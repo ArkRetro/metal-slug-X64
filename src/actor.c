@@ -14,6 +14,7 @@ static scene_clock_t simulation_clock;
 static bool previous_a,previous_b,pending_a,pending_b;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
+static unsigned observed_projectiles;
 #if MSX_RETRO25D
 static float depth_support_y(void) {
     neo_surface_t support;
@@ -28,6 +29,19 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
     const scene_image_t *im=scene_frame(bank_id,frame);
     int x=center-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
     scene_render_image(im,x,136+dy+im->y,mirror,flash);
+}
+static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
+    const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
+    const scene_image_t *im=scene_frame(SCENE_PROJECTILES,0);
+    bool mirror=bullet->direction<0;
+    int x=bullet->x-game.camera-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
+    int y=bullet->y-bank->height/2+im->y;
+    scene_render_image(im,x,y,mirror,false);
+    unsigned observed=1u<<(owner*2+mirror);
+    if (!(observed_projectiles&observed)) {
+        observed_projectiles|=observed;
+        debugf("MSX projectile sprite owner=%u direction=%d size=%ux%u\n",owner,bullet->direction,im->width,im->height);
+    }
 }
 void actor_init(void) {
     scene_assets_init();scene_renderer_init();msx_game_init(&game);
@@ -79,6 +93,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     // Keep imminent frame transitions requested ahead of the draw deadline.
     for (unsigned next=0;next<3;next++)
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
+    scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     const scene_bank_t *soldier=scene_bank(SCENE_SOLDIER);
     unsigned sf=(game.ticks/soldier->interval)%soldier->first;
     if (game.enemy.x-game.x/MSX_UNIT<400) for (unsigned i=0;i<3;i++)
@@ -105,8 +120,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;
         for (unsigned i=0;i<n;i++) if (list[i].active) {
             int x=list[i].x-game.camera;
-            if (x>=4 && x<=316) scene_render_box(x-4,list[i].y,8,3,
-                owner?(color_t){255,64,40,255}:(color_t){255,232,128,255});
+            if (x>=-16 && x<336) draw_projectile(&list[i],owner);
         }
     }
     scene_render_foreground_fog();

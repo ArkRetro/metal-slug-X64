@@ -92,7 +92,7 @@ void scene_assets_init(void) {
     stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
     data_cache_hit_writeback((void*)scene_palettes,sizeof(scene_palettes));
     // Warm the present zone outside gameplay. Marco's branch transitions stay pinned.
-    for (unsigned bank=0;bank<4;bank++) if (bank!=SCENE_SOLDIER) {
+    for (unsigned bank=0;bank<SCENE_BANK_COUNT;bank++) if (bank!=SCENE_SOLDIER) {
         const scene_bank_t *b=&scene_banks[bank];
         for (unsigned i=0;i<b->first+b->second;i++) pinned[scene_images[b->start+i].page/8]=true;
     }
@@ -101,7 +101,7 @@ void scene_assets_init(void) {
     debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB DMA=%u bytes\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,stats.dma_bytes);
     stats.misses=0; // Startup waits are outside the gameplay deadline.
 }
-const scene_bank_t *scene_bank(unsigned id) { assert(id<4);return &scene_banks[id]; }
+const scene_bank_t *scene_bank(unsigned id) { assert(id<SCENE_BANK_COUNT);return &scene_banks[id]; }
 const scene_image_t *scene_frame(unsigned id,unsigned frame) {
     const scene_bank_t *b=scene_bank(id);assert(frame<b->first+b->second);return &scene_images[b->start+frame];
 }

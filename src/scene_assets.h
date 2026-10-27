@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
-enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION };
+enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
 typedef struct { uint16_t page,palette; int16_t x,y; uint16_t width,height,format; } scene_image_t;

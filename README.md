@@ -4,6 +4,8 @@ La próxima entrega de ROM será una **beta del port completo**. No se publican
 más demos intermedias. Véase [estado de la beta](docs/BETA_STATUS.md).
 El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
 iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
+Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
+con contorno, paleta y transparencia, también al disparar hacia la izquierda.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

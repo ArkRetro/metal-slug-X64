@@ -1,0 +1,42 @@
+{
+  "source": "MAME 0.276 / mslugx / euro",
+  "tile": "0x2cbd3",
+  "palette": "0x71",
+  "tile_size": [
+    16,
+    16
+  ],
+  "visible_size": [
+    10,
+    6
+  ],
+  "opaque_pixels": 44,
+  "observations": 18,
+  "matched_mame_pixels": 792,
+  "ci4_sha256": "2e31dd03af4e8109f6d8e6f4310536e57e3366e08487fb54d52e4c9df9700d45",
+  "host_checks": "make check passed",
+  "scope": "Pistol artwork replaces horizontal projectile rectangles; enemy shots share it pending original weapon logic. Internal testing only; no demo release.",
+  "ares": {
+    "classic": {
+      "internal_rom_sha256": "f8d38c0979a21c14b8e8de8a647ef1631783f975b1caadce4e3a3b698950389c",
+      "projectile_and_traversal_tests": "pass",
+      "cache_misses": [
+        0,
+        0,
+        0
+      ],
+      "tmemory_assertions": "none",
+      "emulator": "ares 146 / paraLLEl-RDP"
+    },
+    "retro25d": {
+      "internal_rom_sha256": "022abf190de3c3652fed6bfded262a9af605598f258a731333ea0f580ef7fadf",
+      "projectile_and_traversal_tests": "pass",
+      "cache_misses": [
+        0,
+        0
+      ],
+      "tmemory_assertions": "none",
+      "emulator": "ares 146 / paraLLEl-RDP"
+    }
+  }
+}

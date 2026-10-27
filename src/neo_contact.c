@@ -76,11 +76,18 @@ bool neo_contact_plane_ground(const neo_contact_actor_t *a,const neo_contact_req
     if (!neo_surface_unique(r->x,&old) || !neo_surface_unique(x,&next)) return false;
     if (old.flags!=0xc0u || next.flags!=0xc0u) return false;
     if (!((old.shape>=1 && old.shape<=4) || (old.shape>=6 && old.shape<=9) || old.shape==11) ||
-        !((next.shape>=1 && next.shape<=4) || next.shape==11)) return false;
+        !((next.shape>=1 && next.shape<=4) || (next.shape>=6 && next.shape<=9) || next.shape==11)) return false;
     int64_t start=(int64_t)r->y-old.height,end=(int64_t)predicted-next.height;
     if (start && ((start<0 && end<0) || (start>0 && end>0))) return false;
+    uint16_t flags=1;
+    if (r->dy<0 && predicted<next.height) {
+        // Executed downward clip: ROM 01319E ORI.W #0042 before attachment.
+        // Limit this extension to the recovered declining-slope/flat join.
+        if (!(old.shape>=6 && old.shape<=9 && next.shape==11 && r->dx>0)) return false;
+        flags|=0x42u;
+    }
     *out=(neo_contact_result_t){x,next.height,r->dx,sub32(next.height,r->y),
-        r->parent_tag,((uint32_t)contact_group_map[next.flags>>5]<<16)|contact_angles[next.shape],1};
+        r->parent_tag,((uint32_t)contact_group_map[next.flags>>5]<<16)|contact_angles[next.shape],flags};
     return true;
 }
 bool neo_contact_ground_step(neo_contact_actor_t *a,const neo_contact_parent_t *parent,

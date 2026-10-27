@@ -71,6 +71,15 @@ Scene region/object queries, forward probes and inter-actor RNG scheduling
 remain external. See `docs/SOLDIER_STATE.md`, `docs/soldier-state-validation.json` and
 `docs/SOLDIER_ATTACK.md` with its three validation reports.
 
+Reposition states AF4F6/AF572 now calculate five animation starts, six RNG calls
+and 34 native movement/draw updates, including the inline pose-table helper.
+A declining-plane contact bias is corrected from original 012DEE arithmetic;
+the observed downward slope/flat join returns 0043 after the 01319E clip.
+Host regressions, native MIPS/ares reposition tests, the coupled attack and the
+existing partial gameplay traversal pass. Only selector 0 and program 23E0DA
+are dynamically covered. Common/global boundaries remain external in this suite.
+See `docs/SOLDIER_LOCOMOTION.md`; this remains unintegrated with campaign AI.
+
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical
 camera motion. It separates C-ROM background bank 0x40000 from moving enemy

@@ -7,7 +7,7 @@
  * pointers; field50's complete gameplay semantics remain unverified. */
 typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
     NEO_ANIM_FINISH,NEO_ANIM_FLIP_FACING,NEO_ANIM_UNRECOVERED,
-    NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW } neo_anim_kind_t;
+    NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW,NEO_ANIM_SELECT_POSE } neo_anim_kind_t;
 typedef struct {
     neo_anim_kind_t kind;
     uint32_t asset;
@@ -26,6 +26,7 @@ typedef struct {
     uint16_t x,y,attributes,z;
     uint8_t correction,flash_palette,palettes[4];
     bool suppress;
+    uint8_t variant61; // Native actor selector consumed by original 004412.
 } neo_anim_render_t;
 /* attributes is in/out: the recovered callback toggles facing bit 0. A game
  * controller must retain that change for physics/AI, not only for rendering. */

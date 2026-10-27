@@ -27,7 +27,7 @@ for c in f['cases']:
     if init:render='{0}';afterattr=0;complete=0
     else:
         palettes=[(b['palettes']>>shift)&255 for shift in (24,16,8,0)]
-        render='{'+','.join(str(v) for v in [b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8])+','+arr(palettes)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+'}'
+        render='{'+','.join(str(v) for v in [b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8])+','+arr(palettes)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+',0}'
         afterattr=c['calls'][-1]['after'] if c['calls'] else b['base']&65535
         complete=a['sr']&1
     n=len(c.get('draws',[]))

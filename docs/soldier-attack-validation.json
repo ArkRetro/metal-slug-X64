@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "emulator": "ares 146, retained workspace build",
-  "rom_sha256": "36b9029a28a07f28bc50e82fdfc5fec4034eac48754c587b0e155e6d26bbc252",
+  "rom_sha256": "330ea6206004dd470c1515170fb09a50da3b3fd5e9fc8a02d2b750333e6b0f5d",
   "log_sha256": "1e01d40eb5a4614a48e4e68eecc8ea2da40ee5c97b880b5e8c69bf531f32272a",
   "fixture_sha256": "2e5aafb0974e9324fccc51ea6abddb2c5a7da70b78b36f73c857523624ab4694",
   "suite": "attack",
@@ -19,5 +19,6 @@
   "port_build": "make all: PASS",
   "active_gameplay_integration": false,
   "scene_collision_queries": "External measured inputs; no native hit/region engine in this regression",
-  "audio": "Event request only; native sample conversion/playback pending"
+  "audio": "Event request only; native sample conversion/playback pending",
+  "slope_regression": "PASS after declining-plane correction and inline-pose API extension"
 }

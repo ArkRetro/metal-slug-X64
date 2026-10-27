@@ -38,7 +38,7 @@ void neo_contact_commit(neo_contact_actor_t *actor,const neo_contact_result_t *r
 /* Opt-in single-plane terrain subset. Caller must establish a static level
  * context without relevant dynamic collision candidates; this API has no actor
  * broadphase input. Attached/crossing, group C0, destination
- * shapes 1..4 or 11 (initial source may also be 6..9), no stacked floors or
+ * shapes 1..4, 6..9 or 11; observed declining-slope/flat downward clip, no stacked floors or
  * dynamic object collisions. Returns false for
  * unsupported cases; this is not the complete 013968 collision kernel. */
 bool neo_contact_plane_ground(const neo_contact_actor_t *actor,

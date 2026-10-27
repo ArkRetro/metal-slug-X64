@@ -17,6 +17,17 @@ def program(bank,root):
             elif op==4:
                 c.update(kind='POSE',flags=arg,dx=struct.unpack_from('b',bank,offset+2)[0],
                     dy=struct.unpack_from('b',bank,offset+3)[0],asset=struct.unpack_from('>I',bank,offset+4)[0]);size=8
+            elif op==0x10:
+                assert arg==0x61,'Unrecovered actor selector'
+                length=struct.unpack_from('>H',bank,offset+2)[0]
+                assert length and length%8==0 and length//8<=255
+                c.update(kind='SELECT_POSE',asset=0x61,operand=length//8,target=len(commands))
+                for i in range(length//8):
+                    at=offset+4+i*8;address=pc+4+i*8
+                    assert bank[at]==4,'Only observed inline pose tables are recovered'
+                    locations[address]=len(commands)
+                    commands.append(dict(address=address,kind='POSE',asset=struct.unpack_from('>I',bank,at+4)[0],target=0,operand=0,flags=bank[at+1],dx=struct.unpack_from('b',bank,at+2)[0],dy=struct.unpack_from('b',bank,at+3)[0]))
+                size=4+length
             elif op==0x20:
                 assert arg==0x50,'Unrecovered actor-field write; do not silently map it'
                 c.update(kind='FIELD50',asset=struct.unpack_from('>I',bank,offset+2)[0]);size=6

@@ -19,6 +19,6 @@ lines+=['static const neo_cull_bounds_t object_bounds='+rec(f['bounds'])+';',
  'static const struct { unsigned frame; neo_contact_actor_t body; uint16_t cursor,timer,speed; uint8_t flash,field18; uint32_t field50; neo_anim_render_t render; neo_anim_draw_t draw; uint16_t attributes,video_phase,region_code; uint8_t phase,epoch; bool other_contact,deleted; } object_cases[]={']
 for c in f['cases']:
  b,a=c['animation_before'],c['animation_after'];p=[b['palettes']>>n&255 for n in (24,16,8,0)]
- render='{'+','.join(str(v) for v in (b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8))+','+arr(p)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+'}'
+ render='{'+','.join(str(v) for v in (b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8))+','+arr(p)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+',0}'
  lines.append('{'+','.join([str(c['frame']),rec(c['expected']),str(c['after_cursor'])]+[str(a[k]) for k in ('timer','speed','f17','f18','field50')]+[render,rec(c['draw'])]+[str(int(c[k])) for k in ('final_attributes','video_phase','region_code','phase','epoch','other_contact','deleted')])+'},')
 lines.append('};');(ROOT/'build/object_fixture.h').write_text('\n'.join(lines)+'\n')

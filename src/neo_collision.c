@@ -38,8 +38,9 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
     else if (shape==10) height=base+8*NEO_UNIT-u-1;
     else if (shape>=11 && shape<=13) height=base+8*NEO_UNIT;
     else return false;
-    // Original slope contact is one fractional unit above the plane.
-    if (shape<=9) height++;
+    // Rising planes keep the one-unit contact bias. Declining quarter-slopes
+    // already include it: ROM 012DEE uses 0x7FFFF before the contact +1.
+    if (shape<=5) height++;
     *out=(neo_surface_t){height,shape,code&0xf0};return true;
 }
 bool neo_surface_unique(int32_t x,neo_surface_t *out) {

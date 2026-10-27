@@ -6,7 +6,7 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion'),default='rng')
 a=p.parse_args();out=a.output.resolve()
 fixture_path=ROOT/('data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
@@ -15,6 +15,8 @@ if a.suite=='rng':
         decisions=len(fixture['decisions']),damping=len(fixture['damping']))
 elif a.suite=='throw':
     counts=dict(steps=len(fixture['cases']))
+elif a.suite=='locomotion':
+    counts=dict(steps=len(fixture['cases']),starts=sum(c['init'] for c in fixture['cases']),draws=len(fixture['cases']),rng=sum(c['rng_calls'] for c in fixture['cases']))
 elif a.suite=='object':
     counts=dict(steps=len(fixture['cases']),draws=len(fixture['cases']),palettes=4,sounds=1)
 elif a.suite=='attack':
@@ -66,7 +68,7 @@ with (out/'xvfb.log').open('w') as xlog:
         if a.suite=='state':report['action_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_action_fixture.json').read_bytes()).hexdigest()
         if a.suite=='state':report['cull_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_cull_fixture.json').read_bytes()).hexdigest()
         if a.suite in ('attack','object'):report['throw_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_throw_fixture.json').read_bytes()).hexdigest()
-        if a.suite in ('contact','control','state','throw','attack','object'):report['terrain_source_sha256']=hashlib.sha256((ROOT/'filesystem/mission1/collision.json').read_bytes()).hexdigest()
+        if a.suite in ('contact','control','state','throw','attack','object','locomotion'):report['terrain_source_sha256']=hashlib.sha256((ROOT/'filesystem/mission1/collision.json').read_bytes()).hexdigest()
         if a.suite=='attack':report['object_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_object_fixture.json').read_bytes()).hexdigest()
         (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS: measured',a.suite,'fixtures executed as native MIPS in ares')
     finally:

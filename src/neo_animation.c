@@ -34,6 +34,16 @@ neo_anim_result_t neo_anim_step_events(neo_anim_state_t *s,neo_anim_render_t *r,
                 neo_anim_draw_t draw=project(s,r,c);emit(context,&draw);
             }
             break;
+        case NEO_ANIM_SELECT_POSE: { // 004412: select/clamp, draw, skip table.
+            if (!c->operand || c->asset!=0x61 || (unsigned)c->target+c->operand>s->program->count) return NEO_ANIM_INVALID;
+            unsigned selected=r->variant61;if (selected>=c->operand) selected=c->operand-1u;
+            const neo_anim_command_t *pose=&s->program->commands[c->target+selected];
+            if (pose->kind!=NEO_ANIM_POSE) return NEO_ANIM_INVALID;
+            if (!r->suppress && !(s->timer&0x8000u) && emit) {
+                neo_anim_draw_t draw=project(s,r,pose);emit(context,&draw);
+            }
+            pc=(unsigned)c->target+c->operand;break;
+        }
         case NEO_ANIM_WAIT: { // 0042F4..00435A, including byte-only timer reload.
             int old=signed16(s->timer);
             if (!c->operand) {

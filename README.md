@@ -37,6 +37,10 @@ El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de pale
 y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
 Las respuestas de impacto siguen externas y la integración jugable está pendiente.
 
+El [reposicionamiento nativo](docs/SOLDIER_LOCOMOTION.md) añade 34 actualizaciones
+con selección de poses, RNG y contacto de pendiente. La escena jugable parcial
+existente conserva su recorrido en ares tras corregir el sesgo fraccionario.
+
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.
 Marco puede aterrizar en superficies a distintas alturas y caer de ellas.

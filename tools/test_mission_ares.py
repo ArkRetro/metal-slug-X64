@@ -6,9 +6,11 @@ import argparse,subprocess,time
 parser=argparse.ArgumentParser();parser.add_argument('--version',type=int,default=10)
 parser.add_argument('--variant',default='release',choices=('release','classic','retro25d'))
 parser.add_argument('--projectiles',action='store_true',help='Check original projectile sprites in both directions and enemy fire')
+parser.add_argument('--output',type=Path,help='Separate capture directory; preserves historical prototype evidence')
+parser.add_argument('--log',type=Path,help='Read this independently launched ares log')
 args=parser.parse_args();VERSION=args.version;variant=args.variant
-OUT=Path(f'/workspace/emulator/v{VERSION}-{variant}');OUT.mkdir(exist_ok=True)
-LOG=Path(f'/workspace/emulator/run-v{VERSION}-{variant}.log')
+OUT=args.output or Path(f'/workspace/emulator/v{VERSION}-{variant}');OUT.mkdir(exist_ok=True)
+LOG=args.log or Path(f'/workspace/emulator/run-v{VERSION}-{variant}.log')
 XD='/workspace/emulator/root/usr/bin/xdotool'
 def key(action,key):subprocess.run([XD,action,key],check=True)
 def press(button):key('keydown',button);time.sleep(.12);key('keyup',button)

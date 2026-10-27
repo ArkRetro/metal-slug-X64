@@ -18,7 +18,7 @@ for c in f['cases'][1:]:
 lines+=['};','static const struct { uint16_t cursor,timer,speed; uint8_t flash,field18; uint32_t field50; neo_anim_render_t render; bool complete; unsigned events; } attack_cases[]={']
 for c in f['cases'][1:]:
  b,a=c['before'],c['after'];palettes=[(b['palettes']>>n)&255 for n in (24,16,8,0)]
- render='{'+','.join(str(v) for v in (b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8))+','+arr(palettes)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+'}'
+ render='{'+','.join(str(v) for v in (b['x'],b['y'],b['base']&65535,b['z'],b['correction'],b['f16']>>8))+','+arr(palettes)+','+str(int(bool(b['f5f']&8 and b['phase']&1)))+',0}'
  lines.append(state(a,c['after_cursor'])[:-1]+','+render+','+str(int(bool(a['sr']&1)))+','+str(len(c['calls']))+'},')
  for call in c['calls']:
   if call['before']['target']==0x3bb8e:

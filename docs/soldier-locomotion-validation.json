@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "30759b1cea39bfa038a9ba90c1d820322d61b3aa6cce3090343871d27121708e",
+  "log_sha256": "fc690d0245eafb9109cd751b3c81b251b0b8982ab408c85d7f790d6d751efaec",
+  "fixture_sha256": "d7e7b07644538ff14d1b384889662eb00fa084bfdab57fdbf53b23fb37cffe15",
+  "suite": "locomotion",
+  "steps": 34,
+  "starts": 5,
+  "draws": 34,
+  "rng": 6,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "terrain_source_sha256": "dc68c2c0a3361cd4a2ea8a5e67ea3096eff28059e7f23f249ec571cab7996204",
+  "host_check": "make check: PASS",
+  "prototype_gameplay": "Existing partial scene traversed in ares after the slope correction; not complete mission coverage",
+  "external_inputs": [
+    "Common control/flags5f between main updates",
+    "Initial conditions of five reposition segments",
+    "Global RNG state at each main-update boundary",
+    "Scene region/object services, player positions, camera, zero delay grid and resource bindings"
+  ],
+  "dynamic_profile": {
+    "steps": 34,
+    "starts": 5,
+    "rng_calls": 6,
+    "selector_values": [
+      0
+    ],
+    "programs": [
+      "0x23E0DA"
+    ],
+    "kernel_flags": {
+      "0x0001": 33,
+      "0x0043": 1
+    }
+  },
+  "active_gameplay_integration": false
+}

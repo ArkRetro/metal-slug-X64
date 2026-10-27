@@ -152,3 +152,7 @@ los tres guardias del prototipo continúan siendo provisionales.
 El seguimiento integrado en [SOLDIER_CONTROL.md](SOLDIER_CONTROL.md) ya calcula
 `+0x5F` desde el bloque común y el RNG original antes del movimiento siguiente.
 La prueba anterior de este informe conserva su frontera y sus hashes históricos.
+
+El resolver se amplía en [SOLDIER_LOCOMOTION.md](SOLDIER_LOCOMOTION.md) con
+destinos descendentes 6..9 y el recorte observado hacia piso plano. Ese informe
+explica también la corrección del sesgo fraccionario y su validación posterior.

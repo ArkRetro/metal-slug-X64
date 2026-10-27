@@ -81,8 +81,10 @@ apariciones de oleadas o campaña. Las rutas sin apoyo y rutinas no recuperadas
 fallan explícitamente al entrar; el código no ejecuta direcciones originales.
 
 El ataque observado usa callbacks ROM `0x040648` y `0x03BB8E`. El segundo
-llama al asignador `0x00411C` con entrada `0x03BC28`; esto identifica un siguiente
-hilo de investigación, no un proyectil nativo ya terminado.
+llama al asignador `0x00411C` con entrada `0x03BC28`. El seguimiento en
+[SOLDIER_ATTACK.md](SOLDIER_ATTACK.md) ya traduce esos efectos, el lanzamiento
+y el recorrido observado hasta el borrado. Las consultas de impacto siguen
+externas y el ataque aún no está integrado en la IA activa.
 
 ## Identidad y borrado
 

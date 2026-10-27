@@ -18,8 +18,8 @@ static neo_anim_draw_t project(const neo_anim_state_t *s,const neo_anim_render_t
     else if ((c->flags>>4)<4u) attr=(uint16_t)((attr&255u)|((unsigned)r->palettes[c->flags>>4]<<8));
     return (neo_anim_draw_t){c->asset,x,y,attr,r->z};
 }
-neo_anim_result_t neo_anim_step(neo_anim_state_t *s,neo_anim_render_t *r,
-    neo_anim_emit_t emit,void *context,unsigned budget) {
+neo_anim_result_t neo_anim_step_events(neo_anim_state_t *s,neo_anim_render_t *r,
+    neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context) {
     if (!s->program) return NEO_ANIM_COMPLETE; // 004284: carry set, no updates.
     if (s->flash && !(s->flash&0x80u)) --s->flash; // signed TST.B/BLE at 004290.
     unsigned pc=s->cursor;
@@ -59,9 +59,17 @@ neo_anim_result_t neo_anim_step(neo_anim_state_t *s,neo_anim_render_t *r,
             s->timer&=255u;return NEO_ANIM_COMPLETE;
         case NEO_ANIM_FLIP_FACING: // callback ROM 01ADAA, recovered BCHG #0,+15.
             r->attributes^=1u;s->cursor=(uint16_t)pc;break;
+        case NEO_ANIM_REPLACE_PALETTE:case NEO_ANIM_SPAWN_THROW:
+            if (!event || !event(event_context,c->kind,c->asset,r)) return NEO_ANIM_UNSUPPORTED;
+            s->cursor=(uint16_t)pc;break;
         case NEO_ANIM_UNRECOVERED:return NEO_ANIM_UNSUPPORTED;
         default:return NEO_ANIM_INVALID;
         }
     }
     return NEO_ANIM_BUDGET_EXHAUSTED;
+}
+
+neo_anim_result_t neo_anim_step(neo_anim_state_t *s,neo_anim_render_t *r,
+    neo_anim_emit_t emit,void *context,unsigned budget) {
+    return neo_anim_step_events(s,r,emit,context,budget,0,0);
 }

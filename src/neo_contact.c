@@ -31,6 +31,13 @@ neo_contact_request_t neo_contact_prepare_ground(neo_contact_actor_t *a) {
     if ((right && r.dx>=0) || (left && r.dx<0)) r.dx=r.dy=0;
     return r;
 }
+neo_contact_request_t neo_contact_prepare_air(neo_contact_actor_t *a) {
+    neo_contact_request_t r={a->x,a->y,a->vx,a->vy,a->parent_tag,0,
+        a->flags15&32u?0:255,0,0,0};
+    bool right=a->flags15&8u,left=a->flags15&16u;a->flags15&=(uint8_t)~24u;
+    if ((right && r.dx>=0) || (left && r.dx<0)) r.dx=0;
+    return r;
+}
 void neo_contact_commit(neo_contact_actor_t *a,const neo_contact_result_t *r,
     const neo_contact_parent_t *parent,uint8_t epoch) {
     assert(!r->parent_tag || (parent && parent->tag==r->parent_tag));
@@ -42,9 +49,15 @@ void neo_contact_commit(neo_contact_actor_t *a,const neo_contact_result_t *r,
     if (r->flags&8u) a->flags5f|=4u;
     if (r->flags&16u) a->flags5f|=2u;
     a->kind_angle=(uint16_t)(r->kind_angle_word>>8);
+    neo_contact_project(a,parent,epoch);
+    if ((a->flags15&64u) && (a->field66&0xf000u)==0x8000u)
+        a->word1e=(uint16_t)(a->field66-((uint32_t)a->projected_y>>16));
+}
+void neo_contact_project(neo_contact_actor_t *a,const neo_contact_parent_t *parent,uint8_t epoch) {
+    assert(!a->parent_tag || (parent && parent->tag==a->parent_tag));
     int32_t oldx=a->projected_x,oldy=a->projected_y;
     a->projected_x=a->x;a->projected_y=a->y;a->correction=0;
-    if (r->parent_tag) {
+    if (a->parent_tag) {
         unsigned carryx=((uint32_t)a->x&65535u)+((uint32_t)parent->x&65535u)>65535u;
         unsigned carryy=((uint32_t)a->y&65535u)+((uint32_t)parent->y&65535u)>65535u;
         a->correction=(uint8_t)(carryx|(carryy<<1)|parent->correction);
@@ -52,8 +65,6 @@ void neo_contact_commit(neo_contact_actor_t *a,const neo_contact_result_t *r,
     }
     if (!a->mark) {a->cached_x=a->projected_x;a->cached_y=a->projected_y;a->mark=epoch;}
     else if (a->mark!=epoch) {a->cached_x=oldx;a->cached_y=oldy;a->mark=epoch;}
-    if ((a->flags15&64u) && (a->field66&0xf000u)==0x8000u)
-        a->word1e=(uint16_t)(a->field66-((uint32_t)a->projected_y>>16));
 }
 bool neo_contact_plane_ground(const neo_contact_actor_t *a,const neo_contact_request_t *r,
     neo_contact_result_t *out) {

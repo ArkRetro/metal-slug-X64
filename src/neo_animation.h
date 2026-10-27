@@ -6,7 +6,8 @@
  * M68000 opcodes. Descriptors and field50 values are opaque tags, never CPU
  * pointers; field50's complete gameplay semantics remain unverified. */
 typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
-    NEO_ANIM_FINISH,NEO_ANIM_FLIP_FACING,NEO_ANIM_UNRECOVERED } neo_anim_kind_t;
+    NEO_ANIM_FINISH,NEO_ANIM_FLIP_FACING,NEO_ANIM_UNRECOVERED,
+    NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW } neo_anim_kind_t;
 typedef struct {
     neo_anim_kind_t kind;
     uint32_t asset;
@@ -32,10 +33,16 @@ typedef struct { uint32_t descriptor; uint16_t x,y,attributes,z; } neo_anim_draw
 typedef void (*neo_anim_emit_t)(void *context,const neo_anim_draw_t *draw);
 typedef enum { NEO_ANIM_MORE,NEO_ANIM_COMPLETE,NEO_ANIM_INVALID,NEO_ANIM_UNSUPPORTED,
     NEO_ANIM_BUDGET_EXHAUSTED } neo_anim_result_t;
+/* Explicit native effects of recovered callbacks; handler owns native palette
+ * resources/spawn queues. It never receives a callable original CPU address. */
+typedef bool (*neo_anim_event_t)(void *context,neo_anim_kind_t kind,uint32_t asset,
+    neo_anim_render_t *render);
 /* ROM 004256: reset timer/field18, preserve flash and field50 tag. */
 void neo_anim_start(neo_anim_state_t *state,const neo_anim_program_t *program,uint16_t speed);
 /* ROM 00427A control flow, with RDP-independent output. budget is a caller's
  * malformed-data guard, not an invented original animation/frame limit. */
 neo_anim_result_t neo_anim_step(neo_anim_state_t *state,neo_anim_render_t *render,
     neo_anim_emit_t emit,void *context,unsigned budget);
+neo_anim_result_t neo_anim_step_events(neo_anim_state_t *state,neo_anim_render_t *render,
+    neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context);
 #endif

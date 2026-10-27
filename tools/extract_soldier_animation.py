@@ -29,7 +29,10 @@ def program(bank,root):
             elif op==0x14:
                 assert arg==4,'Unrecovered callback payload'
                 callback=struct.unpack_from('>I',bank,offset+2)[0]
-                c.update(kind='FLIP_FACING' if callback==0x1adaa else 'UNRECOVERED',asset=callback);size=6
+                if callback==0x40648:c.update(kind='REPLACE_PALETTE',asset=0x35c,original_callback=callback)
+                elif callback==0x3bb8e:c.update(kind='SPAWN_THROW',asset=0x3bc28,original_callback=callback)
+                else:c.update(kind='FLIP_FACING' if callback==0x1adaa else 'UNRECOVERED',asset=callback)
+                size=6
             else:raise AssertionError(('Unrecovered command',hex(pc),hex(op)))
             pc+=size
     walk(root)

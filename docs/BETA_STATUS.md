@@ -62,9 +62,14 @@ scalar62 and animation starts/speeds rather than replaying them as stimuli.
 All 54 integrated state cycles, six starts, two RNG-based speed calculations
 and 54 movement/draw outputs match MAME. A separate near-player capture verifies
 84 weighted-action queries, including the first nonzero choice of action 1
-(ROM AF918). Its attack animation callbacks and projectile are not ported yet.
+(ROM AF918). The follow-up attack animation now emits native palette/spawn effects, with
+20 original soldier draws and 41 spawned-actor draws through burst and removal.
+Its trajectory, palette cycle, phase transitions and resource lifetime match
+MAME in native host/MIPS tests. Scene collision answers remain external; the
+full soldier state machine and active gameplay integration are not complete.
 Scene region/object queries, forward probes and inter-actor RNG scheduling
-remain external. See `docs/SOLDIER_STATE.md` and `docs/soldier-state-validation.json`.
+remain external. See `docs/SOLDIER_STATE.md`, `docs/soldier-state-validation.json` and
+`docs/SOLDIER_ATTACK.md` with its three validation reports.
 
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical

@@ -33,6 +33,10 @@ velocidades, seis inicios de animación y las transiciones observadas durante
 originales, incluida una selección de ataque. Esto aún no sustituye los guardias
 provisionales ni completa la Misión 1.
 
+El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de paleta
+y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
+Las respuestas de impacto siguen externas y la integración jugable está pendiente.
+
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.
 Marco puede aterrizar en superficies a distintas alturas y caer de ellas.

@@ -1,0 +1,4039 @@
+{
+  "source": "MAME debugger helper probes after verified actor constructor; Ghidra addressed assembly",
+  "provenance": {
+    "capture_sha256": {
+      "debug.log": "5bc55caf77d4a64d54d12b1f3b0751d4a85d933d1979fb8a0cd1e2359e2fd55e",
+      "instructions.log": "dbd7f9440e0738faa1043b0c065a69f8076d25fd6171f0a57da67c15f978184b",
+      "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc",
+      "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "run-command.json": "d720826faebdb8062e55d8043192a0e64ea9bb0425a6df9a7188eac0642e34be"
+    },
+    "ghidra_assembly_sha256": "234128f2004bc4864cf2cb4f69c58cbffc9629652aca8b8482d363ebd745da67",
+    "language": "68000:BE:32:MC68020"
+  },
+  "programs": [
+    {
+      "root": 2348304,
+      "commands": [
+        {
+          "address": 2348304,
+          "kind": "FIELD50",
+          "asset": 244544,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348310,
+          "kind": "POSE",
+          "asset": 1442718,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348318,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348320,
+          "kind": "POSE",
+          "asset": 1442740,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348328,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348330,
+          "kind": "POSE",
+          "asset": 1442764,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348338,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348340,
+          "kind": "POSE",
+          "asset": 1442784,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348348,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348350,
+          "kind": "POSE",
+          "asset": 1442804,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348358,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348360,
+          "kind": "POSE",
+          "asset": 1442828,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348368,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348370,
+          "kind": "POSE",
+          "asset": 1442852,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348378,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348380,
+          "kind": "POSE",
+          "asset": 1442876,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348388,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348390,
+          "kind": "POSE",
+          "asset": 1442900,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348398,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348400,
+          "kind": "POSE",
+          "asset": 1442920,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348408,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348410,
+          "kind": "POSE",
+          "asset": 1442940,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348418,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348420,
+          "kind": "POSE",
+          "asset": 1442960,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348428,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348430,
+          "kind": "JUMP",
+          "asset": 0,
+          "target": 1,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "root": 2348436,
+      "commands": [
+        {
+          "address": 2348436,
+          "kind": "FIELD50",
+          "asset": 244544,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348442,
+          "kind": "POSE",
+          "asset": 1442982,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348450,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348452,
+          "kind": "POSE",
+          "asset": 1443002,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348460,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348462,
+          "kind": "POSE",
+          "asset": 1443026,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348470,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348472,
+          "kind": "POSE",
+          "asset": 1443050,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348480,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348482,
+          "kind": "POSE",
+          "asset": 1443070,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348490,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348492,
+          "kind": "POSE",
+          "asset": 1443090,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348500,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348502,
+          "kind": "POSE",
+          "asset": 1443070,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348510,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348512,
+          "kind": "FINISH",
+          "asset": 0,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "root": 2348514,
+      "commands": [
+        {
+          "address": 2348514,
+          "kind": "FIELD50",
+          "asset": 244544,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348520,
+          "kind": "POSE",
+          "asset": 1443070,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348528,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348530,
+          "kind": "POSE",
+          "asset": 1443090,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348538,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348540,
+          "kind": "POSE",
+          "asset": 1443110,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348548,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 4,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348550,
+          "kind": "POSE",
+          "asset": 1443130,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348558,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 4,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348560,
+          "kind": "POSE",
+          "asset": 1443110,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348568,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 4,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348570,
+          "kind": "POSE",
+          "asset": 1443090,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348578,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2348580,
+          "kind": "JUMP",
+          "asset": 0,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "root": 2350516,
+      "commands": [
+        {
+          "address": 2350516,
+          "kind": "FIELD50",
+          "asset": 244544,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350522,
+          "kind": "POSE",
+          "asset": 1446522,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350530,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350532,
+          "kind": "FLIP_FACING",
+          "asset": 109994,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350538,
+          "kind": "POSE",
+          "asset": 1446542,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350546,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2350548,
+          "kind": "FINISH",
+          "asset": 0,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    },
+    {
+      "root": 2355096,
+      "commands": [
+        {
+          "address": 2355096,
+          "kind": "FIELD50",
+          "asset": 244544,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355102,
+          "kind": "POSE",
+          "asset": 1443070,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355110,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355112,
+          "kind": "POSE",
+          "asset": 1455788,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355120,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355122,
+          "kind": "POSE",
+          "asset": 1455808,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355130,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355132,
+          "kind": "POSE",
+          "asset": 1455828,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355140,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 4,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355142,
+          "kind": "POSE",
+          "asset": 1455848,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355150,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 8,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355152,
+          "kind": "POSE",
+          "asset": 1455868,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355160,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 3,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355162,
+          "kind": "POSE",
+          "asset": 1455892,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355170,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355172,
+          "kind": "POSE",
+          "asset": 1455908,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355180,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355182,
+          "kind": "UNRECOVERED",
+          "asset": 716564,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355188,
+          "kind": "POSE",
+          "asset": 1455924,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355196,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355198,
+          "kind": "POSE",
+          "asset": 1455940,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355206,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355208,
+          "kind": "POSE",
+          "asset": 1455956,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355216,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355218,
+          "kind": "POSE",
+          "asset": 1455976,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355226,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355228,
+          "kind": "POSE",
+          "asset": 1456000,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355236,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 5,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355238,
+          "kind": "POSE",
+          "asset": 1455976,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355246,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355248,
+          "kind": "POSE",
+          "asset": 1455956,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355256,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355258,
+          "kind": "POSE",
+          "asset": 1455940,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355266,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355268,
+          "kind": "POSE",
+          "asset": 1455924,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355276,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355278,
+          "kind": "POSE",
+          "asset": 1455908,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355286,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355288,
+          "kind": "POSE",
+          "asset": 1455892,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355296,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355298,
+          "kind": "POSE",
+          "asset": 1455868,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355306,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355308,
+          "kind": "POSE",
+          "asset": 1455848,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355316,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355318,
+          "kind": "POSE",
+          "asset": 1455828,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355326,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355328,
+          "kind": "POSE",
+          "asset": 1455808,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355336,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355338,
+          "kind": "POSE",
+          "asset": 1455788,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355346,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 2,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355348,
+          "kind": "POSE",
+          "asset": 1443070,
+          "target": 0,
+          "operand": 0,
+          "flags": 64,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355356,
+          "kind": "WAIT",
+          "asset": 0,
+          "target": 0,
+          "operand": 1,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        },
+        {
+          "address": 2355358,
+          "kind": "FINISH",
+          "asset": 0,
+          "target": 0,
+          "operand": 0,
+          "flags": 0,
+          "dx": 0,
+          "dy": 0
+        }
+      ]
+    }
+  ],
+  "cases": [
+    {
+      "kind": "init",
+      "program": 0,
+      "before": {
+        "site": 16982,
+        "frame": 2353,
+        "ptr": 807440,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "program": 2348304,
+        "requested_speed": 256,
+        "field50": 0
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2353,
+        "ptr": 2348304,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 0
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2353,
+        "ptr": 2348304,
+        "timer": 0,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 19,
+        "x": 346,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 0
+      },
+      "draws": [
+        {
+          "descriptor": 1442718,
+          "x": 345,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2353,
+        "ptr": 2348310,
+        "timer": 194,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 1
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2355,
+        "ptr": 2348310,
+        "timer": 194,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 20,
+        "x": 340,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442718,
+          "x": 339,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2355,
+        "ptr": 2348320,
+        "timer": 65412,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 1,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2357,
+        "ptr": 2348320,
+        "timer": 65412,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 21,
+        "x": 334,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442740,
+          "x": 333,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2357,
+        "ptr": 2348320,
+        "timer": 70,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2359,
+        "ptr": 2348320,
+        "timer": 70,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 22,
+        "x": 328,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442740,
+          "x": 327,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2359,
+        "ptr": 2348330,
+        "timer": 65288,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2361,
+        "ptr": 2348330,
+        "timer": 65288,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 23,
+        "x": 322,
+        "y": 336,
+        "correction": 0,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442764,
+          "x": 322,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2361,
+        "ptr": 2348340,
+        "timer": 65482,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 7
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2363,
+        "ptr": 2348340,
+        "timer": 65482,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 24,
+        "x": 316,
+        "y": 336,
+        "correction": 0,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442784,
+          "x": 316,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2363,
+        "ptr": 2348340,
+        "timer": 140,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 7,
+      "after_cursor": 7
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2365,
+        "ptr": 2348340,
+        "timer": 140,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 25,
+        "x": 310,
+        "y": 336,
+        "correction": 0,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442784,
+          "x": 310,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2365,
+        "ptr": 2348350,
+        "timer": 65358,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 7,
+      "after_cursor": 9
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2367,
+        "ptr": 2348350,
+        "timer": 65358,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 26,
+        "x": 304,
+        "y": 336,
+        "correction": 0,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442804,
+          "x": 304,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2367,
+        "ptr": 2348350,
+        "timer": 16,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 9,
+      "after_cursor": 9
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2369,
+        "ptr": 2348350,
+        "timer": 16,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 27,
+        "x": 299,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442804,
+          "x": 298,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2369,
+        "ptr": 2348360,
+        "timer": 65234,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 9,
+      "after_cursor": 11
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2371,
+        "ptr": 2348360,
+        "timer": 65234,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 28,
+        "x": 293,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442828,
+          "x": 292,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2371,
+        "ptr": 2348370,
+        "timer": 65428,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 11,
+      "after_cursor": 13
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2373,
+        "ptr": 2348370,
+        "timer": 65428,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 29,
+        "x": 287,
+        "y": 336,
+        "correction": 1,
+        "z": 34512,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442852,
+          "x": 286,
+          "y": 336,
+          "attributes": 28992,
+          "z": 34512,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2373,
+        "ptr": 2348370,
+        "timer": 86,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 13,
+      "after_cursor": 13
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2375,
+        "ptr": 2348370,
+        "timer": 86,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 30,
+        "x": 281,
+        "y": 335,
+        "correction": 1,
+        "z": 34513,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442852,
+          "x": 280,
+          "y": 335,
+          "attributes": 28992,
+          "z": 34513,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2375,
+        "ptr": 2348380,
+        "timer": 65304,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 13,
+      "after_cursor": 15
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2377,
+        "ptr": 2348380,
+        "timer": 65304,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 31,
+        "x": 275,
+        "y": 334,
+        "correction": 1,
+        "z": 34514,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442876,
+          "x": 274,
+          "y": 334,
+          "attributes": 28992,
+          "z": 34514,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2377,
+        "ptr": 2348390,
+        "timer": 65498,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 15,
+      "after_cursor": 17
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2379,
+        "ptr": 2348390,
+        "timer": 65498,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 32,
+        "x": 269,
+        "y": 334,
+        "correction": 1,
+        "z": 34514,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442900,
+          "x": 268,
+          "y": 334,
+          "attributes": 28992,
+          "z": 34514,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2379,
+        "ptr": 2348390,
+        "timer": 156,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 17,
+      "after_cursor": 17
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2381,
+        "ptr": 2348390,
+        "timer": 156,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 33,
+        "x": 264,
+        "y": 333,
+        "correction": 1,
+        "z": 34515,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442900,
+          "x": 263,
+          "y": 333,
+          "attributes": 28992,
+          "z": 34515,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2381,
+        "ptr": 2348400,
+        "timer": 65374,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 17,
+      "after_cursor": 19
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2383,
+        "ptr": 2348400,
+        "timer": 65374,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 34,
+        "x": 258,
+        "y": 332,
+        "correction": 0,
+        "z": 34516,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442920,
+          "x": 258,
+          "y": 332,
+          "attributes": 28992,
+          "z": 34516,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2383,
+        "ptr": 2348400,
+        "timer": 32,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 19,
+      "after_cursor": 19
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2385,
+        "ptr": 2348400,
+        "timer": 32,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 35,
+        "x": 252,
+        "y": 332,
+        "correction": 0,
+        "z": 34516,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442920,
+          "x": 252,
+          "y": 332,
+          "attributes": 28992,
+          "z": 34516,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2385,
+        "ptr": 2348410,
+        "timer": 65250,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 19,
+      "after_cursor": 21
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2387,
+        "ptr": 2348410,
+        "timer": 65250,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 36,
+        "x": 246,
+        "y": 331,
+        "correction": 0,
+        "z": 34517,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442940,
+          "x": 246,
+          "y": 331,
+          "attributes": 28992,
+          "z": 34517,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2387,
+        "ptr": 2348420,
+        "timer": 65444,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 21,
+      "after_cursor": 23
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2389,
+        "ptr": 2348420,
+        "timer": 65444,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 37,
+        "x": 240,
+        "y": 330,
+        "correction": 0,
+        "z": 34518,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442960,
+          "x": 240,
+          "y": 330,
+          "attributes": 28992,
+          "z": 34518,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2389,
+        "ptr": 2348420,
+        "timer": 102,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 23,
+      "after_cursor": 23
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2391,
+        "ptr": 2348420,
+        "timer": 102,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 38,
+        "x": 235,
+        "y": 329,
+        "correction": 1,
+        "z": 34519,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442960,
+          "x": 234,
+          "y": 329,
+          "attributes": 28992,
+          "z": 34519,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2391,
+        "ptr": 2348430,
+        "timer": 65320,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 23,
+      "after_cursor": 25
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2393,
+        "ptr": 2348430,
+        "timer": 65320,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 39,
+        "x": 229,
+        "y": 329,
+        "correction": 1,
+        "z": 34519,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442718,
+          "x": 228,
+          "y": 329,
+          "attributes": 28992,
+          "z": 34519,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2393,
+        "ptr": 2348320,
+        "timer": 65514,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 25,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2395,
+        "ptr": 2348320,
+        "timer": 65514,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 40,
+        "x": 223,
+        "y": 328,
+        "correction": 1,
+        "z": 34520,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442740,
+          "x": 222,
+          "y": 328,
+          "attributes": 28992,
+          "z": 34520,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2395,
+        "ptr": 2348320,
+        "timer": 172,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2397,
+        "ptr": 2348320,
+        "timer": 172,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 41,
+        "x": 217,
+        "y": 327,
+        "correction": 1,
+        "z": 34521,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442740,
+          "x": 216,
+          "y": 327,
+          "attributes": 28992,
+          "z": 34521,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2397,
+        "ptr": 2348330,
+        "timer": 65390,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 5
+    },
+    {
+      "kind": "init",
+      "program": 1,
+      "before": {
+        "site": 16982,
+        "frame": 2399,
+        "ptr": 2348330,
+        "timer": 65390,
+        "speed": 318,
+        "f17": 255,
+        "f18": 0,
+        "program": 2348436,
+        "requested_speed": 256,
+        "field50": 244544
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2399,
+        "ptr": 2348436,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2399,
+        "ptr": 2348436,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 42,
+        "x": 212,
+        "y": 327,
+        "correction": 1,
+        "z": 34521,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442982,
+          "x": 211,
+          "y": 327,
+          "attributes": 28992,
+          "z": 34521,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2399,
+        "ptr": 2348442,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 1
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2401,
+        "ptr": 2348442,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 43,
+        "x": 207,
+        "y": 326,
+        "correction": 1,
+        "z": 34522,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442982,
+          "x": 206,
+          "y": 326,
+          "attributes": 28992,
+          "z": 34522,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2401,
+        "ptr": 2348452,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 1,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2403,
+        "ptr": 2348452,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 44,
+        "x": 202,
+        "y": 326,
+        "correction": 1,
+        "z": 34522,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443002,
+          "x": 201,
+          "y": 326,
+          "attributes": 28992,
+          "z": 34522,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2403,
+        "ptr": 2348452,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2405,
+        "ptr": 2348452,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 45,
+        "x": 197,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443002,
+          "x": 197,
+          "y": 325,
+          "attributes": 28992,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2405,
+        "ptr": 2348462,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2407,
+        "ptr": 2348462,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 46,
+        "x": 193,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443026,
+          "x": 193,
+          "y": 325,
+          "attributes": 28992,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2407,
+        "ptr": 2348462,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2409,
+        "ptr": 2348462,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 47,
+        "x": 188,
+        "y": 324,
+        "correction": 0,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443026,
+          "x": 188,
+          "y": 324,
+          "attributes": 28992,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2409,
+        "ptr": 2348472,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 7
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2411,
+        "ptr": 2348472,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 48,
+        "x": 184,
+        "y": 324,
+        "correction": 0,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443050,
+          "x": 184,
+          "y": 324,
+          "attributes": 28992,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2411,
+        "ptr": 2348472,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 7,
+      "after_cursor": 7
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2413,
+        "ptr": 2348472,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 49,
+        "x": 180,
+        "y": 324,
+        "correction": 0,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443050,
+          "x": 180,
+          "y": 324,
+          "attributes": 28992,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2413,
+        "ptr": 2348482,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 7,
+      "after_cursor": 9
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2415,
+        "ptr": 2348482,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 50,
+        "x": 176,
+        "y": 324,
+        "correction": 0,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 176,
+          "y": 324,
+          "attributes": 28992,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2415,
+        "ptr": 2348482,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 9,
+      "after_cursor": 9
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2417,
+        "ptr": 2348482,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 51,
+        "x": 173,
+        "y": 324,
+        "correction": 0,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 173,
+          "y": 324,
+          "attributes": 28992,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2417,
+        "ptr": 2348482,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 9,
+      "after_cursor": 9
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2419,
+        "ptr": 2348482,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 52,
+        "x": 169,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 169,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2419,
+        "ptr": 2348492,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 9,
+      "after_cursor": 11
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2421,
+        "ptr": 2348492,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 53,
+        "x": 165,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443090,
+          "x": 165,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2421,
+        "ptr": 2348492,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 11,
+      "after_cursor": 11
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2423,
+        "ptr": 2348492,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 54,
+        "x": 162,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443090,
+          "x": 162,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2423,
+        "ptr": 2348492,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 11,
+      "after_cursor": 11
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2425,
+        "ptr": 2348492,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 55,
+        "x": 159,
+        "y": 323,
+        "correction": 1,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443090,
+          "x": 158,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2425,
+        "ptr": 2348502,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 11,
+      "after_cursor": 13
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2427,
+        "ptr": 2348502,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 56,
+        "x": 155,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 155,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2427,
+        "ptr": 2348502,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 13,
+      "after_cursor": 13
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2429,
+        "ptr": 2348502,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 57,
+        "x": 152,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 152,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2429,
+        "ptr": 2348502,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 13,
+      "after_cursor": 13
+    },
+    {
+      "kind": "step",
+      "program": 1,
+      "before": {
+        "site": 17018,
+        "frame": 2431,
+        "ptr": 2348502,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 58,
+        "x": 148,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 148,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2431,
+        "ptr": 2348502,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8217,
+        "field50": 244544
+      },
+      "before_cursor": 13,
+      "after_cursor": 13
+    },
+    {
+      "kind": "init",
+      "program": 2,
+      "before": {
+        "site": 16982,
+        "frame": 2433,
+        "ptr": 2348502,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "program": 2348514,
+        "requested_speed": 256,
+        "field50": 244544
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2433,
+        "ptr": 2348514,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 2,
+      "before": {
+        "site": 17018,
+        "frame": 2433,
+        "ptr": 2348514,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 59,
+        "x": 145,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 145,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2433,
+        "ptr": 2348520,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 1
+    },
+    {
+      "kind": "init",
+      "program": 3,
+      "before": {
+        "site": 16982,
+        "frame": 2435,
+        "ptr": 2348520,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "program": 2350516,
+        "requested_speed": 256,
+        "field50": 244544
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2435,
+        "ptr": 2350516,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 3,
+      "before": {
+        "site": 17018,
+        "frame": 2435,
+        "ptr": 2350516,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 60,
+        "x": 142,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1446522,
+          "x": 142,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2435,
+        "ptr": 2350522,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 1
+    },
+    {
+      "kind": "step",
+      "program": 3,
+      "before": {
+        "site": 17018,
+        "frame": 2437,
+        "ptr": 2350522,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 61,
+        "x": 139,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1446522,
+          "x": 139,
+          "y": 323,
+          "attributes": 28992,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2437,
+        "ptr": 2350532,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 1,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 3,
+      "before": {
+        "site": 17018,
+        "frame": 2439,
+        "ptr": 2350532,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930752,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 62,
+        "x": 137,
+        "y": 323,
+        "correction": 1,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1446542,
+          "x": 136,
+          "y": 323,
+          "attributes": 28993,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [
+        {
+          "target": 109994,
+          "before": 28992,
+          "after": 28993
+        }
+      ],
+      "after": {
+        "site": 17232,
+        "frame": 2439,
+        "ptr": 2350538,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8217,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 4
+    },
+    {
+      "kind": "init",
+      "program": 0,
+      "before": {
+        "site": 16982,
+        "frame": 2441,
+        "ptr": 2350538,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "program": 2348304,
+        "requested_speed": 256,
+        "field50": 244544
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2441,
+        "ptr": 2348304,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2441,
+        "ptr": 2348304,
+        "timer": 0,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 63,
+        "x": 136,
+        "y": 323,
+        "correction": 0,
+        "z": 34525,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442718,
+          "x": 136,
+          "y": 323,
+          "attributes": 28993,
+          "z": 34525,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2441,
+        "ptr": 2348310,
+        "timer": 221,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 1
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2443,
+        "ptr": 2348310,
+        "timer": 221,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 64,
+        "x": 136,
+        "y": 324,
+        "correction": 1,
+        "z": 34524,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442718,
+          "x": 135,
+          "y": 324,
+          "attributes": 28993,
+          "z": 34524,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2443,
+        "ptr": 2348320,
+        "timer": 65466,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 1,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 0,
+      "before": {
+        "site": 17018,
+        "frame": 2445,
+        "ptr": 2348320,
+        "timer": 65466,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 65,
+        "x": 135,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1442740,
+          "x": 135,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2445,
+        "ptr": 2348320,
+        "timer": 151,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 3
+    },
+    {
+      "kind": "init",
+      "program": 4,
+      "before": {
+        "site": 16982,
+        "frame": 2447,
+        "ptr": 2348320,
+        "timer": 151,
+        "speed": 291,
+        "f17": 255,
+        "f18": 0,
+        "program": 2355096,
+        "requested_speed": 256,
+        "field50": 244544
+      },
+      "after": {
+        "site": 17016,
+        "frame": 2447,
+        "ptr": 2355096,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 0
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2447,
+        "ptr": 2355096,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 66,
+        "x": 132,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1443070,
+          "x": 132,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2447,
+        "ptr": 2355112,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 0,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2449,
+        "ptr": 2355112,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 67,
+        "x": 130,
+        "y": 325,
+        "correction": 1,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455788,
+          "x": 129,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2449,
+        "ptr": 2355112,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 3
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2451,
+        "ptr": 2355112,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 68,
+        "x": 127,
+        "y": 325,
+        "correction": 1,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455788,
+          "x": 126,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2451,
+        "ptr": 2355122,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 3,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2453,
+        "ptr": 2355122,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 69,
+        "x": 124,
+        "y": 325,
+        "correction": 1,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455808,
+          "x": 123,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2453,
+        "ptr": 2355122,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2455,
+        "ptr": 2355122,
+        "timer": 512,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 70,
+        "x": 121,
+        "y": 325,
+        "correction": 1,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455808,
+          "x": 120,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2455,
+        "ptr": 2355122,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 5
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2457,
+        "ptr": 2355122,
+        "timer": 256,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 16,
+        "phase": 71,
+        "x": 118,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455808,
+          "x": 118,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2457,
+        "ptr": 2355132,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 5,
+      "after_cursor": 7
+    },
+    {
+      "kind": "step",
+      "program": 4,
+      "before": {
+        "site": 17018,
+        "frame": 2459,
+        "ptr": 2355132,
+        "timer": 0,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "base": 4294930753,
+        "f16": 255,
+        "palettes": 1895825408,
+        "f5f": 32,
+        "phase": 72,
+        "x": 115,
+        "y": 325,
+        "correction": 0,
+        "z": 34523,
+        "field50": 244544
+      },
+      "draws": [
+        {
+          "descriptor": 1455828,
+          "x": 115,
+          "y": 325,
+          "attributes": 28993,
+          "z": 34523,
+          "raw_flags": 64,
+          "raw_dx": 0,
+          "raw_dy": 0
+        }
+      ],
+      "calls": [],
+      "after": {
+        "site": 17232,
+        "frame": 2459,
+        "ptr": 2355132,
+        "timer": 768,
+        "speed": 256,
+        "f17": 255,
+        "f18": 0,
+        "sr": 8196,
+        "field50": 244544
+      },
+      "before_cursor": 7,
+      "after_cursor": 7
+    }
+  ],
+  "external_speed_writes": [
+    {
+      "frame": 2353,
+      "before": 256,
+      "after": 318
+    },
+    {
+      "frame": 2441,
+      "before": 256,
+      "after": 291
+    }
+  ],
+  "limits": [
+    "Only observed animation commands and callback 01ADAA; unknown callbacks fail explicitly.",
+    "Descriptor output is independent of Neo Geo SCB writes; the complete native soldier is not integrated."
+  ]
+}

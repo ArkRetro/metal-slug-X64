@@ -120,10 +120,14 @@ dirección del breakpoint (`site`) y el PC informado con prefetch (`pc`).
 
 ## Pendiente para integrarlo en el juego
 
+El seguimiento de animación está en [SOLDIER_ANIMATION.md](SOLDIER_ANIMATION.md):
+ya se reproduce en C el subconjunto observado del helper, con estado persistente,
+fin de secuencia y callback de orientación. No cubre todos los comandos del juego.
+
 La campaña nativa aún no reproduce el orden global de llamadas al RNG de todos
 los actores. Tener la rutina correcta no garantiza la misma secuencia si el
 orden de actualización cambia. Faltan helpers de movimiento/contacto, lectura
-de animaciones, impactos, transiciones posteriores y eventos de aparición.
+completa de animaciones, impactos, transiciones posteriores y eventos de aparición.
 Los nuevos módulos no sustituyen aún la IA provisional de los tres guardias.
 No se publica un cartucho de demostración ni se afirma rendimiento del juego
 completo a partir de una prueba interna del backend.

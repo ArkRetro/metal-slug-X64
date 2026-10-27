@@ -8,6 +8,7 @@ import ghidra.program.model.address.*;
 import ghidra.program.model.listing.*;
 import ghidra.program.model.mem.*;
 import ghidra.program.model.symbol.SourceType;
+import ghidra.program.model.data.*;
 
 public class AnalyzeNeoGeoSoldier extends GhidraScript {
     private void loaded(String name,long address,File file,boolean writable,boolean executable) throws Exception {
@@ -41,7 +42,11 @@ public class AnalyzeNeoGeoSoldier extends GhidraScript {
         io("IO_VIDEO",0x3c0000,0x10);
         createLabel(toAddr(0x101f14),"OBSERVED_SLOT_101F14",true,SourceType.USER_DEFINED);
         createLabel(toAddr(0x101414),"OBSERVED_LINK_ANCHOR_101414",true,SourceType.USER_DEFINED);
-        long[] seeds={0x2976,0x29c6,0x40bc,0x410e,0x4240,0x143e4,0xaef30,0xaf17e,0xaf2b2,0xaf65a,0xaf6ba,0xaf6c0,0xaf890,0xaf8a6,0xaf380,0xb0354};
+        // Bytes after the animation error TRAP are diagnostic text, not a CPU
+        // fallthrough path. Define them before disassembly to prevent invented
+        // branches from text bytes into the middle of actual instructions.
+        createData(toAddr(0x42aa),new ArrayDataType(ByteDataType.dataType,0x12,1));
+        long[] seeds={0x2976,0x29c6,0x2e98,0x40bc,0x410e,0x4240,0x4256,0x427a,0x42c0,0x42c4,0x42c8,0x42d4,0x42e0,0x42e8,0x435c,0x4364,0x4470,0x44da,0x143e4,0x1456a,0x145bc,0x1adaa,0xaef14,0xaef30,0xaf17e,0xaf2b2,0xaf65a,0xaf6ba,0xaf6c0,0xaf890,0xaf8a6,0xaf380,0xb0354};
         DecompInterface decompiler=new DecompInterface();decompiler.openProgram(currentProgram);
         try (PrintWriter report=new PrintWriter(new File(out,"instructions.tsv"));
              PrintWriter functions=new PrintWriter(new File(out,"functions.tsv"));

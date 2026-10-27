@@ -14,6 +14,9 @@ watchpoints, traza MAME y Ghidra. El informe separa hechos verificados de hipót
 la IA completa sigue pendiente.
 El [RNG original y los siguientes bloques del soldado](docs/SOLDIER_RNG.md)
 ya tienen código C y fixtures medidos que pasan en host y como MIPS en ares.
+El [helper de animación nativo](docs/SOLDIER_ANIMATION.md) conserva cursor y
+temporizador durante 54 actualizaciones y reproduce los dibujos y el callback
+de orientación observados. La integración de la IA completa sigue pendiente.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

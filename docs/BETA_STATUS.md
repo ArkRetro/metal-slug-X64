@@ -27,6 +27,15 @@ scheduling, state semantics, health and pool bounds remain incomplete. The
 active authored guard AI has not been replaced. See `docs/SOLDIER_RNG.md`,
 `docs/FIRST_SOLDIER.md` and `docs/first-soldier-evidence.json`.
 
+The observed animation-helper subset is now native C as well. Five converted
+programs replay six starts and 54 updates with persistent cursor/timer state;
+all 54 descriptor/position/attribute outputs, two end signals and the observed
+orientation callback match MAME. Only the two previously measured initializer
+speed writes are external. Host and native MIPS replay tests pass in ares.
+Unrecovered callbacks fail explicitly, and complete movement/contact, impacts,
+other animation commands and campaign soldier rendering remain unintegrated.
+See `docs/SOLDIER_ANIMATION.md` and `docs/soldier-animation-validation.json`.
+
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical
 camera motion. It separates C-ROM background bank 0x40000 from moving enemy

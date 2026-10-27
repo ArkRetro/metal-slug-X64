@@ -1,0 +1,11 @@
+{
+  "camera": 0,
+  "size": [
+    320,
+    240
+  ],
+  "depth": "unsigned 16-bit PNG: z=-8+sample/65535*520; positive away from camera",
+  "normal": "RGB8 tangent/view normal: (rgb/255)*2-1; +Z toward camera",
+  "runtime": "analytic depth derivatives evaluated per mesh vertex; PNGs are authoring/debug assets, not runtime normal-texture fetches",
+  "scope": "observed mission-1 region; authored 2.5D art direction, not recovered original depth"
+}

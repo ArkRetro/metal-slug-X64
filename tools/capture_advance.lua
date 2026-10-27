@@ -47,17 +47,19 @@ emu.register_frame_done(function()
  if frame==2100 then cpu:write_u8(0x10c71e,3) end
  if frame>=2190 then
   cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
-  local x=cpu:read_u32(0x1014ec)
+  cpu:write_u8(0x10c621,0x30);cpu:write_u8(0x10c627,0x63)
+  local x=cpu:read_u16(0x102036)
   if x==last_x then stuck=stuck+1 else stuck=0 end
   last_x=x
-  if stuck>120 and frame>=aim_until then aim_until=frame+600;stuck=0 end
-  button('P1 Right',frame<aim_until and 0 or 1)
+  if frame<aim_until then stuck=0 end
+  if stuck>120 then aim_until=frame+300;stuck=0 end
+  button('P1 Right',1)
   button('P1 Up',frame<aim_until and 1 or 0)
   button('P1 A',frame%12<6 and 1 or 0)
   button('P1 B',frame>3000 and frame%120<8 and 1 or 0)
   button('P1 C',frame>2900 and frame%60<8 and 1 or 0)
  end
  if frame>=2100 then positions:write(string.format('%d,%u,%u,%u,%u,%u\n',frame,cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9))) end
- if frame>=2100 and (frame==2100 or frame%120==0) then dump(frame) end
- if frame==9000 then positions:close();manager.machine:exit() end
+ if frame>=2100 and (frame==2100 or frame%60==0) then dump(frame) end
+ if frame==7200 then positions:close();manager.machine:exit() end
 end, 'frame')

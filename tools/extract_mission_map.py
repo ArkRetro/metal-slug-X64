@@ -5,33 +5,30 @@ This recovers the observed region, not an unseen ROM level or gameplay logic.
 """
 import argparse,collections,json,struct
 from pathlib import Path
+from neo_scene import state
 
-def extract(root,output):
+def extract(roots,output):
+    if isinstance(roots,Path):roots=[roots]
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
     observations=[];backdrops=set()
-    for path in sorted(root.glob('vram*.bin'),key=lambda p:int(p.stem[4:])):
+    paths=[path for root in roots for path in sorted(root.glob('vram*.bin'),key=lambda p:int(p.stem[4:]))]
+    for path in paths:
+        root=path.parent
         frame=int(path.stem[4:]);ram_path=root/f'ram{frame}.bin'
         if not ram_path.exists():continue
         v=struct.unpack('>34304H',path.read_bytes());ram=ram_path.read_bytes()
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
         backdrops.add(p[-1])
-        camera_hint=struct.unpack_from('>H',ram,0x2036)[0]
-        camera=(-(v[0x8400+105]>>7))%512
-        camera+=round((camera_hint-camera)/512)*512
-        if not 0<=camera<=4096:continue
-        offsets=((camera+1)//2,(camera*3+2)//4,camera,camera)
-        observations.append(dict(frame=frame,camera=camera,camera_ram=camera_hint,
+        scene=state(v,ram);camera=scene['camera'];offsets=scene['offsets']
+        observations.append(dict(frame=frame,captures=str(root),camera=camera,
+            camera_ram=struct.unpack_from('>H',ram,0x2036)[0],offsets=offsets,
+            vertical_offsets=scene['vertical_offsets'],active=scene['active'],
+            full_speed_mid=scene['full_speed_mid'],
             player_x16=struct.unpack_from('>I',ram,0x14ec)[0],player_y16=struct.unpack_from('>I',ram,0x14f0)[0]))
-        x=y=rows=zx=zy=0
-        for slot in range(1,137):
-            c,z=v[0x8200+slot],v[0x8000+slot]
-            if c&64:x=(x+zx+1)&511;zx=z>>8&15
-            else:x=v[0x8400+slot]>>7;y=(512-(c>>7))&511;rows=c&63;zx=z>>8&15;zy=z&255
-            if not rows:continue
-            assert zx==15 and zy==255,(frame,slot,z)
+        for col in scene['columns']:
+            slot,x,y,rows,layer=(col[k] for k in ('slot','x','y','rows','layer'))
             sx=x-512 if x>=496 else x
             if sx>=320:continue
-            layer=0 if slot<=32 else 1 if slot<=64 else 2 if slot<=104 else 3
             world_x=sx+offsets[layer]
             assert world_x%16==0,(frame,slot,world_x,layer)
             for row in range(min(rows,32)):
@@ -39,10 +36,11 @@ def extract(root,output):
                 if sy>=496:sy-=512
                 if sy+16<=16 or sy>=240:continue
                 low,attr=v[slot*64+row*2:slot*64+row*2+2]
+                if (attr&0xf0)!=0x40:continue
                 code=low|((attr<<12)&0xf0000);mask=7 if attr&8 else 3 if attr&4 else 0
                 code &= ~mask
                 pal=tuple(p[(attr>>8)*16:(attr>>8)*16+16])
-                cells[layer][(world_x,sy-16)][(code,attr&3,mask,pal)]+=1
+                cells[layer][(world_x,sy-16-scene['vertical_offsets'][layer])][(code,attr&3,mask,pal)]+=1
     output.mkdir(parents=True,exist_ok=True)
     palette_ids={};palettes=[];records=[];conflicts=[]
     for layer,table in enumerate(cells):
@@ -55,7 +53,7 @@ def extract(root,output):
             if palette not in palette_ids:palette_ids[palette]=len(palettes);palettes.append(palette)
             records.append(dict(layer=layer,x=x,y=y,code=code,flip=flip,animation_mask=mask,palette=palette_ids[palette],observations=count))
     assert len(backdrops)==1,'Animated backdrop requires a separate palette timeline'
-    report=dict(source='MAME mslugx euro; observed SCB slots 1..136',backdrop=next(iter(backdrops)),
+    report=dict(source='MAME mslugx euro; calibrated SCB background bank 0x40000; enemy slots excluded',backdrop=next(iter(backdrops)),
         camera_max=max(o['camera'] for o in observations),width=max(o['camera'] for o in observations)+320,
         selection='first observed; dynamic coordinate variants retained separately',
         layers=[dict(numerator=n,denominator=d) for n,d in ((1,2),(3,4),(1,1),(1,1))],
@@ -64,5 +62,5 @@ def extract(root,output):
     print('Observed map:',len(records),'cells;',len(palettes),'palettes;',len(conflicts),'coordinate variants; camera',report['camera_max'])
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',type=Path);p.add_argument('--output',type=Path,default=Path('filesystem/mission1'))
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',type=Path,nargs='+');p.add_argument('--output',type=Path,default=Path('filesystem/mission1'))
     a=p.parse_args();extract(a.captures,a.output)

@@ -1,18 +1,37 @@
 #include "scene_renderer.h"
+#include "retro_effects.h"
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
 static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
 static unsigned pal_lru[16];
+static bool depth_mode;
+static retro_frame_t depth_frame;
+static retro_plane_view_t depth_views[5];
+static bool observed_light;
+void scene_render_set_depth_mode(bool enabled) {depth_mode=enabled;}
+void scene_render_depth_frame(const retro_frame_t *f) {
+    depth_frame=*f;
+    if (depth_mode && f->light_count && !observed_light) {
+        observed_light=true;debugf("MSX DEPTH light response active\n");
+    }
+}
+void scene_render_foreground_fog(void) {if (depth_mode) retro_effects_fog(&depth_frame,2);}
+void scene_render_forget_texture(void) {
+    last_page=last_slot=last_format=last_width=last_height=-1;
+    for (unsigned i=0;i<16;i++) pal_ids[i]=-1;
+}
 
 void scene_renderer_init(void) {
     rdpq_text_register_font(1,rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO));
+    retro_effects_init();
 }
 static void finished(void *arg) {
     completion_t *done=arg;
     scene_complete_epoch(done->epoch);
     display_show(done->surface);
+    if (done->epoch==1) debugf("MSX first frame ready\n");
 }
 void scene_render_begin(surface_t *surface) {
     current=&completions[++frame%4];*current=(completion_t){surface,frame,TICKS_READ()};
@@ -33,8 +52,8 @@ static unsigned palette_slot(unsigned id) {
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
-static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,int height,bool mirror,bool flash) {
-    if (x>=320 || y>=240 || x+width<=0 || y+height<=0) return;
+static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
+    if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
     unsigned slot=0;
     if (image->format==0) {rdpq_mode_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else rdpq_mode_tlut(TLUT_NONE);
@@ -47,20 +66,31 @@ static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,in
         last_page=image->page;last_slot=(int)slot;last_format=image->format;
         last_width=image->width;last_height=image->height;uploads++;tmem_bytes+=(unsigned)bytes;
     }
-    rdpq_texture_rectangle_scaled(TILE0,x,y,x+width,y+height,
+    rdpq_texture_rectangle_scaled(TILE0,x,y,x+draw_width,y+draw_height,
         mirror?s+width:s,t,mirror?s:s+width,t+height);
     draws++;
 }
+static float background_x(const scene_map_cell_t *cell,int fallback) {
+    if (!depth_mode) return fallback;
+    const retro_plane_view_t *view=&depth_views[cell->layer];
+    return cell->x*view->scale+view->offset_x;
+}
+static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,int height,bool mirror,bool flash) {
+    blit_scaled(image,x,y,s,t,width,height,width,height,mirror,flash);
+}
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash) {
+    rdpq_mode_filter(FILTER_POINT); // Sprites never inherit the fog sampler.
     blit(image,x,y,0,0,image->width,image->height,mirror,flash);
 }
 void scene_render_background(unsigned camera,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     int offsets[]={(camera+1)/2,(camera*3+2)/4,camera,camera,camera};
+    if (depth_mode) for (unsigned i=0;i<5;i++)
+        assert(retro_plane_projection(depth_frame.camera,retro_effects_layer_depth(i),&depth_views[i]));
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
     // Prefetch a margin on both sides, including the next autoanimation phase.
     for (unsigned i=0;i<count;i++) {
-        int x=cells[i].x-offsets[cells[i].layer];
+        float x=background_x(&cells[i],cells[i].x-offsets[cells[i].layer]);
         if (x< -48 || x>=352) continue;
         scene_request_image(scene_map_image(cells[i].phases[video_tick&7]),2);
         scene_request_image(scene_map_image(cells[i].phases[(video_tick+1)&7]),1);
@@ -68,12 +98,33 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     scene_service();
     rdpq_set_scissor(8,8,312,232);
     scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop()));
-    for (unsigned i=0;i<count;i++) {
-        const scene_map_cell_t *cell=&cells[i];int x=cell->x-offsets[cell->layer];
-        if (x+16<=8 || x>=312) continue;
-        const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-        blit(im,x,8+cell->y,im->x,im->y,16,16,false,false);
+    if (!depth_mode) {
+        for (unsigned i=0;i<count;i++) {
+            const scene_map_cell_t *cell=&cells[i];int x=cell->x-offsets[cell->layer];
+            if (x+16<=8 || x>=312) continue;
+            const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+            blit(im,x,8+cell->y,im->x,im->y,16,16,false,false);
+        }
+        rdpq_set_scissor(0,0,320,240);return;
     }
+    for (unsigned layer=0;layer<5;layer++) {
+      for (unsigned i=0;i<count;i++) {
+        const scene_map_cell_t *cell=&cells[i];
+        if (cell->layer!=layer) continue;
+        float x=background_x(cell,cell->x-offsets[cell->layer]);
+        if (x+16*depth_views[layer].scale<=8 || x>=312) continue;
+        const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+        if (depth_mode) {
+            const retro_plane_view_t *view=&depth_views[layer];
+            float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
+            blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
+        } else blit(im,(int)x,8+cell->y,im->x,im->y,16,16,false,false);
+      }
+      if (depth_mode && layer<2) {
+          retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
+      }
+    }
+    if (depth_mode) retro_effects_mesh(&depth_frame);
     rdpq_set_scissor(0,0,320,240);
 }
 void scene_render_box(int x,int y,int width,int height,color_t color) {
@@ -89,6 +140,7 @@ void scene_render_text(int x,int y,const char *text) {
 void scene_render_end(void) {
     if (!(frame%300)) {
         scene_cache_stats_t s=scene_cache_stats();
+        if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3\n",retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count);
         debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
             s.loads,s.dma_bytes,s.misses,s.evictions);

@@ -1,5 +1,10 @@
 # Metal Slug X para Nintendo 64: trabajo en curso
 
+La próxima entrega de ROM será una **beta del port completo**. No se publican
+más demos intermedias. Véase [estado de la beta](docs/BETA_STATUS.md).
+El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
+iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
+
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.
 Marco puede aterrizar en superficies a distintas alturas y caer de ellas.

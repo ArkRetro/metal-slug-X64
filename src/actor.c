@@ -3,6 +3,8 @@
 #include "scene_assets.h"
 #include "scene_renderer.h"
 #include "scene_clock.h"
+#include "visual_config.h"
+#include "neo_collision.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -12,6 +14,14 @@ static scene_clock_t simulation_clock;
 static bool previous_a,previous_b,pending_a,pending_b;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
+#if MSX_RETRO25D
+static float depth_support_y(void) {
+    neo_surface_t support;
+    if (neo_surface_at(game.x,56*MSX_UNIT-game.y,0,256*MSX_UNIT,&support))
+        return 248.0f-(float)support.height/MSX_UNIT;
+    return 192.0f+(float)msx_ground_offset(game.x)/MSX_UNIT;
+}
+#endif
 
 static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mirror,bool flash) {
     const scene_bank_t *bank=scene_bank(bank_id);
@@ -21,6 +31,9 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
 }
 void actor_init(void) {
     scene_assets_init();scene_renderer_init();msx_game_init(&game);
+#if MSX_RETRO25D
+    scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (internal build)\n");
+#endif
     debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
 }
 void actor_set_active(bool active) {
@@ -71,6 +84,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.enemy.x-game.x/MSX_UNIT<400) for (unsigned i=0;i<3;i++)
         scene_request_image(scene_frame(SCENE_SOLDIER,(sf+i)%soldier->first),2);
     scene_service();
+#if MSX_RETRO25D
+    retro_frame_t effects={.camera={game.camera,0,0,320},.tick=game.ticks};
+    effects.shadows[effects.shadow_count++]=(retro_shadow_t){(float)game.x/MSX_UNIT,192.0f+(float)game.y/MSX_UNIT,depth_support_y(),12};
+    if (game.enemy.alive) effects.shadows[effects.shadow_count++]=(retro_shadow_t){game.enemy.x,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,10};
+    if (game.shooting && game.shot_age<3) effects.lights[effects.light_count++]=(retro_light_t){
+        {(float)game.x/MSX_UNIT+game.facing*24,168.0f+(float)game.y/MSX_UNIT,-18},{255,174,72},72,1.0f-(float)game.shot_age/3};
+    if (game.enemy.flash) effects.lights[effects.light_count++]=(retro_light_t){
+        {game.enemy.x,168.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,-24},{255,128,48},100,(float)game.enemy.flash/12};
+    scene_render_depth_frame(&effects);
+#endif
     scene_render_begin(surface);scene_render_background(game.camera,game.ticks);
     if (game.enemy.alive || game.enemy.respawn>75)
         draw_frame(SCENE_SOLDIER,sf,game.enemy.x-game.camera,msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,game.enemy.facing>0,
@@ -86,6 +109,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
                 owner?(color_t){255,64,40,255}:(color_t){255,232,128,255});
         }
     }
+    scene_render_foreground_fog();
     scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     if (game.complete) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.

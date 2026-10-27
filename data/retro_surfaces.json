@@ -1,0 +1,11 @@
+{
+  "description": "Optional 2.5D art direction for the observed first region; authored geometry, not recovered Neo Geo depth.",
+  "focal": 320,
+  "layer_depths": [320, 106.6666667, 8, 0, 0],
+  "planes": [
+    {"name":"cart_panel", "rect":[558,157,654,184], "depth":2, "dx":0.015, "dy":0.01},
+    {"name":"first_wall", "rect":[704,88,832,178], "depth":4, "dx":0.045, "dy":0.005},
+    {"name":"first_roof", "rect":[704,58,832,88], "depth":10, "dx":0.02, "dy":-0.12},
+    {"name":"village_wall", "rect":[940,68,1040,178], "depth":3, "dx":-0.035, "dy":0.005}
+  ]
+}

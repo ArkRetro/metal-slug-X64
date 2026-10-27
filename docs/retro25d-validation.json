@@ -1,0 +1,51 @@
+{
+  "emulator": "ares 146, paraLLEl-RDP, software Vulkan on Xvfb",
+  "scope": "existing partial mission-1 scene only; not a complete-port beta",
+  "host_checks": "gameplay, collision, original motion, codec, clock, six scene-calibration cases, projection/lighting/budgets passed",
+  "maps": "320x240 unsigned 16-bit depth PNGs and RGB8 normal PNGs verified at camera 0 and 460",
+  "limits": {
+    "mesh_configured_worst_triangles": 64,
+    "mesh_hard_cap": 96,
+    "point_lights": 2,
+    "fog_texture_bytes": 1024,
+    "fog_uploads_per_frame": 3,
+    "sprite_texture_page_bytes_max": 2048
+  },
+  "variants": {
+    "retro25d": {
+      "internal_rom_sha256": "766bd4edb40f06a2eab043796d0c9dbb6e018a5f75f072eba1ffe559afd95886",
+      "ares_traversal": "pass",
+      "render_submit_samples_us": [
+        15732,
+        15353
+      ],
+      "cache_misses": [
+        0,
+        0
+      ],
+      "observed_triangle_samples": [
+        8,
+        8
+      ]
+    },
+    "classic": {
+      "internal_rom_sha256": "8db761b179d3459b42bcf64baffa9afe3dba00e6b6088117977bfd12584098ca",
+      "ares_traversal": "pass",
+      "render_submit_samples_us": [
+        13011,
+        12785
+      ],
+      "cache_misses": [
+        0,
+        0
+      ],
+      "observed_triangle_samples": []
+    }
+  },
+  "limitations": [
+    "Diagnostic render submission samples are not full-frame CPU/GPU timings or a hardware performance guarantee.",
+    "Some earlier samples exceeded the roughly 16.9 ms arcade frame budget; optimization remains necessary.",
+    "Normal PNGs are authoring assets; N64 evaluates analytic normals per mesh vertex.",
+    "No ROM, gameplay demo or beta release is published by this change."
+  ]
+}

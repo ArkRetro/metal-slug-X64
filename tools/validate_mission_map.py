@@ -23,14 +23,18 @@ def validate(captures,model_path,crom_path,out):
     out.mkdir(parents=True,exist_ok=True)
     for observation in model['observations']:
         frame=observation['frame'];camera=observation['camera'];phase=frame&7
-        offsets=((camera+1)//2,(camera*3+2)//4,camera,camera)
+        offsets=observation.get('offsets',((camera+1)//2,(camera*3+2)//4,camera,camera))
+        vertical=observation.get('vertical_offsets',(0,0,0,0))
+        active=observation.get('active',(True,True,True,True))
+        folder=Path(observation.get('captures',str(captures)))
         fill=palette_rgb(model['backdrop'])+(255,)
         recovered=Image.new('RGBA',(320,224),fill)
         for c in model['cells']:
-            paste(recovered,tile(c['code']|(phase&c['animation_mask']),c['flip'],tuple(model['palettes'][c['palette']])),c['x']-offsets[c['layer']],c['y'])
+            if not active[c['layer']]:continue
+            paste(recovered,tile(c['code']|(phase&c['animation_mask']),c['flip'],tuple(model['palettes'][c['palette']])),c['x']-offsets[c['layer']],c['y']+vertical[c['layer']])
         reference=Image.new('RGBA',(320,224),fill);covered=Image.new('L',(320,224))
-        v=struct.unpack('>34304H',(captures/f'vram{frame}.bin').read_bytes())
-        p=struct.unpack('>4096H',(captures/f'palette{frame}.bin').read_bytes())
+        v=struct.unpack('>34304H',(folder/f'vram{frame}.bin').read_bytes())
+        p=struct.unpack('>4096H',(folder/f'palette{frame}.bin').read_bytes())
         x=y=rows=zx=zy=0
         for slot in range(1,381):
             control,zoom=v[0x8200+slot],v[0x8000+slot]
@@ -39,7 +43,8 @@ def validate(captures,model_path,crom_path,out):
             if not rows:continue
             xx=x-512 if x>=496 else x
             if xx>=320:continue
-            if slot<=136:assert zx==15 and zy==255
+            is_background=slot<=64 or 105<=slot<=136
+            if is_background:assert zx==15 and zy==255
             for row in range(min(rows,32)):
                 yy=(y+row*16)&511
                 if yy>=496:yy-=512
@@ -49,13 +54,15 @@ def validate(captures,model_path,crom_path,out):
                 mask=7 if attr&8 else 3 if attr&4 else 0
                 code=(low|((attr<<12)&0xf0000))&~mask;code|=phase&mask
                 im=tile(code,attr&3,tuple(p[(attr>>8)*16:(attr>>8)*16+16]))
-                if slot<=136:paste(reference,im,xx,yy)
+                if is_background and (attr&0xf0)==0x40:paste(reference,im,xx,yy)
+                elif zx!=15 or zy!=255:covered.paste(255,(xx,yy,xx+16,yy+16))
                 else:covered.paste(255,(xx,yy),im.getchannel('A'))
         known=set()
         for c in model['conflicts']:
-            xx=c['x']-offsets[c['layer']]
-            known.update((x,y) for y in range(max(0,c['y']),min(224,c['y']+16)) for x in range(max(8,xx),min(312,xx+16)))
-        screenshot=Image.open(captures/f'game{frame}.png').convert('RGB')
+            if not active[c['layer']]:continue
+            xx=c['x']-offsets[c['layer']];yy=c['y']+vertical[c['layer']]
+            known.update((x,y) for y in range(max(0,yy),min(224,yy+16)) for x in range(max(8,xx),min(312,xx+16)))
+        screenshot=Image.open(folder/f'game{frame}.png').convert('RGB')
         for y in range(224):
             for x in range(8,312):
                 total+=1
@@ -69,7 +76,7 @@ def validate(captures,model_path,crom_path,out):
                     rgb=reference.getpixel((x,y))[:3];actual=screenshot.getpixel((x,y))
                     assert max(abs(a-b) for a,b in zip(rgb,actual))<=1,('MAME difference',frame,x,y,rgb,actual)
                     checked+=1
-        if frame in (2100,2400,2700,2940):recovered.save(out/f'map{frame}.png')
+        if frame in (2100,2400,2700,2940,3480,3780,4320):recovered.save(out/f'map{frame}.png')
     result=dict(frames=len(model['observations']),map_pixels=total,known_variant_pixels=changed,mame_uncovered_pixels=checked)
     (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
 

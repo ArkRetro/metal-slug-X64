@@ -32,8 +32,8 @@
       "internal_rom_sha256": "8db761b179d3459b42bcf64baffa9afe3dba00e6b6088117977bfd12584098ca",
       "ares_traversal": "pass",
       "render_submit_samples_us": [
-        13011,
-        12785
+        13271,
+        13403
       ],
       "cache_misses": [
         0,

@@ -1,0 +1,114 @@
+{
+  "source": "MAME 0.276 / mslugx / euro; read-only collision write trace",
+  "activation_trace_frame": 3790,
+  "object_address": "0x104174",
+  "object_routine": "294e4",
+  "vehicle_health": 0,
+  "object_flags": 73,
+  "object_position": [
+    937.5,
+    64.0
+  ],
+  "stamp_source": "29bf4",
+  "observed_pc": "c8982",
+  "before_frame": 3780,
+  "after_frame": 3791,
+  "traced_writes": 13,
+  "predicted_writes_match": true,
+  "collision_grid_bytes_verified": 4096,
+  "collision_grid_mismatches": 0,
+  "writes": [
+    {
+      "address": 1102701,
+      "old": 0,
+      "new": 5,
+      "world_x": 880,
+      "world_y": 64
+    },
+    {
+      "address": 1102764,
+      "old": 0,
+      "new": 5,
+      "world_x": 888,
+      "world_y": 72
+    },
+    {
+      "address": 1102827,
+      "old": 0,
+      "new": 5,
+      "world_x": 896,
+      "world_y": 80
+    },
+    {
+      "address": 1102891,
+      "old": 0,
+      "new": 11,
+      "world_x": 904,
+      "world_y": 80
+    },
+    {
+      "address": 1102955,
+      "old": 0,
+      "new": 11,
+      "world_x": 912,
+      "world_y": 80
+    },
+    {
+      "address": 1103019,
+      "old": 0,
+      "new": 11,
+      "world_x": 920,
+      "world_y": 80
+    },
+    {
+      "address": 1103083,
+      "old": 0,
+      "new": 11,
+      "world_x": 928,
+      "world_y": 80
+    },
+    {
+      "address": 1103147,
+      "old": 0,
+      "new": 11,
+      "world_x": 936,
+      "world_y": 80
+    },
+    {
+      "address": 1103211,
+      "old": 0,
+      "new": 11,
+      "world_x": 944,
+      "world_y": 80
+    },
+    {
+      "address": 1103275,
+      "old": 0,
+      "new": 11,
+      "world_x": 952,
+      "world_y": 80
+    },
+    {
+      "address": 1103339,
+      "old": 0,
+      "new": 10,
+      "world_x": 960,
+      "world_y": 80
+    },
+    {
+      "address": 1103404,
+      "old": 0,
+      "new": 10,
+      "world_x": 968,
+      "world_y": 72
+    },
+    {
+      "address": 1103469,
+      "old": 0,
+      "new": 10,
+      "world_x": 976,
+      "world_y": 64
+    }
+  ],
+  "limits": "Observed ground vehicle variant only. Captures use survival/ammunition overrides, never enemy-health or collision writes. Soldier-wave prerequisite not yet established. Native vehicle controller not integrated."
+}

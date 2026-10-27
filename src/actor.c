@@ -1,0 +1,98 @@
+#include "actor.h"
+#include "gameplay.h"
+#include "scene_assets.h"
+#include "scene_renderer.h"
+#include "scene_clock.h"
+#include <stdio.h>
+
+static msx_game_t game;
+static bool restart_was_down;
+static unsigned animation_started;
+static scene_clock_t simulation_clock;
+static bool previous_a,previous_b,pending_a,pending_b;
+static int previous_animation=-1;
+static const color_t ink={8,16,32,255};
+
+static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mirror,bool flash) {
+    const scene_bank_t *bank=scene_bank(bank_id);
+    const scene_image_t *im=scene_frame(bank_id,frame);
+    int x=center-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
+    scene_render_image(im,x,136+dy+im->y,mirror,flash);
+}
+void actor_init(void) {
+    scene_assets_init();scene_renderer_init();msx_game_init(&game);
+    debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
+}
+void actor_set_active(bool active) {
+    (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;
+}
+void actor_draw(surface_t *surface,joypad_inputs_t input) {
+    int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
+    if (input.btn.r && !restart_was_down) { msx_game_init(&game);previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
+    restart_was_down=input.btn.r;
+    unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths;
+    int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x;
+    bool was_complete=game.complete,was_grounded=game.grounded;
+    pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
+    previous_a=input.btn.a;previous_b=input.btn.b;
+    unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+    for (unsigned step=0;step<steps;step++) {
+        msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
+        pending_a=pending_b=false;
+    }
+    if (game.hits!=old_hits) debugf("MSX enemy hit=%u\n",game.hits);
+    if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
+    if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
+    if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
+    if (!old_camera && game.camera) debugf("MSX camera moving\n");
+    if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
+    if (!was_complete && game.complete) debugf("MSX observed region end\n");
+    if (was_grounded && !game.grounded) debugf("MSX jump\n");
+    if (!was_grounded && game.grounded) debugf("MSX landed height=%d\n",game.y/MSX_UNIT);
+    int animation=msx_game_animation(&game);
+    if (animation!=previous_animation) animation_started=game.ticks;
+    if (animation!=previous_animation && animation==MSX_RUN_JUMP) debugf("MSX run-jump\n");
+    if (animation!=previous_animation && animation==MSX_RUN_FIRE) debugf("MSX run-fire\n");
+    previous_animation=animation;
+    unsigned bank_id=animation>=MSX_RUN_JUMP?SCENE_MOTION:animation>=MSX_FIRE?SCENE_ACTIONS:SCENE_BASE;
+    const scene_bank_t *bank=scene_bank(bank_id);
+    bool second=animation==MSX_RUN || animation==MSX_JUMP || animation==MSX_RUN_FIRE;
+    unsigned count=second?bank->second:bank->first,sample;
+    if (animation==MSX_JUMP || animation==MSX_RUN_JUMP) {
+        sample=game.air_ticks/bank->interval;if (sample>=count) sample=count-1;
+    } else if (animation==MSX_FIRE) sample=(game.shot_age/bank->interval)%count;
+    else sample=((game.ticks-animation_started)/bank->interval)%count;
+    unsigned frame=sample+(second?bank->first:0);
+    // Keep imminent frame transitions requested ahead of the draw deadline.
+    for (unsigned next=0;next<3;next++)
+        scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
+    const scene_bank_t *soldier=scene_bank(SCENE_SOLDIER);
+    unsigned sf=(game.ticks/soldier->interval)%soldier->first;
+    if (game.enemy.x-game.x/MSX_UNIT<400) for (unsigned i=0;i<3;i++)
+        scene_request_image(scene_frame(SCENE_SOLDIER,(sf+i)%soldier->first),2);
+    scene_service();
+    scene_render_begin(surface);scene_render_background(game.camera,game.ticks);
+    if (game.enemy.alive || game.enemy.respawn>75)
+        draw_frame(SCENE_SOLDIER,sf,game.enemy.x-game.camera,msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,game.enemy.facing>0,
+            (game.enemy.flash || !game.enemy.alive) && (game.ticks&1));
+    if (!(game.invulnerable && ((game.ticks/3)&1)))
+        draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
+    for (unsigned owner=0;owner<2;owner++) {
+        const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
+        unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;
+        for (unsigned i=0;i<n;i++) if (list[i].active) {
+            int x=list[i].x-game.camera;
+            if (x>=4 && x<=316) scene_render_box(x-4,list[i].y,8,3,
+                owner?(color_t){255,64,40,255}:(color_t){255,232,128,255});
+        }
+    }
+    scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
+    if (game.complete) scene_render_box(64,92,192,48,ink);
+    // Fonts are last: their own uploads may replace TMEM texture/palette data.
+    scene_render_text(32,24,"MSX V10 - MISSION 1");
+    char status[40];snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
+    scene_render_text(32,38,status);
+    scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
+    if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}
+    scene_render_end();
+}

@@ -17,6 +17,8 @@ $(BUILD_DIR)/tools/test_neo_animation.o: CC = $(N64_CC)
 $(BUILD_DIR)/tools/test_neo_animation.o: CFLAGS = $(N64_CFLAGS) -MMD
 $(BUILD_DIR)/tools/test_neo_contact.o: CC = $(N64_CC)
 $(BUILD_DIR)/tools/test_neo_contact.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/tools/test_neo_control.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_neo_control.o: CFLAGS = $(N64_CFLAGS) -MMD
 
 .PHONY: all clean check FORCE
 FORCE:
@@ -55,6 +57,12 @@ $(BUILD_DIR)/src/neo_contact.o: $(BUILD_DIR)/contact_tables.h
 $(BUILD_DIR)/tools/test_neo_contact.o: $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/animation_fixture.h
 $(BUILD_DIR)/contact-regression.elf: $(BUILD_DIR)/tools/test_neo_contact.o $(BUILD_DIR)/src/neo_contact.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/neo_animation.o
 contact-regression.z64: N64_ROM_TITLE = "MSX CONTACT TEST"
+$(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h &: tools/compile_control_fixture.py data/soldier_control_fixture.json data/soldier_contact_fixture.json data/soldier_animation_fixture.json
+	python3 tools/compile_control_fixture.py
+$(BUILD_DIR)/src/neo_control.o: $(BUILD_DIR)/control_tables.h
+$(BUILD_DIR)/tools/test_neo_control.o: $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/animation_fixture.h
+$(BUILD_DIR)/control-regression.elf: $(BUILD_DIR)/tools/test_neo_control.o $(BUILD_DIR)/src/neo_control.o $(BUILD_DIR)/src/neo_rng.o $(BUILD_DIR)/src/neo_contact.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/neo_animation.o
+control-regression.z64: N64_ROM_TITLE = "MSX CONTROL TEST"
 $(BUILD_DIR)/src/retro_effects.o: $(BUILD_DIR)/retro25d/retro_assets.h
 $(BUILD_DIR)/retro25d/retro_assets.h: tools/build_retro_assets.py tools/retro_geometry.py data/retro_surfaces.json filesystem/mission1/collision.json
 	python3 tools/build_retro_assets.py
@@ -73,8 +81,8 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64
-check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h
+	rm -rf build mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64
+check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o $(BUILD_DIR)/host/gameplay
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
@@ -99,6 +107,8 @@ check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)
 	$(BUILD_DIR)/host/animation
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_contact.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o $(BUILD_DIR)/host/contact
 	$(BUILD_DIR)/host/contact
+	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_control.c src/neo_control.c src/neo_rng.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o $(BUILD_DIR)/host/control
+	$(BUILD_DIR)/host/control
 	cc -std=c11 -Wall -Wextra -Werror tools/test_retro25d.c src/retro25d.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
 -include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d)

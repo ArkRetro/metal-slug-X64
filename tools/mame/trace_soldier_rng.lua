@@ -8,6 +8,9 @@ for address=0x100016,0x100082,2 do words[#words+1]=string.format('w@(%x)',addres
 local function probe(address,label,condition,extra)
  local fmt=label..' seq=%d frame=%d d0=%08X cursor=%08X ret=%08X counter=%04X a6=%08X f15=%02X f92=%04X state='..string.rep('%04X',55)..'\\n'
  local args='temp2,temp9,d0,d@(100084),d@(sp),w@(10f006),a6,b@(a6+15),w@(a6+92),'..table.concat(words,',')
+ if label=='RNG_OUT' and os.getenv('MSX_RNG_CAPTURE_SR')=='1' then
+  fmt=fmt:sub(1,-3)..' sr=%04X mixed=%04X\\n';args=args..',sr,w@(a3)'
+ end
  dbg:command(string.format('bpset %x,%s,{%sprintf "%s",%s;g}',address,condition,extra or '',fmt,args))
 end
 dbg:command('temp2=0')

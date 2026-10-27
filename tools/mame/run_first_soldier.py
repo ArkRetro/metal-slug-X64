@@ -9,10 +9,12 @@ p.add_argument('--mame',default='/workspace/emulator/root/usr/games/mame')
 p.add_argument('--xvfb',default='/workspace/emulator/root/usr/bin/Xvfb')
 p.add_argument('--library-path',default='/workspace/emulator/root/usr/lib/x86_64-linux-gnu')
 p.add_argument('--script',type=Path,default=ROOT/'tools/mame/trace_first_soldier.lua')
+p.add_argument('--rng-flags',action='store_true',help='Capture final EOR.W SR and destination word in RNG extension')
 a=p.parse_args();out=a.output.resolve()
 assert not out.exists() or not any(out.iterdir()),'Use a new empty output directory; do not overwrite evidence'
 out.mkdir(parents=True,exist_ok=True);(out/'cfg').mkdir();(out/'nvram').mkdir()
 env=dict(os.environ,MSX_CAPTURE_DIR=str(out))
+if a.rng_flags:env['MSX_RNG_CAPTURE_SR']='1'
 if a.library_path:env['LD_LIBRARY_PATH']=a.library_path
 with (out/'xvfb.log').open('w') as xlog:
     server=subprocess.Popen([a.xvfb,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)

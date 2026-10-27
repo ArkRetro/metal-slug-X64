@@ -19,7 +19,7 @@ uint16_t neo_rng_seed(neo_rng_t *rng,uint16_t request,uint16_t *counter) {
     rng->cursor=NEO_RNG_WORDS-1; // 0029BE/0029C0: points at last stored word.
     return d0;
 }
-uint16_t neo_rng_next(neo_rng_t *rng) {
+neo_rng_result_t neo_rng_next_result(neo_rng_t *rng) {
     assert(rng && rng->cursor<NEO_RNG_WORDS);
     uint16_t result=rng->words[rng->cursor]; // 0029D2
     unsigned next=rng->cursor+1u;
@@ -28,5 +28,8 @@ uint16_t neo_rng_next(neo_rng_t *rng) {
     unsigned target=next+23u; // 0029E0: 0x2E bytes, i.e. 23 words.
     if (target>=NEO_RNG_WORDS) target-=NEO_RNG_WORDS; // 0029E4..0029EA
     rng->words[target]^=result; // 0029EE
-    return result;
+    return (neo_rng_result_t){result,rng->words[target]};
+}
+uint16_t neo_rng_next(neo_rng_t *rng) {
+    return neo_rng_next_result(rng).value;
 }

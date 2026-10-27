@@ -131,3 +131,10 @@ completa de animaciones, impactos, transiciones posteriores y eventos de aparici
 Los nuevos módulos no sustituyen aún la IA provisional de los tres guardias.
 No se publica un cartucho de demostración ni se afirma rendimiento del juego
 completo a partir de una prueba interna del backend.
+
+## Continuación verificada
+
+El seguimiento en [SOLDIER_CONTROL.md](SOLDIER_CONTROL.md) verifica también N/Z
+del XOR final en ROM `0x0029EE`. Su signo difiere de D0 en 128 de 276 llamadas;
+`neo_rng_next_result()` expone ambos valores sin cambiar la API anterior.
+Estas condiciones alimentan ahora las decisiones del bloque común nativo.

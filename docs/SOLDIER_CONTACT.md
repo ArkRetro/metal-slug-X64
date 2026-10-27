@@ -146,3 +146,9 @@ Faltan paredes, techos, pisos superpuestos, plataformas móviles, otras formas y
 grupos de terreno, contactos con actores, impactos y las transiciones restantes
 del soldado. El controlador de campaña y sus apariciones siguen pendientes;
 los tres guardias del prototipo continúan siendo provisionales.
+
+## Continuación verificada
+
+El seguimiento integrado en [SOLDIER_CONTROL.md](SOLDIER_CONTROL.md) ya calcula
+`+0x5F` desde el bloque común y el RNG original antes del movimiento siguiente.
+La prueba anterior de este informe conserva su frontera y sus hashes históricos.

@@ -6,7 +6,7 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control'),default='rng')
 a=p.parse_args();out=a.output.resolve()
 fixture_path=ROOT/('data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
@@ -16,9 +16,14 @@ if a.suite=='rng':
 elif a.suite=='animation':
     counts=dict(starts=sum(c['kind']=='init' for c in fixture['cases']),steps=sum(c['kind']=='step' for c in fixture['cases']),
         draws=sum(len(c.get('draws',[])) for c in fixture['cases']))
-else:
+elif a.suite=='contact':
     animation=json.loads((ROOT/'data/soldier_animation_fixture.json').read_text())
     counts=dict(steps=len(fixture['cases']),draws=sum(len(c.get('draws',[])) for c in animation['cases']))
+else:
+    contact=json.loads((ROOT/'data/soldier_contact_fixture.json').read_text())
+    animation=json.loads((ROOT/'data/soldier_animation_fixture.json').read_text())
+    counts=dict(cycles=len(fixture['cases']),rng=len(fixture['rng']),moves=len(contact['cases']),
+        draws=sum(len(c.get('draws',[])) for c in animation['cases']))
 marker='MSX '+a.suite.upper()+' REGRESSION PASS '+' '.join(f'{key}={value}' for key,value in counts.items())
 assert not out.exists() or not any(out.iterdir()),'Preserve previous results; use a fresh output'
 out.mkdir(parents=True,exist_ok=True)
@@ -46,7 +51,8 @@ with (out/'xvfb.log').open('w') as xlog:
             fixture_sha256=hashlib.sha256(fixture_path.read_bytes()).hexdigest(),suite=a.suite,
             **counts,
             limit='Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.')
-        if a.suite=='contact':report['animation_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_animation_fixture.json').read_bytes()).hexdigest()
+        if a.suite in ('contact','control'):report['animation_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_animation_fixture.json').read_bytes()).hexdigest()
+        if a.suite=='control':report['contact_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_contact_fixture.json').read_bytes()).hexdigest()
         (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS: measured',a.suite,'fixtures executed as native MIPS in ares')
     finally:
         if process is not None:

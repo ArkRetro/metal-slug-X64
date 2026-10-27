@@ -45,6 +45,15 @@ inputs and level/camera state are still supplied at the unrecovered controller
 boundary. This is not the complete 013968 solver or a closed-loop soldier AI.
 See `docs/SOLDIER_CONTACT.md` and `docs/soldier-contact-validation.json`.
 
+The common soldier control block is now native C and passes 55 persistent cycles,
+feeding 54 native movements and animation draws without injecting flags5f from
+the capture. RNG condition flags follow the final XOR word, whose sign differs
+from the returned random word in 128 of 276 samples. Host and MIPS/ares pass.
+Two forward query results, the inter-actor RNG schedule, main-state scalar
+choices and scene inputs remain external. Only the captured one-player profile
+is dynamically verified. The provisional gameplay guards remain unchanged.
+See `docs/SOLDIER_CONTROL.md` and `docs/soldier-control-validation.json`.
+
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical
 camera motion. It separates C-ROM background bank 0x40000 from moving enemy

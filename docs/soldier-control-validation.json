@@ -1,0 +1,38 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "793273424edaf42ca14d38dd8d1b7b264749fe5a51adb239f7903c538c9185c7",
+  "log_sha256": "2f2cd506207c1b783dc6936075e11dfe956b8af9fab186f5ee5d3421c70c445d",
+  "fixture_sha256": "6d6228f41a75acb33d4df74c1e06a681ee8e4643169a91415e032781999f1a77",
+  "suite": "control",
+  "cycles": 55,
+  "rng": 276,
+  "moves": 54,
+  "draws": 54,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "animation_fixture_sha256": "01fb25225a5234ee91ee7caf8cd924e7ef774582feef7b5b8ae26001772e54e8",
+  "contact_fixture_sha256": "f0def3f5000361a8f184a3985c9958da881a84892a38c2adae84520168f5c572",
+  "host_check": "make check: PASS",
+  "rng_return_vs_mixed_sign_mismatches": 128,
+  "common_rng_calls": 165,
+  "external_rng_calls": 111,
+  "profile": {
+    "active_mask": 1,
+    "mode88": 2,
+    "rank": 3,
+    "variant68": 0,
+    "selector6e": 2,
+    "threshold": 76,
+    "delay_grid_max": 0,
+    "delay92_nonzero_cases": 0
+  },
+  "external_inputs": [
+    "Constructor initial state",
+    "Main-state scalar62 decisions",
+    "Six animation starts and two speed writes",
+    "Player, scene, camera and delay-grid inputs",
+    "Two forward query results",
+    "Inter-actor global RNG call schedule"
+  ],
+  "native_feedback": "flags5f, target fields and counters persist without fixture injection; motion and animation outputs feed the next control cycle"
+}

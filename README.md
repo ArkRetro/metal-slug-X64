@@ -21,6 +21,11 @@ El [movimiento y contacto de suelo recuperados](docs/SOLDIER_CONTACT.md)
 ya se encadenan con la animación: 54 actualizaciones y dibujos coinciden con
 MAME en host y ares. El solver genérico y el controlador completo siguen pendientes.
 
+El [bloque común del soldado](docs/SOLDIER_CONTROL.md) calcula ahora sus flags
+con las condiciones originales del RNG: 55 ciclos alimentan 54 movimientos y
+dibujos nativos, verificados en host y ares. Las consultas delanteras y el orden
+RNG global siguen siendo entradas externas; aún no es la IA completa.
+
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.
 Marco puede aterrizar en superficies a distintas alturas y caer de ellas.

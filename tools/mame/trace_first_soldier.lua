@@ -2,6 +2,8 @@
 -- Known snapshot routine addresses are candidates, not assumed soldier identities.
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local frame=0
+local end_frame=tonumber(os.getenv('MSX_CAPTURE_END_FRAME') or '2460')
+assert(end_frame>=2460 and end_frame<=6000)
 local trace_stopped=false
 local trace_first_frame=nil
 local fields={}
@@ -53,7 +55,15 @@ emu.register_frame_done(function()
    end end
   end
  end
- if frame>=2100 and frame<=2460 then
+ local stop_right=tonumber(os.getenv('MSX_STOP_RIGHT_FRAME') or '0')
+ if frame==stop_right then
+  for tag,p in pairs(manager.machine.ioport.ports) do
+   if string.find(tag,'JOY1') then for name,f in pairs(p.fields) do
+    if name=='P1 Right' or name=='%p Right' then f:set_value(0) end
+   end end
+  end
+ end
+ if frame>=2100 and frame<=end_frame then
   local ram=assert(io.open(output..'/ram'..frame..'.bin','wb'))
   ram:write(cpu:read_range(0x100000,0x10ffff,8));ram:close()
  end
@@ -63,7 +73,7 @@ emu.register_frame_done(function()
    local file=assert(io.open(output..'/'..region[1],'wb'));file:write(cpu:read_range(region[2],region[3],8));file:close()
   end
  end
- if frame==2460 then
+ if frame==end_frame then
   dbg:command('trace off,maincpu');command('bplist');command('wplist')
   local log=dbg.consolelog;local file=assert(io.open(output..'/debugger-console.log','w'))
   for i=1,#log do if log[i] then file:write(log[i]..'\n') end end

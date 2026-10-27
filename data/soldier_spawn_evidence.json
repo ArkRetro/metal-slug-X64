@@ -1,0 +1,51 @@
+{
+  "source": "MAME 0.276 probes at 01A134 and 01A152, checked against captured CPU ROM and Ghidra",
+  "frame": 2351,
+  "actor_ram": "0x101F14",
+  "parent_actor_ram": "0x101414",
+  "record_cpu_rom": "0x2D631A",
+  "opcode": 7,
+  "length": 22,
+  "unassigned_word4": 796,
+  "coordinate_words": {
+    "x": 352,
+    "y": 80
+  },
+  "copied_fields": {
+    "+0x6E": 2,
+    "+0x70": 90,
+    "+0x72": 120,
+    "+0x74": 150,
+    "+0x76": 1,
+    "+0x78": 0
+  },
+  "record_words": [
+    1814,
+    128,
+    796,
+    352,
+    80,
+    2,
+    90,
+    120,
+    150,
+    1,
+    0
+  ],
+  "next_record_cpu_rom": "0x2d6330",
+  "provenance": {
+    "capture_sha256": {
+      "debug.log": "805e859e13912c5a1318683b356b61480e1b45c06e318fcf5e70400148a80044",
+      "run-command.json": "16da4f60fd2784b0a418484f82ef8b1c64e07877bf95592e0756c83b064821ea",
+      "capture-options.json": "b88f0c58beadd8b20a17b2b17165fb9b9528913a71196654e654ab919c5ebc83",
+      "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+    },
+    "ghidra_assembly_sha256": "dc2da48d62f5b5dc308e14b56016a74d10005e81c93ddb0d193cb3ed8c965517",
+    "language": "68000:BE:32:MC68020"
+  },
+  "limits": [
+    "This identifies one executed spawn record, not the complete wave script.",
+    "Word at record +4 retains no invented semantic name.",
+    "Original script scheduling, difficulty filters, allocator and all other mission events remain incomplete."
+  ]
+}

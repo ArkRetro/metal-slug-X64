@@ -1,7 +1,8 @@
 # Metal Slug X para Nintendo 64: trabajo en curso
 
-La próxima entrega de ROM será una **beta del port completo**. No se publican
-más demos intermedias. Véase [estado de la beta](docs/BETA_STATUS.md).
+La próxima entrega solicitada es una **demo jugable de la Misión 1 completa**,
+validada en ares antes de probarla en MiSTer. Aún no está terminada.
+Véase [estado del port y entrega](docs/BETA_STATUS.md).
 El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
 iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
 Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
@@ -25,6 +26,12 @@ El [bloque común del soldado](docs/SOLDIER_CONTROL.md) calcula ahora sus flags
 con las condiciones originales del RNG: 55 ciclos alimentan 54 movimientos y
 dibujos nativos, verificados en host y ares. Las consultas delanteras y el orden
 RNG global siguen siendo entradas externas; aún no es la IA completa.
+
+La [máquina de estados recuperada](docs/SOLDIER_STATE.md) calcula ahora las
+velocidades, seis inicios de animación y las transiciones observadas durante
+54 actualizaciones. El selector de acciones se compara además con 84 llamadas
+originales, incluida una selección de ataque. Esto aún no sustituye los guardias
+provisionales ni completa la Misión 1.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

@@ -1,9 +1,12 @@
-# Complete beta work and delivery policy
+# Native port status and next delivery
 
-The user requested no more demo cartridges before a complete-port beta. The
-existing v9/v10 releases are historical prototypes. Further ROM builds and ares
-runs are internal validation only; do not publish another numbered demo, ZIP or
-cartridge link. The optional 2.5D shader request does not remove this constraint.
+The latest user instruction supersedes the earlier complete-campaign-beta gate:
+the next requested delivery is a playable demo of the **complete first mission**,
+validated in ares before MiSTer testing. It must include the mission's encounters,
+events and boss through its actual completion. Do not present the partial scene,
+a backend regression cartridge or the old REGION END as that deliverable.
+The existing v9/v10 releases remain historical prototypes. Current backend test
+ROMs are internal and must not be published as the requested demo.
 
 The port is not a complete beta. Original game logic, weapons, vehicles, bosses,
 audio, HUD and the six-mission campaign are not complete. Three provisional
@@ -53,6 +56,15 @@ Two forward query results, the inter-actor RNG schedule, main-state scalar
 choices and scene inputs remain external. Only the captured one-player profile
 is dynamically verified. The provisional gameplay guards remain unchanged.
 See `docs/SOLDIER_CONTROL.md` and `docs/soldier-control-validation.json`.
+
+The observed grounded main-state subset now calculates the routine transitions,
+scalar62 and animation starts/speeds rather than replaying them as stimuli.
+All 54 integrated state cycles, six starts, two RNG-based speed calculations
+and 54 movement/draw outputs match MAME. A separate near-player capture verifies
+84 weighted-action queries, including the first nonzero choice of action 1
+(ROM AF918). Its attack animation callbacks and projectile are not ported yet.
+Scene region/object queries, forward probes and inter-actor RNG scheduling
+remain external. See `docs/SOLDIER_STATE.md` and `docs/soldier-state-validation.json`.
 
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical

@@ -10,6 +10,17 @@ audio, HUD and the six-mission campaign are not complete. Three provisional
 guards and REGION END are not substitutes for that coverage. Neither a graphics
 test nor a Neo Geo emulator boot is evidence that the native port is finished.
 
+The first mission-1 soldier is now correlated with RAM slot 0x101F14 in a
+specific clean euro-BIOS capture. Actual debugger watchpoints, breakpoints and
+an instruction trace establish the 0x0AF17E -> 0x0AF65A -> 0x0AF6C0 chain.
+Ghidra was run on the captured Neo Geo map, with the physical data-ROM bank in
+a separate overlay. The report documents its MC68020-superset decoder limit;
+executed instructions are cross-checked against MAME's M68000 trace. A small
+initializer arithmetic fragment compiles as native C and matches captured
+inputs/outputs. The complete RNG, state semantics, health and pool bounds are
+not established. The active authored guard AI has not been replaced. See
+`docs/FIRST_SOLDIER.md` and `docs/first-soldier-evidence.json`.
+
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical
 camera motion. It separates C-ROM background bank 0x40000 from moving enemy

@@ -1,0 +1,166 @@
+{
+  "status": "VERIFICADO en esta captura; no identificaci\u00f3n universal de todos los soldados",
+  "tools": {
+    "mame": "0.276, actual -debug / -debugger none / wpset / bpset / trace",
+    "ghidra": "11.4.2 headless, analysis script completed",
+    "language": "68000:BE:32:MC68020",
+    "language_limit": "Packaged 68000-family decoder is an MC68020 superset; executed instruction addresses are cross-checked against the actual M68000 MAME trace."
+  },
+  "frame_convention": "RAM is saved after frame_done; debugger temp9 is the last completed frame. Event at temp9=2351 is first seen in RAM2352.",
+  "verified": {
+    "slot": "0x00101f14",
+    "constructor": "0x000af17e",
+    "initial_state": "0x000af65a",
+    "next_state": "0x000af6c0",
+    "indirect_dispatch": [
+      "0x00004246",
+      "0x00004248"
+    ],
+    "routine_stores": [
+      "0x000af2b2",
+      "0x000af6ba"
+    ],
+    "routine_offset": 0,
+    "links": {
+      "previous_offset": "0x04",
+      "next_offset": "0x08",
+      "parent_offset": "0x0c"
+    },
+    "ram_frames": 361,
+    "ram_snapshot_bytes": 65536,
+    "observed_transitions": [
+      {
+        "first_snapshot": 2352,
+        "routine": "0x000af65a"
+      },
+      {
+        "first_snapshot": 2354,
+        "routine": "0x000af6c0"
+      },
+      {
+        "first_snapshot": 2398,
+        "routine": "0x000af890"
+      },
+      {
+        "first_snapshot": 2400,
+        "routine": "0x000af8a6"
+      },
+      {
+        "first_snapshot": 2432,
+        "routine": "0x000af380"
+      },
+      {
+        "first_snapshot": 2434,
+        "routine": "0x000af8d4"
+      },
+      {
+        "first_snapshot": 2436,
+        "routine": "0x000af8ea"
+      },
+      {
+        "first_snapshot": 2440,
+        "routine": "0x000af65a"
+      },
+      {
+        "first_snapshot": 2442,
+        "routine": "0x000af6c0"
+      },
+      {
+        "first_snapshot": 2446,
+        "routine": "0x000b0336"
+      },
+      {
+        "first_snapshot": 2448,
+        "routine": "0x000b0354"
+      }
+    ],
+    "x_delta_matches_stored_vx_samples": 43,
+    "visual_identity": [
+      {
+        "frame": 2380,
+        "actor_slot": "0x00101f14",
+        "palette": "0x71",
+        "displayed_descriptor_physical_rom": "0x0016043c",
+        "displayed_animation_entry_cpu": "0x0023d55c",
+        "ram_animation_pointer": "0x0023d566",
+        "matching_scb_cells": 5,
+        "matched_mame_pixels": 536
+      },
+      {
+        "frame": 2400,
+        "actor_slot": "0x00101f14",
+        "palette": "0x71",
+        "displayed_descriptor_physical_rom": "0x001603b4",
+        "displayed_animation_entry_cpu": "0x0023d520",
+        "ram_animation_pointer": "0x0023d59a",
+        "matching_scb_cells": 5,
+        "matched_mame_pixels": 522
+      }
+    ]
+  },
+  "hypotheses_not_verified": [
+    "Functional names for every state (pursue/throw/die) require controlled input/damage traces.",
+    "Complete actor-pool bounds, actor count and universal stride are not established.",
+    "Do not assume the vehicle health offset has the same semantics for this actor.",
+    "Ghidra decompiler types, inferred parameters, carry-flag logic and pointer-looking fixed-point constants are tentative.",
+    "Original RNG and complete AI are not yet translated; the motion fragment accepts captured RNG outputs."
+  ],
+  "previous_provisional_runtime": "The existing authored three-guard positions, health, firing cadence and checkpoint rules are not verified original soldier logic.",
+  "ram_series_sha256": "4579fbe73cba8663bd5e840627b230bed230cd305475ac08a1c4319c62dd08e5",
+  "ghidra_artifacts": {
+    "headless.log": "c9bfb018ff3d401d9e7be35e1ece203ccbee52b90e6ec4496a8cefa299716ab3",
+    "instructions.tsv": "c38fd53d5f099bd44a02609271a67921fb2cc220f49898ba0bc3129a8957d4b3",
+    "functions.tsv": "145d23af1930cb0008d33339fa3caee11d3407e886afe4ac552dd5e1a6f22824",
+    "memory-map.tsv": "bc1751caa111fd5b3410e1a8cfe801192f9ab9ed0418147e1ae0dce7ffd178f4"
+  },
+  "inputs": {
+    "program_rom_sha1": {
+      "250-p1.p1": "4c19f2e9824e606178ac1c9d4b0516fbaa625035",
+      "250-p2.ep1": "18aaa7a3ba8da99f78c430e9be69ccde04bc04d9"
+    },
+    "fixed_cpu_view_matches_word_swapped_p1": true,
+    "captured_cpu_bank_start": "0x200000",
+    "captured_bank_frame": 2360,
+    "matched_physical_rom_bank": 2,
+    "physical_bank_address": "0x200000",
+    "overlay_note": "Physical bank 1 is an overlay, not an unbanked CPU mapping at 0x100000; CPU work RAM remains separate.",
+    "files": {
+      "program-fixed.bin": {
+        "bytes": 1048576,
+        "sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a"
+      },
+      "program-bank.bin": {
+        "bytes": 1048576,
+        "sha256": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+      },
+      "bios.bin": {
+        "bytes": 131072,
+        "sha256": "f8fc7ffd72ea7064e9a6026d92a19a0dfa346612e36e35c4a3b4ebb311370835"
+      },
+      "ram2360.bin": {
+        "bytes": 65536,
+        "sha256": "ffafae76172e4b1d54ae5ad07df12e7afa26024474f919a446709d1dc1c8a40a"
+      },
+      "palette2360.bin": {
+        "bytes": 8192,
+        "sha256": "84dedbe7b0b4a03839b2f47de70db7037c4c5d605059b315622f328a7511cfe9"
+      },
+      "rom-physical-bank1.bin": {
+        "bytes": 1048576,
+        "sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+      },
+      "instructions.log": {
+        "bytes": 4698843,
+        "sha256": "193b3ba59e5f1ced67472db9d46d7045a8134671e02d1a809e026acc47a40cd8"
+      },
+      "debug.log": {
+        "bytes": 6572,
+        "sha256": "ce5ca2649fbdd5e0a5d147c14925d3b8c39e8bd005f1bacdaf0fe3c0a365c71f"
+      },
+      "commands.log": {
+        "bytes": 855,
+        "sha256": "a56833ef417d03d0087704415af385cf08371ee0daaae24b016d0115bd597cf6"
+      }
+    }
+  }
+}

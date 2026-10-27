@@ -16,6 +16,8 @@ int msx_game_animation(const msx_game_t *g) {
     return g->moving?MSX_RUN:MSX_IDLE;
 }
 static void spawn_enemy(msx_game_t *g) {
+    // PROVISIONAL authored test encounters. These positions, health and firing
+    // rules are NOT the verified Mission-1 soldier AI; see FIRST_SOLDIER.md.
     static const int positions[]={420,780,1140};
     if (g->kills>=3) { g->enemy.alive=false; return; }
     g->enemy=(msx_enemy_t){.x=positions[g->kills],.facing=-1,.health=2,.cooldown=60,.alive=true};

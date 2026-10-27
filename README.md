@@ -9,6 +9,9 @@ con contorno, paleta y transparencia, también al disparar hacia la izquierda.
 El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
 gráficos `.sprite` de libdragon y colisiones de los restos. Se valida en un
 escenario interno; su oleada y aparición originales siguen pendientes.
+El [primer soldado de Misión 1](docs/FIRST_SOLDIER.md) ya está localizado mediante
+watchpoints, traza MAME y Ghidra. El informe separa hechos verificados de hipótesis;
+la IA completa sigue pendiente.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

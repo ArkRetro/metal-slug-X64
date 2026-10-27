@@ -27,6 +27,8 @@ $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h &: tools/compile_veh
 	python3 tools/compile_vehicle.py
 $(BUILD_DIR)/vehicle-sprites.stamp: tools/build_vehicle_sprites.py filesystem/vehicle.json
 	python3 tools/build_vehicle_sprites.py --mksprite $(N64_INST)/bin/mksprite
+$(BUILD_DIR)/soldier_fixture.h: tools/compile_soldier_fixture.py data/first_soldier_init_fixture.json
+	python3 tools/compile_soldier_fixture.py
 $(BUILD_DIR)/src/retro_effects.o: $(BUILD_DIR)/retro25d/retro_assets.h
 $(BUILD_DIR)/retro25d/retro_assets.h: tools/build_retro_assets.py tools/retro_geometry.py data/retro_surfaces.json filesystem/mission1/collision.json
 	python3 tools/build_retro_assets.py
@@ -46,7 +48,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@exit 1
 clean:
 	rm -rf build mslugx-explorer.z64
-check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h
+check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o $(BUILD_DIR)/host/gameplay
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
@@ -63,6 +65,8 @@ check: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)
 	python3 tools/test_vehicle_wreckage.py
 	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c -o $(BUILD_DIR)/host/vehicle
 	$(BUILD_DIR)/host/vehicle
+	cc -std=c11 -Wall -Wextra -Werror -I$(BUILD_DIR) tools/test_neo_soldier.c src/neo_soldier.c -o $(BUILD_DIR)/host/soldier
+	$(BUILD_DIR)/host/soldier
 	cc -std=c11 -Wall -Wextra -Werror tools/test_retro25d.c src/retro25d.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
 -include $(wildcard $(BUILD_DIR)/src/*.d)

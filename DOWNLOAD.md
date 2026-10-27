@@ -1,6 +1,7 @@
 # Descarga para MiSTer — v9
 
-El ZIP está adjunto en la publicación [v9](https://github.com/ArkRetro/metal-slug-X64/releases/tag/v9).
+Descarga [msx9.zip](https://github.com/ArkRetro/metal-slug-X64/raw/refs/heads/main/downloads/msx9.zip).
+También puedes abrir [el archivo en GitHub](https://github.com/ArkRetro/metal-slug-X64/blob/main/downloads/msx9.zip) y pulsar Download.
 Este repositorio es privado: abre el enlace con una cuenta que tenga acceso.
 
 Descarga `msx9.zip`, descomprímelo y copia `mslugx-mission1-v9.z64` a

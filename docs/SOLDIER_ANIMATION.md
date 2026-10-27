@@ -122,6 +122,10 @@ del intérprete ni todos los efectos de sus callbacks. El presupuesto de comando
 es una protección del llamador ante datos malformados, no un límite atribuido
 al arcade.
 
+El [seguimiento de movimiento/contacto](SOLDIER_CONTACT.md) ya reproduce el
+recorrido de suelo observado y lo encadena con estas animaciones. El kernel
+genérico y el controlador completo permanecen pendientes.
+
 Faltan el helper completo de movimiento/contacto del soldado, impactos, el
 resto de sus transiciones y la integración con assets/renderizado de la
 campaña. Este avance no convierte los tres guardias provisionales en IA original.

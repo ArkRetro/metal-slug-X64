@@ -42,6 +42,15 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
     if (shape<=9) height++;
     *out=(neo_surface_t){height,shape,code&0xf0};return true;
 }
+bool neo_surface_unique(int32_t x,neo_surface_t *out) {
+    bool found=false;
+    for (int row=0;row<32;row++) {
+        neo_surface_t candidate;if (!surface(x,row,&candidate)) continue;
+        if (found) return false;
+        *out=candidate;found=true;
+    }
+    return found;
+}
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out) {
     if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
     bool found=false;int64_t closest=INT64_MAX;

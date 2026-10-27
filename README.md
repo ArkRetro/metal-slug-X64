@@ -17,6 +17,9 @@ ya tienen código C y fixtures medidos que pasan en host y como MIPS en ares.
 El [helper de animación nativo](docs/SOLDIER_ANIMATION.md) conserva cursor y
 temporizador durante 54 actualizaciones y reproduce los dibujos y el callback
 de orientación observados. La integración de la IA completa sigue pendiente.
+El [movimiento y contacto de suelo recuperados](docs/SOLDIER_CONTACT.md)
+ya se encadenan con la animación: 54 actualizaciones y dibujos coinciden con
+MAME en host y ares. El solver genérico y el controlador completo siguen pendientes.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

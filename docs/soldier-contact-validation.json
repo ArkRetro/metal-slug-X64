@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "2603299d5d29e3d8f8dd22b74570d75fa0e814ffead0da7053b7905288800eaa",
+  "log_sha256": "e9e2e8d65230335f84e558d8b6e51d1cdd6199bb2c5fdef8df3d9a39ed3f4334",
+  "fixture_sha256": "f0def3f5000361a8f184a3985c9958da881a84892a38c2adae84520168f5c572",
+  "suite": "contact",
+  "steps": 54,
+  "draws": 54,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "animation_fixture_sha256": "01fb25225a5234ee91ee7caf8cd924e7ef774582feef7b5b8ae26001772e54e8",
+  "fixture": "data/soldier_contact_fixture.json",
+  "animation_fixture": "data/soldier_animation_fixture.json",
+  "native_solver": "Computed from recovered native collision grid; no captured kernel results injected into full-step tests",
+  "coupled_replay": "Persistent movement/projection and animation state; native positions feed all 54 draw records",
+  "external_inputs": [
+    "scalar62 and flags5f from unrecovered controller code",
+    "terrain/camera object transform and epoch",
+    "six animation starts and two measured animation-speed writes"
+  ],
+  "compared_actor_fields": [
+    "x",
+    "y",
+    "vx",
+    "vy",
+    "scalar62",
+    "projected_x",
+    "projected_y",
+    "cached_x",
+    "cached_y",
+    "parent_tag",
+    "kind_angle",
+    "field66",
+    "word1e",
+    "flags15",
+    "flags5f",
+    "timer5a",
+    "mark",
+    "correction"
+  ],
+  "unsupported_check": "PASS: stacked terrain returns false without mutating actor or caller output",
+  "host_checks": "make check passed, including prior motion/RNG/animation/vehicle fixtures",
+  "limitations": [
+    "Not the full 013968 kernel or closed-loop soldier AI.",
+    "Caller must establish the static single-plane context and exclude relevant dynamic collision candidates.",
+    "Walls, hazards, moving platforms, stacked floors and unobserved branches remain unsupported/unverified.",
+    "Provisional campaign guards remain unchanged; no new demo is published."
+  ]
+}

@@ -36,6 +36,15 @@ Unrecovered callbacks fail explicitly, and complete movement/contact, impacts,
 other animation commands and campaign soldier rendering remain unintegrated.
 See `docs/SOLDIER_ANIMATION.md` and `docs/soldier-animation-validation.json`.
 
+The observed ground-motion path now has native vector preparation, a static
+single-plane terrain subset, actor/contact updates and parent-relative
+presentation/cache handling. All 54 measured kernel results and actor updates
+match. A persistent motion-to-animation test produces all 54 original draw
+records using the computed coordinates; host and MIPS/ares pass. Scalar/sensing
+inputs and level/camera state are still supplied at the unrecovered controller
+boundary. This is not the complete 013968 solver or a closed-loop soldier AI.
+See `docs/SOLDIER_CONTACT.md` and `docs/soldier-contact-validation.json`.
+
 The current recovery work reaches camera 1920 internally. The calibrated scene
 reader handles culled columns, reuse of the middle sprite bank, and vertical
 camera motion. It separates C-ROM background bank 0x40000 from moving enemy

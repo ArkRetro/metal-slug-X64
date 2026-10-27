@@ -41,7 +41,7 @@ public class AnalyzeNeoGeoSoldier extends GhidraScript {
         io("IO_VIDEO",0x3c0000,0x10);
         createLabel(toAddr(0x101f14),"OBSERVED_SLOT_101F14",true,SourceType.USER_DEFINED);
         createLabel(toAddr(0x101414),"OBSERVED_LINK_ANCHOR_101414",true,SourceType.USER_DEFINED);
-        long[] seeds={0x40bc,0x410e,0x4240,0x143e4,0xaef30,0xaf17e,0xaf2b2,0xaf65a,0xaf6ba,0xaf6c0,0xaf890,0xaf8a6,0xaf380,0xb0354};
+        long[] seeds={0x2976,0x29c6,0x40bc,0x410e,0x4240,0x143e4,0xaef30,0xaf17e,0xaf2b2,0xaf65a,0xaf6ba,0xaf6c0,0xaf890,0xaf8a6,0xaf380,0xb0354};
         DecompInterface decompiler=new DecompInterface();decompiler.openProgram(currentProgram);
         try (PrintWriter report=new PrintWriter(new File(out,"instructions.tsv"));
              PrintWriter functions=new PrintWriter(new File(out,"functions.tsv"));

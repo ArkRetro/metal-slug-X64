@@ -16,9 +16,15 @@ an instruction trace establish the 0x0AF17E -> 0x0AF65A -> 0x0AF6C0 chain.
 Ghidra was run on the captured Neo Geo map, with the physical data-ROM bank in
 a separate overlay. The report documents its MC68020-superset decoder limit;
 executed instructions are cross-checked against MAME's M68000 trace. A small
-initializer arithmetic fragment compiles as native C and matches captured
-inputs/outputs. The complete RNG, state semantics, health and pool bounds are
-not established. The active authored guard AI has not been replaced. See
+initializer arithmetic fragment matches captured inputs/outputs. Follow-up
+work ports the original 55-word RNG and its seeding, tested against four seed
+calls and 276 consecutive complete states, plus two soldier initializations,
+26 decision prefixes and 17 damping updates. These fixtures pass both host C
+and an internal native MIPS cartridge in ares. A build-rule fix ensures direct
+object goals also use the MIPS compiler; the earlier direct-object command
+alone was insufficient evidence of MIPS compilation. Full native RNG call
+scheduling, state semantics, health and pool bounds remain incomplete. The
+active authored guard AI has not been replaced. See `docs/SOLDIER_RNG.md`,
 `docs/FIRST_SOLDIER.md` and `docs/first-soldier-evidence.json`.
 
 The current recovery work reaches camera 1920 internally. The calibrated scene

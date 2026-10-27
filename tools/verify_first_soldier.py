@@ -129,7 +129,7 @@ def verify(captures,ghidra):
             'Complete actor-pool bounds, actor count and universal stride are not established.',
             'Do not assume the vehicle health offset has the same semantics for this actor.',
             'Ghidra decompiler types, inferred parameters, carry-flag logic and pointer-looking fixed-point constants are tentative.',
-            'Original RNG and complete AI are not yet translated; the motion fragment accepts captured RNG outputs.'],
+            'Complete AI and native RNG call scheduling remain incomplete; separately verified RNG work is documented in docs/SOLDIER_RNG.md.'],
         previous_provisional_runtime='The existing authored three-guard positions, health, firing cadence and checkpoint rules are not verified original soldier logic.',
         ram_series_sha256=series.hexdigest(),
         ghidra_artifacts={name:hashlib.sha256((ghidra/name).read_bytes()).hexdigest()

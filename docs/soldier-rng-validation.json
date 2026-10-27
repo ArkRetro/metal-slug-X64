@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "35a835b044a0f80d8c5191f66df24ec39aa61e38d692a81cca320c434c14197d",
+  "log_sha256": "c62792db8c803cda3f735fabf9ec99886d61cda0948ad442618471e74dbc4486",
+  "fixture_sha256": "2bdcfcc6f3bf8c76ddd96f4f7288749b52911c3607ebb838cbdd1b49fd222fa6",
+  "seeds": 4,
+  "calls": 276,
+  "initializers": 2,
+  "decisions": 26,
+  "damping": 17,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "host_checks": "make check: PASS, including previous gameplay/collision/vehicle/graphics fixtures",
+  "mips_elf": "ELF 32-bit MSB MIPS-III, verified with file; assertions executed by ares",
+  "fixture": "data/soldier_rng_fixture.json",
+  "static_only_branches": [
+    "AF6E4 -> AF7F6",
+    "AF712 -> AF8D4",
+    "AF724 type-3 override"
+  ],
+  "not_integrated": "Native actor scheduler and complete soldier helpers remain incomplete; provisional gameplay guards unchanged."
+}

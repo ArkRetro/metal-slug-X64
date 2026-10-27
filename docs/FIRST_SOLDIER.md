@@ -75,10 +75,12 @@ No se deduce el dibujo mostrado restando una longitud fija al puntero actual.
 
 ## Fragmento nativo comprobado
 
-`src/neo_soldier.c` traduce exclusivamente la aritmética observada en
+La primera recuperación de `src/neo_soldier.c` traduce la aritmética observada en
 `0x0AF65A`, manteniendo nombres neutrales para los campos `+0x62` y `+0x26`.
-No implementa una IA completa, no elige una semilla aleatoria y no sustituye
-el generador original por `rand()`.
+No implementa una IA completa ni sustituye el generador original por `rand()`.
+El seguimiento posterior recupera el RNG original, dos inicializaciones y
+bloques adicionales de decisión/desaceleración; sus pruebas independientes
+en host y ares están en [SOLDIER_RNG.md](SOLDIER_RNG.md).
 
 | Operación | ROM |
 | --- | --- |
@@ -107,8 +109,9 @@ La rama `+0x92!=0` está desensamblada; no ha sido ejercitada por esta captura.
 - La salud de este soldado y su tabla de dificultad. En las muestras permanece
   activo con `+0x4E=0`: no se traslada automáticamente a esta clase el campo de
   vida observado en el vehículo.
-- La reproducción completa del RNG, los temporizadores, todas las ramas de
-  CCR/carry y la IA íntegra. El fragmento C recibe los resultados RNG medidos.
+- El orden global de llamadas al RNG en el juego nativo, los temporizadores,
+  todas las ramas de CCR/carry y la IA íntegra. El RNG recuperado tiene un
+  contexto C separado; esto no establece el orden de ejecución de todos los actores.
 - Los tipos, parámetros y expresiones C propuestos por el decompilador. Sus
   archivos se llaman `TENTATIVE_*.c`; no son código nativo validado.
 

@@ -12,6 +12,8 @@ escenario interno; su oleada y aparición originales siguen pendientes.
 El [primer soldado de Misión 1](docs/FIRST_SOLDIER.md) ya está localizado mediante
 watchpoints, traza MAME y Ghidra. El informe separa hechos verificados de hipótesis;
 la IA completa sigue pendiente.
+El [RNG original y los siguientes bloques del soldado](docs/SOLDIER_RNG.md)
+ya tienen código C y fixtures medidos que pasan en host y como MIPS en ares.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

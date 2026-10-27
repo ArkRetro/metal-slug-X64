@@ -154,12 +154,13 @@ int main(void) {
 #else
             if (animation.speed!=anim_cases[anim_index].before.speed) {animation.speed=anim_cases[anim_index].before.speed;speed_changes++;}
 #endif
-            assert(neo_anim_step(&animation,&render,emit,NULL,1024)==(anim_cases[anim_index].complete?NEO_ANIM_COMPLETE:NEO_ANIM_MORE));
+            neo_anim_result_t animation_result=neo_anim_step(&animation,&render,emit,NULL,1024);
+            assert(animation_result==(anim_cases[anim_index].complete?NEO_ANIM_COMPLETE:NEO_ANIM_MORE));
             assert(animation.cursor==anim_cases[anim_index].after.cursor && animation.timer==anim_cases[anim_index].after.timer);
             actor.flags15=(uint8_t)render.attributes;state.flags15=actor.flags15;state.flags5f=actor.flags5f;
 #ifdef MSX_STATE_REGRESSION
             neo_soldier_senses_t senses=state_cases[m].senses;senses.scene=&frame;
-            assert(neo_soldier_state_end(&machine,&actor,&state,native_kernel.flags,anim_cases[anim_index].complete,&senses,&rng));
+            assert(neo_soldier_state_end(&machine,&actor,&state,native_kernel.flags,animation_result==NEO_ANIM_COMPLETE,&senses,&rng));
             machine_equal(&machine,&state_cases[m].after);
             assert(actor.scalar62==state_cases[m].scalar_after && animation.speed==state_cases[m].speed_after);
 #endif

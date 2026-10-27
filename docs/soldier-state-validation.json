@@ -1,7 +1,7 @@
 {
   "status": "PASS",
   "emulator": "ares 146, retained workspace build",
-  "rom_sha256": "363e4b8c2487a57365ac3df60a75e0dc7f65f03cd3013185063c55034a8ad4a9",
+  "rom_sha256": "1a9f9cbf04099af99b247c21ad8a0df8489cce2502dabb9ea34a659658c784d2",
   "log_sha256": "57ab16d43bb893613e1fcaf2543379caee60c480d52d8adb09ad845164b31a43",
   "fixture_sha256": "7ddda1b4fabe6459b8b3ed1f1b884dfe8ac783f433c0063919fbb48c0e262625",
   "suite": "state",
@@ -34,5 +34,6 @@
     "Player/scene/camera inputs and delay grid",
     "Global order of RNG calls from other actors"
   ],
-  "scope": "Grounded observed main-state subset plus original action selection and culling predicate; active provisional guards are unchanged; not a complete mission or a release."
+  "scope": "Grounded observed main-state subset plus original action selection and culling predicate; active provisional guards are unchanged; not a complete mission or a release.",
+  "animation_completion_feedback": "State transitions consume the native neo_anim_step result; the measured completion flag is only an assertion oracle."
 }

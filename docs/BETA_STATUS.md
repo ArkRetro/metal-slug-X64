@@ -18,11 +18,21 @@ pixels, differences only within the 63 recorded variant coordinates, and
 4953328 uncovered RGB8 pixels agreeing with MAME. This validates extraction;
 the expanded region is not yet integrated into gameplay.
 
-Collision snapshots beyond the original region include mutable vehicle and
-destruction footprints. The static collision extractor continues rejecting
-conflicting cells. Do not select the first value or erase its assertion to
-force those snapshots into a static playable level. Camera mode/height changes
-are also measured separately in tools/capture_camera.lua.
+The collision audit of the 86 advance snapshots identifies 8950 invariant cells
+and ten mutable cells at world X 1112..1184. The ten cells change from empty to
+three ramp cells (shape 5) and seven flat cells (shape 11), between observations
+3060 and 3120 during the vehicle/explosion sequence. The actual original event
+trigger remains unproven. All 4758 invariant cells overlapping the existing
+149-column grid agree with it. See `docs/collision-recovery.json`.
+
+`tools/audit_collision.py` retains independent per-run state timelines and an
+explicit validity mask. Unknown/mutable cells are not interpreted as empty
+terrain, and capture frame numbers are not gameplay triggers. The strict static
+extractor continues rejecting conflicts. Do not select the first value or erase
+its assertion to force those snapshots into a static playable level. The native
+runtime still uses the previously validated region; this audit does not extend
+the playable map. Camera mode/height changes are measured separately in
+tools/capture_camera.lua.
 
 An external N64 Neo Geo core was examined only as a reference, at
 `mike-r129/N64-NEOGEO-mvs64` commit

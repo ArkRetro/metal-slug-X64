@@ -50,6 +50,7 @@ check: $(BUILD_DIR)/mission_collision.h
 	$(BUILD_DIR)/host/codec
 	$(BUILD_DIR)/host/clock
 	python3 tools/test_neo_scene.py
+	python3 tools/test_collision_audit.py
 	cc -std=c11 -Wall -Wextra -Werror tools/test_retro25d.c src/retro25d.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
 -include $(wildcard $(BUILD_DIR)/src/*.d)

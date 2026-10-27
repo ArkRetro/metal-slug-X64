@@ -55,7 +55,8 @@ P1 activo y resultado **1** en ROM `0x0AEF12`. El cursor RNG avanza de RAM
 La siguiente entrada observada es `0x0AF918` en 2533. Se confirma la selección,
 no la implementación completa de ese ataque.
 
-Las 84 muestras cubren un jugador y máscara `0x02`. Las ramas de dos jugadores,
+Las 84 muestras tienen máscara `0x02`: 83 con P1 activo y una sin jugadores
+activos. Las ramas de dos jugadores,
 otras máscaras y modificación del retardo por el filtrado están traducidas
 estáticamente, pero no verificadas dinámicamente en esta muestra.
 
@@ -102,7 +103,10 @@ Las ramas BMI/BPL usan el signo de la resta de palabra, conservando su envoltura
 Se comparan 105 consultas exactas: 104 resultados negativos y uno positivo en
 2561. Los primeros 54 se encadenan con las coordenadas e historial calculados
 por movimiento nativo. El resultado positivo coincide con la posterior entrada
-a `0x004126`. El asignador enlazado y la limpieza de recursos no están portados
+a `0x004126`. En las 105 muestras no hay padre de límites; se cubren ambas orientaciones
+horizontales y el rectángulo `(-32, -16, 64, 80)`. La transformación de un padre
+y la inversión vertical están traducidas estáticamente, sin cobertura dinámica
+en esta captura. El asignador enlazado y la limpieza de recursos no están portados
 por este predicado. La traza usa límites desde el descriptor apuntado por RAM
 `0x10C2F0`, además de su padre si existe; no inventa un rectángulo de pantalla.
 

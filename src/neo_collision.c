@@ -1,10 +1,32 @@
 #include "neo_collision.h"
 #include "mission_collision.h"
 #include <limits.h>
+#include <string.h>
+#include "vehicle_wreckage.h"
+static uint8_t dynamic_grid[sizeof(neo_grid)];
+static bool dynamic_active;
+void neo_collision_reset(void) {dynamic_active=false;}
+static int cell_floor(int32_t value) {
+    int64_t v=value;return v>=0?(int)(v/(8*NEO_UNIT)):-(int)((-v+8*NEO_UNIT-1)/(8*NEO_UNIT));
+}
+unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
+    if (!(flags&1) || flags&32) return 0;
+    if (!dynamic_active) {memcpy(dynamic_grid,neo_grid,sizeof(neo_grid));dynamic_active=true;}
+    int base_x=cell_floor(x)-7,base_y=cell_floor(y);unsigned changed=0;
+    for (unsigned col=0;col<13;col++) for (unsigned row=0;row<3;row++) {
+        int cx=base_x+(int)col,cy=base_y+2-(int)row;
+        if (cx<0 || cx>=NEO_GRID_COLUMNS || cy<0 || cy>=32) continue;
+        uint8_t *cell=&dynamic_grid[cx*32+cy];
+        if (*cell&15) continue;
+        uint8_t value=(*cell&0xe0)|(flags&2?16:0)|vehicle_wreckage[row][col];
+        if (value!=*cell) { *cell=value;changed++; }
+    }
+    return changed;
+}
 
 uint8_t neo_collision_cell(int x,int y) {
     if (x<0 || x>=NEO_GRID_COLUMNS*8 || y<0 || y>=256) return 0;
-    return neo_grid[(x/8)*32+y/8];
+    return (dynamic_active?dynamic_grid:neo_grid)[(x/8)*32+y/8];
 }
 static bool surface(int32_t x,int row,neo_surface_t *out) {
     if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
@@ -47,7 +69,18 @@ bool neo_walk_step(neo_air_t *p,int direction) {
     neo_ground_velocity(current.shape,direction,&p->vx,&p->vy);
     p->x+=p->vx;
     int32_t predicted=p->y+p->vy;
-    if (!neo_surface_at(p->x,predicted,4*NEO_UNIT,4*NEO_UNIT,&next)) {
+    bool found=false;
+    // A new ramp can overlap an older flat surface. Select the upper reachable
+    // contact within the original step tolerance, so the old floor cannot pull
+    // feet through the wreck. Distant roofs remain outside that tolerance.
+    for (int row=0;row<32;row++) {
+        neo_surface_t candidate;
+        if (!surface(p->x,row,&candidate)) continue;
+        int64_t delta=(int64_t)candidate.height-predicted;
+        if (delta>4*NEO_UNIT || delta< -4*NEO_UNIT) continue;
+        if (!found || candidate.height>next.height) {next=candidate;found=true;}
+    }
+    if (!found) {
         p->y=predicted;return false;
     }
     int32_t previous=p->y;p->y=next.height;p->vy=p->y-previous;return true;

@@ -5,6 +5,7 @@
 #include "scene_clock.h"
 #include "visual_config.h"
 #include "neo_collision.h"
+#include "vehicle_renderer.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -15,6 +16,15 @@ static bool previous_a,previous_b,pending_a,pending_b;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
 static unsigned observed_projectiles;
+static bool observed_wreck_contact;
+static void reset_game(void) {
+    observed_wreck_contact=false;
+    msx_game_init(&game);
+#if MSX_VEHICLE_REFERENCE
+    msx_game_vehicle_reference(&game);vehicle_renderer_load();
+    debugf("MSX vehicle reference encounter\n");
+#endif
+}
 #if MSX_RETRO25D
 static float depth_support_y(void) {
     neo_surface_t support;
@@ -44,7 +54,7 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     }
 }
 void actor_init(void) {
-    scene_assets_init();scene_renderer_init();msx_game_init(&game);
+    scene_assets_init();scene_renderer_init();reset_game();
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (internal build)\n");
 #endif
@@ -55,11 +65,12 @@ void actor_set_active(bool active) {
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
-    if (input.btn.r && !restart_was_down) { msx_game_init(&game);previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
+    if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
     unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x;
     bool was_complete=game.complete,was_grounded=game.grounded;
+    unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
@@ -68,6 +79,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         pending_a=pending_b=false;
     }
     if (game.hits!=old_hits) debugf("MSX enemy hit=%u\n",game.hits);
+    if (vehicle_health!=game.vehicle.health) debugf("MSX vehicle health=%u\n",game.vehicle.health);
+    if (wreckage!=game.wreckage_cells) debugf("MSX vehicle wreckage=%u\n",game.wreckage_cells);
+    if (vehicle_state!=game.vehicle.state && game.vehicle.state==NEO_VEHICLE_WRECK) debugf("MSX vehicle wreck state\n");
+    if (!observed_wreck_contact && game.vehicle.active && !game.vehicle.health && game.grounded &&
+        game.y==32*MSX_UNIT-game.vehicle.y &&
+        game.x>=game.vehicle.x-40*MSX_UNIT && game.x<=game.vehicle.x+40*MSX_UNIT) {
+        observed_wreck_contact=true;debugf("MSX player on wreck\n");
+    }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
@@ -110,6 +129,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_depth_frame(&effects);
 #endif
     scene_render_begin(surface);scene_render_background(game.camera,game.ticks);
+    vehicle_renderer_draw(&game.vehicle,game.camera,game.vehicle_flash && (game.ticks&2));
     if (game.enemy.alive || game.enemy.respawn>75)
         draw_frame(SCENE_SOLDIER,sf,game.enemy.x-game.camera,msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,game.enemy.facing>0,
             (game.enemy.flash || !game.enemy.alive) && (game.ticks&1));
@@ -128,7 +148,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.complete) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
     scene_render_text(32,24,"MSX V10 - MISSION 1");
-    char status[40];snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
+    char status[40];
+    if (game.vehicle.active) snprintf(status,sizeof(status),"HP:%u VEHICLE:%u",game.health,game.vehicle.health);
+    else snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
     scene_render_text(32,38,status);
     scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}

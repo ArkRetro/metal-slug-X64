@@ -25,8 +25,11 @@ three ramp cells (shape 5) and seven flat cells (shape 11), between observations
 trace confirms the footprint is applied on destruction of the observed ground
 vehicle, with zero health, at its actual world position. The complete template
 is 13x3 cells. A delayed-combat run reproduced thirteen exact writes and all
-4096 collision-grid bytes; soldier-wave prerequisites and native vehicle logic
-remain pending. See `docs/VEHICLE_RAMP.md`. All 4758 invariant cells overlapping the existing
+4096 collision-grid bytes. A native C component now implements the observed
+movement, hitboxes, damage/death animation and one-shot wreckage event, with
+libdragon CI4 .sprite rendering in an internal reference encounter. Campaign
+spawn/wave logic, vehicle attacks and specific destruction effects remain
+pending. See `docs/NATIVE_BACKEND.md` and `docs/VEHICLE_RAMP.md`. All 4758 invariant cells overlapping the existing
 149-column grid agree with it. See `docs/collision-recovery.json`.
 
 `tools/audit_collision.py` retains independent per-run state timelines and an

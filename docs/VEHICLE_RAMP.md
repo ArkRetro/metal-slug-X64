@@ -77,11 +77,14 @@ observada; no representa todos los vehículos del juego.
 
 ## Integración pendiente
 
-Todavía falta el controlador nativo de este vehículo y su grupo original de
-soldados. La traza demuestra el evento de destrucción que añade la geometría;
+Ya existe un componente nativo de movimiento, daño, animación y colisiones,
+conectado a un escenario interno de referencia: véase
+[NATIVE_BACKEND.md](NATIVE_BACKEND.md). Todavía falta integrar su aparición,
+ataque y grupo original de soldados en la campaña. La traza demuestra el evento de destrucción que añade la geometría;
 no establece que sea obligatorio eliminar todos los soldados cercanos como
 condición independiente. Esa parte se debe recuperar del evento de oleada.
 
-Este cambio incorpora datos y un modelo de verificación. No activa una rampa
-ficticia en el escenario N64 actual, ni amplía todavía el tramo jugable. No se
-ha cambiado la ROM desde la última validación en ares ni publicado otra demo.
+La configuración de referencia aplica la huella al destruir el vehículo y
+permite caminar sobre sus restos. El escenario predeterminado no inventa un
+evento de oleada ni amplía todavía el tramo jugable. Las ROM de comprobación
+en ares son internas; no se publica otra demo.

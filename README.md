@@ -6,8 +6,9 @@ El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
 iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
 Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
 con contorno, paleta y transparencia, también al disparar hacia la izquierda.
-Se ha verificado la [rampa del vehículo destruido](docs/VEHICLE_RAMP.md) en el
-original; su controlador nativo y el evento de soldados siguen pendientes.
+El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
+gráficos `.sprite` de libdragon y colisiones de los restos. Se valida en un
+escenario interno; su oleada y aparición originales siguen pendientes.
 
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.

@@ -1,6 +1,7 @@
 #ifndef MSX_GAMEPLAY_H
 #define MSX_GAMEPLAY_H
 #include <stdbool.h>
+#include "neo_vehicle.h"
 enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=1192 };
 enum { MSX_END_X=1164*MSX_UNIT-1 };
 typedef struct { int x,y,direction; bool active; } msx_bullet_t;
@@ -12,9 +13,13 @@ typedef struct {
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     msx_bullet_t bullets[MSX_BULLETS], enemy_bullets[MSX_ENEMY_BULLETS];
     msx_enemy_t enemy;
+    neo_vehicle_t vehicle;
+    unsigned vehicle_events,wreckage_cells,vehicle_flash;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 int msx_game_animation(const msx_game_t *game);
 int msx_ground_offset(int x16);
+/* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */
+void msx_game_vehicle_reference(msx_game_t *game);
 #endif

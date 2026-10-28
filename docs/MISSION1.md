@@ -1,5 +1,8 @@
 # v9: escenario original observado y movimiento aéreo
 
+> Actualización: el tramo jugable llega ahora a la cámara 1920 (antes 872).
+> Véase [la ampliación](#ampliación-hasta-la-cámara-1920) al final.
+
 La v9 sustituye el fondo de 304 píxeles repetido por las capas recuperadas de
 la primera misión hasta el pueblo. No es aún una misión completa ni lógica 1:1.
 
@@ -123,3 +126,67 @@ TMEM y envío CPU de unos 8,6..10,2 ms en ares. No es una medición de rendimien
 en N64 física. Capturas: /workspace/emulator/v9-release/.
 
 MiSTer v9 y consola N64 pendientes de validar.
+
+## Ampliación hasta la cámara 1920
+
+El tramo jugable termina ahora en la cámara 1920: `MSX_WORLD_WIDTH` 2240 y
+límite derecho 2212−1/65536 (cámara+292, la misma fracción medida en 1164).
+Los tres guardias, el checkpoint y `REGION END` siguen siendo provisionales;
+solo se ha movido el final. No es el final de la misión original.
+
+Datos: 36 capturas del tramo anterior (MAME 0.276) y 86 de
+`tools/capture_advance.lua`, repetidas con MAME 0.264 (fotogramas 2100..7200).
+La posición del jugador coincide byte a byte en las tres ejecuciones con esa
+entrada. El extractor obtiene 2719 celdas, 48 paletas, 63 coordenadas con
+variantes y cámara máxima 1920.
+
+`validate_mission_map.py` comprueba los 122 fotogramas: 8307712 píxeles
+reconstruidos, 24236 diferencias dentro de variantes registradas, ninguna fuera,
+y 4952880 píxeles descubiertos de MAME con tolerancia RGB ≤1. La cifra anterior
+(4953328) procedía de la captura con 0.276; mapa y variantes coinciden.
+Resumen en [mission-region-validation.json](mission-region-validation.json).
+
+### Cámara
+
+`src/mission_camera.h` contiene el modelo nativo:
+
+- Banco medio: a 3/4 hasta la cámara 1022; desde 1023 se recarga a velocidad
+  completa (capa 2). Medido en dos trazas con entradas distintas.
+- Altura: `ceil((C-944)/4)`, limitada a 0..16, para fondo y actores; el cielo usa
+  la mitad y el banco a 3/4, tres cuartos. Coincide con los nueve cambios de la
+  traza con saltos (`tools/capture_camera.lua`, `MSX_CAMERA_LAST=7200`).
+
+No verificado o no reproducido: sin saltos (`MSX_CAMERA_JUMP=0`) la altura se
+detiene en 14, no en 16; el original sigue también al jugador (subida temporal
+a 23 en la cámara 1550..1607) y eleva otros 16 px en la cámara 1920 por un
+evento no recuperado. `tools/compare_camera_model.py` da 67/122 fotogramas
+idénticos; 10 difieren 1 px en la capa a 3/4 (aproximación ya existente) y 45
+por esos casos de altura. Las capturas de esos 45 validan la extracción, no
+el modelo de cámara.
+
+### Presupuesto de streaming
+
+Paquete completo: 296 páginas, 101 paletas, 37 chunks; 606208 bytes
+decodificados y 388352 comprimidos (antes 235/75/30, 491520 y 272832).
+Con 8 MiB la caché de 3 MiB lo contiene entero. Con 4 MiB (512 KiB, 32 chunks)
+ya no: el arranque carga la vista inicial al final para que el LRU la conserve,
+y el resto entra por prefetch. `tools/check_scene_budget.py`, dentro de
+`make check`, calcula 25 chunks como peor conjunto de trabajo (cámara 1056),
+con los bancos de Marco fijados, los ocho fotogramas de animación y una
+ventana de 16 px de cámara. Falta medirlo en ares y en hardware de 4 MiB.
+
+### Regeneración
+
+```sh
+MSX_CAPTURE_DIR=/ruta/advance mame mslugx ... -autoboot_script tools/capture_advance.lua
+python3 tools/extract_mission_map.py /ruta/mission1 /ruta/advance
+python3 tools/validate_mission_map.py /ruta/mission1
+python3 tools/extract_region_collision.py /ruta/mission1 /ruta/advance \
+  --expect-prefix /ruta/collision-149.json
+make check && make -j4
+```
+
+Las pruebas host recorren hasta 2212, comprueban cámara monótona y acotada,
+suelo Y=64, aterrizaje sobre el tejado Y=144 y la altura de cámara. La
+integración interna de entrada con audio y recorrido hasta cámara 1920 pasa en ares
+(ver `docs/PR2_REVIEW.md`). La prueba en MiSTer y en 4 MiB sigue pendiente.

@@ -103,7 +103,31 @@ IA, armas/daño, checkpoint y animaciones/pivotes no son todavía lógica 1:1.
 Faltan el encuentro del pueblo, el resto del mapa, HUD, audio, granadas, vehículos
 y jefes. No se garantiza rendimiento en consola N64 por haber pasado ares.
 
-Las nuevas referencias de avance en /workspace/research/mission1-advance llegan
-más allá de la cámara 872, pero no se incorporaron a la entrega: muestran
-redondeos de parallax y cambios en la cuadrícula que los extractores actuales
-detectan y rechazan. Se conserva la aserción en lugar de aceptar datos ambiguos.
+Las referencias de avance (cámara hasta 1920) ya se incorporan. Antes se
+rechazaban por redondeos de parallax y cambios en la cuadrícula; ahora se
+resuelven así, sin relajar ninguna aserción:
+
+- **Capa de colisión activa.** Una traza con taps de lectura/escritura
+  (`tools/trace_collision_loader.lua`) muestra que la consulta original
+  (PC 0xC7A1A) lee la cuadrícula del objeto frontal 0x10C72E hasta que el banco
+  medio pasa a velocidad completa (cámara 1023). Entonces 0xC75A0/0xC75A2
+  copian el anillo al objeto medio 0x10D7B6 y el cargador (0xC734E..0xC735A)
+  solo escribe en él. `observed_cells()` elige ahora la cuadrícula activa.
+  Leer el anillo frontal congelado producía 191 celdas falsas desde la columna
+  184, incluidas copias fantasma de los restos del vehículo 512 px más allá.
+- **Celdas de evento.** `tools/extract_region_collision.py` acepta un cambio
+  solo si toda la cuadrícula de 4096 bytes entre dos capturas consecutivas se
+  reproduce con la huella recuperada del vehículo en un único anclaje (celda
+  146,8 en esta partida). Esas 13 celdas conservan su valor previo (vacío)
+  en la tabla estática; tres solo se ven después del evento y su valor previo
+  procede de la columna precargada, verificada con el resto de la columna.
+  Cualquier otro cambio sigue fallando.
+
+Resultado: 280×32 celdas, 430 no vacías; las 149 primeras columnas son
+idénticas a la tabla anterior. El tramo nuevo tiene suelo en Y=64 y
+superficies superiores entre Y=144 y Y=200, observadas pero no
+verificadas con trayectorias del jugador. Las plataformas de los edificios
+del final usan objetos con coordenadas relativas, no esta cuadrícula, y
+siguen pendientes. Los restos siguen siendo un evento del vehículo, nunca
+terreno estático. Las celdas por encima de Y=256 del anillo están vacías en
+las 122 capturas.

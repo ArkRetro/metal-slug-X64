@@ -99,3 +99,26 @@ esa región. Esta rama conserva título/tutorial/selección, SFX, música contin
 y los encuentros/jefe pendientes. Así evitamos desarrollar dos versiones de
 las mismas rutinas. No se presenta como terminado ningún componente que solo
 figure en ese reparto: mapa extendido y soldados aún no están integrados.
+
+
+## Integración del tramo hasta cámara 1920
+
+Revisado el nuevo head de Claude `97f8396` (commits `62c1094`, `a05a06b5`
+y `294539e`). Se conserva el conjunto ampliado de pruebas del backend al resolver
+el conflicto de Makefile; el presupuesto de chunks se ejecuta en `check`, donde
+están disponibles los assets privados, sin añadirlos como requisito de `check-core`.
+
+Se regeneran mapa y colisión con las capturas existentes de MAME 0.276:
+2.719 celdas, 48 paletas, 280×32 celdas de colisión y 13 celdas de evento
+conservadas fuera del terreno estático. Los 122 fotogramas pasan la auditoría
+independiente: 8.307.712 píxeles de mapa y 4.953.328 píxeles descubiertos de MAME.
+`make check` y la compilación N64 pasan.
+
+La prueba interna de entrada recorre ahora opcionalmente el tramo completo con
+`test_entry_ares.py --region`. En ares pasan los 230 fotogramas únicos de entrada,
+sin omisiones, con audio activo en el traspaso, los controles, las tres bajas
+provisionales, los cambios de altura/banco y el límite exacto de cámara 1920 y
+X=144965631. No se registran misses ni evicciones en la caché de esa ejecución.
+No se publica el ROM interno. El modelo de cámara sigue teniendo las diferencias
+documentadas y no se ha completado la misión ni integrado el controlador nuevo
+de Marco en la campaña; tampoco se acredita funcionamiento en 4 MiB o hardware.

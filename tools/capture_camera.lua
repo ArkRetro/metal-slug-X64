@@ -1,5 +1,8 @@
 -- Verified MAME 0.276 capture, mslugx euro BIOS. Set MSX_CAPTURE_DIR.
+-- MSX_CAMERA_LAST selects the final frame (default 3600; 7200 covers camera 1920).
 -- Reference-only RAM overrides are never shipped in the N64 game.
+-- MSX_CAMERA_JUMP=0 never presses jump (B): separates scroll-driven from player-driven camera height.
+local jumps=os.getenv('MSX_CAMERA_JUMP')~='0'
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local frame=0
 local last_x=-1;local stuck=0;local aim_until=0
@@ -58,7 +61,7 @@ emu.register_frame_done(function()
   button('P1 Right',1)
   button('P1 Up',frame<aim_until and 1 or 0)
   button('P1 A',frame%12<6 and 1 or 0)
-  button('P1 B',frame>3000 and frame%120<8 and 1 or 0)
+  button('P1 B',jumps and frame>3000 and frame%120<8 and 1 or 0)
   button('P1 C',frame>2900 and frame%60<8 and 1 or 0)
  end
  if frame>=2100 then positions:write(string.format('%d,%u,%u,%u,%u,%u\n',frame,cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9))) end
@@ -69,5 +72,5 @@ emu.register_frame_done(function()
    cpu:read_i16(sky+0x84),cpu:read_i16(sky+0x86),
    cpu:read_i32(b+0x14)==cpu:read_i32(m+0x14) and 1 or 0))
  end
- if frame==3600 then positions:close();camera_trace:close();manager.machine:exit() end
+ if frame==tonumber(os.getenv("MSX_CAMERA_LAST") or "3600") then positions:close();camera_trace:close();manager.machine:exit() end
 end, 'frame')

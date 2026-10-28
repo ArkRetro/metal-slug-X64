@@ -3,13 +3,26 @@
 import argparse,json,struct
 from pathlib import Path
 
+FOREGROUND,MIDDLE=0xc72e,0xd7b6
+
+def collision_layer(ram):
+    """Layer object whose grid the original query (PC 0xC7A1A) reads.
+
+    A read-tap trace shows the foreground grid in use until the middle bank
+    starts scrolling with it (camera 1023 in mission 1); the game then copies
+    the ring into the middle object's grid and loads new columns only there.
+    Equal position words select the same state that tools/neo_scene.py uses.
+    """
+    same=ram[FOREGROUND+0x14:FOREGROUND+0x1c]==ram[MIDDLE+0x14:MIDDLE+0x1c]
+    return MIDDLE if same else FOREGROUND
+
 def observed_cells(ram):
     """Yield only observed world cells; ring-buffer aliases are not extra terrain."""
     assert len(ram)==65536,'Expected a complete 64 KiB arcade RAM snapshot'
-    camera=struct.unpack_from('>H',ram,0x2036)[0]
+    camera=struct.unpack_from('>H',ram,0x2036)[0];layer=collision_layer(ram)
     for x in range(max(0,camera-8)//8*8,(camera+327)//8*8,8):
         for y in range(0,256,8):
-            address=0xc72e+0x88+((x&504)<<3)+((~y&504)>>3)
+            address=layer+0x88+((x&504)<<3)+((~y&504)>>3)
             yield camera,x//8,y//8,ram[address],address
 
 def extract(captures,output):

@@ -4,7 +4,7 @@ import argparse,hashlib,json,os,re,subprocess,time
 from pathlib import Path
 from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--region',action='store_true',help='Also traverse the current camera-1920 partial region; not a full mission test');p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
 f=json.loads((ROOT/'filesystem/cinematics/entry.json').read_text());out=a.output.resolve();assert not out.exists() or not any(out.iterdir());out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu');process=None;xd='/workspace/emulator/root/usr/bin/xdotool'
 def key(action,value):subprocess.run([xd,action,value],env=env,check=True)
@@ -31,7 +31,18 @@ with (out/'xvfb.log').open('w') as xlog:
    subprocess.run([xd,'windowfocus','--sync',windows[-1]],env=env,check=True)
    key('keydown','Right');key('keydown','b');time.sleep(.25);key('keydown','a');time.sleep(.12);key('keyup','a')
    wait('MSX run-jump');wait('MSX landed');wait('MSX camera moving');wait('MSX run-fire')
-   ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'playable-after-entry.png');key('keyup','Right');key('keyup','b')
+   ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'playable-after-entry.png')
+   region=None
+   if a.region:
+    text=wait('MSX observed region end',180)
+    end=re.search(r'MSX observed region end camera=(\d+) x=(\d+)',text);assert end
+    assert int(end[1])==1920 and int(end[2])==2212*65536-1
+    for marker in ('MSX camera raised=','MSX middle bank full speed=','MSX defeated=3'):
+     assert marker in text,marker
+    assert not re.search(r'misses=[1-9]',text),'Texture-cache deadline missed'
+    region=dict(camera=int(end[1]),x16=int(end[2]),cache_misses=0,limit='Three provisional guards, approximate camera and REGION END; not complete Mission 1.')
+    ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'partial-region-end.png')
+   key('keyup','Right');key('keyup','b')
    key('keydown','q');time.sleep(.12);key('keyup','q');wait('MSX diagnostics on');time.sleep(.1)
    ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'diagnostics-on.png')
    key('keydown','q');time.sleep(.12);key('keyup','q');wait('MSX diagnostics off');time.sleep(.1)
@@ -40,6 +51,7 @@ with (out/'xvfb.log').open('w') as xlog:
   sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
   timing=re.search(r'MSX INTRO timing decode_max_us=(\d+) decode_mean_us=(\d+) draw_max_us=(\d+)',text);assert timing
   result=dict(status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
+  if a.region:result['partial_region']=region
   (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
  finally:
   if process is not None:

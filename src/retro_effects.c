@@ -26,7 +26,7 @@ static void ground_vertex(const retro_frame_t *f,float x,float floor,float slope
     float portion=(float)row/RETRO_GROUND_ROWS,y=floor+(232-floor)*portion;
     float dy=-6/(232-floor);
     float dx=6*(232-y)/((232-floor)*(232-floor))*slope;
-    bool ok=vertex(f,(retro_vec3_t){x,y,-6*portion},retro_normal(dx,dy),out);assert(ok);
+    bool ok=vertex(f,(retro_vec3_t){x,y,-6*portion},retro_normal(dx,dy),out);assert(ok);(void)ok;
 }
 void retro_effects_mesh(const retro_frame_t *f) {
     triangles=0;rdpq_mode_push();rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
@@ -86,7 +86,7 @@ void retro_effects_fog(const retro_frame_t *f,unsigned slice) {
     rdpq_mode_combiner(RDPQ_COMBINER_TEX_FLAT);rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
     rdpq_mode_alphacompare(1);rdpq_set_scissor(8,8,312,232);
     surface_t texture=surface_make(retro_fog,FMT_IA8,32,32,32);
-    int bytes=rdpq_tex_upload(TILE0,&texture,NULL);assert(bytes==RETRO_FOG_BYTES && bytes<=2048);
+    int bytes=rdpq_tex_upload(TILE0,&texture,NULL);assert(bytes==RETRO_FOG_BYTES && bytes<=2048);(void)bytes;
     float sample[4];retro_lighting(f,(retro_vec3_t){f->camera.x+160,175,depth},(retro_vec3_t){0,0,1},sample);
     unsigned alpha=slice==2?12:18;
     color_t color={70+(unsigned)(sample[0]*sample[3]*30),80+(unsigned)(sample[1]*sample[3]*25),108,alpha};

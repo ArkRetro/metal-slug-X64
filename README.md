@@ -64,6 +64,8 @@ con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea origi
 | START | Alternar escena y laboratorio de tiles |
 
 Puedes recorrer el tramo, saltar y combatir con los tres guardias provisionales.
+El tramo llega ahora a la cámara 1920 (antes 872), con el cambio de banco medio
+y la subida de cámara medidos; véase [la ampliación](docs/MISSION1.md#ampliación-hasta-la-cámara-1920).
 `REGION END` marca el límite del mapa observado, no el final de la misión original.
 Las cajas de prueba de v8 se han retirado. **Sigue siendo un port en desarrollo**:
 faltan mapa completo, resolvedor de colisiones completo, lógica original y cambios dinámicos del

@@ -12,8 +12,9 @@ ROMs are internal and must not be published as the requested demo.
 A native ROM-streamed WAV64/RSP audio backend now passes ares tests for stereo
 mixing, playback lifecycle and AI submission alongside simple RDP output. A clean
 MAME reference spans the title/tutorial/selection/parachute entry with audio.
-The native intro and gameplay sound are not integrated; a strict offline art
-comparison still detects 22 unexplained title pixels. See `docs/INTRO_AUDIO.md`.
+The native intro and gameplay sound are not integrated. Eleven offline art
+comparisons now pass, including a title interval requiring observed raster
+writes and sprite-list latch ordering. See `docs/INTRO_AUDIO.md`.
 
 The grounded attack main state now computes 20 persistent soldier updates,
 40 static support queries and the transition back to idle, coupled to the

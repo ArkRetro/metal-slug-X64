@@ -80,15 +80,33 @@ de zoom. Las capturas PNG sirven para comparar, nunca como texturas del port.
 El comportamiento se contrasta con `neogeo_spr.cpp` de MAME 0.276; se conserva su
 atribución en `LICENSES/MAME-NeoGeo-BSD-3-Clause.txt`.
 
-Diez de once imágenes contrastadas coinciden en los 304×224 píxeles activos,
+Las once imágenes contrastadas coinciden en los 304×224 píxeles activos,
 con tolerancia RGB máxima de una unidad. Es una comparación RGB8 de extracción,
-no del framebuffer N64 cuantizado a RGBA5551. La muestra 360 todavía difiere en 22
-píxeles, todos en las primeras 15 filas. Se probaron estados de vídeo adyacentes;
-no justifican una sustitución de líneas ni permiten atribuir con certeza la
-causa al raster. **El validador completo falla**, conserva la diferencia y no la
-oculta mediante máscaras. La fase automática utiliza el contador registrado en
-la siguiente frontera de frame, que coincide en estas muestras; no se afirma
-cobertura de todos los intervalos de raster o modos de autoanimación.
+no del framebuffer N64 cuantizado a RGBA5551.
+
+En el fotograma 360, una instantánea de VRAM al final del frame no bastaba: la
+traza contiene 137 escrituras de datos de vídeo entre fronteras 359 y 360,
+algunas durante líneas visibles. `capture_intro_raster.lua` observa los puertos
+`0x3C0000..0x3C0005`, su offset VRAM previo y el tiempo de pantalla. La línea se
+deriva de `time_until_pos(0)`, `scan_period` y `frame_period`, APIs verificadas
+en `luaengine.cpp` de MAME 0.276. No hay un método Lua `screen:vpos()` en esta
+versión; la captura de prueba que intentaba usarlo se descartó y el ejecutor
+ahora rechaza cualquier referencia con errores Lua.
+
+El reconstructor aplica esas escrituras a la VRAM inicial y exige que cada
+palabra previa coincida con la traza. También exige que el resultado final sea
+idéntico al volcado siguiente y que la paleta no haya cambiado. Para cada línea,
+la lista de sprites se selecciona con el estado inicial; los píxeles usan el
+estado posterior a las escrituras de esa línea, conforme al orden del timer de
+sprites de MAME. Esa distinción explica el último píxel que aún difería después
+de introducir las escrituras por línea. No se copian píxeles de la captura ni
+se utiliza una máscara para aceptar discrepancias.
+
+La fase automática utiliza el contador registrado en la siguiente frontera de
+frame, que coincide en estas muestras. La sonda de raster cubre un intervalo
+específico del título, y el reconstructor supone autoanimación habilitada en el
+perfil contrastado. No se afirma cobertura de todos los frames, modos o cambios
+de paleta por línea de la intro.
 
 Esta reconstrucción todavía no es un reproductor de intro en N64. Faltan la
 conversión a recursos y comandos nativos acotados, la reproducción sincronizada,
@@ -104,9 +122,13 @@ python3 tools/mame/run_intro_audio.py --rom-dir /ruta/roms \
 python3 tools/prepare_audio_reference.py /ruta/nueva-captura
 make audio-regression.z64
 python3 tools/test_audio_ares.py audio-regression.z64 --output /ruta/nueva-prueba
+python3 tools/mame/run_intro_audio.py --rom-dir /ruta/roms \
+  --output /ruta/nuevo-raster --end-frame 400 --video-step 1 \
+  --script tools/mame/capture_intro_raster.lua
 python3 tools/render_intro_reference.py /ruta/nueva-captura \
+  --raster-reference /ruta/nuevo-raster \
   --bios /ruta/roms/neogeo.zip --output /ruta/nueva-comparacion
 ```
 
-El último comando sigue devolviendo error por los 22 píxeles indicados. Los
-assets, WAV, ROMs de prueba, VRAM/paletas y volcados completos permanecen locales.
+Sin la sonda de raster, la comparación del frame 360 sigue fallando, como debe.
+Los assets, WAV, ROMs de prueba, VRAM/paletas y volcados completos permanecen locales.

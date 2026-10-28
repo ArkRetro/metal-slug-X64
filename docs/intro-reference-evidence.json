@@ -23,76 +23,88 @@
   },
   "driver_sha256": "d8e4f0a498111337eac5a4afaea01fb89760c8b5c3e154dcad58f0b3b0a23036",
   "graphics_validation": {
-    "status": "FAIL",
+    "status": "PASS",
     "frames": [
       {
         "frame": 360,
-        "mismatched_pixels": 22,
-        "sprite_lines": 1543,
-        "zoomed_lines": 512
+        "mismatched_pixels": 0,
+        "sprite_lines": 1585,
+        "zoomed_lines": 512,
+        "raster_writes": 137
       },
       {
         "frame": 540,
         "mismatched_pixels": 0,
         "sprite_lines": 3743,
-        "zoomed_lines": 1016
+        "zoomed_lines": 1016,
+        "raster_writes": 0
       },
       {
         "frame": 660,
         "mismatched_pixels": 0,
         "sprite_lines": 17936,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 900,
         "mismatched_pixels": 0,
         "sprite_lines": 13760,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 1800,
         "mismatched_pixels": 0,
         "sprite_lines": 13632,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 3000,
         "mismatched_pixels": 0,
         "sprite_lines": 13648,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 3600,
         "mismatched_pixels": 0,
         "sprite_lines": 9024,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 3780,
         "mismatched_pixels": 0,
         "sprite_lines": 9888,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 3960,
         "mismatched_pixels": 0,
         "sprite_lines": 7072,
-        "zoomed_lines": 48
+        "zoomed_lines": 48,
+        "raster_writes": 0
       },
       {
         "frame": 4080,
         "mismatched_pixels": 0,
         "sprite_lines": 6656,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       },
       {
         "frame": 4200,
         "mismatched_pixels": 0,
         "sprite_lines": 6480,
-        "zoomed_lines": 0
+        "zoomed_lines": 0,
+        "raster_writes": 0
       }
     ],
     "capture_frames_sha256": "0a7404099ba18a5c1d38f19170fa91da900867ce7c930dc98119816212c9d1f6",
+    "raster_reference_sha256": "0d39f4c85be620fd01a5515b0ba8daae001ed857260f4dd59ec60f413884fca3",
     "screenshot_sha256": {
       "360": "9ddb5e3d0c2b0c7783db1b7619b78fe79d611286f0b69132eb0db74198d2fa8f",
       "540": "de767d6b9ccb3fb3546c7932e92e78272aeb6ff81090f604fbda8ee97b3cd484",
@@ -112,6 +124,18 @@
   "limits": [
     "No native intro player or gameplay audio integration yet.",
     "Sound command values are recorded without invented names.",
-    "Native graphics reconstruction still has 22 unexplained pixels at frame 360."
-  ]
+    "Eleven bounded graphics samples pass; the title raster interval is measured separately, not generalized to every frame."
+  ],
+  "raster_reference": {
+    "raster.jsonl": "0d39f4c85be620fd01a5515b0ba8daae001ed857260f4dd59ec60f413884fca3",
+    "frames.jsonl": "792d72c0234dba37afcbff1e422ffed1316dfe7eaa9baf7691a555b6d3ff076e",
+    "vram359.bin": "4645f6c89b0ca5a4a2b69dfbb07df62f88ac1b76ac2312126901d1239d2e595a",
+    "vram360.bin": "07df03482d5efcfbf90c012856a94634a326208a2b901522c1bc50ef4ab619a5",
+    "palette359.bin": "9cd70f6c101285ed9de6eda6c72cfe1eee33362e6b4145efeaaba9aa3b0dc039",
+    "palette360.bin": "9cd70f6c101285ed9de6eda6c72cfe1eee33362e6b4145efeaaba9aa3b0dc039",
+    "game360.png": "9ddb5e3d0c2b0c7783db1b7619b78fe79d611286f0b69132eb0db74198d2fa8f",
+    "run-command.json": "e8533aa7613a41e22d7d8d1520085fa957ee8f9e26241b7730d876cdbdbf52e7",
+    "options.json": "47a8f62b1e7160c18d6cdfb11ced856423795c3deec01cd60b9c6495a54fa73c"
+  },
+  "raster_data_writes_at_frame_359": 137
 }

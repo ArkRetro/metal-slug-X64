@@ -132,7 +132,8 @@ unsigned retro_shadow_fan(retro_camera_t c,const retro_shadow_t *s,float center[
     float squash=s->squash>0?s->squash:.25f;
     // Airborne actors cast a slightly smaller, lighter blob (up to 25% smaller).
     float radius=(s->radius>0?s->radius:12)*c.focal*q.inverse_w*(1-.25f*(height>96?96:height)/96);
-    float x=q.x,y=q.y,ry=radius*squash;
+    // Sit the ellipse mostly on the receding ground strip below the contact line.
+    float ry=radius*squash,x=q.x,y=q.y+ry*.4f;
     if (x+radius<8 || x-radius>=312 || y+ry<8 || y-ry>=232) return 0;
     static const float ink[3]={4/255.0f,7/255.0f,15/255.0f};
     float v[6]={x,y,ink[0],ink[1],ink[2],alpha/255};

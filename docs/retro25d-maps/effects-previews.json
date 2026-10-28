@@ -1,0 +1,24 @@
+{
+  "content": "Proxy level (authored ground profile and planes) and grey actor boxes; contains no original artwork.",
+  "lower_half": "0.5 + 4*(with effects - without) per channel; grey means unchanged",
+  "previews": {
+    "effects-vehicle.png": {
+      "caption": "Vehicle contact shadow and explosion light, 3 ticks after the blast (camera 872).",
+      "triangles": 32,
+      "limit": 96,
+      "bytes": 11854
+    },
+    "effects-impact.png": {
+      "caption": "Airborne Marco (smaller, lighter shadow), muzzle flash, soldier shadow and a bullet-impact pulse (camera 560).",
+      "triangles": 36,
+      "limit": 96,
+      "bytes": 9495
+    },
+    "effects-decay.png": {
+      "caption": "Explosion pulse at 0, 6, 12 and 24 ticks: (1-t)^2 intensity decay over 30 ticks.",
+      "triangles": 34,
+      "limit": 96,
+      "bytes": 15925
+    }
+  }
+}

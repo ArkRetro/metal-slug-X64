@@ -96,6 +96,11 @@ comprueba que el audio sigue activo al entregar el control; no es una medición
 acústica de sincronización ni una prueba en MiSTer. No se simulan disparos con
 un sonido grabado de una partida: el mapeo de efectos aún falta.
 
+La secuencia no recibe los efectos del [modo 2.5D](RETRO25D.md), activo por
+defecto: sus CRC no cambian. El primer frame de juego tras el traspaso
+restablece modo RDP, scissor y residencia de TMEM/TLUT, y descarta pulsos de
+luz previos.
+
 Al terminar, se comprueba el CRC del último lienzo, se libera la secuencia,
 se establece el estado de apoyo medido y se reinicia el reloj de simulación
 para evitar que el jugador avance durante el tiempo de presentación.

@@ -45,7 +45,7 @@ static void test_shadows(void) {
     retro_camera_t camera={100,0,0,320};float center[6],rim[RETRO_SHADOW_SEGMENTS+1][6];
     retro_shadow_t s=retro_actor_shadow(260,184,184,10);near(s.radius,11.5f);near(s.squash,.25f);
     assert(retro_shadow_fan(camera,&s,center,rim)==RETRO_SHADOW_SEGMENTS);
-    near(center[0],160);near(center[1],185);near(center[5],25/255.0f); // Feathered: dark centre,
+    near(center[0],160);near(center[1],185+11.5f*.25f*.4f);near(center[5],25/255.0f); // Feathered: dark centre,
     for (unsigned j=0;j<=RETRO_SHADOW_SEGMENTS;j++) near(rim[j][5],0);  // transparent rim.
     near(rim[0][0]-center[0],11.5f);near(rim[2][1]-center[1],11.5f*.25f);
     near(rim[4][0]-center[0],-11.5f);near(rim[0][0],rim[RETRO_SHADOW_SEGMENTS][0]);
@@ -53,7 +53,7 @@ static void test_shadows(void) {
     retro_shadow_t jump=s;jump.feet_y=184-48;float c2[6],r2[RETRO_SHADOW_SEGMENTS+1][6];
     assert(retro_shadow_fan(camera,&jump,c2,r2)==RETRO_SHADOW_SEGMENTS);
     assert(c2[5]<center[5] && r2[0][0]-c2[0]<rim[0][0]-center[0]); // Lighter and smaller in the air.
-    near(c2[1],center[1]); // Stays on the ground, not under the feet.
+    assert(c2[1]>=185 && c2[1]<=center[1]); // Stays on the ground, not under the feet.
     jump.feet_y=184-97;assert(!retro_shadow_fan(camera,&jump,c2,r2));
     retro_shadow_t off=s;off.world_x=camera.x+320+20;assert(!retro_shadow_fan(camera,&off,c2,r2));
     off.world_x=camera.x-20;assert(!retro_shadow_fan(camera,&off,c2,r2));

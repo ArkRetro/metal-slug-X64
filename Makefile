@@ -7,7 +7,7 @@ export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := check check-core check-cinematic clean
+HOST_GOALS := check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -76,7 +76,7 @@ filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cin
 	@echo "Run tools/pack_cinematic.py with the local golden entry capture; see docs/INTRO_AUDIO.md"
 	@exit 1
 
-.PHONY: all clean check check-core check-cinematic FORCE
+.PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
 all: mslugx-explorer.z64
 $(BUILD_DIR)/mslugx-explorer.elf: $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
@@ -171,6 +171,9 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@exit 1
 clean:
 	rm -rf build mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64
+# Offline effect previews (proxy level, no original art) from the real mesh code.
+preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
+	python3 tools/export_effect_previews.py
 check-cinematic: $(BUILD_DIR)/entry_meta.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/cinematic-pack

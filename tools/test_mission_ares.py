@@ -32,7 +32,8 @@ try:
     assert windows,'No visible ares window'
     subprocess.run([XD,'windowfocus','--sync',windows[-1]],check=True)
     time.sleep(.5);snap('start')
-    if variant=='retro25d':wait_for('MSX DEPTH mode enabled')
+    # depth25d is the default build; only MSX_VISUAL_MODE=classic omits it.
+    if variant in ('release','retro25d'):wait_for('MSX DEPTH mode enabled')
     else:assert 'MSX DEPTH mode enabled' not in LOG.read_text()
     if args.projectiles:
         key('keydown','b');time.sleep(.45);snap('projectiles-right')
@@ -61,11 +62,13 @@ try:
         for owner,direction in ((0,1),(0,-1),(1,-1)):
             assert f'MSX projectile sprite owner={owner} direction={direction} size=10x6' in text
         print('PASS: original 10x6 projectile sprites, right/left mirroring and enemy shot rendering')
-    if variant=='retro25d':
+    if variant in ('release','retro25d'):
         import re
         assert 'MSX DEPTH light response active' in text
         samples=re.findall(r'MSX DEPTH: triangles=(\d+) limit=96 fog=1024 B lights=(\d+)',text)
         assert samples and all(int(n)<=96 and int(l)<=2 for n,l in samples)
+        for planes,shadows in re.findall(r'MSX DEPTH: .* planes=(\d+) shadows=(\d+)',text):
+            assert int(planes)<=5 and int(shadows)<=4
     print('PASS: original map, slope motion, roof landing, three provisional encounters, region bounds, restart and lab')
     print('\n'.join(line for line in text.splitlines() if 'MSX pack:' in line or 'MSX RDP:' in line)[-1600:])
 finally:

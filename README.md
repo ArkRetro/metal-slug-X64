@@ -33,6 +33,10 @@ velocidades, seis inicios de animación y las transiciones observadas durante
 originales, incluida una selección de ataque. Esto aún no sustituye los guardias
 provisionales ni completa la Misión 1.
 
+La entrega pendiente incluye la **intro completa y sonido**. El nuevo
+[backend de audio y las referencias de intro](docs/INTRO_AUDIO.md) ya tienen
+pruebas internas en ares, pero aún no están integrados en la campaña.
+
 El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de paleta
 y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
 Las respuestas de impacto siguen externas y la integración jugable está pendiente.

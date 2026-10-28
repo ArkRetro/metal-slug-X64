@@ -1,12 +1,19 @@
 # Native port status and next delivery
 
 The latest user instruction supersedes the earlier complete-campaign-beta gate:
-the next requested delivery is a playable demo of the **complete first mission**,
+the next requested delivery is a playable demo of the **complete first mission,
+including its full intro and sound**,
 validated in ares before MiSTer testing. It must include the mission's encounters,
 events and boss through its actual completion. Do not present the partial scene,
 a backend regression cartridge or the old REGION END as that deliverable.
 The existing v9/v10 releases remain historical prototypes. Current backend test
 ROMs are internal and must not be published as the requested demo.
+
+A native ROM-streamed WAV64/RSP audio backend now passes ares tests for stereo
+mixing, playback lifecycle and AI submission alongside simple RDP output. A clean
+MAME reference spans the title/tutorial/selection/parachute entry with audio.
+The native intro and gameplay sound are not integrated; a strict offline art
+comparison still detects 22 unexplained title pixels. See `docs/INTRO_AUDIO.md`.
 
 The grounded attack main state now computes 20 persistent soldier updates,
 40 static support queries and the transition back to idle, coupled to the

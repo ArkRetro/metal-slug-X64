@@ -1,0 +1,117 @@
+{
+  "status": "REFERENCE_CAPTURED_NATIVE_INTEGRATION_PENDING",
+  "frames": 4800,
+  "video_snapshots": 2400,
+  "audio": {
+    "status": "CAPTURED",
+    "frames": 4800,
+    "audio_frames": 3891840,
+    "audio_rate": 48000,
+    "seconds": 81.08,
+    "audio_sha256": "e45373e88d19961526dd09307939685cdc997b4a3e11a2870adadeef34661adb",
+    "script_sha256": "0a44f70fad0f6897ccdf8a74c649faa6e9c13b94146591bdaa7828b94b1cbe37",
+    "limits": "Reference capture only. Intro boundaries and sound command meanings need verification."
+  },
+  "commands": 83,
+  "ym_writes": 213371,
+  "provenance": {
+    "debug.log": "c12bae90f564073990fd4aa6db5c0bd61dea700a3ce6672c01354970e3c77217",
+    "frames.jsonl": "0a7404099ba18a5c1d38f19170fa91da900867ce7c930dc98119816212c9d1f6",
+    "inputs.jsonl": "fae387b843f68d487b56c37206e5bb42770e3e9efaf9c821020e41df59740df8",
+    "options.json": "aaf48d9a2f36f3b2a27131adc6a467899c547a977cba9f0101de2caeab5b8592",
+    "run-command.json": "a27e548352c23b27510a3472f052b66743bb0a615fda023f2618eabf853e35ab"
+  },
+  "driver_sha256": "d8e4f0a498111337eac5a4afaea01fb89760c8b5c3e154dcad58f0b3b0a23036",
+  "graphics_validation": {
+    "status": "FAIL",
+    "frames": [
+      {
+        "frame": 360,
+        "mismatched_pixels": 22,
+        "sprite_lines": 1543,
+        "zoomed_lines": 512
+      },
+      {
+        "frame": 540,
+        "mismatched_pixels": 0,
+        "sprite_lines": 3743,
+        "zoomed_lines": 1016
+      },
+      {
+        "frame": 660,
+        "mismatched_pixels": 0,
+        "sprite_lines": 17936,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 900,
+        "mismatched_pixels": 0,
+        "sprite_lines": 13760,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 1800,
+        "mismatched_pixels": 0,
+        "sprite_lines": 13632,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 3000,
+        "mismatched_pixels": 0,
+        "sprite_lines": 13648,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 3600,
+        "mismatched_pixels": 0,
+        "sprite_lines": 9024,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 3780,
+        "mismatched_pixels": 0,
+        "sprite_lines": 9888,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 3960,
+        "mismatched_pixels": 0,
+        "sprite_lines": 7072,
+        "zoomed_lines": 48
+      },
+      {
+        "frame": 4080,
+        "mismatched_pixels": 0,
+        "sprite_lines": 6656,
+        "zoomed_lines": 0
+      },
+      {
+        "frame": 4200,
+        "mismatched_pixels": 0,
+        "sprite_lines": 6480,
+        "zoomed_lines": 0
+      }
+    ],
+    "capture_frames_sha256": "0a7404099ba18a5c1d38f19170fa91da900867ce7c930dc98119816212c9d1f6",
+    "screenshot_sha256": {
+      "360": "9ddb5e3d0c2b0c7783db1b7619b78fe79d611286f0b69132eb0db74198d2fa8f",
+      "540": "de767d6b9ccb3fb3546c7932e92e78272aeb6ff81090f604fbda8ee97b3cd484",
+      "660": "99daf367381c668dd9448aca7fdc951bba2119279aaff406d3245e6e793271e4",
+      "900": "724733bafc111a0f3ff31d6f8a9eca772ecdf3f9f1f4ee7d5ad3e8fa091edaf7",
+      "1800": "dedb550e18cdd282bfd178b6f08254f8dea40f1795149bafae5d84ba8c50183d",
+      "3000": "a7eccbb5871d4df2144e5c788baae9800c9ab3634bf4632493de71b5d808a8cc",
+      "3600": "263e926faf0587ba4a316c1965366b3f4d332ce58195f6254051af7179e90880",
+      "3780": "269da6aafae5851adb14ab08383cbf4004bdabebfa972e208811df0ee2249fc5",
+      "3960": "be052dc61b9ac6049154886821e8b45f46bb5f94c697054e5d94f524bc20b20f",
+      "4080": "f4c2ecba0f180141c9b591c61f18c9db80e621cbfbc9208d9f040440610c1b61",
+      "4200": "800839a8b05a876bd847752489f9dd29f49939ad10bc1a456238185f9a4f2811"
+    },
+    "phase_policy": "Use the recorded counter at the next frame-done boundary; verified against these screenshots, not all raster intervals.",
+    "limits": "Offline reference reconstruction; no native intro integration. Auto-animation enabled is assumed for this bounded profile. Nonzero differences require explanation, not masking."
+  },
+  "limits": [
+    "No native intro player or gameplay audio integration yet.",
+    "Sound command values are recorded without invented names.",
+    "Native graphics reconstruction still has 22 unexplained pixels at frame 360."
+  ]
+}

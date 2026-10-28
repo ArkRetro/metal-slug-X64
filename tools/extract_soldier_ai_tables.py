@@ -32,6 +32,13 @@ def main():
         hurtboxes=[hurtbox(fixed,x,0) for x in (0x3bb40,0x3bb4c,0x3bb58,0x3bb64,0x3bb70,0x3bb7c)]+[hurtbox(bank,0x24057c,0x200000)],
         player_hurtbox=hurtbox(bank,0x2d0aa8,0x200000),
         hit_matrix=dict(rom='0x004582',rows=[list(fixed[0x4582+20*t:0x4582+20*t+20]) for t in range(8)]),
+        # Mission 1 level script (bank 1, ROM 2D6314) up to the statement that
+        # follows the region's two "all groups cleared" waits (2D651A, whose
+        # player-region condition belongs to the next segment). Record bytes
+        # only; the interpreter is native code (src/neo_script.c).
+        mission_script=dict(rom='0x2D6314',end='0x2D651A',bytes=list(bank[0xd6314:0xd651a])),
+        spawn_table=dict(rom='0x0197DC',entries={hex(o):'0x%08X'%struct.unpack_from('>I',fixed,0x197dc+o)[0]
+            for o in (0x1f8,0x204,0x21c,0x2ac,0x2c8,0x2d0,0x31c,0x354,0x358)}),
         angle_tables=dict(rom='0x002C7C',log=list(fixed[0x2c7c:0x2c7c+256]),atan=list(fixed[0x2d7c:0x2d7c+256])))
     assert out['timer70']['header']==[1,255] and out['timer72']['header']==[1,255]
     a.output.write_text(json.dumps(out,indent=1)+'\n');print('tables written')

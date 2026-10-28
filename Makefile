@@ -210,7 +210,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
+	rm -rf build marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
@@ -227,7 +227,13 @@ $(BUILD_DIR)/marco_fields.h: tools/compile_marco_fields.py data/marco_fields_fix
 $(BUILD_DIR)/history_fixture.h: tools/compile_history_fixture.py data/soldier_history_fixture.json
 	python3 tools/compile_history_fixture.py
 
-check-core: $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
+$(BUILD_DIR)/marco_controller_fixture.h: tools/compile_marco_controller.py data/marco_controller_fixture.json
+	python3 tools/compile_marco_controller.py
+
+$(BUILD_DIR)/marco-advance/marco_controller_fixture.h: tools/compile_marco_controller.py data/marco_advance_controller_fixture.json
+	python3 tools/compile_marco_controller.py --fixture data/marco_advance_controller_fixture.json --output $@
+
+check-core: $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -243,6 +249,7 @@ check-core: $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_D
 	$(BUILD_DIR)/host/cinematic-codec
 	python3 tools/test_neo_scene.py
 	python3 tools/test_collision_audit.py
+	python3 tools/test_neo_queue_publication.py
 	python3 tools/test_vehicle_wreckage.py
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_soldier.c src/neo_soldier.c src/neo_rng.c -o $(BUILD_DIR)/host/soldier
 	$(BUILD_DIR)/host/soldier
@@ -258,6 +265,10 @@ check-core: $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_D
 	$(BUILD_DIR)/host/marco-fields
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_marco_animation.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-animation
 	$(BUILD_DIR)/host/marco-animation
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-controller
+	$(BUILD_DIR)/host/marco-controller
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/marco-advance tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-advance-controller
+	$(BUILD_DIR)/host/marco-advance-controller
 check: check-core $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o $(BUILD_DIR)/host/gameplay
@@ -294,3 +305,49 @@ marco-pair-regression.z64: N64_ROM_TITLE = "MSX MARCO PAIR"
 $(BUILD_DIR)/marco_script.h $(BUILD_DIR)/marco_steps.h:
 	@echo "Compile private Marco scripts/helper journals before this internal target."
 	@exit 1
+
+$(BUILD_DIR)/tools/test_marco_controller.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_marco_controller.o: CFLAGS = $(N64_CFLAGS) -MMD -Isrc -DMARCO_PRIVATE_CONTROLLER_FIXTURE
+$(BUILD_DIR)/tools/test_marco_controller.o: $(BUILD_DIR)/marco_controller_private_fixture.h $(BUILD_DIR)/marco_script.h
+$(BUILD_DIR)/marco-controller-regression.elf: $(BUILD_DIR)/tools/test_marco_controller.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
+marco-controller-regression.z64: N64_ROM_TITLE = "MSX MARCO CONTROL"
+$(BUILD_DIR)/marco_controller_private_fixture.h:
+	@echo "Run compile_marco_controller.py --graph PRIVATE_GRAPH --output build/marco_controller_private_fixture.h"
+	@exit 1
+
+$(BUILD_DIR)/tools/test_marco_coupled.o: tools/test_marco_steps.c $(BUILD_DIR)/marco_controller_private_fixture.h $(BUILD_DIR)/marco_script.h $(BUILD_DIR)/marco_steps.h $(BUILD_DIR)/marco_controller_timeline.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -DMARCO_COUPLED_CONTROLLER -c $< -o $@
+$(BUILD_DIR)/marco-coupled-regression.elf: $(BUILD_DIR)/tools/test_marco_coupled.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
+marco-coupled-regression.z64: N64_ROM_TITLE = "MSX MARCO COUPLED"
+$(BUILD_DIR)/marco_controller_timeline.h:
+	@echo "Compile the private combined journal with compile_marco_timeline.py"
+	@exit 1
+
+$(BUILD_DIR)/tools/test_marco_coupled_pixels.o: tools/test_marco_steps.c $(BUILD_DIR)/marco_controller_private_fixture.h $(BUILD_DIR)/marco_script.h $(BUILD_DIR)/marco_steps.h $(BUILD_DIR)/marco_controller_timeline.h $(BUILD_DIR)/marco_pixel_sequence.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -DMARCO_COUPLED_CONTROLLER -DMARCO_RENDER_COUPLED -c $< -o $@
+$(BUILD_DIR)/marco-coupled-pixels.elf: $(BUILD_DIR)/tools/test_marco_coupled_pixels.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o $(BUILD_DIR)/src/marco_renderer.o
+$(BUILD_DIR)/marco-coupled-pixels.dfs: N64_MKDFS_ROOT = romfs
+marco-coupled-pixels.z64: N64_ROM_TITLE = "MSX MARCO PIPELINE"
+marco-coupled-pixels.z64: $(BUILD_DIR)/marco-coupled-pixels.dfs
+$(BUILD_DIR)/marco_pixel_sequence.h:
+	@echo "Compile audited SCB references with compile_marco_pixel_sequence.py"
+	@exit 1
+
+$(BUILD_DIR)/tools/test_marco_advance.o: tools/test_marco_steps.c $(BUILD_DIR)/marco-advance/marco_script.h $(BUILD_DIR)/marco-advance/marco_steps.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) -I$(BUILD_DIR)/marco-advance $(N64_CFLAGS) -MMD -Isrc -c $< -o $@
+$(BUILD_DIR)/marco-advance-regression.elf: $(BUILD_DIR)/tools/test_marco_advance.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
+marco-advance-regression.z64: N64_ROM_TITLE = "MSX MARCO ADVANCE"
+$(BUILD_DIR)/marco-advance/marco_script.h $(BUILD_DIR)/marco-advance/marco_steps.h:
+	@echo "Compile the private advance helper journal in build/marco-advance first."
+	@exit 1
+
+$(BUILD_DIR)/tools/test_marco_advance_pixels.o: tools/test_marco_steps.c $(BUILD_DIR)/marco-advance/marco_controller_private_fixture.h $(BUILD_DIR)/marco-advance/marco_script.h $(BUILD_DIR)/marco-advance/marco_steps.h $(BUILD_DIR)/marco-advance/marco_controller_timeline.h $(BUILD_DIR)/marco-advance/marco_pixel_sequence.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) -I$(BUILD_DIR)/marco-advance $(N64_CFLAGS) -MMD -Isrc -DMARCO_COUPLED_CONTROLLER -DMARCO_RENDER_COUPLED -DMARCO_PUBLICATION_QUEUE -c $< -o $@
+$(BUILD_DIR)/marco-advance-pixels.elf: $(BUILD_DIR)/tools/test_marco_advance_pixels.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o $(BUILD_DIR)/src/marco_renderer.o
+$(BUILD_DIR)/marco-advance-pixels.dfs: N64_MKDFS_ROOT = romfs
+marco-advance-pixels.z64: N64_ROM_TITLE = "MSX MARCO COMBAT"
+marco-advance-pixels.z64: $(BUILD_DIR)/marco-advance-pixels.dfs

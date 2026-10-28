@@ -814,5 +814,20 @@
       "Depth Z is supplied from recorded draws, not derived from an independently captured actor depth field.",
       "Not integrated with full input controller or campaign. No demo release."
     ]
+  },
+  "controller_pipeline_report": "marco-controller-validation.json",
+  "latest_resource_catalog": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "poses": 178,
+    "framebuffers": 712,
+    "palettes": 2,
+    "ci4_chunks": 190,
+    "maximum_texture_upload": 1024,
+    "texture_upload_limit": 2048,
+    "rom_sha256": "42e86bb048dd2b58635f02ef9180f7e766408dc390c575dc1f3cd1445824d36d",
+    "log_sha256": "e881817afba5fdf73682ae8cf5b17392fcb5981757e74b99f812db930d87c0b6",
+    "asset_metadata_sha256": "643bdc26b2f9c5e0bd6c1cd17bd95e1b693cbd678488588abd69adef486102f9",
+    "limits": "Observed descriptor resource rendering only. All tested framebuffer CRCs match; full player controller and all-game animation coverage are not established. No demo."
   }
 }

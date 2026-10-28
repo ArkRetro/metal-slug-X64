@@ -7,6 +7,13 @@ are validated separately (2,452 whole calls, 2,574 draws and 152 effect requests
 match MAME in host C and MIPS/ares);
 the active campaign still uses the historical six-state visual selector.
 
+The [native Marco input/selection/render pipeline](MARCO_CONTROLLER.md) now
+matches original calls and actual RDP compositions in two captured trajectories.
+The observed resource catalog has 178 descriptors. Combat verification follows
+actual queue publications rather than assuming a fixed physical-frame delay.
+Outer controller transitions, remaining variants and campaign integration are
+still incomplete; none of the internal regression ROMs is a demo delivery.
+
 The latest user instruction supersedes the earlier complete-campaign-beta gate:
 the next requested delivery is a playable demo of the **complete first mission,
 including its full intro and sound**,

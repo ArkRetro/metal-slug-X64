@@ -12,10 +12,18 @@ from export_marco import palette_rgb
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--extra-audit',type=Path,action='append',default=[]);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);a=p.parse_args()
  audit_path=a.audit or a.capture/'audit.json';audit=json.loads(audit_path.read_text());assert audit['status']=='PASS'
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  assert all(sha(a.capture/n)==h for n,h in audit['provenance'].items()),'Preserve audited source capture'
+ extra_audits=[]
+ for path in a.extra_audit:
+  extra=json.loads(path.read_text());assert extra['status']=='PASS'
+  assert all(sha(path.parent/n)==h for n,h in extra['provenance'].items()),'Preserve additional audited capture'
+  assert all(extra['provenance'][n]==audit['provenance'][n] for n in ('program-fixed.bin','program-bank.bin'))
+  extra_audits.append(dict(path=str(path),sha256=sha(path)))
+  audit['descriptor_addresses']=sorted(set(audit['descriptor_addresses'])|set(extra['descriptor_addresses']))
+  audit.setdefault('palette_profiles',[]).extend(extra.get('palette_profiles',[]))
  data=program(a.rom);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
  pal=struct.unpack('>4096H',(a.capture/'palette2104.bin').read_bytes())[0x630:0x640]
  def convert_palette(words):return [0]+[((r>>3)<<11)|((g>>3)<<6)|((b>>3)<<1)|1 for r,g,b in (palette_rgb(v) for v in words[1:])]
@@ -74,7 +82,7 @@ def main():
  lines += ['};','static const struct {uint32_t source_tag;uint16_t first,count;int16_t anchor_x,anchor_y;uint32_t crc[MARCO_PALETTES][2];} marco_poses[]={']
  for pose in poses:lines.append('{'+str(pose['tag'])+'u,'+str(pose['first'])+','+str(pose['count'])+','+str(pose['anchor'][0])+','+str(pose['anchor'][1])+',{'+','.join('{'+','.join(str(v)+'u' for v in pair)+'}' for pair in pose['crc'])+'}},')
  lines.append('};');(ROOT/'build/marco_pose_meta.h').write_text('\n'.join(lines)+'\n')
- report=dict(source='Verified original descriptors, C-ROM and observed Marco palette',poses=poses,parts=parts,palette_rgba5551=palettes,audit_sha256=sha(audit_path),rom_sha256=sha(a.rom),limits='Observed descriptors only, not complete Marco coverage. Native control/state selection is separate.')
+ report=dict(source='Verified original descriptors, C-ROM and observed Marco palette',poses=poses,parts=parts,palette_rgba5551=palettes,audit_sha256=sha(audit_path),additional_audits=extra_audits,rom_sha256=sha(a.rom),limits='Observed descriptors only, not complete Marco coverage. Native control/state selection is separate.')
  (ROOT/'build/marco_pose_assets.json').write_text(json.dumps(report,indent=2)+'\n');(ROOT/'build/marco-poses.stamp').write_text(str(len(poses))+' anchored poses; '+str(len(parts))+' CI4 chunks; <=2048 texture bytes per upload\n')
  print('Built',len(poses),'anchored poses,',len(palettes),'observed palette profiles,',len(parts),'CI4 parts,',sum(p.stat().st_size for p in out.glob('*.sprite')),'ROM bytes')
 if __name__=='__main__':main()

@@ -15,10 +15,11 @@ CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',
  ('run_jump_fire_left',64,('Left','jump','fire')),('grenade_stand',80,('grenade',)),
  ('grenade_crouch',80,('Down','grenade')),('grenade_jump',96,('jump','grenade')),('idle_long',360,()),
  ('run_cycle_right',96,('Right',)),('run_cycle_left',96,('Left',)),('idle_after_cycles',64,())]
-def schedule():
+def schedule(cases=CASES):
  events={};rows=[];at=2100
  def event(f,button,value):events.setdefault(f,[]).append(('P1 '+button,value))
- for name,length,buttons in CASES:
+ for name,length,buttons in cases:
+  assert isinstance(name,str) and name and 16<=length<=1200 and set(buttons)<={'Up','Down','Left','Right','fire','jump','grenade'}
   for b in ('Up','Down','Left','Right','A','B','C'):event(at,b,0)
   for b in buttons:
    if b not in ('fire','jump','grenade'):event(at,b,1)
@@ -30,9 +31,13 @@ def schedule():
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');a=p.parse_args()
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
- rows,events=schedule();last=rows[-1]['last'];assert last<=6000
+ cases=CASES
+ if a.plan:
+  cases=[(c['name'],c['length'],tuple(c['inputs'])) for c in json.loads(a.plan.read_text())]
+  assert cases
+ rows,events=schedule(cases);last=rows[-1]['last'];assert last<=12000
  if a.end_frame is not None:
   assert 2104<=a.end_frame<=last;last=a.end_frame
   rows=[dict(c,last=min(c['last'],last)) for c in rows if c['first']<=last]
@@ -44,6 +49,9 @@ def main():
  env=dict(os.environ,MSX_CAPTURE_DIR=str(out),LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu')
  if a.command_trace:env['MSX_COMMAND_TRACE']='1'
  if a.paired_trace:env['MSX_PAIRED_TRACE']='1'
+ if a.controller_trace:env['MSX_CONTROLLER_TRACE']='1'
+ if a.logic_only:env['MSX_LOGIC_ONLY']='1'
+ if a.queue_trace:env['MSX_QUEUE_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
   server=subprocess.Popen(['/workspace/emulator/root/usr/bin/Xvfb','-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:

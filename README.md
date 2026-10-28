@@ -5,6 +5,8 @@ validada en ares antes de probarla en MiSTer. Aún no está terminada.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
 La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
 el controlador completo todavía está pendiente y no se declara un 100%.
+El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)
+ya pasa comparaciones con MAME y con framebuffer real del RDP en ares.
 El [modo visual 2.5D](docs/RETRO25D.md) está activo por defecto: paralaje en
 perspectiva, iluminación por vértice, sombras de contacto, pulsos de luz en
 impactos y explosiones, y niebla, sin tocar el pixel art ni la jugabilidad 2D.

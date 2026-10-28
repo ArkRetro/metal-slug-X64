@@ -1,18 +1,27 @@
 #!/usr/bin/env python3
 """Run measured backend fixtures on the actual MIPS build in ares, internally."""
-import argparse,hashlib,json,os,subprocess,time
+import argparse,hashlib,json,os,re,subprocess,time
 from pathlib import Path
 from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair','controller','coupled'),default='rng')
 p.add_argument('--fixture',type=Path,help='Private helper journal required for suite pair')
+p.add_argument('--controller-fixture',type=Path,default=ROOT/'data/marco_controller_fixture.json')
+p.add_argument('--pixel-reference',type=Path,default=ROOT/'build/marco_pixel_sequence.json')
+p.add_argument('--pixels',action='store_true',help='Also require the native animation framebuffer completion marker')
 a=p.parse_args();out=a.output.resolve()
-if a.suite=='pair':assert a.fixture is not None,'pair requires --fixture'
-fixture_path=a.fixture if a.suite=='pair' else ROOT/('data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
+if a.pixels:assert a.suite=='coupled','--pixels requires --suite coupled'
+if a.suite in ('pair','coupled'):assert a.fixture is not None,'pair requires --fixture'
+fixture_path=a.fixture if a.suite in ('pair','coupled') else ROOT/('data/marco_controller_fixture.json' if a.suite=='controller' else 'data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
-if a.suite=='pair':
+if a.suite=='controller':
+    counts=dict(inputs=len(fixture['inputs']),choices=len(fixture['choices']))
+elif a.suite=='coupled':
+    controller=json.loads(a.controller_fixture.read_text())
+    counts=dict(inputs=len(controller['inputs']),choices=len(controller['choices']),steps=len(fixture['cases']),draws=sum(len(c['draws']) for c in fixture['cases']),events=sum(len(c['events']) for c in fixture['cases']))
+elif a.suite=='pair':
     counts=dict(steps=len(fixture['cases']),draws=sum(len(c['draws']) for c in fixture['cases']),events=sum(len(c['events']) for c in fixture['cases']))
 elif a.suite=='marco':
     counts=dict(fields=len(fixture['cases']),selectors=len(json.loads((ROOT/'data/marco_selector_fixture.json').read_text())['cases']))
@@ -53,7 +62,7 @@ with (out/'xvfb.log').open('w') as xlog:
         env['DISPLAY']=':'+number
         with (out/'ares.log').open('w') as log:
             process=subprocess.Popen(['bash',str(ROOT/'tools/run_ares.sh'),str(a.rom.resolve())],stdout=log,stderr=subprocess.STDOUT,env=env)
-            deadline=time.monotonic()+45
+            deadline=time.monotonic()+(240 if a.pixels else 45)
             while time.monotonic()<deadline:
                 text=(out/'ares.log').read_text()
                 assert 'ASSERTION FAILED' not in text and 'Assertion failed' not in text,text[-2000:]
@@ -61,7 +70,12 @@ with (out/'xvfb.log').open('w') as xlog:
                 assert process.poll() is None,'ares exited before completing the fixture'
                 time.sleep(.1)
             else:raise AssertionError('No backend completion marker in ares.log')
-            ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'pass.png')
+            if a.pixels:
+                reference=json.loads(a.pixel_reference.read_text())
+                pixels=re.search(r'MSX COUPLED PIXELS PASS frames=(\d+) draws=(\d+) tmem_max=(\d+)',text)
+                assert pixels and int(pixels[1])==reference['frames'] and 0<int(pixels[3])<=2048,text[-2500:]
+                assert 'MSX MARCO NATIVE LIMITS PASS cases='+str(reference['synthetic_transform_limits']) in text
+        ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'pass.png')
         report=dict(status='PASS',emulator='ares 146, retained workspace build',
             rom_sha256=hashlib.sha256(a.rom.read_bytes()).hexdigest(),
             log_sha256=hashlib.sha256((out/'ares.log').read_bytes()).hexdigest(),
@@ -80,6 +94,10 @@ with (out/'xvfb.log').open('w') as xlog:
         if a.suite=='attack':report['main_states']=20;report['ground_queries']=40;report['hit_geometry_candidates']=8;report['hit_geometry_overlaps']=1
         if a.suite=='attack':report['hit_geometry_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_hit_geometry_fixture.json').read_bytes()).hexdigest()
         if a.suite=='attack':report['object_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_object_fixture.json').read_bytes()).hexdigest()
+        if a.suite=='coupled':report['controller_fixture_sha256']=hashlib.sha256(a.controller_fixture.read_bytes()).hexdigest()
+        if a.pixels:
+            report.update(framebuffers=int(pixels[1]),rendered_draws=int(pixels[2]),maximum_texture_upload=int(pixels[3]),pixel_reference=reference,
+                limit='Native input/filter/select/animation/render replay at recorded controller boundaries. Audited Neo Geo SCB framebuffer CRCs match. Outer player state machine, all-game variants and real hardware performance remain unverified. No release.')
         (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS: measured',a.suite,'fixtures executed as native MIPS in ares')
     finally:
         if process is not None:

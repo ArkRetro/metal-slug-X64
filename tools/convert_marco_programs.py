@@ -8,7 +8,7 @@ import argparse,collections,hashlib,json,re,struct
 from pathlib import Path
 from extract_marco_fields import fields
 
-def convert(capture,output,event_evidence=None):
+def convert(capture,output,event_evidence=None,additional_roots=None):
  bank=(capture/'program-bank.bin').read_bytes();text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  initial_roots={int(v,16) for v in re.findall(r'MARCO_INIT frame=\d+ program=([0-9A-F]+)',text)}
  verified_events={};events=[]
@@ -16,9 +16,14 @@ def convert(capture,output,event_evidence=None):
   proof=json.loads(event_evidence.read_text());assert proof['status']=='UNCHANGED_MONITORED_ANIMATION_FIELDS'
   for name,digest in proof['provenance'].items():assert hashlib.sha256((capture/name).read_bytes()).hexdigest()==digest
   verified_events={e['site']:e for e in proof['sites']}
- roots=set(initial_roots)
+ selected_roots={int(v,16) for v in re.findall(r'MARCO_PROGRAM_CHOICE .*?program=([0-9A-F]+)',text)}-{0}
+ roots=set(initial_roots)|selected_roots
  observed=[fields(l) for l in text.splitlines() if l.startswith('MARCO_COMMAND')]
- roots.update(r['cursor'] for r in observed);nodes={};unrecovered=[]
+ roots.update(r['cursor'] for r in observed);observed_roots=set(roots);static_roots=set()
+ if additional_roots:
+  static_roots={int(line,16) for line in additional_roots.read_text().splitlines() if line.strip()}
+  roots.update(static_roots)
+ nodes={};unrecovered=[]
  def walk(pc):
   while pc not in nodes:
    assert 0x200000<=pc<0x300000,hex(pc);at=pc-0x200000;op,arg=bank[at:at+2]
@@ -72,15 +77,15 @@ def convert(capture,output,event_evidence=None):
  for c in nodes.values():
   if c['kind']=='SELECT_FIELD_POSE':assert all(nodes[ordered[c['target']+i]]['kind']=='POSE' for i in range(c['operand']))
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
- graph=dict(initial_program_roots=sorted(initial_roots),entry_seeds=[dict(source=pc,native_index=indices[pc]) for pc in sorted(roots)],commands=[nodes[pc] for pc in ordered],unrecovered=unrecovered,events=events,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-bank.bin')},limits='Observed script graphs only. UNRECOVERED callbacks/services must stop native execution, not become silent no-ops. Complete player controller still required.')
+ graph=dict(initial_program_roots=sorted(initial_roots),observed_selection_roots=sorted(selected_roots),entry_seeds=[dict(source=pc,native_index=indices[pc]) for pc in sorted(observed_roots)],static_seeds=[dict(source=pc,native_index=indices[pc]) for pc in sorted(static_roots)],commands=[nodes[pc] for pc in ordered],unrecovered=unrecovered,events=events,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-bank.bin')},additional_roots_sha256=sha(additional_roots) if additional_roots else None,limits='Observed script graphs plus explicitly listed static seeds; static reachability is not execution coverage. UNRECOVERED callbacks/services must stop native execution, not become silent no-ops. Complete player controller still required.')
  output.mkdir(parents=True,exist_ok=False);(output/'graph.json').write_text(json.dumps(graph,indent=2)+'\n')
  lines=['/* Converted native script data, not executable original addresses. */','#include "neo_animation.h"','static const neo_anim_command_t marco_commands[]={']
  for pc in ordered:
   c=nodes[pc];lines.append('{NEO_ANIM_'+c['kind']+','+','.join(str(c[k]) for k in ('asset','target','operand','flags','dx','dy'))+'},')
  lines+=['};','static const neo_anim_program_t marco_script={marco_commands,sizeof(marco_commands)/sizeof(*marco_commands)};']
  assert len(nodes)<65536;(output/'marco_script.h').write_text('\n'.join(lines)+'\n')
- print('Converted',len(nodes),'commands,',len(roots),'observed command seeds;',len(unrecovered),'explicit unrecovered callbacks/services')
- print('Measured native request sites:',len(events))
+ print('Converted',len(nodes),'commands,',len(observed_roots),'observed command seeds;',len(unrecovered),'explicit unrecovered callbacks/services')
+ print('Measured native request sites:',len(events),'; additional STATIC roots:',len(static_roots))
  print(collections.Counter(c['kind'] for c in nodes.values()))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--event-evidence',type=Path);a=p.parse_args();convert(a.capture,a.output,a.event_evidence)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--event-evidence',type=Path);p.add_argument('--additional-roots',type=Path);a=p.parse_args();convert(a.capture,a.output,a.event_evidence,a.additional_roots)

@@ -5,6 +5,12 @@ todavía no está conseguido.** El ejecutable de campaña conserva los seis esta
 visuales históricos. La biblioteca nueva se comprueba aparte; todavía no está
 conectada al controlador completo del jugador. No se publica otra demo parcial.
 
+La [continuación del controlador y la composición nativa](MARCO_CONTROLLER.md)
+añade filtrado de entradas, selección original de programas y dibujo conjunto
+cuerpo/arma. Dos recorridos pasan en ares; el catálogo combinado llega a 178
+descriptores. El recorrido de combate usa publicaciones reales de cola para
+resolver las llamadas que atraviesan VBlank. Esto no declara completo Marco.
+
 ## Resultado comprobado
 
 La captura ampliada usa MAME 0.276, BIOS euro, entradas de mando programadas y

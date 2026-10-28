@@ -44,7 +44,7 @@ bool marco_renderer_load(void) {
     data_cache_hit_writeback((void*)marco_palettes,sizeof(marco_palettes));
     loaded=true;return true;
 }
-bool marco_renderer_draw_palette(unsigned pose,int x,int y,bool mirror,unsigned palette) {
+static bool draw_pose(unsigned pose,int x,int y,bool mirror,bool flip_y,unsigned palette,bool wrapped,int viewport_x,int viewport_y) {
     if (!loaded || pose>=MARCO_POSES || palette>=MARCO_PALETTES) return false;
     rdpq_mode_push();rdpq_set_mode_standard();rdpq_mode_filter(FILTER_POINT);
     rdpq_mode_dithering(DITHER_NONE_NONE);rdpq_mode_alphacompare(1);
@@ -53,17 +53,35 @@ bool marco_renderer_draw_palette(unsigned pose,int x,int y,bool mirror,unsigned 
     for (unsigned p=0;p<marco_poses[pose].count;p++) {
         unsigned i=marco_poses[pose].first+p;
         int width=marco_parts[i].width,height=marco_parts[i].height;
-        int left=x+(mirror?-marco_parts[i].x-width-1:marco_parts[i].x),top=y+marco_parts[i].y;
-        if (left>=320 || left+width<=0 || top>=240 || top+height<=0) continue;
-        surface_t pixels=sprite_get_pixels(parts[i]);
-        int bytes=rdpq_tex_upload(TILE0,&pixels,NULL);
-        if (bytes<0 || bytes>2048) {rdpq_mode_pop();return false;}
-        if ((unsigned)bytes>max_upload) max_upload=(unsigned)bytes;
-        rdpq_texture_rectangle_scaled(TILE0,left,top,left+width,top+height,mirror?width-1:0,0,mirror?-1:width,height);
+        int left=x+(mirror?-marco_parts[i].x-width-1:marco_parts[i].x);
+        int top=y+(flip_y?-marco_parts[i].y-height-1:marco_parts[i].y);
+        if (wrapped) {left=(int)((unsigned)left&511u);top=(int)((unsigned)top&511u);}
+        unsigned copies=wrapped?2:1;bool uploaded=false;
+        for (unsigned wy=0;wy<copies;wy++) for (unsigned wx=0;wx<copies;wx++) {
+            int xx=left+viewport_x-(int)wx*512,yy=top+viewport_y-(int)wy*512;
+            if (xx>=320 || xx+width<=0 || yy>=240 || yy+height<=0) continue;
+            if (!uploaded) {
+                surface_t pixels=sprite_get_pixels(parts[i]);
+                int bytes=rdpq_tex_upload(TILE0,&pixels,NULL);
+                if (bytes<0 || bytes>2048) {rdpq_mode_pop();return false;}
+                if ((unsigned)bytes>max_upload) max_upload=(unsigned)bytes;
+                uploaded=true;
+            }
+            rdpq_texture_rectangle_scaled(TILE0,xx,yy,xx+width,yy+height,
+                mirror?width-1:0,flip_y?height-1:0,mirror?-1:width,flip_y?-1:height);
+        }
     }
     rdpq_mode_pop();return true;
 }
-
+bool marco_renderer_draw_palette(unsigned pose,int x,int y,bool mirror,unsigned palette) {
+    return draw_pose(pose,x,y,mirror,false,palette,false,0,0);
+}
 bool marco_renderer_draw(unsigned pose,int x,int y,bool mirror) {
     return marco_renderer_draw_palette(pose,x,y,mirror,0);
+}
+bool marco_renderer_draw_native(const neo_anim_draw_t *draw,int viewport_x,int viewport_y,unsigned palette) {
+    unsigned pose;
+    if (!draw || !marco_renderer_find(draw->descriptor,&pose)) return false;
+    return draw_pose(pose,draw->x&511u,(0u-draw->y)&511u,
+        (draw->attributes&1u)!=0,(draw->attributes&2u)!=0,palette,true,viewport_x,viewport_y);
 }

@@ -2,7 +2,9 @@
 
 Current priority from the user: complete **all Marco animations** before further
 level expansion. This is not complete: see [Marco animation recovery](MARCO_ANIMATIONS.md).
-The new observed-descriptor renderer and script primitives are validated separately;
+The observed-descriptor renderer, script primitives and paired body/weapon helper
+are validated separately (2,452 whole calls, 2,574 draws and 152 effect requests
+match MAME in host C and MIPS/ares);
 the active campaign still uses the historical six-state visual selector.
 
 The latest user instruction supersedes the earlier complete-campaign-beta gate:

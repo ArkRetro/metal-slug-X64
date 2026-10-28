@@ -30,9 +30,12 @@ def schedule():
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);a=p.parse_args()
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  rows,events=schedule();last=rows[-1]['last'];assert last<=6000
+ if a.end_frame is not None:
+  assert 2104<=a.end_frame<=last;last=a.end_frame
+  rows=[dict(c,last=min(c['last'],last)) for c in rows if c['first']<=last]
  script=out/'capture.lua';shutil.copyfile(ROOT/'tools/mame/capture_marco_catalog.lua',script)
  (out/'plan.json').write_text(json.dumps(dict(cases=rows,first=2100,last=last,limits='Input experiments; completeness and animation labels require validation.'),indent=2)+'\n')
  lines=['return {first=2100,last='+str(last)+',events={']
@@ -40,6 +43,7 @@ def main():
  (out/'plan.lua').write_text('\n'.join(lines+['}}'])+'\n')
  env=dict(os.environ,MSX_CAPTURE_DIR=str(out),LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu')
  if a.command_trace:env['MSX_COMMAND_TRACE']='1'
+ if a.paired_trace:env['MSX_PAIRED_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
   server=subprocess.Popen(['/workspace/emulator/root/usr/bin/Xvfb','-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:

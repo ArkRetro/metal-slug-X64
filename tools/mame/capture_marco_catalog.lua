@@ -20,13 +20,33 @@ local function button(name,value)
 end
 -- The actor address is verified by the existing entry/air traces. This probe
 -- does not assume its generic helper field meanings apply before observing them.
-local function probe(site,label,format,args)
- dbg:command(string.format('bpset %x,temp9>=%x && a6==1014c4,{printf "%s frame=%%d %s\\n",temp9,%s;g}',site,plan.first,label,format,args))
+local function probe(site,label,format,args,actions)
+ dbg:command(string.format('bpset %x,temp9>=%x && a6==1014c4,{printf "%s frame=%%d %s\\n",temp9,%s;'..(actions or '')..'g}',site,plan.first,label,format,args))
 end
 if os.getenv('MSX_COMMAND_TRACE')=='1' then
  probe(0x429c,'MARCO_COMMAND',
   'cursor=%08X state=%08X timer=%04X speed=%04X flags=%04X f17=%02X correction=%02X f50=%08X f6c=%02X f72=%08X f76=%02X f77=%02X f78=%02X f80=%02X f81=%02X f90=%02X f91=%02X f94=%02X f98=%02X f9a=%02X',
   'a1,a0,w@(a0+4),w@(a0+6),w@(a6+14),b@(a6+17),b@(a6+4d),d@(a6+50),b@(a6+6c),d@(a6+72),b@(a6+76),b@(a6+77),b@(a6+78),b@(a6+80),b@(a6+81),b@(a6+90),b@(a6+91),b@(a6+94),b@(a6+98),b@(a6+9a)')
+end
+if os.getenv('MSX_PAIRED_TRACE')=='1' then
+ local function snapshot(site,label,state,extra_fmt,extra_args,actions)
+  local fmt='state=%08X cursor=%08X timer=%04X speed=%04X f17=%02X f18=%02X field50=%08X x=%04X y=%04X cached_x=%04X cached_y=%04X attr=%04X correction=%02X flash_palette=%02X palettes=%08X flags5f=%02X phase=%02X f72=%08X f76=%02X f77=%02X f78=%02X f79=%02X'
+  local args=state..',d@('..state..'),w@('..state..'+4),w@('..state..'+6),b@(a6+17),b@(a6+18),d@(a6+50),w@(a6+3c),w@(a6+40),w@(a6+44),w@(a6+48),w@(a6+14),b@(a6+4d),b@(a6+16),d@(a6+19),b@(a6+5f),b@(10000f),d@(a6+72),b@(a6+76),b@(a6+77),b@(a6+78),b@(a6+79)'
+  probe(site,label,fmt..(extra_fmt or ''),args..(extra_args or ''),actions)
+ end
+ snapshot(0x427e,'MARCO_STEP_IN','a0')
+ snapshot(0x4350,'MARCO_STEP_OUT','a0',' sr=%04X',',sr')
+ snapshot(0x4288,'MARCO_NULL_OUT','a0',' sr=%04X',',sr')
+ snapshot(0xc3778,'MARCO_WEAPON_IN','a6+88')
+ snapshot(0xc37cc,'MARCO_WEAPON_OUT','a6+88',nil,nil,'trace off,maincpu;')
+ local twin=' weapon_cursor=%08X weapon_timer=%04X weapon_speed=%04X'
+ local twinargs=',d@(a6+88),w@(a6+8c),w@(a6+8e)'
+ snapshot(0x44ec,'MARCO_EFFECT_IN','a6+20',twin..' target=%08X payload=%08X bytes=%04X',twinargs..',a1,a0,d0&ffff')
+ snapshot(0x44ee,'MARCO_EFFECT_OUT','a6+20',twin,twinargs)
+ snapshot(0x4492,'MARCO_SERVICE_IN','a6+20',twin..' token=%04X',twinargs..',d0&ffff')
+ snapshot(0x4498,'MARCO_SERVICE_OUT','a6+20',twin,twinargs)
+ dbg:command('temp8=0')
+ dbg:command('bpset c377e,temp9>='..string.format('%x',plan.first)..' && a6==1014c4 && temp8==0,{temp8=1;trace '..output..'/weapon-step.log,maincpu,noloop,{tracelog "frame=%d A6=%08X A0=%08X D0=%08X D1=%08X SP=%08X ",temp9,a6,a0,d0,d1,sp};g}')
 end
 probe(0x4412,'MARCO_SELECT','cursor=%08X field=%02X value=%02X count=%04X state=%08X x=%04X y=%04X attributes=%04X z=%04X correction=%02X flash_palette=%02X palettes=%08X',
  'a1-1,b@(a1),b@(a6+b@(a1)),w@(a1+1)/8,a0,w@(a6+3c),w@(a6+40),w@(a6+14),w@(a6+1e),b@(a6+4d),b@(a6+16),d@(a6+19)')

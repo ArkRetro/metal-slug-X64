@@ -8,9 +8,14 @@ import argparse,collections,hashlib,json,re,struct
 from pathlib import Path
 from extract_marco_fields import fields
 
-def convert(capture,output):
+def convert(capture,output,event_evidence=None):
  bank=(capture/'program-bank.bin').read_bytes();text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  initial_roots={int(v,16) for v in re.findall(r'MARCO_INIT frame=\d+ program=([0-9A-F]+)',text)}
+ verified_events={};events=[]
+ if event_evidence is not None:
+  proof=json.loads(event_evidence.read_text());assert proof['status']=='UNCHANGED_MONITORED_ANIMATION_FIELDS'
+  for name,digest in proof['provenance'].items():assert hashlib.sha256((capture/name).read_bytes()).hexdigest()==digest
+  verified_events={e['site']:e for e in proof['sites']}
  roots=set(initial_roots)
  observed=[fields(l) for l in text.splitlines() if l.startswith('MARCO_COMMAND')]
  roots.update(r['cursor'] for r in observed);nodes={};unrecovered=[]
@@ -35,8 +40,13 @@ def convert(capture,output):
     size=4+length
    elif op==0x14:
     assert arg>=4;callback=struct.unpack_from('>I',bank,at+2)[0]
-    c.update(kind='UNRECOVERED',asset=callback)
-    unrecovered.append(dict(command=pc,callback=callback,payload=bank[at+6:at+2+arg].hex()));size=2+arg
+    payload=bank[at+6:at+2+arg].hex()
+    if pc in verified_events:
+     e=verified_events[pc];assert e['kind']=='CALLBACK' and e['target']==callback and e['payload']==payload
+     c.update(kind='EVENT',asset=len(events));events.append(dict(e,native_id=c['asset']))
+    else:
+     c.update(kind='UNRECOVERED',asset=callback);unrecovered.append(dict(command=pc,callback=callback,payload=payload))
+    size=2+arg
    elif op==0x18:
     c.update(kind='WRITE_BYTE',asset=arg,target=struct.unpack_from('>H',bank,at+2)[0]);size=4
    elif op==0x1c:
@@ -46,7 +56,13 @@ def convert(capture,output):
    elif op==0x24:c.update(kind='DECREMENT_BYTE',target=arg);size=2
    elif op==0x28:c.update(kind='FINISH');return
    elif op==0x30:
-    c.update(kind='UNRECOVERED',asset=struct.unpack_from('>H',bank,at+2)[0]);unrecovered.append(dict(command=pc,service='original_0x0120F8',token=c['asset']));size=4
+    token=struct.unpack_from('>H',bank,at+2)[0]
+    if pc in verified_events:
+     e=verified_events[pc];assert e['kind']=='SERVICE' and e['target']==0x120f8 and e['token']==token
+     c.update(kind='EVENT',asset=len(events));events.append(dict(e,native_id=c['asset']))
+    else:
+     c.update(kind='UNRECOVERED',asset=token);unrecovered.append(dict(command=pc,service='original_0x0120F8',token=token))
+    size=4
    else:raise AssertionError(('Unrecovered script command',hex(pc),hex(op)))
    pc+=size
  for root in sorted(roots):walk(root)
@@ -56,7 +72,7 @@ def convert(capture,output):
  for c in nodes.values():
   if c['kind']=='SELECT_FIELD_POSE':assert all(nodes[ordered[c['target']+i]]['kind']=='POSE' for i in range(c['operand']))
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
- graph=dict(initial_program_roots=sorted(initial_roots),entry_seeds=[dict(source=pc,native_index=indices[pc]) for pc in sorted(roots)],commands=[nodes[pc] for pc in ordered],unrecovered=unrecovered,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-bank.bin')},limits='Observed script graphs only. UNRECOVERED callbacks/services must stop native execution, not become silent no-ops. Complete player controller still required.')
+ graph=dict(initial_program_roots=sorted(initial_roots),entry_seeds=[dict(source=pc,native_index=indices[pc]) for pc in sorted(roots)],commands=[nodes[pc] for pc in ordered],unrecovered=unrecovered,events=events,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-bank.bin')},limits='Observed script graphs only. UNRECOVERED callbacks/services must stop native execution, not become silent no-ops. Complete player controller still required.')
  output.mkdir(parents=True,exist_ok=False);(output/'graph.json').write_text(json.dumps(graph,indent=2)+'\n')
  lines=['/* Converted native script data, not executable original addresses. */','#include "neo_animation.h"','static const neo_anim_command_t marco_commands[]={']
  for pc in ordered:
@@ -64,6 +80,7 @@ def convert(capture,output):
  lines+=['};','static const neo_anim_program_t marco_script={marco_commands,sizeof(marco_commands)/sizeof(*marco_commands)};']
  assert len(nodes)<65536;(output/'marco_script.h').write_text('\n'.join(lines)+'\n')
  print('Converted',len(nodes),'commands,',len(roots),'observed command seeds;',len(unrecovered),'explicit unrecovered callbacks/services')
+ print('Measured native request sites:',len(events))
  print(collections.Counter(c['kind'] for c in nodes.values()))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args();convert(a.capture,a.output)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--event-evidence',type=Path);a=p.parse_args();convert(a.capture,a.output,a.event_evidence)

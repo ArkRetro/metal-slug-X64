@@ -58,10 +58,54 @@ atribuye a todos una semántica completa de colisión o control.
 El conversor privado ha recorrido 692 comandos tipados desde 531 posiciones de
 comando observadas. Esas posiciones no son 531 animaciones. Hay 16 valores de
 inicio principal vistos por el probe de `0x004256`; esto tampoco enumera todas
-las entradas secundarias ni todos los programas del juego. Permanecen **12
-sitios** de callbacks/servicios sin conversión, correspondientes a cuatro destinos
-originales. Se compilan como `UNRECOVERED`: no se sustituyen por un no-op que
-permitiría fingir una secuencia completa.
+las entradas secundarias ni todos los programas del juego. La captura posterior
+verifica diez sitios de solicitudes a callbacks/servicios; dos sitios estáticos
+no ejecutados permanecen como `UNRECOVERED`. Los efectos completos del juego
+siguen pendientes: registrar una solicitud no implementa su efecto.
+
+## Cuerpo y arma: llamadas completas recuperadas
+
+`marco_animation.c` coordina dos relojes nativos y sus campos compartidos.
+La entrada principal `0x004256` borra el campo +18; la secundaria `0x004260`
+lo conserva. El paso compartido `0x00427E` actualiza el contador de parpadeo
+positivo por llamada, no una vez por actor. La salida con carry se observa en
+`0x004350`; el retorno nulo de `0x004288` no modifica ese contador.
+
+La rutina del arma `0x0C3778..0x0C37CC` toma los offsets firmados +72/+74,
+aplica el reflejo y los suma temporalmente a X/Y y al cache de posición. Después
+resta **los offsets guardados**, incluso si el programa cambió esos campos.
+No resta los offsets nuevos ni restaura coordenadas absolutas que borrarían
+un movimiento realizado por un servicio. Se verifica con traza de instrucciones,
+registros del wrapper y entradas/salidas del helper; no se deduce de capturas PNG.
+
+La captura privada `marco-paired-controller-06` aporta **2.452 llamadas completas**:
+1.459 del cuerpo y 993 del arma, 2.574 dibujos y 152 solicitudes a servicios.
+Los estados finales, cursores convertidos, temporizadores, coordenadas, campos
+compartidos, descriptores y orden de solicitudes coinciden en host C y en
+MIPS ejecutado por ares. Hay 213 cambios de offsets durante una llamada.
+2.135 llamadas reutilizan el estado persistente sin reconciliación; las otras
+317 reciben cambios externos registrados del controlador. La elección de programa,
+el orden de llamadas, las posiciones del mundo y esos cambios siguen siendo
+entradas de la prueba. La profundidad Z se suministra a partir del journal de
+dibujo: esta prueba verifica su propagación, no su cálculo por el controlador.
+
+Las 151 llamadas observadas a través de `0x0044EC` y la llamada de servicio
+`0x004492` no cambian los campos de animación/render monitorizados. Sus diez
+sitios se convierten en solicitudes nativas `NEO_ANIM_EVENT`, con identificadores
+y argumentos documentados en el grafo privado. Esto **no** demuestra que sean
+inocuos para munición, RNG o el pool de actores. Proyectiles, granadas y demás
+efectos necesitan sus implementaciones propias. Dos sitios no observados no
+reciben esa conversión. Un servicio ausente o un comando desconocido detiene
+el actor; un reintento no repite efectos ya enviados.
+
+Este corpus no contiene pasos con contador de flash positivo ni retorno nulo;
+sus límites, el reflejo con envoltura, los offsets cambiados dentro del paso y
+los fallos de servicio se prueban además con casos **sintéticos**, claramente
+separados de la comparación MAME. ASan/UBSan y `make check` pasan.
+
+El cartucho interno `marco-pair-regression.z64` pasa en ares 146 con 2.452 pasos,
+2.574 dibujos y 152 solicitudes. Comprueba el backend de CPU: no es una prueba
+de framebuffer, fluidez, controlador completo ni una demo de campaña.
 
 ## Anclajes y renderizado N64
 
@@ -133,3 +177,22 @@ los 688 framebuffer indicados. La mayor carga de textura registrada por el
 uploader es 1.024 bytes, frente al límite de 2.048. Los casos adicionales de límites de contador,
 servicio ausente y decremento con envoltura son sintéticos y se distinguen de
 los casos originales medidos.
+
+Para reproducir la comparación completa, con los datos privados disponibles:
+
+```sh
+python3 tools/extract_marco_steps.py CAPTURA --trace TRAZA --output DIARIO
+python3 tools/convert_marco_programs.py CAPTURA --event-evidence DIARIO/effects.json --output GRAFO
+python3 tools/compile_marco_steps.py DIARIO/steps.json GRAFO/graph.json --output build/marco_steps.h
+cp GRAFO/marco_script.h build/marco_script.h
+make marco-pair-regression.z64
+python3 tools/test_rng_ares.py marco-pair-regression.z64 --suite pair --fixture DIARIO/steps.json --output RESULTADO_NUEVO
+```
+
+`CAPTURA` se obtiene con `run_marco_catalog.py --command-trace --paired-trace`.
+La traza se limita al primer wrapper; las capturas históricas sin ella deben
+acompañarse de una captura corta del mismo programa fijo y banco.
+El estilo visual pendiente es **diorama**: terreno, fachadas y tejados con
+volumen sencillo y planos separados en profundidad, manteniendo los personajes
+nítidos y la acción 2D. Se retomará después de Marco, junto con soldados,
+vehículos y el resto de la misión.

@@ -76,7 +76,7 @@ neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *s,neo_anim_render_t *r,
             s->timer&=255u;return NEO_ANIM_COMPLETE;
         case NEO_ANIM_FLIP_FACING: // callback ROM 01ADAA, recovered BCHG #0,+15.
             r->attributes^=1u;s->cursor=(uint16_t)pc;break;
-        case NEO_ANIM_REPLACE_PALETTE:case NEO_ANIM_SPAWN_THROW:
+        case NEO_ANIM_REPLACE_PALETTE:case NEO_ANIM_SPAWN_THROW:case NEO_ANIM_EVENT:
             if (!event || !event(event_context,c->kind,c->asset,r)) return NEO_ANIM_UNSUPPORTED;
             s->cursor=(uint16_t)pc;break;
         case NEO_ANIM_WRITE_BYTE:case NEO_ANIM_WRITE_WORD:case NEO_ANIM_WRITE_LONG: {

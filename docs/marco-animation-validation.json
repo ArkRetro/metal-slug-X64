@@ -613,7 +613,8 @@
     "commands": 692,
     "observed_command_seeds": 531,
     "observed_main_program_roots": 16,
-    "unrecovered_sites": 12
+    "unrecovered_sites": 12,
+    "stage": "Baseline before paired-call event evidence; see paired_body_weapon for the later graph"
   },
   "host": {
     "check": "PASS",
@@ -755,5 +756,63 @@
     "status": "PASS",
     "log_sha256": "f590e6d3ea68a4b3b84361b69da2c31577c6b01db340841a074190793d6d4926",
     "limit": "Reference encounter and cache diagnostic only, not full game."
+  },
+  "paired_body_weapon": {
+    "status": "PASS for measured helper calls; NOT complete player controller",
+    "calls": 2452,
+    "body_calls": 1459,
+    "weapon_calls": 993,
+    "draws": 2574,
+    "requests": 152,
+    "unchanged_persistent_calls": 2135,
+    "external_boundary_changes": 317,
+    "offset_changes_during_calls": 213,
+    "observed_event_sites": 10,
+    "unobserved_stopping_sites": [
+      {
+        "command": 2410116,
+        "callback": 807876,
+        "payload": "000000080000"
+      },
+      {
+        "command": 2420154,
+        "callback": 807876,
+        "payload": "fffcfff50000"
+      }
+    ],
+    "private_journal_sha256": "f6b617f2ef7fcde1566431e7a92ca6eb4574c29d9cc91dc9a1945a46bcfb8d07",
+    "private_graph_sha256": "dd3e353957060722438f0433f217189b385919b12984946665466a47bcdd2481",
+    "provenance": {
+      "capture.json": "fc72af59c010d29eae1e53150aa6290c2fdf74f472339fe929d35e87a37da650",
+      "debug.log": "cb7f04883bf9855cc93646722466173d2d7e61caee48cf150ac3a3ec93985f90",
+      "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+    },
+    "instruction_trace_sha256": "e9104b11b1da4166cb28ea62178a4f169d0d594ab4f057eddca502d11b238355",
+    "ares": {
+      "status": "PASS",
+      "emulator": "ares 146, retained workspace build",
+      "rom_sha256": "47856fba131a253256b49a334ad4d570fe5bd6ec00e3bb0fa0302268bf3da5fc",
+      "log_sha256": "2d501fa6172aecfbfe8e31a396ffa7d4f7a1d2bc9577fd391988a9f82fd1293a",
+      "fixture_sha256": "f6b617f2ef7fcde1566431e7a92ca6eb4574c29d9cc91dc9a1945a46bcfb8d07",
+      "suite": "pair",
+      "steps": 2452,
+      "draws": 2574,
+      "events": 152,
+      "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release."
+    },
+    "synthetic_only": [
+      "Positive flash countdown across both helper calls",
+      "Null program early return",
+      "Event changing position while attachment is active",
+      "Unhandled effect retry protection and invalid inputs"
+    ],
+    "limits": [
+      "World positions, call order, program selection and external controller writes are recorded inputs.",
+      "Callback journals cover the listed animation/render fields, not global ammunition, RNG or actor-pool effects.",
+      "Effect handlers must be implemented separately; requests are not silently discarded.",
+      "Depth Z is supplied from recorded draws, not derived from an independently captured actor depth field.",
+      "Not integrated with full input controller or campaign. No demo release."
+    ]
   }
 }

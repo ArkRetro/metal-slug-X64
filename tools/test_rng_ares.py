@@ -6,11 +6,15 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair'),default='rng')
+p.add_argument('--fixture',type=Path,help='Private helper journal required for suite pair')
 a=p.parse_args();out=a.output.resolve()
-fixture_path=ROOT/('data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
+if a.suite=='pair':assert a.fixture is not None,'pair requires --fixture'
+fixture_path=a.fixture if a.suite=='pair' else ROOT/('data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
-if a.suite=='marco':
+if a.suite=='pair':
+    counts=dict(steps=len(fixture['cases']),draws=sum(len(c['draws']) for c in fixture['cases']),events=sum(len(c['events']) for c in fixture['cases']))
+elif a.suite=='marco':
     counts=dict(fields=len(fixture['cases']),selectors=len(json.loads((ROOT/'data/marco_selector_fixture.json').read_text())['cases']))
 elif a.suite=='rng':
     counts=dict(seeds=len(fixture['seeds']),calls=len(fixture['steps']),initializers=len(fixture['initializers']),

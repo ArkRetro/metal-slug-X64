@@ -1,4 +1,6 @@
 -- Verified MAME 0.276 capture, mslugx euro BIOS. Set MSX_CAPTURE_DIR.
+-- MAME 0.264 exposes the 68000 program counter as rPC; 0.276 also as PC.
+local function msx_pc(state) return (state['PC'] or state['rPC']).value end
 -- Reference-only RAM overrides are never shipped in the N64 game.
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local frame=0
@@ -14,7 +16,7 @@ end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0}}
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 physics_tap=cpu:install_write_tap(0x1014ec,0x1014fb,'physics_trace',function(address,data,mask)
- if frame>=2190 and frame<=2400 then taps:write(string.format('%d,%x,%x,%x,%x\n',frame,address,manager.machine.devices[':maincpu'].state['PC'].value,data,mask)) end
+ if frame>=2190 and frame<=2400 then taps:write(string.format('%d,%x,%x,%x,%x\n',frame,address,msx_pc(manager.machine.devices[':maincpu'].state),data,mask)) end
 end)
 local function dump(f)
  local v=io.open(output..'/vram'..f..'.bin','wb')

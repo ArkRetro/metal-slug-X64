@@ -1,4 +1,6 @@
 -- Verified MAME 0.276 capture, mslugx euro BIOS. Set MSX_CAPTURE_DIR.
+-- MAME 0.264 exposes the 68000 program counter as rPC; 0.276 also as PC.
+local function msx_pc(state) return (state['PC'] or state['rPC']).value end
 -- Reference-only survival/ammunition overrides are never shipped in the N64 game.
 -- Set MSX_RAMP_DELAY_COMBAT=1 to pause attacks at frames 2880..3599,
 -- then turn back towards the surviving vehicle and resume firing.
@@ -28,7 +30,7 @@ local cpu=manager.machine.devices[':maincpu'].spaces['program']
 -- Read-only trace: do not write collision, enemy life or level-event state.
 -- Retain the tap globally so Lua GC cannot remove it while emulation runs.
 ramp_tap=cpu:install_write_tap(0x10c7b6,0x10d7b5,'ramp_collision_trace',function(address,data,mask)
- if frame<2800 or manager.machine.devices[':maincpu'].state['PC'].value~=0xc8982 then return end
+ if frame<2800 or msx_pc(manager.machine.devices[':maincpu'].state)~=0xc8982 then return end
  for lane=0,1 do
   local byte_address=address+lane
   local shift=lane==0 and 8 or 0
@@ -36,7 +38,7 @@ ramp_tap=cpu:install_write_tap(0x10c7b6,0x10d7b5,'ramp_collision_trace',function
    local old=cpu:read_u8(byte_address);local new=(data>>shift)&255
    if old~=new then
     local state=manager.machine.devices[':maincpu'].state
-    local row={frame,string.format('%x',byte_address),old,new,string.format('%x',state['PC'].value)}
+    local row={frame,string.format('%x',byte_address),old,new,string.format('%x',msx_pc(state))}
     for _,name in ipairs({'A0','A1','A2','A3','A4','A5','A6','D0','D1','D2','D3'}) do
      row[#row+1]=string.format('%x',state[name].value&0xffffffff)
     end

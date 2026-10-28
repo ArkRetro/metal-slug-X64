@@ -183,3 +183,14 @@ the original gameplay systems and working audio, and pass pertinent ares
 regressions. Rendering/streaming must remain within the N64 budgets in real
 gameplay. The present prototype does not meet that bar; no completion date or
 full-speed hardware claim is made.
+
+## Native Marco motion/accounting increment
+
+437 motion-controller calls (434 animation draws) now match native MIPS/ares.
+The body dispatcher shares actor state between crouch and motion and preserves
+same-tick branches versus next-tick landing. Idle/stand/landing/common services
+still block replacing the campaign controller. Ammunition reservation matches
+134 observed pistol calls; finite-ammo/cap/release cases have static evidence
+and synthetic checks, not original-game dynamic coverage. See
+`MARCO_CONTROLLER.md`, `marco-motion-validation.json`, and
+`marco-ammo-validation.json`. No new partial gameplay demo is released.

@@ -19,6 +19,7 @@ typedef struct {
     uint8_t field6c,field80,field81,field9d;
     int32_t motion62,x,y,vx,vy;
     bool failed;
+    bool tail_call; /* True only for a same-tick branch outside this controller. */
 } marco_crouch_t;
 typedef struct {
     void *context;

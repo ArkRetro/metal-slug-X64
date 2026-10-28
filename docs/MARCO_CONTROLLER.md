@@ -239,3 +239,56 @@ python3 tools/test_rng_ares.py marco-crouch-regression.z64 --suite crouch --crou
 tools/mame/plans/marco-crouch.json`. Los ROM de regresión permanecen privados.
 La campaña activa aún no usa estos controladores; las transiciones generales,
 variantes, acciones especiales y su integración no están al 100%.
+
+## Carrera, salto y unión de controladores
+
+`marco_motion.c` traduce las rutinas ROM `0x0C2642..0x0C294A` a C nativo.
+La captura `marco-motion-calls-48`, sin escrituras de RAM, aporta 437 llamadas,
+890 servicios y 434 dibujos. Los estados y animaciones coinciden en host y
+MIPS/ares (`marco-motion-dispatch-51`). La fixture pública conserva valores
+numéricos; los programas originales siguen fuera del repositorio.
+
+Se preservan las operaciones de 32 bits con wrap y desplazamiento aritmético,
+la velocidad horizontal al saltar corriendo, la velocidad de animación de
+carrera y el contador saturado +86. La condición de animación de caída compara
+la palabra alta de la velocidad vertical con -1: no equivale a comparar la
+velocidad con cero. La validación dinámica cubre las ramas realmente presentes
+en esta captura, no todas las variantes de +6C o +93.
+
+`marco_body.c` comparte un único actor entre carrera/salto y agachado. Diferencia
+las ramas inmediatas (`tail_call`) de los cambios de rutina para el próximo tick.
+En particular, `0x0C2692` puede programar el aterrizaje `0x0C1EBE` y terminar el
+tick actual; no debe ejecutar el aterrizaje inmediatamente. La fixture contrasta
+esa distinción con el punto real de salida de cada llamada. Los ensayos
+sintéticos adicionales comprueban salto desde agachado, agacharse corriendo,
+aterrizaje diferido y parada ante servicios ausentes.
+
+**Límite:** los resultados de colisión de `0x014594`, `0x0C109C` y `0x0143EE`
+siguen siendo entradas grabadas en el replay. Reposo, incorporación, aterrizaje,
+ataque de cuerpo y procesamiento común necesitan todavía su propietario nativo.
+El dispatcher devuelve `MARCO_BODY_EXTERNAL` en esas fronteras; no las disfraza
+de éxito ni sustituye todavía el controlador de seis estados de campaña.
+
+## Contabilidad de munición y proyectiles
+
+`marco_ammo_reserve` traduce ROM `0x0C0D64..0x0C0DE2`. La captura de solo
+lectura `marco-ammo-calls-53` contiene 134 llamadas con arma 0 (pistola),
+munición `0xFFFF` y límite `0xFF`. Coinciden en host y MIPS/ares. Esta evidencia
+no prueba el comportamiento dinámico de armas especiales.
+
+El desensamblado dirigido en Ghidra confirma el resto de ramas: arma distinta
+rechaza sin consumir; cantidad cero rechaza; `0xFFFF` evita el decremento;
+RAM `0x10F001` bit 3 o RAM `0x10C2E7` no nulo omiten esa contabilidad.
+El límite de proyectiles se comprueba **después** del decremento. El límite
+`0xFF` permite el disparo sin incrementar el contador de proyectiles activos.
+Los casos finitos/rechazados se prueban sintéticamente, no se etiquetan como
+observaciones de MAME.
+
+`marco_ammo_release` procede de ROM `0x0C0DFC..0x0C0E1E`: únicamente reduce
+el contador activo si coincide el tipo de arma y no está a cero. No devuelve
+munición. Esta función tiene evidencia estática y ensayos sintéticos; falta
+capturar sus llamadas originales. El caller nativo recibe un objeto de jugador,
+en vez de reproducir el acceso indexado a RAM (el original exige índice <2).
+
+Las rutinas aún no están conectadas al allocator de proyectiles de campaña.
+No se ha completado la física, impacto, daño ni sonido de todas las armas.

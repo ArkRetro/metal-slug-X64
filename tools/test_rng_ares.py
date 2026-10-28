@@ -6,21 +6,25 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair','controller','coupled','upper','crouch'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair','controller','coupled','upper','crouch','motion','ammo'),default='rng')
 p.add_argument('--fixture',type=Path,help='Fixture JSON; private helper journal required for suite pair')
 p.add_argument('--controller-fixture',type=Path,default=ROOT/'data/marco_controller_fixture.json')
 p.add_argument('--pixel-reference',type=Path,default=ROOT/'build/marco_pixel_sequence.json')
 p.add_argument('--pixels',action='store_true',help='Also require the native animation framebuffer completion marker')
+p.add_argument('--motion-native',action='store_true',help='Require native movement animation programs')
 p.add_argument('--crouch-native',action='store_true',help='Require real native body animation in the crouch-controller test')
 p.add_argument('--upper-native',action='store_true',help='Require real native animation in the upper-controller test')
 a=p.parse_args();out=a.output.resolve()
 if a.upper_native:assert a.suite=='upper'
+if a.motion_native:assert a.suite=='motion'
 if a.crouch_native:assert a.suite=='crouch'
 if a.pixels:assert a.suite=='coupled','--pixels requires --suite coupled'
 if a.suite in ('pair','coupled'):assert a.fixture is not None,'pair requires --fixture'
-fixture_path=a.fixture if a.fixture and a.suite in ('pair','coupled','upper','crouch') else ROOT/('data/marco_crouch_turn_fixture.json' if a.suite=='crouch' else 'data/marco_upper_fixture.json' if a.suite=='upper' else 'data/marco_controller_fixture.json' if a.suite=='controller' else 'data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
+fixture_path=a.fixture if a.fixture and a.suite in ('pair','coupled','upper','crouch','motion') else ROOT/('data/marco_ammo_fixture.json' if a.suite=='ammo' else 'data/marco_motion_fixture.json' if a.suite=='motion' else 'data/marco_crouch_turn_fixture.json' if a.suite=='crouch' else 'data/marco_upper_fixture.json' if a.suite=='upper' else 'data/marco_controller_fixture.json' if a.suite=='controller' else 'data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
-if a.suite=='crouch':
+if a.suite=='ammo':
+    counts=dict(calls=len(fixture['cases']))
+elif a.suite in ('crouch','motion'):
     counts=dict(calls=len(fixture['cases']),services=sum(len(c['operations']) for c in fixture['cases']),draws=sum(len(op['draws']) for c in fixture['cases'] for op in c['operations'] if op['kind']=='animate'),events=sum(len(op['events']) for c in fixture['cases'] for op in c['operations'] if op['kind']=='animate'))
 elif a.suite=='upper':
     counts=dict(calls=len(fixture['cases']),resets=sum(c['kind']=='reset' for c in fixture['cases']),services=sum(len(c['operations']) for c in fixture['cases']))
@@ -83,6 +87,7 @@ with (out/'xvfb.log').open('w') as xlog:
                 pixels=re.search(r'MSX COUPLED PIXELS PASS frames=(\d+) draws=(\d+) tmem_max=(\d+)',text)
                 assert pixels and int(pixels[1])==reference['frames'] and 0<int(pixels[3])<=2048,text[-2500:]
                 assert 'MSX MARCO NATIVE LIMITS PASS cases='+str(reference['synthetic_transform_limits']) in text
+        if a.motion_native:assert 'MSX MOTION NATIVE ANIMATION PASS' in text
         if a.crouch_native:assert 'MSX CROUCH NATIVE ANIMATION PASS' in text
         if a.upper_native:
             native_draws=sum(len(op['draws']) for c in fixture['cases'] for op in c['operations'] if op['kind']=='animate')
@@ -108,6 +113,7 @@ with (out/'xvfb.log').open('w') as xlog:
         if a.suite=='attack':report['hit_geometry_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_hit_geometry_fixture.json').read_bytes()).hexdigest()
         if a.suite=='attack':report['object_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_object_fixture.json').read_bytes()).hexdigest()
         if a.suite=='coupled':report['controller_fixture_sha256']=hashlib.sha256(a.controller_fixture.read_bytes()).hexdigest()
+        if a.motion_native:report.update(native_animation=True,limit='Native movement transitions with real animation programs and recorded world collision service results. Campaign integration and unobserved variants remain incomplete. No release.')
         if a.crouch_native:report.update(native_animation=True,limit='Native crouch-body transitions with real animation programs. Recorded world movement/allocator inputs; common player processing and campaign integration remain incomplete. No release.')
         if a.upper_native:report.update(native_animation=True,native_draws=native_draws,native_events=native_events,limit='Whole upper-controller updates coupled to real native scripts. World allocator/RNG outcomes and outer body updates remain service inputs. No complete player/campaign or hardware performance claim.')
         if a.pixels:

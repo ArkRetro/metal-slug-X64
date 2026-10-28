@@ -1,0 +1,3499 @@
+{
+  "source": "Executed MAME C0D64..C0DE2; read-only probes, scheduled controller inputs",
+  "cases": [
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    },
+    {
+      "before": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8196,
+        "base": 1081344
+      },
+      "after": {
+        "slot": 0,
+        "request": 0,
+        "ammo": 65535,
+        "live": 0,
+        "cap": 255,
+        "kind": 0,
+        "cheat": 0,
+        "special": 0,
+        "sr": 8197,
+        "base": 1081344
+      }
+    }
+  ],
+  "provenance": {
+    "capture.lua": "8e736a23d3bdb493926d09db5cc8fb2efaaf4ba3065cd48b98f7f830d4c4c9b5",
+    "debug.log": "d407307d28279e9fd316c96a1d492465c28939c56b5d63ad0b3ac21a295a5e4e",
+    "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "plan.json": "4550373607a701863aa83b0bba92d09047780f7410f473414c907abf18fa0a08"
+  },
+  "limits": [
+    "Only observed weapon kinds/branches are dynamically verified.",
+    "This gate alone does not implement projectile allocation, release, weapon swapping, damage or audio."
+  ]
+}

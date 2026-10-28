@@ -131,6 +131,7 @@ int main(void) {
         marco_crouch_t s;marco_animation_t a;seed(&s,&a,crouch_cases[case_index].before);s.mode=crouch_cases[case_index].entry;
         next_op=crouch_cases[case_index].first;end_op=next_op+crouch_cases[case_index].count;
         assert(marco_crouch_update(&s,&a,&services) && !s.failed && !s.upper.failed && !a.failed);
+        assert(s.tail_call==crouch_cases[case_index].tail_call);
         assert(next_op==end_op && s.mode==crouch_cases[case_index].target);
         uint32_t after[C_COUNT];snapshot(&s,&a,after);check(after,crouch_cases[case_index].after,C_COUNT);
     }

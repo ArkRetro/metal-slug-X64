@@ -4,10 +4,12 @@ import argparse,hashlib,json,re,struct
 from pathlib import Path
 from extract_marco_fields import fields
 ROOT=Path(__file__).resolve().parents[1]
-def extract(capture,output):
+def extract(capture,output,profile="crouch"):
+ assert profile in ("crouch","motion")
  text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  rom=(capture/'program-fixed.bin').read_bytes()
- pcs=[0xc0000+int(v,16) for v in re.findall(r'MCT_([0-9A-F]{4})',(ROOT/'src/marco_crouch.h').read_text())]
+ prefix='MCT' if profile=='crouch' else 'MMT'
+ pcs=[0xc0000+int(v,16) for v in re.findall(prefix+r'_([0-9A-F]{4})',(ROOT/('src/marco_'+profile+'.h')).read_text())]
  tables=[]
  for pc in pcs:
   assert struct.unpack_from('>H',rom,pc)[0]==0x41fa
@@ -17,6 +19,7 @@ def extract(capture,output):
  for l in text.splitlines():
   if not l.startswith('MARCO_'):continue
   tag=l.split()[0];r=fields(l)
+  if profile=='motion':tag=tag.replace('MARCO_MOTION_','MARCO_BODY_')
   if tag=='MARCO_BODY_IN':
    assert active is None;active=dict(before=r,operations=[])
   elif tag=='MARCO_BODY_OUT':
@@ -35,13 +38,14 @@ def extract(capture,output):
    elif tag=='MARCO_PROGRAM_OUT':
     assert pending is not None and r['cursor']==pending['program'] and r['timer']==0 and r['speed']==256
     active['operations'].append(pending);pending=None
-   elif tag=='MARCO_BODY_MOVE_IN':
-    assert pending is None;pending=dict(kind='move',before=r)
-   elif tag=='MARCO_BODY_MOVE_OUT':
+   elif tag in ('MARCO_BODY_MOVE_IN','MARCO_BODY_AIR_IN','MARCO_BODY_FALL_IN'):
+    if pending is not None and pending['kind']=='move' and tag=='MARCO_BODY_FALL_IN':continue # Nested vertical support inside the outer world service.
+    assert pending is None;pending=dict(kind='move',before=r,service={'MARCO_BODY_MOVE_IN':0,'MARCO_BODY_AIR_IN':1,'MARCO_BODY_FALL_IN':2}[tag])
+   elif tag in ('MARCO_BODY_MOVE_OUT','MARCO_BODY_AIR_OUT','MARCO_BODY_FALL_OUT'):
     assert pending is not None and pending['kind']=='move';pending['after']=r
     # Every changed world field must be an explicit service output.
     changed=[k for k in r if k!='frame' and r[k]!=pending['before'][k]]
-    assert set(changed)<={'x','y','vx','vy','attr','field50'},changed
+    assert set(changed)<=({'x','y','vx','vy','attr','field50','f6c'} if profile=='motion' else {'x','y','vx','vy','attr','field50'}),changed
     active['operations'].append(pending);pending=None
    elif tag=='MARCO_STEP_IN':
     assert pending is None and r['state']==0x1014e4
@@ -61,7 +65,7 @@ def extract(capture,output):
  assert all(set(c['before'])==set(columns)|{'frame','entry'} and set(c['after'])==set(columns)|{'frame','exit'} for c in cases)
  rows=[dict(frame=c['before']['frame'],entry=c['before']['entry'],exit=c['after']['exit'],before=[c['before'][k] for k in columns],after=[c['after'][k] for k in columns],operations=c['operations']) for c in cases]
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
- report=dict(source='MAME 0.276 observed crouch-controller blocks, read-only RAM probes and scheduled inputs',columns=columns,metadata=metadata,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-fixed.bin','program-bank.bin')},limits=['Only C2214..C263E; standing, jumping, falling and common C32F4 processing are explicit external tail calls.','Host fixtures replay measured ground and animation services; this alone is not full native animation/campaign integration.','Body script allocator outcomes are world inputs; native projectile counters are computed.'])
+ report=dict(source='MAME 0.276 observed '+profile+'-controller blocks, read-only RAM probes and scheduled inputs',columns=columns,metadata=metadata,provenance={n:sha(capture/n) for n in ('capture.json','debug.log','program-fixed.bin','program-bank.bin')},limits=[('Only C2214..C263E; standing, jumping, falling and common C32F4 processing are explicit external tail calls.' if profile=='crouch' else 'Only C2642..C294A; idle, landing, melee, crouch and common C32F4 are external transitions.'),'Host fixtures replay measured ground and animation services; this alone is not full native animation/campaign integration.','Body script allocator outcomes are world inputs; native projectile counters are computed.'])
  lines=['{']+[json.dumps(k)+':'+json.dumps(v)+',' for k,v in report.items()]+['"cases":[']+[json.dumps(c,separators=(',',':'))+(',' if i+1<len(rows) else '') for i,c in enumerate(rows)]+[']}']
  output.write_text('\n'.join(lines)+'\n');print('Extracted',len(cases),'crouch blocks and',sum(len(c['operations']) for c in cases),'services')
 if __name__=='__main__':

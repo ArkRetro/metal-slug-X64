@@ -23,6 +23,14 @@ end
 local function probe(site,label,format,args,actions)
  dbg:command(string.format('bpset %x,temp9>=%x && a6==1014c4,{printf "%s frame=%%d %s\\n",temp9,%s;'..(actions or '')..'g}',site,plan.first,label,format,args))
 end
+if os.getenv('MSX_AMMO_TRACE')=='1' then
+ local fmt='slot=%04X request=%02X ammo=%04X live=%02X cap=%02X kind=%02X cheat=%02X special=%02X sr=%04X base=%08X'
+ local args='(d0&1),(d1&ff),w@(a5+4724+((d0&1)*2)),b@(a5+471a+(d0&1)),b@(a5+471c+(d0&1)),b@(a5+471e+(d0&1)),b@10f001,b@10c2e7,sr,a5'
+ probe(0xc0d64,'MARCO_AMMO_IN',fmt,args)
+ for _,pc in ipairs({0xc0d9c,0xc0dc4,0xc0dda,0xc0ddc,0xc0de2}) do
+  probe(pc,'MARCO_AMMO_OUT',fmt,args)
+ end
+end
 if os.getenv('MSX_COMMAND_TRACE')=='1' then
  probe(0x429c,'MARCO_COMMAND',
   'cursor=%08X state=%08X timer=%04X speed=%04X flags=%04X f17=%02X correction=%02X f50=%08X f6c=%02X f72=%08X f76=%02X f77=%02X f78=%02X f80=%02X f81=%02X f90=%02X f91=%02X f94=%02X f98=%02X f9a=%02X',
@@ -76,6 +84,22 @@ if os.getenv('MSX_BODY_TRACE')=='1' then
  end
  for _,p in ipairs({{0x14594,'MOVE_IN'},{0xc226c,'MOVE_OUT'},{0xc230c,'MOVE_OUT'},{0xc2396,'MOVE_OUT'},{0xc2444,'MOVE_OUT'},{0xc25be,'MOVE_OUT'}}) do
   dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_BODY_%s frame=%%d %s\\n",temp9,%s;g}',p[1],p[2],fmt,args))
+ end
+end
+if os.getenv('MSX_MOTION_TRACE')=='1' then
+ -- Isolate complete movement-controller blocks. External tail calls are explicit
+ -- boundaries; no unobserved idle/air/world routine is treated as implemented.
+ dbg:command('temp5=0')
+ local fmt='mode=%08X attr=%04X f5f=%02X f6c=%02X character=%04X f80=%02X f81=%02X f90=%02X f91=%02X f92=%02X f93=%02X f95=%02X f97=%02X f98=%02X f9a=%02X f9b=%02X f9c=%02X f9d=%02X motion=%08X x=%08X y=%08X vx=%08X vy=%08X body_cursor=%08X body_timer=%04X body_speed=%04X upper_mode=%08X upper_cursor=%08X upper_timer=%04X upper_speed=%04X f17=%02X f18=%02X field50=%08X f72=%08X f76=%02X f77=%02X f78=%02X f79=%02X kind=%02X packed=%08X gate_mode=%02X gate_current=%02X gate_limit=%02X f7a=%02X f86=%02X'
+ local args='d@(a6),w@(a6+14),b@(a6+5f),b@(a6+6c),w@(a6+6e),b@(a6+80),b@(a6+81),b@(a6+90),b@(a6+91),b@(a6+92),b@(a6+93),b@(a6+95),b@(a6+97),b@(a6+98),b@(a6+9a),b@(a6+9b),b@(a6+9c),b@(a6+9d),d@(a6+62),d@(a6+28),d@(a6+2c),d@(a6+30),d@(a6+34),d@(a6+20),w@(a6+24),w@(a6+26),d@(a6+7c),d@(a6+88),w@(a6+8c),w@(a6+8e),b@(a6+17),b@(a6+18),d@(a6+50),d@(a6+72),b@(a6+76),b@(a6+77),b@(a6+78),b@(a6+79),b@(a5+471e+w@(a6+70)),d@(a5+69ec),b@(a5+4718+w@(a6+70)),b@(a5+471a+w@(a6+70)),b@(a5+471c+w@(a6+70)),b@(a6+7a),b@(a6+86)'
+ for _,pc in ipairs({0xc2642,0xc2654,0xc2692,0xc2706,0xc271c,0xc2746,0xc27a8,0xc27e8,0xc27fa,0xc285c,0xc2888}) do
+  dbg:command(string.format('bpset %x,temp9>=%x && a6==1014c4 && temp5==0,{temp5=1;printf "MARCO_MOTION_IN frame=%%d entry=%%08X %s\\n",temp9,%x,%s;g}',pc,plan.first,fmt,pc,args))
+ end
+ for _,pc in ipairs({0xc32f4,0xc2214,0xc1f4a,0xc1efa,0xc215e}) do
+  dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_MOTION_OUT frame=%%d exit=%%08X %s\\n",temp9,%x,%s;temp5=0;g}',pc,fmt,pc,args))
+ end
+ for _,p in ipairs({{0x14594,'MOVE_IN'},{0xc27d4,'MOVE_OUT'},{0xc2852,'MOVE_OUT'},{0xc2944,'MOVE_OUT'},{0xc109c,'AIR_IN'},{0xc26e2,'AIR_OUT'},{0x143ee,'FALL_IN'},{0xc2714,'FALL_OUT'}}) do
+  dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_MOTION_%s frame=%%d %s\\n",temp9,%s;g}',p[1],p[2],fmt,args))
  end
 end
 if os.getenv('MSX_CONTROLLER_TRACE')=='1' then

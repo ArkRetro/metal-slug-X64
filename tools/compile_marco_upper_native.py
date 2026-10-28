@@ -3,9 +3,9 @@
 import argparse,json,struct,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--part',choices=('upper','crouch'),default='upper');p.add_argument('capture',type=Path);p.add_argument('graph',type=Path);p.add_argument('--fixture',type=Path,default=ROOT/'data/marco_upper_fixture.json');p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--part',choices=('upper','crouch','motion'),default='upper');p.add_argument('capture',type=Path);p.add_argument('graph',type=Path);p.add_argument('--fixture',type=Path,default=ROOT/'data/marco_upper_fixture.json');p.add_argument('--output',type=Path,required=True);a=p.parse_args()
 d=json.loads(a.fixture.read_text());g=json.loads(a.graph.read_text());assert d['provenance']['debug.log']==g['provenance']['debug.log']
-if a.part=='crouch':assert all(op.get('view_z') is not None for c in d['cases'] for op in c['operations'] if op['kind']=='animate'),'Native drawing requires independently captured Z'
+if a.part in ('crouch','motion'):assert all(op.get('view_z') is not None for c in d['cases'] for op in c['operations'] if op['kind']=='animate'),'Native drawing requires independently captured Z'
 rom=(a.capture/'program-fixed.bin').read_bytes();indices={c['address']:i for i,c in enumerate(g['commands'])};tags={}
 for c in d['cases']:
  for op in c['operations']:

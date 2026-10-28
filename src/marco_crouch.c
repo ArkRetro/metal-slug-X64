@@ -4,12 +4,13 @@ static uint32_t input(marco_crouch_t *s) {
 }
 bool marco_crouch_update(marco_crouch_t *s,marco_animation_t *a,const marco_crouch_services_t *v) {
     if(!s || !a || !v || s->failed || s->upper.failed || a->failed) return false;
+    s->tail_call=false;
     uint32_t buttons=0;bool done=false;marco_crouch_table_t table=MCT_22A4;
 #define SELECT(key) do {if(!v->select || !v->select(v->context,key,s,a)) goto fail;} while(0)
 #define MOVE() do {if(!v->move || !v->move(v->context,s,a)) goto fail;} while(0)
 #define ANIMATE() do {if(!v->animate || !v->animate(v->context,s,a,&done)) goto fail;} while(0)
 #define GROUNDED() ((s->upper.input.attributes&64u)!=0)
-#define REQUEST(next) do {s->mode=next;return true;} while(0)
+#define REQUEST(next) do {s->mode=next;s->tail_call=true;return true;} while(0)
     switch(s->mode) {
     case MCR_ENTER:goto enter;
     case MCR_ENTER_WAIT:goto enter_wait;

@@ -39,6 +39,10 @@ void scene_render_begin(surface_t *surface) {
     for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
     last_page=last_slot=last_format=last_width=last_height=-1;draws=uploads=palette_uploads=tmem_bytes=0;
     rdpq_attach_clear(surface,NULL);rdpq_set_mode_standard();
+    // Every frame starts from a known state, whatever ran before it (the
+    // parachute cinematic's blits, the CPU-drawn graphics lab, or font
+    // uploads): full scissor, point sampling, no assumed TMEM/TLUT content.
+    rdpq_set_scissor(0,0,320,240);
     rdpq_mode_filter(FILTER_POINT);rdpq_mode_alphacompare(1);
 }
 static unsigned palette_slot(unsigned id) {
@@ -143,7 +147,9 @@ void scene_render_text(int x,int y,const char *text) {
 void scene_render_end(void) {
     if (!(frame%300)) {
         scene_cache_stats_t s=scene_cache_stats();
-        if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3\n",retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count);
+        if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3 planes=%u shadows=%u shadow_tris=%u\n",
+            retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count,
+            retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
         debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
             s.loads,s.dma_bytes,s.misses,s.evictions);

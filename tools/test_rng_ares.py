@@ -69,6 +69,9 @@ with (out/'xvfb.log').open('w') as xlog:
         if a.suite=='state':report['cull_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_cull_fixture.json').read_bytes()).hexdigest()
         if a.suite in ('attack','object'):report['throw_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_throw_fixture.json').read_bytes()).hexdigest()
         if a.suite in ('contact','control','state','throw','attack','object','locomotion'):report['terrain_source_sha256']=hashlib.sha256((ROOT/'filesystem/mission1/collision.json').read_bytes()).hexdigest()
+        if a.suite=='attack':report['attack_state_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_attack_state_fixture.json').read_bytes()).hexdigest()
+        if a.suite=='attack':report['main_states']=20;report['ground_queries']=40;report['hit_geometry_candidates']=8;report['hit_geometry_overlaps']=1
+        if a.suite=='attack':report['hit_geometry_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_hit_geometry_fixture.json').read_bytes()).hexdigest()
         if a.suite=='attack':report['object_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_object_fixture.json').read_bytes()).hexdigest()
         (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS: measured',a.suite,'fixtures executed as native MIPS in ares')
     finally:

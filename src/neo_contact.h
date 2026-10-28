@@ -28,6 +28,10 @@ typedef struct {
 void neo_contact_vector(int32_t scalar,uint8_t angle,int32_t *vx,int32_t *vy);
 /* ROM 01456A..01469E: clears prior wall bits and prepares the kernel request. */
 neo_contact_request_t neo_contact_prepare_ground(neo_contact_actor_t *actor);
+/* ROM 01436A..0143AA: zero-motion flat-support query, restore stored velocity.
+ * Same caller-established static-scene/no-dynamic-candidate context as ground. */
+bool neo_contact_stationary_flat(neo_contact_actor_t *actor,const neo_contact_parent_t *scene,
+    uint8_t epoch,neo_contact_result_t *kernel_output);
 /* ROM 0143E4..01448C: direct air velocity and independent wall-bit clearing. */
 neo_contact_request_t neo_contact_prepare_air(neo_contact_actor_t *actor);
 /* ROM 01ABC8 projection/history path, without a collision commit. */

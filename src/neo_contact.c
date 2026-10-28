@@ -66,6 +66,18 @@ void neo_contact_project(neo_contact_actor_t *a,const neo_contact_parent_t *pare
     if (!a->mark) {a->cached_x=a->projected_x;a->cached_y=a->projected_y;a->mark=epoch;}
     else if (a->mark!=epoch) {a->cached_x=oldx;a->cached_y=oldy;a->mark=epoch;}
 }
+bool neo_contact_stationary_flat(neo_contact_actor_t *a,const neo_contact_parent_t *scene,
+    uint8_t epoch,neo_contact_result_t *kernel_output) {
+    if (!scene || !a->parent_tag || a->parent_tag!=scene->tag || !(a->flags15&64u) || (a->flags15&32u)) return false;
+    neo_surface_t floor;
+    if (!neo_surface_unique(a->x,&floor) || floor.shape!=11 || floor.flags!=0xc0u || a->y!=floor.height) return false;
+    neo_contact_result_t result={a->x,a->y,0,0,a->parent_tag,
+        ((uint32_t)contact_group_map[floor.flags>>5]<<16)|contact_angles[floor.shape],1};
+    neo_contact_actor_t candidate=*a;neo_contact_commit(&candidate,&result,scene,epoch);
+    candidate.vx=a->vx;candidate.vy=a->vy;*a=candidate;
+    if (kernel_output) *kernel_output=result;
+    return true;
+}
 bool neo_contact_plane_ground(const neo_contact_actor_t *a,const neo_contact_request_t *r,
     neo_contact_result_t *out) {
     if (!(a->flags15&64u) || !r->parent_tag || r->parent_tag!=a->parent_tag) return false;

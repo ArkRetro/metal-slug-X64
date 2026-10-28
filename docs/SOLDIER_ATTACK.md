@@ -29,6 +29,36 @@ actualiza primero la animación del soldado, encola el objeto calculado y espera
 al tick posterior para inicializarlo. No usa un evento de spawn inyectado desde
 el fixture en el momento de crear el objeto.
 
+## Controlador principal del ataque
+
+La captura adicional de `trace_soldier_attack_state.lua` verifica la entrada
+ROM `0x0AF918`: inicia `0x23D7EE` a velocidad `0x0100`, copia la palabra
+`actor+0x72` a `actor+0x70`, pone el escalar `+0x62` a cero y pasa a `0x0AF964`.
+En esta ejecución la palabra copiada vale `0x007F`; su productor anterior sigue
+fuera de este componente. No se introduce como constante de temporización.
+
+`0x0AF964` ejecuta dos consultas distintas: `0x01436A` prueba desplazamiento
+cero, hace commit/proyección y restaura las velocidades anteriores en
+`0x0143A2/0x0143A6`; después `0x01456A` calcula el paso de suelo con escalar cero.
+Las 40 consultas de 20 actualizaciones coinciden con los resultados de MAME.
+La animación genera su propio fin y el controlador vuelve a `0x0AF380`, mediante
+la asignación de `0x0AF98E`. No hay llamadas al RNG antes del bloque común
+`0x0B051E` en estas 20 trazas.
+
+La prueba integrada conserva el actor del soldado entre pasos y calcula sus
+coordenadas, historial, escalar, velocidad de animación y rutina. El evento de
+lanzamiento usa ese actor calculado para crear el hijo. Los límites del bloque
+común siguen aportando entradas externas de control; todavía no forman una IA
+cerrada para todo el encuentro. `neo_contact_stationary_flat()` solo admite
+apoyo estático plano de grupo `0xC0`, con bit 5 de `flags15` desactivado y sin
+candidatos dinámicos relevantes. El camino aéreo del ataque no está recuperado.
+
+El extractor exige que las fronteras de animación de la nueva captura sean
+idénticas a las del fixture independiente anterior. Conserva hashes del ROM,
+la captura y el ensamblado de Ghidra. Su lenguaje disponible es el superset
+`68000:BE:32:MC68020`; las instrucciones ejecutadas se contrastan con las trazas
+M68000 de MAME. Ver [soldier-attack-state-validation.json](soldier-attack-state-validation.json).
+
 ## Aritmética y fidelidad
 
 Todas las posiciones y velocidades son enteros Q16.16, con Y hacia arriba.
@@ -69,6 +99,31 @@ La prueba integrada compara **20 actualizaciones y dibujos** del ataque,
 y ocho de la fase posterior. La paleta cambiada por el
 primer evento persiste entre pasos; el cursor y temporizador también. El vuelo
 parte del actor calculado por el segundo evento, sin reinyectar sus posiciones.
+
+## Geometría de impacto recuperada
+
+`trace_soldier_hit_query.lua` captura las 33 consultas reales del hijo a
+`0x0049E8`, el banco de registro seleccionado y las ocho entradas a `0x004762`.
+El candidato observado es RAM `0x1014C4`, cuyo descriptor en ROM `0x2D0AA8`
+empieza por tipo `5`, flags `1` y rectángulo local `(-8,4,16,28)`.
+La consulta usa ROM `0x0E0894`. No se interpreta la palabra `+0x4E` como una
+salud universal: su significado depende del actor y sigue pendiente.
+
+`neo_hit_rectangle()` traduce solamente ROM `0x004798..0x00484A`: transformación
+por orientación, comparaciones sin signo de palabras, rechazo de bordes y punto
+de impacto local con desplazamientos aritméticos y límites originales. Las ocho
+pruebas independientes producen siete rechazos y una intersección. En la última,
+los stores ejecutados `0x004816/0x00484A` contienen `(x,y)=(-2,18)` y coinciden
+con C. Los dos caminos de espejo tienen análisis estático, sin cobertura dinámica
+en esta captura. El helper no escribe al actor si no hay intersección.
+
+Esta geometría todavía no sustituye las respuestas externas del controlador de
+vuelo: faltan el registro de candidatos, filtros, prioridad, callbacks y efectos
+de daño del resto de `0x004762`. La captura demuestra que el servicio hace más
+que devolver un booleano: modifica campos del objetivo. Esos efectos no se
+suprimen ni se dan por implementados. El límite de 64 entradas comparado en
+`0x004C4C` corresponde al registro de impactos; no demuestra el tamaño del pool
+global de actores.
 
 ## Límites materiales
 

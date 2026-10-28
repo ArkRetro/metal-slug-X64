@@ -1,0 +1,168 @@
+{
+  "cases": [
+    {
+      "frame": 2609,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 136,
+        "y": 391,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2611,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 135,
+        "y": 387,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2613,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 133,
+        "y": 384,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2615,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 132,
+        "y": 380,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2617,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 131,
+        "y": 376,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2619,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 130,
+        "y": 371,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2621,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 129,
+        "y": 367,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": false
+    },
+    {
+      "frame": 2623,
+      "target_x": 128,
+      "target_y": 332,
+      "flags": 64,
+      "query": {
+        "x": 128,
+        "y": 362,
+        "width": 12,
+        "height": 12
+      },
+      "rectangle": {
+        "x": 65528,
+        "y": 4,
+        "width": 16,
+        "height": 28
+      },
+      "hit": true,
+      "impact_y": 18,
+      "impact_x": 65534
+    }
+  ],
+  "source": "MAME 0.276 allocated-child query 0x049E8, candidate 0x04762 and executed narrow-phase stores",
+  "provenance": {
+    "capture_sha256": "d3616e704a0a48a406a1cb774958e3a0520107968a195c04a921264ccee06888",
+    "assembly_sha256": "eb07b86b476494976e2f4a3f7ca7ddacdcb44a5159d328a7aa515854fa979dcc",
+    "language": "68000:BE:32:MC68020"
+  },
+  "limits": [
+    "Eight P1 candidates, one overlap; mirror branches have static analysis only.",
+    "No registry/filter engine, damage, player death or health interpretation is implemented by the geometry helper."
+  ]
+}

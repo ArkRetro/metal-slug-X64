@@ -3,7 +3,10 @@
 #include <string.h>
 #include "../src/neo_soldier_effects.h"
 #include "../src/neo_throw_actor.h"
+#include "../src/neo_soldier_state.h"
 #include "attack_fixture.h"
+#include "../src/neo_hit.h"
+#include "attack_state_fixture.h"
 #include "throw_fixture.h"
 #include "object_fixture.h"
 #ifdef N64
@@ -14,6 +17,19 @@
 static void equal(const neo_contact_actor_t *a,const neo_contact_actor_t *b) {
     SAME(x);SAME(y);SAME(vx);SAME(vy);SAME(scalar62);SAME(projected_x);SAME(projected_y);SAME(cached_x);SAME(cached_y);
     SAME(parent_tag);SAME(kind_angle);SAME(field66);SAME(word1e);SAME(flags15);SAME(flags5f);SAME(timer5a);SAME(mark);SAME(correction);
+}
+static void state_equal(const neo_soldier_state_t *a,const neo_soldier_state_t *b) {
+    SAME(routine);SAME(field78);SAME(field7e);SAME(field81);SAME(field61);SAME(field72);
+}
+static void control_equal(const neo_control_t *a,const neo_control_t *b) {
+    SAME(target84);SAME(velocity88);SAME(phase8c);SAME(timer70);SAME(counter74);SAME(delay92);SAME(target8e);SAME(target90);
+    SAME(selector6e);SAME(flags15);SAME(flags5f);SAME(flags7c);SAME(selected80);SAME(variant68);
+}
+static void kernel_equal(const neo_contact_result_t *a,const neo_contact_result_t *b) {
+    SAME(x);SAME(y);SAME(vx);SAME(vy);SAME(parent_tag);SAME(kind_angle_word);SAME(flags);
+}
+static const neo_anim_program_t *resolve(void *context,uint32_t tag) {
+    (void)context;return tag==0x23d7ee?&attack_program:NULL;
 }
 #undef SAME
 static unsigned draws,events,palettes,spawns,tick,birth;
@@ -50,17 +66,52 @@ int main(void) {
 #ifdef N64
     debug_init_emulog();console_init();
 #endif
+    unsigned overlaps=0;
+    for (unsigned i=0;i<COUNT(hit_cases);i++) {
+        uint16_t x=0x1234,y=0x5678;
+        bool hit=neo_hit_rectangle(&hit_cases[i].query,hit_cases[i].target_x,hit_cases[i].target_y,
+            hit_cases[i].flags,&hit_cases[i].rectangle,&x,&y);
+        assert(hit==hit_cases[i].hit);
+        if (hit) {assert(x==hit_cases[i].impact_x && y==hit_cases[i].impact_y);overlaps++;}
+        else assert(x==0x1234 && y==0x5678);
+    }
+    assert(overlaps==1);
     neo_anim_state_t animation={0};animation.field50_tag=attack_initial.field50;animation.flash=attack_initial.flash;
     neo_anim_start(&animation,&attack_program,0x100);
     neo_anim_render_t render=attack_cases[0].render;
     assert(neo_anim_step(&animation,&render,NULL,NULL,1024)==NEO_ANIM_UNSUPPORTED);
     neo_anim_start(&animation,&attack_program,0x100);
-    neo_soldier_effects_t effects={&throw_source,&throw_scene,throw_spawn_epoch,palette,enqueue,NULL};
+    neo_contact_actor_t parent=attack_state_cases[0].actor_before;
+    neo_soldier_state_t state=attack_state_cases[0].before;
+    neo_contact_actor_t unsupported=parent;unsupported.flags15|=32u;
+    neo_contact_actor_t unchanged=unsupported;
+    assert(!neo_contact_stationary_flat(&unsupported,&throw_scene,throw_spawn_epoch,NULL));
+    equal(&unsupported,&unchanged);
+    neo_soldier_effects_t effects={&parent,&throw_scene,throw_spawn_epoch,palette,enqueue,NULL};
     unsigned attack=0;bool initialized=false;neo_throw_actor_t object;
     neo_throw_services_t services={&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,child_palette,child_release,NULL};
     for (tick=attack_first_frame;attack<COUNT(attack_cases) || child_step<COUNT(object_cases);tick+=2) {
         if (attack<COUNT(attack_cases)) {
             const neo_anim_render_t *input=&attack_cases[attack].render;
+            neo_control_t control=attack_state_cases[attack].control_before;
+            parent.flags5f=attack_state_cases[attack].actor_before.flags5f;
+            equal(&parent,&attack_state_cases[attack].actor_before);
+            state_equal(&state,&attack_state_cases[attack].before);
+            assert(neo_soldier_state_begin(&state,&parent,&control,&animation,NULL,resolve,NULL));
+            state_equal(&state,&attack_state_cases[attack].begun);
+            control_equal(&control,&attack_state_cases[attack].control_begun);
+            neo_contact_result_t ground;
+            for (unsigned pass=0;pass<2;pass++) {
+                equal(&parent,&attack_state_cases[attack].passes[pass].before);
+                const neo_contact_parent_t *scene=&attack_state_cases[attack].passes[pass].parent;
+                uint8_t epoch=attack_state_cases[attack].passes[pass].epoch;
+                assert(pass?neo_contact_ground_step(&parent,scene,epoch,&ground,NULL):neo_contact_stationary_flat(&parent,scene,epoch,&ground));
+                kernel_equal(&ground,&attack_state_cases[attack].passes[pass].kernel);
+                equal(&parent,&attack_state_cases[attack].passes[pass].after);
+                effects.epoch=epoch;
+            }
+            render.x=(uint16_t)((uint32_t)parent.projected_x>>16);render.y=(uint16_t)((uint32_t)parent.projected_y>>16);
+            render.attributes=(uint16_t)((render.attributes&0xff00u)|parent.flags15);render.z=parent.word1e;render.correction=parent.correction;
             assert(render.x==input->x && render.y==input->y && render.attributes==input->attributes && render.z==input->z);
             assert(render.correction==input->correction && render.flash_palette==input->flash_palette && render.suppress==input->suppress);
             assert(memcmp(render.palettes,input->palettes,sizeof(render.palettes))==0);
@@ -70,6 +121,9 @@ int main(void) {
             assert(animation.cursor==attack_cases[attack].cursor && animation.timer==attack_cases[attack].timer);
             assert(animation.speed==attack_cases[attack].speed && animation.flash==attack_cases[attack].flash && animation.field18==attack_cases[attack].field18);
             assert(animation.field50_tag==attack_cases[attack].field50 && events-previous_events==attack_cases[attack].events);
+            assert(neo_soldier_state_end(&state,&parent,&control,ground.flags,result==NEO_ANIM_COMPLETE,NULL,NULL));
+            state_equal(&state,&attack_state_cases[attack].after);
+            control_equal(&control,&attack_state_cases[attack].control_after);
             attack++;
         }
         if (spawns && tick>birth && child_step<COUNT(object_cases)) {
@@ -99,7 +153,7 @@ int main(void) {
     }
     assert(draws==20 && palettes==1 && spawns==1 && events==2 && child_step==41 && child_draws==41);
     assert(child_palette_calls==4 && child_active_palettes==0 && child_released==4 && child_sounds==1 && !object.active);
-    printf("PASS: 20 native attack draws, deferred spawn, 41 child draws, burst and cleanup\n");
+    printf("PASS: 20 native attack states/draws, 40 ground queries, deferred spawn, 41 child draws, burst/cleanup, 8 hit geometries\n");
 #ifdef N64
     debugf("MSX ATTACK REGRESSION PASS steps=%u draws=%u events=%u flight=%u child=%u child_draws=%u\n",attack,draws,events,(unsigned)COUNT(throw_cases),child_step,child_draws);
     for (;;) {wait_ms(100);}

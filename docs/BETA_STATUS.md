@@ -8,6 +8,16 @@ a backend regression cartridge or the old REGION END as that deliverable.
 The existing v9/v10 releases remain historical prototypes. Current backend test
 ROMs are internal and must not be published as the requested demo.
 
+The grounded attack main state now computes 20 persistent soldier updates,
+40 static support queries and the transition back to idle, coupled to the
+native animation and deferred child lifecycle (41 updates through cleanup).
+Eight real hit candidates also validate the native narrow-phase geometry and
+local impact point (one overlap); damage/filter side effects remain pending.
+Host checks and the MIPS regression in ares pass. Common control boundaries
+and dynamic hit-query results remain external; active campaign guards have
+not yet been replaced. See `docs/SOLDIER_ATTACK.md` and
+`docs/soldier-attack-state-validation.json`.
+
 The port is not a complete beta. Original game logic, weapons, vehicles, bosses,
 audio, HUD and the six-mission campaign are not complete. Three provisional
 guards and REGION END are not substitutes for that coverage. Neither a graphics

@@ -10,11 +10,12 @@ static int32_t signed32(uint32_t v) {return v<=0x7fffffffu?(int32_t)v:(int32_t)(
 static uint16_t abs_word(uint16_t value) { return value&0x8000u?(uint16_t)(0u-value):value; }
 
 bool neo_soldier_state_begin(neo_soldier_state_t *s,neo_contact_actor_t *a,
-    const neo_control_t *c,neo_anim_state_t *animation,neo_rng_t *rng,
+    neo_control_t *c,neo_anim_state_t *animation,neo_rng_t *rng,
     neo_soldier_program_t resolve,void *context) {
     uint32_t program=0,next=s->routine;
     if (!(a->flags15&64u)) return false; // Air entry routes require separate recovery.
     switch (s->routine) {
+    case 0xaf918:program=0x23d7ee;next=0xaf964;break;
     case 0xaf4f6: {
         uint16_t delta=(uint16_t)(high(c->target84)-high(a->projected_x));
         uint16_t oriented=(uint16_t)(delta^((a->flags15&1u)?0u:0xffffu));
@@ -25,15 +26,17 @@ bool neo_soldier_state_begin(neo_soldier_state_t *s,neo_contact_actor_t *a,
     case 0xaf380:program=0x23d5e2;next=0xaf39e;break;
     case 0xaf8d4:program=0x23ddb4;next=0xaf8ea;break;
     case 0xb0336:program=0x23ef98;next=0xb0354;break;
-    case 0xaf572:case 0xaf6c0:case 0xaf8a6:case 0xaf39e:case 0xaf8ea:case 0xb0354:break;
+    case 0xaf964:case 0xaf572:case 0xaf6c0:case 0xaf8a6:case 0xaf39e:case 0xaf8ea:case 0xb0354:break;
     default:return false;
     }
+    if ((s->routine==0xaf4f6 || s->routine==0xaf65a) && !rng) return false;
     const neo_anim_program_t *asset=NULL;
     if (program) {
         if (!resolve || !(asset=resolve(context,program))) return false;
         neo_anim_start(animation,asset,0x100);
     }
-    if (s->routine==0xaf4f6) {
+    if (s->routine==0xaf918) {c->timer70=s->field72;a->scalar62=0;}
+    else if (s->routine==0xaf4f6) {
         int32_t base=neo_asr(signed32((uint32_t)c->target84-(uint32_t)a->projected_x),5);
         int32_t random=(int32_t)(neo_rng_next(rng)&0x7fffu)-0x4000;
         a->scalar62=signed32((uint32_t)base+(uint32_t)random);
@@ -91,7 +94,7 @@ static void object_decision(neo_soldier_state_t *s,const neo_contact_actor_t *a,
 bool neo_soldier_state_end(neo_soldier_state_t *s,const neo_contact_actor_t *a,
     neo_control_t *c,uint16_t ground_flags,bool complete,const neo_soldier_senses_t *f,neo_rng_t *rng) {
     uint32_t mode=s->routine;
-    if (mode==0xaf8a6 || mode==0xaf8ea || mode==0xb0354) {
+    if (mode==0xaf964 || mode==0xaf8a6 || mode==0xaf8ea || mode==0xb0354) {
         if (complete) s->routine=mode==0xaf8ea?0xaf65a:0xaf380;
         if (mode==0xb0354 && !(a->flags15&64u)) s->routine=0xafce2;
         return true;

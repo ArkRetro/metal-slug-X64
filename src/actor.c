@@ -10,6 +10,8 @@
 
 static msx_game_t game;
 static bool restart_was_down;
+static bool has_entry;
+static int32_t entry_x,entry_y;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 static bool previous_a,previous_b,pending_a,pending_b;
@@ -19,7 +21,8 @@ static unsigned observed_projectiles;
 static bool observed_wreck_contact;
 static void reset_game(void) {
     observed_wreck_contact=false;
-    msx_game_init(&game);
+    if (has_entry) assert(msx_game_begin_at(&game,entry_x,entry_y));
+    else msx_game_init(&game);
 #if MSX_VEHICLE_REFERENCE
     msx_game_vehicle_reference(&game);vehicle_renderer_load();
     debugf("MSX vehicle reference encounter\n");
@@ -59,6 +62,14 @@ void actor_init(void) {
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (internal build)\n");
 #endif
     debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
+}
+bool actor_begin_mission(int32_t world_x,int32_t world_y) {
+    if (!msx_game_begin_at(&game,world_x,world_y)) return false;
+    has_entry=true;entry_x=world_x;entry_y=world_y;
+    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    scene_clock_reset(&simulation_clock);scene_render_forget_texture();
+    debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
+    return true;
 }
 void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;

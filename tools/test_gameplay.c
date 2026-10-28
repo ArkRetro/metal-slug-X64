@@ -31,9 +31,19 @@ int main(void) {
     for (unsigned i=0;i<1000;i++) msx_game_update(&g,-1,false,false);
     assert(g.x==(g.camera+28)*MSX_UNIT); // Player remains inside the current camera.
     msx_game_init(&g);
-    for (unsigned i=0;i<2500 && !g.complete;i++) msx_game_update(&g,1,false,true);
+    bool last_guard_seen=false;
+    for (unsigned i=0;i<2500 && !g.complete;i++) {
+        unsigned before=g.kills;msx_game_update(&g,1,false,true);
+        if (before==2 && g.kills==3) {
+            assert(!g.enemy.alive && g.enemy.respawn==90 && !g.complete);
+            last_guard_seen=true;msx_game_t after=g;
+            for (unsigned j=0;j<90;j++) msx_game_update(&after,0,false,false);
+            assert(after.kills==3 && !after.enemy.alive && !after.enemy.respawn);
+        }
+    }
+    assert(last_guard_seen);
     assert(g.complete && g.kills==3 && g.hits==6 && g.health>0);
-    assert(g.checkpoint==640 && g.camera==872);
+    assert(g.checkpoint==640 && g.camera==872 && !g.enemy.alive && !g.enemy.respawn);
     int final_x=g.x;msx_game_update(&g,-1,true,true);assert(g.x==final_x);
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.enemy.alive=false;
@@ -48,5 +58,11 @@ int main(void) {
     assert(g.health==2 && g.x==180*MSX_UNIT && g.y==msx_ground_offset(g.x));
     for (unsigned i=0;i<100;i++) msx_game_update(&g,0,false,false);
     assert(g.grounded && g.y==msx_ground_offset(g.x)); // Knockback cannot bury feet in a slope.
+    msx_game_init(&g);
+    assert(msx_game_begin_at(&g,7852402,6157405));
+    assert(g.x==7852402 && g.y==56*MSX_UNIT-6157405 && g.grounded && !g.velocity_x && !g.velocity_y);
+    msx_game_t unchanged=g;
+    assert(!msx_game_begin_at(&g,7852402,6157406));
+    assert(g.x==unchanged.x && g.y==unchanged.y);
     puts("PASS: half-rate input, air landing, dune/village support, camera bounds, provisional encounters and respawn");
 }

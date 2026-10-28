@@ -8,8 +8,8 @@ static uint8_t fixed_rom[131072];
 static uint8_t sprite_cache[SPRITES_PER_PAGE * 128];
 static void fail(const char *message) {
     console_init();
-    printf("MSX v3 ERROR: %s\n", message);
-    debugf("MSX v3 ERROR: %s\n", message);
+    printf("MSX ERROR: %s\n", message);
+    debugf("MSX ERROR: %s\n", message);
     for (;;) {}
 }
 static void load_page(FILE *file, unsigned page) {

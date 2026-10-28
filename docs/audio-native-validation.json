@@ -5,12 +5,11 @@
   "nonzero_samples": 321840,
   "pcm_checksum": "20b10fad",
   "ai_buffers_queued": 24,
-  "rdp_frames": 45,
-  "rom_sha256": "33f7ccfe346c34afb31bba0c2c3e05d5c46391798f8d0d62770e79c302113590",
-  "log_sha256": "31ae7d7122e630b1ba84f1ab4e1422c866248f254a7373dd9668844959f0a013",
+  "rdp_frames": 55,
+  "rom_sha256": "f338beb10518761eed905f9085fabf48662f622bfe75d669ffb72a99090d7272",
+  "log_sha256": "c57a3dd23509fdfa000f71940f86bb320045c62abe9de9ec00db3a07a9ff1492",
   "asset_sha256": "1074ccbbc0a8c9d6797e8f0b6902ef2463cb54e88f261b1311f579b0dde24a6c",
   "limits": "Native title-reference decode/mix and AI submission. No acoustic capture, full intro, game integration, original SFX/music driver or hardware audio validation.",
-  "host_checks": "make check: PASS",
-  "main_build": "make all: PASS",
-  "active_gameplay_integration": false
+  "host_checks": "make check and make check-cinematic: PASS",
+  "n64_build": "PASS"
 }

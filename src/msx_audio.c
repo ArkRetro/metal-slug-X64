@@ -7,7 +7,7 @@ static bool opened[MSX_AUDIO_VOICES],initialized;
 static msx_audio_stats_t stats;
 void msx_audio_init(void) {
     assert(!initialized);
-    audio_init(MSX_AUDIO_RATE,6);mixer_init(MSX_AUDIO_VOICES*2);
+    audio_init(MSX_AUDIO_RATE,2);mixer_init(MSX_AUDIO_VOICES*2);
     for (unsigned ch=0;ch<MSX_AUDIO_VOICES*2;ch++) mixer_ch_set_limits(ch,16,MSX_AUDIO_RATE,8192);
     memset(opened,0,sizeof(opened));stats=(msx_audio_stats_t){0};initialized=true;
 }

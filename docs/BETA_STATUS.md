@@ -12,9 +12,14 @@ ROMs are internal and must not be published as the requested demo.
 A native ROM-streamed WAV64/RSP audio backend now passes ares tests for stereo
 mixing, playback lifecycle and AI submission alongside simple RDP output. A clean
 MAME reference spans the title/tutorial/selection/parachute entry with audio.
-The native intro and gameplay sound are not integrated. Eleven offline art
-comparisons now pass, including a title interval requiring observed raster
-writes and sprite-list latch ordering. See `docs/INTRO_AUDIO.md`.
+The noninteractive parachute entry is now integrated with audio in an internal
+N64 target. All 230 source frames are validated and presented without omissions
+in ares, followed by a measured grounded handoff and working controls in the
+existing partial region. Native pixel CRCs and three actual RDP framebuffer CRCs
+match. The complete title/tutorial/select presentation, gameplay sound effects
+and continuous music remain pending. See `docs/MISSION_ENTRY.md` and
+`docs/INTRO_AUDIO.md`. Reviewed prototype fixes from PR #2 and SDK-free host CI
+are adapted in this branch; see `docs/PR2_REVIEW.md`.
 
 The grounded attack main state now computes 20 persistent soldier updates,
 40 static support queries and the transition back to idle, coupled to the

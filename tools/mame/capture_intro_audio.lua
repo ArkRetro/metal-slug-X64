@@ -7,6 +7,11 @@ local dbg=assert(manager.machine.debugger)
 local sprite=assert(manager.machine.devices[':spritegen'])
 local video_memory=emu.item(assert(sprite.items['0/m_videoram']))
 local animation_counter=emu.item(assert(sprite.items['0/m_auto_animation_counter']))
+local animation_disabled=emu.item(assert(sprite.items['0/m_auto_animation_disabled']))
+local fixed_source=emu.item(assert(sprite.items['0/m_fixed_layer_source']))
+local players=assert(io.open(output..'/player.jsonl','w'))
+local shot_first=tonumber(os.getenv('MSX_SHOT_FIRST') or '0')
+local shot_last=tonumber(os.getenv('MSX_SHOT_LAST') or '0')
 local video_step=tonumber(os.getenv('MSX_VIDEO_STEP') or '2')
 local frame=0
 local inputs=assert(io.open(output..'/inputs.jsonl','w'))
@@ -41,8 +46,11 @@ emu.register_frame_done(function()
   dbg:command('wpiset 0:audiocpu,10000,w,(wpaddr&ff)>=4 && (wpaddr&ff)<=7,{printf "YM_WRITE frame=%d port=%04X value=%02X\\n",temp9,wpaddr,wpdata;g}')
  end
  if actions[frame] then button(actions[frame][1],actions[frame][2]) end
- timing:write(string.format('{"frame":%d,"time":"%s","animation_counter":%d}\n',frame,tostring(manager.machine.time),animation_counter:read(0)));timing:flush()
+ timing:write(string.format('{"frame":%d,"time":"%s","animation_counter":%d,"animation_disabled":%d,"fixed_source":%d}\n',frame,tostring(manager.machine.time),animation_counter:read(0),animation_disabled:read(0),fixed_source:read(0)));timing:flush()
+ if frame>=3800 then
+  players:write(string.format('{"frame":%d,"routine":%d,"x":%d,"y":%d,"vx":%d,"vy":%d,"flags15":%d}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9)));players:flush()
+ end
  if frame%video_step==0 then dump() end
- if frame%60==0 then manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png') end
- if frame==finish then inputs:close();timing:close();manager.machine:exit() end
+ if frame%60==0 or (frame>=shot_first and frame<=shot_last) then manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png') end
+ if frame==finish then inputs:close();timing:close();players:close();manager.machine:exit() end
 end,'frame')

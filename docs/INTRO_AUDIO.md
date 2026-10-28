@@ -68,11 +68,11 @@ ni una música de misión con bucle recuperado. El recorte usa los tiempos
 registrados por MAME, no una división de fotogramas por 60.
 
 En ares se comprueban dos voces estéreo, PCM no nulo, EOF, repetición, parada,
-silencio posterior, 24 buffers enviados al AI y 45 presentaciones RDP mientras
+silencio posterior, 24 buffers enviados al AI y 55 presentaciones RDP mientras
 suena la referencia. La prueba no es una captura acústica ni una medición de
 rendimiento del escenario completo. Ver [audio-native-validation.json](audio-native-validation.json).
 
-## Reconstrucción gráfica y diferencia pendiente
+## Reconstrucción gráfica y estado de integración
 
 `tools/render_intro_reference.py` reconstruye fuera de la N64 los gráficos desde
 C-ROM/S-ROM, paletas, encadenamiento, selección de líneas y las tablas originales
@@ -95,24 +95,25 @@ ahora rechaza cualquier referencia con errores Lua.
 
 El reconstructor aplica esas escrituras a la VRAM inicial y exige que cada
 palabra previa coincida con la traza. También exige que el resultado final sea
-idéntico al volcado siguiente y que la paleta no haya cambiado. Para cada línea,
+idéntico al volcado siguiente. La nueva captura también registra las escrituras
+de paleta y las reproduce por línea cuando hay fundidos. Para cada línea,
 la lista de sprites se selecciona con el estado inicial; los píxeles usan el
 estado posterior a las escrituras de esa línea, conforme al orden del timer de
 sprites de MAME. Esa distinción explica el último píxel que aún difería después
 de introducir las escrituras por línea. No se copian píxeles de la captura ni
 se utiliza una máscara para aceptar discrepancias.
 
-La fase automática utiliza el contador registrado en la siguiente frontera de
-frame, que coincide en estas muestras. La sonda de raster cubre un intervalo
-específico del título, y el reconstructor supone autoanimación habilitada en el
-perfil contrastado. No se afirma cobertura de todos los frames, modos o cambios
-de paleta por línea de la intro.
+Las primeras capturas no guardaban el indicador de autoanimación; sus once
+comparaciones usaban una hipótesis de fase explícitamente limitada. Las nuevas
+capturas guardan ese indicador y la selección de FIX. En la entrada de misión
+se comprueba que autoanimación está deshabilitada y se conservan directamente
+los códigos de tile escritos por el juego. Ese tramo ya se contrasta fotograma
+a fotograma, sin inferir la fase desde el contador de vídeo.
 
-Esta reconstrucción todavía no es un reproductor de intro en N64. Faltan la
-conversión a recursos y comandos nativos acotados, la reproducción sincronizada,
-la transición al controlador del jugador y la integración del sonido de juego.
-También siguen pendientes daños, encuentros, eventos, resto del mapa y jefe para
-completar la Misión 1. El frontend activo continúa siendo la región provisional.
+La [entrada en paracaídas](MISSION_ENTRY.md) sí dispone ahora de un reproductor
+N64 integrado con audio y transición al jugador. La presentación completa de
+título/tutorial/selección aún no está integrada. El juego activo sigue limitado
+a la región provisional y falta completar la Misión 1. No se publica otra demo.
 
 ## Reproducir en el entorno retenido
 

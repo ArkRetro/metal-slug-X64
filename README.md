@@ -1,6 +1,6 @@
 # Metal Slug X para Nintendo 64: trabajo en curso
 
-La próxima entrega solicitada es una **demo jugable de la Misión 1 completa**,
+La próxima entrega solicitada es una **demo jugable de la Misión 1 completa, con intro y sonido**,
 validada en ares antes de probarla en MiSTer. Aún no está terminada.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
 El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
@@ -35,7 +35,9 @@ provisionales ni completa la Misión 1.
 
 La entrega pendiente incluye la **intro completa y sonido**. El nuevo
 [backend de audio y las referencias de intro](docs/INTRO_AUDIO.md) ya tienen
-pruebas internas en ares, pero aún no están integrados en la campaña.
+pruebas internas en ares. La [entrada en paracaídas](docs/MISSION_ENTRY.md) ya
+entrega el control a Marco con audio; la presentación completa y el resto de
+la misión siguen pendientes.
 
 El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de paleta
 y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
@@ -83,12 +85,15 @@ python3 tools/import_rom.py /ruta/a/mslugx.zip
 # Si faltan assets/sidecars: seguir docs/RDP_IMPLEMENTATION.md, docs/MISSION1.md y docs/COLLISION.md.
 # python3 tools/export_marco.py /ruta/capturas
 make -j4
-cc -std=c11 -Wall -Wextra -Werror tools/test_fixed.c -o /tmp/msx-test-fixed
-/tmp/msx-test-fixed
-cc -std=c11 -Wall -Wextra -Werror tools/test_sprites.c -o /tmp/msx-test-sprites
-/tmp/msx-test-sprites
+make check-core
 make check
 ```
+
+`make check-core` no requiere SDK ni ROMs: usa código y los CSV numéricos
+versionados. CI lo ejecuta en cada push y PR. `make check` también es host y
+requiere los metadatos/assets derivados que utilizan las pruebas completas.
+`make check-cinematic` añade los 230 frames del segmento local de entrada.
+Las [correcciones del PR #2](docs/PR2_REVIEW.md) están adaptadas a esta rama.
 
 Resultado: `mslugx-explorer.z64`, aproximadamente 50 MiB. Las ROM originales
 se comprueban contra CRC32 y SHA1 de MAME. ZIP, assets y ROM generada quedan

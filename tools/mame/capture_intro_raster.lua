@@ -10,18 +10,26 @@ local function line()
  local total=math.floor(screen.frame_period/screen.scan_period+0.5)
  return math.floor((screen.frame_period-screen:time_until_pos(0))/screen.scan_period+1e-7)%total
 end
+local first=tonumber(os.getenv('MSX_RASTER_FIRST') or '350')
+local last=tonumber(os.getenv('MSX_RASTER_LAST') or '364')
 local frame=0
 local file=assert(io.open(output..'/raster.jsonl','w'))
 local tap=manager.machine.devices[':maincpu'].spaces.program:install_write_tap(0x3c0000,0x3c0005,'intro_raster',function(address,data,mask)
- if frame>=350 and frame<=364 then
+ if frame>=first and frame<=last then
   file:write(string.format('{"frame":%d,"time":"%s","line":%d,"address":%d,"data":%d,"mask":%d,"vram_offset":%d,"word":%d}\n',frame,tostring(manager.machine.time),line(),address,data,mask,offset:read(0),memory:read(offset:read(0))))
   file:flush()
  end
 end)
+local cpu=manager.machine.devices[':maincpu'].spaces.program
+local palette_tap=cpu:install_write_tap(0x400000,0x401fff,'intro_palette_raster',function(address,data,mask)
+ if frame>=first and frame<=last then
+  file:write(string.format('{"frame":%d,"time":"%s","line":%d,"address":%d,"data":%d,"mask":%d,"palette_index":%d,"word":%d}\n',frame,tostring(manager.machine.time),line(),address,data,mask,(address-0x400000)//2,cpu:read_u16(address)));file:flush()
+ end
+end)
 emu.register_frame_done(function()
  frame=frame+1
- if frame>=350 and frame<=365 then
+ if frame>=first and frame<=last+1 then
   file:write(string.format('{"boundary":%d,"time":"%s","line":%d}\n',frame,tostring(manager.machine.time),line()));file:flush()
  end
- if frame==390 then tap:remove();file:close() end
+ if frame==last+26 then tap:remove();palette_tap:remove();file:close() end
 end,'frame')

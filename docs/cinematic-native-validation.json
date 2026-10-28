@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "frames": 230,
+  "framebuffers": 3,
+  "rom_sha256": "bae369168fe59caad3153e890bd2f9c07048bcab8503ceb356ff7c4074a9323e",
+  "log_sha256": "bd1dbb5e6f456c3ff9a2819677471110a97c1bd3dd2a450075ba0012f163ba4f",
+  "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+  "limits": "All native decoded pixel CRCs, including prepared-frame cache paths. This is not a timing/audio/gameplay test.",
+  "host_checks": "make check and make check-cinematic: PASS",
+  "n64_build": "PASS"
+}

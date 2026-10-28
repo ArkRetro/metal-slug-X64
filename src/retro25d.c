@@ -23,6 +23,13 @@ bool retro_plane_projection(retro_camera_t c,float z,retro_plane_view_t *out) {
     float ratio=c.focal/distance,scale=(c.focal+z)/distance;
     *out=(retro_plane_view_t){scale,160*(1-scale)-c.x*ratio,120*(1-scale)-c.y*ratio};return true;
 }
+bool retro_background_projection(retro_camera_t c,unsigned layer,float depth,retro_plane_view_t *out) {
+    if (layer>=5) return false;
+    if (layer>=2) {
+        *out=(retro_plane_view_t){1,-c.x,-c.y};return true;
+    }
+    return retro_plane_projection(c,depth,out);
+}
 float retro_light_energy(retro_vec3_t p,retro_vec3_t n,const retro_light_t *l) {
     if (!(l->radius>0) || !(l->intensity>0)) return 0;
     float x=l->position.x-p.x,y=l->position.y-p.y,z=p.z-l->position.z;

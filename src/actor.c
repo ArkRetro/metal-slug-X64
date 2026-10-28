@@ -11,6 +11,7 @@
 
 static msx_game_t game;
 static bool restart_was_down;
+static bool diagnostics,diagnostics_was_down;
 static bool has_entry;
 static int32_t entry_x,entry_y;
 static unsigned animation_started;
@@ -77,6 +78,10 @@ void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
+    if (input.btn.l && !diagnostics_was_down) {
+        diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
+    }
+    diagnostics_was_down=input.btn.l;
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
@@ -159,15 +164,19 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
-    scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
+    if (diagnostics) {
+        scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
+    }
     if (game.complete) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
-    scene_render_text(32,24,"MSX V10 - MISSION 1");
-    char status[40];
-    if (game.vehicle.active) snprintf(status,sizeof(status),"HP:%u VEHICLE:%u",game.health,game.vehicle.health);
-    else snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
-    scene_render_text(32,38,status);
-    scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
+    if (diagnostics) {
+        scene_render_text(32,24,"MSX V10 - MISSION 1");
+        char status[40];
+        if (game.vehicle.active) snprintf(status,sizeof(status),"HP:%u VEHICLE:%u",game.health,game.vehicle.health);
+        else snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
+        scene_render_text(32,38,status);
+        scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
+    }
     if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}
     scene_render_end();
 }

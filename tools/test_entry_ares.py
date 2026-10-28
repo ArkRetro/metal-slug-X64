@@ -32,14 +32,18 @@ with (out/'xvfb.log').open('w') as xlog:
    key('keydown','Right');key('keydown','b');time.sleep(.25);key('keydown','a');time.sleep(.12);key('keyup','a')
    wait('MSX run-jump');wait('MSX landed');wait('MSX camera moving');wait('MSX run-fire')
    ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'playable-after-entry.png');key('keyup','Right');key('keyup','b')
+   key('keydown','q');time.sleep(.12);key('keyup','q');wait('MSX diagnostics on');time.sleep(.1)
+   ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'diagnostics-on.png')
+   key('keydown','q');time.sleep(.12);key('keyup','q');wait('MSX diagnostics off');time.sleep(.1)
+   ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'diagnostics-off.png')
    key('keydown','e');time.sleep(.12);key('keyup','e');wait('MSX reset')
   sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
   timing=re.search(r'MSX INTRO timing decode_max_us=(\d+) decode_mean_us=(\d+) draw_max_us=(\d+)',text);assert timing
-  result=dict(status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
+  result=dict(status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
   (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
  finally:
   if process is not None:
-   for button in ('Right','b','a','e'):
+   for button in ('Right','b','a','e','q'):
     try:key('keyup',button)
     except subprocess.CalledProcessError:pass
    process.terminate()

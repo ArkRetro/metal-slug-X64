@@ -16,6 +16,18 @@ make -j4 MSX_VISUAL_MODE=classic      # ruta plana original
 a recompilar el objeto dependiente (`actor.o`). No se cambia de modo alterando
 CFLAGS sin recompilar.
 
+Las capas 2/3/4 (terreno a velocidad completa y props) mantienen la misma
+proyección 2D que los actores y las colisiones. Solo las capas lejanas 0/1
+aplican paralaje en perspectiva. Dar profundidad 8 a la capa 2 introducía
+21,27 píxeles de deriva horizontal con cámara 872; el relieve de iluminación
+puede tener profundidad sin desplazar los texeles del suelo jugable.
+`retro_background_projection` conserva esa alineación aunque se cambie una
+profundidad de autoría. La prueba host barre cámaras 0..1920.
+
+Los paneles de diagnóstico se muestran/ocultan con **L** y arrancan ocultos.
+No son el HUD arcade original, que sigue pendiente. El aviso «REGION END»
+permanece visible al alcanzar el límite provisional.
+
 ## Mapas de profundidad y normales
 
 La autoría está en `data/retro_surfaces.json`. La profundidad se define de forma

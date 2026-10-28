@@ -91,7 +91,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     int offsets[]={(camera+1)/2,(camera*3+2)/4,camera,camera,camera};
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
-        bool ok=retro_plane_projection(depth_frame.camera,retro_effects_layer_depth(i),&depth_views[i]);
+        bool ok=retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]);
         assertf(ok,"Retro plane projection");(void)ok;
     }
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.

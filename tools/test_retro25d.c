@@ -184,6 +184,17 @@ int main(void) {
         retro_plane_view_t plane;assert(retro_plane_projection(camera,depths[i],&plane));
         near(100*plane.scale+plane.offset_x,q.x);near(80*plane.scale+plane.offset_y,q.y);
     }
+    /* At camera 872 the old terrain depth=8 caused 21.27px of drift.
+     * Collidable texture layers must stay pixel-aligned across the region,
+     * even if an authored depth or perspective camera setting changes. */
+    for (unsigned c=0;c<=1920;c+=8) for (unsigned layer=2;layer<5;layer++) {
+        retro_plane_view_t view;
+        assert(retro_background_projection((retro_camera_t){c,0,32,320},layer,8,&view));
+        near(view.scale,1);near(view.offset_x,-(float)c);near(view.offset_y,0);
+    }
+    retro_plane_view_t far_view;
+    assert(retro_background_projection(camera,0,320,&far_view));near(far_view.offset_x,-32);
+    assert(!retro_background_projection(camera,5,0,&far_view));
     assert(!retro_project(camera,(retro_vec3_t){0,0,-313},&q));
     retro_vec3_t p={200,100,0};assert(retro_project(camera,p,&q));float before=q.x;
     camera.z=32;assert(retro_project(camera,p,&q));assert(q.x<before); // Forward camera motion changes perspective.
@@ -206,7 +217,7 @@ int main(void) {
     test_shadows();test_lights_and_pulses();test_fog_focus();test_culling();test_events();
 #ifdef RETRO_REAL_ASSETS
     {
-        assert(sizeof(retro_fog)==RETRO_FOG_BYTES && retro_layer_depths[3]==0 && RETRO_PLANE_COUNT<=sizeof(retro_planes)/sizeof(*retro_planes));
+        assert(sizeof(retro_fog)==RETRO_FOG_BYTES && retro_layer_depths[2]==0 && retro_layer_depths[3]==0 && retro_layer_depths[4]==0 && RETRO_PLANE_COUNT<=sizeof(retro_planes)/sizeof(*retro_planes));
         for (unsigned i=1;i<RETRO_PLANE_COUNT;i++) assert(retro_planes[i-1].left<=retro_planes[i].left);
         retro_scene_t scene={retro_ground,RETRO_GROUND_WIDTH,retro_planes,RETRO_PLANE_COUNT};
         unsigned visible,worst=sweep(&scene,0,RETRO_GROUND_WIDTH-320,&visible);

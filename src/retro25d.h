@@ -34,6 +34,9 @@ retro_vec3_t retro_normal(float depth_dx,float depth_dy);
 bool retro_project(retro_camera_t camera,retro_vec3_t point,retro_projected_t *out);
 retro_vec3_t retro_billboard_point(float asset_x,float asset_y,float depth,float focal);
 bool retro_plane_projection(retro_camera_t camera,float depth,retro_plane_view_t *out);
+/* Layers 2..4 share gameplay coordinates (full-speed terrain and props).
+ * Their texture projection must stay aligned with sprites and 2D collision. */
+bool retro_background_projection(retro_camera_t camera,unsigned layer,float depth,retro_plane_view_t *out);
 float retro_light_energy(retro_vec3_t point,retro_vec3_t normal,const retro_light_t *light);
 void retro_lighting(const retro_frame_t *frame,retro_vec3_t point,retro_vec3_t normal,float rgba[4]);
 /* rgba is normalized 0..1, matching libdragon's triangle shade format. */

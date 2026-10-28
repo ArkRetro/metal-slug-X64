@@ -1,5 +1,6 @@
 {
-  "description": "Optional 2.5D art direction for the observed first region; authored geometry, not recovered Neo Geo depth.",
+  "description": "2.5D art direction for mission 1 (depth25d, default build); authored geometry, not recovered Neo Geo depth.",
+  "authoring": "See docs/RETRO25D.md#añadir-superficies. rect=[left,top,right,bottom] in world X / screen Y; depth -6..24 at every corner; |dx|,|dy|<=0.25; unique name; any world X; at most 5 planes overlapping one 384-px camera window. tools/build_retro_assets.py sorts and validates.",
   "focal": 320,
   "layer_depths": [320, 106.6666667, 8, 0, 0],
   "planes": [

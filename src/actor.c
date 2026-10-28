@@ -6,6 +6,7 @@
 #include "visual_config.h"
 #include "neo_collision.h"
 #include "vehicle_renderer.h"
+#include "retro_events.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -29,6 +30,7 @@ static void reset_game(void) {
 #endif
 }
 #if MSX_RETRO25D
+static retro_events_t depth_events;
 static float depth_support_y(void) {
     neo_surface_t support;
     if (neo_surface_at(game.x,56*MSX_UNIT-game.y,0,256*MSX_UNIT,&support))
@@ -59,7 +61,7 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
 void actor_init(void) {
     scene_assets_init();scene_renderer_init();reset_game();
 #if MSX_RETRO25D
-    scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (internal build)\n");
+    scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
 #endif
     debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
 }
@@ -137,6 +139,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         {(float)game.x/MSX_UNIT+game.facing*24,168.0f+(float)game.y/MSX_UNIT,-18},{255,174,72},72,1.0f-(float)game.shot_age/3};
     if (game.enemy.flash) effects.lights[effects.light_count++]=(retro_light_t){
         {game.enemy.x,168.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,-24},{255,128,48},100,(float)game.enemy.flash/12};
+    // Vehicle shadow, impact/explosion light pulses and fog focus (render-only).
+    retro_events_frame(&depth_events,&game,&effects);
     scene_render_depth_frame(&effects);
 #endif
     scene_render_begin(surface);scene_render_background(game.camera,game.ticks);

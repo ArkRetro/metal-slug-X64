@@ -160,9 +160,14 @@ La prueba interna de ares se ejecuta con:
 
 ```sh
 python3 tools/test_vehicle_ares.py /ruta/rom-interna.z64
-# Volver al escenario predeterminado al terminar:
-make -j4 MSX_SCENARIO=campaign MSX_VISUAL_MODE=classic
+# Volver al escenario y modo visual predeterminados (campaña, depth25d):
+make -j4 MSX_SCENARIO=campaign MSX_VISUAL_MODE=depth25d
 ```
+
+Sin `MSX_VISUAL_MODE=classic`, el escenario del blindado se dibuja en el
+[modo 2.5D](RETRO25D.md): sombra de contacto bajo las ruedas y pulsos de luz en
+los impactos, al empezar la destrucción y en la explosión. Son efectos de
+dibujo; no cambian daño, colisión ni restos.
 
 La cadencia de disparo, el retroceso del jugador y la duración del destello
 de impacto conservan todavía las reglas provisionales del escenario anterior;

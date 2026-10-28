@@ -7,4 +7,6 @@ float retro_effects_layer_depth(unsigned layer);
 void retro_effects_mesh(const retro_frame_t *frame);
 void retro_effects_fog(const retro_frame_t *frame,unsigned slice);
 unsigned retro_effects_triangles(void);
+unsigned retro_effects_visible_planes(void);
+unsigned retro_effects_shadow_triangles(void);
 #endif

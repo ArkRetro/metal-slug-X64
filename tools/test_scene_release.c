@@ -16,6 +16,7 @@ int main(void) {
         for (unsigned sample=0;sample<4;sample++) {
             retro_frame_t frame={.camera={cameras[sample],0,0,320},.tick=120,
                 .light_count=1,.lights={{{cameras[sample]+160,160,-16},{255,160,64},96,1}}};
+            assert(retro_frame_add_shadow(&frame,retro_actor_shadow(cameras[sample]+160,168,192,14)));
             scene_render_depth_frame(&frame);
             surface_t *surface=display_get();scene_render_begin(surface);
             rdpq_mode_dithering(DITHER_NONE_NONE);

@@ -2,8 +2,8 @@
 
 Fuente: [Revisión: posición inicial nombrada, flash del último guardia y pruebas sin SDK](https://github.com/ArkRetro/metal-slug-X64/pull/2),
 commit revisado `c826597fdea29108facb28a1bd5ce9d8fdd18771`.
-El PR parte de `main`, anterior a los componentes nativos nuevos. Sus cambios se
-han adaptado a `beta-work`; el PR no se ha fusionado en `main`.
+En esa primera revisión el PR partía de `main`, anterior a los componentes
+nativos nuevos. Ahora apunta a `beta-work`; no se ha fusionado en `main`.
 
 | Corrección | Aplicación y comprobación |
 | --- | --- |
@@ -11,7 +11,7 @@ han adaptado a `beta-work`; el PR no se ha fusionado en `main`.
 | Cadáver congelado al cerrar la región | Completar la región limpia el temporizador. Es el cierre provisional de la región, no el final real de Misión 1. |
 | Posición repetida como literal | `MSX_START_X` nombra el inicio histórico del prototipo y su reaparición. La entrada en paracaídas utiliza su posición medida propia. |
 | Mensaje de error «v3» | Eliminado el prefijo obsoleto del ejecutable histórico. |
-| Pruebas dependían innecesariamente del SDK | Los objetivos host no incluyen `n64.mk`. `check-core` ejecuta seis pruebas, incluyendo el nuevo códec cinematográfico; `check-cinematic` verifica todos los fotogramas privados del segmento. |
+| Pruebas dependían innecesariamente del SDK | Los objetivos host no incluyen `n64.mk`. La primera integración de `check-core` ejecutaba seis pruebas, incluyendo el nuevo códec cinematográfico; `check-cinematic` verifica todos los fotogramas privados del segmento. |
 | CI | `.github/workflows/check.yml` ejecuta `make check-core` en pushes y PRs. No usa ROMs ni el SDK. |
 
 `check-core` requiere los CSV numéricos versionados que usa la prueba de salto,
@@ -75,3 +75,27 @@ El nuevo par interno `scene-debug.z64`/`scene-release.z64`, ejecutado mediante
 `test_release_ares.py`, compara ocho CRC de framebuffer RDP entre módulos
 normales y `NDEBUG`: cámaras 0/64/320/872, modos clásico y profundidad.
 No publica cartuchos ni constituye una prueba de Misión 1 completa.
+
+## Integración del modo 2.5D de Claude
+
+También se integran `f2f7d30` y `91c730f`: sombras de contacto, pulsos de luz,
+recorte de planos y modo `depth25d` predeterminado. Los conflictos de Makefile
+se resuelven conservando tanto la ampliación de `check-core` como las pruebas
+con geometría real. La ruta `MSX_VISUAL_MODE=classic` sigue disponible.
+El código matemático nuevo se ejecuta en host y N64; los efectos no modifican
+las colisiones ni convierten las reglas provisionales en lógica recuperada.
+
+[Informe de integración](claude-integration-validation.json): ocho imágenes
+RDP coinciden entre normal/NDEBUG con luz y sombra activas; entrada de 230
+fotogramas sin saltos, CRC final `db681cc3` y audio activo al traspaso. Compilan
+los dos cartuchos internos y el laboratorio. En ares también pasa el
+encuentro del blindado: daño, destrucción, 13 celdas de restos, subida,
+reinicio y laboratorio con el nuevo modo visual. `check-core` vuelve a pasar en
+una copia sin SDK/assets tras incorporar los cambios de Claude.
+
+El [comentario de coordinación](https://github.com/ArkRetro/metal-slug-X64/pull/1#issuecomment-6463701871)
+reserva a Claude la región cámara 872→1920, soldados nativos y superficies de
+esa región. Esta rama conserva título/tutorial/selección, SFX, música continua
+y los encuentros/jefe pendientes. Así evitamos desarrollar dos versiones de
+las mismas rutinas. No se presenta como terminado ningún componente que solo
+figure en ese reparto: mapa extendido y soldados aún no están integrados.

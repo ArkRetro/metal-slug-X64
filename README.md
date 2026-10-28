@@ -3,8 +3,10 @@
 La próxima entrega solicitada es una **demo jugable de la Misión 1 completa, con intro y sonido**,
 validada en ares antes de probarla en MiSTer. Aún no está terminada.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
-El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
-iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
+El [modo visual 2.5D](docs/RETRO25D.md) está activo por defecto: paralaje en
+perspectiva, iluminación por vértice, sombras de contacto, pulsos de luz en
+impactos y explosiones, y niebla, sin tocar el pixel art ni la jugabilidad 2D.
+`make MSX_VISUAL_MODE=classic` compila la ruta plana original.
 Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
 con contorno, paleta y transparencia, también al disparar hacia la izquierda.
 El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
@@ -93,6 +95,9 @@ make check
 versionados. CI lo ejecuta en cada push y PR. `make check` también es host y
 requiere los metadatos/assets derivados que utilizan las pruebas completas.
 `make check-cinematic` añade los 230 frames del segmento local de entrada.
+`make -j4` compila el modo 2.5D (`depth25d`); `make -j4 MSX_VISUAL_MODE=classic`,
+la ruta plana. `make preview-depth` genera vistas previas offline de los
+efectos sin arte original.
 Las [correcciones del PR #2](docs/PR2_REVIEW.md) están adaptadas a esta rama.
 
 Resultado: `mslugx-explorer.z64`, aproximadamente 50 MiB. Las ROM originales

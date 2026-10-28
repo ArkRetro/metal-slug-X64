@@ -142,7 +142,7 @@ void scene_render_text(int x,int y,const char *text) {
 }
 void scene_render_end(void) {
     if (!(frame%300)) {
-        scene_cache_stats_t s=scene_cache_stats();
+        scene_cache_stats_t s=scene_cache_stats();(void)s;
         if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3\n",retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count);
         debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),

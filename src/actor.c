@@ -21,7 +21,7 @@ static unsigned observed_projectiles;
 static bool observed_wreck_contact;
 static void reset_game(void) {
     observed_wreck_contact=false;
-    if (has_entry) assert(msx_game_begin_at(&game,entry_x,entry_y));
+    if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
 #if MSX_VEHICLE_REFERENCE
     msx_game_vehicle_reference(&game);vehicle_renderer_load();

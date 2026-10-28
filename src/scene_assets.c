@@ -1,6 +1,7 @@
 #include <libdragon.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdlib.h>
 #include "scene_assets.h"
 #include "scene_codec.h"
 #include "scene_meta.h"
@@ -50,8 +51,12 @@ void scene_service(void) {
     // Reserve the other staging buffer and overlap its PI read with this decode.
     start_next();
     const scene_chunk_t *c=&scene_chunks[chunk];uint8_t *dst=cache+slot*SCENE_CHUNK_BYTES;
-    assertf(scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec),"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(rom+c->offset));
-    assertf(scene_crc32(dst,SCENE_CHUNK_BYTES)==c->crc,"Scene CRC mismatch");
+    bool decoded=scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec);
+    assertf(decoded,"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(rom+c->offset));
+    if (!decoded) abort();
+    uint32_t crc=scene_crc32(dst,SCENE_CHUNK_BYTES);
+    assertf(crc==c->crc,"Scene CRC mismatch");
+    if (crc!=c->crc) abort();
     data_cache_hit_writeback(dst,SCENE_CHUNK_BYTES);
     slots[slot].ready=true;slots[slot].lru=++clock_lru;
 }

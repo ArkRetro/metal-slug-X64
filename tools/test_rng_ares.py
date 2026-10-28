@@ -18,7 +18,7 @@ elif a.suite=='throw':
 elif a.suite=='locomotion':
     counts=dict(steps=len(fixture['cases']),starts=sum(c['init'] for c in fixture['cases']),draws=len(fixture['cases']),rng=sum(c['rng_calls'] for c in fixture['cases']))
 elif a.suite=='object':
-    counts=dict(steps=len(fixture['cases']),draws=len(fixture['cases']),palettes=4,sounds=1)
+    counts=dict(steps=len(fixture['cases']),draws=len(fixture['cases']),palettes=4,sounds=1,failures=11)
 elif a.suite=='attack':
     throw=json.loads((ROOT/'data/soldier_throw_fixture.json').read_text())
     counts=dict(steps=sum(c['kind']=='step' for c in fixture['cases']),draws=sum(len(c.get('draws',[])) for c in fixture['cases']),events=sum(len(c.get('calls',[])) for c in fixture['cases']),flight=len(throw['cases']),child=len(json.loads((ROOT/'data/soldier_object_fixture.json').read_text())['cases']),child_draws=len(json.loads((ROOT/'data/soldier_object_fixture.json').read_text())['cases']))

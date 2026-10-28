@@ -24,3 +24,54 @@ Las pruebas host completas y las compilaciones N64 pasan. La integración en are
 comprueba además la nueva entrada, el traspaso al jugador y sus controles. El
 parpadeo sigue siendo una corrección del guardia provisional: no convierte esa
 IA ni sus parámetros en comportamiento verificado de Neo Geo.
+
+## Segunda revisión: aserciones, recursos e historial
+
+Se han integrado en `beta-work` los commits de Claude `886e9e3` y
+`6e50a1c`, descritos en su [comentario de revisión](https://github.com/ArkRetro/metal-slug-X64/pull/1#issuecomment-6462874985).
+La proyección 2.5D se ejecuta fuera de `assert`, y los capturadores aceptan
+`rPC` en MAME 0.264. La misma auditoría encontró otras dos operaciones con
+ese problema: descomprimir un chunk del escenario y reiniciar Marco en la
+posición medida de entrada. Ambas se ejecutan ahora también con `NDEBUG`.
+Los fallos de descompresión/CRC siguen siendo fatales en esa configuración.
+
+Las dos observaciones pendientes de Claude quedan resueltas así:
+
+- **Recursos del objeto lanzado:** `UNSUPPORTED` cancela el objeto y libera su
+  propietario exactamente una vez, incluso si faltan los servicios en una
+  llamada posterior. No se reintenta un estado parcialmente ejecutado.
+  La sustitución de paleta precede a los efectos de la explosión y un paso
+  fallido no emite solicitudes de sonido. Once casos de fallo/cancelación
+  verifican este contrato nativo; no son comportamiento atribuido a la ROM.
+- **Token de historial:** VERIFICADO en RAM `0x10C33A`, rutina ROM `0x01AB50`:
+  `move.b ($433a,A5),D0; andi.b #1,D0; addq.b #1,D0; move.b D0,($433a,A5)`.
+  La escritura está en `0x01AB5A`; MAME comunica el PC posterior `0x01AB5E`.
+  Con A5=`0x108000`, el destino coincide con el watchpoint. Son 180 escrituras
+  medidas entre los fotogramas 2101 y 2459, alternando 1/2. El primer registro
+  duplicado por los dos watchpoints se descarta explícitamente. Ghidra confirma
+  las instrucciones con dirección; el trace de MAME confirma su ejecución.
+  No hace falta cambiar el centinela `mark==0`: el planificador nativo deberá
+  avanzar el token con `(anterior & 1) + 1` por pasada original de actores,
+  no por VBlank de N64. `neo_history.h` expresa esa operación; todavía no
+  sustituye al planificador global pendiente.
+
+La evidencia numérica del historial está en `data/soldier_history_fixture.json`;
+los hashes y límites de captura figuran allí. ROM, RAM y trazas completas
+permanecen fuera del repositorio. Herramientas reproducibles:
+`trace_projection_epoch.lua`, `extract_history_token.py` y el punto de entrada
+`0x01AB50` de `AnalyzeNeoGeoSoldier.java`.
+
+`check-core` se amplía aquí a RNG/soldado/animación/historial, 2.5D y auditorías
+Python, además de las seis pruebas anteriores. Se ha ejecutado en una copia
+sin SDK, build ni assets privados. `make check` pasa. Los once fallos y la
+secuencia original de 41 pasos pasan con ASan/UBSan; LeakSanitizer no puede
+usarse bajo el ptrace de este entorno y se desactivó en esa ejecución.
+
+En ares 146 pasan objeto (41 dibujos, 11 fallos, una solicitud de sonido)
+y ataque (20 estados, 40 consultas de suelo, 41 dibujos del objeto hijo).
+Informes locales: `claude-object-cleanup-approved/validation.json` y
+`claude-attack-cleanup-approved/validation.json` bajo `/workspace/emulator/`.
+El nuevo par interno `scene-debug.z64`/`scene-release.z64`, ejecutado mediante
+`test_release_ares.py`, compara ocho CRC de framebuffer RDP entre módulos
+normales y `NDEBUG`: cámaras 0/64/320/872, modos clásico y profundidad.
+No publica cartuchos ni constituye una prueba de Misión 1 completa.

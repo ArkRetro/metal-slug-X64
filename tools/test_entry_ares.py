@@ -39,8 +39,12 @@ with (out/'xvfb.log').open('w') as xlog:
     assert int(end[1])==1920 and int(end[2])==2212*65536-1
     for marker in ('MSX camera raised=','MSX middle bank full speed=','MSX defeated=3'):
      assert marker in text,marker
-    assert not re.search(r'misses=[1-9]',text),'Texture-cache deadline missed'
-    region=dict(camera=int(end[1]),x16=int(end[2]),cache_misses=0,limit='Three provisional guards, approximate camera and REGION END; not complete Mission 1.')
+    assert 'MSX DEPTH mode enabled' in text,'Region test requires the requested 2.5D build'
+    cache_samples=re.findall(r'MSX RDP: .* misses=(\d+) evictions=(\d+)',text)
+    assert cache_samples and all(int(m)==0 for m,e in cache_samples),'Missing cache measurements or texture deadline missed'
+    depth_samples=re.findall(r'MSX DEPTH: triangles=(\d+) limit=96 fog=1024 B lights=(\d+)',text)
+    assert depth_samples and all(int(t)<=96 and int(l)<=2 for t,l in depth_samples),'Missing 2.5D measurements or exceeded budget'
+    region=dict(camera=int(end[1]),x16=int(end[2]),cache_misses=0,depth_mode=True,depth_max_triangles=max(int(t) for t,l in depth_samples),cache_samples=len(cache_samples),limit='Three provisional guards, approximate camera and REGION END; not complete Mission 1.')
     ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'partial-region-end.png')
    key('keyup','Right');key('keyup','b')
    key('keydown','q');time.sleep(.12);key('keyup','q');wait('MSX diagnostics on');time.sleep(.1)

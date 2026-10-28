@@ -7,7 +7,7 @@ import argparse,collections,json,struct
 from pathlib import Path
 from neo_scene import state
 
-def extract(roots,output):
+def extract(roots,output,allow_backdrop_timeline=False):
     if isinstance(roots,Path):roots=[roots]
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
     observations=[];backdrops=set()
@@ -20,7 +20,7 @@ def extract(roots,output):
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
         backdrops.add(p[-1])
         scene=state(v,ram);camera=scene['camera'];offsets=scene['offsets']
-        observations.append(dict(frame=frame,captures=str(root),camera=camera,
+        observations.append(dict(frame=frame,captures=str(root),camera=camera,backdrop=p[-1],
             camera_ram=struct.unpack_from('>H',ram,0x2036)[0],offsets=offsets,
             vertical_offsets=scene['vertical_offsets'],active=scene['active'],
             full_speed_mid=scene['full_speed_mid'],
@@ -52,8 +52,9 @@ def extract(roots,output):
             code,flip,mask,palette=selected
             if palette not in palette_ids:palette_ids[palette]=len(palettes);palettes.append(palette)
             records.append(dict(layer=layer,x=x,y=y,code=code,flip=flip,animation_mask=mask,palette=palette_ids[palette],observations=count))
-    assert len(backdrops)==1,'Animated backdrop requires a separate palette timeline'
-    report=dict(source='MAME mslugx euro; calibrated SCB background bank 0x40000; enemy slots excluded',backdrop=next(iter(backdrops)),
+    assert len(backdrops)==1 or allow_backdrop_timeline,'Multiple backdrops require --allow-backdrop-timeline and native event recovery before packing'
+    report=dict(source='MAME mslugx euro; calibrated SCB background bank 0x40000; enemy slots excluded',backdrop=observations[0]['backdrop'],backdrop_values=sorted(backdrops),
+        backdrop_policy='Observed per-frame palette values; multiple values require a recovered runtime event, not a camera threshold inferred from samples',
         camera_max=max(o['camera'] for o in observations),width=max(o['camera'] for o in observations)+320,
         selection='first observed; dynamic coordinate variants retained separately',
         layers=[dict(numerator=n,denominator=d) for n,d in ((1,2),(3,4),(1,1),(1,1))],
@@ -63,4 +64,5 @@ def extract(roots,output):
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',type=Path,nargs='+');p.add_argument('--output',type=Path,default=Path('filesystem/mission1'))
-    a=p.parse_args();extract(a.captures,a.output)
+    p.add_argument('--allow-backdrop-timeline',action='store_true',help='Keep per-observation backdrop values for research; runtime event mapping remains required')
+    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline)

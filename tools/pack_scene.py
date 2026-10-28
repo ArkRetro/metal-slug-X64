@@ -94,6 +94,7 @@ def main():
             crop=[pixels[(row*32+y)*320+8+col*32+x] for y in range(32) for x in range(w)]
             background.append(image(crop,w,32))
     mission=json.loads((ROOT/'filesystem/mission1/map.json').read_text())
+    assert len(mission.get('backdrop_values',[mission['backdrop']]))==1,'Multiple observed backdrops need native event playback before scene packing'
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])

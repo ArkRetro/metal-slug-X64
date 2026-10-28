@@ -1,5 +1,6 @@
 #include "scene_renderer.h"
 #include "retro_effects.h"
+#include "mission_camera.h"
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
@@ -84,7 +85,13 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
 }
 void scene_render_background(unsigned camera,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
-    int offsets[]={(camera+1)/2,(camera*3+2)/4,camera,camera,camera};
+    // Layer 4 holds the market props; it scrolls with the foreground.
+    int height=msx_camera_height((int)camera),offsets[5],rises[5];bool visible[5];
+    for (unsigned i=0;i<5;i++) {
+        unsigned source=i<4?i:3;
+        offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
+        visible[i]=msx_layer_visible(source,(int)camera);
+    }
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
         bool ok=retro_plane_projection(depth_frame.camera,retro_effects_layer_depth(i),&depth_views[i]);
@@ -93,6 +100,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
     // Prefetch a margin on both sides, including the next autoanimation phase.
     for (unsigned i=0;i<count;i++) {
+        if (!visible[cells[i].layer]) continue;
         float x=background_x(&cells[i],cells[i].x-offsets[cells[i].layer]);
         if (x< -48 || x>=352) continue;
         scene_request_image(scene_map_image(cells[i].phases[video_tick&7]),2);
@@ -103,31 +111,33 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop()));
     if (!depth_mode) {
         for (unsigned i=0;i<count;i++) {
-            const scene_map_cell_t *cell=&cells[i];int x=cell->x-offsets[cell->layer];
-            if (x+16<=8 || x>=312) continue;
+            const scene_map_cell_t *cell=&cells[i];
+            if (!visible[cell->layer]) continue;
+            int x=cell->x-offsets[cell->layer],y=8+cell->y+rises[cell->layer];
+            if (x+16<=8 || x>=312 || y+16<=8 || y>=232) continue;
             const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-            blit(im,x,8+cell->y,im->x,im->y,16,16,false,false);
+            blit(im,x,y,im->x,im->y,16,16,false,false);
         }
         rdpq_set_scissor(0,0,320,240);return;
     }
     for (unsigned layer=0;layer<5;layer++) {
+      if (!visible[layer]) continue;
       for (unsigned i=0;i<count;i++) {
         const scene_map_cell_t *cell=&cells[i];
         if (cell->layer!=layer) continue;
         float x=background_x(cell,cell->x-offsets[cell->layer]);
         if (x+16*depth_views[layer].scale<=8 || x>=312) continue;
         const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-        if (depth_mode) {
-            const retro_plane_view_t *view=&depth_views[layer];
-            float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
-            blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
-        } else blit(im,(int)x,8+cell->y,im->x,im->y,16,16,false,false);
+        const retro_plane_view_t *view=&depth_views[layer];
+        // The depth camera carries the height (actor.c), so planes keep their own parallax.
+        float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
+        blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
       }
-      if (depth_mode && layer<2) {
+      if (layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
-    if (depth_mode) retro_effects_mesh(&depth_frame);
+    retro_effects_mesh(&depth_frame);
     rdpq_set_scissor(0,0,320,240);
 }
 void scene_render_box(int x,int y,int width,int height,color_t color) {

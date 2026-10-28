@@ -6,6 +6,7 @@
 #include "visual_config.h"
 #include "neo_collision.h"
 #include "vehicle_renderer.h"
+#include "mission_camera.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -41,14 +42,14 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
     const scene_bank_t *bank=scene_bank(bank_id);
     const scene_image_t *im=scene_frame(bank_id,frame);
     int x=center-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
-    scene_render_image(im,x,136+dy+im->y,mirror,flash);
+    scene_render_image(im,x,136+dy+msx_camera_height(game.camera)+im->y,mirror,flash);
 }
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
     const scene_image_t *im=scene_frame(SCENE_PROJECTILES,0);
     bool mirror=bullet->direction<0;
     int x=bullet->x-game.camera-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
-    int y=bullet->y-bank->height/2+im->y;
+    int y=bullet->y+msx_camera_height(game.camera)-bank->height/2+im->y;
     scene_render_image(im,x,y,mirror,false);
     unsigned observed=1u<<(owner*2+mirror);
     if (!(observed_projectiles&observed)) {
@@ -102,6 +103,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
     if (!old_camera && game.camera) debugf("MSX camera moving\n");
+    if (msx_camera_height(game.camera)!=msx_camera_height(old_camera) && msx_camera_height(game.camera)==MSX_CAMERA_RISE_MAX)
+        debugf("MSX camera raised=%d\n",game.camera);
+    if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
     if (!was_complete && game.complete) debugf("MSX observed region end\n");
     if (was_grounded && !game.grounded) debugf("MSX jump\n");
@@ -130,7 +134,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_request_image(scene_frame(SCENE_SOLDIER,(sf+i)%soldier->first),2);
     scene_service();
 #if MSX_RETRO25D
-    retro_frame_t effects={.camera={game.camera,0,0,320},.tick=game.ticks};
+    retro_frame_t effects={.camera={game.camera,-msx_camera_height(game.camera),0,320},.tick=game.ticks};
     effects.shadows[effects.shadow_count++]=(retro_shadow_t){(float)game.x/MSX_UNIT,192.0f+(float)game.y/MSX_UNIT,depth_support_y(),12};
     if (game.enemy.alive) effects.shadows[effects.shadow_count++]=(retro_shadow_t){game.enemy.x,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,10};
     if (game.shooting && game.shot_age<3) effects.lights[effects.light_count++]=(retro_light_t){

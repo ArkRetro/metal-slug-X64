@@ -1,6 +1,8 @@
 #include <assert.h>
 #include <stdio.h>
 #include "../src/gameplay.h"
+#include "../src/mission_camera.h"
+#include "../src/neo_collision.h"
 int main(void) {
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
@@ -23,8 +25,15 @@ int main(void) {
     for (unsigned i=0;i<160;i++) {msx_game_update(&roof,1,false,false);fell|=!roof.grounded;}
     assert(fell && roof.grounded && roof.y== -8*MSX_UNIT); // Walk off to lower ground.
     g.enemy.alive=false;
-    for (unsigned i=0;i<1600;i++) msx_game_update(&g,1,false,false);
-    assert(g.x==MSX_END_X && g.camera==872);
+    // The region now ends at camera 1920 (was 872): MSX_END_X keeps camera+292-1/65536.
+    assert(MSX_WORLD_WIDTH-320==MSX_CAMERA_MAX && MSX_END_X==(MSX_CAMERA_MAX+292)*MSX_UNIT-1);
+    int highest=0;
+    for (unsigned i=0;i<1600;i++) {
+        msx_game_update(&g,1,false,false);
+        assert(g.camera>=highest && g.camera<=MSX_CAMERA_MAX && g.x<=MSX_END_X);highest=g.camera;
+        if (g.x>1200*MSX_UNIT && g.x<2100*MSX_UNIT) assert(g.grounded && g.y==-8*MSX_UNIT); // Walkable Y=64 floor.
+    }
+    assert(g.x==MSX_END_X && g.camera==MSX_CAMERA_MAX);
     int camera=g.camera;
     for (unsigned i=0;i<100;i++) msx_game_update(&g,-1,false,false);
     assert(g.x<MSX_END_X && g.camera==camera); // Camera does not scroll backwards.
@@ -43,7 +52,7 @@ int main(void) {
     }
     assert(last_guard_seen);
     assert(g.complete && g.kills==3 && g.hits==6 && g.health>0);
-    assert(g.checkpoint==640 && g.camera==872 && !g.enemy.alive && !g.enemy.respawn);
+    assert(g.checkpoint==640 && g.camera==MSX_CAMERA_MAX && g.x==MSX_END_X && !g.enemy.alive && !g.enemy.respawn);
     int final_x=g.x;msx_game_update(&g,-1,true,true);assert(g.x==final_x);
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.enemy.alive=false;
@@ -64,5 +73,24 @@ int main(void) {
     msx_game_t unchanged=g;
     assert(!msx_game_begin_at(&g,7852402,6157406));
     assert(g.x==unchanged.x && g.y==unchanged.y);
-    puts("PASS: half-rate input, air landing, dune/village support, camera bounds, provisional encounters and respawn");
+    // Extended terrain: floor beyond the old end, and a measured upper roof.
+    assert(msx_ground_offset(1192*MSX_UNIT)== -8*MSX_UNIT && msx_ground_offset(2200*MSX_UNIT)== -8*MSX_UNIT);
+    msx_game_init(&g);g.enemy.alive=false;g.camera=1200;g.x=1350*MSX_UNIT;g.y=56*MSX_UNIT-170*MSX_UNIT;g.grounded=false;
+    for (unsigned i=0;i<120 && !g.grounded;i++) msx_game_update(&g,0,false,false);
+    assert(g.grounded && g.y==56*MSX_UNIT-144*MSX_UNIT); // Lands on the Y=144 roof, not the floor below.
+    msx_game_init(&g);g.enemy.alive=false;g.camera=1800-144;g.x=1800*MSX_UNIT;g.y=msx_ground_offset(g.x);
+    msx_game_update(&g,0,true,false);
+    for (unsigned i=0;i<200 && (g.ticks<4 || !g.grounded);i++) msx_game_update(&g,0,false,false);
+    assert(g.grounded && g.y==-8*MSX_UNIT && g.camera==1800-144 && g.air_ticks>0);
+    // Vertical camera: scroll-driven rise 944..1008; middle bank switches at 1023.
+    assert(msx_camera_height(872)==0 && msx_camera_height(944)==0 && msx_camera_height(947)==1);
+    assert(msx_camera_height(965)==6 && msx_camera_height(1008)==16 && msx_camera_height(MSX_CAMERA_MAX)==16);
+    assert(msx_layer_visible(1,1022) && !msx_layer_visible(2,1022) && !msx_layer_visible(1,1023) && msx_layer_visible(2,1023));
+    // The observed vehicle wreck at X=1174 is complete now: 13 cells, as in the arcade trace.
+    neo_collision_reset();
+    assert(neo_collision_vehicle_wreckage(1174*MSX_UNIT,64*MSX_UNIT,1)==13);
+    assert(neo_collision_cell(1196,80)==10 && neo_collision_cell(1208,64)==10); // Cells beyond the old 1192 limit.
+    neo_collision_reset();
+    assert(!neo_collision_cell(1196,80) && !neo_collision_cell(1208,64)); // Event-only: never static terrain.
+    puts("PASS: half-rate input, air landing, dune/village support, camera 0..1920 bounds and height, extended terrain, provisional encounters and respawn");
 }

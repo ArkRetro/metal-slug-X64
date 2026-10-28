@@ -166,9 +166,11 @@
       "health 300 to 0",
       "13-cell wreckage stamp",
       "walk onto wreck",
-      "restart and lab"
+      "restart and lab",
+      "first periodic cache sample misses=0"
     ],
-    "log_sha256": "16a97b8ea4a061ef7a1670a40f3c827d512f22a45e9d453a04eeb228d60a152e",
-    "limit": "Provisional player attack rules; not recovered complete Mission 1."
+    "log_sha256": "ae6cb135eeefee6d2902ad559d7b991b5d6428b65ce23c80272ee092c643de04",
+    "limit": "Provisional player attack rules; not recovered complete Mission 1.",
+    "test_fix": "Await frame-300 diagnostic instead of assuming it exists when the encounter finishes."
   }
 }

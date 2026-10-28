@@ -3,12 +3,15 @@
   "columns": 280,
   "rows": 32,
   "snapshots": 86,
+  "runs": [
+    "captures-map/advance (MAME 0.264 rerun of tools/capture_advance.lua)"
+  ],
   "observed_cells": 8960,
   "invariant_cells": 8950,
   "mutable_cells": 10,
   "unknown_cells": 0,
   "ready_for_static_export": false,
-  "runtime_policy": "Do not compile this report directly. Recover original object/event triggers before activating mutable collision states; capture frame numbers are not gameplay triggers.",
+  "validity": "One byte per column-major cell: 1=invariant observed value; 0=unknown or mutable. Zero data with mask 0 is NOT empty terrain.",
   "mutable": [
     {
       "x": 1112,
@@ -341,7 +344,23 @@
       ]
     }
   ],
+  "runtime_policy": "Do not compile this report directly. Recover original object/event triggers before activating mutable collision states; capture frame numbers are not gameplay triggers.",
   "existing_region_invariant_matches": 4758,
   "existing_region_invariant_mismatches": 0,
-  "runtime_change": "None: original validated region remains active. Mutable object/event triggers are not yet recovered."
+  "collision_layer": "Foreground object 0x10C72E until the middle bank scrolls at full speed (camera 1023); then middle object 0x10D7B6. Verified with read/write taps (tools/trace_collision_loader.lua): query PC 0xC7A1A switches grids and the loader stops writing the foreground ring after camera 1022.",
+  "event_cells_first_observed_after_event": [
+    {
+      "x": 1192,
+      "y": 80
+    },
+    {
+      "x": 1200,
+      "y": 72
+    },
+    {
+      "x": 1208,
+      "y": 64
+    }
+  ],
+  "runtime_change": "filesystem/mission1/collision.json now comes from tools/extract_region_collision.py: 280 columns, invariant cells plus the 13 wreck cells at their pre-event value (0). The wreck remains an event (neo_collision_vehicle_wreckage)."
 }

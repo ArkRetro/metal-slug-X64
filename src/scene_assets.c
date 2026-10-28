@@ -4,6 +4,8 @@
 #include "scene_assets.h"
 #include "scene_codec.h"
 #include "scene_meta.h"
+#include "mission_camera.h"
+_Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay camera limits differ");
 
 typedef struct { int chunk; bool ready; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
@@ -96,10 +98,20 @@ void scene_assets_init(void) {
         const scene_bank_t *b=&scene_banks[bank];
         for (unsigned i=0;i<b->first+b->second;i++) pinned[scene_images[b->start+i].page/8]=true;
     }
-    for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) request(i,1);
-    for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) require_chunk(i);
-    debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB DMA=%u bytes\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,stats.dma_bytes);
-    stats.misses=0; // Startup waits are outside the gameplay deadline.
+    // With 4 MiB the extended map (camera 0..1920) no longer fits completely:
+    // warm the opening view last, so LRU eviction keeps it resident, and stream
+    // the rest by prefetch. tools/check_scene_budget.py bounds the working set.
+    static bool opening[SCENE_CHUNK_COUNT];
+    for (unsigned i=0;i<SCENE_MAP_CELL_COUNT;i++) {
+        const scene_map_cell_t *cell=&scene_map_cells_data[i];unsigned layer=cell->layer<4?cell->layer:3;
+        int x=cell->x-msx_layer_scroll(layer,0);
+        if (!msx_layer_visible(layer,0) || x< -48 || x>=352) continue;
+        for (unsigned phase=0;phase<8;phase++) opening[scene_map_images[cell->phases[phase]].page/8]=true;
+    }
+    for (unsigned pass=0;pass<2;pass++) for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++)
+        if (opening[i]==(pass==1)) { request(i,1);require_chunk(i); }
+    debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB DMA=%u bytes startup evictions=%u\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,stats.dma_bytes,stats.evictions);
+    stats.misses=stats.evictions=0; // Startup waits/evictions are outside the gameplay deadline.
 }
 const scene_bank_t *scene_bank(unsigned id) { assert(id<SCENE_BANK_COUNT);return &scene_banks[id]; }
 const scene_image_t *scene_frame(unsigned id,unsigned frame) {

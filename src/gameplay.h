@@ -3,9 +3,11 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "neo_vehicle.h"
-enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=1192 };
+// Observed region: camera 0..1920. The right limit keeps the arcade fraction
+// (camera+292-1/65536), measured at 1164 for camera 872 and 2212 for 1920.
+enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=2240 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
-enum { MSX_START_X=0x78bad9, MSX_END_X=1164*MSX_UNIT-1 };
+enum { MSX_START_X=0x78bad9, MSX_END_X=2212*MSX_UNIT-1 };
 typedef struct { int x,y,direction; bool active; } msx_bullet_t;
 enum { MSX_IDLE, MSX_RUN, MSX_FIRE, MSX_JUMP, MSX_RUN_JUMP, MSX_RUN_FIRE };
 typedef struct { int x,facing; unsigned health,flash,cooldown,respawn; bool alive; } msx_enemy_t;

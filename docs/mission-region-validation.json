@@ -1,0 +1,81 @@
+{
+  "source": "MAME mslugx euro. Run 1: 36 snapshots of the existing region (MAME 0.276, tools/capture_mission.lua). Run 2: 86 snapshots, frames 2100..7200, tools/capture_advance.lua rerun on MAME 0.264; its positions.csv is identical in the camera and loader traces.",
+  "map": {
+    "cells": 2719,
+    "palettes": 48,
+    "coordinate_variants": 63,
+    "camera_max": 1920,
+    "validation": {
+      "frames": 122,
+      "map_pixels": 8307712,
+      "known_variant_pixels": 24236,
+      "mame_uncovered_pixels": 4952880,
+      "tolerance": "exact SCB reconstruction except recorded variant coordinates; uncovered MAME RGB8 pixels <=1 per channel"
+    },
+    "note": "The earlier 0.276 advance capture reported 4953328 uncovered pixels; this 0.264 rerun covers 4952880. Map pixels and variants match."
+  },
+  "runtime_camera_model": {
+    "frames": 122,
+    "exact": 67,
+    "differences": {
+      "x layer 1": 10,
+      "height": 45
+    },
+    "known": {
+      "x layer 1": "3/4 layer accumulates +-1 px (pre-existing approximation)",
+      "height": "1 player-following transient (frame 3900) and 44 frames after the unrecovered 16 px lift at camera 1920"
+    }
+  },
+  "camera_traces": {
+    "jumping": "tools/capture_camera.lua MSX_CAMERA_LAST=7200: height rises 0->16 between camera 947 and 1008, exactly ceil((camera-944)/4); middle bank full speed at camera 1023 (frame 3404); transient rise to 23 at camera 1550..1607 while the player jumps; another 16 px at camera 1920 from frame 4566.",
+    "no_jump": "MSX_CAMERA_JUMP=0: rise starts at camera 947 but stops at 14 (camera 1008..1470); middle bank switch also at camera 1023."
+  },
+  "collision": {
+    "columns": 280,
+    "rows": 32,
+    "snapshots": 122,
+    "nonempty": 430,
+    "prefix_columns_identical": 149,
+    "event_cells": 13,
+    "event": {
+      "anchor_cell": [
+        146,
+        8
+      ],
+      "flags": 1,
+      "before_frame": 3060,
+      "after_frame": 3120
+    },
+    "layer_switch": "tools/trace_collision_loader.lua (frames 2100..4400): query PC 0xC7A1A reads the foreground grid 17178 times before the switch and the middle grid 20061 times after; at the switch PC 0xC75A0 reads 2048 foreground words and 0xC75A2 writes 4096 middle bytes; the loader (0xC734E..0xC735A) writes the foreground ring only up to camera 1022."
+  },
+  "scene_pack": {
+    "before": {
+      "pages": 235,
+      "palettes": 75,
+      "chunks": 30,
+      "decoded_bytes": 491520,
+      "packed_bytes": 272832
+    },
+    "after": {
+      "pages": 296,
+      "palettes": 101,
+      "chunks": 37,
+      "decoded_bytes": 606208,
+      "packed_bytes": 388352
+    },
+    "budget": {
+      "chunks": 37,
+      "fixed_actor_chunks": 12,
+      "worst_working_set": 25,
+      "worst_camera": 1056,
+      "cache_slots": {
+        "4MiB": 32,
+        "8MiB": 37
+      },
+      "fits_without_eviction": {
+        "4MiB": false,
+        "8MiB": true
+      }
+    }
+  }
+}

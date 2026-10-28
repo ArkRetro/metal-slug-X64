@@ -6,7 +6,10 @@
 int main(void) {
     neo_surface_t s;
     assert(!neo_surface_at(-1,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
-    assert(!neo_surface_at(1192*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
+    // The recovered grid now spans camera 0..1920 (2240 px); 1192 was the old limit.
+    assert(!neo_surface_at(2240*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
+    assert(neo_surface_at(1192*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s) && s.height==64*NEO_UNIT);
+    assert(neo_surface_at(2239*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s) && s.height==64*NEO_UNIT);
     assert(neo_collision_cell(-1,64)==0 && neo_collision_cell(0,-1)==0);
     assert(neo_surface_at(600*NEO_UNIT,64*NEO_UNIT,1,1,&s) && s.height==64*NEO_UNIT);
     assert(neo_surface_at(600*NEO_UNIT,96*NEO_UNIT,1,1,&s) && s.height==96*NEO_UNIT);

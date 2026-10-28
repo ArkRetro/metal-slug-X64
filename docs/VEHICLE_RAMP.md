@@ -47,8 +47,10 @@ aplicación no duplica el efecto.
 Las diez celdas de la auditoría anterior eran diferencias observadas en
 ventanas del escenario, no la plantilla completa del vehículo. No deben
 convertirse en una rampa fija que aparece al matar tres enemigos provisionales.
-La interacción con la carga de columnas fuera de la ventana observada también
-debe conservarse al integrar el escenario completo.
+La interacción con la carga de columnas está medida: los restos viven en el
+anillo frontal, que se copia al objeto medio en la cámara 1023 y después se
+sobrescribe al cargar columnas nuevas. No hay restos fantasma 512 px después
+(véase [COLLISION.md](COLLISION.md)).
 
 ## Repetir y verificar
 
@@ -85,6 +87,8 @@ no establece que sea obligatorio eliminar todos los soldados cercanos como
 condición independiente. Esa parte se debe recuperar del evento de oleada.
 
 La configuración de referencia aplica la huella al destruir el vehículo y
-permite caminar sobre sus restos. El escenario predeterminado no inventa un
+permite caminar sobre sus restos. Con la cuadrícula ampliada a 2240 px, la
+huella en X=1174 escribe las 13 celdas, como el original; antes se recortaban
+las tres de X=1192..1208. El escenario predeterminado no inventa un
 evento de oleada ni amplía todavía el tramo jugable. Las ROM de comprobación
 en ares son internas; no se publica otra demo.

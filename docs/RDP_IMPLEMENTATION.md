@@ -108,7 +108,7 @@ comprueba codec, límites y CRC antes de entregar páginas al RDP.
 Pruebas del host:
 
 ```sh
-cc -std=c11 -Wall -Wextra -Werror tools/test_gameplay.c src/gameplay.c -o /tmp/msx-game
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o /tmp/msx-game
 /tmp/msx-game
 cc -std=c11 -Wall -Wextra -Werror tools/test_scene_codec.c -o /tmp/msx-codec
 /tmp/msx-codec

@@ -85,8 +85,11 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
 void scene_render_background(unsigned camera,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     int offsets[]={(camera+1)/2,(camera*3+2)/4,camera,camera,camera};
-    if (depth_mode) for (unsigned i=0;i<5;i++)
-        assert(retro_plane_projection(depth_frame.camera,retro_effects_layer_depth(i),&depth_views[i]));
+    // Keep the projection outside assert(): NDEBUG would otherwise drop it.
+    if (depth_mode) for (unsigned i=0;i<5;i++) {
+        bool ok=retro_plane_projection(depth_frame.camera,retro_effects_layer_depth(i),&depth_views[i]);
+        assertf(ok,"Retro plane projection");(void)ok;
+    }
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
     // Prefetch a margin on both sides, including the next autoanimation phase.
     for (unsigned i=0;i<count;i++) {

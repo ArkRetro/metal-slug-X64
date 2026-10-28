@@ -71,7 +71,7 @@ static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,i
         last_width=image->width;last_height=image->height;uploads++;tmem_bytes+=(unsigned)bytes;
     }
     rdpq_texture_rectangle_scaled(TILE0,x,y,x+draw_width,y+draw_height,
-        mirror?s+width:s,t,mirror?s:s+width,t+height);
+        mirror?s+width-1:s,t,mirror?s-1:s+width,t+height);
     draws++;
 }
 static float background_x(const scene_map_cell_t *cell,int fallback) {

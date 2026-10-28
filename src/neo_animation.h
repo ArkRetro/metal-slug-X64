@@ -7,7 +7,9 @@
  * pointers; field50's complete gameplay semantics remain unverified. */
 typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
     NEO_ANIM_FINISH,NEO_ANIM_FLIP_FACING,NEO_ANIM_UNRECOVERED,
-    NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW,NEO_ANIM_SELECT_POSE } neo_anim_kind_t;
+    NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW,NEO_ANIM_SELECT_POSE,
+    NEO_ANIM_WRITE_BYTE,NEO_ANIM_WRITE_WORD,NEO_ANIM_WRITE_LONG,
+    NEO_ANIM_DECREMENT_BYTE,NEO_ANIM_BRANCH_FIELD,NEO_ANIM_SELECT_FIELD_POSE } neo_anim_kind_t;
 typedef struct {
     neo_anim_kind_t kind;
     uint32_t asset;
@@ -38,6 +40,13 @@ typedef enum { NEO_ANIM_MORE,NEO_ANIM_COMPLETE,NEO_ANIM_INVALID,NEO_ANIM_UNSUPPO
  * resources/spawn queues. It never receives a callable original CPU address. */
 typedef bool (*neo_anim_event_t)(void *context,neo_anim_kind_t kind,uint32_t asset,
     neo_anim_render_t *render);
+/* Typed field boundary for converted player animation data. Field identifiers
+ * are offline provenance tags; this callback maps them to native C members,
+ * never to emulated RAM. Return false for fields not yet recovered. */
+typedef bool (*neo_anim_field_t)(void *context,unsigned field,unsigned bytes,bool write,uint32_t *value);
+neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *state,neo_anim_render_t *render,
+    neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context,
+    neo_anim_field_t field,void *field_context);
 /* ROM 004256: reset timer/field18, preserve flash and field50 tag. */
 void neo_anim_start(neo_anim_state_t *state,const neo_anim_program_t *program,uint16_t speed);
 /* ROM 00427A control flow, with RDP-independent output. budget is a caller's

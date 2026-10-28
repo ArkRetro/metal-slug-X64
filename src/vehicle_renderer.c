@@ -29,7 +29,7 @@ void vehicle_renderer_draw(const neo_vehicle_t *v,int camera,bool flash) {
         // The pinned SDK's multi-upload return count is a TODO (always zero).
         // Validate actual format/stride at load; its uploader also checks TMEM.
         rdpq_sprite_upload(TILE0,poses[v->pose][flash][part],NULL);
-        rdpq_texture_rectangle_scaled(TILE0,left,y,left+64,y+64,mirror?64:0,0,mirror?0:64,64);
+        rdpq_texture_rectangle_scaled(TILE0,left,y,left+64,y+64,mirror?63:0,0,mirror?-1:64,64);
     }
     rdpq_mode_pop();scene_render_forget_texture();
 }

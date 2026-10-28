@@ -1,5 +1,10 @@
 # Native port status and next delivery
 
+Current priority from the user: complete **all Marco animations** before further
+level expansion. This is not complete: see [Marco animation recovery](MARCO_ANIMATIONS.md).
+The new observed-descriptor renderer and script primitives are validated separately;
+the active campaign still uses the historical six-state visual selector.
+
 The latest user instruction supersedes the earlier complete-campaign-beta gate:
 the next requested delivery is a playable demo of the **complete first mission,
 including its full intro and sound**,

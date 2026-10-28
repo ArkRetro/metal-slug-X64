@@ -117,6 +117,29 @@ $(BUILD_DIR)/soldier_fixture.h: tools/compile_soldier_fixture.py data/first_sold
 $(BUILD_DIR)/rng_fixture.h: tools/compile_rng_fixture.py data/soldier_rng_fixture.json
 	python3 tools/compile_rng_fixture.py
 $(BUILD_DIR)/tools/test_neo_rng.o: $(BUILD_DIR)/rng_fixture.h
+# Private graphics conversion is an explicit offline step; never needs ROMs in CI.
+$(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/marco-poses.stamp:
+	@echo "Run tools/build_marco_poses.py with an audited local capture first."
+	@exit 1
+$(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/tools/test_marco_render.o: $(BUILD_DIR)/marco_pose_meta.h
+$(BUILD_DIR)/tools/test_marco_render.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_marco_render.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/marco-render.elf: $(BUILD_DIR)/tools/test_marco_render.o $(BUILD_DIR)/src/marco_renderer.o
+$(BUILD_DIR)/marco-render.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/marco-render-romfs
+$(BUILD_DIR)/marco-render-romfs/.stamp: $(BUILD_DIR)/marco-poses.stamp
+	mkdir -p $(BUILD_DIR)/marco-render-romfs
+	cp -r romfs/marco $(BUILD_DIR)/marco-render-romfs/
+	touch $@
+$(BUILD_DIR)/marco-render.dfs: $(BUILD_DIR)/marco-render-romfs/.stamp
+marco-render.z64: N64_ROM_TITLE = "MSX MARCO PIXELS"
+marco-render.z64: $(BUILD_DIR)/marco-render.dfs
+
+$(BUILD_DIR)/tools/test_marco_fields.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_marco_fields.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/tools/test_marco_fields.o: $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h
+$(BUILD_DIR)/marco-regression.elf: $(BUILD_DIR)/tools/test_marco_fields.o $(BUILD_DIR)/src/neo_animation.o
+marco-regression.z64: N64_ROM_TITLE = "MSX MARCO TEST"
+
 $(BUILD_DIR)/rng-regression.elf: $(BUILD_DIR)/tools/test_neo_rng.o $(BUILD_DIR)/src/neo_rng.o $(BUILD_DIR)/src/neo_soldier.o
 rng-regression.z64: N64_ROM_TITLE = "MSX RNG TEST"
 $(BUILD_DIR)/animation_fixture.h: tools/compile_animation_fixture.py data/soldier_animation_fixture.json
@@ -187,7 +210,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
+	rm -rf build marco-render.z64 marco-regression.z64 mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
@@ -195,10 +218,16 @@ check-cinematic: $(BUILD_DIR)/entry_meta.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/cinematic-pack
 	$(BUILD_DIR)/host/cinematic-pack filesystem/cinematics/entry.msxc
+$(BUILD_DIR)/marco_selectors.h: tools/compile_marco_selectors.py data/marco_selector_fixture.json
+	python3 tools/compile_marco_selectors.py
+
+$(BUILD_DIR)/marco_fields.h: tools/compile_marco_fields.py data/marco_fields_fixture.json
+	python3 tools/compile_marco_fields.py
+
 $(BUILD_DIR)/history_fixture.h: tools/compile_history_fixture.py data/soldier_history_fixture.json
 	python3 tools/compile_history_fixture.py
 
-check-core: $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
+check-core: $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -225,11 +254,14 @@ check-core: $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DI
 	$(BUILD_DIR)/host/retro25d
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_history.c -o $(BUILD_DIR)/host/history
 	$(BUILD_DIR)/host/history
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_fields.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-fields
+	$(BUILD_DIR)/host/marco-fields
 check: check-core $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
 	$(BUILD_DIR)/host/gameplay
+	python3 tools/test_marco_sprite_edges.py
 	$(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c -o $(BUILD_DIR)/host/vehicle
 	$(BUILD_DIR)/host/vehicle

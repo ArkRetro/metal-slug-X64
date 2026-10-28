@@ -6,11 +6,13 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco'),default='rng')
 a=p.parse_args();out=a.output.resolve()
-fixture_path=ROOT/('data/soldier_'+a.suite+'_fixture.json')
+fixture_path=ROOT/('data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
-if a.suite=='rng':
+if a.suite=='marco':
+    counts=dict(fields=len(fixture['cases']),selectors=len(json.loads((ROOT/'data/marco_selector_fixture.json').read_text())['cases']))
+elif a.suite=='rng':
     counts=dict(seeds=len(fixture['seeds']),calls=len(fixture['steps']),initializers=len(fixture['initializers']),
         decisions=len(fixture['decisions']),damping=len(fixture['damping']))
 elif a.suite=='throw':
@@ -62,6 +64,7 @@ with (out/'xvfb.log').open('w') as xlog:
             fixture_sha256=hashlib.sha256(fixture_path.read_bytes()).hexdigest(),suite=a.suite,
             **counts,
             limit='Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.')
+        if a.suite=='marco':report['selector_fixture_sha256']=hashlib.sha256((ROOT/'data/marco_selector_fixture.json').read_bytes()).hexdigest()
         if a.suite in ('contact','control','state'):report['animation_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_animation_fixture.json').read_bytes()).hexdigest()
         if a.suite in ('control','state'):report['contact_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_contact_fixture.json').read_bytes()).hexdigest()
         if a.suite=='state':report['control_fixture_sha256']=hashlib.sha256((ROOT/'data/soldier_control_fixture.json').read_bytes()).hexdigest()

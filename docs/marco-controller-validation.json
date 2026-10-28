@@ -187,5 +187,62 @@
     "Native event requests do not implement ammunition, RNG, damage, spawning or audio effects by themselves.",
     "Vertical-reflection/edge cases are synthetic and separate from observed player actions.",
     "No real-hardware performance claim."
-  ]
+  ],
+  "upper_and_crouch": {
+    "upper_reference": {
+      "status": "PASS",
+      "emulator": "ares 146, retained workspace build",
+      "rom_sha256": "16bf0d72031070d157ff49a50be4bb7fa069cb7658c3b9aa9f9e60d5f4d94b48",
+      "log_sha256": "fed23b245c0607b409adabc665f7feeed3c28c9b3721571f3e3b12a5a3ac0c33",
+      "fixture_sha256": "0ae880950ac1313ed56c0147cbfa15fcbe6ac5906c847138405c6c92c7fa1916",
+      "suite": "upper",
+      "calls": 1450,
+      "resets": 57,
+      "services": 1753,
+      "limit": "Whole upper-controller updates coupled to real native scripts. World allocator/RNG outcomes and outer body updates remain service inputs. No complete player/campaign or hardware performance claim.",
+      "native_animation": true,
+      "native_draws": 993,
+      "native_events": 119
+    },
+    "upper_combat": {
+      "status": "PASS",
+      "emulator": "ares 146, retained workspace build",
+      "rom_sha256": "653cd1b25fb4d6d42a6fd32b5b2fac0ea9ce144d7a49577405c38ab56c73f38d",
+      "log_sha256": "a37ac2fc054cc8270b32f759d04d141c88fcd96dd8f0b3084b0cdbeb820d983d",
+      "fixture_sha256": "0a04c66404e25f6352196bd18a2097803303a53269d85ecad851b96848ca813c",
+      "suite": "upper",
+      "calls": 642,
+      "resets": 14,
+      "services": 967,
+      "limit": "Whole upper-controller updates coupled to real native scripts. World allocator/RNG outcomes and outer body updates remain service inputs. No complete player/campaign or hardware performance claim.",
+      "native_animation": true,
+      "native_draws": 604,
+      "native_events": 147
+    },
+    "crouch_turn": {
+      "status": "PASS",
+      "emulator": "ares 146, retained workspace build",
+      "rom_sha256": "1e74f2dd6f0b0e6ce472554af1c18b1dadb5ddc2b690aaab98176837819f8ff1",
+      "log_sha256": "346e3b4b01bd7551c577654daa2233b296afa48367c31727802f738e62a4bac7",
+      "fixture_sha256": "e7e058f65e1132d06f3751ce20660e1837352ef304abbb17cf1c2a944b311a01",
+      "suite": "crouch",
+      "calls": 416,
+      "services": 887,
+      "draws": 414,
+      "events": 38,
+      "limit": "Native crouch-body transitions with real animation programs. Recorded world movement/allocator inputs; common player processing and campaign integration remain incomplete. No release.",
+      "native_animation": true
+    },
+    "fixtures": {
+      "data/marco_upper_fixture.json": "0ae880950ac1313ed56c0147cbfa15fcbe6ac5906c847138405c6c92c7fa1916",
+      "data/marco_upper_combat_fixture.json": "0a04c66404e25f6352196bd18a2097803303a53269d85ecad851b96848ca813c",
+      "data/marco_crouch_fixture.json": "75c5d09cc54a85a528580ca2e2e3a379b48fbaff283d597683f7853e743a07e6",
+      "data/marco_crouch_turn_fixture.json": "e7e058f65e1132d06f3751ce20660e1837352ef304abbb17cf1c2a944b311a01"
+    },
+    "limits": [
+      "No complete weapon inventory or campaign integration.",
+      "Public fixture services are replayed; private ares suites execute real animation scripts with recorded world inputs.",
+      "ASan/UBSan PASS; leak checking disabled because of ptrace environment."
+    ]
+  }
 }

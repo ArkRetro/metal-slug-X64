@@ -178,3 +178,64 @@ Los resultados privados se generan en `build/marco-advance/`; el cartucho intern
 es `marco-advance-pixels.z64`. El runner acepta `--controller-fixture` y
 `--pixel-reference` para distinguir este corpus del anterior. Los datos de
 animación convertidos y los assets siguen fuera de Git.
+
+## Controlador superior y cuerpo agachado recuperados
+
+`marco_upper.c` traduce `0x0C37CE..0x0C419C` a estados y funciones C. Incluye
+reposo, disparo, granada, cuerpo a cuerpo, cambios de puntería y las ramas de
+repetición que el original distingue para los valores de arma 5/10 y 6/11.
+Esas ramas tienen evidencia estática; **las capturas actuales no verifican todas
+las armas**. El tipo de arma procede del byte global `0x10C71E` para el jugador
+0, no del campo +6C del actor. La tabla de compatibilidad está en `0x0BEDC0`.
+Las direcciones documentan procedencia: no son punteros ejecutables en N64.
+
+Se han observado y comparado 1.450 llamadas completas (57 reinicios) en la
+secuencia de referencia y 642 (14 reinicios) en combate. Los ensayos privados
+acoplan estos estados al motor de animación C real: respectivamente 993 y
+604 dibujos, con 119 y 147 solicitudes de efectos. Ambos pasan en MIPS/ares.
+Las decisiones exteriores del cuerpo, las respuestas del RNG mundial y la
+reserva de actores siguen siendo entradas registradas de esos ensayos.
+
+Dos detalles comprobados evitan alterar las transiciones: el controlador de arma
+comprueba `D7.w`, mientras el cuerpo comprueba carry; una animación NULL no tiene
+el mismo resultado para ambos. El contador +95 avanza únicamente si se reserva
+el proyectil (`0x0C4430` / `0x0C44A6`). El permiso y consumo de granadas
+(`0x0C478E..0x0C47A8`) respeta la opción global observada; no sustituye la física
+ni la inicialización del actor hijo.
+
+`marco_crouch.c` traduce `0x0C2214..0x0C263E`: entrar, esperar, girarse,
+desplazarse, disparar, lanzar una granada y las transiciones posteriores.
+La prioridad de salto, giro, disparo y granada se conserva por estado; no se
+sustituye por una prioridad común. Las solicitudes de levantarse, saltar o caer
+son destinos explícitos que el controlador general debe despachar **en la misma
+actualización**. El procesamiento común `0x0C32F4` sigue pendiente de integración.
+
+Dos planes con entradas reales, sin escribir RAM, comprueban 227 y 416 bloques
+completos. En el segundo, los programas nativos reales producen los 414 dibujos
+y 38 solicitudes de efectos registrados; pasa también en MIPS/ares. Los siete
+bancos usados enlazan 204 comandos convertidos, sin instrucciones sin recuperar
+en ese grafo. Esto acredita ese recorrido, no el inventario completo de Marco.
+Los ensayos host con AddressSanitizer y UndefinedBehaviorSanitizer pasan;
+LeakSanitizer se desactiva porque el entorno ejecuta bajo ptrace. Estas rutas no
+reservan memoria dinámica.
+
+`make check-core` reproduce los cuatro conjuntos públicos de llamadas del
+controlador sin SDK ni recursos privados. Esas pruebas públicas reproducen los
+servicios de animación y mundo; los ensayos privados anteriores ejecutan además
+los programas de animación. Para reproducir el cuerpo con los recursos privados:
+
+```sh
+python3 tools/extract_marco_crouch.py CAPTURA --output data/marco_crouch_turn_fixture.json
+python3 tools/extract_marco_steps.py CAPTURA --trace TRAZA --output DIARIO
+python3 tools/convert_marco_programs.py CAPTURA --event-evidence DIARIO/effects.json --output GRAFO
+python3 tools/compile_marco_crouch.py --fixture data/marco_crouch_turn_fixture.json --output build/marco-crouch-turn/marco_crouch_fixture.h
+python3 tools/compile_marco_upper_native.py --part crouch CAPTURA GRAFO/graph.json --fixture data/marco_crouch_turn_fixture.json --output build/marco-crouch-turn
+make marco-crouch-regression.z64
+python3 tools/test_rng_ares.py marco-crouch-regression.z64 --suite crouch --crouch-native --fixture data/marco_crouch_turn_fixture.json --output RESULTADO_NUEVO
+```
+
+`CAPTURA` se obtiene con `run_marco_catalog.py --upper-trace --body-trace
+--controller-trace --paired-trace --command-trace --logic-only --plan
+tools/mame/plans/marco-crouch.json`. Los ROM de regresión permanecen privados.
+La campaña activa aún no usa estos controladores; las transiciones generales,
+variantes, acciones especiales y su integración no están al 100%.

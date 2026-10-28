@@ -31,7 +31,7 @@ def schedule(cases=CASES):
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');a=p.parse_args()
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
  if a.plan:
@@ -52,6 +52,8 @@ def main():
  if a.controller_trace:env['MSX_CONTROLLER_TRACE']='1'
  if a.logic_only:env['MSX_LOGIC_ONLY']='1'
  if a.queue_trace:env['MSX_QUEUE_TRACE']='1'
+ if a.upper_trace:env['MSX_UPPER_TRACE']='1'
+ if a.body_trace:env['MSX_BODY_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
   server=subprocess.Popen(['/workspace/emulator/root/usr/bin/Xvfb','-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:

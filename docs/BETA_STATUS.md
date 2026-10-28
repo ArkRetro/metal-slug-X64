@@ -14,6 +14,14 @@ actual queue publications rather than assuming a fixed physical-frame delay.
 Outer controller transitions, remaining variants and campaign integration are
 still incomplete; none of the internal regression ROMs is a demo delivery.
 
+Whole upper-controller updates now match 1,450 reference calls and 642 combat
+calls; their native animation programs pass in ares. Crouch-body transitions
+match another 643 blocks across two input plans; the turn/movement plan also
+passes in ares with 414 actual native animation draws and 38 effect requests.
+These are recorded-boundary regressions. Standing/air/common body processing,
+all weapon/forms coverage and active campaign integration remain incomplete.
+See [Marco controller recovery](MARCO_CONTROLLER.md).
+
 The latest user instruction supersedes the earlier complete-campaign-beta gate:
 the next requested delivery is a playable demo of the **complete first mission,
 including its full intro and sound**,

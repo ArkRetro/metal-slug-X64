@@ -74,9 +74,12 @@ screen_y = 120 + (world_y - camera_y - 120) * scale
 ```
 
 La distancia focal es 320. Las coordenadas de billboard se autorizan para
-conservar su tamaño en píxeles en la vista de referencia. Las profundidades 320
-y 106,6667 reproducen las velocidades de paralaje originales 1/2 y 3/4 con
-`camera_z=0`. Para un plano de profundidad constante la expresión se reduce a
+conservar su tamaño en píxeles en la vista de referencia. Las profundidades
+actuales 960 y 320 dan velocidades de paralaje 1/4 y 1/2 con `camera_z=0`,
+acentuando la separación de los fondos. La configuración anterior (320 y
+106,6667) reproducía las velocidades originales 1/2 y 3/4 y resultaba demasiado
+plana para la dirección de diorama solicitada. Este ajuste es artístico, no
+una profundidad recuperada de la ROM. Para un plano de profundidad constante la expresión se reduce a
 escala y traslación cacheadas por plano, sin divisiones por tile. La malla usa
 la proyección completa con Z variable por vértice y queda lejos del plano
 cercano.
@@ -277,3 +280,11 @@ luces, y entrada de misión con 230 fotogramas sin saltos. Véase
 no acredita Misión 1 completa ni rendimiento en hardware. Los tiempos de ares
 anteriores ([retro25d-validation.json](retro25d-validation.json)) son
 diagnósticos y no garantizan la tasa de frames en N64/MiSTer.
+
+
+La separación actual de fondos no da volumen geométrico a los edificios. Sus
+fachadas siguen compartiendo capas con superficies transitables. Para aplicar
+perspectiva a esas fachadas hace falta extraer piezas decorativas independientes,
+conservar las plataformas en el plano de acción y completar las caras laterales
+que quedarían expuestas. Los wrappers actuales solo reciben iluminación; no
+convierten la ilustración en un edificio 3D texturizado.

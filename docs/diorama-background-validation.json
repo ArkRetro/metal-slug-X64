@@ -1,0 +1,29 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "source_frames": 230,
+  "unique_presented_frames": 230,
+  "skipped_frames": 0,
+  "rendered_frames": 234,
+  "final_pixels_crc32": "db681cc3",
+  "movie_read_bytes": 1246644,
+  "audio_active_at_handoff": true,
+  "diagnostic_toggle": true,
+  "decode_max_us": 12915,
+  "decode_mean_us": 1525,
+  "draw_max_us": 1014,
+  "rom_sha256": "db5ca6b362b290b033ccc89e13b0621eecea81f5e3b60ab934c8da6adcc7dd54",
+  "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+  "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+  "log_sha256": "0e461a3a2fe78c0fc73b41113e814ff6d81e1be0597580f42ad9a660974b6b59",
+  "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.",
+  "partial_region": {
+    "camera": 1920,
+    "x16": 144965631,
+    "cache_misses": 0,
+    "depth_mode": true,
+    "depth_max_triangles": 8,
+    "cache_samples": 2,
+    "limit": "Three provisional guards, approximate camera and REGION END; not complete Mission 1."
+  }
+}

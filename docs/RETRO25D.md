@@ -322,3 +322,18 @@ los laterales y comprueba el total en ejecución. Las cargas siguen usando las
 páginas existentes, con el límite de 2.048 bytes por upload. No hay un atlas
 lateral nuevo: es una reutilización de los materiales del borde, que aún debe
 revisarse artísticamente. La cubierta y el resto de edificios siguen pendientes.
+
+
+## Estado de la prueba de edificios tras revisión visual
+
+Las dos muestras de paredes laterales se han retirado del renderer activo:
+el recorte rectangular no seguía toda la silueta del edificio y reutilizar
+columnas de fachada deformaba ventanas y detalles. El renderer vuelve a mostrar
+el arte original sin esa extrusión. Se conserva el paralaje de fondos.
+Los vídeos anteriores son pruebas históricas rechazadas, no el resultado vigente.
+
+Para retomar el volumen se necesitan máscaras ajustadas a la silueta, una
+textura lateral de pared sin puertas/ventanas copiadas del borde, UV con densidad
+de texel consistente y cubiertas que cierren la geometría. La profundidad de
+96 unidades de la prueba también debe revisarse. No hay una versión corregida
+de volumen de edificios integrada todavía.

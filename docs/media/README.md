@@ -33,3 +33,8 @@ color pass with perspective-correct point-sampled tiles from the facade edge.
 Look around 8–12 seconds; recording is 44.6 seconds, ares, no audio. The side
 reuses the edge's materials and decorative features; no new authored side-wall
 art is supplied. Roofs and other buildings remain pending.
+
+
+Visual review rejected both building-volume recordings: silhouette mismatch
+and distorted facade details. Building extrusion is now disabled in the active
+renderer. These files remain historical evidence, not approved visual results.

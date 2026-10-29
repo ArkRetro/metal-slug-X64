@@ -7,7 +7,7 @@
   "unmodified_source_matches": true,
   "movie_bytes": 3147898,
   "movie_sha256": "a863b3c1c4ea3c22816396f2771d584f2b8c91c8bf5303ba48fd2b5c214410d4",
-  "audio_sha256": "9abbc53007c41fa488c458101162f46ad9b877f8cc56c15cfdcd11414fc0d19f",
+  "audio_sha256": "3c400307f46a56f8162f4ec2820b9ee1d1d75b74bfee2bc528608c33871f4afa",
   "provenance": {
     "capture.json": "7701be2ff1f06adaf18c491c1cda96f217ad0f7f58a17bd9bd35dc694ce6475d",
     "frames.jsonl": "60e52ec0347790d0fa3fea6eff5b194840ec19da689bb66b07bc370036c1471f",
@@ -62,24 +62,24 @@
   "audio_format": "Stereo PCM16 at 32000 Hz, uncompressed WAV64",
   "announcement": {
     "text": "Sixty-four!",
-    "voice": "Kokoro male blend: 65% am_fenrir / 35% am_onyx",
-    "processing": "Emphatic two-part male performance, accented FOUR, presence EQ/compression and prominent hall reverb",
+    "voice": "Qwen3-TTS 1.7B CustomVoice / Ryan, directed male shout",
+    "processing": "Instruction-generated full-voice yell; natural pitch/timing; light mastering and hall reverb",
     "reverb": {
-      "type": "large diffuse hall convolution",
+      "type": "large diffuse hall, ducked behind the shouted attack",
       "t60_seconds": 1.2,
-      "wet_rms_ratio": 0.65,
+      "wet_rms_ratio": 0.55,
       "tail_seconds": 1.05
     },
     "title_hold_frames": 60,
     "start_seconds": 8.6,
-    "end_seconds": 10.764979166666667,
+    "end_seconds": 10.5441875,
     "placement": "Authored after the spoken X, over its remaining echo",
     "previous_audio_unchanged": true,
     "peak_pcm16": 20450,
-    "asset_sha256": "29ce69825766a5551c623e89f6dc867243d129b0f6968acd4b13db3600e52670"
+    "asset_sha256": "cd2a5c36144b74dd35b9fdb684e40dca28139589d06b4744199bd4c483a6c7a9"
   },
   "title_hold_frames": 60,
-  "presentation": "Kokoro emphatic male sixty-four, prominent hall reverb, 60-tick final title hold",
+  "presentation": "Qwen3 instruction-generated male shout, natural pitch/timing, hall behind direct attack",
   "ares_auto": {
     "title_presentation": "animated_x64_original_motion_and_effects",
     "title_source_frames": 601,
@@ -99,13 +99,13 @@
     "decode_max_us": 12913,
     "decode_mean_us": 1527,
     "draw_max_us": 940,
-    "rom_sha256": "7cc55c5f534270accc802953096c82fc437e3868d11c92d0bf3f118d0b2137ef",
+    "rom_sha256": "4c73faf98910ea0249dbf3a00eb7fae8466694a760e20e149fae0b72e196e6b3",
     "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
     "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
-    "log_sha256": "b115bafe9b5e7fd478c6ef563c51a145624d43d246bc26812d15f73b2a17e4f2",
+    "log_sha256": "34404ed5f620b33be514bba5ce79a1d767908963510f1ca6452d675065d4530a",
     "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
   },
-  "ares_start": {
+  "previous_start_validation": {
     "title_presentation": "animated_x64_original_motion_and_effects",
     "title_source_frames": 601,
     "title_final_crc32": null,
@@ -130,38 +130,39 @@
     "log_sha256": "3ab5cf6c5e95c4abe298c76728b8f9b0c81ba56ecbda77fb4cc1ae81485b08ae",
     "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
   },
+  "previous_start_scope": "Previous voice asset; input/timing code and PCM length unchanged",
   "audio_capture": {
     "status": "PASS_PCM_AND_SYNTHETIC_TAIL",
     "capture": "ares 146 ALSA PCM file sink",
     "title_cadence": "601 unique / 0 dropped",
     "pcm_rate": 48000,
     "channels": 2,
-    "source_pcm_correlation_after_clock_fit": 0.9915976806538084,
-    "synthetic_tail_correlation": 0.9994911602664668,
+    "source_pcm_correlation_after_clock_fit": 0.99152279434029,
+    "synthetic_tail_correlation": 0.9987108402301558,
     "clock_rate_fit": 0.9998123573059358,
     "offset_seconds": 2.6191137271689504,
     "minimum_correlation": 0.85,
     "announcement": {
       "text": "Sixty-four!",
-      "voice": "Kokoro male blend: 65% am_fenrir / 35% am_onyx",
-      "processing": "Emphatic two-part male performance, accented FOUR, presence EQ/compression and prominent hall reverb",
+      "voice": "Qwen3-TTS 1.7B CustomVoice / Ryan, directed male shout",
+      "processing": "Instruction-generated full-voice yell; natural pitch/timing; light mastering and hall reverb",
       "reverb": {
-        "type": "large diffuse hall convolution",
+        "type": "large diffuse hall, ducked behind the shouted attack",
         "t60_seconds": 1.2,
-        "wet_rms_ratio": 0.65,
+        "wet_rms_ratio": 0.55,
         "tail_seconds": 1.05
       },
       "title_hold_frames": 60,
       "start_seconds": 8.6,
-      "end_seconds": 10.764979166666667,
+      "end_seconds": 10.5441875,
       "placement": "Authored after the spoken X, over its remaining echo",
       "previous_audio_unchanged": true,
       "peak_pcm16": 20450,
-      "asset_sha256": "29ce69825766a5551c623e89f6dc867243d129b0f6968acd4b13db3600e52670"
+      "asset_sha256": "cd2a5c36144b74dd35b9fdb684e40dca28139589d06b4744199bd4c483a6c7a9"
     },
-    "pcm_sha256": "debd8186e23bc77400e3401c788f019e9ce958d5742620258a96beaa9baa0178",
-    "rom_sha256": "00e46ed8a64c16192da3fe6d83f50c29e9f01fe53f60a5d5de8a772a87c9a599",
-    "audio_sha256": "9abbc53007c41fa488c458101162f46ad9b877f8cc56c15cfdcd11414fc0d19f",
+    "pcm_sha256": "67dc8317a9793afea2deea2880f9c10cbf206186e019e2437b1cf353608abbd6",
+    "rom_sha256": "a8b1e6067399b8de2c5f34daeee3babe3abe23d3543a7ad672967a5ad282be44",
+    "audio_sha256": "3c400307f46a56f8162f4ec2820b9ee1d1d75b74bfee2bc528608c33871f4afa",
     "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
   },
   "title_cadence": "MSX TITLE cadence unique=601 dropped=0 source=601",

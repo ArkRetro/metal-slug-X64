@@ -303,3 +303,18 @@ source frames are presented, plus the final hold; source CRCs still pass the
 native C decoder. Captured announcer/reverb PCM correlates 0.9995 with its source
 window, including the part after the original 10.1545 s endpoint. The hold
 therefore preserves the longer tail in actual emulator playback.
+
+## Directed full-voice shout (active)
+
+The user asked for an actual high-energy shout rather than a louder announcer.
+The active synthesizer is Qwen3-TTS-12Hz-1.7B-CustomVoice, using explicit shouting
+instructions and its built-in male Ryan speaker. It generates the complete phrase
+in one take. Pitch, tempo and word timing are retained; no split-word assembly,
+artificial pitch rise or stretching is used to simulate a shout.
+
+A private calm reference uses the same text and speaker before mastering.
+The generated shouted take has a higher fundamental frequency and brighter
+spectrum than the calm reference; this documents a synthesis change, not a
+listening-quality verdict. The hall is ducked behind the direct shouted attack.
+The full tail ends at 10.5442 s, before the retained 11.168 s handoff.
+Earlier Piper/Kokoro sections describe superseded revisions.

@@ -1,63 +1,51 @@
 #!/usr/bin/env python3
-"""Shape an emphatic male arcade call with a large, baked hall reverb."""
-import argparse, hashlib, json, subprocess, wave
+"""Master an actually instruction-directed shout without altering its delivery."""
+import argparse,hashlib,json,math,subprocess,wave
 from pathlib import Path
 import numpy as np
-from scipy.signal import butter, fftconvolve, sosfilt
+from scipy.signal import butter,fftconvolve,sosfilt
 
 ROOT=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__)
-p.add_argument('sixty',type=Path)
-p.add_argument('four',type=Path)
-a=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('raw',type=Path);a=p.parse_args()
 work=ROOT/'build/title-audio';work.mkdir(parents=True,exist_ok=True)
+source=json.loads((work/'sixty-four-shout-source.json').read_text())
+assert source['raw_sha256']==hashlib.sha256(a.raw.read_bytes()).hexdigest()
+# Preserve natural shouted pitch, attack, coarticulation and word timing.
+filters=('silenceremove=start_periods=1:start_threshold=-46dB:start_silence=0.025,'
+    'areverse,silenceremove=start_periods=1:start_threshold=-46dB:start_silence=0.035,areverse,'
+    'highpass=f=65,lowpass=f=9500,equalizer=f=2500:t=q:w=0.9:g=1,'
+    'acompressor=threshold=0.10:ratio=2:attack=12:release=90:makeup=1.1')
+clean=work/'sixty-four-shout-dry.wav'
+subprocess.run(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-i',str(a.raw),
+    '-af',filters,'-ar','48000','-ac','1','-c:a','pcm_s16le',str(clean)],check=True)
+with wave.open(str(clean)) as w:dry=np.frombuffer(w.readframes(w.getnframes()),dtype='<i2').astype(float)
 rate=48000
-
-def word(path,name,duration,pitch):
-    trimmed=work/f'{name}-trimmed.wav'
-    trim=('silenceremove=start_periods=1:start_threshold=-43dB:start_silence=0.01,'
-          'areverse,silenceremove=start_periods=1:start_threshold=-43dB:start_silence=0.02,areverse')
-    subprocess.run(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-i',str(path),
-        '-af',trim,'-ar',str(rate),'-ac','1','-c:a','pcm_s16le',str(trimmed)],check=True)
-    with wave.open(str(trimmed)) as source:seconds=source.getnframes()/source.getframerate()
-    final=work/f'{name}-performed.wav'
-    effects=(f'rubberband=tempo={seconds/duration}:pitch={pitch}:formant=preserved,'
-        'highpass=f=70,lowpass=f=7600,equalizer=f=135:t=q:w=0.8:g=3,'
-        'equalizer=f=2400:t=q:w=0.9:g=3,acompressor=threshold=0.08:ratio=4.5:attack=8:release=80:makeup=2')
-    subprocess.run(['ffmpeg','-nostdin','-hide_banner','-loglevel','error','-y','-i',str(trimmed),
-        '-af',effects,'-c:a','pcm_s16le',str(final)],check=True)
-    with wave.open(str(final)) as source:data=np.frombuffer(source.readframes(source.getnframes()),dtype='<i2').astype(float)
-    # Keep consonants and the complete performed word, allowing stretch rounding.
-    data=np.pad(data,(0,max(0,round(duration*rate)-len(data))))
-    fade=min(round(.008*rate),len(data)//4)
-    data[:fade]*=np.linspace(0,1,fade);data[-fade:]*=np.linspace(1,0,fade)
-    return data/max(1,np.max(abs(data)))
-
-first=word(a.sixty,'sixty',.44,1.01)*.82
-last=word(a.four,'four',.58,.96)
-dry=np.concatenate((first,np.zeros(round(.095*rate)),last))
-# Longer, clearly audible hall tail; no real-time convolution on N64.
 rng=np.random.default_rng(64);t=np.arange(round(1.05*rate))/rate
-impulse=rng.standard_normal(len(t))*np.exp(-np.log(1000)*t/1.20)
-impulse[t<.035]=0
+impulse=rng.standard_normal(len(t))*np.exp(-np.log(1000)*t/1.20);impulse[t<.045]=0
 impulse=sosfilt(butter(2,[140,4800],btype='bandpass',fs=rate,output='sos'),impulse)
 impulse/=np.sqrt(np.sum(impulse**2))
-for seconds,gain in ((.043,.55),(.079,.43),(.127,.32),(.193,.20)):
+for seconds,gain in ((.053,.55),(.089,.43),(.137,.32),(.203,.20)):
     impulse[round(seconds*rate)]+=gain
 wet=fftconvolve(dry,impulse)
 wet*=np.sqrt(np.mean(dry**2))/max(1e-9,np.sqrt(np.mean(wet[:len(dry)]**2)))
-result=np.pad(dry,(0,len(wet)-len(dry)))+.65*wet
-result*=14500/max(abs(result));fade=round(.03*rate)
-result[-fade:]*=np.linspace(1,0,fade)
-assert 8.60+len(result)/rate < (601+60)/59.185606,'Do not truncate epic reverb at handoff'
+front=np.pad(dry,(0,len(wet)-len(dry)))
+envelope=sosfilt(butter(1,12,fs=rate,output='sos'),abs(front))
+envelope/=max(1,np.max(envelope))
+# Keep the shouted attack in front; the hall opens up between words and at the end.
+result=front+.55*(1-.45*envelope)*wet
+result*=15500/max(abs(result));fade=round(.025*rate);result[-fade:]*=np.linspace(1,0,fade)
+duration=len(result)/rate
+hold=max(60,math.ceil((8.60+duration+.30)*59.185606)-601)
+assert hold<=300,'Unexpectedly long utterance: regenerate rather than cutting the shout'
 out=ROOT/'art/audio/sixty-four.wav'
 with wave.open(str(out),'wb') as target:
     target.setnchannels(1);target.setsampwidth(2);target.setframerate(rate);target.writeframes(result.astype('<i2').tobytes())
-profile=dict(voice='Kokoro male blend: 65% am_fenrir / 35% am_onyx',synthetic=True,
-    source_model='https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0',
-    cadence=dict(sixty_seconds=.44,pause_seconds=.095,four_seconds=.58,emphasis='FOUR'),
-    peak_pcm16=14500,title_hold_frames=60,
-    reverb=dict(type='large diffuse hall convolution',t60_seconds=1.20,wet_rms_ratio=.65,tail_seconds=1.05),
-    processing='Emphatic two-part male performance, accented FOUR, presence EQ/compression and prominent hall reverb',
-    duration_seconds=len(result)/rate,asset_sha256=hashlib.sha256(out.read_bytes()).hexdigest())
+profile=dict(voice='Qwen3-TTS 1.7B CustomVoice / Ryan, directed male shout',synthetic=True,
+    source_model='https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice',
+    direction=source['instruction'],synthesis_seed=source['seed'],natural_delivery=True,
+    pitch_shift=False,time_stretch=False,word_splicing=False,source_raw_sha256=source['raw_sha256'],
+    peak_pcm16=15500,title_hold_frames=hold,
+    reverb=dict(type='large diffuse hall, ducked behind the shouted attack',t60_seconds=1.20,wet_rms_ratio=.55,tail_seconds=1.05),
+    processing='Instruction-generated full-voice yell; natural pitch/timing; light mastering and hall reverb',
+    dry_duration_seconds=len(dry)/rate,duration_seconds=duration,asset_sha256=hashlib.sha256(out.read_bytes()).hexdigest())
 (ROOT/'art/audio/sixty-four.json').write_text(json.dumps(profile,indent=2)+'\n');print(json.dumps(profile,indent=2))

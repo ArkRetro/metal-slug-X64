@@ -74,6 +74,6 @@ performance measurement. The native movie is separately tested in ares; see
 Original letters, particles, metallic impacts and reveal are retained; 6/4
 numerals fall into the reveal, turn gold, and the prompt reads PRESS START.
 The original announcement says Metal Slug X, followed by an arcade-style
-synthetic "sixty-four" at 8.60 s. The current revision uses a lower male
-Kokoro performance with a deliberate beat, accented FOUR and prominent hall
-reverb. A 60-frame final hold lets the reverb decay (661 video frames total). The rejected static/generic-voice video remains historical only.
+synthetic "sixty-four" at 8.60 s. The current revision uses a male
+Qwen3 instruction-directed shouted performance and hall reverb behind
+the direct attack. A 60-frame final hold lets the reverb decay (661 video frames total). The rejected static/generic-voice video remains historical only.

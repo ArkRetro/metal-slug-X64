@@ -1,35 +1,37 @@
-# Active epic male sixty-four announcement
+# Active shouted sixty-four announcement
 
-The current tag uses **Kokoro ONNX**, with a blend of 65% `am_fenrir` and 35%
-`am_onyx`. It replaces the rejected Piper performances. The delivery is authored
-as “Sixty … FOUR!”: 440 ms for sixty, a 95 ms beat, then an accented 580 ms four.
-Each word is synthesized separately and shaped with formant-preserving stretch,
-a small rise/fall in pitch, presence/body EQ and compression.
+The current take is synthesized with **Qwen3-TTS-12Hz-1.7B-CustomVoice** and its
+built-in male Ryan voice (a different model/voice from the rejected Piper Ryan).
+The model receives an explicit top-of-the-lungs arcade-announcer instruction in
+`sixty-four-direction.txt`. It generates the whole phrase as one performance.
+The earlier Kokoro split-word performance has been replaced.
 
-The diffuse hall is deliberately prominent: T60 1.20 s, 65% wet RMS and a
-1.05-second impulse. The waveform peak is 14500 PCM16. Convolution is baked into
-the asset offline; N64 still plays a single uncompressed stereo PCM16 stream.
+The generated pitch, rhythm, attack and coarticulation are retained. There is no
+post-production pitch shift, time stretching or word splicing. Mastering applies
+only mild EQ/compression and an offline hall, lightly ducked behind the shouted
+attack so the direct voice stays forward. Peak: 15500 PCM16; hall T60: 1.20 s.
 
-The tag begins at 8.60 s and the full hall tail ends at 10.765 s. The title now
-holds its final frame for 60 additional source ticks (about 1.014 s), ending at
-11.168 s. The original letters and effects are preserved; the extra hold lets
-the reverb breathe before the mission handoff. Start can still skip the title.
-`sixty-four.json` records the voice, cadence, reverb and waveform hash.
+The tag starts at 8.60 s. Its full voice/reverb tail ends at 10.5442 s; the title
+holds for 60 extra ticks and hands off at 11.168 s. Start remains available.
+The original Metal Slug X announcement and effects are unchanged before the tag.
+`sixty-four.json` records the instruction, seed, source hash and mastering.
 
-Synthesis model and voice-bank source:
-https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
+Model source:
+https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice
 
-Reproduce with the downloaded Kokoro model and kokoro-onnx Python environment:
+Reproduce using qwen-tts 0.1.1, transformers 4.57.3, PyTorch CPU and local weights:
 
 ```
-PYTHONPATH=/workspace/toolchains/kokoropy python3 tools/synthesize_title_voice.py
-python3 tools/master_title_voice.py \
-  build/title-audio/sixty-epic-raw.wav build/title-audio/four-epic-raw.wav
+PYTHONPATH=/workspace/toolchains/qwenttspy HF_HUB_OFFLINE=1 \
+  python3 tools/synthesize_title_voice.py --comparison
+python3 tools/master_title_voice.py build/title-audio/sixty-four-shout-raw.wav
 ```
 
-Mastering uses ffmpeg with rubberband, NumPy and SciPy. Model files stay outside
-Git. The voice asset is mono PCM16/48 kHz; the composite title WAV64 is stereo
-PCM16/32 kHz. This is a synthetic announcer, not an original actor voice clone.
+`--comparison` also produces a private calm take with the same speaker/text so
+that the performance can be compared before mastering. Model weights and raw
+reference files remain outside Git. Mastering uses ffmpeg, NumPy and SciPy;
+all reverb is baked offline. The N64 still plays uncompressed stereo PCM16 at
+32 kHz. The final versioned voice asset is mono PCM16/48 kHz.
 
 `tools/title_announcement.py CAPTURE` rebuilds only the title audio from its
 verified private source capture and the versioned voice asset. Repeating the

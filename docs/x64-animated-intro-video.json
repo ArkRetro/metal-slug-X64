@@ -5,8 +5,8 @@
   "title_hold_frames": 60,
   "rate": "59185606/1000000",
   "presentation": "Offline preview of the authored title frames quantized to native RGB555 and expanded for video, with its source PCM. Not emulator screen capture or a hardware benchmark.",
-  "audio": "Original title effects and original Metal Slug X announcement, followed by an emphatic male sixty-four with prominent hall reverb and an extended final hold.",
-  "video_sha256": "441a80a401b2a60195d60aa66dc5737666dfe6046e57808e5035219f3ed4604b",
+  "audio": "Original title effects and original Metal Slug X announcement, followed by a full-voice male shouted sixty-four, hall reverb and an extended final hold.",
+  "video_sha256": "2465007a695611600e812720629eeda76e70f6f8d3c835fe9a6e433b118d8893",
   "movie_sha256": "a863b3c1c4ea3c22816396f2771d584f2b8c91c8bf5303ba48fd2b5c214410d4",
-  "audio_sha256": "9abbc53007c41fa488c458101162f46ad9b877f8cc56c15cfdcd11414fc0d19f"
+  "audio_sha256": "3c400307f46a56f8162f4ec2820b9ee1d1d75b74bfee2bc528608c33871f4afa"
 }

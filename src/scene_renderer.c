@@ -9,6 +9,12 @@ static completion_t completions[4],*current;
 static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
 static unsigned pal_lru[16];
+// Render-mode values this renderer last set and still knows to be current
+// (-1: unknown). Setting the same TLUT/filter again only re-sent identical
+// SET_OTHER_MODES/SET_COMBINE and a pipe sync; draws and their state are the same.
+static int mode_tlut=-1,mode_filter=-1;
+static void set_tlut(rdpq_tlut_t tlut) {if (mode_tlut!=(int)tlut) {rdpq_mode_tlut(tlut);mode_tlut=(int)tlut;}}
+static void set_point_filter(void) {if (mode_filter!=FILTER_POINT) {rdpq_mode_filter(FILTER_POINT);mode_filter=FILTER_POINT;}}
 static bool depth_mode;
 static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
@@ -23,6 +29,7 @@ void scene_render_foreground_fog(void) {}
 void scene_render_forget_texture(void) {
     last_page=last_slot=last_format=last_width=last_height=-1;
     for (unsigned i=0;i<16;i++) pal_ids[i]=-1;
+    mode_tlut=mode_filter=-1; // Callers changed the render mode outside this renderer.
 }
 
 void scene_renderer_init(void) {
@@ -49,6 +56,7 @@ void scene_render_begin(surface_t *surface) {
     // uploads): full scissor, point sampling, no assumed TMEM/TLUT content.
     rdpq_set_scissor(0,0,320,240);
     rdpq_mode_filter(FILTER_POINT);rdpq_mode_alphacompare(1);
+    mode_tlut=-1;mode_filter=FILTER_POINT;
 }
 static unsigned palette_slot(unsigned id) {
     for (unsigned i=0;i<16;i++) if (pal_ids[i]==(int)id) {pal_lru[i]=++clock_pal;return i;}
@@ -64,8 +72,8 @@ static unsigned palette_slot(unsigned id) {
 static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
     unsigned slot=0;
-    if (image->format==0) {rdpq_mode_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
-    else rdpq_mode_tlut(TLUT_NONE);
+    if (image->format==0) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
+    else set_tlut(TLUT_NONE);
     if (last_page!=image->page || last_slot!=(int)slot || last_format!=image->format || last_width!=image->width || last_height!=image->height) {
         const void *data=scene_page(image);
         unsigned side=image->format?32:64;
@@ -88,7 +96,7 @@ static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,in
     blit_scaled(image,x,y,s,t,width,height,width,height,mirror,flash);
 }
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash) {
-    rdpq_mode_filter(FILTER_POINT); // Sprites never inherit the fog sampler.
+    set_point_filter(); // Sprites never inherit the fog sampler.
     blit(image,x,y,0,0,image->width,image->height,mirror,flash);
 }
 static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick) {
@@ -119,16 +127,22 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
     // Prefetch a margin on both sides, including the next autoanimation phase.
     // Only the runs' visible ranges are visited (scene_cull.h); requests keep
-    // the highest priority per chunk, so their order does not matter.
-    for (unsigned layer=0;layer<5;layer++) {
+    // the highest priority per chunk, so their order does not matter, and
+    // nothing is serviced inside the loop: repeating the previous chunk's
+    // request at the same priority changes nothing and is skipped.
+    // With the whole pack resident every request is a no-op: skip the walk.
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=!scene_assets_all_resident();
+    for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
         scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
         for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             for (unsigned k=first;k<end;k++) {
                 const scene_map_cell_t *cell=&cells[cell_index.order[k]];
-                scene_request_image(scene_map_image(cell->phases[video_tick&7]),2);
-                scene_request_image(scene_map_image(cell->phases[(video_tick+1)&7]),1);
+                const scene_image_t *now=scene_map_image(cell->phases[video_tick&7]);
+                const scene_image_t *next=scene_map_image(cell->phases[(video_tick+1)&7]);
+                if (now->page/8!=last_now) {scene_request_image(now,2);last_now=now->page/8;}
+                if (next->page/8!=last_next) {scene_request_image(next,1);last_next=next->page/8;}
             }
         }
     }
@@ -182,6 +196,7 @@ void scene_render_text(int x,int y,const char *text) {
     // Fonts can overwrite TMEM; do not retain stale texture/palette residency.
     last_page=last_slot=last_format=-1;
     for (unsigned i=0;i<16;i++) pal_ids[i]=-1;
+    mode_tlut=mode_filter=-1;
 }
 void scene_render_end(void) {
     if (!(frame%300)) {

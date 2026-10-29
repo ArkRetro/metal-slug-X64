@@ -15,7 +15,7 @@ static int chunk_slot[SCENE_CHUNK_COUNT];
 static unsigned requests[SCENE_CHUNK_COUNT];
 static bool pinned[SCENE_CHUNK_COUNT];
 static uint8_t *cache,*staging[2];
-static unsigned capacity,clock_lru,epoch,rom;
+static unsigned capacity,clock_lru,epoch,rom,resident;
 static volatile unsigned completed;
 static int active_chunk=-1,active_slot=-1;
 static unsigned active_stage,last_stage;
@@ -37,7 +37,7 @@ static void start_next(void) {
         if (victim<0 || slots[i].lru<slots[victim].lru) victim=(int)i;
     }
     if (victim<0) return;
-    if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++; }
+    if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++;resident--; }
     slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;requests[chosen]=0;
     active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;
     const scene_chunk_t *c=&scene_chunks[chosen];
@@ -63,7 +63,7 @@ void scene_service(void) {
     assertf(crc==c->crc,"Scene CRC mismatch");
     if (crc!=c->crc) abort();
     data_cache_hit_writeback(dst,SCENE_CHUNK_BYTES);
-    slots[slot].ready=true;slots[slot].lru=++clock_lru;
+    slots[slot].ready=true;slots[slot].lru=++clock_lru;resident++;
     if (!timing_depth) msx_perf_add(MSX_PERF_ASSET,TICKS_READ()-started);
 }
 static void request(unsigned chunk,unsigned priority) {
@@ -72,6 +72,10 @@ static void request(unsigned chunk,unsigned priority) {
     if (requests[chunk]<priority) requests[chunk]=priority;
 }
 void scene_request_image(const scene_image_t *image,unsigned priority) { request(image->page/8,priority); }
+/* Every chunk decoded and resident: requests are no-ops (request() returns for
+ * resident chunks) and nothing is ever evicted again (eviction only serves a
+ * request). With the Expansion Pak the whole pack fits after startup. */
+bool scene_assets_all_resident(void) { return resident==SCENE_CHUNK_COUNT; }
 static void require_chunk(unsigned chunk) {
     if (chunk_slot[chunk]>=0 && slots[chunk_slot[chunk]].ready) { stats.hits++;return; }
     stats.misses++;request(chunk,255);

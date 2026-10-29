@@ -27,6 +27,7 @@ const scene_image_t *scene_map_image(unsigned id);
 unsigned scene_map_camera_max(void);
 uint32_t scene_map_backdrop(void);
 const uint16_t *scene_palette(unsigned id);
+bool scene_assets_all_resident(void);
 void scene_request_image(const scene_image_t *image,unsigned priority);
 void scene_service(void);
 const void *scene_page(const scene_image_t *image);

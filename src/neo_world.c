@@ -87,7 +87,10 @@ static void place(neo_contact_actor_t *a,const neo_contact_actor_t *source,int d
 static void soldier_event(void *context,const neo_soldier_event_t *e) {
     tick_t *t=context;neo_world_t *w=t->w;
     switch (e->kind) {
-    case NEO_SOLDIER_EVENT_KNIFE_HIT: t->hits++;break;
+    case NEO_SOLDIER_EVENT_KNIFE_HIT:
+        t->hits++;
+        if (t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER) w->hit_x=HI(w->soldiers[w->order[t->current].index].b.projected_x);
+        break;
     case NEO_SOLDIER_EVENT_THROW: { /* 03BB8E: 00411C inserts after the script actor */
         unsigned i;for (i=0;i<NEO_WORLD_THROWS && w->throws[i].active;i++) {}
         int at=find(w,NEO_WORLD_SCRIPT,0);
@@ -134,7 +137,7 @@ static bool throw_hit(void *context,const neo_contact_actor_t *b) {
     if (!t->player_valid) return false;
     int first=-1;
     uint8_t type=neo_hit_query(b,soldier_throw_attack,&t->player,1,(uint8_t)soldier_throw_attack[4],(uint8_t)soldier_throw_attack[5],&first);
-    if (type && first>=0 && soldier_throw_attack[6]) t->hits++;
+    if (type && first>=0 && soldier_throw_attack[6]) {t->hits++;t->w->hit_x=HI(b->projected_x);}
     return type!=0;
 }
 /* ---- actors ------------------------------------------------------------------ */

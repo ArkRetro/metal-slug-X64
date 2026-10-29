@@ -43,6 +43,28 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
     int x=center-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
     scene_render_image(im,x,136+dy+im->y,mirror,flash);
 }
+/* One native animation draw (original 004364 record): descriptor parts from
+ * the scene pack, logical palette resource resolved through the pack's
+ * palette table, mirrored draws one pixel left (observed, see
+ * tools/export_soldier_sprites.py). Screen y = 248 - original y. */
+static unsigned native_missing_descriptor,native_missing_palette;
+static void draw_native(const neo_world_draw_t *d,bool request_only) {
+    const scene_native_descriptor_t *desc=scene_native_descriptor(d->descriptor);
+    if (!desc) {native_missing_descriptor++;return;}
+    int palette=scene_native_palette(d->palette);
+    if (palette<0) {native_missing_palette++;palette=scene_native_palette(0x20e);}
+    bool mirror=(d->attributes&1u)!=0;
+    int origin_y=MSX_SCREEN_BASE_Y-((int)(int16_t)d->y-MSX_PROJECTED_BASE_Y);
+    for (unsigned i=0;i<desc->count;i++) {
+        const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first+i);
+        if (request_only) {scene_request_image(im,2);continue;}
+        scene_image_t part=*im;part.palette=(uint16_t)palette;
+        int x=mirror?(int)(int16_t)d->x-(im->x+im->width)-1:(int)(int16_t)d->x+im->x;
+        int y=origin_y+im->y;
+        if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
+        scene_render_image(&part,x,y,mirror,d->flash && (game.ticks&1));
+    }
+}
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
     const scene_image_t *im=scene_frame(SCENE_PROJECTILES,0);
@@ -78,7 +100,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
-    unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths;
+    unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x;
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
@@ -99,6 +121,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         observed_wreck_contact=true;debugf("MSX player on wreck\n");
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
+    if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u\n",game.world.spawned,neo_world_alive(&game.world));
+    if (game.world.unsupported!=old_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
+    if (native_missing_descriptor || native_missing_palette) {
+        debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
+        native_missing_descriptor=native_missing_palette=0;
+    }
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
     if (!old_camera && game.camera) debugf("MSX camera moving\n");
@@ -124,35 +152,28 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned next=0;next<3;next++)
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
-    const scene_bank_t *soldier=scene_bank(SCENE_SOLDIER);
-    unsigned sf=(game.ticks/soldier->interval)%soldier->first;
-    if (game.enemy.x-game.x/MSX_UNIT<400) for (unsigned i=0;i<3;i++)
-        scene_request_image(scene_frame(SCENE_SOLDIER,(sf+i)%soldier->first),2);
+    for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     scene_service();
 #if MSX_RETRO25D
     retro_frame_t effects={.camera={game.camera,0,0,320},.tick=game.ticks};
     effects.shadows[effects.shadow_count++]=(retro_shadow_t){(float)game.x/MSX_UNIT,192.0f+(float)game.y/MSX_UNIT,depth_support_y(),12};
-    if (game.enemy.alive) effects.shadows[effects.shadow_count++]=(retro_shadow_t){game.enemy.x,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,192.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,10};
+    for (unsigned i=0;i<game.world.draw_count && effects.shadow_count<(unsigned)(sizeof(effects.shadows)/sizeof(effects.shadows[0]));i++)
+        if (game.world.draws[i].kind==NEO_WORLD_SOLDIER) {
+            float feet=(float)(MSX_SCREEN_BASE_Y-((int)(int16_t)game.world.draws[i].y-MSX_PROJECTED_BASE_Y));
+            effects.shadows[effects.shadow_count++]=(retro_shadow_t){(float)(game.camera+(int16_t)game.world.draws[i].x),feet,feet,10};
+        }
     if (game.shooting && game.shot_age<3) effects.lights[effects.light_count++]=(retro_light_t){
         {(float)game.x/MSX_UNIT+game.facing*24,168.0f+(float)game.y/MSX_UNIT,-18},{255,174,72},72,1.0f-(float)game.shot_age/3};
-    if (game.enemy.flash) effects.lights[effects.light_count++]=(retro_light_t){
-        {game.enemy.x,168.0f+(float)msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,-24},{255,128,48},100,(float)game.enemy.flash/12};
     scene_render_depth_frame(&effects);
 #endif
     scene_render_begin(surface);scene_render_background(game.camera,game.ticks);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.vehicle_flash && (game.ticks&2));
-    if (game.enemy.alive || game.enemy.respawn>75)
-        draw_frame(SCENE_SOLDIER,sf,game.enemy.x-game.camera,msx_ground_offset(game.enemy.x*MSX_UNIT)/MSX_UNIT,game.enemy.facing>0,
-            (game.enemy.flash || !game.enemy.alive) && (game.ticks&1));
+    for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],false);
     if (!(game.invulnerable && ((game.ticks/3)&1)))
         draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
-    for (unsigned owner=0;owner<2;owner++) {
-        const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
-        unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;
-        for (unsigned i=0;i<n;i++) if (list[i].active) {
-            int x=list[i].x-game.camera;
-            if (x>=-16 && x<336) draw_projectile(&list[i],owner);
-        }
+    for (unsigned i=0;i<MSX_BULLETS;i++) if (game.bullets[i].active) {
+        int x=game.bullets[i].x-game.camera;
+        if (x>=-16 && x<336) draw_projectile(&game.bullets[i],0);
     }
     scene_render_foreground_fog();
     scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
@@ -161,7 +182,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_text(32,24,"MSX V10 - MISSION 1");
     char status[40];
     if (game.vehicle.active) snprintf(status,sizeof(status),"HP:%u VEHICLE:%u",game.health,game.vehicle.health);
-    else snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
+    else snprintf(status,sizeof(status),"HP:%u REBELS:%u/%u CP:%s",game.health,game.kills,game.world.spawned,game.checkpoint?"YES":"NO");
     scene_render_text(32,38,status);
     scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}

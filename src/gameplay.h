@@ -3,18 +3,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "neo_vehicle.h"
-enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=1192 };
+#include "neo_world.h"
+enum { MSX_BULLETS=8, MSX_UNIT=65536, MSX_WORLD_WIDTH=1192 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
 enum { MSX_START_X=0x78bad9, MSX_END_X=1164*MSX_UNIT-1 };
 typedef struct { int x,y,direction; bool active; } msx_bullet_t;
+/* Screen/world mapping of the native region world: the original scene is
+ * at (-camera, 256); its projected y word is 256 + original y (y up), and the
+ * N64 draws original y at screen row 248 - y. */
+enum { MSX_SCREEN_BASE_Y=248, MSX_PROJECTED_BASE_Y=256 };
 enum { MSX_IDLE, MSX_RUN, MSX_FIRE, MSX_JUMP, MSX_RUN_JUMP, MSX_RUN_FIRE };
-typedef struct { int x,facing; unsigned health,flash,cooldown,respawn; bool alive; } msx_enemy_t;
 typedef struct {
     int x,y,velocity_x,velocity_y,facing,camera,checkpoint;
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
-    msx_bullet_t bullets[MSX_BULLETS], enemy_bullets[MSX_ENEMY_BULLETS];
-    msx_enemy_t enemy;
+    msx_bullet_t bullets[MSX_BULLETS];
+    /* Native region world (level script, rebel soldiers, thrown objects,
+     * death splashes), updated with the player on alternate video ticks. */
+    neo_world_t world;bool world_enabled;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
 } msx_game_t;
@@ -22,6 +28,8 @@ void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
+/* One hit on the player from world x `from` (knockback away from it). */
+void msx_game_hurt(msx_game_t *game,int from);
 int msx_game_animation(const msx_game_t *game);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */

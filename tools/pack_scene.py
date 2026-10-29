@@ -86,6 +86,23 @@ def main():
     banks.append((len(images),1,0,1,w,h))
     images.append(image([palette[p] for p in crop],x1-x0,y1-y0,x0,y0,True,crop,palette))
     source_bytes+=w*h*2
+    # Native soldier/death/throw descriptors (tools/export_soldier_sprites.py):
+    # pens with origin-relative offsets, split into <=64x64 parts. The image
+    # palette is the soldier's default resource 0x20E; the renderer overrides
+    # it with the logical resource of each draw through scene_native_palette.
+    native=json.loads((ROOT/'filesystem/soldier-native.json').read_text())
+    native_palettes={int(k,16):palette_id(v) for k,v in native['palettes'].items()}
+    base_palette=native['palettes']['0x20e'];descriptors=[];native_start=len(images)
+    for f in native['frames']:
+        pens=bytes.fromhex(f['pens_hex']);w,h=f['width'],f['height'];first=len(images)
+        for py0 in range(0,h,64):
+            for px0 in range(0,w,64):
+                pw,ph=min(64,w-px0),min(64,h-py0)
+                crop=[pens[(py0+y)*w+px0+x] for y in range(ph) for x in range(pw)]
+                images.append(image([base_palette[q] for q in crop],pw,ph,f['x']+px0,f['y']+py0,True,crop,base_palette))
+        descriptors.append((int(f['descriptor'],16),first,len(images)-first))
+    banks.append((native_start,len(images)-native_start,0,1,64,64))
+    source_bytes+=sum(f['width']*f['height']*2 for f in native['frames'])
     raw=(ROOT/'filesystem/desert.bin').read_bytes();source_bytes+=len(raw)
     pixels=struct.unpack('>71680H',raw)
     for row in range(7):
@@ -120,6 +137,10 @@ def main():
     for ctype,name,items in [('scene_chunk_t','scene_chunks',chunks),('scene_bank_t','scene_banks',banks),('scene_image_t','scene_images',images),('scene_image_t','scene_background',background)]:
         lines.append(f'static const {ctype} {name}[]={{')
         lines.extend('  {'+','.join(str(v) for v in item)+'},' for item in items);lines.append('};')
+    lines.append('static const scene_native_descriptor_t scene_native_descriptors[]={')
+    lines.extend('  {0x%x,%d,%d},'%d for d in sorted(descriptors));lines.append('};')
+    lines.append('static const scene_native_palette_t scene_native_palettes[]={')
+    lines.extend('  {0x%x,%d},'%(k,v) for k,v in sorted(native_palettes.items()));lines.append('};')
     lines.append('static const scene_image_t scene_map_images[]={')
     lines.extend('  {'+','.join(map(str,item))+'},' for item in map_images);lines.append('};')
     lines.append('static const scene_map_cell_t scene_map_cells_data[]={')
@@ -127,7 +148,7 @@ def main():
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')
-    report=dict(frames=len(images),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
+    report=dict(frames=len(images),native_descriptors=len(descriptors),native_palettes=len(native_palettes),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
     (ROOT/'build/scene_pack_report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
 if __name__=='__main__':main()

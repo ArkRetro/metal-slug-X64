@@ -92,7 +92,7 @@ void scene_assets_init(void) {
     stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
     data_cache_hit_writeback((void*)scene_palettes,sizeof(scene_palettes));
     // Warm the present zone outside gameplay. Marco's branch transitions stay pinned.
-    for (unsigned bank=0;bank<SCENE_BANK_COUNT;bank++) if (bank!=SCENE_SOLDIER) {
+    for (unsigned bank=0;bank<SCENE_BANK_COUNT;bank++) if (bank!=SCENE_SOLDIER && bank!=SCENE_NATIVE) {
         const scene_bank_t *b=&scene_banks[bank];
         for (unsigned i=0;i<b->first+b->second;i++) pinned[scene_images[b->start+i].page/8]=true;
     }
@@ -110,6 +110,20 @@ const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL
 const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
 unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
 uint32_t scene_map_backdrop(void) { return SCENE_MAP_BACKDROP; }
+const scene_native_descriptor_t *scene_native_descriptor(uint32_t tag) {
+    unsigned lo=0,hi=sizeof(scene_native_descriptors)/sizeof(scene_native_descriptors[0]);
+    while (lo<hi) {
+        unsigned mid=(lo+hi)/2;
+        if (scene_native_descriptors[mid].tag==tag) return &scene_native_descriptors[mid];
+        if (scene_native_descriptors[mid].tag<tag) lo=mid+1; else hi=mid;
+    }
+    return NULL;
+}
+int scene_native_palette(unsigned resource) {
+    for (unsigned i=0;i<sizeof(scene_native_palettes)/sizeof(scene_native_palettes[0]);i++)
+        if (scene_native_palettes[i].resource==resource) return scene_native_palettes[i].palette;
+    return -1;
+}
 const uint16_t *scene_palette(unsigned id) { assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id]; }
 void scene_begin_epoch(unsigned next) { epoch=next; }
 void scene_complete_epoch(unsigned done) { completed=done; }

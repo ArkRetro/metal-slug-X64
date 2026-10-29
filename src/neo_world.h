@@ -63,6 +63,7 @@ typedef struct {
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
+    uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
 } neo_world_t;
 /* Starts the region script at its first record with the RNG ring dumped at

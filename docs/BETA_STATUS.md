@@ -1,3 +1,9 @@
+The internal boot now shows the original title plate reconstructed from ROM,
+with PRESS START replacing INSERT COIN, a title audio excerpt, timed advance
+and Start handoff into the parachute entry. This is a static title adaptation,
+not the full animated intro/tutorial/selection. Both boot paths pass in ares;
+see `title-adaptation-validation.json`. No new demo is published.
+
 Current visual direction: fixed-scale 2D scenery layers with distinct scroll
 speeds and contact shadows only. Building extrusion, perspective background
 projection, fog and added dynamic lighting are disabled in the active renderer.

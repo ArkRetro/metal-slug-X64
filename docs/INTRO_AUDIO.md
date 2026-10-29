@@ -133,3 +133,38 @@ python3 tools/render_intro_reference.py /ruta/nueva-captura \
 
 Sin la sonda de raster, la comparación del frame 360 sigue fallando, como debe.
 Los assets, WAV, ROMs de prueba, VRAM/paletas y volcados completos permanecen locales.
+
+
+## Pantalla de título original adaptada a N64
+
+El arranque interno ahora presenta el título original reconstruido desde C-ROM,
+S-ROM y paletas de la referencia del frame 660. Antes de adaptar los controles,
+`pack_title_reference.py` compara la reconstrucción con la captura independiente
+de MAME (tolerancia RGB <=1 en los 304x224 píxeles activos). Luego cambia solo
+los caracteres FIX de INSERT COIN a PRESS START y elimina el contador de créditos;
+no redibuja el logotipo ni altera el copyright. Los PNG no se usan como texturas.
+
+Se mantiene la pantalla cinco segundos, con avance anticipado al pulsar Start
+tras el primer medio segundo y detección de flanco para ignorar una pulsación
+mantenida al arrancar. Se reproduce el fragmento original de audio de título ya
+convertido. El reproductor cierra los recursos de título antes de abrir la
+entrada en paracaídas. Ambos usan el reproductor nativo/RDP y audio WAV64.
+
+**Alcance:** es una pantalla original adaptada y estática, no la animación completa
+del título arcade, tutorial o selección de personaje. La demo de toda la misión,
+la lógica original completa y los sonidos del juego siguen pendientes. No se
+publica una ROM ni un vídeo parcial como entrega terminada.
+
+Preparación privada:
+
+```sh
+python3 tools/pack_title_reference.py CAPTURA_COMPLETA --bios ROMS/neogeo.zip
+python3 tools/prepare_audio_reference.py CAPTURA_COMPLETA
+make mission1-internal.z64
+python3 tools/test_entry_ares.py mission1-internal.z64 --region --output NUEVO_RESULTADO
+python3 tools/test_entry_ares.py mission1-internal.z64 --skip-title --output NUEVO_RESULTADO_START
+```
+
+La prueba revisa título, audio activo al inicio, CRC de la imagen adaptada,
+avance automático/Start y conservación de la entrada de 230 frames y su handoff.
+No es una captura acústica ni una medición de rendimiento en hardware.

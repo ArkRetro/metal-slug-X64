@@ -4,14 +4,14 @@ import argparse,hashlib,json,os,re,subprocess,time
 from pathlib import Path
 from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--region',action='store_true',help='Also traverse the current camera-1920 partial region; not a full mission test');p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--skip-title',action='store_true',help='Press Start to leave the adapted title before its timeout');p.add_argument('--region',action='store_true',help='Also traverse the current camera-1920 partial region; not a full mission test');p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
 f=json.loads((ROOT/'filesystem/cinematics/entry.json').read_text());out=a.output.resolve();assert not out.exists() or not any(out.iterdir());out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu');process=None;xd='/workspace/emulator/root/usr/bin/xdotool'
 def key(action,value):subprocess.run([xd,action,value],env=env,check=True)
 def wait(marker,seconds=60):
  deadline=time.monotonic()+seconds
  while time.monotonic()<deadline:
-  log=(out/'ares.log').read_text();assert 'ASSERTION FAILED' not in log and 'MSX ERROR:' not in log,log[-3000:]
+  log=(out/'ares.log').read_text();assert 'ASSERTION FAILED' not in log and 'RSP CRASH' not in log and 'MSX ERROR:' not in log,log[-3000:]
   if marker in log:return log
   assert process.poll() is None,'ares exited';time.sleep(.05)
  raise AssertionError('Timeout: '+marker)
@@ -21,6 +21,16 @@ with (out/'xvfb.log').open('w') as xlog:
   display=server.stdout.readline().strip();assert display.isdigit();env['DISPLAY']=':'+display
   with (out/'ares.log').open('w') as log:
    process=subprocess.Popen(['bash',str(ROOT/'tools/run_ares.sh'),str(a.rom.resolve())],stdout=log,stderr=subprocess.STDOUT,env=env)
+   title=wait('MSX TITLE start');assert 'audio=1' in title
+   title_asset=json.loads((ROOT/'filesystem/cinematics/title.json').read_text())
+   assert 'MSX TITLE start crc='+title_asset['pixels_crc32'] in title
+   if not a.skip_title:
+    time.sleep(.5);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'title.png')
+   if a.skip_title:
+    windows=subprocess.check_output([xd,'search','--onlyvisible','--class','ares'],env=env,text=True).split();assert windows
+    subprocess.run([xd,'windowfocus','--sync',windows[-1]],env=env,check=True)
+    time.sleep(1);key('keydown','Return');time.sleep(1.0);key('keyup','Return')
+   title=wait('MSX TITLE complete');assert ('skipped=1' if a.skip_title else 'skipped=0') in title
    wait('MSX INTRO start');time.sleep(.25);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'entry.png')
    text=wait('MSX mission handoff');match=re.search(r'MSX INTRO complete frames=(\d+) rendered=(\d+) crc=([0-9a-fA-F]+) reads=(\d+) audio=(\d+)',text);assert match
    cadence=re.search(r'MSX INTRO cadence unique=(\d+) skipped=(\d+)',text);assert cadence
@@ -55,12 +65,12 @@ with (out/'xvfb.log').open('w') as xlog:
    key('keydown','e');time.sleep(.12);key('keyup','e');wait('MSX reset')
   sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
   timing=re.search(r'MSX INTRO timing decode_max_us=(\d+) decode_mean_us=(\d+) draw_max_us=(\d+)',text);assert timing
-  result=dict(status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
+  result=dict(title_presentation='original_plate_n64_prompt',title_auto_advance=not a.skip_title,title_start_skip=a.skip_title,status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
   if a.region:result['partial_region']=region
   (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
  finally:
   if process is not None:
-   for button in ('Right','b','a','e','q'):
+   for button in ('Right','b','a','e','q','Return'):
     try:key('keyup',button)
     except subprocess.CalledProcessError:pass
    process.terminate()

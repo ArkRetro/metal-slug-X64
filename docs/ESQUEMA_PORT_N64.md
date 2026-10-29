@@ -129,7 +129,8 @@ Implementado:
 Propuesto: fusionar runs horizontales compatibles y usar `LoadBlock` para
 páginas lineales completas; medir, no asumir, cuál de las dos cargas es más
 rápida en cada caso. Instrumentación existente por frame: draws, uploads de
-textura, cambios TLUT, bytes TMEM, microsegundos de CPU.
+textura, cambios TLUT, bytes TMEM, microsegundos de CPU. Desglose por fases (simulación, fondo, actores, esperas) en la línea
+`MSX PERF`; ver [RENDIMIENTO.md](RENDIMIENTO.md).
 
 ### Microcódigo propio
 

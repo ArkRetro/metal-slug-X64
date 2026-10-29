@@ -5,16 +5,7 @@
 static const diorama_building_t building={704,96,832,176,96};
 static unsigned building_triangles;
 static retro_frame_t depth_frame;
-static void building_triangle(void *ctx,const float *a,const float *b,const float *c) {
-    (void)ctx;rdpq_triangle(&TRIFMT_SHADE,a,b,c);
-}
-static void building_sides(void) {
-    rdpq_mode_push();rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
-    rdpq_mode_alphacompare(0);rdpq_mode_blender(0);
-    building_triangles=diorama_building_sides(depth_frame.camera,&building,building_triangle,NULL);
-    rdpq_mode_pop();
-}
-
+static void building_sides(unsigned video_tick);
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
@@ -70,8 +61,7 @@ static unsigned palette_slot(unsigned id) {
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
-static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
-    if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
+static void prepare_texture(const scene_image_t *image,bool flash) {
     unsigned slot=0;
     if (image->format==0) {rdpq_mode_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else rdpq_mode_tlut(TLUT_NONE);
@@ -84,9 +74,41 @@ static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,i
         last_page=image->page;last_slot=(int)slot;last_format=image->format;
         last_width=image->width;last_height=image->height;uploads++;tmem_bytes+=(unsigned)bytes;
     }
+}
+static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
+    if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
+    prepare_texture(image,flash);
     rdpq_texture_rectangle_scaled(TILE0,x,y,x+draw_width,y+draw_height,
         mirror?s+width-1:s,t,mirror?s-1:s+width,t+height);
     draws++;
+}
+static void building_sides(unsigned video_tick) {
+    float center=depth_frame.camera.x+160;
+    int side=center<building.left?0:center>building.right?1:-1;
+    if(side<0 || building.right<depth_frame.camera.x-96 || building.left>depth_frame.camera.x+416) return;
+    unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
+    float x=side?building.right:building.left;
+    rdpq_mode_push();rdpq_mode_combiner(RDPQ_COMBINER_TEX);
+    rdpq_mode_filter(FILTER_POINT);rdpq_mode_persp(true);
+    rdpq_mode_alphacompare(1);rdpq_mode_blender(0);
+    for(int y=(int)building.top;y<(int)building.bottom;y+=16) {
+        const scene_map_cell_t *source=NULL;
+        int edge=side?(int)building.right-16:(int)building.left;
+        for(unsigned i=0;i<count;i++) if(cells[i].layer==3 && cells[i].x==edge && cells[i].y==y) {source=&cells[i];break;}
+        if(!source) continue;
+        const scene_image_t *im=scene_map_image(source->phases[video_tick&7]);
+        scene_request_image(im,2);scene_service();prepare_texture(im,false);
+        retro_vec3_t p[4]={{x,y+8,0},{x,y+24,0},{x,y+24,building.depth},{x,y+8,building.depth}};
+        float v[4][5];bool valid=true;
+        for(unsigned i=0;i<4;i++) {
+            retro_projected_t q;if(!retro_project(depth_frame.camera,p[i],&q)) {valid=false;break;}
+            v[i][0]=q.x;v[i][1]=q.y;
+            v[i][2]=im->x+(i>=2?16:0);v[i][3]=im->y+((i==1 || i==2)?16:0);
+            v[i][4]=q.inverse_w*depth_frame.camera.focal;
+        }
+        if(valid) {rdpq_triangle(&TRIFMT_TEX,v[0],v[1],v[2]);rdpq_triangle(&TRIFMT_TEX,v[0],v[2],v[3]);building_triangles+=2;}
+    }
+    rdpq_mode_pop();
 }
 static float background_x(const scene_map_cell_t *cell,int fallback) {
     if (!depth_mode) return fallback;
@@ -141,7 +163,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     for (unsigned layer=0;layer<5;layer++) {
       if (!visible[layer]) continue;
       for (unsigned pass=0;pass<(layer==3?2u:1u);pass++) {
-      if(layer==3 && pass==1) building_sides();
+      if(layer==3 && pass==1) building_sides(video_tick);
       for (unsigned i=0;i<count;i++) {
         const scene_map_cell_t *cell=&cells[i];
         if (cell->layer!=layer) continue;

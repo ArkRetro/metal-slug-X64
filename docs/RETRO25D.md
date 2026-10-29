@@ -304,3 +304,21 @@ la fachada conserva su proyección plana, las paredes usan color interpolado
 sin textura y aún faltan cubiertas, segmentación del resto de fachadas y
 respuesta dinámica de estas paredes a las luces. El recorte es dirección de
 arte manual, no geometría Neo Geo recuperada. Colisiones y personajes no cambian.
+
+### Laterales texturizados
+
+La muestra siguiente sustituye las paredes de color por cinco franjas de 16
+píxeles tomadas de la columna del borde de la fachada, con sus paletas CI4.
+Se conserva la UV dentro del atlas y se interpola INV_W para texturizado en
+perspectiva del RDP, con FILTER_POINT. El origen vertical incluye los ocho
+píxeles del viewport. Solo se dibuja el lado expuesto; si la cámara está entre
+los dos bordes no se dibuja ninguno. Las imágenes laterales se solicitan a la
+caché explícitamente aunque el borde frontal esté fuera de pantalla.
+
+Esta ruta usa hasta diez triángulos, en lugar de los cuatro de la prueba de
+color. El escenario actual tiene un máximo host de 80 triángulos de efectos;
+con el lateral suma 90 de los 96 disponibles. El contador del renderer incluye
+los laterales y comprueba el total en ejecución. Las cargas siguen usando las
+páginas existentes, con el límite de 2.048 bytes por upload. No hay un atlas
+lateral nuevo: es una reutilización de los materiales del borde, que aún debe
+revisarse artísticamente. La cubierta y el resto de edificios siguen pendientes.

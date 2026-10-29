@@ -27,3 +27,9 @@ Front artwork and collision remain fixed; two untextured receding walls provide
 perspective-dependent thickness. This is an initial single-building volume
 sample, not completed building modeling. Recorded in ares at 20 capture fps,
 without audio. Full host checks and a cutout/projection/budget sweep pass.
+
+`metal-slug-x-building-textured.mp4` replaces the single-building side-wall
+color pass with perspective-correct point-sampled tiles from the facade edge.
+Look around 8–12 seconds; recording is 44.6 seconds, ares, no audio. The side
+reuses the edge's materials and decorative features; no new authored side-wall
+art is supplied. Roofs and other buildings remain pending.

@@ -20,3 +20,10 @@ A first capture attempt hit an RSP timeout; the retained recording completed
 with a lower-load encoder and no RSP crash in its log. This does not establish
 that the timing-dependent failure is fixed. The separate region regression
 also passed. No new gameplay ROM is published.
+
+`metal-slug-x-building-volume.mp4` demonstrates the first authored side-wall
+cutout on the small building around world X=704..832 (roughly 8–12 seconds).
+Front artwork and collision remain fixed; two untextured receding walls provide
+perspective-dependent thickness. This is an initial single-building volume
+sample, not completed building modeling. Recorded in ares at 20 capture fps,
+without audio. Full host checks and a cutout/projection/budget sweep pass.

@@ -1,6 +1,20 @@
 #include "scene_renderer.h"
 #include "retro_effects.h"
 #include "mission_camera.h"
+#include "diorama_building.h"
+static const diorama_building_t building={704,96,832,176,96};
+static unsigned building_triangles;
+static retro_frame_t depth_frame;
+static void building_triangle(void *ctx,const float *a,const float *b,const float *c) {
+    (void)ctx;rdpq_triangle(&TRIFMT_SHADE,a,b,c);
+}
+static void building_sides(void) {
+    rdpq_mode_push();rdpq_mode_combiner(RDPQ_COMBINER_SHADE);
+    rdpq_mode_alphacompare(0);rdpq_mode_blender(0);
+    building_triangles=diorama_building_sides(depth_frame.camera,&building,building_triangle,NULL);
+    rdpq_mode_pop();
+}
+
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
@@ -8,7 +22,6 @@ static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
 static unsigned pal_lru[16];
 static bool depth_mode;
-static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
 static bool observed_light;
 void scene_render_set_depth_mode(bool enabled) {depth_mode=enabled;}
@@ -124,11 +137,15 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         }
         rdpq_set_scissor(0,0,320,240);return;
     }
+    building_triangles=0;
     for (unsigned layer=0;layer<5;layer++) {
       if (!visible[layer]) continue;
+      for (unsigned pass=0;pass<(layer==3?2u:1u);pass++) {
+      if(layer==3 && pass==1) building_sides();
       for (unsigned i=0;i<count;i++) {
         const scene_map_cell_t *cell=&cells[i];
         if (cell->layer!=layer) continue;
+        if(layer==3 && diorama_building_cell(&building,layer,cell->x,cell->y)!=(pass==1)) continue;
         float x=background_x(cell,cell->x-offsets[cell->layer]);
         if (x+16*depth_views[layer].scale<=8 || x>=312) continue;
         const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
@@ -137,11 +154,13 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
         blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
       }
+      }
       if (layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
     retro_effects_mesh(&depth_frame);
+    assertf(retro_effects_triangles()+building_triangles<=RETRO_MAX_TRIANGLES,"Building triangle budget");
     rdpq_set_scissor(0,0,320,240);
 }
 void scene_render_box(int x,int y,int width,int height,color_t color) {
@@ -158,7 +177,7 @@ void scene_render_end(void) {
     if (!(frame%300)) {
         scene_cache_stats_t s=scene_cache_stats();(void)s;
         if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3 planes=%u shadows=%u shadow_tris=%u\n",
-            retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count,
+            retro_effects_triangles()+building_triangles,RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count,
             retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
         debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),

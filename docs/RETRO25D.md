@@ -288,3 +288,19 @@ perspectiva a esas fachadas hace falta extraer piezas decorativas independientes
 conservar las plataformas en el plano de acción y completar las caras laterales
 que quedarían expuestas. Los wrappers actuales solo reciben iluminación; no
 convierten la ilustración en un edificio 3D texturizado.
+
+## Primera muestra de paredes laterales
+
+`diorama_building.c` proyecta dos paredes laterales de una pieza decorativa
+con fachada fija en Z=0 y fondo en Z=96. El renderer separa los tiles de la
+fachada (capa 3, rectángulo de autoría [704,96,832,176]) para dibujar primero
+el entorno, después las paredes y finalmente el frente original. Son cuatro
+triángulos como máximo, sin texturas adicionales ni transferencias TMEM; se
+incluyen en el contador y el límite de 96 triángulos. El máximo sintético
+anterior de 88 más cuatro sigue dentro del presupuesto.
+
+Esta es una primera pieza de volumen, no una conversión de todos los edificios:
+la fachada conserva su proyección plana, las paredes usan color interpolado
+sin textura y aún faltan cubiertas, segmentación del resto de fachadas y
+respuesta dinámica de estas paredes a las luces. El recorte es dirección de
+arte manual, no geometría Neo Geo recuperada. Colisiones y personajes no cambian.

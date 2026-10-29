@@ -427,18 +427,32 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     kind=s->b.timer5a;s->b.timer5a=0;
     if (crouch) s->f5b=0; /* 0407DA writes a word over +5A/+5B */
     bool grounded=(s->b.flags15&64u)!=0;
-    if (kind==6 && (grounded||crouch)) { /* 040D66 / crouch 040A40 handled below */
-        if (crouch) {c->unsupported=true;return false;}
-        if (!B(0x6e)) { /* 040ED0: child 040F88 at offset (8,0) */
-            neo_contact_actor_t seed=s->b;seed.flags15^=1u;
-            event(c,NEO_SOLDIER_EVENT_DEATH_CHILD,0,&seed);
+    /* Dispatch tables: 0406EA (grounded), 040750 (air), 0407F4 (crouch).
+     * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;
+     * 040D66 (grounded pistol) and 040A10 (air pistol) are the observed kills;
+     * the remaining entries (040C8E, 040B46, 040BA8, 040A40, 040AF6, 040A7C,
+     * 040BE6) are not translated and stop explicitly. */
+    uint32_t program=0;
+    if (crouch) {
+        if (kind==0||kind==1||kind==2||kind==6||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x240f8eu; /* 040A28 */
+    } else if (grounded) {
+        if (kind==6) { /* 040D66 */
+            if (!B(0x6e)) { /* 040ED0: child 040F88 at offset (8,0) */
+                neo_contact_actor_t seed=s->b;seed.flags15^=1u;
+                event(c,NEO_SOLDIER_EVENT_DEATH_CHILD,0,&seed);
+            }
+            uint8_t d=s->f5b;bool facing=(s->b.flags15&1u)!=0;
+            bool same=(int8_t)(d^(facing?0xffu:0u))>=0;
+            if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
+            s->routine=0x40db4;return true;
         }
-        uint8_t d=s->f5b;bool facing=(s->b.flags15&1u)!=0;
-        bool same=(int8_t)(d^(facing?0xffu:0u))>=0;
-        if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
-        s->routine=0x40db4;return true;
+        if (kind==0||kind==2||kind==8||kind==0xe||kind==0xf||(kind>=0x10&&kind<0x14)) program=0x2404feu; /* 040DC0 */
+        else if (kind==0xc||kind==0xd) program=0x240454u; /* 040DD8 */
+    } else {
+        if (kind==6) program=0x24103cu; /* 040A10 */
+        else if (kind==0||kind==2||kind==5||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x2404feu; /* 040DC0 */
     }
-    if (kind==6 && !grounded) {if (!anim_start(c,0x24103cu)) return false;s->routine=0x40df0;return true;}
+    if (program) {if (!anim_start(c,program)) return false;s->routine=0x40df0;return true;}
     c->unsupported=true;return false;
 }
 static bool death_motion(ctx_t *c) { /* 040852 */

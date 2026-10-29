@@ -1,10 +1,12 @@
 {
   "title": "METAL SLUG X64",
-  "frames": 601,
+  "frames": 661,
+  "source_frames": 601,
+  "title_hold_frames": 60,
   "rate": "59185606/1000000",
   "presentation": "Offline preview of the authored title frames quantized to native RGB555 and expanded for video, with its source PCM. Not emulator screen capture or a hardware benchmark.",
-  "audio": "Original title effects and original Metal Slug X announcement, followed by a deep male synthetic sixty-four with room reverb.",
-  "video_sha256": "3cc2049935d5292b99b3ba88abc4628810bad32480779a36bcde6cfa403f30f0",
+  "audio": "Original title effects and original Metal Slug X announcement, followed by an emphatic male sixty-four with prominent hall reverb and an extended final hold.",
+  "video_sha256": "441a80a401b2a60195d60aa66dc5737666dfe6046e57808e5035219f3ed4604b",
   "movie_sha256": "a863b3c1c4ea3c22816396f2771d584f2b8c91c8bf5303ba48fd2b5c214410d4",
-  "audio_sha256": "e3da9b079f1cc862e8169803910d4bd98cf3ff0e5c2bf6fb140f0325e6d9a980"
+  "audio_sha256": "9abbc53007c41fa488c458101162f46ad9b877f8cc56c15cfdcd11414fc0d19f"
 }

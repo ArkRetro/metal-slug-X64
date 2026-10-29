@@ -2,11 +2,12 @@
 #include "title_intro.h"
 #include "cinematic.h"
 #include "msx_audio.h"
+#include "title_motion_meta.h"
 bool msx_title_intro(void) {
  if(!msx_cinematic_open("rom:/title.msxc")) return false;
  unsigned count=msx_cinematic_stats().frames;
  uint32_t first_crc=msx_cinematic_pixels_crc();
- if(count<=1) {msx_cinematic_close();return false;}
+ if(count!=MSX_ENTRY_FRAMES || first_crc!=msx_entry_crc[0]) {msx_cinematic_close();return false;}
  if(!msx_audio_open(MSX_AUDIO_MUSIC,"rom:/title-motion.wav64")) {msx_cinematic_close();return false;}
  // Prepare the initial RDP path before starting the synchronized timeline.
  msx_cinematic_draw(display_get());
@@ -31,7 +32,7 @@ bool msx_title_intro(void) {
   }
   if(last!=state.index) {if(last==~0u) dropped+=state.index;else if(state.index>last+1) {dropped+=state.index-last-1;debugf("MSX TITLE miss from=%u to=%lu audio_us=%lu draw_us=%lu\n",last,(unsigned long)state.index,(unsigned long)TICKS_TO_US(audio_ticks),(unsigned long)TICKS_TO_US(previous_draw));}unique++;last=state.index;}
   uint32_t draw_started=TICKS_READ();msx_cinematic_draw(surface);previous_draw=TICKS_READ()-draw_started;rendered++;
-  if(target>=count && state.index+1==count) break;
+  if(target>=count+MSX_TITLE_HOLD_FRAMES && state.index+1==count) break;
  }
  msx_cinematic_stats_t final=msx_cinematic_stats();
  uint32_t final_crc=msx_cinematic_pixels_crc();

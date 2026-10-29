@@ -3,7 +3,8 @@ flash and original audio are reconstructed; authored 6/4 digits fall into the
 same reveal and change from silver to gold. Console prompt: PRESS START.
 See `title-motion-validation.json` and `INTRO_AUDIO.md` for validation and scope.
 The original Metal Slug X announcement is followed by a synthetic "sixty-four"
-tail at 8.60 s, now using a lower male voice with diffuse room reverb;
+tail at 8.60 s, now using an emphatic Kokoro male performance with
+prominent hall reverb and an extra final hold;
 the original effects and earlier speech are preserved.
 The old static-card/generic-voice proposal is rejected and inactive.
 This title update does not complete the tutorial, selection or Mission 1.

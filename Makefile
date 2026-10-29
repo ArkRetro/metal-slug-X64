@@ -214,6 +214,7 @@ clean:
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
+$(BUILD_DIR)/src/title_intro.o: $(BUILD_DIR)/title_motion_meta.h
 $(BUILD_DIR)/title_motion_meta.h: tools/compile_cinematic_crcs.py filesystem/cinematics/title-motion.json
 	python3 tools/compile_cinematic_crcs.py filesystem/cinematics/title-motion.json $@
 

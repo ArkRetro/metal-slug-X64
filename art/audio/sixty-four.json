@@ -1,16 +1,22 @@
 {
-  "voice": "Piper stock en_US-hfc_male-medium; male announcer",
+  "voice": "Kokoro male blend: 65% am_fenrir / 35% am_onyx",
   "synthetic": true,
-  "source_model": "https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/hfc_male/medium",
-  "synthesis_length_scale": 0.88,
-  "pitch_ratio": 0.88,
-  "peak_pcm16": 12500,
-  "reverb": {
-    "type": "diffuse room convolution",
-    "t60_seconds": 0.38,
-    "wet_rms_ratio": 0.22
+  "source_model": "https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0",
+  "cadence": {
+    "sixty_seconds": 0.44,
+    "pause_seconds": 0.095,
+    "four_seconds": 0.58,
+    "emphasis": "FOUR"
   },
-  "processing": "Lower register, 145 Hz body EQ, 1.8 kHz presence, 6:1 compression, diffuse room reverb",
-  "duration_seconds": 1.2678958333333334,
-  "asset_sha256": "258bfe3066d7e10055f2b33724b1973de88923af60a8ab788accfeb4b7d17bfb"
+  "peak_pcm16": 14500,
+  "title_hold_frames": 60,
+  "reverb": {
+    "type": "large diffuse hall convolution",
+    "t60_seconds": 1.2,
+    "wet_rms_ratio": 0.65,
+    "tail_seconds": 1.05
+  },
+  "processing": "Emphatic two-part male performance, accented FOUR, presence EQ/compression and prominent hall reverb",
+  "duration_seconds": 2.1649791666666665,
+  "asset_sha256": "29ce69825766a5551c623e89f6dc867243d129b0f6968acd4b13db3600e52670"
 }

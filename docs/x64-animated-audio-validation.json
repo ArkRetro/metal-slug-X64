@@ -4,29 +4,31 @@
   "title_cadence": "601 unique / 0 dropped",
   "pcm_rate": 48000,
   "channels": 2,
-  "source_pcm_correlation_after_clock_fit": 0.9923869906771097,
-  "synthetic_tail_correlation": 0.9970994193309745,
-  "clock_rate_fit": 0.9998136415525111,
-  "offset_seconds": 2.6192360159817354,
+  "source_pcm_correlation_after_clock_fit": 0.9915976806538084,
+  "synthetic_tail_correlation": 0.9994911602664668,
+  "clock_rate_fit": 0.9998123573059358,
+  "offset_seconds": 2.6191137271689504,
   "minimum_correlation": 0.85,
   "announcement": {
     "text": "Sixty-four!",
-    "voice": "Piper stock en_US-hfc_male-medium; male announcer",
-    "processing": "Lower register, 145 Hz body EQ, 1.8 kHz presence, 6:1 compression, diffuse room reverb",
+    "voice": "Kokoro male blend: 65% am_fenrir / 35% am_onyx",
+    "processing": "Emphatic two-part male performance, accented FOUR, presence EQ/compression and prominent hall reverb",
     "reverb": {
-      "type": "diffuse room convolution",
-      "t60_seconds": 0.38,
-      "wet_rms_ratio": 0.22
+      "type": "large diffuse hall convolution",
+      "t60_seconds": 1.2,
+      "wet_rms_ratio": 0.65,
+      "tail_seconds": 1.05
     },
+    "title_hold_frames": 60,
     "start_seconds": 8.6,
-    "end_seconds": 9.867895833333334,
+    "end_seconds": 10.764979166666667,
     "placement": "Authored after the spoken X, over its remaining echo",
     "previous_audio_unchanged": true,
     "peak_pcm16": 20450,
-    "asset_sha256": "258bfe3066d7e10055f2b33724b1973de88923af60a8ab788accfeb4b7d17bfb"
+    "asset_sha256": "29ce69825766a5551c623e89f6dc867243d129b0f6968acd4b13db3600e52670"
   },
-  "pcm_sha256": "a522e9295db09fe226becaed2eb1fdc7b572494323b1544bbb408ec88d07daae",
-  "rom_sha256": "325973b51d889a3b63a31b0ad3a14d52cb69cf1011a1647602189ec0e577b080",
-  "audio_sha256": "e3da9b079f1cc862e8169803910d4bd98cf3ff0e5c2bf6fb140f0325e6d9a980",
+  "pcm_sha256": "debd8186e23bc77400e3401c788f019e9ce958d5742620258a96beaa9baa0178",
+  "rom_sha256": "00e46ed8a64c16192da3fe6d83f50c29e9f01fe53f60a5d5de8a772a87c9a599",
+  "audio_sha256": "9abbc53007c41fa488c458101162f46ad9b877f8cc56c15cfdcd11414fc0d19f",
   "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
 }

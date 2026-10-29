@@ -1,35 +1,35 @@
-# Active male sixty-four announcement
+# Active epic male sixty-four announcement
 
-`sixty-four.wav` says **Sixty-four!** in English, using a new male base voice:
-Piper `en_US-hfc_male-medium`. This replaces the rejected higher Ryan voice.
-It enters at 8.60 s, after the spoken X, and its reverberation ends at 9.8679 s,
-before the 10.1545 s handoff. Original effects and earlier speech are preserved.
+The current tag uses **Kokoro ONNX**, with a blend of 65% `am_fenrir` and 35%
+`am_onyx`. It replaces the rejected Piper performances. The delivery is authored
+as “Sixty … FOUR!”: 440 ms for sixty, a 95 ms beat, then an accented 580 ms four.
+Each word is synthesized separately and shaped with formant-preserving stretch,
+a small rise/fall in pitch, presence/body EQ and compression.
 
-The register is lowered by a factor of 0.88 with duration compensation.
-145 Hz body EQ, 1.8 kHz presence and 6:1 compression provide a stronger delivery;
-the peak is 12500 PCM16 (previously 8000). Reverb uses a deterministic diffuse
-room impulse with a 380 ms T60 and 22% wet RMS. It is not a repeated-word delay.
-The versioned profile and waveform hash are in `sixty-four.json`.
+The diffuse hall is deliberately prominent: T60 1.20 s, 65% wet RMS and a
+1.05-second impulse. The waveform peak is 14500 PCM16. Convolution is baked into
+the asset offline; N64 still plays a single uncompressed stereo PCM16 stream.
 
-Source model:
-https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/hfc_male/medium
+The tag begins at 8.60 s and the full hall tail ends at 10.765 s. The title now
+holds its final frame for 60 additional source ticks (about 1.014 s), ending at
+11.168 s. The original letters and effects are preserved; the extra hold lets
+the reverb breathe before the mission handoff. Start can still skip the title.
+`sixty-four.json` records the voice, cadence, reverb and waveform hash.
 
-Reproduction with the local model and Piper installation:
+Synthesis model and voice-bank source:
+https://github.com/thewh1teagle/kokoro-onnx/releases/tag/model-files-v1.0
+
+Reproduce with the downloaded Kokoro model and kokoro-onnx Python environment:
 
 ```
-PYTHONPATH=/workspace/toolchains/piperpy /workspace/toolchains/piperpy/bin/piper \
-  --model /workspace/toolchains/piper-voices/en_US-hfc_male-medium.onnx \
-  --input-file art/audio/sixty-four.txt \
-  --output-file build/title-audio/sixty-four-male-raw.wav \
-  --length-scale 0.88 --sentence-silence 0.0
-python3 tools/master_title_voice.py build/title-audio/sixty-four-male-raw.wav
+PYTHONPATH=/workspace/toolchains/kokoropy python3 tools/synthesize_title_voice.py
+python3 tools/master_title_voice.py \
+  build/title-audio/sixty-epic-raw.wav build/title-audio/four-epic-raw.wav
 ```
 
-Mastering uses ffmpeg, NumPy and SciPy offline; no runtime reverb is added
-to the N64 audio budget. The asset is mono PCM16/48 kHz, mixed offline into
-the original stereo track.
-N64 playback uses uncompressed stereo PCM16 WAV64 at 32 kHz. This is a stock
-synthetic male announcer, not a clone of the arcade actor.
+Mastering uses ffmpeg with rubberband, NumPy and SciPy. Model files stay outside
+Git. The voice asset is mono PCM16/48 kHz; the composite title WAV64 is stereo
+PCM16/32 kHz. This is a synthetic announcer, not an original actor voice clone.
 
 `tools/title_announcement.py CAPTURE` rebuilds only the title audio from its
 verified private source capture and the versioned voice asset. Repeating the

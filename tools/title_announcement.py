@@ -35,7 +35,7 @@ def append_tail(pcm, rate):
     result = mixed.astype('<i2').tobytes()
     assert result[:start*4] == pcm[:start*4]
     assert result[end*4:] == pcm[end*4:]
-    return result, dict(text='Sixty-four!', voice=profile['voice'], processing=profile['processing'], reverb=profile['reverb'],
+    return result, dict(text='Sixty-four!', voice=profile['voice'], processing=profile['processing'], reverb=profile['reverb'], title_hold_frames=profile.get('title_hold_frames',0),
         start_seconds=START_SECONDS, end_seconds=end/rate, placement='Authored after the spoken X, over its remaining echo',
         previous_audio_unchanged=True, peak_pcm16=peak, asset_sha256=hashlib.sha256(TAIL.read_bytes()).hexdigest())
 
@@ -49,6 +49,8 @@ def prepare(capture, output, frames, first_frame, last_frame, add_tail):
         pcm = source.readframes(last-first)
     announcement = None
     if add_tail:
+        hold=json.loads(TAIL.with_suffix('.json').read_text()).get('title_hold_frames',0)
+        pcm+=bytes(round(hold/59.185606*48000)*4)
         pcm, announcement = append_tail(pcm, 48000)
     with wave.open(str(output/'title-motion.wav'), 'wb') as target:
         target.setnchannels(2); target.setsampwidth(2); target.setframerate(48000); target.writeframes(pcm)
@@ -69,6 +71,7 @@ def main():
         assert hashlib.sha256((args.capture/name).read_bytes()).hexdigest() == metadata['provenance'][name]
     frames = {row['frame']: row for line in (args.capture/'frames.jsonl').read_text().splitlines() if (row := json.loads(line))}
     metadata['announcement'] = prepare(args.capture, output, frames, metadata['first_frame'], metadata['last_frame'], True)
+    metadata['title_hold_frames'] = metadata['announcement'].get('title_hold_frames',0)
     metadata['audio_sha256'] = hashlib.sha256((output/'title-motion.wav64').read_bytes()).hexdigest()
     metadata['limits'] = 'Animated X64 title with original motion/effects and synthetic sixty-four tail. Not a full Mission 1 demo or original actor voice clone.'
     path.write_text(json.dumps(metadata, indent=2)+'\n')

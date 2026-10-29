@@ -284,3 +284,22 @@ body/presence EQ and compression. The tag peak rises from 8000 to 12500 PCM16.
 A diffuse room impulse (380 ms T60, 22% wet RMS) replaces the small discrete echo.
 The full tail ends at 9.8679 s; the title ends at 10.1545 s, so it is not cut.
 `master_title_voice.py` and `art/audio/sixty-four.json` document this profile.
+
+## Emphatic male / epic hall revision (active)
+
+The user rejected the subdued male interpretation. The active tag changes the
+synthesizer to Kokoro (65% am_fenrir / 35% am_onyx) and authors a two-part call,
+with a 95 ms beat and stronger emphasis on FOUR. The hall grows to 1.20 s T60
+with 65% wet RMS. Its full tail ends at 10.765 s, so the final title now holds
+for 60 additional ticks before handing off (11.168 s total).
+
+The hold count comes from voice metadata via the generated title header and is
+shared by PCM preparation, native timing and video export. Source animation
+remains 601 unique frames; the last frame is held, not interpolated. The earlier
+Piper/short-room paragraphs describe superseded revisions.
+
+The final Kokoro/hall build passes automatic playback and Start skip. All 601
+source frames are presented, plus the final hold; source CRCs still pass the
+native C decoder. Captured announcer/reverb PCM correlates 0.9995 with its source
+window, including the part after the original 10.1545 s endpoint. The hold
+therefore preserves the longer tail in actual emulator playback.

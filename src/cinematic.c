@@ -76,7 +76,9 @@ bool msx_cinematic_open(const char *path) {
     memset(work_canvas,0,w*h*2);canvas=surface_make(work_canvas,FMT_RGBA16,w,h,w*2);
     if (preload) {
         heavy_slot=malloc(count);if (!heavy_slot) goto error;memset(heavy_slot,-1,count);
-        unsigned preparation_budget=size>3*1024*1024?1024*1024:size>2*1024*1024?4*1024*1024:2*1024*1024;
+        // Keep movie + prepared frames within the same 6 MiB cinematic budget.
+        // A 3 MiB threshold cliff previously cut preparation to seven frames.
+        unsigned preparation_budget=size>2*1024*1024?6*1024*1024-(unsigned)size:2*1024*1024;
         unsigned limit=preparation_budget/(w*h*2);if (limit>32) limit=32;
         for (unsigned slot=0;slot<limit;slot++) {
             unsigned selected=count,biggest=size>2*1024*1024?8192:16384;

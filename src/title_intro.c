@@ -34,8 +34,9 @@ bool msx_title_intro(void) {
   if(target>=count && state.index+1==count) break;
  }
  msx_cinematic_stats_t final=msx_cinematic_stats();
+ uint32_t final_crc=msx_cinematic_pixels_crc();
  debugf("MSX TITLE timing audio_max_us=%lu decode_max_us=%lu draw_max_us=%lu\n",(unsigned long)TICKS_TO_US(audio_max),(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)TICKS_TO_US(final.max_draw_ticks));
  msx_audio_stop(MSX_AUDIO_MUSIC);msx_cinematic_close();
  debugf("MSX TITLE cadence unique=%u dropped=%u source=%u\n",unique,dropped,count);
- debugf("MSX TITLE complete frames=%u skipped=%u\n",rendered,skipped);return true;
+ debugf("MSX TITLE complete frames=%u skipped=%u crc=%08lx\n",rendered,skipped,(unsigned long)final_crc);return true;
 }

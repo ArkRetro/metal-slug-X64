@@ -1,14 +1,10 @@
-Current intro work supersedes the static-title proposals below: original title
-motion and synchronized audio recovered from ROM/reference, 361 frames matched
-offline and presented without omissions in ares. The X64-specific graphic and
-sound adaptation is not complete. Generated title/voice experiments were rejected
-and are not active. No new intro video or full-mission demo is released.
-
-The internal boot now shows the original title plate reconstructed from ROM,
-with PRESS START replacing INSERT COIN, a title audio excerpt, timed advance
-and Start handoff into the parachute entry. This is a static title adaptation,
-not the full animated intro/tutorial/selection. Both boot paths pass in ares;
-see `title-adaptation-validation.json`. No new demo is published.
+Current title: animated METAL SLUG X64. The source letters, particles, reveal
+flash and original audio are reconstructed; authored 6/4 digits fall into the
+same reveal and change from silver to gold. Console prompt: PRESS START.
+See `title-motion-validation.json` and `INTRO_AUDIO.md` for validation and scope.
+The original announcement still says Metal Slug X; no synthetic 64 voice is used.
+The old static-card/generic-voice proposal is rejected and inactive.
+This title update does not complete the tutorial, selection or Mission 1.
 
 Current visual direction: fixed-scale 2D scenery layers with distinct scroll
 speeds and contact shadows only. Building extrusion, perspective background

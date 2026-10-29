@@ -62,3 +62,16 @@ The user rejected `metal-slug-x64-intro-sound.mp4`: a static generated card and
 generic voice do not reproduce the original letter animation or sound effects.
 It is historical evidence only, not the approved intro. The active work now
 recovers the original animation and synchronized sound before making X64 edits.
+
+## Animated X64 title
+
+`metal-slug-x64-animated-intro.mp4` previews the exact 601 composed frames used
+by the N64 title movie, quantized to native RGB555, with its synchronized source PCM, at 59.185606 fps.
+It is an offline asset preview, not an emulator screen recording or hardware
+performance measurement. The native movie is separately tested in ares; see
+`../title-motion-validation.json`. No captured frames are interpolated.
+
+Original letters, particles, metallic impacts and reveal are retained; 6/4
+numerals fall into the reveal, turn gold, and the prompt reads PRESS START.
+The original announcement says Metal Slug X. A new spoken "sixty-four" is not
+included. The rejected static/generic-voice video remains historical only.

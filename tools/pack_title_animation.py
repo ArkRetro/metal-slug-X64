@@ -6,11 +6,14 @@ import numpy as np
 from PIL import Image
 from render_intro_reference import Renderer,raster_states
 from pack_cinematic import delta,nanos
+from title_x64 import load_digits,compose,DIGIT_KEYS,DIGIT_X
 ROOT=Path(__file__).resolve().parents[1]
-p=argparse.ArgumentParser();p.add_argument('capture',type=Path);p.add_argument('--bios',type=Path,required=True);p.add_argument('--first',type=int,default=300);p.add_argument('--last',type=int,default=660);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('capture',type=Path);p.add_argument('--bios',type=Path,required=True);p.add_argument('--first',type=int,default=300);p.add_argument('--last',type=int,default=660);p.add_argument('--adapt-x64',type=Path,help='Authored transparent paired digit sprite');a=p.parse_args()
 frames={r['frame']:r for l in (a.capture/'frames.jsonl').read_text().splitlines() if (r:=json.loads(l))}
 with zipfile.ZipFile(a.bios) as z:zoom=z.read('000-lo.lo')
 r=Renderer((ROOT/'filesystem/sprites.bin').read_bytes(),(ROOT/'filesystem/fixed.bin').read_bytes(),zoom)
+digits=load_digits(a.adapt_x64) if a.adapt_x64 else None
+preview=ROOT/'build/title-x64-frames';preview.mkdir(parents=True,exist_ok=True)
 out=ROOT/'filesystem/cinematics';previous=np.zeros(304*224,dtype=np.uint16);packets=[];crcs=[]
 for f in range(a.first,a.last+1):
  meta=frames[f];assert meta['fixed_source']==1
@@ -20,6 +23,13 @@ for f in range(a.first,a.last+1):
  ref=np.asarray(Image.open(a.capture/f'game{f}.png').convert('RGB'))
  mismatch=int((np.max(abs(rgb.astype(np.int16)-ref.astype(np.int16)),2)[:,8:312]>1).sum())
  assert not mismatch,('Unexplained title mismatch',f,mismatch)
+ if digits is not None:
+  baseline=rgb
+  rgb=compose(rgb,f,digits,r,colors)
+  allowed=np.zeros(rgb.shape[:2],dtype=bool);allowed[192:200,112:208]=True;allowed[216:224,208:296]=True
+  if f>=610:allowed[:160,211:296]=True
+  assert not np.any((rgb!=baseline)[~allowed]),('Edit escaped authored regions',f)
+ if digits is not None:Image.fromarray(rgb[:,8:312]).save(preview/f'{f:04}.png')
  rgb=rgb[:,8:312].astype(np.uint16);pixels=(((rgb[:,:,0]>>3)<<11)|((rgb[:,:,1]>>3)<<6)|((rgb[:,:,2]>>3)<<1)|1).reshape(-1)
  encoded=delta(pixels,previous);packets.append(struct.pack('>I',zlib.crc32(encoded))+encoded);previous=pixels
  crcs.append(zlib.crc32(pixels.astype('>u2').tobytes()))
@@ -33,7 +43,8 @@ with wave.open(str(a.capture/'reference.wav')) as w:
  first=nanos(frames[a.first]['time'])*48000//10**9;last=nanos(frames[a.last+1]['time'])*48000//10**9
  w.setpos(first);pcm=w.readframes(last-first)
  with wave.open(str(out/'title-motion.wav'),'wb') as target:target.setnchannels(2);target.setsampwidth(2);target.setframerate(48000);target.writeframes(pcm)
-subprocess.run(['/workspace/toolchains/package/opt/libdragon/bin/audioconv64','--wav-resample','32000','--wav-compress','1','--wav-loop','false','-o',str(out),str(out/'title-motion.wav')],check=True)
+subprocess.run(['/workspace/toolchains/package/opt/libdragon/bin/audioconv64','--wav-resample','32000','--wav-compress','0','--wav-loop','false','-o',str(out),str(out/'title-motion.wav')],check=True)
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
-report=dict(status='ALL_FRAMES_MATCH',first_frame=a.first,last_frame=a.last,frames=count,frame_crc32=crcs,movie_bytes=len(movie),movie_sha256=sha(out/'title-motion.msxc'),audio_sha256=sha(out/'title-motion.wav64'),provenance={n:sha(a.capture/n) for n in ('capture.json','frames.jsonl','raster.jsonl','reference.wav')},limits='Recovered original Metal Slug X title reference, not yet an X64 adaptation or complete Mission 1. No generated announcement is used.')
-(out/'title-motion.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS: original title motion and sound',count,'frames')
+report=dict(status='SOURCE_FRAMES_MATCH_THEN_AUTHORED_X64' if digits else 'ALL_FRAMES_MATCH',first_frame=a.first,last_frame=a.last,frames=count,source_pixels_checked=count*304*224,unmodified_source_matches=True,frame_crc32=crcs,movie_bytes=len(movie),movie_sha256=sha(out/'title-motion.msxc'),audio_sha256=sha(out/'title-motion.wav64'),audio_format='Stereo PCM16 at 32000 Hz, uncompressed WAV64',provenance={n:sha(a.capture/n) for n in ('capture.json','frames.jsonl','raster.jsonl','reference.wav')},limits='Recovered original Metal Slug X title reference, not yet an X64 adaptation or complete Mission 1. No generated announcement is used.')
+if digits is not None:report.update(title='METAL SLUG X64',authored_digits_sha256=sha(a.adapt_x64),authored_digit_keys=DIGIT_KEYS,authored_digit_x=DIGIT_X,limits='Animated X64 title adaptation; original letters, particles, flash and synchronized audio, authored extra digits and console prompts. Not complete Mission 1; original announcement says Metal Slug X, no cloned or synthetic 64 voice.')
+(out/'title-motion.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS:', 'X64 title adaptation' if digits else 'original title motion and sound',count,'frames')

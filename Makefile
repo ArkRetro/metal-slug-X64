@@ -224,6 +224,7 @@ check-cinematic: $(BUILD_DIR)/entry_meta.h $(BUILD_DIR)/title_motion_meta.h
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DMSX_CINE_META_HEADER='"title_motion_meta.h"' tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/title-motion-pack
 	$(BUILD_DIR)/host/title-motion-pack filesystem/cinematics/title-motion.msxc
 	python3 tools/test_title_palette_banks.py
+	python3 tools/test_title_x64.py
 $(BUILD_DIR)/marco_selectors.h: tools/compile_marco_selectors.py data/marco_selector_fixture.json
 	python3 tools/compile_marco_selectors.py
 

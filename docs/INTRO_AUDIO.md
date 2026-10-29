@@ -1,6 +1,7 @@
-> Current intro baseline is the recovered original moving title with synchronized
-> sound. The static generated X64 card and generic voice below were rejected.
-> Faithful X64-specific changes are still pending; this is not a completed demo.
+> Active title: METAL SLUG X64 with original animated letters, particles, flash
+> and sound; authored falling 6/4 digits and PRESS START. The generic voice and
+> static card below are historical rejected experiments. The original spoken
+> announcement is retained (Metal Slug X); this is not a complete Mission 1 demo.
 
 # Intro completa y sonido: alcance y evidencia
 
@@ -220,9 +221,40 @@ memoria esté disponible. Se prepara el primer dibujo antes del reloj/audio y
 se obtiene el búfer de pantalla **antes** de calcular/decodificar el frame.
 Las versiones que lo hacían después omitían frames y no se aprobaron.
 
-**Pendiente:** integrar el 64 en el lenguaje de movimiento y acabado original,
-sus sonidos asociados y los prompts de N64, además de la misión/controlador
-completos. El título recuperado es una referencia de Metal Slug X, no una
-adaptación X64 terminada. No se publica otro vídeo como resultado final.
+### Adaptación X64
+
+La versión activa amplía la referencia hasta el frame 900 para conservar el
+remate y el audio completo. Los 601 frames de origen pasan la comparación antes
+de añadir los dígitos. El 6 y el 4 son sprites nuevos con trayectorias de caída
+autorizadas por el diseño, rebote y revelado dorado. Ambos llegan al remate de la
+X; no se sustituyen las partículas, las letras ni los impactos originales.
+Las claves de movimiento están declaradas como autoría en `title_x64.py`, no
+como direcciones o comportamiento recuperado de la ROM.
+
+Se cambia el aviso a PRESS START y se elimina el contador de monedas. El fondo
+del destello se conserva al borrar el texto; no se pinta una franja negra. El
+empaquetador rechaza cambios fuera de esas regiones y de la zona de los dígitos.
+El audio conserva los efectos y la locución original, que dice Metal Slug X;
+no incluye una nueva locución «sixty-four».
 
 La evidencia numérica de esta corrección está en [title-motion-validation.json](title-motion-validation.json). La prueba automática de avance y la de salto con Start pasan; no constituyen una captura acústica ni una prueba en MiSTer.
+
+La ampliación de la secuencia cruzó por 2170 bytes el umbral anterior de 3 MiB;
+la prueba inicial 92 preparó solo siete frames y omitió siete. Ese resultado se
+rechazó. La caché ahora reparte un máximo conjunto de 6 MiB entre el archivo y
+los frames pesados preparados, manteniendo margen para pantalla, audio y código.
+La captura visual offline no es evidencia de rendimiento; la cadencia se valida
+por separado en la ROM final de ares.
+
+El título usa ahora WAV64 **PCM16 estéreo sin compresión, a 32 kHz**, en lugar
+de VADPCM. El coste adicional es aproximadamente 0,9 MiB de cartucho; el flujo
+se lee por el backend nativo sin precargar todo el audio en RDRAM. El vídeo
+exporta los mismos frames compuestos, cuantizados a RGB555, con el PCM fuente;
+no sustituye una medición en ares ni afirma rendimiento en MiSTer.
+
+La captura de salida PCM de ares confirma una correlación de **0,992** con el
+PCM fuente tras ajustar el pequeño desfase del reloj DAC. La versión VADPCM
+anterior medía 0,524 con el mismo método y se sustituyó. El arranque y los 601
+frames completos también pasan con PCM; el registro acústico está en
+`x64-animated-audio-validation.json`. Es una medición de salida del emulador,
+no una prueba de altavoces ni de hardware.

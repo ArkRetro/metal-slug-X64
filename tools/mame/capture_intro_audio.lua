@@ -30,6 +30,7 @@ local function button(name,value)
  inputs:write(string.format('{"frame":%d,"name":"%s","value":%d}\n',frame,name,value));inputs:flush()
 end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0}}
+if os.getenv('MSX_TITLE_ONLY')=='1' then actions={} end
 local confirm=tonumber(os.getenv('MSX_CONFIRM_FRAME') or '0')
 if confirm>0 then actions[confirm]={'P1 A',1};actions[confirm+10]={'P1 A',0} end
 local function dump()

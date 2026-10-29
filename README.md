@@ -81,7 +81,7 @@ No se afirma igualdad 1:1 del juego ni rendimiento garantizado en hardware.
 Véase [colisiones y objetos v10](docs/COLLISION.md),
 [recuperación del escenario y movimiento v9](docs/MISSION1.md),
 [núcleo RDP de v8](docs/RDP_IMPLEMENTATION.md) y
-[arquitectura objetivo](docs/N64_ARCHITECTURE.md).
+[esquema de portabilidad](docs/ESQUEMA_PORT_N64.md) y [arquitectura objetivo](docs/N64_ARCHITECTURE.md).
 
 ## Compilar
 

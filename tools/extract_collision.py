@@ -16,10 +16,24 @@ def collision_layer(ram):
     same=ram[FOREGROUND+0x14:FOREGROUND+0x1c]==ram[MIDDLE+0x14:MIDDLE+0x1c]
     return MIDDLE if same else FOREGROUND
 
-def observed_cells(ram):
-    """Yield only observed world cells; ring-buffer aliases are not extra terrain."""
+def camera_x(ram,layer):
+    """Integer camera X of the active collision layer (-(+0x14 Q16.16)).
+
+    Equal to the scroll-progress word RAM 0x102036 while the camera follows
+    the progress; inside a camera stop with player-driven bounds (Mission 1
+    boss arena: progress 3376, camera 3432..3520) only this value matches the
+    ring loaded by ROM 0C734E and the visible viewport."""
+    return (-struct.unpack_from('>i',ram,layer+0x14)[0])>>16
+
+def observed_cells(ram,layer_camera=False):
+    """Yield only observed world cells; ring-buffer aliases are not extra terrain.
+
+    layer_camera=True takes the viewport from the active layer position
+    (camera_x) instead of the progress word; required past camera stops whose
+    bounds let the view move ahead of the progress."""
     assert len(ram)==65536,'Expected a complete 64 KiB arcade RAM snapshot'
-    camera=struct.unpack_from('>H',ram,0x2036)[0];layer=collision_layer(ram)
+    layer=collision_layer(ram)
+    camera=camera_x(ram,layer) if layer_camera else struct.unpack_from('>H',ram,0x2036)[0]
     for x in range(max(0,camera-8)//8*8,(camera+327)//8*8,8):
         for y in range(0,256,8):
             address=layer+0x88+((x&504)<<3)+((~y&504)>>3)

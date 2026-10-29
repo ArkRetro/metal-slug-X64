@@ -3,26 +3,85 @@
 
 This recovers the observed region, not an unseen ROM level or gameplay logic.
 """
-import argparse,collections,json,struct
+import argparse,collections,csv,json,struct
 from pathlib import Path
-from neo_scene import state
+from neo_scene import state,trace_hints
 
-def extract(roots,output,allow_backdrop_timeline=False):
+def animation_disabled(writes,frame):
+    """LSPC bit 3 as last written before the update that produced `frame`.
+    A write logged with frame n happens while frame n+1 is emulated."""
+    assert not any(frame-2<=f<frame for f,_ in writes),('LSPC mode written next to a snapshot',frame)
+    value=[v for f,v in writes if f<frame]
+    return bool(value and value[-1]&8)
+
+def extract(roots,output,allow_backdrop_timeline=False,frames=None):
     if isinstance(roots,Path):roots=[roots]
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
-    observations=[];backdrops=set()
+    observations=[];backdrops=set();flashes=[]
     paths=[path for root in roots for path in sorted(root.glob('vram*.bin'),key=lambda p:int(p.stem[4:]))]
+    traces={};maps={};phases={};lspc_writes={};baseline={};origin_events=[]
     for path in paths:
         root=path.parent
+        if root not in maps:
+            # Per-frame layer headers (layers.csv): map pointer +2E and map
+            # column origin +32 (ROM 0C6F34/0C6F82) of each layer object.
+            t=root/'layers.csv';maps[root]=None
+            if t.exists():
+                maps[root]=collections.defaultdict(dict)
+                for row in csv.DictReader(t.read_text().splitlines()):
+                    h=bytes.fromhex(row['header'])
+                    maps[root][int(row['frame'])][int(row['object'],16)]=(struct.unpack_from('>I',h,0x2e)[0],struct.unpack_from('>h',h,0x32)[0])
+        if root not in phases:
+            # Hardware auto-animation counter at each snapshot (lspc.csv of
+            # tools/capture_mission_rest.lua, LSPC mode register bits 2..0) and
+            # every write to that register (lspc-writes.csv; bit 3 disables the
+            # auto-animation, so the SCB tile codes are shown unmodified).
+            t=root/'lspc.csv';w=root/'lspc-writes.csv'
+            phases[root]={int(r['frame']):int(r['auto_animation']) for r in csv.DictReader(t.read_text().splitlines())} if t.exists() else None
+            lspc_writes[root]=[(int(r['frame']),int(r['value'],16)) for r in csv.DictReader(w.read_text().splitlines())] if w.exists() else None
+        if root not in traces:
+            # tools/capture_mission_rest.lua writes a per-frame RAM trace; with it
+            # every transform must equal a traced RAM value (see neo_scene.state).
+            t=root/'trace.csv'
+            traces[root]={int(r['frame']):r for r in csv.DictReader(t.read_text().splitlines())} if t.exists() else None
         frame=int(path.stem[4:]);ram_path=root/f'ram{frame}.bin'
         if not ram_path.exists():continue
+        if frames and not frames[0]<=frame<=frames[1]:continue
         v=struct.unpack('>34304H',path.read_bytes());ram=ram_path.read_bytes()
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
+        trace=traces[root]
+        scene=state(v,ram,trace_hints(trace,frame) if trace else None);camera=scene['camera'];offsets=list(scene['offsets'])
+        origins=None
+        if maps[root]:
+            # A layer whose map pointer is unchanged but whose column origin moved
+            # (ROM 0C6F82, e.g. the map swap 0B58CC adds 2 to the sky) shows the
+            # same map shifted: cells are stored in map coordinates, so the
+            # observation's offset carries -16 px per origin column. The SCBs of a
+            # snapshot may show any of the last four updates: the state must be
+            # constant over them. A new map pointer is kept in display coordinates.
+            origins=[]
+            for layer,obj in enumerate((0x10e83e,0x10d7b6,0x10d7b6,0x10c72e)):
+                states={maps[root][frame-k][obj] for k in range(4) if obj in maps[root].get(frame-k,{})}
+                assert len(states)==1,('Layer map state changes inside the snapshot lag window',frame,hex(obj),states)
+                pointer,origin=next(iter(states))
+                base=baseline.setdefault((root,obj),(pointer,origin))
+                if pointer==base[0] and origin!=base[1]:
+                    offsets[layer]-=16*(origin-base[1])
+                    if (str(root),layer,origin) not in {(e['captures'],e['layer'],e['origin']) for e in origin_events}:
+                        origin_events.append(dict(captures=str(root),layer=layer,object=f'0x{obj:06X}',map=f'0x{pointer:06X}',first_frame=frame,origin=origin,baseline_origin=base[1],shift=-16*(origin-base[1])))
+                origins.append([f'0x{pointer:06X}',origin])
+        used={v[c['slot']*64+r*2+1]>>8 for c in scene['columns'] for r in range(min(c['rows'],32)) if (v[c['slot']*64+r*2+1]&0xf0)==0x40}
+        if p[-1]==0x7fff and used and all(w==0x7fff for pal in used for w in p[pal*16+1:pal*16+16]):
+            # Full-screen white flash (an explosion palette effect): every pen of
+            # every background palette and the backdrop are white. Such a frame
+            # carries no map information; it is recorded, never merged.
+            flashes.append(dict(frame=frame,captures=str(root),camera=camera,palettes=len(used)));continue
         backdrops.add(p[-1])
-        scene=state(v,ram);camera=scene['camera'];offsets=scene['offsets']
         observations.append(dict(frame=frame,captures=str(root),camera=camera,backdrop=p[-1],
             camera_ram=struct.unpack_from('>H',ram,0x2036)[0],offsets=offsets,
-            vertical_offsets=scene['vertical_offsets'],active=scene['active'],
+            vertical_offsets=scene['vertical_offsets'],active=scene['active'],map_origins=origins,
+            **({'animation_phase':phases[root][frame]} if phases[root] else {}),
+            **({'auto_animation_disabled':animation_disabled(lspc_writes[root],frame)} if lspc_writes[root] is not None else {}),
             full_speed_mid=scene['full_speed_mid'],
             player_x16=struct.unpack_from('>I',ram,0x14ec)[0],player_y16=struct.unpack_from('>I',ram,0x14f0)[0]))
         for col in scene['columns']:
@@ -58,11 +117,12 @@ def extract(roots,output,allow_backdrop_timeline=False):
         camera_max=max(o['camera'] for o in observations),width=max(o['camera'] for o in observations)+320,
         selection='first observed; dynamic coordinate variants retained separately',
         layers=[dict(numerator=n,denominator=d) for n,d in ((1,2),(3,4),(1,1),(1,1))],
-        palettes=palettes,cells=records,observations=observations,conflicts=conflicts)
+        palettes=palettes,cells=records,observations=observations,conflicts=conflicts,flash_frames=flashes,map_origin_events=origin_events)
     (output/'map.json').write_text(json.dumps(report,separators=(',',':'))+'\n')
     print('Observed map:',len(records),'cells;',len(palettes),'palettes;',len(conflicts),'coordinate variants; camera',report['camera_max'])
 
 if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',type=Path,nargs='+');p.add_argument('--output',type=Path,default=Path('filesystem/mission1'))
     p.add_argument('--allow-backdrop-timeline',action='store_true',help='Keep per-observation backdrop values for research; runtime event mapping remains required')
-    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline)
+    p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames (e.g. exclude the mission-end fade)')
+    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline,a.frames)

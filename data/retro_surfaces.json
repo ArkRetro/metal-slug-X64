@@ -1,0 +1,12 @@
+{
+  "description": "2.5D art direction for mission 1 (depth25d, default build); authored geometry, not recovered Neo Geo depth.",
+  "authoring": "See docs/RETRO25D.md#añadir-superficies. rect=[left,top,right,bottom] in world X / screen Y; depth -6..24 at every corner; |dx|,|dy|<=0.25; unique name; any world X; at most 5 planes overlapping one 384-px camera window. tools/build_retro_assets.py sorts and validates.",
+  "focal": 320,
+  "layer_depths": [960, 320, 0, 0, 0],
+  "planes": [
+    {"name":"cart_panel", "rect":[558,157,654,184], "depth":2, "dx":0.015, "dy":0.01},
+    {"name":"first_wall", "rect":[704,88,832,178], "depth":4, "dx":0.045, "dy":0.005},
+    {"name":"first_roof", "rect":[704,58,832,88], "depth":10, "dx":0.02, "dy":-0.12},
+    {"name":"village_wall", "rect":[940,68,1040,178], "depth":3, "dx":-0.035, "dy":0.005}
+  ]
+}

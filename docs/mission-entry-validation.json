@@ -1,0 +1,21 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "source_frames": 230,
+  "unique_presented_frames": 230,
+  "skipped_frames": 0,
+  "rendered_frames": 234,
+  "final_pixels_crc32": "db681cc3",
+  "movie_read_bytes": 1246644,
+  "audio_active_at_handoff": true,
+  "decode_max_us": 12928,
+  "decode_mean_us": 1532,
+  "draw_max_us": 922,
+  "rom_sha256": "c8b5bc81f7e853abd4bcfc7cc466bc0a1c0d1c728247039c1ec09bf8c0db670b",
+  "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+  "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+  "log_sha256": "e9347c19c4f26a607b2595afa136110a0212011667d2f802083f043834f85977",
+  "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.",
+  "host_checks": "make check and make check-cinematic: PASS",
+  "n64_build": "PASS"
+}

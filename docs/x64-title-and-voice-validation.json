@@ -1,0 +1,74 @@
+{
+  "title_asset": {
+    "title": "METAL SLUG X64",
+    "origin": "Authored with image generation from supplied arcade title reference; N64-era styled lettering, not an official Nintendo font",
+    "art_sha256": "f8256d511042ac214b2701ba6d8978f1c0c48961822e3b38c206430394439d95",
+    "movie_sha256": "617589d67f757eb3ec8e67d41125ceacd9218fca49250642c3e88d182fc027b5",
+    "pixels_crc32": "7f821196",
+    "conversion": "320x240 nearest-neighbor then RGBA5551, no runtime filtering",
+    "limits": "Adapted single title plate, not the full arcade title animation or complete Mission 1."
+  },
+  "standard_region": {
+    "title_presentation": "METAL SLUG X64",
+    "title_auto_advance": true,
+    "title_start_skip": false,
+    "status": "PASS",
+    "emulator": "ares 146",
+    "source_frames": 230,
+    "unique_presented_frames": 230,
+    "skipped_frames": 0,
+    "rendered_frames": 234,
+    "final_pixels_crc32": "db681cc3",
+    "movie_read_bytes": 1246644,
+    "audio_active_at_handoff": true,
+    "diagnostic_toggle": true,
+    "decode_max_us": 12923,
+    "decode_mean_us": 1528,
+    "draw_max_us": 940,
+    "rom_sha256": "1e4ab53e9867bb5360038d4653b021ceee11ebfc7a07b946cf1017f35cf1c324",
+    "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+    "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+    "log_sha256": "fd7387f4fa7000f07e43aca02adeaccb3438ee4abe1d28c0b6c1b89b5bd406a4",
+    "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.",
+    "partial_region": {
+      "camera": 1920,
+      "x16": 144965631,
+      "cache_misses": 0,
+      "depth_mode": true,
+      "presentation": "layered_2d_shadows_only",
+      "depth_max_triangles": 8,
+      "cache_samples": 2,
+      "limit": "Three provisional guards, approximate camera and REGION END; not complete Mission 1."
+    }
+  },
+  "preview": {
+    "events": {
+      "MSX TITLE start": 2.0961137379927095,
+      "MSX TITLE complete": 9.027161201986019,
+      "MSX INTRO start": 9.518218696000986,
+      "MSX INTRO preview complete": 14.425793033005903
+    },
+    "rom_sha256": "7461fc70304679b4945d3fbf9b4dbeacff4d73e35448664a0d0b0c4c5f8dc5ed",
+    "audio_rate": 48000,
+    "audio_channels": 2,
+    "audio_format": "s16le",
+    "audio_capture": "ares ALSA file sink",
+    "title": "METAL SLUG X64",
+    "synthetic_announcement": "Piper stock Ryan high, not original actor cloning",
+    "presentation": "Edited intro preview from ares frames and captured ALSA audio, aligned to native timing; not a real-time performance recording",
+    "voice_pcm_start": 1.14,
+    "entry_pcm_start": 7.3,
+    "first_plate_seconds": 6.16,
+    "cinematic_seconds": 3.886080003979346,
+    "total_seconds": 10.959999999999999,
+    "known_issue": "Full campaign handoff with ALSA/video capture hit an RSP timeout in separate runs; not fixed or claimed stable. This preview holds the final cinematic frame and does not enter gameplay."
+  },
+  "synthetic_voice": {
+    "text": "Metal Slug! X sixty-four!",
+    "original_actor_clone": false,
+    "rate": 32000,
+    "channels": 1,
+    "seconds": 1.80346875,
+    "wav_sha256": "5c0f00ed3f3d39e1262372b8f3ebd724743ee48520204f6febb763e74c8a1681"
+  }
+}

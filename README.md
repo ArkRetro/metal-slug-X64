@@ -1,5 +1,58 @@
 # Metal Slug X para Nintendo 64: trabajo en curso
 
+La próxima entrega solicitada es una **demo jugable de la Misión 1 completa, con intro y sonido**,
+validada en ares antes de probarla en MiSTer. Aún no está terminada.
+Véase [estado del port y entrega](docs/BETA_STATUS.md).
+La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
+el controlador completo todavía está pendiente y no se declara un 100%.
+El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)
+ya pasa comparaciones con MAME y con framebuffer real del RDP en ares.
+El [modo visual 2.5D](docs/RETRO25D.md) está activo por defecto: paralaje en
+perspectiva, iluminación por vértice, sombras de contacto, pulsos de luz en
+impactos y explosiones, y niebla, sin tocar el pixel art ni la jugabilidad 2D.
+`make MSX_VISUAL_MODE=classic` compila la ruta plana original.
+Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
+con contorno, paleta y transparencia, también al disparar hacia la izquierda.
+El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
+gráficos `.sprite` de libdragon y colisiones de los restos. Se valida en un
+escenario interno; su oleada y aparición originales siguen pendientes.
+El [primer soldado de Misión 1](docs/FIRST_SOLDIER.md) ya está localizado mediante
+watchpoints, traza MAME y Ghidra. El informe separa hechos verificados de hipótesis;
+la IA completa sigue pendiente.
+El [RNG original y los siguientes bloques del soldado](docs/SOLDIER_RNG.md)
+ya tienen código C y fixtures medidos que pasan en host y como MIPS en ares.
+El [helper de animación nativo](docs/SOLDIER_ANIMATION.md) conserva cursor y
+temporizador durante 54 actualizaciones y reproduce los dibujos y el callback
+de orientación observados. La integración de la IA completa sigue pendiente.
+El [movimiento y contacto de suelo recuperados](docs/SOLDIER_CONTACT.md)
+ya se encadenan con la animación: 54 actualizaciones y dibujos coinciden con
+MAME en host y ares. El solver genérico y el controlador completo siguen pendientes.
+
+El [bloque común del soldado](docs/SOLDIER_CONTROL.md) calcula ahora sus flags
+con las condiciones originales del RNG: 55 ciclos alimentan 54 movimientos y
+dibujos nativos, verificados en host y ares. Las consultas delanteras y el orden
+RNG global siguen siendo entradas externas; aún no es la IA completa.
+
+La [máquina de estados recuperada](docs/SOLDIER_STATE.md) calcula ahora las
+velocidades, seis inicios de animación y las transiciones observadas durante
+54 actualizaciones. El selector de acciones se compara además con 84 llamadas
+originales, incluida una selección de ataque. Esto aún no sustituye los guardias
+provisionales ni completa la Misión 1.
+
+La entrega pendiente incluye la **intro completa y sonido**. El nuevo
+[backend de audio y las referencias de intro](docs/INTRO_AUDIO.md) ya tienen
+pruebas internas en ares. La [entrada en paracaídas](docs/MISSION_ENTRY.md) ya
+entrega el control a Marco con audio; la presentación completa y el resto de
+la misión siguen pendientes.
+
+El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de paleta
+y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
+Las respuestas de impacto siguen externas y la integración jugable está pendiente.
+
+El [reposicionamiento nativo](docs/SOLDIER_LOCOMOTION.md) añade 34 actualizaciones
+con selección de poses, RNG y contacto de pendiente. La escena jugable parcial
+existente conserva su recorrido en ares tras corregir el sesgo fraccionario.
+
 **v10 incorpora la cuadrícula original de colisiones de 8×8**, la velocidad
 de marcha sobre pendientes y los gráficos del carro y el toldo del mercado.
 Marco puede aterrizar en superficies a distintas alturas y caer de ellas.
@@ -17,6 +70,8 @@ con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea origi
 | START | Alternar escena y laboratorio de tiles |
 
 Puedes recorrer el tramo, saltar y combatir con los tres guardias provisionales.
+El tramo llega ahora a la cámara 1920 (antes 872), con el cambio de banco medio
+y la subida de cámara medidos; véase [la ampliación](docs/MISSION1.md#ampliación-hasta-la-cámara-1920).
 `REGION END` marca el límite del mapa observado, no el final de la misión original.
 Las cajas de prueba de v8 se han retirado. **Sigue siendo un port en desarrollo**:
 faltan mapa completo, resolvedor de colisiones completo, lógica original y cambios dinámicos del
@@ -26,7 +81,7 @@ No se afirma igualdad 1:1 del juego ni rendimiento garantizado en hardware.
 Véase [colisiones y objetos v10](docs/COLLISION.md),
 [recuperación del escenario y movimiento v9](docs/MISSION1.md),
 [núcleo RDP de v8](docs/RDP_IMPLEMENTATION.md) y
-[arquitectura objetivo](docs/N64_ARCHITECTURE.md).
+[esquema de portabilidad](docs/ESQUEMA_PORT_N64.md) y [arquitectura objetivo](docs/N64_ARCHITECTURE.md).
 
 ## Compilar
 
@@ -38,12 +93,18 @@ python3 tools/import_rom.py /ruta/a/mslugx.zip
 # Si faltan assets/sidecars: seguir docs/RDP_IMPLEMENTATION.md, docs/MISSION1.md y docs/COLLISION.md.
 # python3 tools/export_marco.py /ruta/capturas
 make -j4
-cc -std=c11 -Wall -Wextra -Werror tools/test_fixed.c -o /tmp/msx-test-fixed
-/tmp/msx-test-fixed
-cc -std=c11 -Wall -Wextra -Werror tools/test_sprites.c -o /tmp/msx-test-sprites
-/tmp/msx-test-sprites
+make check-core
 make check
 ```
+
+`make check-core` no requiere SDK ni ROMs: usa código y los CSV numéricos
+versionados. CI lo ejecuta en cada push y PR. `make check` también es host y
+requiere los metadatos/assets derivados que utilizan las pruebas completas.
+`make check-cinematic` añade los 230 frames del segmento local de entrada.
+`make -j4` compila el modo 2.5D (`depth25d`); `make -j4 MSX_VISUAL_MODE=classic`,
+la ruta plana. `make preview-depth` genera vistas previas offline de los
+efectos sin arte original.
+Las [correcciones del PR #2](docs/PR2_REVIEW.md) están adaptadas a esta rama.
 
 Resultado: `mslugx-explorer.z64`, aproximadamente 50 MiB. Las ROM originales
 se comprueban contra CRC32 y SHA1 de MAME. ZIP, assets y ROM generada quedan

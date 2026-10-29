@@ -1,0 +1,39 @@
+{
+  "scope": "Native ground-vehicle component in an internal reference encounter; campaign wave/spawn, attacks and specific smoke/explosion sprites remain incomplete. No demo ROM released.",
+  "sdk": "libdragon pinned SDK; mksprite CI4, no dithering, uncompressed .sprite files",
+  "graphics": {
+    "poses": 9,
+    "matched_mame_pixels": 54413,
+    "verified_occluded_pixels": 287,
+    "sprite_files": 36,
+    "texel_bytes_per_upload": 2048,
+    "palette_entries": 16,
+    "sprite_file_bytes": 79776
+  },
+  "backend": "Pure C, Q16.16 motion, original body/cabin hitboxes, fixed-duration animation tables, one-shot destruction events, dynamic wreckage collision",
+  "host_checks": "make check passed, including exact original motion regressions and native vehicle movement/damage/events/wreck walking",
+  "ares": {
+    "vehicle-classic": {
+      "internal_rom_sha256": "e0658e48449509c18f481a45822b55d7f3eb8386a12b2abcc3f5f85a0cd29df7",
+      "destruction_and_walking": "pass",
+      "cache_misses": [
+        0
+      ]
+    },
+    "vehicle-depth": {
+      "internal_rom_sha256": "b44b337ab31186136e1291f5556c9d9923381a80f8eef271664538a91ee7c0df",
+      "destruction_and_walking": "pass",
+      "cache_misses": [
+        0
+      ]
+    }
+  },
+  "existing_scene_regression": "Original partial scene and projectile checks passed in ares in classic and depth modes after the contact/joypad changes; optional vehicle was inactive.",
+  "limitations": [
+    "Original spawn/wave and attack AI are not implemented.",
+    "Specific smoke/explosion sprites remain pending; the native controller emits their events.",
+    "Existing player shot cadence, knockback and palette-flash timing remain provisional.",
+    "Emulator checks do not guarantee full-game or N64 hardware frame rate."
+  ],
+  "pure_c_hitboxes": "Integer collision anchors preserve original pixel-word quantization while motion retains fractional Q16.16 positions; fractional-boundary regression passed."
+}

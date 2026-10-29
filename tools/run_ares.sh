@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 cd "$(dirname "$0")/.."
+rom_path="${1:-$PWD/mslugx-explorer.z64}"
 # Uses the tested emulator retained in this cloud workspace. Requires X11.
 export DISPLAY="${DISPLAY:-:99}"
 export XDG_DATA_HOME=/workspace/emulator/data146
@@ -11,4 +12,4 @@ export VK_DRIVER_FILES=/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.j
 export LIBGL_ALWAYS_SOFTWARE=1
 exec /workspace/emulator/build/rundir/bin/ares --setting 'Video/Driver=OpenGL 3.2' \
     --setting 'General/HomebrewMode=true' --system 'Nintendo 64' --no-file-prompt \
-    "$PWD/mslugx-explorer.z64"
+    "$rom_path"

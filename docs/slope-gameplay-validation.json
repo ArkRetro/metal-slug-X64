@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "rom_sha256": "0b5c3d7b6dd5a79de20b0c63803a752cb9df4bc349ed4413aedf4c2864bbf096",
+  "log_sha256": "10c2f178cbfaae3f2e660a5676f3fa01d8f327b16d3f6cb50f27c7de04a0ed86",
+  "test_sha256": "50958b5af4741af986c04f1fbda2f68ceea5a524215ea1fae8373111160e7c6e",
+  "terrain_source_sha256": "dc68c2c0a3361cd4a2ea8a5e67ea3096eff28059e7f23f249ec571cab7996204",
+  "limit": "Existing partial gameplay region only; three provisional guards, no complete mission/boss coverage; no release.",
+  "checks": [
+    "Input, run-jump and firing",
+    "Dune support and roof landing",
+    "Three provisional encounters",
+    "Existing partial-region bounds",
+    "Restart and laboratory return"
+  ]
+}

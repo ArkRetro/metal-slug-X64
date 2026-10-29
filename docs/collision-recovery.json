@@ -1,0 +1,366 @@
+{
+  "source": "Observed Neo Geo collision RAM; invariant cells and per-run state timelines",
+  "columns": 280,
+  "rows": 32,
+  "snapshots": 86,
+  "runs": [
+    "captures-map/advance (MAME 0.264 rerun of tools/capture_advance.lua)"
+  ],
+  "observed_cells": 8960,
+  "invariant_cells": 8950,
+  "mutable_cells": 10,
+  "unknown_cells": 0,
+  "ready_for_static_export": false,
+  "validity": "One byte per column-major cell: 1=invariant observed value; 0=unknown or mutable. Zero data with mask 0 is NOT empty terrain.",
+  "mutable": [
+    {
+      "x": 1112,
+      "y": 64,
+      "values": [
+        0,
+        5
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100461
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 5,
+              "samples": 6,
+              "ram_address": 1100461
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1120,
+      "y": 72,
+      "values": [
+        0,
+        5
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100524
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 5,
+              "samples": 6,
+              "ram_address": 1100524
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1128,
+      "y": 80,
+      "values": [
+        0,
+        5
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100587
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 5,
+              "samples": 6,
+              "ram_address": 1100587
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1136,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100651
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100651
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1144,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100715
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100715
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1152,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3000,
+              "last_frame": 3060,
+              "first_camera": 837,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 2,
+              "ram_address": 1100779
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100779
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1160,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3060,
+              "last_frame": 3060,
+              "first_camera": 872,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 1,
+              "ram_address": 1100843
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100843
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1168,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3060,
+              "last_frame": 3060,
+              "first_camera": 872,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 1,
+              "ram_address": 1100907
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100907
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1176,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3060,
+              "last_frame": 3060,
+              "first_camera": 872,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 1,
+              "ram_address": 1100971
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3420,
+              "first_camera": 872,
+              "last_camera": 1055,
+              "code": 11,
+              "samples": 6,
+              "ram_address": 1100971
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "x": 1184,
+      "y": 80,
+      "values": [
+        0,
+        11
+      ],
+      "runs": [
+        {
+          "run": 0,
+          "states": [
+            {
+              "first_frame": 3060,
+              "last_frame": 3060,
+              "first_camera": 872,
+              "last_camera": 872,
+              "code": 0,
+              "samples": 1,
+              "ram_address": 1101035
+            },
+            {
+              "first_frame": 3120,
+              "last_frame": 3480,
+              "first_camera": 872,
+              "last_camera": 1199,
+              "code": 11,
+              "samples": 7,
+              "ram_address": 1101035
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "runtime_policy": "Do not compile this report directly. Recover original object/event triggers before activating mutable collision states; capture frame numbers are not gameplay triggers.",
+  "existing_region_invariant_matches": 4758,
+  "existing_region_invariant_mismatches": 0,
+  "collision_layer": "Foreground object 0x10C72E until the middle bank scrolls at full speed (camera 1023); then middle object 0x10D7B6. Verified with read/write taps (tools/trace_collision_loader.lua): query PC 0xC7A1A switches grids and the loader stops writing the foreground ring after camera 1022.",
+  "event_cells_first_observed_after_event": [
+    {
+      "x": 1192,
+      "y": 80
+    },
+    {
+      "x": 1200,
+      "y": 72
+    },
+    {
+      "x": 1208,
+      "y": 64
+    }
+  ],
+  "runtime_change": "filesystem/mission1/collision.json now comes from tools/extract_region_collision.py: 280 columns, invariant cells plus the 13 wreck cells at their pre-event value (0). The wreck remains an event (neo_collision_vehicle_wreckage)."
+}

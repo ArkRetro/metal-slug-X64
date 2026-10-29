@@ -1,0 +1,13 @@
+{
+  "source_pr": "https://github.com/ArkRetro/metal-slug-X64/pull/2",
+  "reviewed_head": "c826597fdea29108facb28a1bd5ce9d8fdd18771",
+  "status": "ADAPTED_TO_BETA_WORK_NOT_MERGED_TO_MAIN",
+  "core_clean_source_no_sdk": "PASS; tracked numerical CSV fixtures included; no ROM assets",
+  "full_host_no_sdk": "PASS",
+  "native_build": "PASS",
+  "third_guard_death_timer_and_no_respawn": "PASS",
+  "final_region_clears_death_timer": "PASS",
+  "core_log_sha256": "b21b5cebbefa49ffc4def2315fd45745faf56020dc09c9d00515d21314959be8",
+  "full_host_log_sha256": "583b8ee835283116c55ef47b52a28cae4dae142c13bc4fe298e8a55e4aac5a44",
+  "limits": "Prototype fixes, not recovery of the original soldier AI or the complete mission."
+}

@@ -1,0 +1,14 @@
+[
+ {"name":"crouch_entry","length":64,"inputs":["Down"]},
+ {"name":"crouch_move_left","length":96,"inputs":["Down","Left"]},
+ {"name":"crouch_move_right","length":96,"inputs":["Down","Right"]},
+ {"name":"crouch_turn_fire_left","length":96,"inputs":["Down","Left","fire"]},
+ {"name":"crouch_turn_fire_right","length":96,"inputs":["Down","Right","fire"]},
+ {"name":"crouch_grenade","length":80,"inputs":["Down","grenade"]},
+ {"name":"crouch_turn_grenade_left","length":80,"inputs":["Down","Left","grenade"]},
+ {"name":"crouch_turn_grenade_right","length":80,"inputs":["Down","Right","grenade"]},
+ {"name":"crouch_release","length":64,"inputs":[]},
+ {"name":"crouch_jump","length":96,"inputs":["Down","jump"]},
+ {"name":"crouch_fire_after_jump","length":96,"inputs":["Down","fire"]},
+ {"name":"stand_release","length":64,"inputs":[]}
+]

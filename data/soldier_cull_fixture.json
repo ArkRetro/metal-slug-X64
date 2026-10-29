@@ -1,0 +1,3069 @@
+{
+  "source": "MAME 0.276 exact 01945C inputs and carry at 0B0546",
+  "provenance": {
+    "capture_sha256": {
+      "debug.log": "204d5ea72ffc978c55c20443da9df1cc49b9e9b65d391611fd42637626299e00",
+      "capture-options.json": "fa0bb93790b8f0d3b6ae8cbec4983a606bf1baf7c03360d8857b9ee2ced2f423",
+      "run-command.json": "b444533b48d897727aea11bf95440d2de52cbb6e85b89a41834ac4f2cb86333c",
+      "actor-2561.log": "5a01b52a90da77398e0edf7678f8878508886f6412014e2bbead24f4b2c65cde"
+    },
+    "ghidra_assembly_sha256": "c322f23fb07c41821db438ecd9bc4643b13f031bbe5cda979d5049c74570c728",
+    "language": "68000:BE:32:MC68020"
+  },
+  "cases": [
+    {
+      "frame": 2353,
+      "return_frame": 2353,
+      "actor": {
+        "projected_x": 22689143,
+        "projected_y": 22020096,
+        "cached_x": 23068672,
+        "cached_y": 21982309,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2355,
+      "return_frame": 2355,
+      "actor": {
+        "projected_x": 22302005,
+        "projected_y": 22020096,
+        "cached_x": 22689143,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2357,
+      "return_frame": 2357,
+      "actor": {
+        "projected_x": 21913732,
+        "projected_y": 22020096,
+        "cached_x": 22302005,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2359,
+      "return_frame": 2359,
+      "actor": {
+        "projected_x": 21524608,
+        "projected_y": 22020096,
+        "cached_x": 21913732,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2361,
+      "return_frame": 2361,
+      "actor": {
+        "projected_x": 21137917,
+        "projected_y": 22020096,
+        "cached_x": 21524608,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2363,
+      "return_frame": 2363,
+      "actor": {
+        "projected_x": 20753051,
+        "projected_y": 22020096,
+        "cached_x": 21137917,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2365,
+      "return_frame": 2365,
+      "actor": {
+        "projected_x": 20369554,
+        "projected_y": 22020096,
+        "cached_x": 20753051,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2367,
+      "return_frame": 2367,
+      "actor": {
+        "projected_x": 19987084,
+        "projected_y": 22020096,
+        "cached_x": 20369554,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2369,
+      "return_frame": 2369,
+      "actor": {
+        "projected_x": 19602312,
+        "projected_y": 22020096,
+        "cached_x": 19987084,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2371,
+      "return_frame": 2371,
+      "actor": {
+        "projected_x": 19215813,
+        "projected_y": 22020096,
+        "cached_x": 19602312,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2373,
+      "return_frame": 2373,
+      "actor": {
+        "projected_x": 18828019,
+        "projected_y": 22020096,
+        "cached_x": 19215813,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2375,
+      "return_frame": 2375,
+      "actor": {
+        "projected_x": 18442326,
+        "projected_y": 21998480,
+        "cached_x": 18828019,
+        "cached_y": 22020096,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2377,
+      "return_frame": 2377,
+      "actor": {
+        "projected_x": 18064305,
+        "projected_y": 21951236,
+        "cached_x": 18442326,
+        "cached_y": 21998480,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2379,
+      "return_frame": 2379,
+      "actor": {
+        "projected_x": 17684394,
+        "projected_y": 21903992,
+        "cached_x": 18064305,
+        "cached_y": 21951236,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2381,
+      "return_frame": 2381,
+      "actor": {
+        "projected_x": 17303065,
+        "projected_y": 21856748,
+        "cached_x": 17684394,
+        "cached_y": 21903992,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2383,
+      "return_frame": 2383,
+      "actor": {
+        "projected_x": 16923745,
+        "projected_y": 21809504,
+        "cached_x": 17303065,
+        "cached_y": 21856748,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2385,
+      "return_frame": 2385,
+      "actor": {
+        "projected_x": 16545931,
+        "projected_y": 21762260,
+        "cached_x": 16923745,
+        "cached_y": 21809504,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2387,
+      "return_frame": 2387,
+      "actor": {
+        "projected_x": 16166175,
+        "projected_y": 21715016,
+        "cached_x": 16545931,
+        "cached_y": 21762260,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2389,
+      "return_frame": 2389,
+      "actor": {
+        "projected_x": 15788034,
+        "projected_y": 21667772,
+        "cached_x": 16166175,
+        "cached_y": 21715016,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2391,
+      "return_frame": 2391,
+      "actor": {
+        "projected_x": 15408033,
+        "projected_y": 21620528,
+        "cached_x": 15788034,
+        "cached_y": 21667772,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2393,
+      "return_frame": 2393,
+      "actor": {
+        "projected_x": 15026637,
+        "projected_y": 21573284,
+        "cached_x": 15408033,
+        "cached_y": 21620528,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2395,
+      "return_frame": 2395,
+      "actor": {
+        "projected_x": 14647266,
+        "projected_y": 21526040,
+        "cached_x": 15026637,
+        "cached_y": 21573284,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2397,
+      "return_frame": 2397,
+      "actor": {
+        "projected_x": 14269414,
+        "projected_y": 21478796,
+        "cached_x": 14647266,
+        "cached_y": 21526040,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2399,
+      "return_frame": 2399,
+      "actor": {
+        "projected_x": 13913189,
+        "projected_y": 21437442,
+        "cached_x": 14269414,
+        "cached_y": 21478796,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2401,
+      "return_frame": 2401,
+      "actor": {
+        "projected_x": 13576347,
+        "projected_y": 21401296,
+        "cached_x": 13913189,
+        "cached_y": 21437442,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2403,
+      "return_frame": 2403,
+      "actor": {
+        "projected_x": 13256522,
+        "projected_y": 21369676,
+        "cached_x": 13576347,
+        "cached_y": 21401296,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2405,
+      "return_frame": 2405,
+      "actor": {
+        "projected_x": 12951506,
+        "projected_y": 21341962,
+        "cached_x": 13256522,
+        "cached_y": 21369676,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2407,
+      "return_frame": 2407,
+      "actor": {
+        "projected_x": 12659766,
+        "projected_y": 21317720,
+        "cached_x": 12951506,
+        "cached_y": 21341962,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2409,
+      "return_frame": 2409,
+      "actor": {
+        "projected_x": 12379719,
+        "projected_y": 21296516,
+        "cached_x": 12659766,
+        "cached_y": 21317720,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2411,
+      "return_frame": 2411,
+      "actor": {
+        "projected_x": 12109992,
+        "projected_y": 21277978,
+        "cached_x": 12379719,
+        "cached_y": 21296516,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2413,
+      "return_frame": 2413,
+      "actor": {
+        "projected_x": 11849183,
+        "projected_y": 21261734,
+        "cached_x": 12109992,
+        "cached_y": 21277978,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2415,
+      "return_frame": 2415,
+      "actor": {
+        "projected_x": 11596365,
+        "projected_y": 21247536,
+        "cached_x": 11849183,
+        "cached_y": 21261734,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2417,
+      "return_frame": 2417,
+      "actor": {
+        "projected_x": 11350346,
+        "projected_y": 21235074,
+        "cached_x": 11596365,
+        "cached_y": 21247536,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2419,
+      "return_frame": 2419,
+      "actor": {
+        "projected_x": 11110418,
+        "projected_y": 21224162,
+        "cached_x": 11350346,
+        "cached_y": 21235074,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2421,
+      "return_frame": 2421,
+      "actor": {
+        "projected_x": 10875864,
+        "projected_y": 21214614,
+        "cached_x": 11110418,
+        "cached_y": 21224162,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2423,
+      "return_frame": 2423,
+      "actor": {
+        "projected_x": 10645961,
+        "projected_y": 21206244,
+        "cached_x": 10875864,
+        "cached_y": 21214614,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2425,
+      "return_frame": 2425,
+      "actor": {
+        "projected_x": 10420228,
+        "projected_y": 21198928,
+        "cached_x": 10645961,
+        "cached_y": 21206244,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2427,
+      "return_frame": 2427,
+      "actor": {
+        "projected_x": 10198181,
+        "projected_y": 21192542,
+        "cached_x": 10420228,
+        "cached_y": 21198928,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2429,
+      "return_frame": 2429,
+      "actor": {
+        "projected_x": 9979332,
+        "projected_y": 21186962,
+        "cached_x": 10198181,
+        "cached_y": 21192542,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2431,
+      "return_frame": 2431,
+      "actor": {
+        "projected_x": 9763192,
+        "projected_y": 21182064,
+        "cached_x": 9979332,
+        "cached_y": 21186962,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2433,
+      "return_frame": 2433,
+      "actor": {
+        "projected_x": 9566629,
+        "projected_y": 21182064,
+        "cached_x": 9763192,
+        "cached_y": 21182064,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2435,
+      "return_frame": 2435,
+      "actor": {
+        "projected_x": 9370055,
+        "projected_y": 21182064,
+        "cached_x": 9566629,
+        "cached_y": 21182064,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2437,
+      "return_frame": 2437,
+      "actor": {
+        "projected_x": 9173473,
+        "projected_y": 21182064,
+        "cached_x": 9370055,
+        "cached_y": 21182064,
+        "flags15": 64
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2439,
+      "return_frame": 2439,
+      "actor": {
+        "projected_x": 8979957,
+        "projected_y": 21182064,
+        "cached_x": 9173473,
+        "cached_y": 21182064,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2441,
+      "return_frame": 2441,
+      "actor": {
+        "projected_x": 8951180,
+        "projected_y": 21222674,
+        "cached_x": 8979957,
+        "cached_y": 21182064,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2443,
+      "return_frame": 2443,
+      "actor": {
+        "projected_x": 8924128,
+        "projected_y": 21263284,
+        "cached_x": 8951180,
+        "cached_y": 21222674,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2445,
+      "return_frame": 2445,
+      "actor": {
+        "projected_x": 8898369,
+        "projected_y": 21303894,
+        "cached_x": 8924128,
+        "cached_y": 21263284,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2447,
+      "return_frame": 2447,
+      "actor": {
+        "projected_x": 8711140,
+        "projected_y": 21303894,
+        "cached_x": 8898369,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2449,
+      "return_frame": 2449,
+      "actor": {
+        "projected_x": 8521567,
+        "projected_y": 21303894,
+        "cached_x": 8711140,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2451,
+      "return_frame": 2451,
+      "actor": {
+        "projected_x": 8330236,
+        "projected_y": 21303894,
+        "cached_x": 8521567,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2453,
+      "return_frame": 2453,
+      "actor": {
+        "projected_x": 8137586,
+        "projected_y": 21303894,
+        "cached_x": 8330236,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2455,
+      "return_frame": 2455,
+      "actor": {
+        "projected_x": 7947019,
+        "projected_y": 21303894,
+        "cached_x": 8137586,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2457,
+      "return_frame": 2457,
+      "actor": {
+        "projected_x": 7758014,
+        "projected_y": 21303894,
+        "cached_x": 7947019,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2459,
+      "return_frame": 2459,
+      "actor": {
+        "projected_x": 7567109,
+        "projected_y": 21303894,
+        "cached_x": 7758014,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2461,
+      "return_frame": 2461,
+      "actor": {
+        "projected_x": 7374779,
+        "projected_y": 21303894,
+        "cached_x": 7567109,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2463,
+      "return_frame": 2463,
+      "actor": {
+        "projected_x": 7184452,
+        "projected_y": 21303894,
+        "cached_x": 7374779,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2465,
+      "return_frame": 2465,
+      "actor": {
+        "projected_x": 6995627,
+        "projected_y": 21303894,
+        "cached_x": 7184452,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2467,
+      "return_frame": 2467,
+      "actor": {
+        "projected_x": 6804857,
+        "projected_y": 21303894,
+        "cached_x": 6995627,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2469,
+      "return_frame": 2469,
+      "actor": {
+        "projected_x": 6615700,
+        "projected_y": 21303894,
+        "cached_x": 6804857,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2471,
+      "return_frame": 2471,
+      "actor": {
+        "projected_x": 6424681,
+        "projected_y": 21303894,
+        "cached_x": 6615700,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2473,
+      "return_frame": 2473,
+      "actor": {
+        "projected_x": 6232265,
+        "projected_y": 21303894,
+        "cached_x": 6424681,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2475,
+      "return_frame": 2475,
+      "actor": {
+        "projected_x": 6038801,
+        "projected_y": 21303894,
+        "cached_x": 6232265,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2477,
+      "return_frame": 2477,
+      "actor": {
+        "projected_x": 5844551,
+        "projected_y": 21303894,
+        "cached_x": 6038801,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2479,
+      "return_frame": 2479,
+      "actor": {
+        "projected_x": 5649712,
+        "projected_y": 21303894,
+        "cached_x": 5844551,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2481,
+      "return_frame": 2481,
+      "actor": {
+        "projected_x": 5454431,
+        "projected_y": 21303894,
+        "cached_x": 5649712,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2483,
+      "return_frame": 2483,
+      "actor": {
+        "projected_x": 5258819,
+        "projected_y": 21303894,
+        "cached_x": 5454431,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2485,
+      "return_frame": 2485,
+      "actor": {
+        "projected_x": 5062958,
+        "projected_y": 21303894,
+        "cached_x": 5258819,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2487,
+      "return_frame": 2487,
+      "actor": {
+        "projected_x": 4866911,
+        "projected_y": 21303894,
+        "cached_x": 5062958,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2489,
+      "return_frame": 2489,
+      "actor": {
+        "projected_x": 4670724,
+        "projected_y": 21303894,
+        "cached_x": 4866911,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2491,
+      "return_frame": 2491,
+      "actor": {
+        "projected_x": 4474432,
+        "projected_y": 21303894,
+        "cached_x": 4670724,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2493,
+      "return_frame": 2493,
+      "actor": {
+        "projected_x": 4278061,
+        "projected_y": 21303894,
+        "cached_x": 4474432,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2495,
+      "return_frame": 2495,
+      "actor": {
+        "projected_x": 4081631,
+        "projected_y": 21303894,
+        "cached_x": 4278061,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2497,
+      "return_frame": 2497,
+      "actor": {
+        "projected_x": 3885157,
+        "projected_y": 21303894,
+        "cached_x": 4081631,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2499,
+      "return_frame": 2499,
+      "actor": {
+        "projected_x": 3691722,
+        "projected_y": 21303894,
+        "cached_x": 3885157,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2501,
+      "return_frame": 2501,
+      "actor": {
+        "projected_x": 3500566,
+        "projected_y": 21303894,
+        "cached_x": 3691722,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2503,
+      "return_frame": 2503,
+      "actor": {
+        "projected_x": 3311119,
+        "projected_y": 21303894,
+        "cached_x": 3500566,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2505,
+      "return_frame": 2505,
+      "actor": {
+        "projected_x": 3122954,
+        "projected_y": 21303894,
+        "cached_x": 3311119,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2507,
+      "return_frame": 2507,
+      "actor": {
+        "projected_x": 2935751,
+        "projected_y": 21303894,
+        "cached_x": 3122954,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2509,
+      "return_frame": 2509,
+      "actor": {
+        "projected_x": 2746197,
+        "projected_y": 21303894,
+        "cached_x": 2935751,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2511,
+      "return_frame": 2511,
+      "actor": {
+        "projected_x": 2554880,
+        "projected_y": 21303894,
+        "cached_x": 2746197,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2513,
+      "return_frame": 2513,
+      "actor": {
+        "projected_x": 2362241,
+        "projected_y": 21303894,
+        "cached_x": 2554880,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2515,
+      "return_frame": 2515,
+      "actor": {
+        "projected_x": 2171682,
+        "projected_y": 21303894,
+        "cached_x": 2362241,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2517,
+      "return_frame": 2517,
+      "actor": {
+        "projected_x": 1982683,
+        "projected_y": 21303894,
+        "cached_x": 2171682,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2519,
+      "return_frame": 2519,
+      "actor": {
+        "projected_x": 1791782,
+        "projected_y": 21303894,
+        "cached_x": 1982683,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2521,
+      "return_frame": 2521,
+      "actor": {
+        "projected_x": 1599455,
+        "projected_y": 21303894,
+        "cached_x": 1791782,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2523,
+      "return_frame": 2523,
+      "actor": {
+        "projected_x": 1409130,
+        "projected_y": 21303894,
+        "cached_x": 1599455,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2525,
+      "return_frame": 2525,
+      "actor": {
+        "projected_x": 1220307,
+        "projected_y": 21303894,
+        "cached_x": 1409130,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2527,
+      "return_frame": 2527,
+      "actor": {
+        "projected_x": 1029538,
+        "projected_y": 21303894,
+        "cached_x": 1220307,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2529,
+      "return_frame": 2529,
+      "actor": {
+        "projected_x": 840382,
+        "projected_y": 21303894,
+        "cached_x": 1029538,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2531,
+      "return_frame": 2531,
+      "actor": {
+        "projected_x": 649363,
+        "projected_y": 21303894,
+        "cached_x": 840382,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2533,
+      "return_frame": 2533,
+      "actor": {
+        "projected_x": 456947,
+        "projected_y": 21303894,
+        "cached_x": 649363,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2535,
+      "return_frame": 2535,
+      "actor": {
+        "projected_x": 266555,
+        "projected_y": 21303894,
+        "cached_x": 456947,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2537,
+      "return_frame": 2537,
+      "actor": {
+        "projected_x": 77681,
+        "projected_y": 21303894,
+        "cached_x": 266555,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2539,
+      "return_frame": 2539,
+      "actor": {
+        "projected_x": -113126,
+        "projected_y": 21303894,
+        "cached_x": 77681,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2541,
+      "return_frame": 2541,
+      "actor": {
+        "projected_x": -305383,
+        "projected_y": 21303894,
+        "cached_x": -113126,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2543,
+      "return_frame": 2543,
+      "actor": {
+        "projected_x": -498727,
+        "projected_y": 21303894,
+        "cached_x": -305383,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2545,
+      "return_frame": 2545,
+      "actor": {
+        "projected_x": -692887,
+        "projected_y": 21303894,
+        "cached_x": -498727,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2547,
+      "return_frame": 2547,
+      "actor": {
+        "projected_x": -887659,
+        "projected_y": 21303894,
+        "cached_x": -692887,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2549,
+      "return_frame": 2549,
+      "actor": {
+        "projected_x": -1082890,
+        "projected_y": 21303894,
+        "cached_x": -887659,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2551,
+      "return_frame": 2551,
+      "actor": {
+        "projected_x": -1278465,
+        "projected_y": 21303894,
+        "cached_x": -1082890,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2553,
+      "return_frame": 2553,
+      "actor": {
+        "projected_x": -1474298,
+        "projected_y": 21303894,
+        "cached_x": -1278465,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2555,
+      "return_frame": 2555,
+      "actor": {
+        "projected_x": -1670324,
+        "projected_y": 21303894,
+        "cached_x": -1474298,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2557,
+      "return_frame": 2557,
+      "actor": {
+        "projected_x": -1866495,
+        "projected_y": 21303894,
+        "cached_x": -1670324,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2559,
+      "return_frame": 2559,
+      "actor": {
+        "projected_x": -2062775,
+        "projected_y": 21303894,
+        "cached_x": -1866495,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": false
+    },
+    {
+      "frame": 2561,
+      "return_frame": 2561,
+      "actor": {
+        "projected_x": -2107113,
+        "projected_y": 21341900,
+        "cached_x": -2062775,
+        "cached_y": 21303894,
+        "flags15": 65
+      },
+      "bounds": {
+        "has_parent": false,
+        "x": 0,
+        "y": 0,
+        "previous_x": 0,
+        "previous_y": 0,
+        "left": 0,
+        "top": 256,
+        "right": 320,
+        "bottom": 512
+      },
+      "rectangle": [
+        65504,
+        65520,
+        64,
+        80
+      ],
+      "outside": true
+    }
+  ],
+  "lifecycle": {
+    "actor_ram": "0x101F14",
+    "deletion_entry_rom": "0x004126",
+    "frame": 2561
+  },
+  "limits": [
+    "Only this actor and observed scene bounds/history are dynamically covered.",
+    "The native predicate does not implement the original linked allocator or destruction cleanup."
+  ]
+}

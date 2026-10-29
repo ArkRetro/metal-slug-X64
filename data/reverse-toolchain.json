@@ -1,0 +1,20 @@
+{
+  "ghidra": {
+    "tag": "Ghidra_11.4.2_build",
+    "asset": "ghidra_11.4.2_PUBLIC_20250826.zip",
+    "url": "https://github.com/NationalSecurityAgency/ghidra/releases/download/Ghidra_11.4.2_build/ghidra_11.4.2_PUBLIC_20250826.zip",
+    "sha256": "795a02076af16257bd6f3f4736c4fc152ce9ff1f95df35cd47e2adc086e037a6"
+  },
+  "jdk": {
+    "release": "jdk-21.0.13+9",
+    "asset": "OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz",
+    "sha256": "d7f5d5cf865a2902b70ff549b97586a7d3f234e016f041ab447ea740c7d66d1c",
+    "source_repository": "adoptium/temurin21-binaries"
+  },
+  "mame": {
+    "version": "0.276",
+    "debugger_api_source": "https://github.com/mamedev/mame/blob/mame0276/src/frontend/mame/luaengine_debug.cpp",
+    "neo_geo_map_source": "https://github.com/mamedev/mame/blob/mame0276/src/mame/neogeo/neogeo.cpp",
+    "neo_geo_map_source_sha256": "d8e4f0a498111337eac5a4afaea01fb89760c8b5c3e154dcad58f0b3b0a23036"
+  }
+}

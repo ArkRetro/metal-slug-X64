@@ -1,0 +1,14 @@
+{
+  "source": "MAME debugger trace + post-frame RAM, euro BIOS",
+  "slot": "0x00101f14",
+  "rng0_low16": "0x5589",
+  "rng1_low16": "0x23ba",
+  "flags15": "0x40",
+  "field92": "0x0",
+  "expected_signed_62": -194883,
+  "expected_word_62": "0xfffd06bd",
+  "expected_word_26": "0x13e",
+  "trace_sha256": "193b3ba59e5f1ced67472db9d46d7045a8134671e02d1a809e026acc47a40cd8",
+  "ram_before_frame": 2352,
+  "ram_after_frame": 2354
+}

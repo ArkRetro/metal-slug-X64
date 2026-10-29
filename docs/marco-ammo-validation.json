@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "a2bbf48f1453c16f400e536e0a960f94d8a6f7fa27295511ddb3afd523b29d12",
+  "log_sha256": "7efde753813d118ba3eb44ada2150e282db25db3063c3eec24d9534d520b9df0",
+  "fixture_sha256": "5cb004df2f9fe78abcf755579922e10b520e29b01f2808dd4ff6fef53e4ff441",
+  "suite": "ammo",
+  "calls": 134,
+  "limit": "134 observed pistol reservation calls; finite-ammo/cap/release branches have static ROM evidence and synthetic tests only. Not campaign-integrated; no complete projectile or weapon system claim.",
+  "reservation_rom": "0x0C0D64..0x0C0DE2",
+  "release_rom": "0x0C0DFC..0x0C0E1E"
+}

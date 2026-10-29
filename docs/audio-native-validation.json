@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "buffers": 386,
+  "nonzero_samples": 321840,
+  "pcm_checksum": "20b10fad",
+  "ai_buffers_queued": 24,
+  "rdp_frames": 55,
+  "rom_sha256": "f338beb10518761eed905f9085fabf48662f622bfe75d669ffb72a99090d7272",
+  "log_sha256": "c57a3dd23509fdfa000f71940f86bb320045c62abe9de9ec00db3a07a9ff1492",
+  "asset_sha256": "1074ccbbc0a8c9d6797e8f0b6902ef2463cb54e88f261b1311f579b0dde24a6c",
+  "limits": "Native title-reference decode/mix and AI submission. No acoustic capture, full intro, game integration, original SFX/music driver or hardware audio validation.",
+  "host_checks": "make check and make check-cinematic: PASS",
+  "n64_build": "PASS"
+}

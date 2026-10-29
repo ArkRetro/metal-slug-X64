@@ -1,0 +1,157 @@
+{
+  "source_video_sha256": "0d2493acd37bfdf1050f0a08895ba30657d0bdc5144d6f7e2aba0d56ac2dd5f4",
+  "duration_seconds": 44.033333,
+  "observed": {
+    "debug_panels": "Large top/bottom panels obscure the active picture.",
+    "end": "REGION END at approximately 40 seconds; partial region, not Mission 1 completion.",
+    "audio": "ffmpeg volumedetect: mean -72.8 dBFS, peak -56.9 dBFS. Cannot distinguish capture routing from game silence from the recording alone.",
+    "build": "Boot menu names mslugx-3d-dev.z64; filename does not establish a source commit or binary hash."
+  },
+  "code_confirmed": {
+    "terrain_drift": {
+      "layer": 2,
+      "old_depth": 8,
+      "focal": 320,
+      "camera_max": 872,
+      "horizontal_drift_pixels": 21.268292682926848,
+      "cause": "Full-speed terrain texture projected at nonzero depth while sprites/collision remain on the 2D gameplay plane.",
+      "fix": "Pin layers 2/3/4 to gameplay projection; preserve perspective for distant layers 0/1."
+    },
+    "debug_overlay": "Hidden by default, L toggles panels. REGION END remains visible because the region is still incomplete."
+  },
+  "validation": {
+    "release_framebuffers": {
+      "status": "PASS",
+      "emulator": "ares 146",
+      "debug": {
+        "samples": [
+          [
+            "0",
+            "0",
+            "c1c95350"
+          ],
+          [
+            "0",
+            "64",
+            "a3db5369"
+          ],
+          [
+            "0",
+            "320",
+            "55930ad6"
+          ],
+          [
+            "0",
+            "872",
+            "e20ba60a"
+          ],
+          [
+            "1",
+            "0",
+            "3c8e75b8"
+          ],
+          [
+            "1",
+            "64",
+            "df2dc2cd"
+          ],
+          [
+            "1",
+            "320",
+            "cedcc7f5"
+          ],
+          [
+            "1",
+            "872",
+            "1bdae6c2"
+          ]
+        ],
+        "rom_sha256": "8e154c5bd6896a45ca5f1ee4e5b7ae2ae716922ce08fa164299f48bc8426ba60",
+        "log_sha256": "ff9f6a452b3214aeb9460c29a4a34405b54d8585efe4886aacb6fe533819eef3"
+      },
+      "release": {
+        "samples": [
+          [
+            "0",
+            "0",
+            "c1c95350"
+          ],
+          [
+            "0",
+            "64",
+            "a3db5369"
+          ],
+          [
+            "0",
+            "320",
+            "55930ad6"
+          ],
+          [
+            "0",
+            "872",
+            "e20ba60a"
+          ],
+          [
+            "1",
+            "0",
+            "3c8e75b8"
+          ],
+          [
+            "1",
+            "64",
+            "df2dc2cd"
+          ],
+          [
+            "1",
+            "320",
+            "cedcc7f5"
+          ],
+          [
+            "1",
+            "872",
+            "1bdae6c2"
+          ]
+        ],
+        "rom_sha256": "311262ee4a29034c38c5cfe03354a2bcc5c6f72f07eb98b7c1641670fa80a5df",
+        "log_sha256": "0ae3c2bb6fb046bb99d4e9d5f8d786bd605b611e720bfc2e13f2deb451cd377a"
+      },
+      "limit": "Eight fixed scene frames; verifies rendering equivalence, not full Mission 1 or hardware performance."
+    },
+    "entry_and_hud": {
+      "status": "PASS",
+      "emulator": "ares 146",
+      "source_frames": 230,
+      "unique_presented_frames": 230,
+      "skipped_frames": 0,
+      "rendered_frames": 234,
+      "final_pixels_crc32": "db681cc3",
+      "movie_read_bytes": 1246644,
+      "audio_active_at_handoff": true,
+      "diagnostic_toggle": true,
+      "decode_max_us": 12918,
+      "decode_mean_us": 1529,
+      "draw_max_us": 933,
+      "rom_sha256": "92fa935247ccf8f54c975315e3cae80045efd51339362380cca91f84a20ac609",
+      "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+      "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+      "log_sha256": "ab2bebef6e2966b45c3e742f6f9befe7751163b832ef9ebdd04168dedefcc72d",
+      "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
+    },
+    "region_traverse": {
+      "status": "PASS",
+      "emulator": "ares 146",
+      "rom_sha256": "763b8202846851653ab5cefb005f29430368275cc3a00c34b590138d4f23e79e",
+      "log_sha256": "e0b7641aa59dc78c5f4f35072faa2b11ccab14e7cacce68e779cd1a90f70d991",
+      "checks": [
+        "slope motion",
+        "roof landing",
+        "three provisional encounters",
+        "region bounds",
+        "restart",
+        "graphics lab",
+        "cache misses=0"
+      ],
+      "limit": "Existing partial region; not complete Mission 1."
+    }
+  }
+}

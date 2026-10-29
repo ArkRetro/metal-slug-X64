@@ -1,0 +1,17 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "4e39bca1b177f4a551bd54230c540fe3111fa55c20123b3c29d826cb6274ffc0",
+  "suite": "upperform",
+  "limit": "Static addressed native state translation with synthetic MIPS/sanitizer tests. New transition animation programs are not bound/rendered in campaign; no original-game dynamic replay or complete controller integration claim.",
+  "source_entries": [
+    "0x0C393C",
+    "0x0C3964",
+    "0x0C396C"
+  ],
+  "direct_program_table": "0x0C03D8 (LEA 0x0C3942)",
+  "ghidra_listing_sha256": {
+    "marco-form-destinations-71": "5fff86f5a12f3903826037cbc720edf436db4cfc70b060c8ccebfaf4e7bc0292",
+    "marco-upper-form-wait-72": "8d61735ced4f3153bb42e8b20f887cf940f3fc2ab572ce3a89513b297f9776a6"
+  }
+}

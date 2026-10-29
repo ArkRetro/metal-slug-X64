@@ -1,0 +1,25 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "edfdac8050af7e8f86ee872128571671549f65bf783aeee480e7af7f48556b2a",
+  "log_sha256": "66dcf2399a749977971be7e0c41803b6e1e80ee4664a59a9dd9bc9dd003e8bcc",
+  "fixture_sha256": "01fb25225a5234ee91ee7caf8cd924e7ef774582feef7b5b8ae26001772e54e8",
+  "suite": "animation",
+  "starts": 6,
+  "steps": 54,
+  "draws": 54,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "fixture": "data/soldier_animation_fixture.json",
+  "replay": "Persistent native state across all 60 helper calls; no per-step cursor/timer reload",
+  "external_speed_writes": 2,
+  "end_signals": 2,
+  "observed_facing_callbacks": 1,
+  "host_checks": "make check: PASS, including prior RNG/gameplay/vehicle regressions",
+  "native_object": "ELF MIPS Big Endian; executed in ares with assertions enabled",
+  "limits": [
+    "No complete soldier controller or campaign renderer integration.",
+    "Only callback 01ADAA is ported; 0AEF14 is present in data but not reached or ported.",
+    "Nonzero pose offsets, other palette paths and blink suppression are statically decoded without dynamic coverage.",
+    "field50 is a neutral name; complete gameplay semantics remain unverified."
+  ]
+}

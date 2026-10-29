@@ -4,9 +4,13 @@ from PIL import ImageGrab
 from pathlib import Path
 import argparse,subprocess,time
 parser=argparse.ArgumentParser();parser.add_argument('--version',type=int,default=10)
-VERSION=parser.parse_args().version
-OUT=Path(f'/workspace/emulator/v{VERSION}-release');OUT.mkdir(exist_ok=True)
-LOG=Path(f'/workspace/emulator/run-v{VERSION}-release.log')
+parser.add_argument('--variant',default='release',choices=('release','classic','retro25d'))
+parser.add_argument('--projectiles',action='store_true',help='Check original projectile sprites in both directions and enemy fire')
+parser.add_argument('--output',type=Path,help='Separate capture directory; preserves historical prototype evidence')
+parser.add_argument('--log',type=Path,help='Read this independently launched ares log')
+args=parser.parse_args();VERSION=args.version;variant=args.variant
+OUT=args.output or Path(f'/workspace/emulator/v{VERSION}-{variant}');OUT.mkdir(exist_ok=True)
+LOG=args.log or Path(f'/workspace/emulator/run-v{VERSION}-{variant}.log')
 XD='/workspace/emulator/root/usr/bin/xdotool'
 def key(action,key):subprocess.run([XD,action,key],check=True)
 def press(button):key('keydown',button);time.sleep(.12);key('keyup',button)
@@ -20,7 +24,25 @@ def wait_for(marker,timeout=75):
         time.sleep(.05)
     raise AssertionError(marker)
 try:
-    wait_for(f'MSX v{VERSION} scene loaded');snap('start')
+    wait_for(f'MSX v{VERSION} scene loaded')
+    if variant!='release':wait_for('MSX first frame ready')
+    # First-frame shader compilation can delay the host event loop at startup.
+    # Focus the emulator only after its rendering window is ready.
+    windows=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()
+    assert windows,'No visible ares window'
+    subprocess.run([XD,'windowfocus','--sync',windows[-1]],check=True)
+    time.sleep(.5);snap('start')
+    # depth25d is the default build; only MSX_VISUAL_MODE=classic omits it.
+    if variant in ('release','retro25d'):wait_for('MSX DEPTH mode enabled')
+    else:assert 'MSX DEPTH mode enabled' not in LOG.read_text()
+    if args.projectiles:
+        key('keydown','b');time.sleep(.45);snap('projectiles-right')
+        key('keydown','Left');time.sleep(.15);key('keyup','Left')
+        time.sleep(.15);snap('projectiles-left');key('keyup','b')
+        key('keydown','Right');time.sleep(2);key('keyup','Right')
+        wait_for('MSX projectile sprite owner=1 direction=-1 size=10x6')
+        time.sleep(.25) # Allow the submitted shot to reach the displayed framebuffer.
+        snap('projectiles-enemy');press('e');time.sleep(.2)
     key('keydown','Right');press('a');wait_for('MSX run-jump');snap('moving-jump')
     key('keydown','b');wait_for('MSX landed');snap('dunes')
     wait_for('MSX defeated=1');snap('first-guard')
@@ -36,6 +58,17 @@ try:
     text=LOG.read_text()
     for marker in ('MSX run-fire','MSX camera moving','MSX defeated=3','MSX reset'):
         assert marker in text,marker
+    if args.projectiles:
+        for owner,direction in ((0,1),(0,-1),(1,-1)):
+            assert f'MSX projectile sprite owner={owner} direction={direction} size=10x6' in text
+        print('PASS: original 10x6 projectile sprites, right/left mirroring and enemy shot rendering')
+    if variant in ('release','retro25d'):
+        import re
+        assert 'MSX DEPTH light response active' in text
+        samples=re.findall(r'MSX DEPTH: triangles=(\d+) limit=96 fog=1024 B lights=(\d+)',text)
+        assert samples and all(int(n)<=96 and int(l)<=2 for n,l in samples)
+        for planes,shadows in re.findall(r'MSX DEPTH: .* planes=(\d+) shadows=(\d+)',text):
+            assert int(planes)<=5 and int(shadows)<=4
     print('PASS: original map, slope motion, roof landing, three provisional encounters, region bounds, restart and lab')
     print('\n'.join(line for line in text.splitlines() if 'MSX pack:' in line or 'MSX RDP:' in line)[-1600:])
 finally:

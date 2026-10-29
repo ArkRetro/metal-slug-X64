@@ -1,0 +1,1713 @@
+{
+  "source": "MAME 0.276, first-soldier constructor-gated per-dispatch traces",
+  "provenance": {
+    "capture_sha256": {
+      "debug.log": "aa40808849a303a5256f900a5a112bcc60e99512adc496de39bc7dabed9b075f",
+      "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc",
+      "run-command.json": "5a24b763519b48052e232654c23756d39aa13f1449140733f54e027ef046c6c0",
+      "actor-2351.log": "b6d4eea3d52de4cfb15f37f7f601ee52eb7c962926a9ab182ca802264bb357e4",
+      "actor-2353.log": "544f33aac1b6edd060ba41da0866e28864b7ff3726fcfae8e63542579d8f64c6",
+      "actor-2355.log": "d0ccb0ef616eba7b3ae9368addc4ad16f4b4c1a7fc706abe3af86d075a96c5e8",
+      "actor-2357.log": "d89f159267fb9632732d503668713410885dccd7bd2e8d98b65baf9a00cc09d4",
+      "actor-2359.log": "346a837e1fc393fec500122f18fc2390063af85cbdfa10edcb931e74d936ccc4",
+      "actor-2361.log": "23f5b9883a41650e2a718dc3ff55b44dc6e7e0c2c8a76edff19f57378db5da72",
+      "actor-2363.log": "96bbad638dd5c1c1508214e0148bb0d9907a91c6491555ae8fcb1dbc398450b3",
+      "actor-2365.log": "17b692b5b92efa27dbeacaf2beb447602d4974ad1875e3cabb9e0a521fb969e5",
+      "actor-2367.log": "3f8c8c44863970fec9554ddae44c4d1685f48ff24e694bc260f22566c371b6ad",
+      "actor-2369.log": "a93a59155526f1ac99ad9d5e0f4b9b39954230557a9e3737cc75ccf28364ea30",
+      "actor-2371.log": "0bc8250b9138d2a96f621befeb310efa87cd149dd013736c94f6673b39433bb9",
+      "actor-2373.log": "9a649e004e252522903dbd25c9e7c99d134f4b3904fb44a15379c2facd90f680",
+      "actor-2375.log": "1eefed2264e89c5006e93e3e7703fa7394a44a6c371dbfd6feb09e9d61d117ea",
+      "actor-2377.log": "660fad586e91d235ac08de6fecb1dedd4251ef765cd73305a4d019bd5f397c23",
+      "actor-2379.log": "fb4bdd7df3abe6c9bb75944f8a9ef657ab62a26ce5bf7d8f4dbf8506d998d413",
+      "actor-2381.log": "fde32c29232f8ec94c3459e93d2c4cd787e84ffecd28edb7185354a986020010",
+      "actor-2383.log": "efc697837adea849713cb68466cc42b67c70a0b322a8c56321c19b3e1ac5307f",
+      "actor-2385.log": "8029b83fbcec6ee805916ebe00247f066de55b270289123e8fa1847854f74b83",
+      "actor-2387.log": "e211836cfe1a9888da203d109217fe641d8732e4df7fa0e071630adcf1dd8290",
+      "actor-2389.log": "c478a7aa9f5d783b853813d930bfc7f1634656df16501b4be788fff66916fb4a",
+      "actor-2391.log": "c5d39a97aa4b30f71e54c6bd4bae9cd7160cb966a2725ed6c4418a17f2d848b6",
+      "actor-2393.log": "274b0591d2f14fc8711e75e374e04d7f27844e2fa7de669c73ebe4a1633874d2",
+      "actor-2395.log": "6134016b3865ed9c7346a1821007866f746fd09923e61baef9d25ad813a91c84",
+      "actor-2397.log": "a68dcb7f04120a0bb624ae065fe401de293ae50b01f4939d89d7819c1af61f76",
+      "actor-2399.log": "0987fba1f2d269da4dd096b6a527b88e18ac8f95ea42d2d8c73c2455e9f0dc66",
+      "actor-2401.log": "a60a14ffc9bc9348502dab770c173a6411411d9863843c03cceec87d3eb3264b",
+      "actor-2403.log": "87f54160a2467bbf305755303e38558cfc5ba49a74059da0799847539dbfe352",
+      "actor-2405.log": "4bf04efb9b7a501fc79563ed370e2a46af489de8c5800fe133fcb5567e840b78",
+      "actor-2407.log": "9292b60a5d53ed5fdc31588ba29b0adcb42fc1d1074050b494589cdae1d08eeb",
+      "actor-2409.log": "95382ddf6cba1f47e581fe2aad031a7ab79a95220642a78757a1f132e65b28a4",
+      "actor-2411.log": "9260e1bb0e5a9dc09dc0fe6de0e34448a13491817e6642e8f82f4093a7fd9a04",
+      "actor-2413.log": "eadf8648c4efdb9a964fa23937a10a9dbe73722a6472da6da2fa0255a80aa858",
+      "actor-2415.log": "86cac80db060bef7703b1bafcd961e4788186c1cfc7533e25309ac44db3e5ea3",
+      "actor-2417.log": "0392985d4ab12887f56e485ce01f83aeda19cfeae639227f6c4081bc62bd6335",
+      "actor-2419.log": "428cff9ae3338638c78a271e98891633efbe98bdf66c9c8a9f207944e814b5c7",
+      "actor-2421.log": "98051b3c411a2d570732abb185ca03f1c55faf9d97a87e9d1a6a6b90a3c38a6a",
+      "actor-2423.log": "714ab4106d695ba0f495fa1cd04896e8513ee7d015387fa13fc48fa4efb5bb37",
+      "actor-2425.log": "e0fb2847a291400f382d0b1e3e0c93f970b11bfff751b0eb883f3fcf8278c71c",
+      "actor-2427.log": "c5003508be02526e5f50956da51a5343710aedaf601ec39988a73f6a625ec74f",
+      "actor-2429.log": "7c274c2c4be6068a51357897ac064a817c15a8d8ae7641e7ad70ffff374b5fb7",
+      "actor-2431.log": "ce9e2d14515a5b58b55883a00d7acf715b54ad4ac38d20efa147454bc9228510",
+      "actor-2433.log": "0b6566728bb33765392b0c066aa491e36b968f8d10e3b5a82c7a2bb62511e65a",
+      "actor-2435.log": "371a4b18090ccdf58ae098721696fb50986a2bd54e54901d5cdd354df41d49e8",
+      "actor-2437.log": "379d8c27aa42dc4ae20b47a93c1a19fbb6d34df0c7f9ece73e19982752fd6d54",
+      "actor-2439.log": "4e2de547f8ab868a8e97f3977aa619ad703ee41e4d501fe0c3dba6ffcf218386",
+      "actor-2441.log": "e6a65c9509a8194434c4cde032a810831fb0af307bdc813faf793bc0a5c17f6f",
+      "actor-2443.log": "2f0fa22b2f850966be309b15b14f9d266bb09d7ea51d096f76bc972cabde135b",
+      "actor-2445.log": "b3240a42b44973f582ac2fd9bab4ff64f29e0d88c51de88aae54ccd8722eb4e2",
+      "actor-2447.log": "8099d8539529a9db992a313a3b5eafe7499deef9abf2112b4ca979512522a20d",
+      "actor-2449.log": "1ea721fcfba482f99d3a6633794d14aefd5c56847713a13a2081416ac4700cc4",
+      "actor-2451.log": "99fb9e69141827f7017ddf507c59597102b3876c3af8da591c4ce3c11d7ca2ba",
+      "actor-2453.log": "0fae3f5d6281bef18ef09574e93bcbe67fe8cc272849275c8063bc101effb9a4",
+      "actor-2455.log": "d1cebd009e18b945e8ffbb47b1d98cba5d12b3c022c1a4d91d6f6b98a1d3dbee",
+      "actor-2457.log": "3199c2d689bfa713d673ca2bd6a163f7e80f01201a9c2e74ebc673555f111e93",
+      "actor-2459.log": "2d325806826527be1578d3eaed384bfdea246b315490745f35f27825575e82c5"
+    },
+    "ghidra_assembly_sha256": "c322f23fb07c41821db438ecd9bc4643b13f031bbe5cda979d5049c74570c728",
+    "language": "68000:BE:32:MC68020"
+  },
+  "tables": {
+    "action_rect": [
+      -56,
+      0,
+      112,
+      80
+    ],
+    "action_routines": [
+      0,
+      719128,
+      719148,
+      719168,
+      719256,
+      719258,
+      719258,
+      719258
+    ]
+  },
+  "cases": [
+    {
+      "frame": 2353,
+      "before": {
+        "routine": 718426,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 1,
+      "rng_calls": 2,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2355,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2357,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2359,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2361,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2363,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2365,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2367,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2369,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2371,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2373,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2375,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 43920
+      }
+    },
+    {
+      "frame": 2377,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 62212
+      }
+    },
+    {
+      "frame": 2379,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 14968
+      }
+    },
+    {
+      "frame": 2381,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 33260
+      }
+    },
+    {
+      "frame": 2383,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 51552
+      }
+    },
+    {
+      "frame": 2385,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 4308
+      }
+    },
+    {
+      "frame": 2387,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 22600
+      }
+    },
+    {
+      "frame": 2389,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 40892
+      }
+    },
+    {
+      "frame": 2391,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 59184
+      }
+    },
+    {
+      "frame": 2393,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 11940
+      }
+    },
+    {
+      "frame": 2395,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 30232
+      }
+    },
+    {
+      "frame": 2397,
+      "before": {
+        "routine": 718528,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718992,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -194883,
+        "speed": 318
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 48524
+      }
+    },
+    {
+      "frame": 2399,
+      "before": {
+        "routine": 718992,
+        "scalar62": -194883,
+        "speed": 318,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -170522,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -170522,
+        "speed": 256
+      },
+      "init_count": 1,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2401,
+      "before": {
+        "routine": 719014,
+        "scalar62": -170522,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -149206,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -149206,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2403,
+      "before": {
+        "routine": 719014,
+        "scalar62": -149206,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -130555,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -130555,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2405,
+      "before": {
+        "routine": 719014,
+        "scalar62": -130555,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -114235,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -114235,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2407,
+      "before": {
+        "routine": 719014,
+        "scalar62": -114235,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -99955,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -99955,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2409,
+      "before": {
+        "routine": 719014,
+        "scalar62": -99955,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -87460,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -87460,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2411,
+      "before": {
+        "routine": 719014,
+        "scalar62": -87460,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -76527,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -76527,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2413,
+      "before": {
+        "routine": 719014,
+        "scalar62": -76527,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -66961,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -66961,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2415,
+      "before": {
+        "routine": 719014,
+        "scalar62": -66961,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -58590,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -58590,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2417,
+      "before": {
+        "routine": 719014,
+        "scalar62": -58590,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -51266,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -51266,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2419,
+      "before": {
+        "routine": 719014,
+        "scalar62": -51266,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -44857,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -44857,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2421,
+      "before": {
+        "routine": 719014,
+        "scalar62": -44857,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -39249,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -39249,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2423,
+      "before": {
+        "routine": 719014,
+        "scalar62": -39249,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -34342,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -34342,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2425,
+      "before": {
+        "routine": 719014,
+        "scalar62": -34342,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -30049,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -30049,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2427,
+      "before": {
+        "routine": 719014,
+        "scalar62": -30049,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -26292,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -26292,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2429,
+      "before": {
+        "routine": 719014,
+        "scalar62": -26292,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719014,
+        "scalar62": -23005,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -23005,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2431,
+      "before": {
+        "routine": 719014,
+        "scalar62": -23005,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 717696,
+        "scalar62": -20129,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": -20129,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2433,
+      "before": {
+        "routine": 717696,
+        "scalar62": -20129,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719060,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 1,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 13936
+      }
+    },
+    {
+      "frame": 2435,
+      "before": {
+        "routine": 719060,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719082,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 1,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2437,
+      "before": {
+        "routine": 719082,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 719082,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2439,
+      "before": {
+        "routine": 719082,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718426,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2441,
+      "before": {
+        "routine": 718426,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 167909,
+        "speed": 291
+      },
+      "init_count": 1,
+      "rng_calls": 2,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 54546
+      }
+    },
+    {
+      "frame": 2443,
+      "before": {
+        "routine": 718528,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 718528,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 167909,
+        "speed": 291
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 0,
+        "object_code": 65535,
+        "object_flags": 29620
+      }
+    },
+    {
+      "frame": 2445,
+      "before": {
+        "routine": 718528,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721718,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 167909,
+        "speed": 291
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 5,
+        "object_code": 65535,
+        "object_flags": 4694
+      }
+    },
+    {
+      "frame": 2447,
+      "before": {
+        "routine": 721718,
+        "scalar62": 167909,
+        "speed": 291,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 1,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2449,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2451,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2453,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2455,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2457,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    },
+    {
+      "frame": 2459,
+      "before": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "after": {
+        "routine": 721748,
+        "scalar62": 0,
+        "speed": 256,
+        "field78": 0,
+        "field7e": 0,
+        "field81": 2
+      },
+      "before_motion": {
+        "scalar62": 0,
+        "speed": 256
+      },
+      "init_count": 0,
+      "rng_calls": 0,
+      "senses": {
+        "region_code": 65535,
+        "object_code": 65535,
+        "object_flags": 0
+      }
+    }
+  ],
+  "limits": [
+    "Constructor remains an external initial condition.",
+    "Scene region/object query engines and common forward probes are not ported.",
+    "Integrated state replay covers grounded observed states with nonzero timer70; no complete soldier AI or mission coverage."
+  ]
+}

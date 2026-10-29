@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "5135f1d6736933a1a5928f4ced866625e64b2b95012a04ba1962747e5e8ef04f",
+  "log_sha256": "89592c40c95c79d5ef8cb2be0b9dd1d3f324719c3a6e8f2adfd320125333c79b",
+  "fixture_sha256": "c31b15a5c7808cc2f266565bdd58307953f03bb99fed348fb26f48661182dae5",
+  "suite": "motion",
+  "calls": 437,
+  "services": 890,
+  "draws": 434,
+  "events": 0,
+  "limit": "Native movement transitions with real animation programs and recorded world collision service results. Campaign integration and unobserved variants remain incomplete. No release.",
+  "native_animation": true,
+  "additional_host_checks": "check-core; real native motion programs under ASan/UBSan; synthetic cross-controller scheduling under ASan/UBSan"
+}

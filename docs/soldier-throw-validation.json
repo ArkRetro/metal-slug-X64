@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "a89022cf389999c4abf39ac9d512dde65de8714a95a7c77d2faf65fae958bf9e",
+  "log_sha256": "5e47ed5a396cdc63231e7ce75d7fe02cf55dd94ce07a4b1e173ab49915390fcf",
+  "fixture_sha256": "80e7cb7f88da58f0107bc7374b8208fe38b779528077aef5b448da7ea0a4a6c7",
+  "suite": "throw",
+  "steps": 33,
+  "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+  "terrain_source_sha256": "dc68c2c0a3361cd4a2ea8a5e67ea3096eff28059e7f23f249ec571cab7996204",
+  "host_check": "make check: PASS",
+  "port_build": "make all: PASS",
+  "active_gameplay_integration": false,
+  "scene_collision_queries": "External measured inputs; no native hit/region engine in this regression",
+  "audio": "Event request only; native sample conversion/playback pending"
+}

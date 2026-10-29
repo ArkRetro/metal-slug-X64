@@ -1,0 +1,833 @@
+{
+  "goal": "Complete all Marco animations before other port work",
+  "completion": "INCOMPLETE: production campaign still uses historical six-state selector; full native player controller and all-game variants remain pending.",
+  "mame": {
+    "source": "MAME 0.276 euro, controller input only",
+    "verified_frames": 2948,
+    "visible_actor_frames": 2916,
+    "remapped_palette_frames": 632,
+    "matched_pixels": 1972752,
+    "independently_explained_occlusions": 7062,
+    "cases": [
+      {
+        "name": "idle_right",
+        "input_conditions": [],
+        "first": 2100,
+        "last": 2611,
+        "verified_frames": 508,
+        "routines": [
+          "0x0C1E54",
+          "0x0C1F4A",
+          "0x0C1FA6"
+        ]
+      },
+      {
+        "name": "crouch_right",
+        "input_conditions": [
+          "Down"
+        ],
+        "first": 2612,
+        "last": 2675,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2236",
+          "0x0C22A4",
+          "0x0C22B6"
+        ]
+      },
+      {
+        "name": "crouch_fire_right",
+        "input_conditions": [
+          "Down",
+          "fire"
+        ],
+        "first": 2676,
+        "last": 2771,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C22B6",
+          "0x0C246A",
+          "0x0C2588"
+        ]
+      },
+      {
+        "name": "stand_fire_right",
+        "input_conditions": [
+          "fire"
+        ],
+        "first": 2772,
+        "last": 2867,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2588"
+        ]
+      },
+      {
+        "name": "aim_up_right",
+        "input_conditions": [
+          "Up"
+        ],
+        "first": 2868,
+        "last": 2931,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1FA6"
+        ]
+      },
+      {
+        "name": "aim_up_fire_right",
+        "input_conditions": [
+          "Up",
+          "fire"
+        ],
+        "first": 2932,
+        "last": 3027,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1FA6"
+        ]
+      },
+      {
+        "name": "walk_right",
+        "input_conditions": [
+          "Right"
+        ],
+        "first": 3028,
+        "last": 3067,
+        "verified_frames": 40,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_fire_right",
+        "input_conditions": [
+          "Right",
+          "fire"
+        ],
+        "first": 3068,
+        "last": 3107,
+        "verified_frames": 40,
+        "routines": [
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "walk_left",
+        "input_conditions": [
+          "Left"
+        ],
+        "first": 3108,
+        "last": 3147,
+        "verified_frames": 40,
+        "routines": [
+          "0x0C27A8",
+          "0x0C285C",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_fire_left",
+        "input_conditions": [
+          "Left",
+          "fire"
+        ],
+        "first": 3148,
+        "last": 3187,
+        "verified_frames": 40,
+        "routines": [
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "stand_fire_left",
+        "input_conditions": [
+          "fire"
+        ],
+        "first": 3188,
+        "last": 3283,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "crouch_left",
+        "input_conditions": [
+          "Down"
+        ],
+        "first": 3284,
+        "last": 3347,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2236",
+          "0x0C22A4",
+          "0x0C22B6"
+        ]
+      },
+      {
+        "name": "crouch_fire_left",
+        "input_conditions": [
+          "Down",
+          "fire"
+        ],
+        "first": 3348,
+        "last": 3443,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C22B6",
+          "0x0C246A",
+          "0x0C2588"
+        ]
+      },
+      {
+        "name": "aim_up_fire_left",
+        "input_conditions": [
+          "Up",
+          "fire"
+        ],
+        "first": 3444,
+        "last": 3539,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2588"
+        ]
+      },
+      {
+        "name": "jump_left",
+        "input_conditions": [
+          "jump"
+        ],
+        "first": 3540,
+        "last": 3635,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C1F4A",
+          "0x0C1FA6",
+          "0x0C2692"
+        ]
+      },
+      {
+        "name": "jump_fire_left",
+        "input_conditions": [
+          "jump",
+          "fire"
+        ],
+        "first": 3636,
+        "last": 3731,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C1FA6",
+          "0x0C2692"
+        ]
+      },
+      {
+        "name": "jump_up_fire_left",
+        "input_conditions": [
+          "jump",
+          "Up",
+          "fire"
+        ],
+        "first": 3732,
+        "last": 3827,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C1FA6",
+          "0x0C2692"
+        ]
+      },
+      {
+        "name": "jump_down_fire_left",
+        "input_conditions": [
+          "jump",
+          "Down",
+          "fire"
+        ],
+        "first": 3828,
+        "last": 3923,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C1FA6",
+          "0x0C2236",
+          "0x0C246A",
+          "0x0C2588",
+          "0x0C2692"
+        ]
+      },
+      {
+        "name": "run_jump_right",
+        "input_conditions": [
+          "Right",
+          "jump"
+        ],
+        "first": 3924,
+        "last": 3987,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C2588",
+          "0x0C2692",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_jump_fire_right",
+        "input_conditions": [
+          "Right",
+          "jump",
+          "fire"
+        ],
+        "first": 3988,
+        "last": 4051,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C2692",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_jump_left",
+        "input_conditions": [
+          "Left",
+          "jump"
+        ],
+        "first": 4052,
+        "last": 4115,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C2692",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_jump_fire_left",
+        "input_conditions": [
+          "Left",
+          "jump",
+          "fire"
+        ],
+        "first": 4116,
+        "last": 4179,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C2692",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "grenade_stand",
+        "input_conditions": [
+          "grenade"
+        ],
+        "first": 4180,
+        "last": 4259,
+        "verified_frames": 80,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "grenade_crouch",
+        "input_conditions": [
+          "Down",
+          "grenade"
+        ],
+        "first": 4260,
+        "last": 4339,
+        "verified_frames": 80,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2294",
+          "0x0C22B6",
+          "0x0C2588"
+        ]
+      },
+      {
+        "name": "grenade_jump",
+        "input_conditions": [
+          "jump",
+          "grenade"
+        ],
+        "first": 4340,
+        "last": 4435,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1EBE",
+          "0x0C1FA6",
+          "0x0C22B6",
+          "0x0C2692",
+          "0x0C2956",
+          "0x0C2E8A"
+        ]
+      },
+      {
+        "name": "idle_long",
+        "input_conditions": [],
+        "first": 4436,
+        "last": 4795,
+        "verified_frames": 360,
+        "routines": [
+          "0x003F1E",
+          "0x0C149E",
+          "0x0C1F4A",
+          "0x0C1FA6",
+          "0x0C229C",
+          "0x0C2E8A",
+          "0x0C2F06",
+          "0x0C2F12"
+        ]
+      },
+      {
+        "name": "run_cycle_right",
+        "input_conditions": [
+          "Right"
+        ],
+        "first": 4796,
+        "last": 4891,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C1FA6",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "run_cycle_left",
+        "input_conditions": [
+          "Left"
+        ],
+        "first": 4892,
+        "last": 4987,
+        "verified_frames": 96,
+        "routines": [
+          "0x0C27A8",
+          "0x0C285C",
+          "0x0C2888"
+        ]
+      },
+      {
+        "name": "idle_after_cycles",
+        "input_conditions": [],
+        "first": 4988,
+        "last": 5051,
+        "verified_frames": 64,
+        "routines": [
+          "0x0C1F4A",
+          "0x0C1FA6",
+          "0x0C2888"
+        ]
+      }
+    ],
+    "descriptor_addresses": [
+      "0x188264",
+      "0x188274",
+      "0x188284",
+      "0x188294",
+      "0x1882A4",
+      "0x1882B0",
+      "0x1882CE",
+      "0x1882EC",
+      "0x18830C",
+      "0x188324",
+      "0x18833C",
+      "0x188354",
+      "0x18836C",
+      "0x188384",
+      "0x18839C",
+      "0x1883AC",
+      "0x1883BC",
+      "0x1883CC",
+      "0x1883EC",
+      "0x18840E",
+      "0x188428",
+      "0x188444",
+      "0x18845C",
+      "0x188474",
+      "0x18848C",
+      "0x1884A4",
+      "0x1884BC",
+      "0x1884D4",
+      "0x1884E4",
+      "0x1884FC",
+      "0x188514",
+      "0x18852C",
+      "0x188544",
+      "0x18855C",
+      "0x188574",
+      "0x188594",
+      "0x1885B4",
+      "0x1886C4",
+      "0x1886DC",
+      "0x1886F4",
+      "0x18870C",
+      "0x1887CC",
+      "0x1887E0",
+      "0x1887F4",
+      "0x188808",
+      "0x188818",
+      "0x188828",
+      "0x188838",
+      "0x18890C",
+      "0x18891C",
+      "0x18893C",
+      "0x188958",
+      "0x188A10",
+      "0x188A24",
+      "0x188A38",
+      "0x188A4C",
+      "0x188A70",
+      "0x188A80",
+      "0x188A90",
+      "0x188AA0",
+      "0x188AB0",
+      "0x188AC0",
+      "0x188AD0",
+      "0x188AE0",
+      "0x188AF0",
+      "0x188B00",
+      "0x188B10",
+      "0x188B20",
+      "0x188B30",
+      "0x188B46",
+      "0x188B5C",
+      "0x188B74",
+      "0x188B88",
+      "0x188B9C",
+      "0x188BB6",
+      "0x188BC2",
+      "0x188BD2",
+      "0x188BE2",
+      "0x188BF6",
+      "0x188D56",
+      "0x188D6E",
+      "0x188D86",
+      "0x188D96",
+      "0x188DA6",
+      "0x188DB6",
+      "0x188DC6",
+      "0x188DD6",
+      "0x188DE6",
+      "0x188DF6",
+      "0x188E06",
+      "0x188E16",
+      "0x188E26",
+      "0x188E36",
+      "0x188E46",
+      "0x188E5A",
+      "0x188E6E",
+      "0x188E7A",
+      "0x188E8E",
+      "0x188E9A",
+      "0x188EA6",
+      "0x188EBA",
+      "0x188ECE",
+      "0x188EDA",
+      "0x188EEE",
+      "0x188EFA",
+      "0x18966E",
+      "0x18967E",
+      "0x189696",
+      "0x1896A6",
+      "0x1896B6",
+      "0x1896C6",
+      "0x189A84",
+      "0x189A9C",
+      "0x189AAC",
+      "0x189ABC",
+      "0x189AD0",
+      "0x189AE4",
+      "0x189B88",
+      "0x189BA2",
+      "0x189BBC",
+      "0x189BD6",
+      "0x189EBC",
+      "0x189ED4",
+      "0x189EEE",
+      "0x18A1FE",
+      "0x18A20E",
+      "0x18A21E",
+      "0x18A236",
+      "0x18A24E",
+      "0x18A266",
+      "0x18A27E",
+      "0x18A296",
+      "0x18A2AE",
+      "0x18A2C6",
+      "0x18A9C4",
+      "0x18A9DC",
+      "0x18AA1C",
+      "0x18AA4C",
+      "0x18AABC",
+      "0x18AB00",
+      "0x18AB40",
+      "0x18AB76",
+      "0x18ABA0",
+      "0x18ABC4",
+      "0x18ABE4",
+      "0x18BA26",
+      "0x18BA3E",
+      "0x18BA52",
+      "0x18BA66",
+      "0x18BA82",
+      "0x18BA9E",
+      "0x18BAB8",
+      "0x18BACC",
+      "0x18BAE0",
+      "0x18BB00",
+      "0x18BB14",
+      "0x18BB28",
+      "0x18BB40",
+      "0x18BB58",
+      "0x18BB6C",
+      "0x18BB84",
+      "0x18BB9C",
+      "0x18BBB0",
+      "0x18BBC8",
+      "0x18C140",
+      "0x18C158",
+      "0x18C170",
+      "0x18C180",
+      "0x18C198",
+      "0x18C1B0",
+      "0x18C1C8",
+      "0x18C1E0"
+    ]
+  },
+  "palette_profiles": 2,
+  "private_audit_sha256": "cc9b02c1588511058a7941bde86b34e64111e43fef2889e86be2ad66914f71e0",
+  "private_graph_sha256": "3ca672308024bfbbb33f128c0af71623eb1561a93399b57fcc5b4d6bfdbe45d8",
+  "native_graph": {
+    "commands": 692,
+    "observed_command_seeds": 531,
+    "observed_main_program_roots": 16,
+    "unrecovered_sites": 12,
+    "stage": "Baseline before paired-call event evidence; see paired_body_weapon for the later graph"
+  },
+  "host": {
+    "check": "PASS",
+    "sdk_free_core": "PASS",
+    "asan_ubsan": "PASS with detect_leaks=0; LSan unavailable under this environment ptrace"
+  },
+  "provenance": {
+    "capture.json": "7f50330a8e8d70459c93f65d126f01ede14ec60d4c5ad55d7429f7c3b1b7730d",
+    "plan.json": "4550373607a701863aa83b0bba92d09047780f7410f473414c907abf18fa0a08",
+    "debug.log": "bfaaef91146a6cb414f0280e31f408e37abe8899ee4c2f4d3d12ae44eb740349",
+    "states.jsonl": "854fbdb20021f78dc31bb22b1b577b579fa71fcaf113057f84171883251e88d2",
+    "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+  },
+  "native_fields": {
+    "status": "PASS",
+    "emulator": "ares 146, retained workspace build",
+    "rom_sha256": "6657de02a88deb932ab1982ccaaad5ee188fc69a6a7eafa170cc9727ed96fd0f",
+    "log_sha256": "eb144a1ea6198aad396a6c1a801a531162fbda39d053049a65ea2ce871b289b7",
+    "fixture_sha256": "9db2cefeea6e1ce146b69caf338cd041e82b5b19b084a11b1492cec08f49c212",
+    "suite": "marco",
+    "fields": 734,
+    "selectors": 366,
+    "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+    "selector_fixture_sha256": "49c429d09f56cd4649ab4ae5c40972b97781cbe755786dcb720f9e690d6e1d90"
+  },
+  "native_pixels": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "poses": 172,
+    "framebuffers": 688,
+    "palettes": 2,
+    "ci4_chunks": 184,
+    "maximum_texture_upload": 1024,
+    "texture_upload_limit": 2048,
+    "rom_sha256": "3d4f62538b043eb42c6b744b4e6fb1d62693d18d60d2d61790c1f4f16e60fd64",
+    "log_sha256": "cd30e1e36ae13d8afe11f098acf5b699511c251b92468040a29920af38b70c6c",
+    "asset_metadata_sha256": "059390d75da1c2189b93259471599c58b332f80631a4a3bce53f8b464697dd52",
+    "limits": "Observed descriptor resource rendering only. All tested framebuffer CRCs match; full player controller and all-game animation coverage are not established. No demo."
+  },
+  "scene_release_equivalence": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "debug": {
+      "samples": [
+        [
+          "0",
+          "0",
+          "c1c95350"
+        ],
+        [
+          "0",
+          "64",
+          "a3db5369"
+        ],
+        [
+          "0",
+          "320",
+          "55930ad6"
+        ],
+        [
+          "0",
+          "872",
+          "e20ba60a"
+        ],
+        [
+          "1",
+          "0",
+          "3c8e75b8"
+        ],
+        [
+          "1",
+          "64",
+          "df2dc2cd"
+        ],
+        [
+          "1",
+          "320",
+          "cedcc7f5"
+        ],
+        [
+          "1",
+          "872",
+          "1bdae6c2"
+        ]
+      ],
+      "rom_sha256": "1e12706c604c5cf657259dfb96288b7e2f9cc05bc52305314530690488d0b1de",
+      "log_sha256": "8a67b9cce995a7c965dd827ce91d7236d0e4f1769317de9755e6fc99724bf7ed"
+    },
+    "release": {
+      "samples": [
+        [
+          "0",
+          "0",
+          "c1c95350"
+        ],
+        [
+          "0",
+          "64",
+          "a3db5369"
+        ],
+        [
+          "0",
+          "320",
+          "55930ad6"
+        ],
+        [
+          "0",
+          "872",
+          "e20ba60a"
+        ],
+        [
+          "1",
+          "0",
+          "3c8e75b8"
+        ],
+        [
+          "1",
+          "64",
+          "df2dc2cd"
+        ],
+        [
+          "1",
+          "320",
+          "cedcc7f5"
+        ],
+        [
+          "1",
+          "872",
+          "1bdae6c2"
+        ]
+      ],
+      "rom_sha256": "41a18efe25f503c180c7453ee11d163726f2936ab5ac3c4041f1bec8654d0d01",
+      "log_sha256": "a276c19fa6d03bbc25730d716b8b8eed4c348eba22c5290c92078e74cc0ce3c8"
+    },
+    "limit": "Eight fixed scene frames; verifies rendering equivalence, not full Mission 1 or hardware performance."
+  },
+  "vehicle_compatibility": {
+    "status": "PASS",
+    "log_sha256": "f590e6d3ea68a4b3b84361b69da2c31577c6b01db340841a074190793d6d4926",
+    "limit": "Reference encounter and cache diagnostic only, not full game."
+  },
+  "paired_body_weapon": {
+    "status": "PASS for measured helper calls; NOT complete player controller",
+    "calls": 2452,
+    "body_calls": 1459,
+    "weapon_calls": 993,
+    "draws": 2574,
+    "requests": 152,
+    "unchanged_persistent_calls": 2135,
+    "external_boundary_changes": 317,
+    "offset_changes_during_calls": 213,
+    "observed_event_sites": 10,
+    "unobserved_stopping_sites": [
+      {
+        "command": 2410116,
+        "callback": 807876,
+        "payload": "000000080000"
+      },
+      {
+        "command": 2420154,
+        "callback": 807876,
+        "payload": "fffcfff50000"
+      }
+    ],
+    "private_journal_sha256": "f6b617f2ef7fcde1566431e7a92ca6eb4574c29d9cc91dc9a1945a46bcfb8d07",
+    "private_graph_sha256": "dd3e353957060722438f0433f217189b385919b12984946665466a47bcdd2481",
+    "provenance": {
+      "capture.json": "fc72af59c010d29eae1e53150aa6290c2fdf74f472339fe929d35e87a37da650",
+      "debug.log": "cb7f04883bf9855cc93646722466173d2d7e61caee48cf150ac3a3ec93985f90",
+      "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "program-bank.bin": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+    },
+    "instruction_trace_sha256": "e9104b11b1da4166cb28ea62178a4f169d0d594ab4f057eddca502d11b238355",
+    "ares": {
+      "status": "PASS",
+      "emulator": "ares 146, retained workspace build",
+      "rom_sha256": "47856fba131a253256b49a334ad4d570fe5bd6ec00e3bb0fa0302268bf3da5fc",
+      "log_sha256": "2d501fa6172aecfbfe8e31a396ffa7d4f7a1d2bc9577fd391988a9f82fd1293a",
+      "fixture_sha256": "f6b617f2ef7fcde1566431e7a92ca6eb4574c29d9cc91dc9a1945a46bcfb8d07",
+      "suite": "pair",
+      "steps": 2452,
+      "draws": 2574,
+      "events": 152,
+      "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release."
+    },
+    "synthetic_only": [
+      "Positive flash countdown across both helper calls",
+      "Null program early return",
+      "Event changing position while attachment is active",
+      "Unhandled effect retry protection and invalid inputs"
+    ],
+    "limits": [
+      "World positions, call order, program selection and external controller writes are recorded inputs.",
+      "Callback journals cover the listed animation/render fields, not global ammunition, RNG or actor-pool effects.",
+      "Effect handlers must be implemented separately; requests are not silently discarded.",
+      "Depth Z is supplied from recorded draws, not derived from an independently captured actor depth field.",
+      "Not integrated with full input controller or campaign. No demo release."
+    ]
+  },
+  "controller_pipeline_report": "marco-controller-validation.json",
+  "latest_resource_catalog": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "poses": 178,
+    "framebuffers": 712,
+    "palettes": 2,
+    "ci4_chunks": 190,
+    "maximum_texture_upload": 1024,
+    "texture_upload_limit": 2048,
+    "rom_sha256": "42e86bb048dd2b58635f02ef9180f7e766408dc390c575dc1f3cd1445824d36d",
+    "log_sha256": "e881817afba5fdf73682ae8cf5b17392fcb5981757e74b99f812db930d87c0b6",
+    "asset_metadata_sha256": "643bdc26b2f9c5e0bd6c1cd17bd95e1b693cbd678488588abd69adef486102f9",
+    "limits": "Observed descriptor resource rendering only. All tested framebuffer CRCs match; full player controller and all-game animation coverage are not established. No demo."
+  }
+}

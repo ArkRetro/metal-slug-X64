@@ -1,0 +1,43 @@
+{
+  "status": "PACKED_ALL_FRAMES_MATCH",
+  "first_frame": 3830,
+  "last_frame": 4059,
+  "frames": 230,
+  "verified_active_rgb_pixels": 15662080,
+  "movie_bytes": 1246644,
+  "maximum_packet": 105690,
+  "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+  "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+  "handoff": {
+    "frame": 4060,
+    "routine": 794534,
+    "x": 7852402,
+    "y": 6157405,
+    "vx": 0,
+    "vy": 0,
+    "flags15": 64
+  },
+  "handoff_ram": {
+    "x": "0x1014EC",
+    "y": "0x1014F0",
+    "vx": "0x1014F4",
+    "vy": "0x1014F8",
+    "flags15": "0x1014D9",
+    "routine_tag": "0x1014C4"
+  },
+  "vram_writes": 42362,
+  "palette_writes": 15584,
+  "screenshot_manifest_sha256": "9950fe22b4630c638c96039ada4eea15b9a11be02abdddbab66dc451c94f0144",
+  "provenance": {
+    "capture.json": "9cfcdeff0bde5def2846443482a6c991c7982c9b771875b90354dd9a73975c3b",
+    "frames.jsonl": "97b88dbc543580de5bf7c1e53655cdcef1223b0a6b1c24410770903b4610c0a4",
+    "player.jsonl": "0b6f7f7ce57249811643120d5a75a491a7e68abd2ba781ac3edcc9f2d3f65272",
+    "raster.jsonl": "4d75d7b146c13e6cf8fd75e45fb808a61ee39e20b10c4f9b4aa8d7b74b8a91da",
+    "reference.wav": "728b3d1b95d2daba93357bffbd4c3683857c5f28972c0e6dafd1e7c1cda068dd"
+  },
+  "graphics_source_sha256": {
+    "sprites.bin": "e25c05202f3d5f0d9c1a9087f6244389eafc2e305be13f9f159195e88021ba61",
+    "fixed.bin": "c791e646e247d0dfa28f4f5074c4331bbb67964d466d3487e15a0cb30ce75a8e"
+  },
+  "limits": "Only the noninteractive mission-entry segment. Title/tutorial/selection and ongoing gameplay music/effects remain separate work."
+}

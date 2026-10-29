@@ -8,8 +8,8 @@ static uint8_t fixed_rom[131072];
 static uint8_t sprite_cache[SPRITES_PER_PAGE * 128];
 static void fail(const char *message) {
     console_init();
-    printf("MSX v3 ERROR: %s\n", message);
-    debugf("MSX v3 ERROR: %s\n", message);
+    printf("MSX ERROR: %s\n", message);
+    debugf("MSX ERROR: %s\n", message);
     for (;;) {}
 }
 static void load_page(FILE *file, unsigned page) {
@@ -46,7 +46,9 @@ int main(void) {
         if (pressed.start) { actor_mode = !actor_mode;actor_set_active(actor_mode); }
         if (actor_mode) {
             surface_t *surface=display_get();
-            actor_draw(surface,joypad_get_inputs(JOYPAD_PORT_1));
+            joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);
+            input.btn=joypad_get_buttons(JOYPAD_PORT_1);
+            actor_draw(surface,input);
             continue;
         }
         if (pressed.a) sprite_mode = !sprite_mode;

@@ -1,0 +1,24 @@
+{
+  "voice": "Qwen3-TTS 1.7B CustomVoice / Ryan, directed male shout",
+  "synthetic": true,
+  "source_model": "https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice",
+  "direction": "Shout at the top of your lungs, like a powerful male arcade announcer calling the title of an action game! Fierce, excited and triumphant. Explosive loud attack on SIXTY, then sustain a roaring FOUR! Strong chest projection, open-throated vowels, a slightly raspy strained edge, and very high vocal energy. Say only the two words, as a forceful yell.",
+  "synthesis_seed": 64,
+  "natural_delivery": true,
+  "pitch_shift": false,
+  "time_stretch": false,
+  "word_splicing": false,
+  "source_raw_sha256": "0e66feb68a27634e43d74657d15a03c0b578f6e13d1bc079d165bbccd4000a88",
+  "peak_pcm16": 15500,
+  "title_hold_frames": 60,
+  "reverb": {
+    "type": "large diffuse hall, ducked behind the shouted attack",
+    "t60_seconds": 1.2,
+    "wet_rms_ratio": 0.55,
+    "tail_seconds": 1.05
+  },
+  "processing": "Instruction-generated full-voice yell; natural pitch/timing; light mastering and hall reverb",
+  "dry_duration_seconds": 0.8942083333333334,
+  "duration_seconds": 1.9441875,
+  "asset_sha256": "cd2a5c36144b74dd35b9fdb684e40dca28139589d06b4744199bd4c483a6c7a9"
+}

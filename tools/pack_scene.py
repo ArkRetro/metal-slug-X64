@@ -73,6 +73,19 @@ def main():
             palette=struct.unpack('>16H',original[start:start+32]);packed=original[start+32:start+indexed_stride]
             raw_indices=[(packed[(y*w+x)//2]>>(0 if x&1 else 4))&15 for y in range(y0,y1) for x in range(x0,x1)]
             images.append(image(crop,x1-x0,y1-y0,x0,y0,True,raw_indices,palette))
+    projectile=json.loads((ROOT/'filesystem/projectiles.json').read_text())
+    w,h=projectile['width'],projectile['height']
+    assert (w,h)==(16,16) and projectile['pivot']==[8,8]
+    packed=bytes.fromhex(projectile['indices_hex'])
+    assert len(packed)==w*h//2 and hashlib.sha256(packed).hexdigest()==projectile['indices_sha256']
+    indices=[(packed[i//2]>>(0 if i&1 else 4))&15 for i in range(w*h)]
+    palette=projectile['palette_rgba5551'];assert len(palette)==16 and palette[0]==0
+    x0,y0,x1,y1=projectile['bounds'];assert 0<=x0<x1<=w and 0<=y0<y1<=h
+    assert all(x0<=i%w<x1 and y0<=i//w<y1 for i,p in enumerate(indices) if p)
+    crop=[indices[y*w+x] for y in range(y0,y1) for x in range(x0,x1)]
+    banks.append((len(images),1,0,1,w,h))
+    images.append(image([palette[p] for p in crop],x1-x0,y1-y0,x0,y0,True,crop,palette))
+    source_bytes+=w*h*2
     raw=(ROOT/'filesystem/desert.bin').read_bytes();source_bytes+=len(raw)
     pixels=struct.unpack('>71680H',raw)
     for row in range(7):
@@ -81,6 +94,7 @@ def main():
             crop=[pixels[(row*32+y)*320+8+col*32+x] for y in range(32) for x in range(w)]
             background.append(image(crop,w,32))
     mission=json.loads((ROOT/'filesystem/mission1/map.json').read_text())
+    assert len(mission.get('backdrop_values',[mission['backdrop']]))==1,'Multiple observed backdrops need native event playback before scene packing'
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])

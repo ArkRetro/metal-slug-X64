@@ -1,0 +1,296 @@
+[
+  {
+    "name": "advance_start",
+    "length": 64,
+    "inputs": [
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_00",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_01",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_02",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_03",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_04",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_05",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_06",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_07",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_08",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_09",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_10",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_11",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_12",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_13",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_14",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_15",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_16",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_17",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_18",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_19",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_20",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_21",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_22",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_23",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_24",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_25",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_26",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_27",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_28",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump"
+    ]
+  },
+  {
+    "name": "advance_right_29",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_right_30",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire",
+      "jump",
+      "grenade"
+    ]
+  },
+  {
+    "name": "advance_right_31",
+    "length": 64,
+    "inputs": [
+      "Right",
+      "fire"
+    ]
+  },
+  {
+    "name": "advance_end_hold",
+    "length": 128,
+    "inputs": [
+      "fire"
+    ]
+  }
+]

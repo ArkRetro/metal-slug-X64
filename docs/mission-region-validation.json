@@ -1,0 +1,126 @@
+{
+  "source": "MAME mslugx euro. Run 1: 36 snapshots of the existing region (MAME 0.276, tools/capture_mission.lua). Run 2: 86 snapshots, frames 2100..7200, tools/capture_advance.lua rerun on MAME 0.264; its positions.csv is identical in the camera and loader traces.",
+  "map": {
+    "cells": 2719,
+    "palettes": 48,
+    "coordinate_variants": 63,
+    "camera_max": 1920,
+    "validation": {
+      "frames": 122,
+      "map_pixels": 8307712,
+      "known_variant_pixels": 24236,
+      "mame_uncovered_pixels": 4952880,
+      "tolerance": "exact SCB reconstruction except recorded variant coordinates; uncovered MAME RGB8 pixels <=1 per channel"
+    },
+    "note": "The earlier 0.276 advance capture reported 4953328 uncovered pixels; this 0.264 rerun covers 4952880. Map pixels and variants match."
+  },
+  "runtime_camera_model": {
+    "frames": 122,
+    "exact": 67,
+    "differences": {
+      "x layer 1": 10,
+      "height": 45
+    },
+    "known": {
+      "x layer 1": "3/4 layer accumulates +-1 px (pre-existing approximation)",
+      "height": "1 player-following transient (frame 3900) and 44 frames after the unrecovered 16 px lift at camera 1920"
+    }
+  },
+  "camera_traces": {
+    "jumping": "tools/capture_camera.lua MSX_CAMERA_LAST=7200: height rises 0->16 between camera 947 and 1008, exactly ceil((camera-944)/4); middle bank full speed at camera 1023 (frame 3404); transient rise to 23 at camera 1550..1607 while the player jumps; another 16 px at camera 1920 from frame 4566.",
+    "no_jump": "MSX_CAMERA_JUMP=0: rise starts at camera 947 but stops at 14 (camera 1008..1470); middle bank switch also at camera 1023."
+  },
+  "collision": {
+    "columns": 280,
+    "rows": 32,
+    "snapshots": 122,
+    "nonempty": 430,
+    "prefix_columns_identical": 149,
+    "event_cells": 13,
+    "event": {
+      "anchor_cell": [
+        146,
+        8
+      ],
+      "flags": 1,
+      "before_frame": 3060,
+      "after_frame": 3120
+    },
+    "layer_switch": "tools/trace_collision_loader.lua (frames 2100..4400): query PC 0xC7A1A reads the foreground grid 17178 times before the switch and the middle grid 20061 times after; at the switch PC 0xC75A0 reads 2048 foreground words and 0xC75A2 writes 4096 middle bytes; the loader (0xC734E..0xC735A) writes the foreground ring only up to camera 1022."
+  },
+  "scene_pack": {
+    "before": {
+      "pages": 235,
+      "palettes": 75,
+      "chunks": 30,
+      "decoded_bytes": 491520,
+      "packed_bytes": 272832
+    },
+    "after": {
+      "pages": 296,
+      "palettes": 101,
+      "chunks": 37,
+      "decoded_bytes": 606208,
+      "packed_bytes": 388352
+    },
+    "budget": {
+      "chunks": 37,
+      "fixed_actor_chunks": 12,
+      "worst_working_set": 25,
+      "worst_camera": 1056,
+      "cache_slots": {
+        "4MiB": 32,
+        "8MiB": 37
+      },
+      "fits_without_eviction": {
+        "4MiB": false,
+        "8MiB": true
+      }
+    }
+  },
+  "integration_in_beta_work": {
+    "claude_head": "97f839606ab2ff80e998cd012c3a3c8b68b61739",
+    "capture": "MAME 0.276 existing mission1 + mission1-advance2 workspace captures",
+    "pixel_validation": {
+      "frames": 122,
+      "map_pixels": 8307712,
+      "known_variant_pixels": 24236,
+      "mame_uncovered_pixels": 4953328
+    },
+    "ares_entry_and_region": {
+      "status": "PASS",
+      "emulator": "ares 146",
+      "source_frames": 230,
+      "unique_presented_frames": 230,
+      "skipped_frames": 0,
+      "rendered_frames": 234,
+      "final_pixels_crc32": "db681cc3",
+      "movie_read_bytes": 1246644,
+      "audio_active_at_handoff": true,
+      "diagnostic_toggle": true,
+      "decode_max_us": 12915,
+      "decode_mean_us": 1525,
+      "draw_max_us": 1012,
+      "rom_sha256": "5746bb70fda591048a72b65af166d202a5e5651a8c6e457281cf9e30ac508d62",
+      "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+      "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+      "log_sha256": "8128dda6deaee7fa6a721842bb3afbb0c1c1daf8f3fb1df7fd8fd775672edefa",
+      "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.",
+      "partial_region": {
+        "camera": 1920,
+        "x16": 144965631,
+        "cache_misses": 0,
+        "depth_mode": true,
+        "depth_max_triangles": 23,
+        "cache_samples": 2,
+        "limit": "Three provisional guards, approximate camera and REGION END; not complete Mission 1."
+      }
+    },
+    "host_checks": "make check PASS; SDK-free check-core checked separately",
+    "limits": [
+      "No 4 MiB or physical hardware test.",
+      "Marco native upper/crouch controllers are separately validated; active campaign still uses the historical visual selector.",
+      "Camera model remains approximate: 67/122 reference frames exact; mission remains incomplete."
+    ]
+  }
+}

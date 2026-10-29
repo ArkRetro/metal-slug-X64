@@ -16,14 +16,30 @@ int msx_game_animation(const msx_game_t *g) {
     return g->moving?MSX_RUN:MSX_IDLE;
 }
 static void spawn_enemy(msx_game_t *g) {
+    // PROVISIONAL authored test encounters. These positions, health and firing
+    // rules are NOT the verified Mission-1 soldier AI; see FIRST_SOLDIER.md.
     static const int positions[]={420,780,1140};
     if (g->kills>=3) { g->enemy.alive=false; return; }
     g->enemy=(msx_enemy_t){.x=positions[g->kills],.facing=-1,.health=2,.cooldown=60,.alive=true};
 }
 void msx_game_init(msx_game_t *g) {
+    neo_collision_reset();
     memset(g,0,sizeof(*g));
-    g->x=0x78bad9;g->y=msx_ground_offset(g->x);
+    g->x=MSX_START_X;g->y=msx_ground_offset(g->x);
     g->facing=1;g->grounded=true;g->health=3;spawn_enemy(g);
+}
+bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
+    neo_surface_t support;
+    if (!neo_surface_unique(world_x,&support) || support.height!=world_y) return false;
+    msx_game_init(g);g->x=world_x;g->y=56*MSX_UNIT-world_y;
+    return true;
+}
+void msx_game_vehicle_reference(msx_game_t *g) {
+    // Observed stationary vehicle variant, at the captured position. This is
+    // selected only by the internal reference build, not by provisional kills.
+    g->x=1020*MSX_UNIT;g->camera=872;g->y=msx_ground_offset(g->x);
+    g->facing=-1;g->enemy.alive=false;
+    neo_vehicle_init(&g->vehicle,937*MSX_UNIT+MSX_UNIT/2,64*MSX_UNIT,936*MSX_UNIT,0,1,300,9);
 }
 static void damage(msx_game_t *g,int from) {
     if (g->invulnerable || g->complete) return;
@@ -36,7 +52,7 @@ static void damage(msx_game_t *g,int from) {
         else {g->grounded=false;g->air_ticks=0;}
     }
     if (!g->health) {
-        g->deaths++;g->health=3;g->x=g->checkpoint?g->checkpoint*MSX_UNIT:0x78bad9;
+        g->deaths++;g->health=3;g->x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
         g->camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
         g->y=msx_ground_offset(g->x);g->velocity_x=g->velocity_y=0;g->grounded=true;g->invulnerable=90;
         memset(g->bullets,0,sizeof(g->bullets));memset(g->enemy_bullets,0,sizeof(g->enemy_bullets));
@@ -51,11 +67,15 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
+    if (g->vehicle_flash) g->vehicle_flash--;
     if (direction) g->facing=direction<0?-1:1;
     g->jump_pending|=jump && !g->jump_was_down;
     g->jump_was_down=jump;
     // The recovered arcade player routine advances on alternate video ticks.
     if (!(g->ticks&1)) {
+        unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;
+        if (events&NEO_VEHICLE_STAMP)
+            g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
         if (g->jump_pending && g->grounded) {
             g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;
         }
@@ -101,7 +121,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (b->y>=192+msx_ground_offset(b->x*MSX_UNIT)/MSX_UNIT) b->active=false;
         else if (e->alive && swept_hit(previous,b->x,4,e->x-10,e->x+10) && b->y+2>=enemy_feet-38 && b->y<=enemy_feet) {
             b->active=false;g->hits++;e->flash=10;
-            if (--e->health==0) { e->alive=false;e->respawn=g->kills<2?90:0;g->kills++; }
+            if (--e->health==0) { e->alive=false;e->respawn=90;g->kills++; }
+        } else if (neo_vehicle_hit_segment(&g->vehicle,previous*MSX_UNIT,b->x*MSX_UNIT,
+            (248-b->y)*MSX_UNIT,4*MSX_UNIT,2*MSX_UNIT)) {
+            b->active=false;neo_vehicle_damage(&g->vehicle,10);g->vehicle_flash=6;
         } else if (b->x<g->camera-32 || b->x>g->camera+352) b->active=false;
     }
     for (unsigned i=0;i<MSX_ENEMY_BULLETS;i++) {
@@ -114,10 +137,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         } else if (b->x<g->camera-32 || b->x>g->camera+352) b->active=false;
     }
     if (e->alive && abs(e->x-g->x/MSX_UNIT)<18 && g->y>msx_ground_offset(g->x)-28*MSX_UNIT) damage(g,e->x);
+    if (neo_vehicle_hit_segment(&g->vehicle,g->x,g->x,73*MSX_UNIT-g->y,9*MSX_UNIT,17*MSX_UNIT))
+        damage(g,g->vehicle.x/MSX_UNIT);
     int camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
     if (camera>g->camera) g->camera=camera;
     if (g->kills==3 && g->x>=MSX_END_X && g->grounded) {
-        g->complete=true;g->moving=false;g->shooting=false;
+        g->complete=true;g->moving=false;g->shooting=false;g->enemy.respawn=0;
         memset(g->bullets,0,sizeof(g->bullets));memset(g->enemy_bullets,0,sizeof(g->enemy_bullets));
     }
 }

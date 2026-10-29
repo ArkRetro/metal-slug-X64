@@ -44,3 +44,15 @@ scales (far 1.08, middle 1.04, action 1), scroll ratios .04/.45/1 and contact
 shadows only. No perspective background projection, building extrusion, fog
 or added lighting. Captured in ares at 20 video fps, 44.6 seconds, no audio.
 Terrain and collidable props retain their original action-plane coordinates.
+
+`metal-slug-x64-intro-sound.mp4` is an **edited intro preview**, not a real-time
+performance capture or complete game demo. It shows the authored METAL SLUG X64
+title, the generic synthetic announcement (“Metal Slug! X sixty-four!”), and
+the existing native parachute movie. Audio was captured from ares through an
+ALSA file sink; the still title and recorded movie segment are aligned to the
+native presentation timing rather than the slower screen-capture clock.
+The preview cartridge deliberately holds the final cinematic frame and does
+not enter gameplay. A separate standard region test passed; ALSA capture runs
+that entered gameplay hit an RSP timeout which remains unresolved.
+The parachute footage still contains original arcade HUD/prompts; full N64 HUD
+adaptation and the complete mission are pending.

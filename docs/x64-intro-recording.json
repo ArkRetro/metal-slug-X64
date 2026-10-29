@@ -1,0 +1,22 @@
+{
+  "events": {
+    "MSX TITLE start": 2.0961137379927095,
+    "MSX TITLE complete": 9.027161201986019,
+    "MSX INTRO start": 9.518218696000986,
+    "MSX INTRO preview complete": 14.425793033005903
+  },
+  "rom_sha256": "7461fc70304679b4945d3fbf9b4dbeacff4d73e35448664a0d0b0c4c5f8dc5ed",
+  "audio_rate": 48000,
+  "audio_channels": 2,
+  "audio_format": "s16le",
+  "audio_capture": "ares ALSA file sink",
+  "title": "METAL SLUG X64",
+  "synthetic_announcement": "Piper stock Ryan high, not original actor cloning",
+  "presentation": "Edited intro preview from ares frames and captured ALSA audio, aligned to native timing; not a real-time performance recording",
+  "voice_pcm_start": 1.14,
+  "entry_pcm_start": 7.3,
+  "first_plate_seconds": 6.16,
+  "cinematic_seconds": 3.886080003979346,
+  "total_seconds": 10.959999999999999,
+  "known_issue": "Full campaign handoff with ALSA/video capture hit an RSP timeout in separate runs; not fixed or claimed stable. This preview holds the final cinematic frame and does not enter gameplay."
+}

@@ -168,3 +168,27 @@ python3 tools/test_entry_ares.py mission1-internal.z64 --skip-title --output NUE
 La prueba revisa título, audio activo al inicio, CRC de la imagen adaptada,
 avance automático/Start y conservación de la entrada de 230 frames y su handoff.
 No es una captura acústica ni una medición de rendimiento en hardware.
+
+
+## METAL SLUG X64: título y locución solicitados
+
+La presentación vigente usa el arte de `art/title/metal-slug-x64.png`, adaptado
+mediante generación de imagen y convertido a 320x240/RGBA5551. El nombre visible
+es METAL SLUG X64. La tipografía evoca los títulos de la época N64; no se atribuye
+a una fuente oficial de Nintendo. Sustituye la placa original de la sección
+anterior, que se conserva como herramienta de reconstrucción.
+
+La voz del título dice “Metal Slug! X sixty-four!” y es una voz sintética genérica
+de Piper. No se clonó al actor original. El canal ANNOUNCER reproduce el WAV64
+convertido desde `art/audio/title-announcement.wav`. No se mezcla con el antiguo
+fragmento de título, que podía contener la locución original; el audio de entrada
+en paracaídas sigue siendo la referencia original.
+
+`intro-preview.z64` es exclusivamente una prueba interna para grabar la
+presentación: mantiene el último frame de la entrada y no ejecuta campaña.
+Durante dos capturas con salida ALSA se observó un timeout RSP al entrar al juego;
+sigue abierto. La prueba estándar sin ese dispositivo de captura sí atravesó el
+tramo parcial, pero no demuestra que el fallo de audio/captura esté corregido.
+El vídeo de muestra es un montaje de frames de ares y su PCM capturado, alineado
+al tiempo de presentación nativo; no representa rendimiento real en hardware.
+No se publica el cartucho de prueba ni se presenta como demo completa.

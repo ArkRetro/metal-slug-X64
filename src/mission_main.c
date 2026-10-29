@@ -42,6 +42,10 @@ int main(void) {
     if (crc!=msx_entry_crc[MSX_ENTRY_FRAMES-1]) fail("CRC ultimo frame");
     debugf("MSX INTRO complete frames=%lu rendered=%u crc=%08lx reads=%lu audio=%u\n",(unsigned long)final.frames,rendered,(unsigned long)crc,(unsigned long)final.read_bytes,msx_audio_playing(MSX_AUDIO_INTRO));
     debugf("MSX INTRO timing decode_max_us=%lu decode_mean_us=%lu draw_max_us=%lu\n",(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)TICKS_TO_US(final.total_decode_ticks/final.frames),(unsigned long)TICKS_TO_US(final.max_draw_ticks));
+#ifdef MSX_INTRO_PREVIEW
+    debugf("MSX INTRO preview complete\n");
+    for (;;) {msx_audio_service();joypad_poll();msx_cinematic_draw(display_get());}
+#endif
     msx_cinematic_close();
     if (!actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
     for (;;) {

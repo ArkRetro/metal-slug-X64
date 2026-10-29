@@ -46,7 +46,8 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
                 case MSI_CROUCH:p->mode=MCR_ENTER;b->domain=MARCO_BODY_CROUCH;continue;
                 case MSI_FAST:b->stance.mode=MST_IDLE_FAST;continue;
                 case MSI_MELEE:m->mode=MMR_MELEE_REQUEST;b->domain=MARCO_BODY_MOTION;return MARCO_BODY_EXTERNAL;
-                case MSI_DRAW: { // C2144..C215A: support first, then body clock.
+                case MSI_DRAW: {
+idle_draw:; // C2144..C215A: support first, then body clock.
                     bool complete=false;
                     if(!motion || !motion->move || !motion->animate ||
                        !motion->move(motion->context,MMM_GROUND,m,a) ||
@@ -54,10 +55,14 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
                     if(complete) b->stance.mode=MST_IDLE_FAST;
                     return MARCO_BODY_COMMON;
                 }
-                case MSI_WORLD:return MARCO_BODY_EXTERNAL;
+                case MSI_WORLD:
+                    if(!stance || !stance->idle_query) return MARCO_BODY_EXTERNAL;
+                    if(!marco_stance_idle_world(&b->stance,m,a,stance)) goto fail;
+                    goto idle_draw;
                 }
                 goto fail;
             }
+            if(b->stance.mode>MST_IDLE) return MARCO_BODY_EXTERNAL;
             if(!stance || !marco_stance_enter(&b->stance,m,a,stance)) goto fail;
             break;
         default:goto fail;

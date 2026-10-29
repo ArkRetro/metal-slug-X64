@@ -42,6 +42,12 @@ static marco_body_t actor(marco_body_domain_t domain,uint16_t buttons) {
     b.motion.player.field6c=8;
     selects=moves=animations=0;land=finish=false;return b;
 }
+static unsigned idle_queries;
+static bool idle_query(void *ctx,marco_idle_query_t key,int16_t arg,marco_motion_t *m,uint16_t *value,bool *carry) {
+    (void)ctx;(void)arg;(void)m;
+    assert(key==(idle_queries?MSQ_191FC:MSQ_18F24));++idle_queries;
+    *value=0;*carry=false;return true;
+}
 int main(void) {
 #ifdef __mips__
     debug_init_emulog();console_init();console_set_render_mode(RENDER_MANUAL);
@@ -59,6 +65,13 @@ int main(void) {
     assert(marco_body_update(&idle,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
     assert(idle.domain==MARCO_BODY_CROUCH && idle.motion.player.mode==MCR_ENTER_WAIT);
     assert(selects==1 && moves==1 && animations==1);
+    idle=actor(MARCO_BODY_STANCE,0);idle.stance.mode=MST_IDLE;
+    idle.motion.player.upper.input.flags9a|=32;
+    sv.idle_query=idle_query;idle_queries=0;marco_animation_reset(&a);
+    assert(marco_body_update(&idle,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(idle_queries==2 && idle.stance.field96==1 && idle.stance.mode==MST_IDLE);
+    assert(moves==1 && animations==1 && !selects);
+    sv.idle_query=NULL;
     /* Crouch -> jump must execute air physics and animate in this very tick. */
     marco_body_t b=actor(MARCO_BODY_CROUCH,32);b.motion.player.mode=MCR_IDLE;
     b.motion.player.upper.bombs=7;

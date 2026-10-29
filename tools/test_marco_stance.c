@@ -84,11 +84,36 @@ static void limits(void) {
     assert(!marco_stance_enter(&s,&m,&a,&v) && m.player.failed && a.failed);
     assert(effect_calls==1);
 }
+/* Static-evidence world decision order and callback failure tests. */
+static unsigned queries,randoms,availability;
+static uint16_t roll,proximity;
+static bool world_query(void *ctx,marco_idle_query_t key,int16_t arg,marco_motion_t *m,uint16_t *value,bool *carry) {
+    (void)ctx;(void)arg;(void)m;++queries;*carry=false;*value=key==MSQ_191FC?proximity:0;return true;
+}
+static bool world_available(void *ctx,marco_stance_table_t table,marco_motion_t *m,bool *out) {
+    (void)ctx;(void)table;(void)m;++availability;*out=true;return true;
+}
+static bool world_random(void *ctx,uint16_t *out) {(void)ctx;++randoms;*out=roll;return true;}
+static void world_limits(void) {
+    marco_stance_services_t v={.idle_query=world_query,.available=world_available,.random16=world_random};
+    marco_stance_t s={.mode=MST_IDLE,.field96=14};marco_motion_t m={0};marco_animation_t a;
+    marco_animation_reset(&a);m.player.field6c=8;
+    roll=65535;proximity=0;queries=randoms=availability=0;
+    assert(marco_stance_idle_world(&s,&m,&a,&v));
+    assert(s.field96==15 && queries==2 && !randoms && !availability);
+    assert(marco_stance_idle_world(&s,&m,&a,&v));
+    assert(s.field96==16 && queries==4 && randoms==1 && !availability);
+    s.field96=255;roll=0;proximity=2;
+    assert(marco_stance_idle_world(&s,&m,&a,&v));
+    assert(s.field96==0 && s.mode==MST_VARIANT_E74 && randoms==4 && availability==2);
+    v.idle_query=NULL;
+    assert(!marco_stance_idle_world(&s,&m,&a,&v) && m.player.failed && a.failed);
+}
 int main(void) {
 #ifdef __mips__
     debug_init_emulog();console_init();console_set_render_mode(RENDER_MANUAL);
 #endif
-    limits();
+    limits();world_limits();
     const marco_stance_services_t services={.select=select_table};
     unsigned count=sizeof(stance_cases)/sizeof(*stance_cases);
     for(case_index=0;case_index<count;case_index++) {

@@ -361,3 +361,25 @@ para el próximo tick. No se atribuye a estos ensayos cobertura dinámica origin
 de `C2144` ni implementación nativa del terreno: los helpers siguen siendo
 servicios explícitos. `make marco-body-regression.z64` y
 `tools/test_marco_body_ares.py ROM --output RESULTADO_NUEVO` reproducen la prueba.
+
+
+## Consultas y temporización del reposo
+
+`marco_stance_idle_world` traduce estáticamente `0x0C2022..0x0C213E`.
+Mantiene las consultas `0x018F24`, `0x018FFE`, `0x014850` y `0x0191FC`
+como servicios explícitos, además del RNG de 16 bits y disponibilidad de
+programas. Incrementa +96 con saturación, conserva los umbrales originales y
+el orden en que una decisión posterior puede sustituir la variante programada.
+Los destinos E84/EAA/E54/E44/E64/E74 son estados nativos pendientes, nunca
+punteros 68000 ejecutables. Se programan para el siguiente tick; los servicios
+de apoyo y animación del tick actual siguen ejecutándose, y el fin de animación
+puede sustituir ese destino por `MST_IDLE_FAST`, como en C2154.
+
+Evidencia: listado dirigido de Ghidra de la ROM suministrada; ensayos sintéticos
+en host/ASan/UBSan y MIPS/ares para contador, RNG, prioridad y servicios ausentes.
+La prueba de cuerpo añade la secuencia de consultas -> apoyo -> animación.
+**No hay todavía una captura dinámica de estos nuevos servicios**; las 800
+entradas medidas anteriormente solo cubren el prefijo de decisión. Las consultas
+concretas al mundo, las rutinas de las variantes y el procesamiento común siguen
+pendientes de recuperación/integración. Esto no completa el controlador de
+campaña ni la demo jugable de la misión.

@@ -1,0 +1,7 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "66139c76005024ddefecd8472855e4f70c6dccb73921dcb7d727cc8de9b26d78",
+  "limit": "Synthetic world-query/support/animation call ordering plus prior cross-controller scheduling. Newly translated C2022..C213E has static evidence, not dynamic original-game service replay. No campaign or complete demo claim.",
+  "stance_rom_sha256": "2655db69e4424ca319a93ec44c162ce77a45971c82c3ea9e0d23b9603b79bb87"
+}

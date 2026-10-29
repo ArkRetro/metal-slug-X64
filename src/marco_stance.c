@@ -51,3 +51,43 @@ fail:
     p->failed=true;u->failed=true;a->failed=true;return false;
 #undef SELECT
 }
+
+bool marco_stance_idle_world(marco_stance_t *s,marco_motion_t *m,marco_animation_t *a,const marco_stance_services_t *v) {
+    if(!s || !m || !a || !v || m->player.failed || m->player.upper.failed || a->failed) return false;
+    marco_crouch_t *p=&m->player;
+    uint16_t value=0,rng=0;bool carry=false,available=false;
+#define QUERY(k,arg) do {if(!v->idle_query || !v->idle_query(v->context,k,arg,m,&value,&carry)) goto fail;} while(0)
+#define AVAILABLE(k) do {if(!v->available || !v->available(v->context,k,m,&available)) goto fail;} while(0)
+#define RANDOM() do {if(!v->random16 || !v->random16(v->context,&rng)) goto fail;} while(0)
+    QUERY(MSQ_18F24,0);
+    if(carry) {
+        QUERY(MSQ_18FFE,0);
+        if((uint8_t)value&s->field5e) {AVAILABLE(MST_203A);if(available) s->mode=MST_VARIANT_E84;}
+    }
+    if(p->field6c==2) {
+        AVAILABLE(MST_2056);
+        if(available) {
+            QUERY(MSQ_14850,(p->upper.input.attributes&1u)?-16:16);
+            if(!carry) s->mode=MST_VARIANT_EAA;
+        }
+    }
+    if(s->field96!=255) ++s->field96;
+    if(s->field96>=16) {
+        RANDOM();
+        if(rng<s->field96) {
+            s->field96=0;AVAILABLE(MST_20B6);
+            if(available) {RANDOM();if(rng<0x4000) {s->mode=MST_VARIANT_E54;goto proximity;}}
+            AVAILABLE(MST_20DA);if(available) s->mode=MST_VARIANT_E44;
+        }
+    }
+proximity:
+    QUERY(MSQ_191FC,0);
+    if(value==1) {AVAILABLE(MST_2100);if(available) {RANDOM();if(rng<256) s->mode=MST_VARIANT_E64;}}
+    else if(value) {AVAILABLE(MST_2124);if(available) {RANDOM();if(rng<256) s->mode=MST_VARIANT_E74;}}
+    return true;
+fail:
+    p->failed=true;p->upper.failed=true;a->failed=true;return false;
+#undef QUERY
+#undef AVAILABLE
+#undef RANDOM
+}

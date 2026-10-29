@@ -86,7 +86,7 @@ static void form_limits(void) {
  u->mode=MUP_RESET;u->input.attributes=64;u->input.mask9c=255;u->gate.limit=255;u->packed=2u<<16;
  assert(marco_common_forms(&s,&b,&a,&v) && s.destination==MCC_CROUCH_22A4 && s.field99==6 && u->form93==1 && s.field94==255);
  u->mode=MUP_ACTIVE;s.field94=0;s.active_projectiles=3;
- assert(marco_common_forms(&s,&b,&a,&v) && s.upper_393c_pending && !s.active_projectiles && form_effects==1 && u->form93==0);
+ assert(marco_common_forms(&s,&b,&a,&v) && u->mode==MUP_FORM_START && !s.active_projectiles && form_effects==1 && u->form93==0);
  u->input.flags9a|=128;s.ammunition=0;unsigned before=form_resets;
  assert(marco_common_forms(&s,&b,&a,&v) && s.immediate_transition && s.destination==MCC_EXIT_30F0 && form_resets==before);
  s.immediate_transition=false;s.ammunition=65535;u->form93=2;s.form_timer=1;s.field94=255;form_valid=true;

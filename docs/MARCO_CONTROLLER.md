@@ -444,9 +444,9 @@ contador de paleta y solicitud explícita del efecto de salida de forma 1.
 `marco_common_update` ordena begin -> forms -> palette -> tail. La salida
 inmediata interrumpe esa secuencia antes de paleta/inmunidad. El tail conserva
 las solicitudes previas salvo que la prioridad original de muerte las cambie.
-Los destinos del cuerpo y la solicitud del upper C393C son enums/flags nativos;
-no se ejecutan como direcciones de ROM ni se dan por implementados. La capa
-propietaria todavía debe resolverlos.
+Los destinos del cuerpo son enums nativos y la capa propietaria todavía debe
+resolverlos. La solicitud del upper C393C programa ahora `MUP_FORM_START`;
+no se ejecutan direcciones de ROM.
 
 Las pruebas sintéticas en host, ASan/UBSan y MIPS/ares cubren cambios de forma,
 servicios ausentes, expiración del temporizador, salida inmediata y la secuencia
@@ -455,3 +455,26 @@ bloque ni adaptación de todos sus servicios al mundo de campaña. Faltan rutina
 de transición/daño/muerte, acciones especiales y unión del catálogo/renderizador.
 La campaña sigue usando el controlador provisional; no se declara integración
 completa ni se publica otro cartucho parcial.
+
+
+## Destino nativo del arma al cambiar de forma
+
+El análisis dirigido de Ghidra de las entradas `0x0C393C`, `0x0C396C` y
+`0x0C0FCE` recupera dos estados: `MUP_FORM_START` y `MUP_FORM_WAIT`.
+El primero limpia +9A bit 5, selecciona directamente por personaje la tabla
+cargada por LEA `0x0C3942`, limpia +92/+97, pone +91=4 y programa la espera.
+La selección usa la inicialización secundaria del arma y conserva +18.
+
+La espera `0x0C3964` consulta el despachador antes de su fallback `0x0C396C`.
+Por eso una pose nueva tiene prioridad sobre avanzar la animación de transición.
+El fallback conserva la condición D7.word != 0 y solo invalida +91 al terminar;
+no cambia automáticamente el modo de espera a pose 0.
+`marco_common_forms` ya programa este estado nativo, en lugar del anterior
+flag de destino sin implementar.
+
+Ensayos sintéticos host, sanitizadores y MIPS/ares cubren inicio, espera,
+finalización e interrupción por una pose nueva. No se presenta esto como una
+captura dinámica MAME ni como validación visual: los programas/recursos de esa
+tabla aún necesitan su enlace al catálogo y al renderizador de campaña.
+Los destinos de transición del cuerpo, daño/muerte y servicios reales siguen
+pendientes; no se declara integración completa.

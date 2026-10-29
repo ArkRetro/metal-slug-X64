@@ -3,7 +3,7 @@
 import argparse,json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-MODES={0:'MUP_DISABLED',0xc381c:'MUP_RESET',0xc38b2:'MUP_SETTLE',0xc397e:'MUP_POSE0',0xc3a5e:'MUP_ACTIVE',0xc3b82:'MUP_MELEE_WAIT',0xc3bcc:'MUP_GRENADE',0xc3cd0:'MUP_FIRE',0xc3d9a:'MUP_FIRE_WAIT',0xc3e66:'MUP_REPEAT_A_WAIT',0xc3f1a:'MUP_REPEAT_B_WAIT',0xc3ffa:'MUP_TURN_WAIT',0xc3fa6:'MUP_TURN_DOWN',0xc3fb4:'MUP_TURN_UP',0xc3fc2:'MUP_TURN_FROM_UP',0xc3fd0:'MUP_TURN_FROM_DOWN',0xc4176:'MUP_AIM_WAIT'}
+MODES={0xc393c:'MUP_FORM_START',0xc3964:'MUP_FORM_WAIT',0:'MUP_DISABLED',0xc381c:'MUP_RESET',0xc38b2:'MUP_SETTLE',0xc397e:'MUP_POSE0',0xc3a5e:'MUP_ACTIVE',0xc3b82:'MUP_MELEE_WAIT',0xc3bcc:'MUP_GRENADE',0xc3cd0:'MUP_FIRE',0xc3d9a:'MUP_FIRE_WAIT',0xc3e66:'MUP_REPEAT_A_WAIT',0xc3f1a:'MUP_REPEAT_B_WAIT',0xc3ffa:'MUP_TURN_WAIT',0xc3fa6:'MUP_TURN_DOWN',0xc3fb4:'MUP_TURN_UP',0xc3fc2:'MUP_TURN_FROM_UP',0xc3fd0:'MUP_TURN_FROM_DOWN',0xc4176:'MUP_AIM_WAIT'}
 ANIM=('cursor','timer','speed','flash','f18','field50','f72','f76','f77','f78','f79')
 # Lower helper probes use f17; upper entry probes use flash.
 def scalar(r,k):return r['f17'] if k=='flash' else r[k]

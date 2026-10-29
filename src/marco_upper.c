@@ -34,6 +34,8 @@ bool marco_upper_update(marco_upper_t *s,marco_animation_t *a,const marco_upper_
 #define ANIMATE() do { if (!v->animate || !v->animate(v->context,s,a,&done)) goto fail; } while(0)
 #define LATCH() do { if (!v->latch_input || !v->latch_input(v->context,2)) goto fail; } while(0)
     switch(s->mode) {
+    case MUP_FORM_START:goto form_start;
+    case MUP_FORM_WAIT:goto dispatch;
     case MUP_RESET:goto reset;
     case MUP_SETTLE:goto settle;
     case MUP_POSE0:goto pose0;
@@ -52,6 +54,10 @@ bool marco_upper_update(marco_upper_t *s,marco_animation_t *a,const marco_upper_
     case MUP_AIM_WAIT:goto aim_wait;
     default:goto fail;
     }
+form_start: // C393C..C3964, direct character-indexed secondary initialization.
+    s->input.flags9a&=(uint8_t)~32u;SELECT(MUT_3942,true);
+    s->aim92=0;s->active91=4;s->idle97=0;s->mode=MUP_FORM_WAIT;
+    goto dispatch; // C3964 dispatches before C396C's animate fallback.
 reset: // C381C; fallback C382E is RTS, not the following C3830 entry.
     s->action98=0;s->active91=255;alternate=true;goto dispatch;
 dispatch: { // C37CE. Reuse a compatible active pose instead of restarting it.

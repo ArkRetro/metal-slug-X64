@@ -2,7 +2,7 @@
 """Internal synthetic cross-controller scheduling test on native MIPS in ares."""
 import argparse,os,subprocess,time,json,hashlib
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--suite',choices=('body','common'),default='body');a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--suite',choices=('body','common','upperform'),default='body');a=p.parse_args()
 a.output.mkdir(parents=True,exist_ok=False);root=Path(__file__).resolve().parents[1]
 env=dict(os.environ,LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu');process=None
 with (a.output/'xvfb.log').open('w') as xlog,(a.output/'ares.log').open('w') as log:

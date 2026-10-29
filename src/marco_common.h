@@ -9,7 +9,6 @@ typedef struct {
  uint16_t timer84,ammunition,form_timer;
  uint8_t active_projectiles;
  bool immediate_transition;
- bool upper_393c_pending;
  uint8_t field5a,field19,field1a,field94,field9e,field99;
  int16_t projected_y,death_line;
  bool global_invincible,alternate_palette;
@@ -32,7 +31,7 @@ typedef struct {
 bool marco_common_begin(marco_common_t*,marco_body_t*,marco_animation_t*,
  const marco_common_services_t*,const marco_upper_services_t*);
 /* C3348..C35D0. An immediate_transition exits to C30F0 before later phases.
- * Body destinations and upper_393c_pending require their native owner. */
+ * Body destinations require their native owner; C393C schedules MUP_FORM_START. */
 bool marco_common_forms(marco_common_t*,marco_body_t*,marco_animation_t*,const marco_common_services_t*);
 /* Executes recovered common phases in order. Success alone does not implement
  * the world services or scheduled destinations; caller must resolve requests. */

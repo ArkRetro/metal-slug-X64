@@ -4,7 +4,7 @@ bool marco_common_begin(marco_common_t *s,marco_body_t *b,marco_animation_t *a,
  if(!s || !b || !a || !v || !upper) return false;
  marco_crouch_t *p=&b->motion.player;marco_upper_t *u=&p->upper;
  if(p->failed || u->failed || a->failed) return false;
- s->destination=MCC_KEEP;s->immediate_transition=false;s->upper_393c_pending=false;
+ s->destination=MCC_KEEP;s->immediate_transition=false;
  if(!v->prepare || !v->prepare(v->context,s,b,a)) goto fail;
  a->fields.variant79=u->desired90==3?1:0; // C32FA..C3304
  if(!marco_upper_update(u,a,upper)) goto fail; // C3308..C330C
@@ -108,7 +108,7 @@ bool marco_common_forms(marco_common_t *s,marco_body_t *b,marco_animation_t *a,c
  if(rule==2) {if(!(u->input.attributes&64u)) return true;s->destination=MCC_FORM_1D70;goto commit;}
  if(u->form93==2 && !(u->input.flags9a&128u) && ((u->input.attributes&64u) || u->mode!=MUP_RESET)) s->destination=MCC_FORM_1D82;
  else if(u->form93==3) s->destination=MCC_FORM_1740;
- else if(u->mode!=MUP_RESET) s->upper_393c_pending=true;
+ else if(u->mode!=MUP_RESET) u->mode=MUP_FORM_START;
  else {
   if(!(u->input.attributes&64u) || !(marco_input_filter(&u->input,u->packed,u->gate)&2u)) return true;
   s->destination=MCC_CROUCH_2280;

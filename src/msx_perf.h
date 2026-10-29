@@ -22,10 +22,23 @@ enum {
     MSX_PERF_STEP,       /* overlapping: slowest single simulation step */
     MSX_PERF_COUNT
 };
+/* Build with MSX_EXTRA_CFLAGS=-DMSX_PROFILE=0 to compile the profile out. */
+#ifndef MSX_PROFILE
+#define MSX_PROFILE 1
+#endif
+#if MSX_PROFILE
 void msx_perf_frame_start(void);
 void msx_perf_mark(unsigned phase);
 void msx_perf_add(unsigned bucket,uint32_t ticks);
 void msx_perf_steps(unsigned steps);
 void msx_perf_counts(unsigned draws,unsigned soldiers);
 void msx_perf_frame_end(void);
+#else
+static inline void msx_perf_frame_start(void) {}
+static inline void msx_perf_mark(unsigned phase) {(void)phase;}
+static inline void msx_perf_add(unsigned bucket,uint32_t ticks) {(void)bucket;(void)ticks;}
+static inline void msx_perf_steps(unsigned steps) {(void)steps;}
+static inline void msx_perf_counts(unsigned draws,unsigned soldiers) {(void)draws;(void)soldiers;}
+static inline void msx_perf_frame_end(void) {}
+#endif
 #endif

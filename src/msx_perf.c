@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include "msx_perf.h"
+#if MSX_PROFILE
 static const char *const names[MSX_PERF_COUNT]={"sim","prep","begin","bgreq","bg","mesh","actors","hud","end","wait","asset","step"};
 static uint32_t last,frame_ticks[MSX_PERF_COUNT];
 static uint64_t sum[MSX_PERF_COUNT],sum_build,sum_total;
@@ -49,3 +50,4 @@ void msx_perf_frame_end(void) {
     for (unsigned i=0;i<MSX_PERF_COUNT;i++) sum[i]=peak[i]=0;
     sum_build=sum_total=0;peak_build=peak_total=0;frames=steps_sum=steps_max=multi=draws_max=soldiers_max=0;
 }
+#endif

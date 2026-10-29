@@ -1,6 +1,7 @@
 #include "scene_renderer.h"
 #include "retro_effects.h"
 #include "mission_camera.h"
+#include "msx_perf.h"
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
@@ -108,7 +109,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         scene_request_image(scene_map_image(cells[i].phases[video_tick&7]),2);
         scene_request_image(scene_map_image(cells[i].phases[(video_tick+1)&7]),1);
     }
-    scene_service();
+    scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);
     rdpq_set_scissor(8,8,312,232);
     scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop()));
     if (!depth_mode) {
@@ -120,7 +121,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
             const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
             blit(im,x,y,im->x,im->y,16,16,false,false);
         }
-        rdpq_set_scissor(0,0,320,240);return;
+        rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
     for (unsigned layer=0;layer<5;layer++) {
       if (!visible[layer]) continue;
@@ -136,9 +137,11 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
       }
     }
+    msx_perf_mark(MSX_PERF_BG_DRAW);
     retro_effects_mesh(&depth_frame);
-    rdpq_set_scissor(0,0,320,240);
+    rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_MESH);
 }
+unsigned scene_render_draw_count(void) {return draws;}
 void scene_render_box(int x,int y,int width,int height,color_t color) {
     if (x>=320 || y>=240 || x+width<=0 || y+height<=0) return;
     rdpq_mode_push();rdpq_set_mode_fill(color);rdpq_fill_rectangle(x,y,x+width,y+height);rdpq_mode_pop();

@@ -275,3 +275,12 @@ handoff in ares. Captured output correlates 0.9923 with the composite source;
 the insertion window alone correlates 0.9982. Both checks require >0.85.
 `verify_title_pcm.py CAPTURE --rom intro-preview.z64` reproduces this comparison.
 Build staging rejects a stale voice-asset hash or WAV64/metadata mismatch.
+
+## Lower male announcer revision
+
+The user rejected the higher Ryan tag. The active voice is now Piper stock
+`en_US-hfc_male-medium`, lowered to 0.88 of its pitch with duration compensation,
+body/presence EQ and compression. The tag peak rises from 8000 to 12500 PCM16.
+A diffuse room impulse (380 ms T60, 22% wet RMS) replaces the small discrete echo.
+The full tail ends at 9.8679 s; the title ends at 10.1545 s, so it is not cut.
+`master_title_voice.py` and `art/audio/sixty-four.json` document this profile.

@@ -20,6 +20,8 @@ START_SECONDS = 8.60
 
 def append_tail(pcm, rate):
     original = np.frombuffer(pcm, dtype='<i2').reshape(-1, 2)
+    profile = json.loads((TAIL.with_suffix('.json')).read_text())
+    assert profile['asset_sha256'] == hashlib.sha256(TAIL.read_bytes()).hexdigest(), 'Voice profile and WAV differ'
     with wave.open(str(TAIL)) as voice:
         assert voice.getframerate() == rate and voice.getnchannels() == 1 and voice.getsampwidth() == 2
         tag = np.frombuffer(voice.readframes(voice.getnframes()), dtype='<i2')
@@ -33,7 +35,7 @@ def append_tail(pcm, rate):
     result = mixed.astype('<i2').tobytes()
     assert result[:start*4] == pcm[:start*4]
     assert result[end*4:] == pcm[end*4:]
-    return result, dict(text='Sixty-four!', voice='Piper stock en_US-ryan-high; synthetic, not a clone',
+    return result, dict(text='Sixty-four!', voice=profile['voice'], processing=profile['processing'], reverb=profile['reverb'],
         start_seconds=START_SECONDS, end_seconds=end/rate, placement='Authored after the spoken X, over its remaining echo',
         previous_audio_unchanged=True, peak_pcm16=peak, asset_sha256=hashlib.sha256(TAIL.read_bytes()).hexdigest())
 

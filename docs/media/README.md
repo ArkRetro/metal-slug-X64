@@ -74,4 +74,5 @@ performance measurement. The native movie is separately tested in ares; see
 Original letters, particles, metallic impacts and reveal are retained; 6/4
 numerals fall into the reveal, turn gold, and the prompt reads PRESS START.
 The original announcement says Metal Slug X, followed by an arcade-style
-synthetic "sixty-four" at 8.60 s. The rejected static/generic-voice video remains historical only.
+synthetic "sixty-four" at 8.60 s. The current revision uses a lower male
+base voice, stronger delivery and diffuse room reverb. The rejected static/generic-voice video remains historical only.

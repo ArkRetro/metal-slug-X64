@@ -4,23 +4,29 @@
   "title_cadence": "601 unique / 0 dropped",
   "pcm_rate": 48000,
   "channels": 2,
-  "source_pcm_correlation_after_clock_fit": 0.9922732456651698,
-  "synthetic_tail_correlation": 0.9982458548233637,
+  "source_pcm_correlation_after_clock_fit": 0.9923869906771097,
+  "synthetic_tail_correlation": 0.9970994193309745,
   "clock_rate_fit": 0.9998136415525111,
   "offset_seconds": 2.6192360159817354,
   "minimum_correlation": 0.85,
   "announcement": {
     "text": "Sixty-four!",
-    "voice": "Piper stock en_US-ryan-high; synthetic, not a clone",
+    "voice": "Piper stock en_US-hfc_male-medium; male announcer",
+    "processing": "Lower register, 145 Hz body EQ, 1.8 kHz presence, 6:1 compression, diffuse room reverb",
+    "reverb": {
+      "type": "diffuse room convolution",
+      "t60_seconds": 0.38,
+      "wet_rms_ratio": 0.22
+    },
     "start_seconds": 8.6,
-    "end_seconds": 9.47,
+    "end_seconds": 9.867895833333334,
     "placement": "Authored after the spoken X, over its remaining echo",
     "previous_audio_unchanged": true,
     "peak_pcm16": 20450,
-    "asset_sha256": "947c8295e876928538fa479b48ca1cecceb8511354f6d448749b09b4c4445721"
+    "asset_sha256": "258bfe3066d7e10055f2b33724b1973de88923af60a8ab788accfeb4b7d17bfb"
   },
-  "pcm_sha256": "7e1f6d51d38d579ce41cd13b828aecad8c79c25933b689c6c2376f6c9e440b49",
-  "rom_sha256": "a77f4df75116a4078a1d089512e93edad6f72fbca9f38764e7fc953973aace7d",
-  "audio_sha256": "3b5c735948948355799d2d2586c6ec4255972ca9bc986d73e2ad05d9c318d3e7",
+  "pcm_sha256": "a522e9295db09fe226becaed2eb1fdc7b572494323b1544bbb408ec88d07daae",
+  "rom_sha256": "325973b51d889a3b63a31b0ad3a14d52cb69cf1011a1647602189ec0e577b080",
+  "audio_sha256": "e3da9b079f1cc862e8169803910d4bd98cf3ff0e5c2bf6fb140f0325e6d9a980",
   "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
 }

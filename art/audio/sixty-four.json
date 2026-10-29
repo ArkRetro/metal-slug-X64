@@ -1,0 +1,16 @@
+{
+  "voice": "Piper stock en_US-hfc_male-medium; male announcer",
+  "synthetic": true,
+  "source_model": "https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/hfc_male/medium",
+  "synthesis_length_scale": 0.88,
+  "pitch_ratio": 0.88,
+  "peak_pcm16": 12500,
+  "reverb": {
+    "type": "diffuse room convolution",
+    "t60_seconds": 0.38,
+    "wet_rms_ratio": 0.22
+  },
+  "processing": "Lower register, 145 Hz body EQ, 1.8 kHz presence, 6:1 compression, diffuse room reverb",
+  "duration_seconds": 1.2678958333333334,
+  "asset_sha256": "258bfe3066d7e10055f2b33724b1973de88923af60a8ab788accfeb4b7d17bfb"
+}

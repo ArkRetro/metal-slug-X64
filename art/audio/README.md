@@ -1,21 +1,35 @@
-# Active synthetic sixty-four tail
+# Active male sixty-four announcement
 
-`sixty-four.wav` says **Sixty-four!** in English. It is appended at 8.60 s of
-the reconstructed title, after the spoken X, while the original echo decays.
-It ends at 9.47 s, before the 10.1545 s title handoff. The original PCM is
-unchanged before and after the insertion region; no earlier effects are ducked.
+`sixty-four.wav` says **Sixty-four!** in English, using a new male base voice:
+Piper `en_US-hfc_male-medium`. This replaces the rejected higher Ryan voice.
+It enters at 8.60 s, after the spoken X, and its reverberation ends at 9.8679 s,
+before the 10.1545 s handoff. Original effects and earlier speech are preserved.
 
-The voice is Piper 1.8.0's public stock `en_US-ryan-high`, with length-scale
-1.0 and no sentence silence. It is a synthetic arcade-style addition, not a
-clone of the original announcer. Source model:
-https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/ryan/high
+The register is lowered by a factor of 0.88 with duration compensation.
+145 Hz body EQ, 1.8 kHz presence and 6:1 compression provide a stronger delivery;
+the peak is 12500 PCM16 (previously 8000). Reverb uses a deterministic diffuse
+room impulse with a 380 ms T60 and 22% wet RMS. It is not a repeated-word delay.
+The versioned profile and waveform hash are in `sixty-four.json`.
 
-Mastering trims external silence, raises pitch by a factor of 1.09 while
-preserving duration with atempo=0.917, applies 95 Hz/6.8 kHz band limits,
-+3 dB at 220 Hz and +2 dB at 2.2 kHz, compression, and low-level 65/115 ms echo.
-The peak is normalized to 8000 PCM16, with an 8 ms attack and 15 ms tail fade.
-The versioned asset is mono PCM16/48 kHz. It is mixed into the original stereo
-PCM offline; the N64 uses the resulting uncompressed stereo WAV64 at 32 kHz.
+Source model:
+https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US/hfc_male/medium
+
+Reproduction with the local model and Piper installation:
+
+```
+PYTHONPATH=/workspace/toolchains/piperpy /workspace/toolchains/piperpy/bin/piper \
+  --model /workspace/toolchains/piper-voices/en_US-hfc_male-medium.onnx \
+  --input-file art/audio/sixty-four.txt \
+  --output-file build/title-audio/sixty-four-male-raw.wav \
+  --length-scale 0.88 --sentence-silence 0.0
+python3 tools/master_title_voice.py build/title-audio/sixty-four-male-raw.wav
+```
+
+Mastering uses ffmpeg, NumPy and SciPy offline; no runtime reverb is added
+to the N64 audio budget. The asset is mono PCM16/48 kHz, mixed offline into
+the original stereo track.
+N64 playback uses uncompressed stereo PCM16 WAV64 at 32 kHz. This is a stock
+synthetic male announcer, not a clone of the arcade actor.
 
 `tools/title_announcement.py CAPTURE` rebuilds only the title audio from its
 verified private source capture and the versioned voice asset. Repeating the

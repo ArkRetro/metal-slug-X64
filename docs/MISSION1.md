@@ -190,3 +190,8 @@ Las pruebas host recorren hasta 2212, comprueban cámara monótona y acotada,
 suelo Y=64, aterrizaje sobre el tejado Y=144 y la altura de cámara. La
 integración interna de entrada con audio y recorrido hasta cámara 1920 pasa en ares
 (ver `docs/PR2_REVIEW.md`). La prueba en MiSTer y en 4 MiB sigue pendiente.
+
+El resto de la misión (cámara 1920 hasta el final, con la arena del jefe) ya
+tiene captura reproducible, mapa y colisión validados, modelo de cámara medido
+e inventario de apariciones: véase [MISSION1_REST.md](MISSION1_REST.md). El
+runtime no se ha ampliado todavía.

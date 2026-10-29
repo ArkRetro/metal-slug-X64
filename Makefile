@@ -299,6 +299,7 @@ check-core: $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.
 	$(BUILD_DIR)/host/cinematic-codec
 	python3 tools/test_neo_scene.py
 	python3 tools/test_collision_audit.py
+	python3 tools/test_mission_rest.py
 	python3 tools/test_neo_queue_publication.py
 	python3 tools/test_vehicle_wreckage.py
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_soldier.c src/neo_soldier.c src/neo_rng.c -o $(BUILD_DIR)/host/soldier

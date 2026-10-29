@@ -313,7 +313,7 @@ check-core: $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.
 	$(BUILD_DIR)/host/marco-idle
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_diorama_building.c src/diorama_building.c src/retro25d.c -lm -o $(BUILD_DIR)/host/diorama-building
 	$(BUILD_DIR)/host/diorama-building
-	$(HOST_CC) $(HOST_CFLAGS) tools/test_marco_common.c src/marco_common.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-common
+	$(HOST_CC) $(HOST_CFLAGS) tools/test_marco_common.c src/marco_common.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-common
 	$(BUILD_DIR)/host/marco-common
 check: check-core $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
@@ -449,5 +449,5 @@ marco-body-regression.z64: N64_ROM_TITLE = "MSX MARCO BODY"
 $(BUILD_DIR)/tools/test_marco_common.o: tools/test_marco_common.c src/marco_common.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -c $< -o $@
-$(BUILD_DIR)/marco-common-regression.elf: $(BUILD_DIR)/tools/test_marco_common.o $(BUILD_DIR)/src/marco_common.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
+$(BUILD_DIR)/marco-common-regression.elf: $(BUILD_DIR)/tools/test_marco_common.o $(BUILD_DIR)/src/marco_common.o $(BUILD_DIR)/src/marco_upper.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
 marco-common-regression.z64: N64_ROM_TITLE = "MSX MARCO COMMON"

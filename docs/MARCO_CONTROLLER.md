@@ -407,3 +407,25 @@ servicios de mundo y las rutinas de daño/muerte. También siguen pendientes
 variantes de reposo, acciones especiales, todas las armas y la unión del catálogo
 de programas y eventos al renderizador activo. **El controlador de Marco no
 está integrado al 100 % en campaña.**
+
+## Orden de entrada y paleta del procesamiento común
+
+`marco_common_begin` traduce `0x0C32F4..0x0C3348`: exige el servicio de
+preparación `0x019432`, calcula +79 como 0/1 según +90==3 y llama a
+`marco_upper_update` nativo. Después conserva la escritura condicional de +9E
+cuando +5A==15 y calcula +9D con los valores de forma/variante posteriores al
+upper. Una prueba sintética ejecuta el upper real con servicios de selección y
+animación controlados, y comprueba el orden y los campos observables.
+
+`marco_common_palette` traduce `0x0C35D0..0x0C3634`: decrementa +99, usa el
+descriptor 0x390 para los valores resultantes 3/5 y exige el lookup nativo de
+las tablas de las LEA C35FC/C3614/C361C en los demás casos. El servicio de
+escritura representa `0x009D1E`; la paleta no se inventa ni se descarta. La
+prueba cubre la transición a cero, el caso +99==1, la variante de paleta y
+servicios ausentes. Estas pruebas pasan en host, sanitizadores y MIPS/ares;
+la cobertura nueva sigue siendo estática/sintética, no un replay dinámico MAME.
+
+**Falta C3348..C35D0**, con consultas y cambios de forma, entre ambas fases.
+No se deben concatenar begin/palette/tail omitiendo ese tramo ni conectarlas
+a campaña como si constituyeran un controlador completo. También siguen
+pendientes las rutinas de daño/muerte, acciones especiales y servicios reales.

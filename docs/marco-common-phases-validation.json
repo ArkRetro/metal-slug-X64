@@ -1,0 +1,12 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "8be28d209c894e316ca268913db5942beeb5a6ecbeb0d9a009748732782c03b9",
+  "suite": "common",
+  "limit": "Static addressed native translation with synthetic upper-controller coupling, palette timing and immunity/death scheduling tests. C3348..C35D0, dynamic original-game replay, real world services and campaign integration are incomplete.",
+  "source_rom_ranges": [
+    "0x0C32F4..0x0C3348",
+    "0x0C35D0..0x0C3634",
+    "0x0C3634..0x0C3776"
+  ]
+}

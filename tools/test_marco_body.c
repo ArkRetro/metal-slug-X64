@@ -2,8 +2,11 @@
 #include <assert.h>
 #include <stdio.h>
 #include "../src/marco_body.h"
+#ifdef __mips__
+#include <libdragon.h>
+#endif
 static unsigned selects,moves,animations;
-static bool land;
+static bool land,finish;
 static bool ms(void *c,marco_motion_table_t t,marco_motion_t *s,marco_animation_t *a) {
     (void)c;(void)t;(void)s;(void)a;++selects;return true;
 }
@@ -14,7 +17,9 @@ static bool cs(void *c,marco_crouch_table_t t,marco_crouch_t *s,marco_animation_
     (void)c;(void)t;(void)s;(void)a;++selects;return true;
 }
 static bool mm(void *c,marco_motion_service_t t,marco_motion_t *s,marco_animation_t *a) {
-    (void)c;(void)a;++moves;assert(t==MMM_AIR);
+    (void)c;(void)a;++moves;
+    if(t==MMM_GROUND) return true;
+    assert(t==MMM_AIR);
     if(land) s->player.upper.input.attributes|=64;
     else s->player.upper.input.attributes&=(uint16_t)~64u;
     return true;
@@ -23,7 +28,7 @@ static bool cm(void *c,marco_crouch_t *s,marco_animation_t *a) {
     (void)c;(void)s;(void)a;++moves;return true;
 }
 static bool ma(void *c,marco_motion_t *s,marco_animation_t *a,bool *done) {
-    (void)c;(void)s;(void)a;++animations;*done=false;return true;
+    (void)c;(void)s;(void)a;++animations;*done=finish;return true;
 }
 static bool ca(void *c,marco_crouch_t *s,marco_animation_t *a,bool *done) {
     (void)c;(void)s;(void)a;++animations;*done=false;return true;
@@ -35,9 +40,12 @@ static marco_body_t actor(marco_body_domain_t domain,uint16_t buttons) {
     b.motion.player.upper.gate.limit=255;
     b.motion.player.upper.packed=(uint32_t)buttons<<16;
     b.motion.player.field6c=8;
-    selects=moves=animations=0;land=false;return b;
+    selects=moves=animations=0;land=finish=false;return b;
 }
 int main(void) {
+#ifdef __mips__
+    debug_init_emulog();console_init();console_set_render_mode(RENDER_MANUAL);
+#endif
     marco_motion_services_t mv={.select=ms,.move=mm,.animate=ma};
     marco_crouch_services_t cv={.select=cs,.move=cm,.animate=ca};
     marco_stance_services_t sv={.select=ss};
@@ -64,8 +72,8 @@ int main(void) {
     assert(b.motion.mode==MMR_LAND_REQUEST && !b.motion.tail_call);
     assert(moves==2 && animations==2);
     b.motion.player.upper.packed=0;
-    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_EXTERNAL);
-    assert(moves==2 && animations==2 && selects==2);
+    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(moves==3 && animations==3 && selects==2);
     assert(b.domain==MARCO_BODY_STANCE && b.stance.mode==MST_IDLE);
     assert(b.stance.field1e==0x8834 && b.stance.field66==0x8834);
     /* Running -> crouch uses the same actor/clock, with no extra body step. */
@@ -75,11 +83,15 @@ int main(void) {
     assert(b.domain==MARCO_BODY_CROUCH && b.motion.player.mode==MCR_ENTER_WAIT);
     assert(selects==1 && moves==1 && animations==1);
     assert(b.motion.player.upper.combo95==19 && a.field50_tag==0x2d0ab4);
-    /* Stand-up initialization runs immediately, then exposes the idle boundary. */
+    /* Stand-up initialization and its first body step share this tick. */
     b=actor(MARCO_BODY_CROUCH,0);b.motion.player.mode=MCR_IDLE;
-    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_EXTERNAL);
+    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
     assert(b.domain==MARCO_BODY_STANCE && b.stance.mode==MST_IDLE);
-    assert(selects==1 && !moves && !animations);
+    assert(selects==1 && moves==1 && animations==1);
+    /* Clock completion schedules the next entry, without advancing it twice. */
+    finish=true;
+    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(b.stance.mode==MST_IDLE_FAST && selects==1 && moves==2 && animations==2);
     /* Running stop enters stance in the same tick, preserving an active aim. */
     b=actor(MARCO_BODY_MOTION,0);b.motion.mode=MMR_RUN;
     b.motion.player.upper.aim92=1;b.motion.player.upper.mode=MUP_ACTIVE;
@@ -99,4 +111,7 @@ int main(void) {
     assert(b.motion.player.failed && a.failed);
     assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_FAILED);
     puts("PASS: cross-controller same-tick branches, deferred landing and explicit external/failure boundaries");
+#ifdef __mips__
+    debugf("MSX BODY REGRESSION PASS\n");console_render();while(1) {}
+#endif
 }

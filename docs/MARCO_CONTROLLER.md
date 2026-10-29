@@ -345,8 +345,19 @@ los filtrados repetidos y sus efectos en +5F/+9A/+9B.
 
 El dispatcher conecta las salidas de reposo a carrera/salto/agachado en el mismo
 tick. `MSI_DRAW` señala la continuación en `0x0C2144`; `MSI_WORLD`, las consultas
-que empiezan en `0x0C2022`. Ambas siguen devolviendo `MARCO_BODY_EXTERNAL` y
-requieren completar la misma actualización, sin reintentar el filtrado ni
-presentar otro frame. La rama de ataque cercano también permanece externa.
+que empiezan en `0x0C2022`. `MSI_WORLD` sigue devolviendo `MARCO_BODY_EXTERNAL` y requiere completar
+la misma actualización, sin reintentar el filtrado ni presentar otro frame.
+`MSI_DRAW` ya ejecuta los servicios de apoyo y animación en el orden de
+`0x0C2144..0x0C215A`, programa `MST_IDLE_FAST` al completar y devuelve
+`MARCO_BODY_COMMON`. La rama de ataque cercano también permanece externa.
 Esta comprobación no avanza animaciones ni sustituye el controlador de campaña.
 Ver `marco-idle-validation.json`. No se publica un cartucho parcial.
+
+
+La continuación de reposo tiene ensayos sintéticos del despacho completo en
+host y MIPS/ares (`marco-body-native-63`): incorporación seguida de apoyo y
+animación en el mismo tick, aterrizaje diferido y reinicio de animación programado
+para el próximo tick. No se atribuye a estos ensayos cobertura dinámica original
+de `C2144` ni implementación nativa del terreno: los helpers siguen siendo
+servicios explícitos. `make marco-body-regression.z64` y
+`tools/test_marco_body_ares.py ROM --output RESULTADO_NUEVO` reproducen la prueba.

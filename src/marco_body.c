@@ -46,7 +46,15 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
                 case MSI_CROUCH:p->mode=MCR_ENTER;b->domain=MARCO_BODY_CROUCH;continue;
                 case MSI_FAST:b->stance.mode=MST_IDLE_FAST;continue;
                 case MSI_MELEE:m->mode=MMR_MELEE_REQUEST;b->domain=MARCO_BODY_MOTION;return MARCO_BODY_EXTERNAL;
-                case MSI_DRAW:case MSI_WORLD:return MARCO_BODY_EXTERNAL;
+                case MSI_DRAW: { // C2144..C215A: support first, then body clock.
+                    bool complete=false;
+                    if(!motion || !motion->move || !motion->animate ||
+                       !motion->move(motion->context,MMM_GROUND,m,a) ||
+                       !motion->animate(motion->context,m,a,&complete)) goto fail;
+                    if(complete) b->stance.mode=MST_IDLE_FAST;
+                    return MARCO_BODY_COMMON;
+                }
+                case MSI_WORLD:return MARCO_BODY_EXTERNAL;
                 }
                 goto fail;
             }

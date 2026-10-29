@@ -102,6 +102,15 @@ if os.getenv('MSX_MOTION_TRACE')=='1' then
   dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_MOTION_%s frame=%%d %s\\n",temp9,%s;g}',p[1],p[2],fmt,args))
  end
 end
+if os.getenv('MSX_IDLE_TRACE')=='1' then
+ dbg:command('temp5=0')
+ local fmt='attr=%04X f5f=%02X f6c=%02X f9a=%02X f9b=%02X f9c=%02X f9d=%02X packed=%08X gate_mode=%02X gate_current=%02X gate_limit=%02X'
+ local args='w@(a6+14),b@(a6+5f),b@(a6+6c),b@(a6+9a),b@(a6+9b),b@(a6+9c),b@(a6+9d),d@(a5+69ec),b@(a5+4718+w@(a6+70)),b@(a5+471a+w@(a6+70)),b@(a5+471c+w@(a6+70))'
+ dbg:command(string.format('bpset c1fa6,temp9>=%x && a6==1014c4 && temp5==0,{temp5=1;printf "MARCO_IDLE_IN frame=%%d %s\\n",temp9,%s;g}',plan.first,fmt,args))
+ for _,pc in ipairs({0xc271c,0xc2214,0xc285c,0xc2654,0xc215e,0xc1f4a,0xc2144,0xc2022}) do
+  dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_IDLE_OUT frame=%%d exit=%%08X %s\\n",temp9,%x,%s;temp5=0;g}',pc,fmt,pc,args))
+ end
+end
 if os.getenv('MSX_STANCE_TRACE')=='1' then
  -- Entry initializers stop before the idle update at C1FA6.
  dbg:command('temp5=0')

@@ -38,7 +38,18 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
             }
             b->domain=MARCO_BODY_MOTION;break;
         case MARCO_BODY_STANCE:
-            if(b->stance.mode==MST_IDLE) return MARCO_BODY_EXTERNAL;
+            if(b->stance.mode==MST_IDLE) {
+                switch(marco_stance_idle_branch(m)) {
+                case MSI_RUN:m->mode=MMR_RUN_START;b->domain=MARCO_BODY_MOTION;continue;
+                case MSI_JUMP:m->mode=MMR_JUMP;b->domain=MARCO_BODY_MOTION;continue;
+                case MSI_FALL:m->mode=MMR_FALL;b->domain=MARCO_BODY_MOTION;continue;
+                case MSI_CROUCH:p->mode=MCR_ENTER;b->domain=MARCO_BODY_CROUCH;continue;
+                case MSI_FAST:b->stance.mode=MST_IDLE_FAST;continue;
+                case MSI_MELEE:m->mode=MMR_MELEE_REQUEST;b->domain=MARCO_BODY_MOTION;return MARCO_BODY_EXTERNAL;
+                case MSI_DRAW:case MSI_WORLD:return MARCO_BODY_EXTERNAL;
+                }
+                goto fail;
+            }
             if(!stance || !marco_stance_enter(&b->stance,m,a,stance)) goto fail;
             break;
         default:goto fail;

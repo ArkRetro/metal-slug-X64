@@ -1,4 +1,19 @@
 #include "marco_stance.h"
+static uint32_t idle_input(marco_upper_t *u) {
+    return marco_input_filter(&u->input,u->packed,u->gate);
+}
+marco_idle_branch_t marco_stance_idle_branch(marco_motion_t *m) {
+    marco_crouch_t *p=&m->player;marco_upper_t *u=&p->upper;
+    if(!(u->input.attributes&64u)) return MSI_FALL;
+    if(p->field6c==12) return MSI_CROUCH;
+    uint32_t buttons=idle_input(u);
+    if(buttons&12u) return MSI_RUN;
+    if(buttons&32u) return MSI_JUMP;
+    if(buttons&2u) return MSI_CROUCH;
+    if(p->field9d && (u->input.flags9a&1u) && (idle_input(u)&16u)) return MSI_MELEE;
+    if(!(u->input.flags9a&32u)) return (idle_input(u)&81u)?MSI_FAST:MSI_DRAW;
+    return (idle_input(u)&81u)?MSI_DRAW:MSI_WORLD;
+}
 bool marco_stance_enter(marco_stance_t *s,marco_motion_t *m,marco_animation_t *a,const marco_stance_services_t *v) {
     if(!s || !m || !a || !v || m->player.failed || m->player.upper.failed || a->failed) return false;
     marco_crouch_t *p=&m->player;marco_upper_t *u=&p->upper;

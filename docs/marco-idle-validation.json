@@ -1,0 +1,10 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "27952ec637bcb26c539392a27d0e5dc61acc456f42a4b9cd08b4f5d8026b4682",
+  "log_sha256": "cdd88bfa0ee4eb3d053e56f6e909c46b592c276abef68193cc14bccdcd219252",
+  "fixture_sha256": "f1e4bd20c279ae65faa695e32bc50c66a1c41b992d3fd763b8d1c982f12592ba",
+  "suite": "idle",
+  "calls": 800,
+  "limit": "800 idle branch decisions at C1FA6..C2022; input filter side effects and exit destination match. No idle world decisions, animation advance, rendering or full campaign integration claim."
+}

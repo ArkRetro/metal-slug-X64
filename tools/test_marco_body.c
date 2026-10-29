@@ -42,6 +42,15 @@ int main(void) {
     marco_crouch_services_t cv={.select=cs,.move=cm,.animate=ca};
     marco_stance_services_t sv={.select=ss};
     marco_animation_t a;marco_animation_reset(&a);
+    marco_body_t idle=actor(MARCO_BODY_STANCE,32);idle.stance.mode=MST_IDLE;
+    assert(marco_body_update(&idle,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(idle.domain==MARCO_BODY_MOTION && idle.motion.mode==MMR_AIR);
+    assert(selects==1 && moves==1 && animations==1);
+    idle=actor(MARCO_BODY_STANCE,2);idle.stance.mode=MST_IDLE;
+    marco_animation_reset(&a);
+    assert(marco_body_update(&idle,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(idle.domain==MARCO_BODY_CROUCH && idle.motion.player.mode==MCR_ENTER_WAIT);
+    assert(selects==1 && moves==1 && animations==1);
     /* Crouch -> jump must execute air physics and animate in this very tick. */
     marco_body_t b=actor(MARCO_BODY_CROUCH,32);b.motion.player.mode=MCR_IDLE;
     b.motion.player.upper.bombs=7;
@@ -54,6 +63,7 @@ int main(void) {
     assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
     assert(b.motion.mode==MMR_LAND_REQUEST && !b.motion.tail_call);
     assert(moves==2 && animations==2);
+    b.motion.player.upper.packed=0;
     assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_EXTERNAL);
     assert(moves==2 && animations==2 && selects==2);
     assert(b.domain==MARCO_BODY_STANCE && b.stance.mode==MST_IDLE);

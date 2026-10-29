@@ -21,4 +21,12 @@ typedef struct {
  * Does not advance animation or run the C1FA6 idle body. The owner must enter
  * that body in this same tick; MST_IDLE is an explicit boundary, not a frame. */
 bool marco_stance_enter(marco_stance_t*,marco_motion_t*,marco_animation_t*,const marco_stance_services_t*);
+typedef enum {
+    MSI_FALL,MSI_CROUCH,MSI_RUN,MSI_JUMP,MSI_MELEE,MSI_FAST,
+    MSI_DRAW,MSI_WORLD
+} marco_idle_branch_t;
+/* C1FA6..C2022: original input priority and filter side effects. MSI_DRAW
+ * continues at C2144; MSI_WORLD needs the original world/idle decisions.
+ * This is a branch decision, not a completed body update. */
+marco_idle_branch_t marco_stance_idle_branch(marco_motion_t*);
 #endif

@@ -334,3 +334,19 @@ make check-core
 make marco-stance-regression.z64
 python3 tools/test_rng_ares.py marco-stance-regression.z64 --suite stance --output RESULTADO_NUEVO
 ```
+
+## Decisiones del reposo
+
+`marco_stance_idle_branch` recupera ROM `0x0C1FA6..0x0C2022`. Una captura
+independiente de 2.952 ticks aporta 800 decisiones: coinciden el destino y todos
+los campos de entrada observados en host y MIPS/ares. La prioridad original es
+suelo, variante +6C=12, dirección, salto, agachado y ataque cercano. Se conservan
+los filtrados repetidos y sus efectos en +5F/+9A/+9B.
+
+El dispatcher conecta las salidas de reposo a carrera/salto/agachado en el mismo
+tick. `MSI_DRAW` señala la continuación en `0x0C2144`; `MSI_WORLD`, las consultas
+que empiezan en `0x0C2022`. Ambas siguen devolviendo `MARCO_BODY_EXTERNAL` y
+requieren completar la misma actualización, sin reintentar el filtrado ni
+presentar otro frame. La rama de ataque cercano también permanece externa.
+Esta comprobación no avanza animaciones ni sustituye el controlador de campaña.
+Ver `marco-idle-validation.json`. No se publica un cartucho parcial.

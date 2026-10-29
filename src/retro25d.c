@@ -23,6 +23,16 @@ bool retro_plane_projection(retro_camera_t c,float z,retro_plane_view_t *out) {
     float ratio=c.focal/distance,scale=(c.focal+z)/distance;
     *out=(retro_plane_view_t){scale,160*(1-scale)-c.x*ratio,120*(1-scale)-c.y*ratio};return true;
 }
+/* Authored 2D transforms: constant scale, independent scroll, no perspective.
+ * Terrain/props stay in the gameplay plane for contact and collision. */
+bool retro_layered_2d_projection(retro_camera_t c,unsigned layer,retro_plane_view_t *out) {
+    if(layer>=5 || !out) return false;
+    static const float speed[5]={.04f,.45f,1,1,1};
+    static const float size[5]={1.08f,1.04f,1,1,1};
+    float scale=size[layer];
+    *out=(retro_plane_view_t){scale,160*(1-scale)-c.x*speed[layer],120*(1-scale)-c.y*speed[layer]};
+    return true;
+}
 bool retro_background_projection(retro_camera_t c,unsigned layer,float depth,retro_plane_view_t *out) {
     if (layer>=5) return false;
     if (layer>=2) {

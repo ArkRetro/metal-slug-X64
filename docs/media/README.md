@@ -38,3 +38,9 @@ art is supplied. Roofs and other buildings remain pending.
 Visual review rejected both building-volume recordings: silhouette mismatch
 and distorted facade details. Building extrusion is now disabled in the active
 renderer. These files remain historical evidence, not approved visual results.
+
+`metal-slug-x-layered-2d.mp4` is the current requested direction: fixed 2D
+scales (far 1.08, middle 1.04, action 1), scroll ratios .04/.45/1 and contact
+shadows only. No perspective background projection, building extrusion, fog
+or added lighting. Captured in ares at 20 video fps, 44.6 seconds, no audio.
+Terrain and collidable props retain their original action-plane coordinates.

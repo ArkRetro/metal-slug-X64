@@ -10,15 +10,13 @@ static unsigned pal_lru[16];
 static bool depth_mode;
 static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
-static bool observed_light;
 void scene_render_set_depth_mode(bool enabled) {depth_mode=enabled;}
 void scene_render_depth_frame(const retro_frame_t *f) {
     depth_frame=*f;
-    if (depth_mode && f->light_count && !observed_light) {
-        observed_light=true;debugf("MSX DEPTH light response active\n");
-    }
+    // This presentation uses layered 2D scenery and contact shadows only.
+    depth_frame.light_count=0;depth_frame.camera.z=0;
 }
-void scene_render_foreground_fog(void) {if (depth_mode) retro_effects_fog(&depth_frame,2);}
+void scene_render_foreground_fog(void) {}
 void scene_render_forget_texture(void) {
     last_page=last_slot=last_format=last_width=last_height=-1;
     for (unsigned i=0;i<16;i++) pal_ids[i]=-1;
@@ -98,7 +96,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     }
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
-        bool ok=retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]);
+        bool ok=retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
         assertf(ok,"Retro plane projection");(void)ok;
     }
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
@@ -137,9 +135,6 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
         blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
       }
-      if (layer<2) {
-          retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
-      }
     }
     retro_effects_mesh(&depth_frame);
     rdpq_set_scissor(0,0,320,240);
@@ -157,8 +152,8 @@ void scene_render_text(int x,int y,const char *text) {
 void scene_render_end(void) {
     if (!(frame%300)) {
         scene_cache_stats_t s=scene_cache_stats();(void)s;
-        if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=3 planes=%u shadows=%u shadow_tris=%u\n",
-            retro_effects_triangles(),RETRO_MAX_TRIANGLES,RETRO_FOG_BYTES,depth_frame.light_count,
+        if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=0 planes=%u shadows=%u shadow_tris=%u\n",
+            retro_effects_triangles(),RETRO_MAX_TRIANGLES,0u,depth_frame.light_count,
             retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
         debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),

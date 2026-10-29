@@ -1,3 +1,8 @@
+Current visual direction: fixed-scale 2D scenery layers with distinct scroll
+speeds and contact shadows only. Building extrusion, perspective background
+projection, fog and added dynamic lighting are disabled in the active renderer.
+See `RETRO25D.md` and `layered-2d-validation.json`.
+
 # Native port status and next delivery
 
 Current priority from the user: complete **all Marco animations** before further

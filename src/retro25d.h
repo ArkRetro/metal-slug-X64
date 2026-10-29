@@ -36,6 +36,7 @@ retro_vec3_t retro_billboard_point(float asset_x,float asset_y,float depth,float
 bool retro_plane_projection(retro_camera_t camera,float depth,retro_plane_view_t *out);
 /* Layers 2..4 share gameplay coordinates (full-speed terrain and props).
  * Their texture projection must stay aligned with sprites and 2D collision. */
+bool retro_layered_2d_projection(retro_camera_t camera,unsigned layer,retro_plane_view_t *out);
 bool retro_background_projection(retro_camera_t camera,unsigned layer,float depth,retro_plane_view_t *out);
 float retro_light_energy(retro_vec3_t point,retro_vec3_t normal,const retro_light_t *light);
 void retro_lighting(const retro_frame_t *frame,retro_vec3_t point,retro_vec3_t normal,float rgba[4]);

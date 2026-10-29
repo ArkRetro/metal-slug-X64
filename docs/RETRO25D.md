@@ -1,3 +1,8 @@
+> Presentación vigente: capas 2D reescaladas a tamaño fijo, desplazamiento
+> independiente y sombras de contacto. La perspectiva, la niebla, las luces
+> añadidas y las extrusiones de edificios están desactivadas. Las secciones
+> de esos efectos conservan el historial y las herramientas experimentales.
+
 # Modo visual 2.5D (`depth25d`, activo por defecto)
 
 El port compila por defecto el modo `depth25d`: cambios sutiles en tres
@@ -337,3 +342,21 @@ textura lateral de pared sin puertas/ventanas copiadas del borde, UV con densida
 de texel consistente y cubiertas que cierren la geometría. La profundidad de
 96 unidades de la prueba también debe revisarse. No hay una versión corregida
 de volumen de edificios integrada todavía.
+
+
+## Capas 2D y sombras (dirección vigente)
+
+`retro_layered_2d_projection` aplica transformaciones afines constantes. Capa 0:
+velocidad 0,04, escala 1,08; capa 1: velocidad 0,45, escala 1,04. Las capas
+2/3/4 conservan escala 1 y velocidad 1, porque contienen terreno, plataformas
+y props del plano de acción. La capa 2 es la recarga del banco intermedio a
+velocidad completa que hace el recorrido original, no otro fondo decorativo
+independiente. Se mantiene ese cambio de banco y las colisiones.
+
+Las escalas no cambian con la cámara Z ni la focal y no deforman edificios.
+La niebla de fondo/frente no se dibuja. El renderer descarta las luces del frame
+y fuerza cámara Z=0 antes del pase de sombras: no hay overlays de iluminación
+ni wrappers de edificios, únicamente los abanicos de sombra de contacto.
+La configuración histórica `depth25d` selecciona esta presentación por
+compatibilidad con los comandos de compilación existentes; su nombre no indica
+que se siga usando perspectiva en los fondos. `classic` mantiene su ruta previa.

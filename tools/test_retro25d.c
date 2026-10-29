@@ -177,6 +177,17 @@ static void test_events(void) {
 }
 int main(void) {
     retro_camera_t camera={64,0,0,320};retro_projected_t q;
+    // Constant layer sizes and speeds must not depend on camera Z/focal.
+    for(unsigned layer=0;layer<5;layer++) {
+        retro_plane_view_t a,b;
+        assert(retro_layered_2d_projection((retro_camera_t){0,0,0,320},layer,&a));
+        assert(retro_layered_2d_projection((retro_camera_t){100,0,100,20},layer,&b));
+        near(a.scale,b.scale);near(a.offset_y,b.offset_y);
+        if(layer==0) near(a.offset_x-b.offset_x,4);
+        else if(layer==1) near(a.offset_x-b.offset_x,45);
+        else {near(a.offset_x-b.offset_x,100);near(a.scale,1);}
+    }
+    assert(!retro_layered_2d_projection(camera,5,NULL));
     const float depths[]={0,320.0f/3,320},ratios[]={1,.75,.5};
     for (unsigned i=0;i<3;i++) {
         retro_vec3_t p=retro_billboard_point(100,80,depths[i],320);

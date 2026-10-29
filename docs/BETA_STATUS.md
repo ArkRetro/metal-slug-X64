@@ -70,9 +70,23 @@ not yet been replaced. See `docs/SOLDIER_ATTACK.md` and
 `docs/soldier-attack-state-validation.json`.
 
 The port is not a complete beta. Original game logic, weapons, vehicles, bosses,
-audio, HUD and the six-mission campaign are not complete. Three provisional
-guards and REGION END are not substitutes for that coverage. Neither a graphics
-test nor a Neo Geo emulator boot is evidence that the native port is finished.
+audio, HUD and the six-mission campaign are not complete. The playable region's
+rebel soldiers are now the ported original logic (see below), but REGION END is
+still a port construct. Neither a graphics test nor a Neo Geo emulator boot is
+evidence that the native port is finished.
+
+The three provisional guards are gone. The playable Mission 1 region runs the
+native world: the original level script (2D6314..2D651A), the rebel soldier
+constructor and routine family, pistol/knife deaths, thrown objects and death
+splashes, in the original actor-list order with native RNG scheduling. The
+closed-loop test replays four MAME captures (1811 updates, 2696 soldier
+states, 152 thrown-object positions, RNG ring and delay grid after every
+update) injecting only the inputs of actors the port does not have. Sprites
+are the original descriptors (487, verified pixel-exact on 25 captured
+actors) with the original logical palettes. Still external: the other
+spawn-table entities of the region (prisoners, scene objects), unobserved
+death-table entries, five unobserved palettes and sound playback. See
+`docs/SOLDIER_WORLD.md`, `docs/SOLDIER_KERNEL.md` and the fixtures under `data/`.
 
 The first mission-1 soldier is now correlated with RAM slot 0x101F14 in a
 specific clean euro-BIOS capture. Actual debugger watchpoints, breakpoints and

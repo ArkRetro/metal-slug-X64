@@ -18,9 +18,9 @@ static neo_anim_draw_t project(const neo_anim_state_t *s,const neo_anim_render_t
     else if ((c->flags>>4)<4u) attr=(uint16_t)((attr&255u)|((unsigned)r->palettes[c->flags>>4]<<8));
     return (neo_anim_draw_t){c->asset,x,y,attr,r->z};
 }
-neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *s,neo_anim_render_t *r,
+static neo_anim_result_t step(neo_anim_state_t *s,neo_anim_render_t *r,
     neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context,
-    neo_anim_field_t field,void *field_context) {
+    neo_anim_field_t field,void *field_context,const neo_anim_actor_t *actor) {
     if (!s->program) return NEO_ANIM_COMPLETE; // 004284: carry set, no updates.
     if (s->flash && !(s->flash&0x80u)) --s->flash; // signed TST.B/BLE at 004290.
     unsigned pc=s->cursor;
@@ -102,6 +102,39 @@ neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *s,neo_anim_render_t *r,
             }
             s->cursor=(uint16_t)pc;break;
         }
+        case NEO_ANIM_SET_BYTE:case NEO_ANIM_SET_WORD:case NEO_ANIM_SET_LONG: /* 00445A/004464/004470 */
+            if (!actor || !actor->write_field || !actor->write_field(actor->context,c->target,
+                c->kind==NEO_ANIM_SET_BYTE?1u:c->kind==NEO_ANIM_SET_WORD?2u:4u,c->asset)) return NEO_ANIM_UNSUPPORTED;
+            s->cursor=(uint16_t)pc;break;
+        case NEO_ANIM_DEC_BYTE: { /* 00447C: SUBQ.B #1 */
+            uint8_t v;
+            if (!actor || !actor->read_byte || !actor->write_field || !actor->read_byte(actor->context,c->target,&v) ||
+                !actor->write_field(actor->context,c->target,1,(uint8_t)(v-1u))) return NEO_ANIM_UNSUPPORTED;
+            s->cursor=(uint16_t)pc;break;
+        }
+        case NEO_ANIM_COND_JUMP: { /* 0044A6: jump when (field!=0)==(flag!=0) */
+            uint8_t v;
+            if (!actor || !actor->read_byte || !actor->read_byte(actor->context,(uint16_t)c->asset,&v)) return NEO_ANIM_UNSUPPORTED;
+            if ((v!=0)==(c->operand!=0)) {if (c->target>=s->program->count) return NEO_ANIM_INVALID;pc=c->target;}
+            s->cursor=(uint16_t)pc;break;
+        }
+        case NEO_ANIM_SWITCH: { /* 0044BC: entries follow as JUMP commands */
+            uint8_t v;
+            if (!actor || !actor->read_byte || !actor->read_byte(actor->context,(uint16_t)c->asset,&v)) return NEO_ANIM_UNSUPPORTED;
+            if ((unsigned)pc+c->operand>s->program->count) return NEO_ANIM_INVALID;
+            if (v<c->operand) {
+                const neo_anim_command_t *e=&s->program->commands[pc+v];
+                if (e->kind!=NEO_ANIM_JUMP || e->target>=s->program->count) return NEO_ANIM_INVALID;
+                pc=e->target;
+            } else pc+=c->operand;
+            s->cursor=(uint16_t)pc;break;
+        }
+        case NEO_ANIM_SOUND: /* 004486: sound request through 0120F8 */
+            if (actor && actor->sound) actor->sound(actor->context,c->target);
+            s->cursor=(uint16_t)pc;break;
+        case NEO_ANIM_CALL: /* 0044DA with a callback the actor has recovered */
+            if (!actor || !actor->call || !actor->call(actor->context,c->asset,c->target,r)) return NEO_ANIM_UNSUPPORTED;
+            s->cursor=(uint16_t)pc;break;
         case NEO_ANIM_UNRECOVERED:return NEO_ANIM_UNSUPPORTED;
         default:return NEO_ANIM_INVALID;
         }
@@ -109,6 +142,15 @@ neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *s,neo_anim_render_t *r,
     return NEO_ANIM_BUDGET_EXHAUSTED;
 }
 
+neo_anim_result_t neo_anim_step_fields(neo_anim_state_t *s,neo_anim_render_t *r,
+    neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context,
+    neo_anim_field_t field,void *field_context) {
+    return step(s,r,emit,context,budget,event,event_context,field,field_context,0);
+}
+neo_anim_result_t neo_anim_step_actor(neo_anim_state_t *s,neo_anim_render_t *r,
+    neo_anim_emit_t emit,void *context,unsigned budget,const neo_anim_actor_t *actor) {
+    return step(s,r,emit,context,budget,actor?actor->event:0,actor?actor->context:0,0,0,actor);
+}
 neo_anim_result_t neo_anim_step_events(neo_anim_state_t *s,neo_anim_render_t *r,
     neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context) {
     return neo_anim_step_fields(s,r,emit,context,budget,event,event_context,0,0);

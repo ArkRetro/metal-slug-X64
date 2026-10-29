@@ -43,13 +43,18 @@ neo_throw_result_t neo_throw_actor_step(neo_throw_actor_t *s,const neo_throw_fra
         neo_throw_initialize(&s->body,f->players,s->field6e);s->phase=NEO_THROW_FLYING;
     } else if (s->phase==NEO_THROW_BURST) {
         if (!palette(s,service,&s->render,0x36c,0,true)) return unsupported(s);
-        s->body.field66=0x8820;s->body.word1e=0x8820;
-        pending_events|=NEO_THROW_AUDIO_0;
+        /* 03BE52 (terrain contact) or 03BE6C (hit), then 01C8FC. */
+        uint16_t layer=s->burst==NEO_THROW_BURST_CONTACT?0x1001:0x8820;
+        s->body.field66=layer;s->body.word1e=layer;
+        pending_events|=s->burst==NEO_THROW_BURST_CONTACT?NEO_THROW_AUDIO_1027:NEO_THROW_AUDIO_0;
         neo_anim_start(&s->animation,service->burst,0x100);
         s->body.flags15&=253u;s->animation.field50_tag=0;s->phase=NEO_THROW_EFFECT;
     }
     bool flying=s->phase==NEO_THROW_FLYING;
-    if (flying) {if (!neo_throw_free_step(&s->body,f->scene,f->epoch,0)) return unsupported(s);}
+    if (flying) {
+        if (service->air) {if (!service->air(service->context,&s->body,f)) return unsupported(s);}
+        else if (!neo_throw_free_step(&s->body,f->scene,f->epoch,0)) return unsupported(s);
+    }
     else if (s->phase==NEO_THROW_EFFECT) neo_contact_project(&s->body,f->scene,f->epoch);
     else return unsupported(s);
     s->render.x=(uint16_t)((uint32_t)s->body.projected_x>>16);s->render.y=(uint16_t)((uint32_t)s->body.projected_y>>16);
@@ -60,7 +65,10 @@ neo_throw_result_t neo_throw_actor_step(neo_throw_actor_t *s,const neo_throw_fra
     if (events) *events=pending_events;
     if (!flying && result==NEO_ANIM_COMPLETE) return done(s);
     if (flying) {
-        if ((s->body.flags15&128u) || f->region_code || f->other_contact) s->phase=NEO_THROW_BURST;
+        s->burst=NEO_THROW_BURST_NONE;
+        if (s->body.flags15&128u) s->burst=NEO_THROW_BURST_CONTACT;
+        if ((service->hit && service->hit(service->context,&s->body)) || f->other_contact || f->region_code) s->burst=NEO_THROW_BURST_HIT;
+        if (s->burst) s->phase=NEO_THROW_BURST;
         unsigned index=f->video_phase&3u;if (index>=3) index=1;
         s->render.attributes=(uint16_t)((s->render.attributes&255u)|((unsigned)s->render.palettes[index]<<8));
     }

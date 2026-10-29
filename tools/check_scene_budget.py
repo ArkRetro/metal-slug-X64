@@ -30,7 +30,10 @@ def check(meta_path,camera_path):
     banks=table(meta,'scene_banks');images=table(meta,'scene_images')
     map_images=table(meta,'scene_map_images');cells=table(meta,'scene_map_cells_data')
     fixed=set()
-    for start,first,second,*_ in banks:
+    # Bank 5 (SCENE_NATIVE, original soldier descriptors) is streamed on
+    # demand like the map, not pinned (scene_assets.c); it is checked below.
+    for index,(start,first,second,*_) in enumerate(banks):
+        if index==5:continue
         fixed.update(images[i][0]//8 for i in range(start,start+first+second))
     per_camera=[]
     for c in range(camera_max+1):
@@ -48,8 +51,15 @@ def check(meta_path,camera_path):
     report=dict(chunks=chunks,fixed_actor_chunks=len(fixed),worst_working_set=worst[0],worst_camera=worst[1],
                 cache_slots={k:min(v,chunks) for k,v in caches.items()},
                 fits_without_eviction={k:chunks<=v for k,v in caches.items()})
+    native=re.search(r'SCENE_NATIVE_PROGRAM_CHUNKS_MAX3 (\d+)',meta)
+    native=int(native.group(1)) if native else 0
+    report['native_three_programs']=native
+    report['native_fits']={k:worst[0]+native<=v for k,v in report['cache_slots'].items()}
     for name,slots in report['cache_slots'].items():
         assert worst[0]<=slots,('Scene working set exceeds cache',name,worst,slots)
+    # Three concurrent soldier animations must stay resident with the 8 MiB
+    # cache; with 4 MiB they stream (reported in native_fits).
+    assert report['native_fits']['8MiB'],('Native soldier set exceeds the 8 MiB cache',worst,native)
     return report
 
 if __name__=='__main__':

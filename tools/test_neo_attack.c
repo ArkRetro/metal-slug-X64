@@ -89,7 +89,7 @@ int main(void) {
     equal(&unsupported,&unchanged);
     neo_soldier_effects_t effects={&parent,&throw_scene,throw_spawn_epoch,palette,enqueue,NULL};
     unsigned attack=0;bool initialized=false;neo_throw_actor_t object;
-    neo_throw_services_t services={&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,child_palette,child_release,NULL};
+    neo_throw_services_t services={&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,child_palette,child_release,NULL,NULL,NULL};
     for (tick=attack_first_frame;attack<COUNT(attack_cases) || child_step<COUNT(object_cases);tick+=2) {
         if (attack<COUNT(attack_cases)) {
             const neo_anim_render_t *input=&attack_cases[attack].render;

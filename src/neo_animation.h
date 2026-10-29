@@ -10,7 +10,17 @@ typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
     NEO_ANIM_REPLACE_PALETTE,NEO_ANIM_SPAWN_THROW,NEO_ANIM_SELECT_POSE,
     NEO_ANIM_WRITE_BYTE,NEO_ANIM_WRITE_WORD,NEO_ANIM_WRITE_LONG,
     NEO_ANIM_DECREMENT_BYTE,NEO_ANIM_BRANCH_FIELD,NEO_ANIM_SELECT_FIELD_POSE,
-    NEO_ANIM_EVENT } neo_anim_kind_t;
+    NEO_ANIM_EVENT,
+    /* Soldier/death actor interface (neo_anim_step_actor): original
+     * 0x18/0x1C/0x20 field writes, 0x24 decrement, 0x0C conditional jump,
+     * 0x2C switch, 0x30 sound request and 0x14 callbacks without a dedicated
+     * kind. Writes/decrement: target = field offset, asset = value.
+     * COND_JUMP: asset = field, operand = flag, target = command index.
+     * SWITCH: asset = field, operand = entry count, followed by that many JUMP
+     * entries. SOUND: target = request id. CALL: asset = ROM routine label
+     * (provenance only), target = parameter word. */
+    NEO_ANIM_SET_BYTE,NEO_ANIM_SET_WORD,NEO_ANIM_SET_LONG,NEO_ANIM_DEC_BYTE,
+    NEO_ANIM_COND_JUMP,NEO_ANIM_SWITCH,NEO_ANIM_SOUND,NEO_ANIM_CALL } neo_anim_kind_t;
 typedef struct {
     neo_anim_kind_t kind;
     uint32_t asset;
@@ -56,4 +66,17 @@ neo_anim_result_t neo_anim_step(neo_anim_state_t *state,neo_anim_render_t *rende
     neo_anim_emit_t emit,void *context,unsigned budget);
 neo_anim_result_t neo_anim_step_events(neo_anim_state_t *state,neo_anim_render_t *render,
     neo_anim_emit_t emit,void *context,unsigned budget,neo_anim_event_t event,void *event_context);
+/* Native actor interface for the soldier commands. Field numbers are the
+ * original offsets used as names; the actor maps each one it models to a
+ * named C field and returns false for anything else (explicit failure). */
+typedef struct {
+    neo_anim_event_t event;
+    bool (*read_byte)(void *context,uint16_t field,uint8_t *value);
+    bool (*write_field)(void *context,uint16_t field,unsigned size,uint32_t value);
+    void (*sound)(void *context,uint16_t id);
+    bool (*call)(void *context,uint32_t routine,uint16_t parameter,neo_anim_render_t *render);
+    void *context;
+} neo_anim_actor_t;
+neo_anim_result_t neo_anim_step_actor(neo_anim_state_t *state,neo_anim_render_t *render,
+    neo_anim_emit_t emit,void *context,unsigned budget,const neo_anim_actor_t *actor);
 #endif

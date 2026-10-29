@@ -45,7 +45,7 @@ static void fault_setup(neo_throw_actor_t *actor,fault_owner_t *owner,neo_throw_
     neo_throw_spawn(&seed,&throw_source,&throw_scene,throw_spawn_epoch);
     neo_anim_render_t graphics=object_cases[0].render;graphics.attributes=seed.flags15;memset(graphics.palettes,0,sizeof(graphics.palettes));
     neo_throw_actor_start(actor,&seed,throw_field6e,object_initial_flash,&graphics);
-    *service=(neo_throw_services_t){&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,fault_palette,fault_release,owner};
+    *service=(neo_throw_services_t){&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,fault_palette,fault_release,owner,NULL,NULL};
     *frame=(neo_throw_frame_t){&throw_scene,&throw_players,&object_bounds,object_cases[0].video_phase,0,object_cases[0].epoch,false};
 }
 static void fault_failed(neo_throw_actor_t *actor,fault_owner_t *owner,neo_throw_services_t *service,neo_throw_frame_t *frame,unsigned events) {
@@ -111,7 +111,7 @@ int main(void) {
     neo_contact_actor_t child;neo_throw_spawn(&child,&throw_source,&throw_scene,throw_spawn_epoch);
     neo_anim_render_t graphics=object_cases[0].render;graphics.attributes=child.flags15;memset(graphics.palettes,0,sizeof(graphics.palettes));
     neo_throw_actor_t object;neo_throw_actor_start(&object,&child,throw_field6e,object_initial_flash,&graphics);
-    neo_throw_services_t services={&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,palette,release,NULL};
+    neo_throw_services_t services={&object_programs[0],&object_programs[1],object_flight_rectangle,object_burst_rectangle,palette,release,NULL,NULL,NULL};
     for (step=0;step<COUNT(object_cases);step++) {
         neo_throw_frame_t frame={&throw_scene,&throw_players,&object_bounds,object_cases[step].video_phase,object_cases[step].region_code,
             object_cases[step].epoch,object_cases[step].other_contact};

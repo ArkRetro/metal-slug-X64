@@ -115,10 +115,10 @@ La rama `+0x92!=0` está desensamblada; no ha sido ejercitada por esta captura.
 - Los tipos, parámetros y expresiones C propuestos por el decompilador. Sus
   archivos se llaman `TENTATIVE_*.c`; no son código nativo validado.
 
-Los encuentros de tres guardias de `gameplay.c` conservan valores de desarrollo
-propios —posiciones, dos impactos de vida, cadencia y checkpoint—. Están
-marcados como **PROVISIONALES**, no como lógica recuperada del 68000. Este
-trabajo no los presenta como IA original ni los reemplaza por hipótesis nuevas.
+Los encuentros de tres guardias provisionales de `gameplay.c` han sido
+sustituidos por la lógica recuperada: guion de nivel, constructor y rutinas del
+soldado, muerte, objetos lanzados y salpicaduras, verificados en bucle cerrado
+contra MAME. Ver [SOLDIER_WORLD.md](SOLDIER_WORLD.md).
 
 ## Ghidra y mapa Neo Geo usado
 

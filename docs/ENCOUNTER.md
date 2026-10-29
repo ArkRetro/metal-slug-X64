@@ -1,5 +1,13 @@
 # v6: zona de encuentros
 
+> **Actualización:** los tres guardias provisionales descritos aquí fueron
+> sustituidos por el mundo nativo de la región (guion de nivel, soldados
+> rebeldes, objetos lanzados y salpicaduras originales). Ver
+> [SOLDIER_WORLD.md](SOLDIER_WORLD.md). Las secciones siguientes se conservan
+> como historial de la versión v6; sus valores (posiciones 420/780/1140, dos
+> impactos de vida, proyectiles enemigos, "tres guardias") ya no existen en
+> `gameplay.c`.
+
 Nuevo: coordenadas de mundo, cámara horizontal, combate con soldados,
 proyectiles enemigos, tres puntos de vida para Marco, invulnerabilidad breve al
 recibir daño, checkpoint, reaparición y condición de salida. R reinicia todo.

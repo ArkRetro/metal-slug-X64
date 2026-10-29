@@ -7,14 +7,14 @@
   "unmodified_source_matches": true,
   "movie_bytes": 3147898,
   "movie_sha256": "a863b3c1c4ea3c22816396f2771d584f2b8c91c8bf5303ba48fd2b5c214410d4",
-  "audio_sha256": "6abcecdb0591bb3d2a7ce856d4623d69d8b2262e9478d1c2de4ec2adcbf661f5",
+  "audio_sha256": "3b5c735948948355799d2d2586c6ec4255972ca9bc986d73e2ad05d9c318d3e7",
   "provenance": {
     "capture.json": "7701be2ff1f06adaf18c491c1cda96f217ad0f7f58a17bd9bd35dc694ce6475d",
     "frames.jsonl": "60e52ec0347790d0fa3fea6eff5b194840ec19da689bb66b07bc370036c1471f",
     "raster.jsonl": "f238949d7723d5c4266079e5c56c46bd0e26a4969bcfcb598f097298680d3538",
     "reference.wav": "209ce9cf5e6cb25d7a8fc937080984142c9da2fc31786b7ae585ed241d62608a"
   },
-  "limits": "Animated X64 title adaptation; original letters, particles, flash and synchronized audio, authored extra digits and console prompts. Not complete Mission 1; original announcement says Metal Slug X, no cloned or synthetic 64 voice.",
+  "limits": "Animated X64 title with original motion/effects and synthetic sixty-four tail. Not a full Mission 1 demo or original actor voice clone.",
   "title": "METAL SLUG X64",
   "authored_digits_sha256": "52f80abf49c3f92d4b5f9f67ba39e53814c334151820d4d3c359600c228a481b",
   "authored_digit_keys": [
@@ -60,7 +60,17 @@
     253
   ],
   "audio_format": "Stereo PCM16 at 32000 Hz, uncompressed WAV64",
-  "presentation": "Animated X64 title: original reconstructed motion/effects, authored falling 64 and console prompts",
+  "announcement": {
+    "text": "Sixty-four!",
+    "voice": "Piper stock en_US-ryan-high; synthetic, not a clone",
+    "start_seconds": 8.6,
+    "end_seconds": 9.47,
+    "placement": "Authored after the spoken X, over its remaining echo",
+    "previous_audio_unchanged": true,
+    "peak_pcm16": 20450,
+    "asset_sha256": "947c8295e876928538fa479b48ca1cecceb8511354f6d448749b09b4c4445721"
+  },
+  "presentation": "Animated X64 title with original motion/effects and synthetic sixty-four after spoken X",
   "ares_auto": {
     "title_presentation": "animated_x64_original_motion_and_effects",
     "title_source_frames": 601,
@@ -80,10 +90,10 @@
     "decode_max_us": 12916,
     "decode_mean_us": 1527,
     "draw_max_us": 988,
-    "rom_sha256": "d41be84b1e1e9a1c792592b33a1d99bf7c85b23911fed0af9689dfde53a6be6c",
+    "rom_sha256": "cf485b6329fb2e66e09bc8d794843cf7f8e515e3e1f976be3c71db3dccdf8531",
     "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
     "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
-    "log_sha256": "208805b7c8740aafd1ec3c38a6a118d4b07ef994663a96bb5aaaf0d70381612a",
+    "log_sha256": "9620246c1cc2792cef2f8bcdf9d9649b2da6976fae0f25190013037a9d976d5f",
     "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
   },
   "ares_start": {
@@ -102,44 +112,49 @@
     "movie_read_bytes": 1246644,
     "audio_active_at_handoff": true,
     "diagnostic_toggle": true,
-    "decode_max_us": 12882,
+    "decode_max_us": 12883,
     "decode_mean_us": 1527,
-    "draw_max_us": 941,
-    "rom_sha256": "d41be84b1e1e9a1c792592b33a1d99bf7c85b23911fed0af9689dfde53a6be6c",
+    "draw_max_us": 944,
+    "rom_sha256": "cf485b6329fb2e66e09bc8d794843cf7f8e515e3e1f976be3c71db3dccdf8531",
     "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
     "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
-    "log_sha256": "c9e54000e9b07eb4f568799f96acb20e8885693b339fe2b5e4791af5d70d3f22",
+    "log_sha256": "e339378facd594ed1564a50003e6ddcd00022d09fbc333dffb88eca9b2f4b24e",
     "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
+  },
+  "audio_capture": {
+    "status": "PASS_PCM_AND_SYNTHETIC_TAIL",
+    "capture": "ares 146 ALSA PCM file sink",
+    "title_cadence": "601 unique / 0 dropped",
+    "pcm_rate": 48000,
+    "channels": 2,
+    "source_pcm_correlation_after_clock_fit": 0.9922732456651698,
+    "synthetic_tail_correlation": 0.9982458548233637,
+    "clock_rate_fit": 0.9998136415525111,
+    "offset_seconds": 2.6192360159817354,
+    "minimum_correlation": 0.85,
+    "announcement": {
+      "text": "Sixty-four!",
+      "voice": "Piper stock en_US-ryan-high; synthetic, not a clone",
+      "start_seconds": 8.6,
+      "end_seconds": 9.47,
+      "placement": "Authored after the spoken X, over its remaining echo",
+      "previous_audio_unchanged": true,
+      "peak_pcm16": 20450,
+      "asset_sha256": "947c8295e876928538fa479b48ca1cecceb8511354f6d448749b09b4c4445721"
+    },
+    "pcm_sha256": "7e1f6d51d38d579ce41cd13b828aecad8c79c25933b689c6c2376f6c9e440b49",
+    "rom_sha256": "a77f4df75116a4078a1d089512e93edad6f72fbca9f38764e7fc953973aace7d",
+    "audio_sha256": "3b5c735948948355799d2d2586c6ec4255972ca9bc986d73e2ad05d9c318d3e7",
+    "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
   },
   "title_cadence": "MSX TITLE cadence unique=601 dropped=0 source=601",
   "title_cache": "MSX CINEMATIC cache=3147898 streaming=0 prepared=23 prepared_bytes=3132416",
   "title_timing": "MSX TITLE timing audio_max_us=4377 decode_max_us=14351 draw_max_us=1006",
-  "audio_capture": {
-    "capture": "ares 146 ALSA PCM file sink; intro-preview ROM",
-    "title_cadence": "601 unique / 0 dropped",
-    "pcm_rate": 48000,
-    "channels": 2,
-    "nonzero_samples": 631159,
-    "source_pcm_correlation_after_clock_fit": 0.9920388825217618,
-    "clock_rate_fit": 0.9998136415525111,
-    "offset_seconds": 2.6192360159817354,
-    "pcm_sha256": "cd5b9612d265a15d5ed3d046e6b84d5e2b07bdf2f1ac9d2177573fe5d9048f1c",
-    "rom_sha256": "542fb3e073e21e489947755c62a8ed3053a8d8746f9ef695ecd5adae3de78d71",
-    "format": "Native title WAV64: uncompressed stereo PCM16, 32000 Hz",
-    "limits": "Emulator audio measurement, not bit-exact or listening-quality approval. Capture reached title and parachute completion; environment restart interrupted final hold/recording finalization. No MiSTer/full campaign stability claim.",
-    "status": "PASS_PCM_COMPARISON",
-    "minimum_correlation": 0.85,
-    "rejected_vadpcm_correlation": 0.5235228391416633
-  },
-  "rejected_run": {
-    "run": "x64-animated-title-92",
-    "dropped": 7,
-    "reason": "Old 3 MiB threshold prepared only seven frames; fixed by combined 6 MiB movie/preparation budget."
-  },
   "host_checks": [
     "All 601 title frame CRCs matched native C decoding",
     "All 230 entry frame CRCs matched native C decoding",
     "Physical palette banks/scanline/masked writes passed",
     "Transparent FIX/flash and landing regression passed"
-  ]
+  ],
+  "movie_unchanged_from_previous_validation": true
 }

@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Recover original title motion and sound; require every frame to match MAME."""
-import argparse,hashlib,json,struct,subprocess,wave,zipfile,zlib
+import argparse,hashlib,json,struct,zipfile,zlib
 from pathlib import Path
 import numpy as np
 from PIL import Image
 from render_intro_reference import Renderer,raster_states
-from pack_cinematic import delta,nanos
+from pack_cinematic import delta
 from title_x64 import load_digits,compose,DIGIT_KEYS,DIGIT_X
+from title_announcement import prepare as prepare_audio
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser();p.add_argument('capture',type=Path);p.add_argument('--bios',type=Path,required=True);p.add_argument('--first',type=int,default=300);p.add_argument('--last',type=int,default=660);p.add_argument('--adapt-x64',type=Path,help='Authored transparent paired digit sprite');a=p.parse_args()
 frames={r['frame']:r for l in (a.capture/'frames.jsonl').read_text().splitlines() if (r:=json.loads(l))}
@@ -38,13 +39,8 @@ count=len(packets);offset=32+4*(count+1);offsets=[offset]
 for packet in packets:offset+=len(packet);offsets.append(offset)
 movie=struct.pack('>4s7I',b'MSXC',1,304,224,count,max(map(len,packets)),59185606,1000000)+struct.pack('>'+str(count+1)+'I',*offsets)+b''.join(packets)
 (out/'title-motion.msxc').write_bytes(movie)
-with wave.open(str(a.capture/'reference.wav')) as w:
- assert w.getframerate()==48000 and w.getnchannels()==2
- first=nanos(frames[a.first]['time'])*48000//10**9;last=nanos(frames[a.last+1]['time'])*48000//10**9
- w.setpos(first);pcm=w.readframes(last-first)
- with wave.open(str(out/'title-motion.wav'),'wb') as target:target.setnchannels(2);target.setsampwidth(2);target.setframerate(48000);target.writeframes(pcm)
-subprocess.run(['/workspace/toolchains/package/opt/libdragon/bin/audioconv64','--wav-resample','32000','--wav-compress','0','--wav-loop','false','-o',str(out),str(out/'title-motion.wav')],check=True)
+announcement=prepare_audio(a.capture,out,frames,a.first,a.last,digits is not None)
 sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
 report=dict(status='SOURCE_FRAMES_MATCH_THEN_AUTHORED_X64' if digits else 'ALL_FRAMES_MATCH',first_frame=a.first,last_frame=a.last,frames=count,source_pixels_checked=count*304*224,unmodified_source_matches=True,frame_crc32=crcs,movie_bytes=len(movie),movie_sha256=sha(out/'title-motion.msxc'),audio_sha256=sha(out/'title-motion.wav64'),audio_format='Stereo PCM16 at 32000 Hz, uncompressed WAV64',provenance={n:sha(a.capture/n) for n in ('capture.json','frames.jsonl','raster.jsonl','reference.wav')},limits='Recovered original Metal Slug X title reference, not yet an X64 adaptation or complete Mission 1. No generated announcement is used.')
-if digits is not None:report.update(title='METAL SLUG X64',authored_digits_sha256=sha(a.adapt_x64),authored_digit_keys=DIGIT_KEYS,authored_digit_x=DIGIT_X,limits='Animated X64 title adaptation; original letters, particles, flash and synchronized audio, authored extra digits and console prompts. Not complete Mission 1; original announcement says Metal Slug X, no cloned or synthetic 64 voice.')
+if digits is not None:report.update(title='METAL SLUG X64',announcement=announcement,authored_digits_sha256=sha(a.adapt_x64),authored_digit_keys=DIGIT_KEYS,authored_digit_x=DIGIT_X,limits='Animated X64 title adaptation; original letters, particles, flash and synchronized audio, authored extra digits and console prompts. Not complete Mission 1; original announcement followed by synthetic sixty-four; not an original actor voice clone.')
 (out/'title-motion.json').write_text(json.dumps(report,indent=2)+'\n');print('PASS:', 'X64 title adaptation' if digits else 'original title motion and sound',count,'frames')

@@ -79,7 +79,7 @@ scene-debug.z64: $(BUILD_DIR)/scene-debug.dfs
 scene-release.z64: $(BUILD_DIR)/scene-release.dfs
 
 # Internal integration cartridge: not the requested complete Mission 1 demo.
-$(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64 $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/title.msxc &: tools/build_mission_fs.py filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
+$(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64 $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/title.msxc &: tools/build_mission_fs.py art/audio/sixty-four.wav filesystem/cinematics/title-motion.json filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
 	python3 tools/build_mission_fs.py
 $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/entry.json
 	python3 tools/compile_entry_meta.py

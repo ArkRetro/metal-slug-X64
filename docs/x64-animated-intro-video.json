@@ -3,8 +3,8 @@
   "frames": 601,
   "rate": "59185606/1000000",
   "presentation": "Offline preview of the authored title frames quantized to native RGB555 and expanded for video, with its source PCM. Not emulator screen capture or a hardware benchmark.",
-  "audio": "Original title effects and original Metal Slug X announcement. No synthesized or cloned sixty-four announcement.",
-  "video_sha256": "69a4027ad44071142e2577e1a0ce6c4ef46db951b152c76a4c084637d6947746",
+  "audio": "Original title effects and original Metal Slug X announcement, followed by a synthetic sixty-four tail.",
+  "video_sha256": "3aa93554160f1997b79dd1c378075690ec24af5db6c4b00e8cfaa9e3f329ed97",
   "movie_sha256": "a863b3c1c4ea3c22816396f2771d584f2b8c91c8bf5303ba48fd2b5c214410d4",
-  "audio_sha256": "6abcecdb0591bb3d2a7ce856d4623d69d8b2262e9478d1c2de4ec2adcbf661f5"
+  "audio_sha256": "3b5c735948948355799d2d2586c6ec4255972ca9bc986d73e2ad05d9c318d3e7"
 }

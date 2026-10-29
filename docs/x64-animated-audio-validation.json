@@ -1,17 +1,26 @@
 {
-  "capture": "ares 146 ALSA PCM file sink; intro-preview ROM",
+  "status": "PASS_PCM_AND_SYNTHETIC_TAIL",
+  "capture": "ares 146 ALSA PCM file sink",
   "title_cadence": "601 unique / 0 dropped",
   "pcm_rate": 48000,
   "channels": 2,
-  "nonzero_samples": 631159,
-  "source_pcm_correlation_after_clock_fit": 0.9920388825217618,
+  "source_pcm_correlation_after_clock_fit": 0.9922732456651698,
+  "synthetic_tail_correlation": 0.9982458548233637,
   "clock_rate_fit": 0.9998136415525111,
   "offset_seconds": 2.6192360159817354,
-  "pcm_sha256": "cd5b9612d265a15d5ed3d046e6b84d5e2b07bdf2f1ac9d2177573fe5d9048f1c",
-  "rom_sha256": "542fb3e073e21e489947755c62a8ed3053a8d8746f9ef695ecd5adae3de78d71",
-  "format": "Native title WAV64: uncompressed stereo PCM16, 32000 Hz",
-  "limits": "Emulator audio measurement, not bit-exact or listening-quality approval. Capture reached title and parachute completion; environment restart interrupted final hold/recording finalization. No MiSTer/full campaign stability claim.",
-  "status": "PASS_PCM_COMPARISON",
   "minimum_correlation": 0.85,
-  "rejected_vadpcm_correlation": 0.5235228391416633
+  "announcement": {
+    "text": "Sixty-four!",
+    "voice": "Piper stock en_US-ryan-high; synthetic, not a clone",
+    "start_seconds": 8.6,
+    "end_seconds": 9.47,
+    "placement": "Authored after the spoken X, over its remaining echo",
+    "previous_audio_unchanged": true,
+    "peak_pcm16": 20450,
+    "asset_sha256": "947c8295e876928538fa479b48ca1cecceb8511354f6d448749b09b4c4445721"
+  },
+  "pcm_sha256": "7e1f6d51d38d579ce41cd13b828aecad8c79c25933b689c6c2376f6c9e440b49",
+  "rom_sha256": "a77f4df75116a4078a1d089512e93edad6f72fbca9f38764e7fc953973aace7d",
+  "audio_sha256": "3b5c735948948355799d2d2586c6ec4255972ca9bc986d73e2ad05d9c318d3e7",
+  "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
 }

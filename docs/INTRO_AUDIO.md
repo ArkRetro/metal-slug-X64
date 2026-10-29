@@ -1,7 +1,7 @@
 > Active title: METAL SLUG X64 with original animated letters, particles, flash
 > and sound; authored falling 6/4 digits and PRESS START. The generic voice and
 > static card below are historical rejected experiments. The original spoken
-> announcement is retained (Metal Slug X); this is not a complete Mission 1 demo.
+> announcement is retained, followed by a synthetic "sixty-four"; this is not a complete Mission 1 demo.
 
 # Intro completa y sonido: alcance y evidencia
 
@@ -258,3 +258,20 @@ anterior medía 0,524 con el mismo método y se sustituyó. El arranque y los 60
 frames completos también pasan con PCM; el registro acústico está en
 `x64-animated-audio-validation.json`. Es una medición de salida del emulador,
 no una prueba de altavoces ni de hardware.
+
+## Synthetic sixty-four addition
+
+The user requested a similar synthetic voice immediately after the original X.
+`art/audio/sixty-four.wav` supplies only that English phrase, not a replacement
+for the original announcement. `title_announcement.py` mixes it at the authored
+8.60 s insertion point, ending at 9.47 s, over the remaining original echo.
+It starts from the verified source capture on every rebuild. Assertions verify
+that earlier/later PCM is unchanged, that it does not clip, and that the tag
+finishes before the title handoff. The N64 and exported video share this mix.
+This supersedes the earlier note that a spoken sixty-four is absent.
+
+The integrated synthetic-tail build passes automatic title playback and Start
+handoff in ares. Captured output correlates 0.9923 with the composite source;
+the insertion window alone correlates 0.9982. Both checks require >0.85.
+`verify_title_pcm.py CAPTURE --rom intro-preview.z64` reproduces this comparison.
+Build staging rejects a stale voice-asset hash or WAV64/metadata mismatch.

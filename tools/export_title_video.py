@@ -22,7 +22,7 @@ subprocess.run(['ffmpeg', '-nostdin', '-hide_banner', '-loglevel', 'error', '-y'
     str(a.output)], check=True)
 report = dict(title=meta['title'], frames=meta['frames'], rate='59185606/1000000',
     presentation='Offline preview of the authored title frames quantized to native RGB555 and expanded for video, with its source PCM. Not emulator screen capture or a hardware benchmark.',
-    audio='Original title effects and original Metal Slug X announcement. No synthesized or cloned sixty-four announcement.',
+    audio='Original title effects and original Metal Slug X announcement, followed by a synthetic sixty-four tail.',
     video_sha256=hashlib.sha256(a.output.read_bytes()).hexdigest(),
     movie_sha256=meta['movie_sha256'], audio_sha256=meta['audio_sha256'])
 (ROOT/'docs/x64-animated-intro-video.json').write_text(json.dumps(report,indent=2)+'\n')

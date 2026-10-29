@@ -6,6 +6,7 @@
 #include "scene_codec.h"
 #include "scene_meta.h"
 #include "mission_camera.h"
+#include "msx_perf.h"
 _Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay camera limits differ");
 
 typedef struct { int chunk; bool ready; unsigned used_epoch,lru; } cache_slot_t;
@@ -14,11 +15,12 @@ static int chunk_slot[SCENE_CHUNK_COUNT];
 static unsigned requests[SCENE_CHUNK_COUNT];
 static bool pinned[SCENE_CHUNK_COUNT];
 static uint8_t *cache,*staging[2];
-static unsigned capacity,clock_lru,epoch,rom;
+static unsigned capacity,clock_lru,epoch,rom,resident;
 static volatile unsigned completed;
 static int active_chunk=-1,active_slot=-1;
 static unsigned active_stage,last_stage;
 static scene_cache_stats_t stats;
+static unsigned timing_depth; // require_chunk times its whole wait; nested service is not counted twice.
 // PI status bits 0/1: DMA and IO busy. A nonblocking poll keeps prefetch asynchronous.
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
 
@@ -35,7 +37,7 @@ static void start_next(void) {
         if (victim<0 || slots[i].lru<slots[victim].lru) victim=(int)i;
     }
     if (victim<0) return;
-    if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++; }
+    if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++;resident--; }
     slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;requests[chosen]=0;
     active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;
     const scene_chunk_t *c=&scene_chunks[chosen];
@@ -48,6 +50,7 @@ static void start_next(void) {
 void scene_service(void) {
     if (active_chunk<0) { start_next();return; }
     if (pi_busy()) return;
+    uint32_t started=TICKS_READ();
     int chunk=active_chunk,slot=active_slot;unsigned stage=active_stage;
     active_chunk=active_slot=-1;
     // Reserve the other staging buffer and overlap its PI read with this decode.
@@ -60,7 +63,8 @@ void scene_service(void) {
     assertf(crc==c->crc,"Scene CRC mismatch");
     if (crc!=c->crc) abort();
     data_cache_hit_writeback(dst,SCENE_CHUNK_BYTES);
-    slots[slot].ready=true;slots[slot].lru=++clock_lru;
+    slots[slot].ready=true;slots[slot].lru=++clock_lru;resident++;
+    if (!timing_depth) msx_perf_add(MSX_PERF_ASSET,TICKS_READ()-started);
 }
 static void request(unsigned chunk,unsigned priority) {
     assertf(chunk<SCENE_CHUNK_COUNT,"Scene chunk ID");
@@ -68,9 +72,14 @@ static void request(unsigned chunk,unsigned priority) {
     if (requests[chunk]<priority) requests[chunk]=priority;
 }
 void scene_request_image(const scene_image_t *image,unsigned priority) { request(image->page/8,priority); }
+/* Every chunk decoded and resident: requests are no-ops (request() returns for
+ * resident chunks) and nothing is ever evicted again (eviction only serves a
+ * request). With the Expansion Pak the whole pack fits after startup. */
+bool scene_assets_all_resident(void) { return resident==SCENE_CHUNK_COUNT; }
 static void require_chunk(unsigned chunk) {
     if (chunk_slot[chunk]>=0 && slots[chunk_slot[chunk]].ready) { stats.hits++;return; }
     stats.misses++;request(chunk,255);
+    uint32_t started=TICKS_READ();timing_depth++;
     while (chunk_slot[chunk]<0 || !slots[chunk_slot[chunk]].ready) {
         scene_service();
         if (active_chunk>=0 || pi_busy()) dma_wait();
@@ -79,6 +88,7 @@ static void require_chunk(unsigned chunk) {
             assertf(active_chunk>=0 || (chunk_slot[chunk]>=0 && slots[chunk_slot[chunk]].ready),"Scene working set exceeds cache");
         }
     }
+    if (!--timing_depth) msx_perf_add(MSX_PERF_ASSET,TICKS_READ()-started);
 }
 const void *scene_page(const scene_image_t *image) {
     assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");

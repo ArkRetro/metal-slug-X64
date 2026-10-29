@@ -10,6 +10,7 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
 void scene_render_box(int x,int y,int width,int height,color_t color);
 void scene_render_text(int x,int y,const char *text);
 void scene_render_end(void);
+unsigned scene_render_draw_count(void);
 void scene_render_set_depth_mode(bool enabled);
 void scene_render_depth_frame(const retro_frame_t *frame);
 void scene_render_foreground_fog(void);

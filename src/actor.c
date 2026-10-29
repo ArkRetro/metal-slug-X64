@@ -8,6 +8,7 @@
 #include "vehicle_renderer.h"
 #include "retro_events.h"
 #include "mission_camera.h"
+#include "msx_perf.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -105,6 +106,7 @@ void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
+    msx_perf_frame_start();
     if (input.btn.l && !diagnostics_was_down) {
         diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
     }
@@ -121,9 +123,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     for (unsigned step=0;step<steps;step++) {
+        uint32_t step_start=TICKS_READ();
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
         pending_a=pending_b=false;
+        msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
     }
+    msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
     if (game.hits!=old_hits) debugf("MSX enemy hit=%u\n",game.hits);
     if (vehicle_health!=game.vehicle.health) debugf("MSX vehicle health=%u\n",game.vehicle.health);
     if (wreckage!=game.wreckage_cells) debugf("MSX vehicle wreckage=%u\n",game.wreckage_cells);
@@ -187,7 +192,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     retro_events_frame(&depth_events,&game,&effects);
     scene_render_depth_frame(&effects);
 #endif
-    scene_render_begin(surface);scene_render_background(game.camera,game.ticks);
+    msx_perf_mark(MSX_PERF_PREP);
+    scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
+    scene_render_background(game.camera,game.ticks);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.vehicle_flash && (game.ticks&2));
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],false);
     if (!(game.invulnerable && ((game.ticks/3)&1)))
@@ -201,6 +208,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
+    msx_perf_mark(MSX_PERF_ACTORS);
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
@@ -215,5 +223,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
     if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}
-    scene_render_end();
+    msx_perf_mark(MSX_PERF_HUD);
+    scene_render_end();msx_perf_mark(MSX_PERF_END);
+    msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));
+    msx_perf_frame_end();
 }

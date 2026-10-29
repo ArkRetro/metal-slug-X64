@@ -101,7 +101,8 @@ flechas, `a`=A, `b`=B, `e`=R, Return=Start): 8 rebeldes creados por el guion,
 registros importados; el segmento del camión no está portado, por lo que
 entre las cámaras 872 y 1920 no hay apariciones nativas) y se alcanza el fin
 de región en la cámara 1920. Sin descriptores ni rutinas no soportadas.
-Rendimiento observado: `draws` ≤ 501, CPU 19–20 ms por fotograma, `misses=0`
+Rendimiento observado: `draws` ≤ 516, CPU ≤ 8,8 ms por fotograma (antes 19–26 ms,
+ver [RENDIMIENTO.md](RENDIMIENTO.md)), 60 fotogramas por segundo, `misses=0`
 (caché de 8 MiB: todo el pack residente). Con 4 MiB el banco nativo se
 transmite bajo demanda (`tools/check_scene_budget.py`).
 

@@ -4,24 +4,33 @@
 #include "sprites.h"
 #include "actor.h"
 
-static uint8_t fixed_rom[131072];
-static uint8_t sprite_cache[SPRITES_PER_PAGE * 128];
+/* The FIX/C tile lab is a diagnostic: it needs the raw 48 MiB C-ROM copy, so
+ * only the separate lab cartridge (make mslugx-lab.z64) includes it. */
+#ifndef MSX_GRAPHICS_LAB
+#define MSX_GRAPHICS_LAB 0
+#endif
+
 static void fail(const char *message) {
     console_init();
     printf("MSX ERROR: %s\n", message);
     debugf("MSX ERROR: %s\n", message);
     for (;;) {}
 }
+#if MSX_GRAPHICS_LAB
+static uint8_t fixed_rom[131072];
+static uint8_t sprite_cache[SPRITES_PER_PAGE * 128];
 static void load_page(FILE *file, unsigned page) {
     if (fseek(file, (long)page * sizeof(sprite_cache), SEEK_SET) != 0 ||
         fread(sprite_cache, 1, sizeof(sprite_cache), file) != sizeof(sprite_cache))
         fail("Lectura de pagina C");
     debugf("MSX C page %u loaded\n", page);
 }
+#endif
 int main(void) {
     debug_init_emulog();
     console_init();
     if (dfs_init(DFS_DEFAULT_LOCATION) != DFS_ESUCCESS) fail("DragonFS");
+#if MSX_GRAPHICS_LAB
     FILE *file = fopen("rom:/fixed.bin", "rb");
     if (!file || fread(fixed_rom, 1, sizeof(fixed_rom), file) != sizeof(fixed_rom))
         fail("fixed.bin ausente o incompleto");
@@ -31,11 +40,21 @@ int main(void) {
         ftell(sprites) != (long)SPRITE_TILE_COUNT * 128)
         fail("sprites.bin ausente o incompleto");
     load_page(sprites, 0);
+#endif
     rdpq_init();
     actor_init();
     console_close();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
     joypad_init();
+#if !MSX_GRAPHICS_LAB
+    for (;;) {
+        joypad_poll();
+        surface_t *surface=display_get();
+        joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);
+        input.btn=joypad_get_buttons(JOYPAD_PORT_1);
+        actor_draw(surface,input);
+    }
+#else
     unsigned pages[2] = {0, 0};
     bool sprite_mode = true, joined = false, inverted = false;
     bool actor_mode = true;
@@ -99,4 +118,5 @@ int main(void) {
         graphics_draw_text(surface, 32, 202, "A:FIX/C Z:join B:invert");
         display_show(surface);
     }
+#endif
 }

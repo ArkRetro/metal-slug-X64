@@ -1,0 +1,27 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146, retained workspace build",
+  "rom_sha256": "262919f8472db62af336b0182b251bbd118e248ff9f70d55617247b3ef2141c4",
+  "log_sha256": "57daff209d85e16dedc7d7b2dac704fa2810b641615d912ab3d2774f5f70b6fb",
+  "fixture_sha256": "ba58295b5786d6108fba1d8ea9f1e06281b4b56afe98d63ef509ca70e8a0dcf5",
+  "suite": "stance",
+  "calls": 80,
+  "services": 80,
+  "limit": "80 observed stance entry initializers through C1FA6, with recorded program choices and native clock initialization. No idle update, animation advance, visual validation or campaign integration claim.",
+  "coverage": {
+    "0x0C1F4A": 64,
+    "0x0C1E34": 4,
+    "0x0C1EFA": 3,
+    "0x0C1EBE": 9
+  },
+  "static_and_synthetic_only": [
+    "form93=2 landing effect service order/failure",
+    "field86>=32 branch to C1E94",
+    "signed aim-byte boundary cases"
+  ],
+  "host_checks": [
+    "make check",
+    "ASan/UBSan stance boundaries",
+    "ASan/UBSan cross-controller transitions"
+  ]
+}

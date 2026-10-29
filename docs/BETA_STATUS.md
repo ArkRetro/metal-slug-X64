@@ -188,8 +188,10 @@ full-speed hardware claim is made.
 
 437 motion-controller calls (434 animation draws) now match native MIPS/ares.
 The body dispatcher shares actor state between crouch and motion and preserves
-same-tick branches versus next-tick landing. Idle/stand/landing/common services
-still block replacing the campaign controller. Ammunition reservation matches
+same-tick branches versus next-tick landing. Stand-up/landing/idle entry
+initializers now match 80 observed calls and are connected to that dispatcher.
+The C1FA6 idle update, world services, melee and common processing still block
+replacing the campaign controller. See `marco-stance-validation.json`. Ammunition reservation matches
 134 observed pistol calls; finite-ammo/cap/release cases have static evidence
 and synthetic checks, not original-game dynamic coverage. See
 `MARCO_CONTROLLER.md`, `marco-motion-validation.json`, and

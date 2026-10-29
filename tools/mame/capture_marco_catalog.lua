@@ -102,6 +102,18 @@ if os.getenv('MSX_MOTION_TRACE')=='1' then
   dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_MOTION_%s frame=%%d %s\\n",temp9,%s;g}',p[1],p[2],fmt,args))
  end
 end
+if os.getenv('MSX_STANCE_TRACE')=='1' then
+ -- Entry initializers stop before the idle update at C1FA6.
+ dbg:command('temp5=0')
+ local fmt='mode=%08X attr=%04X f5f=%02X f6c=%02X character=%04X f80=%02X f81=%02X f90=%02X f91=%02X f92=%02X f93=%02X f95=%02X f97=%02X f98=%02X f9a=%02X f9b=%02X f9c=%02X f9d=%02X motion=%08X x=%08X y=%08X vx=%08X vy=%08X body_cursor=%08X body_timer=%04X body_speed=%04X upper_mode=%08X upper_cursor=%08X upper_timer=%04X upper_speed=%04X f17=%02X f18=%02X field50=%08X f72=%08X f76=%02X f77=%02X f78=%02X f79=%02X kind=%02X packed=%08X gate_mode=%02X gate_current=%02X gate_limit=%02X f7a=%02X f86=%02X f7b=%02X f96=%02X f1e=%04X f66=%04X'
+ local args='d@(a6),w@(a6+14),b@(a6+5f),b@(a6+6c),w@(a6+6e),b@(a6+80),b@(a6+81),b@(a6+90),b@(a6+91),b@(a6+92),b@(a6+93),b@(a6+95),b@(a6+97),b@(a6+98),b@(a6+9a),b@(a6+9b),b@(a6+9c),b@(a6+9d),d@(a6+62),d@(a6+28),d@(a6+2c),d@(a6+30),d@(a6+34),d@(a6+20),w@(a6+24),w@(a6+26),d@(a6+7c),d@(a6+88),w@(a6+8c),w@(a6+8e),b@(a6+17),b@(a6+18),d@(a6+50),d@(a6+72),b@(a6+76),b@(a6+77),b@(a6+78),b@(a6+79),b@(a5+471e+w@(a6+70)),d@(a5+69ec),b@(a5+4718+w@(a6+70)),b@(a5+471a+w@(a6+70)),b@(a5+471c+w@(a6+70)),b@(a6+7a),b@(a6+86),b@(a6+7b),b@(a6+96),w@(a6+1e),w@(a6+66)'
+ for _,pc in ipairs({0xc1e34,0xc1e94,0xc1ebe,0xc1efa,0xc1f4a}) do
+  dbg:command(string.format('bpset %x,temp9>=%x && a6==1014c4 && temp5==0,{temp5=1;printf "MARCO_STANCE_IN frame=%%d entry=%%08X %s\\n",temp9,%x,%s;g}',pc,plan.first,fmt,pc,args))
+ end
+ for _,pc in ipairs({0xc1fa6}) do
+  dbg:command(string.format('bpset %x,temp5==1 && a6==1014c4,{printf "MARCO_STANCE_OUT frame=%%d exit=%%08X %s\\n",temp9,%x,%s;temp5=0;g}',pc,fmt,pc,args))
+ end
+end
 if os.getenv('MSX_CONTROLLER_TRACE')=='1' then
  -- Source-table reads and actual chosen pointer, before any initialization.
  for _,p in ipairs({{0xc0f32,0},{0xc0f62,1}}) do

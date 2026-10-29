@@ -264,8 +264,9 @@ sintéticos adicionales comprueban salto desde agachado, agacharse corriendo,
 aterrizaje diferido y parada ante servicios ausentes.
 
 **Límite:** los resultados de colisión de `0x014594`, `0x0C109C` y `0x0143EE`
-siguen siendo entradas grabadas en el replay. Reposo, incorporación, aterrizaje,
-ataque de cuerpo y procesamiento común necesitan todavía su propietario nativo.
+siguen siendo entradas grabadas en el replay. La actualización de reposo, el
+ataque de cuerpo y el procesamiento común necesitan todavía su propietario nativo.
+Las entradas de incorporación/aterrizaje ya se resuelven como se describe abajo.
 El dispatcher devuelve `MARCO_BODY_EXTERNAL` en esas fronteras; no las disfraza
 de éxito ni sustituye todavía el controlador de seis estados de campaña.
 
@@ -292,3 +293,44 @@ en vez de reproducir el acceso indexado a RAM (el original exige índice <2).
 
 Las rutinas aún no están conectadas al allocator de proyectiles de campaña.
 No se ha completado la física, impacto, daño ni sonido de todas las armas.
+
+## Incorporación, aterrizaje y entradas al reposo
+
+`marco_stance.c` recupera las entradas `0x0C1E34` (incorporación), `0x0C1EBE`
+(aterrizaje), `0x0C1EFA` y `0x0C1F4A` (dos entradas a reposo), además de la
+rama estática `0x0C1E94`. Todas terminan antes de ejecutar `0x0C1FA6`.
+`marco_body.c` las conecta con carrera/salto/agachado sin copiar el actor ni
+introducir un tick extra. Un aterrizaje programado sigue esperando al siguiente
+tick; la incorporación y la entrada al reposo desde carrera son inmediatas.
+
+La captura de solo lectura `marco-stance-calls-57` registra **80 entradas**:
+64 en `0x0C1F4A`, cuatro en `0x0C1E34`, tres en `0x0C1EFA` y nueve en
+`0x0C1EBE`. Coinciden los campos finales y las 80 selecciones en host y ares.
+La extracción verifica cada tabla y puntero elegido contra la ROM suministrada.
+El ensayo nativo llama a la inicialización real del reloj, pero usa un programa
+marcador: **no avanza ni valida visualmente estas animaciones**.
+
+El camino `0x0C1F24` limpia +92, selecciona programa y reinicia el controlador
+superior; `0x0C1F4A` conserva el controlador superior y +92. La prueba preserva
+esta diferencia. La comparación de +92 es de byte con signo. El aterrizaje
+escribe `0x8834` en +1E/+66 y `0xFF` en +7A/+7B antes de los servicios de efecto.
+
+La rama +93=2 exige un servicio explícito para `0x0040BC`/`0x01ACF2`; su
+contenido no se sustituye por un efecto inventado. Tiene evidencia estática y
+pruebas sintéticas de orden y ausencia de servicio, no cobertura dinámica en
+esta captura. Lo mismo aplica a la rama de +86 >= 32 hacia `0x0C1E94`.
+
+**Pendiente:** ejecutar `0x0C1FA6` con sus consultas al mundo, ataque de cuerpo,
+procesamiento común y conexión al controlador de campaña. `MARCO_BODY_EXTERNAL`
+en el estado `MST_IDLE` exige resolver esa frontera en el mismo tick; no es un
+reposo implementado ni un resultado válido para mostrar otro frame.
+
+Reproducción (capturas y ROM de prueba privadas):
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output CAPTURA --stance-trace --controller-trace --logic-only
+python3 tools/extract_marco_stance.py CAPTURA --output data/marco_stance_fixture.json
+make check-core
+make marco-stance-regression.z64
+python3 tools/test_rng_ares.py marco-stance-regression.z64 --suite stance --output RESULTADO_NUEVO
+```

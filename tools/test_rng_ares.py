@@ -6,7 +6,7 @@ from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair','controller','coupled','upper','crouch','motion','ammo'),default='rng')
+p.add_argument('--suite',choices=('rng','animation','contact','control','state','throw','attack','object','locomotion','marco','pair','controller','coupled','upper','crouch','motion','ammo','stance'),default='rng')
 p.add_argument('--fixture',type=Path,help='Fixture JSON; private helper journal required for suite pair')
 p.add_argument('--controller-fixture',type=Path,default=ROOT/'data/marco_controller_fixture.json')
 p.add_argument('--pixel-reference',type=Path,default=ROOT/'build/marco_pixel_sequence.json')
@@ -20,9 +20,11 @@ if a.motion_native:assert a.suite=='motion'
 if a.crouch_native:assert a.suite=='crouch'
 if a.pixels:assert a.suite=='coupled','--pixels requires --suite coupled'
 if a.suite in ('pair','coupled'):assert a.fixture is not None,'pair requires --fixture'
-fixture_path=a.fixture if a.fixture and a.suite in ('pair','coupled','upper','crouch','motion') else ROOT/('data/marco_ammo_fixture.json' if a.suite=='ammo' else 'data/marco_motion_fixture.json' if a.suite=='motion' else 'data/marco_crouch_turn_fixture.json' if a.suite=='crouch' else 'data/marco_upper_fixture.json' if a.suite=='upper' else 'data/marco_controller_fixture.json' if a.suite=='controller' else 'data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
+fixture_path=a.fixture if a.fixture and a.suite in ('pair','coupled','upper','crouch','motion') else ROOT/('data/marco_stance_fixture.json' if a.suite=='stance' else 'data/marco_ammo_fixture.json' if a.suite=='ammo' else 'data/marco_motion_fixture.json' if a.suite=='motion' else 'data/marco_crouch_turn_fixture.json' if a.suite=='crouch' else 'data/marco_upper_fixture.json' if a.suite=='upper' else 'data/marco_controller_fixture.json' if a.suite=='controller' else 'data/marco_fields_fixture.json' if a.suite=='marco' else 'data/soldier_'+a.suite+'_fixture.json')
 fixture=json.loads(fixture_path.read_text())
-if a.suite=='ammo':
+if a.suite=='stance':
+    counts=dict(calls=len(fixture['cases']),services=sum(len(c['operations']) for c in fixture['cases']))
+elif a.suite=='ammo':
     counts=dict(calls=len(fixture['cases']))
 elif a.suite in ('crouch','motion'):
     counts=dict(calls=len(fixture['cases']),services=sum(len(c['operations']) for c in fixture['cases']),draws=sum(len(op['draws']) for c in fixture['cases'] for op in c['operations'] if op['kind']=='animate'),events=sum(len(op['events']) for c in fixture['cases'] for op in c['operations'] if op['kind']=='animate'))

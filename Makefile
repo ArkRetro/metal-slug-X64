@@ -98,10 +98,25 @@ filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cin
 .PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
 all: mslugx-explorer.z64
-$(BUILD_DIR)/mslugx-explorer.elf: $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(WORLD_OBJS)
+$(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
-$(BUILD_DIR)/mslugx-explorer.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
+# The game cartridge carries only what the game reads; the raw FIX/C-ROM copies
+# (fixed.bin, sprites.bin, 48 MiB) go only into the diagnostic lab cartridge.
+$(BUILD_DIR)/mslugx-explorer.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-explorer.dfs: $(BUILD_DIR)/game-romfs.stamp
+$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
+	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
+	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles $(BUILD_DIR)/game-romfs/
+	touch $@
+$(BUILD_DIR)/src/main-lab.o: src/main.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_GRAPHICS_LAB=1 -o $@ $<
+$(BUILD_DIR)/mslugx-lab.elf: $(BUILD_DIR)/src/main-lab.o $(filter-out $(BUILD_DIR)/src/main.o,$(MSLUGX_GAME_OBJS))
+mslugx-lab.z64: N64_ROM_TITLE = "MSX GRAPHICS LAB"
+mslugx-lab.z64: $(BUILD_DIR)/mslugx-lab.dfs
+$(BUILD_DIR)/mslugx-lab.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
 $(BUILD_DIR)/scene_meta.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json
 	python3 tools/pack_scene.py
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
@@ -230,7 +245,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
+	rm -rf build intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 mslugx-lab.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py

@@ -27,7 +27,7 @@ def validate(captures,model_path,crom_path,out):
         vertical=observation.get('vertical_offsets',(0,0,0,0))
         active=observation.get('active',(True,True,True,True))
         folder=Path(observation.get('captures',str(captures)))
-        fill=palette_rgb(model['backdrop'])+(255,)
+        fill=palette_rgb(observation.get('backdrop',model['backdrop']))+(255,)
         recovered=Image.new('RGBA',(320,224),fill)
         for c in model['cells']:
             if not active[c['layer']]:continue
@@ -44,7 +44,6 @@ def validate(captures,model_path,crom_path,out):
             xx=x-512 if x>=496 else x
             if xx>=320:continue
             is_background=slot<=64 or 105<=slot<=136
-            if is_background:assert zx==15 and zy==255
             for row in range(min(rows,32)):
                 yy=(y+row*16)&511
                 if yy>=496:yy-=512
@@ -54,7 +53,9 @@ def validate(captures,model_path,crom_path,out):
                 mask=7 if attr&8 else 3 if attr&4 else 0
                 code=(low|((attr<<12)&0xf0000))&~mask;code|=phase&mask
                 im=tile(code,attr&3,tuple(p[(attr>>8)*16:(attr>>8)*16+16]))
-                if is_background and (attr&0xf0)==0x40:paste(reference,im,xx,yy)
+                if is_background and (attr&0xf0)==0x40:
+                    assert zx==15 and zy==255,('Scaled background requires a recovered transform',frame,slot,zx,zy)
+                    paste(reference,im,xx,yy)
                 elif zx!=15 or zy!=255:covered.paste(255,(xx,yy,xx+16,yy+16))
                 else:covered.paste(255,(xx,yy),im.getchannel('A'))
         known=set()

@@ -1,0 +1,176 @@
+{
+  "scope": "Claude PR2 integration on beta-work, not full Mission 1",
+  "claude_head": "91c730fdce99ea8f777112250dc322fa66f05836",
+  "review_comment": "https://github.com/ArkRetro/metal-slug-X64/pull/1#issuecomment-6462874985",
+  "coordination_comment": "https://github.com/ArkRetro/metal-slug-X64/pull/1#issuecomment-6463701871",
+  "object": {
+    "status": "PASS",
+    "emulator": "ares 146, retained workspace build",
+    "rom_sha256": "6b8fccc7ed3abadbe9904003b3090522cf0e011bf22e901252f55ca8f982d48f",
+    "log_sha256": "3141d388ff0dc90d0133c4be508d6b4e5504e90cf8b8d7d2c43d69caa3417718",
+    "fixture_sha256": "b7984ba700d4429d024aadaa3b5bafef1e3007010b9291f50a34bf7458fc05ee",
+    "suite": "object",
+    "steps": 41,
+    "draws": 41,
+    "palettes": 4,
+    "sounds": 1,
+    "failures": 11,
+    "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+    "throw_fixture_sha256": "80e7cb7f88da58f0107bc7374b8208fe38b779528077aef5b448da7ea0a4a6c7",
+    "terrain_source_sha256": "dc68c2c0a3361cd4a2ea8a5e67ea3096eff28059e7f23f249ec571cab7996204"
+  },
+  "attack": {
+    "status": "PASS",
+    "emulator": "ares 146, retained workspace build",
+    "rom_sha256": "b78b17f6f0333fc04cb4ca669c1a9acefe6a91dd9644586ca6780322b012138d",
+    "log_sha256": "cf19d407a31f9408064e6f7a4e5da9974ede928ee3dac3c2a4feda37bb127296",
+    "fixture_sha256": "2e5aafb0974e9324fccc51ea6abddb2c5a7da70b78b36f73c857523624ab4694",
+    "suite": "attack",
+    "steps": 20,
+    "draws": 20,
+    "events": 2,
+    "flight": 33,
+    "child": 41,
+    "child_draws": 41,
+    "limit": "Internal CPU backend regression; not a full game, rendering or frame-rate test. No release.",
+    "throw_fixture_sha256": "80e7cb7f88da58f0107bc7374b8208fe38b779528077aef5b448da7ea0a4a6c7",
+    "terrain_source_sha256": "dc68c2c0a3361cd4a2ea8a5e67ea3096eff28059e7f23f249ec571cab7996204",
+    "attack_state_fixture_sha256": "54108b30ee37c74add38433aca902d89961c627e21887856cf5446f9246fb7e8",
+    "main_states": 20,
+    "ground_queries": 40,
+    "hit_geometry_candidates": 8,
+    "hit_geometry_overlaps": 1,
+    "hit_geometry_fixture_sha256": "4e912ff6a7d5b91f3d7b3df07119a8807ae0c2aa1c5b31e135e43b1639f158cc",
+    "object_fixture_sha256": "b7984ba700d4429d024aadaa3b5bafef1e3007010b9291f50a34bf7458fc05ee"
+  },
+  "render_release": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "debug": {
+      "samples": [
+        [
+          "0",
+          "0",
+          "c1c95350"
+        ],
+        [
+          "0",
+          "64",
+          "a3db5369"
+        ],
+        [
+          "0",
+          "320",
+          "55930ad6"
+        ],
+        [
+          "0",
+          "872",
+          "e20ba60a"
+        ],
+        [
+          "1",
+          "0",
+          "3c8e75b8"
+        ],
+        [
+          "1",
+          "64",
+          "df2dc2cd"
+        ],
+        [
+          "1",
+          "320",
+          "cedcc7f5"
+        ],
+        [
+          "1",
+          "872",
+          "1bdae6c2"
+        ]
+      ],
+      "rom_sha256": "632472ab7910ca28989bf9655742dec2caa5729862a84e06fdba332b08cc7884",
+      "log_sha256": "0a9c1a0db6530177e6bb6e9656840eab8be62fb0a1321ef8f72ed7953ffaf62c"
+    },
+    "release": {
+      "samples": [
+        [
+          "0",
+          "0",
+          "c1c95350"
+        ],
+        [
+          "0",
+          "64",
+          "a3db5369"
+        ],
+        [
+          "0",
+          "320",
+          "55930ad6"
+        ],
+        [
+          "0",
+          "872",
+          "e20ba60a"
+        ],
+        [
+          "1",
+          "0",
+          "3c8e75b8"
+        ],
+        [
+          "1",
+          "64",
+          "df2dc2cd"
+        ],
+        [
+          "1",
+          "320",
+          "cedcc7f5"
+        ],
+        [
+          "1",
+          "872",
+          "1bdae6c2"
+        ]
+      ],
+      "rom_sha256": "c831a14624325342758fe3a44ef6e907adfd27157cc48f6b134c80062e4725a3",
+      "log_sha256": "b88226027eb636a3e5806f6f5af75c62687c56fe19b3b116da296af34e3d8360"
+    },
+    "limit": "Eight fixed scene frames; verifies rendering equivalence, not full Mission 1 or hardware performance."
+  },
+  "entry": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "source_frames": 230,
+    "unique_presented_frames": 230,
+    "skipped_frames": 0,
+    "rendered_frames": 234,
+    "final_pixels_crc32": "db681cc3",
+    "movie_read_bytes": 1246644,
+    "audio_active_at_handoff": true,
+    "decode_max_us": 12915,
+    "decode_mean_us": 1529,
+    "draw_max_us": 989,
+    "rom_sha256": "3c5d33f8e255c2fdc71b4fbef4e2bb4103ee36136fea0cd915ed3fed69bc350e",
+    "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+    "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+    "log_sha256": "ae9f31d7222d9b6fbc40aca81db02978d234169c0e068c301cc03e9809aef136",
+    "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
+  },
+  "vehicle": {
+    "status": "PASS",
+    "scenario": "native vehicle reference encounter, depth25d",
+    "verified": [
+      "health 300 to 0",
+      "13-cell wreckage stamp",
+      "walk onto wreck",
+      "restart and lab",
+      "first periodic cache sample misses=0"
+    ],
+    "log_sha256": "ae6cb135eeefee6d2902ad559d7b991b5d6428b65ce23c80272ee092c643de04",
+    "limit": "Provisional player attack rules; not recovered complete Mission 1.",
+    "test_fix": "Await frame-300 diagnostic instead of assuming it exists when the encounter finishes."
+  }
+}

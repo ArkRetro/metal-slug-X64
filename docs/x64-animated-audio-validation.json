@@ -1,0 +1,34 @@
+{
+  "status": "PASS_PCM_AND_SYNTHETIC_TAIL",
+  "capture": "ares 146 ALSA PCM file sink",
+  "title_cadence": "601 unique / 0 dropped",
+  "pcm_rate": 48000,
+  "channels": 2,
+  "source_pcm_correlation_after_clock_fit": 0.99152279434029,
+  "synthetic_tail_correlation": 0.9987108402301558,
+  "clock_rate_fit": 0.9998123573059358,
+  "offset_seconds": 2.6191137271689504,
+  "minimum_correlation": 0.85,
+  "announcement": {
+    "text": "Sixty-four!",
+    "voice": "Qwen3-TTS 1.7B CustomVoice / Ryan, directed male shout",
+    "processing": "Instruction-generated full-voice yell; natural pitch/timing; light mastering and hall reverb",
+    "reverb": {
+      "type": "large diffuse hall, ducked behind the shouted attack",
+      "t60_seconds": 1.2,
+      "wet_rms_ratio": 0.55,
+      "tail_seconds": 1.05
+    },
+    "title_hold_frames": 60,
+    "start_seconds": 8.6,
+    "end_seconds": 10.5441875,
+    "placement": "Authored after the spoken X, over its remaining echo",
+    "previous_audio_unchanged": true,
+    "peak_pcm16": 20450,
+    "asset_sha256": "cd2a5c36144b74dd35b9fdb684e40dca28139589d06b4744199bd4c483a6c7a9"
+  },
+  "pcm_sha256": "67dc8317a9793afea2deea2880f9c10cbf206186e019e2437b1cf353608abbd6",
+  "rom_sha256": "a8b1e6067399b8de2c5f34daeee3babe3abe23d3543a7ad672967a5ad282be44",
+  "audio_sha256": "3c400307f46a56f8162f4ec2820b9ee1d1d75b74bfee2bc528608c33871f4afa",
+  "limits": "Emulator output comparison, not MiSTer/full-campaign stability or listening-quality approval."
+}

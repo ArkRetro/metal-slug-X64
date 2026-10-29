@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "45bff50cb5557ed148bd87a7917a3e2f4ccecae0ad8d2acdb0fe73a1e0cb88d2",
+  "limit": "Synthetic cross-controller scheduling and service boundaries; not an original-game replay, rendering, full idle logic or campaign test."
+}

@@ -2,6 +2,12 @@
 -- Reference-only RAM overrides are never shipped in the N64 game.
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local frame=0
+local last_frame=tonumber(os.getenv("MSX_ADVANCE_LAST") or "7200")
+local sweep=os.getenv("MSX_ADVANCE_SWEEP")=="1"
+local sweep_direction=-1
+local stationary_frames=0
+local sweep_camera=-1
+assert(last_frame>=7200 and last_frame<=36000)
 local last_x=-1;local stuck=0;local aim_until=0
 local positions=assert(io.open(output..'/positions.csv','w'))
 positions:write('frame,x16,y16,vx16,vy16,flags\n')
@@ -59,7 +65,21 @@ emu.register_frame_done(function()
   button('P1 B',frame>3000 and frame%120<8 and 1 or 0)
   button('P1 C',frame>2900 and frame%60<8 and 1 or 0)
  end
+ -- Optional control-only experiment for stationary elevated encounters after camera 1920.
+ -- Sweep under the towers rather than firing upward from the right boundary.
+ -- Coordinates are input targets within the observed viewport, not recovered
+ -- spawn/AI constants. Existing reference-only RAM overrides above still apply.
+ local current_camera=cpu:read_u16(0x102036)
+ if current_camera==sweep_camera then stationary_frames=stationary_frames+1 else stationary_frames=0;sweep_camera=current_camera end
+ if sweep and frame>=7200 and current_camera>=1920 and stationary_frames>=240 then
+  -- +3C is the observed projected X. +28 becomes parent-relative on a mount.
+  local screen_x=cpu:read_u16(0x101500)&511
+  if screen_x<=48 then sweep_direction=1 elseif screen_x>=256 then sweep_direction=-1 end
+  button('P1 Right',sweep_direction>0 and 1 or 0)
+  button('P1 Left',sweep_direction<0 and 1 or 0)
+  button('P1 Up',1)
+ elseif sweep and frame>=7200 then button('P1 Left',0) end
  if frame>=2100 then positions:write(string.format('%d,%u,%u,%u,%u,%u\n',frame,cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9))) end
  if frame>=2100 and (frame==2100 or frame%60==0) then dump(frame) end
- if frame==7200 then positions:close();manager.machine:exit() end
+ if frame==last_frame then positions:close();manager.machine:exit() end
 end, 'frame')

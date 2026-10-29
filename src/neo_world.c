@@ -121,6 +121,7 @@ static bool throw_palette(void *context,uint16_t asset,bool replace,uint8_t *han
     for (uint8_t i=1;i<COUNT(throw_palette_ids);i++) if (throw_palette_ids[i]==asset) {*handle=i;return true;}
     return false;
 }
+static void throw_release(void *context) {(void)context;}
 static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame_t *f) {
     tick_t *t=context;neo_world_t *w=t->w;(void)f;
     /* 03BD3A acceleration, then 0143E4: air request, 013968 sweep, commit. */
@@ -183,7 +184,7 @@ static bool run_splash(tick_t *t,unsigned i) {
 static bool run_throw(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_throw_actor_t *o=&w->throws[i];
     neo_throw_services_t services={program(0x23f3f0),program(0x22d2a6),soldier_throw_flight_rect,soldier_throw_burst_rect,
-        throw_palette,NULL,t,throw_air,throw_hit};
+        throw_palette,throw_release,t,throw_air,throw_hit};
     /* The effect phase projects against the object's current parent. */
     const neo_contact_parent_t *scene=o->body.parent_tag==TERRAIN_TAG?&w->terrain:&w->root;
     neo_throw_frame_t frame={scene,&t->players,&t->bounds,w->video_phase,0,w->epoch,false};

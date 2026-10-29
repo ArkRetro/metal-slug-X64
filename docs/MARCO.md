@@ -1,3 +1,6 @@
+Estado actual y trabajo prioritario: [conjunto completo de animaciones de Marco](MARCO_ANIMATIONS.md).
+La extracción descrita abajo es histórica; no constituye el catálogo completo.
+
 # Marco: extracción v4
 
 Se reconstruye el personaje con los datos originales de Metal Slug X:

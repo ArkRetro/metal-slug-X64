@@ -3,8 +3,14 @@
 La próxima entrega solicitada es una **demo jugable de la Misión 1 completa, con intro y sonido**,
 validada en ares antes de probarla en MiSTer. Aún no está terminada.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
-El [modo visual 2.5D opcional](docs/RETRO25D.md) añade profundidad, normales,
-iluminación y niebla dentro de las restricciones N64; sigue en validación interna.
+La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
+el controlador completo todavía está pendiente y no se declara un 100%.
+El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)
+ya pasa comparaciones con MAME y con framebuffer real del RDP en ares.
+El [modo visual 2.5D](docs/RETRO25D.md) está activo por defecto: paralaje en
+perspectiva, iluminación por vértice, sombras de contacto, pulsos de luz en
+impactos y explosiones, y niebla, sin tocar el pixel art ni la jugabilidad 2D.
+`make MSX_VISUAL_MODE=classic` compila la ruta plana original.
 Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
 con contorno, paleta y transparencia, también al disparar hacia la izquierda.
 El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
@@ -64,6 +70,8 @@ con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea origi
 | START | Alternar escena y laboratorio de tiles |
 
 Puedes recorrer el tramo, saltar y combatir con los tres guardias provisionales.
+El tramo llega ahora a la cámara 1920 (antes 872), con el cambio de banco medio
+y la subida de cámara medidos; véase [la ampliación](docs/MISSION1.md#ampliación-hasta-la-cámara-1920).
 `REGION END` marca el límite del mapa observado, no el final de la misión original.
 Las cajas de prueba de v8 se han retirado. **Sigue siendo un port en desarrollo**:
 faltan mapa completo, resolvedor de colisiones completo, lógica original y cambios dinámicos del
@@ -73,7 +81,7 @@ No se afirma igualdad 1:1 del juego ni rendimiento garantizado en hardware.
 Véase [colisiones y objetos v10](docs/COLLISION.md),
 [recuperación del escenario y movimiento v9](docs/MISSION1.md),
 [núcleo RDP de v8](docs/RDP_IMPLEMENTATION.md) y
-[arquitectura objetivo](docs/N64_ARCHITECTURE.md).
+[esquema de portabilidad](docs/ESQUEMA_PORT_N64.md) y [arquitectura objetivo](docs/N64_ARCHITECTURE.md).
 
 ## Compilar
 
@@ -93,6 +101,9 @@ make check
 versionados. CI lo ejecuta en cada push y PR. `make check` también es host y
 requiere los metadatos/assets derivados que utilizan las pruebas completas.
 `make check-cinematic` añade los 230 frames del segmento local de entrada.
+`make -j4` compila el modo 2.5D (`depth25d`); `make -j4 MSX_VISUAL_MODE=classic`,
+la ruta plana. `make preview-depth` genera vistas previas offline de los
+efectos sin arte original.
 Las [correcciones del PR #2](docs/PR2_REVIEW.md) están adaptadas a esta rama.
 
 Resultado: `mslugx-explorer.z64`, aproximadamente 50 MiB. Las ROM originales

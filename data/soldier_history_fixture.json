@@ -1,0 +1,1309 @@
+{
+  "source": "MAME 0.276 watchpoint on RAM 0x10C33A plus executed instructions; Ghidra addressed cross-check",
+  "writer_rom": "0x01AB5A",
+  "routine_rom": "0x01AB50",
+  "watch_pc_after_write": "0x01AB5E",
+  "rows": [
+    {
+      "frame": 2101,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2103,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2105,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2107,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2109,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2111,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2113,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2115,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2117,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2119,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2121,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2123,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2125,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2127,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2129,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2131,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2133,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2135,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2137,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2139,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2141,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2143,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2145,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2147,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2149,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2151,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2153,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2155,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2157,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2159,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2161,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2163,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2165,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2167,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2169,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2171,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2173,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2175,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2177,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2179,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2181,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2183,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2185,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2187,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2189,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2191,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2193,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2195,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2197,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2199,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2201,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2203,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2205,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2207,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2209,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2211,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2213,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2215,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2217,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2219,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2221,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2223,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2225,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2227,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2229,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2231,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2233,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2235,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2237,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2239,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2241,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2243,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2245,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2247,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2249,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2251,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2253,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2255,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2257,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2259,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2261,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2263,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2265,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2267,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2269,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2271,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2273,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2275,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2277,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2279,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2281,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2283,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2285,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2287,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2289,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2291,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2293,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2295,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2297,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2299,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2301,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2303,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2305,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2307,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2309,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2311,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2313,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2315,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2317,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2319,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2321,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2323,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2325,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2327,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2329,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2331,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2333,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2335,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2337,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2339,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2341,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2343,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2345,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2347,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2349,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2351,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2353,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2355,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2357,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2359,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2361,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2363,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2365,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2367,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2369,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2371,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2373,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2375,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2377,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2379,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2381,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2383,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2385,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2387,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2389,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2391,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2393,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2395,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2397,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2399,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2401,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2403,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2405,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2407,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2409,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2411,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2413,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2415,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2417,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2419,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2421,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2423,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2425,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2427,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2429,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2431,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2433,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2435,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2437,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2439,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2441,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2443,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2445,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2447,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2449,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2451,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2453,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2455,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    },
+    {
+      "frame": 2457,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 2,
+      "before": 1
+    },
+    {
+      "frame": 2459,
+      "pc": 109406,
+      "address": 1098554,
+      "data": 1,
+      "before": 2
+    }
+  ],
+  "executed_proof": [
+    {
+      "pc": 109392,
+      "d0": 150,
+      "a5": 1081344
+    },
+    {
+      "pc": 109396,
+      "d0": 2,
+      "a5": 1081344
+    },
+    {
+      "pc": 109400,
+      "d0": 0,
+      "a5": 1081344
+    },
+    {
+      "pc": 109402,
+      "d0": 1,
+      "a5": 1081344
+    },
+    {
+      "pc": 109406,
+      "d0": 1,
+      "a5": 1081344
+    }
+  ],
+  "duplicate_watch_log_rows": 1,
+  "provenance": {
+    "debug.log": "dd1dd1b0840b9d0bf4d05c41e8203c168843ecc7e1a0def209e68adbfab14823",
+    "history-token.log": "a2329d367a9877171dbfa60427d1622d5d7608055886cf561b5af71955244b2b",
+    "program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "run-command.json": "79b458c51453774ac653dff5c0955987dbf68505168d3a2156fb51f48f37b174"
+  },
+  "ghidra_sha256": "0bfb840d83238ac730b261b6a78b700658907c1a4ef97ead6575397576687da1",
+  "language": "68000:BE:32:MC68020",
+  "limits": [
+    "Observed active-gameplay update passes, not arbitrary startup RAM.",
+    "Watch PC reports the following RTS; the actual store is 01AB5A.",
+    "Native callers must use this token convention; raw uint8_t increment is not the recovered scheduler."
+  ]
+}

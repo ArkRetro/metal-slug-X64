@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "vehicle_renderer.h"
 #include "scene_renderer.h"
+#include "mission_camera.h"
 static sprite_t *poses[9][2][2];
 static bool loaded;
 void vehicle_renderer_load(void) {
@@ -21,7 +22,7 @@ void vehicle_renderer_draw(const neo_vehicle_t *v,int camera,bool flash) {
     if (!v->active) return;
     assertf(loaded && v->pose<9,"Vehicle renderer state");
     bool mirror=v->facing>0;
-    int x=v->x/65536-camera-64-(mirror?1:0),y=248-v->y/65536-64;
+    int x=v->x/65536-camera-64-(mirror?1:0),y=248-v->y/65536-64+msx_camera_height(camera);
     rdpq_mode_push();rdpq_mode_filter(FILTER_POINT);rdpq_mode_alphacompare(1);
     for (unsigned part=0;part<2;part++) {
         int left=x+(mirror?64-(int)part*64:(int)part*64);
@@ -29,7 +30,7 @@ void vehicle_renderer_draw(const neo_vehicle_t *v,int camera,bool flash) {
         // The pinned SDK's multi-upload return count is a TODO (always zero).
         // Validate actual format/stride at load; its uploader also checks TMEM.
         rdpq_sprite_upload(TILE0,poses[v->pose][flash][part],NULL);
-        rdpq_texture_rectangle_scaled(TILE0,left,y,left+64,y+64,mirror?64:0,0,mirror?0:64,64);
+        rdpq_texture_rectangle_scaled(TILE0,left,y,left+64,y+64,mirror?63:0,0,mirror?-1:64,64);
     }
     rdpq_mode_pop();scene_render_forget_texture();
 }

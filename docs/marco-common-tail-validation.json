@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "f17f5495074c3c82c12989761b9115a58d17d2a2d1d50585bc8ca709023766cf",
+  "suite": "common",
+  "limit": "Static addressed translation with synthetic native MIPS and sanitizer checks. No original-game dynamic replay, preceding C32F4..C3634 processing, death-routine implementation or campaign integration.",
+  "source_rom_range": "0x0C3634..0x0C3776",
+  "ghidra_listing_sha256": "77e484a8de3d976d9bfc01c7f4973f7c391cb3ae2ac389bb4306c1c402e868f0"
+}

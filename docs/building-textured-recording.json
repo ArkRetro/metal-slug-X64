@@ -1,0 +1,8 @@
+{
+  "emulator": "ares 146",
+  "rom_sha256": "69cf55bef16bc282a45fb2fd3adac3855309804145857494907484399befc1cc",
+  "depth_enabled": true,
+  "wall_clock_capture": true,
+  "audio": false,
+  "limit": "Existing partial-region prototype. Not the complete mission or newly integrated Marco controller. Capture speed is host emulator performance, not N64 hardware performance."
+}

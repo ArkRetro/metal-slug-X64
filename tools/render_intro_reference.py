@@ -73,6 +73,48 @@ def raster_records(folder,kind='vram'):
   r=json.loads(line)
   if (kind=='vram' and r.get('address')==0x3c0002) or (kind=='palette' and 'palette_index' in r):groups.setdefault(r['frame'],[]).append(r)
  return groups
+@lru_cache(2)
+def bank_palette_records(folder):
+ groups={}
+ for line in (folder/'raster.jsonl').read_text().splitlines():
+  r=json.loads(line)
+  if 'palette_index' in r or r.get('palette_bank_write'):groups.setdefault(r['frame'],[]).append(r)
+ return groups
+
+@lru_cache(2)
+def frame_metadata(folder):
+ return {r['frame']:r for line in (folder/'frames.jsonl').read_text().splitlines() if (r:=json.loads(line))}
+
+def bank_palette_states(folder,frame):
+ """Replay both physical banks, checking every pre-write and final snapshot."""
+ meta=frame_metadata(folder)
+ assert not meta[frame-1]['screen_shadow'] and not meta[frame]['screen_shadow'],'Screen-shadow transitions need separate reconstruction'
+ read=lambda f:struct.unpack('>8192H',(folder/f'palette-banks{f}.bin').read_bytes())
+ memory=list(read(frame-1));active=meta[frame-1]['palette_bank'];groups={};applied=0;visible=False
+ def apply(r):
+  nonlocal active,applied
+  if r.get('palette_bank_write'):
+   assert r['bank_before']==active,('Bank pre-state differs',frame,r)
+   active=0x1000 if r['address']&0x10 else 0
+  else:
+   assert r['palette_bank']==active,('Write bank differs',frame,r)
+   address=active+r['palette_index']
+   assert memory[address]==r['word'],('Banked pre-write differs',frame,r)
+   memory[address]=(memory[address]&(~r['mask']&65535))|(r['data']&r['mask'])
+  applied+=1
+ for r in bank_palette_records(folder).get(frame-1,[]):
+  if r['line']>=240:assert not visible;apply(r)
+  else:visible=True;groups.setdefault(r['line'],[]).append(r)
+ current=tuple(memory[active:active+4096]);states={}
+ for line in range(240):
+  changes=groups.get(line,[])
+  for r in changes:apply(r)
+  if changes:current=tuple(memory[active:active+4096])
+  if line>=16:states[line]=current
+ assert tuple(memory)==read(frame),'Missing physical-bank palette writes'
+ assert active==meta[frame]['palette_bank'],'Missing bank selection'
+ return states,applied
+
 def raster_states(folder,frame,palette_raster=False):
  """Replay measured writes with the original per-line sprite-list latch."""
  def reconstruct(initial,final,writes,index_key,pairs):
@@ -96,7 +138,8 @@ def raster_states(folder,frame,palette_raster=False):
  pal=lambda f:struct.unpack('>4096H',(folder/f'palette{f}.bin').read_bytes())
  states,n=reconstruct(vram(frame-1),vram(frame),raster_records(folder).get(frame-1,[]),'vram_offset',True)
  if palette_raster:
-  colors,pn=reconstruct(pal(frame-1),pal(frame),raster_records(folder,'palette').get(frame-1,[]),'palette_index',False)
+  if (folder/f'palette-banks{frame}.bin').exists():colors,pn=bank_palette_states(folder,frame)
+  else:colors,pn=reconstruct(pal(frame-1),pal(frame),raster_records(folder,'palette').get(frame-1,[]),'palette_index',False)
   return states,n,colors,pn
  assert pal(frame-1)==pal(frame),'Palette raster changes need separate recovery'
  return states,n

@@ -35,6 +35,9 @@ try:
         key('keydown','Left');wait('MSX player on wreck');key('keyup','Left');time.sleep(.1);snap('on-wreck')
         press('e');time.sleep(.3);snap('reset');wait('MSX reset')
         press('Return');time.sleep(.2);snap('lab');press('Return');time.sleep(.2);snap('return')
+        # The first cache diagnostic is emitted at rendered frame 300.
+        # Fast runs can finish the encounter before that; await the sample.
+        wait('MSX RDP:')
         assert 'misses=0' in logpath.read_text()
         print('PASS: native .sprite vehicle, pistol damage, destruction, 13-cell stamp, wreck, walk approach, restart and lab')
 finally:

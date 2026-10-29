@@ -1,0 +1,73 @@
+{
+  "title_presentation": "original_plate_n64_prompt",
+  "title_auto_advance": true,
+  "status": "PASS",
+  "emulator": "ares 146",
+  "source_frames": 230,
+  "unique_presented_frames": 230,
+  "skipped_frames": 0,
+  "rendered_frames": 234,
+  "final_pixels_crc32": "db681cc3",
+  "movie_read_bytes": 1246644,
+  "audio_active_at_handoff": true,
+  "diagnostic_toggle": true,
+  "decode_max_us": 12923,
+  "decode_mean_us": 1528,
+  "draw_max_us": 955,
+  "rom_sha256": "389b7b7eb41942c5f66f8283bfc4009ed99a28d2fe8b5d55258598b240fa6334",
+  "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+  "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+  "log_sha256": "2f550ae901e5393114ae982ceddf72e0aba426f32dafa58276e745abd28ee9ad",
+  "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.",
+  "partial_region": {
+    "camera": 1920,
+    "x16": 144965631,
+    "cache_misses": 0,
+    "depth_mode": true,
+    "presentation": "layered_2d_shadows_only",
+    "depth_max_triangles": 8,
+    "cache_samples": 2,
+    "limit": "Three provisional guards, approximate camera and REGION END; not complete Mission 1."
+  },
+  "limit": "Original single title plate adapted at FIX prompt level; native title audio excerpt and automatic advance into verified parachute entry and existing partial region. Not full animated arcade intro, complete Marco integration or full Mission 1.",
+  "start_skip_validation": {
+    "title_presentation": "original_plate_n64_prompt",
+    "title_auto_advance": false,
+    "title_start_skip": true,
+    "status": "PASS",
+    "emulator": "ares 146",
+    "source_frames": 230,
+    "unique_presented_frames": 230,
+    "skipped_frames": 0,
+    "rendered_frames": 234,
+    "final_pixels_crc32": "db681cc3",
+    "movie_read_bytes": 1246644,
+    "audio_active_at_handoff": true,
+    "diagnostic_toggle": true,
+    "decode_max_us": 12924,
+    "decode_mean_us": 1528,
+    "draw_max_us": 959,
+    "rom_sha256": "389b7b7eb41942c5f66f8283bfc4009ed99a28d2fe8b5d55258598b240fa6334",
+    "movie_sha256": "cb14ea1c77290f11d29375e3a88fd551082fa03635899eb4d9d9ab9fa6b90ef9",
+    "audio_sha256": "47c03a9b6df735d02b97f88a091daa69d04ec15be90d93f3d8a73ec2ec6e76ed",
+    "log_sha256": "a702fba859ff62d8179db60b939767cf0714b103136120d345bd00f9c455d968",
+    "limits": "Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim."
+  },
+  "title_asset": {
+    "source_frame": 660,
+    "baseline_reference_matches": true,
+    "changes": [
+      "FIX row 26 columns 15..25: INSERT COIN -> PRESS START",
+      "FIX row 29 columns 27..36: remove credit counter"
+    ],
+    "movie_sha256": "47586dda58335a296aa29218da0722505be5aa7572abbf7271cdb031854378fd",
+    "pixels_crc32": "e5c9e67a",
+    "limits": "Single original title plate adapted for N64 input, not the full animated arcade introduction.",
+    "source_sha256": {
+      "vram660.bin": "dc88460e87697e77ae8769adda40036522d2bbfd04ecbe1c6c1510df66a2c2bb",
+      "palette660.bin": "b8dc84bdfafbae70bc5f91a1582b8238b6d473452ad5c1212ab7aa18c9d12c6f",
+      "game660.png": "99daf367381c668dd9448aca7fdc951bba2119279aaff406d3245e6e793271e4",
+      "frames.jsonl": "0a7404099ba18a5c1d38f19170fa91da900867ce7c930dc98119816212c9d1f6"
+    }
+  }
+}

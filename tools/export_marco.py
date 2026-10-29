@@ -6,6 +6,7 @@ these captures. This is a specific verified extraction, not a universal parser.
 Source layout: MAME neogeo_spr.cpp; resistor conversion: neogeo_v.cpp.
 """
 import argparse
+from array import array
 import hashlib
 import json
 from pathlib import Path
@@ -34,6 +35,8 @@ def palette_rgb(word):
 def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
     image = Image.new('RGBA', (320, 256))
     indices = bytearray(320*256)
+    palette_indices = array('H',[0])*(320*256)
+    selected_palettes = {selected_palette} if isinstance(selected_palette,int) else set(selected_palette)
     records = []
     x = y = rows = zx = zy = 0
     for slot in range(1, 381):
@@ -49,7 +52,7 @@ def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
             continue
         for row in range(rows):
             low, attr = vram[slot * 64 + row * 2:slot * 64 + row * 2 + 2]
-            if attr >> 8 != selected_palette:
+            if attr >> 8 not in selected_palettes:
                 continue
             if x_range is not None and not x_range[0] <= x < x_range[1]:
                 continue
@@ -64,11 +67,13 @@ def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
                     offset = tile * 128 + (64 if xx < 8 else 0) + yy * 4
                     pen = sum(((crom[offset+b] >> (xx % 8)) & 1) << bit
                               for bit, b in enumerate((0, 2, 1, 3)))
-                    dx, dy = x+px, y+row*16+py
+                    dx, dy = (x+px)&511, (y+row*16+py)&511
                     if pen and 0 <= dx < 320 and 0 <= dy < 256:
-                        image.putpixel((dx, dy), palette_rgb(palette[selected_palette*16+pen])+(255,))
+                        image.putpixel((dx, dy), palette_rgb(palette[(attr>>8)*16+pen])+(255,))
                         indices[dy*320+dx] = pen
+                        palette_indices[dy*320+dx] = (attr>>8)*16+pen
     image.info["neo_indices"] = bytes(indices)
+    image.info["neo_palette_indices"] = palette_indices.tobytes()
     return image, records
 
 
@@ -88,7 +93,7 @@ def top_sprite_pixel(vram, palette, crom, px, py):
             x = vram[0x8400+slot] >> 7; y = (512-(c >> 7)) & 511
             rows, zx, zy = c & 63, (z >> 8) & 15, z & 255
         dy = (py-y) & 511
-        if not rows or not x <= px < x+16 or dy >= min(rows,32)*16:
+        if not rows or ((px-x)&511) >= 16 or dy >= min(rows,32)*16:
             continue
         if zx != 15 or zy != 255:
             result = None; continue
@@ -96,7 +101,7 @@ def top_sprite_pixel(vram, palette, crom, px, py):
         if attr & 12:
             result = None; continue
         code = low | ((attr << 12) & 0xf0000)
-        sx, sy = px-x, dy%16
+        sx, sy = (px-x)&511, dy%16
         if attr & 1: sx = 15-sx
         if attr & 2: sy = 15-sy
         offset = code*128+(64 if sx<8 else 0)+sy*4

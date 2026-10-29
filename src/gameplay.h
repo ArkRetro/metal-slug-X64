@@ -4,9 +4,11 @@
 #include <stdint.h>
 #include "neo_vehicle.h"
 #include "neo_world.h"
-enum { MSX_BULLETS=8, MSX_UNIT=65536, MSX_WORLD_WIDTH=1192 };
+// Observed region: camera 0..1920. The right limit keeps the arcade fraction
+// (camera+292-1/65536), measured at 1164 for camera 872 and 2212 for 1920.
+enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=2240 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
-enum { MSX_START_X=0x78bad9, MSX_END_X=1164*MSX_UNIT-1 };
+enum { MSX_START_X=0x78bad9, MSX_END_X=2212*MSX_UNIT-1 };
 typedef struct { int x,y,direction; bool active; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the
@@ -18,6 +20,10 @@ typedef struct {
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     msx_bullet_t bullets[MSX_BULLETS];
+    /* Hostile straight projectiles observed by the depth25d event layer.
+     * No actor of the native region emits one (rebel soldiers here knife and
+     * throw objects); the list stays empty in the campaign. */
+    msx_bullet_t enemy_bullets[MSX_ENEMY_BULLETS];
     /* Native region world (level script, rebel soldiers, thrown objects,
      * death splashes), updated with the player on alternate video ticks. */
     neo_world_t world;bool world_enabled;

@@ -93,7 +93,14 @@ def main():
     native=json.loads((ROOT/'filesystem/soldier-native.json').read_text())
     native_palettes={int(k,16):palette_id(v) for k,v in native['palettes'].items()}
     base_palette=native['palettes']['0x20e'];descriptors=[];native_start=len(images)
-    for f in native['frames']:
+    # Pack the descriptors in program order so that one animation streams as
+    # few consecutive chunks as possible (SCENE_NATIVE is not pinned).
+    programs=json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'];rank={}
+    for prog in programs:
+        for c in prog['commands']:
+            if c['kind']=='POSE':rank.setdefault(c['asset'],len(rank))
+    native_frames=sorted(native['frames'],key=lambda f:rank.get(int(f['descriptor'],16),len(rank)))
+    for f in native_frames:
         pens=bytes.fromhex(f['pens_hex']);w,h=f['width'],f['height'];first=len(images)
         for py0 in range(0,h,64):
             for px0 in range(0,w,64):
@@ -111,6 +118,7 @@ def main():
             crop=[pixels[(row*32+y)*320+8+col*32+x] for y in range(32) for x in range(w)]
             background.append(image(crop,w,32))
     mission=json.loads((ROOT/'filesystem/mission1/map.json').read_text())
+    assert len(mission.get('backdrop_values',[mission['backdrop']]))==1,'Multiple observed backdrops need native event playback before scene packing'
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
@@ -139,6 +147,12 @@ def main():
         lines.extend('  {'+','.join(str(v) for v in item)+'},' for item in items);lines.append('};')
     lines.append('static const scene_native_descriptor_t scene_native_descriptors[]={')
     lines.extend('  {0x%x,%d,%d},'%d for d in sorted(descriptors));lines.append('};')
+    # Streaming working set of the native bank: chunks of each program's poses;
+    # the three largest model three concurrent animations (budget check).
+    page_of={d:images[first][0] for d,first,count in descriptors}
+    parts={d:[images[first+i][0] for i in range(count)] for d,first,count in descriptors}
+    program_chunks=sorted((len({pg//8 for c in prog['commands'] if c['kind']=='POSE' for pg in parts[c['asset']]}) for prog in programs),reverse=True)
+    lines.append(f'#define SCENE_NATIVE_PROGRAM_CHUNKS_MAX3 {sum(program_chunks[:3])}')
     lines.append('static const scene_native_palette_t scene_native_palettes[]={')
     lines.extend('  {0x%x,%d},'%(k,v) for k,v in sorted(native_palettes.items()));lines.append('};')
     lines.append('static const scene_image_t scene_map_images[]={')

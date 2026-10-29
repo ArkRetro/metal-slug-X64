@@ -425,7 +425,33 @@ prueba cubre la transición a cero, el caso +99==1, la variante de paleta y
 servicios ausentes. Estas pruebas pasan en host, sanitizadores y MIPS/ares;
 la cobertura nueva sigue siendo estática/sintética, no un replay dinámico MAME.
 
-**Falta C3348..C35D0**, con consultas y cambios de forma, entre ambas fases.
-No se deben concatenar begin/palette/tail omitiendo ese tramo ni conectarlas
-a campaña como si constituyeran un controlador completo. También siguen
+El tramo intermedio C3348..C35D0 se ejecuta ahora mediante
+`marco_common_forms`, dentro de `marco_common_update`. No se deben concatenar
+begin/palette/tail omitiéndolo ni presentar esa secuencia como controlador
+completo de campaña. También siguen
 pendientes las rutinas de daño/muerte, acciones especiales y servicios reales.
+
+
+## Fases comunes conectadas y solicitudes de forma
+
+`marco_common_forms` traduce estáticamente `0x0C3348..0x0C35D0`. La tabla
+numérica de 16 reglas se contrastó directamente con ROM `0x0C32E4`, calculando
+su dirección desde la LEA `0x0C3428`. No se han inventado los valores.
+Incluye la consulta AA458 y la salida inmediata a C30F0, autorización/reinicio
+de arma, consultas C0BAE/CA2F8 y temporizador de forma, prioridades de forma,
+contador de paleta y solicitud explícita del efecto de salida de forma 1.
+
+`marco_common_update` ordena begin -> forms -> palette -> tail. La salida
+inmediata interrumpe esa secuencia antes de paleta/inmunidad. El tail conserva
+las solicitudes previas salvo que la prioridad original de muerte las cambie.
+Los destinos del cuerpo y la solicitud del upper C393C son enums/flags nativos;
+no se ejecutan como direcciones de ROM ni se dan por implementados. La capa
+propietaria todavía debe resolverlos.
+
+Las pruebas sintéticas en host, ASan/UBSan y MIPS/ares cubren cambios de forma,
+servicios ausentes, expiración del temporizador, salida inmediata y la secuencia
+común conectada con el upper nativo. No hay aún replay dinámico MAME de este
+bloque ni adaptación de todos sus servicios al mundo de campaña. Faltan rutinas
+de transición/daño/muerte, acciones especiales y unión del catálogo/renderizador.
+La campaña sigue usando el controlador provisional; no se declara integración
+completa ni se publica otro cartucho parcial.

@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "a6d7b1667fd5c81490e0301d928ce4aa864fac99b0e289691bef9fa302fe09ba",
+  "suite": "common",
+  "limit": "Static addressed common-phase translation and synthetic native MIPS/sanitizer tests, including native upper coupling and immediate-exit ordering. No dynamic MAME service replay, destination-routine implementation or campaign integration claim.",
+  "static_rom_range": "0x0C32F4..0x0C3776",
+  "verified_numeric_table": "ROM 0x0C32E4, 16 bytes, addressed via LEA 0x0C3428"
+}

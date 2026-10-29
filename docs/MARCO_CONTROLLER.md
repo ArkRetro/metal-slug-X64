@@ -383,3 +383,27 @@ entradas medidas anteriormente solo cubren el prefijo de decisión. Las consulta
 concretas al mundo, las rutinas de las variantes y el procesamiento común siguen
 pendientes de recuperación/integración. Esto no completa el controlador de
 campaña ni la demo jugable de la misión.
+
+## Tramo final del procesamiento común
+
+`marco_common_tail` traduce ROM `0x0C3634..0x0C3776`: contador de inmunidad,
+paleta intermitente, protección global/consulta CA2F8, resultado de contacto
+4C24, solicitud de forma 3, prioridad de destinos de muerte, consulta de
+proximidad 49E8 y restauración de máscara +9C. Las escrituras de paleta +14
+modifican el byte alto del atributo y conservan el byte bajo de flags. Los
+destinos C2956 y C2D6A se devuelven como enums programados, no se ejecutan ni
+se consideran implementados por esta función.
+
+La evidencia de origen es el listado dirigido de Ghidra de la ROM suministrada.
+Los ensayos son **sintéticos**, en host, ASan/UBSan y MIPS/ares; no hay todavía
+replay dinámico MAME de este nuevo tramo. Se validan orden de servicios,
+fronteras del contador, conservación de flags, protección y prioridad de muerte.
+`make marco-common-regression.z64` y `tools/test_marco_body_ares.py ROM
+--suite common --output RESULTADO_NUEVO` reproducen la prueba interna.
+
+No está conectado a `actor.c` ni sustituye el controlador provisional. Antes de
+usarlo deben implementarse C32F4..C3634 (upper, cambios de forma y paleta), los
+servicios de mundo y las rutinas de daño/muerte. También siguen pendientes
+variantes de reposo, acciones especiales, todas las armas y la unión del catálogo
+de programas y eventos al renderizador activo. **El controlador de Marco no
+está integrado al 100 % en campaña.**

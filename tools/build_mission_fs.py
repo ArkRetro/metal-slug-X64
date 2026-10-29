@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1];out=ROOT/'build/mission1-romfs';out.mkdir(parents=True,exist_ok=True)
 (out/'title-reference.wav64').unlink(missing_ok=True)
-for name,source in [('title.msxc',ROOT/'filesystem/cinematics/title.msxc'),('scene.pack',ROOT/'romfs/scene.pack'),('entry.msxc',ROOT/'filesystem/cinematics/entry.msxc'),('entry.wav64',ROOT/'filesystem/cinematics/entry.wav64'),('title-announcement.wav64',ROOT/'filesystem/cinematics/title-announcement.wav64')]:shutil.copyfile(source,out/name)
+(out/'title-announcement.wav64').unlink(missing_ok=True)
+for name,source in [('title.msxc',ROOT/'filesystem/cinematics/title-motion.msxc'),('scene.pack',ROOT/'romfs/scene.pack'),('entry.msxc',ROOT/'filesystem/cinematics/entry.msxc'),('entry.wav64',ROOT/'filesystem/cinematics/entry.wav64'),('title-motion.wav64',ROOT/'filesystem/cinematics/title-motion.wav64')]:shutil.copyfile(source,out/name)
 shutil.copytree(ROOT/'romfs/vehicles',out/'vehicles',dirs_exist_ok=True)
 print('Internal mission filesystem:',sum(p.stat().st_size for p in out.rglob('*') if p.is_file()),'bytes')

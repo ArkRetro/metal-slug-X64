@@ -22,8 +22,8 @@ with (out/'xvfb.log').open('w') as xlog:
   with (out/'ares.log').open('w') as log:
    process=subprocess.Popen(['bash',str(ROOT/'tools/run_ares.sh'),str(a.rom.resolve())],stdout=log,stderr=subprocess.STDOUT,env=env)
    title=wait('MSX TITLE start');assert 'audio=1' in title
-   title_asset=json.loads((ROOT/'filesystem/cinematics/title.json').read_text())
-   assert 'MSX TITLE start crc='+title_asset['pixels_crc32'] in title
+   title_asset=json.loads((ROOT/'filesystem/cinematics/title-motion.json').read_text())
+   assert 'MSX TITLE start crc='+f"{title_asset['frame_crc32'][0]:08x}" in title
    if not a.skip_title:
     time.sleep(.5);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'title.png')
    if a.skip_title:
@@ -32,6 +32,7 @@ with (out/'xvfb.log').open('w') as xlog:
     time.sleep(1);key('keydown','Return');time.sleep(1.0);key('keyup','Return')
    title=wait('MSX TITLE complete');assert ('skipped=1' if a.skip_title else 'skipped=0') in title
    wait('MSX INTRO start');time.sleep(.25);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'entry.png')
+   if not a.skip_title:assert f"MSX TITLE cadence unique={title_asset['frames']} dropped=0 source={title_asset['frames']}" in title
    text=wait('MSX mission handoff');match=re.search(r'MSX INTRO complete frames=(\d+) rendered=(\d+) crc=([0-9a-fA-F]+) reads=(\d+) audio=(\d+)',text);assert match
    cadence=re.search(r'MSX INTRO cadence unique=(\d+) skipped=(\d+)',text);assert cadence
    assert int(cadence[1])==f['frames'] and int(cadence[2])==0,'Entry dropped source frames'
@@ -65,7 +66,7 @@ with (out/'xvfb.log').open('w') as xlog:
    key('keydown','e');time.sleep(.12);key('keyup','e');wait('MSX reset')
   sha=lambda path:hashlib.sha256(path.read_bytes()).hexdigest()
   timing=re.search(r'MSX INTRO timing decode_max_us=(\d+) decode_mean_us=(\d+) draw_max_us=(\d+)',text);assert timing
-  result=dict(title_presentation=title_asset.get('title','original_plate_n64_prompt'),title_auto_advance=not a.skip_title,title_start_skip=a.skip_title,status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
+  result=dict(title_presentation='recovered_original_motion_x64_adaptation_pending',title_auto_advance=not a.skip_title,title_start_skip=a.skip_title,status='PASS',emulator='ares 146',source_frames=f['frames'],unique_presented_frames=int(cadence[1]),skipped_frames=int(cadence[2]),rendered_frames=int(match[2]),final_pixels_crc32=match[3],movie_read_bytes=int(match[4]),audio_active_at_handoff=True,diagnostic_toggle=True,decode_max_us=int(timing[1]),decode_mean_us=int(timing[2]),draw_max_us=int(timing[3]),rom_sha256=sha(a.rom),movie_sha256=f['movie_sha256'],audio_sha256=f['audio_sha256'],log_sha256=sha(out/'ares.log'),limits='Internal noninteractive entry into the existing partial region. Full title/tutorial/select, full Mission 1, gameplay effects and continuous music remain pending. No release; no acoustic capture or hardware performance claim.')
   if a.region:result['partial_region']=region
   (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
  finally:

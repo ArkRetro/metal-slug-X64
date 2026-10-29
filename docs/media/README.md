@@ -56,3 +56,9 @@ not enter gameplay. A separate standard region test passed; ALSA capture runs
 that entered gameplay hit an RSP timeout which remains unresolved.
 The parachute footage still contains original arcade HUD/prompts; full N64 HUD
 adaptation and the complete mission are pending.
+
+
+The user rejected `metal-slug-x64-intro-sound.mp4`: a static generated card and
+generic voice do not reproduce the original letter animation or sound effects.
+It is historical evidence only, not the approved intro. The active work now
+recovers the original animation and synchronized sound before making X64 edits.

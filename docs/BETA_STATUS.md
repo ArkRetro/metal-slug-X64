@@ -1,3 +1,9 @@
+Current intro work supersedes the static-title proposals below: original title
+motion and synchronized audio recovered from ROM/reference, 361 frames matched
+offline and presented without omissions in ares. The X64-specific graphic and
+sound adaptation is not complete. Generated title/voice experiments were rejected
+and are not active. No new intro video or full-mission demo is released.
+
 The internal boot now shows the original title plate reconstructed from ROM,
 with PRESS START replacing INSERT COIN, a title audio excerpt, timed advance
 and Start handoff into the parachute entry. This is a static title adaptation,

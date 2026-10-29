@@ -13,7 +13,7 @@ int main(void) {
     debug_init_emulog();console_init();
     if (dfs_init(DFS_DEFAULT_LOCATION)!=DFS_ESUCCESS) fail("DragonFS");
     if (get_memory_size()<8*1024*1024) fail("Se requiere Expansion Pak (8 MiB)");
-    rdpq_init();actor_init();msx_audio_init();
+    rdpq_init();msx_audio_init();
     console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);joypad_init();
     if (!msx_title_intro()) fail("Presentacion inicial");
     if (!msx_cinematic_open("rom:/entry.msxc")) fail("Entrada cinematica");
@@ -47,6 +47,7 @@ int main(void) {
     for (;;) {msx_audio_service();joypad_poll();msx_cinematic_draw(display_get());}
 #endif
     msx_cinematic_close();
+    actor_init();
     if (!actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
     for (;;) {
         msx_audio_service();joypad_poll();

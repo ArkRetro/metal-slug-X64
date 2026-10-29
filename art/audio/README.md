@@ -1,3 +1,5 @@
+> Rejected presentation experiment. Not used by the active intro.
+
 # Title announcement
 
 Text: “Metal Slug! X sixty-four!” (English).

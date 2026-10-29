@@ -79,13 +79,13 @@ scene-debug.z64: $(BUILD_DIR)/scene-debug.dfs
 scene-release.z64: $(BUILD_DIR)/scene-release.dfs
 
 # Internal integration cartridge: not the requested complete Mission 1 demo.
-$(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64 $(BUILD_DIR)/mission1-romfs/title-announcement.wav64 $(BUILD_DIR)/mission1-romfs/title.msxc &: tools/build_mission_fs.py filesystem/cinematics/title.msxc filesystem/cinematics/title-announcement.wav64 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
+$(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64 $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/title.msxc &: tools/build_mission_fs.py filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
 	python3 tools/build_mission_fs.py
 $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/entry.json
 	python3 tools/compile_entry_meta.py
 $(BUILD_DIR)/src/mission_main.o: $(BUILD_DIR)/entry_meta.h
 $(BUILD_DIR)/mission1-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
-$(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-announcement.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
+$(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 mission1-internal.z64: N64_ROM_TITLE = "MSX M1 INTERNAL"
 mission1-internal.z64: $(BUILD_DIR)/mission1-internal.dfs
@@ -214,10 +214,16 @@ clean:
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
-check-cinematic: $(BUILD_DIR)/entry_meta.h
+$(BUILD_DIR)/title_motion_meta.h: tools/compile_cinematic_crcs.py filesystem/cinematics/title-motion.json
+	python3 tools/compile_cinematic_crcs.py filesystem/cinematics/title-motion.json $@
+
+check-cinematic: $(BUILD_DIR)/entry_meta.h $(BUILD_DIR)/title_motion_meta.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/cinematic-pack
 	$(BUILD_DIR)/host/cinematic-pack filesystem/cinematics/entry.msxc
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DMSX_CINE_META_HEADER='"title_motion_meta.h"' tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/title-motion-pack
+	$(BUILD_DIR)/host/title-motion-pack filesystem/cinematics/title-motion.msxc
+	python3 tools/test_title_palette_banks.py
 $(BUILD_DIR)/marco_selectors.h: tools/compile_marco_selectors.py data/marco_selector_fixture.json
 	python3 tools/compile_marco_selectors.py
 
@@ -473,3 +479,7 @@ $(BUILD_DIR)/intro-preview.dfs: $(BUILD_DIR)/mission1-internal.dfs
 	cp $< $@
 intro-preview.z64: N64_ROM_TITLE = "METAL SLUG X64"
 intro-preview.z64: $(BUILD_DIR)/intro-preview.dfs
+
+filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64:
+	@echo "Recover full title motion with tools/pack_title_animation.py; see docs/INTRO_AUDIO.md"
+	@exit 1

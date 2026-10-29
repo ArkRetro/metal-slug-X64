@@ -9,6 +9,9 @@ local video_memory=emu.item(assert(sprite.items['0/m_videoram']))
 local animation_counter=emu.item(assert(sprite.items['0/m_auto_animation_counter']))
 local animation_disabled=emu.item(assert(sprite.items['0/m_auto_animation_disabled']))
 local fixed_source=emu.item(assert(sprite.items['0/m_fixed_layer_source']))
+local palette_bank=emu.item(assert(manager.machine.devices[':'].items['0/m_palette_bank']))
+local palette_memory=emu.item(assert(manager.machine.devices[':'].items['0/m_paletteram']))
+local screen_shadow=emu.item(assert(manager.machine.devices[':'].items['0/m_screen_shadow']))
 local players=assert(io.open(output..'/player.jsonl','w'))
 local shot_first=tonumber(os.getenv('MSX_SHOT_FIRST') or '0')
 local shot_last=tonumber(os.getenv('MSX_SHOT_LAST') or '0')
@@ -36,6 +39,9 @@ local function dump()
  local pal=assert(io.open(output..'/palette'..frame..'.bin','wb'))
  for i=0,4095 do pal:write(string.pack('>I2',cpu:read_u16(0x400000+i*2))) end
  pal:close()
+ local banks=assert(io.open(output..'/palette-banks'..frame..'.bin','wb'))
+ for i=0,8191 do banks:write(string.pack('>I2',palette_memory:read(i))) end
+ banks:close()
 end
 emu.register_frame_done(function()
  frame=frame+1;dbg:command(string.format('temp9=%x',frame))
@@ -46,7 +52,7 @@ emu.register_frame_done(function()
   dbg:command('wpiset 0:audiocpu,10000,w,(wpaddr&ff)>=4 && (wpaddr&ff)<=7,{printf "YM_WRITE frame=%d port=%04X value=%02X\\n",temp9,wpaddr,wpdata;g}')
  end
  if actions[frame] then button(actions[frame][1],actions[frame][2]) end
- timing:write(string.format('{"frame":%d,"time":"%s","animation_counter":%d,"animation_disabled":%d,"fixed_source":%d}\n',frame,tostring(manager.machine.time),animation_counter:read(0),animation_disabled:read(0),fixed_source:read(0)));timing:flush()
+ timing:write(string.format('{"frame":%d,"time":"%s","animation_counter":%d,"animation_disabled":%d,"fixed_source":%d,"palette_bank":%d,"screen_shadow":%d}\n',frame,tostring(manager.machine.time),animation_counter:read(0),animation_disabled:read(0),fixed_source:read(0),palette_bank:read(0),screen_shadow:read(0)));timing:flush()
  if frame>=3800 then
   players:write(string.format('{"frame":%d,"routine":%d,"x":%d,"y":%d,"vx":%d,"vy":%d,"flags15":%d}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9)));players:flush()
  end

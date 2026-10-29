@@ -2,7 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "../src/cinematic_codec.h"
-#include "entry_meta.h"
+#ifndef MSX_CINE_META_HEADER
+#define MSX_CINE_META_HEADER "entry_meta.h"
+#endif
+#include MSX_CINE_META_HEADER
 int main(int argc,char **argv) {
     assert(argc==2);FILE *f=fopen(argv[1],"rb");assert(f);uint8_t header[32];assert(fread(header,1,32,f)==32);
     unsigned frames=msx_cine_be32(header+16),maximum=msx_cine_be32(header+20),pixels=msx_cine_be32(header+8)*msx_cine_be32(header+12);

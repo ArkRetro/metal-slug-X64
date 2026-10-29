@@ -1,3 +1,7 @@
+> Current intro baseline is the recovered original moving title with synchronized
+> sound. The static generated X64 card and generic voice below were rejected.
+> Faithful X64-specific changes are still pending; this is not a completed demo.
+
 # Intro completa y sonido: alcance y evidencia
 
 La siguiente entrega solicitada es una demo jugable de **toda la Misión 1,
@@ -170,16 +174,16 @@ avance automático/Start y conservación de la entrada de 230 frames y su handof
 No es una captura acústica ni una medición de rendimiento en hardware.
 
 
-## METAL SLUG X64: título y locución solicitados
+## Experimento rechazado: placa X64 y locución genérica
 
-La presentación vigente usa el arte de `art/title/metal-slug-x64.png`, adaptado
+La propuesta anterior usaba el arte de `art/title/metal-slug-x64.png`, adaptado
 mediante generación de imagen y convertido a 320x240/RGBA5551. El nombre visible
 es METAL SLUG X64. La tipografía evoca los títulos de la época N64; no se atribuye
-a una fuente oficial de Nintendo. Sustituye la placa original de la sección
+a una fuente oficial de Nintendo. Sustituía la placa original de la sección
 anterior, que se conserva como herramienta de reconstrucción.
 
 La voz del título dice “Metal Slug! X sixty-four!” y es una voz sintética genérica
-de Piper. No se clonó al actor original. El canal ANNOUNCER reproduce el WAV64
+de Piper. No se clonó al actor original. El canal ANNOUNCER reproducía el WAV64
 convertido desde `art/audio/title-announcement.wav`. No se mezcla con el antiguo
 fragmento de título, que podía contener la locución original; el audio de entrada
 en paracaídas sigue siendo la referencia original.
@@ -192,3 +196,33 @@ tramo parcial, pero no demuestra que el fallo de audio/captura esté corregido.
 El vídeo de muestra es un montaje de frames de ares y su PCM capturado, alineado
 al tiempo de presentación nativo; no representa rendimiento real en hardware.
 No se publica el cartucho de prueba ni se presenta como demo completa.
+
+
+## Reconstrucción de la animación original (dirección vigente)
+
+La captura `title-animation-banked-82` registra cada frame, escrituras de VRAM,
+ambos bancos físicos de paleta y las conmutaciones de banco. El primer intento
+sin ambos bancos falló una comprobación de preescritura: se descartó. El nuevo
+replay conserva cada valor previo, cada máscara y ambas memorias finales; compara
+cada uno de los 361 frames 300..660 con MAME, sin píxeles RGB activos fuera de
+la tolerancia de una unidad. Son 24.582.656 píxeles activos contrastados.
+
+El PCM se recorta con las marcas de tiempo de esos mismos frames, sin añadir
+voz sintetizada ni sustituir los efectos originales. `pack_title_animation.py`
+produce la secuencia nativa y el WAV64; los PNG solo verifican, no son texturas.
+Los contadores nativos de ares verifican 361 frames únicos y cero omisiones,
+además de conservar los 230 de la entrada en paracaídas y el recorrido parcial.
+`check-cinematic` contrasta también todos los CRC decodificados por C.
+
+Se amplía la caché de cinemática y se preparan hasta 32 frames pesados cuando
+cabe en 8 MiB. El escenario se carga tras cerrar las cinemáticas, para que esa
+memoria esté disponible. Se prepara el primer dibujo antes del reloj/audio y
+se obtiene el búfer de pantalla **antes** de calcular/decodificar el frame.
+Las versiones que lo hacían después omitían frames y no se aprobaron.
+
+**Pendiente:** integrar el 64 en el lenguaje de movimiento y acabado original,
+sus sonidos asociados y los prompts de N64, además de la misión/controlador
+completos. El título recuperado es una referencia de Metal Slug X, no una
+adaptación X64 terminada. No se publica otro vídeo como resultado final.
+
+La evidencia numérica de esta corrección está en [title-motion-validation.json](title-motion-validation.json). La prueba automática de avance y la de salto con Start pasan; no constituyen una captura acústica ni una prueba en MiSTer.

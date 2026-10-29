@@ -1,3 +1,5 @@
+> Rejected presentation experiment. Not used by the active intro.
+
 # METAL SLUG X64 title artwork
 
 Authored through image generation using the reconstructed arcade title as its

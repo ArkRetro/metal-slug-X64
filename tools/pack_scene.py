@@ -107,7 +107,7 @@ def main():
                 pw,ph=min(64,w-px0),min(64,h-py0)
                 crop=[pens[(py0+y)*w+px0+x] for y in range(ph) for x in range(pw)]
                 images.append(image([base_palette[q] for q in crop],pw,ph,f['x']+px0,f['y']+py0,True,crop,base_palette))
-        descriptors.append((int(f['descriptor'],16),first,len(images)-first))
+        descriptors.append((int(f["descriptor"],16),first-native_start,len(images)-first))
     banks.append((native_start,len(images)-native_start,0,1,64,64))
     source_bytes+=sum(f['width']*f['height']*2 for f in native['frames'])
     raw=(ROOT/'filesystem/desert.bin').read_bytes();source_bytes+=len(raw)
@@ -149,8 +149,7 @@ def main():
     lines.extend('  {0x%x,%d,%d},'%d for d in sorted(descriptors));lines.append('};')
     # Streaming working set of the native bank: chunks of each program's poses;
     # the three largest model three concurrent animations (budget check).
-    page_of={d:images[first][0] for d,first,count in descriptors}
-    parts={d:[images[first+i][0] for i in range(count)] for d,first,count in descriptors}
+    parts={d:[images[native_start+first+i][0] for i in range(count)] for d,first,count in descriptors}
     program_chunks=sorted((len({pg//8 for c in prog['commands'] if c['kind']=='POSE' for pg in parts[c['asset']]}) for prog in programs),reverse=True)
     lines.append(f'#define SCENE_NATIVE_PROGRAM_CHUNKS_MAX3 {sum(program_chunks[:3])}')
     lines.append('static const scene_native_palette_t scene_native_palettes[]={')

@@ -92,7 +92,27 @@ python3 tools/extract_soldier_world.py  /ruta/walk3:3320 /ruta/fire3:2880 /ruta/
 make check && make -j4
 ```
 
+## Verificación en ares 146
+
+`tools/test_mission_native_ares.py` recorre la región en la ROM real
+(`mslugx-explorer.z64`, ares 146, Expansion Pak, teclado enlazado al mando:
+flechas, `a`=A, `b`=B, `e`=R, Return=Start): 8 rebeldes creados por el guion,
+7 abatidos, el guion se detiene explícitamente en `0x2D651A` (fin de los
+registros importados; el segmento del camión no está portado, por lo que
+entre las cámaras 872 y 1920 no hay apariciones nativas) y se alcanza el fin
+de región en la cámara 1920. Sin descriptores ni rutinas no soportadas.
+Rendimiento observado: `draws` ≤ 501, CPU 19–20 ms por fotograma, `misses=0`
+(caché de 8 MiB: todo el pack residente). Con 4 MiB el banco nativo se
+transmite bajo demanda (`tools/check_scene_budget.py`).
+
 ## Pendiente (sin implementar nada especulativo)
+
+- Segmento del guion tras `0x2D651A` (camión `0x0028`, condiciones de región
+  del jugador `0x0B/0x0C`, llamadas `0x0C7xxx`, soldados con `+76=3/4`): no
+  importado; el intérprete se detiene y lo registra.
+- La altura de cámara del mapa ampliado (`msx_camera_height`) solo desplaza el
+  dibujo; la escena del mundo sigue en `y=256` (la palabra RAM `0x10E980` del
+  original no está medida en ese tramo).
 
 - Entradas de la tabla de apariciones `0x0197DC` que el guion usa en la región
   y no están portadas: `0x099DCC/0x099E06`, `0x0400AA`, `0x03FC5A`, `0x0B6298`,

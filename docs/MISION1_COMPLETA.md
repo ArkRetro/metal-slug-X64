@@ -96,7 +96,7 @@ contestados por el mundo:
 | objetos de escena, barrido y suelo | raíz/terreno; `10D7B6/10E8C6` = terreno (banco medio a velocidad completa); núcleo de colisión nativo |
 | plataformas `0x0140C0/0x013F1E` | objetos dinámicos del núcleo (`0E93B2/0E94AC/0E95A6`), visibles para soldados y actores genéricos |
 | registro `0x004C24` y ataque `0x0049E8` | casillas de la ventana de registro; filas de ataque de clase 0 contra el jugador |
-| efectos | `01C706/01C71E/01D764/01D86C…` siguen como actores genéricos nativos; `02A18A` es `JMP 0041AC`; prisioneros `099DCC` y estelas convertidas `02A3CE` cuentan como externos |
+| efectos | `01C706/01C71E/01D764/01D86C…` siguen como actores genéricos nativos; `02A18A` es `JMP 0041AC`; las estelas convertidas `02A3CE` cuentan como externas; los prisioneros `099DCC` son nativos (MISION1_ACTORES.md) |
 | misión `0x018F92/0x018F40` | `mission_step` 1 y 2 → `mission_complete` / `complete` |
 
 Los disparos del jugador llegan al jefe por la fase estrecha original
@@ -154,7 +154,8 @@ iguales, 0 distintos**
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
-| `0x031D92`, `0x099DCC`, `0x099E06` prisioneros, `0x03458E` Camel Slug | externos |
+| `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
+| `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),

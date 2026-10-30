@@ -159,10 +159,23 @@ def main():
         dyn+=[(0xffff,0,0)]*(48-len(dyn))
         # RAM 1067E2 (kill-all, 004BAC) as read: set by another family.
         kill=rd(u,0x1067e2)
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d},'%(
+        # Object list (markers, 040200/0402E6) as read: list 10C3A2 (count
+        # word 10C3F2) or 10C3F4 (count 10C444), 10-byte entries x.l, y.l,
+        # height.b, id.b. Entries the query did not reach stay 0.
+        marks=[]
+        for base in (0x10c3a2,0x10c3f4):
+            cnt=rd(u,base+0x50)
+            if cnt is None:continue
+            assert cnt%10==0 and cnt<=80,(u['frame'],cnt)
+            for i in range(cnt//10):
+                wv=[(lambda v:0 if v is None else v[1]&((0xff00 if v[0]&0xff00 else 0)|(0xff if v[0]&0xff else 0)))(u['reads'].get(hex(base+10*i+2*j))) for j in range(5)]
+                marks.append((s32(wv[0]<<16|wv[1]),s32(wv[2]<<16|wv[3]),wv[4]>>8,wv[4]&255))
+            break
+        nm=len(marks);marks+=[(0,0,0,0)]*(8-len(marks))
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s}},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068))))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks)))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

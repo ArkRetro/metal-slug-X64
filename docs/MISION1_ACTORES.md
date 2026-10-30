@@ -335,9 +335,17 @@ escribe el código del jugador original; ahora `neo_genv_t.pickup_box`),
   (H), 51`; con otro movimiento (`0x08BA10`, `0x08BA38`, `0x08BAB2`) el
   constructor lo devuelve al mundo como externo. La lista `10C5C2` no tiene
   lector en el port y no se mantiene.
-- Solo pasada la región (`MISSION1_REGION_END`): en la región la prueba de
-  mundo en bucle cerrado (`walk3`…`m3x`) los trata como actores de fuera y
-  los soldados nativos aún no sueltan los suyos (tipo 0 vía `0x08CDB2`).
+- Nativos en toda la misión (antes solo pasada `MISSION1_REGION_END`): la
+  prueba de mundo de la región los compara ahora como actores del mundo (ver
+  «Prisioneros `0x099DCC/0x099E06`»). Movimientos nativos: `0x08B9B2`,
+  `0x08BA10` (tipo 1A, el del bombardero), `0x08BA38` (24) y `0x08BAB2` (las
+  comidas 35, 38, 3A..3C, 3E, 43, 45..47, 58) y `0x08BD5A`; `0x08BAAA`
+  (`0x08CCD4`) y los demás siguen devolviendo el objeto como externo.
+  Retrollamadas nuevas de las comidas: `2881E6` (la 35 al caer suelta tres
+  36 con velocidades del RNG), `28A61A`, `289A5E`, `2887C2`, `288786`,
+  `28879A`, `288502`, `288DEC`, `288BEE`, `28904E`, `28906E`, `287D5C`,
+  `28774C`, `28AB28`, `28AB36` (`0x002F1A`). `0x08C66A` ejecuta el programa
+  con sus retrollamadas (antes sin ellas).
 - Caja del jugador del port: la de pie de las capturas (`FFF8,0000,0010,
   0020`, 158 de 167 volcados de `pri1/trk3/bld1/robe1`; las otras son el
   tanque y otra postura que el port no tiene); sin jugador 2 (`8000`).
@@ -583,6 +591,83 @@ salpicadura) dan 26143 píxeles iguales y 3529 distintos en 5 volcados (8310..84
 cuando bajan del helicóptero (sin investigar: probablemente el orden de
 sprites con el helicóptero, que aún no es nativo).
 
+## Prisioneros `0x099DCC/0x099E06` (`src/neo_prisoner.c`)
+
+Registros del guion en toda la misión (desierto y aldea incluidos:
+`0x2D6384`, `0x2D639E`, `0x2D6666` (`0x099E06`), `0x2D66D6`, `0x2D67DA`,
+`0x2D69D0`, `0x2D6ED0`, `0x2D6F42`, `0x2D70C4`; grupo 9 sin contar) y los
+tres de la escotilla del jefe. Palabras `+6E..+76`: `+6E` cara/vagar (3 =
+`0x0029F2(3)`), `+72` mira a la izquierda, `+74` objeto que regala (`FFFF`
+ninguno, `FFFE` se lo da al jugador), `+76` su vida, `+78` detrás. Traducción
+manual de `0x099DCC..0x09A5EE`: constructor `0x09AC16` (paletas `0x382/0x3FA`,
+profundidad `8820`; `0x03C526` no crea nada en la Misión 1), colgado atado
+`29FAD8` hasta un golpe (`0x09AD2A` → `0x004C24`; `+88` cuenta el
+estremecimiento de `0x09AD1C`), se suelta (`29FB34`); `0x099E06` atado a la
+silla (`29FCBE`, contador `+18` del programa), golpeado cae (`29FDE6`) y deja
+la cuerda `0x09A97C` (`29FE0A`). Suelto (`0x099FD8`): paletas `0x381/0x3FA`,
+caja `0x09AD4C`, vaga (`29FE52`, `+62` = 1,5 px) `+7A` actualizaciones, se
+para (`29FED0`) en una pared o al acabarse, cae de las cornisas (`29FBEC`);
+en un marcador de la lista de objetos (`0x040200`, ahora
+`ga_marker_cross`) sube (bit 0: `29FFE4/29FFFA` con `0x0402E6`, ahora
+`ga_marker_follow`; luego salta `2A0074/2A011C`) o baja (bit 1:
+`2A0128/2A01D0/2A024A`). Tocado (`0x09AB9A`: rectángulo `0x09ADE0`; RAM
+`10C303` vale FF en las 91 lecturas de `fam2`) se cuenta el rescate
+(`0x09AAD6`: `10E9E8/10E9EA` por `0x0C8CC2`, `10C5FC/10C600`, `10C5FF/10C603`
+con `+74 = FFFE`; ahora `neo_ga_flags_t.tally/rescued/gifts`), gira, saluda
+(`29FEEC`: su retrollamada `0x09ACD6` da el objeto `+74` por `0x08CDB2`
+colocado por `0x014A02`, ahora `ga_sweep_place`), saluda con la mano
+(`2A02B6`) y corre a la izquierda (`2A0260`) hasta una pared, 30
+actualizaciones más. Fuera de `0x09ADD0` (`0x0C8BEC`) acaba en `0x09A5EE`
+(comprobación del cartucho → `0x004188`: borrar).
+
+- **Parada explícita**: `+74 = FFFE` al acabar el saludo (`0x0DDCDA`: el
+  prisionero sigue al jugador para darle el objeto), no grabado; ambos
+  jugadores dentro del rectángulo (`0x09ABD6`, el port tiene uno).
+- Servicio del motor de animación: el contador `+18` del programa se lee y
+  escribe ahora a través del estado del programa (antes `SET_BYTE/DEC_BYTE`
+  sobre `+18` se perdían al acabar el paso); una retrollamada sin traducir se
+  detiene en su propia dirección (antes `0x00427A`).
+- `0x0040BC` copia `+68` de su A6: con `0x00411C` es el actor del guion
+  (`+68 = 0`), no el creador (`neo_world.c`).
+
+Prueba `prisoner2` (`data/prisoner2_fixture.json.gz`, MAME
+`captures-m1full/fam2`, rangos `99dcc-9a5ee`, `9a97c-9a9c2`): **2 nodos, 259
+actualizaciones en bucle cerrado (8079..8444), 35980 bytes iguales**, con
+bajada por un marcador (`0x09A4FA`), rescate, saludo con su objeto y salida.
+La prueba genérica lee ahora la lista de objetos (`10C3A2/10C3F4`) que leyó la
+actualización (`tools/extract_family_fixture.py` junta los bytes de altura e
+identificador leídos aparte).
+
+Prueba de mundo de la región (`tools/test_neo_world.c`,
+`data/soldier_world_fixture.json.gz` re-extraído de `walk3`, `fire3`,
+`entry-walk3`, `entry-fire3`, `m2x`, `m3x` con los prisioneros, la cuerda y
+los objetos `0x08C374` como actores del mundo): **5248 actualizaciones,
+22880 estados de actores genéricos** (antes 17934), 15168 llamadas RNG
+nativas (873 inyectadas, antes 879). La extracción distingue `0x09A5EE`
+(compartida con las cajas `0x09A67E`, externas allí), marca `pending` los
+objetos creados detrás del recorrido (tras el actor del guion por un actor
+posterior; corren desde la actualización siguiente), deja fuera los objetos
+que crea `0x0C962C` (externo) y graba las cajas de recogida `10C5EC/10C5F4`
+de cada actualización (las restaura el sistema de continuación antes que los
+actores del mundo: `m2x` 7525). La prueba inyecta el golpe externo de un
+cuerpo sin salud (`+5F` bit 7) y compara la capa `10D7B6` como `10C72E`
+cuando el extractor ya las igualó.
+
+Gráficos: `... fam2@1c97a-1c97a fam2@99dcc-9a9c2 --palette-capture
+/home/user/captures/blood --keep <exportación anterior>` (opción nueva
+`--keep`: las paletas que ninguna captura dada tiene se conservan; las
+capturas `hfam/cfam` ya no están): 1807 descriptores (los 1546 anteriores
+idénticos), 49 paletas (nuevas `0x381`, `0x382`, `0x3FA`, `0x117`; las
+anteriores idénticas); los volcados de `fam2` 8100..8190 del prisionero:
+1402 píxeles iguales, 0 distintos.
+
+Partida de `tools/test_gameplay.c`: los rescates cambian el recorrido; la
+parada 1304 dura 146 (cota inferior 140; la recreativa 385, ver arriba), la
+cámara sube a 32 y las armas 0C y 08 (constructor `0x0641EC`) de los regalos se disparan
+como paradas explícitas contadas (sus disparos no están portados; la H sigue
+siendo nativa entera). `armored_x` acepta el blindado hasta x < 352 (su
+cuerpo entra en la vista 40 px antes que `+3C`).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura
@@ -637,7 +722,7 @@ MSX_REST_BOSS_FROM=7200 MSX_REST_LAST=8100`; en esa partida la cámara llega a
 | --- | --- | --- |
 | `data/cannon_fixture.json.gz` | `92a00-95600`, `3b4e0-3b600`, `14a4e-14a60`, `3523c-35300` | cañón `0x092A32` (+ `0x093278`, `0x0954DC`) y sus hijos, 219 actualizaciones (7772..8100) |
 | `data/prisoner_fixture.json.gz` | `99862-99dc0` | prisionero `0x099862`, 124 actualizaciones |
-| `data/prisoner2_fixture.json.gz` | `99dcc-99e60` | prisionero `0x099DCC`, 11 actualizaciones |
+| `data/prisoner2_fixture.json.gz` | `99dcc-9a5ee`, `9a97c-9a9c2` | prisioneros `0x099DCC` de `fam2` (prueba `prisoner2`, más abajo) |
 | `data/hitem_fixture.json.gz` | `8c37c-8c700` | objeto H `0x08C37C`, 129 actualizaciones (depende del sistema de armas del jugador, que el port no tiene) |
 
 Los espadachines `0x09D846/62/76`, el lanzacohetes `0x05ED84` y el

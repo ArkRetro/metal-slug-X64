@@ -36,6 +36,7 @@ typedef struct {
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
+    int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -270,6 +271,10 @@ int main(void) {
         if (u->tmask) terrain_seen=true;
         dyn_inputs(&kernel,u);
         if (u->w4068>=0) kernel.w4068=(uint16_t)u->w4068;     /* RAM 10C068 as read */
+        /* Object list as read (markers of other families' actors). */
+        static neo_marker_t marks[8];
+        for (int m=0;m<u->marker_count;m++) marks[m]=(neo_marker_t){u->markers[m][0],u->markers[m][1],(uint8_t)u->markers[m][2],(uint8_t)u->markers[m][3]};
+        e.markers=marks;e.marker_count=(unsigned)u->marker_count;
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */

@@ -40,6 +40,7 @@ BLOBS=[
     (0xE61D4,0x310,'0A9CB6 death pieces: speeds E61D4, angles E6206, lists E6220.., cull rectangle E64D8 (0A9A56)'),
     (0x35644,0x24,'035668 creature: cull rectangle, hurtbox, program speeds 035658'),
     (0x99D62,0x64,'099862 prisoner: hurtbox 099D62, cull rectangles 099D6E/099D76, player rectangle 099D7E, wriggle programs 099D86'),
+    (0x9AD4C,0x9C,'099DCC/099E06 prisoners: hurtbox 09AD4C, view rectangle 09ADD0, player rectangle 09ADE0, item table 09ADE8'),
     (0x2D0B9E,0x160,'099862 prisoner rank tables 2D0B9E/2D0BB8/2D0BD2 (0260C8) and item lists 2D0BEC (099D12)'),
     (0xE553E,0x20,'08C5EA item kinds deleted when their program ends'),
     (0xE561C,0x10,'08C0CC item pickup rectangle E561C, cull rectangle E5624 (0C8BEC)'),

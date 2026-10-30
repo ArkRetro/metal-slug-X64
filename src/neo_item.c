@@ -16,9 +16,10 @@
  * its end), +8C = 2 updates of 08C66A and the item goes. It leaves when outside 0E5624 (0C8BEC) or, with +8B, when its
  * creator is gone (00409A).
  *
- * Only the kinds whose motion is 08B9B2 (fall with 0xA000 gravity, grow +12
- * / +13 by 8 up to FF) are native (programs of every such kind are
- * imported; 36 is dropped by the hidden boxes 09A67E). The constructor hands any other kind
+ * Native kinds: the motions 08B9B2 (fall with 0xA000 gravity, grow +12 / +13
+ * by 8 up to FF), 08BA10, 08BA38 and 08BAB2 (programs of every such kind are
+ * imported; 36 is dropped by the hidden boxes 09A67E, 1A by the bomber, 29,
+ * 35 and 4B.. by the prisoners). The constructor hands any other kind
  * back to the world as an external actor (counted, not created). The item
  * list 10C5C2 (08CBCA/08CBF8) has no reader in the port and is not kept.
  * The path that would reach the cartridge check (2FFFE0, +6E = FFFF) ends in
@@ -42,12 +43,76 @@ static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(addres
  * fall-motion programs (kinds 31, 39, 44) stop explicitly. Kind 37's
  * program (288396) is translated; its 2884C8 turns it into kind 28, whose
  * motion 08BD5A walks on the ground (0x01456A) and falls in the air. */
+/* 08CD58 -> 08CDB2: item `kind` (+72 = d5) after the script actor at the
+ * actor's place (01ACF2). */
+static neo_gactor_t *k8cd58(neo_gactor_t *a,neo_genv_t *e,uint16_t kind,uint16_t d5) {
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (!c) return NULL;
+    ga_sb(c,0x8b,0);ga_sw(c,0x70,0);ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);
+    ga_place_at(c,a,e,0,0);ga_sw(c,0x72,d5);
+    return c;
+}
+/* 2881E6 (kind 35 landing): three items 36 thrown with random speeds. */
+static void k2881e6(neo_gactor_t *a,neo_genv_t *e) {
+    neo_gactor_t *c=k8cd58(a,e,0x36,0);
+    uint16_t r=(uint16_t)((ga_rand(e)&1u)+1u);if (c) ga_sw(c,0x30,r);
+    r=(uint16_t)((ga_rand(e)&1u)+3u);if (c) ga_sw(c,0x34,r);
+    c=k8cd58(a,e,0x36,0);
+    r=(uint16_t)(ga_rand(e)&1u);if (c) {ga_sw(c,0x30,r);ga_sw(c,0x32,0x8000);}
+    r=(uint16_t)((ga_rand(e)&1u)+4u);if (c) ga_sw(c,0x34,r);
+    c=k8cd58(a,e,0x36,1);
+    r=(uint16_t)(0u-((ga_rand(e)&1u)+1u));if (c) ga_sw(c,0x30,r);
+    r=(uint16_t)((ga_rand(e)&1u)+3u);if (c) ga_sw(c,0x34,r);
+}
 static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
-    (void)parameter;
     if (kind!=NEO_ANIM_CALL) return false;
     switch (routine) {
     case 0x2881ca: if (BIT(0x15,6) && !L(0x30)) SB(0x7d,L(0x34)?0:0xff);return true;
     case 0x287d50: SB(0x7d,BIT(0x15,6)?0xff:0);return true;
+    case 0x2881e6: k2881e6(a,e);return true;
+    /* The foods (kinds 35.., motion 08BAB2): rolling speed and the
+     * program's flags +7D/+7E. */
+    case 0x28a61a: case 0x289a5e: {
+        uint32_t d0=L(0x30);if (d0&0x80000000u) d0=0u-d0;
+        d0>>=8;
+        uint16_t w=(int16_t)(uint16_t)d0>0x200?0x200u:(uint16_t)d0;
+        SW(0x26,w);
+        if (routine==0x289a5eu) {SB(0x7d,w?0:0xff);return true;}
+        if (!B(0x7e)) {
+            uint32_t v=L(0x30);if (v&0x80000000u) v=0u-v;
+            if ((int32_t)v<=0x9000 || (int16_t)W(0x26)<=0x90) {SL(0x30,0);SW(0x26,0);}
+        }
+        return true;
+    }
+    case 0x2887c2: SB(0x7d,(ga_rand(e)&1u)?0:0xff);return true;
+    case 0x288786: SB(0x7e,(uint8_t)(B(0x7e)+1u));if (B(0x7e)>=0x1eu) SB(0x7e,0);return true;
+    case 0x28906e: SB(0x7e,(uint8_t)(B(0x7e)+1u));if (B(0x7e)>=0x11u) SB(0x7e,0);return true;
+    case 0x28879a: SB(0x7d,0);if (BIT(0x15,6) && !B(0x7e) && !L(0x30)) SB(0x7d,L(0x34)?0:0xff);return true;
+    case 0x28904e: SB(0x7d,0);if (BIT(0x15,6) && !L(0x30)) SB(0x7d,L(0x34)?0:0xff);return true;
+    case 0x288dec: case 0x288bee:
+        SB(0x7d,0);
+        if (BIT(0x15,6) && !L(0x30) && !L(0x34) && B(0x7e)==(routine==0x288decu?3u:0xcu)) SB(0x7d,0xff);
+        return true;
+    case 0x288502: SB(0x7d,BIT(0x15,6)?0xff:0);if (BIT(0x15,6)) {SL(0x30,0);SL(0x34,0);}return true;
+    case 0x287d5c: SET(0x5f,3);return true;
+    /* Kinds 3F and 58 (parameter: the frame count). */
+    case 0x28ab28: SB(0x7e,(uint8_t)ga_rand_range(e,parameter));return true;
+    case 0x28ab36: {
+        uint8_t last=(uint8_t)(parameter-1u);
+        uint8_t d1=(uint8_t)(((W(0x30)&0x8000u)?0xffu:0u)^(BIT(0x15,0)?0xffu:0u));
+        d1=(uint8_t)((d1&0xfeu)+1u);
+        SB(0x7e,(uint8_t)(B(0x7e)+d1));
+        if (B(0x7e)&0x80u) SB(0x7e,last);
+        if ((int8_t)last<(int8_t)B(0x7e)) SB(0x7e,0);
+        /* 002F1A: |vx|,|vy| (pixels) -> larger + smaller/2. */
+        uint16_t x=(uint16_t)(uint32_t)((int32_t)L(0x30)>>8),y=(uint16_t)(uint32_t)((int32_t)L(0x34)>>8);
+        if (x&0x8000u) x=(uint16_t)(0u-x);
+        if (y&0x8000u) y=(uint16_t)(0u-y);
+        uint16_t d0=y>x?(uint16_t)((x>>1)+y):(uint16_t)((y>>1)+x);
+        d0>>=2;if (d0) d0=(uint16_t)(d0+0x80u);
+        SW(0x26,d0);return true;
+    }
+    case 0x28774c: if (!L(0x34)) SW(0x26,0);return true;           /* kind 24 */
     case 0x28aa7e: SB(0x7e,ga_rand_range(e,3));return true;
     /* Kind 37 (program 288396). */
     case 0x2884aa: SW(0x26,(uint16_t)((ga_rand(e)&0xffu)+0x100u));return true;
@@ -74,6 +139,50 @@ static void k8b9b2(neo_gactor_t *a,neo_genv_t *e) {
     else SL(0x34,L(0x34)+0xffff6000u);
     SB(0x12,B(0x12)>0xf7u?0xff:B(0x12)+8u);
     SB(0x13,B(0x13)>0xf7u?0xff:B(0x13)+8u);
+}
+/* 08BA10: the fall with 0x5000 gravity (kind 1A). 08BA38 / 08BAB2: on the
+ * ground a fall faster than 0x4000 bounces at half speed (else it stops),
+ * in the air 0xA000 / 0x5000 gravity; +30 slows by 0x800 towards 0 (kinds
+ * 24; 35, 38, 3A..3C, 3E, 43, 45..47, 58). All grow as 08B9B2 (08B9D8). */
+static void grow(neo_gactor_t *a) {
+    SB(0x12,B(0x12)>0xf7u?0xff:B(0x12)+8u);
+    SB(0x13,B(0x13)>0xf7u?0xff:B(0x13)+8u);
+}
+static void k8ba10(neo_gactor_t *a,neo_genv_t *e) {
+    ga_air(a,e);
+    if (B(0x15)&0x40u) {SL(0x30,0);SL(0x34,0);}
+    else SL(0x34,L(0x34)+0xffffb000u);
+    grow(a);
+}
+static void k8ba38(neo_gactor_t *a,neo_genv_t *e,uint32_t gravity) {
+    ga_air(a,e);
+    if (B(0x15)&0x40u) {
+        uint32_t d7=L(0x34);
+        if (d7&0x80000000u) {
+            d7=(uint32_t)((int32_t)(0u-d7)>>1);SL(0x34,d7);
+            if ((int32_t)d7<=0x4000) {SL(0x30,0);SL(0x34,0);}
+        }
+    } else SL(0x34,L(0x34)+gravity);
+    uint32_t d7=L(0x30);
+    if (d7) {
+        if (d7&0x80000000u) {d7+=0x800u;if (!(d7&0x80000000u)) d7=0;}
+        else {d7-=0x800u;if (d7&0x80000000u) d7=0;}
+        SL(0x30,d7);
+    }
+    grow(a);
+}
+static void k8bd5a(neo_gactor_t *a,neo_genv_t *e);
+/* The motions the port has (record +14). */
+static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u;}
+static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
+    switch (m) {
+    case MOTION_FALL: k8b9b2(a,e);return true;
+    case 0x8ba10: k8ba10(a,e);return true;
+    case 0x8ba38: k8ba38(a,e,0xffff6000u);return true;
+    case 0x8bab2: k8ba38(a,e,0xffffb000u);return true;
+    case 0x8bd5a: k8bd5a(a,e);return true;
+    default: ga_fail(e,m);return false;
+    }
 }
 /* 08BD5A: ground step (+62) on the ground, else the 0xB000 gravity and the
  * air step (0143DC); then the item grows as in 08B9B2. */
@@ -217,7 +326,7 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (W(0x6e)==0xffffu) return GA_DELETE;                      /* 004188 */
         if (W(0x6e)>=0x5au) {ga_fail(e,0x8d2e2);return GA_UNSUPPORTED;} /* TRAP #F */
         rec=RECORDS+0x18u*W(0x6e);
-        if (rl(rec+0x14)!=MOTION_FALL) {if (e->external) e->external(e->ctx,L(0));return GA_DELETE;}
+        if (!motion_known(rl(rec+0x14))) {if (e->external) e->external(e->ctx,L(0));return GA_DELETE;}
         if (B(0x7f)) ga_floor(a,e);
         if (BIT(0x73,0)) SET(0x15,0);
         if (BIT(0x73,1)) SET(0x15,1);
@@ -252,9 +361,7 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     rec=L(0x82);
     if (!W(0x86)) SB(0x7c,0xff);
     SW(0x86,W(0x86)-1u);
-    if (rl(rec+0x14)==MOTION_FALL) k8b9b2(a,e);
-    else if (rl(rec+0x14)==0x8bd5au) k8bd5a(a,e);
-    else {ga_fail(e,rl(rec+0x14));return GA_UNSUPPORTED;}
+    if (!motion(a,e,rl(rec+0x14))) return GA_UNSUPPORTED;
     if (!B(0x80)) {
         if (W(0x78)) SW(0x78,W(0x78)-1u);
         else {
@@ -281,10 +388,9 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     goto view;
 taken:                                                               /* 08C66A */
-    {ga_call_t none=NULL;
-     if (rl(rec+0x14)!=MOTION_FALL) {ga_fail(e,rl(rec+0x14));return GA_UNSUPPORTED;}
-     k8b9b2(a,e);
-     if (ga_anim_step(a,e,none)<0) return GA_UNSUPPORTED;
+    {/* 08C66A: the motion, then 00427A with the program's callbacks. */
+     if (!motion(a,e,rl(rec+0x14))) return GA_UNSUPPORTED;
+     if (ga_anim_step(a,e,item_call)<0) return GA_UNSUPPORTED;
      SB(0x8c,B(0x8c)-1u);
      return B(0x8c)?GA_MORE:GA_DELETE;}
 view:

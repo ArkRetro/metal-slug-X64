@@ -45,9 +45,6 @@ typedef struct {
     uint16_t value;
     neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD */
 } neo_soldier_event_t;
-/* Stair/ledge marker of the object list RAM 43A2/43F4 (registered by ROM
- * 040110: position relative to the scene root, height, id). */
-typedef struct { int32_t x,y; uint8_t height,id; } neo_marker_t;
 typedef struct {
     neo_kscene_t *kernel;
     neo_contact_parent_t terrain,root;   /* tags 0x10C72E and 0x10E968 */

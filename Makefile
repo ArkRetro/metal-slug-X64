@@ -252,7 +252,7 @@ $(BUILD_DIR)/robe_fixture.h: tools/compile_robe_fixture.py data/robe_fixture.jso
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2
 FAMILY_ARGS_truck := --tree
 FAMILY_ARGS_swordgen := --tree
 # The shop 0B6566 fell before the prisoner (pri1 RAM dumps 7200 -> 7500: its

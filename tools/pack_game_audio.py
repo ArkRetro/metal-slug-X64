@@ -94,10 +94,19 @@ def main():
             offset=int(t0*a.music_rate/SRC)//16*16
             length=offset+int((end-t0)*a.music_rate/SRC)//16*16
             out=resample(pcm[:end],a.music_rate,length)
-            write(staging/(label+'.wav'),out,a.music_rate)
-            cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','true','--wav-loop-offset',str(offset),'-o',str(a.output),str(staging/(label+'.wav'))]
+            # The pinned libdragon's VADPCM reader only wraps whole files, so
+            # the music is split: <label>_intro (once, [0, offset)) and
+            # <label> (the loop body [offset, length), looped whole). The game
+            # starts the body on the same channel exactly when the intro ends
+            # (mixer event, src/msx_audio.c).
+            write(staging/(label+'_intro.wav'),out[:offset],a.music_rate)
+            subprocess.run([conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'_intro.wav'))],check=True,stdout=subprocess.DEVNULL)
+            write(staging/(label+'.wav'),out[offset:],a.music_rate)
+            cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','true','-o',str(a.output),str(staging/(label+'.wav'))]
+            intro=a.output/(label+'_intro.wav64')
             entry=dict(loop,splice_source_sample=t0,end_source_sample=end,seam_correlation=round(seam,4),
-                       loop_offset=offset,samples=len(out),rate=a.music_rate,channels=2,compression='vadpcm')
+                       loop_offset=offset,samples=len(out)-offset,intro_samples=offset,intro_bytes=intro.stat().st_size,
+                       intro_sha256=hashlib.sha256(intro.read_bytes()).hexdigest(),rate=a.music_rate,channels=2,compression='vadpcm')
         else:
             assert not info['stereo'],label
             out=resample(pcm[:,0],a.sfx_rate)
@@ -109,7 +118,7 @@ def main():
         entry.update(word=info['word'],seconds=round(entry['samples']/entry['rate'],3),bytes=wav64.stat().st_size,
                      sha256=hashlib.sha256(wav64.read_bytes()).hexdigest(),conversion=cmd[:-3]+[cmd[-1].rsplit('/',1)[-1]])
         manifest[label]=entry
-    total=sum(e.get('bytes',0) for e in manifest.values())
+    total=sum(e.get('bytes',0)+e.get('intro_bytes',0) for e in manifest.values())
     (a.output/'manifest.json').write_text(json.dumps(dict(source='tools/pack_game_audio.py from tools/render_sound_commands.py renders',total_bytes=total,sounds=manifest),indent=1)+'\n')
     for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})
     print('total',total)

@@ -144,8 +144,10 @@ iguales, 0 distintos**
 | `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (salvo disparo de torreta) |
 | `0x05486A`/`0x054904` edificio de cúpulas y derrumbe `0x0B58CC` | **nativo** (MISION1_ACTORES.md) |
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
-| `0x033C98` camión con lona, `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
-| `0x09F682` camello, `0x09D846/62/76`, `0x0A8C62` espadachines, `0x09A67E` cohetes, `0x0395B6` | externos |
+| `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
+| `0x0A8C62` espadachín de túnica sobre el carro + subguion `0x2D719A` | **nativo** (MISION1_ACTORES.md) |
+| `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
+| `0x09F682` camello, `0x09D846/62/76`, `0x039590/0x0395B6` espadachines del carro, `0x035668`, `0x09A67E` cohetes | externos |
 | `0x031D92`, `0x099862`, `0x099DCC`, `0x099E06`, `0x08C37C` prisioneros/objetos, `0x03458E` Camel Slug | externos |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, `0x087E36`, piezas `0x08732C` | externos |
 

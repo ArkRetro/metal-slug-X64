@@ -33,7 +33,7 @@ typedef struct {
     uint32_t frame; int node; uint32_t routine; int has_post; uint8_t post[0xb0];
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
-    int32_t p1x,p1y,signal,group,front,epoch,cursor;
+    int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9];
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
 } family_update_t;
 #include FAMILY_HEADER
@@ -182,6 +182,8 @@ int main(void) {
         if (u->p1x>=0) p1x=u->p1x;
         if (u->p1y>=0) p1y=u->p1y;
         if (u->epoch>=0) epoch=(uint8_t)u->epoch;
+        if (u->progress>=0) e.camera=(uint16_t)u->progress;
+        for (unsigned g=0;g<9;g++) if (u->groups[g]>=0) groups[g]=(uint8_t)u->groups[g];
         if (u->signal>=0) {flags.dome_signal=(uint8_t)u->signal;flags.dome_group=(uint8_t)u->group;}
         front_value=u->front;
         if (u->cursor>=0) rng.cursor=(uint8_t)u->cursor;

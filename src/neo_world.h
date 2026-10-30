@@ -59,8 +59,13 @@ typedef struct {
                                 * own update clears it before the others run) */
     bool unregistered;         /* +50 clear: no hurtbox registered (004C24) */
 } neo_world_player_t;
+/* Sub-script actors 019E72 created by generic actors (robed swordsman
+ * 0A8C46/0A8C62): the same interpreter over another record. */
+enum { NEO_WORLD_SUBSCRIPTS=4 };
+typedef struct { bool used; int16_t owner; neo_script_t script; } neo_world_sub_t;
 typedef struct {
     neo_script_t script;
+    neo_world_sub_t subs[NEO_WORLD_SUBSCRIPTS];
     neo_soldier_t soldiers[NEO_WORLD_SOLDIERS];
     neo_soldier_spawn_t pending[NEO_WORLD_SOLDIERS];bool constructed[NEO_WORLD_SOLDIERS];
     neo_throw_actor_t throws[NEO_WORLD_THROWS];uint8_t throw_palettes[NEO_WORLD_THROWS][4];

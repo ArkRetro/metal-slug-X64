@@ -174,6 +174,38 @@ jefe (33 veces): el combate dura más (40508 pasos, límite de la prueba 60000)
 y la altura máxima de 30 se comprueba antes del jefe. El carro no llega a
 pisarse en el recorrido (su techo está por encima del salto).
 
+## Espadachín de túnica sobre el carro `0x0A8C62` y subguiones (`src/neo_rest.c`)
+
+`0x0A8C62` es la misma figura que `0x0A8C46` (arena del jefe) pero en el
+suelo (`0x0146E8`, `+66 = 8838`): registro `0x2D6E3C` (progreso 2336, grupo
+0, `+74 = 1`, `+7C = 6`). Su gesto invierte `10C606` y crea el subguion
+`0x019E72` con el registro `[0x00087A + 4]` = `0x2D719A`, que ya no es un op
+3 aislado: crea la criatura `0x035668` y, mientras el carro (grupo 7) vive,
+tres espadachines `0x039590` (grupo 6) desde el carro. Cuando el grupo 6
+queda vacío (y el subguion terminó: `+60` bit 7), `0x0A8FE0` con `+72 = 0`
+→ `0x0A935A` (re-padre a la raíz `10E968`, `0x01AD52` = `0x01AC4C` +
+proyección) → `0x0A9390` (se va andando) hasta salir de la vista.
+
+- Subguiones generales: el actor genérico `0x019E82` ejecuta su registro
+  con el mismo intérprete del guion (`neo_genv_t.subscript`, una instancia
+  `neo_script_t` por subguion en `neo_world_t.subs`, con los recuentos de
+  grupo del tick y el subguion como creador de sus apariciones). La tabla de
+  apariciones importada incluye ahora los desplazamientos de los subguiones
+  (`0x22C` → `0x039590`, `0x250` → `0x035668`).
+- Prueba de familia `swordgen` (`data/swordgen_fixture.json.gz`, `trk3`,
+  rango `a8c62-a9a00`, `--tree`): **1 nodo, 178 actualizaciones en bucle
+  cerrado (6832..7296), 24780 bytes iguales**; el subguion queda fuera (su
+  final llega como bytes externos `+60`). La prueba genérica toma ahora
+  también los recuentos de grupo `10C326..` y el progreso de cámara `10E99E`
+  leídos por el original.
+- Detenciones explícitas: `0x0A8FE0` con `+72 ≠ 0` (combate de la figura, no
+  alcanzado en las grabaciones), su muerte `0x0A93DC` y la rama `+93 = 0`.
+- Los espadachines `0x039590/0x0395B6` (familia `0x0395xx`, con su muerte
+  compartida `0x0A93CE` → trozos `0x0A9510..0x0A98BE`) y la criatura
+  `0x035668` siguen externos: están en las trazas `trk3`
+  (`truck_fixture.json.gz`, rangos `39500-39d00`, `35600-35a00`, y
+  `swordgen_fixture.json.gz`, `a93c0-a9a00`) pero no se han portado.
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

@@ -102,10 +102,17 @@ def main():
         assert len(writes)<=12,u['frame']
         writes+=[(0,0)]*(12-len(writes))
         def opt(v):return -1 if v is None else v
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s}},'%(
+        # Group live counts (RAM 10C326.., bytes) and camera progress 10E99E.
+        groups=[]
+        for gi in range(9):
+            v=u['reads'].get(hex(0x10c326+(gi&~1)))
+            if v is None or not (v[0]&(0xff00 if gi%2==0 else 0xff)):groups.append(-1)
+            else:groups.append((v[1]>>8)&255 if gi%2==0 else v[1]&255)
+        progress=opt(rd(u,0x10e99e))
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s}},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext)))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext)))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

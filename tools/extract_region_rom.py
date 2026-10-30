@@ -33,6 +33,7 @@ BLOBS=[
     (0x2D7214,0x02,'019F1A sub-script record 2D7214 (op 3)'),
     (0x33924,0x374,'033C98 covered wagon: body/roof/wreck cell maps (0140C0), hurtbox, cull rectangle, debris list'),
     (0x2D3E5C,0x60,'033C98 covered wagon health (0260C8)'),
+    (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

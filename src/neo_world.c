@@ -34,6 +34,8 @@ typedef struct {
     int current;                 /* order index of the running actor */
     uint16_t draw_palette;bool draw_flash;uint8_t draw_kind;
     neo_genv_t genv;
+    const neo_script_env_t *se;  /* the script environment of this tick */
+    int sub_owner;               /* generic actor running a sub-script (-1) */
 } tick_t;
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
@@ -77,12 +79,14 @@ enum { BOSS_CONSTRUCTOR=0xd5976 };
 static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     tick_t *t=context;neo_world_t *w=t->w;
-    int at=sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
+    /* A sub-script actor (generic actor 019E82) creates after itself. */
+    bool sub=sp->creator<0 && t->sub_owner>=0;
+    int at=sub?find(w,NEO_WORLD_GACTOR,(unsigned)t->sub_owner):sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
     uint32_t routine=sp->constructor&0xffffffu;
     if (routine!=SOLDIER_CONSTRUCTOR && at>=0 && neo_region_routine(routine)) {
         /* 01A10A: 0040BC after the creator, words to +6E.., +69 group,
          * +68 variant, +28/+2C at the scene root (01ABB6). */
-        neo_gactor_t *a=ga_insert(t,at,routine,sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);
+        neo_gactor_t *a=ga_insert(t,at,routine,sub?NEO_GA_TAG((unsigned)t->sub_owner):sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);
         if (!a) return;
         for (unsigned k=0;k<sp->word_count;k++) ga_sw(a,0x6eu + 2u*k,sp->words[k]);
         ga_sb(a,0x69,sp->group69);ga_sb(a,0x68,sp->variant68);
@@ -308,6 +312,7 @@ static void g_dyn_release(void *ctx,neo_gactor_t *a) {
 static void ga_kill(tick_t *t,neo_gactor_t *a) {
     /* 003F90: palettes, dynamic object (0164D0), +6B/+58, +68/+69. */
     if (ga_b(a,0x6a)!=0xffu) g_dyn_release(t,a);
+    for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS;i++) if (t->w->subs[i].used && t->w->subs[i].owner==a->index) t->w->subs[i].used=false;
     ga_sb(a,0x6b,0xff);ga_sw(a,0x58,0xffff);ga_sb(a,0x68,0);ga_sb(a,0x69,0xff);
     a->active=false;
 }
@@ -799,6 +804,28 @@ static void delete_tree(tick_t *t,unsigned at) {
         remove_at(w,at+1u);
     }
 }
+/* Sub-script actor 019E72/019E82 (a generic actor) running the record at
+ * ROM `record` with the level-script interpreter; true once its op 3 ran. */
+static bool g_subscript(void *ctx,neo_gactor_t *a,uint32_t record) {
+    tick_t *t=ctx;neo_world_t *w=t->w;
+    if (!t->se) return false;
+    neo_world_sub_t *sub=NULL;
+    for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (w->subs[i].used && w->subs[i].owner==a->index) sub=&w->subs[i];
+    if (!sub) {
+        for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (!w->subs[i].used) sub=&w->subs[i];
+        const uint8_t *code=ga_rom(record);
+        if (!sub || !code) {ga_fail(&t->genv,record);return false;}
+        sub->used=true;sub->owner=a->index;
+        neo_script_init(&sub->script,code,0x80,record);
+    }
+    /* RAM 10C326..: the live counts of this tick. */
+    memcpy(sub->script.groups,w->script.groups,sizeof(sub->script.groups));
+    int saved=t->sub_owner;t->sub_owner=a->index;
+    neo_script_tick(&sub->script,t->se);
+    t->sub_owner=saved;
+    if (sub->script.halted) {ga_fail(&t->genv,sub->script.halt_address);return false;}
+    return sub->script.finished;
+}
 /* ROM 004192: the running actor deletes the deeper nodes that follow it. */
 static void g_kill_children(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
@@ -865,7 +892,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
-    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;
+    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
@@ -898,6 +925,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t};
+    t.se=&se;t.sub_owner=-1;
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         if (slot.kind==NEO_WORLD_GACTOR && w->gactors[slot.index].placeholder) {

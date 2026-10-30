@@ -15,7 +15,28 @@ def main():
     descs={int(m.group(1),16):(int(m.group(2)),int(m.group(3))) for m in re.finditer(r'\{0x([0-9a-f]+),(\d+),(\d+)\}',body)}
     start=banks[5][0]
     assert all(images[start+f+i][4]<=64 and images[start+f+i][5]<=64 for f,c in descs.values() for i in range(c)),'part above one TMEM page'
-    report={};empty={int(x,16) for x in json.loads((ROOT/'filesystem/boss-native.json').read_text())['empty']}
+    # Round trip: every boss descriptor rebuilt from the packed CI4 pages
+    # (romfs/scene.pack) must equal the exported pens exactly.
+    from pack_scene import unrle
+    chunks=table(meta,'scene_chunks');blob=(ROOT/'romfs/scene.pack').read_bytes()
+    def page(i):
+        off,length,crc,codec=chunks[i//8];raw=blob[off:off+length]
+        dec=unrle(raw) if codec else raw
+        return dec[(i%8)*2048:(i%8+1)*2048]
+    boss=json.loads((ROOT/'filesystem/boss-native.json').read_text());checked=0
+    for f in boss['frames']:
+        tag=int(f['descriptor'],16);first,count=descs[tag];w,h=f['width'],f['height']
+        pens=bytes.fromhex(f['pens_hex']);got=bytearray(w*h)
+        for i in range(count):
+            pg,pal,x,y,pw,ph,fmt=images[start+first+i];assert fmt==0
+            data=page(pg)
+            for yy in range(ph):
+                for xx in range(pw):
+                    pen=(data[yy*32+xx//2]>>(0 if xx&1 else 4))&15
+                    got[(y-f['y']+yy)*w+(x-f['x']+xx)]=pen
+        assert bytes(got)==pens,('pack round trip',hex(tag))
+        checked+=1
+    report={'pack_round_trip_descriptors':checked};empty={int(x,16) for x in json.loads((ROOT/'filesystem/boss-native.json').read_text())['empty']}
     for path in sorted((ROOT/'data').glob('boss_fight_*.json.gz')):
         d=json.load(gzip.open(path));main_id=d['nodes'][0]['id']
         passes=[];worst=dict(chunks=0,pages=0,draws=0,parts=0);allc=set();missing=set()
@@ -40,6 +61,6 @@ def main():
         boss_pages=int(re.search(r'SCENE_BOSS_PAGES (\d+)',meta).group(1)),cache_slots_4MiB=32,cache_slots_8MiB=192)
     print(json.dumps(report,indent=1))
     for k,v in report.items():
-        if k!='pack':assert not v['missing_descriptors'],(k,v['missing_descriptors'])
+        if k not in ('pack','pack_round_trip_descriptors'):assert not v['missing_descriptors'],(k,v['missing_descriptors'])
     return report
 if __name__=='__main__':main()

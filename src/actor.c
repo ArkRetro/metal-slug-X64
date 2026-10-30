@@ -1,3 +1,4 @@
+#include "neo_region.h"
 #include "actor.h"
 #include "gameplay.h"
 #include "scene_assets.h"
@@ -216,6 +217,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
     if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
     if (game.world.ga_flags.barrel_patched && !old_flags.barrel_patched) debugf("MSX shop destroyed (0B6882 patch) camera=%d\n",game.camera);
+    {   /* Armoured vehicle 087E36 of the 1304 stop: standing (+5F bit 7 clear) or not. */
+        static bool armored_standing;bool standing=false;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&game.world.gactors[i];uint32_t r=ga_l(a,0);
+            if (a->active && neo_armored_routine(r) && !(ga_b(a,0x5f)&0x80u)) standing=true;
+        }
+        if (standing && !armored_standing) debugf("MSX armoured vehicle 087E36 camera=%d\n",game.camera);
+        if (!standing && armored_standing) debugf("MSX armoured vehicle destroyed camera=%d\n",game.camera);
+        armored_standing=standing;
+    }
     if (game.world.ga_flags.collapsed && !old_flags.collapsed) debugf("MSX domed building collapsed (0B58CC) camera=%d height=%d\n",game.camera,game.camera_height);
     if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);

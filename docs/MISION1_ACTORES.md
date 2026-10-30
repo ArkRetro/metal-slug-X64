@@ -748,9 +748,15 @@ Comprobado en ares (`/workspace/emulator/fixr/rubble.png`,
   dibujan celda a celda (antes toda la capa 2 o 3 desde la tienda/derrumbe):
   441 → 400 dibujos en la arena del jefe.
 
-Otros problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
-cámara aún en 1920, la zona `x < 2016` bajo la fachada desaparecida muestra
-el color de fondo (en las grabaciones la cámara ya está en 2021 treinta
-fotogramas después y esa zona no vuelve a verse; sin evidencia de qué la
-cubre); 646 píxeles distintos en la validación de sprites de los
+Resuelto después (informe del usuario en MiSTer: «falta parte del
+edificio»): justo tras el derrumbe, con la cámara aún en 1920, la zona
+`x < 2016` bajo la fachada desaparecida mostraba el color de fondo. La
+captura `captures-m1full/col1` (volcado en cada fotograma 6980..7035,
+`MSX_REST_EXTRA_DUMPS`) muestra que en la recreativa los escombros `0B53A8`
+ocupan toda la pantalla desde el cambio (cámara 1922..2010 en 6994..7017):
+`tools/extract_mission_map.py col1 --frames 6997:7035` da sus celdas de capa 3
+y `tools/merge_rubble_cells.py` añade a `swapped_cells` las 46 de las columnas
+1920..2000 (las 112 ya conocidas, idénticas en código, giro y paleta): 158
+celdas. Las columnas 1856..1904 no se ven con la cámara en 1920 o más. Otros
+problemas: 646 píxeles distintos en la validación de sprites de los
 espadachines árabes (arriba).

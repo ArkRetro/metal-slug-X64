@@ -1,0 +1,261 @@
+{
+ "status": "PASS",
+ "emulator": "ares 146 (Audio/Driver=None)",
+ "traversal": "tools/test_mission_native_ares.py: 8 rebels, 7 killed, region end camera 1920",
+ "runs": {
+  "passed": 1,
+  "failed_traversal": 1,
+  "failure": "first run: MSX world unsupported routine=afff0 (soldier routine coverage, input-timing dependent; audio counters in that run: underruns=0)"
+ },
+ "perf": {
+  "cpu_max_us": 8046,
+  "audio_max_us": 3306,
+  "cpu_plus_audio_worst_us": 10455,
+  "audio_mean_us": "842-899",
+  "budget_us": 12000
+ },
+ "audio_counters": {
+  "started": 172,
+  "replaced": 165,
+  "dropped": 0,
+  "unmapped": 0,
+  "world_dropped": 0,
+  "music": 0,
+  "ai": 631,
+  "underruns": 0
+ },
+ "music": {
+  "started": true,
+  "stopped_at_region_end": true
+ },
+ "rom": {
+  "bytes": 3768320,
+  "sha256": "c3f8a0af0a69bb2f9b8622f50da719351e8cc4d7f25e540ff6da63f535330376",
+  "audio_bytes": 2496346,
+  "music_bytes": 2356300,
+  "music_seconds": 87.257,
+  "music_bytes_per_minute": 1620248
+ },
+ "sounds": {
+  "pistol": {
+   "word": "10F7",
+   "seconds": 0.489,
+   "bytes": 6830,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "explosion": {
+   "word": "1027",
+   "seconds": 0.639,
+   "bytes": 8864,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "knife_hit": {
+   "word": "10FA",
+   "seconds": 0.381,
+   "bytes": 5372,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_103e": {
+   "word": "103E",
+   "seconds": 0.668,
+   "bytes": 9242,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_103f": {
+   "word": "103F",
+   "seconds": 0.327,
+   "bytes": 4652,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_1040": {
+   "word": "1040",
+   "seconds": 1.16,
+   "bytes": 15902,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_1041": {
+   "word": "1041",
+   "seconds": 0.56,
+   "bytes": 7802,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_1042": {
+   "word": "1042",
+   "seconds": 1.111,
+   "bytes": 15236,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "rebel_1043": {
+   "word": "1043",
+   "seconds": 0.375,
+   "bytes": 5300,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "vehicle_hit": {
+   "word": "108D",
+   "seconds": 0.296,
+   "bytes": 4238,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "vehicle_smoke": {
+   "word": "1023",
+   "seconds": 1.178,
+   "bytes": 16136,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "vehicle_destroy": {
+   "word": "10A5",
+   "status": "SILENT: not packed"
+  },
+  "vehicle_burst": {
+   "word": "1033",
+   "seconds": 2.981,
+   "bytes": 40472,
+   "rate": 24000,
+   "channels": 1,
+   "compression": "vadpcm"
+  },
+  "music_mission1": {
+   "word": "0021",
+   "seconds": 87.257,
+   "bytes": 2356300,
+   "rate": 24000,
+   "channels": 2,
+   "compression": "vadpcm"
+  }
+ },
+ "music_loop": {
+  "period_s": 78.79,
+  "start_s": 5.97,
+  "similarity": 0.979,
+  "seam_correlation": 0.9298,
+  "loop_offset": 203280,
+  "samples": 2094176,
+  "rate": 24000
+ },
+ "render_vs_gameplay": {
+  "_baseline_pistol": {
+   "n": 600,
+   "median": 0.052,
+   "max": 0.603
+  },
+  "explosion": {
+   "n": 30,
+   "median": 0.115,
+   "max": 0.822
+  },
+  "knife_hit": {
+   "n": 1,
+   "median": 0.25,
+   "max": 0.25
+  },
+  "pistol": {
+   "n": 201,
+   "median": 0.266,
+   "max": 0.608
+  },
+  "rebel_103e": {
+   "n": 6,
+   "median": 0.516,
+   "max": 0.656
+  },
+  "rebel_1041": {
+   "n": 13,
+   "median": 0.617,
+   "max": 0.764
+  },
+  "rebel_1042": {
+   "n": 9,
+   "median": 0.492,
+   "max": 0.656
+  },
+  "rebel_1043": {
+   "n": 1,
+   "median": 0.117,
+   "max": 0.117
+  },
+  "vehicle_burst": {
+   "n": 1,
+   "median": 0.522,
+   "max": 0.522
+  },
+  "vehicle_hit": {
+   "n": 12,
+   "median": 0.343,
+   "max": 0.492
+  },
+  "vehicle_smoke": {
+   "n": 2,
+   "median": 0.37,
+   "max": 0.449
+  }
+ },
+ "channel_pairs": {
+  "method": "two commands 0.2 s apart vs isolated renders: overlap / cut / drop by least residual",
+  "overlap": [
+   "10F7+1027",
+   "1027+10F7",
+   "1041+10F7",
+   "10F7+1041",
+   "10FA+10F7",
+   "10FA+1041",
+   "1041+10FA",
+   "108D+1023",
+   "10F7+1023",
+   "1041+1027"
+  ],
+  "cut": [
+   "10F7+10F7",
+   "1027+1027",
+   "1041+1041",
+   "103E+1041",
+   "1042+1041",
+   "1041+1042",
+   "1043+1041",
+   "103F+1041",
+   "1040+1041",
+   "1041+103E",
+   "1041+1040",
+   "103F+103E",
+   "1027+1023",
+   "1027+1033",
+   "1027+10FA",
+   "10F7+108D",
+   "108D+108D",
+   "10FA+10FA",
+   "10FA+1023",
+   "1023+1023",
+   "1023+1033"
+  ],
+  "drop": [
+   "1041+103F",
+   "1041+1043",
+   "108D+10F7",
+   "10FA+1027",
+   "1023+10FA"
+  ]
+ },
+ "limits": "Log/timing check; no acoustic capture in ares, no hardware/MiSTer test. mission1-internal.z64 not built in this worktree (cinematic assets absent)."
+}

@@ -1,19 +1,119 @@
 {
  "description": "Mission 1 gameplay sounds of the N64 port. Each entry is an original 68000 sound request word (ROM 0120F8) with the callers that issued it in MAME gameplay captures (tools/extract_sound_map.py) and the latch bytes that render it in isolation (tools/render_sound_commands.py). Numbers only; the audio is rendered locally from the user's ROM.",
  "sounds": [
-  {"label": "pistol", "word": "10F7", "callers": ["01B78C"], "event": "player pistol shot (bullet creation ROM 01B782)"},
-  {"label": "explosion", "word": "1027", "callers": ["03BE68", "01C15C"], "event": "thrown object burst on terrain contact (ROM 03BE52) / grenade explosion (ROM 01C152)"},
-  {"label": "knife_hit", "word": "10FA", "callers": ["0AEF2E"], "event": "rebel knife hits the player (ROM 0AEF14)"},
-  {"label": "rebel_103e", "word": "103E", "callers": ["004498"], "event": "animation sound command 0x30 (ROM 004486) in rebel programs 240588/2406EC/240A3E/240AE6/240DEE/24103C"},
-  {"label": "rebel_103f", "word": "103F", "callers": [], "event": "animation sound command 0x30 in rebel programs 240588/2406EC/240C6E/240C76/240D2E/240D3C/241056; not observed in a capture"},
-  {"label": "rebel_1040", "word": "1040", "callers": [], "event": "animation sound command 0x30 in rebel programs 240E8E/2410E2; not observed in a capture"},
-  {"label": "rebel_1041", "word": "1041", "callers": ["004498"], "event": "animation sound command 0x30 in rebel programs 240588/2406EC/240DEE/240F8E"},
-  {"label": "rebel_1042", "word": "1042", "callers": ["004498"], "event": "animation sound command 0x30 in rebel program 240DEE"},
-  {"label": "rebel_1043", "word": "1043", "callers": ["004498"], "event": "animation sound command 0x30 in rebel program 2404FE"},
-  {"label": "vehicle_hit", "word": "108D", "callers": ["01BB34"], "event": "player bullet hits the armoured vehicle (health -10)"},
-  {"label": "vehicle_smoke", "word": "1023", "callers": ["029AEE"], "event": "vehicle health below half and vehicle destroyed (ROM 029AE4)"},
-  {"label": "vehicle_destroy", "word": "10A5", "pre": ["0C"], "callers": ["0294AC"], "event": "vehicle destroyed, health 0 (ROM 0294A2, via 012192 which sends 0x0C first)"},
-  {"label": "vehicle_burst", "word": "1033", "callers": ["029B1E"], "event": "vehicle destruction burst, 12 video frames after health 0 (ROM 029B14)"},
-  {"label": "music_mission1", "word": "0021", "callers": ["018434"], "event": "Mission 1 music, after the driver reset 03 and 06 at the mission start", "music": true, "frames": 24000}
+  {
+   "label": "pistol",
+   "word": "10F7",
+   "callers": [
+    "01B78C"
+   ],
+   "event": "player pistol shot (bullet creation ROM 01B782)"
+  },
+  {
+   "label": "explosion",
+   "word": "1027",
+   "callers": [
+    "03BE68",
+    "01C15C"
+   ],
+   "event": "thrown object burst on terrain contact (ROM 03BE52) / grenade explosion (ROM 01C152)"
+  },
+  {
+   "label": "knife_hit",
+   "word": "10FA",
+   "callers": [
+    "0AEF2E"
+   ],
+   "event": "rebel knife hits the player (ROM 0AEF14)"
+  },
+  {
+   "label": "rebel_103e",
+   "word": "103E",
+   "callers": [
+    "004498"
+   ],
+   "event": "animation sound command 0x30 (ROM 004486) in rebel programs 240588/2406EC/240A3E/240AE6/240DEE/24103C"
+  },
+  {
+   "label": "rebel_103f",
+   "word": "103F",
+   "callers": [],
+   "event": "animation sound command 0x30 in rebel programs 240588/2406EC/240C6E/240C76/240D2E/240D3C/241056; not observed in a capture"
+  },
+  {
+   "label": "rebel_1040",
+   "word": "1040",
+   "callers": [],
+   "event": "animation sound command 0x30 in rebel programs 240E8E/2410E2; not observed in a capture"
+  },
+  {
+   "label": "rebel_1041",
+   "word": "1041",
+   "callers": [
+    "004498"
+   ],
+   "event": "animation sound command 0x30 in rebel programs 240588/2406EC/240DEE/240F8E"
+  },
+  {
+   "label": "rebel_1042",
+   "word": "1042",
+   "callers": [
+    "004498"
+   ],
+   "event": "animation sound command 0x30 in rebel program 240DEE"
+  },
+  {
+   "label": "rebel_1043",
+   "word": "1043",
+   "callers": [
+    "004498"
+   ],
+   "event": "animation sound command 0x30 in rebel program 2404FE"
+  },
+  {
+   "label": "vehicle_hit",
+   "word": "108D",
+   "callers": [
+    "01BB34"
+   ],
+   "event": "player bullet hits the armoured vehicle (health -10)"
+  },
+  {
+   "label": "vehicle_smoke",
+   "word": "1023",
+   "callers": [
+    "029AEE"
+   ],
+   "event": "vehicle health below half and vehicle destroyed (ROM 029AE4)"
+  },
+  {
+   "label": "vehicle_engine_stop",
+   "word": "10A5",
+   "pre": [
+    "0C"
+   ],
+   "callers": [
+    "0294AC"
+   ],
+   "event": "vehicle destroyed, health 0 (ROM 0294A2 via 012192: 0x0C then 0x10A5). Rendered silent: 0x10A5 alone is a continuous (looping) sound started when the vehicle appears (ROM 029220) and 0x0C+0x10A5 stops it. Not packed: the native vehicle has no appearance event and the engine loop point was not measured."
+  },
+  {
+   "label": "vehicle_burst",
+   "word": "1033",
+   "callers": [
+    "029B1E"
+   ],
+   "event": "vehicle destruction burst, 12 video frames after health 0 (ROM 029B14)"
+  },
+  {
+   "label": "music_mission1",
+   "word": "0021",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 1 music, after the driver reset 03 and 06 at the mission start",
+   "music": true,
+   "frames": 24000
+  }
  ]
 }

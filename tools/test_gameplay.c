@@ -39,23 +39,21 @@ int main(void) {
     assert(g.x<MSX_END_X && g.camera==camera); // Camera does not scroll backwards.
     for (unsigned i=0;i<1000;i++) msx_game_update(&g,-1,false,false);
     assert(g.x==(g.camera+28)*MSX_UNIT); // Player remains inside the current camera.
-    // Native region: walking right while firing. Re-measured with the ported
-    // script/soldiers (replacing the three provisional guards): the imported
-    // script (ROM 2D6314..2D651A, camera 0..872) spawns 8 soldiers (0AF17E)
-    // for this walk, 7 are killed by one pistol hit each (health 0, ROM 01B4C2
-    // damage 10), one leaves the scene; 7 spawn-table entries the port does
-    // not have are counted as external. The script then stops explicitly at
-    // 2D651A (the truck segment is not ported), so camera 872..1920 has no
-    // native spawns and the region end moves with the extended map: camera
-    // 1920, x = MSX_END_X (was camera 872, x 1164).
+    // Native region: walking right while firing, re-measured with the whole
+    // region script (ROM 2D6314..2D6A28, camera 0..1920): 25 soldiers
+    // (0AF17E, +76 modes 1..4, riders of the native truck 02916E included),
+    // 16 killed by the pistol, 23 spawn-table entries not ported yet counted as
+    // external; the truck riders' knives hit the player 16 times (two lives
+    // lost). The script ends at its last imported record (2D6A28) after the
+    // camera-1920 lock, with no unsupported path.
     msx_game_init(&g);
     unsigned steps=0;
     for (;steps<6000 && !g.complete;steps++) msx_game_update(&g,1,false,true);
     assert(g.complete && steps<6000);
-    assert(g.world.spawned==8 && g.kills==7 && g.hits==7 && !neo_world_alive(&g.world));
-    assert(g.world.external_spawns==7 && !g.world.unsupported && !g.world.overflow);
-    assert(g.world.script.halted && g.world.script.halt_address==0x2D651A); // End of the imported records.
-    assert(g.health==3 && g.world.player_hits==0 && g.deaths==0);
+    assert(g.world.spawned==25 && g.kills==16 && neo_world_alive(&g.world)==2);
+    assert(g.world.external_spawns==23 && !g.world.unsupported && !g.world.overflow);
+    assert(g.world.script.halted && g.world.script.halt_address==0x2D6A28); // End of the imported records.
+    assert(g.world.player_hits==16 && g.deaths==2 && g.health==3);
     assert(neo_world_region_clear(&g.world) && g.checkpoint==640 && g.camera==MSX_CAMERA_MAX && g.x==MSX_END_X);
     int final_x=g.x;msx_game_update(&g,-1,true,true);assert(g.x==final_x);
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;

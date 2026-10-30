@@ -70,8 +70,7 @@ int main(void) {
         neo_soldier_t s;if (!load(&s,&c->before)) {bad_load++;continue;}
         neo_soldier_result_t result=NEO_SOLDIER_MORE;
         neo_rng_t rng;memcpy(rng.words,c->rng_words,sizeof(rng.words));rng.cursor=c->rng_cursor;neo_rng_t rng0=rng;
-        neo_kscene_t kernel={{c->terrain[0],c->terrain[1],c->terrain[2],c->terrain[3]},{c->terrain[0],c->terrain[1],c->terrain[2],c->terrain[3]},
-            soldier_group_map,0,0};
+        neo_kscene_t kernel={.terrain={c->terrain[0],c->terrain[1],c->terrain[2],c->terrain[3]},.root={c->terrain[0],c->terrain[1],c->terrain[2],c->terrain[3]},.group_map=soldier_group_map};
         uint16_t grid[128];memcpy(grid,c->grid,sizeof(grid));
         neo_hurtbox_t player={c->hx,c->hy,c->hflags15,soldier_player_hurtbox.type,0,
             {soldier_player_hurtbox.rect[0],soldier_player_hurtbox.rect[1],soldier_player_hurtbox.rect[2],soldier_player_hurtbox.rect[3]},c->hdead};

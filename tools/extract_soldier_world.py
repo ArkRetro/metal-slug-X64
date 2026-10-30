@@ -18,13 +18,19 @@ from pathlib import Path
 import soldier_capture
 from soldier_capture import Capture,PLAYER,rng_step,soldier
 SCRIPT=0x101414;DEAD=0x3F1E
+# Generic actors ported natively (src/neo_region.c families), by routine
+# label. Everything else is an outside actor whose RNG calls are injected.
+GACTOR=set([0x2916E,0x29294,0x29326,0x2936C,0x293DC,0x29438,0x294A2,0x294E4,0x29566,0x295BC,0x29802,0x29852,0x298F4])
+def gactor_routine(rt):return rt in GACTOR
 def world_routine(rt):
+    if gactor_routine(rt):return True
     # Soldier family, pistol death (040DB4/040DF0), death splash (040F88/040FD4),
     # runners and thrown objects. The 0400AA entity (states 0400F2..) is not
     # part of the world.
     return (rt in (0x1A422,0x1A438,0x40DB4,0x40DF0,0x40F88,0x40FD4) or 0xAE000<=rt<0xB1000 or
         0x3BC28<=rt<0x3BE8E or 0x1C8FC<=rt<0x1CA9E)
 def kind_of(rt):
+    if gactor_routine(rt):return 5
     if rt in (0x1A422,0x1A438):return 1
     if 0x3BC28<=rt<0x3BE8E or 0x1C8FC<=rt<0x1CA9E:return 3
     if rt in (0x40F88,0x40FD4):return 4
@@ -87,20 +93,29 @@ def extract(path,last,label):
                 flags15=before.b(n+0x15),flags5f=before.b(n+0x5F),mark=before.b(n+0x4C),correction=before.b(n+0x4D),
                 kind_angle=before.w(n+0x6C),f6f=before.b(n+0x6F),f5e=before.b(n+0x5E)))
         for wn in world:wn['position']=position(wn['node'])
+        player=dict(px=before.w(PLAYER+0x3C),py=before.w(PLAYER+0x40),flags15=before.b(PLAYER+0x15),
+            alive=before.l(PLAYER)!=DEAD,dead=bool(before.b(PLAYER+0x5F)&0xC0),follow=before.b(PLAYER+0x7A))
+        if before.l(PLAYER)==DEAD and after.l(PLAYER)!=DEAD:
+            # Continue: the player node is re-created and placed by an actor
+            # that runs before the world actors; the position they read is not
+            # recorded (the test takes the soldiers' control targets of this
+            # update from the original, counted as injected).
+            player=dict(px=after.w(PLAYER+0x44),py=after.w(PLAYER+0x48),flags15=after.b(PLAYER+0x15),alive=True,dead=False,follow=after.b(PLAYER+0x7A),respawn=True)
+        pl=before
         world.sort(key=lambda wn:wn['position'])
-        soldiers={};throws={}
+        soldiers={};throws={};gactors={}
         for n,rt in ra.items():
             if rt==DEAD or not world_routine(rt) or n==SCRIPT:continue
             k=kind_of(rt)
             if k==2:soldiers['%X'%n]=dict(after=soldier(after,n),locals=list(after.raw(n+0x6E,0x26)))
             elif k==3:throws['%X'%n]=dict(x=after.l(n+0x28),y=after.l(n+0x2C),routine=rt)
+            elif k==5:gactors['%X'%n]=after.raw(n,0xC0).hex()
         out['ticks'].append(dict(frame=f,scroll_x=after.l(0x10E97C),scroll_y=after.l(0x10E980),epoch=after.b(0x10C33A),
-            video=before.w(0x10000E),player=dict(px=before.w(PLAYER+0x3C),py=before.w(PLAYER+0x40),flags15=before.b(PLAYER+0x15),
-                alive=before.l(PLAYER)!=DEAD,dead=bool(before.b(PLAYER+0x5F)&0xC0)),
+            video=before.w(0x10000E),active=after.b(0x10C33C),player=player,
             order=world,log=log,bullets=bullets,
             expect=dict(rng=dict(words=list(words),cursor=cur),pc=after.l(SCRIPT+0x6E),groups=list(after.raw(0x10C326,9)),
                 grid=[after.w(0x1067E6+2*k) for k in range(128)],
-                soldiers=soldiers,throws=throws)))
+                soldiers=soldiers,throws=throws,gactors=gactors)))
     return out
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',nargs='+',help='DIR:LAST_FRAME')

@@ -1,0 +1,87 @@
+{
+ "source": "MAME 0.264 mslugx euro capture; fixed CPU block and P2 bank 1 window",
+ "program_fixed_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+ "program_bank_sha256": "8855c1e7a71344706a508227e35704bf5b248888597724f805ef9f1cdaf264bd",
+ "blobs": [
+  {
+   "rom": "0x2CE974",
+   "reader": "029160 truck health (0260C8)",
+   "hex": "000101ea01ea01ea01ea000a012c02d002d002d002d0000a019000010078005a0078005a007800780078005a0078005a00780078000102000200020002000200"
+  },
+  {
+   "rom": "0x2CE9A8",
+   "reader": "0296CA truck speed (0260C8)",
+   "hex": "000102000200020002000200020002000200020002000200020000ff0078008c009600d200d200d200c800dc00dc0122012201220082009600a000dc00dc00dc"
+  },
+  {
+   "rom": "0x029B62",
+   "reader": "029240 truck hurtboxes (+50)",
+   "hex": "0202ffd000000058001c80000202ffe00000001800308000"
+  },
+  {
+   "rom": "0x029B6E",
+   "reader": "029802 truck body hurtboxes (+50)",
+   "hex": "0202ffe000000018003080000201ffd000000058001c8000"
+  },
+  {
+   "rom": "0x029B92",
+   "reader": "0292BC truck push attack (0049E8)",
+   "hex": "ffd0ffff00600008000500000010ffff"
+  },
+  {
+   "rom": "0x029BA2",
+   "reader": "029ACE truck attack (0049E8)",
+   "hex": "ffd0ffff00600005000d00010640ffff"
+  },
+  {
+   "rom": "0x029BB2",
+   "reader": "029B56 truck explosion attack (0049E8)",
+   "hex": "ffd0ffff00600020000900017fffffff"
+  },
+  {
+   "rom": "0x029BC2",
+   "reader": "02922E truck solid box (004E76)",
+   "hex": "ffd8fffc00500014"
+  },
+  {
+   "rom": "0x029BCA",
+   "reader": "029550 truck visibility rectangle (0C8BEC)",
+   "hex": "ffb0000000a00018"
+  },
+  {
+   "rom": "0x029BDA",
+   "reader": "029A82 truck player rectangle (01AFFC)",
+   "hex": "ffc0000000800100"
+  },
+  {
+   "rom": "0x029BE2",
+   "reader": "029AEE truck smoke list (01DA40)",
+   "hex": "0106001effd000600008002000000001c6ee"
+  },
+  {
+   "rom": "0x029C58",
+   "reader": "029A1E truck cell map",
+   "hex": "f9020e040103000000000000000c0c0c0c000000000000000000001d00001b000000000000000000001d00001b00000000000000000b0b0000001b0b0b0b0b0b0b0b"
+  },
+  {
+   "rom": "0x029C9A",
+   "reader": "029A26 truck cell map",
+   "hex": "f9020e04010300000000000000000000000c0c0c0c000000000000000000001d00001b000000000000000000001d00001b0000000b0b0b0b0b0b0b1d0000000b0b00"
+  },
+  {
+   "rom": "0x029CDC",
+   "reader": "029A04 truck cell map",
+   "hex": "f9020e040100000000000000000c0c0c0c000000000000000000001d00001b000000000000000000001d00001b00000000000000000b0b0000001b0b0b0b0b0b0b0b"
+  },
+  {
+   "rom": "0x029D1E",
+   "reader": "029A0C truck cell map",
+   "hex": "f9020e04010000000000000000000000000c0c0c0c000000000000000000001d00001b000000000000000000001d00001b0000000b0b0b0b0b0b0b1d0000000b0b00"
+  },
+  {
+   "rom": "0x029D60",
+   "reader": "029A2E truck cell map",
+   "hex": "f9020e03010000000000000000000000000000000000000000000000000000000000000000000b0b0b0b0b0b0b0b0b0b0b0b0b0b"
+  }
+ ]
+}

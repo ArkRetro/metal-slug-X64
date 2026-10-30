@@ -43,7 +43,33 @@ static bool condition(vm_t *v,uint16_t at) {
     if (type<9u) count=v->s->groups[type];
     else if (type==9u) for (unsigned g=0;g<8u;g++) count=(count+v->s->groups[g])&0xffffu;
     else if (type==0xau) return true;
-    else if (type==0x13u) return !v->e->any_player; /* 01903A returns D7=0 */
+    else if (type>=0xbu && type<=0x13u) {
+        /* ROM 01903A with RAM 10C322 set (observed in every capture): start
+         * from the 69B8/69BA point, take each live player's +3C/+40 when its
+         * +7A/+7B is set, copy the other player's point when one is absent.
+         * D7.w: FFxx = P1 alive, xxFF = P2 alive. */
+        const neo_script_player_t *p=v->e->players;
+        uint16_t d0=v->s->w69b8,d1=v->s->w69ba,d2=d0,d3=d1,d7=0;
+        if (p[0].alive) {d7=0xff00u;if (p[0].follow_x) d0=p[0].px;if (p[0].follow_y) d1=p[0].py;}
+        if (p[1].alive) {d7|=0xffu;if (p[1].follow_x) d2=p[1].px;if (p[1].follow_y) d3=p[1].py;}
+        if (!p[1].alive) {d2=d0;d3=d1;}
+        if (!p[0].alive) {d0=d2;d1=d3;}
+        uint16_t ax=(uint16_t)(((uint32_t)d0+d2)>>1),ay=(uint16_t)(((uint32_t)d1+d3)>>1); /* ADD + ROXR */
+        bool lx=((uint16_t)(ax-v->s->w4330))&0x8000u,ly=((uint16_t)(ay-v->s->w4332))&0x8000u;
+        bool s0=!(((uint16_t)(d0-v->s->w4330))&0x8000u),s2=!(((uint16_t)(d2-v->s->w4330))&0x8000u);
+        bool t1=!(((uint16_t)(d1-v->s->w4332))&0x8000u),t3=!(((uint16_t)(d3-v->s->w4332))&0x8000u);
+        switch (type) {
+        case 0xb: return d7 && lx;          /* 01A69E */
+        case 0xc: return d7 && !lx;         /* 01A6BE */
+        case 0xd: return d7 && s0!=s2;      /* 01A6DE */
+        case 0xe: return d7 && !ly;         /* 01A702 */
+        case 0xf: return d7 && ly;          /* 01A722 */
+        case 0x10: return d7 && t1!=t3;     /* 01A742 */
+        case 0x11: return d7==0;            /* 01A766 */
+        case 0x12: return d7 && d7!=0xffffu;/* 01A778 */
+        default: return d7==0xffffu;        /* 01A790 */
+        }
+    }
     else {halt(v,at);return false;}
     uint16_t value=word(v,at,2);
     switch (cmp) {
@@ -132,10 +158,13 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         if (b!=0x8000u) v->s->w69ba=(uint16_t)(b+0x100u);
         return next(v,pc);
     }
+    case 0xc: /* 01A2F0 -> 0C7C12: release the camera lock */
+        if (v->e->camera_release) v->e->camera_release(v->e->context);
+        return next(v,pc);
     case 0x10: /* 01A32E */
         v->s->w4330=word(v,pc,2);v->s->w4332=(uint16_t)(word(v,pc,4)+0x100u);
         return next(v,pc);
-    default: /* 0..5 trap; 0C/0D/0E call 0C7xxx; 11 grouped runner */
+    default: /* 0..5 trap; 0D/0E camera auto-scroll; 11 grouped runner */
         return halt(v,pc);
     }
 }
@@ -156,7 +185,7 @@ static uint16_t blocking(vm_t *v,uint16_t pc) {
     case 0:
         if (word(v,pc,4)!=0xffffu) {
             uint16_t p[4]={word(v,pc,6),word(v,pc,8),word(v,pc,10),word(v,pc,12)};
-            if (v->e->camera_lock) v->e->camera_lock(v->e->context,p);
+            if (v->e->camera_lock) v->e->camera_lock(v->e->context,word(v,pc,4),p);
         }
         if (v->e->camera>=word(v,pc,2)) return run(v,next(v,pc));
         return pc;

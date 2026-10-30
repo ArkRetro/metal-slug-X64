@@ -8,6 +8,8 @@ local first=tonumber(os.getenv('MSX_RAM_FIRST') or '2100')
 local dbg=assert(manager.machine.debugger)
 local frame=0
 local cond='((d@(a6)>=ae000 && d@(a6)<b1000) || (d@(a6)>=40d00 && d@(a6)<41000))'
+-- MSX_KERNEL_ALL=1: every actor's calls (generic actors of the region).
+if os.getenv('MSX_KERNEL_ALL')=='1' then cond='1' end
 local regs='d0=%08X d1=%08X d2=%08X d3=%08X d4=%08X d5=%08X d6=%08X d7=%08X a0=%08X a1=%08X'
 local args='d0,d1,d2,d3,d4,d5,d6,d7,a0,a1'
 local mode='mode=%08X m8=%02X m9=%02X ma=%02X mb=%02X mc=%02X md=%02X'
@@ -15,6 +17,13 @@ local margs='d@(10c004),b@(10c008),b@(10c009),b@(10c00a),b@(10c00b),b@(10c00c),b
 -- Scene objects used by the kernel: terrain 10C72E and root 10E968 (+14..+20)
 -- and the persistent scratch words RAM 10C018/10C068.
 local scene='printf "KSC t=%08X,%08X,%08X,%08X r=%08X,%08X,%08X,%08X w4018=%04X w4068=%04X gm=%08X",d@(10c742),d@(10c746),d@(10c74a),d@(10c74e),d@(10e97c),d@(10e980),d@(10e984),d@(10e988),w@(10c018),w@(10c068),d@(10c00e)'
+-- Dynamic collision objects 6 and 7 (RAM 10C1EE/10C22E: +10 parent, +14..+20
+-- position, +26 cell map, +2A countdown, +2C..+38 box) and the bins
+-- (10C26E x, 10C280 y, 10C290 solid), as the kernel sees them at entry.
+local function dyn(base) return string.format('d@(%x),d@(%x),d@(%x),d@(%x),d@(%x),d@(%x),w@(%x),d@(%x),d@(%x),d@(%x),d@(%x)',
+ base+0x10,base+0x14,base+0x18,base+0x1c,base+0x20,base+0x26,base+0x2a,base+0x2c,base+0x30,base+0x34,base+0x38) end
+local dynfmt='%08X,%08X,%08X,%08X,%08X,%08X,%04X,%08X,%08X,%08X,%08X'
+scene=scene..';printf "KDY d6='..dynfmt..' d7='..dynfmt..' bx=%08X,%08X,%08X,%08X,%04X by=%08X,%08X,%08X,%08X sm=%02X self=%02X,%08X",'..dyn(0x10c1ee)..','..dyn(0x10c22e)..',d@(10c26e),d@(10c272),d@(10c276),d@(10c27a),w@(10c27e),d@(10c280),d@(10c284),d@(10c288),d@(10c28c),b@(10c290),b@(a6+6a),a6+28'
 emu.register_frame_done(function()
  frame=frame+1
  if frame==first-1 then

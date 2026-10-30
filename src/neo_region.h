@@ -1,0 +1,10 @@
+#ifndef MSX_NEO_REGION_H
+#define MSX_NEO_REGION_H
+#include <stddef.h>
+#include "neo_gactor.h"
+/* Families of generic actors of the Mission 1 region (camera 0..1920). Each
+ * family file exports a tick (one update of the actor, dispatched by its
+ * routine label +00) and a predicate naming the routine labels it owns. */
+ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_truck_routine(uint32_t routine);
+#endif

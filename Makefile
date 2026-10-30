@@ -475,7 +475,7 @@ check: check-boss $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FA
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

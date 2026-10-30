@@ -208,8 +208,7 @@ static neo_gactor_t *ga_alloc(neo_world_t *w,uint32_t routine,uint32_t creator_t
     memset(a->written,0,sizeof(a->written));
     return a;
 }
-static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
-    tick_t *t=ctx;neo_world_t *w=t->w;
+bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==TERRAIN_TAG) {*out=w->terrain;return true;}
     if (tag==ROOT_TAG) {*out=w->root;return true;}
     if (tag>=NEO_DYN_TAG(0) && tag<NEO_DYN_TAG(NEO_KDYN_COUNT)) {*out=w->dyn_parent[(tag-NEO_DYN_TAG(0))/64u];return true;}
@@ -228,6 +227,7 @@ static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
     return false;
 }
+static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {return neo_world_parent(((tick_t *)ctx)->w,tag,out);}
 static const neo_anim_program_t *g_program(uint32_t tag) {return program(tag);}
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68) {
     neo_world_t *w=t->w;
@@ -327,7 +327,22 @@ static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
     if (w->marker_count[l]>=8u) return; /* 040114: 0x50 bytes */
     w->markers[l][w->marker_count[l]++]=(neo_marker_t){x,y,h,id};
 }
-static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
+/* 004E76: register (or with a null descriptor unregister) the actor's solid
+ * body in the table 106756 (slot index at +6B, first free slot for a new
+ * body; a full table leaves the body unregistered). */
+static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
+    neo_world_t *w=((tick_t *)ctx)->w;
+    if (!desc) {ga_sb(a,0x6b,0xff);return;}
+    uint8_t slot=ga_b(a,0x6b);
+    if (slot==0xffu) {
+        for (slot=0;slot<NEO_WORLD_SOLIDS && w->solids[slot].actor>=0;slot++) {}
+        if (slot==NEO_WORLD_SOLIDS) return;                            /* 004EB6 */
+        ga_sb(a,0x6b,slot);
+    } else if (slot>=NEO_WORLD_SOLIDS) {                               /* 004EC0: TRAP #15 */
+        w->solid_unsupported++;ga_fail(&((tick_t *)ctx)->genv,0x4ec0);return;
+    }
+    w->solids[slot].actor=(int16_t)a->index;w->solids[slot].desc=desc;
+}
 static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
     if (templ==0x29bf4u || templ==0x29c26u) {neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));return;}
     const uint8_t *t=ga_rom(templ);
@@ -858,6 +873,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     neo_script_init(&w->script,mission1_script,sizeof(mission1_script),MISSION1_SCRIPT_BASE);
     memcpy(w->rng.words,mission1_handoff_rng,sizeof(w->rng.words));w->rng.cursor=MISSION1_HANDOFF_RNG_CURSOR;
     w->terrain.tag=TERRAIN_TAG;w->root.tag=ROOT_TAG;
+    for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) w->solids[i].actor=-1;  /* 004624: table 106756 cleared */
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
@@ -929,6 +945,11 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     neo_grid_decay(w->grid,&w->grid_cursor);
     w->kill_active=w->ga_flags.kill_request!=0;w->ga_flags.kill_request=0;   /* 0046D4 */
     w->ga_flags.flash_request=0;                                              /* 0046E0 */
+    /* 004736: free the slots whose actor no longer holds them (+6B). */
+    for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) {
+        int16_t o=w->solids[i].actor;
+        if (o>=0 && ga_b(&w->gactors[o],0x6b)!=i) w->solids[i].actor=-1;
+    }
     g->kill_all=w->kill_active;
     /* Map swap actor 0B595A (inserted after the mission actor). */
     if (w->swap_step==2) {w->ga_flags.collapsed=1;w->ga_flags.flash=0;w->swap_step=3;}

@@ -5,10 +5,7 @@
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
 /* Armoured vehicle 087E36 still standing (any routine of the family, +5F
- * bit 7 clear) on screen: its world X, else -1. The port has no solid-body
- * push-out (004E76) yet, so the reference policies keep the player on its
- * left, under its platform (map 0E4FF2), facing it, as the arcade's body
- * blocks the player there. */
+ * bit 7 clear) on screen: its world X, else -1. */
 static int armored_x(const msx_game_t *g) {
     for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
         const neo_gactor_t *a=&g->world.gactors[i];
@@ -89,8 +86,6 @@ int main(void) {
             int x=g.camera+(int16_t)ga_w(a,0x3c)-96,px=g.x/MSX_UNIT;
             if (x<g.camera+300) {dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
         }
-        int armored=armored_x(&g);
-        if (armored>=0) {int x=armored-96,px=g.x/MSX_UNIT;dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
@@ -118,8 +113,10 @@ int main(void) {
     // Camera stop 1304: the arcade holds 2D67CA for 385 frames (MAME,
     // docs/MISION1_ACTORES.md) until the armoured vehicle 087E36 that
     // brings the prone soldier in is destroyed. This pistol-only policy,
-    // standing in front of it, needs under twice that (it took ~2000 while
-    // the vehicle was external and the soldier waited off-screen).
+    // walking right into it (its solid body 004E76/0E4E90 stops the player
+    // through the push-out 004ED2), needs under twice that (it took ~2000
+    // while the vehicle was external and the soldier waited off-screen).
+    assert(g.solid_pushes>0 && !g.world.solid_unsupported);
     assert(hold_max>=200 && hold_max<2*385);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     // The script camera stops at 3376 (boss arena); the player's view then
@@ -150,10 +147,12 @@ int main(void) {
                 int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
             }
             if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
-            // From the floor (Y=64): a respawn can land on the ledge at
-            // x~1435 or on the vehicle's platform, left to the random walk.
+            // Armoured vehicle on screen, player on the floor (Y=64; a respawn
+            // can land on the ledge at x~1435 or on its platform): walk at it
+            // firing level, as at the domes; its solid body (004ED2) stops the
+            // walk.
             int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
-            if (armored>=0) {int x=armored-96,px=g.x/MSX_UNIT;dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;a=false;}
+            if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
             g.aim_up=a;rs=rs*1103515245u+12345u;
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
@@ -162,7 +161,8 @@ int main(void) {
         assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
         assert(g.world.unsupported==g.world.boss_unsupported);
         // The random policy (deaths, respawns on the ledge or the vehicle's
-        // platform) ends the 1304 hold within three times the arcade's 385.
+        // platform; its body blocks the walk) ends the 1304 hold within three
+        // times the arcade's 385.
         assert(hold_max>=200 && hold_max<3*385);
     }
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;

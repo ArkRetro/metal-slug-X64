@@ -123,6 +123,78 @@ static void ride_on(msx_game_t *g,uint8_t object,int32_t x,int32_t y) {
     g->ride_x=(int32_t)((uint32_t)x+(uint32_t)k->terrain.x-(uint32_t)d->pos.x);
     g->ride_y=(int32_t)((uint32_t)y+(uint32_t)k->terrain.y-(uint32_t)d->pos.y);
 }
+/* Push-out 004ED2 from the solid bodies of the table 106756 (registered by
+ * 004E76: armoured vehicle 087E36, truck 02916E), called by the player's
+ * ground step 014594 (with +30 = ground speed +62) and air step 0143EE
+ * before their sweeps. (vx,vy) is the velocity of this update (+30/+34).
+ * Per body (descriptor words: kind, half width, x, y, width, height; x
+ * mirrored by the owner's +15 bit 0), the player's position predicted
+ * relative to the body (its relative velocity added) must lie inside the
+ * box; the side is then the half holding the current position: left sets
+ * the player's +15 bit 3 and the body's bit 4 (right: player bit 4, body
+ * bit 3), and the player moves 1/16 of the way to that edge from where it
+ * stands (each hit restarts from there: the last one wins). Kind 1 with
+ * the player's current feet at or above the top returns D7 = -1 (top).
+ * The nudge is applied directly: the original sweeps it through 013968,
+ * which this player model does not use (neo_collision supports it). The
+ * truck's descriptor 029BC2 has height 0, so it never pushes. */
+typedef struct { bool left,right,top; } solid_push_t;
+/* Motion of a +38 parent since the previous update (none for tag 0). */
+static bool parent_motion(const neo_world_t *w,uint32_t tag,uint32_t *dx,uint32_t *dy) {
+    neo_contact_parent_t p;*dx=*dy=0;
+    if (!tag) return true;
+    if (!neo_world_parent(w,tag,&p)) return false;
+    *dx=(uint32_t)p.x-(uint32_t)p.previous_x;*dy=(uint32_t)p.y-(uint32_t)p.previous_y;
+    return true;
+}
+static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t vy) {
+    solid_push_t r={false,false,false};
+    neo_world_t *w=&g->world;
+    if (!g->world_enabled) return r;
+    if (w->ga_flags.player_lock) return r;                    /* 0C8CFC: 10E9E3 set, D7 = 0 */
+    /* 01ABC8: projected position (+3C/+40), as player_frame. */
+    int32_t rx=-(int32_t)((uint32_t)g->camera<<16),ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
+    if (w->camera_native) {rx=neo_camera_root_x(&w->camera);ry=neo_camera_root_y(&w->camera);}
+    uint32_t px=(uint32_t)body->x+(uint32_t)rx,py=(uint32_t)body->y+(uint32_t)ry;
+    /* Motion of the player's parent (+38): the platform it rides, else the
+     * scene root of player_frame. */
+    uint32_t pdx,pdy;
+    parent_motion(w,g->ride?NEO_DYN_TAG(g->ride-1):0x10e968u,&pdx,&pdy);
+    int32_t start=body->x;bool hit=false;
+    for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) {                /* 004EF2 */
+        int o=w->solids[i].actor;
+        if (o<0) continue;
+        neo_gactor_t *a=&w->gactors[o];
+        if (ga_b(a,0x6b)!=i) continue;
+        const uint8_t *t=ga_rom(w->solids[i].desc);
+        uint32_t bdx,bdy;
+        if (!t || !parent_motion(w,ga_l(a,0x38),&bdx,&bdy)) {w->solid_unsupported++;continue;}  /* explicit stop: unknown descriptor/parent */
+        #define DW(k) ((uint16_t)(t[2*(k)]<<8|t[2*(k)+1]))
+        uint32_t d0=px-ga_l(a,0x3c),d1=py-ga_l(a,0x40);
+        uint32_t d2=(uint32_t)vx+pdx-ga_l(a,0x30)-bdx+d0,d3=(uint32_t)vy+pdy-ga_l(a,0x34)-bdy+d1;
+        uint16_t x0=(uint16_t)(d0>>16),y0=(uint16_t)(d1>>16),x1=(uint16_t)(d2>>16),y1=(uint16_t)(d3>>16);
+        uint16_t oy=DW(3),h=DW(5);
+        if ((uint16_t)(y1-oy)>=h) continue;                    /* 004F7A */
+        int16_t above=(int16_t)(uint16_t)(y0-oy-h);
+        uint16_t ox=DW(2),wd=DW(4);
+        if (ga_b(a,0x15)&1u) ox=(uint16_t)-(uint16_t)(ox+wd);  /* 004F8A */
+        if ((uint16_t)(x1-ox)>=wd) continue;                   /* 004F9C */
+        int16_t side=(int16_t)(uint16_t)(x0-ox-DW(1)),push;
+        if (side>=0) {                                          /* 004FAC: right half */
+            r.right=true;r.left=false;ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|8u));
+            push=(int16_t)-(int16_t)(uint16_t)(side-DW(1));if (push<0) push=0;
+        } else {                                                /* 004FC8: left half */
+            r.left=true;r.right=false;ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|16u));
+            push=(int16_t)-(int16_t)(uint16_t)(side+DW(1));if (push>0) push=0;
+        }
+        if (above>=0 && DW(0)==1u) r.top=true;                 /* 004FE0 */
+        body->x=start+(int32_t)push*(MSX_UNIT/16);             /* 004FF4..00503E */
+        hit=true;
+        #undef DW
+    }
+    if (hit) g->solid_pushes++;
+    return r;
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
     /* Collapse of the domed building: the players' input handlers are the
@@ -160,16 +232,33 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* Walking on the platform (flat top): still supported within
              * the original step tolerance, else the player falls off. */
             neo_ground_velocity(0,direction,&body.vx,&body.vy);body.vy=0;
+            solid_push_t s=solid_push(g,&body,body.vx,body.vy);
+            if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014676..01469C */
             body.x+=body.vx;
             uint8_t object;int32_t top;
             if (platform_floor(g,body.x,body.y+8*MSX_UNIT,-16*MSX_UNIT,&object,&top)) {body.y=top;ride_on(g,object,body.x,body.y);}
             else {g->ride=0;g->grounded=false;g->air_ticks=0;}
         } else if (g->grounded) {
+            /* 014594: the push-out sees the ground speed (+62) as +30; the
+             * sweep's velocity into the body is cancelled (014676..01469C). */
+            neo_surface_t feet;int32_t gvx,gvy;
+            neo_ground_velocity(neo_surface_at(body.x,body.y,1,NEO_UNIT,&feet)?feet.shape:0,direction,&gvx,&gvy);
+            solid_push_t s=solid_push(g,&body,gvx,body.vy);
+            if ((s.left && gvx>=0) || (s.right && gvx<0)) direction=0;
             g->grounded=neo_walk_step(&body,direction);
             if (!g->grounded) g->air_ticks=0;
         } else {
             int previous=body.y;
-            neo_air_step(&body,direction);
+            neo_air_accel(&body,direction);
+            solid_push_t s=solid_push(g,&body,body.vx,body.vy);
+            if (s.top) {
+                /* 014408: on top of a kind-1 body (player +5F bit 7, dying,
+                 * has no equivalent here): thrown up, and away when it was
+                 * in the left half; neither side then blocks. */
+                body.vy=0x60000;
+                if (s.left) {int32_t v=0u-(uint32_t)body.vx;body.vx=(v>=0?0x40000:-0x40000)+(v>>1);}
+            } else if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014468..01448A */
+            body.x+=body.vx;body.y+=body.vy;
             g->air_ticks+=2;
             uint8_t object;int32_t top;
             if (body.y<previous && platform_floor(g,body.x,previous,body.y-previous,&object,&top) && top<=previous && top>=body.y) {

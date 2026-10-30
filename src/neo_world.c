@@ -207,8 +207,7 @@ static neo_gactor_t *ga_alloc(neo_world_t *w,uint32_t routine,uint32_t creator_t
     memset(a->written,0,sizeof(a->written));
     return a;
 }
-static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
-    tick_t *t=ctx;neo_world_t *w=t->w;
+bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==TERRAIN_TAG) {*out=w->terrain;return true;}
     if (tag==ROOT_TAG) {*out=w->root;return true;}
     if (tag>=NEO_DYN_TAG(0) && tag<NEO_DYN_TAG(NEO_KDYN_COUNT)) {*out=w->dyn_parent[(tag-NEO_DYN_TAG(0))/64u];return true;}
@@ -227,6 +226,7 @@ static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
     return false;
 }
+static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {return neo_world_parent(((tick_t *)ctx)->w,tag,out);}
 static const neo_anim_program_t *g_program(uint32_t tag) {return program(tag);}
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68) {
     neo_world_t *w=t->w;

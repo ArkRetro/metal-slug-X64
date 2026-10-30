@@ -29,13 +29,13 @@ int main(void) {
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         if (held && (hold%20==1 || g.hits!=lasthits)) {
-            printf("step=%u hold=%u px=%d py=%d cam=%d face=%d gnd=%d ride=%u pushes=%u hits=%u aim_up=%d |",
-                steps,hold,g.x/MSX_UNIT,g.y/MSX_UNIT,g.camera,g.facing,g.grounded,g.ride,g.solid_pushes,g.hits,g.aim_up);
+            printf("step=%u hold=%u px=%d py=%d cam=%d face=%d gnd=%d ride=%u pushes=%u unsup=%u hits=%u aim_up=%d |",
+                steps,hold,g.x/MSX_UNIT,g.y/MSX_UNIT,g.camera,g.facing,g.grounded,g.ride,g.solid_pushes,g.world.solid_unsupported,g.hits,g.aim_up);
             for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
                 const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
                 if (!a->active || r<0x87e36u || r>0x89c00u) continue;
-                printf(" veh[%u] r=%05lx x=%d y=%d f15=%02x f5f=%02x 6b=%02x vx=%ld",i,(unsigned long)r,
-                    g.camera+(int16_t)ga_w(a,0x3c),(int16_t)ga_w(a,0x40),ga_b(a,0x15),ga_b(a,0x5f),ga_b(a,0x6b),(long)(int32_t)ga_l(a,0x30));
+                printf(" veh[%u] r=%05lx x=%d y=%d f15=%02x f5f=%02x 6b=%02x p38=%06lx vx=%ld",i,(unsigned long)r,
+                    g.camera+(int16_t)ga_w(a,0x3c),(int16_t)ga_w(a,0x40),ga_b(a,0x15),ga_b(a,0x5f),ga_b(a,0x6b),(unsigned long)ga_l(a,0x38),(long)(int32_t)ga_l(a,0x30));
             }
             putchar('\n');lasthits=g.hits;
         }

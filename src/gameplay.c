@@ -139,16 +139,13 @@ static void ride_on(msx_game_t *g,uint8_t object,int32_t x,int32_t y) {
  * which this player model does not use (neo_collision supports it). The
  * truck's descriptor 029BC2 has height 0, so it never pushes. */
 typedef struct { bool left,right,top; } solid_push_t;
-static uint32_t parent_dx(const neo_world_t *w,uint32_t tag,bool *ok) {
-    if (tag==0x10e968u) return (uint32_t)w->root.x-(uint32_t)w->root.previous_x;
-    if (tag==0x10c72eu) return (uint32_t)w->terrain.x-(uint32_t)w->terrain.previous_x;
-    if (!tag) return 0;
-    *ok=false;return 0;
-}
-static uint32_t parent_dy(const neo_world_t *w,uint32_t tag) {
-    if (tag==0x10e968u) return (uint32_t)w->root.y-(uint32_t)w->root.previous_y;
-    if (tag==0x10c72eu) return (uint32_t)w->terrain.y-(uint32_t)w->terrain.previous_y;
-    return 0;
+/* Motion of a +38 parent since the previous update (none for tag 0). */
+static bool parent_motion(const neo_world_t *w,uint32_t tag,uint32_t *dx,uint32_t *dy) {
+    neo_contact_parent_t p;*dx=*dy=0;
+    if (!tag) return true;
+    if (!neo_world_parent(w,tag,&p)) return false;
+    *dx=(uint32_t)p.x-(uint32_t)p.previous_x;*dy=(uint32_t)p.y-(uint32_t)p.previous_y;
+    return true;
 }
 static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t vy) {
     solid_push_t r={false,false,false};
@@ -161,11 +158,8 @@ static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t 
     uint32_t px=(uint32_t)body->x+(uint32_t)rx,py=(uint32_t)body->y+(uint32_t)ry;
     /* Motion of the player's parent (+38): the platform it rides, else the
      * scene root of player_frame. */
-    uint32_t pdx=(uint32_t)w->root.x-(uint32_t)w->root.previous_x,pdy=(uint32_t)w->root.y-(uint32_t)w->root.previous_y;
-    if (g->ride) {
-        const neo_kdyn_t *d=&w->kernel.dyn[g->ride-1];
-        pdx=(uint32_t)d->pos.x-(uint32_t)d->pos.prev_x;pdy=(uint32_t)d->pos.y-(uint32_t)d->pos.prev_y;
-    }
+    uint32_t pdx,pdy;
+    parent_motion(w,g->ride?NEO_DYN_TAG(g->ride-1):0x10e968u,&pdx,&pdy);
     int32_t start=body->x;bool hit=false;
     for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) {                /* 004EF2 */
         int o=w->solids[i].actor;
@@ -173,9 +167,8 @@ static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t 
         neo_gactor_t *a=&w->gactors[o];
         if (ga_b(a,0x6b)!=i) continue;
         const uint8_t *t=ga_rom(w->solids[i].desc);
-        bool ok=true;uint32_t tag=ga_l(a,0x38);
-        uint32_t bdx=parent_dx(w,tag,&ok),bdy=parent_dy(w,tag);
-        if (!t || !ok) {w->solid_unsupported++;continue;}       /* explicit stop: unknown descriptor/parent */
+        uint32_t bdx,bdy;
+        if (!t || !parent_motion(w,ga_l(a,0x38),&bdx,&bdy)) {w->solid_unsupported++;continue;}  /* explicit stop: unknown descriptor/parent */
         #define DW(k) ((uint16_t)(t[2*(k)]<<8|t[2*(k)+1]))
         uint32_t d0=px-ga_l(a,0x3c),d1=py-ga_l(a,0x40);
         uint32_t d2=(uint32_t)vx+pdx-ga_l(a,0x30)-bdx+d0,d3=(uint32_t)vy+pdy-ga_l(a,0x34)-bdy+d1;

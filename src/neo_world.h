@@ -145,6 +145,10 @@ void neo_world_init(neo_world_t *world,int32_t scroll_x);
 /* One original logic update. Returns the number of hits on the player
  * (knife 0AEF14 and thrown-object flight attack ROM 0E0894). */
 unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_player_t *player);
+/* Position block of the object a +38 parent tag names (terrain, scene root,
+ * layer objects, dynamic objects, generic actors, boss nodes): current and
+ * previous projected position; false for an unknown tag. */
+bool neo_world_parent(const neo_world_t *world,uint32_t tag,neo_contact_parent_t *out);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

@@ -91,12 +91,17 @@ def main():
     # palette is the soldier's default resource 0x20E; the renderer overrides
     # it with the logical resource of each draw through scene_native_palette.
     native=json.loads((ROOT/'filesystem/soldier-native.json').read_text())
+    # Mission 1 boss descriptors (tools/export_boss_sprites.py) share the
+    # streamed SCENE_NATIVE bank; their palettes are other logical resources.
+    boss=json.loads((ROOT/'filesystem/boss-native.json').read_text())
+    native['frames']=native['frames']+boss['frames'];native['palettes']=dict(native['palettes'],**boss['palettes'])
     native_palettes={int(k,16):palette_id(v) for k,v in native['palettes'].items()}
     base_palette=native['palettes']['0x20e'];descriptors=[];native_start=len(images)
     # Pack the descriptors in program order so that one animation streams as
     # few consecutive chunks as possible (SCENE_NATIVE is not pinned).
     programs=json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'];rank={}
-    for prog in programs:
+    boss_programs=json.loads((ROOT/'data/boss_programs.json').read_text())['programs']
+    for prog in programs+boss_programs:
         for c in prog['commands']:
             if c['kind']=='POSE':rank.setdefault(c['asset'],len(rank))
     native_frames=sorted(native['frames'],key=lambda f:rank.get(int(f['descriptor'],16),len(rank)))
@@ -152,6 +157,13 @@ def main():
     parts={d:[images[native_start+first+i][0] for i in range(count)] for d,first,count in descriptors}
     program_chunks=sorted((len({pg//8 for c in prog['commands'] if c['kind']=='POSE' for pg in parts[c['asset']]}) for prog in programs),reverse=True)
     lines.append(f'#define SCENE_NATIVE_PROGRAM_CHUNKS_MAX3 {sum(program_chunks[:3])}')
+    # Boss: chunks of every boss pose (the whole fight's set) and of the
+    # largest single program; tools/check_boss_budget.py measures the set
+    # drawn per logic pass of the recorded fights.
+    boss_tags={int(f['descriptor'],16) for f in boss['frames']}
+    boss_chunks={pg//8 for d in boss_tags for pg in parts[d]}
+    lines.append(f'#define SCENE_BOSS_CHUNKS {len(boss_chunks)}')
+    lines.append(f'#define SCENE_BOSS_PAGES {len({pg for d in boss_tags for pg in parts[d]})}')
     lines.append('static const scene_native_palette_t scene_native_palettes[]={')
     lines.extend('  {0x%x,%d},'%(k,v) for k,v in sorted(native_palettes.items()));lines.append('};')
     lines.append('static const scene_image_t scene_map_images[]={')
@@ -161,7 +173,7 @@ def main():
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')
-    report=dict(frames=len(images),native_descriptors=len(descriptors),native_palettes=len(native_palettes),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
+    report=dict(frames=len(images),native_descriptors=len(descriptors),boss_descriptors=len(boss_tags),boss_pages=len({pg for d in boss_tags for pg in parts[d]}),boss_chunks=len(boss_chunks),native_palettes=len(native_palettes),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
     (ROOT/'build/scene_pack_report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
 if __name__=='__main__':main()

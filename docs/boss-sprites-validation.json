@@ -1,0 +1,1062 @@
+{
+ "descriptors": 260,
+ "unique_tiles": 3426,
+ "palettes": [
+  "0x223",
+  "0x2ec",
+  "0x2ed",
+  "0x2ee",
+  "0x2ef",
+  "0x319",
+  "0x31a",
+  "0x31b",
+  "0x347",
+  "0x357",
+  "0x358",
+  "0x359",
+  "0x393"
+ ],
+ "stats": {
+  "pixels_equal": 1689859,
+  "pixels_different": 2,
+  "vram_pixels_not_drawn_by_native_boss": 191538,
+  "frames": 102,
+  "pass_rank_2": 51,
+  "pass_rank_1": 51
+ },
+ "frames": [
+  {
+   "frame": 10710,
+   "update_frame": 10707,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 388,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10740,
+   "update_frame": 10737,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 9509,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10770,
+   "update_frame": 10767,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 14899,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10800,
+   "update_frame": 10797,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 14994,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10830,
+   "update_frame": 10827,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 15037,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10860,
+   "update_frame": 10857,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 15029,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 10890,
+   "update_frame": 10887,
+   "pass_rank": 2,
+   "draws": 19,
+   "equal": 17045,
+   "different": 0,
+   "uncovered": 5,
+   "first_differences": []
+  },
+  {
+   "frame": 10920,
+   "update_frame": 10918,
+   "pass_rank": 2,
+   "draws": 30,
+   "equal": 17325,
+   "different": 0,
+   "uncovered": 20,
+   "first_differences": []
+  },
+  {
+   "frame": 10950,
+   "update_frame": 10949,
+   "pass_rank": 1,
+   "draws": 39,
+   "equal": 17471,
+   "different": 0,
+   "uncovered": 83,
+   "first_differences": []
+  },
+  {
+   "frame": 10980,
+   "update_frame": 10978,
+   "pass_rank": 1,
+   "draws": 41,
+   "equal": 16578,
+   "different": 0,
+   "uncovered": 129,
+   "first_differences": []
+  },
+  {
+   "frame": 11010,
+   "update_frame": 11008,
+   "pass_rank": 1,
+   "draws": 41,
+   "equal": 15169,
+   "different": 0,
+   "uncovered": 209,
+   "first_differences": []
+  },
+  {
+   "frame": 11040,
+   "update_frame": 11038,
+   "pass_rank": 2,
+   "draws": 31,
+   "equal": 14166,
+   "different": 0,
+   "uncovered": 2442,
+   "first_differences": []
+  },
+  {
+   "frame": 11070,
+   "update_frame": 11069,
+   "pass_rank": 2,
+   "draws": 24,
+   "equal": 11799,
+   "different": 0,
+   "uncovered": 2145,
+   "first_differences": []
+  },
+  {
+   "frame": 11100,
+   "update_frame": 11099,
+   "pass_rank": 1,
+   "draws": 27,
+   "equal": 13791,
+   "different": 0,
+   "uncovered": 1901,
+   "first_differences": []
+  },
+  {
+   "frame": 11130,
+   "update_frame": 11129,
+   "pass_rank": 1,
+   "draws": 29,
+   "equal": 14661,
+   "different": 0,
+   "uncovered": 1076,
+   "first_differences": []
+  },
+  {
+   "frame": 11160,
+   "update_frame": 11156,
+   "pass_rank": 2,
+   "draws": 34,
+   "equal": 16755,
+   "different": 0,
+   "uncovered": 190,
+   "first_differences": []
+  },
+  {
+   "frame": 11190,
+   "update_frame": 11186,
+   "pass_rank": 2,
+   "draws": 40,
+   "equal": 16909,
+   "different": 0,
+   "uncovered": 235,
+   "first_differences": []
+  },
+  {
+   "frame": 11220,
+   "update_frame": 11216,
+   "pass_rank": 2,
+   "draws": 41,
+   "equal": 15896,
+   "different": 0,
+   "uncovered": 257,
+   "first_differences": []
+  },
+  {
+   "frame": 11250,
+   "update_frame": 11248,
+   "pass_rank": 2,
+   "draws": 29,
+   "equal": 15189,
+   "different": 0,
+   "uncovered": 164,
+   "first_differences": []
+  },
+  {
+   "frame": 11280,
+   "update_frame": 11279,
+   "pass_rank": 1,
+   "draws": 28,
+   "equal": 15161,
+   "different": 0,
+   "uncovered": 217,
+   "first_differences": []
+  },
+  {
+   "frame": 11310,
+   "update_frame": 11309,
+   "pass_rank": 1,
+   "draws": 26,
+   "equal": 17472,
+   "different": 0,
+   "uncovered": 1865,
+   "first_differences": []
+  },
+  {
+   "frame": 11340,
+   "update_frame": 11339,
+   "pass_rank": 1,
+   "draws": 25,
+   "equal": 16867,
+   "different": 0,
+   "uncovered": 4239,
+   "first_differences": []
+  },
+  {
+   "frame": 11370,
+   "update_frame": 11369,
+   "pass_rank": 1,
+   "draws": 33,
+   "equal": 16790,
+   "different": 0,
+   "uncovered": 509,
+   "first_differences": []
+  },
+  {
+   "frame": 11400,
+   "update_frame": 11396,
+   "pass_rank": 2,
+   "draws": 41,
+   "equal": 16911,
+   "different": 0,
+   "uncovered": 108,
+   "first_differences": []
+  },
+  {
+   "frame": 11430,
+   "update_frame": 11426,
+   "pass_rank": 2,
+   "draws": 41,
+   "equal": 11536,
+   "different": 0,
+   "uncovered": 5138,
+   "first_differences": []
+  },
+  {
+   "frame": 11460,
+   "update_frame": 11456,
+   "pass_rank": 2,
+   "draws": 40,
+   "equal": 13350,
+   "different": 0,
+   "uncovered": 5772,
+   "first_differences": []
+  },
+  {
+   "frame": 11490,
+   "update_frame": 11489,
+   "pass_rank": 1,
+   "draws": 33,
+   "equal": 11116,
+   "different": 0,
+   "uncovered": 5511,
+   "first_differences": []
+  },
+  {
+   "frame": 11520,
+   "update_frame": 11518,
+   "pass_rank": 2,
+   "draws": 14,
+   "equal": 14749,
+   "different": 0,
+   "uncovered": 4106,
+   "first_differences": []
+  },
+  {
+   "frame": 11550,
+   "update_frame": 11550,
+   "pass_rank": 1,
+   "draws": 12,
+   "equal": 15157,
+   "different": 0,
+   "uncovered": 1745,
+   "first_differences": []
+  },
+  {
+   "frame": 11580,
+   "update_frame": 11578,
+   "pass_rank": 2,
+   "draws": 8,
+   "equal": 16135,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 11610,
+   "update_frame": 11608,
+   "pass_rank": 2,
+   "draws": 7,
+   "equal": 17451,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 11640,
+   "update_frame": 11638,
+   "pass_rank": 2,
+   "draws": 9,
+   "equal": 18383,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 11670,
+   "update_frame": 11668,
+   "pass_rank": 2,
+   "draws": 9,
+   "equal": 18373,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 11700,
+   "update_frame": 11698,
+   "pass_rank": 2,
+   "draws": 9,
+   "equal": 18321,
+   "different": 0,
+   "uncovered": 0,
+   "first_differences": []
+  },
+  {
+   "frame": 11730,
+   "update_frame": 11728,
+   "pass_rank": 2,
+   "draws": 21,
+   "equal": 20175,
+   "different": 0,
+   "uncovered": 10,
+   "first_differences": []
+  },
+  {
+   "frame": 11760,
+   "update_frame": 11758,
+   "pass_rank": 2,
+   "draws": 32,
+   "equal": 20660,
+   "different": 0,
+   "uncovered": 4,
+   "first_differences": []
+  },
+  {
+   "frame": 11790,
+   "update_frame": 11789,
+   "pass_rank": 1,
+   "draws": 32,
+   "equal": 19191,
+   "different": 0,
+   "uncovered": 71,
+   "first_differences": []
+  },
+  {
+   "frame": 11820,
+   "update_frame": 11817,
+   "pass_rank": 2,
+   "draws": 31,
+   "equal": 18304,
+   "different": 0,
+   "uncovered": 129,
+   "first_differences": []
+  },
+  {
+   "frame": 11850,
+   "update_frame": 11847,
+   "pass_rank": 2,
+   "draws": 31,
+   "equal": 18081,
+   "different": 0,
+   "uncovered": 214,
+   "first_differences": []
+  },
+  {
+   "frame": 11880,
+   "update_frame": 11878,
+   "pass_rank": 2,
+   "draws": 28,
+   "equal": 20322,
+   "different": 0,
+   "uncovered": 1418,
+   "first_differences": []
+  },
+  {
+   "frame": 11910,
+   "update_frame": 11908,
+   "pass_rank": 2,
+   "draws": 30,
+   "equal": 19761,
+   "different": 0,
+   "uncovered": 2196,
+   "first_differences": []
+  },
+  {
+   "frame": 11940,
+   "update_frame": 11938,
+   "pass_rank": 1,
+   "draws": 34,
+   "equal": 20556,
+   "different": 0,
+   "uncovered": 1475,
+   "first_differences": []
+  },
+  {
+   "frame": 11970,
+   "update_frame": 11968,
+   "pass_rank": 1,
+   "draws": 43,
+   "equal": 21855,
+   "different": 0,
+   "uncovered": 1858,
+   "first_differences": []
+  },
+  {
+   "frame": 12000,
+   "update_frame": 11998,
+   "pass_rank": 1,
+   "draws": 46,
+   "equal": 18456,
+   "different": 0,
+   "uncovered": 2394,
+   "first_differences": []
+  },
+  {
+   "frame": 12030,
+   "update_frame": 12028,
+   "pass_rank": 1,
+   "draws": 47,
+   "equal": 18253,
+   "different": 0,
+   "uncovered": 1361,
+   "first_differences": []
+  },
+  {
+   "frame": 12060,
+   "update_frame": 12058,
+   "pass_rank": 1,
+   "draws": 46,
+   "equal": 15851,
+   "different": 0,
+   "uncovered": 3380,
+   "first_differences": []
+  },
+  {
+   "frame": 12090,
+   "update_frame": 12088,
+   "pass_rank": 1,
+   "draws": 44,
+   "equal": 15792,
+   "different": 0,
+   "uncovered": 4449,
+   "first_differences": []
+  },
+  {
+   "frame": 12120,
+   "update_frame": 12118,
+   "pass_rank": 1,
+   "draws": 40,
+   "equal": 16510,
+   "different": 0,
+   "uncovered": 3353,
+   "first_differences": []
+  },
+  {
+   "frame": 12150,
+   "update_frame": 12148,
+   "pass_rank": 1,
+   "draws": 35,
+   "equal": 17546,
+   "different": 0,
+   "uncovered": 4487,
+   "first_differences": []
+  },
+  {
+   "frame": 12180,
+   "update_frame": 12178,
+   "pass_rank": 1,
+   "draws": 37,
+   "equal": 20373,
+   "different": 0,
+   "uncovered": 3543,
+   "first_differences": []
+  },
+  {
+   "frame": 12210,
+   "update_frame": 12208,
+   "pass_rank": 1,
+   "draws": 36,
+   "equal": 19242,
+   "different": 0,
+   "uncovered": 3626,
+   "first_differences": []
+  },
+  {
+   "frame": 12240,
+   "update_frame": 12238,
+   "pass_rank": 1,
+   "draws": 39,
+   "equal": 18285,
+   "different": 0,
+   "uncovered": 1906,
+   "first_differences": []
+  },
+  {
+   "frame": 12270,
+   "update_frame": 12268,
+   "pass_rank": 1,
+   "draws": 43,
+   "equal": 17971,
+   "different": 0,
+   "uncovered": 1386,
+   "first_differences": []
+  },
+  {
+   "frame": 12300,
+   "update_frame": 12298,
+   "pass_rank": 1,
+   "draws": 44,
+   "equal": 14402,
+   "different": 0,
+   "uncovered": 1220,
+   "first_differences": []
+  },
+  {
+   "frame": 12330,
+   "update_frame": 12328,
+   "pass_rank": 1,
+   "draws": 48,
+   "equal": 12917,
+   "different": 0,
+   "uncovered": 1490,
+   "first_differences": []
+  },
+  {
+   "frame": 12360,
+   "update_frame": 12358,
+   "pass_rank": 1,
+   "draws": 47,
+   "equal": 13163,
+   "different": 0,
+   "uncovered": 1852,
+   "first_differences": []
+  },
+  {
+   "frame": 12390,
+   "update_frame": 12388,
+   "pass_rank": 1,
+   "draws": 38,
+   "equal": 14150,
+   "different": 0,
+   "uncovered": 3102,
+   "first_differences": []
+  },
+  {
+   "frame": 12420,
+   "update_frame": 12418,
+   "pass_rank": 1,
+   "draws": 29,
+   "equal": 17475,
+   "different": 0,
+   "uncovered": 10043,
+   "first_differences": []
+  },
+  {
+   "frame": 12450,
+   "update_frame": 12448,
+   "pass_rank": 1,
+   "draws": 28,
+   "equal": 19012,
+   "different": 0,
+   "uncovered": 8795,
+   "first_differences": []
+  },
+  {
+   "frame": 12480,
+   "update_frame": 12478,
+   "pass_rank": 1,
+   "draws": 30,
+   "equal": 17885,
+   "different": 0,
+   "uncovered": 3107,
+   "first_differences": []
+  },
+  {
+   "frame": 12510,
+   "update_frame": 12508,
+   "pass_rank": 1,
+   "draws": 37,
+   "equal": 18597,
+   "different": 0,
+   "uncovered": 780,
+   "first_differences": []
+  },
+  {
+   "frame": 12540,
+   "update_frame": 12538,
+   "pass_rank": 1,
+   "draws": 35,
+   "equal": 17764,
+   "different": 0,
+   "uncovered": 584,
+   "first_differences": []
+  },
+  {
+   "frame": 12570,
+   "update_frame": 12568,
+   "pass_rank": 1,
+   "draws": 35,
+   "equal": 16510,
+   "different": 0,
+   "uncovered": 178,
+   "first_differences": []
+  },
+  {
+   "frame": 12600,
+   "update_frame": 12598,
+   "pass_rank": 1,
+   "draws": 33,
+   "equal": 16562,
+   "different": 0,
+   "uncovered": 399,
+   "first_differences": []
+  },
+  {
+   "frame": 12630,
+   "update_frame": 12628,
+   "pass_rank": 1,
+   "draws": 34,
+   "equal": 16567,
+   "different": 0,
+   "uncovered": 334,
+   "first_differences": []
+  },
+  {
+   "frame": 12660,
+   "update_frame": 12658,
+   "pass_rank": 2,
+   "draws": 31,
+   "equal": 17771,
+   "different": 0,
+   "uncovered": 4722,
+   "first_differences": []
+  },
+  {
+   "frame": 12690,
+   "update_frame": 12689,
+   "pass_rank": 1,
+   "draws": 33,
+   "equal": 18407,
+   "different": 0,
+   "uncovered": 4029,
+   "first_differences": []
+  },
+  {
+   "frame": 12720,
+   "update_frame": 12718,
+   "pass_rank": 1,
+   "draws": 39,
+   "equal": 19452,
+   "different": 0,
+   "uncovered": 2722,
+   "first_differences": []
+  },
+  {
+   "frame": 12750,
+   "update_frame": 12748,
+   "pass_rank": 1,
+   "draws": 39,
+   "equal": 19152,
+   "different": 0,
+   "uncovered": 601,
+   "first_differences": []
+  },
+  {
+   "frame": 12780,
+   "update_frame": 12778,
+   "pass_rank": 1,
+   "draws": 38,
+   "equal": 17168,
+   "different": 0,
+   "uncovered": 1823,
+   "first_differences": []
+  },
+  {
+   "frame": 12810,
+   "update_frame": 12808,
+   "pass_rank": 1,
+   "draws": 38,
+   "equal": 12982,
+   "different": 0,
+   "uncovered": 767,
+   "first_differences": []
+  },
+  {
+   "frame": 12840,
+   "update_frame": 12837,
+   "pass_rank": 2,
+   "draws": 37,
+   "equal": 13005,
+   "different": 0,
+   "uncovered": 389,
+   "first_differences": []
+  },
+  {
+   "frame": 12870,
+   "update_frame": 12867,
+   "pass_rank": 2,
+   "draws": 34,
+   "equal": 14535,
+   "different": 0,
+   "uncovered": 2926,
+   "first_differences": []
+  },
+  {
+   "frame": 12900,
+   "update_frame": 12897,
+   "pass_rank": 2,
+   "draws": 38,
+   "equal": 16228,
+   "different": 0,
+   "uncovered": 2468,
+   "first_differences": []
+  },
+  {
+   "frame": 12930,
+   "update_frame": 12927,
+   "pass_rank": 2,
+   "draws": 30,
+   "equal": 17888,
+   "different": 0,
+   "uncovered": 4142,
+   "first_differences": []
+  },
+  {
+   "frame": 12960,
+   "update_frame": 12957,
+   "pass_rank": 2,
+   "draws": 27,
+   "equal": 17475,
+   "different": 0,
+   "uncovered": 2026,
+   "first_differences": []
+  },
+  {
+   "frame": 12990,
+   "update_frame": 12987,
+   "pass_rank": 2,
+   "draws": 28,
+   "equal": 17856,
+   "different": 0,
+   "uncovered": 143,
+   "first_differences": []
+  },
+  {
+   "frame": 13020,
+   "update_frame": 13018,
+   "pass_rank": 2,
+   "draws": 27,
+   "equal": 17205,
+   "different": 0,
+   "uncovered": 595,
+   "first_differences": []
+  },
+  {
+   "frame": 13050,
+   "update_frame": 13046,
+   "pass_rank": 2,
+   "draws": 37,
+   "equal": 19209,
+   "different": 2,
+   "uncovered": 755,
+   "first_differences": [
+    [
+     135,
+     91,
+     3694,
+     2629
+    ],
+    [
+     134,
+     92,
+     3695,
+     2629
+    ]
+   ]
+  },
+  {
+   "frame": 13080,
+   "update_frame": 13076,
+   "pass_rank": 2,
+   "draws": 43,
+   "equal": 19516,
+   "different": 0,
+   "uncovered": 527,
+   "first_differences": []
+  },
+  {
+   "frame": 13110,
+   "update_frame": 13106,
+   "pass_rank": 2,
+   "draws": 39,
+   "equal": 18938,
+   "different": 0,
+   "uncovered": 1998,
+   "first_differences": []
+  },
+  {
+   "frame": 13140,
+   "update_frame": 13136,
+   "pass_rank": 2,
+   "draws": 44,
+   "equal": 19617,
+   "different": 0,
+   "uncovered": 1034,
+   "first_differences": []
+  },
+  {
+   "frame": 13170,
+   "update_frame": 13166,
+   "pass_rank": 2,
+   "draws": 49,
+   "equal": 18824,
+   "different": 0,
+   "uncovered": 342,
+   "first_differences": []
+  },
+  {
+   "frame": 13200,
+   "update_frame": 13196,
+   "pass_rank": 2,
+   "draws": 49,
+   "equal": 16911,
+   "different": 0,
+   "uncovered": 1425,
+   "first_differences": []
+  },
+  {
+   "frame": 13230,
+   "update_frame": 13226,
+   "pass_rank": 2,
+   "draws": 49,
+   "equal": 16738,
+   "different": 0,
+   "uncovered": 724,
+   "first_differences": []
+  },
+  {
+   "frame": 13260,
+   "update_frame": 13256,
+   "pass_rank": 2,
+   "draws": 38,
+   "equal": 17095,
+   "different": 0,
+   "uncovered": 4988,
+   "first_differences": []
+  },
+  {
+   "frame": 13290,
+   "update_frame": 13287,
+   "pass_rank": 2,
+   "draws": 35,
+   "equal": 16650,
+   "different": 0,
+   "uncovered": 5159,
+   "first_differences": []
+  },
+  {
+   "frame": 13320,
+   "update_frame": 13317,
+   "pass_rank": 2,
+   "draws": 37,
+   "equal": 16043,
+   "different": 0,
+   "uncovered": 2947,
+   "first_differences": []
+  },
+  {
+   "frame": 13350,
+   "update_frame": 13347,
+   "pass_rank": 2,
+   "draws": 34,
+   "equal": 14863,
+   "different": 0,
+   "uncovered": 4659,
+   "first_differences": []
+  },
+  {
+   "frame": 13380,
+   "update_frame": 13379,
+   "pass_rank": 1,
+   "draws": 28,
+   "equal": 13785,
+   "different": 0,
+   "uncovered": 2770,
+   "first_differences": []
+  },
+  {
+   "frame": 13410,
+   "update_frame": 13409,
+   "pass_rank": 1,
+   "draws": 27,
+   "equal": 13781,
+   "different": 0,
+   "uncovered": 2406,
+   "first_differences": []
+  },
+  {
+   "frame": 13440,
+   "update_frame": 13438,
+   "pass_rank": 1,
+   "draws": 28,
+   "equal": 16317,
+   "different": 0,
+   "uncovered": 3116,
+   "first_differences": []
+  },
+  {
+   "frame": 13470,
+   "update_frame": 13468,
+   "pass_rank": 1,
+   "draws": 34,
+   "equal": 19349,
+   "different": 0,
+   "uncovered": 1632,
+   "first_differences": []
+  },
+  {
+   "frame": 13500,
+   "update_frame": 13498,
+   "pass_rank": 1,
+   "draws": 38,
+   "equal": 18140,
+   "different": 0,
+   "uncovered": 260,
+   "first_differences": []
+  },
+  {
+   "frame": 13530,
+   "update_frame": 13528,
+   "pass_rank": 1,
+   "draws": 40,
+   "equal": 18879,
+   "different": 0,
+   "uncovered": 1752,
+   "first_differences": []
+  },
+  {
+   "frame": 13560,
+   "update_frame": 13558,
+   "pass_rank": 1,
+   "draws": 40,
+   "equal": 18091,
+   "different": 0,
+   "uncovered": 1582,
+   "first_differences": []
+  },
+  {
+   "frame": 13590,
+   "update_frame": 13588,
+   "pass_rank": 1,
+   "draws": 37,
+   "equal": 17050,
+   "different": 0,
+   "uncovered": 400,
+   "first_differences": []
+  },
+  {
+   "frame": 13620,
+   "update_frame": 13618,
+   "pass_rank": 1,
+   "draws": 37,
+   "equal": 17024,
+   "different": 0,
+   "uncovered": 762,
+   "first_differences": []
+  },
+  {
+   "frame": 13650,
+   "update_frame": 13646,
+   "pass_rank": 2,
+   "draws": 39,
+   "equal": 15291,
+   "different": 0,
+   "uncovered": 3590,
+   "first_differences": []
+  },
+  {
+   "frame": 13680,
+   "update_frame": 13677,
+   "pass_rank": 2,
+   "draws": 30,
+   "equal": 14989,
+   "different": 0,
+   "uncovered": 7326,
+   "first_differences": []
+  },
+  {
+   "frame": 13710,
+   "update_frame": 13707,
+   "pass_rank": 2,
+   "draws": 21,
+   "equal": 15239,
+   "different": 0,
+   "uncovered": 5734,
+   "first_differences": []
+  },
+  {
+   "frame": 13740,
+   "update_frame": 13739,
+   "pass_rank": 1,
+   "draws": 10,
+   "equal": 15826,
+   "different": 0,
+   "uncovered": 1087,
+   "first_differences": []
+  }
+ ]
+}

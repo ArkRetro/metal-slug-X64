@@ -29,7 +29,8 @@
 --  weapons.csv   every frame from 2100: camera, inputs, input word 10E9EC,
 --                P1 actor (1014C4) routine/+15/+4E/+5F/+6C/+90/+92..+95/+9A,
 --                position, weapon block 10C718..10C72F, vehicle slot P1
---                10C608..10C62B, record pointer 10C2E8 (set by ROM 0AA83A)
+--                10C608..10C62B, record pointer 10C2E8 (set by ROM 0AA83A),
+--                frame counter 10000E, timer 1013DE, score 10C46A, prisoners 10C5FC
 --  actors.csv    actor births/routine changes (with +6E: item kind, angle)
 --  actorstate.csv every second frame from MSX_WEAPONS_STATE_FROM (6800)
 --  trace.csv     the family-pipeline trace columns of capture_mission_rest.lua
@@ -55,13 +56,16 @@ local family_from=tonumber(os.getenv('MSX_WEAPONS_FAMILY_FROM') or '0')
 local family_to=tonumber(os.getenv('MSX_WEAPONS_FAMILY_TO') or '0')
 local assist_camera=tonumber(os.getenv('MSX_WEAPONS_ASSIST_CAMERA') or '0')
 local assisting=assist_camera>0
+-- MSX_WEAPONS_KEEP_TIMER=1: do not hold the mission timer 1013DE (HUD timer
+-- digits, docs/ARMAS_VEHICULOS.md §11); everything else as without it.
+local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
 local frame=0
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local mstate=manager.machine.devices[':maincpu'].state
 local ROOT,DEAD,SCRIPT,P1=0x1010a4,0x3f1e,0x101414,0x1014c4
 local function hexbytes(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
 local wcsv=assert(io.open(output..'/weapons.csv','w'))
-wcsv:write('frame,camera,inputs,input_word,routine,flags15,health,f5f,f6c,f90,f92,f93,f94,f95,f9a,x16,y16,weapon_block,slot_p1,hud\n')
+wcsv:write('frame,camera,inputs,input_word,routine,flags15,health,f5f,f6c,f90,f92,f93,f94,f95,f9a,x16,y16,weapon_block,slot_p1,hud,video,timer,score,rescued\n')
 local actors=assert(io.open(output..'/actors.csv','w'))
 actors:write('frame,camera,node,event,routine,previous,creator,parent,x,y,kind6e,word70\n')
 local states=assert(io.open(output..'/actorstate.csv','w'))
@@ -164,6 +168,10 @@ local function probes()
  bp(0x9294a,'1','tank_cannon a6=%08X shells=%X type=%X','a6,b@10c627,b@(a6+7c)')
  bp(0x929ee,'1','tank_bomb a6=%08X','a6')
  bp(0x93a08,'1','tank_exit_AB a6=%08X health=%X','a6,w@(a6+4e)')
+ -- Targets of the homing projectiles: the 0049E8 query result of the C
+ -- (063FDC; A1 the alternative of a negative +8B) and of the rocket (0638B4).
+ bp(0x63fe6,'1','chaser_target a6=%08X a0=%08X a1=%08X r8b=%X a0x=%08X a0y=%08X a1x=%08X a1y=%08X','a6,a0,a1,b@(a6+8b),d@(a0+3c),d@(a0+40),d@(a1+3c),d@(a1+40)')
+ bp(0x638be,'1','rocket_target a6=%08X a0=%08X a0x=%08X a0y=%08X','a6,a0,d@(a0+3c),d@(a0+40)')
  -- Allocations by the player or by a vehicle (A6 the creator).
  local who='(a6==1014c4)||((d@(a6)>=34000)&&(d@(a6)<36000))||((d@(a6)>=90000)&&(d@(a6)<98000))'
  bp(0x411c,who,'alloc ctor=%08X creator=%08X croutine=%08X','a0,a6,d@(a6)')
@@ -275,7 +283,7 @@ emu.register_frame_done(function()
  if frame>=1550 and frame<=1700 then button('P1 A',1) end
  if frame==1710 then button('P1 A',0) end
  if frame>=2000 then
-  cpu:write_u8(0x1013de,0x5a)
+  if not keep_timer then cpu:write_u8(0x1013de,0x5a) end
   cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40) -- P1 invulnerability, capture only.
   cpu:write_u8(0x101549,0x99)
   cpu:write_u8(0x101288,2)
@@ -324,10 +332,10 @@ emu.register_frame_done(function()
  if frame>=2100 then
   local inputs=(pressed['P1 Left']==1 and 'L' or '')..(pressed['P1 Right']==1 and 'R' or '')..(pressed['P1 Up']==1 and 'U' or '')..(pressed['P1 A']==1 and 'A' or '')..(pressed['P1 B']==1 and 'B' or '')..(pressed['P1 C']==1 and 'C' or '')
   local block=hexbytes(0x10c718,0x18);local slotp=hexbytes(0x10c608,0x24)
-  wcsv:write(string.format('%d,%d,%s,%04x%04x,%x,%02x,%d,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%u,%u,%s,%s,%x\n',frame,camera,inputs,
+  wcsv:write(string.format('%d,%d,%s,%04x%04x,%x,%02x,%d,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%02x,%u,%u,%s,%s,%x,%04x,%04x,%08x,%04x\n',frame,camera,inputs,
    cpu:read_u16(0x10e9ec),cpu:read_u16(0x10e9ee),cpu:read_u32(P1),cpu:read_u8(P1+0x15),cpu:read_u16(P1+0x4e),cpu:read_u8(P1+0x5f),cpu:read_u8(P1+0x6c),
    cpu:read_u8(P1+0x90),cpu:read_u8(P1+0x92),cpu:read_u8(P1+0x93),cpu:read_u8(P1+0x94),cpu:read_u8(P1+0x95),cpu:read_u8(P1+0x9a),
-   cpu:read_u32(P1+0x28),cpu:read_u32(P1+0x2c),block,slotp,cpu:read_u32(0x10c2e8)))
+   cpu:read_u32(P1+0x28),cpu:read_u32(P1+0x2c),block,slotp,cpu:read_u32(0x10c2e8),cpu:read_u16(0x10000e),cpu:read_u16(0x1013de),cpu:read_u32(0x10c46a),cpu:read_u16(0x10c5fc)))
   local g={}
   for i=0,8 do g[#g+1]=string.format('%d',cpu:read_u8(0x10c326+i)) end
   trace:write(string.format('%d,%d,%d,%u,%u,%x,%x,%d,%s,%s\n',frame,camera,cpu:read_u16(0x10e99e),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),

@@ -25,6 +25,26 @@ void msx_game_init(msx_game_t *g) {
     // The original region script starts at its first record with the RNG
     // ring the mission handoff left (data/soldier_ai_tables.json).
     neo_world_init(&g->world,-(int32_t)((uint32_t)g->camera<<16));g->world_enabled=true;
+    /* Mission start: timer 003586 (DIP index 0 of 10FD8C: 60, as in the
+     * captures), lives 10FD88 = 3 (0C9406), one taken by the first spawn
+     * (0C95E6). */
+    neo_hud_init(&g->hud,(uint16_t)(neo_hud_timer_start(MSX_HUD_TIMER_DIP)<<8|0xff));
+    g->hud.panel[0].f84=3;neo_hud_life_lost(&g->hud,0);
+}
+/* One update of the original HUD with the port's state (neo_hud.c): single
+ * player MVS game with no credit (P2 panel "INSERT COIN", "CREDIT 0"), no
+ * vehicle gauge (the port's player does not ride), timer running while the
+ * mission is in play. */
+static void hud_step(msx_game_t *g) {
+    if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
+    neo_hud_input_t in={0};
+    in.hud_on=true;in.join_mask=3;in.mvs=true;in.credit_text=true;in.credits=0;
+    in.arms=neo_hud_arms(g->world.weapons.b,NULL,0,false,0);
+    neo_hud_bombs(g->world.weapons.b,NULL,0,0,0,&in.bombs,&in.bomb_type);
+    memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
+    in.video=(uint16_t)(g->ticks>>1);
+    in.timer_running=!g->complete && !g->mission_complete;
+    neo_hud_frame(&g->hud,&in);
 }
 bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     neo_surface_t support;
@@ -60,6 +80,10 @@ void msx_game_hurt(msx_game_t *g,int from) {
         /* 0C2FA4 (the dead player gone) and 0C0E6E (the new life). */
         marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
         g->deaths++;g->health=3;g->velocity_x=g->velocity_y=0;g->invulnerable=90;
+        /* 0C95E6: one life less on the panel; with none left the original
+         * ends the game (0C9848, not translated: explicit stop, the port
+         * keeps playing with 0). */
+        if (!neo_hud_life_lost(&g->hud,0)) g->hud_game_over++;
         memset(g->bullets,0,sizeof(g->bullets));
         if (g->world_enabled && g->world.camera_native) {
             // The mission camera never scrolls back: respawn inside the
@@ -364,6 +388,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
         if (g->world.mission_step>=1) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
+        hud_step(g);
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;

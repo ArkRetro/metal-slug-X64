@@ -575,10 +575,56 @@ Duración de la parada 1304 (`2D67CA`, la arcade: 385): carrera de la misión
 (pasos totales 40084/44750/40398/38494 → 30704/35146/29054/30210). Con la H
 sola (sin granadas) no cambiaba: la H se toma después de 1304.
 
-### Paso 5: HUD — pendiente
+### Paso 5: HUD de capa fija — ver §11
 
-El port no tiene ruta de HUD de capa fija (`actor.c` solo dibuja el texto de
-diagnóstico). Los contadores ARMS/BOMB (`0x0C071C`, `0x0C0764`) están
-correctos en el estado (`marco_weapons_rounds`, `marco_weapons_bomb_count`) y
-`actor.c` registra sus cambios. El panel `0x0C9650..0x0C9844` es el paso
-siguiente.
+## 11. HUD de capa fija (`src/neo_hud.c`, `src/hud_renderer.c`)
+
+El HUD del original es la capa fija del Neo Geo (VRAM `7000..74FF`, 40
+columnas de 32 filas, palabra = paleta<<12 | tile S-ROM). `neo_hud.c` es un
+modelo de ese mapa escrito por traducciones de las rutinas del juego:
+
+- panel en juego `0x0C9650..0x0C983E` (vidas `0C96BE`, puntuación `0C96FC`,
+  ARMS `0C9738` con `0C071C`, BOMB `0C979E` con `0C0764`, indicador del
+  vehículo `0C9B94`, estrellas de prisioneros `0C9D08`);
+- panel P2 inactivo `0C9380` (INSERT COIN / PRESS START / GAME OVER con el
+  parpadeo `0C9228`), texto de créditos `01A7F4`;
+- cifras del tiempo `0C8FDC` del actor de misión (`101364` +7A = `1013DE`),
+  cuenta atrás `0186FA..0187A2` (condiciones `0193FE`, `104303` bit 7,
+  `10C2E7`, `104300`, `0C8CFC`, `107003`; pitido `0x10D7`), reiniciado por la
+  entrada `01913C` de la tabla de apariciones (`neo_world.c` la cuenta en
+  `timer_resets`; valor inicial `003586`, índice DIP `10FD8C` = 0: 60);
+- servicios de texto `03CF12/03CF60/03CF9A/03D004/03D050/03D068/03D0D0/
+  03D244/03D25A(03DD96)`.
+
+Paradas explícitas (contadas en `unsupported`, registradas una vez): escrituras
+fuera de `7000..74FF` (TRAP #F del original), páginas de glifo distintas de
+<10 y `a`, fin de tiempo `0C0A2C` y fin de partida `0C9848` (el port sigue con
+0 vidas; `hud_game_over` lo cuenta).
+
+**Orden en el fotograma.** El juego corre cada dos fotogramas de vídeo y una
+actualización ocupa dos: `10000E` cambia en el fotograma N, pero algunos
+actores (el jugador) terminan en N+1. Los paneles leen el estado completo de
+la actualización anterior, es decir, la fila de `weapons.csv` del fotograma
+N-1. Las apariciones `01913C` corren después del actor de misión (la
+actualización del reinicio muestra `xxFF`, no `xxFD`).
+
+**Prueba** (`tools/test_neo_hud.c`, `make check-core`): `data/hud_fixture.json.gz`
+(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`
+de `tools/capture_weapons.lua`; solo RAM/VRAM de las capturas) tiene 993
+intervalos de 30 fotogramas entre volcados. Cada intervalo parte del mapa,
+los campos de los paneles, los contadores de parpadeo y el tiempo del
+volcado f0 y reproduce cada actualización con las entradas de `0C071C`/
+`0C0764`; las filas 3, 4, 5, 28 y 29 deben coincidir palabra a palabra con el
+volcado f1 (198600 palabras) y el tiempo con `1013DE` (989 intervalos; 4 se
+excluyen porque un indicador de RAM de la cuenta atrás, conocido solo en f0 y
+f1, cambia dentro del intervalo). Además, la primera actualización con el HUD
+encendido redibuja el marco completo del primer volcado (178 palabras; se
+excluye la fase de parpadeo de INSERT COIN). Resultado: 0 diferencias.
+
+**Dibujo** (`hud_renderer.c`): tiles de `rom:/fixed.bin` (S-ROM,
+`tools/import_rom.py`) con las paletas fijas `rom:/hud-palette.bin`
+(`tools/build_hud_assets.py` desde volcados de paleta de las capturas; fuera
+de Git). Una celda se rasteriza en una tira RGBA16 de 304x224 solo cuando su
+palabra cambia; cada fotograma copia (modo COPY) el tramo de columnas no
+vacías de cada fila visible, sobre todas las capas, con tijera en la ventana
+304x224.

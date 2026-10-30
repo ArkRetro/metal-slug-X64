@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include "neo_vehicle.h"
 #include "neo_world.h"
+#include "neo_hud.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
@@ -14,6 +15,9 @@ enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
 /* up: fired with up held (moves up, original pistol attack row 4). */
 /* kind: weapon id that fired it (RAM 10C71E); 0 = pistol. */
+#ifndef MSX_HUD_TIMER_DIP
+#define MSX_HUD_TIMER_DIP 0   /* RAM 10FD8C (003586 index): 60 */
+#endif
 typedef struct { int x,y,direction; bool active,up; uint8_t kind; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the
@@ -43,6 +47,9 @@ typedef struct {
     /* Native region world (level script, rebel soldiers, thrown objects,
      * death splashes), updated with the player on alternate video ticks. */
     neo_world_t world;bool world_enabled;
+    /* Fix-layer HUD (neo_hud.c, docs/ARMAS_VEHICULOS.md §11), updated with
+     * the world; timer_resets_seen: 01913C spawns already applied. */
+    neo_hud_t hud;unsigned timer_resets_seen,hud_game_over;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */

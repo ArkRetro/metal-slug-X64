@@ -14,6 +14,7 @@
 #include "boss_renderer.h"
 #include "marco_visual.h"
 #include "marco_renderer.h"
+#include "hud_renderer.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -121,6 +122,7 @@ void actor_init(void) {
         (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
     scene_assets_init();scene_renderer_init();reset_game();
     marco_native=marco_renderer_load();
+    hud_renderer_init();
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
@@ -324,6 +326,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_foreground_fog();
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
+    /* The original fix layer above every layer, on the 304x224 window. */
+    rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
+    scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }

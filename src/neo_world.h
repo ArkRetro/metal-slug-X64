@@ -111,6 +111,7 @@ typedef struct {
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
+    unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
     int32_t camera_lock;            /* RAM 69BC high word set by 0C7B0C; -1 = free (0C7C12) */
     /* Native mission camera (neo_camera.h) driven by the caller before each

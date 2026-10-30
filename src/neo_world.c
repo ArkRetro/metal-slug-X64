@@ -108,6 +108,12 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * the actor then leaves (004188 after the cartridge check). */
         w->ga_flags.dome_signal=0xff;w->ga_flags.dome_group=sp->group69;return;
     }
+    if (routine==0x1913cu) {
+        /* Spawn-table entry 01913C (uncounted): the mission timer 1013DE back
+         * to its start value 003586; the actor then leaves (004188 after the
+         * cartridge check). The player's HUD applies it (neo_hud.c). */
+        w->timer_resets++;return;
+    }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}

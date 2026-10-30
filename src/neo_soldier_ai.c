@@ -251,7 +251,7 @@ uint8_t neo_hit_query(const neo_contact_actor_t *a,const int16_t rect[4],const n
 static uint8_t hit_player(ctx_t *c,const int16_t *attack,bool damage) {
     int first=-1;
     uint8_t type=neo_hit_query(&c->s->b,attack,c->e->targets,c->e->target_count,(uint8_t)attack[4],0,&first);
-    if (damage && first>=0 && attack[6]) event(c,NEO_SOLDIER_EVENT_KNIFE_HIT,(uint16_t)attack[6],NULL);
+    if (damage && first>=0 && attack[6]) event(c,NEO_SOLDIER_EVENT_KNIFE_HIT,(uint16_t)attack[4],NULL);  /* value: the row's kind */
     return type;
 }
 bool neo_soldier_hurtbox(const neo_soldier_t *s,neo_hurtbox_t *out) {

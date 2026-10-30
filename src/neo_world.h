@@ -61,7 +61,7 @@ typedef struct {
 } neo_world_player_t;
 /* Sub-script actors 019E72 created by generic actors (robed swordsman
  * 0A8C46/0A8C62): the same interpreter over another record. */
-enum { NEO_WORLD_SUBSCRIPTS=4 };
+enum { NEO_WORLD_SUBSCRIPTS=4, NEO_WORLD_SOLIDS=16 };
 typedef struct { bool used; int16_t owner; neo_script_t script; } neo_world_sub_t;
 typedef struct {
     neo_script_t script;
@@ -87,6 +87,11 @@ typedef struct {
     neo_contact_parent_t terrain,root;
     neo_rng_t rng;
     uint16_t grid[128];unsigned grid_cursor;
+    /* RAM 106756..1067D6: solid bodies registered by 004E76 (actor, body
+     * descriptor; the slot index is the actor's +6B), read by the player's
+     * push-out 004ED2. actor = gactor index, -1 = free slot. */
+    struct { int16_t actor; uint32_t desc; } solids[NEO_WORLD_SOLIDS];
+    unsigned solid_unsupported;     /* 004E76 traps (+6B >= 16) */
     uint8_t epoch;
     uint16_t video_phase;          /* RAM 10000E, set by the caller per update */
     int32_t scroll_x;              /* RAM 10E97C: -camera, Q16.16 */

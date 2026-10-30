@@ -55,6 +55,10 @@ BLOBS=[
     (0x1B842,0x40,'01B882 player bullet attack row table (direction +6F)'),
     (0xE5526,0x78,'08B896 item points: special values E5526 (+7B), combo values E5556, repeated value E559A'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
+    (0x5EB46,0x23E,'05ED84 rocket launcher: hurtboxes 5EB46/5EB62, solid boxes 5EB6E/5EB7C (004E76), push rows 5EB8A/5EB9A (0049E8), rocket hurtbox 5EBAA, cull rectangle 5EBC6, trail offsets by angle 5EBD6, program tables 5ECD6..5ED36 (fire, reload, flinch, walk), rocket offsets 5ED46/5ED56'),
+    (0x5FFA0,0x200,'05FD8A rocket: attack rows 5FFA0..6009E and their table by angle 600A0 (0049E8)'),
+    (0x60348,0x24,'060490 aim flash program tables 60348/6035C by the shot and the stance'),
+    (0x2D1310,0x15C,'05ED84 rocket launcher rank tables 2D1310 (health), 2D1372 (speed), 2D13A4 (wait), 2D13D6 (shots), 2D1408 (aim), 2D143A (rocket health) (0260C8)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

@@ -161,7 +161,8 @@ iguales, 0 distintos**
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
 | `0x0A8C62` espadachín de túnica sobre el carro + subguion `0x2D719A` | **nativo** (MISION1_ACTORES.md) |
-| `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
+| `0x092A32` cañón, `0x04857C` helicóptero | externos |
+| `0x05ED84` lanzacohetes, cohetes `0x05FD8A`, destello `0x060490`, fogonazo `0x0602E4`, estelas `0x059C82` | **nativo** (MISION1_ACTORES.md) |
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
 | `0x035668` criatura del subguion | **nativo** (MISION1_ACTORES.md) |
 | `0x09D846/62/76` espadachines, cuchillo `0x09ECCC`, salpicadura `0x01C97A` | **nativo** (MISION1_ACTORES.md; `0x09E382` parada explícita) |
@@ -252,7 +253,7 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura), en especial el camión `0x033C98` y sus plataformas, los vehículos `0x092A32`/`0x05ED84`,
+- Actores del resto aún externos (tabla de cobertura), en especial el camión `0x033C98` y sus plataformas, el cañón `0x092A32`,
   el helicóptero `0x04857C`, la infantería (`0x09D846/62/76`, `0x0A8C62`,
   `0x09F682`), prisioneros/objetos y la Camel Slug `0x03458E`.
 - Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/

@@ -28,6 +28,8 @@ local period=tonumber(os.getenv('MSX_REST_PERIOD') or '30')
 local extra={}
 for f in string.gmatch(os.getenv('MSX_REST_EXTRA_DUMPS') or '','(%d+)') do extra[tonumber(f)]=true end
 local frame=0
+local hold_fire={-1,-1}
+for lo,hi in string.gmatch(os.getenv('MSX_REST_HOLD_FIRE') or '','(%d+)-(%d+)') do hold_fire={tonumber(lo),tonumber(hi)} end
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local ROOT,DEAD,SCRIPT=0x1010a4,0x3f1e,0x101414
 local trace=assert(io.open(output..'/trace.csv','w'))
@@ -321,9 +323,13 @@ emu.register_frame_done(function()
   else
    button('P1 Right',1);button('P1 Left',0);button('P1 Up',0)
   end
-  button('P1 A',frame%12<6 and 1 or 0)
-  button('P1 B',frame>3000 and frame%120<8 and 1 or 0)
-  button('P1 C',frame>2900 and frame%60<8 and 1 or 0)
+  -- MSX_REST_HOLD_FIRE="lo-hi": no shooting, grenades or jumps in those
+  -- frames (capture-only: an enemy family, e.g. the rocket launcher 05ED84,
+  -- survives long enough to reach every state; the player is invulnerable).
+  local hold=frame>=hold_fire[1] and frame<=hold_fire[2]
+  button('P1 A',(not hold and frame%12<6) and 1 or 0)
+  button('P1 B',(not hold and frame>3000 and frame%120<8) and 1 or 0)
+  button('P1 C',(not hold and frame>2900 and frame%60<8) and 1 or 0)
  end
  if frame>=2100 then
   local b=0x10c72e;local m=0x10d7b6;local sky=0x10e83e

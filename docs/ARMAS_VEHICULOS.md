@@ -173,8 +173,9 @@ programas de animación de Marco** en el banco 1 (palabras largas
   `10F001` bit 3 / `10C2E7 ≠ 0`), y concede si `10C71A < 10C71C`. Con
   permiso: destello opcional de `0x0C432A[id]` (`0x0C58D2` para 3, 8, C,
   D, E, F) y luego id 5 → `0x01B6DC`, id A → `0x01B716` (`+93 = 2`:
-  `0x01B668` / `0x01BDD2`), con `+95 += 1` y ángulo `+6E += 2·((+95 mod 3)−1)`
-  (abanico de la H, `0x0C44A6`); el resto, constructor de la tabla, `+95 += 1`,
+  `0x01B668` / `0x01BDD2`), con `+95` incrementado dos veces y ángulo
+  `+6E += 2·((+95 mod 3)−1)` (abanico de la H, `0x0C44A6`; `×3` con
+  `+93 = 2`, `0x0C4506`); el resto, constructor de la tabla, `+95 += 1`,
   `+6E` = dirección (`0x0C4244`), `+70` = jugador. Posición `0x014A02` y
   velocidad heredada del soporte (`0x0C4834..0x0C4874`). Sin permiso,
   `0x0C0DFC`.
@@ -367,8 +368,10 @@ Bala `0x01B6A0` (programa `0x22C1B8`, paleta `0x3D6`) o `0x01BE24` si
 Observado (`vehicles2`, `tankfam`): subida 10375; 9 obuses
 (`tank_cannon`, 10416..11057, `+1F` 10→1); 152 balas `0x01B6A0` de la
 torreta `101784`; 23 `0x0956CE` (programa `0x291AF0`) del estado
-`0x092DDA`; salida A+B 11099 (tipo 1). La salud quedó en `0x30`: **daño y
-destrucción del SV-001 no observados**.
+`0x092DDA`; salida A+B 11099 (tipo 1). La salud quedó en `0x30`. Una
+ejecución más larga (`tanklong`: `PLAN=vehicles RIDE=2400`, igual que
+`vehicles2` hasta 10376, tanque 10376..12777, salida A+B 12777) tampoco
+recibió daño: **daño y destrucción del SV-001 no observados**.
 
 ## 8. Desconocido / no observado
 

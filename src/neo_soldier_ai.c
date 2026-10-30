@@ -1,3 +1,4 @@
+#include "neo_blood.h"
 #include "neo_soldier_ai.h"
 #include "neo_soldier.h"
 #include "neo_soldier_action.h"
@@ -493,8 +494,8 @@ static void death_setup(ctx_t *c) { /* 04097A */
     neo_soldier_t *s=c->s;
     if (!(s->b.flags5f&64u)) {s->b.flags5f|=64u;SB(0x6e,0);}
     s->anim.field50_tag=0;s->b.flags5f&=127u;
-    /* 0405EA: palette resource 0x22F, or the 01B2BE alternative. */
-    s->palette_resource=c->e->blood?0x22f:0x22f;
+    /* 0405EA: 01B2BE carry clear (BLOOD ON) 0x20E, carry set (OFF) 0x22F. */
+    s->palette_resource=neo_blood_palette(NEO_BLOOD_SOLDIER_DEATH,c->e->blood);
     s->anim.field50_tag=0;s->group69=0xff;
     uint16_t flags=0;probe_vertical(c,-1,&flags);
     SB(0x72,(flags&8u)?0xff:0);

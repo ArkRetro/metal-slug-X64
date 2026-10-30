@@ -13,9 +13,10 @@
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
 enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414 };
 #define RUNNER_TAG(i) (0x50000000u|(uint32_t)(i))
-/* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player;
- * RAM 10FD8F = 0 (01B2BE carry set: splash palette 03BA). */
-enum { MODE88=2, RANK=3, SPLASH_PALETTE=0x3ba, SPLASH_PROGRAM=0x2402fa };
+/* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player.
+ * RAM 10FD8F (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
+ * (src/neo_blood.c: 037A ON, 03BA OFF). */
+enum { MODE88=2, RANK=3, SPLASH_PROGRAM=0x2402fa };
 static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
 static const neo_anim_program_t *program(uint32_t tag) {
     for (unsigned i=0;i<COUNT(soldier_programs);i++) if (soldier_programs[i].tag==tag) return &soldier_programs[i].program;
@@ -763,7 +764,7 @@ static bool run_splash(tick_t *t,unsigned i) {
     s->render.x=HI(s->body.projected_x);s->render.y=HI(s->body.projected_y);
     s->render.attributes=(uint16_t)((s->render.attributes&0xff00u)|s->body.flags15);
     s->render.z=s->body.word1e;s->render.correction=s->body.correction;
-    t->draw_palette=SPLASH_PALETTE;t->draw_flash=false;t->draw_kind=NEO_WORLD_SPLASH;
+    t->draw_palette=neo_blood_palette(NEO_BLOOD_SPLASH,w->blood);t->draw_flash=false;t->draw_kind=NEO_WORLD_SPLASH;
     neo_anim_result_t r=neo_anim_step(&s->anim,&s->render,emit,t,1024);
     if (r!=NEO_ANIM_MORE) {s->active=false;return false;}
     return true;
@@ -853,6 +854,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
     w->view[0]=0;w->view[1]=319;w->view[2]=256;w->view[3]=511;
+    w->blood=MSX_BLOOD!=0;  /* RAM 10FD8F */
 }
 unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t *pl) {
     tick_t t;memset(&t,0,sizeof(t));t.w=w;
@@ -876,7 +878,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->kernel=&w->kernel;e->terrain=w->terrain;e->root=w->root;e->epoch=w->epoch;e->players=t.players;
     e->grid=w->grid;e->rng=&w->rng;e->targets=t.player_hittable?&t.player:NULL;e->target_count=t.player_hittable?1:0;
     e->bounds=t.bounds;e->camera_word=HI(w->terrain.x);e->program=program;e->emit=emit;e->emit_context=&t;
-    e->event=soldier_event;e->event_context=&t;e->blood=false;e->dyn=w->dyn_parent;
+    e->event=soldier_event;e->event_context=&t;e->blood=w->blood;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
     e->player_state[0].follow7b=pl?pl->follow_y:0xff;e->player_state[0].x=px;e->player_state[0].y=py;
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
@@ -895,7 +897,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
-    memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
+    memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;g->blood=w->blood;
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */
     memcpy(w->last_boxes,w->boxes,sizeof(w->boxes));w->last_box_count=w->box_count;w->box_count=0;

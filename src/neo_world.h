@@ -8,6 +8,7 @@
 #include "neo_gactor.h"
 #include "neo_camera.h"
 #include "neo_boss.h"
+#include "neo_blood.h"
 /* Closed native world of the playable Mission 1 region: level script and its
  * runners, rebel soldiers (constructor + routine family + pistol death), the
  * objects they throw, the death splash child (ROM 040F88) and the shared
@@ -132,6 +133,10 @@ typedef struct {
     bool kill_active;               /* RAM 1067E2 */
     uint8_t swap_step;
     unsigned killed_all;            /* soldiers killed by 004BAC */
+    /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
+     * nonzero). neo_world_init sets MSX_BLOOD (default 1: ON, the Japanese
+     * header default); the US/EU headers default it to OFF. */
+    bool blood;
 } neo_world_t;
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */

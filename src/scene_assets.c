@@ -96,6 +96,7 @@ const void *scene_page(const scene_image_t *image) {
     cache_slot_t *s=&slots[chunk_slot[chunk]];s->used_epoch=epoch;s->lru=++clock_lru;
     return cache+(unsigned)chunk_slot[chunk]*SCENE_CHUNK_BYTES+(image->page%8)*SCENE_PAGE_BYTES;
 }
+enum { SCENE_HEAP_RESERVE=1536*1024 };
 void scene_assets_init(void) {
     rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
     assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
@@ -103,6 +104,13 @@ void scene_assets_init(void) {
     // with the rest-of-mission actors) when it fits, else 3.5 MiB.
     capacity=(get_memory_size()>=8*1024*1024?SCENE_CHUNK_COUNT*SCENE_CHUNK_BYTES:512*1024)/SCENE_CHUNK_BYTES;
     if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
+    /* The heap left after the cache must still hold the display buffers,
+     * Marco's poses and the audio (allocated later): keep a reserve, the
+     * rest of the pack streams through the LRU slots. */
+    {heap_stats_t h;sys_get_heap_stats(&h);
+     int room=h.total-h.used-SCENE_HEAP_RESERVE;
+     unsigned fit=room>0?(unsigned)room/SCENE_CHUNK_BYTES:0;
+     if (get_memory_size()>=8*1024*1024 && fit<capacity) capacity=fit>(7u*512u*1024u/SCENE_CHUNK_BYTES)?fit:7u*512u*1024u/SCENE_CHUNK_BYTES;}
     cache=memalign(64,capacity*SCENE_CHUNK_BYTES);
     if (!cache && get_memory_size()>=8*1024*1024) {capacity=7*512*1024/SCENE_CHUNK_BYTES;cache=memalign(64,capacity*SCENE_CHUNK_BYTES);}
     slots=calloc(capacity,sizeof(*slots));

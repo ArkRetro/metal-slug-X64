@@ -529,7 +529,7 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
      * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;
      * 040D66 (grounded pistol) and 040A10 (air pistol) are the observed kills;
      * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast; kind 9
-     * grounded) is translated;
+     * grounded: the grenade's explosion) is translated;
      * the remaining entries (040B46, 040BA8, 040A40, 040AF6, 040A7C,
      * 040BE6) are not translated and stop explicitly. */
     uint32_t program=0;

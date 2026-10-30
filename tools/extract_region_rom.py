@@ -17,7 +17,7 @@ BLOBS=[
     (0x2CE974,0x40,'029160 truck health (0260C8)'),(0x2CE9A8,0x40,'0296CA truck speed (0260C8)'),
     (0x29B62,0x18,'029240 truck hurtboxes (+50)'),(0x29B6E,0x18,'029802 truck body hurtboxes (+50)'),
     (0x29B92,0x10,'0292BC truck push attack (0049E8)'),(0x29BA2,0x10,'029ACE truck attack (0049E8)'),
-    (0x29BB2,0x10,'029B56 truck explosion attack (0049E8)'),(0x29BC2,0x08,'02922E truck solid box (004E76)'),
+    (0x29BB2,0x10,'029B56 truck explosion attack (0049E8)'),(0x29BC2,0x0C,'02922E truck solid box (004E76; 004EF2 reads six words, the last two are the bytes of 029BCA)'),
     (0x29BCA,0x08,'029550 truck visibility rectangle (0C8BEC)'),(0x29BDA,0x08,'029A82 truck player rectangle (01AFFC)'),
     (0x29BE2,0x12,'029AEE truck smoke list (01DA40)'),
     (0x29C58,0x42,'029A1E truck cell map'),(0x29C9A,0x42,'029A26 truck cell map'),(0x29CDC,0x42,'029A04 truck cell map'),
@@ -48,6 +48,9 @@ BLOBS=[
     (0xE5170,0xEE,'088F20 armoured vehicle pieces table 0E516E (10 x 0x18: program, speeds, accelerations, offsets; first two bytes in the blob above)'),
     (0x334C0,0x8,'08982A exhaust smoke palette table 0334C0'),
     (0x9ADA0,0x78,'09A67E hidden item box: hurtboxes 09ADA0.., view rectangle 09ADD8 (0C8BEC), hurtbox table 09ADF8 and scatter ranges 09AE08 by +6E'),
+    (0x1B4C2,0x14C,'01B882 player bullet attack rows 01B4C2..01B5B2 (by direction) and 01B5C2 (01BBE2); grenade 01B5D2 (01BFD0), its explosion rows 01B5E2/01B5F2 and their list 01B602 (01C19A); 0049E8'),
+    (0x1B842,0x40,'01B882 player bullet attack row table (direction +6F)'),
+    (0xE5526,0x78,'08B896 item points: special values E5526 (+7B), combo values E5556, repeated value E559A'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():

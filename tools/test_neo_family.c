@@ -35,7 +35,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
-    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill;
+    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -68,7 +68,7 @@ static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
      * the recorded families mixes both). */
     for (unsigned i=0;i<NEO_KDYN_COUNT;i++) {
         const uint8_t *b=&dynram[i*64];
-        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         uint32_t map=L32(b+0x26);
         neo_kdyn_t *d=&k->dyn[i];
         d->map=map?ga_rom(map):NULL;
@@ -107,7 +107,7 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     /* Dynamic collision objects as read (dyn_inputs). */
     if (tag>=0x10c06eu && tag<0x10c06eu+64u*NEO_KDYN_COUNT && !((tag-0x10c06eu)&63u)) {
         const uint8_t *b=&dynram[tag-0x10c06eu];
-        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
         #undef L32
         return true;
@@ -199,7 +199,7 @@ int main(void) {
     /* Node addresses are not in the fixture: a child's recorded +0C names
      * its creator. */
     for (unsigned i=0;i<NN;i++) if (NODES[i].creator>=0)
-        node_address[NODES[i].creator]=(uint32_t)(NODES[i].pre[0x0c]<<24|NODES[i].pre[0x0d]<<16|NODES[i].pre[0x0e]<<8|NODES[i].pre[0x0f]);
+        node_address[NODES[i].creator]=(uint32_t)((uint32_t)NODES[i].pre[0x0c]<<24|NODES[i].pre[0x0d]<<16|NODES[i].pre[0x0e]<<8|NODES[i].pre[0x0f]);
     neo_rng_t rng;memset(&rng,0,sizeof(rng));
     static neo_kscene_t kernel;kernel.group_map=soldier_group_map;
     uint8_t groups[9]={0},flag606=0;
@@ -220,6 +220,11 @@ int main(void) {
     {static const uint32_t st[][3]=FAMILY_STAMPS;
      for (unsigned i=0;i<sizeof(st)/sizeof(st[0]);i++) {const uint8_t *t=ga_rom(st[i][2]);assert(t);neo_collision_stamp((int32_t)st[i][0],(int32_t)st[i][1],t);}}
 #endif
+    /* Item pickups (neo_item.c): player 1 from a new life (0C0E20/0C0E6E). */
+    static marco_weapons_t weapons;static marco_weapon_player_t player1;static neo_pickup_env_t pickup;
+    marco_weapons_new_game(&weapons);player1.exists=true;marco_weapons_life(&weapons,0,&player1);
+    pickup.weapons=&weapons;pickup.player[0]=&player1;pickup.mission=0;e.pickup=&pickup;
+    unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
     unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
@@ -264,6 +269,7 @@ int main(void) {
         if (u->tmask&16) terrain.correction=(uint8_t)u->tcorr;
         if (u->tmask) terrain_seen=true;
         dyn_inputs(&kernel,u);
+        if (u->w4068>=0) kernel.w4068=(uint16_t)u->w4068;     /* RAM 10C068 as read */
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
@@ -273,7 +279,33 @@ int main(void) {
         if (u->kill>0) e.kill_all=true;
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
+#ifdef FAMILY_HIT_UPDATES
+        /* Contacts are the listed updates only (a deletion is the view). */
+        {static const int hits[][2]=FAMILY_HIT_UPDATES;contact=false;
+         for (unsigned h=0;h<sizeof(hits)/sizeof(hits[0]);h++) if ((uint32_t)hits[h][0]==u->frame && hits[h][1]==u->node) contact=true;}
+#endif
+#ifdef FAMILY_HIT_CHILD
+        /* A bullet deleted without an impact (its first update in this or
+         * the next logic update) left the view: no contact. */
+        if (contact) {
+            contact=false;
+            for (unsigned i=0;i<NN;i++) if (NODES[i].creator==u->node && NODES[i].routine==FAMILY_HIT_CHILD &&
+                NODES[i].frame>=u->frame && NODES[i].frame<=u->frame+3u) contact=true;
+        }
+#endif
+        unsigned taken=pickup.taken;pickup.frame++;
         ga_result_t r=neo_region_tick(a,&e);
+        if (pickup.taken!=taken) {
+#ifdef FAMILY_PICKUPS
+            static const uint32_t pk[][3]=FAMILY_PICKUPS;bool ok=false;
+            for (unsigned i=0;i<sizeof(pk)/sizeof(pk[0]);i++)
+                if (pk[i][0]==u->frame) ok=marco_weapons_id(&weapons,0)==pk[i][1] && marco_weapons_rounds(&weapons,0)==pk[i][2];
+            if (!ok) {fprintf(stderr,"frame %u: pickup left weapon %x rounds %x\n",u->frame,marco_weapons_id(&weapons,0),marco_weapons_rounds(&weapons,0));return 1;}
+            pickups_checked++;
+#else
+            fprintf(stderr,"frame %u: unexpected pickup\n",u->frame);return 1;
+#endif
+        }
 #ifdef FAMILY_STOP
         {static const uint32_t stop[2]=FAMILY_STOP;
          if (u->frame==stop[0]) {
@@ -301,10 +333,10 @@ int main(void) {
             a->active=false;deleted++;continue;
         }
         if (r!=GA_MORE) {fprintf(stderr,"frame %u node %d %05x: native result %d, original keeps it\n",u->frame,u->node,u->routine,r);return 1;}
-        if (ga_l(a,0)!=(uint32_t)(u->post[0]<<24|u->post[1]<<16|u->post[2]<<8|u->post[3])) {
+        if (ga_l(a,0)!=(uint32_t)((uint32_t)u->post[0]<<24|u->post[1]<<16|u->post[2]<<8|u->post[3])) {
             fprintf(stderr,"frame %u node %d %05x -> %05x expected %02x%02x%02x%02x\n",u->frame,u->node,u->routine,ga_l(a,0),u->post[0],u->post[1],u->post[2],u->post[3]);return 1;
         }
-        uint32_t t38=native_tag((uint32_t)(u->post[0x38]<<24|u->post[0x39]<<16|u->post[0x3a]<<8|u->post[0x3b]));
+        uint32_t t38=native_tag((uint32_t)((uint32_t)u->post[0x38]<<24|u->post[0x39]<<16|u->post[0x3a]<<8|u->post[0x3b]));
         for (unsigned o=0x10;o<0xb0;o++) {
             if (skip(o)) continue;
             uint8_t want=(o>=0x38 && o<0x3c)?(uint8_t)(t38>>(24-8*(o-0x38))):u->post[o];
@@ -316,7 +348,11 @@ int main(void) {
 #ifdef FAMILY_STOP
     if (!stopped) {fprintf(stderr,"explicit stop never reached\n");return 1;}
 #endif
-    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside%s\n",
-        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,swapped?", map swap requested":"");
+#ifdef FAMILY_PICKUPS
+    {static const uint32_t pk[][3]=FAMILY_PICKUPS;
+     if (pickups_checked!=sizeof(pk)/sizeof(pk[0])) {fprintf(stderr,"%u pickups, expected %u\n",pickups_checked,(unsigned)(sizeof(pk)/sizeof(pk[0])));return 1;}}
+#endif
+    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups%s\n",
+        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,swapped?", map swap requested":"");
     return 0;
 }

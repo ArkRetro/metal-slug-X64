@@ -181,8 +181,13 @@ static bool throw_palette(void *context,uint16_t asset,bool replace,uint8_t *han
     return false;
 }
 static void throw_release(void *context) {(void)context;}
+/* The throw services' context is the world: neo_throw_actor keeps it as the
+ * owner of the palettes it took and checks it on every later update, so it
+ * must not be the address of a per-update (stack) tick_t. The tick of the
+ * running update is reached through throw_tick_ctx (set by run_throw). */
+static tick_t *throw_tick_ctx;
 static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame_t *f) {
-    tick_t *t=context;neo_world_t *w=t->w;(void)f;
+    neo_world_t *w=context;(void)f;
     /* 03BD3A acceleration, then 0143E4: air request, 013968 sweep, commit. */
     neo_throw_accelerate(b);
     neo_contact_request_t q=neo_contact_prepare_air(b);
@@ -193,7 +198,7 @@ static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame
     return true;
 }
 static bool throw_hit(void *context,const neo_contact_actor_t *b) {
-    tick_t *t=context;
+    tick_t *t=throw_tick_ctx;(void)context;
     if (!t->player_hittable) return false;
     int first=-1;
     uint8_t type=neo_hit_query(b,soldier_throw_attack,&t->player,1,(uint8_t)soldier_throw_attack[4],(uint8_t)soldier_throw_attack[5],&first);
@@ -450,6 +455,7 @@ static bool ga_class(const neo_gactor_t *g,unsigned cls) {
     const uint8_t *d=ga_rom(ga_l(g,0x50));
     return d && ((d[1]>>cls)&1u);
 }
+static bool boss_shot(neo_world_t *w,const neo_contact_actor_t *a,const int16_t at[7]);
 static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     tick_t *t=ctx;neo_world_t *w=t->w;neo_contact_actor_t c=ga_contact(a);
     if (row[5]==0) { /* class 0: the player */
@@ -465,6 +471,9 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
             if (neo_soldier_hurtbox(s,&hb) && neo_soldier_receive(s,&c,ga_b(a,0x5e),row,w->grid) && hb.type>best) best=hb.type;
         }
     }
+    /* The boss's hurtboxes (registered apart, see boss_shot) take the
+     * player's bullets (neo_bullet.c) like neo_world_shot_row's. */
+    if (w->boss_active && neo_bullet_routine(ga_l(a,0)) && boss_shot(w,&c,row) && !best) best=1;
     uint16_t qx;uint8_t qy;
     if (!attack_bins(&c,row,&qx,&qy)) return best;
     for (unsigned b=0;b<w->last_box_count;b++) {
@@ -805,13 +814,15 @@ static bool run_splash(tick_t *t,unsigned i) {
 static bool run_throw(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_throw_actor_t *o=&w->throws[i];
     neo_throw_services_t services={program(0x23f3f0),program(0x22d2a6),soldier_throw_flight_rect,soldier_throw_burst_rect,
-        throw_palette,throw_release,t,throw_air,throw_hit};
+        throw_palette,throw_release,w,throw_air,throw_hit};
     /* The effect phase projects against the object's current parent. */
     const neo_contact_parent_t *scene=o->body.parent_tag==TERRAIN_TAG?&w->terrain:&w->root;
     neo_throw_frame_t frame={scene,&t->players,&t->bounds,w->video_phase,0,w->epoch,false};
     unsigned before=w->draw_count;
     t->draw_kind=NEO_WORLD_THROW;t->draw_flash=false;t->draw_palette=0;
+    throw_tick_ctx=t;
     unsigned events;neo_throw_result_t r=neo_throw_actor_step(o,&frame,&services,emit,t,&events);
+    throw_tick_ctx=NULL;
     if (events&NEO_THROW_AUDIO_1027) sound_request(w,0x1027); /* 03BE52 burst on terrain contact */
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t handle=(uint8_t)(w->draws[k].attributes>>8);
@@ -884,6 +895,9 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
+    /* 0C0E20 (new game) and 0C0E6E (player 1's first life); RAM 10C2F6 reads 0 in Mission 1. */
+    marco_weapons_new_game(&w->weapons);w->weapon_player.exists=true;
+    marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=0;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
@@ -926,6 +940,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
+    w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
+    w->pickup.slot[0]=w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
      * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the
@@ -1006,8 +1023,30 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;
     }
+    /* Player shots of this update (00411C after the list head). */
+    for (unsigned i=0;i<w->shot_request_count;i++) {
+        neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),w->shot_requests[i].routine,SCRIPT_TAG,0);
+        if (!a) {w->shot_dropped++;continue;}
+        const neo_world_shot_request_t *q=&w->shot_requests[i];
+        if (q->grenade) {ga_sw(a,0x6e,q->player);ga_sb(a,0x15,q->flags15);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);}
+        else {ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);}
+        ga_sb(a,0x5e,0);
+        ga_sl(a,0x28,(uint32_t)w->shot_requests[i].x);ga_sl(a,0x2c,(uint32_t)w->shot_requests[i].y);ga_sl(a,0x38,ROOT_TAG);
+        w->player_shots++;
+    }
+    w->shot_request_count=0;
     w->player_hits+=t.hits;
     return t.hits;
+}
+bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false};
+    return true;
+}
+bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true};
+    return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {
     neo_contact_actor_t b;memset(&b,0,sizeof(b));

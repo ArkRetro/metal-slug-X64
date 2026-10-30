@@ -13,7 +13,8 @@ enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
 /* up: fired with up held (moves up, original pistol attack row 4). */
-typedef struct { int x,y,direction; bool active,up; } msx_bullet_t;
+/* kind: weapon id that fired it (RAM 10C71E); 0 = pistol. */
+typedef struct { int x,y,direction; bool active,up; uint8_t kind; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the
  * N64 draws original y at screen row 248 - y. */
@@ -51,6 +52,17 @@ typedef struct {
      * with the platform (wagon 033C98, boss). */
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
     unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
+    /* Weapons (world.weapons, RAM 10C718; docs/ARMAS_VEHICULOS.md). A shot
+     * reserves through 0C0D64 for the current weapon; only the pistol's
+     * constructor 01B782 has a port (the bullets above). A shot of another
+     * weapon is an explicit stop: counted with its constructor (table
+     * 0C42AA) and fired as the port's pistol bullet; the H fires native
+     * bullets (neo_bullet.c). grenade: input (bomb button, set by the
+     * caller like aim_up); a throw consumes a bomb (0C478E) and throws the
+     * native grenade 01BF46/01BF10 (grenades); other bomb types stop
+     * explicitly (grenade_stops). */
+    bool grenade,grenade_was_down;
+    unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

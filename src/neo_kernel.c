@@ -666,3 +666,24 @@ bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int
     *out=(neo_kfloor_t){S(k.d0),S(k.d1),k.a0,k.d7,S(k.l405c+1u),(k.w4012&1u)!=0};
     return true;
 }
+/* 013CF8 (01381C, 01382A; A0 = none): the first collision object whose
+ * cell under the absolute point (x,y) has class `cls` (012938, D7 high
+ * word). The original keeps B4008 from the previous query: the caller
+ * passes it. */
+bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
+    int32_t *ox,int32_t *oy,uint8_t *object) {
+    kr_t k={0};k.s=scene;k.b4008=b4008;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=NEO_KOBJ_NONE;
+    k.iterator=0;k14160(&k,k.d0,k.d1,0,0);k1382a(&k);
+    while (k.a1!=NEO_KOBJ_NONE) {
+        const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);
+        if (!b) return false;
+        if (a) {k.d0+=(uint32_t)a->x;k.d1+=(uint32_t)a->y;}
+        k.d0-=(uint32_t)b->x;k.d1-=(uint32_t)b->y;k.a0=k.a1;
+        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d1=SWAP(k.d1);k.d0=SWAP(k.d0);
+        if (k.unsupported) return false;
+        if ((uint16_t)(k.d7>>16)==cls) {if (ox) *ox=S(k.d0);if (oy) *oy=S(k.d1);if (object) *object=k.a0;return true;}
+        k1382a(&k);
+    }
+    return false;
+}

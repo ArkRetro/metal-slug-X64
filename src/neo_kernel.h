@@ -71,4 +71,8 @@ bool neo_kernel_point_group(const neo_kscene_t *scene,int32_t x,int32_t y,uint16
 /* ROM 012938 classification of the terrain cell at local pixel (x,y). */
 uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t x,uint16_t y,
     uint8_t b4008,uint8_t b400d,uint16_t *flags,uint32_t d7_in);
+/* ROM 013CF8: first collision object with a cell of class `cls` under the
+ * absolute point; the point relative to it. */
+bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
+    int32_t *ox,int32_t *oy,uint8_t *object);
 #endif

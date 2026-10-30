@@ -106,6 +106,13 @@ uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     ga_set_contact(a,&c);if (kind) *kind=k.kind;return k.flags;
 }
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e) {return ga_air_kind(a,e,NULL);}
+uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4) {
+    neo_contact_actor_t c=ga_contact(a);
+    neo_contact_request_t r=neo_contact_prepare_air(&c);
+    neo_kres_t k;
+    if (!sweep(a,e,&c,&r,0,r.mode8,0,&k)) {ga_set_contact(a,&c);return 0;}
+    ga_set_contact(a,&c);if (d4) *d4=k.w4068;return k.flags;
+}
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     neo_contact_actor_t c=ga_contact(a);
     neo_contact_request_t r=neo_contact_prepare_ground(&c);
@@ -218,7 +225,7 @@ bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
     const uint8_t *r=ga_rom(rect);
     if (!r) {ga_fail(e,rect);return false;}
-    uint32_t d0=(uint32_t)(r[0]<<24|r[1]<<16|r[2]<<8|r[3]),d1=(uint32_t)(r[4]<<24|r[5]<<16|r[6]<<8|r[7]);
+    uint32_t d0=(uint32_t)((uint32_t)r[0]<<24|r[1]<<16|r[2]<<8|r[3]),d1=(uint32_t)((uint32_t)r[4]<<24|r[5]<<16|r[6]<<8|r[7]);
     uint8_t f=ga_b(a,0x15);
     uint16_t lo=(uint16_t)d0,hi;
     if (f&2u) lo=(uint16_t)(0u-(uint16_t)(lo+(uint16_t)d1));

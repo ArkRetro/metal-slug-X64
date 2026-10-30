@@ -130,7 +130,7 @@ static void test_events(void) {
     msx_game_t g;memset(&g,0,sizeof(g));g.ticks=10;g.camera=100;
     retro_events_t e;memset(&e,0,sizeof(e));retro_frame_t f={.camera={100,0,0,320}};
     retro_events_frame(&e,&g,&f);assert(!f.light_count && !f.shadow_count && e.primed);
-    g.bullets[0]=(msx_bullet_t){250,170,1,true,false};g.ticks=11;f=(retro_frame_t){.camera={100,0,0,320}};
+    g.bullets[0]=(msx_bullet_t){250,170,1,true,false,0};g.ticks=11;f=(retro_frame_t){.camera={100,0,0,320}};
     retro_events_frame(&e,&g,&f);assert(!f.light_count);
     g.bullets[0].x=256;g.ticks=12;retro_events_frame(&e,&g,&f);assert(!f.light_count); // Still flying.
     msx_game_t before=g;g.bullets[0].active=false;g.ticks=13;f=(retro_frame_t){.camera={100,0,0,320}};
@@ -139,17 +139,17 @@ static void test_events(void) {
     assert(f.light_count==1 && e.impacts==1);near(f.lights[0].position.x,259);near(f.lights[0].position.y,170);
     (void)before;
     // A bullet leaving the screen is not an impact.
-    g.bullets[1]=(msx_bullet_t){415,170,1,true,false};g.ticks=14;retro_events_frame(&e,&g,&f);
+    g.bullets[1]=(msx_bullet_t){415,170,1,true,false,0};g.ticks=14;retro_events_frame(&e,&g,&f);
     g.bullets[1].active=false;g.ticks=15;retro_events_frame(&e,&g,&f);assert(e.impacts==1);
     // Slot reused in one frame: the old bullet still produced an impact.
-    g.bullets[2]=(msx_bullet_t){300,170,1,true,false};g.ticks=16;retro_events_frame(&e,&g,&f);
-    g.bullets[2]=(msx_bullet_t){180,170,1,true,false};g.ticks=17;retro_events_frame(&e,&g,&f);assert(e.impacts==2);
+    g.bullets[2]=(msx_bullet_t){300,170,1,true,false,0};g.ticks=16;retro_events_frame(&e,&g,&f);
+    g.bullets[2]=(msx_bullet_t){180,170,1,true,false,0};g.ticks=17;retro_events_frame(&e,&g,&f);assert(e.impacts==2);
     // Enemy bullets too, dimmer.
-    g.enemy_bullets[0]=(msx_bullet_t){200,168,-1,true,false};g.ticks=18;retro_events_frame(&e,&g,&f);
+    g.enemy_bullets[0]=(msx_bullet_t){200,168,-1,true,false,0};g.ticks=18;retro_events_frame(&e,&g,&f);
     g.enemy_bullets[0].active=false;g.ticks=19;f=(retro_frame_t){.camera={100,0,0,320}};
     retro_events_frame(&e,&g,&f);assert(e.impacts==3 && f.light_count>=1);
     // Respawn: bullets cleared together with a death are not impacts.
-    g.enemy_bullets[0]=(msx_bullet_t){200,168,-1,true,false};g.ticks=20;retro_events_frame(&e,&g,&f);
+    g.enemy_bullets[0]=(msx_bullet_t){200,168,-1,true,false,0};g.ticks=20;retro_events_frame(&e,&g,&f);
     memset(g.enemy_bullets,0,sizeof(g.enemy_bullets));g.deaths=1;g.ticks=21;retro_events_frame(&e,&g,&f);assert(e.impacts==3);
     // Vehicle: contact shadow under the wheels, destruction and explosion pulses.
     // Same placement as msx_game_vehicle_reference(), without the generated animation tables.
@@ -168,7 +168,7 @@ static void test_events(void) {
     g.ticks=70;f=(retro_frame_t){.camera={872,0,0,320}};retro_events_frame(&e,&g,&f);assert(!f.light_count);
     assert(e.explosions==2); // Flags persist in vehicle_events; no repeated explosion.
     // Restart (ticks go back): pulses are forgotten.
-    g.vehicle_events=0;g.vehicle.health=300;g.ticks=50;g.bullets[3]=(msx_bullet_t){300,170,1,true,false};
+    g.vehicle_events=0;g.vehicle.health=300;g.ticks=50;g.bullets[3]=(msx_bullet_t){300,170,1,true,false,0};
     retro_events_frame(&e,&g,&f);g.ticks=5;g.bullets[3].active=false;f=(retro_frame_t){.camera={872,0,0,320}};
     retro_events_frame(&e,&g,&f);assert(!f.light_count && !e.pulses.count);
     // Camera scrolling raises the fog focus, which relaxes when it stops.

@@ -8,6 +8,7 @@
 #include "neo_cull.h"
 #include "neo_kernel.h"
 #include "neo_rng.h"
+#include "marco_ammo.h"
 /* Generic native actor for the region entities other than the rebel soldier
  * (vehicle, flying bomber, prisoners, scene objects, effects). Each family is
  * a manual C translation of its original routines (ROM labels are kept as
@@ -57,6 +58,25 @@ typedef struct neo_ga_flags {
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
 } neo_ga_flags_t;
+/* The players' weapon, bomb and score state the item pickups serve
+ * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
+ * explicit stop. RAM provenance per field. */
+typedef struct neo_pickup_env {
+    marco_weapons_t *weapons;            /* RAM 10C718 */
+    marco_weapon_player_t *player[2];    /* player actor fields (+93/+94/+95, 0040AC) */
+    uint8_t *slot[2];                    /* vehicle slots 10C608/10C62C (NULL: none) */
+    uint8_t score[2][4];                 /* RAM 10C46A / 10C472 (BCD, 057948) */
+    uint32_t points[2];                  /* RAM 10C5A0+4p: value of the last pickup */
+    uint32_t stamp[2];                   /* RAM 10C594+4p: frame of the last combo pickup */
+    uint32_t frame;                      /* RAM 10C590 (frame counter the stamps compare) */
+    uint16_t combo[2];                   /* RAM 10C5AC+2p (08B910) */
+    uint8_t combo_lock[2];               /* RAM 10C5BE+p (08B7E6) */
+    uint16_t mission;                    /* RAM 10C2F6 (0C0BAE) */
+    uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
+    unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
+    unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
+                                          * pickup labels 08C752 (both external) */
+} neo_pickup_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -119,6 +139,7 @@ struct neo_genv {
      * for actor `a` (the interpreter of the world, freed with the actor);
      * true once op 3 ran. */
     bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
+    neo_pickup_env_t *pickup;
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
@@ -137,6 +158,7 @@ void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
 uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */
+uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D4.w at its return (the sweep's 13968) */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */

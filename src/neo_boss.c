@@ -1538,8 +1538,16 @@ neo_boss_result_t neo_boss_step(neo_boss_t *w,int16_t i) {
     if (n->routine==DEAD) return NEO_BOSS_MORE;      /* 003F1E */
     ctx_t ctx={w,n,i,false,false,false},*c=&ctx;
     w->born_count=0;
+    /* Routine lookup through a small direct-mapped cache of the table
+     * (same result as the linear search; the table is constant). */
+    static struct { uint32_t label; routine_fn fn; } cache[64];
+    unsigned h=(n->routine>>1)&63u;
     routine_fn fn=NULL;
-    for (unsigned k=0;k<sizeof(routines)/sizeof(routines[0]);k++) if (routines[k].label==n->routine) {fn=routines[k].fn;break;}
+    if (cache[h].label==n->routine && cache[h].fn) fn=cache[h].fn;
+    else {
+        for (unsigned k=0;k<sizeof(routines)/sizeof(routines[0]);k++) if (routines[k].label==n->routine) {fn=routines[k].fn;break;}
+        if (fn) {cache[h].label=n->routine;cache[h].fn=fn;}
+    }
     if (!fn) {w->unsupported_label=n->routine;return NEO_BOSS_UNSUPPORTED;}
     fn(c);
     if (c->unsupported) return NEO_BOSS_UNSUPPORTED;

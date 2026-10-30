@@ -46,7 +46,7 @@ def pad():
         hold('a',(t%4.0)<0.15)
         if domes.is_set():
             # Domed building (054904): sweep under the three domes firing up.
-            hold('Up',True);sweep=int(t/3.5)%2
+            hold('Up',True);sweep=int(t/5.0)%2
             hold('Left',sweep==0);hold('Right',sweep==1)
         elif shop.is_set():
             # Destructible shop (0B6566) at the 2336 stop: back off to its

@@ -523,10 +523,34 @@ responde un contacto de `0x0049E8`.
 En el juego, la H (`0x0C4454/0x0C447C`) dispara balas nativas `0x01B716` con
 el abanico `0x0C44A6` (`+95` dos veces por disparo); se insertan tras la
 cabeza de la lista al final del tick del mundo y corren desde el siguiente.
-**Aproximación declarada**: la boca (`0x0C4244`, `0x014A02`) usa la boca de
-pistola del port, porque el modelo de jugador del port no tiene `+72/+74/+92`;
-la cadencia es la del port, no la de las retrollamadas de los programas de
-Marco (`0x0C4372`), que el port no ejecuta como disparo. La pistola sigue
+**H en diagonal** (`src/marco_hgun.c`): los estados del torso con la H del
+original: disparo `0x0C3E9C`, ráfaga `0x0C3F1A` (antes de `+76` un cambio de
+puntería abre un barrido; después, una nueva pulsación `+9B` bit 4 reinicia
+la ráfaga), barridos `0x0C3FA6..0x0C3FDE` / `0x0C3FFA` / `0x0C4006`, con los
+programas de Marco `+93 = 1` de las tablas `0x0BFDD8`, `0x0BFE18`,
+`0x0BFE58` (ráfagas: `0x0C4372` en las actualizaciones 0/2/4/6, `+76` en la
+7, fin en 12/16/19) y `0x0BFE98`, `0x0BFED8`, `0x0BFF18`, `0x0BFF58`
+(barridos: `0x0C453A` con los ángulos 08/18/28/38, F8/E8/D8/C8, 30/20/10,
+D0/E0/F0; fin en 8 o 6). `0x0C4244` da 0x40/0/−0x40 según `+92` (a la
+izquierda `0x80 − ángulo`) y `0x0C44A6` suma `+95` **una** vez por bala
+(el port sumaba dos: `hfam` muestra 0, +2, −2) y el abanico 2·((+95 mod 3)−1);
+`0x0C453A` refleja su ángulo con la orientación de ese momento y también
+cuenta `+95`. Una granada pone `+92 = 0`. La pulsación en reposo arranca el
+estado en la actualización siguiente; el fin de un programa con la petición
+de disparo encadena el siguiente estado en la misma actualización (`hfam`:
+la ráfaga hacia arriba dispara dos actualizaciones después del último
+diagonal). Prueba `tools/test_marco_hgun.c` (`make check-core`): estados con
+entradas guionizadas y las 22 balas diagonales registradas en `hfam`
+(`data/hgun_fixture.json`), todas pasos de un barrido en orden y con el
+reflejo de su orientación. `hfam` no tiene la columna `10000E`, así que los
+fotogramas de las actualizaciones no se comparan.
+**Aproximaciones declaradas**: el reposo `0x0C38B2` no se traduce (`+92` se
+conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` y la puntería
+hacia abajo en el aire no existen en el modelo de jugador del port; la boca
+sigue siendo la de pistola del port (adelante (24,80), arriba (3,108),
+interpolada para un diagonal), porque el port no tiene `+72/+74`. Disparar
+exige pulsar (como en el arcade); `tools/test_gameplay.c` pulsa cada 8
+pasos. La pistola sigue
 con la bala del port (la del jefe y el blindado de referencia pasan por
 `neo_world_shot`). **Paradas explícitas**: H con `+93 = 2` (`0x01B668/0x01BDD2`),
 cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas

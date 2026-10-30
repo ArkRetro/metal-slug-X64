@@ -70,7 +70,7 @@ static void release_run(unsigned seed) {
         g.aim_up=a;rs=rs*1103515245u+12345u;
         /* Now and then a bomb; at the armoured vehicle every 40. */
         g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
-        msx_game_update(&g,dir,(rs>>16)%50==0,true);check_draws(&g);
+        msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */check_draws(&g);
         g.world.sound_count=0;
     }
     printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
@@ -241,7 +241,7 @@ int main(int argc,char **argv) {
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (g.world.gactors[i].active && ga_l(&g.world.gactors[i],0)==0xb6606u) target=true;
         g.grenade=target && (steps%40)<2;
         weapon_seen|=1u<<marco_weapons_id(&g.world.weapons,0);
-        msx_game_update(&g,dir,(steps%240)<4,true);check_draws(&g);
+        msx_game_update(&g,dir,(steps%240)<4,steps%8<4);check_draws(&g);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
         if (g.camera<2336 && g.camera_height>max_height) max_height=g.camera_height;
@@ -270,7 +270,9 @@ int main(int argc,char **argv) {
     assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.expiries>0);
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     assert(!g.weapon_stops && g.world.player_shots==g.weapon_shots+g.grenades && !g.world.shot_dropped);
-    printf("H bullets that hit: %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.world.pickup.blast_hits);fflush(stdout);
+    printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
+    /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
+    assert(g.hgun_diagonal>0);
     assert(g.world.pickup.bullet_hits>0 && g.world.pickup.blast_hits>0);
     /* Native grenades 01BF46/01BF10 (neo_bullet.c): every one lands. */
     assert(g.grenades>=10 && !g.grenade_stops && !g.world.weapons.b[0]);

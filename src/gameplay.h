@@ -6,6 +6,7 @@
 #include "neo_vehicle.h"
 #include "neo_world.h"
 #include "neo_hud.h"
+#include "marco_hgun.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
@@ -69,6 +70,9 @@ typedef struct {
      * native grenade 01BF46/01BF10 (grenades); other bomb types stop
      * explicitly (grenade_stops). */
     bool grenade,grenade_was_down;
+    /* H upper body (marco_hgun.c): fire states, sweeps and their diagonal
+     * bullets; fire_was: the fire input of the previous tick (+9B bit 4). */
+    marco_hgun_t hgun;bool fire_was;unsigned hgun_diagonal;uint8_t hgun_kind;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);

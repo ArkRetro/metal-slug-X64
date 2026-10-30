@@ -23,6 +23,9 @@ const scene_bank_t *scene_bank(unsigned id);
 const scene_image_t *scene_frame(unsigned id,unsigned frame);
 const scene_image_t *scene_background_tile(unsigned row,unsigned col);
 const scene_map_cell_t *scene_map_cells(unsigned *count);
+/* Layer-2 cells of the destroyed-shop patch (0B6882), drawn instead of the
+ * cells at the same coordinates once the building is down. */
+const scene_map_cell_t *scene_patch_cells(unsigned *count);
 const scene_image_t *scene_map_image(unsigned id);
 unsigned scene_map_camera_max(void);
 uint32_t scene_map_backdrop(bool after);

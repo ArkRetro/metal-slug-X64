@@ -27,9 +27,27 @@ static bool depth_mode;
  * extracted cells are in map coordinates: drawn 32 px further left).
  * The white flash (RAM 109944) turns every background palette to 0x7FFF. */
 enum { COLLAPSE_FACADE_X=0x74*16, COLLAPSE_SKY_SHIFT=32 };
-static bool collapsed,flash;
+static bool collapsed,flash,patched;
+static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n);
 void scene_render_set_collapse(bool done,bool white) {collapsed=done;flash=white;}
-static inline bool hidden(const scene_map_cell_t *cell) {return collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X;}
+void scene_render_set_patch(bool done) {patched=done;}
+static bool patch_cell(const scene_map_cell_t *cell) {
+    unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);
+    for (unsigned i=0;i<n;i++) if (p[i].x==cell->x && p[i].y==cell->y) return true;
+    return false;
+}
+static inline bool hidden(const scene_map_cell_t *cell) {
+    if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    /* Destroyed shop: column 0x9F-3.. of layer 10D7B6 (0B6882). */
+    return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16 && patch_cell(cell);
+}
+static void draw_patch(const int *offsets,const int *rises,unsigned video_tick) {
+    unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);
+    for (unsigned i=0;i<n;i++) {
+        int x=p[i].x-offsets[2];
+        if (x>-16 && x<320) classic_cell(&p[i],offsets,rises,video_tick,1);
+    }
+}
 static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
 static scene_cell_index_t cell_index;
@@ -214,6 +232,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
                 classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
             }
           }
+          if (layer==2 && patched) draw_patch(offsets,rises,video_tick);
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)

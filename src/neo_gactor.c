@@ -69,13 +69,15 @@ void ga_move(neo_gactor_t *a,neo_genv_t *e) {
 }
 static uint8_t kobj(uint32_t tag) {
     if (tag>=DYN_TAG(0) && tag<DYN_TAG(NEO_KDYN_COUNT) && !((tag-DYN_TAG(0))&63u)) return (uint8_t)(NEO_KOBJ_DYN0+(tag-DYN_TAG(0))/64u);
-    return tag==TERRAIN_TAG?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
+    return tag==TERRAIN_TAG || tag==0x10d7b6u?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
 }
+static uint32_t terrain_tag=TERRAIN_TAG;
 static uint32_t ktag(uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return DYN_TAG(id-NEO_KOBJ_DYN0);
-    return id==NEO_KOBJ_TERRAIN?TERRAIN_TAG:id==NEO_KOBJ_ROOT?ROOT_TAG:0;
+    return id==NEO_KOBJ_TERRAIN?terrain_tag:id==NEO_KOBJ_ROOT?ROOT_TAG:0;
 }
 static void self(neo_gactor_t *a,neo_genv_t *e) {
+    terrain_tag=e->terrain_tag?e->terrain_tag:TERRAIN_TAG;
     uint8_t d=ga_b(a,0x6a);e->kernel->self_dyn=d<NEO_KDYN_COUNT?(uint8_t)(d+1):0;e->kernel->self_block=NEO_GA_TAG(a->index);
 }
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
@@ -86,10 +88,13 @@ static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo
     neo_kreq_t q={r->x,r->y,r->dx,r->dy,parent,mode,b4008,b4009,0,0,0};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return false;}
-    neo_contact_result_t res={k.x,k.y,k.vx,k.vy,ktag(k.parent),k.kind,k.flags};
+    neo_contact_result_t res={k.x,k.y,k.vx,k.vy,kobj(r->parent_tag)==k.parent?r->parent_tag:ktag(k.parent),k.kind,k.flags};
     neo_contact_parent_t p;bool has=res.parent_tag?ga_parent(e,res.parent_tag,&p):false;
     if (res.parent_tag && !has) return false;
     neo_contact_commit(c,&res,has?&p:NULL,e->epoch);
+    /* 014506..014516: after the projection, a body on the ground (+15 bit
+     * 6) updates its depth word (01AD8C). */
+    if ((c->flags15&0x40u) && (c->field66&0xf000u)==0x8000u) c->word1e=(uint16_t)(c->field66-(uint16_t)((uint32_t)c->projected_y>>16));
     if (out) *out=k;
     return true;
 }
@@ -121,7 +126,7 @@ void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     neo_kfloor_t fl;
     if (!neo_kernel_floor(e->kernel,c.x,c.y,parent,(int32_t)0xff000000,(uint8_t)(c.flags15&32u?0:255),0,0,&fl)) {ga_fail(e,0x146e8);return;}
     ga_sw(a,0x6c,(uint16_t)(fl.kind>>8));
-    ga_sl(a,0x28,(uint32_t)fl.x);ga_sl(a,0x2c,(uint32_t)fl.y);ga_sl(a,0x30,0);ga_sl(a,0x34,0);ga_sl(a,0x38,ktag(fl.parent));
+    ga_sl(a,0x28,(uint32_t)fl.x);ga_sl(a,0x2c,(uint32_t)fl.y);ga_sl(a,0x30,0);ga_sl(a,0x34,0);ga_sl(a,0x38,parent==fl.parent?c.parent_tag:ktag(fl.parent));  /* a layer object (10D7B6) stays itself */
     ga_project(a,e);
     ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|64u));
 }

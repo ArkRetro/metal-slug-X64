@@ -18,8 +18,10 @@ from extract_boss_fight import parse
 ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     # Domed building 054904 (rise, ruin, turret, banners, hatch, launcher, ender, missile).
     0x24a334,0x24a33e,0x24a348,0x24a352,0x24a35c,0x24a366,0x24a370,0x24a450,0x24a530,0x24ac42,0x24abb0,
-    0x24a610,0x24a6f2,0x24a742,0x24a7ce,0x24a910,0x24aa18)
-RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883)
+    0x24a610,0x24a6f2,0x24a742,0x24a7ce,0x24a910,0x24aa18,
+    # Destructible shop 0B6566 (building stages, ruin, overlay).
+    0x2a89b8,0x2a89c4,0x2a89d0,0x2a89dc,0x2a89e8,0x2a89f4,0x2a8a00)
+RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46e)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
@@ -85,6 +87,7 @@ def validate(capture,nodes,descs,crom,stats,per):
         if isinstance(nodes,tuple):
             if not nodes[0]<=u['routine']<=nodes[1]:continue
         elif u['node'] not in nodes:continue
+        if u['post'] is None or u['post'][:4]==bytes.fromhex('00003f1e'):continue   # deleting update: nothing drawn after it
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:

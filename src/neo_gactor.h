@@ -51,6 +51,7 @@ typedef struct neo_ga_flags {
     uint8_t kill_request;            /* RAM 1067E3 (004BFE), copied to 1067E2 by 00469C */
     uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */
     uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
+    uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
 } neo_ga_flags_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
@@ -97,6 +98,9 @@ struct neo_genv {
     void (*external)(void *ctx,uint32_t constructor);
     /* Mission flags outside the actor list (domed building 054904). */
     struct neo_ga_flags *flags;
+    /* Layer object of the static collision terrain: 10C72E in the village,
+     * 10D7B6 from camera 1023 (the floor answers of the traces). 0 = 10C72E. */
+    uint32_t terrain_tag;
     bool kill_all;                   /* RAM 1067E2 (004BAC: registered non-class-1 bodies die) */
     void (*camera_mode)(void *ctx,uint8_t mode);       /* 0C7B48: RAM 10E95A */
     void (*camera_rise)(void *ctx,int32_t vy);         /* RAM 10E960 (autoscroll vy) */

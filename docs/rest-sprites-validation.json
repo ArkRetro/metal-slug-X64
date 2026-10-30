@@ -1,9 +1,10 @@
 {
- "descriptors": 261,
+ "descriptors": 268,
  "palettes": [
   "0x1b",
   "0x20b",
   "0x3ba",
+  "0x46e",
   "0x472",
   "0x475",
   "0x476",
@@ -16,12 +17,12 @@
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 67,
-  "frames": 76,
-  "pixels_equal": 1229473,
-  "pixels_different": 20685,
-  "pixels_overlapping": 99989,
-  "rank_2": 35,
-  "rank_1": 41
+  "frames": 87,
+  "pixels_equal": 1260561,
+  "pixels_different": 4575,
+  "pixels_overlapping": 105159,
+  "rank_2": 38,
+  "rank_1": 49
  },
  "frames": [
   {
@@ -350,8 +351,8 @@
    "capture": "bld1",
    "frame": 6120,
    "update_frame": 6120,
-   "equal": 24518,
-   "different": 94
+   "equal": 24587,
+   "different": 0
   },
   {
    "capture": "bld1",
@@ -391,9 +392,9 @@
   {
    "capture": "bld1",
    "frame": 6300,
-   "update_frame": 6300,
-   "equal": 24343,
-   "different": 337
+   "update_frame": 6299,
+   "equal": 24543,
+   "different": 0
   },
   {
    "capture": "bld1",
@@ -551,10 +552,87 @@
   },
   {
    "capture": "bld1",
-   "frame": 6990,
-   "update_frame": 6988,
+   "frame": 7170,
+   "update_frame": 7170,
    "equal": 0,
-   "different": 15679
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7200,
+   "update_frame": 7197,
+   "equal": 1164,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7230,
+   "update_frame": 7227,
+   "equal": 2978,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7260,
+   "update_frame": 7257,
+   "equal": 7203,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7290,
+   "update_frame": 7290,
+   "equal": 7203,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7320,
+   "update_frame": 7318,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7350,
+   "update_frame": 7350,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7380,
+   "update_frame": 7380,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7410,
+   "update_frame": 7410,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7440,
+   "update_frame": 7440,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7470,
+   "update_frame": 7470,
+   "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7500,
+   "update_frame": 7500,
+   "equal": 1753,
+   "different": 0
   }
  ]
 }

@@ -10,8 +10,9 @@
  * then go on top). Children outside the family (effects, debris, soldier
  * deaths) go to a scratch node and are counted.
  *
- * Inputs per update are the RAM words the original read (scene root, layer
- * object, player 1, script flags, layer words, epoch, RNG cursor and ring).
+ * Inputs per update are the RAM words the original read (scene root; the
+ * layer objects 10C72E/10D7B6/10E8C6 hold the same position in Mission 1,
+ * checked in the RAM dumps), player 1, script flags, layer words, epoch, RNG cursor and ring).
  * After every update the routine and the node bytes +10..+AF must match,
  * except the allocator's palette slot numbers (+14, +16, +19..+1C: native
  * handles), the animation pointer +20..+23 (native program/cursor) and the
@@ -33,7 +34,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int terrain; int32_t tx,ty;
     int32_t p1x,p1y,signal,group,front,epoch,cursor;
-    uint16_t ring[8][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
+    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -46,7 +47,7 @@ enum { NN=sizeof(NODES)/sizeof(NODES[0]), NU=sizeof(UPDATES)/sizeof(UPDATES[0]) 
 static neo_gactor_t actors[NN+1];            /* [NN] = scratch */
 static bool bound[NN];
 static unsigned externals,draws;
-static neo_contact_parent_t root,terrain;
+static neo_contact_parent_t root;
 static neo_ga_flags_t flags;
 static uint8_t ram[0x200];                   /* globals, see slot() */
 static uint8_t expect[0x200];
@@ -71,7 +72,8 @@ static int index_of(const neo_gactor_t *a) {return (int)(a-actors);}
 static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     (void)ctx;
     if (tag==0x10e968u) {*out=root;return true;}
-    if (tag==0x10c72eu) {*out=terrain;return true;}
+    /* Layer objects (the world keeps them with the terrain). */
+    if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=root;out->tag=tag;return true;}
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NN) {
         const neo_gactor_t *a=&actors[tag&0xffffu];
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};
@@ -123,6 +125,17 @@ static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=
 static bool contact;
 static unsigned contacts;
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {(void)ctx;(void)a;(void)row;if (contact) contacts++;return contact?1:0;}
+/* 0140C0/013F1E: slot of the dynamic collision object (+6A), from 7 down;
+ * no other actor of the trace holds one. */
+static bool dyn_used[NEO_KDYN_COUNT];
+static void dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t dy) {
+    (void)ctx;(void)map;(void)dx;(void)dy;
+    if (ga_b(a,0x6a)!=0xffu) return;
+    for (int k=NEO_KDYN_COUNT-1;k>=0;k--) if (!dyn_used[k]) {dyn_used[k]=true;ga_sb(a,0x6a,(uint8_t)k);return;}
+}
+static void dyn_release(void *ctx,neo_gactor_t *a) {(void)ctx;if (ga_b(a,0x6a)<NEO_KDYN_COUNT) dyn_used[ga_b(a,0x6a)]=false;ga_sb(a,0x6a,0xff);}
+static unsigned stamps;
+static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {(void)ctx;(void)a;(void)t;stamps++;}
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
 static bool skip(unsigned o) {return o==0x14 || o==0x16 || o==0x58 || o==0x59 || (o>=0x19 && o<=0x1c) || (o>=0x20 && o<=0x23) || (o>=0x44 && o<=0x4b);}
 int main(void) {
@@ -135,11 +148,12 @@ int main(void) {
     uint8_t groups[9]={0},flag606=0;
     neo_genv_t e;memset(&e,0,sizeof(e));
     e.kernel=&kernel;e.rng=&rng;e.parent=parent;e.program=program;e.emit=emit;e.groups=groups;e.flag606=&flag606;
-    e.spawn=spawn;e.attack=attack;e.creator=creator_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.creator=creator_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
-    e.flags=&flags;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+    e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
+    e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
     unsigned compared=0,deleted=0;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
@@ -153,20 +167,19 @@ int main(void) {
         if (u->root_mask&4) root.previous_x=u->root[2];
         if (u->root_mask&8) root.previous_y=u->root[3];
         root.tag=0x10e968u;if (u->corr>=0) root.correction=(uint8_t)u->corr;
-        if (u->terrain) terrain=(neo_contact_parent_t){0x10c72eu,u->tx,u->ty,u->tx,u->ty,0};
         if (u->p1x>=0) p1x=u->p1x;
         if (u->p1y>=0) p1y=u->p1y;
         if (u->epoch>=0) epoch=(uint8_t)u->epoch;
         if (u->signal>=0) {flags.dome_signal=(uint8_t)u->signal;flags.dome_group=(uint8_t)u->group;}
         front_value=u->front;
         if (u->cursor>=0) rng.cursor=(uint8_t)u->cursor;
-        for (unsigned r=0;r<8;r++) if (u->ring[r][0]<NEO_RNG_WORDS) rng.words[u->ring[r][0]]=u->ring[r][1];
+        for (unsigned r=0;r<64;r++) if (u->ring[r][0]<NEO_RNG_WORDS) rng.words[u->ring[r][0]]=u->ring[r][1];
         /* Bytes other actors wrote into the node since its last update. */
         for (unsigned x=0;x<16 && u->ext[x][0];x++) a->m[u->ext[x][0]]=u->ext[x][1];
         /* Static collision objects (the world keeps terrain and root
          * together). */
         kernel.root=(neo_kobj_t){root.x,root.y,root.previous_x,root.previous_y};
-        kernel.terrain=u->terrain?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
+        kernel.terrain=kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
         if (kill_frame && !kill_at && u->frame>kill_frame) kill_at=u->frame;
@@ -204,7 +217,7 @@ int main(void) {
         }
     }
     for (unsigned i=0;i<NN;i++) if (!bound[i]) {fprintf(stderr,"node %u (%05x) never created\n",i,NODES[i].routine);return 1;}
-    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u children outside the family%s\n",
-        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,externals,swapped?", map swap requested":"");
+    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family%s\n",
+        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,swapped?", map swap requested":"");
     return 0;
 }

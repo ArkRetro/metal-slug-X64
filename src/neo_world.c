@@ -318,7 +318,10 @@ static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
 }
 static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
 static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
-    (void)ctx;neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));
+    if (templ==0x29bf4u || templ==0x29c26u) {neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));return;}
+    const uint8_t *t=ga_rom(templ);
+    if (!t) {ga_fail(&((tick_t *)ctx)->genv,templ);return;}
+    neo_collision_stamp((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),t);
 }
 /* ROM 004C24: the actor is registered when one of its rectangles is inside
  * the registry area (x -32..383, y 264..503 projected); the query (0049E8 ->
@@ -855,6 +858,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */

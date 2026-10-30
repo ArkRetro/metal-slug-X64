@@ -24,6 +24,26 @@ unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
     return changed;
 }
 
+unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
+    /* ROM 0C88B0 (tools/collision_stamp.py): template dx,dy,w,h,material,
+     * -,mask.l, w*h shape nibbles (top row first) at the actor's integer
+     * cell; an existing shape s survives unless mask bit s is set; bits
+     * 5..7 of the old cell are kept. The ring window of the layer always
+     * covers the stamps of Mission 1 (actors on screen). */
+    if (!dynamic_active) {memcpy(dynamic_grid,neo_grid,sizeof(neo_grid));dynamic_active=true;}
+    int dx=(int8_t)t[0],dy=(int8_t)t[1],w=t[2],h=t[3];
+    uint32_t mask=(uint32_t)t[6]<<24|(uint32_t)t[7]<<16|(uint32_t)t[8]<<8|t[9];
+    int base_x=cell_floor(x)+dx,base_y=cell_floor(y)+dy+h-1;unsigned changed=0;
+    for (int col=0;col<w;col++) for (int row=0;row<h;row++) {
+        int cx=base_x+col,cy=base_y-row;
+        if (cx<0 || cx>=NEO_GRID_COLUMNS || cy<0 || cy>=32) continue;
+        uint8_t *cell=&dynamic_grid[cx*32+cy];unsigned shape=*cell&15u;
+        if (shape && !((mask>>shape)&1u)) continue;
+        uint8_t value=(uint8_t)((t[10+row*w+col]|(t[4]?16:0))+(*cell&0xe0));
+        if (value!=*cell) {*cell=value;changed++;}
+    }
+    return changed;
+}
 uint8_t neo_collision_cell(int x,int y) {
     if (x<0 || x>=NEO_GRID_COLUMNS*8 || y<0 || y>=256) return 0;
     return (dynamic_active?dynamic_grid:neo_grid)[(x/8)*32+y/8];

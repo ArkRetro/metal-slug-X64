@@ -9,6 +9,8 @@ import argparse,hashlib,json
 from pathlib import Path
 # address, length, reader (provenance)
 BLOBS=[
+    (0xB6938,0x1A8,'0B6566 destructible building: cull rectangle, hurtbox, debris lists, stamps, roof map'),
+    (0x2D3A5C,0x40,'0B6566 building health (0260C8)'),
     (0x546F0,0x17A,'054904 domed building: programs, offsets, delays, hurtboxes, attack row, debris lists, cull rectangle'),
     (0x553B2,0x20,'0553D2 dome missile launch offsets'),(0x5545C,0x1C,'055478 dome missile frame/zoom by height'),
     (0x5597C,0x20,'dome missile program hurtbox (+50)'),(0x2D1CF4,0x34C,'054904 domed building rank tables (0260C8)'),

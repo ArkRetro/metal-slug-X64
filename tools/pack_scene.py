@@ -143,6 +143,20 @@ def main():
         for c in mission['cells']:c['segment']=0
         mission,_=merge(dict(mission,conflicts=[]),dict(rest,conflicts=[]))
         for c in mission['cells']:c.setdefault('segment',1)
+        # Destroyed-shop patch (0B6882, sub-map 0B6AD2 on layer 10D7B6): the
+        # 62 coordinate variants of the rest map; the packed map keeps the
+        # first observed (intact) cell and the other choice goes to a
+        # separate list the renderer swaps in once the building is down
+        # (tools/decode_map_commands.py --map checks them against the ROM).
+        base={(c['layer'],c['x'],c['y']):c for c in mission['cells']}
+        for cf in rest['conflicts']:
+            b=base[(cf['layer'],cf['x'],cf['y'])];bpal=mission['palettes'][b['palette']]
+            post=[ch for ch in cf['choices'] if (ch['code'],ch['flip'],list(ch['palette']))!=(b['code'],b['flip'],list(bpal))]
+            assert len(post)==1,('Patch variant',cf)
+            ch=post[0];pal=list(ch['palette'])
+            if pal not in mission['palettes']:mission['palettes'].append(pal)
+            mission['cells'].append(dict(layer=5,x=cf['x'],y=cf['y'],code=ch['code'],flip=ch['flip'],animation_mask=ch['animation'],
+                palette=mission['palettes'].index(pal),segment=1))
         values=[v for v in rest['backdrop_values'] if v!=mission['backdrop']]
         assert len(values)==1;backdrop_after=values[0]
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
@@ -150,6 +164,7 @@ def main():
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
     backdrop=palette_rgb(mission['backdrop'])
     map_images,map_cells=pack_map(mission,(ROOT/'filesystem/sprites.bin').read_bytes(),image)
+    patch_cells=[c for c in map_cells if c[0]==5];map_cells=[c for c in map_cells if c[0]!=5]
     real_pages=len(pages)
     while len(pages)%8:pages.append(bytes(PAGE))
     blob=bytearray();chunks=[]
@@ -205,6 +220,11 @@ def main():
     lines.extend('  {'+','.join(map(str,item))+'},' for item in map_images);lines.append('};')
     lines.append('static const scene_map_cell_t scene_map_cells_data[]={')
     lines.extend('  {'+f'{layer},{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in map_cells);lines.append('};')
+    lines.append(f'#define SCENE_PATCH_CELL_COUNT {len(patch_cells)}')
+    lines.append('static const scene_map_cell_t scene_patch_cells_data[]={')
+    lines.extend('  {'+f'2,{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in patch_cells)
+    if not patch_cells:lines.append('  {0,0,0,{0}},')
+    lines.append('};')
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')

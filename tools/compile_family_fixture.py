@@ -6,8 +6,7 @@ Nodes are numbered in order of first appearance; each keeps its creator
 (+0C, another node of the fixture or -1) and its first routine, and the node
 bytes of its first update (the allocator's fields plus what the creator
 wrote before it ran). Per update: the inputs the original read (scene root
-10E968 block, layer object 10C72E derived from the update's own +3C-+28
-when the node hangs from it, player 1 +3C/+40, script flags 10C44E/10C44F,
+10E968 block (the layer objects hold the same position), player 1 +3C/+40, script flags 10C44E/10C44F,
 layer words 10B954/10B95C, epoch 10C33A, RNG cursor and ring words) and the
 writes to the watched globals as (address, byte) pairs."""
 import argparse,gzip,json
@@ -68,18 +67,13 @@ def main():
         for i in range(4):
             if root[2*i] is not None and root[2*i+1] is not None:rmask|=1<<i;rv[i]=s32(root[2*i]<<16|root[2*i+1])
         corr=rd(u,0x10e98c)
-        # Layer object 10C72E (not traced): position implied by the update.
-        tmask=0;tx=ty=0
-        if u['post'] and int.from_bytes(post[0x38:0x3c],'big')==0x10c72e:
-            tmask=1
-            tx=s32((int.from_bytes(post[0x3c:0x40],'big')-int.from_bytes(post[0x28:0x2c],'big'))&0xffffffff)
-            ty=s32((int.from_bytes(post[0x40:0x44],'big')-int.from_bytes(post[0x2c:0x30],'big'))&0xffffffff)
+        tmask=0;tx=ty=0   # layer objects: same position as the root (RAM dumps)
         cur=None
         if hex(RING1) in u['reads'] and hex(RING1+2) in u['reads']:
             ptr=u['reads'][hex(RING1)][1]<<16|u['reads'][hex(RING1+2)][1];cur=(ptr-RING0)//2
         ring=[((int(k,16)-RING0)//2,v[1]) for k,v in u['reads'].items() if RING0<=int(k,16)<RING1]
-        assert len(ring)<=8,u['frame']
-        ring+= [(255,0)]*(8-len(ring))
+        assert len(ring)<=64,u['frame']
+        ring+= [(255,0)]*(64-len(ring))
         b954,b95c=rd(u,0x10b954),rd(u,0x10b95c)
         front=-1 if b954 is None or b95c is None else int((b954^0x8000)<(b95c^0x8000))
         writes=[]

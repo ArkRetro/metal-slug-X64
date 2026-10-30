@@ -33,6 +33,11 @@ def validate(captures,model_path,crom_path,out):
         active=observation.get('active',(True,True,True,True))
         folder=Path(observation.get('captures',str(captures)))
         fill=palette_rgb(observation.get('backdrop',model['backdrop']))+(255,)
+        # --ram-layers maps: background slot ranges and C-ROM banks recorded per
+        # observation (tools/neo_scene.ram_slots); otherwise the Mission 1 ranges.
+        ranges=[(b,b+32) for b in observation['background_slots'].values()] if 'background_slots' in observation else [(1,65),(105,137)]
+        banks=set(observation.get('banks',(4,)))
+        def background(slot,attr):return any(lo<=slot<hi for lo,hi in ranges) and (attr&0xf0)>>4 in banks
         recovered=Image.new('RGBA',(320,224),fill)
         for c in model['cells']:
             if not active[c['layer']]:continue
@@ -48,7 +53,6 @@ def validate(captures,model_path,crom_path,out):
             if not rows:continue
             xx=x-512 if x>=496 else x
             if xx>=320:continue
-            is_background=slot<=64 or 105<=slot<=136
             for row in range(min(rows,32)):
                 yy=(y+row*16)&511
                 if yy>=496:yy-=512
@@ -59,7 +63,7 @@ def validate(captures,model_path,crom_path,out):
                 code=low|((attr<<12)&0xf0000)
                 if not disabled:code=(code&~mask)|(phase&mask)
                 im=tile(code,attr&3,tuple(p[(attr>>8)*16:(attr>>8)*16+16]))
-                if is_background and (attr&0xf0)==0x40:
+                if background(slot,attr):
                     assert zx==15 and zy==255,('Scaled background requires a recovered transform',frame,slot,zx,zy)
                     paste(reference,im,xx,yy)
                 elif zx!=15 or zy!=255:covered.paste(255,(xx,yy,xx+16,yy+16))
@@ -86,7 +90,7 @@ def validate(captures,model_path,crom_path,out):
                     yy-=16
                     if yy>=224 or yy+16<=0:continue
                     low,attr=pv[slot*64+row*2:slot*64+row*2+2]
-                    if (slot<=64 or 105<=slot<=136) and (attr&0xf0)==0x40:continue
+                    if background(slot,attr):continue
                     if zx!=15 or zy!=255:covered.paste(255,(xx,yy,xx+16,yy+16));continue
                     mask=7 if attr&8 else 3 if attr&4 else 0;code=(low|((attr<<12)&0xf0000))&~mask
                     for ph in range(mask+1):covered.paste(255,(xx,yy),tile(code|ph,attr&3,tuple(p[(attr>>8)*16:(attr>>8)*16+16])).getchannel('A'))

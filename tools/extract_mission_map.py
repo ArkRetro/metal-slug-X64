@@ -5,7 +5,7 @@ This recovers the observed region, not an unseen ROM level or gameplay logic.
 """
 import argparse,collections,csv,json,struct
 from pathlib import Path
-from neo_scene import state,trace_hints
+from neo_scene import state,trace_hints,ram_slots
 
 def animation_disabled(writes,frame):
     """LSPC bit 3 as last written before the update that produced `frame`.
@@ -14,12 +14,26 @@ def animation_disabled(writes,frame):
     value=[v for f,v in writes if f<frame]
     return bool(value and value[-1]&8)
 
-def extract(roots,output,allow_backdrop_timeline=False,frames=None):
+def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=False,banks=(4,)):
     if isinstance(roots,Path):roots=[roots]
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
     observations=[];backdrops=set();flashes=[]
     paths=[path for root in roots for path in sorted(root.glob('vram*.bin'),key=lambda p:int(p.stem[4:]))]
-    traces={};maps={};phases={};lspc_writes={};baseline={};origin_events=[]
+    traces={};maps={};phases={};lspc_writes={};baseline={};origin_events=[];slot_changes=[];slot_headers={}
+    def maps_slots(root,frame):
+        # {logical layer: first slot} from the layer headers of `frame`.
+        if root not in slot_headers:
+            slot_headers[root]=collections.defaultdict(dict)
+            for row in csv.DictReader((root/'layers.csv').read_text().splitlines()):
+                h=bytes.fromhex(row['header']);slot_headers[root][int(row['frame'])][int(row['object'],16)]=h
+        hs=slot_headers[root].get(frame)
+        if not hs:return {}
+        full=hs[0x10c72e][0x14:0x1c]==hs[0x10d7b6][0x14:0x1c]
+        out={}
+        for layer,obj in ((0,0x10e83e),(2 if full else 1,0x10d7b6),(3,0x10c72e)):
+            b=struct.unpack_from('>H',hs[obj],0x2c)[0]
+            if b!=0xffff:out[layer]=b+1
+        return out
     for path in paths:
         root=path.parent
         if root not in maps:
@@ -50,7 +64,15 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None):
         v=struct.unpack('>34304H',path.read_bytes());ram=ram_path.read_bytes()
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
         trace=traces[root]
-        scene=state(v,ram,trace_hints(trace,frame) if trace else None);camera=scene['camera'];offsets=list(scene['offsets'])
+        slots=None
+        if ram_layers:
+            # Slot ranges of the layer objects (+0x2C) must be constant over
+            # the SCB lag window (layers.csv), else the frame is not used.
+            slots=ram_slots(ram)
+            window={tuple(sorted(maps_slots(root,frame-k).items())) for k in range(4)} if (root/'layers.csv').exists() else {tuple(sorted(slots.items()))}
+            if len(window)!=1 or next(iter(window))!=tuple(sorted(slots.items())):
+                slot_changes.append(dict(frame=frame,captures=str(root)));continue
+        scene=state(v,ram,trace_hints(trace,frame) if trace else None,slots=slots,banks=banks);camera=scene['camera'];offsets=list(scene['offsets'])
         origins=None
         if maps[root]:
             # A layer whose map pointer is unchanged but whose column origin moved
@@ -70,7 +92,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None):
                     if (str(root),layer,origin) not in {(e['captures'],e['layer'],e['origin']) for e in origin_events}:
                         origin_events.append(dict(captures=str(root),layer=layer,object=f'0x{obj:06X}',map=f'0x{pointer:06X}',first_frame=frame,origin=origin,baseline_origin=base[1],shift=-16*(origin-base[1])))
                 origins.append([f'0x{pointer:06X}',origin])
-        used={v[c['slot']*64+r*2+1]>>8 for c in scene['columns'] for r in range(min(c['rows'],32)) if (v[c['slot']*64+r*2+1]&0xf0)==0x40}
+        used={v[c['slot']*64+r*2+1]>>8 for c in scene['columns'] for r in range(min(c['rows'],32)) if (v[c['slot']*64+r*2+1]&0xf0)>>4 in banks}
         if p[-1]==0x7fff and used and all(w==0x7fff for pal in used for w in p[pal*16+1:pal*16+16]):
             # Full-screen white flash (an explosion palette effect): every pen of
             # every background palette and the backdrop are white. Such a frame
@@ -82,7 +104,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None):
             vertical_offsets=scene['vertical_offsets'],active=scene['active'],map_origins=origins,
             **({'animation_phase':phases[root][frame]} if phases[root] else {}),
             **({'auto_animation_disabled':animation_disabled(lspc_writes[root],frame)} if lspc_writes[root] is not None else {}),
-            full_speed_mid=scene['full_speed_mid'],
+            full_speed_mid=scene['full_speed_mid'],**({'background_slots':{str(k):v for k,v in slots.items()},'banks':list(banks)} if ram_layers else {}),
             player_x16=struct.unpack_from('>I',ram,0x14ec)[0],player_y16=struct.unpack_from('>I',ram,0x14f0)[0]))
         for col in scene['columns']:
             slot,x,y,rows,layer=(col[k] for k in ('slot','x','y','rows','layer'))
@@ -95,7 +117,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None):
                 if sy>=496:sy-=512
                 if sy+16<=16 or sy>=240:continue
                 low,attr=v[slot*64+row*2:slot*64+row*2+2]
-                if (attr&0xf0)!=0x40:continue
+                if (attr&0xf0)>>4 not in banks:continue
                 code=low|((attr<<12)&0xf0000);mask=7 if attr&8 else 3 if attr&4 else 0
                 code &= ~mask
                 pal=tuple(p[(attr>>8)*16:(attr>>8)*16+16])
@@ -117,6 +139,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None):
         camera_max=max(o['camera'] for o in observations),width=max(o['camera'] for o in observations)+320,
         selection='first observed; dynamic coordinate variants retained separately',
         layers=[dict(numerator=n,denominator=d) for n,d in ((1,2),(3,4),(1,1),(1,1))],
+        **({'ram_layers':True,'slot_change_frames':slot_changes} if ram_layers else {}),
         palettes=palettes,cells=records,observations=observations,conflicts=conflicts,flash_frames=flashes,map_origin_events=origin_events)
     (output/'map.json').write_text(json.dumps(report,separators=(',',':'))+'\n')
     print('Observed map:',len(records),'cells;',len(palettes),'palettes;',len(conflicts),'coordinate variants; camera',report['camera_max'])
@@ -125,4 +148,6 @@ if __name__=='__main__':
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('captures',type=Path,nargs='+');p.add_argument('--output',type=Path,default=Path('filesystem/mission1'))
     p.add_argument('--allow-backdrop-timeline',action='store_true',help='Keep per-observation backdrop values for research; runtime event mapping remains required')
     p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames (e.g. exclude the mission-end fade)')
-    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline,a.frames)
+    p.add_argument('--ram-layers',action='store_true',help='Background SCB slot ranges from the layer objects (+0x2C) instead of the fixed Mission 1 ranges')
+    p.add_argument('--banks',type=lambda v:tuple(int(x,0) for x in v.split(',')),default=(4,),help='C-ROM banks (code bits 16..19) of background tiles')
+    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline,a.frames,a.ram_layers,a.banks)

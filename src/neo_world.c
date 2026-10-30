@@ -68,6 +68,9 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     memset(&w->soldiers[i],0,sizeof(w->soldiers[i]));w->soldiers[i].active=true;w->constructed[i]=false;
     w->spawned++;
 }
+static void sound_request(neo_world_t *w,uint16_t word) {
+    if (w->sound_count<NEO_WORLD_SOUNDS) w->sounds[w->sound_count++]=word;else w->sound_dropped++;
+}
 /* ---- soldier events -------------------------------------------------------- */
 static void place(neo_contact_actor_t *a,const neo_contact_actor_t *source,int dx,int dy,
     const neo_contact_parent_t *scene,uint8_t epoch) {
@@ -87,6 +90,7 @@ static void place(neo_contact_actor_t *a,const neo_contact_actor_t *source,int d
 static void soldier_event(void *context,const neo_soldier_event_t *e) {
     tick_t *t=context;neo_world_t *w=t->w;
     switch (e->kind) {
+    case NEO_SOLDIER_EVENT_SOUND:sound_request(w,e->value);break;
     case NEO_SOLDIER_EVENT_KNIFE_HIT:
         t->hits++;
         if (t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER) w->hit_x=HI(w->soldiers[w->order[t->current].index].b.projected_x);
@@ -191,6 +195,7 @@ static bool run_throw(tick_t *t,unsigned i) {
     unsigned before=w->draw_count;
     t->draw_kind=NEO_WORLD_THROW;t->draw_flash=false;t->draw_palette=0;
     unsigned events;neo_throw_result_t r=neo_throw_actor_step(o,&frame,&services,emit,t,&events);
+    if (events&NEO_THROW_AUDIO_1027) sound_request(w,0x1027); /* 03BE52 burst on terrain contact */
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t handle=(uint8_t)(w->draws[k].attributes>>8);
         w->draws[k].palette=handle<COUNT(throw_palette_ids)?throw_palette_ids[handle]:0;

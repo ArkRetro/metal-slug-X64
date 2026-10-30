@@ -9,6 +9,7 @@
 #include "retro_events.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "game_audio.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -31,6 +32,7 @@ static void reset_game(void) {
     msx_game_vehicle_reference(&game);vehicle_renderer_load();
     debugf("MSX vehicle reference encounter\n");
 #endif
+    game_audio_sync(&game);
 }
 #if MSX_RETRO25D
 static retro_events_t depth_events;
@@ -99,6 +101,7 @@ bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     has_entry=true;entry_x=world_x;entry_y=world_y;
     previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();
+    game_audio_sync(&game);
     debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
     return true;
 }
@@ -129,6 +132,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
     }
     msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
+    game_audio_update(&game);
     if (game.hits!=old_hits) debugf("MSX enemy hit=%u\n",game.hits);
     if (vehicle_health!=game.vehicle.health) debugf("MSX vehicle health=%u\n",game.vehicle.health);
     if (wreckage!=game.wreckage_cells) debugf("MSX vehicle wreckage=%u\n",game.wreckage_cells);

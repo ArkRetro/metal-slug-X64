@@ -29,6 +29,7 @@ typedef struct {
     neo_world_t world;bool world_enabled;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
+    unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

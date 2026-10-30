@@ -5,6 +5,8 @@
 #include "msx_audio.h"
 #include "entry_meta.h"
 #include "title_intro.h"
+#include "game_audio.h"
+#include "msx_perf.h"
 static void fail(const char *message) {
     console_init();printf("MSX ERROR: %s\n",message);debugf("MSX ERROR: %s\n",message);
     for (;;) wait_ms(100);
@@ -47,10 +49,11 @@ int main(void) {
     for (;;) {msx_audio_service();joypad_poll();msx_cinematic_draw(display_get());}
 #endif
     msx_cinematic_close();
+    if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
     actor_init();
     if (!actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
     for (;;) {
-        msx_audio_service();joypad_poll();
+        uint32_t audio_started=TICKS_READ();msx_audio_service();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-audio_started);joypad_poll();
         joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);input.btn=joypad_get_buttons(JOYPAD_PORT_1);
         actor_draw(display_get(),input);
     }

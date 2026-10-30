@@ -1,6 +1,7 @@
 {
- "descriptors": 491,
+ "descriptors": 652,
  "palettes": [
+  "0x103",
   "0x121",
   "0x122",
   "0x123",
@@ -9,6 +10,12 @@
   "0x1a",
   "0x1b",
   "0x20b",
+  "0x37d",
+  "0x37e",
+  "0x380",
+  "0x3a6",
+  "0x3a7",
+  "0x3ac",
   "0x3ba",
   "0x3fd",
   "0x46e",
@@ -20,17 +27,19 @@
   "0x4b9",
   "0x87f",
   "0x883",
-  "0x93"
+  "0x93",
+  "0x9b",
+  "0xd0"
  ],
  "missing_palettes": [],
  "stats": {
-  "zoomed_entries_skipped": 67,
-  "frames": 120,
-  "pixels_equal": 1337228,
-  "pixels_different": 5221,
-  "pixels_overlapping": 105276,
-  "rank_2": 58,
-  "rank_1": 62
+  "zoomed_entries_skipped": 57,
+  "frames": 132,
+  "pixels_equal": 1341271,
+  "pixels_different": 6164,
+  "pixels_overlapping": 104503,
+  "rank_2": 66,
+  "rank_1": 66
  },
  "frames": [
   {
@@ -359,8 +368,8 @@
    "capture": "bld1",
    "frame": 6120,
    "update_frame": 6120,
-   "equal": 24587,
-   "different": 0
+   "equal": 24134,
+   "different": 51
   },
   {
    "capture": "bld1",
@@ -400,8 +409,8 @@
   {
    "capture": "bld1",
    "frame": 6300,
-   "update_frame": 6299,
-   "equal": 24543,
+   "update_frame": 6300,
+   "equal": 24442,
    "different": 0
   },
   {
@@ -471,7 +480,7 @@
    "capture": "bld1",
    "frame": 6600,
    "update_frame": 6598,
-   "equal": 20530,
+   "equal": 20621,
    "different": 0
   },
   {
@@ -763,55 +772,6 @@
   },
   {
    "capture": "trk3",
-   "frame": 6900,
-   "update_frame": 6895,
-   "equal": 918,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 6960,
-   "update_frame": 6958,
-   "equal": 1153,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 7020,
-   "update_frame": 7016,
-   "equal": 1139,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 7080,
-   "update_frame": 7079,
-   "equal": 1153,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 7140,
-   "update_frame": 7139,
-   "equal": 1153,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 7200,
-   "update_frame": 7198,
-   "equal": 1122,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
-   "frame": 7260,
-   "update_frame": 7260,
-   "equal": 0,
-   "different": 0
-  },
-  {
-   "capture": "trk3",
    "frame": 7020,
    "update_frame": 7017,
    "equal": 233,
@@ -871,6 +831,139 @@
    "frame": 7500,
    "update_frame": 7498,
    "equal": 196,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7800,
+   "update_frame": 7797,
+   "equal": 793,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7830,
+   "update_frame": 7827,
+   "equal": 904,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 912,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7890,
+   "update_frame": 7888,
+   "equal": 829,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7920,
+   "update_frame": 7918,
+   "equal": 788,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7950,
+   "update_frame": 7948,
+   "equal": 782,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 782,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8010,
+   "update_frame": 8008,
+   "equal": 892,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8040,
+   "update_frame": 8040,
+   "equal": 0,
+   "different": 892
+  },
+  {
+   "capture": "pri1",
+   "frame": 8070,
+   "update_frame": 8068,
+   "equal": 826,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7830,
+   "update_frame": 7828,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7890,
+   "update_frame": 7888,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7920,
+   "update_frame": 7918,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7950,
+   "update_frame": 7948,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8010,
+   "update_frame": 8008,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8070,
+   "update_frame": 8068,
+   "equal": 404,
    "different": 0
   }
  ]

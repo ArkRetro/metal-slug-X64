@@ -52,6 +52,7 @@ typedef struct neo_ga_flags {
     uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */
     uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
+    uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
 } neo_ga_flags_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
@@ -88,6 +89,7 @@ struct neo_genv {
     /* ROM 0C88B0: wreck template stamped into the static collision grid. */
     void (*stamp)(void *ctx,neo_gactor_t *a,uint32_t template_address);
     uint16_t view[4];                /* RAM 10E9D2..10E9D8 (visible rectangle) */
+    uint16_t pickup_box[8];          /* RAM 10C5EC/10C5F4: item pickup boxes (x,y,w,h) of players 1/2 */
     /* ROM 040110: object-list entry (scene-root-relative position). */
     void (*marker)(void *ctx,int32_t x,int32_t y,uint8_t height,uint8_t id);
     uint8_t *marker_seq;             /* RAM 10C446 */

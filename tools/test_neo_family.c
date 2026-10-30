@@ -26,6 +26,7 @@
 #include <string.h>
 #define MSX_SOLDIER_PROGRAMS 1
 #include "../src/neo_region.h"
+#include "../src/neo_collision.h"
 #include "../src/neo_soldier_ai.h"
 #include "soldier_ai_tables.h"
 typedef struct { int creator; uint32_t routine,frame; uint8_t pre[0xb0]; } family_node_t;
@@ -34,7 +35,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
-    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
+    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8];
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -202,9 +203,15 @@ int main(void) {
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
     e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
     e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+#ifdef FAMILY_STAMPS
+    /* Collision stamps of other actors made before the family's first
+     * update (seen in the RAM dumps of the capture). */
+    {static const uint32_t st[][3]=FAMILY_STAMPS;
+     for (unsigned i=0;i<sizeof(st)/sizeof(st[0]);i++) {const uint8_t *t=ga_rom(st[i][2]);assert(t);neo_collision_stamp((int32_t)st[i][0],(int32_t)st[i][1],t);}}
+#endif
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
-    unsigned compared=0,deleted=0;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
+    unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
         neo_gactor_t *a=&actors[u->node];
@@ -226,6 +233,7 @@ int main(void) {
         if (u->epoch>=0) epoch=(uint8_t)u->epoch;
         if (u->progress>=0) e.camera=(uint16_t)u->progress;
         for (unsigned g=0;g<9;g++) if (u->groups[g]>=0) groups[g]=(uint8_t)u->groups[g];
+        for (unsigned b=0;b<8;b++) if (u->boxes[b]>=0) e.pickup_box[b]=(uint16_t)u->boxes[b];
         if (u->signal>=0) {flags.dome_signal=(uint8_t)u->signal;flags.dome_group=(uint8_t)u->group;}
         front_value=u->front;
         if (u->cursor>=0) rng.cursor=(uint8_t)u->cursor;
@@ -250,6 +258,15 @@ int main(void) {
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
         ga_result_t r=neo_region_tick(a,&e);
+#ifdef FAMILY_STOP
+        {static const uint32_t stop[2]=FAMILY_STOP;
+         if (u->frame==stop[0]) {
+            /* An untranslated service the original reached in this update:
+             * the native code must stop exactly there. */
+            if (!(r==GA_UNSUPPORTED || e.unsupported) || e.unsupported_at!=stop[1]) {fprintf(stderr,"frame %u: expected the explicit stop at %05x (result %d at %05x)\n",u->frame,stop[1],r,(unsigned)e.unsupported_at);return 1;}
+            stopped=true;break;
+         }}
+#endif
         if (r==GA_UNSUPPORTED || e.unsupported) {fprintf(stderr,"frame %u node %d %05x unsupported %05x\n",u->frame,u->node,u->routine,(unsigned)e.unsupported_at);return 1;}
         /* Flags the family writes through neo_ga_flags_t. */
         if (flags.kill_request!=kill_before) {put(0x1067e3,flags.kill_request);if (!kill_frame) kill_frame=u->frame;}
@@ -280,7 +297,10 @@ int main(void) {
         }
     }
     for (unsigned i=0;i<NN;i++) if (!bound[i]) {fprintf(stderr,"node %u (%05x) never created\n",i,NODES[i].routine);return 1;}
-    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside%s\n",
-        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,swapped?", map swap requested":"");
+#ifdef FAMILY_STOP
+    if (!stopped) {fprintf(stderr,"explicit stop never reached\n");return 1;}
+#endif
+    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside%s\n",
+        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,swapped?", map swap requested":"");
     return 0;
 }

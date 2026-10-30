@@ -275,6 +275,133 @@ nodo, 216 actualizaciones en bucle cerrado (7004..7528), 30100 bytes
 iguales**; gráficos (paleta `0x93`, 9 volcados): 2044 píxeles iguales, 0
 distintos.
 
+## Prisionero `0x099862` (`src/neo_prisoner.c`)
+
+Registro `0x2D6E6E` (progreso 2336, grupo 9 no contado, palabras `1, 6, 3,
+320`). Atado (programa `29F6D0`, retrollamada `0x099BE6` que anda `+62` y
+gasta el presupuesto `+76`; `+80` = índice de forcejeo) hasta que lo golpean
+(`0x004C24` con acarreo → `0x099922`) o lo toca un jugador (`0x099C3C`:
+rectángulo `0x099D7E`; `0x09AB38` cuenta el rescate en RAM `10C5FC/10C600`,
+ahora `neo_ga_flags_t.rescued`). Suelto (`0x099956`) forcejea con la tabla
+`0x099D86` y cada `+7A` actualizaciones (rango `2D0BB8`) da uno de sus `+72`
+objetos (`0x099CEE` → `0x099D12` → `0x08CDB2`: objeto `0x08C374` tras el
+actor del guion, tipo de la lista `[2D0BEC + 4·+70]` por el RNG; ≥ `0x5A`
+no da nada). Tocado: saludo `29F9AC` (su retrollamada `0x099CCC` lanza el
+regalo restante, `0x099C9C`), salto (`29FA22/29FA40`, `0x0143E4`) y carrera
+(`0x099A8A`: velocidad `2D0B9E`, programa `29FA78`) hasta chocar con una
+pared (`+5F` bit 0: 30 actualizaciones más) o salir de la vista
+(`0x099AF8`). Sin presupuesto estando atado (`0x099A22`): un objeto y salto.
+`0x01AF9A` con los dos jugadores vivos se detiene explícitamente (el port
+tiene uno). No llama a `0x01B2BE` (sangre).
+
+Prueba `prisoner` (`data/prisoner_fixture.json.gz`, MAME `pri1`, rango
+`99862-99dc0`): **1 nodo, 124 actualizaciones en bucle cerrado
+(7772..8073), 17220 bytes iguales**, liberado por un disparo, tocado,
+saludo con un objeto lanzado (externo, sus números aleatorios consumidos),
+carrera y salida. El prisionero anda sobre los restos del carro (objeto
+dinámico `10C22E`, mapa `0x033ADC`) junto a la columna de pared de la
+tienda caída: la prueba genérica acepta ahora `--stamp X,Y,PLANTILLA`
+(sellos `0x0C88B0` de otra familia anteriores a la primera actualización;
+aquí los cuatro de la tienda en `+28/+2C = 0A48/0040`, la posición del
+tejado `0x0B680E` en la traza `barrel`). Comprobado en los volcados de RAM
+de `pri1`: la columna `x = 2576` vale `1F` en 7200 y `10` desde 7500; sin
+ella el bit 2 de `+5F` (bandera 8 del núcleo) no aparece en 7872.
+
+Gráficos: `tools/export_rest_sprites.py mslugx.zip robe1 bld1@54800-55700
+bld1@b6500-b6b00 trk3@33c98-34200 trk3@39500-3a100 trk3@a93c0-a9a00
+trk3@35600-35a00 pri1@99862-99dc0`: 547 descriptores (los 491 anteriores
+idénticos), paleta `0x9B`; los 10 volcados del prisionero: 7508 píxeles
+iguales, 0 distintos salvo el de 8040 (892), cuya actualización es del
+mismo fotograma del volcado (la lista mostrada es aún la anterior).
+
+## Objetos `0x08C374/0x08C37C` (`src/neo_item.c`)
+
+El tipo `+6E` elige un registro de `0x0E581A` (`0x08D2DA`, 0x18 bytes:
+`+1` lista de objetos `10C5C2`, `+2` aparición `2861BC`, `+4` programa,
+`+8` paletas, `+10` rutina de recogida, `+14` movimiento). `0x08C53C`: vida
+`+70` (0x258 por defecto, FFFF = siempre; a 0 parpadea, `+5F` bit 3, 30
+actualizaciones más), `+86`/`+7C`, el movimiento, `+78` actualizaciones de
+espera y `0x08C0CC`: a tamaño completo (`+12 = FF`), rectángulo `0x0E561C`
+contra las cajas de recogida de los jugadores (RAM `10C5EC/10C5F4`, que
+escribe el código del jugador original; ahora `neo_genv_t.pickup_box`),
+`0x00288A`; sale fuera de `0x0E5624` o, con `+8B`, sin creador.
+
+- **Parada explícita: la recogida.** Las rutinas `+10` dan armas (`0x0C0928`),
+  bombas o puntos (`0x0C0BF4`, `0x057948`) al jugador original, que el port
+  no tiene: el objeto se retira y se cuenta (`item_pickups`, registro `MSX
+  item taken`), sin efecto. `tools/test_gameplay.c` lo informa aparte.
+- Solo son nativos los tipos con movimiento `0x08B9B2` (caída con gravedad
+  `0xA000`, crece `+12/+13` de 8 en 8): `06, 18, 1C, 29, 2A, 2B, 2F, 4B, 4F
+  (H), 51`; con otro movimiento (`0x08BA10`, `0x08BA38`, `0x08BAB2`) el
+  constructor lo devuelve al mundo como externo. La lista `10C5C2` no tiene
+  lector en el port y no se mantiene.
+- Solo pasada la región (`MISSION1_REGION_END`): en la región la prueba de
+  mundo en bucle cerrado (`walk3`…`m3x`) los trata como actores de fuera y
+  los soldados nativos aún no sueltan los suyos (tipo 0 vía `0x08CDB2`).
+- Caja del jugador del port: la de pie de las capturas (`FFF8,0000,0010,
+  0020`, 158 de 167 volcados de `pri1/trk3/bld1/robe1`; las otras son el
+  tanque y otra postura que el port no tiene); sin jugador 2 (`8000`).
+- No llama a `0x01B2BE` (sangre).
+
+Prueba `hitem` (`data/hitem_fixture.json.gz` re-extraído de `pri1` con las
+lecturas de `10C5EC..10C5FB`; rango `8c37c-8c700`): **1 nodo, 128
+actualizaciones en bucle cerrado (7772..8081), 17780 bytes iguales** y la
+parada explícita exactamente en la recogida de 8081 (rutina `0x08B59E`, H).
+La prueba genérica acepta `--stop FOTOGRAMA,RUTINA` (la actualización de
+ese fotograma debe detenerse en esa rutina; las posteriores se descartan).
+Gráficos: programas de los tipos nativos y paletas `0x37D, 0x3A6, 0x380,
+0x37E, 0x3A7, 0x3AC, 0xD0, 0x103` (`0x3AC` de los volcados de
+`captures-boss/runA`, sin validar nodos allí); los 9 volcados del H:
+3636 píxeles iguales, 0 distintos. Total: 652 descriptores, 29 paletas, los
+anteriores idénticos.
+
+## Parada 1304: espera larga sin enemigo visible (diagnóstico)
+
+Síntoma (informe del usuario y sonda de anfitrión): en la parada de cámara
+1304 el guion espera en `0x2D67CA` unas 2000–2400 actualizaciones sin
+enemigo a la vista. Evidencia de MAME 0.264 (`captures-m1rest/run1, run4,
+run8, run9` y la nueva `captures-m1full/veh1`, idénticas): la recreativa
+espera en `0x2D67CA` del fotograma **4582 al 4967 (385)**, tras `0x2D673E`
+(4330..4581). Las apariciones de 4582 son el vehículo blindado `0x087E36`
+(grupo 1, nodo `103884`), el soldado tumbado contado `0x04115A` (grupo 0) y
+un soldado `0x0AF…` (grupo 2). En la recreativa el soldado tumbado **se
+sube a la plataforma dinámica del vehículo** en su primera actualización
+(`+38 = 10C22E`, posición relativa `(-8, 80)`), el vehículo lo trae a la
+vista (X 1656 → 1558: `0x088120` → `0x0881E6`/`0x088232`), el jugador lo
+mata (`0x040D06` en 4842) y la espera termina cuando el vehículo es
+destruido (`0x08845C` en 4966). En el port `0x087E36` es externo: el
+soldado se queda en el suelo en x = 342 de pantalla, fuera de la vista,
+dispara desde allí y solo entra cuando `+74` llega a 0. **Causa: falta el
+vehículo `0x087E36`** (hipótesis (b)); la cámara (1304 en ambos) y la X de
+aparición (1646 en ambos) coinciden.
+
+Preparado para portarlo: traza de familia `captures-m1full/veh1`
+(`MSX_REST_FAMILY_ROOTS=87e36 MSX_REST_BOSS_FROM=4500 MSX_REST_LAST=5000`) →
+`data/armored_fixture.json.gz` (rangos `87e36-89c00`, `40396-403d0`: 328
+actualizaciones 4581..4967, estados `087F2E, 08806E, 088120, 0881E6,
+088232, 08830C, 08833A, 0883E8, 08845C, 08889C, 0888C8, 08890E, 08893A,
+088A30` y su hijo `0x040396`). Constructor: salud y tres palabras por rango
+(`2D0E40/2D0EA2/2D0F04/2D0F66`), cuerpo sólido `0x004E76` (`0E4E90`),
+caja `0E4E84`, plataforma dinámica `0x0140C4` con el mapa `0E4FF2`, ataque
+`0E4E9E` mientras avanza. No portado todavía (sin nada aproximado en su
+lugar).
+
+## Otras paradas explícitas de esta tanda
+
+- **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura
+  `pri1`: el jugador se sube en 7841 y la HUD pasa a CANNON). Desde la
+  espera vacía (`0x092B0E`) usa el sistema de vehículos del jugador original
+  (`0x0AA610` elige al jugador cercano, `0x0AA760/0x0AA83A` lo ata a la
+  ranura `10C608/10C62C` y cambia la HUD, mando `0x0CA2CE`), que el port no
+  tiene: sigue externo.
+- **Prisionero `0x099DCC`**: la traza `pri1` solo tiene su espera atado (11
+  actualizaciones). La nueva captura `captures-m1full/fam2`
+  (`MSX_REST_FAMILY_ROOTS=99dcc,5ed84,403a0,9a67e,4857c,9d846,9d862,9d876,4115a,9f682,1913c,3458e
+  MSX_REST_BOSS_FROM=8000 MSX_REST_LAST=10600`, cámara 2336 → 3192) recoge
+  su liberación y las familias siguientes (helicóptero `0x0485xx..0x048Axx`,
+  espadachines `0x09Dxxx/0x09Exxx`, lanzacohetes `0x05EFxx..0x05F9xx`,
+  cohetes `0x09A0xx..0x09A5xx`) para la próxima tanda.
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

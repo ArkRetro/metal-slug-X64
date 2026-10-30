@@ -152,8 +152,9 @@ iguales, 0 distintos**
 | `0x09F682` camello, `0x09D846/62/76`, `0x09A67E` cohetes | externos |
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
+| `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
 | `0x031D92`, `0x099DCC`, `0x099E06` prisioneros, `0x03458E` Camel Slug | externos |
-| `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, `0x087E36`, piezas `0x08732C` | externos |
+| `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),
 el actor no se crea ni se dibuja y no cuenta en los grupos (las esperas "grupos

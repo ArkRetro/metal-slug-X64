@@ -138,6 +138,26 @@ void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     ga_project(a,e);
     ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|64u));
 }
+bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
+    /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
+     * a downward one from its end by |distance| + 8 (carry on either hit). */
+    neo_contact_actor_t c=ga_contact(a);
+    uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x14850);return false;}
+    self(a,e);
+    uint8_t b4008=(uint8_t)(c.flags15&32u?0:255);
+    int32_t d3=(int32_t)((uint32_t)(int32_t)distance<<16);
+    neo_kreq_t q={c.x,c.y,d3,0,parent,0,b4008,0xff,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x14850);return false;}
+    if (k.flags&1u) return true;
+    if (d3>=0) d3=S32(0u-(uint32_t)d3);
+    d3=S32((uint32_t)d3-0x80000u);
+    neo_kreq_t q2={k.x,k.y,0,d3,k.parent,0,b4008,0xff,0,0,0};
+    neo_kres_t k2;
+    if (!neo_kernel_sweep(e->kernel,&q2,&k2)) {ga_fail(e,0x14850);return false;}
+    return (k2.flags&1u)!=0;
+}
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
     const neo_anim_program_t *p=e->program?e->program(tag):NULL;
     if (!p) {ga_fail(e,tag);return false;}
@@ -145,25 +165,44 @@ bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
     ga_sw(a,0x24,0);ga_sw(a,0x26,speed);ga_sb(a,0x18,0);
     return true;
 }
-typedef struct {neo_gactor_t *a;neo_genv_t *e;ga_call_t call;bool fail;} anim_ctx_t;
+/* +18 is the program's own counter (neo_anim_state_t field18) while it runs:
+ * the program's byte commands on +18 (SET_BYTE/DEC_BYTE/COND_JUMP) see it. */
+typedef struct {neo_gactor_t *a;neo_genv_t *e;ga_call_t call;bool fail;neo_anim_state_t *s;uint32_t missing;} anim_ctx_t;
 static bool ev(void *context,neo_anim_kind_t kind,uint32_t asset,neo_anim_render_t *render) {
     anim_ctx_t *c=context;(void)render;
     if (kind==NEO_ANIM_REPLACE_PALETTE) {c->a->palette[0]=(uint16_t)asset;return true;}
-    return c->call && c->call(c->a,c->e,kind,asset,0);
+    if (c->call && c->call(c->a,c->e,kind,asset,0)) return true;
+    c->missing=asset;return false;
 }
 static bool rd(void *context,uint16_t field,uint8_t *value) {
-    anim_ctx_t *c=context;if (field>=NEO_GA_BYTES) return false;*value=c->a->m[field];return true;
+    anim_ctx_t *c=context;if (field>=NEO_GA_BYTES) return false;*value=field==0x18 && c->s?c->s->field18:c->a->m[field];return true;
 }
 static bool wr(void *context,uint16_t field,unsigned size,uint32_t value) {
     anim_ctx_t *c=context;
     if (field+size>NEO_GA_BYTES) return false;
     if (size==1) ga_sb(c->a,field,(uint8_t)value); else if (size==2) ga_sw(c->a,field,(uint16_t)value); else ga_sl(c->a,field,value);
+    if (c->s && field<=0x18 && field+size>0x18) c->s->field18=c->a->m[0x18];
     return true;
 }
 static void snd(void *context,uint16_t id) {anim_ctx_t *c=context;if (c->e->sound) c->e->sound(c->e->ctx,id);}
+/* A callback reads and writes the node: the program's timer +24, speed +26,
+ * flash +17 and counter +18 are in the node while it runs. */
+static void state_out(anim_ctx_t *c) {
+    if (!c->s) return;
+    ga_sw(c->a,0x24,c->s->timer);ga_sw(c->a,0x26,c->s->speed);ga_sb(c->a,0x17,c->s->flash);ga_sb(c->a,0x18,c->s->field18);
+}
+static void state_in(anim_ctx_t *c) {
+    if (!c->s) return;
+    c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);c->s->flash=ga_b(c->a,0x17);c->s->field18=ga_b(c->a,0x18);
+}
 static bool cl(void *context,uint32_t routine,uint16_t parameter,neo_anim_render_t *render) {
-    anim_ctx_t *c=context;(void)render;
-    return c->call && c->call(c->a,c->e,NEO_ANIM_CALL,routine,parameter);
+    anim_ctx_t *c=context;
+    /* ... and the attributes +15 (facing: 286AE8). */
+    state_out(c);if (render) ga_sb(c->a,0x15,(uint8_t)render->attributes);
+    bool ok=c->call && c->call(c->a,c->e,NEO_ANIM_CALL,routine,parameter);
+    state_in(c);if (render) render->attributes=ga_b(c->a,0x15);
+    if (ok) return true;
+    c->missing=routine;return false;
 }
 int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {
     neo_anim_state_t s={a->program,ga_l(a,0x50),a->cursor,ga_w(a,0x24),ga_w(a,0x26),ga_b(a,0x17),ga_b(a,0x18)};
@@ -171,13 +210,14 @@ int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {
     r.x=ga_w(a,0x3c);r.y=ga_w(a,0x40);r.attributes=ga_b(a,0x15);r.z=ga_w(a,0x1e);r.correction=ga_b(a,0x4d);
     for (unsigned i=0;i<4;i++) r.palettes[i]=ga_b(a,0x19+i);
     r.flash_palette=ga_b(a,0x16);
-    anim_ctx_t c={a,e,call,false};
+    anim_ctx_t c={a,e,call,false,&s,0};
     neo_anim_actor_t actor={ev,rd,wr,snd,cl,&c};
     neo_anim_result_t res=neo_anim_step_actor(&s,&r,e->emit,e->emit_ctx,1024,&actor);
     a->program=s.program;a->cursor=s.cursor;ga_sl(a,0x50,s.field50_tag);ga_sw(a,0x24,s.timer);ga_sw(a,0x26,s.speed);
     ga_sb(a,0x17,s.flash);ga_sb(a,0x18,s.field18);
     ga_sb(a,0x15,(uint8_t)r.attributes);
-    if (res!=NEO_ANIM_MORE && res!=NEO_ANIM_COMPLETE) {ga_fail(e,0x427a);return -1;}
+    /* An untranslated program callback stops at its own address. */
+    if (res!=NEO_ANIM_MORE && res!=NEO_ANIM_COMPLETE) {ga_fail(e,c.missing?c.missing:0x427a);return -1;}
     return res==NEO_ANIM_COMPLETE;
 }
 void ga_palette(neo_gactor_t *a,uint16_t resource) {
@@ -295,3 +335,74 @@ neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16
     return c;
 }
 bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e) {return !e->creator_alive || e->creator_alive(e->ctx,a);}
+/* ROM 040200: the object-list marker (stairs, ledges) the actor crosses this
+ * update (scene-root-relative position, 04015C: the nearest by X among the
+ * markers whose height band holds Y); -1 for none. *flag: 1 below the
+ * marker's top half, 2 above (040274). */
+int ga_marker_cross(neo_gactor_t *a,neo_genv_t *e,uint8_t *flag) {
+    neo_contact_parent_t root,p;
+    if (!ga_parent(e,ROOT_TAG,&root)) return -1;
+    uint32_t tag=ga_l(a,0x38);bool has=tag && ga_parent(e,tag,&p);
+    if (tag && !has) return -1;
+    uint32_t x=ga_l(a,0x28),y=ga_l(a,0x2c);
+    if (has) {x+=(uint32_t)p.x;y+=(uint32_t)p.y;}
+    x-=(uint32_t)root.x;y-=(uint32_t)root.y;
+    uint32_t best=0xffffffffu;uint32_t at=0;const neo_marker_t *m=NULL;
+    for (unsigned i=0;i<e->marker_count;i++) {
+        const neo_marker_t *k=&e->markers[i];
+        uint32_t dy=y-(uint32_t)k->y;
+        if (dy>=((uint32_t)k->height<<16)) continue;
+        uint32_t px=(uint32_t)k->x-(dy>>3);
+        uint32_t d=x-px;if ((int32_t)d<0) d=0u-d;
+        if (best>d) {best=d;at=px;m=k;}
+    }
+    if ((int32_t)best<0 || !m) return -1;
+    uint32_t d7=ga_l(a,0x30);
+    if (has) d7+=(uint32_t)p.x-(uint32_t)p.previous_x;
+    d7=d7-(uint32_t)root.x+(uint32_t)root.previous_x+x;
+    if ((int32_t)((x-at)^(d7-at))>=0) return -1;
+    uint32_t d1=(y-(uint32_t)m->y)*2u;
+    int8_t r=(int8_t)(uint8_t)((uint8_t)(d1>>16)-m->height);
+    *flag=(uint8_t)((r<0?0xffu:0u)+2u);
+    return m->id;
+}
+/* ROM 0402E6: follow marker `id` (the depth word 01AD8C, re-parent to the
+ * scene root 01AC4C, X along the marker's slope, 0143E4); the height left to
+ * climb (negative: none, or above). */
+int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id) {
+    if ((ga_w(a,0x66)&0xf000u)==0x8000u) ga_sw(a,0x1e,(uint16_t)(ga_w(a,0x66)-ga_w(a,0x40)));
+    const neo_marker_t *m=NULL;
+    for (unsigned i=0;i<e->marker_count && !m;i++) if (e->markers[i].id==id) m=&e->markers[i];
+    if (!m) {ga_stationary(a,e);return (int16_t)0x8000;}
+    neo_contact_parent_t root,op;
+    if (!ga_parent(e,ROOT_TAG,&root)) return (int16_t)0x8000;
+    uint32_t tag=ga_l(a,0x38);
+    uint32_t d0=ga_l(a,0x28),d1=ga_l(a,0x2c),d2=ga_l(a,0x30),d3=ga_l(a,0x34);
+    if (tag!=ROOT_TAG) {
+        bool has=tag && ga_parent(e,tag,&op);
+        d2+=d0;d3+=d1;
+        if (has) {d0+=(uint32_t)op.previous_x;d1+=(uint32_t)op.previous_y;d2+=(uint32_t)op.x;d3+=(uint32_t)op.y;}
+        d0-=(uint32_t)root.previous_x;d1-=(uint32_t)root.previous_y;d2-=(uint32_t)root.x;d3-=(uint32_t)root.y;
+        d2-=d0;d3-=d1;
+    }
+    uint32_t d4=(uint32_t)((int32_t)(d1+d3-(uint32_t)m->y)>>3);
+    d2=(uint32_t)m->x-d0-d4;
+    ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d2);ga_sl(a,0x34,d3);ga_sl(a,0x38,ROOT_TAG);
+    ga_air(a,e);
+    uint32_t h=(uint32_t)m->height<<16;
+    uint32_t r=h+(uint32_t)m->y+(uint32_t)root.y-ga_l(a,0x40);
+    if ((int32_t)r>(int32_t)h) r=0xffffffffu;
+    return (int16_t)(uint16_t)(r>>16);
+}
+/* ROM 014A02: kernel sweep (013968, 10C004 = 0, 10C008 = FF, 10C009 = 0)
+ * from the actor's block by (dx,dy) pixels; the end point and its object
+ * become `child`'s +28/+2C/+38 (not projected). */
+void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy) {
+    uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
+    if (parent==0xff) {ga_fail(e,0x14a02);return;}
+    self(a,e);
+    neo_kreq_t q={(int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(int32_t)((uint32_t)(int32_t)dx<<16),(int32_t)((uint32_t)(int32_t)dy<<16),parent,0,0xff,0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return;}
+    ga_sl(child,0x28,(uint32_t)k.x);ga_sl(child,0x2c,(uint32_t)k.y);ga_sl(child,0x38,parent==k.parent?tag:ktag(k.parent));
+}

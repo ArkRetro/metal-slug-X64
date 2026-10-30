@@ -246,11 +246,6 @@ static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creato
     if (at<0) {w->overflow++;return NULL;}
     /* A family not ported yet: the actor is not created (counted). */
     if (!neo_region_routine(routine)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
-    /* Items (neo_item.c) are native past the region (script beyond
-     * MISSION1_REGION_END). In the region they stay outside actors: the
-     * region's closed-loop world fixture records them as such, and the
-     * native soldiers do not drop theirs (0AF... -> 08CDB2) yet. */
-    if (neo_item_routine(routine) && !neo_world_region_clear(w)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
     uint8_t depth=(uint8_t)(w->order[at].depth+1u);
     neo_gactor_t *a=ga_alloc(w,routine,creator_tag,v68,depth);
     if (!a) return NULL;
@@ -260,7 +255,9 @@ static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creato
 static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script) {
     tick_t *t=ctx;neo_world_t *w=t->w;
     int at=after_script?find(w,NEO_WORLD_SCRIPT,0):(creator?order_of_gactor(w,creator):t->current);
-    return ga_insert(t,at,routine,after_script?SCRIPT_TAG:(creator?NEO_GA_TAG(creator->index):0),creator?ga_b(creator,0x68):0);
+    /* 0040BC copies +68 from its A6: the creator, or the script actor for
+     * 00411C (+68 = 0). */
+    return ga_insert(t,at,routine,after_script?SCRIPT_TAG:(creator?NEO_GA_TAG(creator->index):0),!after_script && creator?ga_b(creator,0x68):0);
 }
 static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id);}
 static void g_camera_mode(void *ctx,uint8_t mode) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_set_auto(&t->w->camera,mode);}
@@ -949,11 +946,13 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * others are the tank and one more pose the port has not); no player 2. */
     for (unsigned i=0;i<8;i++) g->pickup_box[i]=0x8000u;
     if (t.player_valid) {g->pickup_box[0]=0xfff8u;g->pickup_box[1]=0;g->pickup_box[2]=0x10;g->pickup_box[3]=0x20;}
+    if (w->pickup_input) memcpy(g->pickup_box,w->pickup_input,sizeof(g->pickup_box));
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
+    g->markers=e->markers;g->marker_count=e->marker_count;
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;g->blood=w->blood;
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */

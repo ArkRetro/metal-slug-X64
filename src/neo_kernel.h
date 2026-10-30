@@ -75,4 +75,8 @@ uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t
  * absolute point; the point relative to it. */
 bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
     int32_t *ox,int32_t *oy,uint8_t *object);
+/* Stair/ledge marker of the object list RAM 10C3A2/10C3F4 (registered by ROM
+ * 040110: position relative to the scene root, height, id; queried by
+ * 040200/0402E6). */
+typedef struct { int32_t x,y; uint8_t height,id; } neo_marker_t;
 #endif

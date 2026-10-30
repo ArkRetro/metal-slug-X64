@@ -335,9 +335,17 @@ escribe el código del jugador original; ahora `neo_genv_t.pickup_box`),
   (H), 51`; con otro movimiento (`0x08BA10`, `0x08BA38`, `0x08BAB2`) el
   constructor lo devuelve al mundo como externo. La lista `10C5C2` no tiene
   lector en el port y no se mantiene.
-- Solo pasada la región (`MISSION1_REGION_END`): en la región la prueba de
-  mundo en bucle cerrado (`walk3`…`m3x`) los trata como actores de fuera y
-  los soldados nativos aún no sueltan los suyos (tipo 0 vía `0x08CDB2`).
+- Nativos en toda la misión (antes solo pasada `MISSION1_REGION_END`): la
+  prueba de mundo de la región los compara ahora como actores del mundo (ver
+  «Prisioneros `0x099DCC/0x099E06`»). Movimientos nativos: `0x08B9B2`,
+  `0x08BA10` (tipo 1A, el del bombardero), `0x08BA38` (24) y `0x08BAB2` (las
+  comidas 35, 38, 3A..3C, 3E, 43, 45..47, 58) y `0x08BD5A`; `0x08BAAA`
+  (`0x08CCD4`) y los demás siguen devolviendo el objeto como externo.
+  Retrollamadas nuevas de las comidas: `2881E6` (la 35 al caer suelta tres
+  36 con velocidades del RNG), `28A61A`, `289A5E`, `2887C2`, `288786`,
+  `28879A`, `288502`, `288DEC`, `288BEE`, `28904E`, `28906E`, `287D5C`,
+  `28774C`, `28AB28`, `28AB36` (`0x002F1A`). `0x08C66A` ejecuta el programa
+  con sus retrollamadas (antes sin ellas).
 - Caja del jugador del port: la de pie de las capturas (`FFF8,0000,0010,
   0020`, 158 de 167 volcados de `pri1/trk3/bld1/robe1`; las otras son el
   tanque y otra postura que el port no tiene); sin jugador 2 (`8000`).
@@ -529,6 +537,172 @@ movimiento `0x08BD5A` anda por el suelo); las de los tipos 31, 39 y 44
 son detenciones explícitas. Gráficos: 1232 descriptores, 39 paletas
 (faltan `0x37F, 0x133, 0x38E, 0x823`: ninguna captura las tiene).
 
+## Espadachines `0x09D846/0x09D862/0x09D876` (`src/neo_swords.c`)
+
+Registros del guion en las cámaras 2556..2789 (`0x2D6EFC`, `0x2D6F28`,
+`0x2D6F6A..0x2D6FA6`, `0x2D7000`, `0x2D702C`; grupos 0, 2 y 5 contados) y
+los que suelta el helicóptero `0x04857C` (creadores `0x04870C/0x04871C/
+0x047A6C`, aún externos). Traducción manual de `0x09D846..0x09EC34`:
+constructores `0x09EEB8` (palabras `+6E..+76` → banderas `+96/+98`,
+temporizador `+8A`, `+8C = FFFF`) y `0x09EF6A` (`0x09D876`: punto objetivo
+`+7E`, objeto `+8C/+8E`, cuchillos `+95`), `0x09D89A` (suelo, proyección,
+paleta por `0x01B2BE` en `0x09EFE4`: **0x3FE con BLOOD ON, 0x0B8 con OFF**,
+caja `0x09F610`, palabras de rango `2D2244..2D24B0`, jugador más cercano
+`0x01AF9A` guardado en `+6E` como el nodo original `1014C4/101574`).
+Estados: patrulla `0x09D964`, reposo `0x09D9C0/0x09DA3A`, acercamiento
+`0x09DB44`, persecución `0x09DC5C`, carrera `0x09DD12`, salto de ataque
+`0x09DDCE`, huida `0x09DE84` (temporizador `+8A`), aterrizaje `0x09DF5E`,
+guardia `0x09DFB2`, giro `0x09E00A`, lanzamiento de cuchillo `0x09E062`
+(retrollamadas `0x09F508` → cuchillo `0x09ECCC`, `0x09F536`), tajo
+`0x09E122..0x09E1FE` (fila de ataque `0x09F62C`), saltito `0x09E25A/
+0x09E250`, caída `0x09E34C`; colas `0x09E77E/0x09E79C/0x09E7AC` (cualquier
+golpe de `0x004C24` mata: objeto `0x09F53E` → `0x08CDB2`, muerte por el
+tipo `+5A` o una de las cuatro de `0x09F66C` por el RNG) y `0x09E81C`
+(retirada fuera de `0x09F64C`). Muertes `0x09E842/0x09E8C2/0x09E920/0x09EAB8`
+con la salpicadura `0x01C97A` (`src/neo_effects.c`; paleta por `0x01B2BE`
+en `0x01C996`: **0x37A ON, 0x3BA OFF**). `0x09EC34` (comprobación del
+cartucho) y `0x09ECC4` (`0x0041AC`) borran. Servicio nuevo del actor
+genérico: `ga_probe_forward` (`0x014850`, sonda hacia delante y hacia
+abajo, la misma que usa el soldado).
+
+- **Parada explícita**: `0x09E382` (bandera `+96` bit 3, palabra `+72` del
+  registro distinta de 0: salto a un punto fijo `0DD8/0EE0` por `0x0B64BA`),
+  no alcanzada en las grabaciones ni en las partidas del port.
+- Sin validar por la prueba (no aparecen en `fam2`): el lanzamiento de
+  cuchillo y el cuchillo `0x09ECCC` (paletas `0x16C..0x16E` sin captura),
+  el tajo, la huida y el salto de ataque.
+- Sangre: `data/blood_fixture.json` regenerado
+  (`tools/extract_blood_fixture.py /home/user/captures/blood`, con las
+  llamadas del lado ON en `0x09EFFE/0x09F010` y `0x01C9A8`): sitios
+  `0x09EFE4` (13 peticiones ON, 0x3FE) y `0x01C996` (11, 0x37A) pasan a
+  traducidos; `0x09F598` (`0x09F562`, otra familia) sigue sin traducir.
+
+Prueba `swords` (`data/swords_fixture.json.gz`, MAME `captures-m1full/fam2`,
+rango `9d800-9ef00`): **13 nodos, 818 actualizaciones en bucle cerrado
+(8199..8605), 112700 bytes iguales**, 13 borrados, 8 salpicaduras fuera de la
+familia; muertes por las cuatro rutinas, carrera, guardia, giro y patrulla.
+
+Gráficos: `... cfam@8c37c-8c700 fam2@9d800-9ef00 fam2@1c97a-1c97a
+--palette-capture /home/user/captures/blood` (opción nueva: paletas de una
+captura sin traza, aquí las ON `0x3FE` y `0x37A`): 1546 descriptores (los
+1330 anteriores idénticos), 45 paletas (las anteriores idénticas; nuevas
+`0xB8`, `0x37A`, `0x3FE`), 175 volcados; los 14 de `fam2` (13 de los espadachines, 1 de la
+salpicadura) dan 26143 píxeles iguales y 3529 distintos en 5 volcados (8310..8400, 8520),
+cuando bajan del helicóptero (sin investigar: probablemente el orden de
+sprites con el helicóptero, que aún no es nativo).
+
+## Prisioneros `0x099DCC/0x099E06` (`src/neo_prisoner.c`)
+
+Registros del guion en toda la misión (desierto y aldea incluidos:
+`0x2D6384`, `0x2D639E`, `0x2D6666` (`0x099E06`), `0x2D66D6`, `0x2D67DA`,
+`0x2D69D0`, `0x2D6ED0`, `0x2D6F42`, `0x2D70C4`; grupo 9 sin contar) y los
+tres de la escotilla del jefe. Palabras `+6E..+76`: `+6E` cara/vagar (3 =
+`0x0029F2(3)`), `+72` mira a la izquierda, `+74` objeto que regala (`FFFF`
+ninguno, `FFFE` se lo da al jugador), `+76` su vida, `+78` detrás. Traducción
+manual de `0x099DCC..0x09A5EE`: constructor `0x09AC16` (paletas `0x382/0x3FA`,
+profundidad `8820`; `0x03C526` no crea nada en la Misión 1), colgado atado
+`29FAD8` hasta un golpe (`0x09AD2A` → `0x004C24`; `+88` cuenta el
+estremecimiento de `0x09AD1C`), se suelta (`29FB34`); `0x099E06` atado a la
+silla (`29FCBE`, contador `+18` del programa), golpeado cae (`29FDE6`) y deja
+la cuerda `0x09A97C` (`29FE0A`). Suelto (`0x099FD8`): paletas `0x381/0x3FA`,
+caja `0x09AD4C`, vaga (`29FE52`, `+62` = 1,5 px) `+7A` actualizaciones, se
+para (`29FED0`) en una pared o al acabarse, cae de las cornisas (`29FBEC`);
+en un marcador de la lista de objetos (`0x040200`, ahora
+`ga_marker_cross`) sube (bit 0: `29FFE4/29FFFA` con `0x0402E6`, ahora
+`ga_marker_follow`; luego salta `2A0074/2A011C`) o baja (bit 1:
+`2A0128/2A01D0/2A024A`). Tocado (`0x09AB9A`: rectángulo `0x09ADE0`; RAM
+`10C303` vale FF en las 91 lecturas de `fam2`) se cuenta el rescate
+(`0x09AAD6`: `10E9E8/10E9EA` por `0x0C8CC2`, `10C5FC/10C600`, `10C5FF/10C603`
+con `+74 = FFFE`; ahora `neo_ga_flags_t.tally/rescued/gifts`), gira, saluda
+(`29FEEC`: su retrollamada `0x09ACD6` da el objeto `+74` por `0x08CDB2`
+colocado por `0x014A02`, ahora `ga_sweep_place`), saluda con la mano
+(`2A02B6`) y corre a la izquierda (`2A0260`) hasta una pared, 30
+actualizaciones más. Fuera de `0x09ADD0` (`0x0C8BEC`) acaba en `0x09A5EE`
+(comprobación del cartucho → `0x004188`: borrar).
+
+- **Parada explícita**: `+74 = FFFE` al acabar el saludo (`0x0DDCDA`: el
+  prisionero sigue al jugador para darle el objeto), no grabado; ambos
+  jugadores dentro del rectángulo (`0x09ABD6`, el port tiene uno).
+- Servicio del motor de animación: el contador `+18` del programa se lee y
+  escribe ahora a través del estado del programa (antes `SET_BYTE/DEC_BYTE`
+  sobre `+18` se perdían al acabar el paso); una retrollamada sin traducir se
+  detiene en su propia dirección (antes `0x00427A`).
+- `0x0040BC` copia `+68` de su A6: con `0x00411C` es el actor del guion
+  (`+68 = 0`), no el creador (`neo_world.c`).
+
+Prueba `prisoner2` (`data/prisoner2_fixture.json.gz`, MAME
+`captures-m1full/fam2`, rangos `99dcc-9a5ee`, `9a97c-9a9c2`): **2 nodos, 259
+actualizaciones en bucle cerrado (8079..8444), 35980 bytes iguales**, con
+bajada por un marcador (`0x09A4FA`), rescate, saludo con su objeto y salida.
+La prueba genérica lee ahora la lista de objetos (`10C3A2/10C3F4`) que leyó la
+actualización (`tools/extract_family_fixture.py` junta los bytes de altura e
+identificador leídos aparte).
+
+Prueba de mundo de la región (`tools/test_neo_world.c`,
+`data/soldier_world_fixture.json.gz` re-extraído de `walk3`, `fire3`,
+`entry-walk3`, `entry-fire3`, `m2x`, `m3x` con los prisioneros, la cuerda y
+los objetos `0x08C374` como actores del mundo): **5248 actualizaciones,
+22880 estados de actores genéricos** (antes 17934), 15168 llamadas RNG
+nativas (873 inyectadas, antes 879). La extracción distingue `0x09A5EE`
+(compartida con las cajas `0x09A67E`, externas allí), marca `pending` los
+objetos creados detrás del recorrido (tras el actor del guion por un actor
+posterior; corren desde la actualización siguiente), deja fuera los objetos
+que crea `0x0C962C` (externo) y graba las cajas de recogida `10C5EC/10C5F4`
+de cada actualización (las restaura el sistema de continuación antes que los
+actores del mundo: `m2x` 7525). La prueba inyecta el golpe externo de un
+cuerpo sin salud (`+5F` bit 7) y compara la capa `10D7B6` como `10C72E`
+cuando el extractor ya las igualó.
+
+Gráficos: `... fam2@1c97a-1c97a fam2@99dcc-9a9c2 --palette-capture
+/home/user/captures/blood --keep <exportación anterior>` (opción nueva
+`--keep`: las paletas que ninguna captura dada tiene se conservan; las
+capturas `hfam/cfam` ya no están): 1807 descriptores (los 1546 anteriores
+idénticos), 49 paletas (nuevas `0x381`, `0x382`, `0x3FA`, `0x117`; las
+anteriores idénticas); los volcados de `fam2` 8100..8190 del prisionero:
+1402 píxeles iguales, 0 distintos.
+
+Partida de `tools/test_gameplay.c`: los rescates cambian el recorrido; la
+parada 1304 dura 146 (cota inferior 140; la recreativa 385, ver arriba), la
+cámara sube a 32 y las armas 0C y 08 (constructor `0x0641EC`) de los regalos se disparan
+como paradas explícitas contadas (sus disparos no están portados; la H sigue
+siendo nativa entera). `armored_x` acepta el blindado hasta x < 352 (su
+cuerpo entra en la vista 40 px antes que `+3C`).
+
+## Frutas de la ventana central de la ruina (cajas `0x09A67E` + objetos)
+
+Informe del usuario: tras el derrumbe, disparando a la ventana central de la
+ruina caen manzanas en la recreativa y en el port no. Son las cajas ocultas
+`0x09A67E` del guion en (2072,136) (`0x2D6ABC..0x2D6BD2`, ya nativas en
+`neo_secret.c`), cuyos tipos `+74` son 85, 54 y 56 (0x55, 0x36, 0x38), y las
+de (1984,104) y (2340,176) (0x2C..0x2E, 0x37, 0x45, 0x54, 0x24). Los tipos
+con movimiento `0x08BAB2/0x08BA38` se devolvían como externos: no aparecía
+ningún objeto. Con los movimientos y retrollamadas de las comidas
+(prisioneros, arriba) son nativos; además:
+
+- El paso de animación del actor genérico pone en el nodo el temporizador
+  `+24`, la velocidad `+26`, el destello `+17`, el contador `+18` y los
+  atributos `+15` antes de cada retrollamada y los recoge después (antes una
+  retrollamada que escribía la velocidad, `28AB36`, o giraba el objeto,
+  `286AE8`, se perdía al acabar el paso).
+- `0x08BCCC` (tipo 0x55 y su tabla `0x08BCC0`) sigue sin traducir: el objeto
+  se devuelve como externo (contado).
+
+Captura nueva `captures-m1full/food1` (`MSX_REST_FAMILY_ROOTS=9a67e,9a688,
+9a692,8c374,8c37c MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=7800`): tras el
+derrumbe salen de la ventana cinco objetos 0x58 (7037..7045), luego 0x37,
+0x54, 0x38/0x36/0x2E y 0x24. Prueba `food` (`data/food_fixture.json.gz`,
+rangos `9a5ee-9a9c2`, `8c374-8c700`, `--script-routines 8c374,8c37c`: las
+cajas las crea el guion, los objetos las cajas): **28 nodos, 1762
+actualizaciones en bucle cerrado (6989..7338), 244580 bytes iguales**, tres
+recogidas de comida (puntos: el arma no cambia). **Parada de la prueba** en
+7339 (corte del fixture): los objetos de la ventana tocan allí la colisión de
+los escombros `0B53A8` (bit 2 de `+5F`), que la rejilla del port no tiene
+(la colisión de la capa 10C72E cambia con el mapa; sin traducir).
+Gráficos: `... food1@8c374-8c700`: 1807 descriptores, 49 paletas, sin
+cambios; los 26 volcados de `food1`: 10576 píxeles iguales, 1631 distintos
+(volcados de 7110..7260 con muchos objetos superpuestos y actualizaciones del
+mismo fotograma, como en `pri1`).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura
@@ -583,7 +757,7 @@ MSX_REST_BOSS_FROM=7200 MSX_REST_LAST=8100`; en esa partida la cámara llega a
 | --- | --- | --- |
 | `data/cannon_fixture.json.gz` | `92a00-95600`, `3b4e0-3b600`, `14a4e-14a60`, `3523c-35300` | cañón `0x092A32` (+ `0x093278`, `0x0954DC`) y sus hijos, 219 actualizaciones (7772..8100) |
 | `data/prisoner_fixture.json.gz` | `99862-99dc0` | prisionero `0x099862`, 124 actualizaciones |
-| `data/prisoner2_fixture.json.gz` | `99dcc-99e60` | prisionero `0x099DCC`, 11 actualizaciones |
+| `data/prisoner2_fixture.json.gz` | `99dcc-9a5ee`, `9a97c-9a9c2` | prisioneros `0x099DCC` de `fam2` (prueba `prisoner2`, más abajo) |
 | `data/hitem_fixture.json.gz` | `8c37c-8c700` | objeto H `0x08C37C`, 129 actualizaciones (depende del sistema de armas del jugador, que el port no tiene) |
 
 Los espadachines `0x09D846/62/76`, el lanzacohetes `0x05ED84` y el
@@ -609,9 +783,15 @@ Comprobado en ares (`/workspace/emulator/fixr/rubble.png`,
   dibujan celda a celda (antes toda la capa 2 o 3 desde la tienda/derrumbe):
   441 → 400 dibujos en la arena del jefe.
 
-Otros problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
-cámara aún en 1920, la zona `x < 2016` bajo la fachada desaparecida muestra
-el color de fondo (en las grabaciones la cámara ya está en 2021 treinta
-fotogramas después y esa zona no vuelve a verse; sin evidencia de qué la
-cubre); 646 píxeles distintos en la validación de sprites de los
+Resuelto después (informe del usuario en MiSTer: «falta parte del
+edificio»): justo tras el derrumbe, con la cámara aún en 1920, la zona
+`x < 2016` bajo la fachada desaparecida mostraba el color de fondo. La
+captura `captures-m1full/col1` (volcado en cada fotograma 6980..7035,
+`MSX_REST_EXTRA_DUMPS`) muestra que en la recreativa los escombros `0B53A8`
+ocupan toda la pantalla desde el cambio (cámara 1922..2010 en 6994..7017):
+`tools/extract_mission_map.py col1 --frames 6997:7035` da sus celdas de capa 3
+y `tools/merge_rubble_cells.py` añade a `swapped_cells` las 46 de las columnas
+1920..2000 (las 112 ya conocidas, idénticas en código, giro y paleta): 158
+celdas. Las columnas 1856..1904 no se ven con la cámara en 1920 o más. Otros
+problemas: 646 píxeles distintos en la validación de sprites de los
 espadachines árabes (arriba).

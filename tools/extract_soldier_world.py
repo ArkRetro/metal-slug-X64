@@ -7,7 +7,7 @@ world's actors (script, runners, soldiers and deaths, thrown objects, death
 splashes) and the complete ROM 0029C6 call log of the update with the value
 each call returned (recovered by stepping the dumped ring; equality with the
 next dump is asserted). Calls by actors outside the world (player, bullets,
-sparks, the 099DCC/099E06 entities) are injected by the test at their
+sparks) are injected by the test at their
 original position; calls by world actors must be made natively.
 
 Expected results per update: RNG ring, script position, group counters and,
@@ -24,8 +24,24 @@ GACTOR=set([0x2916E,0x29294,0x29326,0x2936C,0x293DC,0x29438,0x294A2,0x294E4,0x29
     0x1C6EE,0x1C706,0x1C71E,0x1C736,0x1C74E,0x1C766,0x1C77E,0x1C796,0x1C9E6,0x1D764,0x1D7B8,
     0x1D86C,0x1D8A4,0x1D8D4,0x1D8E4,0x1D908,0x1D934,0x1D93C,0x1D944,0x1D958,0x1D9C6,
     0xDC97E,0xDCA54,0xDCA9C,0xDCADC,0xDCAF8,0xDCBB6,0xDCBC2,0xDD3E0,0xDD418,0xDD642,0xDD6BE,0x9503C,0xDD802,0xDD82A,
-    0x403A0,0x40396,0x403C0])
+    0x403A0,0x40396,0x403C0,
+    # Prisoners 099DCC/099E06 (src/neo_prisoner.c), the rope 09A97C and the
+    # items 08C374 they give (src/neo_item.c).
+    0x99DCC,0x99E48,0x99E64,0x99E7A,0x99E06,0x99F64,0x99F80,0x99F9C,0x99FD8,0x9A000,0x9A042,0x9A06E,0x9A0F6,0x9A11C,
+    0x9A142,0x9A160,0x9A17E,0x9A1FC,0x9A230,0x9A278,0x9A290,0x9A2D8,0x9A322,0x9A346,0x9A364,0x9A376,0x9A396,0x9A3B2,
+    0x9A3D4,0x9A3F2,0x9A438,0x9A454,0x9A46E,0x9A4A2,0x9A4D2,0x9A4FA,0x9A516,0x9A534,0x9A552,0x9A58E,0x9A5AA,0x9A97C,
+    0x9A9AC,0x9A5EE,0x8C374,0x8C37C,0x8C53C,0x8C564,0x8C66A,0x8C68E,0x8C6B2])
 def gactor_routine(rt):return rt in GACTOR
+# 09A5EE (the cartridge check before 004188) is shared by the prisoners and
+# the hidden item boxes 09A67E.. (outside actors here): a node at 09A5EE is
+# a world actor only when it was last seen as a prisoner or its rope.
+SHARED=0x9A5EE;PRISONER_NODES=set()
+def note_prisoners(acts):
+    for n,rt in acts:
+        if rt==SHARED:continue
+        if 0x99DCC<=rt<SHARED or rt in (0x9A97C,0x9A9AC):PRISONER_NODES.add(n)
+        else:PRISONER_NODES.discard(n)
+def gactor_node(n,rt):return gactor_routine(rt) and (rt!=SHARED or n in PRISONER_NODES)
 def world_routine(rt):
     if gactor_routine(rt):return True
     # Soldier family, pistol death (040DB4/040DF0), death splash (040F88/040FD4),
@@ -51,12 +67,12 @@ def owned(frame):
     # Generic actors are world actors only when created by the script, a
     # runner or another world generic actor (an effect created by an outside
     # actor, e.g. a thrown object's burst, stays outside).
-    acts=dict(frame.actors());world=set()
+    acts=dict(frame.actors());world=set();note_prisoners(acts.items())
     changed=True
     while changed:
         changed=False
         for n,rt in acts.items():
-            if n in world or not gactor_routine(rt):continue
+            if n in world or not gactor_node(n,rt):continue
             c=frame.l(n+0x0C)
             if 0x1C8FC<=rt<0x1CA9E and c==SCRIPT:continue
             if c==SCRIPT or acts.get(c) in (0x1A422,0x1A438) or c in world:world.add(n);changed=True
@@ -78,7 +94,7 @@ def exec_order(ev,first,nxt,before,after,family):
         c=before.l(n+0x0C)
         if THROW_CTORS(rt) and c==SCRIPT:family[n]='throw'
         elif SOLDIER_RT(rt):family[n]='soldier'
-        elif gactor_routine(rt) and (c==SCRIPT or before.l(c) in RUNNERS or family.get(c)=='gactor'):family[n]='gactor'
+        elif gactor_node(n,rt) and (c==SCRIPT or before.l(c) in RUNNERS or family.get(c)=='gactor'):family[n]='gactor'
         else:family.setdefault(n,None)
     world=[];log_pos=[];exec_pos={};idx=0;cur=None;created=set();allocs=[];splats=[];cur_world=False;cur_rt=None
     for e in events:
@@ -86,6 +102,10 @@ def exec_order(ev,first,nxt,before,after,family):
             _,n,rt,cr=e
             if rt in (0xAF17E,0x4115A):family[n]='soldier'
             elif THROW_CTORS(rt) and cr==SCRIPT:family[n]='throw'
+            # An item 08C374 after the script actor (00411C) belongs to the
+            # world only when a world actor made it (0C962C, outside, makes
+            # some too).
+            elif rt in (0x8C374,0x8C37C,0x8C53C,0x8C564,0x8C66A,0x8C68E,0x8C6B2) and cr==SCRIPT and not cur_world:family[n]=None
             elif gactor_routine(rt) and (cr==SCRIPT or family.get(cr)=='gactor' or family.get(cr)=='runner'):family[n]='gactor'
             elif rt in (0x40F88,):family[n]='splash'
             elif rt in RUNNERS:family[n]='runner'
@@ -118,6 +138,9 @@ def exec_order(ev,first,nxt,before,after,family):
     # test's node mapping.
     for n,rt in reversed(allocs):
         if family.get(n)=='throw' and n not in exec_pos:world.append(dict(node=n,kind=3,created=True,position=2*idx+2))
+        # Likewise generic actors created after the script actor (00411C:
+        # the items 08C374 of 08CDB2) that run from the next update.
+        if family.get(n)=='gactor' and n not in exec_pos:world.append(dict(node=n,kind=5,created=True,pending=True,position=2*idx+2))
     return world,log_pos,exec_pos,splats
 def tick_frames(cap,first,last):
     out=[];prev=cap.frame(first).b(0x10C33A)
@@ -201,7 +224,9 @@ def extract(path,last,label):
                 world.append(dict(node=n,kind=kind_of(ra[n]),created=True))
                 continue
             if n==SCRIPT:world.append(dict(node=n,kind=0,created=False))
-            elif rt!=DEAD and world_routine(rt):world.append(dict(node=n,kind=kind_of(rt),created=created))
+            # An item created behind the traversal (after the script actor
+            # by a later actor) still holds its constructor: it runs next update.
+            elif rt!=DEAD and world_routine(rt):world.append(dict(node=n,kind=kind_of(rt),created=created,pending=created and rt in (0x8C374,0x8C37C)))
         fcalls=[c for g in range(f,ticks[i+1]) for c in calls.get(g,[])]
         words,cur=before.rng();log=[]
         for node,_ in fcalls:
@@ -250,7 +275,16 @@ def extract(path,last,label):
                 world.append(dict(node=n,kind=5,created=True,transient=True,position=cpos+1))
         player=dict(px=before.w(PLAYER+0x3C),py=before.w(PLAYER+0x40),flags15=before.b(PLAYER+0x15),
             alive=before.l(PLAYER)!=DEAD,dead=bool(before.b(PLAYER+0x5F)&0xC0),follow=before.b(PLAYER+0x7A),
-            unregistered=before.l(PLAYER+0x50)==0)
+            unregistered=before.l(PLAYER+0x50)==0,
+            # Item pickup boxes RAM 10C5EC/10C5F4 (x,y,w,h per player), as
+            # the player's previous update left them (read by 08C0CC).
+            pickup=list(struct.unpack('>8H',before.raw(0x10C5EC,16))))
+        # A player put back in play (continue): the box is restored ahead of
+        # the world actors (m2x 7525: the item 102964 runs before the player
+        # node and is taken with the box of the next dump).
+        pa=list(struct.unpack('>8H',after.raw(0x10C5EC,16)))
+        for q in (0,4):
+            if player['pickup'][q]==0x8000 and pa[q]!=0x8000:player['pickup'][q:q+4]=pa[q:q+4]
         if before.l(PLAYER)==DEAD and after.l(PLAYER)!=DEAD:
             # Continue: the player node is re-created and placed by an actor
             # that runs before the world actors; the position they read is not

@@ -340,7 +340,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             int32_t x=g->aim_up?g->x+g->facing*3*MSX_UNIT:g->x+g->facing*24*MSX_UNIT;
             int32_t y=(g->aim_up?108:80)*MSX_UNIT-g->y;
             neo_world_player_shot(&g->world,ammo.kind==5?0x1b6dcu:0x1b716u,x,y,angle,0);
-            g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;break;
+            g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;break;
         }
         if (ammo.kind) {
             static const uint32_t constructor[MARCO_WEAPON_IDS]={0x1b782,0xc5508,0x644c4,0x6381c,0xa71f8,0x1b6dc,0xc46d6,0x646b0,

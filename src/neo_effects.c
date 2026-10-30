@@ -1,4 +1,5 @@
 #include "neo_region.h"
+#include "neo_blood.h"
 /* Visual effects of the region (ROM 01C6E8..01DF20), manual translation:
  * one-shot effects (01C6EE.. constructors, routine 01C9E6), smoke emitters
  * (01DA40 -> 01D764/01D7B8 with the emission lists) and the vehicle exhaust
@@ -28,7 +29,15 @@ static const fx_t *simple_of(uint32_t r) {
 }
 static ga_result_t simple_tick(neo_gactor_t *a,neo_genv_t *e) {
     const fx_t *f=simple_of(L(0));
-    if (f) {
+    if (L(0)==0x1c97au) {
+        /* 01C97A: blood splash of the swordsmen 09D846.. (palette by 01B2BE
+         * at 01C996), mirrored, rectangle 01DEF0. */
+        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
+        if (!ga_anim_start(a,e,0x22e97e,0x100)) return GA_UNSUPPORTED;
+        ga_palette(a,neo_blood_palette(NEO_BLOOD_SPLASH_1C97A,e->blood));
+        SB(0x15,B(0x15)^1u);SL(0x82,0x1def0);
+        SB(0x15,B(0x15)&~2u);SL(0x50,0);SL(0,0x1c9e6);
+    } else if (f) {
         if (!ga_anim_start(a,e,f->program,0x100)) return GA_UNSUPPORTED;
         SL(0x82,f->rect);ga_palette(a,f->palette);
         if (!(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);   /* 01DEA2 */
@@ -186,11 +195,11 @@ static ga_result_t particle_tick(neo_gactor_t *a,neo_genv_t *e) {
     return GA_MORE;
 }
 bool neo_effects_routine(uint32_t r) {
-    return simple_of(r) || r==0x1c9e6 || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6;
+    return simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6;
 }
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
-    if (simple_of(r) || r==0x1c9e6) return simple_tick(a,e);
+    if (simple_of(r) || r==0x1c9e6 || r==0x1c97a) return simple_tick(a,e);
     if (r==0x1d764 || r==0x1d7b8) return smoke_tick(a,e);
     if (r==0x1d944 || r==0x1d958 || r==0x1d9c6) return particle_tick(a,e);
     if (r==0x1d93c) {

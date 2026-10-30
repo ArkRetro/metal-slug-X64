@@ -74,6 +74,9 @@ typedef struct {
     neo_throw_actor_t throws[NEO_WORLD_THROWS];uint8_t throw_palettes[NEO_WORLD_THROWS][4];
     neo_world_splash_t splashes[NEO_WORLD_SPLASHES];
     neo_gactor_t gactors[NEO_WORLD_GACTORS];
+    /* Item pickup boxes RAM 10C5EC/10C5F4 from outside (a recording); NULL:
+     * the port's player keeps the standing box (neo_world_tick). */
+    const uint16_t *pickup_input;
     neo_world_dyn_t dyn[NEO_KDYN_COUNT];
     neo_contact_parent_t dyn_parent[NEO_KDYN_COUNT];  /* projected blocks as parents */
     /* ROM 004C24 registry of the generic actors, double buffered: owners

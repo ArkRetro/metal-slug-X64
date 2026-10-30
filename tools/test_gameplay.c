@@ -30,8 +30,10 @@ static int armored_x(const msx_game_t *g) {
         const neo_gactor_t *a=&g->world.gactors[i];
         uint32_t r=ga_l(a,0);
         if (!a->active || r<0x87e36u || r>0x88b02u || (ga_b(a,0x5f)&0x80u)) continue;
+        /* Its body reaches 40 px left of +3C: at the right edge (x up to
+         * 352) it is in view. */
         int x=(int16_t)ga_w(a,0x3c);
-        if (x>=0 && x<320) return g->camera+x;
+        if (x>=0 && x<352) return g->camera+x;
     }
     return -1;
 }
@@ -269,7 +271,10 @@ int main(int argc,char **argv) {
     assert(g.world.pickup.taken>0 && !g.world.item_pickups);
     assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.expiries>0);
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
-    assert(!g.weapon_stops && g.world.player_shots==g.weapon_shots+g.grenades && !g.world.shot_dropped);
+    /* Every H shot is native; the other weapons the prisoners give (their
+     * shots are not ported) stop explicitly at their constructor, counted. */
+    assert(g.world.player_shots==g.h_shots+g.grenades && !g.world.shot_dropped);
+    assert(g.weapon_stops==g.weapon_shots-g.h_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.world.pickup.blast_hits);fflush(stdout);
     assert(g.world.pickup.bullet_hits>0 && g.world.pickup.blast_hits>0);
     /* Native grenades 01BF46/01BF10 (neo_bullet.c): every one lands. */
@@ -287,16 +292,17 @@ int main(int argc,char **argv) {
     // brings the prone soldier in is destroyed. The pistol-only policy,
     // walking right into it (its solid body 004E76/0E4E90 stops the player
     // through the push-out 004ED2), needed 668 (~2000 while the vehicle was
-    // external); with the native grenades thrown at it the stop holds 194,
-    // under the arcade's 385.
+    // external); with the native grenades thrown at it the stop held 194,
+    // and 146 since the region's prisoners and their items are native (the
+    // rescues change the walk), under the arcade's 385.
     assert(g.solid_pushes>0 && !g.world.solid_unsupported);
-    assert(hold_max>=150 && hold_max<385);
+    assert(hold_max>=140 && hold_max<385);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     // The script camera stops at 3376 (boss arena); the player's view then
     // follows the oscillating boss-fight policy, so where it stands when the
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
-    assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    assert(g.world.ga_flags.collapsed && max_height==32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 16 (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

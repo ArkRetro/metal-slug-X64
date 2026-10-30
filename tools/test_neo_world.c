@@ -28,6 +28,8 @@ typedef struct {
     bool hit[NEO_WORLD_SOLDIERS];   /* +5B..+5D are written by the first hit */
     bool skipped[96];                /* transient entries the port did not create */
     bool existed[NEO_WORLD_GACTORS]; /* generic actors alive when the update began */
+    bool traced[NEO_WORLD_GACTORS];  /* generic actors that ran this update */
+    unsigned gskip[16],gskips;       /* created generic actors behind the traversal (00411C) */
     unsigned injected,bad_order,bullet_hits,external_attacks,splat_at,splats;
     char why[256];
 } ctx_t;
@@ -90,6 +92,10 @@ static void trace(void *context,uint8_t kind,uint8_t index) {
     /* A thrown object created this update is inserted after the script actor
      * (03BB8E -> 00411C), behind the traversal: it first runs next update. */
     while (c->executed<t->order_count && t->order[c->executed].created && t->order[c->executed].kind==NEO_WORLD_THROW) c->executed++;
+    /* Likewise a generic actor created behind the traversal (after the
+     * script actor by a later actor, 00411C: the items 08C374 of 08CDB2). */
+    while (c->executed<t->order_count && t->order[c->executed].pending) {if (c->gskips<16) c->gskip[c->gskips++]=c->executed;c->executed++;}
+    if (kind==NEO_WORLD_GACTOR) c->traced[index]=true;
     /* A transient entry (created and deleted by a world actor within the
      * update) is matched only by a generic actor the port created this
      * update; otherwise its calls are injected as an outside actor's. */
@@ -157,6 +163,9 @@ static const char *compare_gactor(const ctx_t *c,const neo_gactor_t *a,const uin
         if (o>=0x38 && o<0x3c) {
             uint32_t want=(uint32_t)m[0x38]<<24|(uint32_t)m[0x39]<<16|(uint32_t)m[0x3a]<<8|m[0x3b];
             uint32_t got=node_of_tag(c,ga_l(a,0x38));
+            /* The layer object 10D7B6 is recorded as the terrain 10C72E while
+             * both sit at the same place (asserted by the extractor). */
+            if (got==0x10d7b6u && want==0x10c72eu) got=want;
             if (want!=got) {snprintf(buf,sizeof(buf)," +38=%06x/%06x",(unsigned)got,(unsigned)want);return buf;}
             o=0x3b;continue;
         }
@@ -195,14 +204,24 @@ int main(void) {
             const world_tick_t *t=&cap->ticks[ti];
             c.t=t;c.executed=0;c.log_at=0;c.splat_at=0;c.bullet_at=0;c.why[0]=0;
             memset(c.skipped,0,sizeof(c.skipped));skipped_now=c.skipped;
-            for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) c.existed[i]=w.gactors[i].active;
+            for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {c.existed[i]=w.gactors[i].active;c.traced[i]=false;}
+            c.gskips=0;
             w.video_phase=t->video;w.scroll_y=t->scroll_y;memcpy(w.view,t->view,sizeof(w.view));
             neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u),t->unregistered};
             unsigned before_calls=c.injected;
+            w.pickup_input=t->pickup;
             neo_world_tick(&w,t->scroll_x,&p);
             bullets_before(&c,0xffffu);
             while (c.executed<t->order_count && t->order[c.executed].created && t->order[c.executed].kind==NEO_WORLD_THROW) c.executed++;
+            while (c.executed<t->order_count && t->order[c.executed].pending) {if (c.gskips<16) c.gskip[c.gskips++]=c.executed;c.executed++;}
             while (c.executed<t->order_count && t->order[c.executed].transient) {c.skipped[c.executed]=true;c.executed++;}
+            /* Generic actors created this update that did not run yet (after
+             * the script actor) take the skipped created entries in list order. */
+            for (unsigned i=0,k=0;i<w.order_count;i++) {
+                unsigned g=w.order[i].index;
+                if (w.order[i].kind!=NEO_WORLD_GACTOR || c.existed[g] || c.traced[g] || !w.gactors[g].active) continue;
+                if (k<c.gskips) c.map[NEO_WORLD_GACTOR][g]=t->order[c.gskip[k++]].node;
+            }
             /* Map the objects thrown this update to their nodes, in list order;
              * a slot freed (and possibly reused) this update loses its node. */
             for (unsigned i=0;i<NEO_WORLD_THROWS;i++) {
@@ -308,7 +327,9 @@ int main(void) {
                 {
                     neo_gactor_t *g=&w.gactors[found];
                     uint16_t want=(uint16_t)(o->m[0x4e]<<8|o->m[0x4f]);
-                    if (want<ga_w(g,0x4e)) {
+                    /* A body without health (the prisoners) shows the
+                     * outside hit by +5F bit 7 (004C24 reads it next update). */
+                    if (want<ga_w(g,0x4e) || ((o->m[0x5f]&0x80u) && !(ga_b(g,0x5f)&0x80u) && ga_l(g,0x50))) {
                         static const unsigned off[]={0x4e,0x4f,0x5a,0x5b,0x5c,0x5d,0x5e,0x17,0x5f};
                         for (unsigned i=0;i<sizeof(off)/sizeof(off[0]);i++) ga_sb(g,off[i],o->m[off[i]]);
                         c.external_attacks++;

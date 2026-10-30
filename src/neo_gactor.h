@@ -57,6 +57,8 @@ typedef struct neo_ga_flags {
     uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
+    uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
+    uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
@@ -116,6 +118,9 @@ struct neo_genv {
     /* ROM 040110: object-list entry (scene-root-relative position). */
     void (*marker)(void *ctx,int32_t x,int32_t y,uint8_t height,uint8_t id);
     uint8_t *marker_seq;             /* RAM 10C446 */
+    /* Object list read this update (RAM 10C3A2/10C3F4 by 10000F bit 0:
+     * the one written during the previous update), for 040200/0402E6. */
+    const neo_marker_t *markers;unsigned marker_count;
     uint8_t flag448;                 /* RAM 10E448 */
     bool blood;                      /* RAM 10FD8F nonzero (soft-DIP BLOOD ON): 01B2BE clears the carry */
     const uint8_t *groups;           /* RAM 10C326..10C32E live counts (019DCA) */
@@ -162,6 +167,7 @@ uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */
+bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 014850: carry */
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed); /* 004256 */
 /* 00427A. `call` handles family callbacks (NEO_ANIM_CALL / events); returns
  * 1 complete, 0 more, -1 unsupported. */
@@ -185,4 +191,7 @@ void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy); /* 002E7C
 neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy); /* 0040BC + 01B220 */
 void ga_place_at(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01ACF2 */
 bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e);             /* 00409A carry */
+int ga_marker_cross(neo_gactor_t *a,neo_genv_t *e,uint8_t *flag);  /* 040200: marker id or -1 */
+int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id); /* 0402E6 */
+void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy); /* 014A02 */
 #endif

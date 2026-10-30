@@ -9,9 +9,14 @@ static inline int32_t neo_asr(int64_t v,unsigned shift) {
     int64_t divisor=(int64_t)1<<shift;
     return (int32_t)(v>=0?v/divisor:-((-v+divisor-1)/divisor));
 }
-static inline void neo_air_step(neo_air_t *p,int direction) {
+/* Acceleration (03BD3A), then the displacement of the air step (0143EE);
+ * the solid-body push-out 004ED2 runs between them. */
+static inline void neo_air_accel(neo_air_t *p,int direction) {
     p->vy+=neo_asr(-22*(int64_t)NEO_UNIT-p->vy,5);
     p->vx+=neo_asr(direction*4*(int64_t)NEO_UNIT-p->vx,direction?2:5);
+}
+static inline void neo_air_step(neo_air_t *p,int direction) {
+    neo_air_accel(p,direction);
     p->x+=p->vx;p->y+=p->vy;
 }
 #endif

@@ -404,6 +404,20 @@ static void convert(ctx_t *c,uint32_t label) {
     e.kind=NEO_BOSS_EFFECT_CONVERT;e.label=label;e.node=c->i;
     memcpy(e.image,N->f,NEO_BOSS_FIELDS);e.has_image=true;
     if (!SV->effect || !SV->effect(SV->context,&e)) {fail(c,label);return;}
+    /* Its descendants (shell trails reading the shell's palette and depth)
+     * follow it into the world: they now depend on generic state. */
+    for (;;) {
+        int16_t k=N->next;
+        if (k<0 || c->w->nodes[k].depth<=N->depth) break;
+        neo_boss_node_t *d=&c->w->nodes[k];
+        if (d->routine!=DEAD) {
+            neo_boss_effect_t f;memset(&f,0,sizeof(f));
+            f.kind=NEO_BOSS_EFFECT_CONVERT;f.label=d->routine;f.node=k;
+            memcpy(f.image,d->f,NEO_BOSS_FIELDS);f.has_image=true;
+            if (!SV->effect(SV->context,&f)) {fail(c,d->routine);return;}
+        }
+        d->routine=DEAD;N->next=d->next;d->routine=0;d->next=-1;
+    }
     kill(c->w,c->i);c->handed_off=true;
 }
 static void sound(ctx_t *c,uint16_t id) {if (SV->sound) SV->sound(SV->context,id);}
@@ -1454,14 +1468,24 @@ static void p2a244(ctx_t *c) {
     SW(0x66,0x1001);SW(0x1e,0x1001);SL(0x50,0);
     convert(c,0x1c71e);
 }
-/* ROM 02A680 (program callback): trail sprite, generic actor 02A3B4. */
+/* ROM 02A680 (program callback): trail sprite 02A3B4 behind the shell. The
+ * allocation result is not tested: on failure the writes go to the scratch. */
 static void p2a680(ctx_t *c) {
     int16_t i;neo_boss_node_t *ch=allocate(c,0x2a3b4,0x2a,&i);
     if (c->unsupported) return;
     ch->f[0x86]=B(0x86);
-    if (i>=0) place_root(c,ch,0,0); else place_root(c,&scratch_node,0,0);
-    CHECK;
-    effect_commit(c,ch,0x2a3b4);
+    place_root(c,ch,0,0);
+}
+/* ROM 02A3B4: trail sprite, follows its shell's palette and depth. */
+static void p2a3ce(ctx_t *c);
+static void p2a3b4(ctx_t *c) {p2a5ea(c);CHECK;anim_start(c,0x236c9a);CHECK;GO(0x2a3ce,p2a3ce);}
+static void p2a3ce(ctx_t *c) {
+    project(c);CHECK;
+    neo_boss_node_t *p=creator(c);
+    if (!p) {fail(c,0x2a3d4);return;}
+    SB(0x14,p->f[0x14]);
+    SW(0x1e,neo_boss_w(p,0x1e)-1u);
+    if (anim_step(c)) N->routine=0x2a18a;
 }
 /* ROM 02A6A2 (program callback): cycle the shell palette. */
 static void p2a6a2(ctx_t *c) {
@@ -1506,7 +1530,7 @@ static const entry_t routines[]={
     {0xd6c66,d6c66},{0xd6d30,d6d30},{0xd6d4c,d6d4c},{0xd6d6a,d6d6a},{0xd6dc0,d6dc0},{0xd6dd6,d6dd6},{0xd6dee,d6dee},
     {0xd6e26,d6e26},{0xd6e5e,d6e5e},{0xd6e86,d6e86},{0xd6ea0,d6ea0},{0xd6ebe,d6ebe},{0xd6f90,shell_ctor},
     {0xd6ffc,d6ffc},{0xd7020,d7020},
-    {0x2a18a,p2a18a},{0x2a244,p2a244},{0x2a2ac,p2a2ac},{0x2a2fe,p2a2fe},
+    {0x2a18a,p2a18a},{0x2a244,p2a244},{0x2a2ac,p2a2ac},{0x2a2fe,p2a2fe},{0x2a3b4,p2a3b4},{0x2a3ce,p2a3ce},
 };
 neo_boss_result_t neo_boss_step(neo_boss_t *w,int16_t i) {
     neo_boss_node_t *n=node_at(w,i);

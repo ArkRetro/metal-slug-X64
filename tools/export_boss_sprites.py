@@ -65,12 +65,12 @@ def main():
     # because some of them share the boss palette slots; only the pixels of
     # native draws are scored.
     from extract_boss_fight import parse,lanes
-    native_rt=lambda r:0xd5976<=r<0xd74d4 or r in (0x2a18a,0x2a244,0x2a2ac,0x2a2fe)
+    native_rt=lambda r:0xd5976<=r<0xd74d4 or r in (0x2a18a,0x2a244,0x2a2ac,0x2a2fe,0x2a3b4,0x2a3ce)
     main=fixture['nodes'][0]['addr'];passes=[];main_gone=[False]
     for u in parse(a.capture/'boss-trace.txt'):
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
-            if k=='W' and pc==0xa078:
+            if k=='W' and pc==0xa078 and ad<0x10f000:
                 if cur is None or len(cur['w'])>=6:cur=dict(w=[],z=0,native=native_rt(u['routine']));dl.append(cur)
                 cur['w'].append(d)
             elif k=='W' and pc==0xa080 and cur is not None:cur['z']=(cur['z']<<16|d)&0xffffffff

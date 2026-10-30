@@ -18,7 +18,7 @@
  * addresses: fields that held pointers keep opaque tags (ROM data labels,
  * NEO_BOSS_TAG node tags, the player tags 0x1014C4/0x101574 and scene object
  * tags). The animation program/cursor (+20) is native. */
-enum { NEO_BOSS_NODES=40,NEO_BOSS_FIELDS=0xb0 };
+enum { NEO_BOSS_NODES=96,NEO_BOSS_FIELDS=0xb0 };
 #define NEO_BOSS_TAG(index) (0x00b05000u|((uint32_t)(index)<<4))
 #define NEO_BOSS_IS_TAG(v) (((v)&0xfffff00fu)==0x00b05000u)
 #define NEO_BOSS_TAG_INDEX(v) ((unsigned)(((v)>>4)&0xffu))

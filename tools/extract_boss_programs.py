@@ -35,7 +35,7 @@ def roots(p1,bank):
         if p1[a:a+2]==b'\x22\x7c' and p1[a+6:a+10]==b'\x30\x3c\x01\x00':out.add(struct.unpack_from('>I',p1,a+2)[0])
     for t,n in TABLES:
         for i in range(n):out.add(rl(t+4*i))
-    out|={0x236c74}   # shell program started at 02A296 (0D6FF6 -> 02A260)
+    out|={0x236c74,0x236c9a}   # shell (02A296, from 0D6FF6 -> 02A260) and its trail (02A3B8)
     return sorted(out)
 def convert(bank,root):
     commands=[];where={}

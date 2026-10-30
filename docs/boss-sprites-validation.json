@@ -1,6 +1,6 @@
 {
- "descriptors": 260,
- "unique_tiles": 3426,
+ "descriptors": 264,
+ "unique_tiles": 3430,
  "palettes": [
   "0x223",
   "0x2ec",
@@ -17,9 +17,9 @@
   "0x393"
  ],
  "stats": {
-  "pixels_equal": 1689859,
-  "pixels_different": 2,
-  "vram_pixels_not_drawn_by_native_boss": 191538,
+  "pixels_equal": 1700890,
+  "pixels_different": 0,
+  "vram_pixels_not_drawn_by_native_boss": 180509,
   "frames": 102,
   "pass_rank_2": 51,
   "pass_rank_1": 51
@@ -90,9 +90,9 @@
    "update_frame": 10887,
    "pass_rank": 2,
    "draws": 19,
-   "equal": 17045,
+   "equal": 17050,
    "different": 0,
-   "uncovered": 5,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -100,9 +100,9 @@
    "update_frame": 10918,
    "pass_rank": 2,
    "draws": 30,
-   "equal": 17325,
+   "equal": 17345,
    "different": 0,
-   "uncovered": 20,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -110,9 +110,9 @@
    "update_frame": 10949,
    "pass_rank": 1,
    "draws": 39,
-   "equal": 17471,
+   "equal": 17554,
    "different": 0,
-   "uncovered": 83,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -120,9 +120,9 @@
    "update_frame": 10978,
    "pass_rank": 1,
    "draws": 41,
-   "equal": 16578,
+   "equal": 16707,
    "different": 0,
-   "uncovered": 129,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -130,9 +130,9 @@
    "update_frame": 11008,
    "pass_rank": 1,
    "draws": 41,
-   "equal": 15169,
+   "equal": 15378,
    "different": 0,
-   "uncovered": 209,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -140,9 +140,9 @@
    "update_frame": 11038,
    "pass_rank": 2,
    "draws": 31,
-   "equal": 14166,
+   "equal": 14335,
    "different": 0,
-   "uncovered": 2442,
+   "uncovered": 2273,
    "first_differences": []
   },
   {
@@ -150,9 +150,9 @@
    "update_frame": 11069,
    "pass_rank": 2,
    "draws": 24,
-   "equal": 11799,
+   "equal": 11902,
    "different": 0,
-   "uncovered": 2145,
+   "uncovered": 2042,
    "first_differences": []
   },
   {
@@ -160,19 +160,19 @@
    "update_frame": 11099,
    "pass_rank": 1,
    "draws": 27,
-   "equal": 13791,
+   "equal": 13881,
    "different": 0,
-   "uncovered": 1901,
+   "uncovered": 1811,
    "first_differences": []
   },
   {
    "frame": 11130,
    "update_frame": 11129,
    "pass_rank": 1,
-   "draws": 29,
-   "equal": 14661,
+   "draws": 30,
+   "equal": 14828,
    "different": 0,
-   "uncovered": 1076,
+   "uncovered": 909,
    "first_differences": []
   },
   {
@@ -180,9 +180,9 @@
    "update_frame": 11156,
    "pass_rank": 2,
    "draws": 34,
-   "equal": 16755,
+   "equal": 16945,
    "different": 0,
-   "uncovered": 190,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -190,9 +190,9 @@
    "update_frame": 11186,
    "pass_rank": 2,
    "draws": 40,
-   "equal": 16909,
+   "equal": 17144,
    "different": 0,
-   "uncovered": 235,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -200,9 +200,9 @@
    "update_frame": 11216,
    "pass_rank": 2,
    "draws": 41,
-   "equal": 15896,
+   "equal": 16153,
    "different": 0,
-   "uncovered": 257,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -210,19 +210,19 @@
    "update_frame": 11248,
    "pass_rank": 2,
    "draws": 29,
-   "equal": 15189,
+   "equal": 15353,
    "different": 0,
-   "uncovered": 164,
+   "uncovered": 0,
    "first_differences": []
   },
   {
    "frame": 11280,
    "update_frame": 11279,
    "pass_rank": 1,
-   "draws": 28,
-   "equal": 15161,
+   "draws": 29,
+   "equal": 15378,
    "different": 0,
-   "uncovered": 217,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -230,9 +230,9 @@
    "update_frame": 11309,
    "pass_rank": 1,
    "draws": 26,
-   "equal": 17472,
+   "equal": 17619,
    "different": 0,
-   "uncovered": 1865,
+   "uncovered": 1718,
    "first_differences": []
   },
   {
@@ -240,9 +240,9 @@
    "update_frame": 11339,
    "pass_rank": 1,
    "draws": 25,
-   "equal": 16867,
+   "equal": 16882,
    "different": 0,
-   "uncovered": 4239,
+   "uncovered": 4224,
    "first_differences": []
   },
   {
@@ -250,9 +250,9 @@
    "update_frame": 11369,
    "pass_rank": 1,
    "draws": 33,
-   "equal": 16790,
+   "equal": 16832,
    "different": 0,
-   "uncovered": 509,
+   "uncovered": 467,
    "first_differences": []
   },
   {
@@ -260,9 +260,9 @@
    "update_frame": 11396,
    "pass_rank": 2,
    "draws": 41,
-   "equal": 16911,
+   "equal": 17019,
    "different": 0,
-   "uncovered": 108,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -270,9 +270,9 @@
    "update_frame": 11426,
    "pass_rank": 2,
    "draws": 41,
-   "equal": 11536,
+   "equal": 11717,
    "different": 0,
-   "uncovered": 5138,
+   "uncovered": 4957,
    "first_differences": []
   },
   {
@@ -280,9 +280,9 @@
    "update_frame": 11456,
    "pass_rank": 2,
    "draws": 40,
-   "equal": 13350,
+   "equal": 13477,
    "different": 0,
-   "uncovered": 5772,
+   "uncovered": 5645,
    "first_differences": []
   },
   {
@@ -290,9 +290,9 @@
    "update_frame": 11489,
    "pass_rank": 1,
    "draws": 33,
-   "equal": 11116,
+   "equal": 11331,
    "different": 0,
-   "uncovered": 5511,
+   "uncovered": 5296,
    "first_differences": []
   },
   {
@@ -370,9 +370,9 @@
    "update_frame": 11728,
    "pass_rank": 2,
    "draws": 21,
-   "equal": 20175,
+   "equal": 20185,
    "different": 0,
-   "uncovered": 10,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -380,9 +380,9 @@
    "update_frame": 11758,
    "pass_rank": 2,
    "draws": 32,
-   "equal": 20660,
+   "equal": 20664,
    "different": 0,
-   "uncovered": 4,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -390,9 +390,9 @@
    "update_frame": 11789,
    "pass_rank": 1,
    "draws": 32,
-   "equal": 19191,
+   "equal": 19262,
    "different": 0,
-   "uncovered": 71,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -400,9 +400,9 @@
    "update_frame": 11817,
    "pass_rank": 2,
    "draws": 31,
-   "equal": 18304,
+   "equal": 18433,
    "different": 0,
-   "uncovered": 129,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -410,9 +410,9 @@
    "update_frame": 11847,
    "pass_rank": 2,
    "draws": 31,
-   "equal": 18081,
+   "equal": 18295,
    "different": 0,
-   "uncovered": 214,
+   "uncovered": 0,
    "first_differences": []
   },
   {
@@ -420,9 +420,9 @@
    "update_frame": 11878,
    "pass_rank": 2,
    "draws": 28,
-   "equal": 20322,
+   "equal": 20465,
    "different": 0,
-   "uncovered": 1418,
+   "uncovered": 1275,
    "first_differences": []
   },
   {
@@ -440,9 +440,9 @@
    "update_frame": 11938,
    "pass_rank": 1,
    "draws": 34,
-   "equal": 20556,
+   "equal": 20571,
    "different": 0,
-   "uncovered": 1475,
+   "uncovered": 1460,
    "first_differences": []
   },
   {
@@ -450,9 +450,9 @@
    "update_frame": 11968,
    "pass_rank": 1,
    "draws": 43,
-   "equal": 21855,
+   "equal": 21898,
    "different": 0,
-   "uncovered": 1858,
+   "uncovered": 1815,
    "first_differences": []
   },
   {
@@ -460,9 +460,9 @@
    "update_frame": 11998,
    "pass_rank": 1,
    "draws": 46,
-   "equal": 18456,
+   "equal": 18572,
    "different": 0,
-   "uncovered": 2394,
+   "uncovered": 2278,
    "first_differences": []
   },
   {
@@ -470,9 +470,9 @@
    "update_frame": 12028,
    "pass_rank": 1,
    "draws": 47,
-   "equal": 18253,
+   "equal": 18420,
    "different": 0,
-   "uncovered": 1361,
+   "uncovered": 1194,
    "first_differences": []
   },
   {
@@ -480,9 +480,9 @@
    "update_frame": 12058,
    "pass_rank": 1,
    "draws": 46,
-   "equal": 15851,
+   "equal": 16102,
    "different": 0,
-   "uncovered": 3380,
+   "uncovered": 3129,
    "first_differences": []
   },
   {
@@ -490,9 +490,9 @@
    "update_frame": 12088,
    "pass_rank": 1,
    "draws": 44,
-   "equal": 15792,
+   "equal": 15974,
    "different": 0,
-   "uncovered": 4449,
+   "uncovered": 4267,
    "first_differences": []
   },
   {
@@ -500,9 +500,9 @@
    "update_frame": 12118,
    "pass_rank": 1,
    "draws": 40,
-   "equal": 16510,
+   "equal": 16757,
    "different": 0,
-   "uncovered": 3353,
+   "uncovered": 3106,
    "first_differences": []
   },
   {
@@ -510,9 +510,9 @@
    "update_frame": 12148,
    "pass_rank": 1,
    "draws": 35,
-   "equal": 17546,
+   "equal": 17679,
    "different": 0,
-   "uncovered": 4487,
+   "uncovered": 4354,
    "first_differences": []
   },
   {
@@ -520,9 +520,9 @@
    "update_frame": 12178,
    "pass_rank": 1,
    "draws": 37,
-   "equal": 20373,
+   "equal": 20383,
    "different": 0,
-   "uncovered": 3543,
+   "uncovered": 3533,
    "first_differences": []
   },
   {
@@ -530,9 +530,9 @@
    "update_frame": 12208,
    "pass_rank": 1,
    "draws": 36,
-   "equal": 19242,
+   "equal": 19267,
    "different": 0,
-   "uncovered": 3626,
+   "uncovered": 3601,
    "first_differences": []
   },
   {
@@ -540,9 +540,9 @@
    "update_frame": 12238,
    "pass_rank": 1,
    "draws": 39,
-   "equal": 18285,
+   "equal": 18333,
    "different": 0,
-   "uncovered": 1906,
+   "uncovered": 1858,
    "first_differences": []
   },
   {
@@ -550,9 +550,9 @@
    "update_frame": 12268,
    "pass_rank": 1,
    "draws": 43,
-   "equal": 17971,
+   "equal": 18095,
    "different": 0,
-   "uncovered": 1386,
+   "uncovered": 1262,
    "first_differences": []
   },
   {
@@ -560,9 +560,9 @@
    "update_frame": 12298,
    "pass_rank": 1,
    "draws": 44,
-   "equal": 14402,
+   "equal": 14594,
    "different": 0,
-   "uncovered": 1220,
+   "uncovered": 1028,
    "first_differences": []
   },
   {
@@ -570,9 +570,9 @@
    "update_frame": 12328,
    "pass_rank": 1,
    "draws": 48,
-   "equal": 12917,
+   "equal": 13177,
    "different": 0,
-   "uncovered": 1490,
+   "uncovered": 1230,
    "first_differences": []
   },
   {
@@ -580,9 +580,9 @@
    "update_frame": 12358,
    "pass_rank": 1,
    "draws": 47,
-   "equal": 13163,
+   "equal": 13484,
    "different": 0,
-   "uncovered": 1852,
+   "uncovered": 1531,
    "first_differences": []
   },
   {
@@ -590,9 +590,9 @@
    "update_frame": 12388,
    "pass_rank": 1,
    "draws": 38,
-   "equal": 14150,
+   "equal": 14376,
    "different": 0,
-   "uncovered": 3102,
+   "uncovered": 2876,
    "first_differences": []
   },
   {
@@ -610,9 +610,9 @@
    "update_frame": 12448,
    "pass_rank": 1,
    "draws": 28,
-   "equal": 19012,
+   "equal": 19042,
    "different": 0,
-   "uncovered": 8795,
+   "uncovered": 8765,
    "first_differences": []
   },
   {
@@ -620,9 +620,9 @@
    "update_frame": 12478,
    "pass_rank": 1,
    "draws": 30,
-   "equal": 17885,
+   "equal": 17910,
    "different": 0,
-   "uncovered": 3107,
+   "uncovered": 3082,
    "first_differences": []
   },
   {
@@ -630,9 +630,9 @@
    "update_frame": 12508,
    "pass_rank": 1,
    "draws": 37,
-   "equal": 18597,
+   "equal": 18646,
    "different": 0,
-   "uncovered": 780,
+   "uncovered": 731,
    "first_differences": []
   },
   {
@@ -640,9 +640,9 @@
    "update_frame": 12538,
    "pass_rank": 1,
    "draws": 35,
-   "equal": 17764,
+   "equal": 17835,
    "different": 0,
-   "uncovered": 584,
+   "uncovered": 513,
    "first_differences": []
   },
   {
@@ -650,19 +650,19 @@
    "update_frame": 12568,
    "pass_rank": 1,
    "draws": 35,
-   "equal": 16510,
+   "equal": 16630,
    "different": 0,
-   "uncovered": 178,
+   "uncovered": 58,
    "first_differences": []
   },
   {
    "frame": 12600,
    "update_frame": 12598,
    "pass_rank": 1,
-   "draws": 33,
-   "equal": 16562,
+   "draws": 34,
+   "equal": 16733,
    "different": 0,
-   "uncovered": 399,
+   "uncovered": 228,
    "first_differences": []
   },
   {
@@ -670,9 +670,9 @@
    "update_frame": 12628,
    "pass_rank": 1,
    "draws": 34,
-   "equal": 16567,
+   "equal": 16803,
    "different": 0,
-   "uncovered": 334,
+   "uncovered": 98,
    "first_differences": []
   },
   {
@@ -680,9 +680,9 @@
    "update_frame": 12658,
    "pass_rank": 2,
    "draws": 31,
-   "equal": 17771,
+   "equal": 17911,
    "different": 0,
-   "uncovered": 4722,
+   "uncovered": 4582,
    "first_differences": []
   },
   {
@@ -690,9 +690,9 @@
    "update_frame": 12689,
    "pass_rank": 1,
    "draws": 33,
-   "equal": 18407,
+   "equal": 18417,
    "different": 0,
-   "uncovered": 4029,
+   "uncovered": 4019,
    "first_differences": []
   },
   {
@@ -700,9 +700,9 @@
    "update_frame": 12718,
    "pass_rank": 1,
    "draws": 39,
-   "equal": 19452,
+   "equal": 19482,
    "different": 0,
-   "uncovered": 2722,
+   "uncovered": 2692,
    "first_differences": []
   },
   {
@@ -710,9 +710,9 @@
    "update_frame": 12748,
    "pass_rank": 1,
    "draws": 39,
-   "equal": 19152,
+   "equal": 19222,
    "different": 0,
-   "uncovered": 601,
+   "uncovered": 531,
    "first_differences": []
   },
   {
@@ -720,9 +720,9 @@
    "update_frame": 12778,
    "pass_rank": 1,
    "draws": 38,
-   "equal": 17168,
+   "equal": 17287,
    "different": 0,
-   "uncovered": 1823,
+   "uncovered": 1704,
    "first_differences": []
   },
   {
@@ -730,9 +730,9 @@
    "update_frame": 12808,
    "pass_rank": 1,
    "draws": 38,
-   "equal": 12982,
+   "equal": 13153,
    "different": 0,
-   "uncovered": 767,
+   "uncovered": 596,
    "first_differences": []
   },
   {
@@ -740,9 +740,9 @@
    "update_frame": 12837,
    "pass_rank": 2,
    "draws": 37,
-   "equal": 13005,
+   "equal": 13243,
    "different": 0,
-   "uncovered": 389,
+   "uncovered": 151,
    "first_differences": []
   },
   {
@@ -750,9 +750,9 @@
    "update_frame": 12867,
    "pass_rank": 2,
    "draws": 34,
-   "equal": 14535,
+   "equal": 14683,
    "different": 0,
-   "uncovered": 2926,
+   "uncovered": 2778,
    "first_differences": []
   },
   {
@@ -760,9 +760,9 @@
    "update_frame": 12897,
    "pass_rank": 2,
    "draws": 38,
-   "equal": 16228,
+   "equal": 16443,
    "different": 0,
-   "uncovered": 2468,
+   "uncovered": 2253,
    "first_differences": []
   },
   {
@@ -770,9 +770,9 @@
    "update_frame": 12927,
    "pass_rank": 2,
    "draws": 30,
-   "equal": 17888,
+   "equal": 17954,
    "different": 0,
-   "uncovered": 4142,
+   "uncovered": 4076,
    "first_differences": []
   },
   {
@@ -780,9 +780,9 @@
    "update_frame": 12957,
    "pass_rank": 2,
    "draws": 27,
-   "equal": 17475,
+   "equal": 17546,
    "different": 0,
-   "uncovered": 2026,
+   "uncovered": 1955,
    "first_differences": []
   },
   {
@@ -790,9 +790,9 @@
    "update_frame": 12987,
    "pass_rank": 2,
    "draws": 28,
-   "equal": 17856,
+   "equal": 17933,
    "different": 0,
-   "uncovered": 143,
+   "uncovered": 66,
    "first_differences": []
   },
   {
@@ -800,42 +800,29 @@
    "update_frame": 13018,
    "pass_rank": 2,
    "draws": 27,
-   "equal": 17205,
+   "equal": 17317,
    "different": 0,
-   "uncovered": 595,
+   "uncovered": 483,
    "first_differences": []
   },
   {
    "frame": 13050,
    "update_frame": 13046,
    "pass_rank": 2,
-   "draws": 37,
-   "equal": 19209,
-   "different": 2,
-   "uncovered": 755,
-   "first_differences": [
-    [
-     135,
-     91,
-     3694,
-     2629
-    ],
-    [
-     134,
-     92,
-     3695,
-     2629
-    ]
-   ]
+   "draws": 38,
+   "equal": 19378,
+   "different": 0,
+   "uncovered": 588,
+   "first_differences": []
   },
   {
    "frame": 13080,
    "update_frame": 13076,
    "pass_rank": 2,
    "draws": 43,
-   "equal": 19516,
+   "equal": 19640,
    "different": 0,
-   "uncovered": 527,
+   "uncovered": 403,
    "first_differences": []
   },
   {
@@ -843,9 +830,9 @@
    "update_frame": 13106,
    "pass_rank": 2,
    "draws": 39,
-   "equal": 18938,
+   "equal": 18986,
    "different": 0,
-   "uncovered": 1998,
+   "uncovered": 1950,
    "first_differences": []
   },
   {
@@ -853,9 +840,9 @@
    "update_frame": 13136,
    "pass_rank": 2,
    "draws": 44,
-   "equal": 19617,
+   "equal": 19712,
    "different": 0,
-   "uncovered": 1034,
+   "uncovered": 939,
    "first_differences": []
   },
   {
@@ -863,9 +850,9 @@
    "update_frame": 13166,
    "pass_rank": 2,
    "draws": 49,
-   "equal": 18824,
+   "equal": 18989,
    "different": 0,
-   "uncovered": 342,
+   "uncovered": 177,
    "first_differences": []
   },
   {
@@ -873,9 +860,9 @@
    "update_frame": 13196,
    "pass_rank": 2,
    "draws": 49,
-   "equal": 16911,
+   "equal": 17145,
    "different": 0,
-   "uncovered": 1425,
+   "uncovered": 1191,
    "first_differences": []
   },
   {
@@ -883,9 +870,9 @@
    "update_frame": 13226,
    "pass_rank": 2,
    "draws": 49,
-   "equal": 16738,
+   "equal": 17040,
    "different": 0,
-   "uncovered": 724,
+   "uncovered": 422,
    "first_differences": []
   },
   {
@@ -893,9 +880,9 @@
    "update_frame": 13256,
    "pass_rank": 2,
    "draws": 38,
-   "equal": 17095,
+   "equal": 17305,
    "different": 0,
-   "uncovered": 4988,
+   "uncovered": 4778,
    "first_differences": []
   },
   {
@@ -903,9 +890,9 @@
    "update_frame": 13287,
    "pass_rank": 2,
    "draws": 35,
-   "equal": 16650,
+   "equal": 16763,
    "different": 0,
-   "uncovered": 5159,
+   "uncovered": 5046,
    "first_differences": []
   },
   {
@@ -913,9 +900,9 @@
    "update_frame": 13317,
    "pass_rank": 2,
    "draws": 37,
-   "equal": 16043,
+   "equal": 16246,
    "different": 0,
-   "uncovered": 2947,
+   "uncovered": 2744,
    "first_differences": []
   },
   {
@@ -923,9 +910,9 @@
    "update_frame": 13347,
    "pass_rank": 2,
    "draws": 34,
-   "equal": 14863,
+   "equal": 14934,
    "different": 0,
-   "uncovered": 4659,
+   "uncovered": 4588,
    "first_differences": []
   },
   {
@@ -933,9 +920,9 @@
    "update_frame": 13379,
    "pass_rank": 1,
    "draws": 28,
-   "equal": 13785,
+   "equal": 13864,
    "different": 0,
-   "uncovered": 2770,
+   "uncovered": 2691,
    "first_differences": []
   },
   {
@@ -943,9 +930,9 @@
    "update_frame": 13409,
    "pass_rank": 1,
    "draws": 27,
-   "equal": 13781,
+   "equal": 13879,
    "different": 0,
-   "uncovered": 2406,
+   "uncovered": 2308,
    "first_differences": []
   },
   {
@@ -953,9 +940,9 @@
    "update_frame": 13438,
    "pass_rank": 1,
    "draws": 28,
-   "equal": 16317,
+   "equal": 16432,
    "different": 0,
-   "uncovered": 3116,
+   "uncovered": 3001,
    "first_differences": []
   },
   {
@@ -963,9 +950,9 @@
    "update_frame": 13468,
    "pass_rank": 1,
    "draws": 34,
-   "equal": 19349,
+   "equal": 19518,
    "different": 0,
-   "uncovered": 1632,
+   "uncovered": 1463,
    "first_differences": []
   },
   {
@@ -973,9 +960,9 @@
    "update_frame": 13498,
    "pass_rank": 1,
    "draws": 38,
-   "equal": 18140,
+   "equal": 18235,
    "different": 0,
-   "uncovered": 260,
+   "uncovered": 165,
    "first_differences": []
   },
   {
@@ -983,9 +970,9 @@
    "update_frame": 13528,
    "pass_rank": 1,
    "draws": 40,
-   "equal": 18879,
+   "equal": 18937,
    "different": 0,
-   "uncovered": 1752,
+   "uncovered": 1694,
    "first_differences": []
   },
   {
@@ -993,9 +980,9 @@
    "update_frame": 13558,
    "pass_rank": 1,
    "draws": 40,
-   "equal": 18091,
+   "equal": 18169,
    "different": 0,
-   "uncovered": 1582,
+   "uncovered": 1504,
    "first_differences": []
   },
   {
@@ -1003,9 +990,9 @@
    "update_frame": 13588,
    "pass_rank": 1,
    "draws": 37,
-   "equal": 17050,
+   "equal": 17153,
    "different": 0,
-   "uncovered": 400,
+   "uncovered": 297,
    "first_differences": []
   },
   {
@@ -1013,9 +1000,9 @@
    "update_frame": 13618,
    "pass_rank": 1,
    "draws": 37,
-   "equal": 17024,
+   "equal": 17183,
    "different": 0,
-   "uncovered": 762,
+   "uncovered": 603,
    "first_differences": []
   },
   {
@@ -1023,9 +1010,9 @@
    "update_frame": 13646,
    "pass_rank": 2,
    "draws": 39,
-   "equal": 15291,
+   "equal": 15528,
    "different": 0,
-   "uncovered": 3590,
+   "uncovered": 3353,
    "first_differences": []
   },
   {
@@ -1033,9 +1020,9 @@
    "update_frame": 13677,
    "pass_rank": 2,
    "draws": 30,
-   "equal": 14989,
+   "equal": 15122,
    "different": 0,
-   "uncovered": 7326,
+   "uncovered": 7193,
    "first_differences": []
   },
   {

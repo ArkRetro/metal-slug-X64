@@ -23,14 +23,33 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../src/neo_boss.h"
+#ifdef N64
+#include <libdragon.h>
+#include "boss_fight_names.h"
+/* The cartridge streams the same fixture stream from DFS (rom:/boss-<name>.bin). */
+static const char *const fight_names[]={BOSS_FIGHT_NAMES};
+#else
 #include "boss_fixture.h"
+#endif
 enum { E_RNG=1,E_ALLOC,E_PAL,E_SCENE,E_SWEEP,E_FLOOR,E_PLAT,E_PLATFREE,E_HURT,E_ATTACK,E_BOUNDS,E_DRAW,E_MISSION };
 static const char *ev_name[]={"?","rng","alloc","pal","scene","sweep","floor","plat","platfree","hurt","attack","bounds","draw","mission"};
-typedef struct { const uint8_t *p,*end; } rd_t;
-static uint8_t u8(rd_t *r) {assert(r->p<r->end);return *r->p++;}
+/* Fixture reader: a memory stream on the host, a buffered DFS file on N64.
+ * Blocks are copied into a per-update arena (reset before each update). */
+typedef struct { const uint8_t *p,*end; FILE *f; uint8_t buf[4096]; unsigned at,len; } rd_t;
+static uint8_t arena[1u<<20];static unsigned arena_used;
+static uint8_t u8(rd_t *r) {
+    if (!r->f) {assert(r->p<r->end);return *r->p++;}
+    if (r->at==r->len) {r->len=(unsigned)fread(r->buf,1,sizeof(r->buf),r->f);r->at=0;assert(r->len);}
+    return r->buf[r->at++];
+}
 static uint16_t u16(rd_t *r) {uint16_t v=u8(r);return (uint16_t)(v|u8(r)<<8);}
 static uint32_t u32(rd_t *r) {uint32_t v=u16(r);return v|(uint32_t)u16(r)<<16;}
-static const uint8_t *blk(rd_t *r,unsigned n) {const uint8_t *q=r->p;r->p+=n;assert(r->p<=r->end);return q;}
+static const uint8_t *blk(rd_t *r,unsigned n) {
+    assert(arena_used+n<=sizeof(arena));
+    uint8_t *q=arena+arena_used;arena_used+=n;
+    for (unsigned i=0;i<n;i++) q[i]=u8(r);
+    return q;
+}
 typedef struct {
     uint8_t type;
     uint32_t a[8];
@@ -45,7 +64,7 @@ static void bad(const char *fmt,uint32_t a,uint32_t b) {
     if (!error[0]) snprintf(error,sizeof(error),fmt,(unsigned)a,(unsigned)b);
 }
 static event_t *pop(uint8_t type) {
-    if (cur>=nev) {bad("missing event %s (%u)",type,0);errors_by_type[type]++;return NULL;}
+    if (cur>=nev) {if (!error[0]) snprintf(error,sizeof(error),"unexpected %s request",ev_name[type]);errors_by_type[type]++;return NULL;}
     event_t *e=&evs[cur];
     if (e->type!=type) {
         char b[96];snprintf(b,sizeof(b),"event %s, expected %s",ev_name[type],ev_name[e->type]);
@@ -55,8 +74,9 @@ static event_t *pop(uint8_t type) {
     cur++;return e;
 }
 /* ---- node identity ---- */
-static unsigned nnodes;static uint32_t node_addr[256],node_ctor[256];
-static int16_t native_of[256];static int fixture_of[NEO_BOSS_NODES];
+static unsigned nnodes;static uint32_t node_addr[4096],node_ctor[4096];
+static int16_t native_of[4096];static int fixture_of[NEO_BOSS_NODES];
+static uint16_t history[NEO_BOSS_NODES][256];static unsigned history_count[NEO_BOSS_NODES];
 static neo_boss_t boss;
 static uint16_t s_rng(void *c) {(void)c;event_t *e=pop(E_RNG);return e?(uint16_t)e->a[0]:0;}
 static int pending_child[16];static unsigned npending;
@@ -94,7 +114,7 @@ static bool s_plat(void *c,int16_t node,uint8_t slot,uint32_t table,const int32_
     if (e->a[1]>=2 && ((uint32_t)pos[0]!=e->a[2] || (uint32_t)pos[1]!=e->a[3])) bad("platform position %x expected %x",(uint32_t)pos[0],e->a[2]);
     return true;
 }
-static void s_platfree(void *c,int16_t node,uint8_t slot) {(void)c;(void)node;(void)slot;pop(E_PLATFREE);}
+static void s_platfree(void *c,int16_t node,uint8_t slot) {(void)c;if (getenv("BOSS_LIST")) printf("platfree native %d fixture %d slot %02x routine %06x\n",node,fixture_of[node],slot,(unsigned)boss.nodes[node].routine);pop(E_PLATFREE);}
 static bool s_hurt(void *c,int16_t node,uint8_t *off,uint8_t *idx,bool *kill) {
     (void)c;(void)node;event_t *e=pop(E_HURT);if (!e) return false;
     *off=(uint8_t)e->a[0];*idx=(uint8_t)e->a[1];*kill=e->a[2]!=0;return true;
@@ -111,10 +131,12 @@ static void s_draw(void *c,int16_t node,const neo_anim_draw_t *d) {
     if (!e) {draws_bad++;return;}
     uint16_t attr=(uint16_t)((d->attributes&0xff00u)|(d->attributes&7u));
     if (e->a[0]!=d->descriptor || e->a[1]!=d->x || e->a[2]!=d->y || e->a[3]!=attr || e->a[4]!=d->z) {
-        draws_bad++;bad("draw descriptor %x expected %x",d->descriptor,e->a[0]);
+        draws_bad++;
+        if (!error[0]) snprintf(error,sizeof(error),"draw %06x %u,%u attr %04x z %04x expected %06x %u,%u attr %04x z %04x",(unsigned)d->descriptor,d->x,d->y,attr,d->z,
+            (unsigned)e->a[0],(unsigned)e->a[1],(unsigned)e->a[2],(unsigned)e->a[3],(unsigned)e->a[4]);
     } else draws_ok++;
 }
-static uint32_t last_effect_label;static int last_effect_kind=-1;
+static uint32_t last_effect_label;static int16_t current_node=-1;static int last_effect_kind=-1;
 static bool s_effect(void *c,const neo_boss_effect_t *f) {
     (void)c;
     if (f->kind==NEO_BOSS_EFFECT_SPAWN) {
@@ -126,7 +148,7 @@ static bool s_effect(void *c,const neo_boss_effect_t *f) {
             if (ok) effects_ok++; else effects_bad++;
         }
     }
-    if (f->kind==NEO_BOSS_EFFECT_CONVERT) {last_effect_label=f->label;last_effect_kind=f->kind;}
+    if (f->kind==NEO_BOSS_EFFECT_CONVERT && f->node==current_node) {last_effect_label=f->label;last_effect_kind=f->kind;}
     return true;
 }
 static void s_mission(void *c,int16_t node,uint8_t step) {(void)c;(void)node;event_t *e=pop(E_MISSION);if (e && e->a[0]!=step) bad("mission step %u expected %u",step,e->a[0]);}
@@ -141,8 +163,13 @@ static int compare(const neo_boss_node_t *n,const uint8_t *img,char *why,size_t 
     for (unsigned k=0;k<2;k++) {
         unsigned o=ptr_off[k];uint32_t v=rd_l(mine,o);
         if (NEO_BOSS_IS_TAG(v)) {
-            int f=fixture_of[NEO_BOSS_TAG_INDEX(v)];
+            unsigned ix=NEO_BOSS_TAG_INDEX(v);int f=fixture_of[ix];
             uint32_t a=f>=0?node_addr[f]+(o==0x38?0x28u:0u):0;
+            /* A tag kept after its node was freed (the original keeps the
+             * stale address, e.g. +8E of the turret after its gun left):
+             * any earlier occupant of that native slot may be the one. */
+            for (unsigned h=0;h<history_count[ix] && a!=rd_l(img,o);h++)
+                if (node_addr[history[ix][h]]+(o==0x38?0x28u:0u)==rd_l(img,o)) a=rd_l(img,o);
             mine[o]=(uint8_t)(a>>24);mine[o+1]=(uint8_t)(a>>16);mine[o+2]=(uint8_t)(a>>8);mine[o+3]=(uint8_t)a;
         }
     }
@@ -182,13 +209,28 @@ static void load_env(neo_boss_env_t *e,uint32_t a,uint8_t v) {
 static int32_t rl_s(const uint8_t *p,unsigned o) {return (int32_t)rd_l(p,o);}
 int main(void) {
     setvbuf(stdout,NULL,_IONBF,0);
-    unsigned total_fail=0;
-    for (unsigned fi=0;fi<sizeof(boss_fights)/sizeof(boss_fights[0]);fi++) {
+#ifdef N64
+    debug_init_emulog();debug_init_isviewer();dfs_init(DFS_DEFAULT_LOCATION);
+    unsigned fights=sizeof(fight_names)/sizeof(fight_names[0]);
+#else
+    unsigned fights=sizeof(boss_fights)/sizeof(boss_fights[0]);
+#endif
+    unsigned total_fail=0,total_pass=0,total_draws=0;
+    for (unsigned fi=0;fi<fights;fi++) {
+        static rd_t r;memset(&r,0,sizeof(r));
+#ifdef N64
+        char path[64];snprintf(path,sizeof(path),"rom:/boss-%s.bin",fight_names[fi]);
+        r.f=fopen(path,"rb");assert(r.f);
+        struct { const char *name; } FF={fight_names[fi]},*F=&FF;
+#else
         const boss_fight_t *F=&boss_fights[fi];
-        rd_t r={F->bytes,F->bytes+F->size};
+        r.p=F->bytes;r.end=F->bytes+F->size;
+#endif
         nnodes=u16(&r);uint32_t nup=u32(&r);
+        assert(nnodes<=4096);
         for (unsigned i=0;i<nnodes;i++) {node_ctor[i]=u32(&r);(void)u16(&r);node_addr[i]=u32(&r);native_of[i]=-1;}
-        for (unsigned i=0;i<NEO_BOSS_NODES;i++) fixture_of[i]=-1;
+        arena_used=0;
+        for (unsigned i=0;i<NEO_BOSS_NODES;i++) {fixture_of[i]=-1;history_count[i]=0;}
         neo_boss_services_t sv={NULL,s_rng,s_alloc,s_pal,NULL,NULL,s_scene,s_sweep,s_floor,s_plat,s_platfree,s_hurt,s_attack,s_bounds,s_draw,s_effect,s_mission};
         neo_boss_init(&boss,&sv);draws_ok=draws_bad=effects_ok=effects_bad=0;
         boss.env.p1_node=true;
@@ -197,6 +239,7 @@ int main(void) {
         static unsigned fail_rt[0x2000];memset(fail_rt,0,sizeof(fail_rt));
         bool stop=false;
         for (uint32_t k=0;k<nup && !stop;k++) {
+            arena_used=0;
             uint32_t frame=u32(&r);uint16_t id=u16(&r);uint32_t routine=u32(&r);uint8_t has_pre=u8(&r);int32_t handoff=(int32_t)u32(&r);
             const uint8_t *pre=has_pre?blk(&r,NEO_BOSS_FIELDS):NULL,*post=blk(&r,NEO_BOSS_FIELDS);
             /* hits applied by other actors since the previous boss update */
@@ -239,7 +282,7 @@ int main(void) {
                 default:assert(0);
                 }
             }
-            error[0]=0;npending=0;last_effect_kind=-1;
+            error[0]=0;npending=0;last_effect_kind=-1;last_effect_label=0;
             int16_t ni=native_of[id];
             if (ni<0 && routine==0xd5976 && node_ctor[id]==0xd5976) {
                 ni=neo_boss_spawn(&boss,pre);native_of[id]=ni;fixture_of[ni]=id;
@@ -250,16 +293,20 @@ int main(void) {
             else if (pre && compare(&boss.nodes[ni],pre,why,sizeof(why))>=0) {ok=false;pre_fail++;memmove(why+4,why,strlen(why)+1);memcpy(why,"pre ",4);}
             neo_boss_result_t res=NEO_BOSS_MORE;
             if (ok) {
-                res=neo_boss_step(&boss,ni);
+                current_node=ni;res=neo_boss_step(&boss,ni);
                 /* bind the new boss nodes to the fixture's children, in allocation order */
                 for (unsigned b=0;b<boss.born_count && b<npending;b++)
-                    if (pending_child[b]>=0) {native_of[pending_child[b]]=boss.born[b];fixture_of[boss.born[b]]=pending_child[b];}
+                    if (pending_child[b]>=0) {
+                        int16_t q=boss.born[b];
+                        if (fixture_of[q]>=0 && history_count[q]<256) history[q][history_count[q]++]=(uint16_t)fixture_of[q];
+                        native_of[pending_child[b]]=q;fixture_of[q]=pending_child[b];
+                    }
                 if (res==NEO_BOSS_HANDED_OFF) cur=nev;   /* the rest ran in generic code */
                 if (res==NEO_BOSS_UNSUPPORTED && getenv("BOSS_POOL")) {
                     for (int q=0;q<NEO_BOSS_NODES;q++) printf(" %d:%06x/%d",q,(unsigned)boss.nodes[q].routine,boss.nodes[q].depth);
                     printf("\n");
                 }
-                if (res==NEO_BOSS_UNSUPPORTED) {unsupported++;ok=false;snprintf(why,sizeof(why),"UNSUPPORTED %06x",(unsigned)boss.unsupported_label);}
+                if (res==NEO_BOSS_UNSUPPORTED) {unsupported++;ok=false;snprintf(why,sizeof(why),"UNSUPPORTED %06x (%s)",(unsigned)boss.unsupported_label,error);}
                 else if (error[0]) {ok=false;snprintf(why,sizeof(why),"%s",error);}
                 else if (cur!=nev) {ok=false;snprintf(why,sizeof(why),"%u events left, next %s",nev-cur,ev_name[evs[cur].type]);}
                 else {
@@ -280,6 +327,10 @@ int main(void) {
                 if (j==ncovered && ncovered<128) covered[ncovered++]=routine;
             } else {
                 fail++;fail_rt[routine&0x1fff]++;
+                if (getenv("BOSS_LIST") && fail<=2) {
+                    for (int16_t q=boss.first;q>=0;q=boss.nodes[q].next) printf(" [%d %06x d%u 6a=%02x f%d]",q,(unsigned)boss.nodes[q].routine,boss.nodes[q].depth,boss.nodes[q].f[0x6a],fixture_of[q]);
+                    printf("\n");
+                }
                 if (fail<=30) printf("  %s #%u f=%u node %u rt %06x: %s\n",F->name,(unsigned)k,(unsigned)frame,id,(unsigned)routine,why);
                 if (getenv("BOSS_STOP")) stop=true;
             }
@@ -290,9 +341,17 @@ int main(void) {
         for (unsigned j=0;j<ncovered;j++) printf(" %05x",(unsigned)covered[j]);
         printf("\n");
         for (unsigned j=0;j<0x2000;j++) if (fail_rt[j]) printf("  routine ..%04x: %u failures\n",j,fail_rt[j]);
-        total_fail+=fail;
+        total_fail+=fail;total_pass+=pass;total_draws+=draws_ok;
+#ifdef N64
+        fclose(r.f);
+#endif
     }
+#ifdef N64
+    if (!total_fail) debugf("MSX BOSS REGRESSION PASS fights=%u updates=%u draws=%u\n",fights,total_pass,total_draws);
+    else debugf("MSX BOSS REGRESSION FAIL %u\n",total_fail);
+    for (;;) wait_ms(100);
+#endif
     if (total_fail) {printf("FAIL\n");return 1;}
-    printf("PASS: native boss reproduces the recorded fights\n");
+    printf("PASS: native boss reproduces the recorded fights (%u updates)\n",total_pass);
     return 0;
 }

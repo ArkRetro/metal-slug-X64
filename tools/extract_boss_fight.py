@@ -29,8 +29,10 @@ from ROM), damage/class (D3) and the attacker's bytes."""
 import argparse,gzip,json,struct,collections
 from pathlib import Path
 from extract_boss_programs import rom,ROOT
-BOSS_CTORS={0xd5976,0xd600c,0xd6130,0xd61f2,0xd6464,0xd6500,0xd65ee,0xd680a,0xd69dc,0xd6a84,0xd6d30,0xd6f90,0xd6ffc}
+NATIVE_GENERIC=(0x2a18a,0x2a244,0x2a2ac,0x2a2fe,0x2a3b4,0x2a3ce)
+BOSS_CTORS={0x2a3b4,0xd5976,0xd600c,0xd6130,0xd61f2,0xd6464,0xd6500,0xd65ee,0xd680a,0xd69dc,0xd6a84,0xd6d30,0xd6f90,0xd6ffc}
 POOL0=0x1010a4;NODE=0xb0
+STACK0,STACK1=0x10f100,0x10f400
 # global bytes the boss reads (neo_boss_env_t): facing 10C606, alive mask
 # 10C33C, epoch 10C33A, players' +3C/+40 words and routine longs, mission
 # over 10C300, rank 10FD8B, players 100088, video frame 10000E/10800F.
@@ -55,7 +57,12 @@ def parse(path):
                 cur['post']=None;yield cur
             cur=dict(frame=frame+1,node=int(p[1],16),routine=int(p[2],16),pre=bytes.fromhex(p[3]),recs=[],hits=pending);pending=[];attack=None
         elif t=='V':cur['post']=bytes.fromhex(p[2]);yield cur;cur=None
-        elif t in 'RW':cur['recs'].append((t,int(p[1],16),int(p[2],16),int(p[3],16),int(p[4],16)))
+        elif t in 'RW':
+            a=int(p[1],16)
+            # the supervisor stack (an interrupt frame carries the PC of the
+            # interrupted instruction, which would fake a service result)
+            if STACK0<=a<STACK1:continue
+            cur['recs'].append((t,a,int(p[2],16),int(p[3],16),int(p[4],16)))
         elif t=='B':cur['recs'].append(('B',int(p[1],16),int(p[2],16),0,0x40ec))
         elif t=='X':
             a,m,d,pc,a6=(int(x,16) for x in p[1:6]);a0,d3=(int(x,16) for x in p[6:8]) if len(p)>=8 else (0,0)
@@ -88,22 +95,31 @@ def main():
                 written_by_creator[lid]=set();born.append(lid)
             elif r[0] in 'RW':
                 tn=node_of(r[1])
-                if tn is not None and tn!=n and tn in life and lives[life[tn]]['first'] is None and lives[life[tn]]['creator']==life.get(n):
+                # bytes of a node not yet dispatched: what any family update
+                # read there before writing it is what the node inherited
+                if r[0]=='W' and r[4]==0x410e and tn is not None and tn in life and lives[life[tn]]['ctor'] is None:
+                    # 00410E stores the constructor: known even if the node
+                    # is deleted before its first update
+                    L2=lives[life[tn]];L2['ctor0']=((L2.get('ctor0',0)<<16)|r[3])&0xffffffff
+                if tn is not None and tn!=n and tn in life and lives[life[tn]]['first'] is None:
                     st=stale.setdefault(life[tn],{})
                     for b,v in lanes(r[1],r[2],r[3]):
                         if r[0]=='W':written_by_creator[life[tn]].add(b-tn)
                         elif b-tn not in written_by_creator[life[tn]]:st.setdefault(b-tn,v)
         u['life']=life[n]
+    for L in lives:
+        if L['ctor'] is None and 'ctor0' in L:L['ctor']=L['ctor0']
     native={i for i,L in enumerate(lives) if L['ctor'] in BOSS_CTORS}
     ids={lid:k for k,lid in enumerate(sorted(native))}
     def image_base(lid):
         L=lives[lid]
-        if L['first'] is None:return None
-        b=bytearray(L['first'])
+        b=bytearray(L['first']) if L['first'] is not None else bytearray(NODE)
+        if L['first'] is None:
+            for o,v in stale.get(lid,{}).items():b[o]=v
         for o in written_by_creator.get(lid,()):b[o]=stale.get(lid,{}).get(o,0xa5)
         for o in range(0,0x10):b[o]=0
         return b.hex()
-    addr_life={};nb=[0];last_rec={}
+    addr_life={};nb=[0];last_rec={};handed=set()
     out=[];counts=collections.Counter();routines=collections.Counter()
     prev_post={}
     live_at={}   # address -> life id while processing (for pointer mapping)
@@ -119,11 +135,26 @@ def main():
             att=next((x for x in hl0[j:]+hl0[:j][::-1] if 'attacker' in x and x['attacker']==h['a6']),None)
             hits.append((h,att))
         lid=u['life'];live_at[n]=lid
-        if lid in native and not (0xd5976<=u['routine']<0xd74d4 or u['routine'] in (0x2a18a,0x2a244,0x2a2ac,0x2a2fe)):
+        # descendants of a handed-off node belong to the world from then on
+        anc=lives[lid]['creator'];gone=False
+        while anc is not None:
+            if anc in handed:gone=True;break
+            anc=lives[anc]['creator']
+        if lid in native and gone:
+            for r in u['recs']:
+                if r[0]=='B':live_at[r[1]]=born[nb[0]];nb[0]+=1
+            continue
+        if u['routine']==0x3f1e:
+            # a deleted node still linked before deeper nodes (003F1E)
+            for r in u['recs']:
+                if r[0]=='B':live_at[r[1]]=born[nb[0]];nb[0]+=1
+            continue
+        if lid in native and not (0xd5976<=u['routine']<0xd74d4 or u['routine'] in NATIVE_GENERIC):
             # a boss node continued by generic code after a hand-off
             if out and lid in last_rec and not last_rec[lid].get('handoff'):
                 r0=last_rec[lid];img=bytes.fromhex(r0['post'])
                 prog=int.from_bytes(img[0x20:0x24],'big')
+                handed.add(lid)
                 r0['handoff']=0x8eebc if u['routine']==0x8eebc else 0x1c71e if 0<=prog-0x22cf2c<0x40 else 0x1c706 if 0<=prog-0x22ce6c<0x40 else -1
             for r in u['recs']:
                 if r[0]=='B':live_at[r[1]]=born[nb[0]];nb[0]+=1
@@ -144,6 +175,7 @@ def main():
             elif k=='B':
                 al=[e for e in ev if e[0]=='alloc'][-1]
                 cl=born[nb[0]];nb[0]+=1
+                assert lives[cl]['addr']==ad,('birth order',hex(ad),hex(lives[cl]['addr']))
                 al[2]=cl;al[3]=ids.get(cl,-1);al[4]=image_base(cl);al.append(lives[cl]['first'].hex() if lives[cl]['first'] is not None else None)
                 live_at[ad]=cl
             elif k=='W' and pc==0x9f78:ev.append(['pal',[v for _,v in lanes(ad,m,d)][0]])
@@ -198,7 +230,7 @@ def main():
                 j=3 if pc==0x19518 else 4;ev[-1][j]=(ev[-1][j]<<16|d)&0xffffffff
             elif k=='R' and pc in (0x1954c,0x19554,0x1956e,0x19576):
                 ev[-1][{0x1954c:5,0x1956e:6,0x19554:7,0x19576:8}[pc]]=d
-            elif k=='W' and pc==0xa078:
+            elif k=='W' and pc==0xa078 and ad<0x10f000:   # an interrupt frame push has the same PC
                 if not ev or ev[-1][0]!='draw' or len(ev[-1][1])>=6:ev.append(['draw',[],0])
                 ev[-1][1].append(d)
             elif k=='W' and pc==0xa080:
@@ -238,6 +270,13 @@ def main():
         rec=dict(f=u['frame'],n=ids[lid],r=u['routine'],post=post.hex(),ev=ev,hits=hl,env={'%x'%k:v for k,v in sorted(envr.items())})
         if prev_post.get(lid)!=pre:rec['pre']=pre.hex()
         prev_post[lid]=post
+        nrt=int.from_bytes(post[0:4],'big')
+        if nrt!=0x3f1e and not (0xd5976<=nrt<0xd74d4 or nrt in NATIVE_GENERIC):
+            # the update jumped into generic code: hand-off (label from the
+            # program it started, or the routine it set)
+            prog=int.from_bytes(post[0x20:0x24],'big')
+            rec['handoff']=0x8eebc if nrt==0x8eebc else 0x1c71e if 0<=prog-0x22cf2c<0x40 else 0x1c706 if 0<=prog-0x22ce6c<0x40 else -1
+            handed.add(lid)
         out.append(rec);last_rec[lid]=rec
     nodes=[dict(id=ids[l],addr=lives[l]['addr'],ctor=lives[l]['ctor'],creator=ids.get(lives[l]['creator'],-1)) for l in sorted(native)]
     # main boss spawn image

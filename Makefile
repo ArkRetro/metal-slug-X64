@@ -350,6 +350,17 @@ $(BUILD_DIR)/boss_tables.h: tools/compile_boss_tables.py data/boss_tables.json d
 $(BUILD_DIR)/boss_fixture.h: tools/compile_boss_fixture.py $(wildcard data/boss_fight_*.json.gz)
 	python3 tools/compile_boss_fixture.py
 $(BUILD_DIR)/src/neo_boss.o: $(BUILD_DIR)/boss_tables.h
+BOSS_SRCS_N64 := src/neo_boss.c src/neo_animation.c src/neo_contact.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_control.c src/neo_rng.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c
+# Internal MIPS regression: the fight fixtures replayed by neo_boss in ares
+# (tools/test_boss_ares.py); the streams are DFS files, not headers.
+$(BUILD_DIR)/boss_fight_names.h $(BUILD_DIR)/boss-romfs/boss-a.bin: $(BUILD_DIR)/boss_fixture.h
+$(BUILD_DIR)/tools/test_neo_boss.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/tools/test_neo_boss.o: $(BUILD_DIR)/boss_fight_names.h $(BUILD_DIR)/boss_tables.h
+$(BUILD_DIR)/boss-regression.elf: $(BUILD_DIR)/tools/test_neo_boss.o $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(BOSS_SRCS_N64))
+$(BUILD_DIR)/boss-regression.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/boss-romfs
+$(BUILD_DIR)/boss-regression.dfs: $(BUILD_DIR)/boss-romfs/boss-a.bin
+boss-regression.z64: N64_ROM_TITLE = "MSX BOSS TEST"
+boss-regression.z64: $(BUILD_DIR)/boss-regression.dfs
 BOSS_SRCS := src/neo_boss.c src/neo_animation.c src/neo_contact.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_control.c src/neo_rng.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c
 check-boss: $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/boss_fixture.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_tables.h $(BUILD_DIR)/state_tables.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_wreckage.h
 	mkdir -p $(BUILD_DIR)/host

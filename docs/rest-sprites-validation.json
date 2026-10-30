@@ -1,5 +1,5 @@
 {
- "descriptors": 701,
+ "descriptors": 799,
  "palettes": [
   "0x103",
   "0x121",
@@ -9,9 +9,12 @@
   "0x19",
   "0x1a",
   "0x1b",
+  "0x202",
   "0x20b",
   "0x24",
+  "0x27c",
   "0x30b",
+  "0x378",
   "0x37d",
   "0x37e",
   "0x380",
@@ -36,12 +39,12 @@
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 57,
-  "frames": 146,
-  "pixels_equal": 1403516,
-  "pixels_different": 6326,
+  "frames": 154,
+  "pixels_equal": 1404641,
+  "pixels_different": 8068,
   "pixels_overlapping": 104503,
-  "rank_2": 71,
-  "rank_1": 75
+  "rank_2": 77,
+  "rank_1": 77
  },
  "frames": [
   {
@@ -1065,6 +1068,62 @@
    "update_frame": 4978,
    "equal": 4524,
    "different": 121
+  },
+  {
+   "capture": "hfam",
+   "frame": 12387,
+   "update_frame": 12385,
+   "equal": 12,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 7862,
+   "update_frame": 7861,
+   "equal": 0,
+   "different": 1542
+  },
+  {
+   "capture": "cfam",
+   "frame": 7923,
+   "update_frame": 7921,
+   "equal": 29,
+   "different": 98
+  },
+  {
+   "capture": "cfam",
+   "frame": 7981,
+   "update_frame": 7979,
+   "equal": 125,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 8371,
+   "update_frame": 8369,
+   "equal": 130,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 21,
+   "different": 102
+  },
+  {
+   "capture": "cfam",
+   "frame": 8343,
+   "update_frame": 8341,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 8371,
+   "update_frame": 8369,
+   "equal": 404,
+   "different": 0
   }
  ]
 }

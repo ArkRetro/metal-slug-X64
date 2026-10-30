@@ -530,9 +530,14 @@ Marco (`0x0C4372`), que el port no ejecuta como disparo. La pistola sigue
 con la bala del port (la del jefe y el blindado de referencia pasan por
 `neo_world_shot`). **Paradas explícitas**: H con `+93 = 2` (`0x01B668/0x01BDD2`),
 cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas
-(`weapon_stops`, se disparan como bala de pistola del port). Los descriptores
-de sprite de las balas nativas no están en el paquete de escena: no se
-dibujan todavía (`native_missing_descriptor`).
+(`weapon_stops`, se disparan como bala de pistola del port).
+
+Gráficos: `tools/export_rest_sprites.py` añade los programas de la chispa
+`0x28617E`, las balas, los impactos, la granada y su explosión (paletas
+`0x202`, `0x27C`, `0x378`). Orden documentado en `MISION1_ACTORES.md` más
+`hfam@1b600-1bd00 cfam@1bd00-1c400 cfam@8c37c-8c700`: 799 descriptores (98
+nuevos), 34 paletas, 154 volcados validados contra VRAM (1404641 píxeles
+iguales, 8068 distintos; antes 146 volcados, 6326 distintos).
 
 ### Paso 4: granadas (`src/neo_bullet.c`)
 

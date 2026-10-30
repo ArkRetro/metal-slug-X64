@@ -34,6 +34,9 @@ typedef struct neo_gactor {
     /* Deleted (routine 003F1E) but kept in the list while deeper nodes follow
      * it (ROM 004126 -> 00408C): its fields stay readable by its children. */
     bool placeholder;
+    /* Program interrupted by a flinch (the original keeps +20 in +86 and
+     * restarts it through 004256): native resume point. */
+    const neo_anim_program_t *resume_program;uint16_t resume_cursor;uint32_t resume_tag;
 } neo_gactor_t;
 static inline uint8_t ga_b(const neo_gactor_t *a,unsigned o) {return a->m[o];}
 static inline uint16_t ga_w(const neo_gactor_t *a,unsigned o) {return (uint16_t)(a->m[o]<<8|a->m[o+1]);}

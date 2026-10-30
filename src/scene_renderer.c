@@ -247,7 +247,13 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             for (unsigned k=first;k<end;) {
                 unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
-                if (hidden(&cells[cell_index.order[k]])) {k+=n;continue;}
+                /* A merged column can mix hidden (replaced) and kept cells:
+                 * once a replacement is active, its layer goes cell by cell. */
+                if ((patched && layer==2) || (collapsed && layer==3)) {
+                    for (unsigned j=0;j<n;j++)
+                        if (!hidden(&cells[cell_index.order[k+j]])) classic_cell(&cells[cell_index.order[k+j]],offsets,rises,video_tick,1);
+                    k+=n;continue;
+                }
                 classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
             }
           }

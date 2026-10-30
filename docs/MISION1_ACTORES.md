@@ -111,6 +111,13 @@ iguales**, 4 sellos. Encontrado al portarlo: `0x01448C` termina con
 al núcleo conservan el objeto de capa del padre (`10D7B6` a partir de la
 cámara 1023, como responden las trazas).
 
+Render: desde las páginas altas (columnas del mapa fusionadas en un solo
+dibujo), `hidden()` se evaluaba solo en la primera celda de cada columna
+fusionada; tras la destrucción de la tienda una columna que empezaba en una
+celda del parche se saltaba entera (agujero del color de fondo en ares).
+Ahora, con un reemplazo activo (parche en la capa 2, escombros en la 3), esa
+capa se dibuja celda a celda.
+
 Parche de mapa: las 62 variantes de coordenadas del mapa del resto son el
 submapa `0x0B6AD2`; `tools/pack_scene.py` empaqueta la variante posterior
 aparte (`scene_patch_cells`) y el render la dibuja en lugar de la celda

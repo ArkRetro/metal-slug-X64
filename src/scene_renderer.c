@@ -103,6 +103,10 @@ static unsigned palette_slot(unsigned id) {
 }
 static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
+    /* A shrink below 1/16 (sprite zoom near 0, e.g. a missile leaving its
+     * launcher) would overflow the RDP's texture step: less than a pixel
+     * per 16 texels, nothing visible to draw. */
+    if (draw_width*16.0f<(float)width || draw_height*16.0f<(float)height) return;
     unsigned slot=0;
     if (image->format!=1) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else set_tlut(TLUT_NONE);

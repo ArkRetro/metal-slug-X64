@@ -224,7 +224,11 @@ trozos `0x0A9510..0x0A9814` movidos por `0x0A98BE`, caída `0x2A769C`) y el
 vuelo `0x03993A` (espada `0x039C62`, sangre `0x040F88` externa, parpadeo
 `+8E` y `0x004188`). `0x03C526` pregunta a `0x019240` por el bono de misión:
 RAM `10C2F6` = 0 en la Misión 1 (volcados), no crea `0x03C62A`. RAM
-`10FD8F` = 0 en las capturas: paletas de los trozos de esa opción.
+`10FD8F` (opción BLOOD) es `MSX_BLOOD` (Makefile, 1 = ON por defecto):
+`src/neo_blood.c` da la paleta de cada rama de `0x01B2BE` (muerte `0x0A9436`,
+trozos `0x0A95F2/0x0A969A/0x0A9742/0x0A9876`); ON viene de
+`tools/capture_blood.lua` (`data/blood_fixture.json`), OFF de las capturas
+euro, que las pruebas reproducen con la opción en OFF.
 
 Los espadachines salen del carro y su primer suelo es el objeto dinámico
 del carro (`+38 = 10C22E`). La prueba genérica recibe ahora también las

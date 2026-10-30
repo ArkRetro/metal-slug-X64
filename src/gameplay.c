@@ -45,6 +45,7 @@ void msx_game_vehicle_reference(msx_game_t *g) {
 #define MSX_REFERENCE_INVULNERABLE 0
 #endif
 const bool msx_reference_invulnerable=MSX_REFERENCE_INVULNERABLE!=0;
+const uint32_t msx_game_layout=MSX_GAME_LAYOUT;
 void msx_game_hurt(msx_game_t *g,int from) {
     if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE) return;
     g->health--;g->invulnerable=60;

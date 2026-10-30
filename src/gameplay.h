@@ -2,6 +2,7 @@
 #define MSX_GAMEPLAY_H
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 #include "neo_vehicle.h"
 #include "neo_world.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
@@ -58,6 +59,15 @@ void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 void msx_game_hurt(msx_game_t *game,int from);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
+/* Layout of msx_game_t as one object file sees it. gameplay.c exports its
+ * own; actor.c compares it with the value it was compiled with, so a stale
+ * object built against an older neo_world_t (the reference cartridge's
+ * gameplay.o once missed the item fields: its ga_flags.player_handlers read
+ * the low byte of item_pickups and the first item taken froze the player's
+ * input) stops at start instead of corrupting the game. */
+#define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \
+    (uint32_t)offsetof(msx_game_t,world.ga_flags)<<8^(uint32_t)offsetof(msx_game_t,ride)<<4)
+extern const uint32_t msx_game_layout;
 int msx_game_animation(const msx_game_t *game);
 /* Projected words of the player (+3C/+40) as the native world receives them. */
 void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);

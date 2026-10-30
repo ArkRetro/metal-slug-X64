@@ -117,6 +117,8 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     }
 }
 void actor_init(void) {
+    assertf(msx_game_layout==MSX_GAME_LAYOUT,"stale gameplay object: msx_game_t layout %08lx, actor.c %08lx (rebuild)",
+        (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
     scene_assets_init();scene_renderer_init();reset_game();
     marco_native=marco_renderer_load();
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);

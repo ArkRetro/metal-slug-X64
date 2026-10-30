@@ -108,6 +108,12 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * the actor then leaves (004188 after the cartridge check). */
         w->ga_flags.dome_signal=0xff;w->ga_flags.dome_group=sp->group69;return;
     }
+    if (routine==0x1913cu) {
+        /* Spawn-table entry 01913C (uncounted): the mission timer 1013DE back
+         * to its start value 003586; the actor then leaves (004188 after the
+         * cartridge check). The player's HUD applies it (neo_hud.c). */
+        w->timer_resets++;return;
+    }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
@@ -138,13 +144,23 @@ static void place(neo_contact_actor_t *a,const neo_contact_actor_t *source,int d
     seed.cached_y=(int32_t)((uint32_t)seed.cached_y-0x200000u);
     neo_throw_spawn(a,&seed,scene,epoch);
 }
+/* 004C24 on the player (+5A/+5B): the highest kind of the update wins; +5B
+ * bit 7 when the player's projected x is left of the attacker's +44. */
+static void player_hit(tick_t *t,int32_t projected_x,int32_t cached_x,uint8_t kind) {
+    neo_world_t *w=t->w;
+    if (!t->hits || kind>w->hit_kind) {w->hit_kind=kind;w->hit_right=(int16_t)(uint16_t)(t->player.x-(uint16_t)HI(cached_x))<0;}
+    t->hits++;w->hit_x=HI(projected_x);
+}
 static void soldier_event(void *context,const neo_soldier_event_t *e) {
     tick_t *t=context;neo_world_t *w=t->w;
     switch (e->kind) {
     case NEO_SOLDIER_EVENT_SOUND:sound_request(w,e->value);break;
     case NEO_SOLDIER_EVENT_KNIFE_HIT:
-        t->hits++;
-        if (t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER) w->hit_x=HI(w->soldiers[w->order[t->current].index].b.projected_x);
+        /* The soldier's 0049E8 row (value: its kind +4). */
+        if (t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER) {
+            const neo_soldier_t *so=&w->soldiers[w->order[t->current].index];
+            player_hit(t,so->b.projected_x,so->b.cached_x,(uint8_t)e->value);
+        } else t->hits++;
         break;
     case NEO_SOLDIER_EVENT_THROW: { /* 03BB8E: 00411C inserts after the script actor */
         unsigned i;for (i=0;i<NEO_WORLD_THROWS && w->throws[i].active;i++) {}
@@ -202,7 +218,7 @@ static bool throw_hit(void *context,const neo_contact_actor_t *b) {
     if (!t->player_hittable) return false;
     int first=-1;
     uint8_t type=neo_hit_query(b,soldier_throw_attack,&t->player,1,(uint8_t)soldier_throw_attack[4],(uint8_t)soldier_throw_attack[5],&first);
-    if (type && first>=0 && soldier_throw_attack[6]) {t->hits++;t->w->hit_x=HI(b->projected_x);}
+    if (type && first>=0 && soldier_throw_attack[6]) player_hit(t,b->projected_x,b->cached_x,(uint8_t)soldier_throw_attack[4]);
     return type!=0;
 }
 /* ---- generic actors (neo_gactor.h) ------------------------------------------- */
@@ -458,7 +474,7 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     if (row[5]==0) { /* class 0: the player */
         if (!t->player_hittable) return 0;
         int first=-1;uint8_t type=neo_hit_query(&c,row,&t->player,1,(uint8_t)row[4],0,&first);
-        if (type && first>=0 && row[6]) {t->hits++;w->hit_x=HI(c.projected_x);}
+        if (type && first>=0 && row[6]) player_hit(t,c.projected_x,c.cached_x,(uint8_t)row[4]);
         return type;
     }
     uint8_t best=0;
@@ -630,7 +646,7 @@ static bool b_attack(void *c,int16_t node,uint32_t rows,uint16_t *result) {
             a.projected_x=(int32_t)neo_boss_l(n,0x3c);a.projected_y=(int32_t)neo_boss_l(n,0x40);
             a.cached_x=(int32_t)neo_boss_l(n,0x44);a.cached_y=(int32_t)neo_boss_l(n,0x48);a.flags15=n->f[0x15];
             int first=-1;uint8_t type=neo_hit_query(&a,row,&t->player,1,(uint8_t)row[4],0,&first);
-            if (type && first>=0 && row[6]) {t->hits++;w->hit_x=HI(a.projected_x);}
+            if (type && first>=0 && row[6]) player_hit(t,a.projected_x,a.cached_x,(uint8_t)row[4]);
             if (type>*result) *result=type;
         }
         if ((uint16_t)(r[14]<<8|r[15])==0xffffu) return true;

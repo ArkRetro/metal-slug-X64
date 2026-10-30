@@ -8,6 +8,7 @@
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
 static int right_limit(const msx_game_t *g);
+static void ride_on(msx_game_t *g,uint8_t object,int32_t x,int32_t y);
 int msx_ground_offset(int x) {
     neo_surface_t s;
     return neo_surface_at(x,64*MSX_UNIT,64*MSX_UNIT,64*MSX_UNIT,&s)?56*MSX_UNIT-s.height:0;
@@ -21,10 +22,30 @@ void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
     memset(g,0,sizeof(*g));
     g->x=MSX_START_X;g->y=msx_ground_offset(g->x);
-    g->facing=1;g->grounded=true;g->health=3;
+    g->facing=1;g->grounded=true;g->health=1;
     // The original region script starts at its first record with the RNG
     // ring the mission handoff left (data/soldier_ai_tables.json).
     neo_world_init(&g->world,-(int32_t)((uint32_t)g->camera<<16));g->world_enabled=true;
+    /* Mission start: timer 003586 (DIP index 0 of 10FD8C: 60, as in the
+     * captures), lives 10FD88 = 3 (0C9406), one taken by the first spawn
+     * (0C95E6). */
+    neo_hud_init(&g->hud,(uint16_t)(neo_hud_timer_start(MSX_HUD_TIMER_DIP)<<8|0xff));
+    g->hud.panel[0].f84=3;neo_hud_life_lost(&g->hud,0);
+}
+/* One update of the original HUD with the port's state (neo_hud.c): single
+ * player MVS game with no credit (P2 panel "INSERT COIN", "CREDIT 0"), no
+ * vehicle gauge (the port's player does not ride), timer running while the
+ * mission is in play. */
+static void hud_step(msx_game_t *g) {
+    if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
+    neo_hud_input_t in={0};
+    in.hud_on=true;in.join_mask=3;in.mvs=true;in.credit_text=true;in.credits=0;
+    in.arms=neo_hud_arms(g->world.weapons.b,NULL,0,false,0);
+    neo_hud_bombs(g->world.weapons.b,NULL,0,0,0,&in.bombs,&in.bomb_type);
+    memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
+    in.video=(uint16_t)(g->ticks>>1);
+    in.timer_running=!g->complete && !g->mission_complete;
+    neo_hud_frame(&g->hud,&in);
 }
 bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     neo_surface_t support;
@@ -46,32 +67,65 @@ void msx_game_vehicle_reference(msx_game_t *g) {
 #endif
 const bool msx_reference_invulnerable=MSX_REFERENCE_INVULNERABLE!=0;
 const uint32_t msx_game_layout=MSX_GAME_LAYOUT;
+/* Root of the projected words (the scene root 10E968 of player_frame). */
+static void root_xy(const msx_game_t *g,int32_t *rx,int32_t *ry) {
+    *rx=-(int32_t)((uint32_t)g->camera<<16);*ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
+    if (g->world.camera_native) {*rx=neo_camera_root_x(&g->world.camera);*ry=neo_camera_root_y(&g->world.camera);}
+}
+static void start_death(msx_game_t *g,uint8_t kind,bool right) {
+    int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
+    if (!marco_death_start(&g->life,kind,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
+    if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
+    g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
+    marco_hgun_reset(&g->hgun);
+}
 void msx_game_hurt(msx_game_t *g,int from) {
-    if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE) return;
-    g->health--;g->invulnerable=60;
-    g->x=clamp(g->x+(g->x/MSX_UNIT<from?-20:20)*MSX_UNIT,(g->camera+28)*MSX_UNIT,right_limit(g));
-    if (g->grounded) {
-        neo_surface_t support;
-        if (neo_surface_at(g->x,56*MSX_UNIT-g->y,8*MSX_UNIT,8*MSX_UNIT,&support))
-            g->y=56*MSX_UNIT-support.height;
-        else {g->grounded=false;g->air_ticks=0;}
-    }
-    if (!g->health) {
-        /* 0C2FA4 (the dead player gone) and 0C0E6E (the new life). */
-        marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
-        g->deaths++;g->health=3;g->velocity_x=g->velocity_y=0;g->invulnerable=90;
-        memset(g->bullets,0,sizeof(g->bullets));
-        if (g->world_enabled && g->world.camera_native) {
-            // The mission camera never scrolls back: respawn inside the
-            // current view, dropping onto the nearest floor below.
-            g->x=clamp(g->x,(g->camera+64)*MSX_UNIT,(g->camera+256)*MSX_UNIT);
-            g->y=56*MSX_UNIT-(g->camera_height+200)*MSX_UNIT;g->grounded=false;g->air_ticks=0;
-            return;
+    if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE || g->life.phase!=MARCO_ALIVE) return;
+    /* 0C2956 with the update's +5A/+5B (neo_world.c player_hit). */
+    if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
+    else start_death(g,0,g->x/MSX_UNIT<from);
+}
+/* Floor 0146EE: 013DB2 from the feet down 256 px, terrain or a platform. */
+static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
+    if (g->world_enabled) {
+        neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+        neo_kfloor_t f;
+        if (neo_kernel_floor(k,x,*y,NEO_KOBJ_TERRAIN,-256*MSX_UNIT,0xff,0,0,&f) && f.found) {
+            if (f.parent>=NEO_KOBJ_DYN0) {
+                const neo_kdyn_t *d=&k->dyn[f.parent-NEO_KOBJ_DYN0];
+                if (d->map) {*y=(int32_t)((uint32_t)f.y+(uint32_t)d->pos.y-(uint32_t)k->terrain.y);ride_on(g,f.parent,x,*y);return true;}
+            } else {*y=f.y;return true;}
         }
-        g->x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
-        g->camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
-        g->y=msx_ground_offset(g->x);g->grounded=true;
     }
+    neo_surface_t s;
+    if (neo_surface_at(x,*y,256*MSX_UNIT,256*MSX_UNIT,&s) && s.height<=*y) {*y=s.height;return true;}
+    return false;
+}
+/* The panel's new life (0C95AE): a life less (0C95E6; none left is the game
+ * over 0C9848, not translated: explicit stop, the port goes on with 0), the
+ * timer back to its start (019124), the weapons of a new life (0C2FA4 at
+ * the end, 0C0E6E/0C0EAA), the respawn point 0196E8 and the type-0
+ * entrance 0C1438 (floor 0146EE, program 0BF498, +84 = 0x78). */
+static void new_life(msx_game_t *g) {
+    if (!neo_hud_life_lost(&g->hud,0)) g->hud_game_over++;
+    neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
+    marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
+    memset(g->bullets,0,sizeof(g->bullets));
+    g->velocity_x=g->velocity_y=0;g->facing=1;g->ride=0;g->air_ticks=0;   /* 0C10FE: facing right */
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    int32_t x,y;
+    if (g->world_enabled && g->world.camera_native) {
+        marco_respawn_t r=marco_respawn_point(neo_camera_progress(&g->world.camera),rx,ry);
+        x=r.x;y=r.y;
+    } else {
+        /* Without the native camera (lab builds): the port's checkpoint. */
+        x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
+        g->camera=clamp(x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);y=64*MSX_UNIT;
+    }
+    g->grounded=respawn_floor(g,x,&y);
+    g->x=x;g->y=56*MSX_UNIT-y;
+    marco_entrance_start(&g->life);g->invulnerable=2*0x78;
 }
 /* Projected words of the player as the original registers them (+3C/+40):
  * world position plus the scene root (RAM 10E97C/10E980) of the native
@@ -81,6 +135,12 @@ static neo_world_player_t player_frame(const msx_game_t *g) {
     if (g->world.camera_native) {rx=neo_camera_root_x(&g->world.camera);ry=neo_camera_root_y(&g->world.camera);}
     neo_world_player_t p={(uint16_t)((uint32_t)(g->x+rx)>>16),(uint16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16),
         (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
+    /* Dying: +5F bit 7. The dying player also clears its 10C33C bit and is
+     * no actor for the update between its end (0C2F96) and the new life;
+     * the soldiers' and items' paths without an active player (the
+     * soldiers' 0AF6C0.. states loop) are not translated, so `inactive`
+     * stays clear and `alive` set: explicit deviation (docs/JEFE_MISION1.md). */
+    p.dead=g->life.phase==MARCO_DYING || g->life.phase==MARCO_LYING;
     return p;
 }
 void msx_game_projected(const msx_game_t *g,uint16_t *x,uint16_t *y) {
@@ -218,6 +278,15 @@ static bool active_bullet_step(msx_game_t *g,msx_bullet_t *b) {
     } else if (b->x<g->camera-32 || b->x>g->camera+352) b->active=false;
     return b->active;
 }
+/* 0C0D64 for the H bullet of a fire callback (marco_hgun.c). */
+static bool hgun_reserve(void *context) {
+    msx_game_t *g=context;
+    marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
+    g->hgun_kind=ammo.kind;
+    bool allowed=marco_ammo_reserve(&ammo,ammo.kind,false,false);
+    marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
+    return allowed;
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
     /* Collapse of the domed building: the players' input handlers are the
@@ -231,8 +300,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (direction) g->facing=direction<0?-1:1;
     g->jump_pending|=jump && !g->jump_was_down;
     g->jump_was_down=jump;
+    /* Dying, gone or entering: no control (0C2E8A..0C2F12, 0C149E). */
+    bool dying=g->life.phase==MARCO_DYING || g->life.phase==MARCO_LYING;
+    if (g->life.phase!=MARCO_ALIVE) {direction=0;jump=false;fire=false;g->grenade=false;g->moving=false;g->jump_pending=false;}
+    if (g->life.phase==MARCO_ENTERING) g->invulnerable=2*0x78;
+    if (g->life.phase==MARCO_GONE && !(g->ticks&1)) new_life(g);
     // The recovered arcade player routine advances on alternate video ticks.
-    if (!(g->ticks&1)) {
+    if (!(g->ticks&1) && g->life.phase!=MARCO_GONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;
         if (events&NEO_VEHICLE_STAMP)
             g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
@@ -241,6 +315,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         }
         g->jump_pending=false;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
+        if (dying) {
+            /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
+             * air step 0143EE (no gravity of its own) or the ground step. */
+            marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
+            if (g->life.phase==MARCO_LYING && g->grounded) body.vy=0;
+        }
         if (g->ride) {
             /* Carried: the feet follow the platform object (projected
              * position + relative feet - terrain). */
@@ -272,9 +352,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             if (!g->grounded) g->air_ticks=0;
         } else {
             int previous=body.y;
-            neo_air_accel(&body,direction);
+            if (!dying) neo_air_accel(&body,direction);
             solid_push_t s=solid_push(g,&body,body.vx,body.vy);
-            if (s.top) {
+            if (s.top && !dying) {
                 /* 014408: on top of a kind-1 body (player +5F bit 7, dying,
                  * has no equivalent here): thrown up, and away when it was
                  * in the left half; neither side then blocks. */
@@ -291,6 +371,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
+        if (dying) {
+            /* 0C2EC6..0C2F8A: speed, program, landing, count-down, off-screen. */
+            int32_t rx,ry;root_xy(g,&rx,&ry);
+            int32_t vx=g->velocity_x;
+            marco_death_after(&g->life,g->grounded,&vx,(int16_t)((uint32_t)(g->x+rx)>>16),(int16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16));
+            g->velocity_x=vx;
+            if (g->grounded) g->velocity_y=0;
+        } else if (g->life.phase==MARCO_ENTERING) marco_entrance_step(&g->life);
     }
     int player=g->x/MSX_UNIT;
     if (player>=640 && g->kills>=1) g->checkpoint=640;
@@ -315,12 +403,46 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 bool still=g->grounded && !g->moving;
                 neo_world_player_grenade(&g->world,still?0x1bf10u:0x1bf46u,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
-                g->grenades++;
+                g->grenades++;marco_hgun_throw(&g->hgun);
             } else g->grenade_stops++;
         }
         g->grenade_was_down=g->grenade;
     }
-    if (fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
+    /* The H (ammo kinds 5/10 with +93 != 2): the original upper-body fire
+     * states (marco_hgun.c) on the player's updates; the fire press is +9B
+     * bit 4. The bullets 01B6DC/01B716 take the callbacks' angles (0C4244
+     * with the fan, or the 0C453A sweep steps). Muzzle: the port has no
+     * +72/+74 (offset of the upper body), so the 0C4244/0C453A offsets are
+     * applied to the port's pistol muzzles: forward (24,80), up (3,108),
+     * linearly between them for a diagonal (declared approximation). */
+    bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
+    bool hgun=false;
+    if (g->world_enabled && g->world.weapon_player.form93!=2) {
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;
+    }
+    if (!hgun) marco_hgun_reset(&g->hgun);
+    else {
+        if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
+        if (!(g->ticks&1)) {
+            marco_weapon_player_t *m=&g->world.weapon_player;
+            g->hgun.combo95=m->combo95;
+            marco_hgun_input_t in={g->aim_up,false,g->facing<0};
+            marco_hgun_shot_t shots[4];
+            unsigned n=g->complete?0:marco_hgun_step(&g->hgun,&in,hgun_reserve,g,shots,4);
+            m->combo95=g->hgun.combo95;
+            for (unsigned k=0;k<n;k++) {
+                /* Elevation of the shot from the angle (0 forward .. 0x40 up, mirrored left). */
+                uint8_t a=shots[k].angle;int e=g->facing<0?0x80-(int)a:(int)a;
+                if (e<0) e=0; else if (e>0x40) e=0x40;
+                int32_t x=g->x+g->facing*((24*(0x40-e)+3*e)/0x40)*MSX_UNIT;
+                int32_t y=((80*(0x40-e)+108*e)/0x40)*MSX_UNIT-g->y;
+                neo_world_player_shot(&g->world,g->hgun_kind==5?0x1b6dcu:0x1b716u,x,y,a,0);
+                g->hgun_diagonal+=shots[k].sweep;
+                g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;
+            }
+        }
+    }
+    if (fire && !hgun && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
         /* 0C0D64 for the current weapon (it may consume a round and still
          * refuse at the active-projectile cap). */
         marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
@@ -328,20 +450,6 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
         g->cooldown=8;
         if (!allowed) break;
-        if ((ammo.kind==5 || ammo.kind==10) && g->world_enabled && g->world.weapon_player.form93!=2) {
-            /* 0C4454/0C447C: the H bullet 01B6DC/01B716 (neo_bullet.c);
-             * 0C4430 and 0C44A6 count +95 twice, the angle fans by
-             * 2*((+95 mod 3)-1). The muzzle (0C4244 table, 014A02) is the
-             * port's pistol muzzle: the player model has no +72/+74. */
-            marco_weapon_player_t *m=&g->world.weapon_player;
-            m->combo95=(uint8_t)(m->combo95+1u);m->combo95=(uint8_t)(m->combo95+1u);
-            uint8_t angle=g->aim_up?0x40:(g->facing<0?0x80:0);
-            angle=(uint8_t)(angle+2*((int)(m->combo95%3u)-1));
-            int32_t x=g->aim_up?g->x+g->facing*3*MSX_UNIT:g->x+g->facing*24*MSX_UNIT;
-            int32_t y=(g->aim_up?108:80)*MSX_UNIT-g->y;
-            neo_world_player_shot(&g->world,ammo.kind==5?0x1b6dcu:0x1b716u,x,y,angle,0);
-            g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;break;
-        }
         if (ammo.kind) {
             static const uint32_t constructor[MARCO_WEAPON_IDS]={0x1b782,0xc5508,0x644c4,0x6381c,0xa71f8,0x1b6dc,0xc46d6,0x646b0,
                 0x641ec,0xa716e,0x1b716,0xc46d6,0x63f32,0x8606a,0xde4da,0xdea20};
@@ -360,10 +468,17 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->world.scroll_y=neo_camera_root_y(&g->world.camera);
         if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
+        /* Time over (0186FA -> 0C0A2C): +9E = FF, +5A = 6, a death however
+         * invulnerable (not in the reference cartridge). */
+        if (!g->hud.time_over) g->time_over_seen=false;
+        else if (!g->time_over_seen && g->life.phase==MARCO_ALIVE && !g->complete && !MSX_REFERENCE_INVULNERABLE) {
+            g->time_over_seen=true;g->time_overs++;start_death(g,6,g->world.hit_right);
+        }
         g->kills=g->world.kills;
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
         if (g->world.mission_step>=1) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
+        hud_step(g);
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;

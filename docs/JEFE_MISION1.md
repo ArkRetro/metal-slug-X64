@@ -247,3 +247,88 @@ python3 tools/test_boss_ares.py boss-regression.z64 --output /ruta/ares-boss
 
 `filesystem/boss-native.json` (generado, no versionado como el resto de
 `filesystem/`) lo necesita `pack_scene.py`.
+
+## Pendiente (prueba 5 en MiSTer)
+
+- **Marco cae sobre el jefe al reaparecer: corregido** (sección siguiente).
+- **Explosiones del jefe sin color: identificado, no corregido.** Las
+  manchas planas azules con borde dorado/rojo/cian y los círculos grandes
+  planos (capturas del port en ares, combate del jefe) son el programa
+  `0x22CF2C` (descriptores `0x1300AE..0x1306CE`) de los actores genéricos
+  que crea el jefe, dibujado con los recursos de paleta `0x357`, `0x358` y
+  `0x359`. El paquete de escena guarda la paleta más frecuente de las
+  capturas (`tools/export_boss_sprites.py`): plumas 1..6 una rampa dorada,
+  roja o cian y plumas 7..15 = `0x100F` (azul puro). En el original esas
+  ranuras las anima el asignador de paletas: su entrada en `0x1068EA`
+  (`0574 0574 0844 0844 nnnn 0357 0357`, `runDbg2` fotogramas 10950,
+  13380..13440) lleva un contador `+8` (1, 0x0B, 2) y la paleta pasa de una
+  de fuego (`7FFE 5FFA 4FD8 ...` en el fotograma 10950) a la apagada
+  (`4EB0 ...`, `100E`, `100B`), así que la explosión se ve de fuego y se
+  apaga. El port no tiene paletas animadas (TLUT estática por recurso):
+  **parada explícita**; hace falta traducir el motor de fundidos del
+  asignador (`0x009EA8`/`0x009F88` y su tabla `0x0574`/`0x0844`) y dar al
+  renderizador paletas por fotograma.
+
+## Muerte y reaparición del jugador (`src/marco_death.c`)
+
+Antes el port daba 3 puntos de vida con un retroceso inventado de ±20 px y la
+vida nueva caía desde lo alto de la vista (`camera_height+200`) al primer
+suelo, incluidas las plataformas dinámicas del jefe. Ahora, como el original:
+
+- **Un impacto mata** (`0x0C2956`). El tipo `+5A` (el mayor de la
+  actualización, `neo_world.c player_hit`) elige la muerte: tipo 2
+  `0x0C2BCE` (en el aire conserva `+30/+34`; en el suelo los anula; `+80` =
+  0x100), tipos 7/0x10 `0x0C2C7A/0x0C2C40` (programa `0x0BF358`, `+80` =
+  0x80), los demás `0x0C2DDA` (programas `0x0BF298` en el suelo /
+  `0x0BF318` en el aire, `+80` = 0x20). Todas menos la de tipo 2 lanzan al
+  jugador: `+34` = 0xA9000 y `+30` = ∓2 según `+5B` bit 7 (atacante a la
+  derecha: mira a la derecha y sale hacia la izquierda). **Paradas
+  explícitas**: tipo 8 (`0x0C2ACC`) y tipo 0x12 en el suelo (`0x0C2A70`)
+  tienen muertes propias; se cuentan (`death_stops`) y usan `0x0C2DDA`.
+- **Vuelo** `0x0C2E8A`: en el aire `+34 += (−0x160000 − +34) >> 5`,
+  `+30 −= +30 >> 5` y el paso aéreo `0x0143EE` (el del port, con las
+  plataformas; sin el empujón hacia arriba de los cuerpos sólidos, `+5F` bit
+  7); en el suelo el paso de suelo con velocidad 0. La velocidad del programa
+  `+26` se acerca 1/16 a `+80` cada actualización (0x100 al aterrizar), así
+  la duración de la animación depende de cuánto dura el vuelo. Los programas
+  esperan con `BRANCH_FIELD +78` hasta el aterrizaje.
+- **Tumbado** `0x0C2F06/0x0C2F12`: 31 actualizaciones (`+80` = 0x1E), `+30`
+  = 0, `+34 −= 0x5000`; fin (`0x0C2F90`) también si sale de la vista
+  (`0x0C2F72`).
+- **Vida nueva** en la actualización siguiente (panel `0x0C95AE`): una vida
+  menos (sin vidas, `0x0C9848` fin de partida: parada explícita, el port
+  sigue con 0), el tiempo vuelve a su inicio (`0x019124`), armas de vida
+  nueva, y la posición de `0x0196E8`: tabla de reaparición `10C31E`
+  (Misión 1: banco 1 `2D5C22`, entradas de 12 bytes por progreso de cámara
+  `10E99E`; con progreso ≥ 0x0D30 el registro `2D5C52`: x = raíz + 0x28,
+  y = 0x50) más un paso `0x0143E4` con `+7` = 16 px, después la entrada de
+  tipo 0 `0x0C1438`: suelo `0x0146EE` (búsqueda `0x013DB2` 256 px hacia
+  abajo, terreno o plataforma) y el programa `0x0BF498` (12
+  actualizaciones sin control, `+84` = 0x78). En la arena del jefe la vida
+  nueva queda en la pantalla x = 56 sobre el suelo de la arena (y = 64), nunca
+  sobre el jefe.
+- **Fin de tiempo** (`0x0186FA` → `0x0C0A2C`, `+9E` = FF, `+5A` = 6): mata
+  al jugador aunque sea invulnerable; el tiempo queda en 0 hasta la vida
+  nueva. No en el cartucho de referencia, que sigue invulnerable.
+
+Captura: `tools/capture_weapons.lua` con `MSX_WEAPONS_MORTAL_CAMERA=3300`
+(deja de forzar la invulnerabilidad `101523`/`101549` en la arena y escribe
+`deaths.csv`), `MSX_WEAPONS_ASSIST_CAMERA=3300`, `MSX_WEAPONS_LAST=17200`:
+`/home/user/captures/weapons/death3` (7 muertes en la arena: tipos 2, 7, 9 y
+0xD). Prueba `tools/test_marco_death.c` (`make check-core`,
+`data/death_fixture.json`): 127 velocidades en vuelo, 302 velocidades de
+programa `+26`, las actualizaciones de `0x0C2F06` y de `003F1E`, el punto de
+reaparición y la duración de la entrada de las 7 muertes, iguales.
+**Parada explícita**: la primera actualización de una muerte de tipo 7 tiene
+`+30/+34` = ∓3,80 escritos fuera de `0x0C2C7A` (no localizado; las demás
+actualizaciones coinciden). `tools/test_gameplay.c`: en las carreras de
+lanzamiento cada vida nueva en la arena (13..15 por carrera) queda en el
+suelo de la arena a x de pantalla 56..58.
+
+**Desviaciones declaradas**: el jugador que muere también borra su bit de
+`10C33C` y deja de existir una actualización (`0x0C2F96`); las rutas de los
+soldados y objetos sin jugador activo no están traducidas (los estados
+`0x0AF6C0..` de los soldados entran en bucle), así que el mundo sigue viendo
+al jugador activo. Las poses de los programas de muerte no están en el
+catálogo de poses auditado: el port mantiene la última pose mientras muere
+(registrado una vez).

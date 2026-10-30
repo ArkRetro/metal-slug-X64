@@ -5,6 +5,9 @@
 #include <stddef.h>
 #include "neo_vehicle.h"
 #include "neo_world.h"
+#include "neo_hud.h"
+#include "marco_hgun.h"
+#include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
@@ -14,6 +17,9 @@ enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
 /* up: fired with up held (moves up, original pistol attack row 4). */
 /* kind: weapon id that fired it (RAM 10C71E); 0 = pistol. */
+#ifndef MSX_HUD_TIMER_DIP
+#define MSX_HUD_TIMER_DIP 0   /* RAM 10FD8C (003586 index): 60 */
+#endif
 typedef struct { int x,y,direction; bool active,up; uint8_t kind; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the
@@ -43,6 +49,9 @@ typedef struct {
     /* Native region world (level script, rebel soldiers, thrown objects,
      * death splashes), updated with the player on alternate video ticks. */
     neo_world_t world;bool world_enabled;
+    /* Fix-layer HUD (neo_hud.c, docs/ARMAS_VEHICULOS.md §11), updated with
+     * the world; timer_resets_seen: 01913C spawns already applied. */
+    neo_hud_t hud;unsigned timer_resets_seen,hud_game_over;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
@@ -62,6 +71,13 @@ typedef struct {
      * native grenade 01BF46/01BF10 (grenades); other bomb types stop
      * explicitly (grenade_stops). */
     bool grenade,grenade_was_down;
+    /* H upper body (marco_hgun.c): fire states, sweeps and their diagonal
+     * bullets; fire_was: the fire input of the previous tick (+9B bit 4). */
+    marco_hgun_t hgun;bool fire_was;unsigned hgun_diagonal;uint8_t hgun_kind;
+    /* Death and new life (marco_death.c, docs/JEFE_MISION1.md): one hit
+     * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
+     * the deaths of kinds 8 / 0x12 (own routines, not translated). */
+    marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
 } msx_game_t;
@@ -69,7 +85,8 @@ void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
-/* One hit on the player from world x `from` (knockback away from it). */
+/* A hit on the player (from: world x of the attacker, used without the
+ * native world): the death 0C2956 unless invulnerable or already dying. */
 void msx_game_hurt(msx_game_t *game,int from);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;

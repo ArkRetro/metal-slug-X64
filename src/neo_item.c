@@ -17,8 +17,8 @@
  * creator is gone (00409A).
  *
  * Only the kinds whose motion is 08B9B2 (fall with 0xA000 gravity, grow +12
- * / +13 by 8 up to FF) are native: 06, 18, 1C, 29, 2A, 2B, 2F, 4B, 4F (H
- * heavy machine gun, family test), 51. The constructor hands any other kind
+ * / +13 by 8 up to FF) are native (programs of every such kind are
+ * imported; 36 is dropped by the hidden boxes 09A67E). The constructor hands any other kind
  * back to the world as an external actor (counted, not created). The item
  * list 10C5C2 (08CBCA/08CBF8) has no reader in the port and is not kept.
  * The path that would reach the cartridge check (2FFFE0, +6E = FFFF) ends in
@@ -36,11 +36,50 @@ enum { RECORDS=0xe581a, MOTION_FALL=0x8b9b2 };
 static uint8_t rb(uint32_t address) {const uint8_t *p=ga_rom(address);return p?p[0]:0;}
 static uint16_t rw(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint16_t)(p[0]<<8|p[1]):0;}
 static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(address+2);}
+/* Program callbacks: 2881CA (kind 36: resting on the ground, +15 bit 6 and
+ * +30 = 0, sets +7D when +34 = 0 too), 287D50 (kinds 34, 39: +7D = on the
+ * ground), 28AA7E (kind 54: +7E = 0029F2 of 3). The other callbacks of the
+ * fall-motion programs (kinds 31, 39, 44) stop explicitly. Kind 37's
+ * program (288396) is translated; its 2884C8 turns it into kind 28, whose
+ * motion 08BD5A walks on the ground (0x01456A) and falls in the air. */
+static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    switch (routine) {
+    case 0x2881ca: if (BIT(0x15,6) && !L(0x30)) SB(0x7d,L(0x34)?0:0xff);return true;
+    case 0x287d50: SB(0x7d,BIT(0x15,6)?0xff:0);return true;
+    case 0x28aa7e: SB(0x7e,ga_rand_range(e,3));return true;
+    /* Kind 37 (program 288396). */
+    case 0x2884aa: SW(0x26,(uint16_t)((ga_rand(e)&0xffu)+0x100u));return true;
+    case 0x28849a: SB(0x7e,(uint8_t)(ga_rand(e)&0xfu));return true;
+    case 0x2884be: SL(0x30,0);SL(0x34,0);return true;
+    case 0x288baa: SB(0x7e,(uint8_t)(B(0x7e)+1u));if (B(0x7e)>=0x10u) SB(0x7e,0);return true;
+    case 0x286b44: SB(0x7d,(ga_rand(e)&3u)?0:0xff);return true;
+    case 0x286ae8: /* face +73 bit 2 (right)/3 (left), else the screen half */
+        if (BIT(0x73,2)) SET(0x15,0);
+        else if (BIT(0x73,3)) SB(0x15,B(0x15)&~1u);
+        else {ga_project(a,e);SB(0x15,B(0x15)&~1u);if ((int16_t)W(0x3c)<0xa0) SET(0x15,0);}
+        /* fall through */
+    case 0x286b2c: SL(0x62,BIT(0x15,0)?0xc000u:0u-0xc000u);return true;
+    case 0x2884c8: /* becomes kind 28 (08D312: record +82; its motion 08BD5A) */
+        SW(0x6e,0x28);SL(0x82,RECORDS+0x18u*0x28u);
+        SW(0x76,0);SW(0x74,0);SL(0x62,0);SW(0x26,0x100);return true;
+    default: return false;
+    }
+}
 /* 08B9B2: the fall, and the item grows to full size. */
 static void k8b9b2(neo_gactor_t *a,neo_genv_t *e) {
     ga_air(a,e);                                                     /* 0143E4 */
     if (B(0x15)&0x40u) {SL(0x30,0);SL(0x34,0);}
     else SL(0x34,L(0x34)+0xffff6000u);
+    SB(0x12,B(0x12)>0xf7u?0xff:B(0x12)+8u);
+    SB(0x13,B(0x13)>0xf7u?0xff:B(0x13)+8u);
+}
+/* 08BD5A: ground step (+62) on the ground, else the 0xB000 gravity and the
+ * air step (0143DC); then the item grows as in 08B9B2. */
+static void k8bd5a(neo_gactor_t *a,neo_genv_t *e) {
+    if (BIT(0x15,6)) {uint32_t kind;ga_ground(a,e,&kind);}
+    else {SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);}
     SB(0x12,B(0x12)>0xf7u?0xff:B(0x12)+8u);
     SB(0x13,B(0x13)>0xf7u?0xff:B(0x13)+8u);
 }
@@ -213,7 +252,9 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     rec=L(0x82);
     if (!W(0x86)) SB(0x7c,0xff);
     SW(0x86,W(0x86)-1u);
-    k8b9b2(a,e);
+    if (rl(rec+0x14)==MOTION_FALL) k8b9b2(a,e);
+    else if (rl(rec+0x14)==0x8bd5au) k8bd5a(a,e);
+    else {ga_fail(e,rl(rec+0x14));return GA_UNSUPPORTED;}
     if (!B(0x80)) {
         if (W(0x78)) SW(0x78,W(0x78)-1u);
         else {
@@ -232,7 +273,7 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
             }
         }
     }
-    int r=ga_anim_step(a,e,NULL);
+    int r=ga_anim_step(a,e,item_call);
     if (r<0) return GA_UNSUPPORTED;
     if (r) {
         if (!B(0x8a)) {START(rl(rec+4));SB(0x8a,0xff);SB(0x14,B(0x19));}

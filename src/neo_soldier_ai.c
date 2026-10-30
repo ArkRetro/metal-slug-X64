@@ -546,7 +546,7 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
             if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
             s->routine=0x40db4;return true;
         }
-        if (kind==1 || kind==9) return death_40c8e(c);              /* 0406EE / 04070E: blasts (kind 9: the grenade's 01B5E2) */
+        if (kind==1||kind==9) return death_40c8e(c);   /* 0406EA entries 1 and 9 */
         if (kind==0||kind==2||kind==8||kind==0xe||kind==0xf||(kind>=0x10&&kind<0x14)) program=0x2404feu; /* 040DC0 */
         else if (kind==0xc||kind==0xd) program=0x240454u; /* 040DD8 */
     } else {

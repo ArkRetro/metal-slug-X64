@@ -233,7 +233,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         static bool armored_standing;bool standing=false;
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&game.world.gactors[i];uint32_t r=ga_l(a,0);
-            if (a->active && neo_armored_routine(r) && !(ga_b(a,0x5f)&0x80u)) standing=true;
+            if (a->active && neo_armored_vehicle(r) && !(ga_b(a,0x5f)&0x80u)) standing=true;
         }
         if (standing && !armored_standing) debugf("MSX armoured vehicle 087E36 camera=%d\n",game.camera);
         if (!standing && armored_standing) debugf("MSX armoured vehicle destroyed camera=%d\n",game.camera);

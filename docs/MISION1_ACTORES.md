@@ -442,6 +442,93 @@ de `veh1`: 62245 píxeles iguales, 162 distintos, todos en 4950 y 4980,
 cuando el contador de destello `+17` está activo (3 y FF en las
 actualizaciones previas); el validador dibuja con la paleta base.
 
+### Hijos del vehículo blindado (`src/neo_armored.c`)
+
+Todos tras el actor del guion (`0x00411C`): proyectil `0x088B52` (cae con
+gravedad `0xB000`, rueda con la velocidad de rango `2D102C` reducida en la
+primera pendiente y luego por el ángulo D7 de `0x0143E4`; explota
+(`0x088E0E`: sonido 1022, explosión `0x01C706`) al tocar a un jugador
+(fila `0E4EAE`, clase 0), con `0x004C0E` (RAM `1067E4`, copia de `1067E5`
+hecha por `0x0046E0`: ahora `neo_world_t.shots_clear`/`neo_genv_t.clear_shots`),
+contra una pared, al frenarse por debajo de 0x1000 o tras 0x140
+actualizaciones en el suelo), vaina `0x0896A0` (rebota, `+6E` = 30
+rebotes), humos `0x088ED8`, `0x08982A` (paleta de la palabra 1 de
+`0x0334C0`: 0x13F) y `0x0897E2`, piezas `0x08943C` (crecen `+12/+13` de 8 en
+8) y las diez piezas `0x088F20` (tabla `0E516E`). Ya hacen daño.
+
+Prueba `armored` re-extraída de la nueva captura `captures-m1full/veh2`
+(`MSX_REST_FAMILY_ROOTS=87e36,896a0,88b52,88ed8,8982a,8943c,88f20,897e2
+MSX_REST_BOSS_FROM=4500 MSX_REST_LAST=5000`; las 328 actualizaciones del
+vehículo son idénticas a `veh1`), con `--script-actor 101414`: los nodos
+creados tras el actor del guion tienen el creador −2 y el código nativo debe
+crearlos con `after_script`. **15 nodos, 609 actualizaciones en bucle
+cerrado (4581..4998), 84560 bytes iguales**, 5 borrados. `0x088F20` y
+`0x0897E2` no aparecen en la traza (el vehículo grabado no ejecutó
+`0x08938A` ni la explosión final con `+74 = 0`): traducción sin validar.
+
+Gráficos: `... veh1@87e36-89c00 veh2@88b52-89940`: 829 descriptores, 36
+paletas (nuevas `0xD3, 0x208, 0x113, 0x13F, 0x37C`), 153 volcados:
+1407960 píxeles iguales, 6326 distintos (los mismos de antes).
+
+Al hacer daño, las partidas de lanzamiento mueren más en la parada 1304
+(esperas de 506 a 2900 pasos; las partidas difieren entre `-O0` y `-O2`
+del anfitrión, sin investigar): `tools/test_gameplay.c` solo exige que la
+pasen (cota inferior 200). Una de ellas llegó a la entrada 9 de la tabla de muerte en suelo
+`0x0406EA`, que es `0x040C8E` como la 1 (antes detención explícita):
+traducida.
+
+## Parada 2336: espera en `0x2D6E8A` (diagnóstico)
+
+MAME: `0x2D6E8A` (grupos 0..7 vacíos tras el carro) dura 197 fotogramas en
+`pri1` y `fam2` (7773..7970) y 26 en `trk3`; el espadachín de túnica
+`0x0A8C62` está en x = 2615 (pantalla 279, `0x0A8E1A/0x0A8ECE`), pasa a
+`0x0A8FE0` en 7867 y sale andando (`0x0A9390`) hasta 7968. En el port, la
+sonda de anfitrión reproduce una espera sin fin solo con el jugador quieto
+a la derecha de la columna x = 2576 de la tienda caída mirando a la
+derecha: un espadachín `0x039590` que bajó del carro a su izquierda (el
+carro para en 2610 y los espadachines salen en −27..−46) no puede volver a
+cruzarla (celda `0x10`, la misma en los volcados de RAM de MAME desde 7500;
+la cruza hacia la izquierda pero no hacia la derecha) y gira o pasea entre
+x ≈ 2455 y 2542. Es la lógica original (prueba `arab` bit-exacta) con el
+terreno original; el jugador original también puede estar ahí (`pri1`, 7410:
+x = 2620). Con el jugador vuelto hacia el enemigo visible más cercano la
+espera dura 0, 102 y 166 pasos (pantalla 160, 220, 280): prueba nueva en
+`tools/test_gameplay.c` (`stand_2336`, cota `< 3·197`).
+
+## Cajas ocultas `0x09A67E` (`src/neo_secret.c`)
+
+Entrada `0x2E8` de la tabla de apariciones, en la cámara 1920 (registros
+`0x2D6ABC/B02/B48/B8E`, uno al azar, grupo 1 contado, en 2072,136 sobre la
+ruina de las cúpulas; luego hasta diez sin contar mientras el grupo 1 está
+vacío). Invisible: caja `0x09ADA0..` por `+6E`, salud `+72` (`0x09A688`
+cuenta golpes), `+70` objetos (0: 1..3 al azar). Abierta (`+5F` bit 7, por
+disparos o por el mata-todo de `0x004BAC` de la tienda caída) deja un
+objeto `0x08C374` por actualización (`0x08CD58` → `0x08CDB2`, tipo `+74`,
+dispersión `+80/+82` de `0x09AE08`, movimiento `0x09A8E0` por `+7A`) y se va
+fuera del rectángulo `0x09ADD8`. Al abrirse `0x09A956` → `0x03C5D2` busca
+una celda del grupo 5 en `+3C/+40` −1, +7 y +15 (`0x013CF8`, ahora
+`neo_kernel_point_group`); no hay ninguna en la Misión 1 (rejilla observada)
+y, encontrada, crearía `0x03C962`: detención explícita, como la variante
+`0x09A692` (prisionero `0x099E1C`). En la recreativa la caja contada vive
+hasta que cae la tienda (su mata-todo la abre), así que también sostiene la
+espera del grupo 1 de `0x2D6D78`.
+
+Prueba `secret` (`data/secret_fixture.json.gz`, MAME `captures-m1full/box1`,
+`MSX_REST_FAMILY_ROOTS=9a67e,9a688,9a692 MSX_REST_BOSS_FROM=6900
+MSX_REST_LAST=7450`, rango `9a5ee-9a9c2`): **15 nodos, 416 actualizaciones
+en bucle cerrado (6989..7397), 56140 bytes iguales**, 15 borrados, 32
+objetos fuera de la familia. La prueba genérica lee ahora RAM `1067E2`
+(mata-todo de otra familia) cuando la traza la tiene.
+
+Objetos: los programas de todos los tipos con movimiento `0x08B9B2` se
+importan (antes solo diez; la caja da el tipo 36 y las partidas de
+lanzamiento llegaron al 37 y al 54). Retrollamadas traducidas: `2881CA`,
+`287D50`, `28AA7E` y las del tipo 37 (`2884AA`, `28849A`, `2884BE`,
+`288BAA`, `286B44`, `286AE8`, `286B2C`, `2884C8`: pasa a tipo 28, cuyo
+movimiento `0x08BD5A` anda por el suelo); las de los tipos 31, 39 y 44
+son detenciones explícitas. Gráficos: 1232 descriptores, 39 paletas
+(faltan `0x37F, 0x133, 0x38E, 0x823`: ninguna captura las tiene).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

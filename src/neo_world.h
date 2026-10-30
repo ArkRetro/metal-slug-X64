@@ -149,6 +149,7 @@ typedef struct {
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */
     neo_ga_flags_t ga_flags;
     bool kill_active;               /* RAM 1067E2 */
+    bool shots_clear;               /* RAM 1067E4 (0046E0: copy of the 004C06 request 1067E5) */
     uint8_t swap_step;
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
@@ -189,6 +190,8 @@ bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_act
 /* True once the script has passed the camera-1920 lock (2D6A1A): the end of
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);
+/* A spawn-table constructor the script creates natively (script_spawn). */
+bool neo_world_spawn_native(uint32_t constructor);
 unsigned neo_world_alive(const neo_world_t *world);
 /* Mission actor's camera step (ROM 018D96..0C81C0, neo_camera_update) with
  * the player's projected words; enables the native camera. The caller then

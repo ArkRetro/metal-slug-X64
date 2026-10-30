@@ -534,10 +534,11 @@ cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas
 
 Gráficos: `tools/export_rest_sprites.py` añade los programas de la chispa
 `0x28617E`, las balas, los impactos, la granada y su explosión (paletas
-`0x202`, `0x27C`, `0x378`). Orden documentado en `MISION1_ACTORES.md` más
-`hfam@1b600-1bd00 cfam@1bd00-1c400 cfam@8c37c-8c700`: 799 descriptores (98
-nuevos), 34 paletas, 154 volcados validados contra VRAM (1404641 píxeles
-iguales, 8068 distintos; antes 146 volcados, 6326 distintos).
+`0x202`, `0x27C`, `0x378`). Orden documentado en `MISION1_ACTORES.md`
+(con `veh2@88b52-89940 box1@9a67e-9ae80`) más `hfam@1b600-1bd00
+cfam@1bd00-1c400 cfam@8c37c-8c700`: 1330 descriptores (98 nuevos sobre los
+1232 de la integración), 42 paletas (faltan las mismas 4 sin captura), 161
+volcados validados contra VRAM (1409085 píxeles iguales, 8068 distintos).
 
 ### Paso 4: granadas (`src/neo_bullet.c`)
 

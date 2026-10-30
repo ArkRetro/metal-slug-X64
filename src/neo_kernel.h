@@ -63,6 +63,11 @@ void neo_kernel_dyn_begin(neo_kscene_t *scene);
 /* ROM 013F82: bounding box and bins of dynamic object i (its position must
  * already be projected for this tick). */
 void neo_kernel_dyn_update(neo_kscene_t *scene,unsigned i);
+/* ROM 013CF8 at the absolute point (x,y) (A0 = 0): true when a cell of the
+ * static terrain there belongs to `group` (012938 high word). A dynamic
+ * object whose map is of that group sets *unknown (013CF8 then depends on
+ * RAM 10C008 and the bins of the previous query). */
+bool neo_kernel_point_group(const neo_kscene_t *scene,int32_t x,int32_t y,uint16_t group,bool *unknown);
 /* ROM 012938 classification of the terrain cell at local pixel (x,y). */
 uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t x,uint16_t y,
     uint8_t b4008,uint8_t b400d,uint16_t *flags,uint32_t d7_in);

@@ -399,11 +399,188 @@ static ga_result_t armored_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* Children of the vehicle (all after the script actor, 00411C). The
+ * copy-protection check before their deletions is not reproduced (see the
+ * vehicle). 03C520 (00/019240) creates nothing in Mission 1. */
+/* 088DE4: in the air the gravity 0xB000 per update; on the ground +6E
+ * counts up and past 0x140 the shell explodes (true). Then 0143E4; *kind
+ * is its D7 (the contact's angle word). */
+static bool k88de4(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
+    if (!BIT(0x15,6)) SL(0x34,L(0x34)+0xffffb000u);
+    else {SW(0x6e,W(0x6e)+1u);if (S16(W(0x6e))>0x140) return true;}
+    ga_air_kind(a,e,kind);
+    return false;
+}
+/* 088E0E: explosion 01C706 after the script actor, then 004188. */
+static ga_result_t k88e0e(neo_gactor_t *a,neo_genv_t *e) {
+    sound(e,0x1022);
+    neo_gactor_t *c=after_script(a,e,0x1c706,0,0);
+    if (c) {ga_sw(c,0x66,0x1001);ga_sw(c,0x1e,0x1001);ga_sw(c,0x26,0x100);}
+    return GA_DELETE;
+}
+/* The shell's hit tests: the attack row 0E4EAE (players) and 004C0E (RAM
+ * 1067E4: enemy shots cleared). */
+static bool shell_hit(neo_gactor_t *a,neo_genv_t *e) {return ga_attack(a,e,0xe4eae)!=0 || e->clear_shots;}
+static ga_result_t shell_tick(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t kind=0;
+    for (unsigned guard=0;guard<4;guard++) switch (L(0)) {
+    case 0x88b52: /* shell: fired, falls to the ground */
+        SW(0x66,0xe0ef);SW(0x1e,0xe0ef);START(0x284aba);ga_palette(a,0x24);
+        SL(0x30,0);SW(0x6e,0);SB(0x76,0);
+        SL(0,0x88b94);
+        /* fall through */
+    case 0x88b94:
+        if (k88de4(a,e,&kind)) return k88e0e(a,e);
+        if (ga_cull(a,e,0xe4ece)) return GA_DELETE;
+        if (shell_hit(a,e)) return k88e0e(a,e);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (BIT(0x15,6)) SL(0,0x88be6);
+        return GA_MORE;
+    case 0x88be6: /* landed */
+        START(0x284b0c);
+        SL(0,0x88bfc);
+        /* fall through */
+    case 0x88bfc: {
+        if (k88de4(a,e,&kind)) return k88e0e(a,e);
+        if (ga_cull(a,e,0xe4ece)) return GA_DELETE;
+        if (shell_hit(a,e)) return k88e0e(a,e);
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x88cd0);
+        return GA_MORE;
+    }
+    case 0x88cd0: { /* rolls towards the facing side */
+        uint32_t d7=(uint32_t)rank(a,e,0x2d102c)<<8;
+        if (!BIT(0x15,0)) d7=0u-d7;
+        SL(0x30,d7);SL(0x72,d7);
+        START(0x284b40);SL(0x34,0);
+        SL(0,0x88d10);
+    }   /* fall through */
+    case 0x88d10: {
+        SL(0x30,L(0x72));
+        if (k88de4(a,e,&kind)) return k88e0e(a,e);
+        uint16_t d7=(uint16_t)kind;
+        if (!B(0x76)) {
+            if (d7!=0x4000u) { /* first slope: speed x 5/8 */
+                SB(0x76,0xff);
+                int32_t d6=(int32_t)L(0x72)>>2;SL(0x72,L(0x72)-(uint32_t)d6);
+                d6>>=1;SL(0x72,L(0x72)-(uint32_t)d6);
+            }
+        } else {
+            SW(0x70,d7);
+            int32_t d=((int32_t)d7-0x4000)>>3;
+            SL(0x72,L(0x72)-(uint32_t)d);
+            if (BIT(0x15,0)) {if ((int32_t)L(0x72)<=0x1000) return k88e0e(a,e);}
+            else if ((int32_t)L(0x72)>=-0x1000) return k88e0e(a,e);
+        }
+        if (shell_hit(a,e)) return k88e0e(a,e);
+        uint32_t v=L(0x72);if (v&0x80000000u) v=0u-v;
+        v>>=9;if ((uint16_t)v>0x180u) v=0x180;
+        SW(0x26,(uint16_t)v);
+        if (BIT(0x5f,0)) return k88e0e(a,e);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0xe4ece)?GA_DELETE:GA_MORE;
+    }
+    default: ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* 0896A0: the spent case, bounces (+6E bounces after the first landing). */
+static ga_result_t case_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x896a0) {
+        START(0x284a14);ga_palette(a,0xd3);
+        SW(0x66,0x1001);SW(0x1e,0x1001);SL(0x30,0x18000);SL(0x34,0x38000);
+        if (BIT(0x15,0)) SL(0x30,0u-L(0x30));
+        SW(0x6e,0x1e);
+        SL(0,0x896fa);
+    }
+    SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);
+    if (BIT(0x15,6)) {SB(0x5f,B(0x5f)|8u);SL(0x34,(uint32_t)((int32_t)(0u-L(0x34))>>1));}
+    if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+    if (ga_cull(a,e,0xe4ece)) return GA_DELETE;
+    if (BIT(0x5f,3)) {SW(0x6e,W(0x6e)-1u);if (!W(0x6e)) return GA_DELETE;}
+    return GA_MORE;
+}
+/* 088ED8 (muzzle smoke), 0897E2 (wreck smoke), 08982A (exhaust): one
+ * program at the projected position, deleted when it ends. */
+static ga_result_t puff_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x88ed8: SW(0x66,0xe0f0);SW(0x1e,0xe0f0);START(0x236272);ga_palette(a,0x208);SL(0,0x88f08);break;
+    case 0x897e2: START(0x24855c);ga_palette(a,0x113);SW(0x66,0x1001);SW(0x1e,0x1001);SL(0,0x89812);break;
+    case 0x8982a: { /* palette: word 1 of the table 0334C0 */
+        const uint8_t *t=ga_rom(0x334c2);
+        if (!t) {ga_fail(e,0x334c2);return GA_UNSUPPORTED;}
+        ga_palette(a,(uint16_t)(t[0]<<8|t[1]));START(0x239bca);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SL(0,0x89864);break;
+    }
+    default: break;
+    }
+    ga_project(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:GA_MORE;
+}
+/* 08943C: a piece of the destroyed vehicle (speed set by 0886CE), grows to
+ * full size, deleted when its program ends. */
+static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x8943c) {
+        START(0x247da8);ga_palette(a,0x37c);
+        SW(0x26,(uint16_t)((ga_rand(e)&0x1fu)+0x40u));
+        uint16_t z=(ga_rand(e)&1u)?0x1001:0xe0ed;SW(0x66,z);SW(0x1e,z);
+        SL(0,0x8949c);
+    }
+    SB(0x12,B(0x12)>=0xf8u?0xff:B(0x12)+8u);
+    SB(0x13,B(0x13)>=0xf8u?0xff:B(0x13)+8u);
+    ga_move(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:GA_MORE;
+}
+/* 088F20: one of the ten pieces of 08938A (+84 = entry of the table 0E516E:
+ * program, vx, vy, ax, ay, dx, dy; mirrored when +5B < 0). Not in the
+ * traces (the recorded vehicles never ran 08938A). */
+static ga_result_t shard_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x88f20) {
+        SL(0x62,0);ga_ground(a,e,NULL);
+        uint32_t at=0xe516eu+(uint32_t)W(0x84)*0x18u;
+        const uint8_t *t=ga_rom(at);
+        if (!t) {ga_fail(e,at);return GA_UNSUPPORTED;}
+        #define T32(o) ((uint32_t)(t[o]<<24|t[(o)+1]<<16|t[(o)+2]<<8|t[(o)+3]))
+        SL(0x34,T32(8));SL(0x8e,T32(0x10));
+        SW(0x2c,W(0x2c)+(uint16_t)(t[0x16]<<8|t[0x17]));
+        uint16_t d7=(uint16_t)(t[0x14]<<8|t[0x15]);uint32_t d6=T32(4),d5=T32(0xc),program=T32(0);
+        #undef T32
+        if (B(0x5b)&0x80u) {d7=(uint16_t)-d7;d6=0u-d6;d5=0u-d5;}
+        SW(0x28,W(0x28)+d7);SL(0x30,d6);SL(0x8a,d5);
+        START(program);ga_palette(a,0x24);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
+        SL(0,0x88fa2);
+    }
+    SL(0x30,L(0x30)+L(0x8a));SL(0x34,L(0x34)+L(0x8e));
+    ga_air(a,e);
+    if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+    if (BIT(0x15,6) && (L(0x34)&0x80000000u)) return GA_DELETE;
+    return ga_cull(a,e,0xe4ece)?GA_DELETE:GA_MORE;
+}
+static const uint32_t child_labels[]={0x88b52,0x88b94,0x88be6,0x88bfc,0x88cd0,0x88d10,0x896a0,0x896fa,0x88ed8,0x88f08,
+    0x897e2,0x89812,0x8982a,0x89864,0x8943c,0x8949c,0x88f20,0x88fa2};
 static const uint32_t labels[]={0x87e36,0x87f2e,0x87f9a,0x8806e,0x88120,0x881e6,0x88232,0x8830c,0x8833a,0x883e8,0x8845c,
     0x88536,0x8854c,0x88598,0x886ec,0x88760,0x887b2,0x887c8,0x8889c,0x888a8,0x888c8,0x8890e,0x8893a,0x88a30,0x88a4a,
     0x88ad2,0x88b02};
-bool neo_armored_routine(uint32_t r) {
-    for (unsigned i=0;i<sizeof(labels)/sizeof(labels[0]);i++) if (labels[i]==r) return true;
+static bool child_routine(uint32_t r) {
+    for (unsigned i=0;i<sizeof(child_labels)/sizeof(child_labels[0]);i++) if (child_labels[i]==r) return true;
     return false;
 }
-ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e) {return armored_tick(a,e);}
+bool neo_armored_routine(uint32_t r) {
+    for (unsigned i=0;i<sizeof(labels)/sizeof(labels[0]);i++) if (labels[i]==r) return true;
+    return child_routine(r);
+}
+bool neo_armored_vehicle(uint32_t r) {return neo_armored_routine(r) && !child_routine(r);}
+ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x88b52: case 0x88b94: case 0x88be6: case 0x88bfc: case 0x88cd0: case 0x88d10: return shell_tick(a,e);
+    case 0x896a0: case 0x896fa: return case_tick(a,e);
+    case 0x88ed8: case 0x88f08: case 0x897e2: case 0x89812: case 0x8982a: case 0x89864: return puff_tick(a,e);
+    case 0x8943c: case 0x8949c: return piece_tick(a,e);
+    case 0x88f20: case 0x88fa2: return shard_tick(a,e);
+    default: return armored_tick(a,e);
+    }
+}

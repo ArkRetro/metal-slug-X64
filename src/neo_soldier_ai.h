@@ -76,6 +76,7 @@ typedef struct {
     int32_t x,y;            /* local to the scene root, Q16.16 */
     uint16_t words[6];      /* +6E,+70,+72,+74,+76,+78 */
     uint8_t variant68,group69;
+    uint32_t constructor;   /* spawn-table entry: 0 = 0AF17E, or 04115A */
 } neo_soldier_spawn_t;
 /* ROM 01ABB6 placement + 0AF17E/0AEF30 constructor, including its control
  * target/prefix/probes. Returns false (state untouched) for an unrecovered

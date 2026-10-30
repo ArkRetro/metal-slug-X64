@@ -45,6 +45,8 @@ def main():
         # 0B0396: idle animations (random pick) and the alert rectangle (01AFFC).
         idle_programs=dict(rom='0x0B037E',values=[struct.unpack_from('>I',fixed,0xb037e+4*i)[0] for i in range(4)]),
         alert_rect=dict(rom='0x0B038E',values=words(fixed,0xb038e,4,True)),
+        # 04115A soldier variant: removal rectangle of its tail (01945C).
+        variant_cull_rect=dict(rom='0x040FF2',values=words(fixed,0x40ff2,4,True)),
         hurtboxes=[hurtbox(fixed,x,0) for x in (0x3bb40,0x3bb4c,0x3bb58,0x3bb64,0x3bb70,0x3bb7c)]+[hurtbox(bank,0x24057c,0x200000)],
         player_hurtbox=hurtbox(bank,0x2d0aa8,0x200000),
         hit_matrix=dict(rom='0x004582',rows=[list(fixed[0x4582+20*t:0x4582+20*t+20]) for t in range(8)]),

@@ -764,6 +764,15 @@
    512
   ]
  },
+ "variant_cull_rect": {
+  "rom": "0x040FF2",
+  "values": [
+   -48,
+   -16,
+   96,
+   64
+  ]
+ },
  "hurtboxes": [
   {
    "rom": "0x3bb40",

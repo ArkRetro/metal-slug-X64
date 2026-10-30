@@ -646,6 +646,40 @@ static uint16_t speed_from(int32_t v) {
 }
 /* AF65A..AF6BA initial movement, AF4F6..AF56C reposition, etc. return false on
  * an unsupported path (state is then in an unspecified partial update). */
+/* ---- 04115A variant helpers ----------------------------------------------- */
+/* 041144: ground step, or the 0AEDD6 air drift then 0143E4. */
+static void v_move(ctx_t *c) {
+    neo_contact_actor_t *a=&c->s->b;
+    if (a->flags15&64u) {ground(c,NULL);return;}
+    a->vx=S32((uint32_t)a->vx+ASR((uint32_t)a->scalar62-(uint32_t)a->vx,5));
+    a->vy=S32((uint32_t)a->vy+ASR(0xfff00000u-(uint32_t)a->vy,5));
+    air(c,0);
+}
+/* 01B08A over the active players (1AEB0): 01B0BE carry (no active player
+ * behind) and 01B0F6 carry clear (one in front). */
+static bool v_all_in_front(ctx_t *c) {
+    const neo_control_frame_t *f=&c->e->players;neo_soldier_t *s=c->s;
+    bool behind=false,front=false;
+    for (unsigned p=0;p<2;p++) {
+        if (!((f->active_mask>>p)&1u)) continue;
+        int16_t d=S16((uint16_t)(HI(s->b.projected_x)-(p?f->p2x:f->p1x)));
+        bool in_front=(s->b.flags15&1u)?d>0:d<0;
+        if (in_front) front=true; else behind=true;
+    }
+    return !behind && front;
+}
+/* 041464/041472: timer, registration, death (0407CA with +7C, else 0406B6)
+ * and the 01945C removal with the rectangle ROM 040FF2. */
+static bool death_dispatch(ctx_t *c,bool crouch);
+static bool b05dc(ctx_t *c);
+static neo_soldier_result_t v_tail(ctx_t *c,bool timer) {
+    neo_soldier_t *s=c->s;
+    if (timer && W(0x70)) SW(0x70,W(0x70)-1u);
+    if (s->b.flags5f&128u) {if (!death_dispatch(c,B(0x7c)!=0)) return NEO_SOLDIER_UNSUPPORTED;}
+    neo_cull_bounds_t bounds=c->e->bounds;
+    if (neo_cull_outside(&s->b,&bounds,soldier_variant_cull_rect)) return NEO_SOLDIER_DELETED;
+    return c->unsupported?NEO_SOLDIER_UNSUPPORTED:NEO_SOLDIER_MORE;
+}
 static neo_soldier_result_t run(ctx_t *c) {
     neo_soldier_t *s=c->s;neo_contact_actor_t *a=&s->b;
     for (unsigned guard=0;guard<8;guard++) switch (s->routine) {
@@ -774,6 +808,76 @@ static neo_soldier_result_t run(ctx_t *c) {
         if (r==1u) {s->routine=0xafd94;continue;}
         if (r==2u) {s->routine=0xafbc0;continue;}
         a->vx=a->scalar62;goto fall_start;
+    }
+    /* ---- 04115A variant: walks +6E:+7E pixels, then idles (0411E6..041464) ---- */
+    case 0x411e6: {
+        uint16_t m=W(0x76);
+        if (m==2u) {SB(0x7c,0xff);START(0x2411f2);a->scalar62=0x10000;}
+        else if (m==3u) {START(0x24116e);a->scalar62=0x10000;}
+        else {START(0x23d510);a->scalar62=0x30000;}
+        if (!(a->flags15&1u)) a->scalar62=S32(0u-(uint32_t)a->scalar62);
+        if (W(0x7a)) {
+            uint32_t d0=(uint32_t)(int32_t)S16(W(0x7a))<<8;
+            if (S32(d0)<0) {a->flags15^=1u;d0=0u-d0;}
+            if (!(a->flags15&1u)) d0=0u-d0;
+            a->scalar62=S32(d0);
+        }
+        s->routine=0x4128c;
+    }   /* fall through */
+    case 0x4128c: {
+        v_move(c);
+        uint32_t d0=(uint32_t)a->projected_x-(uint32_t)c->e->root.x-(uint32_t)a->cached_x+(uint32_t)c->e->root.previous_x;
+        if (S32(d0)<0) d0=0u-d0;
+        uint32_t d1=((uint32_t)W(0x6e)<<16)|W(0x7e);
+        if (d1<d0) s->routine=0x412e0;
+        d1-=d0;SW(0x7e,(uint16_t)d1);SW(0x6e,(uint16_t)(d1>>16));
+        anim_step(c);
+        if (hit_player(c,soldier_attack_sense,false)==5u) s->routine=0x4137e;
+        return v_tail(c,false);
+    }
+    case 0x412e0:START(0x24123e);a->scalar62=0;s->routine=0x412fa; /* fall through */
+    case 0x412fa:
+        v_move(c);anim_step(c);
+        if (a->flags15&64u) {
+            if (hit_player(c,soldier_attack_sense,false)==5u) s->routine=0x4137e;
+            if (!W(0x70)) {
+                int16_t x=S16(HI(a->projected_x));
+                if (x>0x18 && x<0x4ef9) s->routine=0x413b0; /* the bound is the word at ROM 000128 */
+                else {
+                    if (!W(0x74)) s->routine=0x41430; else SW(0x74,W(0x74)-1u);
+                    SW(0x70,W(0x72));
+                }
+            }
+        }
+        if (v_all_in_front(c)) s->routine=0x413fa;
+        return v_tail(c,true);
+    case 0x4137e:START(0x2412ee);a->scalar62=0;s->routine=0x41398; /* fall through */
+    case 0x41398:
+        v_move(c);
+        if (anim_step(c)) s->routine=0x412e0;
+        return v_tail(c,true);
+    case 0x413b0:
+        if (!W(0x74)) {s->routine=0x41430;continue;}
+        SW(0x70,W(0x72));START(0x24124c);s->routine=0x413d4; /* fall through */
+    case 0x413d4:
+        v_move(c);
+        if (anim_step(c)) {s->routine=0x412e0;SW(0x74,W(0x74)-1u);if (!W(0x74)) s->routine=0x41430;}
+        return v_tail(c,true);
+    case 0x413fa:START(0x241354);a->scalar62=0;s->routine=0x41418; /* fall through */
+    case 0x41418:
+        v_move(c);
+        if (anim_step(c)) s->routine=0x412e0;
+        return v_tail(c,true);
+    case 0x41430: {
+        bool pos=!(neo_rng_next(c->e->rng)&0x8000u);
+        if (B(0x7c)) {
+            if (pos) {s->routine=0xb0750;continue;}                       /* 0B060A */
+            if (!b05dc(c)) return NEO_SOLDIER_UNSUPPORTED;
+            SB(0x7c,B(0x7c)&0x7fu);s->routine=0xb0764;continue;            /* 0B061A */
+        }
+        if (!b05dc(c)) return NEO_SOLDIER_UNSUPPORTED;
+        SB(0x7c,pos?(B(0x7c)|0x80u):(B(0x7c)&0x7fu));                       /* 0B0626 / 0B0632 */
+        s->routine=0xb063e;continue;
     }
     /* ---- stairs/ledges of the object list (0B00C0..0B0332) ---- */
     case 0xb00c0:a->flags15&=(uint8_t)~1u;START(0x23e43c);s->routine=0xb00dc; /* fall through */
@@ -1013,11 +1117,76 @@ static uint16_t table_word(const uint16_t *table,const neo_control_frame_t *f,ui
     unsigned coop=f->active_mask==3u;
     return table[((row-1u)*2u+coop)*6u+variant];
 }
+/* ROM 0AEF30 (shared constructor body), from the rank tables to the control
+ * prefix; false on an unrecovered context. */
+static bool aef30(ctx_t *c) {
+    neo_soldier_t *s=c->s;neo_soldier_env_t *e=c->e;
+    neo_control_frame_t f=frame(c);
+    uint16_t d0=table_word(soldier_timer70_table,&f,s->variant68);
+    if (W(0x70)) d0=(uint16_t)(((uint32_t)d0*W(0x70))>>8); else d0=(uint16_t)(d0>>8);
+    SW(0x70,d0);
+    d0=table_word(soldier_timer72_table,&f,s->variant68);
+    uint16_t d1=W(0x72)?W(0x72):0x1e;
+    SW(0x72,(uint16_t)(((uint32_t)d0*d1)>>8));
+    SW(0x72,(uint16_t)(W(0x72)+(neo_rng_next(e->rng)&7u)));
+    if (!W(0x74)) SW(0x74,0x5a);
+    s->palette_resource=0x20e;
+    s->b.field66=0x8820;s->b.word1e=0x8820;
+    uint16_t mode=W(0x76);
+    if (mode==0 || mode==7 || mode==5 || mode==6) {
+        /* 01495C with d0 = -1: grounded when the probe meets a surface. */
+        neo_contact_actor_t *a=&s->b;neo_kres_t k;
+        if (!query(c,a->x,a->y,0,(int32_t)0xffff0000,0,&k)) return false;
+        if (k.flags&1u) a->flags15|=64u;
+        a->kind_angle=(uint16_t)((a->kind_angle&0xffu)|((k.kind>>16)&0xffu)<<8); /* +6C byte */
+    } else {
+        /* 0146E8 floor search, then projection. */
+        neo_kfloor_t fl;
+        if (!neo_kernel_floor(e->kernel,s->b.x,s->b.y,kobj(s->b.parent_tag),(int32_t)0xff000000,
+            (uint8_t)(s->b.flags15&32u?0:255),0,0,&fl)) return false;
+        s->b.kind_angle=(uint16_t)(fl.kind>>8);s->b.x=fl.x;s->b.y=fl.y;s->b.vx=0;s->b.vy=0;s->b.parent_tag=ktag(fl.parent);
+        project(c);s->b.flags15|=64u;
+    }
+    project(c);
+    if (S16(HI(s->b.projected_x))<0xa0) s->b.flags15|=1u;
+    SW(0x84,(uint16_t)(neo_asr(S16((uint16_t)(HI(s->b.projected_x)-0xa0u)),2)+0xa0));
+    SW(0x86,neo_rng_next(e->rng));
+    target(c);prefix(c);
+    return !c->unsupported;
+}
+/* ROM 0B05DC: a 04115A soldier becomes a regular one. */
+static bool b05dc(ctx_t *c) {
+    neo_soldier_t *s=c->s;
+    SW(0x6e,2);SW(0x70,0);SW(0x74,0);SW(0x78,0);SW(0x76,0);
+    if (!aef30(c)) return false;
+    SW(0x70,0xffff);
+    return true;
+}
+/* ROM 04115A constructor (soldier variant walking a set distance). */
+static void ctor_4115a(ctx_t *c) {
+    neo_soldier_t *s=c->s;
+    SB(0x7c,W(0x76)==2u?0xffu:0u);
+    s->palette_resource=0x20e;s->b.field66=0x8820;s->b.word1e=0x8820;
+    neo_control_frame_t f=frame(c);
+    SW(0x70,(uint16_t)(((uint32_t)table_word(soldier_timer70_table,&f,s->variant68)*W(0x70))>>8));
+    SW(0x72,(uint16_t)(((uint32_t)table_word(soldier_timer72_table,&f,s->variant68)*W(0x72))>>8));
+    if (S16(HI(s->b.projected_x))<0xa0) s->b.flags15|=1u;
+    if (!W(0x6e)) {s->routine=0x412e0;return;}
+    if (W(0x76)) {
+        neo_kfloor_t fl;
+        if (!neo_kernel_floor(c->e->kernel,s->b.x,s->b.y,kobj(s->b.parent_tag),(int32_t)0xff000000,
+            (uint8_t)(s->b.flags15&32u?0:255),0,0,&fl)) {UNSUPPORTED_AT();return;}
+        s->b.kind_angle=(uint16_t)(fl.kind>>8);s->b.x=fl.x;s->b.y=fl.y;s->b.vx=0;s->b.vy=0;s->b.parent_tag=ktag(fl.parent);
+        project(c);s->b.flags15|=64u;
+    }
+    s->routine=0x411e6;
+}
 bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_soldier_env_t *e) {
     /* +76 modes 1..4 (0AF1EE): 1 ground, 2 run in (0AFF16), 3/4 idle on a
      * vehicle facing right/left (0B0396). 0/5/6/7 and +78 bit 0 (01495C
      * probe) are not used by the region script. */
-    if (sp->words[4]<1u || sp->words[4]>4u || (sp->words[5]&1u) || sp->variant68>=12u) return false;
+    if (sp->constructor!=0x4115au && (sp->words[4]<1u || sp->words[4]>4u || (sp->words[5]&1u))) return false;
+    if (sp->variant68>=12u) return false;
     neo_soldier_t backup=*s;
     memset(s,0,sizeof(*s));
     ctx_t c={s,e,false};
@@ -1029,6 +1198,11 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_so
     /* 01ABB6: placed relative to the scene root, mark/correction cleared. */
     s->b.x=sp->x;s->b.y=sp->y;s->b.parent_tag=ROOT_TAG;s->b.mark=0;s->b.correction=0;
     project(&c);
+    if (sp->constructor==0x4115au) {
+        ctor_4115a(&c);
+        if (c.unsupported) {*s=backup;return false;}
+        return true;
+    }
     /* 0AEF30 */
     neo_control_frame_t f=frame(&c);
     uint16_t d0=table_word(soldier_timer70_table,&f,s->variant68);

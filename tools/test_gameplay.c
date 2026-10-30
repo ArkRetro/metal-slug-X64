@@ -40,9 +40,9 @@ int main(void) {
     for (unsigned i=0;i<1000;i++) msx_game_update(&g,-1,false,false);
     assert(g.x==(g.camera+28)*MSX_UNIT); // Player remains inside the current camera.
     // Native region: walking right while firing, re-measured with the whole
-    // region script (ROM 2D6314..2D6A28, camera 0..1920): 25 soldiers
+    // region script (ROM 2D6314..2D6A28, camera 0..1920): 30 soldiers
     // (0AF17E, +76 modes 1..4, riders of the native truck 02916E included),
-    // 16 killed by the pistol, 19 spawn-table entries not ported yet counted as
+    // (0AF17E and the 04115A variant), 20 killed by the pistol, 14 spawn-table entries not ported yet counted as
     // external; the truck riders' knives hit the player 16 times (two lives
     // lost). The script ends at its last imported record (2D6A28) after the
     // camera-1920 lock, with no unsupported path.
@@ -50,8 +50,8 @@ int main(void) {
     unsigned steps=0;
     for (;steps<6000 && !g.complete;steps++) msx_game_update(&g,1,false,true);
     assert(g.complete && steps<6000);
-    assert(g.world.spawned==25 && g.kills==16 && neo_world_alive(&g.world)==2);
-    assert(g.world.external_spawns==19 && !g.world.unsupported && !g.world.overflow);
+    assert(g.world.spawned==30 && g.kills==20 && neo_world_alive(&g.world)==2);
+    assert(g.world.external_spawns==14 && !g.world.unsupported && !g.world.overflow);
     assert(g.world.script.halted && g.world.script.halt_address==0x2D6A28); // End of the imported records.
     assert(g.world.player_hits==16 && g.deaths==2 && g.health==3);
     assert(neo_world_region_clear(&g.world) && g.checkpoint==640 && g.camera==MSX_CAMERA_MAX && g.x==MSX_END_X);

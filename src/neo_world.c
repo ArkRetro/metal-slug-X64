@@ -79,11 +79,11 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
         ga_project(a,&t->genv);
         return;
     }
-    if (routine!=SOLDIER_CONSTRUCTOR) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
+    if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
     neo_soldier_spawn_t *p=&w->pending[i];memset(p,0,sizeof(*p));
-    p->x=sp->x;p->y=sp->y;p->variant68=sp->variant68;p->group69=sp->group69;
+    p->x=sp->x;p->y=sp->y;p->variant68=sp->variant68;p->group69=sp->group69;p->constructor=routine==SOLDIER_CONSTRUCTOR?0:routine;
     for (unsigned k=0;k<6 && k<sp->word_count;k++) p->words[k]=sp->words[k];
     /* The node exists from now on; its constructor runs when the list
      * traversal reaches it (after the creator has finished its update). */

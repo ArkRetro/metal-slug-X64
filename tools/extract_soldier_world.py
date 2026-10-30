@@ -31,7 +31,7 @@ def world_routine(rt):
     # Soldier family, pistol death (040DB4/040DF0), death splash (040F88/040FD4),
     # runners and thrown objects. The 0400AA entity (states 0400F2..) is not
     # part of the world.
-    return (rt in (0x1A422,0x1A438,0x40DB4,0x40DF0,0x40F88,0x40FD4) or 0xAE000<=rt<0xB1000 or
+    return (rt in (0x1A422,0x1A438,0x40DB4,0x40DF0,0x40F88,0x40FD4) or 0xAE000<=rt<0xB1000 or 0x4115A<=rt<0x41464 or
         0x3BC28<=rt<0x3BE8E or 0x1C8FC<=rt<0x1CA9E)
 def kind_of(rt):
     if gactor_routine(rt):return 5
@@ -77,14 +77,14 @@ def exec_order(ev,first,nxt,before,after,family):
         if n in family:continue
         c=before.l(n+0x0C)
         if THROW_CTORS(rt) and c==SCRIPT:family[n]='throw'
-        elif 0xAE000<=rt<0xB1000 or rt in (0x40DB4,0x40DF0):family[n]='soldier'
+        elif SOLDIER_RT(rt):family[n]='soldier'
         elif gactor_routine(rt) and (c==SCRIPT or before.l(c) in RUNNERS or family.get(c)=='gactor'):family[n]='gactor'
         else:family.setdefault(n,None)
     world=[];log_pos=[];exec_pos={};idx=0;cur=None;created=set();allocs=[];splats=[];cur_world=False;cur_rt=None
     for e in events:
         if e[0]=='ALLOC':
             _,n,rt,cr=e
-            if rt==0xAF17E:family[n]='soldier'
+            if rt in (0xAF17E,0x4115A):family[n]='soldier'
             elif THROW_CTORS(rt) and cr==SCRIPT:family[n]='throw'
             elif gactor_routine(rt) and (cr==SCRIPT or family.get(cr)=='gactor' or family.get(cr)=='runner'):family[n]='gactor'
             elif rt in (0x40F88,):family[n]='splash'
@@ -97,7 +97,7 @@ def exec_order(ev,first,nxt,before,after,family):
             if n==SCRIPT:world.append(dict(node=n,kind=0,created=False,position=pos));cur_world=True;continue
             fam=family.get(n);k=None
             if rt in RUNNERS:k=1
-            elif fam=='soldier' and (0xAE000<=rt<0xB1000 or rt in (0x40DB4,0x40DF0)):k=2
+            elif fam=='soldier' and SOLDIER_RT(rt):k=2
             elif fam=='throw' and (THROW_CTORS(rt) or 0x3BC28<=rt<0x3BE8E):k=3
             elif rt in (0x40F88,0x40FD4):k=4
             elif fam=='gactor' and gactor_routine(rt):k=5
@@ -153,6 +153,8 @@ def exec_log(path):
             m=re.search(r'a6=(\w+)',line);ev.setdefault(f,[]).append(('RNG',int(m.group(1),16)))
     return ev if seen else None
 THROW_CTORS=lambda rt:0x3BC28<=rt<0x3BE8E or 0x1C8FC<=rt<0x1CA9E
+# Soldier routines: the 0AF17E family, the deaths, and the 04115A variant.
+SOLDIER_RT=lambda rt:0xAE000<=rt<0xB1000 or rt in (0x40DB4,0x40DF0) or 0x4115A<=rt<0x41464
 def extract(path,last,label):
     cap=Capture(path);calls=cap.rng_calls();ev=exec_log(path)
     # Node ownership from the allocation log: 'gactor' (world generic actor),

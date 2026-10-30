@@ -61,7 +61,7 @@ static const char *construct(const neo_script_spawn_t *sp,const script_construct
     env.root=env.terrain;env.root.tag=0x10e968u;env.epoch=k->epoch;env.camera_word=k->camera;
     env.players=(neo_control_frame_t){0,0,0,0,k->p1x,k->p1y,k->p2x,k->p2y,k->mask,k->mode88,k->rank,k->mask!=0,NULL};
     env.grid=grid;env.rng=&rng;env.program=program;
-    neo_soldier_spawn_t in={sp->x,sp->y,{0},sp->variant68,sp->group69};
+    neo_soldier_spawn_t in={sp->x,sp->y,{0},sp->variant68,sp->group69,0};
     for (unsigned i=0;i<6 && i<sp->word_count;i++) in.words[i]=sp->words[i];
     neo_soldier_t s;memset(&s,0,sizeof(s));
     if (!neo_soldier_construct(&s,&in,&env)) return "unsupported constructor";

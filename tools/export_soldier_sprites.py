@@ -116,6 +116,9 @@ def main():
     # verification frames did not show: read them wherever a capture holds
     # them allocated (RAM 1068EA table + palette dump of the same frame).
     wanted={0x20E,0x22F,0x385,0x214,0x35C,0x221,0x21A,0x3BA,0x37A,0x35D,0x364,0x365,0x36C}
+    # Generic actors of the region (src/neo_truck.c, neo_effects.c, neo_flyer.c):
+    # truck and its flash, effects, bomber sets/propeller/flash, bombs, splash.
+    wanted|={0x22C,0x306,0x204,0x20D,0x387,0x388,0x898,0x899,0x389,0x38A,0x38B,0x378,0x13A,0x13B,0x20B,0x16B}
     for folder in a.palettes:
         for pal_file in sorted(folder.glob('palette*.bin')):
             frame=int(pal_file.stem[7:]);ram_file=folder/f'ram{frame}.bin'

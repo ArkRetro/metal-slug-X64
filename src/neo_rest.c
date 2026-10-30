@@ -9,11 +9,15 @@
  * distance, +72 exit flag, +74 sub-script index (table ROM 00087A), +7C group
  * whose end lets it leave, +7E/+80 unused on this path.
  *
+ * The sub-script it starts at the toggle (script actor 019E72 with the
+ * record [ROM 00087A + 4*(+74)], 2D7214 for +74 = 2) is a lone op 3 record:
+ * its first update (019F1A -> 01A02C) sets its own +5F bit 7 and the
+ * swordsman's +60 bit 7 ("script finished"), then it waits (019E82) and
+ * leaves with its creator (00409A). Any other op there stops explicitly.
+ *
  * Not translated (explicit stop): the exit path 0A8FE0 (after the boss
  * group is empty), and the 0A8C62/0A8C84 generators of the market swordsmen
- * (+93 = 0 branch 0A8EF8). The sub-script it starts (019E72 with record
- * 2D7214 for +74 = 2) is a lone op 3 record, an actor that only waits: it is
- * not created (counted in `external_spawns`). */
+ * (+93 = 0 branch 0A8EF8). */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -110,9 +114,14 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
             if (!B(0x93)) {toggle606(e);CLR(0x60,0);}
             else if (!BIT(0x60,1)) {
                 toggle606(e);SET(0x60,1);
-                /* 0A8F1E: sub-script 019E72 with record [00087A + 4*(+74)]
-                 * (2D7214, a lone op 3 for +74 = 2): not created. */
-                if (W(0x74)!=0xffffu && e->external) e->external(e->ctx,0x19e72);
+                /* 0A8F1E: sub-script 019E72 after this actor (0040BC),
+                 * record [00087A + 4*(+74)], +2C word = 0x100. */
+                if (W(0x74)!=0xffffu) {
+                    const uint8_t *t=ga_rom(0x87au+4u*W(0x74));
+                    if (!t) {ga_fail(e,0x87au+4u*W(0x74));return GA_UNSUPPORTED;}
+                    neo_gactor_t *s=e->spawn?e->spawn(e->ctx,a,0x19e72,false):NULL;
+                    if (s) {ga_sl(s,0x6e,(uint32_t)(t[0]<<24|t[1]<<16|t[2]<<8|t[3]));ga_sw(s,0x2c,0x100);}
+                }
             }
         }
         int r=step(a,e);
@@ -128,8 +137,25 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
+/* Script actor 019E72/019E82 running a record that is a lone op 3 (the
+ * swordsman's sub-script): 01A02C on every update while its creator lives. */
+static ga_result_t subscript(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x19e72) {SW(0x72,0);CLR(0x5f,7);SL(0,0x19e82);}
+    if (!ga_creator_alive(a,e)) return GA_DELETE;          /* 00409A, 004188 */
+    if (!L(0x6e)) return GA_MORE;
+    const uint8_t *r=ga_rom(L(0x6e));
+    if (!r || r[0]!=3u) {ga_fail(e,L(0x6e));return GA_UNSUPPORTED;}
+    SET(0x5f,7);
+    neo_gactor_t *c=e->creator?e->creator(e->ctx,a):NULL;
+    if (c) ga_sb(c,0x60,(uint8_t)(ga_b(c,0x60)|0x80u));
+    return GA_MORE;
+}
 bool neo_rest_routine(uint32_t r) {
+    if (r==0x19e72 || r==0x19e82) return true;
     return r==0xa8c46 || r==0xa8ca0 || r==0xa8d22 || r==0xa8d38 || r==0xa8d6a || r==0xa8daa || r==0xa8dec ||
         r==0xa8df6 || r==0xa8dfc || r==0xa8e1a || r==0xa8e8e || r==0xa8ece;
 }
-ga_result_t neo_rest_tick(neo_gactor_t *a,neo_genv_t *e) {return robe(a,e);}
+ga_result_t neo_rest_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x19e72 || L(0)==0x19e82) return subscript(a,e);
+    return robe(a,e);
+}

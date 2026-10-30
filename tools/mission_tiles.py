@@ -20,13 +20,17 @@ def decode(crom,code,flip):
     return out
 
 def pack_map(model,crom,make_image):
-    groups=defaultdict(set)
+    groups=defaultdict(set);first_x={}
     for c in model['cells']:
         for phase in range(c['animation_mask']+1):
-            groups[c['palette']].add((c['code']|phase,c['flip']))
+            key=(c['code']|phase,c['flip']);groups[c['palette']].add(key)
+            # Leftmost scrolled use of the tile: pages hold tiles that appear
+            # together on screen (fewer TMEM page uploads per frame).
+            k=(c['palette'],)+key;x=c['x']//2 if c['layer']==0 else c['x']
+            first_x[k]=min(first_x.get(k,x),x)
     lookup={};images=[]
     for pal_id,tiles in sorted(groups.items()):
-        palette=rgba16(model['palettes'][pal_id]);tiles=sorted(tiles)
+        palette=rgba16(model['palettes'][pal_id]);tiles=sorted(tiles,key=lambda t:(first_x[(pal_id,)+t],t))
         for start in range(0,len(tiles),16):
             atlas=[0]*4096;batch=tiles[start:start+16]
             for slot,(code,flip) in enumerate(batch):

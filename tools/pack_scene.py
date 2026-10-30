@@ -95,6 +95,13 @@ def main():
     # streamed SCENE_NATIVE bank; their palettes are other logical resources.
     boss=json.loads((ROOT/'filesystem/boss-native.json').read_text())
     native['frames']=native['frames']+boss['frames'];native['palettes']=dict(native['palettes'],**boss['palettes'])
+    # Rest-of-mission generic actors (tools/export_rest_sprites.py), when exported.
+    rest_native=ROOT/'filesystem/rest-native.json'
+    if rest_native.exists():
+        rest_sprites=json.loads(rest_native.read_text())
+        known={f['descriptor'] for f in native['frames']}
+        native['frames']+=[f for f in rest_sprites['frames'] if f['descriptor'] not in known]
+        native['palettes']=dict(native['palettes'],**rest_sprites['palettes'])
     native_palettes={int(k,16):palette_id(v) for k,v in native['palettes'].items()}
     base_palette=native['palettes']['0x20e'];descriptors=[];native_start=len(images)
     # Pack the descriptors in program order so that one animation streams as

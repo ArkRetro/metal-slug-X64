@@ -32,8 +32,12 @@ bool msx_audio_play(unsigned voice,bool loop,float volume) {
     if (!initialized || voice>=MSX_AUDIO_VOICES || !opened[voice] || !(volume>=0 && volume<=1)) return false;
     msx_audio_stop(voice);
     // Keep a loop point stored by audioconv64 (--wav-loop-offset); otherwise
-    // loop the whole file or play it once.
-    if (loop && file_loop[voice]) waves[voice].wave.loop_len=file_loop[voice];
+    // loop the whole file or play it once. The pinned libdragon's VADPCM
+    // reader only wraps whole files (wav64_vadpcm.c asserts loop_len == len
+    // when the end is reached): a partial loop of a compressed file loops the
+    // whole file instead (docs/AUDIO_JUEGO.md).
+    bool vadpcm=waves[voice].format==1;   /* WAV64_FORMAT_VADPCM (internal header) */
+    if (loop && file_loop[voice] && !(vadpcm && file_loop[voice]!=waves[voice].wave.len)) waves[voice].wave.loop_len=file_loop[voice];
     else wav64_set_loop(&waves[voice],loop);
     wav64_play(&waves[voice],voice*2);
     mixer_ch_set_vol(voice*2,volume,volume);return true;

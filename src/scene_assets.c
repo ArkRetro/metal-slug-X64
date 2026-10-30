@@ -99,7 +99,8 @@ const void *scene_page(const scene_image_t *image) {
 void scene_assets_init(void) {
     rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
     assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
-    capacity=(get_memory_size()>=8*1024*1024?3*1024*1024:512*1024)/SCENE_CHUNK_BYTES;
+    // Expansion Pak: 3.5 MiB holds the whole Mission 1 pack (222 chunks).
+    capacity=(get_memory_size()>=8*1024*1024?7*512*1024:512*1024)/SCENE_CHUNK_BYTES;
     if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
     cache=memalign(64,capacity*SCENE_CHUNK_BYTES);slots=calloc(capacity,sizeof(*slots));
     staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);

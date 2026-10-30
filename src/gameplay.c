@@ -39,8 +39,14 @@ void msx_game_vehicle_reference(msx_game_t *g) {
     g->facing=-1;g->world_enabled=false;
     neo_vehicle_init(&g->vehicle,937*MSX_UNIT+MSX_UNIT/2,64*MSX_UNIT,936*MSX_UNIT,0,1,300,9);
 }
+/* Reference-only traversal build (mslugx-reference.z64, never the release):
+ * the player ignores hits so that a scripted run reaches the mission end. */
+#ifndef MSX_REFERENCE_INVULNERABLE
+#define MSX_REFERENCE_INVULNERABLE 0
+#endif
+const bool msx_reference_invulnerable=MSX_REFERENCE_INVULNERABLE!=0;
 void msx_game_hurt(msx_game_t *g,int from) {
-    if (g->invulnerable || g->complete) return;
+    if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE) return;
     g->health--;g->invulnerable=60;
     g->x=clamp(g->x+(g->x/MSX_UNIT<from?-20:20)*MSX_UNIT,(g->camera+28)*MSX_UNIT,right_limit(g));
     if (g->grounded) {

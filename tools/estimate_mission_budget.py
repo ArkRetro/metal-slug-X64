@@ -87,7 +87,7 @@ def working_set(meta,camera_max,switch):
         per.append(used)
     worst=(0,0)
     for c in range(camera_max+1):worst=max(worst,(len(set(fixed).union(*per[c:c+WINDOW])),c))
-    caches={'4MiB':512*1024//CHUNK,'8MiB':3*1024*1024//CHUNK}
+    caches={'4MiB':512*1024//CHUNK,'8MiB':7*512*1024//CHUNK}
     return dict(chunks=chunks,fixed_actor_chunks=len(fixed),worst_working_set=worst[0],worst_camera=worst[1],
         cache_slots={k:min(v,chunks) for k,v in caches.items()},
         fits_without_eviction={k:chunks<=v for k,v in caches.items()},

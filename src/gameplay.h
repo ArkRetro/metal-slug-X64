@@ -48,6 +48,8 @@ bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 /* One hit on the player from world x `from` (knockback away from it). */
 void msx_game_hurt(msx_game_t *game,int from);
+/* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
+extern const bool msx_reference_invulnerable;
 int msx_game_animation(const msx_game_t *game);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */

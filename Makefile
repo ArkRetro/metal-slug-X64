@@ -116,6 +116,16 @@ $(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.sta
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	touch $@
+# Reference traversal cartridge (tools/test_mission_native_ares.py): the same
+# game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.
+$(BUILD_DIR)/reference/gameplay.o: src/gameplay.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_INVULNERABLE=1 -o $@ $<
+$(BUILD_DIR)/mslugx-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(filter-out $(BUILD_DIR)/src/gameplay.o,$(MSLUGX_GAME_OBJS))
+mslugx-reference.z64: N64_ROM_TITLE = "MSX M1 REFERENCE"
+mslugx-reference.z64: $(BUILD_DIR)/mslugx-reference.dfs
+$(BUILD_DIR)/mslugx-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
 $(BUILD_DIR)/src/main-lab.o: src/main.c
 	@mkdir -p $(dir $@)
 	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_GRAPHICS_LAB=1 -o $@ $<
@@ -123,7 +133,7 @@ $(BUILD_DIR)/mslugx-lab.elf: $(BUILD_DIR)/src/main-lab.o $(filter-out $(BUILD_DI
 mslugx-lab.z64: N64_ROM_TITLE = "MSX GRAPHICS LAB"
 mslugx-lab.z64: $(BUILD_DIR)/mslugx-lab.dfs
 $(BUILD_DIR)/mslugx-lab.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
-$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json $(wildcard filesystem/mission1/rest/map.json)
+$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json $(wildcard filesystem/mission1/rest/map.json filesystem/rest-native.json)
 	python3 tools/pack_scene.py
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
@@ -228,6 +238,8 @@ $(BUILD_DIR)/region_rom.h: tools/compile_region_rom.py data/region_rom.json
 	python3 tools/compile_region_rom.py
 $(BUILD_DIR)/camera_fixture.h: tools/compile_camera_fixture.py data/camera_fixture.json.gz
 	python3 tools/compile_camera_fixture.py
+$(BUILD_DIR)/robe_fixture.h: tools/compile_robe_fixture.py data/robe_fixture.json.gz
+	python3 tools/compile_robe_fixture.py
 $(BUILD_DIR)/src/neo_region.o: $(BUILD_DIR)/region_rom.h
 $(BUILD_DIR)/soldier_world_fixture.h: tools/compile_soldier_world.py data/soldier_world_fixture.json.gz
 	python3 tools/compile_soldier_world.py
@@ -397,7 +409,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: check-boss $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: check-boss $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
@@ -433,6 +445,8 @@ check: check-boss $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/soldier_ai_tables.h
 	$(BUILD_DIR)/host/world
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c -o $(BUILD_DIR)/host/rest
+	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
 -include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d)

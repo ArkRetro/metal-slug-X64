@@ -1,5 +1,6 @@
 #include "neo_region.h"
 #include "region_rom.h"
+#include "neo_boss.h"
 /* Dispatch of the generic actors by routine label (see neo_region.h) and the
  * ROM data tables they read (data/region_rom.json). */
 const uint8_t *ga_rom(uint32_t address) {
@@ -7,7 +8,9 @@ const uint8_t *ga_rom(uint32_t address) {
         const region_blob_t *b=&region_blobs[i];
         if (address>=b->address && address<b->address+b->length) return b->data+(address-b->address);
     }
-    return NULL;
+    /* The boss's ROM regions (debris lists 0E932A.. read by the generic
+     * actors it creates). */
+    return neo_boss_rom(address,1);
 }
 bool neo_region_routine(uint32_t r) {return neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r);}
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {

@@ -103,6 +103,7 @@ void actor_init(void) {
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
 #endif
     debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
+    if (msx_reference_invulnerable) debugf("MSX reference build: player invulnerable (not a release)\n");
 }
 bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     if (!msx_game_begin_at(&game,world_x,world_y)) return false;
@@ -129,6 +130,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
     unsigned old_progress=neo_camera_progress(&game.world.camera);bool old_region_end=game.region_end,old_backdrop=game.backdrop_after;
+    bool old_boss=game.world.boss_active,old_mission=game.mission_complete;uint8_t old_flag606=game.world.flag606,old_phase=game.world.boss_active?neo_boss_phase(&game.world.boss):0;
+    unsigned old_boss_unsupported=game.world.boss_unsupported,old_hp=game.world.boss_active?neo_boss_health(&game.world.boss):0;
+    int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
@@ -155,7 +159,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
     if (game.world.script.halted && !old_halted) debugf("MSX script stopped at %06lx (records beyond are not ported)\n",(unsigned long)game.world.script.halt_address);
-    if (game.world.unsupported!=old_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
+    if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
         native_missing_descriptor=native_missing_palette=0;
@@ -168,6 +172,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
         debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
     if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+    if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));
+    if (game.world.camera.auto_mode!=old_auto) debugf("MSX camera autoscroll=%u progress=%u\n",game.world.camera.auto_mode,neo_camera_progress(&game.world.camera));
+    if (game.world.boss_active && !old_boss) debugf("MSX boss spawned camera=%d\n",game.camera);
+    if (game.world.flag606!=old_flag606) debugf("MSX boss start signal 10C606=%02x camera=%d\n",game.world.flag606,game.camera);
+    if (game.world.boss_active) {
+        uint8_t phase=neo_boss_phase(&game.world.boss);unsigned hp=neo_boss_health(&game.world.boss);
+        if (phase!=old_phase || hp/1000!=old_hp/1000) debugf("MSX boss phase=%u hp=%u hits=%u\n",phase,hp,game.world.boss_hits);
+    }
+    if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
+    if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
     if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);

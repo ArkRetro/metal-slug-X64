@@ -3,6 +3,11 @@
 #include "mission_camera.h"
 #include "msx_perf.h"
 #include "scene_cull.h"
+#include "visual_config.h"
+
+// Optional depth25d extras (MSX_DEPTH_STYLE bits); the release presentation
+// is layered 2D scenery with contact shadows only (style 0).
+enum { DEPTH_PERSPECTIVE=1, DEPTH_LIGHTS=2, DEPTH_FOG=4 };
 
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
@@ -22,10 +27,10 @@ static scene_cell_index_t cell_index;
 void scene_render_set_depth_mode(bool enabled) {depth_mode=enabled;}
 void scene_render_depth_frame(const retro_frame_t *f) {
     depth_frame=*f;
-    // This presentation uses layered 2D scenery and contact shadows only.
-    depth_frame.light_count=0;depth_frame.camera.z=0;
+    if (!(MSX_DEPTH_STYLE&DEPTH_LIGHTS)) depth_frame.light_count=0;
+    if (!(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)) depth_frame.camera.z=0;
 }
-void scene_render_foreground_fog(void) {}
+void scene_render_foreground_fog(void) {if (depth_mode && (MSX_DEPTH_STYLE&DEPTH_FOG)) retro_effects_fog(&depth_frame,2);}
 void scene_render_forget_texture(void) {
     last_page=last_slot=last_format=last_width=last_height=-1;
     for (unsigned i=0;i<16;i++) pal_ids[i]=-1;
@@ -121,7 +126,9 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     }
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
-        bool ok=retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
+        bool ok=(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
+            retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]):
+            retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
         assertf(ok,"Retro plane projection");(void)ok;
     }
     // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
@@ -180,6 +187,9 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
           float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
           blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
         }
+      }
+      if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
+          retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
     msx_perf_mark(MSX_PERF_BG_DRAW);

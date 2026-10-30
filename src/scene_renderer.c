@@ -184,6 +184,14 @@ static scene_cell_window_t layer_window(unsigned layer,int offset,float size,flo
     return (scene_cell_window_t){1.0f,(float)-offset,size,left,right,inclusive};
 }
 static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end);
+static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *view,const int *offsets,unsigned video_tick,unsigned n) {
+    float x=background_x(cell,cell->x-offsets[cell->layer]);
+    float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
+    if (x>=320 || x+size<=0) return;
+    const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+    // The depth camera carries the height (actor.c), so planes keep their own parallax.
+    blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+}
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,5);}
 /* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
@@ -274,15 +282,21 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
         for (unsigned k=first;k<end;) {
           const scene_map_cell_t *cell=&cells[cell_index.order[k]];
           unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
+          /* Same rule as the classic path: once a replacement is active, a
+           * merged column may mix hidden and kept cells, so go cell by cell. */
+          if ((patched && layer==2) || (collapsed && layer==3)) {
+              for (unsigned j=0;j<n;j++)
+                  if (!hidden(&cells[cell_index.order[k+j]])) depth_cell(&cells[cell_index.order[k+j]],view,offsets,video_tick,1);
+              k+=n;continue;
+          }
           if (hidden(cell)) {k+=n;continue;}
-          float x=background_x(cell,cell->x-offsets[cell->layer]);
-          const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-          // The depth camera carries the height (actor.c), so planes keep their own parallax.
-          float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
-          blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+          depth_cell(cell,view,offsets,video_tick,n);
           k+=n;
         }
       }
+      // Replacement cells (shop patch, post-collapse rubble) on their layer.
+      if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
       if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }

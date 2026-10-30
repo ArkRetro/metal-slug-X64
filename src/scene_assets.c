@@ -99,10 +99,13 @@ const void *scene_page(const scene_image_t *image) {
 void scene_assets_init(void) {
     rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
     assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
-    // Expansion Pak: 3.5 MiB holds the whole Mission 1 pack (222 chunks).
-    capacity=(get_memory_size()>=8*1024*1024?7*512*1024:512*1024)/SCENE_CHUNK_BYTES;
+    // Expansion Pak: the whole Mission 1 pack resident (300 chunks, 4.7 MiB,
+    // with the rest-of-mission actors) when it fits, else 3.5 MiB.
+    capacity=(get_memory_size()>=8*1024*1024?SCENE_CHUNK_COUNT*SCENE_CHUNK_BYTES:512*1024)/SCENE_CHUNK_BYTES;
     if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
-    cache=memalign(64,capacity*SCENE_CHUNK_BYTES);slots=calloc(capacity,sizeof(*slots));
+    cache=memalign(64,capacity*SCENE_CHUNK_BYTES);
+    if (!cache && get_memory_size()>=8*1024*1024) {capacity=7*512*1024/SCENE_CHUNK_BYTES;cache=memalign(64,capacity*SCENE_CHUNK_BYTES);}
+    slots=calloc(capacity,sizeof(*slots));
     staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);
     assertf(cache && slots && staging[0] && staging[1],"Scene cache allocation");
     for (unsigned i=0;i<capacity;i++) slots[i].chunk=-1;
@@ -135,6 +138,8 @@ const scene_image_t *scene_frame(unsigned id,unsigned frame) {
 }
 const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(row<7 && col<10);return &scene_background[row*10+col]; }
 const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data; }
+const scene_map_cell_t *scene_patch_cells(unsigned *count) { *count=SCENE_PATCH_CELL_COUNT;return scene_patch_cells_data; }
+const scene_map_cell_t *scene_collapse_cells(unsigned *count) { *count=SCENE_COLLAPSE_CELL_COUNT;return scene_collapse_cells_data; }
 const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
 unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
 uint32_t scene_map_backdrop(bool after) { return after?SCENE_MAP_BACKDROP_AFTER:SCENE_MAP_BACKDROP; }

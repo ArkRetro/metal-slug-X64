@@ -30,6 +30,9 @@ typedef struct {
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     bool aim_up;   /* input: up held (set by the caller before msx_game_update) */
+    bool crouch;   /* input: down held; grounded = crouched in place (the original
+                    * crawls: not ported, see docs/MARCO_CAMPAIGN.md) */
+    bool crouching,jump_moving;   /* state: crouched this update; takeoff while moving */
     msx_bullet_t bullets[MSX_BULLETS];
     /* Hostile straight projectiles observed by the depth25d event layer.
      * No actor of the native region emits one (rebel soldiers here knife and
@@ -41,6 +44,11 @@ typedef struct {
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
+    /* Dynamic platform the player stands on (kernel object NEO_KOBJ_DYN0 +
+     * ride - 1, 0 = none) and the feet relative to it (Q16.16): the original
+     * body's +28/+2C are relative to its parent object (+38), so it moves
+     * with the platform (wagon 033C98, boss). */
+    uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
@@ -51,6 +59,8 @@ void msx_game_hurt(msx_game_t *game,int from);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
 int msx_game_animation(const msx_game_t *game);
+/* Projected words of the player (+3C/+40) as the native world receives them. */
+void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */
 void msx_game_vehicle_reference(msx_game_t *game);

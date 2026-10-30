@@ -80,6 +80,9 @@ static neo_world_player_t player_frame(const msx_game_t *g) {
         (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
     return p;
 }
+void msx_game_projected(const msx_game_t *g,uint16_t *x,uint16_t *y) {
+    neo_world_player_t p=player_frame(g);*x=p.px;*y=p.py;
+}
 /* Mission actor camera step (neo_world_camera) and its command-list events. */
 static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
     neo_world_camera(&g->world,p);
@@ -95,8 +98,38 @@ static int right_limit(const msx_game_t *g) {
     int64_t r=(int64_t)(g->camera+292)*MSX_UNIT-1;
     return r<MSX_END_X?(int)r:MSX_END_X;
 }
+/* Floor search 013DB2 of the native world's collision kernel from the
+ * player's feet (terrain-relative, y up) down `depth` (negative, Q16.16):
+ * true when the first floor found is a dynamic object (0140C0 platform);
+ * *y gets the world height of its surface. The static terrain stays with
+ * neo_collision (the same grid). */
+static bool platform_floor(msx_game_t *g,int32_t x,int32_t y,int32_t depth,uint8_t *object,int32_t *top) {
+    if (!g->world_enabled) return false;
+    neo_kscene_t *k=&g->world.kernel;bool any=false;
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) any|=k->dyn[i].map!=NULL;
+    if (!any) return false;
+    k->self_dyn=0;k->self_block=0;
+    neo_kfloor_t f;
+    if (!neo_kernel_floor(k,x,y,NEO_KOBJ_TERRAIN,depth,0xff,0,0,&f) || !f.found || f.parent<NEO_KOBJ_DYN0) return false;
+    const neo_kdyn_t *d=&k->dyn[f.parent-NEO_KOBJ_DYN0];
+    if (!d->map) return false;
+    *object=f.parent;*top=(int32_t)((uint32_t)f.y+(uint32_t)d->pos.y-(uint32_t)k->terrain.y);
+    return true;
+}
+static void ride_on(msx_game_t *g,uint8_t object,int32_t x,int32_t y) {
+    const neo_kscene_t *k=&g->world.kernel;const neo_kdyn_t *d=&k->dyn[object-NEO_KOBJ_DYN0];
+    if (!g->ride) g->rides++;
+    g->ride=(uint8_t)(object-NEO_KOBJ_DYN0+1);
+    g->ride_x=(int32_t)((uint32_t)x+(uint32_t)k->terrain.x-(uint32_t)d->pos.x);
+    g->ride_y=(int32_t)((uint32_t)y+(uint32_t)k->terrain.y-(uint32_t)d->pos.y);
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
+    /* Collapse of the domed building: the players' input handlers are the
+     * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
+    if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
+    g->crouching=g->crouch && g->grounded && !g->ride;
+    if (g->crouching && direction) {g->facing=direction<0?-1:1;direction=0;}  /* turns in place */
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
     if (g->vehicle_flash) g->vehicle_flash--;
@@ -109,21 +142,42 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (events&NEO_VEHICLE_STAMP)
             g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
         if (g->jump_pending && g->grounded) {
-            g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;
+            g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;
         }
         g->jump_pending=false;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
-        if (g->grounded) {
+        if (g->ride) {
+            /* Carried: the feet follow the platform object (projected
+             * position + relative feet - terrain). */
+            const neo_kscene_t *k=&g->world.kernel;const neo_kdyn_t *d=&k->dyn[g->ride-1];
+            if (!d->map) {g->ride=0;g->grounded=false;g->air_ticks=0;}
+            else {
+                body.x=(int32_t)((uint32_t)d->pos.x+(uint32_t)g->ride_x-(uint32_t)k->terrain.x);
+                body.y=(int32_t)((uint32_t)d->pos.y+(uint32_t)g->ride_y-(uint32_t)k->terrain.y);
+            }
+        }
+        if (g->ride) {
+            /* Walking on the platform (flat top): still supported within
+             * the original step tolerance, else the player falls off. */
+            neo_ground_velocity(0,direction,&body.vx,&body.vy);body.vy=0;
+            body.x+=body.vx;
+            uint8_t object;int32_t top;
+            if (platform_floor(g,body.x,body.y+8*MSX_UNIT,-16*MSX_UNIT,&object,&top)) {body.y=top;ride_on(g,object,body.x,body.y);}
+            else {g->ride=0;g->grounded=false;g->air_ticks=0;}
+        } else if (g->grounded) {
             g->grounded=neo_walk_step(&body,direction);
             if (!g->grounded) g->air_ticks=0;
         } else {
             int previous=body.y;
             neo_air_step(&body,direction);
             g->air_ticks+=2;
-            g->grounded=neo_land_step(&body,previous);
+            uint8_t object;int32_t top;
+            if (body.y<previous && platform_floor(g,body.x,previous,body.y-previous,&object,&top) && top<=previous && top>=body.y) {
+                body.vy=top-previous;body.y=top;g->grounded=true;ride_on(g,object,body.x,body.y);
+            } else g->grounded=neo_land_step(&body,previous);
         }
         g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));
-        if (g->x!=body.x) body.vx=0;
+        if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
     }
     int player=g->x/MSX_UNIT;

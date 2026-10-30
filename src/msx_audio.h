@@ -14,6 +14,10 @@ bool msx_audio_open(unsigned voice,const char *path);
 /* loop=true keeps the loop point stored in the WAV64 (audioconv64
  * --wav-loop-offset) when the file has one, else loops the whole file. */
 bool msx_audio_play(unsigned voice,bool loop,float volume);
+/* Loop body of an intro opened with msx_audio_open: msx_audio_play(loop)
+ * then plays the intro once and this file looped, sample-exact (the pinned
+ * libdragon's VADPCM reader cannot loop from inside a file). */
+bool msx_audio_open_loop(unsigned voice,const char *path);
 void msx_audio_stop(unsigned voice);
 bool msx_audio_playing(unsigned voice);
 /* Produce stereo PCM with RSP mixing into caller storage. The caller must

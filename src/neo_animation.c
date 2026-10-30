@@ -39,8 +39,12 @@ static neo_anim_result_t step(neo_anim_state_t *s,neo_anim_render_t *r,
             if (!c->operand || (c->kind==NEO_ANIM_SELECT_POSE && c->asset!=0x61) || (unsigned)c->target+c->operand>s->program->count) return NEO_ANIM_INVALID;
             unsigned selected=r->variant61;
             if (c->kind==NEO_ANIM_SELECT_FIELD_POSE) {
-                uint32_t value;
-                if (!field || !field(field_context,c->asset,1,false,&value)) return NEO_ANIM_UNSUPPORTED;
+                uint32_t value;uint8_t byte;
+                /* Actor interface: the selector byte (+83/+A6 in the boss
+                 * programs) through read_byte, as 004412 reads (A6,D0.W). */
+                if (field) {if (!field(field_context,c->asset,1,false,&value)) return NEO_ANIM_UNSUPPORTED;}
+                else if (actor && actor->read_byte && actor->read_byte(actor->context,(uint16_t)c->asset,&byte)) value=byte;
+                else return NEO_ANIM_UNSUPPORTED;
                 selected=value&255u;
             }
             if (selected>=c->operand) selected=c->operand-1u;

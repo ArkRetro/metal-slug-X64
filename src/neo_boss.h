@@ -116,6 +116,8 @@ typedef struct {
     uint32_t unsupported_label; /* ROM label of the last unsupported path */
     uint32_t phase_changes,deaths;
     bool mission_complete;      /* set when 018F92 was requested */
+    int16_t born[16];           /* nodes linked by the last neo_boss_step (in order) */
+    uint8_t born_count;
 } neo_boss_t;
 void neo_boss_init(neo_boss_t *boss,const neo_boss_services_t *services);
 /* Script record 0x2D70FC (op 7, constructor 0D5976): creates the main node
@@ -147,5 +149,7 @@ uint16_t neo_boss_w(const neo_boss_node_t *n,unsigned offset);
 uint32_t neo_boss_l(const neo_boss_node_t *n,unsigned offset);
 /* Main body helpers for the integration: health (+4E) and phase (+79). */
 uint16_t neo_boss_health(const neo_boss_t *boss);
+/* ROM address of the node's current animation command (provenance, for tests). */
+uint32_t neo_boss_anim_address(const neo_boss_node_t *node);
 uint8_t neo_boss_phase(const neo_boss_t *boss);
 #endif

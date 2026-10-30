@@ -66,8 +66,12 @@ static int16_t link_after(neo_boss_t *w,int16_t creator_index,uint32_t routine,c
     memset(n,0,sizeof(*n));
     memcpy(n->f,image,NEO_BOSS_FIELDS);
     n->routine=routine;n->creator=creator_index;
-    if (creator_index<0) {n->next=w->first;w->first=i;n->depth=1;}
-    else {neo_boss_node_t *p=&w->nodes[creator_index];n->next=p->next;p->next=i;n->depth=(uint8_t)(p->depth+1);}
+    if (creator_index<0) {n->next=w->first;w->first=i;n->depth=n->f[0x11];}
+    else {
+        neo_boss_node_t *p=&w->nodes[creator_index];n->next=p->next;p->next=i;n->depth=(uint8_t)(p->depth+1);
+        n->f[0x10]=0;n->f[0x11]=n->depth;   /* 0040F0..0040F6 */
+        n->f[0x68]=p->f[0x68];      /* 004110 */
+    }
     return i;
 }
 static int16_t previous(neo_boss_t *w,int16_t i) {
@@ -343,6 +347,7 @@ static neo_boss_node_t *allocate(ctx_t *c,uint32_t ctor,uint16_t reserve,int16_t
     if (!SV->allocate(SV->context,reserve,image)) {memset(&scratch_node,0,sizeof(scratch_node));return &scratch_node;}
     int16_t i=link_after(c->w,c->i,ctor,image);
     if (i<0) {fail(c,0x40bc);return &scratch_node;}
+    if (c->w->born_count<16) c->w->born[c->w->born_count++]=i;
     *index=i;
     return &c->w->nodes[i];
 }
@@ -1369,3 +1374,210 @@ static void d6e5e(ctx_t *c) {
 static void d6e86(ctx_t *c) {project(c);CHECK;if (anim_step(c)) N->routine=0xd6d4c;CHECK;vent_tail(c);}
 static void d6ea0(ctx_t *c) {SL(0x96,0);anim_start(c,0x2ad900);CHECK;GO(0xd6ebe,d6ebe);}
 static void d6ebe(ctx_t *c) {project(c);CHECK;if (anim_step(c)) N->routine=0xd6004;}
+/* 0D6FFC: muzzle flash. */
+static void d7020(ctx_t *c);
+static void d6ffc(ctx_t *c) {palette(c,0x393);CHECK;anim_start(c,0x2ad968);CHECK;GO(0xd7020,d7020);}
+static void d7020(ctx_t *c) {
+    project(c);CHECK;
+    if (anim_step(c)) N->routine=0xd6004;
+    CHECK;
+    if (outside(c,0xe9194)) N->routine=0xd6004;
+}
+/* 0D6F90: shell, continued by the generic projectile code 02A260. */
+static void p2a260(ctx_t *c,uint32_t gravity);static void p2a2ac(ctx_t *c);static void p2a2fe(ctx_t *c);
+static void p2a244(ctx_t *c);
+static void d6f90(ctx_t *c) {
+    SW(0x66,0xe0ef);SW(0x1e,0xe0ef);
+    neo_boss_node_t *p=creator(c),*g=p?node_at(c->w,p->creator):NULL;
+    if (!p || !g) {fail(c,0xd6f9c);return;}
+    unsigned d0=p->f[0xa3];
+    uint32_t t=0x2caf92;
+    if (S8(g->f[0x79])>3) t=0x2cafa2;
+    uint32_t row=rom_long(c,t+d0*4u);CHECK;
+    unsigned k=(B(0x7d)&7u)*4u;
+    SL(0x30,speed8(rom_word(c,row+k)));
+    SL(0x34,0x10000);
+    uint32_t gravity=speed8(rom_word(c,row+k+2));CHECK;
+    p2a260(c,gravity);
+}
+/* ROM 02A5EA: the shell's three palettes. */
+static void p2a5ea(ctx_t *c) {
+    palette(c,0x357);CHECK;palette(c,0x358);CHECK;palette(c,0x359);CHECK;
+    SB(0x14,B(0x19));
+}
+/* ROM 02A50A: aim at a player in rectangle 02A7DA (or the nearest one);
+ * speed row by distance from tables 2CB0B2/2CB114, random X spread. */
+static void p2a50a(ctx_t *c) {
+    uint32_t tag;
+    if (player_in_rect(c,0x2a7da,&tag)) {CHECK;nearest_player(c,&tag);}
+    CHECK;
+    int16_t px,py;if (!player_xy(c,tag,&px,&py)) return;
+    uint16_t d0=(uint16_t)(S16(W(0x3c))-px);
+    if (!(S16(d0)>0x20)) d0=0x20;
+    d0=(uint16_t)((uint16_t)(d0-0x20)>>4);
+    if (!(d0<0x0f)) d0=0x0f;
+    uint32_t off=(uint32_t)d0*12u;
+    uint16_t sel=(uint16_t)(table(c,0x2cb0b2)&3u);CHECK;
+    uint32_t row=rom_long(c,0x2cb114+sel*4u)+off;CHECK;
+    SL(0x30,rom_long(c,row+8));SL(0x7a,rom_long(c,row+4));SL(0x34,rom_long(c,row));CHECK;
+    uint16_t r=random16(c);CHECK;
+    SL(0x30,L(0x30)+(uint32_t)((int32_t)r-0x8000));
+    if (B(0x15)&1u) SL(0x30,0u-L(0x30));
+}
+static void p2a260(ctx_t *c,uint32_t gravity) {
+    SL(0x7a,gravity);
+    SB(0x86,0);SB(0x86,B(0x86)|0x40u);SB(0x86,B(0x86)|0x10u);
+    p2a50a(c);CHECK;
+    SB(0x15,B(0x15)|0x20u);
+    p2a5ea(c);CHECK;
+    SW(0x66,0xe0f0);SW(0x1e,0xe0f0);
+    anim_start(c,0x236c74);CHECK;
+    GO(0x2a2ac,p2a2ac);
+}
+static void p2a2ac(ctx_t *c) {
+    SL(0x34,L(0x34)+L(0x7a));
+    air(c);CHECK;
+    if (B(0x15)&0x80u) N->routine=0x2a2fe;
+    anim_step(c);CHECK;
+    if (attack(c,0x2a794)) N->routine=0x2a244;
+    CHECK;
+    if (outside(c,0x2a7ea)) N->routine=0x2a18a;
+}
+static void p2a2fe(ctx_t *c) {
+    sound(c,(B(0x86)&0x10u)?0x1022:0x1021);
+    if (B(0x86)&0x40u) {p2a244(c);return;}
+    FAIL(0x2a32a);   /* ground burst 02A32A..02A3B2: not recovered */
+}
+static void p2a244(ctx_t *c) {
+    palette_release(c);
+    SW(0x66,0x1001);SW(0x1e,0x1001);SL(0x50,0);
+    convert(c,0x1c71e);
+}
+/* ROM 02A680 (program callback): trail sprite, generic actor 02A3B4. */
+static void p2a680(ctx_t *c) {
+    int16_t i;neo_boss_node_t *ch=allocate(c,0x2a3b4,0x2a,&i);
+    if (c->unsupported) return;
+    ch->f[0x86]=B(0x86);
+    if (i>=0) place_root(c,ch,0,0); else place_root(c,&scratch_node,0,0);
+    CHECK;
+    effect_commit(c,ch,0x2a3b4);
+}
+/* ROM 02A6A2 (program callback): cycle the shell palette. */
+static void p2a6a2(ctx_t *c) {
+    unsigned d0=(B(0x85)+1u)&3u;
+    if (!(d0<3)) d0=0;
+    SB(0x85,d0);SB(0x14,B(0x19+d0));
+}
+/* Program callbacks of the body/gun programs. */
+static void d72e4(ctx_t *c) {spawn_part(c,0xd69dc,0x0e,0,0,NULL);}
+static void d7308(ctx_t *c) {neo_boss_node_t *ch=spawn_part(c,0xd65ee,0x0e,0,0,NULL);CHECK;set_w(ch,0x80,0);}
+static void d7330(ctx_t *c) {neo_boss_node_t *ch=effect_child(c,0x1c706,0x1c,0,0);CHECK;effect_commit(c,ch,0x1c706);}
+static void d7354(ctx_t *c) {
+    sound(c,0x1021);
+    neo_boss_node_t *ch=effect_child(c,0x1c71e,0x1c,0,0);CHECK;effect_commit(c,ch,0x1c71e);CHECK;
+    debris(c,0xe9360);
+}
+static void d738e(ctx_t *c) {debris(c,0xe934e);}
+static void d739c(ctx_t *c) {
+    sound(c,0x10ea);
+    spawn_part(c,0xd6ffc,0x1c,0,0,NULL);CHECK;
+    neo_boss_node_t *s=spawn_part(c,0xd6f90,0x1c,-0x1c,-4,NULL);CHECK;
+    s->f[0x7d]=B(0x7d);
+    SB(0x7d,(B(0x7d)+1u)&7u);
+}
+
+/* ---- dispatch (004246) ---------------------------------------------------------------- */
+typedef void (*routine_fn)(ctx_t *c);
+typedef struct { uint32_t label; routine_fn fn; } entry_t;
+static void p2a18a(ctx_t *c) {delete_tree(c);}
+static void shell_ctor(ctx_t *c) {d6f90(c);}
+static const entry_t routines[]={
+    {0xd5976,d5976},{0xd5a92,d5a92},{0xd5ad4,d5ad4},{0xd5b1e,d5b1e},{0xd5b7e,d5b7e},{0xd5bba,d5bba},{0xd5bf8,d5bf8},
+    {0xd5c2c,d5c2c},{0xd5c90,d5c90},{0xd5cd2,d5cd2},{0xd5cec,d5cec},{0xd5d04,d5d04},{0xd5d24,d5d24},{0xd5d5c,d5d5c},
+    {0xd5d84,d5d84},{0xd5e5c,d5e5c},{0xd5e88,d5e88},{0xd5ea6,d5ea6},{0xd5ebc,d5ebc},{0xd5eda,d5eda},{0xd5ffc,d5ffc},
+    {0xd6004,d6004},{0xd600c,d600c},{0xd605e,d605e},{0xd60b4,d60b4},{0xd6130,d6130},{0xd6168,d6168},{0xd61f2,d61f2},
+    {0xd624a,d624a},{0xd6254,d6254},{0xd62a2,d62a2},{0xd62bc,d62bc},{0xd62d6,d62d6},{0xd62f2,d62f2},{0xd632e,d632e},
+    {0xd6348,d6348},{0xd6362,d6362},{0xd637e,d637e},{0xd63ae,d63ae},{0xd63c4,d63c4},{0xd6464,d6464},{0xd64d8,d64d8},
+    {0xd6500,d6500},{0xd6568,d6568},{0xd65ee,d65ee},{0xd6634,d6634},{0xd668e,d668e},{0xd66b0,d66b0},{0xd66dc,d66dc},
+    {0xd6710,d6710},{0xd672a,d672a},{0xd6756,d6756},{0xd678e,d678e},{0xd6792,d6792},{0xd67dc,d67dc},{0xd67e6,d67e6},
+    {0xd680a,d680a},{0xd687c,d687c},{0xd6882,d6882},{0xd691e,d691e},{0xd697a,d697a},{0xd69dc,d69dc},{0xd6a16,d6a16},
+    {0xd6a3e,d6a3e},{0xd6a54,d6a54},{0xd6a72,d6a72},{0xd6a84,d6a84},{0xd6ac6,d6ac6},{0xd6b10,d6b10},{0xd6bac,d6bac},
+    {0xd6c66,d6c66},{0xd6d30,d6d30},{0xd6d4c,d6d4c},{0xd6d6a,d6d6a},{0xd6dc0,d6dc0},{0xd6dd6,d6dd6},{0xd6dee,d6dee},
+    {0xd6e26,d6e26},{0xd6e5e,d6e5e},{0xd6e86,d6e86},{0xd6ea0,d6ea0},{0xd6ebe,d6ebe},{0xd6f90,shell_ctor},
+    {0xd6ffc,d6ffc},{0xd7020,d7020},
+    {0x2a18a,p2a18a},{0x2a244,p2a244},{0x2a2ac,p2a2ac},{0x2a2fe,p2a2fe},
+};
+neo_boss_result_t neo_boss_step(neo_boss_t *w,int16_t i) {
+    neo_boss_node_t *n=node_at(w,i);
+    if (!n) return NEO_BOSS_UNSUPPORTED;
+    if (n->routine==DEAD) return NEO_BOSS_MORE;      /* 003F1E */
+    ctx_t ctx={w,n,i,false,false,false},*c=&ctx;
+    w->born_count=0;
+    routine_fn fn=NULL;
+    for (unsigned k=0;k<sizeof(routines)/sizeof(routines[0]);k++) if (routines[k].label==n->routine) {fn=routines[k].fn;break;}
+    if (!fn) {w->unsupported_label=n->routine;return NEO_BOSS_UNSUPPORTED;}
+    fn(c);
+    if (c->unsupported) return NEO_BOSS_UNSUPPORTED;
+    if (c->handed_off) return NEO_BOSS_HANDED_OFF;
+    return c->deleted?NEO_BOSS_DELETED:NEO_BOSS_MORE;
+}
+neo_boss_result_t neo_boss_tick(neo_boss_t *w) {
+    int16_t i=w->first;
+    while (i>=0) {
+        /* 00424A reads +8 after the update: a deleted node's successor is
+         * its successor at the time of the delete. */
+        int16_t next=w->nodes[i].next;
+        neo_boss_result_t r=neo_boss_step(w,i);
+        if (r==NEO_BOSS_UNSUPPORTED) return r;
+        if (w->nodes[i].routine) next=w->nodes[i].next;
+        i=next;
+    }
+    return NEO_BOSS_MORE;
+}
+
+/* ---- damage intake (004892..0049E0) ---------------------------------------------------- */
+bool neo_boss_receive(neo_boss_t *w,int16_t i,const neo_boss_hit_t *h) {
+    neo_boss_node_t *n=node_at(w,i);
+    if (!n || n->routine==DEAD || !neo_boss_l(n,0x50)) return false;
+    if (h->kind>n->f[0x5a]) {
+        n->f[0x5a]=h->kind;n->f[0x17]|=6u;n->f[0x5b]=0;
+        if (S16((uint16_t)(neo_boss_w(n,0x3c)-(uint16_t)((uint32_t)h->cx>>16)))<0) n->f[0x5b]|=0x80u;
+        if (S16((uint16_t)(neo_boss_w(n,0x40)-(uint16_t)((uint32_t)h->cy>>16)))<0) n->f[0x5b]|=0x40u;
+        uint32_t dx=(uint32_t)h->px-(uint32_t)h->cx-neo_boss_l(n,0x3c)+neo_boss_l(n,0x44);
+        uint32_t dy=(uint32_t)h->py-(uint32_t)h->cy-neo_boss_l(n,0x40)+neo_boss_l(n,0x48);
+        extern uint8_t neo_angle(int16_t x,int16_t y);
+        n->f[0x5b]|=(uint8_t)((neo_angle(S16((uint16_t)(dx>>16)),S16((uint16_t)(dy>>16)))>>4)&15u);
+        n->f[0x5c]=(uint8_t)ASRW(h->impact_x,1);n->f[0x5d]=(uint8_t)ASRW(h->impact_y,1);
+    }
+    if (!(n->f[0x5f]&0xc0u)) {
+        uint16_t hp=neo_boss_w(n,0x4e),d0=h->damage;
+        if (h->scale_row) d0=(uint16_t)(((uint32_t)h->scale*h->damage)>>8);
+        if (d0) {
+            if (hp>d0) hp=(uint16_t)(hp-d0);
+            else {n->f[0x5f]|=0x80u;hp=0;}
+            set_w(n,0x4e,hp);
+            /* 0049CC: the attacker's +5E bits 0..1 go to bits 2..3 (the
+             * score call 0578FE before it is the attacker's). */
+            n->f[0x5e]=(uint8_t)(((h->attacker5e&3u)<<2)|(n->f[0x5e]&0xf3u));
+        }
+    }
+    return true;
+}
+uint32_t neo_boss_anim_address(const neo_boss_node_t *n) {
+    if (!n->anim.program) return neo_boss_l(n,0x20);
+    for (unsigned i=0;i<BOSS_PROGRAM_COUNT;i++) if (&boss_programs[i].program==n->anim.program)
+        if (n->anim.cursor<n->anim.program->count) {
+            /* a negative entry is an explicit fall-through JUMP into that address */
+            int32_t a=boss_programs[i].address[n->anim.cursor];
+            return (uint32_t)(a<0?-a:a);
+        }
+    return 0;
+}
+uint16_t neo_boss_health(const neo_boss_t *w) {
+    for (int16_t i=w->first;i>=0;i=w->nodes[i].next) if (w->nodes[i].routine && w->nodes[i].creator<0) return neo_boss_w(&w->nodes[i],0x4e);
+    return 0;
+}
+uint8_t neo_boss_phase(const neo_boss_t *w) {
+    for (int16_t i=w->first;i>=0;i=w->nodes[i].next) if (w->nodes[i].routine && w->nodes[i].creator<0) return w->nodes[i].f[0x79];
+    return 0;
+}

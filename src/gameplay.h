@@ -30,6 +30,9 @@ typedef struct {
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     bool aim_up;   /* input: up held (set by the caller before msx_game_update) */
+    bool crouch;   /* input: down held; grounded = crouched in place (the original
+                    * crawls: not ported, see docs/MARCO_CAMPAIGN.md) */
+    bool crouching,jump_moving;   /* state: crouched this update; takeoff while moving */
     msx_bullet_t bullets[MSX_BULLETS];
     /* Hostile straight projectiles observed by the depth25d event layer.
      * No actor of the native region emits one (rebel soldiers here knife and
@@ -56,6 +59,8 @@ void msx_game_hurt(msx_game_t *game,int from);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
 int msx_game_animation(const msx_game_t *game);
+/* Projected words of the player (+3C/+40) as the native world receives them. */
+void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */
 void msx_game_vehicle_reference(msx_game_t *game);

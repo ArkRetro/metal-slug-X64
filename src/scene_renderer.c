@@ -195,8 +195,8 @@ static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *vi
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,5);}
 /* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
-void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,depth_mode?5:3);}
-void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {if (!depth_mode) background(camera,height,backdrop_after,video_tick,3,5);}
+void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,3);}
+void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,3,5);}
 static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
@@ -273,7 +273,9 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             if (cells[i].layer>=begin && cells[i].layer<end && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
         rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
-    for (unsigned layer=0;layer<5;layer++) {
+    // Same split as the classic path: layers begin..end-1 only (the bit-2
+    // sprites are drawn between the two passes); the mesh after layer 4.
+    for (unsigned layer=begin;layer<end;layer++) {
       if (!visible[layer]) continue;
       const retro_plane_view_t *view=&depth_views[layer];
       scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
@@ -302,8 +304,8 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
       }
     }
     msx_perf_mark(MSX_PERF_BG_DRAW);
-    retro_effects_mesh(&depth_frame);
-    rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_MESH);
+    if (end==5) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
+    rdpq_set_scissor(0,0,320,240);
 }
 unsigned scene_render_draw_count(void) {return draws;}
 void scene_render_box(int x,int y,int width,int height,color_t color) {

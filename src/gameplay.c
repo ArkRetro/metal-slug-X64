@@ -80,6 +80,9 @@ static neo_world_player_t player_frame(const msx_game_t *g) {
         (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
     return p;
 }
+void msx_game_projected(const msx_game_t *g,uint16_t *x,uint16_t *y) {
+    neo_world_player_t p=player_frame(g);*x=p.px;*y=p.py;
+}
 /* Mission actor camera step (neo_world_camera) and its command-list events. */
 static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
     neo_world_camera(&g->world,p);
@@ -125,6 +128,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
+    g->crouching=g->crouch && g->grounded && !g->ride;
+    if (g->crouching && direction) {g->facing=direction<0?-1:1;direction=0;}  /* turns in place */
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
     if (g->vehicle_flash) g->vehicle_flash--;
@@ -137,7 +142,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (events&NEO_VEHICLE_STAMP)
             g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
         if (g->jump_pending && g->grounded) {
-            g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;
+            g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;
         }
         g->jump_pending=false;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};

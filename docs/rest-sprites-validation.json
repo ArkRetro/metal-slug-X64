@@ -1,17 +1,21 @@
 {
- "descriptors": 701,
+ "descriptors": 829,
  "palettes": [
   "0x103",
+  "0x113",
   "0x121",
   "0x122",
   "0x123",
+  "0x13f",
   "0x17",
   "0x19",
   "0x1a",
   "0x1b",
+  "0x208",
   "0x20b",
   "0x24",
   "0x30b",
+  "0x37c",
   "0x37d",
   "0x37e",
   "0x380",
@@ -31,17 +35,18 @@
   "0x883",
   "0x93",
   "0x9b",
-  "0xd0"
+  "0xd0",
+  "0xd3"
  ],
  "missing_palettes": [],
  "stats": {
-  "zoomed_entries_skipped": 57,
-  "frames": 146,
-  "pixels_equal": 1403516,
+  "zoomed_entries_skipped": 69,
+  "frames": 153,
+  "pixels_equal": 1407960,
   "pixels_different": 6326,
-  "pixels_overlapping": 104503,
-  "rank_2": 71,
-  "rank_1": 75
+  "pixels_overlapping": 104713,
+  "rank_2": 77,
+  "rank_1": 76
  },
  "frames": [
   {
@@ -1065,6 +1070,55 @@
    "update_frame": 4978,
    "equal": 4524,
    "different": 121
+  },
+  {
+   "capture": "veh2",
+   "frame": 4620,
+   "update_frame": 4618,
+   "equal": 95,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4650,
+   "update_frame": 4648,
+   "equal": 540,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4680,
+   "update_frame": 4677,
+   "equal": 340,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4710,
+   "update_frame": 4708,
+   "equal": 39,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4920,
+   "update_frame": 4916,
+   "equal": 686,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4950,
+   "update_frame": 4948,
+   "equal": 1408,
+   "different": 0
+  },
+  {
+   "capture": "veh2",
+   "frame": 4980,
+   "update_frame": 4977,
+   "equal": 1336,
+   "different": 0
   }
  ]
 }

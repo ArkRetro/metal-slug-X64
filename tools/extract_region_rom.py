@@ -45,6 +45,8 @@ BLOBS=[
     (0xE4E84,0x2EC,'087E36 armoured vehicle: hurtbox E4E84, solid E4E90, attack rows E4E9E/E4EBE, cull E4ECE, player rectangle E4ED6, wreck maps E4EDE/E4F36/E4F8E/E4FC0, platform map E4FF2, debris lists E5060/E50B2, platform offsets E5104 (089412)'),
     (0x89554,0x100,'0886CE armoured vehicle pieces: offset and speed table 089554 (16 entries)'),
     (0x2D0E40,0x220,'087E36 armoured vehicle rank tables 2D0E40/2D0EA2/2D0F04/2D0F66 and speeds 2D0FC8/2D0FFA (0260C8)'),
+    (0xE5170,0xEE,'088F20 armoured vehicle pieces table 0E516E (10 x 0x18: program, speeds, accelerations, offsets; first two bytes in the blob above)'),
+    (0x334C0,0x8,'08982A exhaust smoke palette table 0334C0'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():

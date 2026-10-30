@@ -29,5 +29,6 @@ ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_item_routine(uint32_t routine);
 bool neo_item_pickup(uint32_t routine);
 ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e);
-bool neo_armored_routine(uint32_t routine);   /* pickup routines: explicit stops */
+bool neo_armored_routine(uint32_t routine);
+bool neo_armored_vehicle(uint32_t routine);   /* the vehicle 087E36 itself (not its children) */
 #endif

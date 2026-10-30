@@ -263,7 +263,7 @@ FAMILY_ARGS_prisoner := --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2
 FAMILY_ARGS_hitem := --stop 8081,8b59e
 # The armoured vehicle's marker child 040396 reads RAM 10C446 = 2 (its
 # +70 = 3 in veh1); the trace keeps no read of that byte.
-FAMILY_ARGS_armored := --tree --marker-seq 2
+FAMILY_ARGS_armored := --tree --marker-seq 2 --script-actor 101414
 FAMILY_HEADERS := $(patsubst %,$(BUILD_DIR)/%_fixture.h,$(FAMILIES))
 $(FAMILY_HEADERS): $(BUILD_DIR)/%_fixture.h: data/%_fixture.json.gz tools/compile_family_fixture.py
 	python3 tools/compile_family_fixture.py $< --output $@ --name $* $(FAMILY_ARGS_$*)

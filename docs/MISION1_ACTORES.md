@@ -442,6 +442,59 @@ de `veh1`: 62245 píxeles iguales, 162 distintos, todos en 4950 y 4980,
 cuando el contador de destello `+17` está activo (3 y FF en las
 actualizaciones previas); el validador dibuja con la paleta base.
 
+### Hijos del vehículo blindado (`src/neo_armored.c`)
+
+Todos tras el actor del guion (`0x00411C`): proyectil `0x088B52` (cae con
+gravedad `0xB000`, rueda con la velocidad de rango `2D102C` reducida en la
+primera pendiente y luego por el ángulo D7 de `0x0143E4`; explota
+(`0x088E0E`: sonido 1022, explosión `0x01C706`) al tocar a un jugador
+(fila `0E4EAE`, clase 0), con `0x004C0E` (RAM `1067E4`, copia de `1067E5`
+hecha por `0x0046E0`: ahora `neo_world_t.shots_clear`/`neo_genv_t.clear_shots`),
+contra una pared, al frenarse por debajo de 0x1000 o tras 0x140
+actualizaciones en el suelo), vaina `0x0896A0` (rebota, `+6E` = 30
+rebotes), humos `0x088ED8`, `0x08982A` (paleta de la palabra 1 de
+`0x0334C0`: 0x13F) y `0x0897E2`, piezas `0x08943C` (crecen `+12/+13` de 8 en
+8) y las diez piezas `0x088F20` (tabla `0E516E`). Ya hacen daño.
+
+Prueba `armored` re-extraída de la nueva captura `captures-m1full/veh2`
+(`MSX_REST_FAMILY_ROOTS=87e36,896a0,88b52,88ed8,8982a,8943c,88f20,897e2
+MSX_REST_BOSS_FROM=4500 MSX_REST_LAST=5000`; las 328 actualizaciones del
+vehículo son idénticas a `veh1`), con `--script-actor 101414`: los nodos
+creados tras el actor del guion tienen el creador −2 y el código nativo debe
+crearlos con `after_script`. **15 nodos, 609 actualizaciones en bucle
+cerrado (4581..4998), 84560 bytes iguales**, 5 borrados. `0x088F20` y
+`0x0897E2` no aparecen en la traza (el vehículo grabado no ejecutó
+`0x08938A` ni la explosión final con `+74 = 0`): traducción sin validar.
+
+Gráficos: `... veh1@87e36-89c00 veh2@88b52-89940`: 829 descriptores, 36
+paletas (nuevas `0xD3, 0x208, 0x113, 0x13F, 0x37C`), 153 volcados:
+1407960 píxeles iguales, 6326 distintos (los mismos de antes).
+
+Al hacer daño, las partidas de lanzamiento mueren más en la parada 1304
+(esperas de 506 a 2900 pasos; las partidas difieren entre `-O0` y `-O2`
+del anfitrión, sin investigar): `tools/test_gameplay.c` solo exige que la
+pasen (cota inferior 200). Una de ellas llegó a la entrada 9 de la tabla de muerte en suelo
+`0x0406EA`, que es `0x040C8E` como la 1 (antes detención explícita):
+traducida.
+
+## Parada 2336: espera en `0x2D6E8A` (diagnóstico)
+
+MAME: `0x2D6E8A` (grupos 0..7 vacíos tras el carro) dura 197 fotogramas en
+`pri1` y `fam2` (7773..7970) y 26 en `trk3`; el espadachín de túnica
+`0x0A8C62` está en x = 2615 (pantalla 279, `0x0A8E1A/0x0A8ECE`), pasa a
+`0x0A8FE0` en 7867 y sale andando (`0x0A9390`) hasta 7968. En el port, la
+sonda de anfitrión reproduce una espera sin fin solo con el jugador quieto
+a la derecha de la columna x = 2576 de la tienda caída mirando a la
+derecha: un espadachín `0x039590` que bajó del carro a su izquierda (el
+carro para en 2610 y los espadachines salen en −27..−46) no puede volver a
+cruzarla (celda `0x10`, la misma en los volcados de RAM de MAME desde 7500;
+la cruza hacia la izquierda pero no hacia la derecha) y gira o pasea entre
+x ≈ 2455 y 2542. Es la lógica original (prueba `arab` bit-exacta) con el
+terreno original; el jugador original también puede estar ahí (`pri1`, 7410:
+x = 2620). Con el jugador vuelto hacia el enemigo visible más cercano la
+espera dura 0, 102 y 166 pasos (pantalla 160, 220, 280): prueba nueva en
+`tools/test_gameplay.c` (`stand_2336`, cota `< 3·197`).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

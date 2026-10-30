@@ -944,13 +944,13 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     /* Mission actor (0186A0): grid decay 00469C, group recount 019E40. */
     neo_grid_decay(w->grid,&w->grid_cursor);
     w->kill_active=w->ga_flags.kill_request!=0;w->ga_flags.kill_request=0;   /* 0046D4 */
-    w->ga_flags.flash_request=0;                                              /* 0046E0 */
+    w->shots_clear=w->ga_flags.flash_request!=0;w->ga_flags.flash_request=0;  /* 0046E0 */
     /* 004736: free the slots whose actor no longer holds them (+6B). */
     for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) {
         int16_t o=w->solids[i].actor;
         if (o>=0 && ga_b(&w->gactors[o],0x6b)!=i) w->solids[i].actor=-1;
     }
-    g->kill_all=w->kill_active;
+    g->kill_all=w->kill_active;g->clear_shots=w->shots_clear;
     /* Map swap actor 0B595A (inserted after the mission actor). */
     if (w->swap_step==2) {w->ga_flags.collapsed=1;w->ga_flags.flash=0;w->swap_step=3;}
     else if (w->swap_step==1) {w->ga_flags.flash=1;w->swap_step=2;}

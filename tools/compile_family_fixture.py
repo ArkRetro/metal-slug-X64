@@ -18,8 +18,10 @@ def main():
     p.add_argument('--tree',action='store_true',help='keep only the first node and its descendants')
     p.add_argument('--stop',help='FRAME,ROUTINE (hex routine): the update of that frame must stop explicitly at ROUTINE (an untranslated service); later updates are dropped')
     p.add_argument('--stamp',action='append',default=[],help='X,Y,TEMPLATE (hex): collision stamp (0C88B0) applied before the first update (an event of another family seen in the RAM dumps)')
+    p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     a=p.parse_args();n=a.name
+    script=int(a.script_actor,16) if a.script_actor else None
     d=json.load(gzip.open(a.fixture,'rt'))
     # A node deleted while deeper nodes follow it stays as a placeholder
     # (routine 003F1E, 004126): a deleting update like any other.
@@ -36,7 +38,9 @@ def main():
             if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
             if u['node'] not in live:
                 pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
-                live[u['node']]=len(order);order.append((u,live.get(cr,-1)))
+                c=live.get(cr,-1)
+                if c<0 and script is not None and int(cr,16)==script:c=-2
+                live[u['node']]=len(order);order.append((u,c))
             inst.append(live[u['node']])
             if not u['post']:del live[u['node']]
         return order,inst
@@ -49,7 +53,7 @@ def main():
         # traced family's creators outside it made belong to another test.
         kept=set()
         for i,(u,cr) in enumerate(order):
-            if i==0 or cr in kept:kept.add(i)
+            if i==0 or cr in kept or cr==-2:kept.add(i)
         d['updates']=[u for u,i in zip(d['updates'],inst) if i in kept]
         order,inst=instances(d['updates'])
     def rd(u,ad):

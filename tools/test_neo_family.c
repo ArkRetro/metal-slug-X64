@@ -26,6 +26,7 @@
 #include <string.h>
 #define MSX_SOLDIER_PROGRAMS 1
 #include "../src/neo_region.h"
+#include "../src/neo_collision.h"
 #include "../src/neo_soldier_ai.h"
 #include "soldier_ai_tables.h"
 typedef struct { int creator; uint32_t routine,frame; uint8_t pre[0xb0]; } family_node_t;
@@ -202,6 +203,12 @@ int main(void) {
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
     e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
     e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+#ifdef FAMILY_STAMPS
+    /* Collision stamps of other actors made before the family's first
+     * update (seen in the RAM dumps of the capture). */
+    {static const uint32_t st[][3]=FAMILY_STAMPS;
+     for (unsigned i=0;i<sizeof(st)/sizeof(st[0]);i++) {const uint8_t *t=ga_rom(st[i][2]);assert(t);neo_collision_stamp((int32_t)st[i][0],(int32_t)st[i][1],t);}}
+#endif
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
     unsigned compared=0,deleted=0;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;

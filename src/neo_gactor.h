@@ -52,6 +52,7 @@ typedef struct neo_ga_flags {
     uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */
     uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
+    uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
 } neo_ga_flags_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;

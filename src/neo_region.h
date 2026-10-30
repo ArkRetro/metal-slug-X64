@@ -23,4 +23,6 @@ ga_result_t neo_wagon_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_wagon_routine(uint32_t routine);
 ga_result_t neo_arab_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_arab_routine(uint32_t routine);
+ga_result_t neo_prisoner_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_prisoner_routine(uint32_t routine);
 #endif

@@ -271,6 +271,45 @@ nodo, 216 actualizaciones en bucle cerrado (7004..7528), 30100 bytes
 iguales**; gráficos (paleta `0x93`, 9 volcados): 2044 píxeles iguales, 0
 distintos.
 
+## Prisionero `0x099862` (`src/neo_prisoner.c`)
+
+Registro `0x2D6E6E` (progreso 2336, grupo 9 no contado, palabras `1, 6, 3,
+320`). Atado (programa `29F6D0`, retrollamada `0x099BE6` que anda `+62` y
+gasta el presupuesto `+76`; `+80` = índice de forcejeo) hasta que lo golpean
+(`0x004C24` con acarreo → `0x099922`) o lo toca un jugador (`0x099C3C`:
+rectángulo `0x099D7E`; `0x09AB38` cuenta el rescate en RAM `10C5FC/10C600`,
+ahora `neo_ga_flags_t.rescued`). Suelto (`0x099956`) forcejea con la tabla
+`0x099D86` y cada `+7A` actualizaciones (rango `2D0BB8`) da uno de sus `+72`
+objetos (`0x099CEE` → `0x099D12` → `0x08CDB2`: objeto `0x08C374` tras el
+actor del guion, tipo de la lista `[2D0BEC + 4·+70]` por el RNG; ≥ `0x5A`
+no da nada). Tocado: saludo `29F9AC` (su retrollamada `0x099CCC` lanza el
+regalo restante, `0x099C9C`), salto (`29FA22/29FA40`, `0x0143E4`) y carrera
+(`0x099A8A`: velocidad `2D0B9E`, programa `29FA78`) hasta chocar con una
+pared (`+5F` bit 0: 30 actualizaciones más) o salir de la vista
+(`0x099AF8`). Sin presupuesto estando atado (`0x099A22`): un objeto y salto.
+`0x01AF9A` con los dos jugadores vivos se detiene explícitamente (el port
+tiene uno). No llama a `0x01B2BE` (sangre).
+
+Prueba `prisoner` (`data/prisoner_fixture.json.gz`, MAME `pri1`, rango
+`99862-99dc0`): **1 nodo, 124 actualizaciones en bucle cerrado
+(7772..8073), 17220 bytes iguales**, liberado por un disparo, tocado,
+saludo con un objeto lanzado (externo, sus números aleatorios consumidos),
+carrera y salida. El prisionero anda sobre los restos del carro (objeto
+dinámico `10C22E`, mapa `0x033ADC`) junto a la columna de pared de la
+tienda caída: la prueba genérica acepta ahora `--stamp X,Y,PLANTILLA`
+(sellos `0x0C88B0` de otra familia anteriores a la primera actualización;
+aquí los cuatro de la tienda en `+28/+2C = 0A48/0040`, la posición del
+tejado `0x0B680E` en la traza `barrel`). Comprobado en los volcados de RAM
+de `pri1`: la columna `x = 2576` vale `1F` en 7200 y `10` desde 7500; sin
+ella el bit 2 de `+5F` (bandera 8 del núcleo) no aparece en 7872.
+
+Gráficos: `tools/export_rest_sprites.py mslugx.zip robe1 bld1@54800-55700
+bld1@b6500-b6b00 trk3@33c98-34200 trk3@39500-3a100 trk3@a93c0-a9a00
+trk3@35600-35a00 pri1@99862-99dc0`: 547 descriptores (los 491 anteriores
+idénticos), paleta `0x9B`; los 10 volcados del prisionero: 7508 píxeles
+iguales, 0 distintos salvo el de 8040 (892), cuya actualización es del
+mismo fotograma del volcado (la lista mostrada es aún la anterior).
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

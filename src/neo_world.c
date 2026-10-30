@@ -597,6 +597,18 @@ static bool b_effect(void *c,const neo_boss_effect_t *e) {
     if (!a) return true;
     for (unsigned o=0x10;o<NEO_BOSS_FIELDS;o++) if (o<0x20 || o>=0x24) ga_sb(a,o,e->image[o]);
     ga_sl(a,0,e->label);ga_sw(a,0x10,a->m[0x10]);
+    /* Palette slots of the boss allocator -> native handles (ga_palette):
+     * +19..+1C hold the node's references, +14/+16 the draw/flash slot. */
+    uint8_t count=e->image[0x1d]<4u?e->image[0x1d]:4u;
+    for (unsigned i=0;i<count;i++) {uint8_t s=e->image[0x19+i];a->palette[i]=s<32?w->boss_palette[s]:0;ga_sb(a,0x19+i,(uint8_t)(i+1u));}
+    static const uint8_t refs[2]={0x14,0x16};
+    for (unsigned r=0;r<2;r++) {
+        uint8_t s=e->image[refs[r]],h=0;
+        for (unsigned i=0;i<count;i++) if (e->image[0x19+i]==s) h=(uint8_t)(i+1u);
+        if (!h && s && s<32 && count<4u) {a->palette[count]=w->boss_palette[s];h=(uint8_t)(++count);}
+        ga_sb(a,refs[r],h);
+    }
+    ga_sb(a,0x1d,count);
     /* The node's creator is a boss node: no generic creator to follow. */
     ga_sl(a,0x0c,0);
     return true;

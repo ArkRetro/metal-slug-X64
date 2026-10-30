@@ -247,3 +247,22 @@ python3 tools/test_boss_ares.py boss-regression.z64 --output /ruta/ares-boss
 
 `filesystem/boss-native.json` (generado, no versionado como el resto de
 `filesystem/`) lo necesita `pack_scene.py`.
+
+## Pendiente (prueba 5 en MiSTer)
+
+- **Marco cae sobre el jefe al reaparecer.** Causa en el port: el jugador
+  tiene 3 puntos de vida con un retroceso de ±20 px inventado (en el arcade
+  un impacto mata) y la vida nueva reaparece en `camera_height+200` (arriba
+  de la vista) cayendo hasta el primer suelo de `platform_floor`, que incluye
+  las plataformas dinámicas del jefe (`0140C0`, `ride_on`): por eso aterriza
+  sobre su cuerpo. En el arcade (`hudv2`, fotograma 10196, cámara 2336) la
+  vida nueva aparece en x = cámara + 120, y = 112 (48 px sobre el suelo 64) y
+  está en el suelo dos fotogramas después. No se encontró la rutina que fija
+  esa posición ni hay captura de una muerte en la arena del jefe: parada
+  explícita, sin cambio.
+- **Explosiones del jefe sin color.** Los efectos externos del jefe
+  (`boss_effects_ext`, ~3200 en la carrera de `test_gameplay`) que tienen
+  rutina genérica nativa se dibujan con las paletas de las ranuras del
+  asignador del jefe (`b_effect` en `neo_world.c`: `+19..+1C`, `+14/+16`);
+  los demás solo se cuentan. Sin identificar contra `captures-boss` cuáles
+  salen con paleta plana: pendiente.

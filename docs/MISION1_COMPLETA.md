@@ -72,10 +72,10 @@ sin detenerse.
   `building_raise/building_clear`; desplazamiento del cielo y mapa delantero
   del derrumbe `0x0B58CC`.
 
-Pack: **222 chunks, 1773 páginas, 155 paletas, 1.904.768 bytes**. Con la
+Pack: **223 chunks, 1777 páginas, 155 paletas** (≈1,9 MB empaquetados). Con la
 Expansion Pak la caché de escena pasa de 3 a 3,5 MiB y **todo el pack queda
-residente** (222 ranuras). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
-de trabajo 25 chunks); en la arena del jefe mapa+fijos ocupan 22–23 chunks y
+residente** (224 ranuras). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
+de trabajo 28 chunks); en la arena del jefe mapa+fijos ocupan 22–23 chunks y
 el jefe 14–15 por pasada lógica (`tools/check_boss_budget.py`): **37–38 > 32,
 no cabe** sin rediseñar los fijos o el tamaño de caché (pendiente; ares
 siempre usa 8 MiB).
@@ -177,6 +177,31 @@ fases del jefe y la señal de misión completada, y que solo se detienen los
 nodos documentados. Resultado y capturas en
 [mision1-completa-validation.json](mision1-completa-validation.json).
 
+**Resultado: PASS.** El guion llega al final, el espadachín arranca el jefe,
+el jefe pasa por sus fases (5000 → 0 PV) y emite `0x018F92` y `0x018F40`;
+34 rebeldes creados, 25 abatidos; solo se detienen los dos nodos de la
+torreta documentados; 0 descriptores/paletas ausentes, 0 fallos de caché,
+**0 *underruns* de audio**.
+
+### Rendimiento (`MSX PERF`, ares 146, caché de 8 MiB)
+
+| Tramo | `cpu` media máx. | `cpu` peor fotograma |
+| --- | ---: | ---: |
+| Inicio → arena (cámara 0..3376) | 8.836 µs | 10.538 µs |
+| Combate con el jefe | 13.449 µs | 16.744 µs |
+
+Cambios de rendimiento de este paso: páginas de mapa altas de 16×256
+(teselas apiladas por código: una columna del mapa con códigos consecutivos
+se dibuja en un solo rectángulo; ~530 → ~290 dibujos de fondo), atlas de la
+región separados de los del resto, y el recorrido del jefe con un único
+orden de lista por pasada (antes O(n²)). Referencia en el mismo ares: la ROM
+de `origin/main` da 10,5–12,0 ms de media y 13,0 ms de peor fotograma en la
+región, es decir, la medida de este ares es más lenta que la de
+RENDIMIENTO.md. **El combate con el jefe supera los 12 ms** (simulación
+del jefe hasta 5,6 ms, su dibujo hasta 4 ms, fondo 9,4 ms): pendiente.
+
+ROM de publicación `mslugx-explorer.z64`: 5.111.808 bytes.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros
@@ -215,3 +240,4 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
   del jefe como bloque, salida del espadachín (`0x0A8FE0`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
+- Rendimiento del combate con el jefe (peor fotograma 16,7 ms > 12 ms).

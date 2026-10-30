@@ -647,13 +647,14 @@ static bool run_boss(tick_t *t) {
     w->boss_box_count=0;
     /* neo_boss_tick, continuing after a node that stops on an untranslated
      * path: that node is removed (logged), the others keep running. */
+    /* List order at the start of the pass: when a node is freed during its
+     * update, 00424A follows stale +8 links (a converted shell takes its
+     * trails with it), i.e. the next node of this order still linked. */
+    int16_t order[NEO_BOSS_NODES];uint8_t pos[NEO_BOSS_NODES];unsigned count=0;
+    for (int16_t k=b->first;k>=0 && count<NEO_BOSS_NODES;k=b->nodes[k].next) {pos[k]=(uint8_t)count;order[count++]=k;}
+    bool listed[NEO_BOSS_NODES]={false};
+    for (unsigned k=0;k<count;k++) listed[order[k]]=true;
     for (int16_t i=b->first;i>=0;) {
-        /* The list after this node before its update: 00424A follows the
-         * stale +8 links of nodes freed meanwhile (a converted shell takes
-         * its trails with it), i.e. the first node of this order still
-         * linked. */
-        int16_t after[NEO_BOSS_NODES];unsigned count=0;
-        for (int16_t k=b->nodes[i].next;k>=0 && count<NEO_BOSS_NODES;k=b->nodes[k].next) after[count++]=k;
         int16_t next=-1;uint32_t routine=b->nodes[i].routine;
         neo_boss_result_t r=neo_boss_step(b,i);
         if (r==NEO_BOSS_UNSUPPORTED) {
@@ -662,7 +663,7 @@ static bool run_boss(tick_t *t) {
             neo_boss_stop(b,i);
         }
         if (b->nodes[i].routine) next=b->nodes[i].next;
-        else for (unsigned k=0;k<count;k++) if (b->nodes[after[k]].routine) {next=after[k];break;}
+        else if (listed[i]) for (unsigned k=pos[i]+1u;k<count;k++) if (b->nodes[order[k]].routine) {next=order[k];break;}
         i=next;
     }
     boss_tick_ctx=NULL;

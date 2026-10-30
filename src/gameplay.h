@@ -7,6 +7,7 @@
 #include "neo_world.h"
 #include "neo_hud.h"
 #include "marco_hgun.h"
+#include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
@@ -73,13 +74,18 @@ typedef struct {
     /* H upper body (marco_hgun.c): fire states, sweeps and their diagonal
      * bullets; fire_was: the fire input of the previous tick (+9B bit 4). */
     marco_hgun_t hgun;bool fire_was;unsigned hgun_diagonal;uint8_t hgun_kind;
+    /* Death and new life (marco_death.c, docs/JEFE_MISION1.md): one hit
+     * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
+     * the deaths of kinds 8 / 0x12 (own routines, not translated). */
+    marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
-/* One hit on the player from world x `from` (knockback away from it). */
+/* A hit on the player (from: world x of the attacker, used without the
+ * native world): the death 0C2956 unless invulnerable or already dying. */
 void msx_game_hurt(msx_game_t *game,int from);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;

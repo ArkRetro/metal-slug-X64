@@ -47,7 +47,7 @@ static int armored_x(const msx_game_t *g) {
 static void release_run(unsigned seed) {
     static msx_game_t g;unsigned steps;
     unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
-    unsigned hold=0,hold_max=0;
+    unsigned hold=0,hold_max=0,arena_lives=0;
     for (steps=0;steps<80000 && !g.complete;steps++) {
         /* Camera stop 1304: the script waits at 2D67CA for the armoured
          * vehicle 087E36 (group 1) and the prone soldier riding it. */
@@ -70,12 +70,24 @@ static void release_run(unsigned seed) {
         g.aim_up=a;rs=rs*1103515245u+12345u;
         /* Now and then a bomb; at the armoured vehicle every 40. */
         g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
-        msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */check_draws(&g);
+        bool was_entering=g.life.phase==MARCO_ENTERING;
+        msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */
+        /* A new life in the boss arena (progress 0x0D30: record 2D5C52,
+         * screen x 56, from y 0x50 down to the floor) stands on the arena
+         * floor, never on the boss. */
+        if (!was_entering && g.life.phase==MARCO_ENTERING && neo_camera_progress(&g.world.camera)>=0xd30) {
+            arena_lives++;
+            uint16_t px,py;msx_game_projected(&g,&px,&py);
+            /* px is read after this update's camera step (the record used
+             * the root before it): 56..58 while the camera still scrolls
+             * into the arena (the captures' deaths were all at 3520). */
+            assert(g.grounded && 56*MSX_UNIT-g.y==64*MSX_UNIT && px>=56 && px<=58);
+        }check_draws(&g);
         g.world.sound_count=0;
     }
-    printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
+    printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u arena lives=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
         g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenades,g.expiries,
-        g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max);fflush(stdout);
+        g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max,arena_lives);fflush(stdout);
     assert(!g.world.item_pickups && g.grenades>0 && !g.grenade_stops);
     assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
     assert(g.world.unsupported==g.world.boss_unsupported);
@@ -322,18 +334,25 @@ int main(int argc,char **argv) {
         printf("2336 stand at x=%d: hold 2D6E8A=%u\n",at,h);
         assert(h<3*197);
     }
+    /* One hit kills (0C2956): the death flies away from the attacker
+     * (0C2E44: +34 = 0xA9000, +30 = -2 with the attacker on the right),
+     * lands, lies 31 updates, and the new life (lab build without the native
+     * world: the port's checkpoint) enters invulnerable with no bullets. */
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
-    g.health=1;g.invulnerable=0;g.world_enabled=false;
+    g.invulnerable=0;g.world_enabled=false;
     g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false,0};
     msx_game_hurt(&g,g.x/MSX_UNIT+12);
-    assert(g.deaths==1 && g.health==3 && g.x==640*MSX_UNIT && g.invulnerable);
-    assert(g.camera==496);
+    assert(g.deaths==1 && g.life.phase==MARCO_DYING && g.facing==1 && g.velocity_x==-0x20000 && g.velocity_y==-0xa9000 && !g.grounded);
+    unsigned landed=0,updates=0;
+    for (;updates<400 && g.life.phase!=MARCO_ENTERING;updates++) {msx_game_update(&g,1,true,true);if (!landed && g.grounded) landed=updates;}
+    assert(landed && g.life.phase==MARCO_ENTERING && g.x==640*MSX_UNIT && g.invulnerable && g.camera==496 && g.deaths==1);
     for (unsigned i=0;i<MSX_BULLETS;i++) assert(!g.bullets[i].active);
+    for (unsigned i=0;i<40 && g.life.phase==MARCO_ENTERING;i++) msx_game_update(&g,0,false,false);
+    assert(g.life.phase==MARCO_ALIVE && g.invulnerable);
     msx_game_init(&g);g.x=200*MSX_UNIT;g.y=msx_ground_offset(g.x);g.camera=56;g.world_enabled=false;
     msx_game_hurt(&g,212);
-    assert(g.health==2 && g.x==180*MSX_UNIT && g.y==msx_ground_offset(g.x));
-    for (unsigned i=0;i<100;i++) msx_game_update(&g,0,false,false);
-    assert(g.grounded && g.y==msx_ground_offset(g.x)); // Knockback cannot bury feet in a slope.
+    for (unsigned i=0;i<100 && g.life.phase==MARCO_DYING;i++) msx_game_update(&g,0,false,false);
+    assert(g.life.phase==MARCO_LYING && g.grounded && g.y==msx_ground_offset(g.x) && g.x<200*MSX_UNIT); // Lands, feet on the slope.
     msx_game_init(&g);
     assert(msx_game_begin_at(&g,7852402,6157405));
     assert(g.x==7852402 && g.y==56*MSX_UNIT-6157405 && g.grounded && !g.velocity_x && !g.velocity_y);
@@ -365,6 +384,6 @@ int main(int argc,char **argv) {
     msx_game_init(&g);
     unsigned hit_at=0;
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
-    assert(hit_at && g.health==2 && g.world.player_hits==1 && g.invulnerable);
+    assert(hit_at && g.deaths==1 && g.life.phase==MARCO_DYING && g.world.player_hits==1);
     puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

@@ -113,6 +113,7 @@ typedef struct {
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
+    uint8_t hit_kind;bool hit_right; /* the update's player hit: +5A kind, +5B bit 7 (attacker right) */
     int32_t camera_lock;            /* RAM 69BC high word set by 0C7B0C; -1 = free (0C7C12) */
     /* Native mission camera (neo_camera.h) driven by the caller before each
      * tick (neo_world_camera); when set, RAM 10E99E is its progress and the

@@ -37,7 +37,7 @@ typedef struct {
     uint16_t timer;               /* RAM 1013DE (mission actor 101364 +7A) */
     uint32_t serial;              /* incremented by every map write */
     uint16_t sound;               /* last sound request (0x10D7 timer beep), 0 none */
-    bool time_over;               /* 0C0A2C reached: explicit stop */
+    bool time_over;               /* 0C0A2C reached (the caller kills the player) until 019124 */
     unsigned unsupported;         /* explicit stops (unsupported escapes or glyphs) */
 } neo_hud_t;
 

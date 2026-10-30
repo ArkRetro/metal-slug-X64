@@ -59,6 +59,12 @@ local assisting=assist_camera>0
 -- MSX_WEAPONS_KEEP_TIMER=1: do not hold the mission timer 1013DE (HUD timer
 -- digits, docs/ARMAS_VEHICULOS.md §11); everything else as without it.
 local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
+-- MSX_WEAPONS_MORTAL_CAMERA=<camera>: from the first frame at or past it the
+-- P1 invulnerability bit and count (+84) are no longer forced (bit cleared once) so the player
+-- can die (lives 101288 stay forced); deaths.csv then logs the player's
+-- death/respawn fields every frame (docs/JEFE_MISION1.md, respawn).
+local mortal_camera=tonumber(os.getenv('MSX_WEAPONS_MORTAL_CAMERA') or '0')
+local mortal=false
 local frame=0
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local mstate=manager.machine.devices[':maincpu'].state
@@ -66,6 +72,7 @@ local ROOT,DEAD,SCRIPT,P1=0x1010a4,0x3f1e,0x101414,0x1014c4
 local function hexbytes(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
 local wcsv=assert(io.open(output..'/weapons.csv','w'))
 wcsv:write('frame,camera,inputs,input_word,routine,flags15,health,f5f,f6c,f90,f92,f93,f94,f95,f9a,x16,y16,weapon_block,slot_p1,hud,video,timer,score,rescued\n')
+local deaths=nil
 local actors=assert(io.open(output..'/actors.csv','w'))
 actors:write('frame,camera,node,event,routine,previous,creator,parent,x,y,kind6e,word70\n')
 local states=assert(io.open(output..'/actorstate.csv','w'))
@@ -134,6 +141,8 @@ local function probes()
  bp(0xc0b32,'1','give_bombs d0=%X d1=%X bombs=%X','d0,d1,b@10c720')
  bp(0xc0ee2,'1','pistol_reset a6=%08X ret=%08X id=%X ammo=%X','a6,d@(sp),b@10c71e,w@10c724')
  bp(0xc0e86,'1','player_init a6=%08X','a6')
+ bp(0xc2d6a,'1','player_death a6=%08X x=%04X y=%04X f15=%X','a6,w@(a6+3c),w@(a6+40),b@(a6+15)')
+ bp(0x196e8,'1','respawn a6=%08X rec=%08X c31e=%08X progress=%X','a6,d@10c31a,d@10c31e,w@10e99e')
  -- Fire: 0C438E ammo granted, table in A0; 0C4454/0C447C H; 0C46F4 laser-type.
  bp(0xc438e,'a6==1014c4','fire table=%08X id=%X ammo=%X shots=%X','a0,b@10c71e,w@10c724,b@10c71a')
  bp(0xc4454,'a6==1014c4','fire_h5 f93=%X','b@(a6+93)')
@@ -284,8 +293,11 @@ emu.register_frame_done(function()
  if frame==1710 then button('P1 A',0) end
  if frame>=2000 then
   if not keep_timer then cpu:write_u8(0x1013de,0x5a) end
-  cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40) -- P1 invulnerability, capture only.
-  cpu:write_u8(0x101549,0x99)
+  if mortal_camera>0 and not mortal and cpu:read_u16(0x102036)>=mortal_camera then
+   mortal=true;cpu:write_u8(0x101523,cpu:read_u8(0x101523)&0xbf);print('MORTAL '..frame)
+  end
+  if not mortal then cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40) end -- P1 invulnerability, capture only.
+  if not mortal then cpu:write_u8(0x101549,0x99) end -- P1 +84 low byte (invulnerability count), capture only.
   cpu:write_u8(0x101288,2)
  end
  local camera=cpu:read_u16(0x102036)
@@ -329,6 +341,13 @@ emu.register_frame_done(function()
   button('P1 Right',right);button('P1 Left',left);button('P1 Up',up)
   button('P1 A',a);button('P1 B',b);button('P1 C',c)
  end
+ if mortal then
+  if not deaths then deaths=assert(io.open(output..'/deaths.csv','w'));deaths:write('frame,video,camera,progress,routine,f15,f5f,x28,y2c,v30,v34,x3c,y40,p38,f78,f80,f84,rec,table,lock,f5a,f5b,f26\n') end
+  deaths:write(string.format('%d,%04x,%d,%04x,%x,%02x,%02x,%08x,%08x,%08x,%08x,%08x,%08x,%08x,%02x,%04x,%04x,%08x,%08x,%02x%02x,%02x,%02x,%04x\n',frame,cpu:read_u16(0x10000e),cpu:read_u16(0x102036),
+   cpu:read_u16(0x10e99e),cpu:read_u32(P1),cpu:read_u8(P1+0x15),cpu:read_u8(P1+0x5f),cpu:read_u32(P1+0x28),cpu:read_u32(P1+0x2c),cpu:read_u32(P1+0x30),cpu:read_u32(P1+0x34),
+   cpu:read_u32(P1+0x3c),cpu:read_u32(P1+0x40),cpu:read_u32(P1+0x38),cpu:read_u8(P1+0x78),cpu:read_u16(P1+0x80),cpu:read_u16(P1+0x84),cpu:read_u32(0x10c31a),cpu:read_u32(0x10c31e),
+   cpu:read_u8(0x10c322),cpu:read_u8(0x10c323),cpu:read_u8(P1+0x5a),cpu:read_u8(P1+0x5b),cpu:read_u16(P1+0x26)))
+ end
  if frame>=2100 then
   local inputs=(pressed['P1 Left']==1 and 'L' or '')..(pressed['P1 Right']==1 and 'R' or '')..(pressed['P1 Up']==1 and 'U' or '')..(pressed['P1 A']==1 and 'A' or '')..(pressed['P1 B']==1 and 'B' or '')..(pressed['P1 C']==1 and 'C' or '')
   local block=hexbytes(0x10c718,0x18);local slotp=hexbytes(0x10c608,0x24)
@@ -347,12 +366,12 @@ emu.register_frame_done(function()
   last_key=key
   if frame%300==0 or frame==2100 then check_bank(frame) end
   if (frame>=first_dump and frame%period==0) or (event and frame>=next_event_dump and frame>2200) then dump(frame);if event then next_event_dump=frame+4;print('EVENT '..frame..' '..key) end end
-  if frame%600==0 then print('FRAME '..frame..' camera '..camera);wcsv:flush();actors:flush();trace:flush() end
+  if frame%600==0 then print('FRAME '..frame..' camera '..camera);wcsv:flush();actors:flush();trace:flush();if deaths then deaths:flush() end end
  end
  family_frame(frame)
  in_lua=false
  if frame==last_frame then
   if boss_log then boss_log:close() end
-  wcsv:close();actors:close();states:close();trace:close();manager.machine:exit()
+  wcsv:close();actors:close();states:close();trace:close();if deaths then deaths:close() end;manager.machine:exit()
  end
 end,'frame')

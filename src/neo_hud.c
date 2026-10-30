@@ -289,7 +289,7 @@ void neo_hud_timer_step(neo_hud_t *h,const neo_hud_input_t *in) {
     uint16_t d0=(uint16_t)(h->timer-2);
     if (h->timer<=2) {                                 /* 01876C */
         h->timer=0;neo_hud_timer_draw(h,in->hud_on,0);
-        h->time_over=true;stop(h,"time over 0C0A2C",0); /* not translated */
+        h->time_over=true;  /* 0C0A2C: the caller kills the player (gameplay.c) */
         return;
     }
     h->timer=d0;

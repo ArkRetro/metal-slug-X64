@@ -431,3 +431,26 @@ extraídas de `/home/user/captures/weapons/`, fuera de Git, como
    (`--range 92a00-95800`: 3050 actualizaciones con torreta y balas) más
    `data/cannon_fixture.json.gz`. Antes,
    capturar daño y destrucción (falta evidencia).
+
+## 10. Port
+
+### Paso 1: bloque de armas (`src/marco_ammo.c`)
+
+`marco_weapons_t` guarda los bytes originales `10C718..10C72B` de los dos
+jugadores (`10C72C`/`10C72E` no son de armas). Traducido: partida nueva
+`0x0C0E20`, vida `0x0C0E6E`, concesión `0x0C0928` (tablas `0x0C08A8..0x0C0927`
+con los valores originales), bombas `0x0C0B32` con `0x0AA898` sobre la ranura
+de vehículo (tipo 4: lee `0x0C0764`, **parada explícita** `MW_STOP`), pistola
+`0x0C0EE2`, comprobación de fin `0x0C337A`, lanzamiento `0x0C478E`/`0x0C0808`,
+granadas en vuelo `0x0C0D34`/`0x0C0D48` y la muerte `0x0C2FA4` (en vuelo, id,
+bombas y munición a 0; la encontró la prueba en `vehicles2` 10194).
+
+Prueba `tools/test_marco_weapons.c` (`make check-core`): fixture
+`data/weapon_block_fixture.json.gz` (`tools/extract_weapon_block.py
+pickups pickups2:9400 vehicles2:9400`), bucle cerrado sobre 1840 fotogramas
+con cambio de bloque y 1849 eventos, bit a bit. La fila de `weapons.csv` del
+fotograma f se lee en un punto del fotograma: un evento de f puede quedar
+antes o después; el extractor lo decide con el estado que registra el propio
+punto de ruptura. Los decrementos sin punto de ruptura (`0x0C0D48`,
+`0x0C0DFC`, reservas rechazadas por el tope, la muerte) se infieren del
+bloque y la prueba los aplica con las rutinas nativas.

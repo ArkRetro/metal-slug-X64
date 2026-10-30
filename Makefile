@@ -346,6 +346,9 @@ $(BUILD_DIR)/marco-motion/marco_motion_fixture.h: tools/compile_marco_motion.py 
 
 $(BUILD_DIR)/marco_ammo_fixture.h: tools/compile_marco_ammo.py data/marco_ammo_fixture.json
 	python3 tools/compile_marco_ammo.py
+# Weapon block 10C718 (docs/ARMAS_VEHICULOS.md): tools/extract_weapon_block.py.
+$(BUILD_DIR)/weapon_block_fixture.h: tools/compile_weapon_block.py data/weapon_block_fixture.json.gz
+	python3 tools/compile_weapon_block.py
 
 $(BUILD_DIR)/marco_stance_fixture.h: tools/compile_marco_stance.py tools/compile_marco_upper.py data/marco_stance_fixture.json
 	python3 tools/compile_marco_stance.py
@@ -353,7 +356,7 @@ $(BUILD_DIR)/marco_stance_fixture.h: tools/compile_marco_stance.py tools/compile
 $(BUILD_DIR)/marco_idle_fixture.h: tools/compile_marco_idle.py data/marco_idle_fixture.json
 	python3 tools/compile_marco_idle.py
 
-check-core: $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
+check-core: $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -408,6 +411,8 @@ check-core: $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.
 	$(BUILD_DIR)/host/marco-body
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_ammo.c src/marco_ammo.c -o $(BUILD_DIR)/host/marco-ammo
 	$(BUILD_DIR)/host/marco-ammo
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_weapons.c src/marco_ammo.c -o $(BUILD_DIR)/host/marco-weapons
+	$(BUILD_DIR)/host/marco-weapons
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-stance
 	$(BUILD_DIR)/host/marco-stance
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_idle.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-idle

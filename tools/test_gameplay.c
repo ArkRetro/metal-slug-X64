@@ -76,7 +76,7 @@ int main(void) {
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
-        if (!g.world.boss_active && g.camera_height>max_height) max_height=g.camera_height;
+        if (g.camera<2336 && g.camera_height>max_height) max_height=g.camera_height;
         if (neo_camera_progress(&g.world.camera)>max_progress) max_progress=neo_camera_progress(&g.world.camera);
         // Sound requests of the native world: every one has a packed render.
         for (unsigned i=0;i<g.world.sound_count;i++) {
@@ -99,7 +99,7 @@ int main(void) {
     assert(g.rides>0);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     assert(max_progress==3376 && g.camera==MSX_CAMERA_MAX);
-    assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (before the boss: standing on it lifts the view)
+    assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (measured before the wagon stop: standing on the wreck or the boss lifts the view)
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;
     g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false};

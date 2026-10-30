@@ -200,11 +200,39 @@ proyección) → `0x0A9390` (se va andando) hasta salir de la vista.
   leídos por el original.
 - Detenciones explícitas: `0x0A8FE0` con `+72 ≠ 0` (combate de la figura, no
   alcanzado en las grabaciones), su muerte `0x0A93DC` y la rama `+93 = 0`.
-- Los espadachines `0x039590/0x0395B6` (familia `0x0395xx`, con su muerte
-  compartida `0x0A93CE` → trozos `0x0A9510..0x0A98BE`) y la criatura
-  `0x035668` siguen externos: están en las trazas `trk3`
-  (`truck_fixture.json.gz`, rangos `39500-39d00`, `35600-35a00`, y
-  `swordgen_fixture.json.gz`, `a93c0-a9a00`) pero no se han portado.
+- La criatura `0x035668` sigue externa (traza en `truck_fixture.json.gz`,
+  rango `35600-35a00`, no portada).
+
+## Espadachines árabes del carro `0x039590/0x0395B6` (`src/neo_arab.c`)
+
+`0x039590` espera el progreso `+74`, `0x0395B6` el bit `+74` de `10C606`;
+luego (`0x03965C`) anda hacia los jugadores (`0x039694`, velocidad `+86` de
+la tabla de rango `0x2D257C`, programa por `+90`), gira (`0x039796`), espera
+(`0x0397CC`) y ataca (`0x03973A`: tajo `0x039B60`, cuya fila de ataque
+`0x03A004` actúa mientras su `+91` está puesto y cuyo final pone `+60` del
+espadachín). Todos los estados terminan en `0x039B16` (corte `0x03A014`,
+registro `0x004C24`; un golpe mortal lleva a `0x039820`), que elige por el
+tipo de golpe `+5A`, la dirección `+5B` y un `0x0029F2` entre la muerte en
+trozos `0x0A93CE` (compartida con las figuras de túnica: lista `0x0E6220`,
+trozos `0x0A9510..0x0A9814` movidos por `0x0A98BE`, caída `0x2A769C`) y el
+vuelo `0x03993A` (espada `0x039C62`, sangre `0x040F88` externa, parpadeo
+`+8E` y `0x004188`). `0x03C526` pregunta a `0x019240` por el bono de misión:
+RAM `10C2F6` = 0 en la Misión 1 (volcados), no crea `0x03C62A`. RAM
+`10FD8F` = 0 en las capturas: paletas de los trozos de esa opción.
+
+Los espadachines salen del carro y su primer suelo es el objeto dinámico
+del carro (`+38 = 10C22E`). La prueba genérica recibe ahora también las
+lecturas de los objetos dinámicos `10C06E..10C291` (bloques de 64 bytes,
+casillas) y con ellas reconstruye los objetos del núcleo y sus bloques de
+posición; y los nodos que crea un actor fuera de la familia (aquí el
+subguion) empiezan con sus bytes grabados en su primera actualización.
+
+Prueba `arab` (`data/arab_fixture.json.gz`, `trk3`, rangos `39500-3a100`,
+`a93c0-a9a00`): **22 nodos, 491 actualizaciones en bucle cerrado
+(7003..7311), 65660 bytes iguales**, 22 borrados, 3 espadachines creados
+por el subguion. Gráficos: 433 descriptores, 19 paletas; los 13 volcados
+nuevos dan 646 píxeles distintos en 4 fotogramas (7080, 7140, 7200, 7260;
+no investigado: posible orden/prioridad con el carro).
 
 ## Gráficos
 

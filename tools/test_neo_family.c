@@ -33,7 +33,7 @@ typedef struct {
     uint32_t frame; int node; uint32_t routine; int has_post; uint8_t post[0xb0];
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
-    int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9];
+    int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
 } family_update_t;
 #include FAMILY_HEADER
@@ -48,9 +48,37 @@ static neo_gactor_t actors[NN+1];            /* [NN] = scratch */
 static bool bound[NN];
 static unsigned externals,draws;
 static neo_contact_parent_t root,terrain;
+static uint8_t dynram[0x224];             /* RAM 10C06E..10C291 as read */
 static bool terrain_seen;
 static neo_ga_flags_t flags;
 static uint8_t ram[0x200];                   /* globals, see slot() */
+/* RAM 10C06E..10C291 as read by the original (dynamic collision objects of
+ * actors outside the family, e.g. the wagon under its swordsmen). */
+static bool dyn_seen;
+static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
+    for (unsigned i=0;i<48 && u->dyn[i][0]!=0xffffu;i++) {
+        unsigned o=u->dyn[i][0];uint16_t m=u->dyn[i][1],v=u->dyn[i][2];
+        if (m&0xff00u) dynram[o]=(uint8_t)(v>>8);
+        if (m&0x00ffu) dynram[o+1]=(uint8_t)v;
+        dyn_seen=true;
+    }
+    if (!dyn_seen) return;
+    /* Native objects of the family's own dyn_set keep their slots (none of
+     * the recorded families mixes both). */
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) {
+        const uint8_t *b=&dynram[i*64];
+        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        uint32_t map=L32(b+0x26);
+        neo_kdyn_t *d=&k->dyn[i];
+        d->map=map?ga_rom(map):NULL;
+        d->pos=(neo_kobj_t){(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20)};
+        for (unsigned j=0;j<4;j++) d->bbox[j]=(int32_t)L32(b+0x2c+4*j);
+        d->countdown=(uint16_t)(b[0x2a]<<8|b[0x2b]);
+        d->chain[0]=d->chain[1]=d->chain[2]=0;
+        #undef L32
+    }
+    memcpy(k->bins_x,&dynram[0x200],18);memcpy(k->bins_y,&dynram[0x212],16);k->solid=dynram[0x222];
+}
 static uint8_t expect[0x200];
 static int slot(uint32_t ad) {
     if (ad>=0x10e95a && ad<0x10e964) return (int)(ad-0x10e95a);
@@ -75,6 +103,14 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==0x10e968u) {*out=root;return true;}
     /* Layer objects (the world keeps them with the terrain). */
     if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=terrain_seen?terrain:root;out->tag=tag;return true;}
+    /* Dynamic collision objects as read (dyn_inputs). */
+    if (tag>=0x10c06eu && tag<0x10c06eu+64u*NEO_KDYN_COUNT && !((tag-0x10c06eu)&63u)) {
+        const uint8_t *b=&dynram[tag-0x10c06eu];
+        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NN) {
         const neo_gactor_t *a=&actors[tag&0xffffu];
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};
@@ -120,7 +156,7 @@ static neo_gactor_t *creator_of(void *ctx,neo_gactor_t *a) {
     return NULL;
 }
 /* 004192: the nodes deeper than `a` (its descendants) are deleted. */
-static unsigned killed_children;
+static unsigned killed_children,injected;
 static void kill_children(void *ctx,neo_gactor_t *a) {
     (void)ctx;
     for (unsigned i=0;i<NN;i++) {
@@ -172,6 +208,12 @@ int main(void) {
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
         neo_gactor_t *a=&actors[u->node];
+        /* A node created by an actor outside the family (another family's
+         * test) starts from its recorded bytes at its first update. */
+        if (!bound[u->node] && NODES[u->node].creator<0) {
+            bound[u->node]=true;memset(a,0,sizeof(*a));a->active=true;a->index=(int16_t)u->node;
+            memcpy(a->m,NODES[u->node].pre,0xb0);ga_sl(a,0x38,native_tag(ga_l(a,0x38)));injected++;
+        }
         if (!bound[u->node] || !a->active) {fprintf(stderr,"frame %u node %d (%05x) not created natively\n",u->frame,u->node,u->routine);return 1;}
         if (ga_l(a,0)!=u->routine) {fprintf(stderr,"frame %u node %d routine %05x expected %05x\n",u->frame,u->node,ga_l(a,0),u->routine);return 1;}
         if (u->root_mask&1) root.x=u->root[0];
@@ -199,6 +241,7 @@ int main(void) {
         if (u->tmask&8) terrain.previous_y=u->terrain[3];
         if (u->tmask&16) terrain.correction=(uint8_t)u->tcorr;
         if (u->tmask) terrain_seen=true;
+        dyn_inputs(&kernel,u);
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
@@ -237,7 +280,7 @@ int main(void) {
         }
     }
     for (unsigned i=0;i<NN;i++) if (!bound[i]) {fprintf(stderr,"node %u (%05x) never created\n",i,NODES[i].routine);return 1;}
-    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192%s\n",
-        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,swapped?", map swap requested":"");
+    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside%s\n",
+        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,swapped?", map swap requested":"");
     return 0;
 }

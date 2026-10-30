@@ -1,12 +1,16 @@
 {
- "descriptors": 312,
+ "descriptors": 433,
  "palettes": [
   "0x121",
   "0x122",
   "0x123",
+  "0x17",
+  "0x19",
+  "0x1a",
   "0x1b",
   "0x20b",
   "0x3ba",
+  "0x3fd",
   "0x46e",
   "0x472",
   "0x475",
@@ -20,12 +24,12 @@
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 67,
-  "frames": 98,
-  "pixels_equal": 1326539,
-  "pixels_different": 4575,
-  "pixels_overlapping": 105159,
-  "rank_2": 45,
-  "rank_1": 53
+  "frames": 111,
+  "pixels_equal": 1335184,
+  "pixels_different": 5221,
+  "pixels_overlapping": 105276,
+  "rank_2": 53,
+  "rank_1": 58
  },
  "frames": [
   {
@@ -712,6 +716,97 @@
    "frame": 7500,
    "update_frame": 7498,
    "equal": 2804,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7020,
+   "update_frame": 7016,
+   "equal": 724,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7140,
+   "update_frame": 7137,
+   "equal": 325,
+   "different": 29
+  },
+  {
+   "capture": "trk3",
+   "frame": 7200,
+   "update_frame": 7198,
+   "equal": 471,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7260,
+   "update_frame": 7258,
+   "equal": 0,
+   "different": 171
+  },
+  {
+   "capture": "trk3",
+   "frame": 7080,
+   "update_frame": 7077,
+   "equal": 487,
+   "different": 195
+  },
+  {
+   "capture": "trk3",
+   "frame": 7200,
+   "update_frame": 7200,
+   "equal": 0,
+   "different": 251
+  },
+  {
+   "capture": "trk3",
+   "frame": 6900,
+   "update_frame": 6895,
+   "equal": 918,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 6960,
+   "update_frame": 6958,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7020,
+   "update_frame": 7016,
+   "equal": 1139,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7080,
+   "update_frame": 7079,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7140,
+   "update_frame": 7139,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7200,
+   "update_frame": 7198,
+   "equal": 1122,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7260,
+   "update_frame": 7260,
+   "equal": 0,
    "different": 0
   }
  ]

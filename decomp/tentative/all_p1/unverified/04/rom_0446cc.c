@@ -1,0 +1,11 @@
+/* UNVERIFIED AUTOMATIC DECOMPILATION. P1 owner 0x0446cc.
+ * Status: tentative_c. Not native N64 logic; inferred types/registers and call boundaries require recovery. */
+
+void candidate_446cc(void)
+
+{
+  int unaff_A6;
+
+  *(undefined1 *)(unaff_A6 + 0x81) = 0;
+  return;
+}

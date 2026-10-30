@@ -1,0 +1,66 @@
+{
+  "cart_header_jumps": [
+    {
+      "site": "0x122",
+      "target": "0x2432"
+    },
+    {
+      "site": "0x128",
+      "target": "0x2658"
+    },
+    {
+      "site": "0x12e",
+      "target": "0x2800"
+    },
+    {
+      "site": "0x134",
+      "target": "0x27f6"
+    }
+  ],
+  "constructor_discovery": "A0 values loaded immediately before verified generic allocators 0040BC/00410E",
+  "analysis_warning_lines": 302,
+  "whole_p1_candidate_mode": true,
+  "status": "TENTATIVE_FRONTIER_EXPORTED",
+  "seed_file_sha256": "4d9fb0db1edd49f9042b217135dda00235f21b507a17d6a7bcf820034aa20f6b",
+  "initial_seeds": 6145,
+  "processed": 7944,
+  "statuses": {
+    "tentative_c": 5085,
+    "tentative_c_with_diagnostics": 83,
+    "shared_owner": 2774,
+    "decompiler_failed": 1,
+    "known_animation_flag_data": 1
+  },
+  "recovered_trampoline_entries": 534,
+  "pending": 0,
+  "unresolved": 101,
+  "rom_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "files": {
+    "functions.tsv": "323dfaf52895e7e8ac8684295e6beda8bd6cea5210434c53e981e0d93b8c548d",
+    "instructions.tsv": "c4f5107fe4b09763ddb52d3364f50b6dd062c89999f3b1cc18f43d72bc4ced4d",
+    "TENTATIVE_ROM_C.c": "f0a7c23335b4348db1fd967280a4f9a0457515118604e1669d58c1d515514091",
+    "unresolved.tsv": "21243f7dd1f51d1a2666ccb2981d16c3fe6e3f01b8e940903743c0fcd65a2001",
+    "trampolines.tsv": "0d28d4216b15545650ff9186919f0c41476f3a89fc45e428f9efa68b1ae3bbe5"
+  },
+  "limits": "Whole P1 signature-candidate scan plus direct calls, header JMPs, allocator callbacks, A6 state assignments and recovered BRA.W tables. Candidates may be data. P2 code/data and banking remain unresolved; Z80 initial-map output has a separate inventory. Exported C is unverified and not native/buildable.",
+  "reexport_preserves_all_characters": true,
+  "published_c_files": 5168,
+  "native_c_port": false,
+  "index": "full-p1-index.tsv",
+  "candidate_roots_may_be_data": true,
+  "index_sha256": "2bc044c459edc44e505dc025e076da1a313deaf3839f2a5267cee76a80b975a7",
+  "character_preservation_check": {
+    "status": "PASS",
+    "files": 5168,
+    "normalization": "Trailing whitespace only; original C characters retained"
+  },
+  "known_data_roots": [
+    "0x01A074"
+  ],
+  "failed_decompile": {
+    "address": "0x008512",
+    "timeout_seconds": 120,
+    "role": "I/O/palette upload kernel based on static instructions; exact high-level behavior pending recovery",
+    "fallback": "canonical M68000 assembly provided, no invented C body"
+  }
+}

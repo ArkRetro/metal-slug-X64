@@ -1,0 +1,19 @@
+{
+  "status": "TENTATIVE_Z80_INITIAL_MAP",
+  "processed": 173,
+  "statuses": {
+    "tentative_c": 130,
+    "shared_owner": 19,
+    "tentative_c_with_diagnostics": 24
+  },
+  "unresolved": 0,
+  "analysis_warning_lines": 204,
+  "initial_map_sha256": "eb0219fed4a9e93f8c3216ff78d46918f88f3cdca4f6ce82ce351c1459a8ad3b",
+  "limits": "Initial driver map only; bank changes, RAM execution, I/O, inferred types and indirect flow remain unverified. This is not a native sound driver or all M1 execution states.",
+  "reexport_preserves_all_characters": true,
+  "recovered_dispatch_tables": 9,
+  "recovered_dispatch_entries": 118,
+  "published_c_functions": 154,
+  "native_c_port": false,
+  "index": "full-audio-index.tsv"
+}

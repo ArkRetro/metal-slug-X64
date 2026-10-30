@@ -168,3 +168,11 @@ fuente recompilable. Se está investigando una reconstrucción nativa 2D.
 - [Core N64 MiSTer](https://github.com/MiSTer-devel/N64_MiSTer).
 - [MAME: hashes del set](https://github.com/mamedev/mame/blob/master/src/mame/snk/neogeo.cpp).
 - [MAME: disposición gráfica FIX y C](https://github.com/mamedev/mame/blob/master/src/mame/snk/neogeo_spr.cpp).
+
+## Recuperación del código original
+
+El [índice de descompilación](decomp/README.md) contiene 5.168 cuerpos C
+tentativos del 68000 y 154 del Z80. Se han inventariado P1, P2 y M1 completos;
+la clasificación de bancos, tipos, límites y destinos indirectos sigue pendiente.
+Esta salida automática no es todo el juego convertido a C nativo compilable.
+El [estado de cobertura](decomp/coverage.json) mantiene `complete: false`.

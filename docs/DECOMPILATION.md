@@ -5,7 +5,7 @@ programa original, conservando física, prioridades y temporización. La salida
 automática de un descompilador se mantiene separada de las unidades verificadas
 que compila GCC para MIPS. No se declara una conversión completa del juego.
 
-## Pasada automática reproducible
+## Primera pasada automática reproducible
 
 `tools/ghidra/export_game_c.py` valida el SHA-1 de P1 aportado y convierte el orden
 de sus palabras a la vista CPU. `ExportGameCode.java` recorre semillas previas,
@@ -95,3 +95,42 @@ y acciones especiales, recuperar los servicios de mundo y conectar los estados
 al controlador/renderizador de campaña. Soldados, vehículos, jefes y guiones de
 misión también tienen cobertura parcial. La exportación actual y el bloque nuevo
 no equivalen a tener todo Metal Slug X en C nativo.
+
+## Ampliación al conjunto de programa completo
+
+La petición posterior incluye TODO el código del juego. Se inventarían P1,
+los cuatro bancos físicos de P2 y M1/Z80: 5.373.952 bytes de programa en total.
+No se aplanan las ventanas bancadas ni se presupone que todos esos bytes sean
+instrucciones. Véanse `decomp/program-set.json` y `decomp/coverage.json`.
+
+Una búsqueda de firmas sobre todos los offsets pares de P1 reúne 6.145 raíces
+candidatas y conserva 28.108 sitios de evidencia. El análisis dirigido posterior
+procesa 7.944 entradas y produce 5.169 propietarios: 5.168 tienen C tentativo,
+83 de ellos con diagnósticos, y 0x008512 no obtiene C tras 120 segundos.
+Hay 2.774 entradas de propietario compartido y una raíz de datos conocida
+(0x01A074). Se recuperan 534 entradas de tablas BRA.W; quedan 101 sitios sin
+resolver bajo esta política. Los candidatos por firma pueden ser datos y los
+límites de función aún requieren revisión: no se declara cobertura completa.
+
+0x008512 contiene un núcleo de E/S y subida de paletas según sus instrucciones.
+Se conserva el desensamblado del M68000 de MAME en
+`decomp/tentative/all_p1/unresolved/rom_008512.asm`. La salida de una pasada
+intermedia sin C no se contabiliza como una traducción válida.
+
+Para Z80 se recuperan nueve tablas de despacho (118 entradas) y se exportan
+154 propietarios del mapa inicial: 130 tentativos y 24 con diagnósticos.
+Las tablas con prefijo EXX conservan ese intercambio de registros. Que no
+queden saltos calculados en esa frontera no cubre todos los bancos de M1,
+RAM ejecutable ni efectos hardware. No es un driver nativo de audio terminado.
+
+Los índices globales separan los archivos con diagnósticos; ninguno se marca
+como C nativo verificado. El exportador imprime el C de Ghidra sin sustituciones
+de caracteres; se comprobó que el empaquetado de los 5.168 archivos P1 conserva
+el cuerpo y solo elimina espacios finales. La exportación global se regeneró
+desde el proyecto antes de publicarse para corregir el formateador preliminar.
+Los hashes y recuentos están en `decomp/full-p1-inventory.json` y
+`decomp/audio-inventory.json`. La primera pasada histórica no se suma al total.
+
+La traducción manual y las pruebas de `marco_environment.c` descritas arriba
+siguen siendo la evidencia nativa nueva. El C automático global no sustituye
+el controlador de campaña ni constituye una demo completa.

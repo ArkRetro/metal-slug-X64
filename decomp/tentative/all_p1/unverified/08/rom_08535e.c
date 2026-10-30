@@ -1,0 +1,24 @@
+/* UNVERIFIED AUTOMATIC DECOMPILATION. P1 owner 0x08535e.
+ * Status: tentative_c. Not native N64 logic; inferred types/registers and call boundaries require recovery. */
+
+void candidate_8535e(void)
+
+{
+  undefined4 *unaff_A6;
+  undefined1 uVar1;
+
+  candidate_4192();
+  candidate_8537a();
+  candidate_4192();
+  candidate_120f8();
+  candidate_4256();
+  *(undefined1 *)(unaff_A6 + 5) = *(undefined1 *)((int)unaff_A6 + 0x1a);
+  *unaff_A6 = 0x858ac;
+  uVar1 = 0;
+  candidate_1abc8();
+  candidate_427a();
+  if ((bool)uVar1) {
+    *unaff_A6 = candidate_858c4;
+  }
+  return;
+}

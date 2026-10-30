@@ -1,8 +1,12 @@
-Current source-recovery work: `decomp/` contains a tentative fixed-P1 C export
-(268 bodies / 395 candidate entries), not buildable native game code. The new
-`marco_environment.c` translates C3078..C32E0 and matches 256 controlled original
-M68000 arithmetic probes, with additional synthetic branch tests on host/MIPS.
-World services and campaign integration remain incomplete. See DECOMPILATION.md.
+Current source recovery covers all program-ROM inputs (P1, four physical P2
+banks, M1/Z80). `decomp/` publishes 5,168 tentative P1 C bodies and 154 tentative
+Z80 bodies for its initial map. These are not verified native game code;
+function boundaries, diagnostics, indirect calls, banking and code/data
+classification remain unresolved. 0x008512 has assembly but no recovered C.
+See `decomp/coverage.json` (`complete: false`) and DECOMPILATION.md.
+The new native `marco_environment.c` translates C3078..C32E0 and matches 256
+controlled original M68000 arithmetic probes, with additional synthetic branch
+tests on host/MIPS. World services and campaign integration remain incomplete.
 
 Current title: animated METAL SLUG X64. The source letters, particles, reveal
 flash and original audio are reconstructed; authored 6/4 digits fall into the

@@ -1,0 +1,20 @@
+/* UNVERIFIED AUTOMATIC DECOMPILATION. P1 owner 0x08919c.
+ * Status: tentative_c. Not native N64 logic; inferred types/registers and call boundaries require recovery. */
+
+void candidate_8919c(void)
+
+{
+  undefined2 uVar1;
+  int unaff_A6;
+
+  if (*(short *)(unaff_A6 + 0x6e) != 0) {
+    *(undefined2 *)(unaff_A6 + 0x7a) = *(undefined2 *)(unaff_A6 + 0x70);
+    *(undefined2 *)(unaff_A6 + 0x7c) = *(undefined2 *)(unaff_A6 + 0x72);
+    return;
+  }
+  uVar1 = candidate_1ad7c();
+  *(undefined2 *)(unaff_A6 + 0x7a) = uVar1;
+  uVar1 = candidate_1ad7c();
+  *(undefined2 *)(unaff_A6 + 0x7c) = uVar1;
+  return;
+}

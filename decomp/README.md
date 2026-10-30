@@ -1,45 +1,61 @@
-# Descompilación y traducción nativa
+# Recuperación del programa original a C
 
-Esta carpeta contiene la **salida preliminar de análisis**, separada del C nativo
-compilado por el port. No representa el juego completo convertido a C.
+**La conversión completa todavía no está terminada.** Este directorio contiene
+C automático tentativo, separado del código nativo que compila el port de N64.
+El estado explícito de cobertura está en [coverage.json](coverage.json).
 
-- [tentative/fixed_p1.c](tentative/fixed_p1.c): C tentativo generado por Ghidra.
-- [tentative/functions.tsv](tentative/functions.tsv): entrada solicitada, función
-  propietaria y resultado del descompilador. Varias entradas comparten cuerpo.
-- [tentative/unresolved.tsv](tentative/unresolved.tsv): llamadas/saltos indirectos
-  que esta pasada no resuelve.
-- [inventory.json](inventory.json): límites, recuentos y hashes reproducibles.
+La entrada incluye las tres ROM de programa: P1 (1 MiB), P2 (4 MiB, cuatro
+bancos físicos) y M1/Z80 (128 KiB). El [inventario de entradas](program-set.json)
+registra sus hashes, orden de bytes y ventanas bancadas. Inventariar todos los
+bytes no demuestra que se haya identificado todo el código ejecutable.
 
-La pasada parte de 184 entradas del análisis anterior y sigue llamadas directas
-y asignaciones de rutinas a A6. Recorre 395 entradas y exporta 268 cuerpos;
-126 entradas comparten un propietario y una no obtiene función. Hay 17 sitios
-indirectos sin resolver en esta frontera. Estos recuentos **no son porcentajes
-ni cobertura total del juego**. P2 bancado, tablas indirectas no recuperadas y
-el programa Z80 quedan fuera de esta pasada.
+| Resultado | Archivos y límites |
+| --- | --- |
+| 68000, P1 fijo | [Índice de 5.168 cuerpos C](full-p1-index.tsv): 5.085 tentativos sin diagnóstico del descompilador y 83 con diagnósticos. Ambos grupos requieren revisión. |
+| Sonido Z80 | [Índice de 154 cuerpos C](full-audio-index.tsv): 130 tentativos y 24 con diagnósticos, únicamente para el mapa inicial. |
+| Función pendiente 0x008512 | [Desensamblado M68000](tentative/all_p1/unresolved/rom_008512.asm), sin cuerpo C inventado; timeout del descompilador a 120 segundos. |
+| Frontera inicial histórica | [268 cuerpos de la primera pasada](tentative/fixed_p1.c); se conserva para trazabilidad, no se suma al recuento global. |
 
-El C automático tiene registros `unaff_*`, tipos inferidos, posibles límites de
-función erróneos y diagnósticos de instrucciones. Ghidra usa un decodificador
-MC68020 de conjunto ampliado; cada traducción nativa se contrasta con el M68000
-real de MAME. **No compilar ni enlazar este borrador con la ROM de N64.** El
-Makefile solo compila las unidades nativas seleccionadas de `src/`.
+Cada archivo global identifica la dirección original y su estado. El
+[inventario P1](full-p1-inventory.json) documenta 7.944 entradas candidatas
+procesadas, 534 entradas de tablas recuperadas y 101 sitios sin resolver.
+La búsqueda por firmas puede confundir datos con instrucciones: los recuentos
+no son porcentajes de cobertura. 0x01A074 está identificado como datos de
+banderas de animación y se excluye como función.
 
-El bloque nuevo traducido manualmente está en
-[../src/marco_environment.c](../src/marco_environment.c), con su contrato en
-[../src/marco_environment.h](../src/marco_environment.h). Usa estados, servicios
-y aritmética C de ancho fijo; no ejecuta instrucciones de un M68000 emulado.
-Su evidencia y límites se explican en [../docs/DECOMPILATION.md](../docs/DECOMPILATION.md).
+El [inventario de sonido](audio-inventory.json) registra nueve tablas de despacho
+con 118 entradas recuperadas. Agotar esa frontera del mapa inicial no verifica
+los cambios de banco ni convierte el driver en un backend nativo de sonido.
 
-Reproducir el análisis requiere la ROM aportada, Ghidra 11.4.2 y JDK 21:
+## Qué falta para tener TODO en C utilizable
 
-```sh
-python3 tools/ghidra/export_game_c.py \
-  --rom /ruta/mslugx.zip --seeds decomp/tentative/seeds.txt \
-  --output /ruta/nueva-exportacion --limit 1000
-```
+Resolver los límites de funciones, tipos, registros implícitos, destinos
+indirectos y bancos; distinguir código de datos en P2 y los mapas restantes de
+M1; recuperar 0x008512 y contrastar la semántica con ejecución original.
+Después hay que sustituir los servicios hardware por backends de libdragon.
+El borrador automático conserva símbolos `unaff_*` y dependencias inferidas;
+**no se compila ni se enlaza con la ROM de N64**.
 
-La lista de semillas incluida fija las entradas de esta pasada; `--research`
-permite reunir nuevas raíces desde análisis posteriores.
+La traducción manual nueva está en
+[marco_environment.c](../src/marco_environment.c), direcciones
+0x0C3078..0x0C32E0. Su aritmética coincide con 256 sondas controladas del M68000
+original; los servicios de mundo y su integración en campaña siguen pendientes.
+Véase [evidencia y pruebas](../docs/DECOMPILATION.md).
 
-La salida completa incluye instrucciones, proyecto Ghidra y manifiesto. La ROM,
-RAM y trazas permanecen fuera de Git. El C incluido elimina únicamente espacios
-al final de línea y líneas vacías finales; el inventario distingue los hashes originales y publicados.
+## Herramientas reproducibles
+
+Se requieren las ROM aportadas, Ghidra 11.4.2 y JDK 21. Los scripts están en
+[tools/ghidra](../tools/ghidra). `prepare_program_set.py` valida e inventaría P1,
+P2 y M1; `discover_program_roots.py` registra las firmas y sitios candidatos;
+`export_game_c.py --whole-candidates` analiza la frontera global;
+`ExportProgramFrontier.java` recupera también tablas BRA.W.
+`export_audio_c.py` y `ExportZ80Code.java` analizan el mapa inicial Z80.
+`ReexportExistingC.java` permite volver a exportar los propietarios del proyecto
+sin repetir la búsqueda. `package_whole_decomp.py` separa los cuerpos para revisión.
+
+Los [sitios candidatos](candidate-sites.tsv) permiten revisar el origen de las
+raíces. El índice distingue propietarios compartidos y fallos. La exportación
+conserva los caracteres del C; solo normaliza espacios finales. Se comprobó
+esa preservación en los 5.168 cuerpos P1. Los inventarios distinguen los hashes
+de artefactos originales privados de los publicados cuando corresponde.
+Las ROM binarias, volcados RAM y proyectos Ghidra permanecen fuera de Git.

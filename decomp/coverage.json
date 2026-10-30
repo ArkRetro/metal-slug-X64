@@ -1,0 +1,16 @@
+{
+  "goal": "ALL original game code recovered in usable C",
+  "complete": false,
+  "input_program_roms": "All three files and four P2 physical banks accounted for",
+  "m68k_c_files": 5168,
+  "z80_c_files": 154,
+  "remaining": [
+    "Resolve unverified C types, ABI/register state and function boundaries",
+    "Review signature roots which may actually be data",
+    "Translate/resolve 0x008512; decompiler times out",
+    "Recover computed/external calls and state-dependent mappings",
+    "Classify P2 and remaining M1 bank regions; do not fabricate executable code from data",
+    "Integrate verified native code with libdragon backends"
+  ],
+  "limits": "Exhausting a candidate worklist is not proof of complete code coverage or a finished native game."
+}

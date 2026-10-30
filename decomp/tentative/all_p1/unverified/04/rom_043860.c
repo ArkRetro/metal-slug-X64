@@ -1,0 +1,18 @@
+/* UNVERIFIED AUTOMATIC DECOMPILATION. P1 owner 0x043860.
+ * Status: tentative_c. Not native N64 logic; inferred types/registers and call boundaries require recovery. */
+
+void candidate_43860(void)
+
+{
+  undefined4 *unaff_A6;
+
+  *(undefined2 *)(unaff_A6 + 0xb) = 0x30;
+  candidate_9ea8();
+  *(undefined2 *)((int)unaff_A6 + 0x66) = 400;
+  *(undefined2 *)((int)unaff_A6 + 0x1e) = 400;
+  candidate_4256();
+  *unaff_A6 = 0x43896;
+  candidate_1abc8();
+  candidate_427a();
+  return;
+}

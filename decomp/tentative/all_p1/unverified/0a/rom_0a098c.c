@@ -1,0 +1,16 @@
+/* UNVERIFIED AUTOMATIC DECOMPILATION. P1 owner 0x0a098c.
+ * Status: tentative_c. Not native N64 logic; inferred types/registers and call boundaries require recovery. */
+
+void candidate_a098c(void)
+
+{
+  int unaff_A6;
+
+  if ((*(byte *)(unaff_A6 + 0x90) & 2) == 0) {
+    candidate_4256();
+  }
+  else {
+    candidate_4256();
+  }
+  return;
+}

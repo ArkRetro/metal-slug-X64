@@ -67,10 +67,23 @@ En el mundo:
   (`+4E = 0`, `+5F` bit 7, `+5A = 6`); a los soldados se les aplica antes de
   su actualización (el original lo hace dentro, al registrarse).
 - Cambio de mapa: `0x0B5972` enciende el destello, `0x0B5982` aplica
-  `0x0B58CC` en la siguiente actualización y lo apaga. El render oculta la
-  fachada (capa 3, mapa `0x0B5392` en la columna `0x74`; `0x0B53A8` no
-  muestra celdas) y desplaza el cielo 32 px (origen de columnas +2, celdas
-  extraídas en coordenadas de mapa). El destello pinta el fondo de blanco.
+  `0x0B58CC` en la siguiente actualización y lo apaga. El render sustituye la
+  fachada (capa 3, mapa `0x0B5392` en la columna `0x74`) por los escombros
+  del mapa `0x0B53A8` y desplaza el cielo 32 px (origen de columnas +2,
+  celdas extraídas en coordenadas de mapa). El destello pinta el fondo de
+  blanco.
+- Escombros `0x0B53A8`: tras el cambio, el objeto de capa `10C72E` dibuja
+  desde el SCB 65 (palabra `+2C` de su cabecera: `0x68` → `0x40`), no desde
+  el 105; el extractor suponía el rango fijo 105..136 y daba la capa por
+  inactiva, así que los escombros nunca se extrajeron (rectángulo de color de
+  fondo en su lugar). `tools/neo_scene.py` toma ahora la base de `+2C`
+  (`layers.csv`) y `tools/extract_mission_map.py` guarda aparte
+  (`swapped_cells`) las celdas de una capa cuyo puntero de mapa difiere del
+  primero observado: **112 celdas** de `0x0B53A8` (run8, 5100..13740, una sola
+  variante por celda); las 2680 celdas, 62 variantes y 49 paletas del mapa
+  no cambian. `tools/pack_scene.py` las empaqueta como
+  `scene_collapse_cells` y el render las dibuja como capa 3 en lugar de la
+  fachada una vez caído el edificio.
 - Prioridad: el bit 2 de `+15` pasa al atributo del sprite (`0x00A03E`
   conserva `d1 & 7`); las cúpulas lo tienen y en MAME quedan detrás de la
   fachada. El render dibuja las capas 0..2, los sprites con ese bit, las

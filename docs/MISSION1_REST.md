@@ -284,7 +284,7 @@ tools/run_capture_rest.sh /ruta/run          # MSX_REST_PREV_DUMPS=1 MSX_REST_TR
 MSX_REST_DEBUG=1 MSX_REST_DRAW_FROM=5000 MSX_REST_FIRST_DUMP=5000 tools/run_capture_rest.sh /ruta/run-debug
 python3 tools/decode_level_script.py /ruta/mslugx.zip --output data/mission1_script.json
 python3 tools/decode_map_commands.py /ruta/mslugx.zip --map filesystem/mission1/rest/map.json
-python3 tools/extract_mission_map.py /ruta/run --frames 5100:13740 --allow-backdrop-timeline --output filesystem/mission1/rest
+python3 tools/extract_mission_map.py /ruta/run --frames 5100:13740 --allow-backdrop-timeline --output filesystem/mission1/rest  # incluye swapped_cells (escombros 0B53A8)
 python3 tools/validate_mission_map.py /ruta/run --model filesystem/mission1/rest/map.json --output build/mission-rest-validation
 python3 tools/extract_region_collision.py /ruta/run --rom /ruta/mslugx.zip --frames 2100:13740 --layer-camera \
   --expect-prefix filesystem/mission1/collision.json --output filesystem/mission1/rest/collision.json

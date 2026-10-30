@@ -136,6 +136,7 @@ const scene_image_t *scene_frame(unsigned id,unsigned frame) {
 const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(row<7 && col<10);return &scene_background[row*10+col]; }
 const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data; }
 const scene_map_cell_t *scene_patch_cells(unsigned *count) { *count=SCENE_PATCH_CELL_COUNT;return scene_patch_cells_data; }
+const scene_map_cell_t *scene_collapse_cells(unsigned *count) { *count=SCENE_COLLAPSE_CELL_COUNT;return scene_collapse_cells_data; }
 const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
 unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
 uint32_t scene_map_backdrop(bool after) { return after?SCENE_MAP_BACKDROP_AFTER:SCENE_MAP_BACKDROP; }

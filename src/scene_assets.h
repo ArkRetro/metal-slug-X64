@@ -26,6 +26,9 @@ const scene_map_cell_t *scene_map_cells(unsigned *count);
 /* Layer-2 cells of the destroyed-shop patch (0B6882), drawn instead of the
  * cells at the same coordinates once the building is down. */
 const scene_map_cell_t *scene_patch_cells(unsigned *count);
+/* Layer-3 cells of the rubble map 0B53A8 (0B58CC), drawn instead of the
+ * facade once the domed building has collapsed. */
+const scene_map_cell_t *scene_collapse_cells(unsigned *count);
 const scene_image_t *scene_map_image(unsigned id);
 unsigned scene_map_camera_max(void);
 uint32_t scene_map_backdrop(bool after);

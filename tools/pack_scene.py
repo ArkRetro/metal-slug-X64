@@ -157,6 +157,15 @@ def main():
             if pal not in mission['palettes']:mission['palettes'].append(pal)
             mission['cells'].append(dict(layer=5,x=cf['x'],y=cf['y'],code=ch['code'],flip=ch['flip'],animation_mask=ch['animation'],
                 palette=mission['palettes'].index(pal),segment=1))
+        # Rubble map 0B53A8 that the collapse 0B58CC loads into 10C72E
+        # (swapped_cells of tools/extract_mission_map.py, display coordinates):
+        # virtual layer 6, drawn as layer 3 once the building is down.
+        for c in rest.get('swapped_cells',[]):
+            assert (c['layer'],c['map'])==(3,'0x0B53A8'),('Unexpected swapped map',c)
+            pal=list(rest['palettes'][c['palette']])
+            if pal not in mission['palettes']:mission['palettes'].append(pal)
+            mission['cells'].append(dict(layer=6,x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],animation_mask=c['animation_mask'],
+                palette=mission['palettes'].index(pal),segment=1))
         values=[v for v in rest['backdrop_values'] if v!=mission['backdrop']]
         assert len(values)==1;backdrop_after=values[0]
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
@@ -164,7 +173,7 @@ def main():
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
     backdrop=palette_rgb(mission['backdrop'])
     map_images,map_cells=pack_map(mission,(ROOT/'filesystem/sprites.bin').read_bytes(),image)
-    patch_cells=[c for c in map_cells if c[0]==5];map_cells=[c for c in map_cells if c[0]!=5]
+    patch_cells=[c for c in map_cells if c[0]==5];collapse_cells=[c for c in map_cells if c[0]==6];map_cells=[c for c in map_cells if c[0]<5]
     real_pages=len(pages)
     while len(pages)%8:pages.append(bytes(PAGE))
     blob=bytearray();chunks=[]
@@ -224,6 +233,11 @@ def main():
     lines.append('static const scene_map_cell_t scene_patch_cells_data[]={')
     lines.extend('  {'+f'2,{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in patch_cells)
     if not patch_cells:lines.append('  {0,0,0,{0}},')
+    lines.append('};')
+    lines.append(f'#define SCENE_COLLAPSE_CELL_COUNT {len(collapse_cells)}')
+    lines.append('static const scene_map_cell_t scene_collapse_cells_data[]={')
+    lines.extend('  {'+f'3,{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in collapse_cells)
+    if not collapse_cells:lines.append('  {0,0,0,{0}},')
     lines.append('};')
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])

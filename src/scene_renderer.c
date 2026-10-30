@@ -22,9 +22,10 @@ static void set_tlut(rdpq_tlut_t tlut) {if (mode_tlut!=(int)tlut) {rdpq_mode_tlu
 static void set_point_filter(void) {if (mode_filter!=FILTER_POINT) {rdpq_mode_filter(FILTER_POINT);mode_filter=FILTER_POINT;}}
 static bool depth_mode;
 /* Collapse of the domed building (0B58CC, neo_ga_flags_t): the facade of
- * layer 3 (map 0B5392 at column 0x74, replaced by 0B53A8 which shows no
- * cell) disappears and the sky (10E83E) moves its column origin by +2 (the
- * extracted cells are in map coordinates: drawn 32 px further left).
+ * layer 3 (map 0B5392 at column 0x74) is replaced by the rubble map 0B53A8
+ * (scene_collapse_cells; 10C72E then draws from SCB slot 65) and the sky
+ * (10E83E) moves its column origin by +2 (the extracted cells are in map
+ * coordinates: drawn 32 px further left).
  * The white flash (RAM 109944) turns every background palette to 0x7FFF. */
 enum { COLLAPSE_FACADE_X=0x74*16, COLLAPSE_SKY_SHIFT=32 };
 static bool collapsed,flash,patched;
@@ -41,10 +42,9 @@ static inline bool hidden(const scene_map_cell_t *cell) {
     /* Destroyed shop: column 0x9F-3.. of layer 10D7B6 (0B6882). */
     return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16 && patch_cell(cell);
 }
-static void draw_patch(const int *offsets,const int *rises,unsigned video_tick) {
-    unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);
+static void draw_cells(const scene_map_cell_t *p,unsigned n,const int *offsets,const int *rises,unsigned video_tick) {
     for (unsigned i=0;i<n;i++) {
-        int x=p[i].x-offsets[2];
+        int x=p[i].x-offsets[p[i].layer];
         if (x>-16 && x<320) classic_cell(&p[i],offsets,rises,video_tick,1);
     }
 }
@@ -251,7 +251,8 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
                 classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
             }
           }
-          if (layer==2 && patched) draw_patch(offsets,rises,video_tick);
+          if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
+          if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)

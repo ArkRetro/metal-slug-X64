@@ -1,6 +1,7 @@
 {
- "descriptors": 547,
+ "descriptors": 652,
  "palettes": [
+  "0x103",
   "0x121",
   "0x122",
   "0x123",
@@ -9,6 +10,12 @@
   "0x1a",
   "0x1b",
   "0x20b",
+  "0x37d",
+  "0x37e",
+  "0x380",
+  "0x3a6",
+  "0x3a7",
+  "0x3ac",
   "0x3ba",
   "0x3fd",
   "0x46e",
@@ -21,17 +28,18 @@
   "0x87f",
   "0x883",
   "0x93",
-  "0x9b"
+  "0x9b",
+  "0xd0"
  ],
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 57,
-  "frames": 123,
-  "pixels_equal": 1337635,
+  "frames": 132,
+  "pixels_equal": 1341271,
   "pixels_different": 6164,
   "pixels_overlapping": 104503,
-  "rank_2": 60,
-  "rank_1": 63
+  "rank_2": 66,
+  "rank_1": 66
  },
  "frames": [
   {
@@ -893,6 +901,69 @@
    "frame": 8070,
    "update_frame": 8068,
    "equal": 826,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7830,
+   "update_frame": 7828,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7890,
+   "update_frame": 7888,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7920,
+   "update_frame": 7918,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7950,
+   "update_frame": 7948,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8010,
+   "update_frame": 8008,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "pri1",
+   "frame": 8070,
+   "update_frame": 8068,
+   "equal": 404,
    "different": 0
   }
  ]

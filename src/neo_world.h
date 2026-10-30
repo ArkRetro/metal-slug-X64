@@ -125,6 +125,7 @@ typedef struct {
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
+    unsigned item_pickups;uint32_t item_pickup_routine; /* items taken: explicit stops (neo_item.c) */
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */

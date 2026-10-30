@@ -123,7 +123,7 @@ int main(void) {
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
         }
-        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported);
+        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items taken=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,g.world.item_pickups);
         assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
         assert(g.world.unsupported==g.world.boss_unsupported);
     }

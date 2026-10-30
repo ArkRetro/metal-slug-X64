@@ -310,6 +310,47 @@ idénticos), paleta `0x9B`; los 10 volcados del prisionero: 7508 píxeles
 iguales, 0 distintos salvo el de 8040 (892), cuya actualización es del
 mismo fotograma del volcado (la lista mostrada es aún la anterior).
 
+## Objetos `0x08C374/0x08C37C` (`src/neo_item.c`)
+
+El tipo `+6E` elige un registro de `0x0E581A` (`0x08D2DA`, 0x18 bytes:
+`+1` lista de objetos `10C5C2`, `+2` aparición `2861BC`, `+4` programa,
+`+8` paletas, `+10` rutina de recogida, `+14` movimiento). `0x08C53C`: vida
+`+70` (0x258 por defecto, FFFF = siempre; a 0 parpadea, `+5F` bit 3, 30
+actualizaciones más), `+86`/`+7C`, el movimiento, `+78` actualizaciones de
+espera y `0x08C0CC`: a tamaño completo (`+12 = FF`), rectángulo `0x0E561C`
+contra las cajas de recogida de los jugadores (RAM `10C5EC/10C5F4`, que
+escribe el código del jugador original; ahora `neo_genv_t.pickup_box`),
+`0x00288A`; sale fuera de `0x0E5624` o, con `+8B`, sin creador.
+
+- **Parada explícita: la recogida.** Las rutinas `+10` dan armas (`0x0C0928`),
+  bombas o puntos (`0x0C0BF4`, `0x057948`) al jugador original, que el port
+  no tiene: el objeto se retira y se cuenta (`item_pickups`, registro `MSX
+  item taken`), sin efecto. `tools/test_gameplay.c` lo informa aparte.
+- Solo son nativos los tipos con movimiento `0x08B9B2` (caída con gravedad
+  `0xA000`, crece `+12/+13` de 8 en 8): `06, 18, 1C, 29, 2A, 2B, 2F, 4B, 4F
+  (H), 51`; con otro movimiento (`0x08BA10`, `0x08BA38`, `0x08BAB2`) el
+  constructor lo devuelve al mundo como externo. La lista `10C5C2` no tiene
+  lector en el port y no se mantiene.
+- Solo pasada la región (`MISSION1_REGION_END`): en la región la prueba de
+  mundo en bucle cerrado (`walk3`…`m3x`) los trata como actores de fuera y
+  los soldados nativos aún no sueltan los suyos (tipo 0 vía `0x08CDB2`).
+- Caja del jugador del port: la de pie de las capturas (`FFF8,0000,0010,
+  0020`, 158 de 167 volcados de `pri1/trk3/bld1/robe1`; las otras son el
+  tanque y otra postura que el port no tiene); sin jugador 2 (`8000`).
+- No llama a `0x01B2BE` (sangre).
+
+Prueba `hitem` (`data/hitem_fixture.json.gz` re-extraído de `pri1` con las
+lecturas de `10C5EC..10C5FB`; rango `8c37c-8c700`): **1 nodo, 128
+actualizaciones en bucle cerrado (7772..8081), 17780 bytes iguales** y la
+parada explícita exactamente en la recogida de 8081 (rutina `0x08B59E`, H).
+La prueba genérica acepta `--stop FOTOGRAMA,RUTINA` (la actualización de
+ese fotograma debe detenerse en esa rutina; las posteriores se descartan).
+Gráficos: programas de los tipos nativos y paletas `0x37D, 0x3A6, 0x380,
+0x37E, 0x3A7, 0x3AC, 0xD0, 0x103` (`0x3AC` de los volcados de
+`captures-boss/runA`, sin validar nodos allí); los 9 volcados del H:
+3636 píxeles iguales, 0 distintos. Total: 652 descriptores, 29 paletas, los
+anteriores idénticos.
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

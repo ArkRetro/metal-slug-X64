@@ -233,6 +233,11 @@ static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creato
     if (at<0) {w->overflow++;return NULL;}
     /* A family not ported yet: the actor is not created (counted). */
     if (!neo_region_routine(routine)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
+    /* Items (neo_item.c) are native past the region (script beyond
+     * MISSION1_REGION_END). In the region they stay outside actors: the
+     * region's closed-loop world fixture records them as such, and the
+     * native soldiers do not drop theirs (0AF... -> 08CDB2) yet. */
+    if (neo_item_routine(routine) && !neo_world_region_clear(w)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
     uint8_t depth=(uint8_t)(w->order[at].depth+1u);
     neo_gactor_t *a=ga_alloc(w,routine,creator_tag,v68,depth);
     if (!a) return NULL;
@@ -460,6 +465,12 @@ static int run_gactor(tick_t *t,unsigned i) {
         w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
     if (group<9u && ga_b(a,0x69)>=9u) w->kills++;
+    if ((r==GA_UNSUPPORTED || t->genv.unsupported) && neo_item_pickup(t->genv.unsupported_at)) {
+        /* Explicit stop: an item taken by the player (its pickup routine
+         * serves the original player's weapons/points, not ported). */
+        w->item_pickups++;w->item_pickup_routine=t->genv.unsupported_at;t->genv.unsupported=0;
+        w->draw_count=before;a->active=false;return 0;
+    }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
         w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
         w->draw_count=before;a->active=false;return 0;
@@ -890,6 +901,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
+     * player's code writes them). The port's player keeps the standing box
+     * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the
+     * others are the tank and one more pose the port has not); no player 2. */
+    for (unsigned i=0;i<8;i++) g->pickup_box[i]=0x8000u;
+    if (t.player_valid) {g->pickup_box[0]=0xfff8u;g->pickup_box[1]=0;g->pickup_box[2]=0x10;g->pickup_box[3]=0x20;}
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;

@@ -39,7 +39,11 @@ def validate(captures,model_path,crom_path,out):
         banks=set(observation.get('banks',(4,)))
         def background(slot,attr):return any(lo<=slot<hi for lo,hi in ranges) and (attr&0xf0)>>4 in banks
         recovered=Image.new('RGBA',(320,224),fill)
-        for c in model['cells']:
+        # Neo Geo draws SCB slots in increasing order: with RAM slot ranges the
+        # layers are composed in the order of their first slots (Mission 2
+        # draws the middle bank, slots 317.., over the foreground, 1..).
+        order={int(k):v for k,v in observation['background_slots'].items()} if 'background_slots' in observation else {0:0,1:1,2:2,3:3}
+        for c in sorted(model['cells'],key=lambda c:order.get(c['layer'],c['layer'])):
             if not active[c['layer']]:continue
             paste(recovered,tile(c['code']|(0 if disabled else phase&c['animation_mask']),c['flip'],tuple(model['palettes'][c['palette']])),c['x']-offsets[c['layer']],c['y']+vertical[c['layer']])
         reference=Image.new('RGBA',(320,224),fill);covered=Image.new('L',(320,224))

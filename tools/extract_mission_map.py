@@ -25,6 +25,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         if root not in slot_headers:
             slot_headers[root]=collections.defaultdict(dict)
             for row in csv.DictReader((root/'layers.csv').read_text().splitlines()):
+                if len(row['header'] or '')!=0x110:continue
                 h=bytes.fromhex(row['header']);slot_headers[root][int(row['frame'])][int(row['object'],16)]=h
         hs=slot_headers[root].get(frame)
         if not hs:return {}
@@ -43,6 +44,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
             if t.exists():
                 maps[root]=collections.defaultdict(dict)
                 for row in csv.DictReader(t.read_text().splitlines()):
+                    if len(row['header'] or '')!=0x110:continue  # Unterminated last line of a capture in progress.
                     h=bytes.fromhex(row['header'])
                     maps[root][int(row['frame'])][int(row['object'],16)]=(struct.unpack_from('>I',h,0x2e)[0],struct.unpack_from('>h',h,0x32)[0])
         if root not in phases:

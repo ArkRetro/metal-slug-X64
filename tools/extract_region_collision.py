@@ -33,7 +33,7 @@ def program_rom(zip_path):
     with zipfile.ZipFile(zip_path) as z:raw=z.read('250-p1.p1')
     out=bytearray(raw);out[0::2]=raw[1::2];out[1::2]=raw[0::2];return bytes(out)
 
-def traced_stamps(root,program,frames=None):
+def traced_stamps(root,program,frames=None,strict=True):
     """Explain each frame's stamp writes in root/events.csv by a template group.
 
     The layer origin comes from root/layers.csv at that frame; the cells' old
@@ -72,11 +72,50 @@ def traced_stamps(root,program,frames=None):
                     if [(w['address'],w['old'],w['new']) for w in produced]==writes:
                         matches.append(dict(kind=name,anchor_cell=[cell_x,cell_y],layer=f'0x{layer:06X}',
                             templates=[f'0x{t:06X}' for t in spec['templates']],routine=f'0x{spec["routine"]:06X}',writes=produced))
+        if not strict and len(matches)!=1:
+            # All-mission mode: a stamp of ROM 0C88B0 whose template group is
+            # not registered is still an identified event (routine, frame,
+            # every write); its cells keep their pre-event value.
+            lx=struct.unpack_from('>h',ram,base+0x14)[0];ly=struct.unpack_from('>h',ram,base+0x18)[0]
+            s16=lambda v:((v+0x8000)&0xffff)-0x8000
+            d2=s16(-64-lx)>>3;d3=-((s16(128-ly)>>3)+0x3f)
+            produced=[]
+            for a,old,new in writes:
+                col=(a-layer-0x88)>>6;row=(a-layer-0x88)&63
+                cx=d2+((col-d2)&63);ry=d3+((row-d3)&63)
+                produced.append(dict(address=a,old=old,new=new,world_x=cx*8,world_y=(-ry-1)*8))
+            events.append((frame,dict(kind='stamp_0C88B0',anchor_cell=None,layer=f'0x{layer:06X}',templates=[],routine='0x0C88B0',writes=produced,candidates=len(matches))))
+            continue
         assert len(matches)==1,('Unexplained or ambiguous traced stamp',str(root),frame,len(matches))
         events.append((frame,matches[0]))
     return events
 
 GRID=slice(0xc7b6,0xc7b6+4096)
+
+def generic_grid(values,events,count,stamped_runs):
+    """All-mission result. Never guesses: a cell with one observed value is
+    static terrain; a cell written by a traced stamp keeps its pre-event
+    value and is listed by its event; any other cell seen with several values
+    is MUTABLE (all values with their first/last frames) and a cell never
+    observed is UNKNOWN. Both are flagged in masks so that the runtime cannot
+    treat them as empty."""
+    xs=[x for x,y in values];ys=[y for x,y in values]
+    x0,y0=min(xs),min(ys);width=max(xs)-x0+1;rows=max(ys)-y0+1
+    data=bytearray(width*rows);unknown=bytearray(width*rows);mutable_mask=bytearray(width*rows);mutable=[]
+    for x in range(width):
+        for y in range(rows):
+            i=x*rows+y;v=values.get((x+x0,y+y0))
+            if not v:unknown[i]=1;continue
+            if len(v)>1:
+                mutable_mask[i]=1
+                obs=sorted(((min((f for r,f in fr if f!='pre-event'),default=-1),code,len(fr)) for code,fr in v.items()))
+                mutable.append(dict(x=(x+x0)*8,y=(y+y0)*8,values=[dict(value=c,first_frame=f,observations=n) for f,c,n in obs]))
+                data[i]=next(c for f,c,n in obs if f==min(o[0] for o in obs))
+            else:data[i]=next(iter(v))
+    return dict(source='MAME mslugx euro; collision grid of the layer whose map descriptor (+0x2E) has a collision pointer, + 0x88; observed viewports following the layer X/Y; traced 0C88B0 stamp cells keep their pre-event value',
+        origin_cells=[x0,y0],columns=width,rows=rows,frames=count,cells_hex=data.hex(),
+        unknown_mask_hex=unknown.hex(),unknown_cells=sum(unknown),mutable_mask_hex=mutable_mask.hex(),mutable_cells=mutable,
+        events=events,runtime_policy='Unknown and mutable cells are never empty terrain: the runtime must take them from the recorded events or stop.')
 
 def snapshots(root):
     paths=sorted(root.glob('ram*.bin'),key=lambda p:int(p.stem[3:]))
@@ -98,12 +137,12 @@ def explain(before,after):
     assert len(matches)==1,('Unexplained or ambiguous dynamic collision',len(matches))
     return matches[0]
 
-def extract(roots,program=None,frames=None,layer_camera=False):
-    values=defaultdict(dict);events=[];count=0;preloaded=[]
+def extract(roots,program=None,frames=None,layer_camera=False,descriptor_layers=False):
+    values=defaultdict(dict);events=[];count=0;preloaded=[];stamped_runs=[]
     for root in roots:
         shots=snapshots(root)
         if frames:shots=[(f,r) for f,r in shots if frames[0]<=f<=frames[1]]
-        count+=len(shots);traced=traced_stamps(root,program,frames)
+        count+=len(shots);traced=traced_stamps(root,program,frames,strict=not descriptor_layers)
         seen={}  # per run: cell -> (frame, code) of the latest observation
         stamped={}  # cells written by an explained event in this run
         for index,(frame,ram) in enumerate(shots):
@@ -123,8 +162,9 @@ def extract(roots,program=None,frames=None,layer_camera=False):
                 events.append(dict(kind=event['kind'],run=str(root),frame=event_frame,anchor_cell=event['anchor_cell'],
                     layer=event['layer'],templates=event['templates'],routine=event['routine'],
                     cells=[dict(x=w['world_x'],y=w['world_y'],old=w['old'],new=w['new']) for w in event['writes']]))
-            cells=[(x,y,code) for camera,x,y,code,address in observed_cells(ram,layer_camera)]
+            cells=[(x,y,code) for camera,x,y,code,address in observed_cells(ram,layer_camera,program if descriptor_layers else None)]
             changed=[(x,y) for x,y,code in cells if (x,y) not in stamped and (x,y) in seen and seen[x,y][1]!=code]
+            if changed and descriptor_layers:changed=[]  # Recorded below as mutable cells.
             if changed:
                 # The change must be visible between consecutive snapshots of one run.
                 assert all(seen[c][0]==shots[index-1][0] for c in changed),('Change between unobserved frames',root,frame)
@@ -145,10 +185,12 @@ def extract(roots,program=None,frames=None,layer_camera=False):
                     continue
                 seen[x,y]=(frame,code)
                 values[x,y].setdefault(code,[]).append((str(root),frame))
+        stamped_runs.append(stamped)
         for cell,w in stamped.items():
             # The pre-event byte comes from the verified RAM grid, observed or
             # preloaded ahead of the viewport. It must agree with every run.
             values[cell].setdefault(w['old'],[]).append((str(root),'pre-event'))
+    if descriptor_layers:return generic_grid(values,events,count,stamped_runs)
     width=max(x for x,y in values)+1
     for x in range(width):
         for y in range(32):
@@ -172,12 +214,20 @@ if __name__=='__main__':
     p.add_argument('--rom',type=Path,help='MAME mslugx.zip: templates for traced stamps (events.csv)')
     p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames')
     p.add_argument('--layer-camera',action='store_true',help='Viewport from the active layer position (camera stops with bounds)')
-    a=p.parse_args();report=extract(a.captures,program_rom(a.rom) if a.rom else None,a.frames,a.layer_camera);data=bytes.fromhex(report['cells_hex'])
-    if a.expect_prefix:
+    p.add_argument('--descriptor-layers',action='store_true',help='Collision layer from the map descriptor (+0x2E) and vertical window from the layer Y (all missions; needs --rom)')
+    a=p.parse_args();report=extract(a.captures,program_rom(a.rom) if a.rom else None,a.frames,a.layer_camera,a.descriptor_layers);data=bytes.fromhex(report['cells_hex'])
+    if a.expect_prefix and a.descriptor_layers:
+        old=json.loads(a.expect_prefix.read_text());od=bytes.fromhex(old['cells_hex']);rows=report['rows'];x0,y0=report['origin_cells']
+        assert x0==0 and y0<=0,'Prefix check needs the grid to start at x=0'
+        for x in range(old['columns']):
+            for y in range(32):
+                assert data[x*rows+y-y0]==od[x*32+y],('Region extension changed previously validated collision cells',x,y)
+        report['prefix_columns_verified']=old['columns']
+    elif a.expect_prefix:
         old=bytes.fromhex(json.loads(a.expect_prefix.read_text())['cells_hex'])
         assert data[:len(old)]==old,'Region extension changed previously validated collision cells'
         report['prefix_columns_verified']=len(old)//32
     a.output.parent.mkdir(parents=True,exist_ok=True)
     a.output.write_text(json.dumps(report,separators=(',',':'))+'\n')
-    print('Region collision grid:',report['columns'],'x32;',sum(bool(c) for c in data),'nonempty cells;',
+    print('Region collision grid:',report['columns'],'x',report['rows'],';',report.get('unknown_cells'),'unknown',len(report.get('mutable_cells',[])),'mutable;',sum(bool(c) for c in data),'nonempty cells;',
           report['frames'],'snapshots;',sum(len(e['cells']) for e in report['events']),'event cells kept as pre-event terrain')

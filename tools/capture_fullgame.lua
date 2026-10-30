@@ -21,10 +21,10 @@
 --  unless MSX_FULL_GRID_TAP=0), vram|ram|palette|game<frame> every
 --  MSX_FULL_PERIOD (30) frames, bank<frame>.bin when the 0x200000 window changes,
 --  prev/vram<f>.bin with MSX_FULL_PREV_DUMPS=1, debug.log with MSX_FULL_DEBUG=1.
--- Stops at MSX_FULL_LAST (default 140000) or after MSX_FULL_STALL (default
+-- Stops at MSX_FULL_LAST (default 700000) or after MSX_FULL_STALL (default
 -- 36000) frames without camera/script progress (reported as STALL).
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
-local last_frame=tonumber(os.getenv('MSX_FULL_LAST') or '140000')
+local last_frame=tonumber(os.getenv('MSX_FULL_LAST') or '700000')
 local stall_limit=tonumber(os.getenv('MSX_FULL_STALL') or '36000')
 local first_dump=tonumber(os.getenv('MSX_FULL_FIRST_DUMP') or '2100')
 local period=tonumber(os.getenv('MSX_FULL_PERIOD') or '30')
@@ -45,7 +45,7 @@ local function section_of(pc)
  return s
 end
 local function open(name,header) local f=assert(io.open(output..'/'..name,'w'));f:write(header..'\n');return f end
-local trace=open('trace.csv','frame,camera,camera_word,fore_x,fore_y,mid_x,mid_y,sky_x,sky_y,obj4_x,obj4_y,full_speed,scroll_x,scroll_y,lock,lock_params,autoscroll,cam_x,cam_y,shake,bounds,map_cmd,x16,y16,player_routine,script_pc,script_timer,groups,inputs,section,player_flags,player_screen_x,player_screen_y,weapon,plan')
+local trace=open('trace.csv','frame,camera,camera_word,fore_x,fore_y,mid_x,mid_y,sky_x,sky_y,obj4_x,obj4_y,full_speed,scroll_x,scroll_y,lock,lock_params,autoscroll,cam_x,cam_y,shake,bounds,map_cmd,x16,y16,player_routine,script_pc,script_timer,groups,inputs,section,player_flags,player_screen_x,player_screen_y,weapon,plan,palette_hash')
 local actors=open('actors.csv','frame,camera,node,event,routine,previous,creator,parent,x,y,group,variant')
 local scriptlog=open('script.csv','frame,camera,node,pc')
 local seclog=open('sections.csv','frame,camera,pc,section')
@@ -108,6 +108,13 @@ local function dump(f)
  p:write(table.concat(parts));p:close()
  machine.screens[':screen']:snapshot(output..'/game'..f..'.png')
 end
+-- Hash of the palette RAM (every word): a change between consecutive frames
+-- marks fades and palette effects (excluded/recorded by the map tools).
+local function palette_hash()
+ local h=0
+ for i=0,4095,1 do h=(h*31+cpu:read_u16(0x400000+i*2))%4294967291 end
+ return string.format('%x',h)
+end
 local bank_sum=nil
 local function check_bank(f)
  local s=0
@@ -154,8 +161,8 @@ local function probes()
  dbg:command('bpset 1a132,1,{printf "SPAWN frame=%d node=%08X entry=%08X record=%08X creator=%08X\\n",temp9,a0,d@(sp),d@(sp+4),a6;g}')
  dbg:command(string.format('bpset 4406,(temp9%%%x)==0,{printf "DRAW frame=%%d a6=%%08X routine=%%08X desc=%%08X xy=%%08X attr=%%04X\\n",temp9,a6,d@(a6),d7,d0,d1&ffff;g}',draw_every))
 end
--- Input plan. Progress key: camera progress word, integer camera Y, script
--- position and section. `still` counts frames without any change. While
+-- Input plan. Progress key: camera progress word, script position, section
+-- and map command pointer. `still` counts frames without any change. While
 -- moving: run right firing. After 4 s still: sweep the screen; then cycle
 -- through fallback patterns every 6 s (aim up, jump-spam, run left, drop
 -- through with down+jump). Buttons pulse on frame parity only.
@@ -164,21 +171,65 @@ local still=0;local last_key=nil;local section_start=0;local plan='run'
 -- Deterministic pseudo-random sequence (LCG on the frame number) for the
 -- random-walk fallback: same inputs for the same game state history.
 local function noise(f,salt) return ((f//30)*1103515245+12345+salt*2654435761)%2147483648 end
+-- Read-only terrain probe: shape nibble of the collision cell under world
+-- point (x, y) (Y up), in whichever layer ring (0x10C72E / 0x10D7B6 + 0x88)
+-- holds a nonzero byte there (docs/COLLISION.md index formula).
+local function cell(x,y)
+ local i=((x&504)<<3)|(((~y)&504)>>3)
+ local a=cpu:read_u8(0x10c7b6+i)&15
+ if a~=0 then return a end
+ return cpu:read_u8(0x10d83e+i)&15
+end
+local last_px,blocked=nil,0
+-- Edge jump: on the ground and no ground ahead within 24 px below the feet.
+local function edge_ahead(px,py,dir)
+ if cell(px,py-2)==0 and cell(px,py-6)==0 then return false end
+ for dy=2,26,4 do if cell(px+dir*14,py-dy)~=0 then return false end end
+ return true
+end
 local function plan_inputs(screen_x)
+ local px=cpu:read_i16(0x1014ec);local py=cpu:read_i16(0x1014f0)
+ if px==last_px then blocked=blocked+1 else blocked=0 end
+ last_px=px
+ -- Map command list waiting for a player inside a rectangle (ROM 0C84BE,
+ -- op 4: [layer.l][x][y][w][h], layer-relative = world coordinates, Y up as
+ -- player +2C): steer towards it, jumping when it is higher.
+ local mc=cpu:read_u32(0x10e964)
+ -- Used one 20 s period in three; the generic patterns run in between.
+ if still>=240 and ((still-240)//1200)%3==1 and mc>0 and mc<0x100000 and cpu:read_u16(mc)==4 then
+  local x0,y0,w,h=cpu:read_i16(mc+8),cpu:read_i16(mc+10),cpu:read_i16(mc+12),cpu:read_i16(mc+14)
+  -- 0C8524 compares +40 (= Y + layer Y) with y0 + layer Y: same frame as +2C.
+  plan='rect'
+  local explore=((still-240)//600)%2
+  local dir
+  if px<x0+12 then dir=1 elseif px>x0+w-12 then dir=-1 else dir=sweep_direction end
+  if explore==1 then dir=-dir end
+  if blocked>=60 then sweep_direction=-dir;blocked=0 else sweep_direction=dir end
+  button('P1 Right',sweep_direction>0 and 1 or 0);button('P1 Left',sweep_direction<0 and 1 or 0)
+  button('P1 Up',0);button('P1 Down',0)
+  local higher=py<y0
+  button('P1 B',(higher and (edge_ahead(px,py,sweep_direction) or frame%20<5)) and 1 or 0)
+  button('P1 A',frame%12<6 and 1 or 0)
+  button('P1 C',frame%60<8 and 1 or 0)
+  return
+ end
  if still<240 then
   plan='run'
   button('P1 Right',1);button('P1 Left',0);button('P1 Up',0);button('P1 Down',0)
-  button('P1 B',frame%120<8 and 1 or 0)
+  -- Blocked by a wall for 1/3 s: jump repeatedly (climb steps, vehicles).
+  button('P1 B',(frame%120<8 or (blocked>=20 and frame%16<6)) and 1 or 0)
  else
   local phase=((still-240)//360)%6
   local lo,hi=48,256
   if phase==1 or phase==5 then lo,hi=16,296 end
   if screen_x<=lo then sweep_direction=1 elseif screen_x>=hi then sweep_direction=-1 end
+  -- Pushing against a bound or wall for 1 s: turn around (sweep phases).
+  if blocked>=60 and (phase==1 or phase==5) then sweep_direction=-sweep_direction;blocked=0 end
   if phase==0 or phase==1 then
    plan=phase==0 and 'sweep_up' or 'sweep_jump'
    button('P1 Right',sweep_direction>0 and 1 or 0);button('P1 Left',sweep_direction<0 and 1 or 0)
    button('P1 Up',phase==0 and (frame//180)%2==0 and 1 or 0);button('P1 Down',0)
-   button('P1 B',(phase==1 and frame%24<6 or frame%120<8) and 1 or 0)
+   button('P1 B',((phase==1 and edge_ahead(px,py,sweep_direction)) or frame%120<8 or (blocked>=20 and frame%16<6)) and 1 or 0)
   elseif phase==2 then
    plan='left';button('P1 Right',0);button('P1 Left',1);button('P1 Up',0);button('P1 Down',0)
    button('P1 B',frame%60<8 and 1 or 0)
@@ -196,7 +247,7 @@ local function plan_inputs(screen_x)
    if screen_x<=lo then sweep_direction=1 elseif screen_x>=hi then sweep_direction=-1 end
    button('P1 Right',sweep_direction>0 and 1 or 0);button('P1 Left',sweep_direction<0 and 1 or 0)
    button('P1 Up',(n//7)%3==0 and 1 or 0);button('P1 Down',0)
-   button('P1 B',(frame%30<6 and (n//3)%2==0) and 1 or 0)
+   button('P1 B',(edge_ahead(px,py,sweep_direction) or (frame%30<6 and (n//3)%2==0)) and 1 or 0)
   end
  end
  button('P1 A',frame%12<6 and 1 or 0)
@@ -227,7 +278,9 @@ emu.register_frame_done(function()
   cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
   cpu:write_u8(0x10c621,0x30);cpu:write_u8(0x10c627,0x63)
   -- Progress word 0x10E99E (equal to 0x102036 in Mission 1 only).
-  local key=string.format('%d %d %x %d',cpu:read_u16(0x10e99e),cpu:read_i32(0x10e992)>>16,spc,sec)
+  -- Camera Y is left out: it follows the player's jumps and would reset the
+  -- count forever; vertical paths advance the progress word itself.
+  local key=string.format('%d %x %d %x',cpu:read_u16(0x10e99e),spc,sec,cpu:read_u32(0x10e964))
   if key==last_key then still=still+1 else still=0 end
   last_key=key
   plan_inputs(cpu:read_u16(0x101500)&511)
@@ -250,12 +303,12 @@ emu.register_frame_done(function()
   local lp=string.format('%d %d %d %d',cpu:read_i16(0x10e9c0),cpu:read_i16(0x10e9c2),cpu:read_i16(0x10e9c4),cpu:read_i16(0x10e9c6))
   local auto=string.format('%d %d %d %d',cpu:read_u8(0x10e95a),cpu:read_u8(0x10e95b),cpu:read_i32(0x10e95c),cpu:read_i32(0x10e960))
   local bounds=string.format('%d %d %d %d',cpu:read_i16(0x10e9d2),cpu:read_i16(0x10e9d4),cpu:read_i16(0x10e9d6),cpu:read_i16(0x10e9d8))
-  trace:write(string.format('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s,%d,%d,%d,%s,%x,%u,%u,%x,%x,%d,%s,%s,%d,%x,%d,%d,%d,%s\n',frame,camera,cpu:read_u16(0x10e99e),
+  trace:write(string.format('%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%s,%s,%d,%d,%d,%s,%x,%u,%u,%x,%x,%d,%s,%s,%d,%x,%d,%d,%d,%s,%s\n',frame,camera,cpu:read_u16(0x10e99e),
    cpu:read_i16(b+0x84),cpu:read_i16(b+0x86),cpu:read_i16(m+0x84),cpu:read_i16(m+0x86),cpu:read_i16(sky+0x84),cpu:read_i16(sky+0x86),
    cpu:read_i16(0x10e8c6+0x84),cpu:read_i16(0x10e8c6+0x86),
    cpu:read_i32(b+0x14)==cpu:read_i32(m+0x14) and 1 or 0,cpu:read_i32(0x10e97c),cpu:read_i32(0x10e980),cpu:read_i32(0x10e9bc),lp,auto,cpu:read_i32(0x10e98e),cpu:read_i32(0x10e992),cpu:read_i32(0x10e9cc),bounds,cpu:read_u32(0x10e964),
    cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014c4),spc,cpu:read_u16(SCRIPT+0x72),table.concat(g,' '),inputs,
-   sec,cpu:read_u8(0x101523),cpu:read_i16(0x101500),cpu:read_i16(0x101502),cpu:read_u8(0x10c71e),plan))
+   sec,cpu:read_u8(0x101523),cpu:read_i16(0x101500),cpu:read_i16(0x101502),cpu:read_u8(0x10c71e),plan,palette_hash()))
   if spc~=last_script then last_script=spc;scriptlog:write(string.format('%d,%d,%x,%x\n',frame,camera,SCRIPT,spc)) end
   walk(frame,camera)
   for i=0,7 do
@@ -270,8 +323,11 @@ emu.register_frame_done(function()
    layers:write(string.format('%d,%x,%s\n',frame,o,(h:gsub('.',function(c) return string.format('%02x',string.byte(c)) end))))
   end
   if frame%300==0 or frame==2100 then check_bank(frame) end
-  if frame>=first_dump and (frame==2100 or frame%period==0) then dump(frame) end
-  if prev_dumps and frame>=first_dump and (frame+1)%period==0 then dump_vram(output..'/prev/vram'..(frame+1)..'.bin') end
+  -- While the progress key is unchanged for 20 s, snapshot only every
+  -- 10 periods (the view repeats; keeps long stalls from filling the disk).
+  local sparse=still>=1200
+  if frame>=first_dump and (frame==2100 or (frame%period==0 and (not sparse or frame%(period*10)==0))) then dump(frame) end
+  if prev_dumps and frame>=first_dump and (frame+1)%period==0 and (still<1199 or (frame+1)%(period*10)==0) then dump_vram(output..'/prev/vram'..(frame+1)..'.bin') end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' section '..sec..' plan '..plan..' still '..still..string.format(' script %x',spc));trace:flush();actors:flush();scriptlog:flush();if events then events:flush() end end
  end
  if frame>=last_frame then

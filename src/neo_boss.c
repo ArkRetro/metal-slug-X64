@@ -2,6 +2,7 @@
 #include <stddef.h>
 #include <string.h>
 #include "boss_tables.h"
+#include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 
 /* Native translation of the Mission 1 boss family (ROM 0D5976..0D74D4) and
  * the shell path 02A260..02A3B2. Each routine is labelled with its ROM
@@ -1545,7 +1546,6 @@ bool neo_boss_receive(neo_boss_t *w,int16_t i,const neo_boss_hit_t *h) {
         if (S16((uint16_t)(neo_boss_w(n,0x40)-(uint16_t)((uint32_t)h->cy>>16)))<0) n->f[0x5b]|=0x40u;
         uint32_t dx=(uint32_t)h->px-(uint32_t)h->cx-neo_boss_l(n,0x3c)+neo_boss_l(n,0x44);
         uint32_t dy=(uint32_t)h->py-(uint32_t)h->cy-neo_boss_l(n,0x40)+neo_boss_l(n,0x48);
-        extern uint8_t neo_angle(int16_t x,int16_t y);
         n->f[0x5b]|=(uint8_t)((neo_angle(S16((uint16_t)(dx>>16)),S16((uint16_t)(dy>>16)))>>4)&15u);
         n->f[0x5c]=(uint8_t)ASRW(h->impact_x,1);n->f[0x5d]=(uint8_t)ASRW(h->impact_y,1);
     }

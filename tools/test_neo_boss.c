@@ -207,7 +207,8 @@ int main(void) {
                 unsigned nw=u16(&r);int16_t ix=0,iy=0;
                 for (unsigned w=0;w<nw;w++) {uint8_t o=u8(&r),v=u8(&r);uint32_t pc=u32(&r);
                     if (pc==0x490c) ix=(int16_t)((int8_t)v*2);
-                    if (pc==0x4916) iy=(int16_t)((int8_t)v*2);(void)o;}
+                    if (pc==0x4916) {iy=(int16_t)((int8_t)v*2);}
+                    (void)o;}
                 hits++;
                 if (kind==0xffff || !has_att || native_of[hid]<0) {hits_unknown++;continue;}
                 neo_boss_hit_t hit={rl_s(att,0x3c),rl_s(att,0x40),rl_s(att,0x44),rl_s(att,0x48),(uint8_t)kind,(uint8_t)klass,att[0x5e],damage,ix,iy,false,0};
@@ -222,7 +223,8 @@ int main(void) {
                 case E_RNG:e->a[0]=u16(&r);break;
                 case E_ALLOC: {e->a[0]=u16(&r);e->a[1]=(uint32_t)(int32_t)(int16_t)u16(&r);uint16_t f=u16(&r);
                     if (f&1) e->img=blk(&r,NEO_BOSS_FIELDS);
-                    if (f&2) e->expect=blk(&r,NEO_BOSS_FIELDS);break;}
+                    if (f&2) {e->expect=blk(&r,NEO_BOSS_FIELDS);}
+                    break;}
                 case E_PAL:e->a[0]=u8(&r);break;
                 case E_SCENE:for (unsigned j=0;j<5;j++) e->a[j]=u32(&r);e->a[5]=u8(&r);break;
                 case E_SWEEP:for (unsigned j=0;j<5;j++) e->a[j]=u32(&r);e->a[5]=u16(&r);e->a[6]=u16(&r);break;
@@ -242,7 +244,7 @@ int main(void) {
             if (ni<0 && routine==0xd5976 && node_ctor[id]==0xd5976) {
                 ni=neo_boss_spawn(&boss,pre);native_of[id]=ni;fixture_of[ni]=id;
             }
-            char why[96]="";bool ok=true;
+            char why[300]="";bool ok=true;
             if (ni<0 || !boss.nodes[ni].routine) {snprintf(why,sizeof(why),"node %u not alive natively",id);ok=false;}
             else if (boss.nodes[ni].routine!=routine) {snprintf(why,sizeof(why),"routine %06x/%06x",(unsigned)boss.nodes[ni].routine,(unsigned)routine);ok=false;}
             else if (pre && compare(&boss.nodes[ni],pre,why,sizeof(why))>=0) {ok=false;pre_fail++;memmove(why+4,why,strlen(why)+1);memcpy(why,"pre ",4);}

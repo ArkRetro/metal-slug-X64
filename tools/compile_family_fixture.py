@@ -18,8 +18,10 @@ def main():
     p.add_argument('--tree',action='store_true',help='keep only the first node and its descendants')
     p.add_argument('--stop',help='FRAME,ROUTINE (hex routine): the update of that frame must stop explicitly at ROUTINE (an untranslated service); later updates are dropped')
     p.add_argument('--stamp',action='append',default=[],help='X,Y,TEMPLATE (hex): collision stamp (0C88B0) applied before the first update (an event of another family seen in the RAM dumps)')
+    p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     a=p.parse_args();n=a.name
+    script=int(a.script_actor,16) if a.script_actor else None
     d=json.load(gzip.open(a.fixture,'rt'))
     # A node deleted while deeper nodes follow it stays as a placeholder
     # (routine 003F1E, 004126): a deleting update like any other.
@@ -36,7 +38,9 @@ def main():
             if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
             if u['node'] not in live:
                 pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
-                live[u['node']]=len(order);order.append((u,live.get(cr,-1)))
+                c=live.get(cr,-1)
+                if c<0 and script is not None and int(cr,16)==script:c=-2
+                live[u['node']]=len(order);order.append((u,c))
             inst.append(live[u['node']])
             if not u['post']:del live[u['node']]
         return order,inst
@@ -49,7 +53,7 @@ def main():
         # traced family's creators outside it made belong to another test.
         kept=set()
         for i,(u,cr) in enumerate(order):
-            if i==0 or cr in kept:kept.add(i)
+            if i==0 or cr in kept or cr==-2:kept.add(i)
         d['updates']=[u for u,i in zip(d['updates'],inst) if i in kept]
         order,inst=instances(d['updates'])
     def rd(u,ad):
@@ -129,10 +133,12 @@ def main():
         dyn=[(int(k,16)-0x10c06e,v[0],v[1]) for k,v in u['reads'].items() if 0x10c06e<=int(k,16)<0x10c292]
         assert len(dyn)<=48,(u['frame'],len(dyn))
         dyn+=[(0xffff,0,0)]*(48-len(dyn))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s}},'%(
+        # RAM 1067E2 (kill-all, 004BAC) as read: set by another family.
+        kill=rd(u,0x1067e2)
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes))))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill)))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

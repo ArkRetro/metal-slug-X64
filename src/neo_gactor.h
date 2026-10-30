@@ -107,6 +107,7 @@ struct neo_genv {
     void (*shake)(void *ctx);                          /* 0C801A */
     bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
     bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */
+    void (*kill_children)(void *ctx,neo_gactor_t *a);  /* 004192: delete the deeper nodes after `a` */
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

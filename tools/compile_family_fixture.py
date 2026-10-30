@@ -15,6 +15,7 @@ RING0,RING1=0x100016,0x100084
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('fixture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--name',required=True)
+    p.add_argument('--tree',action='store_true',help='keep only the first node and its descendants')
     a=p.parse_args();n=a.name
     d=json.load(gzip.open(a.fixture,'rt'))
     # A node deleted while deeper nodes follow it stays as a placeholder
@@ -25,15 +26,26 @@ def main():
     # later node at the same address is another instance.
     # A node deleted without a traced update (a creator's tree deletion,
     # 0041AC) shows up again with a routine its last update did not leave.
-    live={};order=[];inst=[];lastroutine={}
-    for u in d['updates']:
-        if u['node'] in live and lastroutine.get(u['node'])!=u['routine']:del live[u['node']]
-        if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
-        if u['node'] not in live:
-            pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
-            live[u['node']]=len(order);order.append((u,live.get(cr,-1)))
-        inst.append(live[u['node']])
-        if not u['post']:del live[u['node']]
+    def instances(updates):
+        live={};order=[];inst=[];lastroutine={}
+        for u in updates:
+            if u['node'] in live and lastroutine.get(u['node'])!=u['routine']:del live[u['node']]
+            if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
+            if u['node'] not in live:
+                pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
+                live[u['node']]=len(order);order.append((u,live.get(cr,-1)))
+            inst.append(live[u['node']])
+            if not u['post']:del live[u['node']]
+        return order,inst
+    order,inst=instances(d['updates'])
+    if a.tree:
+        # Only the first node and its descendants (by creator): nodes the
+        # traced family's creators outside it made belong to another test.
+        kept=set()
+        for i,(u,cr) in enumerate(order):
+            if i==0 or cr in kept:kept.add(i)
+        d['updates']=[u for u,i in zip(d['updates'],inst) if i in kept]
+        order,inst=instances(d['updates'])
     def rd(u,ad):
         v=u['reads'].get(hex(ad))
         if v is None:return None
@@ -67,7 +79,14 @@ def main():
         for i in range(4):
             if root[2*i] is not None and root[2*i+1] is not None:rmask|=1<<i;rv[i]=s32(root[2*i]<<16|root[2*i+1])
         corr=rd(u,0x10e98c)
-        tmask=0;tx=ty=0   # layer objects: same position as the root (RAM dumps)
+        # Layer object 10D7B6 (+14..+24) when the trace has its reads (older
+        # fixtures: same position as the root, checked in the RAM dumps).
+        ter=[rd(u,x) for x in range(0x10d7ca,0x10d7da,2)]
+        tmask=0;tv=[0,0,0,0]
+        for i in range(4):
+            if ter[2*i] is not None and ter[2*i+1] is not None:tmask|=1<<i;tv[i]=s32(ter[2*i]<<16|ter[2*i+1])
+        tcorr=rd(u,0x10d7da)
+        if tcorr is not None:tmask|=16
         cur=None
         if hex(RING1) in u['reads'] and hex(RING1+2) in u['reads']:
             ptr=u['reads'][hex(RING1)][1]<<16|u['reads'][hex(RING1+2)][1];cur=(ptr-RING0)//2
@@ -83,9 +102,9 @@ def main():
         assert len(writes)<=12,u['frame']
         writes+=[(0,0)]*(12-len(writes))
         def opt(v):return -1 if v is None else v
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s}},'%(
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s}},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
-            rmask,*rv,opt(corr),tmask,tx,ty,opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
+            rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
             -1 if cur is None else cur,','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext)))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')

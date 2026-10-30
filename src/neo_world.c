@@ -799,6 +799,11 @@ static void delete_tree(tick_t *t,unsigned at) {
         remove_at(w,at+1u);
     }
 }
+/* ROM 004192: the running actor deletes the deeper nodes that follow it. */
+static void g_kill_children(void *ctx,neo_gactor_t *a) {
+    tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
+    if (at>=0) delete_tree(t,(unsigned)at);
+}
 /* ---- public ------------------------------------------------------------------ */
 static void scene_at(neo_world_t *w,int32_t x,bool reset) {
     neo_contact_parent_t *p[2]={&w->terrain,&w->root};
@@ -860,7 +865,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
-    g->map_swap=g_map_swap;g->front_layer=g_front_layer;
+    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;

@@ -116,6 +116,64 @@ submapa `0x0B6AD2`; `tools/pack_scene.py` empaqueta la variante posterior
 aparte (`scene_patch_cells`) y el render la dibuja en lugar de la celda
 intacta cuando el edificio cae.
 
+## Carro con lona `0x033C98` (`src/neo_wagon.c`)
+
+Registro del guion en la cámara 2336 (fotograma ~6750 en las capturas).
+`0x033C98`: paletas `0x121/0x122`, salud por rango `0x2D3E5C`, avanza a
+`fffd4000` hacia el centro (`+62`, signo por `+3C < 0xA0`) hasta que la
+distancia `+7A` pasa `+70`; `0x033D8A/0x033DB4` frena (las pruebas de signo
+literales del original lo paran en la misma actualización salvo que la
+velocidad cruce cero), abre la lona (programa `239E30`, retrollamada
+`239ECE`: hijo `0x034022` y `+81`), y espera con caja de impacto
+(`0x004C24`) mientras `+74` cuenta el tiempo invulnerable (`+80`: salud
+restaurada). Destruido (`+5F` bit 7): `0x004192` borra los nodos más
+profundos (servicio nuevo `kill_children` del entorno), 16 explosiones
+`0x01DBAA`, seis piezas `0x034094` tras el actor del guion (`0x00411C`),
+escombros `0x01DA40` (lista `0x033C46`), `0x019DFC`, y cae en `0x033F2E`
+(restos con plataforma `0x033ADC/0x033B6E`; con `+72 = 0` se va tras `+7E`
+actualizaciones por el camino de la comprobación del cartucho → `0x004188`).
+El cuerpo es un objeto de colisión dinámico en cada actualización
+(`0x034260`, mapas `0x033924/0x033992` cerrado, `0x033A00/0x033A6E`
+abierto) y el hijo `0x03415A` lleva el del techo (`0x033C00/0x033C12`).
+
+Prueba de familia: `data/truck_fixture.json.gz` (MAME `trk3`, raíces
+`33c98`, rangos `33c98-35a00`, `39500-39d00`) con `--tree` (solo el nodo
+raíz y sus descendientes; los nodos `0x0395xx/0x0356xx` del mismo fichero
+los crea el subguion del espadachín `0x0A8C62`, otra familia).
+**3 nodos, 621 actualizaciones en bucle cerrado (6752..7558), 86800 bytes
+iguales**, 2 nodos borrados por `0x004192`, 23 hijos fuera de la familia.
+Las piezas `0x034094` (creadas tras el actor del guion) no están en la
+traza de familia: traducción literal sin validar por la prueba.
+
+Cambios en la prueba genérica: el extractor guarda también las lecturas del
+objeto de capa `10D7B6` (`+14..+24`), y la prueba usa esa posición para las
+capas y el terreno del núcleo cuando la traza la tiene (el carro se apoya en
+`10D7B6`, cuya Y difiere de la raíz cuando la cámara sube). Las trazas
+anteriores (cúpulas, tienda) no la tienen y siguen usando la de la raíz.
+
+Gráficos: `tools/export_rest_sprites.py ... trk3@33c98-34200`: 312
+descriptores y 15 paletas; validación contra 98 volcados (11 nuevos del
+carro): **1326539 píxeles iguales, 4575 distintos** (los mismos 4575 de
+las cúpulas tapadas por la fachada; ninguno del carro).
+
+### El jugador sobre plataformas dinámicas
+
+El cuerpo original que pisa un objeto dinámico (`0x0140C0`) toma ese objeto
+como padre (`+38`) y guarda su posición relativa (`+28/+2C`), así que se
+mueve con él. `msx_game_update` hace ahora lo mismo con el núcleo del mundo:
+al caer, la búsqueda de suelo `0x013DB2` (`neo_kernel_floor`) desde los
+pies; si el primer suelo es un objeto dinámico, el jugador aterriza en él
+(`ride`, posición relativa al objeto); cada paso lógico los pies siguen al
+objeto (posición proyectada + relativa − terreno), anda sobre su superficie
+plana y se cae si deja de encontrarlo (o si el objeto desaparece). El
+terreno estático sigue con `neo_collision`. Límites: sin paredes del objeto
+(el jugador del port tampoco las tiene con la rejilla estática) y con un
+paso de retraso (el jugador va antes que el objeto en la lista, como en el
+original). En el recorrido nativo el jugador se sube a las plataformas del
+jefe (33 veces): el combate dura más (40508 pasos, límite de la prueba 60000)
+y la altura máxima de 30 se comprueba antes del jefe. El carro no llega a
+pisarse en el recorrido (su techo está por encima del salto).
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

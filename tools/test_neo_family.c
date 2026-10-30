@@ -32,7 +32,7 @@ typedef struct { int creator; uint32_t routine,frame; uint8_t pre[0xb0]; } famil
 typedef struct {
     uint32_t frame; int node; uint32_t routine; int has_post; uint8_t post[0xb0];
     int root_mask; int32_t root[4]; int corr;
-    int terrain; int32_t tx,ty;
+    int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor;
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2];
 } family_update_t;
@@ -47,7 +47,8 @@ enum { NN=sizeof(NODES)/sizeof(NODES[0]), NU=sizeof(UPDATES)/sizeof(UPDATES[0]) 
 static neo_gactor_t actors[NN+1];            /* [NN] = scratch */
 static bool bound[NN];
 static unsigned externals,draws;
-static neo_contact_parent_t root;
+static neo_contact_parent_t root,terrain;
+static bool terrain_seen;
 static neo_ga_flags_t flags;
 static uint8_t ram[0x200];                   /* globals, see slot() */
 static uint8_t expect[0x200];
@@ -73,7 +74,7 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     (void)ctx;
     if (tag==0x10e968u) {*out=root;return true;}
     /* Layer objects (the world keeps them with the terrain). */
-    if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=root;out->tag=tag;return true;}
+    if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=terrain_seen?terrain:root;out->tag=tag;return true;}
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NN) {
         const neo_gactor_t *a=&actors[tag&0xffffu];
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};
@@ -118,6 +119,17 @@ static neo_gactor_t *creator_of(void *ctx,neo_gactor_t *a) {
     if ((t&0xff000000u)==NEO_GA_TAG_BASE && (t&0xffffu)<NN) return &actors[t&0xffffu];
     return NULL;
 }
+/* 004192: the nodes deeper than `a` (its descendants) are deleted. */
+static unsigned killed_children;
+static void kill_children(void *ctx,neo_gactor_t *a) {
+    (void)ctx;
+    for (unsigned i=0;i<NN;i++) {
+        if (!actors[i].active || &actors[i]==a) continue;
+        unsigned depth=0;
+        for (neo_gactor_t *p=creator_of(NULL,&actors[i]);p && depth<NN;p=creator_of(NULL,p),depth++)
+            if (p==a) {actors[i].active=false;killed_children++;break;}
+    }
+}
 static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=creator_of(NULL,a);return !c || c->active;}
 /* 0049E8 against the player (class 0): the player's hurtbox is not in the
  * trace; a contact is taken from the update's outcome (the original deletes
@@ -153,7 +165,7 @@ int main(void) {
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
     e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
-    e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+    e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
     unsigned compared=0,deleted=0;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
@@ -179,7 +191,13 @@ int main(void) {
         /* Static collision objects (the world keeps terrain and root
          * together). */
         kernel.root=(neo_kobj_t){root.x,root.y,root.previous_x,root.previous_y};
-        kernel.terrain=kernel.root;
+        if (u->tmask&1) terrain.x=u->terrain[0];
+        if (u->tmask&2) terrain.y=u->terrain[1];
+        if (u->tmask&4) terrain.previous_x=u->terrain[2];
+        if (u->tmask&8) terrain.previous_y=u->terrain[3];
+        if (u->tmask&16) terrain.correction=(uint8_t)u->tcorr;
+        if (u->tmask) terrain_seen=true;
+        kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
         if (kill_frame && !kill_at && u->frame>kill_frame) kill_at=u->frame;
@@ -217,7 +235,7 @@ int main(void) {
         }
     }
     for (unsigned i=0;i<NN;i++) if (!bound[i]) {fprintf(stderr,"node %u (%05x) never created\n",i,NODES[i].routine);return 1;}
-    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family%s\n",
-        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,swapped?", map swap requested":"");
+    printf("PASS: family %s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192%s\n",
+        STR(FAMILY_NAME),(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,swapped?", map swap requested":"");
     return 0;
 }

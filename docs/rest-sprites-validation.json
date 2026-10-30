@@ -1,6 +1,9 @@
 {
- "descriptors": 268,
+ "descriptors": 312,
  "palettes": [
+  "0x121",
+  "0x122",
+  "0x123",
   "0x1b",
   "0x20b",
   "0x3ba",
@@ -17,12 +20,12 @@
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 67,
-  "frames": 87,
-  "pixels_equal": 1260561,
+  "frames": 98,
+  "pixels_equal": 1326539,
   "pixels_different": 4575,
   "pixels_overlapping": 105159,
-  "rank_2": 38,
-  "rank_1": 49
+  "rank_2": 45,
+  "rank_1": 53
  },
  "frames": [
   {
@@ -632,6 +635,83 @@
    "frame": 7500,
    "update_frame": 7500,
    "equal": 1753,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 6900,
+   "update_frame": 6895,
+   "equal": 6682,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 6960,
+   "update_frame": 6955,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7020,
+   "update_frame": 7020,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7080,
+   "update_frame": 7079,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7140,
+   "update_frame": 7137,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7200,
+   "update_frame": 7199,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7260,
+   "update_frame": 7259,
+   "equal": 7024,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7320,
+   "update_frame": 7316,
+   "equal": 4797,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7380,
+   "update_frame": 7378,
+   "equal": 4765,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7440,
+   "update_frame": 7438,
+   "equal": 4786,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7500,
+   "update_frame": 7498,
+   "equal": 2804,
    "different": 0
   }
  ]

@@ -41,6 +41,11 @@ typedef struct {
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
+    /* Dynamic platform the player stands on (kernel object NEO_KOBJ_DYN0 +
+     * ride - 1, 0 = none) and the feet relative to it (Q16.16): the original
+     * body's +28/+2C are relative to its parent object (+38), so it moves
+     * with the platform (wagon 033C98, boss). */
+    uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

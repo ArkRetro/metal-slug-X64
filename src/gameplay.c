@@ -97,7 +97,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->shooting && ++g->shot_age>=8) g->shooting=false;
     if (fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
         g->bullets[i]=(msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true};
-        g->cooldown=8;g->shot_age=0;g->shooting=true;break;
+        g->cooldown=8;g->shot_age=0;g->shooting=true;g->shots++;break;
     }
     if (g->world_enabled && !(g->ticks&1)) {
         neo_world_player_t p=player_frame(g);

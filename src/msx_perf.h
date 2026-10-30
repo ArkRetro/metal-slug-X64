@@ -20,6 +20,7 @@ enum {
     MSX_PERF_PHASES,
     MSX_PERF_ASSET=MSX_PERF_PHASES, /* overlapping: decode/CRC + require waits */
     MSX_PERF_STEP,       /* overlapping: slowest single simulation step */
+    MSX_PERF_AUDIO,      /* overlapping: game_audio_update + msx_audio_service (AI mix) */
     MSX_PERF_COUNT
 };
 /* Build with MSX_EXTRA_CFLAGS=-DMSX_PROFILE=0 to compile the profile out. */

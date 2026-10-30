@@ -88,7 +88,7 @@ $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/ent
 $(BUILD_DIR)/src/mission_main.o: $(BUILD_DIR)/entry_meta.h
 $(BUILD_DIR)/mission1-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
 $(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
-$(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(WORLD_OBJS)
+$(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(WORLD_OBJS)
 mission1-internal.z64: N64_ROM_TITLE = "MSX M1 INTERNAL"
 mission1-internal.z64: $(BUILD_DIR)/mission1-internal.dfs
 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64:
@@ -98,7 +98,7 @@ filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cin
 .PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
 all: mslugx-explorer.z64
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(WORLD_OBJS)
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
@@ -106,9 +106,13 @@ mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
 # (fixed.bin, sprites.bin, 48 MiB) go only into the diagnostic lab cartridge.
 $(BUILD_DIR)/mslugx-explorer.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-explorer.dfs: $(BUILD_DIR)/game-romfs.stamp
-$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
+# Gameplay audio (docs/AUDIO_JUEGO.md) is rendered locally from the user's ROM
+# into filesystem/audio; without it the game runs silently.
+GAME_AUDIO := $(wildcard filesystem/audio/*.wav64)
+$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(GAME_AUDIO)
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles $(BUILD_DIR)/game-romfs/
+	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	touch $@
 $(BUILD_DIR)/src/main-lab.o: src/main.c
 	@mkdir -p $(dir $@)
@@ -524,7 +528,7 @@ filesystem/cinematics/title-announcement.wav64: art/audio/title-announcement.wav
 $(BUILD_DIR)/tools/intro_preview.o: src/mission_main.c $(BUILD_DIR)/entry_meta.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -DMSX_INTRO_PREVIEW -c $< -o $@
-$(BUILD_DIR)/intro-preview.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/tools/intro_preview.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/intro-preview.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/tools/intro_preview.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 $(BUILD_DIR)/intro-preview.dfs: $(BUILD_DIR)/mission1-internal.dfs
 	cp $< $@
 intro-preview.z64: N64_ROM_TITLE = "METAL SLUG X64"

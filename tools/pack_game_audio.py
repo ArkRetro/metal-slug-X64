@@ -6,8 +6,8 @@ tools/render_sound_commands.py (48 kHz stereo, ROM-derived, gitignored).
 Output: filesystem/audio/<label>.wav64 and filesystem/audio/manifest.json.
 
 * Effects: every render is mono (render.json 'stereo': false, L == R), so
-  they are stored as mono PCM16 at 24 kHz (uncompressed: no decoder state, so
-  any voice can start them at any time). Their content is the YM2610
+  they are stored as mono VADPCM at 24 kHz. The runtime plays each sound on
+  one channel only (src/msx_sfx.c), so its decoder state is never shared. Their content is the YM2610
   ADPCM-A output (18.5 kHz sample rate): <= 3.7 % of the energy lies above
   8 kHz in every render.
 * Music: the loop is measured, not assumed. A 10 ms log-spectrogram
@@ -16,7 +16,8 @@ Output: filesystem/audio/<label>.wav64 and filesystem/audio/manifest.json.
   stays high). The driver output is not sample-identical between passes
   (FM phase, tick jitter), so the splice is placed where the waveform at t0
   and t0+period+d correlates best (d within +-25 ms); the WAV64 holds
-  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 32 kHz.
+  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 24 kHz
+  (loop start/length rounded to 16 samples for VADPCM).
 Resampling is an FFT band limit (numpy only)."""
 import argparse,hashlib,json,subprocess,wave
 from pathlib import Path
@@ -31,8 +32,8 @@ def write(path,pcm,rate):
     pcm=np.clip(np.round(pcm),-32768,32767).astype('<i2')
     with wave.open(str(path),'wb') as w:
         w.setnchannels(1 if pcm.ndim==1 else pcm.shape[1]);w.setsampwidth(2);w.setframerate(rate);w.writeframes(pcm.tobytes())
-def resample(x,rate):
-    n=len(x);m=int(round(n*rate/SRC));X=np.fft.rfft(x,axis=0);k=m//2+1
+def resample(x,rate,m=None):
+    n=len(x);m=m or int(round(n*rate/SRC));X=np.fft.rfft(x,axis=0);k=m//2+1
     Y=np.zeros((k,)+x.shape[1:],dtype=complex);Y[:min(k,len(X))]=X[:min(k,len(X))]
     return np.fft.irfft(Y,m,axis=0)*m/n
 def spectral_frames(mono,hop=480,size=4096,bands=64):
@@ -78,7 +79,7 @@ def main():
     p.add_argument('--source',type=Path,default=ROOT/'filesystem/audio-src')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/audio')
     p.add_argument('--audioconv',default=None);p.add_argument('--sfx-rate',type=int,default=24000)
-    p.add_argument('--music-rate',type=int,default=32000);a=p.parse_args()
+    p.add_argument('--music-rate',type=int,default=24000);a=p.parse_args()
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
     render=json.loads((a.source/'render.json').read_text())['sounds']
     staging=a.output/'wav';staging.mkdir(parents=True,exist_ok=True);manifest={}
@@ -88,7 +89,11 @@ def main():
         if label.startswith('music'):
             loop=find_loop(pcm);period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
             t0,end,seam=splice(pcm,start,period)
-            out=resample(pcm[:end],a.music_rate);offset=int(round(t0*a.music_rate/SRC))
+            # VADPCM loops need a loop start and loop length multiple of 16
+            # samples (libdragon wav64_vadpcm.c): round both down.
+            offset=int(t0*a.music_rate/SRC)//16*16
+            length=offset+int((end-t0)*a.music_rate/SRC)//16*16
+            out=resample(pcm[:end],a.music_rate,length)
             write(staging/(label+'.wav'),out,a.music_rate)
             cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','true','--wav-loop-offset',str(offset),'-o',str(a.output),str(staging/(label+'.wav'))]
             entry=dict(loop,splice_source_sample=t0,end_source_sample=end,seam_correlation=round(seam,4),

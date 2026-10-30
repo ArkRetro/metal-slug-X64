@@ -1,7 +1,7 @@
 #include <libdragon.h>
 #include "msx_perf.h"
 #if MSX_PROFILE
-static const char *const names[MSX_PERF_COUNT]={"sim","prep","begin","bgreq","bg","mesh","actors","hud","end","wait","asset","step"};
+static const char *const names[MSX_PERF_COUNT]={"sim","prep","begin","bgreq","bg","mesh","actors","hud","end","wait","asset","step","audio"};
 static uint32_t last,frame_ticks[MSX_PERF_COUNT];
 static uint64_t sum[MSX_PERF_COUNT],sum_build,sum_total;
 static uint32_t peak[MSX_PERF_COUNT],peak_build,peak_total;

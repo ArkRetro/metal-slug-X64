@@ -63,7 +63,7 @@ int main(void) {
     msx_game_init(&g);
     unsigned steps=0;
     unsigned voices=0,mapped=0,requests=0,pending=0;
-    bool region_end_seen=false;int max_height=0;unsigned max_progress=0,hold=0,hold_max=0;
+    bool region_end_seen=false;int max_height=0;unsigned max_progress=0,hold=0,hold_max=0,weapon_seen=0;
     for (;steps<60000 && !g.complete;steps++) {
         if (g.world.script.base+g.world.script.pc==0x2d67cau) {if (++hold>hold_max) hold_max=hold;} else hold=0;
         int dir=1;
@@ -86,6 +86,8 @@ int main(void) {
             int x=g.camera+(int16_t)ga_w(a,0x3c)-96,px=g.x/MSX_UNIT;
             if (x<g.camera+300) {dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
         }
+        g.grenade=(steps%200)<2;   /* a bomb every 200 updates while any are left */
+        weapon_seen|=1u<<marco_weapons_id(&g.world.weapons,0);
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
@@ -104,6 +106,16 @@ int main(void) {
     printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u (%05lx) boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u shop=%u rides=%u hold 2D67CA=%u\n",
         steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
         g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides,hold_max);
+    printf("weapons: items served=%u stopped=%u (%05lx) weapons seen=%04x shots with them=%u (stops, last %05lx) expiries=%u grenades=%u bombs=%u score=%02x%02x%02x%02x\n",
+        g.world.pickup.taken,g.world.item_pickups,(unsigned long)g.world.item_pickup_routine,weapon_seen,g.weapon_shots,(unsigned long)g.weapon_stop_constructor,
+        g.expiries,g.grenade_stops,marco_weapons_bomb_count(&g.world.weapons,0),g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3]);
+    fflush(stdout);
+    /* Every item the policy walks into is served (weapon, bombs, points):
+     * no pickup stops. The H (id 0A) is taken and used up, then the pistol
+     * comes back (0C337A); the first life's 10 bombs are thrown. */
+    assert(g.world.pickup.taken>0 && !g.world.item_pickups);
+    assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.weapon_stops==g.weapon_shots && g.expiries>0);
+    assert(g.grenade_stops>=10);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
     assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<60000);
@@ -154,10 +166,15 @@ int main(void) {
             int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
             if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
             g.aim_up=a;rs=rs*1103515245u+12345u;
+            g.grenade=(rs>>8)%97==0;   /* now and then a bomb */
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
         }
-        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items taken=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,g.world.item_pickups,hold_max);
+        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items served=%u stopped=%u weapon shots=%u grenades=%u expiries=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,
+            g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.grenade_stops,g.expiries,hold_max);
+        printf("  score=%02x%02x%02x%02x points=%u popups=%u labels=%u\n",g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],
+            g.world.pickup.points[0],g.world.pickup.popups,g.world.pickup.labels);fflush(stdout);
+        assert(!g.world.item_pickups && g.grenade_stops>0);
         assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
         assert(g.world.unsupported==g.world.boss_unsupported);
         // The random policy (deaths, respawns on the ledge or the vehicle's
@@ -167,7 +184,7 @@ int main(void) {
     }
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;
-    g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false};
+    g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false,0};
     msx_game_hurt(&g,g.x/MSX_UNIT+12);
     assert(g.deaths==1 && g.health==3 && g.x==640*MSX_UNIT && g.invulnerable);
     assert(g.camera==496);

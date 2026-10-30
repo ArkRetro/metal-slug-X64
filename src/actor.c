@@ -149,6 +149,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
+    uint8_t old_weapon=marco_weapons_id(&game.world.weapons,0),old_bombs=marco_weapons_bomb_count(&game.world.weapons,0);
+    unsigned old_weapon_stops=game.weapon_stops,old_grenades=game.grenade_stops,old_served=game.world.pickup.taken;
     unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported,old_pickups=game.world.item_pickups;
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
@@ -166,6 +168,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || input.stick_y>25;
         game.crouch=input.btn.d_down || input.stick_y<-25;
+        game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
         if (!(game.ticks&1) && !game.complete) {
             /* One original player update: step the body/weapon programs. */
@@ -193,7 +196,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
     if (game.world.script.halted && !old_halted) debugf("MSX script stopped at %06lx (records beyond are not ported)\n",(unsigned long)game.world.script.halt_address);
     if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
-    if (game.world.item_pickups!=old_pickups) debugf("MSX item taken (explicit stop: pickup routine %05lx not ported)\n",(unsigned long)game.world.item_pickup_routine);
+    if (game.world.item_pickups!=old_pickups) debugf("MSX item pickup stopped explicitly at %05lx (untranslated)\n",(unsigned long)game.world.item_pickup_routine);
+    if (game.world.pickup.taken!=old_served) debugf("MSX item served=%u score=%02x%02x%02x%02x\n",game.world.pickup.taken,
+        game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3]);
+    if (marco_weapons_id(&game.world.weapons,0)!=old_weapon) debugf("MSX weapon id=%x rounds=%u\n",marco_weapons_id(&game.world.weapons,0),marco_weapons_rounds(&game.world.weapons,0));
+    if (marco_weapons_bomb_count(&game.world.weapons,0)!=old_bombs) debugf("MSX bombs=%u\n",marco_weapons_bomb_count(&game.world.weapons,0));
+    if (game.weapon_stops!=old_weapon_stops && !old_weapon_stops) debugf("MSX weapon shot stopped explicitly: constructor %05lx not ported (pistol bullet fired)\n",(unsigned long)game.weapon_stop_constructor);
+    if (game.grenade_stops!=old_grenades) debugf("MSX grenade thrown (explicit stop: 01BF46 not ported) count=%u\n",game.grenade_stops);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
         native_missing_descriptor=native_missing_palette=0;

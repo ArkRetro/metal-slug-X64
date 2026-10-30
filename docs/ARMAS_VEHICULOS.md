@@ -454,3 +454,76 @@ antes o después; el extractor lo decide con el estado que registra el propio
 punto de ruptura. Los decrementos sin punto de ruptura (`0x0C0D48`,
 `0x0C0DFC`, reservas rechazadas por el tope, la muerte) se infieren del
 bloque y la prueba los aplica con las rutinas nativas.
+
+### Paso 2: recogida de objetos (`src/neo_item.c`)
+
+La parada explícita de la recogida desaparece para todo lo que la Misión 1
+usa. `neo_genv_t.pickup` (`neo_pickup_env_t`) lleva el bloque de armas, los
+campos del jugador, las ranuras de vehículo, la puntuación BCD `10C46A`, el
+valor `10C5A0`, el sello `10C594`, el contador `10C590`, el combo
+`10C5AC/10C5BE` y la misión `10C2F6`. Traducido:
+
+- Armas `0x08B568..0x08B5BA` → `0x0C0928`. **Aceptada no da puntos**
+  (`0x08B5CA BCS` → `0x08B87A`, valor a 0); rechazada, puntos (`0x08B896`,
+  `0x08B850`) y sonido `0x1121`. Comprobado en `pickups2`: puntuación igual
+  en 11193/11200 y `10C5A0` 300 → 0 al tomar la H.
+- Bombas `0x08B6D0` → `0x0C0B32`; aceptadas: valor 0 y el rótulo `0x08C752`
+  de `0x08CD10` (actor externo, contado en `labels`); rechazadas, puntos.
+- Puntos/comida `0x08B7FC`: sonido `0x1121`, comida solo en las misiones 4–7,
+  9, 10 (`0x0C0BAE`; en ellas **parada explícita** `0x0C0C14`), valor y suma
+  BCD `0x057948` (con desbordamiento a 999999).
+- Valor `0x08B896`: registro `+0C`, tabla especial `0xE5526` con `+7B`, o
+  combo `0xE5556`/`0xE559A` (registro byte 0 y ≤ 15 fotogramas). El rótulo de
+  puntuación `0x08D330` es un actor externo contado (`popups`); un valor
+  `> 0x50000` es el `TRAP #F` del original (parada explícita).
+- Después `0x08C628`: chispa `0x08C68E/0x08C6B2` (programa `0x28617E` hasta su
+  fin; la comprobación de cartucho `2FFFE0` acaba en `0x004188` en hardware
+  genuino, como la otra rama) y dos actualizaciones de `0x08C66A`.
+- Paradas explícitas que quedan: tipos de bomba `0x08B5F4..0x08B60C`
+  (`0x0C0A7C`), `0x08B650`, `0x08B710`, `0x08B750`, `0x08B78E`, `0x08B7CC`,
+  vehículo de tipo 4 (`0x0C0764`), recogida del jugador 2.
+
+Pruebas (`make check`): familia `hitem` (H tomada en 8081, ya sin `--stop`:
+arma 0A con 200 balas y las dos actualizaciones de `0x08C66A`) y familia nueva
+`citem` (`data/citem_fixture.json.gz`, de `cfam`: C tomada en 8370, arma 0C con
+40 balas, la chispa comparada byte a byte). `hfam` no contiene ninguna
+recogida en la familia de objetos (la H de 11199 se creó antes de la ventana
+de la traza; su único objeto, `2A`, no se toma): no aporta fixture de
+recogida. Los puntos de los objetos `2A`/`2B` (100) los suman las carreras de
+`tools/test_gameplay.c` (puntuación 100 y 300).
+
+### Jugador del port (`src/gameplay.c`)
+
+`neo_world_t` guarda el bloque de armas y los campos del jugador 1
+(`0x0C0E20`/`0x0C0E6E` al empezar; `0x0C2FA4` + `0x0C0E6E` al morir). Cada
+actualización del jugador copia `+94` a `+93` (lo observado en
+`weapons.csv`) y aplica `0x0C337A`. Un disparo reserva con `0x0C0D64` del
+arma actual; las balas del port liberan con `0x0C0DFC` al desaparecer. El
+botón Z lanza una bomba (`0x0C478E`).
+
+**Paradas explícitas** (contadas y registradas en `actor.c`): el disparo de un
+arma distinta de la pistola (`weapon_stops`, con el constructor de la tabla
+`0x0C42AA`: `0x01B716` la H, `0x063F32` la C...) sale como la bala de pistola
+del port, y la granada `0x01BF46/0x01BF10` no se crea (`grenade_stops`).
+
+`tools/test_gameplay.c`: la carrera de la misión toma la H, la gasta (200
+disparos), vuelve a la pistola y lanza sus 10 bombas; las cuatro carreras de
+reglas de lanzamiento sirven todos los objetos que tocan (ninguna parada de
+recogida) y lanzan bombas. Las esperas no cambian: la parada 1304
+(`2D67CA`) dura 668 actualizaciones en la carrera de la misión y 588, 746,
+544 y 752 en las de lanzamiento, igual que antes, porque la H y las granadas
+todavía no tienen balas propias.
+
+### Pasos 3–5: pendientes
+
+- Paso 3 (balas de la H `0x01B716`, abanico `0x0C44A6`, cohete `0x06381C`, C
+  `0x063F32`, destello `0x0C58D2`, retrollamadas `0x0C4372/0x0C453A/0x0C4610`
+  del programa de Marco): no traducido; parada explícita `weapon_stops`.
+- Paso 4 (granada `0x0C4786` → `0x01BF46/0x01BF10`, programa `0x22C950`,
+  explosión `0x01C19A/0x01C152` contra enemigos, tienda, cúpulas y blindado):
+  no traducido; parada explícita `grenade_stops`.
+- Paso 5 (HUD ARMS/BOMB `0x0C9650..0x0C9844`, `0x0C071C`/`0x0C0764`): el port
+  no tiene ruta de HUD de capa fija (`actor.c` solo dibuja el texto de
+  diagnóstico); los contadores están correctos en el estado
+  (`marco_weapons_rounds`, `marco_weapons_bomb_count`) y `actor.c` registra
+  sus cambios. El HUD es el paso siguiente.

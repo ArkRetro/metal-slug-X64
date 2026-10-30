@@ -174,7 +174,15 @@ static void pieces(neo_gactor_t *a,neo_genv_t *e,uint32_t tables) {
 /* 0A93CE: death in pieces, then 0A946C. */
 static ga_result_t death(neo_gactor_t *a,neo_genv_t *e) {
     pieces(a,e,0xe6220);
-    if (W(0x78)) {ga_fail(e,0xa9dca);return GA_UNSUPPORTED;}          /* 0A9DC0 items: none here */
+    /* 0A9DC0: +78 items 08C374 (08CDB2: after the script actor, +6E =
+     * 0x24, +70 = +7A, +72/+7F/+8B = 0, at the swordsman) thrown upwards. */
+    for (unsigned i=W(0x78);i;i--) {
+        neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+        if (c) {ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x7a));ga_sw(c,0x6e,0x24);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);ga_place_at(c,a,e,0,0);}
+        uint8_t angle=(uint8_t)((ga_rand(e)&0x3fu)+0x20u);uint32_t vx,vy;ga_polar(0x40000,angle,&vx,&vy);
+        uint32_t vy2=((((uint32_t)ga_rand(e))&0x1fffu)<<4)+0x50000u;
+        if (c) {ga_sl(c,0x30,vx);ga_sl(c,0x34,vy2);}
+    }
     SL(0x50,0);
     SB(0x14,B(0x1b));                                               /* 01B2BE carry: RAM 10FD8F = 0 */
     START(0x2a769c);

@@ -56,6 +56,16 @@ int main(void) {
         int dir=1;
         if (g.world.boss_active) dir=(steps/90)%3==0?-1:(steps/90)%3==1?1:0;
         g.aim_up=(steps%64)>=40;
+        // Domed building (054904): stand under the leftmost dome that can be
+        // hit (hurtbox 054730) and fire upwards.
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);
+            if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
@@ -71,14 +81,15 @@ int main(void) {
         }
         g.world.sound_count=0;
     }
-    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d\n",
+    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u\n",
         steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
-        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height);
+        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
     assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<40000);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     assert(max_progress==3376 && g.camera==MSX_CAMERA_MAX);
+    assert(g.world.ga_flags.collapsed && max_height==30); // domed building down: camera rose 16 from 14
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;
     g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false};

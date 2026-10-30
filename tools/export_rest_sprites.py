@@ -15,11 +15,14 @@ from export_marco import ROOT,reconstruct
 from export_soldier_sprites import program,descriptor,resources
 from mission_tiles import rgba16
 from extract_boss_fight import parse
-ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c)
-RESOURCES=(0x1b,0x20b,0x3ba)
+ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
+    # Domed building 054904 (rise, ruin, turret, banners, hatch, launcher, ender, missile).
+    0x24a334,0x24a33e,0x24a348,0x24a352,0x24a35c,0x24a366,0x24a370,0x24a450,0x24a530,0x24ac42,0x24abb0,
+    0x24a610,0x24a6f2,0x24a742,0x24a7ce,0x24a910,0x24aa18)
+RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883)
 def main():
-    p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path);p.add_argument('capture',type=Path)
-    p.add_argument('--node',type=lambda v:int(v,16),default=0x104644)
+    p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
+    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     a=p.parse_args()
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
@@ -39,34 +42,72 @@ def main():
         try:descs[d]=descriptor(data,d,crom)
         except AssertionError:descs[d]=dict(descriptor=hex(d),x=0,y=0,width=0,height=0,pens=b'')
         descs[d]['columns']=columns(d)
+    caps=[]
+    for c in a.captures:
+        if '@' in c:
+            path,_,r=c.partition('@');lo,hi=(int(x,16) for x in r.split('-'));caps.append((Path(path),(lo,hi)))
+        else:
+            path,_,nodes=c.partition(':');caps.append((Path(path),[int(n,16) for n in nodes.split(',')] if nodes else [0x104644]))
     palettes={}
-    for pal_file in sorted(a.capture.glob('palette*.bin')):
-        frame=int(pal_file.stem[7:]);ram_file=a.capture/f'ram{frame}.bin'
+    for pal_file in sorted(f for cap,_ in caps for f in cap.glob('palette*.bin')):
+        frame=int(pal_file.stem[7:]);ram_file=pal_file.parent/f'ram{frame}.bin'
         if not ram_file.exists():continue
         ram=ram_file.read_bytes();pw=struct.unpack('>4096H',pal_file.read_bytes())
         for slot,rid in resources(ram).items():
             if rid in RESOURCES:palettes.setdefault(rid,collections.Counter())[tuple(rgba16(pw[slot*16:slot*16+16]))]+=1
     pal_out={hex(k):list(c.most_common(1)[0][0]) for k,c in sorted(palettes.items())}
-    # Sprite-list entries written during each update of the node.
-    updates=[]
-    for u in parse(a.capture/'boss-trace.txt'):
-        if u['node']!=a.node:continue
+    stats=collections.Counter();per=[]
+    for capture,nodes in caps:validate(capture,nodes,descs,crom,stats,per)
+    frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
+    out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
+        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
+        missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
+    (ROOT/'filesystem/rest-native.json').write_text(json.dumps(out,separators=(',',':'))+'\n')
+    report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)
+    a.report.write_text(json.dumps(report,indent=1)+'\n')
+    print(json.dumps(dict(descriptors=len(frames),palettes=len(pal_out),missing=out['missing_palettes'],stats=stats)))
+def zoomed_slots(vram):
+    """Palette slots of the shrunk sprites of a VRAM dump (the rasterizer of
+    export_marco.reconstruct draws only full-size sprites)."""
+    out=set();zx=zy=rows=0
+    for slot in range(1,381):
+        control,zoom=vram[0x8200+slot],vram[0x8000+slot]
+        if control&64:zx=(zoom>>8)&15
+        else:rows,zy,zx=control&63,zoom&255,(zoom>>8)&15
+        if not 0<rows<=32 or (zx==15 and zy==255):continue
+        for row in range(rows):out.add(vram[slot*64+row*2+1]>>8)
+    return out
+def validate(capture,nodes,descs,crom,stats,per):
+    # Sprite-list entries written during each update of the nodes; at a dump
+    # every node contributes its last (or, second try, its previous) update.
+    by=collections.defaultdict(list)
+    for u in parse(capture/'boss-trace.txt'):
+        if isinstance(nodes,tuple):
+            if not nodes[0]<=u['routine']<=nodes[1]:continue
+        elif u['node'] not in nodes:continue
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:
                 if cur is None or len(cur['w'])>=6:cur=dict(w=[]);dl.append(cur)
                 cur['w'].append(d)
-        updates.append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0],y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
-    stats=collections.Counter();per=[]
-    for vf in sorted(a.capture.glob('vram*.bin'),key=lambda f:int(f.stem[4:])):
+        by[u['node']].append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0],y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
+    for vf in sorted(capture.glob('vram*.bin'),key=lambda f:int(f.stem[4:])):
         frame=int(vf.stem[4:])
-        done=[x for x in updates if x[0]<=frame and x[1]]
-        if not done:continue
-        v=struct.unpack('>34304H',vf.read_bytes());pw=struct.unpack('>4096H',(a.capture/f'palette{frame}.bin').read_bytes())
+        if not (capture/f'palette{frame}.bin').exists():continue
+        if not any(x[0]<=frame and x[1] for ups in by.values() for x in ups):continue
+        v=struct.unpack('>34304H',vf.read_bytes());pw=struct.unpack('>4096H',(capture/f'palette{frame}.bin').read_bytes())
         best=None
         for rank in (1,2):
-            if len(done)<rank:continue
-            f,dl=done[-rank]
+            dl=[];f=0
+            for ups in by.values():
+                # Updates up to the dump; a node deleted since then draws nothing.
+                done=[x for x in ups if x[0]<=frame]
+                if len(done)>=rank and done[-1][0]>=frame-2:
+                    f=max(f,done[-rank][0]);dl+=done[-rank][1]
+            if not dl:continue
+            zoomed=zoomed_slots(v)
+            stats['zoomed_entries_skipped']+=sum(1 for d in dl if d['attr']>>8 in zoomed)
+            dl=[d for d in dl if d['attr']>>8 not in zoomed]
             slots={d['attr']>>8 for d in dl}
             im,_=reconstruct(v,pw,crom,slots)
             mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
@@ -86,18 +127,16 @@ def main():
                     if not 0<=sy<256:continue
                     for xx in range(w):
                         pen=pens[yy*w+(w-1-xx if mirror else xx)];sx=left+xx
-                        if pen and 0<=sx<320 and sx in shown:native[sy*320+sx]=(d['attr']>>8)*16+pen
-            same=sum(1 for i in range(320*256) if native[i] and native[i]==mame[i])
-            diff=sum(1 for i in range(320*256) if native[i] and native[i]!=mame[i])
-            if best is None or diff<best[1]:best=(same,diff,rank,f)
-        stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['rank_%d'%best[2]]+=1
-        per.append(dict(frame=frame,update_frame=best[3],equal=best[0],different=best[1]))
-    frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
-    out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
-        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
-        missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
-    (ROOT/'filesystem/rest-native.json').write_text(json.dumps(out,separators=(',',':'))+'\n')
-    report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)
-    a.report.write_text(json.dumps(report,indent=1)+'\n')
-    print(json.dumps(dict(descriptors=len(frames),palettes=len(pal_out),missing=out['missing_palettes'],stats=stats)))
+                        if pen and 0<=sx<320 and sx in shown:
+                            # Two sprites of the family on one pixel: the
+                            # hardware order decides; not compared.
+                            if native[sy*320+sx]:native[sy*320+sx]=-1
+                            else:native[sy*320+sx]=(d['attr']>>8)*16+pen
+            same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
+            diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])
+            overlap=sum(1 for i in range(320*256) if native[i]<0)
+            if best is None or diff<best[1]:best=(same,diff,rank,f,overlap)
+        if best is None:continue
+        stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['pixels_overlapping']+=best[4];stats['rank_%d'%best[2]]+=1
+        per.append(dict(capture=capture.name,frame=frame,update_frame=best[3],equal=best[0],different=best[1]))
 if __name__=='__main__':main()

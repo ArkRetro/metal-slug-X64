@@ -97,6 +97,9 @@ static int right_limit(const msx_game_t *g) {
 }
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
+    /* Collapse of the domed building: the players' input handlers are the
+     * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
+    if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
     if (g->vehicle_flash) g->vehicle_flash--;

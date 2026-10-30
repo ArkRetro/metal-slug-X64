@@ -177,7 +177,7 @@ def main():
     # Streaming working set of the native bank: chunks of each program's poses;
     # the three largest model three concurrent animations (budget check).
     parts={d:[images[native_start+first+i][0] for i in range(count)] for d,first,count in descriptors}
-    program_chunks=sorted((len({pg//8 for c in prog['commands'] if c['kind']=='POSE' for pg in parts[c['asset']]}) for prog in programs),reverse=True)
+    program_chunks=sorted((len({pg//8 for c in prog['commands'] if c['kind']=='POSE' for pg in parts.get(c['asset'],())}) for prog in programs),reverse=True)
     lines.append(f'#define SCENE_NATIVE_PROGRAM_CHUNKS_MAX3 {sum(program_chunks[:3])}')
     # Boss: chunks of every boss pose (the whole fight's set) and of the
     # largest single program; tools/check_boss_budget.py measures the set

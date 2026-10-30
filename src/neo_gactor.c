@@ -189,7 +189,14 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
 }
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
     if (!ga_l(a,0x50)) return false;
+    /* 004BAC: while RAM 1067E2 is set every body whose descriptor class is
+     * not 1 dies instead of registering. */
+    if (e->kill_all) {
+        const uint8_t *d=ga_rom(ga_l(a,0x50));
+        if (d && d[1]!=1u) {ga_sw(a,0x4e,0);ga_sb(a,0x5f,(uint8_t)(ga_b(a,0x5f)|0x80u));ga_sb(a,0x5a,6);goto hit;}
+    }
     if (e->register_box) e->register_box(e->ctx,a);
+hit:
     if (!ga_b(a,0x5a)) return false;
     if (dx) *dx=(int16_t)((int8_t)ga_b(a,0x5c)*2);
     if (dy) *dy=(int16_t)((int8_t)ga_b(a,0x5d)*2);

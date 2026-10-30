@@ -78,6 +78,17 @@ static void draw_native(const neo_world_draw_t *d,bool request_only) {
         const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first+i);
         if (request_only) {scene_request_image(im,2);continue;}
         scene_image_t part=*im;part.palette=(uint16_t)palette;
+        if (d->zoom_x!=0xff || d->zoom_y!=0xff) {
+            /* Shrunk sprite (+12/+13): offsets and size scaled about the
+             * actor's point (render approximation of the hardware shrink). */
+            float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
+            float w=im->width*sx,h=im->height*sy;
+            float x=mirror?(int16_t)d->x-(im->x+im->width)*sx-1:(int16_t)d->x+im->x*sx;
+            float y=origin_y+im->y*sy;
+            if (x+w<=0 || x>=320 || y+h<=0 || y>=240) continue;
+            scene_render_image_scaled(&part,x,y,w,h,mirror,d->flash && (game.ticks&1));
+            continue;
+        }
         int x=mirror?(int)(int16_t)d->x-(im->x+im->width)-1:(int)(int16_t)d->x+im->x;
         int y=origin_y+im->y;
         if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
@@ -130,6 +141,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
     unsigned old_progress=neo_camera_progress(&game.world.camera);bool old_region_end=game.region_end,old_backdrop=game.backdrop_after;
+    neo_ga_flags_t old_flags=game.world.ga_flags;
     bool old_boss=game.world.boss_active,old_mission=game.mission_complete;uint8_t old_flag606=game.world.flag606,old_phase=game.world.boss_active?neo_boss_phase(&game.world.boss):0;
     unsigned old_boss_unsupported=game.world.boss_unsupported,old_hp=game.world.boss_active?neo_boss_health(&game.world.boss):0;
     int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
@@ -182,6 +194,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
     if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
+    if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
+    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
+    if (game.world.ga_flags.collapsed && !old_flags.collapsed) debugf("MSX domed building collapsed (0B58CC) camera=%d height=%d\n",game.camera,game.camera_height);
     if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
@@ -226,9 +241,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
     msx_perf_mark(MSX_PERF_PREP);
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
-    scene_render_background(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
+    scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. */
+    for (unsigned i=0;i<game.world.draw_count;i++) if (game.world.draws[i].attributes&4u) draw_native(&game.world.draws[i],false);
+    scene_render_front(game.camera,game.camera_height,game.backdrop_after,game.ticks);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
-    for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],false);
+    for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
     if (!(game.invulnerable && ((game.ticks/3)&1)))
         draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     for (unsigned owner=0;owner<2;owner++) {

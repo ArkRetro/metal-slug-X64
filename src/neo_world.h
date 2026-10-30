@@ -47,6 +47,7 @@ typedef struct {
     uint16_t palette;          /* logical resource, e.g. 0x020E */
     bool flash;
     uint8_t kind;              /* neo_world_kind_t of the owner */
+    uint8_t zoom_x,zoom_y;     /* generic actors: +12/+13 (0xFF = full size) */
 } neo_world_draw_t;
 typedef struct {
     uint16_t px,py;            /* projected words (+3C/+40) left by the player's
@@ -119,6 +120,13 @@ typedef struct {
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
+    /* Domed building (054904) and its collapse: script flags, player lock,
+     * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
+     * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */
+    neo_ga_flags_t ga_flags;
+    bool kill_active;               /* RAM 1067E2 */
+    uint8_t swap_step;
+    unsigned killed_all;            /* soldiers killed by 004BAC */
 } neo_world_t;
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */

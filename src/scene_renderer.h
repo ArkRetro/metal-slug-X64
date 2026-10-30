@@ -7,6 +7,10 @@ void scene_renderer_init(void);
 void scene_render_begin(surface_t *surface);
 /* Map layers for the displayed camera X and height (mission_camera.h
  * rules); backdrop_after selects the palette loaded at progress 2304. */
+void scene_render_set_collapse(bool collapsed,bool flash);
+void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash);
+void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
+void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash);
 void scene_render_box(int x,int y,int width,int height,color_t color);

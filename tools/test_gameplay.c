@@ -4,6 +4,18 @@
 #include "../src/msx_sfx.h"
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
+/* Armoured vehicle 087E36 still standing (any routine of the family, +5F
+ * bit 7 clear) on screen: its world X, else -1. */
+static int armored_x(const msx_game_t *g) {
+    for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+        const neo_gactor_t *a=&g->world.gactors[i];
+        uint32_t r=ga_l(a,0);
+        if (!a->active || r<0x87e36u || r>0x88b02u || (ga_b(a,0x5f)&0x80u)) continue;
+        int x=(int16_t)ga_w(a,0x3c);
+        if (x>=0 && x<320) return g->camera+x;
+    }
+    return -1;
+}
 int main(void) {
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
@@ -135,6 +147,12 @@ int main(void) {
                 int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
             }
             if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
+            // Armoured vehicle on screen, player on the floor (Y=64; a respawn
+            // can land on the ledge at x~1435 or on its platform): walk at it
+            // firing level, as at the domes; its solid body (004ED2) stops the
+            // walk.
+            int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
+            if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
             g.aim_up=a;rs=rs*1103515245u+12345u;
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;

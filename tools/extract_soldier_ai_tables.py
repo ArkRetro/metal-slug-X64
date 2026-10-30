@@ -56,7 +56,10 @@ def main():
         # Record bytes only; the interpreter is native code (src/neo_script.c).
         mission_script=dict(rom='0x2D6314',end='0x2D7134',region_end='0x2D6A28',bytes=list(bank[0xd6314:0xd7134])),
         spawn_table=dict(rom='0x0197DC',entries={hex(o):'0x%08X'%struct.unpack_from('>I',fixed,0x197dc+o)[0]
-            for o in spawn_offsets(bank[0xd6314:0xd7134])}),
+            for o in spawn_offsets(bank[0xd6314:0xd7134])+[o for o in spawn_offsets(bank[0xd719a:0xd7214]) if o not in spawn_offsets(bank[0xd6314:0xd7134])]}),
+        # Sub-script records started by generic actors (ROM 00087A table,
+        # +74 index): 2D719A of the swordsman 0A8C62 above the wagon.
+        sub_scripts=[dict(rom='0x2D719A',end='0x2D7214')],
         # RNG ring (RAM 100016..100083, cursor 100084) dumped at the mission
         # handoff of the capture; the native world starts from it because the
         # attract/intro consumers that produce it are not part of the port.

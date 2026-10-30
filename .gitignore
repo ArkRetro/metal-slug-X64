@@ -4,3 +4,6 @@ filesystem/
 *.zip
 __pycache__/
 romfs/
+
+# Local test ROM packages (ROM-derived, never committed)
+downloads/

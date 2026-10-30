@@ -52,14 +52,31 @@ int main(void) {
     unsigned steps=0;
     unsigned voices=0,mapped=0,requests=0,pending=0;
     bool region_end_seen=false;int max_height=0;unsigned max_progress=0;
-    for (;steps<40000 && !g.complete;steps++) {
+    for (;steps<60000 && !g.complete;steps++) {
         int dir=1;
         if (g.world.boss_active) dir=(steps/90)%3==0?-1:(steps/90)%3==1?1:0;
         g.aim_up=(steps%64)>=40;
+        // Domed building (054904): stand under the leftmost dome that can be
+        // hit (hurtbox 054730) and fire upwards.
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);
+            if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        // Destructible shop (0B6566): fire at it from 96 px to its left.
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x00)!=0xb6606u) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c)-96,px=g.x/MSX_UNIT;
+            if (x<g.camera+300) {dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
+        }
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
-        if (g.camera_height>max_height) max_height=g.camera_height;
+        if (g.camera<2336 && g.camera_height>max_height) max_height=g.camera_height;
         if (neo_camera_progress(&g.world.camera)>max_progress) max_progress=neo_camera_progress(&g.world.camera);
         // Sound requests of the native world: every one has a packed render.
         for (unsigned i=0;i<g.world.sound_count;i++) {
@@ -71,14 +88,45 @@ int main(void) {
         }
         g.world.sound_count=0;
     }
-    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d\n",
+    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u shop=%u rides=%u\n",
         steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
-        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height);
+        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
-    assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<40000);
+    assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<60000);
+    // The player stands on the boss's dynamic platforms (0140C0 objects,
+    // floor search 013DB2) and is carried by them.
+    assert(g.rides>0);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     assert(max_progress==3376 && g.camera==MSX_CAMERA_MAX);
+    assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    // Release rules (no invulnerability, deaths respawn in view): a seeded
+    // "human" that walks mostly right, turns, idles, jumps and aims up at
+    // random, fires all the time and aims up under the domes. Every camera
+    // stop must resolve: the script reaches its end and the boss dies. The
+    // only nodes that stop are the boss turret's documented ones (before the
+    // slash callback 039FA6 was ported, the slash 039B60 stopped at its
+    // program's command 10 and left its swordsman waiting forever in 03975E).
+    for (unsigned seed=1;seed<=4;seed++) {
+        unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
+        for (steps=0;steps<80000 && !g.complete;steps++) {
+            if (steps%30==0) {rs=rs*1103515245u+12345u;unsigned r=(rs>>16)%10;dir_r=r<6?1:r<8?0:2;rs=rs*1103515245u+12345u;up=(rs>>16)%3==0;}
+            int dir=dir_r==2?-1:(int)dir_r;bool a=up;
+            int dome=-1;
+            for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+                const neo_gactor_t *d=&g.world.gactors[i];
+                if (!d->active || ga_l(d,0x50)!=0x54730u || (ga_b(d,0x5f)&0x80u)) continue;
+                int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
+            }
+            if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
+            g.aim_up=a;rs=rs*1103515245u+12345u;
+            msx_game_update(&g,dir,(rs>>16)%50==0,true);
+            g.world.sound_count=0;
+        }
+        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported);
+        assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
+        assert(g.world.unsupported==g.world.boss_unsupported);
+    }
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;
     g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false};

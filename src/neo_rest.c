@@ -15,9 +15,17 @@
  * swordsman's +60 bit 7 ("script finished"), then it waits (019E82) and
  * leaves with its creator (00409A). Any other op there stops explicitly.
  *
- * Not translated (explicit stop): the exit path 0A8FE0 (after the boss
- * group is empty), and the 0A8C62/0A8C84 generators of the market swordsmen
- * (+93 = 0 branch 0A8EF8). */
+ * 0A8C62 is the same figure on the floor (0146E8, +66 = 8838) above the
+ * covered wagon: its sub-script (record 2D719A, +74 = 1) creates the
+ * creature 035668 and, while the wagon (group 7) lives, three swordsmen
+ * 039590 (group 6). Once group +7C (6) is empty it leaves (0A8FE0 with +72
+ * = 0: 0A935A re-parents to the scene root (01AD52) and walks away 0A9390).
+ * Sub-scripts other than a lone op 3 run in the world's interpreter
+ * (neo_genv_t.subscript).
+ *
+ * Not translated (explicit stop): 0A8FE0 with +72 != 0 (the boss-arena
+ * figure's fight, not reached in the recordings), its death 0A93DC, and the
+ * +93 = 0 branch 0A8EF8. */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -52,10 +60,28 @@ static ga_result_t k9a56(neo_gactor_t *a,neo_genv_t *e) {return ga_cull(a,e,0xe6
 static void hold(neo_gactor_t *a,neo_genv_t *e) {if (B(0x95)) ga_project(a,e); else ga_stationary(a,e);}
 static int step(neo_gactor_t *a,neo_genv_t *e) {return ga_anim_step(a,e,robe_call);}
 static void toggle606(neo_genv_t *e) {if (e->flag606) *e->flag606^=0xffu;}
+/* 01AD52: re-parent the position block (+28..+37) to the scene root
+ * 10E968 (01AC4C), then project (01ABC8). */
+static void to_root(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t tag=L(0x38);
+    if (tag!=0x10e968u) {
+        neo_contact_parent_t op,np;bool has_old=tag && ga_parent(e,tag,&op),has_new=ga_parent(e,0x10e968u,&np);
+        uint32_t d0=L(0x28),d1=L(0x2c),d2=L(0x30),d3=L(0x34);
+        d2+=d0;d3+=d1;
+        if (has_old) {d0+=(uint32_t)op.previous_x;d1+=(uint32_t)op.previous_y;d2+=(uint32_t)op.x;d3+=(uint32_t)op.y;}
+        if (has_new) {d0-=(uint32_t)np.previous_x;d1-=(uint32_t)np.previous_y;d2-=(uint32_t)np.x;d3-=(uint32_t)np.y;}
+        d2-=d0;d3-=d1;
+        SL(0x28,d0);SL(0x2c,d1);SL(0x30,d2);SL(0x34,d3);SL(0x38,0x10e968u);
+    }
+    ga_project(a,e);
+}
 static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
     for (;;) switch (L(0)) {
     case 0xa8c46:
         SW(0x66,0x800);SW(0x1e,0x800);SB(0x93,1);SB(0x95,0xff);
+        SL(0,0xa8ca0);continue;   /* bra 0A8CA0 */
+    case 0xa8c62:
+        ga_floor(a,e);SW(0x66,0x8838);SW(0x1e,0x8838);SB(0x93,1);SB(0x95,0xff);
         SL(0,0xa8ca0);continue;   /* bra 0A8CA0 */
     case 0xa8ca0: {
         SB(0x1d,0);SL(0x50,0);                       /* 009F88, no hurtbox */
@@ -133,7 +159,21 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
         }
         return k9a56(a,e);
     }
-    default: /* 0A8FE0 exit path and the rest: not translated */
+    case 0xa8fe0:
+        SL(0x50,0);
+        if (W(0x72)) {ga_fail(e,0xa8ff0);return GA_UNSUPPORTED;}   /* fight path: not reached */
+        SL(0,0xa935a);continue;
+    case 0xa935a:
+        SL(0x50,0);START(0x2a759c);to_root(a,e);
+        SL(0x62,(uint32_t)W(0x86)<<8);CLR(0x15,0);
+        SL(0,0xa9390);continue;
+    case 0xa9390:
+        if (!B(0x95)) {uint32_t kind;ga_ground(a,e,&kind);}
+        else {SL(0x30,L(0x62));SL(0x34,0);ga_move(a,e);}
+        if (step(a,e)<0) return GA_UNSUPPORTED;
+        if (B(0x5f)&0x80u) SL(0,0xa93dc);
+        return k9a56(a,e);
+    default: /* 0A93DC death and the rest: not translated */
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
@@ -142,9 +182,14 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
 static ga_result_t subscript(neo_gactor_t *a,neo_genv_t *e) {
     if (L(0)==0x19e72) {SW(0x72,0);CLR(0x5f,7);SL(0,0x19e82);}
     if (!ga_creator_alive(a,e)) return GA_DELETE;          /* 00409A, 004188 */
-    if (!L(0x6e)) return GA_MORE;
+    if (!L(0x6e) || BIT(0x5f,7)) return GA_MORE;
     const uint8_t *r=ga_rom(L(0x6e));
-    if (!r || r[0]!=3u) {ga_fail(e,L(0x6e));return GA_UNSUPPORTED;}
+    if (!r) {ga_fail(e,L(0x6e));return GA_UNSUPPORTED;}
+    if (r[0]!=3u) {
+        /* Other records: the level-script interpreter of the world. */
+        if (!e->subscript) {ga_fail(e,L(0x6e));return GA_UNSUPPORTED;}
+        if (!e->subscript(e->ctx,a,L(0x6e))) return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     SET(0x5f,7);
     neo_gactor_t *c=e->creator?e->creator(e->ctx,a):NULL;
     if (c) ga_sb(c,0x60,(uint8_t)(ga_b(c,0x60)|0x80u));
@@ -152,8 +197,8 @@ static ga_result_t subscript(neo_gactor_t *a,neo_genv_t *e) {
 }
 bool neo_rest_routine(uint32_t r) {
     if (r==0x19e72 || r==0x19e82) return true;
-    return r==0xa8c46 || r==0xa8ca0 || r==0xa8d22 || r==0xa8d38 || r==0xa8d6a || r==0xa8daa || r==0xa8dec ||
-        r==0xa8df6 || r==0xa8dfc || r==0xa8e1a || r==0xa8e8e || r==0xa8ece;
+    return r==0xa8c46 || r==0xa8c62 || r==0xa8ca0 || r==0xa8d22 || r==0xa8d38 || r==0xa8d6a || r==0xa8daa || r==0xa8dec ||
+        r==0xa8df6 || r==0xa8dfc || r==0xa8e1a || r==0xa8e8e || r==0xa8ece || r==0xa8fe0 || r==0xa935a || r==0xa9390;
 }
 ga_result_t neo_rest_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (L(0)==0x19e72 || L(0)==0x19e82) return subscript(a,e);

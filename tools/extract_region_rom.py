@@ -9,6 +9,11 @@ import argparse,hashlib,json
 from pathlib import Path
 # address, length, reader (provenance)
 BLOBS=[
+    (0xB6938,0x1A8,'0B6566 destructible building: cull rectangle, hurtbox, debris lists, stamps, roof map'),
+    (0x2D3A5C,0x40,'0B6566 building health (0260C8)'),
+    (0x546F0,0x17A,'054904 domed building: programs, offsets, delays, hurtboxes, attack row, debris lists, cull rectangle'),
+    (0x553B2,0x20,'0553D2 dome missile launch offsets'),(0x5545C,0x1C,'055478 dome missile frame/zoom by height'),
+    (0x5597C,0x20,'dome missile program hurtbox (+50)'),(0x2D1CF4,0x34C,'054904 domed building rank tables (0260C8)'),
     (0x2CE974,0x40,'029160 truck health (0260C8)'),(0x2CE9A8,0x40,'0296CA truck speed (0260C8)'),
     (0x29B62,0x18,'029240 truck hurtboxes (+50)'),(0x29B6E,0x18,'029802 truck body hurtboxes (+50)'),
     (0x29B92,0x10,'0292BC truck push attack (0049E8)'),(0x29BA2,0x10,'029ACE truck attack (0049E8)'),
@@ -26,6 +31,13 @@ BLOBS=[
     (0x0E64D8,0x08,'0A9A56 robed swordsman cull rectangle (01945C)'),
     (0x00087A,0x10,'0A8F38 sub-script records of the robed swordsman (+74 index)'),
     (0x2D7214,0x02,'019F1A sub-script record 2D7214 (op 3)'),
+    (0x33924,0x374,'033C98 covered wagon: body/roof/wreck cell maps (0140C0), hurtbox, cull rectangle, debris list'),
+    (0x2D3E5C,0x60,'033C98 covered wagon health (0260C8)'),
+    (0x39FB0,0xA4,'039590 Arabian swordsman: walk/attack program tables, hurtbox, attack row 03A004, cull rectangle 03A014, player rectangles 03A01C/03A04C'),
+    (0x2D257C,0x188,'039DA8/039E9A Arabian swordsman rank tables 2D257C/2D25DE/2D2640/2D26A2 (0260C8)'),
+    (0xE61D4,0x310,'0A9CB6 death pieces: speeds E61D4, angles E6206, lists E6220.., cull rectangle E64D8 (0A9A56)'),
+    (0x35644,0x24,'035668 creature: cull rectangle, hurtbox, program speeds 035658'),
+    (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

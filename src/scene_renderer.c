@@ -21,6 +21,39 @@ static int mode_tlut=-1,mode_filter=-1;
 static void set_tlut(rdpq_tlut_t tlut) {if (mode_tlut!=(int)tlut) {rdpq_mode_tlut(tlut);mode_tlut=(int)tlut;}}
 static void set_point_filter(void) {if (mode_filter!=FILTER_POINT) {rdpq_mode_filter(FILTER_POINT);mode_filter=FILTER_POINT;}}
 static bool depth_mode;
+/* Collapse of the domed building (0B58CC, neo_ga_flags_t): the facade of
+ * layer 3 (map 0B5392 at column 0x74) is replaced by the rubble map 0B53A8
+ * (scene_collapse_cells; 10C72E then draws from SCB slot 65) and the sky
+ * (10E83E) moves its column origin by +2 (the extracted cells are in map
+ * coordinates: drawn 32 px further left).
+ * The white flash (RAM 109944) turns every background palette to 0x7FFF. */
+enum { COLLAPSE_FACADE_X=0x74*16, COLLAPSE_SKY_SHIFT=32 };
+static bool collapsed,flash,patched;
+static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n);
+void scene_render_set_collapse(bool done,bool white) {collapsed=done;flash=white;}
+void scene_render_set_patch(bool done) {patched=done;}
+static bool patch_cell(const scene_map_cell_t *cell) {
+    unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);
+    for (unsigned i=0;i<n;i++) if (p[i].x==cell->x && p[i].y==cell->y) return true;
+    return false;
+}
+static inline bool hidden(const scene_map_cell_t *cell) {
+    if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    /* Destroyed shop: column 0x9F-3.. of layer 10D7B6 (0B6882). */
+    return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16 && patch_cell(cell);
+}
+/* A merged column shares one x: only a column inside a replaced range can
+ * mix hidden and kept cells (the others keep their merged single draw). */
+static inline bool column_may_hide(const scene_map_cell_t *cell) {
+    if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16;
+}
+static void draw_cells(const scene_map_cell_t *p,unsigned n,const int *offsets,const int *rises,unsigned video_tick) {
+    for (unsigned i=0;i<n;i++) {
+        int x=p[i].x-offsets[p[i].layer];
+        if (x>-16 && x<320) classic_cell(&p[i],offsets,rises,video_tick,1);
+    }
+}
 static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
 static scene_cell_index_t cell_index;
@@ -91,6 +124,10 @@ static unsigned palette_slot(unsigned id) {
 }
 static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
+    /* A shrink below 1/16 (sprite zoom near 0, e.g. a missile leaving its
+     * launcher) would overflow the RDP's texture step: less than a pixel
+     * per 16 texels, nothing visible to draw. */
+    if (draw_width*16.0f<(float)width || draw_height*16.0f<(float)height) return;
     unsigned slot=0;
     if (image->format!=1) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else set_tlut(TLUT_NONE);
@@ -115,6 +152,10 @@ static float background_x(const scene_map_cell_t *cell,int fallback) {
 }
 static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,int height,bool mirror,bool flash) {
     blit_scaled(image,x,y,s,t,width,height,width,height,mirror,flash);
+}
+void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash) {
+    set_point_filter();
+    blit_scaled(image,x,y,0,0,image->width,image->height,width,height,mirror,flash);
 }
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash) {
     set_point_filter(); // Sprites never inherit the fog sampler.
@@ -148,7 +189,21 @@ static scene_cell_window_t layer_window(unsigned layer,int offset,float size,flo
     if (depth_mode) return (scene_cell_window_t){depth_views[layer].scale,depth_views[layer].offset_x,size,left,right,inclusive};
     return (scene_cell_window_t){1.0f,(float)-offset,size,left,right,inclusive};
 }
-void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {
+static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end);
+static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *view,const int *offsets,unsigned video_tick,unsigned n) {
+    float x=background_x(cell,cell->x-offsets[cell->layer]);
+    float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
+    if (x>=320 || x+size<=0) return;
+    const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+    // The depth camera carries the height (actor.c), so planes keep their own parallax.
+    blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+}
+void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,5);}
+/* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute
+ * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
+void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,3);}
+void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,3,5);}
+static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
     int offsets[5],rises[5];bool visible[5];
@@ -157,6 +212,7 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
         offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
         visible[i]=msx_layer_visible(source,(int)camera);
     }
+    if (collapsed) offsets[0]+=COLLAPSE_SKY_SHIFT;
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
         bool ok=(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
@@ -171,7 +227,7 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
     // nothing is serviced inside the loop: repeating the previous chunk's
     // request at the same priority changes nothing and is skipped.
     // With the whole pack resident every request is a no-op: skip the walk.
-    unsigned last_now=~0u,last_next=~0u;bool prefetch=!scene_assets_all_resident();
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident();
     for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
         scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
@@ -186,13 +242,18 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
             }
         }
     }
-    scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);
+    if (begin==0) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}
     rdpq_set_scissor(8,8,312,232);
-    scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop(backdrop_after)));
+    if (flash) {
+        if (begin) {rdpq_set_scissor(0,0,320,240);return;}
+        scene_render_box(8,8,304,224,RGBA32(255,255,255,255));
+        rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
+    }
+    if (begin==0) scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop(backdrop_after)));
     if (!depth_mode) {
         // Pack order is layer order (checked at init), so walking the layers
         // in turn draws the same cells in the same order as one array walk.
-        for (unsigned layer=0;layer<5;layer++) {
+        for (unsigned layer=begin;layer<end;layer++) {
           if (!visible[layer]) continue;
           scene_cell_window_t w=layer_window(layer,offsets[layer],16,8,312,false);
           unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
@@ -200,16 +261,27 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             for (unsigned k=first;k<end;) {
                 unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
+                /* A merged column can mix hidden (replaced) and kept cells:
+                 * once a replacement is active, its layer goes cell by cell. */
+                if (column_may_hide(&cells[cell_index.order[k]])) {
+                    for (unsigned j=0;j<n;j++)
+                        if (!hidden(&cells[cell_index.order[k+j]])) classic_cell(&cells[cell_index.order[k+j]],offsets,rises,video_tick,1);
+                    k+=n;continue;
+                }
                 classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
             }
           }
+          if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
+          if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
-            if (visible[cells[i].layer]) classic_cell(&cells[i],offsets,rises,video_tick,1);
+            if (cells[i].layer>=begin && cells[i].layer<end && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
         rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
-    for (unsigned layer=0;layer<5;layer++) {
+    // Same split as the classic path: layers begin..end-1 only (the bit-2
+    // sprites are drawn between the two passes); the mesh after layer 4.
+    for (unsigned layer=begin;layer<end;layer++) {
       if (!visible[layer]) continue;
       const retro_plane_view_t *view=&depth_views[layer];
       scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
@@ -218,21 +290,28 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
         for (unsigned k=first;k<end;) {
           const scene_map_cell_t *cell=&cells[cell_index.order[k]];
           unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
-          float x=background_x(cell,cell->x-offsets[cell->layer]);
-          const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-          // The depth camera carries the height (actor.c), so planes keep their own parallax.
-          float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
-          blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+          /* Same rule as the classic path: once a replacement is active, a
+           * merged column may mix hidden and kept cells, so go cell by cell. */
+          if (column_may_hide(cell)) {
+              for (unsigned j=0;j<n;j++)
+                  if (!hidden(&cells[cell_index.order[k+j]])) depth_cell(&cells[cell_index.order[k+j]],view,offsets,video_tick,1);
+              k+=n;continue;
+          }
+          if (hidden(cell)) {k+=n;continue;}
+          depth_cell(cell,view,offsets,video_tick,n);
           k+=n;
         }
       }
+      // Replacement cells (shop patch, post-collapse rubble) on their layer.
+      if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
       if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
     msx_perf_mark(MSX_PERF_BG_DRAW);
-    retro_effects_mesh(&depth_frame);
-    rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_MESH);
+    if (end==5) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
+    rdpq_set_scissor(0,0,320,240);
 }
 unsigned scene_render_draw_count(void) {return draws;}
 void scene_render_box(int x,int y,int width,int height,color_t color) {

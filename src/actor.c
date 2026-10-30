@@ -11,6 +11,8 @@
 #include "msx_perf.h"
 #include "game_audio.h"
 #include "boss_renderer.h"
+#include "marco_visual.h"
+#include "marco_renderer.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -25,7 +27,12 @@ static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
 static unsigned observed_projectiles;
 static bool observed_wreck_contact;
+/* Campaign Marco: original programs (marco_visual.c) drawn from the audited
+ * descriptor parts; the historical six-state banks remain only as fallback
+ * when romfs/marco is absent. */
+static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures;
 static void reset_game(void) {
+    marco_visual_reset(&marco);marco_shots=0;
     observed_wreck_contact=false;
     if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
@@ -78,6 +85,17 @@ static void draw_native(const neo_world_draw_t *d,bool request_only) {
         const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first+i);
         if (request_only) {scene_request_image(im,2);continue;}
         scene_image_t part=*im;part.palette=(uint16_t)palette;
+        if (d->zoom_x!=0xff || d->zoom_y!=0xff) {
+            /* Shrunk sprite (+12/+13): offsets and size scaled about the
+             * actor's point (render approximation of the hardware shrink). */
+            float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
+            float w=im->width*sx,h=im->height*sy;
+            float x=mirror?(int16_t)d->x-(im->x+im->width)*sx-1:(int16_t)d->x+im->x*sx;
+            float y=origin_y+im->y*sy;
+            if (x+w<=0 || x>=320 || y+h<=0 || y>=240) continue;
+            scene_render_image_scaled(&part,x,y,w,h,mirror,d->flash && (game.ticks&1));
+            continue;
+        }
         int x=mirror?(int)(int16_t)d->x-(im->x+im->width)-1:(int)(int16_t)d->x+im->x;
         int y=origin_y+im->y;
         if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
@@ -99,6 +117,8 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
 }
 void actor_init(void) {
     scene_assets_init();scene_renderer_init();reset_game();
+    marco_native=marco_renderer_load();
+    debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
 #endif
@@ -130,6 +150,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
     unsigned old_progress=neo_camera_progress(&game.world.camera);bool old_region_end=game.region_end,old_backdrop=game.backdrop_after;
+    neo_ga_flags_t old_flags=game.world.ga_flags;
     bool old_boss=game.world.boss_active,old_mission=game.mission_complete;uint8_t old_flag606=game.world.flag606,old_phase=game.world.boss_active?neo_boss_phase(&game.world.boss):0;
     unsigned old_boss_unsupported=game.world.boss_unsupported,old_hp=game.world.boss_active?neo_boss_health(&game.world.boss):0;
     int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
@@ -141,7 +162,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || input.stick_y>25;
+        game.crouch=input.btn.d_down || input.stick_y<-25;
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
+        if (!(game.ticks&1) && !game.complete) {
+            /* One original player update: step the body/weapon programs. */
+            marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,
+                game.jump_moving,game.facing,0,0};
+            msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
+            marco_visual_step(&marco,&mi);
+            if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}
+        }
         pending_a=pending_b=false;
         msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
     }
@@ -182,6 +212,10 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
     if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
+    if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
+    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
+    if (game.world.ga_flags.barrel_patched && !old_flags.barrel_patched) debugf("MSX shop destroyed (0B6882 patch) camera=%d\n",game.camera);
+    if (game.world.ga_flags.collapsed && !old_flags.collapsed) debugf("MSX domed building collapsed (0B58CC) camera=%d height=%d\n",game.camera,game.camera_height);
     if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
@@ -226,11 +260,35 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
     msx_perf_mark(MSX_PERF_PREP);
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
-    scene_render_background(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
+    scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
+    scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. Every
+     * sprite is clipped to the arcade's 304x224 window, like the layers. */
+    rdpq_set_scissor(8,8,312,232);
+    for (unsigned i=0;i<game.world.draw_count;i++) if (game.world.draws[i].attributes&4u) draw_native(&game.world.draws[i],false);
+    scene_render_front(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
-    for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],false);
+    for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
     if (!(game.invulnerable && ((game.ticks/3)&1)))
-        draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
+    {
+        static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
+        neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
+        /* A descriptor outside the audited catalog (one run-start pose,
+         * 188930, never reached the screen in the captures) keeps the
+         * previous pose for that update instead of a blank frame. */
+        bool known=n>0;unsigned pose;
+        for (unsigned i=0;i<n && known;i++) known=marco_renderer_find(next[i].descriptor,&pose);
+        if (known) {for (unsigned i=0;i<n;i++) parts[i]=next[i];shown=n;}
+        else if (n && !missing++) debugf("MSX marco descriptor outside the catalog: %06lx\n",(unsigned long)next[0].descriptor);
+        n=shown;
+        if (n) {
+            /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
+            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,0);
+            scene_render_forget_texture();
+        } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
+    }
     for (unsigned owner=0;owner<2;owner++) {
         const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
         unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;
@@ -240,6 +298,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
+    rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);

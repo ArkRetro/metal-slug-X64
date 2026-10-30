@@ -28,7 +28,11 @@ bool game_audio_init(void) {
         if (!f) {loaded[i]=false;continue;}
         fclose(f);wav64_open(&sounds[i],path);wav64_set_loop(&sounds[i],false);loaded[i]=true;count++;
     }
-    music_ready=msx_audio_open(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1.wav64");
+    /* Intro + loop body (tools/pack_game_audio.py); older packs have only
+     * the whole file, looped whole. */
+    music_ready=msx_audio_open(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1_intro.wav64") &&
+        msx_audio_open_loop(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1.wav64");
+    if (!music_ready) music_ready=msx_audio_open(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1.wav64");
     ready=count>0;active=true;
     debugf("MSX AUDIO game sounds=%u/%u music=%u\n",count,(unsigned)MSX_SFX_COUNT,music_ready);
     return ready && count==MSX_SFX_COUNT && music_ready;

@@ -35,10 +35,14 @@ def trace_hints(trace,frame,lags=range(4)):
             out[layer].add((-int(row[nx]),ORIGIN_Y[layer]-int(row[ny])))
     return out
 
-def state(vram,ram,hints=None):
+def state(vram,ram,hints=None,fore_base=None):
     """`hints` (optional, from trace_hints) resolves the 16 px vertical
     wrap during fast screen shakes: the unwrapped transform must then equal
-    one of the traced RAM values exactly."""
+    one of the traced RAM values exactly. `fore_base` (optional) is the first
+    SCB slot of the foreground layer object 10C72E (its header word +2C plus
+    one): 105 until the domed building collapses, 65 once 0B58CC loads the
+    rubble map 0B53A8 (layers.csv)."""
+    bases=BASES if fore_base is None else BASES[:3]+(fore_base,)
     fore=struct.unpack_from('>2i',ram,0xc72e+0x14)
     mid=struct.unpack_from('>2i',ram,0xd7b6+0x14)
     full_speed=fore==mid
@@ -46,8 +50,8 @@ def state(vram,ram,hints=None):
     for col in all_columns:
         slot=col['slot']
         if slot<=32:layer=0
+        elif bases[3]<=slot<bases[3]+32:layer=3
         elif slot<=64:layer=2 if full_speed else 1
-        elif 105<=slot<=136:layer=3
         else:continue
         if not any((vram[slot*64+row*2+1]&0xf0)==0x40 for row in range(col['rows'])):continue
         assert col['zx']==15 and col['zy']==255,('Background zoom',slot)
@@ -61,7 +65,7 @@ def state(vram,ram,hints=None):
         group=groups[layer]
         if not group:
             offsets.append(hint_x);vertical.append(hint_y);continue
-        mods=Counter(((c['slot']-BASES[layer])*16-c['x'])&511 for c in group)
+        mods=Counter(((c['slot']-bases[layer])*16-c['x'])&511 for c in group)
         assert len(mods)==1,('Inconsistent background X',layer,mods)
         offset=unwrap(next(iter(mods)),512,hint_x)
         ymods=Counter((c['y']-16-Y_PHASE[layer])&15 for c in group)

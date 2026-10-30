@@ -5,16 +5,39 @@
 static wav64_t waves[MSX_AUDIO_VOICES];
 static bool opened[MSX_AUDIO_VOICES],initialized;
 static int file_loop[MSX_AUDIO_VOICES];   /* loop length stored in the WAV64 header */
+/* Optional loop body played after the voice's file (an intro): started on the
+ * same channel by a mixer event exactly when the intro ends. */
+static wav64_t tails[MSX_AUDIO_VOICES];
+static bool tail_open[MSX_AUDIO_VOICES];
+static float tail_volume[MSX_AUDIO_VOICES];
+static unsigned tail_voice[MSX_AUDIO_VOICES];
+static int start_tail(void *ctx) {
+    unsigned v=*(unsigned *)ctx;
+    wav64_set_loop(&tails[v],true);wav64_play(&tails[v],v*2);mixer_ch_set_vol(v*2,tail_volume[v],tail_volume[v]);
+    return 0;
+}
 static msx_audio_stats_t stats;
 static bool submitted;   /* AI has received a buffer from msx_audio_service */
 void msx_audio_init(void) {
     assert(!initialized);
     audio_init(MSX_AUDIO_RATE,2);mixer_init(MSX_AUDIO_VOICES*2);
     for (unsigned ch=0;ch<MSX_AUDIO_VOICES*2;ch++) mixer_ch_set_limits(ch,16,MSX_AUDIO_RATE,8192);
-    memset(opened,0,sizeof(opened));stats=(msx_audio_stats_t){0};submitted=false;initialized=true;
+    memset(opened,0,sizeof(opened));memset(tail_open,0,sizeof(tail_open));stats=(msx_audio_stats_t){0};submitted=false;initialized=true;
 }
 void msx_audio_stop(unsigned voice) {
-    if (initialized && voice<MSX_AUDIO_VOICES && opened[voice]) mixer_ch_stop(voice*2);
+    if (!initialized || voice>=MSX_AUDIO_VOICES) return;
+    if (tail_open[voice]) mixer_remove_event(start_tail,&tail_voice[voice]);
+    if (opened[voice]) mixer_ch_stop(voice*2);
+}
+bool msx_audio_open_loop(unsigned voice,const char *path) {
+    if (!initialized || voice>=MSX_AUDIO_VOICES || !opened[voice] || !path || strncmp(path,"rom:/",5)) return false;
+    FILE *file=fopen(path,"rb");if (!file) return false;fclose(file);
+    msx_audio_stop(voice);
+    if (tail_open[voice]) {wav64_close(&tails[voice]);tail_open[voice]=false;}
+    wav64_open(&tails[voice],path);
+    const waveform_t *w=&tails[voice].wave,*h=&waves[voice].wave;
+    if (w->channels!=h->channels || w->bits!=16 || w->frequency!=h->frequency) {wav64_close(&tails[voice]);return false;}
+    tail_voice[voice]=voice;tail_open[voice]=true;return true;
 }
 bool msx_audio_open(unsigned voice,const char *path) {
     if (!initialized || voice>=MSX_AUDIO_VOICES || !path || strncmp(path,"rom:/",5)) return false;
@@ -36,6 +59,15 @@ bool msx_audio_play(unsigned voice,bool loop,float volume) {
     // reader only wraps whole files (wav64_vadpcm.c asserts loop_len == len
     // when the end is reached): a partial loop of a compressed file loops the
     // whole file instead (docs/AUDIO_JUEGO.md).
+    if (loop && tail_open[voice]) {
+        /* Intro once, then the loop body from the intro's last sample: the
+         * event delay is the intro length in mixer output samples. */
+        wav64_set_loop(&waves[voice],false);wav64_play(&waves[voice],voice*2);
+        mixer_ch_set_vol(voice*2,volume,volume);tail_volume[voice]=volume;
+        int64_t delay=(int64_t)waves[voice].wave.len*MSX_AUDIO_RATE/(int64_t)waves[voice].wave.frequency;
+        mixer_add_event(delay,start_tail,&tail_voice[voice]);
+        return true;
+    }
     bool vadpcm=waves[voice].format==1;   /* WAV64_FORMAT_VADPCM (internal header) */
     if (loop && file_loop[voice] && !(vadpcm && file_loop[voice]!=waves[voice].wave.len)) waves[voice].wave.loop_len=file_loop[voice];
     else wav64_set_loop(&waves[voice],loop);
@@ -65,6 +97,9 @@ unsigned msx_audio_service(void) {
 msx_audio_stats_t msx_audio_stats(void) {return stats;}
 void msx_audio_close(void) {
     if (!initialized) return;
-    for (unsigned v=0;v<MSX_AUDIO_VOICES;v++) if (opened[v]) {msx_audio_stop(v);wav64_close(&waves[v]);opened[v]=false;}
+    for (unsigned v=0;v<MSX_AUDIO_VOICES;v++) {
+        if (opened[v]) {msx_audio_stop(v);wav64_close(&waves[v]);opened[v]=false;}
+        if (tail_open[v]) {wav64_close(&tails[v]);tail_open[v]=false;}
+    }
     mixer_close();audio_close();initialized=false;submitted=false;
 }

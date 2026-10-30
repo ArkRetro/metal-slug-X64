@@ -53,9 +53,14 @@ bool boss_render_draw(const neo_anim_draw_t *d,unsigned resource,int y_offset,bo
             if (hi<=a || lo>=b) continue;
             int c0=lo>a?lo:a,c1=hi<b?hi:b;
             bool clip=c0>a || c1<b;
-            if (clip) {rdpq_set_scissor(c0<0?0:c0,0,c1>320?320:c1,240);stats.clipped++;}
+            if (clip) {
+                /* Inside the 304x224 active window as every sprite. */
+                int s0=c0<8?8:c0,s1=c1>312?312:c1;
+                if (s0>=s1) continue;
+                rdpq_set_scissor(s0,8,s1,232);stats.clipped++;
+            }
             scene_render_image(&part,x,y,mirror,flash);stats.parts++;
-            if (clip) rdpq_set_scissor(0,0,320,240);
+            if (clip) rdpq_set_scissor(8,8,312,232);
         }
     }
     return true;

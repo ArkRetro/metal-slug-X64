@@ -31,11 +31,12 @@ def wait_for(pattern,timeout=120):
         if re.search(pattern,text):return
         time.sleep(.05)
     raise AssertionError((pattern,log()[-3000:]))
-stop=threading.Event();arena=threading.Event()
+stop=threading.Event();arena=threading.Event();domes=threading.Event();shop=threading.Event()
+shop_t=[0.0];t_start=[0.0]
 def pad():
     # Fire held all the time; up every other half second; jump every 4 s;
     # right, or left/right/still in 1.5 s turns once the boss is fought.
-    t0=time.monotonic();state={}
+    t0=time.monotonic();t_start[0]=t0;state={}
     def hold(name,on):
         if state.get(name)!=on:key('keydown' if on else 'keyup',name);state[name]=on
     while not stop.is_set():
@@ -43,7 +44,17 @@ def pad():
         hold('b',True)
         hold('Up',int(t*2)%2==1)
         hold('a',(t%4.0)<0.15)
-        if arena.is_set():
+        if domes.is_set():
+            # Domed building (054904): sweep under the three domes firing up.
+            hold('Up',True);sweep=int(t/5.0)%2
+            hold('Left',sweep==0);hold('Right',sweep==1)
+        elif shop.is_set():
+            # Destructible shop (0B6566) at the 2336 stop: back off to its
+            # left, then fire right at it.
+            hold('Up',False);back=(t-shop_t[0])<1.2
+            hold('Left',back);hold('Right',False)
+            if not back and int(t*4)%8==0:hold('Right',True)
+        elif arena.is_set():
             phase=int(t/1.5)%3
             hold('Left',phase==0);hold('Right',phase==1)
         else:
@@ -60,9 +71,17 @@ try:
     wait_for(r'MSX rebel spawned=1 ',timeout=200)
     wait_for(r'MSX camera stop=872',timeout=400)
     wait_for(r'MSX camera stop=1920',timeout=900);time.sleep(1.0);snap('village-end')
+    wait_for(r'MSX domes signal 05486A',timeout=900);domes.set();time.sleep(4);snap('domes-risen')
+    wait_for(r'MSX player handlers=054B18',timeout=900);time.sleep(.6);snap('collapse')
+    wait_for(r'MSX domed building collapsed',timeout=300);domes.clear();time.sleep(.3);snap('collapsed')
+    time.sleep(1.5);snap('rubble')
     wait_for(r'MSX region end passed',timeout=900);snap('domed-building')
     wait_for(r'MSX camera autoscroll=1',timeout=900);time.sleep(.8);snap('autoscroll')
     wait_for(r'MSX backdrop palette 0B56CA',timeout=900);snap('truck-stop')
+    wait_for(r'MSX camera stop=2336',timeout=900);time.sleep(.5);snap('shop')
+    shop_t[0]=time.monotonic()-t_start[0];shop.set()
+    wait_for(r'MSX shop destroyed',timeout=600);time.sleep(.4);snap('shop-destroyed');shop.clear()
+    time.sleep(1.5);snap('wagon')
     wait_for(r'MSX camera stop=3192',timeout=900);time.sleep(.5);snap('helicopter-stop')
     wait_for(r'MSX boss spawned',timeout=900);time.sleep(.8);snap('boss-arrives')
     wait_for(r'MSX camera stop=3376',timeout=900);arena.set()

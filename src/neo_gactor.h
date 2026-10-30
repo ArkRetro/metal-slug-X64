@@ -42,6 +42,17 @@ static inline void ga_sb(neo_gactor_t *a,unsigned o,uint8_t v) {a->m[o]=v;a->wri
 static inline void ga_sw(neo_gactor_t *a,unsigned o,uint16_t v) {ga_sb(a,o,(uint8_t)(v>>8));ga_sb(a,o+1,(uint8_t)v);}
 static inline void ga_sl(neo_gactor_t *a,unsigned o,uint32_t v) {ga_sw(a,o,(uint16_t)(v>>16));ga_sw(a,o+2,(uint16_t)v);}
 typedef struct neo_genv neo_genv_t;
+/* RAM bytes shared by the Mission 1 building actors and the mission. */
+typedef struct neo_ga_flags {
+    uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
+    uint8_t player_lock;             /* RAM 10E9E3 (0C8CD6 / 0C8CE6) */
+    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC set to 054B18 (0CA2E0) */
+    uint8_t flash_request;           /* RAM 1067E5 (004C06) */
+    uint8_t kill_request;            /* RAM 1067E3 (004BFE), copied to 1067E2 by 00469C */
+    uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */
+    uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
+    uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
+} neo_ga_flags_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -85,6 +96,22 @@ struct neo_genv {
     uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */
     /* An original actor this world does not create (counted, provenance). */
     void (*external)(void *ctx,uint32_t constructor);
+    /* Mission flags outside the actor list (domed building 054904). */
+    struct neo_ga_flags *flags;
+    /* Layer object of the static collision terrain: 10C72E in the village,
+     * 10D7B6 from camera 1023 (the floor answers of the traces). 0 = 10C72E. */
+    uint32_t terrain_tag;
+    bool kill_all;                   /* RAM 1067E2 (004BAC: registered non-class-1 bodies die) */
+    void (*camera_mode)(void *ctx,uint8_t mode);       /* 0C7B48: RAM 10E95A */
+    void (*camera_rise)(void *ctx,int32_t vy);         /* RAM 10E960 (autoscroll vy) */
+    void (*shake)(void *ctx);                          /* 0C801A */
+    bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
+    bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */
+    void (*kill_children)(void *ctx,neo_gactor_t *a);  /* 004192: delete the deeper nodes after `a` */
+    /* Sub-script actor 019E82: run the level-script record at ROM `record`
+     * for actor `a` (the interpreter of the world, freed with the actor);
+     * true once op 3 ran. */
+    bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

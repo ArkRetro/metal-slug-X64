@@ -34,11 +34,13 @@ typedef struct {
     int current;                 /* order index of the running actor */
     uint16_t draw_palette;bool draw_flash;uint8_t draw_kind;
     neo_genv_t genv;
+    const neo_script_env_t *se;  /* the script environment of this tick */
+    int sub_owner;               /* generic actor running a sub-script (-1) */
 } tick_t;
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
     if (w->draw_count==NEO_WORLD_DRAWS) return;
-    w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,t->draw_palette,t->draw_flash,t->draw_kind};
+    w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,t->draw_palette,t->draw_flash,t->draw_kind,0xff,0xff};
 }
 static bool insert(neo_world_t *w,unsigned at,neo_world_slot_t slot) {
     if (w->order_count==NEO_WORLD_ORDER) return false;
@@ -77,12 +79,14 @@ enum { BOSS_CONSTRUCTOR=0xd5976 };
 static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     tick_t *t=context;neo_world_t *w=t->w;
-    int at=sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
+    /* A sub-script actor (generic actor 019E82) creates after itself. */
+    bool sub=sp->creator<0 && t->sub_owner>=0;
+    int at=sub?find(w,NEO_WORLD_GACTOR,(unsigned)t->sub_owner):sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
     uint32_t routine=sp->constructor&0xffffffu;
     if (routine!=SOLDIER_CONSTRUCTOR && at>=0 && neo_region_routine(routine)) {
         /* 01A10A: 0040BC after the creator, words to +6E.., +69 group,
          * +68 variant, +28/+2C at the scene root (01ABB6). */
-        neo_gactor_t *a=ga_insert(t,at,routine,sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);
+        neo_gactor_t *a=ga_insert(t,at,routine,sub?NEO_GA_TAG((unsigned)t->sub_owner):sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);
         if (!a) return;
         for (unsigned k=0;k<sp->word_count;k++) ga_sw(a,0x6eu + 2u*k,sp->words[k]);
         ga_sb(a,0x69,sp->group69);ga_sb(a,0x68,sp->variant68);
@@ -91,6 +95,11 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
         return;
     }
     if (routine==BOSS_CONSTRUCTOR) {boss_spawn(t,at,sp);return;}
+    if (routine==0x5486au) {
+        /* Spawn-table entry 05486A: RAM 10C44E = FF, 10C44F = its group;
+         * the actor then leaves (004188 after the cartridge check). */
+        w->ga_flags.dome_signal=0xff;w->ga_flags.dome_group=sp->group69;return;
+    }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
@@ -236,6 +245,14 @@ static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bo
     return ga_insert(t,at,routine,after_script?SCRIPT_TAG:(creator?NEO_GA_TAG(creator->index):0),creator?ga_b(creator,0x68):0);
 }
 static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id);}
+static void g_camera_mode(void *ctx,uint8_t mode) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_set_auto(&t->w->camera,mode);}
+static void g_camera_rise(void *ctx,int32_t vy) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vy=vy;}
+static void g_shake(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_start(&t->w->camera);}
+static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return false;t->w->swap_step=1;return true;}
+/* 012022: RAM 10B954 against 10B95C; the only call in Mission 1 is the
+ * banners' constructor at camera 1600, where the trace reads 0x88 and 0x40
+ * (bge: +15 bit 2 clear). */
+static bool g_front_layer(void *ctx) {(void)ctx;return false;}
 static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
@@ -295,6 +312,7 @@ static void g_dyn_release(void *ctx,neo_gactor_t *a) {
 static void ga_kill(tick_t *t,neo_gactor_t *a) {
     /* 003F90: palettes, dynamic object (0164D0), +6B/+58, +68/+69. */
     if (ga_b(a,0x6a)!=0xffu) g_dyn_release(t,a);
+    for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS;i++) if (t->w->subs[i].used && t->w->subs[i].owner==a->index) t->w->subs[i].used=false;
     ga_sb(a,0x6b,0xff);ga_sw(a,0x58,0xffff);ga_sb(a,0x68,0);ga_sb(a,0x69,0xff);
     a->active=false;
 }
@@ -305,7 +323,10 @@ static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
 }
 static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
 static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
-    (void)ctx;neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));
+    if (templ==0x29bf4u || templ==0x29c26u) {neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));return;}
+    const uint8_t *t=ga_rom(templ);
+    if (!t) {ga_fail(&((tick_t *)ctx)->genv,templ);return;}
+    neo_collision_stamp((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),t);
 }
 /* ROM 004C24: the actor is registered when one of its rectangles is inside
  * the registry area (x -32..383, y 264..503 projected); the query (0049E8 ->
@@ -436,6 +457,7 @@ static int run_gactor(tick_t *t,unsigned i) {
         uint8_t h=(uint8_t)(w->draws[k].attributes>>8);
         w->draws[k].palette=h && h<=4u?a->palette[h-1u]:a->palette[0];
         w->draws[k].flash=(ga_b(a,0x17)&1u) && !(ga_b(a,0x17)&0x80u);
+        w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
     if (group<9u && ga_b(a,0x69)>=9u) w->kills++;
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
@@ -582,7 +604,7 @@ static void b_draw(void *c,int16_t node,const neo_anim_draw_t *d) {
     const neo_boss_node_t *n=&w->boss.nodes[node];
     uint8_t slot=(uint8_t)(d->attributes>>8);
     w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,slot<32?w->boss_palette[slot]:0,
-        (n->f[0x17]&1u) && !(n->f[0x17]&0x80u),NEO_WORLD_BOSS};
+        (n->f[0x17]&1u) && !(n->f[0x17]&0x80u),NEO_WORLD_BOSS,0xff,0xff};
 }
 /* Generic actors the boss creates or becomes: the native generic families
  * continue them from the seed image; the others are counted (not drawn). */
@@ -710,6 +732,11 @@ static bool run_soldier(tick_t *t,unsigned i) {
         w->constructed[i]=true;return true;
     }
     uint8_t group=s->group69;
+    /* 004BAC while RAM 1067E2 is set (collapse of the domed building): the
+     * soldier's registration (040A00 -> 004C24) kills it instead. Applied
+     * before its update; the original does it inside, at the registration. */
+    neo_hurtbox_t kill_box;
+    if (w->kill_active && neo_soldier_hurtbox(s,&kill_box)) {s->health=0;s->b.flags5f|=0x80u;s->b.timer5a=6;w->killed_all++;}
     t->draw_palette=s->palette_resource;
     t->draw_kind=NEO_WORLD_SOLDIER;
     t->draw_flash=false;
@@ -777,6 +804,33 @@ static void delete_tree(tick_t *t,unsigned at) {
         remove_at(w,at+1u);
     }
 }
+/* Sub-script actor 019E72/019E82 (a generic actor) running the record at
+ * ROM `record` with the level-script interpreter; true once its op 3 ran. */
+static bool g_subscript(void *ctx,neo_gactor_t *a,uint32_t record) {
+    tick_t *t=ctx;neo_world_t *w=t->w;
+    if (!t->se) return false;
+    neo_world_sub_t *sub=NULL;
+    for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (w->subs[i].used && w->subs[i].owner==a->index) sub=&w->subs[i];
+    if (!sub) {
+        for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (!w->subs[i].used) sub=&w->subs[i];
+        const uint8_t *code=ga_rom(record);
+        if (!sub || !code) {ga_fail(&t->genv,record);return false;}
+        sub->used=true;sub->owner=a->index;
+        neo_script_init(&sub->script,code,0x80,record);
+    }
+    /* RAM 10C326..: the live counts of this tick. */
+    memcpy(sub->script.groups,w->script.groups,sizeof(sub->script.groups));
+    int saved=t->sub_owner;t->sub_owner=a->index;
+    neo_script_tick(&sub->script,t->se);
+    t->sub_owner=saved;
+    if (sub->script.halted) {ga_fail(&t->genv,sub->script.halt_address);return false;}
+    return sub->script.finished;
+}
+/* ROM 004192: the running actor deletes the deeper nodes that follow it. */
+static void g_kill_children(void *ctx,neo_gactor_t *a) {
+    tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
+    if (at>=0) delete_tree(t,(unsigned)at);
+}
 /* ---- public ------------------------------------------------------------------ */
 static void scene_at(neo_world_t *w,int32_t x,bool reset) {
     neo_contact_parent_t *p[2]={&w->terrain,&w->root};
@@ -836,6 +890,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
+    g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
+    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
@@ -851,6 +908,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     }
     /* Mission actor (0186A0): grid decay 00469C, group recount 019E40. */
     neo_grid_decay(w->grid,&w->grid_cursor);
+    w->kill_active=w->ga_flags.kill_request!=0;w->ga_flags.kill_request=0;   /* 0046D4 */
+    w->ga_flags.flash_request=0;                                              /* 0046E0 */
+    g->kill_all=w->kill_active;
+    /* Map swap actor 0B595A (inserted after the mission actor). */
+    if (w->swap_step==2) {w->ga_flags.collapsed=1;w->ga_flags.flash=0;w->swap_step=3;}
+    else if (w->swap_step==1) {w->ga_flags.flash=1;w->swap_step=2;}
     memset(w->script.groups,0,sizeof(w->script.groups));
     for (unsigned i=0;i<NEO_WORLD_SOLDIERS;i++)
         if (w->soldiers[i].active && w->constructed[i] && w->soldiers[i].group69<9u) w->script.groups[w->soldiers[i].group69]++;
@@ -862,6 +925,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t};
+    t.se=&se;t.sub_owner=-1;
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         if (slot.kind==NEO_WORLD_GACTOR && w->gactors[slot.index].placeholder) {

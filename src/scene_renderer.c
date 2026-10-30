@@ -42,6 +42,12 @@ static inline bool hidden(const scene_map_cell_t *cell) {
     /* Destroyed shop: column 0x9F-3.. of layer 10D7B6 (0B6882). */
     return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16 && patch_cell(cell);
 }
+/* A merged column shares one x: only a column inside a replaced range can
+ * mix hidden and kept cells (the others keep their merged single draw). */
+static inline bool column_may_hide(const scene_map_cell_t *cell) {
+    if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16;
+}
 static void draw_cells(const scene_map_cell_t *p,unsigned n,const int *offsets,const int *rises,unsigned video_tick) {
     for (unsigned i=0;i<n;i++) {
         int x=p[i].x-offsets[p[i].layer];
@@ -257,7 +263,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
                 unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
                 /* A merged column can mix hidden (replaced) and kept cells:
                  * once a replacement is active, its layer goes cell by cell. */
-                if ((patched && layer==2) || (collapsed && layer==3)) {
+                if (column_may_hide(&cells[cell_index.order[k]])) {
                     for (unsigned j=0;j<n;j++)
                         if (!hidden(&cells[cell_index.order[k+j]])) classic_cell(&cells[cell_index.order[k+j]],offsets,rises,video_tick,1);
                     k+=n;continue;
@@ -286,7 +292,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
           unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
           /* Same rule as the classic path: once a replacement is active, a
            * merged column may mix hidden and kept cells, so go cell by cell. */
-          if ((patched && layer==2) || (collapsed && layer==3)) {
+          if (column_may_hide(cell)) {
               for (unsigned j=0;j<n;j++)
                   if (!hidden(&cells[cell_index.order[k+j]])) depth_cell(&cells[cell_index.order[k+j]],view,offsets,video_tick,1);
               k+=n;continue;

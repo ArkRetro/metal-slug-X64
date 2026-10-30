@@ -316,17 +316,24 @@ Los espadachines `0x09D846/62/76`, el lanzacohetes `0x05ED84` y el
 helicóptero necesitan otra captura que llegue más lejos (en `pri1` la
 partida no pasa de 2336 antes del fotograma 8100).
 
-Problema abierto principal (ares 146, recorridos `ares14..16`): las dos
-listas de celdas que el render dibuja aparte, los escombros
-`scene_collapse_cells` (112) y el parche de la tienda `scene_patch_cells`
-(62), no se ven: las celdas reemplazadas sí se ocultan, y en su lugar queda
-el color de fondo (rectángulo azul tras el derrumbe, naranja tras la
-tienda). Los datos son correctos (render fuera de línea de las celdas
-extraídas y de las variantes del parche desde `sprites.bin`: escombros y
-muros como en MAME; imágenes `16x256` formato 2 válidas en
-`scene_meta.h`) y la corrección de columnas fusionadas no lo arregló: la
-causa está en el camino de dibujo de `draw_cells` (`scene_renderer.c`) y
-no se ha identificado.
+Resuelto (commit `159900f` y siguientes): los escombros `scene_collapse_cells`
+y el parche de la tienda `scene_patch_cells` solo se dibujaban en el camino
+clásico; el camino `depth25d` (el de publicación) los dibuja ahora en su capa.
+Comprobado en ares (`/workspace/emulator/fixr/rubble.png`,
+`/workspace/emulator/m1b/shots/shop-destroyed.png`). Además:
+
+- Prioridad: el camino `depth25d` dibujaba las capas 0..4 en la primera
+  pasada y nada en la segunda, así que los sprites con el bit 2 de `+15` (las
+  cúpulas) quedaban delante de la fachada (visto en MiSTer). Ahora respeta
+  `begin/end` como el clásico (capas 0..2, sprites bit 2, capas 3..4; la
+  malla tras la capa 4); ares `m1b/shots/domes-risen.png`. El número de
+  dibujos por fotograma no se duplica (máx. 400–443 en el jefe).
+- Todos los sprites (actores, efectos, jefe, Marco) se recortan a la ventana
+  activa de 304×224 (`8..312 × 8..232`), como las capas; el recorte por
+  columnas del jefe se interseca con ella y se omite si queda vacío.
+- Con un reemplazo activo solo las columnas dentro del rango reemplazado se
+  dibujan celda a celda (antes toda la capa 2 o 3 desde la tienda/derrumbe):
+  441 → 400 dibujos en la arena del jefe.
 
 Otros problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
 cámara aún en 1920, la zona `x < 2016` bajo la fachada desaparecida muestra

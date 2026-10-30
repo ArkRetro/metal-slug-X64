@@ -1,5 +1,5 @@
 {
- "descriptors": 433,
+ "descriptors": 491,
  "palettes": [
   "0x121",
   "0x122",
@@ -19,17 +19,18 @@
   "0x478",
   "0x4b9",
   "0x87f",
-  "0x883"
+  "0x883",
+  "0x93"
  ],
  "missing_palettes": [],
  "stats": {
   "zoomed_entries_skipped": 67,
-  "frames": 111,
-  "pixels_equal": 1335184,
+  "frames": 120,
+  "pixels_equal": 1337228,
   "pixels_different": 5221,
   "pixels_overlapping": 105276,
-  "rank_2": 53,
-  "rank_1": 58
+  "rank_2": 58,
+  "rank_1": 62
  },
  "frames": [
   {
@@ -807,6 +808,69 @@
    "frame": 7260,
    "update_frame": 7260,
    "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7020,
+   "update_frame": 7017,
+   "equal": 233,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7080,
+   "update_frame": 7079,
+   "equal": 213,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7140,
+   "update_frame": 7139,
+   "equal": 237,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7200,
+   "update_frame": 7198,
+   "equal": 236,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7260,
+   "update_frame": 7259,
+   "equal": 201,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7320,
+   "update_frame": 7316,
+   "equal": 203,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7380,
+   "update_frame": 7378,
+   "equal": 261,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7440,
+   "update_frame": 7438,
+   "equal": 264,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7500,
+   "update_frame": 7498,
+   "equal": 196,
    "different": 0
   }
  ]

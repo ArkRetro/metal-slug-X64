@@ -200,8 +200,7 @@ proyección) → `0x0A9390` (se va andando) hasta salir de la vista.
   leídos por el original.
 - Detenciones explícitas: `0x0A8FE0` con `+72 ≠ 0` (combate de la figura, no
   alcanzado en las grabaciones), su muerte `0x0A93DC` y la rama `+93 = 0`.
-- La criatura `0x035668` sigue externa (traza en `truck_fixture.json.gz`,
-  rango `35600-35a00`, no portada).
+- La criatura `0x035668` del subguion: ver abajo.
 
 ## Espadachines árabes del carro `0x039590/0x0395B6` (`src/neo_arab.c`)
 
@@ -233,6 +232,17 @@ Prueba `arab` (`data/arab_fixture.json.gz`, `trk3`, rangos `39500-3a100`,
 por el subguion. Gráficos: 433 descriptores, 19 paletas; los 13 volcados
 nuevos dan 646 píxeles distintos en 4 fotogramas (7080, 7140, 7200, 7260;
 no investigado: posible orden/prioridad con el carro).
+
+## Criatura `0x035668` (`src/neo_arab.c`)
+
+Creada por el subguion (`0x2D719E`, `+6E = 0x80`): anda a `+70 = +6E << 8`
+(programa `0x23B3C6` a la velocidad de la tabla `0x035658`) durante `+74 =
+100..199` actualizaciones (`0x035A3A`; `+76` cuenta su edad hasta 1000), se
+da la vuelta (`0x0359A4`, `0x035894`), y golpeada con tipo 1 o 9 (`0x004C24`)
+salta (`0x03581C`). Prueba `creature` (`trk3`, rango `35600-35a00`): **1
+nodo, 216 actualizaciones en bucle cerrado (7004..7528), 30100 bytes
+iguales**; gráficos (paleta `0x93`, 9 volcados): 2044 píxeles iguales, 0
+distintos.
 
 ## Gráficos
 

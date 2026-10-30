@@ -345,6 +345,60 @@ static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
     STEP();
     return ga_cull(a,e,0xe64d8)?GA_DELETE:GA_MORE;
 }
+/* 035668: the creature the swordsman's sub-script lets loose by the wagon
+ * (record 2D719E, +6E = 0x80): it walks at +70 = +6E << 8 for +74 =
+ * 100..199 updates (+76 counts its age up to 1000), turns (0359A4) and, hit
+ * with type 1 or 9 (004C24), jumps away (03581C). */
+static ga_result_t creature_hit(neo_gactor_t *a,neo_genv_t *e) {
+    if (!ga_register(a,e,NULL,NULL)) return GA_MORE;
+    uint8_t d0=B(0x5a);SB(0x5a,0);
+    if (d0!=1u && d0!=9u) return GA_MORE;
+    SL(0x30,0x20000);SL(0x34,0x40000);SET(0x15,0);
+    if (B(0x5b)&0x80u) {SL(0x30,0u-L(0x30));CLR(0x15,0);}
+    START(0x23b5b8);SL(0,0x3585c);return GA_MORE;                  /* 035844 */
+}
+static void k35a28(neo_gactor_t *a,neo_genv_t *e) {if (B(0x15)&0x40u) {uint32_t kind;ga_ground(a,e,&kind);}}
+static ga_result_t creature_tick(neo_gactor_t *a,neo_genv_t *e) {
+    for (;;) switch (L(0)) {
+    case 0x35668:
+        ga_palette(a,0x93);SW(0x66,0x8820);SW(0x1e,0x8820);SL(0x50,0x3564c);SW(0x4e,0x7000);SW(0x76,0);
+        SL(0x70,(uint32_t)((int32_t)S16(W(0x6e))<<8));
+        ga_floor(a,e);ga_project(a,e);
+        if (S16(W(0x3c))<0xa0) SET(0x15,0);
+        SL(0,0x356bc);
+        /* fall through */
+    case 0x356bc: {
+        SW(0x74,ga_rand_range(e,0x64)+0x64u);                        /* 035A3A */
+        SL(0x62,L(0x70));if (!BIT(0x15,0)) SL(0x62,0u-L(0x62));
+        uint32_t d7=(L(0x70)<<2)>>16;if (d7>7u) d7=7;
+        if (!ga_anim_start(a,e,0x23b3c6,rw(0x35658u+2u*d7))) return GA_UNSUPPORTED;
+        SL(0,0x35706);
+    }   /* fall through */
+    case 0x35706:
+        k35a28(a,e);STEP();
+        if (!(B(0x15)&0x40u)) {SL(0x30,0);SL(0x34,0);SL(0x62,0);START(0x23b5b8);SL(0,0x3585c);return GA_MORE;} /* 035812 */
+        if (BIT(0x5f,0)) {SL(0,0x359a4);return GA_MORE;}
+        if (W(0x76)<0x3e8u) {SW(0x76,W(0x76)+1u);uint16_t t=W(0x74);SW(0x74,t-1u);if ((uint16_t)(t-1u)&0x8000u) {SL(0,0x359a4);return GA_MORE;}}
+        if (ga_cull(a,e,0x35644)) return GA_DELETE;
+        return creature_hit(a,e);
+    case 0x3585c:
+        gravity_air(a,e);SW(0x76,W(0x76)+1u);STEP();
+        if (B(0x15)&0x40u) {SL(0,0x35894);return GA_MORE;}
+        return ga_cull(a,e,0x35644)?GA_DELETE:GA_MORE;
+    case 0x35894: SL(0x62,0);START(0x23b4e4);SL(0,0x358ae);
+        /* fall through */
+    case 0x358ae: case 0x359be: {
+        k35a28(a,e);SW(0x76,W(0x76)+1u);
+        int r=ga_anim_step(a,e,arab_call);if (r<0) return GA_UNSUPPORTED;
+        if (r) {SB(0x15,B(0x15)^1u);SL(0,0x356bc);return GA_MORE;}
+        if (!(B(0x15)&0x40u)) {SL(0x30,0);SL(0x34,0);SL(0x62,0);START(0x23b5b8);SL(0,0x3585c);return GA_MORE;}
+        if (ga_cull(a,e,0x35644)) return GA_DELETE;
+        return creature_hit(a,e);
+    }
+    case 0x359a4: SL(0x62,0);START(0x23b41c);SL(0,0x359be);continue;
+    default: ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
 static bool arab_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
     (void)a;(void)e;(void)routine;(void)parameter;
     (void)kind;
@@ -354,12 +408,14 @@ bool neo_arab_routine(uint32_t r) {
     return r==0x39590 || r==0x3959c || r==0x395b6 || r==0x395c8 || r==0x3965c || r==0x39682 || r==0x39694 ||
         r==0x3973a || r==0x3975e || r==0x39796 || r==0x397b0 || r==0x397cc || r==0x397f6 || r==0x39820 ||
         r==0x399dc || r==0xa946c || r==0x39b60 || r==0x39b92 || r==0x39c62 || r==0x39c8c ||
-        r==0xa9510 || r==0xa9550 || r==0xa9590 || r==0xa9638 || r==0xa96e0 || r==0xa9788 || r==0xa9814 || r==0xa98be;
+        r==0xa9510 || r==0xa9550 || r==0xa9590 || r==0xa9638 || r==0xa96e0 || r==0xa9788 || r==0xa9814 || r==0xa98be ||
+        r==0x35668 || r==0x356bc || r==0x35706 || r==0x3585c || r==0x35894 || r==0x358ae || r==0x359a4 || r==0x359be;
 }
 ga_result_t neo_arab_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (r==0x39b60 || r==0x39b92) return slash_tick(a,e);
     if (r==0x39c62 || r==0x39c8c) return sword_tick(a,e);
+    if (r>=0x35668u && r<=0x359beu) return creature_tick(a,e);
     if (r>=0xa9510u && r!=0xa946cu) return piece_tick(a,e);
     return arab_tick(a,e);
 }

@@ -36,6 +36,7 @@ BLOBS=[
     (0x39FB0,0xA4,'039590 Arabian swordsman: walk/attack program tables, hurtbox, attack row 03A004, cull rectangle 03A014, player rectangles 03A01C/03A04C'),
     (0x2D257C,0x188,'039DA8/039E9A Arabian swordsman rank tables 2D257C/2D25DE/2D2640/2D26A2 (0260C8)'),
     (0xE61D4,0x310,'0A9CB6 death pieces: speeds E61D4, angles E6206, lists E6220.., cull rectangle E64D8 (0A9A56)'),
+    (0x35644,0x24,'035668 creature: cull rectangle, hurtbox, program speeds 035658'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():

@@ -108,6 +108,7 @@ struct neo_genv {
      * 10D7B6 from camera 1023 (the floor answers of the traces). 0 = 10C72E. */
     uint32_t terrain_tag;
     bool kill_all;                   /* RAM 1067E2 (004BAC: registered non-class-1 bodies die) */
+    bool clear_shots;                /* RAM 1067E4 (copy of 1067E5 by 0046E0): 004C0E carry, enemy shots vanish */
     void (*camera_mode)(void *ctx,uint8_t mode);       /* 0C7B48: RAM 10E95A */
     void (*camera_rise)(void *ctx,int32_t vy);         /* RAM 10E960 (autoscroll vy) */
     void (*shake)(void *ctx);                          /* 0C801A */
@@ -135,6 +136,7 @@ void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t paren
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
+uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */

@@ -185,9 +185,23 @@ static bool wr(void *context,uint16_t field,unsigned size,uint32_t value) {
     return true;
 }
 static void snd(void *context,uint16_t id) {anim_ctx_t *c=context;if (c->e->sound) c->e->sound(c->e->ctx,id);}
+/* A callback reads and writes the node: the program's timer +24, speed +26,
+ * flash +17 and counter +18 are in the node while it runs. */
+static void state_out(anim_ctx_t *c) {
+    if (!c->s) return;
+    ga_sw(c->a,0x24,c->s->timer);ga_sw(c->a,0x26,c->s->speed);ga_sb(c->a,0x17,c->s->flash);ga_sb(c->a,0x18,c->s->field18);
+}
+static void state_in(anim_ctx_t *c) {
+    if (!c->s) return;
+    c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);c->s->flash=ga_b(c->a,0x17);c->s->field18=ga_b(c->a,0x18);
+}
 static bool cl(void *context,uint32_t routine,uint16_t parameter,neo_anim_render_t *render) {
-    anim_ctx_t *c=context;(void)render;
-    if (c->call && c->call(c->a,c->e,NEO_ANIM_CALL,routine,parameter)) return true;
+    anim_ctx_t *c=context;
+    /* ... and the attributes +15 (facing: 286AE8). */
+    state_out(c);if (render) ga_sb(c->a,0x15,(uint8_t)render->attributes);
+    bool ok=c->call && c->call(c->a,c->e,NEO_ANIM_CALL,routine,parameter);
+    state_in(c);if (render) render->attributes=ga_b(c->a,0x15);
+    if (ok) return true;
     c->missing=routine;return false;
 }
 int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {

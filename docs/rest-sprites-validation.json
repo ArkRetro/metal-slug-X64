@@ -62,12 +62,12 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 69,
-  "frames": 179,
-  "pixels_equal": 1441350,
-  "pixels_different": 10579,
-  "pixels_overlapping": 107412,
-  "rank_2": 92,
-  "rank_1": 87
+  "frames": 205,
+  "pixels_equal": 1451926,
+  "pixels_different": 12210,
+  "pixels_overlapping": 110337,
+  "rank_2": 108,
+  "rank_1": 97
  },
  "frames": [
   {
@@ -1321,6 +1321,188 @@
    "frame": 8430,
    "update_frame": 8430,
    "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7050,
+   "update_frame": 7048,
+   "equal": 294,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7080,
+   "update_frame": 7077,
+   "equal": 784,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7110,
+   "update_frame": 7107,
+   "equal": 1188,
+   "different": 201
+  },
+  {
+   "capture": "food1",
+   "frame": 7140,
+   "update_frame": 7140,
+   "equal": 688,
+   "different": 178
+  },
+  {
+   "capture": "food1",
+   "frame": 7170,
+   "update_frame": 7170,
+   "equal": 1008,
+   "different": 251
+  },
+  {
+   "capture": "food1",
+   "frame": 7200,
+   "update_frame": 7200,
+   "equal": 1051,
+   "different": 97
+  },
+  {
+   "capture": "food1",
+   "frame": 7230,
+   "update_frame": 7227,
+   "equal": 694,
+   "different": 486
+  },
+  {
+   "capture": "food1",
+   "frame": 7260,
+   "update_frame": 7257,
+   "equal": 341,
+   "different": 294
+  },
+  {
+   "capture": "food1",
+   "frame": 7290,
+   "update_frame": 7290,
+   "equal": 247,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7320,
+   "update_frame": 7316,
+   "equal": 247,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7350,
+   "update_frame": 7350,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7380,
+   "update_frame": 7380,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7410,
+   "update_frame": 7410,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7440,
+   "update_frame": 7440,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7470,
+   "update_frame": 7467,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7500,
+   "update_frame": 7497,
+   "equal": 196,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7530,
+   "update_frame": 7529,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7560,
+   "update_frame": 7555,
+   "equal": 311,
+   "different": 81
+  },
+  {
+   "capture": "food1",
+   "frame": 7590,
+   "update_frame": 7587,
+   "equal": 397,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7620,
+   "update_frame": 7617,
+   "equal": 400,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7650,
+   "update_frame": 7648,
+   "equal": 394,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7680,
+   "update_frame": 7677,
+   "equal": 394,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7710,
+   "update_frame": 7708,
+   "equal": 400,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7740,
+   "update_frame": 7737,
+   "equal": 543,
+   "different": 0
+  },
+  {
+   "capture": "food1",
+   "frame": 7770,
+   "update_frame": 7767,
+   "equal": 419,
+   "different": 43
+  },
+  {
+   "capture": "food1",
+   "frame": 7800,
+   "update_frame": 7799,
+   "equal": 580,
    "different": 0
   }
  ]

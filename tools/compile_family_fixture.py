@@ -23,6 +23,7 @@ def main():
     p.add_argument('--hit-from',default='',help='ROUTINES (comma hex): the deleting updates that can leave a --hit-child (default: any)')
     p.add_argument('--hit-child',help='ROUTINE (hex): a node first seen with this routine and +0C = list head 101414 (00411C) is the impact of the node deleted last, at most 3 frames before and not yet matched (its creator); a deleting update hits (0049E8 answers a contact) only when it has such a child')
     p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
+    p.add_argument('--script-routines',default='',help='ROUTINES (comma hex): with --script-actor, only nodes with these first routines are made by family nodes (the others the script itself creates: injected)')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
@@ -53,7 +54,7 @@ def main():
                     if cand:
                         cost=lambda x:0x4000 if x[2] is None else abs(((ix-x[2]+0x8000)&0xffff)-0x8000)+abs(((iy-x[3]+0x8000)&0xffff)-0x8000)
                         c=min(cand,key=cost)[0];claimed.add(c)
-                if c<0 and script is not None and int(cr,16)==script:c=-2
+                if c<0 and script is not None and int(cr,16)==script and (not a.script_routines or u['routine'] in [int(x,16) for x in a.script_routines.split(',')]):c=-2
                 live[u['node']]=len(order);order.append((u,c))
             inst.append(live[u['node']])
             if not u['post'] and (not a.hit_from or u['routine'] in [int(x,16) for x in a.hit_from.split(',')]):

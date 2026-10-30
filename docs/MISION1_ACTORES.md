@@ -668,6 +668,41 @@ como paradas explícitas contadas (sus disparos no están portados; la H sigue
 siendo nativa entera). `armored_x` acepta el blindado hasta x < 352 (su
 cuerpo entra en la vista 40 px antes que `+3C`).
 
+## Frutas de la ventana central de la ruina (cajas `0x09A67E` + objetos)
+
+Informe del usuario: tras el derrumbe, disparando a la ventana central de la
+ruina caen manzanas en la recreativa y en el port no. Son las cajas ocultas
+`0x09A67E` del guion en (2072,136) (`0x2D6ABC..0x2D6BD2`, ya nativas en
+`neo_secret.c`), cuyos tipos `+74` son 85, 54 y 56 (0x55, 0x36, 0x38), y las
+de (1984,104) y (2340,176) (0x2C..0x2E, 0x37, 0x45, 0x54, 0x24). Los tipos
+con movimiento `0x08BAB2/0x08BA38` se devolvían como externos: no aparecía
+ningún objeto. Con los movimientos y retrollamadas de las comidas
+(prisioneros, arriba) son nativos; además:
+
+- El paso de animación del actor genérico pone en el nodo el temporizador
+  `+24`, la velocidad `+26`, el destello `+17`, el contador `+18` y los
+  atributos `+15` antes de cada retrollamada y los recoge después (antes una
+  retrollamada que escribía la velocidad, `28AB36`, o giraba el objeto,
+  `286AE8`, se perdía al acabar el paso).
+- `0x08BCCC` (tipo 0x55 y su tabla `0x08BCC0`) sigue sin traducir: el objeto
+  se devuelve como externo (contado).
+
+Captura nueva `captures-m1full/food1` (`MSX_REST_FAMILY_ROOTS=9a67e,9a688,
+9a692,8c374,8c37c MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=7800`): tras el
+derrumbe salen de la ventana cinco objetos 0x58 (7037..7045), luego 0x37,
+0x54, 0x38/0x36/0x2E y 0x24. Prueba `food` (`data/food_fixture.json.gz`,
+rangos `9a5ee-9a9c2`, `8c374-8c700`, `--script-routines 8c374,8c37c`: las
+cajas las crea el guion, los objetos las cajas): **28 nodos, 1762
+actualizaciones en bucle cerrado (6989..7338), 244580 bytes iguales**, tres
+recogidas de comida (puntos: el arma no cambia). **Parada de la prueba** en
+7339 (corte del fixture): los objetos de la ventana tocan allí la colisión de
+los escombros `0B53A8` (bit 2 de `+5F`), que la rejilla del port no tiene
+(la colisión de la capa 10C72E cambia con el mapa; sin traducir).
+Gráficos: `... food1@8c374-8c700`: 1807 descriptores, 49 paletas, sin
+cambios; los 26 volcados de `food1`: 10576 píxeles iguales, 1631 distintos
+(volcados de 7110..7260 con muchos objetos superpuestos y actualizaciones del
+mismo fotograma, como en `pri1`).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

@@ -252,7 +252,7 @@ $(BUILD_DIR)/robe_fixture.h: tools/compile_robe_fixture.py data/robe_fixture.jso
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food
 FAMILY_ARGS_truck := --tree
 FAMILY_ARGS_swordgen := --tree
 # The shop 0B6566 fell before the prisoner (pri1 RAM dumps 7200 -> 7500: its
@@ -277,6 +277,12 @@ FAMILY_ARGS_grenade := --hit-to 1c152
 # The armoured vehicle's marker child 040396 reads RAM 10C446 = 2 (its
 # +70 = 3 in veh1); the trace keeps no read of that byte.
 FAMILY_ARGS_armored := --tree --marker-seq 2 --script-actor 101414
+# The hidden boxes 09A67E.. of the dome ruin and the items they release after
+# the collapse (food1: kinds 58, 37, 54, 38, 2E); the script actor makes the
+# boxes, the boxes the items (00411C). Three food pickups (points: the weapon
+# stays). Cut before 7339 (fixture source): the post-collapse collision of the
+# rubble map 0B53A8 is not in the port's grid.
+FAMILY_ARGS_food := --script-actor 101414 --script-routines 8c374,8c37c --pickup 7119,0,ffff --pickup 7137,0,ffff --pickup 7139,0,ffff
 FAMILY_HEADERS := $(patsubst %,$(BUILD_DIR)/%_fixture.h,$(FAMILIES))
 $(FAMILY_HEADERS): $(BUILD_DIR)/%_fixture.h: data/%_fixture.json.gz tools/compile_family_fixture.py
 	python3 tools/compile_family_fixture.py $< --output $@ --name $* $(FAMILY_ARGS_$*)

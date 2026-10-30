@@ -1,0 +1,132 @@
+{
+ "status": "PASS (host, closed loop)",
+ "module": "src/neo_boss.c, src/neo_boss.h, src/boss_renderer.c",
+ "source": "MAME 0.264 mslugx euro; tools/capture_mission_rest.lua MSX_REST_BOSS_FROM boss trace",
+ "fights": {
+  "a": {
+   "capture": "runJ (no debugger, run9 variant)",
+   "updates": 32406,
+   "nodes": 1989,
+   "hits": 200,
+   "draws": 30700,
+   "handoffs": 38,
+   "deletes": 1671,
+   "routines": 68
+  },
+  "b": {
+   "capture": "runDbg2 (-debug, different game from frame 2333)",
+   "updates": 35054,
+   "nodes": 2181,
+   "hits": 299,
+   "draws": 33196,
+   "handoffs": 43,
+   "deletes": 1818,
+   "routines": 68
+  }
+ },
+ "closed_loop": {
+  "updates": 67460,
+  "failures": 0,
+  "unsupported": 0,
+  "image_mismatches": 0,
+  "service_sequence_mismatches": 0,
+  "tolerances": [
+   "+00..+0F (list links) not in the image",
+   "stale node pointer (+8E after its part was freed) compared against earlier occupants of the native slot",
+   "protection-check RAM 10F00A/10F00C not ported"
+  ]
+ },
+ "routine_coverage": {
+  "inventory": 86,
+  "native_verified": 56,
+  "generic_handed_to_world": 30,
+  "constructors_verified": 12,
+  "generic": [
+   "01C9E6",
+   "01D1B0",
+   "01D7B8",
+   "01D8A4",
+   "01D8D4",
+   "01D8E4",
+   "01D908",
+   "01D934",
+   "01D93C",
+   "01D944",
+   "01D958",
+   "01D9C6",
+   "08EEBC",
+   "08EEEA",
+   "08F1E0",
+   "099E48",
+   "099E64",
+   "099E7A",
+   "099FD8",
+   "09A06E",
+   "09A17E",
+   "09A1FC",
+   "09A230",
+   "09A278",
+   "09A290",
+   "09A2D8",
+   "09A322",
+   "09A346",
+   "09A5EE",
+   "00A18A"
+  ],
+  "explicit_unsupported": [
+   "08FA1A turret bullet",
+   "02A32A shell ground burst",
+   "path op 8 (0D6C0E homing)"
+  ],
+  "translated_not_executed": [
+   "0D6292..0D637E",
+   "0D6710..0D6756",
+   "0D68AC..0D68BC",
+   "0D6DC0..0D6E86",
+   "0D5DE0",
+   "0D6086",
+   "0D6BB6"
+  ]
+ },
+ "graphics": {
+  "descriptors": 264,
+  "unique_tiles": 3430,
+  "palettes": 13,
+  "pages": 508,
+  "chunks": 65,
+  "pack_chunks": 163,
+  "pack_pages": 1300,
+  "packed_bytes": 1326912,
+  "tmem_bytes_max_per_upload": 2048,
+  "worst_pass": {
+   "a": {
+    "chunks": 16,
+    "pages": 33
+   },
+   "b": {
+    "chunks": 17,
+    "pages": 31
+   }
+  },
+  "fight_chunks": 56,
+  "pixels": {
+   "a": {
+    "dumps": 102,
+    "equal": 1700890,
+    "different": 0
+   },
+   "b": {
+    "dumps": 116,
+    "equal": 1786817,
+    "different": 190,
+    "note": "one dump (13410): shell/trail entries absent from VRAM, unexplained"
+   }
+  },
+  "column_cut": "00A17A..00A18E: 16 px columns with left edge outside -8..311 are not shown"
+ },
+ "ares": null,
+ "limits": [
+  "Not wired into neo_world/script/camera (see docs/JEFE_MISION1.md, Integracion)",
+  "Only the run9 fight variant and one debugger game were captured; the run8 variant did not reappear in 7 runs"
+ ]
+}

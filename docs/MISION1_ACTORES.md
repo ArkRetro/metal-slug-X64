@@ -279,6 +279,26 @@ destrucción.
 
 ## Pendiente
 
-Ver la tabla de cobertura de MISION1_COMPLETA.md. Captura preparada para el
-siguiente paso: `captures-m1full/trk2` (familias `0x033C98`, `0x0A8C62`,
-`0x09D846/62/76`, fotogramas 6950..8600).
+Ver la tabla de cobertura de MISION1_COMPLETA.md. Trazas de familia ya
+extraídas para el siguiente paso (MAME `captures-m1full/pri1`,
+`MSX_REST_FAMILY_ROOTS=8c37c,99862,92a32,99dcc,9d846,9d862,9d876,5ed84,403a0
+MSX_REST_BOSS_FROM=7200 MSX_REST_LAST=8100`; en esa partida la cámara llega a
+2336 en ~7770, así que solo aparecen las familias de tras el carro):
+
+| Fichero | Rangos | Contenido |
+| --- | --- | --- |
+| `data/cannon_fixture.json.gz` | `92a00-95600`, `3b4e0-3b600`, `14a4e-14a60`, `3523c-35300` | cañón `0x092A32` (+ `0x093278`, `0x0954DC`) y sus hijos, 219 actualizaciones (7772..8100) |
+| `data/prisoner_fixture.json.gz` | `99862-99dc0` | prisionero `0x099862`, 124 actualizaciones |
+| `data/prisoner2_fixture.json.gz` | `99dcc-99e60` | prisionero `0x099DCC`, 11 actualizaciones |
+| `data/hitem_fixture.json.gz` | `8c37c-8c700` | objeto H `0x08C37C`, 129 actualizaciones (depende del sistema de armas del jugador, que el port no tiene) |
+
+Los espadachines `0x09D846/62/76`, el lanzacohetes `0x05ED84` y el
+helicóptero necesitan otra captura que llegue más lejos (en `pri1` la
+partida no pasa de 2336 antes del fotograma 8100).
+
+Problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
+cámara aún en 1920, la zona `x < 2016` bajo la fachada desaparecida muestra
+el color de fondo (en las grabaciones la cámara ya está en 2021 treinta
+fotogramas después y esa zona no vuelve a verse; sin evidencia de qué la
+cubre); 646 píxeles distintos en la validación de sprites de los
+espadachines árabes (arriba).

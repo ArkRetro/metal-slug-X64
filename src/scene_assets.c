@@ -99,10 +99,13 @@ const void *scene_page(const scene_image_t *image) {
 void scene_assets_init(void) {
     rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
     assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
-    // Expansion Pak: 3.5 MiB holds the whole Mission 1 pack (222 chunks).
-    capacity=(get_memory_size()>=8*1024*1024?7*512*1024:512*1024)/SCENE_CHUNK_BYTES;
+    // Expansion Pak: the whole Mission 1 pack resident (300 chunks, 4.7 MiB,
+    // with the rest-of-mission actors) when it fits, else 3.5 MiB.
+    capacity=(get_memory_size()>=8*1024*1024?SCENE_CHUNK_COUNT*SCENE_CHUNK_BYTES:512*1024)/SCENE_CHUNK_BYTES;
     if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
-    cache=memalign(64,capacity*SCENE_CHUNK_BYTES);slots=calloc(capacity,sizeof(*slots));
+    cache=memalign(64,capacity*SCENE_CHUNK_BYTES);
+    if (!cache && get_memory_size()>=8*1024*1024) {capacity=7*512*1024/SCENE_CHUNK_BYTES;cache=memalign(64,capacity*SCENE_CHUNK_BYTES);}
+    slots=calloc(capacity,sizeof(*slots));
     staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);
     assertf(cache && slots && staging[0] && staging[1],"Scene cache allocation");
     for (unsigned i=0;i<capacity;i++) slots[i].chunk=-1;

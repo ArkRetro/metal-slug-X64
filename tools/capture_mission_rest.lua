@@ -187,7 +187,84 @@ local function probes()
  -- Animation draw (ROM 004406, see tools/mame/trace_soldier_animation.lua).
  dbg:command(string.format('bpset 4406,temp9>=%x,{printf "DRAW frame=%%d a6=%%08X routine=%%08X desc=%%08X xy=%%08X attr=%%04X\\n",temp9,a6,d@(a6),d7,d0,d1&ffff;g}',draw_from))
 end;local sweep_direction=1;local last_script=-1
+-- MSX_REST_BOSS_FROM=<frame>: from that frame, trace every update of the
+-- Mission 1 boss family (docs/JEFE_MISION1.md) into boss-trace.txt with
+-- read/write taps on work RAM (read-only: the taps never change data).
+--   F frame                       frame marker (written at frame end)
+--   U node routine hex(0xB0)      dispatch (ROM 004246) of a family node: bytes before
+--   V node hex(0xB0)              end of that update (ROM 00424A): bytes after
+--   R addr mask data pc           RAM read during a family update
+--   W addr mask data pc           RAM write during a family update
+--   X addr mask data pc a6 a0 d3  write into a family node by another actor
+--                                 (A0/D3: attack row and damage of 0049E8)
+--   A a6 hex(0xB0)                that actor's bytes (first X of each update)
+--   B node creator                a family node allocated (ROM 0040EC)
+-- The family is the node that dispatches the constructor 0D5976 plus every
+-- node allocated while a family node is the creator (A6 at 0040EC).
+local boss_from=tonumber(os.getenv('MSX_REST_BOSS_FROM') or '0')
+local boss_log=nil
+local in_lua=true
+local family={};local active=nil;local attacker_dumped={}
+local POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
+local mstate=manager.machine.devices[':maincpu'].state
+local function hexbytes(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+local function boss_read(address,data,mask)
+ if in_lua or dumping then return end
+ if address>=POOL0 and address<POOL1 then
+  local o=(address-POOL0)%0xb0
+  if o==0 then
+   if mstate['CURPC'].value==0x4246 then
+    local n=address;in_lua=true
+    local r=cpu:read_u32(n)
+    if r==0xd5976 then family[n]=true end
+    if family[n] then active=n;boss_log:write(string.format('U %x %x %s\n',n,r,hexbytes(n,0xb0))) else active=nil end
+    attacker_dumped={}
+    in_lua=false
+    return
+   end
+  elseif o==8 and active==address-8 then
+   if mstate['CURPC'].value==0x424a then
+    in_lua=true;boss_log:write(string.format('V %x %s\n',active,hexbytes(active,0xb0)));in_lua=false
+    active=nil;return
+   end
+  end
+ end
+ if active then boss_log:write(string.format('R %x %x %x %x\n',address,mask,data,mstate['CURPC'].value)) end
+end
+local function boss_write(address,data,mask)
+ if in_lua or dumping then return end
+ local pc=mstate['CURPC'].value
+ if pc==0x40ec and address>=POOL0 and address<POOL1 and (address-POOL0)%0xb0==0xc then
+  local n=address-0xc;local a6=mstate['A6'].value
+  if family[a6] then family[n]=true;boss_log:write(string.format('B %x %x\n',n,a6)) else family[n]=nil end
+ end
+ if active then boss_log:write(string.format('W %x %x %x %x\n',address,mask,data,pc));return end
+ if address>=POOL0 and address<POOL1 then
+  local n=address-(address-POOL0)%0xb0
+  if family[n] then
+   local a6=mstate['A6'].value
+   boss_log:write(string.format('X %x %x %x %x %x %x %x\n',address,mask,data,pc,a6,mstate['A0'].value,mstate['D3'].value))
+   if not attacker_dumped[a6] and a6>=0x100000 and a6<0x110000 then
+    attacker_dumped[a6]=true;in_lua=true;boss_log:write(string.format('A %x %s\n',a6,hexbytes(a6,0xb0)));in_lua=false
+   end
+  end
+ end
+end
+local function boss_frame(f)
+ if boss_from<=0 then return end
+ if f==boss_from then
+  boss_log=assert(io.open(output..'/boss-trace.txt','w'))
+  boss_rtap=cpu:install_read_tap(0x100000,0x10ffff,'boss_r',boss_read)
+  boss_wtap=cpu:install_write_tap(0x100000,0x10ffff,'boss_w',boss_write)
+ end
+ if boss_log then
+  for n,_ in pairs(family) do if cpu:read_u32(n)==DEAD then family[n]=nil end end
+  boss_log:write(string.format('F %d\n',f))
+  if f%600==0 then boss_log:flush() end
+ end
+end
 emu.register_frame_done(function()
+ in_lua=true
  frame=frame+1
  if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 then probes() end end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
@@ -267,5 +344,6 @@ emu.register_frame_done(function()
   if prev_dumps and frame>=first_dump and (frame+1)%period==0 then dumping=true;dump_vram(output..'/prev/vram'..(frame+1)..'.bin');dumping=false end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' script '..string.format('%x',spc));trace:flush();actors:flush();scriptlog:flush() end
  end
- if frame==last_frame or frame==end_at then trace:close();actors:close();scriptlog:close();layers:close();states:close();platforms:close();lspc:close();lspc_writes:close();if events then events:close() end;manager.machine:exit() end
+ boss_frame(frame);in_lua=false
+ if frame==last_frame or frame==end_at then if boss_log then boss_log:close() end;trace:close();actors:close();scriptlog:close();layers:close();states:close();platforms:close();lspc:close();lspc_writes:close();if events then events:close() end;manager.machine:exit() end
 end,'frame')

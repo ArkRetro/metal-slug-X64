@@ -14,9 +14,11 @@
 #include "boss_renderer.h"
 #include "marco_visual.h"
 #include "marco_renderer.h"
+#include "hud_renderer.h"
 #include <stdio.h>
 
 static msx_game_t game;
+static bool death_logged;
 static bool restart_was_down;
 static bool diagnostics,diagnostics_was_down;
 static bool has_entry;
@@ -121,6 +123,7 @@ void actor_init(void) {
         (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
     scene_assets_init();scene_renderer_init();reset_game();
     marco_native=marco_renderer_load();
+    hud_renderer_init();
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
@@ -170,7 +173,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         game.crouch=input.btn.d_down || input.stick_y<-25;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
-        if (!(game.ticks&1) && !game.complete) {
+        /* Dying (marco_death.c): the death programs' poses (0BF298..) are
+         * not in the audited pose catalog: explicit stop, the last pose
+         * stays (frozen) until the actor ends. */
+        if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death: poses of 0BF298/0BF318 not in the pose catalog (frozen pose)\n");}
+        if (game.life.phase==MARCO_DYING || game.life.phase==MARCO_LYING) msx_game_projected(&game,&marco.base_x,&marco.base_y);
+        if (!(game.ticks&1) && !game.complete && (game.life.phase==MARCO_ALIVE || game.life.phase==MARCO_ENTERING)) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,
                 game.jump_moving,game.facing,0,0};
@@ -295,7 +303,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
-    if (!(game.invulnerable && ((game.ticks/3)&1)))
+    if (game.life.phase!=MARCO_GONE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
         static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
         neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
@@ -324,6 +332,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_foreground_fog();
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
+    /* The original fix layer above every layer, on the 304x224 window. */
+    rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
+    scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }

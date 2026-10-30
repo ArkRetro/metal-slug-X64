@@ -523,10 +523,34 @@ responde un contacto de `0x0049E8`.
 En el juego, la H (`0x0C4454/0x0C447C`) dispara balas nativas `0x01B716` con
 el abanico `0x0C44A6` (`+95` dos veces por disparo); se insertan tras la
 cabeza de la lista al final del tick del mundo y corren desde el siguiente.
-**Aproximación declarada**: la boca (`0x0C4244`, `0x014A02`) usa la boca de
-pistola del port, porque el modelo de jugador del port no tiene `+72/+74/+92`;
-la cadencia es la del port, no la de las retrollamadas de los programas de
-Marco (`0x0C4372`), que el port no ejecuta como disparo. La pistola sigue
+**H en diagonal** (`src/marco_hgun.c`): los estados del torso con la H del
+original: disparo `0x0C3E9C`, ráfaga `0x0C3F1A` (antes de `+76` un cambio de
+puntería abre un barrido; después, una nueva pulsación `+9B` bit 4 reinicia
+la ráfaga), barridos `0x0C3FA6..0x0C3FDE` / `0x0C3FFA` / `0x0C4006`, con los
+programas de Marco `+93 = 1` de las tablas `0x0BFDD8`, `0x0BFE18`,
+`0x0BFE58` (ráfagas: `0x0C4372` en las actualizaciones 0/2/4/6, `+76` en la
+7, fin en 12/16/19) y `0x0BFE98`, `0x0BFED8`, `0x0BFF18`, `0x0BFF58`
+(barridos: `0x0C453A` con los ángulos 08/18/28/38, F8/E8/D8/C8, 30/20/10,
+D0/E0/F0; fin en 8 o 6). `0x0C4244` da 0x40/0/−0x40 según `+92` (a la
+izquierda `0x80 − ángulo`) y `0x0C44A6` suma `+95` **una** vez por bala
+(el port sumaba dos: `hfam` muestra 0, +2, −2) y el abanico 2·((+95 mod 3)−1);
+`0x0C453A` refleja su ángulo con la orientación de ese momento y también
+cuenta `+95`. Una granada pone `+92 = 0`. La pulsación en reposo arranca el
+estado en la actualización siguiente; el fin de un programa con la petición
+de disparo encadena el siguiente estado en la misma actualización (`hfam`:
+la ráfaga hacia arriba dispara dos actualizaciones después del último
+diagonal). Prueba `tools/test_marco_hgun.c` (`make check-core`): estados con
+entradas guionizadas y las 22 balas diagonales registradas en `hfam`
+(`data/hgun_fixture.json`), todas pasos de un barrido en orden y con el
+reflejo de su orientación. `hfam` no tiene la columna `10000E`, así que los
+fotogramas de las actualizaciones no se comparan.
+**Aproximaciones declaradas**: el reposo `0x0C38B2` no se traduce (`+92` se
+conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` y la puntería
+hacia abajo en el aire no existen en el modelo de jugador del port; la boca
+sigue siendo la de pistola del port (adelante (24,80), arriba (3,108),
+interpolada para un diagonal), porque el port no tiene `+72/+74`. Disparar
+exige pulsar (como en el arcade); `tools/test_gameplay.c` pulsa cada 8
+pasos. La pistola sigue
 con la bala del port (la del jefe y el blindado de referencia pasan por
 `neo_world_shot`). **Paradas explícitas**: H con `+93 = 2` (`0x01B668/0x01BDD2`),
 cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas
@@ -575,10 +599,56 @@ Duración de la parada 1304 (`2D67CA`, la arcade: 385): carrera de la misión
 (pasos totales 40084/44750/40398/38494 → 30704/35146/29054/30210). Con la H
 sola (sin granadas) no cambiaba: la H se toma después de 1304.
 
-### Paso 5: HUD — pendiente
+### Paso 5: HUD de capa fija — ver §11
 
-El port no tiene ruta de HUD de capa fija (`actor.c` solo dibuja el texto de
-diagnóstico). Los contadores ARMS/BOMB (`0x0C071C`, `0x0C0764`) están
-correctos en el estado (`marco_weapons_rounds`, `marco_weapons_bomb_count`) y
-`actor.c` registra sus cambios. El panel `0x0C9650..0x0C9844` es el paso
-siguiente.
+## 11. HUD de capa fija (`src/neo_hud.c`, `src/hud_renderer.c`)
+
+El HUD del original es la capa fija del Neo Geo (VRAM `7000..74FF`, 40
+columnas de 32 filas, palabra = paleta<<12 | tile S-ROM). `neo_hud.c` es un
+modelo de ese mapa escrito por traducciones de las rutinas del juego:
+
+- panel en juego `0x0C9650..0x0C983E` (vidas `0C96BE`, puntuación `0C96FC`,
+  ARMS `0C9738` con `0C071C`, BOMB `0C979E` con `0C0764`, indicador del
+  vehículo `0C9B94`, estrellas de prisioneros `0C9D08`);
+- panel P2 inactivo `0C9380` (INSERT COIN / PRESS START / GAME OVER con el
+  parpadeo `0C9228`), texto de créditos `01A7F4`;
+- cifras del tiempo `0C8FDC` del actor de misión (`101364` +7A = `1013DE`),
+  cuenta atrás `0186FA..0187A2` (condiciones `0193FE`, `104303` bit 7,
+  `10C2E7`, `104300`, `0C8CFC`, `107003`; pitido `0x10D7`), reiniciado por la
+  entrada `01913C` de la tabla de apariciones (`neo_world.c` la cuenta en
+  `timer_resets`; valor inicial `003586`, índice DIP `10FD8C` = 0: 60);
+- servicios de texto `03CF12/03CF60/03CF9A/03D004/03D050/03D068/03D0D0/
+  03D244/03D25A(03DD96)`.
+
+Paradas explícitas (contadas en `unsupported`, registradas una vez): escrituras
+fuera de `7000..74FF` (TRAP #F del original), páginas de glifo distintas de
+<10 y `a`, fin de tiempo `0C0A2C` y fin de partida `0C9848` (el port sigue con
+0 vidas; `hud_game_over` lo cuenta).
+
+**Orden en el fotograma.** El juego corre cada dos fotogramas de vídeo y una
+actualización ocupa dos: `10000E` cambia en el fotograma N, pero algunos
+actores (el jugador) terminan en N+1. Los paneles leen el estado completo de
+la actualización anterior, es decir, la fila de `weapons.csv` del fotograma
+N-1. Las apariciones `01913C` corren después del actor de misión (la
+actualización del reinicio muestra `xxFF`, no `xxFD`).
+
+**Prueba** (`tools/test_neo_hud.c`, `make check-core`): `data/hud_fixture.json.gz`
+(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`
+de `tools/capture_weapons.lua`; solo RAM/VRAM de las capturas) tiene 993
+intervalos de 30 fotogramas entre volcados. Cada intervalo parte del mapa,
+los campos de los paneles, los contadores de parpadeo y el tiempo del
+volcado f0 y reproduce cada actualización con las entradas de `0C071C`/
+`0C0764`; las filas 3, 4, 5, 28 y 29 deben coincidir palabra a palabra con el
+volcado f1 (198600 palabras) y el tiempo con `1013DE` (989 intervalos; 4 se
+excluyen porque un indicador de RAM de la cuenta atrás, conocido solo en f0 y
+f1, cambia dentro del intervalo). Además, la primera actualización con el HUD
+encendido redibuja el marco completo del primer volcado (178 palabras; se
+excluye la fase de parpadeo de INSERT COIN). Resultado: 0 diferencias.
+
+**Dibujo** (`hud_renderer.c`): tiles de `rom:/fixed.bin` (S-ROM,
+`tools/import_rom.py`) con las paletas fijas `rom:/hud-palette.bin`
+(`tools/build_hud_assets.py` desde volcados de paleta de las capturas; fuera
+de Git). Una celda se rasteriza en una tira RGBA16 de 304x224 solo cuando su
+palabra cambia; cada fotograma copia (modo COPY) el tramo de columnas no
+vacías de cada fila visible, sobre todas las capas, con tijera en la ventana
+304x224.

@@ -71,6 +71,21 @@ if #windows>0 then
   events:write(string.format('%d,vram%x,0,0,%x,%x,%d\n',frame,address&7,data&0xffff,msx_pc(),cpu:read_u16(0x10e99e)))
  end)
 end
+-- MSX_REST_CAMERA=1: camera.csv, one line per camera update (write tap on
+-- the last store of ROM 0C7CA6, RAM 10E9D8): the inputs ROM 018D96/01903A
+-- read (players +3C/+40/+7A/+7B, routine, RAM 10C322) and the camera/map
+-- block RAM 10E94E..10E9DB after the update (tools/extract_camera_fixture.py).
+local camera_csv=nil
+if os.getenv('MSX_REST_CAMERA')=='1' then
+ camera_csv=assert(io.open(output..'/camera.csv','w'))
+ camera_csv:write('frame,p1,p2,mission,flags,block,d8\n')
+ local function hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+ local function player(b) return string.format('%08x:%s:%02x%02x:%02x%02x',cpu:read_u32(b),hex(b+0x3c,8),cpu:read_u8(b+0x7a),cpu:read_u8(b+0x7b),cpu:read_u8(b+0x5f),cpu:read_u8(b+0x15)) end
+ camera_tap=cpu:install_write_tap(0x10e9d8,0x10e9d9,'rest_camera',function(address,data,mask)
+  camera_csv:write(string.format('%d,%s,%s,%08x:%s,%02x%02x%02x,%s,%04x\n',frame,player(0x1014c4),player(0x101574),
+   cpu:read_u32(0x101364),hex(0x101364+0x72,8),cpu:read_u8(0x10c322),cpu:read_u8(0x10f000),cpu:read_u8(0x10c300),hex(0x10e94e,0x8e),data&0xffff))
+ end)
+end
 local fields={}
 for _,port in pairs(manager.machine.ioport.ports) do
  for name,field in pairs(port.fields) do fields[name]=field end

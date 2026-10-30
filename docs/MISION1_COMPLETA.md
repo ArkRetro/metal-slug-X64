@@ -142,12 +142,12 @@ iguales, 0 distintos**
 | `0x0AF17E`, `0x04115A` (soldados), `0x02916E`, `0x0DC97E`, `0x0403A0`, efectos | nativos (ya existían) |
 | `0x0A8C46` espadachín de túnica + subguion `0x019E72` | **nativo** (nuevo) |
 | `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (salvo disparo de torreta) |
-| `0x05486A` edificio de cúpulas y derrumbe `0x0B58CC` | externo (no se crea; sin derrumbe ni subida a 32) |
-| `0x0B6566` edificio con barriles (parche y sellos) | externo |
+| `0x05486A`/`0x054904` edificio de cúpulas y derrumbe `0x0B58CC` | **nativo** (MISION1_ACTORES.md) |
+| `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` camión con lona, `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
 | `0x09F682` camello, `0x09D846/62/76`, `0x0A8C62` espadachines, `0x09A67E` cohetes, `0x0395B6` | externos |
 | `0x031D92`, `0x099862`, `0x099DCC`, `0x099E06`, `0x08C37C` prisioneros/objetos, `0x03458E` Camel Slug | externos |
-| `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, `0x087E36`, `0x054904` | externos |
+| `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, `0x087E36`, piezas `0x08732C` | externos |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),
 el actor no se crea ni se dibuja y no cuenta en los grupos (las esperas "grupos
@@ -228,10 +228,7 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura), en especial el edificio
-  de cúpulas `0x05486A` (derrumbe, subida de cámara a 32, cambio de mapa
-  `0x0B58CC`, cielo +32), el edificio `0x0B6566` (parche y sellos de colisión),
-  el camión `0x033C98` y sus plataformas, los vehículos `0x092A32`/`0x05ED84`,
+- Actores del resto aún externos (tabla de cobertura), en especial el camión `0x033C98` y sus plataformas, los vehículos `0x092A32`/`0x05ED84`,
   el helicóptero `0x04857C`, la infantería (`0x09D846/62/76`, `0x0A8C62`,
   `0x09F682`), prisioneros/objetos y la Camel Slug `0x03458E`.
 - Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/

@@ -10,6 +10,7 @@
 #include "mission_camera.h"
 #include "msx_perf.h"
 #include "game_audio.h"
+#include "boss_renderer.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -48,7 +49,7 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
     const scene_bank_t *bank=scene_bank(bank_id);
     const scene_image_t *im=scene_frame(bank_id,frame);
     int x=center-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
-    scene_render_image(im,x,136+dy+msx_camera_height(game.camera)+im->y,mirror,flash);
+    scene_render_image(im,x,136+dy+game.camera_height+im->y,mirror,flash);
 }
 /* One native animation draw (original 004364 record): descriptor parts from
  * the scene pack, logical palette resource resolved through the pack's
@@ -57,9 +58,16 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
  * camera height applied to every gameplay sprite). */
 static unsigned native_missing_descriptor,native_missing_palette;
 static int native_screen_y(uint16_t projected_y) {
-    return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y)+msx_camera_height(game.camera);
+    /* The projected word already includes the scene root (camera height). */
+    return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
 }
 static void draw_native(const neo_world_draw_t *d,bool request_only) {
+    if (d->kind==NEO_WORLD_BOSS) {
+        /* Boss entries: column cut and palette resource (boss_renderer.c). */
+        neo_anim_draw_t a={d->descriptor,d->x,d->y,d->attributes,0};
+        boss_render_draw(&a,d->palette,0,d->flash && (game.ticks&1),request_only);
+        return;
+    }
     const scene_native_descriptor_t *desc=scene_native_descriptor(d->descriptor);
     if (!desc) {native_missing_descriptor++;return;}
     int palette=scene_native_palette(d->palette);
@@ -81,7 +89,7 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_image_t *im=scene_frame(SCENE_PROJECTILES,0);
     bool mirror=bullet->direction<0;
     int x=bullet->x-game.camera-bank->width/2+(mirror?bank->width-im->x-im->width:im->x);
-    int y=bullet->y+msx_camera_height(game.camera)-bank->height/2+im->y;
+    int y=bullet->y+game.camera_height-bank->height/2+im->y;
     scene_render_image(im,x,y,mirror,false);
     unsigned observed=1u<<(owner*2+mirror);
     if (!(observed_projectiles&observed)) {
@@ -95,6 +103,7 @@ void actor_init(void) {
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
 #endif
     debugf("MSX v10 scene loaded: original collision grid + slope motion\n");
+    if (msx_reference_invulnerable) debugf("MSX reference build: player invulnerable (not a release)\n");
 }
 bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     if (!msx_game_begin_at(&game,world_x,world_y)) return false;
@@ -119,7 +128,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     restart_was_down=input.btn.r;
     unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported;
     bool old_halted=game.world.script.halted;
-    int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x;
+    int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
+    unsigned old_progress=neo_camera_progress(&game.world.camera);bool old_region_end=game.region_end,old_backdrop=game.backdrop_after;
+    bool old_boss=game.world.boss_active,old_mission=game.mission_complete;uint8_t old_flag606=game.world.flag606,old_phase=game.world.boss_active?neo_boss_phase(&game.world.boss):0;
+    unsigned old_boss_unsupported=game.world.boss_unsupported,old_hp=game.world.boss_active?neo_boss_health(&game.world.boss):0;
+    int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
@@ -127,6 +140,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
+        game.aim_up=input.btn.d_up || input.stick_y>25;
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
         pending_a=pending_b=false;
         msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
@@ -145,7 +159,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
     if (game.world.script.halted && !old_halted) debugf("MSX script stopped at %06lx (records beyond are not ported)\n",(unsigned long)game.world.script.halt_address);
-    if (game.world.unsupported!=old_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
+    if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
         native_missing_descriptor=native_missing_palette=0;
@@ -153,11 +167,25 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
     if (!old_camera && game.camera) debugf("MSX camera moving\n");
-    if (msx_camera_height(game.camera)!=msx_camera_height(old_camera) && msx_camera_height(game.camera)==MSX_CAMERA_RISE_MAX)
-        debugf("MSX camera raised=%d\n",game.camera);
+    if (game.camera_height!=old_height && (game.camera_height==MSX_CAMERA_RISE_MAX || game.camera_height==32))
+        debugf("MSX camera raised=%d height=%d\n",game.camera,game.camera_height);
+    if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
+        debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
+    if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+    if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));
+    if (game.world.camera.auto_mode!=old_auto) debugf("MSX camera autoscroll=%u progress=%u\n",game.world.camera.auto_mode,neo_camera_progress(&game.world.camera));
+    if (game.world.boss_active && !old_boss) debugf("MSX boss spawned camera=%d\n",game.camera);
+    if (game.world.flag606!=old_flag606) debugf("MSX boss start signal 10C606=%02x camera=%d\n",game.world.flag606,game.camera);
+    if (game.world.boss_active) {
+        uint8_t phase=neo_boss_phase(&game.world.boss);unsigned hp=neo_boss_health(&game.world.boss);
+        if (phase!=old_phase || hp/1000!=old_hp/1000) debugf("MSX boss phase=%u hp=%u hits=%u\n",phase,hp,game.world.boss_hits);
+    }
+    if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
+    if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
+    if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
-    if (!was_complete && game.complete) debugf("MSX observed region end camera=%d x=%d\n",game.camera,game.x);
+    if (!was_complete && game.complete) debugf("MSX mission complete camera=%d x=%d\n",game.camera,game.x);
     if (was_grounded && !game.grounded) debugf("MSX jump\n");
     if (!was_grounded && game.grounded) debugf("MSX landed height=%d\n",game.y/MSX_UNIT);
     int animation=msx_game_animation(&game);
@@ -181,7 +209,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     scene_service();
 #if MSX_RETRO25D
-    retro_frame_t effects={.camera={game.camera,-msx_camera_height(game.camera),0,320},.tick=game.ticks};
+    retro_frame_t effects={.camera={game.camera,-game.camera_height,0,320},.tick=game.ticks};
     effects.shadows[effects.shadow_count++]=(retro_shadow_t){(float)game.x/MSX_UNIT,192.0f+(float)game.y/MSX_UNIT,depth_support_y(),12};
     // Contact shadow per drawn rebel soldier: feet at its draw origin
     // (projected words, camera height excluded: shadows use world space).
@@ -198,8 +226,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
     msx_perf_mark(MSX_PERF_PREP);
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
-    scene_render_background(game.camera,game.ticks);
-    vehicle_renderer_draw(&game.vehicle,game.camera,game.vehicle_flash && (game.ticks&2));
+    scene_render_background(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],false);
     if (!(game.invulnerable && ((game.ticks/3)&1)))
         draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
@@ -226,7 +254,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,38,status);
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
-    if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}
+    if (game.complete) {scene_render_text(80,102,"MISSION COMPLETE");scene_render_text(88,120,"R: PLAY AGAIN");}
     msx_perf_mark(MSX_PERF_HUD);
     scene_render_end();msx_perf_mark(MSX_PERF_END);
     msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));

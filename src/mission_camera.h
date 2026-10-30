@@ -2,12 +2,14 @@
 #define MSX_MISSION_CAMERA_H
 #include <stdbool.h>
 /*
- * Observed mission-1 camera transforms up to camera 1920 (docs/MISSION1.md).
+ * Observed mission-1 layer transforms (docs/MISSION1.md, MISSION1_REST.md):
+ * the camera itself is the native original (src/neo_camera.c); these rules
+ * derive the layers from its displayed X and height.
  * Layers: 0 sky (1/2), 1 middle bank at 3/4, 2 same bank at full speed,
  * 3 foreground, 4 market props. Values are screen-pixel scroll offsets.
  */
 enum {
-    MSX_CAMERA_MAX=1920,
+    MSX_CAMERA_MAX=3520,MSX_REGION_CAMERA_MAX=1920,
     /* Both MAME traces reload the middle bank at full speed once camera X reaches 1023. */
     MSX_MID_FULL_SPEED_CAMERA=1023,
     /* Height starts rising at camera 944 and reaches 16 by 1008 in the jumping trace. */

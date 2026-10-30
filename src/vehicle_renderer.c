@@ -18,11 +18,11 @@ void vehicle_renderer_load(void) {
     }
     loaded=true;debugf("MSX vehicle sprites: 36 CI4 halves, 2048 B maximum TMEM upload\n");
 }
-void vehicle_renderer_draw(const neo_vehicle_t *v,int camera,bool flash) {
+void vehicle_renderer_draw(const neo_vehicle_t *v,int camera,int height,bool flash) {
     if (!v->active) return;
     assertf(loaded && v->pose<9,"Vehicle renderer state");
     bool mirror=v->facing>0;
-    int x=v->x/65536-camera-64-(mirror?1:0),y=248-v->y/65536-64+msx_camera_height(camera);
+    int x=v->x/65536-camera-64-(mirror?1:0),y=248-v->y/65536-64+height;
     rdpq_mode_push();rdpq_mode_filter(FILTER_POINT);rdpq_mode_alphacompare(1);
     for (unsigned part=0;part<2;part++) {
         int left=x+(mirror?64-(int)part*64:(int)part*64);

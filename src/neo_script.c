@@ -161,10 +161,13 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
     case 0xc: /* 01A2F0 -> 0C7C12: release the camera lock */
         if (v->e->camera_release) v->e->camera_release(v->e->context);
         return next(v,pc);
+    case 0xd: case 0xe: /* 01A34A/01A35E -> 0C7B4E/0C7BBA: camera autoscroll */
+        if (v->e->autoscroll) v->e->autoscroll(v->e->context,o==0xd);
+        return next(v,pc);
     case 0x10: /* 01A32E */
         v->s->w4330=word(v,pc,2);v->s->w4332=(uint16_t)(word(v,pc,4)+0x100u);
         return next(v,pc);
-    default: /* 0..5 trap; 0D/0E camera auto-scroll; 11 grouped runner */
+    default: /* 0..5 trap; 11 grouped runner */
         return halt(v,pc);
     }
 }

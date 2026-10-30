@@ -1,0 +1,73 @@
+{
+ "camera": {
+  "fixture": "data/camera_fixture.json.gz",
+  "updates": 5085,
+  "frames": [
+   1837,
+   13721
+  ],
+  "differences": 0,
+  "applied_external": {
+   "script_points": 3,
+   "stops": 13,
+   "autoscroll": 2,
+   "actor_0C7B48": 14,
+   "shake": 1
+  }
+ },
+ "robed_swordsman_0A8C46": {
+  "fixture": "data/robe_fixture.json.gz",
+  "closed_loop_updates": 231,
+  "bytes_equal": 32802,
+  "toggle_10C606": 1,
+  "sprites": {
+   "descriptors": 29,
+   "dumps": 17,
+   "pixels_equal": 19450,
+   "pixels_different": 0
+  }
+ },
+ "host_mission_run": {
+  "test": "tools/test_gameplay.c",
+  "script_end": "0x2D7132",
+  "boss_mission_step": 2,
+  "external_spawns": 74,
+  "boss_nodes_stopped": [
+   "0D6168 at 0x08FA1A (turret fire)",
+   "0D6254 (gun gone)"
+  ]
+ },
+ "ares_traversal": {
+  "rom": "mslugx-reference.z64 (MSX_REFERENCE_INVULNERABLE, not the release)",
+  "result": "PASS",
+  "screenshots": "/home/user/captures-m1full/ares7/*.png",
+  "perf_windows": 49,
+  "cpu_worst_frame_us": {
+   "before_boss": 10538,
+   "boss_fight": 16744
+  },
+  "cpu_mean_max_us": {
+   "before_boss": 8836,
+   "boss_fight": 13449
+  },
+  "audio_underruns": 0,
+  "cache_misses": 0,
+  "baseline_note": "origin/main ROM in the same ares setup: region mean 10.5-12.0 ms, max 13.0 ms (bench-base)"
+ },
+ "pack": {
+  "chunks": 223,
+  "pages": 1777,
+  "palettes": 155,
+  "packed_bytes": 1902592
+ },
+ "budget": {
+  "cache_8MiB_slots": 224,
+  "whole_pack_resident_8MiB": true,
+  "cache_4MiB_slots": 32,
+  "map_worst_working_set": 28,
+  "arena_map_plus_pinned": 23,
+  "boss_per_pass": 15,
+  "arena_fits_4MiB": false
+ },
+ "rom_bytes": 5111808
+}

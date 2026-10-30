@@ -20,7 +20,7 @@ int main(void) {
             scene_render_depth_frame(&frame);
             surface_t *surface=display_get();scene_render_begin(surface);
             rdpq_mode_dithering(DITHER_NONE_NONE);
-            scene_render_background(cameras[sample],3);
+            scene_render_background(cameras[sample],msx_camera_height(cameras[sample]),false,3);
             scene_render_foreground_fog();scene_render_end();rspq_wait();
             /* display_get returns an uncached framebuffer; the RDP fence above
              * completes writes before CPU readback. */

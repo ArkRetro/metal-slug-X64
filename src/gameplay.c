@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "neo_motion.h"
 #include "neo_collision.h"
+#include "mission_camera.h"
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
 static int right_limit(const msx_game_t *g);
@@ -38,8 +39,14 @@ void msx_game_vehicle_reference(msx_game_t *g) {
     g->facing=-1;g->world_enabled=false;
     neo_vehicle_init(&g->vehicle,937*MSX_UNIT+MSX_UNIT/2,64*MSX_UNIT,936*MSX_UNIT,0,1,300,9);
 }
+/* Reference-only traversal build (mslugx-reference.z64, never the release):
+ * the player ignores hits so that a scripted run reaches the mission end. */
+#ifndef MSX_REFERENCE_INVULNERABLE
+#define MSX_REFERENCE_INVULNERABLE 0
+#endif
+const bool msx_reference_invulnerable=MSX_REFERENCE_INVULNERABLE!=0;
 void msx_game_hurt(msx_game_t *g,int from) {
-    if (g->invulnerable || g->complete) return;
+    if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE) return;
     g->health--;g->invulnerable=60;
     g->x=clamp(g->x+(g->x/MSX_UNIT<from?-20:20)*MSX_UNIT,(g->camera+28)*MSX_UNIT,right_limit(g));
     if (g->grounded) {
@@ -49,17 +56,38 @@ void msx_game_hurt(msx_game_t *g,int from) {
         else {g->grounded=false;g->air_ticks=0;}
     }
     if (!g->health) {
-        g->deaths++;g->health=3;g->x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
-        g->camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
-        g->y=msx_ground_offset(g->x);g->velocity_x=g->velocity_y=0;g->grounded=true;g->invulnerable=90;
+        g->deaths++;g->health=3;g->velocity_x=g->velocity_y=0;g->invulnerable=90;
         memset(g->bullets,0,sizeof(g->bullets));
+        if (g->world_enabled && g->world.camera_native) {
+            // The mission camera never scrolls back: respawn inside the
+            // current view, dropping onto the nearest floor below.
+            g->x=clamp(g->x,(g->camera+64)*MSX_UNIT,(g->camera+256)*MSX_UNIT);
+            g->y=56*MSX_UNIT-(g->camera_height+200)*MSX_UNIT;g->grounded=false;g->air_ticks=0;
+            return;
+        }
+        g->x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
+        g->camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
+        g->y=msx_ground_offset(g->x);g->grounded=true;
     }
 }
-/* Projected words of the player as the original registers them (+3C/+40). */
+/* Projected words of the player as the original registers them (+3C/+40):
+ * world position plus the scene root (RAM 10E97C/10E980) of the native
+ * camera, or the integer camera at the base height without it. */
 static neo_world_player_t player_frame(const msx_game_t *g) {
-    neo_world_player_t p={(uint16_t)(g->x/MSX_UNIT-g->camera),(uint16_t)(MSX_PROJECTED_BASE_Y+56-g->y/MSX_UNIT),
+    int32_t rx=-(int32_t)((uint32_t)g->camera<<16),ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
+    if (g->world.camera_native) {rx=neo_camera_root_x(&g->world.camera);ry=neo_camera_root_y(&g->world.camera);}
+    neo_world_player_t p={(uint16_t)((uint32_t)(g->x+rx)>>16),(uint16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16),
         (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
     return p;
+}
+/* Mission actor camera step (neo_world_camera) and its command-list events. */
+static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
+    neo_world_camera(&g->world,p);
+    const neo_camera_t *c=&g->world.camera;
+    for (unsigned i=0;i<c->event_count;i++)
+        if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
+    g->camera=(int)(((int64_t)c->x+0xffff)>>16);
+    g->camera_height=(int)(((int64_t)c->y+0xffff)>>16);
 }
 /* Right limit of the player: camera+292-1/65536 (the arcade value behind
  * MSX_END_X), so a script camera lock also stops the player at the screen. */
@@ -103,18 +131,31 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->cooldown) g->cooldown--;
     if (g->shooting && ++g->shot_age>=8) g->shooting=false;
     if (fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
-        g->bullets[i]=(msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true};
+        g->bullets[i]=g->aim_up?(msx_bullet_t){player+g->facing*3,140+g->y/MSX_UNIT,g->facing,true,true}:
+            (msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true,false};
         g->cooldown=8;g->shot_age=0;g->shooting=true;g->shots++;break;
     }
     if (g->world_enabled && !(g->ticks&1)) {
         neo_world_player_t p=player_frame(g);
+        camera_step(g,&p);
         g->world.video_phase=(uint16_t)g->ticks;
-        if (neo_world_tick(&g->world,-(int32_t)((uint32_t)g->camera<<16),&p))
+        g->world.scroll_y=neo_camera_root_y(&g->world.camera);
+        if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
         g->kills=g->world.kills;
+        if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
+        if (g->world.mission_step>=1) g->mission_complete=true;
+        if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;
+        if (b->up) {
+            int previous_y=b->y;b->y-=6;
+            if (b->y<-32) b->active=false;
+            else if (g->world_enabled && neo_world_shot_row(&g->world,b->x*MSX_UNIT,(MSX_SCREEN_BASE_Y-previous_y)*MSX_UNIT,
+                b->x*MSX_UNIT,(MSX_SCREEN_BASE_Y-b->y)*MSX_UNIT,4,false)) {b->active=false;g->hits++;}
+            continue;
+        }
         int previous=b->x;b->x+=b->direction*6;
         if (b->y>=192+msx_ground_offset(b->x*MSX_UNIT)/MSX_UNIT) b->active=false;
         else if (g->world_enabled && neo_world_shot(&g->world,previous*MSX_UNIT,b->x*MSX_UNIT,
@@ -127,14 +168,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     }
     if (neo_vehicle_hit_segment(&g->vehicle,g->x,g->x,73*MSX_UNIT-g->y,9*MSX_UNIT,17*MSX_UNIT))
         msx_game_hurt(g,g->vehicle.x/MSX_UNIT);
-    int camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
-    // Level-script camera lock (ROM 0C7B0C/0C7C12): the view stops at it.
-    if (g->world_enabled && g->world.camera_lock>=0 && camera>g->world.camera_lock) camera=g->world.camera_lock;
-    if (camera>g->camera) g->camera=camera;
-    // Region end: the script has passed its "all groups cleared" waits
-    // (ROM 2D650E/2D6514) and the player stands at the native world limit.
-    if (g->world_enabled && neo_world_region_clear(&g->world) && g->x>=MSX_END_X && g->grounded) {
-        g->complete=true;g->moving=false;g->shooting=false;
-        memset(g->bullets,0,sizeof(g->bullets));
+    if (!g->world_enabled) {
+        // Reference/test runs without the native world: follow the player.
+        int camera=clamp(g->x/MSX_UNIT-144,0,MSX_CAMERA_MAX);
+        if (camera>g->camera) g->camera=camera;
     }
 }

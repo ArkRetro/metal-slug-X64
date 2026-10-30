@@ -1601,6 +1601,15 @@ uint16_t neo_boss_health(const neo_boss_t *w) {
     for (int16_t i=w->first;i>=0;i=w->nodes[i].next) if (w->nodes[i].routine && w->nodes[i].creator<0) return neo_boss_w(&w->nodes[i],0x4e);
     return 0;
 }
+const uint8_t *neo_boss_rom(uint32_t address,unsigned bytes) {return rom_at(address,bytes);}
+void neo_boss_stop(neo_boss_t *w,int16_t i) {
+    neo_boss_node_t *n=node_at(w,i);
+    if (!n || n->routine==DEAD) return;
+    const neo_boss_services_t *s=&w->services;
+    if (s->palette_release && n->f[0x1d]) s->palette_release(s->context,&n->f[0x19],n->f[0x1d]);
+    if (n->f[0x6a]!=0xff && s->platform_release) {s->platform_release(s->context,i,n->f[0x6a]);n->f[0x6a]=0xff;}
+    kill(w,i);
+}
 uint8_t neo_boss_phase(const neo_boss_t *w) {
     for (int16_t i=w->first;i>=0;i=w->nodes[i].next) if (w->nodes[i].routine && w->nodes[i].creator<0) return w->nodes[i].f[0x79];
     return 0;

@@ -1,0 +1,120 @@
+{
+ "descriptors": 29,
+ "palettes": [
+  "0x1b",
+  "0x20b",
+  "0x3ba"
+ ],
+ "missing_palettes": [],
+ "stats": {
+  "frames": 17,
+  "pixels_equal": 19450,
+  "pixels_different": 0,
+  "rank_2": 8,
+  "rank_1": 9
+ },
+ "frames": [
+  {
+   "frame": 10710,
+   "update_frame": 10707,
+   "equal": 1143,
+   "different": 0
+  },
+  {
+   "frame": 10740,
+   "update_frame": 10737,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 10770,
+   "update_frame": 10767,
+   "equal": 1132,
+   "different": 0
+  },
+  {
+   "frame": 10800,
+   "update_frame": 10797,
+   "equal": 1139,
+   "different": 0
+  },
+  {
+   "frame": 10830,
+   "update_frame": 10829,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 10860,
+   "update_frame": 10859,
+   "equal": 1145,
+   "different": 0
+  },
+  {
+   "frame": 10890,
+   "update_frame": 10887,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 10920,
+   "update_frame": 10919,
+   "equal": 1139,
+   "different": 0
+  },
+  {
+   "frame": 10950,
+   "update_frame": 10949,
+   "equal": 1145,
+   "different": 0
+  },
+  {
+   "frame": 10980,
+   "update_frame": 10978,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 11010,
+   "update_frame": 11008,
+   "equal": 1145,
+   "different": 0
+  },
+  {
+   "frame": 11040,
+   "update_frame": 11038,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 11070,
+   "update_frame": 11070,
+   "equal": 1128,
+   "different": 0
+  },
+  {
+   "frame": 11100,
+   "update_frame": 11099,
+   "equal": 1132,
+   "different": 0
+  },
+  {
+   "frame": 11130,
+   "update_frame": 11129,
+   "equal": 1145,
+   "different": 0
+  },
+  {
+   "frame": 11160,
+   "update_frame": 11156,
+   "equal": 1153,
+   "different": 0
+  },
+  {
+   "frame": 11190,
+   "update_frame": 11186,
+   "equal": 1139,
+   "different": 0
+  }
+ ]
+}

@@ -21,6 +21,11 @@ BLOBS=[
     (0x1DEB8,0x48,'01C9FA/01DA2E effect cull rectangles (019504)'),
     (0xDC85A,0x108,'0DC97E bomber: smoke lists/tables (01DA40), palettes, cull rectangles, hurtboxes, attack rows'),
     (0x2D06CE,0x330,'0DC9EE.. bomber rank tables (0260C8)'),
+    (0x0B57BE,0xB2,'0C83E6 Mission 1 camera/map command list (pointer RAM 10E964)'),
+    (0x2D2FC0,0x80,'0A8CA0 robed swordsman rank tables 2D2FC0/2D2FDA/2D2FF4 (0260C8)'),
+    (0x0E64D8,0x08,'0A9A56 robed swordsman cull rectangle (01945C)'),
+    (0x00087A,0x10,'0A8F38 sub-script records of the robed swordsman (+74 index)'),
+    (0x2D7214,0x02,'019F1A sub-script record 2D7214 (op 3)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

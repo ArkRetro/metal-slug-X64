@@ -31,6 +31,9 @@ typedef struct neo_gactor {
      * tell such stale bytes from written ones. */
     uint8_t written[NEO_GA_BYTES/8];
     bool active;
+    /* Deleted (routine 003F1E) but kept in the list while deeper nodes follow
+     * it (ROM 004126 -> 00408C): its fields stay readable by its children. */
+    bool placeholder;
 } neo_gactor_t;
 static inline uint8_t ga_b(const neo_gactor_t *a,unsigned o) {return a->m[o];}
 static inline uint16_t ga_w(const neo_gactor_t *a,unsigned o) {return (uint16_t)(a->m[o]<<8|a->m[o+1]);}
@@ -108,4 +111,14 @@ bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 01AFFC: carr
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 0C8BEC */
 uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *table); /* 0260C8 */
 void ga_fail(neo_genv_t *e,uint32_t at);
+bool ga_cull(neo_gactor_t *a,neo_genv_t *e,uint32_t rect);        /* 01945C: carry = remove */
+bool ga_cull_rect(neo_gactor_t *a,neo_genv_t *e,uint32_t rect);   /* 019504: carry = outside */
+uint16_t ga_rand(neo_genv_t *e);                                  /* 0029C6 */
+uint16_t ga_rand_range(neo_genv_t *e,uint16_t range);             /* 0029F2: (rng*range)>>16 */
+int16_t ga_sine(uint8_t angle);                                   /* table ROM 0029FC */
+int16_t ga_cosine(uint8_t angle);                                 /* table ROM 0029FC + 0x80 */
+void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy); /* 002E7C */
+neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy); /* 0040BC + 01B220 */
+void ga_place_at(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01ACF2 */
+bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e);             /* 00409A carry */
 #endif

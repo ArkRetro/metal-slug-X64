@@ -54,6 +54,7 @@ typedef struct {
     uint8_t follow_x,follow_y; /* +7A/+7B (0xFF while the player is controllable) */
     bool inactive;             /* RAM 10C33C bit clear: the player is dying (its
                                 * own update clears it before the others run) */
+    bool unregistered;         /* +50 clear: no hurtbox registered (004C24) */
 } neo_world_player_t;
 typedef struct {
     neo_script_t script;
@@ -66,7 +67,8 @@ typedef struct {
     neo_contact_parent_t dyn_parent[NEO_KDYN_COUNT];  /* projected blocks as parents */
     /* ROM 004C24 registry of the generic actors, double buffered: owners
      * registered during this update / queried during this update. */
-    uint8_t boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];unsigned box_count,last_box_count;
+    struct { uint8_t owner; uint16_t xbins; uint8_t ybins; } boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];
+    unsigned box_count,last_box_count;
     uint16_t view[4];
     neo_world_slot_t order[NEO_WORLD_ORDER];unsigned order_count;
     neo_kscene_t kernel;
@@ -76,6 +78,8 @@ typedef struct {
     uint8_t epoch;
     uint16_t video_phase;          /* RAM 10000E, set by the caller per update */
     int32_t scroll_x;              /* RAM 10E97C: -camera, Q16.16 */
+    int32_t scroll_y;              /* RAM 10E980: scene object y (0x01000000 at the
+                                    * base height; the caller sets it per update) */
     /* Optional trace hook, called before every actor update (tests). */
     void (*trace)(void *context,uint8_t kind,uint8_t index);void *trace_context;
     neo_world_draw_t draws[NEO_WORLD_DRAWS];unsigned draw_count;

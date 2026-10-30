@@ -9,9 +9,11 @@ const uint8_t *ga_rom(uint32_t address) {
     }
     return NULL;
 }
-bool neo_region_routine(uint32_t r) {return neo_truck_routine(r);}
+bool neo_region_routine(uint32_t r) {return neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r);}
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (neo_truck_routine(r)) return neo_truck_tick(a,e);
+    if (neo_effects_routine(r)) return neo_effects_tick(a,e);
+    if (neo_flyer_routine(r)) return neo_flyer_tick(a,e);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

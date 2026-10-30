@@ -17,6 +17,10 @@ BLOBS=[
     (0x29BE2,0x12,'029AEE truck smoke list (01DA40)'),
     (0x29C58,0x42,'029A1E truck cell map'),(0x29C9A,0x42,'029A26 truck cell map'),(0x29CDC,0x42,'029A04 truck cell map'),
     (0x29D1E,0x42,'029A0C truck cell map'),(0x29D60,0x34,'029A2E truck cell map'),
+    (0x29FC,0x280,'002E7C/01D9F0 sine table (cosine at +0x80)'),
+    (0x1DEB8,0x48,'01C9FA/01DA2E effect cull rectangles (019504)'),
+    (0xDC85A,0x108,'0DC97E bomber: smoke lists/tables (01DA40), palettes, cull rectangles, hurtboxes, attack rows'),
+    (0x2D06CE,0x330,'0DC9EE.. bomber rank tables (0260C8)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

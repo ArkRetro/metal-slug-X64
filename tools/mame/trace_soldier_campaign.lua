@@ -24,6 +24,16 @@ emu.register_frame_done(function()
   -- runner creations (01A1E8), for an exact script fixture.
   dbg:command('bpset 1a10a,1,{printf "SPAWN f=%d a6=%06X rec=%06X",temp9,a6,a0;g}')
   dbg:command('bpset 1a1e8,1,{printf "RUNNER f=%d a6=%06X rec=%06X",temp9,a6,a0;g}')
+  -- MSX_EXEC_LOG=1: every actor execution of the list traversal (ROM 004248,
+  -- A6 = node, routine at dispatch) and every node allocation (004116 at the
+  -- end of 0040BC: A0 = new node, A6 = creator), so the closed-loop fixture
+  -- knows the exact execution order and the RNG caller positions.
+  if os.getenv('MSX_EXEC_LOG')=='1' then
+   dbg:command('bpset 4248,1,{printf "EXEC f=%d a6=%06X rt=%06X",temp9,a6,a0;g}')
+   dbg:command('bpset 4116,1,{printf "ALLOC f=%d a0=%06X rt=%06X cr=%06X",temp9,a0,d@(a0),a6;g}')
+   -- Delay-grid splats (00505A, at A6's projected +3C/+40).
+   dbg:command('bpset 505a,1,{printf "SPLAT f=%d a6=%06X x=%04X y=%04X ret=%06X a2=%06X",temp9,a6,w@(a6+3c),w@(a6+40),d@(sp),a2;g}')
+  end
  end
  if frame>=first and frame<=last and (frame-first)%step==0 then
   local p=assert(io.open(output..'/palette'..frame..'.bin','wb'))

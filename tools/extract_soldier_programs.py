@@ -18,7 +18,9 @@ ROOTS=[0x23d510,0x23d594,0x23d5e2,0x23d692,0x23d6ec,0x23d712,0x23d7ee,0x23d8c0,0
 # Region entities (camera 0..1920) translated as generic actors. Their 0x14
 # callbacks become CALL commands handled by the family code (an unknown one
 # fails explicitly there).
-ROOTS+=[0x236818,0x236846,0x2367e4,0x2367fe,0x236874,0x2368a2,0x2368d0]
+ROOTS+=[0x236818,0x236846,0x2367e4,0x2367fe,0x236874,0x2368a2,0x2368d0,
+    0x22cdd4,0x22ce6c,0x22cf2c,0x22d264,0x22d27a,0x22d290,0x22e48a,0x22eac2,0x22e7f2,0x22e8ae,
+    0x2af47a,0x2afb56,0x2af960,0x2afc60,0x2afcca,0x2919fe]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
@@ -43,8 +45,9 @@ def convert(bank,root):
                 f=struct.unpack('>H',rd(pc+2,2))[0];t=struct.unpack('>I',rd(pc+4,4))[0]
                 fixups.append((add(pc,kind='COND_JUMP',asset=f,operand=1 if arg else 0),t));pending.append(t);pc+=8
             elif op==0x10:
-                assert arg==0x61;length=struct.unpack('>H',rd(pc+2,2))[0];assert length%8==0
-                c=add(pc,kind='SELECT_POSE',asset=0x61,operand=length//8);c['target']=len(commands)
+                length=struct.unpack('>H',rd(pc+2,2))[0];assert length%8==0
+                # 004412: pose selected by the actor byte `arg` (+61 for the soldiers).
+                c=add(pc,kind='SELECT_POSE' if arg==0x61 else 'SELECT_FIELD_POSE',asset=arg,operand=length//8);c['target']=len(commands)
                 for i in range(length//8):
                     at=pc+4+i*8;assert rd(at,1)[0]==4
                     dx,dy=struct.unpack('bb',rd(at+2,2));add(at,kind='POSE',flags=rd(at+1,1)[0],dx=dx,dy=dy,asset=struct.unpack('>I',rd(at+4,4))[0])

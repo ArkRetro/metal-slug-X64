@@ -7,4 +7,8 @@
  * routine label +00) and a predicate naming the routine labels it owns. */
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_truck_routine(uint32_t routine);
+ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_effects_routine(uint32_t routine);
+ga_result_t neo_flyer_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_flyer_routine(uint32_t routine);
 #endif

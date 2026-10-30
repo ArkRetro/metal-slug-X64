@@ -26,7 +26,7 @@ static uint32_t ktag(uint8_t obj) {return obj==NEO_KOBJ_TERRAIN?TERRAIN_TAG:obj=
 /* ---- per-update context ---------------------------------------------------- */
 typedef struct {
     neo_world_t *w;
-    neo_hurtbox_t player;bool player_valid;
+    neo_hurtbox_t player;bool player_valid,player_hittable;
     neo_control_frame_t players;
     neo_cull_bounds_t bounds;
     neo_soldier_env_t env;
@@ -161,7 +161,7 @@ static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame
 }
 static bool throw_hit(void *context,const neo_contact_actor_t *b) {
     tick_t *t=context;
-    if (!t->player_valid) return false;
+    if (!t->player_hittable) return false;
     int first=-1;
     uint8_t type=neo_hit_query(b,soldier_throw_attack,&t->player,1,(uint8_t)soldier_throw_attack[4],(uint8_t)soldier_throw_attack[5],&first);
     if (type && first>=0 && soldier_throw_attack[6]) {t->hits++;t->w->hit_x=HI(b->projected_x);}
@@ -215,7 +215,7 @@ static void g_sound(void *ctx,uint16_t id) {(void)ctx;(void)id;}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (!c) return true;
-    if ((c&0xff000000u)==NEO_GA_TAG_BASE) return (c&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[c&0xffffu].active;
+    if ((c&0xff000000u)==NEO_GA_TAG_BASE) return (c&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[c&0xffffu].active && !t->w->gactors[c&0xffffu].placeholder;
     return true;
 }
 static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
@@ -268,7 +268,9 @@ static void g_dyn_release(void *ctx,neo_gactor_t *a) {
 }
 /* ROM 004126 -> 0164D0: a deleted node releases its dynamic object. */
 static void ga_kill(tick_t *t,neo_gactor_t *a) {
+    /* 003F90: palettes, dynamic object (0164D0), +6B/+58, +68/+69. */
     if (ga_b(a,0x6a)!=0xffu) g_dyn_release(t,a);
+    ga_sb(a,0x6b,0xff);ga_sw(a,0x58,0xffff);ga_sb(a,0x68,0);ga_sb(a,0x69,0xff);
     a->active=false;
 }
 static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
@@ -280,12 +282,9 @@ static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
  * 004762) reads the target's current position and descriptor. The original
  * visits slots in its bin-word order; the port visits them in registration
  * order (the slot numbers include the player and the outside actors). */
-static bool ga_rect_visible(const neo_gactor_t *a,const uint8_t *r) {
-    int16_t x=(int16_t)(r[0]<<8|r[1]),y=(int16_t)(r[2]<<8|r[3]),w=(int16_t)(r[4]<<8|r[5]),h=(int16_t)(r[6]<<8|r[7]);
-    if (ga_b(a,0x15)&1u) x=(int16_t)-(x+w);
-    x=(int16_t)(x+(int16_t)ga_w(a,0x3c));
-    if (ga_b(a,0x15)&2u) y=(int16_t)-(y+h);
-    y=(int16_t)(y+(int16_t)ga_w(a,0x40));
+/* Registry window clip of ROM 004C24/0049E8 (x -32..383, y 264..503
+ * projected): false when the rectangle is outside, else its 32-pixel bins. */
+static bool clip_bins(int16_t x,int16_t y,int16_t w,int16_t h,uint16_t *xbins,uint8_t *ybins) {
     x=(int16_t)(x+0x20);
     if (x<0) {w=(int16_t)(w+x);if (w<0) return false;x=0;}
     if (x>0x17f) return false;
@@ -295,14 +294,35 @@ static bool ga_rect_visible(const neo_gactor_t *a,const uint8_t *r) {
     if (y<0) {h=(int16_t)(h+y);if (h<0) return false;y=0;}
     if (y>0xef) return false;
     if (y+h>0xef) h=(int16_t)(0xef-y);
-    return h!=0;
+    if (!h) return false;
+    for (int b=x>>5;b<=(x+w)>>5;b++) *xbins|=(uint16_t)(1u<<b);
+    for (int b=y>>5;b<=(y+h)>>5;b++) *ybins|=(uint8_t)(1u<<b);
+    return true;
+}
+static bool ga_rect_bins(const neo_gactor_t *a,const uint8_t *r,uint16_t *xbins,uint8_t *ybins) {
+    int16_t x=(int16_t)(r[0]<<8|r[1]),y=(int16_t)(r[2]<<8|r[3]),w=(int16_t)(r[4]<<8|r[5]),h=(int16_t)(r[6]<<8|r[7]);
+    if (ga_b(a,0x15)&1u) x=(int16_t)-(x+w);
+    x=(int16_t)(x+(int16_t)ga_w(a,0x3c));
+    if (ga_b(a,0x15)&2u) y=(int16_t)-(y+h);
+    y=(int16_t)(y+(int16_t)ga_w(a,0x40));
+    return clip_bins(x,y,w,h,xbins,ybins);
 }
 static void g_register(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;neo_world_t *w=t->w;const uint8_t *d=ga_rom(ga_l(a,0x50));
     if (!d) {ga_fail(&t->genv,ga_l(a,0x50));return;}
-    bool any=false;
-    for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) any|=ga_rect_visible(a,d+at);
-    if (any && w->box_count<NEO_WORLD_BOXES) w->boxes[w->box_count++]=(uint8_t)a->index;
+    bool any=false;uint16_t xb=0;uint8_t yb=0;
+    for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) any|=ga_rect_bins(a,d+at,&xb,&yb);
+    if (any && w->box_count<NEO_WORLD_BOXES) {w->boxes[w->box_count].owner=(uint8_t)a->index;w->boxes[w->box_count].xbins=xb;w->boxes[w->box_count].ybins=yb;w->box_count++;}
+}
+/* Bins of an attack rectangle (0049E8); false when outside the window. */
+static bool attack_bins(const neo_contact_actor_t *a,const int16_t at[7],uint16_t *xb,uint8_t *yb) {
+    int16_t x=at[0],y=at[1];
+    if (a->flags15&1u) x=(int16_t)-(x+at[2]);
+    x=(int16_t)(x+(int16_t)HI(a->projected_x));
+    if (a->flags15&2u) y=(int16_t)-(y+at[3]);
+    y=(int16_t)(y+(int16_t)HI(a->projected_y));
+    *xb=0;*yb=0;
+    return clip_bins(x,y,at[2],at[3],xb,yb);
 }
 /* ROM 004762 + 004892..00499A on a generic actor hit by attack row `at`. */
 static bool ga_receive(neo_gactor_t *g,const neo_contact_actor_t *a,uint8_t a5e,const int16_t at[7],uint16_t *grid) {
@@ -354,7 +374,7 @@ static bool ga_class(const neo_gactor_t *g,unsigned cls) {
 static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     tick_t *t=ctx;neo_world_t *w=t->w;neo_contact_actor_t c=ga_contact(a);
     if (row[5]==0) { /* class 0: the player */
-        if (!t->player_valid) return 0;
+        if (!t->player_hittable) return 0;
         int first=-1;uint8_t type=neo_hit_query(&c,row,&t->player,1,(uint8_t)row[4],0,&first);
         if (type && first>=0 && row[6]) {t->hits++;w->hit_x=HI(c.projected_x);}
         return type;
@@ -366,8 +386,11 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
             if (neo_soldier_hurtbox(s,&hb) && neo_soldier_receive(s,&c,ga_b(a,0x5e),row,w->grid) && hb.type>best) best=hb.type;
         }
     }
+    uint16_t qx;uint8_t qy;
+    if (!attack_bins(&c,row,&qx,&qy)) return best;
     for (unsigned b=0;b<w->last_box_count;b++) {
-        neo_gactor_t *g=&w->gactors[w->last_boxes[b]];
+        neo_gactor_t *g=&w->gactors[w->last_boxes[b].owner];
+        if (!(w->last_boxes[b].xbins&qx) || !(w->last_boxes[b].ybins&qy)) continue;
         if (g==a || !g->active || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) continue;
         if (ga_receive(g,&c,ga_b(a,0x5e),row,w->grid)) {uint8_t ty=ga_rom(ga_l(g,0x50))[0];if (ty>best) best=ty;}
     }
@@ -471,7 +494,7 @@ static void delete_tree(tick_t *t,unsigned at) {
 static void scene_at(neo_world_t *w,int32_t x,bool reset) {
     neo_contact_parent_t *p[2]={&w->terrain,&w->root};
     for (unsigned i=0;i<2;i++) {
-        p[i]->previous_x=reset?x:p[i]->x;p[i]->previous_y=SCENE_Y;p[i]->x=x;p[i]->y=SCENE_Y;p[i]->correction=0;
+        p[i]->previous_x=reset?x:p[i]->x;p[i]->previous_y=reset?w->scroll_y:p[i]->y;p[i]->x=x;p[i]->y=w->scroll_y;p[i]->correction=0;
     }
     w->kernel.terrain=(neo_kobj_t){w->terrain.x,w->terrain.y,w->terrain.previous_x,w->terrain.previous_y};
     w->kernel.root=(neo_kobj_t){w->root.x,w->root.y,w->root.previous_x,w->root.previous_y};
@@ -483,7 +506,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     memcpy(w->rng.words,mission1_handoff_rng,sizeof(w->rng.words));w->rng.cursor=MISSION1_HANDOFF_RNG_CURSOR;
     w->terrain.tag=TERRAIN_TAG;w->root.tag=ROOT_TAG;
     w->kernel.group_map=soldier_group_map;
-    w->epoch=1;w->camera_lock=-1;
+    w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
@@ -498,6 +521,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     w->draw_count=0;
     /* Player as the others see it (registered during its previous update). */
     t.player_valid=pl && pl->alive;
+    t.player_hittable=t.player_valid && !pl->unregistered;
     uint16_t px=pl?pl->px:0,py=pl?pl->py:0;
     t.player=(neo_hurtbox_t){px,py,pl?pl->flags15:0,soldier_player_hurtbox.type,0,
         {soldier_player_hurtbox.rect[0],soldier_player_hurtbox.rect[1],soldier_player_hurtbox.rect[2],soldier_player_hurtbox.rect[3]},pl && pl->dead};
@@ -508,13 +532,15 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     t.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     neo_soldier_env_t *e=&t.env;
     e->kernel=&w->kernel;e->terrain=w->terrain;e->root=w->root;e->epoch=w->epoch;e->players=t.players;
-    e->grid=w->grid;e->rng=&w->rng;e->targets=t.player_valid?&t.player:NULL;e->target_count=t.player_valid?1:0;
+    e->grid=w->grid;e->rng=&w->rng;e->targets=t.player_hittable?&t.player:NULL;e->target_count=t.player_hittable?1:0;
     e->bounds=t.bounds;e->camera_word=HI(w->terrain.x);e->program=program;e->emit=emit;e->emit_context=&t;
     e->event=soldier_event;e->event_context=&t;e->blood=false;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;
-    g->video=w->video_phase;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
+    /* RAM 10000E as the actors read it: the counter has already advanced for
+     * this update (video_phase is the value before it). */
+    g->video=(uint16_t)(w->video_phase+1u);g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
@@ -541,6 +567,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,&t};
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
+        if (slot.kind==NEO_WORLD_GACTOR && w->gactors[slot.index].placeholder) {
+            /* 00417E: freed once no deeper node follows it. */
+            if (at+1u<w->order_count && w->order[at+1u].depth>slot.depth) {at++;continue;}
+            w->gactors[slot.index].placeholder=false;w->gactors[slot.index].active=false;
+            remove_at(w,at);continue;
+        }
         if (w->trace) w->trace(w->trace_context,slot.kind,slot.index);
         /* The running actor (A6) for the dynamic-object exclusions of 01424C:
          * only generic actors own dynamic objects or carry others. */
@@ -557,6 +589,11 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         int now=find(w,slot.kind,slot.index);
         if (now<0) now=(int)at;
         if (tree) delete_tree(&t,(unsigned)now);
+        if (!keep && slot.kind==NEO_WORLD_GACTOR && (unsigned)now+1u<w->order_count && w->order[now+1].depth>slot.depth) {
+            /* 004126: a node followed by deeper ones stays as a placeholder. */
+            neo_gactor_t *g=&w->gactors[slot.index];
+            g->active=true;g->placeholder=true;ga_sl(g,0,0x3f1e);keep=true;
+        }
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;
     }
@@ -580,8 +617,10 @@ bool neo_world_shot(neo_world_t *w,int32_t previous_x,int32_t x,int32_t y,bool l
 bool neo_world_hit_actor(neo_world_t *w,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]) {
     if (index>=NEO_WORLD_GACTORS || row[5]<0) return false;
     neo_gactor_t *g=&w->gactors[index];
-    bool registered=false;
-    for (unsigned b=0;b<w->last_box_count;b++) registered|=w->last_boxes[b]==index;
+    bool registered=false;uint16_t qx;uint8_t qy;
+    if (!attack_bins(attacker,row,&qx,&qy)) return false;
+    for (unsigned b=0;b<w->last_box_count;b++)
+        registered|=w->last_boxes[b].owner==index && (w->last_boxes[b].xbins&qx) && (w->last_boxes[b].ybins&qy);
     if (!registered || !g->active || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) return false;
     return ga_receive(g,attacker,a5e,row,w->grid);
 }

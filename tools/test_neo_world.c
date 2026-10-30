@@ -10,6 +10,7 @@
 #define MSX_SOLDIER_PROGRAMS 1
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "../src/neo_world.h"
 #include "soldier_ai_tables.h"
 #include "soldier_world_fixture.h"
@@ -25,16 +26,36 @@ typedef struct {
      * them (animation start, hit). */
     bool fresh[NEO_WORLD_SOLDIERS];
     bool hit[NEO_WORLD_SOLDIERS];   /* +5B..+5D are written by the first hit */
-    unsigned injected,bad_order,bullet_hits,external_attacks;
+    bool skipped[96];                /* transient entries the port did not create */
+    bool existed[NEO_WORLD_GACTORS]; /* generic actors alive when the update began */
+    unsigned injected,bad_order,bullet_hits,external_attacks,splat_at,splats;
     char why[256];
 } ctx_t;
 /* Position of a world actor in the original list; -1 for outside actors. A
  * death splash (040F88/040FD4) never calls the RNG, so calls logged under a
  * node reused for one this update belong to its previous occupant (a bullet
  * spark) and are injected. */
+static const bool *skipped_now;
+/* Original list position of the actor that made call `l`; -1 for outside
+ * actors. Execution-log fixtures give the caller's position directly. */
+static int call_position(const world_tick_t *t,const world_call_t *l);
 static int position_of(const world_tick_t *t,uint32_t node) {
     for (unsigned i=0;i<t->order_count;i++)
-        if (t->order[i].node==node) return t->order[i].kind==NEO_WORLD_SPLASH?-1:t->order[i].position;
+        if (t->order[i].node==node) {
+            if (t->order[i].transient && skipped_now && skipped_now[i]) continue;
+            return t->order[i].kind==NEO_WORLD_SPLASH?-1:t->order[i].position;
+        }
+    return -1;
+}
+static unsigned dbg_frame;
+static int position_of(const world_tick_t *t,uint32_t node);
+static int call_position(const world_tick_t *t,const world_call_t *l) {
+    if (l->position<0) return position_of(t,l->node);
+    for (unsigned i=0;i<t->order_count;i++)
+        if (t->order[i].position==l->position) {
+            if (t->order[i].transient && skipped_now && skipped_now[i]) return -1;
+            return t->order[i].kind==NEO_WORLD_SPLASH?-1:l->position;
+        }
     return -1;
 }
 static void bullet(ctx_t *c,const world_bullet_t *b,int kind,unsigned index) {
@@ -46,7 +67,8 @@ static void bullet(ctx_t *c,const world_bullet_t *b,int kind,unsigned index) {
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,k.parent==1?0x10c72eu:k.parent==2?0x10e968u:0,k.kind,k.flags};
     neo_contact_commit(&body,&res,res.parent_tag==0x10c72eu?&w->terrain:&w->root,w->epoch);
     if (kind==NEO_WORLD_GACTOR) {
-        if (neo_world_hit_actor(w,index,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u])) c->bullet_hits++;
+        if (neo_world_hit_actor(w,index,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u])) {c->bullet_hits++;
+            if (c->t->frame==dbg_frame) printf("  bullet pos %u hits gactor %u at %04x,%04x (bullet %08x,%08x)\n",b->position,index,ga_w(&w->gactors[index],0x3c),ga_w(&w->gactors[index],0x40),(unsigned)body.projected_x,(unsigned)body.projected_y);}
         return;
     }
     neo_soldier_t *s=&w->soldiers[index];
@@ -62,19 +84,30 @@ static void bullets_after(ctx_t *c) {
 }
 static void trace(void *context,uint8_t kind,uint8_t index) {
     ctx_t *c=context;const world_tick_t *t=c->t;
+    if (t->frame==dbg_frame) printf("  trace kind %u index %u rng cursor %u routine %05X\n",kind,index,c->w->rng.cursor,
+        kind==NEO_WORLD_GACTOR?(unsigned)ga_l(&c->w->gactors[index],0):kind==NEO_WORLD_SOLDIER?(unsigned)c->w->soldiers[index].routine:0u);
     bullets_after(c);
     /* A thrown object created this update is inserted after the script actor
      * (03BB8E -> 00411C), behind the traversal: it first runs next update. */
     while (c->executed<t->order_count && t->order[c->executed].created && t->order[c->executed].kind==NEO_WORLD_THROW) c->executed++;
-    if (c->executed>=t->order_count) {c->bad_order++;return;}
+    /* A transient entry (created and deleted by a world actor within the
+     * update) is matched only by a generic actor the port created this
+     * update; otherwise its calls are injected as an outside actor's. */
+    while (c->executed<t->order_count && t->order[c->executed].transient &&
+        !(kind==NEO_WORLD_GACTOR && !c->existed[index])) {c->skipped[c->executed]=true;c->executed++;}
+    if (c->executed>=t->order_count) {c->bad_order++;snprintf(c->why,sizeof(c->why),"extra native actor kind %u index %u routine %05X",kind,index,kind==NEO_WORLD_GACTOR?(unsigned)ga_l(&c->w->gactors[index],0):0u);return;}
     const world_actor_t *a=&t->order[c->executed++];
     if (a->kind!=kind) {c->bad_order++;snprintf(c->why,sizeof(c->why),"actor %u kind %u/%u node %06X",c->executed-1,kind,a->kind,(unsigned)a->node);}
     c->map[kind][index]=a->node;
     if (kind==NEO_WORLD_SOLDIER && !c->w->constructed[index]) {c->fresh[index]=true;c->hit[index]=false;}
     else if (kind==NEO_WORLD_SOLDIER) c->fresh[index]=false;
+    /* Splats of outside actors that precede this one (execution log). */
+    while (c->splat_at<t->splat_count && t->splats[c->splat_at].position<a->position) {
+        neo_grid_splat(c->w->grid,t->splats[c->splat_at].x,t->splats[c->splat_at].y);c->splat_at++;c->splats++;
+    }
     /* Inject the calls of outside actors that precede this one. */
     while (c->log_at<t->log_count) {
-        uint32_t node=t->log[c->log_at].node;int pos=position_of(t,node);
+        int pos=call_position(t,&t->log[c->log_at]);
         if (pos>=0 && pos>=(int)a->position) break;
         if (pos<0) {neo_rng_next(&c->w->rng);c->injected++;}
         c->log_at++;
@@ -152,6 +185,7 @@ static void dump(const neo_world_t *w) {
     }
 }
 int main(void) {
+    {const char *d=getenv("WORLD_DEBUG_FRAME");if (d) dbg_frame=(unsigned)atoi(d);}
     unsigned injected_targets=0,ticks=0,states=0,gstates=0,injected=0,native_calls=0,throws=0,hits=0,draws=0,external_attacks=0,external_splats=0;
     for (unsigned ci=0;ci<COUNT(world_captures);ci++) {
         const world_capture_t *cap=&world_captures[ci];
@@ -162,13 +196,16 @@ int main(void) {
         ctx_t c;memset(&c,0,sizeof(c));c.w=&w;w.trace=trace;w.trace_context=&c;
         for (unsigned ti=0;ti<cap->tick_count;ti++) {
             const world_tick_t *t=&cap->ticks[ti];
-            c.t=t;c.executed=0;c.log_at=0;c.previous_soldier=-1;c.why[0]=0;
-            w.video_phase=t->video;
-            neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u)};
+            c.t=t;c.executed=0;c.log_at=0;c.splat_at=0;c.previous_soldier=-1;c.why[0]=0;
+            memset(c.skipped,0,sizeof(c.skipped));skipped_now=c.skipped;
+            for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) c.existed[i]=w.gactors[i].active;
+            w.video_phase=t->video;w.scroll_y=t->scroll_y;memcpy(w.view,t->view,sizeof(w.view));
+            neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u),t->unregistered};
             unsigned before_calls=c.injected;
             neo_world_tick(&w,t->scroll_x,&p);
             bullets_after(&c);
             while (c.executed<t->order_count && t->order[c.executed].created && t->order[c.executed].kind==NEO_WORLD_THROW) c.executed++;
+            while (c.executed<t->order_count && t->order[c.executed].transient) {c.skipped[c.executed]=true;c.executed++;}
             /* Map the objects thrown this update to their nodes, in list order;
              * a slot freed (and possibly reused) this update loses its node. */
             for (unsigned i=0;i<NEO_WORLD_THROWS;i++) {
@@ -181,9 +218,10 @@ int main(void) {
                 for (;k<t->order_count && !(t->order[k].created && t->order[k].kind==NEO_WORLD_THROW);k++) {}
                 if (k<t->order_count) c.map[NEO_WORLD_THROW][w.order[i].index]=t->order[k++].node;
             }
+            while (c.splat_at<t->splat_count) {neo_grid_splat(w.grid,t->splats[c.splat_at].x,t->splats[c.splat_at].y);c.splat_at++;c.splats++;}
             /* Remaining calls by outside actors after the last world actor. */
             while (c.log_at<t->log_count) {
-                if (position_of(t,t->log[c.log_at].node)<0) {neo_rng_next(&w.rng);c.injected++;}
+                if (call_position(t,&t->log[c.log_at])<0) {neo_rng_next(&w.rng);c.injected++;}
                 c.log_at++;
             }
             bool bad=c.bad_order||c.executed!=t->order_count||w.unsupported||w.overflow||w.rng.cursor!=t->rng_cursor||
@@ -192,6 +230,8 @@ int main(void) {
                 printf("FAIL %s frame %u: order %u/%u (%s) unsupported %u (%05X) overflow %u rng %u/%u pc %06X/%06X epoch %u/%u\n",cap->name,(unsigned)t->frame,
                     c.executed,t->order_count,c.why,w.unsupported,(unsigned)w.unsupported_routine,w.overflow,w.rng.cursor,t->rng_cursor,
                     (unsigned)neo_script_address(&w.script,w.script.pc),(unsigned)t->pc,w.epoch,t->epoch);
+                for (unsigned k=0;k<9;k++) printf(" g%u=%u/%u",k,w.script.groups[k],t->groups[k]);
+                printf(" rngwords %s\n",memcmp(w.rng.words,t->rng_words,sizeof(w.rng.words))?"differ":"same");
                 return 1;
             }
             /* Every original soldier state must have its native counterpart. */
@@ -220,7 +260,7 @@ int main(void) {
             /* Kills of actors outside the world (the 0400AA/099DCC entities
              * shot by the player) splat the grid too (ROM 00505A): a
              * difference that is exactly one or two splats is injected. */
-            for (unsigned n=0;n<2 && memcmp(w.grid,t->grid,sizeof(w.grid));n++) {
+            for (unsigned n=0;n<2 && !t->exec_log && memcmp(w.grid,t->grid,sizeof(w.grid));n++) {
                 bool found=false;
                 for (unsigned cell=0;cell<128 && !found;cell++) {
                     uint16_t g[128];memcpy(g,w.grid,sizeof(g));
@@ -258,10 +298,24 @@ int main(void) {
             }
             for (unsigned k=0;k<t->gactor_count;k++) {
                 const world_gactor_t *o=&t->gactors[k];int found=-1;
-                for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (w.gactors[i].active && c.map[NEO_WORLD_GACTOR][i]==o->node) found=(int)i;
+                for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (w.gactors[i].active && !w.gactors[i].placeholder && c.map[NEO_WORLD_GACTOR][i]==o->node) found=(int)i;
                 if (found<0) {printf("FAIL %s frame %u: actor %06X (%05X) missing natively\n",cap->name,(unsigned)t->frame,(unsigned)o->node,
                     (unsigned)((uint32_t)o->m[1]<<16|(uint32_t)o->m[2]<<8|o->m[3]));return 1;}
                 inject_stale(&w.gactors[found],o->m);
+                /* An attack by an actor the port does not have (the player's
+                 * point-blank shot or knife, ROM 0049E8 from the player's own
+                 * update) is injected as the original recorded it: health,
+                 * hit fields and flash, only when the original took more
+                 * damage than the native actor. */
+                {
+                    neo_gactor_t *g=&w.gactors[found];
+                    uint16_t want=(uint16_t)(o->m[0x4e]<<8|o->m[0x4f]);
+                    if (want<ga_w(g,0x4e)) {
+                        static const unsigned off[]={0x4e,0x4f,0x5a,0x5b,0x5c,0x5d,0x5e,0x17,0x5f};
+                        for (unsigned i=0;i<sizeof(off)/sizeof(off[0]);i++) ga_sb(g,off[i],o->m[off[i]]);
+                        c.external_attacks++;
+                    }
+                }
                 const char *d=compare_gactor(&c,&w.gactors[found],o->m);
                 if (*d) {printf("FAIL %s frame %u: actor %06X (%05X)%s\n",cap->name,(unsigned)t->frame,(unsigned)o->node,(unsigned)ga_l(&w.gactors[found],0),d);return 1;}
                 gstates++;
@@ -270,7 +324,7 @@ int main(void) {
             native_calls+=t->log_count-(c.injected-before_calls);
             ticks++;hits+=c.bullet_hits;c.bullet_hits=0;draws+=w.draw_count;
         }
-        injected+=c.injected;external_attacks+=c.external_attacks;
+        injected+=c.injected;external_attacks+=c.external_attacks;external_splats+=c.splats;
     }
     printf("PASS: %u closed-loop world updates: %u soldier states, %u generic actor states, %u thrown-object positions, %u native RNG calls (%u injected from outside actors), %u bullet hits, %u injected knife hits, %u injected outside-kill splats, %u injected continue targets, %u draws\n",
         ticks,states,gstates,throws,native_calls,injected,hits,external_attacks,external_splats,injected_targets,draws);

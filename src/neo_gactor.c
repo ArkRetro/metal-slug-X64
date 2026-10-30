@@ -1,6 +1,7 @@
 #include "neo_gactor.h"
 #include <string.h>
 #include "neo_target.h"
+#include "neo_cull.h"
 /* Shared services of the generic actor (see neo_gactor.h). Each function is
  * the native counterpart of one original helper, named by its ROM label. */
 static int32_t S32(uint32_t v) {return v<=0x7fffffffu?(int32_t)v:(int32_t)((int64_t)v-0x100000000LL);}
@@ -18,11 +19,19 @@ neo_contact_actor_t ga_contact(const neo_gactor_t *a) {
     return c;
 }
 void ga_set_contact(neo_gactor_t *a,const neo_contact_actor_t *c) {
-    ga_sl(a,0x28,(uint32_t)c->x);ga_sl(a,0x2c,(uint32_t)c->y);ga_sl(a,0x30,(uint32_t)c->vx);ga_sl(a,0x34,(uint32_t)c->vy);
-    ga_sl(a,0x62,(uint32_t)c->scalar62);ga_sl(a,0x3c,(uint32_t)c->projected_x);ga_sl(a,0x40,(uint32_t)c->projected_y);
-    ga_sl(a,0x44,(uint32_t)c->cached_x);ga_sl(a,0x48,(uint32_t)c->cached_y);ga_sl(a,0x38,c->parent_tag);
-    ga_sw(a,0x6c,c->kind_angle);ga_sw(a,0x66,c->field66);ga_sw(a,0x1e,c->word1e);
-    ga_sb(a,0x15,c->flags15);ga_sb(a,0x5f,c->flags5f);ga_sb(a,0x5a,c->timer5a);ga_sb(a,0x4c,c->mark);ga_sb(a,0x4d,c->correction);
+    /* Only changed fields are stored, so the written-byte mask (stale-field
+     * tracking) reflects what the translated routine actually changed. */
+    #define PUTL(o,v) do { if (ga_l(a,o)!=(uint32_t)(v)) ga_sl(a,o,(uint32_t)(v)); } while (0)
+    #define PUTW(o,v) do { if (ga_w(a,o)!=(uint16_t)(v)) ga_sw(a,o,(uint16_t)(v)); } while (0)
+    #define PUTB(o,v) do { if (ga_b(a,o)!=(uint8_t)(v)) ga_sb(a,o,(uint8_t)(v)); } while (0)
+    PUTL(0x28,c->x);PUTL(0x2c,c->y);PUTL(0x30,c->vx);PUTL(0x34,c->vy);
+    PUTL(0x62,c->scalar62);PUTL(0x3c,c->projected_x);PUTL(0x40,c->projected_y);
+    PUTL(0x44,c->cached_x);PUTL(0x48,c->cached_y);PUTL(0x38,c->parent_tag);
+    PUTW(0x6c,c->kind_angle);PUTW(0x66,c->field66);PUTW(0x1e,c->word1e);
+    PUTB(0x15,c->flags15);PUTB(0x5f,c->flags5f);PUTB(0x5a,c->timer5a);PUTB(0x4c,c->mark);PUTB(0x4d,c->correction);
+    #undef PUTL
+    #undef PUTW
+    #undef PUTB
 }
 bool ga_parent(neo_genv_t *e,uint32_t tag,neo_contact_parent_t *out) {
     if (!tag) return false;
@@ -225,3 +234,44 @@ uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *t
     unsigned o=2+(d0*12u+v*2u);
     return (uint16_t)(t[o]<<8|t[o+1]);
 }
+
+bool ga_cull(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
+    const uint8_t *r=ga_rom(rect);
+    if (!r) {ga_fail(e,rect);return false;}
+    uint16_t q[4];for (unsigned i=0;i<4;i++) q[i]=(uint16_t)(r[2*i]<<8|r[2*i+1]);
+    neo_contact_actor_t c=ga_contact(a);
+    return neo_cull_outside(&c,&e->bounds,q);
+}
+bool ga_cull_rect(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
+    const uint8_t *r=ga_rom(rect);
+    if (!r) {ga_fail(e,rect);return false;}
+    uint16_t q[4];for (unsigned i=0;i<4;i++) q[i]=(uint16_t)(r[2*i]<<8|r[2*i+1]);
+    neo_contact_actor_t c=ga_contact(a);
+    return neo_cull_rectangle_outside(&c,&e->bounds,q);
+}
+uint16_t ga_rand(neo_genv_t *e) {return neo_rng_next(e->rng);}
+uint16_t ga_rand_range(neo_genv_t *e,uint16_t range) {return (uint16_t)(((uint32_t)neo_rng_next(e->rng)*range)>>16);}
+int16_t ga_sine(uint8_t angle) {const uint8_t *t=ga_rom(0x29fcu+2u*angle);return t?(int16_t)(t[0]<<8|t[1]):0;}
+int16_t ga_cosine(uint8_t angle) {const uint8_t *t=ga_rom(0x29fcu+0x80u+2u*angle);return t?(int16_t)(t[0]<<8|t[1]):0;}
+void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy) {
+    /* 002E7C: d0 = speed>>8 (arithmetic); d1 = d0.w*sin, d0 = d0.w*cos (muls.w). */
+    int32_t d0=S32(speed)>>8;
+    int16_t w=(int16_t)(uint16_t)d0;
+    *vy=(uint32_t)((int32_t)w*ga_sine(angle));
+    *vx=(uint32_t)((int32_t)w*ga_cosine(angle));
+}
+void ga_place_at(neo_gactor_t *a,const neo_gactor_t *s,neo_genv_t *e,int16_t dx,int16_t dy) {
+    neo_contact_parent_t root;
+    if (!ga_parent(e,ROOT_TAG,&root)) return;
+    uint32_t ox=(uint32_t)(int32_t)dx<<16,oy=(uint32_t)(int32_t)dy<<16;
+    uint32_t d0=ox+ga_l(s,0x3c)-(uint32_t)root.x,d1=oy+ga_l(s,0x40)-(uint32_t)root.y;
+    uint32_t d2=ox+ga_l(s,0x44)-(uint32_t)root.previous_x,d3=oy+ga_l(s,0x48)-(uint32_t)root.previous_y;
+    ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d0-d2);ga_sl(a,0x34,d1-d3);ga_sl(a,0x38,ROOT_TAG);
+    ga_project(a,e);
+}
+neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy) {
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    if (c) ga_place_from(c,a,e,dx,dy);
+    return c;
+}
+bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e) {return !e->creator_alive || e->creator_alive(e->ctx,a);}

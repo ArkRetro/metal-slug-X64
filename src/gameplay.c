@@ -58,7 +58,7 @@ void msx_game_hurt(msx_game_t *g,int from) {
 /* Projected words of the player as the original registers them (+3C/+40). */
 static neo_world_player_t player_frame(const msx_game_t *g) {
     neo_world_player_t p={(uint16_t)(g->x/MSX_UNIT-g->camera),(uint16_t)(MSX_PROJECTED_BASE_Y+56-g->y/MSX_UNIT),
-        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false};
+        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
     return p;
 }
 /* Right limit of the player: camera+292-1/65536 (the arcade value behind

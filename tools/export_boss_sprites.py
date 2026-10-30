@@ -24,6 +24,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path);p.add_argument('capture',type=Path)
     p.add_argument('--fixture',type=Path,default=ROOT/'data/boss_fight_a.json.gz')
     p.add_argument('--frames',default='10230:13740:30');p.add_argument('--report',type=Path,default=ROOT/'docs/boss-sprites-validation.json')
+    p.add_argument('--no-export',action='store_true',help='validate only (keep filesystem/boss-native.json)')
     a=p.parse_args()
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     progs=json.loads((ROOT/'data/boss_programs.json').read_text())['programs']
@@ -65,7 +66,7 @@ def main():
     # native draws are scored.
     from extract_boss_fight import parse,lanes
     native_rt=lambda r:0xd5976<=r<0xd74d4 or r in (0x2a18a,0x2a244,0x2a2ac,0x2a2fe)
-    main=fixture['nodes'][0]['addr'];passes=[]
+    main=fixture['nodes'][0]['addr'];passes=[];main_gone=[False]
     for u in parse(a.capture/'boss-trace.txt'):
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
@@ -74,7 +75,10 @@ def main():
                 cur['w'].append(d)
             elif k=='W' and pc==0xa080 and cur is not None:cur['z']=(cur['z']<<16|d)&0xffffffff
         out=[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0],y=c['w'][1],attr=c['w'][3],z=c['z']&0xffff,native=c['native']) for c in dl if len(c['w'])==6]
-        if u['node']==main or not passes:passes.append([])
+        # a logic pass starts with the main body (first boss node of the
+        # list); once the body is deleted, when a node comes back
+        if u['node']==main and u['routine']==0xd5eda:main_gone[0]=True
+        if not passes or (u['node']==main and not main_gone[0]) or (main_gone[0] and u['node'] in {x[1] for x in passes[-1]}):passes.append([])
         passes[-1].append((u['frame'],u['node'],out,False))
     gen_descs={}
     def desc_of(t):
@@ -148,7 +152,7 @@ def main():
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the boss programs; palettes from MAME 0.264 mslugx euro dumps',
         p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
         missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
-    (ROOT/'filesystem/boss-native.json').write_text(json.dumps(out,separators=(',',':'))+'\n')
+    if not a.no_export:(ROOT/'filesystem/boss-native.json').write_text(json.dumps(out,separators=(',',':'))+'\n')
     tiles=set()
     for d in assets:
         at=d-0x100000;groups,attr=data[at:at+2];at+=2

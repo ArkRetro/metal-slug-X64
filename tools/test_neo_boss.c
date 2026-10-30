@@ -190,7 +190,7 @@ int main(void) {
         for (unsigned i=0;i<nnodes;i++) {node_ctor[i]=u32(&r);(void)u16(&r);node_addr[i]=u32(&r);native_of[i]=-1;}
         for (unsigned i=0;i<NEO_BOSS_NODES;i++) fixture_of[i]=-1;
         neo_boss_services_t sv={NULL,s_rng,s_alloc,s_pal,NULL,NULL,s_scene,s_sweep,s_floor,s_plat,s_platfree,s_hurt,s_attack,s_bounds,s_draw,s_effect,s_mission};
-        neo_boss_init(&boss,&sv);
+        neo_boss_init(&boss,&sv);draws_ok=draws_bad=effects_ok=effects_bad=0;
         boss.env.p1_node=true;
         unsigned pass=0,fail=0,pre_fail=0,unsupported=0,hits=0,hits_unknown=0,handoffs=0,deletes=0;
         uint32_t covered[128];unsigned ncovered=0;

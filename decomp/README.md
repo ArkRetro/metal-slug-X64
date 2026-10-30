@@ -42,4 +42,4 @@ permite reunir nuevas raíces desde análisis posteriores.
 
 La salida completa incluye instrucciones, proyecto Ghidra y manifiesto. La ROM,
 RAM y trazas permanecen fuera de Git. El C incluido elimina únicamente espacios
-al final de línea; el inventario distingue los hashes originales y publicados.
+al final de línea y líneas vacías finales; el inventario distingue los hashes originales y publicados.

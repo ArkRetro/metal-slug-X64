@@ -23,9 +23,9 @@
   "repository_files_sha256": {
     "tentative/functions.tsv": "3133aa8d6eaacf5651b152c1814319d4fa89705a1a9d14db9b9f9165fcddb144",
     "tentative/unresolved.tsv": "ca0cc222d033fd05d66ade2f7705c5d5e19de4cb705ae8078ea0cbc99a6601da",
-    "tentative/fixed_p1.c": "4d2b4d1f076218b5239221586db4e0463adb1f632a747ad96718990817da6cb6",
+    "tentative/fixed_p1.c": "2b32f652db50f46984552a7c04755c1e78d65af95d61a2724771719012fdd985",
     "tentative/seeds.txt": "88d22f11f207c1786bae29051fcb9006d6dfc8f13016fb532e2b4ea00b02f47c"
   },
-  "normalization": "Published C strips trailing whitespace only; files records hashes of the private original export.",
+  "normalization": "Published C strips trailing whitespace and extra final blank lines only; files records hashes of the private original export.",
   "seed_file_sha256": "88d22f11f207c1786bae29051fcb9006d6dfc8f13016fb532e2b4ea00b02f47c"
 }

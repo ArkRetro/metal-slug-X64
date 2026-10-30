@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include <stdio.h>
+#include "scene_renderer.h"
 #include "actor.h"
 #include "cinematic.h"
 #include "msx_audio.h"
@@ -25,7 +26,7 @@ int main(void) {
     unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;uint32_t started=TICKS_READ();
     debugf("MSX INTRO start source=3830 frames=%u\n",MSX_ENTRY_FRAMES);
     for (;;) {
-        joypad_poll();msx_audio_service();surface_t *surface=display_get();
+        joypad_poll();msx_audio_service();surface_t *surface=msx_display_get();
         unsigned target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));
         unsigned work=0;msx_cinematic_stats_t state=msx_cinematic_stats();
         while (state.index<target && state.index+1<state.frames && work<8) {
@@ -46,7 +47,7 @@ int main(void) {
     debugf("MSX INTRO timing decode_max_us=%lu decode_mean_us=%lu draw_max_us=%lu\n",(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)TICKS_TO_US(final.total_decode_ticks/final.frames),(unsigned long)TICKS_TO_US(final.max_draw_ticks));
 #ifdef MSX_INTRO_PREVIEW
     debugf("MSX INTRO preview complete\n");
-    for (;;) {msx_audio_service();joypad_poll();msx_cinematic_draw(display_get());}
+    for (;;) {msx_audio_service();joypad_poll();msx_cinematic_draw(msx_display_get());}
 #endif
     msx_cinematic_close();
     if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
@@ -55,6 +56,6 @@ int main(void) {
     for (;;) {
         uint32_t audio_started=TICKS_READ();msx_audio_service();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-audio_started);joypad_poll();
         joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);input.btn=joypad_get_buttons(JOYPAD_PORT_1);
-        actor_draw(display_get(),input);
+        actor_draw(msx_display_get(),input);
     }
 }

@@ -8,15 +8,15 @@
  * record data (data/soldier_ai_tables.json, ROM 2D6314..2D651A); positions in
  * it are byte offsets, reported as ROM addresses for provenance only.
  *
- * Scope: the opcodes and condition types used by the playable Mission 1
- * region (camera 0..1920). Camera lock/release (0C7B0C/0C7C12) are reported
- * to the caller; the camera auto-scroll pair 0C7B4E/0C7BBA (ops D/E),
- * grouped runners 01A210 and conditions 14/15 halt the interpreter
- * explicitly (`halted`/`halt_address`); nothing is approximated. The
+ * Scope: the opcodes and condition types used by Mission 1 (ROM
+ * 2D6314..2D7132). Camera lock/release (0C7B0C/0C7C12) and the auto-scroll
+ * pair 0C7B4E/0C7BBA (ops D/E) are reported to the caller (src/neo_camera.c
+ * implements them); grouped runners 01A210 and conditions 14/15 halt the
+ * interpreter explicitly (`halted`/`halt_address`); nothing is approximated. The
  * cartridge protection probe interleaved in 019E8C/01A464/01A53A (writes to
  * 2FFFE0, branch to 0197D6 on a mismatch) has no gameplay effect on genuine
  * hardware and is not reproduced. */
-enum { NEO_SCRIPT_RUNNERS=8, NEO_SCRIPT_GROUPS=9, NEO_SCRIPT_SPAWN_WORDS=8 };
+enum { NEO_SCRIPT_RUNNERS=8, NEO_SCRIPT_GROUPS=9, NEO_SCRIPT_SPAWN_WORDS=12 };
 typedef struct {
     bool active;
     uint16_t record;       /* offset of the op 8 record (+6E) */
@@ -63,6 +63,8 @@ typedef struct {
      * 69C0..69C6 (0x8000 = none); ROM 0C7C12 (op C): release (69BC = -1). */
     void (*camera_lock)(void *context,uint16_t x,const uint16_t bounds[4]);
     void (*camera_release)(void *context);
+    /* ROM 0C7B4E (op D) / 0C7BBA (op E): camera autoscroll start/stop. */
+    void (*autoscroll)(void *context,bool start);
     void *context;
 } neo_script_env_t;
 void neo_script_init(neo_script_t *script,const uint8_t *code,uint16_t size,uint32_t base);

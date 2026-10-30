@@ -50,12 +50,13 @@ def main():
         hurtboxes=[hurtbox(fixed,x,0) for x in (0x3bb40,0x3bb4c,0x3bb58,0x3bb64,0x3bb70,0x3bb7c)]+[hurtbox(bank,0x24057c,0x200000)],
         player_hurtbox=hurtbox(bank,0x2d0aa8,0x200000),
         hit_matrix=dict(rom='0x004582',rows=[list(fixed[0x4582+20*t:0x4582+20*t+20]) for t in range(8)]),
-        # Mission 1 level script (bank 1, ROM 2D6314) up to the camera-1920
-        # lock (2D6A1A) included; 2D6A28 onward belongs to the next segment.
+        # Mission 1 level script (bank 1, ROM 2D6314..2D7132 and its op 3
+        # end record); region_end 2D6A28 is the record after the camera-1920
+        # lock (2D6A1A), the end of the village region.
         # Record bytes only; the interpreter is native code (src/neo_script.c).
-        mission_script=dict(rom='0x2D6314',end='0x2D6A28',bytes=list(bank[0xd6314:0xd6a28])),
+        mission_script=dict(rom='0x2D6314',end='0x2D7134',region_end='0x2D6A28',bytes=list(bank[0xd6314:0xd7134])),
         spawn_table=dict(rom='0x0197DC',entries={hex(o):'0x%08X'%struct.unpack_from('>I',fixed,0x197dc+o)[0]
-            for o in spawn_offsets(bank[0xd6314:0xd6a28])}),
+            for o in spawn_offsets(bank[0xd6314:0xd7134])}),
         # RNG ring (RAM 100016..100083, cursor 100084) dumped at the mission
         # handoff of the capture; the native world starts from it because the
         # attract/intro consumers that produce it are not part of the port.

@@ -6,6 +6,8 @@
 #include "neo_soldier_ai.h"
 #include "neo_throw_actor.h"
 #include "neo_gactor.h"
+#include "neo_camera.h"
+#include "neo_boss.h"
 /* Closed native world of the playable Mission 1 region: level script and its
  * runners, rebel soldiers (constructor + routine family + pistol death), the
  * objects they throw, the death splash child (ROM 040F88) and the shared
@@ -21,7 +23,7 @@
 enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_GACTORS=40,
     NEO_WORLD_ORDER=80, NEO_WORLD_DRAWS=96, NEO_WORLD_BOXES=48, NEO_WORLD_SOUNDS=16 };
 typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_THROW,
-    NEO_WORLD_SPLASH, NEO_WORLD_GACTOR } neo_world_kind_t;
+    NEO_WORLD_SPLASH, NEO_WORLD_GACTOR, NEO_WORLD_BOSS } neo_world_kind_t;
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
@@ -97,6 +99,25 @@ typedef struct {
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
     int32_t camera_lock;            /* RAM 69BC high word set by 0C7B0C; -1 = free (0C7C12) */
+    /* Native mission camera (neo_camera.h) driven by the caller before each
+     * tick (neo_world_camera); when set, RAM 10E99E is its progress and the
+     * script's stop/release/autoscroll go to it. Off in the closed-loop
+     * world tests, which take the scroll from the captures. */
+    neo_camera_t camera;bool camera_native;
+    /* Optional extra target of the player's shots (the boss, neo_boss). */
+    bool (*shot_hook)(void *context,const neo_contact_actor_t *bullet,const int16_t row[7]);void *shot_context;
+    /* Mission 1 boss (neo_boss, script record 2D70FC): its nodes run as one
+     * block at the main node's list position. Palette slots of its
+     * allocations (009EA8) map to logical resources for drawing; its
+     * hurtboxes registered during the previous update take the player's
+     * shots; its generic actors (explosions, debris, smoke) join the world. */
+    neo_boss_t boss;bool boss_active;
+    uint16_t boss_palette[32];uint8_t boss_palette_refs[32];
+    int16_t boss_boxes[NEO_BOSS_NODES],last_boss_boxes[NEO_BOSS_NODES];unsigned boss_box_count,last_boss_box_count;
+    uint8_t mission_step;           /* 018F92 (1) / 018F40 (2) requested by the boss */
+    uint8_t flag606;                /* RAM 10C606 */
+    unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
+    unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
 } neo_world_t;
 /* Starts the region script at its first record with the RNG ring dumped at
@@ -110,6 +131,9 @@ unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_play
  * scene-local Q16.16 of the bullet before and after its move. Returns true
  * when a soldier consumed the bullet. */
 bool neo_world_shot(neo_world_t *world,int32_t previous_x,int32_t x,int32_t y,bool left);
+/* Same with pistol attack row `row` (0..15, ROM 01B4C2 + 16*row: the
+ * bullet's direction) and a segment (previous_x,previous_y)->(x,y). */
+bool neo_world_shot_row(neo_world_t *world,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned row,bool left);
 /* Attack row (ROM 0049E8 format) of an outside attacker against generic
  * actor `index`, as registered during the previous update (ROM 004762). */
 bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
@@ -117,4 +141,8 @@ bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_act
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);
 unsigned neo_world_alive(const neo_world_t *world);
+/* Mission actor's camera step (ROM 018D96..0C81C0, neo_camera_update) with
+ * the player's projected words; enables the native camera. The caller then
+ * ticks the world with neo_camera_root_x/neo_camera_root_y as the scroll. */
+void neo_world_camera(neo_world_t *world,const neo_world_player_t *player);
 #endif

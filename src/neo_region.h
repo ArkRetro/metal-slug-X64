@@ -13,4 +13,6 @@ ga_result_t neo_flyer_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_flyer_routine(uint32_t routine);
 ga_result_t neo_props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_props_routine(uint32_t routine);
+ga_result_t neo_rest_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_rest_routine(uint32_t routine);
 #endif

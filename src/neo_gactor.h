@@ -81,6 +81,10 @@ struct neo_genv {
     void (*marker)(void *ctx,int32_t x,int32_t y,uint8_t height,uint8_t id);
     uint8_t *marker_seq;             /* RAM 10C446 */
     uint8_t flag448;                 /* RAM 10E448 */
+    const uint8_t *groups;           /* RAM 10C326..10C32E live counts (019DCA) */
+    uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */
+    /* An original actor this world does not create (counted, provenance). */
+    void (*external)(void *ctx,uint32_t constructor);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

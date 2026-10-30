@@ -124,6 +124,18 @@ def main():
             background.append(image(crop,w,32))
     mission=json.loads((ROOT/'filesystem/mission1/map.json').read_text())
     assert len(mission.get('backdrop_values',[mission['backdrop']]))==1,'Multiple observed backdrops need native event playback before scene packing'
+    # Rest of the mission (camera 1920..3520, docs/MISSION1_REST.md): merged
+    # with the region map; overlapping cells must be identical. The second
+    # backdrop is the palette loaded by the camera command list at progress
+    # 2304 (ROM 0B56CA); the runtime switches on that command's event.
+    backdrop_after=None
+    rest_path=ROOT/'filesystem/mission1/rest/map.json'
+    if rest_path.exists():
+        from estimate_mission_budget import merge
+        rest=json.loads(rest_path.read_text())
+        mission,_=merge(dict(mission,conflicts=[]),dict(rest,conflicts=[]))
+        values=[v for v in rest['backdrop_values'] if v!=mission['backdrop']]
+        assert len(values)==1;backdrop_after=values[0]
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
@@ -146,7 +158,8 @@ def main():
            f'#define SCENE_PAGE_COUNT {real_pages}',f'#define SCENE_CHUNK_COUNT {len(chunks)}',
            f'#define SCENE_PALETTE_COUNT {len(palettes)}',f'#define SCENE_PACK_BYTES {len(blob)}',
            f'#define SCENE_MAP_CELL_COUNT {len(map_cells)}',f'#define SCENE_MAP_CAMERA_MAX {mission["camera_max"]}',
-           f'#define SCENE_MAP_BACKDROP 0x{bytes((*backdrop,255)).hex()}u']
+           f'#define SCENE_MAP_BACKDROP 0x{bytes((*backdrop,255)).hex()}u',
+           f'#define SCENE_MAP_BACKDROP_AFTER 0x{bytes((*palette_rgb(backdrop_after if backdrop_after is not None else mission["backdrop"]),255)).hex()}u']
     for ctype,name,items in [('scene_chunk_t','scene_chunks',chunks),('scene_bank_t','scene_banks',banks),('scene_image_t','scene_images',images),('scene_image_t','scene_background',background)]:
         lines.append(f'static const {ctype} {name}[]={{')
         lines.extend('  {'+','.join(str(v) for v in item)+'},' for item in items);lines.append('};')

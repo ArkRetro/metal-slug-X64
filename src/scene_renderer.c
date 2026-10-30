@@ -115,10 +115,10 @@ static scene_cell_window_t layer_window(unsigned layer,int offset,float size,flo
     if (depth_mode) return (scene_cell_window_t){depth_views[layer].scale,depth_views[layer].offset_x,size,left,right,inclusive};
     return (scene_cell_window_t){1.0f,(float)-offset,size,left,right,inclusive};
 }
-void scene_render_background(unsigned camera,unsigned video_tick) {
+void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
-    int height=msx_camera_height((int)camera),offsets[5],rises[5];bool visible[5];
+    int offsets[5],rises[5];bool visible[5];
     for (unsigned i=0;i<5;i++) {
         unsigned source=i<4?i:3;
         offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
@@ -155,7 +155,7 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
     }
     scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);
     rdpq_set_scissor(8,8,312,232);
-    scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop()));
+    scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop(backdrop_after)));
     if (!depth_mode) {
         // Pack order is layer order (checked at init), so walking the layers
         // in turn draws the same cells in the same order as one array walk.

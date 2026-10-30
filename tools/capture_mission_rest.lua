@@ -217,6 +217,10 @@ end;local sweep_direction=1;local last_script=-1
 -- The family is the node that dispatches the constructor 0D5976 plus every
 -- node allocated while a family node is the creator (A6 at 0040EC).
 local boss_from=tonumber(os.getenv('MSX_REST_BOSS_FROM') or '0')
+-- MSX_REST_FAMILY_ROOTS: constructors whose families are traced (hex list,
+-- default the boss 0D5976), e.g. 'a8c46,5486a' for other rest actors.
+local family_roots={}
+for h in string.gmatch(os.getenv('MSX_REST_FAMILY_ROOTS') or 'd5976','(%x+)') do family_roots[tonumber(h,16)]=true end
 local boss_log=nil
 local in_lua=true
 local family={};local active=nil;local attacker_dumped={}
@@ -231,7 +235,7 @@ local function boss_read(address,data,mask)
    if mstate['CURPC'].value==0x4246 then
     local n=address;in_lua=true
     local r=cpu:read_u32(n)
-    if r==0xd5976 then family[n]=true end
+    if family_roots[r] then family[n]=true end
     if family[n] then active=n;boss_log:write(string.format('U %x %x %s\n',n,r,hexbytes(n,0xb0))) else active=nil end
     attacker_dumped={}
     in_lua=false

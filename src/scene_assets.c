@@ -7,7 +7,7 @@
 #include "scene_meta.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
-_Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay camera limits differ");
+_Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay camera limits differ (filesystem/mission1/rest/map.json missing?)");
 
 typedef struct { int chunk; bool ready; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
@@ -136,7 +136,7 @@ const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(r
 const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data; }
 const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
 unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
-uint32_t scene_map_backdrop(void) { return SCENE_MAP_BACKDROP; }
+uint32_t scene_map_backdrop(bool after) { return after?SCENE_MAP_BACKDROP_AFTER:SCENE_MAP_BACKDROP; }
 const scene_native_descriptor_t *scene_native_descriptor(uint32_t tag) {
     unsigned lo=0,hi=sizeof(scene_native_descriptors)/sizeof(scene_native_descriptors[0]);
     while (lo<hi) {

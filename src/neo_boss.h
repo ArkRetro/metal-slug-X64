@@ -129,6 +129,10 @@ neo_boss_result_t neo_boss_step(neo_boss_t *boss,int16_t index);
  * the same walk, as in the original). Returns the first failure. */
 neo_boss_result_t neo_boss_tick(neo_boss_t *boss);
 int16_t neo_boss_next(const neo_boss_t *boss,int16_t index);
+/* Integration: remove a node whose update stopped on an untranslated path
+ * (its palettes and object platform are released, deeper nodes keep it
+ * linked as a placeholder like 004126). */
+void neo_boss_stop(neo_boss_t *boss,int16_t index);
 /* Damage intake: ROM 004892..0049E0 applied by an attacker's narrow phase
  * (0049E8) to boss node `index`. kind/damage/class are the attack row's
  * bytes (+8, D3 low word, D3 high word); impact is the narrow-phase point
@@ -152,4 +156,7 @@ uint16_t neo_boss_health(const neo_boss_t *boss);
 /* ROM address of the node's current animation command (provenance, for tests). */
 uint32_t neo_boss_anim_address(const neo_boss_node_t *node);
 uint8_t neo_boss_phase(const neo_boss_t *boss);
+/* ROM data read by the boss (tables/regions of tools/extract_boss_tables.py):
+ * `bytes` at `address`, or NULL outside the exported regions. */
+const uint8_t *neo_boss_rom(uint32_t address,unsigned bytes);
 #endif

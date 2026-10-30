@@ -26,54 +26,62 @@ int main(void) {
     for (unsigned i=0;i<160;i++) {msx_game_update(&roof,1,false,false);fell|=!roof.grounded;}
     assert(fell && roof.grounded && roof.y== -8*MSX_UNIT); // Walk off to lower ground.
     g.world_enabled=false;
-    // The region now ends at camera 1920 (was 872): MSX_END_X keeps camera+292-1/65536.
-    assert(MSX_WORLD_WIDTH-320==MSX_CAMERA_MAX && MSX_END_X==(MSX_CAMERA_MAX+292)*MSX_UNIT-1);
+    // Whole mission without the native world: the reference camera follows
+    // the player up to the original command list's hold (3520); the player's
+    // right limit keeps camera+292-1/65536.
     int highest=0;
-    for (unsigned i=0;i<1600;i++) {
+    for (unsigned i=0;i<3200;i++) {
         msx_game_update(&g,1,false,false);
         assert(g.camera>=highest && g.camera<=MSX_CAMERA_MAX && g.x<=MSX_END_X);highest=g.camera;
         if (g.x>1200*MSX_UNIT && g.x<2100*MSX_UNIT) assert(g.grounded && g.y==-8*MSX_UNIT); // Walkable Y=64 floor.
     }
-    assert(g.x==MSX_END_X && g.camera==MSX_CAMERA_MAX);
+    assert(g.camera==MSX_CAMERA_MAX && g.x==(MSX_CAMERA_MAX+292)*MSX_UNIT-1);
     int camera=g.camera;
     for (unsigned i=0;i<100;i++) msx_game_update(&g,-1,false,false);
-    assert(g.x<MSX_END_X && g.camera==camera); // Camera does not scroll backwards.
+    assert(g.x<(MSX_CAMERA_MAX+292)*MSX_UNIT-1 && g.camera==camera); // Camera does not scroll backwards.
     for (unsigned i=0;i<1000;i++) msx_game_update(&g,-1,false,false);
     assert(g.x==(g.camera+28)*MSX_UNIT); // Player remains inside the current camera.
-    // Native region: walking right while firing, re-measured with the whole
-    // region script (ROM 2D6314..2D6A28, camera 0..1920): 30 soldiers
-    // (0AF17E, +76 modes 1..4, riders of the native truck 02916E included),
-    // (0AF17E and the 04115A variant), 20 killed by the pistol, 14 spawn-table entries not ported yet counted as
-    // external; the truck riders' knives hit the player 16 times (two lives
-    // lost). The script ends at its last imported record (2D6A28) after the
-    // camera-1920 lock, with no unsupported path.
+    // Whole Mission 1 with the native world and camera (reference run: walk
+    // right firing, up-shots every other half second, jump every 4 s; the
+    // test keeps the player alive). The script runs to its op 3 end
+    // (2D7132) with the region's soldiers, truck, bomber, the robed swordsman
+    // 0A8C46 and the boss native; the other rest-of-mission constructors are
+    // counted as external. The robed swordsman's gesture toggles RAM 10C606,
+    // the boss starts, dies and signals the mission end (018F92, 018F40).
     msx_game_init(&g);
     unsigned steps=0;
     unsigned voices=0,mapped=0,requests=0,pending=0;
-    for (;steps<6000 && !g.complete;steps++) {
-        msx_game_update(&g,1,false,true);
+    bool region_end_seen=false;int max_height=0;unsigned max_progress=0;
+    for (;steps<40000 && !g.complete;steps++) {
+        int dir=1;
+        if (g.world.boss_active) dir=(steps/90)%3==0?-1:(steps/90)%3==1?1:0;
+        g.aim_up=(steps%64)>=40;
+        msx_game_update(&g,dir,(steps%240)<4,true);
+        g.invulnerable=2;
+        region_end_seen|=g.region_end;
+        if (g.camera_height>max_height) max_height=g.camera_height;
+        if (neo_camera_progress(&g.world.camera)>max_progress) max_progress=neo_camera_progress(&g.world.camera);
         // Sound requests of the native world: every one has a packed render.
         for (unsigned i=0;i<g.world.sound_count;i++) {
             int id=msx_sfx_lookup(g.world.sounds[i]);requests++;
             if (id>=0) {mapped++;voices+=msx_sfx_defs[id].channel==MSX_SFX_CH_VOICE;}
-            // Not rendered yet (docs/AUDIO_JUEGO.md): vehicle engine loop 10A5 and
-            // 10E8 from the generic actors; bit 15 is the same request's variant.
-            else if ((g.world.sounds[i]&0x7fffu)==0x10a5u || (g.world.sounds[i]&0x7fffu)==0x10e8u) pending++;
+            // Not rendered yet (docs/AUDIO_JUEGO.md): vehicle engine loop 10A5,
+            // 10E8 of the generic actors and the boss's own requests.
+            else pending++;
         }
         g.world.sound_count=0;
     }
-    assert(requests && mapped+pending==requests && voices && !g.world.sound_dropped);
+    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d\n",
+        steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
+        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height);
+    assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
-    assert(g.complete && steps<6000);
-    assert(g.world.spawned==30 && g.kills==20 && neo_world_alive(&g.world)==2);
-    assert(g.world.external_spawns==14 && !g.world.unsupported && !g.world.overflow);
-    assert(g.world.script.halted && g.world.script.halt_address==0x2D6A28); // End of the imported records.
-    assert(g.world.player_hits==16 && g.deaths==2 && g.health==3);
-    assert(neo_world_region_clear(&g.world) && g.checkpoint==640 && g.camera==MSX_CAMERA_MAX && g.x==MSX_END_X);
-    int final_x=g.x;msx_game_update(&g,-1,true,true);assert(g.x==final_x);
+    assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<40000);
+    assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
+    assert(max_progress==3376 && g.camera==MSX_CAMERA_MAX);
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;
-    g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true};
+    g.bullets[0]=(msx_bullet_t){g.x/MSX_UNIT,168+g.y/MSX_UNIT,1,true,false};
     msx_game_hurt(&g,g.x/MSX_UNIT+12);
     assert(g.deaths==1 && g.health==3 && g.x==640*MSX_UNIT && g.invulnerable);
     assert(g.camera==496);
@@ -115,5 +123,5 @@ int main(void) {
     unsigned hit_at=0;
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
     assert(hit_at && g.health==2 && g.world.player_hits==1 && g.invulnerable);
-    puts("PASS: half-rate input, air landing, dune/village support, camera 0..1920 bounds and height, extended terrain, native region encounters, knife hit and respawn");
+    puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

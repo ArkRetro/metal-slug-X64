@@ -60,10 +60,21 @@ static void script_runner(void *context,int creator,unsigned index) {
     if (at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_RUNNER,(uint8_t)index,(uint8_t)(w->order[at].depth+1u)})) w->overflow++;
 }
 static void script_camera_lock(void *context,uint16_t x,const uint16_t bounds[4]) {
-    tick_t *t=context;(void)bounds;t->w->camera_lock=(int32_t)x;
+    tick_t *t=context;t->w->camera_lock=(int32_t)x;
+    if (t->w->camera_native) neo_camera_lock(&t->w->camera,x,bounds);
 }
-static void script_camera_release(void *context) {tick_t *t=context;t->w->camera_lock=-1;}
+static void script_camera_release(void *context) {
+    tick_t *t=context;t->w->camera_lock=-1;
+    if (t->w->camera_native) neo_camera_release(&t->w->camera);
+}
+static void script_autoscroll(void *context,bool start) {
+    tick_t *t=context;
+    if (!t->w->camera_native) return;
+    if (start) neo_camera_autoscroll(&t->w->camera); else neo_camera_autoscroll_stop(&t->w->camera);
+}
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68);
+enum { BOSS_CONSTRUCTOR=0xd5976 };
+static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     tick_t *t=context;neo_world_t *w=t->w;
     int at=sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
@@ -79,6 +90,7 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
         ga_project(a,&t->genv);
         return;
     }
+    if (routine==BOSS_CONSTRUCTOR) {boss_spawn(t,at,sp);return;}
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
@@ -196,6 +208,14 @@ static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};
         return true;
     }
+    if (NEO_BOSS_IS_TAG(tag) && NEO_BOSS_TAG_INDEX(tag)<NEO_BOSS_NODES) {
+        const neo_boss_node_t *n=&w->boss.nodes[NEO_BOSS_TAG_INDEX(tag)];
+        *out=(neo_contact_parent_t){tag,(int32_t)neo_boss_l(n,0x3c),(int32_t)neo_boss_l(n,0x40),(int32_t)neo_boss_l(n,0x44),(int32_t)neo_boss_l(n,0x48),neo_boss_b(n,0x4d)};
+        return true;
+    }
+    /* Layer objects 10D7B6/10E8C6 scroll with the foreground once the middle
+     * bank runs at full speed (camera >= 1023, docs/MISSION1_REST.md). */
+    if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
     return false;
 }
 static const neo_anim_program_t *g_program(uint32_t tag) {return program(tag);}
@@ -216,6 +236,7 @@ static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bo
     return ga_insert(t,at,routine,after_script?SCRIPT_TAG:(creator?NEO_GA_TAG(creator->index):0),creator?ga_b(creator,0x68):0);
 }
 static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id);}
+static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (!c) return true;
@@ -425,6 +446,248 @@ static int run_gactor(tick_t *t,unsigned i) {
     if (r==GA_DELETE_TREE) {ga_kill(t,a);return 2;}
     return 1;
 }
+/* ---- Mission 1 boss (neo_boss) ------------------------------------------------- */
+/* The boss services answer from the native world. Context: the running tick. */
+static tick_t *boss_tick_ctx;
+static uint8_t boss_kobj(uint32_t tag) {
+    if (tag==0x10d7b6u || tag==0x10e8c6u) return NEO_KOBJ_TERRAIN;  /* see g_parent */
+    if (tag>=NEO_DYN_TAG(0) && tag<NEO_DYN_TAG(NEO_KDYN_COUNT) && !((tag-NEO_DYN_TAG(0))&63u)) return (uint8_t)(NEO_KOBJ_DYN0+(tag-NEO_DYN_TAG(0))/64u);
+    return tag==TERRAIN_TAG?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
+}
+static uint32_t boss_ktag(uint8_t id) {
+    if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return NEO_DYN_TAG(id-NEO_KOBJ_DYN0);
+    return ktag(id);
+}
+static uint16_t b_random(void *c) {(void)c;return neo_rng_next(&boss_tick_ctx->w->rng);}
+/* ROM 0040BC: the native pool is the boss's own node array; the image is
+ * what ROM 004126 leaves in a freed node (the previous occupant's other
+ * bytes are not tracked: zero, see docs/MISION1_COMPLETA.md). */
+static bool b_allocate(void *c,uint16_t reserve,uint8_t image[NEO_BOSS_FIELDS]) {
+    neo_world_t *w=c;unsigned used=0;
+    for (unsigned i=0;i<NEO_BOSS_NODES;i++) used+=w->boss.nodes[i].routine!=0;
+    if (NEO_BOSS_NODES-used<=reserve) return false;
+    memset(image,0,NEO_BOSS_FIELDS);
+    image[0x12]=image[0x13]=0xff;image[0x17]=0xff;image[0x1e]=image[0x1f]=0xff;image[0x58]=image[0x59]=0xff;
+    image[0x69]=image[0x6a]=image[0x6b]=0xff;
+    return true;
+}
+/* ROM 009EA8: one palette slot per logical resource, reference counted. */
+static bool b_palette(void *c,uint16_t resource,uint8_t *slot) {
+    neo_world_t *w=c;int free_slot=-1;
+    for (unsigned i=1;i<32;i++) {
+        if (w->boss_palette_refs[i] && w->boss_palette[i]==resource) {w->boss_palette_refs[i]++;*slot=(uint8_t)i;return true;}
+        if (!w->boss_palette_refs[i] && free_slot<0) free_slot=(int)i;
+    }
+    if (free_slot<0) return false;
+    w->boss_palette[free_slot]=resource;w->boss_palette_refs[free_slot]=1;*slot=(uint8_t)free_slot;return true;
+}
+static void b_palette_release(void *c,const uint8_t *slots,unsigned count) {
+    neo_world_t *w=c;
+    for (unsigned i=0;i<count;i++) if (slots[i]<32 && w->boss_palette_refs[slots[i]]) w->boss_palette_refs[slots[i]]--;
+}
+static void b_sound(void *c,uint16_t id) {sound_request(c,id);}
+static bool b_scene(void *c,uint32_t tag,neo_contact_parent_t *out) {
+    neo_world_t *w=c;
+    if (tag==ROOT_TAG) {*out=w->root;return true;}
+    if (tag==TERRAIN_TAG || tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
+    return false;
+}
+static bool b_sweep(void *c,const neo_contact_request_t *q,neo_boss_sweep_t *out) {
+    neo_world_t *w=c;uint8_t parent=boss_kobj(q->parent_tag);
+    if (parent==0xff) return false;
+    neo_kreq_t kq={q->x,q->y,q->dx,q->dy,parent,0,q->mode8,0,0,0,0};neo_kres_t k;
+    if (!neo_kernel_sweep(&w->kernel,&kq,&k)) return false;
+    *out=(neo_boss_sweep_t){k.x,k.y,k.vx,k.vy,boss_ktag(k.parent),k.flags,(uint16_t)(k.kind>>8)};
+    return true;
+}
+static bool b_floor(void *c,int32_t x,int32_t y,uint32_t parent_tag,neo_boss_sweep_t *out) {
+    neo_world_t *w=c;uint8_t parent=boss_kobj(parent_tag);
+    if (parent==0xff) return false;
+    neo_kfloor_t fl;
+    if (!neo_kernel_floor(&w->kernel,x,y,parent,(int32_t)0xff000000,255,0,0,&fl)) return false;
+    *out=(neo_boss_sweep_t){fl.x,fl.y,0,0,boss_ktag(fl.parent),0,(uint16_t)(fl.kind>>8)};
+    return true;
+}
+/* ROM 0140C0 / 013F1E: object platforms 0E93B2/0E94AC/0E95A6 as kernel
+ * dynamic objects (the soldiers' and generic actors' collision sees them). */
+static bool b_platform(void *c,int16_t node,uint8_t slot,uint32_t table,const int32_t pos[4],uint32_t parent,uint8_t *slot_out) {
+    neo_world_t *w=c;tick_t *t=boss_tick_ctx;
+    const uint8_t *m=neo_boss_rom(table,10);
+    if (!m) return false;
+    unsigned i=slot;
+    if (i==0xffu) {
+        int k;for (k=NEO_KDYN_COUNT-1;k>=0 && (w->kernel.dyn[k].map || w->kernel.dyn[k].countdown);k--) {}
+        if (k<0) {*slot_out=0xff;return true;}
+        i=(unsigned)k;memset(&w->dyn[i],0,sizeof(w->dyn[i]));w->dyn[i].used=true;w->dyn[i].owner=(int16_t)(0x4000|node);
+    }
+    if (i>=NEO_KDYN_COUNT) return false;
+    w->kernel.dyn[i].map=m;
+    neo_world_dyn_t *d=&w->dyn[i];
+    d->block.x=pos[0];d->block.y=pos[1];d->block.vx=pos[2];d->block.vy=pos[3];d->block.parent_tag=parent;
+    dyn_project(w,t,i);neo_kernel_dyn_update(&w->kernel,i);
+    *slot_out=(uint8_t)i;return true;
+}
+static void b_platform_release(void *c,int16_t node,uint8_t slot) {
+    neo_world_t *w=c;(void)node;
+    if (slot>=NEO_KDYN_COUNT) return;
+    w->kernel.dyn[slot].map=NULL;w->kernel.dyn[slot].countdown=2;dyn_project(w,boss_tick_ctx,slot);
+}
+/* ROM 004C24: rectangles of the node's +50 descriptor inside the registry
+ * window; queried by the player's shots during the next update. */
+static bool b_hurtbox(void *c,int16_t node,uint8_t *offset,uint8_t *index,bool *kill_all) {
+    neo_world_t *w=c;const neo_boss_node_t *n=&w->boss.nodes[node];
+    const uint8_t *d=neo_boss_rom(neo_boss_l(n,0x50),12);
+    *offset=0;*index=0;*kill_all=false;
+    if (!d) return false;
+    bool any=false;
+    for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) {
+        if (!neo_boss_rom(neo_boss_l(n,0x50)+at,10)) return false;
+        int16_t x=(int16_t)(d[at]<<8|d[at+1]),y=(int16_t)(d[at+2]<<8|d[at+3]),rw=(int16_t)(d[at+4]<<8|d[at+5]),rh=(int16_t)(d[at+6]<<8|d[at+7]);
+        if (n->f[0x15]&1u) x=(int16_t)-(x+rw);
+        x=(int16_t)(x+(int16_t)neo_boss_w(n,0x3c));
+        if (n->f[0x15]&2u) y=(int16_t)-(y+rh);
+        y=(int16_t)(y+(int16_t)neo_boss_w(n,0x40));
+        uint16_t xb=0;uint8_t yb=0;any|=clip_bins(x,y,rw,rh,&xb,&yb);
+    }
+    if (any && w->boss_box_count<NEO_BOSS_NODES) w->boss_boxes[w->boss_box_count++]=node;
+    /* 004BAC: after the mission-complete request everything registered dies. */
+    *kill_all=w->mission_step!=0;
+    return true;
+}
+/* ROM 0049E8 with a boss attack row (x,y,w,h,kind,class,damage,next):
+ * class 0 rows against the player. */
+static bool b_attack(void *c,int16_t node,uint32_t rows,uint16_t *result) {
+    neo_world_t *w=c;tick_t *t=boss_tick_ctx;const neo_boss_node_t *n=&w->boss.nodes[node];
+    *result=0;
+    for (unsigned k=0;k<8;k++) {
+        const uint8_t *r=neo_boss_rom(rows+16u*k,16);
+        if (!r) return false;
+        int16_t row[7];for (unsigned i=0;i<7;i++) row[i]=(int16_t)(r[2*i]<<8|r[2*i+1]);
+        if (row[5]==0 && t->player_hittable) {
+            neo_contact_actor_t a;memset(&a,0,sizeof(a));
+            a.projected_x=(int32_t)neo_boss_l(n,0x3c);a.projected_y=(int32_t)neo_boss_l(n,0x40);
+            a.cached_x=(int32_t)neo_boss_l(n,0x44);a.cached_y=(int32_t)neo_boss_l(n,0x48);a.flags15=n->f[0x15];
+            int first=-1;uint8_t type=neo_hit_query(&a,row,&t->player,1,(uint8_t)row[4],0,&first);
+            if (type && first>=0 && row[6]) {t->hits++;w->hit_x=HI(a.projected_x);}
+            if (type>*result) *result=type;
+        }
+        if ((uint16_t)(r[14]<<8|r[15])==0xffffu) return true;
+    }
+    return true;
+}
+static bool b_bounds(void *c,neo_cull_bounds_t *out) {(void)c;*out=boss_tick_ctx->bounds;return true;}
+static void b_draw(void *c,int16_t node,const neo_anim_draw_t *d) {
+    neo_world_t *w=c;
+    if (w->draw_count==NEO_WORLD_DRAWS) return;
+    const neo_boss_node_t *n=&w->boss.nodes[node];
+    uint8_t slot=(uint8_t)(d->attributes>>8);
+    w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,slot<32?w->boss_palette[slot]:0,
+        (n->f[0x17]&1u) && !(n->f[0x17]&0x80u),NEO_WORLD_BOSS};
+}
+/* Generic actors the boss creates or becomes: the native generic families
+ * continue them from the seed image; the others are counted (not drawn). */
+static bool b_effect(void *c,const neo_boss_effect_t *e) {
+    neo_world_t *w=c;tick_t *t=boss_tick_ctx;
+    if (e->kind==NEO_BOSS_EFFECT_DELETE_TREE) return true;
+    /* 02A18A is JMP 0041AC: a converted node that deletes itself. */
+    if (e->kind==NEO_BOSS_EFFECT_CONVERT && e->label==0x2a18au) return true;
+    if (!e->has_image || !neo_region_routine(e->label)) {w->boss_external_effects++;w->external_constructor=e->label;return true;}
+    int at=find(w,NEO_WORLD_BOSS,0);
+    neo_gactor_t *a=ga_insert(t,at,e->label,0,e->image[0x68]);
+    if (!a) return true;
+    for (unsigned o=0x10;o<NEO_BOSS_FIELDS;o++) if (o<0x20 || o>=0x24) ga_sb(a,o,e->image[o]);
+    ga_sl(a,0,e->label);ga_sw(a,0x10,a->m[0x10]);
+    /* The node's creator is a boss node: no generic creator to follow. */
+    ga_sl(a,0x0c,0);
+    return true;
+}
+static void b_mission(void *c,int16_t node,uint8_t step) {neo_world_t *w=c;(void)node;if (step>w->mission_step) w->mission_step=step;}
+static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp) {
+    neo_world_t *w=t->w;
+    if (w->boss_active || at<0) {w->overflow++;return;}
+    neo_boss_services_t sv={w,b_random,b_allocate,b_palette,b_palette_release,b_sound,b_scene,b_sweep,b_floor,
+        b_platform,b_platform_release,b_hurtbox,b_attack,b_bounds,b_draw,b_effect,b_mission};
+    neo_boss_init(&w->boss,&sv);
+    /* 01A10A/01A136: a fresh node (0040BC), the record words at +6E.., +69
+     * group, +68 variant, +28/+2C in the scene root (01ABB6), projected. */
+    uint8_t image[NEO_BOSS_FIELDS];b_allocate(w,0,image);
+    image[0x10]=0;image[0x11]=(uint8_t)(w->order[at].depth+1u);
+    for (unsigned k=0;k<sp->word_count && 0x6eu+2u*k+1u<NEO_BOSS_FIELDS;k++) {image[0x6e + 2*k]=(uint8_t)(sp->words[k]>>8);image[0x6f + 2*k]=(uint8_t)sp->words[k];}
+    image[0x69]=sp->group69;image[0x68]=sp->variant68;
+    uint32_t v[3]={(uint32_t)sp->x,(uint32_t)sp->y,ROOT_TAG};
+    for (unsigned k=0;k<3;k++) for (unsigned b=0;b<4;b++) image[(k==2?0x38:0x28+4*k)+b]=(uint8_t)(v[k]>>(24-8*b));
+    neo_contact_actor_t a;memset(&a,0,sizeof(a));
+    a.x=sp->x;a.y=sp->y;a.parent_tag=ROOT_TAG;
+    neo_contact_project(&a,&w->root,w->epoch);
+    uint32_t p[4]={(uint32_t)a.projected_x,(uint32_t)a.projected_y,(uint32_t)a.cached_x,(uint32_t)a.cached_y};
+    for (unsigned k=0;k<4;k++) for (unsigned b=0;b<4;b++) image[0x3c+4*k+b]=(uint8_t)(p[k]>>(24-8*b));
+    image[0x4c]=a.mark;image[0x4d]=a.correction;
+    if (neo_boss_spawn(&w->boss,image)<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_BOSS,0,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
+    w->boss_active=true;w->spawned++;
+}
+static bool run_boss(tick_t *t) {
+    neo_world_t *w=t->w;neo_boss_t *b=&w->boss;
+    b->env.epoch=w->epoch;b->env.facing606=w->flag606;b->env.rank=RANK;b->env.players88=MODE88;
+    b->env.alive_mask=t->players.active_mask;b->env.p1_node=t->player_valid;b->env.p2_node=false;
+    b->env.p1x=(int16_t)t->player.x;b->env.p1y=(int16_t)t->player.y;b->env.p2x=b->env.p2y=0;
+    b->env.mission_over=w->mission_step!=0;b->env.frame=t->genv.video;
+    boss_tick_ctx=t;
+    w->boss_box_count=0;
+    /* neo_boss_tick, continuing after a node that stops on an untranslated
+     * path: that node is removed (logged), the others keep running. */
+    for (int16_t i=b->first;i>=0;) {
+        /* The list after this node before its update: 00424A follows the
+         * stale +8 links of nodes freed meanwhile (a converted shell takes
+         * its trails with it), i.e. the first node of this order still
+         * linked. */
+        int16_t after[NEO_BOSS_NODES];unsigned count=0;
+        for (int16_t k=b->nodes[i].next;k>=0 && count<NEO_BOSS_NODES;k=b->nodes[k].next) after[count++]=k;
+        int16_t next=-1;uint32_t routine=b->nodes[i].routine;
+        neo_boss_result_t r=neo_boss_step(b,i);
+        if (r==NEO_BOSS_UNSUPPORTED) {
+            w->boss_unsupported++;w->boss_unsupported_label=b->unsupported_label;w->boss_unsupported_routine=routine;
+            w->unsupported++;w->unsupported_routine=b->unsupported_label;
+            neo_boss_stop(b,i);
+        }
+        if (b->nodes[i].routine) next=b->nodes[i].next;
+        else for (unsigned k=0;k<count;k++) if (b->nodes[after[k]].routine) {next=after[k];break;}
+        i=next;
+    }
+    boss_tick_ctx=NULL;
+    /* The block stays in the list while one boss node lives. */
+    return b->first>=0;
+}
+/* Player shot against the boss nodes registered during the previous update
+ * (004762 narrow phase with the attack row, then 004892..0049E0). */
+static bool boss_shot(neo_world_t *w,const neo_contact_actor_t *a,const int16_t at[7]) {
+    bool any=false;
+    for (unsigned k=0;k<w->last_boss_box_count;k++) {
+        int16_t i=w->last_boss_boxes[k];const neo_boss_node_t *n=&w->boss.nodes[i];
+        if (!n->routine || !neo_boss_l(n,0x50)) continue;
+        const uint8_t *d=neo_boss_rom(neo_boss_l(n,0x50),12);
+        if (!d || !((d[1]>>(unsigned)at[5])&1u)) continue;
+        uint16_t x=(uint16_t)at[0],y=(uint16_t)at[1];
+        if (a->flags15&1u) x=(uint16_t)(0u-(uint16_t)(x+(uint16_t)at[2]));
+        x=(uint16_t)(x+HI(a->projected_x));
+        if (a->flags15&2u) y=(uint16_t)(0u-(uint16_t)(y+(uint16_t)at[3]));
+        y=(uint16_t)(y+HI(a->projected_y));
+        neo_hit_rectangle_t q={x,y,(uint16_t)at[2],(uint16_t)at[3]};
+        uint16_t ix=0,iy=0;bool hit=false;
+        for (unsigned o=2;(d[o]<<8|d[o+1])!=0x8000 && !hit;o+=8) {
+            neo_hit_rectangle_t local={(uint16_t)(d[o]<<8|d[o+1]),(uint16_t)(d[o+2]<<8|d[o+3]),(uint16_t)(d[o+4]<<8|d[o+5]),(uint16_t)(d[o+6]<<8|d[o+7])};
+            hit=neo_hit_rectangle(&q,neo_boss_w(n,0x3c),neo_boss_w(n,0x40),n->f[0x15],&local,&ix,&iy);
+        }
+        if (!hit) continue;
+        any=true;
+        uint8_t kind=(uint8_t)at[4];
+        if (kind>=20u || !soldier_hit_matrix[d[0]&7u][kind]) continue;
+        neo_boss_hit_t h={a->projected_x,a->projected_y,a->cached_x,a->cached_y,kind,(uint8_t)at[5],1,(uint16_t)at[6],(int16_t)ix,(int16_t)iy,false,0};
+        const uint8_t *mul=neo_boss_l(n,0x54)?neo_boss_rom(neo_boss_l(n,0x54)+2u*kind,2):NULL;
+        if (mul) {h.scale_row=true;h.scale=(uint16_t)(mul[0]<<8|mul[1]);}
+        if (neo_boss_receive(&w->boss,i,&h)) w->boss_hits++;
+    }
+    return any;
+}
 /* ---- actors ------------------------------------------------------------------ */
 static bool run_soldier(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_soldier_t *s=&w->soldiers[i];
@@ -495,6 +758,7 @@ static void delete_tree(tick_t *t,unsigned at) {
         case NEO_WORLD_SPLASH: w->splashes[s.index].active=false;break;
         case NEO_WORLD_GACTOR: ga_kill(t,&w->gactors[s.index]);break;
         case NEO_WORLD_RUNNER: w->script.runners[s.index].active=false;break;
+        case NEO_WORLD_BOSS: w->boss_active=false;break;
         default:break;
         }
         remove_at(w,at+1u);
@@ -517,6 +781,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->terrain.tag=TERRAIN_TAG;w->root.tag=ROOT_TAG;
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
+    w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
@@ -527,7 +792,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     w->ticks++;
     w->epoch=w->epoch==1?2:1;               /* RAM 10C33A */
     scene_at(w,scroll_x,false);
-    uint16_t camera=(uint16_t)((0u-(uint32_t)scroll_x)>>16); /* RAM 10E99E */
+    uint16_t camera=w->camera_native?neo_camera_progress(&w->camera):(uint16_t)((0u-(uint32_t)scroll_x)>>16); /* RAM 10E99E */
     w->draw_count=0;
     /* Player as the others see it (registered during its previous update). */
     t.player_valid=pl && pl->alive;
@@ -557,6 +822,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
@@ -577,9 +843,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (w->soldiers[i].active && w->constructed[i] && w->soldiers[i].group69<9u) w->script.groups[w->soldiers[i].group69]++;
     for (unsigned i=0;i<NEO_WORLD_GACTORS;i++)
         if (w->gactors[i].active && ga_b(&w->gactors[i],0x69)<9u) w->script.groups[ga_b(&w->gactors[i],0x69)]++;
+    if (w->boss_active) for (int16_t i=w->boss.first;i>=0;i=w->boss.nodes[i].next)
+        if (w->boss.nodes[i].routine && w->boss.nodes[i].routine!=0x3f1eu && w->boss.nodes[i].f[0x69]<9u) w->script.groups[w->boss.nodes[i].f[0x69]]++;
+    memcpy(w->last_boss_boxes,w->boss_boxes,sizeof(w->boss_boxes));w->last_boss_box_count=w->boss_box_count;
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},
-        script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,&t};
+        script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t};
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         if (slot.kind==NEO_WORLD_GACTOR && w->gactors[slot.index].placeholder) {
@@ -599,6 +868,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         case NEO_WORLD_THROW: keep=run_throw(&t,slot.index);break;
         case NEO_WORLD_SPLASH: keep=run_splash(&t,slot.index);break;
         case NEO_WORLD_GACTOR: {int r=run_gactor(&t,slot.index);keep=r==1;tree=r==2;break;}
+        case NEO_WORLD_BOSS: keep=run_boss(&t);if (!keep) w->boss_active=false;break;
         }
         /* The running actor may have inserted others after itself. */
         int now=find(w,slot.kind,slot.index);
@@ -615,19 +885,34 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     w->player_hits+=t.hits;
     return t.hits;
 }
-bool neo_world_shot(neo_world_t *w,int32_t previous_x,int32_t x,int32_t y,bool left) {
+bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {
     neo_contact_actor_t b;memset(&b,0,sizeof(b));
     b.projected_x=(int32_t)((uint32_t)x+(uint32_t)w->terrain.x);b.projected_y=(int32_t)((uint32_t)y+(uint32_t)w->terrain.y);
-    b.cached_x=(int32_t)((uint32_t)previous_x+(uint32_t)w->terrain.x);b.cached_y=b.projected_y;
+    b.cached_x=(int32_t)((uint32_t)previous_x+(uint32_t)w->terrain.x);b.cached_y=(int32_t)((uint32_t)previous_y+(uint32_t)w->terrain.y);
     b.flags15=(uint8_t)(32u|(left?1u:0u));
+    const int16_t *row=soldier_pistol_attacks[rowi&15u];
     bool hit=false;
     for (unsigned at=0;at<w->order_count;at++) {
         if (w->order[at].kind!=NEO_WORLD_SOLDIER) continue;
         unsigned i=w->order[at].index;
         if (!w->constructed[i]) continue;
-        hit|=neo_soldier_receive(&w->soldiers[i],&b,1,soldier_pistol_attacks[0],w->grid);
+        hit|=neo_soldier_receive(&w->soldiers[i],&b,1,row,w->grid);
     }
+    /* The same attack row (0049E8) against the generic actors registered
+     * with class 1 during the previous update (vehicles, bomber, ...). */
+    uint16_t qx;uint8_t qy;
+    if (attack_bins(&b,row,&qx,&qy)) for (unsigned k=0;k<w->last_box_count;k++) {
+        neo_gactor_t *g=&w->gactors[w->last_boxes[k].owner];
+        if (!(w->last_boxes[k].xbins&qx) || !(w->last_boxes[k].ybins&qy)) continue;
+        if (!g->active || g->placeholder || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) continue;
+        hit|=ga_receive(g,&b,1,row,w->grid);
+    }
+    if (w->boss_active) hit|=boss_shot(w,&b,row);
+    if (w->shot_hook) hit|=w->shot_hook(w->shot_context,&b,row);
     return hit;
+}
+bool neo_world_shot(neo_world_t *w,int32_t previous_x,int32_t x,int32_t y,bool left) {
+    return neo_world_shot_row(w,previous_x,y,x,y,0,left);
 }
 bool neo_world_hit_actor(neo_world_t *w,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]) {
     if (index>=NEO_WORLD_GACTORS || row[5]<0) return false;
@@ -639,7 +924,20 @@ bool neo_world_hit_actor(neo_world_t *w,unsigned index,const neo_contact_actor_t
     if (!registered || !g->active || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) return false;
     return ga_receive(g,attacker,a5e,row,w->grid);
 }
-bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_SCRIPT_END);}
+void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
+    if (!w->camera_native) {
+        const uint8_t *list=ga_rom(0x0B57BE);
+        if (!list) return;
+        neo_camera_init(&w->camera,list,0xB2,0x0B57BE);w->camera_native=true;
+        /* State of the first mission-actor update (data/camera_fixture.json.gz):
+         * point 69B8/69BA = 128/384 and the list's first wait (944) armed. */
+        w->script.w69b8=0x80;w->script.w69ba=0x180;
+        neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
+    }
+    neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0},{false,0,0,0,0}};
+    neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
+}
+bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}
 unsigned neo_world_alive(const neo_world_t *w) {
     unsigned n=0;
     for (unsigned i=0;i<NEO_WORLD_SOLDIERS;i++) if (w->soldiers[i].active && w->constructed[i] && w->soldiers[i].group69<9u) n++;

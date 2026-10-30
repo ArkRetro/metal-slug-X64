@@ -25,7 +25,7 @@ const scene_image_t *scene_background_tile(unsigned row,unsigned col);
 const scene_map_cell_t *scene_map_cells(unsigned *count);
 const scene_image_t *scene_map_image(unsigned id);
 unsigned scene_map_camera_max(void);
-uint32_t scene_map_backdrop(void);
+uint32_t scene_map_backdrop(bool after);
 const uint16_t *scene_palette(unsigned id);
 bool scene_assets_all_resident(void);
 void scene_request_image(const scene_image_t *image,unsigned priority);

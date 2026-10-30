@@ -6,8 +6,11 @@
 int main(void) {
     neo_surface_t s;
     assert(!neo_surface_at(-1,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
-    // The recovered grid now spans camera 0..1920 (2240 px); 1192 was the old limit.
-    assert(!neo_surface_at(2240*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
+    // The recovered grid spans the whole mission (480 columns, 3840 px;
+    // filesystem/mission1/rest/collision.json, its first 280 columns are the
+    // region grid); 2240 and 1192 were the earlier limits.
+    assert(!neo_surface_at(3840*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s));
+    assert(neo_surface_at(2240*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s) && s.height==64*NEO_UNIT);
     assert(neo_surface_at(1192*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s) && s.height==64*NEO_UNIT);
     assert(neo_surface_at(2239*NEO_UNIT,64*NEO_UNIT,NEO_UNIT,NEO_UNIT,&s) && s.height==64*NEO_UNIT);
     assert(neo_collision_cell(-1,64)==0 && neo_collision_cell(0,-1)==0);

@@ -10,7 +10,7 @@ the update (from the actor list itself), and the values returned by the ROM
 visible before the next update: script position/timer, the runners in list
 order, the group counters and the actors they created (group, variant and
 constructor). Nothing is interpolated."""
-import argparse,gzip,hashlib,json
+import argparse,gzip,hashlib,json,re,struct
 from pathlib import Path
 import soldier_capture
 from soldier_capture import Capture,PLAYER,rng_step,soldier,environment
@@ -61,14 +61,24 @@ def construction(before,after,fcalls,node):
             players=dict(p1x=envb['p1x'],p1y=envb['p1y'],p2x=envb['p2x'],p2y=envb['p2y'],
                 mask=(1 if envb['p1live'] else 0)|(2 if envb['p2live'] else 0),mode88=envb['mode88'],rank=envb['rank']),
             grid=decayed(before)))
+def spawn_log(path):
+    """SPAWN/RUNNER lines of tools/mame/trace_soldier_campaign.lua (breakpoints
+    at 01A10A/01A1E8), keyed like the RNG log by the video frame that follows."""
+    out={};present=False
+    for line in (Path(path)/'debug.log').read_text().splitlines():
+        m=re.match(r'(SPAWN|RUNNER) f=(\d+) a6=(\w+) rec=(\w+)',line)
+        if m:present=True;out.setdefault(int(m.group(2))+1,[]).append((m.group(1),int(m.group(3),16),int(m.group(4),16)))
+    return out if present else None
+SOLDIER_FIRST={0xAF65A,0xAF380,0xAFCE2,0xAFF16,0xB0396,0xAF2BA,0xAF302,0xAF7F6}
 def extract(path,last,label):
-    cap=Capture(path);calls=cap.rng_calls()
+    cap=Capture(path);calls=cap.rng_calls();slog=spawn_log(path)
     soldier_capture.FIXED=(Path(path)/'program-fixed.bin').read_bytes()
     files=sorted(int(p.stem[3:]) for p in Path(path).glob('ram*.bin'))
     ticks=tick_frames(cap,files[0],min(last,files[-1]))
     first=cap.frame(ticks[0]-1)
     out=dict(capture=label,first_frame=ticks[0],pc=first.l(SCRIPT+0x6E),timer72=first.w(SCRIPT+0x72),
-        runners=runners(first),w4330=first.w(0x10C330),w4332=first.w(0x10C332),ticks=[])
+        runners=runners(first),w4330=first.w(0x10C330),w4332=first.w(0x10C332),
+        w69b8=first.w(0x10E9B8),w69ba=first.w(0x10E9BA),lock=first.l(0x10E9BC),ticks=[])
     for i,f in enumerate(ticks[:-1]):
         before,after=cap.frame(f-1),cap.frame(ticks[i+1]-1)
         rnodes={r['node'] for r in runners(before)}|{r['node'] for r in runners(after)}
@@ -84,7 +94,26 @@ def extract(path,last,label):
         assert (words,cur)==after.rng(),'RNG ring not reproduced by the logged calls at %d'%f
         before_nodes={n for n,_ in before.actors()}
         spawned=[]
-        for n,rt in after.actors():
+        if slog is not None:
+            # Exact spawn list from the breakpoint log; soldier constructions
+            # are matched to the new soldier nodes of each creator in order.
+            fresh={}
+            for n,rt in after.actors():
+                if rt in SOLDIER_FIRST and not (n in before_nodes and before.l(n)!=DEAD):
+                    fresh.setdefault(after.l(n+0x0C),[]).append(n)
+            for kind,a6,rec in [e for g in range(f,ticks[i+1]) for e in slog.get(g,[])]:
+                if kind!='SPAWN':continue
+                creator_record=SCRIPT if a6==SCRIPT else before.l(a6+0x6E) if a6 in before_nodes and before.l(a6)==RUNNER else after.l(a6+0x6E)
+                sp=dict(node=0,creator=a6,creator_record=creator_record,record=rec,group69=0,variant68=0)
+                bank=cap.path/'program-bank.bin'
+                entry=struct.unpack_from('>I',soldier_capture.FIXED,0x197DC+struct.unpack_from('>H',bank.read_bytes(),rec-0x200000+4)[0])[0]
+                if entry==0xAF17E and fresh.get(a6):
+                    # Each new node is inserted right after its creator, so the
+                    # list holds a creator's spawns in reverse creation order.
+                    n=fresh[a6].pop();sp.update(node=n,group69=after.b(n+0x69),variant68=after.b(n+0x68))
+                    sp['construct']=construction(before,after,fcalls,n)
+                spawned.append(sp)
+        for n,rt in ([] if slog is not None else after.actors()):
             creator=after.l(n+0x0C)
             if rt==DEAD or (n in before_nodes and before.l(n)!=DEAD):continue
             if creator==SCRIPT or creator in rnodes:
@@ -102,9 +131,10 @@ def extract(path,last,label):
         # The camera words are updated by an actor that precedes the script in
         # the list (ROM 0186A0 path), so the script reads this update's values.
         p1=before.l(PLAYER)!=DEAD;p2=before.l(0x101574)!=DEAD
+        players=[dict(alive=before.l(n)!=DEAD,fx=before.b(n+0x7A),fy=before.b(n+0x7B),px=before.w(n+0x3C),py=before.w(n+0x40)) for n in (PLAYER,0x101574)]
         out['ticks'].append(dict(frame=f,camera=after.w(0x10E99E),scroll_x=after.l(0x10E97C),scroll_y=after.l(0x10E980),
-            any_player=p1 or p2,groups=recount(before),rng=mine,
-            expect=dict(pc=after.l(SCRIPT+0x6E),timer72=after.w(SCRIPT+0x72),runners=runners(after),
+            any_player=p1 or p2,players=players,groups=recount(before),rng=mine,
+            expect=dict(pc=after.l(SCRIPT+0x6E),timer72=after.w(SCRIPT+0x72),runners=runners(after),lock=after.l(0x10E9BC),
                 groups=list(after.raw(0x10C326,9)),spawned=spawned)))
     return out
 def main():

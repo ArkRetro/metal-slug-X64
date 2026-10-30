@@ -14,6 +14,17 @@ local stop_right=env('MSX_STOP_RIGHT_FRAME',0)
 local fire_frame=env('MSX_FIRE_FRAME',0)
 local ram_first=env('MSX_RAM_FIRST',2100)
 local confirm=env('MSX_CONFIRM_FRAME',0)
+-- Long runs (camera 0..1920): from MSX_UP_FRAME hold Up for the first half of
+-- every MSX_UP_PERIOD frames (aim up while firing); from MSX_COIN_FRAME insert
+-- a coin and press 1P Start every MSX_COIN_PERIOD frames (continue after a
+-- game over; harmless while playing). Zero keeps the historical timelines.
+local up_frame=env('MSX_UP_FRAME',0)
+local up_period=env('MSX_UP_PERIOD',96)
+local coin_frame=env('MSX_COIN_FRAME',0)
+-- From MSX_JUMP_FRAME press jump (B) for 8 frames every MSX_JUMP_PERIOD frames.
+local jump_frame=env('MSX_JUMP_FRAME',0)
+local jump_period=env('MSX_JUMP_PERIOD',90)
+local coin_period=env('MSX_COIN_PERIOD',600)
 local frame=0
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0}}
@@ -39,6 +50,21 @@ emu.register_frame_done(function()
  if fire_frame>0 and frame>=fire_frame then
   local v=frame%12<6 and 1 or 0; button('P1 A',v)
   if frame==fire_frame then inputs:write(frame..' fire toggling 12\n') end
+ end
+ if up_frame>0 and frame>=up_frame then
+  local v=(frame-up_frame)%up_period<up_period//2 and 1 or 0; button('P1 Up',v)
+  if frame==up_frame then inputs:write(frame..' up toggling '..up_period..'\n') end
+ end
+ if jump_frame>0 and frame>=jump_frame then
+  local k=(frame-jump_frame)%jump_period
+  if k==0 then button('P1 B',1) elseif k==8 then button('P1 B',0) end
+  if frame==jump_frame then inputs:write(frame..' jump every '..jump_period..'\n') end
+ end
+ if coin_frame>0 and frame>=coin_frame then
+  local k=(frame-coin_frame)%coin_period
+  if k==0 then button('Coin 1',1) elseif k==10 then button('Coin 1',0)
+  elseif k==30 then button('1 Player Start',1) elseif k==40 then button('1 Player Start',0) end
+  if frame==coin_frame then inputs:write(frame..' coin+start every '..coin_period..'\n') end
  end
  if frame>=ram_first and frame<=end_frame then
   local ram=assert(io.open(output..'/ram'..frame..'.bin','wb'))

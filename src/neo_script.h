@@ -9,9 +9,10 @@
  * it are byte offsets, reported as ROM addresses for provenance only.
  *
  * Scope: the opcodes and condition types used by the playable Mission 1
- * region. Anything else (calls into 0C7xxx, grouped runners 01A210, player
- * region conditions 0B..12/14/15) halts the interpreter explicitly and is
- * reported through `halted`/`halt_address`; nothing is approximated. The
+ * region (camera 0..1920). Camera lock/release (0C7B0C/0C7C12) are reported
+ * to the caller; the camera auto-scroll pair 0C7B4E/0C7BBA (ops D/E),
+ * grouped runners 01A210 and conditions 14/15 halt the interpreter
+ * explicitly (`halted`/`halt_address`); nothing is approximated. The
  * cartridge protection probe interleaved in 019E8C/01A464/01A53A (writes to
  * 2FFFE0, branch to 0197D6 on a mismatch) has no gameplay effect on genuine
  * hardware and is not reproduced. */
@@ -45,14 +46,23 @@ typedef struct {
     uint16_t words[NEO_SCRIPT_SPAWN_WORDS];uint8_t word_count; /* copied to +6E.. */
     int creator;           /* -1 = script actor, otherwise runner index */
 } neo_script_spawn_t;
+/* One player actor as ROM 01903A reads it. */
+typedef struct {
+    bool alive;            /* routine != 003F1E */
+    uint8_t follow_x,follow_y; /* +7A/+7B: use +3C/+40 instead of the 69B8/69BA point */
+    uint16_t px,py;        /* +3C/+40 projected words */
+} neo_script_player_t;
 typedef struct {
     uint16_t camera;       /* RAM 10E99E */
     int32_t scroll_x,scroll_y; /* RAM 10E97C/10E980 (negated camera, Q16.16) */
-    bool any_player;       /* P1 or P2 actor alive (ROM 01903A with 10C322 set) */
+    neo_script_player_t players[2];
     uint16_t (*rng)(void *context);                          /* one ROM 0029C6 call */
     void (*spawn)(void *context,const neo_script_spawn_t *spawn);
     void (*runner)(void *context,int creator,unsigned index); /* runner created after `creator` */
-    void (*camera_lock)(void *context,const uint16_t params[4]);  /* ROM 0C7B0C operands */
+    /* ROM 0C7B0C: lock the camera at x (RAM 69BC) with the four bounds
+     * 69C0..69C6 (0x8000 = none); ROM 0C7C12 (op C): release (69BC = -1). */
+    void (*camera_lock)(void *context,uint16_t x,const uint16_t bounds[4]);
+    void (*camera_release)(void *context);
     void *context;
 } neo_script_env_t;
 void neo_script_init(neo_script_t *script,const uint8_t *code,uint16_t size,uint32_t base);

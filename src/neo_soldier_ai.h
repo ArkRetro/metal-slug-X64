@@ -17,6 +17,8 @@
  * original reuses the same bytes with other widths after death (+6E byte vs
  * word, +76 long over two words). It is never a pointer into CPU memory. */
 enum { NEO_SOLDIER_LOCALS=0x26 };
+/* Tag of dynamic collision object i (RAM 10C06E + 64*i). */
+#define NEO_DYN_TAG(i) (0x10c06eu+64u*(unsigned)(i))
 typedef struct {
     uint32_t routine;
     neo_contact_actor_t b;
@@ -43,9 +45,13 @@ typedef struct {
     uint16_t value;
     neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD */
 } neo_soldier_event_t;
+/* Stair/ledge marker of the object list RAM 43A2/43F4 (registered by ROM
+ * 040110: position relative to the scene root, height, id). */
+typedef struct { int32_t x,y; uint8_t height,id; } neo_marker_t;
 typedef struct {
     neo_kscene_t *kernel;
     neo_contact_parent_t terrain,root;   /* tags 0x10C72E and 0x10E968 */
+    const neo_contact_parent_t *dyn;     /* NEO_KDYN_COUNT dynamic objects, or NULL */
     uint8_t epoch;                        /* RAM 10C33A */
     neo_control_frame_t players;          /* p1/p2 projected words, mask, mode, rank */
     uint16_t *grid;                       /* 16x8 delay grid (RAM 1067E6) */
@@ -57,6 +63,12 @@ typedef struct {
     neo_anim_emit_t emit;void *emit_context;
     void (*event)(void *context,const neo_soldier_event_t *event);void *event_context;
     bool blood;                           /* RAM 10FD8F nonzero: 01B2BE returns carry clear */
+    /* Player actors 1014C4/101574 as 0B03E0 reads them: routine alive (0040AC),
+     * +7A (0 = scripted, the soldiers stay idle) and RAM 10E9F8/10E9FC
+     * (nonzero: CA2F8 carry). */
+    struct { bool alive; uint8_t follow7a; bool vehicle; uint8_t follow7b; uint16_t x,y; } player_state[2];
+    uint16_t point[2];                    /* RAM 69B8/69BA: script point (01903A) */
+    const neo_marker_t *markers;unsigned marker_count; /* list queried this update */
 } neo_soldier_env_t;
 typedef enum { NEO_SOLDIER_MORE,NEO_SOLDIER_DELETED,NEO_SOLDIER_UNSUPPORTED } neo_soldier_result_t;
 /* Spawn record words copied to +6E..+78 (ROM 01A136) and creator data. */
@@ -64,11 +76,15 @@ typedef struct {
     int32_t x,y;            /* local to the scene root, Q16.16 */
     uint16_t words[6];      /* +6E,+70,+72,+74,+76,+78 */
     uint8_t variant68,group69;
+    uint32_t constructor;   /* spawn-table entry: 0 = 0AF17E, or 04115A */
 } neo_soldier_spawn_t;
 /* ROM 01ABB6 placement + 0AF17E/0AEF30 constructor, including its control
  * target/prefix/probes. Returns false (state untouched) for an unrecovered
  * constructor variant. */
 bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *spawn,neo_soldier_env_t *env);
+/* Source line of the last NEO_SOLDIER_UNSUPPORTED cause (diagnostics). */
+extern unsigned neo_soldier_unsupported_line;
+extern uint32_t neo_soldier_unsupported_detail; /* animation result<<28 | command asset */
 /* One original actor update (every second video tick). */
 neo_soldier_result_t neo_soldier_tick(neo_soldier_t *s,neo_soldier_env_t *env);
 /* Big-endian accessors of the routine-private block. */

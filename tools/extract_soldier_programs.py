@@ -15,6 +15,13 @@ ROOTS=[0x23d510,0x23d594,0x23d5e2,0x23d692,0x23d6ec,0x23d712,0x23d7ee,0x23d8c0,0
     0x2402fa,0x24039c,0x2403ee,0x240454,0x2404fe,0x240588,0x2406ec,0x240a3e,0x240ae6,0x240c6e,0x240c76,0x240d2e,0x240d3c,
     0x240dc0,0x240dee,0x240e8e,0x240f8e,0x24103c,0x241056,0x2410e2,
     0x23f3f0,0x22d2a6]
+# Region entities (camera 0..1920) translated as generic actors. Their 0x14
+# callbacks become CALL commands handled by the family code (an unknown one
+# fails explicitly there).
+ROOTS+=[0x236818,0x236846,0x2367e4,0x2367fe,0x236874,0x2368a2,0x2368d0,
+    0x22cdd4,0x22ce6c,0x22cf2c,0x22d264,0x22d27a,0x22d290,0x22e48a,0x22eac2,0x22e7f2,0x22e8ae,
+    0x2af47a,0x2afb56,0x2af960,0x2afc60,0x2afcca,0x2919fe,
+    0x2411f2,0x24116e,0x24123e,0x2412ee,0x24124c,0x241354]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
@@ -39,8 +46,9 @@ def convert(bank,root):
                 f=struct.unpack('>H',rd(pc+2,2))[0];t=struct.unpack('>I',rd(pc+4,4))[0]
                 fixups.append((add(pc,kind='COND_JUMP',asset=f,operand=1 if arg else 0),t));pending.append(t);pc+=8
             elif op==0x10:
-                assert arg==0x61;length=struct.unpack('>H',rd(pc+2,2))[0];assert length%8==0
-                c=add(pc,kind='SELECT_POSE',asset=0x61,operand=length//8);c['target']=len(commands)
+                length=struct.unpack('>H',rd(pc+2,2))[0];assert length%8==0
+                # 004412: pose selected by the actor byte `arg` (+61 for the soldiers).
+                c=add(pc,kind='SELECT_POSE' if arg==0x61 else 'SELECT_FIELD_POSE',asset=arg,operand=length//8);c['target']=len(commands)
                 for i in range(length//8):
                     at=pc+4+i*8;assert rd(at,1)[0]==4
                     dx,dy=struct.unpack('bb',rd(at+2,2));add(at,kind='POSE',flags=rd(at+1,1)[0],dx=dx,dy=dy,asset=struct.unpack('>I',rd(at+4,4))[0])
@@ -50,8 +58,10 @@ def convert(bank,root):
                 if routine==0x1adaa:add(pc,kind='FLIP_FACING')
                 elif routine in PALETTE:add(pc,kind='REPLACE_PALETTE',asset=PALETTE[routine],target=routine&0xffff)
                 elif routine==0x3bb8e:add(pc,kind='SPAWN_THROW',asset=0x3bc28)
+                # 03BBBC/03BBEA: same object with +6E=1 / 2 and offsets (0,24) / (0,32).
+                elif routine in (0x3bbbc,0x3bbea):add(pc,kind='SPAWN_THROW',asset=routine)
                 elif routine in GENERIC:add(pc,kind='CALL',asset=routine,target=param)
-                else:add(pc,kind='UNRECOVERED',asset=routine)
+                else:add(pc,kind='CALL',asset=routine,target=param)
                 pc+=2+arg
             elif op==0x18:add(pc,kind='SET_BYTE',target=struct.unpack('>H',rd(pc+2,2))[0],asset=arg);pc+=4
             elif op==0x1c:add(pc,kind='SET_WORD',target=arg,asset=struct.unpack('>H',rd(pc+2,2))[0]);pc+=4
@@ -85,7 +95,7 @@ def main():
         for c in prog['commands']:kinds[c['kind']]=kinds.get(c['kind'],0)+1
     out=dict(source='MAME 0.264 mslugx euro, CPU window 0x200000..0x2FFFFF saved during Mission 1 (P2 bank 1)',
         program_bank_sha256=hashlib.sha256(bank).hexdigest(),command_kinds=kinds,programs=programs,
-        limits=['Callbacks outside the recovered list are UNRECOVERED and fail explicitly when reached.',
+        limits=['Callbacks without a dedicated kind are CALL commands; the owning actor handles or rejects them explicitly.',
                 'Fall-through into an already converted command is expressed as an explicit JUMP (negative address marker).'])
     a.output.write_text(json.dumps(out,separators=(',',':'))+'\n')
     print(kinds)

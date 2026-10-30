@@ -3,6 +3,9 @@
 #include "fixed.h"
 #include "sprites.h"
 #include "actor.h"
+#include "msx_audio.h"
+#include "game_audio.h"
+#include "msx_perf.h"
 
 /* The FIX/C tile lab is a diagnostic: it needs the raw 48 MiB C-ROM copy, so
  * only the separate lab cartridge (make mslugx-lab.z64) includes it. */
@@ -42,12 +45,18 @@ int main(void) {
     load_page(sprites, 0);
 #endif
     rdpq_init();
+#if !MSX_GRAPHICS_LAB
+    // Gameplay audio: optional ROM-derived assets (docs/AUDIO_JUEGO.md).
+    msx_audio_init();
+    if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+#endif
     actor_init();
     console_close();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
     joypad_init();
 #if !MSX_GRAPHICS_LAB
     for (;;) {
+        uint32_t audio_started=TICKS_READ();msx_audio_service();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-audio_started);
         joypad_poll();
         surface_t *surface=display_get();
         joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);

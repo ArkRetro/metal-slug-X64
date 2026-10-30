@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include "../src/gameplay.h"
+#include "../src/msx_sfx.h"
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
 int main(void) {
@@ -50,7 +51,18 @@ int main(void) {
     // 1920, x = MSX_END_X (was camera 872, x 1164).
     msx_game_init(&g);
     unsigned steps=0;
-    for (;steps<6000 && !g.complete;steps++) msx_game_update(&g,1,false,true);
+    unsigned voices=0,mapped=0,requests=0;
+    for (;steps<6000 && !g.complete;steps++) {
+        msx_game_update(&g,1,false,true);
+        // Sound requests of the native world: every one has a packed render.
+        for (unsigned i=0;i<g.world.sound_count;i++) {
+            int id=msx_sfx_lookup(g.world.sounds[i]);requests++;
+            if (id>=0) {mapped++;voices+=msx_sfx_defs[id].channel==MSX_SFX_CH_VOICE;}
+        }
+        g.world.sound_count=0;
+    }
+    assert(requests && mapped==requests && voices>=g.world.kills && !g.world.sound_dropped);
+    assert(g.shots>=g.hits);
     assert(g.complete && steps<6000);
     assert(g.world.spawned==8 && g.kills==7 && g.hits==7 && !neo_world_alive(&g.world));
     assert(g.world.external_spawns==7 && !g.world.unsupported && !g.world.overflow);

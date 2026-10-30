@@ -67,9 +67,8 @@ con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea origi
 | A | Saltar; soltar antes del siguiente salto |
 | B | Disparar; mantener para repetir |
 | R | Reiniciar la zona |
-| START | Alternar escena y laboratorio de tiles |
 
-Puedes recorrer el tramo, saltar y combatir con los tres guardias provisionales.
+Puedes recorrer el tramo, saltar y combatir con los soldados rebeldes nativos.
 El tramo llega ahora a la cámara 1920 (antes 872), con el cambio de banco medio
 y la subida de cámara medidos; véase [la ampliación](docs/MISSION1.md#ampliación-hasta-la-cámara-1920).
 `REGION END` marca el límite del mapa observado, no el final de la misión original.
@@ -116,7 +115,9 @@ si cambia la release continua, hay que revisar la versión, no omitir el checksu
 
 ## Controles del laboratorio gráfico
 
-Entrar con START desde la escena de Marco. Modo C16: tiles de 16x16 y paleta gris.
+El laboratorio ya no está en la ROM de juego, que solo lleva lo que el juego lee
+(unos 1,2 MB). Es un cartucho de diagnóstico aparte, `make mslugx-lab.z64`,
+porque necesita la copia en bruto de 48 MiB de la C-ROM. Entrar con START desde la escena de Marco. Modo C16: tiles de 16x16 y paleta gris.
 
 | Control N64 | Acción |
 | --- | --- |
@@ -135,11 +136,11 @@ ensamblaje del juego. La escena jugable utiliza las paletas originales recuperad
 
 Usar el core **N64**, con SDRAM y arranque configurados según su documentación.
 Copiar el `.z64` a `games/N64/` y cargarlo en el OSD. La ROM mide más de 16 MiB:
-según el core, un módulo SDRAM de 32 MiB solo admite cartuchos de hasta 16 MiB;
-para esta versión se necesita SDRAM suficiente (64/128 MiB).
+La ROM de juego mide ahora unos 1,2 MB y cabe en cualquier configuración de SDRAM;
+el cartucho del laboratorio (~49 MiB) necesita SDRAM de 64/128 MiB.
 
 Comprobar título `MSX V10 - MISSION 1`, avance de cámara, salto, disparo y combate contra los soldados.
-Con START comprobar `MSX v10 - Graphics lab`, cuadrícula y contador. Probar cambio de
+En el cartucho del laboratorio, con START comprobar `MSX v10 - Graphics lab`, cuadrícula y contador. Probar cambio de
 página, salto L/R, cambio A, unión Z e inversión B. Comparar las letras en FIX
 con la v2 ya probada. Los márgenes están ajustados para CRT; registrar cualquier
 recorte, versión del core y tamaño de SDRAM.

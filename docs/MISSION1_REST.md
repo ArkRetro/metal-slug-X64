@@ -1,5 +1,7 @@
 # Resto de la Misión 1: captura, mapa, colisión, cámara e inventario
 
+> La integración en el runtime está en [MISION1_COMPLETA.md](MISION1_COMPLETA.md).
+
 Este paso recupera, desde el arcade original en MAME, los datos del tramo que
 sigue a la cámara 1920 (donde termina hoy la región jugable del port) hasta el
 final de la misión: el pueblo con el edificio de cúpulas, la calle del mercado,

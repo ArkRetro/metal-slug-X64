@@ -184,3 +184,12 @@ Los pares de la sección 4 se reproducen con `MSX_RENDER_PLAN`, p. ej.
   también en esa ejecución).
 - Prioridades entre pares no medidos son una extensión de los niveles medidos.
 - Validación acústica en hardware/MiSTer.
+
+## Bucle de la música en la libdragon fijada
+
+El lector VADPCM de la libdragon fijada solo da la vuelta a ficheros completos
+(`wav64_vadpcm.c` exige `loop_len == len` al llegar al final y, si no, aborta).
+El recorrido de la misión completa llega al final del fichero de música, cuyo
+bucle medido es parcial: `msx_audio_play` repite ahora el fichero entero
+cuando es VADPCM con bucle parcial (el punto de bucle medido no se respeta
+hasta que el lector lo admita). Ver [MISION1_COMPLETA.md](MISION1_COMPLETA.md).

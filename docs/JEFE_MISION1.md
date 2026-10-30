@@ -192,7 +192,11 @@ Dibujo: `src/boss_renderer.{c,h}` (`boss_render_draw`) usa el renderizador
 existente (`scene_render_image`): partes del banco nativo, paleta por recurso
 lógico, espejo un píxel a la izquierda y el recorte de columnas por *scissor*.
 
-## Integración (pendiente, fuera de este módulo)
+## Integración
+
+Hecha en `neo_world` (ver [MISION1_COMPLETA.md](MISION1_COMPLETA.md)); la
+lista siguiente es el plan original, con las diferencias documentadas allí.
+
 
 1. **Guion**: el registro op 7 `0x2D70FC` (constructor `0x0D5976` de la tabla
    `0x0197DC`) debe llamar a `neo_boss_spawn` con la imagen que deja

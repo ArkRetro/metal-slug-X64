@@ -77,12 +77,13 @@ static unsigned palette_slot(unsigned id) {
 static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
     unsigned slot=0;
-    if (image->format==0) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
+    if (image->format!=1) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else set_tlut(TLUT_NONE);
     if (last_page!=image->page || last_slot!=(int)slot || last_format!=image->format || last_width!=image->width || last_height!=image->height) {
         const void *data=scene_page(image);
-        unsigned side=image->format?32:64;
-        surface_t texture=surface_make((void*)data,image->format?FMT_RGBA16:FMT_CI4,side,side,image->format?64:32);
+        /* Formats: 0 CI4 64x64, 1 RGBA16 32x32, 2 CI4 16x256 (map tiles stacked). */
+        surface_t texture=image->format==1?surface_make((void*)data,FMT_RGBA16,32,32,64):
+            image->format==2?surface_make((void*)data,FMT_CI4,16,256,8):surface_make((void*)data,FMT_CI4,64,64,32);
         int bytes=rdpq_tex_upload_sub(TILE0,&texture,&(rdpq_texparms_t){.palette=(int)slot},0,0,image->width,image->height);
         assertf(bytes<=2048,"Scene TMEM page overflow");
         last_page=image->page;last_slot=(int)slot;last_format=image->format;
@@ -104,11 +105,28 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
     set_point_filter(); // Sprites never inherit the fog sampler.
     blit(image,x,y,0,0,image->width,image->height,mirror,flash);
 }
-static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick) {
+/* Cells following `k` in the window that continue cell k's column: same
+ * layer and x, 16 px lower each, and the next texels of the same tall page
+ * (format 2), so one rectangle draws them all with the same texels. */
+static unsigned column_run(const scene_map_cell_t *cells,const uint16_t *order,unsigned k,unsigned end,unsigned video_tick) {
+    const scene_map_cell_t *c=&cells[order[k]];
+    const scene_image_t *im=scene_map_image(c->phases[video_tick&7]);
+    unsigned n=1;
+    if (im->format!=2) return 1;
+    while (k+n<end && n<16) {
+        const scene_map_cell_t *d=&cells[order[k+n]];
+        const scene_image_t *jm=scene_map_image(d->phases[video_tick&7]);
+        if (d->layer!=c->layer || d->x!=c->x || d->y!=c->y+16*(int)n || jm->page!=im->page || jm->palette!=im->palette ||
+            jm->x!=im->x || jm->y!=im->y+16*(int)n) break;
+        n++;
+    }
+    return n;
+}
+static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n) {
     int x=cell->x-offsets[cell->layer],y=8+cell->y+rises[cell->layer];
-    if (x+16<=8 || x>=312 || y+16<=8 || y>=232) return;
+    if (x+16<=8 || x>=312 || y+16*(int)n<=8 || y>=232) return;
     const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
-    blit(im,x,y,im->x,im->y,16,16,false,false);
+    blit(im,x,y,im->x,im->y,16,16*(int)n,false,false);
 }
 // Cull window of one layer: the same v=x*scale+offset the full scan computed.
 static scene_cell_window_t layer_window(unsigned layer,int offset,float size,float left,float right,bool inclusive) {
@@ -165,12 +183,15 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
           unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
           for (unsigned r=cell_index.layer_runs[layer];r<runs;r++) {
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
-            for (unsigned k=first;k<end;k++) classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick);
+            for (unsigned k=first;k<end;) {
+                unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
+                classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
+            }
           }
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
-            if (visible[cells[i].layer]) classic_cell(&cells[i],offsets,rises,video_tick);
+            if (visible[cells[i].layer]) classic_cell(&cells[i],offsets,rises,video_tick,1);
         rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
     for (unsigned layer=0;layer<5;layer++) {
@@ -179,13 +200,15 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
       scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
       for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
         unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
-        for (unsigned k=first;k<end;k++) {
+        for (unsigned k=first;k<end;) {
           const scene_map_cell_t *cell=&cells[cell_index.order[k]];
+          unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
           float x=background_x(cell,cell->x-offsets[cell->layer]);
           const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
           // The depth camera carries the height (actor.c), so planes keep their own parallax.
           float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
-          blit_scaled(im,x,y,im->x,im->y,16,16,size,size,false,false);
+          blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+          k+=n;
         }
       }
       if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {

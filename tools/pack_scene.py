@@ -140,7 +140,9 @@ def main():
     if rest_path.exists():
         from estimate_mission_budget import merge
         rest=json.loads(rest_path.read_text())
+        for c in mission['cells']:c['segment']=0
         mission,_=merge(dict(mission,conflicts=[]),dict(rest,conflicts=[]))
+        for c in mission['cells']:c.setdefault('segment',1)
         values=[v for v in rest['backdrop_values'] if v!=mission['backdrop']]
         assert len(values)==1;backdrop_after=values[0]
     props=json.loads((ROOT/'filesystem/mission1/props.json').read_text())

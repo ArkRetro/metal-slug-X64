@@ -27,7 +27,7 @@ def wait_for(pattern,timeout=120):
     deadline=time.monotonic()+timeout
     while time.monotonic()<deadline:
         text=log()
-        assert 'ASSERTION FAILED' not in text and 'MSX ERROR' not in text,text[-3000:]
+        assert 'ASSERTION FAILED' not in text and 'MSX ERROR' not in text and 'RSP CRASH' not in text,text[-3000:]
         if re.search(pattern,text):return
         time.sleep(.05)
     raise AssertionError((pattern,log()[-3000:]))

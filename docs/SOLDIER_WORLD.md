@@ -1,5 +1,9 @@
 # Mundo nativo de la región jugable: guion, soldados y objetos lanzados
 
+> Actualización: el guion, la cámara y el jefe continúan hasta el final de la
+> misión; ver [MISION1_COMPLETA.md](MISION1_COMPLETA.md). Lo que sigue describe
+> la región del pueblo (cámara 0..1920).
+
 Continúa [SOLDIER_KERNEL.md](SOLDIER_KERNEL.md). Este paso cierra el bucle de
 los soldados rebeldes de la Misión 1: el guion de nivel, el constructor y la
 familia de rutinas del soldado, su muerte, los objetos que lanza y la salpicadura

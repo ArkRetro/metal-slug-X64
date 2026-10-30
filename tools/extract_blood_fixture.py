@@ -16,7 +16,12 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 # Call site -> (end of the ON branch, OFF palette of the euro recordings).
 # The ON branch follows the bcs; its 009EA8 call is at site+0x12.
-SITES={0x405f0:0x22f,0x40f98:0x3ba,0xa95f2:0x19,0xa969a:0x1a,0xa9742:0x1a,0xa9876:0x19}
+SITES={0x405f0:0x22f,0x40f98:0x3ba,0xa95f2:0x19,0xa969a:0x1a,0xa9742:0x1a,0xa9876:0x19,0x1c996:0x3ba,0x9efe4:0xb8}
+# Sites whose ON branch calls 009EA8 elsewhere than site+0x12: the 1C97A
+# splash at 01C9A8; the swordsmen 09D846.. (09EFE4) at 09EFFE or 09F010 by
+# the sign of +8C (the same resource on both). OFF: the immediate operand of
+# the carry-set branch (01C9B2 0x3BA, 09F01A 0x0B8).
+ON_CALLS={0x9efe4:(0x9effe,0x9f010)}
 ARAB_DEATH=0xa9436
 def resources(ram):
     out={}
@@ -38,7 +43,8 @@ def main():
         pal[int(m.group(2),16)][int(m.group(3),16)]+=1
     sites=[]
     for site,off in sorted(SITES.items()):
-        on=pal.get(site+0x12,collections.Counter())
+        on=collections.Counter()
+        for c in ON_CALLS.get(site,(site+0x12,)):on+=pal.get(c,collections.Counter())
         assert len(on)<=1,(hex(site),on)
         sites.append(dict(site=hex(site),routines={hex(r):n for r,n in sorted(reads[site].items())},
             on=hex(next(iter(on))) if on else None,on_requests=sum(on.values()),off=hex(off)))

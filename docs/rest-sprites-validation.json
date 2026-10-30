@@ -1,5 +1,5 @@
 {
- "descriptors": 1330,
+ "descriptors": 1546,
  "palettes": [
   "0x103",
   "0x113",
@@ -20,6 +20,7 @@
   "0x27c",
   "0x30b",
   "0x378",
+  "0x37a",
   "0x37c",
   "0x37d",
   "0x37e",
@@ -30,6 +31,7 @@
   "0x3ba",
   "0x3c6",
   "0x3fd",
+  "0x3fe",
   "0x46e",
   "0x472",
   "0x475",
@@ -41,6 +43,7 @@
   "0x883",
   "0x93",
   "0x9b",
+  "0xb8",
   "0xd0",
   "0xd3"
  ],
@@ -48,16 +51,19 @@
   "0x37f",
   "0x133",
   "0x38e",
-  "0x823"
+  "0x823",
+  "0x16c",
+  "0x16d",
+  "0x16e"
  ],
  "stats": {
   "zoomed_entries_skipped": 69,
-  "frames": 161,
-  "pixels_equal": 1409085,
-  "pixels_different": 8068,
-  "pixels_overlapping": 104713,
-  "rank_2": 83,
-  "rank_1": 78
+  "frames": 175,
+  "pixels_equal": 1435228,
+  "pixels_different": 11597,
+  "pixels_overlapping": 107412,
+  "rank_2": 92,
+  "rank_1": 83
  },
  "frames": [
   {
@@ -1185,6 +1191,104 @@
    "frame": 8371,
    "update_frame": 8369,
    "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8220,
+   "update_frame": 8218,
+   "equal": 1698,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8250,
+   "update_frame": 8248,
+   "equal": 2316,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8280,
+   "update_frame": 8277,
+   "equal": 3379,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8310,
+   "update_frame": 8310,
+   "equal": 2205,
+   "different": 886
+  },
+  {
+   "capture": "fam2",
+   "frame": 8340,
+   "update_frame": 8340,
+   "equal": 1048,
+   "different": 495
+  },
+  {
+   "capture": "fam2",
+   "frame": 8370,
+   "update_frame": 8368,
+   "equal": 1826,
+   "different": 498
+  },
+  {
+   "capture": "fam2",
+   "frame": 8400,
+   "update_frame": 8399,
+   "equal": 2631,
+   "different": 911
+  },
+  {
+   "capture": "fam2",
+   "frame": 8430,
+   "update_frame": 8427,
+   "equal": 2867,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8460,
+   "update_frame": 8457,
+   "equal": 2387,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8490,
+   "update_frame": 8488,
+   "equal": 1850,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8520,
+   "update_frame": 8520,
+   "equal": 1892,
+   "different": 739
+  },
+  {
+   "capture": "fam2",
+   "frame": 8550,
+   "update_frame": 8548,
+   "equal": 2008,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8580,
+   "update_frame": 8580,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8220,
+   "update_frame": 8218,
+   "equal": 36,
    "different": 0
   }
  ]

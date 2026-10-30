@@ -529,6 +529,60 @@ movimiento `0x08BD5A` anda por el suelo); las de los tipos 31, 39 y 44
 son detenciones explícitas. Gráficos: 1232 descriptores, 39 paletas
 (faltan `0x37F, 0x133, 0x38E, 0x823`: ninguna captura las tiene).
 
+## Espadachines `0x09D846/0x09D862/0x09D876` (`src/neo_swords.c`)
+
+Registros del guion en las cámaras 2556..2789 (`0x2D6EFC`, `0x2D6F28`,
+`0x2D6F6A..0x2D6FA6`, `0x2D7000`, `0x2D702C`; grupos 0, 2 y 5 contados) y
+los que suelta el helicóptero `0x04857C` (creadores `0x04870C/0x04871C/
+0x047A6C`, aún externos). Traducción manual de `0x09D846..0x09EC34`:
+constructores `0x09EEB8` (palabras `+6E..+76` → banderas `+96/+98`,
+temporizador `+8A`, `+8C = FFFF`) y `0x09EF6A` (`0x09D876`: punto objetivo
+`+7E`, objeto `+8C/+8E`, cuchillos `+95`), `0x09D89A` (suelo, proyección,
+paleta por `0x01B2BE` en `0x09EFE4`: **0x3FE con BLOOD ON, 0x0B8 con OFF**,
+caja `0x09F610`, palabras de rango `2D2244..2D24B0`, jugador más cercano
+`0x01AF9A` guardado en `+6E` como el nodo original `1014C4/101574`).
+Estados: patrulla `0x09D964`, reposo `0x09D9C0/0x09DA3A`, acercamiento
+`0x09DB44`, persecución `0x09DC5C`, carrera `0x09DD12`, salto de ataque
+`0x09DDCE`, huida `0x09DE84` (temporizador `+8A`), aterrizaje `0x09DF5E`,
+guardia `0x09DFB2`, giro `0x09E00A`, lanzamiento de cuchillo `0x09E062`
+(retrollamadas `0x09F508` → cuchillo `0x09ECCC`, `0x09F536`), tajo
+`0x09E122..0x09E1FE` (fila de ataque `0x09F62C`), saltito `0x09E25A/
+0x09E250`, caída `0x09E34C`; colas `0x09E77E/0x09E79C/0x09E7AC` (cualquier
+golpe de `0x004C24` mata: objeto `0x09F53E` → `0x08CDB2`, muerte por el
+tipo `+5A` o una de las cuatro de `0x09F66C` por el RNG) y `0x09E81C`
+(retirada fuera de `0x09F64C`). Muertes `0x09E842/0x09E8C2/0x09E920/0x09EAB8`
+con la salpicadura `0x01C97A` (`src/neo_effects.c`; paleta por `0x01B2BE`
+en `0x01C996`: **0x37A ON, 0x3BA OFF**). `0x09EC34` (comprobación del
+cartucho) y `0x09ECC4` (`0x0041AC`) borran. Servicio nuevo del actor
+genérico: `ga_probe_forward` (`0x014850`, sonda hacia delante y hacia
+abajo, la misma que usa el soldado).
+
+- **Parada explícita**: `0x09E382` (bandera `+96` bit 3, palabra `+72` del
+  registro distinta de 0: salto a un punto fijo `0DD8/0EE0` por `0x0B64BA`),
+  no alcanzada en las grabaciones ni en las partidas del port.
+- Sin validar por la prueba (no aparecen en `fam2`): el lanzamiento de
+  cuchillo y el cuchillo `0x09ECCC` (paletas `0x16C..0x16E` sin captura),
+  el tajo, la huida y el salto de ataque.
+- Sangre: `data/blood_fixture.json` regenerado
+  (`tools/extract_blood_fixture.py /home/user/captures/blood`, con las
+  llamadas del lado ON en `0x09EFFE/0x09F010` y `0x01C9A8`): sitios
+  `0x09EFE4` (13 peticiones ON, 0x3FE) y `0x01C996` (11, 0x37A) pasan a
+  traducidos; `0x09F598` (`0x09F562`, otra familia) sigue sin traducir.
+
+Prueba `swords` (`data/swords_fixture.json.gz`, MAME `captures-m1full/fam2`,
+rango `9d800-9ef00`): **13 nodos, 818 actualizaciones en bucle cerrado
+(8199..8605), 112700 bytes iguales**, 13 borrados, 8 salpicaduras fuera de la
+familia; muertes por las cuatro rutinas, carrera, guardia, giro y patrulla.
+
+Gráficos: `... cfam@8c37c-8c700 fam2@9d800-9ef00 fam2@1c97a-1c97a
+--palette-capture /home/user/captures/blood` (opción nueva: paletas de una
+captura sin traza, aquí las ON `0x3FE` y `0x37A`): 1546 descriptores (los
+1330 anteriores idénticos), 45 paletas (las anteriores idénticas; nuevas
+`0xB8`, `0x37A`, `0x3FE`), 175 volcados; los 14 de `fam2` (13 de los espadachines, 1 de la
+salpicadura) dan 26143 píxeles iguales y 3529 distintos en 5 volcados (8310..8400, 8520),
+cuando bajan del helicóptero (sin investigar: probablemente el orden de
+sprites con el helicóptero, que aún no es nativo).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

@@ -27,6 +27,8 @@ BLOBS=[
     (0xDC85A,0x108,'0DC97E bomber: smoke lists/tables (01DA40), palettes, cull rectangles, hurtboxes, attack rows'),
     (0x2D06CE,0x330,'0DC9EE.. bomber rank tables (0260C8)'),
     (0x0B57BE,0xB2,'0C83E6 Mission 1 camera/map command list (pointer RAM 10E964)'),
+    (0x9F610,0x6C,'09D846 swordsmen: hurtbox, attack rows 09F62C/09F63C, cull 09F64C, player rectangle 09F654, programs 09F65C, deaths 09F66C'),
+    (0x2D2244,0x31C,'09D846 swordsmen rank tables 2D2244..2D24B0 and knife 09ECCC tables 2D2512/2D252C/2D253C (0260C8)'),
     (0x2D2FC0,0x80,'0A8CA0 robed swordsman rank tables 2D2FC0/2D2FDA/2D2FF4 (0260C8)'),
     (0x0E64D8,0x08,'0A9A56 robed swordsman cull rectangle (01945C)'),
     (0x00087A,0x10,'0A8F38 sub-script records of the robed swordsman (+74 index)'),

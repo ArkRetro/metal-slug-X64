@@ -149,7 +149,8 @@ iguales, 0 distintos**
 | `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
 | `0x035668` criatura del subguion | **nativo** (MISION1_ACTORES.md) |
-| `0x09F682` camello, `0x09D846/62/76`, `0x09A67E` cohetes | externos |
+| `0x09D846/62/76` espadachines, cuchillo `0x09ECCC`, salpicadura `0x01C97A` | **nativo** (MISION1_ACTORES.md; `0x09E382` parada explícita) |
+| `0x09F682` camello | externo |
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |

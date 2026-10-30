@@ -19,6 +19,8 @@ enum {
     NEO_BLOOD_PIECE_A9638=0xa969a,
     NEO_BLOOD_PIECE_A96E0=0xa9742,
     NEO_BLOOD_PIECE_A9814=0xa9876,
+    NEO_BLOOD_SPLASH_1C97A=0x1c996,    /* 01C97A: splash of the swordsmen's deaths */
+    NEO_BLOOD_SWORDSMAN=0x9efe4,       /* 09D846/09D862/09D876 constructor palette */
 };
 /* Logical palette resource (009EA8 d0) chosen at a translated call site; for
  * 0A9436 the resource of the 039DA8 slot copied to +14. 0 for a call site

@@ -60,6 +60,21 @@ sin detenerse.
 
 ## Mapa, colisión y presupuesto
 
+- Franja inferior tras el camión `0x02916E` (informe del usuario en MiSTer:
+  subido a los restos, «la cámara sube y no se dibuja una franja abajo»).
+  Durante la primera subida de cámara (944..1008, RAM `10E980` de 256 a
+  240-242) la vista aún no ha subido del todo cuando entran las columnas
+  x ≥ 1216, cuya capa 3 acaba en y = 192 en el mapa recuperado: la fila
+  y = 208 nunca se observó en las capturas del mapa (subieron la cámara en
+  otro momento) y el port dejaba ver el fondo abajo a la derecha. La captura
+  de soldados `m2x` tiene VRAM durante la subida: `extract_mission_map.py m2x
+  --frames 6370:9400` y el nuevo `tools/merge_observed_cells.py` añaden 100
+  celdas no observadas antes (capa 3: fila 208 en 1216..1440 y filas sobre
+  la vista; capas 2, 1 y 0), comprobando idénticas las 1861 ya conocidas
+  (o una de sus variantes registradas). El recorrido de ares toma
+  `truck-wreck.png` (jugador sobre los restos en la parada 872) y
+  `camera-risen.png` (progreso 1024, la zona de la franja).
+
 - `tools/pack_scene.py` une el mapa de la región y el del resto
   (`filesystem/mission1/rest/map.json`; las 1061 celdas comunes son
   idénticas); `SCENE_MAP_CAMERA_MAX` = `MSX_CAMERA_MAX` = 3520. Los atlas de
@@ -96,7 +111,7 @@ contestados por el mundo:
 | objetos de escena, barrido y suelo | raíz/terreno; `10D7B6/10E8C6` = terreno (banco medio a velocidad completa); núcleo de colisión nativo |
 | plataformas `0x0140C0/0x013F1E` | objetos dinámicos del núcleo (`0E93B2/0E94AC/0E95A6`), visibles para soldados y actores genéricos |
 | registro `0x004C24` y ataque `0x0049E8` | casillas de la ventana de registro; filas de ataque de clase 0 contra el jugador |
-| efectos | `01C706/01C71E/01D764/01D86C…` siguen como actores genéricos nativos; `02A18A` es `JMP 0041AC`; prisioneros `099DCC` y estelas convertidas `02A3CE` cuentan como externos |
+| efectos | `01C706/01C71E/01D764/01D86C…` siguen como actores genéricos nativos; `02A18A` es `JMP 0041AC`; las estelas convertidas `02A3CE` cuentan como externas; los prisioneros `099DCC` son nativos (MISION1_ACTORES.md) |
 | misión `0x018F92/0x018F40` | `mission_step` 1 y 2 → `mission_complete` / `complete` |
 
 Los disparos del jugador llegan al jefe por la fase estrecha original
@@ -149,11 +164,13 @@ iguales, 0 distintos**
 | `0x092A32` cañón, `0x05ED84` lanzacohetes, `0x04857C` helicóptero | externos |
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
 | `0x035668` criatura del subguion | **nativo** (MISION1_ACTORES.md) |
-| `0x09F682` camello, `0x09D846/62/76`, `0x09A67E` cohetes | externos |
+| `0x09D846/62/76` espadachines, cuchillo `0x09ECCC`, salpicadura `0x01C97A` | **nativo** (MISION1_ACTORES.md; `0x09E382` parada explícita) |
+| `0x09F682` camello | externo |
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
-| `0x031D92`, `0x099DCC`, `0x099E06` prisioneros, `0x03458E` Camel Slug | externos |
+| `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
+| `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),

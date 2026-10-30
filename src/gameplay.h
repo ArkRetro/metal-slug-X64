@@ -63,6 +63,7 @@ typedef struct {
      * explicitly (grenade_stops). */
     bool grenade,grenade_was_down;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
+    unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

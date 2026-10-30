@@ -16,7 +16,7 @@ int main(void) {
         }
         n+=s->requests;
     }
-    if (neo_blood_palette(0x1c996,true)) {printf("FAIL untranslated site answered\n");return 1;}
+    if (neo_blood_palette(0x9f598,true)) {printf("FAIL untranslated site answered\n");return 1;}
     static neo_world_t w;neo_world_init(&w,0);
     if (w.blood!=(MSX_BLOOD!=0)) {printf("FAIL world blood %d, MSX_BLOOD %d\n",w.blood,MSX_BLOOD);return 1;}
     printf("Blood: %u call sites, %u recorded ON requests, default %s\n",(unsigned)(sizeof(blood_sites)/sizeof(blood_sites[0])),n,MSX_BLOOD?"ON":"OFF");

@@ -2,6 +2,15 @@
  "source": "MAME 0.264 mslugx euro, tools/capture_blood.lua (RAM 10FD8F = 1), Mission 1 complete",
  "sites": [
   {
+   "site": "0x1c996",
+   "routines": {
+    "0x1c97a": 11
+   },
+   "on": "0x37a",
+   "on_requests": 11,
+   "off": "0x3ba"
+  },
+  {
    "site": "0x405f0",
    "routines": {
     "0x407a2": 3,
@@ -32,6 +41,17 @@
    "on": "0x37a",
    "on_requests": 1,
    "off": "0x3ba"
+  },
+  {
+   "site": "0x9efe4",
+   "routines": {
+    "0x9d846": 4,
+    "0x9d862": 8,
+    "0x9d876": 1
+   },
+   "on": "0x3fe",
+   "on_requests": 13,
+   "off": "0xb8"
   },
   {
    "site": "0xa95f2",
@@ -81,14 +101,6 @@
   }
  ],
  "untranslated_sites_read": {
-  "0x1c996": {
-   "0x1c97a": 11
-  },
-  "0x9efe4": {
-   "0x9d846": 4,
-   "0x9d862": 8,
-   "0x9d876": 1
-  },
   "0x9f598": {
    "0x9feaa": 1
   }

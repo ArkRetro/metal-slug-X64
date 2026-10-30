@@ -1,3 +1,4 @@
+#include <string.h>
 #include "neo_region.h"
 /* Prisoner of the rest of Mission 1 (spawn-table entry 099862, camera
  * 2336..), manual translation; ROM labels are provenance only.
@@ -225,16 +226,350 @@ static ga_result_t prisoner_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
+static bool prisoner2_routine(uint32_t r) {
+    static const uint32_t list[]={0x99dcc,0x99e48,0x99e64,0x99e7a,0x99e06,0x99f64,0x99f80,0x99f9c,0x99fd8,0x9a000,0x9a042,
+        0x9a06e,0x9a0f6,0x9a11c,0x9a142,0x9a160,0x9a17e,0x9a1fc,0x9a230,0x9a278,0x9a290,0x9a2d8,0x9a322,0x9a346,0x9a364,
+        0x9a376,0x9a396,0x9a3b2,0x9a3d4,0x9a3f2,0x9a438,0x9a454,0x9a46e,0x9a4a2,0x9a4d2,0x9a4fa,0x9a516,0x9a534,0x9a552,
+        0x9a58e,0x9a5aa,0x9a97c,0x9a9ac,0x9a5ee};
+    for (unsigned i=0;i<sizeof(list)/sizeof(list[0]);i++) if (list[i]==r) return true;
+    return false;
+}
+/* ---- Prisoners 099DCC/099E06 (spawn-table entries of the whole mission,
+ * 099DCC..09A5EE; the boss's hatch also drops three 099DCC) -------------
+ * Constructor 09AC16: +72 faces left, +6E = 3 is drawn by 0029F2(3), +78
+ * puts it behind (+15 bit 5), 01436A, palettes 0x382/0x3FA, depth words
+ * 8820 (03C526 asks 019240 for a mission bonus: RAM 10C2F6 = 0 in Mission
+ * 1, nothing is created). 099DCC hangs tied (29FAD8) until hit (09AD2A ->
+ * 004C24; +88 counts the flinch of 09AD1C), struggles free (29FB34) and is
+ * released (099FD8); 099E06 sits tied on a chair (29FCBE), hit it falls
+ * (29FDE6) and leaves its rope 09A97C. Released (099FD8 -> 09A042): palettes
+ * 0x381/0x3FA, hurtbox 09AD4C, wanders (29FE52, +62 = 1.5 px) for +7A
+ * updates (+6E = 0: 15; else 7FFF facing by +6E) and stops (29FED0) at a
+ * wall (+5F bit 0) or when the count runs out; falls (29FBEC) off ledges;
+ * at an object-list marker (040200) climbs (bit 0: 29FFE4/29FFFA, 0402E6,
+ * then jumps off 2A0074/2A011C) or goes down (bit 1: 2A0128/2A01D0/2A024A).
+ * Touched by a player (09AB9A: rectangle 09ADE0) it is rescued (09AAD6),
+ * turns (29FE52 for 4 or 5 updates), salutes (29FEEC, whose callback 09ACD6
+ * gives the item +74 (life +76) through 08CDB2 placed by 014A02), waves
+ * (2A02B6) and runs off left (2A0260) until a wall (+5F bit 0), 30 more
+ * updates. Outside the view (0C8BEC: 09ADD0) it ends (09A5EE: the cartridge
+ * check, then 004188 on genuine hardware: delete). */
+static uint16_t k9ac86_ground_or_air(neo_gactor_t *a,neo_genv_t *e) {   /* 09AC86 */
+    if (B(0x15)&0x40u) {uint32_t kind;ga_ground(a,e,&kind);return 0;}
+    gravity_air(a,e);
+    if ((W(0x66)&0xf000u)==0x8000u) SW(0x1e,W(0x66)-W(0x40));          /* 01AD8C */
+    if (B(0x15)&0x40u) {SL(0x30,0);SL(0x34,0);}
+    return 0;
+}
+static void k9ac16(neo_gactor_t *a,neo_genv_t *e) {
+    if (W(0x72)) SET(0x15,0);
+    if (W(0x6e)==3u) SW(0x6e,ga_rand_range(e,3));
+    if (W(0x78)) SET(0x15,5);
+    ga_stationary(a,e);
+    ga_palette(a,0x382);ga_palette(a,0x3fa);SB(0x14,B(0x19));
+    SW(0x66,0x8820);SW(0x1e,0x8820);
+    /* 03C526 -> 019240: RAM 10C2F6 = 0 (Mission 1) clears the carry: no 03C62A. */
+    if (e->pickup && e->pickup->mission) ga_fail(e,0x3c526);
+}
+/* 09AD2A: the flinch count +88 (09AD1C) runs down instead of registering;
+ * otherwise 004C24 (carry: hit). */
+static bool k9ad2a(neo_gactor_t *a,neo_genv_t *e) {
+    if (W(0x88)) {SW(0x88,W(0x88)-1u);if (!W(0x88)) CLR(0x15,5);return false;}
+    return ga_register(a,e,NULL,NULL);
+}
+/* 09AB9A: a live player inside 09ADE0 (09AB7E: +5F bit 7 (dying) clear,
+ * the port's live player; 01AF3C). RAM
+ * 10C303 (018F16) reads FF in every recorded update (91 in fam2): touching
+ * is enabled. Both players inside: the nearer by X (not reached, one
+ * player in the port). */
+static int k9ab9a(neo_gactor_t *a,neo_genv_t *e) {
+    int found=-1;
+    for (unsigned p=0;p<2;p++) {
+        if (!(e->players.active_mask&(1u<<p))) continue;              /* 01AEB0 */
+        if (outside(a,e,p,0x9ade0)) continue;
+        if (found>=0) {ga_fail(e,0x9abd6);return -1;}
+        found=(int)p;
+    }
+    return found;
+}
+/* 09AAD6: the rescue (RAM 10C301 (018F24) reads 0 in the traces). */
+static void k9aad6(neo_gactor_t *a,neo_genv_t *e,unsigned p) {
+    if (p>1u || !(e->players.active_mask&(1u<<p)) || !e->flags) return; /* 01AEB0 */
+    e->flags->tally[p]++;                                            /* 0C8CC2 */
+    e->flags->rescued[p]++;if (e->flags->rescued[p]>=100u) e->flags->rescued[p]=99u;
+    if (W(0x74)==0xfffeu) e->flags->gifts[p]++;
+}
+/* 09ACD6 (program callback): the item +74 (life +76) after the script
+ * actor (08CDB2), then moved 16 px forward and 8 down by 014A02. */
+static void k9acd6(neo_gactor_t *a,neo_genv_t *e) {
+    if (W(0x74)==0xffffu) return;
+    uint16_t kind=W(0x74);
+    neo_gactor_t *c=NULL;
+    static neo_gactor_t dummy;                     /* 101624: kinds >= 0x5A */
+    if (kind<0x5au) {
+        c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+        if (c) {ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x76));ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);ga_place_at(c,a,e,0,0);}
+    }
+    if (!c) {memset(&dummy,0,sizeof(dummy));c=&dummy;}
+    ga_sweep_place(a,e,c,(int16_t)(BIT(0x15,0)?0x10:-0x10),8);
+    SW(0x74,0xffff);
+}
+/* 0C8BEC against 09ADD0 (the routine then reaches 09A5EE). */
+static ga_result_t k9a5d8(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_outside_view(a,e,0x9add0)) SL(0,0x9a5ee);
+    return GA_MORE;
+}
+/* 09A5C2: touched -> rescued (09A17E); then 09A5D8. */
+static ga_result_t k9a5c2(neo_gactor_t *a,neo_genv_t *e) {
+    int p=k9ab9a(a,e);
+    if (e->unsupported) return GA_UNSUPPORTED;
+    if (p>=0) {SB(0x83,(uint8_t)p);SL(0,0x9a17e);}
+    return k9a5d8(a,e);
+}
+static int step2(neo_gactor_t *a,neo_genv_t *e) {return ga_anim_step(a,e,prisoner_call);}
+#define STEP2(r) do { if (((r)=step2(a,e))<0) return GA_UNSUPPORTED; } while (0)
+/* 09A230/09A290: face the rescuer (01AEB0 +83). */
+static void face_rescuer(neo_gactor_t *a,neo_genv_t *e) {
+    unsigned p=B(0x83)&1u;
+    if (!(e->players.active_mask&(1u<<p))) return;
+    int16_t px=(int16_t)(p?e->players.p2x:e->players.p1x);
+    if (S16(W(0x3c))>px) CLR(0x15,0); else SET(0x15,0);
+}
+static ga_result_t prisoner2_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    for (;;) switch (L(0)) {
+    case 0x99dcc:
+        k1b1dc(a);k9ac16(a,e);
+        START(0x29fad8);SL(0,0x99e48);
+        /* fall through */
+    case 0x99e48:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (k9ad2a(a,e)) SL(0,0x99e64);
+        return k9a5d8(a,e);
+    case 0x99e64:
+        START(0x29fb34);SL(0,0x99e7a);
+        /* fall through */
+    case 0x99e7a:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (r) SL(0,0x99fd8);
+        return k9a5d8(a,e);
+    case 0x99e06:
+        k1b1dc(a);k9ac16(a,e);
+        START(0x29fcbe);SL(0,0x99f64);
+        /* fall through */
+    case 0x99f64:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (k9ad2a(a,e)) SL(0,0x99f80);
+        return k9a5d8(a,e);
+    case 0x99f80:
+        k1b1dc(a);START(0x29fde6);SL(0,0x99f9c);
+        /* fall through */
+    case 0x99f9c:
+        ga_air(a,e);STEP2(r);
+        if (r) {
+            /* 0040BC: the rope 09A97C where the chair was (01B220). */
+            (void)ga_spawn_from(a,e,0x9a97c,0,0);
+            SL(0,0x99fd8);
+        }
+        return k9a5d8(a,e);
+    case 0x99fd8:
+        SB(0x1d,0);ga_palette(a,0x381);ga_palette(a,0x3fa);            /* 009F88, 009EA8 */
+        SB(0x14,B(0x19));
+        /* fall through */
+    case 0x9a000:
+        SL(0x50,0x9ad4c);SB(0x5a,0);CLR(0x5f,7);
+        if (!W(0x6e)) SW(0x7a,0xf);
+        else {if ((uint8_t)W(0x6e)==1u) CLR(0x15,0); else SET(0x15,0);SW(0x7a,0x7fff);}
+        /* fall through */
+    case 0x9a042:
+        START(0x29fe52);
+        SL(0x62,BIT(0x15,0)?0x18000u:(uint32_t)-0x18000);
+        SL(0,0x9a06e);
+        /* fall through */
+    case 0x9a06e: {
+        if (BIT(0x86,0)) ga_stationary(a,e);
+        else {
+            k9ac86_ground_or_air(a,e);
+            if (!(B(0x15)&0x40u)) SL(0,0x9a0f6);
+            else {
+                if (BIT(0x5f,0)) SL(0,0x9a142);
+                if (!B(0x6e)) {uint16_t t=W(0x7a);SW(0x7a,t-1u);if (!t) SL(0,0x9a142);}
+            }
+        }
+        uint8_t flag=0;int id=ga_marker_cross(a,e,&flag);             /* 040200 */
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (id>=0) {
+            SB(0x84,(uint8_t)id);
+            if (flag&1u) SL(0,0x9a396);
+            if (flag&2u) SL(0,0x9a4fa);
+        }
+        STEP2(r);
+        return k9a5c2(a,e);
+    }
+    case 0x9a0f6:
+        SL(0x50,0x9ad4c);START(0x29fbec);SL(0x30,0);SL(0x34,0);SL(0,0x9a11c);
+        /* fall through */
+    case 0x9a11c:
+        gravity_air(a,e);
+        if ((W(0x66)&0xf000u)==0x8000u) SW(0x1e,W(0x66)-W(0x40));       /* 01AD8C */
+        if (B(0x15)&0x40u) SL(0,0x9a042);
+        STEP2(r);
+        return k9a5c2(a,e);
+    case 0x9a142:
+        SL(0x62,0);SL(0x30,0);START(0x29fed0);SL(0,0x9a160);
+        /* fall through */
+    case 0x9a160:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (r) {SW(0x7a,0x1e);SL(0,0x9a042);}
+        return k9a5c2(a,e);
+    case 0x9a17e:
+        if (e->sound) e->sound(e->ctx,0x113a);                         /* 0120F8 */
+        k9aad6(a,e,B(0x83));
+        SL(0x50,0);START(0x29fe52);
+        if (BIT(0x86,0)) {SET(0x15,0);SL(0x62,0xfff00000u);SW(0x7a,5);}
+        else {
+            if (S16(W(0x3c))>0xc0) {SET(0x15,0);SL(0x62,0xfff90000u);} else {CLR(0x15,0);SL(0x62,0x70000u);}
+            SW(0x7a,4);
+        }
+        SL(0,0x9a1fc);
+        /* fall through */
+    case 0x9a1fc:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        SW(0x7a,W(0x7a)-1u);
+        if (!W(0x7a)) {SB(0x15,B(0x15)^1u);SL(0,S16(W(0x74))<0?0x9a290:0x9a230);}
+        return k9a5d8(a,e);
+    case 0x9a230:
+        face_rescuer(a,e);START(0x29feec);SL(0x30,0);SL(0x62,0);SL(0,0x9a278);
+        /* fall through */
+    case 0x9a278:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (r) SL(0,0x9a290);
+        return k9a5d8(a,e);
+    case 0x9a290:
+        face_rescuer(a,e);START(0x2a02b6);SL(0x62,0);SL(0x30,0);SL(0,0x9a2d8);
+        /* fall through */
+    case 0x9a2d8:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (r) {
+            SL(0,0x9a322);
+            /* +74 = FFFE: the prisoner hands its gift to the rescuer
+             * (0DDCDA: follows the player node), not translated. */
+            if (W(0x74)==0xfffeu && (e->players.active_mask&(1u<<(B(0x83)&1u)))) {ga_fail(e,0xddcda);return GA_UNSUPPORTED;}
+        }
+        return k9a5d8(a,e);
+    case 0x9a322:
+        START(0x2a0260);CLR(0x15,0);SL(0x62,0xfffc0000u);SL(0,0x9a346);
+        /* fall through */
+    case 0x9a346:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (BIT(0x5f,0)) SL(0,0x9a364);
+        return k9a5d8(a,e);
+    case 0x9a364:
+        SW(0x7a,0x1e);SET(0x5f,3);SL(0,0x9a376);
+        /* fall through */
+    case 0x9a376:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        SW(0x7a,W(0x7a)-1u);
+        if (S16(W(0x7a))<=0) SL(0,0x9a5ee);
+        return k9a5d8(a,e);
+    case 0x9a396:
+        k1b1dc(a);START(0x29ffe4);SL(0,0x9a3b2);
+        /* fall through */
+    case 0x9a3b2:
+        SW(0x34,0);(void)ga_marker_follow(a,e,B(0x84));STEP2(r);
+        if (r) SL(0,0x9a3d4);
+        return k9a5c2(a,e);
+    case 0x9a3d4:
+        START(0x29fffa);SL(0x34,0x15500);SL(0,0x9a3f2);
+        /* fall through */
+    case 0x9a3f2: {
+        int16_t h=ga_marker_follow(a,e,B(0x84));
+        if (h<0) SL(0,0x9a000);
+        else if ((uint16_t)h<0x24u) SL(0,0x9a438);
+        STEP2(r);
+        if (r) START(0x29fffa);
+        return k9a5c2(a,e);
+    }
+    case 0x9a438:
+        k1b1dc(a);START(0x2a0074);SL(0,0x9a454);
+        /* fall through */
+    case 0x9a454:
+        ga_air(a,e);STEP2(r);
+        if (r) SL(0,0x9a46e);
+        return k9a5c2(a,e);
+    case 0x9a46e:
+        SB(0x82,0xc);START(0x2a011c);SL(0x34,0x4cccc);SL(0x7e,0xffff0a3eu);SL(0x30,0xfffe6667u);SL(0,0x9a4a2);
+        /* fall through */
+    case 0x9a4a2:
+        if (L(0)==0x9a4a2) {
+            uint32_t d0=L(0x30);
+            if (d0) {
+                d0=(uint32_t)((int32_t)d0>>4);
+                uint32_t d1=d0?0u:0xffffffffu;
+                d0=(d0^d1)-d1;
+                SL(0x30,L(0x30)-d0);
+            }
+            SB(0x82,B(0x82)-1u);
+            if ((int8_t)B(0x82)<=0) {SL(0x30,0);SL(0,0x9a4d2);}
+        }
+        /* fall through */
+    case 0x9a4d2:
+        SL(0x34,L(0x34)+L(0x7e));
+        ga_air(a,e);STEP2(r);
+        if (B(0x15)&0x40u) SL(0,0x9a000);
+        return k9a5c2(a,e);
+    case 0x9a4fa:
+        k1b1dc(a);START(0x2a0128);SL(0,0x9a516);
+        /* fall through */
+    case 0x9a516:
+        (void)ga_marker_follow(a,e,B(0x84));STEP2(r);
+        if (r) SL(0,0x9a534);
+        return k9a5c2(a,e);
+    case 0x9a534:
+        START(0x2a01d0);SL(0x34,0xfffeab00u);SL(0,0x9a552);
+        /* fall through */
+    case 0x9a552: {
+        int16_t h=ga_marker_follow(a,e,B(0x84));
+        STEP2(r);
+        if (r) SL(0,0x9a534);
+        if (h<0) SL(0,0x9a0f6);
+        if (!(B(0x15)&0x40u)) SL(0,0x9a58e);
+        return k9a5c2(a,e);
+    }
+    case 0x9a58e:
+        k1b1dc(a);START(0x2a024a);SL(0,0x9a5aa);
+        /* fall through */
+    case 0x9a5aa:
+        k9ac86_ground_or_air(a,e);STEP2(r);
+        if (r) SL(0,0x9a000);
+        return k9a5c2(a,e);
+    /* 09A97C: the rope left by 099E06 (palette 0x382, program 29FE0A). */
+    case 0x9a97c:
+        SW(0x66,0x1001);SW(0x1e,0x1001);ga_palette(a,0x382);START(0x29fe0a);SL(0,0x9a9ac);
+        /* fall through */
+    case 0x9a9ac:
+        ga_project(a,e);STEP2(r);
+        if (r) SL(0,0x9a5ee);
+        return GA_MORE;
+    case 0x9a5ee:
+        return GA_DELETE;                                           /* 004188 */
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
 static bool prisoner_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
     (void)parameter;
     if (kind!=NEO_ANIM_CALL) return false;
     if (routine==0x99be6u) {k99be6(a,e);return true;}
     if (routine==0x99c26u) {k99c26(a);return true;}
     if (routine==0x99ccc) {k99ccc(a,e);return true;}
+    if (routine==0x9acd6u) {k9acd6(a,e);return true;}
+    if (routine==0x9acbau) {SW(0x2c,W(0x2c)+0x24u);ga_project(a,e);return true;}   /* 09ACBA */
+    if (routine==0x9acc8u) {SW(0x2c,W(0x2c)-0x24u);ga_project(a,e);return true;}   /* 09ACC8 */
     return false;
 }
 bool neo_prisoner_routine(uint32_t r) {
     return r==0x99862 || r==0x998e8 || r==0x99922 || r==0x99956 || r==0x999ac || r==0x999c2 || r==0x999dc ||
-        r==0x999f6 || r==0x99a0e || r==0x99a22 || r==0x99a70 || r==0x99a8a || r==0x99ac6 || r==0x99b22;
+        r==0x999f6 || r==0x99a0e || r==0x99a22 || r==0x99a70 || r==0x99a8a || r==0x99ac6 || r==0x99b22 || prisoner2_routine(r);
 }
-ga_result_t neo_prisoner_tick(neo_gactor_t *a,neo_genv_t *e) {return prisoner_tick(a,e);}
+ga_result_t neo_prisoner_tick(neo_gactor_t *a,neo_genv_t *e) {return prisoner2_routine(L(0))?prisoner2_tick(a,e):prisoner_tick(a,e);}

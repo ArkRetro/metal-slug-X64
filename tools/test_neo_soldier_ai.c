@@ -83,6 +83,12 @@ int main(void) {
         env.grid=grid;env.rng=&rng;env.targets=c->hlive?&player:NULL;env.target_count=c->hlive?1:0;
         env.bounds=(neo_cull_bounds_t){false,0,0,0,0,c->bounds[0],c->bounds[1],c->bounds[2],c->bounds[3]};
         env.program=program;
+        /* 01903A inputs: the captured players (alive per the active mask,
+         * following the camera: +7A/+7B set). */
+        for (unsigned p=0;p<2;p++) {
+            env.player_state[p].alive=(c->mask>>p)&1u;env.player_state[p].follow7a=0xff;env.player_state[p].follow7b=0xff;
+            env.player_state[p].x=p?c->p2x:c->p1x;env.player_state[p].y=p?c->p2y:c->p1y;
+        }
         uint32_t routine=c->before.routine;
         /* Player bullets (01B882): air step, then 0049E8 against this soldier. */
         bool consumed[16]={0};

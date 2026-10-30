@@ -251,12 +251,23 @@ python3 tools/test_boss_ares.py boss-regression.z64 --output /ruta/ares-boss
 ## Pendiente (prueba 5 en MiSTer)
 
 - **Marco cae sobre el jefe al reaparecer: corregido** (sección siguiente).
-- **Explosiones del jefe sin color.** Los efectos externos del jefe
-  (`boss_effects_ext`, ~3200 en la carrera de `test_gameplay`) que tienen
-  rutina genérica nativa se dibujan con las paletas de las ranuras del
-  asignador del jefe (`b_effect` en `neo_world.c`: `+19..+1C`, `+14/+16`);
-  los demás solo se cuentan. Sin identificar contra `captures-boss` cuáles
-  salen con paleta plana: pendiente.
+- **Explosiones del jefe sin color: identificado, no corregido.** Las
+  manchas planas azules con borde dorado/rojo/cian y los círculos grandes
+  planos (capturas del port en ares, combate del jefe) son el programa
+  `0x22CF2C` (descriptores `0x1300AE..0x1306CE`) de los actores genéricos
+  que crea el jefe, dibujado con los recursos de paleta `0x357`, `0x358` y
+  `0x359`. El paquete de escena guarda la paleta más frecuente de las
+  capturas (`tools/export_boss_sprites.py`): plumas 1..6 una rampa dorada,
+  roja o cian y plumas 7..15 = `0x100F` (azul puro). En el original esas
+  ranuras las anima el asignador de paletas: su entrada en `0x1068EA`
+  (`0574 0574 0844 0844 nnnn 0357 0357`, `runDbg2` fotogramas 10950,
+  13380..13440) lleva un contador `+8` (1, 0x0B, 2) y la paleta pasa de una
+  de fuego (`7FFE 5FFA 4FD8 ...` en el fotograma 10950) a la apagada
+  (`4EB0 ...`, `100E`, `100B`), así que la explosión se ve de fuego y se
+  apaga. El port no tiene paletas animadas (TLUT estática por recurso):
+  **parada explícita**; hace falta traducir el motor de fundidos del
+  asignador (`0x009EA8`/`0x009F88` y su tabla `0x0574`/`0x0844`) y dar al
+  renderizador paletas por fotograma.
 
 ## Muerte y reaparición del jugador (`src/marco_death.c`)
 

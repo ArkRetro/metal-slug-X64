@@ -1,0 +1,53 @@
+{
+  "status": "NATIVE_C_VALIDATED_WITH_LIMITS",
+  "source_range": "0x0C3078..0x0C32E0",
+  "source_palette_table": "0x0C3152",
+  "source_rom_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "canonical_disassembly": {
+    "status": "STATIC_M68000_DISASSEMBLY",
+    "ranges": [
+      {
+        "start": "0xc3078",
+        "length": 636
+      },
+      {
+        "start": "0xc1740",
+        "length": 234
+      },
+      {
+        "start": "0xc0bae",
+        "length": 70
+      },
+      {
+        "start": "0xca2f8",
+        "length": 44
+      }
+    ],
+    "limits": "Canonical decoder output; instructions were not executed at these addresses.",
+    "cpu_view_sha256": "1f5a7830637313a9e8878053f642ab873940a50a2cbab19d16ce20c6d3293594",
+    "selected_ranges_match_rom": true,
+    "p1_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "whole_view_matches_p1": false,
+    "view_differences": "24 bytes below 0x80 at boot; selected code ranges exactly match verified P1."
+  },
+  "original_cpu_probe": {
+    "status": "PASS",
+    "cases": 256,
+    "range": "0x0C31BE..0x0C31DC",
+    "fixture": "data/marco_environment_fixture.json",
+    "fixture_sha256": "ecb83b2a332bbd99a6e55c0bb1beda6ac85ebfaf6f38be0922860becec46d22f",
+    "limit": "Controlled injected inputs; not a natural gameplay replay."
+  },
+  "host_check_core": "PASS",
+  "asan_ubsan": "PASS with ASAN_OPTIONS=detect_leaks=0 (sandbox ptrace prevents LeakSanitizer; module performs no allocation)",
+  "native": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "rom_sha256": "32898a5a1173ea70d1c7c00d2e355adb27ca759c00841c58f1820c5fbda74997",
+    "suite": "environment",
+    "limit": "256 controlled original-M68000 arithmetic outputs plus synthetic branch/service tests; not gameplay/world/campaign coverage."
+  },
+  "rejected_probe": "113: re-entry breakpoint skipped on debugger resume; later inputs were not loaded. Replaced by 114, which logs and verifies each injected input.",
+  "limits": "World queries, animation/resource binding, effect allocation and C160A/death destinations remain explicit native-owner boundaries. Not integrated into campaign; not the complete game.",
+  "exporter_smoke": "PASS: final Java exporter compiles and emits C with explicit pending frontier on an 8-entry bounded smoke run."
+}

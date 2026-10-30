@@ -177,3 +177,10 @@ Faltan la oleada y la aparición original del vehículo, su ataque y el resto de
 la IA, así como los gráficos específicos de humo/explosiones asociados a los
 eventos recuperados. Este componente no completa el port ni convierte el
 escenario de referencia en una beta. No se publica una ROM o demo nueva.
+
+## Recuperación de código ampliada
+
+La exportación tentativa y la traducción nativa nueva de transiciones de Marco
+se documentan en [DECOMPILATION.md](DECOMPILATION.md). El borrador Ghidra de
+`decomp/` nunca se enlaza con el port; la unidad C comprobada es
+`src/marco_environment.c`, con servicios de mundo explícitos y pendientes.

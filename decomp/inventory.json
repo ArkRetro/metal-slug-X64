@@ -1,0 +1,31 @@
+{
+  "status": "TENTATIVE_FRONTIER_EXPORTED",
+  "initial_seeds": 184,
+  "processed": 395,
+  "statuses": {
+    "tentative_c": 268,
+    "shared_owner": 126,
+    "no_function": 1
+  },
+  "pending": 0,
+  "unresolved": 17,
+  "rom_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "files": {
+    "functions.tsv": "3133aa8d6eaacf5651b152c1814319d4fa89705a1a9d14db9b9f9165fcddb144",
+    "instructions.tsv": "a1192161ba8f5f9607dc09bb088ebf619e1780f80532652b476c1016320c9c88",
+    "TENTATIVE_ROM_C.c": "b84dc33fb9abe86d7e33bf4aae4e3041c1fbd61035613c8b86af1266415df93a",
+    "unresolved.tsv": "ca0cc222d033fd05d66ade2f7705c5d5e19de4cb705ae8078ea0cbc99a6601da"
+  },
+  "limits": "Prior static roots + direct calls + A6 state-pointer frontier in fixed P1 only. Not all game code; indirect tables, P2 banks and Z80 remain. Exported C is unverified and not native/buildable.",
+  "analysis_warning_lines": 24,
+  "native_port": false,
+  "included_file": "tentative/fixed_p1.c",
+  "repository_files_sha256": {
+    "tentative/functions.tsv": "3133aa8d6eaacf5651b152c1814319d4fa89705a1a9d14db9b9f9165fcddb144",
+    "tentative/unresolved.tsv": "ca0cc222d033fd05d66ade2f7705c5d5e19de4cb705ae8078ea0cbc99a6601da",
+    "tentative/fixed_p1.c": "4d2b4d1f076218b5239221586db4e0463adb1f632a747ad96718990817da6cb6",
+    "tentative/seeds.txt": "88d22f11f207c1786bae29051fcb9006d6dfc8f13016fb532e2b4ea00b02f47c"
+  },
+  "normalization": "Published C strips trailing whitespace only; files records hashes of the private original export.",
+  "seed_file_sha256": "88d22f11f207c1786bae29051fcb9006d6dfc8f13016fb532e2b4ea00b02f47c"
+}

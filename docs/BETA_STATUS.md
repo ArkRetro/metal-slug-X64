@@ -1,3 +1,9 @@
+Current source-recovery work: `decomp/` contains a tentative fixed-P1 C export
+(268 bodies / 395 candidate entries), not buildable native game code. The new
+`marco_environment.c` translates C3078..C32E0 and matches 256 controlled original
+M68000 arithmetic probes, with additional synthetic branch tests on host/MIPS.
+World services and campaign integration remain incomplete. See DECOMPILATION.md.
+
 Current title: animated METAL SLUG X64. The source letters, particles, reveal
 flash and original audio are reconstructed; authored 6/4 digits fall into the
 same reveal and change from silver to gold. Console prompt: PRESS START.

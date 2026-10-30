@@ -258,7 +258,9 @@ local function boss_frame(f)
   boss_wtap=cpu:install_write_tap(0x100000,0x10ffff,'boss_w',boss_write)
  end
  if boss_log then
-  for n,_ in pairs(family) do if cpu:read_u32(n)==DEAD then family[n]=nil end end
+  -- No frame-end pruning: the frame callback can run between 0040EC and
+  -- 00410E of an allocation; a reused node leaves the family at its next
+  -- allocation by a creator outside it (0040EC above).
   boss_log:write(string.format('F %d\n',f))
   if f%600==0 then boss_log:flush() end
  end

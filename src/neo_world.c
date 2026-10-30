@@ -181,8 +181,13 @@ static bool throw_palette(void *context,uint16_t asset,bool replace,uint8_t *han
     return false;
 }
 static void throw_release(void *context) {(void)context;}
+/* The throw services' context is the world: neo_throw_actor keeps it as the
+ * owner of the palettes it took and checks it on every later update, so it
+ * must not be the address of a per-update (stack) tick_t. The tick of the
+ * running update is reached through throw_tick_ctx (set by run_throw). */
+static tick_t *throw_tick_ctx;
 static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame_t *f) {
-    tick_t *t=context;neo_world_t *w=t->w;(void)f;
+    neo_world_t *w=context;(void)f;
     /* 03BD3A acceleration, then 0143E4: air request, 013968 sweep, commit. */
     neo_throw_accelerate(b);
     neo_contact_request_t q=neo_contact_prepare_air(b);
@@ -193,7 +198,7 @@ static bool throw_air(void *context,neo_contact_actor_t *b,const neo_throw_frame
     return true;
 }
 static bool throw_hit(void *context,const neo_contact_actor_t *b) {
-    tick_t *t=context;
+    tick_t *t=throw_tick_ctx;(void)context;
     if (!t->player_hittable) return false;
     int first=-1;
     uint8_t type=neo_hit_query(b,soldier_throw_attack,&t->player,1,(uint8_t)soldier_throw_attack[4],(uint8_t)soldier_throw_attack[5],&first);
@@ -809,13 +814,15 @@ static bool run_splash(tick_t *t,unsigned i) {
 static bool run_throw(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_throw_actor_t *o=&w->throws[i];
     neo_throw_services_t services={program(0x23f3f0),program(0x22d2a6),soldier_throw_flight_rect,soldier_throw_burst_rect,
-        throw_palette,throw_release,t,throw_air,throw_hit};
+        throw_palette,throw_release,w,throw_air,throw_hit};
     /* The effect phase projects against the object's current parent. */
     const neo_contact_parent_t *scene=o->body.parent_tag==TERRAIN_TAG?&w->terrain:&w->root;
     neo_throw_frame_t frame={scene,&t->players,&t->bounds,w->video_phase,0,w->epoch,false};
     unsigned before=w->draw_count;
     t->draw_kind=NEO_WORLD_THROW;t->draw_flash=false;t->draw_palette=0;
+    throw_tick_ctx=t;
     unsigned events;neo_throw_result_t r=neo_throw_actor_step(o,&frame,&services,emit,t,&events);
+    throw_tick_ctx=NULL;
     if (events&NEO_THROW_AUDIO_1027) sound_request(w,0x1027); /* 03BE52 burst on terrain contact */
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t handle=(uint8_t)(w->draws[k].attributes>>8);

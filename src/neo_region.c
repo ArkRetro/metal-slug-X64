@@ -4,10 +4,17 @@
 /* Dispatch of the generic actors by routine label (see neo_region.h) and the
  * ROM data tables they read (data/region_rom.json). */
 const uint8_t *ga_rom(uint32_t address) {
+    /* Blobs may overlap (the truck solid box 029BC2 runs into the rectangle
+     * 029BCA): take the one with the most bytes left after the address so a
+     * reader never runs off the end of a shorter blob. */
+    const uint8_t *best=NULL;uint32_t left=0;
     for (unsigned i=0;i<sizeof(region_blobs)/sizeof(region_blobs[0]);i++) {
         const region_blob_t *b=&region_blobs[i];
-        if (address>=b->address && address<b->address+b->length) return b->data+(address-b->address);
+        if (address>=b->address && address<b->address+b->length && b->address+b->length-address>left) {
+            left=b->address+b->length-address;best=b->data+(address-b->address);
+        }
     }
+    if (best) return best;
     /* The boss's ROM regions (debris lists 0E932A.. read by the generic
      * actors it creates). */
     return neo_boss_rom(address,1);

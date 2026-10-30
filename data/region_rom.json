@@ -75,8 +75,8 @@
   },
   {
    "rom": "0x029BC2",
-   "reader": "02922E truck solid box (004E76)",
-   "hex": "ffd8fffc00500014"
+   "reader": "02922E truck solid box (004E76; 004EF2 reads six words, the last two are the bytes of 029BCA)",
+   "hex": "ffd8fffc00500014ffb00000"
   },
   {
    "rom": "0x029BCA",

@@ -68,7 +68,7 @@ static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
      * the recorded families mixes both). */
     for (unsigned i=0;i<NEO_KDYN_COUNT;i++) {
         const uint8_t *b=&dynram[i*64];
-        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         uint32_t map=L32(b+0x26);
         neo_kdyn_t *d=&k->dyn[i];
         d->map=map?ga_rom(map):NULL;
@@ -107,7 +107,7 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     /* Dynamic collision objects as read (dyn_inputs). */
     if (tag>=0x10c06eu && tag<0x10c06eu+64u*NEO_KDYN_COUNT && !((tag-0x10c06eu)&63u)) {
         const uint8_t *b=&dynram[tag-0x10c06eu];
-        #define L32(p) ((uint32_t)((p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
         #undef L32
         return true;
@@ -199,7 +199,7 @@ int main(void) {
     /* Node addresses are not in the fixture: a child's recorded +0C names
      * its creator. */
     for (unsigned i=0;i<NN;i++) if (NODES[i].creator>=0)
-        node_address[NODES[i].creator]=(uint32_t)(NODES[i].pre[0x0c]<<24|NODES[i].pre[0x0d]<<16|NODES[i].pre[0x0e]<<8|NODES[i].pre[0x0f]);
+        node_address[NODES[i].creator]=(uint32_t)((uint32_t)NODES[i].pre[0x0c]<<24|NODES[i].pre[0x0d]<<16|NODES[i].pre[0x0e]<<8|NODES[i].pre[0x0f]);
     neo_rng_t rng;memset(&rng,0,sizeof(rng));
     static neo_kscene_t kernel;kernel.group_map=soldier_group_map;
     uint8_t groups[9]={0},flag606=0;
@@ -333,10 +333,10 @@ int main(void) {
             a->active=false;deleted++;continue;
         }
         if (r!=GA_MORE) {fprintf(stderr,"frame %u node %d %05x: native result %d, original keeps it\n",u->frame,u->node,u->routine,r);return 1;}
-        if (ga_l(a,0)!=(uint32_t)(u->post[0]<<24|u->post[1]<<16|u->post[2]<<8|u->post[3])) {
+        if (ga_l(a,0)!=(uint32_t)((uint32_t)u->post[0]<<24|u->post[1]<<16|u->post[2]<<8|u->post[3])) {
             fprintf(stderr,"frame %u node %d %05x -> %05x expected %02x%02x%02x%02x\n",u->frame,u->node,u->routine,ga_l(a,0),u->post[0],u->post[1],u->post[2],u->post[3]);return 1;
         }
-        uint32_t t38=native_tag((uint32_t)(u->post[0x38]<<24|u->post[0x39]<<16|u->post[0x3a]<<8|u->post[0x3b]));
+        uint32_t t38=native_tag((uint32_t)((uint32_t)u->post[0x38]<<24|u->post[0x39]<<16|u->post[0x3a]<<8|u->post[0x3b]));
         for (unsigned o=0x10;o<0xb0;o++) {
             if (skip(o)) continue;
             uint8_t want=(o>=0x38 && o<0x3c)?(uint8_t)(t38>>(24-8*(o-0x38))):u->post[o];

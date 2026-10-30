@@ -131,7 +131,11 @@ typedef struct {
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
-    unsigned item_pickups;uint32_t item_pickup_routine; /* items taken: explicit stops (neo_item.c) */
+    unsigned item_pickups;uint32_t item_pickup_routine; /* items whose pickup stopped explicitly (neo_item.c) */
+    /* The players' weapon block (RAM 10C718), player 1's weapon fields and
+     * the score/pickup state the items serve (neo_item.c); the caller (the
+     * port's player) reads and updates them. Pointers are set every tick. */
+    marco_weapons_t weapons;marco_weapon_player_t weapon_player;neo_pickup_env_t pickup;
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */

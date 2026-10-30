@@ -10,10 +10,10 @@
  * +78 updates before it can be taken, then 08C0CC: once full size (+12 =
  * FF) the rectangle 0E561C against the pickup boxes of the players (RAM
  * 10C5EC/10C5F4, written by the player's code; one player is drawn at random
- * when both touch it). The pickup routines give weapons (C0928), bombs or
- * points (C0BF4, 057948) to the original player: none of that exists for the
- * port's player, so a pickup is an explicit stop (the item is removed and
- * counted). It leaves when outside 0E5624 (0C8BEC) or, with +8B, when its
+ * when both touch it). The pickup routine of the record (08B568..08B9B0)
+ * serves the player's weapon block and score (neo_genv_t.pickup, see
+ * pickup() below); then 08C628: the sparkle 08C68E (program 28617E until
+ * its end), +8C = 2 updates of 08C66A and the item goes. It leaves when outside 0E5624 (0C8BEC) or, with +8B, when its
  * creator is gone (00409A).
  *
  * Only the kinds whose motion is 08B9B2 (fall with 0xA000 gravity, grow +12
@@ -70,9 +70,109 @@ static int k8c0cc(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
 static bool ends_with_program(uint16_t kind) {
     for (uint32_t p=0xe553e;;p+=2) {uint16_t k=rw(p);if (k&0x8000u) return false;if (k==kind) return true;}
 }
+/* 057948 (D0 = player + 1): BCD sum of the 4 bytes of 10C5A0+4p into the
+ * player's score; on overflow 999999 in its first three bytes. */
+static void add_score(uint8_t score[4],uint32_t value) {
+    unsigned carry=0;
+    for (int i=3;i>=0;i--) {
+        unsigned x=score[i],y=(value>>(8*(3-i)))&0xffu;
+        unsigned lo=(x&15u)+(y&15u)+carry,hi=(x>>4)+(y>>4);
+        if (lo>9u) {lo-=10u;hi++;}
+        carry=hi>9u;if (carry) hi-=10u;
+        score[i]=(uint8_t)(hi<<4|lo);
+    }
+    if (carry) {score[0]=0x99;score[1]=0x99;score[2]=0x99;}
+}
+/* 08B850: the value into the score (not for player index 2). */
+static void k8b850(neo_pickup_env_t *pk,unsigned p) {if (p<2) add_score(pk->score[p],pk->points[p]);}
+/* 08B87A: refused, no value. */
+static void k8b87a(neo_pickup_env_t *pk,unsigned p) {pk->points[p]=0;}
+/* 08B896: the value of the pickup (record +0C, the special table E5526 for
+ * +7B, or the combo tables E5556/E559A when record byte 0 is set and the
+ * previous combo pickup is at most 15 frames old) and its score label
+ * 08D330 (list 101414; an external actor here, counted). */
+static bool k8b896(neo_gactor_t *a,neo_genv_t *e,neo_pickup_env_t *pk,unsigned p,uint32_t rec) {
+    bool combo=rb(rec) && pk->frame-pk->stamp[p]<=0xfu;
+    if (combo) {
+        if (pk->combo_lock[p]) pk->points[p]=rl(0xe559a);
+        else {
+            pk->combo[p]=(uint16_t)(pk->combo[p]+4u);if (pk->combo[p]>0x28u) pk->combo[p]=0x28;
+            pk->points[p]=rl(0xe5556u+pk->combo[p]);
+        }
+    } else {
+        pk->points[p]=B(0x7b)?rl(0xe5526u+4u*(uint16_t)(W(0x6e)-0xfu)):rl(rec+0xc);
+        pk->combo[p]=0;
+    }
+    if ((int32_t)pk->points[p]>0x50000) {ga_fail(e,0x8b97a);return false;}   /* TRAP #F */
+    pk->popups++;
+    if (e->external) e->external(e->ctx,0x8d330);
+    return true;
+}
+/* 08B834: a combo record stamps the frame. */
+static void k8b834(neo_pickup_env_t *pk,unsigned p,uint32_t rec) {if (rb(rec)) pk->stamp[p]=pk->frame;}
+static void sound(neo_genv_t *e,uint16_t id) {if (id && e->sound) e->sound(e->ctx,id);}
+/* 08B568..08B5B6: moveq #id,d1 then 08B5BC. */
+static int weapon_entry(uint32_t r) {
+    static const uint8_t ids[14]={5,2,4,3,6,0xd,0xc,0xf,0xe,0xa,7,9,8,0xb};
+    if (r<0x8b568u || r>0x8b5b6u || (r-0x8b568u)%6u) return -1;
+    return ids[(r-0x8b568u)/6u];
+}
+/* The pickup routine (record +10) for player p. False: an explicit stop
+ * (ga_fail names the untranslated code). */
+static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
+    uint32_t r=rl(rec+0x10);neo_pickup_env_t *pk=e->pickup;
+    if (!pk || p>=2 || !pk->weapons || !pk->player[p]) {ga_fail(e,r);return false;}
+    int id=weapon_entry(r);
+    if (id>=0) {                                                     /* 08B5BC */
+        /* Accepted (carry set) only clears the value; a refused weapon
+         * gives points instead (08B5CA BCS). */
+        uint16_t snd;
+        if (marco_weapons_grant(pk->weapons,p,(uint8_t)id,pk->player[p],&snd)) {sound(e,snd);k8b87a(pk,p);}
+        else {
+            if (!k8b896(a,e,pk,p,rec)) return false;
+            k8b850(pk,p);sound(e,0x1121);
+        }
+    } else if (r==0x8b6d0) {                                         /* bombs */
+        uint16_t snd;
+        marco_weapon_result_t v=marco_weapons_bombs(pk->weapons,p,10,pk->player[p],pk->slot[p],&snd);
+        if (v==MW_STOP) {ga_fail(e,0xc0764);return false;}
+        if (v==MW_ACCEPTED) {
+            /* 08B702: no value; 08CD10 creates the label 08C752 (list
+             * 101414, text E5782[bomb type + 3]): external, counted. */
+            sound(e,snd);k8b87a(pk,p);
+            pk->labels++;if (e->external) e->external(e->ctx,0x8c752);
+        } else {
+            if (!k8b896(a,e,pk,p,rec)) return false;
+            k8b850(pk,p);sound(e,0x1121);
+        }
+    } else if (r==0x8b7fc) {                                         /* points / food */
+        sound(e,0x1121);
+        if (rb(rec+3) && !B(0x7a)) {
+            /* 0C0BF4: food counts only in missions 4-7, 9, 10 (0C0BAE). */
+            uint16_t m=pk->mission;
+            if (m==4 || m==5 || m==6 || m==7 || m==9 || m==10) {ga_fail(e,0xc0c14);return false;}
+        }
+        if (!k8b896(a,e,pk,p,rec)) return false;
+        k8b850(pk,p);
+    } else {ga_fail(e,r);return false;}                              /* bomb types, others */
+    k8b834(pk,p,rec);pk->taken++;
+    return true;
+}
 static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t rec;
     switch (L(0)) {
+    case 0x8c68e:                                                    /* sparkle */
+        START(0x28617e);ga_palette(a,0x380);SL(0,0x8c6b2);
+        /* fall through */
+    case 0x8c6b2: {
+        ga_project(a,e);                                             /* 01ABC8 */
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        /* At the end, 08C6C2 counts RAM 10F00C (+3EF); on its carry the
+         * cartridge check of 2FFFE0, which ends in 004188 on genuine
+         * hardware like the other path (the counters are not kept). */
+        return r?GA_DELETE:GA_MORE;
+    }
     case 0x8c374: case 0x8c37c: {
         SB(0x8a,L(0)==0x8c374?0xff:0);
         if (W(0x6e)==0xffffu) return GA_DELETE;                      /* 004188 */
@@ -104,6 +204,8 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
         SW(0x70,W(0x70)-1u);
         if (!W(0x70)) return GA_DELETE;                              /* 08C684 */
         break;
+    case 0x8c66a:
+        rec=L(0x82);goto taken;
     default:
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
@@ -117,9 +219,16 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
         else {
             int p=k8c0cc(a,e,0xe561c);
             if (p>=0) {
-                /* The pickup routine (+10) serves the original player
-                 * (weapon C0928, points C0BF4/057948, sound 1121). */
-                ga_fail(e,rl(rec+0x10));return GA_UNSUPPORTED;
+                if (!pickup(a,e,(unsigned)p,rec)) return GA_UNSUPPORTED;
+                /* 08C628: 08CBF8 (item list 10C5C2, not kept), the sparkle
+                 * 08C68E when record byte 2 is set, two updates of 08C66A. */
+                if (rb(rec+2)) {
+                    SB(0x14,B(0x1a));
+                    neo_gactor_t *c=e->spawn(e->ctx,a,0x8c68e,true);   /* 00411C, list 101414 */
+                    if (c) ga_place_at(c,a,e,0,0);                       /* 01ACF2 */
+                }
+                SB(0x8c,2);SL(0,0x8c66a);
+                goto taken;
             }
         }
     }
@@ -129,13 +238,23 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (!B(0x8a)) {START(rl(rec+4));SB(0x8a,0xff);SB(0x14,B(0x19));}
         else if (ends_with_program(W(0x6e))) return GA_DELETE;
     }
+    goto view;
+taken:                                                               /* 08C66A */
+    {ga_call_t none=NULL;
+     if (rl(rec+0x14)!=MOTION_FALL) {ga_fail(e,rl(rec+0x14));return GA_UNSUPPORTED;}
+     k8b9b2(a,e);
+     if (ga_anim_step(a,e,none)<0) return GA_UNSUPPORTED;
+     SB(0x8c,B(0x8c)-1u);
+     return B(0x8c)?GA_MORE:GA_DELETE;}
+view:
     /* 08C602 */
     if (B(0x8b) && ga_creator_alive(a,e)) return GA_MORE;
     return ga_outside_view(a,e,0xe5624)?GA_DELETE:GA_MORE;
 }
-bool neo_item_routine(uint32_t r) {return r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564;}
-/* The pickup routines of the records (explicit stops of the native items). */
+bool neo_item_routine(uint32_t r) {return r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564 || r==0x8c66a || r==0x8c68e || r==0x8c6b2;}
+/* The code a pickup stops at when it cannot be served (no pickup state,
+ * untranslated routine or refusal): explicit stops of the native items. */
 bool neo_item_pickup(uint32_t routine) {
-    return routine==0x8b59e || routine==0x8b58c || routine==0x8b5b0 || routine==0x8b6d0 || routine==0x8b7fc;
+    return (routine>=0x8b568 && routine<=0x8b9b0) || routine==0xc0764 || routine==0xc0c14;
 }
 ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e) {return item_tick(a,e);}

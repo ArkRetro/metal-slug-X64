@@ -217,6 +217,11 @@ int main(void) {
     {static const uint32_t st[][3]=FAMILY_STAMPS;
      for (unsigned i=0;i<sizeof(st)/sizeof(st[0]);i++) {const uint8_t *t=ga_rom(st[i][2]);assert(t);neo_collision_stamp((int32_t)st[i][0],(int32_t)st[i][1],t);}}
 #endif
+    /* Item pickups (neo_item.c): player 1 from a new life (0C0E20/0C0E6E). */
+    static marco_weapons_t weapons;static marco_weapon_player_t player1;static neo_pickup_env_t pickup;
+    marco_weapons_new_game(&weapons);player1.exists=true;marco_weapons_life(&weapons,0,&player1);
+    pickup.weapons=&weapons;pickup.player[0]=&player1;pickup.mission=1;e.pickup=&pickup;
+    unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
     unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
@@ -268,7 +273,19 @@ int main(void) {
         e.kill_all=kill_at && u->frame==kill_at;
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
+        unsigned taken=pickup.taken;pickup.frame++;
         ga_result_t r=neo_region_tick(a,&e);
+        if (pickup.taken!=taken) {
+#ifdef FAMILY_PICKUPS
+            static const uint32_t pk[][3]=FAMILY_PICKUPS;bool ok=false;
+            for (unsigned i=0;i<sizeof(pk)/sizeof(pk[0]);i++)
+                if (pk[i][0]==u->frame) ok=marco_weapons_id(&weapons,0)==pk[i][1] && marco_weapons_rounds(&weapons,0)==pk[i][2];
+            if (!ok) {fprintf(stderr,"frame %u: pickup left weapon %x rounds %x\n",u->frame,marco_weapons_id(&weapons,0),marco_weapons_rounds(&weapons,0));return 1;}
+            pickups_checked++;
+#else
+            fprintf(stderr,"frame %u: unexpected pickup\n",u->frame);return 1;
+#endif
+        }
 #ifdef FAMILY_STOP
         {static const uint32_t stop[2]=FAMILY_STOP;
          if (u->frame==stop[0]) {
@@ -311,7 +328,11 @@ int main(void) {
 #ifdef FAMILY_STOP
     if (!stopped) {fprintf(stderr,"explicit stop never reached\n");return 1;}
 #endif
-    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside%s\n",
-        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,swapped?", map swap requested":"");
+#ifdef FAMILY_PICKUPS
+    {static const uint32_t pk[][3]=FAMILY_PICKUPS;
+     if (pickups_checked!=sizeof(pk)/sizeof(pk[0])) {fprintf(stderr,"%u pickups, expected %u\n",pickups_checked,(unsigned)(sizeof(pk)/sizeof(pk[0])));return 1;}}
+#endif
+    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups%s\n",
+        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,swapped?", map swap requested":"");
     return 0;
 }

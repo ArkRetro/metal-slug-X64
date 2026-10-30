@@ -877,6 +877,9 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
+    /* 0C0E20 (new game) and 0C0E6E (player 1's first life); Mission 1. */
+    marco_weapons_new_game(&w->weapons);w->weapon_player.exists=true;
+    marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=1;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
@@ -919,6 +922,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
+    w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
+    w->pickup.slot[0]=w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
      * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the

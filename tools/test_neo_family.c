@@ -176,13 +176,18 @@ static unsigned contacts;
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {(void)ctx;(void)a;(void)row;if (contact) contacts++;return contact?1:0;}
 /* 0140C0/013F1E: slot of the dynamic collision object (+6A), from 7 down;
  * no other actor of the trace holds one. */
+/* A released slot stays busy for two frames (013F1E countdown +2A,
+ * decremented at the end of the camera update 01406A). */
 static bool dyn_used[NEO_KDYN_COUNT];
+static uint8_t dyn_countdown[NEO_KDYN_COUNT];
 static void dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t dy) {
     (void)ctx;(void)map;(void)dx;(void)dy;
     if (ga_b(a,0x6a)!=0xffu) return;
-    for (int k=NEO_KDYN_COUNT-1;k>=0;k--) if (!dyn_used[k]) {dyn_used[k]=true;ga_sb(a,0x6a,(uint8_t)k);return;}
+    for (int k=NEO_KDYN_COUNT-1;k>=0;k--) if (!dyn_used[k] && !dyn_countdown[k]) {dyn_used[k]=true;ga_sb(a,0x6a,(uint8_t)k);return;}
 }
-static void dyn_release(void *ctx,neo_gactor_t *a) {(void)ctx;if (ga_b(a,0x6a)<NEO_KDYN_COUNT) dyn_used[ga_b(a,0x6a)]=false;ga_sb(a,0x6a,0xff);}
+static void dyn_release(void *ctx,neo_gactor_t *a) {(void)ctx;if (ga_b(a,0x6a)<NEO_KDYN_COUNT) {dyn_used[ga_b(a,0x6a)]=false;dyn_countdown[ga_b(a,0x6a)]=2;}ga_sb(a,0x6a,0xff);}
+/* 004E76: solid-body slot +6B (the only solid body of the trace: slot 0). */
+static void solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
 static unsigned stamps;
 static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {(void)ctx;(void)a;(void)t;stamps++;}
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
@@ -197,12 +202,15 @@ int main(void) {
     uint8_t groups[9]={0},flag606=0;
     neo_genv_t e;memset(&e,0,sizeof(e));
     e.kernel=&kernel;e.rng=&rng;e.parent=parent;e.program=program;e.emit=emit;e.groups=groups;e.flag606=&flag606;
-    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.creator=creator_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
     e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
     e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+#ifdef FAMILY_MARKER_SEQ
+    static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
+#endif
 #ifdef FAMILY_STAMPS
     /* Collision stamps of other actors made before the family's first
      * update (seen in the RAM dumps of the capture). */
@@ -215,6 +223,9 @@ int main(void) {
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
         neo_gactor_t *a=&actors[u->node];
+        {static uint32_t last_frame;
+         if (k && u->frame!=last_frame) for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (dyn_countdown[i]) dyn_countdown[i]--;
+         last_frame=u->frame;}
         /* A node created by an actor outside the family (another family's
          * test) starts from its recorded bytes at its first update. */
         if (!bound[u->node] && NODES[u->node].creator<0) {

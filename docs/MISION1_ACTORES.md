@@ -383,8 +383,64 @@ actualizaciones 4581..4967, estados `087F2E, 08806E, 088120, 0881E6,
 088A30` y su hijo `0x040396`). Constructor: salud y tres palabras por rango
 (`2D0E40/2D0EA2/2D0F04/2D0F66`), cuerpo sólido `0x004E76` (`0E4E90`),
 caja `0E4E84`, plataforma dinámica `0x0140C4` con el mapa `0E4FF2`, ataque
-`0E4E9E` mientras avanza. No portado todavía (sin nada aproximado en su
-lugar).
+`0E4E9E` mientras avanza.
+
+### Vehículo blindado `0x087E36` nativo
+
+`src/neo_armored.c`, traducción manual de las ~930 instrucciones
+(`0x087E36..0x089940`) con sus 27 etiquetas de rutina: constructor (trampa
+`trap #15` si `+72 < +70`, rangos `2D0E40/2D0EA2/2D0F04/2D0F66`, caja
+`0E4E84`, cuerpo sólido `0x004E76` con `0E4E90`, paletas `0x24`/`0x30B`,
+plataforma `0x0140C4` con `0E4FF2`; `0x03C532` no crea nada en la Misión 1,
+como en el espadachín), marcador hijo `0x040396` (`0x04036C`, ya nativo en
+`neo_props.c`), avance con humo `0x08982A` cada 8 actualizaciones y
+ataque `0E4E9E`, parada (`0x0881E6`, tabla `0x0881D6`), espera
+(`0x08833A`), ráfagas (`0x08889C..0x088A4A`: disparo `0x088978` con
+`0x0896A0/0x088B52/0x088ED8` tras el actor del guion), retroceso ante un
+jugador delante (`0x088AD2`, rectángulo `0E4ED6`), retroceso por impacto de
+los tipos de `0x01B1F2` (programa `2846BA` y reanudación del interrumpido;
+`+86` guarda la etiqueta del programa y el punto de reanudación es nativo)
+y destrucción (`0x0883E8`/`0x0886EC` según el tipo `0x0D`: `0x019DFC`,
+seis piezas `0x08943C` con la tabla `0x089554`, restos `0E50B2`, plataforma
+liberada y mapa de restos `0E4EDE/0E4F36/0E4F8E/0E4FC0` si `+74`, ataque
+`0E4EBE`; al acabar el programa el objeto `0x08CDB2` (`+76/+78`) y con
+`+74 = 0` la explosión final `0x088598`). La retrollamada de programa
+`0x089412` fija `+A4/+A6` (tabla `0E5104`); `0x08938A` crea diez piezas
+`0x088F20`. La comprobación de protección (`2FFFE0`) antes de algunos
+borrados no se reproduce (en placa original cae en `0x004188`). No llega a
+`0x01B2BE` (sangre). Los hijos tras el actor del guion (`0x0896A0`,
+`0x088B52`, `0x088ED8`, `0x08982A`, `0x08943C`, `0x088F20`, `0x0897E2`)
+no son nativos todavía: se cuentan como externos, así que el vehículo no
+hace daño con sus proyectiles.
+
+Prueba `armored` (`FAMILY_ARGS_armored := --tree --marker-seq 2`; la traza
+no guarda la lectura de `10C446`, y el arnés modela la cuenta atrás de 2
+del objeto dinámico liberado y el registro del cuerpo sólido): **2 nodos,
+328 actualizaciones en bucle cerrado (4581..4998), 45780 bytes iguales**,
+incluido el retroceso por impacto de 4963 y la destrucción.
+
+En el mundo, el soldado tumbado `0x04115A` encuentra la plataforma del
+vehículo en su búsqueda de suelo (ranura 7, `10C22E`, como en la
+recreativa) y entra subido a ella. Al destruirse el vehículo la explosión
+`0E4EBE` (tipo 1) lo alcanza: la entrada `0x040C8E` de las tablas de muerte
+en suelo y en el aire (`0x0406EA`/`0x040750`, índice 1) y su rutina
+`0x040D06` quedan traducidas (`neo_soldier_ai.c`). `tools/test_gameplay.c`
+mide la espera en `0x2D67CA`: **538 pasos** en la partida de referencia (de
+pie a la izquierda del vehículo con la pistola; cota `< 2·385`) y **748,
+810, 764, 952** en las cuatro partidas con reglas de lanzamiento (cota
+`< 3·385`); antes eran unas 2000. Como el port aún no empuja al jugador
+fuera del cuerpo sólido `0x004E76`, las políticas de la prueba se quedan a
+su izquierda (las de lanzamiento solo desde el suelo: una reaparición puede
+caer en la cornisa de x≈1435 o sobre la plataforma del vehículo).
+
+Gráficos: `tools/export_rest_sprites.py mslugx.zip robe1 bld1@54800-55700
+bld1@b6500-b6b00 trk3@33c98-34200 trk3@39500-3a100 trk3@a93c0-a9a00
+trk3@35600-35a00 pri1@99862-99dc0 pri1@8c37c-8c700 captures-boss/runA@0-1
+veh1@87e36-89c00`: 701 descriptores (los 652 anteriores idénticos), 31
+paletas (nuevas `0x24`, `0x30B`; las anteriores idénticas). Los 14 volcados
+de `veh1`: 62245 píxeles iguales, 162 distintos, todos en 4950 y 4980,
+cuando el contador de destello `+17` está activo (3 y FF en las
+actualizaciones previas); el validador dibuja con la paleta base.
 
 ## Otras paradas explícitas de esta tanda
 

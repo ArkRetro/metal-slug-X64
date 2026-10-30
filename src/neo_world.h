@@ -169,6 +169,8 @@ bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_act
 /* True once the script has passed the camera-1920 lock (2D6A1A): the end of
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);
+/* A spawn-table constructor the script creates natively (script_spawn). */
+bool neo_world_spawn_native(uint32_t constructor);
 unsigned neo_world_alive(const neo_world_t *world);
 /* Mission actor's camera step (ROM 018D96..0C81C0, neo_camera_update) with
  * the player's projected words; enables the native camera. The caller then

@@ -78,6 +78,13 @@ static void script_autoscroll(void *context,bool start) {
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68);
 enum { BOSS_CONSTRUCTOR=0xd5976 };
 static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
+/* The spawn-table constructors script_spawn runs natively (the rest are
+ * counted in external_spawns and never created). Items 08C374/08C37C are
+ * native only past the region (ga_insert). */
+bool neo_world_spawn_native(uint32_t constructor) {
+    uint32_t r=constructor&0xffffffu;
+    return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au;
+}
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     tick_t *t=context;neo_world_t *w=t->w;
     /* A sub-script actor (generic actor 019E82) creates after itself. */

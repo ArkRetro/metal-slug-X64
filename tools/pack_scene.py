@@ -124,6 +124,13 @@ def main():
                 crop=[pens[(py0+y)*w+px0+x] for y in range(ph) for x in range(pw)]
                 images.append(image([base_palette[q] for q in crop],pw,ph,f['x']+px0,f['y']+py0,True,crop,base_palette))
         descriptors.append((int(f["descriptor"],16),first-native_start,len(images)-first))
+    # Descriptors without any tile ("empty" of the exporters; 0x1C3F06 is one
+    # group of zero columns, the blank pose of the programs 247DA8 (armoured
+    # vehicle children) and 24AC42): a draw of one shows nothing on the
+    # original, so they are packed with no parts instead of being missing.
+    empty=set(boss.get('empty',[]))|(set(rest_sprites.get('empty',[])) if rest_native.exists() else set())
+    packed={d[0] for d in descriptors}
+    descriptors+=[(t,0,0) for t in sorted(int(e,16) for e in empty) if t not in packed]
     banks.append((native_start,len(images)-native_start,0,1,64,64))
     source_bytes+=sum(f['width']*f['height']*2 for f in native['frames'])
     raw=(ROOT/'filesystem/desert.bin').read_bytes();source_bytes+=len(raw)

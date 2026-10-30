@@ -218,7 +218,7 @@ bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
     const uint8_t *r=ga_rom(rect);
     if (!r) {ga_fail(e,rect);return false;}
-    uint32_t d0=(uint32_t)(r[0]<<24|r[1]<<16|r[2]<<8|r[3]),d1=(uint32_t)(r[4]<<24|r[5]<<16|r[6]<<8|r[7]);
+    uint32_t d0=(uint32_t)((uint32_t)r[0]<<24|r[1]<<16|r[2]<<8|r[3]),d1=(uint32_t)((uint32_t)r[4]<<24|r[5]<<16|r[6]<<8|r[7]);
     uint8_t f=ga_b(a,0x15);
     uint16_t lo=(uint16_t)d0,hi;
     if (f&2u) lo=(uint16_t)(0u-(uint16_t)(lo+(uint16_t)d1));

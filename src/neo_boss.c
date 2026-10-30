@@ -97,8 +97,9 @@ static void kill(neo_boss_t *w,int16_t i) {
         i=p;
     }
 }
+static neo_boss_node_t scratch_node;
 void neo_boss_init(neo_boss_t *w,const neo_boss_services_t *s) {
-    memset(w,0,sizeof(*w));w->first=-1;
+    memset(w,0,sizeof(*w));w->first=-1;memset(&scratch_node,0,sizeof(scratch_node));
     if (s) w->services=*s;
 }
 int16_t neo_boss_spawn(neo_boss_t *w,const uint8_t image[NEO_BOSS_FIELDS]) {
@@ -340,7 +341,7 @@ static uint16_t table(ctx_t *c,uint32_t label) {
 /* ---- children (0040BC) ------------------------------------------------------------- */
 /* A failed allocation (pool short of `reserve`) returns the original's
  * scratch node: later writes land there and are discarded. */
-static neo_boss_node_t scratch_node;
+static neo_boss_node_t scratch_node;  /* cleared by neo_boss_init: no carry-over between fights/games */
 static neo_boss_node_t *allocate(ctx_t *c,uint32_t ctor,uint16_t reserve,int16_t *index) {
     uint8_t image[NEO_BOSS_FIELDS];
     *index=-1;

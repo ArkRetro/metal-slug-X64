@@ -18,7 +18,7 @@
  * Positions are scene-local Q16.16 with Y up (the native collision grid);
  * the scene object sits at (-camera, 256) as RAM 10C742/10C746 do. */
 enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_ORDER=40,
-    NEO_WORLD_DRAWS=48 };
+    NEO_WORLD_DRAWS=48, NEO_WORLD_SOUNDS=16 };
 typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_THROW,
     NEO_WORLD_SPLASH } neo_world_kind_t;
 typedef struct { uint8_t kind,index; } neo_world_slot_t;
@@ -60,6 +60,11 @@ typedef struct {
     /* Optional trace hook, called before every actor update (tests). */
     void (*trace)(void *context,uint8_t kind,uint8_t index);void *trace_context;
     neo_world_draw_t draws[NEO_WORLD_DRAWS];unsigned draw_count;
+    /* Sound requests (original 0120F8 words, e.g. 0x1041 from animation
+     * command 0x30, 0x10FA knife hit, 0x1027 thrown-object burst) in emission
+     * order. Appended by every tick and never cleared here: the consumer
+     * drains the list (sound_count=0); extra requests count in sound_dropped. */
+    uint16_t sounds[NEO_WORLD_SOUNDS];unsigned sound_count,sound_dropped;
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */

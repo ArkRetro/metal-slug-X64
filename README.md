@@ -176,3 +176,8 @@ tentativos del 68000 y 154 del Z80. Se han inventariado P1, P2 y M1 completos;
 la clasificación de bancos, tipos, límites y destinos indirectos sigue pendiente.
 Esta salida automática no es todo el juego convertido a C nativo compilable.
 El [estado de cobertura](decomp/coverage.json) mantiene `complete: false`.
+
+La rutina de paletas [0x008512](decomp/recovered/rom_008512.c) ya tiene una
+reconstrucción C manual contrastada con 18 ejecuciones controladas del M68000.
+La [tabla de condiciones](decomp/recovered/condition-dispatch/README.md)
+documenta otro pendiente de traducción: retorno por flags CCR.C.

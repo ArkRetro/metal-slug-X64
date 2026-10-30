@@ -106,7 +106,7 @@ owner	status	file
 005ea0	tentative_c	tentative/all_p1/unverified/00/rom_005ea0.c
 0062ae	tentative_c	tentative/all_p1/unverified/00/rom_0062ae.c
 00698c	tentative_c	tentative/all_p1/unverified/00/rom_00698c.c
-008512	decompiler_failed	NOT_EXPORTED
+008512	manual_c_controlled_m68000_comparison	recovered/rom_008512.c
 009b84	tentative_c	tentative/all_p1/unverified/00/rom_009b84.c
 009baa	tentative_c	tentative/all_p1/unverified/00/rom_009baa.c
 009bb0	tentative_c	tentative/all_p1/unverified/00/rom_009bb0.c

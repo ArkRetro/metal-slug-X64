@@ -48,7 +48,7 @@
   "native_c_port": false,
   "index": "full-p1-index.tsv",
   "candidate_roots_may_be_data": true,
-  "index_sha256": "2bc044c459edc44e505dc025e076da1a313deaf3839f2a5267cee76a80b975a7",
+  "index_sha256": "e8a8ec3b88075d9e2c1a1ee4f39892fadf10a36a95aba220af7929fa598ba153",
   "character_preservation_check": {
     "status": "PASS",
     "files": 5168,
@@ -61,6 +61,16 @@
     "address": "0x008512",
     "timeout_seconds": 120,
     "role": "I/O/palette upload kernel based on static instructions; exact high-level behavior pending recovery",
-    "fallback": "canonical M68000 assembly provided, no invented C body"
-  }
+    "fallback": "canonical M68000 assembly provided, no invented C body",
+    "resolution": "Recovered manually as C, with controlled original-M68000 comparison. Automatic decompilation failure remains historical."
+  },
+  "manual_c_recoveries": [
+    {
+      "address": "0x008512",
+      "file": "recovered/rom_008512.c",
+      "validation": "recovered/rom_008512.validation.json",
+      "status": "18 controlled M68000 comparisons passed; hardware backend not integrated"
+    }
+  ],
+  "published_c_files_scope": "5168 automatic tentative bodies; one additional manual addressed C recovery is indexed separately"
 }

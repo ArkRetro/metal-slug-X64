@@ -1,0 +1,33 @@
+{
+  "status": "STATIC_DISPATCH_MAP_C_ABI_PENDING",
+  "call_site": "0x01A5D6",
+  "table": "0x01A5DE",
+  "slots": 22,
+  "unique_targets": 14,
+  "observed_source_consumers": [
+    "0x01A026",
+    "0x01A2E8",
+    "0x01A4FA"
+  ],
+  "return_contract": "CCR.C is consumed via BCS; automatic C does not expose it",
+  "table_entries_verified_against_rom": true,
+  "rom_cpu_order_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "published_asm_sha256": "50e26270d396509570d0470e77b8292bb294812169d6998bf0e4fbcee28d0a5d",
+  "rejected_automatic_c_owners": [
+    "01a636",
+    "01a644",
+    "01a698",
+    "01a69e",
+    "01a6be",
+    "01a6de",
+    "01a702",
+    "01a722",
+    "01a742",
+    "01a766",
+    "01a778",
+    "01a790",
+    "01a7a2",
+    "01a7c8"
+  ],
+  "limits": "Static instructions only, not original routine execution. Contiguous BRA.W run is not proof of valid runtime index range. No usable C claimed for these handlers."
+}

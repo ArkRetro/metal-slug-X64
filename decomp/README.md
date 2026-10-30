@@ -11,9 +11,9 @@ bytes no demuestra que se haya identificado todo el código ejecutable.
 
 | Resultado | Archivos y límites |
 | --- | --- |
-| 68000, P1 fijo | [Índice de 5.168 cuerpos C](full-p1-index.tsv): 5.085 tentativos sin diagnóstico del descompilador y 83 con diagnósticos. Ambos grupos requieren revisión. |
+| 68000, P1 fijo | [Índice: 5.168 cuerpos automáticos y una recuperación manual](full-p1-index.tsv): 5.085 tentativos sin diagnóstico del descompilador y 83 con diagnósticos. Ambos grupos requieren revisión. |
 | Sonido Z80 | [Índice de 154 cuerpos C](full-audio-index.tsv): 130 tentativos y 24 con diagnósticos, únicamente para el mapa inicial. |
-| Función pendiente 0x008512 | [Desensamblado M68000](tentative/all_p1/unresolved/rom_008512.asm), sin cuerpo C inventado; timeout del descompilador a 120 segundos. |
+| Rutina 0x008512 | [C reconstruido manualmente](recovered/rom_008512.c), contrastado con 18 ejecuciones controladas originales. El descompilador automático sigue fallando. |
 | Frontera inicial histórica | [268 cuerpos de la primera pasada](tentative/fixed_p1.c); se conserva para trazabilidad, no se suma al recuento global. |
 
 Cada archivo global identifica la dirección original y su estado. El
@@ -31,7 +31,8 @@ los cambios de banco ni convierte el driver en un backend nativo de sonido.
 
 Resolver los límites de funciones, tipos, registros implícitos, destinos
 indirectos y bancos; distinguir código de datos en P2 y los mapas restantes de
-M1; recuperar 0x008512 y contrastar la semántica con ejecución original.
+M1 y contrastar la semántica con ejecución original. Recuperar también la ABI
+de retorno por CCR de la tabla 0x01A5DE (22 entradas, 14 destinos).
 Después hay que sustituir los servicios hardware por backends de libdragon.
 El borrador automático conserva símbolos `unaff_*` y dependencias inferidas;
 **no se compila ni se enlaza con la ROM de N64**.
@@ -59,3 +60,26 @@ conserva los caracteres del C; solo normaliza espacios finales. Se comprobó
 esa preservación en los 5.168 cuerpos P1. Los inventarios distinguen los hashes
 de artefactos originales privados de los publicados cuando corresponde.
 Las ROM binarias, volcados RAM y proyectos Ghidra permanecen fuera de Git.
+
+## Recuperación manual del núcleo de paletas
+
+[rom_008512.c](recovered/rom_008512.c) reconstruye 0x008512..0x009B82 sin
+interpretar instrucciones: sustituye dos secuencias desenrolladas por bucles C.
+Los 18 casos controlados de MAME coinciden en 64 KiB de RAM, ambos bancos de
+paletas, los 16 registros D/A, SR y la secuencia de escrituras de control.
+Los opcodes de los 256 bloques de cada secuencia se comprueban contra P1.
+El [informe](recovered/rom_008512.validation.json) conserva hashes y límites.
+
+La traducción aún conserva una interfaz explícita de bus Neo Geo; **no está
+integrada en libdragon ni valida temporización de bus**. Los casos cubren el
+contador 0/0x2000 y se detienen antes del RTS. El C compila para MIPS R4300 y
+pasa las fixtures originales en host, también con UndefinedBehaviorSanitizer.
+
+```sh
+make check-recovered
+python3 tools/test_recovered_palette.py --sanitize
+```
+
+La [tabla de condiciones](recovered/condition-dispatch/README.md) documenta otro
+pendiente: Ghidra elimina resultados que se devuelven en CCR.C. Sus cuerpos
+aparentemente vacíos no se publican como traducciones válidas.

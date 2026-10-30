@@ -134,3 +134,44 @@ Los hashes y recuentos están en `decomp/full-p1-inventory.json` y
 La traducción manual y las pruebas de `marco_environment.c` descritas arriba
 siguen siendo la evidencia nativa nueva. El C automático global no sustituye
 el controlador de campaña ni constituye una demo completa.
+
+## Recuperación manual posterior: 0x008512..0x009B82
+
+La función que agotaba el descompilador ya tiene reconstrucción C en
+`decomp/recovered/rom_008512.c/.h`. Los 256 bloques de paletas modificadas
+(008540..009738) y las 256 repeticiones de ocho longwords
+(009772..009B70) se convierten en bucles, tras comprobar todos sus opcodes,
+desplazamientos y máscaras MOVEM contra P1. El borrado de la marca de paleta,
+la máscara del primer word, el orden de carga completa antes de escribir y
+el word cero final del relleno se conservan. ADDA.W extiende el signo; la
+aritmética y las direcciones de bus usan anchos explícitos.
+
+La captura privada `palette-kernel-132` ejecuta las instrucciones originales
+con 18 conjuntos de RAM y registros inyectados, interrupciones enmascaradas y
+contador 0/0x2000. Se detiene en 009758 antes del RTS. Coinciden los 64 KiB de
+RAM, ambos bancos de 8 KiB de paletas, D0..D7/A0..A7, SR, banco seleccionado y
+escrituras de watchdog/selección de banco. En MAME el banco se guarda como un
+offset de words (0/4096), no como índice 0/1; las escrituras I/O se comparan
+aplicando mem_mask a las líneas activas. Las primeras capturas con errores del
+harness no se aceptaron como evidencia; el informe publicado procede de 132.
+
+`tools/test_recovered_palette.py` reproduce las entradas sintéticas y compara
+el C contra hashes/registros originales almacenados, sin requerir ROM ni
+emulador. Pasa también con UndefinedBehaviorSanitizer. El archivo compila como
+objeto MIPS-III big endian para R4300, pero no se ha enlazado a una ROM de N64
+ni constituye una prueba en ares. El contrato sigue necesitando un backend de
+bus y no valida ciclos, orden eléctrico de los words MOVEM, otros valores de
+contador ni efectos de una partida. El índice diferencia esta reconstrucción
+manual del fallo histórico del descompilador automático.
+
+## Retorno por flags: tabla 0x01A5DE
+
+JSR indexado en 01A5D6 selecciona stubs BRA.W consecutivos de cuatro bytes:
+22 entradas visibles y 14 destinos únicos en 01A636..01A7C8. Los tres
+consumidores identificados (01A026, 01A2E8, 01A4FA) usan BCS después de llamar
+a 01A5CA. Los manejadores escriben CCR.C mediante ORI/ANDI; ese retorno no
+aparece en el C automático y algunos cuerpos quedan vacíos incorrectamente.
+Se publica el mapa y el desensamblado, no esos cuerpos como C recuperado.
+La tabla está verificada estáticamente; su dominio de índices en ejecución y
+las rutinas auxiliares 01903A/0AAA88 siguen pendientes. Véase
+`decomp/recovered/condition-dispatch/README.md`.

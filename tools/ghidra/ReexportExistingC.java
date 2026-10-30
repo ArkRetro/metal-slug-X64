@@ -17,12 +17,12 @@ public class ReexportExistingC extends GhidraScript {
    c.println("/* UNVERIFIED AUTOMATIC DECOMPILATION FROM SUPPLIED GAME ROM. No native-port or complete-source claim. */");status.println("owner\tstatus");int count=0;
    for(Long owner:owners) {
     Function f=getFunctionAt(toAddr(owner));if(f==null){status.println(Long.toHexString(owner)+"\tno_function");continue;}
-    DecompileResults r=d.decompileFunction(f,10,monitor);String text=r.decompileCompleted()?r.getDecompiledFunction().getC():"";
+    DecompileResults r=d.decompileFunction(f,10,monitor);boolean available=r.decompileCompleted() && r.getDecompiledFunction()!=null;String text=available?r.getDecompiledFunction().getC():"";
     boolean bad=text.contains("halt_baddata") || text.contains("Control flow encountered bad instruction") || text.contains("overlaps instruction");
-    String label=!r.decompileCompleted()?"decompiler_failed":bad?"tentative_c_with_diagnostics":"tentative_c";
+    String label=!available?"decompiler_failed":bad?"tentative_c_with_diagnostics":"tentative_c";
     if(audio)c.println("\n/* Initial-map Z80 owner 0x"+Long.toHexString(owner)+". */");
     else c.println("\n/* Candidate owner 0x"+Long.toHexString(owner)+"; "+label+". */");
-    if(r.decompileCompleted())c.println(text);else c.println("/* Decompiler did not produce C. */");
+    if(available)c.println(text);else c.println("/* Decompiler did not produce C. */");
     status.println(Long.toHexString(owner)+"\t"+label);c.flush();status.flush();if(++count%100==0)println("REEXPORTED "+count);
    }
   }finally{d.dispose();}

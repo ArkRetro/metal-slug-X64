@@ -3,3 +3,7 @@ error=Exception while decompiling 00008512: process: timeout
 
 
 Firstpass produced no C representation. Do not replace this routine with a successful no-op.
+
+Manual recovery now available at decomp/recovered/rom_008512.c.
+18 controlled original-M68000 comparisons pass; see its validation JSON.
+This file records the historical automatic decompiler failure.

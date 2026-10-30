@@ -7,7 +7,7 @@ export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := check check-core check-cinematic preview-depth clean
+HOST_GOALS := check-recovered check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -495,3 +495,9 @@ $(BUILD_DIR)/tools/test_marco_environment.o: tools/test_marco_environment.c src/
 	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -c $< -o $@
 $(BUILD_DIR)/marco-environment-regression.elf: $(BUILD_DIR)/tools/test_marco_environment.o $(BUILD_DIR)/src/marco_environment.o $(BUILD_DIR)/src/marco_upper.o $(BUILD_DIR)/src/marco_controller.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/neo_animation.o
 marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
+
+.PHONY: check-recovered
+check-recovered:
+	python3 tools/test_recovered_palette.py
+
+check-core: check-recovered

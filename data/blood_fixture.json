@@ -1,0 +1,96 @@
+{
+ "source": "MAME 0.264 mslugx euro, tools/capture_blood.lua (RAM 10FD8F = 1), Mission 1 complete",
+ "sites": [
+  {
+   "site": "0x405f0",
+   "routines": {
+    "0x407a2": 3,
+    "0x4128c": 2,
+    "0x412fa": 1,
+    "0xaf39e": 3,
+    "0xaf4d2": 1,
+    "0xaf65a": 1,
+    "0xaf6c0": 12,
+    "0xafd10": 1,
+    "0xafd94": 2,
+    "0xafdb8": 1,
+    "0xb0032": 1,
+    "0xb0336": 1,
+    "0xb0354": 1,
+    "0xb03c0": 1,
+    "0xb0466": 1
+   },
+   "on": "0x20e",
+   "on_requests": 32,
+   "off": "0x22f"
+  },
+  {
+   "site": "0x40f98",
+   "routines": {
+    "0x40f88": 1
+   },
+   "on": "0x37a",
+   "on_requests": 1,
+   "off": "0x3ba"
+  },
+  {
+   "site": "0xa95f2",
+   "routines": {
+    "0xa9590": 4
+   },
+   "on": "0x18",
+   "on_requests": 4,
+   "off": "0x19"
+  },
+  {
+   "site": "0xa969a",
+   "routines": {
+    "0xa9638": 8
+   },
+   "on": "0x17",
+   "on_requests": 8,
+   "off": "0x1a"
+  },
+  {
+   "site": "0xa9742",
+   "routines": {
+    "0xa96e0": 8
+   },
+   "on": "0x17",
+   "on_requests": 8,
+   "off": "0x1a"
+  },
+  {
+   "site": "0xa9876",
+   "routines": {
+    "0xa9814": 4
+   },
+   "on": "0x18",
+   "on_requests": 4,
+   "off": "0x19"
+  },
+  {
+   "site": "0xa9436",
+   "routines": {
+    "0x39820": 5
+   },
+   "on": "0x20b",
+   "on_requests": 4,
+   "off": "0x3ba",
+   "note": "resource of +14 in 0A946C (RAM dumps)"
+  }
+ ],
+ "untranslated_sites_read": {
+  "0x1c996": {
+   "0x1c97a": 11
+  },
+  "0x9efe4": {
+   "0x9d846": 4,
+   "0x9d862": 8,
+   "0x9d876": 1
+  },
+  "0x9f598": {
+   "0x9feaa": 1
+  }
+ }
+}

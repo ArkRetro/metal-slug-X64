@@ -1,3 +1,4 @@
+#include "neo_region.h"
 #include "actor.h"
 #include "gameplay.h"
 #include "scene_assets.h"
@@ -116,6 +117,8 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     }
 }
 void actor_init(void) {
+    assertf(msx_game_layout==MSX_GAME_LAYOUT,"stale gameplay object: msx_game_t layout %08lx, actor.c %08lx (rebuild)",
+        (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
     scene_assets_init();scene_renderer_init();reset_game();
     marco_native=marco_renderer_load();
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
@@ -146,7 +149,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
-    unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported;
+    unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported,old_pickups=game.world.item_pickups;
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
     unsigned old_progress=neo_camera_progress(&game.world.camera);bool old_region_end=game.region_end,old_backdrop=game.backdrop_after;
@@ -190,6 +193,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
     if (game.world.script.halted && !old_halted) debugf("MSX script stopped at %06lx (records beyond are not ported)\n",(unsigned long)game.world.script.halt_address);
     if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
+    if (game.world.item_pickups!=old_pickups) debugf("MSX item taken (explicit stop: pickup routine %05lx not ported)\n",(unsigned long)game.world.item_pickup_routine);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
         native_missing_descriptor=native_missing_palette=0;
@@ -215,6 +219,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
     if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
     if (game.world.ga_flags.barrel_patched && !old_flags.barrel_patched) debugf("MSX shop destroyed (0B6882 patch) camera=%d\n",game.camera);
+    {   /* Armoured vehicle 087E36 of the 1304 stop: standing (+5F bit 7 clear) or not. */
+        static bool armored_standing;bool standing=false;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&game.world.gactors[i];uint32_t r=ga_l(a,0);
+            if (a->active && neo_armored_routine(r) && !(ga_b(a,0x5f)&0x80u)) standing=true;
+        }
+        if (standing && !armored_standing) debugf("MSX armoured vehicle 087E36 camera=%d\n",game.camera);
+        if (!standing && armored_standing) debugf("MSX armoured vehicle destroyed camera=%d\n",game.camera);
+        armored_standing=standing;
+    }
     if (game.world.ga_flags.collapsed && !old_flags.collapsed) debugf("MSX domed building collapsed (0B58CC) camera=%d height=%d\n",game.camera,game.camera_height);
     if (game.backdrop_after && !old_backdrop) debugf("MSX backdrop palette 0B56CA camera=%d\n",game.camera);
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);

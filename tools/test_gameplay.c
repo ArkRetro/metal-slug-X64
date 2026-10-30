@@ -4,6 +4,18 @@
 #include "../src/msx_sfx.h"
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
+/* Armoured vehicle 087E36 still standing (any routine of the family, +5F
+ * bit 7 clear) on screen: its world X, else -1. */
+static int armored_x(const msx_game_t *g) {
+    for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+        const neo_gactor_t *a=&g->world.gactors[i];
+        uint32_t r=ga_l(a,0);
+        if (!a->active || r<0x87e36u || r>0x88b02u || (ga_b(a,0x5f)&0x80u)) continue;
+        int x=(int16_t)ga_w(a,0x3c);
+        if (x>=0 && x<320) return g->camera+x;
+    }
+    return -1;
+}
 int main(void) {
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
@@ -51,8 +63,9 @@ int main(void) {
     msx_game_init(&g);
     unsigned steps=0;
     unsigned voices=0,mapped=0,requests=0,pending=0;
-    bool region_end_seen=false;int max_height=0;unsigned max_progress=0;
+    bool region_end_seen=false;int max_height=0;unsigned max_progress=0,hold=0,hold_max=0;
     for (;steps<60000 && !g.complete;steps++) {
+        if (g.world.script.base+g.world.script.pc==0x2d67cau) {if (++hold>hold_max) hold_max=hold;} else hold=0;
         int dir=1;
         if (g.world.boss_active) dir=(steps/90)%3==0?-1:(steps/90)%3==1?1:0;
         g.aim_up=(steps%64)>=40;
@@ -88,17 +101,28 @@ int main(void) {
         }
         g.world.sound_count=0;
     }
-    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u shop=%u rides=%u\n",
-        steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
-        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides);
+    printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u (%05lx) boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u shop=%u rides=%u hold 2D67CA=%u\n",
+        steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
+        g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides,hold_max);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
     assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<60000);
     // The player stands on the boss's dynamic platforms (0140C0 objects,
     // floor search 013DB2) and is carried by them.
     assert(g.rides>0);
+    // Camera stop 1304: the arcade holds 2D67CA for 385 frames (MAME,
+    // docs/MISION1_ACTORES.md) until the armoured vehicle 087E36 that
+    // brings the prone soldier in is destroyed. This pistol-only policy,
+    // walking right into it (its solid body 004E76/0E4E90 stops the player
+    // through the push-out 004ED2), needs under twice that (it took ~2000
+    // while the vehicle was external and the soldier waited off-screen).
+    assert(g.solid_pushes>0 && !g.world.solid_unsupported);
+    assert(hold_max>=200 && hold_max<2*385);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
-    assert(max_progress==3376 && g.camera==MSX_CAMERA_MAX);
+    // The script camera stops at 3376 (boss arena); the player's view then
+    // follows the oscillating boss-fight policy, so where it stands when the
+    // boss's end sequence completes depends on the fight's timing.
+    assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (measured before the wagon stop: standing on the wreck or the boss lifts the view)
     // Release rules (no invulnerability, deaths respawn in view): a seeded
     // "human" that walks mostly right, turns, idles, jumps and aims up at
@@ -109,7 +133,11 @@ int main(void) {
     // program's command 10 and left its swordsman waiting forever in 03975E).
     for (unsigned seed=1;seed<=4;seed++) {
         unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
+        unsigned hold=0,hold_max=0;
         for (steps=0;steps<80000 && !g.complete;steps++) {
+            /* Camera stop 1304: the script waits at 2D67CA for the armoured
+             * vehicle 087E36 (group 1) and the prone soldier riding it. */
+            if (g.world.script.base+g.world.script.pc==0x2d67cau) {if (++hold>hold_max) hold_max=hold;} else hold=0;
             if (steps%30==0) {rs=rs*1103515245u+12345u;unsigned r=(rs>>16)%10;dir_r=r<6?1:r<8?0:2;rs=rs*1103515245u+12345u;up=(rs>>16)%3==0;}
             int dir=dir_r==2?-1:(int)dir_r;bool a=up;
             int dome=-1;
@@ -119,13 +147,23 @@ int main(void) {
                 int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
             }
             if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
+            // Armoured vehicle on screen, player on the floor (Y=64; a respawn
+            // can land on the ledge at x~1435 or on its platform): walk at it
+            // firing level, as at the domes; its solid body (004ED2) stops the
+            // walk.
+            int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
+            if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
             g.aim_up=a;rs=rs*1103515245u+12345u;
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
         }
-        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported);
+        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items taken=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,g.world.item_pickups,hold_max);
         assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
         assert(g.world.unsupported==g.world.boss_unsupported);
+        // The random policy (deaths, respawns on the ledge or the vehicle's
+        // platform; its body blocks the walk) ends the 1304 hold within three
+        // times the arcade's 385.
+        assert(hold_max>=200 && hold_max<3*385);
     }
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;

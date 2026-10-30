@@ -102,6 +102,10 @@ def main():
         known={f['descriptor'] for f in native['frames']}
         native['frames']+=[f for f in rest_sprites['frames'] if f['descriptor'] not in known]
         native['palettes']=dict(native['palettes'],**rest_sprites['palettes'])
+    # BLOOD ON palettes (tools/export_blood_palettes.py): splash 0x37A, pieces 0x18.
+    blood_native=ROOT/'filesystem/blood-native.json'
+    if blood_native.exists():
+        for k,v in json.loads(blood_native.read_text())['palettes'].items():native['palettes'].setdefault(k,v)
     native_palettes={int(k,16):palette_id(v) for k,v in native['palettes'].items()}
     base_palette=native['palettes']['0x20e'];descriptors=[];native_start=len(images)
     # Pack the descriptors in program order so that one animation streams as

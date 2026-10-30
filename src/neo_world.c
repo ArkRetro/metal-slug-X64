@@ -13,9 +13,10 @@
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
 enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414 };
 #define RUNNER_TAG(i) (0x50000000u|(uint32_t)(i))
-/* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player;
- * RAM 10FD8F = 0 (01B2BE carry set: splash palette 03BA). */
-enum { MODE88=2, RANK=3, SPLASH_PALETTE=0x3ba, SPLASH_PROGRAM=0x2402fa };
+/* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player.
+ * RAM 10FD8F (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
+ * (src/neo_blood.c: 037A ON, 03BA OFF). */
+enum { MODE88=2, RANK=3, SPLASH_PROGRAM=0x2402fa };
 static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
 static const neo_anim_program_t *program(uint32_t tag) {
     for (unsigned i=0;i<COUNT(soldier_programs);i++) if (soldier_programs[i].tag==tag) return &soldier_programs[i].program;
@@ -207,8 +208,7 @@ static neo_gactor_t *ga_alloc(neo_world_t *w,uint32_t routine,uint32_t creator_t
     memset(a->written,0,sizeof(a->written));
     return a;
 }
-static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
-    tick_t *t=ctx;neo_world_t *w=t->w;
+bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==TERRAIN_TAG) {*out=w->terrain;return true;}
     if (tag==ROOT_TAG) {*out=w->root;return true;}
     if (tag>=NEO_DYN_TAG(0) && tag<NEO_DYN_TAG(NEO_KDYN_COUNT)) {*out=w->dyn_parent[(tag-NEO_DYN_TAG(0))/64u];return true;}
@@ -227,12 +227,18 @@ static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
     return false;
 }
+static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {return neo_world_parent(((tick_t *)ctx)->w,tag,out);}
 static const neo_anim_program_t *g_program(uint32_t tag) {return program(tag);}
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68) {
     neo_world_t *w=t->w;
     if (at<0) {w->overflow++;return NULL;}
     /* A family not ported yet: the actor is not created (counted). */
     if (!neo_region_routine(routine)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
+    /* Items (neo_item.c) are native past the region (script beyond
+     * MISSION1_REGION_END). In the region they stay outside actors: the
+     * region's closed-loop world fixture records them as such, and the
+     * native soldiers do not drop theirs (0AF... -> 08CDB2) yet. */
+    if (neo_item_routine(routine) && !neo_world_region_clear(w)) {w->external_spawns++;w->external_constructor=routine;return NULL;}
     uint8_t depth=(uint8_t)(w->order[at].depth+1u);
     neo_gactor_t *a=ga_alloc(w,routine,creator_tag,v68,depth);
     if (!a) return NULL;
@@ -321,7 +327,22 @@ static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
     if (w->marker_count[l]>=8u) return; /* 040114: 0x50 bytes */
     w->markers[l][w->marker_count[l]++]=(neo_marker_t){x,y,h,id};
 }
-static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
+/* 004E76: register (or with a null descriptor unregister) the actor's solid
+ * body in the table 106756 (slot index at +6B, first free slot for a new
+ * body; a full table leaves the body unregistered). */
+static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
+    neo_world_t *w=((tick_t *)ctx)->w;
+    if (!desc) {ga_sb(a,0x6b,0xff);return;}
+    uint8_t slot=ga_b(a,0x6b);
+    if (slot==0xffu) {
+        for (slot=0;slot<NEO_WORLD_SOLIDS && w->solids[slot].actor>=0;slot++) {}
+        if (slot==NEO_WORLD_SOLIDS) return;                            /* 004EB6 */
+        ga_sb(a,0x6b,slot);
+    } else if (slot>=NEO_WORLD_SOLIDS) {                               /* 004EC0: TRAP #15 */
+        w->solid_unsupported++;ga_fail(&((tick_t *)ctx)->genv,0x4ec0);return;
+    }
+    w->solids[slot].actor=(int16_t)a->index;w->solids[slot].desc=desc;
+}
 static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
     if (templ==0x29bf4u || templ==0x29c26u) {neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));return;}
     const uint8_t *t=ga_rom(templ);
@@ -460,6 +481,12 @@ static int run_gactor(tick_t *t,unsigned i) {
         w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
     if (group<9u && ga_b(a,0x69)>=9u) w->kills++;
+    if ((r==GA_UNSUPPORTED || t->genv.unsupported) && neo_item_pickup(t->genv.unsupported_at)) {
+        /* Explicit stop: an item taken by the player (its pickup routine
+         * serves the original player's weapons/points, not ported). */
+        w->item_pickups++;w->item_pickup_routine=t->genv.unsupported_at;t->genv.unsupported=0;
+        w->draw_count=before;a->active=false;return 0;
+    }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
         w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
         w->draw_count=before;a->active=false;return 0;
@@ -763,7 +790,7 @@ static bool run_splash(tick_t *t,unsigned i) {
     s->render.x=HI(s->body.projected_x);s->render.y=HI(s->body.projected_y);
     s->render.attributes=(uint16_t)((s->render.attributes&0xff00u)|s->body.flags15);
     s->render.z=s->body.word1e;s->render.correction=s->body.correction;
-    t->draw_palette=SPLASH_PALETTE;t->draw_flash=false;t->draw_kind=NEO_WORLD_SPLASH;
+    t->draw_palette=neo_blood_palette(NEO_BLOOD_SPLASH,w->blood);t->draw_flash=false;t->draw_kind=NEO_WORLD_SPLASH;
     neo_anim_result_t r=neo_anim_step(&s->anim,&s->render,emit,t,1024);
     if (r!=NEO_ANIM_MORE) {s->active=false;return false;}
     return true;
@@ -846,6 +873,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     neo_script_init(&w->script,mission1_script,sizeof(mission1_script),MISSION1_SCRIPT_BASE);
     memcpy(w->rng.words,mission1_handoff_rng,sizeof(w->rng.words));w->rng.cursor=MISSION1_HANDOFF_RNG_CURSOR;
     w->terrain.tag=TERRAIN_TAG;w->root.tag=ROOT_TAG;
+    for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) w->solids[i].actor=-1;  /* 004624: table 106756 cleared */
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
@@ -853,6 +881,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
     w->view[0]=0;w->view[1]=319;w->view[2]=256;w->view[3]=511;
+    w->blood=MSX_BLOOD!=0;  /* RAM 10FD8F */
 }
 unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t *pl) {
     tick_t t;memset(&t,0,sizeof(t));t.w=w;
@@ -876,7 +905,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->kernel=&w->kernel;e->terrain=w->terrain;e->root=w->root;e->epoch=w->epoch;e->players=t.players;
     e->grid=w->grid;e->rng=&w->rng;e->targets=t.player_hittable?&t.player:NULL;e->target_count=t.player_hittable?1:0;
     e->bounds=t.bounds;e->camera_word=HI(w->terrain.x);e->program=program;e->emit=emit;e->emit_context=&t;
-    e->event=soldier_event;e->event_context=&t;e->blood=false;e->dyn=w->dyn_parent;
+    e->event=soldier_event;e->event_context=&t;e->blood=w->blood;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
     e->player_state[0].follow7b=pl?pl->follow_y:0xff;e->player_state[0].x=px;e->player_state[0].y=py;
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
@@ -890,12 +919,18 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
+     * player's code writes them). The port's player keeps the standing box
+     * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the
+     * others are the tank and one more pose the port has not); no player 2. */
+    for (unsigned i=0;i<8;i++) g->pickup_box[i]=0x8000u;
+    if (t.player_valid) {g->pickup_box[0]=0xfff8u;g->pickup_box[1]=0;g->pickup_box[2]=0x10;g->pickup_box[3]=0x20;}
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
-    memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
+    memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;g->blood=w->blood;
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */
     memcpy(w->last_boxes,w->boxes,sizeof(w->boxes));w->last_box_count=w->box_count;w->box_count=0;
@@ -910,6 +945,11 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     neo_grid_decay(w->grid,&w->grid_cursor);
     w->kill_active=w->ga_flags.kill_request!=0;w->ga_flags.kill_request=0;   /* 0046D4 */
     w->ga_flags.flash_request=0;                                              /* 0046E0 */
+    /* 004736: free the slots whose actor no longer holds them (+6B). */
+    for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) {
+        int16_t o=w->solids[i].actor;
+        if (o>=0 && ga_b(&w->gactors[o],0x6b)!=i) w->solids[i].actor=-1;
+    }
     g->kill_all=w->kill_active;
     /* Map swap actor 0B595A (inserted after the mission actor). */
     if (w->swap_step==2) {w->ga_flags.collapsed=1;w->ga_flags.flash=0;w->swap_step=3;}

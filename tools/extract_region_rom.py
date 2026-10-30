@@ -37,6 +37,14 @@ BLOBS=[
     (0x2D257C,0x188,'039DA8/039E9A Arabian swordsman rank tables 2D257C/2D25DE/2D2640/2D26A2 (0260C8)'),
     (0xE61D4,0x310,'0A9CB6 death pieces: speeds E61D4, angles E6206, lists E6220.., cull rectangle E64D8 (0A9A56)'),
     (0x35644,0x24,'035668 creature: cull rectangle, hurtbox, program speeds 035658'),
+    (0x99D62,0x64,'099862 prisoner: hurtbox 099D62, cull rectangles 099D6E/099D76, player rectangle 099D7E, wriggle programs 099D86'),
+    (0x2D0B9E,0x160,'099862 prisoner rank tables 2D0B9E/2D0BB8/2D0BD2 (0260C8) and item lists 2D0BEC (099D12)'),
+    (0xE553E,0x20,'08C5EA item kinds deleted when their program ends'),
+    (0xE561C,0x10,'08C0CC item pickup rectangle E561C, cull rectangle E5624 (0C8BEC)'),
+    (0xE581A,0x870,'08D2DA item records (0x5A kinds x 0x18: flags, program, palettes, pickup and motion routines)'),
+    (0xE4E84,0x2EC,'087E36 armoured vehicle: hurtbox E4E84, solid E4E90, attack rows E4E9E/E4EBE, cull E4ECE, player rectangle E4ED6, wreck maps E4EDE/E4F36/E4F8E/E4FC0, platform map E4FF2, debris lists E5060/E50B2, platform offsets E5104 (089412)'),
+    (0x89554,0x100,'0886CE armoured vehicle pieces: offset and speed table 089554 (16 entries)'),
+    (0x2D0E40,0x220,'087E36 armoured vehicle rank tables 2D0E40/2D0EA2/2D0F04/2D0F66 and speeds 2D0FC8/2D0FFA (0260C8)'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():

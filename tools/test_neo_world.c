@@ -186,6 +186,7 @@ int main(void) {
     for (unsigned ci=0;ci<COUNT(world_captures);ci++) {
         const world_capture_t *cap=&world_captures[ci];
         static neo_world_t w;neo_world_init(&w,cap->scroll_x);
+        w.blood=false;   /* RAM 10FD8F = 0 in these (euro) captures */
         memcpy(w.rng.words,cap->rng_words,sizeof(w.rng.words));w.rng.cursor=cap->rng_cursor;
         w.script.pc=(uint16_t)(cap->pc-MISSION1_SCRIPT_BASE);w.epoch=cap->epoch;
         memcpy(w.grid,cap->grid,sizeof(w.grid));w.grid_cursor=cap->grid_cursor;w.marker_seq=cap->marker_seq;

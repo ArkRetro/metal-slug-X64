@@ -1,3 +1,4 @@
+#include "neo_blood.h"
 #include "neo_soldier_ai.h"
 #include "neo_soldier.h"
 #include "neo_soldier_action.h"
@@ -255,7 +256,7 @@ static uint8_t hit_player(ctx_t *c,const int16_t *attack,bool damage) {
 }
 bool neo_soldier_hurtbox(const neo_soldier_t *s,neo_hurtbox_t *out) {
     /* 040A00: a dying soldier registers only while +73 is zero. */
-    if ((s->routine==0x40db4 || s->routine==0x40df0) && B(0x73)) return false;
+    if ((s->routine==0x40db4 || s->routine==0x40df0 || s->routine==0x40d06 || s->routine==0x40dc0) && B(0x73)) return false;
     const int16_t *d=soldier_hurtbox(s->anim.field50_tag);
     if (!d) return false;
     *out=(neo_hurtbox_t){HI(s->b.projected_x),HI(s->b.projected_y),s->b.flags15,5,1,{d[0],d[1],d[2],d[3]},
@@ -493,14 +494,29 @@ static void death_setup(ctx_t *c) { /* 04097A */
     neo_soldier_t *s=c->s;
     if (!(s->b.flags5f&64u)) {s->b.flags5f|=64u;SB(0x6e,0);}
     s->anim.field50_tag=0;s->b.flags5f&=127u;
-    /* 0405EA: palette resource 0x22F, or the 01B2BE alternative. */
-    s->palette_resource=c->e->blood?0x22f:0x22f;
+    /* 0405EA: 01B2BE carry clear (BLOOD ON) 0x20E, carry set (OFF) 0x22F. */
+    s->palette_resource=neo_blood_palette(NEO_BLOOD_SOLDIER_DEATH,c->e->blood);
     s->anim.field50_tag=0;s->group69=0xff;
     uint16_t flags=0;probe_vertical(c,-1,&flags);
     SB(0x72,(flags&8u)?0xff:0);
     if (flags&8u) {s->b.field66=0xfff2;s->b.word1e=0xfff2;}
     SB(0x70,(s->b.flags15&64u)?0xff:0);
     SL(0x76,0);s->b.scalar62=0;SB(0x71,0);SB(0x6f,0);SB(0x74,0);
+}
+/* 040C8E (grounded and air tables, kind 1: the armoured vehicle's blast,
+ * row 0E4EBE): thrown up and back, then 040D06. */
+static bool death_40c8e(ctx_t *c) {
+    neo_soldier_t *s=c->s;
+    uint32_t d0=((uint32_t)neo_rng_next(c->e->rng)<<2)-0x10000u;
+    if (s->f5b&0x80u) d0=0u-d0;
+    SL(0x76,d0);s->b.vx=S32(d0);
+    s->b.vy=S32(((uint32_t)neo_rng_next(c->e->rng)<<3)+0x40000u);
+    neo_rng_result_t r=neo_rng_next_result(c->e->rng);
+    if (r.mixed_word&0x8000u) s->b.flags15^=1u;        /* bpl on the final EOR.W */
+    s->anim.speed=(uint16_t)((r.value&0x3fu)+0x80u);    /* then 004256 sets 0x100 */
+    if (!anim_start(c,0x240deeu)) return false;
+    s->b.flags15&=191u;
+    s->routine=0x40d06;return true;
 }
 static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     neo_soldier_t *s=c->s;uint8_t kind=s->b.timer5a;
@@ -512,7 +528,8 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     /* Dispatch tables: 0406EA (grounded), 040750 (air), 0407F4 (crouch).
      * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;
      * 040D66 (grounded pistol) and 040A10 (air pistol) are the observed kills;
-     * the remaining entries (040C8E, 040B46, 040BA8, 040A40, 040AF6, 040A7C,
+     * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast) is translated;
+     * the remaining entries (040B46, 040BA8, 040A40, 040AF6, 040A7C,
      * 040BE6) are not translated and stop explicitly. */
     uint32_t program=0;
     if (crouch) {
@@ -528,14 +545,16 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
             if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
             s->routine=0x40db4;return true;
         }
+        if (kind==1) return death_40c8e(c);
         if (kind==0||kind==2||kind==8||kind==0xe||kind==0xf||(kind>=0x10&&kind<0x14)) program=0x2404feu; /* 040DC0 */
         else if (kind==0xc||kind==0xd) program=0x240454u; /* 040DD8 */
     } else {
+        if (kind==1) return death_40c8e(c);
         if (kind==6) program=0x24103cu; /* 040A10 */
         else if (kind==0||kind==2||kind==5||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x2404feu; /* 040DC0 */
     }
     if (program) {if (!anim_start(c,program)) return false;s->routine=0x40df0;return true;}
-    UNSUPPORTED_AT();return false;
+    neo_soldier_unsupported_detail=(uint32_t)kind|(grounded?0x100u:0u)|(crouch?0x200u:0u);UNSUPPORTED_AT();return false;
 }
 static bool death_motion(ctx_t *c) { /* 040852 */
     neo_soldier_t *s=c->s;
@@ -558,9 +577,19 @@ static bool death_motion(ctx_t *c) { /* 040852 */
     SB(0x70,(s->b.flags15&64u)?0xff:0);
     return true;
 }
-static neo_soldier_result_t death_tick(ctx_t *c) { /* 040DB4 / 040DF0 */
+static neo_soldier_result_t death_tick(ctx_t *c) { /* 040DB4 / 040DF0 / 040D06 / 040DC0 */
     neo_soldier_t *s=c->s;
-    if (s->routine==0x40db4) {
+    if (s->routine==0x40dc0) {if (!anim_start(c,0x2404feu)) return NEO_SOLDIER_UNSUPPORTED;s->routine=0x40df0;return NEO_SOLDIER_MORE;}
+    if (s->routine==0x40d06) {
+        if (!(s->b.flags15&64u)) {
+            uint16_t d0=(uint16_t)((neo_rng_next(c->e->rng)&0xfu)-0xau+s->anim.speed);
+            if (S16((uint16_t)(d0-0x20u))<0) d0=0x20;
+            s->anim.speed=d0;
+        } else {SL(0x76,0);s->anim.speed=0x100;}
+        if (s->b.vy<0) s->anim.field50_tag=0x24057cu;
+        /* 040A00: 004C24 (carry: hit) only while +73 is zero. */
+        if (!B(0x73) && s->b.timer5a) s->routine=0x40dc0;
+    } else if (s->routine==0x40db4) {
         /* 040A00 registers the hurtbox only when +73 is zero (owner side). */
         if (!death_dispatch(c,false)) return NEO_SOLDIER_UNSUPPORTED;
     }
@@ -1096,7 +1125,7 @@ static neo_soldier_result_t run(ctx_t *c) {
         ground(c,NULL);
         if (anim_step(c)) s->routine=0xb063e;
         return retreat_tail(c);
-    case 0x40db4:case 0x40df0:return death_tick(c);
+    case 0x40db4:case 0x40df0:case 0x40d06:case 0x40dc0:return death_tick(c);
     default:return NEO_SOLDIER_UNSUPPORTED;
     }
     return NEO_SOLDIER_UNSUPPORTED;

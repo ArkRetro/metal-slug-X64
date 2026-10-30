@@ -1,4 +1,5 @@
 #include "neo_region.h"
+#include "neo_blood.h"
 /* Arabian swordsmen of the covered wagon (spawn-table entries 039590 and
  * 0395B6, Mission 1 camera 2336) and the shared death of the swordsman
  * figures (0A93CE: pieces 0A9510..0A9814 moving with 0A98BE), manual
@@ -17,8 +18,10 @@
  * Mission 1 (RAM dumps), so it never creates 03C62A here.
  *
  * Every path that would reach the cartridge check (2FFFE0) ends in 004188
- * (delete) on genuine hardware: that is what is translated. RAM 10FD8F is 0
- * in the recordings (01B2BE carry): the piece palettes of that setting. */
+ * (delete) on genuine hardware: that is what is translated. RAM 10FD8F
+ * (BLOOD, e->blood) selects through 01B2BE the death palette (0A9436) and the
+ * piece palettes (0A95F2, 0A969A, 0A9742, 0A9876): the OFF values are those
+ * of the euro recordings, the ON values those of tools/capture_blood.lua. */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -184,7 +187,7 @@ static ga_result_t death(neo_gactor_t *a,neo_genv_t *e) {
         if (c) {ga_sl(c,0x30,vx);ga_sl(c,0x34,vy2);}
     }
     SL(0x50,0);
-    SB(0x14,B(0x1b));                                               /* 01B2BE carry: RAM 10FD8F = 0 */
+    SB(0x14,e->blood?B(0x1a):B(0x1b));                              /* 0A9436: 039DA8 slots 0x20B (ON) / 0x3BA (OFF) */
     START(0x2a769c);
     SB(0x69,0xff);                                                  /* 019DFC */
     SL(0,0xa946c);
@@ -321,11 +324,13 @@ static ga_result_t sword_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 /* 0A9510..0A9814: pieces; 0A98BE moves them (0A9E4A). */
 static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
-    static const struct {uint32_t routine,prog0,prog1;uint16_t pal_carry,pal;uint8_t b60,rnd;} T[]={
-        {0xa9510,0x269340,0x269340,0x3fd,0x3fd,0,0},{0xa9550,0x2a765a,0x2a765a,0x17,0x17,0,0},
-        {0xa9590,0x2a78f0,0x2a796e,0x19,0x18,0,1},{0xa9638,0x2a77f4,0x2a7872,0x1a,0x17,0,1},
-        {0xa96e0,0x2a79ec,0x2a7a6a,0x1a,0x17,0,1},{0xa9788,0x2a7ae8,0x2a7b2a,0x17,0x17,0,1},
-        {0xa9814,0x2a76f8,0x2a7776,0x19,0x18,1,1}};
+    /* site: the 01B2BE call of the random pieces (src/neo_blood.c); the
+     * first two and 0A9788 do not ask and load pal. */
+    static const struct {uint32_t routine,prog0,prog1,site;uint16_t pal;uint8_t b60,rnd;} T[]={
+        {0xa9510,0x269340,0x269340,0,0x3fd,0,0},{0xa9550,0x2a765a,0x2a765a,0,0x17,0,0},
+        {0xa9590,0x2a78f0,0x2a796e,NEO_BLOOD_PIECE_A9590,0,0,1},{0xa9638,0x2a77f4,0x2a7872,NEO_BLOOD_PIECE_A9638,0,0,1},
+        {0xa96e0,0x2a79ec,0x2a7a6a,NEO_BLOOD_PIECE_A96E0,0,0,1},{0xa9788,0x2a7ae8,0x2a7b2a,0,0x17,0,1},
+        {0xa9814,0x2a76f8,0x2a7776,NEO_BLOOD_PIECE_A9814,0,1,1}};
     for (unsigned i=0;i<sizeof(T)/sizeof(T[0]);i++) {
         if (L(0)!=T[i].routine) continue;
         uint32_t prog=T[i].prog0;
@@ -335,7 +340,7 @@ static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
             START(prog);
             uint8_t d0=ga_rand(e)&3u;
             if (d0) {if (d0&1u) SET(0x15,0);if (d0&2u) SET(0x15,1);}
-            free_palettes(a);ga_palette(a,T[i].pal_carry);                /* 01B2BE carry: RAM 10FD8F = 0 */
+            free_palettes(a);ga_palette(a,T[i].site?neo_blood_palette(T[i].site,e->blood):T[i].pal);
         }
         SW(0x66,0x8820);SW(0x1e,0x8820);SB(0x61,0);SB(0x60,T[i].b60);
         SL(0,0xa98be);return GA_MORE;

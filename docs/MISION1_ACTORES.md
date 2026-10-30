@@ -495,6 +495,40 @@ x = 2620). Con el jugador vuelto hacia el enemigo visible más cercano la
 espera dura 0, 102 y 166 pasos (pantalla 160, 220, 280): prueba nueva en
 `tools/test_gameplay.c` (`stand_2336`, cota `< 3·197`).
 
+## Cajas ocultas `0x09A67E` (`src/neo_secret.c`)
+
+Entrada `0x2E8` de la tabla de apariciones, en la cámara 1920 (registros
+`0x2D6ABC/B02/B48/B8E`, uno al azar, grupo 1 contado, en 2072,136 sobre la
+ruina de las cúpulas; luego hasta diez sin contar mientras el grupo 1 está
+vacío). Invisible: caja `0x09ADA0..` por `+6E`, salud `+72` (`0x09A688`
+cuenta golpes), `+70` objetos (0: 1..3 al azar). Abierta (`+5F` bit 7, por
+disparos o por el mata-todo de `0x004BAC` de la tienda caída) deja un
+objeto `0x08C374` por actualización (`0x08CD58` → `0x08CDB2`, tipo `+74`,
+dispersión `+80/+82` de `0x09AE08`, movimiento `0x09A8E0` por `+7A`) y se va
+fuera del rectángulo `0x09ADD8`. Al abrirse `0x09A956` → `0x03C5D2` busca
+una celda del grupo 5 en `+3C/+40` −1, +7 y +15 (`0x013CF8`, ahora
+`neo_kernel_point_group`); no hay ninguna en la Misión 1 (rejilla observada)
+y, encontrada, crearía `0x03C962`: detención explícita, como la variante
+`0x09A692` (prisionero `0x099E1C`). En la recreativa la caja contada vive
+hasta que cae la tienda (su mata-todo la abre), así que también sostiene la
+espera del grupo 1 de `0x2D6D78`.
+
+Prueba `secret` (`data/secret_fixture.json.gz`, MAME `captures-m1full/box1`,
+`MSX_REST_FAMILY_ROOTS=9a67e,9a688,9a692 MSX_REST_BOSS_FROM=6900
+MSX_REST_LAST=7450`, rango `9a5ee-9a9c2`): **15 nodos, 416 actualizaciones
+en bucle cerrado (6989..7397), 56140 bytes iguales**, 15 borrados, 32
+objetos fuera de la familia. La prueba genérica lee ahora RAM `1067E2`
+(mata-todo de otra familia) cuando la traza la tiene.
+
+Objetos: los programas de todos los tipos con movimiento `0x08B9B2` se
+importan (antes solo diez; la caja da el tipo 36 y las partidas de
+lanzamiento llegaron al 37 y al 54). Retrollamadas traducidas: `2881CA`,
+`287D50`, `28AA7E` y las del tipo 37 (`2884AA`, `28849A`, `2884BE`,
+`288BAA`, `286B44`, `286AE8`, `286B2C`, `2884C8`: pasa a tipo 28, cuyo
+movimiento `0x08BD5A` anda por el suelo); las de los tipos 31, 39 y 44
+son detenciones explícitas. Gráficos: 1232 descriptores, 39 paletas
+(faltan `0x37F, 0x133, 0x38E, 0x823`: ninguna captura las tiene).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

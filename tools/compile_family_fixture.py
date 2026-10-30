@@ -133,10 +133,12 @@ def main():
         dyn=[(int(k,16)-0x10c06e,v[0],v[1]) for k,v in u['reads'].items() if 0x10c06e<=int(k,16)<0x10c292]
         assert len(dyn)<=48,(u['frame'],len(dyn))
         dyn+=[(0xffff,0,0)]*(48-len(dyn))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s}},'%(
+        # RAM 1067E2 (kill-all, 004BAC) as read: set by another family.
+        kill=rd(u,0x1067e2)
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes))))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill)))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

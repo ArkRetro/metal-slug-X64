@@ -35,7 +35,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
-    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8];
+    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill;
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -269,6 +269,8 @@ int main(void) {
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
         if (kill_frame && !kill_at && u->frame>kill_frame) kill_at=u->frame;
         e.kill_all=kill_at && u->frame==kill_at;
+        /* RAM 1067E2 as read (set by another family, e.g. the shop). */
+        if (u->kill>0) e.kill_all=true;
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
         ga_result_t r=neo_region_tick(a,&e);

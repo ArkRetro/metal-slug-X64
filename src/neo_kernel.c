@@ -593,6 +593,15 @@ finish:
     *out=(neo_kres_t){S(k.d0),S(k.d1),S(k.d2),S(k.d3),k.a0,k.w4012,k.d7,k.w4068};
     return true;
 }
+bool neo_kernel_point_group(const neo_kscene_t *scene,int32_t x,int32_t y,uint16_t group,bool *unknown) {
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (scene->dyn[i].map && scene->dyn[i].map[5]==group) *unknown=true;
+    kr_t k={0};k.s=(neo_kscene_t *)scene;k.a0=NEO_KOBJ_TERRAIN;
+    const neo_kobj_t *a=obj(&k,k.a0);
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;
+    if (a) {k.d0-=(uint32_t)a->x;k.d1-=(uint32_t)a->y;}
+    k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);
+    return (k.d7>>16)==group;
+}
 uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t x,uint16_t y,
     uint8_t b4008,uint8_t b400d,uint16_t *flags,uint32_t d7_in) {
     kr_t k={0};k.s=(neo_kscene_t *)scene;k.a0=parent;k.d0=x;k.d1=y;k.b4008=b4008;k.b400d=b400d;k.d7=d7_in;

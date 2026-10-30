@@ -47,6 +47,7 @@ BLOBS=[
     (0x2D0E40,0x220,'087E36 armoured vehicle rank tables 2D0E40/2D0EA2/2D0F04/2D0F66 and speeds 2D0FC8/2D0FFA (0260C8)'),
     (0xE5170,0xEE,'088F20 armoured vehicle pieces table 0E516E (10 x 0x18: program, speeds, accelerations, offsets; first two bytes in the blob above)'),
     (0x334C0,0x8,'08982A exhaust smoke palette table 0334C0'),
+    (0x9ADA0,0x78,'09A67E hidden item box: hurtboxes 09ADA0.., view rectangle 09ADD8 (0C8BEC), hurtbox table 09ADF8 and scatter ranges 09AE08 by +6E'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
 ]
 def main():

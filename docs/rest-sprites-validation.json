@@ -1,11 +1,13 @@
 {
- "descriptors": 829,
+ "descriptors": 1232,
  "palettes": [
   "0x103",
   "0x113",
+  "0x114",
   "0x121",
   "0x122",
   "0x123",
+  "0x124",
   "0x13f",
   "0x17",
   "0x19",
@@ -23,6 +25,7 @@
   "0x3a7",
   "0x3ac",
   "0x3ba",
+  "0x3c6",
   "0x3fd",
   "0x46e",
   "0x472",
@@ -38,7 +41,12 @@
   "0xd0",
   "0xd3"
  ],
- "missing_palettes": [],
+ "missing_palettes": [
+  "0x37f",
+  "0x133",
+  "0x38e",
+  "0x823"
+ ],
  "stats": {
   "zoomed_entries_skipped": 69,
   "frames": 153,

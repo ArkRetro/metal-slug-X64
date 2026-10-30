@@ -97,10 +97,11 @@ make check && make -j4
 `tools/test_mission_native_ares.py` recorre la región en la ROM real
 (`mslugx-explorer.z64`, ares 146, Expansion Pak, teclado enlazado al mando:
 flechas, `a`=A, `b`=B, `e`=R, Return=Start): 8 rebeldes creados por el guion,
-7 abatidos, el guion se detiene explícitamente en `0x2D651A` (fin de los
-registros importados; el segmento del camión no está portado, por lo que
-entre las cámaras 872 y 1920 no hay apariciones nativas) y se alcanza el fin
-de región en la cámara 1920. Sin descriptores ni rutinas no soportadas.
+el guion se ejecuta pasado `0x2D651A` (segmento del camión `0x02916E`,
+condiciones de región del jugador, llamadas `0x0C7xxx`, soldados `+76=3/4`,
+variante `0x04115A`, bombardero `0x0DC97E`, marcadores de escalera) y se
+detiene explícitamente en `0x2D6A28`; se alcanza el fin de región en la
+cámara 1920. Sin descriptores ni rutinas no soportadas.
 Rendimiento observado: `draws` ≤ 516, CPU ≤ 8,8 ms por fotograma (antes 19–26 ms,
 ver [RENDIMIENTO.md](RENDIMIENTO.md)), 60 fotogramas por segundo, `misses=0`
 (caché de 8 MiB: todo el pack residente). Con 4 MiB el banco nativo se
@@ -108,9 +109,16 @@ transmite bajo demanda (`tools/check_scene_budget.py`).
 
 ## Pendiente (sin implementar nada especulativo)
 
-- Segmento del guion tras `0x2D651A` (camión `0x0028`, condiciones de región
-  del jugador `0x0B/0x0C`, llamadas `0x0C7xxx`, soldados con `+76=3/4`): no
-  importado; el intérprete se detiene y lo registra.
+- El mundo en lazo cerrado coincide con el arcade hasta el fotograma 7568
+  (m2x) y 7341 (m3x). Lo siguiente que lo detiene es la entrada `0x208` de la
+  tabla de apariciones → `0x087E36` (vehículo blindado con plataforma
+  dinámica `E4FF2`, cuerpo sólido y RNG). Tampoco están portados: POW
+  `0x08C37C`, `0x031D80`/`0x03264E`, restos del bombardero `1CF70/1CE38/1CE44`,
+  puestos `0x03FC5A`/`0x0400AA`, prisioneros `0x099DCC`/`0x099E06` (rescate y
+  objetos), `0x0B6298`, las llamadas `3C2DE/3C13E/3BE8E` del programa
+  `24124C` y algunas entradas de la tabla de muertes. En el juego cuentan como
+  apariciones externas (no se dibujan y la secuencia RNG nativa diverge a
+  partir de ellas).
 - La altura de cámara del mapa ampliado (`msx_camera_height`) solo desplaza el
   dibujo; la escena del mundo sigue en `y=256` (la palabra RAM `0x10E980` del
   original no está medida en ese tramo).

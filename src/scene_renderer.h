@@ -4,6 +4,8 @@
 #include "scene_assets.h"
 #include "retro25d.h"
 void scene_renderer_init(void);
+/* display_get() with a watchdog: re-kicks rspq when no framebuffer frees up. */
+surface_t *msx_display_get(void);
 void scene_render_begin(surface_t *surface);
 /* Map layers for the displayed camera X and height (mission_camera.h
  * rules); backdrop_after selects the palette loaded at progress 2304. */

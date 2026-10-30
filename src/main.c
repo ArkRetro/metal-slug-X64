@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include <stdio.h>
+#include "scene_renderer.h"
 #include "fixed.h"
 #include "sprites.h"
 #include "actor.h"
@@ -58,7 +59,7 @@ int main(void) {
     for (;;) {
         uint32_t audio_started=TICKS_READ();msx_audio_service();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-audio_started);
         joypad_poll();
-        surface_t *surface=display_get();
+        surface_t *surface=msx_display_get();
         joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);
         input.btn=joypad_get_buttons(JOYPAD_PORT_1);
         actor_draw(surface,input);
@@ -73,7 +74,7 @@ int main(void) {
         joypad_buttons_t pressed = joypad_get_buttons_pressed(JOYPAD_PORT_1);
         if (pressed.start) { actor_mode = !actor_mode;actor_set_active(actor_mode); }
         if (actor_mode) {
-            surface_t *surface=display_get();
+            surface_t *surface=msx_display_get();
             joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);
             input.btn=joypad_get_buttons(JOYPAD_PORT_1);
             actor_draw(surface,input);
@@ -99,7 +100,7 @@ int main(void) {
             unsigned shade = (inverted ? 15 - i : i) * 17;
             palette[i] = graphics_make_color(shade, shade, shade, 255);
         }
-        surface_t *surface = display_get();
+        surface_t *surface = msx_display_get();
         uint32_t black = graphics_make_color(0, 0, 0, 255);
         uint32_t white = graphics_make_color(255, 255, 255, 255);
         graphics_fill_screen(surface, black);

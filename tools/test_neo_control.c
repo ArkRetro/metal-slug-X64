@@ -62,11 +62,11 @@ int main(void) {
     neo_anim_state_t probe_animation={0};neo_rng_t probe_rng=initial(),saved_rng=probe_rng;
     assert(!neo_soldier_state_begin(&bad,&probe_actor,&probe_control,&probe_animation,&probe_rng,resolve_program,NULL));
     machine_equal(&bad,&saved_bad);assert(memcmp(&probe_actor,&saved_actor,sizeof(saved_actor))==0);
-    assert(memcmp(&probe_rng,&saved_rng,sizeof(saved_rng))==0 && probe_animation.program==NULL);
+    assert(memcmp(probe_rng.words,saved_rng.words,sizeof(saved_rng.words))==0 && probe_rng.cursor==saved_rng.cursor && probe_animation.program==NULL);
     bad=state_cases[0].before;saved_bad=bad;probe_actor.flags15&=191u;saved_actor=probe_actor;
     assert(!neo_soldier_state_begin(&bad,&probe_actor,&probe_control,&probe_animation,&probe_rng,resolve_program,NULL));
     machine_equal(&bad,&saved_bad);assert(memcmp(&probe_actor,&saved_actor,sizeof(saved_actor))==0);
-    assert(memcmp(&probe_rng,&saved_rng,sizeof(saved_rng))==0);
+    assert(memcmp(probe_rng.words,saved_rng.words,sizeof(saved_rng.words))==0 && probe_rng.cursor==saved_rng.cursor);
     unsigned removed=0;
     for (unsigned i=0;i<COUNT(cull_cases);i++) {
         bool outside=neo_cull_outside(&cull_cases[i].actor,&cull_cases[i].bounds,cull_cases[i].rectangle);

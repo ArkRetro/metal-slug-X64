@@ -158,7 +158,7 @@ static void k8869c(neo_gactor_t *a,neo_genv_t *e) {
         if (BIT(0x15,0)) dx=(int16_t)-dx;
         neo_gactor_t *c=after_script(a,e,0x8943c,dx,dy);               /* 089654 */
         if (!c) continue;
-        uint32_t vx=(uint32_t)(t[4]<<24|t[5]<<16|t[6]<<8|t[7]),vy=(uint32_t)(t[8]<<24|t[9]<<16|t[10]<<8|t[11]);
+        uint32_t vx=(uint32_t)((uint32_t)t[4]<<24|t[5]<<16|t[6]<<8|t[7]),vy=(uint32_t)((uint32_t)t[8]<<24|t[9]<<16|t[10]<<8|t[11]);
         ga_sl(c,0x30,BIT(0x15,0)?0u-vx:vx);ga_sl(c,0x34,vy);
         ga_sb(c,0x12,0x40);
     }
@@ -544,7 +544,7 @@ static ga_result_t shard_tick(neo_gactor_t *a,neo_genv_t *e) {
         uint32_t at=0xe516eu+(uint32_t)W(0x84)*0x18u;
         const uint8_t *t=ga_rom(at);
         if (!t) {ga_fail(e,at);return GA_UNSUPPORTED;}
-        #define T32(o) ((uint32_t)(t[o]<<24|t[(o)+1]<<16|t[(o)+2]<<8|t[(o)+3]))
+        #define T32(o) ((uint32_t)((uint32_t)t[o]<<24|t[(o)+1]<<16|t[(o)+2]<<8|t[(o)+3]))
         SL(0x34,T32(8));SL(0x8e,T32(0x10));
         SW(0x2c,W(0x2c)+(uint16_t)(t[0x16]<<8|t[0x17]));
         uint16_t d7=(uint16_t)(t[0x14]<<8|t[0x15]);uint32_t d6=T32(4),d5=T32(0xc),program=T32(0);

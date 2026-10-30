@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "../src/gameplay.h"
 #include "../src/msx_sfx.h"
 #include "../src/mission_camera.h"
@@ -16,6 +17,53 @@ static int armored_x(const msx_game_t *g) {
         if (x>=0 && x<320) return g->camera+x;
     }
     return -1;
+}
+/* Release rules (no invulnerability, deaths respawn in view): a seeded
+ * "human" that walks mostly right, turns, idles, jumps and aims up at
+ * random, fires all the time and aims up under the domes. Every camera
+ * stop must resolve: the script reaches its end and the boss dies. The
+ * only nodes that stop are the boss turret's documented ones (before the
+ * slash callback 039FA6 was ported, the slash 039B60 stopped at its
+ * program's command 10 and left its swordsman waiting forever in 03975E).
+ * A run depends only on its seed: `gameplay release N` runs seed N alone and
+ * must print the line the whole test prints for it (make check). */
+static void release_run(unsigned seed) {
+    static msx_game_t g;unsigned steps;
+    unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
+    unsigned hold=0,hold_max=0;
+    for (steps=0;steps<80000 && !g.complete;steps++) {
+        /* Camera stop 1304: the script waits at 2D67CA for the armoured
+         * vehicle 087E36 (group 1) and the prone soldier riding it. */
+        if (g.world.script.base+g.world.script.pc==0x2d67cau) {if (++hold>hold_max) hold_max=hold;} else hold=0;
+        if (steps%30==0) {rs=rs*1103515245u+12345u;unsigned r=(rs>>16)%10;dir_r=r<6?1:r<8?0:2;rs=rs*1103515245u+12345u;up=(rs>>16)%3==0;}
+        int dir=dir_r==2?-1:(int)dir_r;bool a=up;
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *d=&g.world.gactors[i];
+            if (!d->active || ga_l(d,0x50)!=0x54730u || (ga_b(d,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
+        // Armoured vehicle on screen, player on the floor (Y=64; a respawn
+        // can land on the ledge at x~1435 or on its platform): walk at it
+        // firing level, as at the domes; its solid body (004ED2) stops the
+        // walk.
+        int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
+        if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
+        g.aim_up=a;rs=rs*1103515245u+12345u;
+        msx_game_update(&g,dir,(rs>>16)%50==0,true);
+        g.world.sound_count=0;
+    }
+    printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items taken=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,g.world.item_pickups,hold_max);fflush(stdout);
+    assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
+    assert(g.world.unsupported==g.world.boss_unsupported);
+    // The random policy (deaths, respawns on the ledge or the vehicle's
+    // platform; its body blocks the walk) must get past the 1304 hold
+    // (the script end is asserted above). Since the vehicle's shells
+    // 088B52 hurt, its length follows the deaths there (506..2900 steps
+    // depending on the host build's optimisation level, which changes
+    // these runs), so only its lower bound is checked.
+    assert(hold_max>=200);
 }
 /* Shop 0B6566 (HP 150 from 2D3A5C; the pistol row does 10 per hit, as the
  * MAME bld1 trace's type-6 hits: 150 -> 140 -> 130 ...): the reference
@@ -91,7 +139,8 @@ static unsigned stand_2336(int at) {
     }
     return passed?hold_max:~0u;
 }
-int main(void) {
+int main(int argc,char **argv) {
+    if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
     msx_game_update(&g,1,true,false);
@@ -199,50 +248,7 @@ int main(void) {
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height==30 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 14 (measured before the wagon stop: standing on the wreck or the boss lifts the view)
-    // Release rules (no invulnerability, deaths respawn in view): a seeded
-    // "human" that walks mostly right, turns, idles, jumps and aims up at
-    // random, fires all the time and aims up under the domes. Every camera
-    // stop must resolve: the script reaches its end and the boss dies. The
-    // only nodes that stop are the boss turret's documented ones (before the
-    // slash callback 039FA6 was ported, the slash 039B60 stopped at its
-    // program's command 10 and left its swordsman waiting forever in 03975E).
-    for (unsigned seed=1;seed<=4;seed++) {
-        unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
-        unsigned hold=0,hold_max=0;
-        for (steps=0;steps<80000 && !g.complete;steps++) {
-            /* Camera stop 1304: the script waits at 2D67CA for the armoured
-             * vehicle 087E36 (group 1) and the prone soldier riding it. */
-            if (g.world.script.base+g.world.script.pc==0x2d67cau) {if (++hold>hold_max) hold_max=hold;} else hold=0;
-            if (steps%30==0) {rs=rs*1103515245u+12345u;unsigned r=(rs>>16)%10;dir_r=r<6?1:r<8?0:2;rs=rs*1103515245u+12345u;up=(rs>>16)%3==0;}
-            int dir=dir_r==2?-1:(int)dir_r;bool a=up;
-            int dome=-1;
-            for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
-                const neo_gactor_t *d=&g.world.gactors[i];
-                if (!d->active || ga_l(d,0x50)!=0x54730u || (ga_b(d,0x5f)&0x80u)) continue;
-                int x=g.camera+(int16_t)ga_w(d,0x3c);if (dome<0 || x<dome) dome=x;
-            }
-            if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;a=true;}
-            // Armoured vehicle on screen, player on the floor (Y=64; a respawn
-            // can land on the ledge at x~1435 or on its platform): walk at it
-            // firing level, as at the domes; its solid body (004ED2) stops the
-            // walk.
-            int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
-            if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
-            g.aim_up=a;rs=rs*1103515245u+12345u;
-            msx_game_update(&g,dir,(rs>>16)%50==0,true);
-            g.world.sound_count=0;
-        }
-        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items taken=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,g.world.item_pickups,hold_max);
-        assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
-        assert(g.world.unsupported==g.world.boss_unsupported);
-        // The random policy (deaths, respawns on the ledge or the vehicle's
-        // platform; its body blocks the walk) must get past the 1304 hold
-        // (the script end is asserted above). Since the vehicle's shells
-        // 088B52 hurt, its length follows the deaths there (506..2900 steps
-        // depending on the host build's optimisation level, which changes
-        // these runs), so only its lower bound is checked.
-        assert(hold_max>=200);
-    }
+    for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The
     // group 6 swordsmen 039590 and the robed swordsman 0A8C62 (group 0, who

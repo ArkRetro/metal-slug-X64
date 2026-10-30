@@ -146,7 +146,7 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
                     const uint8_t *t=ga_rom(0x87au+4u*W(0x74));
                     if (!t) {ga_fail(e,0x87au+4u*W(0x74));return GA_UNSUPPORTED;}
                     neo_gactor_t *s=e->spawn?e->spawn(e->ctx,a,0x19e72,false):NULL;
-                    if (s) {ga_sl(s,0x6e,(uint32_t)(t[0]<<24|t[1]<<16|t[2]<<8|t[3]));ga_sw(s,0x2c,0x100);}
+                    if (s) {ga_sl(s,0x6e,(uint32_t)((uint32_t)t[0]<<24|t[1]<<16|t[2]<<8|t[3]));ga_sw(s,0x2c,0x100);}
                 }
             }
         }

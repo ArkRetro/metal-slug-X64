@@ -17,7 +17,7 @@ BLOBS=[
     (0x2CE974,0x40,'029160 truck health (0260C8)'),(0x2CE9A8,0x40,'0296CA truck speed (0260C8)'),
     (0x29B62,0x18,'029240 truck hurtboxes (+50)'),(0x29B6E,0x18,'029802 truck body hurtboxes (+50)'),
     (0x29B92,0x10,'0292BC truck push attack (0049E8)'),(0x29BA2,0x10,'029ACE truck attack (0049E8)'),
-    (0x29BB2,0x10,'029B56 truck explosion attack (0049E8)'),(0x29BC2,0x08,'02922E truck solid box (004E76)'),
+    (0x29BB2,0x10,'029B56 truck explosion attack (0049E8)'),(0x29BC2,0x0C,'02922E truck solid box (004E76; 004EF2 reads six words, the last two are the bytes of 029BCA)'),
     (0x29BCA,0x08,'029550 truck visibility rectangle (0C8BEC)'),(0x29BDA,0x08,'029A82 truck player rectangle (01AFFC)'),
     (0x29BE2,0x12,'029AEE truck smoke list (01DA40)'),
     (0x29C58,0x42,'029A1E truck cell map'),(0x29C9A,0x42,'029A26 truck cell map'),(0x29CDC,0x42,'029A04 truck cell map'),

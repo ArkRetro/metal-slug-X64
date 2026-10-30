@@ -6,6 +6,7 @@
 #include "neo_collision.h"
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
+static int right_limit(const msx_game_t *g);
 int msx_ground_offset(int x) {
     neo_surface_t s;
     return neo_surface_at(x,64*MSX_UNIT,64*MSX_UNIT,64*MSX_UNIT,&s)?56*MSX_UNIT-s.height:0;
@@ -40,7 +41,7 @@ void msx_game_vehicle_reference(msx_game_t *g) {
 void msx_game_hurt(msx_game_t *g,int from) {
     if (g->invulnerable || g->complete) return;
     g->health--;g->invulnerable=60;
-    g->x=clamp(g->x+(g->x/MSX_UNIT<from?-20:20)*MSX_UNIT,(g->camera+28)*MSX_UNIT,MSX_END_X);
+    g->x=clamp(g->x+(g->x/MSX_UNIT<from?-20:20)*MSX_UNIT,(g->camera+28)*MSX_UNIT,right_limit(g));
     if (g->grounded) {
         neo_surface_t support;
         if (neo_surface_at(g->x,56*MSX_UNIT-g->y,8*MSX_UNIT,8*MSX_UNIT,&support))
@@ -57,8 +58,14 @@ void msx_game_hurt(msx_game_t *g,int from) {
 /* Projected words of the player as the original registers them (+3C/+40). */
 static neo_world_player_t player_frame(const msx_game_t *g) {
     neo_world_player_t p={(uint16_t)(g->x/MSX_UNIT-g->camera),(uint16_t)(MSX_PROJECTED_BASE_Y+56-g->y/MSX_UNIT),
-        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false};
+        (uint8_t)((g->facing<0?1u:0u)|(g->grounded?64u:0u)),true,false,0xff,0xff,false,false};
     return p;
+}
+/* Right limit of the player: camera+292-1/65536 (the arcade value behind
+ * MSX_END_X), so a script camera lock also stops the player at the screen. */
+static int right_limit(const msx_game_t *g) {
+    int64_t r=(int64_t)(g->camera+292)*MSX_UNIT-1;
+    return r<MSX_END_X?(int)r:MSX_END_X;
 }
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) return;
@@ -87,7 +94,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->air_ticks+=2;
             g->grounded=neo_land_step(&body,previous);
         }
-        g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,MSX_END_X);
+        g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));
         if (g->x!=body.x) body.vx=0;
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
     }
@@ -121,6 +128,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (neo_vehicle_hit_segment(&g->vehicle,g->x,g->x,73*MSX_UNIT-g->y,9*MSX_UNIT,17*MSX_UNIT))
         msx_game_hurt(g,g->vehicle.x/MSX_UNIT);
     int camera=clamp(g->x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);
+    // Level-script camera lock (ROM 0C7B0C/0C7C12): the view stops at it.
+    if (g->world_enabled && g->world.camera_lock>=0 && camera>g->world.camera_lock) camera=g->world.camera_lock;
     if (camera>g->camera) g->camera=camera;
     // Region end: the script has passed its "all groups cleared" waits
     // (ROM 2D650E/2D6514) and the player stands at the native world limit.

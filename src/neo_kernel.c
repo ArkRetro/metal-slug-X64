@@ -15,6 +15,7 @@ typedef struct {
     bool v4044; uint8_t o4044; uint32_t l4048,l404c;
     bool v4050; uint8_t o4050; uint32_t l4054,l4058,l405c,l4064; uint8_t o4060;
     uint16_t w4068; unsigned iterator;
+    uint8_t mask42a2; uint16_t idx42a4; int32_t qbox[4]; /* RAM 10C2A2/10C2A4/10C292 */
     bool unsupported;
 } kr_t;
 
@@ -24,31 +25,54 @@ static uint32_t SWAP(uint32_t v) {return (v<<16)|(v>>16);}
 static uint32_t SETW(uint32_t reg,uint32_t word) {return (reg&0xffff0000u)|(word&0xffffu);}
 static uint32_t ASR(uint32_t v,unsigned n) {return (uint32_t)(S(v)>=0?(int32_t)(v>>n):~(int32_t)(~v>>n));}
 static const neo_kobj_t *obj(const kr_t *k,uint8_t id) {
+    if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return &k->s->dyn[id-NEO_KOBJ_DYN0].pos;
     return id==NEO_KOBJ_TERRAIN?&k->s->terrain:id==NEO_KOBJ_ROOT?&k->s->root:NULL;
 }
+static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT;}
 static uint16_t w4024(const kr_t *k) {return (uint16_t)((k->b4024[0]<<8)|k->b4024[1]);}
 static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b4024[3]);}
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}
 static void or4026(kr_t *k,uint16_t v) {k->b4024[2]|=(uint8_t)(v>>8);k->b4024[3]|=(uint8_t)v;}
 
-/* 0C79FE: terrain-object ring lookup; equals the native grid in the loaded
- * window (rows above the 256-pixel map are empty in the ring). */
-static uint8_t cell(uint16_t x,uint16_t y) {
+/* 0C79FE: terrain-object ring lookup (rows above the 256-pixel map are empty
+ * in the ring). The ring holds 64 columns: the loaded window starts one
+ * column before (-64-layer.x)>>3 (column loads observed in the m2x capture:
+ * the slot of column c is reloaded when that start passes c+1); a column
+ * outside it reads the loaded column sharing its ring slot, as the original
+ * does for actors far behind or ahead of the camera. */
+static uint8_t cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
     unsigned row=(unsigned)((~y)&0x1f8u)>>3; /* (~y)/8 modulo 64 */
     unsigned world_row=63u-row; if (world_row>=32u) return 0;
-    return neo_collision_cell((int)x,(int)(world_row*8u));
+    int first=((int16_t)(uint16_t)(-64-(int16_t)(uint16_t)((uint32_t)s->terrain.x>>16))>>3)-1;
+    int col=(int16_t)x>>3;
+    int loaded=first+(int)((unsigned)(col-first)&63u);
+    return neo_collision_cell(loaded*8+((int)x&7),(int)(world_row*8u));
 }
 /* 012938. d0.w/d1.w are local pixels (caller swapped the Q16 words). */
 static void k12938(kr_t *k) {
     if (k->a0==NEO_KOBJ_NONE) {k->d7=0;return;}
-    if (k->a0!=NEO_KOBJ_TERRAIN) {k->unsupported=true;k->d7=0;return;} /* 01431A dynamic */
-    uint32_t c=cell((uint16_t)k->d0,(uint16_t)k->d1);
+    uint32_t hi,lo;
+    if (k->a0>=NEO_KOBJ_DYN0 && k->a0<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) { /* 01431A */
+        const uint8_t *m=k->s->dyn[k->a0-NEO_KOBJ_DYN0].map;
+        if (!m) {k->unsupported=true;k->d7=0;return;}
+        uint16_t d4=(uint16_t)(SW(k->d0)>>3),d5=(uint16_t)(SW(k->d1)>>3);
+        d4=(uint16_t)(d4-(uint16_t)(int16_t)(int8_t)m[0]);d5=(uint16_t)(d5-(uint16_t)(int16_t)(int8_t)m[1]);
+        uint16_t w=m[2],h=m[3];
+        /* Outside the map 014360 returns D7=0 with D6 still holding the
+         * width byte, so the common tail below raises flag 8. */
+        k->d6=w;hi=0;lo=0;
+        if (d4<w) {
+            d5=(uint16_t)~(uint16_t)(d5-h);
+            if (d5<h) {k->d6=m[4];hi=m[5];lo=m[10+(unsigned)d5*w+d4];}
+        }
+    } else {
+    uint32_t c=cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
     k->d6=c;
     uint32_t g=(c&0xe0u)>>5;
     if (k->s->group_map) g=k->s->group_map[g];
-    uint32_t hi,lo;
     if (g==0x0bu) {hi=0;lo=(c&15u)+16u;} else {hi=g;lo=c&15u;}
     k->d6=c&0x10u;
+    }
     /* 0129A2..0129BC: group 1 with b400D clears the cell flag and shape. */
     if (hi==1u && k->b400d) {k->d6=0;lo=0;}
     k->d7=(hi<<16)|lo;
@@ -410,13 +434,89 @@ static void k1ac4c(kr_t *k) {
 }
 /* 01381C/01382A/014160/01424C: object list. Region evidence: 10C72E active,
  * 10D7B6 descriptor +4 zero, empty dynamic-platform bitmaps. */
+/* 014160: dynamic objects whose bins meet the query's box (absolute
+ * coordinates: called with A0 = 0 by 013968/013DB2). */
+static void k14160(kr_t *k,uint32_t d0,uint32_t d1,uint32_t d2,uint32_t d3) {
+    k->idx42a4=7;k->mask42a2=0;
+    if (!k->b4008 && !k->s->solid) return;
+    d2+=d0;d3+=d1;
+    if (S(d0)>S(d2)) {uint32_t t=d0;d0=d2;d2=t;}
+    if (S(d1)>S(d3)) {uint32_t t=d1;d1=d3;d3=t;}
+    k->qbox[0]=S(d0);k->qbox[1]=S(d1);k->qbox[2]=S(d2);k->qbox[3]=S(d3);
+    int x0=(int16_t)(uint16_t)(d0>>16),y0=(int16_t)(uint16_t)(d1>>16),x1=(int16_t)(uint16_t)(d2>>16),y1=(int16_t)(uint16_t)(d3>>16);
+    uint8_t m=0;
+    x1=(int16_t)(uint16_t)(x1+0x80);
+    if (x1>=0) {
+        x0=(int16_t)(uint16_t)(x0+0x80);if (x0<0) x0=0;
+        y1=(int16_t)(uint16_t)(y1-0x80);
+        if (y1>=0) {
+            y0=(int16_t)(uint16_t)(y0-0x80);if (y0<0) y0=0;
+            if (x0<=0x23f && y0<=0x1ff) {
+                if (x1>0x23f) x1=0x23f;
+                if (y1>0x1ff) y1=0x1ff;
+                uint8_t bx=0,by=0;
+                for (int i=x0>>5;i<=x1>>5;i++) bx|=k->s->bins_x[i];
+                for (int i=y0>>5;i<=y1>>5;i++) by|=k->s->bins_y[i];
+                m=(uint8_t)(bx&by);
+            }
+        }
+    }
+    k->mask42a2=m;
+    if (!k->b4008) k->mask42a2&=k->s->solid;
+}
+/* 01382A static list (013810: 10C72E, then the inactive 10D7B6), then the
+ * dynamic objects 01424C, highest index first. */
 static void k1382a(kr_t *k) {
-    k->a1=k->iterator==0?NEO_KOBJ_TERRAIN:NEO_KOBJ_NONE;
-    if (k->iterator<2u) k->iterator++;
+    if (k->iterator==0) {k->iterator=1;k->a1=NEO_KOBJ_TERRAIN;return;}
+    k->iterator=2;
+    uint8_t d6=k->mask42a2;int d7=k->idx42a4;
+    while (d6) {
+        if (d6&0x80u) {
+            const neo_kdyn_t *o=&k->s->dyn[d7&7];
+            bool skip=k->s->self_dyn==(uint8_t)(d7+1) || !o->map;
+            for (unsigned c=0;!skip && c<3 && o->chain[c];c++) if (o->chain[c]==k->s->self_block) skip=true;
+            if (!skip && !(k->qbox[2]<o->bbox[0] || k->qbox[0]>o->bbox[2] || k->qbox[3]<o->bbox[1] || k->qbox[1]>o->bbox[3])) {
+                k->idx42a4=(uint16_t)(d7-1);k->mask42a2=(uint8_t)(d6<<1);
+                k->a1=(uint8_t)(NEO_KOBJ_DYN0+(d7&7));return;
+            }
+        }
+        d7--;d6=(uint8_t)(d6<<1);
+    }
+    k->idx42a4=(uint16_t)d7;k->mask42a2=d6;k->a1=NEO_KOBJ_NONE;
+}
+void neo_kernel_dyn_begin(neo_kscene_t *s) {
+    for (unsigned i=0;i<18;i++) s->bins_x[i]=0;
+    for (unsigned i=0;i<16;i++) s->bins_y[i]=0;
+    s->solid=0;
+}
+/* 013F82 */
+void neo_kernel_dyn_update(neo_kscene_t *s,unsigned i) {
+    neo_kdyn_t *o=&s->dyn[i];const uint8_t *m=o->map;
+    if (!m) return;
+    uint32_t d0=(uint32_t)o->pos.prev_x,d1=(uint32_t)o->pos.prev_y,d2=(uint32_t)o->pos.x,d3=(uint32_t)o->pos.y;
+    if (S(d0)>S(d2)) {uint32_t t=d0;d0=d2;d2=t;}
+    if (S(d1)>S(d3)) {uint32_t t=d1;d1=d3;d3=t;}
+    int16_t dx=(int16_t)((int8_t)m[0]*8),dy=(int16_t)((int8_t)m[1]*8),w=(int16_t)((int8_t)m[2]*8),h=(int16_t)(((int8_t)m[3]+1)*8);
+    w=(int16_t)(w+dx);h=(int16_t)(h+dy);
+    d0+=(uint32_t)(int32_t)dx<<16;d1+=(uint32_t)(int32_t)dy<<16;d2+=(uint32_t)(int32_t)w<<16;d3+=(uint32_t)(int32_t)h<<16;
+    o->bbox[0]=S(d0);o->bbox[1]=S(d1);o->bbox[2]=S(d2);o->bbox[3]=S(d3);
+    int x0=(int16_t)(uint16_t)(d0>>16),y0=(int16_t)(uint16_t)(d1>>16),x1=(int16_t)(uint16_t)(d2>>16),y1=(int16_t)(uint16_t)(d3>>16);
+    x1=(int16_t)(uint16_t)(x1+0x80);if (x1<0) return;
+    x0=(int16_t)(uint16_t)(x0+0x80);if (x0<0) x0=0;
+    y1=(int16_t)(uint16_t)(y1-0x80);if (y1<0) return;
+    y0=(int16_t)(uint16_t)(y0-0x80);if (y0<0) y0=0;
+    if (x0>0x23f) return;
+    if (x1>0x23f) x1=0x23f;
+    if (y0>0x1ff) return;
+    if (y1>0x1ff) y1=0x1ff;
+    uint8_t bit=(uint8_t)(1u<<i);
+    if (!m[4]) s->solid|=bit;
+    for (int b=x0>>5;b<=x1>>5;b++) s->bins_x[b]|=bit;
+    for (int b=y0>>5;b<=y1>>5;b++) s->bins_y[b]|=bit;
 }
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
     kr_t k={0};k.s=scene;
-    if (q->parent!=NEO_KOBJ_TERRAIN && q->parent!=NEO_KOBJ_NONE && q->parent!=NEO_KOBJ_ROOT) return false;
+    if (!known(q->parent)) return false;
     k.d0=(uint32_t)q->x;k.d1=(uint32_t)q->y;k.d2=(uint32_t)q->dx;k.d3=(uint32_t)q->dy;k.a0=q->parent;
     k.w4068=scene->w4068;
     k.m4004=q->mode4004;k.b4008=q->b4008;k.b4009=q->b4009;k.b400a=q->b400a;k.b400b=q->b400b;k.b400d=q->b400d;
@@ -432,7 +532,7 @@ restart:
     if (++restarts>64u) return false;
     k.a1=NEO_KOBJ_NONE;k1ac4c(&k);k.a0=k.a1;
     k.l402c=k.d0;k.l4030=k.d1;
-    k.iterator=0;k1382a(&k);
+    k.iterator=0;k14160(&k,k.d0,k.d1,k.d2,k.d3);k1382a(&k);
     while (k.a1!=NEO_KOBJ_NONE) {
         k1ac4c(&k);k.a0=k.a1;
         if (k.v4050 && k.a0==k.o4050) {k1382a(&k);continue;}
@@ -502,14 +602,14 @@ uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t
 bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int32_t depth,
     uint8_t b4008,uint8_t b400a,uint8_t b400d,neo_kfloor_t *out) {
     kr_t k={0};k.s=scene;k.b4008=b4008;k.b400a=b400a;k.b400d=b400d;
-    if (parent!=NEO_KOBJ_TERRAIN && parent!=NEO_KOBJ_NONE && parent!=NEO_KOBJ_ROOT) return false;
+    if (!known(parent)) return false;
     k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
     uint32_t save0=k.d0,save1=k.d1;uint8_t save_a0=k.a0;   /* 4034/4038/403C */
     k.l405c=(uint32_t)depth;k.l4064=0x4000;k.w4012=0;
     const neo_kobj_t *a=obj(&k,k.a0);
     if (a) {k.d0+=(uint32_t)a->x;k.d1+=(uint32_t)a->y;}
     k.a0=NEO_KOBJ_NONE;k.l402c=k.d0;k.l4030=k.d1;k.d2=0;
-    k.iterator=0;k1382a(&k);
+    k.iterator=0;k14160(&k,k.d0,k.d1,0,(uint32_t)depth);k1382a(&k);
     unsigned guard=0;
     while (k.a1!=NEO_KOBJ_NONE) {
         k.a0=k.a1;a=obj(&k,k.a0);

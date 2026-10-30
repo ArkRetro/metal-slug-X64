@@ -15,6 +15,15 @@ def hurtbox(data,address,base):
     t,f=data[address-base],data[address-base+1];r=list(struct.unpack_from('>4h',data,address-base+2))
     assert struct.unpack_from('>H',data,address-base+10)[0]==0x8000
     return dict(rom=hex(address),type=t,flags=f,rect=r)
+def spawn_offsets(script):
+    """Spawn-table offsets of every op 7 record (walk by record length)."""
+    out=set();pc=0
+    while pc+1<len(script):
+        op,ln=script[pc],script[pc+1]
+        if op==7:out.add(struct.unpack_from('>H',script,pc+4)[0])
+        if not ln:break
+        pc+=ln
+    return sorted(out)
 def handoff_rng(capture,frame):
     ram=(capture/f'ram{frame}.bin').read_bytes()
     return dict(frame=frame,words=list(struct.unpack_from('>55H',ram,0x16)),cursor=(struct.unpack_from('>I',ram,0x84)[0]-0x100016)//2)
@@ -33,16 +42,20 @@ def main():
         pistol=[attack(fixed,0x1b4c2+16*i) for i in range(16)],
         cull_rect=dict(rom='0x0B04F4',values=words(fixed,0xb04f4,4,True)),
         retreat_rect=dict(rom='0x0B04FC',values=words(fixed,0xb04fc,4,True)),
+        # 0B0396: idle animations (random pick) and the alert rectangle (01AFFC).
+        idle_programs=dict(rom='0x0B037E',values=[struct.unpack_from('>I',fixed,0xb037e+4*i)[0] for i in range(4)]),
+        alert_rect=dict(rom='0x0B038E',values=words(fixed,0xb038e,4,True)),
+        # 04115A soldier variant: removal rectangle of its tail (01945C).
+        variant_cull_rect=dict(rom='0x040FF2',values=words(fixed,0x40ff2,4,True)),
         hurtboxes=[hurtbox(fixed,x,0) for x in (0x3bb40,0x3bb4c,0x3bb58,0x3bb64,0x3bb70,0x3bb7c)]+[hurtbox(bank,0x24057c,0x200000)],
         player_hurtbox=hurtbox(bank,0x2d0aa8,0x200000),
         hit_matrix=dict(rom='0x004582',rows=[list(fixed[0x4582+20*t:0x4582+20*t+20]) for t in range(8)]),
-        # Mission 1 level script (bank 1, ROM 2D6314) up to the statement that
-        # follows the region's two "all groups cleared" waits (2D651A, whose
-        # player-region condition belongs to the next segment). Record bytes
-        # only; the interpreter is native code (src/neo_script.c).
-        mission_script=dict(rom='0x2D6314',end='0x2D651A',bytes=list(bank[0xd6314:0xd651a])),
+        # Mission 1 level script (bank 1, ROM 2D6314) up to the camera-1920
+        # lock (2D6A1A) included; 2D6A28 onward belongs to the next segment.
+        # Record bytes only; the interpreter is native code (src/neo_script.c).
+        mission_script=dict(rom='0x2D6314',end='0x2D6A28',bytes=list(bank[0xd6314:0xd6a28])),
         spawn_table=dict(rom='0x0197DC',entries={hex(o):'0x%08X'%struct.unpack_from('>I',fixed,0x197dc+o)[0]
-            for o in (0x1f8,0x204,0x21c,0x2ac,0x2c8,0x2d0,0x31c,0x354,0x358)}),
+            for o in spawn_offsets(bank[0xd6314:0xd6a28])}),
         # RNG ring (RAM 100016..100083, cursor 100084) dumped at the mission
         # handoff of the capture; the native world starts from it because the
         # attract/intro consumers that produce it are not part of the port.

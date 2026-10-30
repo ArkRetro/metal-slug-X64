@@ -40,7 +40,11 @@ static neo_anim_result_t step(neo_anim_state_t *s,neo_anim_render_t *r,
             unsigned selected=r->variant61;
             if (c->kind==NEO_ANIM_SELECT_FIELD_POSE) {
                 uint32_t value;
-                if (!field || !field(field_context,c->asset,1,false,&value)) return NEO_ANIM_UNSUPPORTED;
+                if (actor && actor->read_byte) { /* native actor: byte at the original offset */
+                    uint8_t b;
+                    if (!actor->read_byte(actor->context,(uint16_t)c->asset,&b)) return NEO_ANIM_UNSUPPORTED;
+                    value=b;
+                } else if (!field || !field(field_context,c->asset,1,false,&value)) return NEO_ANIM_UNSUPPORTED;
                 selected=value&255u;
             }
             if (selected>=c->operand) selected=c->operand-1u;

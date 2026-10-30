@@ -17,6 +17,9 @@ for key,name in (('attack_sense','soldier_attack_sense'),('attack_knife','soldie
 L.append('static const int16_t soldier_pistol_attacks[16][7]={'+','.join('{%s}'%','.join(str(x) for x in v['rect']+[v['kind'],v['klass'],v['damage']]) for v in t['pistol'])+'};')
 arr('uint16_t','soldier_cull_rect',[v&0xffff for v in t['cull_rect']['values']])
 arr('uint16_t','soldier_retreat_rect',[v&0xffff for v in t['retreat_rect']['values']])
+arr('uint32_t','soldier_idle_programs',t['idle_programs']['values'])
+arr('int16_t','soldier_alert_rect',t['alert_rect']['values'])
+arr('uint16_t','soldier_variant_cull_rect',[v&0xffff for v in t['variant_cull_rect']['values']])
 L.append('typedef struct { uint32_t tag; int16_t rect[4]; uint8_t type,flags; } soldier_hurtbox_t;')
 L.append('static const soldier_hurtbox_t soldier_hurtboxes[]={'+','.join('{%s,{%s},%d,%d}'%(h['rom'],','.join(map(str,h['rect'])),h['type'],h['flags']) for h in t['hurtboxes'])+'};')
 ph=t['player_hurtbox'];L.append('static const soldier_hurtbox_t soldier_player_hurtbox={%s,{%s},%d,%d};'%(ph['rom'],','.join(map(str,ph['rect'])),ph['type'],ph['flags']))
@@ -39,7 +42,7 @@ kinds={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIE
     'FLIP_FACING':'NEO_ANIM_FLIP_FACING','UNRECOVERED':'NEO_ANIM_UNRECOVERED','REPLACE_PALETTE':'NEO_ANIM_REPLACE_PALETTE',
     'SPAWN_THROW':'NEO_ANIM_SPAWN_THROW','SELECT_POSE':'NEO_ANIM_SELECT_POSE','SET_BYTE':'NEO_ANIM_SET_BYTE','SET_WORD':'NEO_ANIM_SET_WORD',
     'SET_LONG':'NEO_ANIM_SET_LONG','DEC_BYTE':'NEO_ANIM_DEC_BYTE','COND_JUMP':'NEO_ANIM_COND_JUMP','SWITCH':'NEO_ANIM_SWITCH',
-    'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL'}
+    'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL','SELECT_FIELD_POSE':'NEO_ANIM_SELECT_FIELD_POSE'}
 L.append('#ifdef MSX_SOLDIER_PROGRAMS')
 L.append('#include "../src/neo_animation.h"')
 for i,prog in enumerate(p['programs']):

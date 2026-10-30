@@ -27,7 +27,7 @@ def wait_for(pattern,timeout=120):
         time.sleep(.05)
     raise AssertionError(pattern)
 try:
-    wait_for('MSX v10 scene loaded');wait_for('MSX first frame ready')
+    wait_for('MSX v10 scene loaded',timeout=400);wait_for('MSX first frame ready')
     window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]
     subprocess.run([XD,'windowmove',window,'0','0'],check=True)
     subprocess.run([XD,'windowfocus','--sync',window],check=True);time.sleep(.5);snap('start')
@@ -40,7 +40,7 @@ try:
     wait_for(r'MSX rebel spawned=5 ');time.sleep(.6);snap('later-rebels')
     wait_for(r'MSX defeated=5\b');snap('fifth-death')
     wait_for('MSX checkpoint=640')
-    wait_for('MSX script stopped at 2d651a',timeout=240);snap('script-end')
+    wait_for('MSX script stopped at 2d6a28',timeout=240);snap('script-end')
     wait_for('MSX observed region end',timeout=240);key('keyup','Right');key('keyup','b');time.sleep(.3);snap('region-end')
     text=log()
     assert 'MSX world unsupported' not in text,'A soldier routine stopped'

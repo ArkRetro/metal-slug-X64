@@ -351,6 +351,53 @@ Gráficos: programas de los tipos nativos y paletas `0x37D, 0x3A6, 0x380,
 3636 píxeles iguales, 0 distintos. Total: 652 descriptores, 29 paletas, los
 anteriores idénticos.
 
+## Parada 1304: espera larga sin enemigo visible (diagnóstico)
+
+Síntoma (informe del usuario y sonda de anfitrión): en la parada de cámara
+1304 el guion espera en `0x2D67CA` unas 2000–2400 actualizaciones sin
+enemigo a la vista. Evidencia de MAME 0.264 (`captures-m1rest/run1, run4,
+run8, run9` y la nueva `captures-m1full/veh1`, idénticas): la recreativa
+espera en `0x2D67CA` del fotograma **4582 al 4967 (385)**, tras `0x2D673E`
+(4330..4581). Las apariciones de 4582 son el vehículo blindado `0x087E36`
+(grupo 1, nodo `103884`), el soldado tumbado contado `0x04115A` (grupo 0) y
+un soldado `0x0AF…` (grupo 2). En la recreativa el soldado tumbado **se
+sube a la plataforma dinámica del vehículo** en su primera actualización
+(`+38 = 10C22E`, posición relativa `(-8, 80)`), el vehículo lo trae a la
+vista (X 1656 → 1558: `0x088120` → `0x0881E6`/`0x088232`), el jugador lo
+mata (`0x040D06` en 4842) y la espera termina cuando el vehículo es
+destruido (`0x08845C` en 4966). En el port `0x087E36` es externo: el
+soldado se queda en el suelo en x = 342 de pantalla, fuera de la vista,
+dispara desde allí y solo entra cuando `+74` llega a 0. **Causa: falta el
+vehículo `0x087E36`** (hipótesis (b)); la cámara (1304 en ambos) y la X de
+aparición (1646 en ambos) coinciden.
+
+Preparado para portarlo: traza de familia `captures-m1full/veh1`
+(`MSX_REST_FAMILY_ROOTS=87e36 MSX_REST_BOSS_FROM=4500 MSX_REST_LAST=5000`) →
+`data/armored_fixture.json.gz` (rangos `87e36-89c00`, `40396-403d0`: 328
+actualizaciones 4581..4967, estados `087F2E, 08806E, 088120, 0881E6,
+088232, 08830C, 08833A, 0883E8, 08845C, 08889C, 0888C8, 08890E, 08893A,
+088A30` y su hijo `0x040396`). Constructor: salud y tres palabras por rango
+(`2D0E40/2D0EA2/2D0F04/2D0F66`), cuerpo sólido `0x004E76` (`0E4E90`),
+caja `0E4E84`, plataforma dinámica `0x0140C4` con el mapa `0E4FF2`, ataque
+`0E4E9E` mientras avanza. No portado todavía (sin nada aproximado en su
+lugar).
+
+## Otras paradas explícitas de esta tanda
+
+- **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura
+  `pri1`: el jugador se sube en 7841 y la HUD pasa a CANNON). Desde la
+  espera vacía (`0x092B0E`) usa el sistema de vehículos del jugador original
+  (`0x0AA610` elige al jugador cercano, `0x0AA760/0x0AA83A` lo ata a la
+  ranura `10C608/10C62C` y cambia la HUD, mando `0x0CA2CE`), que el port no
+  tiene: sigue externo.
+- **Prisionero `0x099DCC`**: la traza `pri1` solo tiene su espera atado (11
+  actualizaciones). La nueva captura `captures-m1full/fam2`
+  (`MSX_REST_FAMILY_ROOTS=99dcc,5ed84,403a0,9a67e,4857c,9d846,9d862,9d876,4115a,9f682,1913c,3458e
+  MSX_REST_BOSS_FROM=8000 MSX_REST_LAST=10600`, cámara 2336 → 3192) recoge
+  su liberación y las familias siguientes (helicóptero `0x0485xx..0x048Axx`,
+  espadachines `0x09Dxxx/0x09Exxx`, lanzacohetes `0x05EFxx..0x05F9xx`,
+  cohetes `0x09A0xx..0x09A5xx`) para la próxima tanda.
+
 ## Gráficos
 
 `tools/export_rest_sprites.py` acepta varias capturas (`dir:nodos` o

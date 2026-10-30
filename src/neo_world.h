@@ -62,7 +62,7 @@ typedef struct {
 } neo_world_player_t;
 /* Sub-script actors 019E72 created by generic actors (robed swordsman
  * 0A8C46/0A8C62): the same interpreter over another record. */
-enum { NEO_WORLD_SUBSCRIPTS=4 };
+enum { NEO_WORLD_SUBSCRIPTS=4, NEO_WORLD_SOLIDS=16 };
 typedef struct { bool used; int16_t owner; neo_script_t script; } neo_world_sub_t;
 typedef struct {
     neo_script_t script;
@@ -88,6 +88,11 @@ typedef struct {
     neo_contact_parent_t terrain,root;
     neo_rng_t rng;
     uint16_t grid[128];unsigned grid_cursor;
+    /* RAM 106756..1067D6: solid bodies registered by 004E76 (actor, body
+     * descriptor; the slot index is the actor's +6B), read by the player's
+     * push-out 004ED2. actor = gactor index, -1 = free slot. */
+    struct { int16_t actor; uint32_t desc; } solids[NEO_WORLD_SOLIDS];
+    unsigned solid_unsupported;     /* 004E76 traps (+6B >= 16) */
     uint8_t epoch;
     uint16_t video_phase;          /* RAM 10000E, set by the caller per update */
     int32_t scroll_x;              /* RAM 10E97C: -camera, Q16.16 */
@@ -145,6 +150,10 @@ void neo_world_init(neo_world_t *world,int32_t scroll_x);
 /* One original logic update. Returns the number of hits on the player
  * (knife 0AEF14 and thrown-object flight attack ROM 0E0894). */
 unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_player_t *player);
+/* Position block of the object a +38 parent tag names (terrain, scene root,
+ * layer objects, dynamic objects, generic actors, boss nodes): current and
+ * previous projected position; false for an unknown tag. */
+bool neo_world_parent(const neo_world_t *world,uint32_t tag,neo_contact_parent_t *out);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

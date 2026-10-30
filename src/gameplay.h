@@ -50,6 +50,7 @@ typedef struct {
      * body's +28/+2C are relative to its parent object (+38), so it moves
      * with the platform (wagon 033C98, boss). */
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
+    unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

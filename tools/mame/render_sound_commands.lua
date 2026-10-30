@@ -7,7 +7,8 @@
 -- video frame as ROM 01221A does. Every write and its emulated time goes to
 -- render.jsonl; -wavwrite records the output, trimmed offline by
 -- tools/render_sound_commands.py. Plan format (MSX_RENDER_PLAN):
---   label=b1,b2,...:frames;label=...    (bytes hex, frames to record)
+--   label=b1,b2,...:frames;label=...    (bytes hex, frames to record;
+--   an item +N waits N more frames before the next byte)
 -- Each entry is preceded by the driver reset/stop pair 03,06 and a silent gap.
 -- A machine reset re-runs the autoboot script in the same Lua state: refuse
 -- to start a second instance (it would reopen and truncate the log).
@@ -17,9 +18,11 @@ local output=assert(os.getenv('MSX_CAPTURE_DIR'))
 local suspend_at=tonumber(os.getenv('MSX_SUSPEND_FRAME') or '3700')
 local gap=tonumber(os.getenv('MSX_GAP_FRAMES') or '90')
 local plan={}
-for label,bytes,frames in string.gmatch(assert(os.getenv('MSX_RENDER_PLAN')),'([%w_%-]+)=([%x,]+):(%d+)') do
+for label,bytes,frames in string.gmatch(assert(os.getenv('MSX_RENDER_PLAN')),'([%w_%-]+)=([%x,%+]+):(%d+)') do
  local list={}
- for b in string.gmatch(bytes,'%x+') do list[#list+1]=tonumber(b,16) end
+ for b in string.gmatch(bytes,'[%+]?%x+') do
+  if b:sub(1,1)=='+' then list[#list+1]={wait=tonumber(b:sub(2))} else list[#list+1]=tonumber(b,16) end
+ end
  plan[#plan+1]={label=label,bytes=list,frames=tonumber(frames)}
 end
 assert(#plan>0,'Empty plan')
@@ -44,7 +47,11 @@ for _,entry in ipairs(plan) do
  push(t,'write',0x03,entry.label);push(t+2,'write',0x06,entry.label)
  t=t+2+gap
  push(t,'start',0,entry.label)
- for i,b in ipairs(entry.bytes) do push(t+i-1,'write',b,entry.label) end
+ local at=t
+ for _,b in ipairs(entry.bytes) do
+  if type(b)=='table' then at=at+b.wait-1 else push(at,'write',b,entry.label) end
+  at=at+1
+ end
  t=t+entry.frames
  push(t,'end',0,entry.label)
 end

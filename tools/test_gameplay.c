@@ -6,6 +6,23 @@
 #include "../src/msx_sfx.h"
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
+#include "../src/scene_cull.h"
+#include "scene_meta.h"
+/* Every native draw must find its descriptor and logical palette in the
+ * scene pack (src/actor.c and boss_renderer.c log "native draw missing"
+ * otherwise; ares traversal of ac75764: the blank pose 1C3F06 of the
+ * armoured vehicle's children). Counts the misses of this update. */
+static unsigned missing_draws,missing_first;
+static void check_draws(const msx_game_t *g) {
+    for (unsigned i=0;i<g->world.draw_count;i++) {
+        const neo_world_draw_t *d=&g->world.draws[i];
+        unsigned lo=0,hi=sizeof(scene_native_descriptors)/sizeof(scene_native_descriptors[0]);bool found=false;
+        while (lo<hi) {unsigned mid=(lo+hi)/2;if (scene_native_descriptors[mid].tag==d->descriptor) {found=true;break;} if (scene_native_descriptors[mid].tag<d->descriptor) lo=mid+1; else hi=mid;}
+        bool pal=d->kind!=NEO_WORLD_BOSS;
+        for (unsigned k=0;!pal && k<sizeof(scene_native_palettes)/sizeof(scene_native_palettes[0]);k++) pal=scene_native_palettes[k].resource==d->palette;
+        if (!found || !pal) {if (!missing_draws++) missing_first=d->descriptor;}
+    }
+}
 /* Armoured vehicle 087E36 still standing (any routine of the family, +5F
  * bit 7 clear) on screen: its world X, else -1. */
 static int armored_x(const msx_game_t *g) {
@@ -51,7 +68,7 @@ static void release_run(unsigned seed) {
         int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
         if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
         g.aim_up=a;rs=rs*1103515245u+12345u;
-        msx_game_update(&g,dir,(rs>>16)%50==0,true);
+        msx_game_update(&g,dir,(rs>>16)%50==0,true);check_draws(&g);
         g.world.sound_count=0;
     }
     printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items taken=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,g.world.item_pickups,hold_max);fflush(stdout);
@@ -64,6 +81,8 @@ static void release_run(unsigned seed) {
     // depending on the host build's optimisation level, which changes
     // these runs), so only its lower bound is checked.
     assert(hold_max>=200);
+    if (missing_draws) {printf("native draws missing from the scene pack: %u (first descriptor %06x)\n",missing_draws,missing_first);fflush(stdout);}
+    assert(!missing_draws);
 }
 /* Shop 0B6566 (HP 150 from 2D3A5C; the pistol row does 10 per hit, as the
  * MAME bld1 trace's type-6 hits: 150 -> 140 -> 130 ...): the reference
@@ -210,7 +229,7 @@ int main(int argc,char **argv) {
             int x=g.camera+(int16_t)ga_w(a,0x3c)-96,px=g.x/MSX_UNIT;
             if (x<g.camera+300) {dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
         }
-        msx_game_update(&g,dir,(steps%240)<4,true);
+        msx_game_update(&g,dir,(steps%240)<4,true);check_draws(&g);
         g.invulnerable=2;
         region_end_seen|=g.region_end;
         if (g.camera<2336 && g.camera_height>max_height) max_height=g.camera_height;
@@ -229,6 +248,8 @@ int main(int argc,char **argv) {
         steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
         g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides,hold_max);
     assert(requests && voices && !g.world.sound_dropped);
+    if (missing_draws) {printf("native draws missing from the scene pack: %u (first descriptor %06x)\n",missing_draws,missing_first);fflush(stdout);}
+    assert(!missing_draws);
     assert(g.shots>=g.hits);
     assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<60000);
     // The player stands on the boss's dynamic platforms (0140C0 objects,

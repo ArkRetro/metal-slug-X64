@@ -769,6 +769,28 @@ como en `food1`).
 Auditoría del guion tras esta familia: quedan sin crear las apariciones
 contadas `0x09F682` (cámara 2184) y `0x04857C` ×2 (3192).
 
+### Preparado para las dos apariciones contadas que faltan
+
+- Helicóptero `0x04857C` (`fam2`, un solo helicóptero: el registro
+  `0x2D70A6` depende de la consulta `0C` del jugador). Traza de familia
+  extraída con `--range 47800-48f00`: **16651 actualizaciones**, 43 nodos
+  (constructor `0x04857C`, cuerpo `0x0485EC` ×998; hijos `0x04870C` ×5
+  —portadores de los espadachines que suelta, `+61` = índice—, `0x048882` ×5,
+  `0x047874` ×5, `0x047A6C` ×11, `0x047B24` ×14, `0x048EDA`, `0x048EFE`).
+  El código ocupa `0x047800..0x048F40` (1356 instrucciones) **más** sus
+  servicios `0x049000..0x04A070` (`0x04900C`, `0x049236`, `0x0499A4`,
+  `0x049A1E/0x049A92`, `0x049B20`, `0x049E46..0x049FFA`, `0x04A064`), 13
+  programas del banco (`0x24473E`, `0x24483E`, …), rangos `0x2D1656..`, y
+  usa `0x01AD52/0x01AD6E/0x01AD8C`, `0x01DA40` (humo), `0x0029C6` ×10 y
+  `0x002E7C` (polar). Lo que hace falta para portarlo: la misma receta que el
+  lanzacohetes (traducción manual de las dos zonas de código, blobs de sus
+  tablas en `extract_region_rom.py`, programas en `ROCKET_ROOTS`-like,
+  `--script-actor 101414` si algún hijo va tras el actor del guion).
+- Camello `0x09F682` (`camel1`, `--range 9ea00-a0800`: 469 actualizaciones;
+  el jinete 1, nodo `1030F4`, con sus hijos es la primera prueba `--tree`).
+  Sitios de sangre `0x09EFE4/0x09F598` (`neo_blood.c`: ON `0x3FE`, OFF
+  `0x0B8`).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

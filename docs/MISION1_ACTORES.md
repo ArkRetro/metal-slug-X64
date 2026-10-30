@@ -703,6 +703,72 @@ cambios; los 26 volcados de `food1`: 10576 píxeles iguales, 1631 distintos
 (volcados de 7110..7260 con muchos objetos superpuestos y actualizaciones del
 mismo fotograma, como en `pri1`).
 
+## Lanzacohetes `0x05ED84` (`src/neo_rocket.c`)
+
+Registro del guion `0x2D6FC2` (cámara 2688, corredor op 8: uno cada vez
+mientras el grupo 4 está vacío; palabras `1, 256, 312`: rango absoluto
+`+70/+72` → `+76/+78`; `+74 = 3` lo fuerza el constructor). Traducción manual
+de `0x05ED84..0x05FD48` con sus hijos: destello de puntería `0x060490`
+(`0x0040BC`, vive `+82` actualizaciones, programas `60348/6035C` por disparo
+y postura), cohetes `0x05FD8A` (tras el actor del guion, retrollamada
+`0x05FCC0` de los programas de recarga, desplazamientos `5ED46/5ED56`),
+fogonazo `0x0602E4` (retrollamadas `264320..2648DE` del banco: solo
+`264320` lo crea tras el actor del guion, las otras siete tras el
+lanzacohetes), estelas `0x059C82` (`0x059E98`: `0x01ACF2` tras escribir la
+velocidad deja en `+30/+34` el desplazamiento del cohete) y el humo de la
+muerte `0x0897E2` (`neo_armored.c`).
+
+- Postura `+88` (FF/00): programas, caja `5EB46/5EB62`, cuerpo sólido
+  `5EB7C/5EB6E` (`0x004E76`), paletas `0x9C, 0x9D, 0x1D` y destello `0x30B`
+  (`0x004520`). Estados: anda (`0x05EF5C/0x05EF74`, velocidad de rango
+  `2D1372` hacia `+76 + +7A`, `0x05FB26`; filas de empuje `5EB8A/5EB9A`),
+  espera (`0x05F0A8/0x05F0F6`, rango `2D13A4`), primera espera dentro del
+  rango (`0x05F21E/0x05F25C`), parada (`0x05F364/0x05F39A`), giro
+  (`0x05F486/0x05F4BC`, invierte `+88`), disparo (`0x05F5F0/0x05F5FC/0x05F694`
+  con el destello), recarga (`0x05F780/0x05F7BA`: `0x004192` borra el
+  destello, el programa dispara el cohete; `2D13D6` disparos por ráfaga),
+  muertes `0x05F8D4` (tipo `0x0D`) / `0x05F904` → `0x05F94E` (sonidos
+  `1021/102F`, 16 explosiones `0x01DBAA`, humo). La decisión `0x05FC2C`
+  (`+74 = 3`: lado del jugador más cercano `0x01AF9A`) elige giro o disparo
+  cuando `+7E` llega a 0. Todo estado acaba en `0x05FD48` (muerte por `+5F`
+  bit 7, recorte `5EBC6` → `0x004188`).
+- Cohete: velocidad por postura, ángulo `+77` = `0x002EB4(+30>>12, +34>>12)
+  >> 2` en el aire (pose por `+77`, fila de ataque `600A0[+77]`), estela cada
+  dos actualizaciones (`5EBD6[+77]`), gravedad `0xB000`; en el suelo, pared,
+  golpe o contacto explota en el sitio: `0x009F88` (paletas liberadas) y
+  `jmp 0x01C706` (la explosión de `neo_effects.c` corre en la misma
+  actualización sobre el mismo nodo).
+- **Paradas explícitas**: palabra `+6E > 1` (`trap #15` del constructor). El
+  estremecimiento `+8D` (programas `5ED16` por `0x01B206`) está traducido
+  pero no grabado (el jugador nunca golpeó al lanzacohetes sin matarlo):
+  `+84` guarda la etiqueta del programa y el punto de reanudación es nativo.
+- Las tablas `0x5EB46..`, `0x5FFA0..`, `0x60348` y los rangos `2D1310..2D146C`
+  pasan a `data/region_rom.json`; `tools/extract_soldier_programs.py` lee
+  ahora también `program-fixed.bin` (los programas del destello y del
+  fogonazo están en la ROM P1).
+
+Captura nueva `captures-m1full/rl2` (`MSX_REST_FAMILY_ROOTS=5ed84,5fd8a,60490,
+897e2,59c82 MSX_REST_BOSS_FROM=8200 MSX_REST_LAST=9900 MSX_REST_HOLD_FIRE=
+8260-9300`: opción nueva de `tools/capture_mission_rest.lua`, solo para
+capturas: sin disparos, granadas ni saltos en esas imágenes, con el jugador
+invulnerable, para que el lanzacohetes viva y dispare; `fam2` solo tenía sus 66
+actualizaciones de andar y morir). Tres lanzacohetes seguidos (el corredor
+los repone), 15 cohetes, 10 fogonazos, 257 estelas. Prueba `rocket`
+(`data/rocket_fixture.json.gz`, rangos `5ed84-5fa00`, `5fd8a-60100`,
+`60490-605a4`, `602e4-60348`, `59c82-59e30`, `897e2-89900`, `--script-actor
+101414`): **299 nodos, 5778 actualizaciones en bucle cerrado (8280..9503),
+768880 bytes iguales**, 286 borrados, 1 contacto con el jugador (cohete),
+21 hijos fuera de la familia (los fogonazos de `264320`, las explosiones).
+
+Gráficos: `... food1@8c374-8c700 rl2@5ed84-60600 rl2@59c82-59e30`: 2018
+descriptores (211 nuevos), 55 paletas (nuevas `0x9C`, `0x9D`, `0x1D`), 266
+volcados: 1628998 píxeles iguales, 16996 distintos; los 61 de `rl2`: 177072
+iguales, 4786 distintos (volcados con estelas y explosiones superpuestas,
+como en `food1`).
+
+Auditoría del guion tras esta familia: quedan sin crear las apariciones
+contadas `0x09F682` (cámara 2184) y `0x04857C` ×2 (3192).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

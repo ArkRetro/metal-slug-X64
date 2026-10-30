@@ -60,6 +60,21 @@ sin detenerse.
 
 ## Mapa, colisión y presupuesto
 
+- Franja inferior tras el camión `0x02916E` (informe del usuario en MiSTer:
+  subido a los restos, «la cámara sube y no se dibuja una franja abajo»).
+  Durante la primera subida de cámara (944..1008, RAM `10E980` de 256 a
+  240-242) la vista aún no ha subido del todo cuando entran las columnas
+  x ≥ 1216, cuya capa 3 acaba en y = 192 en el mapa recuperado: la fila
+  y = 208 nunca se observó en las capturas del mapa (subieron la cámara en
+  otro momento) y el port dejaba ver el fondo abajo a la derecha. La captura
+  de soldados `m2x` tiene VRAM durante la subida: `extract_mission_map.py m2x
+  --frames 6370:9400` y el nuevo `tools/merge_observed_cells.py` añaden 100
+  celdas no observadas antes (capa 3: fila 208 en 1216..1440 y filas sobre
+  la vista; capas 2, 1 y 0), comprobando idénticas las 1861 ya conocidas
+  (o una de sus variantes registradas). El recorrido de ares toma
+  `truck-wreck.png` (jugador sobre los restos en la parada 872) y
+  `camera-risen.png` (progreso 1024, la zona de la franja).
+
 - `tools/pack_scene.py` une el mapa de la región y el del resto
   (`filesystem/mission1/rest/map.json`; las 1061 celdas comunes son
   idénticas); `SCENE_MAP_CAMERA_MAX` = `MSX_CAMERA_MAX` = 3520. Los atlas de

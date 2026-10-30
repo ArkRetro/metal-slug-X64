@@ -70,6 +70,14 @@ try:
     worker.start()
     wait_for(r'MSX rebel spawned=1 ',timeout=200)
     wait_for(r'MSX camera stop=872',timeout=400)
+    # The truck 02916E's wreck is a ramp: standing on it lifts the camera.
+    try:
+        wait_for(r'MSX landed height=-3[0-9]',timeout=60);time.sleep(.4);snap('truck-wreck')
+    except AssertionError:
+        print('no landing on the truck wreck')
+    # Just past the first camera rise (944..1008): the bottom row of the
+    # foreground at x >= 1216 must be drawn (merge_observed_cells.py).
+    wait_for(r'MSX camera progress=1024 ',timeout=600);snap('camera-risen')
     wait_for(r'MSX camera stop=1920',timeout=900);time.sleep(1.0);snap('village-end')
     wait_for(r'MSX domes signal 05486A',timeout=900);domes.set();time.sleep(4);snap('domes-risen')
     wait_for(r'MSX player handlers=054B18',timeout=900);time.sleep(.6);snap('collapse')

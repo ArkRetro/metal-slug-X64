@@ -37,6 +37,21 @@ void scene_render_forget_texture(void) {
     mode_tlut=mode_filter=-1; // Callers changed the render mode outside this renderer.
 }
 
+// In long ares runs a frame's tail (including its SYNC_FULL completion that
+// presents the framebuffer) was occasionally left in the rspq queue with the
+// RSP halted, so display_get() timed out with both buffers locked. If no
+// buffer frees up for 50 ms, flush the queue again to wake the RSP; give up
+// to display_get()'s own diagnostic crash after 20 attempts.
+surface_t *msx_display_get(void) {
+    surface_t *surface;uint32_t start=TICKS_READ();unsigned kicks=0;
+    while (!(surface=display_try_get())) {
+        if (TICKS_SINCE(start)<TICKS_FROM_MS(50)) continue;
+        if (++kicks>20) return display_get();
+        debugf("MSX rspq kick %u: no framebuffer for 50 ms\n",kicks);
+        rspq_flush();start=TICKS_READ();
+    }
+    return surface;
+}
 void scene_renderer_init(void) {
     rdpq_text_register_font(1,rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO));
     retro_effects_init();

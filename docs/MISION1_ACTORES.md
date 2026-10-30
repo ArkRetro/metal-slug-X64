@@ -296,7 +296,19 @@ Los espadachines `0x09D846/62/76`, el lanzacohetes `0x05ED84` y el
 helicóptero necesitan otra captura que llegue más lejos (en `pri1` la
 partida no pasa de 2336 antes del fotograma 8100).
 
-Problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
+Problema abierto principal (ares 146, recorridos `ares14..16`): las dos
+listas de celdas que el render dibuja aparte, los escombros
+`scene_collapse_cells` (112) y el parche de la tienda `scene_patch_cells`
+(62), no se ven: las celdas reemplazadas sí se ocultan, y en su lugar queda
+el color de fondo (rectángulo azul tras el derrumbe, naranja tras la
+tienda). Los datos son correctos (render fuera de línea de las celdas
+extraídas y de las variantes del parche desde `sprites.bin`: escombros y
+muros como en MAME; imágenes `16x256` formato 2 válidas en
+`scene_meta.h`) y la corrección de columnas fusionadas no lo arregló: la
+causa está en el camino de dibujo de `draw_cells` (`scene_renderer.c`) y
+no se ha identificado.
+
+Otros problemas vistos en ares y no resueltos: justo tras el derrumbe, con la
 cámara aún en 1920, la zona `x < 2016` bajo la fachada desaparecida muestra
 el color de fondo (en las grabaciones la cámara ya está en 2021 treinta
 fotogramas después y esa zona no vuelve a verse; sin evidencia de qué la

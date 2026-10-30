@@ -4,8 +4,11 @@ Z80 bodies for its initial map. These are not verified native game code;
 function boundaries, diagnostics, indirect calls, banking and code/data
 classification remain unresolved. 0x008512 now has a manual C reconstruction matching 18 controlled original
 M68000 calls (RAM, palette banks, registers, SR and control writes). It still
-needs a native hardware backend. A newly recovered 22-slot condition table
-exposes another pending ABI issue: its 14 handlers return conditions in CCR.C.
+needs a native hardware backend. The 22-slot condition dispatch and its 14 handlers now have explicit CCR.C
+recovery matching 447 controlled original calls. The 01903A/0AAA88 helpers
+are intercepted with synthetic outputs; their semantics and campaign binding
+remain unverified. This is addressed C with a register/stack ABI, not an
+integrated native campaign controller.
 See `decomp/coverage.json` (`complete: false`) and DECOMPILATION.md.
 The new native `marco_environment.c` translates C3078..C32E0 and matches 256
 controlled original M68000 arithmetic probes, with additional synthetic branch

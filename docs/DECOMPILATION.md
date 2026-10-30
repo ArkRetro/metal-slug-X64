@@ -164,14 +164,48 @@ bus y no valida ciclos, orden eléctrico de los words MOVEM, otros valores de
 contador ni efectos de una partida. El índice diferencia esta reconstrucción
 manual del fallo histórico del descompilador automático.
 
-## Retorno por flags: tabla 0x01A5DE
+## Hallazgo inicial de retorno por flags: tabla 0x01A5DE
 
 JSR indexado en 01A5D6 selecciona stubs BRA.W consecutivos de cuatro bytes:
 22 entradas visibles y 14 destinos únicos en 01A636..01A7C8. Los tres
 consumidores identificados (01A026, 01A2E8, 01A4FA) usan BCS después de llamar
 a 01A5CA. Los manejadores escriben CCR.C mediante ORI/ANDI; ese retorno no
 aparece en el C automático y algunos cuerpos quedan vacíos incorrectamente.
-Se publica el mapa y el desensamblado, no esos cuerpos como C recuperado.
+En esa primera pasada se publicó el mapa y el desensamblado, descartando esos cuerpos como C recuperado.
 La tabla está verificada estáticamente; su dominio de índices en ejecución y
-las rutinas auxiliares 01903A/0AAA88 siguen pendientes. Véase
+las rutinas auxiliares 01903A/0AAA88 siguen pendientes. La reconstrucción
+manual posterior se documenta en el apartado siguiente. Véase
 `decomp/recovered/condition-dispatch/README.md`.
+
+## Traducción de los 14 manejadores de condiciones
+
+`decomp/recovered/rom_01a5ca.c/.h` reconstruye 01A5CA..01A7F2. El despacho
+conserva las 22 entradas conocidas en un switch de lógica del juego, sin
+fetch/decode de instrucciones M68000. Expone registros y CCR para recuperar
+la ABI, incluyendo escrituras de pila; eso todavía requiere una adaptación
+posterior al backend nativo. Los índices no recuperados >=22 y una auxiliar
+no disponible producen errores explícitos, distintos de carry=0 válido.
+
+La captura `condition-dispatch-138` compara **447 llamadas** originales con
+el C: toda la RAM, D0..D7/A0..A7, SR y el contexto registrado en las entradas auxiliares
+(D0, A0, A7, SR y dirección de retorno) coinciden. Cubre las 22 entradas; todas salvo el caso incondicional 10 tienen
+resultados observados de carry=0 y carry=1 en estos ensayos. El dominio válido
+en partida no está demostrado. Las auxiliares 01903A/0AAA88 se interceptan al
+entrar, devolviendo registros sintéticos: no se verifica su implementación.
+Se enmascaran IRQ, se atiende el watchdog entre llamadas y se detiene antes
+del RTS externo 01A5DC. Las capturas preliminares con resets o etiquetas de
+caso ambiguas se rechazaron; solo 138 alimenta las fixtures publicadas.
+
+Se preservan ADD.W, ROXR.W con X, comparación por N (no una comparación C
+con signo que introduzca semántica N xor V), SPL/EOR de bytes y las escrituras
+parciales de D0/D1/D5/D6/D7. En la suma de contadores, MOVE.B en 01A684
+conserva los bits altos del word y la lectura temporal puede salir de los
+cuatro flags apilados; se conserva la lectura con el índice original.
+A0 y A7 se restauran y los retornos auxiliares se contrastan por dirección.
+
+`tools/test_recovered_conditions.py` verifica las fixtures originales sin ROM
+ni MAME y pasa también con UndefinedBehaviorSanitizer. El módulo compila para
+R4300/MIPS-III big endian. No está enlazado a campaña ni probado como juego
+en ares. Los cuerpos automáticos que perdían CCR permanecen rechazados; el
+índice principal dirige ahora al módulo manual, compartido por el despacho
+y los 14 destinos, sin inflar el recuento de archivos C.

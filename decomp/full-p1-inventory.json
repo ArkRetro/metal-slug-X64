@@ -48,7 +48,7 @@
   "native_c_port": false,
   "index": "full-p1-index.tsv",
   "candidate_roots_may_be_data": true,
-  "index_sha256": "e8a8ec3b88075d9e2c1a1ee4f39892fadf10a36a95aba220af7929fa598ba153",
+  "index_sha256": "3e94640c98e07ebbd7680351c0efbbe3a286693394fa1ea7b1eaf93bd971e2fd",
   "character_preservation_check": {
     "status": "PASS",
     "files": 5168,
@@ -70,7 +70,15 @@
       "file": "recovered/rom_008512.c",
       "validation": "recovered/rom_008512.validation.json",
       "status": "18 controlled M68000 comparisons passed; hardware backend not integrated"
+    },
+    {
+      "address": "0x01A5CA..0x01A7F2",
+      "file": "recovered/rom_01a5ca.c",
+      "validation": "recovered/rom_01a5ca.validation.json",
+      "status": "447 controlled calls matched with 01903A/0AAA88 intercepted; 22 slots / 14 handlers",
+      "helper_semantics_verified": false
     }
   ],
-  "published_c_files_scope": "5168 automatic tentative bodies; one additional manual addressed C recovery is indexed separately"
+  "published_c_files_scope": "5168 historical automatic tentative files, including the superseded automatic 01A5CA body; two additional manual addressed C modules are indexed. The condition module covers the dispatch and 14 handler entries in one shared C body.",
+  "current_index_addresses": 5183
 }

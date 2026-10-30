@@ -11,7 +11,7 @@ bytes no demuestra que se haya identificado todo el código ejecutable.
 
 | Resultado | Archivos y límites |
 | --- | --- |
-| 68000, P1 fijo | [Índice: 5.168 cuerpos automáticos y una recuperación manual](full-p1-index.tsv): 5.085 tentativos sin diagnóstico del descompilador y 83 con diagnósticos. Ambos grupos requieren revisión. |
+| 68000, P1 fijo | [Índice por dirección](full-p1-index.tsv). Se conservan 5.168 archivos automáticos históricos (5.085 sin diagnóstico y 83 con diagnósticos), además de dos módulos manuales. Los automáticos requieren revisión. |
 | Sonido Z80 | [Índice de 154 cuerpos C](full-audio-index.tsv): 130 tentativos y 24 con diagnósticos, únicamente para el mapa inicial. |
 | Rutina 0x008512 | [C reconstruido manualmente](recovered/rom_008512.c), contrastado con 18 ejecuciones controladas originales. El descompilador automático sigue fallando. |
 | Frontera inicial histórica | [268 cuerpos de la primera pasada](tentative/fixed_p1.c); se conserva para trazabilidad, no se suma al recuento global. |
@@ -31,8 +31,9 @@ los cambios de banco ni convierte el driver en un backend nativo de sonido.
 
 Resolver los límites de funciones, tipos, registros implícitos, destinos
 indirectos y bancos; distinguir código de datos en P2 y los mapas restantes de
-M1 y contrastar la semántica con ejecución original. Recuperar también la ABI
-de retorno por CCR de la tabla 0x01A5DE (22 entradas, 14 destinos).
+M1 y contrastar la semántica con ejecución original. Enlazar también las auxiliares
+0x01903A/0x0AAA88 del despacho 0x01A5CA, cuya lógica de condiciones ya se
+ha contrastado bajo respuestas sintéticas de esos servicios.
 Después hay que sustituir los servicios hardware por backends de libdragon.
 El borrador automático conserva símbolos `unaff_*` y dependencias inferidas;
 **no se compila ni se enlaza con la ROM de N64**.
@@ -80,6 +81,9 @@ make check-recovered
 python3 tools/test_recovered_palette.py --sanitize
 ```
 
-La [tabla de condiciones](recovered/condition-dispatch/README.md) documenta otro
-pendiente: Ghidra elimina resultados que se devuelven en CCR.C. Sus cuerpos
-aparentemente vacíos no se publican como traducciones válidas.
+La [tabla de condiciones](recovered/condition-dispatch/README.md) ya tiene
+[reconstrucción C](recovered/rom_01a5ca.c) que conserva el retorno CCR.C:
+447 llamadas controladas coinciden en RAM, registros, SR y límites de llamadas
+auxiliares. Sus dos auxiliares se interceptan con salidas sintéticas; no se
+reclama su semántica ni integración en campaña. Las 22 entradas y 14 manejadores
+comparten un módulo C; no se suman como 14 archivos C independientes.

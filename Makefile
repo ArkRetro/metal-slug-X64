@@ -499,5 +499,6 @@ marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
 .PHONY: check-recovered
 check-recovered:
 	python3 tools/test_recovered_palette.py
+	python3 tools/test_recovered_conditions.py
 
 check-core: check-recovered

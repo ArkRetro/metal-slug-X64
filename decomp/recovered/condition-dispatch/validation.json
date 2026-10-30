@@ -1,5 +1,5 @@
 {
-  "status": "STATIC_DISPATCH_MAP_C_ABI_PENDING",
+  "status": "STATIC_MAP_WITH_CONTROLLED_C_RECOVERY",
   "call_site": "0x01A5D6",
   "table": "0x01A5DE",
   "slots": 22,
@@ -29,5 +29,8 @@
     "01a7a2",
     "01a7c8"
   ],
-  "limits": "Static instructions only, not original routine execution. Contiguous BRA.W run is not proof of valid runtime index range. No usable C claimed for these handlers."
+  "limits": "Original dispatch and handlers compared under intercepted synthetic helper outputs. Helper semantics, valid runtime index domain, cycle timing and campaign integration remain unverified. Historical automatic C loses CCR and remains rejected.",
+  "manual_c": "../rom_01a5ca.c",
+  "manual_validation": "../rom_01a5ca.validation.json",
+  "controlled_cases": 447
 }

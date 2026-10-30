@@ -179,5 +179,7 @@ El [estado de cobertura](decomp/coverage.json) mantiene `complete: false`.
 
 La rutina de paletas [0x008512](decomp/recovered/rom_008512.c) ya tiene una
 reconstrucción C manual contrastada con 18 ejecuciones controladas del M68000.
-La [tabla de condiciones](decomp/recovered/condition-dispatch/README.md)
-documenta otro pendiente de traducción: retorno por flags CCR.C.
+El [despacho de condiciones](decomp/recovered/condition-dispatch/README.md)
+ya conserva el retorno CCR.C en C y coincide con 447 llamadas controladas.
+Sus auxiliares se interceptaron con respuestas sintéticas y siguen pendientes
+de recuperación/enlace nativo.

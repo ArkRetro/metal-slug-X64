@@ -75,8 +75,8 @@ owner	status	file
 00435c	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_00435c.c
 004364	tentative_c	tentative/all_p1/unverified/00/rom_004364.c
 004412	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_004412.c
-004486	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_004486.c
 004470	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_004470.c
+004486	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_004486.c
 0044da	tentative_c_with_diagnostics	tentative/all_p1/with_diagnostics/00/rom_0044da.c
 0044f6	tentative_c	tentative/all_p1/unverified/00/rom_0044f6.c
 004520	tentative_c	tentative/all_p1/unverified/00/rom_004520.c
@@ -172,8 +172,8 @@ owner	status	file
 013f16	tentative_c	tentative/all_p1/unverified/01/rom_013f16.c
 013f1e	tentative_c	tentative/all_p1/unverified/01/rom_013f1e.c
 013f5c	tentative_c	tentative/all_p1/unverified/01/rom_013f5c.c
-0140c0	tentative_c	tentative/all_p1/unverified/01/rom_0140c0.c
 01406a	tentative_c	tentative/all_p1/unverified/01/rom_01406a.c
+0140c0	tentative_c	tentative/all_p1/unverified/01/rom_0140c0.c
 014160	tentative_c	tentative/all_p1/unverified/01/rom_014160.c
 01424c	tentative_c	tentative/all_p1/unverified/01/rom_01424c.c
 01431a	tentative_c	tentative/all_p1/unverified/01/rom_01431a.c
@@ -288,7 +288,21 @@ owner	status	file
 01a0a6	tentative_c	tentative/all_p1/unverified/01/rom_01a0a6.c
 01a134	tentative_c	tentative/all_p1/unverified/01/rom_01a134.c
 01a422	tentative_c	tentative/all_p1/unverified/01/rom_01a422.c
-01a5ca	tentative_c	tentative/all_p1/unverified/01/rom_01a5ca.c
+01a5ca	manual_C_controlled_helpers	recovered/rom_01a5ca.c
+01a636	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a644	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a698	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a69e	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a6be	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a6de	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a702	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a722	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a742	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a766	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a778	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a790	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a7a2	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
+01a7c8	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
 01a7f4	tentative_c	tentative/all_p1/unverified/01/rom_01a7f4.c
 01a872	tentative_c	tentative/all_p1/unverified/01/rom_01a872.c
 01a8aa	tentative_c	tentative/all_p1/unverified/01/rom_01a8aa.c
@@ -928,7 +942,6 @@ owner	status	file
 03618a	tentative_c	tentative/all_p1/unverified/03/rom_03618a.c
 0361ec	tentative_c	tentative/all_p1/unverified/03/rom_0361ec.c
 03622a	tentative_c	tentative/all_p1/unverified/03/rom_03622a.c
-0367b6	tentative_c	tentative/all_p1/unverified/03/rom_0367b6.c
 036254	tentative_c	tentative/all_p1/unverified/03/rom_036254.c
 03628a	tentative_c	tentative/all_p1/unverified/03/rom_03628a.c
 0362c8	tentative_c	tentative/all_p1/unverified/03/rom_0362c8.c
@@ -946,6 +959,7 @@ owner	status	file
 03663e	tentative_c	tentative/all_p1/unverified/03/rom_03663e.c
 0366ac	tentative_c	tentative/all_p1/unverified/03/rom_0366ac.c
 0366da	tentative_c	tentative/all_p1/unverified/03/rom_0366da.c
+0367b6	tentative_c	tentative/all_p1/unverified/03/rom_0367b6.c
 0369ac	tentative_c	tentative/all_p1/unverified/03/rom_0369ac.c
 036a94	tentative_c	tentative/all_p1/unverified/03/rom_036a94.c
 036c4e	tentative_c	tentative/all_p1/unverified/03/rom_036c4e.c
@@ -1646,9 +1660,9 @@ owner	status	file
 04e092	tentative_c	tentative/all_p1/unverified/04/rom_04e092.c
 04e2ea	tentative_c	tentative/all_p1/unverified/04/rom_04e2ea.c
 04e3be	tentative_c	tentative/all_p1/unverified/04/rom_04e3be.c
-04e648	tentative_c	tentative/all_p1/unverified/04/rom_04e648.c
 04e5be	tentative_c	tentative/all_p1/unverified/04/rom_04e5be.c
 04e5d0	tentative_c	tentative/all_p1/unverified/04/rom_04e5d0.c
+04e648	tentative_c	tentative/all_p1/unverified/04/rom_04e648.c
 04e962	tentative_c	tentative/all_p1/unverified/04/rom_04e962.c
 04ea86	tentative_c	tentative/all_p1/unverified/04/rom_04ea86.c
 04eb36	tentative_c	tentative/all_p1/unverified/04/rom_04eb36.c
@@ -3318,7 +3332,6 @@ owner	status	file
 08d7b4	tentative_c	tentative/all_p1/unverified/08/rom_08d7b4.c
 08d7f4	tentative_c	tentative/all_p1/unverified/08/rom_08d7f4.c
 08d814	tentative_c	tentative/all_p1/unverified/08/rom_08d814.c
-08dad0	tentative_c	tentative/all_p1/unverified/08/rom_08dad0.c
 08d91e	tentative_c	tentative/all_p1/unverified/08/rom_08d91e.c
 08d940	tentative_c	tentative/all_p1/unverified/08/rom_08d940.c
 08d972	tentative_c	tentative/all_p1/unverified/08/rom_08d972.c
@@ -3326,6 +3339,7 @@ owner	status	file
 08d9d0	tentative_c	tentative/all_p1/unverified/08/rom_08d9d0.c
 08d9e2	tentative_c	tentative/all_p1/unverified/08/rom_08d9e2.c
 08da04	tentative_c	tentative/all_p1/unverified/08/rom_08da04.c
+08dad0	tentative_c	tentative/all_p1/unverified/08/rom_08dad0.c
 08db2a	tentative_c	tentative/all_p1/unverified/08/rom_08db2a.c
 08db66	tentative_c	tentative/all_p1/unverified/08/rom_08db66.c
 08db98	tentative_c	tentative/all_p1/unverified/08/rom_08db98.c

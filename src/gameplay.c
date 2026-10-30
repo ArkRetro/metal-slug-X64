@@ -315,10 +315,26 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
         g->cooldown=8;
         if (!allowed) break;
+        if ((ammo.kind==5 || ammo.kind==10) && g->world_enabled && g->world.weapon_player.form93!=2) {
+            /* 0C4454/0C447C: the H bullet 01B6DC/01B716 (neo_bullet.c);
+             * 0C4430 and 0C44A6 count +95 twice, the angle fans by
+             * 2*((+95 mod 3)-1). The muzzle (0C4244 table, 014A02) is the
+             * port's pistol muzzle: the player model has no +72/+74. */
+            marco_weapon_player_t *m=&g->world.weapon_player;
+            m->combo95=(uint8_t)(m->combo95+1u);m->combo95=(uint8_t)(m->combo95+1u);
+            uint8_t angle=g->aim_up?0x40:(g->facing<0?0x80:0);
+            angle=(uint8_t)(angle+2*((int)(m->combo95%3u)-1));
+            int32_t x=g->aim_up?g->x+g->facing*3*MSX_UNIT:g->x+g->facing*24*MSX_UNIT;
+            int32_t y=(g->aim_up?108:80)*MSX_UNIT-g->y;
+            neo_world_player_shot(&g->world,ammo.kind==5?0x1b6dcu:0x1b716u,x,y,angle,0);
+            g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;break;
+        }
         if (ammo.kind) {
             static const uint32_t constructor[MARCO_WEAPON_IDS]={0x1b782,0xc5508,0x644c4,0x6381c,0xa71f8,0x1b6dc,0xc46d6,0x646b0,
                 0x641ec,0xa716e,0x1b716,0xc46d6,0x63f32,0x8606a,0xde4da,0xdea20};
-            g->weapon_stops++;g->weapon_stop_constructor=constructor[ammo.kind&15u];
+            /* 0C44C2/0C44E0 (+93 = 2: 01B668/01BDD2) are not ported either. */
+            g->weapon_stops++;g->weapon_stop_constructor=g->world.weapon_player.form93==2 && (ammo.kind==5 || ammo.kind==10)?
+                (ammo.kind==5?0x1b668u:0x1bdd2u):constructor[ammo.kind&15u];
         }
         g->bullets[i]=g->aim_up?(msx_bullet_t){player+g->facing*3,140+g->y/MSX_UNIT,g->facing,true,true,ammo.kind}:
             (msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true,false,ammo.kind};

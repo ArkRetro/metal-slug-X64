@@ -45,6 +45,9 @@ ROOTS+=[0x29f6d0,0x29f9ac,0x29fa22,0x29fa40,0x29fa78,0x29f85e,0x29f874,0x29f88a,
 # Items 08C374/08C37C of the kinds with the motion 08B9B2 (records 0E581A:
 # 06, 18, 1C, 29, 2A, 2B, 2F, 4B, 4F (H), 51) and the appearance 2861BC.
 ROOTS+=[0x28652c,0x28745c,0x287516,0x287814,0x2878ec,0x2879c4,0x287b40,0x2864b0,0x28635a,0x28639c,0x2861bc,0x28617e]
+# Player bullets 01B6DC..01BD00: flight (H 22C1B6/22C3BE, pistol 22C12E),
+# impact 22E504, wall impacts 22C884/22C81E.
+ROOTS+=[0x22c1b6,0x22c3be,0x22c12e,0x22e504,0x22c884,0x22c81e]
 # Armoured vehicle 087E36: wait, stop, drive, destroyed, aim, fire, flinch,
 # reverse (callbacks 089412 platform offset, 08938A pieces).
 ROOTS+=[0x2841b4,0x2841de,0x28425e,0x2842de,0x284416,0x2847de,0x284828,0x28454e,0x2845f2,0x2846ba,0x2848aa]

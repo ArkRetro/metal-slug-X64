@@ -106,15 +106,19 @@ int main(void) {
     printf("mission: steps=%u spawned=%u kills=%u ext=%u unsupported=%u (%05lx) boss_unsupported=%u (%05lx) boss_hits=%u boss_effects_ext=%u hits=%u mapped=%u/%u progress=%u height=%d collapsed=%u killed_all=%u shop=%u rides=%u hold 2D67CA=%u\n",
         steps,g.world.spawned,g.kills,g.world.external_spawns,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,(unsigned long)g.world.boss_unsupported_label,
         g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides,hold_max);
-    printf("weapons: items served=%u stopped=%u (%05lx) weapons seen=%04x shots with them=%u (stops, last %05lx) expiries=%u grenades=%u bombs=%u score=%02x%02x%02x%02x\n",
-        g.world.pickup.taken,g.world.item_pickups,(unsigned long)g.world.item_pickup_routine,weapon_seen,g.weapon_shots,(unsigned long)g.weapon_stop_constructor,
+    printf("weapons: items served=%u stopped=%u (%05lx) weapons seen=%04x shots with them=%u native=%u stops=%u (last %05lx) expiries=%u grenades=%u bombs=%u score=%02x%02x%02x%02x\n",
+        g.world.pickup.taken,g.world.item_pickups,(unsigned long)g.world.item_pickup_routine,weapon_seen,g.weapon_shots,g.world.player_shots,g.weapon_stops,(unsigned long)g.weapon_stop_constructor,
         g.expiries,g.grenade_stops,marco_weapons_bomb_count(&g.world.weapons,0),g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3]);
     fflush(stdout);
     /* Every item the policy walks into is served (weapon, bombs, points):
      * no pickup stops. The H (id 0A) is taken and used up, then the pistol
      * comes back (0C337A); the first life's 10 bombs are thrown. */
     assert(g.world.pickup.taken>0 && !g.world.item_pickups);
-    assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.weapon_stops==g.weapon_shots && g.expiries>0);
+    assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.expiries>0);
+    /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
+    assert(!g.weapon_stops && g.world.player_shots==g.weapon_shots && !g.world.shot_dropped);
+    printf("H bullets that hit: %u\n",g.world.pickup.bullet_hits);fflush(stdout);
+    assert(g.world.pickup.bullet_hits>0);
     assert(g.grenade_stops>=10);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
@@ -170,8 +174,8 @@ int main(void) {
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
         }
-        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items served=%u stopped=%u weapon shots=%u grenades=%u expiries=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,
-            g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.grenade_stops,g.expiries,hold_max);
+        printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,
+            g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenade_stops,g.expiries,hold_max);
         printf("  score=%02x%02x%02x%02x points=%u popups=%u labels=%u\n",g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],
             g.world.pickup.points[0],g.world.pickup.popups,g.world.pickup.labels);fflush(stdout);
         assert(!g.world.item_pickups && g.grenade_stops>0);

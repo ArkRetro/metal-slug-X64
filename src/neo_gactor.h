@@ -72,6 +72,8 @@ typedef struct neo_pickup_env {
     uint16_t combo[2];                   /* RAM 10C5AC+2p (08B910) */
     uint8_t combo_lock[2];               /* RAM 10C5BE+p (08B7E6) */
     uint16_t mission;                    /* RAM 10C2F6 (0C0BAE) */
+    uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
+    unsigned bullet_hits;                /* player bullets (neo_bullet.c) that hit (0049E8) */
     unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
 } neo_pickup_env_t;

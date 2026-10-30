@@ -27,6 +27,8 @@ typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_
     NEO_WORLD_SPLASH, NEO_WORLD_GACTOR, NEO_WORLD_BOSS } neo_world_kind_t;
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
+/* A player shot waiting for its list insertion (neo_world_player_shot). */
+typedef struct { uint32_t routine;int32_t x,y;uint8_t angle,player; } neo_world_shot_request_t;
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
 /* Dynamic collision object owned by a generic actor (RAM 10C06E + 64*i):
  * local position block relative to its parent (+00..+25). */
@@ -136,6 +138,12 @@ typedef struct {
      * the score/pickup state the items serve (neo_item.c); the caller (the
      * port's player) reads and updates them. Pointers are set every tick. */
     marco_weapons_t weapons;marco_weapon_player_t weapon_player;neo_pickup_env_t pickup;
+    /* Player shots made by the player's update (neo_world_player_shot):
+     * inserted after the list head (00411C, A6 = 101414) at the end of the
+     * next tick, so their constructor runs on the update after, as in the
+     * original. */
+    neo_world_shot_request_t shot_requests[8];unsigned shot_request_count,shot_dropped;
+    unsigned player_shots;
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */
@@ -158,6 +166,11 @@ unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_play
  * layer objects, dynamic objects, generic actors, boss nodes): current and
  * previous projected position; false for an unknown tag. */
 bool neo_world_parent(const neo_world_t *world,uint32_t tag,neo_contact_parent_t *out);
+/* A shot of the player's weapon as a native bullet (neo_bullet.c, ROM
+ * 01B6DC/01B716/01B750/01B782): fields the creator writes (0C4434: +6E
+ * angle, +70 player; +28/+2C at the scene root, Q16.16, y up). False when
+ * the request list is full. */
+bool neo_world_player_shot(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

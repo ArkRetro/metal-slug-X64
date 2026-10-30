@@ -443,6 +443,7 @@ static bool ga_class(const neo_gactor_t *g,unsigned cls) {
     const uint8_t *d=ga_rom(ga_l(g,0x50));
     return d && ((d[1]>>cls)&1u);
 }
+static bool boss_shot(neo_world_t *w,const neo_contact_actor_t *a,const int16_t at[7]);
 static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     tick_t *t=ctx;neo_world_t *w=t->w;neo_contact_actor_t c=ga_contact(a);
     if (row[5]==0) { /* class 0: the player */
@@ -458,6 +459,9 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
             if (neo_soldier_hurtbox(s,&hb) && neo_soldier_receive(s,&c,ga_b(a,0x5e),row,w->grid) && hb.type>best) best=hb.type;
         }
     }
+    /* The boss's hurtboxes (registered apart, see boss_shot) take the
+     * player's bullets (neo_bullet.c) like neo_world_shot_row's. */
+    if (w->boss_active && neo_bullet_routine(ga_l(a,0)) && boss_shot(w,&c,row) && !best) best=1;
     uint16_t qx;uint8_t qy;
     if (!attack_bins(&c,row,&qx,&qy)) return best;
     for (unsigned b=0;b<w->last_box_count;b++) {
@@ -1005,8 +1009,22 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;
     }
+    /* Player shots of this update (00411C after the list head). */
+    for (unsigned i=0;i<w->shot_request_count;i++) {
+        neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),w->shot_requests[i].routine,SCRIPT_TAG,0);
+        if (!a) {w->shot_dropped++;continue;}
+        ga_sb(a,0x6e,w->shot_requests[i].angle);ga_sw(a,0x70,w->shot_requests[i].player);ga_sb(a,0x5e,0);
+        ga_sl(a,0x28,(uint32_t)w->shot_requests[i].x);ga_sl(a,0x2c,(uint32_t)w->shot_requests[i].y);ga_sl(a,0x38,ROOT_TAG);
+        w->player_shots++;
+    }
+    w->shot_request_count=0;
     w->player_hits+=t.hits;
     return t.hits;
+}
+bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,angle,player};
+    return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {
     neo_contact_actor_t b;memset(&b,0,sizeof(b));

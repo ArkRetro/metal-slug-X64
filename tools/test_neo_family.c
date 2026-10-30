@@ -273,6 +273,15 @@ int main(void) {
         e.kill_all=kill_at && u->frame==kill_at;
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
+#ifdef FAMILY_HIT_CHILD
+        /* A bullet deleted without an impact (its first update in this or
+         * the next logic update) left the view: no contact. */
+        if (contact) {
+            contact=false;
+            for (unsigned i=0;i<NN;i++) if (NODES[i].creator==u->node && NODES[i].routine==FAMILY_HIT_CHILD &&
+                NODES[i].frame>=u->frame && NODES[i].frame<=u->frame+3u) contact=true;
+        }
+#endif
         unsigned taken=pickup.taken;pickup.frame++;
         ga_result_t r=neo_region_tick(a,&e);
         if (pickup.taken!=taken) {

@@ -12,7 +12,7 @@ from pathlib import Path
 from extract_collision import observed_cells
 
 
-def audit(roots):
+def audit(roots,layer_camera=False,frames=None):
     observations=defaultdict(dict)
     snapshots=0
     for run,root in enumerate(roots):
@@ -20,7 +20,8 @@ def audit(roots):
         assert paths, f'No RAM snapshots in {root}'
         for path in paths:
             frame=int(path.stem[3:])
-            for camera,x,y,code,address in observed_cells(path.read_bytes()):
+            if frames and not frames[0]<=frame<=frames[1]:continue
+            for camera,x,y,code,address in observed_cells(path.read_bytes(),layer_camera):
                 timeline=observations[x,y].setdefault(run,[])
                 if not timeline or timeline[-1]['code']!=code:
                     timeline.append(dict(first_frame=frame,last_frame=frame,
@@ -52,7 +53,9 @@ if __name__=='__main__':
     parser=argparse.ArgumentParser(description=__doc__)
     parser.add_argument('captures',nargs='+',type=Path)
     parser.add_argument('--output',type=Path,required=True)
-    args=parser.parse_args();report=audit(args.captures)
+    parser.add_argument('--layer-camera',action='store_true',help='Viewport from the active layer position (see extract_collision.observed_cells)')
+    parser.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames')
+    args=parser.parse_args();report=audit(args.captures,args.layer_camera,args.frames)
     args.output.parent.mkdir(parents=True,exist_ok=True)
     args.output.write_text(json.dumps(report,separators=(',',':'))+'\n')
     print(f"Collision audit: {report['snapshots']} snapshots, {report['invariant_cells']} invariant cells, "

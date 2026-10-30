@@ -1,0 +1,726 @@
+{
+ "source": "MAME 0.264 mslugx euro BIOS; tools/capture_mission_rest.lua via tools/run_capture_rest.sh. Canonical capture run8 (MSX_REST_PREV_DUMPS=1, MSX_REST_TRACE_WINDOWS=6980-7030,7150-7340): 414 snapshots every 30 frames from 2100, per-frame RAM trace, list walk, layer headers, LSPC writes, collision/VRAM write taps in the windows.",
+ "capture": {
+  "mission_end": {
+   "script_end_record_reached_frame": 10723,
+   "script_end_record": "0x2D7132",
+   "script_actor_removed_frame": 13635,
+   "next_mission_script_frame": 14482,
+   "note": "run8 frames; run6 reaches the next script at 14456 (different boss-fight timing, same mission content)"
+  },
+  "reproducibility": "Eight non-debug runs: identical per-frame camera and script traces up to frame 12684 (player x16 differs in 2 isolated frames between some runs). From 12684 (boss fight) two branches appear, also between two runs with identical options (run8, run9): the emulation is not deterministic there. Map cells, variants and collision extracted from run8 and run9 are identical (only per-cell observation counts differ); collision of run4/run6/run8/run9 is byte-identical. Debugger runs (-debug) follow a different, self-consistent playthrough from frame 2333.",
+  "overrides": "Reference-only, identical to tools/capture_advance.lua: timer 1013DE=0x5A, P1 invulnerability bit 101523|=0x40, 101549=0x99, 101288=2, weapon 10C71E=3 at frame 2100, ammo/bombs 10C725=0xFF, 10C720=0x63, 10C621=0x30, 10C627=0x63. No level, script, enemy or collision state is written."
+ },
+ "script": {
+  "base": "0x2D6314",
+  "end": "0x2D7132",
+  "top_level_statements": 178,
+  "spawn_records": 125,
+  "observed_positions_all_blocking": true,
+  "file": "data/mission1_script.json"
+ },
+ "map": {
+  "frames": 288,
+  "frame_range": [
+   5100,
+   13740
+  ],
+  "cells": 2680,
+  "palettes": 49,
+  "coordinate_variants": 62,
+  "camera_max": 3520,
+  "backdrop_values": [
+   "0x1ea4",
+   "0x2337"
+  ],
+  "flash_frames": [
+   6960
+  ],
+  "map_origin_events": [
+   {
+    "layer": 0,
+    "object": "0x10E83E",
+    "map": "0x0B537C",
+    "first_frame": 7020,
+    "origin": 2,
+    "baseline_origin": 0,
+    "shift": -32
+   }
+  ],
+  "auto_animation_disabled_frames": 70,
+  "validation": {
+   "frames": 288,
+   "map_pixels": 19611648,
+   "known_variant_pixels": 208339,
+   "mame_uncovered_pixels": 10252768,
+   "previous_sprite_list_pixels": 301696,
+   "tolerance": "exact SCB reconstruction except recorded variant coordinates; uncovered MAME RGB8 pixels <=1 per channel; sprites of the previous list (prev/vram<frame>.bin) also excluded"
+  },
+  "building_patch": {
+   "sub_map": "0x00306480",
+   "bank": 2,
+   "cpu_address": "0x206480",
+   "variant_cells": 62
+  },
+  "region_validation_unchanged": {
+   "frames": 122,
+   "map_pixels": 8307712,
+   "known_variant_pixels": 24236,
+   "mame_uncovered_pixels": 4952880
+  }
+ },
+ "collision": {
+  "columns": 480,
+  "rows": 32,
+  "snapshots": 389,
+  "nonempty": 679,
+  "prefix_columns_identical": 280,
+  "viewport": "--layer-camera: active layer position (camera 3432..3520 inside the 3376 stop)",
+  "events": [
+   {
+    "kind": "vehicle_wreckage",
+    "before_frame": 3090,
+    "after_frame": 3120,
+    "anchor_cell": [
+     146,
+     8
+    ],
+    "flags": 1,
+    "cells": 13
+   },
+   {
+    "kind": "building_raise",
+    "frame": 7163,
+    "anchor_cell": [
+     329,
+     8
+    ],
+    "layer": "0x10D7B6",
+    "templates": [
+     "0x0B69F8",
+     "0x0B6A2C"
+    ],
+    "routine": "0x0B680E",
+    "cells": 25
+   },
+   {
+    "kind": "building_clear",
+    "frame": 7312,
+    "anchor_cell": [
+     329,
+     8
+    ],
+    "layer": "0x10D7B6",
+    "templates": [
+     "0x0B6A12",
+     "0x0B6A42"
+    ],
+    "routine": "0x0B685A",
+    "cells": 36
+   }
+  ],
+  "mutable_cells_audit": 39,
+  "unknown_cells": 0
+ },
+ "camera": {
+  "frames": 8441,
+  "first": 5300,
+  "last": 13740,
+  "shake_frames": 84,
+  "rules": {
+   "middle_x == X (full-speed middle bank)": {
+    "exact": 8440,
+    "different": 1,
+    "different_while_shaking": 0,
+    "first_differences": [
+     12244
+    ]
+   },
+   "sky_x == (X+1)//2": {
+    "exact": 8439,
+    "different": 2,
+    "different_while_shaking": 0,
+    "first_differences": [
+     8430,
+     12244
+    ]
+   },
+   "object_10E8C6_x == X": {
+    "exact": 8438,
+    "different": 3,
+    "different_while_shaking": 0,
+    "first_differences": [
+     7144,
+     8430,
+     12244
+    ]
+   },
+   "middle_y == foreground_y": {
+    "exact": 8441,
+    "different": 0,
+    "different_while_shaking": 0,
+    "first_differences": []
+   },
+   "foreground_y == 256 - H - S": {
+    "exact": 8282,
+    "different": 159,
+    "different_while_shaking": 16,
+    "first_differences": [
+     5794,
+     5796,
+     5800,
+     5802,
+     5804,
+     5808,
+     5810,
+     5812,
+     5816,
+     6890,
+     6891,
+     6896
+    ]
+   },
+   "sky_y == 264 - ceil(H/2) - S": {
+    "exact": 8341,
+    "different": 100,
+    "different_while_shaking": 16,
+    "first_differences": [
+     5796,
+     5802,
+     5808,
+     5812,
+     6890,
+     6891,
+     6896,
+     6897,
+     6900,
+     6901,
+     6906,
+     6907
+    ]
+   },
+   "foreground_y == 256 - Hc - S, Hc = ceil(camera_y), previous frame": {
+    "exact": 8370,
+    "different": 71,
+    "different_while_shaking": 50,
+    "first_differences": [
+     5776,
+     5778,
+     5780,
+     5784,
+     5786,
+     5788,
+     5792,
+     6891,
+     6892,
+     6894,
+     6896,
+     6897
+    ]
+   },
+   "sky_y == 264 - ceil(Hc/2) - S, previous frame": {
+    "exact": 8375,
+    "different": 66,
+    "different_while_shaking": 50,
+    "first_differences": [
+     5776,
+     5780,
+     5786,
+     5792,
+     6891,
+     6892,
+     6894,
+     6896,
+     6897,
+     6898,
+     6900,
+     6901
+    ]
+   },
+   "X == ceil(camera_x of the previous frame)": {
+    "exact": 8317,
+    "different": 124,
+    "different_while_shaking": 0,
+    "first_differences": [
+     5300,
+     5303,
+     5307,
+     5310,
+     5313,
+     5316,
+     5319,
+     5322,
+     5328,
+     5349,
+     5352,
+     5355
+    ]
+   },
+   "P == 102036 word": {
+    "exact": 8440,
+    "different": 1,
+    "different_while_shaking": 0,
+    "first_differences": [
+     6994
+    ]
+   },
+   "|X - P| <= 3 without stop operands": {
+    "exact": 3863,
+    "different": 41,
+    "different_while_shaking": 0,
+    "first_differences": [
+     5348,
+     5349,
+     5459,
+     5460,
+     7012,
+     7014,
+     7016,
+     7018,
+     7020,
+     7022,
+     7024,
+     7026
+    ]
+   },
+   "P+op1 <= X <= P+op3 with stop operands": {
+    "exact": 4512,
+    "different": 25,
+    "different_while_shaking": 0,
+    "first_differences": [
+     5471,
+     5472,
+     10723,
+     10724,
+     10725,
+     10726,
+     10727,
+     10728,
+     10729,
+     10730,
+     10731,
+     10732
+    ]
+   }
+  },
+  "heights": {
+   "16": 7100,
+   "17": 9,
+   "18": 9,
+   "19": 10,
+   "20": 11,
+   "21": 6,
+   "22": 11,
+   "23": 4,
+   "24": 13,
+   "25": 10,
+   "26": 6,
+   "27": 15,
+   "28": 4,
+   "29": 11,
+   "30": 6,
+   "31": 4,
+   "32": 1184,
+   "33": 4,
+   "34": 10,
+   "35": 15
+  },
+  "stops": [
+   {
+    "frame": 5299,
+    "progress": 1711,
+    "stop": null,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 5408,
+    "progress": 1842,
+    "stop": 1920,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 5471,
+    "progress": 1920,
+    "stop": 1920,
+    "operands": [
+     0,
+     0,
+     0,
+     32
+    ]
+   },
+   {
+    "frame": 6990,
+    "progress": 1920,
+    "stop": null,
+    "operands": [
+     0,
+     0,
+     0,
+     32
+    ]
+   },
+   {
+    "frame": 7170,
+    "progress": 2249,
+    "stop": 2336,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 7970,
+    "progress": 2336,
+    "stop": null,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 8432,
+    "progress": 2929,
+    "stop": 3192,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 10667,
+    "progress": 3192,
+    "stop": null,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 10707,
+    "progress": 3312,
+    "stop": 3376,
+    "operands": [
+     -32768,
+     -32768,
+     -32768,
+     -32768
+    ]
+   },
+   {
+    "frame": 10723,
+    "progress": 3376,
+    "stop": 3376,
+    "operands": [
+     56,
+     -32768,
+     144,
+     -32768
+    ]
+   }
+  ]
+ },
+ "map_commands": [
+  {
+   "address": "0x0B57BE",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    944
+   ]
+  },
+  {
+   "address": "0x0B57C4",
+   "op": 16,
+   "name": "set_10E9B6",
+   "length": 6,
+   "words": [
+    4
+   ]
+  },
+  {
+   "address": "0x0B57CA",
+   "op": 52,
+   "name": "set_10E9B8",
+   "length": 8,
+   "words": [
+    88,
+    304
+   ]
+  },
+  {
+   "address": "0x0B57D2",
+   "op": 48,
+   "name": "set_camera_bounds_10E9AE",
+   "length": 12,
+   "words": [
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  {
+   "address": "0x0B57DE",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    1008
+   ]
+  },
+  {
+   "address": "0x0B57E4",
+   "op": 16,
+   "name": "set_10E9B6",
+   "length": 6,
+   "words": [
+    0
+   ]
+  },
+  {
+   "address": "0x0B57EA",
+   "op": 52,
+   "name": "set_10E9B8",
+   "length": 8,
+   "words": [
+    128,
+    368
+   ]
+  },
+  {
+   "address": "0x0B57F2",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    1024
+   ]
+  },
+  {
+   "address": "0x0B57F8",
+   "op": 48,
+   "name": "set_camera_bounds_10E9AE",
+   "length": 12,
+   "words": [
+    0,
+    0,
+    0,
+    24
+   ]
+  },
+  {
+   "address": "0x0B5804",
+   "op": 44,
+   "name": "call",
+   "length": 8,
+   "words": [
+    11,
+    22702
+   ]
+  },
+  {
+   "address": "0x0B580C",
+   "op": 24,
+   "name": "load_layer_map",
+   "length": 20,
+   "words": [
+    16,
+    50990,
+    116,
+    11,
+    11,
+    21394,
+    11,
+    21718
+   ]
+  },
+  {
+   "address": "0x0B5820",
+   "op": 28,
+   "name": "layer_attributes",
+   "length": 14,
+   "words": [
+    16,
+    50990,
+    256,
+    256,
+    769
+   ]
+  },
+  {
+   "address": "0x0B582E",
+   "op": 36,
+   "name": "layer_0C6CFC",
+   "length": 8,
+   "words": [
+    16,
+    50990
+   ]
+  },
+  {
+   "address": "0x0B5836",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    1920
+   ]
+  },
+  {
+   "address": "0x0B583C",
+   "op": 84,
+   "name": "call_if_10E9D0_ge_10E9A2",
+   "length": 8,
+   "words": [
+    11,
+    22732
+   ]
+  },
+  {
+   "address": "0x0B5844",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    2304
+   ]
+  },
+  {
+   "address": "0x0B584A",
+   "op": 56,
+   "name": "call_002802",
+   "length": 6,
+   "words": [
+    3
+   ]
+  },
+  {
+   "address": "0x0B5850",
+   "op": 12,
+   "name": "call_009D8C_palette",
+   "length": 8,
+   "words": [
+    11,
+    22218
+   ]
+  },
+  {
+   "address": "0x0B5858",
+   "op": 0,
+   "name": "wait_progress",
+   "length": 6,
+   "words": [
+    3520
+   ]
+  },
+  {
+   "address": "0x0B585E",
+   "op": 48,
+   "name": "set_camera_bounds_10E9AE",
+   "length": 12,
+   "words": [
+    65440,
+    0,
+    0,
+    16
+   ]
+  },
+  {
+   "address": "0x0B586A",
+   "op": 8,
+   "name": "hold_progress_limit",
+   "length": 0,
+   "words": [
+    3520
+   ]
+  }
+ ],
+ "inventory": {
+  "file": "data/mission1_rest_inventory.json",
+  "spawn_records_executed": 59,
+  "kinds": 26
+ },
+ "budget": {
+  "source": "tools/pack_scene.py (unchanged, scratch tree) + tools/check_scene_budget.py rule",
+  "merge": {
+   "overlap_cells": 1061,
+   "added_cells": 1619,
+   "variant_cells": 250,
+   "palettes": 70
+  },
+  "region": {
+   "pack": {
+    "pages": 296,
+    "palettes": 101,
+    "chunks": 37,
+    "decoded_bytes": 606208,
+    "packed_bytes": 388352
+   },
+   "budget": {
+    "chunks": 37,
+    "fixed_actor_chunks": 12,
+    "worst_working_set": 25,
+    "worst_camera": 1056,
+    "cache_slots": {
+     "4MiB": 32,
+     "8MiB": 37
+    },
+    "fits_without_eviction": {
+     "4MiB": false,
+     "8MiB": true
+    },
+    "working_set_fits": {
+     "4MiB": true,
+     "8MiB": true
+    }
+   }
+  },
+  "mission": {
+   "pack": {
+    "pages": 434,
+    "palettes": 123,
+    "chunks": 55,
+    "decoded_bytes": 901120,
+    "packed_bytes": 679552
+   },
+   "budget": {
+    "chunks": 55,
+    "fixed_actor_chunks": 12,
+    "worst_working_set": 27,
+    "worst_camera": 1920,
+    "cache_slots": {
+     "4MiB": 32,
+     "8MiB": 55
+    },
+    "fits_without_eviction": {
+     "4MiB": false,
+     "8MiB": true
+    },
+    "working_set_fits": {
+     "4MiB": true,
+     "8MiB": true
+    }
+   }
+  }
+ }
+}

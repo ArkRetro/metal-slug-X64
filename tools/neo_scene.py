@@ -22,7 +22,23 @@ def columns(vram):
         else:x=vram[0x8400+slot]>>7;y=(512-(c>>7))&511;rows=c&63;zx=z>>8&15;zy=z&255
         if rows:yield dict(slot=slot,x=x,y=y,rows=min(rows,32),zx=zx,zy=zy)
 
-def state(vram,ram):
+def trace_hints(trace,frame,lags=range(4)):
+    """Per-layer (x, y) transforms read from a per-frame RAM trace (columns of
+    tools/capture_mission_rest.lua) for `frame` and the previous frames. SCBs
+    show the transform of the current or one of the previous updates."""
+    out=[set() for _ in range(4)]
+    names=(('sky_x','sky_y'),('mid_x','mid_y'),('mid_x','mid_y'),('fore_x','fore_y'))
+    for k in lags:
+        row=trace.get(frame-k)
+        if row is None:continue
+        for layer,(nx,ny) in enumerate(names):
+            out[layer].add((-int(row[nx]),ORIGIN_Y[layer]-int(row[ny])))
+    return out
+
+def state(vram,ram,hints=None):
+    """`hints` (optional, from trace_hints) resolves the 16 px vertical
+    wrap during fast screen shakes: the unwrapped transform must then equal
+    one of the traced RAM values exactly."""
     fore=struct.unpack_from('>2i',ram,0xc72e+0x14)
     mid=struct.unpack_from('>2i',ram,0xd7b6+0x14)
     full_speed=fore==mid
@@ -51,7 +67,12 @@ def state(vram,ram):
         ymods=Counter((c['y']-16-Y_PHASE[layer])&15 for c in group)
         assert len(ymods)==1,('Inconsistent background Y',layer,ymods)
         y_offset=unwrap(next(iter(ymods)),16,hint_y)
-        assert abs(offset-hint_x)<=32 and abs(y_offset-hint_y)<8,('Ambiguous frame transform',layer,offset,hint_x,y_offset,hint_y)
+        if hints is not None:
+            exact={(x,y) for x,y in hints[layer] if (x-offset)%512==0 and (y-y_offset)%16==0}
+            assert len(exact)==1,('Transform not in the RAM trace',layer,offset,y_offset,sorted(hints[layer]))
+            offset,y_offset=next(iter(exact))
+        assert abs(offset-hint_x)<=32 and abs(y_offset-hint_y)<=16,('Ambiguous frame transform',layer,offset,hint_x,y_offset,hint_y)
+        if hints is None:assert abs(y_offset-hint_y)<8,('Ambiguous frame transform',layer,offset,hint_x,y_offset,hint_y)
         offsets.append(offset);vertical.append(y_offset)
     # The first foreground column can be culled. Use all surviving columns;
     # when that whole bank is empty, the new full-speed bank provides the camera.

@@ -408,8 +408,13 @@ static ga_result_t creature_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 static bool arab_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
-    (void)a;(void)e;(void)routine;(void)parameter;
-    (void)kind;
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    /* 039FA6 (slash program 23C836, command 10): JSR 039ED0; SCC +92.
+     * a6 is the slash itself (its own position, placed on the swordsman):
+     * +92 = FF while a player is in the rectangle 03A04C (second cut),
+     * 0 otherwise (the program's conditional jump skips to its end). */
+    if (routine==0x39fa6u) {SB(0x92,k39ed0(a,e)?0x00:0xff);return true;}
     return false;
 }
 bool neo_arab_routine(uint32_t r) {

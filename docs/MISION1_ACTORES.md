@@ -240,6 +240,26 @@ por el subguion. Gráficos: 433 descriptores, 19 paletas; los 13 volcados
 nuevos dan 646 píxeles distintos en 4 fotogramas (7080, 7140, 7200, 7260;
 no investigado: posible orden/prioridad con el carro).
 
+### Parada 2336 bloqueada (ROM de publicación)
+
+El tajo `0x039B60` (programa `0x23C836`) llama en su orden 10 a `0x039FA6`
+(`JSR 0x039ED0; SCC +92`, con a6 = el propio tajo): `+92 = FF` si un jugador
+está en el rectángulo `0x03A04C` (segundo corte), 0 si no (el salto
+condicional va al final del programa). La traza `trk3` nunca llegó a esa
+orden, así que la llamada se detenía explícitamente: el tajo se borraba sin
+poner `+60` del espadachín y este quedaba para siempre en `0x03975E` (grupo
+6), y la espera "grupos 0..7 a cero" de `0x2D6E8A` no terminaba si el
+espadachín quedaba fuera del alcance de los disparos. Traducida. Con reglas
+de publicación (sin invulnerabilidad), `tools/test_gameplay.c` juega ahora
+cuatro partidas con un "humano" aleatorio sembrado (anda, se para, se da la
+vuelta, salta, apunta arriba al azar y bajo las cúpulas): las cuatro llegan
+al final del guion y del jefe (14–19 muertes) y solo se detienen los dos
+nodos documentados de la torreta. Sin la traducción la prueba falla (el tajo
+se detiene). Paradas que exigen acción del jugador, como en la recreativa:
+1920 (destruir las tres cúpulas: hay que disparar hacia arriba, el port no
+tiene granadas) y 2336 (`0x2D6D78` espera también al grupo 1: hay que
+destruir la tienda `0x0B6566` del borde derecho antes de que llegue el carro).
+
 ## Criatura `0x035668` (`src/neo_arab.c`)
 
 Creada por el subguion (`0x2D719E`, `+6E = 0x80`): anda a `+70 = +6E << 8`

@@ -17,6 +17,33 @@ static int armored_x(const msx_game_t *g) {
     }
     return -1;
 }
+/* Shop 0B6566 (HP 150 from 2D3A5C; the pistol row does 10 per hit, as the
+ * MAME bld1 trace's type-6 hits: 150 -> 140 -> 130 ...): the reference
+ * policy until the shop's origin is at screen x < `seen`, then the player
+ * stays at screen x 160 of that camera firing level (standing or
+ * crouching). Returns the steps to its destruction (0B6882), ~0u if never. */
+static unsigned shop_from_mid(int seen,bool crouch) {
+    static msx_game_t g;msx_game_init(&g);
+    int lock=-1;unsigned from=0;
+    for (unsigned steps=0;steps<20000;steps++) {
+        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (a->active && ga_l(a,0)==0xb6606u && lock<0 && (int16_t)ga_w(a,0x3c)<seen) {lock=g.camera+160;from=steps;}
+        }
+        if (lock>=0) {int px=g.x/MSX_UNIT;dir=px<lock-4?1:px>lock+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;jump=false;g.crouch=crouch && !dir;}
+        msx_game_update(&g,dir,jump,true);g.invulnerable=2;g.world.sound_count=0;
+        if (g.world.ga_flags.barrel_patched) return steps-from;
+    }
+    return ~0u;
+}
 /* Camera stop 2336, after the shop 0B6566 falls: the player stands still
  * at screen x `at` firing level, turned towards the nearest counted enemy
  * (groups 0..7) on screen with a hurtbox (+50; a human does not see
@@ -224,6 +251,15 @@ int main(void) {
     // player stands, left or right of the ruin's column x = 2576 (cell 0x10,
     // the same in the MAME RAM dumps from 7500 on), when it turns to the
     // enemies it can see.
+    // The shop from mid-screen (user report: Marco ~150 px left of it firing
+    // level): as soon as it appears (origin at screen 400, camera ~2243) or
+    // with the camera at the 2336 stop, standing or crouching, 15 pistol
+    // hits break it.
+    for (int seen=400;seen>=300;seen-=100) for (int c=0;c<2;c++) {
+        unsigned n=shop_from_mid(seen,c);
+        printf("shop from screen 160 (seen at %d, crouch %d): destroyed after %u steps\n",seen,c,n);
+        assert(n<400);
+    }
     for (int at=160;at<=280;at+=60) {
         unsigned h=stand_2336(at);
         printf("2336 stand at x=%d: hold 2D6E8A=%u\n",at,h);

@@ -105,6 +105,13 @@ uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e) {
     if (!sweep(a,e,&c,&r,0,r.mode8,0,&k)) {ga_set_contact(a,&c);return 0;}
     ga_set_contact(a,&c);return k.flags;
 }
+uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4) {
+    neo_contact_actor_t c=ga_contact(a);
+    neo_contact_request_t r=neo_contact_prepare_air(&c);
+    neo_kres_t k;
+    if (!sweep(a,e,&c,&r,0,r.mode8,0,&k)) {ga_set_contact(a,&c);return 0;}
+    ga_set_contact(a,&c);if (d4) *d4=k.w4068;return k.flags;
+}
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     neo_contact_actor_t c=ga_contact(a);
     neo_contact_request_t r=neo_contact_prepare_ground(&c);

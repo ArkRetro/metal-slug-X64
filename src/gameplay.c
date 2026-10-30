@@ -303,8 +303,21 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         marco_weapon_player_t *m=&g->world.weapon_player;
         if (m->form94!=0xffu) {m->form93=m->form94;m->form94=0xff;}
         if (marco_weapons_expire(&g->world.weapons,0,m)) g->expiries++;
-        /* Bomb button: 0C478E consumes one; the grenade is not ported. */
-        if (g->grenade && !g->grenade_was_down && !g->complete && marco_weapons_throw(&g->world.weapons,0,false)) g->grenade_stops++;
+        /* Bomb button: 0C478E consumes one; bomb type 1 (0C47BA) throws the
+         * grenade 01BF46, or 01BF10 with the legs' +90 = FF (observed:
+         * standing; 01 running, 03 in the air). Its position (0C4806:
+         * the player's +72/+74 words, -1/0x11..0x15 in cfam) uses the
+         * standing value -1/0x15: the port's player has no +72/+74. Other
+         * bomb types are explicit stops. */
+        if (g->grenade && !g->grenade_was_down && !g->complete && marco_weapons_throw(&g->world.weapons,0,false)) {
+            uint8_t type=g->world.weapons.b[10];
+            if (type==1 && g->world_enabled) {
+                bool still=g->grounded && !g->moving;
+                neo_world_player_grenade(&g->world,still?0x1bf10u:0x1bf46u,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
+                    g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
+                g->grenades++;
+            } else g->grenade_stops++;
+        }
         g->grenade_was_down=g->grenade;
     }
     if (fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {

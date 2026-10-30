@@ -56,11 +56,13 @@ typedef struct {
      * reserves through 0C0D64 for the current weapon; only the pistol's
      * constructor 01B782 has a port (the bullets above). A shot of another
      * weapon is an explicit stop: counted with its constructor (table
-     * 0C42AA) and fired as the port's pistol bullet. grenade: input (bomb
-     * button, set by the caller like aim_up); a throw consumes a bomb
-     * (0C478E) and the grenade 01BF46/01BF10 is an explicit stop too. */
+     * 0C42AA) and fired as the port's pistol bullet; the H fires native
+     * bullets (neo_bullet.c). grenade: input (bomb button, set by the
+     * caller like aim_up); a throw consumes a bomb (0C478E) and throws the
+     * native grenade 01BF46/01BF10 (grenades); other bomb types stop
+     * explicitly (grenade_stops). */
     bool grenade,grenade_was_down;
-    unsigned weapon_shots,weapon_stops,grenade_stops,expiries;uint32_t weapon_stop_constructor;
+    unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
 } msx_game_t;
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */

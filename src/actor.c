@@ -150,7 +150,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
     uint8_t old_weapon=marco_weapons_id(&game.world.weapons,0),old_bombs=marco_weapons_bomb_count(&game.world.weapons,0);
-    unsigned old_weapon_stops=game.weapon_stops,old_grenades=game.grenade_stops,old_served=game.world.pickup.taken;
+    unsigned old_weapon_stops=game.weapon_stops,old_grenades=game.grenades,old_grenade_stops=game.grenade_stops,old_served=game.world.pickup.taken;
     unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported,old_pickups=game.world.item_pickups;
     bool old_halted=game.world.script.halted;
     int old_checkpoint=game.checkpoint,old_camera=game.camera,old_x=game.x,old_height=game.camera_height;
@@ -202,7 +202,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (marco_weapons_id(&game.world.weapons,0)!=old_weapon) debugf("MSX weapon id=%x rounds=%u\n",marco_weapons_id(&game.world.weapons,0),marco_weapons_rounds(&game.world.weapons,0));
     if (marco_weapons_bomb_count(&game.world.weapons,0)!=old_bombs) debugf("MSX bombs=%u\n",marco_weapons_bomb_count(&game.world.weapons,0));
     if (game.weapon_stops!=old_weapon_stops && !old_weapon_stops) debugf("MSX weapon shot stopped explicitly: constructor %05lx not ported (pistol bullet fired)\n",(unsigned long)game.weapon_stop_constructor);
-    if (game.grenade_stops!=old_grenades) debugf("MSX grenade thrown (explicit stop: 01BF46 not ported) count=%u\n",game.grenade_stops);
+    if (game.grenades!=old_grenades) debugf("MSX grenade thrown count=%u\n",game.grenades);
+    if (game.grenade_stops!=old_grenade_stops) debugf("MSX bomb type %u stopped explicitly (0C4756 entry not ported)\n",game.world.weapons.b[10]);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
         native_missing_descriptor=native_missing_palette=0;

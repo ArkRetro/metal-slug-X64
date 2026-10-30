@@ -528,7 +528,8 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     /* Dispatch tables: 0406EA (grounded), 040750 (air), 0407F4 (crouch).
      * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;
      * 040D66 (grounded pistol) and 040A10 (air pistol) are the observed kills;
-     * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast) is translated;
+     * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast; kind 9
+     * grounded: the grenade's explosion) is translated;
      * the remaining entries (040B46, 040BA8, 040A40, 040AF6, 040A7C,
      * 040BE6) are not translated and stop explicitly. */
     uint32_t program=0;
@@ -545,7 +546,7 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
             if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
             s->routine=0x40db4;return true;
         }
-        if (kind==1) return death_40c8e(c);
+        if (kind==1 || kind==9) return death_40c8e(c);              /* 0406EE / 04070E: blasts (kind 9: the grenade's 01B5E2) */
         if (kind==0||kind==2||kind==8||kind==0xe||kind==0xf||(kind>=0x10&&kind<0x14)) program=0x2404feu; /* 040DC0 */
         else if (kind==0xc||kind==0xd) program=0x240454u; /* 040DD8 */
     } else {

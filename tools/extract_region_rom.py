@@ -45,7 +45,7 @@ BLOBS=[
     (0xE4E84,0x2EC,'087E36 armoured vehicle: hurtbox E4E84, solid E4E90, attack rows E4E9E/E4EBE, cull E4ECE, player rectangle E4ED6, wreck maps E4EDE/E4F36/E4F8E/E4FC0, platform map E4FF2, debris lists E5060/E50B2, platform offsets E5104 (089412)'),
     (0x89554,0x100,'0886CE armoured vehicle pieces: offset and speed table 089554 (16 entries)'),
     (0x2D0E40,0x220,'087E36 armoured vehicle rank tables 2D0E40/2D0EA2/2D0F04/2D0F66 and speeds 2D0FC8/2D0FFA (0260C8)'),
-    (0x1B4C2,0x110,'01B882 player bullet attack rows 01B4C2..01B5B2 (by direction) and 01B5C2 (01BBE2), 0049E8'),
+    (0x1B4C2,0x14C,'01B882 player bullet attack rows 01B4C2..01B5B2 (by direction) and 01B5C2 (01BBE2); grenade 01B5D2 (01BFD0), its explosion rows 01B5E2/01B5F2 and their list 01B602 (01C19A); 0049E8'),
     (0x1B842,0x40,'01B882 player bullet attack row table (direction +6F)'),
     (0xE5526,0x78,'08B896 item points: special values E5526 (+7B), combo values E5556, repeated value E559A'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),

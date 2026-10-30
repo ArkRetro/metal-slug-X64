@@ -252,7 +252,7 @@ $(BUILD_DIR)/robe_fixture.h: tools/compile_robe_fixture.py data/robe_fixture.jso
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet armored
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored
 FAMILY_ARGS_truck := --tree
 FAMILY_ARGS_swordgen := --tree
 # The shop 0B6566 fell before the prisoner (pri1 RAM dumps 7200 -> 7500: its
@@ -271,6 +271,9 @@ FAMILY_ARGS_citem := --pickup 8370,c,28
 BULLET_ARGS := --hit-child 1bc2e --hit-from 1b6dc,1b716,1b750,1b782,1b882,1bbe2
 FAMILY_ARGS_hbullet := $(BULLET_ARGS)
 FAMILY_ARGS_pbullet := $(BULLET_ARGS)
+# The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
+# the one that explodes on 0049E8 before its flight is the contact.
+FAMILY_ARGS_grenade := --hit-to 1c152
 # The armoured vehicle's marker child 040396 reads RAM 10C446 = 2 (its
 # +70 = 3 in veh1); the trace keeps no read of that byte.
 FAMILY_ARGS_armored := --tree --marker-seq 2

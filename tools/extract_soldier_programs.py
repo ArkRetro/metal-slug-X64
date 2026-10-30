@@ -48,6 +48,8 @@ ROOTS+=[0x28652c,0x28745c,0x287516,0x287814,0x2878ec,0x2879c4,0x287b40,0x2864b0,
 # Player bullets 01B6DC..01BD00: flight (H 22C1B6/22C3BE, pistol 22C12E),
 # impact 22E504, wall impacts 22C884/22C81E.
 ROOTS+=[0x22c1b6,0x22c3be,0x22c12e,0x22e504,0x22c884,0x22c81e]
+# Grenade 01BF10/01BF46 (22C950) and its explosion 01C152 (22CB60).
+ROOTS+=[0x22c950,0x22cb60]
 # Armoured vehicle 087E36: wait, stop, drive, destroyed, aim, fire, flinch,
 # reverse (callbacks 089412 platform offset, 08938A pieces).
 ROOTS+=[0x2841b4,0x2841de,0x28425e,0x2842de,0x284416,0x2847de,0x284828,0x28454e,0x2845f2,0x2846ba,0x2848aa]

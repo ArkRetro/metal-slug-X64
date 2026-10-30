@@ -881,9 +881,9 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->kernel.group_map=soldier_group_map;
     w->epoch=1;w->camera_lock=-1;w->scroll_y=SCENE_Y;
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
-    /* 0C0E20 (new game) and 0C0E6E (player 1's first life); Mission 1. */
+    /* 0C0E20 (new game) and 0C0E6E (player 1's first life); RAM 10C2F6 reads 0 in Mission 1. */
     marco_weapons_new_game(&w->weapons);w->weapon_player.exists=true;
-    marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=1;
+    marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=0;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
@@ -1013,7 +1013,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     for (unsigned i=0;i<w->shot_request_count;i++) {
         neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),w->shot_requests[i].routine,SCRIPT_TAG,0);
         if (!a) {w->shot_dropped++;continue;}
-        ga_sb(a,0x6e,w->shot_requests[i].angle);ga_sw(a,0x70,w->shot_requests[i].player);ga_sb(a,0x5e,0);
+        const neo_world_shot_request_t *q=&w->shot_requests[i];
+        if (q->grenade) {ga_sw(a,0x6e,q->player);ga_sb(a,0x15,q->flags15);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);}
+        else {ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);}
+        ga_sb(a,0x5e,0);
         ga_sl(a,0x28,(uint32_t)w->shot_requests[i].x);ga_sl(a,0x2c,(uint32_t)w->shot_requests[i].y);ga_sl(a,0x38,ROOT_TAG);
         w->player_shots++;
     }
@@ -1023,7 +1026,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
 }
 bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,angle,player};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false};
+    return true;
+}
+bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true};
     return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {

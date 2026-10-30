@@ -86,7 +86,11 @@ int main(void) {
             int x=g.camera+(int16_t)ga_w(a,0x3c)-96,px=g.x/MSX_UNIT;
             if (x<g.camera+300) {dir=px<x-4?1:px>x+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;}
         }
-        g.grenade=(steps%200)<2;   /* a bomb every 200 updates while any are left */
+        /* Bombs at the armoured vehicle of the 1304 stop, the domes and the
+         * shop (every 40 updates while they stand). */
+        bool target=armored_x(&g)>=0 || dome>=0;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (g.world.gactors[i].active && ga_l(&g.world.gactors[i],0)==0xb6606u) target=true;
+        g.grenade=target && (steps%40)<2;
         weapon_seen|=1u<<marco_weapons_id(&g.world.weapons,0);
         msx_game_update(&g,dir,(steps%240)<4,true);
         g.invulnerable=2;
@@ -108,7 +112,7 @@ int main(void) {
         g.world.boss_hits,g.world.boss_external_effects,g.world.player_hits,mapped,requests,max_progress,max_height,g.world.ga_flags.collapsed,g.world.killed_all,g.world.ga_flags.barrel_patched,g.rides,hold_max);
     printf("weapons: items served=%u stopped=%u (%05lx) weapons seen=%04x shots with them=%u native=%u stops=%u (last %05lx) expiries=%u grenades=%u bombs=%u score=%02x%02x%02x%02x\n",
         g.world.pickup.taken,g.world.item_pickups,(unsigned long)g.world.item_pickup_routine,weapon_seen,g.weapon_shots,g.world.player_shots,g.weapon_stops,(unsigned long)g.weapon_stop_constructor,
-        g.expiries,g.grenade_stops,marco_weapons_bomb_count(&g.world.weapons,0),g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3]);
+        g.expiries,g.grenades,marco_weapons_bomb_count(&g.world.weapons,0),g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3]);
     fflush(stdout);
     /* Every item the policy walks into is served (weapon, bombs, points):
      * no pickup stops. The H (id 0A) is taken and used up, then the pistol
@@ -116,10 +120,11 @@ int main(void) {
     assert(g.world.pickup.taken>0 && !g.world.item_pickups);
     assert((weapon_seen&(1u<<0xa)) && g.weapon_shots>0 && g.expiries>0);
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
-    assert(!g.weapon_stops && g.world.player_shots==g.weapon_shots && !g.world.shot_dropped);
-    printf("H bullets that hit: %u\n",g.world.pickup.bullet_hits);fflush(stdout);
-    assert(g.world.pickup.bullet_hits>0);
-    assert(g.grenade_stops>=10);
+    assert(!g.weapon_stops && g.world.player_shots==g.weapon_shots+g.grenades && !g.world.shot_dropped);
+    printf("H bullets that hit: %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.world.pickup.blast_hits);fflush(stdout);
+    assert(g.world.pickup.bullet_hits>0 && g.world.pickup.blast_hits>0);
+    /* Native grenades 01BF46/01BF10 (neo_bullet.c): every one lands. */
+    assert(g.grenades>=10 && !g.grenade_stops && !g.world.weapons.b[0]);
     assert(requests && voices && !g.world.sound_dropped);
     assert(g.shots>=g.hits);
     assert(g.complete && g.mission_complete && g.world.mission_step==2 && steps<60000);
@@ -128,12 +133,13 @@ int main(void) {
     assert(g.rides>0);
     // Camera stop 1304: the arcade holds 2D67CA for 385 frames (MAME,
     // docs/MISION1_ACTORES.md) until the armoured vehicle 087E36 that
-    // brings the prone soldier in is destroyed. This pistol-only policy,
+    // brings the prone soldier in is destroyed. The pistol-only policy,
     // walking right into it (its solid body 004E76/0E4E90 stops the player
-    // through the push-out 004ED2), needs under twice that (it took ~2000
-    // while the vehicle was external and the soldier waited off-screen).
+    // through the push-out 004ED2), needed 668 (~2000 while the vehicle was
+    // external); with the native grenades thrown at it the stop holds 194,
+    // under the arcade's 385.
     assert(g.solid_pushes>0 && !g.world.solid_unsupported);
-    assert(hold_max>=200 && hold_max<2*385);
+    assert(hold_max>=150 && hold_max<385);
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     // The script camera stops at 3376 (boss arena); the player's view then
     // follows the oscillating boss-fight policy, so where it stands when the
@@ -170,21 +176,23 @@ int main(void) {
             int armored=g.y>=-20*MSX_UNIT?armored_x(&g):-1;
             if (armored>=0) {dir=g.x/MSX_UNIT<armored?1:-1;a=false;}
             g.aim_up=a;rs=rs*1103515245u+12345u;
-            g.grenade=(rs>>8)%97==0;   /* now and then a bomb */
+            /* Now and then a bomb; at the armoured vehicle every 40. */
+            g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
             msx_game_update(&g,dir,(rs>>16)%50==0,true);
             g.world.sound_count=0;
         }
         printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u hold 2D67CA=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,g.world.boss_unsupported,
-            g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenade_stops,g.expiries,hold_max);
+            g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenades,g.expiries,hold_max);
         printf("  score=%02x%02x%02x%02x points=%u popups=%u labels=%u\n",g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],
             g.world.pickup.points[0],g.world.pickup.popups,g.world.pickup.labels);fflush(stdout);
-        assert(!g.world.item_pickups && g.grenade_stops>0);
+        assert(!g.world.item_pickups && g.grenades>0 && !g.grenade_stops);
         assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
         assert(g.world.unsupported==g.world.boss_unsupported);
         // The random policy (deaths, respawns on the ledge or the vehicle's
         // platform; its body blocks the walk) ends the 1304 hold within three
-        // times the arcade's 385.
-        assert(hold_max>=200 && hold_max<3*385);
+        // times the arcade's 385 (588/746/544/752 with the pistol alone;
+        // 210/740/312/198 with the grenades thrown at the vehicle).
+        assert(hold_max>=150 && hold_max<3*385);
     }
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.world_enabled=false;

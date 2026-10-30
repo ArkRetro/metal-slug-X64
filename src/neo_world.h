@@ -28,7 +28,7 @@ typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
 /* A player shot waiting for its list insertion (neo_world_player_shot). */
-typedef struct { uint32_t routine;int32_t x,y;uint8_t angle,player; } neo_world_shot_request_t;
+typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; } neo_world_shot_request_t;
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
 /* Dynamic collision object owned by a generic actor (RAM 10C06E + 64*i):
  * local position block relative to its parent (+00..+25). */
@@ -171,6 +171,10 @@ bool neo_world_parent(const neo_world_t *world,uint32_t tag,neo_contact_parent_t
  * angle, +70 player; +28/+2C at the scene root, Q16.16, y up). False when
  * the request list is full. */
 bool neo_world_player_shot(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player);
+/* A grenade of the player (0C47BA: 01BF46, or 01BF10 when the player's +90
+ * is FF): +6E player, +15 facing (01AC94), +28/+2C at the scene root,
+ * +30/+34 the player's motion (0C4834). */
+bool neo_world_player_grenade(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

@@ -19,6 +19,7 @@ def main():
     p.add_argument('--stop',help='FRAME,ROUTINE (hex routine): the update of that frame must stop explicitly at ROUTINE (an untranslated service); later updates are dropped')
     p.add_argument('--stamp',action='append',default=[],help='X,Y,TEMPLATE (hex): collision stamp (0C88B0) applied before the first update (an event of another family seen in the RAM dumps)')
     p.add_argument('--pickup',action='append',default=[],help='FRAME,ID,ROUNDS (hex id/rounds): the item taken at FRAME must leave player 1 with weapon ID and ROUNDS (the pickup state of neo_item.c, from a new life)')
+    p.add_argument('--hit-to',help='ROUTINE (hex): an update that ends in this routine without moving (+3C..+43 unchanged: the grenade exploding on 0049E8 before its flight) answers a contact')
     p.add_argument('--hit-from',default='',help='ROUTINES (comma hex): the deleting updates that can leave a --hit-child (default: any)')
     p.add_argument('--hit-child',help='ROUTINE (hex): a node first seen with this routine and +0C = list head 101414 (00411C) is the impact of the node deleted last, at most 3 frames before and not yet matched (its creator); a deleting update hits (0049E8 answers a contact) only when it has such a child')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
@@ -81,6 +82,9 @@ def main():
     if a.stop:L.append('#define FAMILY_STOP {%d,0x%x}'%(sf,int(sr,16)))
     if a.pickup:L.append('#define FAMILY_PICKUPS {%s}'%','.join('{%d,0x%x,0x%x}'%tuple(int(x,0 if i==0 else 16) for i,x in enumerate(t.split(','))) for t in a.pickup))
     if a.hit_child:L.append('#define FAMILY_HIT_CHILD 0x%x'%int(a.hit_child,16))
+    if a.hit_to:
+        hits=sorted({(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u['post'] and int(u['post'][:8],16)==int(a.hit_to,16) and int(u['pre'][:8],16)!=int(a.hit_to,16) and u['post'][2*0x3c:2*0x44]==u['pre'][2*0x3c:2*0x44]})
+        L.append('#define FAMILY_HIT_UPDATES {%s}'%','.join('{%d,%d}'%h for h in hits))
     if a.marker_seq is not None:L.append('#define FAMILY_MARKER_SEQ %d'%a.marker_seq)
     if a.stamp:
         st=[tuple(int(x,16) for x in t.split(',')) for t in a.stamp]
@@ -150,10 +154,10 @@ def main():
         dyn=[(int(k,16)-0x10c06e,v[0],v[1]) for k,v in u['reads'].items() if 0x10c06e<=int(k,16)<0x10c292]
         assert len(dyn)<=48,(u['frame'],len(dyn))
         dyn+=[(0xffff,0,0)]*(48-len(dyn))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s}},'%(
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes))))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(rd(u,0x10c068))))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

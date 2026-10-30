@@ -35,7 +35,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
-    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8];
+    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t w4068;
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -220,7 +220,7 @@ int main(void) {
     /* Item pickups (neo_item.c): player 1 from a new life (0C0E20/0C0E6E). */
     static marco_weapons_t weapons;static marco_weapon_player_t player1;static neo_pickup_env_t pickup;
     marco_weapons_new_game(&weapons);player1.exists=true;marco_weapons_life(&weapons,0,&player1);
-    pickup.weapons=&weapons;pickup.player[0]=&player1;pickup.mission=1;e.pickup=&pickup;
+    pickup.weapons=&weapons;pickup.player[0]=&player1;pickup.mission=0;e.pickup=&pickup;
     unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
@@ -266,6 +266,7 @@ int main(void) {
         if (u->tmask&16) terrain.correction=(uint8_t)u->tcorr;
         if (u->tmask) terrain_seen=true;
         dyn_inputs(&kernel,u);
+        if (u->w4068>=0) kernel.w4068=(uint16_t)u->w4068;     /* RAM 10C068 as read */
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
@@ -273,6 +274,11 @@ int main(void) {
         e.kill_all=kill_at && u->frame==kill_at;
         uint8_t kill_before=flags.kill_request;
         contact=!u->has_post;
+#ifdef FAMILY_HIT_UPDATES
+        /* Contacts are the listed updates only (a deletion is the view). */
+        {static const int hits[][2]=FAMILY_HIT_UPDATES;contact=false;
+         for (unsigned h=0;h<sizeof(hits)/sizeof(hits[0]);h++) if ((uint32_t)hits[h][0]==u->frame && hits[h][1]==u->node) contact=true;}
+#endif
 #ifdef FAMILY_HIT_CHILD
         /* A bullet deleted without an impact (its first update in this or
          * the next logic update) left the view: no contact. */

@@ -501,29 +501,78 @@ actualización del jugador copia `+94` a `+93` (lo observado en
 arma actual; las balas del port liberan con `0x0C0DFC` al desaparecer. El
 botón Z lanza una bomba (`0x0C478E`).
 
-**Paradas explícitas** (contadas y registradas en `actor.c`): el disparo de un
-arma distinta de la pistola (`weapon_stops`, con el constructor de la tabla
-`0x0C42AA`: `0x01B716` la H, `0x063F32` la C...) sale como la bala de pistola
-del port, y la granada `0x01BF46/0x01BF10` no se crea (`grenade_stops`).
+### Paso 3: balas (`src/neo_bullet.c`)
 
-`tools/test_gameplay.c`: la carrera de la misión toma la H, la gasta (200
-disparos), vuelve a la pistola y lanza sus 10 bombas; las cuatro carreras de
-reglas de lanzamiento sirven todos los objetos que tocan (ninguna parada de
-recogida) y lanzan bombas. Las esperas no cambian: la parada 1304
-(`2D67CA`) dura 668 actualizaciones en la carrera de la misión y 588, 746,
-544 y 752 en las de lanzamiento, igual que antes, porque la H y las granadas
-todavía no tienen balas propias.
+Traducidas: constructores `0x01B6DC`, `0x01B716` (sonido `0x10F4` limitado
+por `0x01B60E`, RAM `10C33E`), `0x01B750`, `0x01B782`, común `0x01B7BA`, vuelo
+`0x01B882` con la tabla de filas `0x01B842` por `0x0049E8` (soldados,
+cajas registradas —cúpulas, tienda, blindado— y, para estas balas, las del
+jefe), rebote `0x01BBE2`, impactos `0x01BC2E/0x01BC82`, impacto en pared y
+límites de la vista. `0x013CF8` (agua bajo la bala) está en `neo_kernel.c`;
+la salpicadura `0x03C962` es **parada explícita** (no hay celdas de clase 5 en
+la Misión 1).
 
-### Pasos 3–5: pendientes
+Pruebas de familia: `hbullet` (`hfam`: 200 balas H, 64 impactos, 2197
+actualizaciones) y `pbullet` (`cfam`: 36 balas de pistola). Las balas las crea
+el jugador (fuera de la familia): empiezan con sus bytes grabados. El impacto
+se crea con `0x00411C` en la cabeza de la lista y ningún enlace nombra a su
+creador: `compile_family_fixture.py --hit-child/--hit-from` lo asigna a la
+bala muerta más cercana (como mucho 3 fotogramas antes) y solo esa muerte
+responde un contacto de `0x0049E8`.
 
-- Paso 3 (balas de la H `0x01B716`, abanico `0x0C44A6`, cohete `0x06381C`, C
-  `0x063F32`, destello `0x0C58D2`, retrollamadas `0x0C4372/0x0C453A/0x0C4610`
-  del programa de Marco): no traducido; parada explícita `weapon_stops`.
-- Paso 4 (granada `0x0C4786` → `0x01BF46/0x01BF10`, programa `0x22C950`,
-  explosión `0x01C19A/0x01C152` contra enemigos, tienda, cúpulas y blindado):
-  no traducido; parada explícita `grenade_stops`.
-- Paso 5 (HUD ARMS/BOMB `0x0C9650..0x0C9844`, `0x0C071C`/`0x0C0764`): el port
-  no tiene ruta de HUD de capa fija (`actor.c` solo dibuja el texto de
-  diagnóstico); los contadores están correctos en el estado
-  (`marco_weapons_rounds`, `marco_weapons_bomb_count`) y `actor.c` registra
-  sus cambios. El HUD es el paso siguiente.
+En el juego, la H (`0x0C4454/0x0C447C`) dispara balas nativas `0x01B716` con
+el abanico `0x0C44A6` (`+95` dos veces por disparo); se insertan tras la
+cabeza de la lista al final del tick del mundo y corren desde el siguiente.
+**Aproximación declarada**: la boca (`0x0C4244`, `0x014A02`) usa la boca de
+pistola del port, porque el modelo de jugador del port no tiene `+72/+74/+92`;
+la cadencia es la del port, no la de las retrollamadas de los programas de
+Marco (`0x0C4372`), que el port no ejecuta como disparo. La pistola sigue
+con la bala del port (la del jefe y el blindado de referencia pasan por
+`neo_world_shot`). **Paradas explícitas**: H con `+93 = 2` (`0x01B668/0x01BDD2`),
+cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas
+(`weapon_stops`, se disparan como bala de pistola del port). Los descriptores
+de sprite de las balas nativas no están en el paquete de escena: no se
+dibujan todavía (`native_missing_descriptor`).
+
+### Paso 4: granadas (`src/neo_bullet.c`)
+
+Traducidas: `0x01BF10/0x01BF46` (programa `0x22C950`, paleta `0x27C`),
+`0x03C526` (en la Misión 1, `10C2F6 = 0`: sin onda de agua; otras misiones,
+parada explícita), `0x0C0D34`, vuelo `0x01BFD0` (fila `0x01B5D2`, rebote
+`0x01C6AC` con la palabra de superficie D4 = RAM `10C068` de `0x013968`,
+`0x00505A`, giro `+72/+74`, dos botes), `0x0C0D48` y la explosión
+`0x01C152/0x01C19A` (sonido `0x1027`, programa `0x22CB60`, filas `0x01B5E2`
+—tipo 9, daño 100— y `0x01B5F2`). La muerte de soldado en el suelo por tipo
+9 es `0x040C8E` (tabla `0x0406EA`), como el tipo 1: se añadió a
+`neo_soldier_ai.c` (antes era una parada).
+
+Prueba de familia `grenade` (`cfam`: 10 granadas, 270 actualizaciones, tres
+explosiones). `--hit-to 1c152`: la granada que explota por `0x0049E8` antes
+de volar es el contacto. La traza guarda ahora la lectura de `10C068`.
+
+En el juego, Z lanza `0x01BF46` (o `0x01BF10` si `+90 = FF`: quieto) con la
+posición de `0x0C4806` aproximada (`+72/+74` del jugador = −1/0x15, el valor
+de pie de `cfam`; el port no tiene esos campos) y la velocidad del jugador
+(`0x0C4834`). Otros tipos de bomba: parada explícita (`grenade_stops`).
+
+### `tools/test_gameplay.c`
+
+La carrera de la misión toma la H y dispara sus 200 balas nativas (18
+aciertan), vuelve a la pistola (`0x0C337A`) y lanza sus 10 granadas al
+blindado de la parada 1304, a las cúpulas y a la tienda (9 filas de
+explosión aciertan). Las carreras de lanzamiento sirven todos los objetos que
+tocan (ninguna parada de recogida; puntuación 100/300 con `2A`/`2B`),
+disparan la H y lanzan granadas al azar y al blindado.
+
+Duración de la parada 1304 (`2D67CA`, la arcade: 385): carrera de la misión
+668 → **194**; carreras de lanzamiento 588/746/544/752 → **210/740/312/198**
+(pasos totales 40084/44750/40398/38494 → 30704/35146/29054/30210). Con la H
+sola (sin granadas) no cambiaba: la H se toma después de 1304.
+
+### Paso 5: HUD — pendiente
+
+El port no tiene ruta de HUD de capa fija (`actor.c` solo dibuja el texto de
+diagnóstico). Los contadores ARMS/BOMB (`0x0C071C`, `0x0C0764`) están
+correctos en el estado (`marco_weapons_rounds`, `marco_weapons_bomb_count`) y
+`actor.c` registra sus cambios. El panel `0x0C9650..0x0C9844` es el paso
+siguiente.

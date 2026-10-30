@@ -73,7 +73,7 @@ typedef struct neo_pickup_env {
     uint8_t combo_lock[2];               /* RAM 10C5BE+p (08B7E6) */
     uint16_t mission;                    /* RAM 10C2F6 (0C0BAE) */
     uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
-    unsigned bullet_hits;                /* player bullets (neo_bullet.c) that hit (0049E8) */
+    unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
     unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
 } neo_pickup_env_t;
@@ -156,6 +156,7 @@ void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t paren
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
+uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D4.w at its return (the sweep's 13968) */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */

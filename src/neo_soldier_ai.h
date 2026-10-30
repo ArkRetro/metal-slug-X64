@@ -45,6 +45,9 @@ typedef struct {
     uint16_t value;
     neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD */
 } neo_soldier_event_t;
+/* Stair/ledge marker of the object list RAM 43A2/43F4 (registered by ROM
+ * 040110: position relative to the scene root, height, id). */
+typedef struct { int32_t x,y; uint8_t height,id; } neo_marker_t;
 typedef struct {
     neo_kscene_t *kernel;
     neo_contact_parent_t terrain,root;   /* tags 0x10C72E and 0x10E968 */
@@ -63,7 +66,9 @@ typedef struct {
     /* Player actors 1014C4/101574 as 0B03E0 reads them: routine alive (0040AC),
      * +7A (0 = scripted, the soldiers stay idle) and RAM 10E9F8/10E9FC
      * (nonzero: CA2F8 carry). */
-    struct { bool alive; uint8_t follow7a; bool vehicle; } player_state[2];
+    struct { bool alive; uint8_t follow7a; bool vehicle; uint8_t follow7b; uint16_t x,y; } player_state[2];
+    uint16_t point[2];                    /* RAM 69B8/69BA: script point (01903A) */
+    const neo_marker_t *markers;unsigned marker_count; /* list queried this update */
 } neo_soldier_env_t;
 typedef enum { NEO_SOLDIER_MORE,NEO_SOLDIER_DELETED,NEO_SOLDIER_UNSUPPORTED } neo_soldier_result_t;
 /* Spawn record words copied to +6E..+78 (ROM 01A136) and creator data. */

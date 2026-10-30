@@ -70,6 +70,10 @@ typedef struct {
     struct { uint8_t owner; uint16_t xbins; uint8_t ybins; } boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];
     unsigned box_count,last_box_count;
     uint16_t view[4];
+    /* Object lists RAM 43F4/43A2 (written when the counter RAM 10000F bit 0
+     * is clear / set, cleared by 0401E8 before the actors run; the other one
+     * is queried) and the marker id counter RAM 10C446. */
+    neo_marker_t markers[2][8];uint8_t marker_count[2],marker_seq;
     neo_world_slot_t order[NEO_WORLD_ORDER];unsigned order_count;
     neo_kscene_t kernel;
     neo_contact_parent_t terrain,root;

@@ -23,7 +23,8 @@ SCRIPT=0x101414;DEAD=0x3F1E
 GACTOR=set([0x2916E,0x29294,0x29326,0x2936C,0x293DC,0x29438,0x294A2,0x294E4,0x29566,0x295BC,0x29802,0x29852,0x298F4,
     0x1C6EE,0x1C706,0x1C71E,0x1C736,0x1C74E,0x1C766,0x1C77E,0x1C796,0x1C9E6,0x1D764,0x1D7B8,
     0x1D86C,0x1D8A4,0x1D8D4,0x1D8E4,0x1D908,0x1D934,0x1D93C,0x1D944,0x1D958,0x1D9C6,
-    0xDC97E,0xDCA54,0xDCA9C,0xDCADC,0xDCAF8,0xDCBB6,0xDCBC2,0xDD3E0,0xDD418,0xDD642,0xDD6BE,0x9503C,0xDD802,0xDD82A])
+    0xDC97E,0xDCA54,0xDCA9C,0xDCADC,0xDCAF8,0xDCBB6,0xDCBC2,0xDD3E0,0xDD418,0xDD642,0xDD6BE,0x9503C,0xDD802,0xDD82A,
+    0x403A0,0x40396,0x403C0])
 def gactor_routine(rt):return rt in GACTOR
 def world_routine(rt):
     if gactor_routine(rt):return True
@@ -108,7 +109,7 @@ def exec_order(ev,first,nxt,before,after,family):
             # port itself.
             bullet=cur_rt in (0x1B6DC,0x1B716,0x1B750,0x1B782,0x1B882)
             target=family.get(e[5])
-            injected=e[4]==0x4992 and target in ('soldier','gactor') and (bullet or target=='soldier')
+            injected=e[4]==0x4992 and target in ('soldier','gactor') and bullet
             if not cur_world and not injected:splats.append(dict(position=cur if cur is not None else 0,x=e[2],y=e[3]))
         else:
             log_pos.append(cur if cur is not None else -1)
@@ -164,7 +165,7 @@ def extract(path,last,label):
     words,cur=first.rng()
     out=dict(capture=label,first_frame=ticks[0],epoch=first.b(0x10C33A),rng=dict(words=words,cursor=cur),
         pc=first.l(SCRIPT+0x6E),scroll_x=first.l(0x10E97C),grid=list(first.raw(0x1067E6,256)),
-        grid_cursor=(first.l(0x1068E6)-0x1067E6)//32,ticks=[])
+        grid_cursor=(first.l(0x1068E6)-0x1067E6)//32,marker_seq=first.b(0x10C446),ticks=[])
     for i,f in enumerate(ticks[:-1]):
         before,after=cap.frame(f-1),cap.frame(ticks[i+1]-1)
         rb=owned(before);ra=owned(after)
@@ -234,7 +235,7 @@ def extract(path,last,label):
                 kind_angle=before.w(n+0x6C),f6f=before.b(n+0x6F),f5e=before.b(n+0x5E)))
         for wn in world:
             if 'position' not in wn:wn['position']=position(wn['node'])
-        if ev is not None:pass
+        bullets.sort(key=lambda b:b['position'])
         # Transient actors: created by a world generic actor and deleted within
         # the same update (no routine left in the dump). Optional in the test:
         # matched only when the port creates one at that place.

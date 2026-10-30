@@ -20,7 +20,7 @@ typedef struct {
     unsigned executed;        /* world actors run so far this update */
     unsigned log_at;          /* next log entry to look at */
     uint32_t map[6][NEO_WORLD_GACTORS]; /* native slot -> original node */
-    unsigned previous_pos;int previous_soldier,previous_kind; /* for the bullet passes */
+    unsigned bullet_at;              /* next bullet (list order) to run */
     /* Constructed this update: 003F24 leaves +24/+26 and +5B..+5D as the
      * previous occupant left them; the soldier only reads them after writing
      * them (animation start, hit). */
@@ -58,35 +58,35 @@ static int call_position(const world_tick_t *t,const world_call_t *l) {
         }
     return -1;
 }
-static void bullet(ctx_t *c,const world_bullet_t *b,int kind,unsigned index) {
+/* One pistol bullet update (ROM 01B882) at its place in the list: move, then
+ * the attack against every world actor registered (0049E8). */
+static void bullet(ctx_t *c,const world_bullet_t *b) {
     neo_world_t *w=c->w;
     neo_contact_actor_t body={b->x,b->y,b->vx,b->vy,0,b->px,b->py,b->cx,b->cy,b->parent,b->kind_angle,0,0,b->flags15,b->flags5f,0,b->mark,b->correction};
     neo_contact_request_t q=neo_contact_prepare_air(&body);
-    neo_kreq_t kq={q.x,q.y,q.dx,q.dy,(uint8_t)(q.parent_tag==0x10c72eu?1:q.parent_tag==0x10e968u?2:0),0,q.mode8,0,0,0,0};
+    neo_kreq_t kq={q.x,q.y,q.dx,q.dy,(uint8_t)(q.parent_tag==0x10c72eu||q.parent_tag==0x10d7b6u?1:q.parent_tag==0x10e968u?2:0),0,q.mode8,0,0,0,0};
     neo_kres_t k;if (!neo_kernel_sweep(&w->kernel,&kq,&k)) return;
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,k.parent==1?0x10c72eu:k.parent==2?0x10e968u:0,k.kind,k.flags};
     neo_contact_commit(&body,&res,res.parent_tag==0x10c72eu?&w->terrain:&w->root,w->epoch);
-    if (kind==NEO_WORLD_GACTOR) {
-        if (neo_world_hit_actor(w,index,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u])) {c->bullet_hits++;
-            if (c->t->frame==dbg_frame) printf("  bullet pos %u hits gactor %u at %04x,%04x (bullet %08x,%08x)\n",b->position,index,ga_w(&w->gactors[index],0x3c),ga_w(&w->gactors[index],0x40),(unsigned)body.projected_x,(unsigned)body.projected_y);}
-        return;
+    for (unsigned at=0;at<w->order_count;at++) {
+        unsigned index=w->order[at].index;
+        if (w->order[at].kind==NEO_WORLD_GACTOR) {
+            if (neo_world_hit_actor(w,index,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u])) c->bullet_hits++;
+        } else if (w->order[at].kind==NEO_WORLD_SOLDIER) {
+            neo_soldier_t *s=&w->soldiers[index];
+            if (!s->active || !w->constructed[index]) continue;
+            if (neo_soldier_receive(s,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u],w->grid)) {c->bullet_hits++;c->hit[index]=true;}
+        }
     }
-    neo_soldier_t *s=&w->soldiers[index];
-    if (!s->active || !w->constructed[index]) return;
-    if (neo_soldier_receive(s,&body,b->f5e,soldier_pistol_attacks[b->f6f&15u],w->grid)) {c->bullet_hits++;c->hit[index]=true;}
 }
-/* Bullets positioned after the actor that just ran hit it after its update. */
-static void bullets_after(ctx_t *c) {
-    if (c->previous_soldier<0) return;
-    for (unsigned i=0;i<c->t->bullet_count;i++)
-        if (c->t->bullets[i].position>c->previous_pos) bullet(c,&c->t->bullets[i],c->previous_kind,(unsigned)c->previous_soldier);
-    c->previous_soldier=-1;
+/* Bullets placed before position `pos` that have not run yet. */
+static void bullets_before(ctx_t *c,unsigned pos) {
+    while (c->bullet_at<c->t->bullet_count && c->t->bullets[c->bullet_at].position<pos) bullet(c,&c->t->bullets[c->bullet_at++]);
 }
 static void trace(void *context,uint8_t kind,uint8_t index) {
     ctx_t *c=context;const world_tick_t *t=c->t;
     if (t->frame==dbg_frame) printf("  trace kind %u index %u rng cursor %u routine %05X\n",kind,index,c->w->rng.cursor,
         kind==NEO_WORLD_GACTOR?(unsigned)ga_l(&c->w->gactors[index],0):kind==NEO_WORLD_SOLDIER?(unsigned)c->w->soldiers[index].routine:0u);
-    bullets_after(c);
     /* A thrown object created this update is inserted after the script actor
      * (03BB8E -> 00411C), behind the traversal: it first runs next update. */
     while (c->executed<t->order_count && t->order[c->executed].created && t->order[c->executed].kind==NEO_WORLD_THROW) c->executed++;
@@ -112,11 +112,7 @@ static void trace(void *context,uint8_t kind,uint8_t index) {
         if (pos<0) {neo_rng_next(&c->w->rng);c->injected++;}
         c->log_at++;
     }
-    if (kind==NEO_WORLD_SOLDIER || kind==NEO_WORLD_GACTOR) {
-        if (kind==NEO_WORLD_GACTOR || c->w->constructed[index])
-            for (unsigned i=0;i<t->bullet_count;i++) if (t->bullets[i].position<a->position) bullet(c,&t->bullets[i],kind,index);
-        c->previous_soldier=(int)index;c->previous_kind=kind;c->previous_pos=a->position;
-    }
+    bullets_before(c,a->position);
 }
 static const char *compare(const neo_soldier_t *s,const world_snapshot_t *t,bool fresh,bool hit) {
     static char buf[256];buf[0]=0;
@@ -192,18 +188,18 @@ int main(void) {
         static neo_world_t w;neo_world_init(&w,cap->scroll_x);
         memcpy(w.rng.words,cap->rng_words,sizeof(w.rng.words));w.rng.cursor=cap->rng_cursor;
         w.script.pc=(uint16_t)(cap->pc-MISSION1_SCRIPT_BASE);w.epoch=cap->epoch;
-        memcpy(w.grid,cap->grid,sizeof(w.grid));w.grid_cursor=cap->grid_cursor;
+        memcpy(w.grid,cap->grid,sizeof(w.grid));w.grid_cursor=cap->grid_cursor;w.marker_seq=cap->marker_seq;
         ctx_t c;memset(&c,0,sizeof(c));c.w=&w;w.trace=trace;w.trace_context=&c;
         for (unsigned ti=0;ti<cap->tick_count;ti++) {
             const world_tick_t *t=&cap->ticks[ti];
-            c.t=t;c.executed=0;c.log_at=0;c.splat_at=0;c.previous_soldier=-1;c.why[0]=0;
+            c.t=t;c.executed=0;c.log_at=0;c.splat_at=0;c.bullet_at=0;c.why[0]=0;
             memset(c.skipped,0,sizeof(c.skipped));skipped_now=c.skipped;
             for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) c.existed[i]=w.gactors[i].active;
             w.video_phase=t->video;w.scroll_y=t->scroll_y;memcpy(w.view,t->view,sizeof(w.view));
             neo_world_player_t p={t->player_x,t->player_y,t->player_flags15,t->player_alive,t->player_dead,t->follow,t->follow,!(t->active&1u),t->unregistered};
             unsigned before_calls=c.injected;
             neo_world_tick(&w,t->scroll_x,&p);
-            bullets_after(&c);
+            bullets_before(&c,0xffffu);
             while (c.executed<t->order_count && t->order[c.executed].created && t->order[c.executed].kind==NEO_WORLD_THROW) c.executed++;
             while (c.executed<t->order_count && t->order[c.executed].transient) {c.skipped[c.executed]=true;c.executed++;}
             /* Map the objects thrown this update to their nodes, in list order;
@@ -246,7 +242,8 @@ int main(void) {
                 if (o->s.timer5a && o->s.timer5a!=6 && ns->b.timer5a!=o->s.timer5a) {
                     ns->b.timer5a=(uint8_t)o->s.timer5a;ns->f5b=(uint8_t)o->s.f5b;ns->f5c=(uint8_t)o->s.f5c;ns->f5d=(uint8_t)o->s.f5d;
                     ns->f5e=(uint8_t)o->s.f5e;ns->anim.flash|=6u;ns->health=(uint16_t)o->s.health;
-                    if ((o->s.flags5f&0x80u) && !(ns->b.flags5f&0x80u)) {ns->b.flags5f|=0x80u;neo_grid_splat(w.grid,t->player_x,t->player_y);}
+                    /* Execution-log fixtures carry the splat at its logged place. */
+                    if ((o->s.flags5f&0x80u) && !(ns->b.flags5f&0x80u)) {ns->b.flags5f|=0x80u;if (!t->exec_log) neo_grid_splat(w.grid,t->player_x,t->player_y);}
                     c.hit[found]=true;c.external_attacks++;
                 }
                 /* Continue update: the re-created player's position as the

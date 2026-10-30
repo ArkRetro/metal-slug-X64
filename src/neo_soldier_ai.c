@@ -406,8 +406,73 @@ static bool pred_region(ctx_t *c) { /* 0AEDA8 */
     if (!(neo_soldier_b(c->s,0x7c)&8u)) return false;
     return hit_player(c,soldier_attack_sense,false)==5u;
 }
-/* ROM 0AF108: object query 040200 on the region's (empty) object lists. */
-static void pred_object(ctx_t *c) {(void)c;}
+/* Scene-root-relative position of the actor (040200/040128). */
+static void root_relative(ctx_t *c,int32_t *x,int32_t *y) {
+    const neo_contact_parent_t *p=parent_of(c->e,c->s->b.parent_tag);
+    uint32_t d0=(uint32_t)c->s->b.x,d1=(uint32_t)c->s->b.y;
+    if (p) {d0+=(uint32_t)p->x;d1+=(uint32_t)p->y;}
+    *x=S32(d0-(uint32_t)c->e->root.x);*y=S32(d1-(uint32_t)c->e->root.y);
+}
+/* ROM 040200: the marker the actor is crossing this update; -1 for none.
+ * *flag: 1 when below the marker's top half, 2 above (040274). */
+static int marker_cross(ctx_t *c,uint8_t *flag) {
+    const neo_soldier_env_t *e=c->e;
+    int32_t x,y;root_relative(c,&x,&y);
+    uint32_t best=0xffffffffu;int32_t at=0;const neo_marker_t *m=NULL;
+    for (unsigned i=0;i<e->marker_count;i++) { /* 04015C */
+        const neo_marker_t *k=&e->markers[i];
+        uint32_t dy=(uint32_t)y-(uint32_t)k->y;
+        if (dy>=((uint32_t)k->height<<16)) continue;
+        int32_t px=S32((uint32_t)k->x-(dy>>3));
+        uint32_t d=(uint32_t)(x-px);if (S32(d)<0) d=0u-d;
+        if (best>d) {best=d;at=px;m=k;}
+    }
+    if (S32(best)<0 || !m) return -1;
+    const neo_contact_parent_t *p=parent_of(e,c->s->b.parent_tag);
+    uint32_t d7=(uint32_t)c->s->b.vx;
+    if (p) d7+=(uint32_t)p->x-(uint32_t)p->previous_x;
+    d7=d7-(uint32_t)e->root.x+(uint32_t)e->root.previous_x+(uint32_t)x;
+    if (S32(((uint32_t)x-(uint32_t)at)^(d7-(uint32_t)at))>=0) return -1;
+    uint32_t d1=((uint32_t)y-(uint32_t)m->y)*2u;
+    int8_t r=(int8_t)(uint8_t)((uint8_t)(d1>>16)-m->height);
+    *flag=(uint8_t)((r<0?0xffu:0u)+2u);
+    return m->id;
+}
+/* ROM 0AF108 */
+static void pred_object(ctx_t *c) {
+    neo_soldier_t *s=c->s;uint8_t flag=0;
+    int id=marker_cross(c,&flag);
+    if (id<0) return;
+    SB(0x7e,(uint8_t)id);
+    if ((s->b.flags5f&32u) && (flag&1u)) {s->routine=0xb00c0;return;}
+    if ((s->b.flags5f&16u) && (flag&2u)) s->routine=0xb01ce;
+}
+/* ROM 0402E6: follow marker `id` (stairs); returns the remaining height
+ * word (negative: none / above). */
+static int16_t marker_follow(ctx_t *c,uint8_t id) {
+    neo_soldier_t *s=c->s;neo_contact_actor_t *a=&s->b;
+    if ((a->field66&0xf000u)==0x8000u) a->word1e=(uint16_t)(a->field66-HI(a->projected_y)); /* 01AD8C */
+    const neo_marker_t *m=NULL;
+    for (unsigned i=0;i<c->e->marker_count && !m;i++) if (c->e->markers[i].id==id) m=&c->e->markers[i];
+    if (!m) {stationary(c);return (int16_t)0x8000;}
+    /* 01AC4C: re-parent the block to the scene root. */
+    const neo_contact_parent_t *op=parent_of(c->e,a->parent_tag),*np=&c->e->root;
+    uint32_t d0=(uint32_t)a->x,d1=(uint32_t)a->y,d2=(uint32_t)a->vx,d3=(uint32_t)a->vy;
+    if (a->parent_tag!=ROOT_TAG) {
+        d2+=d0;d3+=d1;
+        if (op) {d0+=(uint32_t)op->previous_x;d1+=(uint32_t)op->previous_y;d2+=(uint32_t)op->x;d3+=(uint32_t)op->y;}
+        d0-=(uint32_t)np->previous_x;d1-=(uint32_t)np->previous_y;d2-=(uint32_t)np->x;d3-=(uint32_t)np->y;
+        d2-=d0;d3-=d1;
+    }
+    uint32_t d4=(uint32_t)(S32(d1+d3-(uint32_t)m->y)>>3);
+    d2=(uint32_t)m->x-d0-d4;
+    a->x=S32(d0);a->y=S32(d1);a->vx=S32(d2);a->vy=S32(d3);a->parent_tag=ROOT_TAG;
+    air(c,0);
+    uint32_t h=(uint32_t)m->height<<16;
+    uint32_t r=h+(uint32_t)m->y+(uint32_t)c->e->root.y-(uint32_t)a->projected_y;
+    if (S32(r)>S32(h)) r=0xffffffffu;
+    return (int16_t)(uint16_t)(r>>16);
+}
 static uint8_t choose(ctx_t *c) { /* 0AEE0C */
     neo_soldier_t *s=c->s;neo_control_t k=ctl_load(s);neo_control_frame_t f=frame(c);
     uint8_t r=neo_soldier_action_choose(&k,&s->b,&f,B(0x81),c->e->rng);ctl_store(s,&k);return r;
@@ -529,11 +594,14 @@ static neo_soldier_result_t retreat_tail(ctx_t *c) { /* 0B08EE */
     neo_soldier_t *s=c->s;
     neo_cull_bounds_t bounds=c->e->bounds;
     if (neo_cull_rectangle_outside(&s->b,&bounds,soldier_retreat_rect)) return NEO_SOLDIER_DELETED;
-    neo_control_frame_t f=c->e->players;
-    uint16_t p1x=f.p1x,p1y=f.p1y,p2x=f.p2x,p2y=f.p2y;
-    if (!(f.active_mask&2u)) {p2x=p1x;p2y=p1y;}
-    if (!(f.active_mask&1u)) {p1x=p2x;p1y=p2y;}
-    if (!f.active_mask) {UNSUPPORTED_AT();return NEO_SOLDIER_UNSUPPORTED;}
+    /* 01903A: each live player's +3C/+40 (when its +7A/+7B is set) over the
+     * script point 69B8/69BA; a missing player copies the other. */
+    const neo_soldier_env_t *e=c->e;
+    uint16_t p1x=e->point[0],p1y=e->point[1],p2x=e->point[0],p2y=e->point[1];
+    if (e->player_state[0].alive) {if (e->player_state[0].follow7a) p1x=e->player_state[0].x;if (e->player_state[0].follow7b) p1y=e->player_state[0].y;}
+    if (e->player_state[1].alive) {if (e->player_state[1].follow7a) p2x=e->player_state[1].x;if (e->player_state[1].follow7b) p2y=e->player_state[1].y;}
+    if (!e->player_state[1].alive) {p2x=p1x;p2y=p1y;}
+    if (!e->player_state[0].alive) {p1x=p2x;p1y=p2y;}
     uint16_t t84=HI(S32(L(0x84)));
     uint16_t d1=(uint16_t)neo_asr(S16(p1y),1);if (d1&0x8000u) d1=(uint16_t)(0u-d1);
     uint16_t d0=(uint16_t)(p1x-t84);if (d0&0x8000u) d1=(uint16_t)(0u-d1);
@@ -707,6 +775,41 @@ static neo_soldier_result_t run(ctx_t *c) {
         if (r==2u) {s->routine=0xafbc0;continue;}
         a->vx=a->scalar62;goto fall_start;
     }
+    /* ---- stairs/ledges of the object list (0B00C0..0B0332) ---- */
+    case 0xb00c0:a->flags15&=(uint8_t)~1u;START(0x23e43c);s->routine=0xb00dc; /* fall through */
+    case 0xb00dc:
+        a->vy=0;marker_follow(c,B(0x7e));
+        if (anim_step(c)) s->routine=0xb0102;
+        return tail(c,false);
+    case 0xb0102:START(0x23e47c);a->vy=0x15555;s->routine=0xb0120; /* fall through */
+    case 0xb0120: {
+        int16_t h=marker_follow(c,B(0x7e));
+        if (h<0) s->routine=0xafce2;
+        else if ((uint16_t)h<0x24u) s->routine=0xb0168;
+        if (anim_step(c)) START(0x23e47c);
+        return tail(c,false);
+    }
+    case 0xb0168:START(0x23e4ee);a->vx=0;a->vy=0x30000;s->routine=0xb018e; /* fall through */
+    case 0xb018e:
+        a->vy=0;marker_follow(c,B(0x7e));
+        if (anim_step(c)) {a->vx=S32(0xfffe0000u);a->scalar62=S32(0xfffe0000u);a->vy=0x20000;s->routine=0xafd94;}
+        return tail(c,false);
+    case 0xb01ce:a->flags15&=(uint8_t)~1u;START(0x23e5b8);a->vy=0;s->routine=0xb01f2; /* fall through */
+    case 0xb01f2:
+        marker_follow(c,B(0x7e));
+        if (anim_step(c)) s->routine=0xb0210;
+        return tail(c,false);
+    case 0xb0210:START(0x23e6ae);a->vy=S32(0xfffeaaabu);s->routine=0xb022e; /* fall through */
+    case 0xb022e:
+        if (marker_follow(c,B(0x7e))<0) s->routine=0xafce2;
+        if (anim_step(c)) START(0x23e6ae);
+        if (a->flags15&64u) s->routine=0xb0272;
+        return tail(c,false);
+    case 0xb0272:START(0x23e71a);a->vx=0;a->vy=0;s->routine=0xb0298; /* fall through */
+    case 0xb0298:
+        air(c,0);
+        if (anim_step(c)) s->routine=0xaf380;
+        return tail(c,false);
     case 0xb0396: /* idle on a vehicle (+76 = 3/4): random program of 0B037E */
         START(soldier_idle_programs[(neo_rng_next(c->e->rng)&0xcu)>>2]);a->scalar62=0;s->routine=0xb03c0; /* fall through */
     case 0xb03c0: {

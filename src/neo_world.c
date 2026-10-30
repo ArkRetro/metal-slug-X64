@@ -273,6 +273,11 @@ static void ga_kill(tick_t *t,neo_gactor_t *a) {
     ga_sb(a,0x6b,0xff);ga_sw(a,0x58,0xffff);ga_sb(a,0x68,0);ga_sb(a,0x69,0xff);
     a->active=false;
 }
+static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
+    tick_t *t=ctx;neo_world_t *w=t->w;unsigned l=t->genv.video&1u;
+    if (w->marker_count[l]>=8u) return; /* 040114: 0x50 bytes */
+    w->markers[l][w->marker_count[l]++]=(neo_marker_t){x,y,h,id};
+}
 static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
 static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
     (void)ctx;neo_collision_vehicle_wreckage((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(uint8_t)(templ==0x29c26u?3u:1u));
@@ -536,6 +541,8 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->bounds=t.bounds;e->camera_word=HI(w->terrain.x);e->program=program;e->emit=emit;e->emit_context=&t;
     e->event=soldier_event;e->event_context=&t;e->blood=false;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
+    e->player_state[0].follow7b=pl?pl->follow_y:0xff;e->player_state[0].x=px;e->player_state[0].y=py;
+    e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;
     /* RAM 10000E as the actors read it: the counter has already advanced for
@@ -544,6 +551,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
+    g->marker=g_marker;g->marker_seq=&w->marker_seq;
+    w->marker_count[g->video&1u]=0;                          /* 0401E8 */
+    e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */

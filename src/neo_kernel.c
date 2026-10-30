@@ -34,12 +34,19 @@ static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b402
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}
 static void or4026(kr_t *k,uint16_t v) {k->b4024[2]|=(uint8_t)(v>>8);k->b4024[3]|=(uint8_t)v;}
 
-/* 0C79FE: terrain-object ring lookup; equals the native grid in the loaded
- * window (rows above the 256-pixel map are empty in the ring). */
-static uint8_t cell(uint16_t x,uint16_t y) {
+/* 0C79FE: terrain-object ring lookup (rows above the 256-pixel map are empty
+ * in the ring). The ring holds 64 columns: the loaded window starts one
+ * column before (-64-layer.x)>>3 (column loads observed in the m2x capture:
+ * the slot of column c is reloaded when that start passes c+1); a column
+ * outside it reads the loaded column sharing its ring slot, as the original
+ * does for actors far behind or ahead of the camera. */
+static uint8_t cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
     unsigned row=(unsigned)((~y)&0x1f8u)>>3; /* (~y)/8 modulo 64 */
     unsigned world_row=63u-row; if (world_row>=32u) return 0;
-    return neo_collision_cell((int)x,(int)(world_row*8u));
+    int first=((int16_t)(uint16_t)(-64-(int16_t)(uint16_t)((uint32_t)s->terrain.x>>16))>>3)-1;
+    int col=(int16_t)x>>3;
+    int loaded=first+(int)((unsigned)(col-first)&63u);
+    return neo_collision_cell(loaded*8+((int)x&7),(int)(world_row*8u));
 }
 /* 012938. d0.w/d1.w are local pixels (caller swapped the Q16 words). */
 static void k12938(kr_t *k) {
@@ -59,7 +66,7 @@ static void k12938(kr_t *k) {
             if (d5<h) {k->d6=m[4];hi=m[5];lo=m[10+(unsigned)d5*w+d4];}
         }
     } else {
-    uint32_t c=cell((uint16_t)k->d0,(uint16_t)k->d1);
+    uint32_t c=cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
     k->d6=c;
     uint32_t g=(c&0xe0u)>>5;
     if (k->s->group_map) g=k->s->group_map[g];

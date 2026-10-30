@@ -34,14 +34,15 @@ def wait_for(pattern,timeout=120):
 stop=threading.Event();arena=threading.Event();domes=threading.Event();shop=threading.Event()
 shop_t=[0.0];t_start=[0.0]
 def pad():
-    # Fire held all the time; up every other half second; jump every 4 s;
+    # Fire tapped (10 presses a second: the H fires a burst per press,
+    # +9B bit 4 is the press edge 10E9EC); up every other half second; jump every 4 s;
     # right, or left/right/still in 1.5 s turns once the boss is fought.
     t0=time.monotonic();t_start[0]=t0;state={}
     def hold(name,on):
         if state.get(name)!=on:key('keydown' if on else 'keyup',name);state[name]=on
     while not stop.is_set():
         t=time.monotonic()-t0
-        hold('b',True)
+        hold('b',int(t*20)%2==0)
         hold('Up',int(t*2)%2==1)
         hold('a',(t%4.0)<0.15)
         if domes.is_set():

@@ -505,7 +505,7 @@ static int run_gactor(tick_t *t,unsigned i) {
     ga_result_t r=neo_region_tick(a,&t->genv);
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t h=(uint8_t)(w->draws[k].attributes>>8);
-        w->draws[k].palette=h && h<=4u?a->palette[h-1u]:a->palette[0];
+        w->draws[k].palette=h && h<=6u?a->palette[h-1u]:a->palette[0];
         w->draws[k].flash=(ga_b(a,0x17)&1u) && !(ga_b(a,0x17)&0x80u);
         w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
@@ -679,11 +679,17 @@ static bool b_effect(void *c,const neo_boss_effect_t *e) {
      * +19..+1C hold the node's references, +14/+16 the draw/flash slot. */
     uint8_t count=e->image[0x1d]<4u?e->image[0x1d]:4u;
     for (unsigned i=0;i<count;i++) {uint8_t s=e->image[0x19+i];a->palette[i]=s<32?w->boss_palette[s]:0;ga_sb(a,0x19+i,(uint8_t)(i+1u));}
+    /* A draw/flash slot the node no longer references (the shell releases
+     * its three palettes before converting into the explosion 01C71E, which
+     * then allocates 0x204 into +19) keeps its resource behind handle 5/6:
+     * the original draws with the slot's last contents until the allocator
+     * reuses it, and the +19.. list stays as the original's (the explosion's
+     * descriptors select palette 0 = +19). */
     static const uint8_t refs[2]={0x14,0x16};
     for (unsigned r=0;r<2;r++) {
         uint8_t s=e->image[refs[r]],h=0;
         for (unsigned i=0;i<count;i++) if (e->image[0x19+i]==s) h=(uint8_t)(i+1u);
-        if (!h && s && s<32 && count<4u) {a->palette[count]=w->boss_palette[s];h=(uint8_t)(++count);}
+        if (!h && s && s<32) {a->palette[4+r]=w->boss_palette[s];h=(uint8_t)(5+r);}
         ga_sb(a,refs[r],h);
     }
     ga_sb(a,0x1d,count);

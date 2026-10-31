@@ -38,7 +38,8 @@ void scene_request_image(const scene_image_t *image,unsigned priority);
 void scene_service(void);
 const void *scene_page(const scene_image_t *image);
 /* Non-blocking variant for sprite parts: once this frame has spent its
- * synchronous decode budget (SCENE_SYNC_DECODES), a part whose chunk is not
+ * decode budget (SCENE_SYNC_DECODES, shared with the prefetch decodes of
+ * scene_service), a part whose chunk is not
  * resident is requested at top priority and NULL is returned (the part is
  * not drawn this frame) instead of waiting for another DMA + decode. */
 const void *scene_page_try(const scene_image_t *image);

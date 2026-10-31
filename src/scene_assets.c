@@ -58,7 +58,8 @@ void scene_service(void) {
     // Prefetch spends at most SCENE_SERVICE_DECODES decodes per frame; the
     // chunk stays in its staging buffer for the next frame. A synchronous
     // wait (require_chunk) is never held back.
-    if (!timing_depth && frame_service_decodes>=SCENE_SERVICE_DECODES) { stats.held++;return; }
+    // The budget is shared with the synchronous decodes of deferrable parts.
+    if (!timing_depth && frame_service_decodes+frame_sync_decodes>=SCENE_SERVICE_DECODES) { stats.held++;return; }
     if (!timing_depth) frame_service_decodes++;
     uint32_t started=TICKS_READ();
     int chunk=active_chunk,slot=active_slot;unsigned stage=active_stage;
@@ -112,7 +113,7 @@ const void *scene_page_try(const scene_image_t *image) {
     assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");
     unsigned chunk=image->page/8;
     if (!resident_chunk(chunk)) {
-        if (frame_sync_decodes>=SCENE_SYNC_DECODES) { stats.deferred++;request(chunk,255);return NULL; }
+        if (frame_sync_decodes+frame_service_decodes>=SCENE_SYNC_DECODES) { stats.deferred++;request(chunk,255);return NULL; }
         frame_sync_decodes++;
     }
     return scene_page(image);

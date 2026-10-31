@@ -317,7 +317,7 @@ siguiente al paso 2) con sus contadores:
 | `018846..018870` | `10E9E3`=FF, música `15418`, `+7C`=0x1E, `subq/bne` | 30 actualizaciones |
 | `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento = **parada explícita**, sigue en el acto |
 | `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras **nativas** (`src/neo_end.c`, abajo) |
-| `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido = **parada explícita** |
+| `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido **nativo** (`src/neo_fade.c`) |
 | `01891E` | misión `42F4`+1 < 6 → misión siguiente (`1829E`) | misiones 2–6 no portadas: **vuelve a empezar la misión 1** |
 
 ### Letras MISSION COMPLETE `06090A` (`src/neo_end.c`)
@@ -352,11 +352,41 @@ primera actualización: la lista de sprites aún no ha llegado a la VRAM) y
 sola actualización por volcado). `tools/test_gameplay.c` comprueba que las 18
 letras llegan, salen y la raíz marca el `+60`, sin paradas.
 
+### Fundido `9C0A` (`src/neo_fade.c`)
+
+`009C0A` fija los objetivos (cada canal limitado a −31..31, en 8.8), el
+número de pasos (`d3`, 0/1 → 1) y el paso `divs.w`; `00698C` lo ejecuta el
+actor cabeza de lista `003918` una vez por actualización (antes del actor de
+misión) y el último paso cae en el objetivo. El dibujo suma el byte alto a
+cada canal de 5 bits con saturación (como la conversión `005A0A`) en copias
+de las TLUT que se suben mientras dura (también la paleta de Marco y el color
+de fondo); la capa fija queda fuera. MAME `runK`: las paletas 0..9 no
+cambian, la entrada de fondo 0xFFF sí, todo negro en 14452. Prueba
+(`test_gameplay`): −248 por actualización y −31 al terminar.
+
+### Paradas que quedan
+
+- **Recuento de prisioneros `0308C0`** (y `cae6c` ya traducido): el actor
+  dibuja en la capa fija con el motor de texto completo (`03DD96`: páginas
+  0x30, `A`, `H`, `K`, `a`, `h`… y los prefijos DE/DF, de los que `neo_hud`
+  solo tiene `<10` y `a`), nombres y grados aleatorios de los prisioneros
+  (`2CAD6`/`2C982` con `0029F2`), el desfile `030FB2` (programas
+  `237AEC/237B84/237BD0/237C48`, ya exportados por `extract_soldier_programs.py`)
+  y la bonificación BCD (`057948`: 10000 por prisionero, 100000 y la tabla
+  `2D0A74` por `+8E`). Su traza de familia está en `runK`
+  (`MSX_REST_FAMILY_ROOTS=308e4`, fotogramas 13759..14453, 9 nodos) para cuando se
+  traduzca. Sigue siendo la única parada del fin de misión.
+- **`019798`** (fin de partida): no es un actor de sprites propio; crea un
+  objeto `08C374` con `08CD58` (tipo de la tabla `019792`, `+70`=0x384,
+  `+72`=0x10) y lo prepara con `0196E8`. Hace falta una captura de fin de
+  partida con volcados de VRAM de sprites y traza de familia (las de `go1..3`
+  ya no están en disco y `capture_gameover.lua` solo guarda la capa fija).
+
 Captura `runJ` (volcados cada 30 fotogramas): `018870` en 13710, `0188B0`
 (recuento) en 13770, `0188F4` en ≤14040, `018916` en 14370, misión 2 en
 14460; la puntuación pasa de 55330 a 285330 mientras `10C5FC` baja de 11 a
 0 (recuento). Prueba: `tools/test_gameplay.c` comprueba 30+160+32
-actualizaciones y 2 paradas (recuento y fundido).
+actualizaciones y 1 parada (recuento).
 
 ## Pendiente
 
@@ -370,4 +400,4 @@ actualizaciones y 2 paradas (recuento y fundido).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
-- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0`, fundido `9C0A` (las letras `06090A` ya son nativas).
+- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0` (las letras `06090A` y el fundido `9C0A` ya son nativos).

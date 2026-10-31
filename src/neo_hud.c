@@ -376,10 +376,11 @@ void neo_hud_game_over(neo_hud_t *h,unsigned p,const neo_hud_input_t *in) {
         if (in->can_continue) continue_start(h,in); else h->continue_timer=0;
         game_over_enter(h,q,in);return;
     }
-    /* 0C98A2: 019798 creates the CONTINUE? actor (008CD58, the big sprite text
-     * and digit) at the respawn point 0196E8: not ported, explicit stop; the
-     * fix-layer text of this panel is. */
-    stop(h,"continue actor 019798",p);
+    /* 0C98A2: 019798 drops an item (08CD58: kind 019792[0] = 0, +70 =
+     * 0x384, +72 = 0x10) at the respawn point 0196E8 (go2 capture: node
+     * 08C53C at the game over): not ported, explicit stop. The big CONTINUE?
+     * and digit are the mission actor's program 018120 (neo_continue.c). */
+    stop(h,"continue item 019798",p);
     panel_clear(h,q,in->hud_on);
     continue_start(h,in);
     q->state=NEO_PANEL_CONTINUE;
@@ -408,14 +409,17 @@ static void continue_update(neo_hud_t *h,neo_panel_t *q,const neo_hud_input_t *i
 }
 void neo_hud_continue_step(neo_hud_t *h,const neo_hud_input_t *in) {
     uint16_t t=h->continue_timer;
+    h->continue_draw=false;
     if (!t) return;                                   /* 0187A4 */
     uint16_t d0;
     if (t<0x780 && in->speedup && h->mode[0]==2) {     /* 0187B0: 190F0 bit 5 */
         d0=(uint16_t)((t&0xff00)|0x80);d0=d0>=0x100?(uint16_t)(d0-0x100):0;
     } else d0=t>=5?(uint16_t)(t-5):0;
     h->continue_timer=d0;
-    if (in->continue_dip && d0 && h->mode[0]!=1 && h->mode[1]!=1 && in->join_mask && (uint8_t)(t>>8)!=(uint8_t)(d0>>8))
-        h->sound=0x10d4;                              /* 0187F0..018836 (10E9E3 clear) */
+    /* 0187F0..01881C (10E9E3 clear): the beep on a new digit (018836) and
+     * the mission actor's 00427A (01883C, program 018120: neo_continue.c). */
+    h->continue_draw=in->continue_dip && d0 && h->mode[0]!=1 && h->mode[1]!=1 && in->join_mask;
+    if (h->continue_draw && (uint8_t)(t>>8)!=(uint8_t)(d0>>8)) h->sound=0x10d4;
 }
 void neo_hud_frame(neo_hud_t *h,const neo_hud_input_t *in) {
     h->continued=false;

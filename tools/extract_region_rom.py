@@ -87,6 +87,11 @@ BLOBS=[
     (0x63716,0x8,'063756 C blast cull rectangle (019504)'),
     (0x63814,0x8,'063FDC C shell cull rectangle (019504)'),
     (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
+    (0x30800,0xC0,'0308C0 prisoner tally strings 030800..0308BF (RECAPTURED PRISONER, the special prisoners and ranks 030825..03085A, blanks 03085F, GREAT!/DRAW!/NO PRISONER, 1P/2P, blank 03089C, x10000, +30000 and its blanks)'),
+    (0x2C982,0x154,'0306D0 prisoner ranks: list 02C982 (count word, strings; 03010A), English index 02C9F8 and the Japanese list 02CA38 / index 02CA96 (0029F2)'),
+    (0x2CAD6,0x1D96,'0306D0 English prisoner names 02CAD6 (count word 989, zero-terminated strings; 030152)'),
+    (0x3D512,0x884,'03DD96 font tables: page X two-byte codes 03D512, pages H 03D596, K 03D796, k 03D996 and h 03DB96'),
+    (0x3E194,0x114,'03E0A8 accent pairs of the font page 0x32 (03E194..03E2A7)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

@@ -7,6 +7,7 @@
 #include "neo_world.h"
 #include "neo_hud.h"
 #include "neo_end.h"
+#include "neo_continue.h"
 #include "neo_fade.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
@@ -62,9 +63,16 @@ typedef struct {
     unsigned continues,game_over_frames;
     /* Mission end sequence 0x018846 (gameplay.c mission_end_step). */
     uint8_t mission_end;bool end_started;uint16_t end_timer;unsigned end_stops;
-    /* Its actors: the MISSION COMPLETE letters 06090A (neo_end.c); RAM
-     * 10EA1B (cae6c: highest mission reached). */
+    /* Its actors: the prisoner tally 0308C0 (neo_tally.c) and the MISSION
+     * COMPLETE letters 06090A (neo_end.c); RAM 10EA1B (cae6c: highest
+     * mission reached). end_ram: the RAM the tally reads and writes (copied
+     * from and back to the world); end_fire_was/end_jump_was: A and B held
+     * at the previous update (new presses 10C35D). */
     neo_end_t end;uint8_t best_mission;
+    neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
+    /* The big CONTINUE? and digit: the mission actor's program 018120
+     * (neo_continue.c), started at the mission start (01868A). */
+    neo_continue_t continue_sprites;
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
@@ -134,7 +142,7 @@ extern const bool msx_reference_invulnerable;
  * gameplay.o once missed the item fields: its ga_flags.player_handlers read
  * the low byte of item_pickups and the first item taken froze the player's
  * input) stops at start instead of corrupting the game. */
-enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_LETTERS,MSX_END_FADE,MSX_END_DONE };
+enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_TALLY,MSX_END_LETTERS,MSX_END_FADE,MSX_END_DONE };
 /* Updates of the GAME OVER panel before the original game ends (MAME go1). */
 #define MSX_GAME_OVER_UPDATES 190u
 #define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \

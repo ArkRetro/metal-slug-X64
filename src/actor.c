@@ -299,6 +299,20 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
     if (!was_complete && game.complete) debugf("MSX mission complete camera=%d x=%d\n",game.camera,game.x);
+    {   /* Prisoner tally 0308C0 (neo_tally.c): start and end. */
+        static uint8_t seen_end;static uint16_t rescued_at_start;
+        if (game.mission_end!=seen_end) {
+            if (game.mission_end==MSX_END_TALLY) {
+                rescued_at_start=game.end_ram.rescued[0];
+                debugf("MSX prisoner tally started (0308C0 prisoners=%u special=%u/%u)\n",rescued_at_start,game.end_ram.special[0][0],game.end_ram.special[0][1]);
+            } else if (seen_end==MSX_END_TALLY) {
+                const uint8_t *sc=game.world.pickup.score[0];
+                debugf("MSX prisoner tally done (counted=%u left=%u score=%02x%02x%02x%02x nodes=%u stops=%u text stops=%u)\n",
+                    rescued_at_start,game.end_ram.rescued[0],sc[0],sc[1],sc[2],sc[3],game.end.spawned,game.end.unsupported,game.end_ram.unsupported_text);
+            }
+            seen_end=game.mission_end;
+        }
+    }
     {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
         static bool logged;
         if (game.mission_end!=MSX_END_LETTERS) logged=false;
@@ -328,6 +342,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
+    for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);
     if (game.world.boss_active) scene_prefetch_boss();
     scene_prefetch_ahead(game.camera);
     scene_service();
@@ -398,6 +413,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* Mission-end actors (MISSION COMPLETE letters 06090A), created after
      * the mission actor: above the world's sprites, below the fix layer. */
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],false);
+    /* The mission actor's CONTINUE? and digit (program 018120). */
+    for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],false);
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     /* The original fix layer above every layer, on the 304x224 window. */

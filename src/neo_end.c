@@ -231,7 +231,8 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
         int n=s->order[i];neo_gactor_t *a=&s->nodes[n];
         if (!a->active || a->placeholder) continue;
         t.current=n;e.unsupported=0;
-        ga_result_t r=neo_end_routine(ga_l(a,0))?tick(a,&e,in):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
+        ga_result_t r=neo_end_routine(ga_l(a,0))?tick(a,&e,in):
+            neo_tally_routine(ga_l(a,0))?neo_tally_tick(s,a,&e,in->ram):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
         if (r==GA_UNSUPPORTED) {
             /* Explicit stop: the node stays frozen, counted once. */
             if (!s->unsupported) s->unsupported_at=e.unsupported_at;
@@ -246,6 +247,8 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
         }
         if (s->on_updated) s->on_updated(s->on_alloc_ctx,a);
     }
+    /* The tally root's last update set the mission actor's +60 (030A6E). */
+    if (in->ram && in->ram->mission60) {s->mission60=1;in->ram->mission60=0;}
     /* Nodes deleted with no node created after them leave the list. */
     for (unsigned i=s->count;i-->0;) {
         int n=s->order[i];

@@ -106,10 +106,21 @@ static neo_anim_result_t step(neo_anim_state_t *s,neo_anim_render_t *r,
             }
             s->cursor=(uint16_t)pc;break;
         }
-        case NEO_ANIM_SET_BYTE:case NEO_ANIM_SET_WORD:case NEO_ANIM_SET_LONG: /* 00445A/004464/004470 */
-            if (!actor || !actor->write_field || !actor->write_field(actor->context,c->target,
-                c->kind==NEO_ANIM_SET_BYTE?1u:c->kind==NEO_ANIM_SET_WORD?2u:4u,c->asset)) return NEO_ANIM_UNSUPPORTED;
+        case NEO_ANIM_SET_BYTE:case NEO_ANIM_SET_WORD:case NEO_ANIM_SET_LONG: { /* 00445A/004464/004470 */
+            unsigned size=c->kind==NEO_ANIM_SET_BYTE?1u:c->kind==NEO_ANIM_SET_WORD?2u:4u;
+            if (!actor || !actor->write_field || !actor->write_field(actor->context,c->target,size,c->asset)) return NEO_ANIM_UNSUPPORTED;
+            /* 004364 reads +12..+15 and +3C/+40 at every pose: a write to the
+             * attributes or the position applies to the next pose of the same
+             * pass (the mission actor's CONTINUE? program 018120). */
+            uint8_t h,l;
+            if (c->target<=0x15 && c->target+size>0x14 && actor->read_byte &&
+                actor->read_byte(actor->context,0x14,&h) && actor->read_byte(actor->context,0x15,&l)) r->attributes=(uint16_t)(h<<8|l);
+            if (c->target<=0x3d && c->target+size>0x3c && actor->read_byte &&
+                actor->read_byte(actor->context,0x3c,&h) && actor->read_byte(actor->context,0x3d,&l)) r->x=(uint16_t)(h<<8|l);
+            if (c->target<=0x41 && c->target+size>0x40 && actor->read_byte &&
+                actor->read_byte(actor->context,0x40,&h) && actor->read_byte(actor->context,0x41,&l)) r->y=(uint16_t)(h<<8|l);
             s->cursor=(uint16_t)pc;break;
+        }
         case NEO_ANIM_DEC_BYTE: { /* 00447C: SUBQ.B #1 */
             uint8_t v;
             if (!actor || !actor->read_byte || !actor->write_field || !actor->read_byte(actor->context,c->target,&v) ||

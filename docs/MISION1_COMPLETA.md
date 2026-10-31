@@ -346,7 +346,7 @@ y comprobar que todo descriptor y paleta de las exportaciones de ambos lados
 sigue presente e idéntico.
 
 ```sh
-C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss V=/home/user/captures-world
+C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss V=/home/user/captures-world E=/home/user/captures-end
 cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/robe1 $C/bld1@54800-55700 $C/bld1@b6500-b6b00 $C/trk3@33c98-34200 $C/trk3@39500-3a100 \
   $C/trk3@a93c0-a9a00 $C/trk3@35600-35a00 $C/pri1@99862-99dc0 $C/pri1@8c37c-8c700 $B/runA@0-1 \
@@ -357,9 +357,17 @@ cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
   $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 $W/cfam@63600-64300 $W/cfam@c5800-c5a00 \
   $V/civ1@31d80-32150 $C/fam2@1ce08-1d763 $C/bld1@1ce08-1d763 $C/bld1@1e058-1e07c $C/trk3@1ce08-1d763 \
-  $C/rl2@1ce08-1d763 $V/gift3@8c374-8c700 $V/gift3@8d330-8d850 \
-  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
+  $C/rl2@1ce08-1d763 $V/gift3@8c374-8c700 $V/gift3@8d330-8d850 $E/tal1@308c0-311d8 \
+  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --palette-capture $E/go2 \
+  --keep /nonexistent && cd ..
 ```
+
+Rama `work-end` (ROM 11): se añaden `$E/tal1@308c0-311d8` (sprites del
+recuento) y `--palette-capture $E/go2` (paletas `0x63`/`0x25F` del
+CONTINUE?). `civ1` y `gift3` ya no estaban en disco: la exportación se hizo
+sin ellas y con `--keep` sobre la anterior (sus descriptores salen de la ROM
+y sus paletas se conservan); resultado: superconjunto de la anterior (todo
+descriptor y paleta presentes e idénticos), ver FIN_PARTIDA.md.
 
 Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
 2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77
@@ -380,7 +388,7 @@ continuación):
 
 | ROM | Pieza |
 | --- | --- |
-| `0C9848` | DIP `10FD8A` (continuación permitida), dos jugadores → GAME OVER; créditos `1A872` → `+8C`; `1A8AA` (CREDIT_CHECK de la BIOS en MVS) o AES → `019798` (actor CONTINUE?, **parada explícita**), `0C9254` limpia el panel, `19008` pone el contador `1013E2` = `0x9FF` |
+| `0C9848` | DIP `10FD8A` (continuación permitida), dos jugadores → GAME OVER; créditos `1A872` → `+8C`; `1A8AA` (CREDIT_CHECK de la BIOS en MVS) o AES → `019798` (objeto en el punto de reaparición, **parada explícita**), `0C9254` limpia el panel, `19008` pone el contador `1013E2` = `0x9FF` |
 | `0C98CC`/`0C9918` | modo del jugador `10FDB6+p` con la tabla `27B4` de `27C4`; moneda nueva → contador a 9 (`0C993E`); contador 0 → GAME OVER; texto `CONTINUE? ` (`0C90FE`, fuente de dos filas) una vez y la cifra `0C9112[contador>>8]` cada actualización |
 | `0187A4..0187EC` | paso del contador en el actor de misión: −5 por actualización; por debajo de `0x780`, B (`190F0` D1 bit 5) salta a la cifra siguiente (`|0x80 − 0x100`); pitido `0x10D4` al cambiar de cifra |
 | `0C98DE`, `0C8CB2`, `0C9420` | continuación tomada: la última cifra de la puntuación cuenta continuaciones (máx. 9), contador `10E9E4+2p`, vidas del DIP `10FD88` (1 si es 0), modo 1 |
@@ -398,7 +406,9 @@ TANK BUSTERS» y la demo): el port no tiene tabla ni demo y **reinicia la
 misión 1** tras esas 190 actualizaciones.
 
 **Paradas explícitas** (`neo_hud_t.unsupported`, registro `MSX HUD explicit
-stops`): el actor de sprites CONTINUE?/cifra grande `019798` (`08CD58`), la
+stops`): el objeto que suelta `019798` (`08CD58`; el CONTINUE? y la cifra
+grande son el programa `018120` del actor de misión, nativo desde ROM 11:
+[FIN_PARTIDA.md](FIN_PARTIDA.md)), la
 tabla de récords `057B44`/entrada de nombre `058132` (se sigue la rama de
 puntuación que no entra, la de las capturas), el gráfico de unión `0C94D6`
 tras la continuación (el panel de juego se redibuja en la actualización
@@ -433,7 +443,7 @@ siguiente al paso 2) con sus contadores:
 | ROM | Pieza | Port |
 | --- | --- | --- |
 | `018846..018870` | `10E9E3`=FF, música `15418`, `+7C`=0x1E, `subq/bne` | 30 actualizaciones |
-| `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento = **parada explícita**, sigue en el acto |
+| `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento **nativo** (`src/neo_tally.c`, [FIN_PARTIDA.md](FIN_PARTIDA.md)) |
 | `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras **nativas** (`src/neo_end.c`, abajo) |
 | `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido **nativo** (`src/neo_fade.c`) |
 | `01891E` | misión `42F4`+1 < 6 → misión siguiente (`1829E`) | misiones 2–6 no portadas: **vuelve a empezar la misión 1** |
@@ -482,29 +492,28 @@ de fondo); la capa fija queda fuera. MAME `runK`: las paletas 0..9 no
 cambian, la entrada de fondo 0xFFF sí, todo negro en 14452. Prueba
 (`test_gameplay`): −248 por actualización y −31 al terminar.
 
-### Paradas que quedan
+### Recuento y continuación (ROM 11)
 
-- **Recuento de prisioneros `0308C0`** (y `cae6c` ya traducido): el actor
-  dibuja en la capa fija con el motor de texto completo (`03DD96`: páginas
-  0x30, `A`, `H`, `K`, `a`, `h`… y los prefijos DE/DF, de los que `neo_hud`
-  solo tiene `<10` y `a`), nombres y grados aleatorios de los prisioneros
-  (`2CAD6`/`2C982` con `0029F2`), el desfile `030FB2` (programas
-  `237AEC/237B84/237BD0/237C48`, ya exportados por `extract_soldier_programs.py`)
-  y la bonificación BCD (`057948`: 10000 por prisionero, 100000 y la tabla
-  `2D0A74` por `+8E`). Su traza de familia está en `runK`
-  (`MSX_REST_FAMILY_ROOTS=308e4`, fotogramas 13759..14453, 9 nodos) para cuando se
-  traduzca. Sigue siendo la única parada del fin de misión.
-- **`019798`** (fin de partida): no es un actor de sprites propio; crea un
-  objeto `08C374` con `08CD58` (tipo de la tabla `019792`, `+70`=0x384,
-  `+72`=0x10) y lo prepara con `0196E8`. Hace falta una captura de fin de
-  partida con volcados de VRAM de sprites y traza de familia (las de `go1..3`
-  ya no están en disco y `capture_gameover.lua` solo guarda la capa fija).
+- **Recuento de prisioneros `0308C0`**: **nativo** con el motor de texto
+  completo `03DD96` (`src/neo_tally.c`, `src/neo_text.c`); cuatro capturas
+  con traza de VRAM, en bucle cerrado bit a bit (palabras de VRAM, bytes,
+  aleatorios, puntuación). Paradas explícitas solo en ramas que el port no
+  alcanza (japonés, jugador 2, medallas `018FEA`). Ver
+  [FIN_PARTIDA.md](FIN_PARTIDA.md).
+- **CONTINUE? y la cifra grande**: no son `019798` sino el programa
+  `018120` del propio actor de misión, **nativo** (`src/neo_continue.c`,
+  5110 entradas de la lista de sprites iguales a MAME).
+- **`019798`** (fin de partida): suelta un objeto `08C374` (`08CD58`: tipo
+  `019792[0]` = 0, `+70`=0x384, `+72`=0x10) en el punto `0196E8`; sigue
+  como **parada explícita** (la captura `go2` lo muestra).
+
 
 Captura `runJ` (volcados cada 30 fotogramas): `018870` en 13710, `0188B0`
 (recuento) en 13770, `0188F4` en ≤14040, `018916` en 14370, misión 2 en
 14460; la puntuación pasa de 55330 a 285330 mientras `10C5FC` baja de 11 a
-0 (recuento). Prueba: `tools/test_gameplay.c` comprueba 30+160+32
-actualizaciones y 1 parada (recuento).
+0 (recuento, con el salto A/B). Prueba: `tools/test_gameplay.c` comprueba
+30 + recuento + 160 + 32 actualizaciones, ninguna parada y la bonificación
+exacta.
 
 ## Pendiente
 
@@ -518,4 +527,4 @@ actualizaciones y 1 parada (recuento).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
-- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0` (las letras `06090A` y el fundido `9C0A` ya son nativos).
+- Actores de fin de partida/misión: el objeto de `019798` y la tabla de récords `057B44` (el recuento `0308C0`, el CONTINUE? `018120`, las letras `06090A` y el fundido `9C0A` ya son nativos).

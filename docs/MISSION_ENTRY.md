@@ -203,6 +203,18 @@ colgado usan el procesamiento común del port. `test_gameplay`: sin entrada
 aterriza a los 200 fotogramas (como MAME); con B a los 20, corta y aterriza
 43 fotogramas después.
 
+**Borde izquierdo (fallo de ROM 12 en MiSTer: «si caminas hacia atrás caes
+infinito»).** La pantalla para al jugador en `cámara+28`; el port recortaba
+solo la x y dejaba los pies a la altura de la x sin recortar, que en la
+rampa de la salida (más baja a la izquierda) queda dentro del suelo: el
+siguiente paso de suelo no encontraba suelo y caía sin fin (también desde el
+aterrizaje antiguo de 4060). MAME (`capture_mission_rest.lua`,
+`MSX_REST_INPUTS=2040:L:1`): x se queda en 28,0 con la cámara en 0 y los pies
+sobre el suelo en esa x (y = 71). `clamp_feet` (`gameplay.c`) recorta y, si
+estaba apoyado, recoloca los pies sobre el suelo en la x recortada (paso
+normal, descenso y expulsión de vehículo). `test_gameplay`: izquierda desde
+el traspaso, tras el corte y tras el aterrizaje, y en cada parada de cámara.
+
 **Paradas explícitas.**
 
 - La deriva usa el RNG del port, no la secuencia exacta de la partida.

@@ -268,6 +268,16 @@ static void mount_place(msx_game_t *g) {
     g->grounded=(m[0x15]&0x40u)!=0;g->facing=(m[0x15]&1u)?-1:1;
     g->velocity_x=g->velocity_y=0;g->ride=0;g->air_ticks=0;
 }
+/* The screen edges (camera+28 .. right_limit) on the feet: a grounded
+ * player stopped by an edge stands on the floor at the stopped x (MAME,
+ * left held after the landing: x 28.0 at camera 0, y on the floor there).
+ * Clamping x alone left the feet at the height of the unclamped x, inside
+ * the slope, and the next walk step found no floor (ROM 12, MiSTer). */
+static void clamp_feet(msx_game_t *g,neo_air_t *body,bool grounded) {
+    g->x=clamp(body->x,(g->camera+28)*MSX_UNIT,right_limit(g));
+    neo_surface_t s;
+    if (g->x!=body->x && grounded && neo_surface_at(g->x,body->y,4*NEO_UNIT,4*NEO_UNIT,&s)) body->y=s.height;
+}
 /* The parachute descent (marco_descent.c): 0C162A hanging or 0C170C after
  * the cut, with the port's air step for the sweep (0143EE, 0C109C). The
  * input of 0C0FEA: B (jump press) bit 5, A (fire press) bit 4. */
@@ -286,7 +296,7 @@ static void descent_step(msx_game_t *g) {
     neo_air_t body={g->x,56*MSX_UNIT-g->y,(int32_t)nrl(m,0x30),(int32_t)nrl(m,0x34)};
     int32_t previous=body.y;body.x+=body.vx;body.y+=body.vy;
     bool ground=neo_land_step(&body,previous);
-    g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));g->y=56*MSX_UNIT-body.y;
+    clamp_feet(g,&body,ground);g->y=56*MSX_UNIT-body.y;
     m[0x15]=(uint8_t)((m[0x15]&~0x40u)|(ground?0x40u:0u));
     if (g->descent==MSX_DESCENT_HANG) {
         if (marco_descent_hang_after(m)) {g->descent=MSX_DESCENT_NONE;neo_landing_marker(&g->landing);}   /* 0C16B0 */
@@ -301,7 +311,7 @@ static void mount_eject_step(msx_game_t *g) {
     neo_air_t body={g->x,56*MSX_UNIT-g->y,(int32_t)nrl(m,0x30),(int32_t)nrl(m,0x34)};
     int32_t previous=body.y;body.x+=body.vx;body.y+=body.vy;
     bool ground=neo_land_step(&body,previous);
-    g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));g->y=56*MSX_UNIT-body.y;
+    clamp_feet(g,&body,ground);g->y=56*MSX_UNIT-body.y;
     m[0x15]=(uint8_t)((m[0x15]&~0x40u)|(ground?0x40u:0u));
     if (marco_mount_eject_end(m,saved)) g->mount=MSX_MOUNT_NONE;      /* 0C1EBE */
     g->grounded=ground;g->facing=(m[0x15]&1u)?-1:1;g->air_ticks=0;
@@ -699,7 +709,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 body.vy=top-previous;body.y=top;g->grounded=true;ride_on(g,object,body.x,body.y);
             } else g->grounded=neo_land_step(&body,previous);
         }
-        g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));
+        clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
         if (dying) {

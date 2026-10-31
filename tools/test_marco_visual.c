@@ -102,7 +102,7 @@ int main(void){
   unsigned tok=0,tbad=0;
   for(unsigned i=0;i<THROW_CASES;i++){
     const throw_case_t*c=&throw_cases[i];
-    bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c',down=strstr(c->name,"down")!=NULL;
+    bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c',down=strstr(c->name,"down")!=NULL,knife=strstr(c->name,"knife")!=NULL;
     marco_visual_reset(&v);
     marco_visual_input_t in={.grounded=true,.facing=1,.x=120,.y=350,.form=(uint8_t)c->form,.hgun_program=-1,.cgun=cgun};
     if(c->situation==3)in.moving=1;
@@ -111,7 +111,7 @@ int main(void){
     in.aim_up=strstr(c->name,"_up")!=NULL;in.aim_down=down;
     unsigned bad=0;
     for(unsigned k=0;k<c->count;k++){
-      in.thrown=grenade&&k==0;in.cgun_fire=cgun&&!grenade&&k==0;
+      in.thrown=grenade&&k==0;in.cgun_fire=cgun&&!grenade&&k==0;in.knife=knife&&k==0;
       if(c->name[0]=='h'&&down){in.hgun_program=strstr(c->name,"sweep")?4:2;in.hgun_start=k==0;}
       marco_visual_step(&v,&in);
       unsigned n=c->part?(v.weapon_role>=0?v.weapon_count:0):v.body_count;
@@ -121,7 +121,7 @@ int main(void){
     }
     assert(!v.failures);
   }
-  printf("throws/C/H down: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
-  assert(tok>=200&&!tbad);
-  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire and H down programs pose by pose against the captures");
+  printf("throws/C/H down/knife: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
+  assert(tok>=290&&!tbad);
+  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down and knife cuts (pistol, H: standing, crouched) pose by pose against the captures");
 }

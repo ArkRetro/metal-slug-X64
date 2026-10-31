@@ -71,6 +71,18 @@ ROLES_EXTRA=[
  ('W1C_FIRE_DOWN',1,0x255FDE,[('cgun',('c_jump_down_fire_right',))]),
  ('B1C_CROUCH_FIRE',0,0x256EB6,[('cgun',('c_crouch_fire_right',))]),
 ]
+# The knife (0C3B46: a fire press with +9A bit 0, a hurtbox of type 4/5 in
+# reach): weapon table 0BF958 standing (form 1: row +0x10), body table
+# 0BF118 crouched. tools/mame/plans/marco-knife-*.json (run_marco_catalog.py
+# --plan, each cut placed where +9A bit 0 was set): marco-k1 pistol,
+# marco-k2 --give-hgun. The other table 0BF918 (+9A bit 1) did not occur.
+# Each role: (capture option, form, conditions).
+ROLES_KNIFE=[
+ ('W_KNIFE',1,0x24D486,'knife',0,('k_cut_stand_0','k_cut_stand_2')),
+ ('B_CROUCH_KNIFE',0,0x2505A6,'knife',0,('k_cut_crouch_1','k_cut_crouch_3')),
+ ('W1_KNIFE',1,0x255472,'knife_h',1,('k_cut_stand_0','k_cut_stand_2')),
+ ('B1_CROUCH_KNIFE',0,0x258088,'knife_h',1,('k_cut_crouch_1','k_cut_crouch_3')),
+]
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
@@ -78,6 +90,8 @@ def main():
     p.add_argument('--grenade-capture',type=Path,help='form-1 grenade and H down capture (ROLES_EXTRA)')
     p.add_argument('--cgun-capture',type=Path,help='C capture (ROLES_EXTRA)')
     p.add_argument('--hgun-capture',type=Path,help='the H catalog capture (form-1 roles; its programs are in the graph through convert_marco_programs.py --extra-capture)')
+    p.add_argument('--knife-capture',type=Path,help='pistol knife capture (ROLES_KNIFE)')
+    p.add_argument('--knife-h-capture',type=Path,help='knife capture with the H (ROLES_KNIFE)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
     choices=json.loads((c/'controller.json').read_text())['choices']
@@ -126,6 +140,19 @@ def main():
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 1: {", ".join(c for _,cs in evidence for c in cs)} */')
     else:assert not any(extra.values()),'--grenade-capture and --cgun-capture go together'
+    knife={'knife':a.knife_capture,'knife_h':a.knife_h_capture}
+    if all(knife.values()):
+        for role,part,addr,key,form,conds in ROLES_KNIFE:
+            k=knife[key];kplan={x['name']:x for x in json.loads((k/'plan.json').read_text())['cases']}
+            kchoices=json.loads((k/'controller.json').read_text())['choices']
+            for cond in conds:
+                case=kplan[cond]
+                seen=[x for x in kchoices if case['first']<=x['choice']['frame']<=case['last']
+                      and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==form]
+                assert seen,(role,hex(addr),key,cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}: {", ".join(conds)} */')
+    else:assert not any(knife.values()),'--knife-capture and --knife-h-capture go together'
     lines+=['};','#endif','']
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(lines))
     print('Marco campaign roles:',len(ROLES),'commands from',c)

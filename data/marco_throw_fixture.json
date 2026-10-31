@@ -452,6 +452,130 @@
 1618852,
 1618852
 ]
+},
+{
+"name": "p_knife_stand",
+"capture": "marco-k1",
+"case": "k_cut_stand_0",
+"part": 1,
+"chain": [
+2413702
+],
+"form": 0,
+"situation": "stand",
+"first": 2237,
+"descriptors": [
+1615682,
+1615698,
+1615714,
+1615730,
+1615754,
+1615754,
+1615754,
+1615754,
+1615754,
+1615778,
+1615730,
+1615682
+]
+},
+{
+"name": "p_knife_stand2",
+"capture": "marco-k1",
+"case": "k_cut_stand_2",
+"part": 1,
+"chain": [
+2413702
+],
+"form": 0,
+"situation": "stand",
+"first": 2733,
+"descriptors": [
+1615682,
+1615698,
+1615714,
+1615730,
+1615754,
+1615754,
+1615754,
+1615754,
+1615754,
+1615778,
+1615730,
+1615682
+]
+},
+{
+"name": "p_knife_crouch",
+"capture": "marco-k1",
+"case": "k_cut_crouch_1",
+"part": 0,
+"chain": [
+2426278
+],
+"form": 0,
+"situation": "crouch",
+"first": 2317,
+"descriptors": [
+1608064,
+1615980,
+1615996,
+1616012,
+1616028,
+1616052,
+1616086,
+1616052,
+1616086
+]
+},
+{
+"name": "h_knife_stand",
+"capture": "marco-k2",
+"case": "k_cut_stand_0",
+"part": 1,
+"chain": [
+2446450
+],
+"form": 1,
+"situation": "stand",
+"first": 2237,
+"descriptors": [
+1615802,
+1615834,
+1615854,
+1615878,
+1615906,
+1615906,
+1615906,
+1615906,
+1615906,
+1615946,
+1615834,
+1615802
+]
+},
+{
+"name": "h_knife_crouch",
+"capture": "marco-k2",
+"case": "k_cut_crouch_3",
+"part": 0,
+"chain": [
+2457736
+],
+"form": 1,
+"situation": "crouch",
+"first": 3325,
+"descriptors": [
+1619008,
+1616120,
+1616140,
+1616164,
+1616198,
+1616240,
+1616282,
+1616282,
+1616282
+]
 }
 ]
 }

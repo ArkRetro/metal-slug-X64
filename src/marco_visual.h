@@ -25,6 +25,7 @@ typedef struct {
     bool thrown;           /* a grenade thrown in this update (0C3BCC / crouched 0C2458) */
     bool cgun;             /* the C (id 0C, form 1) */
     bool cgun_fire;        /* its fire state 0C3CD0 entered in this update */
+    bool knife;            /* a knife cut 0C3B46 started in this update */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;

@@ -34,7 +34,8 @@ static bool crouch_role(int r) {
     return r==MARCO_CAMPAIGN_B_CROUCH_IN || r==MARCO_CAMPAIGN_B_CROUCH || r==MARCO_CAMPAIGN_B_CROUCH_FIRE ||
         r==MARCO_CAMPAIGN_B_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE ||
         r==MARCO_CAMPAIGN_B1_CROUCH_IN || r==MARCO_CAMPAIGN_B1_CROUCH || r==MARCO_CAMPAIGN_B1_CROUCH_FIRE ||
-        r==MARCO_CAMPAIGN_B1_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE || r==MARCO_CAMPAIGN_B1C_CROUCH_FIRE;
+        r==MARCO_CAMPAIGN_B1_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE || r==MARCO_CAMPAIGN_B1C_CROUCH_FIRE ||
+        r==MARCO_CAMPAIGN_B_CROUCH_KNIFE || r==MARCO_CAMPAIGN_B1_CROUCH_KNIFE;
 }
 static bool weapon_default(int r) {
     return r==MARCO_CAMPAIGN_W_IDLE || r==MARCO_CAMPAIGN_W_RUN || r==MARCO_CAMPAIGN_W_JUMP ||
@@ -125,7 +126,10 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         /* A throw crouched (0C2458): body 0BF098, then the after-throw
          * crouch 0BEF98 (0C2294; it loops like the crouch 0BEF18). The C
          * crouched: 0C246A with its table C0398 (256EB6). */
-        if (in->form==1) {
+        /* The knife crouched (0C3B46): body table 0BF118 (marco-k1/k2),
+         * then the crouch. */
+        if (in->knife) start(v,MARCO_BODY,in->form==1?MARCO_CAMPAIGN_B1_CROUCH_KNIFE:MARCO_CAMPAIGN_B_CROUCH_KNIFE);
+        else if (in->form==1) {
             if (in->thrown) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_GRENADE);
             else if (hgun_start) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_FIRE);
             else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
@@ -149,6 +153,8 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         /* 0C3A5E tests the bomb (bit 6) before the fire (bit 4): a throw
          * this update starts 0BF998 (pistol 24C862, form 1 253B3A). */
         if (in->thrown) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_GRENADE:MARCO_CAMPAIGN_W_GRENADE);
+        /* The knife standing: weapon table 0BF958 (form 1: +0x10). */
+        else if (in->knife) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_KNIFE:MARCO_CAMPAIGN_W_KNIFE);
         else if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
         else if (in->form==1 && in->cgun && in->cgun_fire)
             start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W1C_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W1C_FIRE_DOWN:MARCO_CAMPAIGN_W1C_FIRE);

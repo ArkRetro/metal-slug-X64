@@ -34,9 +34,9 @@ static bool observed_wreck_contact;
 /* Campaign Marco: original programs (marco_visual.c) drawn from the audited
  * descriptor parts; the historical six-state banks remain only as fallback
  * when romfs/marco is absent. */
-static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures,marco_grenades,marco_cfires;
+static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures,marco_grenades,marco_cfires,marco_knives;
 static void reset_game(void) {
-    marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=0;
+    marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
     if (has_entry && entry_descent) msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
     else if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
@@ -225,7 +225,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
          * the body/weapon programs restart with the new life. */
         if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death kind=%u\n",game.world.hit_kind);}
         if (game.life.phase==MARCO_ALIVE) death_logged=false;
-        if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;marco_grenades=game.grenades;marco_cfires=game.c_fires;}
+        if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;marco_grenades=game.grenades;marco_cfires=game.c_fires;marco_knives=game.knife_cuts;}
         if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
@@ -238,6 +238,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.thrown=game.grenades!=marco_grenades;marco_grenades=game.grenades;
             mi.cgun=marco_weapons_id(&game.world.weapons,0)==0x0c;
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
+            mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}

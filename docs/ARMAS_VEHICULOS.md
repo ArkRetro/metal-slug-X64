@@ -1220,8 +1220,4 @@ los primeros rebeldes): 10 cortes, todos de la tabla `0x0BF958` en reposo
 (`0x24D486`), 21 fotogramas hasta la siguiente elección de disparo.
 `tools/test_gameplay.c` (`knife_run`): cortes que golpean, sin paradas.
 Sonidos `10FB`, `10F9`, `1069` renderizados y medidos contra todos
-(`data/sound_pairs.json`, 2000 pares). **Pendiente**: los programas del
-corte (`0x0BF918/0x0BF958`, todas las formas) no están en el catálogo de
-Marco (`build/marco_campaign.h`): regenerarlo exige las capturas H
-`marco-h2/h3`, que ya no están en disco; mientras, Marco no cambia de pose al
-cortar.
+(`data/sound_pairs.json`, 2000 pares). Poses del corte: MARCO_CAMPAIGN.md, «Cuchillo».

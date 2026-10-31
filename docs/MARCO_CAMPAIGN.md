@@ -209,6 +209,33 @@ cd ..; python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture
 make check-marco-campaign
 ```
 
+## Cuchillo (rama `work-rom12`)
+
+Un disparo con `+9A` bit 0 (un *hurtbox* de tipo 4/5 al alcance) corta
+(`0C3B46`): de pie el arma toma la tabla `0BF958` (pistola `24D486`, forma 1
+`255472`), agachado el cuerpo la tabla `0BF118` (pistola `2505A6`, forma 1
+`258088`); al acabar vuelven el programa de reposo y el agachado.
+`marco_visual.c` los arranca con `knife` (los cortes de `gameplay.c`).
+
+Capturas `marco-k1` (pistola) y `marco-k2` (`--give-hgun`) con
+`tools/mame/plans/marco-knife.json`, generado por
+`tools/mame/plan_knife_cuts.py`: cada corte (de pie y agachado alternos) se
+coloca en el primer fotograma posterior con `+9A` bit 0 cuyo prefijo de
+entradas no cambia, y se comprueba en la captura siguiente (4 cortes en cada
+una). La otra tabla `0BF918` (`+9A` bit 1) no apareció: parada explícita.
+Catálogo: las capturas H `marco-h2/h3` siguen en disco (no hizo falta
+recapturarlas); 376 → 402 poses, las 376 anteriores idénticas (CRC, límites,
+ancla y partes); 4 programas nuevos en el grafo. `make check-marco-campaign`:
+**293 pasos iguales, 0 distintos** (20 casos; 54 de los 5 cortes).
+
+```sh
+python3 tools/mame/plan_knife_cuts.py K1 p 8 3700; python3 tools/mame/plan_knife_cuts.py K2 h 8 3700
+cd tools; python3 extract_marco_steps.py K1 --trace K1 --output K1/diary; python3 audit_marco_catalog.py K1 --rom mslugx.zip --output K1/audit.json   # y K2
+# convert_marco_programs.py / build_marco_poses.py: las órdenes de arriba con --extra-capture K1 --extra-capture K2 / --extra-audit K1/audit.json --extra-audit K2/audit.json
+cd ..; python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --output build/marco_campaign.h
+python3 tools/extract_throw_fixture.py --output /tmp/k.json p_knife_stand=K1:k_cut_stand_0:1:24d486:0:stand ...   # añadidos a data/marco_throw_fixture.json
+```
+
 ## Ciclo de carrera
 
 El original arranca la carrera (`C285C`, traducido en `marco_motion.c`) con

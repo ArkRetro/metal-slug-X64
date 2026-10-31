@@ -601,6 +601,67 @@ sola (sin granadas) no cambiaba: la H se toma después de 1304.
 
 ### Paso 5: HUD de capa fija — ver §11
 
+### Semántica del disparo (captura `hold`, `tools/capture_weapons.lua` plan `hold`)
+
+`/home/user/captures/weapons/hold2`: el jugador quieto en el inicio de la
+misión **mantiene A** (280 de cada 300 fotogramas) de pie, agachado, apuntando
+arriba y saltando, con la pistola y luego con la H (id `0A`, 200 balas, `+94 =
+1` escrito en 3400), y al final pulsa A cada 4 fotogramas. Resultado
+(`debug.log`, puntos de ruptura `0x0C438E`, `0x01B782`, `0x01B716`):
+
+- **Pistola: un disparo por pulsación, nunca autodisparo.** Pulsación en
+  2190 → retrollamada `0C4372` en 2191 (misma actualización) → constructor
+  `01B782` en 2193 (una actualización después, `00411C` en la retrollamada);
+  mantener A 280 fotogramas no dispara más (2491, 2791, 3091, 3391: uno por
+  pulsación en cada postura). Mecanismo: `0x0C0FEA` hace `+9B |= nuevas
+  pulsaciones & +9C` (`10E9EC+0` son las pulsaciones nuevas, `+2` las
+  mantenidas, `0x0CA1B8`; `+9C` vuelve a `FF` en `0x0C3770` cada
+  actualización); el estado `0x0C3CD0` borra `+9B` bit 4 al empezar el
+  programa y `0x0C3D9A` solo vuelve a disparar con `+76` del programa **y**
+  `+9B` bit 4 (una pulsación guardada). Programas: nivel `24C70A` (`0C4372`
+  en 0, `+76` en 1, fin 20), arriba `24C7F2` y abajo `24EABC` (`+76` en 2):
+  cadencia mínima 2 (3) actualizaciones entre retrollamadas.
+- **H: una ráfaga por pulsación** (de pie/agachado 4 balas en 3693, 3697,
+  3701, 3705; apuntando arriba 4; en el aire 3), nada más mientras se
+  mantiene; pulsando cada 4 fotogramas dispara una bala cada 4 fotogramas
+  (4595..). `+95` sube **una** vez por bala (`0C4434` entra en `jsr 1AC94`,
+  no en el `addq` de `0C4430`): ángulos 0, +2, −2 como en `hfam`. Lo que ya
+  hacía `marco_hgun.c`; las capturas anteriores no mantenían A (`a =
+  frame%12<6`).
+- **Boca** (`0x0C4244`, tabla `0x0C4204`, 3 filas por `+92` × 4 formas,
+  palabras (x,y) en píxeles respecto a `+28/+2C`, y hacia arriba): abajo
+  `(0,-16) (-4,-20) (16,0) (8,-16)`, nivel `(16,10) (24,4) (24,8) (20,4)`,
+  arriba `(0,40) (0,48) (8,32) (5,32)`; barridos `0x0C453A` tabla `0x0C4234`
+  `(16,28) (16,16) (16,20) (16,46)`; se suma `+72/+74` del programa de
+  piernas y en `0C43CC` se resta otra vez salvo `+90 = FF`. Medido: pistola
+  de pie `(16,27)` (`+74 = 17`), agachado `(16,16)` (`+74 = 6`); H de pie
+  `(28,16)` (`+72/+74 = 4/12`), corriendo `(26,23..25)`. El ángulo del
+  abanico (±2) y de los barridos sale de ese único punto.
+
+Port (`src/gameplay.c`): `fire_request` es `+9B` bit 4 (pulsación nueva,
+guardada hasta consumirse; mantener no dispara), `pistol_wait` las
+actualizaciones hasta `+76` + 1 (2 nivel, 3 arriba/agachado) y
+`pistol_pending` retrasa la bala una actualización. La H usa una boca por
+puntería (nivel (24,4), arriba (0,48), abajo (-4,-20), barridos (16,16)) más
+`+72/+74` medidos (de pie (4,12), agachado (0,6), corriendo (2,20), aire 0),
+**aproximación declarada**: el port no tiene `+72/+74`. La pistola de pie
+conserva la boca del port (24, 24 arriba del ancla; arcade (16,27)) porque
+con la altura original la carrera guionizada de `tools/test_gameplay.c` deja
+de liberar al prisionero que da la H (`items served` 8 → 2): pendiente de
+contrastar la caja del prisionero con la fila de ataque de la pistola.
+
+**Pendiente (visto en hardware):** la forma 1 (H) no tiene poses en el
+catálogo: los programas de la H (ráfagas `24CAA8`.. poses `192C3E`, `19533A`,
+…; tablas de forma 1 en `+0x10` de `0BFDD8..0BFF58` y las de reposo/carrera
+de la forma 1) no están exportados y Marco se dibuja con la pistola. Las
+poses de muerte tampoco: `0BF298 → 25009E` (`18BA26..18BBC8`, 28
+actualizaciones, bucle en `+78` hasta aterrizar), `0BF318 → 25016A`
+(`18BD6A..18BE30`), `0BF358 → 2501DC` (`18C9C4..18CE8E`, bucle hasta `+78 =
+0`), entrada `0BF498 → 24F072` (`18AABC..18ABE4`, `188828`, `188838`); el
+port mantiene la última pose (en hardware: Marco «congelado» mientras vuela,
+yace 31 actualizaciones y reaparece). Hace falta exportarlas con la cadena de
+`tools/build_marco_poses.py` y validarlas contra `death3`/`hfam`.
+
 ## 11. HUD de capa fija (`src/neo_hud.c`, `src/hud_renderer.c`)
 
 El HUD del original es la capa fija del Neo Geo (VRAM `7000..74FF`, 40

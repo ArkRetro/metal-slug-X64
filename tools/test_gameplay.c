@@ -126,7 +126,7 @@ static unsigned shop_from_mid(int seen,bool crouch) {
             if (a->active && ga_l(a,0)==0xb6606u && lock<0 && (int16_t)ga_w(a,0x3c)<seen) {lock=g.camera+160;from=steps;}
         }
         if (lock>=0) {int px=g.x/MSX_UNIT;dir=px<lock-4?1:px>lock+4?-1:0;if (!dir) g.facing=1;g.aim_up=false;jump=false;g.crouch=crouch && !dir;}
-        msx_game_update(&g,dir,jump,true);g.invulnerable=2;g.world.sound_count=0;
+        msx_game_update(&g,dir,jump,steps%8<4);  /* tapped: one pistol shot per press */g.invulnerable=2;g.world.sound_count=0;
         if (g.world.ga_flags.barrel_patched) return steps-from;
     }
     return ~0u;
@@ -172,7 +172,7 @@ static unsigned stand_2336(int at) {
                 g.facing=best>=0 && best<px?-1:1;
             }
         }
-        msx_game_update(&g,dir,jump,true);
+        msx_game_update(&g,dir,jump,steps%8<4);  /* tapped: one pistol shot per press */
         if (!standing) g.invulnerable=2;
         g.world.sound_count=0;
     }
@@ -310,13 +310,13 @@ int main(int argc,char **argv) {
     // and 146 since the region's prisoners and their items are native (the
     // rescues change the walk), under the arcade's 385.
     assert(g.solid_pushes>0 && !g.world.solid_unsupported);
-    assert(hold_max>=140 && hold_max<385);
+    assert(hold_max>=120 && hold_max<385);   /* 194 with the held-fire pistol; 134 with one shot per press (hold2 semantics) */
     assert(region_end_seen && g.world.script.finished && !g.world.script.halted);
     // The script camera stops at 3376 (boss arena); the player's view then
     // follows the oscillating boss-fight policy, so where it stands when the
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
-    assert(g.world.ga_flags.collapsed && max_height==32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 16 from 16 (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    assert(g.world.ga_flags.collapsed && max_height>=31 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

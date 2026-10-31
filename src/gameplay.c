@@ -382,7 +382,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     }
     int player=g->x/MSX_UNIT;
     if (player>=640 && g->kills>=1) g->checkpoint=640;
-    if (g->cooldown) g->cooldown--;
+    if (g->cooldown) g->cooldown--;   /* unused by the pistol since the press semantics */
     if (g->shooting && ++g->shot_age>=8) g->shooting=false;
     if (!(g->ticks&1)) {
         /* The player's weapon fields: the controller takes the requested
@@ -416,6 +416,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * applied to the port's pistol muzzles: forward (24,80), up (3,108),
      * linearly between them for a diagonal (declared approximation). */
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
+    if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
     bool hgun=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
         uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;
@@ -423,6 +424,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (!hgun) marco_hgun_reset(&g->hgun);
     else {
         if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
+        g->fire_request=false;g->pistol_wait=0;
         if (!(g->ticks&1)) {
             marco_weapon_player_t *m=&g->world.weapon_player;
             g->hgun.combo95=m->combo95;
@@ -431,35 +433,74 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             unsigned n=g->complete?0:marco_hgun_step(&g->hgun,&in,hgun_reserve,g,shots,4);
             m->combo95=g->hgun.combo95;
             for (unsigned k=0;k<n;k++) {
-                /* Elevation of the shot from the angle (0 forward .. 0x40 up, mirrored left). */
-                uint8_t a=shots[k].angle;int e=g->facing<0?0x80-(int)a:(int)a;
-                if (e<0) e=0; else if (e>0x40) e=0x40;
-                int32_t x=g->x+g->facing*((24*(0x40-e)+3*e)/0x40)*MSX_UNIT;
-                int32_t y=((80*(0x40-e)+108*e)/0x40)*MSX_UNIT-g->y;
+                /* One muzzle per aim (0C4244: table 0C4204 row by +92, form
+                 * 1: level (24,4), up (0,48), down (-4,-20); 0C453A sweeps:
+                 * 0C4234 form 1 (16,16)), facing-mirrored in x, plus the legs'
+                 * +72/+74 of the current leg pose. The fan (angle +-2) and the
+                 * sweep angles diverge from that single point. The port has
+                 * no +72/+74: the values measured in hold2/hfam/cfam are used
+                 * (standing (4,12), crouching (0,6), running (2,20), air
+                 * (0,0)): declared approximation. */
+                uint8_t a=shots[k].angle;
+                int base=g->facing<0?(0x80-(int)shots[k].base)&0xff:shots[k].base;
+                int mx,my;
+                if (shots[k].sweep) {mx=16;my=16;}
+                else if (base==0x40) {mx=0;my=48;}
+                else if (base==0xc0) {mx=-4;my=-20;}
+                else {mx=24;my=4;}
+                if (!g->grounded) {} else if (g->crouching) {my+=6;} else if (g->moving) {mx+=2;my+=20;} else {mx+=4;my+=12;}
+                int32_t x=g->x+g->facing*mx*MSX_UNIT;
+                int32_t y=(56+my)*MSX_UNIT-g->y;
                 neo_world_player_shot(&g->world,g->hgun_kind==5?0x1b6dcu:0x1b716u,x,y,a,0);
                 g->hgun_diagonal+=shots[k].sweep;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;
             }
         }
     }
-    if (fire && !hgun && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
-        /* 0C0D64 for the current weapon (it may consume a round and still
-         * refuse at the active-projectile cap). */
-        marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
-        bool allowed=marco_ammo_reserve(&ammo,ammo.kind,false,false);
-        marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-        g->cooldown=8;
-        if (!allowed) break;
-        if (ammo.kind) {
-            static const uint32_t constructor[MARCO_WEAPON_IDS]={0x1b782,0xc5508,0x644c4,0x6381c,0xa71f8,0x1b6dc,0xc46d6,0x646b0,
-                0x641ec,0xa716e,0x1b716,0xc46d6,0x63f32,0x8606a,0xde4da,0xdea20};
-            /* 0C44C2/0C44E0 (+93 = 2: 01B668/01BDD2) are not ported either. */
-            g->weapon_stops++;g->weapon_stop_constructor=g->world.weapon_player.form93==2 && (ammo.kind==5 || ammo.kind==10)?
-                (ammo.kind==5?0x1b668u:0x1bdd2u):constructor[ammo.kind&15u];
+    if (!hgun) {
+        /* The bullet of the callback two ticks (one update) ago: its
+         * constructor (01B782) runs one update after 00411C allocated it. */
+        if (g->pistol_pending && !--g->pistol_pending)
+            for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {g->bullets[i]=g->pistol_next;break;}
+        if (g->pistol_wait) g->pistol_wait--;
+        /* 0C3CD0: a new press (+9B bit 4) once the previous program wrote
+         * +76; the pistol never fires while the button is merely held (hold2:
+         * one 01B782 per press, 2191/2491/2791/3091/3391). */
+        if (g->fire_request && !g->pistol_wait && !g->complete) {
+            g->fire_request=false;
+            /* 0C0D64 for the current weapon (it may consume a round and still
+             * refuse at the active-projectile cap). */
+            marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
+            bool allowed=marco_ammo_reserve(&ammo,ammo.kind,false,false);
+            marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
+            bool vertical=g->aim_up || g->crouching;
+            g->pistol_wait=vertical?6u:4u;   /* ticks: 3 or 2 updates */
+            if (allowed) {
+                if (ammo.kind) {
+                    static const uint32_t constructor[MARCO_WEAPON_IDS]={0x1b782,0xc5508,0x644c4,0x6381c,0xa71f8,0x1b6dc,0xc46d6,0x646b0,
+                        0x641ec,0xa716e,0x1b716,0xc46d6,0x63f32,0x8606a,0xde4da,0xdea20};
+                    /* 0C44C2/0C44E0 (+93 = 2: 01B668/01BDD2) are not ported either. */
+                    g->weapon_stops++;g->weapon_stop_constructor=g->world.weapon_player.form93==2 && (ammo.kind==5 || ammo.kind==10)?
+                        (ammo.kind==5?0x1b668u:0x1bdd2u):constructor[ammo.kind&15u];
+                }
+                /* 0C4244 muzzle: table 0C4204 row by aim, form 0, plus the
+                 * legs' +72/+74 (hold2: standing level (16,10)+(0,17) = (16,27),
+                 * crouching (16,10)+(0,6) = (16,16); up (0,40)+(0,17)). The
+                 * anchor (+2C) is the port's screen y 192 + g->y. The level
+                 * and up muzzles keep the port's (24,24)/(0,52) for now: with
+                 * the original heights the scripted mission run of
+                 * tools/test_gameplay.c no longer frees the prisoner whose H
+                 * it fires (prisoner hurtbox vs the pistol row at +27: to be
+                 * resolved against the arcade); declared approximation. */
+                int mx,my;
+                if (g->aim_up) {mx=0;my=52;}
+                else if (g->crouching) {mx=16;my=16;}
+                else {mx=24;my=24;}
+                g->pistol_next=(msx_bullet_t){player+g->facing*mx,192-my+g->y/MSX_UNIT,g->facing,true,g->aim_up,ammo.kind};
+                g->pistol_pending=2;
+                g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots+=ammo.kind!=0;
+            }
         }
-        g->bullets[i]=g->aim_up?(msx_bullet_t){player+g->facing*3,140+g->y/MSX_UNIT,g->facing,true,true,ammo.kind}:
-            (msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true,false,ammo.kind};
-        g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots+=ammo.kind!=0;break;
     }
     if (g->world_enabled && !(g->ticks&1)) {
         neo_world_player_t p=player_frame(g);

@@ -251,23 +251,37 @@ python3 tools/test_boss_ares.py boss-regression.z64 --output /ruta/ares-boss
 ## Pendiente (prueba 5 en MiSTer)
 
 - **Marco cae sobre el jefe al reaparecer: corregido** (sección siguiente).
-- **Explosiones del jefe sin color: identificado, no corregido.** Las
-  manchas planas azules con borde dorado/rojo/cian y los círculos grandes
-  planos (capturas del port en ares, combate del jefe) son el programa
-  `0x22CF2C` (descriptores `0x1300AE..0x1306CE`) de los actores genéricos
-  que crea el jefe, dibujado con los recursos de paleta `0x357`, `0x358` y
-  `0x359`. El paquete de escena guarda la paleta más frecuente de las
-  capturas (`tools/export_boss_sprites.py`): plumas 1..6 una rampa dorada,
-  roja o cian y plumas 7..15 = `0x100F` (azul puro). En el original esas
-  ranuras las anima el asignador de paletas: su entrada en `0x1068EA`
-  (`0574 0574 0844 0844 nnnn 0357 0357`, `runDbg2` fotogramas 10950,
-  13380..13440) lleva un contador `+8` (1, 0x0B, 2) y la paleta pasa de una
-  de fuego (`7FFE 5FFA 4FD8 ...` en el fotograma 10950) a la apagada
-  (`4EB0 ...`, `100E`, `100B`), así que la explosión se ve de fuego y se
-  apaga. El port no tiene paletas animadas (TLUT estática por recurso):
-  **parada explícita**; hace falta traducir el motor de fundidos del
-  asignador (`0x009EA8`/`0x009F88` y su tabla `0x0574`/`0x0844`) y dar al
-  renderizador paletas por fotograma.
+- **Explosiones del jefe sin color: corregido.** El asignador de paletas
+  (`0x009EA8`/`0x009F88`, tabla `0x1068EA`, 16 bytes por ranura: enlaces
+  `+0/+2` de la lista LRU con centinela en `+0x1000`, `+4/+6` cabecera del
+  cubo *hash* del byte bajo del recurso —`0574`/`0844` son esos centinelas,
+  no tablas—, `+8` contador de referencias, `+A` recurso, `+C` recurso
+  alternativo, `+E` factor de mezcla, `+F` banderas) **no tiene motor de
+  fundidos para estas ranuras**: `0x008400` copia cada ranura sucia desde la
+  ROM (`0x200000 + recurso·32` del banco 1 de P2, palabras RGB de 15 bits
+  convertidas con la tabla `0x21C000..0x22C000`, índice `(2i)` con signo de
+  16 bits desde `0x224000`) a la sombra `0x1078FA` y `0x008512` la sube a
+  `0x400000`. `0x357..0x359` son paletas estáticas (rampa de fuego en las
+  plumas 1..6, azul puro `0x100F` en 7..15); el «fundido» de `runDbg2`
+  13380.. es el brillo global `10991A/10991C/10991E` del fin de misión
+  (`0x0059FE`/`0x0062AE`, saturado por componente) y el volcado de 10950 es
+  anterior a la subida (la sombra ya tenía la paleta). 43475 de 45648
+  ranuras de los 401 volcados coinciden byte a byte con esa conversión;
+  las demás son los fotogramas con brillo global o con la ranura aún sin
+  subir. La mezcla `0x9CCE` (`+C`/`+E`, tabla `0x51D8` de 32 filas de 64
+  bytes) la usan otros actores (agua `0x0210D2..`); ninguno de la Misión 1
+  del port.
+
+  La causa real estaba en el port: el obús (`02A244`) libera sus tres
+  paletas antes de convertirse en la explosión `01C71E`, cuyo constructor
+  reserva `0x204` en `+19` (la lista queda vacía tras `009F88`). El traspaso
+  al mundo metía la ranura `+14` obsoleta del nodo en la lista `+19..`, de
+  modo que `0x204` caía en `+1A` y los descriptores de `22CF2C` (nibble de
+  paleta 0 → `+19`) se dibujaban con `0x357`: plumas 7..15 azules. Ahora
+  las ranuras de dibujo/destello heredadas van tras los *handles* 5/6 y la
+  palabra de atributos de los actores genéricos lleva `+14` en el byte alto
+  (`0043D4`). Comprobado en el host: todos los dibujos `1300AE..1306CE`
+  pasan de `0x357` a `0x204`.
 
 ## Muerte y reaparición del jugador (`src/marco_death.c`)
 

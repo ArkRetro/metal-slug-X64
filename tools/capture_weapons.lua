@@ -145,6 +145,8 @@ local function probes()
  bp(0x196e8,'1','respawn a6=%08X rec=%08X c31e=%08X progress=%X','a6,d@10c31a,d@10c31e,w@10e99e')
  -- Fire: 0C438E ammo granted, table in A0; 0C4454/0C447C H; 0C46F4 laser-type.
  bp(0xc438e,'a6==1014c4','fire table=%08X id=%X ammo=%X shots=%X','a0,b@10c71e,w@10c724,b@10c71a')
+ bp(0x1b782,'1','bullet_pistol a6=%08X','a6')
+ bp(0x1b716,'1','bullet_hA a6=%08X','a6')
  bp(0xc4454,'a6==1014c4','fire_h5 f93=%X','b@(a6+93)')
  bp(0xc447c,'a6==1014c4','fire_hA f93=%X','b@(a6+93)')
  bp(0xc46f4,'a6==1014c4','fire_beam id=%X','b@10c71e')
@@ -309,7 +311,22 @@ emu.register_frame_done(function()
    print('ASSIST END '..frame..' camera '..camera)
   end
  end
- if frame>=2190 then
+ if plan=='hold' and frame>=2190 then
+  -- Fire semantics plan (docs/ARMAS_VEHICULOS.md §3): the player stands at
+  -- the mission start and HOLDS A (released 20 frames every 300) in the four
+  -- stances, with the pistol and then the H (id 0A, 200 rounds, given at
+  -- 3400 like a pickup), then taps A every 4 frames; nothing else moves.
+  local t=frame-2190
+  local phase=t//300
+  if frame==3400 then cpu:write_u8(0x10c71e,0x0a);cpu:write_u16(0x10c724,200);cpu:write_u8(0x10c71c,0xff);cpu:write_u8(P1+0x94,1) end
+  local a=(t%300<280) and 1 or 0
+  if phase>=8 then a=(frame%4<2) and 1 or 0 end
+  local up=(phase%4==2) and 1 or 0
+  local down=(phase%4==1) and 1 or 0
+  local b=(phase%4==3 and frame%60<4) and 1 or 0
+  button('P1 Right',0);button('P1 Left',0);button('P1 Up',up);button('P1 Down',down)
+  button('P1 A',a);button('P1 B',b);button('P1 C',0)
+ elseif frame>=2190 then
   if camera==last_camera then still=still+1 else still=0 end
   last_camera=camera
   local slot=cpu:read_u16(0x10c608);local slot_state=cpu:read_u8(0x10c608+0x1c)

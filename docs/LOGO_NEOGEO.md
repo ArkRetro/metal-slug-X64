@@ -5,9 +5,17 @@ del arranque de *Mario Kart 64* (donde gira el logotipo de Nintendo), con la
 sintonía del *eyecatch* de la BIOS Neo Geo. Después sigue lo que ya había:
 
 - en el cartucho de juego (`mslugx-explorer.z64`, `mslugx-reference.z64`,
-  las ROM de prueba), la Misión 1;
-- en `mission1-internal.z64`, la presentación animada METAL SLUG X64 sin
-  cambios y luego la entrada en paracaídas.
+  las ROM de prueba), la presentación animada METAL SLUG X64, la entrada en
+  paracaídas y la Misión 1 cuando el cartucho lleva las cinemáticas privadas
+  (`filesystem/cinematics/title-motion.*`, `entry.*`; `src/main.c`); sin
+  ellas, directamente la Misión 1 (con la caché de escena calentándose en el
+  tiempo libre del logo, RENDIMIENTO.md);
+- en `mission1-internal.z64` (`mission_main.c`, mismo orden; vuelve a enlazar
+  con los objetos del juego), igual que el cartucho de juego.
+
+Start salta cada etapa (logo, título y entrada). `tools/test_logo_ares.py`
+comprueba el orden entero, sin fotogramas tardíos ni perdidos, con
+`--skip logo,title,entry` para elegir qué etapas se saltan.
 
 Start (flanco de pulsación, como en el título) salta el logo; un Start
 mantenido desde el encendido no cuenta. Si los recursos privados del logo no
@@ -186,11 +194,8 @@ no se puede construir aquí. No es una grabación continua de una sola ROM.
 
 ## Pendiente / límites
 
-- `mission1-internal.z64` lleva el logo antes de `msx_title_intro()`, pero sus
-  recursos de cinemática (`filesystem/cinematics/*`: título X64 y entrada en
-  paracaídas) no existen en este entorno, así que esa ROM no se ha podido
-  construir ni probar aquí; el cambio en `mission_main.c` se ha compilado con
-  cabeceras sustitutas. Las ROM de prueba del usuario (`mslugx-pruebaN`) son
-  el cartucho de juego, que sí se ha probado: logo → Misión 1.
+- Las cinemáticas privadas (título X64 y entrada, regeneradas con MAME 0.264)
+  ya están en el cartucho de juego: logo → título → entrada → Misión 1,
+  probado en ares (RENDIMIENTO.md, «Orden de arranque»).
 - Sin prueba en MiSTer.
 Evidencia numérica: [logo-neogeo-validation.json](logo-neogeo-validation.json).

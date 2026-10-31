@@ -77,11 +77,17 @@ bool msx_cinematic_open(const char *path) {
     if (preload) {
         heavy_slot=malloc(count);if (!heavy_slot) goto error;memset(heavy_slot,-1,count);
         // Keep movie + prepared frames within the same 6 MiB cinematic budget.
-        // A 3 MiB threshold cliff previously cut preparation to seven frames.
-        unsigned preparation_budget=size>2*1024*1024?6*1024*1024-(unsigned)size:2*1024*1024;
+        // A 3 MiB threshold cliff previously cut preparation to seven frames;
+        // a 2 MiB cap left the entry's 8-16 KB packets (up to 13 ms to
+        // decode) unprepared and dropped 14 of its frames.
+        unsigned preparation_budget=6*1024*1024-(unsigned)size;
+        // Never more than the heap has left (minus 256 KB): the game's own
+        // allocations (audio, display) share the Expansion Pak with it.
+        {heap_stats_t h;sys_get_heap_stats(&h);int room=h.total-h.used-256*1024;
+         if ((int)preparation_budget>room) preparation_budget=room>0?(unsigned)room:0;}
         unsigned limit=preparation_budget/(w*h*2);if (limit>32) limit=32;
         for (unsigned slot=0;slot<limit;slot++) {
-            unsigned selected=count,biggest=size>2*1024*1024?8192:16384;
+            unsigned selected=count,biggest=8192;
             for (unsigned i=0;i<count;i++) if (heavy_slot[i]<0 && offsets[i+1]-offsets[i]>biggest) {selected=i;biggest=offsets[i+1]-offsets[i];}
             if (selected==count) break;
             heavy_slot[selected]=(int8_t)slot;heavy_count++;

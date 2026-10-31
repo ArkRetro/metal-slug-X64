@@ -134,9 +134,12 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
 void actor_init(void) {
     assertf(msx_game_layout==MSX_GAME_LAYOUT,"stale gameplay object: msx_game_t layout %08lx, actor.c %08lx (rebuild)",
         (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
+    uint32_t began=TICKS_READ();
     scene_assets_init();scene_renderer_init();reset_game();
     marco_native=marco_renderer_load();
     hud_renderer_init();
+    scene_assets_check_budget();
+    debugf("MSX actor_init %lu us\n",(unsigned long)TICKS_TO_US(TICKS_READ()-began));
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
@@ -326,6 +329,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     if (game.world.boss_active) scene_prefetch_boss();
+    scene_prefetch_ahead(game.camera);
     scene_service();
 #if MSX_RETRO25D
     retro_frame_t effects={.camera={game.camera,-game.camera_height,0,320},.tick=game.ticks};

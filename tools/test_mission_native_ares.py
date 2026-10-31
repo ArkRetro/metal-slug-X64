@@ -51,7 +51,10 @@ def pad():
         hold('a',(t%(0.9 if camel_zone.is_set() and not domes.is_set() else 4.0))<0.15)
         if domes.is_set():
             # Domed building (054904): sweep under the three domes firing up.
-            hold('Up',True);sweep=int(t/5.0)%2
+            # The sweep is timed in wall seconds: 15 s each way reaches both
+            # screen edges even when ares runs at 14-20 VPS (5 s left the
+            # far-left dome alive in a loaded host, base and new ROM alike).
+            hold('Up',True);sweep=int(t/15.0)%2
             hold('Left',sweep==0);hold('Right',sweep==1)
         elif shop.is_set():
             # Destructible shop (0B6566) at the 2336 stop: back off to its

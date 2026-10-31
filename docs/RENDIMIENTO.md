@@ -60,8 +60,10 @@ Línea base (`e77dd6c` + instrumentación), recorrido completo:
 - Cada blit volvía a enviar `rdpq_mode_tlut` (y cada sprite
   `rdpq_mode_filter`): el RSP recalculaba el modo y emitía
   `SET_OTHER_MODES`/`SET_COMBINE` idénticos con su `SYNC_PIPE`.
-- Con el Expansion Pak todo el pack (100 bloques) queda residente tras el
-  arranque; aun así el prefetch hacía ~900 peticiones nulas por fotograma.
+- Con el Expansion Pak todo el pack (100 bloques entonces) quedaba residente
+  tras el arranque; aun así el prefetch hacía ~900 peticiones nulas por
+  fotograma. (Histórico: el pack actual, 665 bloques, ya no cabe; ver
+  «Expansion Pak: presupuesto de RAM medido» al final.)
 
 Perfil fino de `blit_scaled` (experimento no integrado, 500 blits): modo
 TLUT+paleta ≈1,5 ms, subida de textura (~50 por fotograma) ≈1,6 ms,
@@ -410,3 +412,148 @@ aplazadas un fotograma y `held=238` descodificaciones de prefetch movidas al
 fotograma siguiente en todo el recorrido. Pantalla de MISSION 1 COMPLETE con
 las letras nativas: `mission-complete-letters.png` del recorrido (fuera de
 Git: deriva de la ROM).
+
+## Expansion Pak: presupuesto de RAM medido, mapa fijado y precarga por tiempo libre
+
+**Problema.** El diseño «todo el pack residente» ya no se cumplía: el pack
+tiene 665 bloques de 16 KiB (10,4 MiB descodificados) y la consola tiene
+8 MiB. `scene_assets_init` seguía cargando el pack entero al arrancar (las
+`startup evictions` ≈ 380-400 del registro eran eso: 665 descodificaciones
+síncronas, ≈5,3 s con la pantalla en negro tras el logo NEOGEO) y la caché se
+dimensionaba con una reserva fija adivinada (`SCENE_HEAP_RESERVE`, 1,5 MiB).
+El peor fotograma del recorrido (≈35 ms, cámara 2336) era una falta síncrona
+de un bloque del fondo: el banco nativo (612 bloques) recicla la caché LRU y
+podía echar bloques del mapa, y al llegar a 2336 el guion crea seis tipos de
+actor a la vez (66 bloques nuevos).
+
+**Cambios** (`src/scene_assets.c`, `src/main.c`, `src/neogeo_logo.c`,
+`tools/pack_scene.py`):
+
+1. **Presupuesto de RAM medido y comprobado.** Orden de arranque: pantalla y
+   mezclador → audio del juego (`game_audio_init`; lo que deje residente en
+   RAM ya cuenta) → caché de escena (`scene_assets_begin`) → logo → juego
+   (`actor_init`). La caché se dimensiona la **última** con lo que queda del
+   montón menos las reservas medidas de lo que se asigna después (tabla de
+   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 256 KB; con menos de
+   208 ranuras falla con un `assertf` que da los KB. `scene_assets_check_budget`
+   comprueba (assert) tras cargar el juego que queda la reserva de juego más
+   medio margen, y la línea `MSX RDP` informa del mínimo de montón libre visto
+   (`heap_low=`, muestreado cada 30 fotogramas). Líneas `MSX MEM <etapa>` en el
+   arranque.
+2. **Mapa entero fijado y residente** (Expansion Pak): los 37 bloques del mapa
+   (celdas, parche de la tienda y escombros de las cúpulas) se fijan como los
+   bancos de Marco y se cargan antes del primer fotograma, en orden de cámara.
+   El fondo ya no puede fallar y su recorrido de prefetch (`bgreq`) se omite
+   (`scene_assets_map_resident`). Con 4 MiB sigue el camino anterior: 32
+   ranuras, vista inicial cargada, el mapa se transmite con el margen −48..352.
+3. **Precarga por el guion** (`scene_prefetch_ahead`): `pack_scene.py` genera
+   `scene_ahead` (cámara de aparición, bloque) desde el inventario del resto de
+   la misión (`data/mission1_rest_inventory.json`: los registros de aparición
+   del guion, la cámara de cada uno y los descriptores que dibujó cada tipo de
+   actor en MAME): 487 pares, 251 bloques. Cada fotograma se piden, con la
+   prioridad más baja, los bloques de lo que el guion crea en los próximos 384
+   píxeles de cámara, y los ya residentes se marcan como recién usados para
+   que la LRU no los recicle antes de la aparición. Solo afecta al dibujo.
+4. **Descodificación en tiempo libre** (`scene_assets_idle`): mientras la CPU
+   espera un framebuffer (`msx_display_get`) se descodifican bloques pedidos,
+   solo si la estimación (la descodificación más lenta reciente, ≤7,3 ms medida)
+   termina antes del próximo borrado vertical menos 1,2 ms (una interrupción
+   VI marca cada borrado): el fotograma que espera ese borrado nunca se
+   retrasa. No cuenta en el presupuesto por fotograma (`SCENE_SERVICE_DECODES`).
+5. **Calentamiento durante el logo NEOGEO**: el logo llama a
+   `scene_assets_idle` en el tiempo que le sobra de cada fotograma (≈7 ms). La
+   lista de calentamiento es: bancos fijados, mapa en orden de cámara y luego
+   los bloques de `scene_ahead` en orden de cámara (estos solo en ranuras
+   libres: calentar nunca expulsa). Si el logo se salta con Start,
+   `scene_assets_init` carga de forma síncrona solo la parte obligatoria
+   (bancos y mapa, 49 bloques).
+
+La simulación no lee nada de esto (`make check`, -O0/-O2 idénticos).
+
+### Orden de arranque
+
+- **Sin las cinemáticas privadas** (`filesystem/cinematics` ausente): pantalla
+  → audio del juego → caché de escena → logo NEOGEO (calentando la caché en
+  su tiempo libre) → Misión 1.
+- **Con ellas** (`title-motion.*`, `entry.*`): logo → título X64
+  (`msx_title_intro`) → entrada en paracaídas → audio del juego → caché →
+  Misión 1 (`actor_begin_mission` con el traspaso medido de `entry.json`). El
+  título precarga su película (3,4 MB) y 16 fotogramas preparados (2,1 MB):
+  casi todo el montón, así que la caché no puede existir durante el logo ni
+  las cinemáticas; se dimensiona después, con lo que queda, y la parte
+  obligatoria (bancos y mapa, 50 bloques) se carga entonces (≈0,28 s); el
+  resto del calentamiento sigue en el tiempo libre del juego. La preparación
+  de fotogramas de la cinemática se limita además al montón libre (−256 KB).
+
+### Presupuesto de RAM (8 MiB, ares 146, `mslugx-reference.z64`, líneas `MSX MEM`)
+
+Columna «rama»: esta rama sola (`7b47b06`). Columna «fusión»: con
+`work-world`/`work-weapons` (efectos residentes, mundo 96/160/160, pack de 711
+bloques) y las cinemáticas de arranque.
+
+| Concepto | Rama (KB) | Fusión (KB) | Notas |
+| --- | ---: | ---: | --- |
+| RDRAM | 8192 | 8192 | Expansion Pak |
+| Imagen del programa (texto+datos+bss) | 1618 | 1681 | `mips64-elf-size` |
+| Pila | 64 | 64 | `STACK_SIZE` de libdragon |
+| **Montón total** | **6534** | **6446** | `sys_get_heap_stats` |
+| Pantalla (2 framebuffers 320×240×16), mezclador, rdpq | 450 | 451 | antes de todo |
+| Logo NEOGEO (z-buffer, malla, flujo del jingle) | 169 | 169 | se libera al acabar |
+| Título X64 (película + 16 fotogramas preparados) | — | ≈5500 | se libera al acabar |
+| Entrada (película + 21 fotogramas preparados) | — | ≈4100 | se libera al acabar |
+| Audio del juego | 4 | 843 | efectos residentes (`msx_ramfs`, 851.270 B) en la fusión |
+| **Caché de escena** | **4816** (301 ranuras) | **3872** (242 ranuras) | + ≈40 KB de ranuras y staging; se dimensiona la última |
+| `actor_init` (poses de Marco, ROM S del HUD + tira, índice del mapa, fuente) | 560 | 552 | reserva 640 |
+| Libre tras cargar el juego | 659 | 676 | assert ≥ 320 + 128 |
+| Mínimo libre en el recorrido (`heap_low`) | 465 (hasta 1920) | 416 | crecimiento en juego ≤ 260 KB; reserva 320 |
+| Margen | 256 | 256 | |
+
+Las reservas (`SCENE_RESERVE_LOGO_KB` 224, `SCENE_RESERVE_GAME_KB` 640,
+`SCENE_RESERVE_RUNTIME_KB` 320, `SCENE_HEAP_MARGIN_KB` 256) suman 1216 KB
+fuera de la caché. Lo que se cargue antes de dimensionarla (más efectos, otro
+audio) la reduce automáticamente; por debajo de 208 ranuras el arranque falla
+con un mensaje que da los KB. Con 4 MiB nada de esto se aplica: 32 ranuras,
+como antes.
+
+### Medidas
+
+Arranque (`tools/test_logo_ares.py`, líneas `MSX MEM`/`t=`):
+
+| | Antes (`436c69a`) | Rama, sin cinemáticas | Fusión, con cinemáticas |
+| --- | ---: | ---: | ---: |
+| Negro tras la última pantalla de arranque hasta el primer fotograma | ≈5,5 s (5,29 s solo del pack) | 283–301 ms | 894 ms tras la entrada (efectos 283 ms, 50 bloques 281 ms, resto de `actor_init` 280 ms) |
+| Bloques cargados en el tiempo libre del logo | 0 | 243–299 | 0 (no hay caché aún) |
+| Fotogramas tardíos del logo (`late`) | 0 | 0 | 0 |
+| Fotogramas perdidos del título / de la entrada | — | — | 0 / 0 |
+
+Recorrido completo (`tools/test_mission_native_ares.py`, `mslugx-reference.z64`):
+
+| | Antes (`436c69a`, registro anterior) | Fusión sin esta rama (coordinador) | Esta rama + fusión, sin cinemáticas (`780633c`) | Final, con cinemáticas |
+| --- | ---: | ---: | ---: | ---: |
+| Resultado | PASS | PASS | PASS, crash=0 | PASS, crash=0 |
+| Pack / caché | 665 / 266 ranuras | 711 / 227 | 711 / 243 | 711 / 242 |
+| Faltas síncronas del **fondo** (`sync=`) | ≥1 (la de 2336) | sin medir | **0** | **0** |
+| `misses` (todas, piezas de actor aplazables incluidas) | 133 | 166 | 149 | 137 |
+| `evictions` | 379 | — | 460 | 444 |
+| `deferred` / `held` | 113 / 207 | — | 36 / 231 | 31 / 374 |
+| Descodificaciones en tiempo libre (`idle=`) | — | — | 152 | 262 |
+| Peor fotograma del recorrido | 35,3 ms (2336: `asset` 17,9 ms, fondo) | 42,7 ms | 53,0 ms (2336: `sim` 28,0 ms, dos pasos de 15,6 ms; `asset` 12,0 ms) | 35,9 ms (primera ventana, arranque) |
+| Peor fotograma en 2336 | 35,3 ms | — | 53,0 ms (simulación) | 33,8 ms (`sim` 18,9 ms, `asset` 11,9 ms) |
+| Mínimo de montón libre | — | 709 KB | 416 KB | 421 KB |
+| *underruns* de audio | 2 | — | 8 | 4 |
+
+**Lectura.** El objetivo de la rama se cumple: ninguna falta síncrona del
+fondo en todo el recorrido (el mapa está fijado) y el pico de 2336 ya no es
+del fondo. Lo que queda en los picos es (1) la **simulación** del mundo en
+2336 (seis tipos de actor creados a la vez por el guion; `step` hasta 12,5–15,6
+ms, dos pasos en un fotograma), que no es de esta rama: es el coste nuevo de
+`work-world`/`work-weapons` (más actores nativos, restos y etiquetas; la
+fusión sin esta rama ya daba 42,7 ms), y (2) **una** descodificación síncrona
+de una pieza de actor aplazable (`asset` ≈10–12 ms con su DMA; el presupuesto
+`SCENE_SYNC_DECODES=1` la permite para no dejar al actor sin dibujar un
+fotograma). La precarga por el guion cubre el resto de la misión (cámara ≥
+1920); la región (0..1920) no tiene inventario de apariciones, así que sus
+soldados siguen dependiendo de la petición del mismo fotograma. Siguiente
+paso posible: un inventario de la región como `mission1_rest_inventory.json`,
+o aplazar siempre (`SCENE_SYNC_DECODES=0`) ahora que el tiempo libre
+descodifica 150–260 bloques por recorrido.

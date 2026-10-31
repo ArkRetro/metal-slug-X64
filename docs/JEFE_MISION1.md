@@ -194,7 +194,8 @@ una carga de TMEM de 2048 bytes como máximo (comprobado). Conjunto de trabajo
 por pasada lógica en los combates grabados (`tools/check_boss_budget.py`, en
 `check-boss`): **peor 16–17 chunks y 31–33 páginas**, 56 chunks distintos en
 todo el combate; ida y vuelta pack→píxeles exacta para los 264 descriptores.
-Con la caché de 8 MiB (192 ranuras) cabe el pack entero; con 4 MiB (32
+Con la caché de 8 MiB cabía entonces el pack entero (ya no: 665 chunks; el
+conjunto del jefe se pide por adelantado, RENDIMIENTO.md); con 4 MiB (32
 ranuras) el jefe se transmite bajo demanda junto al mapa de la arena.
 
 Dibujo: `src/boss_renderer.{c,h}` (`boss_render_draw`) usa el renderizador

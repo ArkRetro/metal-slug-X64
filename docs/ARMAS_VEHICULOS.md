@@ -1045,4 +1045,23 @@ alterno, saltos con arriba y luego abajo, A cada 8 fotogramas):
   sectores de 45°: un eje cuenta si el stick está a menos de 67,5° de él);
   comprobado en `tools/test_gameplay.c`. La cruceta digital no cambia.
 
+### Camel Slug: Marco doble y atascado (informe de MiSTer)
+
+Reproducido en el anfitrión (`tools/test_gameplay.c`, carreras `camel`:
+montar entre las cúpulas y 2336 y cabalgar al azar, saltando abajo+B o
+expulsando con A+B): al llegar a la cámara 2688 el lanzacohetes `05ED84`
+registra su cuerpo sólido (`5EB7C`) y la Camel se para en `0x004ED2` (el
+empuje de los cuerpos sólidos, **parada explícita**: ninguna traza de la
+Camel lo ejerce). El mundo quitaba la Camel pero su hijo, el jinete gráfico
+`034F1A/034F96` (que dibuja a Marco), seguía vivo en el sitio de la parada
+y el Marco del port, expulsado, se dibujaba a la vez: dos Marcos, uno
+quieto. Ahora una parada explícita de un actor genérico borra también sus
+descendientes (`0041AC`, como al borrar un nodo con hijos): en las tres
+carreras ningún jinete gráfico sobrevive a su Camel (antes, 5421
+actualizaciones) ni se dibuja a Marco a pie con la ranura atada. **Sigue
+pendiente** traducir `0x004ED2` para la Camel (código `004ED2..005058`:
+sobre la tabla `106756`, barrido `013968` desde `+44/+48` y `01AC4C`), con
+una captura de la Camel cabalgando hasta el lanzacohetes: hasta entonces la
+Camel termina en 2688 y Marco sigue a pie.
+
 Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).

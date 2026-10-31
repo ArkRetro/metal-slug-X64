@@ -246,7 +246,55 @@ static void air_down_run(void) {
         g.down_shots,g.h_shots,h,g.c_shots,c,g.world.unsupported,missing_draws);fflush(stdout);
     assert(g.down_shots>0 && g.h_shots>0 && g.c_shots>0 && !g.world.unsupported && !missing_draws);
 }
+/* The Camel Slug ridden (MiSTer report: Marco stuck and drawn twice): the
+ * C clears the way (granted until the ride), the player jumps on the Camel
+ * between the domes and the 2336 stop and rides it at random (bombs, aim,
+ * jumps; never A and B together), with `mode` 1 jumping off (down+B) and 2
+ * ejecting (A+B) every few seconds. Never drawn on foot while the slot
+ * still holds him (the Camel draws its rider 034F1A), no mounted-player
+ * stop, every ride ends on foot. */
+static void camel_run(int mode) {
+    static msx_game_t g;msx_game_init(&g);unsigned rs=1,mounted_at=0,doubled=0;
+    for (unsigned s=0;s<9000 && !g.complete;s++) {
+        int cx=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];
+            if (a->active && ga_l(a,0)>=0x3458eu && ga_l(a,0)<=0x34d58u) {cx=g.camera+(int16_t)ga_w(a,0x3c);break;}}
+        int dir=1;bool jump=(s%240)<4,fire=s%8<4;g.aim_up=(s%64)>=40;g.crouch=false;g.grenade=false;
+        if (!g.mounts && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {uint16_t so=0;marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&so);}
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);if (dome<0 || x<dome) dome=x;}
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        if (g.mount==MSX_MOUNT_NONE && cx>=0 && g.camera>=1900 && !g.mounts) {int px=g.x/MSX_UNIT;dir=px<cx-4?1:px>cx+4?-1:0;jump=(s%40)<4;}
+        if (g.mount==MSX_MOUNT_RIDE) {
+            if (!mounted_at) mounted_at=s;
+            unsigned t=s-mounted_at;rs=rs*1103515245u+12345u;
+            dir=((rs>>16)%5)?1:-1;fire=(rs>>8)%3==0;g.grenade=(rs>>12)%23==0;g.aim_up=(rs>>24)%4==0;
+            jump=(rs>>20)%17==0;if (jump) fire=false;
+            if (mode==1 && t%300==299) {g.crouch=true;jump=true;fire=false;}
+            if (mode==2 && t%400==399) {jump=true;fire=true;}
+        }
+        g.invulnerable=2;
+        msx_game_update(&g,dir,jump,fire);g.world.sound_count=0;check_draws(&g);
+        bool bound=g.world.vslots.slot[0].b[0]|g.world.vslots.slot[0].b[1];
+        if (g.mount!=MSX_MOUNT_RIDE && bound && g.life.phase==MARCO_ALIVE) doubled++;
+        /* The rider graphic 034F1A/034F96 (a Marco) only with its Camel. */
+        bool camel=false,rider=false;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];uint32_t q=ga_l(a,0);
+            if (!a->active) continue;
+            camel|=q>=0x3458eu && q<=0x34d58u;rider|=q==0x34f1au || q==0x34f96u;}
+        if (rider && !camel) doubled++;
+    }
+    printf("camel run %d: mounts=%u dismounts=%u mounted-player stops=%u drawn on foot while bound=%u mount=%u camera=%d unsupported=%u (%05lx) missing draws=%u (%06x)\n",
+        mode,g.mounts,g.dismounts,g.mount_stops,doubled,g.mount,g.camera,g.world.unsupported,(unsigned long)g.world.unsupported_routine,missing_draws,missing_first);fflush(stdout);
+    /* The only stop: the Camel at 004ED2 when a solid body is registered
+     * (the rocket launcher 05ED84 at camera 2688; untranslated, no capture). */
+    assert(g.mounts>=1 && g.dismounts>=1 && !g.mount_stops && !doubled && g.mount==MSX_MOUNT_NONE && !missing_draws);
+    assert(!g.world.unsupported || g.world.unsupported_routine==0x4ed2u);
+}
 int main(int argc,char **argv) {
+    if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
@@ -397,6 +445,7 @@ int main(int argc,char **argv) {
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
     air_down_run();
+    for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

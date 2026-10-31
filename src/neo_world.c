@@ -592,6 +592,7 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     }
     return best;
 }
+static void delete_tree(tick_t *t,unsigned at);
 static int run_gactor(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_gactor_t *a=&w->gactors[i];
     uint8_t group=ga_b(a,0x69);
@@ -613,6 +614,10 @@ static int run_gactor(tick_t *t,unsigned i) {
     }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
         w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
+        /* The stopped actor goes with its descendants (0041AC): a child
+         * must not outlive it (the Camel Slug stopped at 004ED2 left its
+         * rider graphic 034F1A, a second Marco, drawn where it stopped). */
+        {int at=find(w,NEO_WORLD_GACTOR,(unsigned)a->index);if (at>=0) delete_tree(t,(unsigned)at);}
         w->draw_count=before;a->active=false;return 0;
     }
     if (r==GA_DELETE) {ga_kill(t,a);return 0;}

@@ -318,3 +318,17 @@ spectrum than the calm reference; this documents a synthesis change, not a
 listening-quality verdict. The hall is ducked behind the direct shouted attack.
 The full tail ends at 10.5442 s, before the retained 11.168 s handoff.
 Earlier Piper/Kokoro sections describe superseded revisions.
+
+## Regeneración con MAME 0.264 (31-10-2026)
+
+La máquina actual solo tiene MAME 0.264 (`/usr/games/mame`). `run_intro_audio.py`
+acepta `--mame` y usa por defecto el binario 0.276 si existe y, si no, el del
+sistema. El punto de vigilancia de órdenes de sonido usa `curpc`, válido en las
+dos versiones (`pc` falla en 0.264). `pack_cinematic.py` busca `audioconv64` en
+`../toolchains` como `title_announcement.py`.
+
+Con 0.264 se regeneraron los dos paquetes privados y pasan sus comprobaciones:
+título X64 (`--end-frame 910 --video-step 1 --raster-first 300 --raster-last 900
+--shot-first 300 --shot-last 900`): **601 fotogramas iguales a MAME** antes de
+añadir los dígitos; entrada en paracaídas (`--end-frame 4200 --confirm-frame
+3620`, raster y capturas 3820..4140): **230 fotogramas**, 1.246.644 bytes.

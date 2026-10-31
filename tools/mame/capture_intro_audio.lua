@@ -47,7 +47,7 @@ end
 emu.register_frame_done(function()
  frame=frame+1;dbg:command(string.format('temp9=%x',frame))
  if frame==1 then
-  dbg:command('wpset 320000:maincpu,1,w,1,{printf "AUDIO_COMMAND frame=%d pc=%08X value=%02X\\n",temp9,pc,wpdata;g}')
+  dbg:command('wpset 320000:maincpu,1,w,1,{printf "AUDIO_COMMAND frame=%d pc=%08X value=%02X\\n",temp9,curpc,wpdata;g}')
   -- Driver mame0276 src/mame/neogeo/neogeo.cpp:1799..1802: ports 4..7,
   -- mirrored through the Z80 upper address byte. Retain full addresses.
   dbg:command('wpiset 0:audiocpu,10000,w,(wpaddr&ff)>=4 && (wpaddr&ff)<=7,{printf "YM_WRITE frame=%d port=%04X value=%02X\\n",temp9,wpaddr,wpdata;g}')

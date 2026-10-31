@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom": "mslugx-reference.z64",
+  "rom_sha256": "f89ce5a88040875254d63acb71af0c5d3c3ab126a944c666be191c8f29539763",
+  "logo": {
+    "frames": 546,
+    "seconds": 9.15,
+    "frame_max_us": 16722,
+    "late_frames": 0,
+    "cpu_max_us": 9220,
+    "cpu_mean_us": 6873,
+    "max_triangles_drawn": 471,
+    "jingle": true,
+    "next": "MSX first frame ready"
+  },
+  "start_skip": {
+    "status": "PASS",
+    "skipped_at_frame": 152,
+    "late_frames": 0
+  },
+  "mesh": {
+    "vertices": 1120,
+    "triangles": 900,
+    "cap_points": 229,
+    "cap_triangles": 221,
+    "side_edges": 229,
+    "closed_edges": 1350,
+    "width": 220.92307692307693,
+    "height": 40.0,
+    "depth": 14.0
+  },
+  "outline": {
+    "loops": 8,
+    "raw_points": 1622,
+    "points": 229,
+    "tolerance": 0.45
+  },
+  "screenshot_match": {
+    "max_rgb_difference": 7,
+    "row_offset": 0
+  },
+  "jingle": {
+    "source": "BIOS sound command $02 at frame 290, played by the cartridge sound driver (MAME 0.264, euro BIOS, header byte 0x114 cleared in emulation)",
+    "seconds": 6.861,
+    "gain": 4.0,
+    "peak": 10484
+  },
+  "mesh_sha256": "bee791ff1e0be42d4a2d8083c172791da2f5e0a61a641a2c294dd9b7e96f7b30",
+  "wav64_sha256": "684d26ad6e6414b31a606268d46cf8a97301a2ee1ad9fe5faed9bbad751b9e83",
+  "gates": {
+    "check": "PASS",
+    "check_core": "PASS",
+    "build": "PASS",
+    "reference": "PASS"
+  },
+  "limits": "Emulated frame times; no MiSTer/hardware run. mission1-internal (logo then X64 title) not built here: its cinematic assets are absent."
+}

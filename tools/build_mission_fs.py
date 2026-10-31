@@ -14,4 +14,8 @@ shutil.copytree(ROOT/'romfs/vehicles',out/'vehicles',dirs_exist_ok=True)
 shutil.rmtree(out/'audio',ignore_errors=True)
 if list((ROOT/'filesystem/audio').glob('*.wav64')):
     (out/'audio').mkdir();[shutil.copyfile(f,out/'audio'/f.name) for f in sorted((ROOT/'filesystem/audio').glob('*.wav64'))]
+# 3D NEOGEO boot logo before the title (docs/LOGO_NEOGEO.md); optional.
+for name in ('neogeo-logo.mesh','neogeo-jingle.wav64'):
+    (out/name).unlink(missing_ok=True)
+    if (ROOT/'filesystem/logo'/name).exists():shutil.copyfile(ROOT/'filesystem/logo'/name,out/name)
 print('Internal mission filesystem:',sum(p.stat().st_size for p in out.rglob('*') if p.is_file()),'bytes')

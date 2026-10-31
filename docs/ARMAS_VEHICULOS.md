@@ -1150,7 +1150,33 @@ actualizaciones) ni se dibuja a Marco a pie con la ranura atada.
 mismo cuerpo, paso 10): la Camel pasa el lanzacohetes (sección «deja de
 disparar», abajo); falta una captura de la Camel ejerciéndolo.
 
-Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).
+### Paso 12: arma R (`0x06381C`, rama `work-marco12`)
+
+Informe de MiSTer: con la R no se veían el disparo ni los cohetes (el port
+caía en la bala de pistola con parada explícita). La R (id 3) usa las mismas
+tablas de programas de disparo que la C (`0x0C3C10/0C3C50/0C3C90` → `0C02D8`,
+`0C0318`, `0C0358` para ambas) y el mismo destello `0x0C58D2`: `gameplay.c`
+la dispara por la ruta de la C con el cohete. `neo_chaser.c` traduce el
+cohete: constructor `06381C` (sonido `10F5`, paleta `37C`, programa
+`2683F2` horizontal / `2683B6` vertical), vuelo `0638B4` (búsqueda `+76` =
+`063660`/`063670`; horizontal: `+34` hacia el centro del objetivo (`01B162`
+y su `+42`) con el empuje `+7E/+82`; vertical: `+30` hacia el `+3C` largo
+del objetivo; empuje `0x6000` en el eje; pared → explosión en la misma
+actualización; contacto `063620/063630`; fuera de `063804` devuelve el
+proyectil `0C0DFC` id 3; estela `063D9E` cada préstamo de `+74`) y
+explosión `063A92/063AD6` (`26858A`/`2685CA`, tres llamadas `0636B0` en
+actualizaciones distintas con las cargas `±0x10/0x20/0x30`, programas
+`22CDD4/22CE6C/22CF2C`, filas `063680/063690/0636A0`).
+
+Captura `r1` (`PLAN=pickups ASSIST_CAMERA=600` da la R hasta la cámara 600,
+`FAMILY 2150..2690 ROOTS=6381c,c58d2,63d9e`): familia `rlaunch` (`--attacks
+--previous --spawn-window 2`): 498 nodos, 8516 actualizaciones, 1129100
+bytes iguales (41 cohetes, 5 explosiones, estelas y destellos). Nuevo: las
+respuestas de `0049E8` registran también `+42`/`+3E` del objetivo (los lee
+el cohete); `--spawn-window` (por defecto 8): con el pool lleno el original
+no crea el hijo, y un nodo registrado más tarde es de otra actualización.
+`tools/test_gameplay.c`: carrera R hasta la cámara 3520 (564 ondas, 56
+muertes, sin paradas ni dibujos ausentes).
 
 ### Camel Slug: «deja de disparar» (informe de MiSTer, ROM 10)
 

@@ -52,11 +52,20 @@ def main():
                 elif pc==0x4b96 and ad==0x106754:cur['attacks'][-1][0]=data
                 elif pc==0x4b9a:cur['attacks'][-1][1]=(cur['attacks'][-1][1]<<16|data)&0xffffffff
                 elif pc==0x4b9e:cur['attacks'][-1][2]=(cur['attacks'][-1][2]<<16|data)&0xffffffff
+                elif pc in (0x638de,0x6391c):
+                    # The rocket 06381C reads the target's +42 after 01B162
+                    # (level) or its +3C long (vertical: the low word +3E).
+                    if pc==0x638de:base,slot=ad-0x42,3
+                    elif ad&2:base,slot=ad-0x3e,4
+                    else:base,slot=ad-0x3c,0
+                    tg=cur['targets'].setdefault('%x'%base,[None,None,0,0,0])
+                    while len(tg)<5:tg.append(0)
+                    tg[slot]=data
                 elif pc in (0x1b176,0x1b17a,0x1b17e):
                     # +50 is read as two words (the second at +52).
                     base=ad-{0x1b176:0x3c,0x1b17a:0x40,0x1b17e:0x50}[pc]
                     if pc==0x1b17e and '%x'%(ad-0x52) in cur['targets']:base=ad-0x52
-                    tg=cur['targets'].setdefault('%x'%base,[None,None,0])
+                    tg=cur['targets'].setdefault('%x'%base,[None,None,0,0,0])
                     if pc==0x1b176:tg[0]=data
                     elif pc==0x1b17a:tg[1]=data
                     else:tg[2]=(tg[2]<<16|data)&0xffffffff

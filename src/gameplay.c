@@ -682,7 +682,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
     bool hgun=false,chaser=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c;
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c || kind==3;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
@@ -736,7 +736,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
             g->fire_request=false;
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
-            bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
+            /* The R (id 3) shares the C's fire programs (tables 0C3C10/
+             * 0C3C50/0C3C90: 0C02D8/0C0318/0C0358 for both) and flash;
+             * its projectile is the rocket 06381C (neo_chaser.c). */
+            uint8_t id=ammo.kind==3?3:0x0c;
+            bool allowed=marco_ammo_reserve(&ammo,id,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
             bool vertical=g->aim_up || g->crouching || g->aim_down;
             g->pistol_wait=vertical?6u:12u;
@@ -749,7 +753,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
                 neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                if (neo_world_player_actor(&g->world,0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                if (neo_world_player_actor(&g->world,id==3?0x6381cu:0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
                     g->world.weapon_player.combo95++;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }

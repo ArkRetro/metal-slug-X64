@@ -528,7 +528,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
         if (sl>=w->last_reg_count) continue;
         const uint16_t xb=w->last_regs[sl].xbins;const uint8_t yb=w->last_regs[sl].ybins;
         if (!(xb&qx) || !(yb&qy)) continue;
-        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0}};
+        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0},0,0};
         const uint8_t *d=NULL;
         switch (w->last_regs[sl].kind) {
         case NEO_WORLD_GACTOR: {
@@ -536,7 +536,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             if (g==a || !g->active || g->placeholder || !ga_l(g,0x50)) continue;
             d=ga_rom(ga_l(g,0x50));
             if (!candidate(d,ga_w(g,0x3c),ga_w(g,0x40),ga_b(g,0x15),ga_l(g,0x54)?ga_rom(ga_l(g,0x54)):NULL,ga_b(g,0x5f),&q,row)) continue;
-            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);
+            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);tg.y_low=ga_w(g,0x42);tg.x_low=ga_w(g,0x3e);
             break;
         }
         case NEO_WORLD_SOLDIER: {
@@ -545,7 +545,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             uint8_t sd[12]={hb.type,(uint8_t)(1u<<hb.klass),(uint8_t)((uint16_t)hb.rect[0]>>8),(uint8_t)hb.rect[0],(uint8_t)((uint16_t)hb.rect[1]>>8),(uint8_t)hb.rect[1],
                 (uint8_t)((uint16_t)hb.rect[2]>>8),(uint8_t)hb.rect[2],(uint8_t)((uint16_t)hb.rect[3]>>8),(uint8_t)hb.rect[3],0x80,0};
             if (!candidate(sd,hb.x,hb.y,hb.flags15,NULL,hb.dead?0x80u:0,&q,row)) continue;
-            h=s->health;tg.x=hb.x;tg.y=hb.y;d=sd;
+            h=s->health;tg.x=hb.x;tg.y=hb.y;tg.y_low=(uint16_t)s->b.projected_y;tg.x_low=(uint16_t)s->b.projected_x;d=sd;
             for (unsigned k=0;k<4;k++) tg.rect[k]=hb.rect[k];
             break;
         }
@@ -555,7 +555,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             d=neo_boss_rom(neo_boss_l(n,0x50),12);
             const uint8_t *mul=neo_boss_l(n,0x54)?neo_boss_rom(neo_boss_l(n,0x54),40):NULL;
             if (!candidate(d,neo_boss_w(n,0x3c),neo_boss_w(n,0x40),n->f[0x15],mul,n->f[0x5f],&q,row)) continue;
-            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);
+            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);tg.y_low=neo_boss_w(n,0x42);tg.x_low=neo_boss_w(n,0x3e);
             break;
         }
         default: continue;

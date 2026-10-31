@@ -229,12 +229,12 @@ static unsigned stand_2336(int at) {
  * shop run firing tapped. Every shell, flash, trail and blast is native (no
  * stop, every descriptor in the scene pack); shells home in and explode
  * (064128 -> blast 06371E) and kill. */
-static void chaser_run(void) {
+static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
-    unsigned blasts=0,trails=0,grants=0;bool seen[NEO_WORLD_GACTORS]={false};
+    unsigned blasts=0,trails=0,grants=0,rockets=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
-        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {
-            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&sound)) grants++;
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound)) grants++;
         }
         int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
         int dome=-1;
@@ -248,16 +248,21 @@ static void chaser_run(void) {
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
             bool blast=a->active && (r==0x63740u || r==0x63756u);
+            if (a->active && r==0x6381cu) rockets++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
-    printf("C run: grants=%u shells=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        grants,g.c_shots,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    printf("%s run: grants=%u shells=%u rockets=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        id==3?"R":"C",grants,g.c_shots,rockets,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
     assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
     assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
+    if (id==3) assert(rockets>=40);
 }
+/* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
+ * flash; MiSTer report: no rockets drawn). */
+static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);}
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
  * at C0, the H's fan and its downward sweeps), from the mission start. */

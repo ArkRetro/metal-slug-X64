@@ -177,6 +177,14 @@ static void env_to_ram(const marco_weapons_t *weapons) {
  * could not make (node pool exhausted: the shell 047DE0 of the bomb at
  * heli2 frame 11363), counted as external. */
 static uint32_t current_frame;
+/* Frames after its creator's update in which a recorded child may first
+ * appear (compile_family_fixture.py --spawn-window; default 8). With a
+ * full node pool the original makes no child: a later recorded node is
+ * another update's (the R family: 2). */
+#ifndef FAMILY_SPAWN_WINDOW
+#define FAMILY_SPAWN_WINDOW 8u
+#endif
+#define SPAWN_WINDOW FAMILY_SPAWN_WINDOW
 static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script) {
     (void)ctx;
     int c=creator?index_of(creator):after_script?-2:-1;
@@ -186,7 +194,7 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     /* c = -2: after the script actor (00411C), the recorded creator is the
      * script actor (compile_family_fixture.py --script-actor). */
     if ((c>=0 && c<(int)NN) || c==-2) for (unsigned i=0;i<NN;i++) {
-        if (bound[i] || NODES[i].creator!=c || NODES[i].routine!=routine || NODES[i].frame>current_frame+8u) continue;
+        if (bound[i] || NODES[i].creator!=c || NODES[i].routine!=routine || NODES[i].frame>current_frame+SPAWN_WINDOW) continue;   /* 0040BC: this update or the next frame (a later node is another update's child: the pool was full) */
         if (pick<0 || NODES[i].frame<NODES[pick].frame) pick=(int)i;
         else if (NODES[i].frame==NODES[pick].frame) pick=(int)i;
     }
@@ -252,8 +260,8 @@ static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     if (answer_used>=answer_count) {answer_used++;return 0;}
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {
-        const int32_t *t=r+1+8*i;neo_ga_target_t *o=&answer_env->target[i];
-        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]}};
+        const int32_t *t=r+1+10*i;neo_ga_target_t *o=&answer_env->target[i];
+        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]},(uint16_t)t[8],(uint16_t)t[9]};
     }
     if (r[0]) contacts++;
     return (uint8_t)r[0];

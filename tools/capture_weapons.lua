@@ -47,6 +47,7 @@
 --                (the A6 that 00411C saved), so the projectiles are traced
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local plan=os.getenv('MSX_WEAPONS_PLAN') or 'pickups'
+local ride_jumps=os.getenv('MSX_WEAPONS_RIDE_JUMPS')
 local ride_len=tonumber(os.getenv('MSX_WEAPONS_RIDE') or (plan=='vehicles' and '720' or '60'))
 local last_frame=tonumber(os.getenv('MSX_WEAPONS_LAST') or '11000')
 local first_dump=tonumber(os.getenv('MSX_WEAPONS_FIRST_DUMP') or '6900')
@@ -141,6 +142,9 @@ local function probes()
   dbg:command('bpset 4406,a6==1014c4,{printf "MARCO_DRAW frame=%d descriptor=%08X xy=%08X attr=%04X z=%04X\\n",temp9,d7,d0,d1&ffff,d5&ffff;g}')
   dbg:command('bpset 4256,a6==1014c4,{printf "MARCO_INIT frame=%d program=%08X speed=%04X\\n",temp9,a1,d0&ffff;g}')
  end
+ -- Extra debugger commands (MSX_WEAPONS_DEBUG_CMDS, separated by '|'):
+ -- one-off kernel traces such as the SV-001 tread sweeps.
+ for c in string.gmatch(os.getenv('MSX_WEAPONS_DEBUG_CMDS') or '','[^|]+') do dbg:command(c) end
  -- Weapon state.
  bp(0xc0928,'1','give_weapon d0=%X d1=%X old=%X ammo=%X','d0,d1,b@10c71e,w@10c724')
  bp(0xc09c8,'1','give_weapon_done id=%X ammo=%X max=%X','b@10c71e,w@10c724,b@10c71c')
@@ -388,7 +392,7 @@ emu.register_frame_done(function()
   if not riding and mounted_slot~=0 then print(string.format('LEFT %d %x',frame,mounted_slot));mounted_slot=0;mounted_at=nil end
   local screen_x=cpu:read_u16(0x101500)&511
   local stopped=still>=240
-  local right,left,up=1,0,0
+  local right,left,up,down=1,0,0,0
   if stopped then
    if screen_x<=48 then sweep_direction=1 elseif screen_x>=256 then sweep_direction=-1 end
    right=sweep_direction>0 and 1 or 0;left=sweep_direction<0 and 1 or 0
@@ -405,10 +409,17 @@ emu.register_frame_done(function()
     c=(t%40<6) and 1 or 0
     -- Hold position for the first half, then advance.
     if t<ride_len//2 and not stopped then right=(t//60)%2==0 and 1 or 0;left=1-right end
+    -- MSX_WEAPONS_RIDE_JUMPS=1: jumps (B) and crouches (down; with B: out)
+    -- in the SV-001 (its 09333A and 093138).
+    local veh=cpu:read_u32(0x100000+mounted_slot)
+    if ride_jumps=='1' and veh>=0x92810 and veh<0x95800 then b=(t%100>=50 and t%100<54) and 1 or 0;down=(t%150>=100 and t%150<130) and 1 or 0;if b==1 then a=0 end end -- A+B would leave
+    -- 2: long crouches (bombs with C) and separate jumps.
+    if ride_jumps=='2' and veh>=0x92810 and veh<0x95800 then b=(t%200>=100 and t%200<104) and 1 or 0;down=(t%200>=20 and t%200<80) and 1 or 0;if b==1 then a=0 end end
    end
-   if t>=ride_len and t<ride_len+6 then a=1;b=1;c=0 end -- leave: A+B (ROM 035168, input bit 7)
+   if t>=ride_len and t<ride_len+6 then a=1;b=1;c=0;down=0 end -- leave: A+B (ROM 035168, input bit 7)
   end
   button('P1 Right',right);button('P1 Left',left);button('P1 Up',up)
+  if ride_jumps then button('P1 Down',down) end
   button('P1 A',a);button('P1 B',b);button('P1 C',c)
  end
  if mortal then

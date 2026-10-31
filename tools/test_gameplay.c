@@ -263,6 +263,19 @@ static void chaser_run_id(uint8_t id) {
 /* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
  * flash; MiSTer report: no rockets drawn). */
 static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);}
+/* The knife (MiSTer report: enemies could not be knifed): walk right with
+ * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
+ * (0C3B46/0C419E) instead of firing, and the cuts kill. */
+static void knife_run(void) {
+    static msx_game_t g;msx_game_init(&g);unsigned kills_at_cut=0,last_cuts=0;
+    for (unsigned steps=0;steps<6000 && g.camera<1200;steps++) {
+        msx_game_update(&g,(steps%64)<48?1:0,false,steps%6<3);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (g.knife_cuts!=last_cuts) {last_cuts=g.knife_cuts;kills_at_cut=g.kills;}
+    }
+    printf("knife run: cuts=%u hits=%u kills=%u shots=%u camera=%d unsupported=%u\n",g.knife_cuts,g.knife_hits,g.kills,g.shots,g.camera,g.world.unsupported);fflush(stdout);
+    assert(g.knife_cuts>0 && g.knife_hits>0 && !g.world.unsupported && !missing_draws);
+    (void)kills_at_cut;
+}
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
  * at C0, the H's fan and its downward sweeps), from the mission start. */
@@ -334,6 +347,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -481,6 +495,7 @@ int main(int argc,char **argv) {
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
+    knife_run();
     air_down_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);

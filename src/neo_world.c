@@ -1261,6 +1261,27 @@ bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int
     if (w->shot_hook) hit|=w->shot_hook(w->shot_context,&b,row);
     return hit;
 }
+uint8_t neo_world_player_attack(neo_world_t *w,int32_t x,int32_t y,bool left,const int16_t row[7]) {
+    neo_contact_actor_t b;memset(&b,0,sizeof(b));
+    b.projected_x=b.cached_x=(int32_t)((uint32_t)x+(uint32_t)w->terrain.x);
+    b.projected_y=b.cached_y=(int32_t)((uint32_t)y+(uint32_t)w->terrain.y);
+    b.flags15=(uint8_t)(32u|(left?1u:0u));
+    uint8_t best=0;
+    for (unsigned at=0;at<w->order_count;at++) {
+        if (w->order[at].kind!=NEO_WORLD_SOLDIER || !w->constructed[w->order[at].index]) continue;
+        neo_soldier_t *s=&w->soldiers[w->order[at].index];neo_hurtbox_t hb;
+        if (neo_soldier_hurtbox(s,&hb) && neo_soldier_receive(s,&b,1,row,w->grid) && hb.type>best) best=hb.type;
+    }
+    uint16_t qx;uint8_t qy;
+    if (!attack_bins(&b,row,&qx,&qy)) return best;
+    for (unsigned k=0;k<w->last_box_count;k++) {
+        neo_gactor_t *g=&w->gactors[w->last_boxes[k].owner];
+        if (!(w->last_boxes[k].xbins&qx) || !(w->last_boxes[k].ybins&qy)) continue;
+        if (!g->active || g->placeholder || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) continue;
+        if (ga_receive(g,&b,1,row,w->grid)) {uint8_t ty=ga_rom(ga_l(g,0x50))[0];if (ty>best) best=ty;}
+    }
+    return best;
+}
 bool neo_world_shot(neo_world_t *w,int32_t previous_x,int32_t x,int32_t y,bool left) {
     return neo_world_shot_row(w,previous_x,y,x,y,0,left);
 }

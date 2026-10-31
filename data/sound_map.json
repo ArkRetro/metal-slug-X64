@@ -404,6 +404,30 @@
    "event": "SV-001 crouch (ROM 093138, tank6 capture)"
   },
   {
+   "label": "sfx_10fb",
+   "word": "10FB",
+   "callers": [
+    "0C419E"
+   ],
+   "event": "knife cut hitting a type-5 hurtbox with the kind-2 row (ROM 0C41D8, knife1 capture)"
+  },
+  {
+   "label": "sfx_10f9",
+   "word": "10F9",
+   "callers": [
+    "0C419E"
+   ],
+   "event": "knife cut on a type-5 hurtbox, other row kinds (ROM 0C41E4)"
+  },
+  {
+   "label": "sfx_1069",
+   "word": "1069",
+   "callers": [
+    "0C419E"
+   ],
+   "event": "knife cut hitting a type-4 hurtbox (ROM 0C41F6)"
+  },
+  {
    "label": "music_mission1",
    "word": "0021",
    "callers": [

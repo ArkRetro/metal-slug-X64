@@ -1203,3 +1203,24 @@ actores genéricos; en la arena del jefe, con fuego continuo, hasta 43
 impactos `0x01C9E6` y 22 nodos `0x003F1E` a la espera de sus hijos) una
 bala puede no crearse (`overflow`, 2 veces en 20000 actualizaciones de una
 semilla); el original reparte 100 nodos entre todos sus actores.
+
+### Paso 13: cuchillo `0x0C3B46` (rama `work-marco12`)
+
+Informe de MiSTer: no se podía matar con el cuchillo. `gameplay.c` lo hace
+nativo: cada actualización del jugador `0x0C3744` consulta la fila `2D0AE4`
+(clase 1, sin daño) en su origen; un *hurtbox* de tipo 4 o 5 al alcance pone
+`+9A` bit 0, y una pulsación de disparo (cualquier arma salvo `+93 = 3`,
+`0x0C3CD0`) corta en vez de disparar: la primera retrollamada `0x0C419E`
+del programa (una actualización después) golpea con la fila `2D0AF4` (tipo
+2, daño 0x1E; `neo_world_player_attack`) y suena `10FB` (tipo 5) o `1069`
+(tipo 4); las pulsaciones durante el corte esperan a su fin (`+76`).
+Captura `knife1` (`run_marco_catalog.py --plan` con andar y disparar hacia
+los primeros rebeldes): 10 cortes, todos de la tabla `0x0BF958` en reposo
+(`0x24D486`), 21 fotogramas hasta la siguiente elección de disparo.
+`tools/test_gameplay.c` (`knife_run`): cortes que golpean, sin paradas.
+Sonidos `10FB`, `10F9`, `1069` renderizados y medidos contra todos
+(`data/sound_pairs.json`, 2000 pares). **Pendiente**: los programas del
+corte (`0x0BF918/0x0BF958`, todas las formas) no están en el catálogo de
+Marco (`build/marco_campaign.h`): regenerarlo exige las capturas H
+`marco-h2/h3`, que ya no están en disco; mientras, Marco no cambia de pose al
+cortar.

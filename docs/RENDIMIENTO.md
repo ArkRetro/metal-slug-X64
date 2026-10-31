@@ -278,4 +278,26 @@ pasos de `rspq_highpri_begin`, sin tocar el juego.
   guion agotó su tiempo en la zona del jefe): 59 ventanas de 300
   fotogramas (17.700 fotogramas), `crash=0`, 16 *underruns* en 10.894
   búferes de AI con los 43 µs añadidos a cada `begin`.
-- Recorrido completo con la librería final (sin espera): FINAL_PENDIENTE
+- Recorridos completos con la librería final (sin espera), dos pasadas de
+  30 minutos con el anfitrión muy cargado (carga media 9–20 en 4 núcleos,
+  otras sesiones de ares en paralelo): 71 y 90 ventanas de 300 fotogramas
+  (21.300 y 27.000 fotogramas), `RSP CRASH`=0, sin patadas del vigilante
+  (`MSX rspq kick`=0), *underruns* 5/9.127 y 26/13.305 búferes de AI
+  (0,05 % y 0,2 %, con `audio=` medio ≈0,9–1,2 ms y máx. ≈4 ms por
+  servicio). La segunda pasada llegó al jefe (`boss.png`); la primera se
+  quedó en el derrumbe de las cúpulas por el guion de entrada (sin
+  enemigos ni errores en el registro), no por el RSP: en la pasada con
+  espera añadida la misma ROM parcheada superó cúpulas, tienda, camión y
+  helicóptero hasta dañar al jefe.
+
+### Peor fotograma (62,9 ms en el jefe de la ROM 6)
+
+No está relacionado con la cola RSP: en estas pasadas el máximo de `cpu`
+por ventana (44–66 ms) coincide siempre con `asset=…/29.000–44.000` µs
+(descodificación síncrona de un bloque del pack en un `require` fallido:
+`misses=26–29`), repartido en `prep`/`begin`/`bgreq`/`actors` según dónde
+cae la carga; `audio` (todo `msx_audio_service`, incluida la espera
+`rspq_highpri_sync` de cada mezcla) es ≈1 ms de media y ≤4–5 ms de
+máximo. El resto de fotogramas de cada ventana queda en 13–15 ms de
+`cpu`. Reducir ese pico es cuestión de prefetch/residencia del pack
+(`scene_assets.c`), no del mezclador ni de rspq.

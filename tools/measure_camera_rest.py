@@ -13,7 +13,7 @@ from pathlib import Path
 def Hc(r):return (int(r['cam_y'])+0xffff)>>16
 
 def rules(r,prev):
-    X=-int(r['fore_x']);P=int(r['camera']);H=int(r['cam_y'])>>16;S=int(r['shake'])>>16
+    X=-int(r['fore_x']);P=int(r['camera_word']);H=int(r['cam_y'])>>16;S=int(r['shake'])>>16
     out={
         'middle_x == X (full-speed middle bank)':-int(r['mid_x'])==X,
         'sky_x == (X+1)//2':-int(r['sky_x'])==(X+1)//2,
@@ -24,7 +24,10 @@ def rules(r,prev):
         'foreground_y == 256 - Hc - S, Hc = ceil(camera_y), previous frame':prev is not None and int(r['fore_y'])==256-Hc(prev)-(int(prev['shake'])>>16),
         'sky_y == 264 - ceil(Hc/2) - S, previous frame':prev is not None and int(r['sky_y'])==264-(Hc(prev)+1)//2-(int(prev['shake'])>>16),
         'X == ceil(camera_x of the previous frame)':prev is not None and X==(int(prev['cam_x'])+0xffff)>>16,
-        'P == 102036 word':P==int(r['camera_word']),
+        'P == 102036 word':int(r['camera'])==P,
+        # All missions: the progress word advances by the larger axis motion
+        # of the displayed camera (diagonal/vertical paths of Mission 2+).
+        'P - P_prev == max(|X - X_prev|, |Hc - Hc_prev|)':prev is not None and P-int(prev['camera_word'])==max(abs(X+int(prev['fore_x'])),abs(Hc(r)-Hc(prev))),
         '|X - P| <= 3 without stop operands':None,
         'P+op1 <= X <= P+op3 with stop operands':None,
     }
@@ -56,7 +59,7 @@ def measure(path,first,last):
         key=(r['lock'],r['lock_params'])
         if key!=last_key:
             lock=int(r['lock'])
-            stops.append(dict(frame=int(r['frame']),progress=int(r['camera']),stop=None if lock==-1 else lock>>16,
+            stops.append(dict(frame=int(r['frame']),progress=int(r['camera_word']),stop=None if lock==-1 else lock>>16,
                 operands=[int(v) for v in r['lock_params'].split()]))
             last_key=key
     heights=collections.Counter(int(r['cam_y'])>>16 for r in rows)

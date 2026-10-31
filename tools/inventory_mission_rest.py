@@ -58,8 +58,14 @@ def main():
     p.add_argument('zip',type=Path);p.add_argument('capture',type=Path,help='debugger capture directory')
     p.add_argument('--from-record',type=lambda v:int(v,0),default=0x2D6A1A,help='first script statement (default: camera stop 1920)')
     p.add_argument('--output',type=Path,required=True)
+    p.add_argument('--all-sections',action='store_true',help='Spawn records of every script of the table ROM 0x000800 (full game)')
+    p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI spawn frames (one mission of a full-game capture)')
     a=p.parse_args()
-    prog=Program(a.zip);script=decode(prog);data=rom(a.zip)
+    prog=Program(a.zip);data=rom(a.zip)
+    if a.all_sections:
+        from fullgame_scripts import table
+        script=[st for b in table(prog) if 0x200000<=b<0x300000 for st in decode(prog,b)]
+    else:script=decode(prog)
     records={int(s['address'],16):s for s in walk(script) if s['op']==7}
     log=(a.capture/'debug.log').read_text().splitlines()
     assert any('MAME debugger' in l for l in log[:3]) and not any('Error in' in l for l in log),'debug.log missing or has command errors'
@@ -110,15 +116,16 @@ def main():
             cache[f]={i:struct.unpack_from('>H',ram,0x68EA+16*i+10)[0] for i in range(256)}
         r=cache[f].get(slot);return None if r in (0,0xFFFF) else r
     kinds=collections.OrderedDict();desc_cache={}
-    start=next(s for s in spawns if s['record']>=a.from_record)['frame']
+    start=next(s for s in spawns if s['record']>=a.from_record and (not a.frames or a.frames[0]<=s['frame']<=a.frames[1]))['frame']
     for k,root in enumerate(roots):
         s=root['spawn']
         if s['record']<a.from_record:continue
+        if a.frames and not a.frames[0]<=s['frame']<=a.frames[1]:continue
         rec=records[s['record']];entry=s['entry']&0xFFFFFF
         kind=kinds.setdefault(entry,dict(constructor=f'0x{entry:06X}',table_offset=rec['table_offset'],group_counted=not s['entry']>>31,
             spawns=[],transient=0,routines=set(),descriptors=collections.Counter(),palettes=collections.Counter(),members=0,undrawn_members=0))
         row=trace.get(s['frame'],{})
-        kind['spawns'].append(dict(frame=s['frame'],camera=int(row.get('camera',-1)),record=f'0x{s["record"]:06X}',
+        kind['spawns'].append(dict(frame=s['frame'],camera=int(row.get('camera_word',row.get('camera',-1))),record=f'0x{s["record"]:06X}',
             node=f'0x{s["node"]:06X}',creator=f'0x{s["creator"]:06X}',x=rec['x'],y=rec['y'],screen_relative=[rec['x_screen_relative'],rec['y_screen_relative']],
             group=rec['group'],words=rec['words'],world_xy=root['inst']['first_xy'] if root['inst'] else None))
         if root['inst'] is None:kind['transient']+=1

@@ -116,6 +116,10 @@ static void release_run(unsigned seed) {
          * special one) plus 100000 for ten or more added to the score. */
         assert(e.mission_end==MSX_END_DONE && !e.end_stops && !e.end.unsupported && !e.end_ram.unsupported_text);
         assert(updates==30+tally+160+32 && tally>0);
+        /* 01891E: Mission 2's first stage record 017212 (descriptor 016DDE:
+         * map list 0B6D2A, script entry 0x804, stage 1), entry kind 0. */
+        assert(e.flow.mission==1 && e.flow.record==0x17212 && e.flow.descriptor==0x16DDE && e.flow.stage==1 && e.flow.load);
+        assert(e.flow.routine==0x184B4 && neo_mission_map_list(&e.flow)==0xB6D2A && neo_mission_script_entry(&e.flow)==0x804 && e.flow.cleared[0]==1);
         assert(!e.world.ga_flags.rescued[0]);
         {
             uint32_t bonus=0;

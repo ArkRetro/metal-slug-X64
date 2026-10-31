@@ -31,6 +31,10 @@ int msx_game_animation(const msx_game_t *g) {
 void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
     memset(g,0,sizeof(*g));
+    /* 01829E for Mission 1 (record 01714E): the port's entry runs the
+     * stage start, so the flow only keeps its words (docs/MISION2.md). */
+    neo_mission_start(&g->flow,0);
+    for (unsigned k=0;k<40 && g->flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&g->flow);
     g->x=MSX_START_X;g->y=msx_ground_offset(g->x);
     g->facing=1;g->grounded=true;g->health=1;
     // The original region script starts at its first record with the RNG
@@ -515,8 +519,10 @@ static bool hgun_reserve(void *context) {
  *   0188FC  fade 9C0A (E1,E1,E1, 0x20: to -31 in 32 updates, neo_fade.c,
  *           stepped by the list head actor 003918 before the mission actor),
  *           +7C = 0x20; 018916 waits 33 updates.
- *   01891E  mission 42F4 + 1 < 6: the next mission (1829E). Missions 2..6
- *           are not ported: mission_end = done, actor.c restarts Mission 1.
+ *   01891E  mission 42F4 + 1 < 6: the next mission (1829E), neo_mission.c:
+ *           Mission 2's first stage record 017212 (descriptor 016DDE). Its
+ *           scene is not loaded yet: mission_end = done, actor.c logs the
+ *           stage and restarts Mission 1 (docs/MISION2.md).
  * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
  * Mission 2 at 14460 (dumps every 30 frames). */
 static uint16_t end_rand(void *ctx) {return neo_rng_next(&((msx_game_t *)ctx)->world.rng);}
@@ -538,6 +544,9 @@ static void end_ram_start(msx_game_t *g) {
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {
     case MSX_END_NONE:
+        /* 018F40 cleared 4303; the stage loop takes record +2 (018722,
+         * 0182C8): type 4 with +4 = 0, the mission end 018846. */
+        g->flow.end=0;neo_mission_stage_done(&g->flow);
         g->mission_end=MSX_END_WAIT;g->end_timer=0x1e;
         __attribute__((fallthrough)); /* 018864 -> 018870 in the same update */
     case MSX_END_WAIT:
@@ -563,6 +572,7 @@ static void mission_end_step(msx_game_t *g) {
         __attribute__((fallthrough)); /* 018910 -> 018916 */
     case MSX_END_FADE:
         if (g->end_timer--) return;
+        neo_mission_next(&g->flow);                                     /* 01891E */
         g->mission_end=MSX_END_DONE;
         return;
     default: return;

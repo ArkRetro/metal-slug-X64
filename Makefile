@@ -270,7 +270,7 @@ $(BUILD_DIR)/end_letters_fixture.h: tools/compile_end_fixture.py data/end_letter
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food rocket heli camel decor awning porter slug civil
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food rocket heli camel decor awning porter slug civil blast debris flash
 # The camel riders 09F682 (camel2: hold-fire 6950..7950 at camera 2184..2336),
 # their riders, heads, shots, pieces and the dropped sword 09EE34; the rider
 # dies as a swordsman (09E920/09EAB8, neo_swords.c). A shot A0034 that hits
@@ -294,6 +294,10 @@ FAMILY_ARGS_slug := --script-actor 101414 --script-routines 1be24,59e30 --node-f
 # stands, is hit at 7064 and flees with the scream 104F); the figures keep
 # the leader in +7A.
 FAMILY_ARGS_civil := --node-fields 7a
+# Explosion effects (src/neo_effects.c): fragments 01D31C.. and debris
+# 01CE08.. of fam2 (wagon, rocket launcher, helicopters; 8414..10599), the
+# shop's debris and puffs 01D488 of bld1 (cut before 7312: the shop's
+# collision stamps are not replayed) and its flashes 01E058 (bld1).
 FAMILY_ARGS_porter := --terrain 10c72e --node-fields 72,76 --pickup 2836,0,ffff
 # The rocket launcher 05ED84 (rl2: hold-fire capture at camera 2688), its aim
 # flash 060490 (0040BC) and, after the script actor (00411C), the rockets

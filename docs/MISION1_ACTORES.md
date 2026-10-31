@@ -1052,6 +1052,51 @@ mapa de nodos: **5248 actualizaciones, 29627 estados de actores genéricos**.
 Gráficos: `civ1@31d80-32150` (programas `237D02/237D0E/237D6E/237D7A/237CC0`,
 paleta `0x92`): 0 píxeles distintos.
 
+## Explosiones: fragmentos `0x01D31C..`, restos `0x01CE08..` y destello `0x01E058` (`src/neo_effects.c`)
+
+La auditoría de constructores sin crear (`EXT`, recorrido de
+`tools/test_gameplay.c` instrumentado) daba como explosiones ausentes:
+`0x01D31C` (las 16 bolas de fuego de `01DBAA` al destruir el carro, el
+camión, el blindado y el lanzacohetes), `0x01D488` (humo del edificio
+destructible), los restos `0x01CE08/14/20/38/44` y `0x01CF70` (listas de los
+emisores `01D764/01D7B8`: edificios, cúpulas, helicópteros) y `0x01E058`.
+Traducción de `0x01CE08..0x01D762` y `0x01E058..0x01E11A`:
+
+- **Fragmentos** `01D31C/01D37C/01D3D2/01D428/01D488/01D4DA`: programa y
+  paleta por un bit aleatorio (`22DAEE/22DC2C` `0x277/0x278`, `22D5BC/22D626`
+  `0x20A`, `22D8EA/22D940` `0x29E`; `01D4DA` por la tabla `01E008`, `0xF7`),
+  `+62` velocidad, ángulo `+8A` aleatorio (`01D51A/01D54A/01D578`), salida
+  `01D5EC` con seno/coseno (`0029FC`) y una reducción aleatoria que conserva
+  la palabra alta de D1 (`move.w $34(a6),d1` tras `move.l`), límites, vuelo
+  `01D6E4` (`0143E4`, gravedad `+7E`; cada bote divide las velocidades y
+  cuenta `+92`; `+5F` bit 3 tras el primer bote) hasta `01D93C` o fuera de
+  `01DEF0`. `01D5AA` (sin programa propio) no se alcanza en la Misión 1: no
+  se traduce.
+- **Restos** `01CE08..01D078`: índice `+91` y paleta por entrada (bases
+  `01D084/01D09C/01D0B4/01D0CC/01D0E4`), programa `01DF20` y rectángulo
+  `01DF94` por `+91`, giro aleatorio `01DEA2`, salida aleatoria, vuelo
+  `01D1B0` hasta tocar suelo (`01B1DC`, `004188`), el fin del programa o salir
+  del rectángulo.
+- **Destello** `01E058`: programa `22EA20`, paleta `0x143`, hasta su fin.
+- Datos ROM nuevos en `region_rom.json`: `01DF00..01E027`.
+
+Pruebas de familia (rangos solo de las rutinas nuevas):
+
+| Prueba | Captura | Resultado |
+| --- | --- | --- |
+| `blast` | `fam2` (carro, lanzacohetes, helicópteros) | 26 nodos, 777 actualizaciones (8414..10599), 105420 bytes iguales |
+| `debris` | `bld1` (edificio destructible), cortada antes de 7312 | 48 nodos, 1582 actualizaciones (6360..7311), 217000 bytes iguales |
+| `flash` | `bld1` | 10 nodos, 320 actualizaciones (7293..7421), 43400 bytes iguales |
+
+Las trazas `trk3` (fragmentos contra el carro destruido) y el resto de
+`bld1` (humo contra los sellos de colisión de la tienda destruida) difieren
+en el bit 2 de `+5F` (techo) del barrido `0143E4`: la prueba de familia no
+reproduce ni el objeto dinámico del carro (solo lo que se leyó) ni los sellos
+`0C88B0` de otra familia; por eso se cortan. En el juego ambos son nativos.
+
+Gráficos: `fam2/bld1/trk3/rl2@1ce08-1d763`, `bld1@1e058-1e07c`; paletas
+nuevas `0x277 0x278 0x20A 0x29E 0x143 0x228`.
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

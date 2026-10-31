@@ -24,6 +24,7 @@ BLOBS=[
     (0x29D1E,0x42,'029A0C truck cell map'),(0x29D60,0x34,'029A2E truck cell map'),
     (0x29FC,0x280,'002E7C/01D9F0 sine table (cosine at +0x80)'),
     (0x1DEB8,0x48,'01C9FA/01DA2E effect cull rectangles (019504)'),
+    (0x1DF00,0x128,'01D0F8 debris cull rectangles 01DF00..01DF1F, program table 01DF20 and rectangle table 01DF94 (by +91); 01D4DA fragment programs 01E008'),
     (0xDC85A,0x108,'0DC97E bomber: smoke lists/tables (01DA40), palettes, cull rectangles, hurtboxes, attack rows'),
     (0x2D06CE,0x330,'0DC9EE.. bomber rank tables (0260C8)'),
     (0x0B57BE,0xB2,'0C83E6 Mission 1 camera/map command list (pointer RAM 10E964)'),

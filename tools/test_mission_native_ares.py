@@ -95,7 +95,7 @@ try:
     wait_for(r'MSX camera progress=1024 ',timeout=600);snap('camera-risen')
     wait_for(r'MSX camera stop=1920',timeout=900);time.sleep(1.0);snap('village-end')
     wait_for(r'MSX domes signal 05486A',timeout=900);domes.set();time.sleep(4);snap('domes-risen')
-    wait_for(r'MSX player handlers=054B18',timeout=900);time.sleep(.6);snap('collapse')
+    wait_for(r'MSX player handlers=054B18',timeout=1800);time.sleep(.6);snap('collapse')  # the tapped pistol needs 11-13 min for the three domes
     wait_for(r'MSX domed building collapsed',timeout=300);domes.clear();time.sleep(.3);snap('collapsed')
     time.sleep(1.5);snap('rubble')
     wait_for(r'MSX region end passed',timeout=900);snap('domed-building')

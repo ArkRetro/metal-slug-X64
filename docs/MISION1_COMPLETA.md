@@ -528,3 +528,61 @@ exacta.
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
 - Actores de fin de partida/misión: el objeto de `019798` y la tabla de récords `057B44` (el recuento `0308C0`, el CONTINUE? `018120`, las letras `06090A` y el fundido `9C0A` ya son nativos).
+
+## Correcciones de MiSTer, ROM 10c/10d (rama `work-fix11`)
+
+### Tejados: celdas del grupo 1 (`src/neo_collision.c`)
+
+Informe: Marco de pie en el tejado alto del edificio de la izquierda del
+mercado (bajo la pancarta roja). La rejilla tiene allí tres superficies:
+calle `0B` (y 64), tejado `FB` (grupo 7, y 144) y el tejado alto `3B` (y 192,
+con el borde inclinado `37..39`, grupo 1); el mismo patrón en x 1296..1480 y
+1584..1767. Las barridas del jugador (`0143EE` en el aire, `014594` en el
+suelo) pasan por `0128E8`, que pone la RAM `10C00D`; con ella el núcleo borra
+las celdas del grupo 1 (`0129A2..0129BC`; el mapa de grupos de la misión 1
+deja el 1 como 1). Evidencia MAME (`capture_mission_rest.lua`, `roof1`, solo
+captura: `MSX_REST_POKE` de la Y del mundo del jugador `1014F0/1`):
+
+| Prueba | Resultado en MAME |
+| --- | --- |
+| soltado en y 202 sobre x 1718..1736 | atraviesa `3B` (y 192) en x 1731..1736 sin posarse |
+| soltado en y 172 sobre x 1700..1736 | se posa en `FB` (y ≈ 142,4, rutina `0C2888`) |
+| `roof0` (sin tocar nada): salto desde el armazón en y 90 | ápice 143,9: no llega al tejado `FB` |
+
+El port aterrizaba en cualquier celda: desde `FB` un salto (56 px) llegaba
+a `3B` (y 192), la altura de la foto. Ahora las consultas del jugador
+(`neo_surface_at`, `neo_walk_step`, `neo_land_step`) ignoran el grupo 1;
+las de soldados y objetos (`neo_surface_unique`) lo conservan. El tejado
+`FB` sigue siendo alcanzable como en el arcade (desde una plataforma más
+alta que la calle).
+
+### Prioridad de sprites: la palabra `+1E` (`src/actor.c`)
+
+Regla del original: cada actor añade sus entradas a la lista de sprites
+(`00A03E`) con su palabra `+1E`; antes de escribir la VRAM, `0113EA` ordena
+la lista por esa palabra (dos pasadas estables de recuento, byte bajo y
+luego alto, `011440..01186C` y `0118C4..011CFA`) y la escribe en ese orden:
+a mayor `+1E`, más delante; a igualdad, el orden de la lista de actores.
+Valores medidos en las capturas de familia: edificios y decorado `0000`,
+lona del carro `8700`, edificio de barriles `86B8..86EC`, soldados
+`86D8..86F0`, objetos `86D8..8838`, disparos `E000`, letras y recuento
+`FFFF`. Las capas del mapa (sprites fijos del decorado) van siempre detrás
+de los actores; solo los actores con el bit 2 de `+15` quedan entre las
+capas 0..2 y 3..4 (`scene_render_back/front`), y en todas las capturas de
+familia solo lo llevan las piezas del edificio de cúpulas (`054C2C..`); en
+el port tampoco lo lleva ningún objeto (simulación de 60000 pasos). El port
+dibujaba los actores en orden de lista: una lona, un cartel o un edificio
+creado antes que un objeto lo tapaba. Ahora `actor.c` dibuja los actores
+del mundo ordenados por `+1E` de forma estable (`neo_world_draw_t.z`).
+Marco, sus disparos y el vehículo siguen dibujándose después de los actores
+del mundo (sin cambio).
+
+### HUD sin monedas (`src/gameplay.c`)
+
+El cartucho tiene su propio camino doméstico (AES, RAM `10FD82` = 0): el
+panel P2 inactivo (`0C9380`) pregunta a `01A8AA` por los créditos domésticos
+de la RAM `100004` (`0x0505` desde `0024F4`) y muestra PRESS START; el
+contador `01A7F4` solo se dibuja con el bit 1 del DIP blando `10FD91`, que
+pone la BIOS MVS: apagado. El HUD del port usa ahora ese camino (PRESS
+START parpadeando en P2, sin CREDIT; la continuación ya usaba la rama AES).
+Desviación: los cinco créditos domésticos no se gastan.

@@ -46,13 +46,19 @@ void msx_game_init(msx_game_t *g) {
     g->hud.panel[0].f84=3;neo_hud_life_lost(&g->hud,0);
 }
 /* One update of the original HUD with the port's state (neo_hud.c): single
- * player MVS game with no credit (P2 panel "INSERT COIN", "CREDIT 0"), no
- * vehicle gauge (no native vehicle binds player 1's slot yet), timer running while the
- * mission is in play. */
+ * player game on the home cartridge path (docs/FIN_PARTIDA.md, "HUD sin
+ * monedas"): RAM 10FD82 = 0 (AES), so the idle P2 panel 0C9380 asks 01A8AA
+ * for the home credits of RAM 100004 (0x0505 from 0024F4) and shows PRESS
+ * START, and the continue takes the AES branch of 0C987A. The home credits
+ * are never spent in the port (deviation: the cartridge's own count of 5 is
+ * not modelled). The credit counter 01A7F4 needs the soft-DIP bit 1 of
+ * 10FD91, which only the MVS BIOS sets: off (no CREDIT text). No vehicle
+ * gauge (no native vehicle binds player 1's slot yet), timer running while
+ * the mission is in play. */
 static void hud_step(msx_game_t *g) {
     if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
     neo_hud_input_t in={0};
-    in.hud_on=true;in.join_mask=3;in.mvs=true;in.credit_text=true;in.credits=0;
+    in.hud_on=true;in.join_mask=3;in.mvs=false;in.credits_available=true;in.credit_text=false;in.credits=0;
     /* 0C071C/0C0764 read player 1's vehicle slot 10C608 (ARMS infinite and
      * the vehicle's shells while riding). */
     in.arms=neo_hud_arms(g->world.weapons.b,g->world.vslots.slot[0].b,0,false,0);

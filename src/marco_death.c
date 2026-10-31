@@ -7,10 +7,11 @@
 #include <string.h>
 
 #define P(d) {NEO_ANIM_POSE,(d),0,0,64,0,0}
+#define PY(d,y) {NEO_ANIM_POSE,(d),0,0,64,0,(y)}   /* POSE with its dy byte */
 #define W(n) {NEO_ANIM_WAIT,0,0,(n),0,0,0}
 /* 0BF298: 25009E */
 static const neo_anim_command_t ground_cmds[]={
-    {NEO_ANIM_WRITE_BYTE,0xff,0x78,0,0,0,0},P(0x18ba26),W(1),P(0x18ba3e),W(1),P(0x18ba52),W(1),P(0x18ba66),
+    {NEO_ANIM_WRITE_BYTE,0xff,0x78,0,0,0,0},PY(0x18ba26,-4),W(1),P(0x18ba3e),W(1),P(0x18ba52),W(1),P(0x18ba66),
     W(1),P(0x18ba82),W(1),P(0x18ba9e),W(1),P(0x18bab8),W(1),P(0x18bacc),
     W(2),P(0x18bae0),W(3),P(0x18bb00),W(1),{NEO_ANIM_BRANCH_FIELD,0x78,19,1,0,0,0},P(0x18bb14),W(2),
     P(0x18bb28),W(2),P(0x18bb40),W(2),P(0x18bb58),W(2),P(0x18bb6c),W(1),
@@ -52,13 +53,18 @@ static const neo_anim_command_t entrance_cmds[]={
     W(4),P(0x188838),W(1),{NEO_ANIM_FINISH,0,0,0,0,0,0},
 };
 #undef P
+#undef PY
 #undef W
 #define PROGRAM(n) static const neo_anim_program_t n##_prog={n##_cmds,sizeof n##_cmds/sizeof n##_cmds[0]}
 PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);
 static const neo_anim_program_t air_prog={air_cmds,sizeof air_cmds/sizeof air_cmds[0]};
 PROGRAM(entrance);
 
-static void emit(void *context,const neo_anim_draw_t *draw) {((marco_death_t *)context)->descriptor=draw->descriptor;}
+/* The pose relative to the actor's words, facing right (render x/y 0,
+ * attributes 0x6340: palette 0x63 of the player, as marco_visual.c). */
+static void emit(void *context,const neo_anim_draw_t *draw) {
+    marco_death_t *d=context;d->descriptor=draw->descriptor;d->draw=*draw;d->drawn=true;d->shown=true;
+}
 static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *value) {
     marco_death_t *d=context;(void)bytes;
     if (f==0x78) {if (write) d->f78=(uint8_t)*value; else *value=d->f78;return true;}
@@ -66,7 +72,7 @@ static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *v
     return false;
 }
 static neo_anim_result_t step(marco_death_t *d) {
-    neo_anim_render_t r;memset(&r,0,sizeof r);
+    neo_anim_render_t r;memset(&r,0,sizeof r);r.attributes=0x6340;
     return neo_anim_step_fields(&d->anim,&r,emit,d,256,NULL,NULL,field,d);
 }
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing) {
@@ -85,7 +91,7 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
     bool translated=true;
     if (kind==7 || kind==0x10) {
         /* 0C2C7A/0C2C40 (their sounds differ) -> 0C2CB0: 0BF358, +80 = 0x80. */
-        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;
+        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;
     } else {
         /* 0C2DDA (kinds 8 and 0x12 on the ground have their own deaths,
          * 0C2ACC/0C2A70: not translated, explicit stop, this one instead):
@@ -96,6 +102,15 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
     /* 0C2E44..0C2E7E: +34 = 0xA9000, +30 = -2 facing right else +2, airborne. */
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
     return translated;
+}
+bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,neo_anim_draw_t *out) {
+    /* Lying, the program steps (and draws) every other update: blinking. */
+    if (!d->drawn || (d->phase==MARCO_LYING && !d->shown)) return false;
+    *out=d->draw;
+    out->x=(uint16_t)(x+(facing<0?-(int16_t)d->draw.x:(int16_t)d->draw.x));
+    out->y=(uint16_t)(y+d->draw.y);
+    if (facing<0) out->attributes^=1u;
+    return true;
 }
 void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy) {
     if (d->phase==MARCO_DYING) {
@@ -110,7 +125,7 @@ static bool offscreen(int16_t sx,int16_t py) {          /* 0C2F72..0C2F8A */
     return (uint16_t)sx>=0x140u || (uint16_t)(py-0xc0)>=0x200u;
 }
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y) {
-    d->updates++;
+    d->updates++;d->shown=false;
     if (d->phase==MARCO_DYING) {
         /* 0C2EC6: +26 moves 1/16 of the way to +80; 0C2ED4: the program. */
         int16_t sp=(int16_t)d->anim.speed;sp=(int16_t)(sp+((int16_t)(d->speed_target-sp)>>4));d->anim.speed=(uint16_t)sp;
@@ -152,7 +167,7 @@ void marco_entrance_start(marco_death_t *d) {
 }
 bool marco_entrance_step(marco_death_t *d) {
     if (d->phase!=MARCO_ENTERING) return false;
-    d->updates++;
+    d->updates++;d->shown=false;
     if (step(d)!=NEO_ANIM_MORE) {d->phase=MARCO_ALIVE;return false;}   /* 0C14B6: then 0C229C */
     return true;
 }

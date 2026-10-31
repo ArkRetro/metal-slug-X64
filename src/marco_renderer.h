@@ -13,6 +13,7 @@ unsigned marco_renderer_palette_count(void);
 unsigned marco_renderer_max_upload(void);
 uint32_t marco_renderer_source_tag(unsigned pose);
 bool marco_renderer_find(uint32_t source_tag,unsigned *pose);
+unsigned marco_renderer_burnt_palette(void);
 bool marco_renderer_draw(unsigned pose,int anchor_x,int anchor_y,bool mirror);
 bool marco_renderer_draw_palette(unsigned pose,int anchor_x,int anchor_y,bool mirror,unsigned palette);
 /* Draw a native helper emission in Neo Geo 9-bit coordinates. viewport_x/y

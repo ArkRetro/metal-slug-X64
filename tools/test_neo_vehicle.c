@@ -39,7 +39,7 @@ int main(void) {
     for (unsigned i=0;i<20;i++) assert(!neo_vehicle_step(&v));
     neo_collision_reset();assert(neo_collision_cell(880,64)==0);
     msx_game_t g;msx_game_init(&g);msx_game_vehicle_reference(&g);
-    for (unsigned i=0;i<350;i++) msx_game_update(&g,0,false,true);
+    for (unsigned i=0;i<350;i++) msx_game_update(&g,0,false,i%8<4);  /* tapped: one pistol shot per press */
     assert(g.vehicle.health==0 && g.vehicle.state==NEO_VEHICLE_WRECK && g.wreckage_cells==13);
     for (unsigned i=0;i<100 && g.x>944*U;i++) msx_game_update(&g,-1,false,false);
     assert(g.grounded && g.y== -32*U); // Walk up the right ramp onto the wreck.

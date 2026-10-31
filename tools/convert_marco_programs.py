@@ -8,7 +8,7 @@ import argparse,collections,hashlib,json,re,struct
 from pathlib import Path
 from extract_marco_fields import fields
 
-def convert(capture,output,event_evidence=None,additional_roots=None):
+def convert(capture,output,event_evidence=None,additional_roots=None,extra_evidence=None,equivalent=False):
  bank=(capture/'program-bank.bin').read_bytes();text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  initial_roots={int(v,16) for v in re.findall(r'MARCO_INIT frame=\d+ program=([0-9A-F]+)',text)}
  verified_events={};events=[]
@@ -16,6 +16,22 @@ def convert(capture,output,event_evidence=None,additional_roots=None):
   proof=json.loads(event_evidence.read_text());assert proof['status']=='UNCHANGED_MONITORED_ANIMATION_FIELDS'
   for name,digest in proof['provenance'].items():assert hashlib.sha256((capture/name).read_bytes()).hexdigest()==digest
   verified_events={e['site']:e for e in proof['sites']}
+ # Further audited captures of the same program bank (e.g. the H catalog,
+ # tools/mame/plans/marco-hgun.json): their measured sites join the evidence.
+ for extra in extra_evidence or ():
+  proof=json.loads((extra/'diary/effects.json').read_text());assert proof['status']=='UNCHANGED_MONITORED_ANIMATION_FIELDS'
+  for name,digest in proof['provenance'].items():assert hashlib.sha256((extra/name).read_bytes()).hexdigest()==digest
+  assert (extra/'program-bank.bin').read_bytes()==(capture/'program-bank.bin').read_bytes(),'Same program bank'
+  for e in proof['sites']:
+   if e['site'] in verified_events:
+    v=verified_events[e['site']];assert (v['kind'],v.get('target'),v.get('payload'),v.get('token'))==(e['kind'],e.get('target'),e.get('payload'),e.get('token'))
+    v['count']+=e['count']
+   else:verified_events[e['site']]=dict(e,evidence=extra.name)
+ # Every root seen as a program choice of an extra capture is an observed seed.
+ for extra in extra_evidence or ():
+  t=(extra/'debug.log').read_text()
+  initial_roots|={int(v,16) for v in re.findall(r'MARCO_PROGRAM_CHOICE .*?program=([0-9A-F]+)',t)}-{0}
+ by_call={(e['target'],e['payload']):e for e in verified_events.values() if e['kind']=='CALLBACK'}
  selected_roots={int(v,16) for v in re.findall(r'MARCO_PROGRAM_CHOICE .*?program=([0-9A-F]+)',text)}-{0}
  roots=set(initial_roots)|selected_roots
  observed=[fields(l) for l in text.splitlines() if l.startswith('MARCO_COMMAND')]
@@ -49,6 +65,11 @@ def convert(capture,output,event_evidence=None,additional_roots=None):
     if pc in verified_events:
      e=verified_events[pc];assert e['kind']=='CALLBACK' and e['target']==callback and e['payload']==payload
      c.update(kind='EVENT',asset=len(events));events.append(dict(e,native_id=c['asset']))
+    elif equivalent and (callback,payload) in by_call:
+     # A site of the form-1 copy of a program whose call (target and
+     # payload bytes) equals a measured site's: the same request.
+     e=by_call[(callback,payload)]
+     c.update(kind='EVENT',asset=len(events));events.append(dict(e,site=pc,native_id=c['asset'],equivalent_to=e['site']))
     else:
      c.update(kind='UNRECOVERED',asset=callback);unrecovered.append(dict(command=pc,callback=callback,payload=payload))
     size=2+arg
@@ -88,4 +109,4 @@ def convert(capture,output,event_evidence=None,additional_roots=None):
  print('Measured native request sites:',len(events),'; additional STATIC roots:',len(static_roots))
  print(collections.Counter(c['kind'] for c in nodes.values()))
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--event-evidence',type=Path);p.add_argument('--additional-roots',type=Path);a=p.parse_args();convert(a.capture,a.output,a.event_evidence,a.additional_roots)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--event-evidence',type=Path);p.add_argument('--additional-roots',type=Path);p.add_argument('--extra-capture',type=Path,action='append',default=[],help='audited capture of the same bank whose diary/effects.json and program choices are added');p.add_argument('--equivalent-calls',action='store_true',help='a callback site whose target and payload equal a measured site\'s is that request (EVENT)');a=p.parse_args();convert(a.capture,a.output,a.event_evidence,a.additional_roots,a.extra_capture,a.equivalent_calls)

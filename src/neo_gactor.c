@@ -212,14 +212,17 @@ static bool cl(void *context,uint32_t routine,uint16_t parameter,neo_anim_render
     /* ... and the attributes +15 (facing: 286AE8). */
     state_out(c);if (render) ga_sb(c->a,0x15,(uint8_t)render->attributes);
     bool ok=c->call && c->call(c->a,c->e,NEO_ANIM_CALL,routine,parameter);
-    state_in(c);if (render) render->attributes=ga_b(c->a,0x15);
+    /* The callback may change the draw palette +14 (025192 cycles it). */
+    state_in(c);if (render) render->attributes=(uint16_t)(ga_b(c->a,0x14)<<8|ga_b(c->a,0x15));
     if (ok) return true;
     c->missing=routine;return false;
 }
 int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {
     neo_anim_state_t s={a->program,ga_l(a,0x50),a->cursor,ga_w(a,0x24),ga_w(a,0x26),ga_b(a,0x17),ga_b(a,0x18)};
     neo_anim_render_t r;memset(&r,0,sizeof(r));
-    r.x=ga_w(a,0x3c);r.y=ga_w(a,0x40);r.attributes=ga_b(a,0x15);r.z=ga_w(a,0x1e);r.correction=ga_b(a,0x4d);
+    /* 0043D4: a descriptor's palette nibble >= 4 draws with +14 (high byte
+     * of the attribute word); 0..3 select +19..+1C. */
+    r.x=ga_w(a,0x3c);r.y=ga_w(a,0x40);r.attributes=(uint16_t)(ga_b(a,0x14)<<8|ga_b(a,0x15));r.z=ga_w(a,0x1e);r.correction=ga_b(a,0x4d);
     for (unsigned i=0;i<4;i++) r.palettes[i]=ga_b(a,0x19+i);
     r.flash_palette=ga_b(a,0x16);
     anim_ctx_t c={a,e,call,false,&s,0};

@@ -1,0 +1,155 @@
+[
+ {
+  "name": "h_idle_right",
+  "length": 40,
+  "inputs": []
+ },
+ {
+  "name": "h_stand_fire_right",
+  "length": 48,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "h_aim_up_fire_right",
+  "length": 48,
+  "inputs": [
+   "Up",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_fire_after_up",
+  "length": 40,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "h_aim_up_right",
+  "length": 24,
+  "inputs": [
+   "Up"
+  ]
+ },
+ {
+  "name": "h_idle_fwd",
+  "length": 40,
+  "inputs": []
+ },
+ {
+  "name": "h_aim_up_from_idle",
+  "length": 32,
+  "inputs": [
+   "Up"
+  ]
+ },
+ {
+  "name": "h_idle_fwd2",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_crouch_right",
+  "length": 32,
+  "inputs": [
+   "Down"
+  ]
+ },
+ {
+  "name": "h_crouch_fire_right",
+  "length": 48,
+  "inputs": [
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_walk_right",
+  "length": 32,
+  "inputs": [
+   "Right"
+  ]
+ },
+ {
+  "name": "h_run_fire_right",
+  "length": 40,
+  "inputs": [
+   "Right",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_walk_left",
+  "length": 32,
+  "inputs": [
+   "Left"
+  ]
+ },
+ {
+  "name": "h_jump_left",
+  "length": 64,
+  "inputs": [
+   "jump"
+  ]
+ },
+ {
+  "name": "h_jump_fire_left",
+  "length": 64,
+  "inputs": [
+   "jump",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_jump_up_fire_left",
+  "length": 64,
+  "inputs": [
+   "jump",
+   "Up",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_fire_fwd_reset",
+  "length": 48,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "h_idle_fwd3",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_walk_right2",
+  "length": 24,
+  "inputs": [
+   "Right"
+  ]
+ },
+ {
+  "name": "h_run_jump_right",
+  "length": 56,
+  "inputs": [
+   "Right",
+   "jump"
+  ]
+ },
+ {
+  "name": "h_run_jump_fire_right",
+  "length": 56,
+  "inputs": [
+   "Right",
+   "jump",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_idle_after",
+  "length": 24,
+  "inputs": []
+ }
+]

@@ -1,0 +1,31 @@
+[
+ {
+  "name": "h_idle_right",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_crouch_long",
+  "length": 112,
+  "inputs": [
+   "Down"
+  ]
+ },
+ {
+  "name": "h_idle_fwd",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_aim_up_long",
+  "length": 112,
+  "inputs": [
+   "Up"
+  ]
+ },
+ {
+  "name": "h_idle_after",
+  "length": 40,
+  "inputs": []
+ }
+]

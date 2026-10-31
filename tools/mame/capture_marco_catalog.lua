@@ -6,6 +6,7 @@ local sprite=manager.machine.devices[':spritegen']
 local video=emu.item(assert(sprite.items['0/m_videoram']))
 local dbg=assert(manager.machine.debugger)
 local frame=0
+local dump_until=nil
 local inputs=assert(io.open(output..'/inputs.jsonl','w'))
 local states=assert(io.open(output..'/states.jsonl','w'))
 local function button(name,value)
@@ -174,6 +175,13 @@ local boot={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[77
 emu.register_frame_done(function()
  frame=frame+1;dbg:command(string.format('temp9=%x',frame))
  if boot[frame] then button(boot[frame][1],boot[frame][2]) end
+ -- Capture only (MSX_GIVE_HGUN): the H as a pickup gives it (weapon id 0A at
+ -- 10C71E, rounds 10C724, 10C71C = FF, +94 = 1; tools/capture_weapons.lua
+ -- plan hold), rounds kept at 200 so the plan never runs out.
+ if os.getenv('MSX_GIVE_HGUN')=='1' and frame>=plan.first then
+  if frame==plan.first then cpu:write_u8(0x10c71e,0x0a);cpu:write_u8(0x10c71c,0xff);cpu:write_u8(0x1014c4+0x94,1) end
+  cpu:write_u16(0x10c724,200)
+ end
  for _,event in ipairs(plan.events[frame] or {}) do button(event[1],event[2]) end
  if frame>=plan.first and frame<=plan.last and os.getenv('MSX_QUEUE_TRACE')=='1' then
   if frame==plan.first+2 then
@@ -185,7 +193,18 @@ emu.register_frame_done(function()
  if frame>=plan.first and frame<=plan.last then
   local file=assert(io.open(output..'/actor'..frame..'.bin','wb'));file:write(cpu:read_range(0x1014c4,0x101573,8));file:close()
   states:write(string.format('{"frame":%d,"routine":%d,"cursor":%d,"x":%d,"y":%d,"projected_x":%d,"projected_y":%d,"flags":%d}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014e4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x101500),cpu:read_u32(0x101504),cpu:read_u16(0x1014d8)));states:flush()
-  if os.getenv('MSX_LOGIC_ONLY')~='1' then
+  -- MSX_DUMP_ROUTINES=lo-hi,lo-hi (hex): VRAM/palette/screen only while the
+  -- player's routine (+0) is in a range, plus the 4 frames after (the
+  -- three-tick submission delay); the audit takes such a sparse capture.
+  local dump=true
+  local ranges=os.getenv('MSX_DUMP_ROUTINES')
+  if ranges then
+   local routine=cpu:read_u32(0x1014c4);local inside=false
+   for lo,hi in ranges:gmatch('(%x+)-(%x+)') do if routine>=tonumber(lo,16) and routine<=tonumber(hi,16) then inside=true end end
+   if inside then dump_until=frame+4 end
+   dump=dump_until~=nil and frame<=dump_until
+  end
+  if os.getenv('MSX_LOGIC_ONLY')~='1' and dump then
   local v=assert(io.open(output..'/vram'..frame..'.bin','wb'));for i=0,0x85ff do v:write(string.pack('>I2',video:read(i))) end;v:close()
   local p=assert(io.open(output..'/palette'..frame..'.bin','wb'));for i=0,4095 do p:write(string.pack('>I2',cpu:read_u16(0x400000+i*2))) end;p:close()
   manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png')

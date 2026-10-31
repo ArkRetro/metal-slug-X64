@@ -19,6 +19,10 @@ typedef struct {
     uint8_t f78;                /* +78: FF until the body lands */
     uint8_t count80;            /* 0C2F06: lying count-down */
     uint32_t descriptor;        /* last pose of the program (drawing) */
+    neo_anim_draw_t draw;       /* that pose relative to the actor's words, facing right */
+    bool drawn;                 /* a pose was emitted since the start */
+    bool shown;                 /* the program drew in the last update (lying: every other one) */
+    bool burnt;                 /* 0BF358 (kinds 7/0x10): drawn with its burnt palette */
     unsigned updates;           /* updates in the phase */
 } marco_death_t;
 
@@ -36,6 +40,10 @@ void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy);
 /* After the motion: landing 0C2EE4, speed 0C2EC6, program 00427A, the
  * lying count-down 0C2F12 and the off-screen end 0C2F72 (screen x/y of the
  * projected +3C/+40). Returns the phase for the next update. */
+/* The death/entrance pose at the actor's projected words (x, y) with the
+ * facing (-1 left): mirrored offsets and attribute bit 0. False before the
+ * program's first pose. */
+bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,neo_anim_draw_t *out);
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y);
 /* The respawn record of 0196E8 for the camera progress (10E99E): world x/y
  * (Q16, y up) from the scene root (root_x/root_y, Q16) after the 0143E4 step

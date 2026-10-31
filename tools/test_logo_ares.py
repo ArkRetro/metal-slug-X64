@@ -102,6 +102,17 @@ try:
             cad=re.search(r'MSX TITLE cadence unique=(\d+) dropped=(\d+)',log());assert cad
             assert 'title' in skips or int(cad[2])==0,('dropped title frames',cad[0])
             stages['title']=dict(frames=int(t[1]),skipped='title' in skips,dropped=int(cad[2]))
+            # HOW TO PLAY / SOLDIER SELECT / the choice (optional files): the
+            # selection waits on P1 at Marco for A or Start.
+            done=[]
+            while True:
+                s=wait(r'MSX CINE (%s) start'%'|'.join(n for n in ('howto','select','confirm','entry') if n not in done),600);done.append(s[1])
+                if s[1]=='entry':break
+                if s[1]=='select':
+                    wait(r'MSX CINE select waiting',300);snap('soldier-select.png');time.sleep(.5);press_start()
+                elif s[1]=='howto':snap('howto-start.png')
+                c=wait(r'MSX CINE %s complete frames=(\d+) rendered=(\d+) crc=(\w+) skipped=(\d)'%s[1],900)
+                stages[s[1]]=dict(frames=int(c[1]),rendered=int(c[2]),skipped=bool(int(c[4])))
             wait(r'MSX INTRO start',120);snap('entry-start.png')
             if 'entry' in skips:time.sleep(2.0);press_start()
             e=wait(r'MSX INTRO complete frames=(\d+) rendered=(\d+) crc=(\w+) skipped=(\d)',600)

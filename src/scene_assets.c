@@ -14,6 +14,8 @@ static cache_slot_t *slots;
 static int chunk_slot[SCENE_CHUNK_COUNT];
 static unsigned requests[SCENE_CHUNK_COUNT];
 static bool pinned[SCENE_CHUNK_COUNT];
+static uint8_t block_pins[SCENE_CHUNK_COUNT];   // bit per recorded-block group
+static int recording=-1;
 static uint8_t *cache,*staging[2];
 static unsigned capacity,clock_lru,epoch,rom,resident;
 static volatile unsigned completed;
@@ -21,6 +23,9 @@ static int active_chunk=-1,active_slot=-1;
 static unsigned active_stage,last_stage;
 static scene_cache_stats_t stats;
 static unsigned timing_depth; // require_chunk times its whole wait; nested service is not counted twice.
+// Per-frame decode budget (reset by scene_begin_epoch): prefetch decodes in
+// scene_service and synchronous misses of deferrable sprite parts.
+static unsigned frame_service_decodes,frame_sync_decodes;
 // PI status bits 0/1: DMA and IO busy. A nonblocking poll keeps prefetch asynchronous.
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
 
@@ -33,7 +38,7 @@ static void start_next(void) {
     int victim=-1;
     for (unsigned i=0;i<capacity;i++) {
         if (slots[i].chunk<0) { victim=(int)i;break; }
-        if (!slots[i].ready || pinned[slots[i].chunk] || slots[i].used_epoch>completed) continue;
+        if (!slots[i].ready || pinned[slots[i].chunk] || block_pins[slots[i].chunk] || slots[i].used_epoch>completed) continue;
         if (victim<0 || slots[i].lru<slots[victim].lru) victim=(int)i;
     }
     if (victim<0) return;
@@ -50,6 +55,11 @@ static void start_next(void) {
 void scene_service(void) {
     if (active_chunk<0) { start_next();return; }
     if (pi_busy()) return;
+    // Prefetch spends at most SCENE_SERVICE_DECODES decodes per frame; the
+    // chunk stays in its staging buffer for the next frame. A synchronous
+    // wait (require_chunk) is never held back.
+    if (!timing_depth && frame_service_decodes>=SCENE_SERVICE_DECODES) { stats.held++;return; }
+    if (!timing_depth) frame_service_decodes++;
     uint32_t started=TICKS_READ();
     int chunk=active_chunk,slot=active_slot;unsigned stage=active_stage;
     active_chunk=active_slot=-1;
@@ -93,8 +103,24 @@ static void require_chunk(unsigned chunk) {
 const void *scene_page(const scene_image_t *image) {
     assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");
     unsigned chunk=image->page/8;require_chunk(chunk);
+    if (recording>=0) block_pins[chunk]|=(uint8_t)(1u<<recording);
     cache_slot_t *s=&slots[chunk_slot[chunk]];s->used_epoch=epoch;s->lru=++clock_lru;
     return cache+(unsigned)chunk_slot[chunk]*SCENE_CHUNK_BYTES+(image->page%8)*SCENE_PAGE_BYTES;
+}
+static bool resident_chunk(unsigned chunk) { return chunk_slot[chunk]>=0 && slots[chunk_slot[chunk]].ready; }
+const void *scene_page_try(const scene_image_t *image) {
+    assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");
+    unsigned chunk=image->page/8;
+    if (!resident_chunk(chunk)) {
+        if (frame_sync_decodes>=SCENE_SYNC_DECODES) { stats.deferred++;request(chunk,255);return NULL; }
+        frame_sync_decodes++;
+    }
+    return scene_page(image);
+}
+void scene_prefetch_boss(void) {
+    static const uint16_t boss_chunks[]=SCENE_BOSS_CHUNK_LIST;
+    if (capacity<SCENE_CHUNK_COUNT/4) return;   // 4 MiB: the boss set does not fit (MISION1_COMPLETA.md)
+    for (unsigned i=0;i<sizeof(boss_chunks)/sizeof(boss_chunks[0]);i++) request(boss_chunks[i],1);
 }
 enum { SCENE_HEAP_RESERVE=1536*1024 };
 void scene_assets_init(void) {
@@ -138,7 +164,7 @@ void scene_assets_init(void) {
     for (unsigned pass=0;pass<2;pass++) for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++)
         if (opening[i]==(pass==1)) { request(i,1);require_chunk(i); }
     debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB DMA=%u bytes startup evictions=%u\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,stats.dma_bytes,stats.evictions);
-    stats.misses=stats.evictions=0; // Startup waits/evictions are outside the gameplay deadline.
+    stats.misses=stats.evictions=stats.deferred=stats.held=0; // Startup waits/evictions are outside the gameplay deadline.
 }
 const scene_bank_t *scene_bank(unsigned id) { assert(id<SCENE_BANK_COUNT);return &scene_banks[id]; }
 const scene_image_t *scene_frame(unsigned id,unsigned frame) {
@@ -166,6 +192,9 @@ int scene_native_palette(unsigned resource) {
     return -1;
 }
 const uint16_t *scene_palette(unsigned id) { assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id]; }
-void scene_begin_epoch(unsigned next) { epoch=next; }
+void scene_record_pins(int group) { recording=group; }
+void scene_unpin_group(int group) { for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) block_pins[i]&=(uint8_t)~(1u<<group); }
+unsigned scene_completed_epoch(void) { return completed; }
+void scene_begin_epoch(unsigned next) { epoch=next;frame_service_decodes=frame_sync_decodes=0; }
 void scene_complete_epoch(unsigned done) { completed=done; }
 scene_cache_stats_t scene_cache_stats(void) { return stats; }

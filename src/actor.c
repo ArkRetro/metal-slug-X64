@@ -71,7 +71,15 @@ static int native_screen_y(uint16_t projected_y) {
     /* The projected word already includes the scene root (camera height). */
     return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
 }
+static void draw_native_parts(const neo_world_draw_t *d,bool request_only);
+/* Actor sprite parts may be deferred a frame when their chunk is not
+ * resident and the frame's synchronous decode budget is spent. */
 static void draw_native(const neo_world_draw_t *d,bool request_only) {
+    if (!request_only) scene_render_set_deferrable(true);
+    draw_native_parts(d,request_only);
+    if (!request_only) scene_render_set_deferrable(false);
+}
+static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     if (d->kind==NEO_WORLD_BOSS) {
         /* Boss entries: column cut and palette resource (boss_renderer.c). */
         neo_anim_draw_t a={d->descriptor,d->x,d->y,d->attributes,0};
@@ -310,6 +318,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
+    if (game.world.boss_active) scene_prefetch_boss();
     scene_service();
 #if MSX_RETRO25D
     retro_frame_t effects={.camera={game.camera,-game.camera_height,0,320},.tick=game.ticks};

@@ -166,7 +166,7 @@ iguales, 0 distintos**
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
 | `0x0A8C62` espadachín de túnica sobre el carro + subguion `0x2D719A` | **nativo** (MISION1_ACTORES.md) |
-| `0x092A32` cañón | externo |
+| `0x092A32` SV-001 (tanque del jugador, orugas `0x014A4E`, obús, voladura) | **nativo** (ARMAS_VEHICULOS.md, paso 10; paradas: daño `0x09351A`, destrucción con jinete `0x0938DA`) |
 | `0x04857C` formación de helicópteros (`0x04870C` guías, `0x048882` helicópteros, `0x047874` rotores, `0x047A6C` lanzadores, `0x047B24` bombas, `0x047DE0` casquillos) | **nativo** (MISION1_ACTORES.md) |
 | `0x05ED84` lanzacohetes, cohetes `0x05FD8A`, destello `0x060490`, fogonazo `0x0602E4`, estelas `0x059C82` | **nativo** (MISION1_ACTORES.md) |
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
@@ -508,8 +508,11 @@ actualizaciones y 1 parada (recuento).
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el SV-001 `0x092A32`
-  (no contado; la Camel Slug `0x03458E` es nativa y se puede montar).
+- SV-001 `0x092A32` nativo y montable; sin captura siguen como paradas
+  explícitas su reacción al daño `0x09351A`, la destrucción con jinete
+  `0x0938DA` (hijo `0x03533A`) y el obús de tipo 5 `0x0950DC`; la Camel
+  conserva su parada `0x004ED2` (el empuje de cuerpos sólidos ya es nativo
+  para el SV-001).
 - Disparo de la torreta del jefe (`0x08FA1A` → `0x08EFFA`/`0x08F058`):
   traducido sin captura (falta una captura en la que dispare para
   verificarlo); `0x08F1A0` sigue como parada explícita.

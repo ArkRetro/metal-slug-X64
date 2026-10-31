@@ -239,7 +239,7 @@ fotogramas del traspaso, sin paradas.
 2102, tras el aterrizaje: antes cambian las palabras de protección
 `2FFFE0..`) con `tools/mame/plans/marco-descent*.json`: `marco-dsc0` (sin
 entrada), `marco-dsc1` (B en 1898) y `marco-dsc2` (A en 1858, C en 1878, A
-en 1912). Colgado: cuerpo `0BF818` → `24E5AA` (nuevo, `B_HANG`), arma la del
+en 1918). Colgado: cuerpo `0BF818` → `24E5AA` (nuevo, `B_HANG`), arma la del
 salto `0BFC58` → `24E5BC`; el corte elige el cuerpo de salto `0BF758` →
 `24E4E0`; colgado, A y C eligen los programas de disparo y granada de
 siempre (`24C70A`, `24C862`). `marco_visual.c` toma `hanging`

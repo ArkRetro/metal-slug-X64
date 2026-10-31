@@ -168,6 +168,7 @@ uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 014850: carry */
+bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 01495C: carry */
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed); /* 004256 */
 /* 00427A. `call` handles family callbacks (NEO_ANIM_CALL / events); returns
  * 1 complete, 0 more, -1 unsupported. */

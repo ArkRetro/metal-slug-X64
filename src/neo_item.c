@@ -220,7 +220,7 @@ static bool ends_with_program(uint16_t kind) {
 }
 /* 057948 (D0 = player + 1): BCD sum of the 4 bytes of 10C5A0+4p into the
  * player's score; on overflow 999999 in its first three bytes. */
-static void add_score(uint8_t score[4],uint32_t value) {
+void neo_item_add_score(uint8_t score[4],uint32_t value) {
     unsigned carry=0;
     for (int i=3;i>=0;i--) {
         unsigned x=score[i],y=(value>>(8*(3-i)))&0xffu;
@@ -232,7 +232,7 @@ static void add_score(uint8_t score[4],uint32_t value) {
     if (carry) {score[0]=0x99;score[1]=0x99;score[2]=0x99;}
 }
 /* 08B850: the value into the score (not for player index 2). */
-static void k8b850(neo_pickup_env_t *pk,unsigned p) {if (p<2) add_score(pk->score[p],pk->points[p]);}
+static void k8b850(neo_pickup_env_t *pk,unsigned p) {if (p<2) neo_item_add_score(pk->score[p],pk->points[p]);}
 /* 08B87A: refused, no value. */
 static void k8b87a(neo_pickup_env_t *pk,unsigned p) {pk->points[p]=0;}
 /* 08B896: the value of the pickup (record +0C, the special table E5526 for

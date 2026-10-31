@@ -114,6 +114,7 @@ static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_
     }
     case 0x28774c: if (!L(0x34)) SW(0x26,0);return true;           /* kind 24 */
     case 0x28aa7e: SB(0x7e,ga_rand_range(e,3));return true;
+    case 0x286fa8: SW(0x26,(uint16_t)((ga_rand(e)&0x3fu)+0xc0u));return true;  /* kind 55: program speed */
     /* Kind 37 (program 288396). */
     case 0x2884aa: SW(0x26,(uint16_t)((ga_rand(e)&0xffu)+0x100u));return true;
     case 0x28849a: SB(0x7e,(uint8_t)(ga_rand(e)&0xfu));return true;
@@ -172,8 +173,38 @@ static void k8ba38(neo_gactor_t *a,neo_genv_t *e,uint32_t gravity) {
     grow(a);
 }
 static void k8bd5a(neo_gactor_t *a,neo_genv_t *e);
+/* 08B9F2: the item grows by 0x10 (kind 55's states). */
+static void grow16(neo_gactor_t *a) {
+    SB(0x12,B(0x12)>0xefu?0xff:B(0x12)+0x10u);
+    SB(0x13,B(0x13)>0xefu?0xff:B(0x13)+0x10u);
+}
+/* 08BCCC (kind 55, the prisoners' gift and the ruin window's box): state
+ * +76 of the table 08BCC0 (08BD66). 0 08BCD4: 01ABC8, four bounces (+74),
+ * state 1. 1 08BCEA: 0xB000 gravity and 0143E4; on the ground the fall
+ * speed (before the step) back up at half, +30 times 3/4, one bounce less
+ * (state 2 after the last). 2 08B9B2: the fall. */
+static bool k8bccc(neo_gactor_t *a,neo_genv_t *e) {
+    switch (W(0x76)) {
+    case 0: ga_project(a,e);SW(0x76,1);SW(0x74,4);grow16(a);return true;
+    case 1: {
+        SL(0x34,L(0x34)+0xffffb000u);
+        uint32_t d0=L(0x34);
+        ga_air(a,e);                                                 /* 0143E4 */
+        if (BIT(0x15,6)) {
+            SL(0x34,(uint32_t)((int32_t)(0u-d0)>>1));
+            uint32_t v=(uint32_t)((int32_t)L(0x30)>>1);
+            SL(0x30,v+(uint32_t)((int32_t)v>>1));
+            SW(0x74,W(0x74)-1u);
+            if (!W(0x74)) SW(0x76,2);
+        }
+        grow16(a);return true;
+    }
+    case 2: k8b9b2(a,e);return true;
+    default: ga_fail(e,0x8bd66);return false;
+    }
+}
 /* The motions the port has (record +14). */
-static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u;}
+static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u || m==0x8bcccu;}
 static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     switch (m) {
     case MOTION_FALL: k8b9b2(a,e);return true;
@@ -181,6 +212,7 @@ static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     case 0x8ba38: k8ba38(a,e,0xffff6000u);return true;
     case 0x8bab2: k8ba38(a,e,0xffffb000u);return true;
     case 0x8bd5a: k8bd5a(a,e);return true;
+    case 0x8bccc: return k8bccc(a,e);
     default: ga_fail(e,m);return false;
     }
 }
@@ -251,9 +283,13 @@ static bool k8b896(neo_gactor_t *a,neo_genv_t *e,neo_pickup_env_t *pk,unsigned p
         pk->points[p]=B(0x7b)?rl(0xe5526u+4u*(uint16_t)(W(0x6e)-0xfu)):rl(rec+0xc);
         pk->combo[p]=0;
     }
+    /* 08B944: the label 08D330 after the script actor (00411C), +6E = the
+     * value, at the item (01ACF2), +8A = the player. */
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8d330,true):NULL;
+    if (c) ga_sl(c,0x6e,pk->points[p]);
     if ((int32_t)pk->points[p]>0x50000) {ga_fail(e,0x8b97a);return false;}   /* TRAP #F */
+    if (c) {ga_place_at(c,a,e,0,0);ga_sb(c,0x8a,(uint8_t)p);}
     pk->popups++;
-    if (e->external) e->external(e->ctx,0x8d330);
     return true;
 }
 /* 08B834: a combo record stamps the frame. */
@@ -306,6 +342,115 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
     k8b834(pk,p,rec);pk->taken++;
     return true;
 }
+/* ---- score label 08D330 --------------------------------------------------- */
+/* The value +6E as up to eight digits (leading zeros skipped, +8C.., count
+ * +72), 8 px apart from +28, each with its own height +74+4i. Digit i waits
+ * +91+i updates, rises +96+i updates at 0x50000, then follows the speeds
+ * 0E55EC by +9B+i; after the last digit's end, 15 updates still (08D63E),
+ * then the blink of 0E55CA rising by 0x3000 (08D6A2/08D738) until its end.
+ * The palette slot blinks every update (+A0). Each digit is its program of
+ * 0E56EE (0E565A with RAM 10C2F6 nonzero, 08CF2E) started and stepped once
+ * (08D7B4). It goes when four newer labels of its player exist (08D814). */
+static bool k8d814(neo_gactor_t *a,neo_genv_t *e) {
+    neo_pickup_env_t *pk=e->pickup;unsigned p=B(0x8a)&1u;
+    return pk && (uint16_t)(W(0x88)+4u)<pk->label_count[p];
+}
+static void k8d7f4(neo_gactor_t *a,neo_genv_t *e,unsigned i) {
+    uint32_t y=L(0x74+4u*i)+L(0x34);SL(0x74+4u*i,y);SL(0x2c,y);ga_project(a,e);
+}
+static bool k8d7b4(neo_gactor_t *a,neo_genv_t *e,unsigned i) {
+    uint32_t table=(e->pickup && e->pickup->mission)?0xe565a:0xe56ee;
+    if (!ga_anim_start(a,e,rl(table+4u*B(0x8c+i)),0x100)) return false;
+    return ga_anim_step(a,e,NULL)>=0;
+}
+static void blink(neo_gactor_t *a) {SB(0x14,(B(0xa0)&1u)?B(0x19):B(0x1a));SB(0xa0,B(0xa0)+1u);}
+static ga_result_t label_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x8d330: {
+        unsigned p=B(0x8a);neo_pickup_env_t *pk=e->pickup;
+        if (!pk || p>1u) {ga_fail(e,0x8d33c);return GA_UNSUPPORTED;}
+        pk->label_count[p]++;SW(0x88,pk->label_count[p]);
+        SW(0x66,0xffff);SW(0x1e,0xffff);
+        uint32_t pal=rl(0xe559eu+4u*p);ga_palette(a,rw(pal));ga_palette(a,rw(pal+2u));
+        SB(0x14,B(0x19));
+        SB(0x8c,0);SB(0x8d,0xff);SB(0x8e,0xff);SB(0x8f,0xff);SB(0x90,0xff);
+        uint32_t d4=L(0x6e);unsigned n=0;uint8_t any=0;
+        for (unsigned k=0;k<8;k++) {d4=d4<<4|d4>>28;uint8_t d=(uint8_t)(d4&15u);any|=d;if (any) SB(0x8c+n++,d);}
+        SW(0x72,n?n:1u);
+        for (unsigned k=0;k<5;k++) SB(0x91+k,k);
+        uint8_t d0=(uint8_t)(((W(0x88)+2u)&7u)+6u);
+        for (unsigned k=0;k<5;k++) {SB(0x96+k,d0);SB(0x9b+k,0);}
+        for (unsigned k=0;k<5;k++) SL(0x74+4u*k,0);
+        SB(0xa0,0);SB(0xa1,0);SL(0x30,0);SL(0x34,0);
+        ga_project(a,e);
+        for (unsigned k=0;k<5;k++) SL(0x74+4u*k,L(0x2c));
+        ga_project(a,e);
+        if (p==0) SW(0x28,(uint16_t)(W(0x28)+(uint16_t)(e->players.p1x-W(0x3c))));
+        else SW(0x28,(uint16_t)(W(0x28)+(uint16_t)(e->players.p2x-W(0x3c))));
+        ga_project(a,e);
+        if ((int16_t)W(0x3c)>0x100) SW(0x28,W(0x28)-0x20u);
+        SL(0,0x8d4de);
+    }   /* fall through */
+    case 0x8d4de: {
+        if (k8d814(a,e)) return GA_DELETE;                           /* 08D56E (cartridge check: 004188) */
+        ga_project(a,e);blink(a);
+        uint32_t x=L(0x28);
+        for (unsigned i=0;i<W(0x72);i++) {
+            if (B(0x91+i)) SB(0x91+i,B(0x91+i)-1u);
+            else {
+                if (B(0x96+i)) {SL(0x34,0x50000);SB(0x96+i,B(0x96+i)-1u);}
+                else {
+                    uint32_t v=rl(0xe55ecu+4u*B(0x9b+i));SL(0x34,v);
+                    if (v==0x80000000u) {if (i+1u==W(0x72)) SL(0,0x8d62e);}
+                    else SB(0x9b+i,B(0x9b+i)+1u);
+                }
+                k8d7f4(a,e,i);
+                if (!k8d7b4(a,e,i)) return GA_UNSUPPORTED;
+            }
+            SW(0x28,W(0x28)+8u);
+        }
+        SL(0x28,x);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x8d62e:
+        SL(0x34,0);SB(0x8b,0xf);SL(0,0x8d63e);
+        /* fall through */
+    case 0x8d63e: {
+        if (k8d814(a,e)) return GA_DELETE;
+        ga_project(a,e);
+        SB(0x8b,B(0x8b)-1u);
+        if (!B(0x8b)) {SL(0x34,0);SL(0,0x8d6a2);goto rise;}
+        blink(a);
+        uint32_t x=L(0x28);
+        for (unsigned i=0;i<W(0x72);i++) {k8d7f4(a,e,i);if (!k8d7b4(a,e,i)) return GA_UNSUPPORTED;SW(0x28,W(0x28)+8u);}
+        SL(0x28,x);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x8d698:
+        SL(0x34,0);SL(0,0x8d6a2);
+        /* fall through */
+    case 0x8d6a2:
+    rise: {
+        if (k8d814(a,e)) return GA_DELETE;
+        ga_project(a,e);
+        SL(0x34,L(0x34)+0x3000u);
+        uint8_t k=B(0xa1);SB(0xa1,k+1u);
+        uint8_t d6=rb(0xe55cau+k);
+        if (d6==0xffu) return GA_DELETE;                             /* 004188 */
+        SB(0x14,d6?B(0x19):B(0x1a));
+        uint32_t x=L(0x28);
+        for (unsigned i=0;i<W(0x72);i++) {
+            k8d7f4(a,e,i);
+            if (d6!=2u && !k8d7b4(a,e,i)) return GA_UNSUPPORTED;
+            SW(0x28,W(0x28)+8u);
+        }
+        SL(0x28,x);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool label_routine(uint32_t r) {return r==0x8d330 || r==0x8d4de || r==0x8d62e || r==0x8d63e || r==0x8d698 || r==0x8d6a2;}
 static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t rec;
     switch (L(0)) {
@@ -398,10 +543,10 @@ view:
     if (B(0x8b) && ga_creator_alive(a,e)) return GA_MORE;
     return ga_outside_view(a,e,0xe5624)?GA_DELETE:GA_MORE;
 }
-bool neo_item_routine(uint32_t r) {return r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564 || r==0x8c66a || r==0x8c68e || r==0x8c6b2;}
+bool neo_item_routine(uint32_t r) {return label_routine(r) || r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564 || r==0x8c66a || r==0x8c68e || r==0x8c6b2;}
 /* The code a pickup stops at when it cannot be served (no pickup state,
  * untranslated routine or refusal): explicit stops of the native items. */
 bool neo_item_pickup(uint32_t routine) {
     return (routine>=0x8b568 && routine<=0x8b9b0) || routine==0xc0764 || routine==0xc0c14;
 }
-ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e) {return item_tick(a,e);}
+ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e) {return label_routine(ga_l(a,0))?label_tick(a,e):item_tick(a,e);}

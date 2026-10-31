@@ -164,7 +164,8 @@ void scene_assets_init(void) {
     }
     for (unsigned pass=0;pass<2;pass++) for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++)
         if (opening[i]==(pass==1)) { request(i,1);require_chunk(i); }
-    debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB DMA=%u bytes startup evictions=%u\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,stats.dma_bytes,stats.evictions);
+    {heap_stats_t h;sys_get_heap_stats(&h);
+     debugf("MSX pack: %u pages, %u palettes, %u chunks; cache=%u KB (%u chunks) DMA=%u bytes startup evictions=%u heap free after cache=%d KB\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,stats.cache_bytes/1024,capacity,stats.dma_bytes,stats.evictions,(h.total-h.used)/1024);}
     stats.misses=stats.evictions=stats.deferred=stats.held=0; // Startup waits/evictions are outside the gameplay deadline.
 }
 const scene_bank_t *scene_bank(unsigned id) { assert(id<SCENE_BANK_COUNT);return &scene_banks[id]; }

@@ -89,6 +89,11 @@ static void trace(void *context,uint8_t kind,uint8_t index) {
     ctx_t *c=context;const world_tick_t *t=c->t;
     if (t->frame==dbg_frame) printf("  trace kind %u index %u rng cursor %u routine %05X\n",kind,index,c->w->rng.cursor,
         kind==NEO_WORLD_GACTOR?(unsigned)ga_l(&c->w->gactors[index],0):kind==NEO_WORLD_SOLDIER?(unsigned)c->w->soldiers[index].routine:0u);
+    /* The score labels 08D330 of the item pickups (neo_item.c) are native
+     * but outside actors in these captures (the extractor cannot tell them
+     * from the labels other actors make, 08CE72/08CEEC): they make no RNG
+     * call and are left out of the order comparison. */
+    if (kind==NEO_WORLD_GACTOR) {uint32_t r=ga_l(&c->w->gactors[index],0);if (r==0x8d330u || r==0x8d4deu || r==0x8d62eu || r==0x8d63eu || r==0x8d698u || r==0x8d6a2u) return;}
     /* A thrown object created this update is inserted after the script actor
      * (03BB8E -> 00411C), behind the traversal: it first runs next update. */
     while (c->executed<t->order_count && t->order[c->executed].created && t->order[c->executed].kind==NEO_WORLD_THROW) c->executed++;
@@ -171,7 +176,10 @@ static const char *compare_gactor(const ctx_t *c,const neo_gactor_t *a,const uin
         }
         /* The porter 0327EC keeps its item node and the item's creator in
          * +72/+76 (238632): compared through the node map. */
-        if ((o==0x72 || o==0x76) && (ga_l(a,0)==0x32840u || ga_l(a,0)==0x32864u)) {
+        /* The civilians 031D80/031D92 and their figures keep the leader
+         * node in +7A (031DEA): compared through the node map as well. */
+        if (((o==0x72 || o==0x76) && (ga_l(a,0)==0x32840u || ga_l(a,0)==0x32864u)) ||
+            (o==0x7a && ((ga_l(a,0)>=0x31d80u && ga_l(a,0)<=0x320aau) && ga_l(a,0)!=0x31d80u && ga_l(a,0)!=0x31d92u))) {
             uint32_t want=(uint32_t)m[o]<<24|(uint32_t)m[o+1]<<16|(uint32_t)m[o+2]<<8|m[o+3];
             uint32_t got=ga_l(a,o);
             if ((got&0xff000000u)==NEO_GA_TAG_BASE) got=c->map[NEO_WORLD_GACTOR][got&0xffu];

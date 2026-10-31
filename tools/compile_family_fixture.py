@@ -28,9 +28,13 @@ def main():
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
+    p.add_argument('--label-after-pickup',help='ROUTINE (hex): with --script-actor, a node of this routine made by the script actor is native only when it follows a pickup of the fixture (one per pickup, at most 2 frames later, at the item\'s projected position): the score label 08D330 of 08B944; the labels other actors make are injected')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
+    p.add_argument('--attacks',action='store_true',help='the 0049E8 answers of every update (extract_family_fixture.py --attacks): D0 and the A0/A1 targets as 01B162 read them (rectangle from data/region_rom.json); a target the update did not read gets 7FFF,7FFF and no box')
+    p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
+    used=[]
     d=json.load(gzip.open(a.fixture,'rt'))
     # A node deleted while deeper nodes follow it stays as a placeholder
     # (routine 003F1E, 004126): a deleting update like any other.
@@ -40,7 +44,9 @@ def main():
     # later node at the same address is another instance.
     # A node deleted without a traced update (a creator's tree deletion,
     # 0041AC) shows up again with a routine its last update did not leave.
+    pickups=[(u['frame'],u['post'][2*0x3c:2*0x44]) for u in d['updates'] if u['post'] and u['post'][:8]=='0008c66a' and u['routine']!=0x8c66a]
     def instances(updates):
+        used.clear()
         live={};order=[];inst=[];lastroutine={};dead=[];claimed=set();gone={}
         for u in updates:
             if u['node'] in live and lastroutine.get(u['node'])!=u['routine']:del live[u['node']]
@@ -60,6 +66,14 @@ def main():
                         cost=lambda x:0x4000 if x[2] is None else abs(((ix-x[2]+0x8000)&0xffff)-0x8000)+abs(((iy-x[3]+0x8000)&0xffff)-0x8000)
                         c=min(cand,key=cost)[0];claimed.add(c)
                 if c<0 and script is not None and int(cr,16)==script and (not a.script_routines or u['routine'] in [int(x,16) for x in a.script_routines.split(',')]):c=-2
+                if c<0 and script is not None and int(cr,16)==script and a.label_after_pickup and u['routine']==int(a.label_after_pickup,16):
+                    # The score label 08D330 an item's pickup makes (08B944):
+                    # one per pickup of the two frames before; the labels
+                    # other actors make (08CE72/08CEEC) are injected.
+                    # 01ACF2 placed it on the item: its projected words are
+                    # the item's after the pickup update.
+                    near=[q for q in pickups if u['frame']-2<=q[0]<=u['frame'] and q not in used and q[1]==u['pre'][2*0x3c:2*0x44]]
+                    if near:used.append(near[0]);c=-2
                 live[u['node']]=len(order);order.append((u,c))
             inst.append(live[u['node']])
             if not u['post'] and (not a.hit_from or u['routine'] in [int(x,16) for x in a.hit_from.split(',')]):
@@ -121,6 +135,12 @@ def main():
         L.append('#define FAMILY_RAM {%s}'%','.join('{0x%s,0x%s}'%tuple(r.split('-')) for r in d['ram']))
         L.append('static const uint32_t %s_ram_in[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rin) or '{0,0}'))
         L.append('static const uint32_t %s_ram_out[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rout) or '{0,0}'))
+    # Score-label counts RAM 10C5B2/10C5B4 (08D330) as read: inputs.
+    lc=[(k,rd(u,0x10c5b2),rd(u,0x10c5b4)) for k,u in enumerate(d['updates'])]
+    lc=[(k,x if x is not None else -1,y if y is not None else -1) for k,x,y in lc if x is not None or y is not None]
+    if lc and a.label_after_pickup:
+        L.append('#define FAMILY_LABEL_COUNTS 1')
+        L.append('static const int32_t %s_label_counts[][3]={%s};'%(n,','.join('{%d,%d,%d}'%t for t in lc)))
     L.append('static const family_update_t %s_updates[]={'%n)
     last={}
     maxext=0
@@ -203,6 +223,41 @@ def main():
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
             -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k]))
     L.append('};')
+    if a.attacks:
+        rom={}
+        for b in json.load(open(Path(__file__).resolve().parent.parent/'data'/'region_rom.json'))['blobs']:
+            base=int(b['rom'],16);data=bytes.fromhex(b['hex'])
+            for i,x in enumerate(data):rom[base+i]=x
+        def rect(ptr):
+            if not ptr:return (0,0,0,0,0)
+            w=[]
+            for o in range(2,10,2):
+                assert ptr+o in rom and ptr+o+1 in rom,'descriptor %x not in region_rom.json'%ptr
+                v=rom[ptr+o]<<8|rom[ptr+o+1];w.append(v-0x10000 if v&0x8000 else v)
+            return (1,*w)
+        rows=[];spans=[]
+        for u in d['updates']:
+            f=len(rows)
+            for typ,a0,a1 in u.get('attacks',[]):
+                row=[typ]
+                for node in (a0,a1):
+                    tg=u.get('targets',{}).get('%x'%node) if node else None
+                    if not node:row+=[0,0,0,0,0,0,0,0]
+                    elif tg is None or tg[0] is None or tg[1] is None:row+=[1,0x7fff,0x7fff,0,0,0,0,0]
+                    else:row+=[1,tg[0],tg[1],*rect(tg[2])]
+                rows.append(row)
+            spans.append((f,len(rows)-f))
+        L.append('#define FAMILY_ATTACKS 1')
+        L.append('static const int32_t %s_attacks[][17]={%s};'%(n,','.join('{%s}'%','.join(map(str,r)) for r in rows) or '{0}'))
+        L.append('static const uint16_t %s_attack_spans[][2]={%s};'%(n,','.join('{%d,%d}'%x for x in spans)))
+    if a.previous:
+        where={};prev=[]
+        for k,u in enumerate(d['updates']):
+            where[u['node']]=inst[k]
+            pv='%06x'%int(u['pre'][8:16],16)
+            prev.append(where.get(pv,-1))
+        L.append('#define FAMILY_PREVIOUS 1')
+        L.append('static const int16_t %s_previous[]={%s};'%(n,','.join(map(str,prev))))
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')
 if __name__=='__main__':main()

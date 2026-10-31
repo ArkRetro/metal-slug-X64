@@ -1,3 +1,4 @@
+#include "../src/msx_stick.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -73,13 +74,17 @@ static void release_run(unsigned seed) {
         /* Now and then a bomb; at the armoured vehicle every 40. */
         g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
         bool was_entering=g.life.phase==MARCO_ENTERING;
+        unsigned progress_before=neo_camera_progress(&g.world.camera);
         /* Out of lives: the player takes the continue (0C98CC, Start). */
         g.start_edge=g.awaiting_continue;
         msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */
         /* A new life in the boss arena (progress 0x0D30: record 2D5C52,
          * screen x 56, from y 0x50 down to the floor) stands on the arena
          * floor, never on the boss. */
-        if (!was_entering && g.life.phase==MARCO_ENTERING && neo_camera_progress(&g.world.camera)>=0xd30) {
+        /* The record is chosen by the progress when the new life starts
+         * (0196E8, before this update's camera step): a death while the
+         * camera reaches 0x0D30 (progress 0x0D2F) takes the previous record. */
+        if (!was_entering && g.life.phase==MARCO_ENTERING && progress_before>=0xd30) {
             arena_lives++;
             uint16_t px,py;msx_game_projected(&g,&px,&py);
             /* px is read after this update's camera step (the record used
@@ -129,7 +134,9 @@ static unsigned shop_from_mid(int seen,bool crouch) {
     static msx_game_t g;msx_game_init(&g);
     int lock=-1;unsigned from=0;
     for (unsigned steps=0;steps<20000;steps++) {
-        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
+        /* No jumps once the Camel Slug 03458E waits (record at camera
+         * 2032): landing on it mounts Marco (0AA610) and the pistol rests. */
+        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4 && g.camera<2032;
         int dome=-1;
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];
@@ -194,8 +201,117 @@ static unsigned stand_2336(int at) {
     }
     return passed?hold_max:~0u;
 }
+/* The C weapon (id 0C, neo_chaser.c): granted at the start and again
+ * whenever it runs out (0C0928, as an item would), the dome policy of the
+ * shop run firing tapped. Every shell, flash, trail and blast is native (no
+ * stop, every descriptor in the scene pack); shells home in and explode
+ * (064128 -> blast 06371E) and kill. */
+static void chaser_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned blasts=0,trails=0,grants=0;bool seen[NEO_WORLD_GACTORS]={false};
+    for (unsigned steps=0;steps<9000;steps++) {
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&sound)) grants++;
+        }
+        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
+            bool blast=a->active && (r==0x63740u || r==0x63756u);
+            if (blast && !seen[i]) blasts++;
+            seen[i]=blast;
+            if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
+        }
+    }
+    printf("C run: grants=%u shells=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        grants,g.c_shots,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
+    assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
+}
+/* Aiming down in the air (+92 = FF): jumps with down held and fire
+ * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
+ * at C0, the H's fan and its downward sweeps), from the mission start. */
+static void air_down_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned h=0,c=0;
+    for (unsigned steps=0;steps<3000;steps++) {
+        if (steps==1000 || steps==2000) {uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,steps==1000?0x0a:0x0c,&g.world.weapon_player,&sound);}
+        unsigned j=steps%120;g.crouch=j>=12 && j<100;g.aim_up=false;
+        msx_game_update(&g,0,j<6,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (!g.grounded && g.aim_down && marco_weapons_id(&g.world.weapons,0)==0x0a) h++;
+        if (!g.grounded && g.aim_down && marco_weapons_id(&g.world.weapons,0)==0x0c) c++;
+    }
+    printf("air down: pistol down shots=%u H shots=%u (air updates %u) C shells=%u (air updates %u) unsupported=%u missing draws=%u\n",
+        g.down_shots,g.h_shots,h,g.c_shots,c,g.world.unsupported,missing_draws);fflush(stdout);
+    assert(g.down_shots>0 && g.h_shots>0 && g.c_shots>0 && !g.world.unsupported && !missing_draws);
+}
+/* The Camel Slug ridden (MiSTer report: Marco stuck and drawn twice): the
+ * C clears the way (granted until the ride), the player jumps on the Camel
+ * between the domes and the 2336 stop and rides it at random (bombs, aim,
+ * jumps; never A and B together), with `mode` 1 jumping off (down+B) and 2
+ * ejecting (A+B) every few seconds. Never drawn on foot while the slot
+ * still holds him (the Camel draws its rider 034F1A), no mounted-player
+ * stop, every ride ends on foot. */
+static void camel_run(int mode) {
+    static msx_game_t g;msx_game_init(&g);unsigned rs=1,mounted_at=0,doubled=0;
+    for (unsigned s=0;s<9000 && !g.complete;s++) {
+        int cx=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];
+            if (a->active && ga_l(a,0)>=0x3458eu && ga_l(a,0)<=0x34d58u) {cx=g.camera+(int16_t)ga_w(a,0x3c);break;}}
+        int dir=1;bool jump=(s%240)<4,fire=s%8<4;g.aim_up=(s%64)>=40;g.crouch=false;g.grenade=false;
+        if (!g.mounts && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {uint16_t so=0;marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&so);}
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);if (dome<0 || x<dome) dome=x;}
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        if (g.mount==MSX_MOUNT_NONE && cx>=0 && g.camera>=1900 && !g.mounts) {int px=g.x/MSX_UNIT;dir=px<cx-4?1:px>cx+4?-1:0;jump=(s%40)<4;}
+        if (g.mount==MSX_MOUNT_RIDE) {
+            if (!mounted_at) mounted_at=s;
+            unsigned t=s-mounted_at;rs=rs*1103515245u+12345u;
+            dir=((rs>>16)%5)?1:-1;fire=(rs>>8)%3==0;g.grenade=(rs>>12)%23==0;g.aim_up=(rs>>24)%4==0;
+            jump=(rs>>20)%17==0;if (jump) fire=false;
+            if (mode==1 && t%300==299) {g.crouch=true;jump=true;fire=false;}
+            if (mode==2 && t%400==399) {jump=true;fire=true;}
+        }
+        g.invulnerable=2;
+        msx_game_update(&g,dir,jump,fire);g.world.sound_count=0;check_draws(&g);
+        bool bound=g.world.vslots.slot[0].b[0]|g.world.vslots.slot[0].b[1];
+        if (g.mount!=MSX_MOUNT_RIDE && bound && g.life.phase==MARCO_ALIVE) doubled++;
+        /* The rider graphic 034F1A/034F96 (a Marco) only with its Camel. */
+        bool camel=false,rider=false;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *a=&g.world.gactors[i];uint32_t q=ga_l(a,0);
+            if (!a->active) continue;
+            camel|=q>=0x3458eu && q<=0x34d58u;rider|=q==0x34f1au || q==0x34f96u;}
+        if (rider && !camel) doubled++;
+    }
+    printf("camel run %d: mounts=%u dismounts=%u mounted-player stops=%u drawn on foot while bound=%u mount=%u camera=%d unsupported=%u (%05lx) missing draws=%u (%06x)\n",
+        mode,g.mounts,g.dismounts,g.mount_stops,doubled,g.mount,g.camera,g.world.unsupported,(unsigned long)g.world.unsupported_routine,missing_draws,missing_first);fflush(stdout);
+    /* The only stop: the Camel at 004ED2 when a solid body is registered
+     * (the rocket launcher 05ED84 at camera 2688; untranslated, no capture). */
+    assert(g.mounts>=1 && g.dismounts>=1 && !g.mount_stops && !doubled && g.mount==MSX_MOUNT_NONE && !missing_draws);
+    assert(!g.world.unsupported || g.world.unsupported_routine==0x4ed2u);
+}
 int main(int argc,char **argv) {
+    if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
+    if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
+    {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
+        int h,v;
+        msx_stick_lever(85,26,&h,&v);assert(h==1 && v==0);     /* 17 degrees: right only (was up-right) */
+        msx_stick_lever(60,60,&h,&v);assert(h==1 && v==1);     /* 45: up-right */
+        msx_stick_lever(30,80,&h,&v);assert(h==0 && v==1);     /* 69: up only */
+        msx_stick_lever(-70,-40,&h,&v);assert(h==-1 && v==-1); /* 30: down-left */
+        msx_stick_lever(20,10,&h,&v);assert(h==0 && v==0);     /* dead zone */
+    }
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
     msx_game_update(&g,1,true,false);
@@ -301,8 +417,8 @@ int main(int argc,char **argv) {
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     /* Every H shot is native; the other weapons the prisoners give (their
      * shots are not ported) stop explicitly at their constructor, counted. */
-    assert(g.world.player_shots==g.h_shots+g.grenades && !g.world.shot_dropped);
-    assert(g.weapon_stops==g.weapon_shots-g.h_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
+    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots && !g.world.shot_dropped);
+    assert(g.weapon_stops==g.weapon_shots-g.h_shots-g.c_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
     /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
     assert(g.hgun_diagonal>0);
@@ -333,6 +449,9 @@ int main(int argc,char **argv) {
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    chaser_run();
+    air_down_run();
+    for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

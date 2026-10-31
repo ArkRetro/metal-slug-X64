@@ -106,6 +106,240 @@
    "event": "vehicle destruction burst, 12 video frames after health 0 (ROM 029B14)"
   },
   {
+   "label": "sfx_1022",
+   "word": "1022",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 048AF6/055772/05FE28/088D10/0DD6BE (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10ea",
+   "word": "10EA",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10ff",
+   "word": "10FF",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 047AE0/09FEAA (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10a4",
+   "word": "10A4",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1064",
+   "word": "1064",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 05F7BA (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1025",
+   "word": "1025",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 089812/08F1E0 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10f4",
+   "word": "10F4",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 01B6DC/01B716 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_109b",
+   "word": "109B",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 0DD642 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10a3",
+   "word": "10A3",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 055638/060490 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_108c",
+   "word": "108C",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 01BE24 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1021",
+   "word": "1021",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 048AB6/048AF6/048C8C/054E28/054E62/05F904/0883E8/0DD6BE (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1048",
+   "word": "1048",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 099E7A/099F9C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_113a",
+   "word": "113A",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 09A17E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1121",
+   "word": "1121",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 048AB6/08C53C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10c6",
+   "word": "10C6",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1035",
+   "word": "1035",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 003F1E/019E82/034094/035706/08C53C/0A8E1A/0B6606/0B66F2 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1056",
+   "word": "1056",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 09A2D8 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1074",
+   "word": "1074",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 054CA0 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1075",
+   "word": "1075",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 054F60 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_104a",
+   "word": "104A",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_102f",
+   "word": "102F",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 05F94E/0DCAF8 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_104f",
+   "word": "104F",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 032040 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10e8",
+   "word": "10E8",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 048882/0DC97E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10a5",
+   "word": "10A5",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 02916E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1072",
+   "word": "1072",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 087F2E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1026",
+   "word": "1026",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 054A2E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1142",
+   "word": "1142",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 0B66F2 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_112d",
+   "word": "112D",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 08C53C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_10a7",
+   "word": "10A7",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1158",
+   "word": "1158",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 08C53C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_105d",
+   "word": "105D",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 033C98 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1124",
+   "word": "1124",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 08C53C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_108e",
+   "word": "108E",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 09FADE (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1073",
+   "word": "1073",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_112e",
+   "word": "112E",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 08C53C (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1032",
+   "word": "1032",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_102c",
+   "word": "102C",
+   "callers": [],
+   "event": "animation sound command 0x30 (ROM 004486) of the native rebel soldiers (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_116e",
+   "word": "116E",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 034698 (port host traversal of tools/test_gameplay.c)"
+  },
+  {
+   "label": "sfx_1067",
+   "word": "1067",
+   "callers": [],
+   "event": "requested by the native world actors at ROM 08890E (port host traversal of tools/test_gameplay.c)"
+  },
+  {
    "label": "music_mission1",
    "word": "0021",
    "callers": [

@@ -74,13 +74,17 @@ static void release_run(unsigned seed) {
         /* Now and then a bomb; at the armoured vehicle every 40. */
         g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
         bool was_entering=g.life.phase==MARCO_ENTERING;
+        unsigned progress_before=neo_camera_progress(&g.world.camera);
         /* Out of lives: the player takes the continue (0C98CC, Start). */
         g.start_edge=g.awaiting_continue;
         msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */
         /* A new life in the boss arena (progress 0x0D30: record 2D5C52,
          * screen x 56, from y 0x50 down to the floor) stands on the arena
          * floor, never on the boss. */
-        if (!was_entering && g.life.phase==MARCO_ENTERING && neo_camera_progress(&g.world.camera)>=0xd30) {
+        /* The record is chosen by the progress when the new life starts
+         * (0196E8, before this update's camera step): a death while the
+         * camera reaches 0x0D30 (progress 0x0D2F) takes the previous record. */
+        if (!was_entering && g.life.phase==MARCO_ENTERING && progress_before>=0xd30) {
             arena_lives++;
             uint16_t px,py;msx_game_projected(&g,&px,&py);
             /* px is read after this update's camera step (the record used
@@ -130,7 +134,9 @@ static unsigned shop_from_mid(int seen,bool crouch) {
     static msx_game_t g;msx_game_init(&g);
     int lock=-1;unsigned from=0;
     for (unsigned steps=0;steps<20000;steps++) {
-        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
+        /* No jumps once the Camel Slug 03458E waits (record at camera
+         * 2032): landing on it mounts Marco (0AA610) and the pistol rests. */
+        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4 && g.camera<2032;
         int dome=-1;
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];

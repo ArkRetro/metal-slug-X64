@@ -1,0 +1,63 @@
+From 2a77da9eab67300dff646697e80db021769e99f2 Mon Sep 17 00:00:00 2001
+From: Christopher Bonhage <christopher.bonhage@meeq.tech>
+Date: Mon, 20 Jul 2026 18:24:23 -0400
+Subject: [PATCH 1/2] rspq: fix highpri REQUESTED-clear race (set signal before
+ queueing the clear)
+
+rspq_highpri_begin appended the WRITE_STATUS command that clears
+SIG_HIGHPRI_REQUESTED into the queue *before* raising the signal in
+SP_STATUS. With the RSP already in highpri mode and caught up with the
+write cursor (e.g. mixer_poll issuing many begin/end batches per poll),
+the RSP can consume that clear inside the few-instruction window before
+the set lands -- anything that widens the window (an interrupt on real
+hardware, a scheduler yield at a recompiler block boundary in ares)
+makes it reachable. The set then dangles: after the final epilog the
+RSP re-enters highpri into an empty queue and parks forever with
+SIG_HIGHPRI_RUNNING set, deadlocking rspq_highpri_sync (200ms "wait
+loop timed out" RSP crash).
+
+Setting REQUESTED before appending the clear closes the race by
+construction: the RSP cannot execute the clear before it is written,
+which is now after the set. This also preserves the WRITE_STATUS
+command's documented purpose (killing a dummy REQUESTED left over from
+a skipped epilog).
+
+Validated by widening the window with wait_ticks(2000) as an
+interrupt stand-in: original order deadlocks at first sustained mixer
+activity; reordered survives extended soaks with the same delay.
+
+(cherry picked from commit 43c67dcf598a11523435ff72edcc1c2b479f96d3)
+---
+ src/rspq/rspq.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/src/rspq/rspq.c b/src/rspq/rspq.c
+index 9b5858d5d..c8182c744 100644
+--- a/src/rspq/rspq.c
++++ b/src/rspq/rspq.c
+@@ -1047,10 +1047,20 @@ void rspq_highpri_begin(void)
+     // add a command in case the previous epilog was skipped. Otherwise,
+     // a dummy SIG_HIGHPRI_REQUESTED could stay on and eventually highpri
+     // mode would enter once again.
+-    rspq_append1(rspq_cur_pointer, RSPQ_CMD_WRITE_STATUS,
+-        SP_WSTATUS_CLEAR_SIG_HIGHPRI_REQUESTED | SP_WSTATUS_SET_SIG_HIGHPRI_RUNNING);
++    // Set SIG_HIGHPRI_REQUESTED *before* writing the WRITE_STATUS command that
++    // clears it. If the RSP is already in highpri mode and caught up with the
++    // write cursor, it can execute the appended WRITE_STATUS within a few
++    // cycles of the append; with the old order (append first, then set), the
++    // clear could be consumed before the set landed, leaving a dangling
++    // REQUESTED that made the RSP re-enter highpri after the final epilog and
++    // park forever on the empty queue with SIG_HIGHPRI_RUNNING set (deadlocking
++    // rspq_highpri_sync). Setting the signal first closes the race: the RSP
++    // cannot execute the clear before it is written, which is after the set.
+     MEMORY_BARRIER();
+     *SP_STATUS = SP_WSTATUS_SET_SIG_HIGHPRI_REQUESTED;
++    MEMORY_BARRIER();
++    rspq_append1(rspq_cur_pointer, RSPQ_CMD_WRITE_STATUS,
++        SP_WSTATUS_CLEAR_SIG_HIGHPRI_REQUESTED | SP_WSTATUS_SET_SIG_HIGHPRI_RUNNING);
+     rspq_flush_internal();
+ }
+ 
+-- 
+2.43.0
+

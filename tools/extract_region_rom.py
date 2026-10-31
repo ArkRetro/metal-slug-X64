@@ -78,6 +78,8 @@ BLOBS=[
     (0x32646,0x8,'03264E village porter cull rectangle (01945C)'),
     (0x605AA,0x256,'06090A MISSION COMPLETE letters: letter records 605AA/60614 (060DC4 forms), 606A6 (060E02, number 060B06 first) and 60728 (060E3C, mission 5): +60 program, +61, +72 delay, +6E/+70 target'),
     (0x60F44,0x58,'06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)'),
+    (0x31B86,0x16,'032040 civilians: flight program speeds by +62 (004256)'),
+    (0x31D34,0x4C,'031D80/031D92 civilians: program tables 031D34/031D40, cull rectangle 031D4C (01945C), hurtbox 031D54, offsets 031D60, panic hit kinds 031D68, command sequences 031D74/031D7A'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

@@ -104,6 +104,9 @@ ROOTS+=CAMEL_ROOTS
 ROOTS+=[0x2a89ac,0x2402ca]
 # Village porter 03264E: figure 2389CE/2386F0, walker 237F36.
 ROOTS+=[0x2389ce,0x2386f0,0x237f36]
+# Village civilians 031D80/031D92 (031F52: stand 237D02/237D6E, gesture
+# 237D0E/237D7A, flight 237CC0).
+ROOTS+=[0x237d02,0x237d0e,0x237d6e,0x237d7a,0x237cc0]
 # Mission end: MISSION COMPLETE letters 06090A (tables 060F44, 060F7C) and
 # the prisoner tally 0308C0 (parade 237AEC/237B84/237BD0/237C48, tables 031276).
 ROOTS+=[0x264ff8+0xa*i for i in range(14)]+[0x265084+0xa*i for i in range(6)]

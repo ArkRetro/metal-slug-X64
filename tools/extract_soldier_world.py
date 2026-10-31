@@ -35,7 +35,9 @@ GACTOR=set([0x2916E,0x29294,0x29326,0x2936C,0x293DC,0x29438,0x294A2,0x294E4,0x29
     # decoration 0B6298 with its delete 0B6202 (src/neo_barrel.c).
     0x400AA,0x400F2,0xB6298,0xB62C8,0xB6202,
     # The village porter 03264E and its walker 0327EC (src/neo_porter.c).
-    0x3264E,0x326A8,0x326FE,0x327CA,0x327EC,0x32840,0x32864])
+    0x3264E,0x326A8,0x326FE,0x327CA,0x327EC,0x32840,0x32864,
+    # The village civilians 031D80/031D92 and their figures 031F52 (src/neo_civil.c).
+    0x31D80,0x31D92,0x31E10,0x31E1A,0x31F52,0x31FA8,0x31FBE,0x32004,0x3201C,0x32040,0x320AA])
 def gactor_routine(rt):return rt in GACTOR
 # 09A5EE (the cartridge check before 004188) is shared by the prisoners and
 # the hidden item boxes 09A67E.. (outside actors here): a node at 09A5EE is

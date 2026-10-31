@@ -1006,6 +1006,52 @@ Registro `0x2D642E` (grupo 9, no contado; palabra `+6E` = 80). Traducción de
 - Gráficos: `unc1@3264e-32940`: 2355 descriptores, paleta nueva `0x92`; 14
   volcados: 10495 píxeles iguales, 0 distintos.
 
+## Civiles del pueblo `0x031D80/0x031D92` (`src/neo_civil.c`, rama `work-world`)
+
+Los "civiles que huyen" de la Misión 1. `0x031D80` es la alternativa
+aleatoria del porteador en la cámara 440 (registro `0x2D641E`, `op 10`
+`random_choice`: en `unc1` salió el porteador, en `entry-fire3` los civiles);
+`0x031D92` aparece siempre en la cámara 1984 (registro `0x2D6C76`). Grupo 9,
+no contados. Traducción de `0x031D80..0x032148`:
+
+- **Líder** (el nodo del guion, sin gráficos): `+83` = 0/1, `+76` su
+  secuencia de órdenes (`031D74`: 0,1,2,3 en bucle; `031D7A`: 0,1,3; un byte
+  negativo retrocede el siguiente byte, `031F32`), `+72` la velocidad de las
+  figuras (palabra << 11), `+7A` él mismo. Crea dos figuras `0x031F52`
+  (tablas de programas `031D40` y `031D34`; `0x031D92` solo la segunda) con
+  `0040BC` y las cuenta en `+81`. Orden 0: cuenta atrás `+7E`
+  (`0029F2(0x1E)+0x14`) hasta la siguiente; orden 3: la siguiente enseguida.
+  Sin figuras (`+81` = 0) se borra.
+- **Figura** `0x031F52` (paleta `0x92`, caja `031D54`, colocada sobre el
+  líder con `01AD6E` y desplazamiento `031D60`, suelo `0146E8`): quieta
+  (`01436A`) con su primer programa; las órdenes 1/2 hacen el gesto (segundo
+  programa) a las figuras con palabra `+0A` de tabla 0/≠0, y su final pide la
+  siguiente orden. Cuando la cámara pasa su `+70` registra la caja (`004C24`);
+  un golpe cuyo tipo `+5A` está en `031D68` marca `+82` del líder, y con
+  `+82` todas **huyen** (`0x032040`): programa `237CC0` a la velocidad de
+  `031B86` por su `+62`, dirección por el signo de la palabra mezclada del
+  RNG, **grito `0x104F`** (`0120F8`), y caminan (`08CCD4`) girando en las
+  paredes (`+5F` bit 0). Se van fuera de `031D4C` (`01945C`, `+81` del líder
+  − 1).
+- `ga_floor` (`0146E8`) acepta ahora como padre el bloque de otro actor
+  (`013DB2` lee su `+14/+18`, es decir `+3C/+40`): el mismo punto relativo a
+  la raíz de la escena.
+
+Captura `captures-world/civ1` (`MSX_REST_FAMILY_ROOTS=31d92,31d80
+MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=7700`): la figura aparece en 7011, el
+jugador la alcanza en 7064 y huye. Prueba `civil` (`--node-fields 7a`):
+**2 nodos, 126 actualizaciones en bucle cerrado (7011..7165), 17640 bytes
+iguales**. Cortada antes de 7168: la figura llega a los escombros del
+derrumbe (`0B53A8`), cuya colisión no está en la rejilla estática del port
+(igual que la prueba `food`). El gesto (órdenes 1/2) no aparece en la traza
+(el golpe llega antes de que venza `+7E`); la prueba del mundo sí recorre los
+civiles de la cámara 440 (`entry-fire3`, dos figuras): `extract_soldier_world.py`
+los cuenta como actores del mundo y `test_neo_world.c` compara su `+7A` por el
+mapa de nodos: **5248 actualizaciones, 29627 estados de actores genéricos**.
+
+Gráficos: `civ1@31d80-32150` (programas `237D02/237D0E/237D6E/237D7A/237CC0`,
+paleta `0x92`): 0 píxeles distintos.
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

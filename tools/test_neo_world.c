@@ -171,7 +171,10 @@ static const char *compare_gactor(const ctx_t *c,const neo_gactor_t *a,const uin
         }
         /* The porter 0327EC keeps its item node and the item's creator in
          * +72/+76 (238632): compared through the node map. */
-        if ((o==0x72 || o==0x76) && (ga_l(a,0)==0x32840u || ga_l(a,0)==0x32864u)) {
+        /* The civilians 031D80/031D92 and their figures keep the leader
+         * node in +7A (031DEA): compared through the node map as well. */
+        if (((o==0x72 || o==0x76) && (ga_l(a,0)==0x32840u || ga_l(a,0)==0x32864u)) ||
+            (o==0x7a && ((ga_l(a,0)>=0x31d80u && ga_l(a,0)<=0x320aau) && ga_l(a,0)!=0x31d80u && ga_l(a,0)!=0x31d92u))) {
             uint32_t want=(uint32_t)m[o]<<24|(uint32_t)m[o+1]<<16|(uint32_t)m[o+2]<<8|m[o+3];
             uint32_t got=ga_l(a,o);
             if ((got&0xff000000u)==NEO_GA_TAG_BASE) got=c->map[NEO_WORLD_GACTOR][got&0xffu];

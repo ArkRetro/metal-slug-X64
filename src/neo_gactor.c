@@ -148,7 +148,15 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e) {
 void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     neo_contact_actor_t c=ga_contact(a);
     uint8_t parent=kobj(c.parent_tag);
-    if (parent==0xff) {ga_fail(e,0x146e8);return;}
+    if (parent==0xff) {
+        /* A0 = another actor's position block (the civilians 031F52 placed
+         * on their leader by 01AD6E): 013DB2 reads its +14/+18 (actor
+         * +3C/+40); the same point relative to the scene root. */
+        neo_contact_parent_t p,r;
+        if (!ga_parent(e,c.parent_tag,&p) || !ga_parent(e,ROOT_TAG,&r)) {ga_fail(e,0x146e8);return;}
+        c.x=(int32_t)((uint32_t)c.x+(uint32_t)p.x-(uint32_t)r.x);c.y=(int32_t)((uint32_t)c.y+(uint32_t)p.y-(uint32_t)r.y);
+        c.parent_tag=ROOT_TAG;parent=NEO_KOBJ_ROOT;
+    }
     self(a,e);
     neo_kfloor_t fl;
     if (!neo_kernel_floor(e->kernel,c.x,c.y,parent,(int32_t)0xff000000,(uint8_t)(c.flags15&32u?0:255),0,0,&fl)) {ga_fail(e,0x146e8);return;}

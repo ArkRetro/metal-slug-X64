@@ -174,7 +174,8 @@ iguales, 0 distintos**
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
 | `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
-| `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
+| `0x031D80/0x031D92` civiles del pueblo (figuras `0x031F52`, huida y grito `0x104F`) | **nativos** (MISION1_ACTORES.md) |
+| `0x03458E` Camel Slug | nativo (ARMAS_VEHICULOS.md) |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
 | `0x0B6298` decoración del pueblo, `0x0400AA` toldo del puesto, `0x03264E` porteador | **nativos** (MISION1_ACTORES.md) |
 

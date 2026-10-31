@@ -146,6 +146,7 @@ void neo_hud_init(neo_hud_t *h,uint16_t timer) {
         h->fix[c*32+r]=(c&&c<39&&r&&r<31)?0x00ff:0x0000;
     panel_init(&h->panel[0],0);panel_init(&h->panel[1],1);
     h->timer=timer;
+    h->mode[0]=1;h->panel[0].f88=1;  /* single player game: BIOS 10FDB6 = 1, 10FDB7 = 0 (captures) */
 }
 /* 0C9254: clears the panel's three rows (16 columns of 0320). */
 static void panel_clear(neo_hud_t *h,neo_panel_t *q,bool hud_on) {

@@ -300,8 +300,52 @@ static bool hgun_reserve(void *context) {
     marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
     return allowed;
 }
+/* Mission end of the mission actor 101364 (0x018846..0x01893A), one step
+ * per original update, from the update after 018F40 (step 2):
+ *   018846  10E9E3 = FF (c8cd6), music 15418, +7C = 0x1E; 018870 waits
+ *           (subq/bne: 30 updates).
+ *   018884  cae6c(mission) and the prisoner tally actor 0308C0 (it adds the
+ *           rescue bonus to 10C46A and sets the mission actor's +60):
+ *           not ported, explicit stops; the port goes on at once.
+ *   0188BE  sounds 0x20 and 0x1137, +7C = 0xA0, the MISSION COMPLETE letters
+ *           actor 06090A (not ported: explicit stop; actor.c draws a text
+ *           stand-in); 0188F4 waits (subq/bcc: 161 updates).
+ *   0188FC  fade 9C0A (E1,E1,E1, 0x20; not ported: explicit stop), +7C =
+ *           0x20; 018916 waits 33 updates.
+ *   01891E  mission 42F4 + 1 < 6: the next mission (1829E). Missions 2..6
+ *           are not ported: mission_end = done, actor.c restarts Mission 1.
+ * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
+ * Mission 2 at 14460 (dumps every 30 frames). */
+static void mission_end_step(msx_game_t *g) {
+    switch (g->mission_end) {
+    case MSX_END_NONE:
+        g->mission_end=MSX_END_WAIT;g->end_timer=0x1e;
+        __attribute__((fallthrough)); /* 018864 -> 018870 in the same update */
+    case MSX_END_WAIT:
+        if (--g->end_timer) return;
+        g->end_stops+=2;                       /* cae6c, tally actor 0308C0 */
+        g->end_timer=0xa0;g->end_stops++;      /* letters actor 06090A */
+        g->mission_end=MSX_END_LETTERS;
+        __attribute__((fallthrough)); /* 0188EE -> 0188F4 */
+    case MSX_END_LETTERS:
+        if (g->end_timer--) return;
+        g->end_stops++;                        /* fade 9C0A */
+        g->end_timer=0x20;g->mission_end=MSX_END_FADE;
+        __attribute__((fallthrough)); /* 018910 -> 018916 */
+    case MSX_END_FADE:
+        if (g->end_timer--) return;
+        g->mission_end=MSX_END_DONE;
+        return;
+    default: return;
+    }
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
-    if (g->complete) return;
+    if (g->complete) {
+        g->ticks++;
+        if (!(g->ticks&1) && g->end_started) mission_end_step(g);
+        g->end_started=true;
+        return;
+    }
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}

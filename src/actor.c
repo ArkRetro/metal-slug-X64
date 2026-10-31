@@ -153,6 +153,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* GAME OVER shown until the original hands the machine back to the BIOS:
      * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
      * ranking/attract that follow are not ported: the mission restarts. */
+    if (game.mission_end==MSX_END_DONE) {
+        /* 01891E: Mission 2 is not ported; Mission 1 starts again. */
+        debugf("MSX mission end 018846 done (explicit stops=%u): Mission 2 not ported, Mission 1 restarts\n",game.end_stops);
+        reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
+    }
     if (game.game_over_frames>=MSX_GAME_OVER_UPDATES) {
         debugf("MSX game over: mission restart (continues=%u)\n",game.continues);
         reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
@@ -364,7 +369,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
-    if (game.complete) scene_render_box(64,92,192,48,ink);
+    /* Stand-in for the letters actor 06090A while 0188F4 waits. */
+    if (game.mission_end==MSX_END_LETTERS) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
     if (diagnostics) {
         scene_render_text(32,24,"MSX V10 - MISSION 1");
@@ -374,7 +380,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,38,status);
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
-    if (game.complete) {scene_render_text(80,102,"MISSION COMPLETE");scene_render_text(88,120,"R: PLAY AGAIN");}
+    if (game.mission_end==MSX_END_LETTERS) scene_render_text(80,110,"MISSION COMPLETE");
     msx_perf_mark(MSX_PERF_HUD);
     scene_render_end();msx_perf_mark(MSX_PERF_END);
     msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));

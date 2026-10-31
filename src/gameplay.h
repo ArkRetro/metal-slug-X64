@@ -58,6 +58,8 @@ typedef struct {
      * start_edge/jump_edge: Start and A pressed since the previous update. */
     bool no_life,awaiting_continue,start_edge,jump_edge;
     unsigned continues,game_over_frames;
+    /* Mission end sequence 0x018846 (gameplay.c mission_end_step). */
+    uint8_t mission_end;bool end_started;uint16_t end_timer;unsigned end_stops;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
@@ -114,6 +116,7 @@ extern const bool msx_reference_invulnerable;
  * gameplay.o once missed the item fields: its ga_flags.player_handlers read
  * the low byte of item_pickups and the first item taken froze the player's
  * input) stops at start instead of corrupting the game. */
+enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_LETTERS,MSX_END_FADE,MSX_END_DONE };
 /* Updates of the GAME OVER panel before the original game ends (MAME go1). */
 #define MSX_GAME_OVER_UPDATES 190u
 #define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \

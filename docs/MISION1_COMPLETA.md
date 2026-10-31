@@ -395,6 +395,16 @@ volcado de `trk3`; se conserva el valor de la exportación del tanque (la de
 más volcados), como `0x143`. Validación: 735 volcados, 3045010 píxeles
 iguales, 155616 distintos.
 
+ROM 12 (rama `work-rom12`, unión de `work-grenade`/`work-marco12` con el
+aterrizaje de `work-chute`): `--keep` es repetible y conserva, además de las
+paletas, los descriptores que ninguna raíz de este árbol produce (los del
+descenso de la otra rama). Orden de arriba con `$E/land2@c4a58-c5330` y
+`--keep` sobre ambas exportaciones (`civ1`, `gift3`, `tal1` ya no están):
+**4678 descriptores y 103 paletas**, superconjunto de las dos (todo
+descriptor y paleta presentes e idénticos; `0x397`/`0x39E` toman el valor
+conservado, como arriba). Validación: 735 volcados, 3045010 píxeles iguales,
+155616 distintos (igual que antes).
+
 Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
 2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77
 paletas (todas las de ambos lados, idénticas salvo `0x208`: el lado de

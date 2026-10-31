@@ -146,7 +146,7 @@ def main():
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
-    p.add_argument('--keep',type=Path,default=ROOT/'filesystem/rest-native.json',help='previous export: its palettes stay when no given capture has them (captures no longer at hand)')
+    p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
     a=p.parse_args()
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
@@ -179,12 +179,18 @@ def main():
         for slot,rid in resources(ram).items():
             if rid in RESOURCES:palettes.setdefault(rid,collections.Counter())[tuple(rgba16(pw[slot*16:slot*16+16]))]+=1
     pal_out={hex(k):list(c.most_common(1)[0][0]) for k,c in sorted(palettes.items())}
-    if a.keep and a.keep.exists():
-        for k,v in json.loads(a.keep.read_text()).get('palettes',{}).items():pal_out.setdefault(k,v)
+    kept_frames={}
+    for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
+        if not keep.exists():continue
+        prev=json.loads(keep.read_text())
+        for k,v in prev.get('palettes',{}).items():pal_out.setdefault(k,v)
+        for f in prev.get('frames',[]):kept_frames.setdefault(f['descriptor'],f)
         pal_out=dict(sorted(pal_out.items(),key=lambda kv:int(kv[0],16)))
     stats=collections.Counter();per=[]
     for capture,nodes in caps:validate(capture,nodes,descs,crom,stats,per)
     frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
+    have={f['descriptor'] for f in frames}
+    frames+=[f for d,f in sorted(kept_frames.items(),key=lambda kv:int(kv[0],16)) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
         p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
         missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])

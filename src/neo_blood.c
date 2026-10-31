@@ -13,6 +13,7 @@ static const struct { uint32_t site; uint16_t off,on; } sites[]={
     {NEO_BLOOD_PIECE_A9814,0x19,0x18},
     {NEO_BLOOD_SPLASH_1C97A,0x3ba,0x37a},
     {NEO_BLOOD_SWORDSMAN,0xb8,0x3fe},
+    {NEO_BLOOD_CAMEL_RIDER,0xb8,0x3fe},
 };
 uint16_t neo_blood_palette(uint32_t call_site,bool blood) {
     for (unsigned i=0;i<sizeof(sites)/sizeof(sites[0]);i++)

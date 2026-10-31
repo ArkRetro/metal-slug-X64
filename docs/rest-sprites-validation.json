@@ -1,10 +1,11 @@
 {
- "descriptors": 2100,
+ "descriptors": 2220,
  "palettes": [
   "0x103",
   "0x113",
   "0x114",
   "0x117",
+  "0x118",
   "0x121",
   "0x122",
   "0x123",
@@ -73,12 +74,12 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 65,
-  "frames": 408,
-  "pixels_equal": 2663638,
-  "pixels_different": 145622,
-  "pixels_overlapping": 751241,
-  "rank_2": 282,
-  "rank_1": 126,
+  "frames": 445,
+  "pixels_equal": 2738722,
+  "pixels_different": 145989,
+  "pixels_overlapping": 762855,
+  "rank_2": 315,
+  "rank_1": 130,
   "missing_descriptor": 30
  },
  "frames": [
@@ -2937,6 +2938,265 @@
    "update_frame": 13079,
    "equal": 0,
    "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7020,
+   "update_frame": 7018,
+   "equal": 1674,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7050,
+   "update_frame": 7048,
+   "equal": 1674,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7080,
+   "update_frame": 7078,
+   "equal": 1682,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7110,
+   "update_frame": 7108,
+   "equal": 1674,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7140,
+   "update_frame": 7138,
+   "equal": 3100,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7170,
+   "update_frame": 7168,
+   "equal": 2986,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7200,
+   "update_frame": 7198,
+   "equal": 1191,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7230,
+   "update_frame": 7228,
+   "equal": 1256,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7260,
+   "update_frame": 7258,
+   "equal": 1309,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7290,
+   "update_frame": 7288,
+   "equal": 2070,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7320,
+   "update_frame": 7318,
+   "equal": 2462,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7350,
+   "update_frame": 7348,
+   "equal": 2429,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7380,
+   "update_frame": 7378,
+   "equal": 2298,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7410,
+   "update_frame": 7408,
+   "equal": 2316,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7440,
+   "update_frame": 7438,
+   "equal": 2291,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7470,
+   "update_frame": 7468,
+   "equal": 1328,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7500,
+   "update_frame": 7498,
+   "equal": 1427,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7530,
+   "update_frame": 7528,
+   "equal": 1442,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7560,
+   "update_frame": 7558,
+   "equal": 2377,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7590,
+   "update_frame": 7588,
+   "equal": 2323,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7620,
+   "update_frame": 7618,
+   "equal": 2377,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7650,
+   "update_frame": 7648,
+   "equal": 2394,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7680,
+   "update_frame": 7678,
+   "equal": 2435,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7710,
+   "update_frame": 7708,
+   "equal": 2319,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7740,
+   "update_frame": 7740,
+   "equal": 1288,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7770,
+   "update_frame": 7768,
+   "equal": 1419,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7800,
+   "update_frame": 7798,
+   "equal": 1498,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7830,
+   "update_frame": 7828,
+   "equal": 2482,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 2461,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7890,
+   "update_frame": 7888,
+   "equal": 2416,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7920,
+   "update_frame": 7920,
+   "equal": 2179,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7950,
+   "update_frame": 7948,
+   "equal": 1410,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 1419,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 8010,
+   "update_frame": 8006,
+   "equal": 1627,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 3270,
+   "different": 0
+  },
+  {
+   "capture": "camel2",
+   "frame": 8070,
+   "update_frame": 8066,
+   "equal": 2764,
+   "different": 209
+  },
+  {
+   "capture": "camel2",
+   "frame": 8100,
+   "update_frame": 8098,
+   "equal": 2017,
+   "different": 158
   }
  ]
 }

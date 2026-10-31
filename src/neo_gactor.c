@@ -83,9 +83,20 @@ static void self(neo_gactor_t *a,neo_genv_t *e) {
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {
     uint8_t parent=kobj(r->parent_tag);
-    if (parent==0xff) {ga_fail(e,0x13968);return false;}
+    int32_t x=r->x,y=r->y,dx=r->dx,dy=r->dy;
+    if (parent==0xff) {
+        /* An actor's position block as A0 (the camel rider 09FEAA dying on
+         * its camel): 01AC4C converts to absolute coordinates (A1 = 0) with
+         * the block's previous and current positions, as for any object. */
+        neo_contact_parent_t p;
+        if ((r->parent_tag&0xff000000u)!=NEO_GA_TAG_BASE || !ga_parent(e,r->parent_tag,&p)) {ga_fail(e,0x13968);return false;}
+        int32_t ex=(int32_t)((uint32_t)x+(uint32_t)dx+(uint32_t)p.x),ey=(int32_t)((uint32_t)y+(uint32_t)dy+(uint32_t)p.y);
+        x=(int32_t)((uint32_t)x+(uint32_t)p.previous_x);y=(int32_t)((uint32_t)y+(uint32_t)p.previous_y);
+        dx=(int32_t)((uint32_t)ex-(uint32_t)x);dy=(int32_t)((uint32_t)ey-(uint32_t)y);
+        parent=NEO_KOBJ_NONE;
+    }
     self(a,e);
-    neo_kreq_t q={r->x,r->y,r->dx,r->dy,parent,mode,b4008,b4009,0,0,0};
+    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,0,0,0};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return false;}
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,kobj(r->parent_tag)==k.parent?r->parent_tag:ktag(k.parent),k.kind,k.flags};

@@ -167,7 +167,7 @@ iguales, 0 distintos**
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
 | `0x035668` criatura del subguion | **nativo** (MISION1_ACTORES.md) |
 | `0x09D846/62/76` espadachines, cuchillo `0x09ECCC`, salpicadura `0x01C97A` | **nativo** (MISION1_ACTORES.md; `0x09E382` parada explícita) |
-| `0x09F682` camello | externo |
+| `0x09F682` jinetes de camello (jinete `0x09FEAA`, cabeza `0x09FF92`, disparos `0x0A0034`, piezas `0x0A016A`, espada `0x09EE34`) | **nativo** (MISION1_ACTORES.md) |
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
@@ -254,8 +254,9 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`,
-  el camello `0x09F682` y la Camel Slug `0x03458E`.
+- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`
+  y la Camel Slug `0x03458E` (no contados; la auditoría ya no informa de
+  ninguna aparición contada perdida).
 - Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/
   `0x08F1A0`): necesita una captura en la que dispare.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista

@@ -861,13 +861,85 @@ Tablas en `data/region_rom.json`: `E0962..E0C32`, `48E1A`, `49006`, `49762`
 y los rangos `2D14CE..2D1AAC`; programas (19) en `data/soldier_programs.json`
 (`HELI_ROOTS`). `neo_gactor.c`: `ga_probe_vertical` (`01495C`).
 
-### Preparado para las dos apariciones contadas que faltan
+## Jinetes de camello `0x09F682` (cámara 2184, `src/neo_camel.c`)
 
-- Helicóptero `0x04857C`: portado (sección siguiente).
-- Camello `0x09F682` (`camel1`, `--range 9ea00-a0800`: 469 actualizaciones;
-  el jinete 1, nodo `1030F4`, con sus hijos es la primera prueba `--tree`).
-  Sitios de sangre `0x09EFE4/0x09F598` (`neo_blood.c`: ON `0x3FE`, OFF
-  `0x0B8`).
+Registro del guion `0x2D6D24` (cámara 2184) y su compañero de la cámara
+1939: dos camellos, cada uno con tres nodos. Traducción manual de
+`0x09F682..0x0A0AE8`:
+
+- **Camello `0x09F682`** (invisible: lleva el estado y el trote): palabras
+  `+6E` (lado), `+70` (lado lejano, `+90` bit 1), `+72` (bits de cambio de
+  lado, `0A0664`), `+74` (punto de parada `+84`), `+76` (vida `+80`, 0 =
+  7FFF). Constructor `0A023E/0A02D0` (suelo, jinete `0x09FDFE` con
+  `0x0040BC`, paleta `0x117`; `03C532` → `019240`: sin onda `03C62A` en la
+  misión 1), rangos `2D311C/2D30A0`. Entrada andando (`0x09F7C4/0x09F7F4`,
+  `0A0532`) o esperando (`0x09F730/0x09F752`, `0A055C`) y parada
+  (`0x09F76A/0x09F782`: espera a que acabe el programa del jinete, `+61`).
+  Estados: andar `0x09F846/0x09F878` (movimientos `+7A`: vaivén `0A039E`,
+  alejarse `0A03D6`, volver `0A043A`; `0A047E` velocidad de programa),
+  alejarse `0x09F90A/0x09F940` (`0A0508`: seis veces cerca), parado
+  `0x09F968/0x09F9A6`, giro `0x09F9FA/0x09FA28`, cambio de lado
+  `0x09FA48/0x09FAC0`, sin cabeza `0x09FADE/0x09FB2C` (sonido `108E`),
+  apuntar/disparar/bajar `0x09FB48..0x09FC6C` (rangos `2D3242`, `2D31E0`,
+  `2D317E`; distancias `2D3306/2D3320`), huida `0x09FC9C..0x09FCFE`
+  (`019DFC`, 6 px; también al morir el jinete, `+5F` bit 7). Colas
+  `09FD0E` (vida, `0A072A`), `09FD3A`, `09FD4A` (recorte `A0B1E`) y
+  `09FD60` (`004188`; la comprobación del cartucho previa no se reproduce).
+  Trote `+8D` por la llamada `0A0774` (desplazamientos `A0B6A` → `+88/+89`).
+- **Jinete `0x09FDFE/0x09FEAA`**: sigue al camello (`0A07D0`: `+88/+89`
+  reflejados, capa `+1E`, banderas `+90`, caja `A0AEA/A0AF6`, sin caja en
+  los estados `B/C/D` o FF) con el programa del estado `+8B` (tablas
+  `A0B82/A0BBA`, 16 entradas: FF lee la 15). Al acabar el programa pone
+  `+61` del camello. Muerte (`09FF0A`): `+5F` bit 7 del camello; espada
+  `0x09EE34` (`09F562`, `neo_swords.c`) o `+96` bit 0 sin cabeza
+  (`09F58C`), `009F88`, paleta por `01B2BE` en `09F598` (`neo_blood.c`: ON
+  `0x3FE`, OFF `0x0B8`; la captura BLOOD ON pidió `0x3FE` en `09F5AA`, ya en
+  `data/blood_fixture.json`), lado por `+5B` y las muertes de espadachín
+  `0x09E920`/`0x09EAB8` al azar.
+- **Cabeza `0x09FF26/0x09FF92`**: vida `2D303E`, sigue al jinete
+  (`0A0866`, programas `2A24EC..2A25CE` por los cambios de `+90`), caja
+  `A0B02` mientras `+8F` del jinete; golpeada con `+90` bit 3 cambia de
+  programa y al morir pone el bit 4 del camello (→ sin cabeza).
+- Llamadas de programa: `0A0AB6/0A0ABE` (`+90` bit 2), `0A0AC6/0A0AD8`
+  (bit 3 del jinete y del camello), `0A09D0/0A0A02` (sonido `10FF`, disparo
+  `0x0A0034` en (-27,31)/(-32,31): rango `2D30BA`, fila `A0B0E`, explosión
+  `0x0A00E8` con `22E504`), `0A0A68` (3 o 4 piezas `0x0A016A`, velocidades
+  `A0B2E`), `0A0A34/0A0A5C` (casquillo `0x0A020A`, `A0B5E`).
+- `neo_gactor`: un barrido cuyo padre es el bloque de posición de otro
+  actor (el jinete muere encima del camello: `01436A` con `+38` = camello
+  `+28`) pasa a coordenadas absolutas como `01AC4C` (posiciones anterior y
+  actual del bloque).
+- `0AAA88` (vehículo del jugador, `0A0664`) responde 0: el port no tiene
+  vehículos del jugador.
+
+**Captura** `captures-m1full/camel2` (`MSX_REST_FAMILY_ROOTS=9f682
+MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=8400 MSX_REST_FIRST_DUMP=6900
+MSX_REST_HOLD_FIRE=6950-7950`): sin disparos el segundo camello llega a la
+parada 2336 y recorre andar, alejarse, girar, cambiar de lado, apuntar,
+disparar (8 disparos, 7 tocan al jugador invulnerable), bajar y huir. En
+`camel1` el jugador lo mataba en 7200. Nuevas opciones solo de captura
+`MSX_REST_HOLD_STILL` y `MSX_REST_STAND_FIRE` (no usadas en `camel2`: con el
+jugador quieto la cámara sigue hasta 2336 igualmente).
+
+**Prueba `camel`** (`data/camel_fixture.json.gz`, rango `9ea00-a0800`,
+`--hit-to a00e8 --hit-moving`): **18 nodos, 1970 actualizaciones en bucle
+cerrado (7001..8150), 273280 bytes iguales**, 18 borrados, 7 contactos con
+el jugador (disparos), 1 creado fuera (el segundo camello). No grabados
+(traducidos): la entrada `0x09F6CA` (`0A0296`), la entrada andando
+`0x09F7C4`, sin cabeza `0x09FADE`, el casquillo `0x0A020A`, la muerte
+`0x09E920` del jinete y la espada en `0x09F58C`.
+
+Gráficos: `tools/export_rest_sprites.py ... camel2@9ea00-a0800`: 2220
+descriptores (120 nuevos, los 2100 anteriores idénticos), 64 paletas (nueva
+`0x118`); los 37 volcados de `camel2`: 75084 píxeles iguales, 367 distintos
+(8070 y 8100: muertes con efectos superpuestos).
+
+Tablas en `data/region_rom.json`: `A0AEA..A0BF9` y los rangos
+`2D303E..2D3417`; 36 programas (`CAMEL_ROOTS`).
+
+Auditoría tras esta familia: **0 apariciones contadas perdidas**; sin
+contar quedan `0x01913C 0x031D80 0x031D92 0x03264E 0x03458E 0x03FC5A
+0x0400AA 0x092A32 0x0B6298 0x0B639A 0x0B63A0`.
 
 ## Otras paradas explícitas de esta tanda
 

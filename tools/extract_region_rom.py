@@ -64,6 +64,8 @@ BLOBS=[
     (0x49762,0x8,'04940C lone helicopter player rectangle (01AF3C)'),
     (0x2D14CE,0x5DE,'04857C helicopter rank tables 2D14CE..2D1A92 (health 2D14CE/2D1530, timers 2D1592..2D171A, bomb counts 2D177C/2D17DE/2D1840, intervals 2D18BC/2D18D6, speeds 2D18F0..2D1A92) (0260C8)'),
     (0x2D1310,0x15C,'05ED84 rocket launcher rank tables 2D1310 (health), 2D1372 (speed), 2D13A4 (wait), 2D13D6 (shots), 2D1408 (aim), 2D143A (rocket health) (0260C8)'),
+    (0xA0AEA,0x110,'09F682 camel riders: rider hurtboxes A0AEA/A0AF6, head hurtbox A0B02, shot attack row A0B0E, cull rectangles A0B1E/A0B26 (01945C/019504), piece and case speeds A0B2E/A0B5E, trot offsets A0B6A (0A0774), rider program tables A0B82/A0BBA by the camel state (0A098C)'),
+    (0x2D303E,0x3DA,'09F682 camel riders rank tables 2D303E (head health), 2D30A0 (speed), 2D30BA (shot speed), 2D311C/2D31E0/2D317E (shot timers), 2D3242 (shots), 2D3306/2D3320 (distances), 2D333A/2D33B6 (0A0296 entry) (0260C8)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

@@ -250,6 +250,10 @@ local boss_from=tonumber(os.getenv('MSX_REST_BOSS_FROM') or '0')
 local family_roots={}
 for h in string.gmatch(os.getenv('MSX_REST_FAMILY_ROOTS') or 'd5976','(%x+)') do family_roots[tonumber(h,16)]=true end
 local boss_log=nil
+-- MSX_REST_IDLE_TALLY=1: no input at all once the mission-end tally 0308C0
+-- has been dispatched (capture-only: its waits run without the A/B skip).
+tally_seen=false
+local idle_tally=os.getenv('MSX_REST_IDLE_TALLY')=='1'
 local in_lua=true
 local family={};local active=nil;local attacker_dumped={}
 local POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
@@ -264,6 +268,7 @@ local function boss_read(address,data,mask)
     local n=address;in_lua=true
     local r=cpu:read_u32(n)
     if family_roots[r] then family[n]=true end
+    if r==0x308c0 then tally_seen=true end
     if family[n] then active=n;boss_log:write(string.format('U %x %x %s\n',n,r,hexbytes(n,0xb0))) else active=nil end
     attacker_dumped={}
     in_lua=false
@@ -303,6 +308,22 @@ local function boss_frame(f)
   boss_log=assert(io.open(output..'/boss-trace.txt','w'))
   boss_rtap=cpu:install_read_tap(0x100000,0x10ffff,'boss_r',boss_read)
   boss_wtap=cpu:install_write_tap(0x100000,0x10ffff,'boss_w',boss_write)
+  -- MSX_REST_VRAM_TRACE=1: every VRAM data write (LSPC 3C0002) made during a
+  -- family update, as 'Z vram_address data' (the address register 3C0000
+  -- and the modulo 3C0004 are followed here; the snapshots' own accesses
+  -- are skipped). The fix map of the mission-end tally 0308C0 is written so.
+  if os.getenv('MSX_REST_VRAM_TRACE')=='1' then
+   local vaddr,vmod=0,1
+   boss_vtap=cpu:install_write_tap(0x3c0000,0x3c0005,'boss_v',function(address,data,mask)
+    if in_lua or dumping then return end
+    if address==0x3c0000 then vaddr=data&0xffff
+    elseif address==0x3c0004 then vmod=data&0xffff
+    elseif address==0x3c0002 then
+     if active then boss_log:write(string.format('Z %x %x\n',vaddr,data&0xffff)) end
+     vaddr=(vaddr&0x8000)|((vaddr+vmod)&0x7fff)
+    end
+   end)
+  end
  end
  if boss_log then
   -- No frame-end pruning: the frame callback can run between 0040EC and
@@ -327,6 +348,12 @@ emu.register_frame_done(function()
   cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40)
   cpu:write_u8(0x101549,0x99)
   cpu:write_u8(0x101288,2)
+ end
+ -- MSX_REST_POKE="frame:address:value,...": capture-only one-shot byte
+ -- writes (e.g. the rescued count 10C5FC before the mission-end tally, to
+ -- record its NO PRISONER branch). Never used for a fixture of the region.
+ for f,ad,v in string.gmatch(os.getenv('MSX_REST_POKE') or '','(%d+):(%x+):(%x+)') do
+  if tonumber(f)==frame then cpu:write_u8(tonumber(ad,16),tonumber(v,16));print(string.format('POKE %d %s=%s',frame,ad,v)) end
  end
  if frame==2100 then cpu:write_u8(0x10c71e,3) end
  local camera=cpu:read_u16(0x102036)
@@ -353,7 +380,7 @@ emu.register_frame_done(function()
   -- frames (capture-only: an enemy family, e.g. the rocket launcher 05ED84,
   -- survives long enough to reach every state; the player is invulnerable).
   local hold=frame>=hold_fire[1] and frame<=hold_fire[2]
-  local still_hold=frame>=hold_still[1] and frame<=hold_still[2]
+  local still_hold=(frame>=hold_still[1] and frame<=hold_still[2]) or (idle_tally and tally_seen)
   local standing=frame>=stand_fire[1] and frame<=stand_fire[2]
   if still_hold or standing then
    hold=true;button('P1 Up',0)

@@ -46,6 +46,7 @@ typedef struct {
     bool time_over;               /* 0C0A2C reached (the caller kills the player) until 019124 */
     unsigned unsupported;         /* explicit stops (unsupported escapes or glyphs) */
     uint16_t continue_timer;      /* RAM 1013E2 (mission actor +7E), 19008/1901A/19022 */
+    bool continue_draw;           /* 0187F0..01883C reached: the mission actor's 00427A draws CONTINUE? (neo_continue.c) */
     uint8_t mode[2];              /* BIOS player mode 10FDB6+p (0 none, 1 play, 2 continue, 3 over) */
     uint16_t continues[2];        /* RAM 10E9E4+2p (0C8CB2) */
     bool continued;               /* set by the update in which 0C98CC took the continue */

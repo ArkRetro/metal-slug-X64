@@ -4,6 +4,16 @@
 -- only) so the next death is the game over 0C9848. MSX_GO_COIN=<frame>: insert
 -- a coin at that frame and press start 60 frames later (continue variant).
 -- MSX_GO_TAPB=1: B pressed 4 frames every 40 in frames 3600..4399.
+-- MSX_GO_DUMP=<period>: from frame 2000 also full snapshots every <period>
+-- frames (vram<f>.bin: VRAM words 0000..85FF with the sprite tables,
+-- palette<f>.bin, ram<f>.bin, game<f>.png) and actors.csv: the routine of
+-- every live node of the actor pool (1010A4 + 0xB0 n) whenever the set
+-- changes (sprite actors of the game over and the continue).
+-- MSX_GO_TRACE=1: trace.txt from frame 3400: 'M frame bytes' the mission
+-- actor 101364 (+00..+AF) after every frame, 'S frame w0..w5' every
+-- sprite-list entry it writes (PC 00A078, A6 = 101364: its 00427A at
+-- 01883C, the CONTINUE? program 018120) and 'I frame node bytes' each
+-- item node 08C374.. the first frame it is seen (the item of 019798).
 -- Run: mame mslugx -bios euro -video none -sound none -nothrottle
 --   -autoboot_script tools/mame/capture_gameover.lua (MSX_CAPTURE_DIR set).
 local out=assert(os.getenv('MSX_CAPTURE_DIR'))
@@ -21,6 +31,31 @@ local fixlog=assert(io.open(out..'/fix.bin','wb'))
 local walk=os.getenv('MSX_GO_WALK')~='0'
 local tapb=os.getenv('MSX_GO_TAPB')=='1'
 local lastfix=nil;local frame=0
+local dump_period=tonumber(os.getenv('MSX_GO_DUMP') or '0')
+local actors=dump_period>0 and assert(io.open(out..'/actors.csv','w')) or nil
+local last_actors=nil
+local trace=os.getenv('MSX_GO_TRACE')=='1' and assert(io.open(out..'/trace.txt','w')) or nil
+local items_seen={}
+local function hexbytes(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+if trace then
+ local st=manager.machine.devices[':maincpu'].state
+ local entry={}
+ tap_sprites=cpu:install_write_tap(0x100000,0x10ffff,'go_sprites',function(address,data,mask)
+  if frame<3400 or st['CURPC'].value~=0xa078 or st['A6'].value~=0x101364 then return end
+  entry[#entry+1]=string.format('%x',data&0xffff)
+  if #entry==6 then trace:write('S '..(frame+1)..' '..table.concat(entry,' ')..'\n');entry={} end
+ end)
+end
+local function snapshot(f)
+ local v=assert(io.open(out..'/vram'..f..'.bin','wb'))
+ local t={};for i=0,0x85ff do t[#t+1]=string.pack('>I2',video:read(i)) end
+ v:write(table.concat(t));v:close()
+ local r=assert(io.open(out..'/ram'..f..'.bin','wb'));r:write(cpu:read_range(0x100000,0x10ffff,8));r:close()
+ local p=assert(io.open(out..'/palette'..f..'.bin','wb'))
+ for i=0,4095 do p:write(string.pack('>I2',cpu:read_u16(0x400000+i*2))) end
+ p:close()
+ manager.machine.screens[':screen']:snapshot(out..'/game'..f..'.png')
+end
 emu.register_frame_done(function()
  frame=frame+1
  if actions[frame] then local a=actions[frame];if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
@@ -39,5 +74,21 @@ emu.register_frame_done(function()
    if frame%2==0 then manager.machine.screens[':screen']:snapshot(out..'/s'..frame..'.png') end
   end
  end
- if frame>=last then log:close();fixlog:close();manager.machine:exit() end
+ if trace and frame>=3400 then
+  trace:write(string.format('M %d %s\n',frame,hexbytes(0x101364,0xb0)))
+  for n=0,99 do
+   local a=0x1010a4+n*0xb0;local r=cpu:read_u32(a)
+   if r>=0x8c374 and r<0x8c800 then
+    if not items_seen[a] then items_seen[a]=true;trace:write(string.format('I %d %x %s\n',frame,a,hexbytes(a,0xb0))) end
+   else items_seen[a]=nil end
+  end
+ end
+ if actors and frame>=2000 then
+  local t={}
+  for n=0,99 do local a=0x1010a4+n*0xb0;local r=cpu:read_u32(a);if r~=0x3f1e and r~=0 then t[#t+1]=string.format('%x:%x',a,r) end end
+  local s=table.concat(t,' ')
+  if s~=last_actors then actors:write(frame..','..s..'\n');last_actors=s end
+  if frame%dump_period==0 then snapshot(frame) end
+ end
+ if frame>=last then log:close();fixlog:close();if actors then actors:close() end;if trace then trace:close() end;manager.machine:exit() end
 end)

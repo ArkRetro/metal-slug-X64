@@ -1,14 +1,37 @@
 #ifndef MSX_NEO_END_H
 #define MSX_NEO_END_H
 #include "neo_gactor.h"
+#include "neo_fade.h"
+#include "neo_text.h"
 /* Actors of the mission actor's end sequence (0x018846..0x01893A): the
- * MISSION COMPLETE letters 06090A (root, the letters 060A72 and the mission
- * number 060B06). A small actor list of its own: the end sequence runs after
+ * prisoner tally 0308C0 (src/neo_tally.c) and the MISSION COMPLETE letters
+ * 06090A (root, the letters 060A72 and the mission number 060B06). A small actor list of its own: the end sequence runs after
  * the world stops (gameplay.c), the nodes are created by the mission actor
  * 101364 (0040BC: after it, so at the head of this list) or by each other,
  * and a deleted node keeps its bytes (the letters read their root's +60/+72
  * after the root deleted itself, as in the original RAM). */
-enum { NEO_END_NODES=32, NEO_END_DRAWS=64 };
+enum { NEO_END_NODES=32, NEO_END_DRAWS=64, NEO_END_SOUNDS=8 };
+/* RAM the prisoner tally 0308C0 (src/neo_tally.c) reads and writes, and its
+ * services. NULL in neo_end_inputs_t: a tally node is an explicit stop. */
+typedef struct {
+    neo_hud_t *hud;                  /* fix map (VRAM 7000..74FF) */
+    void (*on_write)(void *ctx,uint16_t address,uint16_t word);void *write_ctx; /* test hook */
+    neo_fade_t *fade;                /* RAM 10991A.. (009C0A) */
+    uint16_t rescued[2];             /* RAM 10C5FC/10C600 (counted down) */
+    uint8_t special[2][2];           /* RAM 10C5FE/10C5FF, 10C602/10C603 */
+    uint8_t score[2][4];             /* RAM 10C46A/10C472 (BCD, 057948) */
+    uint8_t players;                 /* RAM 10C33C (01AEB0: bit p = player p in play) */
+    uint8_t region;                  /* RAM 100000 byte (0: Japanese texts) */
+    uint8_t medal[2];                /* RAM 10C306/10C307 (018FEA) */
+    uint8_t pressed[2];              /* RAM 10C35D/10C363 (new presses) */
+    uint16_t video;                  /* RAM 10000E */
+    uint16_t (*rand)(void *ctx);void *rand_ctx;   /* 0029C6 */
+    /* Outputs: sounds (0120F8), audio commands (01228C, not reproduced),
+     * the mission actor's +60, text stops. */
+    uint16_t sounds[NEO_END_SOUNDS];unsigned sound_count,sounds_dropped;
+    unsigned audio_commands,unsupported_text;
+    uint8_t mission60;
+} neo_end_ram_t;
 typedef struct {
     uint32_t descriptor;
     uint16_t x,y,attributes;
@@ -23,6 +46,7 @@ typedef struct {
     bool front_layer;            /* 012022: RAM 10B954 < 10B95C */
     uint16_t mission;            /* RAM 10C2F4 (0: Mission 1) */
     const neo_anim_program_t *(*program)(uint32_t tag);
+    neo_end_ram_t *ram;          /* the tally's RAM (NULL: tally nodes stop) */
 } neo_end_inputs_t;
 typedef struct neo_end {
     neo_gactor_t nodes[NEO_END_NODES];
@@ -45,4 +69,7 @@ neo_gactor_t *neo_end_start(neo_end_t *s,uint32_t routine);
  * in the same pass, as in the original list walk). */
 void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in);
 bool neo_end_routine(uint32_t routine);
+/* Prisoner tally 0308C0 (src/neo_tally.c). */
+bool neo_tally_routine(uint32_t routine);
+ga_result_t neo_tally_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m);
 #endif

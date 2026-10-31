@@ -71,6 +71,7 @@ typedef struct neo_ga_flags {
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
     uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
+    uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an

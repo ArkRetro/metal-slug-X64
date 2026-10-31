@@ -194,11 +194,98 @@ static ga_result_t particle_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (ga_cull_rect(a,e,0x1def8)) SL(0,0x1d93c);
     return GA_MORE;
 }
+/* ---- the generic fire 08FA4E (the boss turret's gun 0D6168) -------------- */
+/* 002EB4: angle (0..0xFF) of the vector (d0, d1) with the tables 002C7C
+ * (logarithm) and 002D7C (arctangent); 0x40 when x is 0 after halving. */
+static uint8_t k2eb4(neo_genv_t *e,int16_t x,int16_t y) {
+    const uint8_t *t=ga_rom(0x2c7c);
+    if (!t) {ga_fail(e,0x2c7c);return 0;}
+    uint16_t d0=(uint16_t)(x>>1),d1=(uint16_t)(y>>1);
+    uint8_t d2=(d0&0x8000u)?0xff:0,d3=(d1&0x8000u)?0xff:0,r;
+    d0=(uint16_t)((d0&0xff00u)|(uint8_t)(((uint8_t)d0^d2)-d2));
+    d1=(uint16_t)((d1&0xff00u)|(uint8_t)(((uint8_t)d1^d3)-d3));
+    d0&=0xffu;
+    if (!d0) r=0x40;
+    else {
+        d1&=0xffu;
+        if (!d1) r=0;
+        else {
+            unsigned v=(unsigned)t[d1]-(unsigned)t[d0];
+            if (v>0xffu) r=t[0x100+(v&0xffu)];                                   /* borrow */
+            else r=(uint8_t)(0x40u-t[0x100+(uint8_t)~v]);
+        }
+    }
+    d3^=d2;r=(uint8_t)((r^d3)-d3);r=(uint8_t)(r+(d2&0x80u));
+    return r;
+}
+/* 08EFFA / 08F040: the muzzle flash (program 22D264, palette 0x208) at the
+ * offset +8B/+8C (-8 in y); its end -> 08EFD6 (0041AC). 08F058 / 08F114:
+ * the projectile: velocity, gravity and rise from the rows 08FD5C[+88 & 7]
+ * by the direction +8A (x 0x20 back with +94 bit 0), +15 bit 5 for the
+ * directions 0 and 8..15, palette 0x373, program 28C32C; each update 0143E4,
+ * the ground or +5F bit 0 -> 08F1E0 (sound 1025, 08EFDE), +8A = 002EB4 of
+ * the velocity >> 3, gravity, 0427A, attack row 08FC46 (08FC56 with +93 bit
+ * 5) -> 08EFDE on a hit, outside 08FC74 (019504) -> 08EFD6. 08EFDE: +66/+1E
+ * = E0ED, +50 = 0, the explosion 01C706 in place. Translated from the ROM:
+ * no capture holds the turret's fire. */
+static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x8effa:
+        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);ga_palette(a,0x208);
+        SW(0x28,W(0x28)+(uint16_t)(int16_t)(int8_t)B(0x8b));SW(0x2c,W(0x2c)+(uint16_t)((int16_t)(int8_t)B(0x8c)-8));
+        if (!ga_anim_start(a,e,0x22d264,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x8f040);
+        /* fall through */
+    case 0x8f040:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r>0) SL(0,0x8efd6);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x8efd6: return GA_DELETE_TREE;
+    case 0x8f058: {
+        uint32_t t=0;const uint8_t *p=ga_rom(0x8fd5cu+(B(0x88)&7u)*4u);
+        if (p) t=(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];
+        const uint8_t *q=t?ga_rom(t+(B(0x8a)&15u)*6u):NULL;
+        if (!q) {ga_fail(e,0x8fd5c);return GA_UNSUPPORTED;}
+        int16_t vx=(int16_t)(q[0]<<8|q[1]),g=(int16_t)(q[2]<<8|q[3]),vy=(int16_t)(q[4]<<8|q[5]),d4=0x20;
+        if (vx<0) d4=-0x20;
+        if (B(0x94)&1u) vx=(int16_t)(vx-d4);
+        SL(0x30,(uint32_t)((int32_t)vx*256));SL(0x76,(uint32_t)((int32_t)g*256));SL(0x34,(uint32_t)((int32_t)vy*256));
+        uint8_t d=B(0x8a)&15u;
+        if (!d || d>=8u) SB(0x15,B(0x15)|0x20u);
+        ga_palette(a,0x373);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SB(0x15,B(0x15)&~1u);
+        if (!ga_anim_start(a,e,0x28c32c,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x8f114);
+    }   /* fall through */
+    case 0x8f114: {
+        ga_air(a,e);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if ((B(0x15)&0x40u) || (B(0x5f)&1u)) SL(0,0x8f1e0);
+        SB(0x8a,(uint8_t)(k2eb4(e,(int16_t)((int16_t)W(0x30)>>4),(int16_t)((int16_t)W(0x34)>>4))>>3));   /* asr.w #4, 002EB4, lsr.w #3 */
+        SL(0x34,L(0x34)+L(0x76));
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (ga_attack(a,e,(B(0x93)&0x20u)?0x8fc56u:0x8fc46u)) SL(0,0x8efde);
+        if (ga_cull_rect(a,e,0x8fc74)) SL(0,0x8efd6);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x8f1e0:
+        if (e->sound) e->sound(e->ctx,0x1025);
+        /* fall through */
+    case 0x8efde:
+        SB(0x1d,0);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SL(0x50,0);              /* 009F88 */
+        SL(0,0x1c706);
+        return neo_effects_tick(a,e);                                   /* jmp 01C706 */
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
 bool neo_effects_routine(uint32_t r) {
-    return simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6;
+    return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6;
 }
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
+    if (fire_routine(r)) return fire_tick(a,e);
     if (simple_of(r) || r==0x1c9e6 || r==0x1c97a) return simple_tick(a,e);
     if (r==0x1d764 || r==0x1d7b8) return smoke_tick(a,e);
     if (r==0x1d944 || r==0x1d958 || r==0x1d9c6) return particle_tick(a,e);

@@ -40,8 +40,8 @@ static int armored_x(const msx_game_t *g) {
 /* Release rules (no invulnerability, deaths respawn in view): a seeded
  * "human" that walks mostly right, turns, idles, jumps and aims up at
  * random, fires all the time and aims up under the domes. Every camera
- * stop must resolve: the script reaches its end and the boss dies. The
- * only nodes that stop are the boss turret's documented ones (before the
+ * stop must resolve: the script reaches its end and the boss dies. No
+ * node stops (the boss turret's gun fires natively since 08FA1A; before the
  * slash callback 039FA6 was ported, the slash 039B60 stopped at its
  * program's command 10 and left its swordsman waiting forever in 03975E).
  * A run depends only on its seed: `gameplay release N` runs seed N alone and
@@ -101,7 +101,7 @@ static void release_run(unsigned seed) {
         while (e.mission_end!=MSX_END_DONE && updates<1000) {bool started=e.end_started;msx_game_update(&e,0,false,false);if (started && !(e.ticks&1)) updates++;}
         assert(e.mission_end==MSX_END_DONE && updates==30+160+32 && e.end_stops==4);
     }
-    assert(g.world.unsupported==g.world.boss_unsupported);
+    assert(!g.world.unsupported && !g.world.boss_unsupported);   /* no node stops (the turret gun's fire 08FA1A is native) */
     // The random policy (deaths, respawns on the ledge or the vehicle's
     // platform; its body blocks the walk) must get past the 1304 hold
     // (the script end is asserted above). Since the vehicle's shells

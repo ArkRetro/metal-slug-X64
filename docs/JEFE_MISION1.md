@@ -148,8 +148,17 @@ resultado).
   `08F1E0`; los tres prisioneros `099DCC` (`099E48..09A5EE`, 15 rutinas);
   `00A18A`.
 - Bloques traducidos desde la ROM que ningún combate ejecutó (no verificados):
-  disparo de la torreta `0D6292..0D637E` (termina en `0x08FA1A`, que crea la
-  bala genérica `0x08EFFA`: **falla explícitamente**, `NEO_BOSS_UNSUPPORTED`),
+  disparo de la torreta `0D6292..0D637E` y del cañón `0D61B2` (programa
+  `28B77C[+A6]` y `0x08FA1A`/`0x08FA4E`: sonido `1064`, destello `0x08EFFA`
+  con el desplazamiento `08FD1C`, proyectil `0x08F058` con las filas
+  `08FD5C`, ataque `08FC46`, recuadro `08FC74`, ángulo `0x002EB4` y la
+  explosión `0x01C706`; ambos siguen como actores genéricos en
+  `neo_effects.c`; `0x08F1A0` con `+93` bit 5 queda como parada explícita:
+  el `+93` del cañón nunca se pone). Antes de esto el cañón se detenía en
+  `0x08FA1A`, el mundo lo quitaba y la base, que lee `+A6` del cañón por
+  `+8E`, se detenía después en `0D6254` o `0D62F2` (`b05060` = la etiqueta
+  de su nodo). Ahora ningún nodo del jefe se detiene (pruebas `release`
+  de `test_gameplay` con `unsupported=0`, que la prueba exige);
   reapertura de la escotilla `0D6710..0D6756` y reinicio del cañón por `+A1`,
   fuego del respiradero `0D6DC0..0D6E86`, golpe con armadura en fase 2
   (`0D5DE0`), muerte del blindaje frontal por daño (`0D6086`), fin de

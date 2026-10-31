@@ -14,8 +14,11 @@ enum {
     SCENE_RESERVE_GAME_KB=640,     // actor_init after the cache (measured 560)
     SCENE_RESERVE_RUNTIME_KB=320,  // gameplay growth (measured peak in the docs)
     SCENE_HEAP_MARGIN_KB=256,
-    /* Expansion Pak: below this many slots something else took the RAM. */
-    SCENE_EXPANDED_MIN_SLOTS=224,
+    /* Expansion Pak floor: the pinned banks and map (49 chunks), the boss
+     * set (65) and three soldier programs (83) with some room; below it
+     * something else took the RAM (the cache is sized last, from the free
+     * heap left after the audio, so whatever loads before shrinks it). */
+    SCENE_EXPANDED_MIN_SLOTS=208,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank

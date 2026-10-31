@@ -60,8 +60,10 @@ Línea base (`e77dd6c` + instrumentación), recorrido completo:
 - Cada blit volvía a enviar `rdpq_mode_tlut` (y cada sprite
   `rdpq_mode_filter`): el RSP recalculaba el modo y emitía
   `SET_OTHER_MODES`/`SET_COMBINE` idénticos con su `SYNC_PIPE`.
-- Con el Expansion Pak todo el pack (100 bloques) queda residente tras el
-  arranque; aun así el prefetch hacía ~900 peticiones nulas por fotograma.
+- Con el Expansion Pak todo el pack (100 bloques entonces) quedaba residente
+  tras el arranque; aun así el prefetch hacía ~900 peticiones nulas por
+  fotograma. (Histórico: el pack actual, 665 bloques, ya no cabe; ver
+  «Expansion Pak: presupuesto de RAM medido» al final.)
 
 Perfil fino de `blit_scaled` (experimento no integrado, 500 blits): modo
 TLUT+paleta ≈1,5 ms, subida de textura (~50 por fotograma) ≈1,6 ms,
@@ -410,3 +412,86 @@ aplazadas un fotograma y `held=238` descodificaciones de prefetch movidas al
 fotograma siguiente en todo el recorrido. Pantalla de MISSION 1 COMPLETE con
 las letras nativas: `mission-complete-letters.png` del recorrido (fuera de
 Git: deriva de la ROM).
+
+## Expansion Pak: presupuesto de RAM medido, mapa fijado y precarga por tiempo libre
+
+**Problema.** El diseño «todo el pack residente» ya no se cumplía: el pack
+tiene 665 bloques de 16 KiB (10,4 MiB descodificados) y la consola tiene
+8 MiB. `scene_assets_init` seguía cargando el pack entero al arrancar (las
+`startup evictions` ≈ 380-400 del registro eran eso: 665 descodificaciones
+síncronas, ≈5,3 s con la pantalla en negro tras el logo NEOGEO) y la caché se
+dimensionaba con una reserva fija adivinada (`SCENE_HEAP_RESERVE`, 1,5 MiB).
+El peor fotograma del recorrido (≈35 ms, cámara 2336) era una falta síncrona
+de un bloque del fondo: el banco nativo (612 bloques) recicla la caché LRU y
+podía echar bloques del mapa, y al llegar a 2336 el guion crea seis tipos de
+actor a la vez (66 bloques nuevos).
+
+**Cambios** (`src/scene_assets.c`, `src/main.c`, `src/neogeo_logo.c`,
+`tools/pack_scene.py`):
+
+1. **Presupuesto de RAM medido y comprobado.** Orden de arranque: pantalla y
+   mezclador → audio del juego (`game_audio_init`; lo que deje residente en
+   RAM ya cuenta) → caché de escena (`scene_assets_begin`) → logo → juego
+   (`actor_init`). La caché se dimensiona la **última** con lo que queda del
+   montón menos las reservas medidas de lo que se asigna después (tabla de
+   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 256 KB; con menos de
+   208 ranuras falla con un `assertf` que da los KB. `scene_assets_check_budget`
+   comprueba (assert) tras cargar el juego que queda la reserva de juego más
+   medio margen, y la línea `MSX RDP` informa del mínimo de montón libre visto
+   (`heap_low=`, muestreado cada 30 fotogramas). Líneas `MSX MEM <etapa>` en el
+   arranque.
+2. **Mapa entero fijado y residente** (Expansion Pak): los 37 bloques del mapa
+   (celdas, parche de la tienda y escombros de las cúpulas) se fijan como los
+   bancos de Marco y se cargan antes del primer fotograma, en orden de cámara.
+   El fondo ya no puede fallar y su recorrido de prefetch (`bgreq`) se omite
+   (`scene_assets_map_resident`). Con 4 MiB sigue el camino anterior: 32
+   ranuras, vista inicial cargada, el mapa se transmite con el margen −48..352.
+3. **Precarga por el guion** (`scene_prefetch_ahead`): `pack_scene.py` genera
+   `scene_ahead` (cámara de aparición, bloque) desde el inventario del resto de
+   la misión (`data/mission1_rest_inventory.json`: los registros de aparición
+   del guion, la cámara de cada uno y los descriptores que dibujó cada tipo de
+   actor en MAME): 487 pares, 251 bloques. Cada fotograma se piden, con la
+   prioridad más baja, los bloques de lo que el guion crea en los próximos 384
+   píxeles de cámara, y los ya residentes se marcan como recién usados para
+   que la LRU no los recicle antes de la aparición. Solo afecta al dibujo.
+4. **Descodificación en tiempo libre** (`scene_assets_idle`): mientras la CPU
+   espera un framebuffer (`msx_display_get`) se descodifican bloques pedidos,
+   solo si la estimación (la descodificación más lenta reciente, ≤7,3 ms medida)
+   termina antes del próximo borrado vertical menos 1,2 ms (una interrupción
+   VI marca cada borrado): el fotograma que espera ese borrado nunca se
+   retrasa. No cuenta en el presupuesto por fotograma (`SCENE_SERVICE_DECODES`).
+5. **Calentamiento durante el logo NEOGEO**: el logo llama a
+   `scene_assets_idle` en el tiempo que le sobra de cada fotograma (≈7 ms). La
+   lista de calentamiento es: bancos fijados, mapa en orden de cámara y luego
+   los bloques de `scene_ahead` en orden de cámara (estos solo en ranuras
+   libres: calentar nunca expulsa). Si el logo se salta con Start,
+   `scene_assets_init` carga de forma síncrona solo la parte obligatoria
+   (bancos y mapa, 49 bloques).
+
+La simulación no lee nada de esto (`make check`, -O0/-O2 idénticos).
+
+### Presupuesto de RAM (8 MiB, ares 146, `mslugx-reference.z64`, líneas `MSX MEM`)
+
+| Concepto | KB | Notas |
+| --- | ---: | --- |
+| RDRAM | 8192 | Expansion Pak |
+| Imagen del programa (texto+datos+bss) | 1618 | `mips64-elf-size`; las reservas del mundo de `work-weapons` (64 actores, 112 entradas de lista, 128 dibujos) añaden ≈6 KB de bss |
+| Pila | 64 | `STACK_SIZE` de libdragon |
+| **Montón total** | **6534** | `sys_get_heap_stats` |
+| Pantalla (2 framebuffers 320×240×16), mezclador, rdpq, joypad | 450 | antes de la caché |
+| Audio del juego (efectos en flujo, música) | 4 | antes de la caché; con los efectos residentes de `work-world` (851 KB) la caché se reduce en lo mismo |
+| **Caché de escena** | **4816** | 301 ranuras de 16 KiB, + 40 KB de ranuras/staging |
+| Logo NEOGEO (z-buffer, malla, flujo del jingle) | 169 | se libera antes del juego; reserva 224 |
+| `actor_init` (poses de Marco, ROM S del HUD + tira, índice del mapa, fuente) | 560 | reserva 640 |
+| Crecimiento en juego (bloques rspq de fondos grabados, sprites de vehículos) | ver recorrido | reserva 320 |
+| Margen | 256 | |
+| Libre tras cargar el juego | 659 | assert ≥ 448 |
+
+### Medidas
+
+| | Antes (`436c69a`) | Después |
+| --- | ---: | ---: |
+| Negro tras el logo (fin del logo → primer fotograma) | ≈5,5 s (5,29 s solo de pack) | 283 ms |
+| Bloques cargados en el logo | 0 | 299 (todo lo que cabe en ranuras libres) |
+| Fotogramas tardíos del logo (`late`) | 0 | 0 (`frame_max` 16,7 → 18,0 ms, `cpu` media 6,9 → 6,8 ms) |
+| Caché | 4544 KB (284 ranuras) | 4816 KB (301 ranuras) |

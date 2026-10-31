@@ -87,9 +87,12 @@ sin detenerse.
   `building_raise/building_clear`; desplazamiento del cielo y mapa delantero
   del derrumbe `0x0B58CC`.
 
-Pack: **223 chunks, 1777 páginas, 155 paletas** (≈1,9 MB empaquetados). Con la
-Expansion Pak la caché de escena pasa de 3 a 3,5 MiB y **todo el pack queda
-residente** (224 ranuras). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
+Pack (en este paso): **223 chunks, 1777 páginas, 155 paletas** (≈1,9 MB
+empaquetados); entonces cabía entero en la caché de 8 MiB. **Ya no es así**:
+el pack actual tiene 665 chunks (10,4 MiB descodificados) y la caché de 8 MiB
+tiene ≈300 ranuras; el mapa (37 chunks) queda fijado y residente y los actores
+se transmiten (ver «Caché de escena con la Expansion Pak» más abajo y
+RENDIMIENTO.md). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
 de trabajo 28 chunks); en la arena del jefe mapa+fijos ocupan 22–23 chunks y
 el jefe 14–15 por pasada lógica (`tools/check_boss_budget.py`): **37–38 > 32,
 no cabe** sin rediseñar los fijos o el tamaño de caché (pendiente; ares

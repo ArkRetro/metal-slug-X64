@@ -108,7 +108,8 @@ detiene explícitamente en `0x2D6A28`; se alcanza el fin de región en la
 cámara 1920. Sin descriptores ni rutinas no soportadas.
 Rendimiento observado: `draws` ≤ 516, CPU ≤ 8,8 ms por fotograma (antes 19–26 ms,
 ver [RENDIMIENTO.md](RENDIMIENTO.md)), 60 fotogramas por segundo, `misses=0`
-(caché de 8 MiB: todo el pack residente). Con 4 MiB el banco nativo se
+(caché de 8 MiB: entonces todo el pack residente; hoy solo el mapa, los
+actores se transmiten, RENDIMIENTO.md). Con 4 MiB el banco nativo se
 transmite bajo demanda (`tools/check_scene_budget.py`).
 
 ## Pendiente (sin implementar nada especulativo)

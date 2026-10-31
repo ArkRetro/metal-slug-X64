@@ -231,6 +231,20 @@ del jefe hasta 5,6 ms, su dibujo hasta 4 ms, fondo 9,4 ms): pendiente.
 
 ROM de publicación `mslugx-explorer.z64`: 5.111.808 bytes.
 
+### Fusión ROM 8 + Camel Slug (rama `work-weapons`, tras `f9a1ac6`)
+
+Exportación de sprites regenerada (orden de abajo, «Exportación completa»).
+Puertas: `make check-core` en un clon limpio, `make check` (determinismo,
+`missing_draws` = 0, auditoría: solo `0x092A32` parado explícitamente),
+`make -j4` y `make mslugx-reference.z64` sin cambios de código. Recorrido
+completo en ares (`trav-long.sh`, Xvfb :92, 6000 s): **PASS**, 37 rebeldes
+creados, 43 abatidos, jefe derrotado, misión completada
+(`018F92/018F40`), ningún nodo del jefe detenido, 0 *crash* del RSP,
+*underruns* de audio máx. 1; `MSX PERF` 127 ventanas, `cpu` media máx.
+18.777 µs, **peor fotograma 35.564 µs**; RDP: 399 dibujos máx., 133
+fallos máx. El recorrido no subió a la Camel Slug (`mounts=0`). ROMs
+`mslugx-explorer.z64` y `mslugx-reference.z64`: 8.683.520 bytes cada una.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros

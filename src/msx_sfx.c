@@ -22,6 +22,7 @@ const msx_sfx_def_t msx_sfx_defs[MSX_SFX_COUNT]={
     [MSX_SFX_REBEL_1041]={0x1041,MSX_SFX_CH_VOICE,1,"rebel_1041"},
     [MSX_SFX_REBEL_1042]={0x1042,MSX_SFX_CH_VOICE,1,"rebel_1042"},
     [MSX_SFX_REBEL_1043]={0x1043,MSX_SFX_CH_VOICE,0,"rebel_1043"},
+    MSX_SFX_POLICY_DEFS
 };
 int msx_sfx_lookup(uint16_t word) {
     for (int i=0;i<MSX_SFX_COUNT;i++) if (msx_sfx_defs[i].word==word) return i;

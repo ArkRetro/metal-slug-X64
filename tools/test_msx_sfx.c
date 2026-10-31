@@ -11,7 +11,7 @@ int main(void) {
     }
     assert(msx_sfx_lookup(0x10a5)<0 && msx_sfx_lookup(0x0021)<0); // engine loop / music: not effects
     // Unmapped request: ignored and counted.
-    assert(msx_sfx_request(&s,0x104a)==-1 && s.unmapped==1);
+    assert(msx_sfx_request(&s,0x1026)==-1 && s.unmapped==1);      // loop sound (render still active at the window end): not an effect
     // Same sound retriggers on its channel (pistol fire rate).
     assert(msx_sfx_request(&s,0x10f7)==MSX_SFX_CH_WEAPON);
     assert(msx_sfx_request(&s,0x10f7)==MSX_SFX_CH_WEAPON && s.replaced==1);

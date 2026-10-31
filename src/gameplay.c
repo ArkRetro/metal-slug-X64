@@ -821,7 +821,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->world_enabled && !(g->ticks&1)) {
         neo_world_player_t p=player_frame(g);
         camera_step(g,&p);
-        g->world.video_phase=(uint16_t)g->ticks;
+        /* RAM 10000E counts the original's updates (+1 per update, every
+         * second video frame: MAME marco-g1, MARCO_STEP_IN phase 95, 96,
+         * 97.. at frames 2101, 2103, 2105..), not video frames: its bit 0
+         * flips the double buffers such as the object-list markers
+         * (0401E8/04051C write one, 040200 reads the other). */
+        g->world.video_phase=(uint16_t)(g->ticks>>1);
         g->world.scroll_y=neo_camera_root_y(&g->world.camera);
         mount_record(g,&p);
         if (g->landing_pending || g->landing_on) landing_step(g);

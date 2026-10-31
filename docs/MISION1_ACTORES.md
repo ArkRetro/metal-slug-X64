@@ -620,6 +620,20 @@ colocado por `0x014A02`, ahora `ga_sweep_place`), saluda con la mano
 actualizaciones más. Fuera de `0x09ADD0` (`0x0C8BEC`) acaba en `0x09A5EE`
 (comprobación del cartucho → `0x004188`: borrar).
 
+- **Prisionero en la cornisa del mercado (informe de MiSTer, ROM 11)**: el
+  liberado en el tejado `FB` (x 1425, y 144, nodo de terreno `10D7B6`) se
+  quedaba yendo y viniendo. En MAME (`captures-m1full/fam2`, fotogramas
+  4199..4331) cruza el marcador de x 1416 (`0x0403A0`, id 2) y baja
+  (`9A4FA`, `9A516`, `9A534` en y 108, caída `9A0F6/9A11C`) hasta la calle
+  (y 64). Causa: la RAM `10000E` del port contaba fotogramas de vídeo (el
+  mundo corre en los pares: su bit 0 nunca cambiaba), y la lista de
+  marcadores es doble (`0401E8`/`04051C` escriben una, `040200` lee la
+  otra según el bit 0 de `10000F`): la leída siempre estaba vacía. En el
+  original `10000F` sube 1 por actualización (`marco-g1`: 95, 96, 97… en
+  2101, 2103, 2105…); `gameplay.c` lo cuenta ahora así. Su suelo usa
+  `01456A`/`0143DC` → `0128DA` (`10C00D` = 0): la regla del grupo 1 del
+  jugador no se le aplica (ni antes ni ahora). Arnés de host con el mundo
+  completo: el prisionero baja por el mismo camino y llega a y 64.
 - **Parada explícita**: `+74 = FFFE` al acabar el saludo (`0x0DDCDA`: el
   prisionero sigue al jugador para darle el objeto), no grabado; ambos
   jugadores dentro del rectángulo (`0x09ABD6`, el port tiene uno).

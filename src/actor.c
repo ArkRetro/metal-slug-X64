@@ -165,7 +165,9 @@ void actor_set_active(bool active) {
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
-    if (input.btn.l && !diagnostics_was_down) {
+    /* The diagnostic overlay (L) only on the internal reference cartridge:
+     * the release game has no debug HUD (user request). */
+    if (msx_reference_invulnerable && input.btn.l && !diagnostics_was_down) {
         diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
     }
     diagnostics_was_down=input.btn.l;

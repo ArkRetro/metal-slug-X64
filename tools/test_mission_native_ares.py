@@ -86,7 +86,21 @@ def milestones():
             for i in range(4):time.sleep(.25);snap('camel%d'%i)
         time.sleep(.1)
 watcher=threading.Thread(target=milestones,daemon=True)
+def boot_taps():
+    # The boot cinematics (title, HOW TO PLAY, SOLDIER SELECT) wait for or
+    # accept Start: tap it until the mission is loaded (SOLDIER SELECT stands
+    # on Marco until A/Start, src/main.c).
+    focused=False
+    while not stop.is_set() and 'MSX first frame ready' not in log():
+        if not focused:
+            found=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True).stdout.split()
+            if found:subprocess.run([XD,'windowfocus',found[-1]]);focused=True
+        if focused and re.search(r'MSX (TITLE start|CINE \w+ start)',log()):
+            key('keydown','Return');time.sleep(.1);key('keyup','Return')
+        time.sleep(1.5)
+tapper=threading.Thread(target=boot_taps,daemon=True)
 try:
+    tapper.start()
     wait_for('MSX v10 scene loaded',timeout=400)
     # The scripted pad cannot survive Mission 1 with a mortal player: a
     # release cartridge dies at the truck of the 872 stop, respawns behind

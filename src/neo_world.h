@@ -116,8 +116,8 @@ typedef struct {
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
-    /* The player's vehicles of the script (Camel Slug 03458E, SV-001 092A32):
-     * explicit stops, not created (their slot services neo_vslot.c and the
+    /* The player's vehicles of the script: the SV-001 092A32 is an explicit
+     * stop, not created (the Camel Slug 03458E is native; the slot services neo_vslot.c and the
      * turret control neo_vulcan.c are native; the vehicles are not). */
     unsigned vehicle_stops;uint32_t vehicle_stop_constructor;
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
@@ -152,6 +152,19 @@ typedef struct {
      * free at the start (0AA4F6); player 1 accepts or drops its binding every
      * update (0C3352 -> 0AA458). The pickups and the HUD read player 1's. */
     neo_vslots_t vslots;
+    /* What the player's vehicles read (neo_genv_t.vehicle): player 1's node
+     * record 1014C4 (the port's player keeps it, gameplay.c), player 2's
+     * (absent), the input words 10E9EC +0 new / +2 held (0CA1B8) and the
+     * environment the world hands to the Camel Slug (set every tick). The
+     * world no longer runs player 1's 0AA458: the port's player does, after
+     * the actors (the original player 1014C4 runs after the Camel). */
+    uint8_t player_node[2][0xc0];
+    uint16_t pad[2];
+    neo_vehicle_env_t vehicle_env;
+    /* RAM 10F000, the original's debug-flag word (cleared at 002488): bit 7
+     * keeps a vehicle's rider when the vehicle is destroyed (03519E and the
+     * other vehicles). 0 in the game; the reference build sets bit 7. */
+    uint8_t dip10f000;
     /* Player shots made by the player's update (neo_world_player_shot):
      * inserted after the list head (00411C, A6 = 101414) at the end of the
      * next tick, so their constructor runs on the update after, as in the

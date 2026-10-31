@@ -37,7 +37,7 @@
  * 0143AC / 014574 (10C00B and 10C00D set: no bound).
  *
  * Explicit stops: water (034AC0, kind 5: no class-5 cell in Mission 1), the
- * turret's end 03B86E (the vehicle gone) and spark 03BA76, the camel's
+ * turret's spark 03BA76 (its end 03B86E and piece 03B936 are below), the camel's
  * other children 03533A.. (never created in the traces), a ROM table
  * outside data/region_rom.json. Not reproduced: 009CCE (palette fade RAM
  * 1068EA, no node byte) and the cartridge checks (2FFFE0) before 004188,
@@ -516,7 +516,16 @@ static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
         neo_vulcan_out_t out;bool spark;
         neo_vulcan_step(a->m,&in,false,&out,&spark);
         for (unsigned o=0;o<0xc0;o++) if (a->m[o]!=before[o]) ga_sb(a,o,a->m[o]);
-        if (out.state==NEO_VULCAN_GONE) {ga_fail(e,0x3b86e);return GA_UNSUPPORTED;}   /* explicit stop */
+        if (out.state==NEO_VULCAN_GONE) {
+            /* 03B86E: a rider's angle +1A = -1 (0AAB84/0AABDC), the end
+             * piece 03B936 after the list head (00411C) at the turret
+             * (01B220) with its +72; then the cartridge check before
+             * 004188 (not reproduced: the deletion). */
+            if (in.rider>=0) neo_vslot_angle(e->vehicle->slots,(unsigned)in.rider,0xffffu);
+            neo_gactor_t *q=e->spawn?e->spawn(e->ctx,NULL,0x3b936,true):NULL;
+            if (q) {ga_sb(q,0x72,B(0x72));ga_place_from(q,a,e,0,0);}
+            return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+        }
         if (out.state==NEO_VULCAN_HOLD) return GA_MORE;
         if (out.angle_set) neo_vslot_angle(e->vehicle->slots,(unsigned)in.rider,out.angle);
         if (out.fire) {
@@ -545,19 +554,45 @@ static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* The turret's end piece 03B936 / 03B97C (program 23D46C, palette
+ * 03B4C8[+72]): thrown up (+34 = 0x38E38, +30 = 0x71C7, gravity 0x143A) for
+ * at most 0x32 updates; on the ground or at the end the explosion 01C706
+ * (00411C, 01ACF2) and 004188; off the screen (+3C >= 0x140, or +40 < 0x100
+ * through the cartridge check) 004188. Translated from the ROM: no capture
+ * holds a turret end. */
+static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    if (L(0)==0x3b936) {
+        START(0x23d46c);ga_palette(a,rw(0x3b4c8u+2u*B(0x72)));
+        SL(0x34,0x38e38);SL(0x30,0x71c7);SB(0x76,0x32);SL(0,0x3b97c);
+    }
+    SL(0x34,L(0x34)+0xffffebc6u);
+    bool boom=BIT(0x15,6)!=0;
+    if (!boom) {if (!B(0x76)) boom=true; else SB(0x76,B(0x76)-1u);}
+    if (boom) {
+        neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x1c706,true):NULL;
+        if (c) ga_place_at(c,a,e,0,0);
+        return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+    }
+    ga_air(a,e);STEP(r);(void)r;
+    if (W(0x3c)>=0x140u) return GA_DELETE;
+    if ((int16_t)(W(0x40)-0x100u)<0) return GA_DELETE;
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
 bool neo_slug_routine(uint32_t r) {
     switch (r) {
     case 0x3458e: case 0x345a0: case 0x345e0: case 0x34698: case 0x34868: case 0x346ea: case 0x346fa:
     case 0x34786: case 0x3478c: case 0x3479c: case 0x34852: case 0x348d8: case 0x348f0: case 0x349be:
     case 0x349c6: case 0x349d8: case 0x34bf0: case 0x34d58:
     case 0x34f1a: case 0x34f96: case 0x34fd2: case 0x35016: case 0x3523c: case 0x3527e:
-    case 0x3b4e0: case 0x3b57c: return true;
+    case 0x3b4e0: case 0x3b57c: case 0x3b936: case 0x3b97c: return true;
     }
     return false;
 }
 ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (r==0x3b4e0 || r==0x3b57c) return turret_tick(a,e);
+    if (r==0x3b936 || r==0x3b97c) return piece_tick(a,e);
     if (r==0x34f1a || r==0x34f96 || r==0x34fd2 || r==0x35016 || r==0x3523c || r==0x3527e) return rider_tick(a,e);
     return camel_tick(a,e);
 }

@@ -165,6 +165,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
     uint8_t old_weapon=marco_weapons_id(&game.world.weapons,0),old_bombs=marco_weapons_bomb_count(&game.world.weapons,0);
+    unsigned old_mounts=game.mounts,old_dismounts=game.dismounts,old_mount_stops=game.mount_stops;
     unsigned old_vehicle_stops=game.world.vehicle_stops,old_weapon_stops=game.weapon_stops,old_grenades=game.grenades,old_grenade_stops=game.grenade_stops,old_served=game.world.pickup.taken;
     unsigned old_hits=game.hits,old_kills=game.kills,old_deaths=game.deaths,old_spawned=game.world.spawned,old_unsupported=game.world.unsupported,old_pickups=game.world.item_pickups;
     bool old_halted=game.world.script.halted;
@@ -192,7 +193,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death kind=%u\n",game.world.hit_kind);}
         if (game.life.phase==MARCO_ALIVE) death_logged=false;
         if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;}
-        if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE) {
+        if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,
                 game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1?1u:0u,-1,false};
@@ -237,6 +238,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.weapon_stops!=old_weapon_stops && !old_weapon_stops) debugf("MSX weapon shot stopped explicitly: constructor %05lx not ported (pistol bullet fired)\n",(unsigned long)game.weapon_stop_constructor);
     if (game.world.vehicle_stops!=old_vehicle_stops) debugf("MSX vehicle stopped explicitly: script spawn %05lx not ported (not created)\n",(unsigned long)game.world.vehicle_stop_constructor);
     if (game.grenades!=old_grenades) debugf("MSX grenade thrown count=%u\n",game.grenades);
+    if (game.mounts!=old_mounts) debugf("MSX player mounted vehicle kind=%u (0C3078) count=%u\n",game.world.vslots.slot[0].b[0x21],game.mounts);
+    if (game.dismounts!=old_dismounts) debugf("MSX player left vehicle kind=%u (0C30F0) count=%u\n",game.world.vslots.slot[0].b[0x1d],game.dismounts);
+    if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);
     if (game.grenade_stops!=old_grenade_stops) debugf("MSX bomb type %u stopped explicitly (0C4756 entry not ported)\n",game.world.weapons.b[10]);
     if (native_missing_descriptor || native_missing_palette) {
         debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
@@ -329,7 +333,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
-    if (game.life.phase!=MARCO_GONE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
+    /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
+    if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
         static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
         neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;

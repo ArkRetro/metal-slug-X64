@@ -60,7 +60,7 @@ if __name__=='__main__':
   assert source.getframerate()==48000 and source.getnchannels()==2 and source.getsampwidth()==2
   first=nanos(frames[a.first_frame]['time'])*48000//10**9;last=nanos(frames[a.audio_last_frame]['time'])*48000//10**9;assert last<=source.getnframes();source.setpos(first);pcm=source.readframes(last-first)
   with wave.open(str(out/'entry.wav'),'wb') as target:target.setnchannels(2);target.setsampwidth(2);target.setframerate(48000);target.writeframes(pcm)
- cmd=['/workspace/toolchains/package/opt/libdragon/bin/audioconv64','--wav-resample','32000','--wav-compress','1','--wav-loop','false','-o',str(out),str(out/'entry.wav')];subprocess.run(cmd,check=True)
+ cmd=[str(ROOT.parent/'toolchains/package/opt/libdragon/bin/audioconv64'),'--wav-resample','32000','--wav-compress','1','--wav-loop','false','-o',str(out),str(out/'entry.wav')];subprocess.run(cmd,check=True)
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  report=dict(status='PACKED_ALL_FRAMES_MATCH',first_frame=a.first_frame,last_frame=a.last_frame,frames=count,maximum_packet=maximum,movie_bytes=len(movie),movie_sha256=sha(out/'entry.msxc'),audio_sha256=sha(out/'entry.wav64'),audio_first_sample=first,audio_last_sample=last,handoff=handoff,frame_crc32=checks,visual=visual,provenance={n:sha(a.capture/n) for n in ('capture.json','frames.jsonl','player.jsonl','raster.jsonl','reference.wav')},limits='Only the noninteractive mission-entry segment. Title/tutorial/selection and ongoing gameplay music/effects remain separate work.')
  (out/'entry.json').write_text(json.dumps(report,indent=2)+'\n')

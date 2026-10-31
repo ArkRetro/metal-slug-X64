@@ -312,6 +312,21 @@ VPS con tres emuladores en la máquina: el guion de prueba espera en tiempo
 real); el segundo, con la máquina menos cargada, pasó. ROMs de 9.568.256
 bytes.
 
+### Rama `work-sv001` (SV-001 nativo, empuje 004ED2, Camel)
+
+Puertas tras fusionar `origin/ccr-09eb2f6b-8rwl8l` (6e6a9e8, efectos
+residentes con *writeback*): `make check` (auditoría: 32 de 36
+constructores nativos, ninguno parado explícitamente; familias `tank`,
+`tankjump`, `tankcrouch`, `tankpush` y `camel_run` sin paradas),
+`make check-core` en un clon limpio, `make -j4` y `make
+mslugx-reference.z64`. Recorrido completo en ares (Xvfb :97): **PASS**, 29
+rebeldes creados, 31 abatidos, jefe derrotado, misión completada, ningún
+nodo del jefe detenido, ningún actor sin soporte, **0 *crash***,
+*underruns* máx. 4; `MSX PERF` 87 ventanas, `cpu` media máx. 17.328 µs,
+**peor fotograma 37.561 µs**; RDP 401 dibujos máx. Efectos residentes
+982.356 B (57 ficheros), paquete de escena 939 *chunks*, caché 3504 KB
+(219 ranuras), montón libre mínimo en juego 670 KB.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros

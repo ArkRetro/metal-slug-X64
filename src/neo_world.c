@@ -41,7 +41,7 @@ typedef struct {
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
     if (w->draw_count==NEO_WORLD_DRAWS) return;
-    w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,t->draw_palette,t->draw_flash,t->draw_kind,0xff,0xff};
+    w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,t->draw_palette,t->draw_flash,t->draw_kind,0xff,0xff,d->z};
 }
 static bool insert(neo_world_t *w,unsigned at,neo_world_slot_t slot) {
     if (w->order_count==NEO_WORLD_ORDER) return false;
@@ -774,7 +774,7 @@ static void b_draw(void *c,int16_t node,const neo_anim_draw_t *d) {
     const neo_boss_node_t *n=&w->boss.nodes[node];
     uint8_t slot=(uint8_t)(d->attributes>>8);
     w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,slot<32?w->boss_palette[slot]:0,
-        (n->f[0x17]&1u) && !(n->f[0x17]&0x80u),NEO_WORLD_BOSS,0xff,0xff};
+        (n->f[0x17]&1u) && !(n->f[0x17]&0x80u),NEO_WORLD_BOSS,0xff,0xff,d->z};
 }
 /* Generic actors the boss creates or becomes: the native generic families
  * continue them from the seed image; the others are counted (not drawn). */

@@ -375,11 +375,25 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */
     rdpq_set_scissor(8,8,312,232);
-    for (unsigned i=0;i<game.world.draw_count;i++) if (game.world.draws[i].attributes&4u) draw_native(&game.world.draws[i],false);
+    /* 0113EA: the original sorts the frame's sprite-list entries by the
+     * priority word +1E (two stable counting passes, low then high byte)
+     * and lists them in that order, so a higher +1E draws over a lower one
+     * (an item, +1E 0x8838, over the wagon's canvas, 0x8700); equal words
+     * keep the actor-list order. */
+    static uint8_t order[NEO_WORLD_DRAWS];
+    {
+        unsigned n=game.world.draw_count;
+        for (unsigned i=0;i<n;i++) {
+            unsigned j=i;
+            while (j && game.world.draws[order[j-1]].z>game.world.draws[i].z) {order[j]=order[j-1];j--;}
+            order[j]=(uint8_t)i;
+        }
+    }
+    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}
     scene_render_front(game.camera,game.camera_height,game.backdrop_after,game.ticks);
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
-    for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
+    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (!(d->attributes&4u)) draw_native(d,false);}
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
     if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {

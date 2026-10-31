@@ -52,6 +52,7 @@ typedef struct {
     bool flash;
     uint8_t kind;              /* neo_world_kind_t of the owner */
     uint8_t zoom_x,zoom_y;     /* generic actors: +12/+13 (0xFF = full size) */
+    uint16_t z;                /* +1E: the sprite list is sorted by it (0113EA) */
 } neo_world_draw_t;
 typedef struct {
     uint16_t px,py;            /* projected words (+3C/+40) left by the player's

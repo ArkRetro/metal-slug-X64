@@ -128,15 +128,19 @@ GAME_AUDIO := $(wildcard filesystem/audio/*.wav64)
 # 3D NEOGEO boot logo and jingle (docs/LOGO_NEOGEO.md): private assets from
 # tools/build_neogeo_logo.py; without them the game boots straight in.
 BOOT_LOGO := $(wildcard filesystem/logo/neogeo-logo.mesh filesystem/logo/neogeo-jingle.wav64)
+# HOW TO PLAY, SOLDIER SELECT and the choice between the title and the entry
+# (tools/pack_cinematic.py --name howto/select/confirm, docs/MISSION_ENTRY.md).
+BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64))
 # The fix-layer HUD (src/hud_renderer.c) draws the S-ROM tiles with the fix
 # palettes of tools/build_hud_assets.py (docs/ARMAS_VEHICULOS.md §11).
-$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) filesystem/fixed.bin filesystem/hud-palette.bin
+$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
+	$(if $(and $(BOOT_CINE_OBJS),$(BOOT_ATTRACT)),cp $(BOOT_ATTRACT) $(BUILD_DIR)/game-romfs/)
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.

@@ -55,7 +55,11 @@ emu.register_frame_done(function()
  if actions[frame] then button(actions[frame][1],actions[frame][2]) end
  timing:write(string.format('{"frame":%d,"time":"%s","animation_counter":%d,"animation_disabled":%d,"fixed_source":%d,"palette_bank":%d,"screen_shadow":%d}\n',frame,tostring(manager.machine.time),animation_counter:read(0),animation_disabled:read(0),fixed_source:read(0),palette_bank:read(0),screen_shadow:read(0)));timing:flush()
  if frame>=3800 then
-  players:write(string.format('{"frame":%d,"routine":%d,"x":%d,"y":%d,"vx":%d,"vy":%d,"flags15":%d}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9)));players:flush()
+  -- The whole player node (0x1014C4, 256 bytes): body program, cursor and
+  -- timers at the handoff (the landing after the parachute).
+  local node={}
+  for i=0,255 do node[#node+1]=string.format('%02x',cpu:read_u8(0x1014c4+i)) end
+  players:write(string.format('{"frame":%d,"routine":%d,"x":%d,"y":%d,"vx":%d,"vy":%d,"flags15":%d,"node":"%s"}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9),table.concat(node)));players:flush()
  end
  if frame%video_step==0 then dump() end
  if frame%60==0 or (frame>=shot_first and frame<=shot_last) then manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png') end

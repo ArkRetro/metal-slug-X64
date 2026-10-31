@@ -31,26 +31,41 @@ static void fail(const char *message) {
 #endif
 #if MSX_BOOT_CINEMATICS && !MSX_GRAPHICS_LAB
 static bool rom_file(const char *path) { return dfs_rom_addr(path)!=0; }
-/* Parachute entry (docs/MISSION_ENTRY.md): the offline frames of the MAME
- * capture at their own clock with its audio; Start skips it (after half a
- * second). Ends on the handoff frame; false when it cannot play. */
-static bool entry_cinematic(void) {
-    if (!msx_cinematic_open("rom:/entry.msxc")) return false;
-    if (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0]) {msx_cinematic_close();return false;}
-    bool audio=msx_audio_open(MSX_AUDIO_INTRO,"rom:/entry.wav64");
+/* One offline cinematic of the MAME capture at its own clock with its audio
+ * (docs/MISSION_ENTRY.md): HOW TO PLAY, SOLDIER SELECT, the selection and the
+ * parachute entry. Start skips it after half a second. hold >= 0 (-2: its last
+ * frame): the movie stops on that frame (SOLDIER SELECT with P1 on Marco) until A or Start is
+ * pressed, as the arcade waits for the player's choice; only Marco can be
+ * chosen for now. Ends on its last frame; false when it cannot play. */
+static bool play_cinematic(const char *label,const char *movie,const char *sound,int hold,bool entry) {
+    if (!msx_cinematic_open(movie)) return false;
+    if (entry && (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0])) {msx_cinematic_close();return false;}
+    if (hold==-2) hold=(int)msx_cinematic_stats().frames-1;   // its last frame (capture 3619)
+    bool audio=msx_audio_open(MSX_AUDIO_INTRO,sound);
     if (audio) msx_audio_play(MSX_AUDIO_INTRO,false,0.8f);
-    unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,start_skip=false;uint32_t draw_ticks=0;
+    unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,previous_a=true,start_skip=false,held=false;uint32_t draw_ticks=0;
     uint32_t started=TICKS_READ();
-    debugf("MSX INTRO start source=3830 frames=%u audio=%u\n",MSX_ENTRY_FRAMES,audio);
+    debugf("MSX CINE %s start frames=%lu audio=%u hold=%d\n",label,(unsigned long)msx_cinematic_stats().frames,audio,hold);
+    if (entry) debugf("MSX INTRO start source=3830 frames=%u audio=%u\n",MSX_ENTRY_FRAMES,audio);
     for (;;) {
         uint32_t a0=TICKS_READ();joypad_poll();msx_audio_service();uint32_t audio_ticks=TICKS_READ()-a0;
         unsigned target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));
-        bool start=joypad_get_buttons(JOYPAD_PORT_1).start;
-        if (target>=30 && start && !previous) {start_skip=true;break;}
-        previous=start;
+        joypad_buttons_t buttons=joypad_get_buttons(JOYPAD_PORT_1);
+        bool start=buttons.start,press=(start && !previous) || (buttons.a && !previous_a);
+        previous=start;previous_a=buttons.a;
+        if (held) {
+            /* Waiting on the choice: the clock stands on the hold frame. */
+            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen\n",label);}
+            else {surface_t *surface=display_get();msx_cinematic_draw(surface);rendered++;
+                started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
+        } else if (target>=30 && press) {
+            if (hold>=0) {hold=-1;debugf("MSX CINE %s chosen early\n",label);}   // the choice made before the cursor settles
+            else {start_skip=true;break;}
+        }
         uint32_t w0=TICKS_READ();surface_t *surface=display_get();uint32_t waited=TICKS_READ()-w0;
         // The frame shown is the one due when this framebuffer frees (as the title does).
         target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));
+        if (hold>=0 && target>(unsigned)hold) target=(unsigned)hold;
         msx_cinematic_stats_t state=msx_cinematic_stats();unsigned work=0;
         while (state.index<target && state.index+1<state.frames && work<8) {
             if (!msx_cinematic_next()) {start_skip=true;break;}
@@ -60,21 +75,35 @@ static bool entry_cinematic(void) {
         if (last_presented!=state.index) {
             if (last_presented!=~0u && state.index>last_presented+1) {
                 skipped+=state.index-last_presented-1;
-                debugf("MSX INTRO miss from=%u to=%lu wait_us=%lu decode_us=%lu audio_us=%lu draw_us=%lu\n",last_presented,(unsigned long)state.index,(unsigned long)TICKS_TO_US(waited),(unsigned long)TICKS_TO_US(decoded),(unsigned long)TICKS_TO_US(audio_ticks),(unsigned long)TICKS_TO_US(draw_ticks));
+                debugf("MSX CINE %s miss from=%u to=%lu wait_us=%lu decode_us=%lu audio_us=%lu draw_us=%lu\n",label,last_presented,(unsigned long)state.index,(unsigned long)TICKS_TO_US(waited),(unsigned long)TICKS_TO_US(decoded),(unsigned long)TICKS_TO_US(audio_ticks),(unsigned long)TICKS_TO_US(draw_ticks));
             }
             unique++;last_presented=state.index;
         }
         uint32_t d0=TICKS_READ();msx_cinematic_draw(surface);draw_ticks=TICKS_READ()-d0;rendered++;
+        if (hold>=0 && state.index==(unsigned)hold) {held=true;debugf("MSX CINE %s waiting for A/Start at frame %d\n",label,hold);}
         if (target>=state.frames && state.index+1==state.frames) break;
     }
     msx_cinematic_stats_t final=msx_cinematic_stats();
-    debugf("MSX INTRO cadence unique=%u skipped=%u\n",unique,skipped);
-    debugf("MSX INTRO complete frames=%lu rendered=%u crc=%08lx skipped=%u decode_max_us=%lu t=%lu ms\n",(unsigned long)final.frames,rendered,
+    debugf("MSX CINE %s cadence unique=%u skipped=%u\n",label,unique,skipped);
+    if (entry) debugf("MSX INTRO cadence unique=%u skipped=%u\n",unique,skipped);
+    debugf("MSX CINE %s complete frames=%lu rendered=%u crc=%08lx skipped=%u decode_max_us=%lu t=%lu ms\n",label,(unsigned long)final.frames,rendered,
+        (unsigned long)msx_cinematic_pixels_crc(),start_skip,(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)get_ticks_ms());
+    if (entry) debugf("MSX INTRO complete frames=%lu rendered=%u crc=%08lx skipped=%u decode_max_us=%lu t=%lu ms\n",(unsigned long)final.frames,rendered,
         (unsigned long)msx_cinematic_pixels_crc(),start_skip,(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)get_ticks_ms());
     rspq_wait();
     if (audio) msx_audio_stop(MSX_AUDIO_INTRO);
     msx_cinematic_close();
     return true;
+}
+/* Arcade order after the title (MAME capture, coin and Start at the title):
+ * HOW TO PLAY 770..3459, SOLDIER SELECT 3460..3619 (P1 on Marco from 3600),
+ * the choice 3620..3829, then the parachute entry from 3830. The first three
+ * are optional private files; the entry is required for the handoff. */
+static bool entry_cinematic(void) {
+    if (rom_file("/howto.msxc")) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",-1,false);
+    if (rom_file("/select.msxc")) play_cinematic("select","rom:/select.msxc","rom:/select.wav64",-2,false);
+    if (rom_file("/confirm.msxc")) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",-1,false);
+    return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",-1,true);
 }
 #endif
 #if MSX_GRAPHICS_LAB

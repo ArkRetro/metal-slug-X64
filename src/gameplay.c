@@ -422,7 +422,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
-    else {
+    /* The body program's +72/+74 of this update, before the upper body
+     * (00427A then 0C3778) reads them for the muzzle. */
+    if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun);
+    if (hgun) {
         if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
         g->fire_request=false;g->pistol_wait=0;
         if (!(g->ticks&1)) {
@@ -435,22 +438,17 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             for (unsigned k=0;k<n;k++) {
                 /* One muzzle per aim (0C4244: table 0C4204 row by +92, form
                  * 1: level (24,4), up (0,48), down (-4,-20); 0C453A sweeps:
-                 * 0C4234 form 1 (16,16)), facing-mirrored in x, plus the legs'
-                 * +72/+74 of the current leg pose. The fan (angle +-2) and the
-                 * sweep angles diverge from that single point. The port has
-                 * no +72/+74: the values measured in hold2/hfam/cfam are used
-                 * (standing (4,12), crouching (0,6), running (2,20), air
-                 * (0,0)): declared approximation. */
+                 * 0C4234 form 1 (16,16)), facing-mirrored in x, plus +72/+74
+                 * of the body program's pose (marco_legs.c; hold2/hfam: idle
+                 * (24,21), walking (23,21..25), running jump (20..23,15..16)).
+                 * The fan (angle +-2) and the sweep angles diverge from that
+                 * single point. */
                 uint8_t a=shots[k].angle;
                 int base=g->facing<0?(0x80-(int)shots[k].base)&0xff:shots[k].base;
-                int mx,my;
-                if (shots[k].sweep) {mx=16;my=16;}
-                else if (base==0x40) {mx=0;my=48;}
-                else if (base==0xc0) {mx=-4;my=-20;}
-                else {mx=24;my=4;}
-                if (!g->grounded) {} else if (g->crouching) {my+=6;} else if (g->moving) {mx+=2;my+=20;} else {mx+=4;my+=12;}
-                int32_t x=g->x+g->facing*mx*MSX_UNIT;
-                int32_t y=(56+my)*MSX_UNIT-g->y;
+                marco_muzzle_t m=shots[k].sweep?marco_muzzle_sweep(&g->legs,a,ga_sine(a),ga_cosine(a)):
+                    marco_muzzle_aim(&g->legs,base==0x40?1:base==0xc0?-1:0,1,g->facing<0);
+                int32_t x=g->x+m.x*MSX_UNIT;
+                int32_t y=(56+m.y)*MSX_UNIT-g->y;
                 neo_world_player_shot(&g->world,g->hgun_kind==5?0x1b6dcu:0x1b716u,x,y,a,0);
                 g->hgun_diagonal+=shots[k].sweep;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;
@@ -484,18 +482,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                         (ammo.kind==5?0x1b668u:0x1bdd2u):constructor[ammo.kind&15u];
                 }
                 /* 0C4244 muzzle: table 0C4204 row by aim, form 0, plus the
-                 * legs' +72/+74 (hold2: standing level (16,10)+(0,17) = (16,27),
-                 * crouching (16,10)+(0,6) = (16,16); up (0,40)+(0,17)). The
-                 * anchor (+2C) is the port's screen y 192 + g->y. The level
-                 * and up muzzles keep the port's (24,24)/(0,52) for now: with
-                 * the original heights the scripted mission run of
-                 * tools/test_gameplay.c no longer frees the prisoner whose H
-                 * it fires (prisoner hurtbox vs the pistol row at +27: to be
-                 * resolved against the arcade); declared approximation. */
-                int mx,my;
-                if (g->aim_up) {mx=0;my=52;}
-                else if (g->crouching) {mx=16;my=16;}
-                else {mx=24;my=24;}
+                 * body program's +72/+74 (hold2: standing level (16,10)+(0,17)
+                 * = (16,27), up (0,40)+(0,17) = (0,57), crouching (16,16)). */
+                marco_muzzle_t m=marco_muzzle_aim(&g->legs,g->aim_up?1:0,0,g->facing<0);
+                int mx=g->facing*m.x,my=m.y;
                 g->pistol_next=(msx_bullet_t){player+g->facing*mx,192-my+g->y/MSX_UNIT,g->facing,true,g->aim_up,ammo.kind};
                 g->pistol_pending=2;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots+=ammo.kind!=0;

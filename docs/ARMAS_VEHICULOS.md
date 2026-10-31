@@ -641,14 +641,31 @@ arriba y saltando, con la pistola y luego con la H (id `0A`, 200 balas, `+94 =
 Port (`src/gameplay.c`): `fire_request` es `+9B` bit 4 (pulsación nueva,
 guardada hasta consumirse; mantener no dispara), `pistol_wait` las
 actualizaciones hasta `+76` + 1 (2 nivel, 3 arriba/agachado) y
-`pistol_pending` retrasa la bala una actualización. La H usa una boca por
-puntería (nivel (24,4), arriba (0,48), abajo (-4,-20), barridos (16,16)) más
-`+72/+74` medidos (de pie (4,12), agachado (0,6), corriendo (2,20), aire 0),
-**aproximación declarada**: el port no tiene `+72/+74`. La pistola de pie
-conserva la boca del port (24, 24 arriba del ancla; arcade (16,27)) porque
-con la altura original la carrera guionizada de `tools/test_gameplay.c` deja
-de liberar al prisionero que da la H (`items served` 8 → 2): pendiente de
-contrastar la caja del prisionero con la fila de ataque de la pistola.
+`pistol_pending` retrasa la bala una actualización.
+
+**Boca (`src/marco_legs.c`).** `+72/+74` los escriben los programas de
+cuerpo en cada pose (`WRITE_WORD`/`WRITE_LONG`): reposo `24C5EA` (0,17),
+carrera `24DD18` (−1, 17..21, bucle desde la quinta pose), salto `24E4E0`
+(1, 24..18, espera arriba mientras está en el aire), salto con carrera
+`24E858` (−3/−4, 15..11) y después `24DF6C` (−1,15). `marco_legs.c` lleva
+esas líneas de tiempo con los mismos arranques que `marco_visual.c`.
+Agachado ningún programa los escribe: se usan los valores medidos (H (4,12),
+pistola (0,6)), **aproximación declarada** (escritor no localizado).
+`0C4244` (con `+90 ≠ FF`, todos los nacimientos medidos): tabla `0C4204` por
+`+92` y forma más `+72/+74`, x negada mirando a la izquierda (la H y la
+pistola: de pie (16,27)/(0,57), como el original; la carrera guionizada de
+`tools/test_gameplay.c` sigue liberando a los prisioneros). `0C453A`
+(barridos) **no usa la tabla `0C4234`**: x = parte entera de 12·cos θ más
+`+72`, y = parte entera de 12·sen θ (más la mitad si θ < 0x80) más `+74` + 2,
+con θ ya reflejado a la izquierda (`002E7C`, tabla de senos `0029FC`); el
+port usaba (16,16) reflejado, de ahí los diagonales erráticos en hardware.
+Prueba `tools/test_marco_muzzle.c` (`make check`,
+`data/hmuzzle_fixture.json` de `tools/extract_hmuzzle_fixture.py` sobre
+`hold2`, `hfam`, `hudp2`, `hudv2`): los **34 nacimientos de balas H** (29 del
+abanico ±2, 5 de barrido, a izquierda y derecha) son, píxel a píxel, la boca
+de su puntería con el `+72/+74` de una pose del programa de cuerpo de la
+rutina del jugador. La velocidad y la trayectoria de cada bala las cubre la
+familia `hbullet`.
 
 **Forma 1 y muertes (resuelto):** la forma 1 (H) y las muertes tienen sus
 programas y poses en el catálogo; ver [MARCO_CAMPAIGN.md](MARCO_CAMPAIGN.md),

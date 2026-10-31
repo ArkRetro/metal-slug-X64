@@ -7,6 +7,7 @@
 #include "neo_world.h"
 #include "neo_hud.h"
 #include "marco_hgun.h"
+#include "marco_legs.h"
 #include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
@@ -74,6 +75,7 @@ typedef struct {
     /* H upper body (marco_hgun.c): fire states, sweeps and their diagonal
      * bullets; fire_was: the fire input of the previous tick (+9B bit 4). */
     marco_hgun_t hgun;bool fire_was;unsigned hgun_diagonal;uint8_t hgun_kind;
+    marco_legs_t legs;   /* +72/+74 of the body programs (marco_legs.c) */
     /* Pistol/other weapons fire state (0C3CD0/0C3D9A, docs/ARMAS_VEHICULOS.md
      * §3): fire_request is +9B bit 4 (a new press, kept until a shot takes
      * it; holding never re-sets it), pistol_wait the updates until the

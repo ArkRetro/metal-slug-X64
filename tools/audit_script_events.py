@@ -26,10 +26,12 @@ def main():
     ctors=sorted({s['constructor'] for s,_ in spawns})
     out=subprocess.run([str(a.helper)]+ctors,check=True,capture_output=True,text=True).stdout.split('\n')
     native={int(l.split()[0],16):l.split()[1]=='1' for l in out if l.strip()}
+    stops=sorted('0x%06X'%int(l.split()[0],16) for l in out if l.strip() and l.split()[1]=='2')
     counted=[(s,c) for s,c in spawns if s['group_counted'] and s['group']<9 and not native[int(s['constructor'],16)]]
     print('script spawn audit: %d records, %d constructors, %d native'%(len(spawns),len(ctors),sum(native.values())))
     print('counted spawns the port drops (%d):'%len(counted))
     for s,c in counted:print('  camera %4d record %s constructor %s group %d'%(c,s['address'],s['constructor'],s['group']))
-    unc=sorted({s['constructor'] for s,_ in spawns if not (s['group_counted'] and s['group']<9) and not native[int(s['constructor'],16)]})
+    unc=sorted({s['constructor'] for s,_ in spawns if not (s['group_counted'] and s['group']<9) and not native[int(s['constructor'],16)] and s['constructor'] not in stops})
+    print('constructors stopped explicitly (%d, logged, not created): %s'%(len(stops),' '.join(stops)))
     print('uncounted constructors the port drops (%d): %s'%(len(unc),' '.join(unc)))
 if __name__=='__main__':main()

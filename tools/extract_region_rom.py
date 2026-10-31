@@ -37,6 +37,8 @@ BLOBS=[
     (0x2D3E5C,0x60,'033C98 covered wagon health (0260C8)'),
     (0x39FB0,0xA4,'039590 Arabian swordsman: walk/attack program tables, hurtbox, attack row 03A004, cull rectangle 03A014, player rectangles 03A01C/03A04C'),
     (0x2D257C,0x188,'039DA8/039E9A Arabian swordsman rank tables 2D257C/2D25DE/2D2640/2D26A2 (0260C8)'),
+    (0x34320,0x08,'03458E Camel Slug mount rectangle (0AA610)'),(0x92A2A,0x08,'092A32 SV-001 mount rectangle (0AA610)'),
+    (0x3B424,0xBC,'03B4E0 vulcan turret: aim tables 03B424/03B464, start angles 03B4A4, aim table pointers 03B4B0, palettes 03B4C8/03B4D4'),(0x97E08,0x80,'03B65C SV-001 vulcan aim tables 097E08/097E48'),
     (0xE61D4,0x310,'0A9CB6 death pieces: speeds E61D4, angles E6206, lists E6220.., cull rectangle E64D8 (0A9A56)'),
     (0x35644,0x24,'035668 creature: cull rectangle, hurtbox, program speeds 035658'),
     (0x99D62,0x64,'099862 prisoner: hurtbox 099D62, cull rectangles 099D6E/099D76, player rectangle 099D7E, wriggle programs 099D86'),

@@ -727,3 +727,68 @@ de Git). Una celda se rasteriza en una tira RGBA16 de 304x224 solo cuando su
 palabra cambia; cada fotograma copia (modo COPY) el tramo de columnas no
 vacías de cada fila visible, sobre todas las capas, con tijera en la ventana
 304x224.
+
+## 12. Vehículos del jugador: port (pasos 6–9)
+
+### Paso 6: ranura de vehículo y jinete (`src/neo_vslot.c`)
+
+Traducción manual de los servicios `0x0AA458..0x0AABF2` sobre la ranura de
+0x24 bytes guardada con sus bytes originales (`neo_vslots_t`: `10C608`,
+`10C62C` y los registros `10C2E8/10C2EC`): aceptar/soltar del jugador
+`0x0AA458` (con `0x018F24`), bajada `0x0AA4C8`, reinicio `0x0AA4F6/0x0AA520`,
+seguimiento del montado `0x0AA550`, lectura de la salida `0x0AA5AC` (hasta su
+`0x0143EE`), selección `0x0AA610` con la prueba `0x0C0556` (rectángulos
+`0x034320`/`0x092A2A` en `data/region_rom.json`), atadura `0x0AA760`, salida
+`0x0AA7FC` (el original nombra el nodo del P1 también para el P2: sin efecto),
+subida `0x0AA83A`, obús `0x0AA956`, daño `0x0AA994`/`0x0AA9E4`, `0x0AAA88`
+(tipo 0: el `TRAP #F` del original, parada explícita), `0x0AAB66`,
+`0x0AAB84`, `0x0AABDC`, y el mando `0x0CA1B8` (máscaras `0x0CA1B0`: bit 7 =
+A+B a la vez; con la tabla por defecto C no anula B).
+
+Prueba `tools/test_neo_vslot.c` (`make check-core`): fixture
+`data/vslot_fixture.json.gz` (`tools/extract_vslot_fixture.py
+camelfam=… tankfam=… --routing vehicles2/weapons.csv --routing
+pickups2/weapons.csv`): **las 3918 llamadas** a estos servicios de las
+trazas de familia `camelfam` y `tankfam` (Camel, SV-001, torretas y el nodo
+del jugador `1014C4`: 476 ataduras, 551 aceptaciones, 64 selecciones, las
+salidas de tipo 0 —muerte del jinete, 10091— y 1 —A+B, 11099—, subidas,
+obuses y daño), con los argumentos del llamador (inmediatos del sitio de la
+`JSR`, `+7B/+7C` del SV-001) y lo que cada llamada leyó del nodo y de los
+jugadores. Las ranuras son estado nativo en bucle cerrado: toda lectura de
+la ranura por el original ve el valor nativo, y tras cada llamada ranuras,
+registros y bytes de nodo escritos coinciden byte a byte (282096 bytes de
+ranura). Además, 3533 muestras de `weapons.csv` (entradas estables) dan la
+palabra mantenida de `0x0CA1B8`, 3 de ellas con A+B (`0xB8`).
+
+En el juego (`neo_world.c`): ranuras libres al empezar, el jugador 1 llama a
+`0x0AA458` en cada actualización, la recogida de bombas (`0x0AA898`) y el HUD
+(`0x0C071C`/`0x0C0764`: ARMS ∞ y CANNON) leen la ranura del P1. Ningún
+vehículo nativo la ata todavía.
+
+### Paso 7: torreta vulcan (`src/neo_vulcan.c`)
+
+Traducido el control de `0x03B57C..0x03B808`: fin si el vehículo no existe,
+`+5F` bit 7 o el ancla `0x8000`; espera con `0x8080`; `+84 >>= 1`; jinete
+`0x0AAB84` (sin jinete: ráfaga a 0); ángulo a la ranura; A nuevo → ráfaga
+(`+76 = +74` si no había, `+77 = +75`, `+89 = 8`); A mantenido con
+`0x0CA614` (`10F084+p`) repite cada 8; destino por la palanca (tablas
+`0x03B4B0[+72]`: `0x03B424`, `0x03B464`, `0x097E08`, `0x097E48`), giro con
+velocidad `+7E + +80` (aceleraciones hacia `0xFA00`/`0x3000`), sentido `+79`
+(el `spl` mira los indicadores de `cmpi.w #$8000`: `FF` con diferencia
+negativa); disparo cada `+73` con el abanico `+7A` (−2, 0, +2 solo si el
+ángulo no cambió), bala `0x01B6A0` (`0x01BE24` con `+72 = 5`) con `+6E` y
+`+5E`; `+88` = pose. Prueba `tools/test_neo_vulcan.c` (`make check-core`,
+`data/vulcan_fixture.json.gz` de `tools/extract_vulcan_fixture.py`): las 543
+actualizaciones de torreta de `camelfam` (229) y `tankfam` (314), campos de
+control `+5E`, `+72..+89` en bucle cerrado, las **235 balas** (83 `0x01BE24`,
+152 `0x01B6A0`) con su `+6E`, 101 con abanico, y la chispa.
+
+**Paradas explícitas** (sin traducir, no se adivinan): la colocación de la
+torreta sobre el ancla `0x03B80C..0x03B86C`, los constructores de bala
+`0x01B6A0`/`0x01BE24`, el barrido `0x014A02`, la chispa `0x03BA76` y el fin
+`0x03B86E`; la Camel Slug `0x03458E` y el SV-001 `0x092A32` (con su obús
+`0x094EAA`, destello `0x0952F8`, `0x0954DC`, `0x0956CE`): el mundo no los
+crea, cuenta cada aparición del guion en `vehicle_stops` y el juego lo
+registra (`MSX vehicle stopped explicitly`); `tools/audit_script_events.py`
+los lista como paradas explícitas. Daño y destrucción del SV-001 siguen sin
+captura.

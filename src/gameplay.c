@@ -34,14 +34,16 @@ void msx_game_init(msx_game_t *g) {
 }
 /* One update of the original HUD with the port's state (neo_hud.c): single
  * player MVS game with no credit (P2 panel "INSERT COIN", "CREDIT 0"), no
- * vehicle gauge (the port's player does not ride), timer running while the
+ * vehicle gauge (no native vehicle binds player 1's slot yet), timer running while the
  * mission is in play. */
 static void hud_step(msx_game_t *g) {
     if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
     neo_hud_input_t in={0};
     in.hud_on=true;in.join_mask=3;in.mvs=true;in.credit_text=true;in.credits=0;
-    in.arms=neo_hud_arms(g->world.weapons.b,NULL,0,false,0);
-    neo_hud_bombs(g->world.weapons.b,NULL,0,0,0,&in.bombs,&in.bomb_type);
+    /* 0C071C/0C0764 read player 1's vehicle slot 10C608 (ARMS infinite and
+     * the vehicle's shells while riding). */
+    in.arms=neo_hud_arms(g->world.weapons.b,g->world.vslots.slot[0].b,0,false,0);
+    neo_hud_bombs(g->world.weapons.b,g->world.vslots.slot[0].b,0,0,0,&in.bombs,&in.bomb_type);
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
     in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;

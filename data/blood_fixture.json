@@ -54,6 +54,15 @@
    "off": "0xb8"
   },
   {
+   "site": "0x9f598",
+   "routines": {
+    "0x9feaa": 1
+   },
+   "on": "0x3fe",
+   "on_requests": 1,
+   "off": "0xb8"
+  },
+  {
    "site": "0xa95f2",
    "routines": {
     "0xa9590": 4
@@ -100,9 +109,5 @@
    "note": "resource of +14 in 0A946C (RAM dumps)"
   }
  ],
- "untranslated_sites_read": {
-  "0x9f598": {
-   "0x9feaa": 1
-  }
- }
+ "untranslated_sites_read": {}
 }

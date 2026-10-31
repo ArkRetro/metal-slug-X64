@@ -3,6 +3,9 @@
 import argparse,json,os,subprocess,hashlib,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
+# MAME 0.264+ and Xvfb: the emulator tree when present, else the system ones.
+MAME=next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')
+XVFB=next((m for m in ('/workspace/emulator/root/usr/bin/Xvfb','/usr/bin/Xvfb') if os.path.exists(m)),'Xvfb')
 # Names describe input conditions only. Classify animation from actual evidence.
 CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',96,('Down','fire')),
  ('stand_fire_right',96,('fire',)),('aim_up_right',64,('Up',)),('aim_up_fire_right',96,('Up','fire')),
@@ -31,7 +34,7 @@ def schedule(cases=CASES):
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');a=p.parse_args()
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
  if a.plan:
@@ -55,18 +58,20 @@ def main():
  if a.upper_trace:env['MSX_UPPER_TRACE']='1'
  if a.body_trace:env['MSX_BODY_TRACE']='1'
  if a.ammo_trace:env['MSX_AMMO_TRACE']='1'
+ if a.give_hgun:env['MSX_GIVE_HGUN']='1'
+ if a.dump_routines:env['MSX_DUMP_ROUTINES']=a.dump_routines
  assert sum((a.body_trace,a.motion_trace,a.stance_trace,a.idle_trace))<=1,'Block tracers share a debugger latch'
  if a.idle_trace:env['MSX_IDLE_TRACE']='1'
  if a.stance_trace:env['MSX_STANCE_TRACE']='1'
  if a.motion_trace:
   env['MSX_MOTION_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
-  server=subprocess.Popen(['/workspace/emulator/root/usr/bin/Xvfb','-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
+  server=subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:
    number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
-   cmd=['/workspace/emulator/root/usr/games/mame','mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]
+   cmd=[MAME,'mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]
    (out/'run-command.json').write_text(json.dumps(cmd,indent=2)+'\n')
-   with (out/'mame.log').open('w') as log:subprocess.run(cmd,cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=480)
+   with (out/'mame.log').open('w') as log:subprocess.run(cmd,cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=int(os.environ.get('MSX_CATALOG_TIMEOUT','480')))
    log=(out/'mame.log').read_text();debug=(out/'debug.log').read_text();assert 'LUA ERROR' not in log and 'Error in command' not in debug and 'MARCO_DRAW' in debug
    assert len(list(out.glob('actor*.bin')))==last-2100+1
    sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()

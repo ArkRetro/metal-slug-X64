@@ -169,6 +169,15 @@ static const char *compare_gactor(const ctx_t *c,const neo_gactor_t *a,const uin
             if (want!=got) {snprintf(buf,sizeof(buf)," +38=%06x/%06x",(unsigned)got,(unsigned)want);return buf;}
             o=0x3b;continue;
         }
+        /* The porter 0327EC keeps its item node and the item's creator in
+         * +72/+76 (238632): compared through the node map. */
+        if ((o==0x72 || o==0x76) && (ga_l(a,0)==0x32840u || ga_l(a,0)==0x32864u)) {
+            uint32_t want=(uint32_t)m[o]<<24|(uint32_t)m[o+1]<<16|(uint32_t)m[o+2]<<8|m[o+3];
+            uint32_t got=ga_l(a,o);
+            if ((got&0xff000000u)==NEO_GA_TAG_BASE) got=c->map[NEO_WORLD_GACTOR][got&0xffu];
+            if (want!=got) {snprintf(buf,sizeof(buf)," +%02X=%06x/%06x",o,(unsigned)got,(unsigned)want);return buf;}
+            o+=3;continue;
+        }
         if (a->m[o]!=m[o]) {
             snprintf(buf+strlen(buf),sizeof(buf)-strlen(buf)," +%02X=%02x/%02x",o,a->m[o],m[o]);
             if (strlen(buf)>200) break;

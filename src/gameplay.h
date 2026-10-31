@@ -7,6 +7,7 @@
 #include "neo_world.h"
 #include "neo_hud.h"
 #include "marco_hgun.h"
+#include "marco_legs.h"
 #include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
@@ -74,6 +75,18 @@ typedef struct {
     /* H upper body (marco_hgun.c): fire states, sweeps and their diagonal
      * bullets; fire_was: the fire input of the previous tick (+9B bit 4). */
     marco_hgun_t hgun;bool fire_was;unsigned hgun_diagonal;uint8_t hgun_kind;
+    marco_legs_t legs;   /* +72/+74 of the body programs (marco_legs.c) */
+    /* Pistol/other weapons fire state (0C3CD0/0C3D9A, docs/ARMAS_VEHICULOS.md
+     * §3): fire_request is +9B bit 4 (a new press, kept until a shot takes
+     * it; holding never re-sets it), pistol_wait the updates until the
+     * program's +76 lets the next press fire (level 24C70A: +76 at 1, state
+     * latency 1 -> 2; up/down 24C7F2/24EABC: +76 at 2 -> 3), and
+     * pistol_pending the ticks until the bullet whose constructor runs the
+     * update after the fire callback (00411C at the callback, 01B782 one
+     * update later) joins the list. Both counts are in ticks (2 per update);
+     * a press fires on the tick it arrives, as the original's state does in
+     * the update of the press (hold2: press 2190, callback 2191). */
+    bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
     /* Death and new life (marco_death.c, docs/JEFE_MISION1.md): one hit
      * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
      * the deaths of kinds 8 / 0x12 (own routines, not translated). */

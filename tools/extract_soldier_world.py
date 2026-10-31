@@ -30,7 +30,12 @@ GACTOR=set([0x2916E,0x29294,0x29326,0x2936C,0x293DC,0x29438,0x294A2,0x294E4,0x29
     0x99DCC,0x99E48,0x99E64,0x99E7A,0x99E06,0x99F64,0x99F80,0x99F9C,0x99FD8,0x9A000,0x9A042,0x9A06E,0x9A0F6,0x9A11C,
     0x9A142,0x9A160,0x9A17E,0x9A1FC,0x9A230,0x9A278,0x9A290,0x9A2D8,0x9A322,0x9A346,0x9A364,0x9A376,0x9A396,0x9A3B2,
     0x9A3D4,0x9A3F2,0x9A438,0x9A454,0x9A46E,0x9A4A2,0x9A4D2,0x9A4FA,0x9A516,0x9A534,0x9A552,0x9A58E,0x9A5AA,0x9A97C,
-    0x9A9AC,0x9A5EE,0x8C374,0x8C37C,0x8C53C,0x8C564,0x8C66A,0x8C68E,0x8C6B2])
+    0x9A9AC,0x9A5EE,0x8C374,0x8C37C,0x8C53C,0x8C564,0x8C66A,0x8C68E,0x8C6B2,
+    # The market stall's awning 0400AA (src/neo_props.c) and the village
+    # decoration 0B6298 with its delete 0B6202 (src/neo_barrel.c).
+    0x400AA,0x400F2,0xB6298,0xB62C8,0xB6202,
+    # The village porter 03264E and its walker 0327EC (src/neo_porter.c).
+    0x3264E,0x326A8,0x326FE,0x327CA,0x327EC,0x32840,0x32864])
 def gactor_routine(rt):return rt in GACTOR
 # 09A5EE (the cartridge check before 004188) is shared by the prisoners and
 # the hidden item boxes 09A67E.. (outside actors here): a node at 09A5EE is
@@ -74,6 +79,12 @@ def owned(frame):
         for n,rt in acts.items():
             if n in world or not gactor_node(n,rt):continue
             c=frame.l(n+0x0C)
+            # A creator kept as a placeholder (004126: deeper nodes follow
+            # it) stands for its own creator (the porter 0327EC after its
+            # figure 03264E is culled).
+            for _ in range(8):
+                if acts.get(c)!=DEAD or c==SCRIPT:break
+                c=frame.l(c+0x0C)
             if 0x1C8FC<=rt<0x1CA9E and c==SCRIPT:continue
             if c==SCRIPT or acts.get(c) in (0x1A422,0x1A438) or c in world:world.add(n);changed=True
     def label(n,rt):

@@ -505,7 +505,7 @@ static int run_gactor(tick_t *t,unsigned i) {
     ga_result_t r=neo_region_tick(a,&t->genv);
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t h=(uint8_t)(w->draws[k].attributes>>8);
-        w->draws[k].palette=h && h<=4u?a->palette[h-1u]:a->palette[0];
+        w->draws[k].palette=h && h<=6u?a->palette[h-1u]:a->palette[0];
         w->draws[k].flash=(ga_b(a,0x17)&1u) && !(ga_b(a,0x17)&0x80u);
         w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
@@ -679,11 +679,17 @@ static bool b_effect(void *c,const neo_boss_effect_t *e) {
      * +19..+1C hold the node's references, +14/+16 the draw/flash slot. */
     uint8_t count=e->image[0x1d]<4u?e->image[0x1d]:4u;
     for (unsigned i=0;i<count;i++) {uint8_t s=e->image[0x19+i];a->palette[i]=s<32?w->boss_palette[s]:0;ga_sb(a,0x19+i,(uint8_t)(i+1u));}
+    /* A draw/flash slot the node no longer references (the shell releases
+     * its three palettes before converting into the explosion 01C71E, which
+     * then allocates 0x204 into +19) keeps its resource behind handle 5/6:
+     * the original draws with the slot's last contents until the allocator
+     * reuses it, and the +19.. list stays as the original's (the explosion's
+     * descriptors select palette 0 = +19). */
     static const uint8_t refs[2]={0x14,0x16};
     for (unsigned r=0;r<2;r++) {
         uint8_t s=e->image[refs[r]],h=0;
         for (unsigned i=0;i<count;i++) if (e->image[0x19+i]==s) h=(uint8_t)(i+1u);
-        if (!h && s && s<32 && count<4u) {a->palette[count]=w->boss_palette[s];h=(uint8_t)(++count);}
+        if (!h && s && s<32) {a->palette[4+r]=w->boss_palette[s];h=(uint8_t)(5+r);}
         ga_sb(a,refs[r],h);
     }
     ga_sb(a,0x1d,count);
@@ -885,6 +891,10 @@ static bool g_subscript(void *ctx,neo_gactor_t *a,uint32_t record) {
     return sub->script.finished;
 }
 /* ROM 004192: the running actor deletes the deeper nodes that follow it. */
+static bool g_has_children(void *ctx,neo_gactor_t *a) {
+    tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
+    return at>=0 && (unsigned)at+1u<t->w->order_count && t->w->order[at+1].depth>t->w->order[at].depth;
+}
 static void g_kill_children(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
     if (at>=0) delete_tree(t,(unsigned)at);
@@ -965,7 +975,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     if (w->pickup_input) memcpy(g->pickup_box,w->pickup_input,sizeof(g->pickup_box));
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
-    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
+    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     g->markers=e->markers;g->marker_count=e->marker_count;
@@ -1034,6 +1044,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             /* 004126: a node followed by deeper ones stays as a placeholder. */
             neo_gactor_t *g=&w->gactors[slot.index];
             g->active=true;g->placeholder=true;ga_sl(g,0,0x3f1e);keep=true;
+        } else if (!keep && slot.kind!=NEO_WORLD_GACTOR && (unsigned)now+1u<w->order_count && w->order[now+1].depth>slot.depth) {
+            /* 004126 for any node (a script runner whose soldier follows
+             * it): the slot stays as a placeholder generic actor, so a tree
+             * deletion (0041AC) before it stops at its depth. */
+            neo_gactor_t *g=ga_alloc(w,0x3f1e,0,0,slot.depth);
+            if (g) {g->placeholder=true;w->order[now].kind=NEO_WORLD_GACTOR;w->order[now].index=(uint8_t)g->index;keep=true;}
         }
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;

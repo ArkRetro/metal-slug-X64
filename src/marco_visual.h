@@ -18,6 +18,9 @@ typedef struct {
     bool running_jump;     /* takeoff while moving */
     int facing;            /* -1 left, 1 right */
     uint16_t x,y;          /* projected words of the player (+3C/+40) */
+    uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables) */
+    int hgun_program;      /* H upper body (marco_hgun.c): its program (marco_hgun_program_t), -1 none */
+    bool hgun_start;       /* that program started (or restarted) in this update */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;
@@ -25,6 +28,7 @@ typedef struct {
     int body_role,weapon_role;     /* MARCO_CAMPAIGN_* entry, -1 none */
     bool body_done,weapon_done;    /* program finished: its last draws stay */
     bool grounded,crouch,moving,running_jump;
+    uint8_t form;                  /* +93 of the previous update */
     uint16_t base_x,base_y;
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */

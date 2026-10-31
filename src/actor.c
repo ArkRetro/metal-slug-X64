@@ -173,15 +173,19 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         game.crouch=input.btn.d_down || input.stick_y<-25;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
-        /* Dying (marco_death.c): the death programs' poses (0BF298..) are
-         * not in the audited pose catalog: explicit stop, the last pose
-         * stays (frozen) until the actor ends. */
-        if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death: poses of 0BF298/0BF318 not in the pose catalog (frozen pose)\n");}
-        if (game.life.phase==MARCO_DYING || game.life.phase==MARCO_LYING) msx_game_projected(&game,&marco.base_x,&marco.base_y);
-        if (!(game.ticks&1) && !game.complete && (game.life.phase==MARCO_ALIVE || game.life.phase==MARCO_ENTERING)) {
+        /* Dying, lying and the entrance (marco_death.c): the death and
+         * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
+         * the body/weapon programs restart with the new life. */
+        if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death kind=%u\n",game.world.hit_kind);}
+        if (game.life.phase==MARCO_ALIVE) death_logged=false;
+        if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;}
+        if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,
-                game.jump_moving,game.facing,0,0};
+                game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1?1u:0u,-1,false};
+            if (game.hgun.state==MARCO_HGUN_BURST || game.hgun.state==MARCO_HGUN_SWEEP) {
+                mi.hgun_program=game.hgun.program;mi.hgun_start=game.hgun.t==1;
+            }
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}
@@ -307,6 +311,10 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     {
         static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
         neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
+        if (marco_native && game.life.phase!=MARCO_ALIVE) {
+            uint16_t bx,by;msx_game_projected(&game,&bx,&by);
+            n=marco_death_draw(&game.life,bx,by,game.facing,&next[0])?1u:0u;
+        }
         /* A descriptor outside the audited catalog (one run-start pose,
          * 188930, never reached the screen in the captures) keeps the
          * previous pose for that update instead of a blank frame. */
@@ -317,7 +325,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         n=shown;
         if (n) {
             /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
-            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,0);
+            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
+            unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
+            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,palette);
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }

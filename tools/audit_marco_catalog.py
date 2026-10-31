@@ -14,7 +14,7 @@ from export_vehicle import program
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
 
-def audit(capture,rom_path,output,queue_publication=False):
+def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=()):
  plan=json.loads((capture/'plan.json').read_text());states={r['frame']:r for line in (capture/'states.jsonl').read_text().splitlines() if (r:=json.loads(line))}
  text=(capture/'debug.log').read_text();assert 'Error in command' not in text
  rom=program(rom_path);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
@@ -32,6 +32,14 @@ def audit(capture,rom_path,output,queue_publication=False):
   return tiles
  draws=collections.defaultdict(list)
  for f,d,xy,attr,z in re.findall(r'MARCO_DRAW frame=(\d+) descriptor=([0-9A-F]+) xy=([0-9A-F]+) attr=([0-9A-F]+) z=([0-9A-F]+)',text):draws[int(f)].append(dict(descriptor=int(d,16),xy=int(xy,16),attr=int(attr,16)))
+ # An update the vertical blank splits (load: the body's draw in frame f, the
+ # weapon's in f+1, the next update in f+2 or f+3) is one submission: both frames
+ # compose the union. The SCB comparison below rejects a wrong merge.
+ split_updates=0;alternate_probes=0;excluded=0
+ for f in sorted(draws):
+  nxt=f+2 if f+2 in draws else f+3
+  if f+1 in draws and nxt in draws and f-1 not in draws and len(draws[f])+len(draws[f+1])<=len(draws[nxt]):
+   merged=draws[f]+draws[f+1];draws[f]=list(merged);draws[f+1]=list(merged);split_updates+=1
  visible_batches={};queue_swaps=0
  if queue_publication:
   from neo_queue_publication import published_batches
@@ -62,8 +70,11 @@ def audit(capture,rom_path,output,queue_publication=False):
    last=visible_batches.get(frame)
   elif frame-3 in updates:last=frame-3
   if last is None:continue
+  if sparse and not (capture/f'vram{frame}.bin').exists():continue
+  if any(lo<=frame<=hi for lo,hi in exclude):excluded+=1;continue
   v=struct.unpack('>34304H',(capture/f'vram{frame}.bin').read_bytes());pal=struct.unpack('>4096H',(capture/f'palette{frame}.bin').read_bytes())
   known_palettes.update(d['attr']>>8 for d in draws[last])
+  if sparse:known_palettes.update(d['attr']>>8 for u in range(frame-6,frame) for d in draws.get(u,()))
   active_palettes=known_palettes
   image,_=reconstruct(v,pal,crom,selected_palette=active_palettes);indices=np.frombuffer(image.info['neo_palette_indices'],dtype=np.uint16).reshape(256,320)
   # Each original submission lasts two video ticks. An absent submission
@@ -71,6 +82,13 @@ def audit(capture,rom_path,output,queue_publication=False):
   # The SCB comparison below independently rejects any incorrect expiry.
   source_frame=last if queue_publication or frame-last<=4 else frame-3
   actual=composed(source_frame);difference=np.count_nonzero(actual[16:240,8:312]!=indices[16:240,8:312])
+  if difference and sparse:
+   # A sparse capture has no queue trace: the update the frame shows may
+   # be another of the last six (vertical blanks under load); the SCB
+   # comparison must then match one of them exactly.
+   for other in sorted((u for u in updates if frame-6<=u<=frame-1 and u!=source_frame),reverse=True):
+    d2=np.count_nonzero(composed(other)[16:240,8:312]!=indices[16:240,8:312])
+    if not d2:source_frame=other;difference=0;alternate_probes+=1;break
   if difference:
    failures.append(dict(frame=frame,probe_frame=source_frame,pixels=int(difference)));continue
   reference=np.asarray(Image.open(capture/f'game{frame}.png').convert('RGB'))
@@ -100,9 +118,9 @@ def audit(capture,rom_path,output,queue_publication=False):
  for case in plan['cases']:
   frames=[f for f in rows if case['first']<=f<=case['last']]
   cases.append(dict(name=case['name'],input_conditions=case['inputs'],first=case['first'],last=case['last'],verified_frames=len(frames),routines=sorted({f"0x{states[f]['routine']:06X}" for f in frames})))
- report=dict(queue_publication=queue_publication,observed_queue_swaps=queue_swaps,status='PASS' if not failures else 'FAILED',source='MAME 0.276 euro, controller input only',verified_frames=len(rows),visible_actor_frames=visible_frames,remapped_palette_frames=other_palette_frames,palette_profiles=[dict(sha256=key,words=values,frame_uses=profile_uses[key]) for key,values in profiles.items()],descriptor_addresses=sorted(f'0x{tag:06X}' for tag in normal_tags),other_palette_only_descriptors=sorted({f"0x{d['descriptor']:06X}" for ds in draws.values() for d in ds if d['descriptor'] not in normal_tags}),matched_pixels=pixels,independently_explained_occlusions=occluded,frame_failures=failures,cases=cases,provenance={n:sha(capture/n) for n in ('capture.json','plan.json','debug.log','states.jsonl','program-fixed.bin','program-bank.bin')},limits=[str(len(plan['cases']))+' input conditions, not a complete game-wide Marco animation inventory.','Descriptor data are physical cartridge offsets, never executable native pointers.','Active 304x224 pixels; clipped margins do not establish complete offscreen art.','Input cases do not prove all weapon variants, damage/death paths or transformations. Palette identity is checked per observed draw.'])
+ report=dict(queue_publication=queue_publication,observed_queue_swaps=queue_swaps,split_updates=split_updates,alternate_probes=alternate_probes,excluded_frames=excluded,exclusions=[list(e) for e in exclude],status='PASS' if not failures else 'FAILED',source='MAME 0.276 euro, controller input only',verified_frames=len(rows),visible_actor_frames=visible_frames,remapped_palette_frames=other_palette_frames,palette_profiles=[dict(sha256=key,words=values,frame_uses=profile_uses[key]) for key,values in profiles.items()],descriptor_addresses=sorted(f'0x{tag:06X}' for tag in normal_tags),other_palette_only_descriptors=sorted({f"0x{d['descriptor']:06X}" for ds in draws.values() for d in ds if d['descriptor'] not in normal_tags}),matched_pixels=pixels,independently_explained_occlusions=occluded,frame_failures=failures,cases=cases,provenance={n:sha(capture/n) for n in ('capture.json','plan.json','debug.log','states.jsonl','program-fixed.bin','program-bank.bin')},limits=[str(len(plan['cases']))+' input conditions, not a complete game-wide Marco animation inventory.','Descriptor data are physical cartridge offsets, never executable native pointers.','Active 304x224 pixels; clipped margins do not establish complete offscreen art.','Input cases do not prove all weapon variants, damage/death paths or transformations. Palette identity is checked per observed draw.'])
  output.parent.mkdir(parents=True,exist_ok=True);output.write_text(json.dumps(report,indent=2)+'\n');assert not failures,failures[:8]
  print('PASS',len(rows),'frames,',len(report['descriptor_addresses']),'descriptors,',pixels,'pixels')
 
 if __name__=='__main__':
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--rom',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--queue-publication',action='store_true');a=p.parse_args();audit(a.capture,a.rom,a.output,a.queue_publication)
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--rom',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--queue-publication',action='store_true');p.add_argument('--sparse',action='store_true',help='frames without a VRAM dump (run_marco_catalog.py --dump-routines) are skipped');p.add_argument('--exclude',action='append',default=[],help='lo-hi: frames left out (documented anomalies; listed in the report)');a=p.parse_args();audit(a.capture,a.rom,a.output,a.queue_publication,a.sparse,[tuple(map(int,e.split('-'))) for e in a.exclude])

@@ -31,6 +31,13 @@ for f in string.gmatch(os.getenv('MSX_REST_EXTRA_DUMPS') or '','(%d+)') do extra
 local frame=0
 local hold_fire={-1,-1}
 for lo,hi in string.gmatch(os.getenv('MSX_REST_HOLD_FIRE') or '','(%d+)-(%d+)') do hold_fire={tonumber(lo),tonumber(hi)} end
+-- MSX_REST_HOLD_STILL="lo-hi": no input at all in those frames (the player
+-- stands, the camera waits); MSX_REST_STAND_FIRE="lo-hi": the player stands
+-- firing level, turning every 96 frames (one-frame Left/Right tap).
+-- Capture-only, like MSX_REST_HOLD_FIRE (camel riders 09F682 at camera 2184).
+local hold_still={-1,-1};local stand_fire={-1,-1}
+for lo,hi in string.gmatch(os.getenv('MSX_REST_HOLD_STILL') or '','(%d+)-(%d+)') do hold_still={tonumber(lo),tonumber(hi)} end
+for lo,hi in string.gmatch(os.getenv('MSX_REST_STAND_FIRE') or '','(%d+)-(%d+)') do stand_fire={tonumber(lo),tonumber(hi)} end
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 -- MSX_REST_ROM_PATCH="off:old:new,...": capture-only patch of the P2 ROM image
 -- (hex bank-relative offset, old and new byte): every 1MB bank of the 5MB
@@ -346,7 +353,15 @@ emu.register_frame_done(function()
   -- frames (capture-only: an enemy family, e.g. the rocket launcher 05ED84,
   -- survives long enough to reach every state; the player is invulnerable).
   local hold=frame>=hold_fire[1] and frame<=hold_fire[2]
-  button('P1 A',(not hold and frame%12<6) and 1 or 0)
+  local still_hold=frame>=hold_still[1] and frame<=hold_still[2]
+  local standing=frame>=stand_fire[1] and frame<=stand_fire[2]
+  if still_hold or standing then
+   hold=true;button('P1 Up',0)
+   local turn=standing and (frame-stand_fire[1])%96==0
+   local left=((frame-stand_fire[1])//96)%2==1
+   button('P1 Right',(turn and not left) and 1 or 0);button('P1 Left',(turn and left) and 1 or 0)
+  end
+  button('P1 A',((not hold or standing) and frame%12<6) and 1 or 0)
   button('P1 B',(not hold and frame>3000 and frame%120<8) and 1 or 0)
   button('P1 C',(not hold and frame>2900 and frame%60<8) and 1 or 0)
  end

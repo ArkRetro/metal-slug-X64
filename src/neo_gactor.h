@@ -24,7 +24,12 @@ typedef struct neo_gactor {
     uint8_t m[NEO_GA_BYTES];
     const neo_anim_program_t *program;uint16_t cursor;uint32_t program_tag;
     uint8_t palette_handles[4];
-    uint16_t palette[4];      /* logical resources requested through 009EA8 per slot */
+    /* Logical resources behind the native palette handles: handles 1..4 are
+     * the node's own references (+19..+1C, counted in +1D); handles 5 and 6
+     * hold the draw/flash slots (+14/+16) a node converted from the boss
+     * brought along without a reference, which the original keeps drawing
+     * with until the allocator reuses the slot. */
+    uint16_t palette[6];
     int16_t index;            /* pool slot */
     /* Bytes written since the node was taken from the free list (bit per
      * offset). The fields ROM 004126 does not clear keep the previous
@@ -140,6 +145,7 @@ struct neo_genv {
     bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
     bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */
     void (*kill_children)(void *ctx,neo_gactor_t *a);  /* 004192: delete the deeper nodes after `a` */
+    bool (*has_children)(void *ctx,neo_gactor_t *a);   /* 00408C: carry when the next node is deeper than `a` */
     /* Sub-script actor 019E82: run the level-script record at ROM `record`
      * for actor `a` (the interpreter of the world, freed with the actor);
      * true once op 3 ran. */

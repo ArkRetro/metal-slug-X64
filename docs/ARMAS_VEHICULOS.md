@@ -601,6 +601,81 @@ sola (sin granadas) no cambiaba: la H se toma después de 1304.
 
 ### Paso 5: HUD de capa fija — ver §11
 
+### Semántica del disparo (captura `hold`, `tools/capture_weapons.lua` plan `hold`)
+
+`/home/user/captures/weapons/hold2`: el jugador quieto en el inicio de la
+misión **mantiene A** (280 de cada 300 fotogramas) de pie, agachado, apuntando
+arriba y saltando, con la pistola y luego con la H (id `0A`, 200 balas, `+94 =
+1` escrito en 3400), y al final pulsa A cada 4 fotogramas. Resultado
+(`debug.log`, puntos de ruptura `0x0C438E`, `0x01B782`, `0x01B716`):
+
+- **Pistola: un disparo por pulsación, nunca autodisparo.** Pulsación en
+  2190 → retrollamada `0C4372` en 2191 (misma actualización) → constructor
+  `01B782` en 2193 (una actualización después, `00411C` en la retrollamada);
+  mantener A 280 fotogramas no dispara más (2491, 2791, 3091, 3391: uno por
+  pulsación en cada postura). Mecanismo: `0x0C0FEA` hace `+9B |= nuevas
+  pulsaciones & +9C` (`10E9EC+0` son las pulsaciones nuevas, `+2` las
+  mantenidas, `0x0CA1B8`; `+9C` vuelve a `FF` en `0x0C3770` cada
+  actualización); el estado `0x0C3CD0` borra `+9B` bit 4 al empezar el
+  programa y `0x0C3D9A` solo vuelve a disparar con `+76` del programa **y**
+  `+9B` bit 4 (una pulsación guardada). Programas: nivel `24C70A` (`0C4372`
+  en 0, `+76` en 1, fin 20), arriba `24C7F2` y abajo `24EABC` (`+76` en 2):
+  cadencia mínima 2 (3) actualizaciones entre retrollamadas.
+- **H: una ráfaga por pulsación** (de pie/agachado 4 balas en 3693, 3697,
+  3701, 3705; apuntando arriba 4; en el aire 3), nada más mientras se
+  mantiene; pulsando cada 4 fotogramas dispara una bala cada 4 fotogramas
+  (4595..). `+95` sube **una** vez por bala (`0C4434` entra en `jsr 1AC94`,
+  no en el `addq` de `0C4430`): ángulos 0, +2, −2 como en `hfam`. Lo que ya
+  hacía `marco_hgun.c`; las capturas anteriores no mantenían A (`a =
+  frame%12<6`).
+- **Boca** (`0x0C4244`, tabla `0x0C4204`, 3 filas por `+92` × 4 formas,
+  palabras (x,y) en píxeles respecto a `+28/+2C`, y hacia arriba): abajo
+  `(0,-16) (-4,-20) (16,0) (8,-16)`, nivel `(16,10) (24,4) (24,8) (20,4)`,
+  arriba `(0,40) (0,48) (8,32) (5,32)`; barridos `0x0C453A` tabla `0x0C4234`
+  `(16,28) (16,16) (16,20) (16,46)`; se suma `+72/+74` del programa de
+  piernas y en `0C43CC` se resta otra vez salvo `+90 = FF`. Medido: pistola
+  de pie `(16,27)` (`+74 = 17`), agachado `(16,16)` (`+74 = 6`); H de pie
+  `(28,16)` (`+72/+74 = 4/12`), corriendo `(26,23..25)`. El ángulo del
+  abanico (±2) y de los barridos sale de ese único punto.
+
+Port (`src/gameplay.c`): `fire_request` es `+9B` bit 4 (pulsación nueva,
+guardada hasta consumirse; mantener no dispara), `pistol_wait` las
+actualizaciones hasta `+76` + 1 (2 nivel, 3 arriba/agachado) y
+`pistol_pending` retrasa la bala una actualización.
+
+**Boca (`src/marco_legs.c`).** `+72/+74` los escriben los programas de
+cuerpo en cada pose (`WRITE_WORD`/`WRITE_LONG`): reposo `24C5EA` (0,17),
+carrera `24DD18` (−1, 17..21, bucle desde la quinta pose), salto `24E4E0`
+(1, 24..18, espera arriba mientras está en el aire), salto con carrera
+`24E858` (−3/−4, 15..11) y después `24DF6C` (−1,15). `marco_legs.c` lleva
+esas líneas de tiempo con los mismos arranques que `marco_visual.c`.
+Agachado ningún programa los escribe: se usan los valores medidos (H (4,12),
+pistola (0,6)), **aproximación declarada** (escritor no localizado).
+`0C4244` (con `+90 ≠ FF`, todos los nacimientos medidos): tabla `0C4204` por
+`+92` y forma más `+72/+74`, x negada mirando a la izquierda (la H y la
+pistola: de pie (16,27)/(0,57), como el original; la carrera guionizada de
+`tools/test_gameplay.c` sigue liberando a los prisioneros). `0C453A`
+(barridos) **no usa la tabla `0C4234`**: x = parte entera de 12·cos θ más
+`+72`, y = parte entera de 12·sen θ (más la mitad si θ < 0x80) más `+74` + 2,
+con θ ya reflejado a la izquierda (`002E7C`, tabla de senos `0029FC`); el
+port usaba (16,16) reflejado, de ahí los diagonales erráticos en hardware.
+Prueba `tools/test_marco_muzzle.c` (`make check`,
+`data/hmuzzle_fixture.json` de `tools/extract_hmuzzle_fixture.py` sobre
+`hold2`, `hfam`, `hudp2`, `hudv2`): los **34 nacimientos de balas H** (29 del
+abanico ±2, 5 de barrido, a izquierda y derecha) son, píxel a píxel, la boca
+de su puntería con el `+72/+74` de una pose del programa de cuerpo de la
+rutina del jugador. La velocidad y la trayectoria de cada bala las cubre la
+familia `hbullet`.
+
+**Forma 1 y muertes (resuelto):** la forma 1 (H) y las muertes tienen sus
+programas y poses en el catálogo; ver [MARCO_CAMPAIGN.md](MARCO_CAMPAIGN.md),
+«Forma 1 (H) y muerte». El renderizador usa la fila `+0x10` con `+93 = 1`;
+mientras muere, yace (dibujo cada dos actualizaciones: parpadeo) y entra,
+dibuja la pose del programa de `marco_death.c` (`marco_death_draw`, paleta
+quemada en `0BF358`). `tools/test_marco_death.c` compara además, en las 8
+muertes de `marco-d2`, la pose de cada actualización mientras muere (315
+poses) y el número de dibujos mientras yace, iguales.
+
 ## 11. HUD de capa fija (`src/neo_hud.c`, `src/hud_renderer.c`)
 
 El HUD del original es la capa fija del Neo Geo (VRAM `7000..74FF`, 40

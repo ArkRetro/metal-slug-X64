@@ -37,8 +37,10 @@ static bool rom_file(const char *path) { return dfs_rom_addr(path)!=0; }
  * frame): the movie stops on that frame (SOLDIER SELECT with P1 on Marco) until A or Start is
  * pressed, as the arcade waits for the player's choice; only Marco can be
  * chosen for now. Ends on its last frame; false when it cannot play. */
-static bool play_cinematic(const char *label,const char *movie,const char *sound,int hold,bool entry) {
+static bool play_cinematic(const char *label,const char *movie,const char *sound,int hold,bool entry,const char *next) {
     if (!msx_cinematic_open(movie)) return false;
+    // The next movie is read and prepared in this one's spare frame time.
+    if (next && !msx_cinematic_prepare(next)) next=NULL;
     if (entry && (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0])) {msx_cinematic_close();return false;}
     if (hold==-2) hold=(int)msx_cinematic_stats().frames-1;   // its last frame (capture 3619)
     bool audio=msx_audio_open(MSX_AUDIO_INTRO,sound);
@@ -57,6 +59,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
             /* Waiting on the choice: the clock stands on the hold frame. */
             if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen\n",label);}
             else {surface_t *surface=display_get();msx_cinematic_draw(surface);rendered++;
+                if (next) while (msx_cinematic_prepare_idle()) {}
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
         } else if (target>=30 && press) {
             if (hold>=0) {hold=-1;debugf("MSX CINE %s chosen early\n",label);}   // the choice made before the cursor settles
@@ -80,6 +83,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
             unique++;last_presented=state.index;
         }
         uint32_t d0=TICKS_READ();msx_cinematic_draw(surface);draw_ticks=TICKS_READ()-d0;rendered++;
+        if (next) while (msx_cinematic_prepare_idle()) {}
         if (hold>=0 && state.index==(unsigned)hold) {held=true;debugf("MSX CINE %s waiting for A/Start at frame %d\n",label,hold);}
         if (target>=state.frames && state.index+1==state.frames) break;
     }
@@ -100,10 +104,12 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
  * the choice 3620..3829, then the parachute entry from 3830. The first three
  * are optional private files; the entry is required for the handoff. */
 static bool entry_cinematic(void) {
-    if (rom_file("/howto.msxc")) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",-1,false);
-    if (rom_file("/select.msxc")) play_cinematic("select","rom:/select.msxc","rom:/select.wav64",-2,false);
-    if (rom_file("/confirm.msxc")) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",-1,false);
-    return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",-1,true);
+    bool howto=rom_file("/howto.msxc"),select=rom_file("/select.msxc"),confirm=rom_file("/confirm.msxc");
+    const char *after_select=confirm?"rom:/confirm.msxc":"rom:/entry.msxc";
+    if (howto) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",-1,false,select?"rom:/select.msxc":after_select);
+    if (select) play_cinematic("select","rom:/select.msxc","rom:/select.wav64",-2,false,after_select);
+    if (confirm) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",-1,false,"rom:/entry.msxc");
+    return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",-1,true,NULL);
 }
 #endif
 #if MSX_GRAPHICS_LAB

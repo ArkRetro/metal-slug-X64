@@ -4,17 +4,38 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
-static FILE *movie;
-static uint32_t *offsets;
-static uint8_t *packet,*movie_cache;
-static uint32_t rom;
-static uint16_t *work_canvas,*heavy_pixels;
-static int8_t *heavy_slot;
-static unsigned heavy_count;
-static surface_t canvas;
-static msx_cinematic_stats_t stats;
-static enum { PREP_NONE,PREP_LOAD,PREP_CHECK,PREP_APPLY,PREP_DONE } prep;
-static char prep_path[64];
+/* Two movie slots: the one playing and the next one, prepared in the
+ * current one's spare frame time (the boot runs title, HOW TO PLAY, SOLDIER
+ * SELECT, the choice and the entry back to back; preparing each only at its
+ * open left 0.4-1 s freezes between them, MiSTer report "micro parones").
+ * C is the slot the functions below act on. */
+enum { PREP_NONE,PREP_LOAD,PREP_CHECK,PREP_APPLY,PREP_DONE };
+typedef struct {
+    FILE *s_movie;uint32_t *s_offsets;uint8_t *s_packet,*s_movie_cache;uint32_t s_rom;
+    uint16_t *s_work_canvas,*s_heavy_pixels;int8_t *s_heavy_slot;unsigned s_heavy_count;
+    surface_t s_canvas;msx_cinematic_stats_t s_stats;
+    int s_prep;char s_prep_path[64];uint32_t s_prep_pos,s_prep_size;unsigned s_prep_index;uint32_t s_prep_crc,s_prep_crc_pos;
+} cine_slot_t;
+static cine_slot_t slot_a,slot_b;
+static cine_slot_t *playing=&slot_a,*pending=&slot_b,*C=&slot_a;
+#define movie (C->s_movie)
+#define offsets (C->s_offsets)
+#define packet (C->s_packet)
+#define movie_cache (C->s_movie_cache)
+#define rom (C->s_rom)
+#define work_canvas (C->s_work_canvas)
+#define heavy_pixels (C->s_heavy_pixels)
+#define heavy_slot (C->s_heavy_slot)
+#define heavy_count (C->s_heavy_count)
+#define canvas (C->s_canvas)
+#define stats (C->s_stats)
+#define prep (C->s_prep)
+#define prep_path (C->s_prep_path)
+#define prep_pos (C->s_prep_pos)
+#define prep_size (C->s_prep_size)
+#define prep_index (C->s_prep_index)
+#define prep_crc (C->s_prep_crc)
+#define prep_crc_pos (C->s_prep_crc_pos)
 static bool decode(unsigned index) {
     uint32_t began=TICKS_READ(),length=offsets[index+1]-offsets[index];
     const uint8_t *source;
@@ -38,7 +59,7 @@ static bool decode(unsigned index) {
     if (elapsed>stats.max_decode_ticks) stats.max_decode_ticks=elapsed;
     stats.index=index;return true;
 }
-void msx_cinematic_close(void) {
+static void close_slot(void) {
     if (movie) fclose(movie);
     free(work_canvas);free(heavy_pixels);free(heavy_slot);work_canvas=heavy_pixels=NULL;heavy_slot=NULL;heavy_count=0;
     free(packet);free(movie_cache);free(offsets);movie=NULL;packet=movie_cache=NULL;offsets=NULL;rom=0;
@@ -51,8 +72,6 @@ void msx_cinematic_close(void) {
  * "parones en la intro"). Now msx_cinematic_prepare starts it and
  * msx_cinematic_prepare_idle advances it in the logo's spare frame time;
  * msx_cinematic_open finishes whatever is left. */
-static uint32_t prep_pos,prep_size;
-static unsigned prep_index;
 static volatile uint32_t vblank_at,vblank_period;
 static bool vblank_hooked;
 static void on_vblank(void) {
@@ -61,13 +80,16 @@ static void on_vblank(void) {
     vblank_at=now;
 }
 enum { PREP_DMA_BYTES=16*1024, PREP_CRC_BYTES=8*1024, PREP_MARGIN_US=1500 };
-static uint32_t prep_crc,prep_crc_pos;
 static uint32_t idle_left(void) {
     uint32_t v=vblank_at,period=vblank_period?vblank_period:TICKS_FROM_US(16683);
     if (!v) return 0;
     uint32_t since=TICKS_READ()-v,margin=TICKS_FROM_US(PREP_MARGIN_US);
     return since+margin>=period?0:period-since-margin;
 }
+static bool force_ok;   // a stuck step may run late only while another movie plays (not under the logo)
+static uint32_t last_force;   // at most one late step per half second (a skipped frame, not a freeze)
+static unsigned refused,last_heavy;   // last_heavy: per slot would be exact; prepared one at a time
+   // consecutive idle refusals of the same step
 static uint32_t apply_ticks_per_kb,check_ticks_per_kb;   // running mean per KB (0: first step unbounded)
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
 static bool begin(const char *path) {
@@ -106,7 +128,7 @@ static bool begin(const char *path) {
     if (!vblank_hooked) {register_VI_handler(on_vblank);vblank_hooked=true;}
     return true;
 error:
-    msx_cinematic_close();return false;
+    close_slot();return false;
 }
 /* The heaviest frames get a prepared copy, within the same 6 MiB cinematic
  * budget as before (a 3 MiB cliff cut preparation to seven frames; a 2 MiB
@@ -127,6 +149,7 @@ static bool select_heavy(void) {
         if (selected==count) break;
         heavy_slot[selected]=(int8_t)slot;heavy_count++;
     }
+    last_heavy=0;for (unsigned i=0;i<count;i++) if (heavy_slot[i]>=0) last_heavy=i;
     if (heavy_count) {heavy_pixels=memalign(16,(size_t)heavy_count*w*h*2);if (!heavy_pixels) return false;}
     return true;
 }
@@ -146,7 +169,11 @@ static int prep_step(uint32_t budget) {
         // CRC in pieces of PREP_CRC_BYTES (the key frames are ~110 KB), then
         // the packet's structure (one pass over its run words).
         const uint8_t *source=movie_cache+offsets[prep_index];unsigned length=offsets[prep_index+1]-offsets[prep_index];
-        if (budget && check_ticks_per_kb*(PREP_CRC_BYTES>>10)>budget) return 0;
+        if (budget && check_ticks_per_kb*(PREP_CRC_BYTES>>10)*(force_ok?2u:1u)>budget) {
+            if (!force_ok || ++refused<20 || TICKS_READ()-last_force<TICKS_FROM_MS(1000)) return 0;
+            last_force=TICKS_READ();
+        }
+        refused=0;
         uint32_t t0=TICKS_READ(),n=length-4-prep_crc_pos;if (n>PREP_CRC_BYTES) n=PREP_CRC_BYTES;
         if (!prep_crc_pos) prep_crc=~0u;
         prep_crc=msx_cine_crc32_update(prep_crc,source+4+prep_crc_pos,n);prep_crc_pos+=n;
@@ -162,14 +189,18 @@ static int prep_step(uint32_t budget) {
     }
     case PREP_APPLY: {
         unsigned length=offsets[prep_index+1]-offsets[prep_index];
-        if (budget && apply_ticks_per_kb*((length>>10)+1)>budget) return 0;
+        if (budget && apply_ticks_per_kb*((length>>10)+1)*(force_ok?2u:1u)>budget) {
+            if (!force_ok || ++refused<20 || TICKS_READ()-last_force<TICKS_FROM_MS(1000)) return 0;
+            last_force=TICKS_READ();
+        }
+        refused=0;
         uint32_t t0=TICKS_READ();
         msx_cine_delta_apply_trusted(work_canvas,movie_cache+offsets[prep_index]+4);
         unsigned plane=stats.width*stats.height;
         if (heavy_slot[prep_index]>=0) memcpy(heavy_pixels+(size_t)heavy_slot[prep_index]*plane,work_canvas,(size_t)plane*2);
         apply_ticks_per_kb=(apply_ticks_per_kb*3+(TICKS_READ()-t0)/((length>>10)+1))/4;
-        if (++prep_index==stats.frames) {
-            data_cache_hit_writeback(heavy_pixels,(size_t)heavy_count*plane*2);
+        if (++prep_index==stats.frames || (heavy_count && prep_index>last_heavy)) {
+            prep_index=stats.frames;data_cache_hit_writeback(heavy_pixels,(size_t)heavy_count*plane*2);
             memset(work_canvas,0,(size_t)plane*2);prep=PREP_DONE;
         }
         return 1;
@@ -177,16 +208,27 @@ static int prep_step(uint32_t budget) {
     default: return 0;
     }
 }
-bool msx_cinematic_prepare(const char *path) {return begin(path);}
+void msx_cinematic_close(void) {C=playing;close_slot();}
+bool msx_cinematic_prepare(const char *path) {
+    C=playing->s_movie?pending:playing;
+    if (C->s_movie) return !strcmp(C->s_prep_path,path);
+    bool ok=begin(path);
+    if (!ok) {heap_stats_t h;sys_get_heap_stats(&h);debugf("MSX CINEMATIC cannot prepare %s (heap free %d)\n",path,h.total-h.used);}
+    return ok;
+}
 bool msx_cinematic_prepare_idle(void) {
+    C=pending->s_movie && pending->s_prep!=PREP_DONE?pending:playing;
+    force_ok=C==pending;
     if (!movie || prep==PREP_DONE || prep==PREP_NONE) return false;
     uint32_t left=idle_left();
     if (!left) return false;
     int r=prep_step(left);
-    if (r<0) {debugf("MSX CINEMATIC bad packet while preparing %s\n",prep_path);msx_cinematic_close();return false;}
+    if (r<0) {debugf("MSX CINEMATIC bad packet while preparing %s\n",prep_path);close_slot();return false;}
     return r>0;
 }
 bool msx_cinematic_open(const char *path) {
+    if (!playing->s_movie && pending->s_movie && !strcmp(pending->s_prep_path,path)) {cine_slot_t *s=playing;playing=pending;pending=s;}
+    C=playing;
     if (movie && strcmp(prep_path,path)) return false;
     uint32_t began=TICKS_READ();unsigned left_index=prep==PREP_APPLY?prep_index:0;int left_state=prep;
     if (!movie && !begin(path)) return false;
@@ -198,20 +240,23 @@ bool msx_cinematic_open(const char *path) {
     debugf("MSX CINEMATIC cache=%ld streaming=%u prepared=%u prepared_bytes=%lu\n",movie_cache?(long)prep_size:0L,!movie_cache,heavy_count,(unsigned long)heavy_count*stats.width*stats.height*2);
     return true;
 error:
-    msx_cinematic_close();return false;
+    close_slot();return false;
 }
 bool msx_cinematic_next(void) {
+    C=playing;
     return movie && stats.index+1<stats.frames && decode(stats.index+1);
 }
 void msx_cinematic_draw(surface_t *target) {
+    C=playing;
     assert(movie && target);uint32_t began=TICKS_READ();
     rdpq_attach_clear(target,NULL);rdpq_set_mode_standard();rdpq_mode_filter(FILTER_POINT);rdpq_mode_dithering(DITHER_NONE_NONE);
     rdpq_tex_blit(&canvas,(320-stats.width)/2,(240-stats.height)/2,NULL);
     rdpq_detach_wait();display_show(target);
     uint32_t elapsed=TICKS_READ()-began;if (elapsed>stats.max_draw_ticks) stats.max_draw_ticks=elapsed;
 }
-msx_cinematic_stats_t msx_cinematic_stats(void) {return stats;}
+msx_cinematic_stats_t msx_cinematic_stats(void) {C=playing;return stats;}
 
 uint32_t msx_cinematic_pixels_crc(void) {
+    C=playing;
     return movie?msx_cine_crc32(canvas.buffer,(size_t)stats.width*stats.height*2):0;
 }

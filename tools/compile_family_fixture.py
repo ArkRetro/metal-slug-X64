@@ -27,6 +27,7 @@ def main():
     p.add_argument('--script-routines',default='',help='ROUTINES (comma hex): with --script-actor, only nodes with these first routines are made by family nodes (the others the script itself creates: injected)')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
+    p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
@@ -93,6 +94,9 @@ def main():
     if a.hit_to:
         hits=sorted({(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u['post'] and int(u['post'][:8],16)==int(a.hit_to,16) and int(u['pre'][:8],16)!=int(a.hit_to,16) and (a.hit_moving or u['post'][2*0x3c:2*0x44]==u['pre'][2*0x3c:2*0x44])})
         L.append('#define FAMILY_HIT_UPDATES {%s}'%','.join('{%d,%d}'%h for h in hits))
+    if a.node_fields:
+        L.append('#define FAMILY_NODE_FIELDS {%s}'%','.join('0x%x'%int(x,16) for x in a.node_fields.split(',')))
+        L.append('#define FAMILY_ADDRESSES {%s}'%','.join('0x%s'%u['node'] for u,_ in order))
     if a.terrain:L.append('#define FAMILY_TERRAIN 0x%xu'%int(a.terrain,16))
     if a.marker_seq is not None:L.append('#define FAMILY_MARKER_SEQ %d'%a.marker_seq)
     if a.stamp:

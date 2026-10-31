@@ -973,7 +973,38 @@ MSX_REST_FIRST_DUMP=2300`).
   jugador, que el entorno de los actores no lleva), los toldos rayados
   `0x0B639A/0x0B63A0` (velocidad de programa por RAM `100012/100013`,
   `002836`, y rebote por `10C6B0/10C6B1`, que escribe `0B64BA` desde el
-  jugador), `0x031D80/0x03264E/0x031D92` (no traducidos en esta tanda).
+  jugador), `0x031D80` (su registro `0x2D641E` no se ejecutó en `unc1`) y `0x031D92`.
+
+## Porteador del pueblo `0x03264E` (cámara 440, `src/neo_porter.c`)
+
+Registro `0x2D642E` (grupo 9, no contado; palabra `+6E` = 80). Traducción de
+`0x03264E..0x032938` y de las llamadas de sus programas del banco
+(`238632..2386EE`, `238AF0..238BAA`):
+
+- **Figura `0x03264E`** (`019DFC`, paleta `0x92`, programa `2389CE` con
+  `238B20/238B70/238AF0/238B08/238B78`: va y viene, `+7E` su desvío):
+  `+6E` + progreso de cámara (RAM `10E99E`) es la cámara a la que envía al
+  porteador `0x0327EC` (`0040BC`, desde `x = 0x180` o `-0x40` por `+70`,
+  `01ACF2`); movimiento `08CCD4` hasta que el porteador llega (`+80`), luego
+  `0x0327B0/0x0327CA` (programa `2386F0` con `238B8E`, `01436A`).
+- **Porteador `0x0327EC`** (paleta `0x114`, programa `237F36`, 2,5 px):
+  `23867C` (a menos de 0x28 px pone `+80` de ambos), `238632` le da un
+  objeto `0x08C374` de tipo `0x30` (`08CD70`: `0040BC` tras él, `+70` =
+  FFFF; objeto y creador en `+72/+76`), `2386A4/2386C2/2386CC/238666/
+  2386E6/238670/2386D6`; mientras siga un nodo más profundo (`00408C`, nuevo
+  servicio `has_children` del entorno) espera, luego `+83` de ambos.
+  Recorte `032646` → `004188`.
+- Prueba `porter` (`--terrain 10c72e --node-fields 72,76 --pickup
+  2836,0,ffff`: `--node-fields` compara los punteros a nodos a través de la
+  correspondencia): **246 actualizaciones (2601..3016), 34020 bytes
+  iguales**, el objeto recogido en 2836 (puntos).
+- Mundo: `extract_soldier_world.py` trata un creador marcador (`003F1E`)
+  como su propio creador (el porteador sigue siendo del mundo cuando la
+  figura se recorta); `test_neo_world.c` compara `+72/+76` del porteador por
+  el mapa de nodos. 5248 actualizaciones, 28211 estados de actores
+  genéricos, 6 llamadas al RNG menos inyectadas.
+- Gráficos: `unc1@3264e-32940`: 2355 descriptores, paleta nueva `0x92`; 14
+  volcados: 10495 píxeles iguales, 0 distintos.
 
 ## Otras paradas explícitas de esta tanda
 

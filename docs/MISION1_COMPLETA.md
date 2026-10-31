@@ -174,7 +174,7 @@ iguales, 0 distintos**
 | `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
 | `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
-| `0x0B6298` decoración del pueblo, `0x0400AA` toldo del puesto | **nativos** (MISION1_ACTORES.md) |
+| `0x0B6298` decoración del pueblo, `0x0400AA` toldo del puesto, `0x03264E` porteador | **nativos** (MISION1_ACTORES.md) |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),
 el actor no se crea ni se dibuja y no cuenta en los grupos (las esperas "grupos

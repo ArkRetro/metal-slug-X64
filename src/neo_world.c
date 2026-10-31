@@ -885,6 +885,10 @@ static bool g_subscript(void *ctx,neo_gactor_t *a,uint32_t record) {
     return sub->script.finished;
 }
 /* ROM 004192: the running actor deletes the deeper nodes that follow it. */
+static bool g_has_children(void *ctx,neo_gactor_t *a) {
+    tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
+    return at>=0 && (unsigned)at+1u<t->w->order_count && t->w->order[at+1].depth>t->w->order[at].depth;
+}
 static void g_kill_children(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;int at=find(t->w,NEO_WORLD_GACTOR,(unsigned)a->index);
     if (at>=0) delete_tree(t,(unsigned)at);
@@ -965,7 +969,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     if (w->pickup_input) memcpy(g->pickup_box,w->pickup_input,sizeof(g->pickup_box));
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
-    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->subscript=g_subscript;
+    g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     g->markers=e->markers;g->marker_count=e->marker_count;

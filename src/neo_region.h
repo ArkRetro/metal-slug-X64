@@ -33,6 +33,8 @@ ga_result_t neo_heli_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_heli_routine(uint32_t routine);
 ga_result_t neo_camel_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_camel_routine(uint32_t routine);
+ga_result_t neo_porter_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_porter_routine(uint32_t routine);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_bullet_routine(uint32_t routine);
 ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e);

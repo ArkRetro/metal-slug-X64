@@ -342,6 +342,11 @@
    "rom": "0x0E08B8",
    "reader": "03FC5A/0400AA market stall: cull rectangle E08B8 (03FADA), box offsets E0900, debris list E090C, collision stamps E091E/E0932 (0C88B0), hurtbox E0942, player rectangle E094E",
    "hex": "ffe0ffe0004000400003eeb40003ef240003ef5a0003ef5a0003f23a0003f23a0003f2ac0003f2e20023ff1e0023ff1e0023ff600023ffa20023ffe40023ffe40023ffe40023ffe4ffe8003c0000003c0018003c01ff0002fffc00080000000800000003ffacfb070a010100000000000b0b0b0b0b0b0b0b0b0bfd0306010100000000000b0b0b0b0b0b0002fff4fffc001800088000fff4fffe001800080002fff0fff0001800208000"
+  },
+  {
+   "rom": "0x032646",
+   "reader": "03264E village porter cull rectangle (01945C)",
+   "hex": "ffe8fff000300040"
   }
  ]
 }

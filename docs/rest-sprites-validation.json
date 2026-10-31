@@ -1,5 +1,5 @@
 {
- "descriptors": 2222,
+ "descriptors": 2355,
  "palettes": [
   "0x103",
   "0x113",
@@ -60,6 +60,7 @@
   "0x4b9",
   "0x87f",
   "0x883",
+  "0x92",
   "0x93",
   "0x9b",
   "0x9c",
@@ -76,12 +77,12 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 65,
-  "frames": 511,
-  "pixels_equal": 2789894,
+  "frames": 525,
+  "pixels_equal": 2800389,
   "pixels_different": 145989,
   "pixels_overlapping": 762855,
-  "rank_2": 339,
-  "rank_1": 172,
+  "rank_2": 351,
+  "rank_1": 174,
   "missing_descriptor": 30
  },
  "frames": [
@@ -3659,6 +3660,104 @@
    "capture": "unc1",
    "frame": 2790,
    "update_frame": 2790,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2610,
+   "update_frame": 2608,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2640,
+   "update_frame": 2635,
+   "equal": 168,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2670,
+   "update_frame": 2666,
+   "equal": 565,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2700,
+   "update_frame": 2696,
+   "equal": 565,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2730,
+   "update_frame": 2726,
+   "equal": 1176,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2760,
+   "update_frame": 2756,
+   "equal": 1085,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2790,
+   "update_frame": 2786,
+   "equal": 1141,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2820,
+   "update_frame": 2816,
+   "equal": 1053,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2850,
+   "update_frame": 2846,
+   "equal": 1012,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2880,
+   "update_frame": 2876,
+   "equal": 1011,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2910,
+   "update_frame": 2906,
+   "equal": 1070,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2940,
+   "update_frame": 2936,
+   "equal": 1107,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 2970,
+   "update_frame": 2966,
+   "equal": 542,
+   "different": 0
+  },
+  {
+   "capture": "unc1",
+   "frame": 3000,
+   "update_frame": 2999,
    "equal": 0,
    "different": 0
   }

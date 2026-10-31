@@ -247,6 +247,23 @@ creados, 43 abatidos, jefe derrotado, misión completada
 fallos máx. El recorrido no subió a la Camel Slug (`mounts=0`). ROMs
 `mslugx-explorer.z64` y `mslugx-reference.z64`: 8.683.520 bytes cada una.
 
+### Rama `work-world` (civiles, explosiones, efectos de sonido)
+
+Puertas: `make check` (auditoría: sin crear solo `0x01913C 0x03FC5A
+0x0B639A 0x0B63A0`, parada explícita `0x092A32`; 1665/1670 peticiones de
+sonido del mundo con render), `make check-core` en un clon limpio, `make -j4`
+y `make mslugx-reference.z64`. Recorrido completo en ares
+(`trav-w.sh` adaptado, Xvfb :97): **PASS**, 36 rebeldes creados, 39 abatidos,
+jefe derrotado, misión completada, ningún nodo del jefe detenido, Camel Slug
+montada 1 vez, **0 *crash* del RSP**, *underruns* máx. 1; `MSX PERF` 123
+ventanas, `cpu` media máx. 14.963 µs, **peor fotograma 35.524 µs**; RDP 403
+dibujos máx., 147 fallos máx. Efectos: 7914 iniciados, 341 descartados por la
+política, 5 sin render (bucles y `>= 0x2000`); montón libre mínimo en juego
+814.016 B. Un primer intento falló por tiempo en las cúpulas (ares a 16
+VPS con tres emuladores en la máquina: el guion de prueba espera en tiempo
+real); el segundo, con la máquina menos cargada, pasó. ROMs de 9.568.256
+bytes.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros

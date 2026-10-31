@@ -886,3 +886,36 @@ captura): 2768 descriptores (413 nuevos). Validación contra VRAM de
 general): 24 volcados, 21206 píxeles iguales, 695 distintos (los volcados
 de la subida 9531, de la muerte 10092 y de balas cuyo volcado está lejos de
 su actualización).
+
+### Paso 10 (pendiente): SV-001 `0x092A32`, alcance medido
+
+Sin traducir: sigue siendo la parada explícita registrada de
+`neo_world.c` (`0x092A32`, aparición no contada). Lo medido para la
+traducción:
+
+- Código: `0x092810..0x095800` (unas 2.730 instrucciones; `0x092832`
+  caja de daño `+50` por `+74` y tablas `0x9274x/0x927Cx`, ángulo `+84` →
+  `+74/+75/+76`; `0x092934` cañón: `+8A = 0x18`, `0x0AA956`, destello
+  `0x0952F8`, obús `0x094EAA` o `0x0950DC` si `+7C = 5`, `0x014A02` con el
+  desplazamiento `+70[4..5]`; `0x0929E6` bombas `0x0C0808`).
+- Estados recorridos en `tankfam` (`extract_family_fixture.py --range
+  92a00-95800`: 1048 actualizaciones): espera `92B0E` (5), subida
+  `92C18/92C38/92C76` (13), parado `92C9A` (4), marcha `92DDA` (207),
+  disparo `9307C` (79), `93278/9329E` (2), salida `93A46` (3); obús
+  `94EAA/94F1C/94FF8/9503C` (9 creados, 362), destello `952F8/9533C` (144),
+  entrada `954DC/95580` (6), `956CE/95768` (214). Torreta y balas en
+  `--range 3b4e0-3b900 --range 1b600-1bd00` (2002 más: `3B57C` 314,
+  `1B6A0` 152, `1B882` 1111, `1BC82` 416, `1BC2E` 7).
+- Rutinas del núcleo que faltan en el port: el cuerpo de orugas
+  `0x014AE8` (hijo `0x014A4E` en `+8C`, que no está en los nodos de la
+  traza de familia: haría falta `--ram` de su nodo), su barrido
+  `0x014C0C/0x014C2E/0x014C48/0x014C6A` (`0x0128E8` + `0x004ED2`, como el
+  de la Camel), `0x0153D2`, `0x0353C2` (hijo `0x03533A`), `0x009D1E`
+  (rampa de paleta `1068EA`), `0x0AD9E6/0x0AE220` (efectos tras el actor del
+  guion), `0x0AA956` (obuses `+1F` del bloque de armas, `10F001` bit 2),
+  `0x01AB9C`, `0x0C05B8` (`+93` del jugador).
+- Daño `0x093772`/`0x0AA9E4`, destrucción `0x0938DA`/`0x093AFA` y bombas
+  `0x0929E6`: sin captura; deben quedar como paradas explícitas.
+
+Tampoco empezado: el arma C de Marco `0x063F32`, el cohete `0x06381C` y el
+destello `0x0C58D2` (siguen en `weapon_stops`).

@@ -108,10 +108,18 @@ BLOBS=[
     (0x2CAD6,0x1D96,'0306D0 English prisoner names 02CAD6 (count word 989, zero-terminated strings; 030152)'),
     (0x3D512,0x884,'03DD96 font tables: page X two-byte codes 03D512, pages H 03D596, K 03D796, k 03D996 and h 03DB96'),
     (0x3E194,0x114,'03E0A8 accent pairs of the font page 0x32 (03E194..03E2A7)'),
+    (0x16DCE,0x8AE,'01824A/0182B6 mission stage records (table 017D44, missions 1..6) and their stage descriptors 016DCE.. (+A)'),
+    (0x17D44,0x18,'01824A mission record table (six long pointers)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();fixed=(a.capture/'program-fixed.bin').read_bytes();bank=(a.capture/'program-bank.bin').read_bytes()
+    a=p.parse_args()
+    if a.capture.suffix=='.zip':
+        # The MAME ROM set itself: fixed P1 and P2 bank 1, the window of every
+        # capture (tools/decode_level_script.Program).
+        from decode_level_script import Program
+        prog=Program(a.capture);fixed=prog.fixed[:0x100000];bank=prog.p2[0x100000:0x200000]
+    else:fixed=(a.capture/'program-fixed.bin').read_bytes();bank=(a.capture/'program-bank.bin').read_bytes()
     out=dict(source='MAME 0.264 mslugx euro capture; fixed CPU block and P2 bank 1 window',
         program_fixed_sha256=hashlib.sha256(fixed).hexdigest(),program_bank_sha256=hashlib.sha256(bank).hexdigest(),blobs=[])
     for addr,n,why in BLOBS:

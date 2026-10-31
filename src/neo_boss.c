@@ -879,6 +879,40 @@ static bool aim(ctx_t *c) {
     SB(0xa6,B(0xa6)+(S8((uint8_t)(v-B(0xa6)))>0?1:0xff));
     return false;
 }
+/* 08FA4E: the generic fire (sound 1064; +6E = direction +8A, mirrored by
+ * 08FEE0 when facing left; the flash 08EFFA and the projectile 08F058
+ * after the node (0040BC, reserve 0x1C, 01B220), the flash told the
+ * direction and the muzzle offset 08FD1C[+8A] (x mirrored), the projectile
+ * moved by it with +8A = +6E, +93 = 0, +94 = this +94 bit 0, +88). Both
+ * continue as generic actors (neo_effects.c). With +93 bit 5 the projectile
+ * would be 08F1A0 (explicit stop: the gun's +93 is never set). */
+static void k8fa4e(ctx_t *c) {
+    sound(c,0x1064);
+    uint8_t d0=B(0x8a);
+    if (B(0x15)&1u) {d0=rom_byte(c,0x8fee0u+(d0&15u));CHECK;}
+    SB(0x6e,d0&15u);
+    uint32_t row=0x8fd1cu+(B(0x8a)&15u)*4u;
+    int16_t d1=(int16_t)rom_word(c,row),d2=(int16_t)rom_word(c,row+2u);CHECK;
+    if (B(0x15)&1u) d1=(int16_t)-d1;
+    neo_boss_node_t *f=effect_child(c,0x8effa,0x1c,0,0);CHECK;
+    set_b(f,0x8a,B(0x8a));set_b(f,0x8b,(uint8_t)d1);set_b(f,0x8c,(uint8_t)d2);
+    effect_commit(c,f,0x8effa);CHECK;
+    if (B(0x93)&0x20u) FAIL(0x8f1a0);
+    neo_boss_node_t *q=effect_child(c,0x8f058,0x1c,0,0);CHECK;
+    set_b(q,0x8a,B(0x6e));
+    set_w(q,0x28,(uint16_t)(neo_boss_w(q,0x28)+(uint16_t)d1));set_w(q,0x2c,(uint16_t)(neo_boss_w(q,0x2c)+(uint16_t)d2));
+    set_b(q,0x93,0);set_b(q,0x94,(uint8_t)(B(0x94)&1u));set_b(q,0x88,B(0x88));
+    effect_commit(c,q,0x8f058);
+}
+/* 08FA1A: 08FA4E with +8A = d0, +88 = d1 and +94 bit 0 set, then the three
+ * restored. */
+static void k8fa1a(ctx_t *c,uint8_t d0,uint8_t d1) {
+    uint8_t s8a=B(0x8a),s88=B(0x88),s94=B(0x94);
+    SB(0x8a,d0);SB(0x88,d1);SB(0x94,B(0x94)|1u);
+    k8fa4e(c);
+    if (c->unsupported) return;
+    SB(0x8a,s8a);SB(0x88,s88);SB(0x94,s94);
+}
 /* 0D6130: turret gun on 0D61F2. */
 static void d6168(ctx_t *c);
 static void d6130(ctx_t *c) {
@@ -898,8 +932,12 @@ static void d6168(ctx_t *c) {
     if (anim_step(c)) {CHECK;anim_start(c,0x2ada3e);}
     CHECK;
     p=creator(c);
-    /* 0D61B2: firing (08FA1A spawns the generic bullet 08EFFA) is not recovered. */
-    if (p && p->f[0x61]) FAIL(0x8fa1a);
+    /* 0D61B2: the base asks to fire (+61): the gun's muzzle program
+     * 28B77C[+A6] and 08FA1A (+A6, 0). */
+    if (p && p->f[0x61]) {
+        anim_table(c,0x28b77c,B(0xa6)&15u);CHECK;
+        k8fa1a(c,B(0xa6),0);CHECK;
+    }
     if (ENV->mission_over) convert(c,0x8eebc);
 }
 /* 0D61F2: turret base on 0D6464. */

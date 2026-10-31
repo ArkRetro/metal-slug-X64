@@ -82,10 +82,10 @@ static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
  * counted in external_spawns and never created). Items 08C374/08C37C are
  * native only past the region (ga_insert). */
 /* Spawn-table constructors the world stops explicitly (counted in
- * vehicle_stops, logged): the player's vehicles. */
+ * vehicle_stops, logged): the SV-001 (the Camel Slug 03458E is native). */
 bool neo_world_spawn_stop(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
-    return r==0x3458eu || r==0x92a32u;
+    return r==0x92a32u;
 }
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
@@ -121,8 +121,8 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * cartridge check). The player's HUD applies it (neo_hud.c). */
         w->timer_resets++;return;
     }
-    if (routine==0x3458eu || routine==0x92a32u) {
-        /* Camel Slug 03458E / SV-001 092A32 (uncounted spawns): explicit stop. */
+    if (routine==0x92a32u) {
+        /* SV-001 092A32 (uncounted spawn): explicit stop. */
         w->vehicle_stops++;w->vehicle_stop_constructor=routine;return;
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
@@ -979,9 +979,19 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
     w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
     w->pickup.slot[0]=w->vslots.slot[0].b;w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
-    /* 0C3352 -> 0AA458: player 1 takes a binding a vehicle made in this
-     * update or frees the slot (no native vehicle binds yet: it stays free). */
-    if (t.player_valid) (void)neo_vslot_accept(&w->vslots,0,g->video,false);
+    /* The player's vehicles (Camel Slug 03458E): slots, the players' node
+     * records, input words. Player 1's 0C3352 -> 0AA458 is the port
+     * player's, after this tick (the original 1014C4 runs after the Camel). */
+    {
+        neo_vehicle_env_t *v=&w->vehicle_env;unsigned grenades=v->grenades;uint32_t last=v->grenade_last;
+        memset(v,0,sizeof(*v));v->grenades=grenades;v->grenade_last=last;
+        v->slots=&w->vslots;v->player[0]=w->player_node[0];v->player[1]=w->player_node[1];
+        v->exists[0]=t.player_valid;v->exists[1]=false;
+        v->input[0][0]=w->pad[0];v->input[0][1]=w->pad[1];v->dip10f000=w->dip10f000;
+        for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) if (w->solids[i].actor>=0) v->solids++;
+        g->vehicle=v;
+    }
+    w->kernel.shake_y=w->camera_native?(uint32_t)w->camera.shake_applied:0;   /* RAM 10E9CC (0138A0) */
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
      * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the

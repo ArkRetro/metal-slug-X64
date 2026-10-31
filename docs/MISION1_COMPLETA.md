@@ -117,9 +117,11 @@ contestados por el mundo:
 Los disparos del jugador llegan al jefe por la fase estrecha original
 (`0x004762` + `0x004892..0x0049E0`, matriz de impactos, multiplicador `+54`).
 Tras un nodo que se detiene, el recorrido sigue los enlaces como `0x00424A`
-(enlaces de nodos liberados). Detenciones explícitas observadas en el
-recorrido: el cañón de la torreta al disparar (`0x08FA1A`, bala genérica
-`0x08EFFA` no portada) y, sin su cañón, la base (`0x0D6254`). Dibujo con
+(enlaces de nodos liberados). El disparo del cañón de la torreta
+(`0x08FA1A`: destello `0x08EFFA` y proyectil `0x08F058`) está traducido
+desde la ROM (ninguna captura lo tiene); ningún nodo del jefe se detiene
+(antes: el cañón en `0x08FA1A` y, sin su cañón, la base en `0x0D6254` o
+`0x0D62F2`). Dibujo con
 `boss_render_draw` (recorte de columnas original).
 
 ## Espadachín de túnica `0x0A8C46` (arranque del jefe)
@@ -156,7 +158,7 @@ iguales, 0 distintos**
 | --- | --- |
 | `0x0AF17E`, `0x04115A` (soldados), `0x02916E`, `0x0DC97E`, `0x0403A0`, efectos | nativos (ya existían) |
 | `0x0A8C46` espadachín de túnica + subguion `0x019E72` | **nativo** (nuevo) |
-| `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (salvo disparo de torreta) |
+| `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (disparo de la torreta traducido sin captura) |
 | `0x05486A`/`0x054904` edificio de cúpulas y derrumbe `0x0B58CC` | **nativo** (MISION1_ACTORES.md) |
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
@@ -390,11 +392,11 @@ actualizaciones y 1 parada (recuento).
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`
-  y la Camel Slug `0x03458E` (no contados; la auditoría ya no informa de
-  ninguna aparición contada perdida).
-- Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/
-  `0x08F1A0`): necesita una captura en la que dispare.
+- Actores del resto aún externos (tabla de cobertura): el SV-001 `0x092A32`
+  (no contado; la Camel Slug `0x03458E` es nativa y se puede montar).
+- Disparo de la torreta del jefe (`0x08FA1A` → `0x08EFFA`/`0x08F058`):
+  traducido sin captura (falta una captura en la que dispare para
+  verificarlo); `0x08F1A0` sigue como parada explícita.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista
   del jefe como bloque, salida del espadachín (`0x0A8FE0`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).

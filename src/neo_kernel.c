@@ -516,8 +516,8 @@ void neo_kernel_dyn_update(neo_kscene_t *s,unsigned i) {
 }
 /* 0138A0: with 10C00D set and 10C00B clear, the horizontal motion is cut at
  * the screen box of the configuration (x from 10C01C, width 10C020; positions
- * relative to the sweep's object): D6 = FF and 10C024/10C025 mark the side.
- * The vertical bound is skipped with 10C00C set (the only case recovered). */
+ * relative to the sweep's object): D6 = FF and 10C024/10C025 mark the side;
+ * then the vertical one (10C026/10C027) unless 10C00C is set. */
 static bool k138a0(kr_t *k) {
     if (!k->b400d || k->b400b) return false;
     bool cut=false;
@@ -532,6 +532,20 @@ static bool k138a0(kr_t *k) {
             if (S(k->d2)<S(d7)) {k->d2=d7;cut=true;k->b4024[1]=0xff;}
         }
     }
+    /* 013906: the vertical bound unless 10C00C (y from 10C01E, height
+     * 10C022, less the shake RAM 10E9CC); downwards the original compares
+     * before clamping its limit (013952..01395A: only N and V decide). */
+    if (!k->s->b400c && k->d3) {
+        if (!(k->d3&0x80000000u)) {
+            uint32_t d7=(((uint32_t)(uint16_t)(k->s->config[1]+k->s->config[3]))<<16)-k->s->shake_y-1u-k->d1;
+            if (d7&0x80000000u) d7=0;
+            if (S(k->d3)>S(d7)) {k->d3=d7;cut=true;k->b4024[2]=0xff;}
+        } else {
+            uint32_t d7=((uint32_t)k->s->config[1]<<16)-k->s->shake_y-k->d1,r=k->d3-d7;
+            bool n=(r>>31)!=0,v=(((k->d3^d7)&(k->d3^r))>>31)!=0;
+            if (n && !v) {k->d3=d7;cut=true;k->b4024[3]=0xff;}
+        }
+    }
     return cut;
 }
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
@@ -540,7 +554,6 @@ bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
     k.d0=(uint32_t)q->x;k.d1=(uint32_t)q->y;k.d2=(uint32_t)q->dx;k.d3=(uint32_t)q->dy;k.a0=q->parent;
     k.w4068=scene->w4068;
     k.m4004=q->mode4004;k.b4008=q->b4008;k.b4009=q->b4009;k.b400a=q->b400a;k.b400b=q->b400b;k.b400d=q->b400d;
-    if (k.b400d && !k.b400b && !scene->b400c) return false; /* 0138A0: vertical bound (RAM 1069CC) not recovered */
     /* 013968 */
     if (S(k.d2)>0xffffff) k.d2=0xffffffu;
     if (S(k.d3)>0xffffff) k.d3=0xffffffu;

@@ -831,3 +831,58 @@ de colisión de esa zona, no de la Camel).
 En el juego la Camel sigue sin crearse (parada explícita registrada): falta
 el jugador montado del port (`0x0C3078..0x0C3260`: seguir la ranura, la
 pose del jinete y las salidas) y sus gráficos en el paquete de escena.
+
+### Paso 9: jugador montado y Camel Slug en el juego (`src/marco_mount.c`)
+
+Traducción manual de `0x0C3078..0x0C3260` y del relevo de la ranura del
+procesamiento común `0x0C3348..0x0C3376` sobre el registro del nodo del
+jugador (`neo_world_t.player_node`, disposición original): acarreo de
+`0x0AA458` → `+9A` bit 7 (recién puesto → `+00 = 0x0C3078`; borrado tras
+estar puesto → `0x0C30F0`), `0x0C3078` (`+7A/+7B`, `+15` bit 0, `+50 = 0`,
+`0x0C0F16`), `0x0C309C` (`0x0AA550`, `0x019424/0x018F24`, `0x0C30C0`),
+`0x0C30F0` (`0x0AA5AC`; tipo 0 muerte con `+5A/+5F`, tipo 1 expulsión;
+tipos 2–5 paradas explícitas `0x0C32D0`, `0x0C1F4A`, `0x0C315A`),
+`0x0C3232/0x0C3250` (`0x0AA4C8`, `+84 |= 0x1E`, `0x0C0FEA`, el arco y la
+palanca, `0x0C109C`). Prueba `tools/test_marco_mount.c` (`make
+check-core`, `data/mount_fixture.json.gz`: `extract_family_fixture.py`
+sobre el nodo `1014C4` de `camelfam` y `tankfam`, rutinas `c2692` y
+`c3000..c3300`, con la RAM de ranura, registro, `10C300/10C301`, mando,
+bloque de armas y `10000E`): **517 actualizaciones** (36 libres, 2
+subidas, 472 montado, la muerte del jinete en 10091, la salida A+B en 11099
+y 3 del salto de expulsión), 12470 bytes de nodo y 691 de ranura/registro
+iguales. Lo que reescriben después las partes no traducidas de la misma
+actualización (`0x0143EE` y `0x0427A` del llamador, la muerte `0x0C2956`,
+`+84/+85` del procesamiento común) no se compara.
+
+En el juego (`gameplay.c`): el registro se llena con el jugador del port
+antes del mundo (`+3C/+40` proyectados y `+44/+48` los anteriores —la
+prueba de segmento de `0x0C0556`—, `+15`, `+28..+38` en la raíz como en
+las trazas, `+5E = 1`, `+5F` bit 7, `+93`); las palabras de mando
+`10E9EC` salen de los botones con `0x0CA1B8` (A disparo, B salto, C bomba,
+A+B juntos bit 7). La Camel se crea en su registro del guion
+(`neo_world_spawn_stop` solo para el SV-001). El jugador 1 corre **después**
+de los actores (en las trazas `1014C4` va tras la Camel): `0x0C309C`, el
+relevo y las salidas; montado está oculto (lo dibuja el jinete gráfico
+`0x034F1A`), sin caja de daño (`+50 = 0`) y sin controles propios. Muerto
+o entrando suelta la ranura (`0x0C2F6C`, `0x0C149E`). Desviaciones
+declaradas: el barrido `0x0143EE` de `0x0AA5AC` es el desplazamiento recto
+por el asiento, el de `0x0C109C` es el paso aéreo del jugador del port, y
+el programa de la expulsión `0x0BF618` es la pose de salto del port. Solo
+en el cartucho de referencia: `10F000` bit 7 (indicador de depuración del
+original, `0x03519E`: el vehículo destruido no mata al jinete).
+
+Núcleo: la cota vertical de `0x0138A0` (`0x013906..0x013966`: `10C01E`,
+`10C022`, temblor `10E9CC`; abajo el original compara antes de acotar)
+traducida; `10C00C` vale 0 en todos los volcados de Misión 1 (la prueba de
+familia lo ponía a FF y ahora usa 0: `slug` sigue bit a bit). Fin de la
+torreta `0x03B86E` y su pieza `0x03B936/0x03B97C` (programa `0x23D46C`,
+explosión `0x01C706`) traducidos de la ROM (ninguna captura los tiene).
+
+Gráficos: `tools/export_rest_sprites.py` añade los programas de la Camel,
+el jinete, la torreta, la pieza, las balas y el polvo (paletas `0x3FF`,
+`0x376`, `0x3D6`, `0x3AD`, `0x884`, `0x170`; `0x377`, jinete del P2, sin
+captura): 2768 descriptores (413 nuevos). Validación contra VRAM de
+`camelfam` (`docs/slug-sprites-validation.json`, sin tocar el informe
+general): 24 volcados, 21206 píxeles iguales, 695 distintos (los volcados
+de la subida 9531, de la muerte 10092 y de balas cuyo volcado está lejos de
+su actualización).

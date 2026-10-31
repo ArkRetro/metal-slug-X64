@@ -33,10 +33,10 @@ typedef struct {
     uint16_t w4068;
     /* 0138A0 (sweeps with RAM 10C00D set by 0128E8: the players and the
      * vehicles they ride): the screen box RAM 10C01C..10C023 copied from the
-     * rider's record (10C2E8: ROM 016DBE x 1C, y 0, w 108, h 1E0) and RAM
-     * 10C00C (FF in every vehicle trace: no vertical bound; 0 is an explicit
-     * stop). */
-    uint16_t config[4]; uint8_t b400c;
+     * rider's record (10C2E8: ROM 016DBE x 1C, y 0, w 108, h 1E0), RAM
+     * 10C00C (set by 0537FE, cleared at the mission start 0180CC: 0 in the
+     * Mission 1 dumps, vertical bound on) and the shake RAM 10E9CC. */
+    uint16_t config[4]; uint8_t b400c; uint32_t shake_y;
     neo_kdyn_t dyn[NEO_KDYN_COUNT];
     uint8_t bins_x[18],bins_y[16],solid; /* RAM 10C26E, 10C280, 10C290 */
     /* The actor running a query (A6): its own dynamic object (+6A; stored

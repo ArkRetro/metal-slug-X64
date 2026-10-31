@@ -106,7 +106,16 @@ typedef struct {
     marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
+    /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
+     * node record world.player_node[0]: mount = none, riding (0C3078/
+     * 0C309C: the port's player is hidden, has no hurtbox and follows the
+     * slot) or the eject jump (0C3250). pad_held: the held input bits of the
+     * previous update (0CA1B8 new presses). mount_stop: ROM label of the
+     * last untranslated path met (explicit stop, logged). */
+    uint8_t mount;uint8_t pad_held;unsigned mounts,dismounts,mount_stops;uint32_t mount_stop;
+    bool debug_dropped;   /* screenshot cartridge only (MSX_DEBUG_CAMEL_DROP) */
 } msx_game_t;
+enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);

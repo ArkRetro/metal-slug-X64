@@ -128,7 +128,7 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     if (!crouch) {
         int rest=weapon_rest(v,in,v->running_jump);
         if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
-        else if (in->form!=1 && in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:MARCO_CAMPAIGN_W_FIRE);
+        else if (in->form!=1 && in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W_FIRE_DOWN:MARCO_CAMPAIGN_W_FIRE);
         else if (v->weapon_role<0 || (weapon_default(v->weapon_role) && v->weapon_role!=rest) ||
             (v->weapon_done && !weapon_default(v->weapon_role)) ||
             (v->grounded!=in->grounded && in->grounded && !hgun_role(v->weapon_role)))

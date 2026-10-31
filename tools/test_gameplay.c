@@ -228,7 +228,25 @@ static void chaser_run(void) {
     assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
     assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
 }
+/* Aiming down in the air (+92 = FF): jumps with down held and fire
+ * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
+ * at C0, the H's fan and its downward sweeps), from the mission start. */
+static void air_down_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned h=0,c=0;
+    for (unsigned steps=0;steps<3000;steps++) {
+        if (steps==1000 || steps==2000) {uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,steps==1000?0x0a:0x0c,&g.world.weapon_player,&sound);}
+        unsigned j=steps%120;g.crouch=j>=12 && j<100;g.aim_up=false;
+        msx_game_update(&g,0,j<6,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (!g.grounded && g.aim_down && marco_weapons_id(&g.world.weapons,0)==0x0a) h++;
+        if (!g.grounded && g.aim_down && marco_weapons_id(&g.world.weapons,0)==0x0c) c++;
+    }
+    printf("air down: pistol down shots=%u H shots=%u (air updates %u) C shells=%u (air updates %u) unsupported=%u missing draws=%u\n",
+        g.down_shots,g.h_shots,h,g.c_shots,c,g.world.unsupported,missing_draws);fflush(stdout);
+    assert(g.down_shots>0 && g.h_shots>0 && g.c_shots>0 && !g.world.unsupported && !missing_draws);
+}
 int main(int argc,char **argv) {
+    if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     msx_game_t g;msx_game_init(&g);
@@ -336,7 +354,7 @@ int main(int argc,char **argv) {
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     /* Every H shot is native; the other weapons the prisoners give (their
      * shots are not ported) stop explicitly at their constructor, counted. */
-    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots && !g.world.shot_dropped);
+    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots && !g.world.shot_dropped);
     assert(g.weapon_stops==g.weapon_shots-g.h_shots-g.c_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
     /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
@@ -369,6 +387,7 @@ int main(int argc,char **argv) {
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
+    air_down_run();
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

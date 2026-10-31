@@ -618,6 +618,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * +72/+74 (offset of the upper body), so the 0C4244/0C453A offsets are
      * applied to the port's pistol muzzles: forward (24,80), up (3,108),
      * linearly between them for a diagonal (declared approximation). */
+    /* Down held in the air: 0C0FEA bit 1, the fire state 0C3CD0 sets +92 =
+     * FF and takes the down tables (0C3C90; the H's sweeps 0C3FA6..); on
+     * the ground down is the crouch. MAME capture `air` (tools/
+     * capture_weapons.lua plan air): pistol, H and C shots at C0 (the H's
+     * fan BE/C0/C2 and its sweeps C8..F8, mirrored B8..88), muzzle the
+     * 0C4204 down row plus the jump programs' +72/+74 (tools/
+     * test_marco_muzzle.c). Up wins over down (0C3D30 tests bit 0 first). */
+    g->aim_down=g->crouch && !g->grounded && !g->aim_up && g->mount==MSX_MOUNT_NONE && !g->ride;
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
     if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
     bool hgun=false,chaser=false;
@@ -634,7 +642,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (!(g->ticks&1)) {
             marco_weapon_player_t *m=&g->world.weapon_player;
             g->hgun.combo95=m->combo95;
-            marco_hgun_input_t in={g->aim_up,false,g->facing<0};
+            marco_hgun_input_t in={g->aim_up,g->aim_down,g->facing<0};
             marco_hgun_shot_t shots[4];
             unsigned n=g->complete?0:marco_hgun_step(&g->hgun,&in,hgun_reserve,g,shots,4);
             m->combo95=g->hgun.combo95;
@@ -678,12 +686,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-            bool vertical=g->aim_up || g->crouching;
+            bool vertical=g->aim_up || g->crouching || g->aim_down;
             g->pistol_wait=vertical?6u:12u;
             if (allowed) {
                 bool left=g->facing<0;
-                marco_muzzle_t m=marco_muzzle_aim(&g->legs,g->aim_up?1:0,1,left);
-                uint8_t angle=g->aim_up?0x40:0;
+                int aim92=g->aim_up?1:g->aim_down?-1:0;
+                marco_muzzle_t m=marco_muzzle_aim(&g->legs,aim92,1,left);
+                uint8_t angle=aim92>0?0x40:aim92<0?0xc0:0;
                 if (left) angle=(uint8_t)(0x80-angle);
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
@@ -709,7 +718,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             bool allowed=marco_ammo_reserve(&ammo,ammo.kind,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-            bool vertical=g->aim_up || g->crouching;
+            bool vertical=g->aim_up || g->crouching || g->aim_down;
             g->pistol_wait=vertical?6u:4u;   /* ticks: 3 or 2 updates */
             if (allowed) {
                 if (ammo.kind) {
@@ -722,11 +731,21 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 /* 0C4244 muzzle: table 0C4204 row by aim, form 0, plus the
                  * body program's +72/+74 (hold2: standing level (16,10)+(0,17)
                  * = (16,27), up (0,40)+(0,17) = (0,57), crouching (16,16)). */
+                if (g->aim_down && !ammo.kind && g->world_enabled) {
+                    /* Down in the air (+92 = FF, program 24EABC): the
+                     * native bullet 01B782 at angle C0 (both facings,
+                     * 0x80 - C0 = C0) from the 0C4204 down row (0,-16)
+                     * plus +72/+74, after the list head like the H's. */
+                    marco_muzzle_t m=marco_muzzle_aim(&g->legs,-1,0,g->facing<0);
+                    neo_world_player_shot(&g->world,0x1b782u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,0xc0,0);
+                    g->shot_age=0;g->shooting=true;g->shots++;g->down_shots++;
+                } else {
                 marco_muzzle_t m=marco_muzzle_aim(&g->legs,g->aim_up?1:0,0,g->facing<0);
                 int mx=g->facing*m.x,my=m.y;
                 g->pistol_next=(msx_bullet_t){player+g->facing*mx,192-my+g->y/MSX_UNIT,g->facing,true,g->aim_up,ammo.kind};
                 g->pistol_pending=2;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots+=ammo.kind!=0;
+                }
             }
         }
     }

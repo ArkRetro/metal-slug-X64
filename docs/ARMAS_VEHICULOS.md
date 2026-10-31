@@ -545,8 +545,9 @@ entradas guionizadas y las 22 balas diagonales registradas en `hfam`
 reflejo de su orientación. `hfam` no tiene la columna `10000E`, así que los
 fotogramas de las actualizaciones no se comparan.
 **Aproximaciones declaradas**: el reposo `0x0C38B2` no se traduce (`+92` se
-conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` y la puntería
-hacia abajo en el aire no existen en el modelo de jugador del port; la boca
+conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` no existe en el
+modelo de jugador del port (la puntería hacia abajo en el aire ya sí: ver
+«Puntería hacia abajo en el aire» más abajo); la boca
 sigue siendo la de pistola del port (adelante (24,80), arriba (3,108),
 interpolada para un diagonal), porque el port no tiene `+72/+74`. Disparar
 exige pulsar (como en el arcade); `tools/test_gameplay.c` pulsa cada 8
@@ -979,5 +980,40 @@ Gráficos: `tools/export_rest_sprites.py` añade los programas `267F92`,
 `$W/cfam@63600-64300 $W/cfam@c5800-c5a00` en la exportación completa:
 2870 descriptores (57 nuevos), 78 paletas, 617 volcados validados (2936091
 píxeles iguales, 150936 distintos).
+
+### Puntería hacia abajo en el aire (pistola, H y C)
+
+Captura `air` (`tools/capture_weapons.lua`, plan `air`, MAME 0.264,
+`MSX_WEAPONS_LAST=5080`): desde el inicio de la misión, saltos quieto y con
+carrera manteniendo abajo, paseo con arriba alterno (barridos) y saltos con
+arriba y luego abajo, A pulsado cada 8 fotogramas, con la pistola, la H
+(dada en 3150) y la C (en 4110). En el aire, abajo es `0C0FEA` bit 1: el
+estado `0C3CD0` pone `+92 = FF` y toma las tablas `0C3C90` (pistola
+`24EABC`, C `255FDE`: `+76` en 2) y la H barre adelante→abajo
+(`C8/D8/E8/F8`, reflejados `B8..88`) y dispara su abanico `BE/C0/C2`; en
+tierra abajo es agacharse. Todos los nacimientos: ángulo `C0` (las dos
+orientaciones) y la boca de la fila abajo de `0C4204` (pistola (0,−16), forma 1
+(−4,−20)) más el `+72/+74` de los programas de salto (sobre todo `24E858`
+(−4,12)).
+
+Port (`gameplay.c`): `aim_down` = abajo en el aire (arriba gana, como
+`0C3D30`); la pistola dispara entonces la bala nativa `01B782` a `C0` (las
+demás siguen con la bala del port), la H recibe `down` en
+`marco_hgun_input_t` (sus programas hacia abajo ya estaban traducidos) y la
+C usa `C0` con la espera de 3 actualizaciones. El cuerpo dibuja `24EABC`
+para la pistola (`marco_visual.c`); los programas de arma hacia abajo de la
+forma 1 (H `2560C0/2561DC/25624E`, C) no están en el catálogo de Marco: se
+dibuja el de reposo (limitación visual). Sonido: `game_audio.c` ya no pide
+`0x10F7` por los disparos nativos (H, C, pistola abajo), cuyos constructores
+piden el suyo.
+
+Prueba `tools/test_marco_muzzle.c` (`data/hmuzzle_fixture.json`, ahora con
+`air` y con los nodos reutilizados, no solo los nacidos): **1012
+nacimientos** de H, pistola y C (839 de puntería, 173 de barrido; 213 hacia
+abajo en el aire) iguales píxel a píxel. Se excluyen los nacimientos con el
+jugador contra una pared (`+15` bit 7): el barrido de colocación `014A02`
+los detiene en la pared (`hfam` 11118..11152), la aproximación declarada.
+`tools/test_gameplay.c` (carrera `airdown`): pistola, H y C disparan hacia
+abajo saltando, sin paradas ni dibujos ausentes.
 
 Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).

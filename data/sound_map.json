@@ -340,6 +340,70 @@
    "event": "requested by the native world actors at ROM 08890E (port host traversal of tools/test_gameplay.c)"
   },
   {
+   "label": "sfx_1084",
+   "word": "1084",
+   "callers": [
+    "094EAA"
+   ],
+   "event": "SV-001 cannon shell launched (ROM 094EAA, tank1 capture)"
+  },
+  {
+   "label": "sfx_10f2",
+   "word": "10F2",
+   "callers": [
+    "094FF8"
+   ],
+   "event": "SV-001 cannon shell burst (ROM 094FF8)"
+  },
+  {
+   "label": "sfx_1092",
+   "word": "1092",
+   "callers": [
+    "093278"
+   ],
+   "event": "SV-001 stand-by after the rider climbs in or a drive (ROM 093278)"
+  },
+  {
+   "label": "sfx_10e9",
+   "word": "10E9",
+   "callers": [
+    "093A08"
+   ],
+   "event": "SV-001 exit with A+B (ROM 093A08)"
+  },
+  {
+   "label": "sfx_1034",
+   "word": "1034",
+   "callers": [
+    "093AFA"
+   ],
+   "event": "SV-001 blown up after the exit (ROM 093AFA, tank3 capture)"
+  },
+  {
+   "label": "sfx_1090",
+   "word": "1090",
+   "callers": [
+    "09333A"
+   ],
+   "event": "SV-001 jump (ROM 09333A, tank5 capture)"
+  },
+  {
+   "label": "sfx_1091",
+   "word": "1091",
+   "callers": [
+    "09347A"
+   ],
+   "event": "SV-001 landing (ROM 09347A)"
+  },
+  {
+   "label": "sfx_108f",
+   "word": "108F",
+   "callers": [
+    "093138"
+   ],
+   "event": "SV-001 crouch (ROM 093138, tank6 capture)"
+  },
+  {
    "label": "music_mission1",
    "word": "0021",
    "callers": [

@@ -50,9 +50,16 @@ def main():
         if l in KNOWN:
             for m in labels:
                 if m in KNOWN and KNOWN[m][0]==KNOWN[l][0]:parent[find(m)]=find(l)
-    for k,(mode,_) in res.items():
+    # A non-overlap pair joins the two sounds' groups unless the union would
+    # hold two measured channels (a single pair against the rest: listed in
+    # 'bridges', not used).
+    def known_of(root):return {KNOWN[m][0] for m in labels if m in KNOWN and find(m)==root}
+    bridges=[]
+    for k,(mode,_) in sorted(res.items()):
         x,y=k.split('>')
-        if mode in ('cut','drop'):parent[find(y)]=find(x)
+        if mode not in ('cut','drop'):continue
+        if len(known_of(find(x))|known_of(find(y)))>1:bridges.append(k);continue
+        parent[find(y)]=find(x)
     comps={}
     for l in labels:comps.setdefault(find(l),[]).append(l)
     channels={};names={}
@@ -92,9 +99,9 @@ def main():
         rule='same channel: a cut or drop in either order; level: cut >=, drop <',
         sounds={l:dict(word=words.get(l),channel=channels[l],level=level[l],
             pairs={k:res[k][0] for k in res if l in k.split('>')}) for l in labels},
-        channels=sorted(set(channels.values())),contradictions=contradictions,
+        channels=sorted(set(channels.values())),contradictions=contradictions,bridges=bridges,
         unclear=sorted(k for k,v in res.items() if v[0]=='unclear'))
     a.output.write_text(json.dumps(out,indent=1)+'\n')
     for c in out['channels']:print(c,sorted((level[l],l) for l in labels if channels[l]==c))
-    print('contradictions',contradictions);print('unclear pairs',len(out['unclear']))
+    print('contradictions',contradictions);print('bridges',bridges);print('unclear pairs',len(out['unclear']))
 if __name__=='__main__':main()

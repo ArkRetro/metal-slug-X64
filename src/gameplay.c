@@ -11,6 +11,9 @@
 #ifndef MSX_REFERENCE_INVULNERABLE
 #define MSX_REFERENCE_INVULNERABLE 0
 #endif
+#ifndef MSX_DEBUG_CAMEL_DROP
+#define MSX_DEBUG_CAMEL_DROP 0
+#endif
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
 static int right_limit(const msx_game_t *g);
@@ -476,6 +479,23 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->life.phase==MARCO_ENTERING) g->invulnerable=2*0x78;
     if (g->life.phase==MARCO_GONE && !(g->ticks&1) && !g->awaiting_continue) new_life(g);
     // The recovered arcade player routine advances on alternate video ticks.
+#if MSX_DEBUG_CAMEL_DROP
+    /* Screenshot cartridge only (mslugx-camel-shot.z64, never a release):
+     * once, the player is dropped 40 px above the Camel Slug waiting on the
+     * screen (0345E0); the original's 0AA610 then takes the falling player. */
+    if (!(g->ticks&1) && g->world_enabled && g->mount==MSX_MOUNT_NONE && g->life.phase==MARCO_ALIVE && !g->debug_dropped)
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *c=&g->world.gactors[i];
+            if (!c->active || ga_l(c,0)!=0x345e0u) continue;
+            int16_t sx=(int16_t)ga_w(c,0x3c);
+            if (sx<48 || sx>272) continue;
+            int32_t rx,ry;root_xy(g,&rx,&ry);
+            g->x=(int32_t)(ga_l(c,0x3c)-(uint32_t)rx);
+            g->y=56*MSX_UNIT+ry-(int32_t)(ga_l(c,0x40)+(40u<<16));
+            g->grounded=false;g->ride=0;g->velocity_x=0;g->velocity_y=MSX_UNIT;g->air_ticks=0;
+            g->debug_dropped=true;break;
+        }
+#endif
     if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_EJECT) mount_eject_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_NONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;

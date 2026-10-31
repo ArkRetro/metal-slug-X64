@@ -107,6 +107,7 @@ typedef struct {
      * previous update (0CA1B8 new presses). mount_stop: ROM label of the
      * last untranslated path met (explicit stop, logged). */
     uint8_t mount;uint8_t pad_held;unsigned mounts,dismounts,mount_stops;uint32_t mount_stop;
+    bool debug_dropped;   /* screenshot cartridge only (MSX_DEBUG_CAMEL_DROP) */
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);

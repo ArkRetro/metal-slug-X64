@@ -435,7 +435,7 @@ $(BUILD_DIR)/hmuzzle_fixture.h: tools/compile_hmuzzle_fixture.py data/hmuzzle_fi
 $(BUILD_DIR)/death_fixture.h: tools/compile_death_fixture.py data/death_fixture.json
 	python3 tools/compile_death_fixture.py
 # H aim (docs/ARMAS_VEHICULOS.md §10): tools/extract_hgun_fixture.py.
-$(BUILD_DIR)/hgun_fixture.h: tools/compile_hgun_fixture.py data/hgun_fixture.json
+$(BUILD_DIR)/hgun_fixture.h: tools/compile_hgun_fixture.py data/hgun_fixture.json data/hgun_replay_fixture.json
 	python3 tools/compile_hgun_fixture.py
 # Fix-layer HUD (docs/ARMAS_VEHICULOS.md §11): tools/extract_hud_fixture.py.
 $(BUILD_DIR)/hud_fixture.h: tools/compile_hud_fixture.py data/hud_fixture.json.gz

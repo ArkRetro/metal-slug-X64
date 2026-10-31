@@ -1016,4 +1016,33 @@ los detiene en la pared (`hfam` 11118..11152), la aproximación declarada.
 `tools/test_gameplay.c` (carrera `airdown`): pistola, H y C disparan hacia
 abajo saltando, sin paradas ni dibujos ausentes.
 
+### H en diagonal: repetición de la captura `air` y la palanca
+
+Informe de MiSTer: «el arma H sigue teniendo mal el disparo en diagonal».
+Comprobación de extremo a extremo contra la captura `air` (paseo con arriba
+alterno, saltos con arriba y luego abajo, A cada 8 fotogramas):
+
+- **Bocas**: los 1012 nacimientos de `test_marco_muzzle.c` (paso anterior),
+  173 de ellos de barrido, iguales píxel a píxel (ángulo y origen).
+- **Estados** (`tools/test_marco_hgun.c`, parte 3,
+  `data/hgun_replay_fixture.json` de `tools/extract_hgun_replay.py air 3150
+  4100`): las palabras de mando `10E9EC` de cada actualización por
+  `marco_hgun.c` dan cada bala H del original en la misma actualización y
+  con el mismo ángulo (144 actualizaciones, 71 balas, 32 pasos de barrido:
+  adelante↔arriba andando, abajo en el aire, abajo→adelante al aterrizar).
+  Quedan fuera, y se resincroniza tras 8 actualizaciones sin balas, las
+  ventanas en que el original usa estados que el jugador del port no tiene:
+  **el cuchillo** `0x0C3B46` (`+9A` bit 0, puesto por `0x0C3744` con la fila
+  `2D0AE4` de `0049E8`: con un enemigo al alcance una pulsación acuchilla en
+  vez de disparar; en `air` 3706..3736 tres pulsaciones no dan balas) y **el
+  aterrizaje agachado** con abajo (`0x0C1EBE` → `0x0C2236`: `+92 = 0` sin
+  barrido). Ambos siguen sin traducir (el port dispara en esos casos).
+- **Causa en el hardware**: la palanca. `actor.c` leía el stick analógico
+  como una puerta cuadrada (cada eje pasado 25 por su cuenta): empujar a la
+  derecha con 17° de holgura ya era arriba-derecha, y la H barría
+  adelante→arriba y volvía mientras se andaba. Ahora `src/msx_stick.h` lo
+  lee como la palanca de 8 direcciones del arcade (zona muerta de radio 25,
+  sectores de 45°: un eje cuenta si el stick está a menos de 67,5° de él);
+  comprobado en `tools/test_gameplay.c`. La cruceta digital no cambia.
+
 Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).

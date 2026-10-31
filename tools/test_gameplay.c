@@ -1,3 +1,4 @@
+#include "../src/msx_stick.h"
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -249,6 +250,14 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
+    {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
+        int h,v;
+        msx_stick_lever(85,26,&h,&v);assert(h==1 && v==0);     /* 17 degrees: right only (was up-right) */
+        msx_stick_lever(60,60,&h,&v);assert(h==1 && v==1);     /* 45: up-right */
+        msx_stick_lever(30,80,&h,&v);assert(h==0 && v==1);     /* 69: up only */
+        msx_stick_lever(-70,-40,&h,&v);assert(h==-1 && v==-1); /* 30: down-left */
+        msx_stick_lever(20,10,&h,&v);assert(h==0 && v==0);     /* dead zone */
+    }
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
     msx_game_update(&g,1,true,false);

@@ -10,6 +10,7 @@
 #include "retro_events.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "msx_stick.h"
 #include "game_audio.h"
 #include "boss_renderer.h"
 #include "marco_visual.h"
@@ -161,7 +162,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
     }
     diagnostics_was_down=input.btn.l;
-    int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
+    int stick_h,stick_v;msx_stick_lever(input.stick_x,input.stick_y,&stick_h,&stick_v);
+    int direction=(input.btn.d_right || stick_h>0)-(input.btn.d_left || stick_h<0);
     /* GAME OVER shown until the original hands the machine back to the BIOS:
      * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
      * ranking/attract that follow are not ported: the mission restarts. */
@@ -195,8 +197,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
-        game.aim_up=input.btn.d_up || input.stick_y>25;
-        game.crouch=input.btn.d_down || input.stick_y<-25;
+        game.aim_up=input.btn.d_up || stick_v>0;
+        game.crouch=input.btn.d_down || stick_v<0;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
         /* Dying, lying and the entrance (marco_death.c): the death and

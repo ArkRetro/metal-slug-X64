@@ -47,5 +47,9 @@ pasos de simulación por fotograma); 0 fallos síncronos del fondo; caché de
 
 ## Después de la Misión 1
 
-Misiones 2–6 (herramientas de captura generalizadas en `work-fullgame`) y
-efecto diorama (en pausa, `work-diorama`).
+Misión 2, fase 1 (rama `work-m2`, [MISION2.md](MISION2.md)): flujo de
+misión nativo (`01829E..01891E`, probado contra la captura completa), datos
+de las tres etapas exportados, paquete por misión y auditoría. Tras la Misión 1
+el flujo elige la etapa 1 de la Misión 2 y, como su escena aún no se carga,
+para explícitamente y vuelve a la Misión 1. Misiones 3–6 y efecto diorama (en
+pausa, `work-diorama`) después.

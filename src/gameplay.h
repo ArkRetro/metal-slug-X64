@@ -10,6 +10,7 @@
 #include "neo_continue.h"
 #include "neo_landing.h"
 #include "neo_fade.h"
+#include "neo_mission.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
 #include "marco_death.h"
@@ -70,6 +71,9 @@ typedef struct {
      * from and back to the world); end_fire_was/end_jump_was: A and B held
      * at the previous update (new presses 10C35D). */
     neo_end_t end;uint8_t best_mission;
+    /* Stage flow of the mission actor (neo_mission.c): Mission 1 stage
+     * 016DCE until 01891E selects the next mission. */
+    neo_mission_t flow;
     bool start_letters;unsigned start_stops;   /* MISSION 1 START 0607DE in end (descent) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
     /* The big CONTINUE? and digit: the mission actor's program 018120

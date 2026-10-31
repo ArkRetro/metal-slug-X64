@@ -188,8 +188,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
      * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
      * ranking/attract that follow are not ported: the mission restarts. */
     if (game.mission_end==MSX_END_DONE) {
-        /* 01891E: Mission 2 is not ported; Mission 1 starts again. */
-        debugf("MSX mission end 018846 done (explicit stops=%u): Mission 2 not ported, Mission 1 restarts\n",game.end_stops);
+        /* 01891E (neo_mission.c) selected the next stage; its scene is not
+         * loaded yet (docs/MISION2.md): explicit stop, Mission 1 again. */
+        debugf("MSX mission end 018846 done (explicit stops=%u): 01891E -> mission %u record %06lX stage %u descriptor %06lX map %06lX script %04X: scene not loaded (explicit stop), Mission 1 restarts\n",
+               game.end_stops,(unsigned)game.flow.mission+1u,(unsigned long)game.flow.record,(unsigned)game.flow.stage,(unsigned long)game.flow.descriptor,
+               (unsigned long)neo_mission_map_list(&game.flow),(unsigned)neo_mission_script_entry(&game.flow));
         reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
     }
     if (game.game_over_frames>=MSX_GAME_OVER_UPDATES) {

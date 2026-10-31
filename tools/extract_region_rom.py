@@ -78,6 +78,11 @@ BLOBS=[
     (0x32646,0x8,'03264E village porter cull rectangle (01945C)'),
     (0x605AA,0x256,'06090A MISSION COMPLETE letters: letter records 605AA/60614 (060DC4 forms), 606A6 (060E02, number 060B06 first) and 60728 (060E3C, mission 5): +60 program, +61, +72 delay, +6E/+70 target'),
     (0x60F44,0x58,'06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)'),
+    (0x63600,0x20,'063F32 C weapon shell: contact row 063600 and search row 063610 (0049E8)'),
+    (0x63690,0x10,'0636B0 C explosion blast attack row 063690 (0049E8 by 063740)'),
+    (0x63716,0x8,'063756 C blast cull rectangle (019504)'),
+    (0x63814,0x8,'063FDC C shell cull rectangle (019504)'),
+    (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

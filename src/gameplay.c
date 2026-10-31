@@ -620,14 +620,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * linearly between them for a diagonal (declared approximation). */
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
     if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
-    bool hgun=false;
+    bool hgun=false,chaser=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
      * (00427A then 0C3778) reads them for the muzzle. */
-    if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun,!g->grounded && g->velocity_y<0);
+    if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun || chaser,!g->grounded && g->velocity_y<0);
     if (hgun) {
         if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
         g->fire_request=false;g->pistol_wait=0;
@@ -658,7 +658,42 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             }
         }
     }
-    if (!hgun) {
+    if (chaser) {
+        /* The C (id 0C, +93 = 1): the general fire state 0C3CD0 with the
+         * programs of the tables 0C3C10/0C3C50/0C3C90 for id 0C (form 1:
+         * level 253A56, CALL 0C4372 at 0 and +76 at 5; up 253AC6 and down
+         * 255FDE, +76 at 2), so a new press fires again 6 (3) updates
+         * later. 0C4372 -> 0C0D64, then after the list head (00411C) the
+         * flash 0C58D2 (table 0C432A) at the 0C4244 point minus +72/+74
+         * (0C43CC: facing left the x is -(t+x72)-x72) with the player's
+         * motion (01ACF2), and the shell 063F32 (0C42AA) at the 0C4244
+         * point (0C482E: 014A02 is the direct placement of the H bullets,
+         * declared approximation) with +95 + 1, +6E = 0/40 mirrored facing
+         * left, +70 = 0, +5E = the player's. The shells give their
+         * projectile back themselves (0C0DFC, neo_chaser.c). */
+        g->pistol_pending=0;
+        if (g->pistol_wait) g->pistol_wait--;
+        if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
+            g->fire_request=false;
+            marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
+            bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
+            marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
+            bool vertical=g->aim_up || g->crouching;
+            g->pistol_wait=vertical?6u:12u;
+            if (allowed) {
+                bool left=g->facing<0;
+                marco_muzzle_t m=marco_muzzle_aim(&g->legs,g->aim_up?1:0,1,left);
+                uint8_t angle=g->aim_up?0x40:0;
+                if (left) angle=(uint8_t)(0x80-angle);
+                int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
+                int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
+                neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
+                if (neo_world_player_actor(&g->world,0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                    g->world.weapon_player.combo95++;
+                g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
+            }
+        }
+    } else if (!hgun) {
         /* The bullet of the callback two ticks (one update) ago: its
          * constructor (01B782) runs one update after 00411C allocated it. */
         if (g->pistol_pending && !--g->pistol_pending)
@@ -682,7 +717,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                         0x641ec,0xa716e,0x1b716,0xc46d6,0x63f32,0x8606a,0xde4da,0xdea20};
                     /* 0C44C2/0C44E0 (+93 = 2: 01B668/01BDD2) are not ported either. */
                     g->weapon_stops++;g->weapon_stop_constructor=g->world.weapon_player.form93==2 && (ammo.kind==5 || ammo.kind==10)?
-                        (ammo.kind==5?0x1b668u:0x1bdd2u):constructor[ammo.kind&15u];
+                        (ammo.kind==5?0x1b668u:0x1bdd2u):g->world.weapon_player.form93==2 && ammo.kind==0x0c?0x63f10u:constructor[ammo.kind&15u];
                 }
                 /* 0C4244 muzzle: table 0C4204 row by aim, form 0, plus the
                  * body program's +72/+74 (hold2: standing level (16,10)+(0,17)

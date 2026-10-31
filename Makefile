@@ -21,7 +21,7 @@ ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
 N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
-WORLD_SRCS := src/neo_camera.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_end.c src/neo_fade.c src/marco_mount.c
+WORLD_SRCS := src/neo_camera.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_end.c src/neo_fade.c src/marco_mount.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
@@ -270,7 +270,7 @@ $(BUILD_DIR)/end_letters_fixture.h: tools/compile_end_fixture.py data/end_letter
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food rocket heli camel decor awning porter slug
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 food rocket heli camel decor awning porter slug
 # The camel riders 09F682 (camel2: hold-fire 6950..7950 at camera 2184..2336),
 # their riders, heads, shots, pieces and the dropped sword 09EE34; the rider
 # dies as a swordsman (09E920/09EAB8, neo_swords.c). A shot A0034 that hits
@@ -321,6 +321,13 @@ FAMILY_ARGS_citem := --pickup 8370,c,28
 BULLET_ARGS := --hit-child 1bc2e --hit-from 1b6dc,1b716,1b750,1b782,1b882,1bbe2
 FAMILY_ARGS_hbullet := $(BULLET_ARGS)
 FAMILY_ARGS_pbullet := $(BULLET_ARGS)
+# The C weapon of cfam (neo_chaser.c, extract_family_fixture.py --range
+# 63600-64300 --range c5800-c5a00 --ram 10c718-10c72c --attacks): 40 shells
+# 063F32 and their flight 063FDC with the 0049E8 answers (D0, the A0/A1
+# targets 01B162 read), 32 explosions 064128 and blasts 06371E (after the
+# list head, 00411C), 286 trail puffs 063D9E pulled towards the node before
+# them (+04), 40 muzzle flashes 0C58D2, and the weapon block (0C0DFC).
+FAMILY_ARGS_chaser := --script-actor 101414 --script-routines 6371e --attacks --previous
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.
 FAMILY_ARGS_grenade := --hit-to 1c152
@@ -611,7 +618,7 @@ check: check-boss $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/hmuzzle_fixtur
 	$(BUILD_DIR)/host/blood
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_slug.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c -o $(BUILD_DIR)/host/rest
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_slug.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c -o $(BUILD_DIR)/host/rest
 	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DEND_HEADER='"end_letters_fixture.h"' -DEND_NAME=end_letters tools/test_neo_end.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_letters
 	$(BUILD_DIR)/host/end_letters

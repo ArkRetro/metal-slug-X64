@@ -1,5 +1,5 @@
 {
- "descriptors": 2813,
+ "descriptors": 2870,
  "palettes": [
   "0x103",
   "0x113",
@@ -36,6 +36,7 @@
   "0x24",
   "0x27c",
   "0x30b",
+  "0x363",
   "0x373",
   "0x376",
   "0x378",
@@ -88,13 +89,13 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 832,
-  "frames": 613,
-  "pixels_equal": 2930624,
-  "pixels_different": 150106,
-  "pixels_overlapping": 764201,
-  "rank_2": 395,
+  "frames": 617,
+  "pixels_equal": 2936091,
+  "pixels_different": 150936,
+  "pixels_overlapping": 765765,
+  "rank_2": 399,
   "rank_1": 218,
-  "missing_descriptor": 30
+  "missing_descriptor": 28
  },
  "frames": [
   {
@@ -4387,6 +4388,34 @@
    "update_frame": 9814,
    "equal": 0,
    "different": 48
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 808,
+   "different": 330
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 3187,
+   "different": 500
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 736,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 736,
+   "different": 0
   }
  ]
 }

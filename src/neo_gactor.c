@@ -274,6 +274,11 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     if ((int16_t)(r[14]<<8|r[15])>=0) ga_fail(e,row); /* several (class,damage) pairs: not observed */
     return best;
 }
+uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
+    memset(e->target,0,sizeof(e->target));
+    e->want_targets=true;uint8_t r=ga_attack(a,e,row);e->want_targets=false;
+    return r;
+}
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
     if (!ga_l(a,0x50)) return false;
     /* 004BAC: while RAM 1067E2 is set every body whose descriptor class is

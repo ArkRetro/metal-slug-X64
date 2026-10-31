@@ -288,7 +288,7 @@ cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/fam2@99dcc-9a9c2 $C/food1@8c374-8c700 $C/rl2@5ed84-60600 $C/rl2@59c82-59e30 \
   $C/heli2@47800-49000 $C/camel2@9ea00-a0800 $C/unc1@b6200-b6300 $C/unc1@400aa-40100 \
   $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
-  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 \
+  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 $W/cfam@63600-64300 $W/cfam@c5800-c5a00 \
   --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
 ```
 

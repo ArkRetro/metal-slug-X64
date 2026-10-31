@@ -194,7 +194,42 @@ static unsigned stand_2336(int at) {
     }
     return passed?hold_max:~0u;
 }
+/* The C weapon (id 0C, neo_chaser.c): granted at the start and again
+ * whenever it runs out (0C0928, as an item would), the dome policy of the
+ * shop run firing tapped. Every shell, flash, trail and blast is native (no
+ * stop, every descriptor in the scene pack); shells home in and explode
+ * (064128 -> blast 06371E) and kill. */
+static void chaser_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned blasts=0,trails=0,grants=0;bool seen[NEO_WORLD_GACTORS]={false};
+    for (unsigned steps=0;steps<9000;steps++) {
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&sound)) grants++;
+        }
+        int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
+        int dome=-1;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0x50)!=0x54730u || (ga_b(a,0x5f)&0x80u)) continue;
+            int x=g.camera+(int16_t)ga_w(a,0x3c);if (dome<0 || x<dome) dome=x;
+        }
+        if (dome>=0) {int px=g.x/MSX_UNIT;dir=px<dome-2?1:px>dome+2?-1:0;g.aim_up=true;}
+        msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
+            bool blast=a->active && (r==0x63740u || r==0x63756u);
+            if (blast && !seen[i]) blasts++;
+            seen[i]=blast;
+            if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
+        }
+    }
+    printf("C run: grants=%u shells=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        grants,g.c_shots,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
+    assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
+}
 int main(int argc,char **argv) {
+    if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     msx_game_t g;msx_game_init(&g);
     int start=g.x;
@@ -301,8 +336,8 @@ int main(int argc,char **argv) {
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     /* Every H shot is native; the other weapons the prisoners give (their
      * shots are not ported) stop explicitly at their constructor, counted. */
-    assert(g.world.player_shots==g.h_shots+g.grenades && !g.world.shot_dropped);
-    assert(g.weapon_stops==g.weapon_shots-g.h_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
+    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots && !g.world.shot_dropped);
+    assert(g.weapon_stops==g.weapon_shots-g.h_shots-g.c_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
     /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
     assert(g.hgun_diagonal>0);
@@ -333,6 +368,7 @@ int main(int argc,char **argv) {
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    chaser_run();
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

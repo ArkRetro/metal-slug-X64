@@ -22,14 +22,14 @@
  *
  * Positions are scene-local Q16.16 with Y up (the native collision grid);
  * the scene object sits at (-camera, 256) as RAM 10C742/10C746 do. */
-enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_GACTORS=40,
-    NEO_WORLD_ORDER=80, NEO_WORLD_DRAWS=96, NEO_WORLD_BOXES=48, NEO_WORLD_SOUNDS=16 };
+enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_GACTORS=64,
+    NEO_WORLD_ORDER=112, NEO_WORLD_DRAWS=128, NEO_WORLD_BOXES=48, NEO_WORLD_SOUNDS=16 };
 typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_THROW,
     NEO_WORLD_SPLASH, NEO_WORLD_GACTOR, NEO_WORLD_BOSS } neo_world_kind_t;
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
 /* A player shot waiting for its list insertion (neo_world_player_shot). */
-typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; } neo_world_shot_request_t;
+typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; bool actor;uint8_t f5e; } neo_world_shot_request_t;
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
 /* Dynamic collision object owned by a generic actor (RAM 10C06E + 64*i):
  * local position block relative to its parent (+00..+25). */
@@ -84,6 +84,12 @@ typedef struct {
      * registered during this update / queried during this update. */
     struct { uint8_t owner; uint16_t xbins; uint8_t ybins; } boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];
     unsigned box_count,last_box_count;
+    /* The same registry in its slot order (004C24 numbers the bodies as
+     * they register, at most 0x40): soldiers, generic actors and boss
+     * nodes, for the A0/A1 targets of 0049E8 (004B06 visits the slots
+     * 16..31, 0..15, 48..63, 32..47). */
+    struct { uint8_t kind,index; uint16_t xbins; uint8_t ybins; } regs[64],last_regs[64];
+    unsigned reg_count,last_reg_count;
     uint16_t view[4];
     /* Object lists RAM 43F4/43A2 (written when the counter RAM 10000F bit 0
      * is clear / set, cleared by 0401E8 before the actors run; the other one
@@ -203,6 +209,12 @@ bool neo_world_player_shot(neo_world_t *world,uint32_t constructor,int32_t x,int
  * is FF): +6E player, +15 facing (01AC94), +28/+2C at the scene root,
  * +30/+34 the player's motion (0C4834). */
 bool neo_world_player_grenade(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player);
+/* A child of the player's fire callback 0C4372 made after the list head
+ * (00411C) with the creator's fields: +6E angle (0C4244), +70 player word,
+ * +15, +5E, +28/+2C at the scene root, +30/+34 (the C weapon: the muzzle
+ * flash 0C58D2 placed by 01ACF2, the shell 063F32 by 0C482E). A shell
+ * 063F32 the world cannot insert gives its projectile back (0C4526). */
+bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

@@ -20,6 +20,7 @@ GLOBALS=[(0x10e95a,0x10e964),(0x10e9c8,0x10e9d0),(0x1067e2,0x1067e4),(0x109944,0
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('trace',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--range',action='append',required=True,help='lo-hi routine interval (hex)')
+    p.add_argument('--attacks',action='store_true',help='record every 0049E8 call of an update (its D0 at 004B96 and A0/A1 at 004B9A/004B9E, 0 on the 004BA4 path) and what 01B162 read of a target (+3C/+40 words, +50): the C shell\'s homing')
     p.add_argument('--ram',action='append',default=[],help='lo-hi RAM interval (hex): every first read of a byte there (input) and every write (output), e.g. the vehicle slots, input words, weapon block and player nodes a vehicle reads')
     a=p.parse_args();ranges=[tuple(int(x,16) for x in r.split('-')) for r in a.range]
     rams=[tuple(int(x,16) for x in r.split('-')) for r in a.ram]
@@ -34,6 +35,7 @@ def main():
             if cur is not None:cur['post']=None;updates.append(cur)
             r=int(t[2],16)
             cur=dict(frame=frame,node=t[1],routine=r,pre=t[3],reads={},writes=[],ram_in={},ram_out=[]) if keep(r) else None
+            if cur is not None and a.attacks:cur['attacks']=[];cur['targets']={}
             continue
         if cur is None:continue
         if t[0]=='V':cur['post']=t[2];updates.append(cur);cur=None;continue
@@ -45,6 +47,19 @@ def main():
                     # Object-list bytes: the id (+9) is read apart from the height (+8).
                     o=cur['reads'][hex(ad)];new=mask&~o[0];o[1]=(o[1]&o[0])|(data&new);o[0]|=new
             if t[0]=='W' and any(lo<=ad<hi for lo,hi in GLOBALS):cur['writes'].append([ad,mask,data,pc])
+            if a.attacks and t[0]=='R':
+                if pc==0x49e8 and ad==0x10f000:cur['attacks'].append([0,0,0])
+                elif pc==0x4b96 and ad==0x106754:cur['attacks'][-1][0]=data
+                elif pc==0x4b9a:cur['attacks'][-1][1]=(cur['attacks'][-1][1]<<16|data)&0xffffffff
+                elif pc==0x4b9e:cur['attacks'][-1][2]=(cur['attacks'][-1][2]<<16|data)&0xffffffff
+                elif pc in (0x1b176,0x1b17a,0x1b17e):
+                    # +50 is read as two words (the second at +52).
+                    base=ad-{0x1b176:0x3c,0x1b17a:0x40,0x1b17e:0x50}[pc]
+                    if pc==0x1b17e and '%x'%(ad-0x52) in cur['targets']:base=ad-0x52
+                    tg=cur['targets'].setdefault('%x'%base,[None,None,0])
+                    if pc==0x1b176:tg[0]=data
+                    elif pc==0x1b17a:tg[1]=data
+                    else:tg[2]=(tg[2]<<16|data)&0xffffffff
             if inram(ad):
                 for b,m in ((ad,0xff00),(ad+1,0xff)):
                     if not mask&m:continue

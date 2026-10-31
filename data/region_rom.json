@@ -417,6 +417,31 @@
    "rom": "0x060F44",
    "reader": "06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)",
    "hex": "00264ff8002650020026500c00265016002650200026502a002650340026503e00265048002650520026505c00265066002650700026507a002650840026508e00265098002650a2002650ac002650b6ffe8ffe800300030"
+  },
+  {
+   "rom": "0x063600",
+   "reader": "063F32 C weapon shell: contact row 063600 and search row 063610 (0049E8)",
+   "hex": "fffcfffc0008000800090001001effffff80ff8001000100000000010000ffff"
+  },
+  {
+   "rom": "0x063690",
+   "reader": "0636B0 C explosion blast attack row 063690 (0049E8 by 063740)",
+   "hex": "ffe8fff00030004000010001000affff"
+  },
+  {
+   "rom": "0x063716",
+   "reader": "063756 C blast cull rectangle (019504)",
+   "hex": "ffe0ffe000400040"
+  },
+  {
+   "rom": "0x063814",
+   "reader": "063FDC C shell cull rectangle (019504)",
+   "hex": "fff0fff000200020"
+  },
+  {
+   "rom": "0x03BB70",
+   "reader": "soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)",
+   "hex": "0502fff000000020000a8000"
   }
  ]
 }

@@ -24,6 +24,9 @@ typedef struct {
 /* Window: a cell passes when (v+size > left, or >= when left_inclusive) and v < right. */
 typedef struct { float scale,offset,size,left,right;bool left_inclusive; } scene_cell_window_t;
 bool scene_cell_index_build(scene_cell_index_t *index,const scene_map_cell_t *cells,unsigned count);
+/* Same index in caller memory (count entries of each): a mission stage's
+ * index lives with its tables (scene_stage_load). */
+bool scene_cell_index_build_into(scene_cell_index_t *index,const scene_map_cell_t *cells,unsigned count,uint16_t *order,scene_cell_run_t *runs);
 static inline float scene_cell_value(const scene_cell_window_t *w,int16_t x) {return x*w->scale+w->offset;}
 static inline bool scene_cell_left_ok(const scene_cell_window_t *w,int16_t x) {
     float v=scene_cell_value(w,x);

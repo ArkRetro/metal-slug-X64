@@ -59,6 +59,8 @@ typedef struct {
     const uint8_t *list;uint32_t list_base;uint16_t list_size;
     neo_camera_event_t events[NEO_CAMERA_EVENTS];unsigned event_count,event_dropped;
     unsigned unsupported;uint32_t unsupported_at;
+    /* Players of the last update (+3C/+40 projected words) for op 4. */
+    struct { bool alive; uint16_t px,py; } op4_players[2];
 } neo_camera_t;
 /* One player as ROM 01903A reads it. */
 typedef struct { bool alive; uint8_t follow_x,follow_y; uint16_t px,py; } neo_camera_player_t;

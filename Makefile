@@ -133,9 +133,13 @@ BOOT_LOGO := $(wildcard filesystem/logo/neogeo-logo.mesh filesystem/logo/neogeo-
 BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64))
 # The fix-layer HUD (src/hud_renderer.c) draws the S-ROM tiles with the fix
 # palettes of tools/build_hud_assets.py (docs/ARMAS_VEHICULOS.md §11).
-$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin
+# Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
+# the mission switch; without them the game stops there and restarts Mission 1.
+MISSION_PACKS := $(wildcard romfs/mission[2-6].pack)
+$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
+	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
@@ -158,6 +162,17 @@ mslugx-camel-shot.z64: N64_ROM_TITLE = "MSX CAMEL SHOT"
 mslugx-camel-shot.z64: $(BUILD_DIR)/mslugx-camel-shot.dfs
 $(BUILD_DIR)/mslugx-camel-shot.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-camel-shot.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Mission 2 reference cartridge (tools/test_mission2_ares.py, never a
+# release): the reference game starting at Mission 2's first record, with
+# the stage-end hook (MSX_REFERENCE_STAGE_EXIT, gameplay.c).
+$(BUILD_DIR)/m2ref/actor.o: src/actor.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=2 -o $@ $<
+$(BUILD_DIR)/mslugx-m2-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(BUILD_DIR)/m2ref/actor.o $(filter-out $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+mslugx-m2-reference.z64: N64_ROM_TITLE = "MSX M2 REFERENCE"
+mslugx-m2-reference.z64: $(BUILD_DIR)/mslugx-m2-reference.dfs
+$(BUILD_DIR)/mslugx-m2-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-m2-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-reference.z64: N64_ROM_TITLE = "MSX M1 REFERENCE"
 mslugx-reference.z64: $(BUILD_DIR)/mslugx-reference.dfs
 $(BUILD_DIR)/mslugx-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -174,7 +189,7 @@ $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fix
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/neo_world.o $(BUILD_DIR)/src/neo_boss.o: $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h
-$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
+$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
 $(BUILD_DIR)/visual_config.h: FORCE tools/build_visual_config.py
 	python3 tools/build_visual_config.py $(MSX_VISUAL_MODE) --scenario $(MSX_SCENARIO) --depth-style $(MSX_DEPTH_STYLE) --output $@
 $(BUILD_DIR)/src/neo_collision.o: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_wreckage.h
@@ -722,7 +737,7 @@ check: check-boss $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d $(BUILD_DIR)/m2ref/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

@@ -12,6 +12,12 @@
 #ifndef MSX_REFERENCE_INVULNERABLE
 #define MSX_REFERENCE_INVULNERABLE 0
 #endif
+/* Reference build only: the stage end of a mission pack stage once the
+ * camera holds at the end of its list and the player reaches the right
+ * edge (the stage-1 exit actor 0B6F24 is not ported, docs/MISION2.md). */
+#ifndef MSX_REFERENCE_STAGE_EXIT
+#define MSX_REFERENCE_STAGE_EXIT MSX_REFERENCE_INVULNERABLE
+#endif
 #ifndef MSX_DEBUG_CAMEL_DROP
 #define MSX_DEBUG_CAMEL_DROP 0
 #endif
@@ -109,6 +115,37 @@ void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_
      * before; its first update is in the same frame as the canopy's
      * constructor (ms2 capture: 1838). Its voice is in the entry audio. */
     neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;
+}
+void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
+    neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
+    neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
+    msx_game_init(g);
+    g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;
+    g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=flags;
+    neo_world_init_stage(&g->world,0,st);
+    /* Each stage starts its timer again (DIP 60, the run4 capture). */
+    neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
+    g->in_stage=true;g->stage_camera_max=camera_max;
+    /* On the highest floor of the left edge (run4: y 64, 184 and 48 at the
+     * three stage starts; the grid's top rows are empty). */
+    neo_surface_t top;g->x=0;
+    g->y=neo_surface_at(0,(int32_t)neo_collision_rows()*8*MSX_UNIT,0,(int32_t)neo_collision_rows()*8*MSX_UNIT,&top)?56*MSX_UNIT-top.height:msx_ground_offset(0);
+    g->walk_in_x=start_x*MSX_UNIT;
+}
+void msx_game_stage_end(msx_game_t *g) {
+    if (g->stage_step) return;
+    /* 018F40 then 018722: the next record (the flow's exit kind). */
+    g->flow.end=0;neo_mission_stage_done(&g->flow);
+    g->stage_step=1;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));
+}
+/* Stage end to the next stage's 0183D0, one flow update per game update;
+ * the exit fade of kind 8 (16 steps, 0184F6) is the port's palette fade. */
+static void stage_end_step(msx_game_t *g) {
+    if (g->stage_load) return;
+    if (g->flow.fade_in && g->flow.fade_steps>1 && g->stage_step==1) {neo_fade_start(&g->fade,(int16_t)-0x1f,(int16_t)-0x1f,(int16_t)-0x1f,g->flow.fade_steps);g->stage_step=2;}
+    neo_fade_step(&g->fade);
+    if (g->flow.state==NEO_MISSION_STAGE_EXIT || g->flow.state==NEO_MISSION_STAGE_ENTRY) neo_mission_update(&g->flow);
+    if (g->flow.load) g->stage_load=true;
 }
 void msx_game_vehicle_reference(msx_game_t *g) {
     // Observed stationary vehicle variant, at the captured position. This is
@@ -608,6 +645,16 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->end_started=true;
         return;
     }
+    if (g->stage_step) {g->ticks++;if (!(g->ticks&1)) stage_end_step(g);return;}
+    /* Stage start of a mission pack: the player walks in (no control). */
+    if (g->walk_in_x) {
+        if (g->x<g->walk_in_x && g->life.phase==MARCO_ALIVE) {direction=1;jump=false;fire=false;}
+        else g->walk_in_x=0;
+    }
+#if MSX_REFERENCE_STAGE_EXIT
+    if (g->in_stage && g->camera>=g->stage_camera_max &&
+        g->x>=(g->camera+280)*MSX_UNIT) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+#endif
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}

@@ -125,7 +125,21 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
                 if (d7>c->progress) return;
             } else if (op==8) {
                 set_target(c,(uint32_t)lw(c,a+4)<<16);c->held=true;return;
-            } else {c->unsupported++;c->unsupported_at=c->list_base+a;return;} /* op 4: 0C84BE not used */
+            } else {
+                /* 0C84BE (Mission 2's lists): wait until every present
+                 * player's +3C/+40 is inside the rectangle (+8/+A relative
+                 * to the layer object's +14/+18, size +C/+E). The layer is
+                 * 10C72E in every list; its +14/+18 are the scene root's
+                 * words (run4 RAM: -camera x and 256 - camera y). */
+                int16_t lx=(int16_t)((uint32_t)NEG(c->x)>>16),ly=(int16_t)((0x01000000u-(uint32_t)c->y)>>16);
+                uint16_t d2=(uint16_t)(lw(c,a+8)+(uint16_t)lx),d3=(uint16_t)(lw(c,a+10)+(uint16_t)ly),w=lw(c,a+12),h=lw(c,a+14);
+                bool in[2],any=false;
+                for (unsigned i=0;i<2;i++) {
+                    in[i]=!c->op4_players[i].alive || ((uint16_t)(c->op4_players[i].px-d2)<w && (uint16_t)(c->op4_players[i].py-d3)<h);
+                    any|=c->op4_players[i].alive;
+                }
+                if (!any || !in[0] || !in[1]) return;
+            }
         } else switch (op) {
         case 0x0c: event(c,NEO_CAMERA_EV_PALETTE,ll(c,a+4),0);break;
         case 0x10: c->mode=lw(c,a+4);break;
@@ -205,6 +219,7 @@ void neo_camera_finish(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
     neo_camera_commands(c,p8,pa);
 }
 void neo_camera_update(neo_camera_t *c,const neo_camera_player_t players[2],bool follow,uint16_t *p8,uint16_t *pa) {
+    for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=players[i].alive;c->op4_players[i].px=players[i].px;c->op4_players[i].py=players[i].py;}
     neo_camera_track(c,players,follow,*p8,*pa);
     neo_camera_finish(c,p8,pa);
 }

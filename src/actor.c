@@ -36,9 +36,44 @@ static bool observed_wreck_contact;
  * descriptor parts; the historical six-state banks remain only as fallback
  * when romfs/marco is absent. */
 static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures,marco_grenades,marco_cfires,marco_knives;
+/* Reference cartridge of Mission 2 only (mslugx-m2-reference.z64, never a
+ * release): the game jumps to this mission's first record at the first
+ * frame instead of playing Mission 1. */
+#ifndef MSX_REFERENCE_START_MISSION
+#define MSX_REFERENCE_START_MISSION 0
+#endif
+/* Mission packs (docs/MISION2.md "Fase 2"): the stage the flow selected
+ * (42F6 = descriptor +E, pack index stage-1), loaded at its 0183D0. */
+static bool load_stage(void) {
+    unsigned index=game.flow.stage?game.flow.stage-1u:0u;
+    if (!scene_stage_load(index)) return false;
+    const scene_stage_t *st=scene_stage();
+    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);
+    scene_renderer_stage_changed();
+    neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
+    /* 019604 record +2: the x the player is placed at (0x68 from the left). */
+    int start_x=st->players_len>=4?(int)(int16_t)(st->players[2]<<8|st->players[3]):0x68;
+    msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
+    for (unsigned k=0;k<40 && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
+    debugf("MSX mission %u stage %u start: record %06lX descriptor %06lX camera list %06lX script %06lX (%u bytes) walk-in to x=%d\n",
+        (unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,(unsigned long)game.flow.record,(unsigned long)game.flow.descriptor,
+        (unsigned long)st->camera_rom,(unsigned long)st->script_rom,st->script_len,start_x);
+    return true;
+}
+/* The flow's mission (42F4) from its first record: pack and stage 1. */
+static bool enter_mission(void) {
+    for (unsigned k=0;k<40 && !game.flow.load && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
+    if (!scene_mission_load(game.flow.index+1u)) return false;
+    return load_stage();
+}
+static void leave_mission(void) {
+    if (!scene_stage()) return;
+    scene_mission_unload();neo_collision_set_grid(NULL,NULL,NULL,0,0);scene_renderer_stage_changed();
+}
 static void reset_game(void) {
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
+    leave_mission();
     if (has_entry && entry_descent) msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
     else if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
@@ -187,13 +222,32 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* GAME OVER shown until the original hands the machine back to the BIOS:
      * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
      * ranking/attract that follow are not ported: the mission restarts. */
+#if MSX_REFERENCE_START_MISSION>1
+    {static bool jumped;
+     if (!jumped) {
+        jumped=true;game.flow.mission=MSX_REFERENCE_START_MISSION-1;neo_mission_start(&game.flow,MSX_REFERENCE_START_MISSION-1);
+        debugf("MSX reference build: start at mission %u (not a release)\n",MSX_REFERENCE_START_MISSION);
+        if (!enter_mission()) debugf("MSX mission %u pack not loaded: Mission 1 goes on\n",MSX_REFERENCE_START_MISSION);
+        previous_animation=-1;scene_clock_reset(&simulation_clock);
+     }}
+#endif
     if (game.mission_end==MSX_END_DONE) {
-        /* 01891E (neo_mission.c) selected the next stage; its scene is not
-         * loaded yet (docs/MISION2.md): explicit stop, Mission 1 again. */
-        debugf("MSX mission end 018846 done (explicit stops=%u): 01891E -> mission %u record %06lX stage %u descriptor %06lX map %06lX script %04X: scene not loaded (explicit stop), Mission 1 restarts\n",
+        /* 01891E (neo_mission.c) selected the next mission's first stage:
+         * its pack is loaded now (docs/MISION2.md "Fase 2"). Without the
+         * pack (romfs/missionN.pack missing): explicit stop, Mission 1. */
+        debugf("MSX mission end 018846 done (explicit stops=%u): 01891E -> mission %u record %06lX stage %u descriptor %06lX map %06lX script %04X\n",
                game.end_stops,(unsigned)game.flow.mission+1u,(unsigned long)game.flow.record,(unsigned)game.flow.stage,(unsigned long)game.flow.descriptor,
                (unsigned long)neo_mission_map_list(&game.flow),(unsigned)neo_mission_script_entry(&game.flow));
-        reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
+        if (!enter_mission()) {
+            debugf("MSX mission %u not loaded (explicit stop): Mission 1 restarts\n",(unsigned)game.flow.mission+1u);
+            reset_game();
+        }
+        previous_animation=-1;scene_clock_reset(&simulation_clock);
+    }
+    if (game.stage_load) {
+        debugf("MSX stage end (018722) mission %u: next stage %u (exit hooks=%u)\n",(unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,game.stage_exit_hooks);
+        if (!load_stage()) {debugf("MSX stage %u not loaded (explicit stop): Mission 1 restarts\n",(unsigned)game.flow.stage);reset_game();}
+        previous_animation=-1;scene_clock_reset(&simulation_clock);
     }
     if (game.game_over_frames>=MSX_GAME_OVER_UPDATES) {
         debugf("MSX game over: mission restart (continues=%u)\n",game.continues);
@@ -303,6 +357,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
         debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
     if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+    if (game.in_stage) {   /* mission pack stage: camera, player and coverage */
+        static unsigned last;static int seen_camera=-1,seen_height=-99999;
+        if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {
+            last=game.ticks;seen_camera=game.camera;seen_height=game.camera_height;
+            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u\n",
+                (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
+                game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported);
+        }
+    }
     if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));
     if (game.world.camera.auto_mode!=old_auto) debugf("MSX camera autoscroll=%u progress=%u\n",game.world.camera.auto_mode,neo_camera_progress(&game.world.camera));
     if (game.world.boss_active && !old_boss) debugf("MSX boss spawned camera=%d\n",game.camera);

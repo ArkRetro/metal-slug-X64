@@ -3,20 +3,35 @@
 #include <limits.h>
 #include <string.h>
 #include "vehicle_wreckage.h"
-static uint8_t dynamic_grid[sizeof(neo_grid)];
+static uint8_t dynamic_grid_m1[sizeof(neo_grid)];
 static bool dynamic_active;
+/* Active grid (column major, `rows` cells per column, row 0 at the bottom):
+ * Mission 1's compiled neo_grid, or a stage of a mission pack
+ * (neo_collision_set_grid, docs/MISION2.md "Fase 2"). */
+static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid=dynamic_grid_m1;static const uint8_t *unknown;
+static unsigned columns=NEO_GRID_COLUMNS,rows=32,unknown_reads;
 void neo_collision_reset(void) {dynamic_active=false;}
+void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned column_count,unsigned row_count) {
+    if (!cells) {grid=neo_grid;dynamic_grid=dynamic_grid_m1;unknown=NULL;columns=NEO_GRID_COLUMNS;rows=32;}
+    else {grid=cells;dynamic_grid=dynamic;unknown=unknown_mask;columns=column_count;rows=row_count;}
+    dynamic_active=false;unknown_reads=0;
+}
+unsigned neo_collision_rows(void) {return rows;}
+unsigned neo_collision_unknown_reads(void) {return unknown_reads;}
+static void make_dynamic(void) {
+    if (!dynamic_active) {memcpy(dynamic_grid,grid,columns*rows);dynamic_active=true;}
+}
 static int cell_floor(int32_t value) {
     int64_t v=value;return v>=0?(int)(v/(8*NEO_UNIT)):-(int)((-v+8*NEO_UNIT-1)/(8*NEO_UNIT));
 }
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
     if (!(flags&1) || flags&32) return 0;
-    if (!dynamic_active) {memcpy(dynamic_grid,neo_grid,sizeof(neo_grid));dynamic_active=true;}
+    make_dynamic();
     int base_x=cell_floor(x)-7,base_y=cell_floor(y);unsigned changed=0;
     for (unsigned col=0;col<13;col++) for (unsigned row=0;row<3;row++) {
         int cx=base_x+(int)col,cy=base_y+2-(int)row;
-        if (cx<0 || cx>=NEO_GRID_COLUMNS || cy<0 || cy>=32) continue;
-        uint8_t *cell=&dynamic_grid[cx*32+cy];
+        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
+        uint8_t *cell=&dynamic_grid[cx*rows+cy];
         if (*cell&15) continue;
         uint8_t value=(*cell&0xe0)|(flags&2?16:0)|vehicle_wreckage[row][col];
         if (value!=*cell) { *cell=value;changed++; }
@@ -30,27 +45,31 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
      * cell; an existing shape s survives unless mask bit s is set; bits
      * 5..7 of the old cell are kept. The ring window of the layer always
      * covers the stamps of Mission 1 (actors on screen). */
-    if (!dynamic_active) {memcpy(dynamic_grid,neo_grid,sizeof(neo_grid));dynamic_active=true;}
+    make_dynamic();
     int dx=(int8_t)t[0],dy=(int8_t)t[1],w=t[2],h=t[3];
     uint32_t mask=(uint32_t)t[6]<<24|(uint32_t)t[7]<<16|(uint32_t)t[8]<<8|t[9];
     int base_x=cell_floor(x)+dx,base_y=cell_floor(y)+dy+h-1;unsigned changed=0;
     for (int col=0;col<w;col++) for (int row=0;row<h;row++) {
         int cx=base_x+col,cy=base_y-row;
-        if (cx<0 || cx>=NEO_GRID_COLUMNS || cy<0 || cy>=32) continue;
-        uint8_t *cell=&dynamic_grid[cx*32+cy];unsigned shape=*cell&15u;
+        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
+        uint8_t *cell=&dynamic_grid[cx*rows+cy];unsigned shape=*cell&15u;
         if (shape && !((mask>>shape)&1u)) continue;
         uint8_t value=(uint8_t)((t[10+row*w+col]|(t[4]?16:0))+(*cell&0xe0));
         if (value!=*cell) {*cell=value;changed++;}
     }
     return changed;
 }
-unsigned neo_collision_columns(void) {return NEO_GRID_COLUMNS;}
+unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
-    if (x<0 || x>=NEO_GRID_COLUMNS*8 || y<0 || y>=256) return 0;
-    return (dynamic_active?dynamic_grid:neo_grid)[(x/8)*32+y/8];
+    if (x<0 || x>=(int)columns*8 || y<0 || y>=(int)rows*8) return 0;
+    unsigned at=(unsigned)(x/8)*rows+(unsigned)(y/8);
+    /* A never observed cell (mission packs only) reads as empty and is
+     * counted: an explicit stop of the collision coverage. */
+    if (unknown && (unknown[at>>3]>>(at&7)&1u)) {unknown_reads++;return 0;}
+    return (dynamic_active?dynamic_grid:grid)[at];
 }
 static bool surface(int32_t x,int row,neo_surface_t *out) {
-    if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
+    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     uint8_t code=neo_collision_cell(x/NEO_UNIT,row*8);
     unsigned shape=code&15;int32_t base=row*8*NEO_UNIT,u=(uint32_t)x&(8*NEO_UNIT-1),height;
     if (shape>=1 && shape<=4) height=base+(u/4)+(shape-1)*2*NEO_UNIT;
@@ -72,13 +91,13 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
  * y 192 and lands on the FB roof at y 144. Soldiers and other actors keep
  * them (neo_surface_unique). */
 static bool player_surface(int32_t x,int row,neo_surface_t *out) {
-    if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
+    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     if ((neo_collision_cell(x/NEO_UNIT,row*8)>>5)==1u) return false;
     return surface(x,row,out);
 }
 bool neo_surface_unique(int32_t x,neo_surface_t *out) {
     bool found=false;
-    for (int row=0;row<32;row++) {
+    for (int row=0;row<(int)rows;row++) {
         neo_surface_t candidate;if (!surface(x,row,&candidate)) continue;
         if (found) return false;
         *out=candidate;found=true;
@@ -86,9 +105,9 @@ bool neo_surface_unique(int32_t x,neo_surface_t *out) {
     return found;
 }
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out) {
-    if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
+    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     bool found=false;int64_t closest=INT64_MAX;
-    for (int row=0;row<32;row++) {
+    for (int row=0;row<(int)rows;row++) {
         neo_surface_t s;if (!player_surface(x,row,&s)) continue;
         int64_t distance=(int64_t)s.height-reference;
         if (distance>rise || distance< -(int64_t)drop) continue;
@@ -116,7 +135,7 @@ bool neo_walk_step(neo_air_t *p,int direction) {
     // A new ramp can overlap an older flat surface. Select the upper reachable
     // contact within the original step tolerance, so the old floor cannot pull
     // feet through the wreck. Distant roofs remain outside that tolerance.
-    for (int row=0;row<32;row++) {
+    for (int row=0;row<(int)rows;row++) {
         neo_surface_t candidate;
         if (!player_surface(p->x,row,&candidate)) continue;
         int64_t delta=(int64_t)candidate.height-predicted;
@@ -131,7 +150,7 @@ bool neo_walk_step(neo_air_t *p,int direction) {
 bool neo_land_step(neo_air_t *p,int32_t previous_y) {
     if (p->vy>0 || p->y>previous_y) return false;
     bool hit=false;neo_surface_t highest={0};
-    for (int row=0;row<32;row++) {
+    for (int row=0;row<(int)rows;row++) {
         neo_surface_t s;if (!player_surface(p->x,row,&s)) continue;
         if (s.height>previous_y || s.height<p->y) continue;
         if (!hit || s.height>highest.height) { highest=s;hit=true; }

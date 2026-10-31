@@ -4,6 +4,8 @@
 #include "scene_assets.h"
 #include "retro25d.h"
 void scene_renderer_init(void);
+/* After scene_stage_load / scene_mission_unload (docs/MISION2.md). */
+void scene_renderer_stage_changed(void);
 /* display_get() with a watchdog: re-kicks rspq when no framebuffer frees up. */
 surface_t *msx_display_get(void);
 void scene_render_begin(surface_t *surface);

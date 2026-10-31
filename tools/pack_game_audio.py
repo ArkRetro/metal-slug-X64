@@ -83,8 +83,14 @@ def main():
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
     render=json.loads((a.source/'render.json').read_text())['sounds']
     staging=a.output/'wav';staging.mkdir(parents=True,exist_ok=True);manifest={}
+    old=json.loads((a.output/'manifest.json').read_text())['sounds'] if (a.output/'manifest.json').exists() else {}
     for label,info in render.items():
         if info['status']=='SILENT':manifest[label]=dict(word=info['word'],status='SILENT: not packed');continue
+        # The music render (77 MB) need not stay on disk: keep its pack.
+        if label.startswith('music') and not (a.source/(label+'.wav')).exists() and label in old:manifest[label]=old[label];continue
+        # A sound still playing at the end of its render window is a loop
+        # (engine 10A5, 1026), not a one-shot effect: not packed.
+        if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END':manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
         pcm=read(a.source/(label+'.wav'))
         if label.startswith('music'):
             loop=find_loop(pcm);period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))

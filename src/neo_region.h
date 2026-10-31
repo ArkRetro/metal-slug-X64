@@ -35,6 +35,8 @@ ga_result_t neo_camel_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_camel_routine(uint32_t routine);
 ga_result_t neo_porter_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_porter_routine(uint32_t routine);
+ga_result_t neo_civil_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_civil_routine(uint32_t routine);
 ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_slug_routine(uint32_t routine);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);
@@ -46,6 +48,9 @@ ga_result_t neo_swords_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_swords_routine(uint32_t routine);
 ga_result_t neo_rocket_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_rocket_routine(uint32_t routine);
+ga_result_t neo_chaser_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_chaser_routine(uint32_t routine);
+bool neo_chaser_attacker(uint32_t routine);   /* the C's rows of the player's side (boss hurtboxes) */
 ga_result_t neo_secret_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_secret_routine(uint32_t routine);   /* the vehicle 087E36 itself (not its children) */
 #endif

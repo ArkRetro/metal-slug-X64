@@ -3,9 +3,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 /* Native libdragon backend, not a Z80/YM2610 emulator. Each voice reserves a
- * stereo pair: intro, music, announcer, then five effect voices. */
+ * stereo pair of mixer channels: intro, music, announcer, then the effect
+ * voices. The gameplay effects are mono: game_audio.c plays each driver
+ * channel of the measured policy on one mixer channel from
+ * MSX_AUDIO_EFFECT_MIXER on (all 32 mixer channels are allocated). */
 enum { MSX_AUDIO_INTRO,MSX_AUDIO_MUSIC,MSX_AUDIO_ANNOUNCER,MSX_AUDIO_EFFECT_FIRST,
-    MSX_AUDIO_VOICES=8,MSX_AUDIO_RATE=32000 };
+    MSX_AUDIO_VOICES=16,MSX_AUDIO_RATE=32000,
+    MSX_AUDIO_EFFECT_MIXER=MSX_AUDIO_EFFECT_FIRST*2,MSX_AUDIO_EFFECT_CHANNELS=MSX_AUDIO_VOICES*2-MSX_AUDIO_EFFECT_FIRST*2 };
 /* underruns: service calls that found the AI idle (both hardware buffers
  * drained, i.e. an audible gap) after the first submission. */
 typedef struct { uint32_t buffers,underruns;uint64_t frames; } msx_audio_stats_t;

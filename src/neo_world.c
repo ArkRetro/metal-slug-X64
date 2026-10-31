@@ -303,6 +303,11 @@ static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     if ((c&0xff000000u)==NEO_GA_TAG_BASE) return (c&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[c&0xffffu].active && !t->w->gactors[c&0xffffu].placeholder;
     return true;
 }
+static neo_gactor_t *g_previous(void *ctx,neo_gactor_t *a) {
+    tick_t *t=ctx;neo_world_t *w=t->w;int at=order_of_gactor(w,a);
+    if (at<=0 || w->order[at-1].kind!=NEO_WORLD_GACTOR) return NULL;
+    return &w->gactors[w->order[at-1].index];
+}
 static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if ((c&0xff000000u)==NEO_GA_TAG_BASE && (c&0xffffu)<NEO_WORLD_GACTORS) return &t->w->gactors[c&0xffffu];
@@ -408,6 +413,12 @@ static bool clip_bins(int16_t x,int16_t y,int16_t w,int16_t h,uint16_t *xbins,ui
     for (int b=y>>5;b<=(y+h)>>5;b++) *ybins|=(uint8_t)(1u<<b);
     return true;
 }
+/* 004C24: the next registry slot (none past 0x40). */
+static void reg_add(neo_world_t *w,uint8_t kind,unsigned index,uint16_t xb,uint8_t yb) {
+    if (w->reg_count>=COUNT(w->regs)) return;
+    w->regs[w->reg_count].kind=kind;w->regs[w->reg_count].index=(uint8_t)index;
+    w->regs[w->reg_count].xbins=xb;w->regs[w->reg_count].ybins=yb;w->reg_count++;
+}
 static bool ga_rect_bins(const neo_gactor_t *a,const uint8_t *r,uint16_t *xbins,uint8_t *ybins) {
     int16_t x=(int16_t)(r[0]<<8|r[1]),y=(int16_t)(r[2]<<8|r[3]),w=(int16_t)(r[4]<<8|r[5]),h=(int16_t)(r[6]<<8|r[7]);
     if (ga_b(a,0x15)&1u) x=(int16_t)-(x+w);
@@ -422,6 +433,7 @@ static void g_register(void *ctx,neo_gactor_t *a) {
     bool any=false;uint16_t xb=0;uint8_t yb=0;
     for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) any|=ga_rect_bins(a,d+at,&xb,&yb);
     if (any && w->box_count<NEO_WORLD_BOXES) {w->boxes[w->box_count].owner=(uint8_t)a->index;w->boxes[w->box_count].xbins=xb;w->boxes[w->box_count].ybins=yb;w->box_count++;}
+    if (any) reg_add(w,NEO_WORLD_GACTOR,(unsigned)a->index,xb,yb);
 }
 /* Bins of an attack rectangle (0049E8); false when outside the window. */
 static bool attack_bins(const neo_contact_actor_t *a,const int16_t at[7],uint16_t *xb,uint8_t *yb) {
@@ -481,8 +493,79 @@ static bool ga_class(const neo_gactor_t *g,unsigned cls) {
     return d && ((d[1]>>cls)&1u);
 }
 static bool boss_shot(neo_world_t *w,const neo_contact_actor_t *a,const int16_t at[7]);
+/* 004762..004952 without side effects, for one registered body: the
+ * narrow phase with the descriptor's rectangles, the hit matrix 004582, the
+ * +54 multiplier of the kind and +5F bits 7/6; its +4E and what 01B162 reads. */
+static bool candidate(const uint8_t *d,uint16_t bx,uint16_t by,uint8_t b15,const uint8_t *mul,uint8_t f5f,
+                      const neo_hit_rectangle_t *q,const int16_t row[7]) {
+    if (!d || !((d[1]>>(unsigned)row[5])&1u)) return false;
+    uint16_t ix=0,iy=0;bool hit=false;
+    for (unsigned o=2;(d[o]<<8|d[o+1])!=0x8000 && !hit;o+=8) {
+        neo_hit_rectangle_t local={(uint16_t)(d[o]<<8|d[o+1]),(uint16_t)(d[o+2]<<8|d[o+3]),(uint16_t)(d[o+4]<<8|d[o+5]),(uint16_t)(d[o+6]<<8|d[o+7])};
+        hit=neo_hit_rectangle(q,bx,by,b15,&local,&ix,&iy);
+    }
+    uint8_t kind=(uint8_t)row[4];
+    if (!hit || kind>=20u || !soldier_hit_matrix[d[0]&7u][kind]) return false;
+    if (mul && !(mul[2*kind]|mul[2*kind+1])) return false;
+    return !(f5f&0xc0u);
+}
+static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *c,const int16_t row[7]) {
+    neo_world_t *w=t->w;neo_ga_target_t *out=t->genv.target;
+    memset(out,0,2*sizeof(*out));
+    uint16_t qx;uint8_t qy;
+    if (!attack_bins(c,row,&qx,&qy)) return;                       /* 004BA4 */
+    uint16_t x=(uint16_t)row[0],y=(uint16_t)row[1];
+    if (c->flags15&1u) x=(uint16_t)(0u-(uint16_t)(x+(uint16_t)row[2]));
+    x=(uint16_t)(x+HI(c->projected_x));
+    if (c->flags15&2u) y=(uint16_t)(0u-(uint16_t)(y+(uint16_t)row[3]));
+    y=(uint16_t)(y+HI(c->projected_y));
+    neo_hit_rectangle_t q={x,y,(uint16_t)row[2],(uint16_t)row[3]};
+    uint16_t hi=0,lo=0xffff;
+    static const uint8_t group[4]={16,0,48,32};
+    for (unsigned gi=0;gi<4;gi++) for (unsigned sl=group[gi];sl<group[gi]+16u;sl++) {
+        if (sl>=w->last_reg_count) continue;
+        const uint16_t xb=w->last_regs[sl].xbins;const uint8_t yb=w->last_regs[sl].ybins;
+        if (!(xb&qx) || !(yb&qy)) continue;
+        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0}};
+        const uint8_t *d=NULL;
+        switch (w->last_regs[sl].kind) {
+        case NEO_WORLD_GACTOR: {
+            neo_gactor_t *g=&w->gactors[i];
+            if (g==a || !g->active || g->placeholder || !ga_l(g,0x50)) continue;
+            d=ga_rom(ga_l(g,0x50));
+            if (!candidate(d,ga_w(g,0x3c),ga_w(g,0x40),ga_b(g,0x15),ga_l(g,0x54)?ga_rom(ga_l(g,0x54)):NULL,ga_b(g,0x5f),&q,row)) continue;
+            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);
+            break;
+        }
+        case NEO_WORLD_SOLDIER: {
+            neo_soldier_t *s=&w->soldiers[i];neo_hurtbox_t hb;
+            if (!s->active || !w->constructed[i] || !neo_soldier_hurtbox(s,&hb)) continue;
+            uint8_t sd[12]={hb.type,(uint8_t)(1u<<hb.klass),(uint8_t)((uint16_t)hb.rect[0]>>8),(uint8_t)hb.rect[0],(uint8_t)((uint16_t)hb.rect[1]>>8),(uint8_t)hb.rect[1],
+                (uint8_t)((uint16_t)hb.rect[2]>>8),(uint8_t)hb.rect[2],(uint8_t)((uint16_t)hb.rect[3]>>8),(uint8_t)hb.rect[3],0x80,0};
+            if (!candidate(sd,hb.x,hb.y,hb.flags15,NULL,hb.dead?0x80u:0,&q,row)) continue;
+            h=s->health;tg.x=hb.x;tg.y=hb.y;d=sd;
+            for (unsigned k=0;k<4;k++) tg.rect[k]=hb.rect[k];
+            break;
+        }
+        case NEO_WORLD_BOSS: {
+            const neo_boss_node_t *n=&w->boss.nodes[i];
+            if (!w->boss_active || !n->routine || !neo_boss_l(n,0x50)) continue;
+            d=neo_boss_rom(neo_boss_l(n,0x50),12);
+            const uint8_t *mul=neo_boss_l(n,0x54)?neo_boss_rom(neo_boss_l(n,0x54),40):NULL;
+            if (!candidate(d,neo_boss_w(n,0x3c),neo_boss_w(n,0x40),n->f[0x15],mul,n->f[0x5f],&q,row)) continue;
+            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);
+            break;
+        }
+        default: continue;
+        }
+        if (w->last_regs[sl].kind!=NEO_WORLD_SOLDIER) for (unsigned k=0;k<4;k++) tg.rect[k]=(int16_t)(d[2+2*k]<<8|d[3+2*k]);
+        if (h>=hi) {hi=h;out[0]=tg;}                                   /* 004932..004942 */
+        if (h<=lo) {lo=h;out[1]=tg;}                                   /* 004946..004952 */
+    }
+}
 static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     tick_t *t=ctx;neo_world_t *w=t->w;neo_contact_actor_t c=ga_contact(a);
+    if (t->genv.want_targets && row[5]!=0) attack_targets(t,a,&c,row);
     if (row[5]==0) { /* class 0: the player */
         if (!t->player_hittable) return 0;
         int first=-1;uint8_t type=neo_hit_query(&c,row,&t->player,1,(uint8_t)row[4],0,&first);
@@ -498,7 +581,7 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     }
     /* The boss's hurtboxes (registered apart, see boss_shot) take the
      * player's bullets (neo_bullet.c) like neo_world_shot_row's. */
-    if (w->boss_active && neo_bullet_routine(ga_l(a,0)) && boss_shot(w,&c,row) && !best) best=1;
+    if (w->boss_active && (neo_bullet_routine(ga_l(a,0)) || neo_chaser_attacker(ga_l(a,0))) && !t->genv.want_targets && boss_shot(w,&c,row) && !best) best=1;
     uint16_t qx;uint8_t qy;
     if (!attack_bins(&c,row,&qx,&qy)) return best;
     for (unsigned b=0;b<w->last_box_count;b++) {
@@ -509,6 +592,7 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     }
     return best;
 }
+static void delete_tree(tick_t *t,unsigned at);
 static int run_gactor(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_gactor_t *a=&w->gactors[i];
     uint8_t group=ga_b(a,0x69);
@@ -530,6 +614,10 @@ static int run_gactor(tick_t *t,unsigned i) {
     }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
         w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
+        /* The stopped actor goes with its descendants (0041AC): a child
+         * must not outlive it (the Camel Slug stopped at 004ED2 left its
+         * rider graphic 034F1A, a second Marco, drawn where it stopped). */
+        {int at=find(w,NEO_WORLD_GACTOR,(unsigned)a->index);if (at>=0) delete_tree(t,(unsigned)at);}
         w->draw_count=before;a->active=false;return 0;
     }
     if (r==GA_DELETE) {ga_kill(t,a);return 0;}
@@ -640,6 +728,18 @@ static bool b_hurtbox(void *c,int16_t node,uint8_t *offset,uint8_t *index,bool *
         uint16_t xb=0;uint8_t yb=0;any|=clip_bins(x,y,rw,rh,&xb,&yb);
     }
     if (any && w->boss_box_count<NEO_BOSS_NODES) w->boss_boxes[w->boss_box_count++]=node;
+    if (any) {
+        uint16_t xb=0;uint8_t yb=0;
+        for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) {
+            int16_t x=(int16_t)(d[at]<<8|d[at+1]),y=(int16_t)(d[at+2]<<8|d[at+3]),rw=(int16_t)(d[at+4]<<8|d[at+5]),rh=(int16_t)(d[at+6]<<8|d[at+7]);
+            if (n->f[0x15]&1u) x=(int16_t)-(x+rw);
+            x=(int16_t)(x+(int16_t)neo_boss_w(n,0x3c));
+            if (n->f[0x15]&2u) y=(int16_t)-(y+rh);
+            y=(int16_t)(y+(int16_t)neo_boss_w(n,0x40));
+            clip_bins(x,y,rw,rh,&xb,&yb);
+        }
+        reg_add(w,NEO_WORLD_BOSS,(unsigned)node,xb,yb);
+    }
     /* 004BAC: after the mission-complete request everything registered dies. */
     *kill_all=w->mission_step!=0;
     return true;
@@ -824,6 +924,15 @@ static bool run_soldier(tick_t *t,unsigned i) {
     if (group<9u && s->group69>=9u) w->kills++;
     if (r==NEO_SOLDIER_UNSUPPORTED) {w->unsupported++;w->unsupported_routine=s->routine;w->draw_count=before;s->active=false;return false;}
     if (r==NEO_SOLDIER_DELETED) {s->active=false;return false;}
+    /* 040A00 -> 004C24: the soldier's slot in the registry. */
+    neo_hurtbox_t hb;
+    if (neo_soldier_hurtbox(s,&hb)) {
+        int16_t x=hb.rect[0],y=hb.rect[1];
+        if (hb.flags15&1u) x=(int16_t)-(x+hb.rect[2]);
+        if (hb.flags15&2u) y=(int16_t)-(y+hb.rect[3]);
+        uint16_t xb=0;uint8_t yb=0;
+        if (clip_bins((int16_t)(x+(int16_t)hb.x),(int16_t)(y+(int16_t)hb.y),hb.rect[2],hb.rect[3],&xb,&yb)) reg_add(w,NEO_WORLD_SOLDIER,i,xb,yb);
+    }
     return true;
 }
 static bool run_splash(tick_t *t,unsigned i) {
@@ -973,7 +1082,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->stamp=g_stamp;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->previous=g_previous;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
@@ -1009,6 +1118,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */
     memcpy(w->last_boxes,w->boxes,sizeof(w->boxes));w->last_box_count=w->box_count;w->box_count=0;
+    memcpy(w->last_regs,w->regs,sizeof(w->regs));w->last_reg_count=w->reg_count;w->reg_count=0;
     /* End of the camera update (ROM 01406A): dynamic collision objects. */
     neo_kernel_dyn_begin(&w->kernel);
     for (int i=NEO_KDYN_COUNT-1;i>=0;i--) {
@@ -1083,8 +1193,19 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     /* Player shots of this update (00411C after the list head). */
     for (unsigned i=0;i<w->shot_request_count;i++) {
         neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),w->shot_requests[i].routine,SCRIPT_TAG,0);
-        if (!a) {w->shot_dropped++;continue;}
         const neo_world_shot_request_t *q=&w->shot_requests[i];
+        if (!a) {
+            w->shot_dropped++;
+            if (q->routine==0x63f32u && q->player<2u) {                  /* 0C4526: 0C0DFC */
+                marco_ammo_t m=marco_weapons_ammo(&w->weapons,q->player);marco_ammo_release(&m,0x0c);marco_weapons_set_ammo(&w->weapons,q->player,&m);
+            }
+            continue;
+        }
+        if (q->actor) {
+            ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);ga_sb(a,0x15,q->flags15);ga_sb(a,0x5e,q->f5e);
+            ga_sl(a,0x28,(uint32_t)q->x);ga_sl(a,0x2c,(uint32_t)q->y);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);ga_sl(a,0x38,ROOT_TAG);
+            w->player_shots++;continue;
+        }
         if (q->grenade) {ga_sw(a,0x6e,q->player);ga_sb(a,0x15,q->flags15);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);}
         else {ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);}
         ga_sb(a,0x5e,0);
@@ -1097,12 +1218,17 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
 }
 bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false,false,0};
     return true;
 }
 bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0};
+    return true;
+}
+bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
     return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {

@@ -228,7 +228,33 @@ static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=
  * the attacker in that update). */
 static bool contact;
 static unsigned contacts;
+#ifdef FAMILY_ATTACKS
+/* The recorded 0049E8 answers of the update, in call order: D0 and the
+ * A0/A1 targets as 01B162 read them (compile_family_fixture.py --attacks). */
+#define ATTACKS CAT(FAMILY_NAME,_attacks)
+#define ATTACK_SPANS CAT(FAMILY_NAME,_attack_spans)
+static neo_genv_t *answer_env;
+static unsigned answer_first,answer_count,answer_used,answers;
+static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
+    (void)ctx;(void)a;(void)row;
+    if (answer_used>=answer_count) {answer_used++;return 0;}
+    const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
+    for (unsigned i=0;i<2;i++) {
+        const int32_t *t=r+1+8*i;neo_ga_target_t *o=&answer_env->target[i];
+        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]}};
+    }
+    if (r[0]) contacts++;
+    return (uint8_t)r[0];
+}
+#else
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {(void)ctx;(void)a;(void)row;if (contact) contacts++;return contact?1:0;}
+#endif
+#ifdef FAMILY_PREVIOUS
+/* +04 of the recorded node: the node before it in the list. */
+#define PREVIOUS CAT(FAMILY_NAME,_previous)
+static int previous_node;
+static neo_gactor_t *previous(void *ctx,neo_gactor_t *a) {(void)ctx;(void)a;return previous_node>=0?&actors[previous_node]:NULL;}
+#endif
 /* 0140C0/013F1E: slot of the dynamic collision object (+6A), from 7 down;
  * no other actor of the trace holds one. */
 /* A released slot stays busy for two frames (013F1E countdown +2A,
@@ -260,6 +286,12 @@ int main(void) {
     uint8_t groups[9]={0},flag606=0;
     neo_genv_t e;memset(&e,0,sizeof(e));
     e.kernel=&kernel;e.rng=&rng;e.parent=parent;e.program=program;e.emit=emit;e.groups=groups;e.flag606=&flag606;
+#ifdef FAMILY_ATTACKS
+    answer_env=&e;
+#endif
+#ifdef FAMILY_PREVIOUS
+    e.previous=previous;
+#endif
     e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
@@ -357,13 +389,30 @@ int main(void) {
         }
 #endif
         unsigned taken=pickup.taken;pickup.frame++;
+#ifdef FAMILY_LABEL_COUNTS
+        /* RAM 10C5B2/10C5B4 (score labels per player, 08D330) as read. */
+        {const int32_t (*lc)[3]=CAT(FAMILY_NAME,_label_counts);
+         for (unsigned i=0;i<sizeof(CAT(FAMILY_NAME,_label_counts))/sizeof(lc[0]);i++) if (lc[i][0]==(int32_t)k) {
+             if (lc[i][1]>=0) pickup.label_count[0]=(uint16_t)lc[i][1];
+             if (lc[i][2]>=0) pickup.label_count[1]=(uint16_t)lc[i][2];
+         }}
+#endif
 #ifdef FAMILY_RAM
         for (int i=0;i<u->ram_in_count;i++) wram[RAMIN[u->ram_in_first+i][0]&0xffffu]=(uint8_t)RAMIN[u->ram_in_first+i][1];
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);
 #endif
+#ifdef FAMILY_ATTACKS
+        answer_first=ATTACK_SPANS[k][0];answer_count=ATTACK_SPANS[k][1];answer_used=0;
+#endif
+#ifdef FAMILY_PREVIOUS
+        previous_node=PREVIOUS[k];
+#endif
         ga_result_t r=neo_region_tick(a,&e);
+#ifdef FAMILY_ATTACKS
+        if (answer_used!=answer_count) {fprintf(stderr,"frame %u node %d %05x: %u calls of 0049E8, original %u\n",u->frame,u->node,u->routine,answer_used,answer_count);return 1;}
+#endif
 #ifdef FAMILY_RAM
         env_to_ram(&weapons);
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) for (uint32_t ad=ram_ranges[g][0];ad<ram_ranges[g][1];ad++) {

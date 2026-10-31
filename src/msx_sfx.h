@@ -12,12 +12,17 @@
  * channel replaces the playing sound when its priority is >= the playing
  * one (same sound = restart from the beginning) and is dropped otherwise.
  * Effects on different channels overlap freely. */
-enum { MSX_SFX_CH_WEAPON, MSX_SFX_CH_IMPACT, MSX_SFX_CH_VOICE, MSX_SFX_CHANNELS };
+/* The rest of the effects of the Mission 1 world, with their channels and
+ * levels, come from the pair measurement of tools/measure_sound_pairs.py
+ * (data/sound_policy.json -> tools/compile_sound_policy.py). */
+#include "msx_sfx_policy.h"
+enum { MSX_SFX_CH_WEAPON, MSX_SFX_CH_IMPACT, MSX_SFX_CH_VOICE, MSX_SFX_POLICY_CHANNELS, MSX_SFX_CHANNELS };
 typedef enum {
     MSX_SFX_PISTOL, MSX_SFX_VEHICLE_HIT,
     MSX_SFX_EXPLOSION, MSX_SFX_KNIFE_HIT, MSX_SFX_VEHICLE_SMOKE, MSX_SFX_VEHICLE_BURST,
     MSX_SFX_REBEL_103E, MSX_SFX_REBEL_103F, MSX_SFX_REBEL_1040, MSX_SFX_REBEL_1041,
     MSX_SFX_REBEL_1042, MSX_SFX_REBEL_1043,
+    MSX_SFX_POLICY_IDS,
     MSX_SFX_COUNT
 } msx_sfx_id_t;
 typedef struct {

@@ -14,6 +14,7 @@
 #define SW(o,v) ga_sw(a,(o),(uint16_t)(v))
 #define SL(o,v) ga_sl(a,(o),(uint32_t)(v))
 static int16_t S16(uint16_t v) {return (int16_t)v;}
+static int32_t S32(uint32_t v) {return (int32_t)v;}
 /* ---- one-shot effects ------------------------------------------------------- */
 typedef struct { uint32_t routine,program,rect; uint16_t palette; } fx_t;
 /* Constructors reached in the region: program (004256), cull rectangle (+82,
@@ -194,6 +195,148 @@ static ga_result_t particle_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (ga_cull_rect(a,e,0x1def8)) SL(0,0x1d93c);
     return GA_MORE;
 }
+/* ---- explosion fragments 01D31C.. and debris 01CE08.. --------------------- */
+/* 01D31C/01D37C/01D3D2/01D428/01D488/01D4DA: a fragment (program and
+ * palette by a random bit or the table 01E008), then the launch at a random
+ * angle 01D5EC, the flight 01D6E4 (0143E4 with the gravity +7E; each landing
+ * halves the speeds and counts +92 down to the end 01D93C; +5F bit 3 once it
+ * bounced) until 01D93C or outside 01DEF0 (019504). 01D5AA (no program of
+ * its own) is not reached in Mission 1 and is not translated. */
+typedef struct { uint32_t routine; uint8_t clear62,tail; uint32_t prog0,prog1; uint16_t pal0,pal1; } frag_t;
+static const frag_t frags[]={
+    {0x1d31c,0,0,0x22daee,0x22dc2c,0x277,0x278},{0x1d37c,1,1,0x22daee,0x22dc2c,0x277,0x278},
+    {0x1d3d2,1,2,0x22daee,0x22dc2c,0x277,0x278},{0x1d428,0,0,0x22d5bc,0x22d626,0x20a,0x20a},
+    {0x1d488,0,0,0x22d8ea,0x22d940,0x29e,0x29e},{0x1d4da,0,0,0,0,0xf7,0xf7},
+};
+static const frag_t *frag_of(uint32_t r) {
+    for (unsigned i=0;i<sizeof(frags)/sizeof(frags[0]);i++) if (frags[i].routine==r) return &frags[i];
+    return NULL;
+}
+static uint32_t rom_l(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]:0;}
+static ga_result_t frag_tick(neo_gactor_t *a,neo_genv_t *e) {
+    const frag_t *f=frag_of(L(0));
+    if (f) {
+        uint16_t d0;
+        if (f->clear62) {SL(0x62,0);d0=ga_rand(e);}
+        else {d0=ga_rand(e);SW(0x62,(uint16_t)((d0&0x700u)+0x100u));}
+        uint32_t prog;uint16_t pal;
+        if (f->routine==0x1d4da) {prog=rom_l(0x1e008u+4u*(d0&7u));pal=f->pal0;}
+        else if (!(d0&2u)) {prog=f->prog0;pal=f->pal0;} else {prog=f->prog1;pal=f->pal1;}
+        if (!prog || !ga_anim_start(a,e,prog,0x100)) return GA_UNSUPPORTED;
+        ga_palette(a,pal);
+        /* 01D51A / 01D54A / 01D578 */
+        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
+        d0=ga_rand(e);
+        if (f->tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
+        else if (f->tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
+        else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
+        /* 01D5EC */
+        if (S16(W(0x62))<=0) SW(0x62,0x200);
+        uint16_t d3=ga_rand(e);
+        uint8_t ang=(uint8_t)W(0x8a);
+        int16_t d1=ga_sine(ang),d2=ga_cosine(ang);
+        d3=(uint16_t)((d3&7u)+1u);
+        int16_t m=(int16_t)(uint16_t)((int32_t)d1*(int16_t)d3);     /* muls.w, low word */
+        m=(int16_t)(m>>2);                                           /* asr.w #2 */
+        int32_t vy=(int32_t)m*S16(W(0x62)),vx=(int32_t)d2*S16(W(0x62));
+        SL(0x34,(uint32_t)vy);SL(0x30,(uint32_t)vx);
+        d0=ga_rand(e);
+        if ((int8_t)(uint8_t)d0<=0) {
+            int16_t k=(int16_t)((ga_rand(e)&3u)+2u);
+            uint32_t d1l=(uint32_t)(S32(L(0x30))>>8);                       /* move.l, asr.l #8 */
+            int16_t v=(int16_t)(uint16_t)d1l;
+            int16_t q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x30,(uint16_t)(int16_t)(q>>1));
+            k=(int16_t)((ga_rand(e)&3u)+2u);
+            /* move.w $34(a6),d1 keeps the upper word of D1, asr.l #8 */
+            d1l=(uint32_t)(S32((d1l&0xffff0000u)|W(0x34))>>8);
+            v=(int16_t)(uint16_t)d1l;
+            q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x34,(uint16_t)(int16_t)(q>>1));
+        }
+        int32_t c=S32(L(0x34));if (c>0x100000) c=0x100000;if (c<0) c=0;SL(0x34,(uint32_t)c);
+        c=S32(L(0x30));if (c>0x80000) c=0x80000;if (c<-0x80000) c=-0x80000;SL(0x30,(uint32_t)c);
+        SL(0x7a,L(0x34));SL(0x7e,0xffffb000u);SB(0x15,B(0x15)|0x20u);
+        SL(0,0x1d6e4);
+    }
+    /* 01D6E4 */
+    ga_air(a,e);
+    if (B(0x15)&0x80u) {
+        SL(0x30,(uint32_t)(S32(L(0x30))>>2));
+        uint32_t d0=(uint32_t)(S32(L(0x7a))>>1);SL(0x34,d0);SL(0x7a,d0);
+        SB(0x92,B(0x92)-1u);
+        if ((int8_t)B(0x92)<=0) SL(0,0x1d93c);
+    } else SL(0x34,L(0x34)+L(0x7e));
+    if (B(0x93)!=B(0x92)) SB(0x5f,B(0x5f)|8u);
+    if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;            /* 01B1EC: carry clear */
+    if (ga_cull_rect(a,e,0x1def0)) SL(0,0x1d93c);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 01CE08..01D078: a debris piece, (d1 = +91 index, d0 = palette and its
+ * base: 01D084 +0, 01D09C 0x106, 01D0B4 0x879, 01D0CC +0, 01D0E4 +0x200);
+ * 01D0F8: program 01DF20 and cull rectangle 01DF94 by +91, random flip
+ * 01DEA2, random launch, then 01D1B0: 0143E4 with the gravity +7E until it
+ * lands (01B1DC, 004188), its program ends (004188) or it leaves +82
+ * (019504). */
+static bool debris_entry(uint32_t r,uint8_t *d1,uint16_t *pal) {
+    static const struct { uint16_t lo,hi; uint16_t d0; uint8_t d1,base; } runs[]={
+        /* routine range (low 16 bits), d0, first d1, base: 0 = d0+0x200, 1 = d0, 2 = 0x106, 3 = 0x879 */
+        {0xce08,0xce20,0x00a,0x11,0},{0xce2c,0xce44,0x00b,0x14,0},{0xce50,0xce5c,0x168,0x15,1},
+        {0xce68,0xce98,0x167,0x0f,1},{0xcea4,0xcf04,0x09e,0x06,0},{0xcf10,0xcf34,0x0f7,0x0b,1},
+        {0xcf94,0xcfd0,0x106,0x17,2},{0xcfdc,0xd000,0x167,0x0b,3},{0xd00c,0xd030,0x144,0x0b,1},{0xd03c,0xd078,0x144,0x00,1},
+    };
+    if ((r>>16)!=1u) return false;
+    uint16_t w=(uint16_t)r;
+    for (unsigned i=0;i<sizeof(runs)/sizeof(runs[0]);i++) if (w>=runs[i].lo && w<=runs[i].hi && !((w-runs[i].lo)%12u)) {
+        *d1=(uint8_t)(runs[i].d1+(w-runs[i].lo)/12u);
+        *pal=runs[i].base==0?(uint16_t)(runs[i].d0+0x200u):runs[i].base==1?runs[i].d0:runs[i].base==2?0x106:0x879;
+        return true;
+    }
+    /* 01CF40..01CF88: one entry each (01D0E4: +0x200). */
+    static const struct { uint16_t w,d0; uint8_t d1; } one[]={
+        {0xcf40,0x88,0x10},{0xcf4c,0x77,0x11},{0xcf58,0x77,0x13},{0xcf64,0x28,0x10},{0xcf70,0x28,0x13},{0xcf7c,0x77,0x13},{0xcf88,0x78,0x15},
+    };
+    for (unsigned i=0;i<sizeof(one)/sizeof(one[0]);i++) if (w==one[i].w) {*d1=one[i].d1;*pal=(uint16_t)(one[i].d0+0x200u);return true;}
+    return false;
+}
+static ga_result_t debris_tick(neo_gactor_t *a,neo_genv_t *e) {
+    uint8_t d1;uint16_t pal;
+    if (debris_entry(L(0),&d1,&pal)) {
+        SB(0x91,(uint8_t)(d1<<2));ga_palette(a,pal);
+        uint16_t i=(uint16_t)(B(0x91)&0xfcu);
+        SL(0x82,rom_l(0x1df94u+i));
+        if (!ga_anim_start(a,e,rom_l(0x1df20u+i),0x100)) return GA_UNSUPPORTED;
+        if (!(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);                     /* 01DEA2 */
+        SL(0x34,0x80000);SL(0x7e,0xffffbbbcu);SL(0x30,0x20000);
+        uint16_t r=ga_rand(e);uint32_t d0=(uint32_t)(r&7u)<<15;
+        SL(0x30,(r&1u)?d0:0u-d0);
+        r=ga_rand(e);SL(0x34,L(0x34)-((uint32_t)(r&15u)<<15));
+        if (S16(W(0x34))>0xfb) SW(0x34,0xfb);
+        if (S32(L(0x7e))>-0x1000) SL(0x7e,0xfffff000u);
+        SB(0x15,B(0x15)|0x20u);SL(0x50,0);SB(0x12,0xff);SB(0x13,0xff);
+        SL(0,0x1d1b0);
+    }
+    /* 01D1B0 */
+    ga_air(a,e);
+    if (B(0x15)&0x40u) {SL(0x30,0);SL(0x34,0);SL(0x62,0);return GA_DELETE;}   /* 01B1DC, 004188 */
+    SL(0x34,L(0x34)+L(0x7e));
+    int st=ga_anim_step(a,e,NULL);                                  /* 01B1EC: carry clear */
+    if (st<0) return GA_UNSUPPORTED;
+    if (st) return GA_DELETE;
+    if (ga_cull_rect(a,e,L(0x82))) return GA_DELETE;
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 01E058: program 22EA20 (palette 0x143) in place until its end (01E07C). */
+static ga_result_t flash_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x1e058) {
+        if (!ga_anim_start(a,e,0x22ea20,0x100)) return GA_UNSUPPORTED;
+        ga_palette(a,0x143);SL(0,0x1e07c);
+    }
+    ga_project(a,e);
+    int st=ga_anim_step(a,e,NULL);
+    if (st<0) return GA_UNSUPPORTED;
+    return st?GA_DELETE:GA_MORE;
+}
+static bool frag_routine(uint32_t r) {return frag_of(r) || r==0x1d6e4;}
+static bool debris_routine(uint32_t r) {uint8_t d1;uint16_t pal;return debris_entry(r,&d1,&pal) || r==0x1d1b0;}
 /* ---- the generic fire 08FA4E (the boss turret's gun 0D6168) -------------- */
 /* 002EB4: angle (0..0xFF) of the vector (d0, d1) with the tables 002C7C
  * (logarithm) and 002D7C (arctangent); 0x40 when x is 0 after halving. */
@@ -281,7 +424,7 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
 bool neo_effects_routine(uint32_t r) {
-    return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6;
+    return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
 }
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
@@ -289,6 +432,9 @@ ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (simple_of(r) || r==0x1c9e6 || r==0x1c97a) return simple_tick(a,e);
     if (r==0x1d764 || r==0x1d7b8) return smoke_tick(a,e);
     if (r==0x1d944 || r==0x1d958 || r==0x1d9c6) return particle_tick(a,e);
+    if (frag_routine(r)) return frag_tick(a,e);
+    if (debris_routine(r)) return debris_tick(a,e);
+    if (r==0x1e058 || r==0x1e07c) return flash_tick(a,e);
     if (r==0x1d93c) {
         /* 0041AC from a particle or the emitter: delete with the following
          * deeper nodes. */

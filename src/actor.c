@@ -10,6 +10,7 @@
 #include "retro_events.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "msx_stick.h"
 #include "game_audio.h"
 #include "boss_renderer.h"
 #include "marco_visual.h"
@@ -161,7 +162,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
     }
     diagnostics_was_down=input.btn.l;
-    int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
+    int stick_h,stick_v;msx_stick_lever(input.stick_x,input.stick_y,&stick_h,&stick_v);
+    int direction=(input.btn.d_right || stick_h>0)-(input.btn.d_left || stick_h<0);
     /* GAME OVER shown until the original hands the machine back to the BIOS:
      * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
      * ranking/attract that follow are not ported: the mission restarts. */
@@ -195,8 +197,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
-        game.aim_up=input.btn.d_up || input.stick_y>25;
-        game.crouch=input.btn.d_down || input.stick_y<-25;
+        game.aim_up=input.btn.d_up || stick_v>0;
+        game.crouch=input.btn.d_down || stick_v<0;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
         /* Dying, lying and the entrance (marco_death.c): the death and
@@ -207,7 +209,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;}
         if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
-            marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,
+            marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
                 game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1?1u:0u,-1,false};
             if (game.hgun.state==MARCO_HGUN_BURST || game.hgun.state==MARCO_HGUN_SWEEP) {
                 mi.hgun_program=game.hgun.program;mi.hgun_start=game.hgun.t==1;

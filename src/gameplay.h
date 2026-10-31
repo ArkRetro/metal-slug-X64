@@ -106,6 +106,9 @@ typedef struct {
     marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
+    unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */
+    unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
+    bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
      * node record world.player_node[0]: mount = none, riding (0C3078/
      * 0C309C: the port's player is hidden, has no hurtbox and follows the

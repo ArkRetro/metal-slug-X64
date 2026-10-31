@@ -199,3 +199,16 @@ no se puede construir aquí. No es una grabación continua de una sola ROM.
   probado en ares (RENDIMIENTO.md, «Orden de arranque»).
 - Sin prueba en MiSTer.
 Evidencia numérica: [logo-neogeo-validation.json](logo-neogeo-validation.json).
+
+## Carga del título durante el logo (ROM 10c)
+
+En MiSTer se veían unos 3 s de negro entre el blanco final del logo y el
+título: `msx_cinematic_open` leía de golpe los 3,4 MB del título, validaba sus
+601 paquetes (CRC y estructura) y aplicaba todos para preparar los fotogramas
+pesados. Ahora `msx_cinematic_prepare` arranca ese trabajo antes del logo y
+`msx_cinematic_prepare_idle` (gancho de tiempo libre del logo) lo avanza por
+pasos acotados: DMA de 16 KB, CRC en trozos de 8 KB, un paquete por paso al
+aplicar; cada paso solo empieza si cabe antes del siguiente blanco vertical
+(margen 1,5 ms, estimación media por KB). `msx_cinematic_open` termina lo que
+falte. Medido en ares: negro tras el logo 2,2 s → 0,55 s (queda la aplicación
+de los paquetes 346..600); el logo pierde 2 fotogramas de 544.

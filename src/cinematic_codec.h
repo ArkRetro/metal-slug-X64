@@ -41,7 +41,9 @@ static inline bool msx_cine_delta(uint16_t *canvas,size_t pixels,const uint8_t *
     if (!canvas || !msx_cine_delta_validate(pixels,data,length)) return false;
     msx_cine_delta_apply_trusted(canvas,data);return true;
 }
-static inline uint32_t msx_cine_crc32(const uint8_t *p,size_t length) {
+/* Running form: start from ~0u, feed the bytes in any number of pieces,
+ * complement at the end (msx_cine_crc32 does it in one piece). */
+static inline uint32_t msx_cine_crc32_update(uint32_t crc,const uint8_t *p,size_t length) {
     static const uint32_t table[256]={
         0x0u,0x77073096u,0xee0e612cu,0x990951bau,0x76dc419u,0x706af48fu,0xe963a535u,0x9e6495a3u,
         0xedb8832u,0x79dcb8a4u,0xe0d5e91eu,0x97d2d988u,0x9b64c2bu,0x7eb17cbdu,0xe7b82d07u,0x90bf1d91u,
@@ -76,8 +78,8 @@ static inline uint32_t msx_cine_crc32(const uint8_t *p,size_t length) {
         0xbdbdf21cu,0xcabac28au,0x53b39330u,0x24b4a3a6u,0xbad03605u,0xcdd70693u,0x54de5729u,0x23d967bfu,
         0xb3667a2eu,0xc4614ab8u,0x5d681b02u,0x2a6f2b94u,0xb40bbe37u,0xc30c8ea1u,0x5a05df1bu,0x2d02ef8du,
     };
-    uint32_t crc=~0u;
     while (length--) crc=(crc>>8)^table[(crc^*p++)&255u];
-    return ~crc;
+    return crc;
 }
+static inline uint32_t msx_cine_crc32(const uint8_t *p,size_t length) {return ~msx_cine_crc32_update(~0u,p,length);}
 #endif

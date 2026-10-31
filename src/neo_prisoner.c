@@ -113,7 +113,10 @@ static bool k99c3c(neo_gactor_t *a,neo_genv_t *e) {
     for (unsigned p=0;p<2;p++) {
         if (!(e->players.active_mask&(1u<<p))) continue;              /* 01AEB0 */
         if (outside(a,e,p,0x99d7e)) continue;
-        if (e->flags && e->flags->rescued[p]<99u) e->flags->rescued[p]++; /* 09AB38 */
+        if (e->flags) {                                                 /* 09AB38 */
+            if (e->flags->rescued[p]<99u) e->flags->rescued[p]++;
+            e->flags->special[p]++;
+        }
         return true;
     }
     return false;

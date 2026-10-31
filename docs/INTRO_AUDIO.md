@@ -328,7 +328,10 @@ dos versiones (`pc` falla en 0.264). `pack_cinematic.py` busca `audioconv64` en
 `../toolchains` como `title_announcement.py`.
 
 Con 0.264 se regeneraron los dos paquetes privados y pasan sus comprobaciones:
-título X64 (`--end-frame 910 --video-step 1 --raster-first 300 --raster-last 900
---shot-first 300 --shot-last 900`): **601 fotogramas iguales a MAME** antes de
-añadir los dígitos; entrada en paracaídas (`--end-frame 4200 --confirm-frame
+título X64 (`MSX_TITLE_ONLY=1 ... --end-frame 960 --video-step 1 --raster-first 299
+--raster-last 900 --shot-first 300 --shot-last 900`, como en `art/title/README.md`):
+**601 fotogramas iguales a MAME** antes de añadir los dígitos, 3.147.898 bytes,
+los mismos que la referencia validada. Sin `MSX_TITLE_ONLY=1` la captura mete
+una moneda y el arcade corta el título para pasar a HOW TO PLAY: la ROM 10
+llevó ese título cortado (informe de MiSTer); entrada en paracaídas (`--end-frame 4200 --confirm-frame
 3620`, raster y capturas 3820..4140): **230 fotogramas**, 1.246.644 bytes.

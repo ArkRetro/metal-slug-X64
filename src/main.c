@@ -120,7 +120,11 @@ int main(void) {
         /* The title preloads its 3.4 MB movie plus prepared frames (most of
          * the heap): the logo runs alone, the audio, the scene cache and its
          * warm-up come after the entry, sized from what is free then. */
+        // The title's movie is read, validated and its heavy frames prepared
+        // in the logo's spare frame time (before: ~2 s of black after it).
+        if (msx_cinematic_prepare("rom:/title.msxc")) msx_neogeo_logo_set_idle(msx_cinematic_prepare_idle);
         msx_neogeo_logo();
+        msx_neogeo_logo_set_idle(NULL);
     } else {
         // Gameplay audio first (what it keeps in RAM is counted), then the
         // scene cache, warmed in the logo's spare frame time.

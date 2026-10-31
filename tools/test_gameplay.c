@@ -8,6 +8,7 @@
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
 #include "../src/scene_cull.h"
+#include "../src/neo_region.h"
 #include "scene_meta.h"
 /* Every native draw must find its descriptor and logical palette in the
  * scene pack (src/actor.c and boss_renderer.c log "native draw missing"
@@ -99,19 +100,41 @@ static void release_run(unsigned seed) {
         g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max,arena_lives);fflush(stdout);
     assert(!g.world.item_pickups && g.grenades>0 && !g.grenade_stops);
     assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
-    {   /* Mission end 018846: 018870 (+7C 0x1E, subq/bne), 0188F4 (0xA0,
-         * subq/bcc) and 018916 (0x20, subq/bcc) entered in the same update
-         * as the previous wait ends: 30 + 160 + 32 updates. */
-        static msx_game_t e;e=g;unsigned updates=0;
-        while (e.mission_end!=MSX_END_DONE && updates<1000) {bool started=e.end_started;msx_game_update(&e,0,false,false);if (started && !(e.ticks&1)) updates++;}
-        /* Stops: the tally 0308C0 and the fade 9C0A. The letters 06090A
-         * all arrive and leave (17 nodes, the root sets the mission
-         * actor's +60) with no explicit stop and draw while they run. */
-        assert(e.mission_end==MSX_END_DONE && updates==30+160+32 && e.end_stops==1);
+    {   /* Mission end 018846: 018870 (+7C 0x1E, subq/bne), the prisoner
+         * tally 0308C0 (0188B0 waits for its +60), 0188F4 (0xA0, subq/bcc)
+         * and 018916 (0x20, subq/bcc) entered in the same update as the
+         * previous wait ends: 30 + tally + 160 + 32 updates. */
+        static msx_game_t e;e=g;unsigned updates=0,tally=0;
+        uint16_t rescued=g.world.ga_flags.rescued[0];
+        uint8_t before[4];memcpy(before,g.world.pickup.score[0],4);
+        while (e.mission_end!=MSX_END_DONE && updates<4000) {
+            bool started=e.end_started;msx_game_update(&e,0,false,false);
+            if (started && !(e.ticks&1)) {updates++;if (e.mission_end==MSX_END_TALLY) tally++;}
+        }
+        /* The tally ran natively to its end with no explicit stop: every
+         * prisoner counted (10C5FC back to 0) and 10000 each (30000 for a
+         * special one) plus 100000 for ten or more added to the score. */
+        assert(e.mission_end==MSX_END_DONE && !e.end_stops && !e.end.unsupported && !e.end_ram.unsupported_text);
+        assert(updates==30+tally+160+32 && tally>0);
+        assert(!e.world.ga_flags.rescued[0]);
+        {
+            uint32_t bonus=0;
+            unsigned special=(e.end_ram.special[0][0]!=0)+(e.end_ram.special[0][1]!=0);
+            for (unsigned i=0;i<rescued;i++) bonus+=i<rescued-(rescued<special?rescued:special)?10000u:30000u;
+            if (rescued>=10) bonus+=100000u;
+            uint8_t want[4];memcpy(want,before,4);
+            uint32_t bcd=0;for (unsigned k=0,v=bonus;k<8;k++,v/=10) bcd|=(v%10u)<<(4*k);
+            neo_item_add_score(want,bcd);
+            assert(!memcmp(want,e.world.pickup.score[0],4));
+            printf("release run %u: mission end %u prisoners (%u special), tally %u updates, score %02x%02x%02x%02x -> %02x%02x%02x%02x\n",seed,rescued,special,tally,
+                before[0],before[1],before[2],before[3],e.world.pickup.score[0][0],e.world.pickup.score[0][1],e.world.pickup.score[0][2],e.world.pickup.score[0][3]);
+        }
         /* Fade 9C0A (E1,E1,E1, 0x20): -248 per update, -31 at the last step. */
         for (unsigned i=0;i<3;i++) assert(neo_fade_offset(&e.fade,i)==-31 && e.fade.current[i]==(int16_t)0xe100 && e.fade.step[i]==-248);
         assert(!e.fade.count);
-        assert(e.end.spawned==18 && e.end.mission60==1 && !e.end.unsupported && e.end.count==0);
+        /* The letters 06090A all arrive and leave (17 nodes, the root sets
+         * the mission actor's +60) after the tally's nodes. */
+        assert(e.end.mission60==1 && !e.end.unsupported);
     }
     assert(!g.world.unsupported && !g.world.boss_unsupported);   /* no node stops (the turret gun's fire 08FA1A is native) */
     // The random policy (deaths, respawns on the ledge or the vehicle's

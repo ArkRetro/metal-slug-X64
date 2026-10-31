@@ -155,7 +155,7 @@ static unsigned palette_slot(unsigned id) {
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
-static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flash) {
+static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flip_y,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
     /* A shrink below 1/16 (sprite zoom near 0, e.g. a missile leaving its
      * launcher) would overflow the RDP's texture step: less than a pixel
@@ -176,7 +176,7 @@ static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,i
         last_width=image->width;last_height=image->height;uploads++;tmem_bytes+=(unsigned)bytes;
     }
     rdpq_texture_rectangle_scaled(TILE0,x,y,x+draw_width,y+draw_height,
-        mirror?s+width-1:s,t,mirror?s-1:s+width,t+height);
+        mirror?s+width-1:s,flip_y?t+height-1:t,mirror?s-1:s+width,flip_y?t-1:t+height);
     draws++;
 }
 static float background_x(const scene_map_cell_t *cell,int fallback) {
@@ -185,11 +185,18 @@ static float background_x(const scene_map_cell_t *cell,int fallback) {
     return cell->x*view->scale+view->offset_x;
 }
 static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,int height,bool mirror,bool flash) {
-    blit_scaled(image,x,y,s,t,width,height,width,height,mirror,flash);
+    blit_scaled(image,x,y,s,t,width,height,width,height,mirror,false,flash);
 }
 void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash) {
+    scene_render_sprite_scaled(image,x,y,width,height,mirror,false,flash);
+}
+void scene_render_sprite_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flip_y,bool flash) {
     set_point_filter();
-    blit_scaled(image,x,y,0,0,image->width,image->height,width,height,mirror,flash);
+    blit_scaled(image,x,y,0,0,image->width,image->height,width,height,mirror,flip_y,flash);
+}
+void scene_render_sprite(const scene_image_t *image,int x,int y,bool mirror,bool flip_y,bool flash) {
+    set_point_filter();
+    blit_scaled(image,x,y,0,0,image->width,image->height,image->width,image->height,mirror,flip_y,flash);
 }
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash) {
     set_point_filter(); // Sprites never inherit the fog sampler.
@@ -230,7 +237,7 @@ static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *vi
     if (x>=320 || x+size<=0) return;
     const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
     // The depth camera carries the height (actor.c), so planes keep their own parallax.
-    blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false);
+    blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false,false);
 }
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,5);}
 /* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute

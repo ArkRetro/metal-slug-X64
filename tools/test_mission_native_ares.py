@@ -29,7 +29,8 @@ def wait_for(pattern,timeout=120):
     while time.monotonic()<deadline:
         text=log()
         assert 'ASSERTION FAILED' not in text and 'MSX ERROR' not in text and 'RSP CRASH' not in text,text[-3000:]
-        if re.search(pattern,text):return
+        m=re.search(pattern,text)
+        if m:return m
         time.sleep(.05)
     raise AssertionError((pattern,log()[-3000:]))
 stop=threading.Event();arena=threading.Event();domes=threading.Event();shop=threading.Event();camel_zone=threading.Event()
@@ -125,6 +126,10 @@ try:
     wait_for(r'MSX boss phase=\d+ hp=2\d\d\d',timeout=1800);snap('boss-damaged')
     wait_for(r'MSX mission complete signal',timeout=2400);time.sleep(.5);snap('mission-complete')
     wait_for(r'MSX mission complete camera',timeout=600);time.sleep(.3);snap('mission-end')
+    wait_for(r'MSX prisoner tally started',timeout=600);time.sleep(1.2);snap('prisoner-tally')
+    m=wait_for(r'MSX prisoner tally done \(counted=(\d+) left=(\d+) .*stops=(\d+) text stops=(\d+)\)',timeout=900);snap('prisoner-tally-done')
+    tally=tuple(int(x) for x in m.groups())
+    assert tally[1]==0 and tally[2]==0 and tally[3]==0,('prisoner tally 0308C0',tally)
     wait_for(r'MSX mission end letters arrived',timeout=600);time.sleep(.2);snap('mission-complete-letters')
     stop.set();worker.join(timeout=5)
     time.sleep(6)   # one more MSX PERF/AUDIO window
@@ -144,6 +149,7 @@ try:
     print('PASS: whole Mission 1 traversed: rebels spawned=%d killed=%d; boss started by 0A8C46, defeated; mission complete (018F92/018F40)'%(spawned,killed))
     mounts=len(re.findall(r'MSX player mounted vehicle',text))
     print('boss nodes stopped: none; Camel Slug mounts=%d'%mounts)
+    print('prisoner tally 0308C0 after the mission complete: %d prisoners counted, no stop'%tally[0])
     if perf:print('MSX PERF windows=%d cpu mean max=%d us worst frame=%d us'%(len(perf),max(p[0] for p in perf),max(p[1] for p in perf)))
     if rdp:print('RDP samples=%d draws max=%d CPU max=%d us misses max=%d'%(len(rdp),max(r[0] for r in rdp),max(r[1] for r in rdp),max(r[2] for r in rdp)))
     if audio:print('audio underruns max=%d'%max(audio))

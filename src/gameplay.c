@@ -35,6 +35,7 @@ void msx_game_init(msx_game_t *g) {
     // The original region script starts at its first record with the RNG
     // ring the mission handoff left (data/soldier_ai_tables.json).
     neo_world_init(&g->world,-(int32_t)((uint32_t)g->camera<<16));g->world_enabled=true;
+    neo_continue_start(&g->continue_sprites,neo_world_program);       /* 01868A */
     /* Reference traversal build only: the original's debug flag 10F000 bit 7
      * (a destroyed vehicle keeps its rider), as the player ignores hits. */
     g->world.dip10f000=MSX_REFERENCE_INVULNERABLE?0x80u:0u;
@@ -66,6 +67,10 @@ static void hud_step(msx_game_t *g) {
     in.continue_dip=true;in.can_continue=true;in.credit_count=0;in.lives_dip=3;
     in.start=g->start_edge;in.speedup=g->jump_edge;in.no_life=g->no_life;g->no_life=false;
     neo_hud_frame(&g->hud,&in);
+    /* 01883C: the mission actor's 00427A while the countdown runs (012022:
+     * the front-layer test reads 0 in the go2 capture, as at the mission end). */
+    if (g->hud.continue_draw) neo_continue_draw(&g->continue_sprites,g->hud.continue_timer,false,neo_world_program);
+    else neo_continue_clear(&g->continue_sprites);
     if (g->hud.continued) {
         memcpy(g->world.pickup.score[0],g->hud.score,4);g->awaiting_continue=false;g->continues++;
     }
@@ -416,12 +421,14 @@ static bool hgun_reserve(void *context) {
  *   018846  10E9E3 = FF (c8cd6), music 15418, +7C = 0x1E; 018870 waits
  *           (subq/bne: 30 updates).
  *   018884  cae6c(mission): RAM 10EA1B keeps the highest mission reached
- *           (signed byte); the prisoner tally actor 0308C0 (it adds the
- *           rescue bonus to 10C46A and sets the mission actor's +60): not
- *           ported, explicit stop; the port goes on at once.
- *   0188BE  sounds 0x20 and 0x1137, +7C = 0xA0, the MISSION COMPLETE letters
- *           actor 06090A (neo_end.c, created after the mission actor: it runs
- *           in the same update); 0188F4 waits (subq/bcc: 161 updates).
+ *           (signed byte); +60 = 0 and the prisoner tally actor 0308C0
+ *           (neo_tally.c, created after the mission actor: it runs in the
+ *           same update); 0188B0 waits for its +60 (the tally's root sets
+ *           it when it ends; it adds the rescue bonus to 10C46A).
+ *   0188B8  music 15422; sounds 0x20 and 0x1137, +7C = 0xA0, +60 = 0, the
+ *           MISSION COMPLETE letters actor 06090A (neo_end.c, created after
+ *           the mission actor: it runs in the same update); 0188F4 waits
+ *           (subq/bcc: 161 updates).
  *   0188FC  fade 9C0A (E1,E1,E1, 0x20: to -31 in 32 updates, neo_fade.c,
  *           stepped by the list head actor 003918 before the mission actor),
  *           +7C = 0x20; 018916 waits 33 updates.
@@ -429,6 +436,22 @@ static bool hgun_reserve(void *context) {
  *           are not ported: mission_end = done, actor.c restarts Mission 1.
  * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
  * Mission 2 at 14460 (dumps every 30 frames). */
+static uint16_t end_rand(void *ctx) {return neo_rng_next(&((msx_game_t *)ctx)->world.rng);}
+/* The RAM of the tally from the world (once, as 0308C0 starts). The
+ * port's single player: 10C33C = 1 (none while awaiting the continue),
+ * the euro region of every capture (RAM 100000 = 1), medals 10C306/7 = 0
+ * (no ported actor writes them; 0 in every capture). */
+static void end_ram_start(msx_game_t *g) {
+    neo_end_ram_t *m=&g->end_ram;
+    memset(m,0,sizeof(*m));
+    m->hud=&g->hud;m->fade=&g->fade;m->rand=end_rand;m->rand_ctx=g;
+    for (unsigned p=0;p<2;p++) {
+        m->rescued[p]=g->world.ga_flags.rescued[p];
+        m->special[p][0]=g->world.ga_flags.special[p];m->special[p][1]=g->world.ga_flags.gifts[p];
+        memcpy(m->score[p],g->world.pickup.score[p],4);
+    }
+    m->players=g->awaiting_continue?0u:1u;m->region=1;
+}
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {
     case MSX_END_NONE:
@@ -437,9 +460,17 @@ static void mission_end_step(msx_game_t *g) {
     case MSX_END_WAIT:
         if (--g->end_timer) return;
         if ((int8_t)0>(int8_t)g->best_mission) g->best_mission=0;   /* cae6c(42F4 = 0) */
-        g->end_stops++;                        /* tally actor 0308C0 */
-        g->end_timer=0xa0;
-        neo_end_reset(&g->end);neo_end_start(&g->end,0x6090a);      /* 0188DE */
+        neo_end_reset(&g->end);end_ram_start(g);
+        neo_end_start(&g->end,0x308c0);                                /* 01889A */
+        g->mission_end=MSX_END_TALLY;
+        __attribute__((fallthrough)); /* 0188AA -> 0188B0 */
+    case MSX_END_TALLY:
+        /* A tally node stopped explicitly (neo_tally.c) would never set
+         * +60: the port then goes on (counted in end_stops). */
+        if (!g->end.mission60 && !g->end.unsupported) return;
+        g->end_stops+=g->end.unsupported;
+        g->end_timer=0xa0;g->end.mission60=0;
+        neo_end_start(&g->end,0x6090a);                                /* 0188DE */
         g->mission_end=MSX_END_LETTERS;
         __attribute__((fallthrough)); /* 0188EE -> 0188F4 */
     case MSX_END_LETTERS:
@@ -454,6 +485,23 @@ static void mission_end_step(msx_game_t *g) {
     default: return;
     }
 }
+/* One update of the mission-end list after the mission actor: inputs of
+ * the tally (new presses of A/B, video counter 10000E as the HUD's), its
+ * RAM back into the world (rescued counts, score) and its sounds into the
+ * world's request list. */
+static void end_actors(msx_game_t *g,bool jump,bool fire) {
+    neo_end_ram_t *m=&g->end_ram;
+    m->pressed[0]=(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u));
+    m->video=(uint16_t)(g->ticks>>1);
+    neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program,m};
+    neo_end_update(&g->end,&in);
+    for (unsigned p=0;p<2;p++) {g->world.ga_flags.rescued[p]=m->rescued[p];memcpy(g->world.pickup.score[p],m->score[p],4);}
+    for (unsigned i=0;i<m->sound_count;i++) {
+        if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=m->sounds[i];
+        else g->world.sound_dropped++;
+    }
+    m->sound_count=0;
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) {
         g->ticks++;
@@ -461,10 +509,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */
             mission_end_step(g);
             /* The end actors after the mission actor in the list. */
-            if (g->end.count) {
-                neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program};
-                neo_end_update(&g->end,&in);
-            }
+            if (g->end.count) end_actors(g,jump,fire);
+            g->end_fire_was=fire;g->end_jump_was=jump;
         }
         g->end_started=true;
         return;

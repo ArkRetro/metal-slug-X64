@@ -223,6 +223,22 @@ def main():
     # Prefetched while the boss fight runs (scene_prefetch_boss).
     lines.append('#define SCENE_BOSS_CHUNK_LIST {'+','.join(str(c) for c in sorted(boss_chunks))+'}')
     lines.append(f'#define SCENE_BOSS_PAGES {len({pg for d in boss_tags for pg in parts[d]})}')
+    # Script lookahead (scene_prefetch_ahead): every spawn of the
+    # rest-of-mission inventory (data/mission1_rest_inventory.json: the
+    # script's spawn records, the camera of each spawn and the descriptors
+    # each actor kind drew in the MAME playthrough) gives the chunks of those
+    # descriptors keyed by the spawn camera; they are requested while the
+    # camera approaches it. Sorted by camera.
+    ahead=set()
+    inventory=ROOT/'data/mission1_rest_inventory.json'
+    if inventory.exists():
+        for kind in json.loads(inventory.read_text())['kinds']:
+            kind_chunks={pg//8 for d in kind['descriptors'] for pg in parts.get(int(d['address'],16),())}
+            for spawn in kind['spawns']:ahead.update((spawn['camera'],c) for c in kind_chunks)
+    ahead=sorted(ahead)
+    lines.append(f'#define SCENE_AHEAD_COUNT {len(ahead)}')
+    lines.append('static const uint16_t scene_ahead[][2]={'+(','.join('{%d,%d}'%a for a in ahead) or '{0xffff,0}')+'};')
+    soldier_chunks={pg//8 for prog in programs for c in prog['commands'] if c['kind']=='POSE' for pg in parts.get(c['asset'],())}
     # 16-pixel sprite columns of each boss descriptor (origin-relative x,
     # unmirrored): the original builder drops a column whose left edge is
     # outside -8..311 (00A17A..00A18E); boss_renderer.c clips likewise.
@@ -255,7 +271,7 @@ def main():
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')
-    report=dict(frames=len(images),native_descriptors=len(descriptors),boss_descriptors=len(boss_tags),boss_pages=len({pg for d in boss_tags for pg in parts[d]}),boss_chunks=len(boss_chunks),native_palettes=len(native_palettes),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
+    report=dict(frames=len(images),native_descriptors=len(descriptors),boss_descriptors=len(boss_tags),boss_pages=len({pg for d in boss_tags for pg in parts[d]}),boss_chunks=len(boss_chunks),native_palettes=len(native_palettes),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background),ahead_pairs=len(ahead),ahead_chunks=len({c for _,c in ahead}),soldier_program_chunks=len(soldier_chunks))
     (ROOT/'build/scene_pack_report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
 if __name__=='__main__':main()

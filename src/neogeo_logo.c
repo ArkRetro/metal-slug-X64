@@ -140,6 +140,9 @@ static unsigned draw_sides(void) {
     return n;
 }
 
+static bool (*idle_hook)(void);
+void msx_neogeo_logo_set_idle(bool (*idle)(void)) { idle_hook=idle; }
+
 bool msx_neogeo_logo(void) {
     if (!load_mesh()) {debugf("MSX LOGO skipped: no rom:/neogeo-logo.mesh (tools/build_neogeo_logo.py)\n");return false;}
     float yaw=START_YAW;
@@ -147,6 +150,7 @@ bool msx_neogeo_logo(void) {
     {float hx=LX,hy=LY,hz=LZ+1.0f,l=1.0f/sqrtf(hx*hx+hy*hy+hz*hz);HX=hx*l;HY=hy*l;HZ=hz*l;}
     bool audio=msx_audio_open(MSX_AUDIO_INTRO,"rom:/neogeo-jingle.wav64");
     surface_t zbuf=surface_alloc(FMT_RGBA16,320,240);
+    {heap_stats_t h;sys_get_heap_stats(&h);debugf("MSX MEM logo: heap used=%d KB free=%d KB\n",h.used/1024,(h.total-h.used)/1024);}
     debugf("MSX LOGO start caps=%u edges=%u cap_tris=%u size=%.1fx%.1fx%.1f audio=%u\n",cap_count,edge_count,cap_tri_count,(double)logo_w,(double)logo_h,(double)logo_d,audio);
     /* Prime the first frame before starting the clock and the jingle. */
     {surface_t *s=display_get();rdpq_attach_clear(s,NULL);rdpq_detach_show();}
@@ -154,6 +158,7 @@ bool msx_neogeo_logo(void) {
     if (audio) msx_audio_play(MSX_AUDIO_INTRO,false,1.0f);
     uint32_t began=TICKS_READ(),last_frame=began,frame_max=0,cpu_max=0;uint64_t cpu_sum=0;
     unsigned frames=0,late=0,max_drawn=0;bool previous=true,skipped=false;
+    uint32_t idle_sum=0;
     surface_t *prev=NULL;
     for (;;) {
         msx_audio_service();joypad_poll();
@@ -208,6 +213,9 @@ bool msx_neogeo_logo(void) {
         rdpq_detach_show();prev=surface;frames++;
         uint32_t cpu=TICKS_READ()-cpu_began;if (cpu>cpu_max) cpu_max=cpu;
         cpu_sum+=cpu;
+        /* Spare time until the next blank: the caller's background work (the
+         * game's scene warm-up, scene_assets_idle), never past the blank. */
+        if (idle_hook) {uint32_t i0=TICKS_READ();while (idle_hook()) {}idle_sum+=TICKS_READ()-i0;}
         if (frames==60 || frames==150 || frames==230 || frames==330)
             debugf("MSX LOGO shot frame=%u t=%u yaw=%d triangles=%u cpu_us=%lu\n",frames,(unsigned)t,(int)yaw_at(t),drawn,(unsigned long)TICKS_TO_US(cpu));
     }
@@ -218,9 +226,9 @@ bool msx_neogeo_logo(void) {
     msx_audio_stop(MSX_AUDIO_INTRO);
     surface_free(&zbuf);free_mesh();
     float seconds=(float)TICKS_TO_US(TICKS_READ()-began)/1e6f;
-    debugf("MSX LOGO timing frames=%u seconds=%.2f frame_max_us=%lu cpu_max_us=%lu cpu_mean_us=%lu late=%u max_triangles=%u\n",
+    debugf("MSX LOGO timing frames=%u seconds=%.2f frame_max_us=%lu cpu_max_us=%lu cpu_mean_us=%lu late=%u max_triangles=%u idle_mean_us=%lu\n",
         frames,(double)seconds,(unsigned long)TICKS_TO_US(frame_max),(unsigned long)TICKS_TO_US(cpu_max),
-        (unsigned long)TICKS_TO_US(cpu_sum/(frames?frames:1)),late,max_drawn);
-    debugf("MSX LOGO complete skipped=%u\n",skipped);
+        (unsigned long)TICKS_TO_US(cpu_sum/(frames?frames:1)),late,max_drawn,(unsigned long)TICKS_TO_US(idle_sum/(frames?frames:1)));
+    debugf("MSX LOGO complete skipped=%u t=%lu ms\n",skipped,(unsigned long)get_ticks_ms());
     return true;
 }

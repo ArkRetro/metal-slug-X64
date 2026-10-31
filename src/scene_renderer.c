@@ -108,6 +108,8 @@ void scene_render_forget_texture(void) {
 surface_t *msx_display_get(void) {
     surface_t *surface;uint32_t start=TICKS_READ();unsigned kicks=0;
     while (!(surface=display_try_get())) {
+        // Spare time before the next blank: stream scene chunks (scene_assets_idle).
+        scene_assets_idle();
         if (TICKS_SINCE(start)<TICKS_FROM_MS(50)) continue;
         if (++kicks>20) return display_get();
         debugf("MSX rspq kick %u: no framebuffer for 50 ms\n",kicks);
@@ -126,7 +128,7 @@ static void finished(void *arg) {
     completion_t *done=arg;
     scene_complete_epoch(done->epoch);
     display_show(done->surface);
-    if (done->epoch==1) debugf("MSX first frame ready\n");
+    if (done->epoch==1) debugf("MSX first frame ready t=%lu ms\n",(unsigned long)get_ticks_ms());
 }
 void scene_render_begin(surface_t *surface) {
     current=&completions[++frame%4];*current=(completion_t){surface,frame,TICKS_READ()};
@@ -399,10 +401,11 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     // the highest priority per chunk, so their order does not matter, and
     // nothing is serviced inside the loop: repeating the previous chunk's
     // request at the same priority changes nothing and is skipped.
-    // With the whole pack resident every request is a no-op: skip the walk.
+    // With the whole map pinned and resident (Expansion Pak) every request is
+    // a no-op: skip the walk.
     // Every phase of both passes recorded for these exact inputs: the chunks
     // they read are pinned (resident), so every request would be a no-op.
-    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident() && !bg_static(offsets,rises,visible);
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_map_resident() && !bg_static(offsets,rises,visible);
     for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
         scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
@@ -452,14 +455,15 @@ void scene_render_text(int x,int y,const char *text) {
     mode_tlut=mode_filter=-1;
 }
 void scene_render_end(void) {
+    if (!(frame%30)) scene_assets_heap_low();
     if (!(frame%300)) {
         scene_cache_stats_t s=scene_cache_stats();(void)s;
         if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=0 planes=%u shadows=%u shadow_tris=%u\n",
             retro_effects_triangles(),RETRO_MAX_TRIANGLES,0u,depth_frame.light_count,
             retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
-        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u deferred=%u held=%u bgblocks=%u/%u\n",
+        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u deferred=%u held=%u sync=%u idle=%u decode_max=%lu us heap_low=%d KB bgblocks=%u/%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
-            s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,bg_replays,bg_records);
+            s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,s.sync_misses,s.idle_decodes,(unsigned long)TICKS_TO_US(s.decode_max_ticks),scene_assets_heap_low()/1024,bg_replays,bg_records);
     }
     // One completion fence per frame: RDRAM pages stay pinned until RDP is done.
     rdpq_detach_cb(finished,current);

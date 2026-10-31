@@ -52,11 +52,20 @@ int main(void) {
     console_close();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
     joypad_init();
-    // Boot logo first (docs/LOGO_NEOGEO.md), before the game loads its scene and
-    // starts its music; skipped when its private assets are absent.
-    msx_neogeo_logo();
+    scene_assets_mem("display");
     // Gameplay audio: optional ROM-derived assets (docs/AUDIO_JUEGO.md).
+    // Loaded before the scene cache is sized: what it keeps in RAM is counted.
     if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+    scene_assets_mem("audio");
+    // Scene cache (measured RAM budget, scene_assets.c); its warm-up (the map
+    // and the first actors) runs in the logo's spare frame time.
+    scene_assets_begin();
+    // Boot logo (docs/LOGO_NEOGEO.md) before the game starts its music;
+    // skipped when its private assets are absent.
+    msx_neogeo_logo_set_idle(scene_assets_idle);
+    msx_neogeo_logo();
+    msx_neogeo_logo_set_idle(NULL);
+    scene_assets_mem("logo done");
     actor_init();
 #else
     actor_init();

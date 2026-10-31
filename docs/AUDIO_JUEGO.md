@@ -275,3 +275,19 @@ El recorrido de la misión completa llega al final del fichero de música, cuyo
 bucle medido es parcial: `msx_audio_play` repite ahora el fichero entero
 cuando es VADPCM con bucle parcial (el punto de bucle medido no se respeta
 hasta que el lector lo admita). Ver [MISION1_COMPLETA.md](MISION1_COMPLETA.md).
+
+## Corrección: efectos residentes distorsionados (ROM 10)
+
+En MiSTer los efectos sonaban completamente distorsionados durante el juego.
+Grabando la salida de ares (ALSA a archivo, 48 kHz) y midiendo saltos de
+muestra > 8000: ROM 9 0,03 %, rama de armas 0,03 %, rama del mundo 9,7 %,
+ROM 10 11,9 % con 2 % de muestras recortadas. Leer los mismos WAV64 desde
+`rom:/` en vez de `ram:/` daba 0,03 %: la causa era `msx_ramfs`. Su `read`
+copiaba con la CPU y el dato quedaba en la caché de datos; el decodificador
+VADPCM del RSP lo lee por DMA de la RDRAM y decodificaba memoria antigua.
+`ram_read` hace ahora `data_cache_hit_writeback` del búfer copiado (como si
+fuera una lectura PI). Con el arreglo: 0,04 %, sin recorte.
+
+La entrada en paracaídas (`entry.wav64`, VADPCM) también medía 2–3,5 % en su
+ventana frente a 0,33 % de la fuente; sin comprimir (como el título) mide
+0,01–0,3 %. `pack_cinematic.py` usa ahora `--wav-compress 0` (≈800 KB).

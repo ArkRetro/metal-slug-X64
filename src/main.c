@@ -8,6 +8,11 @@
 #include "game_audio.h"
 #include "msx_perf.h"
 #include "neogeo_logo.h"
+#if MSX_BOOT_CINEMATICS
+#include "title_intro.h"
+#include "cinematic.h"
+#include "entry_meta.h"
+#endif
 
 /* The FIX/C tile lab is a diagnostic: it needs the raw 48 MiB C-ROM copy, so
  * only the separate lab cartridge (make mslugx-lab.z64) includes it. */
@@ -21,6 +26,57 @@ static void fail(const char *message) {
     debugf("MSX ERROR: %s\n", message);
     for (;;) {}
 }
+#ifndef MSX_BOOT_CINEMATICS
+#define MSX_BOOT_CINEMATICS 0
+#endif
+#if MSX_BOOT_CINEMATICS && !MSX_GRAPHICS_LAB
+static bool rom_file(const char *path) { return dfs_rom_addr(path)!=0; }
+/* Parachute entry (docs/MISSION_ENTRY.md): the offline frames of the MAME
+ * capture at their own clock with its audio; Start skips it (after half a
+ * second). Ends on the handoff frame; false when it cannot play. */
+static bool entry_cinematic(void) {
+    if (!msx_cinematic_open("rom:/entry.msxc")) return false;
+    if (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0]) {msx_cinematic_close();return false;}
+    bool audio=msx_audio_open(MSX_AUDIO_INTRO,"rom:/entry.wav64");
+    if (audio) msx_audio_play(MSX_AUDIO_INTRO,false,0.8f);
+    unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,start_skip=false;uint32_t draw_ticks=0;
+    uint32_t started=TICKS_READ();
+    debugf("MSX INTRO start source=3830 frames=%u audio=%u\n",MSX_ENTRY_FRAMES,audio);
+    for (;;) {
+        uint32_t a0=TICKS_READ();joypad_poll();msx_audio_service();uint32_t audio_ticks=TICKS_READ()-a0;
+        unsigned target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));
+        bool start=joypad_get_buttons(JOYPAD_PORT_1).start;
+        if (target>=30 && start && !previous) {start_skip=true;break;}
+        previous=start;
+        uint32_t w0=TICKS_READ();surface_t *surface=display_get();uint32_t waited=TICKS_READ()-w0;
+        // The frame shown is the one due when this framebuffer frees (as the title does).
+        target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));
+        msx_cinematic_stats_t state=msx_cinematic_stats();unsigned work=0;
+        while (state.index<target && state.index+1<state.frames && work<8) {
+            if (!msx_cinematic_next()) {start_skip=true;break;}
+            state=msx_cinematic_stats();work++;
+        }
+        uint32_t decoded=TICKS_READ()-w0-waited;
+        if (last_presented!=state.index) {
+            if (last_presented!=~0u && state.index>last_presented+1) {
+                skipped+=state.index-last_presented-1;
+                debugf("MSX INTRO miss from=%u to=%lu wait_us=%lu decode_us=%lu audio_us=%lu draw_us=%lu\n",last_presented,(unsigned long)state.index,(unsigned long)TICKS_TO_US(waited),(unsigned long)TICKS_TO_US(decoded),(unsigned long)TICKS_TO_US(audio_ticks),(unsigned long)TICKS_TO_US(draw_ticks));
+            }
+            unique++;last_presented=state.index;
+        }
+        uint32_t d0=TICKS_READ();msx_cinematic_draw(surface);draw_ticks=TICKS_READ()-d0;rendered++;
+        if (target>=state.frames && state.index+1==state.frames) break;
+    }
+    msx_cinematic_stats_t final=msx_cinematic_stats();
+    debugf("MSX INTRO cadence unique=%u skipped=%u\n",unique,skipped);
+    debugf("MSX INTRO complete frames=%lu rendered=%u crc=%08lx skipped=%u decode_max_us=%lu t=%lu ms\n",(unsigned long)final.frames,rendered,
+        (unsigned long)msx_cinematic_pixels_crc(),start_skip,(unsigned long)TICKS_TO_US(final.max_decode_ticks),(unsigned long)get_ticks_ms());
+    rspq_wait();
+    if (audio) msx_audio_stop(MSX_AUDIO_INTRO);
+    msx_cinematic_close();
+    return true;
+}
+#endif
 #if MSX_GRAPHICS_LAB
 static uint8_t fixed_rom[131072];
 static uint8_t sprite_cache[SPRITES_PER_PAGE * 128];
@@ -52,12 +108,47 @@ int main(void) {
     console_close();
     display_init(RESOLUTION_320x240, DEPTH_16_BPP, 2, GAMMA_NONE, FILTERS_RESAMPLE);
     joypad_init();
-    // Boot logo first (docs/LOGO_NEOGEO.md), before the game loads its scene and
-    // starts its music; skipped when its private assets are absent.
-    msx_neogeo_logo();
-    // Gameplay audio: optional ROM-derived assets (docs/AUDIO_JUEGO.md).
-    if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+    scene_assets_mem("display");
+    /* Boot order: NEOGEO logo (docs/LOGO_NEOGEO.md), X64 title and parachute
+     * entry (docs/MISSION_ENTRY.md) when the cartridge carries them, then
+     * Mission 1. Each private part is optional. */
+    bool cinematics=false;
+#if MSX_BOOT_CINEMATICS
+    cinematics=rom_file("/title.msxc") && rom_file("/title-motion.wav64") && rom_file("/entry.msxc") && rom_file("/entry.wav64");
+#endif
+    if (cinematics) {
+        /* The title preloads its 3.4 MB movie plus prepared frames (most of
+         * the heap): the logo runs alone, the audio, the scene cache and its
+         * warm-up come after the entry, sized from what is free then. */
+        msx_neogeo_logo();
+    } else {
+        // Gameplay audio first (what it keeps in RAM is counted), then the
+        // scene cache, warmed in the logo's spare frame time.
+        if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+        scene_assets_mem("audio");
+        scene_assets_begin();
+        msx_neogeo_logo_set_idle(scene_assets_idle);
+        msx_neogeo_logo();
+        msx_neogeo_logo_set_idle(NULL);
+        scene_assets_mem("logo done");
+    }
+    bool handoff=false;
+#if MSX_BOOT_CINEMATICS
+    if (cinematics) {
+        if (!msx_title_intro()) debugf("MSX TITLE could not play\n");
+        scene_assets_mem("title done");
+        handoff=entry_cinematic();
+        scene_assets_mem("entry done");
+        if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+        scene_assets_mem("audio");
+    }
+#endif
     actor_init();
+#if MSX_BOOT_CINEMATICS
+    // Marco where the entry's last frame leaves him (measured MAME handoff).
+    if (handoff && !actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
+#endif
+    (void)handoff;
 #else
     actor_init();
     console_close();

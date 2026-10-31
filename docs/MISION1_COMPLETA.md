@@ -87,9 +87,12 @@ sin detenerse.
   `building_raise/building_clear`; desplazamiento del cielo y mapa delantero
   del derrumbe `0x0B58CC`.
 
-Pack: **223 chunks, 1777 páginas, 155 paletas** (≈1,9 MB empaquetados). Con la
-Expansion Pak la caché de escena pasa de 3 a 3,5 MiB y **todo el pack queda
-residente** (224 ranuras). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
+Pack (en este paso): **223 chunks, 1777 páginas, 155 paletas** (≈1,9 MB
+empaquetados); entonces cabía entero en la caché de 8 MiB. **Ya no es así**:
+el pack actual tiene 665 chunks (10,4 MiB descodificados) y la caché de 8 MiB
+tiene ≈300 ranuras; el mapa (37 chunks) queda fijado y residente y los actores
+se transmiten (ver «Caché de escena con la Expansion Pak» más abajo y
+RENDIMIENTO.md). Con 4 MiB (32 ranuras) el mapa cabe (peor conjunto
 de trabajo 28 chunks); en la arena del jefe mapa+fijos ocupan 22–23 chunks y
 el jefe 14–15 por pasada lógica (`tools/check_boss_budget.py`): **37–38 > 32,
 no cabe** sin rediseñar los fijos o el tamaño de caché (pendiente; ares
@@ -193,6 +196,21 @@ genéricos registrados (bombardero, camión, jefe) y la reaparición tras perder
 las vidas es en la vista actual (la cámara original no retrocede). El jugador
 no se sube a plataformas dinámicas (jefe/camión): solo usa la rejilla
 estática.
+
+## Caché de escena con la Expansion Pak
+
+El pack ya no cabe entero (711 bloques, 11,1 MiB descodificados, frente a
+≈240 ranuras de 16 KiB). Desde `work-xpak` (detalle y tabla de RAM en
+[RENDIMIENTO.md](RENDIMIENTO.md), «Expansion Pak: presupuesto de RAM
+medido»): la caché se dimensiona la última con un presupuesto medido y
+comprobado (assert), el mapa entero (38 bloques: celdas, parche de la tienda
+y escombros) queda fijado y residente, los actores que crea el guion se piden
+384 píxeles de cámara antes de su aparición (`scene_ahead`, de
+`data/mission1_rest_inventory.json`) y los bloques se descodifican en el
+tiempo libre de cada fotograma (y en el del logo NEOGEO cuando no hay
+cinemáticas). Recorrido completo final: PASS, crash=0, **0 faltas síncronas
+del fondo**, `misses=137`, `evictions=444`, peor fotograma 35,9 ms (arranque)
+y 33,8 ms en 2336 (simulación del mundo 18,9 ms + una pieza de actor).
 
 ## Recorrido en ares 146
 

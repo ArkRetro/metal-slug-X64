@@ -311,8 +311,9 @@ static bool hgun_reserve(void *context) {
  *   0188BE  sounds 0x20 and 0x1137, +7C = 0xA0, the MISSION COMPLETE letters
  *           actor 06090A (neo_end.c, created after the mission actor: it runs
  *           in the same update); 0188F4 waits (subq/bcc: 161 updates).
- *   0188FC  fade 9C0A (E1,E1,E1, 0x20; not ported: explicit stop), +7C =
- *           0x20; 018916 waits 33 updates.
+ *   0188FC  fade 9C0A (E1,E1,E1, 0x20: to -31 in 32 updates, neo_fade.c,
+ *           stepped by the list head actor 003918 before the mission actor),
+ *           +7C = 0x20; 018916 waits 33 updates.
  *   01891E  mission 42F4 + 1 < 6: the next mission (1829E). Missions 2..6
  *           are not ported: mission_end = done, actor.c restarts Mission 1.
  * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
@@ -332,7 +333,7 @@ static void mission_end_step(msx_game_t *g) {
         __attribute__((fallthrough)); /* 0188EE -> 0188F4 */
     case MSX_END_LETTERS:
         if (g->end_timer--) return;
-        g->end_stops++;                        /* fade 9C0A */
+        neo_fade_start(&g->fade,(int16_t)-0x1f,(int16_t)-0x1f,(int16_t)-0x1f,0x20);   /* 9C0A */
         g->end_timer=0x20;g->mission_end=MSX_END_FADE;
         __attribute__((fallthrough)); /* 018910 -> 018916 */
     case MSX_END_FADE:
@@ -346,6 +347,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) {
         g->ticks++;
         if (!(g->ticks&1) && g->end_started) {
+            neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */
             mission_end_step(g);
             /* The end actors after the mission actor in the list. */
             if (g->end.count) {

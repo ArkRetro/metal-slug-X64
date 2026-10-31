@@ -1,4 +1,5 @@
 #include "scene_renderer.h"
+#include "neo_fade.h"
 #include "retro_effects.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
@@ -13,6 +14,27 @@ typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
 static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
+/* Palette fade (neo_fade.c, RAM 10991A..): each TLUT uploaded while it is on
+ * is a converted copy, every 5-bit channel plus its offset clamped to 0..31
+ * like the original's palette conversion 005A0A. Copies live in a ring per
+ * frame in flight (the RDP reads them later). */
+enum { FADE_COPIES=128 };
+static int8_t fade_offset[3];static bool fade_on;
+static uint16_t fade_copies[4][FADE_COPIES][16] __attribute__((aligned(16)));
+static unsigned fade_used,fade_ring,fade_overflow;
+void scene_render_set_fade(int8_t r,int8_t g,int8_t b) {fade_offset[0]=r;fade_offset[1]=g;fade_offset[2]=b;fade_on=r||g||b;}
+const uint16_t *scene_render_fade_palette(const uint16_t *source) {
+    if (!fade_on) return source;
+    if (fade_used==FADE_COPIES) {fade_overflow++;return source;}
+    uint16_t *d=fade_copies[fade_ring][fade_used++];
+    for (unsigned i=0;i<16;i++) {
+        uint16_t c=source[i];
+        unsigned red=neo_fade_channel((c>>11)&31u,fade_offset[0]),green=neo_fade_channel((c>>6)&31u,fade_offset[1]),blue=neo_fade_channel((c>>1)&31u,fade_offset[2]);
+        d[i]=(uint16_t)(red<<11|green<<6|blue<<1|(c&1u));
+    }
+    data_cache_hit_writeback(d,sizeof(fade_copies[0][0]));
+    return d;
+}
 static unsigned pal_lru[16];
 // Render-mode values this renderer last set and still knows to be current
 // (-1: unknown). Setting the same TLUT/filter again only re-sent identical
@@ -107,6 +129,7 @@ static void finished(void *arg) {
 void scene_render_begin(surface_t *surface) {
     current=&completions[++frame%4];*current=(completion_t){surface,frame,TICKS_READ()};
     scene_begin_epoch(frame);scene_service();
+    fade_ring=frame%4;fade_used=0;
     for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
     last_page=last_slot=last_format=last_width=last_height=-1;draws=uploads=palette_uploads=tmem_bytes=0;
     rdpq_attach_clear(surface,NULL);rdpq_set_mode_standard();
@@ -124,7 +147,7 @@ static unsigned palette_slot(unsigned id) {
         if (pal_ids[i]<0) {slot=i;break;}
         if (pal_lru[i]<pal_lru[slot]) slot=i;
     }
-    rdpq_tex_upload_tlut((uint16_t*)scene_palette(id),slot*16,16);
+    rdpq_tex_upload_tlut((uint16_t*)scene_render_fade_palette(scene_palette(id)),slot*16,16);
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
@@ -255,7 +278,15 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
         scene_render_box(8,8,304,224,RGBA32(255,255,255,255));
         rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
-    if (begin==0) scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop(backdrop_after)));
+    if (begin==0) {
+        color_t backdrop=color_from_packed32(scene_map_backdrop(backdrop_after));
+        if (fade_on) {   /* the backdrop entry 0xFFF fades with the others (MAME runK) */
+            backdrop.r=(uint8_t)(neo_fade_channel(backdrop.r>>3,fade_offset[0])<<3);
+            backdrop.g=(uint8_t)(neo_fade_channel(backdrop.g>>3,fade_offset[1])<<3);
+            backdrop.b=(uint8_t)(neo_fade_channel(backdrop.b>>3,fade_offset[2])<<3);
+        }
+        scene_render_box(8,8,304,224,backdrop);
+    }
     if (!depth_mode) {
         // Pack order is layer order (checked at init), so walking the layers
         // in turn draws the same cells in the same order as one array walk.

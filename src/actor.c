@@ -281,6 +281,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
     if (!was_complete && game.complete) debugf("MSX mission complete camera=%d x=%d\n",game.camera,game.x);
+    {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
+        static bool logged;
+        if (game.mission_end!=MSX_END_LETTERS) logged=false;
+        else if (!logged && game.end.count && ga_l(&game.end.nodes[game.end.order[0]],0)==0x609a4) {
+            logged=true;debugf("MSX mission end letters arrived (06090A nodes=%u draws=%u stops=%u)\n",game.end.spawned,game.end.draw_count,game.end.unsupported);
+        }
+    }
     if (was_grounded && !game.grounded) debugf("MSX jump\n");
     if (!was_grounded && game.grounded) debugf("MSX landed height=%d\n",game.y/MSX_UNIT);
     int animation=msx_game_animation(&game);
@@ -322,6 +329,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
     msx_perf_mark(MSX_PERF_PREP);
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
+    scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
     scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
@@ -372,6 +380,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     /* The original fix layer above every layer, on the 304x224 window. */
+    /* The fix layer's palettes are outside the fade (MAME runK: slots 0..9 keep their colours). */
+    scene_render_set_fade(0,0,0);
     rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
     scene_render_forget_texture();
     if (diagnostics) {

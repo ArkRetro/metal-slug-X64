@@ -102,7 +102,10 @@ static void release_run(unsigned seed) {
         /* Stops: the tally 0308C0 and the fade 9C0A. The letters 06090A
          * all arrive and leave (17 nodes, the root sets the mission
          * actor's +60) with no explicit stop and draw while they run. */
-        assert(e.mission_end==MSX_END_DONE && updates==30+160+32 && e.end_stops==2);
+        assert(e.mission_end==MSX_END_DONE && updates==30+160+32 && e.end_stops==1);
+        /* Fade 9C0A (E1,E1,E1, 0x20): -248 per update, -31 at the last step. */
+        for (unsigned i=0;i<3;i++) assert(neo_fade_offset(&e.fade,i)==-31 && e.fade.current[i]==(int16_t)0xe100 && e.fade.step[i]==-248);
+        assert(!e.fade.count);
         assert(e.end.spawned==18 && e.end.mission60==1 && !e.end.unsupported && e.end.count==0);
     }
     assert(g.world.unsupported==g.world.boss_unsupported);

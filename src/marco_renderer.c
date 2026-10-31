@@ -1,6 +1,7 @@
 #include <libdragon.h>
 #include <stdio.h>
 #include "marco_renderer.h"
+#include "scene_renderer.h"
 #include "marco_pose_meta.h"
 static sprite_t *parts[MARCO_PARTS];
 static bool loaded;
@@ -59,7 +60,7 @@ static bool draw_pose(unsigned pose,int x,int y,bool mirror,bool flip_y,unsigned
     rdpq_mode_push();rdpq_set_mode_standard();rdpq_mode_filter(FILTER_POINT);
     rdpq_mode_dithering(DITHER_NONE_NONE);rdpq_mode_alphacompare(1);
     rdpq_mode_tlut(TLUT_RGBA16);
-    rdpq_tex_upload_tlut((uint16_t*)marco_palettes[palette],0,16);
+    rdpq_tex_upload_tlut((uint16_t*)scene_render_fade_palette(marco_palettes[palette]),0,16);
     for (unsigned p=0;p<marco_poses[pose].count;p++) {
         unsigned i=marco_poses[pose].first+p;
         int width=marco_parts[i].width,height=marco_parts[i].height;

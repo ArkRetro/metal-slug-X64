@@ -112,6 +112,7 @@ try:
     wait_for(r'MSX boss phase=\d+ hp=2\d\d\d',timeout=1800);snap('boss-damaged')
     wait_for(r'MSX mission complete signal',timeout=2400);time.sleep(.5);snap('mission-complete')
     wait_for(r'MSX mission complete camera',timeout=600);time.sleep(.3);snap('mission-end')
+    wait_for(r'MSX mission end letters arrived',timeout=600);time.sleep(.2);snap('mission-complete-letters')
     stop.set();worker.join(timeout=5)
     time.sleep(6)   # one more MSX PERF/AUDIO window
     text=log()

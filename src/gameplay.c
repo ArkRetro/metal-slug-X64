@@ -424,7 +424,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
      * (00427A then 0C3778) reads them for the muzzle. */
-    if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun);
+    if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun,!g->grounded && g->velocity_y<0);
     if (hgun) {
         if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
         g->fire_request=false;g->pistol_wait=0;

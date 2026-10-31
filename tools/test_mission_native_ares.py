@@ -63,6 +63,15 @@ def pad():
         time.sleep(.03)
     for name in list(state):hold(name,False)
 worker=threading.Thread(target=pad,daemon=True)
+def milestones():
+    # Marco with the H (weapon id 0A from the prisoner's gift): a few
+    # screenshots once the weapon changes, while the pad keeps firing.
+    while not stop.is_set():
+        if re.search(r'MSX weapon id=a ',log()):
+            for i in range(4):time.sleep(.7);snap('hgun%d'%i)
+            return
+        time.sleep(.2)
+watcher=threading.Thread(target=milestones,daemon=True)
 try:
     wait_for('MSX v10 scene loaded',timeout=400)
     # The scripted pad cannot survive Mission 1 with a mortal player: a
@@ -73,7 +82,7 @@ try:
     window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]
     subprocess.run([XD,'windowmove',window,'0','0'],check=True)
     subprocess.run([XD,'windowfocus','--sync',window],check=True);time.sleep(.5);snap('start')
-    worker.start()
+    worker.start();watcher.start()
     wait_for(r'MSX rebel spawned=1 ',timeout=200)
     wait_for(r'MSX camera stop=872',timeout=400)
     # The truck 02916E's wreck is a ramp: standing on it lifts the camera.

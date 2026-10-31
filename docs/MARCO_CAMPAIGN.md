@@ -138,6 +138,23 @@ columna (también reflejados): 71 volcados, todos los descriptores del jugador
 están en el catálogo; en 5 quedan 1–3 columnas de una fila de otros actores
 con la paleta del jugador (partículas).
 
+## Ciclo de carrera
+
+El original arranca la carrera (`C285C`, traducido en `marco_motion.c`) con
+la velocidad de cuerpo `+26 = 0x1C1`: en `marco-cat1` todas las
+actualizaciones de `24DD18` la tienen. El port la arrancaba a 0x100 (un
+ciclo 1,76 veces más lento). `marco_visual.c` la usa ahora para `B_RUN`, y
+`src/marco_legs.c` lleva con ella los `+72/+74` del programa (y los del salto
+y del salto con carrera, que esperan arriba mientras `+78 = FF`, es decir
+mientras sube). Pruebas: `tools/test_marco_legs.c` (`make check-core`,
+`data/legs_fixture.json` de `tools/extract_legs_fixture.py` sobre
+`marco-cat1`): 194 pasos de cuerpo con `+72/+74` iguales en la carrera (a
+derecha e izquierda), el salto y el salto con carrera hasta el aterrizaje;
+`make check-marco-campaign`: la pose de cada actualización de `walk_right` y
+`run_cycle_right` (68) igual a la del original. La pose `188930` del
+arranque dura menos de una actualización a 0x1C1: tampoco se dibuja en el
+original.
+
 ## Pendiente
 
 - Controlador original completo (`0x0C1xxx..0x0C3xxx`, ya traducido en

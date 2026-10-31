@@ -10,42 +10,78 @@ static const entry_t jump[12]={{2,1,24},{2,1,23},{1,1,21},{1,1,19},{1,1,18},{1,1
     {1,1,19},{1,1,20},{1,1,21},{1,1,22},{1,1,23},{1,1,24}};
 /* 24E858: index 3 holds while airborne; then 24DF6C (-1,15) for ever. */
 static const entry_t run_jump[8]={{1,-3,15},{2,-3,12},{3,-4,12},{1,-4,12},{2,-4,12},{2,-3,12},{2,-2,11},{2,-1,11}};
-static void start(marco_legs_t *l,marco_legs_program_t p) {l->program=p;l->index=0;l->wait=0;l->started=true;}
+/* The body programs' commands that matter here, in the converted format of
+ * tools/convert_marco_programs.py (POSE without a descriptor: the drawing is
+ * marco_visual.c's): +72/+74 writes, waits, the +78 branch (FF while
+ * airborne) and the loops. */
+#define WW(f,v) {NEO_ANIM_WRITE_WORD,(v),(f),0,0,0,0}
+#define WL(v) {NEO_ANIM_WRITE_LONG,(v),0x72,0,0,0,0}
+#define P {NEO_ANIM_POSE,0,0,0,64,0,0}
+#define W(n) {NEO_ANIM_WAIT,0,0,(n),0,0,0}
+#define RUNP(y,w) WW(0x74,y),P,W(w)
+static const neo_anim_command_t run_cmds[]={   /* 24DD18 */
+    WW(0x72,0xffff),RUNP(17,1),RUNP(17,1),RUNP(18,1),RUNP(18,1),
+    RUNP(19,2),RUNP(20,2),RUNP(21,2),RUNP(20,2),RUNP(19,2),RUNP(19,2),RUNP(19,2),RUNP(20,2),RUNP(21,2),RUNP(20,2),RUNP(19,2),RUNP(19,2),
+    {NEO_ANIM_JUMP,0,13,0,0,0,0},
+};
+static const neo_anim_command_t jump_cmds[]={  /* 24E4E0 */
+    WL(0x10018),P,W(2),WL(0x10017),P,W(2),WL(0x10015),P,W(1),WL(0x10013),P,W(1),WL(0x10012),P,W(1),
+    WL(0x10012),P,W(1),{NEO_ANIM_BRANCH_FIELD,0x78,16,255,0,0,0},
+    WL(0x10013),P,W(1),WL(0x10014),P,W(1),WL(0x10015),P,W(1),WL(0x10016),P,W(1),WL(0x10017),P,W(1),WL(0x10018),P,W(0),
+    {NEO_ANIM_FINISH,0,0,0,0,0,0},
+};
+static const neo_anim_command_t run_jump_cmds[]={  /* 24E858, then 24DF6C */
+    WL(0xfffd000f),P,W(1),WL(0xfffd000c),P,W(2),WL(0xfffc000c),P,W(3),WL(0xfffc000c),P,W(1),
+    {NEO_ANIM_BRANCH_FIELD,0x78,10,255,0,0,0},
+    WL(0xfffc000c),P,W(2),WL(0xfffd000c),P,W(2),WL(0xfffe000b),P,W(2),WL(0xffff000b),P,W(2),
+    WL(0xffff000f),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),
+    {NEO_ANIM_JUMP,0,25,0,0,0,0},
+};
+#undef WW
+#undef WL
+#undef P
+#undef W
+#undef RUNP
+static const neo_anim_program_t programs[]={
+    {run_cmds,sizeof run_cmds/sizeof *run_cmds},{jump_cmds,sizeof jump_cmds/sizeof *jump_cmds},
+    {run_jump_cmds,sizeof run_jump_cmds/sizeof *run_jump_cmds}};
+static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *value) {
+    marco_legs_t *l=context;
+    if (f==0x78 && !write) {*value=l->rising?0xffu:0u;return true;}
+    if (!write) return false;
+    if (f==0x72 && bytes==4) {l->x72=(int8_t)(int16_t)(*value>>16);l->y74=(int8_t)(int16_t)*value;return true;}
+    if (f==0x72) {l->x72=(int8_t)(int16_t)*value;return true;}
+    if (f==0x74) {l->y74=(int8_t)(int16_t)*value;return true;}
+    return true;
+}
+/* Body speed +26: 0x1C1 for the run (C285C, marco_motion.c), else 0x100. */
+static void start(marco_legs_t *l,marco_legs_program_t p) {
+    l->program=p;l->started=true;l->done=false;
+    if (p==MARCO_LEGS_RUN) neo_anim_start(&l->anim,&programs[0],0x1c1);
+    else if (p==MARCO_LEGS_JUMP) neo_anim_start(&l->anim,&programs[1],0x100);
+    else if (p==MARCO_LEGS_RUN_JUMP) neo_anim_start(&l->anim,&programs[2],0x100);
+}
 void marco_legs_reset(marco_legs_t *l) {memset(l,0,sizeof *l);l->grounded=true;l->x72=0;l->y74=17;}
-void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool running_jump,bool hgun) {
+void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool running_jump,bool hgun,bool rising) {
+    l->rising=rising;
     /* The program of the situation (marco_visual_step's body choice). */
     if (!grounded) {
         if (l->grounded || !l->started) start(l,running_jump?MARCO_LEGS_RUN_JUMP:MARCO_LEGS_JUMP);
     } else if (crouch) {
-        if (l->program!=MARCO_LEGS_CROUCH) start(l,MARCO_LEGS_CROUCH);
+        if (l->program!=MARCO_LEGS_CROUCH || !l->started) start(l,MARCO_LEGS_CROUCH);
     } else {
         marco_legs_program_t p=moving?MARCO_LEGS_RUN:MARCO_LEGS_IDLE;
-        bool same=l->program==p || (p==MARCO_LEGS_RUN && l->program==MARCO_LEGS_RUN_LOOP);
-        if (!l->grounded || !same || !l->started) start(l,p);
+        if (!l->grounded || l->program!=p || !l->started) start(l,p);
     }
     l->grounded=grounded;
-    /* The entry of this update and its wait (speed 0x100: one per update). */
-    const entry_t *e=NULL;
     switch (l->program) {
-    case MARCO_LEGS_IDLE: l->x72=0;l->y74=17;return;
+    case MARCO_LEGS_IDLE: l->x72=0;l->y74=17;return;          /* 24C5EA */
     case MARCO_LEGS_CROUCH: l->x72=hgun?4:0;l->y74=hgun?12:6;return;
-    case MARCO_LEGS_RUN_LOOP: l->x72=-1;l->y74=15;return;
-    case MARCO_LEGS_RUN: e=&run[l->index];break;
-    case MARCO_LEGS_JUMP: e=&jump[l->index];break;
-    case MARCO_LEGS_RUN_JUMP: e=&run_jump[l->index];break;
-    }
-    l->x72=e->x;l->y74=e->y;
-    if (++l->wait<e->wait) return;
-    l->wait=0;
-    switch (l->program) {
-    case MARCO_LEGS_RUN: l->index=l->index==15?4:l->index+1;break;
-    case MARCO_LEGS_JUMP: if (!(l->index==5 && !grounded) && l->index<11) l->index++;break;
-    case MARCO_LEGS_RUN_JUMP:
-        if (l->index==3 && !grounded) break;
-        if (l->index==7) l->program=MARCO_LEGS_RUN_LOOP; else l->index++;
-        break;
     default: break;
     }
+    if (l->done) return;
+    neo_anim_render_t r;memset(&r,0,sizeof r);
+    if (neo_anim_step_fields(&l->anim,&r,NULL,NULL,256,NULL,NULL,field,l)!=NEO_ANIM_MORE) l->done=true;
 }
 /* 0C4204: rows down/level/up, forms 0..3, words (x, y up). */
 static const int8_t muzzle_table[3][4][2]={

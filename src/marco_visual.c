@@ -20,7 +20,10 @@ static void start(marco_visual_t *v,marco_part_t part,int role) {
     if (part==MARCO_BODY) {v->body_role=role;v->body_done=false;}
     else {v->weapon_role=role;v->weapon_done=false;}
     if (role<0) return;
-    if (!marco_animation_start(&v->anim,part,&marco_script,(uint16_t)role,0x100)) v->failures++;
+    /* Body speed +26: the run starts at 0x1C1 (C285C, marco_motion.c; cat1:
+     * every run update of 24DD18 has 01C1), every other program at 0x100. */
+    uint16_t speed=part==MARCO_BODY && role==MARCO_CAMPAIGN_B_RUN?0x1c1:0x100;
+    if (!marco_animation_start(&v->anim,part,&marco_script,(uint16_t)role,speed)) v->failures++;
     v->starts++;
 }
 void marco_visual_reset(marco_visual_t *v) {

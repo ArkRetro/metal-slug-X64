@@ -4,19 +4,23 @@
  * 0C4244/0C453A) as the body programs write them (WRITE_WORD/WRITE_LONG to
  * +72/+74, bank 1): idle 24C5EA (0,17); walk 24DD18 (-1, 17..21 per pose,
  * loop from its fifth pose); jump 24E4E0 (1, 24..18, holding at the top while
- * airborne: BRANCH on +78); running jump 24E858 (-3/-4, 15..11, holding while
- * airborne) then the run loop 24DF6C (-1,15). The program chosen per
+ * rising: BRANCH on +78); running jump 24E858 (-3/-4, 15..11, holding while
+ * rising) then the run loop 24DF6C (-1,15). The run goes at the body
+ * speed 0x1C1 of C285C (marco_motion.c; cat1: +26 = 01C1 in every run update). The program chosen per
  * situation and its restarts are those of marco_visual.c. Crouched no body
  * program writes them (24ECD6/24ECF6, 256BE6/256C06): the values measured
  * in hold2 stand in (H (4,12): bullets (28,16); pistol (0,6)), declared
  * approximation (writer not located). Pure C, timelines only (y up). */
 #include <stdbool.h>
 #include <stdint.h>
+#include "neo_animation.h"
 typedef enum { MARCO_LEGS_IDLE,MARCO_LEGS_RUN,MARCO_LEGS_JUMP,MARCO_LEGS_RUN_JUMP,MARCO_LEGS_RUN_LOOP,MARCO_LEGS_CROUCH } marco_legs_program_t;
-typedef struct { marco_legs_program_t program; uint8_t index,wait; bool grounded,started; int8_t x72,y74; } marco_legs_t;
+typedef struct { marco_legs_program_t program; neo_anim_state_t anim; bool grounded,started,done,rising; int8_t x72,y74; } marco_legs_t;
 void marco_legs_reset(marco_legs_t *l);
 /* One player update with the situation of marco_visual_input_t. */
-void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool running_jump,bool hgun);
+/* rising: the vertical velocity is upward (+78 stays FF while rising: the
+ * jumps hold their top pose; cat1: +78 = 0 from the first falling update). */
+void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool running_jump,bool hgun,bool rising);
 /* Muzzle of a fire callback relative to the player's +28/+2C (pixels, y up),
  * with +90 != FF (every H and pistol birth of hold2/hfam/hudp2/hudv2):
  * 0C4244, table 0C4204 by +92 (1 up, 0 level, -1 down) and form +93, plus

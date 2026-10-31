@@ -375,6 +375,9 @@ $(BUILD_DIR)/marco-motion/marco_motion_fixture.h: tools/compile_marco_motion.py 
 
 $(BUILD_DIR)/marco_ammo_fixture.h: tools/compile_marco_ammo.py data/marco_ammo_fixture.json
 	python3 tools/compile_marco_ammo.py
+# Body programs' +72/+74 (src/marco_legs.c): tools/extract_legs_fixture.py.
+$(BUILD_DIR)/legs_fixture.h: tools/compile_legs_fixture.py data/legs_fixture.json
+	python3 tools/compile_legs_fixture.py
 # H muzzles (docs/ARMAS_VEHICULOS.md §10): tools/extract_hmuzzle_fixture.py.
 $(BUILD_DIR)/hmuzzle_fixture.h: tools/compile_hmuzzle_fixture.py data/hmuzzle_fixture.json
 	python3 tools/compile_hmuzzle_fixture.py
@@ -397,7 +400,7 @@ $(BUILD_DIR)/marco_stance_fixture.h: tools/compile_marco_stance.py tools/compile
 $(BUILD_DIR)/marco_idle_fixture.h: tools/compile_marco_idle.py data/marco_idle_fixture.json
 	python3 tools/compile_marco_idle.py
 
-check-core: $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
+check-core: $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -460,6 +463,8 @@ check-core: $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR
 	$(BUILD_DIR)/host/hgun
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_death.c src/marco_death.c src/neo_animation.c -o $(BUILD_DIR)/host/death
 	$(BUILD_DIR)/host/death
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_legs.c src/marco_legs.c src/neo_animation.c -o $(BUILD_DIR)/host/legs
+	$(BUILD_DIR)/host/legs
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-stance
 	$(BUILD_DIR)/host/marco-stance
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_idle.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-idle
@@ -683,7 +688,7 @@ filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64
 	@echo "Recover full title motion with tools/pack_title_animation.py; see docs/INTRO_AUDIO.md"
 	@exit 1
 # Campaign Marco with the private program table and pose catalog.
-check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h
+check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/legs_fixture.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_marco_visual.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/marco_visual
 	$(BUILD_DIR)/host/marco_visual

@@ -1,10 +1,12 @@
 #include <assert.h>
 #include <stdio.h>
+#include <string.h>
 /* Campaign Marco (docs/MARCO_CAMPAIGN.md): private data, make check-marco-campaign. */
 #include <stdint.h>
 #include "marco_visual.h"
 #include "marco_hgun.h"
 #include "marco_death.h"
+#include "legs_fixture.h"
 static bool reserve(void *c){(void)c;return true;}
 #include "marco_pose_meta.h"
 static int find(uint32_t t){for(unsigned i=0;i<MARCO_POSES;i++)if(marco_poses[i].source_tag==t)return 1;return 0;}
@@ -71,4 +73,26 @@ int main(void){
   printf("death/entrance poses=%u missing=%u\n",dposes,dmissing);
   assert(dposes>=40 && !dmissing);
   puts("PASS: death programs 0BF298/0BF318/0BF358 and the entrance 0BF498: every pose in the audited catalog");
+  /* The run cycle frame by frame (data/legs_fixture.json, marco-cat1): the
+   * body's pose of every update of walk_right and run_cycle_right from the
+   * first step of 24DD18 (speed 0x1C1). The run-start pose 188930 lasts
+   * less than an update in the arcade (never drawn): the step shows the next. */
+  unsigned rok=0,rbad=0;
+  for(unsigned i=0;i<LEGS_CASES;i++){
+    const legs_case_t*c=&legs_cases[i];
+    if(strcmp(c->name,"walk_right")&&strcmp(c->name,"run_cycle_right"))continue;
+    marco_visual_reset(&v);
+    marco_visual_input_t in={.grounded=true,.facing=1,.x=120,.y=350,.hgun_program=-1};
+    marco_visual_step(&v,&in);
+    in.moving=1;
+    for(unsigned k=0;k<c->count;k++){
+      const legs_step_t*st=&legs_steps[c->first+k];
+      marco_visual_step(&v,&in);
+      if(v.body_count&&v.body_draws[0].descriptor==st->descriptor)rok++;
+      else{rbad++;if(rbad<10)printf("%s step %u: body %06x, capture %06x\n",c->name,k,v.body_count?v.body_draws[0].descriptor:0,st->descriptor);}
+    }
+  }
+  printf("run cycle: %u updates equal, %u different\n",rok,rbad);
+  assert(rok>=60&&!rbad);
+  puts("PASS: run cycle 24DD18 at 0x1C1, pose by pose against marco-cat1");
 }

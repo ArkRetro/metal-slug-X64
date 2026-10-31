@@ -12,7 +12,7 @@ from export_marco import palette_rgb
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--extra-audit',type=Path,action='append',default=[]);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--extra-audit',type=Path,action='append',default=[]);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);p.add_argument('--extra-profile-min-uses',type=int,default=0,help='palette profiles of the extra audits seen in fewer frames (fades, flashes) are left out');p.add_argument('--name-palette',action='append',default=[],help='NAME=W1,W2,..: #define MARCO_PALETTE_NAME for the profile whose colours 1.. start with these words');a=p.parse_args()
  audit_path=a.audit or a.capture/'audit.json';audit=json.loads(audit_path.read_text());assert audit['status']=='PASS'
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  assert all(sha(a.capture/n)==h for n,h in audit['provenance'].items()),'Preserve audited source capture'
@@ -23,7 +23,7 @@ def main():
   assert all(extra['provenance'][n]==audit['provenance'][n] for n in ('program-fixed.bin','program-bank.bin'))
   extra_audits.append(dict(path=str(path),sha256=sha(path)))
   audit['descriptor_addresses']=sorted(set(audit['descriptor_addresses'])|set(extra['descriptor_addresses']))
-  audit.setdefault('palette_profiles',[]).extend(extra.get('palette_profiles',[]))
+  audit.setdefault('palette_profiles',[]).extend(x for x in extra.get('palette_profiles',[]) if x['frame_uses']>=a.extra_profile_min_uses and any(x['words'][1:]))
  data=program(a.rom);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
  pal=struct.unpack('>4096H',(a.capture/'palette2104.bin').read_bytes())[0x630:0x640]
  def convert_palette(words):return [0]+[((r>>3)<<11)|((g>>3)<<6)|((b>>3)<<1)|1 for r,g,b in (palette_rgb(v) for v in words[1:])]
@@ -81,7 +81,12 @@ def main():
  lines += ['{'+','.join(str(part[k]) for k in ('x','y','width','height','indices_fnv'))+'},' for part in parts]
  lines += ['};','static const struct {uint32_t source_tag;uint16_t first,count;int16_t anchor_x,anchor_y;uint32_t crc[MARCO_PALETTES][2];} marco_poses[]={']
  for pose in poses:lines.append('{'+str(pose['tag'])+'u,'+str(pose['first'])+','+str(pose['count'])+','+str(pose['anchor'][0])+','+str(pose['anchor'][1])+',{'+','.join('{'+','.join(str(v)+'u' for v in pair)+'}' for pair in pose['crc'])+'}},')
- lines.append('};');(ROOT/'build/marco_pose_meta.h').write_text('\n'.join(lines)+'\n')
+ lines.append('};')
+ for spec in a.name_palette:
+  name,_,words=spec.partition('=');prefix=[int(w,16) for w in words.split(',')]
+  found=[i for i,pal in enumerate(palettes) if convert_palette([0]+prefix+[0]*(15-len(prefix)))[1:1+len(prefix)]==pal[1:1+len(prefix)]]
+  assert len(found)==1,(name,found);lines.append(f'#define MARCO_PALETTE_{name} {found[0]}u')
+ (ROOT/'build/marco_pose_meta.h').write_text('\n'.join(lines)+'\n')
  report=dict(source='Verified original descriptors, C-ROM and observed Marco palette',poses=poses,parts=parts,palette_rgba5551=palettes,audit_sha256=sha(audit_path),additional_audits=extra_audits,rom_sha256=sha(a.rom),limits='Observed descriptors only, not complete Marco coverage. Native control/state selection is separate.')
  (ROOT/'build/marco_pose_assets.json').write_text(json.dumps(report,indent=2)+'\n');(ROOT/'build/marco-poses.stamp').write_text(str(len(poses))+' anchored poses; '+str(len(parts))+' CI4 chunks; <=2048 texture bytes per upload\n')
  print('Built',len(poses),'anchored poses,',len(palettes),'observed palette profiles,',len(parts),'CI4 parts,',sum(p.stat().st_size for p in out.glob('*.sprite')),'ROM bytes')

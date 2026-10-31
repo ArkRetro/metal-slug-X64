@@ -6,6 +6,16 @@ static sprite_t *parts[MARCO_PARTS];
 static bool loaded;
 static unsigned max_upload;
 unsigned marco_renderer_count(void) {return MARCO_POSES;}
+/* The palette profile of the burnt death (0BF358, kinds 7/0x10): the one
+ * the catalog build names BURNT (build_marco_poses.py --name-palette), else
+ * the first. */
+unsigned marco_renderer_burnt_palette(void) {
+#ifdef MARCO_PALETTE_BURNT
+    return MARCO_PALETTE_BURNT;
+#else
+    return 0;
+#endif
+}
 unsigned marco_renderer_palette_count(void) {return MARCO_PALETTES;}
 unsigned marco_renderer_max_upload(void) {return max_upload;}
 uint32_t marco_renderer_source_tag(unsigned pose) {return pose<MARCO_POSES?marco_poses[pose].source_tag:0;}

@@ -26,6 +26,7 @@ static bool has_entry;
 static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
+enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
 static bool previous_a,previous_b,pending_a,pending_b,previous_start;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
@@ -214,6 +215,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     game.start_edge|=input.btn.start && !previous_start;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+    /* At most two steps per frame: the world updates on every second step
+     * (gameplay.c), so a frame never runs two world updates (10-13 ms each
+     * around camera 2336). The rest of the catch-up stays as debt for the
+     * next frames (scene_clock_defer): no simulation step is lost. */
+    if (steps>MSX_FRAME_STEPS) {scene_clock_defer(&simulation_clock,steps-MSX_FRAME_STEPS,TICKS_PER_SECOND);steps=MSX_FRAME_STEPS;}
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || stick_v>0;

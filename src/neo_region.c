@@ -3,15 +3,44 @@
 #include "neo_boss.h"
 /* Dispatch of the generic actors by routine label (see neo_region.h) and the
  * ROM data tables they read (data/region_rom.json). */
+/* The blobs sorted by address, with the running maximum of their ends: a
+ * lookup is a binary search plus a short walk back over the blobs that can
+ * still contain the address (the linear scan over every blob was the
+ * hottest function of the world update, docs/RENDIMIENTO.md). Same answer as
+ * the scan: the most bytes left after the address, the first blob on ties. */
+enum { REGION_BLOBS=sizeof(region_blobs)/sizeof(region_blobs[0]) };
+static uint8_t blob_order[REGION_BLOBS];
+static uint32_t blob_start[REGION_BLOBS],blob_max_end[REGION_BLOBS];
+static bool blob_sorted;
+static void sort_blobs(void) {
+    _Static_assert(REGION_BLOBS<=256,"blob index is a byte");
+    for (unsigned i=0;i<REGION_BLOBS;i++) {
+        unsigned j=i;
+        while (j && region_blobs[blob_order[j-1]].address>region_blobs[i].address) {blob_order[j]=blob_order[j-1];j--;}
+        blob_order[j]=(uint8_t)i;
+    }
+    uint32_t end=0;
+    for (unsigned k=0;k<REGION_BLOBS;k++) {
+        const region_blob_t *b=&region_blobs[blob_order[k]];
+        blob_start[k]=b->address;
+        if (b->address+b->length>end) end=b->address+b->length;
+        blob_max_end[k]=end;
+    }
+    blob_sorted=true;
+}
 const uint8_t *ga_rom(uint32_t address) {
     /* Blobs may overlap (the truck solid box 029BC2 runs into the rectangle
      * 029BCA): take the one with the most bytes left after the address so a
      * reader never runs off the end of a shorter blob. */
-    const uint8_t *best=NULL;uint32_t left=0;
-    for (unsigned i=0;i<sizeof(region_blobs)/sizeof(region_blobs[0]);i++) {
-        const region_blob_t *b=&region_blobs[i];
-        if (address>=b->address && address<b->address+b->length && b->address+b->length-address>left) {
-            left=b->address+b->length-address;best=b->data+(address-b->address);
+    if (!blob_sorted) sort_blobs();
+    unsigned lo=0,hi=REGION_BLOBS;                  /* first start > address */
+    while (lo<hi) {unsigned m=(lo+hi)/2;if (blob_start[m]<=address) lo=m+1; else hi=m;}
+    const uint8_t *best=NULL;uint32_t left=0;unsigned best_index=REGION_BLOBS;
+    for (unsigned k=lo;k-- && blob_max_end[k]>address;) {
+        unsigned i=blob_order[k];const region_blob_t *b=&region_blobs[i];
+        if (address<b->address+b->length) {
+            uint32_t l=b->address+b->length-address;
+            if (l>left || (l==left && i<best_index)) {left=l;best_index=i;best=b->data+(address-b->address);}
         }
     }
     if (best) return best;

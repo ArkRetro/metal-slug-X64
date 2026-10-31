@@ -156,6 +156,13 @@ static void ram_to_env(marco_weapons_t *weapons) {
         venv.input[p][0]=w16(0x10e9ecu+6u*p);venv.input[p][1]=w16(0x10e9eeu+6u*p);venv.repeat[p]=wram[0xf084+p];
     }
     venv.halted=wram[0xc301];venv.system=wram[0xc300];venv.dip10f000=wram[0xf000];venv.dip10f001=wram[0xf001];venv.solids=0;venv.slots=&vslots;
+    /* The solid-body table 106756 (zero unless the fixture records it with
+     * the bodies' nodes: --ram 106756-1067d6 and the node ranges). */
+    for (unsigned i=0;i<16;i++) {
+        uint32_t n=w32(0x106756u+8u*i);
+        venv.solid_node[i]=n?&wram[n&0xffffu]:NULL;venv.solid_desc[i]=w32(0x10675au+8u*i);
+        if (n) venv.solids++;
+    }
     memcpy(weapons->b,&wram[0xc718],MARCO_WEAPON_BLOCK);
 }
 static void env_to_ram(const marco_weapons_t *weapons) {
@@ -194,6 +201,11 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     neo_gactor_t *s=&actors[NN];memset(s,0,sizeof(*s));s->active=true;s->index=(int16_t)NN;ga_sl(s,0,routine);
     if (creator) ga_sl(s,0x0c,NEO_GA_TAG((unsigned)c));
     return s;
+}
+static neo_gactor_t *actor_of(void *ctx,uint32_t t) {
+    (void)ctx;
+    if ((t&0xff000000u)==NEO_GA_TAG_BASE && (t&0xffffu)<NN && actors[t&0xffffu].active) return &actors[t&0xffffu];
+    return NULL;
 }
 static neo_gactor_t *creator_of(void *ctx,neo_gactor_t *a) {
     (void)ctx;uint32_t t=ga_l(a,0x0c);
@@ -292,7 +304,7 @@ int main(void) {
 #ifdef FAMILY_PREVIOUS
     e.previous=previous;
 #endif
-    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
@@ -416,6 +428,14 @@ int main(void) {
 #ifdef FAMILY_RAM
         env_to_ram(&weapons);
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) for (uint32_t ad=ram_ranges[g][0];ad<ram_ranges[g][1];ad++) {
+            /* The player nodes' list links +04..+0B change when a family
+             * node next to them is inserted or deleted (0040BC/004188, the
+             * node pool is not modelled). */
+            if ((ad>=0x1014c8u && ad<0x1014d0u) || (ad>=0x101578u && ad<0x101580u)) continue;
+            /* A recorded RAM range over a node the family holds now (a
+             * solid body's node reused by a family node): the node test
+             * compares it. */
+            {bool own=false;for (unsigned k=0;k<NN && !own;k++) own=actors[k].active && node_address[k] && ad>=node_address[k] && ad<node_address[k]+0xc0u;if (own) continue;}
             if (wram[ad&0xffffu]!=wexpect[ad&0xffffu]) {fprintf(stderr,"frame %u node %d %05x: RAM %06x = %02x, original %02x\n",u->frame,u->node,u->routine,(unsigned)ad,wram[ad&0xffffu],wexpect[ad&0xffffu]);return 1;}
             ram_bytes++;
         }
@@ -473,7 +493,12 @@ int main(void) {
                  want=(uint8_t)(v>>(24-8*(o-nf[k])));
              }}
 #endif
-            if (a->m[o]!=want) {fprintf(stderr,"frame %u node %d routine %05x +%02X=%02x expected %02x\n",u->frame,u->node,u->routine,o,a->m[o],want);return 1;}
+            if (a->m[o]!=want) {
+                fprintf(stderr,"frame %u node %d routine %05x +%02X=%02x expected %02x\n",u->frame,u->node,u->routine,o,a->m[o],want);
+                fprintf(stderr,"  got     ");for (unsigned q=0x10;q<0xb0;q++) fprintf(stderr,"%02x%s",a->m[q],(q&15)==15?"\n          ":"");
+                fprintf(stderr,"\n  wanted  ");for (unsigned q=0x10;q<0xb0;q++) fprintf(stderr,"%02x%s",u->post[q],(q&15)==15?"\n          ":"");
+                fprintf(stderr,"\n");return 1;
+            }
             compared++;
         }
     }

@@ -317,10 +317,13 @@ static void camel_run(int mode) {
     }
     printf("camel run %d: mounts=%u dismounts=%u mounted-player stops=%u drawn on foot while bound=%u mount=%u camera=%d unsupported=%u (%05lx) missing draws=%u (%06x)\n",
         mode,g.mounts,g.dismounts,g.mount_stops,doubled,g.mount,g.camera,g.world.unsupported,(unsigned long)g.world.unsupported_routine,missing_draws,missing_first);fflush(stdout);
-    /* The only stop: the Camel at 004ED2 when a solid body is registered
-     * (the rocket launcher 05ED84 at camera 2688; untranslated, no capture). */
-    assert(g.mounts>=1 && g.dismounts>=1 && !g.mount_stops && !doubled && g.mount==MSX_MOUNT_NONE && !missing_draws);
-    assert(!g.world.unsupported || g.world.unsupported_routine==0x4ed2u);
+    /* No stop: the Camel is pushed out of the rocket launcher's solid body
+     * (05ED84 at camera 2688, 004ED2 native). Mode 0 never leaves on its own
+     * (the 004ED2 stop used to end its ride: MiSTer report, ROM 10); modes
+     * 1 and 2 end every ride on foot. */
+    assert(g.mounts>=1 && !g.mount_stops && !doubled && !missing_draws);
+    if (mode) assert(g.dismounts>=1 && g.mount==MSX_MOUNT_NONE);
+    assert(!g.world.unsupported);
 }
 int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}

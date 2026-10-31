@@ -82,10 +82,11 @@ static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
  * counted in external_spawns and never created). Items 08C374/08C37C are
  * native only past the region (ga_insert). */
 /* Spawn-table constructors the world stops explicitly (counted in
- * vehicle_stops, logged): the SV-001 (the Camel Slug 03458E is native). */
+ * vehicle_stops, logged): none left (the Camel Slug 03458E and the SV-001
+ * 092A32 are native). */
 bool neo_world_spawn_stop(uint32_t constructor) {
-    uint32_t r=constructor&0xffffffu;
-    return r==0x92a32u;
+    (void)constructor;
+    return false;
 }
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
@@ -120,10 +121,6 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * to its start value 003586; the actor then leaves (004188 after the
          * cartridge check). The player's HUD applies it (neo_hud.c). */
         w->timer_resets++;return;
-    }
-    if (routine==0x92a32u) {
-        /* SV-001 092A32 (uncounted spawn): explicit stop. */
-        w->vehicle_stops++;w->vehicle_stop_constructor=routine;return;
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
@@ -307,6 +304,11 @@ static neo_gactor_t *g_previous(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;neo_world_t *w=t->w;int at=order_of_gactor(w,a);
     if (at<=0 || w->order[at-1].kind!=NEO_WORLD_GACTOR) return NULL;
     return &w->gactors[w->order[at-1].index];
+}
+static neo_gactor_t *g_actor(void *ctx,uint32_t tag) {
+    tick_t *t=ctx;
+    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[tag&0xffffu].active) return &t->w->gactors[tag&0xffffu];
+    return NULL;
 }
 static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
@@ -1082,7 +1084,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->previous=g_previous;g->stamp=g_stamp;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
@@ -1097,7 +1099,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         v->slots=&w->vslots;v->player[0]=w->player_node[0];v->player[1]=w->player_node[1];
         v->exists[0]=t.player_valid;v->exists[1]=false;
         v->input[0][0]=w->pad[0];v->input[0][1]=w->pad[1];v->dip10f000=w->dip10f000;
-        for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) if (w->solids[i].actor>=0) v->solids++;
+        for (unsigned i=0;i<NEO_WORLD_SOLIDS;i++) if (w->solids[i].actor>=0) {
+            v->solids++;v->solid_node[i]=w->gactors[w->solids[i].actor].m;v->solid_desc[i]=w->solids[i].desc;
+        }
         g->vehicle=v;
     }
     w->kernel.shake_y=w->camera_native?(uint32_t)w->camera.shake_applied:0;   /* RAM 10E9CC (0138A0) */

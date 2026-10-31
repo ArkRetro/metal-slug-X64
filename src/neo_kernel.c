@@ -728,3 +728,43 @@ bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls
     }
     return false;
 }
+/* 013C1A (01381C, 01382A): the surface under the point (x,y) of `parent`
+ * among the collision objects: per object the cell at the point (012938)
+ * and, without a surface there, the one 8 px above; the highest surface
+ * height wins (D6, 10C05C), its D7 word (10C064) is returned through 012E64
+ * (D5 = the word before the table, the caller's index). */
+bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uint8_t b4008,uint8_t b400a,uint8_t b400d,
+    uint16_t *d5,uint32_t *d6,uint32_t *d7,uint8_t *object) {
+    kr_t k={0};k.s=scene;k.b4008=b4008;k.b400a=b400a;k.b400d=b400d;
+    if (!known(parent)) return false;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
+    k.d7=0;uint8_t o4060=NEO_KOBJ_NONE;k.l405c=0x80000000u;k.l4064=0x4000;
+    k.iterator=0;k14160(&k,k.d0,k.d1,0,0xfff80000u);k1382a(&k);
+    unsigned guard=0;
+    while (k.a1!=NEO_KOBJ_NONE) {
+        if (++guard>32u) return false;
+        const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);
+        if (a) {k.d0+=(uint32_t)a->x;k.d1+=(uint32_t)a->y;}
+        if (b) {k.d0-=(uint32_t)b->x;k.d1-=(uint32_t)b->y;}
+        k.a0=k.a1;
+        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);
+        scene->w4018=(uint16_t)k.d7;
+        bool record=false;
+        if (k.d7&0xffffu) {k129ec(&k);k12cba(&k);if (k.d6>0x80000000u) record=true;}
+        if (!record) {
+            k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k.d1=SETW(k.d1,(k.d1-8u)&0xffffu);k12938(&k);
+            k.d1=SETW(k.d1,(k.d1+8u)&0xffffu);k.d1=SWAP(k.d1);k.d0=SWAP(k.d0);
+            if ((k.d7&0xffffu) && !(scene->w4018==0x3cu && (k.d7&0xffffu)==0x3cu)) {
+                k129ec(&k);k12cba(&k);
+                if (k.d6!=NONE) {k.d6-=0x80000u;record=true;}
+            }
+        }
+        if (k.unsupported) return false;
+        if (record && S(k.d6)>S(k.l405c)) {k.l405c=k.d6;k.l4064=k.d7;o4060=k.a0;}
+        k1382a(&k);
+    }
+    k.d6=k.l405c;k.d7=k.l4064;k.d5=SETW(k.d5,k.d7);k12e64(&k);
+    if (k.unsupported) return false;
+    *d5=(uint16_t)k.d5;*d6=k.d6;*d7=k.d7;*object=o4060;
+    return true;
+}

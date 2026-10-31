@@ -123,9 +123,8 @@ typedef struct {
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
-    /* The player's vehicles of the script: the SV-001 092A32 is an explicit
-     * stop, not created (the Camel Slug 03458E is native; the slot services neo_vslot.c and the
-     * turret control neo_vulcan.c are native; the vehicles are not). */
+    /* Spawn-table vehicles stopped explicitly (none left: the Camel Slug
+     * 03458E and the SV-001 092A32 are native, neo_slug.c / neo_tank.c). */
     unsigned vehicle_stops;uint32_t vehicle_stop_constructor;
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
     uint8_t hit_kind;bool hit_right; /* the update's player hit: +5A kind, +5B bit 7 (attacker right) */

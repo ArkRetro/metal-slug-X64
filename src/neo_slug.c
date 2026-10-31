@@ -74,24 +74,35 @@ static void config(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t rec=p<0?NEO_VSLOT_RECORD:e->vehicle->slots->record[p];
     for (unsigned i=0;i<4;i++) e->kernel->config[i]=rw(rec+2u*i);
 }
-/* 004ED2 (after 0128E8): no push with the player lock (0C8CFC) or an empty
- * solid-body table; otherwise an explicit stop. */
-static bool k4ed2(neo_gactor_t *a,neo_genv_t *e) {
-    if (e->flags && e->flags->player_lock) return true;
-    ga_project(a,e);                                                    /* 004EE0 */
-    if (e->vehicle->solids) {ga_fail(e,0x4ed2);return false;}
+/* 004ED2 (after 0128E8, 10C004 = 0, 10C009 = b4009): the push out of the
+ * solid bodies (ga_push_solids, measured with the SV-001 against the rocket
+ * launcher's body, ARMAS_VEHICULOS.md paso 10). In the air (0143EE) a
+ * kind-1 body under the Camel (D7 < 0) with +5F bit 7 clear throws it up:
+ * +34 = 0x60000, +15 bits 4 and 3 cleared and, with bit 3 set before,
+ * +30 = (-+30 >> 1) + 0x40000 against the motion. */
+static bool k4ed2(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool air) {
+    bool top=false;
+    if (!ga_push_solids(a,e,b4009,&top)) return false;
+    if (air && top && !(B(0x5f)&0x80u)) {                               /* 014408 */
+        SL(0x34,0x60000);
+        bool b3=(B(0x15)&8u)!=0;SB(0x15,B(0x15)&~0x18u);
+        if (b3) {
+            int32_t d1=-(int32_t)L(0x30),d0=d1<0?-0x40000:0x40000;
+            SL(0x30,(uint32_t)(d0+(d1>>1)));
+        }
+    }
     return true;
 }
 /* 014594 / 0143EE / 0143AC / 014574, then 03546A's +8F (kind 5). */
 static uint16_t kind_of(uint32_t k) {return (uint16_t)(k>>16);}
 static uint32_t ground_ride(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0,v30=L(0x30);config(a,e);SL(0x30,L(0x62));
-    if (!k4ed2(a,e)) return 0;
+    if (!k4ed2(a,e,0xff,false)) return 0;
     SL(0x30,v30);ga_ground_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
 }
 static uint32_t air_ride(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0;config(a,e);
-    if (!k4ed2(a,e)) return 0;
+    if (!k4ed2(a,e,0,true)) return 0;
     ga_air_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
 }
 static uint32_t air_free(neo_gactor_t *a,neo_genv_t *e) {uint32_t k=0;ga_air_flags(a,e,0xff,0xff,&k);return k;}
@@ -534,7 +545,13 @@ static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
                 ga_sb(b,0x5e,out.bullet5e);ga_sb(b,0x6e,out.bullet6e);
                 uint32_t vx,vy;ga_polar(0x1c0000u,out.heading,&vx,&vy);
                 uint16_t d6=ga_sweep_place_d0(a,e,b,(int16_t)(vx>>16),(int16_t)(vy>>16),0xff);
-                if (d6 && !W(0x84)) {SW(0x84,0xff);ga_fail(e,0x3ba76);return GA_UNSUPPORTED;}   /* spark: explicit stop */
+                if (d6 && !W(0x84)) {
+                    /* 03B7CE: the spark 03BA76 (0040BC after the turret) at
+                     * the bullet's integer position on its object (01AB9C). */
+                    SW(0x84,0xff);
+                    neo_gactor_t *k=e->spawn?e->spawn(e->ctx,a,0x3ba76,false):NULL;
+                    if (k) ga_place(k,e,(int16_t)(ga_l(b,0x28)>>16),(int16_t)(ga_l(b,0x2c)>>16),ga_l(b,0x38));
+                }
             }
         }
         /* 03B80C: on the anchor, flash from the vehicle, program. */
@@ -553,6 +570,16 @@ static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* 03BA76 / 03BA9A: the vulcan's spark on a wall (palette 0x3D6, program
+ * 23D4E0 until its end; then the cartridge check before 004188, not
+ * reproduced: the deletion). */
+static ga_result_t spark_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    if (L(0)==0x3ba76) {ga_palette(a,0x3d6);START(0x23d4e0);SL(0,0x3ba9a);}
+    ga_project(a,e);
+    if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:(e->unsupported?GA_UNSUPPORTED:GA_MORE);
 }
 /* The turret's end piece 03B936 / 03B97C (program 23D46C, palette
  * 03B4C8[+72]): thrown up (+34 = 0x38E38, +30 = 0x71C7, gravity 0x143A) for
@@ -585,7 +612,7 @@ bool neo_slug_routine(uint32_t r) {
     case 0x34786: case 0x3478c: case 0x3479c: case 0x34852: case 0x348d8: case 0x348f0: case 0x349be:
     case 0x349c6: case 0x349d8: case 0x34bf0: case 0x34d58:
     case 0x34f1a: case 0x34f96: case 0x34fd2: case 0x35016: case 0x3523c: case 0x3527e:
-    case 0x3b4e0: case 0x3b57c: case 0x3b936: case 0x3b97c: return true;
+    case 0x3b4e0: case 0x3b57c: case 0x3b936: case 0x3b97c: case 0x3ba76: case 0x3ba9a: return true;
     }
     return false;
 }
@@ -593,6 +620,7 @@ ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (r==0x3b4e0 || r==0x3b57c) return turret_tick(a,e);
     if (r==0x3b936 || r==0x3b97c) return piece_tick(a,e);
+    if (r==0x3ba76 || r==0x3ba9a) return spark_tick(a,e);
     if (r==0x34f1a || r==0x34f96 || r==0x34fd2 || r==0x35016 || r==0x3523c || r==0x3527e) return rider_tick(a,e);
     return camel_tick(a,e);
 }

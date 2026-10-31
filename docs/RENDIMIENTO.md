@@ -340,3 +340,73 @@ fotogramas en vuelo, `rspq_wait`). Y la media del combate con el jefe ya es
 siguientes: empaquetar varias piezas nativas por página (el pack bajaría a
 ≈5 MiB descodificados y cabría casi entero), prefetch de los descriptores
 del jefe por fase, y un presupuesto de descodificación por fotograma.
+
+## Combate con el jefe, segunda ronda: presupuesto de descodificación y fondos grabados
+
+**Cambios** (`65c657d`, `e0dc093`, `ffbc8ed`):
+
+1. **Presupuesto de descodificación por fotograma con alternativa no
+   bloqueante** (`scene_assets.c`). Como mucho una descodificación de bloque
+   por fotograma entre el prefetch (`scene_service`; si ya se gastó, el
+   bloque leído por DMA espera en su búfer: `held=`) y las piezas de sprite
+   de los actores (`scene_page_try`, activo en `draw_native`): una pieza cuyo
+   bloque no está residente cuando ya se gastó el presupuesto se pide con
+   prioridad máxima y no se dibuja ese fotograma (`deferred=`), en lugar de
+   encadenar varias esperas DMA+descodificación. El fondo, Marco y el HUD
+   siguen siendo síncronos (`scene_page`).
+2. **Prefetch del jefe**: mientras dura el combate se piden con la prioridad
+   más baja todos los bloques de las poses del jefe
+   (`SCENE_BOSS_CHUNK_LIST`, 65 bloques, `pack_scene.py`); con 8 MiB caben
+   junto al mapa de la arena, así que un cambio de animación encuentra sus
+   piezas residentes. Con 4 MiB no se hace (no caben, MISION1_COMPLETA.md).
+   Es «por fase» en el sentido amplio: el conjunto de todas las fases.
+3. **Fondos estáticos grabados** (`scene_renderer.c`): el coste de dibujo
+   del combate era el fondo (`bg` ≈10 ms con la cámara quieta). Si las
+   entradas de las capas (desplazamientos, subidas, visibilidad, celdas de
+   sustitución, vistas de profundidad) se repiten, cada pasada (capas 0..2 y
+   3..4) y fase de animación (`video_tick & 7`) se graba una vez como bloque
+   rspq y se reproduce: los mismos comandos RDP sin reconstruirlos. El estado
+   TMEM/TLUT del renderer se reinicia antes de grabar y tras reproducir (cada
+   bloque sube lo que dibuja); los bloques de memoria que lee un bloque
+   quedan fijados por generación (4 grupos) y se liberan, con los bloques
+   rspq, cuando el RDP terminó el último fotograma que los usó. Desactivado
+   durante un fundido o el destello blanco. Con todas las fases grabadas se
+   omite además el recorrido de prefetch del fondo (`bgreq` ≈1,8 → 0,1 ms).
+   Línea `MSX RDP`: `bgblocks=reproducciones/grabaciones`.
+
+**No hecho**: empaquetar varias piezas nativas por página (cambio de formato
+del pack y del renderer: `scene_image_t` sin desplazamiento s/t); con los dos
+primeros cambios el pico ya no lo pide.
+
+**Medida** (ares 146, `mslugx-reference.z64`, recorrido completo con
+`test_mission_native_ares.py`; «antes» = `abe9403` sin presupuesto, mismo
+ares, misma sesión):
+
+| | Antes | `e0dc093` | `ffbc8ed` |
+| --- | ---: | ---: | ---: |
+| Peor fotograma (`cpu` máx., todo el recorrido) | 57.174 µs | 37.817 µs | 35.304 µs |
+| Peor fotograma en el combate | 40.632 µs | 33.894 µs | 27.054 µs |
+| `cpu` media del combate (media de ventanas) | 20.633 µs | 13.474 µs | 10.905 µs |
+| `cpu` media, peor ventana | 22.623 µs | 18.768 µs | 18.788 µs |
+| `bg` medio en el combate | 9.959 µs | 4.119 µs | 2.858 µs |
+| fotogramas con 2 pasos (media por ventana del combate, de 300) | 282 | 122 | 83 |
+| *underruns* de audio | 9 | 3 | 2 |
+| resultado | PASS | PASS | PASS |
+
+Los picos que quedaban en `e0dc093` (31–38 ms) eran una descodificación de
+prefetch en `bgreq` (≈8 ms) más la síncrona de una pieza (≈8–18 ms de
+`asset`) en el mismo fotograma, sobre la simulación del jefe (`sim` hasta
+10–13 ms en las ventanas de las explosiones): de ahí el presupuesto
+compartido de `ffbc8ed`. La simulación del jefe (`step` máx. ≈13 ms) es lo
+siguiente si se quiere bajar más.
+
+Con `ffbc8ed` el combate queda por debajo de 33 ms en todos sus fotogramas
+(27,1 ms el peor) y su media de ventanas en 10,9 ms (60 Hz salvo las
+ventanas de las explosiones). El peor fotograma del recorrido (35,3 ms) ya
+no es del jefe: es en el tramo con desplazamiento de la cámara 2336, una
+falta síncrona de un bloque del **fondo** (`asset` 17,9 ms; el fondo, Marco y
+el HUD no se aplazan) sumada a la simulación. `deferred=157` piezas
+aplazadas un fotograma y `held=238` descodificaciones de prefetch movidas al
+fotograma siguiente en todo el recorrido. Pantalla de MISSION 1 COMPLETE con
+las letras nativas: `mission-complete-letters.png` del recorrido (fuera de
+Git: deriva de la ROM).

@@ -12,7 +12,7 @@ privados y no están en git.
 | Título METAL SLUG X64 | cinemática de 601 fotogramas iguales a MAME | INTRO_AUDIO.md |
 | HOW TO PLAY | cinemática (fotogramas 770..3459 de la captura con moneda) | MISSION_ENTRY.md |
 | SOLDIER SELECT | cinemática que espera A/Start sobre Marco (solo Marco) | MISSION_ENTRY.md |
-| Entrada en paracaídas | cinemática + traspaso nativo; tela y marcador 1P nativos | MISSION_ENTRY.md, MISION1_COMPLETA.md |
+| Entrada en paracaídas | cinemática + traspaso nativo; tela y marcador 1P nativos; lógica del descenso (jugador y vela, corte) traducida y probada, aún sin conectar al arranque | MISSION_ENTRY.md, MISION1_COMPLETA.md |
 
 ## Misión 1
 

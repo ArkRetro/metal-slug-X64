@@ -139,3 +139,63 @@ python3 tools/test_entry_ares.py mission1-internal.z64 --output /ruta/nueva-prue
 
 Los archivos generados y referencias completas quedan fuera de Git. Este objetivo
 es de integración interna y no se publica hasta cumplir la entrega solicitada.
+
+## Descenso nativo (rama `work-chute`)
+
+Informe de MiSTer: en el arcade se controla a Marco mientras baja en
+paracaídas; disparar (A) o saltar (B) corta la cuerda, Marco cae solo y la
+tela se va. La lógica del descenso ya está traducida y comprobada bit a bit;
+su conexión al arranque sigue pendiente (paradas abajo).
+
+**Evidencia.** Tres capturas de familia de `capture_mission_rest.lua`
+(`MSX_REST_FAMILY_ROOTS=c15ba,c162a,c170c,c4a58,c5286`, volcados cada 2
+fotogramas desde 1830, nueva variable `MSX_REST_INPUTS` para pulsar durante
+el descenso, 1838..2038 en esa captura):
+
+| Captura | Entrada | Resultado |
+| --- | --- | --- |
+| `ch0` | ninguna | aterriza en 2039 (0C162A → 0C1FA6) |
+| `chA` | A en 1858 (alto), C en 1878, A en 1918 | dispara y lanza granada colgado (bombas 10 → 9); corta en 1921 (`+40` < 448) |
+| `chB` | B en 1898 | corta en 1901; cae con 0C170C y aterriza en 1935 |
+
+En la captura de entrada (`land1`) el jugador pasa a 0C162A en 3860; la
+paleta del escenario está completa desde 3860 (el oscurecimiento acaba en
+3858) y el fondo no se mueve durante el descenso (filas 150..223 iguales
+entre 3900 y 4100). El texto MISSION 1 START son actores de sprites (paletas
+`0x6D..0x6F` cambiantes hasta 3932), no capa FIX.
+
+**Traducido** (`src/marco_descent.c`, `src/neo_landing.c`):
+
+- 0C15C6 (inicio), 0C162A (velocidad vertical hacia −1,0 con el término de
+  `+40`, deriva aleatoria de 0029C6 con la palabra alta de D0 que deja
+  `ANDI.W`, corte con B siempre y con A bajo `+40` = 0x1C0, aterrizaje),
+  0C16D8 (corte: `+50`, `+90`, `+30`, `+34` = 2,0, `+61` = 2) y 0C170C
+  (gravedad hacia −22,0 >> 5). El barrido 0143EE, 0C109C, los programas
+  0BF818/0BF758 y el procesamiento común son del llamador.
+- Vela: constructor 0C4A58 (0C4904, 01AD6E, paleta 0x38D), descenso de
+  0C4AAE (`+1E` del jugador, `+28` = ∓4, 01AC38, 00427A), corte 0C4B20
+  (`+5F` bit 3, 0C498C, 01AD52 a la raíz de escena con el movimiento del
+  padre como velocidad, `+34` = 0) y 0C4B4A hasta el final del programa.
+  El bit 3 de `+5F` oculta las poses en fases de vídeo impares (00436E):
+  la vela cortada parpadea.
+
+**Pruebas** (`tools/test_marco_descent.c`, en `make check`; fixture
+`data/descent_fixture.json.gz` de `tools/extract_descent_fixture.py`):
+jugador 205 actualizaciones en bucle cerrado sobre sus campos propios, 3567
+bytes iguales, 2 cortes, 3 aterrizajes; vela 256 actualizaciones en bucle
+cerrado desde el constructor, 35926 bytes iguales, 3 borrados.
+Píxeles de la vela (exportación `export_rest_sprites.py` con raíces 0C4904 y
+0C498C contra la VRAM de las tres capturas): los fotogramas visibles de la
+vela cortada coinciden al 100 % (p. ej. 1098/1098, 1070/1070); los
+fotogramas en que no aparece son el parpadeo de 00436E.
+
+**Paradas explícitas.**
+
+- El arranque sigue entregando el control en 4060: `gameplay.c` aún no
+  ejecuta `marco_descent_*` ni crea la vela con `neo_landing_descent`, y
+  `main.c` no corta `entry.msxc` en 3859. El traspaso correcto sería en
+  3860 (primer 0C162A), con `entry.msxc` solo para 3830..3859.
+- Las letras MISSION 1 START (actores de sprites) no están portadas; con el
+  traspaso en 3860 habría que portarlas o superponerlas.
+- La pose colgada del cuerpo (programa 0BF818) no se dibuja: el port no la
+  tiene en su catálogo de Marco.

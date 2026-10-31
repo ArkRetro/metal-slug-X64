@@ -624,7 +624,7 @@ creaba los dos actores que el original tiene en ese momento:
 
 | ROM | Pieza |
 | --- | --- |
-| `0C4A58` (creado en `0C1604` por el jugador al saltar) | la vela: en el descenso sigue al jugador (`+28` = −4/+4 según su giro, `+38` = su bloque `+28`, paleta `0x38D`) y dibuja también al jugador; `0C4AAE` con el bit 6 de `+15` del jugador (en el suelo) pasa a `0C4B62` |
+| `0C4A58` (creado en `0C1604` por el jugador al saltar) | la vela (descenso y corte nativos desde `work-chute`, MISSION_ENTRY.md «Descenso nativo»): en el descenso sigue al jugador (`+28` = −4/+4 según su giro, `+38` = su bloque `+28`, paleta `0x38D`) y dibuja también al jugador; `0C4AAE` con el bit 6 de `+15` del jugador (en el suelo) pasa a `0C4B62` |
 | `0C4B62`, `0C4B78` | programa `0C49D4`; cada actualización `01ACA2` (giro del jugador), `+1E` = el del jugador − 1 (detrás de él), `01AC38`, `00427A`; se borra al terminar el programa (27 actualizaciones; la comprobación de cartucho `0C4B98` no se reproduce) |
 | `0C5286` (creado por `0C162A` al aterrizar) | marcador «1P» con la flecha: `+1E` = FFFE, paleta `0x2A3` y programa `0C519E` (jugador 2: `0x2A2`, `0C5212`); `0C52FA` sigue las palabras `+3C/+40` del jugador hasta el final de su programa (108 actualizaciones) |
 

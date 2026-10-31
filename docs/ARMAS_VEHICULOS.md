@@ -1145,11 +1145,10 @@ y el Marco del port, expulsado, se dibujaba a la vez: dos Marcos, uno
 quieto. Ahora una parada explícita de un actor genérico borra también sus
 descendientes (`0041AC`, como al borrar un nodo con hijos): en las tres
 carreras ningún jinete gráfico sobrevive a su Camel (antes, 5421
-actualizaciones) ni se dibuja a Marco a pie con la ranura atada. **Sigue
-pendiente** traducir `0x004ED2` para la Camel (código `004ED2..005058`:
-sobre la tabla `106756`, barrido `013968` desde `+44/+48` y `01AC4C`), con
-una captura de la Camel cabalgando hasta el lanzacohetes: hasta entonces la
-Camel termina en 2688 y Marco sigue a pie.
+actualizaciones) ni se dibuja a Marco a pie con la ranura atada.
+`0x004ED2` ya es nativo (`ga_push_solids`, medido con el SV-001 contra el
+mismo cuerpo, paso 10): la Camel pasa el lanzacohetes (sección «deja de
+disparar», abajo); falta una captura de la Camel ejerciéndolo.
 
 Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).
 

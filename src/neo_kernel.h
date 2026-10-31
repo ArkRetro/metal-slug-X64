@@ -31,6 +31,12 @@ typedef struct {
     /* RAM 10C068 is written only by the surface response 012EE2 and returned
      * in D4.w by every sweep, so it also persists between calls. */
     uint16_t w4068;
+    /* 0138A0 (sweeps with RAM 10C00D set by 0128E8: the players and the
+     * vehicles they ride): the screen box RAM 10C01C..10C023 copied from the
+     * rider's record (10C2E8: ROM 016DBE x 1C, y 0, w 108, h 1E0) and RAM
+     * 10C00C (FF in every vehicle trace: no vertical bound; 0 is an explicit
+     * stop). */
+    uint16_t config[4]; uint8_t b400c;
     neo_kdyn_t dyn[NEO_KDYN_COUNT];
     uint8_t bins_x[18],bins_y[16],solid; /* RAM 10C26E, 10C280, 10C290 */
     /* The actor running a query (A6): its own dynamic object (+6A; stored

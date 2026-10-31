@@ -792,3 +792,42 @@ crea, cuenta cada aparición del guion en `vehicle_stops` y el juego lo
 registra (`MSX vehicle stopped explicitly`); `tools/audit_script_events.py`
 los lista como paradas explícitas. Daño y destrucción del SV-001 siguen sin
 captura.
+
+### Paso 8: Camel Slug (`src/neo_slug.c`)
+
+Traducción manual de `0x034408..0x0354B8` (Camel, jinete gráfico
+`0x034F1A`, efecto `0x034FD2`, marcador `0x03523C`) y de la torreta
+`0x03B4E0/0x03B57C` completa salvo su fin y su chispa (control en
+`neo_vulcan.c`; colocación sobre el ancla `+78` de la Camel, destello
+`0x0044F6`, programa `0x23CE0C`), las balas `0x01BE24` (y `0x01B6A0` del
+SV-001) en `neo_bullet.c` y el polvo `0x059E30` en `neo_rocket.c`. La Camel
+lee la ranura y el mando del jinete por `neo_genv_t.vehicle`
+(`neo_vehicle_env_t`: ranuras, nodos de los jugadores, palabras de mando,
+`10F084`, `10C300/10C301`, `10F000/10F001`); las bombas del jinete por
+`0x0C0808` (bloque de armas). Pasos de física: `0x014594`/`0x0143EE`
+(`0x0128E8`: `10C00D` puesto y el recuadro de pantalla del registro del
+jinete, `0x0138A0`, ahora en `neo_kernel.c`; `0x004ED2` con la tabla de
+cuerpos sólidos vacía en todas las trazas) y `0x0143AC`/`0x014574`
+(`10C00B` y `10C00D`: sin recuadro). Paradas explícitas: agua (`0x034AC0`,
+tipo 5), fin `0x03B86E` y chispa `0x03BA76` de la torreta, el recuadro
+vertical de `0x0138A0` (`10C00C` = 0), un cuerpo sólido registrado
+(`0x004ED2`), los hijos `0x03533A..` no creados en las trazas. No se
+reproducen `0x009CCE` (rampa de paleta en `1068EA`, ningún byte de nodo) ni
+las comprobaciones de cartucho antes de `0x004188`.
+
+Prueba de familia `slug` (`make check`, `data/slug_fixture.json.gz` de
+`camelfam` con `extract_family_fixture.py --ram ...`, la nueva opción que
+registra las lecturas y escrituras de la RAM fuera de los nodos): 1304
+actualizaciones en bucle cerrado (9414..10094: espera, subida en 9530,
+paseo, salto, vulcan con 83 balas `0x01BE24` —su actualización
+constructora—, bombas y efectos, 15 polvos, el jinete muerto en 10091 y la
+vuelta a la espera), 178220 bytes de nodo y 636352 bytes de RAM fuera de los
+nodos (ranuras, palabras de mando, bloque de armas, nodos de los jugadores)
+iguales. El vuelo posterior de las balas (`0x01B882`, ya probado en
+`hbullet`) se deja fuera: en 9620 una bala choca en el original con una
+celda con la marca `0x10` que la rejilla del port no tiene en x≈2575 (dato
+de colisión de esa zona, no de la Camel).
+
+En el juego la Camel sigue sin crearse (parada explícita registrada): falta
+el jugador montado del port (`0x0C3078..0x0C3260`: seguir la ranura, la
+pose del jinete y las salidas) y sus gráficos en el paquete de escena.

@@ -80,8 +80,10 @@ static void self(neo_gactor_t *a,neo_genv_t *e) {
     terrain_tag=e->terrain_tag?e->terrain_tag:TERRAIN_TAG;
     uint8_t d=ga_b(a,0x6a);e->kernel->self_dyn=d<NEO_KDYN_COUNT?(uint8_t)(d+1):0;e->kernel->self_block=NEO_GA_TAG(a->index);
 }
+static uint8_t sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {
+    uint8_t b400b=sweep_400b,b400d=sweep_400d;sweep_400b=sweep_400d=0;
     uint8_t parent=kobj(r->parent_tag);
     int32_t x=r->x,y=r->y,dx=r->dx,dy=r->dy;
     if (parent==0xff) {
@@ -96,7 +98,7 @@ static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo
         parent=NEO_KOBJ_NONE;
     }
     self(a,e);
-    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,0,0,0};
+    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,0,b400b,b400d};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return false;}
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,kobj(r->parent_tag)==k.parent?r->parent_tag:ktag(k.parent),k.kind,k.flags};
@@ -117,6 +119,12 @@ uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     ga_set_contact(a,&c);if (kind) *kind=k.kind;return k.flags;
 }
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e) {return ga_air_kind(a,e,NULL);}
+uint16_t ga_air_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind) {
+    sweep_400b=b400b;sweep_400d=b400d;uint16_t f=ga_air_kind(a,e,kind);sweep_400b=sweep_400d=0;return f;
+}
+uint16_t ga_ground_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind) {
+    sweep_400b=b400b;sweep_400d=b400d;uint16_t f=ga_ground(a,e,kind);sweep_400b=sweep_400d=0;return f;
+}
 uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4) {
     neo_contact_actor_t c=ga_contact(a);
     neo_contact_request_t r=neo_contact_prepare_air(&c);
@@ -424,11 +432,25 @@ int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id) {
  * from the actor's block by (dx,dy) pixels; the end point and its object
  * become `child`'s +28/+2C/+38 (not projected). */
 void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy) {
+    (void)ga_sweep_place_d0(a,e,child,dx,dy,0);
+}
+uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0) {
     uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
-    if (parent==0xff) {ga_fail(e,0x14a02);return;}
+    int32_t x=(int32_t)ga_l(a,0x28),y=(int32_t)ga_l(a,0x2c),ddx=(int32_t)((uint32_t)(int32_t)dx<<16),ddy=(int32_t)((uint32_t)(int32_t)dy<<16);
+    if (parent==0xff) {
+        /* An actor's position block (the turret on its vehicle): 01AC4C
+         * converts to absolute coordinates, as in sweep(). */
+        neo_contact_parent_t p;
+        if ((tag&0xff000000u)!=NEO_GA_TAG_BASE || !ga_parent(e,tag,&p)) {ga_fail(e,0x14a02);return 0;}
+        int32_t ex=(int32_t)((uint32_t)x+(uint32_t)ddx+(uint32_t)p.x),ey=(int32_t)((uint32_t)y+(uint32_t)ddy+(uint32_t)p.y);
+        x=(int32_t)((uint32_t)x+(uint32_t)p.previous_x);y=(int32_t)((uint32_t)y+(uint32_t)p.previous_y);
+        ddx=(int32_t)((uint32_t)ex-(uint32_t)x);ddy=(int32_t)((uint32_t)ey-(uint32_t)y);
+        parent=NEO_KOBJ_NONE;
+    }
     self(a,e);
-    neo_kreq_t q={(int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),(int32_t)((uint32_t)(int32_t)dx<<16),(int32_t)((uint32_t)(int32_t)dy<<16),parent,0,0xff,0,0,0,0};
+    neo_kreq_t q={x,y,ddx,ddy,parent,0,(uint8_t)(d0?0:0xff),0,0,0,0};
     neo_kres_t k;
-    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return;}
-    ga_sl(child,0x28,(uint32_t)k.x);ga_sl(child,0x2c,(uint32_t)k.y);ga_sl(child,0x38,parent==k.parent?tag:ktag(k.parent));
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return 0;}
+    ga_sl(child,0x28,(uint32_t)k.x);ga_sl(child,0x2c,(uint32_t)k.y);ga_sl(child,0x38,kobj(tag)==k.parent?tag:ktag(k.parent));
+    return (uint16_t)(k.flags&0x15u);                               /* 014A48: D6 & 15 */
 }

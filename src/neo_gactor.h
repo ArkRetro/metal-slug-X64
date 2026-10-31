@@ -9,6 +9,7 @@
 #include "neo_kernel.h"
 #include "neo_rng.h"
 #include "marco_ammo.h"
+#include "neo_vslot.h"
 /* Generic native actor for the region entities other than the rebel soldier
  * (vehicle, flying bomber, prisoners, scene objects, effects). Each family is
  * a manual C translation of its original routines (ROM labels are kept as
@@ -84,6 +85,21 @@ typedef struct neo_pickup_env {
     unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
 } neo_pickup_env_t;
+/* What the player's vehicles (Camel Slug 03458E, SV-001 092A32, their
+ * turret 03B4E0) read and write outside their nodes; NULL in neo_genv_t: a
+ * vehicle service is an explicit stop. RAM provenance per field. */
+typedef struct neo_vehicle_env {
+    neo_vslots_t *slots;             /* RAM 10C608/10C62C, 10C2E8/10C2EC (neo_vslot.c) */
+    uint8_t *player[2];              /* player nodes 1014C4/101574 (+00..+BF original layout) */
+    bool exists[2];                  /* 0040AC of the player nodes */
+    uint16_t input[2][2];            /* 0CA2CE: 10E9EC/10E9F2 +0 new, +2 held */
+    uint8_t repeat[2];               /* 0CA614: RAM 10F084+p */
+    uint8_t halted,system;           /* RAM 10C301 (018F24), 10C300 (019424) */
+    uint8_t dip10f000,dip10f001;     /* RAM 10F000 (bit 7: 03519E), 10F001 (bit 2: free bombs) */
+    uint8_t solids;                  /* bodies registered in the table 106756 (004ED2) */
+    unsigned grenades;               /* grenades 0C0808 made for a rider (counted; the player's code) */
+    uint32_t grenade_last;           /* routine of the last one */
+} neo_vehicle_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -151,6 +167,10 @@ struct neo_genv {
      * true once op 3 ran. */
     bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
     neo_pickup_env_t *pickup;
+    neo_vehicle_env_t *vehicle;
+    /* Low word of the node's address as the slot services keep it (slot
+     * +00, 0AA760; a turret's +0E): a nonzero id per node (NULL: 8000|index). */
+    uint16_t (*node_word)(void *ctx,const neo_gactor_t *a);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
@@ -171,6 +191,10 @@ uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
 uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */
 uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D4.w at its return (the sweep's 13968) */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
+/* The same sweeps with RAM 10C00B/10C00D (0143AC/014574: both FF; 0128E8 of
+ * 0143EE/014594: 10C00D FF, the screen bound 0138A0 of kernel->config). */
+uint16_t ga_air_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind);
+uint16_t ga_ground_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind);
 void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 014850: carry */
@@ -201,4 +225,6 @@ bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e);             /* 00409A carr
 int ga_marker_cross(neo_gactor_t *a,neo_genv_t *e,uint8_t *flag);  /* 040200: marker id or -1 */
 int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id); /* 0402E6 */
 void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy); /* 014A02 */
+/* 014A02 with its D0 (0: 10C008 = FF) and the result D6 & 15. */
+uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0);
 #endif

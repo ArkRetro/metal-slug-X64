@@ -537,6 +537,8 @@ check: check-boss $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(
 	python3 tools/check_scene_budget.py
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_cull.c src/scene_cull.c src/retro25d.c -lm -o $(BUILD_DIR)/host/scene-cull
 	$(BUILD_DIR)/host/scene-cull
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_pack.c -o $(BUILD_DIR)/host/scene-pack
+	$(BUILD_DIR)/host/scene-pack romfs/scene.pack
 	python3 tools/test_marco_sprite_edges.py
 	$(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/vehicle

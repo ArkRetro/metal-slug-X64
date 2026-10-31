@@ -53,6 +53,11 @@ typedef struct {
     /* Fix-layer HUD (neo_hud.c, docs/ARMAS_VEHICULOS.md §11), updated with
      * the world; timer_resets_seen: 01913C spawns already applied. */
     neo_hud_t hud;unsigned timer_resets_seen,hud_game_over;
+    /* Game over and continue (neo_hud.c 0C9848): the new life found no life
+     * (no_life: one HUD update), the player stays gone until the continue;
+     * start_edge/jump_edge: Start and A pressed since the previous update. */
+    bool no_life,awaiting_continue,start_edge,jump_edge;
+    unsigned continues,game_over_frames;
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
@@ -109,6 +114,8 @@ extern const bool msx_reference_invulnerable;
  * gameplay.o once missed the item fields: its ga_flags.player_handlers read
  * the low byte of item_pickups and the first item taken froze the player's
  * input) stops at start instead of corrupting the game. */
+/* Updates of the GAME OVER panel before the original game ends (MAME go1). */
+#define MSX_GAME_OVER_UPDATES 190u
 #define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \
     (uint32_t)offsetof(msx_game_t,world.ga_flags)<<8^(uint32_t)offsetof(msx_game_t,ride)<<4)
 extern const uint32_t msx_game_layout;

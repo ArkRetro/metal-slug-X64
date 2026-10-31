@@ -44,8 +44,19 @@ static void hud_step(msx_game_t *g) {
     neo_hud_bombs(g->world.weapons.b,NULL,0,0,0,&in.bombs,&in.bomb_type);
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
-    in.timer_running=!g->complete && !g->mission_complete;
+    in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;
+    /* Continue (docs/MISION1_COMPLETA.md, game over): DIP 10FD8A on, free play
+     * (the home cartridge's AES path of 0C987A: a continue is always offered,
+     * Start takes it), lives DIP 3, B of the arcade (the port's jump) speeds
+     * the countdown (0187B0). */
+    in.continue_dip=true;in.can_continue=true;in.credit_count=0;in.lives_dip=3;
+    in.start=g->start_edge;in.speedup=g->jump_edge;in.no_life=g->no_life;g->no_life=false;
     neo_hud_frame(&g->hud,&in);
+    if (g->hud.continued) {
+        memcpy(g->world.pickup.score[0],g->hud.score,4);g->awaiting_continue=false;g->continues++;
+    }
+    g->start_edge=g->jump_edge=false;
+    if (g->hud.panel[0].state==NEO_PANEL_GAME_OVER && g->game_over_frames<0xffff) g->game_over_frames++;
 }
 bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     neo_surface_t support;
@@ -108,7 +119,9 @@ static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
  * the end, 0C0E6E/0C0EAA), the respawn point 0196E8 and the type-0
  * entrance 0C1438 (floor 0146EE, program 0BF498, +84 = 0x78). */
 static void new_life(msx_game_t *g) {
-    if (!neo_hud_life_lost(&g->hud,0)) g->hud_game_over++;
+    /* No life left: the panel's game over 0C9848 (neo_hud.c) runs in the
+     * next HUD update; the player stays gone until its continue. */
+    if (!neo_hud_life_lost(&g->hud,0)) {g->hud_game_over++;g->no_life=true;g->awaiting_continue=true;return;}
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     memset(g->bullets,0,sizeof(g->bullets));
@@ -304,7 +317,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     bool dying=g->life.phase==MARCO_DYING || g->life.phase==MARCO_LYING;
     if (g->life.phase!=MARCO_ALIVE) {direction=0;jump=false;fire=false;g->grenade=false;g->moving=false;g->jump_pending=false;}
     if (g->life.phase==MARCO_ENTERING) g->invulnerable=2*0x78;
-    if (g->life.phase==MARCO_GONE && !(g->ticks&1)) new_life(g);
+    if (g->life.phase==MARCO_GONE && !(g->ticks&1) && !g->awaiting_continue) new_life(g);
     // The recovered arcade player routine advances on alternate video ticks.
     if (!(g->ticks&1) && g->life.phase!=MARCO_GONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;

@@ -28,7 +28,13 @@ typedef struct {
     uint8_t f86;               /* HUD flag of the previous update (10E9E1 copy) */
     uint8_t f89;               /* bit 0 digit blink, bit 2 BOMB label, bit 3 gauge falling */
     uint8_t f8a,f8b;           /* last BOMB value, last star count */
+    uint8_t f88;               /* player mode copy (27C4 result) */
+    uint8_t f8c;               /* credits seen by the continue (1A872) */
+    uint8_t f8d;               /* cleared by 0C9B30 */
+    uint16_t f80;              /* GAME OVER delay word (0C9AC2) */
+    uint8_t state;             /* NEO_PANEL_*: which routine (a6) runs */
 } neo_panel_t;
+enum { NEO_PANEL_PLAY, NEO_PANEL_CONTINUE, NEO_PANEL_GAME_OVER, NEO_PANEL_STOPPED };
 
 typedef struct {
     uint16_t fix[NEO_FIX_WORDS];  /* index column*32+row = VRAM address - 7000 */
@@ -39,6 +45,12 @@ typedef struct {
     uint16_t sound;               /* last sound request (0x10D7 timer beep), 0 none */
     bool time_over;               /* 0C0A2C reached (the caller kills the player) until 019124 */
     unsigned unsupported;         /* explicit stops (unsupported escapes or glyphs) */
+    uint16_t continue_timer;      /* RAM 1013E2 (mission actor +7E), 19008/1901A/19022 */
+    uint8_t mode[2];              /* BIOS player mode 10FDB6+p (0 none, 1 play, 2 continue, 3 over) */
+    uint16_t continues[2];        /* RAM 10E9E4+2p (0C8CB2) */
+    bool continued;               /* set by the update in which 0C98CC took the continue */
+    uint8_t score[4];             /* copy of RAM 10C46A: the continue's digit 0C98DE is
+                                   * written here and copied back by the caller */
 } neo_hud_t;
 
 /* Inputs of one update: RAM the routines read. */
@@ -59,6 +71,14 @@ typedef struct {
     bool credit_text;           /* RAM 10C2E6 and 10FD91 bit 1 (016A62/00354E) */
     bool timer_running;         /* 018704..01875A: a player in play, 4303 bit 7,
                                  * 10E9E3 clear, 10F003 nonzero */
+    /* Game over / continue (0C9848, 0C9918, 0187A4): */
+    bool continue_dip;          /* RAM 10FD8A (game DIP: continue allowed) */
+    bool can_continue;          /* 1A8AA for the player (BIOS CREDIT_CHECK on MVS) */
+    uint8_t credit_count;       /* 1A872: credits of the player's coin slot */
+    bool start;                 /* the BIOS took a start: player mode 10FDB6+p = 1 */
+    bool speedup;               /* 190F0 D1 bit 5 (new press of B) while the mode is 2 */
+    uint8_t lives_dip;          /* RAM 10FD88 (0C942C) */
+    bool no_life;               /* 0C95F6: this update's new life found no life left */
 } neo_hud_input_t;
 
 /* 0C071C: the ARMS value of player p: FFFF when riding a vehicle of a kind
@@ -90,4 +110,9 @@ void neo_hud_credit(neo_hud_t *h,const neo_hud_input_t *in);              /* 01A
 /* 0C2FA4 path of the panel (0C95E6): one life less; false when none was left
  * (game over 0C9848: explicit stop in the port). */
 bool neo_hud_life_lost(neo_hud_t *h,unsigned p);
+/* 0C9848: the panel's game over (no lives left). Continue countdown
+ * (0C98CC/0C9918, timer 19008) or GAME OVER (0C99E6 -> 0C9ACE). */
+void neo_hud_game_over(neo_hud_t *h,unsigned p,const neo_hud_input_t *in);
+/* 0187A4..0187EC: the mission actor's continue timer step (after 0186FA). */
+void neo_hud_continue_step(neo_hud_t *h,const neo_hud_input_t *in);
 #endif

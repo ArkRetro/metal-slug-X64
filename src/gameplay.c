@@ -696,10 +696,49 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * test_marco_muzzle.c). Up wins over down (0C3D30 tests bit 0 first). */
     g->aim_down=g->crouch && !g->grounded && !g->aim_up && g->mount==MSX_MOUNT_NONE && !g->ride;
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
+    /* The knife. 0C3744 (each player update): the query row 2D0AE4 (kind
+     * 0, no damage) at the player; a hurtbox of type 4 or 5 in reach sets
+     * +9A bit 0. 0C3CD0 (any weapon but +93 = 3): a fire press with it
+     * runs 0C3B46 instead of firing: the cut program (tables 0BF918 /
+     * 0BF958, alternating by +9A bit 1; knife1 capture: 0BF958 at rest,
+     * 21 frames until the next fire choice) whose first callback 0C419E
+     * (one update later) hits with the row 2D0AF4 (kind 2, class 1, damage
+     * 0x1E): type 5 -> sound 10FB, type 4 -> 1069. Presses during the cut
+     * wait for its end (+76). */
+    enum { KNIFE_TICKS=21 };
+    bool knife_ok=g->world_enabled && g->mount==MSX_MOUNT_NONE && g->life.phase==MARCO_ALIVE && !g->complete && g->world.weapon_player.form93!=3;
+    if (!(g->ticks&1)) {
+        g->knife_reach=false;
+        const uint8_t *q=ga_rom(0x2d0ae4);
+        if (knife_ok && q) {
+            int16_t row[7];for (unsigned i=0;i<7;i++) row[i]=(int16_t)(q[2*i]<<8|q[2*i+1]);
+            uint8_t t=neo_world_player_attack(&g->world,g->x,56*MSX_UNIT-g->y,g->facing<0,row);
+            g->knife_reach=t==4 || t==5;
+        }
+    }
+    if (g->knife_t) {
+        g->knife_t--;
+        if (g->knife_t==KNIFE_TICKS-2u && knife_ok) {
+            const uint8_t *q=ga_rom(0x2d0af4);
+            if (q) {
+                int16_t row[7];for (unsigned i=0;i<7;i++) row[i]=(int16_t)(q[2*i]<<8|q[2*i+1]);
+                uint8_t t=neo_world_player_attack(&g->world,g->x,56*MSX_UNIT-g->y,g->facing<0,row);
+                uint16_t snd=t==5?(row[4]==2?0x10fbu:0x10f9u):t==4?0x1069u:0;
+                if (snd && g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=snd;
+                if (t) g->knife_hits++;
+            }
+        }
+        if (fire_edge && !g->complete) g->fire_request=true;
+        fire_edge=false;
+    } else if (fire_edge && g->knife_reach && knife_ok) {
+        g->knife_t=KNIFE_TICKS;g->knife_cuts++;g->fire_request=false;fire_edge=false;
+        g->shot_age=0;g->shooting=true;
+    }
     if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
+    if (g->knife_t) g->pistol_wait=g->pistol_wait>g->knife_t?g->pistol_wait:g->knife_t;
     bool hgun=false,chaser=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c;
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c || kind==3;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
@@ -753,7 +792,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
             g->fire_request=false;g->c_fires++;
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
-            bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
+            /* The R (id 3) shares the C's fire programs (tables 0C3C10/
+             * 0C3C50/0C3C90: 0C02D8/0C0318/0C0358 for both) and flash;
+             * its projectile is the rocket 06381C (neo_chaser.c). */
+            uint8_t id=ammo.kind==3?3:0x0c;
+            bool allowed=marco_ammo_reserve(&ammo,id,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
             bool vertical=g->aim_up || g->crouching || g->aim_down;
             g->pistol_wait=vertical?6u:12u;
@@ -766,7 +809,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
                 neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                if (neo_world_player_actor(&g->world,0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                if (neo_world_player_actor(&g->world,id==3?0x6381cu:0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
                     g->world.weapon_player.combo95++;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }

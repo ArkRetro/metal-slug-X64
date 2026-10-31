@@ -114,6 +114,9 @@ typedef struct {
      * a press fires on the tick it arrives, as the original's state does in
      * the update of the press (hold2: press 2190, callback 2191). */
     bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
+    /* The knife 0C3B46: reach of 0C3744 (+9A bit 0), ticks left of the cut
+     * program, cuts, cuts that hit. */
+    bool knife_reach;unsigned knife_t,knife_cuts,knife_hits;
     /* Death and new life (marco_death.c, docs/JEFE_MISION1.md): one hit
      * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
      * the deaths of kinds 8 / 0x12 (own routines, not translated). */

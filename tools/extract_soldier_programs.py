@@ -146,6 +146,9 @@ ROOTS+=[0x28c32c]
 # (268622, CALL 0636B0; its blast uses 22CE6C, above), trail 063D9E (26863A)
 # and the muzzle flash 0C58D2 (fixed block: 0C586C up/down, 0C5806 level).
 ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
+# The R weapon (neo_chaser.c): rocket 06381C (level 2683F2, vertical 2683B6)
+# and its explosion 063A92 (26858A / 2685CA).
+ROOTS+=[0x2683f2,0x2683b6,0x26858a,0x2685ca]
 # The SV-001 092A32 (neo_tank.c): its state programs, the shell 094EAA
 # (290FC0, burst 2919FE), the muzzle flash 0952F8 (29090E / 290C9E), the dust
 # 0956CE (291AF0) and the rider's entry 0954DC (tables 0954A4 / 0954B4 /

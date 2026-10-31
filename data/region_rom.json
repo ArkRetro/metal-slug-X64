@@ -459,9 +459,34 @@
    "hex": "fff0fff000200020"
   },
   {
+   "rom": "0x063620",
+   "reader": "0638B4 R rocket: contact rows 063620 (level) / 063630 (vertical) and search rows 063660 / 063670 (0049E8)",
+   "hex": "0000fffc0018000800090001001efffffffc00000008001800090001001effff0000fff80030001000090001001efffffff800000010003000090001001effff0000ffc400800078000000010000ffffffd0000000600080000000010000ffff"
+  },
+  {
+   "rom": "0x063680",
+   "reader": "063A92 R explosion blast rows 063680 / 063690 / 0636A0 (0636B0 payloads, 0049E8 by 063740)",
+   "hex": "fff0fff80020003000010001001effffffe8fff00030004000010001000affffffd8ffe80050006000010001000affff"
+  },
+  {
+   "rom": "0x063804",
+   "reader": "0638B4 R rocket cull rectangle 063804 (019504)",
+   "hex": "ffd0ffd000600060"
+  },
+  {
+   "rom": "0x2D0AE4",
+   "reader": "0C3744 knife reach query row 2D0AE4 and 0C419E cut row 2D0AF4 (0049E8)",
+   "hex": "fffc000000220024000000010000fffffffc00000024002400020001001effff"
+  },
+  {
    "rom": "0x03BB70",
    "reader": "soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)",
    "hex": "0502fff000000020000a8000"
+  },
+  {
+   "rom": "0x03BB40",
+   "reader": "soldier hurtboxes 03BB40 / 03BB58: R rocket targets (01B162 reads their first rectangle)",
+   "hex": "0502fff600040014002080000502fff400100018001480000502fff600000014001880000502fff6000a001400228000"
   },
   {
    "rom": "0x014522",

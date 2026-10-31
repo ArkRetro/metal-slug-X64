@@ -57,7 +57,7 @@ typedef struct neo_genv neo_genv_t;
  * the +54 multiplier, +5F bits 7 and 6 clear), as 01B162 reads it: +3C/+40
  * words and the first rectangle of its +50 descriptor (`box` false: +50 is
  * 0). */
-typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; } neo_ga_target_t;
+typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y_low,x_low; } neo_ga_target_t;   /* +42 / +3E: the low words the rocket 06381C reads */
 /* RAM bytes shared by the Mission 1 building actors and the mission. */
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */

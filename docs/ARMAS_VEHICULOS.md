@@ -1151,7 +1151,33 @@ actualizaciones) ni se dibuja a Marco a pie con la ranura atada.
 mismo cuerpo, paso 10): la Camel pasa el lanzacohetes (sección «deja de
 disparar», abajo); falta una captura de la Camel ejerciéndolo.
 
-Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).
+### Paso 12: arma R (`0x06381C`, rama `work-marco12`)
+
+Informe de MiSTer: con la R no se veían el disparo ni los cohetes (el port
+caía en la bala de pistola con parada explícita). La R (id 3) usa las mismas
+tablas de programas de disparo que la C (`0x0C3C10/0C3C50/0C3C90` → `0C02D8`,
+`0C0318`, `0C0358` para ambas) y el mismo destello `0x0C58D2`: `gameplay.c`
+la dispara por la ruta de la C con el cohete. `neo_chaser.c` traduce el
+cohete: constructor `06381C` (sonido `10F5`, paleta `37C`, programa
+`2683F2` horizontal / `2683B6` vertical), vuelo `0638B4` (búsqueda `+76` =
+`063660`/`063670`; horizontal: `+34` hacia el centro del objetivo (`01B162`
+y su `+42`) con el empuje `+7E/+82`; vertical: `+30` hacia el `+3C` largo
+del objetivo; empuje `0x6000` en el eje; pared → explosión en la misma
+actualización; contacto `063620/063630`; fuera de `063804` devuelve el
+proyectil `0C0DFC` id 3; estela `063D9E` cada préstamo de `+74`) y
+explosión `063A92/063AD6` (`26858A`/`2685CA`, tres llamadas `0636B0` en
+actualizaciones distintas con las cargas `±0x10/0x20/0x30`, programas
+`22CDD4/22CE6C/22CF2C`, filas `063680/063690/0636A0`).
+
+Captura `r1` (`PLAN=pickups ASSIST_CAMERA=600` da la R hasta la cámara 600,
+`FAMILY 2150..2690 ROOTS=6381c,c58d2,63d9e`): familia `rlaunch` (`--attacks
+--previous --spawn-window 2`): 498 nodos, 8516 actualizaciones, 1129100
+bytes iguales (41 cohetes, 5 explosiones, estelas y destellos). Nuevo: las
+respuestas de `0049E8` registran también `+42`/`+3E` del objetivo (los lee
+el cohete); `--spawn-window` (por defecto 8): con el pool lleno el original
+no crea el hijo, y un nodo registrado más tarde es de otra actualización.
+`tools/test_gameplay.c`: carrera R hasta la cámara 3520 (564 ondas, 56
+muertes, sin paradas ni dibujos ausentes).
 
 ### Camel Slug: «deja de disparar» (informe de MiSTer, ROM 10)
 
@@ -1178,3 +1204,24 @@ actores genéricos; en la arena del jefe, con fuego continuo, hasta 43
 impactos `0x01C9E6` y 22 nodos `0x003F1E` a la espera de sus hijos) una
 bala puede no crearse (`overflow`, 2 veces en 20000 actualizaciones de una
 semilla); el original reparte 100 nodos entre todos sus actores.
+
+### Paso 13: cuchillo `0x0C3B46` (rama `work-marco12`)
+
+Informe de MiSTer: no se podía matar con el cuchillo. `gameplay.c` lo hace
+nativo: cada actualización del jugador `0x0C3744` consulta la fila `2D0AE4`
+(clase 1, sin daño) en su origen; un *hurtbox* de tipo 4 o 5 al alcance pone
+`+9A` bit 0, y una pulsación de disparo (cualquier arma salvo `+93 = 3`,
+`0x0C3CD0`) corta en vez de disparar: la primera retrollamada `0x0C419E`
+del programa (una actualización después) golpea con la fila `2D0AF4` (tipo
+2, daño 0x1E; `neo_world_player_attack`) y suena `10FB` (tipo 5) o `1069`
+(tipo 4); las pulsaciones durante el corte esperan a su fin (`+76`).
+Captura `knife1` (`run_marco_catalog.py --plan` con andar y disparar hacia
+los primeros rebeldes): 10 cortes, todos de la tabla `0x0BF958` en reposo
+(`0x24D486`), 21 fotogramas hasta la siguiente elección de disparo.
+`tools/test_gameplay.c` (`knife_run`): cortes que golpean, sin paradas.
+Sonidos `10FB`, `10F9`, `1069` renderizados y medidos contra todos
+(`data/sound_pairs.json`, 2000 pares). **Pendiente**: los programas del
+corte (`0x0BF918/0x0BF958`, todas las formas) no están en el catálogo de
+Marco (`build/marco_campaign.h`): regenerarlo exige las capturas H
+`marco-h2/h3`, que ya no están en disco; mientras, Marco no cambia de pose al
+cortar.

@@ -23,7 +23,7 @@ static bool death_logged;
 static bool restart_was_down;
 static bool diagnostics,diagnostics_was_down;
 static bool has_entry;
-static int32_t entry_x,entry_y;
+static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 static bool previous_a,previous_b,pending_a,pending_b,previous_start;
@@ -34,11 +34,12 @@ static bool observed_wreck_contact;
 /* Campaign Marco: original programs (marco_visual.c) drawn from the audited
  * descriptor parts; the historical six-state banks remain only as fallback
  * when romfs/marco is absent. */
-static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures;
+static marco_visual_t marco;static bool marco_native;static unsigned marco_shots,marco_failures,marco_grenades,marco_cfires,marco_knives;
 static void reset_game(void) {
-    marco_visual_reset(&marco);marco_shots=0;
+    marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
-    if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
+    if (has_entry && entry_descent) msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
+    else if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
 #if MSX_VEHICLE_REFERENCE
     msx_game_vehicle_reference(&game);vehicle_renderer_load();
@@ -160,6 +161,15 @@ bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
     return true;
 }
+/* The handoff at the start of the parachute descent (MAME 3860). */
+void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) {
+    msx_game_begin_descent(&game,world_x,world_y,vx,vy);
+    has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
+    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    scene_clock_reset(&simulation_clock);scene_render_forget_texture();
+    game_audio_sync(&game);
+    debugf("MSX mission handoff (descent) x=%ld y=%ld vx=%ld vy=%ld\n",(long)world_x,(long)world_y,(long)vx,(long)vy);
+}
 void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;
 }
@@ -215,7 +225,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
          * the body/weapon programs restart with the new life. */
         if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death kind=%u\n",game.world.hit_kind);}
         if (game.life.phase==MARCO_ALIVE) death_logged=false;
-        if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;}
+        if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;marco_grenades=game.grenades;marco_cfires=game.c_fires;marco_knives=game.knife_cuts;}
         if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
@@ -223,6 +233,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             if (game.hgun.state==MARCO_HGUN_BURST || game.hgun.state==MARCO_HGUN_SWEEP) {
                 mi.hgun_program=game.hgun.program;mi.hgun_start=game.hgun.t==1;
             }
+            /* The throw (0C47BA: the grenade of this update) and the C's fire
+             * state start the upper-body programs of marco_visual.c. */
+            mi.thrown=game.grenades!=marco_grenades;marco_grenades=game.grenades;
+            mi.cgun=marco_weapons_id(&game.world.weapons,0)==0x0c;
+            mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
+            mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
+            mi.hanging=game.descent==MSX_DESCENT_HANG;
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}
@@ -349,6 +366,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);
+    for (unsigned i=0;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],true);
     if (game.world.boss_active) scene_prefetch_boss();
     scene_prefetch_ahead(game.camera);
     scene_service();
@@ -396,6 +414,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (!(d->attributes&4u)) draw_native(d,false);}
+    /* The parachute canopy (+1E = the player's - 1): behind the player. */
+    for (unsigned i=game.landing.marker_draws;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],false);
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
     if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
@@ -421,6 +441,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
+    /* The landing's player marker (+1E = FFFE): over the player. */
+    for (unsigned i=0;i<game.landing.marker_draws;i++) draw_end(&game.landing.draws[i],false);
     for (unsigned owner=0;owner<2;owner++) {
         const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
         unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;

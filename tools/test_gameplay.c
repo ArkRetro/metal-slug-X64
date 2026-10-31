@@ -229,12 +229,12 @@ static unsigned stand_2336(int at) {
  * shop run firing tapped. Every shell, flash, trail and blast is native (no
  * stop, every descriptor in the scene pack); shells home in and explode
  * (064128 -> blast 06371E) and kill. */
-static void chaser_run(void) {
+static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
-    unsigned blasts=0,trails=0,grants=0;bool seen[NEO_WORLD_GACTORS]={false};
+    unsigned blasts=0,trails=0,grants=0,rockets=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
-        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=0x0c && g.life.phase==MARCO_ALIVE) {
-            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&sound)) grants++;
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound)) grants++;
         }
         int dir=1;g.aim_up=(steps%64)>=40;bool jump=(steps%240)<4;
         int dome=-1;
@@ -248,15 +248,33 @@ static void chaser_run(void) {
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
             bool blast=a->active && (r==0x63740u || r==0x63756u);
+            if (a->active && r==0x6381cu) rockets++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
-    printf("C run: grants=%u shells=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        grants,g.c_shots,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    printf("%s run: grants=%u shells=%u rockets=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        id==3?"R":"C",grants,g.c_shots,rockets,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
     assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
     assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
+    if (id==3) assert(rockets>=40);
+}
+/* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
+ * flash; MiSTer report: no rockets drawn). */
+static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);}
+/* The knife (MiSTer report: enemies could not be knifed): walk right with
+ * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
+ * (0C3B46/0C419E) instead of firing, and the cuts kill. */
+static void knife_run(void) {
+    static msx_game_t g;msx_game_init(&g);unsigned kills_at_cut=0,last_cuts=0;
+    for (unsigned steps=0;steps<6000 && g.camera<1200;steps++) {
+        msx_game_update(&g,(steps%64)<48?1:0,false,steps%6<3);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (g.knife_cuts!=last_cuts) {last_cuts=g.knife_cuts;kills_at_cut=g.kills;}
+    }
+    printf("knife run: cuts=%u hits=%u kills=%u shots=%u camera=%d unsupported=%u\n",g.knife_cuts,g.knife_hits,g.kills,g.shots,g.camera,g.world.unsupported);fflush(stdout);
+    assert(g.knife_cuts>0 && g.knife_hits>0 && !g.world.unsupported && !missing_draws);
+    (void)kills_at_cut;
 }
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
@@ -329,6 +347,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -476,6 +495,7 @@ int main(int argc,char **argv) {
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
+    knife_run();
     air_down_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
@@ -526,6 +546,30 @@ int main(int argc,char **argv) {
     msx_game_t unchanged=g;
     assert(!msx_game_begin_at(&g,7852402,6157406));
     assert(g.x==unchanged.x && g.y==unchanged.y);
+    // Parachute descent from the 3860 handoff (marco_descent.c): no input
+    // lands after about 100 updates (MAME 200 frames), B cuts and falls sooner.
+    {
+        unsigned hang=0,cut=0,most=0,letter_ticks=0;
+        msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
+        assert(g.descent==MSX_DESCENT_HANG && !g.grounded);
+        for (;hang<600 && g.descent;hang++) {
+            msx_game_update(&g,0,false,false);
+            if (g.end.draw_count>most) most=g.end.draw_count;
+            if (g.start_letters) letter_ticks=hang+1;
+        }
+        assert(!g.descent && g.grounded && g.world.player_node[0][0x61]==1 && hang>=190 && hang<=210);
+        assert(g.y==msx_ground_offset(g.x));
+        // MISSION 1 START 0607DE (neo_end.c): the letters arrive, blink and
+        // leave during the descent without a stop (MAME ms2: 71 updates).
+        assert(!g.start_letters && !g.start_stops && !g.end.count && most>=13);
+        printf("MISSION 1 START: %u draws at most, gone after %u ticks\n",most,letter_ticks);
+        msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
+        for (unsigned i=0;i<20;i++) msx_game_update(&g,0,false,false);
+        msx_game_update(&g,0,true,false);
+        for (;cut<600 && g.descent;cut++) msx_game_update(&g,0,false,false);
+        assert(g.descent_cuts==1 && g.grounded && g.world.player_node[0][0x61]==2 && cut+21<hang);
+        printf("descent: landed after %u ticks, cut at 20 and landed %u ticks later\n",hang,cut);
+    }
     // Extended terrain: floor beyond the old end, and a measured upper roof.
     assert(msx_ground_offset(1192*MSX_UNIT)== -8*MSX_UNIT && msx_ground_offset(2200*MSX_UNIT)== -8*MSX_UNIT);
     msx_game_init(&g);g.world_enabled=false;g.camera=1200;g.x=1350*MSX_UNIT;g.y=56*MSX_UNIT-170*MSX_UNIT;g.grounded=false;

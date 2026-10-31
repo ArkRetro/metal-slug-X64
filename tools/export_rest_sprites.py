@@ -102,6 +102,8 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     # 268622 and its blast 06371E (22CE6C), trail 063D9E (26863A), muzzle
     # flash 0C58D2 (0C586C, 0C5806).
     0x267f92,0x268622,0x22ce6c,0x26863a,0xc586c,0xc5806,
+    # The R weapon's rocket 06381C and its explosion 063A92.
+    0x2683f2,0x2683b6,0x26858a,0x2685ca,
     # The SV-001 092A32 (neo_tank.c; extract_soldier_programs.py TANK_ROOTS).
     0x291ce4,0x291dc2,0x2942d4,0x294c6c,0x29667e,0x2952ec,0x296cfe,0x29589a,0x2972ac,0x295f1a,
     0x29792c,0x298090,0x2984ca,0x298904,0x298d3e,0x29a202,0x2934ec,0x2947a0,0x29282a,0x299180,
@@ -114,7 +116,11 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     0x237aec,0x237b84,0x237bd0,0x237c48,
     # The mission actor's CONTINUE? and countdown digit 018120 and GAME OVER
     # 0181E4 (fixed block, neo_continue.c).
-    0x18120,0x181e4)
+    0x18120,0x181e4,
+    # Parachute landing: the canopy 0C49D4 and the player marker 0C519E/0C5212.
+    0xc49d4,0xc519e,0xc5212,
+    # Parachute descent: the canopy descending/cut away (0C4904/0C498C).
+    0xc4904,0xc498c)
 RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46e,0x121,0x122,0x123,0x17,0x19,0x1a,0x3fd,0x93,0x9b,0x37d,0x3a6,0x380,0x37e,0x3a7,0x3ac,0xd0,0x103,0x24,0x30b,0xd3,0x208,0x113,0x13f,0x37c,0x124,0x37f,0x3c6,0x114,0x133,0x38e,0x823,0x3fd,0x202,0x27c,0x378,0x3fe,0xb8,0x37a,0x16c,0x16d,0x16e,0x381,0x382,0x3fa,0x117,0x9c,0x9d,0x1d,0x15a,0x20,0x21,0x22,0x23,0x178,0x179,0x202,0x15c,0x118,0x442,0x13b,0x92,0x114,
     # Camel Slug, its rider (player 1/2), turret and bullets, marker, dust.
     0x3ff,0x376,0x377,0x3d6,0x3ad,0x884,0x170,
@@ -134,13 +140,15 @@ RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46
     # Prisoner tally 0308C0: parade icon (0x381, 0x3FA, 0x9B listed above).
     0x2a2,
     # CONTINUE? letters (slot 04) and digit (slot FE) of 018120 (go2 dumps).
-    0x63,0x25f)
+    0x63,0x25f,
+    # Parachute canopy (0C4A58) and player 1/2 marker (0C5286).
+    0x38d,0x2a3)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
-    p.add_argument('--keep',type=Path,default=ROOT/'filesystem/rest-native.json',help='previous export: its palettes stay when no given capture has them (captures no longer at hand)')
+    p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
     a=p.parse_args()
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
@@ -173,12 +181,18 @@ def main():
         for slot,rid in resources(ram).items():
             if rid in RESOURCES:palettes.setdefault(rid,collections.Counter())[tuple(rgba16(pw[slot*16:slot*16+16]))]+=1
     pal_out={hex(k):list(c.most_common(1)[0][0]) for k,c in sorted(palettes.items())}
-    if a.keep and a.keep.exists():
-        for k,v in json.loads(a.keep.read_text()).get('palettes',{}).items():pal_out.setdefault(k,v)
+    kept_frames={}
+    for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
+        if not keep.exists():continue
+        prev=json.loads(keep.read_text())
+        for k,v in prev.get('palettes',{}).items():pal_out.setdefault(k,v)
+        for f in prev.get('frames',[]):kept_frames.setdefault(f['descriptor'],f)
         pal_out=dict(sorted(pal_out.items(),key=lambda kv:int(kv[0],16)))
     stats=collections.Counter();per=[]
     for capture,nodes in caps:validate(capture,nodes,descs,crom,stats,per)
     frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
+    have={f['descriptor'] for f in frames}
+    frames+=[f for d,f in sorted(kept_frames.items(),key=lambda kv:int(kv[0],16)) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
         p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
         missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])

@@ -1,0 +1,33 @@
+[
+ {
+  "name": "d_hang",
+  "length": 28,
+  "inputs": []
+ },
+ {
+  "name": "d_fire_high",
+  "length": 20,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "d_grenade",
+  "length": 40,
+  "inputs": [
+   "grenade"
+  ]
+ },
+ {
+  "name": "d_fire_cut",
+  "length": 24,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "d_fall",
+  "length": 178,
+  "inputs": []
+ }
+]

@@ -123,6 +123,11 @@ ROOTS+=[0x237aec,0x237b84,0x237bd0,0x237c48,0x237c52,0x237c68,0x237c7e,0x237c94,
 # The mission actor 101364's own program (fixed block): the big CONTINUE?
 # and the countdown digit 018120 (00427A at 01883C) and GAME OVER 0181E4.
 ROOTS+=[0x18120,0x181e4]
+# Parachute landing (0C162A): the canopy collapsing behind the player 0C49D4
+# (0C4B62) and the player marker over him 0C519E/0C5212 (0C5286).
+ROOTS+=[0xc49d4,0xc519e,0xc5212]
+# Parachute descent: the canopy 0C4A58 (0C4904 descending, 0C498C cut away).
+ROOTS+=[0xc4904,0xc498c]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
@@ -143,6 +148,9 @@ ROOTS+=[0x28c32c]
 # (268622, CALL 0636B0; its blast uses 22CE6C, above), trail 063D9E (26863A)
 # and the muzzle flash 0C58D2 (fixed block: 0C586C up/down, 0C5806 level).
 ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
+# The R weapon (neo_chaser.c): rocket 06381C (level 2683F2, vertical 2683B6)
+# and its explosion 063A92 (26858A / 2685CA).
+ROOTS+=[0x2683f2,0x2683b6,0x26858a,0x2685ca]
 # The SV-001 092A32 (neo_tank.c): its state programs, the shell 094EAA
 # (290FC0, burst 2919FE), the muzzle flash 0952F8 (29090E / 290C9E), the dust
 # 0956CE (291AF0) and the rider's entry 0954DC (tables 0954A4 / 0954B4 /

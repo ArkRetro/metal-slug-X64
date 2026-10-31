@@ -1,0 +1,19 @@
+[
+ {
+  "name": "d_hang",
+  "length": 68,
+  "inputs": []
+ },
+ {
+  "name": "d_cut_jump",
+  "length": 16,
+  "inputs": [
+   "jump"
+  ]
+ },
+ {
+  "name": "d_fall",
+  "length": 206,
+  "inputs": []
+ }
+]

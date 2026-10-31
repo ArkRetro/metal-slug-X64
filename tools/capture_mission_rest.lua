@@ -340,6 +340,16 @@ emu.register_frame_done(function()
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
  if frame>=1550 and frame<=1700 then button('P1 A',1) end
  if frame==1710 then button('P1 A',0) end
+ -- MSX_REST_INPUTS="frame:button:value,..." (button A/B/C/L/R/U/D): capture-
+ -- only presses before the control plan (the parachute descent, 1838..2038).
+ for f,b,v in string.gmatch(os.getenv('MSX_REST_INPUTS') or '','(%d+):(%a):(%d)') do
+  if tonumber(f)==frame then
+   local names={A='P1 A',B='P1 B',C='P1 C',L='P1 Left',R='P1 Right',U='P1 Up',D='P1 Down'}
+   button(names[b],tonumber(v))
+  end
+ end
+ -- Snapshots before 2100 (the descent): MSX_REST_FIRST_DUMP below 2100.
+ if frame<2100 and frame>=first_dump and frame%period==0 then dump(frame) end
  -- Reference-only overrides, same addresses/values as capture_advance.lua:
  -- mission timer, P1 invulnerability bit (OR), lives/credits words, weapon
  -- (3) and its ammo/bomb counters. Never level, script, enemy or collision.

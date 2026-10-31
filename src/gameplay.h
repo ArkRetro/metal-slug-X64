@@ -8,6 +8,7 @@
 #include "neo_hud.h"
 #include "neo_end.h"
 #include "neo_continue.h"
+#include "neo_landing.h"
 #include "neo_fade.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
@@ -69,10 +70,20 @@ typedef struct {
      * from and back to the world); end_fire_was/end_jump_was: A and B held
      * at the previous update (new presses 10C35D). */
     neo_end_t end;uint8_t best_mission;
+    bool start_letters;unsigned start_stops;   /* MISSION 1 START 0607DE in end (descent) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
     neo_continue_t continue_sprites;
+    /* The parachute landing's canopy and player marker (neo_landing.c),
+     * created at the entry handoff (landing_pending) and run after the
+     * player; landing_x/y: the player's projected longs of the previous
+     * update (+44/+48). */
+    neo_landing_t landing;bool landing_pending,landing_on;int32_t landing_x,landing_y;
+    /* The parachute descent (marco_descent.c) from the entry handoff at its
+     * start: hanging (0C162A) or falling after the cut (0C170C); fire
+     * latched for its update; the scene root of the previous update (01AD52). */
+    uint8_t descent;bool descent_fire;int32_t landing_root_x,landing_root_y;unsigned descent_cuts;
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
@@ -108,6 +119,9 @@ typedef struct {
      * a press fires on the tick it arrives, as the original's state does in
      * the update of the press (hold2: press 2190, callback 2191). */
     bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
+    /* The knife 0C3B46: reach of 0C3744 (+9A bit 0), ticks left of the cut
+     * program, cuts, cuts that hit. */
+    bool knife_reach;unsigned knife_t,knife_cuts,knife_hits;
     /* Death and new life (marco_death.c, docs/JEFE_MISION1.md): one hit
      * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
      * the deaths of kinds 8 / 0x12 (own routines, not translated). */
@@ -115,6 +129,7 @@ typedef struct {
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
     unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */
+    unsigned c_fires;   /* C fire states entered (0C3CD0: its program starts even when 0C0D64 refuses) */
     unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
     bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
@@ -130,6 +145,10 @@ enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
+enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };
+/* The handoff at the start of the parachute descent (MAME 3860: +28/+2C,
+ * +30/+34 after the player's first 0C162A update), with the canopy. */
+void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 /* A hit on the player (from: world x of the attacker, used without the
  * native world): the death 0C2956 unless invulnerable or already dying. */

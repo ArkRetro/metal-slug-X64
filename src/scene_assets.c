@@ -33,6 +33,7 @@ static bool pinned[SCENE_CHUNK_COUNT],map_chunk[SCENE_CHUNK_COUNT];
 static uint8_t block_pins[SCENE_CHUNK_COUNT];   // bit per recorded-block group
 static int recording=-1;
 static uint8_t *cache,*staging[2];
+static uint8_t **slot_mem;   /* each slot's 16 KiB (the cache can span several heap blocks) */
 static unsigned capacity,clock_lru,epoch,rom,resident;
 static volatile unsigned completed;
 static int active_chunk=-1,active_slot=-1;
@@ -114,7 +115,7 @@ static uint32_t decode_active(void) {
     active_chunk=active_slot=-1;
     // Reserve the other staging buffer and overlap its PI read with this decode.
     start_next();
-    const scene_chunk_t *c=&scene_chunks[chunk];uint8_t *dst=cache+slot*SCENE_CHUNK_BYTES;
+    const scene_chunk_t *c=&scene_chunks[chunk];uint8_t *dst=slot_mem[slot];
     bool decoded=scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec);
     assertf(decoded,"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(rom+c->offset));
     if (!decoded) abort();
@@ -192,7 +193,7 @@ static const void *page_of(const scene_image_t *image,bool deferrable) {
     unsigned chunk=image->page/8;require_chunk(chunk,deferrable);
     if (recording>=0) block_pins[chunk]|=(uint8_t)(1u<<recording);
     cache_slot_t *s=&slots[chunk_slot[chunk]];s->used_epoch=epoch;s->lru=++clock_lru;
-    return cache+(unsigned)chunk_slot[chunk]*SCENE_CHUNK_BYTES+(image->page%8)*SCENE_PAGE_BYTES;
+    return slot_mem[chunk_slot[chunk]]+(image->page%8)*SCENE_PAGE_BYTES;
 }
 const void *scene_page(const scene_image_t *image) { return page_of(image,false); }
 const void *scene_page_try(const scene_image_t *image) {
@@ -289,7 +290,22 @@ void scene_assets_begin(void) {
         capacity=(unsigned)room/SCENE_CHUNK_BYTES;
         if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
     }
-    cache=memalign(64,capacity*SCENE_CHUNK_BYTES);
+    /* The free total can be split by earlier allocations (cinematic slots
+     * freed around the resident sounds): the slots take as few heap blocks
+     * as fit, the largest first. */
+    slot_mem=calloc(capacity,sizeof(*slot_mem));
+    unsigned have=0,block=capacity;
+    while (slot_mem && have<capacity && block) {
+        if (block>capacity-have) block=capacity-have;
+        uint8_t *m=memalign(64,block*SCENE_CHUNK_BYTES);
+        if (!m) {block/=2;continue;}
+        if (!cache) cache=m;
+        for (unsigned i=0;i<block;i++) slot_mem[have++]=m+i*SCENE_CHUNK_BYTES;
+    }
+    if (have<capacity) {
+        assertf(!expanded || have>=SCENE_EXPANDED_MIN_SLOTS,"RAM budget: %u scene slots allocated (minimum %u)",have,SCENE_EXPANDED_MIN_SLOTS);
+        capacity=have;
+    }
     slots=calloc(capacity,sizeof(*slots));
     assertf(cache && slots && staging[0] && staging[1],"Scene cache allocation");
     for (unsigned i=0;i<capacity;i++) slots[i].chunk=-1;

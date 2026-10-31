@@ -182,6 +182,16 @@ emu.register_frame_done(function()
   if frame==plan.first then cpu:write_u8(0x10c71e,0x0a);cpu:write_u8(0x10c71c,0xff);cpu:write_u8(0x1014c4+0x94,1) end
   cpu:write_u16(0x10c724,200)
  end
+ -- Capture only (MSX_GIVE_CGUN): the C as a pickup gives it (id 0C at
+ -- 10C71E, 40 rounds at 10C724, cap 3 at 10C71C, none live 10C71A, +94 = 1;
+ -- tools/capture_weapons.lua plan air), rounds kept at 40.
+ if os.getenv('MSX_GIVE_CGUN')=='1' and frame>=plan.first then
+  if frame==plan.first then cpu:write_u8(0x10c71e,0x0c);cpu:write_u8(0x10c71c,3);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
+  cpu:write_u16(0x10c724,40)
+ end
+ -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
+ -- several throws never runs out (the assist of capture_weapons.lua).
+ if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end
  for _,event in ipairs(plan.events[frame] or {}) do button(event[1],event[2]) end
  if frame>=plan.first and frame<=plan.last and os.getenv('MSX_QUEUE_TRACE')=='1' then
   if frame==plan.first+2 then
@@ -210,7 +220,9 @@ emu.register_frame_done(function()
   manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png')
   end
  end
- if frame==plan.first+2 then
+ -- The program blocks after the landing (frame 2102 at the latest): before
+ -- it the protection words at 2FFFE0.. still change (descent captures).
+ if frame==math.max(plan.first,2100)+2 then
   for _,r in ipairs({{'program-fixed.bin',0,0xfffff},{'program-bank.bin',0x200000,0x2fffff}}) do
    local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
   end

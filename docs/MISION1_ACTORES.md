@@ -1097,6 +1097,30 @@ reproduce ni el objeto dinámico del carro (solo lo que se leyó) ni los sellos
 Gráficos: `fam2/bld1/trk3/rl2@1ce08-1d763`, `bld1@1e058-1e07c`; paletas
 nuevas `0x277 0x278 0x20A 0x29E 0x143 0x228`.
 
+## Premios: lo que falta (rama `work-world`, diagnóstico)
+
+Recorrido de `tools/test_gameplay.c` instrumentado (`EXT`/`ITEMBY`): los
+premios que el port no muestra salen todos de `src/neo_item.c` (rama de armas,
+no tocada aquí):
+
+- **Tipo `0x55`** (registro `0E581A + 0x18*0x55`: programa `286FBC`, paleta
+  `0x3AC`, recogida `08B7FC` = puntos/comida con la voz `1121`, movimiento
+  **`0x08BCCC`**, tabla de estados `0x08BCC0`: `08BCD4` entrada, `08BCEA`
+  botes que dividen las velocidades, `08BD32/08BD3C`, y `08BD74..08BE22`
+  caminar con `08CCD4` girando en paredes). Lo dan los prisioneros `0x099DCC`
+  (`09ACD6` desde `09A7C2`, `+74` = 0x55: 9 regalos por recorrido) y la caja
+  oculta de la ventana de la ruina. `neo_item.c` lo devuelve como externo
+  (`motion_known` no tiene `08BCCC`): **es el regalo de prisionero que
+  falta**. Cambio necesario en `neo_item.c` (traducir `08BCCC` y aceptarlo en
+  `motion_known/motion`): informado, no hecho.
+- Etiquetas de puntos `0x08D330` (39 por recorrido) y de recogida
+  `0x08C752` (4): externas en `neo_item.c` (contadas).
+- El puesto `0x03FC5A` (cajas de fruta `0x03FD6E`): no da objetos; al
+  dispararle o saltar sobre él suelta la salpicadura `0x03FEB2` (programa
+  `22DB44`, paleta `0x20B`). Sigue como parada explícita: `03FE38` pregunta a
+  `01AF1A` por el bit 6 de `+15` del jugador y a `0AAA88` por su vehículo, que
+  el entorno de los actores no lleva.
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

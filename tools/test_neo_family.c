@@ -267,7 +267,7 @@ int main(void) {
 #ifndef FAMILY_TERRAIN
 #define FAMILY_TERRAIN 0x10d7b6u   /* the families past camera 1023 */
 #endif
-    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;e.node_word=node_word;kernel.b400c=0xff;
+    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;e.node_word=node_word;kernel.b400c=0;   /* RAM 10C00C: 0 in the Mission 1 dumps */
     unsigned ram_bytes=0;(void)ram_bytes;
     e.kill_children=kill_children;e.has_children=has_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
 #ifdef FAMILY_MARKER_SEQ

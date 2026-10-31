@@ -117,9 +117,11 @@ contestados por el mundo:
 Los disparos del jugador llegan al jefe por la fase estrecha original
 (`0x004762` + `0x004892..0x0049E0`, matriz de impactos, multiplicador `+54`).
 Tras un nodo que se detiene, el recorrido sigue los enlaces como `0x00424A`
-(enlaces de nodos liberados). Detenciones explícitas observadas en el
-recorrido: el cañón de la torreta al disparar (`0x08FA1A`, bala genérica
-`0x08EFFA` no portada) y, sin su cañón, la base (`0x0D6254`). Dibujo con
+(enlaces de nodos liberados). El disparo del cañón de la torreta
+(`0x08FA1A`: destello `0x08EFFA` y proyectil `0x08F058`) está traducido
+desde la ROM (ninguna captura lo tiene); ningún nodo del jefe se detiene
+(antes: el cañón en `0x08FA1A` y, sin su cañón, la base en `0x0D6254` o
+`0x0D62F2`). Dibujo con
 `boss_render_draw` (recorte de columnas original).
 
 ## Espadachín de túnica `0x0A8C46` (arranque del jefe)
@@ -156,7 +158,7 @@ iguales, 0 distintos**
 | --- | --- |
 | `0x0AF17E`, `0x04115A` (soldados), `0x02916E`, `0x0DC97E`, `0x0403A0`, efectos | nativos (ya existían) |
 | `0x0A8C46` espadachín de túnica + subguion `0x019E72` | **nativo** (nuevo) |
-| `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (salvo disparo de torreta) |
+| `0x0D5976` jefe (86 rutinas, ver JEFE_MISION1) | **nativo y conectado** (disparo de la torreta traducido sin captura) |
 | `0x05486A`/`0x054904` edificio de cúpulas y derrumbe `0x0B58CC` | **nativo** (MISION1_ACTORES.md) |
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
@@ -229,6 +231,20 @@ del jefe hasta 5,6 ms, su dibujo hasta 4 ms, fondo 9,4 ms): pendiente.
 
 ROM de publicación `mslugx-explorer.z64`: 5.111.808 bytes.
 
+### Fusión ROM 8 + Camel Slug (rama `work-weapons`, tras `f9a1ac6`)
+
+Exportación de sprites regenerada (orden de abajo, «Exportación completa»).
+Puertas: `make check-core` en un clon limpio, `make check` (determinismo,
+`missing_draws` = 0, auditoría: solo `0x092A32` parado explícitamente),
+`make -j4` y `make mslugx-reference.z64` sin cambios de código. Recorrido
+completo en ares (`trav-long.sh`, Xvfb :92, 6000 s): **PASS**, 37 rebeldes
+creados, 43 abatidos, jefe derrotado, misión completada
+(`018F92/018F40`), ningún nodo del jefe detenido, 0 *crash* del RSP,
+*underruns* de audio máx. 1; `MSX PERF` 127 ventanas, `cpu` media máx.
+18.777 µs, **peor fotograma 35.564 µs**; RDP: 399 dibujos máx., 133
+fallos máx. El recorrido no subió a la Camel Slug (`mounts=0`). ROMs
+`mslugx-explorer.z64` y `mslugx-reference.z64`: 8.683.520 bytes cada una.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros
@@ -248,10 +264,43 @@ python3 tools/extract_rest_family.py /ruta/robe1/boss-trace.txt --root a8c46 --o
 python3 tools/extract_soldier_ai_tables.py /ruta/captures-soldiers/entry-walk3 --output data/soldier_ai_tables.json
 python3 tools/extract_soldier_programs.py /ruta/captures-soldiers/walk3 --output data/soldier_programs.json
 python3 tools/extract_region_rom.py /ruta/captures-soldiers/walk3 --output data/region_rom.json
-cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..
+cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..   # solo el espadachín; la exportación completa, abajo
 make check-core && make check && make -j4 && make mslugx-reference.z64
 python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ares
 ```
+
+### Exportación completa de `filesystem/rest-native.json` (privada)
+
+Unión de todas las capturas de ambas líneas de trabajo (misión: `robe1` …
+`unc1`, `runK`; vehículos: `hfam`, `cfam`, `camelfam`, `death2`), sin
+`--keep`: ninguna paleta depende de una exportación anterior. Tras una
+fusión basta repetir esta orden (añadiendo las capturas nuevas de cada lado)
+y comprobar que todo descriptor y paleta de las exportaciones de ambos lados
+sigue presente e idéntico.
+
+```sh
+C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss
+cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
+  $C/robe1 $C/bld1@54800-55700 $C/bld1@b6500-b6b00 $C/trk3@33c98-34200 $C/trk3@39500-3a100 \
+  $C/trk3@a93c0-a9a00 $C/trk3@35600-35a00 $C/pri1@99862-99dc0 $C/pri1@8c37c-8c700 $B/runA@0-1 \
+  $C/veh1@87e36-89c00 $C/veh2@88b52-89940 $C/box1@9a67e-9ae80 $W/hfam@1b600-1bd00 \
+  $W/cfam@1bd00-1c400 $W/cfam@8c37c-8c700 $C/fam2@9d800-9ef00 $C/fam2@1c97a-1c97a \
+  $C/fam2@99dcc-9a9c2 $C/food1@8c374-8c700 $C/rl2@5ed84-60600 $C/rl2@59c82-59e30 \
+  $C/heli2@47800-49000 $C/camel2@9ea00-a0800 $C/unc1@b6200-b6300 $C/unc1@400aa-40100 \
+  $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
+  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 \
+  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
+```
+
+Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
+2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77
+paletas (todas las de ambos lados, idénticas salvo `0x208`: el lado de
+vehículos la tomaba solo del volcado de `death2`, la única de sus capturas
+con ella; la unión toma el valor de `veh1`, `veh2`, `box1`, `food1`, `heli2`
+y `runA`, el del lado de la misión, 18 volcados contra 1), faltan las mismas
+`0x37F`, `0x133`, `0x38E`, `0x823`, `0x377`; 613 volcados validados
+([rest-sprites-validation.json](rest-sprites-validation.json)): 2930624
+píxeles iguales, 150106 distintos (los ya documentados por familia).
 
 ## Fin de partida y continuación (`0x0C9848`)
 
@@ -390,11 +439,11 @@ actualizaciones y 1 parada (recuento).
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`
-  y la Camel Slug `0x03458E` (no contados; la auditoría ya no informa de
-  ninguna aparición contada perdida).
-- Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/
-  `0x08F1A0`): necesita una captura en la que dispare.
+- Actores del resto aún externos (tabla de cobertura): el SV-001 `0x092A32`
+  (no contado; la Camel Slug `0x03458E` es nativa y se puede montar).
+- Disparo de la torreta del jefe (`0x08FA1A` → `0x08EFFA`/`0x08F058`):
+  traducido sin captura (falta una captura en la que dispare para
+  verificarlo); `0x08F1A0` sigue como parada explícita.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista
   del jefe como bloque, salida del espadachín (`0x0A8FE0`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).

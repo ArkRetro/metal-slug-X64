@@ -526,6 +526,22 @@ int main(int argc,char **argv) {
     msx_game_t unchanged=g;
     assert(!msx_game_begin_at(&g,7852402,6157406));
     assert(g.x==unchanged.x && g.y==unchanged.y);
+    // Parachute descent from the 3860 handoff (marco_descent.c): no input
+    // lands after about 100 updates (MAME 200 frames), B cuts and falls sooner.
+    {
+        unsigned hang=0,cut=0;
+        msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
+        assert(g.descent==MSX_DESCENT_HANG && !g.grounded);
+        for (;hang<600 && g.descent;hang++) msx_game_update(&g,0,false,false);
+        assert(!g.descent && g.grounded && g.world.player_node[0][0x61]==1 && hang>=190 && hang<=210);
+        assert(g.y==msx_ground_offset(g.x));
+        msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
+        for (unsigned i=0;i<20;i++) msx_game_update(&g,0,false,false);
+        msx_game_update(&g,0,true,false);
+        for (;cut<600 && g.descent;cut++) msx_game_update(&g,0,false,false);
+        assert(g.descent_cuts==1 && g.grounded && g.world.player_node[0][0x61]==2 && cut+21<hang);
+        printf("descent: landed after %u ticks, cut at 20 and landed %u ticks later\n",hang,cut);
+    }
     // Extended terrain: floor beyond the old end, and a measured upper roof.
     assert(msx_ground_offset(1192*MSX_UNIT)== -8*MSX_UNIT && msx_ground_offset(2200*MSX_UNIT)== -8*MSX_UNIT);
     msx_game_init(&g);g.world_enabled=false;g.camera=1200;g.x=1350*MSX_UNIT;g.y=56*MSX_UNIT-170*MSX_UNIT;g.grounded=false;

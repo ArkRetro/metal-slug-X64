@@ -185,7 +185,11 @@ int main(void) {
     actor_init();
 #if MSX_BOOT_CINEMATICS
     // Marco where the entry's last frame leaves him (measured MAME handoff).
+#if MSX_ENTRY_DESCENT
+    if (handoff) actor_begin_descent(MSX_ENTRY_X,MSX_ENTRY_Y,MSX_ENTRY_VX,MSX_ENTRY_VY);
+#else
     if (handoff && !actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
+#endif
 #endif
     (void)handoff;
 #else

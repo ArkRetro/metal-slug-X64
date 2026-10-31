@@ -189,13 +189,24 @@ Píxeles de la vela (exportación `export_rest_sprites.py` con raíces 0C4904 y
 vela cortada coinciden al 100 % (p. ej. 1098/1098, 1070/1070); los
 fotogramas en que no aparece son el parpadeo de 00436E.
 
+**Conexión al arranque.** `entry.msxc` se recorta a 3830..3859 con
+`tools/truncate_cinematic.py` (los 30 primeros paquetes delta y sus CRC
+auditados, sin volver a renderizar; el audio sigue entero y suena después
+del traspaso). El traspaso pasa a 3860 con el estado del jugador tras su
+primer 0C162A (`+28/+2C` = 7865136/16293888, `+30/+34` = 816/−483328;
+`MSX_ENTRY_DESCENT` en `entry_meta.h`). `msx_game_begin_descent` crea la
+vela (su constructor corre con el primer paso), y `gameplay.c` ejecuta el
+descenso cada actualización: B (salto) y A (disparo) como bits 5/4 de
+0C0FEA, la deriva con el RNG del mundo, el barrido aéreo del port como
+0143EE/0C109C, el marcador 1P al aterrizar o al cortar. Disparo y granadas
+colgado usan el procesamiento común del port. `test_gameplay`: sin entrada
+aterriza a los 200 fotogramas (como MAME); con B a los 20, corta y aterriza
+43 fotogramas después.
+
 **Paradas explícitas.**
 
-- El arranque sigue entregando el control en 4060: `gameplay.c` aún no
-  ejecuta `marco_descent_*` ni crea la vela con `neo_landing_descent`, y
-  `main.c` no corta `entry.msxc` en 3859. El traspaso correcto sería en
-  3860 (primer 0C162A), con `entry.msxc` solo para 3830..3859.
-- Las letras MISSION 1 START (actores de sprites) no están portadas; con el
-  traspaso en 3860 habría que portarlas o superponerlas.
-- La pose colgada del cuerpo (programa 0BF818) no se dibuja: el port no la
-  tiene en su catálogo de Marco.
+- Las letras MISSION 1 START (actores de sprites) no están portadas: tras
+  el traspaso en 3860 no se muestran.
+- La pose colgada del cuerpo (programa 0BF818) no está en el catálogo de
+  Marco: durante el descenso el port dibuja su pose aérea.
+- La deriva usa el RNG del port, no la secuencia exacta de la partida.

@@ -274,5 +274,8 @@ pasos de `rspq_highpri_begin`, sin tocar el juego.
 
   (`PC:018` es la instrucción siguiente al `break` de `WaitNewInput`; los
   registros `t0`, `t1`, `s4`, `sp`, `ra` coinciden con la foto.)
-- Con el parche 1 y la **misma** espera: EXP2_PENDIENTE
+- Con el parche 1 y la **misma** espera (12 minutos de ares, hasta que el
+  guion agotó su tiempo en la zona del jefe): 59 ventanas de 300
+  fotogramas (17.700 fotogramas), `crash=0`, 16 *underruns* en 10.894
+  búferes de AI con los 43 µs añadidos a cada `begin`.
 - Recorrido completo con la librería final (sin espera): FINAL_PENDIENTE

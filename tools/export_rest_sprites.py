@@ -120,7 +120,10 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     # Parachute landing: the canopy 0C49D4 and the player marker 0C519E/0C5212.
     0xc49d4,0xc519e,0xc5212,
     # Parachute descent: the canopy descending/cut away (0C4904/0C498C).
-    0xc4904,0xc498c)
+    0xc4904,0xc498c,
+    # Mission 2: the GO arrow 05287C (idle 24953C, arrows of table 05285C)
+    # and the stage-1 exit marker 0B6F6A (2A8B70).
+    0x24953c,0x249546,0x2495fc,0x2496b2,0x249768,0x24981e,0x2498d4,0x24998a,0x2a8b70)
 RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46e,0x121,0x122,0x123,0x17,0x19,0x1a,0x3fd,0x93,0x9b,0x37d,0x3a6,0x380,0x37e,0x3a7,0x3ac,0xd0,0x103,0x24,0x30b,0xd3,0x208,0x113,0x13f,0x37c,0x124,0x37f,0x3c6,0x114,0x133,0x38e,0x823,0x3fd,0x202,0x27c,0x378,0x3fe,0xb8,0x37a,0x16c,0x16d,0x16e,0x381,0x382,0x3fa,0x117,0x9c,0x9d,0x1d,0x15a,0x20,0x21,0x22,0x23,0x178,0x179,0x202,0x15c,0x118,0x442,0x13b,0x92,0x114,
     # Camel Slug, its rider (player 1/2), turret and bullets, marker, dust.
     0x3ff,0x376,0x377,0x3d6,0x3ad,0x884,0x170,
@@ -142,12 +145,15 @@ RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46
     # CONTINUE? letters (slot 04) and digit (slot FE) of 018120 (go2 dumps).
     0x63,0x25f,
     # Parachute canopy (0C4A58) and player 1/2 marker (0C5286).
-    0x38d,0x2a3)
+    0x38d,0x2a3,
+    # Mission 2: GO arrow 05287C, stage-1 exit marker 0B6F6A.
+    0x125,0x461)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
+    p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
     a=p.parse_args()
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
@@ -196,7 +202,7 @@ def main():
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
         p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
         missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
-    (ROOT/'filesystem/rest-native.json').write_text(json.dumps(out,separators=(',',':'))+'\n')
+    a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(out,separators=(',',':'))+'\n')
     report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)
     a.report.write_text(json.dumps(report,indent=1)+'\n')
     print(json.dumps(dict(descriptors=len(frames),palettes=len(pal_out),missing=out['missing_palettes'],stats=stats)))
@@ -243,6 +249,10 @@ def validate(capture,nodes,descs,crom,stats,per):
             zoomed=zoomed_slots(v)
             stats['zoomed_entries_skipped']+=sum(1 for d in dl if d['attr']>>8 in zoomed)
             dl=[d for d in dl if d['attr']>>8 not in zoomed]
+            # Auto-animated entries (attr bits 2/3: the LSPC counter picks the
+            # tile, e.g. the GO arrow 05287C) are not rasterized here.
+            stats['auto_animation_entries_skipped']+=sum(1 for d in dl if d['attr']&12)
+            if any(d['attr']&12 for d in dl):continue
             slots={d['attr']>>8 for d in dl}
             im,_=reconstruct(v,pw,crom,slots)
             mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])

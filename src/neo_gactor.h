@@ -117,6 +117,9 @@ struct neo_genv {
     neo_cull_bounds_t bounds;        /* RAM 10C2F0 scene descriptor */
     uint16_t video;                  /* RAM 10000E */
     uint16_t camera;                 /* RAM 10E99E */
+    uint16_t camera_low;             /* RAM 10E9A0 (low word of the progress long, 0C7B26) */
+    uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
+    uint8_t *arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, 05287C) */
     int32_t scroll_x,scroll_y;       /* RAM 10E97C/10E980 */
     uint16_t *grid;                  /* delay grid RAM 1067E6 */
     void *ctx;

@@ -51,5 +51,8 @@ Misión 2, fase 1 (rama `work-m2`, [MISION2.md](MISION2.md)): flujo de
 misión nativo (`01829E..01891E`, probado contra la captura completa), datos
 de las tres etapas exportados, paquete por misión y auditoría. Tras la Misión 1
 el flujo elige la etapa 1 de la Misión 2 y, como su escena aún no se carga,
-para explícitamente y vuelve a la Misión 1. Misiones 3–6 y efecto diorama (en
+para explícitamente y vuelve a la Misión 1. Fase 2, actores y datos (rama
+`work-m2act`, [MISION2_ACTORES.md](MISION2_ACTORES.md)): transiciones
+`3AED8`/`3AEF0`, flecha GO `05287C` y marcador `0B6F6A` nativos; rejilla de
+la etapa 2 completa desde la ROM. Misiones 3–6 y efecto diorama (en
 pausa, `work-diorama`) después.

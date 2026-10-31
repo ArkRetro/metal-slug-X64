@@ -164,6 +164,9 @@ TANK_ROOTS=[0x291ce4,0x291dc2,0x2942d4,0x294c6c,0x29667e,0x2952ec,0x296cfe,0x295
     # 093AFA: the pieces 0AD9B8 (fixed block 0AD8CE); the burst uses 22CF2C (above).
     0x0ad8ce]
 ROOTS+=TANK_ROOTS
+# Mission 2: the GO arrow 05287C (idle 24953C, arrows of table 05285C by
+# RAM 10C44A) and the stage-1 exit marker 0B6F6A (2A8B70).
+ROOTS+=[0x24953c,0x249546,0x2495fc,0x2496b2,0x249768,0x24981e,0x2498d4,0x24998a,0x2a8b70]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

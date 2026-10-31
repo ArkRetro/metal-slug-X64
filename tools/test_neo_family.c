@@ -424,6 +424,7 @@ int main(void) {
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);
+        e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
 #endif
 #ifdef FAMILY_ATTACKS
         answer_first=ATTACK_SPANS[k][0];answer_count=ATTACK_SPANS[k][1];answer_used=0;

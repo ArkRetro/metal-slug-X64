@@ -353,6 +353,12 @@ emu.register_frame_done(function()
   if key==last_key then still=still+1 else still=0 end
   last_key=key
   plan_inputs(cpu:read_u16(0x101500)&511)
+  -- MSX_FULL_IDLE="lo-hi": capture-only, no input in those frames (an idle
+  -- player for the GO arrow 05287C).
+  local il,ih=string.match(os.getenv('MSX_FULL_IDLE') or '','(%d+)-(%d+)')
+  if il and frame>=tonumber(il) and frame<=tonumber(ih) then
+   for _,b in ipairs({'P1 Left','P1 Right','P1 Up','P1 Down','P1 A','P1 B','P1 C'}) do button(b,0) end
+  end
   if still>=stall_limit then print('STALL '..frame);last_frame=frame end
  end
  if frame>=2100 then

@@ -144,9 +144,13 @@ pierde ninguna aparición contada.** Apariciones contadas que el port pierde:
    completa); `neo_world_init` con guion (sección 1 `2D7298..2D7516`, blob de
    ROM), lista de cámara `0B6D2A` (espera de progreso en `0B6DF2`) y
    jugadores `019604` (`+4` = `2D5C6A`).
-3. Salida de la etapa 1: el actor de mapa `0B6F24` (rectángulo `01B2CE` →
-   `018F40`); transiciones `3AED8`/`3AEF0`; `5287C` de `01860A`.
-4. Etapas 2 y 3: cámara/render/colisión verticales y capturas que cubran las
-   celdas desconocidas.
+3. Salida de la etapa 1: el actor de mapa `0B6ED2`/`0B6F24` (rectángulo
+   `01B2CE` → `018F40`, caminata automática `0CA340`): pendiente. Hechos en
+   `work-m2act` ([MISION2_ACTORES.md](MISION2_ACTORES.md)): transiciones
+   `3AED8`/`3AEF0` nativas (`neo_wipe.c`, sin paradas en `test_neo_mission`),
+   flecha GO `05287C` y marcador `0B6F6A` (`neo_goarrow.c`).
+4. Etapas 2 y 3: cámara/render verticales. Colisión: etapa 2 completa desde
+   la ROM (`fill_collision_rom.py`, 0 desconocidas); etapa 3 completa hasta
+   la fila 207, quedan 37037 celdas fuera de la vista de la subida.
 5. Recorrido de la Misión 2 en ares (`tools/test_mission_native_ares.py` con
    la etapa 1) cuando exista el cargador.

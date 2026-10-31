@@ -32,6 +32,17 @@ def main():
   converted=convert_palette(profile['words'])
   if converted not in palettes:palettes.append(converted)
  colors=[((v>>11&31)*255//31,(v>>6&31)*255//31,(v>>1&31)*255//31,255 if v&1 else 0) for v in rgba16]
+ # Pens with the same colour (3 and 6 of the player's palette): mksprite
+ # maps a pixel to a palette index by colour, so a later duplicate is moved
+ # by one 8-bit step that keeps its RGBA5551 value (the palette is the same).
+ for i in range(len(colors)):
+  while colors[i] in colors[:i]:
+   c=list(colors[i])
+   for k in range(3):
+    if (c[k]+1)>>3==c[k]>>3 and (c[k]+1)*31//255>=0:c[k]+=1;break
+    if c[k] and (c[k]-1)>>3==c[k]>>3:c[k]-=1;break
+   else:raise AssertionError(('no free 8-bit colour',i,colors[i]))
+   colors[i]=tuple(c)
  source=ROOT/'build/marco-png';source.mkdir(parents=True,exist_ok=True);out=ROOT/'romfs/marco';out.mkdir(parents=True,exist_ok=True)
  parts=[];poses=[];paths=[]
  for tag in audit['descriptor_addresses']:

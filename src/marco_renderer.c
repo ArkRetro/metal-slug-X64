@@ -36,20 +36,20 @@ bool marco_renderer_load(void) {
     if (loaded) return true;
     for (unsigned i=0;i<MARCO_PARTS;i++) {
         char path[48];snprintf(path,sizeof(path),"rom:/marco/p%u.sprite",i);parts[i]=sprite_load(path);
-        if (!parts[i]) {marco_renderer_close();return false;}
+        if (!parts[i]) {debugf("MSX marco part %u: not loaded\n",i);marco_renderer_close();return false;}
         surface_t pixels=sprite_get_pixels(parts[i]);
         if (sprite_get_format(parts[i])!=FMT_CI4 || parts[i]->width!=marco_parts[i].width ||
             parts[i]->height!=marco_parts[i].height || (unsigned)pixels.stride*pixels.height>2048) {
-            marco_renderer_close();return false;
+            debugf("MSX marco part %u: format/size %ux%u\n",i,parts[i]->width,parts[i]->height);marco_renderer_close();return false;
         }
         const uint16_t *palette=sprite_get_palette(parts[i]);
         for (unsigned pen=0;pen<16;pen++) if (palette[pen]!=marco_palettes[0][pen]) {
-            marco_renderer_close();return false;
+            debugf("MSX marco part %u: palette pen %u\n",i,pen);marco_renderer_close();return false;
         }
         uint32_t fingerprint=2166136261u;const uint8_t *data=pixels.buffer;
         for (unsigned y=0;y<pixels.height;y++) for (unsigned x=0;x<pixels.width;x++)
             fingerprint=(fingerprint^((data[y*pixels.stride+x/2]>>((x&1)?0:4))&15u))*16777619u;
-        if (fingerprint!=marco_parts[i].indices_fnv) {marco_renderer_close();return false;}
+        if (fingerprint!=marco_parts[i].indices_fnv) {debugf("MSX marco part %u: pixels differ\n",i);marco_renderer_close();return false;}
     }
     data_cache_hit_writeback((void*)marco_palettes,sizeof(marco_palettes));
     loaded=true;return true;

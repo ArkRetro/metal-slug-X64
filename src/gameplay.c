@@ -751,7 +751,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->pistol_pending=0;
         if (g->pistol_wait) g->pistol_wait--;
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
-            g->fire_request=false;
+            g->fire_request=false;g->c_fires++;
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);

@@ -824,7 +824,10 @@ filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64
 	@echo "Recover full title motion with tools/pack_title_animation.py; see docs/INTRO_AUDIO.md"
 	@exit 1
 # Campaign Marco with the private program table and pose catalog.
-check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/legs_fixture.h
+# Throw/C/H-down poses per step (tools/extract_throw_fixture.py, data/marco_throw_fixture.json).
+$(BUILD_DIR)/marco_throw_fixture.h: tools/extract_throw_fixture.py data/marco_throw_fixture.json
+	python3 tools/extract_throw_fixture.py --from-json data/marco_throw_fixture.json --header $@
+check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/marco_throw_fixture.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_marco_visual.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/marco_visual
 	$(BUILD_DIR)/host/marco_visual

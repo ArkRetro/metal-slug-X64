@@ -1088,9 +1088,10 @@ Port (`gameplay.c`): `aim_down` = abajo en el aire (arriba gana, como
 demás siguen con la bala del port), la H recibe `down` en
 `marco_hgun_input_t` (sus programas hacia abajo ya estaban traducidos) y la
 C usa `C0` con la espera de 3 actualizaciones. El cuerpo dibuja `24EABC`
-para la pistola (`marco_visual.c`); los programas de arma hacia abajo de la
-forma 1 (H `2560C0/2561DC/25624E`, C) no están en el catálogo de Marco: se
-dibuja el de reposo (limitación visual). Sonido: `game_audio.c` ya no pide
+para la pistola (`marco_visual.c`); los de la forma 1 (H `2560C0/2561DC`,
+C `255FDE`, y los demás disparos de la C) están ahora en el catálogo (ver
+MARCO_CAMPAIGN.md, «Granadas, arma C y la H hacia abajo»); `25624E` sigue
+sin captura. Sonido: `game_audio.c` ya no pide
 `0x10F7` por los disparos nativos (H, C, pistola abajo), cuyos constructores
 piden el suyo.
 

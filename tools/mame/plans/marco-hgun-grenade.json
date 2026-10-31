@@ -1,0 +1,95 @@
+[
+ {
+  "name": "h_idle_right",
+  "length": 40,
+  "inputs": []
+ },
+ {
+  "name": "h_grenade_stand",
+  "length": 64,
+  "inputs": [
+   "grenade"
+  ]
+ },
+ {
+  "name": "h_idle_fwd",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_grenade_crouch",
+  "length": 80,
+  "inputs": [
+   "Down",
+   "grenade"
+  ]
+ },
+ {
+  "name": "h_idle_fwd2",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "h_grenade_jump",
+  "length": 96,
+  "inputs": [
+   "jump",
+   "grenade"
+  ]
+ },
+ {
+  "name": "h_grenade_run",
+  "length": 48,
+  "inputs": [
+   "Right",
+   "grenade"
+  ]
+ },
+ {
+  "name": "h_jump_down_fire_right",
+  "length": 96,
+  "inputs": [
+   "jump",
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_run_jump_down_fire_right",
+  "length": 64,
+  "inputs": [
+   "Right",
+   "jump",
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_walk_left",
+  "length": 16,
+  "inputs": [
+   "Left"
+  ]
+ },
+ {
+  "name": "h_jump_down_fire_left",
+  "length": 96,
+  "inputs": [
+   "jump",
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "h_grenade_stand_left",
+  "length": 64,
+  "inputs": [
+   "grenade"
+  ]
+ },
+ {
+  "name": "h_idle_end",
+  "length": 40,
+  "inputs": []
+ }
+]

@@ -34,7 +34,8 @@ def schedule(cases=CASES):
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');p.add_argument('--give-cgun',action='store_true',help='capture only: at the first plan frame write the C (id 0C, 40 rounds kept, cap 3, +94 = 1) like a pickup, as tools/capture_weapons.lua plan air');p.add_argument('--keep-bombs',action='store_true',help='capture only: bombs kept at 10 (several throws per plan)');a=p.parse_args()
+ assert not (a.give_hgun and a.give_cgun)
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
  if a.plan:
@@ -59,6 +60,8 @@ def main():
  if a.body_trace:env['MSX_BODY_TRACE']='1'
  if a.ammo_trace:env['MSX_AMMO_TRACE']='1'
  if a.give_hgun:env['MSX_GIVE_HGUN']='1'
+ if a.give_cgun:env['MSX_GIVE_CGUN']='1'
+ if a.keep_bombs:env['MSX_KEEP_BOMBS']='1'
  if a.dump_routines:env['MSX_DUMP_ROUTINES']=a.dump_routines
  assert sum((a.body_trace,a.motion_trace,a.stance_trace,a.idle_trace))<=1,'Block tracers share a debugger latch'
  if a.idle_trace:env['MSX_IDLE_TRACE']='1'

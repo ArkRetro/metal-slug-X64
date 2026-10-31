@@ -12,14 +12,14 @@
 #include "death_fixture.h"
 
 int main(void) {
-    unsigned bad=0,skipped=0,velocities=0,speeds=0,ends=0,respawns=0,entrances=0;
+    unsigned bad=0,skipped=0,velocities=0,speeds=0,ends=0,respawns=0,entrances=0,poses=0;
     for (unsigned i=0;i<DEATHS;i++) {
         const death_case_t *c=&death_cases[i];const death_update_t *u=&death_updates[c->first];
         marco_death_t d;int32_t vx=(int32_t)u[0].v30,vy=(int32_t)u[0].v34;int facing=0;
         bool ground=(u[0].f15&0x40u)!=0;
         marco_death_start(&d,(uint8_t)c->kind,ground,(c->f5b&0x80u)!=0,&vx,&vy,&facing);
         if (c->kind!=2) ground=false;                          /* 0C2E7E */
-        unsigned k=1,end=0,gone=0;
+        unsigned k=1,end=0,gone=0;uint32_t got[256]={0};marco_life_phase_t phase[256]={0};
         for (;k<c->count && d.phase!=MARCO_GONE;k++) {
             marco_death_velocity(&d,ground,&vx,&vy);
             bool now=(u[k].f15&0x40u)!=0;
@@ -40,9 +40,25 @@ int main(void) {
                 if (d.anim.speed!=u[k].f26) {if (bad<20) fprintf(stderr,"death %u update %u: +26 %04X, capture %04X\n",c->frame,k,d.anim.speed,u[k].f26);bad++;}
                 else speeds++;
             }
+            /* The pose of the update (0 none: lying, every other update). */
+            {neo_anim_draw_t dd;got[k]=d.phase!=MARCO_GONE && marco_death_draw(&d,0,0,1,&dd)?dd.descriptor:0;phase[k]=before;}
             if (before==MARCO_DYING && d.phase==MARCO_LYING) end=k;
             if (d.phase==MARCO_GONE) gone=k;
             ground=now;
+        }
+        /* The poses (MARCO_DRAW of 004406, logged by marco-d2): every
+         * update's pose while dying, in order, and the number of draws while
+         * lying (every other update: the body blinks). */
+        if (c->pose_count) {
+            unsigned n=0,lying=0;
+            for (unsigned j=1;j<k;j++) {
+                if (phase[j]==MARCO_DYING) {
+                    if (n<c->pose_count && got[j]==death_poses[c->pose_first+n]) poses++;
+                    else {if (bad<40) fprintf(stderr,"death %u (kind %X) dying pose %u: %06X, capture %06X\n",c->frame,c->kind,n,(unsigned)got[j],n<c->pose_count?death_poses[c->pose_first+n]:0u);bad++;}
+                    n++;
+                } else if (phase[j]==MARCO_LYING) lying+=got[j]!=0;
+            }
+            if (n!=c->pose_count || lying!=c->lying_draws) {fprintf(stderr,"death %u: %u dying poses, %u lying draws; capture %u, %u\n",c->frame,n,lying,c->pose_count,c->lying_draws);bad++;}
         }
         /* The capture: 0C2F06 written at the end update, 003F1E at the actor's end. */
         unsigned want_end=0,want_gone=0,want_entry=0,want_normal=0;
@@ -66,7 +82,7 @@ int main(void) {
         if (want_entry+n!=want_normal) {fprintf(stderr,"death %u: entrance %u updates, capture %u\n",c->frame,n+1,want_normal-want_entry);bad++;}
         else entrances++;
     }
-    printf("death: %u deaths, %u airborne velocities, %u speeds, %u end/gone updates, %u respawn points, %u entrances equal (%u updates with swept motion not compared); %u mismatches\n",DEATHS,velocities,speeds,ends,respawns,entrances,skipped,bad);
+    printf("death: %u deaths, %u airborne velocities, %u speeds, %u end/gone updates, %u respawn points, %u entrances, %u update poses equal (%u updates with swept motion not compared); %u mismatches\n",DEATHS,velocities,speeds,ends,respawns,entrances,poses,skipped,bad);
     if (bad) return 1;
     printf("PASS: player death 0C2956..0C2F96 and respawn 0196E8/0C1438\n");
     return 0;

@@ -650,17 +650,14 @@ con la altura original la carrera guionizada de `tools/test_gameplay.c` deja
 de liberar al prisionero que da la H (`items served` 8 → 2): pendiente de
 contrastar la caja del prisionero con la fila de ataque de la pistola.
 
-**Pendiente (visto en hardware):** la forma 1 (H) no tiene poses en el
-catálogo: los programas de la H (ráfagas `24CAA8`.. poses `192C3E`, `19533A`,
-…; tablas de forma 1 en `+0x10` de `0BFDD8..0BFF58` y las de reposo/carrera
-de la forma 1) no están exportados y Marco se dibuja con la pistola. Las
-poses de muerte tampoco: `0BF298 → 25009E` (`18BA26..18BBC8`, 28
-actualizaciones, bucle en `+78` hasta aterrizar), `0BF318 → 25016A`
-(`18BD6A..18BE30`), `0BF358 → 2501DC` (`18C9C4..18CE8E`, bucle hasta `+78 =
-0`), entrada `0BF498 → 24F072` (`18AABC..18ABE4`, `188828`, `188838`); el
-port mantiene la última pose (en hardware: Marco «congelado» mientras vuela,
-yace 31 actualizaciones y reaparece). Hace falta exportarlas con la cadena de
-`tools/build_marco_poses.py` y validarlas contra `death3`/`hfam`.
+**Forma 1 y muertes (resuelto):** la forma 1 (H) y las muertes tienen sus
+programas y poses en el catálogo; ver [MARCO_CAMPAIGN.md](MARCO_CAMPAIGN.md),
+«Forma 1 (H) y muerte». El renderizador usa la fila `+0x10` con `+93 = 1`;
+mientras muere, yace (dibujo cada dos actualizaciones: parpadeo) y entra,
+dibuja la pose del programa de `marco_death.c` (`marco_death_draw`, paleta
+quemada en `0BF358`). `tools/test_marco_death.c` compara además, en las 8
+muertes de `marco-d2`, la pose de cada actualización mientras muere (315
+poses) y el número de dibujos mientras yace, iguales.
 
 ## 11. HUD de capa fija (`src/neo_hud.c`, `src/hud_renderer.c`)
 

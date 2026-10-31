@@ -135,6 +135,12 @@ local function probes()
  bp(0x8b612,'1','bombtype_item d0=%X d1=%X a6=%08X kind=%X','d0,d1,a6,w@(a6+6e)')
  bp(0x8b7fc,'1','points_item d0=%X a6=%08X kind=%X rec=%08X','d0,a6,w@(a6+6e),a0')
  bp(0x8b896,'1','score_popup d0=%X rec=%08X value=%08X','d0,a0,d@(a0+c)')
+ -- Marco catalog mode (MSX_WEAPONS_MARCO_DUMP=lo-hi,..): the player's draws
+ -- and program starts in the format of tools/mame/capture_marco_catalog.lua.
+ if os.getenv('MSX_WEAPONS_MARCO_DUMP') then
+  dbg:command('bpset 4406,a6==1014c4,{printf "MARCO_DRAW frame=%d descriptor=%08X xy=%08X attr=%04X z=%04X\\n",temp9,d7,d0,d1&ffff,d5&ffff;g}')
+  dbg:command('bpset 4256,a6==1014c4,{printf "MARCO_INIT frame=%d program=%08X speed=%04X\\n",temp9,a1,d0&ffff;g}')
+ end
  -- Weapon state.
  bp(0xc0928,'1','give_weapon d0=%X d1=%X old=%X ammo=%X','d0,d1,b@10c71e,w@10c724')
  bp(0xc09c8,'1','give_weapon_done id=%X ammo=%X max=%X','b@10c71e,w@10c724,b@10c71c')
@@ -282,6 +288,29 @@ local function button(name,value)
   end end
  end
 end
+-- Marco catalog mode: while the player's routine is in a range (and the 4
+-- frames after: the submission delay), the VRAM (video item, no register
+-- write), palette and screen of every frame, plus states.jsonl and the
+-- program banks, for tools/audit_marco_catalog.py --sparse (plan.json is
+-- written by the caller).
+local marco_ranges=os.getenv('MSX_WEAPONS_MARCO_DUMP');local marco_until=nil;local marco_states=nil
+local function marco_dump(f)
+ if not marco_ranges or f<2100 then return end
+ if not marco_states then marco_states=assert(io.open(output..'/states.jsonl','w')) end
+ local P=0x1014c4;local routine=cpu:read_u32(P)
+ marco_states:write(string.format('{"frame":%d,"routine":%d,"cursor":%d,"x":%d,"y":%d,"projected_x":%d,"projected_y":%d,"flags":%d,"f5a":%d}\n',f,routine,cpu:read_u32(P+0x20),cpu:read_u32(P+0x28),cpu:read_u32(P+0x2c),cpu:read_u32(P+0x3c),cpu:read_u32(P+0x40),cpu:read_u16(P+0x14),cpu:read_u8(P+0x5a)))
+ if f==2102 then
+  for _,r in ipairs({{'program-fixed.bin',0,0xfffff},{'program-bank.bin',0x200000,0x2fffff}}) do
+   local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
+  end
+ end
+ for lo,hi in marco_ranges:gmatch('(%x+)-(%x+)') do if routine>=tonumber(lo,16) and routine<=tonumber(hi,16) then marco_until=f+4 end end
+ if not marco_until or f>marco_until then return end
+ local video=emu.item(assert(manager.machine.devices[':spritegen'].items['0/m_videoram']))
+ local v=assert(io.open(output..'/vram'..f..'.bin','wb'));for i=0,0x85ff do v:write(string.pack('>I2',video:read(i))) end;v:close()
+ local pf=assert(io.open(output..'/palette'..f..'.bin','wb'));for i=0,4095 do pf:write(string.pack('>I2',cpu:read_u16(0x400000+i*2))) end;pf:close()
+ manager.machine.screens[':screen']:snapshot(output..'/game'..f..'.png')
+end
 local still=0;local last_camera=-1;local sweep_direction=1
 local mounted_at=nil;local mounted_slot=0;local leave_until=0
 local last_key=nil;local next_event_dump=0
@@ -385,10 +414,11 @@ emu.register_frame_done(function()
   if (frame>=first_dump and frame%period==0) or (event and frame>=next_event_dump and frame>2200) then dump(frame);if event then next_event_dump=frame+4;print('EVENT '..frame..' '..key) end end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera);wcsv:flush();actors:flush();trace:flush();if deaths then deaths:flush() end end
  end
+ marco_dump(frame)
  family_frame(frame)
  in_lua=false
  if frame==last_frame then
   if boss_log then boss_log:close() end
-  wcsv:close();actors:close();states:close();trace:close();if deaths then deaths:close() end;manager.machine:exit()
+  wcsv:close();actors:close();states:close();trace:close();if deaths then deaths:close() end;if marco_states then marco_states:close() end;manager.machine:exit()
  end
 end,'frame')

@@ -36,7 +36,13 @@ static int ram_read(void *file,uint8_t *ptr,int len) {
     ram_handle_t *h=file;size_t n=h->file->size-h->pos;
     if (len<0) return -1;
     if ((size_t)len<n) n=(size_t)len;
-    memcpy(ptr,h->file->data+h->pos,n);h->pos+=n;return (int)n;
+    memcpy(ptr,h->file->data+h->pos,n);h->pos+=n;
+    /* The caller may hand the buffer to the RSP (wav64 VADPCM decoding DMAs
+     * it from RDRAM): a CPU copy stays in the data cache, so write it back,
+     * as a cartridge read (PI DMA) would have landed it in RDRAM. Without
+     * this the RSP decoded stale memory: distorted effects (ROM 10). */
+    if (n) data_cache_hit_writeback(ptr,n);
+    return (int)n;
 }
 static int ram_close(void *file) {((ram_handle_t *)file)->used=false;return 0;}
 static filesystem_t ramfs={.open=ram_open,.fstat=ram_fstat,.lseek=ram_lseek,.read=ram_read,.close=ram_close};

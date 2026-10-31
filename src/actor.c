@@ -91,7 +91,11 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     if (!desc) {native_missing_descriptor++;return;}
     int palette=scene_native_palette(d->palette);
     if (palette<0) {native_missing_palette++;palette=scene_native_palette(0x20e);}
-    bool mirror=(d->attributes&1u)!=0;
+    /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'
+     * 32 directions 22C3BE are 9 shapes with both flips; ignoring bit 1
+     * drew the bullets going up-right as "\", MiSTer report). Parts are
+     * placed as marco_renderer.c does: -(y+height)-1 when flipped. */
+    bool mirror=(d->attributes&1u)!=0,flip_y=(d->attributes&2u)!=0;
     int origin_y=native_screen_y(d->y);
     for (unsigned i=0;i<desc->count;i++) {
         const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first+i);
@@ -103,15 +107,15 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
             float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
             float w=im->width*sx,h=im->height*sy;
             float x=mirror?(int16_t)d->x-(im->x+im->width)*sx-1:(int16_t)d->x+im->x*sx;
-            float y=origin_y+im->y*sy;
+            float y=flip_y?origin_y-(im->y+im->height)*sy-1:origin_y+im->y*sy;
             if (x+w<=0 || x>=320 || y+h<=0 || y>=240) continue;
-            scene_render_image_scaled(&part,x,y,w,h,mirror,d->flash && (game.ticks&1));
+            scene_render_sprite_scaled(&part,x,y,w,h,mirror,flip_y,d->flash && (game.ticks&1));
             continue;
         }
         int x=mirror?(int)(int16_t)d->x-(im->x+im->width)-1:(int)(int16_t)d->x+im->x;
-        int y=origin_y+im->y;
+        int y=flip_y?origin_y-(im->y+im->height)-1:origin_y+im->y;
         if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
-        scene_render_image(&part,x,y,mirror,d->flash && (game.ticks&1));
+        scene_render_sprite(&part,x,y,mirror,flip_y,d->flash && (game.ticks&1));
     }
 }
 static void draw_end(const neo_end_draw_t *e,bool request_only) {
@@ -161,7 +165,9 @@ void actor_set_active(bool active) {
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
-    if (input.btn.l && !diagnostics_was_down) {
+    /* The diagnostic overlay (L) only on the internal reference cartridge:
+     * the release game has no debug HUD (user request). */
+    if (msx_reference_invulnerable && input.btn.l && !diagnostics_was_down) {
         diagnostics=!diagnostics;debugf("MSX diagnostics %s\n",diagnostics?"on":"off");
     }
     diagnostics_was_down=input.btn.l;
@@ -299,6 +305,20 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
     if (!was_complete && game.complete) debugf("MSX mission complete camera=%d x=%d\n",game.camera,game.x);
+    {   /* Prisoner tally 0308C0 (neo_tally.c): start and end. */
+        static uint8_t seen_end;static uint16_t rescued_at_start;
+        if (game.mission_end!=seen_end) {
+            if (game.mission_end==MSX_END_TALLY) {
+                rescued_at_start=game.end_ram.rescued[0];
+                debugf("MSX prisoner tally started (0308C0 prisoners=%u special=%u/%u)\n",rescued_at_start,game.end_ram.special[0][0],game.end_ram.special[0][1]);
+            } else if (seen_end==MSX_END_TALLY) {
+                const uint8_t *sc=game.world.pickup.score[0];
+                debugf("MSX prisoner tally done (counted=%u left=%u score=%02x%02x%02x%02x nodes=%u stops=%u text stops=%u)\n",
+                    rescued_at_start,game.end_ram.rescued[0],sc[0],sc[1],sc[2],sc[3],game.end.spawned,game.end.unsupported,game.end_ram.unsupported_text);
+            }
+            seen_end=game.mission_end;
+        }
+    }
     {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
         static bool logged;
         if (game.mission_end!=MSX_END_LETTERS) logged=false;
@@ -328,6 +348,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
+    for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);
     if (game.world.boss_active) scene_prefetch_boss();
     scene_prefetch_ahead(game.camera);
     scene_service();
@@ -356,11 +377,25 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */
     rdpq_set_scissor(8,8,312,232);
-    for (unsigned i=0;i<game.world.draw_count;i++) if (game.world.draws[i].attributes&4u) draw_native(&game.world.draws[i],false);
+    /* 0113EA: the original sorts the frame's sprite-list entries by the
+     * priority word +1E (two stable counting passes, low then high byte)
+     * and lists them in that order, so a higher +1E draws over a lower one
+     * (an item, +1E 0x8838, over the wagon's canvas, 0x8700); equal words
+     * keep the actor-list order. */
+    static uint8_t order[NEO_WORLD_DRAWS];
+    {
+        unsigned n=game.world.draw_count;
+        for (unsigned i=0;i<n;i++) {
+            unsigned j=i;
+            while (j && game.world.draws[order[j-1]].z>game.world.draws[i].z) {order[j]=order[j-1];j--;}
+            order[j]=(uint8_t)i;
+        }
+    }
+    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}
     scene_render_front(game.camera,game.camera_height,game.backdrop_after,game.ticks);
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
-    for (unsigned i=0;i<game.world.draw_count;i++) if (!(game.world.draws[i].attributes&4u)) draw_native(&game.world.draws[i],false);
+    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (!(d->attributes&4u)) draw_native(d,false);}
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
     if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
@@ -398,6 +433,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* Mission-end actors (MISSION COMPLETE letters 06090A), created after
      * the mission actor: above the world's sprites, below the fix layer. */
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],false);
+    /* The mission actor's CONTINUE? and digit (program 018120). */
+    for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],false);
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     /* The original fix layer above every layer, on the 304x224 window. */

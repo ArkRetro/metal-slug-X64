@@ -371,7 +371,9 @@ torreta `101784`; 23 `0x0956CE` (programa `0x291AF0`) del estado
 `0x092DDA`; salida A+B 11099 (tipo 1). La salud quedó en `0x30`. Una
 ejecución más larga (`tanklong`: `PLAN=vehicles RIDE=2400`, igual que
 `vehicles2` hasta 10376, tanque 10376..12777, salida A+B 12777) tampoco
-recibió daño: **daño y destrucción del SV-001 no observados**.
+recibió daño: **daño y destrucción del SV-001 no observados**. La
+voladura tras la salida (`0x093AFA`), los saltos, el agachado con bombas y
+el empuje del cuerpo del lanzacohetes sí se capturaron después (paso 10).
 
 ## 8. Desconocido / no observado
 
@@ -888,35 +890,120 @@ general): 24 volcados, 21206 píxeles iguales, 695 distintos (los volcados
 de la subida 9531, de la muerte 10092 y de balas cuyo volcado está lejos de
 su actualización).
 
-### Paso 10 (pendiente): SV-001 `0x092A32`, alcance medido
+### Paso 10: SV-001 `0x092A32` (`src/neo_tank.c`, `src/neo_tread.c`)
 
-Sin traducir: sigue siendo la parada explícita registrada de
-`neo_world.c` (`0x092A32`, aparición no contada). Lo medido para la
-traducción:
+Traducción manual de `0x092810..0x095800` (tanque, cañón, obús, destello,
+entrada del jinete, polvo) y de su cuerpo de orugas `0x014AE8..0x0153EE`
+(`neo_tread.c`); la torreta vulcan `0x03B4E0/0x03B57C` (`+72 = 0`, ancla
+`tanque+86`) y las balas `0x01B6A0` son las de la Camel (`neo_slug.c`,
+`neo_bullet.c`), ahora con la chispa `0x03BA76/0x03BA9A` (antes parada
+explícita). El mundo ya no para la aparición `0x092A32`
+(`neo_world_spawn_stop` no para nada) y el jugador montado es el mismo de
+la Camel (`marco_mount.c`, tipo 1: salida A+B o de un salto expulsa al
+jugador); la HUD ya mostraba CANNON, los obuses (`+1F` de la ranura) y la
+salud del vehículo (`neo_hud.c`, tipo 1).
 
-- Código: `0x092810..0x095800` (unas 2.730 instrucciones; `0x092832`
-  caja de daño `+50` por `+74` y tablas `0x9274x/0x927Cx`, ángulo `+84` →
-  `+74/+75/+76`; `0x092934` cañón: `+8A = 0x18`, `0x0AA956`, destello
-  `0x0952F8`, obús `0x094EAA` o `0x0950DC` si `+7C = 5`, `0x014A02` con el
-  desplazamiento `+70[4..5]`; `0x0929E6` bombas `0x0C0808`).
-- Estados recorridos en `tankfam` (`extract_family_fixture.py --range
-  92a00-95800`: 1048 actualizaciones): espera `92B0E` (5), subida
-  `92C18/92C38/92C76` (13), parado `92C9A` (4), marcha `92DDA` (207),
-  disparo `9307C` (79), `93278/9329E` (2), salida `93A46` (3); obús
-  `94EAA/94F1C/94FF8/9503C` (9 creados, 362), destello `952F8/9533C` (144),
-  entrada `954DC/95580` (6), `956CE/95768` (214). Torreta y balas en
-  `--range 3b4e0-3b900 --range 1b600-1bd00` (2002 más: `3B57C` 314,
-  `1B6A0` 152, `1B882` 1111, `1BC82` 416, `1BC2E` 7).
-- Rutinas del núcleo que faltan en el port: el cuerpo de orugas
-  `0x014AE8` (hijo `0x014A4E` en `+8C`, que no está en los nodos de la
-  traza de familia: haría falta `--ram` de su nodo), su barrido
-  `0x014C0C/0x014C2E/0x014C48/0x014C6A` (`0x0128E8` + `0x004ED2`, como el
-  de la Camel), `0x0153D2`, `0x0353C2` (hijo `0x03533A`), `0x009D1E`
-  (rampa de paleta `1068EA`), `0x0AD9E6/0x0AE220` (efectos tras el actor del
-  guion), `0x0AA956` (obuses `+1F` del bloque de armas, `10F001` bit 2),
-  `0x01AB9C`, `0x0C05B8` (`+93` del jugador).
-- Daño `0x093772`/`0x0AA9E4`, destrucción `0x0938DA`/`0x093AFA` y bombas
-  `0x0929E6`: sin captura; deben quedar como paradas explícitas.
+**Estados.** Constructor `092A32` (paletas `0x3D3/0x39D/0x203`, suelo
+`0146E8`, orugas `014AE8` en `+8C`, salud `0x30`, tipo 4, 10 obuses,
+torreta), espera `092AD8/092B0E` (marcador `0353A4`, recorte `092A1A`,
+`0AA610` con el rectángulo `092A2A`), subida `092C18..092C76` (hijo de
+entrada `0954DC/095580`: programas `0954A4/0954B4/0954C4` por el `+93` del
+jugador y el `+6E` del jinete, paleta `0954D4`, desplazamiento `095460[+74]`;
+al terminar pone `tanque+60 = FF`), reposo `093278/09329E` (sonido `1092`),
+parado `092C9A/092CC2`, marcha `092DDA` (entradas `092D24..092DA2` que caen
+en `092DDA` en la misma actualización; polvo `0956CE/095768` por `+95`),
+frenada `092F94`, disparo `093054/09307C` (`+79`), agachado
+`093138/09315E/093204/09321A` (bombas `0929E6` → `0C0808` con el
+desplazamiento `+70[2..3]`), salto `09333A/093362` (sonido `1090`), aire
+`09339E/0933C2` (`0153D2` con `092A10[+75]`, gravedad, palanca, C), aterrizaje
+`09347A/0934A2` (sonido `1091`), salida de un salto `0937C6/0937E4`,
+salida A+B `093A08/093A46` (sonido `10E9`, lista de paletas `093882`) y
+voladura `093AFA` (sonido `1034`, fila `0939F8`, `0AA7FC` tipo 0, destello
+de pantalla `0AE1DC/0AE1F0` por `009BB0`, cuatro piezas `0AD9B8/0AD88A`
+—programa `0AD8CE` del bloque fijo; su retrollamada `0AD96C` crea la
+siguiente mientras `+4E`— y estallido `093BC2/093BF2`, programa `22CF2C`).
+Cola común `093692`: enfriamiento `+8A`, `+5F` bit 6, lista de paletas
+`+90` (`009D1E`: la ranura de paleta `+14` toma el recurso de la lista;
+en el port, `a->palette[+14 − 1]`), parpadeo `+7E`, `0AA760`, `0AAA88`,
+daño `0AA9E4`, fila de empuje `0939E8`, ancla `0939BA`. Cañón `092934`:
+`0AA956`, destello `0952F8/09533C/095448` (zoom `290F3A[+74]` por la
+retrollamada `290F4C`), obús `094EAA/094F1C/094FF8/09503C` (sonidos
+`1084/10F2`; una pared, `+5F` bit 1, también lo hace estallar). Las
+retrollamadas `09280E/092820` de los programas eligen el registro de pose
+`+70` en tablas del banco `0x29xxxx` (`extract_soldier_programs.py`: el
+destino es la palabra baja de la tabla tras la llamada).
+
+**Orugas.** El nodo `014A4E` es un nodo de familia cuyos campos escribe el
+tanque (`compile_family_fixture.py --shared 14a4e`). Cada paso (`014C0C`
+aire con `0128E8` + `004ED2`, `014C2E` aire, `014C48` suelo con `004ED2`,
+`014C6A` suelo) lee el modo `10C004` de la tabla `014522` por la palabra
+de superficie de la sonda `013C1A` (`neo_kernel_probe`; sin superficie la
+palabra es `0x4000` y se lee el código en `014522+0x4000`, blob
+`0x018522`), barre el punto delantero y el trasero (`014B12`, dos barridos
+absolutos de `013968`), mueve el ángulo con el muelle `014B90` y barre el
+vehículo hasta el punto medio.
+
+**Cuerpos sólidos `004ED2`.** Nuevo `ga_push_solids` (`neo_gactor.c`): la
+tabla `106756` llega por `neo_vehicle_env_t.solid_node/solid_desc` (el
+mundo la llena con sus `solids[]`); por cuerpo, la caja del descriptor
+(espejo por `+15` bit 0 del dueño), los bits `+15` 3/4 de ambos, el empuje
+de 1/16 y el barrido `013968` desde `+44/+48` (más el movimiento del padre)
+con A0 = 0, de vuelta relativo a `+38` (`01AC4C`). `10C008 = FF` y
+`10C00B = 0` en ese barrido (globales del barrido anterior en el
+original): coinciden en los 16 empujes medidos. La Camel sigue con su
+parada `0x004ED2` (su paso aéreo `0143EE` usa el resultado D7, sin
+traducir).
+
+**Capturas** (`tools/capture_weapons.lua`, plan `vehicles`,
+`ASSIST_CAMERA=2000`; `MSX_WEAPONS_RIDE_JUMPS=1/2` añade saltos y
+agachados sólo dentro del SV-001; `MSX_WEAPONS_DEBUG_CMDS` añade órdenes
+del depurador, p. ej. trazas del núcleo):
+
+| Captura | Variables | Contenido |
+| --- | --- | --- |
+| `tank3` | `LAST=11500 FAMILY 10330..11490 ROOTS=92a32,ae1dc,ad9b8,93bc2 FIRST_DUMP=11150` | subida 10376, marcha, 9 obuses, salida A+B 11099, voladura 11209 |
+| `tank5` | igual con `RIDE_JUMPS=1`, `LAST=11250` | saltos, aire, aterrizajes, salida de un salto (937E4) |
+| `tank6` | `RIDE_JUMPS=2`, `LAST=11130` | agachado 9315E/93204, 4 bombas `01BF10` |
+| `tank7` | `RIDE=2400 LAST=12310 FAMILY 10330..12300` | el lanzacohetes `05ED84` registra su cuerpo `05EB7C`: 83 comprobaciones y 16 empujes 11994..12210 |
+| `tank4` | `LAST=11145 FIRST_DUMP=11100 PERIOD=3` | solo volcados: paletas `0x396..0x39E` de la lista `093882` |
+
+**Pruebas de familia** (`make check`, `extract_family_fixture.py --attacks
+--ram 10c608-10c650 … 10000e-100010`, rangos `92810-95800`, `14a4e`,
+`3b4e0-3bb00`, `3523c-352ff`, `1b6a0`, `ae1dc-ae220`, `ad884-ad9e6`;
+`FAMILY_ARGS_tank… := --script-actor 101414 --script-routines 1b6a0
+--node-fields 6e,8c --shared 14a4e --attacks` y los sellos de la tienda
+`0B6566` de la familia `prisoner`):
+
+| Familia | Nodos | Actualizaciones (fotogramas) | Bytes de nodo | RAM fuera de nodos |
+| --- | --- | --- | --- | --- |
+| `tank` | 235 | 2603 (10337..11358) | 350560 | 1228616 |
+| `tankjump` | 70 | 1015 (10337..10839) | 138740 | 479080 |
+| `tankcrouch` (+ `--script-routines 1bf10`) | 213 | 1855 (10337..11117) | 253120 | 875560 |
+| `tankpush` (+ `--ram 106756-1067d6` y campos del cuerpo `102C24`) | 501 | 4104 (10337..12299) | 554680 | 2467704 |
+
+Todas iguales bit a bit. Hallazgos de la traza del núcleo (`013968` con
+`bpset 129bc`): la bandera 8 de un punto de las orugas venía de la celda
+`(2576, fila 11)` marcada `0x10` por el sello de la tienda `0B6566`, que
+el port aplica pero la prueba no tenía (`--stamp`); también explica la
+celda «`0x10` en x≈2575» de la prueba `slug`. La prueba de familia ya no
+compara los enlaces `+04..+0B` de los nodos de jugador (los cambia el
+pool al insertar o borrar un nodo vecino) ni la RAM registrada que cae
+dentro de un nodo de la familia vivo.
+
+**Sprites.** `export_rest_sprites.py` con las raíces del tanque, `0AD8CE` y
+`22CF2C`, y las capturas `tank3`, `tank1` (paletas) y `tank4`
+(`--palette-capture`), con `--keep`: 4603 descriptores (1443 nuevos, los
+anteriores idénticos), 98 paletas (12 nuevas: `0x203`, `0x204`, `0x258`,
+`0x396..0x39A`, `0x39C..0x39E`, `0x3D3`; `0x143` se deja con el valor de
+la exportación anterior, la de más volcados). Faltan `0x4/0x5` (entrada de
+los personajes 2/3, `0954D4`). Validación contra VRAM: 49 volcados, 198118
+píxeles iguales, 7803 distintos (solapes y parpadeo `+7E`).
+
+**Paradas explícitas** (sin captura): reacción al daño `09351A` (y su
+caída `0935A8..093684`), destrucción con jinete `0938DA` (hijo `03533A` de
+`0353C2`, no traducido), obús de tipo 5 `0950DC`, `0933D6` sin nodo de
+orugas. No se reproducen las comprobaciones de cartucho antes de
+`004188`.
 
 ### Paso 11: arma C de Marco (`src/neo_chaser.c`)
 
@@ -1058,10 +1145,35 @@ y el Marco del port, expulsado, se dibujaba a la vez: dos Marcos, uno
 quieto. Ahora una parada explícita de un actor genérico borra también sus
 descendientes (`0041AC`, como al borrar un nodo con hijos): en las tres
 carreras ningún jinete gráfico sobrevive a su Camel (antes, 5421
-actualizaciones) ni se dibuja a Marco a pie con la ranura atada. **Sigue
-pendiente** traducir `0x004ED2` para la Camel (código `004ED2..005058`:
-sobre la tabla `106756`, barrido `013968` desde `+44/+48` y `01AC4C`), con
-una captura de la Camel cabalgando hasta el lanzacohetes: hasta entonces la
-Camel termina en 2688 y Marco sigue a pie.
+actualizaciones) ni se dibuja a Marco a pie con la ranura atada.
+`0x004ED2` ya es nativo (`ga_push_solids`, medido con el SV-001 contra el
+mismo cuerpo, paso 10): la Camel pasa el lanzacohetes (sección «deja de
+disparar», abajo); falta una captura de la Camel ejerciéndolo.
 
 Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).
+
+### Camel Slug: «deja de disparar» (informe de MiSTer, ROM 10)
+
+Reproducción en el anfitrión (paseos largos en la Camel con el disparo
+pulsado, mantenido o al azar, saltos sin A+B, sin morir): la Camel
+desaparecía en la cámara ≈2693, al llegar al lanzacohetes `0x05ED84`, que
+registra su cuerpo sólido (`0x05EB7C`, tipo 1) en la tabla `106756`: el
+paso de la Camel llamaba a `0x004ED2` y eso era una parada explícita, el
+mundo borraba la Camel y su torreta y el jugador salía expulsado. Con el
+empuje nativo (`ga_push_solids`, medido con el SV-001 en `tank7`) la Camel
+pasa: tres semillas por modo llegan a la cámara 3520 disparando (2348–2991
+balas, ninguna racha de más de 2 actualizaciones sin bala con el disparo
+pulsado a golpes). En el aire, un cuerpo de tipo 1 bajo la Camel la
+lanza hacia arriba (`0x014408..0x014446`: `+34 = 0x60000`, bits `+15` 4 y
+3, `+30` contra el movimiento): traducido del código, sin captura que lo
+recorra. `tools/test_gameplay.c` (`camel_run`) ya no admite la parada
+`0x004ED2` y el modo 0 sigue montado hasta el final.
+
+Mantener A pulsado dispara una sola ráfaga de 5 balas, igual que el
+original: la repetición de `0x03B622` depende de `10F084+p` (`0x0CA614`),
+una opción del menú `0x066742` (`0x0CA5DC/0x0CA5EE`) que vale 0 en todas
+las capturas de MAME (`slug`, `tank`). Con el bote de nodos lleno (96
+actores genéricos; en la arena del jefe, con fuego continuo, hasta 43
+impactos `0x01C9E6` y 22 nodos `0x003F1E` a la espera de sus hijos) una
+bala puede no crearse (`overflow`, 2 veces en 20000 actualizaciones de una
+semilla); el original reparte 100 nodos entre todos sus actores.

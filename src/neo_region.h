@@ -39,6 +39,13 @@ ga_result_t neo_civil_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_civil_routine(uint32_t routine);
 ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_slug_routine(uint32_t routine);
+ga_result_t neo_tank_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_tank_routine(uint32_t routine);
+/* neo_tread.c: the SV-001's tread body 014AE8..0153EE. */
+neo_gactor_t *neo_tread_spawn(neo_gactor_t *a,neo_genv_t *e);
+int32_t neo_tread_step(neo_gactor_t *a,neo_genv_t *e,unsigned entry);
+void neo_tread_air_reset(neo_gactor_t *c,uint16_t d0);
+ga_result_t neo_tread_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_bullet_routine(uint32_t routine);
 ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e);

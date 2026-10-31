@@ -166,7 +166,7 @@ iguales, 0 distintos**
 | `0x0B6566` edificio con barriles (parche y sellos) | **nativo** (MISION1_ACTORES.md) |
 | `0x033C98` carro con lona (plataformas, restos, piezas) | **nativo** (MISION1_ACTORES.md) |
 | `0x0A8C62` espadachín de túnica sobre el carro + subguion `0x2D719A` | **nativo** (MISION1_ACTORES.md) |
-| `0x092A32` cañón | externo |
+| `0x092A32` SV-001 (tanque del jugador, orugas `0x014A4E`, obús, voladura) | **nativo** (ARMAS_VEHICULOS.md, paso 10; paradas: daño `0x09351A`, destrucción con jinete `0x0938DA`) |
 | `0x04857C` formación de helicópteros (`0x04870C` guías, `0x048882` helicópteros, `0x047874` rotores, `0x047A6C` lanzadores, `0x047B24` bombas, `0x047DE0` casquillos) | **nativo** (MISION1_ACTORES.md) |
 | `0x05ED84` lanzacohetes, cohetes `0x05FD8A`, destello `0x060490`, fogonazo `0x0602E4`, estelas `0x059C82` | **nativo** (MISION1_ACTORES.md) |
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
@@ -312,6 +312,21 @@ VPS con tres emuladores en la máquina: el guion de prueba espera en tiempo
 real); el segundo, con la máquina menos cargada, pasó. ROMs de 9.568.256
 bytes.
 
+### Rama `work-sv001` (SV-001 nativo, empuje 004ED2, Camel)
+
+Puertas tras fusionar `origin/ccr-09eb2f6b-8rwl8l` (6e6a9e8, efectos
+residentes con *writeback*): `make check` (auditoría: 32 de 36
+constructores nativos, ninguno parado explícitamente; familias `tank`,
+`tankjump`, `tankcrouch`, `tankpush` y `camel_run` sin paradas),
+`make check-core` en un clon limpio, `make -j4` y `make
+mslugx-reference.z64`. Recorrido completo en ares (Xvfb :97): **PASS**, 29
+rebeldes creados, 31 abatidos, jefe derrotado, misión completada, ningún
+nodo del jefe detenido, ningún actor sin soporte, **0 *crash***,
+*underruns* máx. 4; `MSX PERF` 87 ventanas, `cpu` media máx. 17.328 µs,
+**peor fotograma 37.561 µs**; RDP 401 dibujos máx. Efectos residentes
+982.356 B (57 ficheros), paquete de escena 939 *chunks*, caché 3504 KB
+(219 ranuras), montón libre mínimo en juego 670 KB.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros
@@ -346,7 +361,7 @@ y comprobar que todo descriptor y paleta de las exportaciones de ambos lados
 sigue presente e idéntico.
 
 ```sh
-C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss V=/home/user/captures-world
+C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss V=/home/user/captures-world E=/home/user/captures-end
 cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/robe1 $C/bld1@54800-55700 $C/bld1@b6500-b6b00 $C/trk3@33c98-34200 $C/trk3@39500-3a100 \
   $C/trk3@a93c0-a9a00 $C/trk3@35600-35a00 $C/pri1@99862-99dc0 $C/pri1@8c37c-8c700 $B/runA@0-1 \
@@ -357,9 +372,17 @@ cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
   $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 $W/cfam@63600-64300 $W/cfam@c5800-c5a00 \
   $V/civ1@31d80-32150 $C/fam2@1ce08-1d763 $C/bld1@1ce08-1d763 $C/bld1@1e058-1e07c $C/trk3@1ce08-1d763 \
-  $C/rl2@1ce08-1d763 $V/gift3@8c374-8c700 $V/gift3@8d330-8d850 \
-  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
+  $C/rl2@1ce08-1d763 $V/gift3@8c374-8c700 $V/gift3@8d330-8d850 $E/tal1@308c0-311d8 \
+  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --palette-capture $E/go2 \
+  --keep /nonexistent && cd ..
 ```
+
+Rama `work-end` (ROM 11): se añaden `$E/tal1@308c0-311d8` (sprites del
+recuento) y `--palette-capture $E/go2` (paletas `0x63`/`0x25F` del
+CONTINUE?). `civ1` y `gift3` ya no estaban en disco: la exportación se hizo
+sin ellas y con `--keep` sobre la anterior (sus descriptores salen de la ROM
+y sus paletas se conservan); resultado: superconjunto de la anterior (todo
+descriptor y paleta presentes e idénticos), ver FIN_PARTIDA.md.
 
 Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
 2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77
@@ -380,7 +403,7 @@ continuación):
 
 | ROM | Pieza |
 | --- | --- |
-| `0C9848` | DIP `10FD8A` (continuación permitida), dos jugadores → GAME OVER; créditos `1A872` → `+8C`; `1A8AA` (CREDIT_CHECK de la BIOS en MVS) o AES → `019798` (actor CONTINUE?, **parada explícita**), `0C9254` limpia el panel, `19008` pone el contador `1013E2` = `0x9FF` |
+| `0C9848` | DIP `10FD8A` (continuación permitida), dos jugadores → GAME OVER; créditos `1A872` → `+8C`; `1A8AA` (CREDIT_CHECK de la BIOS en MVS) o AES → `019798` (objeto en el punto de reaparición, **parada explícita**), `0C9254` limpia el panel, `19008` pone el contador `1013E2` = `0x9FF` |
 | `0C98CC`/`0C9918` | modo del jugador `10FDB6+p` con la tabla `27B4` de `27C4`; moneda nueva → contador a 9 (`0C993E`); contador 0 → GAME OVER; texto `CONTINUE? ` (`0C90FE`, fuente de dos filas) una vez y la cifra `0C9112[contador>>8]` cada actualización |
 | `0187A4..0187EC` | paso del contador en el actor de misión: −5 por actualización; por debajo de `0x780`, B (`190F0` D1 bit 5) salta a la cifra siguiente (`|0x80 − 0x100`); pitido `0x10D4` al cambiar de cifra |
 | `0C98DE`, `0C8CB2`, `0C9420` | continuación tomada: la última cifra de la puntuación cuenta continuaciones (máx. 9), contador `10E9E4+2p`, vidas del DIP `10FD88` (1 si es 0), modo 1 |
@@ -398,7 +421,9 @@ TANK BUSTERS» y la demo): el port no tiene tabla ni demo y **reinicia la
 misión 1** tras esas 190 actualizaciones.
 
 **Paradas explícitas** (`neo_hud_t.unsupported`, registro `MSX HUD explicit
-stops`): el actor de sprites CONTINUE?/cifra grande `019798` (`08CD58`), la
+stops`): el objeto que suelta `019798` (`08CD58`; el CONTINUE? y la cifra
+grande son el programa `018120` del actor de misión, nativo desde ROM 11:
+[FIN_PARTIDA.md](FIN_PARTIDA.md)), la
 tabla de récords `057B44`/entrada de nombre `058132` (se sigue la rama de
 puntuación que no entra, la de las capturas), el gráfico de unión `0C94D6`
 tras la continuación (el panel de juego se redibuja en la actualización
@@ -433,7 +458,7 @@ siguiente al paso 2) con sus contadores:
 | ROM | Pieza | Port |
 | --- | --- | --- |
 | `018846..018870` | `10E9E3`=FF, música `15418`, `+7C`=0x1E, `subq/bne` | 30 actualizaciones |
-| `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento = **parada explícita**, sigue en el acto |
+| `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento **nativo** (`src/neo_tally.c`, [FIN_PARTIDA.md](FIN_PARTIDA.md)) |
 | `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras **nativas** (`src/neo_end.c`, abajo) |
 | `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido **nativo** (`src/neo_fade.c`) |
 | `01891E` | misión `42F4`+1 < 6 → misión siguiente (`1829E`) | misiones 2–6 no portadas: **vuelve a empezar la misión 1** |
@@ -482,34 +507,36 @@ de fondo); la capa fija queda fuera. MAME `runK`: las paletas 0..9 no
 cambian, la entrada de fondo 0xFFF sí, todo negro en 14452. Prueba
 (`test_gameplay`): −248 por actualización y −31 al terminar.
 
-### Paradas que quedan
+### Recuento y continuación (ROM 11)
 
-- **Recuento de prisioneros `0308C0`** (y `cae6c` ya traducido): el actor
-  dibuja en la capa fija con el motor de texto completo (`03DD96`: páginas
-  0x30, `A`, `H`, `K`, `a`, `h`… y los prefijos DE/DF, de los que `neo_hud`
-  solo tiene `<10` y `a`), nombres y grados aleatorios de los prisioneros
-  (`2CAD6`/`2C982` con `0029F2`), el desfile `030FB2` (programas
-  `237AEC/237B84/237BD0/237C48`, ya exportados por `extract_soldier_programs.py`)
-  y la bonificación BCD (`057948`: 10000 por prisionero, 100000 y la tabla
-  `2D0A74` por `+8E`). Su traza de familia está en `runK`
-  (`MSX_REST_FAMILY_ROOTS=308e4`, fotogramas 13759..14453, 9 nodos) para cuando se
-  traduzca. Sigue siendo la única parada del fin de misión.
-- **`019798`** (fin de partida): no es un actor de sprites propio; crea un
-  objeto `08C374` con `08CD58` (tipo de la tabla `019792`, `+70`=0x384,
-  `+72`=0x10) y lo prepara con `0196E8`. Hace falta una captura de fin de
-  partida con volcados de VRAM de sprites y traza de familia (las de `go1..3`
-  ya no están en disco y `capture_gameover.lua` solo guarda la capa fija).
+- **Recuento de prisioneros `0308C0`**: **nativo** con el motor de texto
+  completo `03DD96` (`src/neo_tally.c`, `src/neo_text.c`); cuatro capturas
+  con traza de VRAM, en bucle cerrado bit a bit (palabras de VRAM, bytes,
+  aleatorios, puntuación). Paradas explícitas solo en ramas que el port no
+  alcanza (japonés, jugador 2, medallas `018FEA`). Ver
+  [FIN_PARTIDA.md](FIN_PARTIDA.md).
+- **CONTINUE? y la cifra grande**: no son `019798` sino el programa
+  `018120` del propio actor de misión, **nativo** (`src/neo_continue.c`,
+  5110 entradas de la lista de sprites iguales a MAME).
+- **`019798`** (fin de partida): suelta un objeto `08C374` (`08CD58`: tipo
+  `019792[0]` = 0, `+70`=0x384, `+72`=0x10) en el punto `0196E8`; sigue
+  como **parada explícita** (la captura `go2` lo muestra).
+
 
 Captura `runJ` (volcados cada 30 fotogramas): `018870` en 13710, `0188B0`
 (recuento) en 13770, `0188F4` en ≤14040, `018916` en 14370, misión 2 en
 14460; la puntuación pasa de 55330 a 285330 mientras `10C5FC` baja de 11 a
-0 (recuento). Prueba: `tools/test_gameplay.c` comprueba 30+160+32
-actualizaciones y 1 parada (recuento).
+0 (recuento, con el salto A/B). Prueba: `tools/test_gameplay.c` comprueba
+30 + recuento + 160 + 32 actualizaciones, ninguna parada y la bonificación
+exacta.
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el SV-001 `0x092A32`
-  (no contado; la Camel Slug `0x03458E` es nativa y se puede montar).
+- SV-001 `0x092A32` nativo y montable; sin captura siguen como paradas
+  explícitas su reacción al daño `0x09351A`, la destrucción con jinete
+  `0x0938DA` (hijo `0x03533A`) y el obús de tipo 5 `0x0950DC`; la Camel
+  conserva su parada `0x004ED2` (el empuje de cuerpos sólidos ya es nativo
+  para el SV-001).
 - Disparo de la torreta del jefe (`0x08FA1A` → `0x08EFFA`/`0x08F058`):
   traducido sin captura (falta una captura en la que dispare para
   verificarlo); `0x08F1A0` sigue como parada explícita.
@@ -518,4 +545,62 @@ actualizaciones y 1 parada (recuento).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
-- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0` (las letras `06090A` y el fundido `9C0A` ya son nativos).
+- Actores de fin de partida/misión: el objeto de `019798` y la tabla de récords `057B44` (el recuento `0308C0`, el CONTINUE? `018120`, las letras `06090A` y el fundido `9C0A` ya son nativos).
+
+## Correcciones de MiSTer, ROM 10c/10d (rama `work-fix11`)
+
+### Tejados: celdas del grupo 1 (`src/neo_collision.c`)
+
+Informe: Marco de pie en el tejado alto del edificio de la izquierda del
+mercado (bajo la pancarta roja). La rejilla tiene allí tres superficies:
+calle `0B` (y 64), tejado `FB` (grupo 7, y 144) y el tejado alto `3B` (y 192,
+con el borde inclinado `37..39`, grupo 1); el mismo patrón en x 1296..1480 y
+1584..1767. Las barridas del jugador (`0143EE` en el aire, `014594` en el
+suelo) pasan por `0128E8`, que pone la RAM `10C00D`; con ella el núcleo borra
+las celdas del grupo 1 (`0129A2..0129BC`; el mapa de grupos de la misión 1
+deja el 1 como 1). Evidencia MAME (`capture_mission_rest.lua`, `roof1`, solo
+captura: `MSX_REST_POKE` de la Y del mundo del jugador `1014F0/1`):
+
+| Prueba | Resultado en MAME |
+| --- | --- |
+| soltado en y 202 sobre x 1718..1736 | atraviesa `3B` (y 192) en x 1731..1736 sin posarse |
+| soltado en y 172 sobre x 1700..1736 | se posa en `FB` (y ≈ 142,4, rutina `0C2888`) |
+| `roof0` (sin tocar nada): salto desde el armazón en y 90 | ápice 143,9: no llega al tejado `FB` |
+
+El port aterrizaba en cualquier celda: desde `FB` un salto (56 px) llegaba
+a `3B` (y 192), la altura de la foto. Ahora las consultas del jugador
+(`neo_surface_at`, `neo_walk_step`, `neo_land_step`) ignoran el grupo 1;
+las de soldados y objetos (`neo_surface_unique`) lo conservan. El tejado
+`FB` sigue siendo alcanzable como en el arcade (desde una plataforma más
+alta que la calle).
+
+### Prioridad de sprites: la palabra `+1E` (`src/actor.c`)
+
+Regla del original: cada actor añade sus entradas a la lista de sprites
+(`00A03E`) con su palabra `+1E`; antes de escribir la VRAM, `0113EA` ordena
+la lista por esa palabra (dos pasadas estables de recuento, byte bajo y
+luego alto, `011440..01186C` y `0118C4..011CFA`) y la escribe en ese orden:
+a mayor `+1E`, más delante; a igualdad, el orden de la lista de actores.
+Valores medidos en las capturas de familia: edificios y decorado `0000`,
+lona del carro `8700`, edificio de barriles `86B8..86EC`, soldados
+`86D8..86F0`, objetos `86D8..8838`, disparos `E000`, letras y recuento
+`FFFF`. Las capas del mapa (sprites fijos del decorado) van siempre detrás
+de los actores; solo los actores con el bit 2 de `+15` quedan entre las
+capas 0..2 y 3..4 (`scene_render_back/front`), y en todas las capturas de
+familia solo lo llevan las piezas del edificio de cúpulas (`054C2C..`); en
+el port tampoco lo lleva ningún objeto (simulación de 60000 pasos). El port
+dibujaba los actores en orden de lista: una lona, un cartel o un edificio
+creado antes que un objeto lo tapaba. Ahora `actor.c` dibuja los actores
+del mundo ordenados por `+1E` de forma estable (`neo_world_draw_t.z`).
+Marco, sus disparos y el vehículo siguen dibujándose después de los actores
+del mundo (sin cambio).
+
+### HUD sin monedas (`src/gameplay.c`)
+
+El cartucho tiene su propio camino doméstico (AES, RAM `10FD82` = 0): el
+panel P2 inactivo (`0C9380`) pregunta a `01A8AA` por los créditos domésticos
+de la RAM `100004` (`0x0505` desde `0024F4`) y muestra PRESS START; el
+contador `01A7F4` solo se dibuja con el bit 1 del DIP blando `10FD91`, que
+pone la BIOS MVS: apagado. El HUD del port usa ahora ese camino (PRESS
+START parpadeando en P2, sin CREDIT; la continuación ya usaba la rama AES).
+Desviación: los cinco créditos domésticos no se gastan.

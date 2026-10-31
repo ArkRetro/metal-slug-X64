@@ -80,6 +80,72 @@ static void self(neo_gactor_t *a,neo_genv_t *e) {
     terrain_tag=e->terrain_tag?e->terrain_tag:TERRAIN_TAG;
     uint8_t d=ga_b(a,0x6a);e->kernel->self_dyn=d<NEO_KDYN_COUNT?(uint8_t)(d+1):0;e->kernel->self_block=NEO_GA_TAG(a->index);
 }
+uint8_t ga_kobj(uint32_t tag) {return kobj(tag);}
+uint32_t ga_ktag(uint8_t id) {return ktag(id);}
+void ga_self(neo_gactor_t *a,neo_genv_t *e) {self(a,e);}
+/* Motion of a +38 parent since its previous position (block +14 - +1C,
+ * +18 - +20); none for 0. */
+static bool parent_motion(neo_genv_t *e,uint32_t tag,uint32_t *dx,uint32_t *dy) {
+    *dx=*dy=0;if (!tag) return true;
+    neo_contact_parent_t p;if (!ga_parent(e,tag,&p)) return false;
+    *dx=(uint32_t)p.x-(uint32_t)p.previous_x;*dy=(uint32_t)p.y-(uint32_t)p.previous_y;return true;
+}
+bool ga_push_solids(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool *top) {
+    if (top) *top=false;
+    if (e->flags && e->flags->player_lock) return true;                /* 01B34E -> 0C8CFC */
+    ga_project(a,e);                                                    /* 004EE0 */
+    if (!e->vehicle) return true;
+    for (unsigned i=0;i<16;i++) {                                       /* 004EF2 */
+        uint8_t *b=e->vehicle->solid_node[i];
+        if (!b || b[0x6b]!=i) continue;
+        const uint8_t *t=ga_rom(e->vehicle->solid_desc[i]);
+        if (!t) {ga_fail(e,e->vehicle->solid_desc[i]);return false;}
+        #define DW(k) ((uint16_t)(t[2*(k)]<<8|t[2*(k)+1]))
+        #define BL(o) ((uint32_t)b[o]<<24|(uint32_t)b[(o)+1]<<16|(uint32_t)b[(o)+2]<<8|b[(o)+3])
+        uint32_t adx,ady,bdx,bdy;
+        if (!parent_motion(e,ga_l(a,0x38),&adx,&ady) || !parent_motion(e,BL(0x38),&bdx,&bdy)) return false;
+        uint32_t d0=ga_l(a,0x3c)-BL(0x3c),d1=ga_l(a,0x40)-BL(0x40);
+        uint32_t d2=ga_l(a,0x30)+adx-BL(0x30)-bdx+d0,d3=ga_l(a,0x34)+ady-BL(0x34)-bdy+d1;
+        uint16_t w0=(uint16_t)(d0>>16),w1=(uint16_t)(d1>>16),w2=(uint16_t)(d2>>16),w3=(uint16_t)(d3>>16);
+        w3=(uint16_t)(w3-DW(3));
+        if (w3>=DW(5)) continue;                                        /* 004F7A */
+        w1=(uint16_t)(w1-DW(3)-DW(5));
+        uint16_t ox=DW(2),wd=DW(4);
+        if (b[0x15]&1u) ox=(uint16_t)-(uint16_t)(ox+wd);                /* 004F8A */
+        w2=(uint16_t)(w2-ox);
+        if (w2>=wd) continue;                                           /* 004F9C */
+        int16_t push=(int16_t)(uint16_t)(w0-ox-DW(1));
+        if (push>=0) {                                                  /* 004FAC */
+            ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|0x10u));b[0x15]|=8u;
+            push=(int16_t)-(int16_t)(uint16_t)(push-DW(1));if (push<0) push=0;
+        } else {                                                        /* 004FC8 */
+            ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|8u));b[0x15]|=0x10u;
+            push=(int16_t)-(int16_t)(uint16_t)(push+DW(1));if (push>=0) push=0;
+        }
+        if (!(w1&0x8000u) && DW(0)==1u && top) *top=true;               /* 004FE0 */
+        #undef DW
+        #undef BL
+        /* 004FF4: from +44/+48 by the push (1/16 px) and the parent's
+         * motion, swept with A0 = 0 (013968), then relative to +38
+         * (01AC4C). */
+        uint32_t sx=(uint32_t)(((int32_t)((uint32_t)(uint16_t)push<<16))>>4)+adx,sy=ady;
+        self(a,e);
+        neo_kreq_t q={S32(ga_l(a,0x44)),S32(ga_l(a,0x48)),S32(sx),S32(sy),NEO_KOBJ_NONE,0,0xff,b4009,0,0,0xff};
+        neo_kres_t k;
+        if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x502a);return false;}
+        uint32_t x=(uint32_t)k.x,y=(uint32_t)k.y;
+        if (k.parent!=NEO_KOBJ_NONE) {
+            neo_contact_parent_t o;if (!ga_parent(e,ktag(k.parent),&o)) return false;
+            x+=(uint32_t)o.x;y+=(uint32_t)o.y;
+        }
+        if (ga_l(a,0x38)) {
+            neo_contact_parent_t o;if (!ga_parent(e,ga_l(a,0x38),&o)) return false;
+            x-=(uint32_t)o.x;y-=(uint32_t)o.y;
+        }
+        ga_sl(a,0x28,x);ga_sl(a,0x2c,y);
+    }
+    return !e->unsupported;
+}
 static uint8_t sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {

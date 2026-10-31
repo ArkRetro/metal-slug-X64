@@ -29,10 +29,12 @@ def main():
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
     p.add_argument('--label-after-pickup',help='ROUTINE (hex): with --script-actor, a node of this routine made by the script actor is native only when it follows a pickup of the fixture (one per pickup, at most 2 frames later, at the item\'s projected position): the score label 08D330 of 08B944; the labels other actors make are injected')
+    p.add_argument('--shared',help='ROUTINES (comma hex): nodes whose fields another family node writes between their own updates (the SV-001 writes its tread node 014A4E in 014C7E..0153D0): no external bytes are injected, the native writes are compared at the node\'s next update')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     p.add_argument('--attacks',action='store_true',help='the 0049E8 answers of every update (extract_family_fixture.py --attacks): D0 and the A0/A1 targets as 01B162 read them (rectangle from data/region_rom.json); a target the update did not read gets 7FFF,7FFF and no box')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
+    shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
     script=int(a.script_actor,16) if a.script_actor else None
     used=[]
     d=json.load(gzip.open(a.fixture,'rt'))
@@ -150,7 +152,7 @@ def main():
         # since its previous update: inputs of this update.
         ext=[]
         prev=last.get(inst[k])
-        if prev is not None:
+        if prev is not None and u['routine'] not in shared:
             pre0=bytes.fromhex(u['pre'])
             ext=[(o,pre0[o]) for o in range(0x10,0xb0) if pre0[o]!=prev[o] and not (0x20<=o<0x24 or 0x44<=o<0x4c)]
         if u['post']:last[inst[k]]=post

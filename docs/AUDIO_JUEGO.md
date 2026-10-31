@@ -182,15 +182,16 @@ nivel(B) ≥ nivel(A); B descartado → nivel(B) < nivel(A)) respetando los de l
 sección 4. Medidas: cada sonido nuevo consigo mismo y contra pistola,
 explosión y `1041` en ambos órdenes; los que solapan con los tres, todos
 contra todos; los de cada canal conocido contra los demás niveles del canal.
-Pares en `data/sound_pairs.json` (889: 259 de la primera ronda y 630 de la
-segunda), resultado en `data/sound_policy.json` (solo números) y
+Pares en `data/sound_pairs.json` (1673: 259 de la primera ronda, 630 de la
+segunda y 784 de las dos del SV-001: cada sonido nuevo contra todos los
+demás en ambos órdenes), resultado en `data/sound_policy.json` (solo números) y
 `src/msx_sfx_policy.h` (`tools/compile_sound_policy.py`):
 
 | Canal | Sonidos (nivel) |
 | --- | --- |
-| arma | `10F7` (0); `108D`, `108C`, `10F4` (1) |
-| impacto | `1027` (0); `10FA`, `1022` (1); `1023`, `1033`, `1021`, `1025`, `102C`, `1035`, `1064`, `1067`, `10FF` (2); `102F`, `1032` (3) |
-| voz | `103F`, `1043`, `10A3`, `10A4`, `10C6`, `116E` (0); `103E`, `1040..1042`, `1048`, `1073`, `108E` (1); `104A`, `104F`, `105D`, `1072`, `1074`, `1075`, `1142` (2) |
+| arma | `10F7` (0); `108D`, `108C`, `10F4`, `1084` (1); `10F2` (2) |
+| impacto | `1027`, `10E9` (0); `10FA`, `1022` (1); `1023`, `1033`, `1021`, `1025`, `102C`, `1035`, `1064`, `1067`, `10FF` (2); `102F`, `1032`, `1034` (3) |
+| voz | `103F`, `1043`, `10A3`, `10A4`, `10C6`, `116E`, `1092`, `108F`, `1090`, `1091` (0); `103E`, `1040..1042`, `1048`, `1073`, `108E` (1); `104A`, `104F`, `105D`, `1072`, `1074`, `1075`, `1142` (2) |
 | `1056` | `1056` (0); `1124`, `112D`, `112E`, `113A`, `1158` (1) |
 | `10E8` | `10EA` (0); `10E8` (1) |
 | `109B`, `10A7`, `1121` | uno cada uno |
@@ -202,6 +203,17 @@ las lista en `contradictions`): el nivel de un sonido nuevo nunca sale del
 intervalo que dan sus pares con los sonidos ya medidos. Es una aproximación
 documentada de la regla del controlador, no su código (no se ha leído el
 Z80).
+
+**Sonidos del SV-001** (rama `work-sv001`): `1084` (obús), `10F2`
+(estallido del obús), `1092` (reposo), `10E9` (salida A+B), `1034`
+(voladura), `108F` (agachado), `1090` (salto) y `1091` (aterrizaje) en
+`data/sound_map.json`, renderizados aislados (`render_sound_commands.py
+--labels`, 0,49–2,74 s, todos `OK`) y medidos contra los sonidos
+anteriores (por lotes de 60 pares: un lote grande llenó el disco y dejó
+`render.jsonl` cortado). Un par uniría dos canales medidos
+(`10F2 > 10A4`: la onda dice «descarte», la envolvente «solapa»):
+`derive_sound_policy.py` ya no une grupos con un par así y lo lista en
+`bridges`. Política: 45 efectos con canal, 471 pares dudosos.
 
 **Canales de mezcla.** Los efectos son mono: cada canal del controlador usa un
 canal mono del mezclador desde el 6 (los 32 del mezclador; antes un par
@@ -263,3 +275,19 @@ El recorrido de la misión completa llega al final del fichero de música, cuyo
 bucle medido es parcial: `msx_audio_play` repite ahora el fichero entero
 cuando es VADPCM con bucle parcial (el punto de bucle medido no se respeta
 hasta que el lector lo admita). Ver [MISION1_COMPLETA.md](MISION1_COMPLETA.md).
+
+## Corrección: efectos residentes distorsionados (ROM 10)
+
+En MiSTer los efectos sonaban completamente distorsionados durante el juego.
+Grabando la salida de ares (ALSA a archivo, 48 kHz) y midiendo saltos de
+muestra > 8000: ROM 9 0,03 %, rama de armas 0,03 %, rama del mundo 9,7 %,
+ROM 10 11,9 % con 2 % de muestras recortadas. Leer los mismos WAV64 desde
+`rom:/` en vez de `ram:/` daba 0,03 %: la causa era `msx_ramfs`. Su `read`
+copiaba con la CPU y el dato quedaba en la caché de datos; el decodificador
+VADPCM del RSP lo lee por DMA de la RDRAM y decodificaba memoria antigua.
+`ram_read` hace ahora `data_cache_hit_writeback` del búfer copiado (como si
+fuera una lectura PI). Con el arreglo: 0,04 %, sin recorte.
+
+La entrada en paracaídas (`entry.wav64`, VADPCM) también medía 2–3,5 % en su
+ventana frente a 0,33 % de la fuente; sin comprimir (como el título) mide
+0,01–0,3 %. `pack_cinematic.py` usa ahora `--wav-compress 0` (≈800 KB).

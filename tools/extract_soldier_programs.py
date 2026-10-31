@@ -120,6 +120,9 @@ ROOTS+=[0x237d02,0x237d0e,0x237d6e,0x237d7a,0x237cc0]
 # the prisoner tally 0308C0 (parade 237AEC/237B84/237BD0/237C48, tables 031276).
 ROOTS+=[0x264ff8+0xa*i for i in range(14)]+[0x265084+0xa*i for i in range(6)]
 ROOTS+=[0x237aec,0x237b84,0x237bd0,0x237c48,0x237c52,0x237c68,0x237c7e,0x237c94,0x237caa]
+# The mission actor 101364's own program (fixed block): the big CONTINUE?
+# and the countdown digit 018120 (00427A at 01883C) and GAME OVER 0181E4.
+ROOTS+=[0x18120,0x181e4]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
@@ -140,6 +143,19 @@ ROOTS+=[0x28c32c]
 # (268622, CALL 0636B0; its blast uses 22CE6C, above), trail 063D9E (26863A)
 # and the muzzle flash 0C58D2 (fixed block: 0C586C up/down, 0C5806 level).
 ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
+# The SV-001 092A32 (neo_tank.c): its state programs, the shell 094EAA
+# (290FC0, burst 2919FE), the muzzle flash 0952F8 (29090E / 290C9E), the dust
+# 0956CE (291AF0) and the rider's entry 0954DC (tables 0954A4 / 0954B4 /
+# 0954C4 by the character +93 and the rider's +6E).
+TANK_ROOTS=[0x291ce4,0x291dc2,0x2942d4,0x294c6c,0x29667e,0x2952ec,0x296cfe,0x29589a,0x2972ac,0x295f1a,
+    0x29792c,0x298090,0x2984ca,0x298904,0x298d3e,0x29a202,0x2934ec,0x2947a0,0x29282a,0x299180,
+    0x299756,0x29c308,0x29c746,0x29b690,0x29b6f2,0x29b734,0x29bcd6,0x2964c8,0x292200,0x290fc0,
+    0x2919fe,0x29090e,0x290c9e,0x291af0,
+    0x29263a,0x2926b6,0x292732,0x2927ae,0x292678,0x2926f4,0x292770,0x2927ec,
+    0x25d20a,0x25dba0,0x25e536,0x25eecc,
+    # 093AFA: the pieces 0AD9B8 (fixed block 0AD8CE); the burst uses 22CF2C (above).
+    0x0ad8ce]
+ROOTS+=TANK_ROOTS
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):
@@ -178,6 +194,10 @@ def convert(bank,root,fixed=None):
                 elif routine==0x3bb8e:add(pc,kind='SPAWN_THROW',asset=0x3bc28)
                 # 03BBBC/03BBEA: same object with +6E=1 / 2 and offsets (0,24) / (0,32).
                 elif routine in (0x3bbbc,0x3bbea):add(pc,kind='SPAWN_THROW',asset=routine)
+                # The SV-001's 09280E/092820 take A0 = the table after the
+                # routine (+70 = table[+74 / +75]): the low word of the
+                # table's address (bank 29xxxx, asserted).
+                elif routine in (0x9280e,0x92820):assert (pc+6)>>16==0x29;add(pc,kind='CALL',asset=routine,target=(pc+6)&0xffff)
                 elif routine in GENERIC:add(pc,kind='CALL',asset=routine,target=param)
                 else:add(pc,kind='CALL',asset=routine,target=param)
                 pc+=2+arg

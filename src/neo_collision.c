@@ -63,6 +63,18 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
     if (shape<=5) height++;
     *out=(neo_surface_t){height,shape,code&0xf0};return true;
 }
+/* The player's sweeps (0143EE air, 014594 ground) run 0128E8, which sets
+ * RAM 10C00D: the kernel then clears cells of group 1 (0129A2..0129BC; the
+ * Mission 1 group map keeps 1 as 1), i.e. the codes 31..3B of the upper
+ * roofs. MAME roof1 capture (docs/MISION1_COMPLETA.md, "Tejados"): the
+ * player dropped at y 202 over x 1731..1736 falls through the 3B cells at
+ * y 192 and lands on the FB roof at y 144. Soldiers and other actors keep
+ * them (neo_surface_unique). */
+static bool player_surface(int32_t x,int row,neo_surface_t *out) {
+    if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
+    if ((neo_collision_cell(x/NEO_UNIT,row*8)>>5)==1u) return false;
+    return surface(x,row,out);
+}
 bool neo_surface_unique(int32_t x,neo_surface_t *out) {
     bool found=false;
     for (int row=0;row<32;row++) {
@@ -76,7 +88,7 @@ bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_su
     if (x<0 || x>=NEO_GRID_COLUMNS*8*NEO_UNIT) return false;
     bool found=false;int64_t closest=INT64_MAX;
     for (int row=0;row<32;row++) {
-        neo_surface_t s;if (!surface(x,row,&s)) continue;
+        neo_surface_t s;if (!player_surface(x,row,&s)) continue;
         int64_t distance=(int64_t)s.height-reference;
         if (distance>rise || distance< -(int64_t)drop) continue;
         int64_t magnitude=distance<0?-distance:distance;
@@ -105,7 +117,7 @@ bool neo_walk_step(neo_air_t *p,int direction) {
     // feet through the wreck. Distant roofs remain outside that tolerance.
     for (int row=0;row<32;row++) {
         neo_surface_t candidate;
-        if (!surface(p->x,row,&candidate)) continue;
+        if (!player_surface(p->x,row,&candidate)) continue;
         int64_t delta=(int64_t)candidate.height-predicted;
         if (delta>4*NEO_UNIT || delta< -4*NEO_UNIT) continue;
         if (!found || candidate.height>next.height) {next=candidate;found=true;}
@@ -119,7 +131,7 @@ bool neo_land_step(neo_air_t *p,int32_t previous_y) {
     if (p->vy>0 || p->y>previous_y) return false;
     bool hit=false;neo_surface_t highest={0};
     for (int row=0;row<32;row++) {
-        neo_surface_t s;if (!surface(p->x,row,&s)) continue;
+        neo_surface_t s;if (!player_surface(p->x,row,&s)) continue;
         if (s.height>previous_y || s.height<p->y) continue;
         if (!hit || s.height>highest.height) { highest=s;hit=true; }
     }

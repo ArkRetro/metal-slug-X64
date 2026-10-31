@@ -19,6 +19,10 @@ typedef struct {
     bool unsupported;
 } kr_t;
 
+/* RAM 10C016 is a long whose low word is 10C018: 013776 and the crossings
+ * write the long, 013C1A/013DB2 the word; later sweeps read either. */
+static void set4016(kr_t *k,uint32_t v) {k->l4016=v;k->s->w4018=(uint16_t)v;}
+static void set4018(kr_t *k,uint16_t v) {k->l4016=(k->l4016&0xffff0000u)|v;k->s->w4018=v;}
 static int32_t S(uint32_t v) {return v<=0x7fffffffu?(int32_t)v:(int32_t)((int64_t)v-0x100000000LL);}
 static int16_t SW(uint32_t v) {v&=0xffffu;return (int16_t)(v<=0x7fffu?(int)v:(int)v-65536);}
 static uint32_t SWAP(uint32_t v) {return (v<<16)|(v>>16);}
@@ -46,6 +50,11 @@ static uint8_t cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
     int first=((int16_t)(uint16_t)(-64-(int16_t)(uint16_t)((uint32_t)s->terrain.x>>16))>>3)-1;
     int col=(int16_t)x>>3;
     int loaded=first+(int)((unsigned)(col-first)&63u);
+    /* The ring is filled ahead of the scroll, but the map ends at its last
+     * column: at the end of the mission (boss arena, camera 3520) the slots
+     * past it still hold the columns loaded 64 earlier (MAME: the boss's
+     * prisoners run on the arena floor at x 3447, column 430). */
+    if (loaded>=(int)neo_collision_columns()) loaded-=64;
     return neo_collision_cell(loaded*8+((int)x&7),(int)(world_row*8u));
 }
 /* 012938. d0.w/d1.w are local pixels (caller swapped the Q16 words). */
@@ -286,13 +295,13 @@ static void cross_horizontal(kr_t *k) {
             k->d7=SETW(k->d7,w<<2);
         }
     }
-    k->l4016=k->d7;k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->d4=0xffffffffu;
+    set4016(k,k->d7);k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->d4=0xffffffffu;
 }
 static void cross_vertical(kr_t *k) {
     k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k12938(k);
     if ((k->d7&0xffffu)==0x38u) {k->b4014=1;k->d7&=0xffff0000u;}
     else k->b4014=0;
-    k->l4016=k->d7;k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->d4=0xffffffffu;
+    set4016(k,k->d7);k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->d4=0xffffffffu;
 }
 /* ANDI/ADD/SWAP/CMPI.W #8: true when the step leaves the current cell. */
 static bool step_x(kr_t *k,uint32_t amount) {
@@ -392,7 +401,7 @@ static void k1351a(kr_t *k) {
 }
 /* 013776: sweep the remaining (d2,d3) through cells of object a0. */
 static void k13776(kr_t *k) {
-    k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->b4014=0;k12938(k);k->l4016=k->d7;
+    k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);k->b4014=0;k12938(k);set4016(k,k->d7);
     if ((k->d7&0xffffu)==0x38u) k->b4014=1;
     k->d0=SWAP(k->d0);k->d1=SWAP(k->d1);
     k->l4028=0;
@@ -664,8 +673,8 @@ bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int
     while (k.a1!=NEO_KOBJ_NONE) {
         k.a0=k.a1;a=obj(&k,k.a0);
         k.d0-=(uint32_t)a->x;k.d1-=(uint32_t)a->y;
-        k.l4016=0;uint32_t acc=0;k.d3=0xfff80000u;
-        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.l4016=k.d7;k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);
+        set4016(&k,0);uint32_t acc=0;k.d3=0xfff80000u;
+        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);set4016(&k,k.d7);k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);
         k129ec(&k);k12cba(&k);
         bool hit=k.d6>0x80000000u;
         if (!hit) {k.d1+=k.d3;acc+=k.d3;}
@@ -675,7 +684,7 @@ bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int
             k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);
             k129ec(&k);
             if (!(scene->w4018==0x3cu && (k.d7&0xffffu)==0x3cu)) {
-                scene->w4018=(uint16_t)k.d7;
+                set4018(&k,(uint16_t)k.d7);
                 if (k.d7&0xffffu) {
                     k12cba(&k);
                     if (k.d6!=NONE) {hit=true;break;}
@@ -748,7 +757,7 @@ bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uin
         if (b) {k.d0-=(uint32_t)b->x;k.d1-=(uint32_t)b->y;}
         k.a0=k.a1;
         k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);
-        scene->w4018=(uint16_t)k.d7;
+        set4018(&k,(uint16_t)k.d7);
         bool record=false;
         if (k.d7&0xffffu) {k129ec(&k);k12cba(&k);if (k.d6>0x80000000u) record=true;}
         if (!record) {

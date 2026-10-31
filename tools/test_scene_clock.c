@@ -12,5 +12,13 @@ int main(void) {
     total=8;
     for (unsigned i=0;i<10;i++) total+=scene_clock_steps(&clock,10+freq,freq);
     assert(total==59); // Catch-up preserves simulation debt.
-    puts("PASS: original cadence, pause/reset, timer wrap and retained catch-up debt");
+    scene_clock_reset(&clock);assert(scene_clock_steps(&clock,10,freq)==0);
+    unsigned steps=scene_clock_steps(&clock,10+freq/10,freq);assert(steps==5);
+    scene_clock_defer(&clock,steps-2,freq);total=2;     // A frame keeps two steps ...
+    while ((steps=scene_clock_steps(&clock,10+freq/10,freq))) {
+        if (steps>2) scene_clock_defer(&clock,steps-2,freq),steps=2;
+        total+=steps;
+    }
+    assert(total==5); // ... and the deferred ones run in later frames.
+    puts("PASS: original cadence, pause/reset, timer wrap and retained catch-up debt, deferred steps");
 }

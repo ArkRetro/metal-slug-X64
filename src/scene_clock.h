@@ -15,4 +15,9 @@ static inline unsigned scene_clock_steps(scene_clock_t *c,uint32_t now,uint32_t 
     while (c->phase>=threshold && count<8) { c->phase-=threshold;count++; }
     return count;
 }
+/* Gives `count` steps back to the clock: they stay as debt for later frames
+ * (the frame runs fewer steps, the simulation loses none). */
+static inline void scene_clock_defer(scene_clock_t *c,unsigned count,uint32_t frequency) {
+    c->phase+=(uint64_t)count*((uint64_t)frequency*1000000u);
+}
 #endif

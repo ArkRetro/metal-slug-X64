@@ -557,3 +557,79 @@ soldados siguen dependiendo de la petición del mismo fotograma. Siguiente
 paso posible: un inventario de la región como `mission1_rest_inventory.json`,
 o aplazar siempre (`SCENE_SYNC_DECODES=0`) ahora que el tiempo libre
 descodifica 150–260 bloques por recorrido.
+
+## ROM 12: picos de 53,7 ms en 2336 (búsquedas lineales y dos actualizaciones del mundo por fotograma)
+
+El recorrido de ROM 12 (`e61a00c`) dio un peor fotograma de 53,7 ms frente a
+38,8–40,1 ms de ROM 11. Comparando ventana a ventana (cámara de la última
+línea `MSX camera` antes de cada `MSX PERF`), las dos ROM tienen el mismo
+perfil: el pico está siempre en 2336 (y 3376) y es de **simulación**, no del
+fondo ni de la caché (`asset` ≈ 12 ms en ambas). Una línea de diagnóstico
+temporal por paso lento (> 7 ms: actor por actor dentro de `neo_world_tick`)
+mostró:
+
+- Cada actualización del mundo (una de cada dos llamadas a
+  `msx_game_update`: el mundo avanza con `ticks` par) cuesta 9–13 ms en
+  2336 (premios cayendo 08C53C, proyectiles C 063FDC con su estela 063E48,
+  restos 01D6E4…): 50–60 actores a 150–400 µs cada uno. Los pasos impares
+  cuestan ≈ 0,1 ms.
+- El fotograma de 53,7 ms ejecutó **cuatro** pasos (`steps=404/4`): dos
+  actualizaciones del mundo (`sim` 31,2 ms) más una descodificación síncrona
+  (`asset` 11,8 ms). ROM 11 llegó a tres pasos (`sim` 20,9 ms, 40,1 ms). La
+  diferencia entre ROM 11 y ROM 12 es sobre todo cuántos pasos de
+  recuperación caen en el mismo fotograma, no un actor nuevo.
+- En el perfil del anfitrión (`tools/test_gameplay.c`, gprof/cachegrind con
+  cachés de 16/8 KB como la VR4300) la función más cara era `ga_rom`
+  (25 % del tiempo, 4,6 M llamadas): recorría las 113 regiones de ROM de
+  forma lineal en cada lectura de tabla (senos, rectángulos, descriptores);
+  `program()` recorría igual los 665 programas de animación.
+
+Cambios (sin tocar la simulación; `make check` da salidas idénticas):
+
+1. `ga_rom`: búsqueda binaria sobre las regiones ordenadas una vez, con el
+   máximo acumulado de sus finales para recorrer hacia atrás solo las que
+   aún pueden contener la dirección; misma respuesta que el recorrido
+   lineal (la región con más bytes tras la dirección, la primera en caso de
+   empate). `program()`: índice ordenado por etiqueta y búsqueda binaria (la
+   primera entrada de cada etiqueta). En el anfitrión `ga_rom` pasa del
+   25 % al 3,5 %; en ares la media de `sim` en la ventana estable de 3072
+   baja de 2,9 a 2,2 ms y su máximo de 8,2 a 5,1 ms.
+2. Un fotograma ejecuta como mucho **dos** pasos (`MSX_FRAME_STEPS`,
+   `actor.c`): así nunca hay dos actualizaciones del mundo en el mismo
+   fotograma. Los pasos sobrantes vuelven al reloj
+   (`scene_clock_defer`) y se ejecutan en los fotogramas siguientes: no se
+   pierde ningún paso (prueba en `tools/test_scene_clock.c`). La
+   recuperación es más lenta (un paso extra por fotograma en vez de siete).
+
+| Recorrido completo (ares) | ROM 11 (`r11ref`) | ROM 12 (`e61a00c`) | Con los cambios |
+| --- | ---: | ---: | ---: |
+| Peor fotograma | 40,1 ms | 53,7 ms (2336, 4 pasos) | 36,2 ms¹ (2336, 2 pasos; arranque 36,2 ms) |
+| Pasos máx. por fotograma | 3 | 4 | 2 |
+| `sim` máx. en 2336 | 20,9 ms | 31,2 ms | 14,7 ms¹ |
+| `sim` media / máx. en 3072 | 2,8 / 7,5 ms | 3,0 / 8,2 ms | 2,2 / 5,1 ms¹ |
+
+¹ Con la instrumentación de diagnóstico activa (un poco más lenta). Medida
+final sin ella (`mslugx-reference.z64`, PASS, crash=0): peor fotograma
+35,2 ms (primera ventana, arranque) y 35,2 ms en 2336 (`sim` 11,8 ms, 2
+pasos; `asset` 12,3 ms); 3376: 32,8 ms; `sim` en 3072 ≈ 2,4 / 5,4 ms;
+212 ranuras, 1227 KB libres tras la caché, mínimo libre 357 KB.
+
+Queda el coste propio de la actualización del mundo en 2336 (≈ 11 ms con
+50–60 actores): es trabajo distribuido entre muchos actores, sin una
+función dominante tras los cambios.
+
+### Caché de escena y montón (ROM 12)
+
+Mapa del montón medido en el arranque con cinemáticas (bloques libres,
+reservando el mayor cada vez): tras la entrada, 3368 + 1976 + 148 + 136 KB;
+un bloque pequeño (≈ 11 KB) que queda vivo de las cinemáticas parte el
+montón en dos. Los 60 efectos (1003 KB, ROM 11: 57 y 851 KB) llenan los
+huecos bajos y 1976 KB → 1220 KB. Las ranuras de la caché (`e61a00c`) se
+reparten en dos bloques de 105 y una suelta, y tras la caché quedan 1240 KB
+libres = la reserva (1216 KB) + < 1 ranura. Es decir, la fragmentación ya no
+cuesta ranuras: el número lo fija el total libre menos las reservas
+(`actor_init` 615 KB de 640; crecimiento en juego ≈ 260 KB de 320; margen
+256 KB; mínimo libre en el recorrido 367 KB). Reservar los efectos en un
+solo bloque o la caché antes que ellos no daría ninguna ranura más; para
+subir de 211–212 ranuras (mínimo 208) hay que bajar el margen (128 KB
+darían 8 ranuras) o reducir lo residente.

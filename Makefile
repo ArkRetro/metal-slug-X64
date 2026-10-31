@@ -318,7 +318,11 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch
+# The boss's three prisoners 099DCC (hatch 0D7402 in phase 2) from the two
+# boss fights (captures-boss runJ 11957..12644, runDbg2 11249..11902): they
+# fall from y 96 through the body platform 0E94AC, land on the arena floor
+# (layer 10D7B6), are freed, rescued and run off left (view 10E9D2 = -88).
 # The camel riders 09F682 (camel2: hold-fire 6950..7950 at camera 2184..2336),
 # their riders, heads, shots, pieces and the dropped sword 09EE34; the rider
 # dies as a swordsman (09E920/09EAB8, neo_swords.c). A shot A0034 that hits

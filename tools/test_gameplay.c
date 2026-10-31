@@ -343,7 +343,27 @@ static void camel_run(int mode) {
     if (mode) assert(g.dismounts>=1 && g.mount==MSX_MOUNT_NONE);
     assert(!g.world.unsupported);
 }
+/* Walking left from the parachute descent (MiSTer ROM 12: "si caminas hacia
+ * atras caes infinito"): hold left from the handoff, after the cut and after
+ * the landing; Marco must land and stay on the floor. */
+static void fall_run(unsigned cut_at,unsigned left_from,bool print) {
+    static msx_game_t g;msx_game_init(&g);
+    msx_game_begin_descent(&g,7865136,16293888,816,-483328);
+    int deepest=g.y;unsigned landed=0;
+    for (unsigned t=0;t<1200;t++) {
+        bool cut=cut_at && t==cut_at;
+        msx_game_update(&g,t>=left_from?-1:0,cut,false);
+        if (g.y>deepest) deepest=g.y;
+        if (!landed && !g.descent && g.grounded) landed=t;
+        if (print && (t%40==0 || t<4)) printf("t=%u x=%d y=%d cam=%d descent=%u gr=%d\n",t,g.x>>16,g.y>>16,g.camera,g.descent,g.grounded);
+    }
+    printf("fall cut=%u left=%u: landed %u x=%d y=%d deepest=%d camera=%d\n",cut_at,left_from,landed,g.x>>16,g.y>>16,deepest>>16,g.camera);
+    assert(landed && g.grounded && !g.descent && g.y==msx_ground_offset(g.x) && deepest<=64*MSX_UNIT);
+    assert(g.x>=(g.camera+28)*MSX_UNIT);
+    if (left_from<1200) assert(g.x==(g.camera+28)*MSX_UNIT);   /* MAME: x 28.0, feet on the floor */
+}
 int main(int argc,char **argv) {
+    if (argc>1 && !strcmp(argv[1],"fall")) {fall_run(argc>2?(unsigned)atoi(argv[2]):0,argc>3?(unsigned)atoi(argv[3]):0,argc>4);return 0;}
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
@@ -569,6 +589,20 @@ int main(int argc,char **argv) {
         for (;cut<600 && g.descent;cut++) msx_game_update(&g,0,false,false);
         assert(g.descent_cuts==1 && g.grounded && g.world.player_node[0][0x61]==2 && cut+21<hang);
         printf("descent: landed after %u ticks, cut at 20 and landed %u ticks later\n",hang,cut);
+        // Left held from the handoff, after the cut and after the landing:
+        // stopped at camera+28 on the floor, never through it (MiSTer ROM 12).
+        fall_run(0,0,false);fall_run(0,300,false);fall_run(20,0,false);fall_run(20,100,false);fall_run(60,0,false);
+        msx_game_init(&g);assert(msx_game_begin_at(&g,7852402,6157405));
+        for (unsigned t=0;t<400;t++) msx_game_update(&g,-1,false,false);
+        assert(g.grounded && g.x==28*MSX_UNIT && g.y==msx_ground_offset(g.x));
+        // Every camera stop of the course: left against the edge stays on the floor.
+        for (int c=0;c<=MSX_CAMERA_MAX;c+=16) {
+            msx_game_init(&g);g.world_enabled=false;g.camera=c;g.x=(c+60)*MSX_UNIT;g.y=msx_ground_offset(g.x);
+            if (!g.y && !msx_ground_offset(g.x+MSX_UNIT)) continue;
+            for (unsigned t=0;t<120;t++) msx_game_update(&g,-1,false,false);
+            if (!(g.grounded && g.x==(c+28)*MSX_UNIT)) printf("left edge camera %d: x=%d y=%d grounded=%d\n",c,g.x>>16,g.y>>16,g.grounded);
+            assert(g.y<=64*MSX_UNIT);
+        }
     }
     // Extended terrain: floor beyond the old end, and a measured upper roof.
     assert(msx_ground_offset(1192*MSX_UNIT)== -8*MSX_UNIT && msx_ground_offset(2200*MSX_UNIT)== -8*MSX_UNIT);

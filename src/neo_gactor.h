@@ -104,6 +104,9 @@ typedef struct neo_vehicle_env {
     uint8_t halted,system;           /* RAM 10C301 (018F24), 10C300 (019424) */
     uint8_t dip10f000,dip10f001;     /* RAM 10F000 (bit 7: 03519E), 10F001 (bit 2: free bombs) */
     uint8_t solids;                  /* bodies registered in the table 106756 (004ED2) */
+    /* The table 106756 itself (16 entries): each body's node (+00..+BF,
+     * writable: 004ED2 sets its +15 bits 3/4) and descriptor; NULL free. */
+    uint8_t *solid_node[16];uint32_t solid_desc[16];
     unsigned grenades;               /* grenades 0C0808 made for a rider (counted; the player's code) */
     uint32_t grenade_last;           /* routine of the last one */
 } neo_vehicle_env_t;
@@ -146,6 +149,9 @@ struct neo_genv {
     /* ROM 00409A: carry set when the creator (+0C) is alive. */
     bool (*creator_alive)(void *ctx,neo_gactor_t *a);
     neo_gactor_t *(*creator)(void *ctx,neo_gactor_t *a);
+    /* The generic actor of a node tag held in a field (the SV-001's tread
+     * node 014A4E in +8C); NULL when none. */
+    neo_gactor_t *(*actor)(void *ctx,uint32_t tag);
     /* +04 of the original node: the node before `a` in the actor list (a
      * deleted node with deeper ones after it stays as a placeholder, 004126);
      * NULL when it is not a generic actor. */
@@ -232,6 +238,15 @@ bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 01AFFC: carr
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 0C8BEC */
 uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *table); /* 0260C8 */
 void ga_fail(neo_genv_t *e,uint32_t at);
+/* The kernel object of a parent tag (0xFF: an actor's block) and back, and
+ * the self exclusion of the actor running a query (01424C). */
+uint8_t ga_kobj(uint32_t tag);
+uint32_t ga_ktag(uint8_t id);
+void ga_self(neo_gactor_t *a,neo_genv_t *e);
+/* 004ED2 after 0128E8 (10C004 = 0, 10C009 = b4009): the push out of the
+ * solid bodies of e->vehicle (table 106756). False on an explicit stop;
+ * *top = the D7 = -1 of a kind-1 body under the actor. */
+bool ga_push_solids(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool *top);
 bool ga_cull(neo_gactor_t *a,neo_genv_t *e,uint32_t rect);        /* 01945C: carry = remove */
 bool ga_cull_rect(neo_gactor_t *a,neo_genv_t *e,uint32_t rect);   /* 019504: carry = outside */
 uint16_t ga_rand(neo_genv_t *e);                                  /* 0029C6 */

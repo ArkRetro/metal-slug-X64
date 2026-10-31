@@ -18,6 +18,7 @@
 --  events.csv      MSX_REST_TRACE_WINDOWS: collision and VRAM-port writes
 --  prev/vram<f>    MSX_REST_PREV_DUMPS=1: VRAM of the frame before a snapshot
 --  debug.log       MSX_REST_DEBUG=1 (-debug): SPAWN/DRAW/BP_ probe lines
+--  MSX_REST_ROM_PATCH / MSX_REST_HOLD_FIRE: capture-only overrides (below)
 -- Stops 60 frames after the Mission 2 script starts (or at MSX_REST_LAST).
 local output=assert(os.getenv('MSX_CAPTURE_DIR'),'Set MSX_CAPTURE_DIR')
 local last_frame=tonumber(os.getenv('MSX_REST_LAST') or '20000')
@@ -31,6 +32,24 @@ local frame=0
 local hold_fire={-1,-1}
 for lo,hi in string.gmatch(os.getenv('MSX_REST_HOLD_FIRE') or '','(%d+)-(%d+)') do hold_fire={tonumber(lo),tonumber(hi)} end
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
+-- MSX_REST_ROM_PATCH="off:old:new,...": capture-only patch of the P2 ROM image
+-- (hex bank-relative offset, old and new byte): every 1MB bank of the 5MB
+-- program region holding `old` at that offset gets `new`. Used to make the
+-- level script spawn both alternatives of a player-position condition (the
+-- helicopters 2D7092/2D70A6: byte 2D70A4 0C -> 0B). Never for a family test
+-- of the native code: the port keeps the original condition.
+for off,old,new in string.gmatch(os.getenv('MSX_REST_ROM_PATCH') or '','(%x+):(%x+):(%x+)') do
+ local n=0
+ for tag,region in pairs(manager.machine.memory.regions) do
+  if region.size>=0x500000 then
+   for b=0,3 do
+    local at=0x100000+b*0x100000+tonumber(off,16)
+    if region:read_u8(at)==tonumber(old,16) then region:write_u8(at,tonumber(new,16));n=n+1;print(string.format('ROM PATCH %s bank %d %s->%s',tag,b,old,new)) end
+   end
+  end
+ end
+ print(string.format('ROM PATCH %s %s->%s: %d banks',off,old,new,n))
+end
 local ROOT,DEAD,SCRIPT=0x1010a4,0x3f1e,0x101414
 local trace=assert(io.open(output..'/trace.csv','w'))
 trace:write('frame,camera,camera_word,fore_x,fore_y,mid_x,mid_y,sky_x,sky_y,obj4_x,obj4_y,full_speed,scroll_x,scroll_y,lock,lock_params,autoscroll,cam_x,cam_y,shake,bounds,map_cmd,x16,y16,player_routine,script_pc,script_timer,groups,inputs\n')

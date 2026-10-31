@@ -769,23 +769,101 @@ como en `food1`).
 Auditoría del guion tras esta familia: quedan sin crear las apariciones
 contadas `0x09F682` (cámara 2184) y `0x04857C` ×2 (3192).
 
+
+## Formación de helicópteros `0x04857C` (cámara 3192)
+
+`src/neo_heli.c`: traducción manual de `0x047874..0x048FFE` con sus
+servicios `0x04900C..0x04A1AC` y las llamadas de programa
+`0x04A1AE/0x04A208/0x04A262`. Dos registros del guion la crean según la
+mitad de pantalla del jugador (`2D7092`, consulta `0B`: jugador a la
+izquierda, entra por `x=352`; `2D70A6`, consulta `0C`: por `x=-32`); palabras
+`+6E` = 12 (altura `0x1C0`), `+70` = 0 (juego de rutas), `+72` = 5.
+
+- **Controlador `0x04857C/0x0485EC`** (invisible): `+72` guías `0x04870C`
+  (`+61` = índice), cuenta de vivos `+96` (al llegar a 0: `019DFC` y borrado),
+  ranuras `+76+4i`/`+90+i` con la posición y el rumbo de cada guía, ritmo de
+  bombardeo (`+8A/+8C/+8E/+95/+99`, rango `2D1656`) y la explosión en cadena
+  (`+9A/+9B/+9C`: un bit cada 5 actualizaciones).
+- **Guía `0x04870C`** (invisible): espera `+61×16`, crea el helicóptero
+  `0x048882`, sube a la altura (`04982A`, dirección `0499A4`: ángulo `002EB4`
+  + giro `+74`, velocidad = distancia × 0x1800 suavizada ⅛/¹⁄₁₆; alabeo
+  `049A92`) y a 8 px (`049E46`) sigue la ruta `E0AF2/E0AFE[+70]` con el
+  intérprete `021288` (`E0B0A..E0C32`, velocidad `+A8` hasta el rango `2D1A92`),
+  anotando su posición en la ranura del controlador.
+- **Helicóptero `0x048882`**: caja `E0AB2`, vida `2D1530`, paletas `0x15A`
+  (guía 0, sonido `0x10E8`) o `0x20`, destello `0x15C`, rotor `0x047874`
+  (programa `24483E`, índice de alabeo copiado y reflejado desde 7, destello
+  compartido `0044F6`). Espera a que su guía llegue (`0x04893E`), pasa a la
+  raíz (`01AD52`) y sigue la ranura `+95` del controlador (`049EFA`: recto a
+  menos de 4 px, si no 4 px por el ángulo; alabeo `+96` con desplazamiento 3
+  por la tabla `E09F4` del rumbo `+AA`). Bombardea (`04A064`: jugador a 32 px
+  del lado del alabeo, `04A15A`; los siguientes se suman mientras
+  `+95 × +8C <= +8A`) en `0x048A06/0x048A2C`: `2D1840` lanzadores `0x047A6C`
+  cada `2D18D6` actualizaciones, alabeo hacia 4. Cola `049030`: caja (`004C24`),
+  golpe → `0x048AF6` (o `0x048AB6` con los puntos `08D1D0`: formación completa
+  y guía 0; entonces todos explotan por los bits `+9A`), recorte `E0AA2`.
+  Muertes (`0x048B10`, moneda `0029C6`): explosión `0x048E22` (humo `E0A3E`,
+  cuatro restos `0x048EDA/EFE/F26/F4E` con `0x180000` polar y bocanadas
+  `01C6EE`, `01C71E` en el sitio) o caída `0x048B2E/0x048BBC` (`0x50000` polar
+  a 0x20/0x60, humo `E0A50`, bocanadas cada 5, sonda vertical `01495C`,
+  choque `0x048C8C` → restos `0x048D22/0x048D5E` con `22CF2C`, paleta `0x204`,
+  fila de ataque `E0AE2`).
+- **Lanzador `0x047A6C`**: programa `244F06`; su llamada `04A262` crea la
+  bomba `0x047B24` (rango de velocidad `2D19B4` polar por `+80` del lanzador,
+  desplazamiento `E0A1E[+96]`, fila `E0ABE`; impacto `0x048510` en el suelo
+  (`0146E8`, programa `245106`) o explosión `0x047C48` (`22E504`) al tocar al
+  jugador) y el casquillo `0x047DE0` tras el actor del guion (`00411C`,
+  programa `244F9E`, gravedad `0143DC`, un rebote `+61`, 18 actualizaciones).
+
+**Captura** `captures-m1full/heli2` (`MSX_REST_FAMILY_ROOTS=4857c,47de0
+MSX_REST_BOSS_FROM=8500 MSX_REST_LAST=16000 MSX_REST_HOLD_FIRE=8600-9900
+MSX_REST_ROM_PATCH=d70a4:0c:0b`): la opción nueva `MSX_REST_ROM_PATCH` (solo
+para capturas) cambia en la imagen ROM de MAME el byte de la condición del
+segundo registro (`2D70A4`: `0C` → `0B`) para que las dos formaciones (10
+helicópteros, una por cada lado) aparezcan en una partida de un jugador; el
+jugador no dispara entre 8600 y 9900 y las mata después (cámara liberada en
+13103). Los casquillos van tras el actor del guion, así que `47de0` ha de
+ser raíz de la traza (la primera captura `heli1` no los tenía).
+
+**Prueba `heli`** (`data/heli_fixture.json.gz`, rangos `47800-49000`,
+`49000-4a300`; `--script-actor 101414 --script-routines 47de0
+--late-creator --hit-to 47c48 --hit-moving`): **634 nodos, 62823
+actualizaciones en bucle cerrado (8591..13088), 8706880 bytes iguales**, 631
+borrados, 17 contactos con el jugador (bombas), 101 hijos fuera de la
+familia (humos, bocanadas, explosiones), 1 creado fuera (la segunda
+formación, raíz inyectada). Novedades del banco de pruebas:
+`--late-creator` (la bomba nace en la actualización en que el programa del
+lanzador termina: el lanzador queda como marcador `003F1E` y sigue siendo el
+creador), `--hit-moving` (la bomba vuela antes de su fila de ataque) y el
+enlace de un hijo nativo solo a un nodo grabado que aparezca en los 8
+fotogramas siguientes (en 11363 la ROM se quedó sin nodos para un casquillo:
+el hijo nativo cuenta como externo). Corrección de la lectura: en `04855A`
+y `048BB6` no hay `rts`: el constructor del impacto y el inicio de la caída
+siguen en el mismo fotograma con `048560`/`048BBC`.
+
+**Paradas explícitas**: helicóptero solitario `0x047F7E..0x048510` (estados
+`0x047800/0x04783A/0x048002..0x0484FE`, lanzadores `0x0479B8/0x047A12`,
+bombas `0x047AFC/0x047B10` de `04A1AE/04A208`; no aparece en la misión 1),
+`+6E > 0x13` (`trap #15` "takasa err"), la explosión temporizada `0x048CD2`
+(inalcanzable: `048C36` comprueba el byte alto de la palabra `+8C`). Los
+puntos `0x048AB6` están traducidos (suma BCD `057948` a través de
+`neo_item_add_score`, etiqueta `08D0D2` externa) pero no grabados.
+
+Gráficos: `tools/export_rest_sprites.py ... rl2@59c82-59e30 heli2@47800-49000`:
+2100 descriptores (82 nuevos), 63 paletas (nuevas `0x15A`, `0x20`, `0x21`,
+`0x22`, `0x23`, `0x178`, `0x179`, `0x15C`); los 150 volcados de `heli2`:
+1039120 píxeles iguales, 128626 distintos (diez helicópteros con humos,
+bocanadas y explosiones superpuestos, y el destello `+17` de los golpes; el
+validador dibuja con la paleta base), 30 entradas sin descriptor (efectos
+fuera de los programas exportados).
+
+Tablas en `data/region_rom.json`: `E0962..E0C32`, `48E1A`, `49006`, `49762`
+y los rangos `2D14CE..2D1AAC`; programas (19) en `data/soldier_programs.json`
+(`HELI_ROOTS`). `neo_gactor.c`: `ga_probe_vertical` (`01495C`).
+
 ### Preparado para las dos apariciones contadas que faltan
 
-- Helicóptero `0x04857C` (`fam2`, un solo helicóptero: el registro
-  `0x2D70A6` depende de la consulta `0C` del jugador). Traza de familia
-  extraída con `--range 47800-48f00`: **16651 actualizaciones**, 43 nodos
-  (constructor `0x04857C`, cuerpo `0x0485EC` ×998; hijos `0x04870C` ×5
-  —portadores de los espadachines que suelta, `+61` = índice—, `0x048882` ×5,
-  `0x047874` ×5, `0x047A6C` ×11, `0x047B24` ×14, `0x048EDA`, `0x048EFE`).
-  El código ocupa `0x047800..0x048F40` (1356 instrucciones) **más** sus
-  servicios `0x049000..0x04A070` (`0x04900C`, `0x049236`, `0x0499A4`,
-  `0x049A1E/0x049A92`, `0x049B20`, `0x049E46..0x049FFA`, `0x04A064`), 13
-  programas del banco (`0x24473E`, `0x24483E`, …), rangos `0x2D1656..`, y
-  usa `0x01AD52/0x01AD6E/0x01AD8C`, `0x01DA40` (humo), `0x0029C6` ×10 y
-  `0x002E7C` (polar). Lo que hace falta para portarlo: la misma receta que el
-  lanzacohetes (traducción manual de las dos zonas de código, blobs de sus
-  tablas en `extract_region_rom.py`, programas en `ROCKET_ROOTS`-like,
-  `--script-actor 101414` si algún hijo va tras el actor del guion).
+- Helicóptero `0x04857C`: portado (sección siguiente).
 - Camello `0x09F682` (`camel1`, `--range 9ea00-a0800`: 469 actualizaciones;
   el jinete 1, nodo `1030F4`, con sus hijos es la primera prueba `--tree`).
   Sitios de sangre `0x09EFE4/0x09F598` (`neo_blood.c`: ON `0x3FE`, OFF

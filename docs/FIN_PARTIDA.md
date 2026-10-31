@@ -196,3 +196,30 @@ make check
 nombres `02CAD6`, fuentes `03D512`, acentos `03E194`) y
 `data/soldier_programs.json` (591 programas) son superconjuntos de los
 anteriores (todo bloque y programa previo presente e idéntico).
+
+## Puertas y recorrido (rama `work-end`, tras fusionar `6e6a9e8`)
+
+`make check` (todas las pruebas, con `-pipe` en `HOST_CFLAGS` por falta de
+disco para los temporales del compilador; las cuatro partidas de
+publicación cuentan 6/10/7/6 prisioneros y suman la bonificación exacta),
+`make check-core` en un clon limpio, `make -j4` y `make
+mslugx-reference.z64` (ROMs de 17.498.112 bytes). Recorrido completo en
+ares 146 (`tools/test_mission_native_ares.py`): **PASS, 0 *crash***, 36
+rebeldes creados, 52 abatidos, jefe derrotado, misión completada; **recuento
+tras MISSION COMPLETE: 6 prisioneros (1 especial) contados, cuenta a 0,
+puntuación 151500 → 231500, 0 paradas, 0 paradas de texto**; letras sin
+paradas; `MSX PERF` 63 ventanas, `cpu` media máx. 16.942 µs, peor fotograma
+35.198 µs; RDP 401 dibujos máx.; *underruns* de audio máx. 7. El recorrido
+dispara sin parar, así que el recuento toma el salto A/B, como en el
+arcade (`talK`).
+
+## Pendiente
+
+- El objeto de `0x019798` (arriba) y la tabla de récords `057B44`.
+- El programa GAME OVER `0181E4` y los fundidos del actor de misión tras el
+  GAME OVER (`018ADA..018BC8`: `(0,-31,-31)` y a negro): el port sigue
+  reiniciando la misión 1 tras las 190 actualizaciones.
+- El rótulo de las bombas `0x08C752` (un actor por letra `08C954`, texto
+  `0E5782`): sigue externo y contado; hace falta una captura de familia de
+  una recogida de bombas.
+- Los sonidos `0x10D6`, `0x10D8`, `0x1150` del recuento no tienen render.

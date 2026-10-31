@@ -144,6 +144,14 @@ typedef struct {
      * last untranslated path met (explicit stop, logged). */
     uint8_t mount;uint8_t pad_held;unsigned mounts,dismounts,mount_stops;uint32_t mount_stop;
     bool debug_dropped;   /* screenshot cartridge only (MSX_DEBUG_CAMEL_DROP) */
+    /* Stages of a mission pack (docs/MISION2.md "Fase 2"): walk-in to
+     * walk_in_x (Q16) at the stage start; stage_step: the stage end
+     * (018722, exit kind +6) until the flow's 0183D0 asks for the next
+     * stage (stage_load: actor.c loads it and calls msx_game_begin_stage);
+     * stage_camera_max: the list's hold; stage_exit_hooks: stage ends set by
+     * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24. */
+    int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
+    int stage_camera_max;unsigned stage_exit_hooks;
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
@@ -154,6 +162,13 @@ enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };
  * +30/+34 after the player's first 0C162A update), with the canopy. */
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
+/* A stage of a mission pack (the collision grid already set): the world's
+ * script and camera list, the HUD, flow, weapons and score kept; the player
+ * enters walking from the left edge to start_x (pixels), as in the run4
+ * capture of Mission 2 (19440..19530). */
+void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int start_x,int camera_max);
+/* Stage end (018F40 + 018722 for a stage whose next record is a stage). */
+void msx_game_stage_end(msx_game_t *game);
 /* A hit on the player (from: world x of the attacker, used without the
  * native world): the death 0C2956 unless invulnerable or already dying. */
 void msx_game_hurt(msx_game_t *game,int from);

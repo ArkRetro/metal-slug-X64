@@ -1310,7 +1310,21 @@ bool neo_world_hit_actor(neo_world_t *w,unsigned index,const neo_contact_actor_t
     if (!registered || !g->active || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) return false;
     return ga_receive(g,attacker,a5e,row,w->grid);
 }
+void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_t *st) {
+    neo_rng_t rng=w->rng;marco_weapons_t weapons=w->weapons;neo_pickup_env_t pickup=w->pickup;neo_ga_flags_t flags=w->ga_flags;
+    neo_world_init(w,scroll_x);
+    w->rng=rng;w->weapons=weapons;w->pickup=pickup;
+    memcpy(w->ga_flags.rescued,flags.rescued,sizeof(flags.rescued));memcpy(w->ga_flags.special,flags.special,sizeof(flags.special));memcpy(w->ga_flags.gifts,flags.gifts,sizeof(flags.gifts));
+    neo_script_init(&w->script,st->script,st->script_size,st->script_base);
+    w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;
+}
 void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
+    if (!w->camera_native && w->stage_camera) {
+        /* 0C8774 with 69D0 = 0 (a stage start): the whole list from its
+         * first command; its point (op 34) sets 69B8/69BA. */
+        neo_camera_init(&w->camera,w->stage_camera,w->stage_camera_size,w->stage_camera_base);w->camera_native=true;
+        neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
+    }
     if (!w->camera_native) {
         const uint8_t *list=ga_rom(0x0B57BE);
         if (!list) return;

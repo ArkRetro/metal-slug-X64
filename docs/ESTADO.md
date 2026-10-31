@@ -49,7 +49,15 @@ pasos de simulación por fotograma); 0 fallos síncronos del fondo; caché de
 
 Misión 2, fase 1 (rama `work-m2`, [MISION2.md](MISION2.md)): flujo de
 misión nativo (`01829E..01891E`, probado contra la captura completa), datos
-de las tres etapas exportados, paquete por misión y auditoría. Tras la Misión 1
-el flujo elige la etapa 1 de la Misión 2 y, como su escena aún no se carga,
-para explícitamente y vuelve a la Misión 1. Misiones 3–6 y efecto diorama (en
-pausa, `work-diorama`) después.
+de las tres etapas exportados, paquete por misión y auditoría. Fase 2, motor
+(rama `work-m2eng`): tras la Misión 1 el juego carga `romfs/mission2.pack`
+(tablas de una etapa en ranuras de la caché, sin tocar el presupuesto de
+RAM), con su guion, lista de cámara (incluido el `op 4` vertical) y reglas
+de capa por etapa. En ares (`tools/test_mission2_ares.py`, cartucho de
+referencia de la Misión 2): la etapa 1 se recorre hasta el final de su lista
+(cámara 320), el gancho de referencia termina la etapa (el actor de salida
+`0B6F24` no está portado) y la etapa 2 carga y avanza hasta la espera `op 4`
+de la cámara 752; ahí para: el jugador no tiene aún el contacto lateral con
+paredes del original (`+15` bits 3/4 de los barridos `0143EE/014594`), cruza
+el bloque de x 944 y cae al foso de x 992. Misiones 3–6 y efecto diorama
+(en pausa, `work-diorama`) después.

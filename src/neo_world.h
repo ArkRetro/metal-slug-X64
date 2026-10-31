@@ -134,6 +134,9 @@ typedef struct {
      * script's stop/release/autoscroll go to it. Off in the closed-loop
      * world tests, which take the scroll from the captures. */
     neo_camera_t camera;bool camera_native;
+    /* Stage of a mission pack (neo_world_init_stage); NULL camera = Mission 1's
+     * list 0B57BE. */
+    const uint8_t *stage_camera;uint16_t stage_camera_size;uint32_t stage_camera_base;unsigned camera_events_unsupported;
     /* Optional extra target of the player's shots (the boss, neo_boss). */
     bool (*shot_hook)(void *context,const neo_contact_actor_t *bullet,const int16_t row[7]);void *shot_context;
     /* Mission 1 boss (neo_boss, script record 2D70FC): its nodes run as one
@@ -193,6 +196,15 @@ typedef struct {
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */
 void neo_world_init(neo_world_t *world,int32_t scroll_x);
+/* Stage of a mission pack (docs/MISION2.md "Fase 2", 0183D0): the script
+ * section of the descriptor's +8 entry and the camera command list +0 from
+ * its first command; the RNG ring, weapons and score carry over from the
+ * previous stage (the original never resets them between stages). */
+typedef struct {
+    const uint8_t *script;uint16_t script_size;uint32_t script_base;
+    const uint8_t *camera;uint16_t camera_size;uint32_t camera_base;
+} neo_world_stage_t;
+void neo_world_init_stage(neo_world_t *world,int32_t scroll_x,const neo_world_stage_t *stage);
 /* One original logic update. Returns the number of hits on the player
  * (knife 0AEF14 and thrown-object flight attack ROM 0E0894). */
 unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_player_t *player);

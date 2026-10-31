@@ -95,8 +95,9 @@ Un fichero autodescrito por misión (`MSXM`): tablas de etapas, celdas,
 imágenes, paletas y bloques, rejillas, y las páginas CI4 en bloques de 16 KiB
 (8 páginas, RLE como `pack_scene.py`). El runtime cargará las tablas de **una
 etapa** a la vez y las páginas pasarán por la caché de escena, como los
-actores de la Misión 1. Mientras no exista el cargador se escribe en `build/`
-(no en `romfs/`), así la ROM no cambia.
+actores de la Misión 1. Desde la fase 2 se escribe en `romfs/mission2.pack`
+(privado) y el juego lo carga en el cambio de misión (versión 2 del formato,
+ver "Fase 2").
 
 Misión 2: 691 páginas, 87 bloques, 36 paletas, 10890 imágenes, 17905 celdas;
 1,36 MiB descodificados, **1,80 MiB** el fichero (0,46 MiB de tablas).
@@ -135,7 +136,99 @@ pierde ninguna aparición contada.** Apariciones contadas que el port pierde:
 021A1C 021A26 032DE2 035B66 035C68 035D12 03882A 03A05A 03A2AA 0529C0 0613CA
 0613E6 0678CA 082BCE 08C154 08C168 09692C 0995EC 099DE2 099DF0 0B829C 0B833A`.
 
-## Pendiente (fase 2)
+## Fase 2: motor (cargador por misión, etapas, cámara vertical)
+
+Rama `work-m2eng`. La Misión 1 sigue compilada como antes (`scene_meta.h`,
+`neo_grid`, `mission_camera.h`): `make check` y las familias no cambian.
+Las demás misiones se cargan de `romfs/missionN.pack` en el cambio de
+misión que elige `01891E`; sin el paquete el juego para explícitamente y
+vuelve a la Misión 1, como antes.
+
+**Paquete versión 2** (`tools/pack_mission.py`, `--rom` = el set de MAME):
+registro de etapa de 128 bytes con, además de lo anterior, el color de
+fondo, el rango de imágenes de la etapa, la máscara de celdas desconocidas
+de la rejilla (un bit por celda), tres bloques de ROM (lista de cámara del
+descriptor `+0` hasta su `op 8`; sección de guion de `+8` por la tabla
+`0x000800`; registros de jugador de `+4` hasta el umbral `FFFF`) y las reglas
+de capa. Las reglas se ajustan a las observaciones y la herramienta para si
+no encajan (±8 px, el retraso de las instantáneas):
+
+| Etapa | Capa 0 | Capa 1 | Capa 2 | Capa 3 |
+| --- | --- | --- | --- | --- |
+| 1 | x 1, visible | x 1/2, cámara ≥ 4 | x 1/2, cámara ≤ 3 | x 1 |
+| 2 | — | — | x 1, y 1, cámara ≤ 1026 | x 1, y 1 |
+| 3 | x 1/2, y 1/2 | — | — | x 1, y 1 |
+
+(y = subida de la cámara: `256 − y` del objeto raíz `10E968`, comprobado en
+los volcados de RAM de `run4`: la capa 3 sube 536 px en la etapa 2.) Los
+umbrales de visibilidad son el punto medio entre observaciones (la capa 2 de
+la etapa 2 se apaga entre las cámaras 1008 y 1044): aproximación hasta
+encontrar el evento que la apaga. Las rejillas con celdas nunca observadas
+se empaquetan con su máscara: una celda desconocida se lee vacía y se cuenta
+(`neo_collision_unknown_reads`, parada explícita de cobertura).
+
+**Cargador** (`scene_assets.c`, `scene_mission_load`/`scene_stage_load`):
+las tablas de una etapa se leen en ranuras contiguas de la caché de escena
+sacadas del LRU (`reserved`), así el presupuesto de RAM no cambia (la caché
+sigue teniendo sus ranuras, ≥ 208); los bloques de la misión son los ids
+`SCENE_CHUNK_COUNT..` (páginas `SCENE_CHUNK_COUNT·8 + n`, paletas
+`SCENE_PALETTE_COUNT + n`) y pasan por la misma caché; el mapa de la etapa
+se fija y se carga con la pantalla en negro. Medido en ares:
+
+| Etapa | Tablas | Ranuras | Mapa | Carga |
+| --- | --- | --- | --- | --- |
+| 1 | 55 KB | 4 | 12 bloques | 125 ms |
+| 2 | 224 KB | 15 | 24 bloques | 272 ms |
+| 3 | ≈ 640 KB (estimado) | ≈ 40 | 49 | — |
+
+Al volver a la Misión 1 (fin de partida, R) se liberan las ranuras y el mapa
+de la Misión 1 se fija otra vez. El índice de recorte del renderizador
+(`scene_cull`) se construye en la memoria de la etapa
+(`scene_cell_index_build_into`).
+
+**Mundo y juego**: `neo_world_init_stage` pone el guion de la sección (`0x804`
+→ `2D7298`, etc.) y la lista de cámara completa desde su primer comando
+(`0C8774` con `69D0` = 0: el punto de `op 34` da `69B8/69BA`); el anillo del
+RNG, las armas, la puntuación y los rescates pasan de una etapa a otra.
+`msx_game_begin_stage` conserva el HUD (reinicia el tiempo a 60) y el flujo,
+coloca a Marco en el suelo más alto del borde izquierdo (captura `run4`:
+y 64, 184 y 48 en las tres etapas) y lo hace entrar andando hasta la x del
+registro de `019604` (`+2` = `0x68`). Fin de etapa: `msx_game_stage_end`
+(`018F40` + `018722`) y una actualización del flujo por actualización del
+juego hasta su `0183D0`, donde `actor.c` carga la etapa siguiente.
+
+**Cámara vertical**: la cámara nativa ya llevaba x/y (modos 0..7, raíz
+`10E968`); falta en la Misión 1 solo el `op 4` (`0C84BE`), que ahora espera a
+que cada jugador presente esté (`+3C/+40`) dentro del rectángulo relativo a
+`+14/+18` de la capa `10C72E` (= palabras de la raíz, volcados de `run4`). El
+renderizador aplica las reglas de capa en x e y; la colisión admite rejillas
+de cualquier altura (`neo_collision_set_grid`), y el anillo de `neo_kernel`
+lee la celda directamente cuando la rejilla tiene más de 32 filas (la
+ventana vertical del anillo no está modelada).
+
+**Gancho de referencia** (solo `mslugx-m2-reference.z64`, nunca una versión):
+`MSX_REFERENCE_START_MISSION=2` salta al primer registro de la Misión 2 en
+el primer fotograma y `MSX_REFERENCE_STAGE_EXIT` termina la etapa cuando la
+cámara llega al final de su lista y el jugador al borde derecho, en lugar
+del actor de salida `0B6F24` (no portado; es del agente de actores).
+
+**Recorrido** (`tools/test_mission2_ares.py`, ares, cartucho
+`mslugx-m2-reference.z64`): la etapa 1 carga en 125 ms, Marco entra andando,
+la cámara sigue su lista hasta 320 (progreso 320, modo 0) sin leer ninguna
+celda desconocida; el gancho termina la etapa y el flujo (`017234`, salida 8,
+entrada 4) carga la etapa 2, que se dibuja con sus reglas y avanza hasta la
+espera `op 4` de la cámara 752 (rectángulo x 928..1247, y 160..295). Ahí
+para: el jugador del port no tiene el contacto lateral con paredes (`+15`
+bits 3/4, que `014594` pone a cero la velocidad), cruza el bloque de x 944
+por debajo y cae al foso de x 992, así que nunca sube al escalón que pide el
+`op 4`; la subida vertical (modos 4/5) y la etapa 3 no se alcanzan en ares.
+Rendimiento en la etapa 2: peor fotograma 5,5 ms de CPU, 0 fallos síncronos.
+Pendiente de esta parte: el contacto lateral del jugador, la ventana vertical del anillo de
+colisión, el evento real de visibilidad de capas, las 550 variantes
+dinámicas de la etapa 1 (zonas negras: el agua del río), la caída al vacío
+(sin muerte por caída en el port) y reducir las tablas de la etapa 3.
+
+## Pendiente (fase 2, resto)
 
 1. Cargador por misión en `scene_assets.c`: tablas de la etapa desde
    `missionN.pack`, páginas por la caché; reglas de capas por etapa en lugar

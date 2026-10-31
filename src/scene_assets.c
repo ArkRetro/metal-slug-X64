@@ -7,6 +7,10 @@
 #include "scene_meta.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "scene_cull.h"
+#include <stdio.h>
+enum { SCENE_MISSION_PAGE_BASE=SCENE_CHUNK_COUNT*8 };
+_Static_assert(SCENE_MISSION_PAGE_BASE+SCENE_MISSION_CHUNKS_MAX*8<=0xffff,"Mission page ids are 16-bit");
 _Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay camera limits differ (filesystem/mission1/rest/map.json missing?)");
 /* Measured RAM budget (KB), see "RAM budget" below. */
 enum {
@@ -25,12 +29,15 @@ enum {
     SCENE_AHEAD_PIXELS=384,        // script lookahead distance (camera pixels)
 };
 
-typedef struct { int chunk; bool ready; unsigned used_epoch,lru; } cache_slot_t;
+/* Chunk ids: scene.pack's, then (SCENE_CHUNK_COUNT..) the loaded mission
+ * pack's (scene_mission_load); a mission page is SCENE_CHUNK_COUNT*8+page. */
+enum { CHUNKS_ALL=SCENE_CHUNK_COUNT+SCENE_MISSION_CHUNKS_MAX };
+typedef struct { int chunk; bool ready,reserved; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
-static int chunk_slot[SCENE_CHUNK_COUNT];
-static unsigned requests[SCENE_CHUNK_COUNT];
-static bool pinned[SCENE_CHUNK_COUNT],map_chunk[SCENE_CHUNK_COUNT];
-static uint8_t block_pins[SCENE_CHUNK_COUNT];   // bit per recorded-block group
+static int chunk_slot[CHUNKS_ALL];
+static unsigned requests[CHUNKS_ALL];
+static bool pinned[CHUNKS_ALL],map_chunk[CHUNKS_ALL];
+static uint8_t block_pins[CHUNKS_ALL];   // bit per recorded-block group
 static int recording=-1;
 static uint8_t *cache,*staging[2];
 static uint8_t **slot_mem;   /* each slot's 16 KiB (the cache can span several heap blocks) */
@@ -48,11 +55,20 @@ static unsigned frame_service_decodes,frame_sync_decodes;
  * then the script's first spawns. Taken only into free slots, after every
  * request, so warming never evicts. `warm_required` leading entries must be
  * resident before the first frame (scene_assets_init finishes them). */
-static uint16_t warm_list[SCENE_CHUNK_COUNT];
+static uint16_t warm_list[CHUNKS_ALL];
 static unsigned warm_count,warm_next,warm_required;
 static bool warming,map_resident_all;
 static unsigned map_chunks,ahead_cursor;
 static int last_camera=-1;
+/* Loaded mission pack (scene_mission_load): its chunk table and ROM base. */
+static const scene_chunk_t *mission_chunks;
+static unsigned mission_chunk_count;
+static uint32_t mission_rom,mission_bytes;
+static const scene_chunk_t *chunk_info(unsigned c,uint32_t *base,uint32_t *size) {
+    if (c<SCENE_CHUNK_COUNT) {*base=rom;*size=SCENE_PACK_BYTES;return &scene_chunks[c];}
+    assertf(c-SCENE_CHUNK_COUNT<mission_chunk_count,"Mission chunk ID");
+    *base=mission_rom;*size=mission_bytes;return &mission_chunks[c-SCENE_CHUNK_COUNT];
+}
 // PI status bits 0/1: DMA and IO busy. A nonblocking poll keeps prefetch asynchronous.
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
 /* Idle-time decoding (scene_assets_idle): the VI interrupt stamps every
@@ -85,12 +101,13 @@ static int warm_candidate(void) {
 static void start_next(void) {
     if (active_chunk>=0 || pi_busy()) return;
     int chosen=-1;bool warm=false;
-    for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++)
+    for (unsigned i=0;i<CHUNKS_ALL;i++)
         if (requests[i] && (chosen<0 || requests[i]>requests[chosen])) chosen=(int)i;
     if (chosen<0) { chosen=warm_candidate();warm=true; }
     if (chosen<0) return;
     int victim=-1;
     for (unsigned i=0;i<capacity;i++) {
+        if (slots[i].reserved) continue;   // stage tables (scene_stage_load)
         if (slots[i].chunk<0) { victim=(int)i;break; }
         if (warm) continue;   // warming only fills free slots
         if (!slots[i].ready || pinned[slots[i].chunk] || block_pins[slots[i].chunk] || slots[i].used_epoch>completed) continue;
@@ -101,11 +118,11 @@ static void start_next(void) {
     if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++;resident--; }
     slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;requests[chosen]=0;
     active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;
-    const scene_chunk_t *c=&scene_chunks[chosen];
+    uint32_t base,size;const scene_chunk_t *c=chunk_info((unsigned)chosen,&base,&size);
     unsigned length=(c->length+63)&~63u;
-    assertf(length<=SCENE_CHUNK_BYTES && c->offset+length<=SCENE_PACK_BYTES,"Pack chunk bounds");
+    assertf(length<=SCENE_CHUNK_BYTES && c->offset+length<=size,"Pack chunk bounds");
     data_cache_hit_invalidate(staging[active_stage],length);
-    dma_read_async(staging[active_stage],rom+c->offset,length);
+    dma_read_async(staging[active_stage],base+c->offset,length);
     stats.loads++;stats.dma_bytes+=length;
 }
 /* Decode the staged chunk (its DMA done) into its slot; returns the ticks. */
@@ -115,9 +132,9 @@ static uint32_t decode_active(void) {
     active_chunk=active_slot=-1;
     // Reserve the other staging buffer and overlap its PI read with this decode.
     start_next();
-    const scene_chunk_t *c=&scene_chunks[chunk];uint8_t *dst=slot_mem[slot];
+    uint32_t base,size;const scene_chunk_t *c=chunk_info((unsigned)chunk,&base,&size);uint8_t *dst=slot_mem[slot];(void)size;
     bool decoded=scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec);
-    assertf(decoded,"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(rom+c->offset));
+    assertf(decoded,"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(base+c->offset));
     if (!decoded) abort();
     uint32_t crc=scene_crc32(dst,SCENE_CHUNK_BYTES);
     assertf(crc==c->crc,"Scene CRC mismatch");
@@ -155,7 +172,7 @@ bool scene_assets_idle(void) {
     return true;
 }
 static void request(unsigned chunk,unsigned priority) {
-    assertf(chunk<SCENE_CHUNK_COUNT,"Scene chunk ID");
+    assertf(chunk<SCENE_CHUNK_COUNT+mission_chunk_count,"Scene chunk ID");
     if (chunk_slot[chunk]>=0) return;
     if (requests[chunk]<priority) requests[chunk]=priority;
 }
@@ -189,7 +206,7 @@ static void require_chunk(unsigned chunk,bool deferrable) {
     if (!--timing_depth && !warming) msx_perf_add(MSX_PERF_ASSET,TICKS_READ()-started);
 }
 static const void *page_of(const scene_image_t *image,bool deferrable) {
-    assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");
+    assertf(image->page<SCENE_PAGE_COUNT || (image->page>=SCENE_MISSION_PAGE_BASE && image->page/8u<SCENE_CHUNK_COUNT+mission_chunk_count),"Scene page ID");
     unsigned chunk=image->page/8;require_chunk(chunk,deferrable);
     if (recording>=0) block_pins[chunk]|=(uint8_t)(1u<<recording);
     cache_slot_t *s=&slots[chunk_slot[chunk]];s->used_epoch=epoch;s->lru=++clock_lru;
@@ -197,7 +214,7 @@ static const void *page_of(const scene_image_t *image,bool deferrable) {
 }
 const void *scene_page(const scene_image_t *image) { return page_of(image,false); }
 const void *scene_page_try(const scene_image_t *image) {
-    assertf(image->page<SCENE_PAGE_COUNT,"Scene page ID");
+    assertf(image->page<SCENE_PAGE_COUNT || image->page>=SCENE_MISSION_PAGE_BASE,"Scene page ID");
     unsigned chunk=image->page/8;
     if (!resident_chunk(chunk)) {
         if (frame_sync_decodes+frame_service_decodes>=SCENE_SYNC_DECODES) { stats.deferred++;request(chunk,255);return NULL; }
@@ -264,7 +281,7 @@ int scene_assets_heap_low(void) {
 }
 
 static void warm_add(unsigned chunk) {
-    static bool queued[SCENE_CHUNK_COUNT];
+    static bool queued[CHUNKS_ALL];
     if (queued[chunk]) return;
     queued[chunk]=true;warm_list[warm_count++]=(uint16_t)chunk;
 }
@@ -309,7 +326,7 @@ void scene_assets_begin(void) {
     slots=calloc(capacity,sizeof(*slots));
     assertf(cache && slots && staging[0] && staging[1],"Scene cache allocation");
     for (unsigned i=0;i<capacity;i++) slots[i].chunk=-1;
-    for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) chunk_slot[i]=-1;
+    for (unsigned i=0;i<CHUNKS_ALL;i++) chunk_slot[i]=-1;
     stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
     decode_estimate=TICKS_FROM_US(4000);
     register_VI_handler(on_vblank);
@@ -385,12 +402,195 @@ const scene_image_t *scene_frame(unsigned id,unsigned frame) {
     const scene_bank_t *b=scene_bank(id);assert(frame<b->first+b->second);return &scene_images[b->start+frame];
 }
 const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(row<7 && col<10);return &scene_background[row*10+col]; }
-const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data; }
-const scene_map_cell_t *scene_patch_cells(unsigned *count) { *count=SCENE_PATCH_CELL_COUNT;return scene_patch_cells_data; }
-const scene_map_cell_t *scene_collapse_cells(unsigned *count) { *count=SCENE_COLLAPSE_CELL_COUNT;return scene_collapse_cells_data; }
-const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
-unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
-uint32_t scene_map_backdrop(bool after) { return after?SCENE_MAP_BACKDROP_AFTER:SCENE_MAP_BACKDROP; }
+/* ---- Mission packs (docs/MISION2.md "Fase 2") ----
+ * The game keeps Mission 1's tables compiled in; another mission's pack is
+ * opened at the mission switch (01891E) and each stage's tables are read
+ * into slots of the scene cache taken out of the LRU (`reserved`), so the
+ * RAM budget does not change: the cache still has every slot it had, a
+ * stage borrows what its tables need (stage 1 of Mission 2: 3 slots) and
+ * its map chunks are pinned like Mission 1's. Back to Mission 1 (game over
+ * or reset), the slots are released and Mission 1's map pinned again. */
+typedef struct __attribute__((packed)) {
+    uint32_t descriptor;uint16_t width,camera_max;uint32_t backdrop,first_cell,cell_count;
+    uint16_t columns,rows;int16_t origin_x,origin_y;uint32_t grid,unknown,image_first,image_count;
+    struct __attribute__((packed)) {uint32_t rom,offset,length;} blob[3];
+    scene_layer_rule_t rules[4];
+} pack_stage_t;
+_Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
+typedef struct __attribute__((packed)) {
+    char magic[4];uint16_t version,mission,stages,palettes;uint32_t images,chunks,cells,grid_bytes;
+} pack_header_t;
+static pack_header_t mission_head;
+static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_chunks_at;
+static scene_stage_t stage;static bool stage_on;
+static unsigned stage_images_count(void);
+static int reserved_first=-1;static unsigned reserved_count;
+static unsigned stage_map_first,stage_map_count;   // mission chunk ids of the stage map
+static uint8_t *reserve_mem;static unsigned reserve_used,reserve_size;
+static scene_map_cell_t *stage_cells;static scene_image_t *stage_images;static uint16_t (*stage_palettes)[16];static unsigned stage_image_total;
+static unsigned stage_images_count(void) {return stage_image_total;}
+static void rom_read(void *dst,uint32_t offset,uint32_t length) {
+    assertf(offset+length<=mission_bytes,"Mission pack read");
+    data_cache_hit_writeback_invalidate(dst,length);dma_read(dst,mission_rom+offset,length);
+}
+static void *take(unsigned bytes) {
+    void *p=reserve_mem+reserve_used;reserve_used+=(bytes+15)&~15u;
+    assertf(reserve_used<=reserve_size,"Stage tables exceed their slots");
+    return p;
+}
+const scene_stage_t *scene_stage(void) { return stage_on?&stage:NULL; }
+static void release_reserved(void) {
+    if (reserved_first<0) return;
+    for (unsigned i=0;i<reserved_count;i++) slots[reserved_first+i].reserved=false;
+    reserved_first=-1;reserved_count=0;reserve_mem=NULL;
+}
+/* Takes `count` contiguous slots (one heap block) out of the cache, the last
+ * such run so the pinned player banks (warmed first) are rarely in it. */
+static bool reserve_slots(unsigned count) {
+    for (int first=(int)capacity-(int)count;first>=0;first--) {
+        bool ok=true;
+        for (unsigned i=1;i<count && ok;i++) ok=slot_mem[first+i]==slot_mem[first]+i*SCENE_CHUNK_BYTES;
+        if (!ok) continue;
+        for (unsigned i=0;i<count;i++) {
+            cache_slot_t *sl=&slots[first+i];
+            if (sl->chunk>=0) {chunk_slot[sl->chunk]=-1;if (sl->ready) resident--;stats.evictions++;}
+            *sl=(cache_slot_t){.chunk=-1,.reserved=true};
+        }
+        reserved_first=first;reserved_count=count;reserve_mem=slot_mem[first];reserve_used=0;reserve_size=count*SCENE_CHUNK_BYTES;
+        return true;
+    }
+    return false;
+}
+static void forget_mission_chunks(void) {
+    for (unsigned c=SCENE_CHUNK_COUNT;c<CHUNKS_ALL;c++) {
+        pinned[c]=false;map_chunk[c]=false;requests[c]=0;
+        if (chunk_slot[c]>=0) {slots[chunk_slot[c]]=(cache_slot_t){.chunk=-1};chunk_slot[c]=-1;resident--;}
+    }
+}
+/* Waits for the chunk in flight (its slot may be reserved next). */
+static void quiesce(void) {
+    while (active_chunk>=0) { if (pi_busy()) dma_wait(); else decode_active(); }
+    for (unsigned c=0;c<CHUNKS_ALL;c++) requests[c]=0;
+}
+bool scene_mission_load(unsigned mission) {
+    char path[32];snprintf(path,sizeof(path),"/mission%u.pack",mission);
+    uint32_t at=(uint32_t)dfs_rom_addr(path);
+    if (!at) {debugf("MSX mission pack %s missing\n",path);return false;}
+    quiesce();scene_mission_unload();
+    mission_rom=PhysicalAddr((void*)(uintptr_t)at);mission_bytes=(uint32_t)dfs_rom_size(path);
+    static pack_header_t head __attribute__((aligned(16)));
+    data_cache_hit_writeback_invalidate(&head,sizeof(head));dma_read(&head,mission_rom,sizeof(head));
+    if (memcmp(head.magic,"MSXM",4) || head.version!=2 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
+        debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);return false;
+    }
+    mission_head=head;
+    uint32_t o=sizeof(head)+128u*head.stages;
+    mission_cells_at=o;o+=22u*head.cells;
+    mission_images_at=o;o+=8u*head.images;
+    mission_palettes_at=o;o+=32u*head.palettes;
+    mission_chunks_at=o;
+    /* Mission 1's map is no longer drawn: its chunks go back to the LRU. */
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (map_chunk[c]) pinned[c]=false;
+    map_resident_all=false;
+    debugf("MSX mission pack %s: %u stages, %lu chunks, %lu images, %lu cells, %lu bytes\n",path,head.stages,(unsigned long)head.chunks,(unsigned long)head.images,(unsigned long)head.cells,(unsigned long)mission_bytes);
+    return true;
+}
+bool scene_stage_load(unsigned index) {
+    if (!mission_bytes || index>=mission_head.stages) return false;
+    uint32_t began=TICKS_READ();
+    quiesce();
+    static pack_stage_t ps __attribute__((aligned(16)));
+    data_cache_hit_writeback_invalidate(&ps,sizeof(ps));dma_read(&ps,mission_rom+sizeof(pack_header_t)+128u*index,sizeof(ps));
+    /* The previous stage's chunks and tables. */
+    release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
+    unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
+    unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
+        2u*((grid+15)&~15u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
+    for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
+    unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
+    if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
+    /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
+    scene_chunk_t *chunks=take(16u*mission_head.chunks);rom_read(chunks,mission_chunks_at,16u*mission_head.chunks);
+    mission_chunks=chunks;mission_chunk_count=mission_head.chunks;
+    stage_palettes=take(32u*mission_head.palettes);rom_read(stage_palettes,mission_palettes_at,32u*mission_head.palettes);
+    /* Cells: 22-byte records (u8 layer) converted in place to
+     * scene_map_cell_t, the image ids rebased to the stage's images. */
+    _Static_assert(sizeof(scene_map_cell_t)==22,"scene_map_cell_t is the pack record size");
+    uint8_t *raw=take(cells*22u);rom_read(raw,mission_cells_at+22u*ps.first_cell,cells*22u);
+    stage_cells=(scene_map_cell_t*)raw;
+    for (unsigned i=0;i<cells;i++) {
+        const uint8_t *r=raw+22u*i;scene_map_cell_t c;
+        c.layer=r[0];c.x=(int16_t)(r[2]<<8|r[3]);c.y=(int16_t)(r[4]<<8|r[5]);
+        for (unsigned k=0;k<8;k++) c.phases[k]=(uint16_t)((r[6+2*k]<<8|r[7+2*k])-ps.image_first);
+        memcpy(&stage_cells[i],&c,sizeof(c));
+    }
+    /* Images: 8-byte records (page, palette, y, height) read at the end of
+     * their table and expanded forward (never over an unread record). */
+    stage_images=take(images*sizeof(scene_image_t));stage_image_total=images;
+    uint8_t *ri=(uint8_t*)stage_images+images*(sizeof(scene_image_t)-8u);rom_read(ri,mission_images_at+8u*ps.image_first,images*8u);
+    unsigned min_page=0xffff,max_page=0;
+    for (unsigned i=0;i<images;i++) {
+        const uint8_t *r=ri+8u*i;uint16_t page=(uint16_t)(r[0]<<8|r[1]),pal=(uint16_t)(r[2]<<8|r[3]),y=(uint16_t)(r[4]<<8|r[5]),h=(uint16_t)(r[6]<<8|r[7]);
+        stage_images[i]=(scene_image_t){(uint16_t)(SCENE_MISSION_PAGE_BASE+page),(uint16_t)(SCENE_PALETTE_COUNT+pal),0,(int16_t)y,16,h,2};
+        if (page<min_page) min_page=page;
+        if (page>max_page) max_page=page;
+    }
+    /* Grid, its stamp copy and the unknown mask. */
+    uint8_t *g=take(grid),*dyn=take(grid),*unknown=NULL;rom_read(g,ps.grid,grid);
+    if (ps.unknown) {unknown=take((grid+7)/8);rom_read(unknown,ps.unknown,(grid+7)/8);}
+    const uint8_t *blob[3];
+    for (unsigned b=0;b<3;b++) {uint8_t *d=take(ps.blob[b].length);if (ps.blob[b].length) rom_read(d,ps.blob[b].offset,ps.blob[b].length);blob[b]=d;}
+    uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
+    data_cache_hit_writeback(reserve_mem,reserve_used);
+    stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
+        .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.unknown=unknown,
+        .camera_list=blob[0],.camera_rom=ps.blob[0].rom,.camera_len=(uint16_t)ps.blob[0].length,
+        .script=blob[1],.script_rom=ps.blob[1].rom,.script_len=(uint16_t)ps.blob[1].length,
+        .players=blob[2],.players_rom=ps.blob[2].rom,.players_len=(uint16_t)ps.blob[2].length,
+        .cells=stage_cells,.cell_count=cells,.index_order=order,.index_runs=runs};
+    memcpy(stage.rules,ps.rules,sizeof(stage.rules));
+    stage_on=true;
+    /* The stage map, pinned and loaded now (the screen is black). */
+    stage_map_first=min_page/8u;stage_map_count=images?max_page/8u-min_page/8u+1u:0;
+    map_chunks=0;
+    for (unsigned i=0;i<cells;i++) for (unsigned k=0;k<8;k++) {
+        unsigned c=SCENE_CHUNK_COUNT+stage_images[stage_cells[i].phases[k]].page/8u-SCENE_MISSION_PAGE_BASE/8u;
+        if (!map_chunk[c]) {map_chunk[c]=true;pinned[c]=true;map_chunks++;}
+    }
+    unsigned before=stats.loads;
+    for (unsigned c=SCENE_CHUNK_COUNT;c<SCENE_CHUNK_COUNT+mission_chunk_count;c++) if (map_chunk[c]) require_chunk(c,true);
+    /* Pinned player banks evicted by the reservation come back too. */
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (pinned[c] && !resident_chunk(c)) require_chunk(c,true);
+    map_resident_all=true;
+    debugf("MSX stage load mission %u stage %u: descriptor %06lX %u cells %u images grid %ux%u%s, tables %u KB in %u slots, map %u chunks (%u loads) in %lu us\n",
+        stage.mission,index+1,(unsigned long)ps.descriptor,cells,images,ps.columns,ps.rows,unknown?" (unknown cells masked)":"",
+        reserve_used/1024,count,map_chunks,stats.loads-before,(unsigned long)TICKS_TO_US(TICKS_READ()-began));
+    stats.misses=stats.sync_misses=0;
+    return true;
+}
+void scene_mission_unload(void) {
+    if (!mission_bytes) return;
+    quiesce();release_reserved();forget_mission_chunks();
+    stage_on=false;mission_chunk_count=0;mission_bytes=0;mission_chunks=NULL;
+    /* Mission 1's map pinned and resident again. */
+    map_chunks=0;
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (map_chunk[c]) {pinned[c]=true;map_chunks++;}
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (pinned[c] && !resident_chunk(c)) require_chunk(c,true);
+    map_resident_all=capacity>=warm_required+SCENE_EXPANDED_STREAM_SLOTS;
+    debugf("MSX mission pack unloaded: Mission 1 map pinned again\n");
+}
+const scene_map_cell_t *scene_map_cells(unsigned *count) {
+    if (stage_on) {*count=stage.cell_count;return stage_cells;}
+    *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data;
+}
+const scene_map_cell_t *scene_patch_cells(unsigned *count) { if (stage_on) {*count=0;return NULL;} *count=SCENE_PATCH_CELL_COUNT;return scene_patch_cells_data; }
+const scene_map_cell_t *scene_collapse_cells(unsigned *count) { if (stage_on) {*count=0;return NULL;} *count=SCENE_COLLAPSE_CELL_COUNT;return scene_collapse_cells_data; }
+const scene_image_t *scene_map_image(unsigned id) {
+    if (stage_on) {assert(id<stage_images_count());return &stage_images[id];}
+    assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id];
+}
+unsigned scene_map_camera_max(void) { return stage_on?stage.camera_max:SCENE_MAP_CAMERA_MAX; }
+uint32_t scene_map_backdrop(bool after) { if (stage_on) return stage.backdrop;return after?SCENE_MAP_BACKDROP_AFTER:SCENE_MAP_BACKDROP; }
 const scene_native_descriptor_t *scene_native_descriptor(uint32_t tag) {
     unsigned lo=0,hi=sizeof(scene_native_descriptors)/sizeof(scene_native_descriptors[0]);
     while (lo<hi) {
@@ -405,9 +605,12 @@ int scene_native_palette(unsigned resource) {
         if (scene_native_palettes[i].resource==resource) return scene_native_palettes[i].palette;
     return -1;
 }
-const uint16_t *scene_palette(unsigned id) { assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id]; }
+const uint16_t *scene_palette(unsigned id) {
+    if (id>=SCENE_PALETTE_COUNT && stage_on) {assert(id-SCENE_PALETTE_COUNT<mission_head.palettes);return stage_palettes[id-SCENE_PALETTE_COUNT];}
+    assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id];
+}
 void scene_record_pins(int group) { recording=group; }
-void scene_unpin_group(int group) { for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) block_pins[i]&=(uint8_t)~(1u<<group); }
+void scene_unpin_group(int group) { for (unsigned i=0;i<CHUNKS_ALL;i++) block_pins[i]&=(uint8_t)~(1u<<group); }
 unsigned scene_completed_epoch(void) { return completed; }
 void scene_begin_epoch(unsigned next) { epoch=next;frame_service_decodes=frame_sync_decodes=0; }
 void scene_complete_epoch(unsigned done) { completed=done; }

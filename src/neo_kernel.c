@@ -45,6 +45,10 @@ static void or4026(kr_t *k,uint16_t v) {k->b4024[2]|=(uint8_t)(v>>8);k->b4024[3]
  * outside it reads the loaded column sharing its ring slot, as the original
  * does for actors far behind or ahead of the camera. */
 static uint8_t cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    /* Vertical stages of the mission packs (rows > 32): the ring's window is
+     * not modelled; the cell is read at the terrain-local pixel itself
+     * (docs/MISION2.md "Fase 2"). */
+    if (neo_collision_rows()>32u) return neo_collision_cell((int16_t)x,(int16_t)y);
     unsigned row=(unsigned)((~y)&0x1f8u)>>3; /* (~y)/8 modulo 64 */
     unsigned world_row=63u-row; if (world_row>=32u) return 0;
     int first=((int16_t)(uint16_t)(-64-(int16_t)(uint16_t)((uint32_t)s->terrain.x>>16))>>3)-1;

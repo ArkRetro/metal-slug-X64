@@ -117,12 +117,14 @@ surface_t *msx_display_get(void) {
     }
     return surface;
 }
+static scene_cell_index_t mission1_index;
 void scene_renderer_init(void) {
     rdpq_text_register_font(1,rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO));
     retro_effects_init();
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     bool indexed=scene_cell_index_build(&cell_index,cells,count);
     assertf(indexed,"Map cell index");(void)indexed;
+    mission1_index=cell_index;
 }
 static void finished(void *arg) {
     completion_t *done=arg;
@@ -389,8 +391,17 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
     int offsets[5],rises[5];bool visible[5];
+    const scene_stage_t *st=scene_stage();
     for (unsigned i=0;i<5;i++) {
         unsigned source=i<4?i:3;
+        if (st) {
+            /* Mission pack stage: the fitted rules (tools/pack_mission.py). */
+            const scene_layer_rule_t *r=&st->rules[source];
+            offsets[i]=((int)camera*r->x_num+r->x_den-1)/r->x_den;
+            rises[i]=height>=0?(height*r->y_num+r->y_den-1)/r->y_den:-((-height*r->y_num)/r->y_den);
+            visible[i]=i<4 && (int)camera>=r->visible_min && (int)camera<=r->visible_max;
+            continue;
+        }
         offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
         visible[i]=msx_layer_visible(source,(int)camera);
     }
@@ -448,6 +459,24 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     msx_perf_mark(MSX_PERF_BG_DRAW);
     if (end==5) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
     rdpq_set_scissor(0,0,320,240);
+}
+/* A mission pack stage was loaded or Mission 1 restored (scene_assets.c):
+ * the recorded blocks read the old map's slots, the cull index its cells. */
+void scene_renderer_stage_changed(void) {
+    rspq_wait();
+    for (unsigned g=0;g<4;g++) {
+        bg_retired_t *r=&bg_retired[g];
+        for (unsigned i=0;i<16;i++) if (r->blocks[i]) {rspq_block_free(r->blocks[i]);r->blocks[i]=NULL;}
+        r->pending=false;scene_unpin_group((int)g);
+    }
+    for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
+    bg_key.valid=false;collapsed=flash=patched=false;
+    const scene_stage_t *st=scene_stage();
+    if (st) {
+        bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
+        assertf(indexed,"Stage cell index");(void)indexed;
+    } else cell_index=mission1_index;
+    scene_render_forget_texture();
 }
 unsigned scene_render_draw_count(void) {return draws;}
 void scene_render_box(int x,int y,int width,int height,color_t color) {

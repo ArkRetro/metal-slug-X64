@@ -3,6 +3,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
+/* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
+ * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
+ * set from scene_meta.h in scene_assets.c). */
+enum { SCENE_MISSION_CHUNKS_MAX=128 };
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
@@ -80,4 +84,29 @@ unsigned scene_completed_epoch(void);
 void scene_begin_epoch(unsigned epoch);
 void scene_complete_epoch(unsigned epoch);
 scene_cache_stats_t scene_cache_stats(void);
+/* Mission packs (romfs/missionN.pack, docs/MISION2.md "Fase 2"). A layer of
+ * a stage scrolls by camera*x_num/x_den and rises by camera_y*y_num/y_den;
+ * it is drawn while visible_min <= camera x <= visible_max. */
+typedef struct { uint8_t x_num,x_den,y_num,y_den; int16_t visible_min,visible_max; } scene_layer_rule_t;
+typedef struct {
+    unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */
+    uint32_t descriptor;             /* stage descriptor (016DDE..) */
+    uint16_t width,camera_max;uint32_t backdrop;
+    uint16_t columns,rows;           /* collision grid (8-px cells, column major, row 0 at the bottom) */
+    const uint8_t *grid;uint8_t *grid_dynamic;const uint8_t *unknown;
+    const uint8_t *camera_list;uint32_t camera_rom;uint16_t camera_len;   /* descriptor +0 */
+    const uint8_t *script;uint32_t script_rom;uint16_t script_len;        /* +8 -> table 0x000800 */
+    const uint8_t *players;uint32_t players_rom;uint16_t players_len;     /* +4 (019604 records) */
+    scene_layer_rule_t rules[4];
+    const scene_map_cell_t *cells;unsigned cell_count;
+    void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
+} scene_stage_t;
+/* Opens /missionN.pack (header only; Mission 1's map goes back to the LRU). */
+bool scene_mission_load(unsigned mission);
+/* Reads one stage's tables into reserved cache slots and pins its map. */
+bool scene_stage_load(unsigned index);
+/* Back to Mission 1's compiled tables. */
+void scene_mission_unload(void);
+/* The loaded stage, or NULL while Mission 1's compiled tables are active. */
+const scene_stage_t *scene_stage(void);
 #endif

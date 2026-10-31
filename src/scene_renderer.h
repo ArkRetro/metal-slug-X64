@@ -16,6 +16,10 @@ void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned v
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash);
+/* A sprite part with the Neo Geo flips: mirror = attribute bit 0 (H),
+ * flip_y = bit 1 (V); the caller places the part (flipped offsets). */
+void scene_render_sprite(const scene_image_t *image,int x,int y,bool mirror,bool flip_y,bool flash);
+void scene_render_sprite_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flip_y,bool flash);
 /* Sprite parts drawn while on use scene_page_try (per-frame decode budget). */
 void scene_render_set_deferrable(bool on);
 /* Palette fade offsets (-31..31 per channel, 0 = off) for the TLUTs uploaded

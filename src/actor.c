@@ -91,7 +91,11 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     if (!desc) {native_missing_descriptor++;return;}
     int palette=scene_native_palette(d->palette);
     if (palette<0) {native_missing_palette++;palette=scene_native_palette(0x20e);}
-    bool mirror=(d->attributes&1u)!=0;
+    /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'
+     * 32 directions 22C3BE are 9 shapes with both flips; ignoring bit 1
+     * drew the bullets going up-right as "\", MiSTer report). Parts are
+     * placed as marco_renderer.c does: -(y+height)-1 when flipped. */
+    bool mirror=(d->attributes&1u)!=0,flip_y=(d->attributes&2u)!=0;
     int origin_y=native_screen_y(d->y);
     for (unsigned i=0;i<desc->count;i++) {
         const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first+i);
@@ -103,15 +107,15 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
             float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
             float w=im->width*sx,h=im->height*sy;
             float x=mirror?(int16_t)d->x-(im->x+im->width)*sx-1:(int16_t)d->x+im->x*sx;
-            float y=origin_y+im->y*sy;
+            float y=flip_y?origin_y-(im->y+im->height)*sy-1:origin_y+im->y*sy;
             if (x+w<=0 || x>=320 || y+h<=0 || y>=240) continue;
-            scene_render_image_scaled(&part,x,y,w,h,mirror,d->flash && (game.ticks&1));
+            scene_render_sprite_scaled(&part,x,y,w,h,mirror,flip_y,d->flash && (game.ticks&1));
             continue;
         }
         int x=mirror?(int)(int16_t)d->x-(im->x+im->width)-1:(int)(int16_t)d->x+im->x;
-        int y=origin_y+im->y;
+        int y=flip_y?origin_y-(im->y+im->height)-1:origin_y+im->y;
         if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
-        scene_render_image(&part,x,y,mirror,d->flash && (game.ticks&1));
+        scene_render_sprite(&part,x,y,mirror,flip_y,d->flash && (game.ticks&1));
     }
 }
 static void draw_end(const neo_end_draw_t *e,bool request_only) {

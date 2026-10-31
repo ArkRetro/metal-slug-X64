@@ -16,6 +16,12 @@ void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned v
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash);
+/* Sprite parts drawn while on use scene_page_try (per-frame decode budget). */
+void scene_render_set_deferrable(bool on);
+/* Palette fade offsets (-31..31 per channel, 0 = off) for the TLUTs uploaded
+ * from now on; scene_render_fade_palette returns the converted copy. */
+void scene_render_set_fade(int8_t red,int8_t green,int8_t blue);
+const uint16_t *scene_render_fade_palette(const uint16_t *source);
 void scene_render_box(int x,int y,int width,int height,color_t color);
 void scene_render_text(int x,int y,const char *text);
 void scene_render_end(void);

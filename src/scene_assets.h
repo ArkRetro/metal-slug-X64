@@ -8,7 +8,7 @@ typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
 typedef struct { uint16_t page,palette; int16_t x,y; uint16_t width,height,format; } scene_image_t;
 typedef struct { uint16_t layer; int16_t x,y; uint16_t phases[8]; } scene_map_cell_t;
-typedef struct { unsigned dma_bytes,loads,hits,misses,evictions,cache_bytes; } scene_cache_stats_t;
+typedef struct { unsigned dma_bytes,loads,hits,misses,evictions,cache_bytes,deferred,held; } scene_cache_stats_t;
 /* Original sprite descriptors drawn by the native animation programs: parts
  * are consecutive SCENE_NATIVE images whose x/y are origin-relative (y down).
  * Palettes are the original logical resources (009EA8 ids). */
@@ -37,6 +37,23 @@ bool scene_assets_all_resident(void);
 void scene_request_image(const scene_image_t *image,unsigned priority);
 void scene_service(void);
 const void *scene_page(const scene_image_t *image);
+/* Non-blocking variant for sprite parts: once this frame has spent its
+ * decode budget (SCENE_SYNC_DECODES, shared with the prefetch decodes of
+ * scene_service), a part whose chunk is not
+ * resident is requested at top priority and NULL is returned (the part is
+ * not drawn this frame) instead of waiting for another DMA + decode. */
+const void *scene_page_try(const scene_image_t *image);
+enum { SCENE_SYNC_DECODES=1, SCENE_SERVICE_DECODES=1 };
+/* Low-priority requests for every chunk of the boss poses (the fight's whole
+ * set fits the 8 MiB cache next to the arena map), so its animation changes
+ * find their parts resident instead of decoding several chunks in one frame. */
+void scene_prefetch_boss(void);
+/* Recorded background blocks (scene_renderer.c): while recording, every page
+ * served pins its chunk under `group` (0..3) until scene_unpin_group; a pinned
+ * chunk is never evicted (the block keeps reading its RDRAM). */
+void scene_record_pins(int group);
+void scene_unpin_group(int group);
+unsigned scene_completed_epoch(void);
 void scene_begin_epoch(unsigned epoch);
 void scene_complete_epoch(unsigned epoch);
 scene_cache_stats_t scene_cache_stats(void);

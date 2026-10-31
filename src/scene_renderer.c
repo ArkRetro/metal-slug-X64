@@ -1,4 +1,5 @@
 #include "scene_renderer.h"
+#include "neo_fade.h"
 #include "retro_effects.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
@@ -13,6 +14,29 @@ typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
 static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
+static bool deferrable;
+void scene_render_set_deferrable(bool on) { deferrable=on; }
+/* Palette fade (neo_fade.c, RAM 10991A..): each TLUT uploaded while it is on
+ * is a converted copy, every 5-bit channel plus its offset clamped to 0..31
+ * like the original's palette conversion 005A0A. Copies live in a ring per
+ * frame in flight (the RDP reads them later). */
+enum { FADE_COPIES=128 };
+static int8_t fade_offset[3];static bool fade_on;
+static uint16_t fade_copies[4][FADE_COPIES][16] __attribute__((aligned(16)));
+static unsigned fade_used,fade_ring,fade_overflow;
+void scene_render_set_fade(int8_t r,int8_t g,int8_t b) {fade_offset[0]=r;fade_offset[1]=g;fade_offset[2]=b;fade_on=r||g||b;}
+const uint16_t *scene_render_fade_palette(const uint16_t *source) {
+    if (!fade_on) return source;
+    if (fade_used==FADE_COPIES) {fade_overflow++;return source;}
+    uint16_t *d=fade_copies[fade_ring][fade_used++];
+    for (unsigned i=0;i<16;i++) {
+        uint16_t c=source[i];
+        unsigned red=neo_fade_channel((c>>11)&31u,fade_offset[0]),green=neo_fade_channel((c>>6)&31u,fade_offset[1]),blue=neo_fade_channel((c>>1)&31u,fade_offset[2]);
+        d[i]=(uint16_t)(red<<11|green<<6|blue<<1|(c&1u));
+    }
+    data_cache_hit_writeback(d,sizeof(fade_copies[0][0]));
+    return d;
+}
 static unsigned pal_lru[16];
 // Render-mode values this renderer last set and still knows to be current
 // (-1: unknown). Setting the same TLUT/filter again only re-sent identical
@@ -107,6 +131,7 @@ static void finished(void *arg) {
 void scene_render_begin(surface_t *surface) {
     current=&completions[++frame%4];*current=(completion_t){surface,frame,TICKS_READ()};
     scene_begin_epoch(frame);scene_service();
+    fade_ring=frame%4;fade_used=0;
     for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
     last_page=last_slot=last_format=last_width=last_height=-1;draws=uploads=palette_uploads=tmem_bytes=0;
     rdpq_attach_clear(surface,NULL);rdpq_set_mode_standard();
@@ -124,7 +149,7 @@ static unsigned palette_slot(unsigned id) {
         if (pal_ids[i]<0) {slot=i;break;}
         if (pal_lru[i]<pal_lru[slot]) slot=i;
     }
-    rdpq_tex_upload_tlut((uint16_t*)scene_palette(id),slot*16,16);
+    rdpq_tex_upload_tlut((uint16_t*)scene_render_fade_palette(scene_palette(id)),slot*16,16);
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
@@ -138,7 +163,8 @@ static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,i
     if (image->format!=1) {set_tlut(TLUT_RGBA16);slot=palette_slot(flash?0:image->palette);}
     else set_tlut(TLUT_NONE);
     if (last_page!=image->page || last_slot!=(int)slot || last_format!=image->format || last_width!=image->width || last_height!=image->height) {
-        const void *data=scene_page(image);
+        const void *data=deferrable?scene_page_try(image):scene_page(image);
+        if (!data) return;   // chunk deferred to a later frame (scene_page_try)
         /* Formats: 0 CI4 64x64, 1 RGBA16 32x32, 2 CI4 16x256 (map tiles stacked). */
         surface_t texture=image->format==1?surface_make((void*)data,FMT_RGBA16,32,32,64):
             image->format==2?surface_make((void*)data,FMT_CI4,16,256,8):surface_make((void*)data,FMT_CI4,64,64,32);
@@ -209,53 +235,8 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,3);}
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,3,5);}
-static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
+static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
-    // Layer 4 holds the market props; it scrolls with the foreground.
-    int offsets[5],rises[5];bool visible[5];
-    for (unsigned i=0;i<5;i++) {
-        unsigned source=i<4?i:3;
-        offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
-        visible[i]=msx_layer_visible(source,(int)camera);
-    }
-    if (collapsed) offsets[0]+=COLLAPSE_SKY_SHIFT;
-    // Keep the projection outside assert(): NDEBUG would otherwise drop it.
-    if (depth_mode) for (unsigned i=0;i<5;i++) {
-        bool ok=(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
-            retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]):
-            retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
-        assertf(ok,"Retro plane projection");(void)ok;
-    }
-    // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
-    // Prefetch a margin on both sides, including the next autoanimation phase.
-    // Only the runs' visible ranges are visited (scene_cull.h); requests keep
-    // the highest priority per chunk, so their order does not matter, and
-    // nothing is serviced inside the loop: repeating the previous chunk's
-    // request at the same priority changes nothing and is skipped.
-    // With the whole pack resident every request is a no-op: skip the walk.
-    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident();
-    for (unsigned layer=0;layer<5 && prefetch;layer++) {
-        if (!visible[layer]) continue;
-        scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
-        for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
-            unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
-            for (unsigned k=first;k<end;k++) {
-                const scene_map_cell_t *cell=&cells[cell_index.order[k]];
-                const scene_image_t *now=scene_map_image(cell->phases[video_tick&7]);
-                const scene_image_t *next=scene_map_image(cell->phases[(video_tick+1)&7]);
-                if (now->page/8!=last_now) {scene_request_image(now,2);last_now=now->page/8;}
-                if (next->page/8!=last_next) {scene_request_image(next,1);last_next=next->page/8;}
-            }
-        }
-    }
-    if (begin==0) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}
-    rdpq_set_scissor(8,8,312,232);
-    if (flash) {
-        if (begin) {rdpq_set_scissor(0,0,320,240);return;}
-        scene_render_box(8,8,304,224,RGBA32(255,255,255,255));
-        rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
-    }
-    if (begin==0) scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop(backdrop_after)));
     if (!depth_mode) {
         // Pack order is layer order (checked at init), so walking the layers
         // in turn draws the same cells in the same order as one array walk.
@@ -283,7 +264,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
             if (cells[i].layer>=begin && cells[i].layer<end && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
-        rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
+        return;
     }
     // Same split as the classic path: layers begin..end-1 only (the bit-2
     // sprites are drawn between the two passes); the mesh after layer 4.
@@ -315,6 +296,145 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
+}
+/* Static backgrounds as recorded rspq blocks. While the layer inputs (scroll
+ * offsets, rises, visibility, replacement cells, depth projection) stay the
+ * same, each pass (back: layers 0..2, front: 3..4) and animation phase
+ * (video_tick & 7) is recorded once and replayed: the same RDP commands
+ * without rebuilding them (the boss arena: ~10 ms of CPU per frame). The
+ * renderer's TMEM/TLUT bookkeeping is reset before recording and after a
+ * replay, so a block uploads everything it draws. Chunks a block reads stay
+ * pinned until the RDP has finished the last frame that ran it; then the
+ * blocks are freed. Off while a fade or the white flash is on. */
+typedef struct {
+    bool valid;bool collapsed,patched;int offsets[5],rises[5];bool visible[5];
+    retro_plane_view_t views[5];
+} bg_key_t;
+static bg_key_t bg_key;
+static rspq_block_t *bg_blocks[2][8];static unsigned bg_block_draws[2][8];
+static unsigned bg_group,bg_last_used;     // pin group of the live blocks; last frame that ran one
+/* Retired generations (one per pin group): freed once their last frame is done. */
+typedef struct {bool pending;unsigned epoch;rspq_block_t *blocks[16];} bg_retired_t;
+static bg_retired_t bg_retired[4];
+static unsigned bg_replays,bg_records;
+static void reset_texture_state(void) {
+    for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
+    last_page=last_slot=last_format=last_width=last_height=-1;mode_tlut=-1;
+}
+static void bg_collect(void) {
+    for (unsigned g=0;g<4;g++) {
+        bg_retired_t *r=&bg_retired[g];
+        if (!r->pending || scene_completed_epoch()<r->epoch) continue;
+        for (unsigned i=0;i<16;i++) if (r->blocks[i]) {rspq_block_free(r->blocks[i]);r->blocks[i]=NULL;}
+        scene_unpin_group((int)g);r->pending=false;
+    }
+}
+/* Retire the live blocks; false when no pin group is free for new ones. */
+static bool bg_retire(void) {
+    bg_retired_t *r=&bg_retired[bg_group];unsigned n=0;
+    for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {r->blocks[n++]=bg_blocks[p][t];bg_blocks[p][t]=NULL;}
+    bg_key.valid=false;
+    if (!n) {scene_unpin_group((int)bg_group);return true;}
+    r->pending=true;r->epoch=bg_last_used;
+    for (unsigned g=1;g<=4;g++) if (!bg_retired[(bg_group+g)&3u].pending) {bg_group=(bg_group+g)&3u;return true;}
+    return false;
+}
+static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
+    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched) return false;
+    for (unsigned i=0;i<5;i++) if (bg_key.offsets[i]!=offsets[i] || bg_key.rises[i]!=rises[i] || bg_key.visible[i]!=visible[i]) return false;
+    if (depth_mode && memcmp(bg_key.views,depth_views,sizeof(bg_key.views))) return false;
+    for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (!bg_blocks[p][t]) return false;
+    return true;
+}
+static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
+    bg_collect();
+    bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
+    bg_key_t key;memset(&key,0,sizeof(key));
+    key.valid=true;key.collapsed=collapsed;key.patched=patched;
+    for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
+    if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
+    if (!cacheable || memcmp(&key,&bg_key,sizeof(key))) {
+        if (bg_key.valid) bg_retire();
+        // Record only once the inputs held for a second frame (scrolling never records).
+        static bg_key_t previous;
+        bool repeat=cacheable && !bg_retired[bg_group].pending && !memcmp(&key,&previous,sizeof(key));
+        previous=key;
+        if (!repeat) {draw_layers(begin,end,offsets,rises,visible,video_tick);return;}
+        bg_key=key;
+    }
+    unsigned pass=begin?1u:0u,phase=video_tick&7u;
+    if (!bg_blocks[pass][phase]) {
+        reset_texture_state();
+        unsigned before=draws;
+        scene_record_pins((int)bg_group);
+        rspq_block_begin();
+        draw_layers(begin,end,offsets,rises,visible,video_tick);
+        bg_blocks[pass][phase]=rspq_block_end();
+        scene_record_pins(-1);bg_records++;
+        bg_block_draws[pass][phase]=draws-before;draws=before;
+    }
+    rspq_block_run(bg_blocks[pass][phase]);bg_replays++;bg_last_used=frame;draws+=bg_block_draws[pass][phase];
+    reset_texture_state();rdpq_set_scissor(8,8,312,232);
+}
+static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
+    unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
+    // Layer 4 holds the market props; it scrolls with the foreground.
+    int offsets[5],rises[5];bool visible[5];
+    for (unsigned i=0;i<5;i++) {
+        unsigned source=i<4?i:3;
+        offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
+        visible[i]=msx_layer_visible(source,(int)camera);
+    }
+    if (collapsed) offsets[0]+=COLLAPSE_SKY_SHIFT;
+    // Keep the projection outside assert(): NDEBUG would otherwise drop it.
+    if (depth_mode) for (unsigned i=0;i<5;i++) {
+        bool ok=(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
+            retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]):
+            retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
+        assertf(ok,"Retro plane projection");(void)ok;
+    }
+    // Each source cell is CI4 inside a 64x64 / 2048-byte palette atlas.
+    // Prefetch a margin on both sides, including the next autoanimation phase.
+    // Only the runs' visible ranges are visited (scene_cull.h); requests keep
+    // the highest priority per chunk, so their order does not matter, and
+    // nothing is serviced inside the loop: repeating the previous chunk's
+    // request at the same priority changes nothing and is skipped.
+    // With the whole pack resident every request is a no-op: skip the walk.
+    // Every phase of both passes recorded for these exact inputs: the chunks
+    // they read are pinned (resident), so every request would be a no-op.
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident() && !bg_static(offsets,rises,visible);
+    for (unsigned layer=0;layer<5 && prefetch;layer++) {
+        if (!visible[layer]) continue;
+        scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
+        for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
+            unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
+            for (unsigned k=first;k<end;k++) {
+                const scene_map_cell_t *cell=&cells[cell_index.order[k]];
+                const scene_image_t *now=scene_map_image(cell->phases[video_tick&7]);
+                const scene_image_t *next=scene_map_image(cell->phases[(video_tick+1)&7]);
+                if (now->page/8!=last_now) {scene_request_image(now,2);last_now=now->page/8;}
+                if (next->page/8!=last_next) {scene_request_image(next,1);last_next=next->page/8;}
+            }
+        }
+    }
+    if (begin==0) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}
+    rdpq_set_scissor(8,8,312,232);
+    if (flash) {
+        if (begin) {rdpq_set_scissor(0,0,320,240);return;}
+        scene_render_box(8,8,304,224,RGBA32(255,255,255,255));
+        rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
+    }
+    if (begin==0) {
+        color_t backdrop=color_from_packed32(scene_map_backdrop(backdrop_after));
+        if (fade_on) {   /* the backdrop entry 0xFFF fades with the others (MAME runK) */
+            backdrop.r=(uint8_t)(neo_fade_channel(backdrop.r>>3,fade_offset[0])<<3);
+            backdrop.g=(uint8_t)(neo_fade_channel(backdrop.g>>3,fade_offset[1])<<3);
+            backdrop.b=(uint8_t)(neo_fade_channel(backdrop.b>>3,fade_offset[2])<<3);
+        }
+        scene_render_box(8,8,304,224,backdrop);
+    }
+    draw_layers_cached(begin,end,offsets,rises,visible,video_tick);
+    if (!depth_mode) {rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;}
     msx_perf_mark(MSX_PERF_BG_DRAW);
     if (end==5) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
     rdpq_set_scissor(0,0,320,240);
@@ -337,9 +457,9 @@ void scene_render_end(void) {
         if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=0 planes=%u shadows=%u shadow_tris=%u\n",
             retro_effects_triangles(),RETRO_MAX_TRIANGLES,0u,depth_frame.light_count,
             retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
-        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u\n",
+        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u deferred=%u held=%u bgblocks=%u/%u\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
-            s.loads,s.dma_bytes,s.misses,s.evictions);
+            s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,bg_replays,bg_records);
     }
     // One completion fence per frame: RDRAM pages stay pinned until RDP is done.
     rdpq_detach_cb(finished,current);

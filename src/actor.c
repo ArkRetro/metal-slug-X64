@@ -71,7 +71,15 @@ static int native_screen_y(uint16_t projected_y) {
     /* The projected word already includes the scene root (camera height). */
     return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
 }
+static void draw_native_parts(const neo_world_draw_t *d,bool request_only);
+/* Actor sprite parts may be deferred a frame when their chunk is not
+ * resident and the frame's synchronous decode budget is spent. */
 static void draw_native(const neo_world_draw_t *d,bool request_only) {
+    if (!request_only) scene_render_set_deferrable(true);
+    draw_native_parts(d,request_only);
+    if (!request_only) scene_render_set_deferrable(false);
+}
+static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     if (d->kind==NEO_WORLD_BOSS) {
         /* Boss entries: column cut and palette resource (boss_renderer.c). */
         neo_anim_draw_t a={d->descriptor,d->x,d->y,d->attributes,0};
@@ -104,6 +112,10 @@ static void draw_native(const neo_world_draw_t *d,bool request_only) {
         if (x+im->width<=0 || x>=320 || y+im->height<=0 || y>=240) continue;
         scene_render_image(&part,x,y,mirror,d->flash && (game.ticks&1));
     }
+}
+static void draw_end(const neo_end_draw_t *e,bool request_only) {
+    neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y};
+    draw_native(&d,request_only);
 }
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
@@ -278,6 +290,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (msx_layer_visible(2,game.camera) && !msx_layer_visible(2,old_camera)) debugf("MSX middle bank full speed=%d\n",game.camera);
     if (old_x<596*MSX_UNIT && game.x>=596*MSX_UNIT) debugf("MSX first roof x=%d\n",game.x/MSX_UNIT);
     if (!was_complete && game.complete) debugf("MSX mission complete camera=%d x=%d\n",game.camera,game.x);
+    {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
+        static bool logged;
+        if (game.mission_end!=MSX_END_LETTERS) logged=false;
+        else if (!logged && game.end.count && ga_l(&game.end.nodes[game.end.order[0]],0)==0x609a4) {
+            logged=true;debugf("MSX mission end letters arrived (06090A nodes=%u draws=%u stops=%u)\n",game.end.spawned,game.end.draw_count,game.end.unsupported);
+        }
+    }
     if (was_grounded && !game.grounded) debugf("MSX jump\n");
     if (!was_grounded && game.grounded) debugf("MSX landed height=%d\n",game.y/MSX_UNIT);
     int animation=msx_game_animation(&game);
@@ -299,6 +318,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
+    for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
+    if (game.world.boss_active) scene_prefetch_boss();
     scene_service();
 #if MSX_RETRO25D
     retro_frame_t effects={.camera={game.camera,-game.camera_height,0,320},.tick=game.ticks};
@@ -318,6 +339,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
     msx_perf_mark(MSX_PERF_PREP);
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
+    scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
     scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
@@ -362,16 +384,19 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
+    /* Mission-end actors (MISSION COMPLETE letters 06090A), created after
+     * the mission actor: above the world's sprites, below the fix layer. */
+    for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],false);
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     /* The original fix layer above every layer, on the 304x224 window. */
+    /* The fix layer's palettes are outside the fade (MAME runK: slots 0..9 keep their colours). */
+    scene_render_set_fade(0,0,0);
     rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
     scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
-    /* Stand-in for the letters actor 06090A while 0188F4 waits. */
-    if (game.mission_end==MSX_END_LETTERS) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
     if (diagnostics) {
         scene_render_text(32,24,"MSX V10 - MISSION 1");
@@ -381,7 +406,6 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,38,status);
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
-    if (game.mission_end==MSX_END_LETTERS) scene_render_text(80,110,"MISSION COMPLETE");
     msx_perf_mark(MSX_PERF_HUD);
     scene_render_end();msx_perf_mark(MSX_PERF_END);
     msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));

@@ -306,14 +306,16 @@ static bool hgun_reserve(void *context) {
  * per original update, from the update after 018F40 (step 2):
  *   018846  10E9E3 = FF (c8cd6), music 15418, +7C = 0x1E; 018870 waits
  *           (subq/bne: 30 updates).
- *   018884  cae6c(mission) and the prisoner tally actor 0308C0 (it adds the
- *           rescue bonus to 10C46A and sets the mission actor's +60):
- *           not ported, explicit stops; the port goes on at once.
+ *   018884  cae6c(mission): RAM 10EA1B keeps the highest mission reached
+ *           (signed byte); the prisoner tally actor 0308C0 (it adds the
+ *           rescue bonus to 10C46A and sets the mission actor's +60): not
+ *           ported, explicit stop; the port goes on at once.
  *   0188BE  sounds 0x20 and 0x1137, +7C = 0xA0, the MISSION COMPLETE letters
- *           actor 06090A (not ported: explicit stop; actor.c draws a text
- *           stand-in); 0188F4 waits (subq/bcc: 161 updates).
- *   0188FC  fade 9C0A (E1,E1,E1, 0x20; not ported: explicit stop), +7C =
- *           0x20; 018916 waits 33 updates.
+ *           actor 06090A (neo_end.c, created after the mission actor: it runs
+ *           in the same update); 0188F4 waits (subq/bcc: 161 updates).
+ *   0188FC  fade 9C0A (E1,E1,E1, 0x20: to -31 in 32 updates, neo_fade.c,
+ *           stepped by the list head actor 003918 before the mission actor),
+ *           +7C = 0x20; 018916 waits 33 updates.
  *   01891E  mission 42F4 + 1 < 6: the next mission (1829E). Missions 2..6
  *           are not ported: mission_end = done, actor.c restarts Mission 1.
  * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
@@ -325,13 +327,15 @@ static void mission_end_step(msx_game_t *g) {
         __attribute__((fallthrough)); /* 018864 -> 018870 in the same update */
     case MSX_END_WAIT:
         if (--g->end_timer) return;
-        g->end_stops+=2;                       /* cae6c, tally actor 0308C0 */
-        g->end_timer=0xa0;g->end_stops++;      /* letters actor 06090A */
+        if ((int8_t)0>(int8_t)g->best_mission) g->best_mission=0;   /* cae6c(42F4 = 0) */
+        g->end_stops++;                        /* tally actor 0308C0 */
+        g->end_timer=0xa0;
+        neo_end_reset(&g->end);neo_end_start(&g->end,0x6090a);      /* 0188DE */
         g->mission_end=MSX_END_LETTERS;
         __attribute__((fallthrough)); /* 0188EE -> 0188F4 */
     case MSX_END_LETTERS:
         if (g->end_timer--) return;
-        g->end_stops++;                        /* fade 9C0A */
+        neo_fade_start(&g->fade,(int16_t)-0x1f,(int16_t)-0x1f,(int16_t)-0x1f,0x20);   /* 9C0A */
         g->end_timer=0x20;g->mission_end=MSX_END_FADE;
         __attribute__((fallthrough)); /* 018910 -> 018916 */
     case MSX_END_FADE:
@@ -344,7 +348,15 @@ static void mission_end_step(msx_game_t *g) {
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) {
         g->ticks++;
-        if (!(g->ticks&1) && g->end_started) mission_end_step(g);
+        if (!(g->ticks&1) && g->end_started) {
+            neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */
+            mission_end_step(g);
+            /* The end actors after the mission actor in the list. */
+            if (g->end.count) {
+                neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program};
+                neo_end_update(&g->end,&in);
+            }
+        }
         g->end_started=true;
         return;
     }

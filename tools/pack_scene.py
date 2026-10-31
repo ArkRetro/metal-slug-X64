@@ -220,6 +220,8 @@ def main():
     boss_tags={int(f['descriptor'],16) for f in boss['frames']}
     boss_chunks={pg//8 for d in boss_tags for pg in parts[d]}
     lines.append(f'#define SCENE_BOSS_CHUNKS {len(boss_chunks)}')
+    # Prefetched while the boss fight runs (scene_prefetch_boss).
+    lines.append('#define SCENE_BOSS_CHUNK_LIST {'+','.join(str(c) for c in sorted(boss_chunks))+'}')
     lines.append(f'#define SCENE_BOSS_PAGES {len({pg for d in boss_tags for pg in parts[d]})}')
     # 16-pixel sprite columns of each boss descriptor (origin-relative x,
     # unmirrored): the original builder drops a column whose left edge is

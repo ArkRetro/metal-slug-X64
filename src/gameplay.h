@@ -6,6 +6,8 @@
 #include "neo_vehicle.h"
 #include "neo_world.h"
 #include "neo_hud.h"
+#include "neo_end.h"
+#include "neo_fade.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
 #include "marco_death.h"
@@ -60,6 +62,10 @@ typedef struct {
     unsigned continues,game_over_frames;
     /* Mission end sequence 0x018846 (gameplay.c mission_end_step). */
     uint8_t mission_end;bool end_started;uint16_t end_timer;unsigned end_stops;
+    /* Its actors: the MISSION COMPLETE letters 06090A (neo_end.c); RAM
+     * 10EA1B (cae6c: highest mission reached). */
+    neo_end_t end;uint8_t best_mission;
+    neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */

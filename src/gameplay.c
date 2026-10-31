@@ -6,6 +6,7 @@
 #include "neo_collision.h"
 #include "mission_camera.h"
 #include "marco_mount.h"
+#include "marco_descent.h"
 /* Reference-only traversal build (mslugx-reference.z64, never the release):
  * the player ignores hits so that a scripted run reaches the mission end. */
 #ifndef MSX_REFERENCE_INVULNERABLE
@@ -90,6 +91,17 @@ bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     g->landing_pending=true;   /* the entry ends at the parachute landing */
     return true;
 }
+void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) {
+    msx_game_init(g);g->x=world_x;g->y=56*MSX_UNIT-world_y;g->grounded=false;g->air_ticks=0;
+    uint8_t *m=g->world.player_node[0];
+    marco_descent_begin(m);
+    m[0x30]=(uint8_t)((uint32_t)vx>>24);m[0x31]=(uint8_t)((uint32_t)vx>>16);m[0x32]=(uint8_t)((uint32_t)vx>>8);m[0x33]=(uint8_t)vx;
+    m[0x34]=(uint8_t)((uint32_t)vy>>24);m[0x35]=(uint8_t)((uint32_t)vy>>16);m[0x36]=(uint8_t)((uint32_t)vy>>8);m[0x37]=(uint8_t)vy;
+    g->velocity_x=vx;g->velocity_y=-vy;g->descent=MSX_DESCENT_HANG;
+    /* The canopy 0C4A58 was created in the same update (0C1604): its
+     * constructor runs with the first landing step. */
+    neo_landing_descent(&g->landing);g->landing_on=true;
+}
 void msx_game_vehicle_reference(msx_game_t *g) {
     // Observed stationary vehicle variant, at the captured position. This is
     // selected only by the internal reference build, not by provisional kills.
@@ -110,14 +122,22 @@ static void root_xy(const msx_game_t *g,int32_t *rx,int32_t *ry) {
 static void landing_step(msx_game_t *g) {
     int32_t rx,ry;root_xy(g,&rx,&ry);
     neo_landing_input_t in={0};
+    const uint8_t *m=g->world.player_node[0];
+    in.state61=m[0x61];in.flags5f=g->life.phase==MARCO_ALIVE?0:0x80u;
+    in.root_x=rx;in.root_y=ry;
+    if (!g->landing_root_x && !g->landing_root_y) {g->landing_root_x=rx;g->landing_root_y=ry;}
+    in.root_previous_x=g->landing_root_x;in.root_previous_y=g->landing_root_y;
+    in.odd_phase=(g->ticks>>1)&1u;
     in.x=(int32_t)((uint32_t)g->x+(uint32_t)rx);in.y=(int32_t)((uint32_t)(56*MSX_UNIT-g->y)+(uint32_t)ry);
     if (g->landing_pending) {g->landing_x=in.x;g->landing_y=in.y;}
     in.previous_x=g->landing_x;in.previous_y=g->landing_y;
     in.flags15=(uint8_t)((g->facing<0?1u:0u)|(g->grounded?0x40u:0u));
-    in.z=0x86d6;in.player=0;in.epoch=g->world.epoch;
+    in.z=g->descent?0xe0ec:0x86d6;in.player=0;in.epoch=g->world.epoch;   /* 0C15EE / the stance */
     if (g->landing_pending) {neo_landing_start(&g->landing,&in,neo_world_program);g->landing_pending=false;g->landing_on=true;}
+    bool first=g->landing.canopy.active && ga_l(&g->landing.canopy,0)==0xc4a58u;
+    if (first) {g->landing_x=in.x;g->landing_y=in.y;}
     neo_landing_update(&g->landing,&in,neo_world_program);
-    g->landing_x=in.x;g->landing_y=in.y;
+    g->landing_x=in.x;g->landing_y=in.y;g->landing_root_x=rx;g->landing_root_y=ry;
     if (!g->landing.canopy.active && !g->landing.marker.active) {g->landing_on=false;g->landing.draw_count=0;}
 }
 static void start_death(msx_game_t *g,uint8_t kind,bool right) {
@@ -243,6 +263,32 @@ static void mount_place(msx_game_t *g) {
     g->y=56*MSX_UNIT-(int32_t)((uint32_t)p.y+nrl(m,0x2c)-(uint32_t)ry);
     g->grounded=(m[0x15]&0x40u)!=0;g->facing=(m[0x15]&1u)?-1:1;
     g->velocity_x=g->velocity_y=0;g->ride=0;g->air_ticks=0;
+}
+/* The parachute descent (marco_descent.c): 0C162A hanging or 0C170C after
+ * the cut, with the port's air step for the sweep (0143EE, 0C109C). The
+ * input of 0C0FEA: B (jump press) bit 5, A (fire press) bit 4. */
+static void descent_step(msx_game_t *g) {
+    uint8_t *m=g->world.player_node[0];
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    nwl(m,0x40,(uint32_t)(56*MSX_UNIT-g->y)+(uint32_t)ry);                /* +40: projected */
+    m[0x15]=(uint8_t)((m[0x15]&~0x41u)|(g->facing<0?1u:0u));
+    if (g->descent==MSX_DESCENT_HANG) {
+        uint32_t input=(g->jump_pending?0x20u:0u)|(g->descent_fire?0x10u:0u);
+        if (marco_descent_hang(m,neo_rng_next(&g->world.rng),input)==MARCO_DESCENT_CUT) {
+            g->descent=MSX_DESCENT_FALL;g->descent_cuts++;neo_landing_marker(&g->landing);   /* 0C16D8 */
+        }
+    } else marco_descent_fall(m);
+    g->jump_pending=false;g->descent_fire=false;
+    neo_air_t body={g->x,56*MSX_UNIT-g->y,(int32_t)nrl(m,0x30),(int32_t)nrl(m,0x34)};
+    int32_t previous=body.y;body.x+=body.vx;body.y+=body.vy;
+    bool ground=neo_land_step(&body,previous);
+    g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,right_limit(g));g->y=56*MSX_UNIT-body.y;
+    m[0x15]=(uint8_t)((m[0x15]&~0x40u)|(ground?0x40u:0u));
+    if (g->descent==MSX_DESCENT_HANG) {
+        if (marco_descent_hang_after(m)) {g->descent=MSX_DESCENT_NONE;neo_landing_marker(&g->landing);}   /* 0C16B0 */
+    } else if (marco_descent_fall_after(m)) g->descent=MSX_DESCENT_NONE;                               /* 0C1EBE */
+    g->grounded=ground;g->air_ticks=0;g->ride=0;
+    g->velocity_x=ground?0:(int32_t)nrl(m,0x30);g->velocity_y=ground?0:-(int32_t)nrl(m,0x34);
 }
 /* 0C3250 with the port's air step for its 0143EE (as the player's own). */
 static void mount_eject_step(msx_game_t *g) {
@@ -577,7 +623,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->debug_dropped=true;break;
         }
 #endif
-    if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_EJECT) mount_eject_step(g);
+    g->descent_fire|=fire && !g->fire_was && g->descent;
+    if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->descent) descent_step(g);
+    else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_EJECT) mount_eject_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_NONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;
         if (events&NEO_VEHICLE_STAMP)

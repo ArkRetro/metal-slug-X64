@@ -126,6 +126,8 @@ ROOTS+=[0x18120,0x181e4]
 # Parachute landing (0C162A): the canopy collapsing behind the player 0C49D4
 # (0C4B62) and the player marker over him 0C519E/0C5212 (0C5286).
 ROOTS+=[0xc49d4,0xc519e,0xc5212]
+# Parachute descent: the canopy 0C4A58 (0C4904 descending, 0C498C cut away).
+ROOTS+=[0xc4904,0xc498c]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}

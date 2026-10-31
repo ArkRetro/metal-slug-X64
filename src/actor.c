@@ -23,7 +23,7 @@ static bool death_logged;
 static bool restart_was_down;
 static bool diagnostics,diagnostics_was_down;
 static bool has_entry;
-static int32_t entry_x,entry_y;
+static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 static bool previous_a,previous_b,pending_a,pending_b,previous_start;
@@ -38,7 +38,8 @@ static marco_visual_t marco;static bool marco_native;static unsigned marco_shots
 static void reset_game(void) {
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=0;
     observed_wreck_contact=false;
-    if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
+    if (has_entry && entry_descent) msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
+    else if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
 #if MSX_VEHICLE_REFERENCE
     msx_game_vehicle_reference(&game);vehicle_renderer_load();
@@ -159,6 +160,15 @@ bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     game_audio_sync(&game);
     debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
     return true;
+}
+/* The handoff at the start of the parachute descent (MAME 3860). */
+void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) {
+    msx_game_begin_descent(&game,world_x,world_y,vx,vy);
+    has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
+    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    scene_clock_reset(&simulation_clock);scene_render_forget_texture();
+    game_audio_sync(&game);
+    debugf("MSX mission handoff (descent) x=%ld y=%ld vx=%ld vy=%ld\n",(long)world_x,(long)world_y,(long)vx,(long)vy);
 }
 void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;

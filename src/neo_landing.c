@@ -1,9 +1,17 @@
 /* Parachute landing actors, manual translation of ROM 0C4A58..0C4B60 (the
- * canopy's descent update in its landing branch and its collapse) and
+ * canopy: constructor, descent, cut away and collapse) and
  * 0C5286..0C5320 (the player marker). Labels are provenance only.
- *   0C4AAE  creator alive (0040AC) and +5F bit 7 clear; parent on the
- *           ground (+15 bit 6) -> 0C4B62 (the other branches belong to the
- *           descent, before the port's handoff: explicit stop).
+ *   0C4A58  004256 with 0C4904, +30/+34 = 0, 01AD6E (on the parent's +28
+ *           block), palette 0x38D (009EA8).
+ *   0C4AAE  creator gone (0040AC: the port's player always exists) or its
+ *           +5F bit 7 -> 0C4B20; parent on the ground (+15 bit 6) or +61 = 1
+ *           -> 0C4B62; +61 = 2 -> 0C4B20; else +1E = the parent's, +28 word
+ *           = -4 (+4 flipped), 01AC38, 00427A (then the player's 00427A and
+ *           +7C: the port's player draws itself).
+ *   0C4B20  +5F bit 3 (00436E: the poses show on even video phases only),
+ *           004256 with 0C498C, 01AD52 (to the scene root, keeping the
+ *           parent's motion as velocity), +34 = 0; 0C4B4A: 01AC38, 00427A,
+ *           deleted at the end of the program.
  *   0C4B62  004256 with 0C49D4; 0C4B78: 01ACA2 (flip bits 0..1 from the
  *           parent), +1E = parent +1E - 1, 01AC38, 00427A; deleted when the
  *           program ends (the cartridge check 0C4B98 is not reproduced).
@@ -22,6 +30,7 @@
 typedef struct {neo_landing_t *s;const neo_landing_input_t *in;neo_gactor_t *current;} ctx_t;
 static bool g_parent(void *c,uint32_t tag,neo_contact_parent_t *out) {
     const neo_landing_input_t *in=((ctx_t *)c)->in;
+    if (tag==NEO_LANDING_ROOT) {*out=(neo_contact_parent_t){tag,in->root_x,in->root_y,in->root_previous_x,in->root_previous_y,in->root_correction};return true;}
     if (tag!=NEO_LANDING_PLAYER) return false;
     *out=(neo_contact_parent_t){tag,in->x,in->y,in->previous_x,in->previous_y,in->correction};
     return true;
@@ -30,6 +39,7 @@ static bool g_front(void *c) {return ((ctx_t *)c)->in->front_layer;}
 static void g_emit(void *c,const neo_anim_draw_t *d) {
     ctx_t *t=c;neo_landing_t *s=t->s;const neo_gactor_t *a=t->current;
     if (s->draw_count==NEO_LANDING_DRAWS || !a) return;
+    if ((ga_b(a,0x5f)&8u) && t->in->odd_phase) return;                     /* 00436E */
     uint8_t h=(uint8_t)(d->attributes>>8);
     uint16_t resource=h>=1 && h<=4?a->palette[h-1]:0;
     s->draws[s->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13)};
@@ -39,11 +49,29 @@ static void env(neo_genv_t *e,neo_ga_flags_t *flags,ctx_t *t,const neo_anim_prog
     e->ctx=t;e->parent=g_parent;e->front_layer=g_front;e->emit=g_emit;e->emit_ctx=t;e->program=program;e->flags=flags;e->epoch=t->in->epoch;
 }
 #define START(tag) do { if (!ga_anim_start(a,e,(tag),0x100)) return GA_UNSUPPORTED; } while (0)
+/* 01AD52: +28..+37 from the parent's block to the scene root (01AC4C). */
+static void to_root(neo_gactor_t *a,neo_genv_t *e,const neo_landing_input_t *in) {
+    uint32_t x=L(0x28),y=L(0x2c);
+    uint32_t ex=x+L(0x30)+(uint32_t)in->x-(uint32_t)in->root_x,ey=y+L(0x34)+(uint32_t)in->y-(uint32_t)in->root_y;
+    x+=(uint32_t)in->previous_x-(uint32_t)in->root_previous_x;y+=(uint32_t)in->previous_y-(uint32_t)in->root_previous_y;
+    SL(0x28,x);SL(0x2c,y);SL(0x30,ex-x);SL(0x34,ey-y);SL(0x38,NEO_LANDING_ROOT);
+    ga_project(a,e);
+}
 static ga_result_t canopy(neo_gactor_t *a,neo_genv_t *e,const neo_landing_input_t *in) {
     int r;
     switch (L(0)) {
+    case 0xc4a58:
+        START(0xc4904);SL(0x30,0);SL(0x34,0);
+        ga_place(a,e,0,0,NEO_LANDING_PLAYER);ga_palette(a,0x38d);SL(0,0xc4aae);
+        /* fall through */
     case 0xc4aae:
-        if (!(in->flags15&0x40u)) {ga_fail(e,0xc4ac6);return GA_UNSUPPORTED;}    /* descent: before the handoff */
+        if (in->flags5f&0x80u) goto cut;
+        if (!(in->flags15&0x40u) && in->state61!=1) {
+            if (in->state61==2) goto cut;
+            SW(0x1e,in->z);SW(0x28,B(0x15)&1u?4u:0xfffcu);
+            ga_move(a,e);
+            return ga_anim_step(a,e,NULL)<0?GA_UNSUPPORTED:GA_MORE;
+        }
         START(0xc49d4);SL(0,0xc4b78);
         /* fall through */
     case 0xc4b78:
@@ -53,6 +81,14 @@ static ga_result_t canopy(neo_gactor_t *a,neo_genv_t *e,const neo_landing_input_
         r=ga_anim_step(a,e,NULL);
         if (r<0) return GA_UNSUPPORTED;
         return r?GA_DELETE:GA_MORE;                                              /* 004188 */
+    cut:
+        SB(0x5f,B(0x5f)|8u);START(0xc498c);to_root(a,e,in);SL(0x34,0);SL(0,0xc4b4a);
+        /* fall through */
+    case 0xc4b4a:
+        ga_move(a,e);
+        r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
@@ -91,6 +127,12 @@ void neo_landing_start(neo_landing_t *s,const neo_landing_input_t *in,const neo_
     SB(0x15,in->flags15&3u);SL(0x28,(uint32_t)(int32_t)(B(0x15)&1u?4:-4)<<16);SL(0x38,NEO_LANDING_PLAYER);SW(0x1e,in->z);
     ga_palette(a,0x38d);
     node_init(&s->marker,0xc5286);
+}
+void neo_landing_descent(neo_landing_t *s) {
+    memset(s,0,sizeof(*s));node_init(&s->canopy,0xc4a58);
+}
+void neo_landing_marker(neo_landing_t *s) {
+    if (!s->marker.active) node_init(&s->marker,0xc5286);
 }
 void neo_landing_update(neo_landing_t *s,const neo_landing_input_t *in,const neo_anim_program_t *(*program)(uint32_t tag)) {
     s->draw_count=0;s->marker_draws=0;

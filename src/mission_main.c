@@ -54,7 +54,11 @@ int main(void) {
     msx_cinematic_close();
     if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
     actor_init();
+#if MSX_ENTRY_DESCENT
+    actor_begin_descent(MSX_ENTRY_X,MSX_ENTRY_Y,MSX_ENTRY_VX,MSX_ENTRY_VY);
+#else
     if (!actor_begin_mission(MSX_ENTRY_X,MSX_ENTRY_Y)) fail("Soporte al aterrizar");
+#endif
     for (;;) {
         uint32_t audio_started=TICKS_READ();msx_audio_service();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-audio_started);joypad_poll();
         joypad_inputs_t input=joypad_get_inputs(JOYPAD_PORT_1);input.btn=joypad_get_buttons(JOYPAD_PORT_1);

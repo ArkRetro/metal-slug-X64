@@ -549,12 +549,20 @@ int main(int argc,char **argv) {
     // Parachute descent from the 3860 handoff (marco_descent.c): no input
     // lands after about 100 updates (MAME 200 frames), B cuts and falls sooner.
     {
-        unsigned hang=0,cut=0;
+        unsigned hang=0,cut=0,most=0,letter_ticks=0;
         msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
         assert(g.descent==MSX_DESCENT_HANG && !g.grounded);
-        for (;hang<600 && g.descent;hang++) msx_game_update(&g,0,false,false);
+        for (;hang<600 && g.descent;hang++) {
+            msx_game_update(&g,0,false,false);
+            if (g.end.draw_count>most) most=g.end.draw_count;
+            if (g.start_letters) letter_ticks=hang+1;
+        }
         assert(!g.descent && g.grounded && g.world.player_node[0][0x61]==1 && hang>=190 && hang<=210);
         assert(g.y==msx_ground_offset(g.x));
+        // MISSION 1 START 0607DE (neo_end.c): the letters arrive, blink and
+        // leave during the descent without a stop (MAME ms2: 71 updates).
+        assert(!g.start_letters && !g.start_stops && !g.end.count && most>=13);
+        printf("MISSION 1 START: %u draws at most, gone after %u ticks\n",most,letter_ticks);
         msx_game_begin_descent(&g,7865136,16293888,816,-483328);g.world_enabled=false;
         for (unsigned i=0;i<20;i++) msx_game_update(&g,0,false,false);
         msx_game_update(&g,0,true,false);

@@ -103,7 +103,7 @@ int main(void) {
                 if (u->correction>=0) in.root.correction=(uint8_t)u->correction;
             }
         }
-        if (!started) {assert(UPDATES[i].node==0 && UPDATES[i].routine==0x6090a);neo_end_start(&s,0x6090a);started=true;}
+        if (!started) {assert(UPDATES[i].node==0 && (UPDATES[i].routine==0x6090a || UPDATES[i].routine==0x607de));neo_end_start(&s,UPDATES[i].routine);started=true;}
         cur_lo=i;cur_hi=j;
         unsigned before=updates;
         neo_end_update(&s,&in);frames++;
@@ -114,6 +114,6 @@ int main(void) {
         i=j;
     }
     assert(s.mission60==1);
-    printf("mission end letters 06090A: %u frames, %u updates, %u bytes equal, %u deletes, %u draws; mission actor +60 set\n",frames,updates,bytes,deletes,draws);
+    printf("%s letters (root %06x): %u frames, %u updates, %u bytes equal, %u deletes, %u draws; mission actor +60 set\n",UPDATES[0].routine==0x607de?"MISSION START":"MISSION COMPLETE",(unsigned)UPDATES[0].routine,frames,updates,bytes,deletes,draws);
     return 0;
 }

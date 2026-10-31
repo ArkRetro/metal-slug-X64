@@ -1,7 +1,8 @@
 #include "neo_end.h"
 #include <string.h>
 #include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
-/* MISSION COMPLETE letters 06090A, manual translation of ROM 06090A..060F42
+/* MISSION COMPLETE letters 06090A and MISSION n START 0607DE, manual
+ * translation of ROM 0607DE..060F42
  * (ROM labels are provenance only). Called by the mission actor at 0188DE
  * (0040BC, A6 = 101364).
  *
@@ -63,7 +64,7 @@ static neo_gactor_t *alloc(neo_end_t *s,int creator,uint32_t routine) {
 }
 void neo_end_reset(neo_end_t *s) {memset(s,0,sizeof(*s));}
 neo_gactor_t *neo_end_start(neo_end_t *s,uint32_t routine) {return alloc(s,-1,routine);}
-bool neo_end_routine(uint32_t r) {return r>=0x6090a && r<=0x60c8c;}
+bool neo_end_routine(uint32_t r) {return r>=0x607de && r<=0x60c8c;}
 /* ---- environment ----------------------------------------------------------- */
 static bool g_parent(void *c,uint32_t tag,neo_contact_parent_t *out) {
     ctx_t *t=c;
@@ -131,6 +132,30 @@ static bool approach(neo_gactor_t *a) {
 static ga_result_t tick(neo_gactor_t *a,neo_genv_t *e,const neo_end_inputs_t *in) {
     neo_gactor_t *p=e->creator(e->ctx,a);
     switch (L(0)) {
+    case 0x607de:
+        /* MISSION n START, created by the mission actor at 018646 (0040BC,
+         * D0 = 0x0E). Missions >= 6 delete it (the cartridge check of
+         * 0607EA is not reproduced). 060878: the voice 607D2[mission]
+         * (0120F8); 060888 as 06090A with +7D = 0: the mission number
+         * 060DC4 (060B06, as 060E02) and the letters of 605AA (mission 5:
+         * 060DFC, 60614); 0608E0 waits for 0x0E arrivals (0x12). */
+        if (in->mission>=6) return GA_DELETE;
+        if (in->ram) {
+            if (in->ram->sound_count<NEO_END_SOUNDS) in->ram->sounds[in->ram->sound_count++]=rw(0x607d2u+2u*in->mission);
+            else in->ram->sounds_dropped++;
+        }
+        SB(0x7d,0);ga_place(a,e,0,0x1ff,0);SW(0x66,0xffff);SW(0x1e,0xffff);SW(0x72,0);
+        if ((uint8_t)in->mission==5) letters(a,e,0x60614);                        /* 060DFC */
+        else {                                                                     /* 060DC4 */
+            neo_gactor_t *c=e->spawn(e->ctx,a,0x60b06,false);
+            if (c) {ga_place_from(c,a,e,0,0);ga_sb(c,0x61,0);ga_sw(c,0x72,0x0e);ga_sw(c,0x6e,0xf0);ga_sw(c,0x70,0x1a8);}
+            letters(a,e,0x605aa);
+        }
+        SB(0x61,0);SB(0x60,0);SL(0,0x608e0);
+        /* fall through */
+    case 0x608e0:
+        if (B(0x61)==((uint8_t)in->mission==5?0x12:0x0e)) SL(0,0x6099e);
+        return GA_MORE;
     case 0x6090a:
         if (in->mission>=6) return GA_DELETE;
         SB(0x7d,1);ga_place(a,e,0,0x1ff,0);SW(0x66,0xffff);SW(0x1e,0xffff);SW(0x72,0);

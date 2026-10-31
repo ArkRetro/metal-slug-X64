@@ -115,13 +115,13 @@
   "0x5"
  ],
  "stats": {
-  "zoomed_entries_skipped": 832,
-  "frames": 735,
-  "pixels_equal": 3045010,
-  "pixels_different": 155616,
-  "pixels_overlapping": 780801,
-  "rank_2": 474,
-  "rank_1": 261
+  "zoomed_entries_skipped": 1510,
+  "frames": 807,
+  "pixels_equal": 3210803,
+  "pixels_different": 157166,
+  "pixels_overlapping": 780927,
+  "rank_2": 489,
+  "rank_1": 318
  },
  "frames": [
   {
@@ -5267,6 +5267,510 @@
    "frame": 2254,
    "update_frame": 2253,
    "equal": 516,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1838,
+   "update_frame": 1838,
+   "equal": 0,
+   "different": 572
+  },
+  {
+   "capture": "ms2",
+   "frame": 1840,
+   "update_frame": 1838,
+   "equal": 572,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1842,
+   "update_frame": 1842,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1844,
+   "update_frame": 1844,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1846,
+   "update_frame": 1846,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1848,
+   "update_frame": 1848,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1850,
+   "update_frame": 1848,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1852,
+   "update_frame": 1852,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1854,
+   "update_frame": 1854,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1856,
+   "update_frame": 1856,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1858,
+   "update_frame": 1858,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1860,
+   "update_frame": 1860,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1862,
+   "update_frame": 1862,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1864,
+   "update_frame": 1864,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1866,
+   "update_frame": 1866,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1868,
+   "update_frame": 1868,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1870,
+   "update_frame": 1870,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1872,
+   "update_frame": 1872,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1874,
+   "update_frame": 1874,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1876,
+   "update_frame": 1876,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1878,
+   "update_frame": 1878,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1880,
+   "update_frame": 1880,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1882,
+   "update_frame": 1882,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1884,
+   "update_frame": 1884,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1886,
+   "update_frame": 1886,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1888,
+   "update_frame": 1888,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1890,
+   "update_frame": 1890,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1892,
+   "update_frame": 1892,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1894,
+   "update_frame": 1894,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1896,
+   "update_frame": 1896,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1898,
+   "update_frame": 1898,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1900,
+   "update_frame": 1900,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1902,
+   "update_frame": 1902,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1904,
+   "update_frame": 1904,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1906,
+   "update_frame": 1906,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1908,
+   "update_frame": 1908,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1910,
+   "update_frame": 1910,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1912,
+   "update_frame": 1912,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1914,
+   "update_frame": 1914,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1916,
+   "update_frame": 1916,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1918,
+   "update_frame": 1918,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1920,
+   "update_frame": 1920,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1922,
+   "update_frame": 1922,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1924,
+   "update_frame": 1924,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1926,
+   "update_frame": 1926,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1928,
+   "update_frame": 1926,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1930,
+   "update_frame": 1930,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1932,
+   "update_frame": 1932,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1934,
+   "update_frame": 1934,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1936,
+   "update_frame": 1936,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1938,
+   "update_frame": 1938,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1940,
+   "update_frame": 1940,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1942,
+   "update_frame": 1942,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1944,
+   "update_frame": 1942,
+   "equal": 3594,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1946,
+   "update_frame": 1946,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1948,
+   "update_frame": 1948,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1950,
+   "update_frame": 1950,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1952,
+   "update_frame": 1952,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1954,
+   "update_frame": 1952,
+   "equal": 6054,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1956,
+   "update_frame": 1954,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1958,
+   "update_frame": 1956,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1960,
+   "update_frame": 1958,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1962,
+   "update_frame": 1960,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1964,
+   "update_frame": 1962,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1966,
+   "update_frame": 1964,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1968,
+   "update_frame": 1966,
+   "equal": 6056,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1970,
+   "update_frame": 1968,
+   "equal": 6032,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1972,
+   "update_frame": 1970,
+   "equal": 4747,
+   "different": 747
+  },
+  {
+   "capture": "ms2",
+   "frame": 1974,
+   "update_frame": 1972,
+   "equal": 3245,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1976,
+   "update_frame": 1976,
+   "equal": 173,
+   "different": 231
+  },
+  {
+   "capture": "ms2",
+   "frame": 1978,
+   "update_frame": 1978,
+   "equal": 44,
+   "different": 0
+  },
+  {
+   "capture": "ms2",
+   "frame": 1980,
+   "update_frame": 1978,
+   "equal": 0,
    "different": 0
   }
  ]

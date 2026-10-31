@@ -12,7 +12,7 @@ privados y no están en git.
 | Título METAL SLUG X64 | cinemática de 601 fotogramas iguales a MAME | INTRO_AUDIO.md |
 | HOW TO PLAY | cinemática (fotogramas 770..3459 de la captura con moneda) | MISSION_ENTRY.md |
 | SOLDIER SELECT | cinemática que espera A/Start sobre Marco (solo Marco) | MISSION_ENTRY.md |
-| Entrada en paracaídas | cinemática + traspaso nativo; tela y marcador 1P nativos; descenso jugable nativo desde 3860 (deriva, disparo/granada colgado, corte con A/B); faltan letras MISSION 1 START y pose colgada | MISSION_ENTRY.md, MISION1_COMPLETA.md |
+| Entrada en paracaídas | cinemática + traspaso nativo; tela y marcador 1P nativos; descenso jugable nativo desde 3860 (deriva, disparo/granada colgado, corte con A/B); letras MISSION 1 START nativas; pose colgada en curso | MISSION_ENTRY.md, MISION1_COMPLETA.md |
 
 ## Misión 1
 
@@ -42,7 +42,7 @@ fondo; detalle en RENDIMIENTO.md.
 | 10 | Logo NEOGEO, arma C, civiles, explosiones, premios, sonidos, Expansion Pak |
 | 10b–10d | sonido sin distorsión, título sin cortes, balas H/C orientadas, recuento, CONTINUE? |
 | 11 / 11b | SV-001, HOW TO PLAY, SOLDIER SELECT, tejado, capas, sin INSERT COIN, sin HUD de depuración |
-| 12 (en curso) | aterrizaje, cuchillo, lanzacohetes, brazo de granadas |
+| 12 (en curso) | aterrizaje, descenso jugable, MISSION 1 START, cuchillo con pose, lanzacohetes, brazo de granadas |
 
 ## Después de la Misión 1
 

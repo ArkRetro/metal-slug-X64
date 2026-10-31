@@ -205,8 +205,32 @@ aterriza a los 200 fotogramas (como MAME); con B a los 20, corta y aterriza
 
 **Paradas explícitas.**
 
-- Las letras MISSION 1 START (actores de sprites) no están portadas: tras
-  el traspaso en 3860 no se muestran.
 - La pose colgada del cuerpo (programa 0BF818) no está en el catálogo de
   Marco: durante el descenso el port dibuja su pose aérea.
 - La deriva usa el RNG del port, no la secuencia exacta de la partida.
+
+### MISSION 1 START (`0607DE`, `src/neo_end.c`, rama `work-rom12`)
+
+El actor de misión lo crea en `018646` (`0040BC`, D0 = 0x0E) justo antes del
+traspaso; su primera actualización es la del constructor de la vela (1838 en
+`ms2`). `0607DE`: misiones ≥ 6 lo borran (la comprobación de cartucho
+`0607EA` no se reproduce); `060878` pide la voz `607D2[misión]` (`0120F8`,
+0x1131 en la Misión 1; en el port suena con el audio de la entrada);
+`060888` es la raíz de `06090A` con `+7D` = 0: cifra `060B06` (`060DC4`) y
+las letras de `605AA` (misión 5: `60614`); `0608E0` espera 0x0E llegadas
+(0x12) y sigue por `06099E` como MISSION COMPLETE (`+7D` = 0: velocidad
+`060E7A` con los topes y `+7A` = 0x30). `gameplay.c` la crea con
+`msx_game_begin_descent` en la lista `end` y la actualiza cada paso hasta
+que se borra la última letra; se dibuja con las letras de fin de misión.
+
+Evidencia: captura de familia `ms2` (`MSX_REST_BOSS_FROM=1780
+MSX_REST_FAMILY_ROOTS=607de MSX_REST_FIRST_DUMP=1780 MSX_REST_PERIOD=2
+MSX_REST_LAST=2110`). `tools/extract_end_fixture.py ... --range 607de-60f42`
+→ `data/start_letters_fixture.json.gz`; `tools/test_neo_end.c` (en `make
+check`, `start_letters`): **1038 actualizaciones en bucle cerrado (71
+pasadas, 15 nodos), 145550 bytes iguales, 13 borrados**, `+60` del actor de
+misión puesto. Sprites (`export_rest_sprites.py ... ms2@607de-60f42`) contra
+la VRAM: **72 volcados, 165793 píxeles iguales, 1550 distintos** (1838: la
+primera actualización, aún no en la VRAM; 1972/1976: cambio de programa al
+salir). `test_gameplay`: 14 sprites como máximo, desaparecen a los 143
+fotogramas del traspaso, sin paradas.

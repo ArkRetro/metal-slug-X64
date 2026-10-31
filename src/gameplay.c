@@ -101,6 +101,10 @@ void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_
     /* The canopy 0C4A58 was created in the same update (0C1604): its
      * constructor runs with the first landing step. */
     neo_landing_descent(&g->landing);g->landing_on=true;
+    /* MISSION 1 START 0607DE: created by the mission actor (018646) just
+     * before; its first update is in the same frame as the canopy's
+     * constructor (ms2 capture: 1838). Its voice is in the entry audio. */
+    neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;
 }
 void msx_game_vehicle_reference(msx_game_t *g) {
     // Observed stationary vehicle variant, at the captured position. This is
@@ -624,6 +628,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         }
 #endif
     g->descent_fire|=fire && !g->fire_was && g->descent;
+    if (!(g->ticks&1) && g->start_letters) {
+        /* The MISSION 1 START letters after the mission actor (neo_end.c). */
+        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program,NULL};
+        neo_end_update(&g->end,&in);
+        g->start_stops+=g->end.unsupported;
+        if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}
+    }
     if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->descent) descent_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_EJECT) mount_eject_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_NONE) {

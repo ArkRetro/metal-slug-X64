@@ -403,7 +403,10 @@ descenso de la otra rama). Orden de arriba con `$E/land2@c4a58-c5330` y
 **4678 descriptores y 103 paletas**, superconjunto de las dos (todo
 descriptor y paleta presentes e idénticos; `0x397`/`0x39E` toman el valor
 conservado, como arriba). Validación: 735 volcados, 3045010 píxeles iguales,
-155616 distintos (igual que antes).
+155616 distintos (igual que antes). Con `$E/ms2@607de-60f42` (MISSION 1
+START, MISSION_ENTRY.md) y `--keep` también sobre esa unión: los mismos
+4678 descriptores y 103 paletas; 807 volcados, 3210803 iguales, 157166
+distintos.
 
 Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
 2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77

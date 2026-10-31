@@ -81,6 +81,11 @@ BLOBS=[
     (0x60F44,0x58,'06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)'),
     (0x31B86,0x16,'032040 civilians: flight program speeds by +62 (004256)'),
     (0x31D34,0x4C,'031D80/031D92 civilians: program tables 031D34/031D40, cull rectangle 031D4C (01945C), hurtbox 031D54, offsets 031D60, panic hit kinds 031D68, command sequences 031D74/031D7A'),
+    (0x63600,0x20,'063F32 C weapon shell: contact row 063600 and search row 063610 (0049E8)'),
+    (0x63690,0x10,'0636B0 C explosion blast attack row 063690 (0049E8 by 063740)'),
+    (0x63716,0x8,'063756 C blast cull rectangle (019504)'),
+    (0x63814,0x8,'063FDC C shell cull rectangle (019504)'),
+    (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

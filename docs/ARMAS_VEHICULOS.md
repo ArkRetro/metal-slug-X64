@@ -545,15 +545,16 @@ entradas guionizadas y las 22 balas diagonales registradas en `hfam`
 reflejo de su orientación. `hfam` no tiene la columna `10000E`, así que los
 fotogramas de las actualizaciones no se comparan.
 **Aproximaciones declaradas**: el reposo `0x0C38B2` no se traduce (`+92` se
-conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` y la puntería
-hacia abajo en el aire no existen en el modelo de jugador del port; la boca
+conserva, como en `hfam` 12308..12312); el giro `0x0C3BCC` no existe en el
+modelo de jugador del port (la puntería hacia abajo en el aire ya sí: ver
+«Puntería hacia abajo en el aire» más abajo); la boca
 sigue siendo la de pistola del port (adelante (24,80), arriba (3,108),
 interpolada para un diagonal), porque el port no tiene `+72/+74`. Disparar
 exige pulsar (como en el arcade); `tools/test_gameplay.c` pulsa cada 8
 pasos. La pistola sigue
 con la bala del port (la del jefe y el blindado de referencia pasan por
 `neo_world_shot`). **Paradas explícitas**: H con `+93 = 2` (`0x01B668/0x01BDD2`),
-cohete `0x06381C`, C `0x063F32` (y su destello `0x0C58D2`) y las demás armas
+cohete `0x06381C`, C con `+93 = 2` (`0x063F10`; la C normal es nativa, paso 11) y las demás armas
 (`weapon_stops`, se disparan como bala de pistola del port).
 
 Gráficos: `tools/export_rest_sprites.py` añade los programas de la chispa
@@ -917,16 +918,150 @@ traducción:
 - Daño `0x093772`/`0x0AA9E4`, destrucción `0x0938DA`/`0x093AFA` y bombas
   `0x0929E6`: sin captura; deben quedar como paradas explícitas.
 
-Tampoco empezado: el arma C de Marco `0x063F32`, el cohete `0x06381C` y el
-destello `0x0C58D2` (siguen en `weapon_stops`). Medido para su traducción
-(`hudc` y `cfam` dan la misma traza, `--range 63600-64300 --range
-c5800-c5a00`: 6584 actualizaciones): 40 obuses C `63F32` y su vuelo `63FDC`
-(619), la explosión `64128` (32) con su hijo `6371E/63740/63756` (729), la
-estela `63D9E` (286) y sus bocanadas `63E48` (4484), el destello
-`C58D2/C5930` (394). El vuelo pide a `0x0049E8` su objetivo: A0 es el
-cuerpo registrado tocado de mayor salud `+4E` (RAM `-$182A(a5)`, `>=`), A1
-el de menor (`-$1824(a5)`, `<=`; ambos sin los de `+5F` bit 6, en
-`0x004928..0x004952`); `+8B` (aleatorio) elige A1 si es negativo; el
-ángulo `0x01B14A` apunta al centro de la caja `+50` del objetivo
-(`0x01B162`; sin objetivo, ángulo aleatorio). `neo_genv_t.attack` solo
-devuelve el tipo: hay que ampliar su contrato en `neo_world.c`.
+### Paso 11: arma C de Marco (`src/neo_chaser.c`)
+
+El arma C (id `0C`, 40 obuses, tope 3 en vuelo) es nativa. Medido y
+traducido de `hudc`/`cfam` (`--range 63600-64300 --range c5800-c5a00`: 6584
+actualizaciones):
+
+- **Jugador** (`gameplay.c`): el estado general `0x0C3CD0` con los programas
+  de las tablas `0C3C10/0C3C50/0C3C90` para el id `0C` (forma 1): nivel
+  `253A56` (`CALL 0C4372` en 0, `+76` en 5: otra pulsación dispara 6
+  actualizaciones después), arriba `253AC6` y abajo `255FDE` (`+76` en 2).
+  `0C4372` → `0C0D64`; tras la cabeza de la lista (`00411C`) el destello
+  `0C58D2` (tabla `0C432A`) en el punto de `0C4244` menos `+72/+74`
+  (`0C43CC`: mirando a la izquierda queda −(t+x72)−x72) con el movimiento
+  del jugador (`01ACF2`), y el obús `063F32` (tabla `0C42AA`) en el punto de
+  `0C4244` con `+95 + 1`, `+6E` = 0/40 reflejado, `+70`, `+5E` del jugador.
+  `+93 = 2` (`063F10`, tabla `0C42EA`) sigue siendo parada explícita.
+  **Aproximación declarada**: la colocación `0C482E` (`014A02`) es la
+  colocación directa de las balas H; el agachado usa el `+72/+74` medido de
+  la H (forma 1).
+- **Obús** `063F32`/`063FDC`, **explosión** `064128`/`06414C` (programa
+  `268622`, `CALL 0636B0` → onda `06371E/063740/063756`, fila `063690`,
+  una sola consulta), **estela** `063D9E`/`063E48` (atraída por el nodo
+  anterior de la lista, `+04`: la bocanada más nueva o el obús, también
+  como marcador `003F1E`) y **destello** `0C58D2`/`0C5930`; detalles en la
+  cabecera de `neo_chaser.c`. El obús devuelve su proyectil (`0C0DFC`) al
+  explotar o salir de `063814`.
+- **Consulta de objetivos** (`0049E8`, `004928..004952`): `neo_genv_t` lleva
+  ahora `target[0]/target[1]` (A0: mayor `+4E` con `>=`; A1: menor con
+  `<=`; gana el último visitado en un empate) con lo que `01B162` lee
+  (`+3C/+40` y el primer rectángulo de `+50`), pedidos con
+  `ga_attack_targets`. Solo cuentan los cuerpos que pasan la fase estrecha,
+  la matriz `004582`, el multiplicador `+54` y `+5F` bits 7/6 a 0. Comprobado
+  en la traza: la regla reproduce los 454 A0/A1 registrados (435 con varios
+  candidatos, 217 con empates). En el mundo (`neo_world.c`) el registro
+  conserva el orden de las ranuras de `004C24` (soldados, actores genéricos y
+  nodos del jefe según se registran, máximo 0x40) y `004B06` las visita en
+  el orden 16..31, 0..15, 48..63, 32..47. La fila de búsqueda (clase 1, tipo
+  0, daño 0) no tiene efectos en el original y no se envía al jefe; la de
+  contacto y la onda sí (`neo_chaser_attacker`). `neo_genv_t.previous` da
+  el nodo anterior de la lista (`+04`).
+- Capacidad del mundo: 64 actores genéricos, 112 nodos de orden y 128
+  dibujos (el original tiene 0x70 nodos; la estela pide `0040BC` con
+  prioridad 0x2A, que el port no modela).
+
+Pruebas: familia `chaser` (`make check`, `data/chaser_fixture.json.gz`,
+`extract_family_fixture.py ... --ram 10c718-10c72c --attacks`, nuevas
+opciones `--attacks`/`--previous` de `compile_family_fixture.py`): **398
+nodos, 6584 actualizaciones en bucle cerrado, 868560 bytes** iguales, las
+respuestas de `0049E8` en el orden de las llamadas (D0 y los A0/A1 que
+`01B162` leyó; un objetivo que el original no leyó vale 7FFF,7FFF: elegir el
+otro falla), el bloque de armas (131680 bytes de RAM: `0C0DFC`). Mutaciones
+comprobadas: elegir A0 en vez de A1, olvidar `+04`, la deriva de la estela
+o la devolución del proyectil fallan. `tools/test_gameplay.c` (carrera C):
+la C concedida y recargada (`0C0928`) con la política de las cúpulas:
+765 obuses nativos, 445 ondas, 61 muertes, sin paradas ni dibujos ausentes,
+hasta la cámara 3520.
+
+Gráficos: `tools/export_rest_sprites.py` añade los programas `267F92`,
+`268622`, `22CE6C`, `26863A`, `0C586C`, `0C5806` y la paleta `0x363`, con
+`$W/cfam@63600-64300 $W/cfam@c5800-c5a00` en la exportación completa:
+2870 descriptores (57 nuevos), 78 paletas, 617 volcados validados (2936091
+píxeles iguales, 150936 distintos).
+
+### Puntería hacia abajo en el aire (pistola, H y C)
+
+Captura `air` (`tools/capture_weapons.lua`, plan `air`, MAME 0.264,
+`MSX_WEAPONS_LAST=5080`): desde el inicio de la misión, saltos quieto y con
+carrera manteniendo abajo, paseo con arriba alterno (barridos) y saltos con
+arriba y luego abajo, A pulsado cada 8 fotogramas, con la pistola, la H
+(dada en 3150) y la C (en 4110). En el aire, abajo es `0C0FEA` bit 1: el
+estado `0C3CD0` pone `+92 = FF` y toma las tablas `0C3C90` (pistola
+`24EABC`, C `255FDE`: `+76` en 2) y la H barre adelante→abajo
+(`C8/D8/E8/F8`, reflejados `B8..88`) y dispara su abanico `BE/C0/C2`; en
+tierra abajo es agacharse. Todos los nacimientos: ángulo `C0` (las dos
+orientaciones) y la boca de la fila abajo de `0C4204` (pistola (0,−16), forma 1
+(−4,−20)) más el `+72/+74` de los programas de salto (sobre todo `24E858`
+(−4,12)).
+
+Port (`gameplay.c`): `aim_down` = abajo en el aire (arriba gana, como
+`0C3D30`); la pistola dispara entonces la bala nativa `01B782` a `C0` (las
+demás siguen con la bala del port), la H recibe `down` en
+`marco_hgun_input_t` (sus programas hacia abajo ya estaban traducidos) y la
+C usa `C0` con la espera de 3 actualizaciones. El cuerpo dibuja `24EABC`
+para la pistola (`marco_visual.c`); los programas de arma hacia abajo de la
+forma 1 (H `2560C0/2561DC/25624E`, C) no están en el catálogo de Marco: se
+dibuja el de reposo (limitación visual). Sonido: `game_audio.c` ya no pide
+`0x10F7` por los disparos nativos (H, C, pistola abajo), cuyos constructores
+piden el suyo.
+
+Prueba `tools/test_marco_muzzle.c` (`data/hmuzzle_fixture.json`, ahora con
+`air` y con los nodos reutilizados, no solo los nacidos): **1012
+nacimientos** de H, pistola y C (839 de puntería, 173 de barrido; 213 hacia
+abajo en el aire) iguales píxel a píxel. Se excluyen los nacimientos con el
+jugador contra una pared (`+15` bit 7): el barrido de colocación `014A02`
+los detiene en la pared (`hfam` 11118..11152), la aproximación declarada.
+`tools/test_gameplay.c` (carrera `airdown`): pistola, H y C disparan hacia
+abajo saltando, sin paradas ni dibujos ausentes.
+
+### H en diagonal: repetición de la captura `air` y la palanca
+
+Informe de MiSTer: «el arma H sigue teniendo mal el disparo en diagonal».
+Comprobación de extremo a extremo contra la captura `air` (paseo con arriba
+alterno, saltos con arriba y luego abajo, A cada 8 fotogramas):
+
+- **Bocas**: los 1012 nacimientos de `test_marco_muzzle.c` (paso anterior),
+  173 de ellos de barrido, iguales píxel a píxel (ángulo y origen).
+- **Estados** (`tools/test_marco_hgun.c`, parte 3,
+  `data/hgun_replay_fixture.json` de `tools/extract_hgun_replay.py air 3150
+  4100`): las palabras de mando `10E9EC` de cada actualización por
+  `marco_hgun.c` dan cada bala H del original en la misma actualización y
+  con el mismo ángulo (144 actualizaciones, 71 balas, 32 pasos de barrido:
+  adelante↔arriba andando, abajo en el aire, abajo→adelante al aterrizar).
+  Quedan fuera, y se resincroniza tras 8 actualizaciones sin balas, las
+  ventanas en que el original usa estados que el jugador del port no tiene:
+  **el cuchillo** `0x0C3B46` (`+9A` bit 0, puesto por `0x0C3744` con la fila
+  `2D0AE4` de `0049E8`: con un enemigo al alcance una pulsación acuchilla en
+  vez de disparar; en `air` 3706..3736 tres pulsaciones no dan balas) y **el
+  aterrizaje agachado** con abajo (`0x0C1EBE` → `0x0C2236`: `+92 = 0` sin
+  barrido). Ambos siguen sin traducir (el port dispara en esos casos).
+- **Causa en el hardware**: la palanca. `actor.c` leía el stick analógico
+  como una puerta cuadrada (cada eje pasado 25 por su cuenta): empujar a la
+  derecha con 17° de holgura ya era arriba-derecha, y la H barría
+  adelante→arriba y volvía mientras se andaba. Ahora `src/msx_stick.h` lo
+  lee como la palanca de 8 direcciones del arcade (zona muerta de radio 25,
+  sectores de 45°: un eje cuenta si el stick está a menos de 67,5° de él);
+  comprobado en `tools/test_gameplay.c`. La cruceta digital no cambia.
+
+### Camel Slug: Marco doble y atascado (informe de MiSTer)
+
+Reproducido en el anfitrión (`tools/test_gameplay.c`, carreras `camel`:
+montar entre las cúpulas y 2336 y cabalgar al azar, saltando abajo+B o
+expulsando con A+B): al llegar a la cámara 2688 el lanzacohetes `05ED84`
+registra su cuerpo sólido (`5EB7C`) y la Camel se para en `0x004ED2` (el
+empuje de los cuerpos sólidos, **parada explícita**: ninguna traza de la
+Camel lo ejerce). El mundo quitaba la Camel pero su hijo, el jinete gráfico
+`034F1A/034F96` (que dibuja a Marco), seguía vivo en el sitio de la parada
+y el Marco del port, expulsado, se dibujaba a la vez: dos Marcos, uno
+quieto. Ahora una parada explícita de un actor genérico borra también sus
+descendientes (`0041AC`, como al borrar un nodo con hijos): en las tres
+carreras ningún jinete gráfico sobrevive a su Camel (antes, 5421
+actualizaciones) ni se dibuja a Marco a pie con la ranura atada. **Sigue
+pendiente** traducir `0x004ED2` para la Camel (código `004ED2..005058`:
+sobre la tabla `106756`, barrido `013968` desde `+44/+48` y `01AC4C`), con
+una captura de la Camel cabalgando hasta el lanzacohetes: hasta entonces la
+Camel termina en 2688 y Marco sigue a pie.
+
+Sigue sin traducir el cohete `0x06381C` (arma R, no aparece en la Misión 1).

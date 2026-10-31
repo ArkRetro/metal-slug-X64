@@ -7,7 +7,8 @@
 #include "scene_assets.h"
 #include <malloc.h>
 /* Event sources -> original request words (data/sound_map.json):
- *  - game->shots (bullet created, ROM 01B782)           -> 0x10F7
+ *  - the port's pistol bullets (game->shots without the native H, C and
+ *    down shots, whose constructors request their own sounds) -> 0x10F7
  *  - world sound list (animation 0x30, 0x10FA, 0x1027)  -> as requested
  *  - vehicle health lowered by a bullet (ROM 01BB34)     -> 0x108D
  *  - vehicle health below half / reaching zero (029AE4)  -> 0x1023
@@ -18,6 +19,7 @@ enum { VOLUME_PERCENT=80 };
 static wav64_t sounds[MSX_SFX_COUNT];
 static bool loaded[MSX_SFX_COUNT],ready,music_ready,music_on,warned,active;
 static msx_sfx_state_t policy;
+static unsigned port_shots(const msx_game_t *g) {return g->shots-g->h_shots-g->c_shots-g->down_shots;}
 static unsigned shots,vehicle_health,vehicle_frame,vehicle_state;
 static bool complete;
 static unsigned frames;
@@ -71,7 +73,7 @@ void game_audio_sync(msx_game_t *g) {
     if (!active) return;
     for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.current[c]>=0) mixer_ch_stop(mixer_of(c));
     msx_sfx_reset(&policy);
-    shots=g->shots;vehicle_health=g->vehicle.health;vehicle_frame=g->vehicle.frame;vehicle_state=g->vehicle.state;
+    shots=port_shots(g);vehicle_health=g->vehicle.health;vehicle_frame=g->vehicle.frame;vehicle_state=g->vehicle.state;
     complete=g->complete;g->world.sound_count=0;
     if (!complete && !music_on) game_audio_music(true);
 }
@@ -81,7 +83,7 @@ void game_audio_update(msx_game_t *g) {
     // Channels whose sound ended accept any request again.
     for (unsigned c=0;c<MSX_SFX_CHANNELS;c++)
         if (policy.current[c]>=0 && !mixer_ch_playing(mixer_of(c))) msx_sfx_finished(&policy,c);
-    if (g->shots!=shots) request(0x10f7);
+    if (port_shots(g)!=shots) request(0x10f7);
     for (unsigned i=0;i<g->world.sound_count;i++) request(g->world.sounds[i]);
     g->world.sound_count=0;
     const neo_vehicle_t *v=&g->vehicle;
@@ -91,7 +93,7 @@ void game_audio_update(msx_game_t *g) {
         if (below || !v->health) request(0x1023);
     }
     if (v->state>=NEO_VEHICLE_DYING && v->frame==1 && (vehicle_frame!=1 || vehicle_state<NEO_VEHICLE_DYING)) request(0x1033);
-    shots=g->shots;vehicle_health=v->health;vehicle_frame=v->frame;vehicle_state=v->state;
+    shots=port_shots(g);vehicle_health=v->health;vehicle_frame=v->frame;vehicle_state=v->state;
     if (g->complete && !complete) game_audio_music(false);
     complete=g->complete;
     msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-started);

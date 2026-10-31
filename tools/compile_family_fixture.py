@@ -29,6 +29,8 @@ def main():
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
+    p.add_argument('--attacks',action='store_true',help='the 0049E8 answers of every update (extract_family_fixture.py --attacks): D0 and the A0/A1 targets as 01B162 read them (rectangle from data/region_rom.json); a target the update did not read gets 7FFF,7FFF and no box')
+    p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
     d=json.load(gzip.open(a.fixture,'rt'))
@@ -203,6 +205,41 @@ def main():
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
             -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k]))
     L.append('};')
+    if a.attacks:
+        rom={}
+        for b in json.load(open(Path(__file__).resolve().parent.parent/'data'/'region_rom.json'))['blobs']:
+            base=int(b['rom'],16);data=bytes.fromhex(b['hex'])
+            for i,x in enumerate(data):rom[base+i]=x
+        def rect(ptr):
+            if not ptr:return (0,0,0,0,0)
+            w=[]
+            for o in range(2,10,2):
+                assert ptr+o in rom and ptr+o+1 in rom,'descriptor %x not in region_rom.json'%ptr
+                v=rom[ptr+o]<<8|rom[ptr+o+1];w.append(v-0x10000 if v&0x8000 else v)
+            return (1,*w)
+        rows=[];spans=[]
+        for u in d['updates']:
+            f=len(rows)
+            for typ,a0,a1 in u.get('attacks',[]):
+                row=[typ]
+                for node in (a0,a1):
+                    tg=u.get('targets',{}).get('%x'%node) if node else None
+                    if not node:row+=[0,0,0,0,0,0,0,0]
+                    elif tg is None or tg[0] is None or tg[1] is None:row+=[1,0x7fff,0x7fff,0,0,0,0,0]
+                    else:row+=[1,tg[0],tg[1],*rect(tg[2])]
+                rows.append(row)
+            spans.append((f,len(rows)-f))
+        L.append('#define FAMILY_ATTACKS 1')
+        L.append('static const int32_t %s_attacks[][17]={%s};'%(n,','.join('{%s}'%','.join(map(str,r)) for r in rows) or '{0}'))
+        L.append('static const uint16_t %s_attack_spans[][2]={%s};'%(n,','.join('{%d,%d}'%x for x in spans)))
+    if a.previous:
+        where={};prev=[]
+        for k,u in enumerate(d['updates']):
+            where[u['node']]=inst[k]
+            pv='%06x'%int(u['pre'][8:16],16)
+            prev.append(where.get(pv,-1))
+        L.append('#define FAMILY_PREVIOUS 1')
+        L.append('static const int16_t %s_previous[]={%s};'%(n,','.join(map(str,prev))))
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')
 if __name__=='__main__':main()

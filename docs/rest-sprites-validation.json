@@ -1,5 +1,5 @@
 {
- "descriptors": 3081,
+ "descriptors": 3138,
  "palettes": [
   "0x103",
   "0x113",
@@ -42,6 +42,7 @@
   "0x27c",
   "0x29e",
   "0x30b",
+  "0x363",
   "0x373",
   "0x376",
   "0x378",
@@ -94,13 +95,13 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 832,
-  "frames": 658,
-  "pixels_equal": 2967240,
-  "pixels_different": 151277,
-  "pixels_overlapping": 779102,
-  "rank_2": 432,
+  "frames": 662,
+  "pixels_equal": 2972707,
+  "pixels_different": 152107,
+  "pixels_overlapping": 780666,
+  "rank_2": 436,
   "rank_1": 226,
-  "missing_descriptor": 30
+  "missing_descriptor": 28
  },
  "frames": [
   {
@@ -4393,6 +4394,34 @@
    "update_frame": 9814,
    "equal": 0,
    "different": 48
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 808,
+   "different": 330
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 3187,
+   "different": 500
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 736,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 736,
+   "different": 0
   },
   {
    "capture": "civ1",

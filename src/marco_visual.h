@@ -15,6 +15,7 @@
 enum { MARCO_VISUAL_DRAWS=8 };
 typedef struct {
     bool grounded,moving,crouch,aim_up,fired;
+    bool aim_down;         /* down held in the air (+92 = FF): the pistol's 24EABC */
     bool running_jump;     /* takeoff while moving */
     int facing;            /* -1 left, 1 right */
     uint16_t x,y;          /* projected words of the player (+3C/+40) */

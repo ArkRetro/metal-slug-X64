@@ -133,6 +133,10 @@ ROOTS+=[0x23a1da,0x23a306,0x23a350,0x23a376,0x23a3c0,0x23a3fc,0x23a508,0x23a276,
 # The generic fire 08FA4E of the boss turret's gun 0D6168: its projectile
 # 08F058 (the flash 08EFFA uses 22D264, already above).
 ROOTS+=[0x28c32c]
+# The C weapon (neo_chaser.c): shell 063F32 (267F92), explosion 064128
+# (268622, CALL 0636B0; its blast uses 22CE6C, above), trail 063D9E (26863A)
+# and the muzzle flash 0C58D2 (fixed block: 0C586C up/down, 0C5806 level).
+ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

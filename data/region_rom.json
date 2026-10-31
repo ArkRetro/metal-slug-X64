@@ -432,6 +432,31 @@
    "rom": "0x031D34",
    "reader": "031D80/031D92 civilians: program tables 031D34/031D40, cull rectangle 031D4C (01945C), hurtbox 031D54, offsets 031D60, panic hit kinds 031D68, command sequences 031D74/031D7A",
    "hex": "00237d0200237d0e0000000000237d6e00237d7a00010001ffd0fff0006000400003ffe0ffe0005000508000ffee00120012ffee06010708090a0b0c0d0e050000010203ff05000103ff0400"
+  },
+  {
+   "rom": "0x063600",
+   "reader": "063F32 C weapon shell: contact row 063600 and search row 063610 (0049E8)",
+   "hex": "fffcfffc0008000800090001001effffff80ff8001000100000000010000ffff"
+  },
+  {
+   "rom": "0x063690",
+   "reader": "0636B0 C explosion blast attack row 063690 (0049E8 by 063740)",
+   "hex": "ffe8fff00030004000010001000affff"
+  },
+  {
+   "rom": "0x063716",
+   "reader": "063756 C blast cull rectangle (019504)",
+   "hex": "ffe0ffe000400040"
+  },
+  {
+   "rom": "0x063814",
+   "reader": "063FDC C shell cull rectangle (019504)",
+   "hex": "fff0fff000200020"
+  },
+  {
+   "rom": "0x03BB70",
+   "reader": "soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)",
+   "hex": "0502fff000000020000a8000"
   }
  ]
 }

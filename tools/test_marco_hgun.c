@@ -52,8 +52,47 @@ static void scripted(void) {
     marco_hgun_reset(&h);h.aim92=1;n=0;marco_hgun_press(&h);run(&h,fwd,8,a,&n);
     EXPECT(n==3 && a[0]==0x30 && a[1]==0x20 && a[2]==0x10 && h.aim92==0,"sweep up->forward %u %02X %02X %02X",n,a[0],a[1],a[2]);
 }
+/* 3. The capture air (data/hgun_replay_fixture.json): its input words fed
+ * update by update (the fire press as the next update's word shows it: the
+ * words are sampled a frame after the player read them; up = +2 bit 0, down
+ * = bit 1 in the air, facing = +15 bit 0) give every H bullet of the
+ * original in the same update with the same angle: the downward bursts and
+ * sweeps in the air, the forward<->up sweeps walking and the down->forward
+ * sweep on landing. Left out, and resynchronised once the original is quiet
+ * for 8 updates (+92, +95 from the capture): the windows where the
+ * original's upper body takes states the port's player has not, the knife
+ * 0C3B46 (+9A bit 0 from 0C3744: an enemy in reach, a press slashes) and the
+ * landing into the crouch with down held (0C1EBE -> 0C2236). */
+static void replay(void) {
+    marco_hgun_t h;marco_hgun_reset(&h);h.aim92=(int8_t)hgun_updates[0].f92;h.combo95=(uint8_t)hgun_updates[0].f95;
+    unsigned compared=0,skipped=0,bullets=0,diagonal=0,hold=0,quiet=0;bool skip=false;
+    for (unsigned i=0;i<HGUN_UPDATES;i++) {
+        const hgun_update_t *u=&hgun_updates[i];
+        if (u->f15&0x100u) hold=12;
+        if ((u->f15&0x40u) && (u->held&2u) && h.aim92<0) hold=12;
+        if (hold || skip) {
+            if (hold) hold--;
+            quiet=u->births?0:quiet+1;skipped++;
+            if (!hold && quiet>=8) {skip=false;marco_hgun_reset(&h);h.aim92=(int8_t)u->f92;h.combo95=(uint8_t)u->f95;}
+            else skip=true;
+            continue;
+        }
+        bool next=i+1<HGUN_UPDATES && (hgun_updates[i+1].news&0x10u);
+        if ((h.state==MARCO_HGUN_IDLE && next) || (h.state!=MARCO_HGUN_IDLE && (u->news&0x10u))) marco_hgun_press(&h);
+        marco_hgun_input_t in={(u->held&1u)!=0,(u->held&2u) && !(u->f15&0x40u),(u->f15&1u)!=0};
+        marco_hgun_shot_t s[4];unsigned n=marco_hgun_step(&h,&in,reserve,NULL,s,4);
+        bool same=n==u->births;
+        for (unsigned k=0;same && k<n;k++) same=s[k].angle==u->angle[k];
+        EXPECT(same,"air %u: %u bullets (%02X), original %u (%02X)",u->frame,n,n?s[0].angle:0,u->births,u->births?u->angle[0]:0);
+        for (unsigned k=0;k<n;k++) diagonal+=s[k].sweep;
+        bullets+=n;compared++;
+    }
+    printf("air replay: %u updates compared (%u bullets, %u sweep steps), %u left out (knife, crouch landing)\n",compared,bullets,diagonal,skipped);
+    EXPECT(compared>100 && diagonal>0,"air replay too short");
+}
 int main(void) {
     scripted();
+    replay();
     static const uint8_t steps[2][4]={{0x08,0x18,0x28,0x38},{0x30,0x20,0x10,0}};
     unsigned diagonal=0,sweeps=0;int seq=-1,at=0;unsigned last=0;
     for (unsigned i=0;i<HGUN_ROWS;i++) {

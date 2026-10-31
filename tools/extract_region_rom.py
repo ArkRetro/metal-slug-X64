@@ -110,6 +110,7 @@ BLOBS=[
     (0x3E194,0x114,'03E0A8 accent pairs of the font page 0x32 (03E194..03E2A7)'),
     (0x16DCE,0x8AE,'01824A/0182B6 mission stage records (table 017D44, missions 1..6) and their stage descriptors 016DCE.. (+A)'),
     (0x17D44,0x18,'01824A mission record table (six long pointers)'),
+    (0xE0818,0x7C,'03AF08 stage transition fix-map columns: entry 3AED8 (E0818) and exit 3AEF0 (E0856)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

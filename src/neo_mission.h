@@ -2,6 +2,7 @@
 #define MSX_NEO_MISSION_H
 #include <stdbool.h>
 #include <stdint.h>
+#include "neo_wipe.h"
 /*
  * Stage flow of the mission actor 101364 (ROM 0x01829E..0x01860A, 0x018722
  * and 0x01891E), docs/MISION2.md. RAM words with A5 = 0x108000: 42F4
@@ -28,6 +29,8 @@ typedef struct {
     bool load;            /* 0183D0 ran this update: load the stage */
     bool letters;         /* 018646: MISSION n START (42FA = 0) */
     bool fade_black,fade_in;uint8_t fade_steps;   /* 9C0A requests */
+    bool signal;          /* +60 of the mission actor */
+    neo_wipe_t wipe;bool wiping;  /* 3AED8/3AEF0 after the mission actor (+60) */
     unsigned stops;uint32_t stop_at;              /* explicit stops */
 } neo_mission_t;
 /* 01829E with 42F8 = mission, 42FA = record_index (0 at a mission start). */

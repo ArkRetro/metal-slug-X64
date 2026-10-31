@@ -256,7 +256,76 @@ end
 -- MSX_FULL_LOAD=<state name> MSX_FULL_LOAD_FRAME=<frame>: resume from a state
 -- saved by MSX_FULL_SAVE (iteration only; canonical captures run from boot).
 local load_name=os.getenv('MSX_FULL_LOAD')
+-- MSX_FULL_FAMILY_ROOTS=<hex list> MSX_FULL_FAMILY_FROM=<frame>: family
+-- trace (boss-trace.txt, same format as capture_mission_rest.lua's
+-- MSX_REST_FAMILY_ROOTS: U/V/R/W/X/A/B/F lines; Z vram writes with
+-- MSX_FULL_VRAM_TRACE=1). Read-only taps; usually with MSX_FULL_LOAD.
+local fam_from=tonumber(os.getenv('MSX_FULL_FAMILY_FROM') or '0')
+local family_roots={}
+for h in string.gmatch(os.getenv('MSX_FULL_FAMILY_ROOTS') or '','(%x+)') do family_roots[tonumber(h,16)]=true end
+local fam_log=nil;local in_lua=true;local family={};local factive=nil;local attacker_dumped={}
+local POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
+local mstate=machine.devices[':maincpu'].state
+local function hexbytes(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+local function fam_read(address,data,mask)
+ if in_lua then return end
+ if address>=POOL0 and address<POOL1 then
+  local o=(address-POOL0)%0xb0
+  if o==0 and mstate['CURPC'].value==0x4246 then
+   local n=address;in_lua=true
+   local r=cpu:read_u32(n)
+   if family_roots[r] then family[n]=true end
+   if family[n] then factive=n;fam_log:write(string.format('U %x %x %s\n',n,r,hexbytes(n,0xb0))) else factive=nil end
+   attacker_dumped={};in_lua=false;return
+  elseif o==8 and factive==address-8 and mstate['CURPC'].value==0x424a then
+   in_lua=true;fam_log:write(string.format('V %x %s\n',factive,hexbytes(factive,0xb0)));in_lua=false
+   factive=nil;return
+  end
+ end
+ if factive then fam_log:write(string.format('R %x %x %x %x\n',address,mask,data,mstate['CURPC'].value)) end
+end
+local function fam_write(address,data,mask)
+ if in_lua then return end
+ local pc=mstate['CURPC'].value
+ if pc==0x40ec and address>=POOL0 and address<POOL1 and (address-POOL0)%0xb0==0xc then
+  local n=address-0xc;local a6=mstate['A6'].value
+  if family[a6] then family[n]=true;fam_log:write(string.format('B %x %x\n',n,a6)) else family[n]=nil end
+ end
+ if factive then fam_log:write(string.format('W %x %x %x %x\n',address,mask,data,pc));return end
+ if address>=POOL0 and address<POOL1 then
+  local n=address-(address-POOL0)%0xb0
+  if family[n] then
+   local a6=mstate['A6'].value
+   fam_log:write(string.format('X %x %x %x %x %x %x %x\n',address,mask,data,pc,a6,mstate['A0'].value,mstate['D3'].value))
+   if not attacker_dumped[a6] and a6>=0x100000 and a6<0x110000 then
+    attacker_dumped[a6]=true;in_lua=true;fam_log:write(string.format('A %x %s\n',a6,hexbytes(a6,0xb0)));in_lua=false
+   end
+  end
+ end
+end
+local function fam_frame(f)
+ if fam_from<=0 then return end
+ if f==fam_from then
+  fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
+  fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
+  if os.getenv('MSX_FULL_VRAM_TRACE')=='1' then
+   local vaddr,vmod=0,1
+   fam_vtap=cpu:install_write_tap(0x3c0000,0x3c0005,'fam_v',function(address,data,mask)
+    if in_lua then return end
+    if address==0x3c0000 then vaddr=data&0xffff
+    elseif address==0x3c0004 then vmod=data&0xffff
+    elseif address==0x3c0002 then
+     if factive then fam_log:write(string.format('Z %x %x\n',vaddr,data&0xffff)) end
+     vaddr=(vaddr&0x8000)|((vaddr+vmod)&0x7fff)
+    end
+   end)
+  end
+ end
+ if fam_log then fam_log:write(string.format('F %d\n',f));if f%600==0 then fam_log:flush() end end
+end
 emu.register_frame_done(function()
+ in_lua=true
  frame=frame+1
  if load_name and frame==1 then machine:load(load_name);frame=tonumber(os.getenv('MSX_FULL_LOAD_FRAME'));last_section=-3 end
  if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 then probes() end end
@@ -334,7 +403,10 @@ emu.register_frame_done(function()
   if prev_dumps and frame>=first_dump and (frame+1)%period==0 and (still<1199 or (frame+1)%(period*10)==0) then dump_vram(output..'/prev/vram'..(frame+1)..'.bin') end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' section '..sec..' plan '..plan..' still '..still..string.format(' script %x',spc));trace:flush();actors:flush();scriptlog:flush();if events then events:flush() end end
  end
+ fam_frame(frame)
+ in_lua=false
  if frame>=last_frame then
+  if fam_log then fam_log:close() end
   for _,f in ipairs({trace,actors,scriptlog,seclog,layers,states,platforms,lspc,lspc_writes}) do f:close() end
   if events then events:close() end
   machine:exit()

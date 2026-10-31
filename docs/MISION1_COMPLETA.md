@@ -197,6 +197,21 @@ las vidas es en la vista actual (la cámara original no retrocede). El jugador
 no se sube a plataformas dinámicas (jefe/camión): solo usa la rejilla
 estática.
 
+## Caché de escena con la Expansion Pak
+
+El pack ya no cabe entero (711 bloques, 11,1 MiB descodificados, frente a
+≈240 ranuras de 16 KiB). Desde `work-xpak` (detalle y tabla de RAM en
+[RENDIMIENTO.md](RENDIMIENTO.md), «Expansion Pak: presupuesto de RAM
+medido»): la caché se dimensiona la última con un presupuesto medido y
+comprobado (assert), el mapa entero (38 bloques: celdas, parche de la tienda
+y escombros) queda fijado y residente, los actores que crea el guion se piden
+384 píxeles de cámara antes de su aparición (`scene_ahead`, de
+`data/mission1_rest_inventory.json`) y los bloques se descodifican en el
+tiempo libre de cada fotograma (y en el del logo NEOGEO cuando no hay
+cinemáticas). Recorrido completo final: PASS, crash=0, **0 faltas síncronas
+del fondo**, `misses=137`, `evictions=444`, peor fotograma 35,9 ms (arranque)
+y 33,8 ms en 2336 (simulación del mundo 18,9 ms + una pieza de actor).
+
 ## Recorrido en ares 146
 
 `make mslugx-reference.z64` compila el mismo juego con

@@ -161,7 +161,7 @@ static void request(unsigned chunk,unsigned priority) {
 void scene_request_image(const scene_image_t *image,unsigned priority) { request(image->page/8,priority); }
 /* Every chunk decoded and resident: requests are no-ops (request() returns for
  * resident chunks) and nothing is ever evicted again (eviction only serves a
- * request). The 665-chunk pack (10.4 MiB decoded) does not fit the 8 MiB
+ * request). The pack (711 chunks, 11.1 MiB decoded) does not fit the 8 MiB
  * console: this stays false; scene_assets_map_resident is what holds. */
 bool scene_assets_all_resident(void) { return resident==SCENE_CHUNK_COUNT; }
 static bool resident_chunk(unsigned chunk) { return chunk_slot[chunk]>=0 && slots[chunk_slot[chunk]].ready; }

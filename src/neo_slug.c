@@ -74,24 +74,35 @@ static void config(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t rec=p<0?NEO_VSLOT_RECORD:e->vehicle->slots->record[p];
     for (unsigned i=0;i<4;i++) e->kernel->config[i]=rw(rec+2u*i);
 }
-/* 004ED2 (after 0128E8): no push with the player lock (0C8CFC) or an empty
- * solid-body table; otherwise an explicit stop. */
-static bool k4ed2(neo_gactor_t *a,neo_genv_t *e) {
-    if (e->flags && e->flags->player_lock) return true;
-    ga_project(a,e);                                                    /* 004EE0 */
-    if (e->vehicle->solids) {ga_fail(e,0x4ed2);return false;}
+/* 004ED2 (after 0128E8, 10C004 = 0, 10C009 = b4009): the push out of the
+ * solid bodies (ga_push_solids, measured with the SV-001 against the rocket
+ * launcher's body, ARMAS_VEHICULOS.md paso 10). In the air (0143EE) a
+ * kind-1 body under the Camel (D7 < 0) with +5F bit 7 clear throws it up:
+ * +34 = 0x60000, +15 bits 4 and 3 cleared and, with bit 3 set before,
+ * +30 = (-+30 >> 1) + 0x40000 against the motion. */
+static bool k4ed2(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool air) {
+    bool top=false;
+    if (!ga_push_solids(a,e,b4009,&top)) return false;
+    if (air && top && !(B(0x5f)&0x80u)) {                               /* 014408 */
+        SL(0x34,0x60000);
+        bool b3=(B(0x15)&8u)!=0;SB(0x15,B(0x15)&~0x18u);
+        if (b3) {
+            int32_t d1=-(int32_t)L(0x30),d0=d1<0?-0x40000:0x40000;
+            SL(0x30,(uint32_t)(d0+(d1>>1)));
+        }
+    }
     return true;
 }
 /* 014594 / 0143EE / 0143AC / 014574, then 03546A's +8F (kind 5). */
 static uint16_t kind_of(uint32_t k) {return (uint16_t)(k>>16);}
 static uint32_t ground_ride(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0,v30=L(0x30);config(a,e);SL(0x30,L(0x62));
-    if (!k4ed2(a,e)) return 0;
+    if (!k4ed2(a,e,0xff,false)) return 0;
     SL(0x30,v30);ga_ground_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
 }
 static uint32_t air_ride(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0;config(a,e);
-    if (!k4ed2(a,e)) return 0;
+    if (!k4ed2(a,e,0,true)) return 0;
     ga_air_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
 }
 static uint32_t air_free(neo_gactor_t *a,neo_genv_t *e) {uint32_t k=0;ga_air_flags(a,e,0xff,0xff,&k);return k;}

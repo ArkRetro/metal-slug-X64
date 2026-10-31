@@ -697,8 +697,8 @@ modelo de ese mapa escrito por traducciones de las rutinas del juego:
 
 Paradas explícitas (contadas en `unsupported`, registradas una vez): escrituras
 fuera de `7000..74FF` (TRAP #F del original), páginas de glifo distintas de
-<10 y `a`, fin de tiempo `0C0A2C` y fin de partida `0C9848` (el port sigue con
-0 vidas; `hud_game_over` lo cuenta).
+<10 y `a`, fin de tiempo `0C0A2C`. El fin de partida `0C9848` (continuación y GAME
+OVER) está traducido: ver MISION1_COMPLETA.md, «Fin de partida y continuación».
 
 **Orden en el fotograma.** El juego corre cada dos fotogramas de vídeo y una
 actualización ocupa dos: `10000E` cambia en el fotograma N, pero algunos

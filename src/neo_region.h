@@ -35,6 +35,8 @@ bool neo_armored_routine(uint32_t routine);
 bool neo_armored_vehicle(uint32_t routine);
 ga_result_t neo_swords_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_swords_routine(uint32_t routine);
+ga_result_t neo_rocket_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_rocket_routine(uint32_t routine);
 ga_result_t neo_secret_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_secret_routine(uint32_t routine);   /* the vehicle 087E36 itself (not its children) */
 #endif

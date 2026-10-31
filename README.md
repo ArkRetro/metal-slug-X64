@@ -162,7 +162,9 @@ fuente recompilable. Se está investigando una reconstrucción nativa 2D.
 
 ## Fuentes
 
-- [libdragon](https://github.com/DragonMinded/libdragon), commit `e356bf3f56f7afbf7e5246329562f145965cfdfc`.
+- [libdragon](https://github.com/DragonMinded/libdragon), commit `e356bf3f56f7afbf7e5246329562f145965cfdfc`
+  más los dos parches de `tools/libdragon-patches/` (correcciones de rspq tomadas de la rama
+  `preview`; `tools/setup.sh` los aplica; motivo en [docs/RENDIMIENTO.md](docs/RENDIMIENTO.md)).
 - [Instalación](https://github.com/DragonMinded/libdragon/wiki/Installing-libdragon).
 - [Toolchain](https://github.com/DragonMinded/libdragon/releases/tag/toolchain-continuous-prerelease).
 - [ares](https://github.com/ares-emulator/ares).

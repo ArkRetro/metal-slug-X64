@@ -72,9 +72,15 @@ void scene_render_forget_texture(void) {
 
 // In long ares runs a frame's tail (including its SYNC_FULL completion that
 // presents the framebuffer) was occasionally left in the rspq queue with the
-// RSP halted, so display_get() timed out with both buffers locked. If no
-// buffer frees up for 50 ms, flush the queue again to wake the RSP; give up
-// to display_get()'s own diagnostic crash after 20 attempts.
+// RSP halted, so display_get() timed out with both buffers locked. That is
+// the ares JIT missing the two-write wake-up in rspq_flush_internal (libdragon
+// cd5b8f567 adds a branch hint for it; applied in tools/libdragon-patches).
+// If no buffer frees up for 50 ms, flush the queue again to wake the RSP; give
+// up to display_get()'s own diagnostic crash after 20 attempts. rspq_flush only
+// sets SIG_MORE and clears HALT/BROKE, which the RSP protocol tolerates at any
+// time, so this kick cannot disturb the highpri (mixer) queue: the real RSP
+// hang on hardware was the SIG_HIGHPRI_REQUESTED race fixed by patch 0001
+// (docs/RENDIMIENTO.md).
 surface_t *msx_display_get(void) {
     surface_t *surface;uint32_t start=TICKS_READ();unsigned kicks=0;
     while (!(surface=display_try_get())) {

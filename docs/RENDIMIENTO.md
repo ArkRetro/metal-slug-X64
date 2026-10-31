@@ -301,3 +301,42 @@ cae la carga; `audio` (todo `msx_audio_service`, incluida la espera
 máximo. El resto de fotogramas de cada ventana queda en 13–15 ms de
 `cpu`. Reducir ese pico es cuestión de prefetch/residencia del pack
 (`scene_assets.c`), no del mezclador ni de rspq.
+
+## Picos del combate con el jefe: CRC por tabla
+
+**Causa.** Cada bloque del pack (16 KiB descodificados) se verificaba con un
+CRC-32 bit a bit: 131.072 pasos, ≈8 ms en el N64, más el RLE byte a byte.
+Una descodificación costaba ≈14 ms, tanto en un fallo síncrono (`require`)
+como en el prefetch (`scene_service`, hasta 3 por fotograma), de ahí los
+`asset=…/29–44 ms` (2–3 bloques en un fotograma). Con 606 bloques
+(9,7 MiB descodificados) y ≈277 ranuras de caché (4,4 MiB) el pack no cabe:
+553 bloques son del banco nativo, con un 40 % de ocupación real de página
+(3,6 MB de píxeles en 9,0 MB de páginas de 64×64).
+
+**Cambio.** `scene_crc32` usa una tabla de 256 entradas (idéntica bit a bit
+al CRC de referencia `scene_crc32_bitwise`; `test_scene_codec` lo compara en
+búferes aleatorios y `test_scene_pack`, en `make check`, descodifica los 606
+bloques del pack y compara tabla, bit a bit y el CRC de `pack_scene.py`); el
+RLE rellena cada tramo con `memset`. Mismo resultado, sin cambios visuales.
+
+**Medida** (ares 146, `mslugx-reference.z64`, recorrido completo con
+`test_mission_native_ares.py`, ambas PASS):
+
+| | Antes (HEAD 895d076) | Después |
+| --- | ---: | ---: |
+| Peor fotograma (`cpu` máx.) | 103.180 µs | 57.849 µs |
+| `asset` máx. en un fotograma | 70.147 µs | 36.411 µs |
+| Peor fotograma de las demás ventanas | 66–82 ms | 39–48 ms |
+| `cpu` media máx. (ventana del jefe) | 22.771 µs | 22.435 µs |
+| fallos de caché (`misses`) | 100 | 101 |
+| *underruns* de audio | 41 | 13 |
+
+**Pendiente.** El objetivo de <33 ms no se alcanza: el pico restante es un
+fotograma con ≈36 ms de `asset` (varios fallos síncronos seguidos al cambiar
+de animación el jefe, cada uno con su DMA y, si no hay ranura libre de
+fotogramas en vuelo, `rspq_wait`). Y la media del combate con el jefe ya es
+≈22 ms (`bg` ≈10,7 ms, `sim` ≈3,8 ms, `actors` ≈4 ms: el juego presenta a
+30 Hz ahí), así que <16,7 ms exige trabajo de dibujo además del pack. Pasos
+siguientes: empaquetar varias piezas nativas por página (el pack bajaría a
+≈5 MiB descodificados y cabría casi entero), prefetch de los descriptores
+del jefe por fase, y un presupuesto de descodificación por fotograma.

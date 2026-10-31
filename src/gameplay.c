@@ -44,8 +44,19 @@ static void hud_step(msx_game_t *g) {
     neo_hud_bombs(g->world.weapons.b,NULL,0,0,0,&in.bombs,&in.bomb_type);
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
-    in.timer_running=!g->complete && !g->mission_complete;
+    in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;
+    /* Continue (docs/MISION1_COMPLETA.md, game over): DIP 10FD8A on, free play
+     * (the home cartridge's AES path of 0C987A: a continue is always offered,
+     * Start takes it), lives DIP 3, B of the arcade (the port's jump) speeds
+     * the countdown (0187B0). */
+    in.continue_dip=true;in.can_continue=true;in.credit_count=0;in.lives_dip=3;
+    in.start=g->start_edge;in.speedup=g->jump_edge;in.no_life=g->no_life;g->no_life=false;
     neo_hud_frame(&g->hud,&in);
+    if (g->hud.continued) {
+        memcpy(g->world.pickup.score[0],g->hud.score,4);g->awaiting_continue=false;g->continues++;
+    }
+    g->start_edge=g->jump_edge=false;
+    if (g->hud.panel[0].state==NEO_PANEL_GAME_OVER && g->game_over_frames<0xffff) g->game_over_frames++;
 }
 bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     neo_surface_t support;
@@ -108,7 +119,9 @@ static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
  * the end, 0C0E6E/0C0EAA), the respawn point 0196E8 and the type-0
  * entrance 0C1438 (floor 0146EE, program 0BF498, +84 = 0x78). */
 static void new_life(msx_game_t *g) {
-    if (!neo_hud_life_lost(&g->hud,0)) g->hud_game_over++;
+    /* No life left: the panel's game over 0C9848 (neo_hud.c) runs in the
+     * next HUD update; the player stays gone until its continue. */
+    if (!neo_hud_life_lost(&g->hud,0)) {g->hud_game_over++;g->no_life=true;g->awaiting_continue=true;return;}
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     memset(g->bullets,0,sizeof(g->bullets));
@@ -287,8 +300,52 @@ static bool hgun_reserve(void *context) {
     marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
     return allowed;
 }
+/* Mission end of the mission actor 101364 (0x018846..0x01893A), one step
+ * per original update, from the update after 018F40 (step 2):
+ *   018846  10E9E3 = FF (c8cd6), music 15418, +7C = 0x1E; 018870 waits
+ *           (subq/bne: 30 updates).
+ *   018884  cae6c(mission) and the prisoner tally actor 0308C0 (it adds the
+ *           rescue bonus to 10C46A and sets the mission actor's +60):
+ *           not ported, explicit stops; the port goes on at once.
+ *   0188BE  sounds 0x20 and 0x1137, +7C = 0xA0, the MISSION COMPLETE letters
+ *           actor 06090A (not ported: explicit stop; actor.c draws a text
+ *           stand-in); 0188F4 waits (subq/bcc: 161 updates).
+ *   0188FC  fade 9C0A (E1,E1,E1, 0x20; not ported: explicit stop), +7C =
+ *           0x20; 018916 waits 33 updates.
+ *   01891E  mission 42F4 + 1 < 6: the next mission (1829E). Missions 2..6
+ *           are not ported: mission_end = done, actor.c restarts Mission 1.
+ * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
+ * Mission 2 at 14460 (dumps every 30 frames). */
+static void mission_end_step(msx_game_t *g) {
+    switch (g->mission_end) {
+    case MSX_END_NONE:
+        g->mission_end=MSX_END_WAIT;g->end_timer=0x1e;
+        __attribute__((fallthrough)); /* 018864 -> 018870 in the same update */
+    case MSX_END_WAIT:
+        if (--g->end_timer) return;
+        g->end_stops+=2;                       /* cae6c, tally actor 0308C0 */
+        g->end_timer=0xa0;g->end_stops++;      /* letters actor 06090A */
+        g->mission_end=MSX_END_LETTERS;
+        __attribute__((fallthrough)); /* 0188EE -> 0188F4 */
+    case MSX_END_LETTERS:
+        if (g->end_timer--) return;
+        g->end_stops++;                        /* fade 9C0A */
+        g->end_timer=0x20;g->mission_end=MSX_END_FADE;
+        __attribute__((fallthrough)); /* 018910 -> 018916 */
+    case MSX_END_FADE:
+        if (g->end_timer--) return;
+        g->mission_end=MSX_END_DONE;
+        return;
+    default: return;
+    }
+}
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
-    if (g->complete) return;
+    if (g->complete) {
+        g->ticks++;
+        if (!(g->ticks&1) && g->end_started) mission_end_step(g);
+        g->end_started=true;
+        return;
+    }
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
@@ -304,7 +361,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     bool dying=g->life.phase==MARCO_DYING || g->life.phase==MARCO_LYING;
     if (g->life.phase!=MARCO_ALIVE) {direction=0;jump=false;fire=false;g->grenade=false;g->moving=false;g->jump_pending=false;}
     if (g->life.phase==MARCO_ENTERING) g->invulnerable=2*0x78;
-    if (g->life.phase==MARCO_GONE && !(g->ticks&1)) new_life(g);
+    if (g->life.phase==MARCO_GONE && !(g->ticks&1) && !g->awaiting_continue) new_life(g);
     // The recovered arcade player routine advances on alternate video ticks.
     if (!(g->ticks&1) && g->life.phase!=MARCO_GONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;

@@ -73,6 +73,8 @@ static void release_run(unsigned seed) {
         /* Now and then a bomb; at the armoured vehicle every 40. */
         g.grenade=(rs>>8)%97==0 || (armored>=0 && steps%40<2);
         bool was_entering=g.life.phase==MARCO_ENTERING;
+        /* Out of lives: the player takes the continue (0C98CC, Start). */
+        g.start_edge=g.awaiting_continue;
         msx_game_update(&g,dir,(rs>>16)%50==0,steps%8<4);  /* fire tapped (H bursts per press) */
         /* A new life in the boss arena (progress 0x0D30: record 2D5C52,
          * screen x 56, from y 0x50 down to the floor) stands on the arena
@@ -87,11 +89,18 @@ static void release_run(unsigned seed) {
         }check_draws(&g);
         g.world.sound_count=0;
     }
-    printf("release run %u: steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u arena lives=%u\n",seed,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
+    printf("release run %u: continues=%u steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u arena lives=%u\n",seed,g.continues,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
         g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenades,g.expiries,
         g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max,arena_lives);fflush(stdout);
     assert(!g.world.item_pickups && g.grenades>0 && !g.grenade_stops);
     assert(g.complete && g.world.script.finished && !g.world.script.halted && g.deaths>0);
+    {   /* Mission end 018846: 018870 (+7C 0x1E, subq/bne), 0188F4 (0xA0,
+         * subq/bcc) and 018916 (0x20, subq/bcc) entered in the same update
+         * as the previous wait ends: 30 + 160 + 32 updates. */
+        static msx_game_t e;e=g;unsigned updates=0;
+        while (e.mission_end!=MSX_END_DONE && updates<1000) {bool started=e.end_started;msx_game_update(&e,0,false,false);if (started && !(e.ticks&1)) updates++;}
+        assert(e.mission_end==MSX_END_DONE && updates==30+160+32 && e.end_stops==4);
+    }
     assert(g.world.unsupported==g.world.boss_unsupported);
     // The random policy (deaths, respawns on the ledge or the vehicle's
     // platform; its body blocks the walk) must get past the 1304 hold

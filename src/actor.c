@@ -25,7 +25,7 @@ static bool has_entry;
 static int32_t entry_x,entry_y;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
-static bool previous_a,previous_b,pending_a,pending_b;
+static bool previous_a,previous_b,pending_a,pending_b,previous_start;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
 static unsigned observed_projectiles;
@@ -150,6 +150,18 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     diagnostics_was_down=input.btn.l;
     int direction=(input.btn.d_right || input.stick_x>25)-(input.btn.d_left || input.stick_x < -25);
+    /* GAME OVER shown until the original hands the machine back to the BIOS:
+     * 190 updates after player mode 3 (MAME go1: frames 4578..4957). The
+     * ranking/attract that follow are not ported: the mission restarts. */
+    if (game.mission_end==MSX_END_DONE) {
+        /* 01891E: Mission 2 is not ported; Mission 1 starts again. */
+        debugf("MSX mission end 018846 done (explicit stops=%u): Mission 2 not ported, Mission 1 restarts\n",game.end_stops);
+        reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
+    }
+    if (game.game_over_frames>=MSX_GAME_OVER_UPDATES) {
+        debugf("MSX game over: mission restart (continues=%u)\n",game.continues);
+        reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
+    }
     if (input.btn.r && !restart_was_down) { reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);debugf("MSX reset\n"); }
     restart_was_down=input.btn.r;
     uint8_t old_weapon=marco_weapons_id(&game.world.weapons,0),old_bombs=marco_weapons_bomb_count(&game.world.weapons,0);
@@ -165,6 +177,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
+    game.start_edge|=input.btn.start && !previous_start;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     for (unsigned step=0;step<steps;step++) {
@@ -195,6 +208,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
     game_audio_update(&game);
+    {static uint8_t panel_state;static unsigned hud_stops;
+     if (game.hud.panel[0].state!=panel_state) {
+        static const char *const names[]={"play","continue","game over","stopped"};
+        panel_state=game.hud.panel[0].state;
+        debugf("MSX panel %s (0C9848) timer=%04x continues=%u score=%02x%02x%02x%02x\n",names[panel_state&3],game.hud.continue_timer,game.continues,
+            game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3]);
+     }
+     if (game.hud.unsupported!=hud_stops) {hud_stops=game.hud.unsupported;debugf("MSX HUD explicit stops=%u\n",hud_stops);}}
     if (game.hits!=old_hits) debugf("MSX enemy hit=%u\n",game.hits);
     if (vehicle_health!=game.vehicle.health) debugf("MSX vehicle health=%u\n",game.vehicle.health);
     if (wreckage!=game.wreckage_cells) debugf("MSX vehicle wreckage=%u\n",game.wreckage_cells);
@@ -348,7 +369,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
-    if (game.complete) scene_render_box(64,92,192,48,ink);
+    /* Stand-in for the letters actor 06090A while 0188F4 waits. */
+    if (game.mission_end==MSX_END_LETTERS) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
     if (diagnostics) {
         scene_render_text(32,24,"MSX V10 - MISSION 1");
@@ -358,7 +380,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,38,status);
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
-    if (game.complete) {scene_render_text(80,102,"MISSION COMPLETE");scene_render_text(88,120,"R: PLAY AGAIN");}
+    if (game.mission_end==MSX_END_LETTERS) scene_render_text(80,110,"MISSION COMPLETE");
     msx_perf_mark(MSX_PERF_HUD);
     scene_render_end();msx_perf_mark(MSX_PERF_END);
     msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));

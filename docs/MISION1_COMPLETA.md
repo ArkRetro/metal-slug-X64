@@ -253,6 +253,79 @@ make check-core && make check && make -j4 && make mslugx-reference.z64
 python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ares
 ```
 
+## Fin de partida y continuación (`0x0C9848`)
+
+Antes el port reaparecía sin fin con 0 vidas. Ahora el panel P1
+(`neo_hud.c`) ejecuta el fin de partida original cuando la vida nueva
+`0C95E6` no encuentra vidas (`gameplay.c`: el jugador queda fuera hasta la
+continuación):
+
+| ROM | Pieza |
+| --- | --- |
+| `0C9848` | DIP `10FD8A` (continuación permitida), dos jugadores → GAME OVER; créditos `1A872` → `+8C`; `1A8AA` (CREDIT_CHECK de la BIOS en MVS) o AES → `019798` (actor CONTINUE?, **parada explícita**), `0C9254` limpia el panel, `19008` pone el contador `1013E2` = `0x9FF` |
+| `0C98CC`/`0C9918` | modo del jugador `10FDB6+p` con la tabla `27B4` de `27C4`; moneda nueva → contador a 9 (`0C993E`); contador 0 → GAME OVER; texto `CONTINUE? ` (`0C90FE`, fuente de dos filas) una vez y la cifra `0C9112[contador>>8]` cada actualización |
+| `0187A4..0187EC` | paso del contador en el actor de misión: −5 por actualización; por debajo de `0x780`, B (`190F0` D1 bit 5) salta a la cifra siguiente (`|0x80 − 0x100`); pitido `0x10D4` al cambiar de cifra |
+| `0C98DE`, `0C8CB2`, `0C9420` | continuación tomada: la última cifra de la puntuación cuenta continuaciones (máx. 9), contador `10E9E4+2p`, vidas del DIP `10FD88` (1 si es 0), modo 1 |
+| `0C99E6`, `0C9ABC`, `0C9ACE` | GAME OVER: modo 3, panel limpio, `+88 = 3`, `+80 = 0x1E` (se lee su byte alto: 0) y el texto ` GAME OVER ` cada actualización con el HUD encendido |
+
+**Créditos en el port.** Cartucho doméstico = juego libre: la continuación
+siempre se ofrece (`can_continue`, la rama AES de `0C987A`) y START la toma
+(la BIOS pone el modo 1). La captura con la BIOS euro (MVS, 0 créditos)
+muestra lo mismo: con `CREDIT 0` la BIOS ofrece la cuenta atrás y la
+moneda la reinicia a 9; el panel P2 sigue con INSERT COIN y `CREDIT 0`
+como en el resto del port. DIP de vidas 3. Sin START, tras el GAME OVER el
+original apaga el HUD y devuelve la máquina a la BIOS 190 actualizaciones
+después del modo 3 (`go1`: fotogramas 4578..4957; luego la tabla «BEST
+TANK BUSTERS» y la demo): el port no tiene tabla ni demo y **reinicia la
+misión 1** tras esas 190 actualizaciones.
+
+**Paradas explícitas** (`neo_hud_t.unsupported`, registro `MSX HUD explicit
+stops`): el actor de sprites CONTINUE?/cifra grande `019798` (`08CD58`), la
+tabla de récords `057B44`/entrada de nombre `058132` (se sigue la rama de
+puntuación que no entra, la de las capturas), el gráfico de unión `0C94D6`
+tras la continuación (el panel de juego se redibuja en la actualización
+siguiente), las ramas `0C9312`/`0C9406` y el retardo `0C9AD6`.
+
+**Evidencia.** `tools/mame/capture_gameover.lua` (MAME 0.264, BIOS euro;
+vidas `101288` forzadas a 0 una vez en el fotograma 2000, solo captura):
+`go1` sin moneda (cuenta atrás completa y GAME OVER), `go2` moneda en 3800
+y START en 3860 (continuación, puntuación `…500` → `…501`, vidas 3), `go3`
+B cada 40 fotogramas (el salto de cifra por debajo de `0x780`).
+`tools/extract_continue_fixture.py` → `data/continue_fixture.json.gz`;
+`tools/test_neo_continue.c` (en `make check-core`): **1018 actualizaciones,
+48816 palabras del panel P1 (16×3 desde `7043`), contador `1013E2` y `+88`
+iguales a MAME**; en la actualización de la continuación se comprueban
+puntuación, vidas y modo (sus palabras de panel son las de `0C94D6`, no
+portado).
+
+```sh
+MSX_CAPTURE_DIR=/ruta/go1 MSX_GO_LAST=6000 mame mslugx -bios euro -video none -sound none \
+  -nothrottle -autoboot_script tools/mame/capture_gameover.lua   # go2: MSX_GO_COIN=3800; go3: MSX_GO_TAPB=1
+python3 tools/extract_continue_fixture.py /ruta/go1 /ruta/go2 /ruta/go3 --b-taps go3:3600:4400:40 \
+  --output data/continue_fixture.json.gz
+```
+
+## Fin de misión (`0x018846`)
+
+Tras `0x018F40` (paso 2; borra `4303`) el actor de misión pasa por su
+registro de fin (`0x0182C4`) a `0x018846`. Traducido en
+`gameplay.c` (`mission_end_step`, un paso por actualización desde la
+siguiente al paso 2) con sus contadores:
+
+| ROM | Pieza | Port |
+| --- | --- | --- |
+| `018846..018870` | `10E9E3`=FF, música `15418`, `+7C`=0x1E, `subq/bne` | 30 actualizaciones |
+| `018884..0188B8` | `cae6c(misión)` y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | **parada explícita**, sigue en el acto |
+| `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras = **parada explícita**, texto de sustitución |
+| `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido = **parada explícita** |
+| `01891E` | misión `42F4`+1 < 6 → misión siguiente (`1829E`) | misiones 2–6 no portadas: **vuelve a empezar la misión 1** |
+
+Captura `runJ` (volcados cada 30 fotogramas): `018870` en 13710, `0188B0`
+(recuento) en 13770, `0188F4` en ≤14040, `018916` en 14370, misión 2 en
+14460; la puntuación pasa de 55330 a 285330 mientras `10C5FC` baja de 11 a
+0 (recuento). Prueba: `tools/test_gameplay.c` comprueba 30+160+32
+actualizaciones y 4 paradas.
+
 ## Pendiente
 
 - Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`
@@ -264,4 +337,5 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
   del jefe como bloque, salida del espadachín (`0x0A8FE0`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
-- Rendimiento del combate con el jefe (peor fotograma 16,7 ms > 12 ms).
+- Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
+- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0`, `06090A`, fundido `9C0A`.

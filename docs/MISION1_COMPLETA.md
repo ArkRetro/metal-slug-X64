@@ -250,10 +250,43 @@ python3 tools/extract_rest_family.py /ruta/robe1/boss-trace.txt --root a8c46 --o
 python3 tools/extract_soldier_ai_tables.py /ruta/captures-soldiers/entry-walk3 --output data/soldier_ai_tables.json
 python3 tools/extract_soldier_programs.py /ruta/captures-soldiers/walk3 --output data/soldier_programs.json
 python3 tools/extract_region_rom.py /ruta/captures-soldiers/walk3 --output data/region_rom.json
-cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..
+cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..   # solo el espadachín; la exportación completa, abajo
 make check-core && make check && make -j4 && make mslugx-reference.z64
 python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ares
 ```
+
+### Exportación completa de `filesystem/rest-native.json` (privada)
+
+Unión de todas las capturas de ambas líneas de trabajo (misión: `robe1` …
+`unc1`, `runK`; vehículos: `hfam`, `cfam`, `camelfam`, `death2`), sin
+`--keep`: ninguna paleta depende de una exportación anterior. Tras una
+fusión basta repetir esta orden (añadiendo las capturas nuevas de cada lado)
+y comprobar que todo descriptor y paleta de las exportaciones de ambos lados
+sigue presente e idéntico.
+
+```sh
+C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss
+cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
+  $C/robe1 $C/bld1@54800-55700 $C/bld1@b6500-b6b00 $C/trk3@33c98-34200 $C/trk3@39500-3a100 \
+  $C/trk3@a93c0-a9a00 $C/trk3@35600-35a00 $C/pri1@99862-99dc0 $C/pri1@8c37c-8c700 $B/runA@0-1 \
+  $C/veh1@87e36-89c00 $C/veh2@88b52-89940 $C/box1@9a67e-9ae80 $W/hfam@1b600-1bd00 \
+  $W/cfam@1bd00-1c400 $W/cfam@8c37c-8c700 $C/fam2@9d800-9ef00 $C/fam2@1c97a-1c97a \
+  $C/fam2@99dcc-9a9c2 $C/food1@8c374-8c700 $C/rl2@5ed84-60600 $C/rl2@59c82-59e30 \
+  $C/heli2@47800-49000 $C/camel2@9ea00-a0800 $C/unc1@b6200-b6300 $C/unc1@400aa-40100 \
+  $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
+  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 \
+  --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
+```
+
+Resultado (fusión ROM 8 + Camel Slug, 2 m 52 s): 2813 descriptores (los
+2379 del lado de la misión y los 2789 del lado de vehículos, idénticos), 77
+paletas (todas las de ambos lados, idénticas salvo `0x208`: el lado de
+vehículos la tomaba solo del volcado de `death2`, la única de sus capturas
+con ella; la unión toma el valor de `veh1`, `veh2`, `box1`, `food1`, `heli2`
+y `runA`, el del lado de la misión, 18 volcados contra 1), faltan las mismas
+`0x37F`, `0x133`, `0x38E`, `0x823`, `0x377`; 613 volcados validados
+([rest-sprites-validation.json](rest-sprites-validation.json)): 2930624
+píxeles iguales, 150106 distintos (los ya documentados por familia).
 
 ## Fin de partida y continuación (`0x0C9848`)
 

@@ -634,6 +634,10 @@ actualizaciones más. Fuera de `0x09ADD0` (`0x0C8BEC`) acaba en `0x09A5EE`
   `01456A`/`0143DC` → `0128DA` (`10C00D` = 0): la regla del grupo 1 del
   jugador no se le aplica (ni antes ni ahora). Arnés de host con el mundo
   completo: el prisionero baja por el mismo camino y llega a y 64.
+- **Prisioneros del jefe (informe de MiSTer)**: no caían de la escotilla;
+  corregido en el núcleo de colisión (`10C016/10C018`, anillo de columnas al
+  final del mapa), ver JEFE_MISION1.md «Prisioneros del jefe»; pruebas
+  `bossprisoner`/`bossprisonerb`.
 - **Parada explícita**: `+74 = FFFE` al acabar el saludo (`0x0DDCDA`: el
   prisionero sigue al jugador para darle el objeto), no grabado; ambos
   jugadores dentro del rectángulo (`0x09ABD6`, el port tiene uno).

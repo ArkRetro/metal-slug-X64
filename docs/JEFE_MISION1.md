@@ -293,6 +293,58 @@ python3 tools/test_boss_ares.py boss-regression.z64 --output /ruta/ares-boss
   (`0043D4`). Comprobado en el host: todos los dibujos `1300AE..1306CE`
   pasan de `0x357` a `0x204`.
 
+## Prisioneros del jefe (informe de MiSTer)
+
+«Los prisioneros del jefe final deben ser liberados y caer al suelo en la
+segunda fase». En la recreativa, al destruir la escotilla (parte inferior,
+`0x0D65EE`) con el jefe levantado, `0D678E` llama a `0D7402`: tres
+`0x099DCC` en (−0x28/−0x08/+0x18, +0x20) del cuerpo (y = 96 del mundo,
+`+6E` 2/0/0, `+74` 0x1B/0/6), después `0D6792` suelta la plataforma de la
+escotilla. Cada prisionero (`src/neo_prisoner.c`, constructor `0x09AC16`)
+cae atado (`099E48` con gravedad), un disparo lo suelta (`099E64/099E7A`),
+aterriza en el suelo de la arena (capa `10D7B6`, y = 64) y sigue como
+cualquier prisionero (`099FD8` → rescate `09A17E`, saludo con objeto,
+huida `9A346`, borrado `9A5EE`).
+
+**Causa en el port**: el mundo sí los creaba (`b_effect` → `ga_insert`), pero
+quedaban colgados en el aire, dentro del jefe, hasta el final. El barrido
+estacionario del constructor (`01436A` → `013968`) cae dentro de la
+plataforma del cuerpo en fase 2 (`0E94AC`, objeto dinámico 5) en una celda
+de clase `0x3C`. En la recreativa `013776` escribe el largo `10C016`, cuya
+palabra baja es `10C018`, y `0137FE` ve `0x3C` y pone el bit 9 de `10C012`
+(`0x208`): el prisionero no se apoya y sigue colgado del objeto raíz. El
+núcleo nativo guardaba `10C016` y `10C018` por separado (`l4016` y
+`w4018`): `w4018` tenía un valor anterior (`0x2C`), el bit 9 no se ponía y
+el prisionero quedaba apoyado en la plataforma del jefe (`+15` bit 6, padre
+el objeto dinámico) sin caer nunca. Ahora ambas son la misma memoria
+(`set4016/set4018` en `neo_kernel.c`).
+
+Segunda diferencia, vista con la prueba de familia: la rejilla de colisión
+es un anillo de 64 columnas lleno por delante del desplazamiento; con la
+cámara en 3520 las ranuras de las columnas que siguen a la última del mapa
+(480) conservan las cargadas 64 columnas antes. El port devolvía 0 (sin
+suelo) en x < 3448 del suelo de la arena y el prisionero que huía caía;
+ahora `cell()` usa la columna 64 anterior (`neo_collision_columns()`).
+
+**Prueba**: familias `bossprisoner` y `bossprisonerb` (`make check`),
+extraídas de las trazas del jefe (`captures-boss/runJ` 11957..12644 y
+`runDbg2` 11249..11902, rango `99dcc-9a5ee`; las trazas del jefe incluyen a
+los hijos genéricos): **635 y 633 actualizaciones en bucle cerrado, 3 nodos
+cada una, 88480 y 88200 bytes iguales**, caída, aterrizaje, liberación,
+rescate, saludo y salida. Antes del arreglo fallaba la primera
+actualización (`+15` = 41, esperado 01). El extractor lee ahora el
+rectángulo visible `10E9D2..10E9D8` y la prueba lo aplica (durante la huida
+vale −88..: la recreativa los borra en x −129; el mundo nativo sigue usando
+0..319 y los borra antes, fuera de la pantalla). Partidas de
+`test_gameplay`: los tres prisioneros caen (y 336 → 304) y se liberan.
+
+Píxeles (`export_rest_sprites.py ... runJ@99dcc-9a5ee runDbg2@99dcc-9a5ee
+--keep`, sin descriptores ni paletas nuevos): 44 volcados, 36 idénticos
+(47034 píxeles iguales); 8 con diferencias (3673 píxeles), uno es el
+fotograma de creación (11250: la VRAM aún no los tiene) y los demás
+fotogramas sueltos con otros sprites del jefe solapados o la lista aún sin
+subir; sin explicar uno por uno.
+
 ## Muerte y reaparición del jugador (`src/marco_death.c`)
 
 Antes el port daba 3 puntos de vida con un retroceso inventado de ±20 px y la

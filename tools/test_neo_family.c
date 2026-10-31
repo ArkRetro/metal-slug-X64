@@ -38,6 +38,7 @@ typedef struct {
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
     int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
     int ram_in_first,ram_in_count,ram_out_first,ram_out_count;  /* FAMILY_RAM inputs/outputs */
+    int32_t view[4];   /* RAM 10E9D2..10E9D8 as read (0C8BEC), -1: not read */
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -362,6 +363,7 @@ int main(void) {
         if (u->p1y>=0) p1y=u->p1y;
         if (u->epoch>=0) epoch=(uint8_t)u->epoch;
         if (u->progress>=0) e.camera=(uint16_t)u->progress;
+        for (unsigned v=0;v<4;v++) if (u->view[v]>=0) e.view[v]=(uint16_t)u->view[v];
         for (unsigned g=0;g<9;g++) if (u->groups[g]>=0) groups[g]=(uint8_t)u->groups[g];
         for (unsigned b=0;b<8;b++) if (u->boxes[b]>=0) e.pickup_box[b]=(uint16_t)u->boxes[b];
         if (u->signal>=0) {flags.dome_signal=(uint8_t)u->signal;flags.dome_group=(uint8_t)u->group;}

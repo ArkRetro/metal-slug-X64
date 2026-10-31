@@ -6,6 +6,7 @@
 typedef struct { int32_t height; uint8_t shape,flags; } neo_surface_t;
 /* Q16.16 world coordinates; bounded queries never wrap outside the recovered map. */
 uint8_t neo_collision_cell(int x,int y);
+unsigned neo_collision_columns(void);   /* 8-px columns of the recovered map */
 void neo_collision_reset(void);
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes); /* 0C88B0 */
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags);

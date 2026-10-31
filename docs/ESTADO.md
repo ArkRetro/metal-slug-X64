@@ -22,7 +22,7 @@ privados y no están en git.
 | Marco | movimiento, pistola, H (barridos), C (proyectil buscador), R, granadas, cuchillo con pose, disparo abajo en el aire, muerte/reaparición | tabla de cuchillo 0BF918 sin captura |
 | Vehículos | Camel Slug y tanque SV-001 montables | reacciones de daño del SV-001 sin captura |
 | Enemigos y actores | soldados, camión, helicópteros, lanzacohetes, camelleros, civiles, prisioneros, premios | rótulo de bombas 08C752, puesto de fruta 03FC5A |
-| Jefe | completo (torreta, fases, explosiones) | — |
+| Jefe | completo (torreta, fases, explosiones, prisioneros de la escotilla que caen al suelo) | — |
 | Fin de misión | MISSION COMPLETE, recuento de prisioneros | textos japoneses, 2 jugadores, medallas |
 | Continuar | CONTINUE? con cuenta atrás | objeto 019798 |
 | Marcador | HUD original en modo consola doméstica (PRESS START, sin CREDIT) | — |

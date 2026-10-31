@@ -81,6 +81,12 @@ static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
 /* The spawn-table constructors script_spawn runs natively (the rest are
  * counted in external_spawns and never created). Items 08C374/08C37C are
  * native only past the region (ga_insert). */
+/* Spawn-table constructors the world stops explicitly (counted in
+ * vehicle_stops, logged): the player's vehicles. */
+bool neo_world_spawn_stop(uint32_t constructor) {
+    uint32_t r=constructor&0xffffffu;
+    return r==0x3458eu || r==0x92a32u;
+}
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
     return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au;
@@ -113,6 +119,10 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * to its start value 003586; the actor then leaves (004188 after the
          * cartridge check). The player's HUD applies it (neo_hud.c). */
         w->timer_resets++;return;
+    }
+    if (routine==0x3458eu || routine==0x92a32u) {
+        /* Camel Slug 03458E / SV-001 092A32 (uncounted spawns): explicit stop. */
+        w->vehicle_stops++;w->vehicle_stop_constructor=routine;return;
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
@@ -920,6 +930,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
     /* 0C0E20 (new game) and 0C0E6E (player 1's first life); RAM 10C2F6 reads 0 in Mission 1. */
     marco_weapons_new_game(&w->weapons);w->weapon_player.exists=true;
+    neo_vslot_reset_all(&w->vslots);w->vslots.record[0]=w->vslots.record[1]=NEO_VSLOT_RECORD;
     marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=0;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
@@ -965,7 +976,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
     w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
-    w->pickup.slot[0]=w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
+    w->pickup.slot[0]=w->vslots.slot[0].b;w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
+    /* 0C3352 -> 0AA458: player 1 takes a binding a vehicle made in this
+     * update or frees the slot (no native vehicle binds yet: it stays free). */
+    if (t.player_valid) (void)neo_vslot_accept(&w->vslots,0,g->video,false);
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
      * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the

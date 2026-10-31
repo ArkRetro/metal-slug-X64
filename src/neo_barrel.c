@@ -12,7 +12,11 @@
  * 0B680E: collision stamps 0B69F8/0B6A2C (0C88B0) and the dynamic object
  * 0B6A60 (0140C0) one pixel lower than the node, cleared (0B6A12/0B6A42,
  * 013F1E) with the building. 0B6202 is the delete through the cartridge
- * check (004188 on genuine hardware). */
+ * check (004188 on genuine hardware).
+ *
+ * 0B6298 (village decoration, camera 336, script record 2D63B8, group 9 not
+ * counted): palette 0x442, program 2A89AC, depth 01AD8C, cull 0B6948 ->
+ * 0B6202. */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -132,8 +136,16 @@ static ga_result_t roof_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     return GA_MORE;
 }
+static ga_result_t decor_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0xb6298) {
+        ga_palette(a,0x442);SW(0x66,0);SW(0x1e,0);START(0x2a89ac);SL(0,0xb62c8);
+    }
+    depth(a);ga_project(a,e);STEP();
+    if (ga_cull(a,e,0xb6948)) SL(0,0xb6202);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
 bool neo_barrel_routine(uint32_t r) {
-    return r==0xb6566 || r==0xb6606 || r==0xb66f2 || r==0xb6736 || r==0xb6748 || r==0xb6202 ||
+    return r==0xb6298 || r==0xb62c8 || r==0xb6566 || r==0xb6606 || r==0xb66f2 || r==0xb6736 || r==0xb6748 || r==0xb6202 ||
         r==0xb6770 || r==0xb67a6 || r==0xb680e || r==0xb6834;
 }
 ga_result_t neo_barrel_tick(neo_gactor_t *a,neo_genv_t *e) {
@@ -141,5 +153,6 @@ ga_result_t neo_barrel_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (r==0xb6770 || r==0xb67a6) return overlay_tick(a,e);
     if (r==0xb680e || r==0xb6834) return roof_tick(a,e);
     if (r==0xb6202) {SB(0x5f,B(0x5f)|0x80u);return GA_DELETE;}       /* 0B6202 -> 004188 */
+    if (r==0xb6298 || r==0xb62c8) return decor_tick(a,e);
     return building_tick(a,e);
 }

@@ -5,7 +5,7 @@
 Every update (U..V) of a family node whose routine lies in one of the
 --range intervals is kept: frame, node, routine before, node bytes before
 and after, the first value of every watched RAM word the update read (scene
-root, layer object 10D7B6 (the static terrain past camera 1023), dynamic
+root, layer objects 10D7B6 (the static terrain past camera 1023) and 10C72E (the village's), dynamic
 collision objects 10C06E..10C291 (eight 64-byte blocks, bins), camera progress, script flags 444E/444F, player 1 +3C/+40 and node,
 kill-all 1067E2 (004BAC), group counts, item pickup boxes of the players 10C5EC/10C5F4, the kernel's
 last surface word 10C068 (D4 at the end of 013968), object lists 10C3A2/10C3F4 (markers, 040200/0402E6), epoch, RNG ring and cursor, layer flags 3954/395C) and the
@@ -15,7 +15,7 @@ Node addresses are kept: the native test maps a child it creates to the
 recorded node with the same creator (+0C) and first routine."""
 import argparse,gzip,json
 from pathlib import Path
-WATCH={0x10c068}|set(range(0x10e97c,0x10e990,2))|set(range(0x10d7ca,0x10d7dc,2))|set(range(0x10c06e,0x10c292,2))|{0x10e99e,0x10c444,0x10c44e,0x101500,0x101504,0x1014c4,0x1014c6,0x10c33a,0x10c33c,0x10b954,0x10b95c,0x100084,0x100086,0x1067e2}|set(range(0x10c326,0x10c330,2))|set(range(0x10c5ec,0x10c5fc,2))|set(range(0x100016,0x100084,2))|set(range(0x10c3a2,0x10c446,2))
+WATCH={0x10c068}|set(range(0x10e97c,0x10e990,2))|set(range(0x10d7ca,0x10d7dc,2))|set(range(0x10c742,0x10c754,2))|set(range(0x10c06e,0x10c292,2))|{0x10e99e,0x10c444,0x10c44e,0x101500,0x101504,0x1014c4,0x1014c6,0x10c33a,0x10c33c,0x10b954,0x10b95c,0x100084,0x100086,0x1067e2}|set(range(0x10c326,0x10c330,2))|set(range(0x10c5ec,0x10c5fc,2))|set(range(0x100016,0x100084,2))|set(range(0x10c3a2,0x10c446,2))
 GLOBALS=[(0x10e95a,0x10e964),(0x10e9c8,0x10e9d0),(0x1067e2,0x1067e4),(0x109944,0x109946),(0x10e9e2,0x10e9e4),(0x10e9f8,0x10ea00),(0x10c606,0x10c608)]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('trace',type=Path);p.add_argument('--output',type=Path,required=True)

@@ -1034,6 +1034,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             /* 004126: a node followed by deeper ones stays as a placeholder. */
             neo_gactor_t *g=&w->gactors[slot.index];
             g->active=true;g->placeholder=true;ga_sl(g,0,0x3f1e);keep=true;
+        } else if (!keep && slot.kind!=NEO_WORLD_GACTOR && (unsigned)now+1u<w->order_count && w->order[now+1].depth>slot.depth) {
+            /* 004126 for any node (a script runner whose soldier follows
+             * it): the slot stays as a placeholder generic actor, so a tree
+             * deletion (0041AC) before it stops at its depth. */
+            neo_gactor_t *g=ga_alloc(w,0x3f1e,0,0,slot.depth);
+            if (g) {g->placeholder=true;w->order[now].kind=NEO_WORLD_GACTOR;w->order[now].index=(uint8_t)g->index;keep=true;}
         }
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;

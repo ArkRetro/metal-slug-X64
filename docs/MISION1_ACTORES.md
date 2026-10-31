@@ -941,6 +941,40 @@ Auditoría tras esta familia: **0 apariciones contadas perdidas**; sin
 contar quedan `0x01913C 0x031D80 0x031D92 0x03264E 0x03458E 0x03FC5A
 0x0400AA 0x092A32 0x0B6298 0x0B639A 0x0B63A0`.
 
+## Apariciones no contadas del pueblo: `0x0B6298` y `0x0400AA`
+
+Captura `captures-m1full/unc1` (`MSX_REST_FAMILY_ROOTS=b6298,400aa,3fc5a,
+31d80,3264e MSX_REST_BOSS_FROM=2300 MSX_REST_LAST=4100
+MSX_REST_FIRST_DUMP=2300`).
+
+- **Decoración `0x0B6298`** (cámara 336, registro `0x2D63B8`; `neo_barrel.c`):
+  paleta `0x442`, programa `2A89AC`, profundidad `01AD8C`, recorte `0B6948`
+  → `0x0B6202`. Prueba `decor`: **665 actualizaciones en bucle cerrado
+  (2496..4035), 92960 bytes iguales**, borrado en 4035.
+- **Toldo del puesto `0x0400AA`** (cámara 192, registro `0x2D6364`;
+  `neo_props.c`): suelo, `009F88`, paleta `0x13B`, programa `2402CA`, sello
+  de colisión `0E0932` (`0C88B0`: no cambia ninguna celda de la rejilla
+  estática, que ya lo contiene; comprobado), profundidad, recorte `0E08B8`
+  (`03FADA` → `0041AC`). Prueba `awning` (`--terrain 10c72e`: la opción
+  nueva lee el objeto de capa del pueblo `10C72E`, cuyas lecturas
+  `10C742..` guarda ahora `extract_family_fixture.py`): **152
+  actualizaciones (2349..2803), 21140 bytes iguales**, 1 sello.
+- Mundo: un nodo que no es actor genérico (el corredor del guion que creó un
+  soldado) y se borra con nodos más profundos detrás queda como marcador
+  (`004126`), igual que los actores genéricos: el borrado en árbol `0041AC`
+  del toldo se detiene en él y no se lleva al soldado (`walk3`, 2730).
+  `data/soldier_world_fixture.json.gz` re-extraído con `0x0400AA/0x0B6298`
+  como actores del mundo (el extractor anterior reproducía el fichero
+  exacto): 5248 actualizaciones, 27193 estados de actores genéricos.
+- Gráficos: `unc1@b6200-b6300 unc1@400aa-40100`: 2222 descriptores, paletas
+  nuevas `0x442`, `0x13B`; 66 volcados: 51172 píxeles iguales, 0 distintos.
+- **Paradas explícitas** (siguen externas): el puesto `0x03FC5A` (sus cajas
+  de fruta `0x03FD6E` preguntan a `01AF1A` por el bit 6 de `+15` del
+  jugador, que el entorno de los actores no lleva), los toldos rayados
+  `0x0B639A/0x0B63A0` (velocidad de programa por RAM `100012/100013`,
+  `002836`, y rebote por `10C6B0/10C6B1`, que escribe `0B64BA` desde el
+  jugador), `0x031D80/0x03264E/0x031D92` (no traducidos en esta tanda).
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

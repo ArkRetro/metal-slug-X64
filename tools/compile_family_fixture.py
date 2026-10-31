@@ -26,6 +26,7 @@ def main():
     p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
     p.add_argument('--script-routines',default='',help='ROUTINES (comma hex): with --script-actor, only nodes with these first routines are made by family nodes (the others the script itself creates: injected)')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
+    p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
@@ -92,6 +93,7 @@ def main():
     if a.hit_to:
         hits=sorted({(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u['post'] and int(u['post'][:8],16)==int(a.hit_to,16) and int(u['pre'][:8],16)!=int(a.hit_to,16) and (a.hit_moving or u['post'][2*0x3c:2*0x44]==u['pre'][2*0x3c:2*0x44])})
         L.append('#define FAMILY_HIT_UPDATES {%s}'%','.join('{%d,%d}'%h for h in hits))
+    if a.terrain:L.append('#define FAMILY_TERRAIN 0x%xu'%int(a.terrain,16))
     if a.marker_seq is not None:L.append('#define FAMILY_MARKER_SEQ %d'%a.marker_seq)
     if a.stamp:
         st=[tuple(int(x,16) for x in t.split(',')) for t in a.stamp]
@@ -125,11 +127,13 @@ def main():
         corr=rd(u,0x10e98c)
         # Layer object 10D7B6 (+14..+24) when the trace has its reads (older
         # fixtures: same position as the root, checked in the RAM dumps).
-        ter=[rd(u,x) for x in range(0x10d7ca,0x10d7da,2)]
+        # --terrain 10c72e: the village object 10C72E (+14..+24) instead.
+        tb=0x10c742 if a.terrain and int(a.terrain,16)==0x10c72e else 0x10d7ca
+        ter=[rd(u,x) for x in range(tb,tb+0x10,2)]
         tmask=0;tv=[0,0,0,0]
         for i in range(4):
             if ter[2*i] is not None and ter[2*i+1] is not None:tmask|=1<<i;tv[i]=s32(ter[2*i]<<16|ter[2*i+1])
-        tcorr=rd(u,0x10d7da)
+        tcorr=rd(u,tb+0x10)
         if tcorr is not None:tmask|=16
         cur=None
         if hex(RING1) in u['reads'] and hex(RING1+2) in u['reads']:

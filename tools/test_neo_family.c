@@ -216,7 +216,10 @@ int main(void) {
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
-    e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
+#ifndef FAMILY_TERRAIN
+#define FAMILY_TERRAIN 0x10d7b6u   /* the families past camera 1023 */
+#endif
+    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;
     e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
 #ifdef FAMILY_MARKER_SEQ
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;

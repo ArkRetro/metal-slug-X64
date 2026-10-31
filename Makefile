@@ -255,13 +255,17 @@ $(BUILD_DIR)/robe_fixture.h: tools/compile_robe_fixture.py data/robe_fixture.jso
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food rocket heli camel
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade armored secret swords prisoner2 food rocket heli camel decor awning
 # The camel riders 09F682 (camel2: hold-fire 6950..7950 at camera 2184..2336),
 # their riders, heads, shots, pieces and the dropped sword 09EE34; the rider
 # dies as a swordsman (09E920/09EAB8, neo_swords.c). A shot A0034 that hits
 # the player (0049E8) explodes in place (A00E8) after its move: --hit-to with
 # --hit-moving.
 FAMILY_ARGS_camel := --hit-to a00e8 --hit-moving
+# The village decoration 0B6298 (unc1: camera 336 -> 968, cull 0B6948) and the
+# market stall's awning 0400AA (camera 192, its collision stamp 0E0932; the
+# village terrain object 10C72E).
+FAMILY_ARGS_awning := --terrain 10c72e
 # The rocket launcher 05ED84 (rl2: hold-fire capture at camera 2688), its aim
 # flash 060490 (0040BC) and, after the script actor (00411C), the rockets
 # 05FD8A, muzzles 0602E4, trail puffs 059C82 and the death smoke 0897E2.

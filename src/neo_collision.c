@@ -44,6 +44,7 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
     }
     return changed;
 }
+unsigned neo_collision_columns(void) {return NEO_GRID_COLUMNS;}
 uint8_t neo_collision_cell(int x,int y) {
     if (x<0 || x>=NEO_GRID_COLUMNS*8 || y<0 || y>=256) return 0;
     return (dynamic_active?dynamic_grid:neo_grid)[(x/8)*32+y/8];

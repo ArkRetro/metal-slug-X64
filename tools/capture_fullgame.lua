@@ -167,7 +167,7 @@ end
 -- through fallback patterns every 6 s (aim up, jump-spam, run left, drop
 -- through with down+jump). Buttons pulse on frame parity only.
 local sweep_direction=1;local last_script=-1;local last_section=-2
-local still=0;local last_key=nil;local section_start=0;local plan='run'
+local seen_ending=false;local still=0;local last_key=nil;local section_start=0;local plan='run'
 -- Deterministic pseudo-random sequence (LCG on the frame number) for the
 -- random-walk fallback: same inputs for the same game state history.
 local function noise(f,salt) return ((f//30)*1103515245+12345+salt*2654435761)%2147483648 end
@@ -290,6 +290,10 @@ emu.register_frame_done(function()
   if sec~=last_section and spc~=0 and (not load_name or frame>tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+2) then
    seclog:write(string.format('%d,%d,%x,%d\n',frame,camera,spc,sec));seclog:flush()
    print(string.format('SECTION %d frame %d pc %x',sec,frame,spc))
+   -- The ending script (table entry 22) followed by an attract-mode demo
+   -- script (20/21): the game is over; keep 600 frames and stop.
+   if (sec==20 or sec==21) and seen_ending and last_frame>frame+600 then last_frame=frame+600 end
+   if sec==22 then seen_ending=true end
    last_section=sec;section_start=frame
    -- Iteration aid only (MSX_FULL_SAVE=1): a MAME state per section start.
    if os.getenv('MSX_FULL_SAVE')=='1' and sec>=0 and sec<30 and frame>(tonumber(os.getenv('MSX_FULL_LOAD_FRAME') or '0'))+10 then machine:save(string.format('sec%02d_%d',sec,frame)) end

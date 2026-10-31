@@ -62,10 +62,10 @@ def main():
         assert not bad,('Observed script positions that are not decoded blocking statements',bad[:10])
     if a.missions:
         for mission,secs in a.missions.items():
-            out=dict(source=report['source']+'; P1 + P2 bank 1 of the user MAME set',mission=int(mission),
+            out=dict(source=report['source']+'; P1 + P2 bank 1 of the user MAME set',mission=int(mission) if mission.isdigit() else mission,
                 sections=[dict(index=i,base=f'0x{bases[i]:06X}',end=decoded[i][-1]['address'],statements=decoded[i]) for i in secs],
                 constructors=sorted({x['constructor'] for i in secs for x in walk(decoded[i]) if x['op']==7}))
-            (a.output_dir/f'mission{mission}_script.json').write_text(json.dumps(out,indent=1)+'\n')
+            (a.output_dir/(f'mission{mission}_script.json' if mission.isdigit() else f'{mission}_script.json')).write_text(json.dumps(out,indent=1)+'\n')
     if a.report:a.report.write_text(json.dumps(report,indent=1)+'\n')
     for s in report['sections']:print(s['index'],s['base'],s.get('top_level_statements'),s.get('spawn_records'),s.get('camera_max'),len(s.get('stops',[])),len(s.get('constructors',[])))
     if a.capture:print('observed rest positions',report['observed_rest_positions']['checked'],'all blocking')

@@ -266,6 +266,20 @@ al llegar a 0x0D30 toma el anterior), y la prueba de la tienda desde media
 pantalla no salta una vez que espera la Camel Slug (aterrizar en ella monta a
 Marco y la pistola descansa).
 
+### Puertas y recorrido tras la fusión y los premios
+
+`make check` (auditoría igual; prueba `label` nueva), `make check-core` en un
+clon limpio, `make -j4` y `make mslugx-reference.z64` (ROMs de 9.617.408
+bytes). Recorrido completo en ares: **PASS**, 30 rebeldes creados, 32
+abatidos, jefe derrotado (fase 6), misión completada, ningún nodo del jefe
+detenido, **0 *crash***, *underruns* máx. 1; `MSX PERF` 91 ventanas, `cpu`
+media máx. 17.434 µs, **peor fotograma 42.741 µs**; RDP 401 dibujos máx.,
+166 fallos máx. Efectos residentes 851.270 B, caché de escena 3632 KB (227
+*chunks*), montón libre mínimo en juego 709.480 B. Un intento anterior se
+paró en las cúpulas (110 ventanas, 459 impactos sin derrumbe; ya pasó una
+vez antes de la fusión: la política de barrido del guion de ares no siempre
+alcanza las cúpulas); el siguiente pasó con el derrumbe en 39 ventanas.
+
 ### Rama `work-world` (civiles, explosiones, efectos de sonido)
 
 Puertas: `make check` (auditoría: sin crear solo `0x01913C 0x03FC5A

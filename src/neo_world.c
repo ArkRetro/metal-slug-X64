@@ -18,9 +18,24 @@ enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414 };
  * (src/neo_blood.c: 037A ON, 03BA OFF). */
 enum { MODE88=2, RANK=3, SPLASH_PROGRAM=0x2402fa };
 static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
+/* The programs by tag: a binary search over an index sorted once (the
+ * first entry of a tag, as the linear scan it replaces). */
+static uint16_t program_order[COUNT(soldier_programs)];
+static bool programs_sorted;
 static const neo_anim_program_t *program(uint32_t tag) {
-    for (unsigned i=0;i<COUNT(soldier_programs);i++) if (soldier_programs[i].tag==tag) return &soldier_programs[i].program;
-    return NULL;
+    enum {N=COUNT(soldier_programs)};
+    if (!programs_sorted) {
+        _Static_assert(N<=65535,"program index is 16 bits");
+        for (unsigned i=0;i<N;i++) {      /* stable insertion: equal tags keep their order */
+            unsigned j=i;
+            while (j && soldier_programs[program_order[j-1]].tag>soldier_programs[i].tag) {program_order[j]=program_order[j-1];j--;}
+            program_order[j]=(uint16_t)i;
+        }
+        programs_sorted=true;
+    }
+    unsigned lo=0,hi=N;                                /* first tag >= tag */
+    while (lo<hi) {unsigned m=(lo+hi)/2;if (soldier_programs[program_order[m]].tag<tag) lo=m+1; else hi=m;}
+    return lo<N && soldier_programs[program_order[lo]].tag==tag?&soldier_programs[program_order[lo]].program:NULL;
 }
 static uint8_t kobj(uint32_t tag) {return tag==TERRAIN_TAG?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:NEO_KOBJ_NONE;}
 static uint32_t ktag(uint8_t obj) {return obj==NEO_KOBJ_TERRAIN?TERRAIN_TAG:obj==NEO_KOBJ_ROOT?ROOT_TAG:0;}

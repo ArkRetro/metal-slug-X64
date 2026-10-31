@@ -9,6 +9,7 @@
 #include "neo_camera.h"
 #include "neo_boss.h"
 #include "neo_blood.h"
+#include "neo_vslot.h"
 /* Closed native world of the playable Mission 1 region: level script and its
  * runners, rebel soldiers (constructor + routine family + pistol death), the
  * objects they throw, the death splash child (ROM 040F88) and the shared
@@ -143,6 +144,10 @@ typedef struct {
      * the score/pickup state the items serve (neo_item.c); the caller (the
      * port's player) reads and updates them. Pointers are set every tick. */
     marco_weapons_t weapons;marco_weapon_player_t weapon_player;neo_pickup_env_t pickup;
+    /* Vehicle slots RAM 10C608/10C62C and records 10C2E8/10C2EC (neo_vslot.c):
+     * free at the start (0AA4F6); player 1 accepts or drops its binding every
+     * update (0C3352 -> 0AA458). The pickups and the HUD read player 1's. */
+    neo_vslots_t vslots;
     /* Player shots made by the player's update (neo_world_player_shot):
      * inserted after the list head (00411C, A6 = 101414) at the end of the
      * next tick, so their constructor runs on the update after, as in the

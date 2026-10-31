@@ -920,6 +920,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->flag606=0xff;   /* RAM 10C606 when the boss spawns (both recorded fights) */
     /* 0C0E20 (new game) and 0C0E6E (player 1's first life); RAM 10C2F6 reads 0 in Mission 1. */
     marco_weapons_new_game(&w->weapons);w->weapon_player.exists=true;
+    neo_vslot_reset_all(&w->vslots);w->vslots.record[0]=w->vslots.record[1]=NEO_VSLOT_RECORD;
     marco_weapons_life(&w->weapons,0,&w->weapon_player);w->pickup.mission=0;
     scene_at(w,scroll_x,true);
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
@@ -965,7 +966,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
     w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
-    w->pickup.slot[0]=w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
+    w->pickup.slot[0]=w->vslots.slot[0].b;w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;
+    /* 0C3352 -> 0AA458: player 1 takes a binding a vehicle made in this
+     * update or frees the slot (no native vehicle binds yet: it stays free). */
+    if (t.player_valid) (void)neo_vslot_accept(&w->vslots,0,g->video,false);
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
      * of the captures (FFF8,0000,0010,0020 in 160 of 175 RAM dumps; the

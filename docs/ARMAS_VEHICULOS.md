@@ -727,3 +727,41 @@ de Git). Una celda se rasteriza en una tira RGBA16 de 304x224 solo cuando su
 palabra cambia; cada fotograma copia (modo COPY) el tramo de columnas no
 vacías de cada fila visible, sobre todas las capas, con tijera en la ventana
 304x224.
+
+## 12. Vehículos del jugador: port (pasos 6–9)
+
+### Paso 6: ranura de vehículo y jinete (`src/neo_vslot.c`)
+
+Traducción manual de los servicios `0x0AA458..0x0AABF2` sobre la ranura de
+0x24 bytes guardada con sus bytes originales (`neo_vslots_t`: `10C608`,
+`10C62C` y los registros `10C2E8/10C2EC`): aceptar/soltar del jugador
+`0x0AA458` (con `0x018F24`), bajada `0x0AA4C8`, reinicio `0x0AA4F6/0x0AA520`,
+seguimiento del montado `0x0AA550`, lectura de la salida `0x0AA5AC` (hasta su
+`0x0143EE`), selección `0x0AA610` con la prueba `0x0C0556` (rectángulos
+`0x034320`/`0x092A2A` en `data/region_rom.json`), atadura `0x0AA760`, salida
+`0x0AA7FC` (el original nombra el nodo del P1 también para el P2: sin efecto),
+subida `0x0AA83A`, obús `0x0AA956`, daño `0x0AA994`/`0x0AA9E4`, `0x0AAA88`
+(tipo 0: el `TRAP #F` del original, parada explícita), `0x0AAB66`,
+`0x0AAB84`, `0x0AABDC`, y el mando `0x0CA1B8` (máscaras `0x0CA1B0`: bit 7 =
+A+B a la vez; con la tabla por defecto C no anula B).
+
+Prueba `tools/test_neo_vslot.c` (`make check-core`): fixture
+`data/vslot_fixture.json.gz` (`tools/extract_vslot_fixture.py
+camelfam=… tankfam=… --routing vehicles2/weapons.csv --routing
+pickups2/weapons.csv`): **las 3918 llamadas** a estos servicios de las
+trazas de familia `camelfam` y `tankfam` (Camel, SV-001, torretas y el nodo
+del jugador `1014C4`: 476 ataduras, 551 aceptaciones, 64 selecciones, las
+salidas de tipo 0 —muerte del jinete, 10091— y 1 —A+B, 11099—, subidas,
+obuses y daño), con los argumentos del llamador (inmediatos del sitio de la
+`JSR`, `+7B/+7C` del SV-001) y lo que cada llamada leyó del nodo y de los
+jugadores. Las ranuras son estado nativo en bucle cerrado: toda lectura de
+la ranura por el original ve el valor nativo, y tras cada llamada ranuras,
+registros y bytes de nodo escritos coinciden byte a byte (282096 bytes de
+ranura). Además, 3533 muestras de `weapons.csv` (entradas estables) dan la
+palabra mantenida de `0x0CA1B8`, 3 de ellas con A+B (`0xB8`).
+
+En el juego (`neo_world.c`): ranuras libres al empezar, el jugador 1 llama a
+`0x0AA458` en cada actualización, la recogida de bombas (`0x0AA898`) y el HUD
+(`0x0C071C`/`0x0C0764`: ARMS ∞ y CANNON) leen la ranura del P1. Ningún
+vehículo nativo la ata todavía.
+

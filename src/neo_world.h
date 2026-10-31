@@ -116,6 +116,10 @@ typedef struct {
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
+    /* The player's vehicles of the script (Camel Slug 03458E, SV-001 092A32):
+     * explicit stops, not created (their slot services neo_vslot.c and the
+     * turret control neo_vulcan.c are native; the vehicles are not). */
+    unsigned vehicle_stops;uint32_t vehicle_stop_constructor;
     uint16_t hit_x;                 /* projected x of the last attacker that hit the player */
     uint8_t hit_kind;bool hit_right; /* the update's player hit: +5A kind, +5B bit 7 (attacker right) */
     int32_t camera_lock;            /* RAM 69BC high word set by 0C7B0C; -1 = free (0C7C12) */
@@ -201,6 +205,7 @@ bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_act
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);
 /* A spawn-table constructor the script creates natively (script_spawn). */
+bool neo_world_spawn_stop(uint32_t constructor);
 bool neo_world_spawn_native(uint32_t constructor);
 unsigned neo_world_alive(const neo_world_t *world);
 /* Mission actor's camera step (ROM 018D96..0C81C0, neo_camera_update) with

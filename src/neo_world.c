@@ -81,6 +81,12 @@ static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp);
 /* The spawn-table constructors script_spawn runs natively (the rest are
  * counted in external_spawns and never created). Items 08C374/08C37C are
  * native only past the region (ga_insert). */
+/* Spawn-table constructors the world stops explicitly (counted in
+ * vehicle_stops, logged): the player's vehicles. */
+bool neo_world_spawn_stop(uint32_t constructor) {
+    uint32_t r=constructor&0xffffffu;
+    return r==0x3458eu || r==0x92a32u;
+}
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
     return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au;
@@ -113,6 +119,10 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * to its start value 003586; the actor then leaves (004188 after the
          * cartridge check). The player's HUD applies it (neo_hud.c). */
         w->timer_resets++;return;
+    }
+    if (routine==0x3458eu || routine==0x92a32u) {
+        /* Camel Slug 03458E / SV-001 092A32 (uncounted spawns): explicit stop. */
+        w->vehicle_stops++;w->vehicle_stop_constructor=routine;return;
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}

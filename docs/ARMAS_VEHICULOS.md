@@ -765,3 +765,30 @@ En el juego (`neo_world.c`): ranuras libres al empezar, el jugador 1 llama a
 (`0x0C071C`/`0x0C0764`: ARMS ∞ y CANNON) leen la ranura del P1. Ningún
 vehículo nativo la ata todavía.
 
+### Paso 7: torreta vulcan (`src/neo_vulcan.c`)
+
+Traducido el control de `0x03B57C..0x03B808`: fin si el vehículo no existe,
+`+5F` bit 7 o el ancla `0x8000`; espera con `0x8080`; `+84 >>= 1`; jinete
+`0x0AAB84` (sin jinete: ráfaga a 0); ángulo a la ranura; A nuevo → ráfaga
+(`+76 = +74` si no había, `+77 = +75`, `+89 = 8`); A mantenido con
+`0x0CA614` (`10F084+p`) repite cada 8; destino por la palanca (tablas
+`0x03B4B0[+72]`: `0x03B424`, `0x03B464`, `0x097E08`, `0x097E48`), giro con
+velocidad `+7E + +80` (aceleraciones hacia `0xFA00`/`0x3000`), sentido `+79`
+(el `spl` mira los indicadores de `cmpi.w #$8000`: `FF` con diferencia
+negativa); disparo cada `+73` con el abanico `+7A` (−2, 0, +2 solo si el
+ángulo no cambió), bala `0x01B6A0` (`0x01BE24` con `+72 = 5`) con `+6E` y
+`+5E`; `+88` = pose. Prueba `tools/test_neo_vulcan.c` (`make check-core`,
+`data/vulcan_fixture.json.gz` de `tools/extract_vulcan_fixture.py`): las 543
+actualizaciones de torreta de `camelfam` (229) y `tankfam` (314), campos de
+control `+5E`, `+72..+89` en bucle cerrado, las **235 balas** (83 `0x01BE24`,
+152 `0x01B6A0`) con su `+6E`, 101 con abanico, y la chispa.
+
+**Paradas explícitas** (sin traducir, no se adivinan): la colocación de la
+torreta sobre el ancla `0x03B80C..0x03B86C`, los constructores de bala
+`0x01B6A0`/`0x01BE24`, el barrido `0x014A02`, la chispa `0x03BA76` y el fin
+`0x03B86E`; la Camel Slug `0x03458E` y el SV-001 `0x092A32` (con su obús
+`0x094EAA`, destello `0x0952F8`, `0x0954DC`, `0x0956CE`): el mundo no los
+crea, cuenta cada aparición del guion en `vehicle_stops` y el juego lo
+registra (`MSX vehicle stopped explicitly`); `tools/audit_script_events.py`
+los lista como paradas explícitas. Daño y destrucción del SV-001 siguen sin
+captura.

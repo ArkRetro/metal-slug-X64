@@ -52,6 +52,12 @@ static inline void ga_sb(neo_gactor_t *a,unsigned o,uint8_t v) {a->m[o]=v;a->wri
 static inline void ga_sw(neo_gactor_t *a,unsigned o,uint16_t v) {ga_sb(a,o,(uint8_t)(v>>8));ga_sb(a,o+1,(uint8_t)v);}
 static inline void ga_sl(neo_gactor_t *a,unsigned o,uint32_t v) {ga_sw(a,o,(uint16_t)(v>>16));ga_sw(a,o+2,(uint16_t)v);}
 typedef struct neo_genv neo_genv_t;
+/* One of ROM 0049E8's other results (004928..004952, returned in A0/A1 at
+ * 004B96): a registered body the query hit (after the hit matrix 004582 and
+ * the +54 multiplier, +5F bits 7 and 6 clear), as 01B162 reads it: +3C/+40
+ * words and the first rectangle of its +50 descriptor (`box` false: +50 is
+ * 0). */
+typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; } neo_ga_target_t;
 /* RAM bytes shared by the Mission 1 building actors and the mission. */
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
@@ -82,6 +88,7 @@ typedef struct neo_pickup_env {
     uint16_t mission;                    /* RAM 10C2F6 (0C0BAE) */
     uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
     unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
+    uint16_t label_count[2];             /* RAM 10C5B2+2p: score labels 08D330 made (08D33C) */
     unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
 } neo_pickup_env_t;
@@ -121,6 +128,13 @@ struct neo_genv {
     /* ROM 0049E8: attack row against the registered hurtboxes of the given
      * class; applies the original damage side effects; returns max type. */
     uint8_t (*attack)(void *ctx,neo_gactor_t *a,const int16_t row[7]);
+    /* With `want_targets` set (ga_attack_targets), the attack callback also
+     * leaves in target[0]/target[1] the bodies 0049E8 returns in A0 (highest
+     * +4E, `>=`) and A1 (lowest +4E, `<=`): the last body visited wins a
+     * tie, in the registry's slot order (004B06: 16..31, 0..15, 48..63,
+     * 32..47). */
+    bool want_targets;
+    neo_ga_target_t target[2];
     /* ROM 004C24: register this actor's hurtbox descriptor (+50). */
     void (*register_box)(void *ctx,neo_gactor_t *a);
     /* ROM 0140C0 / 013F1E: attach or release the actor's dynamic collision
@@ -132,6 +146,10 @@ struct neo_genv {
     /* ROM 00409A: carry set when the creator (+0C) is alive. */
     bool (*creator_alive)(void *ctx,neo_gactor_t *a);
     neo_gactor_t *(*creator)(void *ctx,neo_gactor_t *a);
+    /* +04 of the original node: the node before `a` in the actor list (a
+     * deleted node with deeper ones after it stays as a placeholder, 004126);
+     * NULL when it is not a generic actor. */
+    neo_gactor_t *(*previous)(void *ctx,neo_gactor_t *a);
     /* ROM 0C88B0: wreck template stamped into the static collision grid. */
     void (*stamp)(void *ctx,neo_gactor_t *a,uint32_t template_address);
     uint16_t view[4];                /* RAM 10E9D2..10E9D8 (visible rectangle) */
@@ -207,6 +225,8 @@ int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call);
 void ga_palette(neo_gactor_t *a,uint16_t resource);           /* 009EA8 (slot = +1D++) */
 void ga_flash_palette(neo_gactor_t *a,uint16_t resource);     /* 004520 */
 uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row); /* 0049E8 */
+/* 0049E8 with its A0/A1 results in e->target[0]/[1] (cleared first). */
+uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row);
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy); /* 004C24: carry */
 bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 01AFFC: carry when none */
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 0C8BEC */

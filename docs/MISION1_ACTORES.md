@@ -1006,6 +1006,147 @@ Registro `0x2D642E` (grupo 9, no contado; palabra `+6E` = 80). Traducción de
 - Gráficos: `unc1@3264e-32940`: 2355 descriptores, paleta nueva `0x92`; 14
   volcados: 10495 píxeles iguales, 0 distintos.
 
+## Civiles del pueblo `0x031D80/0x031D92` (`src/neo_civil.c`, rama `work-world`)
+
+Los "civiles que huyen" de la Misión 1. `0x031D80` es la alternativa
+aleatoria del porteador en la cámara 440 (registro `0x2D641E`, `op 10`
+`random_choice`: en `unc1` salió el porteador, en `entry-fire3` los civiles);
+`0x031D92` aparece siempre en la cámara 1984 (registro `0x2D6C76`). Grupo 9,
+no contados. Traducción de `0x031D80..0x032148`:
+
+- **Líder** (el nodo del guion, sin gráficos): `+83` = 0/1, `+76` su
+  secuencia de órdenes (`031D74`: 0,1,2,3 en bucle; `031D7A`: 0,1,3; un byte
+  negativo retrocede el siguiente byte, `031F32`), `+72` la velocidad de las
+  figuras (palabra << 11), `+7A` él mismo. Crea dos figuras `0x031F52`
+  (tablas de programas `031D40` y `031D34`; `0x031D92` solo la segunda) con
+  `0040BC` y las cuenta en `+81`. Orden 0: cuenta atrás `+7E`
+  (`0029F2(0x1E)+0x14`) hasta la siguiente; orden 3: la siguiente enseguida.
+  Sin figuras (`+81` = 0) se borra.
+- **Figura** `0x031F52` (paleta `0x92`, caja `031D54`, colocada sobre el
+  líder con `01AD6E` y desplazamiento `031D60`, suelo `0146E8`): quieta
+  (`01436A`) con su primer programa; las órdenes 1/2 hacen el gesto (segundo
+  programa) a las figuras con palabra `+0A` de tabla 0/≠0, y su final pide la
+  siguiente orden. Cuando la cámara pasa su `+70` registra la caja (`004C24`);
+  un golpe cuyo tipo `+5A` está en `031D68` marca `+82` del líder, y con
+  `+82` todas **huyen** (`0x032040`): programa `237CC0` a la velocidad de
+  `031B86` por su `+62`, dirección por el signo de la palabra mezclada del
+  RNG, **grito `0x104F`** (`0120F8`), y caminan (`08CCD4`) girando en las
+  paredes (`+5F` bit 0). Se van fuera de `031D4C` (`01945C`, `+81` del líder
+  − 1).
+- `ga_floor` (`0146E8`) acepta ahora como padre el bloque de otro actor
+  (`013DB2` lee su `+14/+18`, es decir `+3C/+40`): el mismo punto relativo a
+  la raíz de la escena.
+
+Captura `captures-world/civ1` (`MSX_REST_FAMILY_ROOTS=31d92,31d80
+MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=7700`): la figura aparece en 7011, el
+jugador la alcanza en 7064 y huye. Prueba `civil` (`--node-fields 7a`):
+**2 nodos, 126 actualizaciones en bucle cerrado (7011..7165), 17640 bytes
+iguales**. Cortada antes de 7168: la figura llega a los escombros del
+derrumbe (`0B53A8`), cuya colisión no está en la rejilla estática del port
+(igual que la prueba `food`). El gesto (órdenes 1/2) no aparece en la traza
+(el golpe llega antes de que venza `+7E`); la prueba del mundo sí recorre los
+civiles de la cámara 440 (`entry-fire3`, dos figuras): `extract_soldier_world.py`
+los cuenta como actores del mundo y `test_neo_world.c` compara su `+7A` por el
+mapa de nodos: **5248 actualizaciones, 29627 estados de actores genéricos**.
+
+Gráficos: `civ1@31d80-32150` (programas `237D02/237D0E/237D6E/237D7A/237CC0`,
+paleta `0x92`): 0 píxeles distintos.
+
+## Explosiones: fragmentos `0x01D31C..`, restos `0x01CE08..` y destello `0x01E058` (`src/neo_effects.c`)
+
+La auditoría de constructores sin crear (`EXT`, recorrido de
+`tools/test_gameplay.c` instrumentado) daba como explosiones ausentes:
+`0x01D31C` (las 16 bolas de fuego de `01DBAA` al destruir el carro, el
+camión, el blindado y el lanzacohetes), `0x01D488` (humo del edificio
+destructible), los restos `0x01CE08/14/20/38/44` y `0x01CF70` (listas de los
+emisores `01D764/01D7B8`: edificios, cúpulas, helicópteros) y `0x01E058`.
+Traducción de `0x01CE08..0x01D762` y `0x01E058..0x01E11A`:
+
+- **Fragmentos** `01D31C/01D37C/01D3D2/01D428/01D488/01D4DA`: programa y
+  paleta por un bit aleatorio (`22DAEE/22DC2C` `0x277/0x278`, `22D5BC/22D626`
+  `0x20A`, `22D8EA/22D940` `0x29E`; `01D4DA` por la tabla `01E008`, `0xF7`),
+  `+62` velocidad, ángulo `+8A` aleatorio (`01D51A/01D54A/01D578`), salida
+  `01D5EC` con seno/coseno (`0029FC`) y una reducción aleatoria que conserva
+  la palabra alta de D1 (`move.w $34(a6),d1` tras `move.l`), límites, vuelo
+  `01D6E4` (`0143E4`, gravedad `+7E`; cada bote divide las velocidades y
+  cuenta `+92`; `+5F` bit 3 tras el primer bote) hasta `01D93C` o fuera de
+  `01DEF0`. `01D5AA` (sin programa propio) no se alcanza en la Misión 1: no
+  se traduce.
+- **Restos** `01CE08..01D078`: índice `+91` y paleta por entrada (bases
+  `01D084/01D09C/01D0B4/01D0CC/01D0E4`), programa `01DF20` y rectángulo
+  `01DF94` por `+91`, giro aleatorio `01DEA2`, salida aleatoria, vuelo
+  `01D1B0` hasta tocar suelo (`01B1DC`, `004188`), el fin del programa o salir
+  del rectángulo.
+- **Destello** `01E058`: programa `22EA20`, paleta `0x143`, hasta su fin.
+- Datos ROM nuevos en `region_rom.json`: `01DF00..01E027`.
+
+Pruebas de familia (rangos solo de las rutinas nuevas):
+
+| Prueba | Captura | Resultado |
+| --- | --- | --- |
+| `blast` | `fam2` (carro, lanzacohetes, helicópteros) | 26 nodos, 777 actualizaciones (8414..10599), 105420 bytes iguales |
+| `debris` | `bld1` (edificio destructible), cortada antes de 7312 | 48 nodos, 1582 actualizaciones (6360..7311), 217000 bytes iguales |
+| `flash` | `bld1` | 10 nodos, 320 actualizaciones (7293..7421), 43400 bytes iguales |
+
+Las trazas `trk3` (fragmentos contra el carro destruido) y el resto de
+`bld1` (humo contra los sellos de colisión de la tienda destruida) difieren
+en el bit 2 de `+5F` (techo) del barrido `0143E4`: la prueba de familia no
+reproduce ni el objeto dinámico del carro (solo lo que se leyó) ni los sellos
+`0C88B0` de otra familia; por eso se cortan. En el juego ambos son nativos.
+
+Gráficos: `fam2/bld1/trk3/rl2@1ce08-1d763`, `bld1@1e058-1e07c`; paletas
+nuevas `0x277 0x278 0x20A 0x29E 0x143 0x228`.
+
+## Premios: regalo tipo `0x55` y etiquetas de puntos `0x08D330` (`src/neo_item.c`, rama `work-world`)
+
+Diagnóstico (recorrido de `tools/test_gameplay.c` instrumentado): los premios
+que faltaban salían de `neo_item.c`. Ahora son nativos:
+
+- **Tipo `0x55`** (registro `0E581A + 0x18*0x55`: programa `286FBC` con la
+  retrollamada `286FA8` (`+26` = `0029C6 & 0x3F + 0xC0`), paleta `0x3AC`,
+  recogida `08B7FC` = puntos/comida con la voz `1121`), movimiento
+  **`0x08BCCC`** por el estado `+76` de la tabla `0x08BCC0` (`08BD66`):
+  0 `08BCD4` proyecta, cuatro botes (`+74`) y estado 1; 1 `08BCEA` gravedad
+  0xB000 y `0143E4`, en el suelo la velocidad de caída anterior al paso vuelve
+  hacia arriba a la mitad, `+30` por 3/4 y un bote menos (estado 2 tras el
+  último); 2 `08B9B2`. Crece de 0x10 en 0x10 (`08B9F2`). Lo dan los
+  prisioneros (`09ACD6`) y la caja oculta de la ventana de la ruina.
+- **Etiqueta de puntos `0x08D330`** (creada por la recogida `08B944`
+  después del actor del guion, `+6E` = el valor, sobre el objeto, `+8A` el
+  jugador): contador por jugador RAM `10C5B2/10C5B4` en `+88`, paletas por
+  jugador `0E559E` (`0x3B8/0x3B9`), hasta ocho dígitos sin ceros a la
+  izquierda (`+8C..`, cuántos en `+72`), cada uno 8 px a la derecha con su
+  altura `+74+4i`: espera `+91+i`, sube `+96+i` actualizaciones a 0x50000,
+  sigue las velocidades `0E55EC`; tras el último, 15 actualizaciones quieta
+  (`08D63E`) y el parpadeo `0E55CA` subiendo 0x3000 (`08D6A2/08D738`). Cada
+  dígito es su programa de `0E56EE` (`0E565A` con RAM `10C2F6` ≠ 0, `08CF2E`)
+  arrancado y avanzado una vez (`08D7B4`): varios dibujos por actualización.
+  Se va cuando hay cuatro etiquetas más nuevas de su jugador (`08D814`).
+- Sigue externa (contada): la etiqueta de texto de las bombas `0x08C752`
+  (`08CD10`: crea un actor por letra `0x08C954` con el texto `0E5782`; ninguna
+  captura la tiene). Las etiquetas de puntos que crean otros actores
+  (`08CE72`, `08CEEC`) dependen de rutinas que el port no traduce.
+
+**Captura** `captures-world/gift3` (`MSX_REST_FAMILY_ROOTS=9a67e,9a688,9a692,
+8c374,8c37c,8d330,8c752 MSX_REST_BOSS_FROM=7600 MSX_REST_LAST=8400`, con
+el parche solo de captura `MSX_REST_ROM_PATCH=D6EE1:06:55`: el prisionero
+`2D6ED0` da el tipo 0x55 en vez del 6; el código del objeto es el original).
+**Prueba `label`**: 11 nodos, 683 actualizaciones en bucle cerrado
+(7732..8398), 94220 bytes iguales, 4 recogidas (dos comidas en 7848, puntos en
+8017, la H en 8081), 1157 dibujos. El compilador de pruebas tiene la opción
+nueva `--label-after-pickup` (la etiqueta de una recogida es nativa: una por
+recogida, en la posición proyectada del objeto; las de otros actores se
+inyectan) y la prueba lee RAM `10C5B2/10C5B4` tal como se leyó. El objeto
+0x55 se recorre en los estados 0 y 1 (16 actualizaciones). La caja de la
+ventana (`captures-world/gift1`, mismo parche en los registros
+`2D6B02..2D6BD2`) cae sobre los escombros `0B53A8`, que la rejilla del port no
+tiene: descartada como prueba.
+
+El puesto `0x03FC5A` (cajas de fruta `0x03FD6E`) no da objetos: al dispararle
+o saltar sobre él suelta la salpicadura `0x03FEB2`. Sigue como parada
+explícita: `03FE38` pregunta a `01AF1A` por el bit 6 de `+15` del jugador y a
+`0AAA88` por su vehículo, que el entorno de los actores no lleva.
+
 ## Otras paradas explícitas de esta tanda
 
 - **Tanque SV-001 `0x092A32`** (la "cañón" de las notas anteriores; captura

@@ -1,5 +1,5 @@
 {
- "descriptors": 2813,
+ "descriptors": 3160,
  "palettes": [
   "0x103",
   "0x113",
@@ -12,6 +12,7 @@
   "0x124",
   "0x13b",
   "0x13f",
+  "0x143",
   "0x15a",
   "0x15c",
   "0x16c",
@@ -29,13 +30,19 @@
   "0x200",
   "0x202",
   "0x208",
+  "0x20a",
   "0x20b",
   "0x21",
   "0x22",
+  "0x228",
   "0x23",
   "0x24",
+  "0x277",
+  "0x278",
   "0x27c",
+  "0x29e",
   "0x30b",
+  "0x363",
   "0x373",
   "0x376",
   "0x378",
@@ -51,6 +58,8 @@
   "0x3aa",
   "0x3ac",
   "0x3ad",
+  "0x3b8",
+  "0x3b9",
   "0x3ba",
   "0x3be",
   "0x3c6",
@@ -87,14 +96,14 @@
   "0x377"
  ],
  "stats": {
-  "zoomed_entries_skipped": 832,
-  "frames": 613,
-  "pixels_equal": 2930624,
-  "pixels_different": 150106,
-  "pixels_overlapping": 764201,
-  "rank_2": 395,
-  "rank_1": 218,
-  "missing_descriptor": 30
+  "zoomed_entries_skipped": 834,
+  "frames": 676,
+  "pixels_equal": 2975908,
+  "pixels_different": 152172,
+  "pixels_overlapping": 780955,
+  "rank_2": 443,
+  "rank_1": 233,
+  "missing_descriptor": 28
  },
  "frames": [
   {
@@ -4387,6 +4396,447 @@
    "update_frame": 9814,
    "equal": 0,
    "different": 48
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 808,
+   "different": 330
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 3187,
+   "different": 500
+  },
+  {
+   "capture": "cfam",
+   "frame": 8403,
+   "update_frame": 8401,
+   "equal": 736,
+   "different": 0
+  },
+  {
+   "capture": "cfam",
+   "frame": 9051,
+   "update_frame": 9049,
+   "equal": 736,
+   "different": 0
+  },
+  {
+   "capture": "civ1",
+   "frame": 7020,
+   "update_frame": 7020,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "civ1",
+   "frame": 7080,
+   "update_frame": 7077,
+   "equal": 753,
+   "different": 0
+  },
+  {
+   "capture": "civ1",
+   "frame": 7140,
+   "update_frame": 7138,
+   "equal": 517,
+   "different": 0
+  },
+  {
+   "capture": "civ1",
+   "frame": 7200,
+   "update_frame": 7199,
+   "equal": 751,
+   "different": 0
+  },
+  {
+   "capture": "civ1",
+   "frame": 7260,
+   "update_frame": 7258,
+   "equal": 774,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8430,
+   "update_frame": 8427,
+   "equal": 852,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8460,
+   "update_frame": 8457,
+   "equal": 950,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8490,
+   "update_frame": 8489,
+   "equal": 288,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8520,
+   "update_frame": 8519,
+   "equal": 263,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 8550,
+   "update_frame": 8548,
+   "equal": 158,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 9840,
+   "update_frame": 9839,
+   "equal": 243,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 9870,
+   "update_frame": 9867,
+   "equal": 206,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 9900,
+   "update_frame": 9896,
+   "equal": 163,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 9930,
+   "update_frame": 9928,
+   "equal": 163,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 9960,
+   "update_frame": 9958,
+   "equal": 71,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 10170,
+   "update_frame": 10168,
+   "equal": 181,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 10200,
+   "update_frame": 10198,
+   "equal": 310,
+   "different": 219
+  },
+  {
+   "capture": "fam2",
+   "frame": 10230,
+   "update_frame": 10228,
+   "equal": 537,
+   "different": 0
+  },
+  {
+   "capture": "fam2",
+   "frame": 10260,
+   "update_frame": 10258,
+   "equal": 374,
+   "different": 57
+  },
+  {
+   "capture": "fam2",
+   "frame": 10290,
+   "update_frame": 10288,
+   "equal": 372,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6390,
+   "update_frame": 6389,
+   "equal": 535,
+   "different": 199
+  },
+  {
+   "capture": "bld1",
+   "frame": 6420,
+   "update_frame": 6418,
+   "equal": 396,
+   "different": 317
+  },
+  {
+   "capture": "bld1",
+   "frame": 6450,
+   "update_frame": 6450,
+   "equal": 861,
+   "different": 139
+  },
+  {
+   "capture": "bld1",
+   "frame": 6480,
+   "update_frame": 6478,
+   "equal": 846,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6510,
+   "update_frame": 6507,
+   "equal": 98,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6570,
+   "update_frame": 6568,
+   "equal": 801,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6600,
+   "update_frame": 6598,
+   "equal": 939,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6630,
+   "update_frame": 6627,
+   "equal": 1071,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6660,
+   "update_frame": 6657,
+   "equal": 419,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6750,
+   "update_frame": 6749,
+   "equal": 538,
+   "different": 33
+  },
+  {
+   "capture": "bld1",
+   "frame": 6780,
+   "update_frame": 6778,
+   "equal": 384,
+   "different": 106
+  },
+  {
+   "capture": "bld1",
+   "frame": 6810,
+   "update_frame": 6808,
+   "equal": 536,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6840,
+   "update_frame": 6838,
+   "equal": 237,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 6870,
+   "update_frame": 6868,
+   "equal": 149,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7320,
+   "update_frame": 7316,
+   "equal": 1323,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7350,
+   "update_frame": 7347,
+   "equal": 1235,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7380,
+   "update_frame": 7377,
+   "equal": 615,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7320,
+   "update_frame": 7316,
+   "equal": 3071,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7350,
+   "update_frame": 7347,
+   "equal": 7099,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7380,
+   "update_frame": 7377,
+   "equal": 4905,
+   "different": 0
+  },
+  {
+   "capture": "bld1",
+   "frame": 7410,
+   "update_frame": 7407,
+   "equal": 790,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7320,
+   "update_frame": 7317,
+   "equal": 846,
+   "different": 0
+  },
+  {
+   "capture": "trk3",
+   "frame": 7380,
+   "update_frame": 7378,
+   "equal": 325,
+   "different": 0
+  },
+  {
+   "capture": "rl2",
+   "frame": 9420,
+   "update_frame": 9417,
+   "equal": 227,
+   "different": 0
+  },
+  {
+   "capture": "rl2",
+   "frame": 9450,
+   "update_frame": 9448,
+   "equal": 444,
+   "different": 101
+  },
+  {
+   "capture": "gift3",
+   "frame": 7740,
+   "update_frame": 7736,
+   "equal": 146,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7800,
+   "update_frame": 7798,
+   "equal": 380,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7920,
+   "update_frame": 7920,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 446,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8340,
+   "update_frame": 8338,
+   "equal": 84,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8400,
+   "update_frame": 8399,
+   "equal": 84,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7800,
+   "update_frame": 7798,
+   "equal": 109,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7860,
+   "update_frame": 7860,
+   "equal": 109,
+   "different": 65
+  },
+  {
+   "capture": "gift3",
+   "frame": 7920,
+   "update_frame": 7918,
+   "equal": 309,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 130,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 96,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8100,
+   "update_frame": 8098,
+   "equal": 96,
+   "different": 0
   }
  ]
 }

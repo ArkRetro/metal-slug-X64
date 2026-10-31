@@ -177,7 +177,9 @@ iguales, 0 distintos**
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
 | `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
-| `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
+| `0x031D80/0x031D92` civiles del pueblo (figuras `0x031F52`, huida y grito `0x104F`) | **nativos** (MISION1_ACTORES.md) |
+| `0x01D31C..` fragmentos de explosión, `0x01CE08..` restos, `0x01E058` destello | **nativos** (MISION1_ACTORES.md) |
+| `0x03458E` Camel Slug | nativo (ARMAS_VEHICULOS.md) |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
 | `0x0B6298` decoración del pueblo, `0x0400AA` toldo del puesto, `0x03264E` porteador | **nativos** (MISION1_ACTORES.md) |
 
@@ -248,6 +250,39 @@ creados, 43 abatidos, jefe derrotado, misión completada
 fallos máx. El recorrido no subió a la Camel Slug (`mounts=0`). ROMs
 `mslugx-explorer.z64` y `mslugx-reference.z64`: 8.683.520 bytes cada una.
 
+### Fusión `origin/main` + `origin/work-weapons` en `work-world`
+
+Conflictos resueltos por unión (Makefile, `neo_region.c`, `game_audio.c`:
+`10F7` solo para los disparos de pistola del port y los efectos residentes
+con la política medida; `export_rest_sprites.py`, `extract_region_rom.py`).
+`region_rom.json` (92 bloques), `soldier_programs.json` y la exportación de
+sprites (3160 descriptores, 86 paletas) regenerados: superconjuntos de ambos
+lados (todo descriptor y paleta de cada lado presente e idéntico). Capacidad
+del mundo: 96 actores genéricos, 160 entradas de lista, 160 dibujos (los
+restos de explosión nativos llenaban los 64 de la rama de armas).
+`test_gameplay.c`: la vida nueva en la arena se comprueba con el progreso del
+momento en que empieza (`0196E8` elige el registro por él; una muerte justo
+al llegar a 0x0D30 toma el anterior), y la prueba de la tienda desde media
+pantalla no salta una vez que espera la Camel Slug (aterrizar en ella monta a
+Marco y la pistola descansa).
+
+### Rama `work-world` (civiles, explosiones, efectos de sonido)
+
+Puertas: `make check` (auditoría: sin crear solo `0x01913C 0x03FC5A
+0x0B639A 0x0B63A0`, parada explícita `0x092A32`; 1665/1670 peticiones de
+sonido del mundo con render), `make check-core` en un clon limpio, `make -j4`
+y `make mslugx-reference.z64`. Recorrido completo en ares
+(`trav-w.sh` adaptado, Xvfb :97): **PASS**, 36 rebeldes creados, 39 abatidos,
+jefe derrotado, misión completada, ningún nodo del jefe detenido, Camel Slug
+montada 1 vez, **0 *crash* del RSP**, *underruns* máx. 1; `MSX PERF` 123
+ventanas, `cpu` media máx. 14.963 µs, **peor fotograma 35.524 µs**; RDP 403
+dibujos máx., 147 fallos máx. Efectos: 7914 iniciados, 341 descartados por la
+política, 5 sin render (bucles y `>= 0x2000`); montón libre mínimo en juego
+814.016 B. Un primer intento falló por tiempo en las cúpulas (ares a 16
+VPS con tres emuladores en la máquina: el guion de prueba espera en tiempo
+real); el segundo, con la máquina menos cargada, pasó. ROMs de 9.568.256
+bytes.
+
 ## Audio
 
 El reproductor de VADPCM de la libdragon fijada solo da la vuelta a ficheros
@@ -282,7 +317,7 @@ y comprobar que todo descriptor y paleta de las exportaciones de ambos lados
 sigue presente e idéntico.
 
 ```sh
-C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss
+C=/home/user/captures-m1full W=/home/user/captures/weapons B=/home/user/captures-boss V=/home/user/captures-world
 cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/robe1 $C/bld1@54800-55700 $C/bld1@b6500-b6b00 $C/trk3@33c98-34200 $C/trk3@39500-3a100 \
   $C/trk3@a93c0-a9a00 $C/trk3@35600-35a00 $C/pri1@99862-99dc0 $C/pri1@8c37c-8c700 $B/runA@0-1 \
@@ -291,7 +326,9 @@ cd tools && python3 export_rest_sprites.py /home/user/roms/mslugx.zip \
   $C/fam2@99dcc-9a9c2 $C/food1@8c374-8c700 $C/rl2@5ed84-60600 $C/rl2@59c82-59e30 \
   $C/heli2@47800-49000 $C/camel2@9ea00-a0800 $C/unc1@b6200-b6300 $C/unc1@400aa-40100 \
   $C/unc1@3264e-32940 $B/runK@60900-60fff $W/camelfam@34300-35600 $W/camelfam@3b4e0-3b900 \
-  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 \
+  $W/camelfam@1be24-1be30 $W/camelfam@59e30-59f00 $W/cfam@63600-64300 $W/cfam@c5800-c5a00 \
+  $V/civ1@31d80-32150 $C/fam2@1ce08-1d763 $C/bld1@1ce08-1d763 $C/bld1@1e058-1e07c $C/trk3@1ce08-1d763 \
+  $C/rl2@1ce08-1d763 $V/gift3@8c374-8c700 $V/gift3@8d330-8d850 \
   --palette-capture /home/user/captures/blood --palette-capture $W/death2 --keep /nonexistent && cd ..
 ```
 

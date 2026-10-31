@@ -155,6 +155,76 @@ Opus (`--wav-compress 3`) dejaría la misma música en 1,31 MB por 159 s
 (≈0,5 MB/min), pero en este commit de libdragon no admite bucles con offset
 ni *seek* y descodifica en CPU; no se usa.
 
+## 8. Efectos del resto de la Misión 1 y residencia en RAM (rama `work-world`)
+
+Informe del usuario (ROM 9 en MiSTer): solo sonaban los disparos, algunas
+explosiones y los gritos. El mundo nativo ya pedía muchas más órdenes
+(`sounds[]`), pero solo 12 tenían render.
+
+**Órdenes nuevas.** Recorrido de `tools/test_gameplay.c` instrumentado: 40
+palabras distintas pedidas por el mundo nativo que no tenían render. Se
+descartan las `>= 0x2000` (`90A5`, `90E8`: `0120F8` las tira) y `002C`
+(banco 00, música). Las 37 restantes más `10A5/1026` están en
+`data/sound_map.json` (`sfx_<palabra>`, con las rutinas ROM que las piden en
+el port) y se renderizan aisladas como antes (`render_sound_commands.py
+--labels`). `10A5` (motor del blindado) y `1026` siguen sonando al final de la
+ventana de 300 fotogramas: son bucles, no efectos, y no se empaquetan
+(`pack_game_audio.py`: estado `LOOP`). Total de efectos: 49 renders, 63 s.
+
+**Política medida.** `tools/measure_sound_pairs.py` renderiza pares (A y,
+12 fotogramas después, B) y los ajusta contra los renders aislados con dos
+criterios: la forma de onda (las muestras ADPCM-A son idénticas entre renders)
+y la envolvente de potencia en ventanas de 10 ms (las partes FM/SSG no lo
+son). `tools/derive_sound_policy.py` decide cada par (onda si explica la
+mezcla, si no envolvente con margen ≥ 0,05, si no «dudoso»), une en un canal
+los sonidos con algún par que no solapa y ordena los niveles (B corta a A →
+nivel(B) ≥ nivel(A); B descartado → nivel(B) < nivel(A)) respetando los de la
+sección 4. Medidas: cada sonido nuevo consigo mismo y contra pistola,
+explosión y `1041` en ambos órdenes; los que solapan con los tres, todos
+contra todos; los de cada canal conocido contra los demás niveles del canal.
+Pares en `data/sound_pairs.json` (889: 259 de la primera ronda y 630 de la
+segunda), resultado en `data/sound_policy.json` (solo números) y
+`src/msx_sfx_policy.h` (`tools/compile_sound_policy.py`):
+
+| Canal | Sonidos (nivel) |
+| --- | --- |
+| arma | `10F7` (0); `108D`, `108C`, `10F4` (1) |
+| impacto | `1027` (0); `10FA`, `1022` (1); `1023`, `1033`, `1021`, `1025`, `102C`, `1035`, `1064`, `1067`, `10FF` (2); `102F`, `1032` (3) |
+| voz | `103F`, `1043`, `10A3`, `10A4`, `10C6`, `116E` (0); `103E`, `1040..1042`, `1048`, `1073`, `108E` (1); `104A`, `104F`, `105D`, `1072`, `1074`, `1075`, `1142` (2) |
+| `1056` | `1056` (0); `1124`, `112D`, `112E`, `113A`, `1158` (1) |
+| `10E8` | `10EA` (0); `10E8` (1) |
+| `109B`, `10A7`, `1121` | uno cada uno |
+
+263 pares quedan dudosos (sobre todo los sonidos FM/SSG largos); 38
+relaciones medidas no caben en un orden total de niveles (ciclos entre
+sonidos nuevos del canal de impacto y de `1056`; `derive_sound_policy.py`
+las lista en `contradictions`): el nivel de un sonido nuevo nunca sale del
+intervalo que dan sus pares con los sonidos ya medidos. Es una aproximación
+documentada de la regla del controlador, no su código (no se ha leído el
+Z80).
+
+**Canales de mezcla.** Los efectos son mono: cada canal del controlador usa un
+canal mono del mezclador desde el 6 (los 32 del mezclador; antes un par
+estéreo por voz con 5 voces de efectos).
+
+**Residencia en RAM (Expansion Pak).** `src/msx_ramfs.c` monta `ram:/`: al
+arrancar (`game_audio_init`, antes de dimensionar la caché de escena) cada
+WAV64 de efecto se lee entero de la ROM una sola vez y el decodificador VADPCM
+lo lee desde RAM en cada reproducción: ninguna reproducción toca el bus del
+cartucho ni abre ficheros. La música sigue en streaming desde la ROM.
+
+| Medida (ares, `MSX AUDIO sfx resident`) | Valor |
+| --- | --- |
+| Efectos residentes | 851 270 B (49 WAV64 VADPCM 24 kHz mono) |
+| Montón total / usado antes → después de cargar | 6 678 976 B / 770 936 → 1 633 728 B |
+| Caché de escena (`scene_assets_init`, reserva `SCENE_HEAP_RESERVE` 1,5 MiB) | 3584 KB (224 *chunks*; antes 4096 KB, 256) |
+| Montón libre tras la caché / en juego | 1307 KB / 948 KB |
+
+`scene_assets_all_resident()` **no puede ser cierto** con este paquete: 703
+*chunks* de 16 KiB son 11,5 MiB decodificados, más que toda la RDRAM (ya en
+`main`: 665 *chunks*, caché 4256 KB, falso). La caché de 224 *chunks* sigue
+por encima del peor conjunto de trabajo (30, `check_scene_budget.py`).
+
 ## Regenerar
 
 ```sh
@@ -174,10 +244,10 @@ Los pares de la sección 4 se reproducen con `MSX_RENDER_PLAN`, p. ej.
 
 ## Pendiente
 
-- Motor del blindado (`10A5`) y su parada; sonidos del jugador fuera de la
-  pistola (granadas, muerte de Marco, `1121`/`1123`/`113A`…), voces de
-  selección, música de jefe/continuación (`002D`) y del resto de misiones.
-- Orden `104A` (rutina rebelde `0B0466`) no la emite el port: rutina sin traducir.
+- Motor del blindado (`10A5`) y `1026` (bucles, sin empaquetar); sonidos
+  del jugador fuera de la pistola que el port no pide (granadas, muerte de
+  Marco, `1123`…), voces de selección, música de jefe/continuación
+  (`002C`/`002D`) y del resto de misiones.
 - En una de dos ejecuciones del recorrido en ares el mundo paró una rutina
   (`MSX world unsupported routine=afff0`): cobertura de la IA rebelde
   dependiente del ritmo de entradas, sin relación con el audio (0 underruns

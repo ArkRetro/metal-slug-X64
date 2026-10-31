@@ -96,7 +96,9 @@ Cuerpo de pie, carrera y salto: la tabla no tiene fila 1 (fallback
 estado de disparo de la H (`marco_hgun.c`) en la actualización en que
 empieza su programa; agachado no hay hilo de arma (el cuerpo `256D52` lleva
 los `0C4372`). Los programas hacia abajo (`2560C0`, `2561DC`, `25624E`)
-necesitan apuntar abajo en el aire, que el jugador del port no tiene.
+necesitan apuntar abajo en el aire: el jugador ya apunta abajo
+(ARMAS_VEHICULOS.md), pero estos programas no están en el catálogo y se
+dibuja el de reposo.
 Llamadas: los sitios de forma 1 medidos en `marco-h2/h3` y los de la misma
 rutina y carga útil que un sitio medido (`convert_marco_programs.py
 --extra-capture --equivalent-calls`) son `EVENT`; queda un `UNRECOVERED`

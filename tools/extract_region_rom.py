@@ -24,6 +24,7 @@ BLOBS=[
     (0x29D1E,0x42,'029A0C truck cell map'),(0x29D60,0x34,'029A2E truck cell map'),
     (0x29FC,0x280,'002E7C/01D9F0 sine table (cosine at +0x80)'),
     (0x1DEB8,0x48,'01C9FA/01DA2E effect cull rectangles (019504)'),
+    (0x1DF00,0x128,'01D0F8 debris cull rectangles 01DF00..01DF1F, program table 01DF20 and rectangle table 01DF94 (by +91); 01D4DA fragment programs 01E008'),
     (0xDC85A,0x108,'0DC97E bomber: smoke lists/tables (01DA40), palettes, cull rectangles, hurtboxes, attack rows'),
     (0x2D06CE,0x330,'0DC9EE.. bomber rank tables (0260C8)'),
     (0x0B57BE,0xB2,'0C83E6 Mission 1 camera/map command list (pointer RAM 10E964)'),
@@ -48,6 +49,7 @@ BLOBS=[
     (0x9AD4C,0x9C,'099DCC/099E06 prisoners: hurtbox 09AD4C, view rectangle 09ADD0, player rectangle 09ADE0, item table 09ADE8'),
     (0x2D0B9E,0x160,'099862 prisoner rank tables 2D0B9E/2D0BB8/2D0BD2 (0260C8) and item lists 2D0BEC (099D12)'),
     (0xE553E,0x20,'08C5EA item kinds deleted when their program ends'),
+    (0xE559E,0x178,'08D330 score label: palettes by player 0E559E (0E55AA/0E55AE), blink sequence 0E55CA, digit speeds 0E55EC, digit programs 0E565A/0E56EE (08D7B4)'),
     (0xE561C,0x10,'08C0CC item pickup rectangle E561C, cull rectangle E5624 (0C8BEC)'),
     (0xE581A,0x870,'08D2DA item records (0x5A kinds x 0x18: flags, program, palettes, pickup and motion routines)'),
     (0xE4E84,0x2EC,'087E36 armoured vehicle: hurtbox E4E84, solid E4E90, attack rows E4E9E/E4EBE, cull E4ECE, player rectangle E4ED6, wreck maps E4EDE/E4F36/E4F8E/E4FC0, platform map E4FF2, debris lists E5060/E50B2, platform offsets E5104 (089412)'),
@@ -78,6 +80,13 @@ BLOBS=[
     (0x32646,0x8,'03264E village porter cull rectangle (01945C)'),
     (0x605AA,0x256,'06090A MISSION COMPLETE letters: letter records 605AA/60614 (060DC4 forms), 606A6 (060E02, number 060B06 first) and 60728 (060E3C, mission 5): +60 program, +61, +72 delay, +6E/+70 target'),
     (0x60F44,0x58,'06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)'),
+    (0x31B86,0x16,'032040 civilians: flight program speeds by +62 (004256)'),
+    (0x31D34,0x4C,'031D80/031D92 civilians: program tables 031D34/031D40, cull rectangle 031D4C (01945C), hurtbox 031D54, offsets 031D60, panic hit kinds 031D68, command sequences 031D74/031D7A'),
+    (0x63600,0x20,'063F32 C weapon shell: contact row 063600 and search row 063610 (0049E8)'),
+    (0x63690,0x10,'0636B0 C explosion blast attack row 063690 (0049E8 by 063740)'),
+    (0x63716,0x8,'063756 C blast cull rectangle (019504)'),
+    (0x63814,0x8,'063FDC C shell cull rectangle (019504)'),
+    (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

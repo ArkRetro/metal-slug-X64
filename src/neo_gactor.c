@@ -148,7 +148,15 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e) {
 void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     neo_contact_actor_t c=ga_contact(a);
     uint8_t parent=kobj(c.parent_tag);
-    if (parent==0xff) {ga_fail(e,0x146e8);return;}
+    if (parent==0xff) {
+        /* A0 = another actor's position block (the civilians 031F52 placed
+         * on their leader by 01AD6E): 013DB2 reads its +14/+18 (actor
+         * +3C/+40); the same point relative to the scene root. */
+        neo_contact_parent_t p,r;
+        if (!ga_parent(e,c.parent_tag,&p) || !ga_parent(e,ROOT_TAG,&r)) {ga_fail(e,0x146e8);return;}
+        c.x=(int32_t)((uint32_t)c.x+(uint32_t)p.x-(uint32_t)r.x);c.y=(int32_t)((uint32_t)c.y+(uint32_t)p.y-(uint32_t)r.y);
+        c.parent_tag=ROOT_TAG;parent=NEO_KOBJ_ROOT;
+    }
     self(a,e);
     neo_kfloor_t fl;
     if (!neo_kernel_floor(e->kernel,c.x,c.y,parent,(int32_t)0xff000000,(uint8_t)(c.flags15&32u?0:255),0,0,&fl)) {ga_fail(e,0x146e8);return;}
@@ -273,6 +281,11 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     uint8_t best=e->attack(e->ctx,a,w);
     if ((int16_t)(r[14]<<8|r[15])>=0) ga_fail(e,row); /* several (class,damage) pairs: not observed */
     return best;
+}
+uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
+    memset(e->target,0,sizeof(e->target));
+    e->want_targets=true;uint8_t r=ga_attack(a,e,row);e->want_targets=false;
+    return r;
 }
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
     if (!ga_l(a,0x50)) return false;

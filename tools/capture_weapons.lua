@@ -355,6 +355,30 @@ emu.register_frame_done(function()
   local b=(phase%4==3 and frame%60<4) and 1 or 0
   button('P1 Right',0);button('P1 Left',0);button('P1 Up',up);button('P1 Down',down)
   button('P1 A',a);button('P1 B',b);button('P1 C',0)
+ elseif plan=='air' and frame>=2190 then
+  -- Aiming in the air and H sweeps (docs/ARMAS_VEHICULOS.md, down-aim):
+  -- 3 weapons x 960 frames (pistol from 2190; the H (0A, 200 rounds) given
+  -- at 3150; the C (0C, 40 rounds, cap 3) at 4110, like a pickup), each in
+  -- four 240-frame stances repeated twice facing right then left: (0)
+  -- standing jumps (B every 60 frames) holding Down from the take-off,
+  -- (1) running jumps holding Down, (2) walking with Up held 24 of every 48
+  -- frames (sweeps), (3) standing jumps, Up for the first 16 frames of the
+  -- jump then Down. A is tapped every 8 frames (4 down) throughout.
+  local t=frame-2190
+  local w=t//960;local s=(t%960)//240;local u=t%240;local j=u%60
+  if frame==3150 then cpu:write_u8(0x10c71e,0x0a);cpu:write_u16(0x10c724,200);cpu:write_u8(0x10c71c,0xff);cpu:write_u8(P1+0x94,1) end
+  if frame==4110 then cpu:write_u8(0x10c71e,0x0c);cpu:write_u16(0x10c724,40);cpu:write_u8(0x10c71c,3);cpu:write_u8(0x10c71a,0);cpu:write_u8(P1+0x94,1) end
+  if w>=1 and frame<4110 and cpu:read_u16(0x10c724)<20 then cpu:write_u16(0x10c724,200) end
+  if w>=2 and cpu:read_u16(0x10c724)<10 then cpu:write_u16(0x10c724,40) end
+  local leftward=(u>=120)
+  local right,left,up,down,b=0,0,0,0,0
+  local a=(frame%8<4) and 1 or 0
+  if s==0 then b=(j<4) and 1 or 0;down=(j>=6 and j<50) and 1 or 0;if j<2 then right=leftward and 0 or 1;left=leftward and 1 or 0 end
+  elseif s==1 then b=(j<4) and 1 or 0;down=(j>=6 and j<50) and 1 or 0;right=leftward and 0 or 1;left=leftward and 1 or 0
+  elseif s==2 then right=leftward and 0 or 1;left=leftward and 1 or 0;up=((u%48)<24) and 1 or 0
+  else b=(j<4) and 1 or 0;up=(j<16) and 1 or 0;down=(j>=16 and j<50) and 1 or 0;if j<2 then right=leftward and 0 or 1;left=leftward and 1 or 0 end end
+  button('P1 Right',right);button('P1 Left',left);button('P1 Up',up);button('P1 Down',down)
+  button('P1 A',a);button('P1 B',b);button('P1 C',0)
  elseif frame>=2190 then
   if camera==last_camera then still=still+1 else still=0 end
   last_camera=camera

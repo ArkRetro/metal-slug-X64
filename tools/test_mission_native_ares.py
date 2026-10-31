@@ -45,10 +45,10 @@ def pad():
         t=time.monotonic()-t0
         hold('b',int(t*20)%2==0)
         hold('Up',int(t*2)%2==1)
-        # Between the region end (1920) and the 2336 stop the Camel Slug
+        # Between the domes' collapse (1920) and the 2336 stop the Camel Slug
         # 03458E waits at its record (2216): jump often so that a fall lands
         # on it (0AA610 takes a falling player only) and Marco rides it.
-        hold('a',(t%(0.9 if camel_zone.is_set() else 4.0))<0.15)
+        hold('a',(t%(0.9 if camel_zone.is_set() and not domes.is_set() else 4.0))<0.15)
         if domes.is_set():
             # Domed building (054904): sweep under the three domes firing up.
             hold('Up',True);sweep=int(t/5.0)%2
@@ -106,9 +106,9 @@ try:
     wait_for(r'MSX camera stop=1920',timeout=900);time.sleep(1.0);snap('village-end')
     wait_for(r'MSX domes signal 05486A',timeout=900);domes.set();time.sleep(4);snap('domes-risen')
     wait_for(r'MSX player handlers=054B18',timeout=900);time.sleep(.6);snap('collapse')
-    wait_for(r'MSX domed building collapsed',timeout=300);domes.clear();time.sleep(.3);snap('collapsed')
+    wait_for(r'MSX domed building collapsed',timeout=300);domes.clear();camel_zone.set();time.sleep(.3);snap('collapsed')
     time.sleep(1.5);snap('rubble')
-    wait_for(r'MSX region end passed',timeout=900);snap('domed-building');camel_zone.set()
+    wait_for(r'MSX region end passed',timeout=900);snap('domed-building')
     wait_for(r'MSX camera autoscroll=1',timeout=900);time.sleep(.8);snap('autoscroll')
     wait_for(r'MSX backdrop palette 0B56CA',timeout=900);snap('truck-stop')
     wait_for(r'MSX camera stop=2336',timeout=900);camel_zone.clear();time.sleep(.5);snap('shop')

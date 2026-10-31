@@ -1,5 +1,5 @@
 {
- "descriptors": 3193,
+ "descriptors": 3222,
  "palettes": [
   "0x103",
   "0x113",
@@ -43,6 +43,7 @@
   "0x27c",
   "0x29e",
   "0x2a2",
+  "0x2a3",
   "0x30b",
   "0x363",
   "0x373",
@@ -55,6 +56,7 @@
   "0x380",
   "0x381",
   "0x382",
+  "0x38d",
   "0x3a6",
   "0x3a7",
   "0x3aa",
@@ -100,13 +102,13 @@
  ],
  "stats": {
   "zoomed_entries_skipped": 832,
-  "frames": 758,
-  "pixels_equal": 3036577,
-  "pixels_different": 152715,
+  "frames": 735,
+  "pixels_equal": 3015159,
+  "pixels_different": 152107,
   "pixels_overlapping": 780666,
-  "rank_2": 459,
-  "rank_1": 299,
-  "missing_descriptor": 37
+  "rank_2": 474,
+  "rank_1": 261,
+  "missing_descriptor": 28
  },
  "frames": [
   {
@@ -4709,710 +4711,549 @@
    "different": 101
   },
   {
-   "capture": "tal1",
-   "frame": 13840,
-   "update_frame": 13838,
-   "equal": 0,
-   "different": 562
-  },
-  {
-   "capture": "tal1",
-   "frame": 13848,
-   "update_frame": 13844,
-   "equal": 577,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13856,
-   "update_frame": 13853,
-   "equal": 575,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13864,
-   "update_frame": 13862,
-   "equal": 560,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13872,
-   "update_frame": 13870,
-   "equal": 558,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13880,
-   "update_frame": 13878,
-   "equal": 592,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13888,
-   "update_frame": 13886,
-   "equal": 584,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13896,
-   "update_frame": 13892,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13904,
-   "update_frame": 13903,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13912,
-   "update_frame": 13909,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13920,
-   "update_frame": 13917,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13928,
-   "update_frame": 13928,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13936,
-   "update_frame": 13936,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13944,
-   "update_frame": 13942,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13952,
-   "update_frame": 13950,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13960,
-   "update_frame": 13960,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13968,
-   "update_frame": 13966,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 13976,
-   "update_frame": 13974,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2100,
+   "update_frame": 2100,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 13984,
-   "update_frame": 13984,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2102,
+   "update_frame": 2100,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 13992,
-   "update_frame": 13992,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2104,
+   "update_frame": 2104,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14000,
-   "update_frame": 13998,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2106,
+   "update_frame": 2106,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14008,
-   "update_frame": 14006,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2108,
+   "update_frame": 2106,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14016,
-   "update_frame": 14016,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2110,
+   "update_frame": 2110,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14024,
-   "update_frame": 14024,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2112,
+   "update_frame": 2110,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14032,
-   "update_frame": 14030,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2114,
+   "update_frame": 2114,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14040,
-   "update_frame": 14038,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2116,
+   "update_frame": 2114,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14048,
-   "update_frame": 14048,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2118,
+   "update_frame": 2118,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14056,
-   "update_frame": 14055,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2120,
+   "update_frame": 2120,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14064,
-   "update_frame": 14061,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2122,
+   "update_frame": 2122,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14072,
-   "update_frame": 14069,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2124,
+   "update_frame": 2124,
+   "equal": 687,
    "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14080,
-   "update_frame": 14080,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14088,
-   "update_frame": 14088,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14096,
-   "update_frame": 14094,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14104,
-   "update_frame": 14102,
-   "equal": 601,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14112,
-   "update_frame": 14112,
-   "equal": 555,
-   "different": 0
-  },
-  {
-   "capture": "tal1",
-   "frame": 14120,
-   "update_frame": 14120,
-   "equal": 555,
-   "different": 46
   },
   {
-   "capture": "tal1",
-   "frame": 14128,
-   "update_frame": 14126,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2126,
+   "update_frame": 2126,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14136,
-   "update_frame": 14134,
-   "equal": 601,
+   "capture": "land2",
+   "frame": 2128,
+   "update_frame": 2128,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14144,
-   "update_frame": 14144,
-   "equal": 555,
+   "capture": "land2",
+   "frame": 2130,
+   "update_frame": 2130,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14152,
-   "update_frame": 14150,
-   "equal": 834,
+   "capture": "land2",
+   "frame": 2132,
+   "update_frame": 2130,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14160,
-   "update_frame": 14158,
-   "equal": 798,
+   "capture": "land2",
+   "frame": 2134,
+   "update_frame": 2134,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14168,
-   "update_frame": 14168,
-   "equal": 859,
+   "capture": "land2",
+   "frame": 2136,
+   "update_frame": 2136,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14176,
-   "update_frame": 14176,
-   "equal": 786,
+   "capture": "land2",
+   "frame": 2138,
+   "update_frame": 2136,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14184,
-   "update_frame": 14184,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2140,
+   "update_frame": 2140,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14192,
-   "update_frame": 14192,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2142,
+   "update_frame": 2140,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14200,
-   "update_frame": 14200,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2144,
+   "update_frame": 2144,
+   "equal": 516,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14208,
-   "update_frame": 14208,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2146,
+   "update_frame": 2146,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14216,
-   "update_frame": 14216,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2148,
+   "update_frame": 2148,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14224,
-   "update_frame": 14224,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2150,
+   "update_frame": 2150,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14232,
-   "update_frame": 14232,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2152,
+   "update_frame": 2152,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14240,
-   "update_frame": 14240,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2154,
+   "update_frame": 2154,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14248,
-   "update_frame": 14248,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2156,
+   "update_frame": 2154,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14256,
-   "update_frame": 14256,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2158,
+   "update_frame": 2158,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14264,
-   "update_frame": 14264,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2160,
+   "update_frame": 2160,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14272,
-   "update_frame": 14272,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2162,
+   "update_frame": 2160,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14280,
-   "update_frame": 14280,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2164,
+   "update_frame": 2164,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14288,
-   "update_frame": 14288,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2166,
+   "update_frame": 2164,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14296,
-   "update_frame": 14296,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2168,
+   "update_frame": 2168,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14304,
-   "update_frame": 14304,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2170,
+   "update_frame": 2168,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14312,
-   "update_frame": 14312,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2172,
+   "update_frame": 2172,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14320,
-   "update_frame": 14320,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2174,
+   "update_frame": 2174,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14328,
-   "update_frame": 14328,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2176,
+   "update_frame": 2176,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14336,
-   "update_frame": 14336,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2178,
+   "update_frame": 2178,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14344,
-   "update_frame": 14344,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2180,
+   "update_frame": 2180,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14352,
-   "update_frame": 14352,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2182,
+   "update_frame": 2182,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14360,
-   "update_frame": 14360,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2184,
+   "update_frame": 2184,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14368,
-   "update_frame": 14368,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2186,
+   "update_frame": 2184,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14376,
-   "update_frame": 14376,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2188,
+   "update_frame": 2188,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14384,
-   "update_frame": 14384,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2190,
+   "update_frame": 2190,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14392,
-   "update_frame": 14392,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2192,
+   "update_frame": 2190,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14400,
-   "update_frame": 14400,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2194,
+   "update_frame": 2192,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14408,
-   "update_frame": 14408,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2196,
+   "update_frame": 2194,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14416,
-   "update_frame": 14416,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2198,
+   "update_frame": 2196,
+   "equal": 516,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14424,
-   "update_frame": 14424,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2200,
+   "update_frame": 2198,
+   "equal": 516,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14432,
-   "update_frame": 14432,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2202,
+   "update_frame": 2200,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14440,
-   "update_frame": 14440,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2204,
+   "update_frame": 2202,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14448,
-   "update_frame": 14448,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2206,
+   "update_frame": 2204,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14456,
-   "update_frame": 14456,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2208,
+   "update_frame": 2206,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14464,
-   "update_frame": 14464,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2210,
+   "update_frame": 2208,
+   "equal": 409,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14472,
-   "update_frame": 14472,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2212,
+   "update_frame": 2210,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14480,
-   "update_frame": 14480,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2214,
+   "update_frame": 2212,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14488,
-   "update_frame": 14488,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2216,
+   "update_frame": 2214,
+   "equal": 521,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14496,
-   "update_frame": 14496,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2218,
+   "update_frame": 2216,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14504,
-   "update_frame": 14504,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2220,
+   "update_frame": 2218,
+   "equal": 572,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14512,
-   "update_frame": 14512,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2222,
+   "update_frame": 2220,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14520,
-   "update_frame": 14520,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2224,
+   "update_frame": 2222,
+   "equal": 628,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14528,
-   "update_frame": 14528,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2226,
+   "update_frame": 2224,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14536,
-   "update_frame": 14536,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2228,
+   "update_frame": 2226,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14544,
-   "update_frame": 14544,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2230,
+   "update_frame": 2230,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14552,
-   "update_frame": 14552,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2232,
+   "update_frame": 2230,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14560,
-   "update_frame": 14560,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2234,
+   "update_frame": 2232,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14568,
-   "update_frame": 14568,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2236,
+   "update_frame": 2234,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14576,
-   "update_frame": 14576,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2238,
+   "update_frame": 2238,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14584,
-   "update_frame": 14584,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2240,
+   "update_frame": 2238,
+   "equal": 687,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14592,
-   "update_frame": 14592,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2242,
+   "update_frame": 2240,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14600,
-   "update_frame": 14600,
-   "equal": 782,
+   "capture": "land2",
+   "frame": 2244,
+   "update_frame": 2242,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14608,
-   "update_frame": 14608,
-   "equal": 0,
+   "capture": "land2",
+   "frame": 2246,
+   "update_frame": 2244,
+   "equal": 621,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14616,
-   "update_frame": 14614,
-   "equal": 0,
+   "capture": "land2",
+   "frame": 2248,
+   "update_frame": 2246,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14624,
-   "update_frame": 14624,
-   "equal": 0,
+   "capture": "land2",
+   "frame": 2250,
+   "update_frame": 2249,
+   "equal": 564,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14632,
-   "update_frame": 14632,
-   "equal": 0,
+   "capture": "land2",
+   "frame": 2252,
+   "update_frame": 2250,
+   "equal": 516,
    "different": 0
   },
   {
-   "capture": "tal1",
-   "frame": 14640,
-   "update_frame": 14640,
-   "equal": 0,
+   "capture": "land2",
+   "frame": 2254,
+   "update_frame": 2253,
+   "equal": 516,
    "different": 0
   }
  ]

@@ -586,3 +586,33 @@ contador `01A7F4` solo se dibuja con el bit 1 del DIP blando `10FD91`, que
 pone la BIOS MVS: apagado. El HUD del port usa ahora ese camino (PRESS
 START parpadeando en P2, sin CREDIT; la continuación ya usaba la rama AES).
 Desviación: los cinco créditos domésticos no se gastan.
+
+## Aterrizaje: el paracaídas y el marcador del jugador (`src/neo_landing.c`)
+
+Informe: falta la animación del paracaídas cuando Marco toca el suelo. El
+port empieza en el aterrizaje (la cinemática de entrada termina ahí) y no
+creaba los dos actores que el original tiene en ese momento:
+
+| ROM | Pieza |
+| --- | --- |
+| `0C4A58` (creado en `0C1604` por el jugador al saltar) | la vela: en el descenso sigue al jugador (`+28` = −4/+4 según su giro, `+38` = su bloque `+28`, paleta `0x38D`) y dibuja también al jugador; `0C4AAE` con el bit 6 de `+15` del jugador (en el suelo) pasa a `0C4B62` |
+| `0C4B62`, `0C4B78` | programa `0C49D4`; cada actualización `01ACA2` (giro del jugador), `+1E` = el del jugador − 1 (detrás de él), `01AC38`, `00427A`; se borra al terminar el programa (27 actualizaciones; la comprobación de cartucho `0C4B98` no se reproduce) |
+| `0C5286` (creado por `0C162A` al aterrizar) | marcador «1P» con la flecha: `+1E` = FFFE, paleta `0x2A3` y programa `0C519E` (jugador 2: `0x2A2`, `0C5212`); `0C52FA` sigue las palabras `+3C/+40` del jugador hasta el final de su programa (108 actualizaciones) |
+
+El traspaso crea ambos en el estado del final del descenso y los ejecuta
+tras la actualización del jugador (`gameplay.c landing_step`); la vela se
+dibuja antes que Marco y el marcador después. Programas convertidos por
+`tools/extract_soldier_programs.py` (594 programas, superconjunto) y
+sprites/paletas por `export_rest_sprites.py` (`land2@c4a58-c5330`, 3222
+descriptores y 91 paletas, superconjunto).
+
+**Evidencia.** Captura de familia `land2` (`MSX_REST_BOSS_FROM=1500
+MSX_REST_FAMILY_ROOTS=c4a58,c5286 MSX_REST_FIRST_DUMP=1900
+MSX_REST_PERIOD=2 MSX_REST_LAST=2400`; aterrizaje en el fotograma 2038 de
+esa captura). `tools/extract_landing_fixture.py` →
+`data/landing_fixture.json.gz`; `tools/test_neo_landing.c` (en `make
+check`): **137 actualizaciones en bucle cerrado, 19170 bytes iguales, los
+dos borrados**, con las palabras del jugador que leyó cada actualización
+como entrada. Sprites contra la VRAM de `land2`: **78 volcados, 45247
+píxeles iguales, 0 distintos**. Desviación: el `+1E` del jugador del port
+es la constante medida en el aterrizaje (0x86D6).

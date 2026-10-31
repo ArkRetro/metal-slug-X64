@@ -347,6 +347,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);
+    for (unsigned i=0;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],true);
     if (game.world.boss_active) scene_prefetch_boss();
     scene_prefetch_ahead(game.camera);
     scene_service();
@@ -394,6 +395,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     rdpq_set_scissor(8,8,312,232);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (!(d->attributes&4u)) draw_native(d,false);}
+    /* The parachute canopy (+1E = the player's - 1): behind the player. */
+    for (unsigned i=game.landing.marker_draws;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],false);
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
     if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
@@ -419,6 +422,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
+    /* The landing's player marker (+1E = FFFE): over the player. */
+    for (unsigned i=0;i<game.landing.marker_draws;i++) draw_end(&game.landing.draws[i],false);
     for (unsigned owner=0;owner<2;owner++) {
         const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
         unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;

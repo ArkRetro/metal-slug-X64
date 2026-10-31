@@ -123,6 +123,9 @@ ROOTS+=[0x237aec,0x237b84,0x237bd0,0x237c48,0x237c52,0x237c68,0x237c7e,0x237c94,
 # The mission actor 101364's own program (fixed block): the big CONTINUE?
 # and the countdown digit 018120 (00427A at 01883C) and GAME OVER 0181E4.
 ROOTS+=[0x18120,0x181e4]
+# Parachute landing (0C162A): the canopy collapsing behind the player 0C49D4
+# (0C4B62) and the player marker over him 0C519E/0C5212 (0C5286).
+ROOTS+=[0xc49d4,0xc519e,0xc5212]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}

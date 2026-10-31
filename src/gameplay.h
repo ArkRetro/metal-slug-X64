@@ -8,6 +8,7 @@
 #include "neo_hud.h"
 #include "neo_end.h"
 #include "neo_continue.h"
+#include "neo_landing.h"
 #include "neo_fade.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
@@ -73,6 +74,11 @@ typedef struct {
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
     neo_continue_t continue_sprites;
+    /* The parachute landing's canopy and player marker (neo_landing.c),
+     * created at the entry handoff (landing_pending) and run after the
+     * player; landing_x/y: the player's projected longs of the previous
+     * update (+44/+48). */
+    neo_landing_t landing;bool landing_pending,landing_on;int32_t landing_x,landing_y;
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;

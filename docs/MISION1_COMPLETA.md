@@ -167,13 +167,14 @@ iguales, 0 distintos**
 | `0x039590/0x0395B6` espadachines árabes del carro y muerte en trozos `0x0A93CE` | **nativo** (MISION1_ACTORES.md) |
 | `0x035668` criatura del subguion | **nativo** (MISION1_ACTORES.md) |
 | `0x09D846/62/76` espadachines, cuchillo `0x09ECCC`, salpicadura `0x01C97A` | **nativo** (MISION1_ACTORES.md; `0x09E382` parada explícita) |
-| `0x09F682` camello | externo |
+| `0x09F682` jinetes de camello (jinete `0x09FEAA`, cabeza `0x09FF92`, disparos `0x0A0034`, piezas `0x0A016A`, espada `0x09EE34`) | **nativo** (MISION1_ACTORES.md) |
 | `0x099862` prisionero (suelta, objeto) | **nativo** (MISION1_ACTORES.md) |
 | `0x08C374/0x08C37C` objetos (tras la región; recogida = parada explícita) | **nativo** (MISION1_ACTORES.md) |
 | `0x087E36` vehículo blindado de la parada 1304 (proyectiles y piezas externos) | **nativo** (MISION1_ACTORES.md) |
 | `0x099DCC`, `0x099E06` prisioneros (y la cuerda `0x09A97C`), en toda la misión | **nativos** (MISION1_ACTORES.md) |
 | `0x031D92` (objeto de escena), `0x03458E` Camel Slug | externos |
 | `0x01913C` (temporizador), `0x0B63A0/0x0B639A` toldos, piezas `0x08732C` | externos |
+| `0x0B6298` decoración del pueblo, `0x0400AA` toldo del puesto, `0x03264E` porteador | **nativos** (MISION1_ACTORES.md) |
 
 "Externo" = el registro del guion se ejecuta y se cuenta (`external_spawns`),
 el actor no se crea ni se dibuja y no cuenta en los grupos (las esperas "grupos
@@ -254,8 +255,9 @@ python3 tools/test_mission_native_ares.py --log /ruta/ares.log --output /ruta/ar
 
 ## Pendiente
 
-- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`,
-  el camello `0x09F682` y la Camel Slug `0x03458E`.
+- Actores del resto aún externos (tabla de cobertura): el cañón `0x092A32`
+  y la Camel Slug `0x03458E` (no contados; la auditoría ya no informa de
+  ninguna aparición contada perdida).
 - Disparo de la torreta del jefe (`0x08FA1A` → bala `0x08EFFA`/`0x08F058`/
   `0x08F1A0`): necesita una captura en la que dispare.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista

@@ -600,6 +600,26 @@ static ga_result_t knife_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* 09EE34: the camel rider's dropped sword (09F562, neo_camel.c): thrown up
+ * and back, palette 0x3FE, program 2A1CEE; 0041AC on the ground. */
+static ga_result_t drop_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x9ee34:
+        ga_palette(a,0x3fe);
+        SL(0x34,0x66666);SL(0x72,0xffff5c29u);SL(0x30,FACING?0x19999u:0xfffe6667u);
+        SET(0x5f,3);START(0x2a1cee);SL(0,0x9ee8c);
+        /* fall through */
+    case 0x9ee8c:
+        ga_air(a,e);SL(0x34,L(0x34)+L(0x72));STEP(r);
+        if (B(0x15)&0x40u) SL(0,0x9ecc4);
+        SW(0x26,W(0x26)-4u);
+        return t81c(a,e);
+    case 0x9ecc4: return GA_DELETE_TREE;                                  /* 0041AC */
+    case 0x9ec34: return GA_DELETE;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static bool sw_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
     (void)parameter;
     if (kind!=NEO_ANIM_CALL) return false;
@@ -612,18 +632,20 @@ static bool sw_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t 
     if (routine==0x9f536u) {CLR(0x96,0);return true;}
     return false;
 }
+static bool drop(uint32_t r) {return r==0x9ee34 || r==0x9ee8c;}
 static bool knife(uint32_t r) {return r==0x9eccc || r==0x9ed76 || r==0x9edf0 || r==0x9ee1a || r==0x9ecc4;}
 bool neo_swords_routine(uint32_t r) {
     static const uint32_t own[]={0x9d846,0x9d862,0x9d876,0x9d964,0x9d9c0,0x9da2e,0x9db24,0x9db44,0x9dbbe,0x9dc5c,0x9dcd0,
         0x9dd12,0x9dd90,0x9ddce,0x9de5c,0x9de84,0x9defe,0x9df5e,0x9df98,0x9dfb2,0x9dfe2,0x9e00a,0x9e026,0x9e040,0x9e062,
         0x9e0b2,0x9e122,0x9e194,0x9e1ae,0x9e1c4,0x9e1e8,0x9e1fe,0x9e250,0x9e25a,0x9e27e,0x9e298,0x9e31e,0x9e34c,0x9e362,
         0x9e842,0x9e8a8,0x9e8c2,0x9e906,0x9e920,0x9e9b8,0x9e9e0,0x9ea42,0x9ea6a,0x9ea9e,0x9eab8,0x9eade,0x9ec34};
-    if (knife(r)) return true;
+    if (knife(r) || drop(r)) return true;
     for (unsigned i=0;i<sizeof(own)/sizeof(own[0]);i++) if (own[i]==r) return true;
     return false;
 }
 ga_result_t neo_swords_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (knife(r)) return knife_tick(a,e);
+    if (drop(r)) return drop_tick(a,e);
     return sword_tick(a,e);
 }

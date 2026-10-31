@@ -145,6 +145,7 @@ struct neo_genv {
     bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
     bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */
     void (*kill_children)(void *ctx,neo_gactor_t *a);  /* 004192: delete the deeper nodes after `a` */
+    bool (*has_children)(void *ctx,neo_gactor_t *a);   /* 00408C: carry when the next node is deeper than `a` */
     /* Sub-script actor 019E82: run the level-script record at ROM `record`
      * for actor `a` (the interpreter of the world, freed with the actor);
      * true once op 3 ran. */

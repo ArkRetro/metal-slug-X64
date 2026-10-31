@@ -177,6 +177,17 @@ static void kill_children(void *ctx,neo_gactor_t *a) {
             if (p==a) {actors[i].active=false;killed_children++;break;}
     }
 }
+/* 00408C: the next node is deeper (the nodes after `a` are its descendants
+ * in the list: any live descendant). */
+static bool has_children(void *ctx,neo_gactor_t *a) {
+    (void)ctx;
+    for (unsigned i=0;i<NN;i++) {
+        if (!actors[i].active || &actors[i]==a) continue;
+        unsigned depth=0;
+        for (neo_gactor_t *p=creator_of(NULL,&actors[i]);p && depth<NN;p=creator_of(NULL,p),depth++) if (p==a) return true;
+    }
+    return false;
+}
 static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=creator_of(NULL,a);return !c || c->active;}
 /* 0049E8 against the player (class 0): the player's hurtbox is not in the
  * trace; a contact is taken from the update's outcome (the original deletes
@@ -207,6 +218,9 @@ int main(void) {
      * its creator. */
     for (unsigned i=0;i<NN;i++) if (NODES[i].creator>=0)
         node_address[NODES[i].creator]=(uint32_t)((uint32_t)NODES[i].pre[0x0c]<<24|NODES[i].pre[0x0d]<<16|NODES[i].pre[0x0e]<<8|NODES[i].pre[0x0f]);
+#ifdef FAMILY_ADDRESSES
+    {static const uint32_t ad[]=FAMILY_ADDRESSES;for (unsigned i=0;i<NN && i<sizeof(ad)/sizeof(ad[0]);i++) if (!node_address[i]) node_address[i]=ad[i];}
+#endif
     neo_rng_t rng;memset(&rng,0,sizeof(rng));
     static neo_kscene_t kernel;kernel.group_map=soldier_group_map;
     uint8_t groups[9]={0},flag606=0;
@@ -216,8 +230,11 @@ int main(void) {
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
-    e.flags=&flags;e.terrain_tag=0x10d7b6u;   /* both families lie past camera 1023 */
-    e.kill_children=kill_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+#ifndef FAMILY_TERRAIN
+#define FAMILY_TERRAIN 0x10d7b6u   /* the families past camera 1023 */
+#endif
+    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;
+    e.kill_children=kill_children;e.has_children=has_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
 #ifdef FAMILY_MARKER_SEQ
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
 #endif
@@ -351,6 +368,13 @@ int main(void) {
         for (unsigned o=0x10;o<0xb0;o++) {
             if (skip(o)) continue;
             uint8_t want=(o>=0x38 && o<0x3c)?(uint8_t)(t38>>(24-8*(o-0x38))):u->post[o];
+#ifdef FAMILY_NODE_FIELDS
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;
+             for (unsigned k=0;k<sizeof(nf)/sizeof(nf[0]);k++) if (o>=nf[k] && o<nf[k]+4u) {
+                 uint32_t v=native_tag((uint32_t)u->post[nf[k]]<<24|(uint32_t)u->post[nf[k]+1]<<16|(uint32_t)u->post[nf[k]+2]<<8|u->post[nf[k]+3]);
+                 want=(uint8_t)(v>>(24-8*(o-nf[k])));
+             }}
+#endif
             if (a->m[o]!=want) {fprintf(stderr,"frame %u node %d routine %05x +%02X=%02x expected %02x\n",u->frame,u->node,u->routine,o,a->m[o],want);return 1;}
             compared++;
         }

@@ -16,7 +16,8 @@ int main(void) {
         }
         n+=s->requests;
     }
-    if (neo_blood_palette(0x9f598,true)) {printf("FAIL untranslated site answered\n");return 1;}
+    /* A ROM address that is no translated call site (01B2BE itself) answers 0. */
+    if (neo_blood_palette(0x1b2be,true)) {printf("FAIL untranslated site answered\n");return 1;}
     static neo_world_t w;neo_world_init(&w,0);
     if (w.blood!=(MSX_BLOOD!=0)) {printf("FAIL world blood %d, MSX_BLOOD %d\n",w.blood,MSX_BLOOD);return 1;}
     printf("Blood: %u call sites, %u recorded ON requests, default %s\n",(unsigned)(sizeof(blood_sites)/sizeof(blood_sites[0])),n,MSX_BLOOD?"ON":"OFF");

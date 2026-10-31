@@ -861,13 +861,150 @@ Tablas en `data/region_rom.json`: `E0962..E0C32`, `48E1A`, `49006`, `49762`
 y los rangos `2D14CE..2D1AAC`; programas (19) en `data/soldier_programs.json`
 (`HELI_ROOTS`). `neo_gactor.c`: `ga_probe_vertical` (`01495C`).
 
-### Preparado para las dos apariciones contadas que faltan
+## Jinetes de camello `0x09F682` (cámara 2184, `src/neo_camel.c`)
 
-- Helicóptero `0x04857C`: portado (sección siguiente).
-- Camello `0x09F682` (`camel1`, `--range 9ea00-a0800`: 469 actualizaciones;
-  el jinete 1, nodo `1030F4`, con sus hijos es la primera prueba `--tree`).
-  Sitios de sangre `0x09EFE4/0x09F598` (`neo_blood.c`: ON `0x3FE`, OFF
-  `0x0B8`).
+Registro del guion `0x2D6D24` (cámara 2184) y su compañero de la cámara
+1939: dos camellos, cada uno con tres nodos. Traducción manual de
+`0x09F682..0x0A0AE8`:
+
+- **Camello `0x09F682`** (invisible: lleva el estado y el trote): palabras
+  `+6E` (lado), `+70` (lado lejano, `+90` bit 1), `+72` (bits de cambio de
+  lado, `0A0664`), `+74` (punto de parada `+84`), `+76` (vida `+80`, 0 =
+  7FFF). Constructor `0A023E/0A02D0` (suelo, jinete `0x09FDFE` con
+  `0x0040BC`, paleta `0x117`; `03C532` → `019240`: sin onda `03C62A` en la
+  misión 1), rangos `2D311C/2D30A0`. Entrada andando (`0x09F7C4/0x09F7F4`,
+  `0A0532`) o esperando (`0x09F730/0x09F752`, `0A055C`) y parada
+  (`0x09F76A/0x09F782`: espera a que acabe el programa del jinete, `+61`).
+  Estados: andar `0x09F846/0x09F878` (movimientos `+7A`: vaivén `0A039E`,
+  alejarse `0A03D6`, volver `0A043A`; `0A047E` velocidad de programa),
+  alejarse `0x09F90A/0x09F940` (`0A0508`: seis veces cerca), parado
+  `0x09F968/0x09F9A6`, giro `0x09F9FA/0x09FA28`, cambio de lado
+  `0x09FA48/0x09FAC0`, sin cabeza `0x09FADE/0x09FB2C` (sonido `108E`),
+  apuntar/disparar/bajar `0x09FB48..0x09FC6C` (rangos `2D3242`, `2D31E0`,
+  `2D317E`; distancias `2D3306/2D3320`), huida `0x09FC9C..0x09FCFE`
+  (`019DFC`, 6 px; también al morir el jinete, `+5F` bit 7). Colas
+  `09FD0E` (vida, `0A072A`), `09FD3A`, `09FD4A` (recorte `A0B1E`) y
+  `09FD60` (`004188`; la comprobación del cartucho previa no se reproduce).
+  Trote `+8D` por la llamada `0A0774` (desplazamientos `A0B6A` → `+88/+89`).
+- **Jinete `0x09FDFE/0x09FEAA`**: sigue al camello (`0A07D0`: `+88/+89`
+  reflejados, capa `+1E`, banderas `+90`, caja `A0AEA/A0AF6`, sin caja en
+  los estados `B/C/D` o FF) con el programa del estado `+8B` (tablas
+  `A0B82/A0BBA`, 16 entradas: FF lee la 15). Al acabar el programa pone
+  `+61` del camello. Muerte (`09FF0A`): `+5F` bit 7 del camello; espada
+  `0x09EE34` (`09F562`, `neo_swords.c`) o `+96` bit 0 sin cabeza
+  (`09F58C`), `009F88`, paleta por `01B2BE` en `09F598` (`neo_blood.c`: ON
+  `0x3FE`, OFF `0x0B8`; la captura BLOOD ON pidió `0x3FE` en `09F5AA`, ya en
+  `data/blood_fixture.json`), lado por `+5B` y las muertes de espadachín
+  `0x09E920`/`0x09EAB8` al azar.
+- **Cabeza `0x09FF26/0x09FF92`**: vida `2D303E`, sigue al jinete
+  (`0A0866`, programas `2A24EC..2A25CE` por los cambios de `+90`), caja
+  `A0B02` mientras `+8F` del jinete; golpeada con `+90` bit 3 cambia de
+  programa y al morir pone el bit 4 del camello (→ sin cabeza).
+- Llamadas de programa: `0A0AB6/0A0ABE` (`+90` bit 2), `0A0AC6/0A0AD8`
+  (bit 3 del jinete y del camello), `0A09D0/0A0A02` (sonido `10FF`, disparo
+  `0x0A0034` en (-27,31)/(-32,31): rango `2D30BA`, fila `A0B0E`, explosión
+  `0x0A00E8` con `22E504`), `0A0A68` (3 o 4 piezas `0x0A016A`, velocidades
+  `A0B2E`), `0A0A34/0A0A5C` (casquillo `0x0A020A`, `A0B5E`).
+- `neo_gactor`: un barrido cuyo padre es el bloque de posición de otro
+  actor (el jinete muere encima del camello: `01436A` con `+38` = camello
+  `+28`) pasa a coordenadas absolutas como `01AC4C` (posiciones anterior y
+  actual del bloque).
+- `0AAA88` (vehículo del jugador, `0A0664`) responde 0: el port no tiene
+  vehículos del jugador.
+
+**Captura** `captures-m1full/camel2` (`MSX_REST_FAMILY_ROOTS=9f682
+MSX_REST_BOSS_FROM=6900 MSX_REST_LAST=8400 MSX_REST_FIRST_DUMP=6900
+MSX_REST_HOLD_FIRE=6950-7950`): sin disparos el segundo camello llega a la
+parada 2336 y recorre andar, alejarse, girar, cambiar de lado, apuntar,
+disparar (8 disparos, 7 tocan al jugador invulnerable), bajar y huir. En
+`camel1` el jugador lo mataba en 7200. Nuevas opciones solo de captura
+`MSX_REST_HOLD_STILL` y `MSX_REST_STAND_FIRE` (no usadas en `camel2`: con el
+jugador quieto la cámara sigue hasta 2336 igualmente).
+
+**Prueba `camel`** (`data/camel_fixture.json.gz`, rango `9ea00-a0800`,
+`--hit-to a00e8 --hit-moving`): **18 nodos, 1970 actualizaciones en bucle
+cerrado (7001..8150), 273280 bytes iguales**, 18 borrados, 7 contactos con
+el jugador (disparos), 1 creado fuera (el segundo camello). No grabados
+(traducidos): la entrada `0x09F6CA` (`0A0296`), la entrada andando
+`0x09F7C4`, sin cabeza `0x09FADE`, el casquillo `0x0A020A`, la muerte
+`0x09E920` del jinete y la espada en `0x09F58C`.
+
+Gráficos: `tools/export_rest_sprites.py ... camel2@9ea00-a0800`: 2220
+descriptores (120 nuevos, los 2100 anteriores idénticos), 64 paletas (nueva
+`0x118`); los 37 volcados de `camel2`: 75084 píxeles iguales, 367 distintos
+(8070 y 8100: muertes con efectos superpuestos).
+
+Tablas en `data/region_rom.json`: `A0AEA..A0BF9` y los rangos
+`2D303E..2D3417`; 36 programas (`CAMEL_ROOTS`).
+
+Auditoría tras esta familia: **0 apariciones contadas perdidas**; sin
+contar quedan `0x01913C 0x031D80 0x031D92 0x03264E 0x03458E 0x03FC5A
+0x0400AA 0x092A32 0x0B6298 0x0B639A 0x0B63A0`.
+
+## Apariciones no contadas del pueblo: `0x0B6298` y `0x0400AA`
+
+Captura `captures-m1full/unc1` (`MSX_REST_FAMILY_ROOTS=b6298,400aa,3fc5a,
+31d80,3264e MSX_REST_BOSS_FROM=2300 MSX_REST_LAST=4100
+MSX_REST_FIRST_DUMP=2300`).
+
+- **Decoración `0x0B6298`** (cámara 336, registro `0x2D63B8`; `neo_barrel.c`):
+  paleta `0x442`, programa `2A89AC`, profundidad `01AD8C`, recorte `0B6948`
+  → `0x0B6202`. Prueba `decor`: **665 actualizaciones en bucle cerrado
+  (2496..4035), 92960 bytes iguales**, borrado en 4035.
+- **Toldo del puesto `0x0400AA`** (cámara 192, registro `0x2D6364`;
+  `neo_props.c`): suelo, `009F88`, paleta `0x13B`, programa `2402CA`, sello
+  de colisión `0E0932` (`0C88B0`: no cambia ninguna celda de la rejilla
+  estática, que ya lo contiene; comprobado), profundidad, recorte `0E08B8`
+  (`03FADA` → `0041AC`). Prueba `awning` (`--terrain 10c72e`: la opción
+  nueva lee el objeto de capa del pueblo `10C72E`, cuyas lecturas
+  `10C742..` guarda ahora `extract_family_fixture.py`): **152
+  actualizaciones (2349..2803), 21140 bytes iguales**, 1 sello.
+- Mundo: un nodo que no es actor genérico (el corredor del guion que creó un
+  soldado) y se borra con nodos más profundos detrás queda como marcador
+  (`004126`), igual que los actores genéricos: el borrado en árbol `0041AC`
+  del toldo se detiene en él y no se lleva al soldado (`walk3`, 2730).
+  `data/soldier_world_fixture.json.gz` re-extraído con `0x0400AA/0x0B6298`
+  como actores del mundo (el extractor anterior reproducía el fichero
+  exacto): 5248 actualizaciones, 27193 estados de actores genéricos.
+- Gráficos: `unc1@b6200-b6300 unc1@400aa-40100`: 2222 descriptores, paletas
+  nuevas `0x442`, `0x13B`; 66 volcados: 51172 píxeles iguales, 0 distintos.
+- **Paradas explícitas** (siguen externas): el puesto `0x03FC5A` (sus cajas
+  de fruta `0x03FD6E` preguntan a `01AF1A` por el bit 6 de `+15` del
+  jugador, que el entorno de los actores no lleva), los toldos rayados
+  `0x0B639A/0x0B63A0` (velocidad de programa por RAM `100012/100013`,
+  `002836`, y rebote por `10C6B0/10C6B1`, que escribe `0B64BA` desde el
+  jugador), `0x031D80` (su registro `0x2D641E` no se ejecutó en `unc1`) y `0x031D92`.
+
+## Porteador del pueblo `0x03264E` (cámara 440, `src/neo_porter.c`)
+
+Registro `0x2D642E` (grupo 9, no contado; palabra `+6E` = 80). Traducción de
+`0x03264E..0x032938` y de las llamadas de sus programas del banco
+(`238632..2386EE`, `238AF0..238BAA`):
+
+- **Figura `0x03264E`** (`019DFC`, paleta `0x92`, programa `2389CE` con
+  `238B20/238B70/238AF0/238B08/238B78`: va y viene, `+7E` su desvío):
+  `+6E` + progreso de cámara (RAM `10E99E`) es la cámara a la que envía al
+  porteador `0x0327EC` (`0040BC`, desde `x = 0x180` o `-0x40` por `+70`,
+  `01ACF2`); movimiento `08CCD4` hasta que el porteador llega (`+80`), luego
+  `0x0327B0/0x0327CA` (programa `2386F0` con `238B8E`, `01436A`).
+- **Porteador `0x0327EC`** (paleta `0x114`, programa `237F36`, 2,5 px):
+  `23867C` (a menos de 0x28 px pone `+80` de ambos), `238632` le da un
+  objeto `0x08C374` de tipo `0x30` (`08CD70`: `0040BC` tras él, `+70` =
+  FFFF; objeto y creador en `+72/+76`), `2386A4/2386C2/2386CC/238666/
+  2386E6/238670/2386D6`; mientras siga un nodo más profundo (`00408C`, nuevo
+  servicio `has_children` del entorno) espera, luego `+83` de ambos.
+  Recorte `032646` → `004188`.
+- Prueba `porter` (`--terrain 10c72e --node-fields 72,76 --pickup
+  2836,0,ffff`: `--node-fields` compara los punteros a nodos a través de la
+  correspondencia): **246 actualizaciones (2601..3016), 34020 bytes
+  iguales**, el objeto recogido en 2836 (puntos).
+- Mundo: `extract_soldier_world.py` trata un creador marcador (`003F1E`)
+  como su propio creador (el porteador sigue siendo del mundo cuando la
+  figura se recorta); `test_neo_world.c` compara `+72/+76` del porteador por
+  el mapa de nodos. 5248 actualizaciones, 28211 estados de actores
+  genéricos, 6 llamadas al RNG menos inyectadas.
+- Gráficos: `unc1@3264e-32940`: 2355 descriptores, paleta nueva `0x92`; 14
+  volcados: 10495 píxeles iguales, 0 distintos.
 
 ## Otras paradas explícitas de esta tanda
 

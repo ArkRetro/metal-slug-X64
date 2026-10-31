@@ -75,12 +75,24 @@ ROOTS+=PRISONER_ROOTS
 # Item kinds with the motions 08BA10 (1A), 08BA38 (24) and 08BAB2 (35, 38,
 # 3A..3C, 3E, 43, 45..47, 58: the foods), records 0E581A +4.
 ROOTS+=[0x2865cc,0x2876e6,0x287d64,0x28851a,0x288af2,0x288c1e,0x288e1c,0x28988e,0x28a94c,0x28a582,0x288d18,0x28a672,0x28aa8c]
+# Rocket launcher 05ED84 (idle, stop, turn, deaths, fire by shot, reload by
+# shot, flinch, walk), its rocket 05FD8A (2648FA), the aim flash 060490 and
+# the muzzle 0602E4 (programs in the P1 ROM).
+ROCKET_ROOTS=[0x263bc6,0x263bf4,0x263d7a,0x263dcc,0x2640e2,0x264072,0x264b00,0x264bca,0x264c94,0x264e46,
+    0x264152,0x264176,0x26419a,0x2641be,0x2641e2,0x264206,0x26422a,0x26424e,
+    0x264272,0x264374,0x26443e,0x264508,0x2645d2,0x26469c,0x264766,0x264830,
+    0x263fc6,0x263e1e,0x26401c,0x263ef2,0x263c78,0x263d24,0x263c22,0x263cce,0x2648fa,
+    0x60370,0x60394,0x603b8,0x603dc,0x60400,0x60424,0x60448,0x6046c,0x601a0,0x60242]
+ROOTS+=ROCKET_ROOTS
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
-def convert(bank,root):
+def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):
+        # Programs of the P1 ROM (the rocket launcher's flash 060490 and
+        # muzzle 0602E4) read the fixed block.
+        if pc<0x100000:assert fixed is not None;return fixed[pc:pc+n]
         assert 0x200000<=pc<0x300000;return bank[pc-0x200000:pc-0x200000+n]
     def add(pc,**k):
         c=dict(address=pc,kind='',asset=0,target=0,operand=0,flags=0,dx=0,dy=0);c.update(k)
@@ -141,8 +153,8 @@ def convert(bank,root):
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path)
     p.add_argument('--output',type=Path,required=True);a=p.parse_args()
-    bank=(a.capture/'program-bank.bin').read_bytes()
-    programs=[dict(root=r,commands=convert(bank,r)) for r in ROOTS]
+    bank=(a.capture/'program-bank.bin').read_bytes();fixed=(a.capture/'program-fixed.bin').read_bytes()
+    programs=[dict(root=r,commands=convert(bank,r,fixed)) for r in ROOTS]
     kinds={}
     for prog in programs:
         for c in prog['commands']:kinds[c['kind']]=kinds.get(c['kind'],0)+1

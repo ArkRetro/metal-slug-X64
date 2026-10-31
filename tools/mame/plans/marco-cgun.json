@@ -1,0 +1,160 @@
+[
+ {
+  "name": "c_idle_right",
+  "length": 40,
+  "inputs": []
+ },
+ {
+  "name": "c_stand_fire_right",
+  "length": 64,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "c_idle_fwd",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "c_aim_up_fire_right",
+  "length": 64,
+  "inputs": [
+   "Up",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_aim_up_right",
+  "length": 32,
+  "inputs": [
+   "Up"
+  ]
+ },
+ {
+  "name": "c_idle_fwd2",
+  "length": 32,
+  "inputs": []
+ },
+ {
+  "name": "c_crouch_right",
+  "length": 32,
+  "inputs": [
+   "Down"
+  ]
+ },
+ {
+  "name": "c_crouch_fire_right",
+  "length": 64,
+  "inputs": [
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_walk_right",
+  "length": 32,
+  "inputs": [
+   "Right"
+  ]
+ },
+ {
+  "name": "c_run_fire_right",
+  "length": 40,
+  "inputs": [
+   "Right",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_jump_right",
+  "length": 64,
+  "inputs": [
+   "jump"
+  ]
+ },
+ {
+  "name": "c_jump_fire_right",
+  "length": 64,
+  "inputs": [
+   "jump",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_jump_up_fire_right",
+  "length": 64,
+  "inputs": [
+   "jump",
+   "Up",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_jump_down_fire_right",
+  "length": 96,
+  "inputs": [
+   "jump",
+   "Down",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_run_jump_fire_right",
+  "length": 64,
+  "inputs": [
+   "Right",
+   "jump",
+   "fire"
+  ]
+ },
+ {
+  "name": "c_grenade_stand",
+  "length": 64,
+  "inputs": [
+   "grenade"
+  ]
+ },
+ {
+  "name": "c_grenade_crouch",
+  "length": 80,
+  "inputs": [
+   "Down",
+   "grenade"
+  ]
+ },
+ {
+  "name": "c_grenade_jump",
+  "length": 96,
+  "inputs": [
+   "jump",
+   "grenade"
+  ]
+ },
+ {
+  "name": "c_walk_left",
+  "length": 32,
+  "inputs": [
+   "Left"
+  ]
+ },
+ {
+  "name": "c_stand_fire_left",
+  "length": 64,
+  "inputs": [
+   "fire"
+  ]
+ },
+ {
+  "name": "c_grenade_stand_left",
+  "length": 64,
+  "inputs": [
+   "grenade"
+  ]
+ },
+ {
+  "name": "c_idle_end",
+  "length": 40,
+  "inputs": []
+ }
+]

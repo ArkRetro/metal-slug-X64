@@ -22,6 +22,9 @@ typedef struct {
     uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables) */
     int hgun_program;      /* H upper body (marco_hgun.c): its program (marco_hgun_program_t), -1 none */
     bool hgun_start;       /* that program started (or restarted) in this update */
+    bool thrown;           /* a grenade thrown in this update (0C3BCC / crouched 0C2458) */
+    bool cgun;             /* the C (id 0C, form 1) */
+    bool cgun_fire;        /* its fire state 0C3CD0 entered in this update */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;

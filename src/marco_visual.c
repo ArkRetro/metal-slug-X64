@@ -32,7 +32,9 @@ void marco_visual_reset(marco_visual_t *v) {
 }
 static bool crouch_role(int r) {
     return r==MARCO_CAMPAIGN_B_CROUCH_IN || r==MARCO_CAMPAIGN_B_CROUCH || r==MARCO_CAMPAIGN_B_CROUCH_FIRE ||
-        r==MARCO_CAMPAIGN_B1_CROUCH_IN || r==MARCO_CAMPAIGN_B1_CROUCH || r==MARCO_CAMPAIGN_B1_CROUCH_FIRE;
+        r==MARCO_CAMPAIGN_B_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE ||
+        r==MARCO_CAMPAIGN_B1_CROUCH_IN || r==MARCO_CAMPAIGN_B1_CROUCH || r==MARCO_CAMPAIGN_B1_CROUCH_FIRE ||
+        r==MARCO_CAMPAIGN_B1_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE || r==MARCO_CAMPAIGN_B1C_CROUCH_FIRE;
 }
 static bool weapon_default(int r) {
     return r==MARCO_CAMPAIGN_W_IDLE || r==MARCO_CAMPAIGN_W_RUN || r==MARCO_CAMPAIGN_W_JUMP ||
@@ -42,11 +44,17 @@ static bool weapon_default(int r) {
         r==MARCO_CAMPAIGN_W1_AIM_DOWN;
 }
 /* H programs (marco_hgun_program_t order): tables 0BFDD8..0BFF58 + 0x10.
- * The downward ones (2560C0, 2561DC, 25624E) need the aim down in the air,
- * which the port's player does not have (marco_hgun_input_t.down is
- * false): never started. */
-static const int hgun_roles[7]={MARCO_CAMPAIGN_W1_BURST,MARCO_CAMPAIGN_W1_BURST_UP,-1,
-    MARCO_CAMPAIGN_W1_SWEEP_FWD_UP,-1,MARCO_CAMPAIGN_W1_SWEEP_UP_FWD,-1};
+ * Down in the air (marco-g1): burst 0BFE58 2560C0 and sweep forward->down
+ * 0BFED8 2561DC. The sweep down->forward 25624E did not occur in any
+ * capture: not in the catalog, never started (explicit stop: its pose stays
+ * the previous one). */
+static const int hgun_roles[7]={MARCO_CAMPAIGN_W1_BURST,MARCO_CAMPAIGN_W1_BURST_UP,MARCO_CAMPAIGN_W1_BURST_DOWN,
+    MARCO_CAMPAIGN_W1_SWEEP_FWD_UP,MARCO_CAMPAIGN_W1_SWEEP_FWD_DOWN,MARCO_CAMPAIGN_W1_SWEEP_UP_FWD,-1};
+/* Down in the air with the H: its down programs finished hold their last
+ * pose (the settle 0C38B2 of aim FF, table 38DA, was not captured). */
+static bool hgun_down(int r) {
+    return r==MARCO_CAMPAIGN_W1_BURST_DOWN || r==MARCO_CAMPAIGN_W1_SWEEP_FWD_DOWN;
+}
 static bool hgun_role(int r) {
     for (unsigned i=0;i<7;i++) if (r>=0 && hgun_roles[i]==r) return true;
     return false;
@@ -63,6 +71,11 @@ static int weapon_rest(const marco_visual_t *v,const marco_visual_input_t *in,bo
         return in->moving?MARCO_CAMPAIGN_W_RUN:MARCO_CAMPAIGN_W_IDLE;
     }
     int r=v->weapon_role;bool done=v->weapon_done;
+    /* The H lowered in the air without fire (0C3A5E, table 0C413C + 0x10
+     * = 0BFB98 255F8E) was replaced by a burst in the same update in
+     * marco-g1 (never drawn, one pose not captured): explicit stop, the
+     * jump's weapon program stays. A down program keeps its last pose. */
+    if (!in->grounded && in->aim_down && !in->cgun && hgun_down(r)) return r;
     if (!in->grounded) return running_jump?MARCO_CAMPAIGN_W1_RUN_JUMP:MARCO_CAMPAIGN_W1_JUMP;
     if (in->aim_up) {
         if (r==MARCO_CAMPAIGN_W1_AIM_UP && !done) return r;
@@ -109,14 +122,20 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
             if (!hgun_role(v->weapon_role) || v->weapon_done) start(v,MARCO_WEAPON,weapon_rest(v,in,v->running_jump));
         }
     } else if (crouch) {
+        /* A throw crouched (0C2458): body 0BF098, then the after-throw
+         * crouch 0BEF98 (0C2294; it loops like the crouch 0BEF18). The C
+         * crouched: 0C246A with its table C0398 (256EB6). */
         if (in->form==1) {
-            if (hgun_start) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_FIRE);
+            if (in->thrown) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_GRENADE);
+            else if (hgun_start) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_FIRE);
+            else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
             else if (!crouch_role(v->body_role)) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_IN);
-            else if (v->body_done) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH);
+            else if (v->body_done) start(v,MARCO_BODY,v->body_role==MARCO_CAMPAIGN_B1_CROUCH_GRENADE?MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE:MARCO_CAMPAIGN_B1_CROUCH);
         } else {
-            if (in->fired) start(v,MARCO_BODY,MARCO_CAMPAIGN_B_CROUCH_FIRE);
+            if (in->thrown) start(v,MARCO_BODY,MARCO_CAMPAIGN_B_CROUCH_GRENADE);
+            else if (in->fired) start(v,MARCO_BODY,MARCO_CAMPAIGN_B_CROUCH_FIRE);
             else if (!crouch_role(v->body_role)) start(v,MARCO_BODY,MARCO_CAMPAIGN_B_CROUCH_IN);
-            else if (v->body_done) start(v,MARCO_BODY,MARCO_CAMPAIGN_B_CROUCH);
+            else if (v->body_done) start(v,MARCO_BODY,v->body_role==MARCO_CAMPAIGN_B_CROUCH_GRENADE?MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE:MARCO_CAMPAIGN_B_CROUCH);
         }
         v->weapon_role=-1;v->weapon_count=0;
     } else {
@@ -127,10 +146,15 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
      * program (0C3E9C/0C3F1A/0C3FA6..: its start or restart this update). */
     if (!crouch) {
         int rest=weapon_rest(v,in,v->running_jump);
-        if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
+        /* 0C3A5E tests the bomb (bit 6) before the fire (bit 4): a throw
+         * this update starts 0BF998 (pistol 24C862, form 1 253B3A). */
+        if (in->thrown) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_GRENADE:MARCO_CAMPAIGN_W_GRENADE);
+        else if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
+        else if (in->form==1 && in->cgun && in->cgun_fire)
+            start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W1C_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W1C_FIRE_DOWN:MARCO_CAMPAIGN_W1C_FIRE);
         else if (in->form!=1 && in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W_FIRE_DOWN:MARCO_CAMPAIGN_W_FIRE);
         else if (v->weapon_role<0 || (weapon_default(v->weapon_role) && v->weapon_role!=rest) ||
-            (v->weapon_done && !weapon_default(v->weapon_role)) ||
+            (v->weapon_done && !weapon_default(v->weapon_role) && v->weapon_role!=rest) ||
             (v->grounded!=in->grounded && in->grounded && !hgun_role(v->weapon_role)))
             start(v,MARCO_WEAPON,rest);
     }

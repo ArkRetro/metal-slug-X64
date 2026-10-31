@@ -8,6 +8,7 @@
 #include "neo_hud.h"
 #include "neo_end.h"
 #include "neo_continue.h"
+#include "neo_landing.h"
 #include "neo_fade.h"
 #include "marco_hgun.h"
 #include "marco_legs.h"
@@ -73,6 +74,11 @@ typedef struct {
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
     neo_continue_t continue_sprites;
+    /* The parachute landing's canopy and player marker (neo_landing.c),
+     * created at the entry handoff (landing_pending) and run after the
+     * player; landing_x/y: the player's projected longs of the previous
+     * update (+44/+48). */
+    neo_landing_t landing;bool landing_pending,landing_on;int32_t landing_x,landing_y;
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
@@ -115,6 +121,7 @@ typedef struct {
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
     unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */
+    unsigned c_fires;   /* C fire states entered (0C3CD0: its program starts even when 0C0D64 refuses) */
     unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
     bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's

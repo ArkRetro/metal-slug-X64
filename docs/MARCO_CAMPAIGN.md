@@ -140,6 +140,75 @@ columna (también reflejados): 71 volcados, todos los descriptores del jugador
 están en el catálogo; en 5 quedan 1–3 columnas de una fila de otros actores
 con la paleta del jugador (partículas).
 
+## Granadas, arma C y la H hacia abajo
+
+Informe de MiSTer: «hay una animación del brazo de Marco cuando lanza
+granadas que no está implementada». El lanzamiento (`0C3BCC`, tabla
+`0BF998`; agachado `0C2458`, tablas `0BF098` y, al acabar, `0C2294` →
+`0BEF98`) no tenía papel en la campaña y se dibujaba el reposo. Tampoco
+estaban los programas de disparo de la C ni los de la H hacia abajo en el
+aire.
+
+Capturas MAME 0.264 (privadas, `/home/user/captures-grenade`):
+`marco-g1` (`tools/mame/plans/marco-hgun-grenade.json`, `--give-hgun
+--keep-bombs`: granadas de pie, corriendo, en el aire y agachado con la H,
+saltos con abajo y disparo; 768 fotogramas) y `marco-c1`
+(`marco-cgun.json`, `--give-cgun --keep-bombs`: la C dada como en el plan
+`air` de `capture_weapons.lua`, disparos en todas las punterías y
+granadas; 1224 fotogramas). `--give-cgun`/`--keep-bombs` son escrituras
+solo de captura (`10C71E/10C724/10C71C/10C71A/+94`, bombas `10C720` = 10).
+Auditoría (`audit_marco_catalog.py`): **764 y 1208 fotogramas, 79 y 109
+descriptores, 596.066 y 904.263 píxeles iguales**; en `marco-c1` se
+excluyen 2536 y 2876..2886 (el destello `0C58D2` de la C sobre Marco).
+Grafo convertido con `--extra-capture` de ambas (559 programas, el mismo
+`UNRECOVERED` `24EDBA`). Catálogo: **376 poses (las 329 anteriores
+idénticas), 396 piezas CI4, 305.656 bytes**.
+
+| Papel | Tabla | Forma 0 (pistola) | Forma 1 (H y C) |
+| --- | --- | --- | --- |
+| lanzar de pie, corriendo o en el aire (arma) | `0BF998` | `24C862` | `253B3A` |
+| lanzar agachado (cuerpo) | `0BF098` | `24EF98` | `25707C` |
+| agachado tras lanzar (cuerpo, en bucle) | `0BEF98` | `24ED44` | `256C54` |
+| H: ráfaga abajo / barrido adelante→abajo | `0BFE58` / `0BFED8` | — | `2560C0` / `2561DC` |
+| C: disparo, arriba, abajo (arma) | `C02D8` / `C0318` / `C0358` | — | `253A56` / `253AC6` / `255FDE` |
+| C: disparo agachado (cuerpo) | `C0398` | — | `256EB6` |
+
+`marco_visual.c`: la granada de esta actualización (`gameplay.c`, la que
+`0C47BA` lanza) arranca el programa de arma (o de cuerpo agachado) con
+prioridad sobre el disparo, como `0C3A5E` (bit 6 antes que el 4); el estado
+de disparo de la C (`0C3CD0`, contador `c_fires`, aunque `0C0D64` rechace
+el obús) arranca el suyo según la puntería; la H toma `2560C0`/`2561DC`
+de `marco_hgun.c` (programas 2 y 4), y en el aire con abajo un programa
+hacia abajo terminado mantiene su última pose. Ningún programa de lanzar
+escribe `+72/+74` (los de agachado tampoco): `marco_legs.c` no cambia.
+
+**Paradas explícitas**: el barrido abajo→adelante `25624E` no apareció en
+ninguna captura (no está en el catálogo, no se arranca); bajar la H en el
+aire sin disparar (`0BFB98` `255F8E`) solo se eligió en la misma
+actualización que una ráfaga (nunca dibujado, una pose sin capturar): se
+mantiene el programa de salto; el asentamiento con puntería abajo
+(`0C38B2`, tabla `38DA`) no se capturó. La pose `189FE0` de `2560C0` no se
+vio en ninguna captura.
+
+**Prueba** (`make check-marco-campaign`): `tools/extract_throw_fixture.py`
+→ `data/marco_throw_fixture.json`: 15 casos (pistola, H y C; de pie,
+corriendo, en el aire y agachado; disparos de la C; H hacia abajo), desde
+la actualización en que el original eligió el programa, la pose que dibujó
+esa parte en cada paso: **239 pasos iguales, 0 distintos** con
+`marco_visual_step`.
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output G1 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-hgun-grenade.json --give-hgun --keep-bombs
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output C1 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-cgun.json --give-cgun --keep-bombs
+cd tools; python3 extract_marco_controller.py G1 --output G1/controller.json; python3 extract_marco_steps.py G1 --trace G1 --output G1/diary   # y C1
+python3 audit_marco_catalog.py G1 --rom mslugx.zip --output G1/audit.json
+python3 audit_marco_catalog.py C1 --rom mslugx.zip --output C1/audit.json --exclude 2536-2536 --exclude 2876-2886
+python3 convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --equivalent-calls --output GRAFO
+python3 build_marco_poses.py CAP1 --extra-audit CAP2/audit.json --extra-audit H2/audit.json --extra-audit H3/audit.json --extra-audit D2/audit.json --extra-audit G1/audit.json --extra-audit C1/audit.json --extra-profile-min-uses 40 --name-palette BURNT=7FFF,6FF0,4840 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite
+cd ..; python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --output build/marco_campaign.h
+make check-marco-campaign
+```
+
 ## Ciclo de carrera
 
 El original arranca la carrera (`C285C`, traducido en `marco_motion.c`) con
@@ -164,7 +233,7 @@ original.
   variantes de reposo largo (`0x24F072`, `0x24ED92`), aterrizajes,
   transiciones de apuntado (`0x24C65C`/`0x24C6C0`).
 - Acciones sin juego en el port: cuchillo (necesita enemigo al alcance),
-  granadas (`0x24C862`, `0x24ED44`), disparo hacia abajo en el aire
+  disparo hacia abajo en el aire
   (`0x24EABC`: el port no tiene esa bala), reptar, la muerte de tipo 2 en el
   suelo (`2503D4`, sin captura), otras armas y la Camel Slug.
 - Efectos de los eventos de animación (fogonazo, casquillos).

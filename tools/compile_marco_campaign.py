@@ -31,6 +31,11 @@ ROLES=[
  ('W_JUMP',1,0x24E5BC,('jump_left',)),
  ('B_RUN_JUMP',0,0x24E858,('run_jump_right','run_jump_left')),
  ('W_RUN_JUMP',1,0x24E974,('run_jump_right','run_jump_left')),
+ # Grenade (0C3BCC: table 0BF998 standing, running or in the air; crouched
+ # 0C2458: body 0BF098, then 0C2294 the after-throw crouch 0BEF98).
+ ('W_GRENADE',1,0x24C862,('grenade_stand','grenade_jump')),
+ ('B_CROUCH_GRENADE',0,0x24EF98,('grenade_crouch',)),
+ ('B_CROUCH_AFTER_GRENADE',0,0x24ED44,('grenade_crouch',)),
 ]
 # Form 1 (+93 = 1, the H: rows +0x10 of the tables), chosen in the H catalog
 # capture (tools/mame/plans/marco-hgun.json, run_marco_catalog.py --give-hgun).
@@ -50,10 +55,28 @@ ROLES_H=[
  ('B1_CROUCH',0,0x256C06,('h_crouch_right',)),
  ('B1_CROUCH_FIRE',0,0x256D52,('h_crouch_fire_right',)),
 ]
+# Form 1 grenades and the H down programs (tools/mame/plans/
+# marco-hgun-grenade.json, --give-hgun --keep-bombs), and the C (id 0C, also
+# form 1: tools/mame/plans/marco-cgun.json, --give-cgun --keep-bombs; its
+# fire tables 0C3C10/0C3C50/0C3C90 + 0x10 = C02D8/C0318/C0358, crouched
+# C0398). Each role: [(capture option, conditions), ...].
+ROLES_EXTRA=[
+ ('W1_GRENADE',1,0x253B3A,[('grenade',('h_grenade_stand','h_grenade_jump','h_grenade_run')),('cgun',('c_grenade_stand','c_grenade_jump'))]),
+ ('B1_CROUCH_GRENADE',0,0x25707C,[('grenade',('h_grenade_crouch',)),('cgun',('c_grenade_crouch',))]),
+ ('B1_CROUCH_AFTER_GRENADE',0,0x256C54,[('grenade',('h_grenade_crouch',)),('cgun',('c_grenade_crouch',))]),
+ ('W1_BURST_DOWN',1,0x2560C0,[('grenade',('h_jump_down_fire_right','h_run_jump_down_fire_right','h_jump_down_fire_left'))]),
+ ('W1_SWEEP_FWD_DOWN',1,0x2561DC,[('grenade',('h_jump_down_fire_right','h_jump_down_fire_left'))]),
+ ('W1C_FIRE',1,0x253A56,[('cgun',('c_stand_fire_right','c_run_fire_right','c_jump_fire_right','c_stand_fire_left'))]),
+ ('W1C_FIRE_UP',1,0x253AC6,[('cgun',('c_aim_up_fire_right','c_jump_up_fire_right'))]),
+ ('W1C_FIRE_DOWN',1,0x255FDE,[('cgun',('c_jump_down_fire_right',))]),
+ ('B1C_CROUCH_FIRE',0,0x256EB6,[('cgun',('c_crouch_fire_right',))]),
+]
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--graph',type=Path,help='converted graph directory (default CAPTURE/graph)')
+    p.add_argument('--grenade-capture',type=Path,help='form-1 grenade and H down capture (ROLES_EXTRA)')
+    p.add_argument('--cgun-capture',type=Path,help='C capture (ROLES_EXTRA)')
     p.add_argument('--hgun-capture',type=Path,help='the H catalog capture (form-1 roles; its programs are in the graph through convert_marco_programs.py --extra-capture)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
@@ -89,6 +112,20 @@ def main():
                 assert seen,(role,hex(addr),cond)
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 1: {", ".join(conds)} */')
+    extra={'grenade':a.grenade_capture,'cgun':a.cgun_capture}
+    if all(extra.values()):
+        loaded={k:({x['name']:x for x in json.loads((v/'plan.json').read_text())['cases']},json.loads((v/'controller.json').read_text())['choices']) for k,v in extra.items()}
+        for role,part,addr,evidence in ROLES_EXTRA:
+            for key,conds in evidence:
+                xplan,xchoices=loaded[key]
+                for cond in conds:
+                    case=xplan[cond]
+                    seen=[x for x in xchoices if case['first']<=x['choice']['frame']<=case['last']
+                          and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==1]
+                    assert seen,(role,hex(addr),key,cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 1: {", ".join(c for _,cs in evidence for c in cs)} */')
+    else:assert not any(extra.values()),'--grenade-capture and --cgun-capture go together'
     lines+=['};','#endif','']
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(lines))
     print('Marco campaign roles:',len(ROLES),'commands from',c)

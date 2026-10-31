@@ -87,6 +87,7 @@ bool msx_game_begin_at(msx_game_t *g,int32_t world_x,int32_t world_y) {
     neo_surface_t support;
     if (!neo_surface_unique(world_x,&support) || support.height!=world_y) return false;
     msx_game_init(g);g->x=world_x;g->y=56*MSX_UNIT-world_y;
+    g->landing_pending=true;   /* the entry ends at the parachute landing */
     return true;
 }
 void msx_game_vehicle_reference(msx_game_t *g) {
@@ -102,6 +103,22 @@ const uint32_t msx_game_layout=MSX_GAME_LAYOUT;
 static void root_xy(const msx_game_t *g,int32_t *rx,int32_t *ry) {
     *rx=-(int32_t)((uint32_t)g->camera<<16);*ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
     if (g->world.camera_native) {*rx=neo_camera_root_x(&g->world.camera);*ry=neo_camera_root_y(&g->world.camera);}
+}
+/* The landing actors after the player's update (0C162A created the marker
+ * and the canopy saw the ground bit in the landing update itself). The
+ * player's +1E is 0x86D6 at the landing (land2: the canopy takes 0x86D5). */
+static void landing_step(msx_game_t *g) {
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    neo_landing_input_t in={0};
+    in.x=(int32_t)((uint32_t)g->x+(uint32_t)rx);in.y=(int32_t)((uint32_t)(56*MSX_UNIT-g->y)+(uint32_t)ry);
+    if (g->landing_pending) {g->landing_x=in.x;g->landing_y=in.y;}
+    in.previous_x=g->landing_x;in.previous_y=g->landing_y;
+    in.flags15=(uint8_t)((g->facing<0?1u:0u)|(g->grounded?0x40u:0u));
+    in.z=0x86d6;in.player=0;in.epoch=g->world.epoch;
+    if (g->landing_pending) {neo_landing_start(&g->landing,&in,neo_world_program);g->landing_pending=false;g->landing_on=true;}
+    neo_landing_update(&g->landing,&in,neo_world_program);
+    g->landing_x=in.x;g->landing_y=in.y;
+    if (!g->landing.canopy.active && !g->landing.marker.active) {g->landing_on=false;g->landing.draw_count=0;}
 }
 static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
@@ -734,7 +751,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->pistol_pending=0;
         if (g->pistol_wait) g->pistol_wait--;
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
-            g->fire_request=false;
+            g->fire_request=false;g->c_fires++;
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             bool allowed=marco_ammo_reserve(&ammo,0x0c,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
@@ -804,9 +821,15 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->world_enabled && !(g->ticks&1)) {
         neo_world_player_t p=player_frame(g);
         camera_step(g,&p);
-        g->world.video_phase=(uint16_t)g->ticks;
+        /* RAM 10000E counts the original's updates (+1 per update, every
+         * second video frame: MAME marco-g1, MARCO_STEP_IN phase 95, 96,
+         * 97.. at frames 2101, 2103, 2105..), not video frames: its bit 0
+         * flips the double buffers such as the object-list markers
+         * (0401E8/04051C write one, 040200 reads the other). */
+        g->world.video_phase=(uint16_t)(g->ticks>>1);
         g->world.scroll_y=neo_camera_root_y(&g->world.camera);
         mount_record(g,&p);
+        if (g->landing_pending || g->landing_on) landing_step(g);
         if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
         mount_after_world(g);

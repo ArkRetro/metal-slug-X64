@@ -68,6 +68,8 @@ BLOBS=[
     (0x2D303E,0x3DA,'09F682 camel riders rank tables 2D303E (head health), 2D30A0 (speed), 2D30BA (shot speed), 2D311C/2D31E0/2D317E (shot timers), 2D3242 (shots), 2D3306/2D3320 (distances), 2D333A/2D33B6 (0A0296 entry) (0260C8)'),
     (0xE08B8,0xAA,'03FC5A/0400AA market stall: cull rectangle E08B8 (03FADA), box offsets E0900, debris list E090C, collision stamps E091E/E0932 (0C88B0), hurtbox E0942, player rectangle E094E'),
     (0x32646,0x8,'03264E village porter cull rectangle (01945C)'),
+    (0x605AA,0x256,'06090A MISSION COMPLETE letters: letter records 605AA/60614 (060DC4 forms), 606A6 (060E02, number 060B06 first) and 60728 (060E3C, mission 5): +60 program, +61, +72 delay, +6E/+70 target'),
+    (0x60F44,0x58,'06090A letters: program tables 60F44 (letters by +60) and 60F7C (mission number by 10C2F4), cull rectangle 60F94 (01945C)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

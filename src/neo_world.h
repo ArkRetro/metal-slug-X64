@@ -202,4 +202,6 @@ unsigned neo_world_alive(const neo_world_t *world);
  * the player's projected words; enables the native camera. The caller then
  * ticks the world with neo_camera_root_x/neo_camera_root_y as the scroll. */
 void neo_world_camera(neo_world_t *world,const neo_world_player_t *player);
+/* Native animation program of a ROM program tag (tools/extract_soldier_programs.py). */
+const neo_anim_program_t *neo_world_program(uint32_t tag);
 #endif

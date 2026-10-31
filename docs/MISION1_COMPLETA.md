@@ -315,16 +315,48 @@ siguiente al paso 2) con sus contadores:
 | ROM | Pieza | Port |
 | --- | --- | --- |
 | `018846..018870` | `10E9E3`=FF, música `15418`, `+7C`=0x1E, `subq/bne` | 30 actualizaciones |
-| `018884..0188B8` | `cae6c(misión)` y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | **parada explícita**, sigue en el acto |
-| `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras = **parada explícita**, texto de sustitución |
+| `018884..0188B8` | `cae6c(misión)` (RAM `10EA1B`: misión más alta, byte con signo) y el actor de recuento de prisioneros `0308C0` (suma la bonificación a `10C46A`; espera su `+60`) | `cae6c` traducido; recuento = **parada explícita**, sigue en el acto |
+| `0188BE..0188F4` | sonidos `0x20`, `0x1137`; `+7C`=0xA0; actor de letras MISSION COMPLETE `06090A`; `subq/bcc` | 161 actualizaciones; letras **nativas** (`src/neo_end.c`, abajo) |
 | `0188FC..018916` | fundido `9C0A` (E1,E1,E1, 0x20), `+7C`=0x20 | 33 actualizaciones; fundido = **parada explícita** |
 | `01891E` | misión `42F4`+1 < 6 → misión siguiente (`1829E`) | misiones 2–6 no portadas: **vuelve a empezar la misión 1** |
+
+### Letras MISSION COMPLETE `06090A` (`src/neo_end.c`)
+
+Traducción manual de `06090A..060F42`: la raíz (en pantalla en 0,0x1FF;
+crea la cifra de misión `060B06` y una letra `060A72` por registro de 8
+bytes de `606A6`: programa `+60`, `+61`, retardo `+72`, destino `+6E/+70`),
+las letras (velocidad = distancia/4 hacia el destino, encogimiento `+12`
+dentro de 0x30 px con `+76`/`+7A`, paletas `0x3BE` → `0x3AA` → `0x200`,
+llegada: `+61` de la raíz + 1), el parpadeo por el bit 3 de `+72` de la raíz,
+`+60`=FF de la raíz (que pone el `+60` del actor de misión y se borra) y la
+salida acelerada (`+78`, ángulo desde (A0,190) + 0x80, `002EB4`/`002E7C`)
+hasta el recorte `01945C` con el rectángulo `60F94`. Lista propia
+(`neo_end_t`): los nodos los crea el actor de misión (`0040BC`, tras él) y un
+nodo borrado conserva sus bytes (las letras leen `+60/+72` de la raíz ya
+borrada, como en la RAM original). Programas `60F44`/`60F7C` añadidos a
+`extract_soldier_programs.py` y a `export_rest_sprites.py` (ROOTS al final;
+paletas `0x3BE/0x3AA/0x200`; 2355 → 2379 descriptores, ninguno quitado).
+
+Evidencia: `runK` = `runJ` repetida con traza de familia
+(`MSX_REST_BOSS_FROM=13690 MSX_REST_FAMILY_ROOTS=308e4,60974,308c0,6090a
+MSX_REST_FIRST_DUMP=13690 MSX_REST_PERIOD=4 MSX_REST_LAST=14500`).
+`tools/extract_end_fixture.py` → `data/end_letters_fixture.json.gz`;
+`tools/test_neo_end.c` (en `make check`): **1672 actualizaciones en bucle
+cerrado (fotogramas 14040..14230, 18 nodos), 235010 bytes iguales, 17
+borrados**, mismas reglas de exclusión que las familias (`+14/+16/+19..+1C`,
+`+20..+23`, `+44..+4B`). Sprites contra la VRAM de los volcados de `runK`
+([end-sprites-validation.json](end-sprites-validation.json)): 48 volcados,
+103424 píxeles iguales, 1680 distintos, todos en tres volcados: 14040 (la
+primera actualización: la lista de sprites aún no ha llegado a la VRAM) y
+14220/14224 (salida rápida, 2 px por actualización; el validador elige una
+sola actualización por volcado). `tools/test_gameplay.c` comprueba que las 18
+letras llegan, salen y la raíz marca el `+60`, sin paradas.
 
 Captura `runJ` (volcados cada 30 fotogramas): `018870` en 13710, `0188B0`
 (recuento) en 13770, `0188F4` en ≤14040, `018916` en 14370, misión 2 en
 14460; la puntuación pasa de 55330 a 285330 mientras `10C5FC` baja de 11 a
 0 (recuento). Prueba: `tools/test_gameplay.c` comprueba 30+160+32
-actualizaciones y 4 paradas.
+actualizaciones y 2 paradas (recuento y fundido).
 
 ## Pendiente
 
@@ -338,4 +370,4 @@ actualizaciones y 4 paradas.
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).
-- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0`, `06090A`, fundido `9C0A`.
+- Actores de fin de partida/misión: `019798`, `057B44`, `0308C0`, fundido `9C0A` (las letras `06090A` ya son nativas).

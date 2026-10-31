@@ -105,6 +105,10 @@ static void draw_native(const neo_world_draw_t *d,bool request_only) {
         scene_render_image(&part,x,y,mirror,d->flash && (game.ticks&1));
     }
 }
+static void draw_end(const neo_end_draw_t *e,bool request_only) {
+    neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y};
+    draw_native(&d,request_only);
+}
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
     const scene_image_t *im=scene_frame(SCENE_PROJECTILES,0);
@@ -298,6 +302,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
+    for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     scene_service();
 #if MSX_RETRO25D
     retro_frame_t effects={.camera={game.camera,-game.camera_height,0,320},.tick=game.ticks};
@@ -361,6 +366,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
+    /* Mission-end actors (MISSION COMPLETE letters 06090A), created after
+     * the mission actor: above the world's sprites, below the fix layer. */
+    for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],false);
     rdpq_set_scissor(0,0,320,240);
     msx_perf_mark(MSX_PERF_ACTORS);
     /* The original fix layer above every layer, on the 304x224 window. */
@@ -369,8 +377,6 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
-    /* Stand-in for the letters actor 06090A while 0188F4 waits. */
-    if (game.mission_end==MSX_END_LETTERS) scene_render_box(64,92,192,48,ink);
     // Fonts are last: their own uploads may replace TMEM texture/palette data.
     if (diagnostics) {
         scene_render_text(32,24,"MSX V10 - MISSION 1");
@@ -380,7 +386,6 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         scene_render_text(32,38,status);
         scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
     }
-    if (game.mission_end==MSX_END_LETTERS) scene_render_text(80,110,"MISSION COMPLETE");
     msx_perf_mark(MSX_PERF_HUD);
     scene_render_end();msx_perf_mark(MSX_PERF_END);
     msx_perf_counts(scene_render_draw_count(),neo_world_alive(&game.world));

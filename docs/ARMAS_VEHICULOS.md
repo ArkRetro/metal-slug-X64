@@ -918,4 +918,15 @@ traducción:
   `0x0929E6`: sin captura; deben quedar como paradas explícitas.
 
 Tampoco empezado: el arma C de Marco `0x063F32`, el cohete `0x06381C` y el
-destello `0x0C58D2` (siguen en `weapon_stops`).
+destello `0x0C58D2` (siguen en `weapon_stops`). Medido para su traducción
+(`hudc` y `cfam` dan la misma traza, `--range 63600-64300 --range
+c5800-c5a00`: 6584 actualizaciones): 40 obuses C `63F32` y su vuelo `63FDC`
+(619), la explosión `64128` (32) con su hijo `6371E/63740/63756` (729), la
+estela `63D9E` (286) y sus bocanadas `63E48` (4484), el destello
+`C58D2/C5930` (394). El vuelo pide a `0x0049E8` su objetivo: A0 es el
+cuerpo registrado tocado de mayor salud `+4E` (RAM `-$182A(a5)`, `>=`), A1
+el de menor (`-$1824(a5)`, `<=`; ambos sin los de `+5F` bit 6, en
+`0x004928..0x004952`); `+8B` (aleatorio) elige A1 si es negativo; el
+ángulo `0x01B14A` apunta al centro de la caja `+50` del objetivo
+(`0x01B162`; sin objetivo, ángulo aleatorio). `neo_genv_t.attack` solo
+devuelve el tipo: hay que ampliar su contrato en `neo_world.c`.

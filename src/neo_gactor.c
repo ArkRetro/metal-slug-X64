@@ -138,6 +138,18 @@ void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     ga_project(a,e);
     ga_sb(a,0x15,(uint8_t)(ga_b(a,0x15)|64u));
 }
+/* 01495C: vertical probe by `distance` pixels from the actor (4009 = 0);
+ * carry when the sweep meets a surface. */
+bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
+    neo_contact_actor_t c=ga_contact(a);
+    uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return false;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
+    return (k.flags&1u)!=0;
+}
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
      * a downward one from its end by |distance| + 8 (carry on either hit). */

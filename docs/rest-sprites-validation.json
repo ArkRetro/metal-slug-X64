@@ -1,5 +1,5 @@
 {
- "descriptors": 2018,
+ "descriptors": 2100,
  "palettes": [
   "0x103",
   "0x113",
@@ -10,17 +10,25 @@
   "0x123",
   "0x124",
   "0x13f",
+  "0x15a",
+  "0x15c",
   "0x16c",
   "0x16d",
   "0x16e",
   "0x17",
+  "0x178",
+  "0x179",
   "0x19",
   "0x1a",
   "0x1b",
   "0x1d",
+  "0x20",
   "0x202",
   "0x208",
   "0x20b",
+  "0x21",
+  "0x22",
+  "0x23",
   "0x24",
   "0x27c",
   "0x30b",
@@ -64,14 +72,14 @@
   "0x823"
  ],
  "stats": {
-  "zoomed_entries_skipped": 69,
-  "frames": 266,
-  "pixels_equal": 1628998,
-  "pixels_different": 16996,
-  "pixels_overlapping": 124449,
-  "rank_2": 159,
-  "rank_1": 107,
-  "missing_descriptor": 2
+  "zoomed_entries_skipped": 65,
+  "frames": 408,
+  "pixels_equal": 2663638,
+  "pixels_different": 145622,
+  "pixels_overlapping": 751241,
+  "rank_2": 282,
+  "rank_1": 126,
+  "missing_descriptor": 30
  },
  "frames": [
   {
@@ -1097,55 +1105,6 @@
    "different": 121
   },
   {
-   "capture": "veh2",
-   "frame": 4620,
-   "update_frame": 4618,
-   "equal": 95,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4650,
-   "update_frame": 4648,
-   "equal": 540,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4680,
-   "update_frame": 4677,
-   "equal": 340,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4710,
-   "update_frame": 4708,
-   "equal": 39,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4920,
-   "update_frame": 4916,
-   "equal": 686,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4950,
-   "update_frame": 4948,
-   "equal": 1408,
-   "different": 0
-  },
-  {
-   "capture": "veh2",
-   "frame": 4980,
-   "update_frame": 4977,
-   "equal": 1336,
-   "different": 0
-  },
-  {
    "capture": "fam2",
    "frame": 8220,
    "update_frame": 8218,
@@ -1234,13 +1193,6 @@
    "frame": 8580,
    "update_frame": 8580,
    "equal": 0,
-   "different": 0
-  },
-  {
-   "capture": "fam2",
-   "frame": 8220,
-   "update_frame": 8218,
-   "equal": 36,
    "different": 0
   },
   {
@@ -1933,6 +1885,1056 @@
    "capture": "rl2",
    "frame": 9420,
    "update_frame": 9420,
+   "equal": 0,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8610,
+   "update_frame": 8608,
+   "equal": 1569,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8640,
+   "update_frame": 8638,
+   "equal": 4546,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8670,
+   "update_frame": 8668,
+   "equal": 6943,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8700,
+   "update_frame": 8698,
+   "equal": 5911,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8730,
+   "update_frame": 8728,
+   "equal": 6270,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8760,
+   "update_frame": 8758,
+   "equal": 4776,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8790,
+   "update_frame": 8788,
+   "equal": 7480,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 8820,
+   "update_frame": 8819,
+   "equal": 9637,
+   "different": 32
+  },
+  {
+   "capture": "heli2",
+   "frame": 8850,
+   "update_frame": 8848,
+   "equal": 9489,
+   "different": 4134
+  },
+  {
+   "capture": "heli2",
+   "frame": 8880,
+   "update_frame": 8878,
+   "equal": 6749,
+   "different": 3400
+  },
+  {
+   "capture": "heli2",
+   "frame": 8910,
+   "update_frame": 8908,
+   "equal": 4256,
+   "different": 3009
+  },
+  {
+   "capture": "heli2",
+   "frame": 8940,
+   "update_frame": 8939,
+   "equal": 4884,
+   "different": 3714
+  },
+  {
+   "capture": "heli2",
+   "frame": 8970,
+   "update_frame": 8968,
+   "equal": 7063,
+   "different": 4012
+  },
+  {
+   "capture": "heli2",
+   "frame": 9000,
+   "update_frame": 8998,
+   "equal": 6530,
+   "different": 3746
+  },
+  {
+   "capture": "heli2",
+   "frame": 9030,
+   "update_frame": 9029,
+   "equal": 5879,
+   "different": 2491
+  },
+  {
+   "capture": "heli2",
+   "frame": 9060,
+   "update_frame": 9059,
+   "equal": 4453,
+   "different": 346
+  },
+  {
+   "capture": "heli2",
+   "frame": 9090,
+   "update_frame": 9089,
+   "equal": 7886,
+   "different": 613
+  },
+  {
+   "capture": "heli2",
+   "frame": 9120,
+   "update_frame": 9118,
+   "equal": 9472,
+   "different": 888
+  },
+  {
+   "capture": "heli2",
+   "frame": 9150,
+   "update_frame": 9149,
+   "equal": 9143,
+   "different": 1328
+  },
+  {
+   "capture": "heli2",
+   "frame": 9180,
+   "update_frame": 9178,
+   "equal": 6185,
+   "different": 2424
+  },
+  {
+   "capture": "heli2",
+   "frame": 9210,
+   "update_frame": 9208,
+   "equal": 5413,
+   "different": 2352
+  },
+  {
+   "capture": "heli2",
+   "frame": 9240,
+   "update_frame": 9238,
+   "equal": 5973,
+   "different": 3054
+  },
+  {
+   "capture": "heli2",
+   "frame": 9270,
+   "update_frame": 9268,
+   "equal": 7944,
+   "different": 4677
+  },
+  {
+   "capture": "heli2",
+   "frame": 9300,
+   "update_frame": 9298,
+   "equal": 8659,
+   "different": 29
+  },
+  {
+   "capture": "heli2",
+   "frame": 9330,
+   "update_frame": 9328,
+   "equal": 6462,
+   "different": 30
+  },
+  {
+   "capture": "heli2",
+   "frame": 9360,
+   "update_frame": 9358,
+   "equal": 9468,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9390,
+   "update_frame": 9388,
+   "equal": 11285,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9420,
+   "update_frame": 9418,
+   "equal": 10014,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9450,
+   "update_frame": 9448,
+   "equal": 7946,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9480,
+   "update_frame": 9478,
+   "equal": 6459,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9510,
+   "update_frame": 9508,
+   "equal": 9283,
+   "different": 28
+  },
+  {
+   "capture": "heli2",
+   "frame": 9540,
+   "update_frame": 9538,
+   "equal": 12095,
+   "different": 195
+  },
+  {
+   "capture": "heli2",
+   "frame": 9570,
+   "update_frame": 9568,
+   "equal": 6486,
+   "different": 3618
+  },
+  {
+   "capture": "heli2",
+   "frame": 9600,
+   "update_frame": 9598,
+   "equal": 6185,
+   "different": 76
+  },
+  {
+   "capture": "heli2",
+   "frame": 9630,
+   "update_frame": 9628,
+   "equal": 8850,
+   "different": 305
+  },
+  {
+   "capture": "heli2",
+   "frame": 9660,
+   "update_frame": 9658,
+   "equal": 10751,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9690,
+   "update_frame": 9688,
+   "equal": 9620,
+   "different": 256
+  },
+  {
+   "capture": "heli2",
+   "frame": 9720,
+   "update_frame": 9718,
+   "equal": 7745,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9750,
+   "update_frame": 9748,
+   "equal": 6295,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9780,
+   "update_frame": 9779,
+   "equal": 6115,
+   "different": 3815
+  },
+  {
+   "capture": "heli2",
+   "frame": 9810,
+   "update_frame": 9808,
+   "equal": 12327,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 9840,
+   "update_frame": 9838,
+   "equal": 8559,
+   "different": 278
+  },
+  {
+   "capture": "heli2",
+   "frame": 9870,
+   "update_frame": 9870,
+   "equal": 2347,
+   "different": 3086
+  },
+  {
+   "capture": "heli2",
+   "frame": 9900,
+   "update_frame": 9898,
+   "equal": 5307,
+   "different": 4177
+  },
+  {
+   "capture": "heli2",
+   "frame": 9930,
+   "update_frame": 9930,
+   "equal": 7484,
+   "different": 3772
+  },
+  {
+   "capture": "heli2",
+   "frame": 9960,
+   "update_frame": 9960,
+   "equal": 7297,
+   "different": 3823
+  },
+  {
+   "capture": "heli2",
+   "frame": 9990,
+   "update_frame": 9988,
+   "equal": 8699,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10020,
+   "update_frame": 10016,
+   "equal": 6297,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10050,
+   "update_frame": 10047,
+   "equal": 7891,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10080,
+   "update_frame": 10077,
+   "equal": 7301,
+   "different": 35
+  },
+  {
+   "capture": "heli2",
+   "frame": 10110,
+   "update_frame": 10107,
+   "equal": 10922,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10140,
+   "update_frame": 10137,
+   "equal": 11058,
+   "different": 4
+  },
+  {
+   "capture": "heli2",
+   "frame": 10170,
+   "update_frame": 10167,
+   "equal": 10866,
+   "different": 40
+  },
+  {
+   "capture": "heli2",
+   "frame": 10200,
+   "update_frame": 10197,
+   "equal": 10948,
+   "different": 38
+  },
+  {
+   "capture": "heli2",
+   "frame": 10230,
+   "update_frame": 10227,
+   "equal": 6076,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10260,
+   "update_frame": 10257,
+   "equal": 5897,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10290,
+   "update_frame": 10287,
+   "equal": 11499,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10320,
+   "update_frame": 10317,
+   "equal": 10245,
+   "different": 272
+  },
+  {
+   "capture": "heli2",
+   "frame": 10350,
+   "update_frame": 10346,
+   "equal": 10388,
+   "different": 28
+  },
+  {
+   "capture": "heli2",
+   "frame": 10380,
+   "update_frame": 10380,
+   "equal": 6102,
+   "different": 3761
+  },
+  {
+   "capture": "heli2",
+   "frame": 10410,
+   "update_frame": 10407,
+   "equal": 4812,
+   "different": 3906
+  },
+  {
+   "capture": "heli2",
+   "frame": 10440,
+   "update_frame": 10436,
+   "equal": 6915,
+   "different": 38
+  },
+  {
+   "capture": "heli2",
+   "frame": 10470,
+   "update_frame": 10466,
+   "equal": 7958,
+   "different": 60
+  },
+  {
+   "capture": "heli2",
+   "frame": 10500,
+   "update_frame": 10496,
+   "equal": 11163,
+   "different": 28
+  },
+  {
+   "capture": "heli2",
+   "frame": 10530,
+   "update_frame": 10526,
+   "equal": 11697,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10560,
+   "update_frame": 10556,
+   "equal": 11435,
+   "different": 9
+  },
+  {
+   "capture": "heli2",
+   "frame": 10590,
+   "update_frame": 10587,
+   "equal": 5633,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10620,
+   "update_frame": 10617,
+   "equal": 9870,
+   "different": 349
+  },
+  {
+   "capture": "heli2",
+   "frame": 10650,
+   "update_frame": 10646,
+   "equal": 8451,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10680,
+   "update_frame": 10676,
+   "equal": 8523,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10710,
+   "update_frame": 10707,
+   "equal": 10825,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10740,
+   "update_frame": 10737,
+   "equal": 9547,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10770,
+   "update_frame": 10767,
+   "equal": 8674,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10800,
+   "update_frame": 10797,
+   "equal": 10271,
+   "different": 32
+  },
+  {
+   "capture": "heli2",
+   "frame": 10830,
+   "update_frame": 10827,
+   "equal": 8466,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10860,
+   "update_frame": 10857,
+   "equal": 9576,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10890,
+   "update_frame": 10887,
+   "equal": 11538,
+   "different": 50
+  },
+  {
+   "capture": "heli2",
+   "frame": 10920,
+   "update_frame": 10917,
+   "equal": 9014,
+   "different": 27
+  },
+  {
+   "capture": "heli2",
+   "frame": 10950,
+   "update_frame": 10947,
+   "equal": 9417,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 10980,
+   "update_frame": 10977,
+   "equal": 7365,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11010,
+   "update_frame": 11007,
+   "equal": 7370,
+   "different": 158
+  },
+  {
+   "capture": "heli2",
+   "frame": 11040,
+   "update_frame": 11037,
+   "equal": 9448,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11070,
+   "update_frame": 11068,
+   "equal": 10489,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11100,
+   "update_frame": 11098,
+   "equal": 4290,
+   "different": 3941
+  },
+  {
+   "capture": "heli2",
+   "frame": 11130,
+   "update_frame": 11127,
+   "equal": 6946,
+   "different": 277
+  },
+  {
+   "capture": "heli2",
+   "frame": 11160,
+   "update_frame": 11157,
+   "equal": 4726,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11190,
+   "update_frame": 11187,
+   "equal": 8619,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11220,
+   "update_frame": 11220,
+   "equal": 8195,
+   "different": 3457
+  },
+  {
+   "capture": "heli2",
+   "frame": 11250,
+   "update_frame": 11247,
+   "equal": 12543,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11280,
+   "update_frame": 11277,
+   "equal": 9566,
+   "different": 110
+  },
+  {
+   "capture": "heli2",
+   "frame": 11310,
+   "update_frame": 11307,
+   "equal": 10032,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11340,
+   "update_frame": 11337,
+   "equal": 8395,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11370,
+   "update_frame": 11367,
+   "equal": 10620,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11400,
+   "update_frame": 11397,
+   "equal": 9577,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11430,
+   "update_frame": 11427,
+   "equal": 9989,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11460,
+   "update_frame": 11457,
+   "equal": 7967,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11490,
+   "update_frame": 11487,
+   "equal": 6480,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11520,
+   "update_frame": 11516,
+   "equal": 6198,
+   "different": 38
+  },
+  {
+   "capture": "heli2",
+   "frame": 11550,
+   "update_frame": 11546,
+   "equal": 10109,
+   "different": 34
+  },
+  {
+   "capture": "heli2",
+   "frame": 11580,
+   "update_frame": 11580,
+   "equal": 7880,
+   "different": 2989
+  },
+  {
+   "capture": "heli2",
+   "frame": 11610,
+   "update_frame": 11607,
+   "equal": 10286,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11640,
+   "update_frame": 11637,
+   "equal": 8632,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11670,
+   "update_frame": 11668,
+   "equal": 4267,
+   "different": 2216
+  },
+  {
+   "capture": "heli2",
+   "frame": 11700,
+   "update_frame": 11697,
+   "equal": 5989,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11730,
+   "update_frame": 11727,
+   "equal": 8989,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11760,
+   "update_frame": 11757,
+   "equal": 9540,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11790,
+   "update_frame": 11788,
+   "equal": 4242,
+   "different": 3547
+  },
+  {
+   "capture": "heli2",
+   "frame": 11820,
+   "update_frame": 11819,
+   "equal": 4162,
+   "different": 114
+  },
+  {
+   "capture": "heli2",
+   "frame": 11850,
+   "update_frame": 11847,
+   "equal": 7152,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11880,
+   "update_frame": 11877,
+   "equal": 7139,
+   "different": 38
+  },
+  {
+   "capture": "heli2",
+   "frame": 11910,
+   "update_frame": 11907,
+   "equal": 9341,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 11940,
+   "update_frame": 11940,
+   "equal": 5333,
+   "different": 4196
+  },
+  {
+   "capture": "heli2",
+   "frame": 11970,
+   "update_frame": 11970,
+   "equal": 5242,
+   "different": 2884
+  },
+  {
+   "capture": "heli2",
+   "frame": 12000,
+   "update_frame": 11998,
+   "equal": 4208,
+   "different": 405
+  },
+  {
+   "capture": "heli2",
+   "frame": 12030,
+   "update_frame": 12028,
+   "equal": 7992,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12060,
+   "update_frame": 12058,
+   "equal": 5130,
+   "different": 69
+  },
+  {
+   "capture": "heli2",
+   "frame": 12090,
+   "update_frame": 12089,
+   "equal": 3058,
+   "different": 1224
+  },
+  {
+   "capture": "heli2",
+   "frame": 12120,
+   "update_frame": 12118,
+   "equal": 6737,
+   "different": 339
+  },
+  {
+   "capture": "heli2",
+   "frame": 12150,
+   "update_frame": 12148,
+   "equal": 5833,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12180,
+   "update_frame": 12177,
+   "equal": 7756,
+   "different": 339
+  },
+  {
+   "capture": "heli2",
+   "frame": 12210,
+   "update_frame": 12210,
+   "equal": 6305,
+   "different": 1108
+  },
+  {
+   "capture": "heli2",
+   "frame": 12240,
+   "update_frame": 12239,
+   "equal": 5765,
+   "different": 2617
+  },
+  {
+   "capture": "heli2",
+   "frame": 12270,
+   "update_frame": 12270,
+   "equal": 4124,
+   "different": 1686
+  },
+  {
+   "capture": "heli2",
+   "frame": 12300,
+   "update_frame": 12300,
+   "equal": 3242,
+   "different": 3242
+  },
+  {
+   "capture": "heli2",
+   "frame": 12330,
+   "update_frame": 12330,
+   "equal": 6363,
+   "different": 2530
+  },
+  {
+   "capture": "heli2",
+   "frame": 12360,
+   "update_frame": 12360,
+   "equal": 5353,
+   "different": 1848
+  },
+  {
+   "capture": "heli2",
+   "frame": 12390,
+   "update_frame": 12390,
+   "equal": 3598,
+   "different": 2525
+  },
+  {
+   "capture": "heli2",
+   "frame": 12420,
+   "update_frame": 12420,
+   "equal": 4512,
+   "different": 808
+  },
+  {
+   "capture": "heli2",
+   "frame": 12450,
+   "update_frame": 12447,
+   "equal": 4866,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12480,
+   "update_frame": 12480,
+   "equal": 5057,
+   "different": 2739
+  },
+  {
+   "capture": "heli2",
+   "frame": 12510,
+   "update_frame": 12508,
+   "equal": 3463,
+   "different": 789
+  },
+  {
+   "capture": "heli2",
+   "frame": 12540,
+   "update_frame": 12538,
+   "equal": 3254,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12570,
+   "update_frame": 12569,
+   "equal": 5339,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12600,
+   "update_frame": 12600,
+   "equal": 4186,
+   "different": 1498
+  },
+  {
+   "capture": "heli2",
+   "frame": 12630,
+   "update_frame": 12628,
+   "equal": 2557,
+   "different": 1485
+  },
+  {
+   "capture": "heli2",
+   "frame": 12660,
+   "update_frame": 12658,
+   "equal": 2887,
+   "different": 2299
+  },
+  {
+   "capture": "heli2",
+   "frame": 12690,
+   "update_frame": 12688,
+   "equal": 2222,
+   "different": 1262
+  },
+  {
+   "capture": "heli2",
+   "frame": 12720,
+   "update_frame": 12719,
+   "equal": 3128,
+   "different": 2047
+  },
+  {
+   "capture": "heli2",
+   "frame": 12750,
+   "update_frame": 12750,
+   "equal": 3745,
+   "different": 1073
+  },
+  {
+   "capture": "heli2",
+   "frame": 12780,
+   "update_frame": 12780,
+   "equal": 3124,
+   "different": 279
+  },
+  {
+   "capture": "heli2",
+   "frame": 12810,
+   "update_frame": 12807,
+   "equal": 2290,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12840,
+   "update_frame": 12840,
+   "equal": 2003,
+   "different": 31
+  },
+  {
+   "capture": "heli2",
+   "frame": 12870,
+   "update_frame": 12867,
+   "equal": 2000,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12900,
+   "update_frame": 12897,
+   "equal": 1312,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12930,
+   "update_frame": 12927,
+   "equal": 1319,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12960,
+   "update_frame": 12957,
+   "equal": 2043,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 12990,
+   "update_frame": 12988,
+   "equal": 2111,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 13020,
+   "update_frame": 13017,
+   "equal": 1525,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 13050,
+   "update_frame": 13047,
+   "equal": 131,
+   "different": 0
+  },
+  {
+   "capture": "heli2",
+   "frame": 13080,
+   "update_frame": 13079,
    "equal": 0,
    "different": 0
   }

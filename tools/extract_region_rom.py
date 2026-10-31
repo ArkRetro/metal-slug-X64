@@ -58,6 +58,11 @@ BLOBS=[
     (0x5EB46,0x23E,'05ED84 rocket launcher: hurtboxes 5EB46/5EB62, solid boxes 5EB6E/5EB7C (004E76), push rows 5EB8A/5EB9A (0049E8), rocket hurtbox 5EBAA, cull rectangle 5EBC6, trail offsets by angle 5EBD6, program tables 5ECD6..5ED36 (fire, reload, flinch, walk), rocket offsets 5ED46/5ED56'),
     (0x5FFA0,0x200,'05FD8A rocket: attack rows 5FFA0..6009E and their table by angle 600A0 (0049E8)'),
     (0x60348,0x24,'060490 aim flash program tables 60348/6035C by the shot and the stance'),
+    (0xE0962,0x2D0,'04857C helicopter formation: path point lists E0962 (049CB2), bank table by heading E09F4, shell offsets E0A0E, bomb offsets E0A1E, smoke lists E0A3E/E0A50 and their puff table E0A62, cull rectangles E0AA2/E0AAA, hurtbox E0AB2, attack rows E0ABE/E0AE2, path tables E0AF2/E0AFE and the path programs E0B0A..E0C32 (021288)'),
+    (0x48E1A,0x8,'048D5E helicopter wreck rectangle (019504)'),
+    (0x49006,0x4,'048F8C debris puff palette bytes by +8C'),
+    (0x49762,0x8,'04940C lone helicopter player rectangle (01AF3C)'),
+    (0x2D14CE,0x5DE,'04857C helicopter rank tables 2D14CE..2D1A92 (health 2D14CE/2D1530, timers 2D1592..2D171A, bomb counts 2D177C/2D17DE/2D1840, intervals 2D18BC/2D18D6, speeds 2D18F0..2D1A92) (0260C8)'),
     (0x2D1310,0x15C,'05ED84 rocket launcher rank tables 2D1310 (health), 2D1372 (speed), 2D13A4 (wait), 2D13D6 (shots), 2D1408 (aim), 2D143A (rocket health) (0260C8)'),
 ]
 def main():

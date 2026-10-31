@@ -20,11 +20,13 @@ def main():
     p.add_argument('--stamp',action='append',default=[],help='X,Y,TEMPLATE (hex): collision stamp (0C88B0) applied before the first update (an event of another family seen in the RAM dumps)')
     p.add_argument('--pickup',action='append',default=[],help='FRAME,ID,ROUNDS (hex id/rounds): the item taken at FRAME must leave player 1 with weapon ID and ROUNDS (the pickup state of neo_item.c, from a new life)')
     p.add_argument('--hit-to',help='ROUTINE (hex): an update that ends in this routine without moving (+3C..+43 unchanged: the grenade exploding on 0049E8 before its flight) answers a contact')
+    p.add_argument('--hit-moving',action='store_true',help='with --hit-to: the position may change in the update (the bomb 047B24 flies before its attack row)')
     p.add_argument('--hit-from',default='',help='ROUTINES (comma hex): the deleting updates that can leave a --hit-child (default: any)')
     p.add_argument('--hit-child',help='ROUTINE (hex): a node first seen with this routine and +0C = list head 101414 (00411C) is the impact of the node deleted last, at most 3 frames before and not yet matched (its creator); a deleting update hits (0049E8 answers a contact) only when it has such a child')
     p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
     p.add_argument('--script-routines',default='',help='ROUTINES (comma hex): with --script-actor, only nodes with these first routines are made by family nodes (the others the script itself creates: injected)')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
+    p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     a=p.parse_args();n=a.name
     script=int(a.script_actor,16) if a.script_actor else None
     d=json.load(gzip.open(a.fixture,'rt'))
@@ -37,13 +39,14 @@ def main():
     # A node deleted without a traced update (a creator's tree deletion,
     # 0041AC) shows up again with a routine its last update did not leave.
     def instances(updates):
-        live={};order=[];inst=[];lastroutine={};dead=[];claimed=set()
+        live={};order=[];inst=[];lastroutine={};dead=[];claimed=set();gone={}
         for u in updates:
             if u['node'] in live and lastroutine.get(u['node'])!=u['routine']:del live[u['node']]
             if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
             if u['node'] not in live:
                 pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
                 c=live.get(cr,-1)
+                if c<0 and a.late_creator and cr in gone and gone[cr][1]>=u['frame']-1:c=gone[cr][0]
                 if a.hit_child and u['routine']==int(a.hit_child,16) and cr=='101414':
                     # 00411C inserts at the list head: no link names the
                     # creator, already gone (the impact's first update can
@@ -62,7 +65,7 @@ def main():
                 # Projected words after the move (y up); a constructor's
                 # update has no position yet: matched last.
                 dead.append((live[u['node']],u['frame'],(sx(0x3c)+sx(0x30))&0xffff,(sx(0x40)+sx(0x34))&0xffff) if sx(0x3c) else (live[u['node']],u['frame'],None,None))
-            if not u['post']:del live[u['node']]
+            if not u['post']:gone[u['node']]=(live[u['node']],u['frame']);del live[u['node']]
         return order,inst
     if a.stop:
         sf,sr=a.stop.split(',');sf=int(sf)
@@ -87,7 +90,7 @@ def main():
     if a.pickup:L.append('#define FAMILY_PICKUPS {%s}'%','.join('{%d,0x%x,0x%x}'%tuple(int(x,0 if i==0 else 16) for i,x in enumerate(t.split(','))) for t in a.pickup))
     if a.hit_child:L.append('#define FAMILY_HIT_CHILD 0x%x'%int(a.hit_child,16))
     if a.hit_to:
-        hits=sorted({(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u['post'] and int(u['post'][:8],16)==int(a.hit_to,16) and int(u['pre'][:8],16)!=int(a.hit_to,16) and u['post'][2*0x3c:2*0x44]==u['pre'][2*0x3c:2*0x44]})
+        hits=sorted({(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u['post'] and int(u['post'][:8],16)==int(a.hit_to,16) and int(u['pre'][:8],16)!=int(a.hit_to,16) and (a.hit_moving or u['post'][2*0x3c:2*0x44]==u['pre'][2*0x3c:2*0x44])})
         L.append('#define FAMILY_HIT_UPDATES {%s}'%','.join('{%d,%d}'%h for h in hits))
     if a.marker_seq is not None:L.append('#define FAMILY_MARKER_SEQ %d'%a.marker_seq)
     if a.stamp:

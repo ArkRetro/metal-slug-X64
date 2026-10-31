@@ -130,6 +130,12 @@ static uint32_t native_tag(uint32_t recorded) {
     for (unsigned i=0;i<NN;i++) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     return recorded;
 }
+/* Frame of the update being replayed: a child the original made shows up
+ * within a few frames (0040BC: the same frame; 00411C: the next one). A
+ * native spawn with no recorded node that soon is a child the original
+ * could not make (node pool exhausted: the shell 047DE0 of the bomb at
+ * heli2 frame 11363), counted as external. */
+static uint32_t current_frame;
 static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script) {
     (void)ctx;
     int c=creator?index_of(creator):after_script?-2:-1;
@@ -139,7 +145,7 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     /* c = -2: after the script actor (00411C), the recorded creator is the
      * script actor (compile_family_fixture.py --script-actor). */
     if ((c>=0 && c<(int)NN) || c==-2) for (unsigned i=0;i<NN;i++) {
-        if (bound[i] || NODES[i].creator!=c || NODES[i].routine!=routine) continue;
+        if (bound[i] || NODES[i].creator!=c || NODES[i].routine!=routine || NODES[i].frame>current_frame+8u) continue;
         if (pick<0 || NODES[i].frame<NODES[pick].frame) pick=(int)i;
         else if (NODES[i].frame==NODES[pick].frame) pick=(int)i;
     }
@@ -231,7 +237,7 @@ int main(void) {
     unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
-        neo_gactor_t *a=&actors[u->node];
+        neo_gactor_t *a=&actors[u->node];current_frame=u->frame;
         {static uint32_t last_frame;
          if (k && u->frame!=last_frame) for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (dyn_countdown[i]) dyn_countdown[i]--;
          last_frame=u->frame;}

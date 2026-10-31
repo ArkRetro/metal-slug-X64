@@ -239,6 +239,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.cgun=marco_weapons_id(&game.world.weapons,0)==0x0c;
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
+            mi.hanging=game.descent==MSX_DESCENT_HANG;
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}

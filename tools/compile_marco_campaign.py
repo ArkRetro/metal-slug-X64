@@ -83,6 +83,10 @@ ROLES_KNIFE=[
  ('W1_KNIFE',1,0x255472,'knife_h',1,('k_cut_stand_0','k_cut_stand_2')),
  ('B1_CROUCH_KNIFE',0,0x258088,'knife_h',1,('k_cut_crouch_1','k_cut_crouch_3')),
 ]
+# The parachute descent (0C15C6/0C162A): body 0BF818 hanging (weapon the
+# jump's 0BFC58 24E5BC). tools/mame/plans/marco-descent.json with
+# run_marco_catalog.py --first 1830 (marco-dsc0, no input).
+ROLES_DESCENT=[('B_HANG',0,0x24E5AA,('d_hang',))]
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
@@ -92,6 +96,7 @@ def main():
     p.add_argument('--hgun-capture',type=Path,help='the H catalog capture (form-1 roles; its programs are in the graph through convert_marco_programs.py --extra-capture)')
     p.add_argument('--knife-capture',type=Path,help='pistol knife capture (ROLES_KNIFE)')
     p.add_argument('--knife-h-capture',type=Path,help='knife capture with the H (ROLES_KNIFE)')
+    p.add_argument('--descent-capture',type=Path,help='parachute descent capture (ROLES_DESCENT)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
     choices=json.loads((c/'controller.json').read_text())['choices']
@@ -153,6 +158,16 @@ def main():
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}: {", ".join(conds)} */')
     else:assert not any(knife.values()),'--knife-capture and --knife-h-capture go together'
+    if a.descent_capture:
+        d=a.descent_capture;dplan={x['name']:x for x in json.loads((d/'plan.json').read_text())['cases']}
+        dchoices=json.loads((d/'controller.json').read_text())['choices']
+        for role,part,addr,conds in ROLES_DESCENT:
+            for cond in conds:
+                case=dplan[cond]
+                seen=[x for x in dchoices if case['first']<=x['choice']['frame']<=case['last'] and x['choice']['part']==part and x['choice']['program']==addr]
+                assert seen,(role,hex(addr),cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}: {", ".join(conds)} */')
     lines+=['};','#endif','']
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(lines))
     print('Marco campaign roles:',len(ROLES),'commands from',c)

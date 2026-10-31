@@ -102,15 +102,17 @@ int main(void){
   unsigned tok=0,tbad=0;
   for(unsigned i=0;i<THROW_CASES;i++){
     const throw_case_t*c=&throw_cases[i];
-    bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c',down=strstr(c->name,"down")!=NULL,knife=strstr(c->name,"knife")!=NULL;
+    bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c',down=strstr(c->name,"down")!=NULL,knife=strstr(c->name,"knife")!=NULL,hang=!strncmp(c->name,"d_hang",6),cut=!strncmp(c->name,"d_cut",5);
     marco_visual_reset(&v);
     marco_visual_input_t in={.grounded=true,.facing=1,.x=120,.y=350,.form=(uint8_t)c->form,.hgun_program=-1,.cgun=cgun};
     if(c->situation==3)in.moving=1;
-    for(unsigned k=0;k<6;k++){if(c->situation==2&&k==4)in.grounded=false;if(c->situation==1&&!grenade)in.crouch=1;marco_visual_step(&v,&in);}
+    if(cut){in.grounded=false;in.hanging=true;}   /* the descent: hanging before the cut */
+    for(unsigned k=0;k<6;k++){if(c->situation==2&&k==4&&!hang)in.grounded=false;if(c->situation==1&&!grenade)in.crouch=1;marco_visual_step(&v,&in);}
     if(c->situation==1)in.crouch=1;
     in.aim_up=strstr(c->name,"_up")!=NULL;in.aim_down=down;
     unsigned bad=0;
     for(unsigned k=0;k<c->count;k++){
+      if(k==0&&hang){in.grounded=false;in.hanging=true;}if(k==0&&cut)in.hanging=false;
       in.thrown=grenade&&k==0;in.cgun_fire=cgun&&!grenade&&k==0;in.knife=knife&&k==0;
       if(c->name[0]=='h'&&down){in.hgun_program=strstr(c->name,"sweep")?4:2;in.hgun_start=k==0;}
       marco_visual_step(&v,&in);
@@ -121,7 +123,7 @@ int main(void){
     }
     assert(!v.failures);
   }
-  printf("throws/C/H down/knife: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
-  assert(tok>=290&&!tbad);
-  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down and knife cuts (pistol, H: standing, crouched) pose by pose against the captures");
+  printf("throws/C/H down/knife/descent: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
+  assert(tok>=400&&!tbad);
+  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched) and the parachute descent (hanging, cut) pose by pose against the captures");
 }

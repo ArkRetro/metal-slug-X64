@@ -116,8 +116,18 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     v->form=in->form;
     bool hgun_start=in->form==1 && in->hgun_start && in->hgun_program>=0 && in->hgun_program<7;
     /* Body. */
-    if (!in->grounded) {
-        if (v->grounded || v->body_role<0) {
+    if (!in->grounded && in->hanging) {
+        /* Hanging from the canopy (0C15C6: body 0BF818 24E5AA, weapon the
+         * jump's 0BFC58 24E5BC; marco-dsc0). */
+        if (v->body_role!=MARCO_CAMPAIGN_B_HANG) {
+            start(v,MARCO_BODY,MARCO_CAMPAIGN_B_HANG);v->running_jump=false;
+            if (!hgun_role(v->weapon_role) || v->weapon_done) start(v,MARCO_WEAPON,weapon_rest(v,in,false));
+        }
+    } else if (!in->grounded) {
+        /* The cut (0C16D8) starts the fall with the jump body 0BF758
+         * 24E4E0 (marco-dsc1/dsc2); the weapon program stays. */
+        if (v->body_role==MARCO_CAMPAIGN_B_HANG) {v->running_jump=false;start(v,MARCO_BODY,MARCO_CAMPAIGN_B_JUMP);}
+        else if (v->grounded || v->body_role<0) {
             v->running_jump=in->running_jump;
             start(v,MARCO_BODY,v->running_jump?MARCO_CAMPAIGN_B_RUN_JUMP:MARCO_CAMPAIGN_B_JUMP);
             if (!hgun_role(v->weapon_role) || v->weapon_done) start(v,MARCO_WEAPON,weapon_rest(v,in,v->running_jump));

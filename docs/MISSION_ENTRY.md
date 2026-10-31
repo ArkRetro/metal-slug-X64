@@ -205,8 +205,6 @@ aterriza a los 200 fotogramas (como MAME); con B a los 20, corta y aterriza
 
 **Paradas explícitas.**
 
-- La pose colgada del cuerpo (programa 0BF818) no está en el catálogo de
-  Marco: durante el descenso el port dibuja su pose aérea.
 - La deriva usa el RNG del port, no la secuencia exacta de la partida.
 
 ### MISSION 1 START (`0607DE`, `src/neo_end.c`, rama `work-rom12`)
@@ -234,3 +232,19 @@ la VRAM: **72 volcados, 165793 píxeles iguales, 1550 distintos** (1838: la
 primera actualización, aún no en la VRAM; 1972/1976: cambio de programa al
 salir). `test_gameplay`: 14 sprites como máximo, desaparecen a los 143
 fotogramas del traspaso, sin paradas.
+
+### Poses del descenso (catálogo de Marco, rama `work-rom12`)
+
+`run_marco_catalog.py --first 1830` (los bloques de programa se vuelcan en
+2102, tras el aterrizaje: antes cambian las palabras de protección
+`2FFFE0..`) con `tools/mame/plans/marco-descent*.json`: `marco-dsc0` (sin
+entrada), `marco-dsc1` (B en 1898) y `marco-dsc2` (A en 1858, C en 1878, A
+en 1912). Colgado: cuerpo `0BF818` → `24E5AA` (nuevo, `B_HANG`), arma la del
+salto `0BFC58` → `24E5BC`; el corte elige el cuerpo de salto `0BF758` →
+`24E4E0`; colgado, A y C eligen los programas de disparo y granada de
+siempre (`24C70A`, `24C862`). `marco_visual.c` toma `hanging`
+(`gameplay.c` en `MSX_DESCENT_HANG`). `marco-dsc2` queda como evidencia
+de elecciones: su bloque de 2102 aún lleva la comprobación de cartucho de
+las letras (`0609D4`), así que no entra en el grafo. Catálogo 402 → 411
+poses, las anteriores idénticas; `make check-marco-campaign`: casos
+`d_hang` (100 pasos) y `d_cut` (18), **411 pasos iguales, 0 distintos**.

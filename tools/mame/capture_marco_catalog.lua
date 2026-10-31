@@ -220,7 +220,9 @@ emu.register_frame_done(function()
   manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png')
   end
  end
- if frame==plan.first+2 then
+ -- The program blocks after the landing (frame 2102 at the latest): before
+ -- it the protection words at 2FFFE0.. still change (descent captures).
+ if frame==math.max(plan.first,2100)+2 then
   for _,r in ipairs({{'program-fixed.bin',0,0xfffff},{'program-bank.bin',0x200000,0x2fffff}}) do
    local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
   end

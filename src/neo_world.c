@@ -268,6 +268,7 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
 }
 static bool g_parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {return neo_world_parent(((tick_t *)ctx)->w,tag,out);}
 static const neo_anim_program_t *g_program(uint32_t tag) {return program(tag);}
+const neo_anim_program_t *neo_world_program(uint32_t tag) {return program(tag);}
 static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creator_tag,uint8_t v68) {
     neo_world_t *w=t->w;
     if (at<0) {w->overflow++;return NULL;}

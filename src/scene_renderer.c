@@ -339,6 +339,13 @@ static bool bg_retire(void) {
     for (unsigned g=1;g<=4;g++) if (!bg_retired[(bg_group+g)&3u].pending) {bg_group=(bg_group+g)&3u;return true;}
     return false;
 }
+static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
+    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched) return false;
+    for (unsigned i=0;i<5;i++) if (bg_key.offsets[i]!=offsets[i] || bg_key.rises[i]!=rises[i] || bg_key.visible[i]!=visible[i]) return false;
+    if (depth_mode && memcmp(bg_key.views,depth_views,sizeof(bg_key.views))) return false;
+    for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (!bg_blocks[p][t]) return false;
+    return true;
+}
 static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
@@ -393,7 +400,9 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     // nothing is serviced inside the loop: repeating the previous chunk's
     // request at the same priority changes nothing and is skipped.
     // With the whole pack resident every request is a no-op: skip the walk.
-    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident();
+    // Every phase of both passes recorded for these exact inputs: the chunks
+    // they read are pinned (resident), so every request would be a no-op.
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_all_resident() && !bg_static(offsets,rises,visible);
     for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
         scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);

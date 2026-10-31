@@ -20,7 +20,10 @@ GLOBALS=[(0x10e95a,0x10e964),(0x10e9c8,0x10e9d0),(0x1067e2,0x1067e4),(0x109944,0
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('trace',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--range',action='append',required=True,help='lo-hi routine interval (hex)')
+    p.add_argument('--ram',action='append',default=[],help='lo-hi RAM interval (hex): every first read of a byte there (input) and every write (output), e.g. the vehicle slots, input words, weapon block and player nodes a vehicle reads')
     a=p.parse_args();ranges=[tuple(int(x,16) for x in r.split('-')) for r in a.range]
+    rams=[tuple(int(x,16) for x in r.split('-')) for r in a.ram]
+    inram=lambda ad:any(lo<=ad<hi for lo,hi in rams)
     keep=lambda r:any(lo<=r<=hi for lo,hi in ranges)
     updates=[];cur=None;frame=0
     for line in open(a.trace):
@@ -30,7 +33,7 @@ def main():
         if t[0]=='U':
             if cur is not None:cur['post']=None;updates.append(cur)
             r=int(t[2],16)
-            cur=dict(frame=frame,node=t[1],routine=r,pre=t[3],reads={},writes=[]) if keep(r) else None
+            cur=dict(frame=frame,node=t[1],routine=r,pre=t[3],reads={},writes=[],ram_in={},ram_out=[]) if keep(r) else None
             continue
         if cur is None:continue
         if t[0]=='V':cur['post']=t[2];updates.append(cur);cur=None;continue
@@ -42,8 +45,15 @@ def main():
                     # Object-list bytes: the id (+9) is read apart from the height (+8).
                     o=cur['reads'][hex(ad)];new=mask&~o[0];o[1]=(o[1]&o[0])|(data&new);o[0]|=new
             if t[0]=='W' and any(lo<=ad<hi for lo,hi in GLOBALS):cur['writes'].append([ad,mask,data,pc])
+            if inram(ad):
+                for b,m in ((ad,0xff00),(ad+1,0xff)):
+                    if not mask&m:continue
+                    v=(data>>8)&255 if m==0xff00 else data&255
+                    if t[0]=='R':
+                        if '%x'%b not in cur['ram_in'] and not any(w[0]==b for w in cur['ram_out']):cur['ram_in']['%x'%b]=v
+                    else:cur['ram_out'].append([b,v])
     if cur is not None:cur['post']=None;updates.append(cur)
-    with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',ranges=a.range,updates=updates),f,separators=(',',':'))
+    with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',ranges=a.range,ram=a.ram,updates=updates),f,separators=(',',':'))
     rs={}
     for u in updates:rs[u['routine']]=rs.get(u['routine'],0)+1
     print(len(updates),'updates',' '.join('%05x:%d'%(k,v) for k,v in sorted(rs.items())))

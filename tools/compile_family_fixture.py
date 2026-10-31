@@ -107,7 +107,21 @@ def main():
     for u,cr in order:
         pre=bytes.fromhex(u['pre'])
         L.append('{%d,0x%x,%d,{%s}},'%(cr,u['routine'],u['frame'],','.join(str(x) for x in pre[:0xb0])))
-    L.append('};');L.append('static const family_update_t %s_updates[]={'%n)
+    L.append('};')
+    # RAM the update read (first read of each byte) and wrote, in the --ram
+    # intervals of the extraction (vehicle slots, input words, weapon block,
+    # player nodes): inputs and compared outputs.
+    rin=[];rout=[];spans=[]
+    for u in d['updates']:
+        i0,o0=len(rin),len(rout)
+        rin+=[(int(k,16),v) for k,v in sorted(u.get('ram_in',{}).items())]
+        rout+=[(ad,v) for ad,v in u.get('ram_out',[])]
+        spans.append((i0,len(rin)-i0,o0,len(rout)-o0))
+    if d.get('ram'):
+        L.append('#define FAMILY_RAM {%s}'%','.join('{0x%s,0x%s}'%tuple(r.split('-')) for r in d['ram']))
+        L.append('static const uint32_t %s_ram_in[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rin) or '{0,0}'))
+        L.append('static const uint32_t %s_ram_out[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rout) or '{0,0}'))
+    L.append('static const family_update_t %s_updates[]={'%n)
     last={}
     maxext=0
     for k,u in enumerate(d['updates']):
@@ -184,10 +198,10 @@ def main():
                 marks.append((s32(wv[0]<<16|wv[1]),s32(wv[2]<<16|wv[3]),wv[4]>>8,wv[4]&255))
             break
         nm=len(marks);marks+=[(0,0,0,0)]*(8-len(marks))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s}},'%(
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks)))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k]))
     L.append('};')
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(L)+'\n')
     print(len(order),'node instances',len(d['updates']),'updates, at most',maxext,'external bytes per update')

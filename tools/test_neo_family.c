@@ -37,6 +37,7 @@ typedef struct {
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
     uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
     int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
+    int ram_in_first,ram_in_count,ram_out_first,ram_out_count;  /* FAMILY_RAM inputs/outputs */
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -124,12 +125,45 @@ static const neo_anim_program_t *program(uint32_t tag) {
     for (unsigned i=0;i<sizeof(soldier_programs)/sizeof(soldier_programs[0]);i++) if (soldier_programs[i].tag==tag) return &soldier_programs[i].program;
     return NULL;
 }
-/* Recorded node address -> index (the +0C/+38 of the recorded bytes). */
+/* Recorded node address -> index (the +0C/+38 of the recorded bytes). An
+ * address inside a node other than its block (+28) keeps the offset in bits
+ * 16..23 (a turret's +6E into its vehicle). */
 static uint32_t node_address[NN];
 static uint32_t native_tag(uint32_t recorded) {
     for (unsigned i=0;i<NN;i++) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
+    for (unsigned i=0;i<NN;i++) if (node_address[i] && recorded>node_address[i] && recorded<node_address[i]+0xc0u) return NEO_GA_TAG(i)|((recorded-node_address[i])<<16);
     return recorded;
 }
+static uint16_t node_word(void *ctx,const neo_gactor_t *a) {(void)ctx;return a->index>=0 && a->index<(int)NN?(uint16_t)node_address[a->index]:0;}
+#ifdef FAMILY_RAM
+/* RAM the family reads and writes outside its nodes (vehicle slots, input
+ * words, weapon block, player nodes, RAM 10000E): an image of 100000..10FFFF
+ * with the bytes each update read; the native writes must be the
+ * original's. */
+#define RAMIN CAT(FAMILY_NAME,_ram_in)
+#define RAMOUT CAT(FAMILY_NAME,_ram_out)
+static uint8_t wram[0x10000],wexpect[0x10000];
+static const uint32_t ram_ranges[][2]=FAMILY_RAM;
+static neo_vslots_t vslots;static neo_vehicle_env_t venv;
+static uint16_t w16(uint32_t ad) {return (uint16_t)(wram[ad&0xffffu]<<8|wram[(ad+1)&0xffffu]);}
+static uint32_t w32(uint32_t ad) {return (uint32_t)w16(ad)<<16|w16(ad+2);}
+static void ram_to_env(marco_weapons_t *weapons) {
+    memcpy(vslots.slot[0].b,&wram[0xc608],0x24);memcpy(vslots.slot[1].b,&wram[0xc62c],0x24);
+    vslots.record[0]=w32(0x10c2e8);vslots.record[1]=w32(0x10c2ec);
+    for (unsigned p=0;p<2;p++) {
+        uint32_t n=p?0x101574u:0x1014c4u;
+        venv.player[p]=&wram[n&0xffffu];venv.exists[p]=w32(n)!=0x3f1eu;
+        venv.input[p][0]=w16(0x10e9ecu+6u*p);venv.input[p][1]=w16(0x10e9eeu+6u*p);venv.repeat[p]=wram[0xf084+p];
+    }
+    venv.halted=wram[0xc301];venv.system=wram[0xc300];venv.dip10f000=wram[0xf000];venv.dip10f001=wram[0xf001];venv.solids=0;venv.slots=&vslots;
+    memcpy(weapons->b,&wram[0xc718],MARCO_WEAPON_BLOCK);
+}
+static void env_to_ram(const marco_weapons_t *weapons) {
+    memcpy(&wram[0xc608],vslots.slot[0].b,0x24);memcpy(&wram[0xc62c],vslots.slot[1].b,0x24);
+    for (unsigned r=0;r<2;r++) for (unsigned i=0;i<4;i++) wram[0xc2e8+4*r+i]=(uint8_t)(vslots.record[r]>>(24-8*i));
+    memcpy(&wram[0xc718],weapons->b,MARCO_WEAPON_BLOCK);
+}
+#endif
 /* Frame of the update being replayed: a child the original made shows up
  * within a few frames (0040BC: the same frame; 00411C: the next one). A
  * native spawn with no recorded node that soon is a child the original
@@ -233,7 +267,8 @@ int main(void) {
 #ifndef FAMILY_TERRAIN
 #define FAMILY_TERRAIN 0x10d7b6u   /* the families past camera 1023 */
 #endif
-    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;
+    e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;e.node_word=node_word;kernel.b400c=0xff;
+    unsigned ram_bytes=0;(void)ram_bytes;
     e.kill_children=kill_children;e.has_children=has_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
 #ifdef FAMILY_MARKER_SEQ
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
@@ -322,7 +357,21 @@ int main(void) {
         }
 #endif
         unsigned taken=pickup.taken;pickup.frame++;
+#ifdef FAMILY_RAM
+        for (int i=0;i<u->ram_in_count;i++) wram[RAMIN[u->ram_in_first+i][0]&0xffffu]=(uint8_t)RAMIN[u->ram_in_first+i][1];
+        memcpy(wexpect,wram,sizeof(wram));
+        for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
+        ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);
+#endif
         ga_result_t r=neo_region_tick(a,&e);
+#ifdef FAMILY_RAM
+        env_to_ram(&weapons);
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) for (uint32_t ad=ram_ranges[g][0];ad<ram_ranges[g][1];ad++) {
+            if (wram[ad&0xffffu]!=wexpect[ad&0xffffu]) {fprintf(stderr,"frame %u node %d %05x: RAM %06x = %02x, original %02x\n",u->frame,u->node,u->routine,(unsigned)ad,wram[ad&0xffffu],wexpect[ad&0xffffu]);return 1;}
+            ram_bytes++;
+        }
+        memcpy(wram,wexpect,sizeof(wram));
+#endif
         if (pickup.taken!=taken) {
 #ifdef FAMILY_PICKUPS
             static const uint32_t pk[][3]=FAMILY_PICKUPS;bool ok=false;
@@ -386,6 +435,9 @@ int main(void) {
 #ifdef FAMILY_PICKUPS
     {static const uint32_t pk[][3]=FAMILY_PICKUPS;
      if (pickups_checked!=sizeof(pk)/sizeof(pk[0])) {fprintf(stderr,"%u pickups, expected %u\n",pickups_checked,(unsigned)(sizeof(pk)/sizeof(pk[0])));return 1;}}
+#endif
+#ifdef FAMILY_RAM
+    printf("RAM outside the nodes (slots, input words, weapon block, player nodes): %u bytes compared\n",ram_bytes);
 #endif
     printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups%s\n",
         STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,swapped?", map swap requested":"");

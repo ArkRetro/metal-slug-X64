@@ -31,8 +31,9 @@ privados y no están en git.
 
 ## Rendimiento (ares)
 
-Peor fotograma del recorrido 35–39 ms (objetivo 16,7 ms); 0 fallos síncronos del
-fondo; detalle en RENDIMIENTO.md.
+Peor fotograma del recorrido 35 ms en ROM 12 (objetivo 16,7 ms; como mucho dos
+pasos de simulación por fotograma); 0 fallos síncronos del fondo; caché de
+212 ranuras (mínimo 208); detalle en RENDIMIENTO.md.
 
 ## Historial de ROMs de prueba
 

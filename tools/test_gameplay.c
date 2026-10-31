@@ -316,7 +316,7 @@ int main(int argc,char **argv) {
     // follows the oscillating boss-fight policy, so where it stands when the
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
-    assert(g.world.ga_flags.collapsed && max_height>=31 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,
     // the shop down, the wagon gone, the script waiting at 2D6E8A). The

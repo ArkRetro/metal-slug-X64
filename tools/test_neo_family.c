@@ -389,6 +389,14 @@ int main(void) {
         }
 #endif
         unsigned taken=pickup.taken;pickup.frame++;
+#ifdef FAMILY_LABEL_COUNTS
+        /* RAM 10C5B2/10C5B4 (score labels per player, 08D330) as read. */
+        {const int32_t (*lc)[3]=CAT(FAMILY_NAME,_label_counts);
+         for (unsigned i=0;i<sizeof(CAT(FAMILY_NAME,_label_counts))/sizeof(lc[0]);i++) if (lc[i][0]==(int32_t)k) {
+             if (lc[i][1]>=0) pickup.label_count[0]=(uint16_t)lc[i][1];
+             if (lc[i][2]>=0) pickup.label_count[1]=(uint16_t)lc[i][2];
+         }}
+#endif
 #ifdef FAMILY_RAM
         for (int i=0;i<u->ram_in_count;i++) wram[RAMIN[u->ram_in_first+i][0]&0xffffu]=(uint8_t)RAMIN[u->ram_in_first+i][1];
         memcpy(wexpect,wram,sizeof(wram));

@@ -1097,29 +1097,55 @@ reproduce ni el objeto dinámico del carro (solo lo que se leyó) ni los sellos
 Gráficos: `fam2/bld1/trk3/rl2@1ce08-1d763`, `bld1@1e058-1e07c`; paletas
 nuevas `0x277 0x278 0x20A 0x29E 0x143 0x228`.
 
-## Premios: lo que falta (rama `work-world`, diagnóstico)
+## Premios: regalo tipo `0x55` y etiquetas de puntos `0x08D330` (`src/neo_item.c`, rama `work-world`)
 
-Recorrido de `tools/test_gameplay.c` instrumentado (`EXT`/`ITEMBY`): los
-premios que el port no muestra salen todos de `src/neo_item.c` (rama de armas,
-no tocada aquí):
+Diagnóstico (recorrido de `tools/test_gameplay.c` instrumentado): los premios
+que faltaban salían de `neo_item.c`. Ahora son nativos:
 
-- **Tipo `0x55`** (registro `0E581A + 0x18*0x55`: programa `286FBC`, paleta
-  `0x3AC`, recogida `08B7FC` = puntos/comida con la voz `1121`, movimiento
-  **`0x08BCCC`**, tabla de estados `0x08BCC0`: `08BCD4` entrada, `08BCEA`
-  botes que dividen las velocidades, `08BD32/08BD3C`, y `08BD74..08BE22`
-  caminar con `08CCD4` girando en paredes). Lo dan los prisioneros `0x099DCC`
-  (`09ACD6` desde `09A7C2`, `+74` = 0x55: 9 regalos por recorrido) y la caja
-  oculta de la ventana de la ruina. `neo_item.c` lo devuelve como externo
-  (`motion_known` no tiene `08BCCC`): **es el regalo de prisionero que
-  falta**. Cambio necesario en `neo_item.c` (traducir `08BCCC` y aceptarlo en
-  `motion_known/motion`): informado, no hecho.
-- Etiquetas de puntos `0x08D330` (39 por recorrido) y de recogida
-  `0x08C752` (4): externas en `neo_item.c` (contadas).
-- El puesto `0x03FC5A` (cajas de fruta `0x03FD6E`): no da objetos; al
-  dispararle o saltar sobre él suelta la salpicadura `0x03FEB2` (programa
-  `22DB44`, paleta `0x20B`). Sigue como parada explícita: `03FE38` pregunta a
-  `01AF1A` por el bit 6 de `+15` del jugador y a `0AAA88` por su vehículo, que
-  el entorno de los actores no lleva.
+- **Tipo `0x55`** (registro `0E581A + 0x18*0x55`: programa `286FBC` con la
+  retrollamada `286FA8` (`+26` = `0029C6 & 0x3F + 0xC0`), paleta `0x3AC`,
+  recogida `08B7FC` = puntos/comida con la voz `1121`), movimiento
+  **`0x08BCCC`** por el estado `+76` de la tabla `0x08BCC0` (`08BD66`):
+  0 `08BCD4` proyecta, cuatro botes (`+74`) y estado 1; 1 `08BCEA` gravedad
+  0xB000 y `0143E4`, en el suelo la velocidad de caída anterior al paso vuelve
+  hacia arriba a la mitad, `+30` por 3/4 y un bote menos (estado 2 tras el
+  último); 2 `08B9B2`. Crece de 0x10 en 0x10 (`08B9F2`). Lo dan los
+  prisioneros (`09ACD6`) y la caja oculta de la ventana de la ruina.
+- **Etiqueta de puntos `0x08D330`** (creada por la recogida `08B944`
+  después del actor del guion, `+6E` = el valor, sobre el objeto, `+8A` el
+  jugador): contador por jugador RAM `10C5B2/10C5B4` en `+88`, paletas por
+  jugador `0E559E` (`0x3B8/0x3B9`), hasta ocho dígitos sin ceros a la
+  izquierda (`+8C..`, cuántos en `+72`), cada uno 8 px a la derecha con su
+  altura `+74+4i`: espera `+91+i`, sube `+96+i` actualizaciones a 0x50000,
+  sigue las velocidades `0E55EC`; tras el último, 15 actualizaciones quieta
+  (`08D63E`) y el parpadeo `0E55CA` subiendo 0x3000 (`08D6A2/08D738`). Cada
+  dígito es su programa de `0E56EE` (`0E565A` con RAM `10C2F6` ≠ 0, `08CF2E`)
+  arrancado y avanzado una vez (`08D7B4`): varios dibujos por actualización.
+  Se va cuando hay cuatro etiquetas más nuevas de su jugador (`08D814`).
+- Sigue externa (contada): la etiqueta de texto de las bombas `0x08C752`
+  (`08CD10`: crea un actor por letra `0x08C954` con el texto `0E5782`; ninguna
+  captura la tiene). Las etiquetas de puntos que crean otros actores
+  (`08CE72`, `08CEEC`) dependen de rutinas que el port no traduce.
+
+**Captura** `captures-world/gift3` (`MSX_REST_FAMILY_ROOTS=9a67e,9a688,9a692,
+8c374,8c37c,8d330,8c752 MSX_REST_BOSS_FROM=7600 MSX_REST_LAST=8400`, con
+el parche solo de captura `MSX_REST_ROM_PATCH=D6EE1:06:55`: el prisionero
+`2D6ED0` da el tipo 0x55 en vez del 6; el código del objeto es el original).
+**Prueba `label`**: 11 nodos, 683 actualizaciones en bucle cerrado
+(7732..8398), 94220 bytes iguales, 4 recogidas (dos comidas en 7848, puntos en
+8017, la H en 8081), 1157 dibujos. El compilador de pruebas tiene la opción
+nueva `--label-after-pickup` (la etiqueta de una recogida es nativa: una por
+recogida, en la posición proyectada del objeto; las de otros actores se
+inyectan) y la prueba lee RAM `10C5B2/10C5B4` tal como se leyó. El objeto
+0x55 se recorre en los estados 0 y 1 (16 actualizaciones). La caja de la
+ventana (`captures-world/gift1`, mismo parche en los registros
+`2D6B02..2D6BD2`) cae sobre los escombros `0B53A8`, que la rejilla del port no
+tiene: descartada como prueba.
+
+El puesto `0x03FC5A` (cajas de fruta `0x03FD6E`) no da objetos: al dispararle
+o saltar sobre él suelta la salpicadura `0x03FEB2`. Sigue como parada
+explícita: `03FE38` pregunta a `01AF1A` por el bit 6 de `+15` del jugador y a
+`0AAA88` por su vehículo, que el entorno de los actores no lleva.
 
 ## Otras paradas explícitas de esta tanda
 

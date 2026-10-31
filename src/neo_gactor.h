@@ -88,6 +88,7 @@ typedef struct neo_pickup_env {
     uint16_t mission;                    /* RAM 10C2F6 (0C0BAE) */
     uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
     unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
+    uint16_t label_count[2];             /* RAM 10C5B2+2p: score labels 08D330 made (08D33C) */
     unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
 } neo_pickup_env_t;

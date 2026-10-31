@@ -49,6 +49,7 @@ BLOBS=[
     (0x9AD4C,0x9C,'099DCC/099E06 prisoners: hurtbox 09AD4C, view rectangle 09ADD0, player rectangle 09ADE0, item table 09ADE8'),
     (0x2D0B9E,0x160,'099862 prisoner rank tables 2D0B9E/2D0BB8/2D0BD2 (0260C8) and item lists 2D0BEC (099D12)'),
     (0xE553E,0x20,'08C5EA item kinds deleted when their program ends'),
+    (0xE559E,0x178,'08D330 score label: palettes by player 0E559E (0E55AA/0E55AE), blink sequence 0E55CA, digit speeds 0E55EC, digit programs 0E565A/0E56EE (08D7B4)'),
     (0xE561C,0x10,'08C0CC item pickup rectangle E561C, cull rectangle E5624 (0C8BEC)'),
     (0xE581A,0x870,'08D2DA item records (0x5A kinds x 0x18: flags, program, palettes, pickup and motion routines)'),
     (0xE4E84,0x2EC,'087E36 armoured vehicle: hurtbox E4E84, solid E4E90, attack rows E4E9E/E4EBE, cull E4ECE, player rectangle E4ED6, wreck maps E4EDE/E4F36/E4F8E/E4FC0, platform map E4FF2, debris lists E5060/E50B2, platform offsets E5104 (089412)'),

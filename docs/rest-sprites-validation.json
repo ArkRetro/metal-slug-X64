@@ -1,5 +1,5 @@
 {
- "descriptors": 3138,
+ "descriptors": 3160,
  "palettes": [
   "0x103",
   "0x113",
@@ -58,6 +58,8 @@
   "0x3aa",
   "0x3ac",
   "0x3ad",
+  "0x3b8",
+  "0x3b9",
   "0x3ba",
   "0x3be",
   "0x3c6",
@@ -94,13 +96,13 @@
   "0x377"
  ],
  "stats": {
-  "zoomed_entries_skipped": 832,
-  "frames": 662,
-  "pixels_equal": 2972707,
-  "pixels_different": 152107,
-  "pixels_overlapping": 780666,
-  "rank_2": 436,
-  "rank_1": 226,
+  "zoomed_entries_skipped": 834,
+  "frames": 676,
+  "pixels_equal": 2975908,
+  "pixels_different": 152172,
+  "pixels_overlapping": 780955,
+  "rank_2": 443,
+  "rank_1": 233,
   "missing_descriptor": 28
  },
  "frames": [
@@ -4737,6 +4739,104 @@
    "update_frame": 9448,
    "equal": 444,
    "different": 101
+  },
+  {
+   "capture": "gift3",
+   "frame": 7740,
+   "update_frame": 7736,
+   "equal": 146,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7800,
+   "update_frame": 7798,
+   "equal": 380,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7860,
+   "update_frame": 7858,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7920,
+   "update_frame": 7920,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 446,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 404,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8340,
+   "update_frame": 8338,
+   "equal": 84,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8400,
+   "update_frame": 8399,
+   "equal": 84,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7800,
+   "update_frame": 7798,
+   "equal": 109,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7860,
+   "update_frame": 7860,
+   "equal": 109,
+   "different": 65
+  },
+  {
+   "capture": "gift3",
+   "frame": 7920,
+   "update_frame": 7918,
+   "equal": 309,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 7980,
+   "update_frame": 7978,
+   "equal": 130,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8040,
+   "update_frame": 8038,
+   "equal": 96,
+   "different": 0
+  },
+  {
+   "capture": "gift3",
+   "frame": 8100,
+   "update_frame": 8098,
+   "equal": 96,
+   "different": 0
   }
  ]
 }

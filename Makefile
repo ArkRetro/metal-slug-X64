@@ -274,7 +274,7 @@ $(BUILD_DIR)/end_letters_fixture.h: tools/compile_end_fixture.py data/end_letter
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 food rocket heli camel decor awning porter slug civil blast debris flash
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 food rocket heli camel decor awning porter slug civil blast debris flash label
 # The camel riders 09F682 (camel2: hold-fire 6950..7950 at camera 2184..2336),
 # their riders, heads, shots, pieces and the dropped sword 09EE34; the rider
 # dies as a swordsman (09E920/09EAB8, neo_swords.c). A shot A0034 that hits
@@ -352,6 +352,12 @@ FAMILY_ARGS_armored := --tree --marker-seq 2 --script-actor 101414
 # stays). Cut before 7339 (fixture source): the post-collapse collision of the
 # rubble map 0B53A8 is not in the port's grid.
 FAMILY_ARGS_food := --script-actor 101414 --script-routines 8c374,8c37c --pickup 7119,0,ffff --pickup 7137,0,ffff --pickup 7139,0,ffff
+# Score labels 08D330 of the item pickups and the item kind 55 (motion
+# 08BCCC) of gift3 (capture-only ROM patch: the prisoner 2D6ED0 gives kind
+# 55): a label an item's pickup makes is native (--label-after-pickup: one
+# per pickup, at the item's projected position), the labels other actors
+# make (08CE72/08CEEC) are injected; RAM 10C5B2/10C5B4 as read.
+FAMILY_ARGS_label := --script-actor 101414 --script-routines 1 --label-after-pickup 8d330 --pickup 7848,0,ffff --pickup 7848,0,ffff --pickup 8017,0,ffff --pickup 8081,a,c8
 FAMILY_HEADERS := $(patsubst %,$(BUILD_DIR)/%_fixture.h,$(FAMILIES))
 $(FAMILY_HEADERS): $(BUILD_DIR)/%_fixture.h: data/%_fixture.json.gz tools/compile_family_fixture.py
 	python3 tools/compile_family_fixture.py $< --output $@ --name $* $(FAMILY_ARGS_$*)

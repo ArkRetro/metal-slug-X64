@@ -89,6 +89,11 @@ static void trace(void *context,uint8_t kind,uint8_t index) {
     ctx_t *c=context;const world_tick_t *t=c->t;
     if (t->frame==dbg_frame) printf("  trace kind %u index %u rng cursor %u routine %05X\n",kind,index,c->w->rng.cursor,
         kind==NEO_WORLD_GACTOR?(unsigned)ga_l(&c->w->gactors[index],0):kind==NEO_WORLD_SOLDIER?(unsigned)c->w->soldiers[index].routine:0u);
+    /* The score labels 08D330 of the item pickups (neo_item.c) are native
+     * but outside actors in these captures (the extractor cannot tell them
+     * from the labels other actors make, 08CE72/08CEEC): they make no RNG
+     * call and are left out of the order comparison. */
+    if (kind==NEO_WORLD_GACTOR) {uint32_t r=ga_l(&c->w->gactors[index],0);if (r==0x8d330u || r==0x8d4deu || r==0x8d62eu || r==0x8d63eu || r==0x8d698u || r==0x8d6a2u) return;}
     /* A thrown object created this update is inserted after the script actor
      * (03BB8E -> 00411C), behind the traversal: it first runs next update. */
     while (c->executed<t->order_count && t->order[c->executed].created && t->order[c->executed].kind==NEO_WORLD_THROW) c->executed++;

@@ -89,6 +89,7 @@ bool neo_world_spawn_stop(uint32_t constructor) {
 }
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
+    if (neo_world_spawn_stop(r)) return false;
     return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au;
 }
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
@@ -97,7 +98,7 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
     bool sub=sp->creator<0 && t->sub_owner>=0;
     int at=sub?find(w,NEO_WORLD_GACTOR,(unsigned)t->sub_owner):sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
     uint32_t routine=sp->constructor&0xffffffu;
-    if (routine!=SOLDIER_CONSTRUCTOR && at>=0 && neo_region_routine(routine)) {
+    if (routine!=SOLDIER_CONSTRUCTOR && at>=0 && neo_region_routine(routine) && !neo_world_spawn_stop(routine)) {
         /* 01A10A: 0040BC after the creator, words to +6E.., +69 group,
          * +68 variant, +28/+2C at the scene root (01ABB6). */
         neo_gactor_t *a=ga_insert(t,at,routine,sub?NEO_GA_TAG((unsigned)t->sub_owner):sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);

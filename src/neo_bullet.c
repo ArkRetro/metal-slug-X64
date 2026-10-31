@@ -97,6 +97,15 @@ static ga_result_t bullet_tick(neo_gactor_t *a,neo_genv_t *e) {
     build:
         SL(0x7a,0x22e504);SL(0x72,0x100000);
         START(program);ga_palette(a,0x202);
+        goto common;
+    case 0x1be24:                                                    /* the Camel Slug's vulcan */
+        ga_palette(a,0x884);sound(e,0x108c);
+        SL(0x7a,0x22c040);SL(0x72,0x100000);START(0x22c4c6);         /* 01BDE8 */
+        SB(0x7e,0);SB(0x7f,(uint8_t)ga_rand(e)>>4);SB(0x80,1);
+        goto common;
+    case 0x1b6a0:                                                    /* the SV-001's vulcan */
+        sound(e,0x108c);SL(0x7a,0x22e504);SL(0x72,0x100000);START(0x22c1b8);ga_palette(a,0x3d6);
+    common:
         /* 01B7BA */
         SB(0x78,3);SB(0x15,B(0x15)|0x20u);SW(0x66,0xe000);SW(0x1e,0xe000);SB(0x15,B(0x15)&0xfeu);
         velocity(a);index6f(a);index70(a);index71(a);
@@ -247,6 +256,6 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 static bool grenade_routine(uint32_t r) {return r==0x1bf10 || r==0x1bf46 || r==0x1bfd0 || r==0x1c152 || r==0x1c19a;}
 bool neo_bullet_routine(uint32_t r) {
-    return r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r);
+    return r==0x1b6a0 || r==0x1be24 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r);
 }
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {return grenade_routine(ga_l(a,0))?grenade_tick(a,e):bullet_tick(a,e);}

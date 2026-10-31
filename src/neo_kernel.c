@@ -514,13 +514,33 @@ void neo_kernel_dyn_update(neo_kscene_t *s,unsigned i) {
     for (int b=x0>>5;b<=x1>>5;b++) s->bins_x[b]|=bit;
     for (int b=y0>>5;b<=y1>>5;b++) s->bins_y[b]|=bit;
 }
+/* 0138A0: with 10C00D set and 10C00B clear, the horizontal motion is cut at
+ * the screen box of the configuration (x from 10C01C, width 10C020; positions
+ * relative to the sweep's object): D6 = FF and 10C024/10C025 mark the side.
+ * The vertical bound is skipped with 10C00C set (the only case recovered). */
+static bool k138a0(kr_t *k) {
+    if (!k->b400d || k->b400b) return false;
+    bool cut=false;
+    if (k->d2) {
+        if (!(k->d2&0x80000000u)) {
+            uint32_t d7=(((uint32_t)(uint16_t)(k->s->config[0]+k->s->config[2]))<<16)-1u-k->d0;
+            if (d7&0x80000000u) d7=0;
+            if (S(k->d2)>S(d7)) {k->d2=d7;cut=true;k->b4024[0]=0xff;}
+        } else {
+            uint32_t d7=((uint32_t)k->s->config[0]<<16)-k->d0;
+            if (!(d7&0x80000000u)) d7=0;
+            if (S(k->d2)<S(d7)) {k->d2=d7;cut=true;k->b4024[1]=0xff;}
+        }
+    }
+    return cut;
+}
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
     kr_t k={0};k.s=scene;
     if (!known(q->parent)) return false;
     k.d0=(uint32_t)q->x;k.d1=(uint32_t)q->y;k.d2=(uint32_t)q->dx;k.d3=(uint32_t)q->dy;k.a0=q->parent;
     k.w4068=scene->w4068;
     k.m4004=q->mode4004;k.b4008=q->b4008;k.b4009=q->b4009;k.b400a=q->b400a;k.b400b=q->b400b;k.b400d=q->b400d;
-    if (k.b400d) return false; /* 0138A0 bounds of the player configuration */
+    if (k.b400d && !k.b400b && !scene->b400c) return false; /* 0138A0: vertical bound (RAM 1069CC) not recovered */
     /* 013968 */
     if (S(k.d2)>0xffffff) k.d2=0xffffffu;
     if (S(k.d3)>0xffffff) k.d3=0xffffffu;
@@ -532,6 +552,14 @@ restart:
     if (++restarts>64u) return false;
     k.a1=NEO_KOBJ_NONE;k1ac4c(&k);k.a0=k.a1;
     k.l402c=k.d0;k.l4030=k.d1;
+    if (k138a0(&k)) {                                               /* 0139D2..013A32 */
+        if (w4024(&k)==0xffffu || w4026(&k)==0xffffu) {k.w4012|=0x80u;goto finish;}
+        if (k.v4044 && k.a0==k.o4044) {
+            if (k.d2==k.l4048 && k.d3==k.l404c) {k.w4012|=0x80u;goto finish;}
+            k.l4048=k.d2;k.l404c=k.d3;
+        } else if (!k.v4044) {k.v4044=true;k.o4044=k.a0;k.l4048=k.d2;k.l404c=k.d3;}
+        k.v4050=false;
+    }
     k.iterator=0;k14160(&k,k.d0,k.d1,k.d2,k.d3);k1382a(&k);
     while (k.a1!=NEO_KOBJ_NONE) {
         k1ac4c(&k);k.a0=k.a1;

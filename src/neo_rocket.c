@@ -491,8 +491,18 @@ static ga_result_t rocket_tick(neo_gactor_t *a,neo_genv_t *e) {
  * actor (00411C): its facing bit is clear. */
 static ga_result_t puff_tick(neo_gactor_t *a,neo_genv_t *e) {
     switch (L(0)) {
+    case 0x59e30:
+        /* 059E30: the Camel Slug's dust (059EE0): program 24C49C, palette by
+         * the mission (08CF2E: RAM 10C2F6 = 0, Mission 1: 0x170; the other
+         * missions are an explicit stop), +76 = 300, then 059CAE. */
+        SB(0x78,0xff);SB(0x79,0xff);START(0x24c49c);
+        if (!e->pickup || e->pickup->mission) {ga_fail(e,0x8cf2e);return GA_UNSUPPORTED;}
+        ga_palette(a,0x170);SW(0x76,0x12c);
+        goto k59cae;
     case 0x59c82: {
         SB(0x78,0xff);SB(0x79,0xff);START(0x247da8);ga_palette(a,0x37c);SW(0x76,0x1e);
+    }   /* fall through */
+    k59cae: {
         ga_project(a,e);
         neo_gactor_t *c=e->creator?e->creator(e->ctx,a):NULL;
         if (c && (ga_b(c,0x15)&1u)) SET(0x15,0);
@@ -537,7 +547,7 @@ static bool launcher(uint32_t r) {
     return false;
 }
 bool neo_rocket_routine(uint32_t r) {
-    return launcher(r) || r==0x60490 || r==0x604e8 || r==0x602e4 || r==0x60330 || r==0x5fd8a || r==0x5fe28 || r==0x59c82 || r==0x59cda || r==0x59d00;
+    return launcher(r) || r==0x60490 || r==0x604e8 || r==0x602e4 || r==0x60330 || r==0x5fd8a || r==0x5fe28 || r==0x59c82 || r==0x59e30 || r==0x59cda || r==0x59d00;
 }
 ga_result_t neo_rocket_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);

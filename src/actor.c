@@ -269,7 +269,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
-    game.start_edge|=input.btn.start && !previous_start;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
+    /* Reference build: Start in Mission 2 stage 3 toggles the test's route
+     * planner (gameplay.h, msx_autopilot.h) instead of reaching the HUD. */
+    bool start_press=input.btn.start && !previous_start;
+    if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
+        game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
+    }
+    game.start_edge|=start_press;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     /* At most two steps per frame: the world updates on every second step
@@ -282,7 +288,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         game.aim_up=input.btn.d_up || stick_v>0;
         game.crouch=input.btn.d_down || stick_v<0;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
-        msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
+        int pilot_direction=direction;bool pilot_jump=input.btn.a || pending_a;
+        msx_game_autopilot(&game,&pilot_direction,&pilot_jump);
+        msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
         /* Dying, lying and the entrance (marco_death.c): the death and
          * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
          * the body/weapon programs restart with the new life. */

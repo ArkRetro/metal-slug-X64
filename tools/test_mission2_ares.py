@@ -12,7 +12,9 @@ modes 4/5) ends and loads stage 3, whose tower (writer 0B7C38: collision
 and drawing from the same piece types) is climbed up to the boss arena,
 to the boss 026254 (native) and the mission end. Screenshots at each milestone;
 the stage ends, tower pieces and the perf numbers are reported and the
-last line is RESULT: PASS/FAIL."""
+last line is RESULT: PASS/FAIL. Stage 3 is walked by the reference build's
+route planner (src/msx_autopilot.h, docs/MISION2.md "Fase 2f"), turned on
+by Start in stage 3; the pad then only fires."""
 from pathlib import Path
 import argparse,re,subprocess,threading,time
 parser=argparse.ArgumentParser()
@@ -53,6 +55,9 @@ def pad():
         if state.get(name)!=on:key('keydown' if on else 'keyup',name);state[name]=on
     while not stop.is_set():
         now=time.monotonic();t=now-t0
+        if pilot.is_set():
+            hold('Right',False);hold('Left',False);hold('Down',False);hold('a',False);hold('b',int(t*20)%2==0)
+            time.sleep(.03);continue
         cam=camera_now() if int(t*4)%4==0 else last[0]
         if cam!=last[0]:last=(cam,now)
         stuck=now-last[1]
@@ -81,6 +86,7 @@ def stage_report(stage):
     return 'stage %d: camera x max=%d y range=%d..%d progress max=%d modes=%s player x max=%d unknown cells read=%d'%(
         stage,max(r[0] for r in rows),min(r[1] for r in rows),max(r[1] for r in rows),max(r[2] for r in rows),sorted({r[3] for r in rows}),max(r[4] for r in rows),max(r[7] for r in rows))
 walked=[]
+pilot=threading.Event()
 worker=threading.Thread(target=pad,daemon=True);tapper=threading.Thread(target=boot_taps,daemon=True)
 try:
     tapper.start()
@@ -106,6 +112,13 @@ try:
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
     m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)
+    # The route planner: Start toggles it in stage 3.
+    pilot.set();time.sleep(.3)
+    for attempt in range(3):
+        key('keydown','Return');time.sleep(.2);key('keyup','Return')
+        try:wait_for(r'MSX autopilot on',timeout=5);break
+        except AssertionError:time.sleep(1)
+    walked.append('autopilot')
     # The tower climb (writer 0B7C38) up to the boss arena, the boss 026254
     # (native, script record 2D9CA2) and the mission end.
     end=time.monotonic()+3*args.stage_seconds;shots=0;done=None

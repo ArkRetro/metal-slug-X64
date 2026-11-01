@@ -255,6 +255,12 @@ static void new_life(msx_game_t *g) {
     if (g->world_enabled && g->world.camera_native) {
         marco_respawn_t r=marco_respawn_point(neo_camera_progress(&g->world.camera),rx,ry);
         x=r.x;y=r.y;
+        /* 019658's table is Mission 1's: on another mission's screen the
+         * point can lie below it (Mission 2 stage 3, the tower: y 65 under
+         * a camera at y 2200, three fall deaths in a row). Then the new
+         * life drops from the screen's upper part. */
+        int px=(int)((x+rx)>>16),py=(int)((y+ry)>>16);
+        if (g->flow.mission!=0u && (py<0x120 || py>0x1f0 || px<32 || px>288)) {x=(160<<16)-rx;y=(0x1c0<<16)-ry;}
     } else {
         /* Without the native camera (lab builds): the port's checkpoint. */
         x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
@@ -547,13 +553,15 @@ static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,
     neo_kreq_t q={body->x,body->y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,(uint8_t)(ground?0xff:0),0,0,0xff};
     neo_kres_t r;
     if (!neo_kernel_sweep(k,&q,&r) || !(r.flags&4u) || r.parent!=NEO_KOBJ_TERRAIN) return false;
-    g->wall_stops++;*x=r.x;return true;
+    g->wall_stops++;*x=r.x;
+    return true;
 }
 static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t vy) {
     solid_push_t r={false,false,false};
     neo_world_t *w=&g->world;
     if (!g->world_enabled) return r;
     if (w->ga_flags.player_lock) return r;                    /* 0C8CFC: 10E9E3 set, D7 = 0 */
+    if (g->pilot.on) return r;   /* reference autopilot: soldiers' bodies (0E1B4E) do not hold it at a ledge */
     /* 01ABC8: projected position (+3C/+40), as player_frame. */
     int32_t rx=-(int32_t)((uint32_t)g->camera<<16),ry=MSX_PROJECTED_BASE_Y*MSX_UNIT;
     if (w->camera_native) {rx=neo_camera_root_x(&w->camera);ry=neo_camera_root_y(&w->camera);}
@@ -750,9 +758,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
 #if MSX_REFERENCE_STAGE_EXIT
     /* Reference build only, stages without their native exit yet: the
      * stage ends at the end of the camera list. Mission 2 stage 1 ends by
-     * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40). */
+     * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40); stage 3 by its
+     * boss (the tower stairs reach the screen's right edge at camera x
+     * 624, MAME run4 player x 915: the climb goes on). */
     if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
-        !(g->flow.mission==1u && g->flow.stage==1u && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+        !(g->flow.mission==1u && (g->flow.stage==1u || g->flow.stage==3u) && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
     /* The level script stopped at a record of an unported actor (explicit
      * stop): its camera lock would hold the stage there for good. The
      * reference build releases it (0C7C12) to walk the engine further;
@@ -765,7 +775,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * (Mission 2 stage 2, 2D7864: the soldiers 067E98/068020 of 06835C at
      * the right edge, under the player): after 2400 steps (40 s) at the
      * stop the reference build releases it too (lock_timeouts). */
-    if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && g->camera>=g->world.camera_lock) {
+    int lock_at=g->world.camera_native?(int)neo_camera_progress(&g->world.camera):g->camera;   /* 0C7C12 compares the list progress */
+    /* The count starts at the stop and survives the camera's jitter around
+     * it (Mission 2 stage 2: x 2366..2368 at the stop 2368 in ares). */
+    if (g->world.camera_lock!=g->lock_value) {g->lock_value=g->world.camera_lock;g->lock_held=0;}
+    if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && (g->lock_held || lock_at>=g->world.camera_lock)) {
         if (++g->lock_held>=2400u) {
             g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
             g->stage_lock_releases++;g->lock_timeouts++;g->lock_held=0;
@@ -873,8 +887,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * sweep's velocity into the body is cancelled (014676..01469C). */
             neo_surface_t feet;int32_t gvx,gvy;
             neo_ground_velocity(neo_surface_at(body.x,body.y,1,NEO_UNIT,&feet)?feet.shape:0,direction,&gvx,&gvy);
+            int32_t pushed_from=body.x;
             solid_push_t s=solid_push(g,&body,gvx,body.vy);
             if ((s.left && gvx>=0) || (s.right && gvx<0)) direction=0;
+            /* A push-out along a slope keeps the feet on it (Mission 2
+             * stage 3, x 536: a solid pushes the player up the 1234 steps
+             * and the zero-speed walk then found no floor one unit away). */
+            if (body.x!=pushed_from && neo_surface_at(body.x,body.y,4*MSX_UNIT,4*MSX_UNIT,&feet)) body.y=feet.height;
             int32_t wx;
             if (direction && wall_stop(g,&body,gvx,gvy,true,&wx)) {body.x=wx;direction=0;}
             g->grounded=neo_walk_step(&body,direction);
@@ -917,8 +936,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * as it is, 0 for a player not hit). Independent of the
              * reference cartridge's invulnerability (only hits). */
             neo_world_player_t p=player_frame(g);
-            if (MSX_REFERENCE_INVULNERABLE && (int16_t)p.py<0x100 && g->safe) {
-                /* Reference build: back to the last grounded position. */
+            int32_t safe_py=(int32_t)(int16_t)p.py+(g->y-g->safe_y)/MSX_UNIT;
+            if (MSX_REFERENCE_INVULNERABLE && (int16_t)p.py<0x100 && g->safe && safe_py>=0x100) {
+                /* Reference build: back to the last grounded position,
+                 * unless the camera has since risen past it (Mission 2
+                 * stage 3, modes 2/4): then the fall death and a new life. */
                 g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
             } else if ((int16_t)p.py<0x100) {g->pit_deaths++;start_death(g,0,(int16_t)p.px>=0xa0);}
             else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {g->safe_x=g->x;g->safe_y=g->y;g->safe=true;}
@@ -1158,6 +1180,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->kills=g->world.kills;
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
         if (g->world.mission_step>=1) g->mission_complete=true;
+        /* 018F92 of Mission 2's boss (026C30 of 026254, stage 3; the stage
+         * gates 0B6ED2 of stages 1/2 run it too). */
+        if (g->flow.mission==1u && g->flow.stage==3u && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
         hud_step(g);
     }
@@ -1177,3 +1202,5 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (camera>g->camera) g->camera=camera;
     }
 }
+#include "neo_region.h"
+#include "msx_autopilot.h"

@@ -362,7 +362,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit gate crate bags stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags stage3 drone hostage m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -434,6 +434,10 @@ FAMILY_ARGS_rebel3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # gate = the Mission 2 stage-1 gate 03882A and its water ripple 03C62A
 # (neo_gate.c, g1 from sec01_19391: shot open at 19740, 0B6E06).
 FAMILY_ARGS_gate := --attacks --terrain 10c72e --ring 10c72e
+# secret2 = the Mission 2 stage-1 hidden boxes 09A692 (camera 320) and the
+# prisoners 099E1C they release (09A842; neo_secret.c, neo_prisoner.c), pr1
+# from sec01_19391 (19393..22600: three boxes shot open, three prisoners).
+FAMILY_ARGS_secret2 := --attacks --terrain 10c72e --ring 10c72e
 # crate = the Mission 2 stage-3 supply crate 08C168 (neo_crate.c, c1 from
 # sec03_26140: two crates, opened at 28452 and 29708).
 FAMILY_ARGS_crate := --attacks --terrain 10c72e --ring 10c72e

@@ -47,10 +47,36 @@ static marco_visual_t marco;static bool marco_native;static unsigned marco_shots
  * loaded at its 0183D0. The pack holds the mission's stage records in play
  * order: index = 42FA (Mission 2: 0..2 for stages 1..3; Mission 3: its one
  * stage 4, docs/MISION3.md). The pack's descriptor must be the flow's. */
+/* Frames keep presenting while a stage loads (the original loads behind
+ * its wipe/fade, 3AED8/3AEF0, with the screen black): between chunk loads
+ * the frame actor_draw holds is shown cleared to black every ~33 ms and the
+ * next one is taken when the display frees it (display_try_get: the load
+ * never waits for a blank; at the end, display_get). */
+static surface_t **load_target;static bool load_shown_pending;static uint32_t load_shown_at,load_presents,load_gap;
+static void load_idle(void) {
+    msx_audio_idle();
+    if (!load_target) return;
+    if (load_shown_pending) {
+        surface_t *s=display_try_get();
+        if (s) {*load_target=s;load_shown_pending=false;}
+        return;
+    }
+    if (TICKS_SINCE(load_shown_at)<TICKS_FROM_MS(33)) return;
+    uint32_t gap=TICKS_SINCE(load_shown_at);if (gap>load_gap) load_gap=gap;
+    rdpq_attach_clear(*load_target,NULL);rdpq_detach_show();
+    load_shown_pending=true;load_shown_at=TICKS_READ();load_presents++;
+}
+static void load_idle_end(void) {
+    if (load_target && load_shown_pending) {*load_target=display_get();load_shown_pending=false;}
+}
 static bool load_stage(void) {
     unsigned index=game.flow.record_index;
-    scene_assets_set_load_idle(msx_audio_idle);
-    if (!scene_stage_load(index)) return false;
+    scene_assets_set_load_idle(load_idle);load_shown_at=TICKS_READ();load_presents=load_gap=0;
+    bool loaded=scene_stage_load(index);
+    {uint32_t gap=TICKS_SINCE(load_shown_at);if (gap>load_gap) load_gap=gap;}
+    load_idle_end();
+    debugf("MSX stage load frames: %lu black frames shown, longest gap %lu us\n",(unsigned long)load_presents,(unsigned long)TICKS_TO_US(load_gap));
+    if (!loaded) return false;
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
     neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
@@ -216,6 +242,7 @@ void actor_set_active(bool active) {
 }
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
+    load_target=&surface;
     /* The diagnostic overlay (L) only on the internal reference cartridge:
      * the release game has no debug HUD (user request). */
     if (msx_reference_invulnerable && input.btn.l && !diagnostics_was_down) {
@@ -489,6 +516,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_depth_frame(&effects);
 #endif
     msx_perf_mark(MSX_PERF_PREP);
+    load_target=NULL;
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);

@@ -158,6 +158,8 @@ local function probes()
  for _,a in ipairs(list) do
   dbg:command(string.format('bpset %x,1,{printf "BP_%06X ',a,a)..fmt..'\\n",'..regs..';g}')
  end
+ -- MSX_FULL_DEBUG_CMDS: extra debugger commands separated by '|'.
+ for c in string.gmatch(os.getenv('MSX_FULL_DEBUG_CMDS') or '','[^|]+') do dbg:command(c) end
  dbg:command('bpset 1a132,1,{printf "SPAWN frame=%d node=%08X entry=%08X record=%08X creator=%08X\\n",temp9,a0,d@(sp),d@(sp+4),a6;g}')
  dbg:command(string.format('bpset 4406,(temp9%%%x)==0,{printf "DRAW frame=%%d a6=%%08X routine=%%08X desc=%%08X xy=%%08X attr=%%04X\\n",temp9,a6,d@(a6),d7,d0,d1&ffff;g}',draw_every))
 end
@@ -332,7 +334,7 @@ emu.register_frame_done(function()
  in_lua=true
  frame=frame+1
  if load_name and frame==1 then machine:load(load_name);frame=tonumber(os.getenv('MSX_FULL_LOAD_FRAME'));last_section=-3 end
- if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 then probes() end end
+ if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 or (load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1) then probes() end end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
  if frame>=1550 and frame<=1700 then button('P1 A',1) end
  if frame==1710 then button('P1 A',0) end

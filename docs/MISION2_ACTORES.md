@@ -40,6 +40,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `052A5C` espera de cámara; `0678A2/0678AC` soldado (+9C = 4) | `src/neo_m2props.c`, `src/neo_rebel3.c` | familia `stage3` (`c1`): 2 nodos, **1838 actualizaciones** |
 | `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
 | `06835C` soldado con rehén: rehén `021B46..` y soldado `0683FA/0684CA` | `src/neo_hostage.c`, `src/neo_rebel3.c` | familia `hostage` (etapa 2, `h1`): 2 nodos, **186 actualizaciones**, 2 borrados |
+| `09A692` caja oculta → prisionero `099E1C` (`09A842`) | `src/neo_secret.c`, `src/neo_prisoner.c` | familia `secret2` (etapa 1, `pr1`): 8 nodos, **1477 actualizaciones**, 4 borrados, 246 dibujos |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -393,3 +394,26 @@ el registro `2D9CA2` corre entre 92475 y 93083 y el nodo pasa a `026354` en
 93083 (x 480, y 1705). Se llega reproduciendo `run4` desde `sec03_26140`
 (unos 19 min) con `MSX_FULL_SAVE_AT=92700` (solo captura: guarda
 `at_92700`); los tramos de la traza salen de ese estado.
+
+## Prisionero de las cajas ocultas `099E1C` (`neo_secret.c`)
+
+Traza (estado `sec01_19391`, unos 50 s; tres cajas `09A692` en la cámara 320
+de la etapa 1, salud 100/200/300, `+78` = 1):
+
+```sh
+export MSX_FULL_LOAD=sec01_19391 MSX_FULL_LOAD_FRAME=19391 MSX_FULL_STATES=/home/user/captures-fullgame/states4
+MSX_FULL_FAMILY_ROOTS=9a692,99e1c,8c374 MSX_FULL_FAMILY_FROM=19393 MSX_FULL_VRAM_TRACE=1 \
+MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=22600 sh tools/run_capture_fullgame.sh /home/user/captures-m2g/pr1
+python3 tools/extract_family_fixture.py /home/user/captures-m2g/pr1/boss-trace.txt --output data/secret2_fixture.json.gz \
+  --range 99dcc-9a5ee --range 9a5ee-9a9c2 --range 3c62a-3c962 --attacks --ram 10c2f6-10c2f8 --ram 10000e-100010 --ram 10c7b6-10d7b6
+```
+
+`09A842` (caja con `+7E` = 0) crea `099E1C` tras sí misma (`0040BC`, reserva
+0x1C; sin nodo libre escribe en el nodo falso y no pasa nada), `01B220` en
+(0, 0) y suma `+84/+86` a `+28/+2C`; copia `+74/+76` (regalo) y pone su
+`+6E` = `+78` de la caja. `099E1C` es otra entrada del constructor de
+`099DCC..` (`01B1DC`, `09AC16`) que salta directamente a `099FD8`, el
+prisionero ya suelto que pasea (`neo_prisoner.c`, ya nativo). Sprites: los
+programas `29FE52..` y las paletas 0x381/0x382/0x3FA ya estaban en
+`filesystem/mission2/rest-native.json` (56 marcos, 0 ausentes). Sin
+comprobación de píxeles propia (son los marcos de la Misión 1).

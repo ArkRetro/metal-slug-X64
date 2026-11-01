@@ -509,8 +509,10 @@ bool scene_mission_load(unsigned mission) {
     debugf("MSX mission pack %s: %u stages, %lu chunks, %lu images, %lu cells, %lu bytes\n",path,head.stages,(unsigned long)head.chunks,(unsigned long)head.images,(unsigned long)head.cells,(unsigned long)mission_bytes);
     return true;
 }
-/* Called between the chunk loads of a stage (the audio service: the loads
- * take 0.3..1 s, longer than the AI's two buffers). */
+/* Called between the reads and chunk loads of a stage: the audio service
+ * (the loads take 0.14..0.64 s, longer than the AI's two buffers) and, in
+ * actor.c, a black frame shown every ~33 ms (the original loads behind its
+ * wipe/fade 3AED8/3AEF0, with the screen black). */
 static void (*load_idle)(void);
 void scene_assets_set_load_idle(void (*fn)(void)) {load_idle=fn;}
 bool scene_stage_load(unsigned index) {
@@ -532,6 +534,7 @@ bool scene_stage_load(unsigned index) {
     scene_chunk_t *chunks=take(16u*mission_head.chunks);rom_read(chunks,mission_chunks_at,16u*mission_head.chunks);
     mission_chunks=chunks;mission_chunk_count=mission_head.chunks;
     stage_palettes=take(32u*mission_head.palettes);rom_read(stage_palettes,mission_palettes_at,32u*mission_head.palettes);
+    if (load_idle) load_idle();
     /* Cells: 22-byte records (u8 layer) converted in place to
      * scene_map_cell_t, the image ids rebased to the stage's images. */
     _Static_assert(sizeof(scene_map_cell_t)==22,"scene_map_cell_t is the pack record size");
@@ -542,7 +545,9 @@ bool scene_stage_load(unsigned index) {
         c.layer=r[0];c.x=(int16_t)(r[2]<<8|r[3]);c.y=(int16_t)(r[4]<<8|r[5]);
         for (unsigned k=0;k<8;k++) c.phases[k]=(uint16_t)((r[6+2*k]<<8|r[7+2*k])-ps.image_first);
         memcpy(&stage_cells[i],&c,sizeof(c));
+        if (load_idle && (i&1023u)==1023u) load_idle();
     }
+    if (load_idle) load_idle();
     /* Images: 8-byte records (page, palette, y, height) read at the end of
      * their table and expanded forward (never over an unread record). */
     stage_images=take(images*sizeof(scene_image_t));stage_image_total=images;
@@ -554,6 +559,7 @@ bool scene_stage_load(unsigned index) {
         if (page<min_page) min_page=page;
         if (page>max_page) max_page=page;
     }
+    if (load_idle) load_idle();
     /* Actors: descriptors (first rebased after the native bank's frames),
      * 12-byte parts expanded forward from the end of their table as the
      * map images, the resource map. */
@@ -571,11 +577,13 @@ bool scene_stage_load(unsigned index) {
     stage_resources=take(4u*mission_head.resources);
     rom_read(stage_resources,mission_actors_at+8u*mission_head.actors+12u*mission_head.actor_images,4u*mission_head.resources);
     for (unsigned i=0;i<mission_head.resources;i++) stage_resources[i].palette=(uint16_t)(SCENE_PALETTE_COUNT+stage_resources[i].palette);
+    if (load_idle) load_idle();
     /* Grid, its stamp copy and the unknown mask. */
     uint8_t *g=take(grid),*dyn=take(grid),*unknown=NULL,*ring=ps.rows>32u?take(4096u):NULL;rom_read(g,ps.grid,grid);
     if (ps.unknown) {unknown=take((grid+7)/8);rom_read(unknown,ps.unknown,(grid+7)/8);}
     const uint8_t *blob[3];
     for (unsigned b=0;b<3;b++) {uint8_t *d=take(ps.blob[b].length);if (ps.blob[b].length) rom_read(d,ps.blob[b].offset,ps.blob[b].length);blob[b]=d;}
+    if (load_idle) load_idle();
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,

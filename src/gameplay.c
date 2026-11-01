@@ -560,7 +560,12 @@ static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,
     neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
     neo_kreq_t q={body->x,body->y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,(uint8_t)(ground?0xff:0),0,0,0xff};
     neo_kres_t r;
-    if (!neo_kernel_sweep(k,&q,&r) || !(r.flags&4u) || r.parent!=NEO_KOBJ_TERRAIN) return false;
+    if (!neo_kernel_sweep(k,&q,&r) || !(r.flags&4u)) return false;
+    /* The air sweep that meets a wall can end on the scene root (MAME wq1,
+     * Mission 2 stage 3: D6 = 8000000E with A0 = 10E968 at x 624 and in the
+     * tower at 759..887, 10C00A = 0): x back to the terrain (01AC4C). */
+    if (r.parent==NEO_KOBJ_ROOT) r.x=(int32_t)((uint32_t)r.x+(uint32_t)k->root.x-(uint32_t)k->terrain.x);
+    else if (r.parent!=NEO_KOBJ_TERRAIN) return false;
     g->wall_stops++;*x=r.x;
     return true;
 }

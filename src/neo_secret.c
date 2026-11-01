@@ -8,8 +8,9 @@
  * of 09AE08), +70 items (0: 1..3 at random), +72 health (+4E; 0 = opened at
  * once), +74 item kind, +76 its +70, +78 0 or the item's +72 = 1, +7A the
  * release motion (09A8E0). 09A67E/09A688 give items (08CD58 -> 08CDB2: item
- * 08C374 after the script actor), 09A692 a prisoner 099E1C after itself:
- * not translated (explicit stop, not in the Mission 1 script). 09A688
+ * 08C374 after the script actor), 09A692 a prisoner 099E1C after itself
+ * (0040BC reserve 0x1C, 01B220, +28/+2C moved by +84/+86; +74/+76 its gift,
+ * +6E = our +78: neo_prisoner.c). 09A688
  * counts hits (+72) instead of damage. Opened (+5F bit 7: shots, or the
  * kill-all of 004BAC while 1067E2 is set), it drops one item per update, scattered by +80/+82 (the last at
  * (0,4)); it leaves outside the view rectangle 09ADD8 (0C8BEC). Paths to the
@@ -56,9 +57,15 @@ static ga_result_t release(neo_gactor_t *a,neo_genv_t *e) {
         SW(0x86,(uint16_t)(d0-(uint16_t)(S16(W(0x82))>>1)));
     } else {SW(0x84,0);SW(0x86,4);}
     SW(0x70,W(0x70)-1u);
-    if (!W(0x7e)) {ga_fail(e,0x9a842);return GA_UNSUPPORTED;}    /* prisoner 099E1C */
     uint16_t kind=W(0x74);
-    if (kind<0x5au) {                                               /* 08CDB2 */
+    if (!W(0x7e)) {                                                 /* 09A842: prisoner 099E1C */
+        neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x99e1c,0x1c):e->spawn?e->spawn(e->ctx,a,0x99e1c,false):NULL;
+        if (c) {
+            ga_place_from(c,a,e,0,0);                               /* 01B220 */
+            ga_sw(c,0x28,(uint16_t)(ga_w(c,0x28)+W(0x84)));ga_sw(c,0x2c,(uint16_t)(ga_w(c,0x2c)+W(0x86)));
+            ga_sw(c,0x74,W(0x74));ga_sw(c,0x76,W(0x76));ga_sw(c,0x6e,W(0x78));
+        }
+    } else if (kind<0x5au) {                                               /* 08CDB2 */
         neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
         if (c) {
             ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x76));ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);

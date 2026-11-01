@@ -122,8 +122,9 @@ unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
     /* Vertical stages: every reader sees the kernel's ring (0C79FE), which
      * the tower writer 0B7C38 fills beyond the map's rows. */
+    if (x<0 || x>=(int)columns*8 || y<0) return 0;
     if (ring_on) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
-    if (x<0 || x>=(int)columns*8 || y<0 || y>=(int)rows*8) return 0;
+    if (y>=(int)rows*8) return 0;
     unsigned at=(unsigned)(x/8)*rows+(unsigned)(y/8);
     /* A never observed cell (mission packs only) reads as empty and is
      * counted: an explicit stop of the collision coverage. */

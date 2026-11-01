@@ -135,17 +135,67 @@ de spawn (`mslugx-explorer.elf`: texto 1 724 844 B, datos 19 328 B, bss
 160 788 B, total 1 904 960 B). RAM: tablas de la etapa 364 KB en 23 ranuras de la caché (219
 ranuras, 3504 KB); el presupuesto fijo no cambia.
 
+## Fase 2: el tren (rama `work-m3b`)
+
+**Capa `10D7B6` nativa** (`src/neo_train.c`). El escritor de su `+14` es
+`0C81C0`/`0C6F9E` (paso de capa: bit 0 de `10E956+i` → la capa suma su
+velocidad propia `10E94E` en vez de la de la raíz `10E970`; op 0x3C de la
+lista de cámara en el progreso 0x140: `10E957 = 10E958 = 1`). `10E94E` lo
+escribe el conductor `0B8D64` (creado por `0B8D34` desde la lista de
+cámara): raíz (× 3/4 en el modo 2) + `10C6B8`, que con `10E9D0 = 0` salta al
+suelo del modo (`0B8CFC` modo 1: −2 px; `0B8D06` modo 2: −12 px). El
+conductor corre tras las capas: la capa usa la raíz de la actualización
+anterior con el modo vigente. El origen de columnas `+32` lo mueve `0B8DD0`:
+mientras `10C6B6 ≠ 0`, si `tabla[10C6B4] + 32 − 0x20 < +36` (con `+36 =
+(−x >> 20) − 4`, `0C748E`) suma 0x20 (el tren repite 32 columnas antes de la
+columna de la tabla `0B8E36`: 0x50, 0x78, 0xB0, 0xE0, 0x138, 0x188; las
+elige `0B8E7E..0B8EA4`). `test_neo_train` (`data/train_fixture.json.gz`,
+`tools/extract_train_fixture.py` desde run4): **14252 actualizaciones, `x`
+y `+32` exactos**. El desplazamiento observado de la capa es `−x − 16·(+32)`
+con un paso de retraso (553 de 614 observaciones exactas, el resto es el
+retraso de la instantánea): el renderizador dibuja la capa 1 así en vez de
+la regla ajustada (deriva mediana anterior 532 px). Las celdas del paquete
+siguen siendo las primeras vistas por posición (módulo 65536).
+
+**Colisión** (`neo_kernel.c`): `01382A` recorre `10D7B6` tras `10C72E` con
+la ventana vertical de `013856..013896` (`(+34 − 0x11 + 1)·16 + y`, 7 filas
+de 16 px). La rejilla `0B8566` (784 × 48) es una plataforma `0x2B` en la
+fila 36 de cada columna salvo 384..447 (`0xA0` en las filas 46/47):
+`neo_kernel_train_cell`, comparada con la ROM por `tools/test_train_grid.py`
+(`make check MSX_ROM_ZIP=...`). En el anillo la fila de mapa r ocupa la fila
+r + 20 (RAM `10D83E` de run4). El jugador puede aterrizar en ella pero no
+viaja con el tren (en run4 el jugador tiene siempre `10C72E` como padre en
+este tramo: x 1338..3179 con `+38 = 10C72E`).
+
+**Descriptor que faltaba**: los 59 dibujos sin descriptor del recorrido eran
+todos `18653C` (de `filesystem/mission2/rest-native.json`; `actor.c` registra
+ahora la última etiqueta que falta). `filesystem/mission3/rest-native.json`
+(privado) lleva ese marco y las paletas de la Misión 2; el paquete
+`mission3.pack` tiene ya sección de actores (1 descriptor, 0,95 MB).
+
+**Recorrido** (`mslugx-m3-reference.z64`, 300 s): igual que en la fase 1,
+cámara 1901, jugador hasta x 2017. El bloqueo no es el tren: en x 1930..2000
+el jugador **cae** (y hasta −93, 147 rescates) a través del suelo del vagón,
+celdas `0x31..0x3B` del grupo 1 en las filas 17/18 de `10C72E`. El barrido del
+jugador (`0128E8` pone `10C00D` siempre) borra el grupo 1 en `0129A2`, y la
+Misión 3 no tiene tabla de grupos (`10C00E = 0` en la RAM de run4), así que
+`player_surface` (`neo_collision.c`) las ignora igual que el original. En
+run4, sin embargo, el jugador pasa por encima (x 1953, `+38 = 10C72E`): falta
+identificar sobre qué celda se apoya (la conversión de y entre la RAM y la
+rejilla del paquete no está cerrada; con y local = y + `10C72E +18` − 256 da
+la fila 17).
+
 ## Pendiente
 
-1. Colisión móvil del tren: `10D7B6` como segundo objeto de terreno en
-   `01382A` (rejilla `0B8566`, origen de columnas que se mueve) y el escritor
-   de su movimiento (la regla de capa 1 es aproximada, error mediano 532 px).
-2. El cielo con puntero 0 (escritor sin identificar) y la superposición
-   `2A6142` de `10E8C6`; los 7 valores de fondo.
-3. Familias nativas, por frecuencia: `097FCC`, `09BA2A`, `02B202`,
-   `08A732`, `08DA12`, `0A2F2E`, `05D916`… (trazas con
-   `MSX_FULL_FAMILY_ROOTS` desde los estados de `states4`, como
-   [MISION2_ACTORES.md](MISION2_ACTORES.md)), sus sprites en
-   `filesystem/mission3/rest-native.json` y `0AF17E`.
-4. Recorrido más allá de la cámara 1900 (subida a los vagones) y hasta el
-   jefe y el fin de misión.
+1. Recorrido: el suelo de grupo 1 del vagón (x 1904..2095, ver arriba); luego
+   más allá de la cámara 1900 hasta el jefe y el fin de misión.
+2. Capas: el cielo (`10E83E`) usa también `10E94E` desde el progreso 0x140
+   (velocidad 0x40) pero su mapa pasa a 0; su escritor (probablemente el actor
+   `0B8EDC` de `0B8D34`, tabla `0B8EC2`) y la superposición `2A6142` de
+   `10E8C6`; los 7 valores de fondo. Las celdas empaquetadas del tren son las
+   primeras vistas por posición; el bucle de columnas no se refleja en ellas.
+3. Familias nativas, por frecuencia: `097FCC` (sonido 10BA, `0985A0`, hijo
+   `098E4A`), `09BA2A`, `02B202`, `08A732`, `08DA12`, `0A2F2E`, `05D916`, y
+   las rutinas `0AF17E` (constructor de soldado) y `09A842` (trazas con
+   `MSX_FULL_FAMILY_ROOTS` desde `states4/sec04_117966`, como
+   [MISION2_ACTORES.md](MISION2_ACTORES.md)).

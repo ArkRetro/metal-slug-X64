@@ -107,7 +107,7 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
  * palette table, mirrored draws one pixel left (observed, see
  * tools/export_soldier_sprites.py). Screen y = 248 - original y (+ the
  * camera height applied to every gameplay sprite). */
-static unsigned native_missing_descriptor,native_missing_palette;
+static unsigned native_missing_descriptor,native_missing_palette;static uint32_t native_missing_tag;
 static int native_screen_y(uint16_t projected_y) {
     /* The projected word already includes the scene root (camera height). */
     return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
@@ -128,7 +128,7 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         return;
     }
     const scene_native_descriptor_t *desc=scene_native_descriptor(d->descriptor);
-    if (!desc) {native_missing_descriptor++;return;}
+    if (!desc) {native_missing_descriptor++;native_missing_tag=d->descriptor;return;}
     int palette=scene_native_palette(d->palette);
     if (palette<0) {native_missing_palette++;palette=scene_native_palette(0x20e);}
     /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'
@@ -370,7 +370,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);
     if (game.grenade_stops!=old_grenade_stops) debugf("MSX bomb type %u stopped explicitly (0C4756 entry not ported)\n",game.world.weapons.b[10]);
     if (native_missing_descriptor || native_missing_palette) {
-        debugf("MSX native draw missing descriptor=%u palette=%u\n",native_missing_descriptor,native_missing_palette);
+        debugf("MSX native draw missing descriptor=%u palette=%u last=%06lX\n",native_missing_descriptor,native_missing_palette,(unsigned long)native_missing_tag);
         native_missing_descriptor=native_missing_palette=0;
     }
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);

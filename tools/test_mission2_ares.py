@@ -146,6 +146,10 @@ ends=re.findall(r'MSX stage end \(018722\) mission 2: next stage (\d) \(exit hoo
 print('stage ends:',ends)
 pits=[tuple(map(int,m)) for m in re.findall(r'pit deaths=(\d+) rescues=(\d+)',text)]
 if pits:print('pit deaths max=%d, reference rescues max=%d'%(max(p[0] for p in pits),max(p[1] for p in pits)))
+lands=[int(n) for n in re.findall(r'kernel landings=(\d+)',text)]
+if lands:print('air landings by the sweep 013968 where the plane test missed: %d'%max(lands))
+falls=re.findall(r'MSX fall (?:rescue \d+|death) stage \d+: x=-?\d+ y=-?\d+',text)
+print('fall log lines: %d%s'%(len(falls),(' (first: %s)'%falls[0]) if falls else ''))
 perf=[(int(a),int(b)) for a,b in re.findall(r'MSX PERF: .*? cpu=(\d+)/(\d+)',text)]
 rdp=[tuple(map(int,m)) for m in re.findall(r'MSX RDP: draws=(\d+) .*CPU=(\d+) us .*misses=(\d+)',text)]
 audio=[int(n) for n in re.findall(r'MSX AUDIO .*underruns=(\d+)',text)]

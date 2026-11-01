@@ -819,3 +819,44 @@ bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uin
     *d5=(uint16_t)k.d5;*d6=k.d6;*d7=k.d7;*object=o4060;
     return true;
 }
+/* 0128E8 for player 1 (A6 = 1014C4), before each of its sweeps 0143EE
+ * (air) and 014594 (ground): 10C00A = 0, 10C00D = FF and the screen box
+ * RAM 10C01C..10C023 copied from the record at RAM 10C2E8, ROM 016DBE =
+ * 001C 0000 0108 01E0 (MAME: the same words at every call of player 1 in
+ * Mission 2, stages 1 to 3). Without it 0138A0 clips every move to the
+ * right (and up) to nothing at the box of another object, or at 0 x 0, and
+ * the sweep never meets a wall there. The box is the call's own: the
+ * world's (neo_slug.c, neo_tread.c) is put back. */
+bool neo_kernel_player_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result) {
+    static const uint16_t box[4]={0x001c,0x0000,0x0108,0x01e0};   /* ROM 016DBE */
+    uint16_t config[4];
+    for (unsigned i=0;i<4u;i++) {config[i]=scene->config[i];scene->config[i]=box[i];}
+    bool ok=neo_kernel_sweep(scene,request,result);
+    for (unsigned i=0;i<4u;i++) scene->config[i]=config[i];
+    return ok;
+}
+/* Player 1's air sweep 0143EE: 013968 from +28..+34 with 10C004 = 0,
+ * 10C008 = FF (+15 bit 5 clear) and 10C009 = 0. On a floor (D6 bit 0,
+ * 0144B8: +15 bit 6) of the terrain or the root, *out gets the swept
+ * position and +30/+34 (014492) relative to the terrain and true is
+ * returned; otherwise the persistent words 10C018/10C068 are put back, so
+ * the caller's own sweeps see them unchanged. */
+bool neo_kernel_air_landing(neo_kscene_t *scene,int32_t x,int32_t y,int32_t vx,int32_t vy,neo_kland_t *out) {
+    uint16_t w4018=scene->w4018,w4068=scene->w4068;
+    uint8_t self_dyn=scene->self_dyn;uint32_t self_block=scene->self_block;
+    scene->self_dyn=0;scene->self_block=0;
+    neo_kreq_t q={x,y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,0,0,0,0xff};
+    neo_kres_t r;
+    bool ok=neo_kernel_player_sweep(scene,&q,&r);
+    scene->self_dyn=self_dyn;scene->self_block=self_block;
+    if (ok && (r.flags&1u) && (r.parent==NEO_KOBJ_TERRAIN || r.parent==NEO_KOBJ_ROOT)) {
+        if (r.parent==NEO_KOBJ_ROOT) {   /* 01AC4C: back to the terrain */
+            r.x=(int32_t)((uint32_t)r.x+(uint32_t)scene->root.x-(uint32_t)scene->terrain.x);
+            r.y=(int32_t)((uint32_t)r.y+(uint32_t)scene->root.y-(uint32_t)scene->terrain.y);
+        }
+        *out=(neo_kland_t){r.x,r.y,r.vx,r.vy,r.flags,r.kind};
+        return true;
+    }
+    scene->w4018=w4018;scene->w4068=w4068;
+    return false;
+}

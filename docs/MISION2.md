@@ -657,6 +657,8 @@ Subbloques de audio: 888 en todo el recorrido.
   de suelo del port recorre la escalera igual, prueba de host). Las
   caídas vienen de los saltos del mando de la prueba sobre la escalera
   mientras sube la cámara, no de un hueco en la colisión; queda abierto.
+  Resuelto en la Fase 2i (abajo): eran la pared x 944 sin parada y el
+  aterrizaje en pendiente del modelo de planos.
 - **Mapa al empezar la etapa 1**: las paletas del mapa de la etapa 1 se
   tomaron del primer fotograma observado, que era del fundido de entrada
   (468 celdas y el fondo oscuros: la esfinge salía a oscuras toda la
@@ -665,3 +667,89 @@ Subbloques de audio: 888 en todo el recorrido.
   fondo 16384 → 31384; etapas 2 y 3 sin cambios. Comando de la etapa 1:
   añadir `--skip-fade` al de arriba y volver a empaquetar.
 
+
+## Fase 2i: caídas de la Misión 2 (rama `work-m2fall`)
+
+Informe del usuario (hardware real): en la Misión 2 el jugador atraviesa
+suelos donde el original no. Dos causas, las dos en los barridos del
+jugador (`0143EE` aire, `014594` suelo, ambos con `013968`):
+
+1. **Paredes sin parada (la causa de los rescates en ares).** `0128E8`
+   copia antes de cada barrido del jugador 1 la caja de pantalla
+   RAM `10C01C..10C023` del registro de RAM `10C2E8` (ROM `016DBE` =
+   `001C 0000 0108 01E0`; MAME: las mismas palabras en todas las llamadas
+   de las etapas 1 a 3). `wall_stop` barría con la caja del mundo, 0×0 salvo
+   que un vehículo la hubiera escrito (`neo_slug.c`, `neo_tread.c`), y
+   `0138A0` recortaba a nada todo movimiento hacia la derecha (y hacia
+   arriba): la pared no se veía nunca. En la etapa 2 el jugador entraba en
+   la pared x 944..983 del pasillo y 80 (el original se queda en
+   x 943,99, `run4`) y caía al foso de x ≥ 984, bajo la escalera: los
+   rescates en x 964..1097 con la cámara subiendo. Recorrido del piloto de
+   MAME por la etapa 2 (`capture_fullgame.lua` desde `sec02_19932`, con la
+   escena exacta de cada llamada): 432 paradas en pared, 431 perdidas sin la
+   caja, 398 con ella (las 34 restantes y los demás desajustes caen en
+   celdas que la rejilla del port no tiene igual: x 2264 y 558 y la salida
+   x ≥ 2656). `neo_kernel_player_sweep` (neo_kernel.c) pone la caja de
+   `016DBE` para la llamada y devuelve la del mundo; `wall_stop` la usa.
+2. **Aterrizaje en pendientes.** `neo_land_step` solo aterriza en una
+   superficie entre la altura anterior y la nueva *en la x nueva*: una
+   superficie que sube más deprisa que la caída (la escalera de 45°
+   x 976..1031 y las cuartas de pendiente de después, y 224..232) se cruza
+   y el jugador cae. MAME (`capture_m2_stairs.lua`, estado `at_22370`,
+   saltos con plan de mando en la escalera mientras sube la cámara): el
+   original aterriza, p. ej. en x 1038,670 y 225,667 desde x 1035,290
+   y 225,307 con (3,981, −2,407); el modelo de planos sigue hasta el foso.
+   Ahora, si el modelo de planos no aterriza, decide el barrido
+   (`neo_kernel_air_landing`: `013968` con la petición de `0143EE`,
+   10C008 = FF, 10C009 = 0, la caja anterior); con suelo (D6 bit 0) del
+   terreno, posición y +30/+34 del barrido. Sin suelo devuelve 10C018/
+   10C068 como estaban. Contador `kernel landings` en el registro de ares.
+
+Evidencia (MAME 0.264):
+
+- `tools/test_m2_stairs.c` (`make check`, `data/m2_stairs_fixture.json.gz`,
+  `tools/extract_m2_stairs.py`/`compile_m2_stairs_fixture.py`): 676
+  llamadas del jugador bit a bit con la rejilla y el anillo del port (8
+  planes de saltos y 128 llamadas del piloto en la pared x 944); las 110
+  paradas en pared se pierden todas con la caja 0×0; el modelo de planos
+  pierde 5 aterrizajes del original y el barrido los da exactos; los
+  planes eA/eC/eD/eH atraviesan la escalera sin el arreglo y siguen las
+  posiciones de MAME con él (65/65 en eA y eH; en eC/eD el original se
+  desliza parado en la pendiente al final, no portado).
+- Recorridos del piloto con las llamadas trazadas (escena aproximada desde
+  `trace.csv`): etapa 2, 10 aterrizajes perdidos por el modelo de planos,
+  9 exactos con el barrido (el otro, en la salida x 2669, es la rejilla);
+  etapa 3 antes del jefe (marcos < 91000), 12 perdidos, los 12 exactos.
+  Desde el jefe la torre (`0B7C38`) no está en la rejilla estática de la
+  comprobación (no es una medida del juego).
+- Capturas: `MSX_FULL_DEBUG_CMDS` con puntos de parada en `01448C`
+  (entrada, RAM 10C004..10C00D, 10C018, 10C068, 10C01C..10C023, 10E9CC,
+  10C72E +14..+20, 10E968 +14..+20) y `014492` (salida), A6 = 1014C4.
+
+**Salida de la etapa 2.** Con las paradas en pared el jugador ya no
+atraviesa la puerta x 2656..2687 (y 640..679, celdas 0xF), y el gancho de
+salida de la referencia (x ≥ cámara + 280 con la cámara al máximo) no se
+alcanzaba: la etapa 2 se quedaba sin terminar en ares. En MAME la abre el
+actor `03A776` (`03A740` espera RAM `10C358`): `0B7350` → `0C70FC` cambia
+la puerta por suelo (marco 26001 del piloto, celdas de las columnas
+332..337) y crea la salida `0B6ED2`. Ese actor no está traducido (parada
+explícita, comentario en `gameplay.c`); el gancho de la referencia termina
+la etapa 2 con el jugador contra la puerta (x ≥ cámara + 240; cámara 2408,
+puerta en +248). La versión sigue sin salida nativa de la etapa 2, como
+antes.
+
+**Recorrido en ares** (`mslugx-m2-reference.z64`, `--stage-seconds 800`;
+con 400 la etapa 2 no llega a soltar la parada 2368 con otros dos ares en
+la máquina): `RESULT: PASS`, 0 caídas mortales, 2 rescates (antes 63;
+con solo el aterrizaje, 15 en la pared x 944 y la puerta), 5 aterrizajes
+por el barrido. Quedan, sin cerrar: etapa 2 x 2286 (y 467, desde x 2261
+y 557): en MAME el jugador para en x 2263,99 contra el objeto de colisión
+dinámico de la ranura 7 (mapa `0E1B6A`, el de los escombros de `06870A`;
+la rejilla del anillo es igual a la del port), que `wall_stop` no toma
+(solo paredes del terreno); etapa 3 x 348 y 888 (desde x 259 y 928), sin
+captura todavía.
+
+Desviaciones vistas y no tocadas (sin prueba de la rutina): el salto sin
+dirección desde la carrera deja +30 = 0 en el original (plan eE; el port
+conserva la velocidad), y el jugador parado en la cuarta de pendiente
+y 226 avanza ~1 px por actualización en el original (eC/eD).

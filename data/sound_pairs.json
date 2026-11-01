@@ -34000,6 +34000,125 @@
     "second_error": 0.064,
     "margin": 0.004
    }
+  },
+  "sfx_1137>sfx_1137": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2155.6,
+    "second": "overlap",
+    "second_residual": 3495.9,
+    "mix_rms": 3392.6,
+    "latency_b": 12.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.033,
+    "second": "overlap",
+    "second_error": 0.345,
+    "margin": 0.312
+   }
+  },
+  "pistol>sfx_1137": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2053.4,
+    "second": "cut",
+    "second_residual": 2129.1,
+    "mix_rms": 3235.1,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.032,
+    "second": "cut",
+    "second_error": 0.055,
+    "margin": 0.023
+   }
+  },
+  "sfx_1137>pistol": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 866.6,
+    "second": "drop",
+    "second_residual": 1203.3,
+    "mix_rms": 3362.5,
+    "latency_b": 10.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.008,
+    "second": "drop",
+    "second_error": 0.059,
+    "margin": 0.051
+   }
+  },
+  "explosion>sfx_1137": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1029.4,
+    "second": "cut",
+    "second_residual": 1272.7,
+    "mix_rms": 3280.1,
+    "latency_b": 12.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.033,
+    "second": "cut",
+    "second_error": 0.058,
+    "margin": 0.025
+   }
+  },
+  "sfx_1137>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 562.0,
+    "second": "drop",
+    "second_residual": 1192.9,
+    "mix_rms": 3401.6,
+    "latency_b": 14.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.02,
+    "second": "drop",
+    "second_error": 0.114,
+    "margin": 0.095
+   }
+  },
+  "rebel_1041>sfx_1137": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 918.6,
+    "second": "cut",
+    "second_residual": 2342.0,
+    "mix_rms": 4054.5,
+    "latency_b": 9.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.052,
+    "second": "cut",
+    "second_error": 0.127,
+    "margin": 0.075
+   }
+  },
+  "sfx_1137>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 935.6,
+    "second": "drop",
+    "second_residual": 2727.3,
+    "mix_rms": 4207.7,
+    "latency_b": 12.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.009,
+    "second": "drop",
+    "second_error": 0.218,
+    "margin": 0.209
+   }
   }
  }
 }

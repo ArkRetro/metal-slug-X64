@@ -658,6 +658,9 @@ static void end_ram_start(msx_game_t *g) {
     }
     m->players=g->awaiting_continue?0u:1u;m->region=1;
 }
+static void end_sound(msx_game_t *g,uint16_t word) {
+    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else g->world.sound_dropped++;
+}
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {
     case MSX_END_NONE:
@@ -678,6 +681,10 @@ static void mission_end_step(msx_game_t *g) {
          * +60: the port then goes on (counted in end_stops). */
         if (!g->end.mission60 && !g->end.unsupported) return;
         g->end_stops+=g->end.unsupported;
+        /* 0188B8: 15422 (clears 10C2BD), then 0120F8 with 0x0020 (the
+         * mission complete jingle, bank 00) and 0x1137 (the voice), in this
+         * order and before the letters actor's own requests. */
+        end_sound(g,0x0020);end_sound(g,0x1137);
         g->end_timer=0xa0;g->end.mission60=0;
         neo_end_start(&g->end,0x6090a);                                /* 0188DE */
         g->mission_end=MSX_END_LETTERS;

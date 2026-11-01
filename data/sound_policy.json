@@ -102,7 +102,9 @@
     "sfx_10f9>explosion": "drop",
     "explosion>sfx_10f9": "cut",
     "sfx_1069>explosion": "unclear",
-    "explosion>sfx_1069": "overlap"
+    "explosion>sfx_1069": "overlap",
+    "explosion>sfx_1137": "unclear",
+    "sfx_1137>explosion": "overlap"
    }
   },
   "knife_hit": {
@@ -254,7 +256,9 @@
     "sfx_10f9>pistol": "unclear",
     "pistol>sfx_10f9": "overlap",
     "sfx_1069>pistol": "unclear",
-    "pistol>sfx_1069": "overlap"
+    "pistol>sfx_1069": "overlap",
+    "pistol>sfx_1137": "unclear",
+    "sfx_1137>pistol": "overlap"
    }
   },
   "rebel_103e": {
@@ -392,7 +396,9 @@
     "sfx_10f9>rebel_1041": "unclear",
     "rebel_1041>sfx_10f9": "overlap",
     "sfx_1069>rebel_1041": "unclear",
-    "rebel_1041>sfx_1069": "overlap"
+    "rebel_1041>sfx_1069": "overlap",
+    "rebel_1041>sfx_1137": "overlap",
+    "sfx_1137>rebel_1041": "overlap"
    }
   },
   "sfx_1021": {
@@ -3939,6 +3945,20 @@
     "sfx_112e>sfx_1069": "overlap"
    }
   },
+  "sfx_1137": {
+   "word": "1137",
+   "channel": "ch_1137",
+   "level": 0,
+   "pairs": {
+    "sfx_1137>sfx_1137": "cut",
+    "pistol>sfx_1137": "unclear",
+    "sfx_1137>pistol": "overlap",
+    "explosion>sfx_1137": "unclear",
+    "sfx_1137>explosion": "overlap",
+    "rebel_1041>sfx_1137": "overlap",
+    "sfx_1137>rebel_1041": "overlap"
+   }
+  },
   "sfx_113a": {
    "word": "113A",
    "channel": "ch_1056",
@@ -4354,6 +4374,7 @@
   "ch_10a7",
   "ch_10e8",
   "ch_1121",
+  "ch_1137",
   "impact",
   "voice",
   "weapon"
@@ -4442,6 +4463,7 @@
   "explosion>sfx_1124",
   "explosion>sfx_112d",
   "explosion>sfx_112e",
+  "explosion>sfx_1137",
   "explosion>sfx_1158",
   "explosion>sfx_116e",
   "knife_hit>sfx_1021",
@@ -4473,6 +4495,7 @@
   "pistol>sfx_1124",
   "pistol>sfx_112d",
   "pistol>sfx_112e",
+  "pistol>sfx_1137",
   "pistol>sfx_1158",
   "rebel_1041>sfx_10a3",
   "sfx_1021>sfx_1092",

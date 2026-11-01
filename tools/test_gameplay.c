@@ -104,13 +104,24 @@ static void release_run(unsigned seed) {
          * tally 0308C0 (0188B0 waits for its +60), 0188F4 (0xA0, subq/bcc)
          * and 018916 (0x20, subq/bcc) entered in the same update as the
          * previous wait ends: 30 + tally + 160 + 32 updates. */
-        static msx_game_t e;e=g;unsigned updates=0,tally=0;
+        static msx_game_t e;e=g;unsigned updates=0,tally=0,jingle=0,voice=0;
         uint16_t rescued=g.world.ga_flags.rescued[0];
         uint8_t before[4];memcpy(before,g.world.pickup.score[0],4);
         while (e.mission_end!=MSX_END_DONE && updates<4000) {
-            bool started=e.end_started;msx_game_update(&e,0,false,false);
+            bool started=e.end_started;e.world.sound_count=0;msx_game_update(&e,0,false,false);
             if (started && !(e.ticks&1)) {updates++;if (e.mission_end==MSX_END_TALLY) tally++;}
+            /* 0188B8: 0x0020 then 0x1137, once, in the update that creates
+             * the letters (the first of the 0xA0 wait). */
+            for (unsigned i=0;i<e.world.sound_count;i++) {
+                uint16_t w=e.world.sounds[i];
+                if (w==0x0020) {assert(!jingle && i+1<e.world.sound_count && e.world.sounds[i+1]==0x1137);jingle=updates;}
+                if (w==0x1137) {assert(!voice && e.mission_end==MSX_END_LETTERS && e.end_timer==0x9f);voice=updates;}
+            }
         }
+        /* The 30th update ends 018870's wait and starts the tally (counted in
+         * tally); 0188B0 sees its +60 in the update after the last tally
+         * one and goes on to 0188B8 in that update: 30 + tally. */
+        assert(jingle && jingle==voice && jingle==30+tally);
         /* The tally ran natively to its end with no explicit stop: every
          * prisoner counted (10C5FC back to 0) and 10000 each (30000 for a
          * special one) plus 100000 for ten or more added to the score. */
@@ -130,7 +141,7 @@ static void release_run(unsigned seed) {
             uint32_t bcd=0;for (unsigned k=0,v=bonus;k<8;k++,v/=10) bcd|=(v%10u)<<(4*k);
             neo_item_add_score(want,bcd);
             assert(!memcmp(want,e.world.pickup.score[0],4));
-            printf("release run %u: mission end %u prisoners (%u special), tally %u updates, score %02x%02x%02x%02x -> %02x%02x%02x%02x\n",seed,rescued,special,tally,
+            printf("release run %u: mission end %u prisoners (%u special), tally %u updates, 0020+1137 at update %u, score %02x%02x%02x%02x -> %02x%02x%02x%02x\n",seed,rescued,special,tally,jingle,
                 before[0],before[1],before[2],before[3],e.world.pickup.score[0][0],e.world.pickup.score[0][1],e.world.pickup.score[0][2],e.world.pickup.score[0][3]);
         }
         /* Fade 9C0A (E1,E1,E1, 0x20): -248 per update, -31 at the last step. */

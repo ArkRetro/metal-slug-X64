@@ -13,6 +13,10 @@
  *  - vehicle health lowered by a bullet (ROM 01BB34)     -> 0x108D
  *  - vehicle health below half / reaching zero (029AE4)  -> 0x1023
  *  - vehicle destruction burst, DESTROY frame 1 (029B14) -> 0x1033
+ *  - mission end 0188B8 (gameplay.c): 0x0020, the mission complete jingle
+ *    (bank 00: a music command, it replaces the mission music; one-shot,
+ *    played on the intro voice, free during gameplay), and 0x1137, the
+ *    voice (its own measured channel, msx_sfx_policy.h)
  *  - region end: the music stops (the arcade has no region end; its driver
  *    is reset with command 03 between scenes, which silences the music). */
 enum { VOLUME_PERCENT=80 };
@@ -58,6 +62,13 @@ void game_audio_music(bool play) {
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
 static void request(uint16_t word) {
+    if (word==0x0020) {
+        msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
+        bool ok=msx_audio_open(MSX_AUDIO_INTRO,"rom:/audio/music_mission_complete.wav64") &&
+            msx_audio_play(MSX_AUDIO_INTRO,false,VOLUME_PERCENT/100.0f);
+        debugf("MSX AUDIO mission complete jingle %s\n",ok?"start":"missing");
+        return;
+    }
     int channel=msx_sfx_request(&policy,word);
     if (channel<0) return;
     int id=policy.current[channel];
@@ -72,7 +83,7 @@ static void request(uint16_t word) {
 void game_audio_sync(msx_game_t *g) {
     if (!active) return;
     for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.current[c]>=0) mixer_ch_stop(mixer_of(c));
-    msx_sfx_reset(&policy);
+    msx_sfx_reset(&policy);msx_audio_stop(MSX_AUDIO_INTRO);
     shots=port_shots(g);vehicle_health=g->vehicle.health;vehicle_frame=g->vehicle.frame;vehicle_state=g->vehicle.state;
     complete=g->complete;g->world.sound_count=0;
     if (!complete && !music_on) game_audio_music(true);

@@ -428,6 +428,24 @@
    "event": "knife cut hitting a type-4 hurtbox (ROM 0C41F6)"
   },
   {
+   "label": "music_mission_complete",
+   "word": "0020",
+   "callers": [
+    "0188C2"
+   ],
+   "event": "mission complete jingle (ROM 0188B8: 0x20 then 0x1137, same update as the MISSION COMPLETE letters actor 06090A); bank 00, replaces the mission music in the driver",
+   "music": true,
+   "frames": 900
+  },
+  {
+   "label": "sfx_1137",
+   "word": "1137",
+   "callers": [
+    "0188CC"
+   ],
+   "event": "mission complete voice (ROM 0188B8, right after 0x20)"
+  },
+  {
    "label": "music_mission1",
    "word": "0021",
    "callers": [

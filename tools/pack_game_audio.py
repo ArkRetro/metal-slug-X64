@@ -92,7 +92,14 @@ def main():
         # (engine 10A5, 1026), not a one-shot effect: not packed.
         if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END':manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
         pcm=read(a.source/(label+'.wav'))
-        if label.startswith('music'):
+        if label.startswith('music') and info['status']=='OK':
+            # A music command that ends inside its render window (the
+            # mission complete jingle 0020) is a one-shot: stereo, no loop.
+            out=resample(pcm,a.music_rate)
+            write(staging/(label+'.wav'),out,a.music_rate)
+            cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'.wav'))]
+            entry=dict(samples=len(out),rate=a.music_rate,channels=2,compression='vadpcm',one_shot=True)
+        elif label.startswith('music'):
             loop=find_loop(pcm);period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
             t0,end,seam=splice(pcm,start,period)
             # VADPCM loops need a loop start and loop length multiple of 16
@@ -124,6 +131,10 @@ def main():
         entry.update(word=info['word'],seconds=round(entry['samples']/entry['rate'],3),bytes=wav64.stat().st_size,
                      sha256=hashlib.sha256(wav64.read_bytes()).hexdigest(),conversion=cmd[:-3]+[cmd[-1].rsplit('/',1)[-1]])
         manifest[label]=entry
+    # A render of a subset (render_sound_commands.py --labels) keeps the
+    # packs of the other sounds.
+    for label,entry in old.items():
+        if label not in manifest and (a.output/(label+'.wav64')).exists():manifest[label]=entry
     total=sum(e.get('bytes',0)+e.get('intro_bytes',0) for e in manifest.values())
     (a.output/'manifest.json').write_text(json.dumps(dict(source='tools/pack_game_audio.py from tools/render_sound_commands.py renders',total_bytes=total,sounds=manifest),indent=1)+'\n')
     for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})

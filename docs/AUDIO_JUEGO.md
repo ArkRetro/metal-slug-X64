@@ -237,6 +237,44 @@ cartucho ni abre ficheros. La música sigue en streaming desde la ROM.
 `main`: 665 *chunks*, caché 4256 KB, falso). La caché de 224 *chunks* sigue
 por encima del peor conjunto de trabajo (30, `check_scene_budget.py`).
 
+## 9. Fin de misión: «MISSION COMPLETE» (informe de MiSTer, ROM 13)
+
+No sonaba la voz de fin de misión. El actor de misión `101364`, en `0188B8`
+(la actualización en que `0188B0` ve el `+60` del recuento de prisioneros),
+llama a `15422` (solo borra `10C2BD`; `15418` lo pone a FF: no es música)
+y luego a `0120F8` con `0x0020` y `0x1137`, antes de crear las letras
+`06090A`. El port no pedía ninguna.
+
+- `data/sound_map.json`: `music_mission_complete` (`0020`, banco 00: orden
+  de música, sustituye a la de la misión en el controlador) y `sfx_1137`
+  (la voz). Render aislado (`render_sound_commands.py --rom-dir ROMS
+  --labels music_mission_complete sfx_1137`): `0020` 6,77 s estéreo,
+  latencia 355 ms, termina dentro de la ventana de 900 fotogramas (no es un
+  bucle); `1137` 2,05 s mono, `OK`.
+- `pack_game_audio.py`: una música que termina en su ventana (`OK`) se
+  empaqueta entera, estéreo y sin bucle (`one_shot`); un render parcial
+  (`--labels`) conserva en `manifest.json` los paquetes de los demás
+  sonidos. `music_mission_complete.wav64` 183 160 B, `sfx_1137.wav64`
+  27 872 B (residente en RAM como los demás efectos).
+- Canal de `1137`, medido (`measure_sound_pairs.py --pairs`, 7 pares en
+  `data/sound_pairs.json`): consigo misma *corta* (onda y envolvente,
+  margen 0,31); con pistola `10F7`, explosión `1027` y la voz rebelde `1041`,
+  en ambos órdenes, *solapa* (onda). No comparte canal con nada medido:
+  `derive_sound_policy.py` le da un canal propio `ch_1137` (nivel 0; una
+  segunda petición la reinicia). No va al canal VOZ de los rebeldes porque
+  `1041` y `1137` suenan juntos en el original.
+- `gameplay.c` (`mission_end_step`, paso `0188B8`): pide `0x0020` y
+  `0x1137` en ese orden, en la lista de sonidos del mundo, en la misma
+  actualización que crea las letras. `game_audio.c`: `0x0020` para la
+  música de la misión y toca el *jingle* una vez en la voz de la intro
+  (libre en juego; `game_audio_sync` la para al reiniciar); `0x1137` pasa
+  por la política como cualquier efecto.
+- Comprobación (`tools/test_gameplay.c`, `release_run`): cada orden se pide
+  una sola vez, `0020` justo antes de `1137`, en la actualización 30 +
+  recuento (la siguiente a la última del recuento; semilla 1: actualización
+  259, recuento 229), con las letras ya creadas (`+7C` = 0x9F tras su primer
+  `subq`).
+
 ## Regenerar
 
 ```sh

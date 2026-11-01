@@ -33,6 +33,9 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes);
 unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,int column,int top);
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags);
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out);
+/* The player's floor of one cell row (the sweeps' group-1 clearing): the
+ * reference build's stage-3 autopilot enumerates them. */
+bool neo_player_surface(int32_t x,int row,neo_surface_t *out);
 /* Conservative static-terrain query: false for no floor or stacked surfaces. */
 bool neo_surface_unique(int32_t x,neo_surface_t *out);
 void neo_ground_velocity(unsigned shape,int direction,int32_t *vx,int32_t *vy);

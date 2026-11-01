@@ -158,6 +158,8 @@ typedef struct {
      * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
     int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;
+    /* Reference build only (msx_autopilot.h): the test's stage-3 pilot. */
+    struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;} pilot;
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
@@ -168,6 +170,10 @@ enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };
  * +30/+34 after the player's first 0C162A update), with the canopy. */
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
+/* Reference build: the route planner of Mission 2 stage 3 (msx_autopilot.h)
+ * replaces the pad's direction and jump while game->pilot.on; the release
+ * build leaves them as they are. */
+void msx_game_autopilot(msx_game_t *game,int *direction,bool *jump);
 /* A stage of a mission pack (the collision grid already set): the world's
  * script and camera list, the HUD, flow, weapons and score kept; the player
  * enters walking from the left edge to start_x (pixels), as in the run4

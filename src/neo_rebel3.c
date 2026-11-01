@@ -19,8 +19,8 @@
  * absolute position on the new floor object, +34 by 2D29B4, program 269530
  * with callback 069548), lands (069596: the dust 0695DC after the script
  * actor), stands 0693CA and goes to 067A40; its death in the air 069448.
- * Paths without MAME evidence stop explicitly (ga_fail): 067EE4 (+6E
- * modes, edge stop), 067D06 / 067D80 / 069478 (pieces 068D32, +7A), the
+ * 067EE4/067F12 (stand at an edge, ROM-translated without MAME capture).
+ * Paths without MAME evidence stop explicitly (ga_fail): 067D06 / 067D80 / 069478 (pieces 068D32, +7A), the
  * knife of +9C = 4/8 (0689D2, 069696), 0691D2 with +7A.
  * 0683FA (the hostage holder of 06835C, neo_hostage.c; +9C = 0, +81 = FF,
  * +86 = the hostage): program 268D0C, +94 = 0x38 - rand(0x18), +4E by
@@ -302,8 +302,7 @@ static ga_result_t soldier(neo_gactor_t *a,neo_genv_t *e) {
     case 0x67a40:
         SW(0x6e,W(0x6e)&0xff7fu);solid(a,e,0xe1b4e);
         if (!k68bb8(a,e)) {pc=0x67ab4;break;}
-        if (edge(a)) STOP(0x67ee4);
-        pc=0x67e66;break;
+        pc=edge(a)?0x67ee4:0x67e66;break;
     case 0x67a6c:
         SW(0x6e,W(0x6e)&0xff7fu);
         {neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x21cb6u,false):NULL;if (c) ga_place_at(c,a,e,0,0);}
@@ -314,13 +313,13 @@ static ga_result_t soldier(neo_gactor_t *a,neo_genv_t *e) {
         pc=CULL;break;
     case 0x67ab4: {
         START(0x268d0c);SL(0x50,0xe1a96);solid(a,e,0xe1b4e);
-        if (k68a50(a,e,&d0)) STOP(0x67ee4);
+        if (k68a50(a,e,&d0)) {pc=0x67ee4;break;}
         target(a,e,&n);
         bool turn;
         if (W(0x6e)==2u) turn=false;
         else turn=d0?BIT(0x15,0):!BIT(0x15,0);
         if (turn) {pc=0x67ba6;break;}
-        if (W(0x6e)==1u) STOP(0x67ee4);
+        if (W(0x6e)==1u) {pc=0x67ee4;break;}
         uint32_t v=L(0x8a);if (!BIT(0x15,0)) v=0u-v;
         SL(0x62,v);SL(0,0x67b42);pc=0x67b42;break;
     }
@@ -352,6 +351,24 @@ static ga_result_t soldier(neo_gactor_t *a,neo_genv_t *e) {
     case 0x67c62:
         walker(a,e);STEP(r);
         if (r>0) return GA_DELETE;                                     /* 004188 */
+        pc=CULL;break;
+    case 0x67ee4:                                                      /* stands (program 268CC4) */
+        SL(0x50,0xe1a96);solid(a,e,0xe1b4e);START(0x268cc4);SL(0x62,0);SL(0,0x67f12);pc=0x67f12;break;
+    case 0x67f12:
+        walker(a,e);STEP(r);
+        if (!nearest(a,e,&n)) {
+            if (!k68cd4(a,e)) SL(0,0x67ab4);
+            if (k68bb8(a,e)) SL(0,edge(a)?0x67f12:0x67e66);
+            if (behind(a,e)) SL(0,0x67ba6);
+        }
+        /* 067F64: 069280's tail without +9A, its spark unconditional. */
+        if (ga_register(a,e,NULL,NULL)) {
+            if (BIT(0x5f,7) && !k6914a(a,e)) return GA_UNSUPPORTED;
+            SB(0x5a,0);
+            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x682f0u,true):NULL;
+            uint16_t r1=ga_rand(e),r2=ga_rand(e);
+            if (c) ga_place_at(c,a,e,(int16_t)((r2&7u)-3u),(int16_t)((r1&7u)+8u));
+        }
         pc=CULL;break;
     case TAIL:                                                         /* 069280 */
         if (B(0x9a)) SB(0x9a,B(0x9a)-1u);

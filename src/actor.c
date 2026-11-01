@@ -277,12 +277,21 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
      * around camera 2336). The rest of the catch-up stays as debt for the
      * next frames (scene_clock_defer): no simulation step is lost. */
     if (steps>MSX_FRAME_STEPS) {scene_clock_defer(&simulation_clock,steps-MSX_FRAME_STEPS,TICKS_PER_SECOND);steps=MSX_FRAME_STEPS;}
+    /* Reference build: Left and Right held together in Mission 2 stage 3
+     * toggle the test's route planner (gameplay.h, msx_autopilot.h). */
+    static bool pilot_was;bool pilot_keys=input.btn.d_left && input.btn.d_right;
+    if (msx_reference_invulnerable && pilot_keys && !pilot_was && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
+        game.pilot.on=!game.pilot.on;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
+    }
+    pilot_was=pilot_keys;
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || stick_v>0;
         game.crouch=input.btn.d_down || stick_v<0;
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
-        msx_game_update(&game,direction,input.btn.a || pending_a,input.btn.b || pending_b);
+        int pilot_direction=direction;bool pilot_jump=input.btn.a || pending_a;
+        msx_game_autopilot(&game,&pilot_direction,&pilot_jump);
+        msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
         /* Dying, lying and the entrance (marco_death.c): the death and
          * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
          * the body/weapon programs restart with the new life. */

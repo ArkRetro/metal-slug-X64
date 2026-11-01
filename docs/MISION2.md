@@ -493,3 +493,63 @@ la fila 27) saltando la pared de x 312. Ni el mando de la prueba en ares
 actualizaciones) suben a esa plataforma: el jefe y el fin de misión siguen
 sin recorrerse. Pendiente: un mando que siga esa ruta (o un registro de
 entradas de MAME de la etapa 3).
+
+## Fase 2f: ruta de la etapa 3, torre, jefe y fin de misión (rama `work-m2eng6`)
+
+**Ruta comprobada en el anfitrión** (simulación de la etapa 3 del paquete con
+el jugador de referencia): la plataforma del `op 4` de `0B7656` (x 256..319,
+y 176..351) se alcanza por la escalera de la fila 27 (x 600..631), a la que
+se llega saltando a la izquierda desde el suelo de la fila 21 (x ≥ 648, y
+176) por debajo de la plataforma (las celdas `B` son de un solo sentido) y
+aterrizando en la rampa `5`; de la fila 17 se sube saltando la pared de x
+312. Desde ahí la subida sigue a la derecha (filas 29..45), a la izquierda
+(51..69), la escalera de x 600..940 (filas 79..103: el hueco de 64 px de la
+fila 79 se cruza con un salto corriendo) y la torre. Ruta posible con la
+colisión nativa; las correcciones que necesitó:
+
+- `neo_collision.c`: las búsquedas de suelo (`neo_surface_at`,
+  `neo_walk_step`, `neo_land_step`, `neo_surface_unique`) recorrían las 272
+  filas del mapa; con el anillo recorren sus 64 filas de ventana. La torre
+  sube por encima del mapa (y ≥ 2176): allí ninguna fila daba suelo y el
+  jugador atravesaba las piezas (`0B7C38`) en las que estaba.
+- `gameplay.c`, suelo: un empuje lateral de un sólido (soldado `0E1B4E`) en
+  una pendiente movía x sin y y la marcha con velocidad 0 no encontraba el
+  suelo a una unidad (x 536 de la fila 35): ahora los pies siguen la
+  superficie tras el empuje.
+- Salida de referencia (`MSX_REFERENCE_STAGE_EXIT`): el borde derecho con la
+  cámara en su máximo (x 624) terminaba la etapa 3 en la escalera de x 904;
+  la etapa 3 termina con su jefe (en `run4` el jugador pasa por x 915).
+- Caídas del jugador de referencia: si la posición segura ya está bajo la
+  pantalla (la cámara sube en los modos 2/4/5) muere y renace en vez de un
+  bucle de rescates; el punto de `019658` (tabla de la Misión 1) puede quedar
+  bajo la pantalla de otra misión (torre: y 65 con la cámara en y 2200) y
+  entonces la vida nueva cae desde la parte alta de la pantalla.
+- Paradas de cámara del guion (`lock_timeouts`): se comparaban con la x de la
+  cámara; con la cámara nativa se comparan con el progreso de la lista
+  (en la etapa 3 la parada 2376 no se soltaba nunca con la cámara en x 361).
+
+Las paredes de forma 0xF/0x1F de la etapa 3 no frenan al jugador en el
+barrido nativo (`wall_stops` = 0 en todo el recorrido; el núcleo no las
+devuelve con el bit 4 de `D6`): la ruta no depende de ello, pero queda por
+contrastar con MAME.
+
+**Piloto de la prueba** (`src/msx_autopilot.h`, solo en la referencia): un
+mando a ciegas no sube la torre (piezas aleatorias). Con Izquierda y Derecha
+pulsadas a la vez en la etapa 3 (`MSX autopilot on`) un planificador lee los
+suelos del jugador (`neo_player_surface`, anillo incluido) en 80 columnas
+alrededor, los enlaza con pasos y saltos (alcance del salto del puerto: 50
+px de subida con ≤ 40 px de avance, 64 px de hueco a la misma altura) y
+camina hasta el salto del camino hacia el objetivo de la lista de cámara: el
+rectángulo del siguiente `op 4` (leído por delante de las esperas de
+progreso, para no llevar la cámara de modo 1 más allá de la escalera), si
+no la dirección del modo. Replanifica cada 8 pasos; bloqueado salta en
+vertical; con el piloto los cuerpos de los soldados no lo empujan; con el
+jefe `026254` presente pulsa Abajo en el aire (disparo hacia abajo) sin
+dejar de subir (la cámara sube con el jefe). En el anfitrión: fin de misión
+(`018F92`) en 10700..12200 actualizaciones en 6 variantes del disparo.
+
+**Rutinas sin portar**: `067EE4`/`067F12` (soldado parado en un borde,
+programa `268CC4`, raíz nueva de `extract_soldier_programs.py`) traducidas
+de la ROM; su cuchillo de `+9C` = 4/8 (`0689D2`, `069696`) sigue sin portar
+(`6899A`). `09A842` crea el prisionero `099E1C` (familia sin traducir).
+`067D80` (piezas `068D32`, `+7A`) sigue siendo una parada explícita.

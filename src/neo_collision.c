@@ -144,6 +144,13 @@ uint8_t neo_collision_cell(int x,int y) {
     if (unknown && (unknown[at>>3]>>(at&7)&1u)) {unknown_reads++;return 0;}
     return (dynamic_active?dynamic_grid:grid)[at];
 }
+/* Rows the floor searches visit: the map's, or with the ring the 64 rows
+ * of its window. The ring repeats every 64 rows, so beyond the window a
+ * row reads the window row sharing its slot: Mission 2 stage 3's tower
+ * rises above the map's 272 rows (y 2176+), where the map loop found no
+ * floor and the player fell through the pieces it stood on. */
+static int row_lo(void) {return ring_on && !ring_bypass?ring_r0:0;}
+static int row_hi(void) {return ring_on && !ring_bypass?ring_r0+64:(int)rows;}
 static bool surface(int32_t x,int row,neo_surface_t *out) {
     if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     uint8_t code=neo_collision_cell(x/NEO_UNIT,row*8);
@@ -176,9 +183,10 @@ static bool player_surface(int32_t x,int row,neo_surface_t *out) {
     if ((neo_collision_cell(x/NEO_UNIT,row*8)>>5)==1u) return false;
     return surface(x,row,out);
 }
+bool neo_player_surface(int32_t x,int row,neo_surface_t *out) {return player_surface(x,row,out);}
 bool neo_surface_unique(int32_t x,neo_surface_t *out) {
     bool found=false;
-    for (int row=0;row<(int)rows;row++) {
+    for (int row=row_lo(),end=row_hi();row<end;row++) {
         neo_surface_t candidate;if (!surface(x,row,&candidate)) continue;
         if (found) return false;
         *out=candidate;found=true;
@@ -188,7 +196,7 @@ bool neo_surface_unique(int32_t x,neo_surface_t *out) {
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out) {
     if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     bool found=false;int64_t closest=INT64_MAX;
-    for (int row=0;row<(int)rows;row++) {
+    for (int row=row_lo(),end=row_hi();row<end;row++) {
         neo_surface_t s;if (!player_surface(x,row,&s)) continue;
         int64_t distance=(int64_t)s.height-reference;
         if (distance>rise || distance< -(int64_t)drop) continue;
@@ -216,7 +224,7 @@ bool neo_walk_step(neo_air_t *p,int direction) {
     // A new ramp can overlap an older flat surface. Select the upper reachable
     // contact within the original step tolerance, so the old floor cannot pull
     // feet through the wreck. Distant roofs remain outside that tolerance.
-    for (int row=0;row<(int)rows;row++) {
+    for (int row=row_lo(),end=row_hi();row<end;row++) {
         neo_surface_t candidate;
         if (!player_surface(p->x,row,&candidate)) continue;
         int64_t delta=(int64_t)candidate.height-predicted;
@@ -231,7 +239,7 @@ bool neo_walk_step(neo_air_t *p,int direction) {
 bool neo_land_step(neo_air_t *p,int32_t previous_y) {
     if (p->vy>0 || p->y>previous_y) return false;
     bool hit=false;neo_surface_t highest={0};
-    for (int row=0;row<(int)rows;row++) {
+    for (int row=row_lo(),end=row_hi();row<end;row++) {
         neo_surface_t s;if (!player_surface(p->x,row,&s)) continue;
         if (s.height>previous_y || s.height<p->y) continue;
         if (!hit || s.height>highest.height) { highest=s;hit=true; }

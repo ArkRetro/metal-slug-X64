@@ -51,7 +51,7 @@ static bool load_stage(void) {
     if (!scene_stage_load(index)) return false;
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
-    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
+    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);neo_collision_set_origin(st->origin_y);
     scene_renderer_stage_changed();
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */
@@ -71,7 +71,7 @@ static bool enter_mission(void) {
 }
 static void leave_mission(void) {
     if (!scene_stage()) return;
-    scene_mission_unload();neo_collision_set_grid(NULL,NULL,NULL,0,0);scene_renderer_stage_changed();
+    scene_mission_unload();neo_collision_set_grid(NULL,NULL,NULL,0,0);neo_collision_set_origin(0);scene_renderer_stage_changed();
 }
 static void reset_game(void) {
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;

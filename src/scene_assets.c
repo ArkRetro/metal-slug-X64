@@ -575,7 +575,7 @@ bool scene_stage_load(unsigned index) {
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
-        .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,
+        .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.origin_y=ps.origin_y,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,
         .camera_list=blob[0],.camera_rom=ps.blob[0].rom,.camera_len=(uint16_t)ps.blob[0].length,
         .script=blob[1],.script_rom=ps.blob[1].rom,.script_len=(uint16_t)ps.blob[1].length,
         .players=blob[2],.players_rom=ps.blob[2].rom,.players_len=(uint16_t)ps.blob[2].length,

@@ -190,6 +190,10 @@ typedef struct {
      * next tick, so their constructor runs on the update after, as in the
      * original. */
     neo_world_shot_request_t shot_requests[8];unsigned shot_request_count,shot_dropped;
+    /* Camera-list calls that create an actor after the mission actor (0040BC
+     * from the camera step; Mission 3 wagon boxes 0B918C/0B91AE): made at
+     * the end of the next tick, like the shots. */
+    uint32_t camera_calls[4];unsigned camera_call_count;
     unsigned player_shots;
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the

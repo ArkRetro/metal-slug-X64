@@ -419,6 +419,15 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
     if (!s) {ga_fail(e,submap);return;}
     uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
     if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
+    if (c!=0xffffffffu && neo_collision_rows()>32u) {
+        /* Mission 3 (the ring of a 47-row grid): the window copy with the
+         * source offsets (wagon ledges 0B8FA8, sub-map 0B85EA). */
+        unsigned pairs=(unsigned)(s[8]<<8|s[9]),blocks=(unsigned)(s[10]<<8|s[11]);
+        const uint8_t *cells=ga_rom(c);
+        if (!cells || !ga_rom(c+((unsigned)(d[0]+d[2]-1)*blocks+(unsigned)(d[1]+d[3]))*4u-1u)) {ga_fail(e,c);return;}
+        neo_collision_patch_window(cells,blocks,pairs,blocks,d[0],d[1],d[2],d[3],d[4],d[5]);
+        return;
+    }
     if (c==0xffffffffu || d[0] || d[1] || neo_collision_rows()!=32u) {ga_fail(e,0xc72ec);return;}
     unsigned h=(unsigned)(s[10]<<8|s[11]);
     const uint8_t *cells=ga_rom(c);
@@ -1279,6 +1288,15 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         w->player_shots++;
     }
     w->shot_request_count=0;
+    /* 0B918C / 0B91AE: the wagon box 039382 / 03938A at (0770 / 0870, 0040)
+     * of 10C72E (neo_m3props.c). */
+    for (unsigned i=0;i<w->camera_call_count;i++) {
+        bool second=w->camera_calls[i]==0x0B91AEu;
+        neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),second?0x3938au:0x39382u,SCRIPT_TAG,0);
+        if (!a) continue;
+        ga_sl(a,0x28,second?0x08700000u:0x07700000u);ga_sl(a,0x2c,0x00400000u);
+    }
+    w->camera_call_count=0;
     w->player_hits+=t.hits;
     return t.hits;
 }
@@ -1383,6 +1401,11 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     }
     neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0},{false,0,0,0,0}};
     neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
+    for (unsigned i=0;i<w->camera.event_count;i++) {
+        uint32_t at=w->camera.events[i].address;
+        if (w->camera.events[i].kind==NEO_CAMERA_EV_CALL && (at==0x0B918Cu || at==0x0B91AEu) && w->camera_call_count<COUNT(w->camera_calls))
+            w->camera_calls[w->camera_call_count++]=at;
+    }
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}
 unsigned neo_world_alive(const neo_world_t *w) {

@@ -185,10 +185,54 @@ identificar sobre qué celda se apoya (la conversión de y entre la RAM y la
 rejilla del paquete no está cerrada; con y local = y + `10C72E +18` − 256 da
 la fila 17).
 
+## Fase 3: el suelo del vagón (rama `work-m3c`)
+
+**Toma de MAME** (`MSX_FULL_FLOOR_TAP=lo-hi` en `tools/capture_fullgame.lua`:
+`floor.txt` con cada lectura del núcleo de colisión, PC 012800..013A00, y
+de los anillos `10C7B6..10E83D` desde cualquier PC, más una línea `P` por
+fotograma con +28/+2C/+38 del jugador `1014C4`), desde `states4/sec04_117966`
+(la reproducción coincide con run4):
+
+```sh
+export MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_STATES=/home/user/captures-fullgame/states4
+MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_FLOOR_TAP=121100-121260 MSX_FULL_LAST=121261 sh tools/run_capture_fullgame.sh OUT
+```
+
+- La celda la lee `0C79FE..0C7A18`: índice `((x & 1F8) << 3) | ((~y & 1F8) >> 3)`
+  + 0x88 sobre `10C72E` (columna x/8 mod 64, fila de anillo `(~y >> 3) & 63`).
+  `10C72E +2E` es `0B853A` (+C = 0: sin ventana vertical); `10D7B6 +2E` es
+  `0B8566`.
+- **Conversión cerrada**: fila del paquete = 71 − fila del anillo (324
+  celdas leídas en x 1888..2200, 321 iguales; las 3 restantes eran la
+  rampa de abajo). El jugador sube al vagón así: salta contra la pared
+  `0x0F` de la columna 238, se apoya en y 136 sobre una celda `0x0B` en
+  (236..237, fila 24) y de ahí salta a y 184 (fila 30, `0x0B`). Las celdas
+  `0x31..0x3B` del grupo 1 (filas 17/18) no las usa el jugador, como ya
+  hacía el puerto.
+- Esa repisa **no está en el mapa**: la escribe el actor `0B8FA8` copiando
+  (`0C70FC`) bloques del submapa `0B85EA` (112 × 56) en 5 pasos cada 2
+  actualizaciones. Lo crea la caja `039382`/`03938A` (de las llamadas
+  `0B918C`/`0B91AE` de la lista de cámara, x 1904 / 2160, y 64) al romperse
+  de un disparo. Los 145 valores mutables del `collision.json` son
+  exactamente las 6 copias de estos estampadores (`0B90BC..0B9140`,
+  programas `0B9040/0B9064/0B9090`) con fila superior `2·D5 + 1 + 8`.
+  El cartucho de referencia no creaba la caja: el jugador nunca subía.
+
+**Nativo** (`src/neo_m3props.c`): caja `039382/03938A` (programa `23C762`,
+paleta 4BF, caja de daño `039542`, sonido 1069) y estampadores
+`0B911E/0B9140` → `0B8FA8`. `neo_world` crea la caja en las llamadas de
+cámara `0B918C/0B91AE` (tras el actor de misión, al final del tick
+siguiente). `g_map_patch` admite ya la Misión 3: `neo_collision_patch_window`
+recorta a la ventana del anillo como `0C70FC`, desplaza `D5` por el origen
+del paquete (`origin_cells[1]`, ahora en `scene_stage_t.origin_y`) y escribe
+en la rejilla dinámica y el anillo. Prueba `test_neo_m3props`
+(`data/m3ledge_fixture.json`): **5 copias, 320 celdas iguales a MAME**.
+Pendiente: el dibujo de los mosaicos del submapa (+0) y la familia
+`038D1E/038D26` (estampadores `0B90BC..0B9112`, llamadas `0B9148/0B916A`).
+
 ## Pendiente
 
-1. Recorrido: el suelo de grupo 1 del vagón (x 1904..2095, ver arriba); luego
-   más allá de la cámara 1900 hasta el jefe y el fin de misión.
+1. Recorrido: más allá de la cámara 1900 hasta el jefe y el fin de misión.
 2. Capas: el cielo (`10E83E`) usa también `10E94E` desde el progreso 0x140
    (velocidad 0x40) pero su mapa pasa a 0; su escritor (probablemente el actor
    `0B8EDC` de `0B8D34`, tabla `0B8EC2`) y la superposición `2A6142` de

@@ -111,6 +111,41 @@ unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks
     }
     return changed;
 }
+/* Rows of the pack grid below the map's row 0 (collision.json
+ * origin_cells: Mission 3 -8, the others 0). */
+static int origin_rows;
+void neo_collision_set_origin(int origin_y_cells) {origin_rows=origin_y_cells;}
+unsigned neo_collision_patch_window(const uint8_t *cells,unsigned stride,unsigned pairs,unsigned blocks,int d0,int d1,int d2,int d3,int d4,int d5) {
+    /* 0C70FC on the ring of a stage taller than 32 rows: clipped to the
+     * loaded window like neo_collision_ring_copy (d5 in the original's
+     * window blocks: the pack rows sit -origin_rows above them), then
+     * 0C714E clips the source blocks to the sub-map and 0C72EC copies block
+     * (d0+i, d1+j) to the window block d5 - j. The cells go to the dynamic
+     * grid (they stay when the window moves on) and to the ring. */
+    if (!ring_on) return 0;
+    d5-=origin_rows/2;
+    int b36=ring_c0/2,b38=ring_r0/2,d6=b36-d4;
+    if (d6>=0) {d4+=d6;d0+=d6;d2-=d6;if (d2<=0) return 0;d6=0;}
+    d6+=d2-32;if (d6>=0) {d2-=d6;if (d2<=0) return 0;}
+    d6=b38-d5;
+    if (d6>=0) {d5+=d6;d1-=d6;d3-=d6;if (d3<=0) return 0;d6=0;}
+    d6+=d3-32;if (d6>=0) {d3-=d6;if (d3<=0) return 0;}
+    d0=(int16_t)(uint16_t)(d0<<4)>>4;d1=(int16_t)(uint16_t)(d1<<4)>>4;
+    if (d0>=(int)pairs || d1>=(int)blocks) return 0;
+    if (d0<0) {d2+=d0;if (d2<=0) return 0;d4-=d0;d0=0;}
+    if (d1<0) {d3+=d1;if (d3<=0) return 0;d5+=d1;d1=0;}
+    if (d0+d2>(int)pairs) {d2=(int)pairs-d0;if (d2<=0) return 0;}
+    if (d1+d3>(int)blocks) {d3=(int)blocks-d1;if (d3<=0) return 0;}
+    make_dynamic();unsigned changed=0;
+    for (int i=0;i<d2;i++) for (int j=0;j<d3;j++) for (unsigned k=0;k<4;k++) {
+        int cx=2*(d4+i)+(int)(k&1u),cy=2*d5+1-2*j-(int)(k>>1);
+        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
+        uint8_t v=cells[((unsigned)(d0+i)*stride+(unsigned)(d1+j))*4u+k],*cell=&dynamic_grid[cx*rows+cy];
+        if (*cell!=v) {*cell=v;changed++;}
+        ring_touch(cx,cy);
+    }
+    return changed;
+}
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
     /* ROM 0C88B0 (tools/collision_stamp.py): template dx,dy,w,h,material,
      * -,mask.l, w*h shape nibbles (top row first) at the actor's integer

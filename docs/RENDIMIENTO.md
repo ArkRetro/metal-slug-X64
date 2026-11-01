@@ -476,14 +476,14 @@ La simulación no lee nada de esto (`make check`, -O0/-O2 idénticos).
   → audio del juego → caché de escena → logo NEOGEO (calentando la caché en
   su tiempo libre) → Misión 1.
 - **Con ellas** (`title-motion.*`, `entry.*`): logo → título X64
-  (`msx_title_intro`) → entrada en paracaídas → audio del juego → caché →
-  Misión 1 (`actor_begin_mission` con el traspaso medido de `entry.json`). El
-  título precarga su película (3,4 MB) y 16 fotogramas preparados (2,1 MB):
-  casi todo el montón, así que la caché no puede existir durante el logo ni
-  las cinemáticas; se dimensiona después, con lo que queda, y la parte
-  obligatoria (bancos y mapa, 50 bloques) se carga entonces (≈0,28 s); el
-  resto del calentamiento sigue en el tiempo libre del juego. La preparación
-  de fotogramas de la cinemática se limita además al montón libre (−256 KB).
+  (`msx_title_intro`) → HOW TO PLAY → SOLDIER SELECT → elección → entrada en
+  paracaídas → Misión 1 (`actor_begin_descent` con el traspaso medido de
+  `entry.json`). Lo que el juego carga se adelanta al tiempo libre de las
+  cinemáticas (sección «Cinemáticas sin parones»): efectos residentes, piezas
+  de Marco y copia de la ROM S del HUD desde SOLDIER SELECT; la caché de
+  escena empieza durante la elección con las ranuras que caben (calentadas
+  allí) y se completa al terminar la entrada, con el mismo tamaño que tendría
+  creada entonces.
 
 ### Presupuesto de RAM (8 MiB, ares 146, `mslugx-reference.z64`, líneas `MSX MEM`)
 
@@ -797,3 +797,107 @@ Las cargas de etapa siguen siendo un fotograma de 0,3–1,07 s con la pantalla
 en negro (el fundido ya terminó, como en el original detrás de `3AED8`/
 `3AEF0`); lo que se oía (la música cortada) queda resuelto con el audio entre
 cargas. Hacerlas incrementales queda pendiente.
+
+## Cinemáticas sin parones (rama `work-introperf`)
+
+Informe de MiSTer (N64 real, Expansion Pak): la intro seguía con parones. En
+ares (`tools/test_logo_ares.py`, reloj emulado; el PI de MiSTer es otro, por
+eso las correcciones quitan trabajo bloqueante en vez de ajustar tiempos) el
+arranque tenía estas pausas y saltos:
+
+| Tramo | Antes | Después |
+|---|---|---|
+| logo → título | 1881 ms en negro (la preparación del título seguía en la lectura) | 0 ms (título leído y 17 fotogramas hechos durante el logo); `gap_vb=3` (los 2 negros del final del logo) |
+| logo (fotogramas tardíos propios) | 2 | 0 |
+| título | 0 saltados | 0 saltados, `max_vb=1` |
+| título → HOW TO PLAY | 140 ms (apertura síncrona en streaming) | `gap_vb=1` (sin pausa) |
+| HOW TO PLAY | 35 fotogramas saltados (descodificación de hasta 160 ms en el fundido 2638–2667; 1878, 2310) | 0 |
+| HOW TO PLAY → SOLDIER SELECT | 654 ms (preparación atascada) | `gap_vb=1` |
+| SOLDIER SELECT | 12 saltados | 0 |
+| elección | 4 saltados | 0 |
+| elección → entrada | 509 ms | `gap_vb=1` |
+| entrada → juego | 1133 ms (`gap_vb=68`: audio 340, caché 310, Marco 306, HUD 40, reinicio 60…) | ≈130 ms (`gap_vb=7–8`: reinicio del mundo 60, renderizador 17, audio 17, primer fotograma 29) |
+| primeros 2 s de juego | 22 de 120 fotogramas tardíos | 3–8 |
+| 8 s siguientes | 0 | 0 |
+
+`gap_vb`/`late` son las líneas nuevas `MSX FRAMES <tramo>` (`msx_perf.c`):
+blancos verticales entre el último fotograma de un tramo y el primero del
+siguiente (1 = sin pausa) y fotogramas que llegaron 2 o más blancos después
+del anterior. `test_logo_ares.py` las guarda en `presentation` y exige
+`late=0` en cada película.
+
+### Causas
+
+1. **Preparación que no avanzaba.** Cada paso de la preparación en tiempo
+   libre (lectura+LZ4 de un paquete, CRC, aplicar) era indivisible y se
+   rechazaba si no cabía; los fotogramas clave (≈110 KB: en ares ~17 ms de
+   LZ4, ~19 ms de CRC por byte, ~20 ms de aplicación) nunca cabían en los
+   ~5 ms libres del logo, así que la apertura lo hacía todo de golpe
+   (1,9 s, 0,65 s, 0,5 s).
+2. **HOW TO PLAY en streaming** (4,7 MB sin comprimir no entraban en caché):
+   cada fotograma leía del PI con espera, descomprimía, hacía CRC y aplicaba
+   en el tiempo del propio fotograma; los fotogramas clave costaban 70 ms.
+3. **Copias de 136 KB por CPU** (`memcpy` ≈12 ms en ares) tras cada
+   fotograma preparado.
+4. **Traspaso al juego síncrono**: 1 MB de efectos, 585 piezas de Marco, la
+   ROM S del HUD y 50 bloques de la caché de escena leídos con la pantalla
+   quieta; el reinicio del mundo se hacía dos veces.
+5. **Calentamiento en el tiempo del fotograma**: tras el traspaso,
+   `scene_service` descodificaba un bloque de la lista de calentamiento
+   (≈5 ms) en cada fotograma de los primeros ~70.
+6. **Elección del fotograma tras mezclar audio**: con el tiempo libre ya
+   usado, mezclar 2–3 ms antes de `display_get` retrasaba la elección del
+   fotograma y saltaba uno.
+
+### Correcciones
+
+- **Reproductor nuevo (`src/cinematic.c`)**: por película, un *cargador*
+  (DMA asíncrono del PI en trozos de 8 KB a un anillo de paquetes v1, LZ4 en
+  sitio reanudable con CRC por trozos y validación por trozos:
+  `src/cinematic_stream.h`) y un *productor* que decodifica fotogramas
+  completos por adelantado en un conjunto de lienzos (el RDP copia el
+  anterior —copia de 4 píxeles/ciclo— y la CPU aplica el paquete por trozos;
+  los paquetes «sin cambio» comparten lienzo). Todo trabajo corre en piezas
+  de 2–4 KB hasta el plazo del blanco siguiente (coste por KB aprendido, que
+  sube enseguida y baja despacio); mostrar un fotograma solo elige su lienzo.
+  El anillo ocupa la película entera si cabe (título bajo el logo: 3 MB) o
+  2 MB (HOW TO PLAY: el fundido de 650 KB de 2638 se carga antes); una
+  película preparada al lado de otra crece al abrirse. Los lienzos por
+  película salen de sus paquetes pesados (>16 KB): 4 para la elección,
+  8 para las demás. El título prepara HOW TO PLAY en su tiempo libre.
+- **CRC de 4 en 4 bytes** (tablas de 4 KB) y **aplicación con `memcpy`/
+  relleno por palabras**; CRC del primer y último fotograma calculados en
+  segundo plano (la comprobación de la entrada y los registros costaban
+  20 ms en el corte).
+- **Las películas acaban en su último fotograma** sin una vuelta más de
+  trabajo libre, y el fotograma se elige justo tras el blanco, antes de
+  mezclar audio (`main.c`, `title_intro.c`).
+- **Carga del juego adelantada** (`main.c`): desde SOLDIER SELECT,
+  `msx_ramfs_preload` lee por DMA asíncrono los 60 efectos y `fixed.bin`
+  (la ROM S del HUD, usada tal cual), `marco_renderer_preload` carga piezas
+  de Marco mientras caben antes del blanco, y la lista de calentamiento de la
+  caché se calcula en pasos (`scene_assets_plan_step`, 27 ms de golpe antes).
+  Durante la elección, `scene_assets_begin_early` crea la caché con las
+  ranuras que caben dejando sitio a las películas, la calienta en tiempo
+  libre (`scene_assets_idle`) y crece al cerrarse la elección;
+  `scene_assets_begin` la completa tras la entrada comprobando el tamaño
+  contra el montón de entonces. Lo ya cargado de `actor_init` se descuenta de
+  su reserva (`scene_assets_game_preloaded`), así que la caché y el montón
+  libre final son los de antes (214–217 ranuras, ≥ 448 KB libres).
+- `actor_prepare_descent`: el reinicio de `actor_init` ya empieza la bajada y
+  `actor_begin_descent` no la repite.
+- `scene_service` deja los bloques de calentamiento (los que nadie pidió) al
+  tiempo libre antes del blanco; una petición o una espera síncrona los toma
+  igual.
+
+Píxeles: idénticos (CRC de cada película igual que antes en ares:
+título `c0a8e830`, HOW TO PLAY `47fe0a98`, selección `ad129003`, elección
+`342b3c8e`, entrada `be25a626`; `cinematic-regression.z64` compara los 30
+fotogramas de la entrada; `make check-cinematic` compara LZ4/CRC/validación/
+aplicación por trozos con las formas de una pasada en cada paquete).
+
+Queda: el traspaso al juego son ~8 blancos (el reinicio del mundo, 60 ms en
+N64 y despreciable en el host, y el primer dibujado del HUD, 19 ms); en los
+primeros 2 s del juego, 3–8 fotogramas tardíos por la grabación de los
+bloques del fondo (≈7 ms cada uno mientras la cámara baja) y algunas
+peticiones de bloques de soldados aún no calentados.

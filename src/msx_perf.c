@@ -51,3 +51,38 @@ void msx_perf_frame_end(void) {
     sum_build=sum_total=0;peak_build=peak_total=0;frames=steps_sum=steps_max=multi=draws_max=soldiers_max=0;
 }
 #endif
+/* Presentation timing per boot stage (docs/RENDIMIENTO.md, "Cinemáticas sin
+ * parones"): msx_frames_present() at every frame handed to the display (also
+ * from the RDP completion interrupt), msx_frames_stage() at each stage's
+ * start logs the previous stage. Counted in vertical blanks: a frame handed
+ * over shows from the next blank, so consecutive frames one blank apart are
+ * seamless. gap_vb: blanks from the previous stage's last frame to this
+ * stage's first (1: no pause between them); late: frames that came 2 or more
+ * blanks after the previous one (the previous image shown again), long: 3 or
+ * more; max_vb the longest. */
+static volatile uint32_t frames_vi,frames_last,frames_max,frames_first_gap,frames_stage_last;
+static volatile unsigned frames_count,frames_late,frames_long;
+static const char *frames_label;
+static void frames_on_vi(void) {frames_vi++;}
+void msx_frames_present(void) {
+    uint32_t now=frames_vi;
+    if (!frames_count) frames_first_gap=frames_stage_last?now-frames_stage_last:0;
+    else {
+        uint32_t d=now-frames_last;
+        if (d>frames_max) frames_max=d;
+        if (d>=2) frames_late++;
+        if (d>=3) frames_long++;
+    }
+    frames_last=now;frames_count++;
+}
+unsigned msx_frames_count(void) {return frames_count;}
+void msx_frames_stage(const char *label) {
+    static bool hooked;
+    if (!hooked) {register_VI_handler(frames_on_vi);hooked=true;}
+    disable_interrupts();
+    unsigned n=frames_count,late=frames_late,lng=frames_long;uint32_t mx=frames_max,gap=frames_first_gap,last=frames_last;
+    frames_count=frames_late=frames_long=0;frames_max=0;if (n) frames_stage_last=last;
+    enable_interrupts();
+    if (frames_label) debugf("MSX FRAMES %s presents=%u gap_vb=%lu max_vb=%lu late=%u long=%u\n",frames_label,n,(unsigned long)gap,(unsigned long)mx,late,lng);
+    frames_label=label;
+}

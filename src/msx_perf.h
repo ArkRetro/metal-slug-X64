@@ -42,4 +42,8 @@ static inline void msx_perf_steps(unsigned steps) {(void)steps;}
 static inline void msx_perf_counts(unsigned draws,unsigned soldiers) {(void)draws;(void)soldiers;}
 static inline void msx_perf_frame_end(void) {}
 #endif
+/* Presentation timing per boot stage (always built; msx_perf.c). */
+void msx_frames_present(void);
+void msx_frames_stage(const char *label);
+unsigned msx_frames_count(void);
 #endif

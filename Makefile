@@ -582,6 +582,9 @@ check-cinematic: $(BUILD_DIR)/entry_meta.h $(BUILD_DIR)/title_motion_meta.h
 	$(BUILD_DIR)/host/cinematic-pack filesystem/cinematics/entry.msxc
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DMSX_CINE_META_HEADER='"title_motion_meta.h"' tools/test_cinematic_pack.c -o $(BUILD_DIR)/host/title-motion-pack
 	$(BUILD_DIR)/host/title-motion-pack filesystem/cinematics/title-motion.msxc
+	$(HOST_CC) $(HOST_CFLAGS) tools/test_cinematic_stream.c -o $(BUILD_DIR)/host/cinematic-stream
+	python3 tools/msxc_compress.py filesystem/cinematics/entry.msxc $(BUILD_DIR)/host/entry-v2.msxc
+	$(BUILD_DIR)/host/cinematic-stream filesystem/cinematics/entry.msxc $(BUILD_DIR)/host/entry-v2.msxc
 	python3 tools/test_title_palette_banks.py
 	python3 tools/test_title_x64.py
 $(BUILD_DIR)/blood_fixture.h: tools/compile_blood_fixture.py data/blood_fixture.json

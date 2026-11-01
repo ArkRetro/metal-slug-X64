@@ -10,9 +10,10 @@
 #include <string.h>
 #include "fixed.h"
 #include "hud_renderer.h"
+#include "msx_ramfs.h"
 
 enum { FIRST_ROW=2, ROWS=28, FIRST_COLUMN=1, COLUMNS=38 };
-static uint8_t *fixed_rom;
+static const uint8_t *fixed_rom;
 static uint16_t palette[256];
 static surface_t strip;                    /* 304 x 224 RGBA16 */
 static uint16_t shown[NEO_FIX_WORDS];
@@ -21,10 +22,17 @@ static bool ready,valid;
 static uint32_t shown_serial;
 
 bool hud_renderer_init(void) {
-    FILE *f=fopen("rom:/fixed.bin","rb");
-    if (!f) {debugf("MSX HUD: rom:/fixed.bin missing, fix layer off\n");return false;}
-    fixed_rom=malloc(131072);
-    bool ok=fixed_rom && fread(fixed_rom,1,131072,f)==131072;fclose(f);
+    /* Read in the boot cinematics' spare time when they ran (main.c,
+     * msx_ramfs_preload): the resident copy is used as is. */
+    size_t resident=0;const uint8_t *data=msx_ramfs_data("fixed.bin",&resident);
+    bool ok;
+    if (data && resident==131072) {fixed_rom=data;ok=true;}
+    else {
+        FILE *f=fopen("rom:/fixed.bin","rb");
+        if (!f) {debugf("MSX HUD: rom:/fixed.bin missing, fix layer off\n");return false;}
+        uint8_t *copy=malloc(131072);
+        ok=copy && fread(copy,1,131072,f)==131072;fclose(f);fixed_rom=copy;
+    }
     FILE *p=fopen("rom:/hud-palette.bin","rb");
     if (!ok || !p || fread(palette,2,256,p)!=256) {if (p) fclose(p);debugf("MSX HUD: fix assets incomplete, fix layer off\n");return false;}
     fclose(p);

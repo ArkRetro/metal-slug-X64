@@ -42,8 +42,10 @@ static int recording=-1;
 static uint8_t *cache,*staging[2];
 static uint8_t **slot_mem;   /* each slot's 16 KiB (the cache can span several heap blocks) */
 static unsigned capacity,clock_lru,epoch,rom,resident;
+static unsigned capacity_final;   // slots the cache gets; more than `capacity` while begun early (scene_assets_begin_early)
 static volatile unsigned completed;
 static int active_chunk=-1,active_slot=-1;
+static bool active_warm;   // the staged chunk comes from the warm list, not a request
 static unsigned active_stage,last_stage;
 static scene_cache_stats_t stats;
 static unsigned timing_depth; // require_chunk times its whole wait; nested service is not counted twice.
@@ -113,11 +115,11 @@ static void start_next(void) {
         if (!slots[i].ready || pinned[slots[i].chunk] || block_pins[slots[i].chunk] || slots[i].used_epoch>completed) continue;
         if (victim<0 || slots[i].lru<slots[victim].lru) victim=(int)i;
     }
-    if (victim<0) { if (warm) warm_count=warm_next; return; }   // cache full: stop warming
+    if (victim<0) { if (warm && capacity>=capacity_final) warm_count=warm_next; return; }   // cache full: stop warming (not while begun early)
     if (warm) warm_next++;
     if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++;resident--; }
     slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;requests[chosen]=0;
-    active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;
+    active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;active_warm=warm;
     uint32_t base,size;const scene_chunk_t *c=chunk_info((unsigned)chosen,&base,&size);
     unsigned length=(c->length+63)&~63u;
     assertf(length<=SCENE_CHUNK_BYTES && c->offset+length<=size,"Pack chunk bounds");
@@ -152,6 +154,16 @@ void scene_service(void) {
     if (!cache) return;
     if (active_chunk<0) { start_next();return; }
     if (pi_busy()) return;
+    /* A warm-list chunk (nobody asked for it yet) is decoded in the spare
+     * time before the blank (scene_assets_idle), not in the frame's own
+     * time: after the boot cinematics ~300 of them were each a 5 ms decode
+     * in the first 70 gameplay frames, a third of them shown late. A
+     * synchronous wait or a pending request still takes it now. */
+    if (active_warm && !timing_depth) {
+        bool asked=false;
+        for (unsigned i=0;i<CHUNKS_ALL && !asked;i++) asked=requests[i]!=0;
+        if (!asked) return;
+    }
     // Prefetch spends at most SCENE_SERVICE_DECODES decodes per frame; the
     // chunk stays in its staging buffer for the next frame. A synchronous
     // wait (require_chunk) is never held back.
@@ -263,6 +275,15 @@ enum {
     SCENE_HEAP_RESERVE=(SCENE_RESERVE_LOGO>SCENE_RESERVE_GAME+SCENE_RESERVE_RUNTIME?SCENE_RESERVE_LOGO:SCENE_RESERVE_GAME+SCENE_RESERVE_RUNTIME)+SCENE_HEAP_MARGIN,
 };
 static int heap_free(void) { heap_stats_t h;sys_get_heap_stats(&h);return h.total-h.used; }
+/* Part of actor_init's allocations made before the cache (Marco's parts and
+ * the HUD's S-ROM copy, read in the boot cinematics' spare time): no longer
+ * reserved. */
+static int game_preloaded;
+void scene_assets_game_preloaded(unsigned bytes) { game_preloaded=bytes>SCENE_RESERVE_GAME?SCENE_RESERVE_GAME:(int)bytes; }
+static int heap_reserve(void) {
+    int game=SCENE_RESERVE_GAME-game_preloaded+SCENE_RESERVE_RUNTIME;
+    return (SCENE_RESERVE_LOGO>game?SCENE_RESERVE_LOGO:game)+SCENE_HEAP_MARGIN;
+}
 static int heap_free_min=0x7fffffff;
 void scene_assets_mem(const char *stage) {
     heap_stats_t h;sys_get_heap_stats(&h);
@@ -280,10 +301,10 @@ int scene_assets_heap_low(void) {
     return heap_free_min;
 }
 
+static bool warm_queued[CHUNKS_ALL];
 static void warm_add(unsigned chunk) {
-    static bool queued[CHUNKS_ALL];
-    if (queued[chunk]) return;
-    queued[chunk]=true;warm_list[warm_count++]=(uint16_t)chunk;
+    if (warm_queued[chunk]) return;
+    warm_queued[chunk]=true;warm_list[warm_count++]=(uint16_t)chunk;
 }
 static void mark_map(const scene_map_cell_t *cells,unsigned count) {
     for (unsigned i=0;i<count;i++) for (unsigned phase=0;phase<8;phase++) {
@@ -291,83 +312,196 @@ static void mark_map(const scene_map_cell_t *cells,unsigned count) {
         if (!map_chunk[c]) {map_chunk[c]=true;map_chunks++;}
     }
 }
-void scene_assets_begin(void) {
-    if (cache) return;
-    uint32_t began=TICKS_READ();
-    rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
-    assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
-    bool expanded=get_memory_size()>=8*1024*1024;
-    /* 4 MiB: 32 slots (512 KiB), the map streams through them. Expansion
-     * Pak: every byte the RAM budget leaves (SCENE_HEAP_RESERVE above). */
-    capacity=512*1024/SCENE_CHUNK_BYTES;
-    staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);
-    if (expanded) {
-        int room=heap_free()-SCENE_HEAP_RESERVE-(int)(sizeof(cache_slot_t)*SCENE_CHUNK_COUNT)-64;
-        assertf(room>=(int)(SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES),"RAM budget: %d KB left for the scene cache (minimum %u KB)",room/1024,SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES/1024);
-        capacity=(unsigned)room/SCENE_CHUNK_BYTES;
-        if (capacity>SCENE_CHUNK_COUNT) capacity=SCENE_CHUNK_COUNT;
-    }
-    /* The free total can be split by earlier allocations (cinematic slots
-     * freed around the resident sounds): the slots take as few heap blocks
-     * as fit, the largest first. */
-    slot_mem=calloc(capacity,sizeof(*slot_mem));
-    unsigned have=0,block=capacity;
-    while (slot_mem && have<capacity && block) {
-        if (block>capacity-have) block=capacity-have;
-        uint8_t *m=memalign(64,block*SCENE_CHUNK_BYTES);
-        if (!m) {block/=2;continue;}
-        if (!cache) cache=m;
-        for (unsigned i=0;i<block;i++) slot_mem[have++]=m+i*SCENE_CHUNK_BYTES;
-    }
-    if (have<capacity) {
-        assertf(!expanded || have>=SCENE_EXPANDED_MIN_SLOTS,"RAM budget: %u scene slots allocated (minimum %u)",have,SCENE_EXPANDED_MIN_SLOTS);
-        capacity=have;
-    }
-    slots=calloc(capacity,sizeof(*slots));
-    assertf(cache && slots && staging[0] && staging[1],"Scene cache allocation");
-    for (unsigned i=0;i<capacity;i++) slots[i].chunk=-1;
-    for (unsigned i=0;i<CHUNKS_ALL;i++) chunk_slot[i]=-1;
-    stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
-    decode_estimate=TICKS_FROM_US(4000);
-    register_VI_handler(on_vblank);
-    data_cache_hit_writeback((void*)scene_palettes,sizeof(scene_palettes));
+/* The Expansion Pak's warm list (pinned banks, the whole map in camera
+ * order, then the script's spawns) is arithmetic on the compiled tables:
+ * ~27 ms that scene_assets_begin did at once, a skipped frame when the cache
+ * begins beside a movie. Built ahead in small steps in the boot cinematics'
+ * spare time (scene_assets_plan_step); begin uses it when the cache takes
+ * the expanded branch, else builds the list itself as before. */
+enum { PLAN_BANKS,PLAN_MAP,PLAN_PATCH,PLAN_CAMERA,PLAN_SELECT,PLAN_AHEAD,PLAN_DONE };
+static int plan_stage;static unsigned plan_pos,plan_banks;static int *plan_camera;
+static void plan_banks_now(void) {
     // Marco's branch transitions stay pinned (all banks but the streamed ones).
     for (unsigned bank=0;bank<SCENE_BANK_COUNT;bank++) if (bank!=SCENE_SOLDIER && bank!=SCENE_NATIVE) {
         const scene_bank_t *b=&scene_banks[bank];
         for (unsigned i=0;i<b->first+b->second;i++) {unsigned c=scene_images[b->start+i].page/8;pinned[c]=true;warm_add(c);}
     }
-    mark_map(scene_map_cells_data,SCENE_MAP_CELL_COUNT);
-    mark_map(scene_patch_cells_data,SCENE_PATCH_CELL_COUNT);
-    mark_map(scene_collapse_cells_data,SCENE_COLLAPSE_CELL_COUNT);
-    if (expanded && capacity>=warm_count+map_chunks+SCENE_EXPANDED_STREAM_SLOTS) {
+    plan_banks=warm_count;
+}
+/* First camera that brings each map cell within 416 px (inverse of msx_layer_scroll). */
+static void plan_cameras(unsigned from,unsigned to) {
+    for (unsigned i=from;i<to;i++) {
+        const scene_map_cell_t *cell=&scene_map_cells_data[i];unsigned layer=cell->layer<4?cell->layer:3;
+        int ahead=cell->x-416,camera=ahead<=0?0:layer==0?ahead*2:layer==1?ahead*4/3:ahead;
+        if (layer==2 && camera<MSX_MID_FULL_SPEED_CAMERA) camera=MSX_MID_FULL_SPEED_CAMERA;
+        for (unsigned phase=0;phase<8;phase++) {
+            unsigned c=scene_map_images[cell->phases[phase]].page/8;
+            if (camera<plan_camera[c]) plan_camera[c]=camera;
+        }
+    }
+}
+/* The map chunk the camera reaches first, pinned and queued (37 in all). */
+static bool plan_select_one(void) {
+    int best=-1;
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (map_chunk[c] && !pinned[c] && (best<0 || plan_camera[c]<plan_camera[best])) best=(int)c;
+    if (best<0) return false;
+    pinned[best]=true;warm_add((unsigned)best);
+    return true;
+}
+static void plan_ahead(void) {
+    warm_required=warm_count;
+    // Then the actors of the script's spawns in camera order, into the
+    // free slots only (the lookahead keeps them; the LRU recycles them).
+    for (unsigned i=0;i<SCENE_AHEAD_COUNT;i++) warm_add(scene_ahead[i][1]);
+}
+bool scene_assets_plan_step(uint32_t deadline) {
+    enum { CELLS=256 };
+    if (cache) return false;   // begin has built it
+    while (plan_stage!=PLAN_DONE) {
+        if (deadline && (int32_t)(deadline-TICKS_READ())<(int32_t)TICKS_FROM_US(1500)) return true;
+        switch (plan_stage) {
+        case PLAN_BANKS: plan_banks_now();plan_stage=PLAN_MAP;plan_pos=0;break;
+        case PLAN_MAP: {
+            unsigned n=SCENE_MAP_CELL_COUNT-plan_pos;if (n>CELLS) n=CELLS;
+            mark_map(scene_map_cells_data+plan_pos,n);plan_pos+=n;
+            if (plan_pos>=SCENE_MAP_CELL_COUNT) plan_stage=PLAN_PATCH;
+            break;
+        }
+        case PLAN_PATCH:
+            if (!plan_camera && !(plan_camera=malloc(SCENE_CHUNK_COUNT*sizeof(int)))) return false;   // begin builds it then
+            mark_map(scene_patch_cells_data,SCENE_PATCH_CELL_COUNT);
+            mark_map(scene_collapse_cells_data,SCENE_COLLAPSE_CELL_COUNT);
+            for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) plan_camera[c]=0x7fffffff;
+            plan_stage=PLAN_CAMERA;plan_pos=0;break;
+        case PLAN_CAMERA: {
+            unsigned n=SCENE_MAP_CELL_COUNT-plan_pos;if (n>CELLS) n=CELLS;
+            plan_cameras(plan_pos,plan_pos+n);plan_pos+=n;
+            if (plan_pos>=SCENE_MAP_CELL_COUNT) plan_stage=PLAN_SELECT;
+            break;
+        }
+        case PLAN_SELECT:
+            for (unsigned k=0;k<4 && plan_stage==PLAN_SELECT;k++) if (!plan_select_one()) plan_stage=PLAN_AHEAD;
+            break;
+        case PLAN_AHEAD:
+            plan_ahead();free(plan_camera);plan_camera=NULL;plan_stage=PLAN_DONE;break;
+        }
+    }
+    return false;
+}
+/* Slot memory in as few heap blocks as fit, the largest first (the free
+ * total can be split by earlier allocations: cinematic slots freed around the
+ * resident sounds), up to `target` slots and only while the heap keeps
+ * `keep` bytes free. */
+static void allocate_slots(unsigned target,int keep) {
+    unsigned block=target-capacity;
+    while (capacity<target && block) {
+        if (block>target-capacity) block=target-capacity;
+        if (heap_free()-(int)(block*SCENE_CHUNK_BYTES)<keep) {block/=2;continue;}
+        uint8_t *m=memalign(64,block*SCENE_CHUNK_BYTES);
+        if (!m) {block/=2;continue;}
+        if (!cache) cache=m;
+        for (unsigned i=0;i<block;i++) slot_mem[capacity++]=m+i*SCENE_CHUNK_BYTES;
+    }
+    stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
+}
+static void begin(int coming,int keep);
+void scene_assets_begin(void) {
+    if (cache && capacity<capacity_final) {
+        /* Begun early (the boot cinematics' spare time): the rest of the
+         * slots, now that the movies are gone. */
+        uint32_t began=TICKS_READ();unsigned before=capacity;
+        /* The size foreseen when it began, checked against the heap there is
+         * now, as a cache begun here would be sized. */
+        int room=heap_free()+(int)(capacity*SCENE_CHUNK_BYTES)-heap_reserve()-(int)(sizeof(cache_slot_t)*SCENE_CHUNK_COUNT)-64;
+        unsigned now=room>0?(unsigned)room/SCENE_CHUNK_BYTES:0;
+        if (now<capacity_final) capacity_final=now>capacity?now:capacity;
+        allocate_slots(capacity_final,0);
+        assertf(capacity>=SCENE_EXPANDED_MIN_SLOTS,"RAM budget: %u scene slots allocated (minimum %u)",capacity,SCENE_EXPANDED_MIN_SLOTS);
+        capacity_final=capacity;
+        debugf("MSX pack: cache completed %u -> %u slots (%u KB) in %lu us, %u resident\n",before,capacity,stats.cache_bytes/1024,(unsigned long)TICKS_TO_US(TICKS_READ()-began),resident);
+        scene_assets_mem("scene cache");
+        return;
+    }
+    if (cache) return;
+    begin(0,0);
+}
+void scene_assets_grow_early(int keep) {
+    if (!cache || capacity>=capacity_final) return;
+    unsigned before=capacity;allocate_slots(capacity_final,keep);
+    if (capacity>before) debugf("MSX pack: early cache %u -> %u slots\n",before,capacity);
+}
+bool scene_assets_begin_early(int coming,int keep) {
+    if (cache || get_memory_size()<8*1024*1024) return cache!=NULL;
+    begin(coming,keep);
+    return cache!=NULL;
+}
+/* coming: heap bytes freed before scene_assets_begin completes the cache
+ * (0: not early); keep: what the heap keeps meanwhile. */
+static void begin(int coming,int keep) {
+    uint32_t began=TICKS_READ();
+    rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
+    assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
+    bool expanded=get_memory_size()>=8*1024*1024;
+    /* 4 MiB: 32 slots (512 KiB), the map streams through them. Expansion
+     * Pak: every byte the RAM budget leaves (heap_reserve above). */
+    unsigned target=512*1024/SCENE_CHUNK_BYTES;
+    staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);
+    if (expanded) {
+        int room=heap_free()+coming-heap_reserve()-(int)(sizeof(cache_slot_t)*SCENE_CHUNK_COUNT)-64;
+        if (coming && room<(int)(SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES)) {   // early: the verdict is scene_assets_begin's
+            debugf("MSX pack: early cache refused, %d KB foreseen\n",room/1024);
+            free(staging[0]);free(staging[1]);staging[0]=staging[1]=NULL;return;
+        }
+        assertf(room>=(int)(SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES),"RAM budget: %d KB left for the scene cache (minimum %u KB)",room/1024,SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES/1024);
+        target=(unsigned)room/SCENE_CHUNK_BYTES;
+        if (target>SCENE_CHUNK_COUNT) target=SCENE_CHUNK_COUNT;
+    }
+    slot_mem=calloc(target,sizeof(*slot_mem));
+    slots=calloc(target,sizeof(*slots));
+    assertf(slot_mem && slots && staging[0] && staging[1],"Scene cache allocation");
+    capacity=0;allocate_slots(target,coming?keep:0);
+    if (coming && !capacity) {   // no room yet: begun later
+        free(slot_mem);free(slots);free(staging[0]);free(staging[1]);slot_mem=NULL;slots=NULL;staging[0]=staging[1]=NULL;
+        return;
+    }
+    if (!coming && capacity<target) {
+        assertf(!expanded || capacity>=SCENE_EXPANDED_MIN_SLOTS,"RAM budget: %u scene slots allocated (minimum %u)",capacity,SCENE_EXPANDED_MIN_SLOTS);
+        target=capacity;
+    }
+    capacity_final=target;
+    assertf(cache,"Scene cache allocation");
+    for (unsigned i=0;i<capacity_final;i++) slots[i].chunk=-1;
+    for (unsigned i=0;i<CHUNKS_ALL;i++) chunk_slot[i]=-1;
+    decode_estimate=TICKS_FROM_US(coming?8000:4000);   // early: beside a movie, the first guess on the safe side
+    register_VI_handler(on_vblank);
+    data_cache_hit_writeback((void*)scene_palettes,sizeof(scene_palettes));
+    bool planned=plan_stage==PLAN_DONE;
+    if (!(planned && expanded && capacity_final>=plan_banks+map_chunks+SCENE_EXPANDED_STREAM_SLOTS)) {
+        if (plan_stage!=PLAN_BANKS) {   // a plan for another branch, or unfinished: from the start
+            for (unsigned c=0;c<CHUNKS_ALL;c++) pinned[c]=map_chunk[c]=warm_queued[c]=false;
+            warm_count=warm_required=map_chunks=0;free(plan_camera);plan_camera=NULL;
+        }
+        planned=false;plan_stage=PLAN_DONE;
+        plan_banks_now();
+        mark_map(scene_map_cells_data,SCENE_MAP_CELL_COUNT);
+        mark_map(scene_patch_cells_data,SCENE_PATCH_CELL_COUNT);
+        mark_map(scene_collapse_cells_data,SCENE_COLLAPSE_CELL_COUNT);
+    }
+    if (expanded && capacity_final>=plan_banks+map_chunks+SCENE_EXPANDED_STREAM_SLOTS) {
         /* Expansion Pak: the whole map (every cell, the shop patch and the
          * rubble) is pinned and loaded before the first frame, in camera
          * order: the background never misses. */
         map_resident_all=true;
-        /* Scratch in the idle staging buffer (no DMA before the warm-up). */
-        _Static_assert(SCENE_CHUNK_COUNT*sizeof(int)<=SCENE_CHUNK_BYTES,"first_camera fits a staging buffer");
-        int *first_camera=(int*)staging[0];
-        for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) first_camera[c]=0x7fffffff;
-        for (unsigned i=0;i<SCENE_MAP_CELL_COUNT;i++) {
-            const scene_map_cell_t *cell=&scene_map_cells_data[i];unsigned layer=cell->layer<4?cell->layer:3;
-            // First camera that brings the cell within 416 px (inverse of msx_layer_scroll).
-            int ahead=cell->x-416,camera=ahead<=0?0:layer==0?ahead*2:layer==1?ahead*4/3:ahead;
-            if (layer==2 && camera<MSX_MID_FULL_SPEED_CAMERA) camera=MSX_MID_FULL_SPEED_CAMERA;
-            for (unsigned phase=0;phase<8;phase++) {
-                unsigned c=scene_map_images[cell->phases[phase]].page/8;
-                if (camera<first_camera[c]) first_camera[c]=camera;
-            }
+        if (!planned) {
+            /* Scratch in the idle staging buffer (no DMA before the warm-up). */
+            _Static_assert(SCENE_CHUNK_COUNT*sizeof(int)<=SCENE_CHUNK_BYTES,"first_camera fits a staging buffer");
+            plan_camera=(int*)staging[0];
+            for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) plan_camera[c]=0x7fffffff;
+            plan_cameras(0,SCENE_MAP_CELL_COUNT);
+            while (plan_select_one()) {}
+            plan_camera=NULL;
+            plan_ahead();
         }
-        for (;;) {   // 37 chunks: selection by first camera
-            int best=-1;
-            for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (map_chunk[c] && !pinned[c] && (best<0 || first_camera[c]<first_camera[best])) best=(int)c;
-            if (best<0) break;
-            pinned[best]=true;warm_add((unsigned)best);
-        }
-        warm_required=warm_count;
-        // Then the actors of the script's spawns in camera order, into the
-        // free slots only (the lookahead keeps them; the LRU recycles them).
-        for (unsigned i=0;i<SCENE_AHEAD_COUNT;i++) warm_add(scene_ahead[i][1]);
     } else {
         /* 4 MiB: the opening view only (the extended map does not fit);
          * prefetch streams the rest. tools/check_scene_budget.py bounds the
@@ -381,9 +515,9 @@ void scene_assets_begin(void) {
         warm_required=warm_count;
     }
     warming=true;
-    debugf("MSX pack: %u pages, %u palettes, %u chunks (%u map); cache=%u KB (%u slots) reserve=%u KB warm=%u (required %u) setup=%lu us\n",
-        SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,map_chunks,stats.cache_bytes/1024,capacity,(unsigned)SCENE_HEAP_RESERVE/1024,
-        warm_count,warm_required,(unsigned long)TICKS_TO_US(TICKS_READ()-began));
+    debugf("MSX pack: %u pages, %u palettes, %u chunks (%u map); cache=%u KB (%u slots%s) reserve=%u KB warm=%u (required %u) setup=%lu us%s\n",
+        SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT,SCENE_CHUNK_COUNT,map_chunks,stats.cache_bytes/1024,capacity,coming?", begun early":"",(unsigned)heap_reserve()/1024,
+        warm_count,warm_required,(unsigned long)TICKS_TO_US(TICKS_READ()-began),planned?" (warm list planned ahead)":"");
     scene_assets_mem("scene cache");
 }
 void scene_assets_init(void) {

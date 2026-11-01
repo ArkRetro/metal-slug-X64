@@ -32,6 +32,13 @@ static bool complete;
 static unsigned frames;
 static unsigned mixer_of(unsigned channel) {return MSX_AUDIO_EFFECT_MIXER+channel;}
 _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono mixer channel per driver channel");
+void game_audio_preload(void) {
+    if (!msx_ramfs_init()) return;
+    for (unsigned i=0;i<MSX_SFX_COUNT;i++) {
+        char name[64];snprintf(name,sizeof(name),"audio/%s.wav64",msx_sfx_defs[i].name);
+        msx_ramfs_preload(name);
+    }
+}
 bool game_audio_init(void) {
     msx_sfx_reset(&policy);ready=false;
     /* Every effect resident in RAM (Expansion Pak): each WAV64 is read whole

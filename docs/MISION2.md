@@ -126,10 +126,10 @@ antes de cargarlas.
 ## Auditoría del guion
 
 `tools/audit_script_events.py --script data/mission2_script.json` (en `make
-check`): 473 registros de aparición, 41 constructores, 23 nativos. **Apariciones
-contadas que el port pierde: 1**, `026254` (etapa 3, el jefe; ver
-[MISION2_ACTORES.md](MISION2_ACTORES.md)). `06835C` (soldado con rehén) ya
-es nativo. Sin contar: `01913C 021A1C 021A26 032DE2 035B66 035C68
+check`): 473 registros de aparición, 41 constructores, 24 nativos. **Apariciones
+contadas que el port pierde: 0**: el jefe de la etapa 3 `026254` ya es
+nativo ([JEFE_MISION2.md](JEFE_MISION2.md)), como `06835C` (soldado con
+rehén). Sin contar: `01913C 021A1C 021A26 032DE2 035B66 035C68
 035D12 03A05A 03A2AA 0529C0 082BCE 09692C 0995EC 099DE2 099DF0 0B829C 0B833A`.
 
 ## Fase 2: motor (cargador por misión, etapas, cámara vertical)

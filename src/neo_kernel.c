@@ -16,6 +16,7 @@ typedef struct {
     bool v4050; uint8_t o4050; uint32_t l4054,l4058,l405c,l4064; uint8_t o4060;
     uint16_t w4068; unsigned iterator;
     uint8_t mask42a2; uint16_t idx42a4; int32_t qbox[4]; /* RAM 10C2A2/10C2A4/10C292 */
+    int16_t qy0,qy1;  /* 01382A: D4/D5 words (query rows with A0's +20/+18) */
     bool unsupported;
 } kr_t;
 
@@ -30,9 +31,27 @@ static uint32_t SETW(uint32_t reg,uint32_t word) {return (reg&0xffff0000u)|(word
 static uint32_t ASR(uint32_t v,unsigned n) {return (uint32_t)(S(v)>=0?(int32_t)(v>>n):~(int32_t)(~v>>n));}
 static const neo_kobj_t *obj(const kr_t *k,uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return &k->s->dyn[id-NEO_KOBJ_DYN0].pos;
+    if (id==NEO_KOBJ_TRAIN) return k->s->train_on?&k->s->train:NULL;
     return id==NEO_KOBJ_TERRAIN?&k->s->terrain:id==NEO_KOBJ_ROOT?&k->s->root:NULL;
 }
-static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT;}
+static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT || id==NEO_KOBJ_TRAIN;}
+/* ROM 0B8566 collision (+4 = 4340BA): a one-cell platform 0x2B on row 36
+ * of every column but 384..447, which hold 0xA0 on rows 46 and 47
+ * (tools/test_train_grid.py checks this against the ROM). */
+uint8_t neo_kernel_train_cell(int column,int row) {
+    if (column<0 || column>=784 || row<0 || row>=48) return 0;
+    if (column>=384 && column<448) return row>=46?0xa0:0;
+    return row==36?0x2b:0;
+}
+/* 0C79FE on the train's ring: slot row q = ((~y)&0x1F8)>>3 holds map row
+ * q - 20 (run4 RAM 10D83E: map row 36 in slot row 56, layer +34 = 19); the
+ * column is the map column under the local x (+32 origin, neo_train.c). */
+static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    int q=(int)(((uint16_t)~y&0x1f8u)>>3);
+    int c=((int)(int16_t)x-16*(int)s->train_origin)>>3;
+    c%=784;if (c<0) c+=784;
+    return neo_kernel_train_cell(c,q-20);
+}
 static uint16_t w4024(const kr_t *k) {return (uint16_t)((k->b4024[0]<<8)|k->b4024[1]);}
 static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b4024[3]);}
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}
@@ -80,7 +99,7 @@ static void k12938(kr_t *k) {
             if (d5<h) {k->d6=m[4];hi=m[5];lo=m[10+(unsigned)d5*w+d4];}
         }
     } else {
-    uint32_t c=cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
+    uint32_t c=k->a0==NEO_KOBJ_TRAIN?train_cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1):cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
     k->d6=c;
     uint32_t g=(c&0xe0u)>>5;
     if (k->s->group_map) g=k->s->group_map[g];
@@ -452,6 +471,13 @@ static void k1ac4c(kr_t *k) {
  * coordinates: called with A0 = 0 by 013968/013DB2). */
 static void k14160(kr_t *k,uint32_t d0,uint32_t d1,uint32_t d2,uint32_t d3) {
     k->idx42a4=7;k->mask42a2=0;
+    {   /* 01382A's D4/D5 (D1, D3 at the list start, relative to A0) */
+        const neo_kobj_t *p=obj(k,k->a0);uint32_t y0=d1,y1=d1+d3;
+        if (p) {y0+=(uint32_t)p->prev_y;y1+=(uint32_t)p->y;}
+        int16_t a=(int16_t)(uint16_t)(y0>>16),b=(int16_t)(uint16_t)(y1>>16);
+        if (a>b) {int16_t t=a;a=b;b=t;}
+        k->qy0=a;k->qy1=b;
+    }
     if (!k->b4008 && !k->s->solid) return;
     d2+=d0;d3+=d1;
     if (S(d0)>S(d2)) {uint32_t t=d0;d0=d2;d2=t;}
@@ -482,6 +508,12 @@ static void k14160(kr_t *k,uint32_t d0,uint32_t d1,uint32_t d2,uint32_t d3) {
  * dynamic objects 01424C, highest index first. */
 static void k1382a(kr_t *k) {
     if (k->iterator==0) {k->iterator=1;k->a1=NEO_KOBJ_TERRAIN;return;}
+    if (k->iterator==1 && k->s->train_on) {
+        k->iterator=2;
+        /* 01384E..013896: (+34 - 0x11 + 1) * 16 + y; the rows 7*16 above */
+        int d6=(int16_t)(uint16_t)((19-0x11+1)*16+(int16_t)(uint16_t)((uint32_t)k->s->train.y>>16));
+        if (!(d6<k->qy0) && !((int16_t)(d6-7*16)>k->qy1)) {k->a1=NEO_KOBJ_TRAIN;return;}
+    }
     k->iterator=2;
     uint8_t d6=k->mask42a2;int d7=k->idx42a4;
     while (d6) {

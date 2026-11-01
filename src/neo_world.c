@@ -1078,6 +1078,13 @@ static void scene_at(neo_world_t *w,int32_t x,bool reset) {
     w->kernel.terrain=(neo_kobj_t){w->terrain.x,w->terrain.y,w->terrain.previous_x,w->terrain.previous_y};
     w->kernel.root=(neo_kobj_t){w->root.x,w->root.y,w->root.previous_x,w->root.previous_y};
     w->kernel.ring=neo_collision_ring(w->terrain.x,w->terrain.y);
+    /* Mission 3: 10D7B6 (neo_train.c; its y follows the root as 10C72E's). */
+    {
+        int32_t px=reset || !w->kernel.train_on?w->train.x:w->kernel.train.x;
+        w->kernel.train_on=w->train.on;
+        w->kernel.train=(neo_kobj_t){w->train.x,w->terrain.y,px,w->terrain.previous_y};
+        w->kernel.train_origin=w->train.origin;
+    }
     /* RAM 10C00E (camera op 0x50): the cell group map of 012938. Mission 1
      * keeps its table; Mission 2's 0B7000 maps group 6 to 0x0A (ROM bytes
      * 00 01 02 03 04 05 0A 07). */

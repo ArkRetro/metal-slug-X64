@@ -10,6 +10,8 @@
  * in the playable Mission 1 region (one cell-map terrain object, the scene
  * root and no dynamic platform). Unsupported contexts fail explicitly. */
 enum { NEO_KOBJ_NONE, NEO_KOBJ_TERRAIN, NEO_KOBJ_ROOT, NEO_KOBJ_DYN0, NEO_KDYN_COUNT=8 };
+/* Mission 3: the train layer 10D7B6 as the second terrain object of 01382A. */
+enum { NEO_KOBJ_TRAIN=NEO_KOBJ_DYN0+NEO_KDYN_COUNT };
 typedef struct {
     int32_t x,y,prev_x,prev_y; /* object +14/+18/+1C/+20, Q16.16 */
 } neo_kobj_t;
@@ -47,7 +49,15 @@ typedef struct {
      * as index+1, 0 = none) and the tag of its position block (actor +28)
      * are excluded by 01424C. */
     uint8_t self_dyn; uint32_t self_block;
+    /* Mission 3 (docs/MISION3.md): 10D7B6 in the static list 013810 with
+     * its map 0B8566 (+2E: +C nonzero, +10 = 0x11, +14 = 7; layer +34 = 19)
+     * and its column origin +32 (neo_train.c). Off: the list stops at the
+     * terrain as in Missions 1 and 2. */
+    bool train_on; neo_kobj_t train; int16_t train_origin;
 } neo_kscene_t;
+/* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
+ * row 0 at the bottom); 0 outside. */
+uint8_t neo_kernel_train_cell(int column,int row);
 typedef struct {
     int32_t x,y,dx,dy;          /* d0..d3 at entry, relative to `parent` */
     uint8_t parent;             /* NEO_KOBJ_* (A0) */

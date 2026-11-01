@@ -226,7 +226,7 @@ static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
         neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
         neo_kfloor_t f;
         if (neo_kernel_floor(k,x,*y,NEO_KOBJ_TERRAIN,-256*MSX_UNIT,0xff,0,0,&f) && f.found) {
-            if (f.parent>=NEO_KOBJ_DYN0) {
+            if (f.parent>=NEO_KOBJ_DYN0 && f.parent<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) {
                 const neo_kdyn_t *d=&k->dyn[f.parent-NEO_KOBJ_DYN0];
                 if (d->map) {*y=(int32_t)((uint32_t)f.y+(uint32_t)d->pos.y-(uint32_t)k->terrain.y);ride_on(g,f.parent,x,*y);return true;}
             } else {*y=f.y;return true;}
@@ -475,6 +475,8 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
     neo_world_camera(&g->world,p);
     const neo_camera_t *c=&g->world.camera;
     for (unsigned i=0;i<c->event_count;i++) {
+        if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B8D34) neo_train_reset(&g->world.train,g->world.terrain.x);
+        if (c->events[i].kind==NEO_CAMERA_EV_CALL) neo_train_call(&g->world.train,c->events[i].address);
         if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7B00) g->world.tower.counter=0;   /* 10C6B2 */
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7C20) {
@@ -482,6 +484,7 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
             g->world.tower.on=true;g->world.tower.table=8;g->world.tower.at=0;g->world.tower.mode=0;
         }
     }
+    if (g->world.train.on) neo_train_update(&g->world.train,c->root_vx,(c->layer_flags[1]&1u)!=0);
     g->camera=(int)(((int64_t)c->x+0xffff)>>16);
     g->camera_height=(int)(((int64_t)c->y+0xffff)>>16);
 }
@@ -500,16 +503,21 @@ static bool platform_floor(msx_game_t *g,int32_t x,int32_t y,int32_t depth,uint8
     if (!g->world_enabled) return false;
     neo_kscene_t *k=&g->world.kernel;bool any=false;
     for (unsigned i=0;i<NEO_KDYN_COUNT;i++) any|=k->dyn[i].map!=NULL;
-    if (!any) return false;
+    if (!any && !k->train_on) return false;
     k->self_dyn=0;k->self_block=0;
     neo_kfloor_t f;
     if (!neo_kernel_floor(k,x,y,NEO_KOBJ_TERRAIN,depth,0xff,0,0,&f) || !f.found || f.parent<NEO_KOBJ_DYN0) return false;
+    if (f.parent==NEO_KOBJ_TRAIN) {   /* Mission 3: the train's platform (no ride: see docs/MISION3.md) */
+        *object=f.parent;*top=(int32_t)((uint32_t)f.y+(uint32_t)k->train.y-(uint32_t)k->terrain.y);return true;
+    }
+    if (f.parent>=NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return false;
     const neo_kdyn_t *d=&k->dyn[f.parent-NEO_KOBJ_DYN0];
     if (!d->map) return false;
     *object=f.parent;*top=(int32_t)((uint32_t)f.y+(uint32_t)d->pos.y-(uint32_t)k->terrain.y);
     return true;
 }
 static void ride_on(msx_game_t *g,uint8_t object,int32_t x,int32_t y) {
+    if (object==NEO_KOBJ_TRAIN) return;   /* Mission 3: lands, not carried (docs/MISION3.md) */
     const neo_kscene_t *k=&g->world.kernel;const neo_kdyn_t *d=&k->dyn[object-NEO_KOBJ_DYN0];
     if (!g->ride) g->rides++;
     g->ride=(uint8_t)(object-NEO_KOBJ_DYN0+1);

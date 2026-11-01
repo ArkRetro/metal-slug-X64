@@ -60,6 +60,8 @@ void scene_render_set_patch(bool done) {patched=done;}
  * 0xFFFF: none) and the pieces to draw (scene_render_set_tower). */
 static uint16_t tower_cell[SCENE_TOWER_TYPES][3][24];static bool tower_stage;
 static const uint8_t *tower_types;static unsigned tower_count;
+static bool layer_own[4];static int layer_own_offset[4];
+void scene_render_set_layer_offset(unsigned layer,bool on,int offset) {if (layer<4) {layer_own[layer]=on;layer_own_offset[layer]=offset;}}
 void scene_render_set_tower(const uint8_t *types,unsigned count) {tower_types=types;tower_count=tower_stage?count:0u;}
 static void tower_index(const scene_stage_t *st) {
     memset(tower_cell,0xff,sizeof(tower_cell));tower_stage=false;tower_count=0;
@@ -460,6 +462,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             /* Mission pack stage: the fitted rules (tools/pack_mission.py). */
             const scene_layer_rule_t *r=&st->rules[source];
             offsets[i]=((int)camera*r->x_num+r->x_den-1)/r->x_den;
+            if (i<4 && layer_own[i]) offsets[i]=layer_own_offset[i];
             rises[i]=height>=0?(height*r->y_num+r->y_den-1)/r->y_den:-((-height*r->y_num)/r->y_den);
             visible[i]=i<4 && (int)camera>=r->visible_min && (int)camera<=r->visible_max;
             continue;

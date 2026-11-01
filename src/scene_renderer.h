@@ -19,6 +19,9 @@ void scene_render_set_patch(bool patched);
  * (256 + 16 i, SCENE_TOWER_BASE_Y - 48 k + 16 j). */
 enum { SCENE_TOWER_TEMPLATE_X=0x4000, SCENE_TOWER_BASE_Y=-1408, SCENE_TOWER_TYPES=13 };
 void scene_render_set_tower(const uint8_t *types,unsigned count);
+/* Mission packs: layer `layer` drawn at `offset` (its own motion, e.g. the
+ * Mission 3 train, neo_train_scroll) instead of its camera rule. */
+void scene_render_set_layer_offset(unsigned layer,bool on,int offset);
 void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash);
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);

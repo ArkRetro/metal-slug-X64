@@ -362,7 +362,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball goarrow exitmark rebel2 rebel3 stageexit gate crate bags stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate crate bags stage3 drone hostage m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -494,6 +494,14 @@ FAMILY_ARGS_chaser := --script-actor 101414 --script-routines 6371e --attacks --
 # 53 balls (level, up, down; rolls and bursts), their glows 08651C and the
 # blasts 08642E made after the list head by the explosion programs.
 FAMILY_ARGS_dball := --script-actor 101414 --script-routines 8642e --attacks --terrain 10c72e
+# Weapons 02 / 07 (neo_pweapon.c; captures s2 / s7 as d1 with ASSIST_ID=2 / 7,
+# ROOTS=644c4,646b0; --range 64400-64700): 23 blasts each.
+FAMILY_ARGS_sgun2 := --attacks --terrain 10c72e
+FAMILY_ARGS_sgun7 := $(FAMILY_ARGS_sgun2)
+# Weapons 04 / 09 (captures f4 / f9, ROOTS=a71f8,a716e; --range a7100-a7800):
+# the flames, their first flame and puffs (pulled by the node before them).
+FAMILY_ARGS_flame4 := --attacks --previous --terrain 10c72e
+FAMILY_ARGS_flame9 := $(FAMILY_ARGS_flame4)
 FAMILY_ARGS_rlaunch := --script-actor 101414 --script-routines 6371e --attacks --previous --spawn-window 2
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.

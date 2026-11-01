@@ -698,17 +698,37 @@ static void end_ram_start(msx_game_t *g) {
     }
     m->players=g->awaiting_continue?0u:1u;m->region=1;
 }
-/* Weapons fired with the C's programs (tables 0C3C10/0C3C50/0C3C90 give
- * 0C02D8/0C0318/0C0358 to the ids 3, 8, 0C, 0D, 0E) whose projectile of
- * table 0C42AA is native: the R 06381C, the C 063F32 (neo_chaser.c) and
- * the 0D ball 08606A (neo_pweapon.c). All of them have the flash 0C58D2
- * of table 0C432A. */
-static uint32_t c_group_constructor(uint8_t id) {
-    return id==3?0x6381cu:id==0x0c?0x63f32u:id==0x0d?0x8606au:0u;
+/* Weapons fired by the general fire state 0C3CD0 (form 1) whose projectile
+ * of table 0C42AA is native, with the fire programs of the tables
+ * 0C3C10/0C3C50/0C3C90 (+0x10) and the crouched C0098.. table:
+ *  - the C group (C02D8/C0318/C0358: ids 3, 8, 0C, 0D, 0E): the R 06381C,
+ *    the C 063F32 (neo_chaser.c) and the 0D ball 08606A (neo_pweapon.c),
+ *    all with the flash 0C58D2 of table 0C432A; +76 after 5 updates level,
+ *    2 up/down/crouched;
+ *  - 0BFFD8/0C0018/0C0058/0C0098 (ids 02, 07, 0F): the blasts 0644C4 /
+ *    0646B0 (neo_pweapon.c), no flash; +76 after 6 updates level, up and
+ *    crouched (253896, 253962, 256F26), 2 down (256030);
+ *  - 0C00D8/0C0118/0C0158/0C0198 (ids 04, 09): the flames 0A71F8 /
+ *    0A716E (neo_pweapon.c), no flash; +76 after 2 updates (25391A,
+ *    2539FA, 256078, 256FAA).
+ * The other ids keep the explicit stop below. */
+typedef struct {uint32_t constructor;uint8_t group,level,up,down,crouch;} fire_kind_t;
+static fire_kind_t fire_kind(uint8_t id) {
+    switch (id) {
+    case 3: return (fire_kind_t){0x6381cu,MSX_FIRE_C,12,6,6,6};
+    case 0x0c: return (fire_kind_t){0x63f32u,MSX_FIRE_C,12,6,6,6};
+    case 0x0d: return (fire_kind_t){0x8606au,MSX_FIRE_C,12,6,6,6};
+    case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,14,14,6,14};
+    case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,14,14,6,14};
+    case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,6,6,6,6};
+    case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,6,6,6,6};
+    default: return (fire_kind_t){0,MSX_FIRE_NONE,0,0,0,0};
+    }
 }
-bool msx_game_c_programs(const msx_game_t *g) {
-    return c_group_constructor(marco_weapons_id(&g->world.weapons,0))!=0;
+uint8_t msx_game_fire_group(const msx_game_t *g) {
+    return fire_kind(marco_weapons_id(&g->world.weapons,0)).group;
 }
+bool msx_game_c_programs(const msx_game_t *g) {return msx_game_fire_group(g)!=MSX_FIRE_NONE;}
 static void end_sound(msx_game_t *g,uint16_t word) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else g->world.sound_dropped++;
 }
@@ -1108,7 +1128,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->knife_t) g->pistol_wait=g->pistol_wait>g->knife_t?g->pistol_wait:g->knife_t;
     bool hgun=false,chaser=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=c_group_constructor(kind)!=0;
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=fire_kind(kind).group!=MSX_FIRE_NONE;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
@@ -1168,8 +1188,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             uint8_t id=ammo.kind;
             bool allowed=marco_ammo_reserve(&ammo,id,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-            bool vertical=g->aim_up || g->crouching || g->aim_down;
-            g->pistol_wait=vertical?6u:12u;
+            fire_kind_t k=fire_kind(id);
+            g->pistol_wait=g->aim_up?k.up:g->aim_down?k.down:g->crouching?k.crouch:k.level;
             if (allowed) {
                 bool left=g->facing<0;
                 int aim92=g->aim_up?1:g->aim_down?-1:0;
@@ -1178,8 +1198,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 if (left) angle=(uint8_t)(0x80-angle);
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
-                neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                if (neo_world_player_actor(&g->world,c_group_constructor(id),g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                if (k.group==MSX_FIRE_C) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
+                if (neo_world_player_actor(&g->world,k.constructor,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
                     g->world.weapon_player.combo95++;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }

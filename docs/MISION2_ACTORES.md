@@ -393,3 +393,14 @@ el registro `2D9CA2` corre entre 92475 y 93083 y el nodo pasa a `026354` en
 93083 (x 480, y 1705). Se llega reproduciendo `run4` desde `sec03_26140`
 (unos 19 min) con `MSX_FULL_SAVE_AT=92700` (solo captura: guarda
 `at_92700`); los tramos de la traza salen de ese estado.
+
+## Armas que da la Misión 2 (rama `work-m2mummy`)
+
+Del guion (`data/mission2_script.json`, palabra de tipo de objeto de
+`08C37C/08C168` y de los prisioneros `099DF0/099E06`): tipo `04` → arma
+`06` (sección 1, prisionero `2D737C`), `50` → `07`, `52` → `09` (dos), `4A`
+→ `0D`, `01` → `02`, `03` → `04` (tres) y `00` (H) / `02` (R). Nativas:
+`02`, `04`, `07`, `09`, `0D` (proyectiles en `src/neo_pweapon.c`, poses de
+disparo y sonidos: ARMAS_VEHICULOS.md, «Paso 14»), H y R. El rayo `06`
+sigue siendo una parada explícita (dispara la bala de pistola del port).
+La momia (forma 3) tiene ya sus poses (MARCO_CAMPAIGN.md, «Forma 3»).

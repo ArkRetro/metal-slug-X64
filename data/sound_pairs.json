@@ -34119,6 +34119,1162 @@
     "second_error": 0.218,
     "margin": 0.209
    }
+  },
+  "sfx_10f5>sfx_10f5": {
+   "wave": {
+    "mode": "cut",
+    "residual": 994.5,
+    "second": "overlap",
+    "second_residual": 1859.6,
+    "mix_rms": 2251.0,
+    "latency_b": 12.9
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.022,
+    "second": "overlap",
+    "second_error": 0.109,
+    "margin": 0.088
+   }
+  },
+  "sfx_10f6>sfx_10f6": {
+   "wave": {
+    "mode": "cut",
+    "residual": 434.2,
+    "second": "overlap",
+    "second_residual": 1435.0,
+    "mix_rms": 2475.5,
+    "latency_b": 13.6
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.023,
+    "second": "overlap",
+    "second_error": 0.063,
+    "margin": 0.039
+   }
+  },
+  "sfx_10f3>sfx_10f3": {
+   "wave": {
+    "mode": "cut",
+    "residual": 514.4,
+    "second": "overlap",
+    "second_residual": 1896.5,
+    "mix_rms": 2258.8,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.05,
+    "second": "overlap",
+    "second_error": 0.136,
+    "margin": 0.086
+   }
+  },
+  "sfx_116a>sfx_116a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 908.6,
+    "second": "overlap",
+    "second_residual": 991.7,
+    "mix_rms": 1991.8,
+    "latency_b": 15.6
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.022,
+    "second": "overlap",
+    "second_error": 0.046,
+    "margin": 0.025
+   }
+  },
+  "sfx_1168>sfx_1168": {
+   "wave": {
+    "mode": "cut",
+    "residual": 543.0,
+    "second": "overlap",
+    "second_residual": 635.7,
+    "mix_rms": 1044.1,
+    "latency_b": 13.0
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.028,
+    "second": "overlap",
+    "second_error": 0.05,
+    "margin": 0.022
+   }
+  },
+  "sfx_112f>sfx_112f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2451.0,
+    "second": "overlap",
+    "second_residual": 3891.5,
+    "mix_rms": 3396.7,
+    "latency_b": 11.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.069,
+    "second": "overlap",
+    "second_error": 0.341,
+    "margin": 0.272
+   }
+  },
+  "sfx_112c>sfx_112c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2449.3,
+    "second": "overlap",
+    "second_residual": 3930.9,
+    "mix_rms": 3408.6,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.036,
+    "second": "overlap",
+    "second_error": 0.355,
+    "margin": 0.319
+   }
+  },
+  "sfx_115a>sfx_115a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2452.3,
+    "second": "overlap",
+    "second_residual": 4149.7,
+    "mix_rms": 3681.5,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.03,
+    "second": "overlap",
+    "second_error": 0.287,
+    "margin": 0.257
+   }
+  },
+  "pistol>sfx_10f5": {
+   "wave": {
+    "mode": "cut",
+    "residual": 1284.9,
+    "second": "overlap",
+    "second_residual": 1541.6,
+    "mix_rms": 2163.3,
+    "latency_b": 11.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.034,
+    "second": "overlap",
+    "second_error": 0.064,
+    "margin": 0.03
+   }
+  },
+  "sfx_10f5>pistol": {
+   "wave": {
+    "mode": "drop",
+    "residual": 480.1,
+    "second": "overlap",
+    "second_residual": 1393.9,
+    "mix_rms": 2104.3,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.122,
+    "margin": 0.121
+   }
+  },
+  "explosion>sfx_10f5": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 986.2,
+    "second": "cut",
+    "second_residual": 1406.2,
+    "mix_rms": 2437.7,
+    "latency_b": 12.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.027,
+    "second": "cut",
+    "second_error": 0.068,
+    "margin": 0.041
+   }
+  },
+  "sfx_10f5>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 736.6,
+    "second": "drop",
+    "second_residual": 1679.4,
+    "mix_rms": 2624.2,
+    "latency_b": 12.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.128,
+    "margin": 0.105
+   }
+  },
+  "rebel_1041>sfx_10f5": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1023.4,
+    "second": "drop",
+    "second_residual": 1971.8,
+    "mix_rms": 3987.4,
+    "latency_b": 14.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.014,
+    "second": "cut",
+    "second_error": 0.174,
+    "margin": 0.16
+   }
+  },
+  "sfx_10f5>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 684.6,
+    "second": "cut",
+    "second_residual": 1758.3,
+    "mix_rms": 4281.9,
+    "latency_b": 15.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.111,
+    "margin": 0.092
+   }
+  },
+  "pistol>sfx_10f6": {
+   "wave": {
+    "mode": "cut",
+    "residual": 413.7,
+    "second": "overlap",
+    "second_residual": 852.0,
+    "mix_rms": 2183.2,
+    "latency_b": 15.0
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.025,
+    "second": "overlap",
+    "second_error": 0.034,
+    "margin": 0.008
+   }
+  },
+  "sfx_10f6>pistol": {
+   "wave": {
+    "mode": "drop",
+    "residual": 9.4,
+    "second": "overlap",
+    "second_residual": 1204.9,
+    "mix_rms": 2136.5,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.0,
+    "second": "overlap",
+    "second_error": 0.14,
+    "margin": 0.14
+   }
+  },
+  "explosion>sfx_10f6": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 833.9,
+    "second": "cut",
+    "second_residual": 1222.9,
+    "mix_rms": 2412.9,
+    "latency_b": 14.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.026,
+    "second": "cut",
+    "second_error": 0.035,
+    "margin": 0.01
+   }
+  },
+  "sfx_10f6>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 252.4,
+    "second": "drop",
+    "second_residual": 1440.2,
+    "mix_rms": 2584.3,
+    "latency_b": 14.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.023,
+    "second": "cut",
+    "second_error": 0.225,
+    "margin": 0.202
+   }
+  },
+  "rebel_1041>sfx_10f6": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 536.0,
+    "second": "drop",
+    "second_residual": 2042.3,
+    "mix_rms": 3814.9,
+    "latency_b": 14.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.022,
+    "second": "cut",
+    "second_error": 0.108,
+    "margin": 0.086
+   }
+  },
+  "sfx_10f6>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1096.7,
+    "second": "cut",
+    "second_residual": 1812.4,
+    "mix_rms": 4004.9,
+    "latency_b": 15.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.016,
+    "second": "cut",
+    "second_error": 0.234,
+    "margin": 0.218
+   }
+  },
+  "pistol>sfx_10f3": {
+   "wave": {
+    "mode": "cut",
+    "residual": 429.4,
+    "second": "overlap",
+    "second_residual": 857.8,
+    "mix_rms": 2229.1,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.053,
+    "second": "overlap",
+    "second_error": 0.069,
+    "margin": 0.016
+   }
+  },
+  "sfx_10f3>pistol": {
+   "wave": {
+    "mode": "drop",
+    "residual": 195.9,
+    "second": "overlap",
+    "second_residual": 1211.7,
+    "mix_rms": 2190.4,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.0,
+    "second": "overlap",
+    "second_error": 0.054,
+    "margin": 0.053
+   }
+  },
+  "explosion>sfx_10f3": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 508.4,
+    "second": "cut",
+    "second_residual": 1061.9,
+    "mix_rms": 2470.1,
+    "latency_b": 9.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.072,
+    "second": "cut",
+    "second_error": 0.1,
+    "margin": 0.028
+   }
+  },
+  "sfx_10f3>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 518.8,
+    "second": "drop",
+    "second_residual": 1428.9,
+    "mix_rms": 2556.9,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.027,
+    "second": "drop",
+    "second_error": 0.073,
+    "margin": 0.046
+   }
+  },
+  "rebel_1041>sfx_10f3": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 495.5,
+    "second": "drop",
+    "second_residual": 2106.9,
+    "mix_rms": 3788.8,
+    "latency_b": 11.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.071,
+    "second": "cut",
+    "second_error": 0.204,
+    "margin": 0.134
+   }
+  },
+  "sfx_10f3>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 730.5,
+    "second": "cut",
+    "second_residual": 2066.1,
+    "mix_rms": 4031.8,
+    "latency_b": 13.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.208,
+    "margin": 0.196
+   }
+  },
+  "pistol>sfx_116a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 760.2,
+    "second": "overlap",
+    "second_residual": 1268.2,
+    "mix_rms": 1835.6,
+    "latency_b": 13.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.029,
+    "second": "overlap",
+    "second_error": 0.092,
+    "margin": 0.062
+   }
+  },
+  "sfx_116a>pistol": {
+   "wave": {
+    "mode": "drop",
+    "residual": 187.7,
+    "second": "overlap",
+    "second_residual": 1405.2,
+    "mix_rms": 1320.3,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.0,
+    "second": "overlap",
+    "second_error": 1.098,
+    "margin": 1.098
+   }
+  },
+  "explosion>sfx_116a": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 976.7,
+    "second": "drop",
+    "second_residual": 1461.1,
+    "mix_rms": 2156.0,
+    "latency_b": 14.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.016,
+    "second": "drop",
+    "second_error": 0.092,
+    "margin": 0.075
+   }
+  },
+  "sfx_116a>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 828.5,
+    "second": "cut",
+    "second_residual": 888.4,
+    "mix_rms": 2017.6,
+    "latency_b": 13.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.023,
+    "second": "cut",
+    "second_error": 0.029,
+    "margin": 0.005
+   }
+  },
+  "rebel_1041>sfx_116a": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1199.9,
+    "second": "drop",
+    "second_residual": 1576.6,
+    "mix_rms": 4417.8,
+    "latency_b": 14.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.006,
+    "second": "drop",
+    "second_error": 0.018,
+    "margin": 0.012
+   }
+  },
+  "sfx_116a>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1162.8,
+    "second": "cut",
+    "second_residual": 1209.7,
+    "mix_rms": 4055.6,
+    "latency_b": 15.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.022,
+    "second": "cut",
+    "second_error": 0.026,
+    "margin": 0.004
+   }
+  },
+  "pistol>sfx_1168": {
+   "wave": {
+    "mode": "cut",
+    "residual": 550.7,
+    "second": "overlap",
+    "second_residual": 1109.6,
+    "mix_rms": 1325.9,
+    "latency_b": 11.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.038,
+    "second": "overlap",
+    "second_error": 0.129,
+    "margin": 0.091
+   }
+  },
+  "sfx_1168>pistol": {
+   "wave": {
+    "mode": "cut",
+    "residual": 175.7,
+    "second": "overlap",
+    "second_residual": 395.3,
+    "mix_rms": 1558.6,
+    "latency_b": 9.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.037,
+    "second": "overlap",
+    "second_error": 0.04,
+    "margin": 0.002
+   }
+  },
+  "explosion>sfx_1168": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 855.1,
+    "second": "drop",
+    "second_residual": 1018.0,
+    "mix_rms": 1886.7,
+    "latency_b": 12.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.014,
+    "second": "drop",
+    "second_error": 0.069,
+    "margin": 0.055
+   }
+  },
+  "sfx_1168>explosion": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 365.9,
+    "second": "cut",
+    "second_residual": 484.8,
+    "mix_rms": 1738.8,
+    "latency_b": 12.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "cut",
+    "second_error": 0.019,
+    "margin": 0.004
+   }
+  },
+  "rebel_1041>sfx_1168": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 562.9,
+    "second": "drop",
+    "second_residual": 897.2,
+    "mix_rms": 4156.1,
+    "latency_b": 14.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.1,
+    "margin": 0.09
+   }
+  },
+  "sfx_1168>rebel_1041": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 408.7,
+    "second": "cut",
+    "second_residual": 501.2,
+    "mix_rms": 3918.4,
+    "latency_b": 12.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.023,
+    "margin": 0.004
+   }
+  },
+  "pistol>sfx_112f": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2138.8,
+    "second": "cut",
+    "second_residual": 2238.0,
+    "mix_rms": 3390.0,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.036,
+    "second": "cut",
+    "second_error": 0.064,
+    "margin": 0.027
+   }
+  },
+  "sfx_112f>pistol": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3223.9,
+    "second": "overlap",
+    "second_residual": 3364.0,
+    "mix_rms": 3551.7,
+    "latency_b": 11.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.111,
+    "margin": 0.1
+   }
+  },
+  "explosion>sfx_112f": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2438.4,
+    "second": "cut",
+    "second_residual": 2572.0,
+    "mix_rms": 3455.0,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.034,
+    "second": "cut",
+    "second_error": 0.076,
+    "margin": 0.042
+   }
+  },
+  "sfx_112f>explosion": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3275.4,
+    "second": "overlap",
+    "second_residual": 3991.8,
+    "mix_rms": 3624.6,
+    "latency_b": 11.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.13,
+    "margin": 0.115
+   }
+  },
+  "rebel_1041>sfx_112f": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2195.2,
+    "second": "drop",
+    "second_residual": 3226.4,
+    "mix_rms": 4346.7,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.143,
+    "margin": 0.119
+   }
+  },
+  "sfx_112f>rebel_1041": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3273.9,
+    "second": "overlap",
+    "second_residual": 3985.5,
+    "mix_rms": 4581.1,
+    "latency_b": 11.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.243,
+    "margin": 0.23
+   }
+  },
+  "pistol>sfx_112c": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2020.1,
+    "second": "cut",
+    "second_residual": 2109.8,
+    "mix_rms": 3391.6,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.037,
+    "second": "cut",
+    "second_error": 0.061,
+    "margin": 0.024
+   }
+  },
+  "sfx_112c>pistol": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3247.0,
+    "second": "overlap",
+    "second_residual": 4599.7,
+    "mix_rms": 3535.3,
+    "latency_b": 12.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.009,
+    "second": "drop",
+    "second_error": 0.144,
+    "margin": 0.135
+   }
+  },
+  "explosion>sfx_112c": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2060.6,
+    "second": "cut",
+    "second_residual": 2197.5,
+    "mix_rms": 3449.7,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.051,
+    "second": "cut",
+    "second_error": 0.087,
+    "margin": 0.035
+   }
+  },
+  "sfx_112c>explosion": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3236.4,
+    "second": "overlap",
+    "second_residual": 4573.3,
+    "mix_rms": 3613.6,
+    "latency_b": 9.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.164,
+    "margin": 0.149
+   }
+  },
+  "rebel_1041>sfx_112c": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2648.2,
+    "second": "drop",
+    "second_residual": 3255.9,
+    "mix_rms": 4235.8,
+    "latency_b": 13.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.128,
+    "margin": 0.104
+   }
+  },
+  "sfx_112c>rebel_1041": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3440.7,
+    "second": "overlap",
+    "second_residual": 4203.4,
+    "mix_rms": 4426.4,
+    "latency_b": 13.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.007,
+    "second": "drop",
+    "second_error": 0.266,
+    "margin": 0.259
+   }
+  },
+  "pistol>sfx_115a": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2219.1,
+    "second": "cut",
+    "second_residual": 2311.2,
+    "mix_rms": 3676.2,
+    "latency_b": 11.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.048,
+    "second": "cut",
+    "second_error": 0.075,
+    "margin": 0.027
+   }
+  },
+  "sfx_115a>pistol": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3510.0,
+    "second": "overlap",
+    "second_residual": 4902.9,
+    "mix_rms": 3835.9,
+    "latency_b": 14.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.009,
+    "second": "drop",
+    "second_error": 0.096,
+    "margin": 0.087
+   }
+  },
+  "explosion>sfx_115a": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2554.8,
+    "second": "cut",
+    "second_residual": 2664.4,
+    "mix_rms": 3722.2,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.046,
+    "second": "cut",
+    "second_error": 0.084,
+    "margin": 0.037
+   }
+  },
+  "sfx_115a>explosion": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3565.1,
+    "second": "overlap",
+    "second_residual": 4161.8,
+    "mix_rms": 3891.1,
+    "latency_b": 14.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.009,
+    "second": "drop",
+    "second_error": 0.112,
+    "margin": 0.103
+   }
+  },
+  "rebel_1041>sfx_115a": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2709.7,
+    "second": "cut",
+    "second_residual": 3523.4,
+    "mix_rms": 4486.9,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.044,
+    "second": "cut",
+    "second_error": 0.151,
+    "margin": 0.107
+   }
+  },
+  "sfx_115a>rebel_1041": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3534.9,
+    "second": "overlap",
+    "second_residual": 4927.0,
+    "mix_rms": 4685.7,
+    "latency_b": 14.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.199,
+    "margin": 0.189
+   }
+  },
+  "sfx_112f>sfx_112c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2457.0,
+    "second": "overlap",
+    "second_residual": 3754.6,
+    "mix_rms": 3396.0,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.075,
+    "second": "overlap",
+    "second_error": 0.331,
+    "margin": 0.257
+   }
+  },
+  "sfx_112c>sfx_112f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2254.6,
+    "second": "overlap",
+    "second_residual": 3915.6,
+    "mix_rms": 3317.7,
+    "latency_b": 9.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.066,
+    "second": "overlap",
+    "second_error": 0.409,
+    "margin": 0.344
+   }
+  },
+  "sfx_112f>sfx_115a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2555.4,
+    "second": "overlap",
+    "second_residual": 3868.9,
+    "mix_rms": 3681.6,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.03,
+    "second": "overlap",
+    "second_error": 0.254,
+    "margin": 0.223
+   }
+  },
+  "sfx_115a>sfx_112f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2276.8,
+    "second": "overlap",
+    "second_residual": 4176.4,
+    "mix_rms": 3406.3,
+    "latency_b": 11.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.069,
+    "second": "overlap",
+    "second_error": 0.397,
+    "margin": 0.328
+   }
+  },
+  "sfx_112f>sfx_112d": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2793.2,
+    "second": "overlap",
+    "second_residual": 3935.1,
+    "mix_rms": 3587.5,
+    "latency_b": 12.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.036,
+    "second": "overlap",
+    "second_error": 0.269,
+    "margin": 0.233
+   }
+  },
+  "sfx_112d>sfx_112f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2434.5,
+    "second": "overlap",
+    "second_residual": 4195.5,
+    "mix_rms": 3259.5,
+    "latency_b": 12.1
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.034,
+    "second": "overlap",
+    "second_error": 0.52,
+    "margin": 0.487
+   }
+  },
+  "sfx_112c>sfx_1158": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2385.5,
+    "second": "overlap",
+    "second_residual": 3919.5,
+    "mix_rms": 3711.2,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.076,
+    "second": "overlap",
+    "second_error": 0.271,
+    "margin": 0.195
+   }
+  },
+  "sfx_1158>sfx_112c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2685.7,
+    "second": "overlap",
+    "second_residual": 4292.3,
+    "mix_rms": 3398.0,
+    "latency_b": 11.4
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.072,
+    "second": "overlap",
+    "second_error": 0.4,
+    "margin": 0.328
+   }
+  },
+  "sfx_115a>sfx_112e": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2320.4,
+    "second": "overlap",
+    "second_residual": 4027.3,
+    "mix_rms": 3578.1,
+    "latency_b": 10.4
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.077,
+    "second": "overlap",
+    "second_error": 0.335,
+    "margin": 0.258
+   }
+  },
+  "sfx_112e>sfx_115a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2402.5,
+    "second": "overlap",
+    "second_residual": 4107.0,
+    "mix_rms": 3681.5,
+    "latency_b": 14.4
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.03,
+    "second": "overlap",
+    "second_error": 0.326,
+    "margin": 0.295
+   }
+  },
+  "sfx_112f>sfx_1056": {
+   "wave": {
+    "mode": "drop",
+    "residual": 2334.3,
+    "second": "overlap",
+    "second_residual": 2745.5,
+    "mix_rms": 3391.5,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.003,
+    "second": "overlap",
+    "second_error": 0.073,
+    "margin": 0.071
+   }
+  },
+  "sfx_1056>sfx_112f": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2590.8,
+    "second": "cut",
+    "second_residual": 2590.8,
+    "mix_rms": 3525.8,
+    "latency_b": 14.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.019,
+    "margin": 0.0
+   }
   }
  }
 }

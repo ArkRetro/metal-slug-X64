@@ -19,7 +19,7 @@ privados y no están en git.
 | Área | Nativo | Pendiente / paradas explícitas |
 | --- | --- | --- |
 | Recorrido, cámara, guion, colisiones | completo de inicio a fin | — |
-| Marco | movimiento, pistola, H (barridos), C (proyectil buscador), R, granadas, cuchillo con pose, disparo abajo en el aire, muerte/reaparición | tabla de cuchillo 0BF918 sin captura |
+| Marco | movimiento, pistola, H (barridos), C (proyectil buscador), R, armas 0D, 02/07, 04/09 (con poses y sonidos), granadas, cuchillo con pose, disparo abajo en el aire, muerte/reaparición, momia (forma 3) con sus poses | tabla de cuchillo 0BF918 sin captura; armas 01, 06/0B (rayo), 08, 0E, 0F; muertes de soldado por filas de tipo 7/0A/0B |
 | Vehículos | Camel Slug y tanque SV-001 montables | reacciones de daño del SV-001 sin captura |
 | Enemigos y actores | soldados, camión, helicópteros, lanzacohetes, camelleros, civiles, prisioneros, premios | rótulo de bombas 08C752, puesto de fruta 03FC5A |
 | Jefe | completo (torreta, fases, explosiones, prisioneros de la escotilla que caen al suelo) | — |

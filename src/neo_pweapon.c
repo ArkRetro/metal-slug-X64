@@ -38,6 +38,43 @@
  * out of E4E3C.
  * Glow 08651C: program 282EE6 (SWITCH +72), palette 204, +72 of the ball;
  * 08654A: the ball's layer +1E, 01ABC8, 00427A until its end.
+ *
+ * Weapons 02 / 07 (table 0C42AA: 0644C4 / 0646B0, sounds 112F, caps 1,
+ * 30 / 15 rounds; programs of the tables 0C3C10.. at 0BFFD8/0C0018/0C0058):
+ * one blast, +72 = 0 / 1 (2 / 3: the +93 = 2 constructors 0646C8 / 0646E0
+ * of table 0C42EA, palette 86C, not fired by the port), palette 39B, sound
+ * 10F6, layer 1110 (mission 9: 012022, explicit stop), program E13F2[+72]
+ * (level) or E1402[+72]; 064556: 01ABC8, the row E1412 / E1422 / E1432
+ * (down: +15 bit 1 toggled) [+72] once (0049E8), the white screen (009BB0
+ * FF) for one update (0645D2: 0); 0645E0: the velocity decays by 1/8,
+ * 01AC38, 00427A; at its end 0C0DFC with the id E1442[+72] and delete.
+ *
+ * Weapons 04 / 09 (table 0C42AA: 0A71F8 / 0A716E, sounds 112C, caps 1,
+ * 30 rounds; programs of 0C00D8/0C0118/0C0158): the flame. 0A71F8: palette
+ * 384, program 2A655A, +7A = 0; 0A716E: 876, 2A696E, +7A = FF; +7B = 0
+ * (FF in the +93 = 2 constructors 0A7226 / 0A719C of table 0C42EA, not
+ * fired by the port). 0A727E: sound 10F3, layer 1110, +15 bit 5, velocity
+ * polar(0xC0000, +6E), +78/+79 = 0, +72 = 12 updates, 01ABC8. 0A72CE: +74 =
+ * +34, 0143E4, row 0A7146 (0049E8); in the air +30 loses 1/8 (1/16 with
+ * +7B), on the floor +34 = +74 and +30 tends to +-0xC0000 by 1/8 (+6E = 0 /
+ * 0x80 by the facing); +34 tends to 0xC0000 - |+30| by 1/16 (with +7B: the
+ * floor clears +15 bit 1, +5F bit 0 skips it); out of 0A7166 (019504) or
+ * +72 run out: 0A73B4; 00427A; +78 -= 0xA0, a borrow makes a child
+ * (0A748E: the first 0A74E4 with 0040BC reserve 0xE, then the puffs 0A751C
+ * reserve 0x2A; +7A, +7B, +6E, +72 copied, 01ACF2 (0, 0), 01AC94).
+ * 0A73B4: +5F bit 7, 0C0DFC (id 9 with +7A, else 4); 0A73DA: the velocity
+ * loses 1/16, 0143E4, no drawing, deleted once no deeper node follows
+ * (00408C). 0A74E4: program 2A6574 / 2A676C (vertical) at 0x300;
+ * 0A751C: a random flip (0029C6 < 0), program 2A6666 / 2A6988 (+7A, 0x380)
+ * or 2A6868 / 2A6A8E (vertical); both 0A7596: palette 384 / 876 (+7A),
+ * layer 1110 (110F with +7B), +7C/+80 = -polar(0x100000, the angle of the
+ * velocity words) (0 when both are 0), the velocity halves plus two random
+ * words * 2, 01ABC8; 0A7654: towards the node before it (+04) plus +7C/+80
+ * (1/16 of the distance, 1/16 of the difference), 01AC38, every fourth
+ * update the row 0A7156, out of 0A7166 delete, 00427A until its end;
+ * 0A7756: the program speed +26 tends to 0x80 (0x180 once the flame has
+ * +5F bit 7) by 1/8.
+ *
  * The paths that would run the cartridge check (2FFFE0) end in 004188 on
  * genuine hardware: delete. */
 #define B(o) ga_b(a,(o))
@@ -257,15 +294,165 @@ static ga_result_t pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r<0) return GA_UNSUPPORTED;
         return r?GA_DELETE:GA_MORE;
     }
+    /* ---- weapons 02 / 07: the blast 0644C4 / 0646B0 ---- */
+    case 0x644c4: case 0x646b0: {
+        SB(0x72,L(0)==0x646b0u?1u:0u);ga_palette(a,0x39b);
+        sound(e,0x10f6);SW(0x66,0x1110);SW(0x1e,0x1110);
+        if (!e->pickup) {ga_fail(e,0x644ee);return GA_UNSUPPORTED;}
+        if (e->pickup->mission==9u) {ga_fail(e,0x12022);return GA_UNSUPPORTED;}
+        static const uint32_t level[4]={0x2686dc,0x2687e4,0x2688ec,0x2689f4},vertical[4]={0x268760,0x268868,0x268970,0x268a78};
+        START(((B(0x6e)&0x7fu)?vertical:level)[B(0x72)&3u]);
+        SL(0,0x64556);
+        return GA_MORE;
+    }
+    case 0x64556: {
+        ga_project(a,e);
+        uint32_t row;
+        if (!(B(0x6e)&0x7fu)) row=0xe1412;
+        else if (!(B(0x6e)&0x80u)) row=0xe1422;
+        else {SB(0x15,B(0x15)^2u);row=0xe1432;}
+        const uint8_t *t=ga_rom(row+4u*(B(0x72)&3u));
+        if (!t) {ga_fail(e,row);return GA_UNSUPPORTED;}
+        ga_attack(a,e,(uint32_t)t[0]<<24|(uint32_t)t[1]<<16|(uint32_t)t[2]<<8|t[3]);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (e->flags) e->flags->flash=0xff;                            /* 009BB0 */
+        SL(0,0x645d2);
+        goto decay;
+    }
+    case 0x645d2:
+        if (e->flags) e->flags->flash=0;                               /* 009BB0 */
+        SL(0,0x645e0);
+        /* fall through */
+    case 0x645e0:
+    decay: {
+        SL(0x30,L(0x30)-(uint32_t)((int32_t)L(0x30)>>3));
+        SL(0x34,L(0x34)-(uint32_t)((int32_t)L(0x34)>>3));
+        ga_move(a,e);
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        if (!r) return GA_MORE;
+        const uint8_t *id=ga_rom(0xe1442);
+        if (!id) {ga_fail(e,0xe1442);return GA_UNSUPPORTED;}
+        return release(a,e,id[B(0x72)&3u])?GA_DELETE:GA_UNSUPPORTED;
+    }
+    /* ---- weapons 04 / 09: the flame 0A71F8 / 0A716E ---- */
+    case 0xa71f8: case 0xa716e: {
+        bool nine=L(0)==0xa716eu;
+        ga_palette(a,nine?0x876:0x384);START(nine?0x2a696e:0x2a655a);
+        SB(0x7a,nine?0xffu:0u);SB(0x7b,0);
+        sound(e,0x10f3);SW(0x66,0x1110);SW(0x1e,0x1110);SB(0x15,B(0x15)|0x20u);
+        uint32_t vx,vy;ga_polar(0xc0000,B(0x6e),&vx,&vy);SL(0x30,vx);SL(0x34,vy);
+        SB(0x78,0);SB(0x79,0);SW(0x72,12);
+        ga_project(a,e);SL(0,0xa72ce);
+        return GA_MORE;
+    }
+    case 0xa72ce: {
+        SL(0x74,L(0x34));
+        ga_air(a,e);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        ga_attack(a,e,0xa7146);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        bool floor=B(0x15)&0x40u,lift=true;
+        if (!floor) {
+            uint32_t d0=(uint32_t)((int32_t)L(0x30)>>(B(0x7b)?4:3));SL(0x30,L(0x30)-d0);
+        } else {
+            SL(0x34,L(0x74));
+            uint32_t d0=0xc0000;uint16_t d2=0;
+            if (B(0x15)&1u) {d2=0x80;d0=0u-d0;}
+            d0=(uint32_t)((int32_t)(d0-L(0x30))>>3);SL(0x30,L(0x30)+d0);SW(0x6e,d2);
+        }
+        if (B(0x7b)) {
+            if (B(0x15)&0x40u) SB(0x15,B(0x15)&0xfdu);
+            else if (B(0x5f)&1u) lift=false;
+        }
+        if (lift) {
+            uint32_t d1=L(0x30);
+            if (!(d1&0x80000000u)) d1=0u-d1;
+            d1+=0xc0000u;d1-=L(0x34);SL(0x34,L(0x34)+(uint32_t)((int32_t)d1>>4));
+        }
+        if (ga_cull_rect(a,e,0xa7166)) SL(0,0xa73b4);
+        uint16_t t=W(0x72);SW(0x72,t-1u);
+        if (!t) SL(0,0xa73b4);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        uint8_t b78=B(0x78);SB(0x78,b78-0xa0u);
+        if (b78<0xa0u) {                                                 /* 0A748E */
+            bool first=!(B(0x79)&0x80u);SB(0x79,B(0x79)|0x80u);
+            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,first?0xa74e4u:0xa751cu,false):NULL;
+            if (c) {
+                ga_sb(c,0x7a,B(0x7a));ga_sb(c,0x7b,B(0x7b));ga_sw(c,0x6e,W(0x6e));ga_sw(c,0x72,W(0x72));
+                ga_place_at(c,a,e,0,0);ga_sb(c,0x15,(uint8_t)(B(0x15)&3u));   /* 01ACF2, 01AC94 */
+            }
+        }
+        return GA_MORE;
+    }
+    case 0xa73b4:
+        SB(0x5f,B(0x5f)|0x80u);
+        if (!release(a,e,B(0x7a)?9u:4u)) return GA_UNSUPPORTED;
+        SL(0,0xa73da);
+        /* fall through */
+    case 0xa73da:
+        SL(0x30,L(0x30)-(uint32_t)((int32_t)L(0x30)>>4));
+        SL(0x34,L(0x34)-(uint32_t)((int32_t)L(0x34)>>4));
+        ga_air(a,e);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (!e->has_children) {ga_fail(e,0xa73f4);return GA_UNSUPPORTED;}
+        return e->has_children(e->ctx,a)?GA_MORE:GA_DELETE;            /* 00408C */
+    case 0xa74e4: case 0xa751c: {
+        if (L(0)==0xa74e4u) {
+            if (!ga_anim_start(a,e,(B(0x6e)&0x40u)?0x2a676c:0x2a6574,0x300)) return GA_UNSUPPORTED;
+        } else {
+            if (ga_rand(e)&0x8000u) SB(0x15,B(0x15)^1u);
+            bool v=B(0x6e)&0x40u;
+            uint32_t prog=v?(B(0x7a)?0x2a6a8e:0x2a6868):(B(0x7a)?0x2a6988:0x2a6666);
+            if (!ga_anim_start(a,e,prog,!v && B(0x7a)?0x380:0x300)) return GA_UNSUPPORTED;
+        }
+        ga_palette(a,B(0x7a)?0x876:0x384);
+        SW(0x66,B(0x7b)?0x110f:0x1110);SW(0x1e,B(0x7b)?0x110f:0x1110);
+        uint32_t d0=0,d1=0;
+        if (W(0x30) || W(0x34)) {
+            uint8_t ang=(uint8_t)neo_angle((int16_t)W(0x30),(int16_t)W(0x34));
+            ga_polar(0x100000,ang,&d0,&d1);d0=0u-d0;d1=0u-d1;
+        }
+        SL(0x7c,d0);SL(0x80,d1);
+        SL(0x30,(uint32_t)((int32_t)L(0x30)>>1));SL(0x34,(uint32_t)((int32_t)L(0x34)>>1));
+        SL(0x30,L(0x30)+((uint32_t)(int32_t)(int16_t)ga_rand(e)<<1));
+        SL(0x34,L(0x34)+((uint32_t)(int32_t)(int16_t)ga_rand(e)<<1));
+        ga_project(a,e);SL(0,0xa7654);
+        return GA_MORE;
+    }
+    case 0xa7654: {
+        neo_gactor_t *p=e->previous?e->previous(e->ctx,a):NULL;
+        if (!p) {ga_fail(e,0xa7654);return GA_UNSUPPORTED;}
+        uint32_t d0=(uint32_t)((int32_t)(ga_l(p,0x3c)+L(0x7c)-L(0x3c))>>4);
+        SL(0x30,L(0x30)+(uint32_t)((int32_t)(d0-L(0x30))>>4));
+        d0=(uint32_t)((int32_t)(ga_l(p,0x40)+L(0x80)-L(0x40))>>4);
+        SL(0x34,L(0x34)+(uint32_t)((int32_t)(d0-L(0x34))>>4));
+        ga_move(a,e);
+        uint16_t t=(uint16_t)(W(0x72)+1u);SW(0x72,t);
+        if (!(t&3u)) {ga_attack(a,e,0xa7156);if (e->unsupported) return GA_UNSUPPORTED;}
+        if (ga_cull_rect(a,e,0xa7166)) return GA_DELETE;
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        if (r) return GA_DELETE;
+        /* 0A7756: the program speed +26 tends to 0x80 (0x180 once the
+         * flame, +0C, has +5F bit 7) by 1/8. */
+        neo_gactor_t *f=e->creator?e->creator(e->ctx,a):NULL;
+        if (!f) {ga_fail(e,0xa7756);return GA_UNSUPPORTED;}
+        uint16_t target=(ga_b(f,0x5f)&0x80u)?0x180:0x80;
+        SW(0x26,W(0x26)+(uint16_t)((int16_t)(target-W(0x26))>>3));
+        return GA_MORE;
+    }
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
 bool neo_pweapon_routine(uint32_t r) {
     return r==0x8606a || r==0x86124 || r==0x8613a || r==0x8619e || r==0x861c6 || r==0x861e2 || r==0x86216 ||
-        r==0x86260 || r==0x86304 || r==0x8637a || r==0x8642e || r==0x86450 || r==0x86466 || r==0x8651c || r==0x8654a;
+        r==0x86260 || r==0x86304 || r==0x8637a || r==0x8642e || r==0x86450 || r==0x86466 || r==0x8651c || r==0x8654a ||
+        r==0x644c4 || r==0x646b0 || r==0x64556 || r==0x645d2 || r==0x645e0 ||
+        r==0xa71f8 || r==0xa716e || r==0xa72ce || r==0xa73b4 || r==0xa73da || r==0xa74e4 || r==0xa751c || r==0xa7654;
 }
 /* Attackers of the player's side (their rows may hit the boss). */
 bool neo_pweapon_attacker(uint32_t r) {
-    return r==0x8613a || r==0x8619e || r==0x861e2 || r==0x86260 || r==0x86450;
+    return r==0x8613a || r==0x8619e || r==0x861e2 || r==0x86260 || r==0x86450 || r==0x64556 || r==0xa72ce || r==0xa7654;
 }
 ga_result_t neo_pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {return pweapon_tick(a,e);}

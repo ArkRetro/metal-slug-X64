@@ -290,20 +290,58 @@ convertirse en momia». En el port el contacto mataba a Marco.
   `+94 = 0`, `08B87A` y la etiqueta `08CD10` (externa, contada en
   `labels`, y `cures`); si no, el valor `08B896` y `08B850`. No hay cura por
   tiempo en el código de formas (`0C32E4`).
-- **Poses**: programas de la forma 3 elegidos en `marco-mz1` (filas `+0x30`):
-  cuerpo de la transformación `24EDE0` (`0BF258`), arma en reposo `25F520`
-  (`0BF858`), andar `25F562` (`0BF8D8`), disparo `25F5CA` (`0BFD18`), salto
-  `25F794`/`25F7A0` (`0BFB58`/`0BFB98`). **Parada explícita**: no están en el
-  catálogo; `actor.c` pasa la forma 0 y se dibujan los programas de la
-  pistola. Para añadirlos hace falta la captura completa del catálogo
-  (`run_marco_catalog.py ... --command-trace --paired-trace
-  --controller-trace --give-mummy`), su auditoría y los papeles en
-  `compile_marco_campaign.py`, como con la H.
-
+- **Poses** (captura completa `marco-mz2`: `run_marco_catalog.py
+  --command-trace --paired-trace --controller-trace --give-mummy`, plan por
+  defecto, 2948 fotogramas auditados, 92 descriptores, 1765484 píxeles
+  iguales). Filas `+0x30` de las tablas: cuerpo de la transformación
+  `0BF258` `24EDE0` (el mando `0C18B4` no elige otro cuerpo: se queda; sin
+  agacharse), arma en reposo `0BF858` `25F520` (también las tablas de salto
+  `0BFC58/0BFC98`), andar `0BF8D8` `25F562`, disparo `0BFD18` `25F5CA`,
+  arriba `0BFD58` `25F89E`, abajo en el aire `0BFD98` `25F932`, granada
+  `0BF998` `25F626`, subir/mantener/bajar el arma `0BF9D8` `25F74C`,
+  `0BFA18` `25F8F0`, `0BFA98` `25F7AC` (papeles `B3_*`/`W3_*` de
+  `compile_marco_campaign.py --mummy-capture`, `mummy_step` de
+  `marco_visual.c`). `25F794/25F7A0` (`0BFB58/0BFB98`, el arma en el aire)
+  están en el catálogo pero no se eligen (condición de `0C3A5E` sin
+  traducir). Paletas: las ranuras `+19..+1B` del jugador son `63 64 65`
+  (volcados de actor); en forma 3 la `63` y la `64` tienen las dos paletas
+  de la momia (`--name-palette MUMMY=7FFE,6CB8,3863 MUMMY2=7FFE,3DC9,7986`);
+  `marco_visual.c` pone esas ranuras en `+19..+1C` y `actor.c` dibuja cada
+  parte con la de su byte alto. **Aproximación declarada**: el cambio de
+  paleta durante la transformación (`C4DD8`) no se modela (desde la
+  petición de forma). Los efectos `C4DD8`/`C5286` siguen sin traducir.
 Prueba: `tools/test_gameplay.c` (`mummy_run`): el aliento pide la forma 3 y
 deja la pistola, 19 actualizaciones quieto, protección `0x5A`, la H
 rechazada, 29,7 px en 20 actualizaciones andando y la muerte con el
 segundo aliento.
+
+## Disparo de las armas 02/07 y 04/09 (rama `work-m2mummy`)
+
+Capturas `marco-w2`, `marco-w4` y `marco-w6` (`marco-cgun.json`,
+`run_marco_catalog.py --give-weapon <id> --keep-bombs`, nuevo: concesión
+genérica con las tablas `0C0928`): **1220 fotogramas auditados en cada una,
+120/155/131 descriptores, 917499/870616/916270 píxeles iguales**. Papeles
+(forma 1): `W1S_FIRE` `253896`, `W1S_FIRE_UP` `253962`, `W1S_FIRE_DOWN`
+`256030`, `B1S_CROUCH_FIRE` `256F26` (tablas `0BFFD8..0C0098`, ids
+02/07/0F) y `W1F_*`/`B1F_*` `25391A`, `2539FA`, `256078`, `256FAA`
+(`0C00D8..0C0198`, ids 04/09); `marco_visual.c` los elige por `cgroup`.
+Los programas del rayo (`253594`, `2536FC`, `256132`, `256DE8`) están en el
+grafo y el catálogo, sin papel (el rayo no está portado). Catálogo:
+**562 poses (las 411 anteriores idénticas), 585 piezas CI4, 436304 bytes,
+7 perfiles**. Grafo con un segundo `UNRECOVERED` (`256CCA`, retrollamada
+`0C53C4` de un cuerpo agachado de `marco-w4` que la campaña no usa).
+`make check-marco-campaign`: **578 pasos iguales, 0 distintos (34 casos)**,
+con los disparos de 02 y 04 y el disparo y la granada de la momia.
+
+```sh
+N=/home/user/captures-weap2   # capturas nuevas; el resto como arriba
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output $N/marco-w2 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-cgun.json --give-weapon 2 --keep-bombs   # y 4, 6
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output $N/marco-mz2 --command-trace --paired-trace --controller-trace --give-mummy
+# auditoría, extract_marco_steps.py y extract_marco_controller.py de cada una
+python3 convert_marco_programs.py CAP1 ... --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
+python3 build_marco_poses.py CAP1 ... --extra-audit DSC1/audit.json --extra-audit $N/marco-w2/audit.json --extra-audit $N/marco-w4/audit.json --extra-audit $N/marco-w6/audit.json --extra-audit $N/marco-mz2/audit.json --extra-profile-min-uses 40 --name-palette BURNT=7FFF,6FF0,4840 --name-palette MUMMY=7FFE,6CB8,3863 --name-palette MUMMY2=7FFE,3DC9,7986 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite
+python3 compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+```
 
 ## Pendiente
 

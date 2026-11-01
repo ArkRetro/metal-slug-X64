@@ -196,6 +196,15 @@ emu.register_frame_done(function()
   if frame==plan.first then cpu:write_u8(0x10c71e,0x03);cpu:write_u8(0x10c71c,2);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
   cpu:write_u16(0x10c724,30)
  end
+ -- Capture only (MSX_GIVE_WEAPON=<hex id>): any weapon as a pickup gives it
+ -- (0C0928: id at 10C71E, cap 10C71C from ROM 0C08A8, none live 10C71A,
+ -- +94 from 0C0918, rounds from 0C08B8), rounds kept at that value.
+ local give_weapon=os.getenv('MSX_GIVE_WEAPON')
+ if give_weapon and frame>=plan.first then
+  local id=tonumber(give_weapon,16)
+  if frame==plan.first then cpu:write_u8(0x10c71e,id);cpu:write_u8(0x10c71c,cpu:read_u8(0x0c08a8+id));cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,cpu:read_u8(0x0c0918+id)) end
+  cpu:write_u16(0x10c724,cpu:read_u16(0x0c08b8+2*id))
+ end
  -- Capture only (MSX_GIVE_MUMMY): the form request +94 = 3 at the first plan
  -- frame, as the player's contact 0C36C0 sets it for a hit of kind 0x10
  -- (the mummy's breath); the original forms check 0C3428 then runs the

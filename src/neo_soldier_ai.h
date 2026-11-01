@@ -82,6 +82,9 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *spawn,neo
 /* Source line of the last NEO_SOLDIER_UNSUPPORTED cause (diagnostics). */
 extern unsigned neo_soldier_unsupported_line;
 extern uint32_t neo_soldier_unsupported_detail; /* animation result<<28 | command asset */
+/* Deaths by a hit kind whose entry of the tables 0406EA/040750/0407F4 is not
+ * translated (explicit stops): count and kinds (bit per kind). */
+extern unsigned neo_soldier_death_stops;extern uint32_t neo_soldier_death_stop_kinds;
 /* One original actor update (every second video tick). */
 neo_soldier_result_t neo_soldier_tick(neo_soldier_t *s,neo_soldier_env_t *env);
 /* Big-endian accessors of the routine-private block. */

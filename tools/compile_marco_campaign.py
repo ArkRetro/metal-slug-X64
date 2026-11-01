@@ -71,6 +71,41 @@ ROLES_EXTRA=[
  ('W1C_FIRE_DOWN',1,0x255FDE,[('cgun',('c_jump_down_fire_right',))]),
  ('B1C_CROUCH_FIRE',0,0x256EB6,[('cgun',('c_crouch_fire_right',))]),
 ]
+# Weapons fired by the general fire state 0C3CD0 with their own tables
+# 0C3C10/0C3C50/0C3C90 (+0x10, form 1) and crouched 0C246A: ids 02/07/0F
+# take 0BFFD8/0C0018/0C0058/0C0098, ids 04/09 0C00D8/0C0118/0C0158/0C0198
+# (marco-cgun.json with run_marco_catalog.py --give-weapon 2 / 4
+# --keep-bombs: captures marco-w2 / marco-w4). Each role: (capture option,
+# conditions).
+ROLES_WEAPONS=[
+ ('W1S_FIRE',1,0x253896,'w2',('c_stand_fire_right','c_run_fire_right','c_stand_fire_left')),
+ ('W1S_FIRE_UP',1,0x253962,'w2',('c_aim_up_fire_right',)),
+ ('W1S_FIRE_DOWN',1,0x256030,'w2',('c_jump_down_fire_right',)),
+ ('B1S_CROUCH_FIRE',0,0x256F26,'w2',('c_crouch_fire_right',)),
+ ('W1F_FIRE',1,0x25391A,'w4',('c_stand_fire_right','c_run_fire_right')),
+ ('W1F_FIRE_UP',1,0x2539FA,'w4',('c_aim_up_fire_right',)),
+ ('W1F_FIRE_DOWN',1,0x256078,'w4',('c_jump_down_fire_right',)),
+ ('B1F_CROUCH_FIRE',0,0x256FAA,'w4',('c_crouch_fire_right',)),
+]
+# Form 3, the mummy (+93 = 3: rows +0x30 of the tables; the controller
+# 0C18B4 never selects a body program: the transformation's body 0BF258
+# stays). run_marco_catalog.py --give-mummy (the default plan): marco-mz2.
+# 0BFB58 25F794 / 0BFB98 25F7A0 (the gun raised/lowered in the air) are in
+# the graph and the catalog but not selected by the port.
+ROLES_MUMMY=[
+ ('B3_TRANSFORM',0,0x24EDE0,('idle_right',)),
+ ('W3_IDLE',1,0x25F520,('idle_right','idle_after_cycles')),
+ ('W3_WALK',1,0x25F562,('walk_right','run_cycle_right','run_cycle_left')),
+ ('W3_FIRE',1,0x25F5CA,('stand_fire_right','run_fire_right','jump_fire_left','stand_fire_left')),
+ ('W3_FIRE_UP',1,0x25F89E,('aim_up_fire_right','jump_up_fire_left')),
+ ('W3_FIRE_DOWN',1,0x25F932,('jump_down_fire_left',)),
+ ('W3_AIM_UP',1,0x25F74C,('aim_up_right',)),
+ ('W3_AIM_HOLD',1,0x25F8F0,('aim_up_right',)),
+ ('W3_AIM_DOWN',1,0x25F7AC,('walk_right',)),
+ ('W3_GRENADE',1,0x25F626,('grenade_stand','grenade_jump')),
+ ('W3_AIR_UP',1,0x25F794,('run_jump_right',)),
+ ('W3_AIR_DOWN',1,0x25F7A0,('run_jump_right',)),
+]
 # The knife (0C3B46: a fire press with +9A bit 0, a hurtbox of type 4/5 in
 # reach): weapon table 0BF958 standing (form 1: row +0x10), body table
 # 0BF118 crouched. tools/mame/plans/marco-knife-*.json (run_marco_catalog.py
@@ -96,6 +131,9 @@ def main():
     p.add_argument('--hgun-capture',type=Path,help='the H catalog capture (form-1 roles; its programs are in the graph through convert_marco_programs.py --extra-capture)')
     p.add_argument('--knife-capture',type=Path,help='pistol knife capture (ROLES_KNIFE)')
     p.add_argument('--knife-h-capture',type=Path,help='knife capture with the H (ROLES_KNIFE)')
+    p.add_argument('--w2-capture',type=Path,help='weapon 02 capture (ROLES_WEAPONS)')
+    p.add_argument('--w4-capture',type=Path,help='weapon 04 capture (ROLES_WEAPONS)')
+    p.add_argument('--mummy-capture',type=Path,help='form-3 capture (ROLES_MUMMY)')
     p.add_argument('--descent-capture',type=Path,help='parachute descent capture (ROLES_DESCENT)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
@@ -158,6 +196,30 @@ def main():
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}: {", ".join(conds)} */')
     else:assert not any(knife.values()),'--knife-capture and --knife-h-capture go together'
+    wcap={'w2':a.w2_capture,'w4':a.w4_capture}
+    if all(wcap.values()):
+        for role,part,addr,key,conds in ROLES_WEAPONS:
+            w=wcap[key];wplan={x['name']:x for x in json.loads((w/'plan.json').read_text())['cases']}
+            wchoices=json.loads((w/'controller.json').read_text())['choices']
+            for cond in conds:
+                case=wplan[cond]
+                seen=[x for x in wchoices if case['first']<=x['choice']['frame']<=case['last']
+                      and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==1]
+                assert seen,(role,hex(addr),key,cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 1, {key}: {", ".join(conds)} */')
+    else:assert not any(wcap.values()),'--w2-capture and --w4-capture go together'
+    if a.mummy_capture:
+        m=a.mummy_capture;mplan={x['name']:x for x in json.loads((m/'plan.json').read_text())['cases']}
+        mchoices=json.loads((m/'controller.json').read_text())['choices']
+        for role,part,addr,conds in ROLES_MUMMY:
+            for cond in conds:
+                case=mplan[cond]
+                seen=[x for x in mchoices if case['first']<=x['choice']['frame']<=case['last']
+                      and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==3]
+                assert seen,(role,hex(addr),cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 3: {", ".join(conds)} */')
     if a.descent_capture:
         d=a.descent_capture;dplan={x['name']:x for x in json.loads((d/'plan.json').read_text())['cases']}
         dchoices=json.loads((d/'controller.json').read_text())['choices']

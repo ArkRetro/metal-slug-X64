@@ -104,7 +104,23 @@
     "sfx_1069>explosion": "unclear",
     "explosion>sfx_1069": "overlap",
     "explosion>sfx_1137": "unclear",
-    "sfx_1137>explosion": "overlap"
+    "sfx_1137>explosion": "overlap",
+    "explosion>sfx_10f5": "overlap",
+    "sfx_10f5>explosion": "overlap",
+    "explosion>sfx_10f6": "overlap",
+    "sfx_10f6>explosion": "overlap",
+    "explosion>sfx_10f3": "overlap",
+    "sfx_10f3>explosion": "overlap",
+    "explosion>sfx_116a": "overlap",
+    "sfx_116a>explosion": "unclear",
+    "explosion>sfx_1168": "overlap",
+    "sfx_1168>explosion": "unclear",
+    "explosion>sfx_112f": "unclear",
+    "sfx_112f>explosion": "overlap",
+    "explosion>sfx_112c": "unclear",
+    "sfx_112c>explosion": "overlap",
+    "explosion>sfx_115a": "unclear",
+    "sfx_115a>explosion": "overlap"
    }
   },
   "knife_hit": {
@@ -258,7 +274,23 @@
     "sfx_1069>pistol": "unclear",
     "pistol>sfx_1069": "overlap",
     "pistol>sfx_1137": "unclear",
-    "sfx_1137>pistol": "overlap"
+    "sfx_1137>pistol": "overlap",
+    "pistol>sfx_10f5": "unclear",
+    "sfx_10f5>pistol": "drop",
+    "pistol>sfx_10f6": "cut",
+    "sfx_10f6>pistol": "drop",
+    "pistol>sfx_10f3": "cut",
+    "sfx_10f3>pistol": "drop",
+    "pistol>sfx_116a": "cut",
+    "sfx_116a>pistol": "drop",
+    "pistol>sfx_1168": "cut",
+    "sfx_1168>pistol": "cut",
+    "pistol>sfx_112f": "unclear",
+    "sfx_112f>pistol": "overlap",
+    "pistol>sfx_112c": "unclear",
+    "sfx_112c>pistol": "overlap",
+    "pistol>sfx_115a": "unclear",
+    "sfx_115a>pistol": "overlap"
    }
   },
   "rebel_103e": {
@@ -398,7 +430,23 @@
     "sfx_1069>rebel_1041": "unclear",
     "rebel_1041>sfx_1069": "overlap",
     "rebel_1041>sfx_1137": "overlap",
-    "sfx_1137>rebel_1041": "overlap"
+    "sfx_1137>rebel_1041": "overlap",
+    "rebel_1041>sfx_10f5": "overlap",
+    "sfx_10f5>rebel_1041": "overlap",
+    "rebel_1041>sfx_10f6": "overlap",
+    "sfx_10f6>rebel_1041": "overlap",
+    "rebel_1041>sfx_10f3": "overlap",
+    "sfx_10f3>rebel_1041": "overlap",
+    "rebel_1041>sfx_116a": "unclear",
+    "sfx_116a>rebel_1041": "unclear",
+    "rebel_1041>sfx_1168": "overlap",
+    "sfx_1168>rebel_1041": "unclear",
+    "rebel_1041>sfx_112f": "overlap",
+    "sfx_112f>rebel_1041": "overlap",
+    "rebel_1041>sfx_112c": "overlap",
+    "sfx_112c>rebel_1041": "overlap",
+    "rebel_1041>sfx_115a": "overlap",
+    "sfx_115a>rebel_1041": "overlap"
    }
   },
   "sfx_1021": {
@@ -1176,7 +1224,9 @@
     "sfx_10f9>sfx_1056": "unclear",
     "sfx_1056>sfx_10f9": "unclear",
     "sfx_1069>sfx_1056": "overlap",
-    "sfx_1056>sfx_1069": "unclear"
+    "sfx_1056>sfx_1069": "unclear",
+    "sfx_112f>sfx_1056": "drop",
+    "sfx_1056>sfx_112f": "unclear"
    }
   },
   "sfx_105d": {
@@ -3297,6 +3347,20 @@
     "sfx_10f2>sfx_1069": "overlap"
    }
   },
+  "sfx_10f3": {
+   "word": "10F3",
+   "channel": "weapon",
+   "level": 1,
+   "pairs": {
+    "sfx_10f3>sfx_10f3": "cut",
+    "pistol>sfx_10f3": "cut",
+    "sfx_10f3>pistol": "drop",
+    "explosion>sfx_10f3": "overlap",
+    "sfx_10f3>explosion": "overlap",
+    "rebel_1041>sfx_10f3": "overlap",
+    "sfx_10f3>rebel_1041": "overlap"
+   }
+  },
   "sfx_10f4": {
    "word": "10F4",
    "channel": "weapon",
@@ -3335,6 +3399,34 @@
     "sfx_10f4>sfx_10f9": "overlap",
     "sfx_1069>sfx_10f4": "unclear",
     "sfx_10f4>sfx_1069": "overlap"
+   }
+  },
+  "sfx_10f5": {
+   "word": "10F5",
+   "channel": "weapon",
+   "level": 1,
+   "pairs": {
+    "sfx_10f5>sfx_10f5": "cut",
+    "pistol>sfx_10f5": "unclear",
+    "sfx_10f5>pistol": "drop",
+    "explosion>sfx_10f5": "overlap",
+    "sfx_10f5>explosion": "overlap",
+    "rebel_1041>sfx_10f5": "overlap",
+    "sfx_10f5>rebel_1041": "overlap"
+   }
+  },
+  "sfx_10f6": {
+   "word": "10F6",
+   "channel": "weapon",
+   "level": 1,
+   "pairs": {
+    "sfx_10f6>sfx_10f6": "cut",
+    "pistol>sfx_10f6": "cut",
+    "sfx_10f6>pistol": "drop",
+    "explosion>sfx_10f6": "overlap",
+    "sfx_10f6>explosion": "overlap",
+    "rebel_1041>sfx_10f6": "overlap",
+    "sfx_10f6>rebel_1041": "overlap"
    }
   },
   "sfx_10f9": {
@@ -3789,6 +3881,24 @@
     "sfx_1124>sfx_1069": "overlap"
    }
   },
+  "sfx_112c": {
+   "word": "112C",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_112c>sfx_112c": "cut",
+    "pistol>sfx_112c": "unclear",
+    "sfx_112c>pistol": "overlap",
+    "explosion>sfx_112c": "unclear",
+    "sfx_112c>explosion": "overlap",
+    "rebel_1041>sfx_112c": "overlap",
+    "sfx_112c>rebel_1041": "overlap",
+    "sfx_112f>sfx_112c": "cut",
+    "sfx_112c>sfx_112f": "cut",
+    "sfx_112c>sfx_1158": "cut",
+    "sfx_1158>sfx_112c": "cut"
+   }
+  },
   "sfx_112d": {
    "word": "112D",
    "channel": "ch_1056",
@@ -3864,7 +3974,9 @@
     "sfx_10f9>sfx_112d": "unclear",
     "sfx_112d>sfx_10f9": "overlap",
     "sfx_1069>sfx_112d": "unclear",
-    "sfx_112d>sfx_1069": "overlap"
+    "sfx_112d>sfx_1069": "overlap",
+    "sfx_112f>sfx_112d": "cut",
+    "sfx_112d>sfx_112f": "cut"
    }
   },
   "sfx_112e": {
@@ -3942,7 +4054,31 @@
     "sfx_10f9>sfx_112e": "unclear",
     "sfx_112e>sfx_10f9": "overlap",
     "sfx_1069>sfx_112e": "unclear",
-    "sfx_112e>sfx_1069": "overlap"
+    "sfx_112e>sfx_1069": "overlap",
+    "sfx_115a>sfx_112e": "cut",
+    "sfx_112e>sfx_115a": "cut"
+   }
+  },
+  "sfx_112f": {
+   "word": "112F",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_112f>sfx_112f": "cut",
+    "pistol>sfx_112f": "unclear",
+    "sfx_112f>pistol": "overlap",
+    "explosion>sfx_112f": "unclear",
+    "sfx_112f>explosion": "overlap",
+    "rebel_1041>sfx_112f": "overlap",
+    "sfx_112f>rebel_1041": "overlap",
+    "sfx_112f>sfx_112c": "cut",
+    "sfx_112c>sfx_112f": "cut",
+    "sfx_112f>sfx_115a": "cut",
+    "sfx_115a>sfx_112f": "cut",
+    "sfx_112f>sfx_112d": "cut",
+    "sfx_112d>sfx_112f": "cut",
+    "sfx_112f>sfx_1056": "drop",
+    "sfx_1056>sfx_112f": "unclear"
    }
   },
   "sfx_1137": {
@@ -4154,7 +4290,55 @@
     "sfx_10f9>sfx_1158": "unclear",
     "sfx_1158>sfx_10f9": "overlap",
     "sfx_1069>sfx_1158": "unclear",
-    "sfx_1158>sfx_1069": "overlap"
+    "sfx_1158>sfx_1069": "overlap",
+    "sfx_112c>sfx_1158": "cut",
+    "sfx_1158>sfx_112c": "cut"
+   }
+  },
+  "sfx_115a": {
+   "word": "115A",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_115a>sfx_115a": "cut",
+    "pistol>sfx_115a": "unclear",
+    "sfx_115a>pistol": "overlap",
+    "explosion>sfx_115a": "unclear",
+    "sfx_115a>explosion": "overlap",
+    "rebel_1041>sfx_115a": "overlap",
+    "sfx_115a>rebel_1041": "overlap",
+    "sfx_112f>sfx_115a": "cut",
+    "sfx_115a>sfx_112f": "cut",
+    "sfx_115a>sfx_112e": "cut",
+    "sfx_112e>sfx_115a": "cut"
+   }
+  },
+  "sfx_1168": {
+   "word": "1168",
+   "channel": "weapon",
+   "level": 0,
+   "pairs": {
+    "sfx_1168>sfx_1168": "unclear",
+    "pistol>sfx_1168": "cut",
+    "sfx_1168>pistol": "cut",
+    "explosion>sfx_1168": "overlap",
+    "sfx_1168>explosion": "unclear",
+    "rebel_1041>sfx_1168": "overlap",
+    "sfx_1168>rebel_1041": "unclear"
+   }
+  },
+  "sfx_116a": {
+   "word": "116A",
+   "channel": "weapon",
+   "level": 1,
+   "pairs": {
+    "sfx_116a>sfx_116a": "unclear",
+    "pistol>sfx_116a": "cut",
+    "sfx_116a>pistol": "drop",
+    "explosion>sfx_116a": "overlap",
+    "sfx_116a>explosion": "unclear",
+    "rebel_1041>sfx_116a": "unclear",
+    "sfx_116a>rebel_1041": "unclear"
    }
   },
   "sfx_116e": {
@@ -4461,10 +4645,13 @@
   "explosion>sfx_10e9",
   "explosion>sfx_10ea",
   "explosion>sfx_1124",
+  "explosion>sfx_112c",
   "explosion>sfx_112d",
   "explosion>sfx_112e",
+  "explosion>sfx_112f",
   "explosion>sfx_1137",
   "explosion>sfx_1158",
+  "explosion>sfx_115a",
   "explosion>sfx_116e",
   "knife_hit>sfx_1021",
   "knife_hit>sfx_1022",
@@ -4492,12 +4679,17 @@
   "pistol>sfx_10c6",
   "pistol>sfx_10e9",
   "pistol>sfx_10ea",
+  "pistol>sfx_10f5",
   "pistol>sfx_1124",
+  "pistol>sfx_112c",
   "pistol>sfx_112d",
   "pistol>sfx_112e",
+  "pistol>sfx_112f",
   "pistol>sfx_1137",
   "pistol>sfx_1158",
+  "pistol>sfx_115a",
   "rebel_1041>sfx_10a3",
+  "rebel_1041>sfx_116a",
   "sfx_1021>sfx_1092",
   "sfx_1022>sfx_102f",
   "sfx_1022>vehicle_smoke",
@@ -4599,6 +4791,7 @@
   "sfx_1056>sfx_1124",
   "sfx_1056>sfx_112d",
   "sfx_1056>sfx_112e",
+  "sfx_1056>sfx_112f",
   "sfx_1056>sfx_113a",
   "sfx_1056>sfx_1158",
   "sfx_1056>sfx_116e",
@@ -5034,6 +5227,12 @@
   "sfx_1158>sfx_1048",
   "sfx_1158>sfx_109b",
   "sfx_1158>sfx_116e",
+  "sfx_1168>explosion",
+  "sfx_1168>rebel_1041",
+  "sfx_1168>sfx_1168",
+  "sfx_116a>explosion",
+  "sfx_116a>rebel_1041",
+  "sfx_116a>sfx_116a",
   "sfx_116e>explosion",
   "sfx_116e>pistol",
   "sfx_116e>rebel_1041",

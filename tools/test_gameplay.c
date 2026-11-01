@@ -8,6 +8,7 @@
 #include "../src/mission_camera.h"
 #include "../src/neo_collision.h"
 #include "../src/scene_cull.h"
+#include "../src/neo_soldier_ai.h"
 #include "../src/neo_region.h"
 #include "scene_meta.h"
 /* Every native draw must find its descriptor and logical palette in the
@@ -246,6 +247,7 @@ static unsigned stand_2336(int at) {
  * (064128 -> blast 06371E) and kill. */
 static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
+    unsigned stops_before=neo_soldier_death_stops;
     unsigned blasts=0,trails=0,grants=0,rockets=0,rolls=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
         if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
@@ -271,10 +273,20 @@ static void chaser_run_id(uint8_t id) {
         }
     }
     printf("%s run: grants=%u shells=%u rockets=%u rolls=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        id==3?"R":id==0x0d?"0D":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
-    assert(g.c_shots>=40 && grants>=1 && blasts>0 && (trails>0 || id==0x0d) && g.kills>0);
-    if (id==0x0d) assert(rolls>0);
-    assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
+        id==3?"R":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    assert(g.c_shots>=40 && grants>=1 && g.kills>0);
+    if (id==3 || id==0x0c) assert(blasts>0 && trails>0);
+    if (id==0x0d) assert(blasts>0 && rolls>0);
+    /* Weapons 02/07 (rows of kind 0A/0B) and 04/09 (kind 7): a soldier
+     * killed by them takes a death entry of 0406EA/040750/0407F4 that is
+     * not translated (explicit stop, the soldier is removed); nothing
+     * else may stop. */
+    bool kinds_ok=!(neo_soldier_death_stop_kinds&~((1u<<7)|(1u<<0xa)|(1u<<0xb)));
+    if (id==2 || id==7 || id==4 || id==9) {
+        printf("  soldier death stops (kinds %08lx): %u\n",(unsigned long)neo_soldier_death_stop_kinds,neo_soldier_death_stops);
+        assert(kinds_ok && g.world.unsupported==neo_soldier_death_stops-stops_before);
+    } else assert(!g.world.unsupported);
+    assert(!missing_draws && !g.weapon_stops);
     if (id==3) assert(rockets>=40);
     assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
 }
@@ -283,6 +295,10 @@ static void chaser_run_id(uint8_t id) {
 /* Weapon 0D (the ball 08606A, neo_pweapon.c: rolls, bursts and blasts)
  * fired with the same programs and flash. */
 static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id(0x0d);}
+/* Weapons 02 / 07 (the blasts 0644C4 / 0646B0) and 04 / 09 (the flames
+ * 0A71F8 / 0A716E, neo_pweapon.c) with their own fire programs: native,
+ * no stop, every descriptor in the scene pack, and they kill. */
+static void pweapon_run(void) {chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
  * (0C3B46/0C419E) instead of firing, and the cuts kill. */
@@ -418,6 +434,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pweapon")) {pweapon_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
@@ -567,6 +584,7 @@ int main(int argc,char **argv) {
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
+    pweapon_run();
     knife_run();
     mummy_run();
     air_down_run();

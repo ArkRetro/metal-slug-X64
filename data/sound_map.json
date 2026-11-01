@@ -454,6 +454,54 @@
    "event": "Mission 1 music, after the driver reset 03 and 06 at the mission start",
    "music": true,
    "frames": 24000
+  },
+  {
+   "label": "sfx_10f5",
+   "word": "10F5",
+   "callers": [],
+   "event": "requested by the C shell 063F32 / R rocket 06381C (neo_chaser.c)"
+  },
+  {
+   "label": "sfx_10f6",
+   "word": "10F6",
+   "callers": [],
+   "event": "requested by the weapon 02/07 blast 0644C4 (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_10f3",
+   "word": "10F3",
+   "callers": [],
+   "event": "requested by the weapon 04/09 flame 0A727E (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_116a",
+   "word": "116A",
+   "callers": [],
+   "event": "requested by the weapon 0D ball 08606A (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_1168",
+   "word": "1168",
+   "callers": [],
+   "event": "requested by the weapon 0D burst 086216 (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_112f",
+   "word": "112F",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 02/07 (table 0C08F8)"
+  },
+  {
+   "label": "sfx_112c",
+   "word": "112C",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 04/09 (table 0C08F8)"
+  },
+  {
+   "label": "sfx_115a",
+   "word": "115A",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0D (table 0C08F8)"
   }
  ]
 }

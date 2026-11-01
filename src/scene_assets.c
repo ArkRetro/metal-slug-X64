@@ -17,7 +17,7 @@ enum {
     SCENE_RESERVE_LOGO_KB=224,     // boot logo peak, freed before the game (measured 169)
     SCENE_RESERVE_GAME_KB=640,     // actor_init after the cache (measured 560)
     SCENE_RESERVE_RUNTIME_KB=320,  // gameplay growth (measured peak in the docs)
-    SCENE_HEAP_MARGIN_KB=160,
+    SCENE_HEAP_MARGIN_KB=256,
     /* Expansion Pak floor: the pinned banks and map (49 chunks), the boss
      * set (65) and three soldier programs (83) with some room; below it
      * something else took the RAM (the cache is sized last, from the free

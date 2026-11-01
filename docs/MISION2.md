@@ -606,3 +606,29 @@ Subbloques de audio: 888 en todo el recorrido.
   jugador lleva `b400a` = 0), familia del prisionero `099E1C` (≈3,5 KB de
   código de 099E1C..09AD4C) y cargas de etapa incrementales (siguen siendo un
   fotograma con la pantalla en negro; ya no cortan el audio).
+
+## Fase 2h: restos de la Misión 2 (rama `work-m2pol2`)
+
+- **Prisionero `099E1C`**: `09A842` (caja oculta `09A692`) ya lo crea; es
+  la entrada de `099DCC..` que salta a `099FD8` (prisionero suelto, ya
+  nativo). Familia `secret2` (etapa 1, tres cajas): 8 nodos, 1477
+  actualizaciones en bucle cerrado, 246 dibujos
+  ([MISION2_ACTORES.md](MISION2_ACTORES.md)).
+- **Paredes 0xF/0x1F**: grifo de MAME (`MSX_FULL_DEBUG_CMDS`, nuevo en
+  `capture_fullgame.lua`) en `01448C`/`014492` con A6 = 1014C4 desde
+  `sec03_26140` hasta 40000 (`captures-m2g/wq1`): `10C00A` vale 0 en las
+  4653 peticiones del jugador (nadie lo escribe), así que la petición del
+  port era correcta. 107 paradas (bit 2 de D6): x 624 (celdas 0x1F de la
+  columna 77, filas 10..15) y en la torre x 759/791/823/887. En el aire el
+  barrido termina en la raíz (`D6` = 8000000E, A0 = 10E968) y `wall_stop`
+  lo descartaba por no ser el terreno; el núcleo nativo, con la misma
+  petición, da lo mismo (0E, raíz). Ahora se acepta y la x vuelve al
+  terreno (`01AC4C`). Paradas en el recorrido: 0 → 2.
+- **Cargas de etapa**: entre lecturas y bloques, `load_idle` (actor.c)
+  muestra el fotograma retenido en negro cada ~33 ms y toma el siguiente
+  sin esperar al borrado (`display_try_get`; al final `display_get`), como
+  el original carga tras su cortina/fundido. Etapas 1/2/3: 3/7/16
+  fotogramas negros, hueco máximo 39/40/46 ms (antes un solo fotograma de
+  0,14/0,29/0,64 s). La medida `worst frame` del PERF sigue contando la
+  llamada entera.
+

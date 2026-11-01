@@ -271,8 +271,8 @@ static void k9ac16(neo_gactor_t *a,neo_genv_t *e) {
     ga_stationary(a,e);
     ga_palette(a,0x382);ga_palette(a,0x3fa);SB(0x14,B(0x19));
     SW(0x66,0x8820);SW(0x1e,0x8820);
-    /* 03C526 -> 019240: RAM 10C2F6 = 0 (Mission 1) clears the carry: no 03C62A. */
-    if (e->pickup && e->pickup->mission) ga_fail(e,0x3c526);
+    /* 03C526 -> 019240: the ripple 03C62A (none in Mission 1, RAM 10C2F6 = 0). */
+    neo_gate_ripple(a,e,1);
 }
 /* 09AD2A: the flinch count +88 (09AD1C) runs down instead of registering;
  * otherwise 004C24 (carry: hit). */

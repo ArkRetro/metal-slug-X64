@@ -123,6 +123,7 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=flags;
     neo_world_init_stage(&g->world,0,st);
+    g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     g->in_stage=true;g->stage_camera_max=camera_max;
@@ -652,15 +653,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         else g->walk_in_x=0;
     }
 #if MSX_REFERENCE_STAGE_EXIT
-    /* Reference build only. Mission 2 stage 1: the gate 03889C (not
-     * ported) would make the exit 0B6ED2 by 0B6E06; the hook only inserts
-     * the native 0B6ED2 there and the rest is the original's (auto-walk
-     * 0CA3EC, rectangle 01B2CE, 018F40). Other stages: the stage ends. */
-    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT) {
-        if (g->flow.mission==1u && g->flow.stage==1u && g->world_enabled) {
-            if (!g->stage_exit_spawned) g->stage_exit_spawned=neo_world_stage_exit(&g->world);
-        } else {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
-    }
+    /* Reference build only, stages without their native exit yet: the
+     * stage ends at the end of the camera list. Mission 2 stage 1 ends by
+     * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40). */
+    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
+        !(g->flow.mission==1u && g->flow.stage==1u && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
 #endif
     /* Stage exit 0B6ED2 (neo_goarrow.c): 018F40 ends the stage. */
     if (g->world_enabled && g->world.ga_flags.stage_done) {g->world.ga_flags.stage_done=0;msx_game_stage_end(g);return;}

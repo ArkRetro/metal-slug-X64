@@ -312,6 +312,45 @@ static void solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
 }
 static unsigned stamps;
 static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {(void)ctx;(void)a;(void)t;stamps++;}
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+/* 0C70FC (collision part, 0C72EC): the sub-map's cells into the ring +88
+ * of the --ring layer, clipped to its 32x32-block window (+36/+38 as read). */
+static unsigned patches;
+static void map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6]) {
+    (void)ctx;patches++;
+    if (layer!=FAMILY_RING) return;
+    const uint8_t *s=ga_rom(submap);assert(s);
+    int d0=d[0],d1=d[1],d2=d[2],d3=d[3],d4=d[4],d5=d[5],d6,d7;
+    uint32_t L=layer&0xffffu;
+    int16_t w36=(int16_t)(wram[L+0x36]<<8|wram[L+0x37]),w38=(int16_t)(wram[L+0x38]<<8|wram[L+0x39]);
+    d6=w36-d4;if (d6>=0) {d4+=d6;d0+=d6;d2-=d6;if (d2<=0) return;d6=0;}
+    d6+=d2-0x20;if (d6>=0) {d2-=d6;if (d2<=0) return;}
+    d6=w38-d5;if (d6>=0) {d5+=d6;d1-=d6;d3-=d6;if (d3<=0) return;d6=0;}
+    d6+=d3-0x20;if (d6>=0) {d3-=d6;if (d3<=0) return;}
+    int w=(int16_t)(s[8]<<8|s[9]),h=(int16_t)(s[10]<<8|s[11]);
+    d0=(int16_t)(d0<<4)>>4;d1=(int16_t)(d1<<4)>>4;
+    if (d0>=w || d1>=h) return;
+    if (d0<0) {d2+=d0;if (d2<=0) return;d4-=d0;d0=0;}
+    if (d1<0) {d3+=d1;if (d3<=0) return;d5+=d1;d1=0;}
+    d7=d0+d2-w;if (d7>=0) {d2-=d7;if (d2<=0) return;}
+    d7=d1+d3-h;if (d7>=0) {d3-=d7;if (d3<=0) return;}
+    d4&=0x1f;d5=(~d5)&0x1f;
+    uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
+    if (!c) return;
+    assert(c!=0xffffffffu);
+    const uint8_t *src=ga_rom(c+(uint32_t)((d0*h+d1)*4));assert(src);
+    uint8_t *ring=&wram[(L+0x88u)&0xffffu];
+    unsigned col=(unsigned)(d4<<7)&0xf80u;
+    for (int i=0;i<d2;i++) {
+        unsigned r=(unsigned)d5*2u;
+        for (int j=0;j<d3;j++) {
+            unsigned o=col+(r&0x3eu);
+            ring[o]=*src++;ring[o+0x40]=*src++;ring[o+1]=*src++;ring[o+0x41]=*src++;r+=2;
+        }
+        src+=(h-d3)*4;col=(col+0x80u)&0xf80u;
+    }
+}
+#endif
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
 static bool skip(unsigned o) {return o==0x14 || o==0x16 || o==0x58 || o==0x59 || (o>=0x19 && o<=0x1c) || (o>=0x20 && o<=0x23) || (o>=0x44 && o<=0x4b);}
 int main(void) {
@@ -343,6 +382,9 @@ int main(void) {
     e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;e.node_word=node_word;kernel.b400c=0;   /* RAM 10C00C: 0 in the Mission 1 dumps */
     unsigned ram_bytes=0;(void)ram_bytes;
     e.kill_children=kill_children;e.has_children=has_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+    e.map_patch=map_patch;
+#endif
 #ifdef FAMILY_MARKER_SEQ
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
 #endif
@@ -459,6 +501,7 @@ int main(void) {
 #ifdef FAMILY_RING
         kernel.ring=&wram[(FAMILY_RING+0x88u)&0xffffu];
 #endif
+        pickup.mission=w16(0x10c2f6);   /* RAM 10C2F6 as read (0 when not recorded) */
         e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
 #endif
 #ifdef FAMILY_ATTACKS

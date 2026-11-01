@@ -15,6 +15,9 @@ void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t 
 unsigned neo_collision_rows(void);
 unsigned neo_collision_unknown_reads(void);
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes); /* 0C88B0 */
+/* 0C70FC collision part over the whole stage grid: sub-map cells (pairs x
+ * blocks) at cell column `column`, world row `top` for r = 0. */
+unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,int column,int top);
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags);
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out);
 /* Conservative static-terrain query: false for no floor or stacked surfaces. */

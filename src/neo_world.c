@@ -408,6 +408,22 @@ static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
     if (!t) {ga_fail(&((tick_t *)ctx)->genv,templ);return;}
     neo_collision_stamp((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),t);
 }
+/* ROM 0C70FC, collision part (0C72EC): the sub-map's cells over the whole
+ * stage grid of the terrain layer 10C72E (the ring window is not modelled;
+ * the patch is made on screen). Block row d5 is counted from the ROM top
+ * row of a 32-row grid (Mission 2 stage 1); others stop explicitly. */
+static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6]) {
+    neo_genv_t *e=&((tick_t *)ctx)->genv;
+    const uint8_t *s=ga_rom(submap);
+    if (!s) {ga_fail(e,submap);return;}
+    uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
+    if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
+    if (c==0xffffffffu || d[0] || d[1] || neo_collision_rows()!=32u) {ga_fail(e,0xc72ec);return;}
+    unsigned h=(unsigned)(s[10]<<8|s[11]);
+    const uint8_t *cells=ga_rom(c);
+    if (!cells || (unsigned)d[3]!=h) {ga_fail(e,c);return;}
+    neo_collision_patch(cells,(unsigned)d[2],h,2*d[4],2*d[5]+1);
+}
 /* ROM 004C24: the actor is registered when one of its rectangles is inside
  * the registry area (x -32..383, y 264..503 projected); the query (0049E8 ->
  * 004762) reads the target's current position and descriptor. The original
@@ -1099,7 +1115,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
@@ -1220,10 +1236,6 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             }
             continue;
         }
-        if (q->routine==0xb6ed2u) {                                     /* 0B6E06 */
-            ga_sl(a,0x38,ROOT_TAG);ga_sl(a,0x28,(uint32_t)q->x);ga_sl(a,0x2c,(uint32_t)q->y);ga_sl(a,0x6e,0xb6ecau);ga_sw(a,0x72,0x2a0);
-            continue;
-        }
         if (q->actor) {
             ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);ga_sb(a,0x15,q->flags15);ga_sb(a,0x5e,q->f5e);
             ga_sl(a,0x28,(uint32_t)q->x);ga_sl(a,0x2c,(uint32_t)q->y);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);ga_sl(a,0x38,ROOT_TAG);
@@ -1252,11 +1264,6 @@ bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int3
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
-    return true;
-}
-bool neo_world_stage_exit(neo_world_t *w) {
-    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) return false;
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){0xb6ed2u,0x2800000,0x380000,0,0,0,0,0,false,false,0};
     return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {

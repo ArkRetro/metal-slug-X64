@@ -231,11 +231,6 @@ bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,in
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true
  * when a soldier consumed the bullet. */
-/* The stage-1 exit 0B6ED2 as 0B6E06 makes it (scene root, (0x280, 0x38),
- * +6E = rectangle 0B6ECA, +72 = 0x2A0), inserted after the list head at
- * the next update (the original inserts it after the gate 03889C, not
- * ported). */
-bool neo_world_stage_exit(neo_world_t *world);
 bool neo_world_shot(neo_world_t *world,int32_t previous_x,int32_t x,int32_t y,bool left);
 /* Same with pistol attack row `row` (0..15, ROM 01B4C2 + 16*row: the
  * bullet's direction) and a segment (previous_x,previous_y)->(x,y). */

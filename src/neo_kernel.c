@@ -727,8 +727,13 @@ bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int
  * passes it. */
 bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
     int32_t *ox,int32_t *oy,uint8_t *object) {
+    return neo_kernel_point_class_in(scene,NEO_KOBJ_NONE,x,y,cls,b4008,ox,oy,object);
+}
+/* 013CF8 with A0 = `parent` (the point relative to that object). */
+bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
+    int32_t *ox,int32_t *oy,uint8_t *object) {
     kr_t k={0};k.s=scene;k.b4008=b4008;
-    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=NEO_KOBJ_NONE;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
     k.iterator=0;k14160(&k,k.d0,k.d1,0,0);k1382a(&k);
     while (k.a1!=NEO_KOBJ_NONE) {
         const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);

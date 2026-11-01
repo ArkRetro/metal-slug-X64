@@ -189,9 +189,9 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (B(0x15)&1u) {vx=0u-vx;spin=(uint16_t)(0u-spin);}
         SL(0x30,L(0x30)+vx);SL(0x34,vy);SW(0x74,spin);SW(0x72,0);
         SW(0x66,0xe000);SW(0x1e,0xe000);SB(0x15,(B(0x15)|0x20u)&0xfeu);SW(0x70,1);
-        /* 03C526: 019240 answers per mission; Mission 1 (RAM 10C2F6 = 0)
-         * has no water ripple 03C62A. */
-        if (e->pickup && e->pickup->mission) {ga_fail(e,0x3c526);return GA_UNSUPPORTED;}
+        /* 03C526: the water ripple 03C62A when 019240 has a palette for
+         * the mission (none in Mission 1, RAM 10C2F6 = 0). */
+        if (!neo_gate_ripple(a,e,1)) return GA_UNSUPPORTED;
         if (e->pickup && e->pickup->weapons) marco_weapons_armed(e->pickup->weapons,W(0x6e));  /* 0C0D34 */
         SL(0,0x1bfd0);
     }   /* fall through */

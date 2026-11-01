@@ -33,6 +33,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `05287C` flecha GO (todas las etapas) | `src/neo_goarrow.c` | familia `goarrow` (tr2, jugador quieto): 486 actualizaciones, 176 con la flecha |
 | `0B6F6A` marcador de salida de la etapa 1 | `src/neo_goarrow.c` | familia `exitmark` (tr1): 84 actualizaciones |
 | `0613CA/0613D8/0613E6` rebeldes (variante en +96), disparo `061E8C`, destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
+| `03882A/03889C` puerta de la etapa 1, ondas `03C62A` | `src/neo_gate.c` | familia `gate` (g1): 2 nodos, **348 actualizaciones**, 2 borrados, 2 contactos, parches del anillo iguales |
 | `0678B6/0678C0/0678CA/067902` y `0692B2..0692E4` soldados (variante en +9C), cuchillo `067FC0`, destello `021CB6` | `src/neo_rebel3.c` | familia `rebel3` (etapa 2, `b1`): 30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
@@ -135,10 +136,60 @@ Juego (`gameplay.c`): el manejador 3 sustituye la entrada del jugador
 Misión 2 el gancho de referencia `MSX_REFERENCE_STAGE_EXIT` ya no termina
 la etapa: solo inserta el `0B6ED2` nativo (`neo_world_stage_exit`, tras la
 cabeza de la lista en lugar de tras la puerta) en el punto donde antes
-cortaba; caminata, rectángulo y fin son los del original. Las otras etapas
-siguen con el gancho. Falta portar la puerta `03889C` (y `0C70FC`,
-`0AE220`) para quitar el gancho del todo; sin ejecución en ares en esta
-rama (otro ares ocupado).
+cortaba. Ya no: la puerta `03889C` es nativa (sección siguiente) y crea la
+salida como el original; las otras etapas siguen con el gancho.
+
+## Puerta `03889C` y ondas `03C62A` (`neo_gate.c`)
+
+Traza (estado `sec01_19391`, unos 20 s; la puerta cae en 19740):
+
+```sh
+export MSX_FULL_LOAD=sec01_19391 MSX_FULL_LOAD_FRAME=19391 MSX_FULL_STATES=/home/user/captures-fullgame/states4
+MSX_FULL_FAMILY_ROOTS=3882a,ae1dc,b6ed2,b6f6a MSX_FULL_FAMILY_FROM=19393 MSX_FULL_VRAM_TRACE=1 \
+MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=19935 sh tools/run_capture_fullgame.sh /home/user/captures-m2en3/g1
+python3 tools/extract_family_fixture.py /home/user/captures-m2en3/g1/boss-trace.txt --output data/gate_fixture.json.gz \
+  --range 3882a-38a26 --range 3c62a-3c962 --attacks --ram 10c2f6-10c2f8 --ram 10000e-100010 --ram 10c764-10c768 --ram 10c7b6-10d7b6
+```
+
+`03882A` (guion, x 558, +6E = 1): onda `03C52C`, capa 8800, paletas
+0x3CA/0x3D8, suelo `0146E8`, vida `2D39C0` (`0260C8`), caja `038A26`,
+programa `23C55A`, paleta de destello 0x3CB. `03889C`: `01436A`/`0143DC`,
+`00427A`, objeto dinámico `038AD8` (`0140C0`); a la izquierda de x 0x148,
+recorte `038A52` (`019504`) y `004C24` (+5F bit 7 → `038994`). `038994`:
+sonido 1021, `013F1E`, escombros `038A62/74/86` (`01DA40`) y, con +6E = 1
+(tabla `038A5A`), `038A0C`: pantalla blanca `0AE1DC` (`0AE220`, ya nativa),
+fila `038A42` y `0B6E06` (parches `0B6E4A`/`0B6E74` por `0C70FC`, marcador
+`0B6F40`, salida `0B6ED2`); `0389F2` ataca nueve veces y se borra. +6E = 0
+(`0389E6`) es la misma cola sin `038A0C`; otros valores paran.
+
+`0C70FC` (parte de colisión `0C72EC`): nueva llamada `map_patch` de
+`neo_genv_t`. El banco escribe las celdas en el anillo +88 de la capa con el
+recorte a la ventana +36/+38 (comprobado byte a byte contra la RAM); el
+mundo las escribe en la rejilla de la etapa (`neo_collision_patch`, fila
+superior 2·d5+1 en la rejilla de 32 filas). Las **104 celdas mutables** de
+la rejilla de la etapa 1 son exactamente las de los dos parches (`0B6BEC`
+7×7 en la columna 66, fila 21; `0B6C02` 7×4 en la fila 7) y las otras 204
+celdas del rectángulo ya valían eso. Las teselas del parche (+0, y la capa
+`10E83E`) no se dibujan aún.
+
+`03C62A` (ondas en el agua, `03C520..03C532` con +6E = 0..3): `019240` da
+la paleta por la misión (RAM 10C2F6: 0x14B en la Misión 2, 0x14C en la 5;
+las misiones 1, 3 y 4 no tienen onda; la 6, `013D0A`, para). Busca agua
+(clase 5, `013CF8` con A0 = el padre del creador: nuevo
+`neo_kernel_point_class_in`) 2 px por encima del creador y la sigue
+(`03C6EA`); programas `03C67E`/`03C7C6`/`03C7D6`/`03C84E`. El mundo pone
+ahora `pickup.mission` (RAM 10C2F6) al empezar cada etapa de una misión
+empaquetada, así que las granadas (`03C526`, `neo_bullet.c`) y los
+prisioneros crean su onda en lugar de parar. Sin cambio en la Misión 1.
+
+Sprites: programas `23C55A`, `23F746..23FA2C`; paletas 0x3CA, 0x3D8, 0x3CB y
+0x14B en `filesystem/mission2/rest-native.json`. **Píxeles** (captura `gv`,
+volcados cada 15 fotogramas 19500..19770): 18 volcados, **8591 iguales, 0
+distintos**.
+
+Juego: la puerta crea la salida y la etapa 1 de la Misión 2 termina ya sin
+el gancho de referencia (`MSX_REFERENCE_STAGE_EXIT` solo actúa en las otras
+etapas); `neo_world_stage_exit` desaparece.
 
 ## Colisión: rejillas desde la ROM
 

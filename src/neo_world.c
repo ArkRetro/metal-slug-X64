@@ -1183,7 +1183,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
          * only generic actors own dynamic objects or carry others. */
         w->kernel.self_dyn=0;w->kernel.self_block=0x60000000u|(uint32_t)slot.kind<<8|slot.index;
         switch (slot.kind) {
-        case NEO_WORLD_SCRIPT: neo_script_tick(&w->script,&se);break;
+        case NEO_WORLD_SCRIPT: if (!w->ga_flags.mission_end) neo_script_tick(&w->script,&se);break;   /* 018F92 deletes the script actor (0041D0) */
         case NEO_WORLD_RUNNER: keep=neo_script_tick_runner(&w->script,slot.index,&se);break;
         case NEO_WORLD_SOLDIER: keep=run_soldier(&t,slot.index);break;
         case NEO_WORLD_THROW: keep=run_throw(&t,slot.index);break;
@@ -1220,6 +1220,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             }
             continue;
         }
+        if (q->routine==0xb6ed2u) {                                     /* 0B6E06 */
+            ga_sl(a,0x38,ROOT_TAG);ga_sl(a,0x28,(uint32_t)q->x);ga_sl(a,0x2c,(uint32_t)q->y);ga_sl(a,0x6e,0xb6ecau);ga_sw(a,0x72,0x2a0);
+            continue;
+        }
         if (q->actor) {
             ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);ga_sb(a,0x15,q->flags15);ga_sb(a,0x5e,q->f5e);
             ga_sl(a,0x28,(uint32_t)q->x);ga_sl(a,0x2c,(uint32_t)q->y);ga_sl(a,0x30,(uint32_t)q->vx);ga_sl(a,0x34,(uint32_t)q->vy);ga_sl(a,0x38,ROOT_TAG);
@@ -1248,6 +1252,11 @@ bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int3
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
+    return true;
+}
+bool neo_world_stage_exit(neo_world_t *w) {
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) return false;
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){0xb6ed2u,0x2800000,0x380000,0,0,0,0,0,false,false,0};
     return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {

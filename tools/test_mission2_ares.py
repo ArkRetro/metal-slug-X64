@@ -3,8 +3,8 @@
 "Fase 2"). Launch ares separately with the Mission 2 reference cartridge
 (make mslugx-m2-reference.z64: the reference game, invulnerable, starting at
 Mission 2's first record, with the reference stage-end hook of gameplay.c,
-MSX_REFERENCE_STAGE_EXIT, in place of the stage-1 exit actor 0B6F24 that is
-not ported) and pass its log. The pad walks right firing and jumps every few
+MSX_REFERENCE_STAGE_EXIT: in stage 1 it only inserts the native exit 0B6ED2,
+whose gate 03889C is not ported; the exit's auto-walk and 018F40 end it) and pass its log. The pad walks right firing and jumps every few
 seconds. Checks: the mission pack loads, stage 1 starts from its own camera
 list and script, the camera reaches the list's hold (320), the hook ends
 the stage and the flow's next record loads stage 2, whose camera then

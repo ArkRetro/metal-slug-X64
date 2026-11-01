@@ -104,20 +104,41 @@ distintos concentrados en 7 volcados: tres tomados en el fotograma de la
 actualización y los de 23100..23130, con los destellos `0620AA` en pantalla
 (sin explicar del todo).
 
-## Pendiente: salida de la etapa 1 `0B6ED2` (`0B6F24`)
+## Salida de la etapa 1 `0B6ED2` (`0B6F24`, `neo_goarrow.c`)
 
-Traducción leída, no portada (parada explícita). Creado por `2A18A` desde
-el objeto `03889C` (1035C4) con +6E = rectángulo `0B6ECA` (−12, −1, 0x80,
-0x32) y +72 = 0x2A0. `0B6ED2`: espera `0193FE` (un jugador existente con +5F
-bit 7 a 0, o `0C8D0C` 101204 +8D); luego `018F92` (fin de misión: 4300 = FF,
-4304 = +5E, manejadores `0C0538`, `0AAA88` → 4306/4307), `0C09D8`, `0C8CD6`,
-10C00B = FF y `0CA340` ×2 (10EA00/10EA02 = 0x2A0, manejador `0CA3EC`: el
-jugador camina a la derecha hasta x de pantalla 0x2A0, solo en el suelo).
-`0B6F1E`: `01ABC8` y `01B2CE` (todos los jugadores activos dentro del
-rectángulo, `01AF3C`) → `018F40` (4303 = 0) en cada actualización desde
-19859. Necesita la caminata automática en el lado del jugador (gameplay) y
-el banco de pruebas de familias no compara más de 12 escrituras globales
-por actualización (esta escribe 10E9F8..10EA03 dos veces).
+Creada por `0B6E06` (parches de mapa `0C70FC` y marcador `0B6F40`) cuando
+se rompe la puerta `03889C` (1035C4, tabla `038A5A` por +6E; **no
+portada**): raíz, (0x280, 0x38), +6E = rectángulo `0B6ECA` (−12, −1, 0x80,
+0x32), +72 = 0x2A0. `0B6ED2`: con un jugador en juego (`0193FE`; `0C8D0C`,
+sin jugador vivo, es parada explícita) llama a `018F92` (`004BFE`,
+`004C06`, borra el actor del guion 101414 con `0041D0`: el mundo deja de
+ejecutar el guion; `0C09D8`: +84 = FFFF, +5F bit 6, +9A bit 2 de cada
+jugador; 10C300 = FF, 10C304 = +5E, manejadores `0C0538`, 10C306/10C307
+por `0AAA88`: con vehículo es parada), `0C09D8`, `0C8CD6`, 10C00B = FF y
+`0CA340` ×2 (10EA00/10EA02 = +72, manejador `0CA3EC`). `0B6F24`: `01ABC8`
+y, si todos los jugadores en juego (10C33C) están dentro del rectángulo
+(`01B2CE`/`01AF3C`), `018F40` (10C303 = 0). Campos nuevos de
+`neo_ga_flags_t`: `walk_to`, `mission_end`, `end_kind`, `scroll_lock`,
+`stage_done`, `player_guard`; `player_handlers` vale 2 (`0C0538`) o 3
+(`0CA3EC`).
+
+Familia `stageexit` (tr1, `--range b6ed2-b6f3f`, más los bytes de los
+jugadores que leen `0193C0`/`0C09D8` con `--ram`): 84 actualizaciones
+(19741..19929), con el disparo y `018F40` desde 19859. El banco compara ya
+cualquier número de escrituras globales por actualización (`<familia>_writes`)
+y, con `globals = 2` en la extracción, 1067E5, 10EA00..10EA03,
+10C300..10C307 y 10C00A/10C00B (10C303 empieza en FF).
+
+Juego (`gameplay.c`): el manejador 3 sustituye la entrada del jugador
+(en el suelo, hacia la X de pantalla `walk_to`; sin botones) y
+`stage_done` termina la etapa (`msx_game_stage_end`). En la etapa 1 de la
+Misión 2 el gancho de referencia `MSX_REFERENCE_STAGE_EXIT` ya no termina
+la etapa: solo inserta el `0B6ED2` nativo (`neo_world_stage_exit`, tras la
+cabeza de la lista en lugar de tras la puerta) en el punto donde antes
+cortaba; caminata, rectángulo y fin son los del original. Las otras etapas
+siguen con el gancho. Falta portar la puerta `03889C` (y `0C70FC`,
+`0AE220`) para quitar el gancho del todo; sin ejecución en ares en esta
+rama (otro ares ocupado).
 
 ## Colisión: rejillas desde la ROM
 

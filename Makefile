@@ -340,7 +340,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit
 # The boss's three prisoners 099DCC (hatch 0D7402 in phase 2) from the two
 # boss fights (captures-boss runJ 11957..12644, runDbg2 11249..11902): they
 # fall from y 96 through the body platform 0E94AC, land on the arena floor
@@ -398,6 +398,8 @@ FAMILY_ARGS_heli := --script-actor 101414 --script-routines 47de0 --late-creator
 # stage 2 (capture_fullgame.lua from sec02_19932, frames 22600..26139), on
 # the stage-2 grid (private, docs/MISION2_ACTORES.md).
 FAMILY_ARGS_rebel2 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# stageexit = the stage-1 exit 0B6ED2/0B6F24 (neo_goarrow.c, tr1 from
+# sec01_19391: 1 trigger update, 83 rectangle tests, 018F40 in the last).
 # rebel3 = the Mission 2 soldiers 0678B6.. and 0692B2.. (neo_rebel3.c) of
 # stage 2 (capture_fullgame.lua from sec02_19932, frames 20500..26139).
 FAMILY_ARGS_rebel3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000

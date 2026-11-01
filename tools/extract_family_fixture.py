@@ -10,13 +10,16 @@ collision objects 10C06E..10C291 (eight 64-byte blocks, bins), camera progress, 
 kill-all 1067E2 (004BAC), score-label counts 10C5B2/10C5B4 (08D330), group counts, item pickup boxes of the players 10C5EC/10C5F4, the kernel's
 last surface word 10C068 (D4 at the end of 013968), object lists 10C3A2/10C3F4 (markers, 040200/0402E6), visible rectangle 10E9D2..10E9D8 (0C8BEC), the solid-body table 106756..1067D5 (004E76), epoch, RNG ring and cursor, layer flags 3954/395C) and the
 update's writes to watched globals (camera 10E95A..10E963, shake 10E9C8,
-kill-all 1067E3, flash 109944, player lock 10E9E3/10E9F8..10E9FF, 10C606).
+kill-all 1067E3, flash 109944, player lock 10E9E3/10E9F8..10E9FF, 10C606;
+with globals=2 also 1067E5, 10EA00..10EA03, 10C300..10C307, 10C00A/10C00B).
 Node addresses are kept: the native test maps a child it creates to the
 recorded node with the same creator (+0C) and first routine."""
 import argparse,gzip,json
 from pathlib import Path
 WATCH={0x10c068,0x10c5b2,0x10c5b4}|set(range(0x10e97c,0x10e990,2))|set(range(0x10d7ca,0x10d7dc,2))|set(range(0x10c742,0x10c754,2))|set(range(0x10c06e,0x10c292,2))|{0x10e99e,0x10c444,0x10c44e,0x101500,0x101502,0x101504,0x1014c4,0x1014c6,0x10c33a,0x10c33c,0x10b954,0x10b95c,0x100084,0x100086,0x1067e2}|set(range(0x10c326,0x10c330,2))|set(range(0x10c5ec,0x10c5fc,2))|set(range(0x100016,0x100084,2))|set(range(0x10c3a2,0x10c446,2))|set(range(0x10e9d2,0x10e9da,2))|set(range(0x106756,0x1067d6,2))
-GLOBALS=[(0x10e95a,0x10e964),(0x10e9c8,0x10e9d0),(0x1067e2,0x1067e4),(0x109944,0x109946),(0x10e9e2,0x10e9e4),(0x10e9f8,0x10ea00),(0x10c606,0x10c608)]
+GLOBALS=[(0x10e95a,0x10e964),(0x10e9c8,0x10e9d0),(0x1067e2,0x1067e4),(0x109944,0x109946),(0x10e9e2,0x10e9e4),(0x10e9f8,0x10ea00),(0x10c606,0x10c608),
+    # globals=2: the stage exit 0B6ED2 (flash 1067E5, walk targets 10EA00..10EA03, 018F92 / 018F40 10C300..10C307, 10C00B).
+    (0x1067e4,0x1067e6),(0x10ea00,0x10ea04),(0x10c300,0x10c308),(0x10c00a,0x10c00c)]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('trace',type=Path);p.add_argument('--output',type=Path,required=True)
     p.add_argument('--range',action='append',required=True,help='lo-hi routine interval (hex)')
@@ -78,7 +81,7 @@ def main():
                         if '%x'%b not in cur['ram_in'] and not any(w[0]==b for w in cur['ram_out']):cur['ram_in']['%x'%b]=v
                     else:cur['ram_out'].append([b,v])
     if cur is not None:cur['post']=None;updates.append(cur)
-    with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',ranges=a.range,ram=a.ram,updates=updates),f,separators=(',',':'))
+    with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',globals=2,ranges=a.range,ram=a.ram,updates=updates),f,separators=(',',':'))
     rs={}
     for u in updates:rs[u['routine']]=rs.get(u['routine'],0)+1
     print(len(updates),'updates',' '.join('%05x:%d'%(k,v) for k,v in sorted(rs.items())))

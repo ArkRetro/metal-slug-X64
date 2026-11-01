@@ -652,12 +652,26 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         else g->walk_in_x=0;
     }
 #if MSX_REFERENCE_STAGE_EXIT
-    if (g->in_stage && g->camera>=g->stage_camera_max &&
-        g->x>=(g->camera+280)*MSX_UNIT) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+    /* Reference build only. Mission 2 stage 1: the gate 03889C (not
+     * ported) would make the exit 0B6ED2 by 0B6E06; the hook only inserts
+     * the native 0B6ED2 there and the rest is the original's (auto-walk
+     * 0CA3EC, rectangle 01B2CE, 018F40). Other stages: the stage ends. */
+    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT) {
+        if (g->flow.mission==1u && g->flow.stage==1u && g->world_enabled) {
+            if (!g->stage_exit_spawned) g->stage_exit_spawned=neo_world_stage_exit(&g->world);
+        } else {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+    }
 #endif
+    /* Stage exit 0B6ED2 (neo_goarrow.c): 018F40 ends the stage. */
+    if (g->world_enabled && g->world.ga_flags.stage_done) {g->world.ga_flags.stage_done=0;msx_game_stage_end(g);return;}
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
-    if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
+    if (g->world_enabled && g->world.ga_flags.player_handlers==3u) {
+        /* 0CA3EC: on the ground, walk towards screen X walk_to (10EA00);
+         * no buttons. */
+        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
+        direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
     /* Player 1's input words for the vehicles (0CA1B8), once per update. */
     if ((g->ticks&1) && g->world_enabled) mount_pad(g,direction,jump,fire);
     /* Mounted (0C309C) or ejected (0C3250): the vehicle and its turret take

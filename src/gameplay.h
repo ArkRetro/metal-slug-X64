@@ -149,9 +149,11 @@ typedef struct {
      * (018722, exit kind +6) until the flow's 0183D0 asks for the next
      * stage (stage_load: actor.c loads it and calls msx_game_begin_stage);
      * stage_camera_max: the list's hold; stage_exit_hooks: stage ends set by
-     * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24. */
+     * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
+     * (stage 1 of Mission 2: the hook only inserts the native exit 0B6ED2,
+     * stage_exit_spawned; its 018F40 ends the stage). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
-    int stage_camera_max;unsigned stage_exit_hooks;
+    int stage_camera_max;unsigned stage_exit_hooks;bool stage_exit_spawned;
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);

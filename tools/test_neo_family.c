@@ -35,7 +35,7 @@ typedef struct {
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
     int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
-    uint16_t ring[64][2]; uint32_t writes[12][2]; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
+    uint16_t ring[64][2]; int wfirst,wcount; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
     int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
     int ram_in_first,ram_in_count,ram_out_first,ram_out_count;  /* FAMILY_RAM inputs/outputs */
     int32_t view[4];   /* RAM 10E9D2..10E9D8 as read (0C8BEC), -1: not read */
@@ -49,6 +49,7 @@ typedef struct {
 #define CAT(a,b) CAT2(a,b)
 #define NODES CAT(FAMILY_NAME,_nodes)
 #define UPDATES CAT(FAMILY_NAME,_updates)
+#define WRITES CAT(FAMILY_NAME,_writes)
 enum { NN=sizeof(NODES)/sizeof(NODES[0]), NU=sizeof(UPDATES)/sizeof(UPDATES[0]) };
 static neo_gactor_t actors[NN+1];            /* [NN] = scratch */
 static bool bound[NN];
@@ -93,6 +94,13 @@ static int slot(uint32_t ad) {
     if (ad>=0x109944 && ad<0x109946) return 0x30+(int)(ad-0x109944);
     if (ad>=0x10e9e2 && ad<0x10e9e4) return 0x40+(int)(ad-0x10e9e2);
     if (ad>=0x10e9f8 && ad<0x10ea00) return 0x50+(int)(ad-0x10e9f8);
+#ifdef FAMILY_EXIT_GLOBALS
+    /* The stage exit 0B6ED2 (018F92, 0CA340, 018F40). */
+    if (ad>=0x1067e4 && ad<0x1067e6) return 0x22+(int)(ad-0x1067e4);
+    if (ad>=0x10ea00 && ad<0x10ea04) return 0x60+(int)(ad-0x10ea00);
+    if (ad>=0x10c300 && ad<0x10c308) return 0x70+(int)(ad-0x10c300);
+    if (ad>=0x10c00a && ad<0x10c00c) return 0x80+(int)(ad-0x10c00a);
+#endif
     return -1;
 }
 static void put(uint32_t ad,uint8_t v) {int s=slot(ad);if (s>=0) ram[s]=v;}
@@ -358,6 +366,9 @@ int main(void) {
     unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
+#ifdef FAMILY_EXIT_GLOBALS
+    ram[0x73]=expect[0x73]=0xff;   /* RAM 10C303 until 018F40 */
+#endif
     unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
@@ -500,9 +511,15 @@ int main(void) {
         /* Flags the family writes through neo_ga_flags_t. */
         if (flags.kill_request!=kill_before) {put(0x1067e3,flags.kill_request);if (!kill_frame) kill_frame=u->frame;}
         put(0x10e9e3,flags.player_lock);
-        for (unsigned h=0;h<2;h++) {uint32_t v=flags.player_handlers?0x00054b18u:0;for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
+        for (unsigned h=0;h<2;h++) {static const uint32_t hv[4]={0,0x00054b18u,0x000c0538u,0x000ca3ecu};uint32_t v=hv[flags.player_handlers&3u];for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
+#ifdef FAMILY_EXIT_GLOBALS
+        if (flags.flash_request) put(0x1067e5,flags.flash_request);
+        for (unsigned p=0;p<2;p++) {put(0x10ea00+2*p,(uint8_t)(flags.walk_to[p]>>8));put(0x10ea01+2*p,(uint8_t)flags.walk_to[p]);}
+        put(0x10c300,flags.mission_end);put(0x10c304,flags.end_kind);put(0x10c00b,flags.scroll_lock);
+        if (flags.stage_done) put(0x10c303,0);
+#endif
         put(0x109944,flags.flash);
-        for (unsigned w=0;w<12 && u->writes[w][0];w++) {int s=slot(u->writes[w][0]);if (s>=0) expect[s]=(uint8_t)u->writes[w][1];}
+        for (int w=0;w<u->wcount;w++) {int s=slot(WRITES[u->wfirst+w][0]);if (s>=0) expect[s]=(uint8_t)WRITES[u->wfirst+w][1];}
         /* 109945 is the palette allocator's (not a family global). */
         ram[0x31]=expect[0x31];
         if (memcmp(ram,expect,sizeof(ram))) {

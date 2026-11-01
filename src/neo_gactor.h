@@ -62,7 +62,13 @@ typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
     uint8_t player_lock;             /* RAM 10E9E3 (0C8CD6 / 0C8CE6) */
-    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC set to 054B18 (0CA2E0) */
+    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC (0CA2E0): 0 none, 1 = 054B18 (no-op), 2 = 0C0538 (018F92), 3 = 0CA3EC (walk to walk_to[], 0CA340) */
+    uint16_t walk_to[2];             /* RAM 10EA00/10EA02: screen X the 0CA3EC handler walks each player to (0CA340) */
+    uint8_t mission_end;             /* RAM 10C300 = FF (018F92: halt; the level script actor 101414 is deleted, 0041D0) */
+    uint8_t end_kind;                /* RAM 10C304 (018F92: +5E of the caller) */
+    uint8_t scroll_lock;             /* RAM 10C00B = FF (0B6EF4) */
+    uint8_t stage_done;              /* 018F40 ran (RAM 10C303 = 0: the flow's 018722 ends the stage) */
+    uint8_t player_guard;            /* 0C09D8 ran: each player's +84 = FFFF, +5F bit 6 set, +9A bit 2 clear */
     uint8_t flash_request;           /* RAM 1067E5 (004C06) */
     uint8_t kill_request;            /* RAM 1067E3 (004BFE), copied to 1067E2 by 00469C */
     uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */

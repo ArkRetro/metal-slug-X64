@@ -154,6 +154,17 @@ def main():
     if lc and a.label_after_pickup:
         L.append('#define FAMILY_LABEL_COUNTS 1')
         L.append('static const int32_t %s_label_counts[][3]={%s};'%(n,','.join('{%d,%d,%d}'%t for t in lc)))
+    # Writes to the watched globals (extract_family_fixture.py GLOBALS), as
+    # (address, byte) pairs: per update a span of <name>_writes.
+    gw=[];wspans=[]
+    for u in d['updates']:
+        w0=len(gw)
+        for ad,mask,data,pc in u['writes']:
+            if mask&0xff00:gw.append((ad,(data>>8)&255))
+            if mask&0x00ff:gw.append((ad+1,data&255))
+        wspans.append((w0,len(gw)-w0))
+    L.append('static const uint32_t %s_writes[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in gw) or '{0,0}'))
+    if d.get('globals',1)>=2:L.append('#define FAMILY_EXIT_GLOBALS 1')
     L.append('static const family_update_t %s_updates[]={'%n)
     last={}
     maxext=0
@@ -194,12 +205,6 @@ def main():
         ring+= [(255,0)]*(64-len(ring))
         b954,b95c=rd(u,0x10b954),rd(u,0x10b95c)
         front=-1 if b954 is None or b95c is None else int((b954^0x8000)<(b95c^0x8000))
-        writes=[]
-        for ad,mask,data,pc in u['writes']:
-            if mask&0xff00:writes.append((ad,(data>>8)&255))
-            if mask&0x00ff:writes.append((ad+1,data&255))
-        assert len(writes)<=12,u['frame']
-        writes+=[(0,0)]*(12-len(writes))
         def opt(v):return -1 if v is None else v
         def solid_busy(u):
             # Solid-body table 106756 (16 entries of 8 bytes) as 004E76 read
@@ -242,10 +247,10 @@ def main():
                 marks.append((s32(wv[0]<<16|wv[1]),s32(wv[2]<<16|wv[3]),wv[4]>>8,wv[4]&255))
             break
         nm=len(marks);marks+=[(0,0,0,0)]*(8-len(marks))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d},%d,%d},'%(
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},%d,%d,{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d},%d,%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)],opt(rd(u,0x101502)),solid_busy(u)))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),*wspans[k],','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)],opt(rd(u,0x101502)),solid_busy(u)))
     L.append('};')
     if a.attacks:
         rom={}

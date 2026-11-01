@@ -209,8 +209,9 @@ ventana vertical del anillo no está modelada).
 **Gancho de referencia** (solo `mslugx-m2-reference.z64`, nunca una versión):
 `MSX_REFERENCE_START_MISSION=2` salta al primer registro de la Misión 2 en
 el primer fotograma y `MSX_REFERENCE_STAGE_EXIT` termina la etapa cuando la
-cámara llega al final de su lista y el jugador al borde derecho, en lugar
-del actor de salida `0B6F24` (no portado; es del agente de actores).
+cámara llega al final de su lista y el jugador al borde derecho; en la
+etapa 1 solo inserta el actor de salida nativo `0B6ED2` (la puerta `03889C`
+que lo crea no está portada) y el fin lo da su `018F40`.
 
 **Recorrido** (`tools/test_mission2_ares.py`, ares, cartucho
 `mslugx-m2-reference.z64`): la etapa 1 carga en 125 ms, Marco entra andando,
@@ -238,7 +239,9 @@ dinámicas de la etapa 1 (zonas negras: el agua del río), la caída al vacío
    ROM), lista de cámara `0B6D2A` (espera de progreso en `0B6DF2`) y
    jugadores `019604` (`+4` = `2D5C6A`).
 3. Salida de la etapa 1: el actor de mapa `0B6ED2`/`0B6F24` (rectángulo
-   `01B2CE` → `018F40`, caminata automática `0CA340`): pendiente. Hechos en
+   `01B2CE` → `018F40`, caminata automática `0CA340`) es nativo
+   (`neo_goarrow.c`, familia `stageexit`); falta la puerta `03889C` que lo
+   crea (el gancho de referencia lo inserta en su lugar). Hechos en
    `work-m2act` ([MISION2_ACTORES.md](MISION2_ACTORES.md)): transiciones
    `3AED8`/`3AEF0` nativas (`neo_wipe.c`, sin paradas en `test_neo_mission`),
    flecha GO `05287C` y marcador `0B6F6A` (`neo_goarrow.c`).

@@ -93,6 +93,11 @@ pantalla (452), `actor_init` (615) y la caché mínima de 4 MiB (512) dejan
 | caché de escena (margen) | 3303 KB con 192 (falla) | **3536 KB = 221 ranuras con 256** |
 | libre tras cargar el juego | — | 624 KB |
 
+Recorrido completo de la misión 1 en ares (`mslugx-reference.z64`): PASS
+antes y después de v2 (`crash=0`), mínimo de montón libre `heap_low` 369 /
+367 KB, peor fotograma 39,2 / 38,0 ms (antes de la rama: 35,9 ms en
+RENDIMIENTO; mismo rango que las ventanas de arranque del jefe).
+
 ### 2. Películas MSXC v2
 
 | Película | v1 (B) | v2 (B) |

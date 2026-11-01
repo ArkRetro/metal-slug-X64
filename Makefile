@@ -340,7 +340,13 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit gate crate bags stage3 drone hostage m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit gate crate bags stage3 drone hostage m2boss1 m2boss8
+# The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
+# (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
+M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
+ifeq ($(FULL_M2BOSS),1)
+FAMILIES := $(filter-out $(M2BOSS_ALL),$(FAMILIES)) $(M2BOSS_ALL)
+endif
 # The boss's three prisoners 099DCC (hatch 0D7402 in phase 2) from the two
 # boss fights (captures-boss runJ 11957..12644, runDbg2 11249..11902): they
 # fall from y 96 through the body platform 0E94AC, land on the arena floor
@@ -922,3 +928,7 @@ check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_marco_visual.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/marco_visual
 	$(BUILD_DIR)/host/marco_visual
+.PHONY: check-m2boss
+check-m2boss:
+	$(MAKE) FULL_M2BOSS=1 check
+

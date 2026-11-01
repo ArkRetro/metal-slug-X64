@@ -245,7 +245,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         previous_animation=-1;scene_clock_reset(&simulation_clock);
     }
     if (game.stage_load) {
-        debugf("MSX stage end (018722) mission %u: next stage %u (exit hooks=%u)\n",(unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,game.stage_exit_hooks);
+        debugf("MSX stage end (018722) mission %u: next stage %u (exit hooks=%u, script lock releases=%u)\n",(unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,game.stage_exit_hooks,game.stage_lock_releases);
         if (!load_stage()) {debugf("MSX stage %u not loaded (explicit stop): Mission 1 restarts\n",(unsigned)game.flow.stage);reset_game();}
         previous_animation=-1;scene_clock_reset(&simulation_clock);
     }
@@ -331,7 +331,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
-    if (game.world.script.halted && !old_halted) debugf("MSX script stopped at %06lx (records beyond are not ported)\n",(unsigned long)game.world.script.halt_address);
+    if (game.world.script.halted && !old_halted) {
+        const neo_script_t *sc=&game.world.script;unsigned pc=sc->halt_address-sc->base;
+        debugf("MSX script stopped at %06lx (records beyond are not ported): %02x %02x %02x %02x %02x %02x\n",(unsigned long)sc->halt_address,
+            pc<sc->size?sc->code[pc]:0xffu,pc+1u<sc->size?sc->code[pc+1]:0xffu,pc+2u<sc->size?sc->code[pc+2]:0xffu,
+            pc+3u<sc->size?sc->code[pc+3]:0xffu,pc+4u<sc->size?sc->code[pc+4]:0xffu,pc+5u<sc->size?sc->code[pc+5]:0xffu);
+    }
     if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx\n",(unsigned long)game.world.unsupported_routine);
     if (game.world.item_pickups!=old_pickups) debugf("MSX item pickup stopped explicitly at %05lx (untranslated)\n",(unsigned long)game.world.item_pickup_routine);
     if (game.world.pickup.taken!=old_served) debugf("MSX item served=%u score=%02x%02x%02x%02x\n",game.world.pickup.taken,

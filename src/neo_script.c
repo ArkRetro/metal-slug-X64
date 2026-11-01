@@ -98,6 +98,7 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
     case 7: { /* 01A10A */
         bool found;uint32_t entry=spawn_entry(word(v,pc,4),&found);
         if (!found || len(v,pc)<0xau || (len(v,pc)-0xau)/2u>NEO_SCRIPT_SPAWN_WORDS) return halt(v,pc);
+        if (!(entry&0x80000000u) && op(v,(uint16_t)(pc+2))<9u && v->e->native && !v->e->native(entry)) return halt(v,pc);
         mark_spawned(v);
         neo_script_spawn_t sp;memset(&sp,0,sizeof(sp));
         sp.record=v->s->base+pc;sp.constructor=entry;sp.creator=v->creator;

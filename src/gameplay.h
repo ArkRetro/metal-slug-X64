@@ -153,7 +153,7 @@ typedef struct {
      * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
      * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
-    int stage_camera_max;unsigned stage_exit_hooks;
+    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases;
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);

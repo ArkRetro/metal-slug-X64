@@ -66,6 +66,11 @@ typedef struct {
     /* ROM 0C7B4E (op D) / 0C7BBA (op E): camera autoscroll start/stop. */
     void (*autoscroll)(void *context,bool start);
     void *context;
+    /* Optional: false for a constructor the port does not create. A record
+     * counted in its group (group < 9, bit 31 clear) of such a constructor
+     * halts the script there (explicit stop): its group would never empty
+     * and the waits on it would hold the script forever. */
+    bool (*native)(uint32_t constructor);
 } neo_script_env_t;
 void neo_script_init(neo_script_t *script,const uint8_t *code,uint16_t size,uint32_t base);
 /* Script actor update (ROM 019F1A). */

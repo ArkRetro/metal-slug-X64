@@ -343,6 +343,31 @@ python3 build_marco_poses.py CAP1 ... --extra-audit DSC1/audit.json --extra-audi
 python3 compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
 ```
 
+## Entradas privadas: comprobación por contenido
+
+Informe de MiSTer sobre la ROM de prueba 18: «Marco ha perdido animaciones».
+En ares la 18 escribe `MSX marco part 0: format/size 35x26` y
+`native animation missing: six-state fallback (0 poses)`: el ELF llevaba un
+`marco_renderer.o` compilado con el catálogo anterior (411 poses, parte 0 de
+29x29) y el DFS las 585 piezas del catálogo de 562 poses. Las entradas
+privadas (`build/marco_pose_meta.h`, `build/marco_campaign.h`,
+`romfs/marco`) se habían copiado conservando su fecha (`cp -p`), más antigua
+que el objeto, y `make` no lo recompiló. Sin el renderizador nativo el port
+vuelve a los seis estados: sin agacharse, apuntar arriba, disparo hacia abajo,
+granada, cuchillo, paracaídas, muerte… La ROM 16 (y la 17) cargan el
+catálogo nativo.
+
+- `tools/marco_inputs_sum.sh` (en el análisis del Makefile) escribe
+  `build/marco-inputs.sum` solo si cambia el contenido de esas entradas;
+  `marco_renderer.o`, `marco_visual.o`, `test_marco_render.o` y los sellos de
+  romfs dependen de él.
+- `tools/check_marco_romfs.py` repite las pruebas de `marco_renderer_load`
+  (número, CI4, tamaño, huella de píxeles) al construir `game-romfs` y en
+  `make check-marco-campaign`: un catálogo y unas piezas distintos paran la
+  construcción en lugar de dar una ROM con seis estados.
+- `tools/test_marco_inputs_sum.sh` (`make check`): una copia con fecha antigua
+  y contenido distinto renueva la suma, y las reglas dependen de ella.
+
 ## Pendiente
 
 - Controlador original completo (`0x0C1xxx..0x0C3xxx`, ya traducido en

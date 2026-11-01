@@ -595,6 +595,12 @@ Subbloques de audio: 888 en todo el recorrido.
   del fondo en los dos modos, torre agrupada por página). La simulación no
   cambia (solo el dibujo).
 - `1E003C`: corregido (lectura fuera de un bloque de ROM, arriba).
+- Rescates de la referencia: con los escombros de `06870A` ya nativos, el
+  jugador de referencia podía quedar en un bucle de rescates en x 1036..1053
+  al final del primer desplazamiento de la etapa 2 (punto seguro del que
+  vuelve a caer; 300+ rescates y la prueba fallaba). Tras 8 rescates sin
+  aterrizar se vuelve a un punto seguro anterior (hasta 4, a ≥ 32 px);
+  sin ninguno, la caída mortal. Solo `MSX_REFERENCE_INVULNERABLE`.
 - Pendiente: paredes 0xF/0x1F de la etapa 3 contra MAME (sin grifo todavía;
   el núcleo sí trata la forma 15 en `k12ad4`/`k12ee2`, la petición del
   jugador lleva `b400a` = 0), familia del prisionero `099E1C` (≈3,5 KB de

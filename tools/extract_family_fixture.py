@@ -43,8 +43,9 @@ def main():
             ad,mask,data,pc=int(t[1],16),int(t[2],16),int(t[3],16),int(t[4],16)
             if t[0]=='R' and ad in WATCH:
                 if hex(ad) not in cur['reads']:cur['reads'][hex(ad)]=[mask,data,pc]
-                elif 0x10c3a2<=ad<0x10c446 and mask&~cur['reads'][hex(ad)][0]:
-                    # Object-list bytes: the id (+9) is read apart from the height (+8).
+                elif (0x10c3a2<=ad<0x10c446 or 0x10c06e<=ad<0x10c292) and mask&~cur['reads'][hex(ad)][0]:
+                    # Object-list bytes: the id (+9) is read apart from the height (+8);
+                    # the bins of the dynamic objects (10C26E/10C280) are read by bytes.
                     o=cur['reads'][hex(ad)];new=mask&~o[0];o[1]=(o[1]&o[0])|(data&new);o[0]|=new
             if t[0]=='W' and any(lo<=ad<hi for lo,hi in GLOBALS):cur['writes'].append([ad,mask,data,pc])
             if a.attacks and t[0]=='R':

@@ -9,6 +9,8 @@ ga_result_t neo_goarrow_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_goarrow_routine(uint32_t routine);
 ga_result_t neo_rebel2_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_rebel2_routine(uint32_t routine);
+ga_result_t neo_rebel3_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_rebel3_routine(uint32_t routine);
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_truck_routine(uint32_t routine);
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e);

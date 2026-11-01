@@ -33,6 +33,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `05287C` flecha GO (todas las etapas) | `src/neo_goarrow.c` | familia `goarrow` (tr2, jugador quieto): 486 actualizaciones, 176 con la flecha |
 | `0B6F6A` marcador de salida de la etapa 1 | `src/neo_goarrow.c` | familia `exitmark` (tr1): 84 actualizaciones |
 | `0613CA/0613D8/0613E6` rebeldes (variante en +96), disparo `061E8C`, destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
+| `0678B6/0678C0/0678CA/067902` y `0692B2..0692E4` soldados (variante en +9C), cuchillo `067FC0`, destello `021CB6` | `src/neo_rebel3.c` | familia `rebel3` (etapa 2, `b1`): 30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -144,21 +145,63 @@ cámara queda fija en las columnas 39..79; las 37037 celdas desconocidas
 están todas fuera de esas columnas. Hace falta identificar al escritor de
 las plataformas de la subida.
 
+## Soldados `0678B6..` y `0692B2..` (`neo_rebel3.c`)
+
+Traza (estado `sec02_19932`, unos 100 s; `b1`, 3246 actualizaciones) y
+extracción:
+
+```sh
+export MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_STATES=/home/user/captures-fullgame/states4
+MSX_FULL_FAMILY_ROOTS=678b6,678c0,678ca,67902,692b2,692bc,692c6,692d0,692da,692e4 MSX_FULL_FAMILY_FROM=20500 \
+MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh /home/user/captures-m2en/b1
+python3 tools/extract_family_fixture.py /home/user/captures-m2en/b1/boss-trace.txt --output data/rebel3_fixture.json.gz \
+  --range 678b6-69700 --range 21cb6-21cee --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 1014ec-1014f4 --ram 1014fc-101500
+```
+
+Familia `rebel3` (las dos juntas: la `c` entra en la `b` por `067A40`):
+30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos del jugador.
+`extract_family_fixture.py` funde ahora también las lecturas por bytes de
+los objetos dinámicos (`10C06E..10C291`): `014160` lee los bytes de los
+cubos `10C26E/10C280` por separado y solo se guardaba el primero.
+
+Traducción de `0678B6..069700`: variante +9C (paletas `068F98`, rangos
+`2D26BC..2D29B4` por `0260C8`); espera `0678DC` hasta tener al jugador más
+cercano (`01AF9A`, +86) dentro de +70/+78 (`068B4C`/`068B7E`), o aparece
+junto a él (`067908`: `014A02` desde el bloque del jugador, que el banco lee
+de 1014EC..1014FF; `neo_vehicle_env_t.player`); `06905A`; entrada `0679B0`
+(sólido `E1B5C`) u oculta `067A6C` (destello `021CB6`, cuyo programa sube
++80 del creador con `022230`); giro `0679EE`; decisión `067A40` (`068BB8`,
+`068CAE`); andar `067AB4`/`067B42` con el andador `08CCD4` (`068CD4`,
+`068ABA`, `068B08`); giro `067BA6`; cuchillada `067E66` (programa `268DCC`,
+llamada `06899A`: cuchillo `067FC0` con la fila de ataque de `E1A76` por
++60); muerte `067C20` (programa `269024`: objeto `068F26` por `08CDB2`,
+`068F4A`, `069262`). Colas `069280` (+9A, `004C24`, `06914A`, chispa
+`06918E`) y `0688D6` (recorte `E1A5E`). Familia `c` (`0692B2`, +9C = 0): cae
+(`06932E`: `06951C` conserva la posición absoluta sobre el nuevo objeto de
+suelo, +34 por `2D29B4`, programa `269530` con `069548`), aterriza (`069596`:
+polvo `0695DC` tras el actor del guion), `0693CA` y va a `067A40`; muerte en
+el aire `069448`/`069484..069500`.
+
+Paradas explícitas (sin evidencia en la traza): `067EE4` (+6E y borde de
+pantalla), piezas `067D06`/`069478` (+5A = 0x0A/0x0B, `068D32`), `067D80` y
+las bombas `0687F6` de `0691D2`/`069262` (+7A), los cuchillos de +9C = 4/8
+(`069696`, `0689D2`), `067F12`. No se reproduce la comprobación anticopia
+antes de `004188` (10F00A/10F00C, 2FFFE0).
+
+Sprites: raíces `268C0A..26985A` y `2309D2`, paletas 0x3FC, 0x3FD, 0xF2,
+0xAC, 0x3FB (y 0xB0) en `filesystem/mission2/rest-native.json`.
+**Píxeles** (captura `bv`, volcados cada 15 fotogramas 20910..21900 con la
+traza; `export_rest_sprites.py ... bv@678b6-69700 bv@21cb6-21cee`): 30
+volcados, 37947 iguales, 1056 distintos en 5 volcados (21075, 21120..21150,
+21270: muertes y cuchillos superpuestos, sin explicar).
+
 ## Enemigos más frecuentes (no portados)
 
-`0613CA..` ya es nativo (arriba). Los demás no son variante de una familia nativa:
+`0613CA..`, `0678B6..` y `0692B2..` ya son nativos (arriba). Los demás no son variante de una familia nativa:
 
 | Constructor | Lectura |
 | --- | --- |
-| `0678B6/0678C0/0678CA/067902` (×6/–/×27/×4) | una familia, variante en +9C (0 u 8), suelo `0146E8`, `01436A`, objetivo `01AF9A`; código `0678B6..069000` (andador `08CCD4`, cola `0688D6` con recorte `E1A5E`, ayudantes `068A50..068D32`, hijos `067FC0`, `0680F4/068134`, `068214`, `0682F0`, `021CB6`) |
-| `0692B2..0692E4` (×9) | seis entradas, +9C = 0/4/8 |
 | `03670E` (×8) | +96 = 4, paletas 0x142/0x143, programa `23BA74` |
 
-Traza de `0678xx` y `0692xx` juntas (etapa 2, 20500..26139, unos 100 s;
-2200 actualizaciones de la primera, 900 de la segunda, sobre todo `067C62`,
-`067E98`, `067B42`, `068020`, `0679D2` y `06936E`, `0693CA`):
-`MSX_FULL_FAMILY_ROOTS=678b6,678c0,678ca,67902,692b2,692bc,692c6,692d0,692da,692e4
-MSX_FULL_FAMILY_FROM=20500 MSX_FULL_LAST=26139` con el resto como en `a2`;
-se extrae como `rebel2` con `--ring 10c72e --ram 10c7b6-10d7b6`.
 Cada una necesita su traza de familia (las capturas desde `states4` cuestan
 segundos) y una traducción completa.

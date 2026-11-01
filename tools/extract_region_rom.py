@@ -113,6 +113,8 @@ BLOBS=[
     (0x2D4A60,0x2F0,'0613CA Mission 2 rebels: rank tables 2D4A60..2D4CB2 (0260C8), jump table 2D4CCC (06243E), offsets 2D4D2C and delays 2D4D3C'),
     (0xB7000,0x08,'Mission 2 cell group map (RAM 10C00E = 0B7000, 01296C)'),(0xE1B6A,0x90,'Mission 2 stage 2 dynamic collision map E1B6A (0140C0, the platform under the rebels)'),
     (0xE121E,0x60,'0613CA Mission 2 rebels: cull rectangles E121E/E1226 (01945C/019504), hurtbox E1246 (+50), attack row E1252 (0049E8), solid box E1262 (004E76)'),
+    (0x2D26BC,0x35A,'0678B6 / 0692B2 Mission 2 soldiers: rank tables 2D26BC..2D29B4 (0260C8)'),
+    (0xE1A5E,0x10C,'0678B6 / 0692B2 Mission 2 soldiers: cull rectangles E1A5E/E1A66 (01945C), knife rows E1A76.. (0049E8), hurtboxes E1A96/E1AA2 (+50), solid boxes E1B4E/E1B5C (004E76)'),
     (0xE0818,0x7C,'03AF08 stage transition fix-map columns: entry 3AED8 (E0818) and exit 3AEF0 (E0856)'),
 ]
 def main():

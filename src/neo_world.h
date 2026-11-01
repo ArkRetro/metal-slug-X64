@@ -245,6 +245,8 @@ bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,in
 bool neo_world_shot(neo_world_t *world,int32_t previous_x,int32_t x,int32_t y,bool left);
 /* Same with pistol attack row `row` (0..15, ROM 01B4C2 + 16*row: the
  * bullet's direction) and a segment (previous_x,previous_y)->(x,y). */
+/* An actor of the mission actor (map command routine): list head, +28/+2C. */
+bool neo_world_mission_actor(neo_world_t *world,uint32_t routine,int32_t x,int32_t y);
 bool neo_world_shot_row(neo_world_t *world,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned row,bool left);
 /* 0049E8 for the player (A6 = 1014C4) with the attack row `row` at its
  * origin (x, y) (+15 bit 0 = left): the soldiers and the class-matching

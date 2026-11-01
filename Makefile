@@ -362,7 +362,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -444,6 +444,11 @@ FAMILY_ARGS_crate := --attacks --terrain 10c72e --ring 10c72e
 # bags = the Mission 2 stage-2 prop 06851A with its overlay 0685FE and the
 # signal 03A892 (neo_m2props.c, s2 from sec02_19932, frames 19933..26139).
 FAMILY_ARGS_bags := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# m2gate = the Mission 2 stage-2 gate 03A6EA (map command 0B7326), its
+# overlay 03A82E, the opening 03A776 (0B7350: map patch 0B706C, exit
+# 0B6ED2/0B6F24), the dust 03A464 and the signal 03A892 (neo_m2props.c,
+# g2 from sec02_19932, frames 19933..26139: opened at 26001).
+FAMILY_ARGS_m2gate := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # stage3 = the Mission 2 stage-3 camera wait 052A5C (neo_m2props.c) and the
 # soldier 0678A2 (+9C = 4, neo_rebel3.c), c1 from sec03_26140.
 FAMILY_ARGS_stage3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000

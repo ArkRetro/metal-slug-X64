@@ -107,7 +107,7 @@ unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks
         int cx=column+2*(int)p+(int)(k&1u),cy=top-2*(int)b-(int)(k>>1);
         if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
         uint8_t v=cells[(p*blocks+b)*4u+k],*cell=&dynamic_grid[cx*rows+cy];
-        if (*cell!=v) {*cell=v;changed++;}
+        if (*cell!=v) {*cell=v;changed++;ring_touch(cx,cy);}
     }
     return changed;
 }

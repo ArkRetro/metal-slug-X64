@@ -37,6 +37,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `0678B6/0678C0/0678CA/067902` y `0692B2..0692E4` soldados (variante en +9C), cuchillo `067FC0`, destello `021CB6` | `src/neo_rebel3.c` | familia `rebel3` (etapa 2, `b1`): 30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos |
 | `08C154/08C15E/08C168/08C172` caja de suministros (+88 = 3..0) | `src/neo_crate.c` | familia `crate` (etapa 3, `c1`): 2 nodos, **1235 actualizaciones**, 2 borrados |
 | `06851A` obstáculo y su capa `0685FE`; señal `03A892` | `src/neo_m2props.c` | familia `bags` (etapa 2, `s2`): 7 nodos, **421 actualizaciones**, 7 borrados |
+| `03A6EA` puerta de la etapa 2 (orden de mapa `0B7326`), capa `03A82E`, apertura `03A776` (`0B7350`: parche `0B706C`, salida `0B6ED2`), polvo `03A464` | `src/neo_m2props.c` | familia `m2gate` (etapa 2, `g2`): 5 nodos, **1811 actualizaciones**, 2 borrados, parche del anillo igual |
 | `052A5C` espera de cámara; `0678A2/0678AC` soldado (+9C = 4) | `src/neo_m2props.c`, `src/neo_rebel3.c` | familia `stage3` (`c1`): 2 nodos, **1838 actualizaciones** |
 | `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
 | `06835C` soldado con rehén: rehén `021B46..` y soldado `0683FA/0684CA` | `src/neo_hostage.c`, `src/neo_rebel3.c` | familia `hostage` (etapa 2, `h1`): 2 nodos, **186 actualizaciones**, 2 borrados |
@@ -197,6 +198,53 @@ Juego: la puerta crea la salida y la etapa 1 de la Misión 2 termina ya sin
 el gancho de referencia (`MSX_REFERENCE_STAGE_EXIT` solo actúa en las otras
 etapas); `neo_world_stage_exit` desaparece.
 
+## Puerta de la etapa 2 `03A6EA` (`neo_m2props.c`, rama `work-m2gate`)
+
+Traza (unos 70 s; la puerta nace en 24436 y se abre en 26001):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_ROOTS=3a6ea,3a892 \
+  MSX_FULL_FAMILY_FROM=19933 MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh /home/user/captures-m2gate/g2
+python3 tools/extract_family_fixture.py .../g2/boss-trace.txt --output data/m2gate_fixture.json.gz \
+  --range 3a464-3a8a0 --range b6ed2-b6f3f --attacks --ram 10c2f6-10c2f8 --ram 10000e-100010 --ram 10c764-10c768 \
+  --ram 10c7b6-10d7b6 --ram 10c358-10c359 (más los --ram de los jugadores de `stageexit`)
+```
+
+La orden de mapa `2C` de la etapa 2 llama a `0B7326`: `0040BC` (reserva
+0x1C) de `03A6EA` desde el actor de misión 101364 (+0C, +04: justo tras
+él, profundidad 1, +68 = 0), +28 = 0xA70, +2C = 0x2C0. `03A6EA`: `01AB98`
+con la raíz 10E968 y sus palabras +28/+2C, capa `03A82E` (`0040BC` reserva
+0x1C, `01B220` (0, 0)), capa 0, paleta 0x445, +15 bit 0 a 0, programa
+`23CDD0`, RAM 10C358 = 0; `03A75A`: con 10C358 ≠ 0 pasa a `03A776`
+(siempre `01ABC8` y `00427A`). `03A776`: `0B7350` (parche `0B706C` por
+`0C70FC`, D2..D5 = 8, 0xA, 0xA2, 0x2F; sonido 103B por `0120F8`; salida
+`0B6ED2` en (0xAA0, 0x280) de la raíz con +6E = `0B7348` (−12, −1, 0x80,
+0x32) y +72 = 0xAC0), polvo `03A464` (reserva 0x2A, `01B220` (−8, −64)),
++6E = +2C, +30 = 0, +34 = 4,0; `03A7BA`: `01AC38`, `00427A` hasta que +2C
+sube 0x50; `03A7DE`/`03A7E8`: +70 (byte) = 0, palabra +70 + 1, con < 0x19
+pasa a `03A768`; una actualización con +2C + seno `0029FC`[(+70 << 7) &
+0xFF] · 0x100 para `01ABC8`/`00427A` y +2C de vuelta; `03A768` para
+siempre. `03A82E`: capa 0, paleta 0x44B, +15 bit 2 a 1 y bit 0 a 0,
+programa `23CDDC`; `03A86A`: `01ABC8`, `00427A`. `03A464`: paleta 0x204,
+programa `22D372`; `03A488`: `01436A`, `00427A` y `004188` al acabar el
+programa (comprobación anticopia no reproducida).
+
+Prueba: familia `m2gate` (1811 actualizaciones 24436..26137, igual a MAME:
+el parche en el anillo +88 de 10C72E, 10C358 leído y escrito, la salida
+`0B6F24` hasta el final de la captura). En el juego `camera_step`
+(`gameplay.c`) crea la puerta con el evento `0B7326`. Datos:
+`region_rom.json` (`0B706C`, celdas `42C0FA`, rectángulo `0B7348`),
+programas `23CDD0/23CDDC/22D372` en `soldier_programs.json`.
+
+Sprites: paletas 0x445 y 0x44B y los marcos de los tres programas en
+`filesystem/mission2/rest-native.json` (`export_rest_sprites.py ...
+gv@3a464-3a8a0 --mask-auto`, captura `gv` con volcados cada 15 fotogramas
+25995..26130). **Píxeles** por nodo: puerta 10 volcados, 42072 iguales, **0
+distintos**; polvo 5 volcados, 1977 iguales, 0 distintos. La capa
+`03A82E` usa la autoanimación del LSPC (atributo bits 2/3: el renderizador
+no la implementa, se dibuja el marco del descriptor); sin comparación.
+
 ## Colisión: rejillas desde la ROM
 
 `0C72EC` copia las celdas de colisión del descriptor de mapa de la capa
@@ -213,7 +261,7 @@ python3 tools/fill_collision_rom.py filesystem/mission2/s3/collision.json --rom 
 | Etapa | Descriptor | Iguales | Conflictos | Rellenadas | Desconocidas |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `0B6BAA` | 2456 | 0 | 0 | 0 |
-| 2 | `0B702A` | 13190 | 63 (columnas 336..339, filas 80..95: 0 observado, 15 en ROM; escritura sin identificar, se conserva lo observado) | 20440 | **0** |
+| 2 | `0B702A` | 13190 | 63 (columnas 336..339, filas 80..95: 0 observado, 15 en ROM): son el parche `0B706C` de `0B7350` visto después; `--patch b706c:a2:2f` les da el valor de la ROM | 20440 | **0** |
 | 3 | `0B740A` | 16718 (filas 0..207) | 0 | 7803 | 37037 |
 
 `pack_mission.py` ya empaqueta las rejillas de las etapas 1 y 2. En la etapa
@@ -311,8 +359,8 @@ paletas 0xF5 y 0xF6 (destello), caja `E1AA2`, vida `2D296A`, suelo, capa
 recorte `0688D6`. Roto: +60 = FF, `013F1E`, restos `E1BF2`/`E1C04`,
 explosión `01C71E` 32 px arriba, sonido 1035; `06875A`: programa `2693B2`,
 `019DFC`, fila `E1B2E`; `06878E` hasta el final del programa. `03A892`:
-RAM 10C358 = 1 (nuevo `neo_ga_flags_t.signal358`, lo lee `03A75A`, actor no
-portado) y se borra; el banco no compara 10C358.
+RAM 10C358 = 1 (nuevo `neo_ga_flags_t.signal358`, lo lee `03A75A`) y se
+borra; el banco compara 10C358 en la familia `m2gate`.
 
 `052A5C`: +6E = progreso de cámara 10E99E + 1 si +6E = 0; `052A74` se
 borra cuando el progreso alcanza +6E. `0678A2/0678AC`: la variante +9C = 4

@@ -576,6 +576,10 @@ int main(void) {
         m2.tower_mode=(int16_t)w16(0x10c354);m2.frame_step=(uint8_t)(wram[0x008a]+wram[0xf009]);
 #endif
         e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
+        /* RAM 10C358 (03A892 / 03A740 / 03A75A) when the family watches it. */
+        bool watch358=false;
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c358u && 0x10c358u<ram_ranges[g][1]) watch358=true;
+        if (watch358) flags.signal358=wram[0xc358];
 #endif
 #ifdef FAMILY_ATTACKS
         answer_first=ATTACK_SPANS[k][0];answer_count=ATTACK_SPANS[k][1];answer_used=0;
@@ -589,6 +593,7 @@ int main(void) {
 #endif
 #ifdef FAMILY_RAM
         env_to_ram(&weapons);
+        if (watch358) wram[0xc358]=flags.signal358;
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;
         for (unsigned i=0;i<8;i++) wram[0x13d6+i]=(uint8_t)((uint32_t)m2.speed[i>>2]>>(24-8*(i&3)));

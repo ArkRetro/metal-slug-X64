@@ -727,16 +727,41 @@ Evidencia (MAME 0.264):
   10C72E +14..+20, 10E968 +14..+20) y `014492` (salida), A6 = 1014C4.
 
 **Salida de la etapa 2.** Con las paradas en pared el jugador ya no
-atraviesa la puerta x 2656..2687 (y 640..679, celdas 0xF), y el gancho de
-salida de la referencia (x ≥ cámara + 280 con la cámara al máximo) no se
-alcanzaba: la etapa 2 se quedaba sin terminar en ares. En MAME la abre el
-actor `03A776` (`03A740` espera RAM `10C358`): `0B7350` → `0C70FC` cambia
-la puerta por suelo (marco 26001 del piloto, celdas de las columnas
-332..337) y crea la salida `0B6ED2`. Ese actor no está traducido (parada
-explícita, comentario en `gameplay.c`); el gancho de la referencia termina
-la etapa 2 con el jugador contra la puerta (x ≥ cámara + 240; cámara 2408,
-puerta en +248). La versión sigue sin salida nativa de la etapa 2, como
-antes.
+atraviesa la puerta x 2656..2719 (y 640..767, celdas 0xF) y el gancho de
+salida de la referencia no se alcanzaba. Ahora es nativa (rama
+`work-m2gate`, `neo_m2props.c`, docs/MISION2_ACTORES.md "Puerta de la
+etapa 2"): la orden de mapa `2C` `0B7326` crea la puerta `03A6EA` tras el
+actor de misión (`neo_world_mission_actor`, cabeza de la lista); `03A75A`
+espera RAM `10C358` (la pone `03A892`) y `03A776` llama a `0B7350`: parche
+`0B706C` por `0C70FC` en el bloque (0xA2, 0x2F) (fila superior 95 contada
+desde abajo; `g_map_patch` ya no exige la rejilla de 32 filas y las celdas
+dentro de la ventana del anillo se copian a él), sonido 103B y la salida
+`0B6ED2` (rectángulo `0B7348`, +72 = 0xAC0). La puerta sube 0x50 px y se
+queda. El gancho de la referencia ya no actúa en ninguna etapa de la Misión
+2. Las 63 celdas «en conflicto» de la rejilla privada de la etapa 2
+(columnas 336..339, filas 80..95) eran exactamente las del parche vistas
+después de él: `fill_collision_rom.py --patch b706c:a2:2f` les pone el
+valor de la ROM (antes del parche; 0 conflictos):
+
+```sh
+python3 tools/fill_collision_rom.py filesystem/mission2/s2/collision.json --rom mslugx.zip --descriptor b702a --top 101 --patch b706c:a2:2f
+```
+
+**Caída en x 2286** (MAME, captura con puntos de parada en `01448C` y
+`014492`, A6 = 1014C4, marcos 24196..24245 del piloto desde
+`sec02_19932`): la parada del original en x 2263,99998 (fotograma 24207,
+D0 = 08D7FFFF, D6 = 4F) sale con **A0 = 10C72E** (el terreno), no con el
+objeto dinámico: `wall_stop` ya acepta ese resultado, así que no se toca.
+En el recorrido de ares de esta rama el jugador ya no cae ahí (0 rescates en
+la etapa 2); la caída anterior dependía del camino del mando, no de un
+objeto dinámico ignorado.
+
+**Recorrido en ares** (rama `work-m2gate`, `mslugx-m2-reference.z64`,
+`--stage-seconds 800`): `RESULT: PASS`; la etapa 2 termina por su salida
+nativa (`exit hooks=0`), 0 caídas mortales, 0 rescates en las etapas 1 y
+2; quedan los 2 rescates de la etapa 3 (x 348). Explícito: el sonido 103B
+de `0B7350` no está en `data/sound_map.json` (petición sin render) y las
+teselas del parche (+0 del sub-mapa, como en la etapa 1) no se dibujan.
 
 **Recorrido en ares** (`mslugx-m2-reference.z64`, `--stage-seconds 800`;
 con 400 la etapa 2 no llega a soltar la parada 2368 con otros dos ares en

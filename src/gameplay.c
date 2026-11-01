@@ -503,6 +503,8 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
         if (c->events[i].kind==NEO_CAMERA_EV_CALL) neo_train_call(&g->world.train,c->events[i].address);
         if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7B00) g->world.tower.counter=0;   /* 10C6B2 */
+        /* 0B7326 (Mission 2 stage 2): the gate 03A6EA at (0xA70, 0x2C0) (neo_m2props.c). */
+        if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7326) neo_world_mission_actor(&g->world,0x3a6ea,0xa700000,0x2c00000);
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7C20) {
             /* 0B7C20: actor 0B7C38 (040BC) and 026190 (10C350 = 2C1374, 10C354 = 0). */
             g->world.tower.on=true;g->world.tower.table=8;g->world.tower.at=0;g->world.tower.mode=0;
@@ -832,15 +834,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40); stage 3 by its
      * boss (the tower stairs reach the screen's right edge at camera x
      * 624, MAME run4 player x 915: the climb goes on). */
-    /* Mission 2 stage 2: the gate x 2656..2687 (y 640..679) stays a wall
-     * until the actor 03A776 patches the map (0B7350 -> 0C70FC, MAME frame
-     * 26001 of the pilot's run) and creates the exit 0B6ED2; that actor
-     * (03A740, waiting for RAM 10C358) is not translated (explicit stop).
-     * With the player's wall stops (neo_kernel_player_sweep) the player
-     * stands against it at camera max + 248: the hook ends the stage there. */
-    int exit_dx=g->flow.mission==1u && g->flow.stage==2u?240:280;
-    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+exit_dx)*MSX_UNIT &&
-        !(g->flow.mission==1u && (g->flow.stage==1u || g->flow.stage==3u) && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+    /* Mission 2 stage 2 ends by the native gate 03A6EA (map command 0B7326;
+     * 03A776 -> 0B7350: map patch 0B706C, exit 0B6ED2), neo_m2props.c. */
+    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
+        !(g->flow.mission==1u && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
     /* The level script stopped at a record of an unported actor (explicit
      * stop): its camera lock would hold the stage there for good. The
      * reference build releases it (0C7C12) to walk the engine further;

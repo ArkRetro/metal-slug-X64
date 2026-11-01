@@ -411,15 +411,17 @@ static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
 }
 /* ROM 0C70FC, collision part (0C72EC): the sub-map's cells over the whole
  * stage grid of the terrain layer 10C72E (the ring window is not modelled;
- * the patch is made on screen). Block row d5 is counted from the ROM top
- * row of a 32-row grid (Mission 2 stage 1); others stop explicitly. */
+ * the patch is made on screen: Mission 2 stage 1 gate, stage 2 gate
+ * 0B7350); with a ring the cells inside its window follow. Block row d5 is
+ * counted from the bottom (the ring window's +38 blocks): its top row is
+ * 2*d5+1. */
 static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6]) {
     neo_genv_t *e=&((tick_t *)ctx)->genv;
     const uint8_t *s=ga_rom(submap);
     if (!s) {ga_fail(e,submap);return;}
     uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
     if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
-    if (c==0xffffffffu || d[0] || d[1] || neo_collision_rows()!=32u) {ga_fail(e,0xc72ec);return;}
+    if (c==0xffffffffu || d[0] || d[1]) {ga_fail(e,0xc72ec);return;}
     unsigned h=(unsigned)(s[10]<<8|s[11]);
     const uint8_t *cells=ga_rom(c);
     if (!cells || (unsigned)d[3]!=h) {ga_fail(e,c);return;}
@@ -1297,6 +1299,18 @@ bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int3
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
+    return true;
+}
+/* An actor the mission actor 101364 creates (0040BC from a map command
+ * routine, e.g. 0B7326): right after it, i.e. at the head of this list
+ * (depth 1, +68 = 0), with +28/+2C set by the routine; it runs in this
+ * update (the mission actor precedes the list). */
+bool neo_world_mission_actor(neo_world_t *w,uint32_t routine,int32_t x,int32_t y) {
+    if (!neo_region_routine(routine)) {w->external_spawns++;w->external_constructor=routine;return false;}
+    neo_gactor_t *a=ga_alloc(w,routine,0,0,1);
+    if (!a) return false;
+    if (!insert(w,0,(neo_world_slot_t){NEO_WORLD_GACTOR,(uint8_t)a->index,1})) {a->active=false;w->overflow++;return false;}
+    ga_sl(a,0x28,(uint32_t)x);ga_sl(a,0x2c,(uint32_t)y);
     return true;
 }
 bool neo_world_shot_row(neo_world_t *w,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned rowi,bool left) {

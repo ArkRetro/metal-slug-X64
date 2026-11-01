@@ -443,6 +443,10 @@ static void tower_step(msx_game_t *g) {
         if (d0<0) return;
         unsigned type=tower_next(g);if (type>=0xd) type=0xb;
         neo_collision_ring_copy(0x10,(int)(3*type),0x18,3,0x10,0x66+(int)g->world.tower.counter);
+        /* 0C714E copies the same blocks of 0B740A to the sprite map: the
+         * renderer draws piece k (10C6B2 = 3k) from the type's template. */
+        unsigned k=g->world.tower.counter/3u;
+        if (k<NEO_TOWER_PIECES) {g->world.tower.types[k]=(uint8_t)type;if (k>=g->world.tower.drawn) g->world.tower.drawn=k+1u;}
         g->world.tower.counter=(uint16_t)(g->world.tower.counter+3u);g->world.tower.pieces++;
     }
 }
@@ -733,6 +737,16 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
         g->stage_lock_releases++;
     }
+    /* A camera stop the script holds for a group the pad does not clear
+     * (Mission 2 stage 2, 2D7864: the soldiers 067E98/068020 of 06835C at
+     * the right edge, under the player): after 2400 steps (40 s) at the
+     * stop the reference build releases it too (lock_timeouts). */
+    if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && g->camera>=g->world.camera_lock) {
+        if (++g->lock_held>=2400u) {
+            g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
+            g->stage_lock_releases++;g->lock_timeouts++;g->lock_held=0;
+        }
+    } else g->lock_held=0;
 #endif
     /* Stage exit 0B6ED2 (neo_goarrow.c): 018F40 ends the stage. */
     if (g->world_enabled && g->world.ga_flags.stage_done) {g->world.ga_flags.stage_done=0;msx_game_stage_end(g);return;}
@@ -874,7 +888,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * as it is, 0 for a player not hit). Independent of the
              * reference cartridge's invulnerability (only hits). */
             neo_world_player_t p=player_frame(g);
-            if ((int16_t)p.py<0x100) {g->pit_deaths++;start_death(g,0,(int16_t)p.px>=0xa0);}
+            if (MSX_REFERENCE_INVULNERABLE && (int16_t)p.py<0x100 && g->safe) {
+                /* Reference build: back to the last grounded position. */
+                g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
+            } else if ((int16_t)p.py<0x100) {g->pit_deaths++;start_death(g,0,(int16_t)p.px>=0xa0);}
+            else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {g->safe_x=g->x;g->safe_y=g->y;g->safe=true;}
         }
     }
     int player=g->x/MSX_UNIT;

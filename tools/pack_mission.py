@@ -65,6 +65,7 @@ def build(mission,stage_dirs,crom,rom=None):
     for k,d in enumerate(stage_dirs):
         model=json.loads((d/'map.json').read_text())
         base=len(images)
+        tower=tower_templates(model,rom) if rom is not None else None
         st_images,st_cells=pack_map(model,crom,image)
         images.extend((pg,pal,y,h) for pg,pal,_,y,_,h,_ in st_images)
         first=len(cells);cells.extend((layer,x,y,[base+i for i in phases]) for layer,x,y,phases in st_cells)
@@ -89,7 +90,7 @@ def build(mission,stage_dirs,crom,rom=None):
                            grid=offset,unknown=unknown,image_first=base,image_count=len(st_images),rules=rules))
         report.append(dict(stage=d.name,cells=len(st_cells),images=len(st_images),coordinate_variants=len(model['conflicts']),
                            backdrops=sorted(set(backdrops)),grid=[col['columns'],col['rows']],grid_unknown=col.get('unknown_cells'),
-                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules))
+                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower))
     blobs=bytearray()
     if rom is not None:
         for k,st in enumerate(stages):
@@ -162,6 +163,50 @@ def layer_rules(model):
         rules.append((fx.numerator,fx.denominator,fy.numerator,fy.denominator,lo,hi))
     return rules
 
+# Stage 3 tower (docs/MISION2.md "Fase 2d"): the writer 0B7C38 copies 24 x 3
+# blocks of the layer map 0B740A at (0x10, 3 * type) to the window blocks
+# (0x10, 0x66 + 10C6B2); 0C714E copies the sprite map's blocks of the same
+# rectangle (+0 of the descriptor: u16 tile, u16 attribute per 16-px block,
+# column major, 0x88 blocks per column). The recorded cells of the climb
+# (layer 3, y < TOWER_TOP, x 256..639) are run4's sequence: they are dropped
+# and the 13 templates are packed as layer-3 cells at x >= TOWER_TEMPLATE_X
+# (never on screen): template t, block (i, j) at (TOWER_TEMPLATE_X + 16 i,
+# 16 (3 t + j)). The renderer draws piece k (10C6B2 = 3k) of type t at
+# (256 + 16 i, TOWER_BASE_Y - 48 k + 16 j) (scene_render_set_tower).
+TOWER_MAP=0x0B740A;TOWER_TEMPLATE_X=0x4000;TOWER_BASE_Y=-1408;TOWER_TOP=-1360;TOWER_COLUMN=0x10;TOWER_TYPES=13
+def tower_templates(model,rom):
+    if not any(o.get('map_origins') and o['map_origins'][3][0]=='0x%06X'%TOWER_MAP for o in model['observations']):return None
+    gfx,_,_,blocks=struct.unpack_from('>IIHH',rom.fixed,TOWER_MAP);base=gfx-0x100000
+    def entry(col,b):
+        t,a=struct.unpack_from('>HH',rom.p2,base+(col*blocks+b)*4)
+        return t|((a>>4)&0xf)<<16,a>>8,a&3,7 if a&8 else 3 if a&4 else 0
+    # Static rows (map block b at y = top + 16 b, top = -1936): ROM palette -> map palette,
+    # and the check that the recorded cells are this sprite map.
+    top=TOWER_BASE_Y-16*(0x87-0x66);pal={};same=0   # window block W = 0x87 - b
+    cells=[c for c in model['cells'] if c['layer']==3]
+    for c in cells:
+        if c['y']<TOWER_TOP:continue
+        code,p,flip,anim=entry(c['x']//16,(c['y']-top)//16)
+        if code==c['code']:
+            assert pal.setdefault(p,c['palette'])==c['palette'],('palette',p);same+=1
+    assert same>=0.9*sum(1 for c in cells if c['y']>=TOWER_TOP),('sprite map',same)
+    climb=[c for c in cells if c['y']<TOWER_TOP and 256<=c['x']<640]
+    assert all(256<=c['x']<640 for c in cells if c['y']<TOWER_TOP),'tower cells outside the piece columns'
+    # Every recorded piece is one of the templates (run4's sequence).
+    rec={(c['x'],c['y']):c['code'] for c in climb};pieces=0
+    for k in range(200):
+        y0=TOWER_BASE_Y-48*k
+        if not any((x,y0+16*j) in rec for x in range(256,640,16) for j in range(3)):continue
+        assert any(all(rec.get((256+16*i,y0+16*j),code)==code for i in range(24) for j in range(3)
+                       for code in [entry(TOWER_COLUMN+i,3*t+j)[0]]) for t in range(TOWER_TYPES)),('piece',k);pieces+=1
+    ids={id(c) for c in climb};model['cells']=[c for c in model['cells'] if id(c) not in ids]
+    for t in range(TOWER_TYPES):
+        for j in range(3):
+            for i in range(24):
+                code,p,flip,anim=entry(TOWER_COLUMN+i,3*t+j)
+                assert p in pal,('template palette not recorded',t,p)
+                model['cells'].append(dict(layer=3,x=TOWER_TEMPLATE_X+16*i,y=16*(3*t+j),code=code,flip=flip,animation_mask=anim,palette=pal[p],observations=0))
+    return dict(recorded_pieces=pieces,dropped_cells=len(climb),template_cells=TOWER_TYPES*72)
 def stage_blobs(rom,descriptor):
     """ROM tables a stage reads (descriptor 016DDE..): the camera command
     list (+0, walked to its hold, op 8, as 0C83E6 does), the script section

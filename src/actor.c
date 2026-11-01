@@ -330,6 +330,10 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         observed_wreck_contact=true;debugf("MSX player on wreck\n");
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
+    {static unsigned tower_logged;
+     if (game.world.tower.drawn<tower_logged) tower_logged=0;
+     for (;tower_logged<game.world.tower.drawn;tower_logged++)   /* stage 3 tower: collision and drawing share types[] */
+        debugf("MSX tower piece %u type %u camera y=%d\n",tower_logged,game.world.tower.types[tower_logged],game.camera_height);}
     if (game.world.spawned!=old_spawned) debugf("MSX rebel spawned=%u alive=%u camera=%d\n",game.world.spawned,neo_world_alive(&game.world),game.camera);
     if (game.world.script.halted && !old_halted) {
         const neo_script_t *sc=&game.world.script;unsigned pc=sc->halt_address-sc->base;
@@ -366,9 +370,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         static unsigned last;static int seen_camera=-1,seen_height=-99999;
         if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {
             last=game.ticks;seen_camera=game.camera;seen_height=game.camera_height;
-            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u\n",
+            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u\n",
                 (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
-                game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported);
+                game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues);
         }
     }
     if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));
@@ -468,6 +472,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
+    scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
     scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
     /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */

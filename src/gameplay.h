@@ -98,6 +98,10 @@ typedef struct {
      * with the platform (wagon 033C98, boss). */
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
     unsigned wall_stops,pit_deaths;   /* side stops of the sweeps 0143EE/014594 (wall_stop) */
+    /* Reference build only: the last grounded position, where a fall
+     * below the screen puts the player back (pit_rescues) instead of the
+     * fall death 0C3712 (the invulnerability also covers pits). */
+    int32_t safe_x,safe_y;bool safe;unsigned pit_rescues;
     unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
     /* Weapons (world.weapons, RAM 10C718; docs/ARMAS_VEHICULOS.md). A shot
      * reserves through 0C0D64 for the current weapon; only the pistol's
@@ -153,7 +157,7 @@ typedef struct {
      * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
      * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
-    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases;
+    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);

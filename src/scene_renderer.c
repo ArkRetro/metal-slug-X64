@@ -56,6 +56,37 @@ static bool collapsed,flash,patched;
 static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n);
 void scene_render_set_collapse(bool done,bool white) {collapsed=done;flash=white;}
 void scene_render_set_patch(bool done) {patched=done;}
+/* Tower templates of the loaded stage (cell index per type, row, column;
+ * 0xFFFF: none) and the pieces to draw (scene_render_set_tower). */
+static uint16_t tower_cell[SCENE_TOWER_TYPES][3][24];static bool tower_stage;
+static const uint8_t *tower_types;static unsigned tower_count;
+void scene_render_set_tower(const uint8_t *types,unsigned count) {tower_types=types;tower_count=tower_stage?count:0u;}
+static void tower_index(const scene_stage_t *st) {
+    memset(tower_cell,0xff,sizeof(tower_cell));tower_stage=false;tower_count=0;
+    if (!st) return;
+    for (unsigned i=0;i<st->cell_count;i++) {
+        const scene_map_cell_t *c=&st->cells[i];
+        if (c->layer!=3 || c->x<SCENE_TOWER_TEMPLATE_X) continue;
+        unsigned col=(unsigned)(c->x-SCENE_TOWER_TEMPLATE_X)/16u,row=(unsigned)c->y/16u;
+        if (col<24 && row<3u*SCENE_TOWER_TYPES) {tower_cell[row/3][row%3][col]=(uint16_t)i;tower_stage=true;}
+    }
+}
+/* The visible pieces, cell by cell (classic: depth_view NULL). */
+static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *view,const int *offsets,unsigned video_tick,unsigned n);
+static void draw_tower(const int *offsets,const int *rises,const retro_plane_view_t *view,unsigned video_tick) {
+    if (!tower_count || !tower_types) return;
+    const scene_stage_t *st=scene_stage();
+    for (unsigned k=0;k<tower_count;k++) {
+        int top=SCENE_TOWER_BASE_Y-48*(int)k,y=8+top+rises[3];
+        if (!view && (y+48<=8 || y>=232)) continue;
+        unsigned t=tower_types[k];if (t>=SCENE_TOWER_TYPES) continue;
+        for (unsigned j=0;j<3;j++) for (unsigned i=0;i<24;i++) {
+            uint16_t id=tower_cell[t][j][i];if (id==0xffff) continue;
+            scene_map_cell_t c=st->cells[id];c.x=(int16_t)(256+16*(int)i);c.y=(int16_t)(top+16*(int)j);
+            if (view) depth_cell(&c,view,offsets,video_tick,1); else classic_cell(&c,offsets,rises,video_tick,1);
+        }
+    }
+}
 static bool patch_cell(const scene_map_cell_t *cell) {
     unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);
     for (unsigned i=0;i<n;i++) if (p[i].x==cell->x && p[i].y==cell->y) return true;
@@ -271,6 +302,7 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
           }
           if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
           if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
+          if (layer==3) draw_tower(offsets,rises,NULL,video_tick);
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
@@ -303,6 +335,7 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
       // Replacement cells (shop patch, post-collapse rubble) on their layer.
       if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
       if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      if (layer==3) draw_tower(offsets,rises,view,video_tick);
       if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
@@ -318,7 +351,7 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
  * pinned until the RDP has finished the last frame that ran it; then the
  * blocks are freed. Off while a fade or the white flash is on. */
 typedef struct {
-    bool valid;bool collapsed,patched;int offsets[5],rises[5];bool visible[5];
+    bool valid;bool collapsed,patched;unsigned tower;int offsets[5],rises[5];bool visible[5];
     retro_plane_view_t views[5];
 } bg_key_t;
 static bg_key_t bg_key;
@@ -351,7 +384,7 @@ static bool bg_retire(void) {
     return false;
 }
 static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
-    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched) return false;
+    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched || bg_key.tower!=tower_count) return false;
     for (unsigned i=0;i<5;i++) if (bg_key.offsets[i]!=offsets[i] || bg_key.rises[i]!=rises[i] || bg_key.visible[i]!=visible[i]) return false;
     if (depth_mode && memcmp(bg_key.views,depth_views,sizeof(bg_key.views))) return false;
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (!bg_blocks[p][t]) return false;
@@ -383,7 +416,7 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
     bg_key_t key;memset(&key,0,sizeof(key));
-    key.valid=true;key.collapsed=collapsed;key.patched=patched;
+    key.valid=true;key.collapsed=collapsed;key.patched=patched;key.tower=tower_count;
     for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
     if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
     /* Frames the inputs have held, counted once per frame (back pass): the
@@ -501,6 +534,7 @@ void scene_renderer_stage_changed(void) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
     bg_key.valid=false;collapsed=flash=patched=false;
     const scene_stage_t *st=scene_stage();
+    tower_index(st);
     if (st) {
         bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
         assertf(indexed,"Stage cell index");(void)indexed;

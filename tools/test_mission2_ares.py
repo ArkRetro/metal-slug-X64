@@ -1,15 +1,18 @@
 #!/usr/bin/env python3
-"""Walk Mission 2 in ares 146 as far as the engine goes (docs/MISION2.md
-"Fase 2"). Launch ares separately with the Mission 2 reference cartridge
-(make mslugx-m2-reference.z64: the reference game, invulnerable, starting at
-Mission 2's first record, with the reference stage-end hook of gameplay.c,
-MSX_REFERENCE_STAGE_EXIT: in stage 1 it only inserts the native exit 0B6ED2,
-whose gate 03889C is not ported; the exit's auto-walk and 018F40 end it) and pass its log. The pad walks right firing and jumps every few
-seconds. Checks: the mission pack loads, stage 1 starts from its own camera
-list and script, the camera reaches the list's hold (320), the hook ends
-the stage and the flow's next record loads stage 2, whose camera then
-follows its list (vertical modes included). Screenshots at each milestone;
-the last line summarises how far it walked."""
+"""Walk Mission 2 in ares 146 (docs/MISION2.md "Fase 2d"). Launch ares
+separately with the Mission 2 reference cartridge (make
+mslugx-m2-reference.z64: the reference game, invulnerable to hits and, on
+its last ground, to falls below the screen; starting at Mission 2's first
+record; camera stops of the script released when it stops at an unported
+record or after 2400 steps at the stop) and pass its log. The pad walks
+right firing and jumps; when the camera holds still it tries what a player
+would (ground fire, the downward shot, frequent jumps). Checks: stage 1
+ends by its native exit, stage 2 with its script (06835C native, vertical
+modes 4/5) ends and loads stage 3, whose tower (writer 0B7C38: collision
+and drawing from the same piece types) is climbed up to the boss arena,
+where the boss 026254 is an explicit stop. Screenshots at each milestone;
+the stage ends, tower pieces and the perf numbers are reported and the
+last line is RESULT: PASS/FAIL."""
 from pathlib import Path
 import argparse,re,subprocess,threading,time
 parser=argparse.ArgumentParser()
@@ -35,21 +38,30 @@ def camera_now():
     m=re.findall(r'MSX stage \d camera x=(-?\d+) y=(-?\d+)',log()[-20000:])
     return m[-1] if m else None
 def pad():
-    # Right, firing, a jump every 3 s. When the camera has not moved for 6 s
-    # (a camera-list wait such as op 4's rectangle, 0C84BE, which wants the
-    # player on a ledge), back off left for a second and jump more often.
-    t0=time.monotonic();state={};last=(None,t0);back_until=0
+    # Right, firing, a jump every 3 s. The log drives the rest: when the
+    # camera has not moved for 5 s (a camera stop of the script, 0C7C12's
+    # lock, waiting for its group; or a camera-list wait such as op 4's
+    # rectangle 0C84BE, which wants the player on a ledge), the pad cycles
+    # through what a player would try: walk back and fire on the ground
+    # without jumping (soldiers below a ledge), jump with Down held (the
+    # downward shot), then jump often while walking right (steps of the
+    # climbs). Falls below the screen put the reference player back on its
+    # last ground (gameplay.c, pit rescues).
+    t0=time.monotonic();state={};last=(None,t0)
     def hold(name,on):
         if state.get(name)!=on:key('keydown' if on else 'keyup',name);state[name]=on
     while not stop.is_set():
         now=time.monotonic();t=now-t0
         cam=camera_now() if int(t*4)%4==0 else last[0]
         if cam!=last[0]:last=(cam,now)
-        stuck=now-last[1]>6
-        if stuck and now>back_until+3:back_until=now+1.0+(int(t)%3)*0.4
-        left=now<back_until
-        hold('b',int(t*20)%2==0);hold('Right',not left);hold('Left',left)
-        hold('a',(t%(1.2 if stuck else 3.0))<0.2)
+        stuck=now-last[1]
+        fire=int(t*20)%2==0;right=True;left=False;down=False;jump=(t%3.0)<0.2
+        if stuck>5:
+            phase=int((stuck-5)/4)%3;u=(stuck-5)%4
+            if phase==0:left=u<1.2;right=not left;jump=False
+            elif phase==1:right=False;down=True;jump=(u%1.0)<0.2
+            else:jump=(u%1.0)<0.2;left=u>3.2;right=not left
+        hold('b',fire);hold('Right',right);hold('Left',left);hold('Down',down);hold('a',jump)
         time.sleep(.03)
     for name in list(state):hold(name,False)
 def boot_taps():
@@ -86,11 +98,21 @@ try:
     wait_for(r'MSX mission 2 stage 2 start',timeout=30);time.sleep(1.5);snap('stage2-start');walked.append(2)
     end=time.monotonic()+args.stage_seconds;shots=0
     while time.monotonic()<end:
-        time.sleep(args.stage_seconds/6);snap('stage2-%d'%shots);shots+=1
+        time.sleep(2);
+        if time.monotonic()>end-args.stage_seconds+(shots+1)*args.stage_seconds/6:snap('stage2-%d'%shots);shots+=1
         if re.search(r'MSX stage end \(018722\) mission 2: next stage 3',log()):break
-    if re.search(r'MSX mission 2 stage 3 start',log()):
-        walked.append(3);time.sleep(2);snap('stage3-start')
-        time.sleep(args.stage_seconds/2);snap('stage3-later')
+    wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
+    m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
+    wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)
+    # The tower climb (writer 0B7C38) up to the boss arena: the boss 026254
+    # is not ported here, so the script stops explicitly at its record.
+    end=time.monotonic()+2*args.stage_seconds;shots=0;boss=None
+    while time.monotonic()<end and not boss:
+        time.sleep(2)
+        if time.monotonic()>end-2*args.stage_seconds+(shots+1)*args.stage_seconds/4:snap('stage3-%d'%shots);shots+=1
+        boss=re.search(r'MSX (script stopped at \w+ .*|boss stopped node routine=\w+.*)',log()[log().find('MSX mission 2 stage 3 start'):])
+    assert boss,'stage 3: no boss stop within %d s'%(2*args.stage_seconds)
+    time.sleep(1);snap('stage3-boss');walked.append('boss stop: '+boss.group(1))
 finally:
     stop.set()
     for name in ('Right','Left','Up','a','b','Return'):
@@ -99,4 +121,17 @@ finally:
 text=log()
 for s in (1,2,3):print(stage_report(s))
 print('camera list events unsupported (max):',max([int(n) for n in re.findall(r'camera events unsupported=(\d+)',text)] or [0]))
-print('RESULT: Mission 2 walked through stage(s) %s'%(','.join(map(str,walked)) or 'none'))
+pieces=re.findall(r'MSX tower piece (\d+) type (\d+)',text)
+print('stage 3 tower: %d pieces (types %s); drawing and collision use the same types (scene_render_set_tower)'%(len(pieces),''.join('%x'%int(t) for _,t in pieces)))
+ends=re.findall(r'MSX stage end \(018722\) mission 2: next stage (\d) \(exit hooks=(\d+), script lock releases=(\d+)\)',text)
+print('stage ends:',ends)
+pits=[tuple(map(int,m)) for m in re.findall(r'pit deaths=(\d+) rescues=(\d+)',text)]
+if pits:print('pit deaths max=%d, reference rescues max=%d'%(max(p[0] for p in pits),max(p[1] for p in pits)))
+perf=[(int(a),int(b)) for a,b in re.findall(r'MSX PERF: .*? cpu=(\d+)/(\d+)',text)]
+rdp=[tuple(map(int,m)) for m in re.findall(r'MSX RDP: draws=(\d+) .*CPU=(\d+) us .*misses=(\d+)',text)]
+audio=[int(n) for n in re.findall(r'MSX AUDIO .*underruns=(\d+)',text)]
+if perf:print('MSX PERF windows=%d cpu mean max=%d us worst frame=%d us'%(len(perf),max(p[0] for p in perf),max(p[1] for p in perf)))
+if rdp:print('RDP samples=%d draws max=%d CPU max=%d us misses max=%d'%(len(rdp),max(r[0] for r in rdp),max(r[1] for r in rdp),max(r[2] for r in rdp)))
+if audio:print('audio underruns max=%d'%max(audio))
+complete=[s for s in ('2','3') if any(e[0]==s for e in ends)]
+print('RESULT: %s Mission 2 walked: %s'%('PASS' if complete==['2','3'] and 3 in walked and pieces else 'FAIL',', '.join(map(str,walked)) or 'none'))

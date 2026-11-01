@@ -1,5 +1,7 @@
 #ifndef MSX_NEO_WORLD_H
 #define MSX_NEO_WORLD_H
+/* Stage 3 tower pieces remembered for the renderer (81 in run4, up to the boss). */
+enum { NEO_TOWER_PIECES=128 };
 #include <stdbool.h>
 #include <stdint.h>
 #include "neo_script.h"
@@ -136,7 +138,10 @@ typedef struct {
     neo_camera_t camera;bool camera_native;
     /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
      * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */
-    struct { bool on; uint16_t counter; uint8_t table,at; int16_t mode; unsigned pieces; } tower;
+    /* types[k]: piece type of the k-th piece (10C6B2 = 3k), drawn by the
+     * renderer from the templates of map 0B740A (scene_render_set_tower);
+     * drawn: pieces 0..drawn-1 placed. */
+    struct { bool on; uint16_t counter; uint8_t table,at; int16_t mode; unsigned pieces,drawn; uint8_t types[NEO_TOWER_PIECES]; } tower;
     /* Stage of a mission pack (neo_world_init_stage); NULL camera = Mission 1's
      * list 0B57BE. */
     const uint8_t *stage_camera;uint16_t stage_camera_size;uint32_t stage_camera_base;unsigned camera_events_unsupported;

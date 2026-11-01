@@ -1297,3 +1297,58 @@ las variantes `+93 = 2` (tabla `0C42EA`: `0646C8/0646E0`, `0A7226/0A719C`,
 `10C340/10C348`; sus poses `0C01D8..` ya están capturadas en `marco-w6`),
 `08` (`0641EC`), `0E` (`0DE4DA`) y `0F` (`0DEA20`): siguen disparando la
 bala de pistola del port (`weapon_stops`).
+
+**Rayo 06/0B: análisis (rama `work-m2gate`, sin traducir, sigue como
+parada explícita `weapon_stops`).** Captura MAME 0.264 (privada,
+`/home/user/captures-m2gate/w6`, borrada al acabar; repetible):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=6 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=1e22c,c58d2 MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=999999 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT
+```
+
+En 2150..3140: 9 rayos `01E22C` (el primero en 2193), 445 actualizaciones
+en `01E28E/01E2FC/01E398/01E41C`, 58 chispas `01E582/01E58A/01E596`
+(1075 actualizaciones en `01E604`). Estructura leída de la ROM:
+`0C46D6` (con el arma 06/0B: +95 + 1 impar, o acarreo de `0C0D64`)
+llama a `01E19E` (D0 = jugador, D1 = 0, D2 = 4: bloque RAM 10C340/10C348
+del jugador, +6 vivo, +7 sonido 10F8 si el otro jugador no suena, +5 vida
+D2 & 7F, +4 dirección; crea `01E22C` con `0040BC` reserva 0xE, `01B220`,
++5E del jugador, +6E jugador, +70 dirección) y a `01E166` (D0/D1 = el
+punto del arma de la tabla que deja `0C46D6` en A0, más +72/+74 si +90 ≠
+FF; +4 = D3, +92 si +90 ≠ FF, y si cambia con +5 ≤ 0, +6 = 0). `01E22C`: capas E000, paletas 0x98/0x99/0x9A (`009F88` y
+de nuevo según +88, `01F002`: arma 0B → bit 0, `0C05B8` = 2 → bit 1),
+onda `03C526`; por actualización `01F002`, `01EC1E` (una vez por
+fotograma de vídeo 10000E: lee el bloque, copia el giro del jugador, mide
+con `014A02` desde el jugador con +2C/+40 + 1, `01AD6E`/`01AD52`/
+`01ABC8`), `01ED32` (fin si +6 = 0 → `01E4D4`: sonido 10F8 parado por
+`012192` si el otro jugador no lo usa, `004188`); horizontal
+`01ED60`/vertical `01EDF6`: recorre el rayo en pasos de 16 px
+(`014906`, `01AC38`, un `00427A` por paso, filas `1F096..1F116` de
+`0049E8` según +7A y +88, hasta la pared o el borde 0x10..0x130 /
+0x100..0x200), con programas `22EBB6/22EC92/22ED6E` (+70 = 0),
+`22F016/22F0F2/22F1CE` (+70 ≠ 0) y los de la fase `01E398`
+(`22EE6A/22EF3A/22F00A`, `22F2CA/22F39A/22F46A`), chispas `01EF68` cada 4
+fotogramas de vídeo. Falta: traducirlo con la familia de `w6` (dibujos
+múltiples por actualización, `014A02` sobre el nodo del jugador), los papeles
+de las poses `marco-w6` en `compile_marco_campaign.py`, el sonido 10F8 en
+`data/sound_map.json` y la llamada de `fire_kind`.
+
+**Muertes de soldado por fila de tipo 7, 0A y 0B (análisis, sin traducir;
+`neo_soldier_death_stops`).** Tablas de `0406B6`/`0407CA` (destino de cada
+tipo 0..13; ≥ 14 va a `040DC0`/`040A28`): suelo `0406EA` = 40DC0 40C8E
+40DC0 40B46 40B46 40BA8 40D66 **40A40** 40DC0 40C8E **40AF6 40A7C** 40DD8
+40DD8 40DC0×6; aire `040750` = 40DC0 40C8E 40DC0 40B46 40B46 40DC0 40A10
+**40A40** 40DC0 40DC0 **40AF6 40A7C** 40DC0×8; agachado `0407F4` = 40A28×3
+40B46 40B46 40BE6 40A28 **40A40** 40A28 40A28 **40AF6 40A7C** 40A28×8.
+`040A40` (tipo 7): +76 = (`0029C6` & FFFF) << 2, negado si +5B < 0; +34 =
+0; programa `240E8E`; → `040DF0`. `040AF6` (0A): `040F04` (hijo `040F60`
+a (8, 0) con +15 bit 0 invertido: programa `24039C`, paleta 0x37A/0x3BA
+por `01B2BE`), programa `240D2E` o `240C6E` según +5B ^ giro, +34 = 2,0,
++15 bit 6 a 0, → `040DF0`. `040A7C` (0B): `040F04`, programa `240DC0` o
+`240AE6` según el signo de `0029C6`, +30 = ±(`0029C6` & FFFF) << 2 por
++5B, +34 = 16,0, +15 bit 6 a 0; `040AE0`: +34 −= +34 >> 4 mientras sea ≥ 0
+y `040DF0`. Falta la evidencia de MAME (un soldado muerto por la llama o el
+estallido con volcados por fotograma, `extract_soldier_ticks.py`) y la
+variante de `NEO_SOLDIER_EVENT_DEATH_CHILD` con el programa `24039C`.

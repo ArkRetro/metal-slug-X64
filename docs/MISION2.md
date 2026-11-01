@@ -751,15 +751,21 @@ python3 tools/fill_collision_rom.py filesystem/mission2/s2/collision.json --rom 
 `014492`, A6 = 1014C4, marcos 24196..24245 del piloto desde
 `sec02_19932`): la parada del original en x 2263,99998 (fotograma 24207,
 D0 = 08D7FFFF, D6 = 4F) sale con **A0 = 10C72E** (el terreno), no con el
-objeto dinámico: `wall_stop` ya acepta ese resultado, así que no se toca.
-En el recorrido de ares de esta rama el jugador ya no cae ahí (0 rescates en
-la etapa 2); la caída anterior dependía del camino del mando, no de un
-objeto dinámico ignorado.
+objeto dinámico. La rejilla estática no tiene pared en x 2264 (columna
+283: solo la pendiente de las filas 68..71), así que la pared es la del
+objeto dinámico de la ranura 7 (`0E1B6A`, el obstáculo `06851A`) y el
+barrido de 013968 no cambia A0 en una parada lateral: `wall_stop` ya acepta
+ese resultado (padre terreno) y no se toca. En ares la caída sigue siendo
+intermitente (recorrido A: 0 rescates en la etapa 2; recorrido B: 1, en x
+2281 desde x 2261): sin medir si el obstáculo del port existe aún cuando
+llega el jugador (en MAME el piloto lo rompe en el fotograma ~24216 y sigue
+a x 2266,9) o si es el aterrizaje en la pendiente. Parada explícita.
 
 **Recorrido en ares** (rama `work-m2gate`, `mslugx-m2-reference.z64`,
-`--stage-seconds 800`): `RESULT: PASS`; la etapa 2 termina por su salida
-nativa (`exit hooks=0`), 0 caídas mortales, 0 rescates en las etapas 1 y
-2; quedan los 2 rescates de la etapa 3 (x 348). Explícito: el sonido 103B
+`--stage-seconds 800`, dos recorridos): `RESULT: PASS` en los dos; la
+etapa 2 termina por su salida nativa (`exit hooks=0`), 0 caídas mortales;
+rescates: A 0 en la etapa 2 y 2 en la 3 (x 348), B 1 en la etapa 2 (x
+2281) y 4 en la 3 (x 348 y 611; la etapa 3 no cambia en esta rama). Explícito: el sonido 103B
 de `0B7350` no está en `data/sound_map.json` (petición sin render) y las
 teselas del parche (+0 del sub-mapa, como en la etapa 1) no se dibujan.
 

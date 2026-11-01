@@ -143,7 +143,7 @@ BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematic
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
 # the mission switch; without them the game stops there and restarts Mission 1.
 MISSION_PACKS := $(wildcard romfs/mission[2-6].pack)
-$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
+$(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
@@ -152,6 +152,8 @@ $(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.sta
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
 	$(if $(and $(BOOT_CINE_OBJS),$(BOOT_ATTRACT)),cp $(BOOT_ATTRACT) $(BUILD_DIR)/game-romfs/)
+	# Movies as MSXC v2 (LZ4 per packet, same frames; docs/MEMORY_OPTIMIZATION.md).
+	for f in $(BUILD_DIR)/game-romfs/*.msxc; do [ -f "$$f" ] || continue; python3 -I tools/msxc_compress.py $$f $$f.v2 >/dev/null && mv $$f.v2 $$f || exit 1; done
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.

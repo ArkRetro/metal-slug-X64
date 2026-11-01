@@ -33,6 +33,7 @@ typedef struct {
     bool finished;         /* op 3 executed (+5F bit 7) */
     bool halted;uint32_t halt_address;
     unsigned skipped;      /* records of unported constructors skipped (neo_script_env_t.skip_unported) */
+    uint32_t skipped_entry,skipped_address; /* the last one: constructor and record */
     /* RAM 10C326..10C32E: per-group live counts. Recounted by the caller at
      * the start of every original tick (ROM 019E40, called from the mission
      * actor 0186A0 before the script runs); incremented here on spawn. */

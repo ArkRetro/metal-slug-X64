@@ -4,6 +4,10 @@ import argparse,json,struct
 from pathlib import Path
 
 FOREGROUND,MIDDLE=0xc72e,0xd7b6
+# Mission 3 (docs/MISION3.md): 10D7B6 also has a collision map (0B8566, a
+# second terrain object the kernel list 01382A does not model yet); with
+# --both-layers foreground the stage grid is 10C72E's.
+BOTH_LAYERS=[None]
 
 def descriptor_layer(ram,program):
     """Generic rule (all missions): the layer object whose current map
@@ -14,6 +18,7 @@ def descriptor_layer(ram,program):
     for layer in (FOREGROUND,MIDDLE):
         d=struct.unpack_from('>I',ram,layer+0x2e)[0]
         if 0<d<len(program) and struct.unpack_from('>I',program,d+4)[0] not in (0,0xffffffff):found.append(layer)
+    if len(found)==2 and BOTH_LAYERS[0]=='foreground':return FOREGROUND
     assert len(found)==1,('No unique collision layer descriptor',[hex(l) for l in found])
     return found[0]
 

@@ -33,8 +33,8 @@ arr('uint16_t','soldier_throw_burst_rect',[v&0xffff for v in t['throw_rectangles
 arr('int16_t','soldier_throw_attack',t['throw_attack']['values'])
 L.append('enum { MISSION1_SCRIPT_BASE=%s, MISSION1_SCRIPT_END=%s, MISSION1_REGION_END=%s };'%(t['mission_script']['rom'],t['mission_script']['end'],t['mission_script']['region_end']))
 # The spawn table ROM 0197DC is shared by every mission: Mission 1's
-# entries come from the ROM dump; Mission 2's offsets from its decoded
-# script (data/mission2_script.json). Bit 31 (not counted in the group) is
+# entries come from the ROM dump; Missions 2 and 3 from their decoded
+# scripts (data/mission2_script.json, data/mission3_script.json). Bit 31 (not counted in the group) is
 # only read for groups < 9 (neo_script.c), so it is rebuilt from
 # group_counted there and left 0 otherwise.
 spawn=dict(t['spawn_table']['entries'])
@@ -45,8 +45,8 @@ def spawn_records(statements):
             v=st.get(key)
             if isinstance(v,dict):v=[v]
             if isinstance(v,list):yield from spawn_records(v)
-m2=json.loads((ROOT/'data/mission2_script.json').read_text())
-for sec in m2['sections']:
+# Mission 3 too (docs/MISION3.md: 8 bytes per offset, ~1 KB of .rodata).
+for sec in [sec for n in (2,3) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]:
     for st in spawn_records(sec['statements']):
         off=hex(int(st['table_offset'],16));ctor=int(st['constructor'],16)
         bit=(0 if st['group_counted'] else 1<<31) if st['group']<9 else None

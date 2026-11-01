@@ -100,7 +100,7 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         if (!found || len(v,pc)<0xau || (len(v,pc)-0xau)/2u>NEO_SCRIPT_SPAWN_WORDS) return halt(v,pc);
         if (!(entry&0x80000000u) && op(v,(uint16_t)(pc+2))<9u && v->e->native && !v->e->native(entry)) {
             if (!v->e->skip_unported) return halt(v,pc);
-            v->s->skipped++;return next(v,pc);
+            v->s->skipped++;v->s->skipped_entry=entry;v->s->skipped_address=v->s->base+pc;return next(v,pc);
         }
         mark_spawned(v);
         neo_script_spawn_t sp;memset(&sp,0,sizeof(sp));

@@ -5,7 +5,7 @@ This recovers the observed region, not an unseen ROM level or gameplay logic.
 """
 import argparse,collections,csv,json,struct
 from pathlib import Path
-from neo_scene import state,trace_hints,ram_slots
+from neo_scene import state,trace_hints,ram_slots,fourth_layer
 
 def animation_disabled(writes,frame):
     """LSPC bit 3 as last written before the update that produced `frame`.
@@ -19,7 +19,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
     observations=[];backdrops=set();flashes=[]
     paths=[path for root in roots for path in sorted(root.glob('vram*.bin'),key=lambda p:int(p.stem[4:]))]
-    traces={};maps={};phases={};lspc_writes={};baseline={};origin_events=[];fore_bases={};slot_changes=[];slot_headers={}
+    traces={};maps={};phases={};lspc_writes={};baseline={};origin_events=[];fore_bases={};slot_changes=[];slot_headers={};lag_skips=[]
     # Cells of a layer whose map pointer differs from the first observed one
     # (the rubble map 0B53A8 that 0B58CC loads into 10C72E): kept apart, in
     # display coordinates, keyed by (layer, pointer).
@@ -34,8 +34,9 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         hs=slot_headers[root].get(frame)
         if not hs:return {}
         full=hs[0x10c72e][0x14:0x1c]==hs[0x10d7b6][0x14:0x1c]
-        out={}
-        for layer,obj in ((0,0x10e83e),(2 if full else 1,0x10d7b6),(3,0x10c72e)):
+        out={};fourth=0x10e8c6 in hs and struct.unpack_from('>H',hs[0x10e8c6],0x2c)[0]!=0xffff
+        for layer,obj in ((0,0x10e83e),(1 if fourth else 2 if full else 1,0x10d7b6),(2,0x10e8c6),(3,0x10c72e)):
+            if obj not in hs:continue
             b=struct.unpack_from('>H',hs[obj],0x2c)[0]
             if b!=0xffff:out[layer]=b+1
         return out
@@ -87,7 +88,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
             window={tuple(sorted(maps_slots(root,frame-k).items())) for k in range(4)} if (root/'layers.csv').exists() else {tuple(sorted(slots.items()))}
             if len(window)!=1 or next(iter(window))!=tuple(sorted(slots.items())):
                 slot_changes.append(dict(frame=frame,captures=str(root)));continue
-        scene=state(v,ram,trace_hints(trace,frame) if trace else None,fore_base=fore_base if slots is None else None,slots=slots,banks=banks);camera=scene['camera'];offsets=list(scene['offsets'])
+        scene=state(v,ram,trace_hints(trace,frame,fourth=slots is not None and fourth_layer(ram)) if trace else None,fore_base=fore_base if slots is None else None,slots=slots,banks=banks);camera=scene['camera'];offsets=list(scene['offsets'])
         origins=None;layer_maps=[None]*4
         if maps[root]:
             # A layer whose map pointer is unchanged but whose column origin moved
@@ -96,8 +97,12 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
             # observation's offset carries -16 px per origin column. The SCBs of a
             # snapshot may show any of the last four updates: the state must be
             # constant over them. A new map pointer is kept in display coordinates.
-            origins=[]
-            for layer,obj in enumerate((0x10e83e,0x10d7b6,0x10d7b6,0x10c72e)):
+            origins=[];objs=(0x10e83e,0x10d7b6,0x10e8c6 if slots is not None and fourth_layer(ram) else 0x10d7b6,0x10c72e)
+            if ram_layers and any(len({maps[root][frame-k][obj] for k in range(4) if obj in maps[root].get(frame-k,{})})!=1 for obj in objs):
+                # --ram-layers (Mission 3: the column origins move while the
+                # layers scroll): such a frame is skipped and counted.
+                lag_skips.append(frame);continue
+            for layer,obj in enumerate(objs):
                 states={maps[root][frame-k][obj] for k in range(4) if obj in maps[root].get(frame-k,{})}
                 assert len(states)==1,('Layer map state changes inside the snapshot lag window',frame,hex(obj),states)
                 pointer,origin=next(iter(states))
@@ -153,7 +158,10 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
     swapped_records=[]
     for (layer,pointer),table in sorted(swapped.items()):
         for (x,y),choices in sorted(table.items()):
-            assert len(choices)==1,('Swapped map cell variants',layer,hex(pointer),x,y,choices)
+            # Mission 3 swaps maps whose cells change (variants are kept like
+            # the main map's: first observed, the rest in the conflicts).
+            assert len(choices)==1 or ram_layers,('Swapped map cell variants',layer,hex(pointer),x,y,choices)
+            if len(choices)>1:conflicts.append(dict(layer=layer,map=f'0x{pointer:06X}',x=x,y=y,variants=len(choices)))
             (code,flip,mask,palette),count=next(iter(choices.items()))
             if palette not in palette_ids:palette_ids[palette]=len(palettes);palettes.append(palette)
             swapped_records.append(dict(layer=layer,map=f'0x{pointer:06X}',x=x,y=y,code=code,flip=flip,animation_mask=mask,palette=palette_ids[palette],observations=count))
@@ -163,7 +171,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         camera_max=max(o['camera'] for o in observations),width=max(o['camera'] for o in observations)+320,
         selection='first observed; dynamic coordinate variants retained separately',
         layers=[dict(numerator=n,denominator=d) for n,d in ((1,2),(3,4),(1,1),(1,1))],
-        **({'ram_layers':True,'slot_change_frames':slot_changes} if ram_layers else {}),
+        **({'ram_layers':True,'slot_change_frames':slot_changes,'origin_lag_skips':len(lag_skips)} if ram_layers else {}),
         palettes=palettes,cells=records,swapped_cells=swapped_records,observations=observations,conflicts=conflicts,flash_frames=flashes,map_origin_events=origin_events)
     (output/'map.json').write_text(json.dumps(report,separators=(',',':'))+'\n')
     print('Observed map:',len(records),'cells;',len(swapped_records),'swapped-map cells;',len(palettes),'palettes;',len(conflicts),'coordinate variants; camera',report['camera_max'])

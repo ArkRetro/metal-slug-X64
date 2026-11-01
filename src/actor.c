@@ -42,12 +42,15 @@ static marco_visual_t marco;static bool marco_native;static unsigned marco_shots
 #ifndef MSX_REFERENCE_START_MISSION
 #define MSX_REFERENCE_START_MISSION 0
 #endif
-/* Mission packs (docs/MISION2.md "Fase 2"): the stage the flow selected
- * (42F6 = descriptor +E, pack index stage-1), loaded at its 0183D0. */
+/* Mission packs (docs/MISION2.md "Fase 2"): the stage the flow selected,
+ * loaded at its 0183D0. The pack holds the mission's stage records in play
+ * order: index = 42FA (Mission 2: 0..2 for stages 1..3; Mission 3: its one
+ * stage 4, docs/MISION3.md). The pack's descriptor must be the flow's. */
 static bool load_stage(void) {
-    unsigned index=game.flow.stage?game.flow.stage-1u:0u;
+    unsigned index=game.flow.record_index;
     if (!scene_stage_load(index)) return false;
     const scene_stage_t *st=scene_stage();
+    if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
     neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
     scene_renderer_stage_changed();
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
@@ -341,7 +344,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
     {static unsigned skipped;
-     if (game.world.script.skipped!=skipped) {skipped=game.world.script.skipped;if (skipped) debugf("MSX reference: script record of an unported constructor skipped (count=%u)\n",skipped);}}
+     if (game.world.script.skipped!=skipped) {skipped=game.world.script.skipped;if (skipped) debugf("MSX reference: script record of an unported constructor skipped (count=%u) record %06lx constructor %06lx\n",skipped,(unsigned long)game.world.script.skipped_address,(unsigned long)(game.world.script.skipped_entry&0x7fffffffu));}}
     {static unsigned tower_logged;
      if (game.world.tower.drawn<tower_logged) tower_logged=0;
      for (;tower_logged<game.world.tower.drawn;tower_logged++)   /* stage 3 tower: collision and drawing share types[] */

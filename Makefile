@@ -182,6 +182,16 @@ mslugx-m2-reference.z64: N64_ROM_TITLE = "MSX M2 REFERENCE"
 mslugx-m2-reference.z64: $(BUILD_DIR)/mslugx-m2-reference.dfs
 $(BUILD_DIR)/mslugx-m2-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-m2-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Mission 3 reference cartridge (tools/test_mission3_ares.py, never a
+# release): the same hooks starting at Mission 3's record 0173F6.
+$(BUILD_DIR)/m3ref/actor.o: src/actor.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=3 -o $@ $<
+$(BUILD_DIR)/mslugx-m3-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(BUILD_DIR)/m3ref/actor.o $(filter-out $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+mslugx-m3-reference.z64: N64_ROM_TITLE = "MSX M3 REFERENCE"
+mslugx-m3-reference.z64: $(BUILD_DIR)/mslugx-m3-reference.dfs
+$(BUILD_DIR)/mslugx-m3-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-m3-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-reference.z64: N64_ROM_TITLE = "MSX M1 REFERENCE"
 mslugx-reference.z64: $(BUILD_DIR)/mslugx-reference.dfs
 $(BUILD_DIR)/mslugx-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -198,7 +208,7 @@ $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fix
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/neo_world.o $(BUILD_DIR)/src/neo_boss.o: $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h
-$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
+$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref/actor.o $(BUILD_DIR)/m3ref/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
 $(BUILD_DIR)/visual_config.h: FORCE tools/build_visual_config.py
 	python3 tools/build_visual_config.py $(MSX_VISUAL_MODE) --scenario $(MSX_SCENARIO) --depth-style $(MSX_DEPTH_STYLE) --output $@
 $(BUILD_DIR)/src/neo_collision.o: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_wreckage.h
@@ -293,7 +303,7 @@ $(BUILD_DIR)/locomotion_fixture.h: tools/compile_locomotion_fixture.py data/sold
 $(BUILD_DIR)/tools/test_neo_locomotion.o: $(BUILD_DIR)/locomotion_fixture.h
 $(BUILD_DIR)/locomotion-regression.elf: $(BUILD_DIR)/tools/test_neo_locomotion.o $(BUILD_DIR)/src/neo_soldier_state.o $(BUILD_DIR)/src/neo_soldier.o $(BUILD_DIR)/src/neo_soldier_action.o $(BUILD_DIR)/src/neo_rng.o $(BUILD_DIR)/src/neo_contact.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/neo_animation.o
 locomotion-regression.z64: N64_ROM_TITLE = "MSX LOCO TEST"
-$(BUILD_DIR)/soldier_ai_tables.h: tools/compile_soldier_ai_tables.py data/soldier_ai_tables.json data/soldier_programs.json data/mission2_script.json
+$(BUILD_DIR)/soldier_ai_tables.h: tools/compile_soldier_ai_tables.py data/soldier_ai_tables.json data/soldier_programs.json data/mission2_script.json data/mission3_script.json
 	python3 tools/compile_soldier_ai_tables.py
 $(BUILD_DIR)/soldier_tick_fixture.h: tools/compile_soldier_ticks.py data/soldier_tick_fixture.json.gz
 	python3 tools/compile_soldier_ticks.py
@@ -793,7 +803,7 @@ check: check-boss $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d $(BUILD_DIR)/m2ref/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d $(BUILD_DIR)/m2ref/*.d $(BUILD_DIR)/m3ref/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

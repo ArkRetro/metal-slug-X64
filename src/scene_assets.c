@@ -443,6 +443,7 @@ const scene_image_t *scene_frame(unsigned id,unsigned frame) {
 }
 static void rom_read(void *dst,uint32_t offset,uint32_t length) {
     assertf(offset+length<=mission_bytes,"Mission pack read");
+    if (!length) return;   /* empty table (Mission 3: no actor section yet) */
     data_cache_hit_writeback_invalidate(dst,length);dma_read(dst,mission_rom+offset,length);
 }
 static void *take(unsigned bytes) {

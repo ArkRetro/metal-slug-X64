@@ -49,7 +49,7 @@ from mission_tiles import pack_map
 from pack_scene import rle,unrle,PAGE
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
-DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE)}
+DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,)}
 
 def actor_frames(mission):
     """Native actor descriptors of the mission (filesystem/missionN/rest-native.json,
@@ -90,6 +90,15 @@ def build(mission,stage_dirs,crom,rom=None):
         model=json.loads((d/'map.json').read_text())
         base=len(images)
         tower=tower_templates(model,rom) if rom is not None else None
+        merged=merge_swapped(model)
+        if LOOSE[0]:
+            # The column origin (+32) wraps at 4096 columns (16 * 4096 = 65536
+            # px): cell x of a moving layer is taken modulo 65536 (first kept).
+            seen=set();keep=[]
+            for c in model['cells']:
+                c['x']=(c['x']+32768)%65536-32768
+                if (c['layer'],c['x'],c['y']) not in seen:seen.add((c['layer'],c['x'],c['y']));keep.append(c)
+            model['cells']=keep
         st_images,st_cells=pack_map(model,crom,image)
         images.extend((pg,pal,y,h) for pg,pal,_,y,_,h,_ in st_images)
         first=len(cells);cells.extend((layer,x,y,[base+i for i in phases]) for layer,x,y,phases in st_cells)
@@ -114,7 +123,7 @@ def build(mission,stage_dirs,crom,rom=None):
                            grid=offset,unknown=unknown,image_first=base,image_count=len(st_images),rules=rules))
         report.append(dict(stage=d.name,cells=len(st_cells),images=len(st_images),coordinate_variants=len(model['conflicts']),
                            backdrops=sorted(set(backdrops)),grid=[col['columns'],col['rows']],grid_unknown=col.get('unknown_cells'),
-                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower))
+                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower,merged_maps=merged))
     blobs=bytearray()
     if rom is not None:
         for k,st in enumerate(stages):
@@ -181,6 +190,19 @@ def build(mission,stage_dirs,crom,rom=None):
                      header_bytes=len(head),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128
+def merge_swapped(model):
+    """Foreground maps swapped in place (Mission 3: 0B853A -> 0B8600 ->
+    0B8550, docs/MISION3.md) whose cells agree with the main map wherever
+    both were seen: they join the main map (world coordinates, layer 3 at
+    x 1). Other swapped maps (overlays) stay out of the pack."""
+    main={(c['x'],c['y']):c for c in model['cells'] if c['layer']==3};out={}
+    for m in sorted({c['map'] for c in model.get('swapped_cells',[]) if c['layer']==3}):
+        cs=[c for c in model['swapped_cells'] if c['layer']==3 and c['map']==m]
+        if any((c['x'],c['y']) in main and main[(c['x'],c['y'])]['code']!=c['code'] for c in cs):continue
+        new=[dict(c) for c in cs if (c['x'],c['y']) not in main]
+        for c in new:c.pop('map',None);main[(c['x'],c['y'])]=c
+        model['cells'].extend(new);out[m]=len(new)
+    return out
 def layer_rules(model):
     """Per-layer scroll rules fitted to the observations (docs/MISION2.md
     "Fase 2"): x = camera*x_num/x_den, rise = camera_y*y_num/y_den (camera_y
@@ -189,13 +211,28 @@ def layer_rules(model):
     up to the snapshot lag (8 px), else the tool stops."""
     from fractions import Fraction as F
     obs=model['observations'];base=obs[0]['vertical_offsets'];rules=[]
+    if LOOSE[0]:
+        # Mission 3 (docs/MISION3.md): layers 0/1 move on their own (sky map
+        # dropped to pointer 0, 10D7B6 driven by an unrecovered event): the
+        # offsets are unwrapped (16-bit RAM hints), a layer counts as active
+        # only while its first map is shown, and the best fit by median is
+        # kept without the 8 px check (its worst error is reported).
+        obs=[dict(o,offsets=list(o['offsets'])) for o in obs];prev=[None]*4;acc=[0]*4
+        for o in obs:
+            for L in range(4):
+                v=o['offsets'][L]
+                if prev[L] is not None:acc[L]+=(v-prev[L]+32768)%65536-32768
+                else:acc[L]=v
+                prev[L]=v;o['offsets'][L]=acc[L]
+            if o.get('map_origins'):
+                o['active']=[a and o['map_origins'][L][0]==obs[0]['map_origins'][L][0] or (L==3 and a) for L,a in enumerate(o['active'])]
     for L in range(4):
         on=[o for o in obs if o['active'][L]];off=[o for o in obs if not o['active'][L]]
         if not on:rules.append((1,1,1,1,1,0));continue
         fits=[]
         for f in (F(1),F(1,2),F(3,4),F(1,4),F(0)):
-            ex=max(abs(o['offsets'][L]-f*o['camera']) for o in on)
-            fits.append((ex,f))
+            errs=sorted(abs(o['offsets'][L]-f*o['camera']) for o in on)
+            fits.append((errs[len(errs)//2] if LOOSE[0] else errs[-1],f))
         ex,fx=min(fits,key=lambda t:(t[0],-t[1]))
         fits=[]
         for f in (F(1),F(1,2),F(3,4),F(1,4),F(0)):
@@ -203,7 +240,8 @@ def layer_rules(model):
             fits.append((ey,f))
         ey,fy=min(fits,key=lambda t:(t[0],-t[1]))
         if len({o['camera'] for o in on})==1:fx=F(1,2) if L in (1,2) else fx
-        assert ex<=8 and ey<=8,('layer rule does not fit',L,float(ex),float(ey))
+        if LOOSE[0]:LOOSE_ERRORS.append((L,max(abs(o['offsets'][L]-fx*o['camera']) for o in on).__float__(),float(ex)))
+        else:assert ex<=8 and ey<=8,('layer rule does not fit',L,float(ex),float(ey))
         lo=min(o['camera'] for o in on);hi=max(o['camera'] for o in on)
         # Thresholds halfway between the last observation of one state and
         # the first of the other (never inside an observed range).
@@ -276,19 +314,21 @@ def stage_blobs(rom,descriptor):
     while rom.u16(a+12)!=0xffff:a+=12
     out.append((players,rom.read(players,a+14-players)))
     return out
-MISSION=[0]
+MISSION=[0];LOOSE=[False];LOOSE_ERRORS=[]
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('mission',type=int);p.add_argument('stages',type=Path,nargs='+',help='stage directories in play order')
     p.add_argument('--crom',type=Path,default=ROOT/'filesystem/sprites.bin');p.add_argument('--output',type=Path)
     p.add_argument('--report',type=Path)
+    p.add_argument('--loose-layers',action='store_true',help='Mission 3: layers that move on their own get the best median fit (worst error in the report)')
     p.add_argument('--rom',type=Path,default=Path('/home/user/roms/mslugx.zip'),help='MAME set (P ROMs) for the per-stage ROM tables')
-    a=p.parse_args()
+    a=p.parse_args();LOOSE[0]=a.loose_layers
     from decode_level_script import Program
     blob,report=build(a.mission,a.stages,a.crom.read_bytes(),Program(a.rom))
     # romfs/: the game loads it at the mission switch (docs/MISION2.md).
     out=a.output or ROOT/f'romfs/mission{a.mission}.pack';out.parent.mkdir(exist_ok=True);out.write_bytes(blob)
+    if LOOSE_ERRORS:report['loose_layer_errors']=[dict(layer=L,worst=w,median=m) for L,w,m in LOOSE_ERRORS]
     if a.report:a.report.write_text(json.dumps(report,indent=1)+'\n')
     print(json.dumps({k:v for k,v in report.items() if k!='stages'}))
     for s in report['stages']:print(' ',s)

@@ -215,7 +215,11 @@ if __name__=='__main__':
     p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames')
     p.add_argument('--layer-camera',action='store_true',help='Viewport from the active layer position (camera stops with bounds)')
     p.add_argument('--descriptor-layers',action='store_true',help='Collision layer from the map descriptor (+0x2E) and vertical window from the layer Y (all missions; needs --rom)')
-    a=p.parse_args();report=extract(a.captures,program_rom(a.rom) if a.rom else None,a.frames,a.layer_camera,a.descriptor_layers);data=bytes.fromhex(report['cells_hex'])
+    p.add_argument('--both-layers',choices=('foreground',),help='both 10C72E and 10D7B6 have a collision map (Mission 3): use 10C72E')
+    a=p.parse_args()
+    if a.both_layers:
+        import extract_collision;extract_collision.BOTH_LAYERS[0]=a.both_layers
+    report=extract(a.captures,program_rom(a.rom) if a.rom else None,a.frames,a.layer_camera,a.descriptor_layers);data=bytes.fromhex(report['cells_hex'])
     if a.expect_prefix and a.descriptor_layers:
         old=json.loads(a.expect_prefix.read_text());od=bytes.fromhex(old['cells_hex']);rows=report['rows'];x0,y0=report['origin_cells']
         assert x0==0 and y0<=0,'Prefix check needs the grid to start at x=0'

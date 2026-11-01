@@ -5,6 +5,7 @@
 #include <string.h>
 #include "neogeo_logo.h"
 #include "msx_audio.h"
+#include "msx_perf.h"
 
 /* Native boot logo: the NEOGEO eyecatch letters as a closed extruded mesh
  * (tools/build_neogeo_logo.py), projected and lit on the CPU and drawn as
@@ -210,7 +211,7 @@ bool msx_neogeo_logo(void) {
             uint8_t v=(uint8_t)(g*255.0f);
             rdpq_attach_clear(surface,NULL);rdpq_set_mode_fill(RGBA32(v,v,v,255));rdpq_fill_rectangle(0,0,320,240);
         }
-        rdpq_detach_show();prev=surface;frames++;
+        rdpq_detach_show();msx_frames_present();prev=surface;frames++;
         uint32_t cpu=TICKS_READ()-cpu_began;if (cpu>cpu_max) cpu_max=cpu;
         cpu_sum+=cpu;
         /* Spare time until the next blank: the caller's background work (the

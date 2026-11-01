@@ -25,6 +25,10 @@ static bool restart_was_down;
 static bool diagnostics,diagnostics_was_down;
 static bool has_entry;
 static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
+/* reset_game has just begun this entry's descent (actor_prepare_descent
+ * before actor_init): actor_begin_descent need not run it again (~60 ms of
+ * the boot's mission handoff). */
+static bool descent_fresh;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
@@ -106,7 +110,12 @@ static void reset_game(void) {
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
     leave_mission();
-    if (has_entry && entry_descent) msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
+    descent_fresh=false;
+    if (has_entry && entry_descent) {msx_game_begin_descent(&game,entry_x,entry_y,entry_vx,entry_vy);
+#if !MSX_VEHICLE_REFERENCE
+        descent_fresh=true;   // the vehicle reference below changes the game: begun again then
+#endif
+    }
     else if (has_entry) {bool valid=msx_game_begin_at(&game,entry_x,entry_y);assert(valid);(void)valid;}
     else msx_game_init(&game);
 #if MSX_VEHICLE_REFERENCE
@@ -209,11 +218,12 @@ void actor_init(void) {
     assertf(msx_game_layout==MSX_GAME_LAYOUT,"stale gameplay object: msx_game_t layout %08lx, actor.c %08lx (rebuild)",
         (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
     uint32_t began=TICKS_READ();
-    scene_assets_init();scene_renderer_init();reset_game();
-    marco_native=marco_renderer_load();
-    hud_renderer_init();
+    scene_assets_init();uint32_t t1=TICKS_READ();scene_renderer_init();uint32_t t2=TICKS_READ();reset_game();uint32_t t3=TICKS_READ();
+    marco_native=marco_renderer_load();uint32_t t4=TICKS_READ();
+    hud_renderer_init();uint32_t t5=TICKS_READ();
     scene_assets_check_budget();
-    debugf("MSX actor_init %lu us\n",(unsigned long)TICKS_TO_US(TICKS_READ()-began));
+    debugf("MSX actor_init %lu us (scene %lu renderer %lu reset %lu marco %lu hud %lu)\n",(unsigned long)TICKS_TO_US(TICKS_READ()-began),
+        (unsigned long)TICKS_TO_US(t1-began),(unsigned long)TICKS_TO_US(t2-t1),(unsigned long)TICKS_TO_US(t3-t2),(unsigned long)TICKS_TO_US(t4-t3),(unsigned long)TICKS_TO_US(t5-t4));
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");
@@ -231,8 +241,13 @@ bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     return true;
 }
 /* The handoff at the start of the parachute descent (MAME 3860). */
+void actor_prepare_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) {
+    has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
+}
 void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) {
-    msx_game_begin_descent(&game,world_x,world_y,vx,vy);
+    if (!(descent_fresh && has_entry && entry_descent && entry_x==world_x && entry_y==world_y && entry_vx==vx && entry_vy==vy))
+        msx_game_begin_descent(&game,world_x,world_y,vx,vy);
+    descent_fresh=false;
     has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
     previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();

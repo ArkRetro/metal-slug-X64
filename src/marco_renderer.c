@@ -5,6 +5,7 @@
 #include "marco_pose_meta.h"
 static sprite_t *parts[MARCO_PARTS];
 static bool loaded;
+static unsigned next_part,part_bytes;static bool part_failed;   // marco_renderer_preload
 static unsigned max_upload;
 unsigned marco_renderer_count(void) {return MARCO_POSES;}
 /* The palette profile of the burnt death (0BF358, kinds 7/0x10): the one
@@ -38,27 +39,51 @@ bool marco_renderer_find(uint32_t tag,unsigned *pose) {
 }
 void marco_renderer_close(void) {
     for (unsigned i=0;i<MARCO_PARTS;i++) if (parts[i]) {sprite_free(parts[i]);parts[i]=NULL;}
-    loaded=false;max_upload=0;
+    loaded=false;max_upload=0;next_part=part_bytes=0;part_failed=false;
 }
-bool marco_renderer_load(void) {
-    if (loaded) return true;
-    for (unsigned i=0;i<MARCO_PARTS;i++) {
+static uint32_t part_cost;   // ticks of the slowest recent part load
+static bool load_part(unsigned i) {
+    {
+        heap_stats_t h0;sys_get_heap_stats(&h0);
         char path[48];snprintf(path,sizeof(path),"rom:/marco/p%u.sprite",i);parts[i]=sprite_load(path);
-        if (!parts[i]) {debugf("MSX marco part %u: not loaded\n",i);marco_renderer_close();return false;}
+        heap_stats_t h1;sys_get_heap_stats(&h1);part_bytes+=(unsigned)(h1.used-h0.used);
+        if (!parts[i]) {debugf("MSX marco part %u: not loaded\n",i);return false;}
         surface_t pixels=sprite_get_pixels(parts[i]);
         if (sprite_get_format(parts[i])!=FMT_CI4 || parts[i]->width!=marco_parts[i].width ||
             parts[i]->height!=marco_parts[i].height || (unsigned)pixels.stride*pixels.height>2048) {
-            debugf("MSX marco part %u: format/size %ux%u\n",i,parts[i]->width,parts[i]->height);marco_renderer_close();return false;
+            debugf("MSX marco part %u: format/size %ux%u\n",i,parts[i]->width,parts[i]->height);return false;
         }
         const uint16_t *palette=sprite_get_palette(parts[i]);
         for (unsigned pen=0;pen<16;pen++) if (palette[pen]!=marco_palettes[0][pen]) {
-            debugf("MSX marco part %u: palette pen %u\n",i,pen);marco_renderer_close();return false;
+            debugf("MSX marco part %u: palette pen %u\n",i,pen);return false;
         }
         uint32_t fingerprint=2166136261u;const uint8_t *data=pixels.buffer;
         for (unsigned y=0;y<pixels.height;y++) for (unsigned x=0;x<pixels.width;x++)
             fingerprint=(fingerprint^((data[y*pixels.stride+x/2]>>((x&1)?0:4))&15u))*16777619u;
-        if (fingerprint!=marco_parts[i].indices_fnv) {debugf("MSX marco part %u: pixels differ\n",i);marco_renderer_close();return false;}
+        if (fingerprint!=marco_parts[i].indices_fnv) {debugf("MSX marco part %u: pixels differ\n",i);return false;}
     }
+    return true;
+}
+bool marco_renderer_preload(unsigned long deadline,int keep) {
+    if (loaded || part_failed || next_part>=MARCO_PARTS) return false;
+    if (!part_cost) part_cost=TICKS_FROM_US(1500);
+    int32_t left=(int32_t)((uint32_t)deadline-TICKS_READ());
+    if (left<=(int32_t)part_cost) return false;
+    heap_stats_t h;sys_get_heap_stats(&h);
+    if (h.total-h.used<keep+4096) return false;
+    uint32_t t0=TICKS_READ();
+    if (!load_part(next_part)) {part_failed=true;return false;}
+    next_part++;
+    uint32_t spent=TICKS_READ()-t0;part_cost-=part_cost/16;if (spent>part_cost) part_cost=spent;
+    return true;
+}
+unsigned marco_renderer_preloaded_bytes(void) {return part_bytes;}
+bool marco_renderer_load(void) {
+    if (loaded) return true;
+    if (part_failed) {marco_renderer_close();return false;}
+    unsigned before=next_part;
+    for (;next_part<MARCO_PARTS;next_part++) if (!load_part(next_part)) {marco_renderer_close();return false;}
+    if (before) debugf("MSX marco parts: %u of %u loaded before the handoff\n",before,MARCO_PARTS);
     data_cache_hit_writeback((void*)marco_palettes,sizeof(marco_palettes));
     loaded=true;return true;
 }

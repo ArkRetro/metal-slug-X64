@@ -7,6 +7,14 @@
  * player action or claim that the observed descriptor catalog is complete.
  * Drawing changes TMEM/TLUT: invalidate any caller texture-residency cache. */
 bool marco_renderer_load(void);
+/* Background load of the parts (the boot cinematics' spare time, ~0.3 s of
+ * ROM reads at the mission handoff before): loads parts while each fits
+ * before `deadline` (TICKS_READ); false when all are in, one failed or the
+ * heap would keep less than `keep` bytes. marco_renderer_load finishes. */
+bool marco_renderer_preload(unsigned long deadline,int keep);
+/* Heap bytes the parts loaded so far take (the scene cache's game reserve
+ * counts them as already spent). */
+unsigned marco_renderer_preloaded_bytes(void);
 void marco_renderer_close(void); /* Caller must first wait for pending RDP work. */
 unsigned marco_renderer_count(void);
 unsigned marco_renderer_palette_count(void);

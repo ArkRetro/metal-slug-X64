@@ -199,7 +199,7 @@ void scene_renderer_init(void) {
 static void finished(void *arg) {
     completion_t *done=arg;
     scene_complete_epoch(done->epoch);
-    display_show(done->surface);
+    display_show(done->surface);msx_frames_present();
     if (done->epoch==1) debugf("MSX first frame ready t=%lu ms\n",(unsigned long)get_ticks_ms());
 }
 void scene_render_begin(surface_t *surface) {

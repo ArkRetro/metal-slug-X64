@@ -10,6 +10,10 @@
  * locally from the user's ROM; without them the game runs silently and logs
  * it once. */
 bool game_audio_init(void);
+/* Queue the resident effects for a background read (msx_ramfs_preload) in
+ * the boot cinematics' spare time: game_audio_init then finds them in RAM
+ * instead of reading ~1 MB at the mission handoff. */
+void game_audio_preload(void);
 /* Start (or restart) the mission music from its beginning. */
 void game_audio_music(bool play);
 /* A stage starts: its descriptor's music word (+C, 018434); a different

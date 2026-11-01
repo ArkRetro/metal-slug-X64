@@ -30,6 +30,20 @@ int scene_native_palette(unsigned resource);
  * logo's). scene_assets_init calls it if needed, then loads synchronously
  * what the first frame requires. */
 void scene_assets_begin(void);
+/* The cache begun in the boot cinematics' spare time: as many slots as fit
+ * now keeping `keep` bytes free, sized for the heap it will have once
+ * `coming` more bytes are freed (the movies); scene_assets_idle warms them
+ * and scene_assets_begin adds the rest. False when nothing fits yet. */
+bool scene_assets_begin_early(int coming,int keep);
+/* Build the warm list ahead, a bounded step before `deadline` (TICKS_READ;
+ * 0: all of it); true while steps remain. */
+bool scene_assets_plan_step(uint32_t deadline);
+/* More slots for a cache begun early, while the heap keeps `keep` bytes
+ * (a movie closed). */
+void scene_assets_grow_early(int keep);
+/* Bytes of actor_init's allocations already made before the cache (Marco's
+ * parts preloaded during the boot cinematics): taken off its reserve. */
+void scene_assets_game_preloaded(unsigned bytes);
 void scene_assets_init(void);
 /* One step of idle-time work while the CPU waits for a framebuffer: start the
  * next DMA or decode a staged chunk if it ends before the next vertical blank.

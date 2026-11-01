@@ -127,6 +127,13 @@ try:
         time.sleep(1.0)
         ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'after-logo.png')
         time.sleep(3.0);assert 'RSP CRASH' not in log() and 'ASSERTION FAILED' not in log()
+        # Presentation per stage (msx_perf.c, docs/RENDIMIENTO.md "Cinemáticas
+        # sin parones"): no movie may show a frame twice beyond its cadence.
+        presentation={m[1]:dict(presents=int(m[2]),gap_vb=int(m[3]),max_vb=int(m[4]),late=int(m[5]),long=int(m[6]))
+                      for m in re.finditer(r'MSX FRAMES (\S+) presents=(\d+) gap_vb=(\d+) max_vb=(\d+) late=(\d+) long=(\d+)',log())}
+        for name in ('title','howto','select','confirm','entry'):
+            if name in presentation and name not in skips and not (stages.get(name) or {}).get('skipped'):
+                assert presentation[name]['late']==0,('late frames',name,presentation[name])
         if a.record:time.sleep(a.record_after)
         stop.set();time.sleep(.2)
         assert process.poll() is None,'ares exited'
@@ -134,7 +141,7 @@ try:
     box=picture_box(out/'after-logo.png')
     for name in shots+['after-logo.png']:Image.open(out/name).crop(box).resize((640,480),Image.NEAREST).save(out/('picture-'+name))
     result=dict(status='PASS',emulator='ares 146',rom=str(a.rom),cap_points=int(start[1]),side_edges=int(start[2]),cap_triangles=int(start[3]),
-                jingle=True,skipped=sorted(skips),next=nm[0],stages=stages,frames=int(timing[1]),seconds=float(timing[2]),
+                jingle=True,skipped=sorted(skips),next=nm[0],stages=stages,presentation=presentation,frames=int(timing[1]),seconds=float(timing[2]),
                 frame_max_us=int(timing[3]),cpu_max_us=int(timing[4]),cpu_mean_us=int(timing[5]),late_frames=int(timing[6]),max_triangles_drawn=int(timing[7]),
                 screenshots=shots+['after-logo.png'],
                 limits='Emulator frame times (emulated clock); MiSTer/hardware not measured here.')

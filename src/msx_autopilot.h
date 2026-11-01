@@ -10,7 +10,6 @@
  * test turns it on (Left and Right held together in stage 3). */
 #if MSX_REFERENCE_INVULNERABLE
 enum { AP_COLS=80, AP_ROWS=72, AP_PER=8, AP_NODES=AP_COLS*AP_PER };
-static int16_t ap_h[AP_NODES],ap_prev[AP_NODES];static uint8_t ap_cost[AP_NODES],ap_n[AP_COLS];
 static int ap_reach(int dx,int dy) {
     if (dx<0) dx=-dx;
     if (dy>50) return 0;
@@ -56,6 +55,8 @@ static int ap_score(const msx_game_t *g,const int *rect,int x,int y,bool *inside
     }
 }
 static void ap_step(msx_game_t *g,int *direction,bool *jump) {
+    /* On the stack (3.3 KB): no program-image RAM (docs/RENDIMIENTO.md). */
+    int16_t ap_h[AP_NODES],ap_prev[AP_NODES];uint8_t ap_cost[AP_NODES],ap_n[AP_COLS];
     if (!g->pilot.on || !g->world_enabled || g->life.phase!=MARCO_ALIVE || g->complete) return;
     int X=g->x>>16,Y=(int)((56*MSX_UNIT-g->y)>>16);
     *jump=false;

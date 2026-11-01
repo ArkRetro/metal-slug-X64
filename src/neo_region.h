@@ -12,6 +12,12 @@ bool neo_rebel2_routine(uint32_t routine);
 ga_result_t neo_rebel3_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_gate_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_gate_routine(uint32_t routine);
+bool neo_crate_routine(uint32_t routine);
+ga_result_t neo_crate_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m2props_routine(uint32_t routine);
+ga_result_t neo_m2props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_drone_routine(uint32_t routine);
+ga_result_t neo_drone_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 03C520..03C532: the water ripple 03C62A (+6E = kind) when 019240 has a
  * palette for the mission; false on an explicit stop. */
 bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);

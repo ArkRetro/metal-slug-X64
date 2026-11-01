@@ -126,15 +126,10 @@ antes de cargarlas.
 ## Auditoría del guion
 
 `tools/audit_script_events.py --script data/mission2_script.json` (en `make
-check`): 473 registros de aparición, 41 constructores, 7 nativos (`039590`,
-`08C37C`, `099862`, `099DCC`, `099E06`, `09A67E`, `09A692`). **La etapa 1 no
-pierde ninguna aparición contada.** Apariciones contadas que el port pierde:
-194 (etapa 2: `0613E6` ×56, `0613D8` ×31, `0678CA` ×21, `0613CA` ×11, `0692B2`
-×7, `067902` ×4, `06851A` ×3, `03A892`, `06835C`; etapa 3: `0613E6` ×14,
-`0613CA` ×9, `03670E` ×8, `0613D8` ×8, `0678B6` ×6, `0678CA` ×6, `0692B2` ×2,
-`08C154` ×2, `026254`, `052A5C`, `0678A2`, `08C168`). Sin contar: `01913C
-021A1C 021A26 032DE2 035B66 035C68 035D12 03882A 03A05A 03A2AA 0529C0 0613CA
-0613E6 0678CA 082BCE 08C154 08C168 09692C 0995EC 099DE2 099DF0 0B829C 0B833A`.
+check`): 473 registros de aparición, 41 constructores, 22 nativos. **Apariciones
+contadas que el port pierde: 2**, `06835C` (etapa 2, soldado con rehén) y
+`026254` (etapa 3). Sin contar: `01913C 021A1C 021A26 032DE2 035B66 035C68
+035D12 03A05A 03A2AA 0529C0 082BCE 09692C 0995EC 099DE2 099DF0 0B829C 0B833A`.
 
 ## Fase 2: motor (cargador por misión, etapas, cámara vertical)
 

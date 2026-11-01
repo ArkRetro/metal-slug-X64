@@ -35,6 +35,10 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `0613CA/0613D8/0613E6` rebeldes (variante en +96), disparo `061E8C`, destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
 | `03882A/03889C` puerta de la etapa 1, ondas `03C62A` | `src/neo_gate.c` | familia `gate` (g1): 2 nodos, **348 actualizaciones**, 2 borrados, 2 contactos, parches del anillo iguales |
 | `0678B6/0678C0/0678CA/067902` y `0692B2..0692E4` soldados (variante en +9C), cuchillo `067FC0`, destello `021CB6` | `src/neo_rebel3.c` | familia `rebel3` (etapa 2, `b1`): 30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos |
+| `08C154/08C15E/08C168/08C172` caja de suministros (+88 = 3..0) | `src/neo_crate.c` | familia `crate` (etapa 3, `c1`): 2 nodos, **1235 actualizaciones**, 2 borrados |
+| `06851A` obstáculo y su capa `0685FE`; señal `03A892` | `src/neo_m2props.c` | familia `bags` (etapa 2, `s2`): 7 nodos, **421 actualizaciones**, 7 borrados |
+| `052A5C` espera de cámara; `0678A2/0678AC` soldado (+9C = 4) | `src/neo_m2props.c`, `src/neo_rebel3.c` | familia `stage3` (`c1`): 2 nodos, **1838 actualizaciones** |
+| `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -267,13 +271,83 @@ traza; `export_rest_sprites.py ... bv@678b6-69700 bv@21cb6-21cee`): 30
 volcados, 37947 iguales, 1056 distintos en 5 volcados (21075, 21120..21150,
 21270: muertes y cuchillos superpuestos, sin explicar).
 
+## Caja, obstáculo, dron (rama `work-m2en4`)
+
+Trazas (unos 40 s y 60 s):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_FAMILY_ROOTS=8c154,8c168,52a5c,3670e,26254,678a2 \
+  MSX_FULL_FAMILY_FROM=26141 MSX_FULL_LAST=29800 sh tools/run_capture_fullgame.sh /home/user/captures-m2en4/c1
+MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_ROOTS=6851a,6835c,3a892 \
+  MSX_FULL_FAMILY_FROM=19933 MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh /home/user/captures-m2en4/s2
+python3 tools/extract_family_fixture.py .../c1/boss-trace.txt --output data/crate_fixture.json.gz --range 8c154-8c374 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6
+python3 tools/extract_family_fixture.py .../c1/boss-trace.txt --output data/drone_fixture.json.gz --range 3670e-36a64 (mismos --ram)
+python3 tools/extract_family_fixture.py .../c1/boss-trace.txt --output data/stage3_fixture.json.gz --range 52a5c-52a88 --range 678a2-69700 --range 21cb6-21cee (más --ram 1014ec-1014f4 --ram 1014fc-101500)
+python3 tools/extract_family_fixture.py .../s2/boss-trace.txt --output data/bags_fixture.json.gz --range 6851a-687aa --range 3a892-3a89e (mismos --ram)
+```
+
+La reproducción desde `sec03_26140` sí crea el dron (cinco, 26263..26900):
+no hizo falta conducir al jugador.
+
+`08C17C` (caja): programa `E57FA[+88]`, paleta `E55B6[+88]` (0xCF para
++88 impar, 0x3AB par), +4E = 10, capa 8820, caja de golpe `E5634`, suelo
+`0146E8` si +88 < 2, objeto dinámico `E5640`. `08C1F2`: `004C24`, +5A = 0,
+`01436A`+`01AD8C` (+88 ≥ 2) o el andador `08CCD4`, `00427A`, `0140C0` y
+`004188` fuera del rectángulo `E562C` (`0C8BEC`). Rota (+5F bit 7):
+`013F1E`, programa `E580A[+88]`, `019DFC` para +88 impar; +88 0/1 sigue en
+`08C2B2` (andador) y +88 2/3 en `08C356` (`01AD8C`, `01436A`); al acabar el
+programa, `004188` (comprobación anticopia de `08C2C0` no traducida). La
+llamada de programa `2869A4` crea el objeto `08C374` (nativo) tras el actor
+del guion con +6E/+70/+72 de la caja. **Sin evidencia**: +88 = 3 (`08C154`,
+rama `08C356`) y +88 0/2: en `c1` solo se abren dos `08C168`.
+
+`06851A`: +15 bit 0 = (+6E ≠ 0), programa `26939A`/`2693A6`, capa E06C,
+paletas 0xF5 y 0xF6 (destello), caja `E1AA2`, vida `2D296A`, suelo, capa
+`0685FE` (`26938E`/`269382`, `0044F6`, se borra cuando el creador pone
++60). `0685C8`: `01436A`, `00427A`, `004C24`, objeto dinámico `E1B6A`,
+recorte `0688D6`. Roto: +60 = FF, `013F1E`, restos `E1BF2`/`E1C04`,
+explosión `01C71E` 32 px arriba, sonido 1035; `06875A`: programa `2693B2`,
+`019DFC`, fila `E1B2E`; `06878E` hasta el final del programa. `03A892`:
+RAM 10C358 = 1 (nuevo `neo_ga_flags_t.signal358`, lo lee `03A75A`, actor no
+portado) y se borra; el banco no compara 10C358.
+
+`052A5C`: +6E = progreso de cámara 10E99E + 1 si +6E = 0; `052A74` se
+borra cuando el progreso alcanza +6E. `0678A2/0678AC`: la variante +9C = 4
+de `neo_rebel3.c` (paletas 0x17E/0x17F/0x187/0x180); en `c1` solo espera,
+anda y gira (35 actualizaciones).
+
+`03670E` (dron, +96 = 4): paletas 0x142/0x143, programa `23BA74`, capa
+E0ED, vida `2D0C7C`, caja `035A84`, velocidad `2D0CAE`; gira 0x30 px más
+allá del jugador más cercano (`01AF9A`), sube o baja a 0x100 + +6E
+(0x18000) y, encima del jugador (|dx| ≤ 4, +74 = 0), arma +74 =
+`2D0CF8`/2 o suelta la bomba (`03689C`, `0366DA`) si +78 y +77; muerte
+`0368DA` (programa `23BBD0`, sonido 10F0); recorte `035A54` con `0041AC`.
+Bomba `0369AC`: `0143DC`, explota (`036A0C`: paleta 0x4BB, programa
+`23BCF2`, fila `035AB8` mientras +61) en el suelo o si la fila `035AC8`
+toca. La tabla `2D0B9E` de `region_rom.json` se alarga hasta `2D0D40`
+(los bloques deben ser contiguos: `ga_rom` no salta de bloque).
+
+Sprites: programas `286896/286904/2868A2/286910` (caja), `26939A..2693B2`,
+`269382/26938E` (obstáculo), `23BA74..23BCF2` (dron y bomba); paletas 0xCF,
+0xF5, 0xF6, 0x142, 0x143, 0x4BB en `filesystem/mission2/rest-native.json`
+(0x3AB y 0x17E..0x187 no aparecen en los volcados). **Píxeles** (capturas
+`cv`, `sec03_26140`, volcados cada 15 fotogramas 26265..29750, y `sv`,
+`sec02_19932`, 22425..25000; `export_rest_sprites.py ... cv@8c154-8c374
+cv@3670e-36a64 cv@678a2-69700 sv@6851a-687aa`): caja 168 volcados, 106690
+iguales, **0 distintos**; dron 50 volcados, 64761 iguales, 402 distintos en
+3 volcados (26490, 26940, 26970); obstáculo 36 volcados, 119512 iguales,
+1342 distintos en un volcado (22500, la rotura); el soldado `0678A2` no
+sale en ningún volcado. Diferencias sin explicar.
+
 ## Enemigos más frecuentes (no portados)
 
 `0613CA..`, `0678B6..` y `0692B2..` ya son nativos (arriba). Los demás no son variante de una familia nativa:
 
 | Constructor | Lectura |
 | --- | --- |
-| `03670E` (×8) | +96 = 4, paletas 0x142/0x143, programa `23BA74` |
+| `06835C` (etapa 2) | soldado `0683FA` (familia `0678..`, `0684CA`) que retiene a un rehén: el propio nodo pasa a la familia `021B46..0222xx` (paleta 0x1F, programa `230984`, `021BB2..021F84`, `0220BC`, `02223C`, `022178`, `068E94`); sin portar |
+| `026254` (etapa 3) | actor grande (`026254..027E8E`, paletas 0x57/0x5B/0xB2/0x59, programa `23502C`, `059F4E`, `027BC6`); sin portar y sin nacimiento en `c1` |
 
 Cada una necesita su traza de familia (las capturas desde `states4` cuestan
 segundos) y una traducción completa.

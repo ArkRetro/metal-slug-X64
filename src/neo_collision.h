@@ -13,6 +13,16 @@ void neo_collision_reset(void);
  * per cell, set for cells no capture observed (read as empty, counted). */
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned columns,unsigned rows);
 unsigned neo_collision_rows(void);
+/* The kernel's cell ring (0C79FE) of a stage taller than 32 rows, loaded
+ * like 0C73CE/0C74C4/0C72EC for the terrain layer position (+14/+18,
+ * Q16); NULL for Mission 1 (32 rows: neo_kernel's column model). */
+const uint8_t *neo_collision_ring(int32_t terrain_x,int32_t terrain_y);
+/* The 4096 bytes of that ring (stage memory; cleared by set_grid). */
+void neo_collision_set_ring(uint8_t *buffer);
+/* ROM 0C70FC (collision part): the map's blocks (d0, d1) (2x2 cells, rows
+ * from the top), d2 x d3 of them, into the ring at the window blocks
+ * (d4, d5) (+36/+38 units, d5 the top block), clipped to the window. */
+void neo_collision_ring_copy(int d0,int d1,int d2,int d3,int d4,int d5);
 unsigned neo_collision_unknown_reads(void);
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes); /* 0C88B0 */
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags);

@@ -399,12 +399,56 @@ static void mount_after_world(msx_game_t *g) {
 void msx_game_projected(const msx_game_t *g,uint16_t *x,uint16_t *y) {
     neo_world_player_t p=player_frame(g);*x=p.px;*y=p.py;
 }
+/* The stage 3 tower: actor 0B7C38 (MAME run4/t2: the only writer of the
+ * ring besides the loader during the whole climb). Each update, while
+ * (camera y 10E992 >> 4) + 0x13 - 0x66 - 10C6B2 >= 0, a piece type from
+ * 0261A4 goes to 0B7B1C: type >= 0xD is 0xB; the 24 x 3 blocks of the map
+ * 0B740A at (0x10, 3 * type) are copied (0C70FC) to the window blocks
+ * (0x10, 0x66 + 10C6B2), and 10C6B2 += 3. 0261A4 reads the sequence at
+ * 10C350 (P2 bank 1: 2C1374 first, then one of four picked by 0029C6 & 3
+ * from table 027E8E while 10C354 = 0, else 027E7E; 10C354 > 0 counts the
+ * bytes read up to 0x100, negative becomes 1). The writes of 10C354 by
+ * other actors (-1 and 2 seen in run4) are not translated: the mode stays
+ * as 026190 and 0261A4 leave it. */
+static const uint8_t tower_sequences[9][12]={
+    {1,0,1,0,1,0xff},{0xb,0xc,0xb,0xc,0xb,0xff},{0xb,8,0xc,7,8,0xff},{0xb,0xc,9,3,1,0xff},          /* 2C133C.. (027E7E) */
+    {0xb,0,0xa,0xa,0xb,7,0xff},{0xb,0xa,4,3,9,0,0xff},{0xb,8,4,7,7,8,0xff},{0xb,7,9,1,0xa,8,0xff},  /* 2C1354.. (027E8E) */
+    {0xb,0xc,0xa,8,7,9,7,8,0xc,0xb,0xff}};                                                       /* 2C1374 */
+static uint8_t tower_next(msx_game_t *g) {
+    for (;;) {
+        uint8_t v=tower_sequences[g->world.tower.table][g->world.tower.at];
+        if (v!=0xff) {
+            g->world.tower.at++;
+            if (g->world.tower.mode>=1 && g->world.tower.mode<0x100) g->world.tower.mode++;
+            return v;
+        }
+        unsigned pick=neo_rng_next(&g->world.rng)&3u;                       /* 0261F2 */
+        if (g->world.tower.mode<0) g->world.tower.mode=1;
+        g->world.tower.table=(uint8_t)(g->world.tower.mode?pick:4u+pick);g->world.tower.at=0;
+    }
+}
+static void tower_step(msx_game_t *g) {
+    if (!g->world.tower.on) return;
+    for (unsigned guard=0;guard<64;guard++) {
+        int d0=(int)((uint16_t)(g->world.camera.y>>16)>>4)+0x13-0x66-(int)g->world.tower.counter;
+        if (d0<0) return;
+        unsigned type=tower_next(g);if (type>=0xd) type=0xb;
+        neo_collision_ring_copy(0x10,(int)(3*type),0x18,3,0x10,0x66+(int)g->world.tower.counter);
+        g->world.tower.counter=(uint16_t)(g->world.tower.counter+3u);g->world.tower.pieces++;
+    }
+}
 /* Mission actor camera step (neo_world_camera) and its command-list events. */
 static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
     neo_world_camera(&g->world,p);
     const neo_camera_t *c=&g->world.camera;
-    for (unsigned i=0;i<c->event_count;i++)
+    for (unsigned i=0;i<c->event_count;i++) {
         if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
+        if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7B00) g->world.tower.counter=0;   /* 10C6B2 */
+        if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7C20) {
+            /* 0B7C20: actor 0B7C38 (040BC) and 026190 (10C350 = 2C1374, 10C354 = 0). */
+            g->world.tower.on=true;g->world.tower.table=8;g->world.tower.at=0;g->world.tower.mode=0;
+        }
+    }
     g->camera=(int)(((int64_t)c->x+0xffff)>>16);
     g->camera_height=(int)(((int64_t)c->y+0xffff)>>16);
 }
@@ -462,6 +506,21 @@ static bool parent_motion(const neo_world_t *w,uint32_t tag,uint32_t *dx,uint32_
     if (!neo_world_parent(w,tag,&p)) return false;
     *dx=(uint32_t)p.x-(uint32_t)p.previous_x;*dy=(uint32_t)p.y-(uint32_t)p.previous_y;
     return true;
+}
+/* Side contact of the player's sweeps 0143EE (air) and 014594 (ground):
+ * their 013968 call (A0 = terrain, 10C008 = FF with +15 bit 5 clear,
+ * 10C009 = FF on the ground, 10C00D = FF from 0128E8) stops the motion at
+ * a wall cell, the surface response 0131D6/0131EC (D6 bit 2) clearing d2,
+ * which 014492 stores back as +30. The port keeps its own floor model
+ * (neo_walk_step/neo_land_step) and takes only that side stop from the
+ * native kernel: true with *x the swept x when the sweep hit a wall. */
+static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,bool ground,int32_t *x) {
+    if (!g->world_enabled || !vx) return false;
+    neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+    neo_kreq_t q={body->x,body->y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,(uint8_t)(ground?0xff:0),0,0,0xff};
+    neo_kres_t r;
+    if (!neo_kernel_sweep(k,&q,&r) || !(r.flags&4u) || r.parent!=NEO_KOBJ_TERRAIN) return false;
+    g->wall_stops++;*x=r.x;return true;
 }
 static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t vy) {
     solid_push_t r={false,false,false};
@@ -746,6 +805,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             neo_ground_velocity(neo_surface_at(body.x,body.y,1,NEO_UNIT,&feet)?feet.shape:0,direction,&gvx,&gvy);
             solid_push_t s=solid_push(g,&body,gvx,body.vy);
             if ((s.left && gvx>=0) || (s.right && gvx<0)) direction=0;
+            int32_t wx;
+            if (direction && wall_stop(g,&body,gvx,gvy,true,&wx)) {body.x=wx;direction=0;}
             g->grounded=neo_walk_step(&body,direction);
             if (!g->grounded) g->air_ticks=0;
         } else {
@@ -759,6 +820,8 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 body.vy=0x60000;
                 if (s.left) {int32_t v=0u-(uint32_t)body.vx;body.vx=(v>=0?0x40000:-0x40000)+(v>>1);}
             } else if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014468..01448A */
+            int32_t wx;
+            if (wall_stop(g,&body,body.vx,body.vy,false,&wx)) {body.x=wx;body.vx=0;}
             body.x+=body.vx;body.y+=body.vy;
             g->air_ticks+=2;
             uint8_t object;int32_t top;
@@ -777,6 +840,15 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->velocity_x=vx;
             if (g->grounded) g->velocity_y=0;
         } else if (g->life.phase==MARCO_ENTERING) marco_entrance_step(&g->life);
+        else if (g->life.phase==MARCO_ALIVE && !g->complete && g->world_enabled) {
+            /* 0C3712: the projected feet (+40) below RAM 10C72C (0x100 from
+             * the new life 0C0E42: the bottom of the screen) start the fall
+             * death 0C2D6A (+5B = projected x >= 0xA0, then 0C2DDA with +5A
+             * as it is, 0 for a player not hit). Independent of the
+             * reference cartridge's invulnerability (only hits). */
+            neo_world_player_t p=player_frame(g);
+            if ((int16_t)p.py<0x100) {g->pit_deaths++;start_death(g,0,(int16_t)p.px>=0xa0);}
+        }
     }
     int player=g->x/MSX_UNIT;
     if (player>=640 && g->kills>=1) g->checkpoint=640;
@@ -1001,6 +1073,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->landing_pending || g->landing_on) landing_step(g);
         if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
+        tower_step(g);
         mount_after_world(g);
         /* Time over (0186FA -> 0C0A2C): +9E = FF, +5A = 6, a death however
          * invulnerable (not in the reference cartridge). */

@@ -48,7 +48,7 @@ static bool load_stage(void) {
     unsigned index=game.flow.stage?game.flow.stage-1u:0u;
     if (!scene_stage_load(index)) return false;
     const scene_stage_t *st=scene_stage();
-    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);
+    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
     scene_renderer_stage_changed();
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */

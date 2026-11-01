@@ -93,7 +93,7 @@ typedef struct {
     uint32_t descriptor;             /* stage descriptor (016DDE..) */
     uint16_t width,camera_max;uint32_t backdrop;
     uint16_t columns,rows;           /* collision grid (8-px cells, column major, row 0 at the bottom) */
-    const uint8_t *grid;uint8_t *grid_dynamic;const uint8_t *unknown;
+    const uint8_t *grid;uint8_t *grid_dynamic;const uint8_t *unknown;uint8_t *ring; /* kernel cell ring (rows > 32) */
     const uint8_t *camera_list;uint32_t camera_rom;uint16_t camera_len;   /* descriptor +0 */
     const uint8_t *script;uint32_t script_rom;uint16_t script_len;        /* +8 -> table 0x000800 */
     const uint8_t *players;uint32_t players_rom;uint16_t players_len;     /* +4 (019604 records) */

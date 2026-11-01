@@ -1045,6 +1045,12 @@ static void scene_at(neo_world_t *w,int32_t x,bool reset) {
     }
     w->kernel.terrain=(neo_kobj_t){w->terrain.x,w->terrain.y,w->terrain.previous_x,w->terrain.previous_y};
     w->kernel.root=(neo_kobj_t){w->root.x,w->root.y,w->root.previous_x,w->root.previous_y};
+    w->kernel.ring=neo_collision_ring(w->terrain.x,w->terrain.y);
+    /* RAM 10C00E (camera op 0x50): the cell group map of 012938. Mission 1
+     * keeps its table; Mission 2's 0B7000 maps group 6 to 0x0A (ROM bytes
+     * 00 01 02 03 04 05 0A 07). */
+    static const uint8_t mission2_group_map[8]={0,1,2,3,4,5,10,7};
+    w->kernel.group_map=w->camera.l400e==0x0B7000u?mission2_group_map:soldier_group_map;
     w->scroll_x=x;
 }
 void neo_world_init(neo_world_t *w,int32_t scroll_x) {

@@ -134,6 +134,9 @@ typedef struct {
      * script's stop/release/autoscroll go to it. Off in the closed-loop
      * world tests, which take the scroll from the captures. */
     neo_camera_t camera;bool camera_native;
+    /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
+     * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */
+    struct { bool on; uint16_t counter; uint8_t table,at; int16_t mode; unsigned pieces; } tower;
     /* Stage of a mission pack (neo_world_init_stage); NULL camera = Mission 1's
      * list 0B57BE. */
     const uint8_t *stage_camera;uint16_t stage_camera_size;uint32_t stage_camera_base;unsigned camera_events_unsupported;

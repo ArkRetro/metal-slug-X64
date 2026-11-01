@@ -10,12 +10,71 @@ static bool dynamic_active;
  * (neo_collision_set_grid, docs/MISION2.md "Fase 2"). */
 static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid=dynamic_grid_m1;static const uint8_t *unknown;
 static unsigned columns=NEO_GRID_COLUMNS,rows=32,unknown_reads;
-void neo_collision_reset(void) {dynamic_active=false;}
+/* The terrain layer's 64x64 cell ring (object 10C72E +88) of the vertical
+ * stages: what the kernel's 0C79FE reads (neo_kscene_t.ring). */
+static uint8_t *ring;static bool ring_on;static int ring_c0,ring_r0;
+static void ring_put(int c,int r) {
+    /* 0C72EC: cell (c, r) of the map (row r from the bottom) goes to the
+     * ring byte (c & 63) * 64 + ((~(8r)) >> 3 & 63), the index 0C79FE reads
+     * for the local pixel (8c, 8r). Rows and columns beyond the map are
+     * clipped (0C714E) and keep what the slot held. */
+    if (c<0 || c>=(int)columns || r<0 || r>=(int)rows) return;
+    ring[((unsigned)(c&63)<<6)|(63u-((unsigned)r&63u))]=(dynamic_active?dynamic_grid:grid)[(unsigned)c*rows+(unsigned)r];
+}
+static void ring_touch(int c,int r) {
+    if (ring_on && c>=ring_c0 && c<ring_c0+64 && r>=ring_r0 && r<ring_r0+64) ring_put(c,r);
+}
+const uint8_t *neo_collision_ring(int32_t terrain_x,int32_t terrain_y) {
+    if (rows<=32u || !ring) {ring_on=false;return NULL;}
+    /* 0C73CE (stage start) / 0C74C4 (each update): +36 = (-64 - layer x)
+     * >> 4 and +38 = (0x80 - layer y) >> 4 in 16-px blocks of 2x2 cells;
+     * 32 blocks from each are loaded (columns 2*+36.., rows 2*+38.. from
+     * the bottom: the top row 2*+34+1 sits at the map's last row), and a
+     * change of either loads the blocks entering the window. */
+    int c0=2*((int16_t)(uint16_t)((0xffc00000u-(uint32_t)terrain_x)>>16)>>4);
+    int r0=2*((int16_t)(uint16_t)((0x00800000u-(uint32_t)terrain_y)>>16)>>4);
+    if (!ring_on) {memset(ring,0,4096);ring_on=true;ring_c0=c0-128;ring_r0=r0-128;}
+    if (c0!=ring_c0 || r0!=ring_r0) {
+        for (int c=c0;c<c0+64;c++) for (int r=r0;r<r0+64;r++)
+            if (c<ring_c0 || c>=ring_c0+64 || r<ring_r0 || r>=ring_r0+64) ring_put(c,r);
+        ring_c0=c0;ring_r0=r0;
+    }
+    return ring;
+}
+void neo_collision_ring_copy(int d0,int d1,int d2,int d3,int d4,int d5) {
+    if (!ring_on) return;
+    /* 0C70FC: clipped to the loaded window (+36/+38, 32 blocks each). */
+    int b36=ring_c0/2,b38=ring_r0/2,d6=b36-d4;
+    if (d6>=0) {d4+=d6;d0+=d6;d2-=d6;if (d2<=0) return;d6=0;}
+    d6+=d2-32;if (d6>=0) {d2-=d6;if (d2<=0) return;}
+    d6=b38-d5;
+    if (d6>=0) {d5+=d6;d1-=d6;d3-=d6;if (d3<=0) return;d6=0;}
+    d6+=d3-32;if (d6>=0) {d3-=d6;if (d3<=0) return;}
+    /* 0C714E: 12-bit block numbers clipped to the map (+8 column pairs, +A
+     * blocks), then 0C72EC: block (d0+i, d1+j) of the map (rows from the
+     * top) to the ring's column pair (d4+i) & 31 and row pair
+     * (~d5 & 31) + j, i.e. the window block d5 - j. */
+    d0=(int16_t)(uint16_t)(d0<<4)>>4;d1=(int16_t)(uint16_t)(d1<<4)>>4;
+    int pairs=(int)columns/2,blocks=(int)rows/2;
+    if (d0>=pairs || d1>=blocks) return;
+    if (d0<0) {d2+=d0;if (d2<=0) return;d4-=d0;d0=0;}
+    if (d1<0) {d3+=d1;if (d3<=0) return;d5+=d1;d1=0;}
+    if (d0+d2>pairs) {d2=pairs-d0;if (d2<=0) return;}
+    if (d1+d3>blocks) {d3=blocks-d1;if (d3<=0) return;}
+    unsigned top=rows-1u,slot0=((unsigned)~d5&31u)*2u;
+    for (int i=0;i<d2;i++) for (int j=0;j<d3;j++) for (unsigned k=0;k<4;k++) {
+        unsigned dx=k&1u,dr=k>>1,c=2u*(unsigned)(d0+i)+dx,t=2u*(unsigned)(d1+j)+dr;
+        unsigned rc=2u*((unsigned)(d4+i)&31u)+dx,rs=(slot0+2u*(unsigned)j+dr)&63u;
+        ring[rc<<6|rs]=grid[c*rows+(top-t)];
+    }
+}
+void neo_collision_reset(void) {dynamic_active=false;ring_on=false;}
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned column_count,unsigned row_count) {
     if (!cells) {grid=neo_grid;dynamic_grid=dynamic_grid_m1;unknown=NULL;columns=NEO_GRID_COLUMNS;rows=32;}
     else {grid=cells;dynamic_grid=dynamic;unknown=unknown_mask;columns=column_count;rows=row_count;}
-    dynamic_active=false;unknown_reads=0;
+    dynamic_active=false;unknown_reads=0;ring_on=false;ring=NULL;
 }
+void neo_collision_set_ring(uint8_t *buffer) {ring=buffer;ring_on=false;}
 unsigned neo_collision_rows(void) {return rows;}
 unsigned neo_collision_unknown_reads(void) {return unknown_reads;}
 static void make_dynamic(void) {
@@ -34,7 +93,7 @@ unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
         uint8_t *cell=&dynamic_grid[cx*rows+cy];
         if (*cell&15) continue;
         uint8_t value=(*cell&0xe0)|(flags&2?16:0)|vehicle_wreckage[row][col];
-        if (value!=*cell) { *cell=value;changed++; }
+        if (value!=*cell) { *cell=value;changed++;ring_touch(cx,cy); }
     }
     return changed;
 }
@@ -55,12 +114,15 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
         uint8_t *cell=&dynamic_grid[cx*rows+cy];unsigned shape=*cell&15u;
         if (shape && !((mask>>shape)&1u)) continue;
         uint8_t value=(uint8_t)((t[10+row*w+col]|(t[4]?16:0))+(*cell&0xe0));
-        if (value!=*cell) {*cell=value;changed++;}
+        if (value!=*cell) {*cell=value;changed++;ring_touch(cx,cy);}
     }
     return changed;
 }
 unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
+    /* Vertical stages: every reader sees the kernel's ring (0C79FE), which
+     * the tower writer 0B7C38 fills beyond the map's rows. */
+    if (ring_on) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
     if (x<0 || x>=(int)columns*8 || y<0 || y>=(int)rows*8) return 0;
     unsigned at=(unsigned)(x/8)*rows+(unsigned)(y/8);
     /* A never observed cell (mission packs only) reads as empty and is

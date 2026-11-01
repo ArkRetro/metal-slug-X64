@@ -344,7 +344,9 @@ void scene_assets_begin(void) {
          * rubble) is pinned and loaded before the first frame, in camera
          * order: the background never misses. */
         map_resident_all=true;
-        static int first_camera[SCENE_CHUNK_COUNT];
+        /* Scratch in the idle staging buffer (no DMA before the warm-up). */
+        _Static_assert(SCENE_CHUNK_COUNT*sizeof(int)<=SCENE_CHUNK_BYTES,"first_camera fits a staging buffer");
+        int *first_camera=(int*)staging[0];
         for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) first_camera[c]=0x7fffffff;
         for (unsigned i=0;i<SCENE_MAP_CELL_COUNT;i++) {
             const scene_map_cell_t *cell=&scene_map_cells_data[i];unsigned layer=cell->layer<4?cell->layer:3;
@@ -505,7 +507,7 @@ bool scene_stage_load(unsigned index) {
     release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
     unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
     unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
-        2u*((grid+15)&~15u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
+        2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
     for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
@@ -536,14 +538,14 @@ bool scene_stage_load(unsigned index) {
         if (page>max_page) max_page=page;
     }
     /* Grid, its stamp copy and the unknown mask. */
-    uint8_t *g=take(grid),*dyn=take(grid),*unknown=NULL;rom_read(g,ps.grid,grid);
+    uint8_t *g=take(grid),*dyn=take(grid),*unknown=NULL,*ring=ps.rows>32u?take(4096u):NULL;rom_read(g,ps.grid,grid);
     if (ps.unknown) {unknown=take((grid+7)/8);rom_read(unknown,ps.unknown,(grid+7)/8);}
     const uint8_t *blob[3];
     for (unsigned b=0;b<3;b++) {uint8_t *d=take(ps.blob[b].length);if (ps.blob[b].length) rom_read(d,ps.blob[b].offset,ps.blob[b].length);blob[b]=d;}
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
-        .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.unknown=unknown,
+        .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,
         .camera_list=blob[0],.camera_rom=ps.blob[0].rom,.camera_len=(uint16_t)ps.blob[0].length,
         .script=blob[1],.script_rom=ps.blob[1].rom,.script_len=(uint16_t)ps.blob[1].length,
         .players=blob[2],.players_rom=ps.blob[2].rom,.players_len=(uint16_t)ps.blob[2].length,

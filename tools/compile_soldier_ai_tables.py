@@ -73,9 +73,18 @@ for i,prog in enumerate(p['programs']):
         asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
         L.append('  {%s,0x%xu,%d,%d,%d,%d,%d},'%(kinds[c['kind']],asset,c['target'],c['operand'],c['flags'],c['dx'],c['dy']))
     L.append('};')
+    # ROM address of each command: only host checks (test_neo_family) read
+    # it; the console build leaves it out (115 KB of RAM, docs/RENDIMIENTO.md).
+    L.append('#ifndef N64')
     L.append('static const int32_t soldier_program_address_%d[]={%s};'%(i,','.join(str(c['address']) for c in prog['commands'])))
+    L.append('#endif')
+L.append('#ifdef N64')
+L.append('#define SOLDIER_PROGRAM_ADDRESS(i) NULL')
+L.append('#else')
+L.append('#define SOLDIER_PROGRAM_ADDRESS(i) soldier_program_address_##i')
+L.append('#endif')
 L.append('typedef struct { uint32_t tag; neo_anim_program_t program; const int32_t *address; } soldier_program_t;')
-L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d,%d},soldier_program_address_%d}'%(prog['root'],i,len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
+L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)}'%(prog['root'],i,len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
 L.append('#endif')
 L.append('#endif')
 (ROOT/'build').mkdir(exist_ok=True);(ROOT/'build/soldier_ai_tables.h').write_text('\n'.join(L)+'\n')

@@ -21,13 +21,17 @@ typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
      * (provenance only), target = parameter word. */
     NEO_ANIM_SET_BYTE,NEO_ANIM_SET_WORD,NEO_ANIM_SET_LONG,NEO_ANIM_DEC_BYTE,
     NEO_ANIM_COND_JUMP,NEO_ANIM_SWITCH,NEO_ANIM_SOUND,NEO_ANIM_CALL } neo_anim_kind_t;
-typedef struct {
-    neo_anim_kind_t kind;
+/* Packed to 12 bytes (was 16): ~30k converted commands live in the program
+ * image, so the layout is a RAM budget item (docs/RENDIMIENTO.md). Field
+ * order and values are unchanged; asset is read unaligned. */
+typedef struct __attribute__((packed,aligned(4))) {
+    neo_anim_kind_t kind:8;
     uint32_t asset;
     uint16_t target;
     uint8_t operand,flags;
     int8_t dx,dy;
 } neo_anim_command_t;
+_Static_assert(sizeof(neo_anim_command_t)==12,"neo_anim_command_t layout");
 typedef struct { const neo_anim_command_t *commands; uint16_t count; } neo_anim_program_t;
 typedef struct {
     const neo_anim_program_t *program;

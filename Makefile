@@ -23,6 +23,13 @@ N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(
 endif
 WORLD_SRCS := src/neo_camera.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_drone.c src/neo_hostage.c src/neo_m2boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
+# RAM budget (docs/RENDIMIENTO.md): actor/boss/cutscene modules are cold
+# code, compiled -Os (~78 KB less program image). The per-frame core (world,
+# soldier AI, kernel, animation, contact/collision, camera, gameplay, actor)
+# stays -O2. Integer code only; host checks keep -O0/-O2 (make check).
+HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animation.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_cull.c src/neo_hit.c src/neo_camera.c src/neo_soldier.c src/neo_soldier_action.c src/neo_script.c
+COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c)
+$(COLD_OBJS): CFLAGS += -Os
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
 # libdragon normally propagates the toolchain from a .z64 goal. Direct object
@@ -136,7 +143,7 @@ BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematic
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
 # the mission switch; without them the game stops there and restarts Mission 1.
 MISSION_PACKS := $(wildcard romfs/mission[2-6].pack)
-$(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
+$(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
@@ -145,6 +152,8 @@ $(BUILD_DIR)/game-romfs.stamp: romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.sta
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
 	$(if $(and $(BOOT_CINE_OBJS),$(BOOT_ATTRACT)),cp $(BOOT_ATTRACT) $(BUILD_DIR)/game-romfs/)
+	# Movies as MSXC v2 (LZ4 per packet, same frames; docs/MEMORY_OPTIMIZATION.md).
+	for f in $(BUILD_DIR)/game-romfs/*.msxc; do [ -f "$$f" ] || continue; python3 -I tools/msxc_compress.py $$f $$f.v2 >/dev/null && mv $$f.v2 $$f || exit 1; done
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.

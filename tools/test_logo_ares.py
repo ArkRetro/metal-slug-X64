@@ -122,7 +122,7 @@ try:
             cad=re.search(r'MSX INTRO cadence unique=(\d+) skipped=(\d+)',log());assert cad
             assert 'entry' in skips or int(cad[2])==0,('dropped entry frames',cad[0])
             stages['entry']=dict(frames=int(e[1]),rendered=int(e[2]),skipped='entry' in skips,dropped=int(cad[2]))
-            h=wait(r'MSX mission handoff x=(-?\d+) y=(-?\d+)',120);stages['handoff']=[int(h[1]),int(h[2])]
+            h=wait(r'MSX mission handoff (?:\(descent\) )?x=(-?\d+) y=(-?\d+)',120);stages['handoff']=[int(h[1]),int(h[2])]
             nm=wait(r'MSX first frame ready',120)
         time.sleep(1.0)
         ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'after-logo.png')

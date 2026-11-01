@@ -119,6 +119,15 @@ typedef struct neo_vehicle_env {
     unsigned grenades;               /* grenades 0C0808 made for a rider (counted; the player's code) */
     uint32_t grenade_last;           /* routine of the last one */
 } neo_vehicle_env_t;
+/* RAM the Mission 2 stage-3 boss 026254 reads and writes outside its nodes
+ * (neo_m2boss.c); NULL in neo_genv_t: its tail and 059FA8 stop explicitly. */
+typedef struct neo_m2boss_env {
+    int32_t camera_dy;               /* RAM 10E99A (camera 699A, read) */
+    uint16_t point69ba;              /* RAM 10E9BA (written: 0x1A0, 0x110 while +8F bit 4) */
+    int32_t speed[2];                /* RAM 1013D6/1013DA: mission actor +72/+76 (019388) */
+    int16_t tower_mode;              /* RAM 10C354 (02624C/026230/026244) */
+    uint8_t frame_step;              /* 003B4C: RAM 10008A + 10F009 (byte sum) */
+} neo_m2boss_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -139,6 +148,9 @@ struct neo_genv {
     /* ROM 0040BC (after the creator) or 00411C with the script actor as
      * creator (`after_script`). Returns NULL when the pool is exhausted. */
     neo_gactor_t *(*spawn)(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script);
+    /* ROM 0040BC with its reserve D0: no node unless more than `reserve`
+     * nodes are free (RAM 1063D8). NULL: `spawn` (the reserve is ignored). */
+    neo_gactor_t *(*spawn_reserve)(void *ctx,neo_gactor_t *creator,uint32_t routine,uint16_t reserve);
     /* Soldier spawned by an actor (spawn-table entry 0AF17E style). */
     void (*sound)(void *ctx,uint16_t id);
     /* ROM 0049E8: attack row against the registered hurtboxes of the given
@@ -209,6 +221,7 @@ struct neo_genv {
     bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
     neo_pickup_env_t *pickup;
     neo_vehicle_env_t *vehicle;
+    neo_m2boss_env_t *m2boss;
     /* Low word of the node's address as the slot services keep it (slot
      * +00, 0AA760; a turret's +0E): a nonzero id per node (NULL: 8000|index). */
     uint16_t (*node_word)(void *ctx,const neo_gactor_t *a);

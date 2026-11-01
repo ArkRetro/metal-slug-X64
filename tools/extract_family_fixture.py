@@ -80,7 +80,8 @@ def main():
                     if t[0]=='R':
                         if '%x'%b not in cur['ram_in'] and not any(w[0]==b for w in cur['ram_out']):cur['ram_in']['%x'%b]=v
                     else:cur['ram_out'].append([b,v])
-    if cur is not None:cur['post']=None;updates.append(cur)
+    # An update still open at the end of the trace was cut by the capture's
+    # last frame (not a deletion): dropped.
     with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',globals=2,ranges=a.range,ram=a.ram,updates=updates),f,separators=(',',':'))
     rs={}
     for u in updates:rs[u['routine']]=rs.get(u['routine'],0)+1

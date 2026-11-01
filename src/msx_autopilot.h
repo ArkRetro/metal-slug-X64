@@ -7,7 +7,7 @@
  * jumps (the port's jump: 56 px up, about 90 px across) and walks to the
  * jump of the path towards the camera list's goal: the op-4 rectangle it
  * waits for, else the direction of the path mode. Not a game feature: the
- * test turns it on (Left and Right held together in stage 3). */
+ * test turns it on (Start in stage 3). */
 #if MSX_REFERENCE_INVULNERABLE
 enum { AP_COLS=80, AP_ROWS=72, AP_PER=8, AP_NODES=AP_COLS*AP_PER };
 static int ap_reach(int dx,int dy) {

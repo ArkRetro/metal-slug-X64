@@ -14,7 +14,7 @@ to the boss 026254 (native) and the mission end. Screenshots at each milestone;
 the stage ends, tower pieces and the perf numbers are reported and the
 last line is RESULT: PASS/FAIL. Stage 3 is walked by the reference build's
 route planner (src/msx_autopilot.h, docs/MISION2.md "Fase 2f"), turned on
-by holding Left and Right together; the pad then only fires."""
+by Start in stage 3; the pad then only fires."""
 from pathlib import Path
 import argparse,re,subprocess,threading,time
 parser=argparse.ArgumentParser()
@@ -112,10 +112,10 @@ try:
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
     m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)
-    # The route planner: Left and Right held together toggle it.
+    # The route planner: Start toggles it in stage 3.
     pilot.set();time.sleep(.3)
     for attempt in range(3):
-        key('keydown','Left');key('keydown','Right');time.sleep(.4);key('keyup','Right');key('keyup','Left')
+        key('keydown','Return');time.sleep(.2);key('keyup','Return')
         try:wait_for(r'MSX autopilot on',timeout=5);break
         except AssertionError:time.sleep(1)
     walked.append('autopilot')

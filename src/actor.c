@@ -269,7 +269,13 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
-    game.start_edge|=input.btn.start && !previous_start;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
+    /* Reference build: Start in Mission 2 stage 3 toggles the test's route
+     * planner (gameplay.h, msx_autopilot.h) instead of reaching the HUD. */
+    bool start_press=input.btn.start && !previous_start;
+    if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
+        game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
+    }
+    game.start_edge|=start_press;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
     previous_a=input.btn.a;previous_b=input.btn.b;
     unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
     /* At most two steps per frame: the world updates on every second step
@@ -277,13 +283,6 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
      * around camera 2336). The rest of the catch-up stays as debt for the
      * next frames (scene_clock_defer): no simulation step is lost. */
     if (steps>MSX_FRAME_STEPS) {scene_clock_defer(&simulation_clock,steps-MSX_FRAME_STEPS,TICKS_PER_SECOND);steps=MSX_FRAME_STEPS;}
-    /* Reference build: Left and Right held together in Mission 2 stage 3
-     * toggle the test's route planner (gameplay.h, msx_autopilot.h). */
-    static bool pilot_was;bool pilot_keys=input.btn.d_left && input.btn.d_right;
-    if (msx_reference_invulnerable && pilot_keys && !pilot_was && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
-        game.pilot.on=!game.pilot.on;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
-    }
-    pilot_was=pilot_keys;
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || stick_v>0;

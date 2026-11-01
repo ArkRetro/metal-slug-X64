@@ -534,8 +534,8 @@ devuelve con el bit 4 de `D6`): la ruta no depende de ello, pero queda por
 contrastar con MAME.
 
 **Piloto de la prueba** (`src/msx_autopilot.h`, solo en la referencia): un
-mando a ciegas no sube la torre (piezas aleatorias). Con Izquierda y Derecha
-pulsadas a la vez en la etapa 3 (`MSX autopilot on`) un planificador lee los
+mando a ciegas no sube la torre (piezas aleatorias). Con Start en la etapa 3
+(`MSX autopilot on`; ares no entrega Izquierda y Derecha a la vez) un planificador lee los
 suelos del jugador (`neo_player_surface`, anillo incluido) en 80 columnas
 alrededor, los enlaza con pasos y saltos (alcance del salto del puerto: 50
 px de subida con ≤ 40 px de avance, 64 px de hueco a la misma altura) y

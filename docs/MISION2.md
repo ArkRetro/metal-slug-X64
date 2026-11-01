@@ -542,7 +542,7 @@ px de subida con ≤ 40 px de avance, 64 px de hueco a la misma altura) y
 camina hasta el salto del camino hacia el objetivo de la lista de cámara: el
 rectángulo del siguiente `op 4` (leído por delante de las esperas de
 progreso, para no llevar la cámara de modo 1 más allá de la escalera), si
-no la dirección del modo. Replanifica cada 8 pasos; bloqueado salta en
+no la dirección del modo. Replanifica cada 16 pasos; bloqueado salta en
 vertical; con el piloto los cuerpos de los soldados no lo empujan; con el
 jefe `026254` presente pulsa Abajo en el aire (disparo hacia abajo) sin
 dejar de subir (la cámara sube con el jefe). En el anfitrión: fin de misión
@@ -553,3 +553,18 @@ programa `268CC4`, raíz nueva de `extract_soldier_programs.py`) traducidas
 de la ROM; su cuchillo de `+9C` = 4/8 (`0689D2`, `069696`) sigue sin portar
 (`6899A`). `09A842` crea el prisionero `099E1C` (familia sin traducir).
 `067D80` (piezas `068D32`, `+7A`) sigue siendo una parada explícita.
+
+**Fin de misión**: `018F92` del jefe (`026C30`) pone 10C300 = FF y los
+manejadores `0C0538`, pero `mission_complete` solo lo levantaba el jefe de
+la Misión 1 (`mission_step`): ahora también 10C300 en otra misión (el
+registro `MSX mission complete signal (018F92)`); `018F40` cierra después
+la etapa (en el anfitrión, 470 actualizaciones más tarde). El piloto no
+planifica con los manejadores del jugador cambiados (entrada ignorada).
+
+**1E003C**: aparece en la etapa 2 (`MSX world unsupported routine=1e003c`)
+justo al terminar cada desplazamiento automático (progreso 1008, 1568,
+2048): la rutina de un nodo es una dirección del espejo de la RAM de
+trabajo (0x1E003C = 0x10003C + 0xE0000), no de la ROM; el actor se borra con
+sus descendientes y el recorrido sigue. Su escritor no está localizado
+(candidatos: el actor que posee el desplazamiento, `+5B` de 0C7C12).
+Pendiente con el grifo de MAME.

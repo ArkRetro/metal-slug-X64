@@ -57,7 +57,7 @@ static int ap_score(const msx_game_t *g,const int *rect,int x,int y,bool *inside
 static void ap_step(msx_game_t *g,int *direction,bool *jump) {
     /* On the stack (3.3 KB): no program-image RAM (docs/RENDIMIENTO.md). */
     int16_t ap_h[AP_NODES],ap_prev[AP_NODES];uint8_t ap_cost[AP_NODES],ap_n[AP_COLS];
-    if (!g->pilot.on || !g->world_enabled || g->life.phase!=MARCO_ALIVE || g->complete) return;
+    if (!g->pilot.on || !g->world_enabled || g->life.phase!=MARCO_ALIVE || g->complete || g->world.ga_flags.player_handlers) return;
     int X=g->x>>16,Y=(int)((56*MSX_UNIT-g->y)>>16);
     *jump=false;
     if (X==g->pilot.last_x) {if (g->pilot.still<0xffff) g->pilot.still++;} else g->pilot.still=0;
@@ -69,8 +69,8 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
     for (unsigned i=0;i<NEO_WORLD_GACTORS && !boss;i++) boss=g->world.gactors[i].active && neo_m2boss_routine(ga_l(&g->world.gactors[i],0));
     if (boss) g->crouch=!g->grounded;
     if (!g->grounded) {*direction=Y>=g->pilot.air_y?g->pilot.air_dir:g->pilot.pre_dir;g->pilot.kind=0;return;}
-    /* A plan holds for 8 steps (about 3 ms of the N64's per plan). */
-    if (g->pilot.kind && (uint16_t)(g->ticks-g->pilot.plan_tick)<8u) {
+    /* A plan holds for 16 steps (one plan costs milliseconds on the N64). */
+    if (g->pilot.kind && (uint16_t)(g->ticks-g->pilot.plan_tick)<16u) {
         int tx=g->pilot.kind==2?g->pilot.take_x:g->pilot.goal_x;
         if (g->pilot.kind==1 || abs(X-tx)>3) {*direction=X<tx-2?1:X>tx+2?-1:0;return;}
         g->pilot.air_dir=g->pilot.jdir;g->pilot.pre_dir=g->pilot.jpre;g->pilot.air_y=g->pilot.jair_y;
@@ -95,23 +95,25 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
     }
     if (self<0 || abs(ap_h[self]-Y)>8) {*direction=g->pilot.pre_dir?g->pilot.pre_dir:1;if (g->pilot.still>40) *jump=(g->ticks&8)!=0;return;}
     /* Cheapest paths (walk 1, jump 3) by cost levels. */
-    ap_cost[self]=0;
-    for (int level=0;level<=250;level++) {
-        bool any=false;
+    /* Dial's buckets: the count of nodes per cost skips empty levels. */
+    uint16_t at_level[256];memset(at_level,0,sizeof at_level);
+    ap_cost[self]=0;at_level[0]=1;int pending=1;
+    for (int level=0;level<=250 && pending>0;level++) {
+        if (!at_level[level]) continue;
         for (int a=0;a<AP_COLS;a++) for (int k=0;k<ap_n[a];k++) {
-            int na=a*AP_PER+k;if (ap_cost[na]<level || ap_cost[na]==255) continue;
-            any=true;if (ap_cost[na]!=level) continue;
+            int na=a*AP_PER+k;if (ap_cost[na]!=level) continue;
+            pending--;
             for (int b=a-11;b<=a+11;b++) {
                 if (b<0 || b>=AP_COLS || b==a) continue;
                 for (int m=0;m<ap_n[b];m++) {
                     int nb=b*AP_PER+m,dy=ap_h[nb]-ap_h[na];
                     int step=(abs(b-a)==1 && abs(dy)<=9)?1:ap_reach(8*(b-a),dy)?4+abs(b-a):0;
-                    if (!step || level+step>=ap_cost[nb]) continue;
-                    ap_cost[nb]=(uint8_t)(level+step);ap_prev[nb]=(int16_t)na;
+                    if (!step || level+step>=ap_cost[nb] || level+step>250) continue;
+                    if (ap_cost[nb]!=255) at_level[ap_cost[nb]]--; else pending++;
+                    ap_cost[nb]=(uint8_t)(level+step);ap_prev[nb]=(int16_t)na;at_level[level+step]++;
                 }
             }
         }
-        if (!any) break;
     }
     int rect[4];bool has_rect=g->world.camera_native && ap_rect(&g->world.camera,rect);
     bool best_inside=false;

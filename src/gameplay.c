@@ -760,7 +760,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * the right edge, under the player): after 2400 steps (40 s) at the
      * stop the reference build releases it too (lock_timeouts). */
     int lock_at=g->world.camera_native?(int)neo_camera_progress(&g->world.camera):g->camera;   /* 0C7C12 compares the list progress */
-    if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && lock_at>=g->world.camera_lock) {
+    /* The count starts at the stop and survives the camera's jitter around
+     * it (Mission 2 stage 2: x 2366..2368 at the stop 2368 in ares). */
+    if (g->world.camera_lock!=g->lock_value) {g->lock_value=g->world.camera_lock;g->lock_held=0;}
+    if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && (g->lock_held || lock_at>=g->world.camera_lock)) {
         if (++g->lock_held>=2400u) {
             g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
             g->stage_lock_releases++;g->lock_timeouts++;g->lock_held=0;

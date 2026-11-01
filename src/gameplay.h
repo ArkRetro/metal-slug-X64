@@ -157,7 +157,7 @@ typedef struct {
      * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
      * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
-    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;
+    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;int32_t lock_value;
     /* Reference build only (msx_autopilot.h): the test's stage-3 pilot. */
     struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;} pilot;
 } msx_game_t;

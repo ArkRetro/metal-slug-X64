@@ -373,6 +373,8 @@ emu.register_frame_done(function()
    -- Iteration aid only (MSX_FULL_SAVE=1): a MAME state per section start.
    if os.getenv('MSX_FULL_SAVE')=='1' and sec>=0 and sec<30 and frame>(tonumber(os.getenv('MSX_FULL_LOAD_FRAME') or '0'))+10 then machine:save(string.format('sec%02d_%d',sec,frame)) end
   end
+  -- Iteration aid only (MSX_FULL_SAVE_AT=<frame>): a MAME state at that frame.
+  if frame==tonumber(os.getenv('MSX_FULL_SAVE_AT') or '-1') then machine:save(string.format('at_%d',frame)) end
   -- Pistol again after a new section (reference-only weapon, as at 2100).
   if frame==section_start+300 and frame>2400 and cpu:read_u8(0x10c71e)==0 then cpu:write_u8(0x10c71e,3) end
   local b=0x10c72e;local m=0x10d7b6;local sky=0x10e83e

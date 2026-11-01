@@ -21,7 +21,13 @@
  * actor), stands 0693CA and goes to 067A40; its death in the air 069448.
  * Paths without MAME evidence stop explicitly (ga_fail): 067EE4 (+6E
  * modes, edge stop), 067D06 / 067D80 / 069478 (pieces 068D32, +7A), the
- * knife of +9C = 4/8 (0689D2, 069696), 0691D2 with +7A. The cartridge
+ * knife of +9C = 4/8 (0689D2, 069696), 0691D2 with +7A.
+ * 0683FA (the hostage holder of 06835C, neo_hostage.c; +9C = 0, +81 = FF,
+ * +86 = the hostage): program 268D0C, +94 = 0x38 - rand(0x18), +4E by
+ * 2D271E, +62 = +8A by +6E; 0684CA stands (01456A, 00427A) until 068CD4
+ * (-> 067EE4, not observed) or 068C3A (|+28 - +8E| >= +70, or the nearest
+ * player within +94 in front: -> 067E66); 068F66 compares the creator with
+ * itself and never writes. Its death (068F4A) frees the hostage. The cartridge
  * checks before 004188 (10F00A/10F00C, 2FFFE0) are not reproduced. */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
@@ -114,6 +120,20 @@ static bool k68cd4(neo_gactor_t *a,neo_genv_t *e) {
     if (ga_probe_forward(a,e,BIT(0x15,0)?0x10:-0x10)) return false;
     if (W(0x6e)==2u) SW(0x6e,1);
     return true;
+}
+/* 068C3A: carry when +28 left +8E by +70, or the nearest player (+86) is
+ * in front within +94. */
+static bool k68c3a(neo_gactor_t *a,neo_genv_t *e) {
+    int16_t d=S16((uint16_t)(W(0x8e)-W(0x28)));
+    if (d<0) d=(int16_t)-d;
+    if (d>=S16(W(0x70))) return true;
+    uint32_t n;
+    if (nearest(a,e,&n)) return false;
+    SL(0x86,n);
+    d=S16((uint16_t)(W(0x3c)-px(e,n)));
+    if (d>=0) return !BIT(0x15,0) && d<=S16(W(0x94));
+    d=(int16_t)-d;
+    return BIT(0x15,0) && d<=S16(W(0x94));
 }
 /* 068B08: +6E 2 -> 1 once +28 left +8E by +72. */
 static void k68b08(neo_gactor_t *a) {
@@ -343,6 +363,20 @@ static ga_result_t soldier(neo_gactor_t *a,neo_genv_t *e) {
     case CULL:                                                         /* 0688D6 */
         if (ga_cull(a,e,0xe1a5e)) {SB(0x60,0xff);return GA_DELETE;}
         return GA_MORE;
+    case 0x683fa:
+        START(0x268d0c);SL(0x50,0xe1a96);solid(a,e,0xe1b4e);
+        SB(0x9c,0);palettes(a);ga_floor(a,e);
+        SB(0x61,0);SB(0x60,0);SB(0x81,0xff);SB(0x9c,0);
+        SW(0x94,0x38u-ga_rand_range(e,0x18));
+        SW(0x4e,rank(a,e,0x2d271e));
+        SL(0x62,L(0x8a));
+        if (W(0x6e)) SET(0x15,0); else SL(0x62,0u-L(0x62));
+        ga_stationary(a,e);SW(0x8e,W(0x28));SL(0,0x684ca);return GA_MORE;
+    case 0x684ca:
+        ga_ground(a,e,NULL);STEP(r);
+        if (k68cd4(a,e)) {SW(0x6e,0);target(a,e,&n);SL(0,0x67ee4);}
+        if (k68c3a(a,e)) {SW(0x6e,0);target(a,e,&n);SL(0,0x67e66);}
+        pc=TAIL;break;                                                 /* 068F66: no write */
     /* ---- family c ---- */
     case 0x692b2:SB(0x9c,0);pc=0x6932e;break;
     case 0x692c6:SB(0x9c,4);pc=0x6932e;break;
@@ -431,7 +465,7 @@ static ga_result_t flash(neo_gactor_t *a,neo_genv_t *e) {
 }
 static const uint32_t STATES[]={0x678a2,0x678ac,0x678b6,0x678c0,0x678ca,0x67902,0x678dc,0x679b0,0x679d2,0x679ee,0x67a24,0x67a40,0x67a6c,0x67a9a,
     0x67ab4,0x67b42,0x67ba6,0x67bd4,0x67c20,0x67c62,0x67e66,0x67e98,0x692b2,0x692c6,0x692da,0x6936e,0x693ca,0x693e4,
-    0x69484,0x694a8,0x694c4,0x694ce,0x69500,0x67fc0,0x68020,0x21cb6,0x21cee};
+    0x69484,0x694a8,0x694c4,0x694ce,0x69500,0x683fa,0x684ca,0x67fc0,0x68020,0x21cb6,0x21cee};
 bool neo_rebel3_routine(uint32_t r) {
     for (unsigned i=0;i<sizeof(STATES)/sizeof(STATES[0]);i++) if (STATES[i]==r) return true;
     return false;

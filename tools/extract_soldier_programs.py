@@ -179,6 +179,8 @@ ROOTS+=[0x286896,0x286904,0x2868a2,0x286910]
 ROOTS+=[0x26939a,0x2693a6,0x2693b2,0x269382,0x26938e]
 # Mission 2: the drone 03670E and its bomb 0369AC (neo_drone.c).
 ROOTS+=[0x23ba74,0x23bb52,0x23bbd0,0x23bc72,0x23bcf2]
+# Mission 2: the hostage 021B46.. of 06835C (neo_hostage.c).
+ROOTS+=[0x230984,0x230654,0x23066a]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

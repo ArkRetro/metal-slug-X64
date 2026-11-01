@@ -39,6 +39,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `06851A` obstáculo y su capa `0685FE`; señal `03A892` | `src/neo_m2props.c` | familia `bags` (etapa 2, `s2`): 7 nodos, **421 actualizaciones**, 7 borrados |
 | `052A5C` espera de cámara; `0678A2/0678AC` soldado (+9C = 4) | `src/neo_m2props.c`, `src/neo_rebel3.c` | familia `stage3` (`c1`): 2 nodos, **1838 actualizaciones** |
 | `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
+| `06835C` soldado con rehén: rehén `021B46..` y soldado `0683FA/0684CA` | `src/neo_hostage.c`, `src/neo_rebel3.c` | familia `hostage` (etapa 2, `h1`): 2 nodos, **186 actualizaciones**, 2 borrados |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -340,14 +341,68 @@ iguales, **0 distintos**; dron 50 volcados, 64761 iguales, 402 distintos en
 1342 distintos en un volcado (22500, la rotura); el soldado `0678A2` no
 sale en ningún volcado. Diferencias sin explicar.
 
-## Enemigos más frecuentes (no portados)
+## Soldado con rehén `06835C` (rama `work-m2en5`)
 
-`0613CA..`, `0678B6..` y `0692B2..` ya son nativos (arriba). Los demás no son variante de una familia nativa:
+Traza y extracción (estado `sec02_19932`, unos 30 s; el soldado aparece en
+20605 y el rehén se va en 20905):
 
-| Constructor | Lectura |
-| --- | --- |
-| `06835C` (etapa 2) | soldado `0683FA` (familia `0678..`, `0684CA`) que retiene a un rehén: el propio nodo pasa a la familia `021B46..0222xx` (paleta 0x1F, programa `230984`, `021BB2..021F84`, `0220BC`, `02223C`, `022178`, `068E94`); sin portar |
-| `026254` (etapa 3) | actor grande (`026254..027E8E`, paletas 0x57/0x5B/0xB2/0x59, programa `23502C`, `059F4E`, `027BC6`); sin portar y sin nacimiento en `c1` |
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932
+MSX_FULL_FAMILY_ROOTS=6835c MSX_FULL_FAMILY_FROM=20590 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=20610 \
+  MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=20960 sh tools/run_capture_fullgame.sh /home/user/captures-m2en5/h1
+python3 tools/extract_family_fixture.py .../h1/boss-trace.txt --output data/hostage_fixture.json.gz --range 678a2-69700 \
+  --range 21b46-22258 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 1014ec-1014f4 --ram 1014fc-101500
+```
 
-Cada una necesita su traza de familia (las capturas desde `states4` cuestan
-segundos) y una traducción completa.
+`06835C` (guion): +8A = `2D27E2` (`0260C8`) << 8 sin signo; crea el
+soldado `0683FA` (`0040BC`) con +69, +8A, +86 = el propio nodo, +6E,
++70 = +72, +74, +76, +7A = +78, 0x20 px por delante (`01ACF2`); después
++72 = +70, +74 = FFFF, +62 = +8A, +7E = +69, `019DFC` y el nodo pasa a
+rehén (`021B46`): capa 8820, paleta 0x1F, caja `E005E`, suelo, orientación
+por +6E, programa `230984`, +81 = 2, +4E = 1, +80 = 0. `021BB2`: `01456A`,
+`00427A`; con +80 = 1 (lo pone la muerte del soldado, llamada `068F4A`)
+va a `021E9A` (programa `230654`) y `021ECC` (programa `23066A`, gira,
++62 = +72 << 8) y `021F02` anda (`02223C`) hasta que `0220BC` lo recorta
+(`01945C` con `E004E`). `0683FA` (`neo_rebel3.c`, +9C = 0, +81 = FF):
+programa `268D0C`, +94 = 0x38 − azar(0x18), +4E por `2D271E`, +62 = +8A por
++6E; `0684CA` espera (`01456A`, `00427A`) hasta `068CD4` (→ `067EE4`, no
+observado) o `068C3A` (se alejó +70 de +8E, o el jugador más cercano está
+delante a +94 o menos: → `067E66`) y sigue en la familia `0678..`.
+`068F66` compara el creador consigo mismo y nunca escribe. Paradas
+explícitas: `021C0A` (+5A = 0x10: el rehén falso que pasa a soldado por
+`021CB6`, `021C70`, `068E94`; sin evidencia) y `021F22` (+5F bit 0).
+`021AD0..021E78`, `022162..02222E` (rehenes `021A1C/021A26`) no se usan.
+
+Prueba: familia `hostage` (`--node-fields 86`: +86 guarda el nodo del
+rehén o el jugador): 2 nodos, **186 actualizaciones**, 2 borrados, igual a
+MAME. Datos: programas `230984/230654/23066A` en
+`data/soldier_programs.json`, `E004E..E0075` en `region_rom.json`.
+
+Sprites: paleta 0x1F y programas del rehén en
+`filesystem/mission2/rest-native.json`. **Píxeles** (la misma captura `h1`,
+volcados cada 15 fotogramas 20610..20955): soldado 13 volcados, 9801
+iguales, **0 distintos**; rehén 19 volcados, 11089 iguales, 829 distintos
+en 4 volcados (20625..20670, mientras el soldado lo sujeta a su lado; sin
+explicar).
+
+## Jefe de la etapa 3 `026254` (no portado)
+
+No nace en `c1`: es el jefe de la etapa 3. En `run4` el registro `2D9CA2`
+corre entre 92475 y 93083 y el nodo pasa a `026354` en 93083 (x 480,
+y 1705); muere (`026E7A`) en 117325, unos 24000 fotogramas después. Se
+llega reproduciendo `run4` desde `sec03_26140` (unos 19 min) con el nuevo
+`MSX_FULL_SAVE_AT=<fotograma>` (solo captura: guarda `at_<fotograma>`):
+
+```sh
+MSX_FULL_STATES=<dir con sec03_26140> MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_SAVE_AT=92700 \
+  MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=92702 sh tools/run_capture_fullgame.sh <dir>
+MSX_FULL_LOAD=at_92700 MSX_FULL_LOAD_FRAME=92700 MSX_FULL_FAMILY_ROOTS=26254 MSX_FULL_FAMILY_FROM=92900 \
+  MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=94100 sh tools/run_capture_fullgame.sh <dir>/k1
+```
+
+La traza `k1` (92900..94100) pesa 52 MB: 27 nodos, el cuerpo `026354..026B48`
+y sus piezas `026FCE` (3542 actualizaciones), `027330`, `026F6C`, `027638`,
+`02715A`, escombros `01D1B0/01D764/01CF94..01D000` y `059FA8`. La traducción
+de `026254..027E8E` (unas 1600 instrucciones, servicios aún sin portar como
+`0120F8`, `009BB0`, `01B04A/01B14A/01B1C0`, `012192`, `059F4E`) y su traza
+completa (≈ 1 GB por tramos) quedan pendientes.

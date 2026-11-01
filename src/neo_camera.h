@@ -36,6 +36,7 @@ typedef struct { uint8_t kind; uint32_t address; uint16_t value; uint16_t progre
 typedef struct {
     uint32_t vx694e,vy6952;          /* custom layer velocities (unused in Mission 1) */
     uint8_t layer_flags[4];          /* 6956..6959 */
+    uint32_t l400e;                  /* RAM 10C00E (op 0x50): cell group map table */
     uint8_t auto_mode,auto_owner;    /* 695A, 695B */
     int32_t auto_vx,auto_vy;         /* 695C, 6960 */
     uint16_t command;                /* 6964: offset into the command list */

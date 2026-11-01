@@ -30,6 +30,7 @@ def main():
     ap.add_argument('--descriptor',type=lambda v:int(v,16),required=True);ap.add_argument('--top',type=int,required=True,help='Y0: world row of ROM row 0')
     ap.add_argument('--rows',default=None,help='LO:HI world rows to fill (inclusive; default all ROM rows)')
     ap.add_argument('--allow-conflicts',type=int,default=0,help='known cells that may differ from the ROM (kept)')
+    ap.add_argument('--rom-rows',action='store_true',help='after the check, the grid becomes the ROM grid itself (rows 0..TOP, no unknown cell): the rows above it were the ring of a looping stage (stage 3 tower, writer 0B7C38)')
     ap.add_argument('--output',type=Path)
     a=ap.parse_args();d=json.loads(a.collision.read_text());C,R=d['columns'],d['rows']
     cells=bytearray.fromhex(d['cells_hex']);unk=bytearray.fromhex(d['unknown_mask_hex']);mut=bytes.fromhex(d['mutable_mask_hex'])
@@ -50,6 +51,17 @@ def main():
         for y in range(max(0,lo),min(R-1,hi)+1):
             r=a.top-y;i=x*R+y
             if 0<=r<gr and unk[i]:cells[i]=g[x*gr+r];unk[i]=0;filled+=1
+    if a.rom_rows:
+        # Column x, world row y = TOP - r for every ROM row r; observed rows
+        # above TOP are dropped (with their mutable cells).
+        R2=a.top+1;cols=min(C,gc);cells=bytearray(cols*R2);mm=bytearray(cols*R2)
+        for x in range(cols):
+            for y in range(R2):
+                r=a.top-y
+                if 0<=r<gr:cells[x*R2+y]=g[x*gr+r]
+                if y<R:mm[x*R2+y]=mut[x*R+y] if isinstance(mut,(bytes,bytearray)) and len(mut)==C*R else 0
+        unk=bytearray(cols*R2);d['columns'],d['rows']=cols,R2;d['mutable_mask_hex']=mm.hex()
+        if isinstance(d.get('mutable_cells'),list):d['mutable_cells']=[m for m in d['mutable_cells'] if m['y']//8<R2]
     d['cells_hex']=cells.hex();d['unknown_mask_hex']=unk.hex();d['unknown_cells']=sum(1 for v in unk if v)
     d['rom_fill']=dict(descriptor='0x%06X'%a.descriptor,top=a.top,rows=[lo,hi],rom_columns=gc,rom_rows=gr,checked=ok,filled=filled,conflicts=conflicts,
         rule='ROM 0C72EC: collision pointer +4 of the layer map descriptor, 2x2 blocks per column pair; unknown cells filled, known cells kept')

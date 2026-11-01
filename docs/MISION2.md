@@ -251,3 +251,78 @@ dinámicas de la etapa 1 (zonas negras: el agua del río), la caída al vacío
    la fila 207, quedan 37037 celdas fuera de la vista de la subida.
 5. Recorrido de la Misión 2 en ares (`tools/test_mission_native_ares.py` con
    la etapa 1) cuando exista el cargador.
+
+## Fase 2b: contacto lateral, caída, anillo vertical, torre (rama `work-m2eng2`)
+
+**Contacto lateral del jugador** (`gameplay.c`, `wall_stop`): los barridos
+`0143EE`/`014594` llaman a `013968`, cuya respuesta de superficie
+`0131D6`/`0131EC` (D6 bit 2) anula d2 y `014492` lo guarda en `+30`. El
+jugador del port conserva su modelo de suelo y toma del núcleo nativo solo
+esa parada (A0 = terreno, 10C008 = FF, 10C009 = FF en el suelo, 10C00D = FF):
+en el suelo la dirección pasa a 0 y x queda en la del barrido; en el aire
+`+30` = 0. La Misión 1 no cambia (`make check`, `test_gameplay`, recorrido).
+En ares la etapa 2 ya no atraviesa el bloque de x 944: el `op 4` de la
+cámara 752 se cumple y la cámara llega a 1567 (y 283, modos 0/4/5).
+
+**Muerte por caída** (`0C3712`, proceso común `0C32F4`): `+40` (y proyectada
+de los pies) < RAM 10C72C (0x100, puesto por la vida nueva `0C0E42`: el
+borde inferior de la pantalla) → `0C2D6A` (`+5B` = x proyectada ≥ 0xA0) y la
+muerte genérica `0C2DDA` con `+5A` = 0. No depende de la invulnerabilidad
+del cartucho de referencia (solo golpes). Contador `pit_deaths`.
+
+**Anillo vertical** (`neo_collision_ring`, sobre el gancho `ring` de
+`neo_kscene_t` de `work-m2en`): 64×64 celdas en la memoria de la etapa
+(4 KB más en sus ranuras, no en el presupuesto fijo). `0C73CE`/`0C74C4`:
+`+36` = (−64 − x de la capa) >> 4 y `+38` = (0x80 − y de la capa) >> 4, 32
+bloques de 2×2 desde cada uno; `0C72EC` pone la celda (c, fila r desde
+abajo) en `(c & 63)·64 + 63 − (r & 63)` (la fila superior es `2·+34+1`, la
+última de la rejilla: etapa 3 `+34` = 135, 272 filas). Las filas fuera del
+mapa no se escriben (`0C714E` recorta) y conservan lo que había. Los sellos
+`0C88B0` escriben también en el anillo. En las etapas verticales
+`neo_collision_cell` lee el anillo (el jugador, los soldados y el núcleo ven
+lo mismo); la Misión 1 (32 filas) sigue con el modelo de columnas. Mapa de
+grupos de celdas 10C00E: op 0x50 de la lista de cámara (`0B7000` en la
+Misión 2: grupo 6 → 0x0A; Misión 1 sin cambio).
+
+**Torre de la etapa 3** (escritor encontrado con un grifo de escritura en
+MAME sobre todo el anillo, `captures-m2g/t2`, 26140..117960: aparte del
+cargador `0C72EC` nadie escribe el anillo). Las "plataformas desde la fila
+208" no eran filas observadas sino el anillo de una capa que sube hasta
+y −5005 con `+34` = 135: el mapa de colisión de la etapa 3 es la rejilla de
+la ROM, 118 × 272 sin desconocidas (`fill_collision_rom.py --rom-rows`), y
+las plataformas las copia el actor `0B7C38` (creado por `0B7C20`, llamada
+de la lista de cámara `0B7996`; contador 10C6B2 a 0 por `0B7B00`): mientras
+(10E992 >> 4) + 0x13 − 0x66 − 10C6B2 ≥ 0, un tipo de pieza de `0261A4`
+(secuencia en 10C350: 2C1374 primero; luego una de cuatro por `0029C6` & 3,
+tabla `027E8E` con 10C354 = 0 o `027E7E`; banco 1 de P2) va a `0B7B1C`
+(tipo ≥ 0xD → 0xB): 24 × 3 bloques del mapa `0B740A` en (0x10, 3·tipo) a
+los bloques de ventana (0x10, 0x66 + 10C6B2) por `0C70FC` (recorte a la
+ventana) y 10C6B2 += 3. Comprobado con el grifo: las filas del anillo
+escritas en la subida son piezas cada 6 filas. Nativo en `tower_step`
+(`gameplay.c`) y `neo_collision_ring_copy`. **Pendiente**: las escrituras
+de 10C354 de otros actores (−1 y 2 en `run4`) no se traducen, y los
+gráficos de la torre siguen siendo los grabados de `run4` (las piezas
+gráficas las copia la misma `0C714E` al mapa de sprites, que el
+renderizador no reproduce): con otra secuencia aleatoria la colisión y el
+dibujo no coinciden.
+
+**Tablas de la etapa 3**: con la rejilla de 272 filas, 12929 celdas, 6654
+imágenes y el anillo, ≈ 34 ranuras (antes ≈ 40); la etapa 2 rellenada desde
+la ROM (0 desconocidas). El presupuesto fijo de RAM de `ccr` quedaba por
+debajo del mínimo (3307 KB < 3328 KB, el juego no arrancaba): `first_camera`
+de `scene_assets_begin` usa ahora el búfer de staging libre (−4 KB de BSS).
+
+**Umbrales de capas**: la capa 2 de la etapa 2 (objeto 10D7B6) no se apaga:
+en el volcado 22620 (cámara 1048) su velocidad `+8`/`+C` pasa de 0 a
+−4,7 px (la capa sale de la pantalla); 22590 (cámara 1008) aún quieta. El
+autor de esa velocidad no se ha encontrado (las escrituras de 10D7B6..C5
+son todas de la actualización de capas `0C6FC4`/`01AC44`): el umbral 1026
+sigue siendo aproximado.
+
+**Recorrido en ares** (`mslugx-m2-reference.z64`): etapa 1 completa; etapa
+2 hasta la cámara 864..867 (y 64..67, modo 5). Ahí el RSP/RDP se cuelga
+(`MSX rspq kick` ×20 y el diagnóstico de `display_get`) en todas las
+ejecuciones desde el relleno de la etapa 2, también sin `wall_stop` y con
+el paquete anterior: bloqueo del renderizador en la subida vertical, sin
+localizar. Una ejecución anterior (sin las tablas nuevas) llegó a la cámara
+1567. La etapa 3 no se alcanza en ares.

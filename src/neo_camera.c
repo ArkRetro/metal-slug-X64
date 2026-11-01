@@ -156,7 +156,7 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
         case 0x3c: for (unsigned i=0;i<4;i++) c->layer_flags[i]=(uint8_t)(lw(c,a+4+(i&2))>>((i&1)?0:8));event(c,NEO_CAMERA_EV_LAYER_FLAGS,0,0);break;
         case 0x40: c->auto_mode=(uint8_t)(lw(c,a+4)>>8);break;
         case 0x4c: event(c,NEO_CAMERA_EV_GRAPHICS,ll(c,a+4),0);break;
-        case 0x50: break; /* RAM 10C00E long: not read by the ported code */
+        case 0x50: c->l400e=ll(c,a+4);break; /* RAM 10C00E long: the cell group map (neo_world) */
         case 0x54: if (((uint32_t)c->restart<<16)>=c->target) event(c,NEO_CAMERA_EV_COND_CALL,ll(c,a+4),0);break;
         case 0x58: if (((uint32_t)c->restart<<16)<c->target) event(c,NEO_CAMERA_EV_COND_CALL,ll(c,a+4),0);break;
         default: c->unsupported++;c->unsupported_at=c->list_base+a;return;

@@ -97,6 +97,7 @@ typedef struct {
      * body's +28/+2C are relative to its parent object (+38), so it moves
      * with the platform (wagon 033C98, boss). */
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
+    unsigned wall_stops,pit_deaths;   /* side stops of the sweeps 0143EE/014594 (wall_stop) */
     unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
     /* Weapons (world.weapons, RAM 10C718; docs/ARMAS_VEHICULOS.md). A shot
      * reserves through 0C0D64 for the current weapon; only the pistol's

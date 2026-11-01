@@ -150,9 +150,15 @@ las plataformas de la subida.
 
 | Constructor | Lectura |
 | --- | --- |
-| `0678B6/0678C0/0678CA/067902` (×6/–/×27/×4) | una familia, variante en +9C (0 u 8), suelo `0146E8`, `01436A`, objetivo `01AF9A` |
+| `0678B6/0678C0/0678CA/067902` (×6/–/×27/×4) | una familia, variante en +9C (0 u 8), suelo `0146E8`, `01436A`, objetivo `01AF9A`; código `0678B6..069000` (andador `08CCD4`, cola `0688D6` con recorte `E1A5E`, ayudantes `068A50..068D32`, hijos `067FC0`, `0680F4/068134`, `068214`, `0682F0`, `021CB6`) |
 | `0692B2..0692E4` (×9) | seis entradas, +9C = 0/4/8 |
 | `03670E` (×8) | +96 = 4, paletas 0x142/0x143, programa `23BA74` |
 
+Traza de `0678xx` y `0692xx` juntas (etapa 2, 20500..26139, unos 100 s;
+2200 actualizaciones de la primera, 900 de la segunda, sobre todo `067C62`,
+`067E98`, `067B42`, `068020`, `0679D2` y `06936E`, `0693CA`):
+`MSX_FULL_FAMILY_ROOTS=678b6,678c0,678ca,67902,692b2,692bc,692c6,692d0,692da,692e4
+MSX_FULL_FAMILY_FROM=20500 MSX_FULL_LAST=26139` con el resto como en `a2`;
+se extrae como `rebel2` con `--ring 10c72e --ram 10c7b6-10d7b6`.
 Cada una necesita su traza de familia (las capturas desde `states4` cuestan
 segundos) y una traducción completa.

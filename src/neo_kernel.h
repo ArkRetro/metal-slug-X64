@@ -77,6 +77,14 @@ bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *
 typedef struct { int32_t x,y; uint8_t parent; uint32_t kind; int32_t d6; bool found; } neo_kfloor_t;
 bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int32_t depth,
     uint8_t b4008,uint8_t b400a,uint8_t b400d,neo_kfloor_t *result);
+/* 013968 with player 1's screen box of 0128E8 (ROM 016DBE), for its
+ * sweeps 0143EE/014594 (neo_kernel.c). */
+bool neo_kernel_player_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result);
+/* Player 1's air sweep 0143EE/0128E8/013968 from (x,y) with (vx,vy), all
+ * relative to the terrain: true on a floor of the terrain (D6 bit 0), with
+ * the swept position and velocity (neo_kernel.c). */
+typedef struct { int32_t x,y,vx,vy; uint16_t flags; uint32_t kind; } neo_kland_t;
+bool neo_kernel_air_landing(neo_kscene_t *scene,int32_t x,int32_t y,int32_t vx,int32_t vy,neo_kland_t *out);
 /* ROM 01406A start: clear the dynamic-object bins (before the per-object
  * updates of the same tick). */
 void neo_kernel_dyn_begin(neo_kscene_t *scene);

@@ -584,7 +584,13 @@ static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,
     neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
     neo_kreq_t q={body->x,body->y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,(uint8_t)(ground?0xff:0),0,0,0xff};
     neo_kres_t r;
-    if (!neo_kernel_sweep(k,&q,&r) || !(r.flags&4u)) return false;
+    /* 0128E8 sets the player's screen box first (neo_kernel_player_sweep):
+     * with the world's box (0 x 0 unless a vehicle wrote it) 0138A0 cut
+     * every move to the right, the wall was never met and the player
+     * walked into the wall x 944..983 of Mission 2 stage 2 (y 80) and fell
+     * into the pit after it (MAME fall1: 431 of the 432 wall stops of the
+     * stage's run were lost without the box, none with it). */
+    if (!neo_kernel_player_sweep(k,&q,&r) || !(r.flags&4u)) return false;
     /* The air sweep that meets a wall can end on the scene root (MAME wq1,
      * Mission 2 stage 3: D6 = 8000000E with A0 = 10E968 at x 624 and in the
      * tower at 759..887, 10C00A = 0): x back to the terrain (01AC4C). */
@@ -798,7 +804,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40); stage 3 by its
      * boss (the tower stairs reach the screen's right edge at camera x
      * 624, MAME run4 player x 915: the climb goes on). */
-    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
+    /* Mission 2 stage 2: the gate x 2656..2687 (y 640..679) stays a wall
+     * until the actor 03A776 patches the map (0B7350 -> 0C70FC, MAME frame
+     * 26001 of the pilot's run) and creates the exit 0B6ED2; that actor
+     * (03A740, waiting for RAM 10C358) is not translated (explicit stop).
+     * With the player's wall stops (neo_kernel_player_sweep) the player
+     * stands against it at camera max + 248: the hook ends the stage there. */
+    int exit_dx=g->flow.mission==1u && g->flow.stage==2u?240:280;
+    if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+exit_dx)*MSX_UNIT &&
         !(g->flow.mission==1u && (g->flow.stage==1u || g->flow.stage==3u) && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
     /* The level script stopped at a record of an unported actor (explicit
      * stop): its camera lock would hold the stage there for good. The
@@ -969,13 +982,28 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 if (s.left) {int32_t v=0u-(uint32_t)body.vx;body.vx=(v>=0?0x40000:-0x40000)+(v>>1);}
             } else if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014468..01448A */
             int32_t wx;
+            const neo_air_t start=body;   /* 014462: +28..+34 into 013968 */
             if (wall_stop(g,&body,body.vx,body.vy,false,&wx)) {body.x=wx;body.vx=0;}
             body.x+=body.vx;body.y+=body.vy;
             g->air_ticks+=2;
             uint8_t object;int32_t top;
             if (body.y<previous && platform_floor(g,body.x,previous,body.y-previous,&object,&top) && top<=previous && top>=body.y) {
                 body.vy=top-previous;body.y=top;g->grounded=true;ride_on(g,object,body.x,body.y);
-            } else g->grounded=neo_land_step(&body,previous);
+            } else {
+                g->grounded=neo_land_step(&body,previous);
+                /* The plane test only lands on a surface between the old
+                 * and the new height at the new x: a surface rising faster
+                 * than the fall (Mission 2 stage 2, the 45-degree stairs
+                 * x 976..1031 and the quarter slopes after them) is crossed
+                 * and the player falls through (MAME fall1: the arcade
+                 * lands at x 1038.670). The original's air step is the
+                 * sweep 013968 (0143EE), translated in neo_kernel.c: its
+                 * floor then decides (bit-exact on every captured sweep). */
+                neo_kland_t land;
+                if (!g->grounded && g->world_enabled && neo_kernel_air_landing(&g->world.kernel,start.x,start.y,start.vx,start.vy,&land)) {
+                    body.x=land.x;body.y=land.y;body.vx=land.vx;body.vy=land.vy;g->grounded=true;g->kernel_landings++;
+                }
+            }
         }
         clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}

@@ -320,9 +320,58 @@ son todas de la actualización de capas `0C6FC4`/`01AC44`): el umbral 1026
 sigue siendo aproximado.
 
 **Recorrido en ares** (`mslugx-m2-reference.z64`): etapa 1 completa; etapa
-2 hasta la cámara 864..867 (y 64..67, modo 5). Ahí el RSP/RDP se cuelga
-(`MSX rspq kick` ×20 y el diagnóstico de `display_get`) en todas las
-ejecuciones desde el relleno de la etapa 2, también sin `wall_stop` y con
-el paquete anterior: bloqueo del renderizador en la subida vertical, sin
-localizar. Una ejecución anterior (sin las tablas nuevas) llegó a la cámara
-1567. La etapa 3 no se alcanza en ares.
+2 hasta la cámara 864..867 (y 64..67, modo 5), donde el RSP/RDP se colgaba.
+Causa y corrección en la fase 2c.
+
+## Fase 2c: cuelgue de la etapa 2, tabla de spawn, salida de la etapa 1 (rama `work-m2eng3`)
+
+**Cuelgue** (20 `MSX rspq kick` y el diagnóstico de `display_get`): no era
+el renderizador vertical sino los bloques grabados del fondo
+(`scene_renderer.c`). Tras ejecutar un bloque, el RSP sigue escribiendo los
+comandos RDP siguientes en el último búfer estático del bloque; los bloques
+retirados se liberaban en cuanto su fotograma terminaba y el RSP escribía en
+montón libre. En la etapa 2 el fondo se grababa y retiraba cada dos
+fotogramas (el juego actualiza uno de cada dos), así que la corrupción
+llegaba siempre (en la cámara 864 o 1138 según la ejecución). Bisección:
+sin bloques la etapa 2 se completa y la etapa 3 sube hasta la cámara 2408
+(y 536); con un detector (`mallinfo` en cada grabación) el montón aparece
+corrupto ya en la etapa 1. Corrección y medidas en
+[RENDIMIENTO.md](RENDIMIENTO.md) ("Bloques del fondo y montón"): bloque
+permanente `bg_tail` tras cada repetición, grabación tras 3 fotogramas
+iguales y con ≥ 192 KB libres. Con la grabación antigua más el detector la
+etapa 2 llega a la cámara 1598 sin corrupción.
+
+**Presupuesto de RAM**: tras la fusión de `work-m2eng2` el arranque volvía a
+fallar (3295 KB < 3328 KB): margen del montón 256 → 192 KB (209 ranuras).
+
+**Tabla de spawn**: `mission1_spawn_table` (ROM `0197DC`) solo tenía las
+entradas de la Misión 1, así que el guion de la etapa 1 paraba en
+`2D736A` (la puerta `03882A`, desplazamiento 0x240) y la etapa no terminaba
+sin gancho. `compile_soldier_ai_tables.py` añade los desplazamientos del
+guion decodificado de la Misión 2 (`data/mission2_script.json`; el bit 31
+sale de `group_counted` para los grupos < 9, el único caso en que se lee).
+Un registro contado en su grupo (< 9) de un constructor que el puerto no
+crea para el guion (`neo_script_env_t.native` = `neo_world_spawn_native`):
+su grupo nunca se vaciaría y las esperas lo retendrían. Primera parada: la
+etapa 2 en `2D7878` (`06835C`, grupo 0, cámara 616).
+
+**Salida de la etapa 1**: con 10C00B = FF (`0B6EF4`) los barridos
+`0143AC`/`014574` no aplican el recuadro de pantalla, así que la caminata
+`0CA3EC` hacia la x de pantalla 0x2A0 sale por la derecha y entra en el
+rectángulo de `0B6F24`; el jugador del puerto se recortaba al borde
+(x 611) y la etapa no terminaba. `clamp_feet` no recorta con 10C00B puesto.
+`msx_game_begin_stage` conserva de `neo_ga_flags_t` solo los rescates
+(manejadores, destino de la caminata, 10C00B y peticiones de fin eran de la
+etapa anterior).
+
+**Gancho de referencia**: con el guion parado en un actor no portado, su
+bloqueo de cámara (`2D7864`, 616) retendría la etapa: el cartucho de
+referencia lo suelta (`0C7C12`, contador `stage_lock_releases` en la línea
+de fin de etapa) para recorrer el motor; los actores del guion faltan.
+
+**Recorrido en ares**: etapa 1 completa sin gancho (puerta nativa,
+caminata, `018F40`); etapa 2 con el guion hasta `2D7878` y la cámara hasta
+1585..1651 (y 285..298, modos 0/4/5) sin cuelgue en tres ejecuciones; ahí el jugador cae en la
+subida (tres muertes por caída, fin de partida, vuelve a la Misión 1). La
+etapa 3 (subida de la torre, escritor `0B7C38`) solo se ha recorrido con el
+guion de la etapa 2 desactivado (diagnóstico, cámara 2408, y 536).

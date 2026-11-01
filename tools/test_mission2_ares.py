@@ -45,7 +45,8 @@ def pad():
     # through what a player would try: walk back and fire on the ground
     # without jumping (soldiers below a ledge), jump with Down held (the
     # downward shot), then jump often while walking right (steps of the
-    # climbs). Falls below the screen put the reference player back on its
+    # climbs), then walk and jump left for 4 s (stage 3 at the camera 336:
+    # the stairs up are to the left of the ledge the walk-in reaches). Falls below the screen put the reference player back on its
     # last ground (gameplay.c, pit rescues).
     t0=time.monotonic();state={};last=(None,t0)
     def hold(name,on):
@@ -57,10 +58,11 @@ def pad():
         stuck=now-last[1]
         fire=int(t*20)%2==0;right=True;left=False;down=False;jump=(t%3.0)<0.2
         if stuck>5:
-            phase=int((stuck-5)/4)%3;u=(stuck-5)%4
+            phase=int((stuck-5)/4)%4;u=(stuck-5)%4
             if phase==0:left=u<1.2;right=not left;jump=False
             elif phase==1:right=False;down=True;jump=(u%1.0)<0.2
-            else:jump=(u%1.0)<0.2;left=u>3.2;right=not left
+            elif phase==2:jump=(u%1.0)<0.2;left=u>3.2;right=not left
+            else:left=True;right=False;jump=(u%1.0)<0.2
         hold('b',fire);hold('Right',right);hold('Left',left);hold('Down',down);hold('a',jump)
         time.sleep(.03)
     for name in list(state):hold(name,False)

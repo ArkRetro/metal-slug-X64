@@ -15,10 +15,10 @@ Input per stage: filesystem/missionN/sK/map.json (tools/extract_mission_map.py
 --descriptor-layers). Coordinate variants (dynamic map writes, still needing
 their native events) are counted, not packed.
 
-Layout (big endian, every table 4-byte aligned; version 2, read by
+Layout (big endian, every table 4-byte aligned; version 3, read by
 src/scene_assets.c scene_mission_*):
-  'MSXM' u16 version=2 u16 mission u16 stages u16 palettes u32 images u32 chunks
-  u32 cells_total u32 grid_bytes
+  'MSXM' u16 version=3 u16 mission u16 stages u16 palettes u32 images u32 chunks
+  u32 cells_total u32 grid_bytes u32 actors u32 actor_images u32 resources
   stage[stages] (128 bytes):
                   u32 descriptor u16 width u16 camera_max u32 backdrop_rgba
                   u32 first_cell u32 cell_count u16 grid_columns u16 grid_rows
@@ -35,6 +35,9 @@ src/scene_assets.c scene_mission_*):
   image[]:   u16 page u16 palette u16 y u16 h              (8 bytes)
   palette[]: u16 rgba5551[16]
   chunk[]:   u32 offset u32 length u32 crc32 u32 codec
+  actor[]:   u32 descriptor u16 first u16 count               (8 bytes)
+  actor_image[]: u16 page u16 palette i16 x i16 y u16 w u16 h (12 bytes)
+  resource[]: u16 logical palette resource u16 palette        (4 bytes)
   grids (u8 cells, column major) with their unknown masks, the ROM blobs,
   then the chunks (64-byte aligned). Grids with never observed cells are
   packed with their mask: the runtime treats an unknown cell as empty and
@@ -47,6 +50,27 @@ from pack_scene import rle,unrle,PAGE
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
 DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE)}
+
+def actor_frames(mission):
+    """Native actor descriptors of the mission (filesystem/missionN/rest-native.json,
+    tools/export_rest_sprites.py --output) that the scene pack (pack_scene.py:
+    soldier, Mission 1 boss and rest-of-mission exports) does not have, with
+    their palette resources missing there. Empty descriptors get no parts."""
+    path=ROOT/f'filesystem/mission{mission}/rest-native.json'
+    if not path.exists():return [],{},[]
+    known={};have={}
+    for name in ('soldier-native.json','boss-native.json','rest-native.json'):
+        f=ROOT/'filesystem'/name
+        if not f.exists():continue
+        d=json.loads(f.read_text());have.update(d['palettes'])
+        known.update((x['descriptor'],x) for x in d['frames']);known.update((e,None) for e in d.get('empty',[]))
+    m=json.loads(path.read_text())
+    for f in m['frames']:
+        assert f['descriptor'] not in known or known[f['descriptor']] is None or known[f['descriptor']]['pens_hex']==f['pens_hex'],('descriptor differs from the scene pack',f['descriptor'])
+    for k,v in m['palettes'].items():assert have.get(k,v)==v,('palette differs from the scene pack',k)
+    frames=[f for f in m['frames'] if f['descriptor'] not in known]
+    empty=[e for e in m.get('empty',[]) if e not in known and e not in {f['descriptor'] for f in frames}]
+    return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
 def build(mission,stage_dirs,crom,rom=None):
     MISSION[0]=mission
@@ -99,6 +123,28 @@ def build(mission,stage_dirs,crom,rom=None):
                 while len(blobs)%4:blobs.append(0)
                 st['blobs'].append((rom_at,len(blobs),len(data)));blobs.extend(data)
             report[k]['blobs']=[(f'0x{r:06X}',n) for r,_,n in st['blobs']]
+    # Mission actors (docs/MISION2.md "Fase 2e"): <=64x64 parts on their own
+    # pages after the maps; the draw overrides the palette with the logical
+    # resource (scene_native_palette, mission resources after the scene's).
+    frames,resources,empty=actor_frames(mission)
+    while len(pages)%8:pages.append(bytes(PAGE))   # the actors start a chunk
+    actors=[];actor_images=[];res=[]
+    for k,v in sorted(resources.items(),key=lambda t:int(t[0],16)):
+        key=tuple(v)+(0,)*(16-len(v))
+        if key not in pal_ids:pal_ids[key]=len(palettes);palettes.append(key)
+        res.append((int(k,16),pal_ids[key]))
+    for f in frames:
+        pens=bytes.fromhex(f['pens_hex']);w,h=f['width'],f['height'];first=len(actor_images)
+        for py0 in range(0,h,64):
+            for px0 in range(0,w,64):
+                pw,ph=min(64,w-px0),min(64,h-py0);data=bytearray(PAGE)
+                for y in range(ph):
+                    for x in range(pw):data[y*32+x//2]|=(pens[(py0+y)*w+px0+x]&15)<<(0 if x&1 else 4)
+                data=bytes(data)
+                if data not in page_ids:page_ids[data]=len(pages);pages.append(data)
+                actor_images.append((page_ids[data],0,f['x']+px0,f['y']+py0,pw,ph))
+        actors.append((int(f['descriptor'],16),first,len(actor_images)-first))
+    actors+=[(int(e,16),0,0) for e in empty];actors.sort()
     real_pages=len(pages)
     while len(pages)%8:pages.append(bytes(PAGE))
     chunks=[];body=bytearray()
@@ -108,12 +154,15 @@ def build(mission,stage_dirs,crom,rom=None):
         else:codec=0;packed=decoded
         chunks.append([len(body),len(packed),zlib.crc32(decoded),codec])
         body.extend(packed);body.extend(bytes((-len(body))%64))
-    head=bytearray(b'MSXM')+struct.pack('>HHHHIIII',2,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids))
+    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIII',3,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res))
     stage_at=len(head);head+=bytes(STAGE_BYTES*len(stages))
     for layer,x,y,ph in cells:head+=struct.pack('>BBhh8H',layer,0,x,y,*ph)
     for im in images:head+=struct.pack('>4H',*im)
     for p in palettes:head+=struct.pack('>16H',*p)
     table_at=len(head);head+=bytes(16*len(chunks))
+    for a in actors:head+=struct.pack('>IHH',*a)
+    for im in actor_images:head+=struct.pack('>HHhhHH',*im)
+    for r in res:head+=struct.pack('>HH',*r)
     grids_at=len(head);head+=grids
     while len(head)%4:head.append(0)
     blobs_at=len(head);head+=blobs
@@ -128,6 +177,7 @@ def build(mission,stage_dirs,crom,rom=None):
         assert len(rec)<=STAGE_BYTES;head[stage_at+STAGE_BYTES*k:stage_at+STAGE_BYTES*k+len(rec)]=rec
     blob=bytes(head)+bytes(body)
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),
+                     actors=len(actors),actor_images=len(actor_images),actor_pages=len({im[0] for im in actor_images}),resources=len(res),
                      header_bytes=len(head),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128

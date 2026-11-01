@@ -1203,6 +1203,8 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (w->gactors[i].active && ga_b(&w->gactors[i],0x69)<9u) w->script.groups[ga_b(&w->gactors[i],0x69)]++;
     if (w->boss_active) for (int16_t i=w->boss.first;i>=0;i=w->boss.nodes[i].next)
         if (w->boss.nodes[i].routine && w->boss.nodes[i].routine!=0x3f1eu && w->boss.nodes[i].f[0x69]<9u) w->script.groups[w->boss.nodes[i].f[0x69]]++;
+    for (unsigned i=0;i<NEO_SCRIPT_RUNNERS;i++)   /* grouped runners (op 11, 01A210) */
+        if (w->script.runners[i].active && w->script.runners[i].group69<9u) w->script.groups[w->script.runners[i].group69]++;
     memcpy(w->last_boss_boxes,w->boss_boxes,sizeof(w->boss_boxes));w->last_boss_box_count=w->boss_box_count;
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},

@@ -6,7 +6,7 @@ enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
-enum { SCENE_MISSION_CHUNKS_MAX=128 };
+enum { SCENE_MISSION_CHUNKS_MAX=320 };
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;

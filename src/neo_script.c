@@ -123,7 +123,19 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         for (i=0;i<NEO_SCRIPT_RUNNERS && v->s->runners[i].active;i++) {}
         if (i==NEO_SCRIPT_RUNNERS) return halt(v,pc);
         neo_script_runner_t *r=&v->s->runners[i];
-        r->active=true;r->record=pc;r->timer72=word(v,pc,2);r->count76=word(v,pc,8);r->spawned74=false;
+        r->active=true;r->record=pc;r->timer72=word(v,pc,2);r->count76=word(v,pc,8);r->spawned74=false;r->group69=0xff;
+        if (v->e->runner) v->e->runner(v->e->context,v->creator,i);
+        return skip(v,next(v,pc));
+    }
+    case 0x11: { /* 01A210: a runner (01A422) of the op 8 record at +4, its
+                  * +69 = the word at +2 when < 9 (10C326 counted now) */
+        unsigned i;
+        for (i=0;i<NEO_SCRIPT_RUNNERS && v->s->runners[i].active;i++) {}
+        if (i==NEO_SCRIPT_RUNNERS || op(v,(uint16_t)(pc+4))!=8u) return halt(v,pc);
+        neo_script_runner_t *r=&v->s->runners[i];uint16_t rec=(uint16_t)(pc+4),group=word(v,pc,2);
+        r->active=true;r->record=rec;r->timer72=word(v,rec,2);r->count76=word(v,rec,8);r->spawned74=false;
+        r->group69=group<9u?(uint8_t)group:0xffu;
+        if (group<9u) v->s->groups[group]++;
         if (v->e->runner) v->e->runner(v->e->context,v->creator,i);
         return skip(v,next(v,pc));
     }
@@ -171,7 +183,7 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
     case 0x10: /* 01A32E */
         v->s->w4330=word(v,pc,2);v->s->w4332=(uint16_t)(word(v,pc,4)+0x100u);
         return next(v,pc);
-    default: /* 0..5 trap; 11 grouped runner */
+    default: /* 0..5 trap */
         return halt(v,pc);
     }
 }

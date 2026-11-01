@@ -90,7 +90,7 @@ int main(void) {
         s.w4330=cap->w4330;s.w4332=cap->w4332;s.w69b8=cap->w69b8;s.w69ba=cap->w69ba;
         ctx_t c;memset(&c,0,sizeof(c));c.s=&s;c.lock=cap->lock;
         for (unsigned i=0;i<cap->runner_count;i++) {
-            s.runners[i]=(neo_script_runner_t){true,(uint16_t)(cap->runners[i].record-MISSION1_SCRIPT_BASE),cap->runners[i].timer72,cap->runners[i].count76,false};
+            s.runners[i]=(neo_script_runner_t){true,(uint16_t)(cap->runners[i].record-MISSION1_SCRIPT_BASE),cap->runners[i].timer72,cap->runners[i].count76,false,0xff};
             c.order[c.order_count++]=(int)i;
         }
         for (unsigned ti=0;ti<cap->tick_count;ti++) {

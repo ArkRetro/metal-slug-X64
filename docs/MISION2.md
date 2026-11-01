@@ -422,3 +422,43 @@ de la Misión 1.
 **Presupuesto de RAM**: con el jefe `026254` fusionado (+36 KB de código)
 el arranque fallaba otra vez (3303 KB < 3328 KB): margen del montón
 192 → 160 KB.
+
+## Fase 2e: sprites de la Misión 2, corredores agrupados y mando (rama `work-m2eng5`)
+
+**Sprites de los actores** (`tools/pack_mission.py`, versión 3 del paquete):
+ningún paso leía `filesystem/mission2/rest-native.json`, así que enemigos,
+cajas y jefe de la Misión 2 no se dibujaban (`MSX native draw missing`). El
+paquete de misión añade una sección de actores: los descriptores que el
+paquete de escena no tiene (906, con 1455 partes ≤ 64×64 en 1348 páginas
+propias, a partir de un fragmento nuevo) y los 36 recursos de paleta que le
+faltan; los descriptores y paletas comunes deben ser idénticos (lo comprueba
+la herramienta). Cabecera: `u32 actors u32 actor_images u32 resources`;
+tablas tras la de fragmentos: `actor[]` (u32 descriptor, u16 primera parte,
+u16 partes), `actor_image[]` (u16 página, u16 paleta, i16 x, i16 y, u16 w,
+u16 h), `resource[]` (u16 recurso, u16 paleta). `scene_stage_load` las lee
+con las tablas de la etapa en las ranuras reservadas (≈ 31 KB: etapa 1 de 4
+a 6 ranuras, etapa 2 de 15 a 16), `scene_native_descriptor` y
+`scene_native_palette` buscan después en ellas y `scene_frame(SCENE_NATIVE,…)`
+sigue tras las partes del banco. La Misión 1 no cambia (su paquete y su
+`scene_meta.h` son los mismos). Paquete: 87 → 256 fragmentos
+(`SCENE_MISSION_CHUNKS_MAX` 128 → 320, ≈ 2,5 KB de BSS en las tablas por
+fragmento), 1,9 → 3,1 MB de ROM. En ares: 0 dibujos sin descriptor en las
+tres etapas (soldados, momias, rehenes, drones y jefe dibujados).
+
+**Corredor agrupado** (op 11, `01A210`): crea un corredor `01A422` cuyo
+registro es el op 8 de `+4` (su cuerpo es la sentencia siguiente), con
+`+69` = la palabra de `+2` si es < 9 (`10C326` contado en el momento) y
+salta la sentencia. `neo_script.c` lo ejecuta (`group69` del corredor) y
+`neo_world.c` cuenta los corredores agrupados vivos en el recuento de
+grupos (`019E40`). La etapa 3 ya no para en `2D8846`: los cinco corredores
+crean el dron `03670E` (nativo, `neo_drone.c`) sin el salto de registros de
+la referencia; la etapa 2 usa dos (`2D8368`, `2D8418`).
+
+**Jugador en el borde derecho**: en las paradas de cámara (616 y 1920 de la
+etapa 2, 336 de la etapa 3) el jugador queda en x = cámara + 291 porque el
+mando mantiene la derecha; con la izquierda pulsada se aleja del borde
+(hasta 90 px en 1,2 s en los registros), así que no hay recorte erróneo
+(`clamp_feet`, `wall_stop`). En la etapa 3 la escalera sube a la izquierda
+del saliente donde acaba la entrada (modo 1: el progreso sigue a la altura,
+336 = 0x140 + 16): el mando de la prueba añade una cuarta fase de 4 s
+andando y saltando a la izquierda.

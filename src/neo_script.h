@@ -11,7 +11,8 @@
  * Scope: the opcodes and condition types used by Mission 1 (ROM
  * 2D6314..2D7132). Camera lock/release (0C7B0C/0C7C12) and the auto-scroll
  * pair 0C7B4E/0C7BBA (ops D/E) are reported to the caller (src/neo_camera.c
- * implements them); grouped runners 01A210 and conditions 14/15 halt the
+ * implements them); grouped runners 01A210 run as runners counted in their
+ * group (+69, recounted by the caller); conditions 14/15 halt the
  * interpreter explicitly (`halted`/`halt_address`); nothing is approximated. The
  * cartridge protection probe interleaved in 019E8C/01A464/01A53A (writes to
  * 2FFFE0, branch to 0197D6 on a mismatch) has no gameplay effect on genuine
@@ -22,6 +23,7 @@ typedef struct {
     uint16_t record;       /* offset of the op 8 record (+6E) */
     uint16_t timer72,count76;
     bool spawned74;        /* +74 set by a spawn during the current body run */
+    uint8_t group69;       /* +69 of a grouped runner (op 11, 01A210); 0xFF otherwise */
 } neo_script_runner_t;
 typedef struct {
     const uint8_t *code;uint16_t size;uint32_t base;
@@ -74,7 +76,8 @@ typedef struct {
     bool (*native)(uint32_t constructor);
     /* Reference cartridge only: such a record is skipped (not created, not
      * counted) instead of halting, so the script reaches the records after
-     * it (Mission 2 stage 3: 03670E at 2D8846 before the boss 026254). */
+     * it (the stage 3 drone 03670E of Mission 2 is native, neo_drone.c;
+     * its records at 2D8846.. are grouped runners, op 11). */
     bool skip_unported;
 } neo_script_env_t;
 void neo_script_init(neo_script_t *script,const uint8_t *code,uint16_t size,uint32_t base);

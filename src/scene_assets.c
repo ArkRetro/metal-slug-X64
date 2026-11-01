@@ -400,9 +400,6 @@ void scene_assets_init(void) {
     stats.misses=stats.sync_misses=stats.evictions=stats.deferred=stats.held=stats.idle_decodes=0;stats.decode_max_ticks=0;
 }
 const scene_bank_t *scene_bank(unsigned id) { assert(id<SCENE_BANK_COUNT);return &scene_banks[id]; }
-const scene_image_t *scene_frame(unsigned id,unsigned frame) {
-    const scene_bank_t *b=scene_bank(id);assert(frame<b->first+b->second);return &scene_images[b->start+frame];
-}
 const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(row<7 && col<10);return &scene_background[row*10+col]; }
 /* ---- Mission packs (docs/MISION2.md "Fase 2") ----
  * The game keeps Mission 1's tables compiled in; another mission's pack is
@@ -420,10 +417,15 @@ typedef struct __attribute__((packed)) {
 } pack_stage_t;
 _Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
 typedef struct __attribute__((packed)) {
-    char magic[4];uint16_t version,mission,stages,palettes;uint32_t images,chunks,cells,grid_bytes;
+    char magic[4];uint16_t version,mission,stages,palettes;uint32_t images,chunks,cells,grid_bytes,actors,actor_images,resources;
 } pack_header_t;
 static pack_header_t mission_head;
-static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_chunks_at;
+static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_chunks_at,mission_actors_at;
+/* The mission's native actors (pack version 3, docs/MISION2.md "Fase 2e"):
+ * descriptors the scene pack lacks, their parts (SCENE_NATIVE frames after
+ * the bank's own) and the palette resources the scene pack lacks. */
+typedef struct { uint16_t resource,palette; } mission_resource_t;
+static scene_native_descriptor_t *stage_actors;static scene_image_t *stage_actor_images;static mission_resource_t *stage_resources;
 static scene_stage_t stage;static bool stage_on;
 static unsigned stage_images_count(void);
 static int reserved_first=-1;static unsigned reserved_count;
@@ -431,6 +433,14 @@ static unsigned stage_map_first,stage_map_count;   // mission chunk ids of the s
 static uint8_t *reserve_mem;static unsigned reserve_used,reserve_size;
 static scene_map_cell_t *stage_cells;static scene_image_t *stage_images;static uint16_t (*stage_palettes)[16];static unsigned stage_image_total;
 static unsigned stage_images_count(void) {return stage_image_total;}
+const scene_image_t *scene_frame(unsigned id,unsigned frame) {
+    const scene_bank_t *b=scene_bank(id);
+    if (id==SCENE_NATIVE && frame>=b->first+b->second) {
+        assert(stage_on && frame-(b->first+b->second)<mission_head.actor_images);
+        return &stage_actor_images[frame-(b->first+b->second)];
+    }
+    assert(frame<b->first+b->second);return &scene_images[b->start+frame];
+}
 static void rom_read(void *dst,uint32_t offset,uint32_t length) {
     assertf(offset+length<=mission_bytes,"Mission pack read");
     data_cache_hit_writeback_invalidate(dst,length);dma_read(dst,mission_rom+offset,length);
@@ -482,7 +492,7 @@ bool scene_mission_load(unsigned mission) {
     mission_rom=PhysicalAddr((void*)(uintptr_t)at);mission_bytes=(uint32_t)dfs_rom_size(path);
     static pack_header_t head __attribute__((aligned(16)));
     data_cache_hit_writeback_invalidate(&head,sizeof(head));dma_read(&head,mission_rom,sizeof(head));
-    if (memcmp(head.magic,"MSXM",4) || head.version!=2 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
+    if (memcmp(head.magic,"MSXM",4) || head.version!=3 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
         debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);return false;
     }
     mission_head=head;
@@ -490,7 +500,8 @@ bool scene_mission_load(unsigned mission) {
     mission_cells_at=o;o+=22u*head.cells;
     mission_images_at=o;o+=8u*head.images;
     mission_palettes_at=o;o+=32u*head.palettes;
-    mission_chunks_at=o;
+    mission_chunks_at=o;o+=16u*head.chunks;
+    mission_actors_at=o;
     /* Mission 1's map is no longer drawn: its chunks go back to the LRU. */
     for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (map_chunk[c]) pinned[c]=false;
     map_resident_all=false;
@@ -509,6 +520,7 @@ bool scene_stage_load(unsigned index) {
     unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
         2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
     for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
+    need+=((8u*mission_head.actors+15)&~15u)+((mission_head.actor_images*sizeof(scene_image_t)+15)&~15u)+((4u*mission_head.resources+15)&~15u);
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
@@ -537,6 +549,23 @@ bool scene_stage_load(unsigned index) {
         if (page<min_page) min_page=page;
         if (page>max_page) max_page=page;
     }
+    /* Actors: descriptors (first rebased after the native bank's frames),
+     * 12-byte parts expanded forward from the end of their table as the
+     * map images, the resource map. */
+    _Static_assert(sizeof(scene_native_descriptor_t)==8,"pack actor record size");
+    stage_actors=take(8u*mission_head.actors);rom_read(stage_actors,mission_actors_at,8u*mission_head.actors);
+    for (unsigned i=0;i<mission_head.actors;i++) stage_actors[i].first=(uint16_t)(stage_actors[i].first+scene_bank(SCENE_NATIVE)->first+scene_bank(SCENE_NATIVE)->second);
+    stage_actor_images=take(mission_head.actor_images*sizeof(scene_image_t));
+    uint8_t *ra=(uint8_t*)stage_actor_images+mission_head.actor_images*(sizeof(scene_image_t)-12u);
+    rom_read(ra,mission_actors_at+8u*mission_head.actors,12u*mission_head.actor_images);
+    for (unsigned i=0;i<mission_head.actor_images;i++) {
+        const uint8_t *r=ra+12u*i;
+        stage_actor_images[i]=(scene_image_t){(uint16_t)(SCENE_MISSION_PAGE_BASE+(r[0]<<8|r[1])),(uint16_t)(SCENE_PALETTE_COUNT+(r[2]<<8|r[3])),
+            (int16_t)(r[4]<<8|r[5]),(int16_t)(r[6]<<8|r[7]),(uint16_t)(r[8]<<8|r[9]),(uint16_t)(r[10]<<8|r[11]),0};
+    }
+    stage_resources=take(4u*mission_head.resources);
+    rom_read(stage_resources,mission_actors_at+8u*mission_head.actors+12u*mission_head.actor_images,4u*mission_head.resources);
+    for (unsigned i=0;i<mission_head.resources;i++) stage_resources[i].palette=(uint16_t)(SCENE_PALETTE_COUNT+stage_resources[i].palette);
     /* Grid, its stamp copy and the unknown mask. */
     uint8_t *g=take(grid),*dyn=take(grid),*unknown=NULL,*ring=ps.rows>32u?take(4096u):NULL;rom_read(g,ps.grid,grid);
     if (ps.unknown) {unknown=take((grid+7)/8);rom_read(unknown,ps.unknown,(grid+7)/8);}
@@ -600,11 +629,20 @@ const scene_native_descriptor_t *scene_native_descriptor(uint32_t tag) {
         if (scene_native_descriptors[mid].tag==tag) return &scene_native_descriptors[mid];
         if (scene_native_descriptors[mid].tag<tag) lo=mid+1; else hi=mid;
     }
+    if (stage_on) {
+        lo=0;hi=mission_head.actors;
+        while (lo<hi) {
+            unsigned mid=(lo+hi)/2;
+            if (stage_actors[mid].tag==tag) return &stage_actors[mid];
+            if (stage_actors[mid].tag<tag) lo=mid+1; else hi=mid;
+        }
+    }
     return NULL;
 }
 int scene_native_palette(unsigned resource) {
     for (unsigned i=0;i<sizeof(scene_native_palettes)/sizeof(scene_native_palettes[0]);i++)
         if (scene_native_palettes[i].resource==resource) return scene_native_palettes[i].palette;
+    if (stage_on) for (unsigned i=0;i<mission_head.resources;i++) if (stage_resources[i].resource==resource) return stage_resources[i].palette;
     return -1;
 }
 const uint16_t *scene_palette(unsigned id) {

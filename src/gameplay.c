@@ -1159,8 +1159,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->kills=g->world.kills;
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
         if (g->world.mission_step>=1) g->mission_complete=true;
-        /* 018F92 of another mission's boss (Mission 2: 026C30 of 026254). */
-        if (g->flow.mission!=0u && g->world.ga_flags.mission_end) g->mission_complete=true;
+        /* 018F92 of Mission 2's boss (026C30 of 026254, stage 3; the stage
+         * gates 0B6ED2 of stages 1/2 run it too). */
+        if (g->flow.mission==1u && g->flow.stage==3u && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
         hud_step(g);
     }

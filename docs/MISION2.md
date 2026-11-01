@@ -556,7 +556,8 @@ de la ROM; su cuchillo de `+9C` = 4/8 (`0689D2`, `069696`) sigue sin portar
 
 **Fin de misión**: `018F92` del jefe (`026C30`) pone 10C300 = FF y los
 manejadores `0C0538`, pero `mission_complete` solo lo levantaba el jefe de
-la Misión 1 (`mission_step`): ahora también 10C300 en otra misión (el
+la Misión 1 (`mission_step`): ahora también 10C300 en la etapa 3 de la Misión 2 (las puertas
+`0B6ED2` de las etapas 1 y 2 también lo ponen; el
 registro `MSX mission complete signal (018F92)`); `018F40` cierra después
 la etapa (en el anfitrión, 470 actualizaciones más tarde). El piloto no
 planifica con los manejadores del jugador cambiados (entrada ignorada).

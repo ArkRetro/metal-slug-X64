@@ -292,6 +292,37 @@ static void knife_run(void) {
     assert(g.knife_cuts>0 && g.knife_hits>0 && !g.world.unsupported && !missing_draws);
     (void)kills_at_cut;
 }
+/* Form 3, the mummy (MiSTer report: a mummy's breath must turn Marco into
+ * a mummy). A contact of kind 0x10 (the breath 061E8C) requests +94 = 3 and
+ * resets the weapon; the transformation (19 updates, MAME marco-mz1) holds
+ * the player; then 0x5A updates of protection; the mummy walks at half
+ * speed (0x18000), the grant 0C0928 refuses weapons, and a second breath
+ * kills (0C2956). */
+static void mummy_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned s=0;
+    for (;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE);
+    uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,0x0a,&g.world.weapon_player,&sound);
+    for (unsigned k=0;k<4;k++) msx_game_update(&g,0,false,false);
+    g.invulnerable=0;g.world.hit_kind=0x10;msx_game_hurt(&g,0);
+    assert(g.life.phase==MARCO_ALIVE && g.mummy_breaths==1 && g.world.weapon_player.form94==3 && marco_weapons_id(&g.world.weapons,0)==0);
+    int x0=g.x;
+    for (unsigned k=0;k<36;k++) {msx_game_update(&g,1,false,true);g.invulnerable=0;}
+    assert(g.x==x0 && g.mummy_transform && g.world.weapon_player.form93==3);   /* held still */
+    for (unsigned k=0;k<2;k++) msx_game_update(&g,0,false,false);
+    assert(!g.mummy_transform && g.mummy_guard==0x5a);
+    g.world.hit_kind=0x10;msx_game_hurt(&g,0);assert(g.life.phase==MARCO_ALIVE);   /* protected */
+    assert(!marco_weapons_grant(&g.world.weapons,0,0x0a,&g.world.weapon_player,&sound));
+    x0=g.x;
+    for (unsigned k=0;k<40;k++) msx_game_update(&g,1,false,false);
+    int walked=g.x-x0;
+    while (g.mummy_guard) msx_game_update(&g,0,false,false);
+    g.invulnerable=0;g.world.hit_kind=0x10;msx_game_hurt(&g,0);
+    printf("mummy: breaths=%u walked %d.%04d px in 20 updates (0x18000 each: 30) form=%u phase=%d\n",
+        g.mummy_breaths,walked/65536,(walked%65536)*10000/65536,g.world.weapon_player.form93,(int)g.life.phase);fflush(stdout);
+    assert(walked>=28*65536 && walked<=30*65536 && g.life.phase!=MARCO_ALIVE);
+}
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
  * at C0, the H's fan and its downward sweeps), from the mission start. */
@@ -384,6 +415,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -532,6 +564,7 @@ int main(int argc,char **argv) {
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     chaser_run();
     knife_run();
+    mummy_run();
     air_down_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);

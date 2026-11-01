@@ -214,10 +214,14 @@ void neo_ground_velocity(unsigned shape,int direction,int32_t *vx,int32_t *vy) {
     else if (shape==10) {horizontal=181;vertical=-181;}
     *vx=direction*3*256*horizontal;*vy=direction*3*256*vertical;
 }
-bool neo_walk_step(neo_air_t *p,int direction) {
+bool neo_walk_step(neo_air_t *p,int direction) {return neo_walk_step_shift(p,direction,0);}
+/* The ground step with the walk speed shifted right (1: half, the mummy's
+ * 0x18000 of 0C18B4/0C1984 against the 0x30000 of the normal walk). */
+bool neo_walk_step_shift(neo_air_t *p,int direction,unsigned shift) {
     neo_surface_t current,next;
     if (!neo_surface_at(p->x,p->y,1,NEO_UNIT,&current)) return false;
     neo_ground_velocity(current.shape,direction,&p->vx,&p->vy);
+    p->vx>>=shift;p->vy>>=shift;
     p->x+=p->vx;
     int32_t predicted=p->y+p->vy;
     bool found=false;

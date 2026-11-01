@@ -40,5 +40,6 @@ bool neo_player_surface(int32_t x,int row,neo_surface_t *out);
 bool neo_surface_unique(int32_t x,neo_surface_t *out);
 void neo_ground_velocity(unsigned shape,int direction,int32_t *vx,int32_t *vy);
 bool neo_walk_step(neo_air_t *p,int direction);
+bool neo_walk_step_shift(neo_air_t *p,int direction,unsigned shift);
 bool neo_land_step(neo_air_t *p,int32_t previous_y);
 #endif

@@ -211,11 +211,29 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
+    g->mummy_transform=g->mummy_guard=g->mummy_takeoff=0;
     marco_hgun_reset(&g->hgun);
     g->mount=MSX_MOUNT_NONE;
 }
 void msx_game_hurt(msx_game_t *g,int from) {
     if (g->invulnerable || g->complete || MSX_REFERENCE_INVULNERABLE || g->life.phase!=MARCO_ALIVE) return;
+    /* 0C3428/0C3744 tail: +84 counting (the transformation, then 0x5A
+     * updates) sets +5F bit 6, which drops every contact. */
+    if (g->mummy_transform || g->mummy_guard) return;
+    /* 0C36C0: a contact of kind 0x10 (the mummy's breath 061E8C, row
+     * E1252; the drone's bomb 0369AC) requests form 3 (+94 = 3, the weapon
+     * reset to the pistol, +5A cleared); a second one in form 3 is the
+     * death 0C2956. The forms check (rule 3 of 0C32E4) then runs the
+     * transformation 0C17A0 (MAME marco-mz1: 0C17F0 waits 17 updates for
+     * its effect C4DD8, 0C182A sets +84 = 0x5A, the mummy controller
+     * 0C18B4 follows one update later). */
+    if (g->world_enabled && g->world.hit_kind==0x10 && g->world.weapon_player.form93!=3 && g->world.weapon_player.form94!=3) {
+        marco_weapons_pistol(&g->world.weapons,0,&g->world.weapon_player);
+        g->world.weapon_player.form94=3;marco_hgun_reset(&g->hgun);
+        g->mummy_transform=19;g->mummy_takeoff=0;g->mummy_breaths++;
+        g->velocity_x=0;g->moving=g->shooting=false;g->jump_pending=false;g->knife_t=0;
+        return;
+    }
     /* 0C2956 with the update's +5A/+5B (neo_world.c player_hit). */
     if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
     else start_death(g,0,g->x/MSX_UNIT<from);
@@ -809,6 +827,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     /* Mounted (0C309C) or ejected (0C3250): the vehicle and its turret take
      * the input; the player's own controls rest. */
     if (g->mount!=MSX_MOUNT_NONE) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
+    /* 0C17A0/0C17F0/0C182A: the transformation holds the player still
+     * (+30/+34 = 0) with no control; 0C1A0C, the mummy's takeoff, too. */
+    if (g->mummy_transform || g->mummy_takeoff) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
+    if (!(g->ticks&1)) {
+        if (g->mummy_transform && !--g->mummy_transform) g->mummy_guard=0x5a;   /* 0C182A: +84 = 0x5A */
+        else if (g->mummy_guard) g->mummy_guard--;
+    }
     g->crouching=g->crouch && g->grounded && !g->ride && g->mount==MSX_MOUNT_NONE;
     if (g->crouching && direction) {g->facing=direction<0?-1:1;direction=0;}  /* turns in place */
     g->ticks++;g->moving=direction!=0;
@@ -853,12 +878,19 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->start_stops+=g->end.unsupported;
         if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}
     }
+    const unsigned mummy=g->world_enabled && g->world.weapon_player.form93==3?1u:0u;
     if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->descent) descent_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_EJECT) mount_eject_step(g);
     else if (!(g->ticks&1) && g->life.phase!=MARCO_GONE && g->mount==MSX_MOUNT_NONE) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;
         if (events&NEO_VEHICLE_STAMP)
             g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
+        if (g->jump_pending && g->grounded && mummy && !g->mummy_takeoff) {g->mummy_takeoff=4;g->jump_pending=false;}
+        if (g->mummy_takeoff && !--g->mummy_takeoff) {
+            /* 0C1A0C: three updates crouched, then 0C1A62 takes off at
+             * +34 = 0x90000 (marco-mz1). */
+            if (g->grounded) {g->grounded=false;g->velocity_y=-0x90000;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;}
+        }
         if (g->jump_pending && g->grounded) {
             g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;
         }
@@ -883,7 +915,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->ride) {
             /* Walking on the platform (flat top): still supported within
              * the original step tolerance, else the player falls off. */
-            neo_ground_velocity(0,direction,&body.vx,&body.vy);body.vy=0;
+            neo_ground_velocity(0,direction,&body.vx,&body.vy);body.vy=0;body.vx>>=mummy;
             solid_push_t s=solid_push(g,&body,body.vx,body.vy);
             if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014676..01469C */
             body.x+=body.vx;
@@ -895,6 +927,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * sweep's velocity into the body is cancelled (014676..01469C). */
             neo_surface_t feet;int32_t gvx,gvy;
             neo_ground_velocity(neo_surface_at(body.x,body.y,1,NEO_UNIT,&feet)?feet.shape:0,direction,&gvx,&gvy);
+            gvx>>=mummy;gvy>>=mummy;
             int32_t pushed_from=body.x;
             solid_push_t s=solid_push(g,&body,gvx,body.vy);
             if ((s.left && gvx>=0) || (s.right && gvx<0)) direction=0;
@@ -904,11 +937,18 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             if (body.x!=pushed_from && neo_surface_at(body.x,body.y,4*MSX_UNIT,4*MSX_UNIT,&feet)) body.y=feet.height;
             int32_t wx;
             if (direction && wall_stop(g,&body,gvx,gvy,true,&wx)) {body.x=wx;direction=0;}
-            g->grounded=neo_walk_step(&body,direction);
+            g->grounded=neo_walk_step_shift(&body,direction,mummy);
             if (!g->grounded) g->air_ticks=0;
         } else {
             int previous=body.y;
-            if (!dying) neo_air_accel(&body,direction);
+            if (dying) {}
+            else if (mummy) {
+                /* 0C1A62 (mummy in the air, marco-mz1): +34 by (-14 px - +34) >> 5
+                 * each update; across, the walk's half speed (declared
+                 * approximation: the capture jumped straight up). */
+                body.vy+=neo_asr(-14*(int64_t)NEO_UNIT-body.vy,5);
+                body.vx+=neo_asr(direction*2*(int64_t)NEO_UNIT-body.vx,direction?2:5);
+            } else neo_air_accel(&body,direction);
             solid_push_t s=solid_push(g,&body,body.vx,body.vy);
             if (s.top && !dying) {
                 /* 014408: on top of a kind-1 body (player +5F bit 7, dying,

@@ -32,7 +32,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `3AED8` entrada / `3AEF0` salida (tipo 4) | `src/neo_wipe.c`, llamado por `neo_mission.c` | `test_neo_wipe`: 70 actualizaciones, +72 y **22800 escrituras del mapa fijo** iguales; `test_neo_mission`: 12 esperas de 35 actualizaciones, 0 paradas |
 | `05287C` flecha GO (todas las etapas) | `src/neo_goarrow.c` | familia `goarrow` (tr2, jugador quieto): 486 actualizaciones, 176 con la flecha |
 | `0B6F6A` marcador de salida de la etapa 1 | `src/neo_goarrow.c` | familia `exitmark` (tr1): 84 actualizaciones |
-| `0613CA/0613D8/0613E6` rebeldes (variante en +96), disparo `061E8C`, destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
+| `0613CA/0613D8/0613E6` momias (variante en +96; antes «rebeldes»), aliento `061E8C` (fila `E1252`, tipo `0x10`: forma 3, MARCO_CAMPAIGN.md), destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
 | `03882A/03889C` puerta de la etapa 1, ondas `03C62A` | `src/neo_gate.c` | familia `gate` (g1): 2 nodos, **348 actualizaciones**, 2 borrados, 2 contactos, parches del anillo iguales |
 | `0678B6/0678C0/0678CA/067902` y `0692B2..0692E4` soldados (variante en +9C), cuchillo `067FC0`, destello `021CB6` | `src/neo_rebel3.c` | familia `rebel3` (etapa 2, `b1`): 30 nodos, **3246 actualizaciones**, 30 borrados, 47 contactos |
 | `08C154/08C15E/08C168/08C172` caja de suministros (+88 = 3..0) | `src/neo_crate.c` | familia `crate` (etapa 3, `c1`): 2 nodos, **1235 actualizaciones**, 2 borrados |

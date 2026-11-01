@@ -196,6 +196,11 @@ emu.register_frame_done(function()
   if frame==plan.first then cpu:write_u8(0x10c71e,0x03);cpu:write_u8(0x10c71c,2);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
   cpu:write_u16(0x10c724,30)
  end
+ -- Capture only (MSX_GIVE_MUMMY): the form request +94 = 3 at the first plan
+ -- frame, as the player's contact 0C36C0 sets it for a hit of kind 0x10
+ -- (the mummy's breath); the original forms check 0C3428 then runs the
+ -- transformation 0C17A0/0C182A and the mummy controller 0C18B4.
+ if os.getenv('MSX_GIVE_MUMMY')=='1' and frame==plan.first then cpu:write_u8(0x1014c4+0x94,3) end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end

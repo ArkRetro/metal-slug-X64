@@ -7,6 +7,12 @@
 #include "mission_camera.h"
 #include "marco_mount.h"
 #include "marco_descent.h"
+#if defined(__mips__)
+#include <debug.h>
+#define FALL_LOG(...) debugf(__VA_ARGS__)
+#else
+#define FALL_LOG(...) ((void)0)
+#endif
 /* Reference-only traversal build (mslugx-reference.z64, never the release):
  * the player ignores hits so that a scripted run reaches the mission end. */
 #ifndef MSX_REFERENCE_INVULNERABLE
@@ -966,8 +972,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 /* Reference build: back to the last grounded position,
                  * unless the camera has since risen past it (Mission 2
                  * stage 3, modes 2/4): then the fall death and a new life. */
+                FALL_LOG("MSX fall rescue %u stage %u: x=%ld y=%ld camera=%d,%d back to x=%ld y=%ld\n",g->pit_rescues+1u,(unsigned)g->flow.stage,
+                    (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
                 g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
-            } else if ((int16_t)p.py<0x100) {g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
+            } else if ((int16_t)p.py<0x100) {
+                FALL_LOG("MSX fall death stage %u: x=%ld y=%ld camera=%d,%d last ground x=%ld y=%ld\n",(unsigned)g->flow.stage,
+                    (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
+                g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
             else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {
                 unsigned n=g->safe_old;
                 if (g->safe && (g->x-g->safe_x>=32*MSX_UNIT || g->safe_x-g->x>=32*MSX_UNIT) &&

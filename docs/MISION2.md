@@ -67,7 +67,7 @@ Capturas `captures-fullgame/run4` (secciones del guion: 1 en 19391, 2 en
 
 ```sh
 C=/home/user/captures-fullgame/run4
-python3 tools/extract_mission_map.py $C --ram-layers --allow-backdrop-timeline --frames 19391:19931 --output filesystem/mission2/s1
+python3 tools/extract_mission_map.py $C --ram-layers --allow-backdrop-timeline --skip-fade --frames 19391:19931 --output filesystem/mission2/s1
 python3 tools/extract_region_collision.py $C --rom mslugx.zip --descriptor-layers --layer-camera --frames 19391:19931 --output filesystem/mission2/s1/collision.json
 # s2: 19932:26139, s3: 26140:117965
 python3 tools/inventory_mission_rest.py mslugx.zip /home/user/captures-fullgame/run4-debug --all-sections --frames 19364:108833 --output data/mission2_inventory.json
@@ -631,4 +631,37 @@ Subbloques de audio: 888 en todo el recorrido.
   fotogramas negros, hueco máximo 39/40/46 ms (antes un solo fotograma de
   0,14/0,29/0,64 s). La medida `worst frame` del PERF sigue contando la
   llamada entera.
+
+### Prioridades del usuario (MiSTer)
+
+- **Música de la Misión 2**: el original pide la música del descriptor de
+  la etapa (`018412..01842E`: palabra +C, solo si cambia respecto a +80
+  del actor de misión). Etapas 1/2 = `0022` (la 2 no la vuelve a pedir),
+  etapa 3 = `0023`; el jefe crea `059F76`, que manda el fundido `0A..` y
+  tras la espera de `0E11AA` pide `0027` (grifo MAME `mus0`/`mus1`:
+  `0023` en 26139, `0027` en 93274, `0020` en 117580, `0024` (Misión 3)
+  en 117964; ningún `03` entre etapas). `data/sound_map.json` tiene
+  `music_mission2`, `music_mission2_stage3` y `music_mission2_boss`
+  (render aislado, bucles medidos 79,33 / 90,45 / 72,26 s).
+  `game_audio_stage_music` cambia la voz de música al cargar cada etapa
+  (y vuelve a `0021` al reiniciar la Misión 1); las palabras de música de
+  la lista de sonidos del mundo (el `0027` del jefe) también, y `0Axx`
+  la para. En ares: `MSX AUDIO stage music 0022`, música activa toda la
+  partida.
+- **Caídas**: la referencia escribe ahora cada rescate y cada muerte por
+  caída (`MSX fall rescue/death stage N: x y camera ...`). Recorridos: los
+  rescates salen todos en la etapa 2, x 964..1097, con la cámara subiendo
+  (y 80→168) al final del primer desplazamiento: el jugador cae desde la
+  escalera de 45° (celdas de forma 5, x 984..1031) al foso de debajo. La
+  rejilla coincide con MAME (`run4`: x 945..1029 → y 160..221; el modelo
+  de suelo del port recorre la escalera igual, prueba de host). Las
+  caídas vienen de los saltos del mando de la prueba sobre la escalera
+  mientras sube la cámara, no de un hueco en la colisión; queda abierto.
+- **Mapa al empezar la etapa 1**: las paletas del mapa de la etapa 1 se
+  tomaron del primer fotograma observado, que era del fundido de entrada
+  (468 celdas y el fondo oscuros: la esfinge salía a oscuras toda la
+  etapa). `extract_mission_map.py --skip-fade` descarta los fotogramas con
+  el fundido activo (RAM `10991A..10991F` ≠ 0): etapa 1 13 → 9 paletas,
+  fondo 16384 → 31384; etapas 2 y 3 sin cambios. Comando de la etapa 1:
+  añadir `--skip-fade` al de arriba y volver a empaquetar.
 

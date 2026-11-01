@@ -454,6 +454,36 @@
    "event": "Mission 1 music, after the driver reset 03 and 06 at the mission start",
    "music": true,
    "frames": 24000
+  },
+  {
+   "label": "music_mission2",
+   "word": "0022",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 2 music, stages 1 and 2 (descriptors 016DDE/016DEE +C = 0x22; stage 2 does not request it again: 018422 compares with +80)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission2_stage3",
+   "word": "0023",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 2 stage 3 music (descriptor 016DFE +C = 0x23)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission2_boss",
+   "word": "0027",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 2 boss music: 059F76 (created by the boss 026254) sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests +72 = 0x27 (MAME mus1: frame 93274)",
+   "music": true,
+   "frames": 24000
   }
  ]
 }

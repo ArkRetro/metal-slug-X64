@@ -14,7 +14,8 @@ def animation_disabled(writes,frame):
     value=[v for f,v in writes if f<frame]
     return bool(value and value[-1]&8)
 
-def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=False,banks=(4,)):
+def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=False,banks=(4,),skip_fade=False):
+    faded=[]
     if isinstance(roots,Path):roots=[roots]
     cells=[collections.defaultdict(collections.Counter) for _ in range(4)]
     observations=[];backdrops=set();flashes=[]
@@ -71,6 +72,9 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         if not ram_path.exists():continue
         if frames and not frames[0]<=frame<=frames[1]:continue
         v=struct.unpack('>34304H',path.read_bytes());ram=ram_path.read_bytes()
+        # --skip-fade: a palette fade (neo_fade.c, RAM 10991A..10991F: the
+        # three channel offsets) is running, the pens are not the map's.
+        if skip_fade and any(ram[0x991a:0x9920]):faded.append(frame);continue
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
         trace=traces[root]
         fore_base=None
@@ -174,6 +178,7 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         **({'ram_layers':True,'slot_change_frames':slot_changes,'origin_lag_skips':len(lag_skips)} if ram_layers else {}),
         palettes=palettes,cells=records,swapped_cells=swapped_records,observations=observations,conflicts=conflicts,flash_frames=flashes,map_origin_events=origin_events)
     (output/'map.json').write_text(json.dumps(report,separators=(',',':'))+'\n')
+    if skip_fade:print('Frames left out (palette fade):',len(faded),faded[:3],faded[-3:])
     print('Observed map:',len(records),'cells;',len(swapped_records),'swapped-map cells;',len(palettes),'palettes;',len(conflicts),'coordinate variants; camera',report['camera_max'])
 
 if __name__=='__main__':
@@ -182,4 +187,5 @@ if __name__=='__main__':
     p.add_argument('--frames',type=lambda v:tuple(int(x) for x in v.split(':')),help='LO:HI inclusive snapshot frames (e.g. exclude the mission-end fade)')
     p.add_argument('--ram-layers',action='store_true',help='Background SCB slot ranges from the layer objects (+0x2C) instead of the fixed Mission 1 ranges')
     p.add_argument('--banks',type=lambda v:tuple(int(x,0) for x in v.split(',')),default=(4,),help='C-ROM banks (code bits 16..19) of background tiles')
-    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline,a.frames,a.ram_layers,a.banks)
+    p.add_argument('--skip-fade',action='store_true',help='Leave out frames with a palette fade running (RAM 10991A..10991F nonzero): their pens are faded, and the first observed state would keep them')
+    a=p.parse_args();extract(a.captures,a.output,a.allow_backdrop_timeline,a.frames,a.ram_layers,a.banks,a.skip_fade)

@@ -80,6 +80,7 @@ static bool load_stage(void) {
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
     neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
+    game_audio_stage_music(neo_mission_music(&game.flow));   /* 018412..01842E */
     scene_renderer_stage_changed();
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */
@@ -112,6 +113,7 @@ static void reset_game(void) {
     msx_game_vehicle_reference(&game);vehicle_renderer_load();
     debugf("MSX vehicle reference encounter\n");
 #endif
+    game_audio_stage_music(0x0021);   /* Mission 1's descriptor +C */
     game_audio_sync(&game);
 }
 #if MSX_RETRO25D

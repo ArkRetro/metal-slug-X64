@@ -1,6 +1,7 @@
 #ifndef MSX_GAME_AUDIO_H
 #define MSX_GAME_AUDIO_H
 #include <stdbool.h>
+#include <stdint.h>
 #include "gameplay.h"
 /* Mission 1 gameplay audio (docs/AUDIO_JUEGO.md): original sound effects
  * on three effect voices with the measured channel policy (msx_sfx.c) and
@@ -11,6 +12,9 @@
 bool game_audio_init(void);
 /* Start (or restart) the mission music from its beginning. */
 void game_audio_music(bool play);
+/* A stage starts: its descriptor's music word (+C, 018434); a different
+ * word than the playing one restarts the music voice with that music. */
+void game_audio_stage_music(uint16_t word);
 /* Forget previous gameplay state after a reset/handoff (no sounds). */
 void game_audio_sync(msx_game_t *game);
 /* Once per video frame after the simulation: drain the world's sound

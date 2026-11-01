@@ -23,6 +23,9 @@ enum { VOLUME_PERCENT=80 };
 static wav64_t sounds[MSX_SFX_COUNT];
 static bool loaded[MSX_SFX_COUNT],ready,music_ready,music_on,warned,active;
 static msx_sfx_state_t policy;
+static uint16_t music_word;
+static bool open_music(uint16_t word);
+static const char *music_name(uint16_t word);
 static unsigned port_shots(const msx_game_t *g) {return g->shots-g->h_shots-g->c_shots-g->down_shots;}
 static unsigned shots,vehicle_health,vehicle_frame,vehicle_state;
 static bool complete;
@@ -46,14 +49,42 @@ bool game_audio_init(void) {
     heap_stats_t after;sys_get_heap_stats(&after);
     debugf("MSX AUDIO sfx resident=%u bytes (%u files) heap used %d -> %d of %d, free %d\n",(unsigned)msx_ramfs_bytes(),count,
         before.used,after.used,after.total,after.total-after.used);
-    /* Intro + loop body (tools/pack_game_audio.py); older packs have only
-     * the whole file, looped whole. */
-    music_ready=msx_audio_open(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1_intro.wav64") &&
-        msx_audio_open_loop(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1.wav64");
-    if (!music_ready) music_ready=msx_audio_open(MSX_AUDIO_MUSIC,"rom:/audio/music_mission1.wav64");
+    music_word=0;music_ready=open_music(0x0021);
     ready=count>0;active=true;
     debugf("MSX AUDIO game sounds=%u/%u music=%u\n",count,(unsigned)MSX_SFX_COUNT,music_ready);
     return ready && count==MSX_SFX_COUNT && music_ready;
+}
+/* Music words of the stage descriptors (+C, requested by 018434 only when
+ * it differs from the mission actor's +80: Mission 2's stage 2 keeps 0x22;
+ * MAME mus0: 0x23 at 26139, no 03 between stages) -> rendered files. */
+static const char *music_name(uint16_t word) {
+    switch (word) {
+    case 0x0021: return "music_mission1";
+    case 0x0022: return "music_mission2";
+    case 0x0023: return "music_mission2_stage3";
+    case 0x0027: return "music_mission2_boss";
+    default: return NULL;
+    }
+}
+/* Intro + loop body (tools/pack_game_audio.py); older packs have only the
+ * whole file, looped whole. */
+static bool open_music(uint16_t word) {
+    const char *name=music_name(word);
+    if (!name) return false;
+    char intro[80],body[80];
+    snprintf(intro,sizeof(intro),"rom:/audio/%s_intro.wav64",name);snprintf(body,sizeof(body),"rom:/audio/%s.wav64",name);
+    bool ok=msx_audio_open(MSX_AUDIO_MUSIC,intro) && msx_audio_open_loop(MSX_AUDIO_MUSIC,body);
+    if (!ok) ok=msx_audio_open(MSX_AUDIO_MUSIC,body);
+    if (ok) music_word=word;
+    return ok;
+}
+void game_audio_stage_music(uint16_t word) {
+    if (!active || !word || word==music_word) return;
+    bool was_on=music_on;
+    msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
+    music_ready=open_music(word);
+    debugf("MSX AUDIO stage music %04X %s\n",(unsigned)word,music_ready?"":"missing");
+    if (music_ready && (was_on || !complete)) game_audio_music(true);
 }
 void game_audio_music(bool play) {
     if (!active || !music_ready) return;
@@ -62,6 +93,11 @@ void game_audio_music(bool play) {
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
 static void request(uint16_t word) {
+    /* Bank 00 music words from actors (the Mission 2 boss's 059F76: 0x27)
+     * replace the music; 0x0Axx is its fade command (01228C): the music
+     * stops (the fade itself is not rendered). */
+    if (word>=0x0021 && word<0x0100 && music_name(word)) {music_word=0;game_audio_stage_music(word);return;}
+    if ((word&0xff00u)==0x0a00u) {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;debugf("MSX AUDIO music fade %04X\n",(unsigned)word);return;}
     if (word==0x0020) {
         msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
         bool ok=msx_audio_open(MSX_AUDIO_INTRO,"rom:/audio/music_mission_complete.wav64") &&

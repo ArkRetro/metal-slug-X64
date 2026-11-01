@@ -672,3 +672,83 @@ no comprueba los `malloc_uncached` de `rspq_block_begin` ni de
 `__rdpq_block_next_buffer`; un NULL escribiría en la dirección física 0).
 Comprobado en ares con el comportamiento antiguo de grabación más el
 detector: sin corrupción ni cuelgue hasta el final de la etapa 2.
+
+## Presupuesto de RAM por misión: imagen del programa reducida, margen 256 KB
+
+**Problema.** Cada misión nueva añade código C nativo y tablas a un único ELF
+que se carga entero en RDRAM. La caché de escena se dimensiona la última con
+lo que queda, así que cada KB de imagen es un KB menos de caché: con la
+misión 2 el arranque fallaba («RAM budget 3303 KB < 3328 KB», 208 ranuras) y
+el margen del montón se había bajado 256 → 192 → 160 KB para compensar.
+
+**Medida** (`mips64-elf-size`, `nm --size-sort` por objeto, `mslugx-explorer.elf`
+en `f30a292`): texto 826 KB, `.rodata` 1,18 MB, bss 158 KB. Lo grande de
+`.rodata`: `neo_world.o` 592 KB (programas de animación del banco P2 de la
+misión 1, `build/soldier_ai_tables.h`: 760 programas, 28.796 comandos de 16 B
+= 460 KB, más 115 KB de direcciones ROM por comando), `scene_assets.o` 344 KB
+(`build/scene_meta.h`: imágenes, celdas del mapa de la misión 1,
+descriptores), `neo_region.o` 96 KB, `neo_boss.o` 40 KB. El código propio de
+la misión 2 (`neo_rebel2/3`, `neo_m2boss`, `neo_gate`, `neo_drone`,
+`neo_hostage`, `neo_crate`, `neo_m2props`) son 57 KB; sus tablas de escena ya
+van en `mission2.pack` y se cargan en ranuras reservadas de la caché
+(`scene_stage_load`), sin coste en el ELF.
+
+**Cambios** (sin tocar la simulación; `make check` -O0/-O2 idéntico):
+
+1. **`neo_anim_command_t` de 16 a 12 B** (`src/neo_animation.h`,
+   `packed,aligned(4)`, `kind:8`): mismo orden de campos y mismos valores,
+   `asset` se lee sin alinear. Afecta a los programas de soldado, jefe y Marco.
+2. **Direcciones ROM de los programas de soldado solo en el host**
+   (`tools/compile_soldier_ai_tables.py`): únicamente `test_neo_family` las lee;
+   en N64 `address` es `NULL`. Las del jefe (`neo_boss.c` las usa) se quedan.
+3. **`-Os` para el código frío** (`Makefile`, `COLD_OBJS`): módulos de
+   actores, jefes, fin de misión, cinemáticas y logo. El núcleo por fotograma
+   (`HOT_SRCS`: mundo, IA de soldado, núcleo, animación, contacto, control,
+   cámara, guion…) y `gameplay`/`actor`/renderers siguen en -O2.
+4. **Margen del montón restaurado a 256 KB** (`SCENE_HEAP_MARGIN_KB`).
+
+| Imagen del programa (`mslugx-explorer.elf`) | Antes (`f30a292`) | Después |
+| --- | ---: | ---: |
+| texto | 826.360 B | 753.240 B |
+| datos (`.rodata`+`.data`) | 1.228.836 B | 985.180 B |
+| bss | 157.884 B | 157.884 B |
+| **total** | **2.213.080 B (2161 KB)** | **1.896.304 B (1852 KB, −309 KB)** |
+
+### Presupuesto con la misión 2 (8 MiB, ares 146, cartucho de lanzamiento con cinemáticas, líneas `MSX MEM`)
+
+| Concepto | Antes (KB) | Después (KB) | Notas |
+| --- | ---: | ---: | --- |
+| Imagen del programa | 2161 | 1852 | tabla de arriba |
+| **Montón total** | ≈5966 | **6275** | `sys_get_heap_stats` |
+| Pantalla, mezclador, rdpq | 452 | 452 | |
+| Audio del juego (efectos residentes) | ≈993 | 993 | `MSX MEM audio` − `title done` |
+| `actor_init` (Marco, HUD, índice del mapa, fuente) | — | 615 | `game loaded` − `scene cache`; reserva 640 |
+| Reservas fuera de la caché | 960+160 | 960+256 | juego 640 + juego en marcha 320 + margen |
+| **Caché de escena** | 3303 con margen 192 (falla, < 3328); 3335 con margen 160 | **3536 (221 ranuras) con margen 256** | mínimo 208 ranuras = 3328 KB |
+| Libre tras cargar el juego | — | 624 | assert ≥ 320 + 128 |
+| Margen | 160 | **256** | |
+
+**Holgura para misiones futuras.** Con margen 256 quedan 13 ranuras
+(208 KB) sobre el mínimo de 208. La misión 2 añadió 57 KB de código (≈52 KB
+con -Os), así que caben ≈4 misiones más de ese tamaño **siempre que sus datos
+no vayan al ELF**. Reglas para las misiones 3–6:
+
+- Tablas de escena y datos derivados de la ROM de una misión: en
+  `missionN.pack` (DFS), cargados en `scene_stage_load` en ranuras reservadas
+  de la caché, como la misión 2. Nada de cabeceras generadas con datos de
+  misión en `.rodata`.
+- Módulos de actores nuevos: a `WORLD_SRCS` y, salvo que estén en el camino de
+  cada fotograma, fuera de `HOT_SRCS` (-Os).
+- Revisar en cada misión `mips64-elf-size build/mslugx-explorer.elf` y la línea
+  `MSX MEM scene cache` (ranuras ≥ 208 con margen 256). Si un día no basta, el
+  siguiente paso es cargar el código de cada misión como módulo dinámico
+  (`dlopen` de un `.dso` en DFS; el libdragon fijado trae `n64dso`) en ranuras
+  liberadas de la caché al cambiar de misión: hoy no compensa (57 KB por
+  misión frente a la complejidad de exportar la API del mundo).
+
+Opciones medidas y no tomadas: `-Os` también en el núcleo por fotograma
+ahorraría ≈31 KB más (`neo_world` 9 KB, `neo_soldier_ai` 7 KB, `gameplay`
+4 KB…), a costa del tiempo de simulación del pico de 2336; sacar
+`scene_meta.h` de la misión 1 a DFS no libera nada mientras se juega la
+misión 1 (se necesita entero); los efectos residentes (≈850 KB) son una
+decisión del audio (`docs/AUDIO_JUEGO.md`).

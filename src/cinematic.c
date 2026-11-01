@@ -14,7 +14,8 @@ typedef struct {
     FILE *s_movie;uint32_t *s_offsets;uint8_t *s_packet,*s_movie_cache;uint32_t s_rom;
     uint16_t *s_work_canvas,*s_heavy_pixels;int8_t *s_heavy_slot;unsigned s_heavy_count;
     surface_t s_canvas;msx_cinematic_stats_t s_stats;
-    int s_prep;char s_prep_path[64];uint32_t s_prep_pos,s_prep_size;unsigned s_prep_index;uint32_t s_prep_crc,s_prep_crc_pos;
+    uint32_t s_stored;   // MSXC v2: ROM offset of the stored-packet table (0: v1)
+    int s_prep;char s_prep_path[64];uint32_t s_prep_pos,s_prep_size;unsigned s_prep_index;uint32_t s_prep_crc,s_prep_crc_pos,s_prep_file;
 } cine_slot_t;
 static cine_slot_t slot_a,slot_b;
 static cine_slot_t *playing=&slot_a,*pending=&slot_b,*C=&slot_a;
@@ -27,6 +28,8 @@ static cine_slot_t *playing=&slot_a,*pending=&slot_b,*C=&slot_a;
 #define heavy_pixels (C->s_heavy_pixels)
 #define heavy_slot (C->s_heavy_slot)
 #define heavy_count (C->s_heavy_count)
+#define stored (C->s_stored)
+#define prep_file (C->s_prep_file)
 #define canvas (C->s_canvas)
 #define stats (C->s_stats)
 #define prep (C->s_prep)
@@ -36,13 +39,42 @@ static cine_slot_t *playing=&slot_a,*pending=&slot_b,*C=&slot_a;
 #define prep_index (C->s_prep_index)
 #define prep_crc (C->s_prep_crc)
 #define prep_crc_pos (C->s_prep_crc_pos)
+/* MSXC v2 (tools/msxc_compress.py): packet `index` read from the ROM and,
+ * when stored shorter than raw, LZ4-decompressed into dst (the v1 bytes;
+ * dst has 16 bytes of slack: the fast decoder may write 8 past the end). */
+extern int decompress_lz4_full_fast(const void *inbuf,int insize,void *outbuf);
+#define INPLACE_EXTRA(maximum) (((maximum)>>8)+80u)   // LZ4 in-place margin (libdragon lz4_dec_internal.h) + alignment
+static bool fetch(unsigned index,uint8_t *dst) {
+    /* The two table entries are read with the packet (no table in RAM: the
+     * streamed HOW TO PLAY would keep 10 KB in the middle of the heap). */
+    static uint8_t entry[16] __attribute__((aligned(16)));
+    dma_wait();data_cache_hit_invalidate(entry,16);dma_read(entry,rom+stored+4u*index,8);
+    uint32_t first=msx_cine_be32(entry),next=msx_cine_be32(entry+4);
+    uint32_t length=offsets[index+1]-offsets[index],at=first&~1u;
+    if ((next&~1u)<=at) return false;
+    uint32_t have=(next&~1u)-at-(first&1u);
+    if (have>length || at+have>prep_file) return false;
+    if (have>length) return false;
+    /* In place: the stored bytes are read at the end of the packet's room
+     * (dst has INPLACE_EXTRA bytes after it: the packet buffer's tail, or in
+     * the movie cache the next packets' still unwritten room plus its tail),
+     * at least the LZ4 in-place margin past the packet's end. No staging
+     * buffer: it fragmented the heap the prepared frames need. */
+    uint8_t *src=(uint8_t *)(((uintptr_t)dst+length+(have>>8)+48u-have)&~(uintptr_t)15);
+    dma_wait();data_cache_hit_invalidate(src,(have+15u)&~15u);dma_read(src,rom+at,have);
+    if (have==length) {memmove(dst,src,length);return true;}
+    int got=decompress_lz4_full_fast(src,(int)have,dst);
+    if (got!=(int)length) debugf("MSX CINEMATIC packet %u: LZ4 gave %d of %lu bytes (stored %lu)\n",index,got,(unsigned long)length,(unsigned long)have);
+    return got==(int)length;
+}
 static bool decode(unsigned index) {
     uint32_t began=TICKS_READ(),length=offsets[index+1]-offsets[index];
     const uint8_t *source;
     if (movie_cache) source=movie_cache+offsets[index];
     else {
-        dma_wait();data_cache_hit_invalidate(packet,(length+15u)&~15u);dma_read(packet,rom+offsets[index],length);
-        stats.read_bytes+=length;source=packet;
+        if (stored) {if (!fetch(index,packet)) return false;stats.read_bytes+=length;}
+        else {dma_wait();data_cache_hit_invalidate(packet,(length+15u)&~15u);dma_read(packet,rom+offsets[index],length);stats.read_bytes+=length;}
+        source=packet;
     }
     bool prepared=heavy_slot && heavy_slot[index]>=0;
     if (prepared) canvas.buffer=heavy_pixels+(size_t)heavy_slot[index]*stats.width*stats.height;
@@ -62,7 +94,7 @@ static bool decode(unsigned index) {
 static void close_slot(void) {
     if (movie) fclose(movie);
     free(work_canvas);free(heavy_pixels);free(heavy_slot);work_canvas=heavy_pixels=NULL;heavy_slot=NULL;heavy_count=0;
-    free(packet);free(movie_cache);free(offsets);movie=NULL;packet=movie_cache=NULL;offsets=NULL;rom=0;
+    free(packet);free(movie_cache);free(offsets);movie=NULL;packet=movie_cache=NULL;offsets=NULL;stored=0;rom=0;
     canvas=(surface_t){0};stats=(msx_cinematic_stats_t){0};prep=PREP_NONE;prep_path[0]=0;
 }
 /* Preparation of a preloaded movie (Expansion Pak): read it from the ROM,
@@ -90,13 +122,14 @@ static bool force_ok;   // a stuck step may run late only while another movie pl
 static uint32_t last_force;   // at most one late step per half second (a skipped frame, not a freeze)
 static unsigned refused,last_heavy;   // last_heavy: per slot would be exact; prepared one at a time
    // consecutive idle refusals of the same step
-static uint32_t apply_ticks_per_kb,check_ticks_per_kb;   // running mean per KB (0: first step unbounded)
+static uint32_t apply_ticks_per_kb,check_ticks_per_kb,load_ticks_per_kb;   // running mean per KB (0: first step unbounded)
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
 static bool begin(const char *path) {
     if (movie || !path || strncmp(path,"rom:/",5) || strlen(path)>=sizeof(prep_path)) return false;
     movie=fopen(path,"rb");if (!movie) return false;
     uint8_t header[32];
-    if (fread(header,1,sizeof(header),movie)!=sizeof(header) || memcmp(header,"MSXC",4) || msx_cine_be32(header+4)!=1) goto error;
+    if (fread(header,1,sizeof(header),movie)!=sizeof(header) || memcmp(header,"MSXC",4) || (msx_cine_be32(header+4)!=1 && msx_cine_be32(header+4)!=2)) goto error;
+    bool v2=msx_cine_be32(header+4)==2;
     uint32_t w=msx_cine_be32(header+8),h=msx_cine_be32(header+12),count=msx_cine_be32(header+16),maximum=msx_cine_be32(header+20);
     if (!w || !h || w>320 || h>240 || !count || count>6000 || maximum<8 || maximum>512*1024 ||
         msx_cine_be32(header+24)!=59185606u || msx_cine_be32(header+28)!=1000000u) goto error;
@@ -107,22 +140,37 @@ static bool begin(const char *path) {
     for (unsigned i=0;i<=count;i++) {
         uint8_t word[4];if (fread(word,1,4,movie)!=4) goto error;
         offsets[i]=msx_cine_be32(word);
-        if ((offsets[i]&1u) || offsets[i]>(uint32_t)size || (i && (offsets[i]<=offsets[i-1] || offsets[i]-offsets[i-1]>maximum || offsets[i]-offsets[i-1]<8))) goto error;
+        if ((offsets[i]&1u) || offsets[i]>(v2?64u*1024*1024:(uint32_t)size) || (i && (offsets[i]<=offsets[i-1] || offsets[i]-offsets[i-1]>maximum || offsets[i]-offsets[i-1]<8))) goto error;
+    }
+    uint32_t file_size=(uint32_t)size;
+    if (v2) {
+        // Second table: stored packets (header and both tables precede them).
+        stored=32+4*(count+1);prep_file=file_size;
+        uint32_t previous=0;
+        for (unsigned i=0;i<=count;i++) {
+            uint8_t word[4];if (fread(word,1,4,movie)!=4) goto error;
+            uint32_t value=msx_cine_be32(word),at=value&~1u;
+            if (!i && at!=32+8*(count+1)) goto error;
+            if (i==count && value!=file_size) goto error;
+            if (at>file_size || (i && (at<=previous || at-previous>offsets[i]-offsets[i-1]+1))) goto error;
+            previous=at;
+        }
+        size=(long)offsets[count];   // the decompressed (v1) layout from here on
     }
     if (offsets[0]!=32+4*(count+1) || offsets[count]!=(uint32_t)size) goto error;
     rom=PhysicalAddr((void *)(uintptr_t)dfs_rom_addr(path+4));
-    if (!rom || dfs_rom_size(path+4)!=(uint32_t)size) goto error;
+    if (!rom || dfs_rom_size(path+4)!=file_size) goto error;
     stats=(msx_cinematic_stats_t){.frames=count,.max_packet=maximum,.width=w,.height=h};
     work_canvas=memalign(16,w*h*2);if (!work_canvas) goto error;
     memset(work_canvas,0,w*h*2);canvas=surface_make(work_canvas,FMT_RGBA16,w,h,w*2);
     strcpy(prep_path,path);prep_size=(uint32_t)size;prep_pos=0;prep_index=0;prep_crc_pos=0;
     if (get_memory_size()>=8*1024*1024 && size<=4*1024*1024) {
-        unsigned allocation=((unsigned)size+63u)&~63u;movie_cache=memalign(64,allocation);
+        unsigned allocation=((unsigned)size+INPLACE_EXTRA(maximum)+63u)&~63u;movie_cache=memalign(64,allocation);
         if (!movie_cache) goto error;
         data_cache_hit_invalidate(movie_cache,allocation);
         prep=PREP_LOAD;
     } else {
-        packet=memalign(64,(maximum+63u)&~63u);if (!packet) goto error;
+        packet=memalign(64,(maximum+INPLACE_EXTRA(maximum)+63u)&~63u);if (!packet) goto error;
         prep=PREP_DONE;
     }
     if (!vblank_hooked) {register_VI_handler(on_vblank);vblank_hooked=true;}
@@ -150,7 +198,19 @@ static bool select_heavy(void) {
         heavy_slot[selected]=(int8_t)slot;heavy_count++;
     }
     last_heavy=0;for (unsigned i=0;i<count;i++) if (heavy_slot[i]>=0) last_heavy=i;
-    if (heavy_count) {heavy_pixels=memalign(16,(size_t)heavy_count*w*h*2);if (!heavy_pixels) return false;}
+    /* The free total can be split (allocations made meanwhile by the movie
+     * playing): drop the lightest selected frames until the block fits. */
+    for (unsigned want=heavy_count;heavy_count;) {
+        heavy_pixels=memalign(16,(size_t)heavy_count*w*h*2);
+        if (heavy_pixels) {
+            if (heavy_count<want) debugf("MSX CINEMATIC prepared frames %u of %u (heap split)\n",heavy_count,want);
+            break;
+        }
+        unsigned drop=0;
+        for (unsigned i=0;i<count;i++) if (heavy_slot[i]==(int8_t)(heavy_count-1)) drop=i;
+        heavy_slot[drop]=-1;heavy_count--;
+    }
+    last_heavy=0;for (unsigned i=0;i<count;i++) if (heavy_slot[i]>=0) last_heavy=i;
     return true;
 }
 /* One bounded step. budget: ticks it may take (0 = no limit). Returns 1 when
@@ -160,6 +220,22 @@ static int prep_step(uint32_t budget) {
     switch (prep) {
     case PREP_LOAD: {
         if (pi_busy()) return budget?0:(dma_wait(),1);
+        if (stored) {
+            // v2: one packet per step, read and decompressed into the cache
+            // at its v1 offset (prep_pos counts packets here).
+            // Cost per KB of output (DMA + LZ4); 60 us/KB until measured, so
+            // the first steps under the logo cannot overrun its frame.
+            uint32_t have=offsets[prep_pos+1]-offsets[prep_pos],per_kb=load_ticks_per_kb?load_ticks_per_kb:TICKS_FROM_US(60);
+            if (budget && per_kb*((have>>10)+1)*(force_ok?2u:1u)>budget) return 0;
+            uint32_t t0=TICKS_READ();
+            if (!fetch(prep_pos,movie_cache+offsets[prep_pos])) return -1;
+            load_ticks_per_kb=(load_ticks_per_kb*3+(TICKS_READ()-t0)/((have>>10)+1))/4;
+            if (++prep_pos>=stats.frames) {
+                prep=PREP_CHECK;prep_index=0;
+                stored=0;   // the cache holds the v1 bytes now
+            }
+            return 1;
+        }
         uint32_t n=prep_size-prep_pos;if (n>PREP_DMA_BYTES) n=PREP_DMA_BYTES;
         dma_read_async(movie_cache+prep_pos,rom+prep_pos,n);prep_pos+=n;
         if (prep_pos>=prep_size) {dma_wait();prep=PREP_CHECK;prep_index=0;}
@@ -180,6 +256,7 @@ static int prep_step(uint32_t budget) {
         check_ticks_per_kb=(check_ticks_per_kb*3+(TICKS_READ()-t0)/((n>>10)+1))/4;
         if (prep_crc_pos<length-4) return 1;
         prep_crc_pos=0;
+        if (~prep_crc!=msx_cine_be32(source)) debugf("MSX CINEMATIC packet %u: CRC mismatch\n",prep_index);
         if (~prep_crc!=msx_cine_be32(source) || !msx_cine_delta_validate((size_t)stats.width*stats.height,source+4,length-4)) return -1;
         if (++prep_index==stats.frames) {
             if (!select_heavy()) return -1;
@@ -223,7 +300,7 @@ bool msx_cinematic_prepare_idle(void) {
     uint32_t left=idle_left();
     if (!left) return false;
     int r=prep_step(left);
-    if (r<0) {debugf("MSX CINEMATIC bad packet while preparing %s\n",prep_path);close_slot();return false;}
+    if (r<0) {debugf("MSX CINEMATIC bad packet while preparing %s (state %d packet %u/%lu)\n",prep_path,prep,prep==PREP_LOAD?(unsigned)prep_pos:prep_index,(unsigned long)stats.frames);close_slot();return false;}
     return r>0;
 }
 bool msx_cinematic_open(const char *path) {

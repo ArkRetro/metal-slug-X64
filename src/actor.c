@@ -299,7 +299,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             /* The throw (0C47BA: the grenade of this update) and the C's fire
              * state start the upper-body programs of marco_visual.c. */
             mi.thrown=game.grenades!=marco_grenades;marco_grenades=game.grenades;
-            mi.cgun=marco_weapons_id(&game.world.weapons,0)==0x0c;
+            /* The R (id 3) runs the C's fire programs too (MAME, --give-rgun:
+             * fire state 0C3D9A, weapon program 253A56). */
+            mi.cgun=msx_game_c_programs(&game);
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             mi.hanging=game.descent==MSX_DESCENT_HANG;

@@ -21,6 +21,12 @@
 #ifndef MSX_DEBUG_CAMEL_DROP
 #define MSX_DEBUG_CAMEL_DROP 0
 #endif
+/* Screenshot cartridge only (never a release): the R (id 3) granted as an
+ * item would (marco_weapons_grant, 08B5BC) once Marco has landed, and
+ * again whenever it runs out. */
+#ifndef MSX_DEBUG_GIVE_R
+#define MSX_DEBUG_GIVE_R 0
+#endif
 
 static int clamp(int x,int lo,int hi) { return x<lo?lo:x>hi?hi:x; }
 static int right_limit(const msx_game_t *g);
@@ -658,6 +664,9 @@ static void end_ram_start(msx_game_t *g) {
     }
     m->players=g->awaiting_continue?0u:1u;m->region=1;
 }
+bool msx_game_c_programs(const msx_game_t *g) {
+    uint8_t id=marco_weapons_id(&g->world.weapons,0);return id==0x0c || id==3;
+}
 static void end_sound(msx_game_t *g,uint16_t word) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else g->world.sound_dropped++;
 }
@@ -808,6 +817,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->grounded=false;g->ride=0;g->velocity_x=0;g->velocity_y=MSX_UNIT;g->air_ticks=0;
             g->debug_dropped=true;break;
         }
+#endif
+#if MSX_DEBUG_GIVE_R
+    if (g->world_enabled && g->grounded && !g->descent && g->life.phase==MARCO_ALIVE && marco_weapons_id(&g->world.weapons,0)!=3) {
+        uint16_t sound=0;marco_weapons_grant(&g->world.weapons,0,3,&g->world.weapon_player,&sound);
+    }
 #endif
     g->descent_fire|=fire && !g->fire_was && g->descent;
     if (!(g->ticks&1) && g->start_letters) {

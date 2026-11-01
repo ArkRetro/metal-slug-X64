@@ -195,6 +195,10 @@ extern const uint32_t msx_game_layout;
 int msx_game_animation(const msx_game_t *game);
 /* Projected words of the player (+3C/+40) as the native world receives them. */
 void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);
+/* The weapon fires through the C's fire state 0C3CD0 and its upper-body
+ * programs (tables 0C3C10/0C3C50/0C3C90 give 0C02D8/0C0318/0C0358): the C
+ * (id 0C) and the R (id 3). */
+bool msx_game_c_programs(const msx_game_t *game);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */
 void msx_game_vehicle_reference(msx_game_t *game);

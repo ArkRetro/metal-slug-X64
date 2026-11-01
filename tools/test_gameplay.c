@@ -274,6 +274,7 @@ static void chaser_run_id(uint8_t id) {
     assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
     assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
     if (id==3) assert(rockets>=40);
+    assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
 }
 /* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
  * flash; MiSTer report: no rockets drawn). */

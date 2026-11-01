@@ -189,6 +189,13 @@ emu.register_frame_done(function()
   if frame==plan.first then cpu:write_u8(0x10c71e,0x0c);cpu:write_u8(0x10c71c,3);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
   cpu:write_u16(0x10c724,40)
  end
+ -- Capture only (MSX_GIVE_RGUN): the R as a pickup gives it (id 03 at
+ -- 10C71E, 30 rounds, cap 2, none live, +94 = 1: marco_weapons_grant),
+ -- rounds kept at 30.
+ if os.getenv('MSX_GIVE_RGUN')=='1' and frame>=plan.first then
+  if frame==plan.first then cpu:write_u8(0x10c71e,0x03);cpu:write_u8(0x10c71c,2);cpu:write_u8(0x10c71a,0);cpu:write_u8(0x1014c4+0x94,1) end
+  cpu:write_u16(0x10c724,30)
+ end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end

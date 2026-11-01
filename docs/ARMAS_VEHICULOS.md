@@ -1179,6 +1179,33 @@ no crea el hijo, y un nodo registrado más tarde es de otra actualización.
 `tools/test_gameplay.c`: carrera R hasta la cámara 3520 (564 ondas, 56
 muertes, sin paradas ni dibujos ausentes).
 
+### La R «sigue sin verse» (informe de MiSTer, ROM 13)
+
+Qué parte faltaba, por pruebas:
+
+- **Objeto R.** Es el tipo `02` (registro `0E584A`, programa `28632A`,
+  recogida `08B57A` → id 3), y su programa está en las raíces exportadas.
+  La Misión 1 no lo suelta: en las semillas 1 y 2 de `release_run`
+  aparecen los tipos `00` (id 5), `4B` (C), `4F` (H) y `51` (id 8),
+  y nunca el `02`. Por eso hace falta un gancho para darla.
+- **Cohetes.** Con el cartucho de captura (`MSX_DEBUG_GIVE_R=1` en
+  `gameplay.c`, solo para capturas y nunca en un *release*: da la R como
+  un objeto tras el aterrizaje), ares dibuja el cohete `06381C`, su estela,
+  el destello y la explosión de pie, apuntando arriba y corriendo. Lo mismo
+  se ve en MAME (`run_marco_catalog.py --give-rgun`, nuevo, como
+  `--give-cgun`: id 03, 30 balas, tope 2).
+- **Marco disparando la R.** Este era el fallo. En MAME, con `kind=03`, cada
+  disparo entra en el estado de fuego de la C `0C3D9A` y en el programa de
+  arma `253A56` (cursores `253A70..253ABA`, `--upper-trace`). Las tablas
+  `0C3C10/0C3C50/0C3C90` dan `0C02D8/0C0318/0C0358` a los ids 3 y 0C. El
+  port solo pasaba `cgun` a `marco_visual` con el id 0C. Con la R, el cuerpo
+  forma 1 no arrancaba ningún programa de disparo: Marco quedaba en reposo
+  mientras salían los cohetes.
+
+Corrección: `msx_game_c_programs()` (ids 0C y 3) decide `cgun` en
+`actor.c`, y la R usa los programas de disparo de la C
+(`MARCO_CAMPAIGN_W1C_FIRE*`, `B1C_CROUCH_FIRE`). `chaser_run` lo comprueba.
+
 ### Camel Slug: «deja de disparar» (informe de MiSTer, ROM 10)
 
 Reproducción en el anfitrión (paseos largos en la Camel con el disparo

@@ -29,6 +29,10 @@ bool msx_audio_playing(unsigned voice);
 void msx_audio_mix(int16_t *stereo,unsigned frames);
 /* Nonblocking AI service, at most two buffers per call. Call outside RDP work. */
 unsigned msx_audio_service(void);
+/* msx_audio_service when the audio is up (no-op otherwise): extra calls
+ * inside long work (stage loads, a frame's simulation) so the AI's two
+ * 40 ms buffers do not run dry. */
+void msx_audio_idle(void);
 msx_audio_stats_t msx_audio_stats(void);
 void msx_audio_close(void);
 #endif

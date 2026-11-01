@@ -48,4 +48,17 @@ static inline void scene_cell_run_window(const scene_cell_index_t *index,unsigne
     }
     *first=start;*end=lo;
 }
+/* Inside a run, the cells of one column (same x) are contiguous and sorted
+ * by increasing y (scene_cell_index_build). End of the column at k: */
+static inline unsigned scene_cell_column_end(const scene_cell_index_t *index,unsigned k,unsigned end) {
+    int16_t x=index->cells[index->order[k]].x;unsigned lo=k+1,hi=end;
+    while (lo<hi) {unsigned mid=(lo+hi)/2;if (index->cells[index->order[mid]].x==x) lo=mid+1; else hi=mid;}
+    return lo;
+}
+/* First position in [k,end) (one column) whose y is >= y. */
+static inline unsigned scene_cell_column_from(const scene_cell_index_t *index,unsigned k,unsigned end,int y) {
+    unsigned lo=k,hi=end;
+    while (lo<hi) {unsigned mid=(lo+hi)/2;if (index->cells[index->order[mid]].y<y) lo=mid+1; else hi=mid;}
+    return lo;
+}
 #endif

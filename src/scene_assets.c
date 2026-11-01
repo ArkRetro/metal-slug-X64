@@ -509,6 +509,10 @@ bool scene_mission_load(unsigned mission) {
     debugf("MSX mission pack %s: %u stages, %lu chunks, %lu images, %lu cells, %lu bytes\n",path,head.stages,(unsigned long)head.chunks,(unsigned long)head.images,(unsigned long)head.cells,(unsigned long)mission_bytes);
     return true;
 }
+/* Called between the chunk loads of a stage (the audio service: the loads
+ * take 0.3..1 s, longer than the AI's two buffers). */
+static void (*load_idle)(void);
+void scene_assets_set_load_idle(void (*fn)(void)) {load_idle=fn;}
 bool scene_stage_load(unsigned index) {
     if (!mission_bytes || index>=mission_head.stages) return false;
     uint32_t began=TICKS_READ();
@@ -590,9 +594,10 @@ bool scene_stage_load(unsigned index) {
         if (!map_chunk[c]) {map_chunk[c]=true;pinned[c]=true;map_chunks++;}
     }
     unsigned before=stats.loads;
-    for (unsigned c=SCENE_CHUNK_COUNT;c<SCENE_CHUNK_COUNT+mission_chunk_count;c++) if (map_chunk[c]) require_chunk(c,true);
+    if (load_idle) load_idle();
+    for (unsigned c=SCENE_CHUNK_COUNT;c<SCENE_CHUNK_COUNT+mission_chunk_count;c++) if (map_chunk[c]) {require_chunk(c,true);if (load_idle) load_idle();}
     /* Pinned player banks evicted by the reservation come back too. */
-    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (pinned[c] && !resident_chunk(c)) require_chunk(c,true);
+    for (unsigned c=0;c<SCENE_CHUNK_COUNT;c++) if (pinned[c] && !resident_chunk(c)) {require_chunk(c,true);if (load_idle) load_idle();}
     map_resident_all=true;
     debugf("MSX stage load mission %u stage %u: descriptor %06lX %u cells %u images grid %ux%u%s, tables %u KB in %u slots, map %u chunks (%u loads) in %lu us\n",
         stage.mission,index+1,(unsigned long)ps.descriptor,cells,images,ps.columns,ps.rows,unknown?" (unknown cells masked)":"",

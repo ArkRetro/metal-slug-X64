@@ -102,6 +102,8 @@ typedef struct {
      * below the screen puts the player back (pit_rescues) instead of the
      * fall death 0C3712 (the invulnerability also covers pits). */
     int32_t safe_x,safe_y;bool safe;unsigned pit_rescues;
+    unsigned rescue_streak;   /* rescues without landing in between (reference) */
+    int32_t safe_old_x[4],safe_old_y[4];unsigned safe_old;   /* earlier safe points (reference) */
     unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
     /* Weapons (world.weapons, RAM 10C718; docs/ARMAS_VEHICULOS.md). A shot
      * reserves through 0C0D64 for the current weapon; only the pistol's

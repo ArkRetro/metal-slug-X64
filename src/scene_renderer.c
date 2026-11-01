@@ -5,6 +5,8 @@
 #include "msx_perf.h"
 #include "scene_cull.h"
 #include "visual_config.h"
+#include <stdlib.h>
+#include <math.h>
 
 // Optional depth25d extras (MSX_DEPTH_STYLE bits); the release presentation
 // is layered 2D scenery with contact shadows only (style 0).
@@ -75,18 +77,53 @@ static void tower_index(const scene_stage_t *st) {
 }
 /* The visible pieces, cell by cell (classic: depth_view NULL). */
 static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *view,const int *offsets,unsigned video_tick,unsigned n);
+/* Classic path: the pieces' cells never overlap (a 16-pixel grid, pieces
+ * 48 pixels apart), so their order inside the tower is free. Drawn grouped
+ * by texture page and palette, with the column strips of one page merged:
+ * cell by cell in piece order each draw reloaded its page (Mission 2 stage
+ * 3 at the top: ~210 texture loads and ~35 ms of CPU per frame). */
+static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flip_y,bool flash);
+static void blit(const scene_image_t *image,int x,int y,int s,int t,int width,int height,bool mirror,bool flash);
+/* The pieces' cells never overlap (a 16-pixel grid, pieces 48 pixels
+ * apart), so their order inside the tower is free: drawn grouped by texture
+ * page and palette, with the column strips of one page merged. Cell by cell
+ * in piece order each draw reloaded its page (Mission 2 stage 3 at the top:
+ * ~210 texture loads per frame). Pieces wholly off screen are skipped. */
+typedef struct { const scene_image_t *im;int16_t x,y; } tower_draw_t;
+static int tower_draw_cmp(const void *a,const void *b) {
+    const tower_draw_t *p=a,*q=b;
+    if (p->im->page!=q->im->page) return p->im->page<q->im->page?-1:1;
+    if (p->im->palette!=q->im->palette) return p->im->palette<q->im->palette?-1:1;
+    if (p->x!=q->x) return p->x<q->x?-1:1;
+    return p->y<q->y?-1:p->y>q->y;
+}
 static void draw_tower(const int *offsets,const int *rises,const retro_plane_view_t *view,unsigned video_tick) {
     if (!tower_count || !tower_types) return;
+    enum { TOWER_DRAWS=8*72 };
+    static tower_draw_t list[TOWER_DRAWS];unsigned n=0;
     const scene_stage_t *st=scene_stage();
     for (unsigned k=0;k<tower_count;k++) {
         int top=SCENE_TOWER_BASE_Y-48*(int)k,y=8+top+rises[3];
         if (!view && (y+48<=8 || y>=232)) continue;
+        if (view) {float py=(8+top)*view->scale+view->offset_y;if (py+48*view->scale<=0 || py>=240) continue;}
         unsigned t=tower_types[k];if (t>=SCENE_TOWER_TYPES) continue;
         for (unsigned j=0;j<3;j++) for (unsigned i=0;i<24;i++) {
-            uint16_t id=tower_cell[t][j][i];if (id==0xffff) continue;
-            scene_map_cell_t c=st->cells[id];c.x=(int16_t)(256+16*(int)i);c.y=(int16_t)(top+16*(int)j);
-            if (view) depth_cell(&c,view,offsets,video_tick,1); else classic_cell(&c,offsets,rises,video_tick,1);
+            uint16_t id=tower_cell[t][j][i];if (id==0xffff || n==TOWER_DRAWS) continue;
+            /* Map coordinates; the screen tests are classic_cell's/depth_cell's. */
+            int cx=256+16*(int)i,cy=top+16*(int)j;
+            if (!view) {int sx=cx-offsets[3],sy=8+cy+rises[3];if (sx+16<=8 || sx>=312 || sy+16<=8 || sy>=232) continue;}
+            else {float sx=cx*view->scale+view->offset_x;if (sx>=320 || sx+16*view->scale<=0) continue;}
+            list[n++]=(tower_draw_t){scene_map_image(st->cells[id].phases[video_tick&7]),(int16_t)cx,(int16_t)cy};
         }
+    }
+    qsort(list,n,sizeof(*list),tower_draw_cmp);
+    for (unsigned k=0;k<n;) {
+        const scene_image_t *im=list[k].im;unsigned m=1;
+        while (im->format==2 && k+m<n && m<16 && list[k+m].im->page==im->page && list[k+m].im->palette==im->palette &&
+               list[k+m].x==list[k].x && list[k+m].y==list[k].y+16*(int)m && list[k+m].im->x==im->x && list[k+m].im->y==im->y+16*(int)m) m++;
+        if (!view) blit(im,list[k].x-offsets[3],8+list[k].y+rises[3],im->x,im->y,16,16*(int)m,false,false);
+        else {float size=16*view->scale;blit_scaled(im,list[k].x*view->scale+view->offset_x,(8+list[k].y)*view->scale+view->offset_y,im->x,im->y,16,16*(int)m,size,size*(float)m,false,false,false);}
+        k+=m;
     }
 }
 static bool patch_cell(const scene_map_cell_t *cell) {
@@ -279,6 +316,8 @@ void scene_render_background(unsigned camera,int height,bool backdrop_after,unsi
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,3);}
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,3,5);}
+/* Per-layer cost of the sampled frame (index 5: the tower), "MSX BG" line. */
+static uint32_t layer_ticks[6];static unsigned layer_draws[6],layer_uploads[6],layer_visits[6];
 static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     if (!depth_mode) {
@@ -286,11 +325,22 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
         // in turn draws the same cells in the same order as one array walk.
         for (unsigned layer=begin;layer<end;layer++) {
           if (!visible[layer]) continue;
+          uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
           scene_cell_window_t w=layer_window(layer,offsets[layer],16,8,312,false);
           unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
           for (unsigned r=cell_index.layer_runs[layer];r<runs;r++) {
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
+            layer_visits[layer]+=end-first;
             for (unsigned k=first;k<end;) {
+                /* Vertical cull without visiting the column: cells above the
+                 * screen are skipped to the first one that reaches it, cells
+                 * below it to the next column (the tall map of Mission 2
+                 * stage 3 walked ~8,000 cells per pass). A merged strip that
+                 * started above now starts at its first visible cell: the
+                 * same pixels. */
+                int sy=8+cells[cell_index.order[k]].y+rises[layer];
+                if (sy+16<=8) {k=scene_cell_column_from(&cell_index,k,scene_cell_column_end(&cell_index,k,end),-rises[layer]-15);continue;}
+                if (sy>=232) {k=scene_cell_column_end(&cell_index,k,end);continue;}
                 unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
                 /* A merged column can mix hidden (replaced) and kept cells:
                  * once a replacement is active, its layer goes cell by cell. */
@@ -304,7 +354,10 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
           }
           if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
           if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
+          uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
           if (layer==3) draw_tower(offsets,rises,NULL,video_tick);
+          layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
+          layer_ticks[5]+=TICKS_READ()-t1;layer_draws[5]+=draws-d1;layer_uploads[5]+=uploads-u1;
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
@@ -316,11 +369,18 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
     for (unsigned layer=begin;layer<end;layer++) {
       if (!visible[layer]) continue;
       const retro_plane_view_t *view=&depth_views[layer];
+      uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
       scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
+      /* Vertical cull (as the classic path): cell rows whose projected
+       * square lies wholly outside the screen, with two rows of margin. */
+      int ytop=(int)floorf(-view->offset_y/view->scale)-24-32,ybot=(int)ceilf((240.0f-view->offset_y)/view->scale)-8+32;
       for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
         unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
+        layer_visits[layer]+=end-first;
         for (unsigned k=first;k<end;) {
           const scene_map_cell_t *cell=&cells[cell_index.order[k]];
+          if (cell->y<ytop) {k=scene_cell_column_from(&cell_index,k,scene_cell_column_end(&cell_index,k,end),ytop);continue;}
+          if (cell->y>=ybot) {k=scene_cell_column_end(&cell_index,k,end);continue;}
           unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
           /* Same rule as the classic path: once a replacement is active, a
            * merged column may mix hidden and kept cells, so go cell by cell. */
@@ -337,7 +397,10 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
       // Replacement cells (shop patch, post-collapse rubble) on their layer.
       if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
       if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
       if (layer==3) draw_tower(offsets,rises,view,video_tick);
+      layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
+      layer_ticks[5]+=TICKS_READ()-t1;layer_draws[5]+=draws-d1;layer_uploads[5]+=uploads-u1;
       if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
@@ -567,6 +630,11 @@ void scene_render_end(void) {
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
             s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,s.sync_misses,s.idle_decodes,(unsigned long)TICKS_TO_US(s.decode_max_ticks),scene_assets_heap_low()/1024,bg_replays,bg_records);
     }
+    if (!(frame%300)) debugf("MSX BG: layer us/draws/uploads/visits 0=%lu/%u/%u/%u 1=%lu/%u/%u/%u 2=%lu/%u/%u/%u 3=%lu/%u/%u/%u 4=%lu/%u/%u/%u tower=%lu/%u/%u\n",
+        (unsigned long)TICKS_TO_US(layer_ticks[0]),layer_draws[0],layer_uploads[0],layer_visits[0],(unsigned long)TICKS_TO_US(layer_ticks[1]),layer_draws[1],layer_uploads[1],layer_visits[1],
+        (unsigned long)TICKS_TO_US(layer_ticks[2]),layer_draws[2],layer_uploads[2],layer_visits[2],(unsigned long)TICKS_TO_US(layer_ticks[3]),layer_draws[3],layer_uploads[3],layer_visits[3],
+        (unsigned long)TICKS_TO_US(layer_ticks[4]),layer_draws[4],layer_uploads[4],layer_visits[4],(unsigned long)TICKS_TO_US(layer_ticks[5]),layer_draws[5],layer_uploads[5]);
+    memset(layer_ticks,0,sizeof(layer_ticks));memset(layer_draws,0,sizeof(layer_draws));memset(layer_uploads,0,sizeof(layer_uploads));memset(layer_visits,0,sizeof(layer_visits));
     // One completion fence per frame: RDRAM pages stay pinned until RDP is done.
     rdpq_detach_cb(finished,current);
 }

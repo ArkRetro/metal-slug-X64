@@ -945,13 +945,33 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * reference cartridge's invulnerability (only hits). */
             neo_world_player_t p=player_frame(g);
             int32_t safe_py=(int32_t)(int16_t)p.py+(g->y-g->safe_y)/MSX_UNIT;
+            if (g->grounded) g->rescue_streak=0;
+            /* A safe point the player keeps falling from (Mission 2 stage 2
+             * at the end of the first autoscroll: rescued at x 1036..1053
+             * hundreds of times) is replaced after 8 rescues without a
+             * landing by an earlier one (at least 32 px away); with none
+             * left, the fall death and a new life. */
+            if (MSX_REFERENCE_INVULNERABLE && g->rescue_streak>=8) {
+                g->rescue_streak=0;
+                if (g->safe_old) {g->safe_old--;g->safe_x=g->safe_old_x[g->safe_old];g->safe_y=g->safe_old_y[g->safe_old];}
+                else g->safe=false;
+            }
             if (MSX_REFERENCE_INVULNERABLE && (int16_t)p.py<0x100 && g->safe && safe_py>=0x100) {
+                g->rescue_streak++;
                 /* Reference build: back to the last grounded position,
                  * unless the camera has since risen past it (Mission 2
                  * stage 3, modes 2/4): then the fall death and a new life. */
                 g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
-            } else if ((int16_t)p.py<0x100) {g->pit_deaths++;start_death(g,0,(int16_t)p.px>=0xa0);}
-            else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {g->safe_x=g->x;g->safe_y=g->y;g->safe=true;}
+            } else if ((int16_t)p.py<0x100) {g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
+            else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {
+                unsigned n=g->safe_old;
+                if (g->safe && (g->x-g->safe_x>=32*MSX_UNIT || g->safe_x-g->x>=32*MSX_UNIT) &&
+                    (!n || g->safe_old_x[n-1u]!=g->safe_x || g->safe_old_y[n-1u]!=g->safe_y)) {
+                    if (n==4u) {for (unsigned k=0;k<3u;k++) {g->safe_old_x[k]=g->safe_old_x[k+1u];g->safe_old_y[k]=g->safe_old_y[k+1u];}n=3u;}
+                    g->safe_old_x[n]=g->safe_x;g->safe_old_y[n]=g->safe_y;g->safe_old=n+1u;
+                }
+                g->safe_x=g->x;g->safe_y=g->y;g->safe=true;
+            }
         }
     }
     int player=g->x/MSX_UNIT;

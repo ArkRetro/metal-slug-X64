@@ -59,7 +59,7 @@ int main(void) {
     srand(1234);
     for (unsigned trial=0;trial<300;trial++) {
         unsigned n=1+(unsigned)rand()%400;scene_map_cell_t *cells=calloc(n,sizeof(*cells));
-        for (unsigned i=0;i<n;i++) cells[i]=(scene_map_cell_t){(uint16_t)(rand()%5),(int16_t)(rand()%4000-1000),0,{0}};
+        for (unsigned i=0;i<n;i++) {cells[i]=(scene_map_cell_t){(uint16_t)(rand()%5),(int16_t)((rand()%40-10)*(trial&1?16:100)),0,{0}};cells[i].y=(int16_t)(16*(rand()%30-10));}
         scene_cell_index_t r;if (!scene_cell_index_build(&r,cells,n)) {fprintf(stderr,"random build failed\n");return 1;}
         uint16_t *p=malloc(n*2),*q=malloc(n*2);
         for (unsigned k=0;k<20;k++) {
@@ -70,6 +70,22 @@ int main(void) {
                 unsigned got=walk(&r,layer,&w,q);
                 int same=m==got;for (unsigned j=0;same && j<m;j++) same=p[j]==q[j];
                 check(same,"random window",(int)trial);
+                /* The renderer's vertical skip (scene_cell_column_*) visits
+                 * exactly the cells of the window that reach rows top..bottom. */
+                int top=-(rand()%200),bottom=top+16+rand()%300;
+                unsigned a2=0,b2=0;
+                for (unsigned j=0;j<m;j++) if (cells[p[j]].y+16>top && cells[p[j]].y<bottom) p[a2++]=p[j];
+                for (unsigned rr=r.layer_runs[layer];rr<r.layer_runs[layer+1];rr++) {
+                    unsigned first,end;scene_cell_run_window(&r,rr,&w,&first,&end);
+                    for (unsigned j=first;j<end;) {
+                        int y=cells[r.order[j]].y;
+                        if (y+16<=top) {j=scene_cell_column_from(&r,j,scene_cell_column_end(&r,j,end),top-15);continue;}
+                        if (y>=bottom) {j=scene_cell_column_end(&r,j,end);continue;}
+                        q[b2++]=r.order[j++];
+                    }
+                }
+                same=a2==b2;for (unsigned j=0;same && j<a2;j++) same=p[j]==q[j];
+                check(same,"vertical skip",(int)trial);
             }
         }
         free(p);free(q);free(r.order);free(r.runs);free(cells);

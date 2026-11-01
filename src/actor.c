@@ -12,6 +12,7 @@
 #include "msx_perf.h"
 #include "msx_stick.h"
 #include "game_audio.h"
+#include "msx_audio.h"
 #include "boss_renderer.h"
 #include "marco_visual.h"
 #include "marco_renderer.h"
@@ -48,6 +49,7 @@ static marco_visual_t marco;static bool marco_native;static unsigned marco_shots
  * stage 4, docs/MISION3.md). The pack's descriptor must be the flow's. */
 static bool load_stage(void) {
     unsigned index=game.flow.record_index;
+    scene_assets_set_load_idle(msx_audio_idle);
     if (!scene_stage_load(index)) return false;
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
@@ -325,6 +327,10 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
     game_audio_update(&game);
+    /* A second AI service per frame, between the simulation and the draw:
+     * a slow frame (two updates plus a full redraw) no longer drains both
+     * buffers before the main loop's service. */
+    {uint32_t a0=TICKS_READ();msx_audio_idle();msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-a0);}
     {static uint8_t panel_state;static unsigned hud_stops;
      if (game.hud.panel[0].state!=panel_state) {
         static const char *const names[]={"play","continue","game over","stopped"};

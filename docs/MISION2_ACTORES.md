@@ -385,24 +385,11 @@ iguales, **0 distintos**; rehén 19 volcados, 11089 iguales, 829 distintos
 en 4 volcados (20625..20670, mientras el soldado lo sujeta a su lado; sin
 explicar).
 
-## Jefe de la etapa 3 `026254` (no portado)
+## Jefe de la etapa 3 `026254`
 
-No nace en `c1`: es el jefe de la etapa 3. En `run4` el registro `2D9CA2`
-corre entre 92475 y 93083 y el nodo pasa a `026354` en 93083 (x 480,
-y 1705); muere (`026E7A`) en 117325, unos 24000 fotogramas después. Se
-llega reproduciendo `run4` desde `sec03_26140` (unos 19 min) con el nuevo
-`MSX_FULL_SAVE_AT=<fotograma>` (solo captura: guarda `at_<fotograma>`):
-
-```sh
-MSX_FULL_STATES=<dir con sec03_26140> MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_SAVE_AT=92700 \
-  MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=92702 sh tools/run_capture_fullgame.sh <dir>
-MSX_FULL_LOAD=at_92700 MSX_FULL_LOAD_FRAME=92700 MSX_FULL_FAMILY_ROOTS=26254 MSX_FULL_FAMILY_FROM=92900 \
-  MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=94100 sh tools/run_capture_fullgame.sh <dir>/k1
-```
-
-La traza `k1` (92900..94100) pesa 52 MB: 27 nodos, el cuerpo `026354..026B48`
-y sus piezas `026FCE` (3542 actualizaciones), `027330`, `026F6C`, `027638`,
-`02715A`, escombros `01D1B0/01D764/01CF94..01D000` y `059FA8`. La traducción
-de `026254..027E8E` (unas 1600 instrucciones, servicios aún sin portar como
-`0120F8`, `009BB0`, `01B04A/01B14A/01B1C0`, `012192`, `059F4E`) y su traza
-completa (≈ 1 GB por tramos) quedan pendientes.
+Portado: [JEFE_MISION2.md](JEFE_MISION2.md) (`src/neo_m2boss.c`, familias
+`m2boss1..m2boss8`). No nace en `c1`: es el jefe de la etapa 3. En `run4`
+el registro `2D9CA2` corre entre 92475 y 93083 y el nodo pasa a `026354` en
+93083 (x 480, y 1705). Se llega reproduciendo `run4` desde `sec03_26140`
+(unos 19 min) con `MSX_FULL_SAVE_AT=92700` (solo captura: guarda
+`at_92700`); los tramos de la traza salen de ese estado.

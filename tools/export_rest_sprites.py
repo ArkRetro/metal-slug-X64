@@ -137,7 +137,11 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     # Mission 2: the drone 03670E and its bomb 0369AC (neo_drone.c).
     0x23ba74,0x23bb52,0x23bbd0,0x23bc72,0x23bcf2,
     # Mission 2: the hostage 021B46.. of 06835C (neo_hostage.c).
-    0x230984,0x230654,0x23066a)
+    0x230984,0x230654,0x23066a,
+    # Mission 2: the stage-3 boss 026254 (neo_m2boss.c): body, parts (027D74), shots.
+    0x23502c,0x234f10,0x234fcc,0x234f3c,0x23508c,0x235a8a,0x235872,0x23581c,
+    0x2350e6,0x2350fa,0x23510e,0x23518c,0x23520a,0x235288,0x235306,0x235384,0x23543c,0x235454,0x235478,0x2353fe,
+    0x235448,0x235466,0x235484,0x235490,0x2354d8,0x23558a,0x2356ba,0x2356b0,0x23574c,0x235742,0x235762)
 RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46e,0x121,0x122,0x123,0x17,0x19,0x1a,0x3fd,0x93,0x9b,0x37d,0x3a6,0x380,0x37e,0x3a7,0x3ac,0xd0,0x103,0x24,0x30b,0xd3,0x208,0x113,0x13f,0x37c,0x124,0x37f,0x3c6,0x114,0x133,0x38e,0x823,0x3fd,0x202,0x27c,0x378,0x3fe,0xb8,0x37a,0x16c,0x16d,0x16e,0x381,0x382,0x3fa,0x117,0x9c,0x9d,0x1d,0x15a,0x20,0x21,0x22,0x23,0x178,0x179,0x202,0x15c,0x118,0x442,0x13b,0x92,0x114,
     # Camel Slug, its rider (player 1/2), turret and bullets, marker, dust.
     0x3ff,0x376,0x377,0x3d6,0x3ad,0x884,0x170,
@@ -166,6 +170,9 @@ RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46
     0x1f6,0x1f7,0x811,0x84a,0xb0,
     # Mission 2 soldiers 0678B6.. (+9C = 0): 0x3FC/0x3FD/0xF2, flash 0xAC, knife 0x3FB.
     0x3fc,0xf2,0xac,0x3fb,
+    # Mission 2 stage-3 boss 026254: body 0x57/0x5B/0xB2 (flash 0x59), parts
+    # 0x58/0x5C/0xB3 (flash 0x5A), 0x5D..0x61, column 0xB1, shots 0x223.
+    0x57,0x58,0x59,0x5a,0x5b,0x5c,0x5d,0x5e,0x5f,0x60,0x61,0xb1,0xb2,0xb3,0x223,
     # Mission 2 gate 03882A (0x3CA/0x3D8, flash 0x3CB) and ripple 03C62A (0x14B).
     0x3ca,0x3d8,0x3cb,0x14b,
     # Mission 2: crate 08C154.., prop 06851A, drone 03670E, soldier 0678A2 (+9C = 4).
@@ -176,10 +183,11 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
+    p.add_argument('--mask-auto',action='store_true',help='compare the frames with auto-animated entries (LSPC attribute bits 2/3), leaving out their area')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
-    a=p.parse_args()
+    a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
     assets=[]
@@ -241,6 +249,7 @@ def zoomed_slots(vram):
         if not 0<rows<=32 or (zx==15 and zy==255):continue
         for row in range(rows):out.add(vram[slot*64+row*2+1]>>8)
     return out
+MASK_AUTO=False
 def validate(capture,nodes,descs,crom,stats,per):
     # Sprite-list entries written during each update of the nodes; at a dump
     # every node contributes its last (or, second try, its previous) update.
@@ -276,7 +285,9 @@ def validate(capture,nodes,descs,crom,stats,per):
             # Auto-animated entries (attr bits 2/3: the LSPC counter picks the
             # tile, e.g. the GO arrow 05287C) are not rasterized here.
             stats['auto_animation_entries_skipped']+=sum(1 for d in dl if d['attr']&12)
-            if any(d['attr']&12 for d in dl):continue
+            auto=[d for d in dl if d['attr']&12]
+            if auto and not MASK_AUTO:continue
+            dl=[d for d in dl if not d['attr']&12]
             slots={d['attr']>>8 for d in dl}
             im,_=reconstruct(v,pw,crom,slots)
             mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
@@ -301,6 +312,13 @@ def validate(capture,nodes,descs,crom,stats,per):
                             # hardware order decides; not compared.
                             if native[sy*320+sx]:native[sy*320+sx]=-1
                             else:native[sy*320+sx]=(d['attr']>>8)*16+pen
+            # --mask-auto: the area of an auto-animated entry is not compared.
+            for d in auto:
+                g=descs.get(d['desc'])
+                if g is None or not g['width']:continue
+                left=d['x']+(-(g['x']+g['width'])-1 if d['attr']&1 else g['x']);top=((512-d['y'])&511)+g['y']
+                for sy in range(max(top,0),min(top+g['height'],256)):
+                    for sx in range(max(left,0),min(left+g['width'],320)):native[sy*320+sx]=-1
             same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
             diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])
             overlap=sum(1 for i in range(320*256) if native[i]<0)

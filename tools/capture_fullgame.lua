@@ -263,6 +263,10 @@ local load_name=os.getenv('MSX_FULL_LOAD')
 local fam_from=tonumber(os.getenv('MSX_FULL_FAMILY_FROM') or '0')
 local family_roots={}
 for h in string.gmatch(os.getenv('MSX_FULL_FAMILY_ROOTS') or '','(%x+)') do family_roots[tonumber(h,16)]=true end
+-- MSX_FULL_FAMILY_RANGE=<lo>-<hi> (hex): also every node dispatched with a
+-- routine in that interval (a piece of a long fight started mid-way).
+local frange_lo,frange_hi=string.match(os.getenv('MSX_FULL_FAMILY_RANGE') or '','(%x+)-(%x+)')
+if frange_lo then frange_lo,frange_hi=tonumber(frange_lo,16),tonumber(frange_hi,16) end
 local fam_log=nil;local in_lua=true;local family={};local factive=nil;local attacker_dumped={}
 local POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
 local mstate=machine.devices[':maincpu'].state
@@ -274,7 +278,7 @@ local function fam_read(address,data,mask)
   if o==0 and mstate['CURPC'].value==0x4246 then
    local n=address;in_lua=true
    local r=cpu:read_u32(n)
-   if family_roots[r] then family[n]=true end
+   if family_roots[r] or (frange_lo and r>=frange_lo and r<=frange_hi) then family[n]=true end
    if family[n] then factive=n;fam_log:write(string.format('U %x %x %s\n',n,r,hexbytes(n,0xb0))) else factive=nil end
    attacker_dumped={};in_lua=false;return
   elseif o==8 and factive==address-8 and mstate['CURPC'].value==0x424a then

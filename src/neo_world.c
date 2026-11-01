@@ -50,6 +50,7 @@ typedef struct {
     int current;                 /* order index of the running actor */
     uint16_t draw_palette;bool draw_flash;uint8_t draw_kind;
     neo_genv_t genv;
+    neo_m2boss_env_t m2boss;     /* the Mission 2 boss's RAM (neo_m2boss.c) */
     const neo_script_env_t *se;  /* the script environment of this tick */
     int sub_owner;               /* generic actor running a sub-script (-1) */
 } tick_t;
@@ -631,7 +632,22 @@ static int run_gactor(tick_t *t,unsigned i) {
     uint8_t group=ga_b(a,0x69);
     unsigned before=w->draw_count;
     t->draw_kind=NEO_WORLD_GACTOR;t->draw_flash=false;t->draw_palette=0;
+    /* RAM the Mission 2 boss 026254 reads and writes (neo_m2boss.c): camera
+     * 699A, point 69BA, the mission actor's speeds, the tower mode 10C354;
+     * one frame per logic update (003B4C). */
+    bool m2=neo_m2boss_routine(ga_l(a,0));
+    if (m2) {
+        neo_m2boss_env_t *m=&t->m2boss;
+        m->camera_dy=w->camera_native?w->camera.dy:0;m->point69ba=w->script.w69ba;
+        m->speed[0]=w->camera.speed_x;m->speed[1]=w->camera.speed_y;m->tower_mode=w->tower.mode;m->frame_step=1;
+        t->genv.m2boss=m;
+    }
     ga_result_t r=neo_region_tick(a,&t->genv);
+    if (m2) {
+        neo_m2boss_env_t *m=&t->m2boss;
+        w->script.w69ba=m->point69ba;w->camera.speed_x=m->speed[0];w->camera.speed_y=m->speed[1];w->tower.mode=m->tower_mode;
+        t->genv.m2boss=NULL;
+    }
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t h=(uint8_t)(w->draws[k].attributes>>8);
         w->draws[k].palette=h && h<=6u?a->palette[h-1u]:a->palette[0];

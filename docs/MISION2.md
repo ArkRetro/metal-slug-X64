@@ -569,3 +569,14 @@ trabajo (0x1E003C = 0x10003C + 0xE0000), no de la ROM; el actor se borra con
 sus descendientes y el recorrido sigue. Su escritor no está localizado
 (candidatos: el actor que posee el desplazamiento, `+5B` de 0C7C12).
 Pendiente con el grifo de MAME.
+
+**Recorrido en ares** (`mslugx-m2-reference.z64`, `--stage-seconds 400`):
+`RESULT: PASS` — etapa 1, etapa 2 (salida de referencia 1, parada soltada 1),
+etapa 3 con el piloto (80 piezas de torre, cámara hasta y 5155, progreso
+7186), jefe `026254` vencido y `MSX mission complete signal (018F92)`; 0
+caídas mortales, 63 rescates, 0 cuelgues del RSP. PERF (ventanas de 300
+fotogramas, µs): etapa 2 cpu media mediana 6304, peor media 10699; etapa 3
+cpu media mediana 21633, peor media 53384, sim media mediana 5722 (la
+etapa 3 incluye el planificador de referencia, que no existe en la
+versión); peores fotogramas sueltos 0,3..1,07 s en las cargas de etapa.
+Subbloques de audio: 888 en todo el recorrido.

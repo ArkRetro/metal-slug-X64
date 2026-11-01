@@ -253,6 +253,58 @@ derecha e izquierda), el salto y el salto con carrera hasta el aterrizaje;
 arranque dura menos de una actualización a 0x1C1: tampoco se dibuja en el
 original.
 
+## Forma 3: la momia (rama `work-m2mummy`)
+
+Informe de MiSTer: «cuando una momia te echa el aliento, Marco debe
+convertirse en momia». En el port el contacto mataba a Marco.
+
+- **La momia y su aliento ya son nativos.** Son la familia `0613CA/0613D8/
+  0613E6` de `neo_rebel2.c` (documentada como «rebeldes» en
+  MISION2_ACTORES.md): su «disparo» `061E8C` golpea con la fila `E1252`
+  (clase 0, tipo `0x10`). El tipo de la fila es el `+5A` que `004C24`
+  devuelve al jugador (`04DAA`), y `0C36C0` compara ese valor con `0x10`.
+  También dan `0x10` las filas `035AB8/035AC8` de la bomba `0369AC` del dron.
+  Los candidatos `035B66/035C68/035D12` son otra familia (voladores y
+  saltadores con `+96` = 0..3, filas de tipo 7): no transforman.
+- **Contacto** (`gameplay.c`, `msx_game_hurt`): tipo `0x10` sin forma 3 →
+  `+94 = 3`, arma a pistola (`marco_weapons_pistol`), la H se reinicia; en
+  forma 3 → la muerte `0C2956`. Mientras cuenta `+84` (la transformación y
+  después `0x5A` actualizaciones) `+5F` bit 6 descarta todo contacto.
+- **Transformación** medida en MAME (`run_marco_catalog.py --give-mummy`,
+  nuevo: escribe `+94 = 3` en el primer fotograma del plan, solo captura;
+  captura lógica `marco-mz1`, `--logic-only --controller-trace`):
+  `0C17A0` en la actualización siguiente, `0C17F0` espera 17
+  actualizaciones al efecto `C4DD8`, `0C182A` pone `+84 = 0x5A` y `0C18B4`
+  sigue una actualización después: 19 actualizaciones sin control ni
+  movimiento.
+- **Mando de la momia** (`0C18B4`): andar a `+62 = 0x18000` (la mitad de
+  `0x30000`; `neo_walk_step_shift`); salto `0C1A0C` (tres actualizaciones
+  agachado) y `0C1A62` con `+34 = 0x90000` y `+34 += (−14 px − +34) >> 5`
+  (dos pasos medidos exactos); en el aire, el avance horizontal a la mitad
+  es **aproximación declarada** (la captura saltó en vertical). Dispara la
+  pistola (`0C3CE8` solo salta el cuchillo). Ya estaban: la concesión
+  `0C0928` rechaza armas, `knife_ok` excluye la forma 3 y `neo_vslot.c`
+  no deja subir a un vehículo (`0C06E8`).
+- **Cura**: el objeto de tipo `0x32` (registro `E5CCA`, recogida
+  `08B750`): sonido `1121` y `0C0C92`: con el jugador vivo en forma 3,
+  `+94 = 0`, `08B87A` y la etiqueta `08CD10` (externa, contada en
+  `labels`, y `cures`); si no, el valor `08B896` y `08B850`. No hay cura por
+  tiempo en el código de formas (`0C32E4`).
+- **Poses**: programas de la forma 3 elegidos en `marco-mz1` (filas `+0x30`):
+  cuerpo de la transformación `24EDE0` (`0BF258`), arma en reposo `25F520`
+  (`0BF858`), andar `25F562` (`0BF8D8`), disparo `25F5CA` (`0BFD18`), salto
+  `25F794`/`25F7A0` (`0BFB58`/`0BFB98`). **Parada explícita**: no están en el
+  catálogo; `actor.c` pasa la forma 0 y se dibujan los programas de la
+  pistola. Para añadirlos hace falta la captura completa del catálogo
+  (`run_marco_catalog.py ... --command-trace --paired-trace
+  --controller-trace --give-mummy`), su auditoría y los papeles en
+  `compile_marco_campaign.py`, como con la H.
+
+Prueba: `tools/test_gameplay.c` (`mummy_run`): el aliento pide la forma 3 y
+deja la pistola, 19 actualizaciones quieto, protección `0x5A`, la H
+rechazada, 29,7 px en 20 actualizaciones andando y la muerte con el
+segundo aliento.
+
 ## Pendiente
 
 - Controlador original completo (`0x0C1xxx..0x0C3xxx`, ya traducido en

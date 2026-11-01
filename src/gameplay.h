@@ -42,6 +42,10 @@ typedef struct {
      * 2, results); `complete` follows step 2 and stops the simulation. */
     bool mission_complete;
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
+    /* Form 3, the mummy (+93 = 3): updates left in the transformation
+     * 0C17A0..0C182A, the protection +84 after it, the takeoff wait of
+     * 0C1A0C; breaths taken (kind 0x10) and cures (the medicine 08B750). */
+    unsigned mummy_transform,mummy_guard,mummy_takeoff,mummy_breaths,mummy_cures;
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     bool aim_up;   /* input: up held (set by the caller before msx_game_update) */
     bool crouch;   /* input: down held; grounded = crouched in place (the original

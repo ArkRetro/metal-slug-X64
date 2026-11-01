@@ -329,6 +329,19 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
             if (!k8b896(a,e,pk,p,rec)) return false;
             k8b850(pk,p);sound(e,0x1121);
         }
+    } else if (r==0x8b750) {                                         /* medicine (kind 0x32) */
+        /* 08B750: sound 1121, then 0C0C92: a live player in form 3 gets
+         * +94 = 0 (the cure; carry) -> 08B87A and the label 08CD10 (d1 = 1,
+         * external, counted); otherwise the value 08B896 and 08B850. */
+        sound(e,0x1121);
+        marco_weapon_player_t *m=pk->player[p];
+        if (m->exists && !m->dead && m->form93==3) {
+            m->form94=0;k8b87a(pk,p);pk->cures++;
+            pk->labels++;if (e->external) e->external(e->ctx,0x8cd10);
+        } else {
+            if (!k8b896(a,e,pk,p,rec)) return false;
+            k8b850(pk,p);
+        }
     } else if (r==0x8b7fc) {                                         /* points / food */
         sound(e,0x1121);
         if (rb(rec+3) && !B(0x7a)) {

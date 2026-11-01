@@ -13,6 +13,9 @@ void neo_collision_reset(void);
  * per cell, set for cells no capture observed (read as empty, counted). */
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned columns,unsigned rows);
 unsigned neo_collision_rows(void);
+/* Readers see the map grid instead of the ring while `on` (the ring holds
+ * only its 64-row window: a row outside it reads another row's cells). */
+void neo_collision_ring_bypass(bool on);
 /* The kernel's cell ring (0C79FE) of a stage taller than 32 rows, loaded
  * like 0C73CE/0C74C4/0C72EC for the terrain layer position (+14/+18,
  * Q16); NULL for Mission 1 (32 rows: neo_kernel's column model). */

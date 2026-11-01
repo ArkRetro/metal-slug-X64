@@ -12,7 +12,7 @@ static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid=dynamic_grid_m1
 static unsigned columns=NEO_GRID_COLUMNS,rows=32,unknown_reads;
 /* The terrain layer's 64x64 cell ring (object 10C72E +88) of the vertical
  * stages: what the kernel's 0C79FE reads (neo_kscene_t.ring). */
-static uint8_t *ring;static bool ring_on;static int ring_c0,ring_r0;
+static uint8_t *ring;static bool ring_on,ring_bypass;static int ring_c0,ring_r0;
 static void ring_put(int c,int r) {
     /* 0C72EC: cell (c, r) of the map (row r from the bottom) goes to the
      * ring byte (c & 63) * 64 + ((~(8r)) >> 3 & 63), the index 0C79FE reads
@@ -75,6 +75,7 @@ void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t 
     dynamic_active=false;unknown_reads=0;ring_on=false;ring=NULL;
 }
 void neo_collision_set_ring(uint8_t *buffer) {ring=buffer;ring_on=false;}
+void neo_collision_ring_bypass(bool on) {ring_bypass=on;}
 unsigned neo_collision_rows(void) {return rows;}
 unsigned neo_collision_unknown_reads(void) {return unknown_reads;}
 static void make_dynamic(void) {
@@ -135,7 +136,7 @@ uint8_t neo_collision_cell(int x,int y) {
     /* Vertical stages: every reader sees the kernel's ring (0C79FE), which
      * the tower writer 0B7C38 fills beyond the map's rows. */
     if (x<0 || x>=(int)columns*8 || y<0) return 0;
-    if (ring_on) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
+    if (ring_on && !ring_bypass) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
     if (y>=(int)rows*8) return 0;
     unsigned at=(unsigned)(x/8)*rows+(unsigned)(y/8);
     /* A never observed cell (mission packs only) reads as empty and is
@@ -152,6 +153,11 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
     else if (shape==5) height=base+u;
     else if (shape==10) height=base+8*NEO_UNIT-u-1;
     else if (shape>=11 && shape<=13) height=base+8*NEO_UNIT;
+    /* The top of a wall column (shapes 14/15 under an empty cell) is a
+     * floor for the sweep 013968 (Mission 2 stage 3, wall at x 616: the
+     * kernel lands the player at its top, y 128). Mission 1's grid has no
+     * such cell. */
+    else if (shape>=14 && !neo_collision_cell(x/NEO_UNIT,row*8+8)) height=base+8*NEO_UNIT;
     else return false;
     // Rising planes keep the one-unit contact bias. Declining quarter-slopes
     // already include it: ROM 012DEE uses 0x7FFFF before the contact +1.

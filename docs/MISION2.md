@@ -454,11 +454,42 @@ grupos (`019E40`). La etapa 3 ya no para en `2D8846`: los cinco corredores
 crean el dron `03670E` (nativo, `neo_drone.c`) sin el salto de registros de
 la referencia; la etapa 2 usa dos (`2D8368`, `2D8418`).
 
-**Jugador en el borde derecho**: en las paradas de cámara (616 y 1920 de la
-etapa 2, 336 de la etapa 3) el jugador queda en x = cámara + 291 porque el
-mando mantiene la derecha; con la izquierda pulsada se aleja del borde
-(hasta 90 px en 1,2 s en los registros), así que no hay recorte erróneo
-(`clamp_feet`, `wall_stop`). En la etapa 3 la escalera sube a la izquierda
-del saliente donde acaba la entrada (modo 1: el progreso sigue a la altura,
-336 = 0x140 + 16): el mando de la prueba añade una cuarta fase de 4 s
-andando y saltando a la izquierda.
+**Jugador en el borde derecho** (paradas 616/752 de la etapa 2, 336 de la
+etapa 3): reproducido en el anfitrión (etapas del paquete, andar a la
+derecha y luego a la izquierda). `msx_game_begin_stage` buscaba el suelo
+más alto del borde izquierdo con `neo_surface_at`, que ya leía el anillo de
+64 filas del núcleo (cargado por `neo_world_init_stage`); el anillo se
+repite cada 64 filas y la búsqueda desde arriba encontraba la copia del
+suelo de salida 64k filas más arriba (etapa 2: fila 86 por 22; etapa 3:
+fila 261 por 5). El jugador vivía fuera de la ventana del anillo (filas
+−16..47 al empezar), sobre celdas de otra fila: suelos y paredes fantasma
+(`wall_stop` lo paraba en x 624 de la etapa 3 con la izquierda pulsada; 172
+celdas distintas de la rejilla alrededor del jugador en la parada 616 de la
+etapa 2). La búsqueda lee ahora la rejilla (`neo_collision_ring_bypass`): y
+de salida 184 y 48 en las etapas 2 y 3, los valores de `run4`, y 0 celdas
+distintas alrededor del jugador en todo el recorrido del anfitrión. En la
+etapa 3 la pared de x 616 (6 celdas, forma 0xF) es real: se sube saltando
+a la izquierda. Su parte de arriba es suelo para el barrido `013968` (el
+núcleo devuelve el aterrizaje en y 128, `D6` = 0x4B) pero no para el modelo
+de suelo del puerto (formas 1..13), así que el jugador la cruzaba por la
+esquina, quedaba bajo la plataforma y caía a través de la rampa (rescates
+de caída). `neo_collision.c` toma la parte de arriba de una celda de forma
+14/15 con la celda de encima vacía como suelo plano; la rejilla de la
+Misión 1 no tiene ninguna. Con ello la cámara (modo 1: el progreso crece al
+ir a la izquierda) pasa de 336 a 384 en el anfitrión. El mando de la prueba
+añade una cuarta fase de 4 s andando y saltando a la izquierda.
+
+**Estado del recorrido en ares** (`mslugx-m2-reference.z64`, `--stage-seconds
+400`): etapas 1 y 2 completas sin soltar ninguna parada de cámara del guion
+(`script lock releases=0`; antes 3) y con los actores dibujados; la etapa 3
+carga en y 48 (la de `run4`), el guion pasa los corredores agrupados sin
+parar y el mando no llega a la torre: la lista de cámara `0B754E` espera en
+el `op 4` de `0B7656` (tras el progreso 0x180) a que el jugador esté en el
+rectángulo x 256..319, y (desde abajo) 176..351 de la capa, es decir, en la
+plataforma de la fila 23 (y 192, x 248..311) que se alcanza desde el suelo
+de la fila 17 (y 144, x 328..375, escalera superior desde la plataforma de
+la fila 27) saltando la pared de x 312. Ni el mando de la prueba en ares
+(progreso 336) ni su simulación en el anfitrión (progreso 384, 30000
+actualizaciones) suben a esa plataforma: el jefe y el fin de misión siguen
+sin recorrerse. Pendiente: un mando que siga esa ruta (o un registro de
+entradas de MAME de la etapa 3).

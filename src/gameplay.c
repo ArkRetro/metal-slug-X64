@@ -134,9 +134,16 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     g->in_stage=true;g->stage_camera_max=camera_max;
     /* On the highest floor of the left edge (run4: y 64, 184 and 48 at the
-     * three stage starts; the grid's top rows are empty). */
-    neo_surface_t top;g->x=0;
+     * three stage starts; the grid's top rows are empty), searched in the
+     * map grid: the kernel's ring, already loaded by neo_world_init_stage,
+     * repeats every 64 rows, and its copy of the start floor 64k rows
+     * higher (stage 2 row 86 for 22, stage 3 row 261 for 5) put the player
+     * outside the ring's window, on terrain read from another row: phantom
+     * walls and floors (pinned at the right edge at the stops 616/752 of
+     * stage 2 and 336 of stage 3). */
+    neo_surface_t top;g->x=0;neo_collision_ring_bypass(true);
     g->y=neo_surface_at(0,(int32_t)neo_collision_rows()*8*MSX_UNIT,0,(int32_t)neo_collision_rows()*8*MSX_UNIT,&top)?56*MSX_UNIT-top.height:msx_ground_offset(0);
+    neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
 }
 void msx_game_stage_end(msx_game_t *g) {

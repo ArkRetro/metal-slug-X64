@@ -697,6 +697,11 @@
    "rom": "0x2D0AA8",
    "reader": "01B162 the player's hurtbox descriptors 2D0AA8/2D0AC0 (+50; the aim of the Mission 2 boss shots 02715A/0271EC)",
    "hex": "0501fff800040010001c80000501fff800000013000e80000501fff6000e0011001880000501000a0008000e00138000050100050008000c"
+  },
+  {
+   "rom": "0x0E4E2C",
+   "reader": "08606A weapon 0D ball: cull rectangles E4E2C (ball) / E4E3C (blast) (019504), contact row E4E44 and blast rows E4E54 / E4E64 / E4E74 (0049E8)",
+   "hex": "ffd0ffe000500040ffe0ffe000400040ffe0ffe000400040fff20000001c001000090001001efffffff0fff80020003000010001000affffffe8fff00030004000010001000affffffd8ffe80050006000010001000affff"
   }
  ]
 }

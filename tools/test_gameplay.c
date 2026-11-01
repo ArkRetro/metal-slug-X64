@@ -246,7 +246,7 @@ static unsigned stand_2336(int at) {
  * (064128 -> blast 06371E) and kill. */
 static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
-    unsigned blasts=0,trails=0,grants=0,rockets=0;bool seen[NEO_WORLD_GACTORS]={false};
+    unsigned blasts=0,trails=0,grants=0,rockets=0,rolls=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
         if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
             uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound)) grants++;
@@ -262,23 +262,27 @@ static void chaser_run_id(uint8_t id) {
         msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
         for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
-            bool blast=a->active && (r==0x63740u || r==0x63756u);
+            bool blast=a->active && (r==0x63740u || r==0x63756u || r==0x86450u || r==0x86466u);
+            if (a->active && (r==0x86260u || r==0x861e2u)) rolls++;
             if (a->active && r==0x6381cu) rockets++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
-    printf("%s run: grants=%u shells=%u rockets=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        id==3?"R":"C",grants,g.c_shots,rockets,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
-    assert(g.c_shots>=40 && grants>=1 && blasts>0 && trails>0 && g.kills>0);
+    printf("%s run: grants=%u shells=%u rockets=%u rolls=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        id==3?"R":id==0x0d?"0D":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    assert(g.c_shots>=40 && grants>=1 && blasts>0 && (trails>0 || id==0x0d) && g.kills>0);
+    if (id==0x0d) assert(rolls>0);
     assert(!g.world.unsupported && !missing_draws && !g.weapon_stops);
     if (id==3) assert(rockets>=40);
     assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
 }
 /* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
  * flash; MiSTer report: no rockets drawn). */
-static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);}
+/* Weapon 0D (the ball 08606A, neo_pweapon.c: rolls, bursts and blasts)
+ * fired with the same programs and flash. */
+static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id(0x0d);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
  * (0C3B46/0C419E) instead of firing, and the cuts kill. */

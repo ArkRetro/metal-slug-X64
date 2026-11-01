@@ -615,7 +615,7 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     }
     /* The boss's hurtboxes (registered apart, see boss_shot) take the
      * player's bullets (neo_bullet.c) like neo_world_shot_row's. */
-    if (w->boss_active && (neo_bullet_routine(ga_l(a,0)) || neo_chaser_attacker(ga_l(a,0))) && !t->genv.want_targets && boss_shot(w,&c,row) && !best) best=1;
+    if (w->boss_active && (neo_bullet_routine(ga_l(a,0)) || neo_chaser_attacker(ga_l(a,0)) || neo_pweapon_attacker(ga_l(a,0))) && !t->genv.want_targets && boss_shot(w,&c,row) && !best) best=1;
     uint16_t qx;uint8_t qy;
     if (!attack_bins(&c,row,&qx,&qy)) return best;
     for (unsigned b=0;b<w->last_box_count;b++) {
@@ -1262,8 +1262,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         const neo_world_shot_request_t *q=&w->shot_requests[i];
         if (!a) {
             w->shot_dropped++;
-            if (q->routine==0x63f32u && q->player<2u) {                  /* 0C4526: 0C0DFC */
-                marco_ammo_t m=marco_weapons_ammo(&w->weapons,q->player);marco_ammo_release(&m,0x0c);marco_weapons_set_ammo(&w->weapons,q->player,&m);
+            /* 0C4526: 0C0DFC with the current weapon (the projectiles of
+             * table 0C42AA, not the flash 0C58D2). */
+            if (q->actor && q->routine!=0xc58d2u && q->player<2u) {
+                marco_ammo_t m=marco_weapons_ammo(&w->weapons,q->player);marco_ammo_release(&m,m.kind);marco_weapons_set_ammo(&w->weapons,q->player,&m);
             }
             continue;
         }

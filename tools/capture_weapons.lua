@@ -57,6 +57,11 @@ local family_from=tonumber(os.getenv('MSX_WEAPONS_FAMILY_FROM') or '0')
 local family_to=tonumber(os.getenv('MSX_WEAPONS_FAMILY_TO') or '0')
 local assist_camera=tonumber(os.getenv('MSX_WEAPONS_ASSIST_CAMERA') or '0')
 local assisting=assist_camera>0
+-- MSX_WEAPONS_ASSIST_ID=<hex id> (default 3): the weapon the assist writes.
+-- With it set, the first assist frame also writes the cap 10C71C from ROM
+-- table 0C08A8 and the form request +94 from 0C0918 (as 0C0928 does).
+local assist_id=tonumber(os.getenv('MSX_WEAPONS_ASSIST_ID') or '3',16)
+local assist_first=os.getenv('MSX_WEAPONS_ASSIST_ID')~=nil
 -- MSX_WEAPONS_KEEP_TIMER=1: do not hold the mission timer 1013DE (HUD timer
 -- digits, docs/ARMAS_VEHICULOS.md §11); everything else as without it.
 local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
@@ -338,7 +343,12 @@ emu.register_frame_done(function()
  local camera=cpu:read_u16(0x102036)
  if assisting and frame>=2100 then
   if camera<assist_camera then
-   cpu:write_u8(0x10c71e,3);cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
+   if assist_first then
+    assist_first=false
+    cpu:write_u8(0x10c71c,cpu:read_u8(0x0c08a8+assist_id));cpu:write_u8(P1+0x94,cpu:read_u8(0x0c0918+assist_id))
+    print('ASSIST ID '..string.format('%x',assist_id)..' '..frame)
+   end
+   cpu:write_u8(0x10c71e,assist_id);cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
   else
    cpu:write_u16(0x10c724,0);cpu:write_u8(0x10c720,10);assisting=false
    print('ASSIST END '..frame..' camera '..camera)

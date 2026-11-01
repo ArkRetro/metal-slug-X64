@@ -698,8 +698,16 @@ static void end_ram_start(msx_game_t *g) {
     }
     m->players=g->awaiting_continue?0u:1u;m->region=1;
 }
+/* Weapons fired with the C's programs (tables 0C3C10/0C3C50/0C3C90 give
+ * 0C02D8/0C0318/0C0358 to the ids 3, 8, 0C, 0D, 0E) whose projectile of
+ * table 0C42AA is native: the R 06381C, the C 063F32 (neo_chaser.c) and
+ * the 0D ball 08606A (neo_pweapon.c). All of them have the flash 0C58D2
+ * of table 0C432A. */
+static uint32_t c_group_constructor(uint8_t id) {
+    return id==3?0x6381cu:id==0x0c?0x63f32u:id==0x0d?0x8606au:0u;
+}
 bool msx_game_c_programs(const msx_game_t *g) {
-    uint8_t id=marco_weapons_id(&g->world.weapons,0);return id==0x0c || id==3;
+    return c_group_constructor(marco_weapons_id(&g->world.weapons,0))!=0;
 }
 static void end_sound(msx_game_t *g,uint16_t word) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else g->world.sound_dropped++;
@@ -1100,7 +1108,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->knife_t) g->pistol_wait=g->pistol_wait>g->knife_t?g->pistol_wait:g->knife_t;
     bool hgun=false,chaser=false;
     if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=kind==0x0c || kind==3;
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=c_group_constructor(kind)!=0;
     }
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
@@ -1157,7 +1165,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* The R (id 3) shares the C's fire programs (tables 0C3C10/
              * 0C3C50/0C3C90: 0C02D8/0C0318/0C0358 for both) and flash;
              * its projectile is the rocket 06381C (neo_chaser.c). */
-            uint8_t id=ammo.kind==3?3:0x0c;
+            uint8_t id=ammo.kind;
             bool allowed=marco_ammo_reserve(&ammo,id,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
             bool vertical=g->aim_up || g->crouching || g->aim_down;
@@ -1171,7 +1179,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
                 neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                if (neo_world_player_actor(&g->world,id==3?0x6381cu:0x63f32u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                if (neo_world_player_actor(&g->world,c_group_constructor(id),g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
                     g->world.weapon_player.combo95++;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }

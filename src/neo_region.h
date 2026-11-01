@@ -78,7 +78,10 @@ ga_result_t neo_rocket_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_rocket_routine(uint32_t routine);
 ga_result_t neo_chaser_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_chaser_routine(uint32_t routine);
-bool neo_chaser_attacker(uint32_t routine);   /* the C's rows of the player's side (boss hurtboxes) */
+bool neo_chaser_attacker(uint32_t routine);
+ga_result_t neo_pweapon_tick(neo_gactor_t *a,neo_genv_t *e);   /* neo_pweapon.c: the other player weapons */
+bool neo_pweapon_routine(uint32_t routine);
+bool neo_pweapon_attacker(uint32_t routine);   /* the C's rows of the player's side (boss hurtboxes) */
 ga_result_t neo_secret_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_secret_routine(uint32_t routine);   /* the vehicle 087E36 itself (not its children) */
 #endif

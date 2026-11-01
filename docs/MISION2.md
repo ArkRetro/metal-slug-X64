@@ -371,3 +371,54 @@ caminata, `018F40`); etapa 2 con el guion hasta `2D7878` y la cámara hasta
 subida (tres muertes por caída, fin de partida, vuelve a la Misión 1). La
 etapa 3 (subida de la torre, escritor `0B7C38`) solo se ha recorrido con el
 guion de la etapa 2 desactivado (diagnóstico, cámara 2408, y 536).
+
+## Fase 2d: torre dibujada, caídas y recorrido completo (rama `work-m2eng4`)
+
+**Gráficos de la torre** (`tools/pack_mission.py`, `scene_renderer.c`
+`scene_render_set_tower`): el descriptor `0B740A` lleva en `+0` el mapa de
+sprites (u16 tile, u16 atributo por bloque de 16 px, columnas de 0x88
+bloques; tile | (atributo >> 4 & 0xF) << 16, paleta = atributo >> 8, giro
+= bits 0..1, autoanimación de 8 fotogramas = bit 3), y `0C714E` copia sus
+bloques del mismo rectángulo que la colisión. Comprobado contra `run4`:
+las celdas estáticas de la capa 3 son ese mapa (bloque b en y = 16·b −
+1936) y las 82 piezas grabadas de la subida son plantillas exactas: la
+pieza k (10C6B2 = 3k, bloque de ventana 0x66 + 3k) tiene su fila superior
+en y = −1408 − 48k, columnas 0x10..0x27 (la primera, tipo 0xB, es la de
+`2C1374`). El paquete quita las 4880 celdas grabadas de la subida (capa 3,
+y < −1360, x 256..639) y añade las 13 plantillas (936 celdas) en la capa 3
+en x ≥ 0x4000 (nunca en pantalla). `tower_step` guarda el tipo de cada
+pieza (`neo_world_t.tower.types`, 128 piezas) y el renderizador dibuja la
+pieza k desde la plantilla de su tipo (también en el modo de profundidad;
+la clave de los bloques grabados del fondo incluye el número de piezas):
+colisión y dibujo salen del mismo tipo, con cualquier secuencia aleatoria.
+Línea de registro `MSX tower piece k type t`.
+
+**Escrituras de 10C354**: aparte de `026190`/`0261A4` (la torre) solo las
+hacen `026230` (0 → −1), `026244` (borrar) y `02624C` (leer), llamadas por
+el cuerpo del jefe `026254` (`027936`); el jefe nativo (`neo_m2boss.c`) las
+traduce sobre `neo_world_t.tower.mode`.
+
+**Cartucho de referencia** (nunca el de publicación):
+- Caídas: con el jugador en el suelo y los pies proyectados ≥ 0x120 se
+  guarda la posición; si cae bajo la pantalla (`0C3712`) vuelve a ella en
+  lugar de morir (`pit_rescues`; la línea de cámara da `pit deaths` y
+  `rescues`).
+- Paradas de cámara del guion retenidas 2400 pasos con la cámara en ellas
+  se sueltan (`lock_timeouts`): en la etapa 2 los soldados `067E98`/`068020`
+  de `06835C` quedan en el borde derecho, bajo el jugador, y el mando no
+  los mata.
+- Registros del guion de constructores no portados contados en su grupo:
+  se saltan en lugar de parar el guion (`neo_script_env_t.skip_unported`,
+  `MSX reference: script record ... skipped`): la etapa 3 paraba en
+  `2D8846` (`03670E`, al principio) y no llegaba al jefe (`2D9CA2`).
+
+**Prueba** (`tools/test_mission2_ares.py`): el mando sigue el registro
+(cámara quieta 5 s: fuego en el suelo sin saltar, disparo hacia abajo,
+saltos frecuentes); exige el fin de las etapas 1 y 2, la carga de la etapa
+3, piezas de torre y el fin de misión; informa de las piezas, caídas,
+registros saltados y los números de rendimiento (PERF, RDP, audio) como la
+de la Misión 1.
+
+**Presupuesto de RAM**: con el jefe `026254` fusionado (+36 KB de código)
+el arranque fallaba otra vez (3303 KB < 3328 KB): margen del montón
+192 → 160 KB.

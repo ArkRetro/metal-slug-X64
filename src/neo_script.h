@@ -30,6 +30,7 @@ typedef struct {
     bool spawned74;
     bool finished;         /* op 3 executed (+5F bit 7) */
     bool halted;uint32_t halt_address;
+    unsigned skipped;      /* records of unported constructors skipped (neo_script_env_t.skip_unported) */
     /* RAM 10C326..10C32E: per-group live counts. Recounted by the caller at
      * the start of every original tick (ROM 019E40, called from the mission
      * actor 0186A0 before the script runs); incremented here on spawn. */
@@ -71,6 +72,10 @@ typedef struct {
      * halts the script there (explicit stop): its group would never empty
      * and the waits on it would hold the script forever. */
     bool (*native)(uint32_t constructor);
+    /* Reference cartridge only: such a record is skipped (not created, not
+     * counted) instead of halting, so the script reaches the records after
+     * it (Mission 2 stage 3: 03670E at 2D8846 before the boss 026254). */
+    bool skip_unported;
 } neo_script_env_t;
 void neo_script_init(neo_script_t *script,const uint8_t *code,uint16_t size,uint32_t base);
 /* Script actor update (ROM 019F1A). */

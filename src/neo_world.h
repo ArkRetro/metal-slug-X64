@@ -136,6 +136,7 @@ typedef struct {
      * script's stop/release/autoscroll go to it. Off in the closed-loop
      * world tests, which take the scroll from the captures. */
     neo_camera_t camera;bool camera_native;
+    bool script_skip_unported;   /* reference cartridge: neo_script_env_t.skip_unported */
     /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
      * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */
     /* types[k]: piece type of the k-th piece (10C6B2 = 3k), drawn by the

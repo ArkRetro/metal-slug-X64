@@ -10,7 +10,7 @@ would (ground fire, the downward shot, frequent jumps). Checks: stage 1
 ends by its native exit, stage 2 with its script (06835C native, vertical
 modes 4/5) ends and loads stage 3, whose tower (writer 0B7C38: collision
 and drawing from the same piece types) is climbed up to the boss arena,
-where the boss 026254 is an explicit stop. Screenshots at each milestone;
+to the boss 026254 (native) and the mission end. Screenshots at each milestone;
 the stage ends, tower pieces and the perf numbers are reported and the
 last line is RESULT: PASS/FAIL."""
 from pathlib import Path
@@ -104,15 +104,19 @@ try:
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
     m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)
-    # The tower climb (writer 0B7C38) up to the boss arena: the boss 026254
-    # is not ported here, so the script stops explicitly at its record.
-    end=time.monotonic()+2*args.stage_seconds;shots=0;boss=None
-    while time.monotonic()<end and not boss:
+    # The tower climb (writer 0B7C38) up to the boss arena, the boss 026254
+    # (native, script record 2D9CA2) and the mission end.
+    end=time.monotonic()+3*args.stage_seconds;shots=0;done=None
+    def stage3():return log()[log().find('MSX mission 2 stage 3 start'):]
+    while time.monotonic()<end and not done:
         time.sleep(2)
-        if time.monotonic()>end-2*args.stage_seconds+(shots+1)*args.stage_seconds/4:snap('stage3-%d'%shots);shots+=1
-        boss=re.search(r'MSX (script stopped at \w+ .*|boss stopped node routine=\w+.*)',log()[log().find('MSX mission 2 stage 3 start'):])
-    assert boss,'stage 3: no boss stop within %d s'%(2*args.stage_seconds)
-    time.sleep(1);snap('stage3-boss');walked.append('boss stop: '+boss.group(1))
+        if time.monotonic()>end-3*args.stage_seconds+(shots+1)*args.stage_seconds/3:snap('stage3-%d'%shots);shots+=1
+        if 'boss spawned' not in ' '.join(map(str,walked)) and re.search(r'MSX boss spawned',stage3()):snap('stage3-boss');walked.append('boss spawned')
+        done=re.search(r'MSX (mission complete signal \(018F92\)|mission end 018846 done)',stage3())
+        stopped=re.search(r'MSX boss stopped node routine=(\w+) label=(\w+)',stage3())
+        assert not stopped,stopped.group(0)
+    assert done,'stage 3: no mission complete within %d s'%(3*args.stage_seconds)
+    time.sleep(1);snap('mission-complete');walked.append('mission complete')
 finally:
     stop.set()
     for name in ('Right','Left','Up','a','b','Return'):
@@ -134,4 +138,5 @@ if perf:print('MSX PERF windows=%d cpu mean max=%d us worst frame=%d us'%(len(pe
 if rdp:print('RDP samples=%d draws max=%d CPU max=%d us misses max=%d'%(len(rdp),max(r[0] for r in rdp),max(r[1] for r in rdp),max(r[2] for r in rdp)))
 if audio:print('audio underruns max=%d'%max(audio))
 complete=[s for s in ('2','3') if any(e[0]==s for e in ends)]
-print('RESULT: %s Mission 2 walked: %s'%('PASS' if complete==['2','3'] and 3 in walked and pieces else 'FAIL',', '.join(map(str,walked)) or 'none'))
+print('script records of unported constructors skipped (reference):',max([int(n) for n in re.findall(r'unported constructor skipped \(count=(\d+)\)',text)] or [0]))
+print('RESULT: %s Mission 2 walked: %s'%('PASS' if complete==['2','3'] and 'mission complete' in walked and pieces else 'FAIL',', '.join(map(str,walked)) or 'none'))

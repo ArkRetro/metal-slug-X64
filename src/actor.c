@@ -330,6 +330,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         observed_wreck_contact=true;debugf("MSX player on wreck\n");
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
+    {static unsigned skipped;
+     if (game.world.script.skipped!=skipped) {skipped=game.world.script.skipped;if (skipped) debugf("MSX reference: script record of an unported constructor skipped (count=%u)\n",skipped);}}
     {static unsigned tower_logged;
      if (game.world.tower.drawn<tower_logged) tower_logged=0;
      for (;tower_logged<game.world.tower.drawn;tower_logged++)   /* stage 3 tower: collision and drawing share types[] */

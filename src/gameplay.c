@@ -128,6 +128,7 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     memcpy(kept.gifts,flags.gifts,sizeof(kept.gifts));memcpy(kept.special,flags.special,sizeof(kept.special));
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
     neo_world_init_stage(&g->world,0,st);
+    g->world.script_skip_unported=MSX_REFERENCE_INVULNERABLE!=0;   /* reference: skip unported script records */
     g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);

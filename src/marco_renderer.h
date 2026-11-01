@@ -14,6 +14,9 @@ unsigned marco_renderer_max_upload(void);
 uint32_t marco_renderer_source_tag(unsigned pose);
 bool marco_renderer_find(uint32_t source_tag,unsigned *pose);
 unsigned marco_renderer_burnt_palette(void);
+/* The mummy's palette profiles (build_marco_poses.py --name-palette MUMMY /
+ * MUMMY2): slot 63, or slot 64 with `second`; 0 when not in the catalog. */
+unsigned marco_renderer_mummy_palette(bool second);
 bool marco_renderer_draw(unsigned pose,int anchor_x,int anchor_y,bool mirror);
 bool marco_renderer_draw_palette(unsigned pose,int anchor_x,int anchor_y,bool mirror,unsigned palette);
 /* Draw a native helper emission in Neo Geo 9-bit coordinates. viewport_x/y

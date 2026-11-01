@@ -35,6 +35,7 @@ static bool crouch_role(int r) {
         r==MARCO_CAMPAIGN_B_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE ||
         r==MARCO_CAMPAIGN_B1_CROUCH_IN || r==MARCO_CAMPAIGN_B1_CROUCH || r==MARCO_CAMPAIGN_B1_CROUCH_FIRE ||
         r==MARCO_CAMPAIGN_B1_CROUCH_GRENADE || r==MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE || r==MARCO_CAMPAIGN_B1C_CROUCH_FIRE ||
+        r==MARCO_CAMPAIGN_B1S_CROUCH_FIRE || r==MARCO_CAMPAIGN_B1F_CROUCH_FIRE ||
         r==MARCO_CAMPAIGN_B_CROUCH_KNIFE || r==MARCO_CAMPAIGN_B1_CROUCH_KNIFE;
 }
 static bool weapon_default(int r) {
@@ -103,17 +104,53 @@ static void step_part(marco_visual_t *v,marco_part_t part) {
         if (part==MARCO_BODY) {v->body_role=-1;v->body_count=0;} else {v->weapon_role=-1;v->weapon_count=0;}
     }
 }
+/* Form 3, the mummy (rows +0x30 of the tables; marco-mz2, run_marco_catalog.py
+ * --give-mummy): the transformation's body 0BF258 24EDE0 stays (the mummy
+ * controller 0C18B4 selects no body program; it has no crouch); the weapon
+ * part: idle 0BF858 25F520 (also the jump tables 0BFC58/0BFC98), walk
+ * 0BF8D8 25F562, fire 0BFD18 25F5CA / up 0BFD58 25F89E / down in the air
+ * 0BFD98 25F932, grenade 0BF998 25F626, up raises 0BF9D8 25F74C, holds
+ * 0BFA18 25F8F0 and released lowers 0BFA98 25F7AC. The gun raised/lowered
+ * in the air (0BFB58 25F794 / 0BFB98 25F7A0) is in the catalog but not
+ * selected (its condition, 0C3A5E, is not translated). */
+static bool mummy_default(int r) {
+    return r==MARCO_CAMPAIGN_W3_IDLE || r==MARCO_CAMPAIGN_W3_WALK || r==MARCO_CAMPAIGN_W3_AIM_UP ||
+        r==MARCO_CAMPAIGN_W3_AIM_HOLD || r==MARCO_CAMPAIGN_W3_AIM_DOWN;
+}
+static void mummy_step(marco_visual_t *v,const marco_visual_input_t *in) {
+    if (v->body_role!=MARCO_CAMPAIGN_B3_TRANSFORM) start(v,MARCO_BODY,MARCO_CAMPAIGN_B3_TRANSFORM);
+    int r=v->weapon_role;bool done=v->weapon_done;
+    if (in->thrown) start(v,MARCO_WEAPON,MARCO_CAMPAIGN_W3_GRENADE);
+    else if (in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W3_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W3_FIRE_DOWN:MARCO_CAMPAIGN_W3_FIRE);
+    else {
+        int rest;
+        if (!in->grounded) rest=MARCO_CAMPAIGN_W3_IDLE;
+        else if (in->aim_up) {
+            if (r==MARCO_CAMPAIGN_W3_AIM_UP && !done) rest=r;
+            else if (r==MARCO_CAMPAIGN_W3_AIM_UP || r==MARCO_CAMPAIGN_W3_AIM_HOLD || r==MARCO_CAMPAIGN_W3_FIRE_UP) rest=MARCO_CAMPAIGN_W3_AIM_HOLD;
+            else rest=MARCO_CAMPAIGN_W3_AIM_UP;
+        } else if ((r==MARCO_CAMPAIGN_W3_AIM_DOWN && !done) || r==MARCO_CAMPAIGN_W3_AIM_UP || r==MARCO_CAMPAIGN_W3_AIM_HOLD) rest=MARCO_CAMPAIGN_W3_AIM_DOWN;
+        else rest=in->moving?MARCO_CAMPAIGN_W3_WALK:MARCO_CAMPAIGN_W3_IDLE;
+        if (r<0 || (mummy_default(r) && r!=rest) || (done && !mummy_default(r) && r!=rest)) start(v,MARCO_WEAPON,rest);
+    }
+    step_part(v,MARCO_BODY);step_part(v,MARCO_WEAPON);
+    v->grounded=in->grounded;v->crouch=false;v->moving=in->moving;
+}
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     v->base_x=in->x;v->base_y=in->y;
     v->view.render.x=in->x;v->view.render.y=in->y;
     v->view.cached_x=in->x;v->view.cached_y=in->y;
     v->view.render.attributes=(uint16_t)(0x6340u|(in->facing<0?1u:0u));
+    /* The player's palette slots +19..+1C (marco-mz2 actor dumps: 63 64 65
+     * 00): a pose that selects one (0043F6) draws with its high byte. */
+    v->view.render.palettes[0]=0x63;v->view.render.palettes[1]=0x64;v->view.render.palettes[2]=0x65;v->view.render.palettes[3]=0;
     /* Crouched, the body carries the gun (no weapon thread); with the H the
      * crouching bodies are the form-1 rows (0BEED8 256BE6, 0BEF18 256C06)
      * and a burst is the body's 0BFF98 256D52 (its 0C4372 callbacks). */
     bool crouch=in->grounded && in->crouch;
     if (v->form!=in->form) {v->body_role=v->weapon_role=-1;v->body_count=v->weapon_count=0;v->weapon_done=false;}
     v->form=in->form;
+    if (in->form==3) {mummy_step(v,in);return;}
     bool hgun_start=in->form==1 && in->hgun_start && in->hgun_program>=0 && in->hgun_program<7;
     /* Body. */
     if (!in->grounded && in->hanging) {
@@ -142,7 +179,7 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         else if (in->form==1) {
             if (in->thrown) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_GRENADE);
             else if (hgun_start) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_FIRE);
-            else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
+            else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,in->cgroup==2?MARCO_CAMPAIGN_B1S_CROUCH_FIRE:in->cgroup==3?MARCO_CAMPAIGN_B1F_CROUCH_FIRE:MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
             else if (!crouch_role(v->body_role)) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_IN);
             else if (v->body_done) start(v,MARCO_BODY,v->body_role==MARCO_CAMPAIGN_B1_CROUCH_GRENADE?MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE:MARCO_CAMPAIGN_B1_CROUCH);
         } else {
@@ -167,7 +204,17 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         else if (in->knife) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_KNIFE:MARCO_CAMPAIGN_W_KNIFE);
         else if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
         else if (in->form==1 && in->cgun && in->cgun_fire)
-            start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W1C_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W1C_FIRE_DOWN:MARCO_CAMPAIGN_W1C_FIRE);
+        {
+            /* The weapon's tables 0C3C10/0C3C50/0C3C90 (+0x10): the C's
+             * C02D8.., ids 02/07 0BFFD8.., ids 04/09 0C00D8... */
+            static const int fire[4][3]={
+                {MARCO_CAMPAIGN_W1C_FIRE,MARCO_CAMPAIGN_W1C_FIRE_UP,MARCO_CAMPAIGN_W1C_FIRE_DOWN},
+                {MARCO_CAMPAIGN_W1C_FIRE,MARCO_CAMPAIGN_W1C_FIRE_UP,MARCO_CAMPAIGN_W1C_FIRE_DOWN},
+                {MARCO_CAMPAIGN_W1S_FIRE,MARCO_CAMPAIGN_W1S_FIRE_UP,MARCO_CAMPAIGN_W1S_FIRE_DOWN},
+                {MARCO_CAMPAIGN_W1F_FIRE,MARCO_CAMPAIGN_W1F_FIRE_UP,MARCO_CAMPAIGN_W1F_FIRE_DOWN}};
+            const int *f=fire[in->cgroup&3u];
+            start(v,MARCO_WEAPON,in->aim_up?f[1]:in->aim_down && !in->grounded?f[2]:f[0]);
+        }
         else if (in->form!=1 && in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W_FIRE_DOWN:MARCO_CAMPAIGN_W_FIRE);
         else if (v->weapon_role<0 || (weapon_default(v->weapon_role) && v->weapon_role!=rest) ||
             (v->weapon_done && !weapon_default(v->weapon_role) && v->weapon_role!=rest) ||

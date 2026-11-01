@@ -21,7 +21,7 @@ ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
 N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
-WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_drone.c src/neo_hostage.c src/neo_m2boss.c
+WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_drone.c src/neo_hostage.c src/neo_m2boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # RAM budget (docs/RENDIMIENTO.md): actor/boss/cutscene modules are cold
 # code, compiled -Os (~78 KB less program image). The per-frame core (world,
@@ -362,7 +362,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags stage3 drone hostage m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -492,6 +492,20 @@ FAMILY_ARGS_pbullet := $(BULLET_ARGS)
 # list head, 00411C), 286 trail puffs 063D9E pulled towards the node before
 # them (+04), 40 muzzle flashes 0C58D2, and the weapon block (0C0DFC).
 FAMILY_ARGS_chaser := --script-actor 101414 --script-routines 6371e --attacks --previous
+# Weapon 0D (neo_pweapon.c; capture d1: capture_weapons.lua PLAN=air with
+# ASSIST_ID=d, FAMILY 2150..3140 ROOTS=8606a,c58d2,8651c; extract_family_fixture.py
+# --range 86000-86700 --range c5800-c5a00 --ram 10c718-10c72c --attacks):
+# 53 balls (level, up, down; rolls and bursts), their glows 08651C and the
+# blasts 08642E made after the list head by the explosion programs.
+FAMILY_ARGS_dball := --script-actor 101414 --script-routines 8642e --attacks --terrain 10c72e
+# Weapons 02 / 07 (neo_pweapon.c; captures s2 / s7 as d1 with ASSIST_ID=2 / 7,
+# ROOTS=644c4,646b0; --range 64400-64700): 23 blasts each.
+FAMILY_ARGS_sgun2 := --attacks --terrain 10c72e
+FAMILY_ARGS_sgun7 := $(FAMILY_ARGS_sgun2)
+# Weapons 04 / 09 (captures f4 / f9, ROOTS=a71f8,a716e; --range a7100-a7800):
+# the flames, their first flame and puffs (pulled by the node before them).
+FAMILY_ARGS_flame4 := --attacks --previous --terrain 10c72e
+FAMILY_ARGS_flame9 := $(FAMILY_ARGS_flame4)
 FAMILY_ARGS_rlaunch := --script-actor 101414 --script-routines 6371e --attacks --previous --spawn-window 2
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.
@@ -798,7 +812,7 @@ check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture
 	$(BUILD_DIR)/host/blood
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_drone.c src/neo_hostage.c src/neo_m2boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c -o $(BUILD_DIR)/host/rest
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_drone.c src/neo_hostage.c src/neo_m2boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
 	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DEND_HEADER='"end_letters_fixture.h"' -DEND_NAME=end_letters tools/test_neo_end.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_letters
 	$(BUILD_DIR)/host/end_letters

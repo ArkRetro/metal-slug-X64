@@ -17,6 +17,13 @@ unsigned marco_renderer_burnt_palette(void) {
     return 0;
 #endif
 }
+unsigned marco_renderer_mummy_palette(bool second) {
+#if defined(MARCO_PALETTE_MUMMY) && defined(MARCO_PALETTE_MUMMY2)
+    return second?MARCO_PALETTE_MUMMY2:MARCO_PALETTE_MUMMY;
+#else
+    (void)second;return 0;
+#endif
+}
 unsigned marco_renderer_palette_count(void) {return MARCO_PALETTES;}
 unsigned marco_renderer_max_upload(void) {return max_upload;}
 uint32_t marco_renderer_source_tag(unsigned pose) {return pose<MARCO_POSES?marco_poses[pose].source_tag:0;}

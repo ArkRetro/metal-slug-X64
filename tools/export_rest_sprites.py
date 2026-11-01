@@ -104,6 +104,13 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     0x267f92,0x268622,0x22ce6c,0x26863a,0xc586c,0xc5806,
     # The R weapon's rocket 06381C and its explosion 063A92.
     0x2683f2,0x2683b6,0x26858a,0x2685ca,
+    # Weapon 0D (neo_pweapon.c): ball 08606A, glow 08651C, explosions
+    # 2830DA / 28311A (blasts 22CDD4 / 22CE6C / 22CF2C).
+    0x282c18,0x282bf0,0x282c22,0x282c2c,0x282dcc,0x282ee6,0x2830da,0x28311a,0x22cdd4,0x22cf2c,
+    # Weapons 02/07: the blast 0644C4/0646B0.
+    0x2686dc,0x2687e4,0x2688ec,0x2689f4,0x268760,0x268868,0x268970,0x268a78,
+    # Weapons 04/09: the flame and its puffs.
+    0x2a655a,0x2a696e,0x2a6574,0x2a676c,0x2a6666,0x2a6988,0x2a6868,0x2a6a8e,
     # The SV-001 092A32 (neo_tank.c; extract_soldier_programs.py TANK_ROOTS).
     0x291ce4,0x291dc2,0x2942d4,0x294c6c,0x29667e,0x2952ec,0x296cfe,0x29589a,0x2972ac,0x295f1a,
     0x29792c,0x298090,0x2984ca,0x298904,0x298d3e,0x29a202,0x2934ec,0x2947a0,0x29282a,0x299180,
@@ -155,6 +162,12 @@ RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46
     0x3b8,0x3b9,
     # The C weapon's blast 06371E.
     0x363,
+    # Weapon 0D: ball 822, blast 828, glow 204.
+    0x822,0x828,0x204,
+    # Weapons 02/07: blast 39B (+93 = 2: 86C).
+    0x39b,0x86c,
+    # Weapons 04/09: flame 384 / 876.
+    0x384,0x876,
     # The SV-001: body 0x3D3/0x39D/0x203 (exit list 093882: 0x396..0x39A, 0x39C..0x39E),
     # shell 0x258, dust and pieces 0x204, rider entry 0x4/0x5.
     0x3d3,0x39d,0x203,0x258,0x204,0x4,0x5,0x396,0x397,0x398,0x399,0x39a,0x39c,0x39e,
@@ -296,8 +309,11 @@ def validate(capture,nodes,descs,crom,stats,per):
                 g=descs.get(d['desc'])
                 if g is None:stats['missing_descriptor']+=1;continue
                 if not g['width']:continue
-                mirror=d['attr']&1;w,h=g['width'],g['height'];pens=g['pens']
-                left=d['x']+(-(g['x']+w)-1 if mirror else g['x']);top=((512-d['y'])&511)+g['y']
+                # Vertical flip (attribute bit 1, the 0D ball's blasts facing
+                # down): y offset mirrored, one pixel the other way than x
+                # (measured on capture d1: 71222 equal vs 48551 with 0).
+                mirror=d['attr']&1;flip=d['attr']&2;w,h=g['width'],g['height'];pens=g['pens']
+                left=d['x']+(-(g['x']+w)-1 if mirror else g['x']);top=((512-d['y'])&511)+(1-(g['y']+h) if flip else g['y'])
                 shown=set()
                 for cx in g['columns']:
                     sx0=d['x']-cx-16-1 if mirror else d['x']+cx
@@ -306,7 +322,7 @@ def validate(capture,nodes,descs,crom,stats,per):
                     sy=top+yy
                     if not 0<=sy<256:continue
                     for xx in range(w):
-                        pen=pens[yy*w+(w-1-xx if mirror else xx)];sx=left+xx
+                        pen=pens[(h-1-yy if flip else yy)*w+(w-1-xx if mirror else xx)];sx=left+xx
                         if pen and 0<=sx<320 and sx in shown:
                             # Two sprites of the family on one pixel: the
                             # hardware order decides; not compared.

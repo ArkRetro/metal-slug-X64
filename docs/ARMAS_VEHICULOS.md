@@ -1248,3 +1248,52 @@ los primeros rebeldes): 10 cortes, todos de la tabla `0x0BF958` en reposo
 `tools/test_gameplay.c` (`knife_run`): cortes que golpean, sin paradas.
 Sonidos `10FB`, `10F9`, `1069` renderizados y medidos contra todos
 (`data/sound_pairs.json`, 2000 pares). Poses del corte: MARCO_CAMPAIGN.md, «Cuchillo».
+
+### Paso 14: armas 0D, 02/07 y 04/09 (`src/neo_pweapon.c`, rama `work-m2mummy`)
+
+La Misión 2 da las armas `06` (tipo `04`, sección 1), `07` (`50`), `09`
+(`52`), `0D` (`4A`), `02` (`01`), `04` (`03`) y las conocidas H y R
+(guion `data/mission2_script.json`: objetos `08C37C/08C168` y prisioneros
+`099DF0/099E06`). Todas pasan por `0C4372` → tabla `0C42AA` como la C; las
+tablas de programas de disparo `0C3C10/0C3C50/0C3C90` (+0x10, forma 1) y la
+agachada `0C246A` (`C0098..`) dan tres grupos: `C02D8..` (ids 3, 8, C, D,
+E: la C), `0BFFD8..` (02, 07, 0F) y `0C00D8..` (04, 09); `0C01D8..` es el
+rayo (06, 0B).
+
+Capturas MAME 0.264 (`/home/user/captures-weap2`, privadas):
+`capture_weapons.lua` con la nueva `MSX_WEAPONS_ASSIST_ID=<id>` (la ayuda
+escribe ese id; con ella, en el primer fotograma también el tope `0C08A8` y
+`+94` de `0C0918`, como `0C0928`), plan `air`, `ASSIST_CAMERA=9999`,
+`FAMILY 2150..3140`: `d1` (0D), `s2`/`s7` (02/07), `f4`/`f9` (04/09).
+
+| Arma | Proyectil | Familia (`make check`) |
+| --- | --- | --- |
+| 0D | bola `08606A` (nivel/arriba/abajo, rueda `0861C6` con la pose de pendiente `08661C`, estalla `086216`), resplandor `08651C`, explosiones `086304` con las tres llamadas `0866A6` (filas `E4E54/64/74`) | `dball`: 222 nodos, 3952 actualizaciones, 522900 bytes |
+| 02 / 07 | estallido `0644C4`/`0646B0` (fila `E1412..` una vez, pantalla blanca `009BB0` una actualización, devuelve el id de `E1442`) | `sgun2`/`sgun7`: 23 nodos, 437 actualizaciones cada una |
+| 04 / 09 | llama `0A71F8`/`0A716E` (suelo y aire, 12 actualizaciones), primera llama `0A74E4` y bocanadas `0A751C` atraídas por el nodo anterior (`+04`), velocidad de programa `0A7756`; espera a sus hijos (`00408C`) | `flame4`/`flame9`: 258 nodos, 3711/3459 actualizaciones |
+
+En el juego (`gameplay.c`, `fire_kind`): constructor, destello `0C58D2`
+solo en el grupo de la C, y la espera hasta `+76` de cada programa (02/07:
+7 actualizaciones de pie, arriba y agachado, 3 abajo; 04/09: 3).
+`0C4526` (sin nodo) devuelve el proyectil del arma actual.
+`tools/test_gameplay.c` (`chaser`, `pweapon`): 0D, 02, 07, 04 y 09
+concedidas y disparadas hasta la cámara 3520 (0D: 1920), matan, sin dibujos
+ausentes. Gráficos: `export_rest_sprites.py` (raíces y paletas `822`,
+`828`, `204`, `39B`, `384`, `876`; valida ahora el giro vertical, bit 1
+del atributo): `d1` 71222 píxeles iguales / 1044 distintos, `s2+s7` 86231 /
+0, `f4+f9` 63967 / 6237 (sin explicar uno por uno). Al `filesystem/rest-native.json`
+de la Misión 1 solo se añaden los descriptores de esas raíces.
+Sonidos: `10F5`, `10F6`, `10F3`, `116A`, `1168`, `112F`, `112C`, `115A` en
+`data/sound_map.json` (render aislado `OK`).
+
+**Paradas explícitas que quedan**: soldados muertos por una fila de tipo 7
+(llama) o `0A/0B` (estallido): sus entradas de `0406EA/040750/0407F4`
+(`040B46..040BE6`) no están traducidas: el soldado se retira
+(`neo_soldier_death_stops`, comprobado en `pweapon`); el agua bajo la bola
+0D (`03C5CC` → salpicadura `03C962`); la misión 9 de `0644EE` (`012022`);
+las variantes `+93 = 2` (tabla `0C42EA`: `0646C8/0646E0`, `0A7226/0A719C`,
+`063F10`, `0C44C2/0C44E0`); las armas `01` (`0C5508`), `06/0B` (rayo
+`0C46D6` → `01E19E/01E166`, actor de varios segmentos con la RAM
+`10C340/10C348`; sus poses `0C01D8..` ya están capturadas en `marco-w6`),
+`08` (`0641EC`), `0E` (`0DE4DA`) y `0F` (`0DEA20`): siguen disparando la
+bala de pistola del port (`weapon_stops`).

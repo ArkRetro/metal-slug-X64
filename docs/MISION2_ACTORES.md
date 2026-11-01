@@ -417,3 +417,13 @@ prisionero ya suelto que pasea (`neo_prisoner.c`, ya nativo). Sprites: los
 programas `29FE52..` y las paletas 0x381/0x382/0x3FA ya estaban en
 `filesystem/mission2/rest-native.json` (56 marcos, 0 ausentes). Sin
 comprobación de píxeles propia (son los marcos de la Misión 1).
+## Armas que da la Misión 2 (rama `work-m2mummy`)
+
+Del guion (`data/mission2_script.json`, palabra de tipo de objeto de
+`08C37C/08C168` y de los prisioneros `099DF0/099E06`): tipo `04` → arma
+`06` (sección 1, prisionero `2D737C`), `50` → `07`, `52` → `09` (dos), `4A`
+→ `0D`, `01` → `02`, `03` → `04` (tres) y `00` (H) / `02` (R). Nativas:
+`02`, `04`, `07`, `09`, `0D` (proyectiles en `src/neo_pweapon.c`, poses de
+disparo y sonidos: ARMAS_VEHICULOS.md, «Paso 14»), H y R. El rayo `06`
+sigue siendo una parada explícita (dispara la bala de pistola del port).
+La momia (forma 3) tiene ya sus poses (MARCO_CAMPAIGN.md, «Forma 3»).

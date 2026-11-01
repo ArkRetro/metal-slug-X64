@@ -334,7 +334,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
-                game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1?1u:0u,-1,false};
+                game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1 || game.world.weapon_player.form93==3?game.world.weapon_player.form93:0u,-1,false};
             if (game.hgun.state==MARCO_HGUN_BURST || game.hgun.state==MARCO_HGUN_SWEEP) {
                 mi.hgun_program=game.hgun.program;mi.hgun_start=game.hgun.t==1;
             }
@@ -343,7 +343,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.thrown=game.grenades!=marco_grenades;marco_grenades=game.grenades;
             /* The R (id 3) runs the C's fire programs too (MAME, --give-rgun:
              * fire state 0C3D9A, weapon program 253A56). */
-            mi.cgun=msx_game_c_programs(&game);
+            mi.cgun=msx_game_c_programs(&game);mi.cgroup=msx_game_fire_group(&game);
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             mi.hanging=game.descent==MSX_DESCENT_HANG;
@@ -571,7 +571,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
             /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
             unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
-            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,palette);
+            /* The mummy (form 3): slots 63/64 hold its two palettes
+             * (marco-mz2 palette dumps; the switch during the
+             * transformation is not modelled: from the form request on). */
+            bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3;
+            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }

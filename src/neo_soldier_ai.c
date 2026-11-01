@@ -10,6 +10,7 @@
 #include "soldier_ai_tables.h"
 /* Diagnostics: source line of the last explicit stop (no behaviour). */
 unsigned neo_soldier_unsupported_line;uint32_t neo_soldier_unsupported_detail;
+unsigned neo_soldier_death_stops;uint32_t neo_soldier_death_stop_kinds;
 #define UNSUPPORTED_AT() (neo_soldier_unsupported_line=__LINE__,c->unsupported=true)
 
 /* Native translation of the rebel soldier routines. Every routine below is
@@ -555,7 +556,9 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
         else if (kind==0||kind==2||kind==5||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x2404feu; /* 040DC0 */
     }
     if (program) {if (!anim_start(c,program)) return false;s->routine=0x40df0;return true;}
-    neo_soldier_unsupported_detail=(uint32_t)kind|(grounded?0x100u:0u)|(crouch?0x200u:0u);UNSUPPORTED_AT();return false;
+    neo_soldier_unsupported_detail=(uint32_t)kind|(grounded?0x100u:0u)|(crouch?0x200u:0u);
+    neo_soldier_death_stops++;if (kind<32u) neo_soldier_death_stop_kinds|=1u<<kind;
+    UNSUPPORTED_AT();return false;
 }
 static bool death_motion(ctx_t *c) { /* 040852 */
     neo_soldier_t *s=c->s;

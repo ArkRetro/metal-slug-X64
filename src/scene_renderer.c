@@ -357,6 +357,28 @@ static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (!bg_blocks[p][t]) return false;
     return true;
 }
+/* Record only after the inputs held this many frames (two game updates). */
+enum { BG_RECORD_HELD=3, BG_RECORD_MIN_FREE=192*1024 };
+/* A block needs heap for its RSP and RDP buffers, whose allocations
+ * libdragon does not check: never record with the heap nearly full. */
+static bool bg_heap_ok(void) { heap_stats_t h;sys_get_heap_stats(&h);return h.total-h.used>=BG_RECORD_MIN_FREE; }
+/* After a block runs, the RSP keeps writing the following RDP commands
+ * (the rest of the frame, its SYNC_FULL, the next frames until a block or
+ * a full buffer switches it) into the trailing space of that block's last
+ * static RDP buffer (libdragon __rdpq_block_end). Freeing a retired block
+ * once its frame is done (bg_collect) therefore let the RSP write commands
+ * into freed heap: corrupted malloc lists (mallinfo read a framebuffer
+ * address as a chunk link), then a hang without exception in Mission 2
+ * stage 2, where the blocks are retired every other frame. Every replay
+ * is followed by this permanent block (the scissor the caller wanted
+ * anyway), so the RSP's write pointer is always in a buffer never freed.
+ * scene_renderer_stage_changed frees after rspq_wait, which switches the
+ * RSP back to its dynamic buffer. */
+static rspq_block_t *bg_tail;
+static void bg_tail_run(void) {
+    if (!bg_tail) {rspq_block_begin();rdpq_set_scissor(8,8,312,232);bg_tail=rspq_block_end();}
+    rspq_block_run(bg_tail);
+}
 static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
@@ -364,16 +386,23 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
     key.valid=true;key.collapsed=collapsed;key.patched=patched;
     for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
     if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
+    /* Frames the inputs have held, counted once per frame (back pass): the
+     * game updates every other frame, so a scrolling camera repeats each
+     * key once. Recording on that repeat retired and re-recorded both
+     * passes every two frames (Mission 2 stage 2: ~200 KB of blocks in
+     * flight); with the heap exhausted, the unchecked malloc_uncached of
+     * rspq_block_begin/__rdpq_block_next_buffer wrote through address 0
+     * (uncached KSEG1) and the RSP/RDP hung (docs/MISION2.md, fase 2c). */
+    static bg_key_t previous;static unsigned held;
+    if (!begin) {held=memcmp(&key,&previous,sizeof(key))?0:held+1;previous=key;}
     if (!cacheable || memcmp(&key,&bg_key,sizeof(key))) {
         if (bg_key.valid) bg_retire();
-        // Record only once the inputs held for a second frame (scrolling never records).
-        static bg_key_t previous;
-        bool repeat=cacheable && !bg_retired[bg_group].pending && !memcmp(&key,&previous,sizeof(key));
-        previous=key;
+        bool repeat=cacheable && !bg_retired[bg_group].pending && held>=BG_RECORD_HELD && !memcmp(&key,&previous,sizeof(key)) && bg_heap_ok();
         if (!repeat) {draw_layers(begin,end,offsets,rises,visible,video_tick);return;}
         bg_key=key;
     }
     unsigned pass=begin?1u:0u,phase=video_tick&7u;
+    if (!bg_blocks[pass][phase] && !bg_heap_ok()) {draw_layers(begin,end,offsets,rises,visible,video_tick);return;}
     if (!bg_blocks[pass][phase]) {
         reset_texture_state();
         unsigned before=draws;
@@ -385,7 +414,7 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
         bg_block_draws[pass][phase]=draws-before;draws=before;
     }
     rspq_block_run(bg_blocks[pass][phase]);bg_replays++;bg_last_used=frame;draws+=bg_block_draws[pass][phase];
-    reset_texture_state();rdpq_set_scissor(8,8,312,232);
+    reset_texture_state();bg_tail_run();
 }
 static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);

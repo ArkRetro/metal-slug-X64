@@ -121,7 +121,12 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
     msx_game_init(g);
     g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;
-    g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=flags;
+    /* Only the rescue counts outlive the stage: the exit's handlers, walk
+     * target, screen box (10C00B) and end requests belong to the old one. */
+    neo_ga_flags_t kept;memset(&kept,0,sizeof(kept));
+    memcpy(kept.rescued,flags.rescued,sizeof(kept.rescued));memcpy(kept.tally,flags.tally,sizeof(kept.tally));
+    memcpy(kept.gifts,flags.gifts,sizeof(kept.gifts));memcpy(kept.special,flags.special,sizeof(kept.special));
+    g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
     neo_world_init_stage(&g->world,0,st);
     g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
@@ -316,6 +321,9 @@ static void mount_place(msx_game_t *g) {
  * Clamping x alone left the feet at the height of the unclamped x, inside
  * the slope, and the next walk step found no floor (ROM 12, MiSTer). */
 static void clamp_feet(msx_game_t *g,neo_air_t *body,bool grounded) {
+    /* 10C00B = FF (stage exit 0B6ED2): the sweeps 0143AC/014574 skip the
+     * screen box, so the exit's walk 0CA3EC leaves the screen. */
+    if (g->world_enabled && g->world.ga_flags.scroll_lock) {g->x=body->x<MSX_END_X?body->x:MSX_END_X;return;}
     g->x=clamp(body->x,(g->camera+28)*MSX_UNIT,right_limit(g));
     neo_surface_t s;
     if (g->x!=body->x && grounded && neo_surface_at(g->x,body->y,4*NEO_UNIT,4*NEO_UNIT,&s)) body->y=s.height;
@@ -717,6 +725,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * the native gate 03889C (0B6E06 -> 0B6ED2 -> 018F40). */
     if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
         !(g->flow.mission==1u && g->flow.stage==1u && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+    /* The level script stopped at a record of an unported actor (explicit
+     * stop): its camera lock would hold the stage there for good. The
+     * reference build releases it (0C7C12) to walk the engine further;
+     * the actors that the script would create stay missing. */
+    if (g->in_stage && g->world_enabled && g->world.script.halted && g->world.camera_lock>=0) {
+        g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
+        g->stage_lock_releases++;
+    }
 #endif
     /* Stage exit 0B6ED2 (neo_goarrow.c): 018F40 ends the stage. */
     if (g->world_enabled && g->world.ga_flags.stage_done) {g->world.ga_flags.stage_done=0;msx_game_stage_end(g);return;}

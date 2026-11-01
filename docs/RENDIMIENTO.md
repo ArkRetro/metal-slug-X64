@@ -434,7 +434,7 @@ actor a la vez (66 bloques nuevos).
    RAM ya cuenta) → caché de escena (`scene_assets_begin`) → logo → juego
    (`actor_init`). La caché se dimensiona la **última** con lo que queda del
    montón menos las reservas medidas de lo que se asigna después (tabla de
-   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 256 KB; con menos de
+   abajo, constantes `SCENE_RESERVE_*_KB`) y un margen de 192 KB; con menos de
    208 ranuras falla con un `assertf` que da los KB. `scene_assets_check_budget`
    comprueba (assert) tras cargar el juego que queda la reserva de juego más
    medio margen, y la línea `MSX RDP` informa del mínimo de montón libre visto
@@ -509,7 +509,7 @@ bloques) y las cinemáticas de arranque.
 | Margen | 256 | 256 | |
 
 Las reservas (`SCENE_RESERVE_LOGO_KB` 224, `SCENE_RESERVE_GAME_KB` 640,
-`SCENE_RESERVE_RUNTIME_KB` 320, `SCENE_HEAP_MARGIN_KB` 256) suman 1216 KB
+`SCENE_RESERVE_RUNTIME_KB` 320, `SCENE_HEAP_MARGIN_KB` 192) suman 1152 KB
 fuera de la caché. Lo que se cargue antes de dimensionarla (más efectos, otro
 audio) la reduce automáticamente; por debajo de 208 ranuras el arranque falla
 con un mensaje que da los KB. Con 4 MiB nada de esto se aplica: 32 ranuras,
@@ -633,3 +633,42 @@ cuesta ranuras: el número lo fija el total libre menos las reservas
 solo bloque o la caché antes que ellos no daría ninguna ranura más; para
 subir de 211–212 ranuras (mínimo 208) hay que bajar el margen (128 KB
 darían 8 ranuras) o reducir lo residente.
+
+## Bloques del fondo y montón (rama `work-m2eng3`)
+
+**Margen 192 KB.** Tras la fusión de los actores de la Misión 2 el ELF creció
+≈ 93 KB y el arranque fallaba (`RAM budget: 3295 KB left for the scene cache
+(minimum 3328 KB)`): `SCENE_HEAP_MARGIN_KB` baja de 256 a 192 (la salida que
+ya proponía la sección anterior). Medido en ares: 3344 KB de caché (209
+ranuras), 560 KB libres tras cargar el juego, mínimo en la etapa 2 de la
+Misión 2 302 KB.
+
+**Bloques del fondo liberados con el RSP escribiendo en ellos.** Tras
+ejecutar un bloque, libdragon deja que el RSP escriba los comandos RDP
+siguientes (el resto del fotograma, su `SYNC_FULL`, los fotogramas
+siguientes hasta otro bloque) en el espacio libre del último búfer estático
+de ese bloque (`__rdpq_block_end`); solo `rspq_wait` lo devuelve al búfer
+dinámico. `bg_collect` liberaba los bloques retirados en cuanto su
+fotograma terminaba, sin esa espera: el RSP escribía comandos en montón
+libre. Con un detector (`mallinfo` en cada grabación) el montón aparece
+corrupto ya en la etapa 1 de la Misión 2 (enlace de bloque = 0x0025A680, la
+dirección física de un framebuffer). En la etapa 2 los bloques se retiraban
+cada dos fotogramas (el juego actualiza uno de cada dos y la clave del fondo
+se repite una vez: se grababan las dos pasadas en cada repetición, 2 de cada
+3 ejecuciones eran grabaciones) y el cuelgue llegaba siempre: 20 `MSX rspq
+kick` y el diagnóstico de `display_get` (sin excepción; el inspector ni
+siquiera podía reservar sus búferes). Es probablemente también el origen
+de los cuelgues raros de recorridos largos de la Misión 1 que el *kick*
+intentaba despertar.
+
+Corrección (`scene_renderer.c`): tras cada `rspq_block_run` del fondo se
+ejecuta un bloque permanente `bg_tail` (el `rdpq_set_scissor(8,8,312,232)`
+que ya seguía), así el puntero de escritura del RSP queda siempre en un
+búfer que nunca se libera; `scene_renderer_stage_changed` ya libera tras
+`rspq_wait`. Además se graba solo cuando la clave se ha mantenido 3
+fotogramas (`BG_RECORD_HELD`, dos actualizaciones: el desplazamiento ya no
+graba) y nunca con menos de 192 KB libres (`BG_RECORD_MIN_FREE`: libdragon
+no comprueba los `malloc_uncached` de `rspq_block_begin` ni de
+`__rdpq_block_next_buffer`; un NULL escribiría en la dirección física 0).
+Comprobado en ares con el comportamiento antiguo de grabación más el
+detector: sin corrupción ni cuelgue hasta el final de la etapa 2.

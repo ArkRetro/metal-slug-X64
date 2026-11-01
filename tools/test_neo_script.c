@@ -100,7 +100,7 @@ int main(void) {
             neo_script_env_t e={t->camera,t->scroll_x,t->scroll_y,
                 {{t->players[0].alive,t->players[0].fx,t->players[0].fy,t->players[0].px,t->players[0].py},
                  {t->players[1].alive,t->players[1].fx,t->players[1].fy,t->players[1].px,t->players[1].py}},
-                rng,spawn,runner,lock,release,NULL,&c};
+                rng,spawn,runner,lock,release,NULL,&c,NULL};
             neo_script_tick(&s,&e);
             for (unsigned i=0;i<c.order_count;) {
                 int r=c.order[i];

@@ -1190,7 +1190,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     memcpy(w->last_boss_boxes,w->boss_boxes,sizeof(w->boss_boxes));w->last_boss_box_count=w->boss_box_count;
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},
-        script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t};
+        script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native};
     t.se=&se;t.sub_owner=-1;
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;

@@ -167,6 +167,8 @@ ROOTS+=TANK_ROOTS
 # Mission 2: the GO arrow 05287C (idle 24953C, arrows of table 05285C by
 # RAM 10C44A) and the stage-1 exit marker 0B6F6A (2A8B70).
 ROOTS+=[0x24953c,0x249546,0x2495fc,0x2496b2,0x249768,0x24981e,0x2498d4,0x24998a,0x2a8b70]
+# Mission 2: the rebels 0613CA/0613D8/0613E6 (neo_rebel2.c) and their flash 0620AA.
+ROOTS+=[0x265c8a,0x265f36,0x265fe2,0x266666,0x26608e,0x2660c8,0x26611e,0x266190,0x265e62,0x266162,0x266302,0x2663f8,0x26684a,0x2668c8,0x266572,0x2665ec,0x266686,0x266780,0x266a38]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

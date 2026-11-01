@@ -33,6 +33,9 @@ def main():
     p.add_argument('--shared',help='ROUTINES (comma hex): nodes whose fields another family node writes between their own updates (the SV-001 writes its tread node 014A4E in 014C7E..0153D0): no external bytes are injected, the native writes are compared at the node\'s next update')
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     p.add_argument('--attacks',action='store_true',help='the 0049E8 answers of every update (extract_family_fixture.py --attacks): D0 and the A0/A1 targets as 01B162 read them (rectangle from data/region_rom.json); a target the update did not read gets 7FFF,7FFF and no box')
+    p.add_argument('--ring',help='LAYER (hex): the kernel reads the cell ring of this layer object (+88) from the RAM bytes the original read (extract with --ram covering it)')
+    p.add_argument('--group-map',help='ADDRESS (hex): the cell group map RAM 10C00E points to (Mission 2: 0B7000; default the Mission 1 map)')
+    p.add_argument('--grid',type=Path,help='stage collision grid (collision.json of a mission stage, private): the static grid of the test instead of Mission 1 (neo_collision_set_grid)')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
@@ -116,6 +119,12 @@ def main():
         L.append('#define FAMILY_NODE_FIELDS {%s}'%','.join('0x%x'%int(x,16) for x in a.node_fields.split(',')))
         L.append('#define FAMILY_ADDRESSES {%s}'%','.join('0x%s'%u['node'] for u,_ in order))
     if a.terrain:L.append('#define FAMILY_TERRAIN 0x%xu'%int(a.terrain,16))
+    if a.ring:L.append('#define FAMILY_RING 0x%xu'%int(a.ring,16))
+    if a.group_map:L.append('#define FAMILY_GROUP_MAP 0x%xu'%int(a.group_map,16))
+    if a.grid:
+        g=json.load(open(a.grid));cells=bytes.fromhex(g['cells_hex']);assert len(cells)==g['columns']*g['rows']
+        L.append('#define FAMILY_GRID_COLUMNS %du'%g['columns']);L.append('#define FAMILY_GRID_ROWS %du'%g['rows'])
+        L.append('static const uint8_t family_grid[]={%s};'%','.join(str(c) for c in cells))
     if a.marker_seq is not None:L.append('#define FAMILY_MARKER_SEQ %d'%a.marker_seq)
     if a.stamp:
         st=[tuple(int(x,16) for x in t.split(',')) for t in a.stamp]
@@ -192,6 +201,17 @@ def main():
         assert len(writes)<=12,u['frame']
         writes+=[(0,0)]*(12-len(writes))
         def opt(v):return -1 if v is None else v
+        def solid_busy(u):
+            # Solid-body table 106756 (16 entries of 8 bytes) as 004E76 read
+            # it: bit i set for a used entry; -1 when the update read none.
+            m=0;seen=False
+            for i in range(16):
+                for w in (0,2):
+                    v=u['reads'].get(hex(0x106756+8*i+w))
+                    if v is not None:
+                        seen=True
+                        if v[1]:m|=1<<i
+            return m if seen else -1
         # Group live counts (RAM 10C326.., bytes) and camera progress 10E99E.
         groups=[]
         for gi in range(9):
@@ -222,10 +242,10 @@ def main():
                 marks.append((s32(wv[0]<<16|wv[1]),s32(wv[2]<<16|wv[3]),wv[4]>>8,wv[4]&255))
             break
         nm=len(marks);marks+=[(0,0,0,0)]*(8-len(marks))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d}},'%(
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},{%s},{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d},%d,%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)]))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),','.join('{0x%x,%d}'%w for w in writes),','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)],opt(rd(u,0x101502)),solid_busy(u)))
     L.append('};')
     if a.attacks:
         rom={}

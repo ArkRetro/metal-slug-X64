@@ -25,6 +25,10 @@ typedef struct {
 typedef struct {
     neo_kobj_t terrain,root;
     const uint8_t *group_map; /* 8-byte table referenced by RAM 10C00E */
+    /* The terrain layer's 64x64 cell ring (layer object +88, read by
+     * 0C79FE) when known (the family tests of the vertical stages feed the
+     * bytes the original read); NULL: the recovered grid. */
+    const uint8_t *ring;
     /* RAM 10C018 is global scratch written by 013C1A/013DB2 and read by later
      * sweeps; it is kept here instead of being reset per call. */
     uint16_t w4018;

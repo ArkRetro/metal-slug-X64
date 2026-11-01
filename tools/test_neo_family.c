@@ -39,6 +39,8 @@ typedef struct {
     int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
     int ram_in_first,ram_in_count,ram_out_first,ram_out_count;  /* FAMILY_RAM inputs/outputs */
     int32_t view[4];   /* RAM 10E9D2..10E9D8 as read (0C8BEC), -1: not read */
+    int32_t p1xl;      /* RAM 101502: player 1 +3E (low word of the X long), -1: not read */
+    int32_t solid_busy; /* RAM 106756: used entries of the solid-body table as read (004E76), -1: not read */
 } family_update_t;
 #include FAMILY_HEADER
 #define STR2(a) #a
@@ -289,7 +291,17 @@ static void dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t dy
 }
 static void dyn_release(void *ctx,neo_gactor_t *a) {(void)ctx;if (ga_b(a,0x6a)<NEO_KDYN_COUNT) {dyn_used[ga_b(a,0x6a)]=false;dyn_countdown[ga_b(a,0x6a)]=2;}ga_sb(a,0x6a,0xff);}
 /* 004E76: solid-body slot +6B (the only solid body of the trace: slot 0). */
-static void solid(void *ctx,neo_gactor_t *a,uint32_t desc) {(void)ctx;ga_sb(a,0x6b,desc?0:0xff);}
+/* 004E76: +6B = the first free entry of the table 106756 (as the original
+ * read it this update; entry 0 when the update read none), FF to remove. */
+static int32_t solid_busy=-1;
+static void solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
+    (void)ctx;
+    if (!desc) {ga_sb(a,0x6b,0xff);return;}
+    if (ga_b(a,0x6b)!=0xffu) return;
+    unsigned i=0;
+    if (solid_busy>=0) while (i<16 && (solid_busy>>i&1)) i++;
+    if (i<16) ga_sb(a,0x6b,(uint8_t)i);
+}
 static unsigned stamps;
 static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {(void)ctx;(void)a;(void)t;stamps++;}
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
@@ -326,6 +338,13 @@ int main(void) {
 #ifdef FAMILY_MARKER_SEQ
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
 #endif
+#ifdef FAMILY_GROUP_MAP
+    kernel.group_map=ga_rom(FAMILY_GROUP_MAP);assert(kernel.group_map);
+#endif
+#ifdef FAMILY_GRID_COLUMNS
+    /* A stage grid of another mission (collision.json, --grid). */
+    {static uint8_t dynamic[FAMILY_GRID_COLUMNS*FAMILY_GRID_ROWS];neo_collision_set_grid(family_grid,dynamic,NULL,FAMILY_GRID_COLUMNS,FAMILY_GRID_ROWS);}
+#endif
 #ifdef FAMILY_STAMPS
     /* Collision stamps of other actors made before the family's first
      * update (seen in the RAM dumps of the capture). */
@@ -339,7 +358,7 @@ int main(void) {
     unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
-    unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0;
+    unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
         neo_gactor_t *a=&actors[u->node];current_frame=u->frame;
@@ -360,6 +379,8 @@ int main(void) {
         if (u->root_mask&8) root.previous_y=u->root[3];
         root.tag=0x10e968u;if (u->corr>=0) root.correction=(uint8_t)u->corr;
         if (u->p1x>=0) p1x=u->p1x;
+        if (u->p1xl>=0) p1xl=u->p1xl;
+        solid_busy=u->solid_busy;
         if (u->p1y>=0) p1y=u->p1y;
         if (u->epoch>=0) epoch=(uint8_t)u->epoch;
         if (u->progress>=0) e.camera=(uint16_t)u->progress;
@@ -388,7 +409,7 @@ int main(void) {
         for (int m=0;m<u->marker_count;m++) marks[m]=(neo_marker_t){u->markers[m][0],u->markers[m][1],(uint8_t)u->markers[m][2],(uint8_t)u->markers[m][3]};
         e.markers=marks;e.marker_count=(unsigned)u->marker_count;
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
-        e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;
+        e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;e.player_low[0]=(uint16_t)p1xl;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
         if (kill_frame && !kill_at && u->frame>kill_frame) kill_at=u->frame;
         e.kill_all=kill_at && u->frame==kill_at;
@@ -424,6 +445,9 @@ int main(void) {
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);
+#ifdef FAMILY_RING
+        kernel.ring=&wram[(FAMILY_RING+0x88u)&0xffffu];
+#endif
         e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
 #endif
 #ifdef FAMILY_ATTACKS

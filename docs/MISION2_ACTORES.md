@@ -32,6 +32,7 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `3AED8` entrada / `3AEF0` salida (tipo 4) | `src/neo_wipe.c`, llamado por `neo_mission.c` | `test_neo_wipe`: 70 actualizaciones, +72 y **22800 escrituras del mapa fijo** iguales; `test_neo_mission`: 12 esperas de 35 actualizaciones, 0 paradas |
 | `05287C` flecha GO (todas las etapas) | `src/neo_goarrow.c` | familia `goarrow` (tr2, jugador quieto): 486 actualizaciones, 176 con la flecha |
 | `0B6F6A` marcador de salida de la etapa 1 | `src/neo_goarrow.c` | familia `exitmark` (tr1): 84 actualizaciones |
+| `0613CA/0613D8/0613E6` rebeldes (variante en +96), disparo `061E8C`, destello `0620AA` | `src/neo_rebel2.c` | familia `rebel2` (etapa 2, `a2`): 41 nodos, **4815 actualizaciones**, 41 borrados, 4 contactos |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -59,6 +60,48 @@ exportadas; el marco del marcador (`1CDEEE`, 64×141) y los de la flecha.
 vacío, los marcos GO usan la autoanimación del LSPC (atributo 8804, el
 exportador y el renderizador no la implementan: 36 entradas saltadas) y el
 marcador está fuera de la pantalla en los volcados.
+
+## Rebeldes `0613CA/0613D8/0613E6` (`neo_rebel2.c`)
+
+Traza (estado `sec02_19932`, unos 100 s):
+
+```sh
+export MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_STATES=/home/user/captures-fullgame/states4
+MSX_FULL_FAMILY_ROOTS=613ca,613d8,613e6 MSX_FULL_FAMILY_FROM=22600 MSX_FULL_VRAM_TRACE=1 \
+MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0 MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh /home/user/captures-m2en/a2
+python3 tools/extract_family_fixture.py /home/user/captures-m2en/a2/boss-trace.txt --output data/rebel2_fixture.json.gz \
+  --range 613ca-62113 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6
+```
+
+Traducción de `0613CA..062634`: constructores `062114/062190/06224E`
+(palabras del guion a +76/+90/+92/+9B/+9C, rango `2D4A60..` por `0260C8`,
++8A/+8C con ruido del RNG), reposo `06173C`, jugador más cercano en +6E
+(`01AF9A`/`01AEDA`, comparaciones largas de X: nuevo `player_low` de
+`neo_genv_t`, RAM 101502), andar hacia/desde el jugador (`0615A6`/`061670`),
+giro `061808`, disparo `061AE4` (llamada `062422`: tiro `061E8C`), saltos de
+la variante 2 por la tabla `2D4CCC` (`06243E`/`06247E`), destello previo
+`0620AA` (+9C), caída `061B70` (+9B), cola común `061BE8` (+84, recorte
+`E121E`, +9D, chispa `0682F0` tras el actor del guion, muerte por +5A:
+`061C6E`, `061D46`, `061E2E` con el objeto +90/+92 de `08CDB2` desde la
+llamada `0624C4`). Paradas explícitas: `061E16` (+5A = 0x0A, piezas
+`068134`, no aparece en la traza) y la comprobación anticopia de `06201C`
+(10F00A/10F00C, 2FFFE0) antes de `004188`.
+
+Banco de familias (para las etapas verticales): `--ring 10c72e` hace que el
+núcleo lea las celdas del anillo 64×64 de la capa (`0C79FE`, +88) con los
+bytes que leyó el original (`neo_kscene_t.ring`; NULL en el juego, sin
+cambio en la Misión 1), `--group-map b7000` (RAM 10C00E de la Misión 2:
+`0B7000`, entrada 6 = 0x0A), mapa dinámico `E1B6A` en `region_rom.json`,
+y la tabla de cuerpos sólidos `106756` leída por `004E76` (+6B = primera
+entrada libre). `--grid` (rejilla de etapa privada) queda disponible.
+
+Sprites: raíces `265C8A..266A38` y paletas 0x1F6, 0x1F7, 0x811, 0x84A y
+0xB0 en `filesystem/mission2/rest-native.json` (paletas de los volcados de
+`run4` 22650..26100). **Píxeles** (captura `av`, volcados cada 15
+fotogramas 22650..23490 con la traza): 55 volcados, 89228 iguales, 4373
+distintos concentrados en 7 volcados: tres tomados en el fotograma de la
+actualización y los de 23100..23130, con los destellos `0620AA` en pantalla
+(sin explicar del todo).
 
 ## Pendiente: salida de la etapa 1 `0B6ED2` (`0B6F24`)
 
@@ -103,11 +146,10 @@ las plataformas de la subida.
 
 ## Enemigos más frecuentes (no portados)
 
-Ninguno es variante de una familia nativa:
+`0613CA..` ya es nativo (arriba). Los demás no son variante de una familia nativa:
 
 | Constructor | Lectura |
 | --- | --- |
-| `0613CA/0613D8/0613E6` (×20/×39/×70) | una familia, variante en +96 bit 0/1/2 (`062114`/`062190`/`06224E`), paletas 0x1F6/0x1F7, destello 0x811, cuerpo sólido `E1262` (`004E76`) |
 | `0678B6/0678C0/0678CA/067902` (×6/–/×27/×4) | una familia, variante en +9C (0 u 8), suelo `0146E8`, `01436A`, objetivo `01AF9A` |
 | `0692B2..0692E4` (×9) | seis entradas, +9C = 0/4/8 |
 | `03670E` (×8) | +96 = 4, paletas 0x142/0x143, programa `23BA74` |

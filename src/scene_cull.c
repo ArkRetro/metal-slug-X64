@@ -19,7 +19,11 @@ bool scene_cell_index_build_into(scene_cell_index_t *index,const scene_map_cell_
         index->layer_runs[layer]=runs;
         for (unsigned i=0;i<count;i++) {
             if (cells[i].layer!=layer) continue;
-            if (at==0 || runs==index->layer_runs[layer] || cells[i].x<cells[index->order[at-1]].x)
+            const scene_map_cell_t *prev=at?&cells[index->order[at-1]]:NULL;
+            /* A run also breaks where a column's y stops increasing: inside
+             * a run every column (same x) is then sorted by y, which the
+             * renderer's vertical skip (scene_cell_column_*) relies on. */
+            if (at==0 || runs==index->layer_runs[layer] || cells[i].x<prev->x || (cells[i].x==prev->x && cells[i].y<=prev->y))
                 index->runs[runs++]=(scene_cell_run_t){(uint16_t)at,(uint16_t)at};
             index->order[at++]=(uint16_t)i;index->runs[runs-1].end=(uint16_t)at;
         }

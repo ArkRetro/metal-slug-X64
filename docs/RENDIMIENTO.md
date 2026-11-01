@@ -752,3 +752,48 @@ ahorraría ≈31 KB más (`neo_world` 9 KB, `neo_soldier_ai` 7 KB, `gameplay`
 `scene_meta.h` de la misión 1 a DFS no libera nada mientras se juega la
 misión 1 (se necesita entero); los efectos residentes (≈850 KB) son una
 decisión del audio (`docs/AUDIO_JUEGO.md`).
+
+## Misión 2, etapa 3: fondo de la torre y subbloques de audio (rama `work-m2pol`)
+
+Recorrido de referencia en ares (`mslugx-m2-reference.z64`, `--stage-seconds
+400`, ventanas de 300 fotogramas). Antes: cpu media de la peor ventana 53.384
+µs, de ella `bg` 39.981 µs; 888 subbloques de audio en todo el recorrido (741
+en la subida a la torre). La línea nueva `MSX BG` (µs/dibujos/subidas/celdas
+visitadas por capa en el fotograma de muestra) mostró que el coste era de la
+CPU emitiendo celdas, no del RDP:
+
+- **El modo de profundidad no recortaba en vertical** (`depth_cell` solo
+  descarta por x): con el mapa de 272 filas de la etapa 3 todas las celdas de
+  las columnas visibles se dibujaban fuera de pantalla. Ahora las dos rutas
+  (clásica y de profundidad) saltan sin visitarlas las celdas de una columna
+  que quedan por encima (búsqueda binaria hasta la primera que alcanza la
+  pantalla) o por debajo (salto al final de la columna). Requisito: dentro de
+  un tramo del índice (`scene_cull.c`) cada columna está ordenada por y; el
+  tramo se parte también donde la y deja de crecer (18 sitios en el paquete
+  de la Misión 2). `tools/test_scene_cull.c` compara el salto con el recorrido
+  completo en 300 conjuntos aleatorios.
+- **Torre**: las piezas visibles se dibujaban celda a celda en orden de
+  pieza y cada celda volvía a subir su página (≈145–210 subidas de TMEM por
+  fotograma). Las celdas de la torre nunca se solapan (rejilla de 16 px,
+  piezas a 48 px), así que se agrupan por página y paleta y se fusionan las
+  tiras de una columna: 11–15 subidas. Las piezas fuera de pantalla también
+  se descartan en el modo de profundidad.
+
+Audio: `msx_audio_service` se llamaba una vez por fotograma con dos búferes de
+40 ms; un fotograma de más de ~80 ms (dos actualizaciones más el fondo
+completo) los vaciaba. Ahora hay una segunda llamada entre la simulación y el
+dibujo (`msx_audio_idle`, actor.c) y otra entre carga y carga de bloques en
+`scene_stage_load` (`scene_assets_set_load_idle`): las cargas de etapa (0,14 /
+0,29 / 0,64 s) ya no cortan la música.
+
+| Misión 2 (ares, referencia) | antes | después |
+|---|---|---|
+| cpu media, peor ventana | 53.384 µs | 24.727 µs |
+| `bg` medio, peor ventana | 39.981 µs | ≈11.200 µs |
+| subidas de TMEM por fotograma (torre) | 207 | 15–75 |
+| subbloques de audio (todo el recorrido) | 888 | 9 |
+
+Las cargas de etapa siguen siendo un fotograma de 0,3–1,07 s con la pantalla
+en negro (el fundido ya terminó, como en el original detrás de `3AED8`/
+`3AEF0`); lo que se oía (la música cortada) queda resuelto con el audio entre
+cargas. Hacerlas incrementales queda pendiente.

@@ -105,6 +105,7 @@ typedef struct {
 bool scene_mission_load(unsigned mission);
 /* Reads one stage's tables into reserved cache slots and pins its map. */
 bool scene_stage_load(unsigned index);
+void scene_assets_set_load_idle(void (*fn)(void));
 /* Back to Mission 1's compiled tables. */
 void scene_mission_unload(void);
 /* The loaded stage, or NULL while Mission 1's compiled tables are active. */

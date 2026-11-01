@@ -659,9 +659,9 @@
    "hex": "ffc0ffe0008000600502fff40000001800168000feff04040100000000000c0c0c0c1d00001b1d00001b1d00001b00285ef200285efe00285f0a0028"
   },
   {
-   "rom": "0x0E1BFA",
-   "reader": "06870A debris lists E1BF2/E1C04 (01DA40), continued",
-   "hex": "000000500001000e1c1601010008ffe000400000005000000001c6ee"
+   "rom": "0x0E1BF2",
+   "reader": "06870A debris lists E1BF2/E1C04 (01DA40) whole (the reader takes the blob with most bytes left: E1B6A ends 8 bytes into E1BF2) and the routine table E1C16 of E1BF2 (+0D set: 01DAB4 reads E1C16 + random & 3C)",
+   "hex": "01ff000affe00040000000500001000e1c1601010008ffe000400000005000000001c6ee0001cf100001cf1c0001cf280001cf340001cf100001cf1c0001cf280001cf340001cf100001cf1c0001cf280001cf340001cf100001cf1c0001cf280001cf34"
   },
   {
    "rom": "0x035A54",

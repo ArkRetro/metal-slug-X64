@@ -95,6 +95,7 @@ unsigned msx_audio_service(void) {
     return count;
 }
 msx_audio_stats_t msx_audio_stats(void) {return stats;}
+void msx_audio_idle(void) {if (initialized) msx_audio_service();}
 void msx_audio_close(void) {
     if (!initialized) return;
     for (unsigned v=0;v<MSX_AUDIO_VOICES;v++) {

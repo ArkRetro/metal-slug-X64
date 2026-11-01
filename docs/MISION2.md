@@ -562,13 +562,18 @@ registro `MSX mission complete signal (018F92)`); `018F40` cierra después
 la etapa (en el anfitrión, 470 actualizaciones más tarde). El piloto no
 planifica con los manejadores del jugador cambiados (entrada ignorada).
 
-**1E003C**: aparece en la etapa 2 (`MSX world unsupported routine=1e003c`)
-justo al terminar cada desplazamiento automático (progreso 1008, 1568,
-2048): la rutina de un nodo es una dirección del espejo de la RAM de
-trabajo (0x1E003C = 0x10003C + 0xE0000), no de la ROM; el actor se borra con
-sus descendientes y el recorrido sigue. Su escritor no está localizado
-(candidatos: el actor que posee el desplazamiento, `+5B` de 0C7C12).
-Pendiente con el grifo de MAME.
+**1E003C** (resuelto en `work-m2pol`): no era la rutina de un nodo sino la
+dirección que `emit_one` (`neo_effects.c`, 01DA7C) pasaba a `ga_fail`. El
+emisor de escombros `01D764` del objeto `06870A` (padre `06875A`) recibe la
+lista `0E1BF2`; `ga_rom` devuelve el bloque que más bytes deja tras la
+dirección y el único que la cubría era el mapa `0E1B6A` (144 bytes), que
+termina 8 bytes dentro de la lista: los bytes 8..17 se leían de la memoria
+de otro bloque (`0E121E`), de ahí `+0E` = 001E003C (con `+0D` ≠ 0, tabla de
+rutinas). El bloque `0E1BFA` de `data/region_rom.json` empieza ahora en
+`0E1BF2` (listas enteras) e incluye la tabla `0E1C16` (rutinas de escombro
+`01CF10..01CF34`, ya nativas). Localizado con un registro temporal en
+`ga_fail` (dirección de retorno resuelta con `addr2line`), sin MAME: la
+lectura es del puerto, no de la ROM.
 
 **Recorrido en ares** (`mslugx-m2-reference.z64`, `--stage-seconds 400`):
 `RESULT: PASS` — etapa 1, etapa 2 (salida de referencia 1, parada soltada 1),
@@ -580,3 +585,18 @@ cpu media mediana 21633, peor media 53384, sim media mediana 5722 (la
 etapa 3 incluye el planificador de referencia, que no existe en la
 versión); peores fotogramas sueltos 0,3..1,07 s en las cargas de etapa.
 Subbloques de audio: 888 en todo el recorrido.
+
+## Fase 2g: pulido de la Misión 2 (rama `work-m2pol`)
+
+- Audio: 888 → 9 subbloques en el recorrido (Misión 1 sin cambio de
+  mecanismo). Segunda llamada al servicio de audio por fotograma y llamadas
+  entre las cargas de bloques de la etapa (`docs/RENDIMIENTO.md`).
+- Etapa 3: cpu media de la peor ventana 53.384 → 24.727 µs (recorte vertical
+  del fondo en los dos modos, torre agrupada por página). La simulación no
+  cambia (solo el dibujo).
+- `1E003C`: corregido (lectura fuera de un bloque de ROM, arriba).
+- Pendiente: paredes 0xF/0x1F de la etapa 3 contra MAME (sin grifo todavía;
+  el núcleo sí trata la forma 15 en `k12ad4`/`k12ee2`, la petición del
+  jugador lleva `b400a` = 0), familia del prisionero `099E1C` (≈3,5 KB de
+  código de 099E1C..09AD4C) y cargas de etapa incrementales (siguen siendo un
+  fotograma con la pantalla en negro; ya no cortan el audio).

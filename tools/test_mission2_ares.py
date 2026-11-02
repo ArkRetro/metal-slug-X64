@@ -105,7 +105,7 @@ try:
     # B26: the exit 0B6ED2 walks the player into the doorway (handlers
     # 0CA3EC): the marker 0B6F6A (+15 bit 2, window B) over him.
     wait_for(r'MSX player handlers=054B18',timeout=240)
-    for k in range(4):time.sleep(.4);snap('stage1-door-%d'%k)
+    for k in range(8):time.sleep(.5);snap('stage1-door-%d'%k)
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 2',timeout=240)
     m=wait_for(r'MSX stage load mission 2 stage 2: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 2 start',timeout=30);time.sleep(1.5);snap('stage2-start');walked.append(2)
@@ -117,7 +117,7 @@ try:
         # B26: the gate 03A6EA open, the player walked through its frame 03A82E.
         if 'door2' not in walked and 'MSX player handlers=054B18' in log()[log().find('MSX mission 2 stage 2 start'):]:
             walked.append('door2')
-            for k in range(4):time.sleep(.4);snap('stage2-door-%d'%k)
+            for k in range(8):time.sleep(.5);snap('stage2-door-%d'%k)
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
     m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)

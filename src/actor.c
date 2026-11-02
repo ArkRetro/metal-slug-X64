@@ -442,6 +442,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.item_pickups!=old_pickups) debugf("MSX item pickup stopped explicitly at %05lx (untranslated)\n",(unsigned long)game.world.item_pickup_routine);
     if (game.world.pickup.taken!=old_served) debugf("MSX item served=%u score=%02x%02x%02x%02x\n",game.world.pickup.taken,
         game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3]);
+    {
+        /* Items by kind (neo_item.c counters): a line when one changes. */
+        static uint16_t seen[3][NEO_ITEM_KINDS];
+        const neo_pickup_env_t *pk=&game.world.pickup;
+        for (unsigned k=0;k<NEO_ITEM_KINDS;k++)
+            if (pk->item_created[k]!=seen[0][k] || pk->item_external[k]!=seen[1][k] || pk->item_taken[k]!=seen[2][k]) {
+                seen[0][k]=pk->item_created[k];seen[1][k]=pk->item_external[k];seen[2][k]=pk->item_taken[k];
+                debugf("MSX item kind %02x created=%u external=%u taken=%u\n",k,seen[0][k],seen[1][k],seen[2][k]);
+            }
+    }
     if (marco_weapons_id(&game.world.weapons,0)!=old_weapon) debugf("MSX weapon id=%x rounds=%u\n",marco_weapons_id(&game.world.weapons,0),marco_weapons_rounds(&game.world.weapons,0));
     if (marco_weapons_bomb_count(&game.world.weapons,0)!=old_bombs) debugf("MSX bombs=%u\n",marco_weapons_bomb_count(&game.world.weapons,0));
     if (game.weapon_stops!=old_weapon_stops && !old_weapon_stops) debugf("MSX weapon shot stopped explicitly: constructor %05lx not ported (pistol bullet fired)\n",(unsigned long)game.weapon_stop_constructor);

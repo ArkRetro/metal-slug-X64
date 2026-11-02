@@ -565,3 +565,116 @@ píxeles iguales y 538 distintos en 4 volcados (uno tomado en el fotograma
 de la actualización; 20490, 20820 y 20865 con explosiones encima, sin
 explicar). Paradas explícitas: +96 = 1/3 (el nido `035D12` de la etapa 3,
 `035EEC`, `035C76/035D04`, `035E0A`, `0361EC`), sin traza todavía.
+
+## Premios de la Misión 2 (B27, rama `work-m2fix2`)
+
+Informe de MiSTer (ROM 22): faltan premios en la Misión 2. Inventario de
+cada objeto (`08C374` soltado / `08C37C` del guion; tipo `+6E`, registro
+`0E581A + 0x18·tipo`: `+10` recogida, `+14` movimiento) en una captura
+completa de MAME 0.264 de las tres etapas y el jefe (`capture_fullgame.lua`
+con el piloto de la captura, invulnerable; traza de familia de los objetos y
+de sus etiquetas):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_FAMILY_ROOTS=8c374,8c37c,32de2,32fb4,36a64 MSX_FULL_FAMILY_RANGE=8c374-8d900 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec01_19391 MSX_FULL_LOAD_FRAME=19391 MSX_FULL_FAMILY_FROM=19392 MSX_FULL_LAST=19932  sh tools/run_capture_fullgame.sh CAP/inv1
+MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_FROM=19933 MSX_FULL_LAST=26140  sh tools/run_capture_fullgame.sh CAP/inv2
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_FAMILY_FROM=26141 MSX_FULL_LAST=118000 sh tools/run_capture_fullgame.sh CAP/inv3   # 26 min, hasta la Misión 3
+```
+
+Objetos que el original creó (110; «cogidos» por el piloto, que no busca
+premios) y su estado en el port:
+
+| Tipo | Movimiento | Recogida | Etapa 1 (creados/cogidos) | Etapa 2 | Etapa 3 + jefe | Port antes | Port ahora |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `00` | `08B9B2` | arma 5 | 0/0 | 0/0 | 9/5 | nativo | nativo |
+| `01` | `08B9B2` | arma 2 | 0/0 | 0/0 | 2/2 | nativo | nativo |
+| `02` | `08B9B2` | arma 3 | 0/0 | 0/0 | 4/4 | nativo | nativo |
+| `03` | `08B9B2` | arma 4 | 0/0 | 0/0 | 2/2 | nativo | nativo |
+| `04` | `08B9B2` | arma 6 | 1/0 | 0/0 | 0/0 | nativo | nativo |
+| `06` | `08B9B2` | bombas | 0/0 | 0/0 | 2/1 | nativo | nativo |
+| `09` | `08B9B2` | 08B5FA | 0/0 | 1/1 | 0/0 | parada en la recogida | parada en la recogida `08B5FA` |
+| `11` | `08B9B2` | puntos/comida | 0/0 | 0/0 | 1/0 | nativo | nativo |
+| `18` | `08B9B2` | puntos/comida | 0/0 | 0/0 | 1/0 | nativo | nativo |
+| `1C` | `08B9B2` | puntos/comida | 0/0 | 0/0 | 1/0 | nativo | nativo |
+| `1E` | `08B9B2` | puntos/comida | 0/0 | 0/0 | 3/0 | nativo | nativo |
+| `22` | `08B9B2` | puntos/comida | 1/1 | 0/0 | 0/0 | nativo | nativo |
+| `24` | `08BA38` | puntos/comida | 2/2 | 0/0 | 0/0 | nativo | nativo |
+| `29` | `08B9B2` | puntos/comida | 0/0 | 3/2 | 8/6 | nativo | nativo |
+| `2A` | `08B9B2` | puntos/comida | 0/0 | 4/2 | 5/3 | nativo | nativo |
+| `2B` | `08B9B2` | puntos/comida | 2/0 | 3/2 | 1/1 | nativo | nativo |
+| `2C` | `08B9B2` | puntos/comida | 0/0 | 1/1 | 0/0 | nativo | nativo |
+| `2F` | `08B9B2` | puntos/comida | 0/0 | 1/1 | 4/2 | nativo | nativo |
+| `32` | `08B9B2` | medicina | 0/0 | 4/3 | 5/3 | nativo | nativo |
+| `43` | `08BAB2` | puntos/comida | 0/0 | 0/0 | 1/0 | nativo | nativo |
+| `48` | `08B9B2` | puntos/comida | 0/0 | 0/0 | 1/1 | nativo | nativo |
+| `4A` | `08B9B2` | arma D | 0/0 | 1/0 | 0/0 | nativo | nativo |
+| `50` | `08B9B2` | arma 7 | 0/0 | 1/0 | 0/0 | nativo | nativo |
+| `52` | `08B9B2` | arma 9 | 0/0 | 1/1 | 0/0 | nativo | nativo |
+| `54` | `08B9B2` | puntos/comida | 0/0 | 1/1 | 3/1 | nativo | nativo |
+| `56` | `08BD32` | puntos/comida | 0/0 | 0/0 | 30/14 | externo (no se crea) | nativo (familia `coin`) |
+
+Fuentes de premios del guion de la Misión 2 (`data/mission2_script.json`,
+palabra del tipo de cada constructor; los registros al azar cuentan todos)
+y los tipos que el port no traduce:
+
+| Fuente (constructor) | Tipos de objeto en sus registros (veces) | Sin traducir |
+| --- | --- | --- |
+| `021A26` | `11`×4 `12`×2 `29`×1 `2A`×1 `2B`×1 | — |
+| `032DE2` | `2A`×1 `2D`×1 | — |
+| `0613CA` | `2D`×1 `32`×1 `40`×1 `54`×7 | `40` (movimiento `08BAAA`) |
+| `0613D8` | `28`×2 `32`×2 `54`×9 | — |
+| `0613E6` | `1E`×1 `28`×3 `40`×6 `54`×20 | `40` (movimiento `08BAAA`) |
+| `0678CA` | `06`×1 `29`×2 `2A`×2 `2B`×1 `32`×1 | — |
+| `067902` | `2A`×1 `2B`×1 | — |
+| `0692B2` | `06`×1 `29`×3 `2A`×2 `2B`×2 | — |
+| `08C154` | `2B`×1 `2D`×1 `2F`×1 `31`×1 `48`×1 | — |
+| `08C168` | `00`×3 `01`×1 `03`×3 `18`×1 `1C`×1 `29`×2 `2A`×1 `2F`×2 `32`×3 | — |
+| `08C37C` | `00`×1 `02`×1 `1C`×1 `22`×1 `23`×1 `29`×2 `2A`×2 `2B`×2 `2F`×5 `32`×2 `48`×2 `50`×1 `52`×1 `54`×1 `56`×47 | — |
+| `099DE2` | `11`×1 `2F`×1 `35`×1 `36`×1 | — |
+| `099DF0` | `09`×1 `32`×1 `52`×1 | `09` (recogida `08B5FA`) |
+| `099E06` | `04`×1 `32`×2 `4A`×1 | — |
+| `09A67E` | `14`×1 `16`×1 `17`×1 `26`×1 `27`×1 `29`×7 `2A`×11 `2B`×9 `2C`×4 `2D`×4 `2E`×3 `31`×2 `3F`×1 `55`×1 `59`×2 | `3F` (movimiento `08BB44`), `59` (movimiento `08BEA2`) |
+
+**Causa.** El constructor de `neo_item.c` devolvía al mundo como externo
+(contado, no creado) todo objeto cuyo movimiento no estaba traducido. En la
+Misión 2 eso era el tipo `56` (`08BD32`): las monedas que el guion pone en
+la etapa 3 (47 registros `08C37C`, `2D8EEC..2D9B60`; el piloto vio 30 y
+cogió 14) no aparecían. Y el tipo `28` (`08BD5A`), que las momias
+`0613D8/0613E6` sueltan (su `+90`), solo existía como conversión del tipo
+`37` de la Misión 1.
+
+**Arreglo.** `08BD32` (01ABC8 en su sitio y el crecimiento de `08B9D8`) y la
+construcción directa del tipo `28` (mismo registro y movimiento `08BD5A` que
+ya probaba la familia `food`). `neo_pickup_env_t` cuenta por tipo los
+objetos creados, los externos y los cogidos, y la ROM escribe `MSX item kind
+NN created=.. external=.. taken=..` cuando cambian (comparación con MAME en
+ares).
+
+**Prueba:** familia `coin` (ventana 55420..61300 de `inv3`, recortada de la
+traza): seis monedas, su recogida con combo (`0E5556`) y sus etiquetas
+`08D330`, más el objeto `2F` de `2D8FEA` en el suelo: **13 nodos, 15523
+actualizaciones en bucle cerrado, 2171540 bytes iguales, 6 recogidas**. El
+banco de familias cuenta ahora el contador de recogidas `10C590` por
+actualización del juego (`08BFD6`), no por nodo: con varios objetos vivos el
+combo de dos monedas cogidas a 4 actualizaciones salía como dos recogidas
+sueltas. Píxeles (captura `coinv`, `sec03_26140`, volcados cada 15
+fotogramas 55430..56190, `export_rest_sprites.py ... coinv@8c374-8d900`):
+**51 volcados, 28193 píxeles iguales, 0 distintos**.
+
+**Paradas explícitas que quedan** (sin captura: el piloto no los produce;
+el objeto se devuelve como externo y la línea `MSX item kind` lo cuenta):
+
+- `40` (`08BAAA`, el andador `08CCD4`, de las momias `0613CA/0613E6`): su
+  programa `289082` y los de `41/42` llaman a `289528..2896B2`, que sueltan
+  objetos `3D/3F` (`08CD58`); `3D` (`08BB3C`, programa `28992A`) crea el
+  actor `032FB4` (`289A80`), sin portar.
+- `3F` (`08BB44`, caja oculta `2D7604` de la etapa 2, elección al azar) y
+  `59` (`08BEA2`: crea `036A64`, no es un premio; cajas `2D92EE/2D9308`).
+- `09` (prisionero colgado `2D8072`, etapa 2): la recogida `08B5FA` da el
+  tipo de bomba 2 (`0C0A7C`, `10C722+p`) y la etiqueta `08CD10`; el port no
+  tiene bombas de otro tipo (sus lanzamientos y el HUD): parada de la
+  recogida (`ga_fail 08B5FA`, `MSX item pickup stopped explicitly`).
+- `032DE2` (etapa 3, `2D8C68/2D8C76`, regalo `2D`/`2A` en `+74`): sin portar
+  (registro del guion saltado); en MAME el aliento de una momia lo convierte
+  en el soldado `067AB4`, que suelta su regalo al morir.

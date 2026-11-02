@@ -308,7 +308,8 @@ convertirse en momia». En el port el contacto mataba a Marco.
   de la momia (`--name-palette MUMMY=7FFE,6CB8,3863 MUMMY2=7FFE,3DC9,7986`);
   `marco_visual.c` pone esas ranuras en `+19..+1C` y `actor.c` dibuja cada
   parte con la de su byte alto; durante la transformación, las normales
-  (abajo). Los efectos `C4DD8`/`C5286` siguen sin traducir.
+  (abajo). Los efectos `C4DD8`/`C5286` son nativos desde `work-m2fix2`
+  (abajo, «el humo de la transformación»).
 Prueba: `tools/test_gameplay.c` (`mummy_run`): el aliento pide la forma 3 y
 deja la pistola, 19 actualizaciones quieto, protección `0x5A`, la H
 rechazada, 29,7 px en 20 actualizaciones andando y la muerte con el
@@ -381,8 +382,47 @@ catálogo de poses no cambia (las 92 poses de `marco-mz2` ya estaban): solo
 Paradas explícitas (el cuerpo se queda, contador `stops` de
 `marco_visual_t`): bajar de un borde sin saltar (`C0438`, `25F4BC`), el giro
 con +92 (`C0458`), reptar y su giro (`C04A8`/`C0468`; el port no repta) y la
-granada agachada (`C04C8`): no aparecen en `marco-mz2`. El efecto `C4DD8`
-de la transformación y `C5286` siguen sin traducir.
+granada agachada (`C04C8`): no aparecen en `marco-mz2`.
+
+### Forma 3: el humo de la transformación (rama `work-m2fix2`, B28 = B13)
+
+Informe de MiSTer (ROM 22): al convertirse en momia no sale humo. `0C17A0`
+crea tras el jugador (`0040BC`) el efecto `0C4DD8`: paleta `0xB0`
+(`009EA8`), programa `2A97A0` (32 poses), `+60 = 0`, `01AD6E` sobre el
+bloque `+28` del jugador, `+6E = 0x10` y el sonido `1085`; `0C4E1C` copia
+cada actualización el `+1E` del jugador, cuenta `+6E` y, en el préstamo (su
+17.ª actualización), pone `+60 = FF` en el jugador y se borra; si no,
+`01ABC8` y `00427A`. `0C17F0` espera ese `+60` y `0C182A` crea el marcador
+`0C5286` (`0C186E`, el mismo «1P» del aterrizaje). El cambio de paleta a
+mitad (las ranuras `63/64` del jugador pasan a las de la momia en
+`0C182A`) ya lo hacía `actor.c`.
+
+Port: `neo_landing.c` tiene un tercer nodo (`neo_landing_smoke`), que
+`gameplay.c` arranca en la primera actualización de la transformación
+(`mummy_transform` = 18) y cuyo `smoke_done` deja crear el marcador en la
+18.ª (`neo_landing_marker`); sus dibujos van sobre el jugador (su `+1E` y
+detrás de él en la lista) y su sonido a la cola de sonidos del mundo
+(`sfx_1085`, render aislado `OK`, 0,85 s, 11672 bytes residentes).
+
+Captura (MAME 0.264; `MSX_FULL_GIVE_MUMMY=<fotograma>`, nuevo en
+`capture_fullgame.lua`, solo captura: `+94 = 3` como el aliento en
+`0C36C0`):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec01_19391 MSX_FULL_LOAD_FRAME=19391
+MSX_FULL_FAMILY_FROM=19455 MSX_FULL_FAMILY_ROOTS=c4dd8,c5286 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=19455 MSX_FULL_PERIOD=1 \
+  MSX_FULL_GRID_TAP=0 MSX_FULL_IDLE=19455-19530 MSX_FULL_GIVE_MUMMY=19460 MSX_FULL_LAST=19530 sh tools/run_capture_fullgame.sh CAP/mz4
+python3 tools/extract_landing_fixture.py CAP/mz4/boss-trace.txt --output data/smoke_fixture.json.gz
+```
+
+**Prueba** `tools/test_neo_smoke.c` (`make check`; el extractor de
+`landing` reconoce ahora el humo y anota las palabras `10B954/10B95C` que lee
+`012022`): **33 actualizaciones (17 del humo, 16 del marcador), 4544 bytes
+iguales, `smoke_done` en la 17.ª**. Píxeles (`export_rest_sprites.py ...
+mz4@c4dd8-c4f60`, un volcado por fotograma): **33 volcados, 45983 píxeles
+iguales**; los 1514 distintos son los dos volcados tomados en el mismo
+fotograma de la actualización del constructor (la lista de sprites llega al
+fotograma siguiente; 757 + 757).
 
 ## Disparo de las armas 02/07 y 04/09 (rama `work-m2mummy`)
 

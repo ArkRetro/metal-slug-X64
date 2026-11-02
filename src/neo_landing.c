@@ -18,7 +18,13 @@
  *   0C5286  +66/+1E = FFFE; parent +70 = 0: palette 0x2A3 and 0C519E, else
  *           0x2A2 and 0C5212; 0C52E4 waits for the parent's ground bit;
  *           0C52FA: 012022, +3C/+40 words of the parent, 00427A, deleted when
- *           the program ends. */
+ *           the program ends.
+ *   0C4DD8  the mummy transformation's smoke (0C17D6, 0040BC after the
+ *           player): palette 0xB0 (009EA8), 004256 with 2A97A0, +60 = 0,
+ *           01AD6E (on the parent's +28 block), +6E = 0x10, sound 1085;
+ *           0C4E1C: +1E = the parent's, +6E - 1; on its borrow (the 17th
+ *           update) the parent's +60 = FF and 004188, else 01ABC8 and
+ *           00427A. */
 #include "neo_landing.h"
 #include <string.h>
 #define B(o) ga_b(a,(o))
@@ -114,6 +120,23 @@ static ga_result_t marker(neo_gactor_t *a,neo_genv_t *e,const neo_landing_input_
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+static ga_result_t smoke(neo_gactor_t *a,neo_genv_t *e,const neo_landing_input_t *in,neo_landing_t *s) {
+    switch (L(0)) {
+    case 0xc4dd8:
+        ga_palette(a,0xb0);START(0x2a97a0);SB(0x60,0);
+        ga_place(a,e,0,0,NEO_LANDING_PLAYER);SW(0x6e,0x10);
+        if (s->sound_count<2) s->sounds[s->sound_count++]=0x1085;
+        SL(0,0xc4e1c);
+        /* fall through */
+    case 0xc4e1c:
+        SW(0x1e,in->z);
+        SW(0x6e,W(0x6e)-1u);
+        if (W(0x6e)==0xffffu) {s->smoke_done=true;return GA_DELETE;}       /* 0C4E2E, 004188 */
+        ga_project(a,e);                                                       /* 01ABC8 */
+        return ga_anim_step(a,e,NULL)<0?GA_UNSUPPORTED:GA_MORE;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static void node_init(neo_gactor_t *a,uint32_t routine) {
     memset(a,0,sizeof(*a));a->active=true;
     SL(0,routine);SL(0x0c,0x1014c4u);SB(0x12,0xff);SB(0x13,0xff);SW(0x1e,0xffff);SB(0x17,0xff);SW(0x58,0xffff);SB(0x69,0xff);SB(0x6a,0xff);SB(0x6b,0xff);
@@ -134,14 +157,20 @@ void neo_landing_descent(neo_landing_t *s) {
 void neo_landing_marker(neo_landing_t *s) {
     if (!s->marker.active) node_init(&s->marker,0xc5286);
 }
+void neo_landing_smoke(neo_landing_t *s) {
+    node_init(&s->smoke,0xc4dd8);s->smoke_done=false;
+}
+bool neo_landing_active(const neo_landing_t *s) {return s->canopy.active || s->marker.active || s->smoke.active;}
 void neo_landing_update(neo_landing_t *s,const neo_landing_input_t *in,const neo_anim_program_t *(*program)(uint32_t tag)) {
-    s->draw_count=0;s->marker_draws=0;
-    neo_gactor_t *order[2]={&s->marker,&s->canopy};
-    for (unsigned i=0;i<2;i++) {
+    s->draw_count=0;s->marker_draws=0;s->sound_count=0;
+    /* List order: the player, then what 0040BC put right after him (the
+     * newest first): the marker (0C186E) comes after the smoke's end. */
+    neo_gactor_t *order[3]={&s->marker,&s->smoke,&s->canopy};
+    for (unsigned i=0;i<3;i++) {
         neo_gactor_t *a=order[i];
         if (!a->active || a->placeholder) continue;
         ctx_t t={s,in,a};neo_genv_t e;neo_ga_flags_t flags;env(&e,&flags,&t,program);
-        ga_result_t r=a==&s->canopy?canopy(a,&e,in):marker(a,&e,in);
+        ga_result_t r=a==&s->canopy?canopy(a,&e,in):a==&s->smoke?smoke(a,&e,in,s):marker(a,&e,in);
         if (r==GA_UNSUPPORTED) {
             if (!s->unsupported++) s->unsupported_at=e.unsupported_at?e.unsupported_at:ga_l(a,0);
             a->placeholder=true;continue;
@@ -149,6 +178,6 @@ void neo_landing_update(neo_landing_t *s,const neo_landing_input_t *in,const neo
         if (r==GA_DELETE) {ga_sl(a,0,0x3f1e);ga_sb(a,0x1d,0);a->placeholder=true;}   /* 004188 -> 004126 */
         if (s->on_updated) s->on_updated(s->ctx,a);
         if (r==GA_DELETE) a->active=false;
-        if (a==&s->marker) s->marker_draws=s->draw_count;
+        if (a!=&s->canopy) s->marker_draws=s->draw_count;
     }
 }

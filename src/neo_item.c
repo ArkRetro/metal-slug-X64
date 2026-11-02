@@ -204,7 +204,13 @@ static bool k8bccc(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 /* The motions the port has (record +14). */
-static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u || m==0x8bcccu;}
+/* 08BD32 (kind 56, the stage-3 coins of Mission 2): 01ABC8 in place, then
+ * the growth of 08B9D8. */
+/* 08BD5A (kind 28) is the walker kind 37 turns into (2884C8, food
+ * fixture); the mummies 0613D8/0613E6 of Mission 2 drop kind 28 directly
+ * (their +90): the same record and motion from the constructor. */
+static void k8bd32(neo_gactor_t *a,neo_genv_t *e) {ga_project(a,e);grow(a);}
+static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u || m==0x8bcccu || m==0x8bd32u || m==0x8bd5au;}
 static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     switch (m) {
     case MOTION_FALL: k8b9b2(a,e);return true;
@@ -213,6 +219,7 @@ static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     case 0x8bab2: k8ba38(a,e,0xffffb000u);return true;
     case 0x8bd5a: k8bd5a(a,e);return true;
     case 0x8bccc: return k8bccc(a,e);
+    case 0x8bd32: k8bd32(a,e);return true;
     default: ga_fail(e,m);return false;
     }
 }
@@ -352,7 +359,7 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
         if (!k8b896(a,e,pk,p,rec)) return false;
         k8b850(pk,p);
     } else {ga_fail(e,r);return false;}                              /* bomb types, others */
-    k8b834(pk,p,rec);pk->taken++;
+    k8b834(pk,p,rec);pk->taken++;pk->item_taken[W(0x6e)<NEO_ITEM_KINDS?W(0x6e):0]++;
     return true;
 }
 /* ---- score label 08D330 --------------------------------------------------- */
@@ -484,7 +491,12 @@ static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (W(0x6e)==0xffffu) return GA_DELETE;                      /* 004188 */
         if (W(0x6e)>=0x5au) {ga_fail(e,0x8d2e2);return GA_UNSUPPORTED;} /* TRAP #F */
         rec=RECORDS+0x18u*W(0x6e);
-        if (!motion_known(rl(rec+0x14))) {if (e->external) e->external(e->ctx,L(0));return GA_DELETE;}
+        if (!motion_known(rl(rec+0x14))) {
+            if (e->pickup) e->pickup->item_external[W(0x6e)]++;
+            if (e->external) e->external(e->ctx,L(0));
+            return GA_DELETE;
+        }
+        if (e->pickup) e->pickup->item_created[W(0x6e)]++;
         if (B(0x7f)) ga_floor(a,e);
         if (BIT(0x73,0)) SET(0x15,0);
         if (BIT(0x73,1)) SET(0x15,1);

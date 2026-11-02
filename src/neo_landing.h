@@ -24,11 +24,15 @@ typedef struct {
     bool odd_phase;                     /* RAM 10000F bit 0 (00436E: +5F bit 3 hides the poses) */
 } neo_landing_input_t;
 typedef struct {
-    neo_gactor_t canopy,marker;
-    /* The marker's draws first (marker_draws of them, +1E FFFE: over the
-     * player), then the canopy's (+1E = player's - 1: behind him). */
+    neo_gactor_t canopy,marker,smoke;
+    /* The smoke's and the marker's draws first (marker_draws of them: over
+     * the player; the smoke has his +1E and comes after him in the list,
+     * the marker +1E FFFE), then the canopy's (+1E = player's - 1: behind
+     * him). */
     neo_end_draw_t draws[NEO_LANDING_DRAWS];unsigned draw_count,marker_draws;
     unsigned unsupported;uint32_t unsupported_at;
+    bool smoke_done;                    /* the player's +60 set by C4DD8 (0C4E2E) */
+    uint16_t sounds[2];unsigned sound_count;  /* sound words of this update (C4DD8: 1085) */
     /* Test hook: called after each node's update (deleted: routine 003F1E). */
     void (*on_updated)(void *ctx,neo_gactor_t *a);void *ctx;
 } neo_landing_t;
@@ -41,6 +45,13 @@ void neo_landing_start(neo_landing_t *s,const neo_landing_input_t *in,const neo_
  * cut, 0C16B0/0C16D8). */
 void neo_landing_descent(neo_landing_t *s);
 void neo_landing_marker(neo_landing_t *s);
+/* The mummy transformation's smoke C4DD8 (0C17D6: 0040BC after the
+ * player). It counts 17 updates and then sets the player's +60
+ * (smoke_done), which 0C17F0 waits for; the transformation then creates
+ * the marker (0C186E: neo_landing_marker). */
+void neo_landing_smoke(neo_landing_t *s);
+/* True while any of the three actors lives. */
+bool neo_landing_active(const neo_landing_t *s);
 /* One update after the player's (marker first: 0040BC inserts it right
  * after the player, before the canopy). */
 void neo_landing_update(neo_landing_t *s,const neo_landing_input_t *in,const neo_anim_program_t *(*program)(uint32_t tag));

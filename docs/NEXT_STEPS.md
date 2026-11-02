@@ -46,6 +46,16 @@
    la M2, 213 ranuras) y B23 (balas de pistola 16, como el arcade sin tope).
    Al reconstruir la ROM en `/home/user/ws-logo`, comprobar que se rehacen
    los diez objetos fríos (`neo_hud.o` de texto 7675 B, no 10982).
-7. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
+7. **Hecho (rama `work-m2fix2`):** B27 (monedas `56` de la etapa 3 y el
+   tipo `28` de las momias; inventario de premios en MISION2_ACTORES.md),
+   B28 = B13 (humo `0C4DD8` y marcador de la transformación) y B29 (la
+   exportación privada de la Misión 2 no tenía el rayo de la L). Al
+   reconstruir la ROM en `/home/user/ws-logo` copiar (`cp`, sin `-p`):
+   `filesystem/mission2/rest-native.json`, `romfs/mission2.pack`,
+   `romfs/scene.pack` (nuevas raíces de programas) y el audio compartido ya
+   tiene `sfx_1085.wav64`. Quedan de B27, con captura dirigida: el andador
+   `40` de las momias y sus `3D/3F` (`032FB4`), la caja `3F` de la etapa 2,
+   la bomba de tipo 2 (`09`, `0C0A7C`: lanzamiento y HUD) y `032DE2`.
+8. **Siguientes fallos de la matriz por orden:** B14, B03, B15, B20
    (bucles de motor 10A5/1026), pool de actores genéricos (pico 93/96 en la
    M1).

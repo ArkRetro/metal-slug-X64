@@ -84,6 +84,7 @@ typedef struct neo_ga_flags {
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
  * explicit stop. RAM provenance per field. */
+enum { NEO_ITEM_KINDS=0x5a };
 typedef struct neo_pickup_env {
     marco_weapons_t *weapons;            /* RAM 10C718 */
     marco_weapon_player_t *player[2];    /* player actor fields (+93/+94/+95, 0040AC) */
@@ -100,6 +101,11 @@ typedef struct neo_pickup_env {
     uint16_t label_count[2];             /* RAM 10C5B2+2p: score labels 08D330 made (08D33C) */
     unsigned taken,popups,labels,cures;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
+    /* Per item kind (+6E < 0x5A, records 0E581A): items constructed with a
+     * native motion, items handed back as external (motion not translated:
+     * not created) and pickups served. Provenance counters (the original
+     * keeps none). */
+    uint16_t item_created[NEO_ITEM_KINDS],item_external[NEO_ITEM_KINDS],item_taken[NEO_ITEM_KINDS];
 } neo_pickup_env_t;
 /* What the player's vehicles (Camel Slug 03458E, SV-001 092A32, their
  * turret 03B4E0) read and write outside their nodes; NULL in neo_genv_t: a

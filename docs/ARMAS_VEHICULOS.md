@@ -1415,6 +1415,23 @@ python3 tools/export_rest_sprites.py ZIP OUT6@1e100-1f100 OUTB@1e100-1f100 --out
 - `tools/test_gameplay.c pweapon`: `06` 4052 llamadas `0C46D6`, 8 rayos,
   8773 actualizaciones de rayo, 47 muertes; `0B` 3966, 9 rayos, 47 muertes;
   sin paradas ni dibujos ausentes (antes: `weapon_stops`).
+- **B29 (MiSTer, ROM 22: al coger la L no se ve el arma).** Esos
+  descriptores y paletas solo entraron en la exportación de la Misión 1. En
+  la Misión 2 los actores dibujan con `romfs/mission2.pack`, hecho de
+  `filesystem/mission2/rest-native.json`, y la copia de la ROM 22
+  (`/home/user/ws-logo`) era anterior a `work-laser`: le faltaban **235
+  descriptores** (los del rayo `22EBB6..22F476` y el cohete del arma 8
+  `2684D2/2684AA`) y **7 paletas** (`98 99 9A` del rayo, `384 39B 822 828`
+  de las demás armas). `actor.c` cuenta el dibujo que no encuentra y no
+  pinta nada: en la Misión 2 el rayo de la L no se veía (la pistola del
+  jugador y sus poses `W1L_*` sí, vienen del catálogo de Marco). `test_gameplay`
+  prueba el láser contra la escena de la Misión 1 (`scene_meta.h`), así que no
+  lo veía. Arreglo (`work-m2fix2`): `filesystem/mission2/rest-native.json`
+  regenerado con todas las raíces y `--keep filesystem/rest-native.json`
+  (las paletas de la Misión 1), `romfs/mission2.pack` reempaquetado y la
+  comprobación `tools/check_mission_sprites.py` en `make check`: la
+  exportación de la Misión 2 debe llevar todos los descriptores y paletas de
+  la de la Misión 1 (con la de la ROM 22 falla con esos 235 + 7).
 
 **Muertes de soldado por filas de tipo 7, 0A y 0B (`neo_soldier_ai.c`).**
 `death_dispatch` traduce las entradas `040A40` (7: `+76` =

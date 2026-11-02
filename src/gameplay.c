@@ -253,8 +253,12 @@ static void landing_step(msx_game_t *g) {
     bool first=g->landing.canopy.active && ga_l(&g->landing.canopy,0)==0xc4a58u;
     if (first) {g->landing_x=in.x;g->landing_y=in.y;}
     neo_landing_update(&g->landing,&in,neo_world_program);
+    for (unsigned i=0;i<g->landing.sound_count;i++) {
+        if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=g->landing.sounds[i];
+        else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
+    }
     g->landing_x=in.x;g->landing_y=in.y;g->landing_root_x=rx;g->landing_root_y=ry;
-    if (!g->landing.canopy.active && !g->landing.marker.active) {g->landing_on=false;g->landing.draw_count=0;}
+    if (!neo_landing_active(&g->landing)) {g->landing_on=false;g->landing.draw_count=0;}
 }
 static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
@@ -1408,6 +1412,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->world.video_phase=(uint16_t)(g->ticks>>1);
         g->world.scroll_y=neo_camera_root_y(&g->world.camera);
         mount_record(g,&p);
+        /* The transformation (msx_game_hurt: 19 updates). Its first update
+         * (0C17A0) creates the smoke C4DD8 after the player; 0C17F0 waits
+         * for the smoke's +60 (its 17th update), then 0C182A creates the
+         * marker C5286 (0C186E) in the update before the controller. */
+        if (g->mummy_transform==18 && !g->mummy_smoke) {neo_landing_smoke(&g->landing);g->mummy_smoke=true;g->landing_on=true;}
+        if (g->mummy_transform==1 && g->landing.smoke_done) {g->landing.smoke_done=false;neo_landing_marker(&g->landing);g->landing_on=true;}
+        if (!g->mummy_transform) g->mummy_smoke=false;
         if (g->landing_pending || g->landing_on) landing_step(g);
         if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);

@@ -15,7 +15,7 @@
 msx_diag_state_t msx_diag;
 static const char *const event_names[MSX_EV_COUNT]={"-","boot","stage","flow","reset","spawn","soldier","kill","death","weapon","stop","pool","slow","boss","mount","checkpoint","combo"};
 const char *const msx_diag_pool_names[MSX_POOL_COUNT]={"order","soldier","throw","splash","gactor","boss","draw","box","reg","sound","shot","sub","solid","dyn","bullet"};
-const uint16_t msx_diag_pool_capacity[MSX_POOL_COUNT]={160,12,8,8,96,96,160,48,64,16,8,4,16,8,8};
+const uint16_t msx_diag_pool_capacity[MSX_POOL_COUNT]={160,12,8,8,96,96,160,48,64,16,8,4,16,8,16};
 const char *const msx_diag_stop_names[MSX_STOP_COUNT]={"world","boss","death","weapon","grenade","mount","vehicle","item","hud","script","skipped","external","camera","marco","solid"};
 void msx_diag_set_frame(uint32_t frame) {msx_diag.frame=frame;}
 void msx_diag_event(msx_diag_event_t type,unsigned a,unsigned b,uint32_t c) {

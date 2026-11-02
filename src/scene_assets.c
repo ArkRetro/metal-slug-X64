@@ -16,8 +16,14 @@ _Static_assert(SCENE_MAP_CAMERA_MAX==MSX_CAMERA_MAX,"Scene pack and gameplay cam
 /* Measured RAM budget (KB), see "RAM budget" below. */
 enum {
     SCENE_RESERVE_LOGO_KB=224,     // boot logo peak, freed before the game (measured 169)
-    SCENE_RESERVE_GAME_KB=640,     // actor_init after the cache (measured 560)
-    SCENE_RESERVE_RUNTIME_KB=320,  // gameplay growth (measured peak in the docs)
+    /* actor_init's whole heap, part of it preloaded before the cache
+     * (scene_assets_game_preloaded): Marco's parts and fixed.bin 559, the
+     * renderer 28, the HUD strip 67 (304x224 CI8; 133 as RGBA16) = 654.
+     * At 640 with the RGBA16 strip (719 in 1afa21a) the game had 510 KB free
+     * once loaded instead of 576, and 234 KB at the end of the Mission 1
+     * boss. The "MSX actor_init" line gives the parts. */
+    SCENE_RESERVE_GAME_KB=672,
+    SCENE_RESERVE_RUNTIME_KB=320,  // gameplay growth (measured 263 in Mission 1, mostly background blocks)
     SCENE_HEAP_MARGIN_KB=256,
     /* Expansion Pak floor: the pinned banks and map (49 chunks), the boss
      * set (65) and three soldier programs (83) with some room; below it
@@ -295,7 +301,7 @@ void scene_assets_check_budget(void) {
     if (!cache || get_memory_size()<8*1024*1024) return;
     int free_now=heap_free();
     scene_assets_mem("game loaded");
-    debugf("MSX CACHE slots=%u (%u KB, floor %u) free=%d KB\n",capacity,capacity*SCENE_CHUNK_BYTES/1024,SCENE_EXPANDED_MIN_SLOTS,free_now/1024);
+    debugf("MSX CACHE slots=%u (%u KB, floor %u) free=%d KB (budget %d)\n",capacity,capacity*SCENE_CHUNK_BYTES/1024,SCENE_EXPANDED_MIN_SLOTS,free_now/1024,(SCENE_RESERVE_RUNTIME+SCENE_HEAP_MARGIN)/1024);
     // What the game still allocates while it runs must fit what is left.
     assertf(free_now>=SCENE_RESERVE_RUNTIME+SCENE_HEAP_MARGIN/2,"RAM budget: %d KB free after loading, %d KB reserved for gameplay (scene_assets.c)",free_now/1024,(SCENE_RESERVE_RUNTIME+SCENE_HEAP_MARGIN/2)/1024);
 }

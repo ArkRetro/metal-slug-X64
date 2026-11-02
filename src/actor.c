@@ -230,16 +230,18 @@ static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
         debugf("MSX projectile sprite owner=%u direction=%d size=%ux%u\n",owner,bullet->direction,im->width,im->height);
     }
 }
+static int heap_used_kb(void) { heap_stats_t h;sys_get_heap_stats(&h);return h.used/1024; }
 void actor_init(void) {
     assertf(msx_game_layout==MSX_GAME_LAYOUT,"stale gameplay object: msx_game_t layout %08lx, actor.c %08lx (rebuild)",
         (unsigned long)msx_game_layout,(unsigned long)MSX_GAME_LAYOUT);
-    uint32_t began=TICKS_READ();
-    scene_assets_init();uint32_t t1=TICKS_READ();scene_renderer_init();uint32_t t2=TICKS_READ();reset_game();uint32_t t3=TICKS_READ();
-    marco_native=marco_renderer_load();uint32_t t4=TICKS_READ();
-    hud_renderer_init();uint32_t t5=TICKS_READ();
+    uint32_t began=TICKS_READ();int k[6];k[0]=heap_used_kb();
+    scene_assets_init();uint32_t t1=TICKS_READ();k[1]=heap_used_kb();scene_renderer_init();uint32_t t2=TICKS_READ();k[2]=heap_used_kb();reset_game();uint32_t t3=TICKS_READ();k[3]=heap_used_kb();
+    marco_native=marco_renderer_load();uint32_t t4=TICKS_READ();k[4]=heap_used_kb();
+    hud_renderer_init();uint32_t t5=TICKS_READ();k[5]=heap_used_kb();
     scene_assets_check_budget();
-    debugf("MSX actor_init %lu us (scene %lu renderer %lu reset %lu marco %lu hud %lu)\n",(unsigned long)TICKS_TO_US(TICKS_READ()-began),
-        (unsigned long)TICKS_TO_US(t1-began),(unsigned long)TICKS_TO_US(t2-t1),(unsigned long)TICKS_TO_US(t3-t2),(unsigned long)TICKS_TO_US(t4-t3),(unsigned long)TICKS_TO_US(t5-t4));
+    debugf("MSX actor_init %lu us (scene %lu renderer %lu reset %lu marco %lu hud %lu) heap +%d KB (scene %d renderer %d reset %d marco %d hud %d)\n",(unsigned long)TICKS_TO_US(TICKS_READ()-began),
+        (unsigned long)TICKS_TO_US(t1-began),(unsigned long)TICKS_TO_US(t2-t1),(unsigned long)TICKS_TO_US(t3-t2),(unsigned long)TICKS_TO_US(t4-t3),(unsigned long)TICKS_TO_US(t5-t4),
+        k[5]-k[0],k[1]-k[0],k[2]-k[1],k[3]-k[2],k[4]-k[3],k[5]-k[4]);
     debugf("MSX marco native animation %s (%u poses)\n",marco_native?"loaded":"missing: six-state fallback",marco_native?marco_renderer_count():0u);
 #if MSX_RETRO25D
     scene_render_set_depth_mode(true);debugf("MSX DEPTH mode enabled (depth25d default)\n");

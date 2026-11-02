@@ -426,6 +426,7 @@ static unsigned bg_group,bg_last_used;     // pin group of the live blocks; last
 typedef struct {bool pending;unsigned epoch;rspq_block_t *blocks[16];} bg_retired_t;
 static bg_retired_t bg_retired[4];
 static unsigned bg_replays,bg_records;
+static int bg_block_max;   // largest heap taken by one recording (MSX_DIAG): the block sizes BG_RECORD_MIN_FREE allows for
 static void reset_texture_state(void) {
     for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
     last_page=last_slot=last_format=last_width=last_height=-1;mode_tlut=-1;
@@ -456,9 +457,12 @@ static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
     return true;
 }
 /* Record only after the inputs held this many frames (two game updates). */
-enum { BG_RECORD_HELD=3, BG_RECORD_MIN_FREE=192*1024 };
+enum { BG_RECORD_HELD=3, BG_RECORD_MIN_FREE=(256+32)*1024 };
 /* A block needs heap for its RSP and RDP buffers, whose allocations
- * libdragon does not check: never record with the heap nearly full. */
+ * libdragon does not check: never record with the heap nearly full. The
+ * blocks are optional (the layers draw directly), so they stop short of the
+ * 256 KB margin of the RAM budget (scene_assets.c) by one block (bgmax in
+ * the MSX RDP line); at 192 KB they took the Mission 1 boss to 234 KB free. */
 static bool bg_heap_ok(void) { heap_stats_t h;sys_get_heap_stats(&h);return h.total-h.used>=BG_RECORD_MIN_FREE; }
 /* After a block runs, the RSP keeps writing the following RDP commands
  * (the rest of the frame, its SYNC_FULL, the next frames until a block or
@@ -505,9 +509,15 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
         reset_texture_state();
         unsigned before=draws;
         scene_record_pins((int)bg_group);
+#if MSX_DIAG
+        heap_stats_t h0;sys_get_heap_stats(&h0);
+#endif
         rspq_block_begin();
         draw_layers(begin,end,offsets,rises,visible,video_tick);
         bg_blocks[pass][phase]=rspq_block_end();
+#if MSX_DIAG
+        {heap_stats_t h1;sys_get_heap_stats(&h1);if (h1.used-h0.used>bg_block_max) bg_block_max=h1.used-h0.used;}
+#endif
         scene_record_pins(-1);bg_records++;
         bg_block_draws[pass][phase]=draws-before;draws=before;
     }
@@ -632,9 +642,9 @@ void scene_render_end(void) {
         if (depth_mode) debugf("MSX DEPTH: triangles=%u limit=%u fog=%u B lights=%u fog_uploads=0 planes=%u shadows=%u shadow_tris=%u\n",
             retro_effects_triangles(),RETRO_MAX_TRIANGLES,0u,depth_frame.light_count,
             retro_effects_visible_planes(),depth_frame.shadow_count,retro_effects_shadow_triangles());
-        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u deferred=%u held=%u sync=%u idle=%u decode_max=%lu us heap_low=%d KB bgblocks=%u/%u\n",
+        debugf("MSX RDP: draws=%u tex=%u TLUT=%u TMEM=%u B CPU=%lu us PI=%u loads/%u bytes misses=%u evictions=%u deferred=%u held=%u sync=%u idle=%u decode_max=%lu us heap_low=%d KB bgblocks=%u/%u bgmax=%d KB\n",
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
-            s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,s.sync_misses,s.idle_decodes,(unsigned long)TICKS_TO_US(s.decode_max_ticks),scene_assets_heap_low()/1024,bg_replays,bg_records);
+            s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,s.sync_misses,s.idle_decodes,(unsigned long)TICKS_TO_US(s.decode_max_ticks),scene_assets_heap_low()/1024,bg_replays,bg_records,bg_block_max/1024);
     }
     if (!(frame%300)) debugf("MSX BG: layer us/draws/uploads/visits 0=%lu/%u/%u/%u 1=%lu/%u/%u/%u 2=%lu/%u/%u/%u 3=%lu/%u/%u/%u 4=%lu/%u/%u/%u tower=%lu/%u/%u\n",
         (unsigned long)TICKS_TO_US(layer_ticks[0]),layer_draws[0],layer_uploads[0],layer_visits[0],(unsigned long)TICKS_TO_US(layer_ticks[1]),layer_draws[1],layer_uploads[1],layer_visits[1],

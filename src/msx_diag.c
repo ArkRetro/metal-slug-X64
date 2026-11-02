@@ -13,7 +13,7 @@
 #include "neo_soldier_ai.h"
 _Static_assert(NEO_WORLD_ORDER==160 && NEO_WORLD_SOLDIERS==12 && NEO_WORLD_THROWS==8 && NEO_WORLD_SPLASHES==8 && NEO_WORLD_GACTORS==96 &&
     NEO_BOSS_NODES==96 && NEO_WORLD_DRAWS==160 && NEO_WORLD_BOXES==48 && NEO_WORLD_SOUNDS==16 && NEO_WORLD_SUBSCRIPTS==4 &&
-    NEO_WORLD_SOLIDS==16 && NEO_KDYN_COUNT==8 && MSX_BULLETS==8,"msx_diag_pool_capacity (msx_diag_core.c) follows the pools");
+    NEO_WORLD_SOLIDS==16 && NEO_KDYN_COUNT==8 && MSX_BULLETS==16,"msx_diag_pool_capacity (msx_diag_core.c) follows the pools");
 enum { WINDOW=300, HEAP_EVERY=30, SLOW_US=25000, SLOWEST=5, STOPS_EVERY=6 };
 typedef struct { uint32_t frame,cpu,logic,render,asset;int camera; } slow_t;
 static struct {

@@ -42,6 +42,7 @@ typedef struct {
     // producer
     int ps;unsigned prod;int pbuf;volatile bool copy_done;msx_cine_apply_t run;size_t lo,hi;
     uint16_t *buf[NBUF_MAX];unsigned nbuf,nbuf_best;uint8_t q[QN];   // q[f%QN]: canvas of produced frame f
+    unsigned chk,heavy;uint32_t chk_full,chk_prev;   // tables checked in pieces: next entry, packets > 16 KB, ring bytes, last stored offset
     unsigned index;   // frame shown (playing slot)
     /* CRC of the first and last frames, taken in the spare time after they
      * are produced (the entry/title checks and the logs read them at a cut,
@@ -56,8 +57,9 @@ static msx_cine_crc_tables_t crc_tables;static bool crc_ready;
  * rises at once and falls slowly. Work runs in small pieces until the
  * deadline (the next blank minus a margin) would be passed by the next one:
  * an estimate off by any factor overruns by one piece at most. */
-static uint32_t cost_lz4,cost_crc,cost_valid,cost_apply;   // set with the CRC tables
-enum { PIECE_LZ4=2048,PIECE_CRC=4096,PIECE_VALID=4096,PIECE_APPLY=2048 };
+static uint32_t cost_lz4,cost_crc,cost_valid,cost_apply,cost_check;   // set with the CRC tables
+enum { PIECE_LZ4=2048,PIECE_CRC=4096,PIECE_VALID=4096,PIECE_APPLY=2048,PIECE_CHECK=256 };   // PIECE_CHECK: table entries (costed as 8 bytes each)
+enum { ALLOCATE_US=700 };   // ring + canvases + heap statistics once the tables are checked
 static void cost_learn(uint32_t *cost,uint32_t ticks,size_t bytes) {
     if (bytes<512) return;
     uint32_t per=(uint32_t)((uint64_t)ticks*1024u/bytes);
@@ -132,33 +134,41 @@ static bool begin(slot_t *s,const char *path) {
     dma_begin(s,(uint8_t *)s->tables,32,4*words);s->ls=L_TABLE;
     if (!crc_ready) {
         msx_cine_crc_tables_init(&crc_tables);crc_ready=true;
-        cost_lz4=TICKS_FROM_US(300);cost_crc=TICKS_FROM_US(120);cost_valid=TICKS_FROM_US(60);cost_apply=TICKS_FROM_US(200);
+        cost_lz4=TICKS_FROM_US(300);cost_crc=TICKS_FROM_US(120);cost_valid=TICKS_FROM_US(60);cost_apply=TICKS_FROM_US(200);cost_check=TICKS_FROM_US(400);
     }
     if (!vblank_hooked) {register_VI_handler(on_vblank);vblank_hooked=true;}
     return true;
 error:
     close_slot(s);return false;
 }
-/* The tables are in: check them as the v1/v2 reader always did, then take
- * the ring and the canvases this slot can have now. */
-static bool allocate(slot_t *s,bool alone) {
-    uint32_t count=s->count,previous=0,full=0;
-    for (unsigned i=0;i<=count;i++) {
+/* The tables are in: check them as the v1/v2 reader always did, entries
+ * [s->chk, s->chk+n) at a time (HOW TO PLAY's 2691 entries and its ring took
+ * 3.4 ms in one step, past a title frame's blank in test ROM 21): -1 bad,
+ * 1 all checked, 0 more to do. allocate() then takes the ring and the
+ * canvases this slot can have now. */
+static int check_part(slot_t *s,unsigned n) {
+    uint32_t count=s->count;unsigned end=s->chk+n>count+1?count+1:s->chk+n;
+    for (unsigned i=s->chk;i<end;i++) {
         uint32_t o=s->off[i];
-        if ((o&1u) || (i && (o<=s->off[i-1] || o-s->off[i-1]>s->maximum || o-s->off[i-1]<8))) return false;
-        if (i) full+=a16(o-s->off[i-1]);
-    }
-    if (s->v2) {
-        for (unsigned i=0;i<=count;i++) {
+        if ((o&1u) || (i && (o<=s->off[i-1] || o-s->off[i-1]>s->maximum || o-s->off[i-1]<8))) return -1;
+        if (i) {s->chk_full+=a16(o-s->off[i-1]);s->heavy+=o-s->off[i-1]>16384;}
+        if (s->v2) {
             uint32_t value=s->st[i],at=value&~1u;
-            if (!i && at!=32+8*(count+1)) return false;
-            if (i==count && value!=s->file_size) return false;
-            if (at>s->file_size || (i && (at<=previous || at-previous>s->off[i]-s->off[i-1]+1))) return false;
-            previous=at;
+            if (!i && at!=32+8*(count+1)) return -1;
+            if (i==count && value!=s->file_size) return -1;
+            if (at>s->file_size || (i && (at<=s->chk_prev || at-s->chk_prev>o-s->off[i-1]+1))) return -1;
+            s->chk_prev=at;
         }
-    } else if (s->off[count]!=s->file_size) return false;
-    if (s->off[0]!=32+4*(count+1)) return false;
-    s->raw_size=s->off[count]-s->off[0];s->ring_full=full+s->extra+64u;
+    }
+    s->chk=end;
+    if (end<=count) return 0;
+    if (!s->v2 && s->off[count]!=s->file_size) return -1;
+    if (s->off[0]!=32+4*(count+1)) return -1;
+    return 1;
+}
+static bool allocate(slot_t *s,bool alone) {
+    uint32_t count=s->count;
+    s->raw_size=s->off[count]-s->off[0];s->ring_full=s->chk_full+s->extra+64u;
     s->pkt=malloc(count*sizeof(*s->pkt));if (!s->pkt) return false;
     int avail=heap_free()-HEAP_KEEP;
     uint32_t frame=frame_bytes(s),minimum=a16(s->maximum)+s->extra+64u,cap=alone?RING_ALONE_CAP:RING_PLAY_CAP;
@@ -166,9 +176,7 @@ static bool allocate(slot_t *s,bool alone) {
     /* Canvases: the frames decoded ahead absorb the heavy ones (> 16 KB
      * packets); a light movie (the choice: one) needs few, and the heap it
      * leaves takes the game's own loading meanwhile. */
-    unsigned heavy=0;
-    for (unsigned i=0;i<count;i++) heavy+=s->off[i+1]-s->off[i]>16384;
-    unsigned best=heavy+3<4?4:heavy+3>NBUF_MAX?NBUF_MAX:heavy+3;
+    unsigned heavy=s->heavy,best=heavy+3<4?4:heavy+3>NBUF_MAX?NBUF_MAX:heavy+3;
     const unsigned tries[]={best,best<4?best:4,NBUF_MIN};s->nbuf_best=best;
     for (unsigned t=0;t<3 && !s->ring;t++) {
         int room=avail-(int)(tries[t]*frame);
@@ -216,6 +224,17 @@ static int load_step(slot_t *s,uint32_t deadline) {
     switch (s->ls) {
     case L_TABLE: {
         int r=dma_step(s);if (r!=STEP_IDLE) return r;
+        /* The tables, then the heap, in pieces that fit before the deadline
+         * (ensure() passes none and does it all at once). */
+        bool did=false;
+        while (s->chk<=s->count) {
+            if (!fits(deadline,cost_check,PIECE_CHECK*8u)) return did?STEP_WORK:STEP_IDLE;
+            uint32_t t0=TICKS_READ();unsigned at=s->chk;
+            int c=check_part(s,PIECE_CHECK);did=true;
+            if (c<0) {debugf("MSX CINEMATIC %s: bad tables\n",s->path);return STEP_ERROR;}
+            cost_learn(&cost_check,TICKS_READ()-t0,(size_t)(s->chk-at)*8u);
+        }
+        if (deadline && (int32_t)(deadline-TICKS_READ())<(int32_t)TICKS_FROM_US(ALLOCATE_US)) return did?STEP_WORK:STEP_IDLE;
         bool alone=true;
         for (unsigned i=0;i<2;i++) if (&slots[i]!=s && slots[i].active) alone=false;
         if (!allocate(s,alone)) {

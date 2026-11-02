@@ -30,6 +30,13 @@ WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animation.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_cull.c src/neo_hit.c src/neo_camera.c src/neo_soldier.c src/neo_soldier_action.c src/neo_script.c
 COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c)
 $(COLD_OBJS): CFLAGS += -Os
+# make does not see a flag change: the -Os split is recorded in a stamp the
+# kernel objects depend on, rewritten only when the cold list changes. Without
+# it test ROM 21 (/home/user/ws-logo) linked ten cold objects still compiled
+# -O2 from before the split (+4.5 KB, slower logo: the title missed a frame).
+COLD_FLAGS := $(BUILD_DIR)/cold-objs.flags
+COLD_FLAGS_RUN := $(shell mkdir -p $(BUILD_DIR) && echo '-Os $(sort $(COLD_OBJS))' | cmp -s - $(COLD_FLAGS) || echo '-Os $(sort $(COLD_OBJS))' > $(COLD_FLAGS))
+$(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o: $(COLD_FLAGS)
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
 # libdragon normally propagates the toolchain from a .z64 goal. Direct object

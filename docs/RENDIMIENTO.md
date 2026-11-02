@@ -984,3 +984,75 @@ la RAM):**
    `asset` 26,1 ms), 42,7 ms en 3030 (34,7 / 25,3), 40,9 ms en 2336 (lógica
    9,5, render 27,4), 40,8 ms en 3041, 38,8 ms en 3432. Lógica máxima 15,5
    ms (dos pasos en 2336).
+
+## Título sin saltos y margen del montón en juego (rama `work-perf21`, base `1afa21a`)
+
+### Salto del título en la ROM 21 (B21)
+
+`test_logo_ares.py` fallaba con la ROM de `/home/user/ws-logo`:
+`MSX TITLE miss from=2 to=4 audio_us=2878`, `dropped=1`, `late=1`, y justo
+antes `MSX CINEMATIC rom:/howto.msxc step past the blank margin by 2989 us
+(loader 0 producer 0)`. El mismo `1afa21a` compilado limpio pasaba, así que
+no hay un commit culpable entre `ab76871` y `1afa21a`: la ROM se reconstruyó
+byte a byte en `/home/user/ws-world` y la diferencia eran **diez objetos
+fríos (`neo_hud`, `marco_*`, `neo_vslot`…) aún compilados -O2** de antes de
+`38ceb91` (make no ve un cambio de opciones; +4,5 KB de imagen) y
+`mission3.pack`. Con ellos el logo gasta ≈0,7 ms más por fotograma, el
+título no termina de cargarse bajo el logo (`loaded_before=374` de 601) y
+su trabajo libre sigue durante el título.
+
+Lo que pasaba el blanco era el paso `L_TABLE` del cargador de HOW TO PLAY:
+la comprobación de sus tablas (2691 entradas, v2) y la reserva del anillo
+se hacían de una vez, sin plazo: **3,4 ms** medidos (título 0,9 ms).
+
+Corrección:
+
+- `cinematic.c`: las tablas se comprueban en trozos de 256 entradas con
+  coste aprendido (`check_part`, `cost_check`) y la reserva del anillo y los
+  lienzos solo empieza con ≥ 700 µs antes del plazo. Reserva medida tras el
+  cambio: 100–560 µs. `ensure()` (sin plazo) lo sigue haciendo todo junto.
+- `Makefile`: `build/cold-objs.flags` guarda la lista -Os; los objetos del
+  mundo, cinemáticas, título y logo dependen de él, así que cambiar la lista
+  recompila (la siguiente compilación en `/home/user/ws-logo` rehace los diez
+  objetos).
+
+Con la ROM idéntica a la que fallaba más la corrección: 2/2 PASS, 0
+saltados, `late=0` en todas las películas; ROM normal limpia: PASS.
+
+### Montón en juego (B22)
+
+`MSX_DIAG` (ROM de referencia) daba 234 KB libres al final del jefe de la
+M1, bajo el margen de 256. La nueva cuenta por partes de `MSX actor_init`
+(`heap +N KB (scene … renderer … hud …)`) mostró por qué: la reserva de
+`actor_init` (640 KB, de cuando medía 560) no incluía la **tira del HUD**
+(`hud_renderer.c`, 304×224 RGBA16 = 133 KB). Total real 719 KB (Marco y
+`fixed.bin` precargados 559, renderer 28, HUD 133): el juego empezaba con
+510 KB libres en vez de 576 (320 de crecimiento + 256 de margen). El
+crecimiento en juego (≈263 KB) es casi todo bloques grabados del fondo, que
+se grababan mientras quedaran 192 KB.
+
+Correcciones:
+
+- Tira del HUD en **CI8** (índice = paleta << 4 | pluma, las 256 entradas de
+  la capa fija como TLUT; copia con TLUT): 67 KB. Píxeles del HUD iguales en
+  la captura de `test_logo_ares.py`.
+- `SCENE_RESERVE_GAME_KB` 640 → **672** (medido 654).
+- `BG_RECORD_MIN_FREE` 192 → **288 KB**: margen + un bloque (`bgmax`, nuevo
+  en `MSX RDP` con `MSX_DIAG`: 23 KB el mayor en la M1).
+
+| Recorrido (ares, `MSX_DIAG`) | Antes | Después |
+| --- | ---: | ---: |
+| M1 referencia: ranuras | 217 (ROM obsoleta) / 215 | **213** |
+| M1: libre al cargar | 510 KB | 605 KB |
+| M1: mínimo libre | 234 KB | **342 KB** (con reserva 736 y HUD RGBA16, 209 ranuras) |
+| M2 referencia: mínimo libre | — | M2_MIN |
+| ROM normal: ranuras | 216 | **214** (libre 608 KB) |
+
+### Balas de la pistola (B23)
+
+El pool de 8 rechazaba disparos en ráfagas. En el arcade la pistola no
+tiene tope propio: `0C0D64` concede si `10C71A < 10C71C` y `10C71C` es
+`0C08A8[0]` = `FF` (sin límite); la bala `01B782` sale del pool de objetos
+con `00411C`. A 6 px por tick y una pulsación cada 4 ticks caben hasta 10 en
+pantalla. `MSX_BULLETS` = 16: recorrido M1 de referencia, pico **10/16, 0
+rechazos** (antes 8/8 con 3–5).

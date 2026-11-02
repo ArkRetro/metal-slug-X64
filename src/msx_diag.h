@@ -32,7 +32,7 @@ typedef enum {
     MSX_POOL_SUB,      /* sub-scripts (4) */
     MSX_POOL_SOLID,    /* solid bodies 106756 (16) */
     MSX_POOL_DYN,      /* kernel dynamic objects (8) */
-    MSX_POOL_BULLET,   /* player pistol bullets (8) */
+    MSX_POOL_BULLET,   /* player pistol bullets (16) */
     MSX_POOL_COUNT
 } msx_diag_pool_t;
 typedef enum {

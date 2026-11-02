@@ -21,6 +21,24 @@ void msx_diag_set_frame(uint32_t frame) {msx_diag.frame=frame;}
 void msx_diag_event(msx_diag_event_t type,unsigned a,unsigned b,uint32_t c) {
     msx_diag_ring_push(&msx_diag.ring,(msx_diag_entry_t){msx_diag.frame,(uint8_t)type,(uint8_t)a,(uint16_t)b,c});
 }
+void msx_diag_trail(int x,int y,int vx,unsigned flags,uint8_t dyn_mask) {
+    msx_diag.trail[msx_diag.trail_next]=(msx_diag_trail_t){msx_diag.frame,(int16_t)x,(int16_t)y,(int16_t)(vx>32767?32767:vx<-32768?-32768:vx),(uint8_t)flags,dyn_mask};
+    msx_diag.trail_next=(msx_diag.trail_next+1u)%MSX_DIAG_TRAIL;
+    if (msx_diag.trail_count<MSX_DIAG_TRAIL) msx_diag.trail_count++;
+}
+void msx_diag_trail_dump(const char *reason) {
+    if (msx_diag.dumps>=16) return;
+    msx_diag.dumps++;
+    DIAG_PRINT("MSX DIAG trail (%s) frame=%lu\n",reason,(unsigned long)msx_diag.frame);
+    for (unsigned i=0;i<msx_diag.trail_count;i++) {
+        unsigned j=(msx_diag.trail_next+MSX_DIAG_TRAIL-msx_diag.trail_count+i)%MSX_DIAG_TRAIL;
+        const msx_diag_trail_t *t=&msx_diag.trail[j];
+        DIAG_PRINT("MSX DIAG trail f=%lu x=%d y=%d vx=%d %s%s%s%s%s%s dyn=%02x\n",(unsigned long)t->frame,t->x,t->y,t->vx,
+            t->flags&MSX_TRAIL_GROUND?"G":"-",t->flags&MSX_TRAIL_RIDE?"R":"-",t->flags&MSX_TRAIL_WALL?"W":"-",
+            t->flags&MSX_TRAIL_KLAND?"K":"-",t->flags&MSX_TRAIL_PUSH?"P":"-",t->flags&MSX_TRAIL_AIR?"A":"-",t->dyn);
+    }
+    DIAG_PRINT("MSX DIAG trail end\n");
+}
 void msx_diag_pool_fail(msx_diag_pool_t pool) {
     /* One ring entry per pool and report window: a full pool refuses on
      * every update and would otherwise flush the ring. */

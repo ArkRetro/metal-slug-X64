@@ -40,7 +40,16 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * (3323 of 3332 KB): the mission complete voice 1137 (played at the
  * mission end, when the cache is idle) and the D's pickup voice 115A (rare)
  * play from rom:/ too (51 KB). */
-static bool streamed(unsigned i) {uint16_t w=msx_sfx_defs[i].word;return w==0x10f8u || w==0x1137u || w==0x115au;}
+/* The MISSION 2 START voice 1132 (36 KB, once per mission, while the
+ * letters fly in) would leave the reference cartridges 1 slot under the
+ * floor (209 slots before it): it plays from rom:/ too. */
+/* B20: the truck's engine 10A5 is a long one-shot (11.58 s, 157 KB), not a
+ * loop: no room in RAM, it plays from rom:/ as well. (The dome's collapse
+ * 1026, 6.16 s, is rendered but has no policy entry: AUDIO_JUEGO.md 13.) */
+static bool streamed(unsigned i) {
+    uint16_t w=msx_sfx_defs[i].word;
+    return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u;
+}
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
     for (unsigned i=0;i<MSX_SFX_COUNT;i++) {
@@ -124,12 +133,15 @@ void game_audio_music(bool play) {
     else {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;}
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
-static bool voice_word(uint16_t w) {return w==0x1123u || w==0x1124u || (w>=0x112cu && w<=0x1130u) || (w>=0x1158u && w<=0x115bu);}
+/* Logged as "MSX AUDIO voice" with the policy's verdict: the player's
+ * voices, the MISSION n START voices and the long streamed effects (B20). */
+static bool voice_word(uint16_t w) {return w==0x10a5u || w==0x1026u || w==0x1123u || w==0x1124u || (w>=0x1131u && w<=0x1136u) || (w>=0x112cu && w<=0x1130u) || (w>=0x1158u && w<=0x115bu);}
 static void request(uint16_t word) {
     /* 012192 (the actors' stop request, word | 0x8000): the channel playing
      * that word stops (the beam's 10F8 at its end 01E4D4). */
     if (word&0x8000u) {
         for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.current[c]>=0 && msx_sfx_defs[policy.current[c]].word==(word&0x7fffu)) {
+            if (voice_word(word&0x7fffu)) debugf("MSX AUDIO voice %04X: stopped\n",(unsigned)(word&0x7fffu));
             mixer_ch_stop(mixer_of(c));msx_sfx_finished(&policy,c);
         }
         return;

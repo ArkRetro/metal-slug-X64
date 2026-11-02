@@ -9,6 +9,7 @@ typedef struct {
     uint32_t peak_frame,fails,fails_window;
 } msx_diag_pool_stat_t;
 typedef struct { unsigned count;uint32_t routine; } msx_diag_stop_stat_t;
+typedef struct { uint32_t frame;int16_t x,y,vx;uint8_t flags,dyn; } msx_diag_trail_t;
 typedef struct {
     msx_diag_ring_t ring;
     uint32_t frame;
@@ -16,6 +17,8 @@ typedef struct {
     msx_diag_stop_stat_t stop[MSX_STOP_COUNT];
     uint32_t dumped_stops;   /* stop kinds whose first occurrence was dumped */
     unsigned dumps;
+    msx_diag_trail_t trail[MSX_DIAG_TRAIL];
+    unsigned trail_next,trail_count;
     bool fatal;              /* an assertion or exception is being reported */
 } msx_diag_state_t;
 extern msx_diag_state_t msx_diag;

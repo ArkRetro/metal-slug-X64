@@ -104,3 +104,13 @@
     `/home/user/metal-slug-X64/filesystem/audio`, ya con `sfx_1123.wav64`):
     comprobar `MSX AUDIO game sounds=71/71` y `MSX CACHE slots` ≥ 208 en las
     dos ROM de referencia.
+11. **Rama `work-m2fix5`:**
+    - B14 etapa 2 (x 2281): la parada en pared del barrido de suelo toma
+      x/y (MISION2.md, «Caída en x 2281 resuelta»). Etapa 3 (x 348/490/611):
+      ver BUG_MATRIX B14.
+    - B35: voz MISSION 2 START `1132` pedida por las letras, de `rom:/`.
+    - B20: `10A5` y `1026` no son bucles (11,6 s y 6,2 s); `10A5` de
+      `rom:/`; `1026` sin política (sus pares unen dos canales del port).
+    Al reconstruir en `/home/user/ws-logo` (audio compartido ya con
+    `sfx_1132`, `sfx_10a5`, `sfx_1026`): `MSX AUDIO game sounds=73/73`,
+    `MSX CACHE slots=209` en la referencia de la M2.

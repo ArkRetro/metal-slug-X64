@@ -115,14 +115,47 @@ BOOT_CINEMATICS := $(wildcard filesystem/cinematics/title-motion.json filesystem
 ifeq ($(words $(BOOT_CINEMATICS)),6)
 BOOT_CINE_OBJS := $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o
 $(BUILD_DIR)/src/main.o: $(BUILD_DIR)/entry_meta.h $(BOOT_CINEMATICS)
-$(BUILD_DIR)/src/main.o: N64_CFLAGS += -DMSX_BOOT_CINEMATICS=1
+$(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEMATICS=1
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
+# Diagnostic mode (src/msx_diag.h, docs/PORT_STATUS.md "Instrumentación"):
+# the game objects again with MSX_DIAG=1 for the reference cartridges and
+# mslugx-diag.z64; the release (mslugx-explorer.z64) keeps MSX_DIAG=0, where
+# every hook is an empty inline. Each diag object waits for its release twin
+# so the generated headers it includes exist.
+DIAG_GAME_OBJS = $(patsubst $(BUILD_DIR)/src/%,$(BUILD_DIR)/diag/%,$(MSLUGX_GAME_OBJS))
+DIAG_LDFLAGS := --wrap=debug_assert_func_f
+$(patsubst $(BUILD_DIR)/src/%,$(BUILD_DIR)/diag/%,$(COLD_OBJS)) $(BUILD_DIR)/diag/msx_diag.o $(BUILD_DIR)/diag/msx_diag_core.o: DIAG_OPT := -Os
+# MSX_REFERENCE_DIAG=0 links the reference cartridges from the release
+# objects (MSX_DIAG=0): the overhead comparison of docs/RENDIMIENTO.md.
+MSX_REFERENCE_DIAG ?= 1
+ifeq ($(MSX_REFERENCE_DIAG),1)
+REF_OBJS = $(DIAG_GAME_OBJS)
+REF_DIR := diag
+REF_DIAG := -DMSX_DIAG=1
+REF_SUFFIX :=
+else
+REF_OBJS = $(MSLUGX_GAME_OBJS)
+REF_DIR := src
+REF_DIAG :=
+REF_SUFFIX := -nodiag
+endif
+$(BUILD_DIR)/diag/%.o: src/%.c $(BUILD_DIR)/src/%.o
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) $(DIAG_OPT) -MMD -DMSX_DIAG=1 -o $@ $<
+# Release-like diagnostic cartridge: the release game with MSX_DIAG=1.
+$(BUILD_DIR)/mslugx-diag.elf: $(DIAG_GAME_OBJS)
+$(BUILD_DIR)/mslugx-diag.elf: LDFLAGS += $(DIAG_LDFLAGS)
+$(BUILD_DIR)/mslugx-reference.elf $(BUILD_DIR)/mslugx-m2-reference.elf $(BUILD_DIR)/mslugx-m3-reference.elf: LDFLAGS += $(if $(REF_DIAG),$(DIAG_LDFLAGS))
+mslugx-diag.z64: N64_ROM_TITLE = "MSX DIAG"
+mslugx-diag.z64: $(BUILD_DIR)/mslugx-diag.dfs
+$(BUILD_DIR)/mslugx-diag.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-diag.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
 # The game cartridge carries only what the game reads; the raw FIX/C-ROM copies
@@ -165,10 +198,10 @@ $(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_D
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.
-$(BUILD_DIR)/reference/gameplay.o: src/gameplay.c
+$(BUILD_DIR)/reference$(REF_SUFFIX)/gameplay.o: src/gameplay.c
 	@mkdir -p $(dir $@)
-	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_INVULNERABLE=1 -o $@ $<
-$(BUILD_DIR)/mslugx-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(filter-out $(BUILD_DIR)/src/gameplay.o,$(MSLUGX_GAME_OBJS))
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_INVULNERABLE=1 $(REF_DIAG) -o $@ $<
+$(BUILD_DIR)/mslugx-reference.elf: $(BUILD_DIR)/reference$(REF_SUFFIX)/gameplay.o $(filter-out $(BUILD_DIR)/$(REF_DIR)/gameplay.o,$(REF_OBJS))
 # Screenshot cartridge (never a release): the reference game with the player
 # dropped once above the waiting Camel Slug (MSX_DEBUG_CAMEL_DROP).
 $(BUILD_DIR)/camelshot/gameplay.o: src/gameplay.c
@@ -182,10 +215,10 @@ $(BUILD_DIR)/mslugx-camel-shot.dfs: $(BUILD_DIR)/game-romfs.stamp
 # Mission 2 reference cartridge (tools/test_mission2_ares.py, never a
 # release): the reference game starting at Mission 2's first record, with
 # the stage-end hook (MSX_REFERENCE_STAGE_EXIT, gameplay.c).
-$(BUILD_DIR)/m2ref/actor.o: src/actor.c
+$(BUILD_DIR)/m2ref$(REF_SUFFIX)/actor.o: src/actor.c
 	@mkdir -p $(dir $@)
-	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=2 -o $@ $<
-$(BUILD_DIR)/mslugx-m2-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(BUILD_DIR)/m2ref/actor.o $(filter-out $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=2 $(REF_DIAG) -o $@ $<
+$(BUILD_DIR)/mslugx-m2-reference.elf: $(BUILD_DIR)/reference$(REF_SUFFIX)/gameplay.o $(BUILD_DIR)/m2ref$(REF_SUFFIX)/actor.o $(filter-out $(BUILD_DIR)/$(REF_DIR)/gameplay.o $(BUILD_DIR)/$(REF_DIR)/actor.o,$(REF_OBJS))
 mslugx-m2-reference.z64: N64_ROM_TITLE = "MSX M2 REFERENCE"
 mslugx-m2-reference.z64: $(BUILD_DIR)/mslugx-m2-reference.dfs
 $(BUILD_DIR)/mslugx-m2-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -203,10 +236,10 @@ $(BUILD_DIR)/mslugx-m1end.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-m1end.dfs: $(BUILD_DIR)/game-romfs.stamp
 # Mission 3 reference cartridge (tools/test_mission3_ares.py, never a
 # release): the same hooks starting at Mission 3's record 0173F6.
-$(BUILD_DIR)/m3ref/actor.o: src/actor.c
+$(BUILD_DIR)/m3ref$(REF_SUFFIX)/actor.o: src/actor.c
 	@mkdir -p $(dir $@)
-	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=3 -o $@ $<
-$(BUILD_DIR)/mslugx-m3-reference.elf: $(BUILD_DIR)/reference/gameplay.o $(BUILD_DIR)/m3ref/actor.o $(filter-out $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=3 $(REF_DIAG) -o $@ $<
+$(BUILD_DIR)/mslugx-m3-reference.elf: $(BUILD_DIR)/reference$(REF_SUFFIX)/gameplay.o $(BUILD_DIR)/m3ref$(REF_SUFFIX)/actor.o $(filter-out $(BUILD_DIR)/$(REF_DIR)/gameplay.o $(BUILD_DIR)/$(REF_DIR)/actor.o,$(REF_OBJS))
 mslugx-m3-reference.z64: N64_ROM_TITLE = "MSX M3 REFERENCE"
 mslugx-m3-reference.z64: $(BUILD_DIR)/mslugx-m3-reference.dfs
 $(BUILD_DIR)/mslugx-m3-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -227,7 +260,7 @@ $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fix
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/neo_world.o $(BUILD_DIR)/src/neo_boss.o: $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h
-$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref/actor.o $(BUILD_DIR)/m3ref/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
+$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/m3ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
 $(BUILD_DIR)/visual_config.h: FORCE tools/build_visual_config.py
 	python3 tools/build_visual_config.py $(MSX_VISUAL_MODE) --scenario $(MSX_SCENARIO) --depth-style $(MSX_DEPTH_STYLE) --output $@
 $(BUILD_DIR)/src/neo_collision.o: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_wreckage.h
@@ -711,6 +744,8 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_scene_clock.c -o $(BUILD_DIR)/host/clock
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_cinematic_codec.c -o $(BUILD_DIR)/host/cinematic-codec
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_msx_sfx.c src/msx_sfx.c -o $(BUILD_DIR)/host/msx-sfx
+	$(HOST_CC) $(HOST_CFLAGS) -DMSX_DIAG=1 tools/test_msx_diag.c src/msx_diag_core.c -o $(BUILD_DIR)/host/msx-diag
+	$(BUILD_DIR)/host/msx-diag 2>/dev/null
 	$(BUILD_DIR)/host/msx-sfx
 	$(BUILD_DIR)/host/fixed
 	$(BUILD_DIR)/host/sprites
@@ -829,6 +864,12 @@ check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture
 	$(BUILD_DIR)/host/gameplay-O2 release 4 3 2 1 | sort > $(BUILD_DIR)/host/gameplay-seeds.out
 	grep '^release run' $(BUILD_DIR)/host/gameplay.out | sort | diff - $(BUILD_DIR)/host/gameplay-seeds.out
 	@echo "PASS: gameplay determinism (-O2 output identical, each release seed alone identical)"
+	# Diagnostic mode (src/msx_diag.h): the same test with MSX_DIAG=1 (pool
+	# hooks and list checks compiled in) prints the same results.
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_DIAG=1 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c src/msx_diag_core.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-diag
+	$(BUILD_DIR)/host/gameplay-diag > $(BUILD_DIR)/host/gameplay-diag.out 2> $(BUILD_DIR)/host/gameplay-diag.err
+	diff $(BUILD_DIR)/host/gameplay.out $(BUILD_DIR)/host/gameplay-diag.out
+	@echo "PASS: MSX_DIAG=1 gameplay output identical (diagnostic hooks only read the simulation)"
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/script_native.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/script-native
 	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native
 	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native --script data/mission2_script.json
@@ -886,7 +927,7 @@ check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference/*.d $(BUILD_DIR)/m2ref/*.d $(BUILD_DIR)/m3ref/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/diag/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference*/*.d $(BUILD_DIR)/m2ref*/*.d $(BUILD_DIR)/m3ref*/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

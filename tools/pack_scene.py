@@ -256,18 +256,32 @@ def main():
     lines.extend('  {0x%x,%d},'%(k,v) for k,v in sorted(native_palettes.items()));lines.append('};')
     lines.append('static const scene_image_t scene_map_images[]={')
     lines.extend('  {'+','.join(map(str,item))+'},' for item in map_images);lines.append('};')
+    # Map cells as 8-byte records (src/scene_assets.h): the first phase's
+    # image and, for an animated cell, the index of its phase pattern (image
+    # deltas per video phase, shared: Mission 1 has one) instead of 8 ids
+    # per cell (22 bytes; ~61 KB of the program image, docs/RENDIMIENTO.md).
+    patterns=[]
+    def cell(layer,x,y,phases):
+        d=tuple(p-phases[0] for p in phases)
+        if not any(d): return '  {%d,255,%d,%d,%d},'%(layer,x,y,phases[0])
+        assert all(-128<=v<=127 for v in d),'cell phase delta out of int8'
+        if d not in patterns: patterns.append(d)
+        return '  {%d,%d,%d,%d,%d},'%(layer,patterns.index(d),x,y,phases[0])
     lines.append('static const scene_map_cell_t scene_map_cells_data[]={')
-    lines.extend('  {'+f'{layer},{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in map_cells);lines.append('};')
+    lines.extend(cell(layer,x,y,phases) for layer,x,y,phases in map_cells);lines.append('};')
     lines.append(f'#define SCENE_PATCH_CELL_COUNT {len(patch_cells)}')
     lines.append('static const scene_map_cell_t scene_patch_cells_data[]={')
-    lines.extend('  {'+f'2,{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in patch_cells)
-    if not patch_cells:lines.append('  {0,0,0,{0}},')
+    lines.extend(cell(2,x,y,phases) for layer,x,y,phases in patch_cells)
+    if not patch_cells:lines.append('  {0,255,0,0,0},')
     lines.append('};')
     lines.append(f'#define SCENE_COLLAPSE_CELL_COUNT {len(collapse_cells)}')
     lines.append('static const scene_map_cell_t scene_collapse_cells_data[]={')
-    lines.extend('  {'+f'3,{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in collapse_cells)
-    if not collapse_cells:lines.append('  {0,0,0,{0}},')
+    lines.extend(cell(3,x,y,phases) for layer,x,y,phases in collapse_cells)
+    if not collapse_cells:lines.append('  {0,255,0,0,0},')
     lines.append('};')
+    assert len(patterns)<=8,'more cell phase patterns than SCENE_CELL_PATTERNS leaves for the stages'
+    lines.append(f'#define SCENE_CELL_PATTERN_COUNT {len(patterns)}')
+    lines.append('#define SCENE_CELL_PATTERNS_INIT {'+','.join('{'+','.join(map(str,p))+'}' for p in patterns)+'}')
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
     lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')

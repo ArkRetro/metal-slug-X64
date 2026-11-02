@@ -105,7 +105,8 @@ def convert(capture,output,event_evidence=None,additional_roots=None,extra_evide
  output.mkdir(parents=True,exist_ok=False);(output/'graph.json').write_text(json.dumps(graph,indent=2)+'\n')
  lines=['/* Converted native script data, not executable original addresses. */','#include "neo_animation.h"','static const neo_anim_command_t marco_commands[]={']
  for pc in ordered:
-  c=nodes[pc];lines.append('{NEO_ANIM_'+c['kind']+','+','.join(str(c[k]) for k in ('asset','target','operand','flags','dx','dy'))+'},')
+  c=nodes[pc];a=c['asset']&0xffffffff;assert a<0x800000 or a>=0xff800000,'asset %08x does not fit the 24-bit command field'%a
+  lines.append('{NEO_ANIM_'+c['kind']+','+str(a if a<0x800000 else a-0x100000000)+','+','.join(str(c[k]) for k in ('target','operand','flags','dx','dy'))+'},')
  lines+=['};','static const neo_anim_program_t marco_script={marco_commands,sizeof(marco_commands)/sizeof(*marco_commands)};']
  assert len(nodes)<65536;(output/'marco_script.h').write_text('\n'.join(lines)+'\n')
  print('Converted',len(nodes),'commands,',len(observed_roots),'observed command seeds;',len(unrecovered),'explicit unrecovered callbacks/services')

@@ -901,3 +901,86 @@ N64 y despreciable en el host, y el primer dibujado del HUD, 19 ms); en los
 primeros 2 s del juego, 3–8 fotogramas tardíos por la grabación de los
 bloques del fondo (≈7 ms cada uno mientras la cámara baja) y algunas
 peticiones de bloques de soldados aún no calentados.
+
+## RAM de la caché de escena recuperada (rama `work-diag`, base `ab76871`)
+
+`ab76871` ya no arrancaba la M1 en las ROM de referencia: `RAM budget: 3326 KB
+left for the scene cache (minimum 3328 KB)`, es decir, 207 ranuras. ROM 20
+(`5b49ffb`) tenía 214–219.
+
+**Qué creció desde ROM 20** (montón total de `MSX MEM display`: 6258 KB en
+ROM 20, 6141 KB en `ab76871` con objetos limpios; la referencia, 6136 KB):
+
+| Origen | Crecimiento |
+| --- | ---: |
+| Código `5b49ffb..ab76871` con las mismas entradas (ELF de referencia 2.009.504 → 2.033.680 B): `neo_world.o` +11,3 KB (programas de soldado y código), `neo_drone` +3,8, `neo_hostage` +2,3, `marco_visual` +1,8, `gameplay` +1,2, `neo_prisoner` +1,1, `neo_m2props` +1,0, `actor` +0,8 | +24 KB |
+| Entradas privadas regeneradas (`rest-native.json`, catálogo de Marco; diferencia restante del montón) | ≈ +95 KB |
+| Efectos residentes: 1.031.042 B (61) → 1.215.338 B (63) | +184 KB |
+| Registros de ranura reservados de más: `sizeof(cache_slot_t)` × 1007 trozos, cuando solo se crean las ranuras usadas | 16 KB |
+
+**Recuperado sin quitar funciones** (la imagen de la referencia sin
+diagnóstico pasa de 2.033.680 a 1.889.632 B, −141 KB):
+
+- `neo_anim_command_t` de 12 a 10 bytes: `asset` es un campo con signo de 24
+  bits junto al tipo (direcciones 68K y constantes `SET/WRITE_LONG`
+  extendidas en signo; los generadores comprueban el rango). 34.220
+  órdenes: −67 KB.
+- Programas de soldado que son la cola de otro apuntan a su tabla
+  (`compile_soldier_ai_tables.py`; los saltos son relativos y las órdenes
+  idénticas): 1062 órdenes, −10,6 KB.
+- Celdas del mapa de 22 a 8 bytes (`scene_map_cell_t`: imagen de la primera
+  fase y patrón de deltas compartido; la M1 tiene uno, la M2 uno). Se
+  comprobó que las 4699 celdas de la M1 dan las mismas 8 imágenes que antes;
+  las de los paquetes de misión se convierten al cargar la etapa: −61 KB.
+- Cálculo de la caché con los registros de las ranuras que se crean: +12 KB.
+
+Ni `SCENE_EXPANDED_MIN_SLOTS` (208) ni el margen de 256 KB cambian. Nueva
+línea `MSX CACHE slots=N` al cargar el juego:
+
+| ROM (ares, arranque completo) | Antes | Después |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64` | sin medir (≈210) | **218** |
+| `mslugx-reference.z64` (con `MSX_DIAG`) | 207 (aserción) | **217** |
+| `mslugx-m2-reference.z64` (con `MSX_DIAG`) | 207 (aserción) | **217** |
+| Con `work-laser` (`686c0fd`) fusionada, sus entradas de `/home/user/ws-m3`: referencia / normal | 206 (3310 KB) | **215 / 216** |
+
+`sfx_10a5` y `sfx_1026` siguen sin empaquetar: son bucles (motor),
+`pack_game_audio.py` los descarta a propósito. Con 1–3 ranuras sobre 214
+hay sitio para ellos (≈14 KB cada uno a 24 kHz VADPCM si se hacen bucles
+residentes).
+
+## Modo de diagnóstico (`MSX_DIAG`, rama `work-diag`)
+
+Coste, recorrido completo de la M1 en ares, `mslugx-reference.z64` del mismo
+código con `MSX_REFERENCE_DIAG=0` (sin diagnóstico) y con él. Media de las
+medias por ventana de 300 fotogramas (sin la de arranque), µs:
+
+| Fase | Sin diagnóstico (58 ventanas) | Con diagnóstico (47 ventanas) |
+| --- | ---: | ---: |
+| `sim` (lógica) | 2890 | 2929 (+39) |
+| `prep` (incluye `msx_diag_game`) | 1923 | 2033 (+110) |
+| `build` (render) | 6869 | 6053 |
+| `cpu` | 11683 | 11016 |
+
+El coste propio es ≈0,15 ms por fotograma (≈0,9 % de 16,7 ms): el recorrido
+de los pools del mundo y la comparación de contadores. `build` y `cpu`
+varían más entre recorridos (ruta del piloto, ritmo de ares) que esa cifra.
+Imagen: +11,5 KB (código y anillo de 1,5 KB). La ROM normal no lleva nada.
+
+**Lo que mide (recorrido con diagnóstico, 208 ranuras, antes de recuperar
+la RAM):**
+
+1. **Montón.** Pico usado en juego 5891 KB; **mínimo libre 238 KB**, por
+   debajo del margen de 256 KB, en la zona del jefe. El juego crece ≈263 KB
+   sobre los 512 KB libres al cargar (reserva 320). Pico de arranque 5628
+   KB. Tras la recuperación (217 ranuras, recorrido PASS) el pico usado es 6036 KB y el mínimo libre **234 KB** al final del jefe: las ranuras ganadas salen del mismo montón, así que el crecimiento en juego (≈263 KB, reserva 320) es ahora la cota.
+2. **Pools.** Actores genéricos con pico **91/96** (95 %) antes del jefe
+   (cámara ≈3192–3376): el siguiente en rechazar. Balas de pistola **8/8
+   con 5 rechazos** (ráfagas de disparo). Lista de nodos 92/160, nodos del
+   jefe 45/96, dibujos 61/160; el resto por debajo del 25 %. Ninguna parada
+   explícita salvo 18 apariciones de familias sin portar (`02A3CE`).
+3. **Fotogramas lentos: render, no lógica.** Los cinco peores son de
+   render con descodificación síncrona: 44,6 ms en 1920 (render 40,0 ms,
+   `asset` 26,1 ms), 42,7 ms en 3030 (34,7 / 25,3), 40,9 ms en 2336 (lógica
+   9,5, render 27,4), 40,8 ms en 3041, 38,8 ms en 3432. Lógica máxima 15,5
+   ms (dos pasos en 2336).

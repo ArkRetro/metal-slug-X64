@@ -11,7 +11,16 @@ enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
 typedef struct { uint16_t page,palette; int16_t x,y; uint16_t width,height,format; } scene_image_t;
-typedef struct { uint16_t layer; int16_t x,y; uint16_t phases[8]; } scene_map_cell_t;
+/* A map cell: layer, position and its image per video phase (& 7), as the
+ * first phase's image plus, for an animated cell, a shared pattern of image
+ * deltas (scene_cell_patterns; SCENE_CELL_STATIC: the same image in every
+ * phase). 8 bytes instead of 8 ids (RAM budget, docs/RENDIMIENTO.md). */
+enum { SCENE_CELL_STATIC=255, SCENE_CELL_PATTERNS=16 };
+typedef struct { uint8_t layer,anim; int16_t x,y; uint16_t phase; } scene_map_cell_t;
+extern int8_t scene_cell_patterns[SCENE_CELL_PATTERNS][8];
+static inline uint16_t scene_cell_phase(const scene_map_cell_t *cell,unsigned phase) {
+    return cell->anim==SCENE_CELL_STATIC?cell->phase:(uint16_t)(cell->phase+scene_cell_patterns[cell->anim][phase&7u]);
+}
 /* misses: every wait for a chunk (sync_misses: those of non-deferrable
  * draws: background, Marco, HUD); idle_decodes: decoded while the CPU waited
  * for a framebuffer (scene_assets_idle). */
@@ -54,6 +63,8 @@ bool scene_assets_idle(void);
 void scene_assets_mem(const char *stage);
 void scene_assets_check_budget(void);
 int scene_assets_heap_low(void);
+/* Cache slots holding a chunk, and slots allocated (diagnostics). */
+void scene_assets_slots(unsigned *resident,unsigned *capacity);
 const scene_bank_t *scene_bank(unsigned id);
 const scene_image_t *scene_frame(unsigned id,unsigned frame);
 const scene_image_t *scene_background_tile(unsigned row,unsigned col);

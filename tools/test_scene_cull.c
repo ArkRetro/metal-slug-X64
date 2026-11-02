@@ -59,7 +59,7 @@ int main(void) {
     srand(1234);
     for (unsigned trial=0;trial<300;trial++) {
         unsigned n=1+(unsigned)rand()%400;scene_map_cell_t *cells=calloc(n,sizeof(*cells));
-        for (unsigned i=0;i<n;i++) {cells[i]=(scene_map_cell_t){(uint16_t)(rand()%5),(int16_t)((rand()%40-10)*(trial&1?16:100)),0,{0}};cells[i].y=(int16_t)(16*(rand()%30-10));}
+        for (unsigned i=0;i<n;i++) {cells[i]=(scene_map_cell_t){.layer=(uint8_t)(rand()%5),.anim=SCENE_CELL_STATIC,.x=(int16_t)((rand()%40-10)*(trial&1?16:100))};cells[i].y=(int16_t)(16*(rand()%30-10));}
         scene_cell_index_t r;if (!scene_cell_index_build(&r,cells,n)) {fprintf(stderr,"random build failed\n");return 1;}
         uint16_t *p=malloc(n*2),*q=malloc(n*2);
         for (unsigned k=0;k<20;k++) {

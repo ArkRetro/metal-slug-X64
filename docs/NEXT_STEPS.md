@@ -20,9 +20,15 @@
    - Pasar todas las puertas (`PORT_STATUS.md`).
    - Comprobar `native animation loaded (562 poses)` en el registro.
    - Probar la ROM normal, no solo la de referencia.
-4. **Instrumentación de depuración desactivable en la ROM normal.** Un
-   anillo con los últimos 64 eventos, la memoria máxima, la ocupación de los
-   pools y las paradas. Debe volcarse en el registro de ISViewer cuando hay
-   una aserción o una parada.
+4. **Hecho (rama `work-diag`):** modo de diagnóstico `MSX_DIAG`
+   (`PORT_STATUS.md` «Instrumentación») y RAM de la caché recuperada: 218
+   ranuras en la ROM normal y 217 en las de referencia (215/216 con
+   `work-laser` fusionada; `RENDIMIENTO.md`). Al fusionar `work-laser`,
+   resolver el conflicto de `neo_world.c` añadiendo
+   `MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT)` a sus peticiones de disparo. Lo
+   siguiente que señalan los datos: el pool de actores genéricos (pico
+   91/96 antes del jefe), las balas de pistola (8/8, rechazos) y los
+   fotogramas de render con descodificación síncrona (40–45 ms en 1920 y
+   3030).
 5. **Siguientes fallos de la matriz por orden:** B14, B11, B12, B03, B13,
    B15.

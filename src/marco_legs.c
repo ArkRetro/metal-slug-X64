@@ -15,7 +15,7 @@ static const entry_t run_jump[8]={{1,-3,15},{2,-3,12},{3,-4,12},{1,-4,12},{2,-4,
  * marco_visual.c's): +72/+74 writes, waits, the +78 branch (FF while
  * airborne) and the loops. */
 #define WW(f,v) {NEO_ANIM_WRITE_WORD,(v),(f),0,0,0,0}
-#define WL(v) {NEO_ANIM_WRITE_LONG,(v),0x72,0,0,0,0}
+#define WL(v) {NEO_ANIM_WRITE_LONG,(int32_t)(v),0x72,0,0,0,0}   /* sign-extended 24-bit (neo_animation.h) */
 #define P {NEO_ANIM_POSE,0,0,0,64,0,0}
 #define W(n) {NEO_ANIM_WAIT,0,0,(n),0,0,0}
 #define RUNP(y,w) WW(0x74,y),P,W(w)

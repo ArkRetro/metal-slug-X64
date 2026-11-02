@@ -10,6 +10,7 @@
 #include "retro_events.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "msx_diag.h"
 #include "msx_stick.h"
 #include "game_audio.h"
 #include "msx_audio.h"
@@ -121,6 +122,7 @@ static void leave_mission(void) {
     scene_mission_unload();neo_collision_set_grid(NULL,NULL,NULL,0,0);scene_renderer_stage_changed();
 }
 static void reset_game(void) {
+    msx_diag_event(MSX_EV_RESET,game.flow.mission+1u,game.deaths,(uint32_t)game.camera);
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
     leave_mission();
@@ -385,12 +387,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.transforming=game.mummy_transform!=0;mi.takeoff=game.mummy_takeoff!=0;
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
-            if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}
+            if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;msx_diag_stop(MSX_STOP_MARCO,marco.failures,0);}
         }
         pending_a=pending_b=false;
         msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
     }
     msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
+    /* MSX_DIAG: pools, stops and events of this frame's updates (read only). */
+    msx_diag_game(&game,(uint16_t)(input.btn.c_left|input.btn.c_right<<1|input.btn.c_up<<2|input.btn.c_down<<3));
     game_audio_update(&game);
     /* A second AI service per frame, between the simulation and the draw:
      * a slow frame (two updates plus a full redraw) no longer drains both

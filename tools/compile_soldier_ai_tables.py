@@ -60,6 +60,13 @@ L.append('static inline const int16_t *soldier_hurtbox(uint32_t tag) {')
 L.append('    for (size_t i=0;i<sizeof(soldier_hurtboxes)/sizeof(soldier_hurtboxes[0]);i++) if (soldier_hurtboxes[i].tag==tag) return soldier_hurtboxes[i].rect;')
 L.append('    return NULL;\n}')
 # Animation programs
+def asset24(v):
+    """neo_anim_command_t.asset is a signed 24-bit field (src/neo_animation.h):
+    a 68K address, or a sign-extended 24-bit constant written as negative."""
+    v&=0xffffffff
+    if v<0x800000: return '0x%xu'%v
+    assert v>=0xff800000,'asset %08x does not fit the 24-bit command field'%v
+    return '-0x%x'%(0x100000000-v)
 kinds={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIELD50':'NEO_ANIM_FIELD50','FINISH':'NEO_ANIM_FINISH',
     'FLIP_FACING':'NEO_ANIM_FLIP_FACING','UNRECOVERED':'NEO_ANIM_UNRECOVERED','REPLACE_PALETTE':'NEO_ANIM_REPLACE_PALETTE',
     'SPAWN_THROW':'NEO_ANIM_SPAWN_THROW','SELECT_POSE':'NEO_ANIM_SELECT_POSE','SET_BYTE':'NEO_ANIM_SET_BYTE','SET_WORD':'NEO_ANIM_SET_WORD',
@@ -67,12 +74,26 @@ kinds={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIE
     'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL','SELECT_FIELD_POSE':'NEO_ANIM_SELECT_FIELD_POSE'}
 L.append('#ifdef MSX_SOLDIER_PROGRAMS')
 L.append('#include "../src/neo_animation.h"')
+def command_text(c):
+    asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
+    return '{%s,%s,%d,%d,%d,%d,%d}'%(kinds[c['kind']],asset24(asset),c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
+texts=[tuple(command_text(c) for c in prog['commands']) for prog in p['programs']]
+# A program whose commands equal the tail of a longer one points into that
+# one's array (jump targets are relative to the program's own start, and the
+# commands are identical, so the program runs the same): ~1k commands less
+# in the console image (docs/RENDIMIENTO.md, RAM budget).
+storage={}   # program index -> (array program, offset)
+tails={}
+for i in sorted(range(len(texts)),key=lambda k:(-len(texts[k]),k)):
+    t=texts[i]
+    if t and t in tails: storage[i]=tails[t];continue
+    storage[i]=(i,0)
+    for k in range(len(t)): tails.setdefault(t[k:],(i,k))
 for i,prog in enumerate(p['programs']):
-    L.append('static const neo_anim_command_t soldier_program_%d[]={'%i)
-    for c in prog['commands']:
-        asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
-        L.append('  {%s,0x%xu,%d,%d,%d,%d,%d},'%(kinds[c['kind']],asset,c['target'],c['operand'],c['flags'],c['dx'],c['dy']))
-    L.append('};')
+    if storage[i][0]==i:
+        L.append('static const neo_anim_command_t soldier_program_%d[]={'%i)
+        for t in texts[i]: L.append('  %s,'%t)
+        L.append('};')
     # ROM address of each command: only host checks (test_neo_family) read
     # it; the console build leaves it out (115 KB of RAM, docs/RENDIMIENTO.md).
     L.append('#ifndef N64')
@@ -84,7 +105,7 @@ L.append('#else')
 L.append('#define SOLDIER_PROGRAM_ADDRESS(i) soldier_program_address_##i')
 L.append('#endif')
 L.append('typedef struct { uint32_t tag; neo_anim_program_t program; const int32_t *address; } soldier_program_t;')
-L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)}'%(prog['root'],i,len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
+L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d+%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)}'%(prog['root'],storage[i][0],storage[i][1],len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
 L.append('#endif')
 L.append('#endif')
 (ROOT/'build').mkdir(exist_ok=True);(ROOT/'build/soldier_ai_tables.h').write_text('\n'.join(L)+'\n')

@@ -7,6 +7,7 @@
 #include "scene_meta.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
+#include "msx_diag.h"
 #include "scene_cull.h"
 #include <stdio.h>
 enum { SCENE_MISSION_PAGE_BASE=SCENE_CHUNK_COUNT*8 };
@@ -287,15 +288,18 @@ static int heap_reserve(void) {
 static int heap_free_min=0x7fffffff;
 void scene_assets_mem(const char *stage) {
     heap_stats_t h;sys_get_heap_stats(&h);
+    msx_diag_heap(stage);
     debugf("MSX MEM %s: heap used=%d KB free=%d KB of %d KB (cache=%u KB) t=%lu ms\n",stage,h.used/1024,(h.total-h.used)/1024,h.total/1024,stats.cache_bytes/1024,(unsigned long)get_ticks_ms());
 }
 void scene_assets_check_budget(void) {
     if (!cache || get_memory_size()<8*1024*1024) return;
     int free_now=heap_free();
     scene_assets_mem("game loaded");
+    debugf("MSX CACHE slots=%u (%u KB, floor %u) free=%d KB\n",capacity,capacity*SCENE_CHUNK_BYTES/1024,SCENE_EXPANDED_MIN_SLOTS,free_now/1024);
     // What the game still allocates while it runs must fit what is left.
     assertf(free_now>=SCENE_RESERVE_RUNTIME+SCENE_HEAP_MARGIN/2,"RAM budget: %d KB free after loading, %d KB reserved for gameplay (scene_assets.c)",free_now/1024,(SCENE_RESERVE_RUNTIME+SCENE_HEAP_MARGIN/2)/1024);
 }
+void scene_assets_slots(unsigned *resident_out,unsigned *capacity_out) { *resident_out=resident;*capacity_out=capacity; }
 int scene_assets_heap_low(void) {
     int f=heap_free();if (f<heap_free_min) heap_free_min=f;
     return heap_free_min;
@@ -308,7 +312,7 @@ static void warm_add(unsigned chunk) {
 }
 static void mark_map(const scene_map_cell_t *cells,unsigned count) {
     for (unsigned i=0;i<count;i++) for (unsigned phase=0;phase<8;phase++) {
-        unsigned c=scene_map_images[cells[i].phases[phase]].page/8;
+        unsigned c=scene_map_images[scene_cell_phase(&cells[i],phase)].page/8;
         if (!map_chunk[c]) {map_chunk[c]=true;map_chunks++;}
     }
 }
@@ -335,7 +339,7 @@ static void plan_cameras(unsigned from,unsigned to) {
         int ahead=cell->x-416,camera=ahead<=0?0:layer==0?ahead*2:layer==1?ahead*4/3:ahead;
         if (layer==2 && camera<MSX_MID_FULL_SPEED_CAMERA) camera=MSX_MID_FULL_SPEED_CAMERA;
         for (unsigned phase=0;phase<8;phase++) {
-            unsigned c=scene_map_images[cell->phases[phase]].page/8;
+            unsigned c=scene_map_images[scene_cell_phase(cell,phase)].page/8;
             if (camera<plan_camera[c]) plan_camera[c]=camera;
         }
     }
@@ -412,7 +416,8 @@ void scene_assets_begin(void) {
         uint32_t began=TICKS_READ();unsigned before=capacity;
         /* The size foreseen when it began, checked against the heap there is
          * now, as a cache begun here would be sized. */
-        int room=heap_free()+(int)(capacity*SCENE_CHUNK_BYTES)-heap_reserve()-(int)(sizeof(cache_slot_t)*SCENE_CHUNK_COUNT)-64;
+        // The slot records (begin) are already allocated for capacity_final.
+        int room=heap_free()+(int)(capacity*SCENE_CHUNK_BYTES)-heap_reserve()-64;
         unsigned now=room>0?(unsigned)room/SCENE_CHUNK_BYTES:0;
         if (now<capacity_final) capacity_final=now>capacity?now:capacity;
         allocate_slots(capacity_final,0);
@@ -447,13 +452,18 @@ static void begin(int coming,int keep) {
     unsigned target=512*1024/SCENE_CHUNK_BYTES;
     staging[0]=memalign(64,SCENE_CHUNK_BYTES);staging[1]=memalign(64,SCENE_CHUNK_BYTES);
     if (expanded) {
-        int room=heap_free()+coming-heap_reserve()-(int)(sizeof(cache_slot_t)*SCENE_CHUNK_COUNT)-64;
-        if (coming && room<(int)(SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES)) {   // early: the verdict is scene_assets_begin's
+        /* Each slot costs its 16 KiB plus its two records (slot_mem, slots
+         * below), allocated for the slots only: before, the records of every
+         * chunk of the pack (1007 x 16 B) were reserved, ~12 KB too many. */
+        int room=heap_free()+coming-heap_reserve()-64;
+        enum { SLOT_COST=SCENE_CHUNK_BYTES+sizeof(cache_slot_t)+sizeof(uint8_t *) };
+        unsigned fit=room>0?(unsigned)room/SLOT_COST:0;
+        if (coming && fit<SCENE_EXPANDED_MIN_SLOTS) {   // early: the verdict is scene_assets_begin's
             debugf("MSX pack: early cache refused, %d KB foreseen\n",room/1024);
             free(staging[0]);free(staging[1]);staging[0]=staging[1]=NULL;return;
         }
-        assertf(room>=(int)(SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES),"RAM budget: %d KB left for the scene cache (minimum %u KB)",room/1024,SCENE_EXPANDED_MIN_SLOTS*SCENE_CHUNK_BYTES/1024);
-        target=(unsigned)room/SCENE_CHUNK_BYTES;
+        assertf(fit>=SCENE_EXPANDED_MIN_SLOTS,"RAM budget: %d KB left for the scene cache (minimum %u KB)",room/1024,(unsigned)(SCENE_EXPANDED_MIN_SLOTS*SLOT_COST/1024));
+        target=fit;
         if (target>SCENE_CHUNK_COUNT) target=SCENE_CHUNK_COUNT;
     }
     slot_mem=calloc(target,sizeof(*slot_mem));
@@ -510,7 +520,7 @@ static void begin(int coming,int keep) {
             const scene_map_cell_t *cell=&scene_map_cells_data[i];unsigned layer=cell->layer<4?cell->layer:3;
             int x=cell->x-msx_layer_scroll(layer,0);
             if (!msx_layer_visible(layer,0) || x< -48 || x>=352) continue;
-            for (unsigned phase=0;phase<8;phase++) warm_add(scene_map_images[cell->phases[phase]].page/8);
+            for (unsigned phase=0;phase<8;phase++) warm_add(scene_map_images[scene_cell_phase(cell,phase)].page/8);
         }
         warm_required=warm_count;
     }
@@ -649,6 +659,22 @@ bool scene_mission_load(unsigned mission) {
  * wipe/fade 3AED8/3AEF0, with the screen black). */
 static void (*load_idle)(void);
 void scene_assets_set_load_idle(void (*fn)(void)) {load_idle=fn;}
+/* Phase patterns of the map cells: Mission 1's (scene_meta.h), then those a
+ * stage adds (scene_stage_load). */
+int8_t scene_cell_patterns[SCENE_CELL_PATTERNS][8]=SCENE_CELL_PATTERNS_INIT;
+static unsigned cell_patterns=SCENE_CELL_PATTERN_COUNT,pattern_stops;
+static uint8_t cell_pattern(const uint16_t ph[8]) {
+    int8_t d[8];bool moving=false;
+    for (unsigned k=0;k<8;k++) {
+        int v=(int)ph[k]-(int)ph[0];
+        if (v<-128 || v>127) {pattern_stops++;return SCENE_CELL_STATIC;}
+        d[k]=(int8_t)v;moving|=v!=0;
+    }
+    if (!moving) return SCENE_CELL_STATIC;
+    for (unsigned p=0;p<cell_patterns;p++) if (!memcmp(scene_cell_patterns[p],d,8)) return (uint8_t)p;
+    if (cell_patterns==SCENE_CELL_PATTERNS) {pattern_stops++;return SCENE_CELL_STATIC;}
+    memcpy(scene_cell_patterns[cell_patterns],d,8);return (uint8_t)cell_patterns++;
+}
 bool scene_stage_load(unsigned index) {
     if (!mission_bytes || index>=mission_head.stages) return false;
     uint32_t began=TICKS_READ();
@@ -669,18 +695,21 @@ bool scene_stage_load(unsigned index) {
     mission_chunks=chunks;mission_chunk_count=mission_head.chunks;
     stage_palettes=take(32u*mission_head.palettes);rom_read(stage_palettes,mission_palettes_at,32u*mission_head.palettes);
     if (load_idle) load_idle();
-    /* Cells: 22-byte records (u8 layer) converted in place to
-     * scene_map_cell_t, the image ids rebased to the stage's images. */
-    _Static_assert(sizeof(scene_map_cell_t)==22,"scene_map_cell_t is the pack record size");
+    /* Cells: 22-byte records (u8 layer, 8 image ids) converted in place to
+     * the 8-byte scene_map_cell_t (never over an unread record), the image
+     * ids rebased to the stage's images; an animated cell's phase deltas
+     * become a pattern (Mission 2: one, 0..7) appended after Mission 1's. */
+    _Static_assert(sizeof(scene_map_cell_t)==8,"scene_map_cell_t layout");
     uint8_t *raw=take(cells*22u);rom_read(raw,mission_cells_at+22u*ps.first_cell,cells*22u);
-    stage_cells=(scene_map_cell_t*)raw;
+    stage_cells=(scene_map_cell_t*)raw;cell_patterns=SCENE_CELL_PATTERN_COUNT;pattern_stops=0;
     for (unsigned i=0;i<cells;i++) {
-        const uint8_t *r=raw+22u*i;scene_map_cell_t c;
-        c.layer=r[0];c.x=(int16_t)(r[2]<<8|r[3]);c.y=(int16_t)(r[4]<<8|r[5]);
-        for (unsigned k=0;k<8;k++) c.phases[k]=(uint16_t)((r[6+2*k]<<8|r[7+2*k])-ps.image_first);
+        const uint8_t *r=raw+22u*i;scene_map_cell_t c;uint16_t ph[8];
+        for (unsigned k=0;k<8;k++) ph[k]=(uint16_t)((r[6+2*k]<<8|r[7+2*k])-ps.image_first);
+        c.layer=r[0];c.x=(int16_t)(r[2]<<8|r[3]);c.y=(int16_t)(r[4]<<8|r[5]);c.phase=ph[0];c.anim=cell_pattern(ph);
         memcpy(&stage_cells[i],&c,sizeof(c));
         if (load_idle && (i&1023u)==1023u) load_idle();
     }
+    if (pattern_stops) debugf("MSX stage %u cells: %u animated cells drawn with their first image (explicit stop: more than %u phase patterns or a delta beyond int8)\n",index+1,pattern_stops,SCENE_CELL_PATTERNS);
     if (load_idle) load_idle();
     /* Images: 8-byte records (page, palette, y, height) read at the end of
      * their table and expanded forward (never over an unread record). */
@@ -732,7 +761,7 @@ bool scene_stage_load(unsigned index) {
     stage_map_first=min_page/8u;stage_map_count=images?max_page/8u-min_page/8u+1u:0;
     map_chunks=0;
     for (unsigned i=0;i<cells;i++) for (unsigned k=0;k<8;k++) {
-        unsigned c=SCENE_CHUNK_COUNT+stage_images[stage_cells[i].phases[k]].page/8u-SCENE_MISSION_PAGE_BASE/8u;
+        unsigned c=SCENE_CHUNK_COUNT+stage_images[scene_cell_phase(&stage_cells[i],k)].page/8u-SCENE_MISSION_PAGE_BASE/8u;
         if (!map_chunk[c]) {map_chunk[c]=true;pinned[c]=true;map_chunks++;}
     }
     unsigned before=stats.loads;

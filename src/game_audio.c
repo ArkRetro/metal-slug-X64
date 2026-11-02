@@ -32,10 +32,15 @@ static bool complete;
 static unsigned frames;
 static unsigned mixer_of(unsigned channel) {return MSX_AUDIO_EFFECT_MIXER+channel;}
 _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono mixer channel per driver channel");
-/* The beam's sustained 10F8 (5 s window, 88 KB) is the one effect not
+/* The beam's sustained 10F8 (5 s window, 88 KB) is not
  * resident: the RAM budget of the scene cache (208 slots) has no room for
  * it. It plays from rom:/ like the music (docs/AUDIO_JUEGO.md, 11). */
-static bool streamed(unsigned i) {return msx_sfx_defs[i].word==0x10f8u;}
+/* With every effect resident (RAMFS_FILES 96: B34) and the death voice
+ * 1123 (B30) the reference cartridge missed 9 KB of its scene cache floor
+ * (3323 of 3332 KB): the mission complete voice 1137 (played at the
+ * mission end, when the cache is idle) and the D's pickup voice 115A (rare)
+ * play from rom:/ too (51 KB). */
+static bool streamed(unsigned i) {uint16_t w=msx_sfx_defs[i].word;return w==0x10f8u || w==0x1137u || w==0x115au;}
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
     for (unsigned i=0;i<MSX_SFX_COUNT;i++) {
@@ -56,7 +61,7 @@ bool game_audio_init(void) {
         char name[64],path[72];snprintf(name,sizeof(name),"audio/%s.wav64",msx_sfx_defs[i].name);
         if (streamed(i)) snprintf(path,sizeof(path),"rom:/%s",name);
         else {
-            if (!ram || !msx_ramfs_load(name)) {loaded[i]=false;continue;}
+            if (!ram || !msx_ramfs_load(name)) {loaded[i]=false;debugf("MSX AUDIO not resident: %s\n",name);continue;}
             snprintf(path,sizeof(path),"ram:/%s",name);
         }
         wav64_open(&sounds[i],path);wav64_set_loop(&sounds[i],false);loaded[i]=true;count++;
@@ -119,6 +124,7 @@ void game_audio_music(bool play) {
     else {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;}
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
+static bool voice_word(uint16_t w) {return w==0x1123u || w==0x1124u || (w>=0x112cu && w<=0x1130u) || (w>=0x1158u && w<=0x115bu);}
 static void request(uint16_t word) {
     /* 012192 (the actors' stop request, word | 0x8000): the channel playing
      * that word stops (the beam's 10F8 at its end 01E4D4). */
@@ -140,10 +146,23 @@ static void request(uint16_t word) {
         debugf("MSX AUDIO mission complete jingle %s\n",ok?"start":"missing");
         return;
     }
+    /* The player's voices (death 0C294E, weapon pickups 0C08F8, bombs
+     * 0C0B60) are logged with the policy's verdict (B30/B34). */
+    bool voice=voice_word(word);
+    int before=-1,wanted=msx_sfx_lookup(word);
+    if (wanted>=0) before=policy.current[msx_sfx_defs[wanted].channel];
     int channel=msx_sfx_request(&policy,word);
+    if (voice) {
+        if (wanted<0) debugf("MSX AUDIO voice %04X: unmapped\n",(unsigned)word);
+        else if (channel<0) debugf("MSX AUDIO voice %04X: dropped under %04X\n",(unsigned)word,(unsigned)msx_sfx_defs[before].word);
+        else if (before>=0) debugf("MSX AUDIO voice %04X: started, cut %04X\n",(unsigned)word,(unsigned)msx_sfx_defs[before].word);
+        else debugf("MSX AUDIO voice %04X: started\n",(unsigned)word);
+    } else if (channel>=0 && before>=0 && voice_word(msx_sfx_defs[before].word))
+        debugf("MSX AUDIO voice %04X: cut by %04X\n",(unsigned)msx_sfx_defs[before].word,(unsigned)word);
     if (channel<0) return;
     int id=policy.current[channel];
     if (!loaded[id]) {
+        if (voice) debugf("MSX AUDIO voice %04X: not resident\n",(unsigned)word);
         if (!warned) debugf("MSX AUDIO missing rom:/audio/%s.wav64\n",msx_sfx_defs[id].name);
         warned=true;msx_sfx_finished(&policy,(unsigned)channel);return;
     }

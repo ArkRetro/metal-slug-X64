@@ -193,6 +193,81 @@ etapa de la Misión 3.
   COMPLETE** tras la Misión 2. `end_actors` (`gameplay.c`) pasaba la misión
   0 a `06090A`. Ahora pasa la del flujo (RAM 10C2F4, número `060F7C`).
 
+## Reaparición en la torre del jefe (B33, rama `work-m2fix3`)
+
+Informe del usuario (MiSTer, ROM 23): si el jefe de la columna mata a Marco
+en el centro, Marco reaparece en el centro y vuelve a morir: un bucle de
+muertes.
+
+**Causa.** `new_life` (`gameplay.c`) usaba en todas las misiones la tabla
+de reaparición de la Misión 1 (`2D5C22`, compilada en `marco_death.c`); en
+otra misión el punto caía fuera de la pantalla y el port lo cambiaba por el
+centro (x 160, y 0x1C0) con el suelo justo debajo. En la torre, bajo el
+centro está el fondo del hueco donde golpea el jefe: la vida nueva bajaba
+allí y, acabados sus 240 fotogramas de invulnerabilidad, volvía a morir en
+el mismo sitio (o por caída, `0C2D6A`, si no había suelo en 256 px). La
+recreativa no usa el centro: busca el suelo más alto de la pantalla.
+
+**Original** (traducido de la ROM, ver `marco_death.c`):
+
+- `019604` (carga de la etapa, `018434`): 10C31E = la tabla del descriptor
+  (+4: entradas de 12 bytes hasta el umbral 0xFFFF) y 10C31A = el registro
+  +E del registro de la misión (el de entrada de la etapa, 4323 = FF).
+- `019658` (actor de misión, cada actualización): 10C31E avanza mientras el
+  progreso de la cámara (10E99E) alcanza el umbral de la entrada siguiente
+  (nunca retrocede); con 4323 = 0 (la primera colocación `0196E8` de la
+  etapa, la entrada andando del principio) 10C31A = entrada + 2.
+- `0196E8`: x/y del registro, relativas a la raíz (10E968/10E96C) si +4/+5,
+  un paso `0143E4` de +7 píxeles, tipo +8. `0C1260` reparte: 0 y 4 →
+  `0C1438` (suelo `01473A` → `0146EE`), 5 → `0C143E` (sin suelo: cae desde
+  el registro). Los tipos 1–3 y 6–8 solo están en los registros de entrada.
+- Tipo 4 (`019758`): d0 = +40 − 10C72C (0x100); negativo → 5; si no,
+  `014742` con D3 = −d0 << 16 busca un suelo por la pantalla: pasos de 5 px
+  hacia la izquierda mientras la x proyectada sea ≥ 0x1C, luego desde la x
+  del registro hacia la derecha mientras sea < 0x124, cada uno una búsqueda
+  `013DB2` (A0 = 0, coordenadas absolutas, 10C00D = FF). Un suelo más cerca
+  que el mejor (D6 > límite) descuenta una racha de 4 (vuelve a 4 donde no
+  hay suelo); el quinto lo hace el mejor (límite = D6) y la x resultado es
+  +10 (izquierda) o −10 (derecha). Sin resultado → tipo 5.
+- En la torre (etapa 3, tabla `2D5C9A`) las entradas desde el progreso
+  0xD00 son de tipo 4 (0xD30: x 0xA0, y 0xC0 relativas, paso 0x10): la
+  recreativa reaparece a la izquierda o a la derecha del hueco.
+
+**Captura** (`capboss`, `capture_fullgame.lua` desde `at_92700` con
+`MSX_FULL_DEBUG=1` y puntos de ruptura en `019758`, `01478A/014790`,
+`0147EE/0147F4`, `014828`, `0C1266`, `0C1450`, más la orden de sonido):
+15 reapariciones en la torre (caídas al hueco del centro), todas de tipo 4,
+con el suelo encontrado a la izquierda (x de pantalla 0x74, 0xA6) o a la
+derecha (0xC4, 0x128 en una plataforma); 810 búsquedas `013DB2`.
+
+**Port.** `marco_respawn_entries/select/entry/search` (`marco_death.c`);
+`new_life` toma la tabla de la etapa del paquete de la misión (`actor.c`:
+el blob `019604` de `scene_stage`), la de la Misión 1 si no hay paquete, y
+para el tipo 4 busca con el núcleo nativo (`013DB2`, A0 = 0). El suelo de
+`0146EE` se busca ahora con 10C00D = FF (`0128E8` de `01473A`; antes 0).
+Paradas explícitas (`respawn_stops`, registradas): un tipo de registro que
+no sea 0/4/5 (se toma 0) o una búsqueda que el núcleo rechaza. Invulnerable
+tras reaparecer: ya estaba (`+84` = 0x78 de `0C14A4`: 240 fotogramas sin
+contactos), como en la recreativa; las caídas no la miran.
+
+**Pruebas.**
+- `tools/test_marco_death.c` (`make check-core`): las 15 reapariciones de
+  la captura (`data/respawn_fixture.json`, `tools/extract_respawn_fixture.py`
+  y `compile_respawn_fixture.py`): entrada elegida, registro tras el paso,
+  las 810 consultas de `014742` con las respuestas de MAME (entradas x, y y
+  límite iguales), tipo y x colocada: 0 diferencias.
+- Anfitrión (paquete de la Misión 2, piloto de referencia hasta la torre
+  con el progreso 0xD30, Marco soltado en x 176 de pantalla hasta morir por
+  caída): con el código anterior la vida nueva sale en x 160 sobre el fondo
+  del hueco (y 1488); con el arreglo, tipo 4 con suelo encontrado a la
+  izquierda, en x 106 y 40 px más arriba (y 1528), y sigue viva 600
+  actualizaciones después. En la captura el suelo bajo el centro está entre
+  0x10 y 0x85 px más abajo y la recreativa elige siempre una plataforma más
+  alta (x de pantalla 0x74, 0xA6, 0xC4 o 0xCE).
+
+Desviación declarada: el paso `0143E4` de +7 es una suma sin barrido (en
+las 15 reapariciones capturadas el paso es completo, +0x10).
+
 ## Pendiente
 
 - La integración en partida (cámara de la arena, colisión del jugador con

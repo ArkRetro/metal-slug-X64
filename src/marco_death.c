@@ -144,23 +144,80 @@ marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,in
     }
     return d->phase;
 }
-/* Mission 1 respawn table (bank 1 2D5C22, 12-byte entries: threshold of the
- * camera progress, then the record of 0196E8: x, y, x relative to the
- * root, y relative, 0, +7 x step, +8 type). The mission's first record
- * 2D5C18 (type 2, the descent of the start) is only the first spawn's. */
-static const struct { uint16_t from; int16_t x,y; uint8_t relx,rely; int8_t step; uint8_t type; } table[]={
-    {0x0000,0x68,0x70,1,0,0x10,0},{0x0360,0x68,0x88,1,0,0x10,0},{0x0780,0xa0,0x70,1,0,0x10,0},
-    {0x0788,0x68,0x70,1,0,0x10,0},{0x0d30,0x28,0x50,1,0,0x10,0}};
+/* Mission 1 respawn table: the 12-byte entries of bank 1 2D5C22 as the
+ * ROM holds them (threshold of the camera progress, then the record of
+ * 0196E8: x, y, x relative to the root, y relative, +6, +7 x step, +8 type,
+ * +9), to the 0xFFFF threshold. The mission's first record 2D5C18 (type 2,
+ * the descent of the start) is only the first spawn's. Missions 2/3 read
+ * their stage's entries from the mission pack (descriptor +4, 019604). */
+static const uint8_t mission1_records[]={
+    0x00,0x00,0x00,0x68,0x00,0x70,0x01,0x00,0x00,0x10,0x00,0x00,
+    0x03,0x60,0x00,0x68,0x00,0x88,0x01,0x00,0x00,0x10,0x00,0x00,
+    0x07,0x80,0x00,0xa0,0x00,0x70,0x01,0x00,0x00,0x10,0x00,0x00,
+    0x07,0x88,0x00,0x68,0x00,0x70,0x01,0x00,0x00,0x10,0x00,0x00,
+    0x0d,0x30,0x00,0x28,0x00,0x50,0x01,0x00,0x00,0x10,0x00,0x00,
+    0xff,0xff};
+static uint16_t rw(const uint8_t *p) {return (uint16_t)(p[0]<<8|p[1]);}
+unsigned marco_respawn_entries(const uint8_t *table,unsigned length) {
+    /* pack_mission.py stage_blobs: the entries up to the 0xFFFF threshold. */
+    unsigned n=0;
+    while ((n+1u)*12u+2u<=length && rw(table+12u*(n+1u))!=0xffffu) n++;
+    return table && length>=14u?n+1u:0u;
+}
+unsigned marco_respawn_select(const uint8_t *table,unsigned entries,unsigned from,uint16_t progress) {
+    /* 019658: the pointer 10C31E moves on while the progress reaches the
+     * next entry's threshold (bcs: unsigned); it never moves back. */
+    unsigned i=from;
+    while (i+1u<entries && progress>=rw(table+12u*(i+1u))) i++;
+    return i;
+}
+marco_respawn_t marco_respawn_entry(const uint8_t *table,unsigned index,int32_t root_x,int32_t root_y) {
+    const uint8_t *r=table+12u*index+2u;   /* 10C31A: the entry's record */
+    /* 0196E8: x/y words, minus the root's words (10E968/10E96C) when +4/+5
+     * are set (y: +0x100 first), placed by 01AB9C at the root. */
+    int16_t x=(int16_t)rw(r),y=(int16_t)rw(r+2);
+    if (r[4]) x=(int16_t)(x-(int16_t)(root_x>>16));
+    if (r[5]) y=(int16_t)(y+0x100-(int16_t)(root_y>>16));
+    marco_respawn_t o;
+    o.x=(int32_t)((uint32_t)(int16_t)x<<16)+((int32_t)(int8_t)r[7]<<16);   /* 019744: one 0143E4 step of +30 = +7 (player 1) */
+    o.y=(int32_t)((uint32_t)(int16_t)y<<16);
+    o.type=r[8];o.step=(int8_t)r[7];
+    return o;
+}
 marco_respawn_t marco_respawn_point(uint16_t progress,int32_t root_x,int32_t root_y) {
-    /* 019658: the entry follows while the progress reaches the next one's. */
-    unsigned i=0;while (i+1<sizeof table/sizeof table[0] && progress>=table[i+1].from) i++;
-    int16_t x=table[i].x,y=table[i].y;
-    if (table[i].relx) x=(int16_t)(x-(int16_t)(root_x>>16));          /* 01970A: the root's word */
-    if (table[i].rely) y=(int16_t)(y+0x100-(int16_t)(root_y>>16));
-    marco_respawn_t r={(int32_t)((uint32_t)(uint16_t)x<<16),(int32_t)((uint32_t)(uint16_t)y<<16),table[i].type};
-    r.x=(int32_t)((uint32_t)(int16_t)x<<16)+((int32_t)table[i].step<<16);   /* 019744: one 0143E4 step of +30 */
-    r.y=(int32_t)((uint32_t)(int16_t)y<<16);
-    return r;
+    unsigned n=marco_respawn_entries(mission1_records,sizeof mission1_records);
+    return marco_respawn_entry(mission1_records,marco_respawn_select(mission1_records,n,0,progress),root_x,root_y);
+}
+/* 014742: from the record's x (+28, Q16 relative to the root; projected
+ * +3C = +28 + root_x), 5-pixel steps left while the projected x is at least
+ * 0x1C, then from the record's x right while it is below 0x124, each a
+ * floor search 013DB2 (A0 = 0) at the projected (x, py) down to `limit`.
+ * A floor closer than the best so far (D6 > limit, signed) counts down a
+ * run of 4 (reset to 4 where no floor is found); the fifth makes it the
+ * best (limit = D6) and the result x +10 (left scan) or -10 (right scan).
+ * Only the word of +28 moves. True with *x at the result; false: *x back
+ * at the record's x. */
+bool marco_respawn_search(int32_t *x,int32_t root_x,int32_t py,int32_t limit,marco_floor_fn floor,void *ctx) {
+    uint16_t orig=(uint16_t)((uint32_t)*x>>16),result=0x8000u,count=4;
+    uint32_t low=(uint32_t)*x&0xffffu;
+    for (int side=0;side<2;side++) {
+        uint16_t w=orig;count=4;
+        for (unsigned guard=0;guard<0x10000u;guard++) {
+            int32_t px=(int32_t)((((uint32_t)w<<16)|low)+(uint32_t)root_x);   /* 01ABC8 */
+            int16_t sx=(int16_t)((uint32_t)px>>16);
+            /* 014772 cmpi.w #$1C/bmi, 0147D6 cmpi.w #$124/bpl: the N flag. */
+            if (side==0?(int16_t)(sx-0x1c)<0:(int16_t)(sx-0x124)>=0) break;
+            int32_t d6=0;
+            if (floor(ctx,px,py,limit,&d6)) {
+                if (d6>limit) {
+                    if (!count--) {limit=d6;result=(uint16_t)(side==0?w+10u:w-10u);}
+                }
+            } else count=4;
+            w=(uint16_t)(side==0?w-5u:w+5u);
+        }
+    }
+    if (result==0x8000u) {*x=(int32_t)(((uint32_t)orig<<16)|low);return false;}
+    *x=(int32_t)(((uint32_t)result<<16)|low);return true;
 }
 void marco_entrance_start(marco_death_t *d) {
     memset(d,0,sizeof *d);neo_anim_start(&d->anim,&entrance_prog,0x100);d->phase=MARCO_ENTERING;

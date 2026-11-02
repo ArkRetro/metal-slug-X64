@@ -149,6 +149,14 @@ typedef struct {
      * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
      * the deaths of kinds 8 / 0x12 (own routines, not translated). */
     marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
+    /* The stage's respawn table (019604 +4: 12-byte ROM entries from the
+     * mission pack; NULL: Mission 1's, marco_death.c), 019658's entry
+     * (10C31E, it only moves on), the respawns, the type-4 searches 014742
+     * that found a floor / did not (type 5), and explicit stops: a record
+     * type other than 0/4/5 (0C1260's 1..3, 6..8 are not translated: type 0
+     * taken) or a floor search the kernel refused. */
+    const uint8_t *respawn_table;uint16_t respawn_length;unsigned respawn_entry;
+    unsigned respawns,respawn_found,respawn_type5,respawn_stops;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
     unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */

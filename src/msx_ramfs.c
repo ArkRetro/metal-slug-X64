@@ -7,7 +7,9 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-enum { RAMFS_FILES=64, RAMFS_HANDLES=64 };
+/* 64 held only 63 effects with fixed.bin: the last six of msx_sfx_defs
+ * (1142, 1158, 115A, 1168, 116A, 116E) never loaded (B34). */
+enum { RAMFS_FILES=96, RAMFS_HANDLES=96 };   /* each resident effect keeps one open (wav64_open) */
 typedef struct { char name[48]; uint8_t *data; size_t size; } ram_file_t;
 typedef struct { const ram_file_t *file; size_t pos; bool used; } ram_handle_t;
 static ram_file_t files[RAMFS_FILES];static unsigned file_count;

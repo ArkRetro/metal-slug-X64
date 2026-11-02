@@ -52,7 +52,7 @@ static int armored_x(const msx_game_t *g) {
 static void release_run(unsigned seed) {
     static msx_game_t g;unsigned steps;
     unsigned rs=seed,dir_r=1;bool up=false;msx_game_init(&g);
-    unsigned hold=0,hold_max=0,arena_lives=0;
+    unsigned hold=0,hold_max=0,arena_lives=0,death_voices=0;
     for (steps=0;steps<80000 && !g.complete;steps++) {
         /* Camera stop 1304: the script waits at 2D67CA for the armoured
          * vehicle 087E36 (group 1) and the prone soldier riding it. */
@@ -94,8 +94,11 @@ static void release_run(unsigned seed) {
              * into the arena (the captures' deaths were all at 3520). */
             assert(g.grounded && 56*MSX_UNIT-g.y==64*MSX_UNIT && px>=56 && px<=58);
         }check_draws(&g);
+        /* B30: every death (0C2956/0C2D6A) requests Marco's voice 1123. */
+        for (unsigned i=0;i<g.world.sound_count;i++) death_voices+=g.world.sounds[i]==0x1123u;
         g.world.sound_count=0;
     }
+    assert(death_voices==g.deaths);
     printf("release run %u: continues=%u steps=%u deaths=%u kills=%u unsupported=%u (%05lx) boss=%u items served=%u stopped=%u weapon shots=%u (native %u) grenades=%u expiries=%u score=%02x%02x%02x%02x popups=%u hold 2D67CA=%u arena lives=%u\n",seed,g.continues,steps,g.deaths,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.world.boss_unsupported,
         g.world.pickup.taken,g.world.item_pickups,g.weapon_shots,g.world.player_shots,g.grenades,g.expiries,
         g.world.pickup.score[0][0],g.world.pickup.score[0][1],g.world.pickup.score[0][2],g.world.pickup.score[0][3],g.world.pickup.popups,hold_max,arena_lives);fflush(stdout);

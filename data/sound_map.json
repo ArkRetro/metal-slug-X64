@@ -547,6 +547,15 @@
     "0C4E0C"
    ],
    "event": "the mummy transformation's smoke 0C4DD8 (0120F8 in its constructor; neo_landing.c)"
+  },
+  {
+   "label": "sfx_1123",
+   "word": "1123",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Marco's death voice: 0C2956 (hit death) and 0C2D6A (fall death) request table 0C294E[+6E] (Marco 1123, Tarma 1087, Eri 1125, Fio 114E) before anything else (MAME capboss: 1123 at every death, return 0C2D96)"
   }
  ]
 }

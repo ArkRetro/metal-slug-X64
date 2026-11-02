@@ -73,3 +73,19 @@
 9. **Siguientes fallos de la matriz por orden:** B14, B03, B15, B20
    (bucles de motor 10A5/1026), pool de actores genéricos (pico 93/96 en la
    M1).
+10. **Rama `work-m2fix3` (B30, B32–B34 del informe de la ROM 23):**
+    - B33: la reaparición sigue la tabla de la etapa (`019604`/`019658`/
+      `0196E8`) y el tipo 4 busca el suelo como `014742` (JEFE_MISION2.md,
+      «Reaparición en la torre del jefe»).
+    - B30: la voz de muerte `1123` (AUDIO_JUEGO.md §12).
+    - B34: `msx_ramfs` cargaba 63 efectos (faltaban `1158`, `115A`, `1142`,
+      `1168`, `116A`, `116E`); registro `MSX AUDIO voice` de las voces del
+      jugador.
+    - B32: no reproducido (BUG_MATRIX). Falta saber el sitio exacto: pedir
+      al usuario una foto antes de ir a la derecha y la pantalla donde no
+      puede volver, o una captura de MAME en ese punto.
+
+    Al reconstruir la ROM en `/home/user/ws-logo` (audio compartido de
+    `/home/user/metal-slug-X64/filesystem/audio`, ya con `sfx_1123.wav64`):
+    comprobar `MSX AUDIO game sounds=71/71` y `MSX CACHE slots` ≥ 208 en las
+    dos ROM de referencia.

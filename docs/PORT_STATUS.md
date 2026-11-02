@@ -74,6 +74,11 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   - Contadores de paradas: `unsupported`, `weapon_stops`,
     `neo_soldier_death_stops` y `boss_unsupported`.
   - Rescates y muertes por caída, con x, y y la cámara.
+  - `MSX respawn`: cada vida nueva con su entrada de la tabla de la etapa,
+    tipo (0/4/5), x/y y si quedó en el suelo (B33).
+  - `MSX AUDIO voice`: las voces del jugador (muerte `1123`, armas
+    `0C08F8`, bombas `1124`) con el veredicto de la política (B30/B34) y
+    `MSX AUDIO not resident` por cada efecto que no cabe en `ram:/`.
 - Las paradas explícitas se cuentan y se registran con su rutina 68K. Nunca
   se ocultan devolviendo éxito.
 - **Modo de diagnóstico (`MSX_DIAG`, `src/msx_diag*.{c,h}`):** activo en las

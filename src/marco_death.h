@@ -47,9 +47,21 @@ bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,ne
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y);
 /* The respawn record of 0196E8 for the camera progress (10E99E): world x/y
  * (Q16, y up) from the scene root (root_x/root_y, Q16) after the 0143E4 step
- * of +7; type +8 (0 in Mission 1: 0C1438). */
-typedef struct { int32_t x,y; uint8_t type; } marco_respawn_t;
+ * of +7; type +8 (0C1260: 0/4 -> 0C1438, 5 -> 0C143E, 4 after 014742).
+ * marco_respawn_point is Mission 1's table (bank 1 2D5C22). */
+typedef struct { int32_t x,y; uint8_t type; int8_t step; } marco_respawn_t;
 marco_respawn_t marco_respawn_point(uint16_t progress,int32_t root_x,int32_t root_y);
+/* The 12-byte entries of a stage's table (019604 +4, ROM bytes to the
+ * 0xFFFF threshold): their count; 019658's pointer from entry `from` for
+ * the progress (it only moves on); 0196E8's record of an entry. */
+unsigned marco_respawn_entries(const uint8_t *table,unsigned length);
+unsigned marco_respawn_select(const uint8_t *table,unsigned entries,unsigned from,uint16_t progress);
+marco_respawn_t marco_respawn_entry(const uint8_t *table,unsigned index,int32_t root_x,int32_t root_y);
+/* 014742 (record type 4): the floor search across the screen. `floor` is
+ * 013DB2 with A0 = 0 at the absolute (projected) point, D3 = limit: true
+ * when found (carry), with D6. See marco_death.c. */
+typedef bool (*marco_floor_fn)(void *ctx,int32_t px,int32_t py,int32_t limit,int32_t *d6);
+bool marco_respawn_search(int32_t *x,int32_t root_x,int32_t py,int32_t limit,marco_floor_fn floor,void *ctx);
 /* 0C1438..0C14DC: the entrance program after the floor snap; true while it
  * runs (no control, +84 = 0x78). */
 void marco_entrance_start(marco_death_t *d);

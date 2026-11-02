@@ -273,6 +273,11 @@ static void landing_step(msx_game_t *g) {
     if (!neo_landing_active(&g->landing)) {g->landing_on=false;g->landing.draw_count=0;}
 }
 static void start_death(msx_game_t *g,uint8_t kind,bool right) {
+    /* 0C2956 (hits, the vehicle's 0C3118, time over) and 0C2D6A (the fall)
+     * first request the character's death voice, table 0C294E[+6E]: Marco
+     * (+6E = 0) 0x1123 (B30; MAME capboss: every death, return 0C2D96). */
+    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=0x1123;
+    else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
     if (!marco_death_start(&g->life,kind,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
     if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
@@ -305,12 +310,14 @@ void msx_game_hurt(msx_game_t *g,int from) {
     if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
     else start_death(g,0,g->x/MSX_UNIT<from);
 }
-/* Floor 0146EE: 013DB2 from the feet down 256 px, terrain or a platform. */
+/* Floor 0146EE after 0C1438's 01473A: 0128E8 (10C00A = 0, 10C00D = FF:
+ * cells of group 1 are no floor) and 013DB2 from the feet down 256 px,
+ * terrain or a platform. */
 static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
     if (g->world_enabled) {
         neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
         neo_kfloor_t f;
-        if (neo_kernel_floor(k,x,*y,NEO_KOBJ_TERRAIN,-256*MSX_UNIT,0xff,0,0,&f) && f.found) {
+        if (neo_kernel_floor(k,x,*y,NEO_KOBJ_TERRAIN,-256*MSX_UNIT,0xff,0,0xff,&f) && f.found) {
             if (f.parent>=NEO_KOBJ_DYN0 && f.parent<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) {
                 const neo_kdyn_t *d=&k->dyn[f.parent-NEO_KOBJ_DYN0];
                 if (d->map) {*y=(int32_t)((uint32_t)f.y+(uint32_t)d->pos.y-(uint32_t)k->terrain.y);ride_on(g,f.parent,x,*y);return true;}
@@ -321,11 +328,23 @@ static bool respawn_floor(msx_game_t *g,int32_t x,int32_t *y) {
     if (neo_surface_at(x,*y,256*MSX_UNIT,256*MSX_UNIT,&s) && s.height<=*y) {*y=s.height;return true;}
     return false;
 }
+/* 014742's floor search: 013DB2 with A0 = 0 at the projected point (the
+ * kernel's absolute frame: terrain = root = 10E968's position), after
+ * 0128E8 (10C00A = 0, 10C00D = FF) and 10C008 = FF (014766). */
+static bool respawn_search_floor(void *ctx,int32_t px,int32_t py,int32_t limit,int32_t *d6) {
+    msx_game_t *g=ctx;neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+    neo_kfloor_t f;
+    if (!neo_kernel_floor(k,px,py,NEO_KOBJ_NONE,limit,0xff,0,0xff,&f)) {g->respawn_stops++;return false;}
+    *d6=f.d6;return f.found;
+}
 /* The panel's new life (0C95AE): a life less (0C95E6; none left is the game
  * over 0C9848, not translated: explicit stop, the port goes on with 0), the
  * timer back to its start (019124), the weapons of a new life (0C2FA4 at
- * the end, 0C0E6E/0C0EAA), the respawn point 0196E8 and the type-0
- * entrance 0C1438 (floor 0146EE, program 0BF498, +84 = 0x78). */
+ * the end, 0C0E6E/0C0EAA), the respawn point 0196E8 and the entrance of its
+ * type (0C1260): 0 and 4 0C1438 (floor 0146EE, program 0BF498, +84 =
+ * 0x78), 5 0C143E (no floor: the player drops from the record). Type 4 is
+ * first 019758: the projected +40 below 10C72C (0x100) or no floor found by
+ * 014742 across the screen make it 5. */
 static void new_life(msx_game_t *g) {
     /* No life left: the panel's game over 0C9848 (neo_hud.c) runs in the
      * next HUD update; the player stays gone until its continue. */
@@ -336,23 +355,42 @@ static void new_life(msx_game_t *g) {
     g->velocity_x=g->velocity_y=0;g->facing=1;g->ride=0;g->air_ticks=0;   /* 0C10FE: facing right */
     g->mount=MSX_MOUNT_NONE;
     int32_t rx,ry;root_xy(g,&rx,&ry);
-    int32_t x,y;
+    int32_t x,y;uint8_t type=0;
     if (g->world_enabled && g->world.camera_native) {
-        marco_respawn_t r=marco_respawn_point(neo_camera_progress(&g->world.camera),rx,ry);
-        x=r.x;y=r.y;
-        /* 019658's table is Mission 1's: on another mission's screen the
-         * point can lie below it (Mission 2 stage 3, the tower: y 65 under
-         * a camera at y 2200, three fall deaths in a row). Then the new
-         * life drops from the screen's upper part. */
-        int px=(int)((x+rx)>>16),py=(int)((y+ry)>>16);
-        if (g->flow.mission!=0u && (py<0x120 || py>0x1f0 || px<32 || px>288)) {x=(160<<16)-rx;y=(0x1c0<<16)-ry;}
+        unsigned length=g->respawn_length;const uint8_t *table=g->respawn_table;
+        if (!table && g->flow.mission!=0u) {
+            /* A mission pack stage without its table (an old pack): explicit
+             * stop, Mission 1's table. */
+            g->respawn_stops++;FALL_LOG("MSX respawn stop: mission %u stage %u has no 019604 table\n",(unsigned)g->flow.mission+1u,(unsigned)g->flow.stage);
+        }
+        unsigned n=table?marco_respawn_entries(table,length):0;
+        marco_respawn_t r;
+        if (n) {
+            g->respawn_entry=marco_respawn_select(table,n,g->respawn_entry,neo_camera_progress(&g->world.camera));
+            r=marco_respawn_entry(table,g->respawn_entry,rx,ry);
+        } else r=marco_respawn_point(neo_camera_progress(&g->world.camera),rx,ry);
+        x=r.x;y=r.y;type=r.type;
+        if (type==4) {
+            /* 019758: d0 = +40 - 10C72C (0C0D2C), negative -> 5; else 014742
+             * with D3 = -d0 << 16. */
+            int16_t d0=(int16_t)((int16_t)((uint32_t)(y+ry)>>16)-0x100);
+            if (d0<0) type=5;
+            else type=marco_respawn_search(&x,rx,y+ry,(int32_t)((uint32_t)(uint16_t)(0u-(uint16_t)d0)<<16),respawn_search_floor,g)?4:5;
+            if (type==4) g->respawn_found++; else g->respawn_type5++;
+        } else if (type!=0 && type!=5) {
+            g->respawn_stops++;
+            FALL_LOG("MSX respawn stop: record type %u (0C1260) not translated, type 0 taken\n",(unsigned)type);
+            type=0;
+        }
     } else {
         /* Without the native camera (lab builds): the port's checkpoint. */
         x=g->checkpoint?g->checkpoint*MSX_UNIT:MSX_START_X;
         g->camera=clamp(x/MSX_UNIT-144,0,MSX_WORLD_WIDTH-320);y=64*MSX_UNIT;
     }
-    g->grounded=respawn_floor(g,x,&y);
-    g->x=x;g->y=56*MSX_UNIT-y;
+    g->grounded=type!=5 && respawn_floor(g,x,&y);
+    g->x=x;g->y=56*MSX_UNIT-y;g->respawns++;
+    FALL_LOG("MSX respawn %u stage %u: entry %u type %u x=%ld y=%ld screen %d,%d grounded=%d\n",g->respawns,(unsigned)g->flow.stage,g->respawn_entry,
+        (unsigned)type,(long)(x>>16),(long)(y>>16),(int)((uint32_t)(x+rx)>>16),(int)(int16_t)((uint32_t)(y+ry)>>16),(int)g->grounded);
     marco_entrance_start(&g->life);g->invulnerable=2*0x78;
 }
 /* Projected words of the player as the original registers them (+3C/+40):

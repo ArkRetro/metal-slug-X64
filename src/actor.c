@@ -102,6 +102,8 @@ static bool load_stage(void) {
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */
     int start_x=st->players_len>=4?(int)(int16_t)(st->players[2]<<8|st->players[3]):0x68;
     msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
+    /* 019604 +4: the stage's respawn entries (019658/0196E8, B33). */
+    game.respawn_table=st->players;game.respawn_length=st->players_len;
     /* The exit kind (fade-in, wipe) and the stage loop run in the game's
      * updates (gameplay.c, stage_entry_step). */
     if (game.mission_start) debugf("MSX mission start 1805C: weapon=%u bombs=%u rescued=%u\n",(unsigned)marco_weapons_id(&game.world.weapons,0),

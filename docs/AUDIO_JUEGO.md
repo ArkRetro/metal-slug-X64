@@ -308,6 +308,52 @@ sfx_10f8` y, en modo explícito, contra `1056`, `1069`, `109B`, `10A7`,
 `10E8`, `1121`, `1137`): sin corte ni caída claros: canal propio
 `ch_10f8`.
 
+## 12. Voz de muerte de Marco y efectos que no cargaban (ROM 23, rama `work-m2fix3`)
+
+**B30: faltaba siempre la voz al morir.** `0C2956` (muerte por contacto, la
+de `0C3118` al perder el vehículo y la del tiempo) y `0C2D6A` (caída) piden
+antes que nada la palabra de la tabla `0C294E` indexada por el personaje
+(+6E: Marco `1123`, Tarma `1087`, Eri `1125`, Fio `114E`). Captura
+`capboss` (MAME, `wpset` en el anillo `10BF68`): `1123` en cada una de las
+15 muertes, llamador `0C2D96`. El port no la pedía: `start_death`
+(`gameplay.c`) la pone ahora en la lista de sonidos del mundo para toda
+muerte. `sfx_1123` en `data/sound_map.json`, render aislado
+(`render_sound_commands.py --labels sfx_1123`: 1,505 s, `OK`, latencia
+15,8 ms), 133 pares medidos (`measure_sound_pairs.py --pairs`: consigo
+misma y contra las 66 etiquetas de la política en los dos órdenes; en
+`data/sound_pairs.json`): corta las voces de los rebeldes y estas caen
+bajo ella (`103E`, `1041`, `104A`, `104F`, `1142`; `10A3`/`10A4`/`10A7`/`10C6`
+solo por onda), solapa con el resto. `derive_sound_policy.py`: canal VOZ,
+nivel 2; ningún otro sonido cambia de canal ni de nivel. `104A`, `104F` y
+`1142` ya tenían el nivel 2, así que en el port la cortan (3 contradicciones
+nuevas en `data/sound_policy.json`, como las anteriores). `sfx_1123.wav64` 20 546 B, residente.
+
+**Seis efectos nunca cargaban.** `msx_ramfs` tenía 64 ficheros y 64
+descriptores: con `fixed.bin` solo cabían 63 efectos y los seis últimos de
+`msx_sfx_defs` (`1142`, `1158` la voz de la C, `115A`, `1168`, `116A`,
+`116E`) se quedaban fuera (`MSX AUDIO game sounds=64/70` en la ROM 23 y un
+único `missing` en el registro). Ahora 96 ficheros y 96 descriptores (cada
+efecto residente tiene su WAV64 abierto) y un registro por efecto que no
+carga. Con todo residente la ROM de referencia se quedaba 9 KB por debajo
+del suelo de la caché de escena (3323 de 3332 KB): la voz de fin de misión
+`1137` (suena con la caché quieta) y la voz de la D `115A` (rara) se leen de
+`rom:/` como `10F8` (51 KB): 210 ranuras en la referencia.
+
+**B34: la voz «Rocket launcher».** La recreativa la pide al coger el arma
+(`0C0928` → tabla `0C08F8`: `112E` para los ids 3 y 8; captura `capboss`
+95523 y `capw8` 14145, solo esa palabra). El port pide lo mismo
+(`marco_weapons_grant`) y `112E` es residente desde la ROM 21; en el
+recorrido de la Misión 1 en ares (referencia) al coger el arma 8:
+`MSX AUDIO voice 112E: started` y nada la corta después. Registro nuevo para
+las voces del jugador (`MSX AUDIO voice XXXX: started / started, cut YYYY /
+dropped under YYYY / cut by YYYY / not resident`). Sin causa encontrada en
+el port: queda abierto. Dato de la recreativa (`capw8`, `-wavwrite` desde
+`sec00_2100`, correlación normalizada de la parte propia de cada voz, tras
+el «OK» común de 0,45 s): la voz de la C en 5928 se oye (0,61), la de la H
+en 8658 (con `108C` cada 5 fotogramas) y la de la R en 14145 (con `10F5` 6
+fotogramas después) no (0,04, el nivel de base): en la recreativa también
+puede no oírse si se dispara al coger el arma; falta medir ese par.
+
 ## Regenerar
 
 ```sh

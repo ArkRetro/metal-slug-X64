@@ -151,6 +151,31 @@ static void release_run(unsigned seed) {
         /* The letters 06090A all arrive and leave (17 nodes, the root sets
          * the mission actor's +60) after the tally's nodes. */
         assert(e.end.mission60==1 && !e.end.unsupported);
+        /* B24: Mission 2's boss 026254 ends its sinking with 018F40 (026E4A,
+         * flags.stage_done) in the last stage. Its next record (017274, type
+         * 4 with +4 = 0) is the mission end 018846 (MAME run4's mission flow
+         * fixture: 0186A0 -> 018870 at frame 117325): the same sequence as
+         * above, then 01891E selects Mission 3 (record 0173F6, stage bits
+         * 0F). The stage step used to take it as a stage exit and wait for
+         * a stage load that never came. */
+        static msx_game_t m;m=e;
+        for (unsigned stage=1;stage<=3;stage++) {
+            for (unsigned k=0;k<200 && m.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&m.flow);   /* the wipes 3AED8/3AEF0: 35 updates */
+            assert(m.flow.state==NEO_MISSION_PLAYING && m.flow.mission==1 && m.flow.stage==stage);
+            assert(neo_mission_ends_after_stage(&m.flow)==(stage==3));
+            if (stage<3) {m.flow.end=0;neo_mission_stage_done(&m.flow);}
+        }
+        m.complete=false;m.end_started=false;m.mission_end=MSX_END_NONE;m.stage_step=0;m.end.count=0;
+        m.world.mission_step=0;m.world.ga_flags.stage_done=1;
+        unsigned calls=0,end_updates=0;
+        while (m.mission_end!=MSX_END_DONE && calls<8000) {
+            bool started=m.end_started;msx_game_update(&m,0,false,false);calls++;
+            if (started && !(m.ticks&1)) end_updates++;
+            assert(!m.stage_step);
+        }
+        assert(m.complete && m.mission_complete && m.mission_end==MSX_END_DONE && !m.end_stops && !m.end.unsupported);
+        assert(m.flow.mission==2 && m.flow.record==0x173F6 && m.flow.load && m.flow.cleared[0]==0x0f);
+        printf("release run %u: Mission 2 boss 018F40 -> mission end 018846 in %u updates -> Mission 3 record %06X\n",seed,end_updates,(unsigned)m.flow.record);
     }
     assert(!g.world.unsupported && !g.world.boss_unsupported);   /* no node stops (the turret gun's fire 08FA1A is native) */
     // The random policy (deaths, respawns on the ledge or the vehicle's
@@ -301,7 +326,71 @@ static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id
  * no stop, every descriptor in the scene pack, and they kill. */
 /* Weapons 06 / 0B: the beam 01E22C (neo_pweapon.c) made by the steps of
  * its fire programs (0C46D6), its sparks. */
-static void pweapon_run(void) {chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);chaser_run_id(6);chaser_run_id(0x0b);}
+/* B25: weapons 02/07 fired facing left. 0C4434 (01AC94) copies the
+ * player's +15 & 3 to the blast 0644C4/0646B0: MAME s2/s7 (the sgun2/sgun7
+ * families, 23 blasts each) have +15 = 01 for each of the 12 shots facing
+ * left (+6E = 80 level, 40 up, C0 down) and 00 facing right (00, 40, C0).
+ * The port made every blast with +15 = 0: facing left it was drawn and hit
+ * (row E1412, mirrored by +15 bit 0) towards the right. */
+static void sgun_left_run(uint8_t id) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned checked[2][3]={{0}},bad=0;bool seen[NEO_WORLD_GACTORS]={false};
+    for (unsigned steps=0;steps<4000;steps++) {
+        if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
+            uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound);
+        }
+        /* Walk right, then turn round every 400 steps; aim up a quarter of
+         * the time, jump with Down held a quarter of the time. */
+        bool leftward=(steps/400)%2==1;unsigned u=steps%400;
+        int dir=u<8?(leftward?-1:1):0;g.aim_up=u>=100 && u<200;
+        bool jump=u>=300 && (u%40)<4;g.crouch=u>=300 && (u%40)>=8;
+        msx_game_update(&g,dir,jump,steps%8<4);g.invulnerable=2;g.world.sound_count=0;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
+            bool blast=a->active && (r==0x64556u || r==0x645d2u || r==0x645e0u);
+            if (blast && !seen[i]) {
+                bool left=g.facing<0;uint8_t f15=ga_b(a,0x15)&1u,angle=ga_b(a,0x6e);
+                /* 064556 toggles +15 bit 1 for the down row; bit 0 stays. */
+                unsigned aim=angle==0x40?1:angle==0xc0?2:0;
+                bool good=f15==(left?1u:0u) && (aim || angle==(left?0x80u:0u));
+                checked[left][aim]++;if (!good) bad++;
+            }
+            seen[i]=blast;
+        }
+    }
+    printf("%02X left/right: level %u/%u, up %u/%u, down %u/%u blasts checked, %u with the wrong facing\n",id,
+        checked[1][0],checked[0][0],checked[1][1],checked[0][1],checked[1][2],checked[0][2],bad);fflush(stdout);
+    assert(!bad && checked[1][0] && checked[0][0] && checked[1][1] && checked[0][1] && checked[1][2] && !g.world.unsupported);
+}
+/* B26: the sprite windows and layers of each stage in SCB slot order
+ * (msx_draw_order, from MAME run4's RAM 10B954/10B95C and the layer
+ * objects' +2C) and player 1's +1E (0x8834 - +40 on the ground: run4
+ * 19860, +40 = 312 -> 86FC; 26040, 362 -> 86CA). Mission 1 and Mission 2
+ * stage 3 keep the port's order (layers 0..2, bit-2 sprites, 3..4, the
+ * others); stage 1 draws the bottom strip 10E83E (layer 0) over window A
+ * and the exit marker 0B6F6A (+15 bit 2) over it; stage 2 the layer
+ * 10D7B6 (1/2) over window A and the gate's frame 03A82E over it. */
+static void draw_order_run(void) {
+    msx_draw_order_t o=msx_draw_order(0,0);assert(o.known && o.back==0x07 && o.front==0x18 && !o.normal_mid);
+    o=msx_draw_order(1,1);assert(o.known && o.back==0x1e && o.front==0x01 && o.normal_mid);
+    o=msx_draw_order(1,2);assert(o.known && o.back==0x18 && o.front==0x06 && o.normal_mid);
+    o=msx_draw_order(1,3);assert(o.known && o.back==0x01 && o.front==0x18 && !o.normal_mid);
+    o=msx_draw_order(2,4);assert(!o.known && o.back==0x07 && o.front==0x18 && !o.normal_mid);
+    static msx_game_t g;msx_game_init(&g);
+    unsigned grounded=0,air=0;uint16_t last=0xffff;
+    for (unsigned steps=0;steps<3000;steps++) {
+        msx_game_update(&g,1,(steps%200)<4,steps%8<4);g.invulnerable=2;
+        if (!g.world_enabled || (g.ticks&1)) continue;
+        uint16_t px,py;msx_game_projected(&g,&px,&py);
+        if (g.life.phase==MARCO_ALIVE && !g.descent && g.grounded) {assert(msx_game_depth(&g)==(uint16_t)(0x8834u-py));grounded++;}
+        else if (g.life.phase==MARCO_ALIVE && !g.descent && last<0xe000u) {if (msx_game_depth(&g)!=last) fprintf(stderr,"step %u depth %04x last %04x py %u grounded %d\n",steps,msx_game_depth(&g),last,py,g.grounded);assert(msx_game_depth(&g)==last);air++;}
+        last=msx_game_depth(&g);
+    }
+    printf("draw order: Mission 2 stage 1 back %02x front %02x, stage 2 back %02x front %02x; player +1E on the ground %u updates, kept in the air %u\n",
+        msx_draw_order(1,1).back,msx_draw_order(1,1).front,msx_draw_order(1,2).back,msx_draw_order(1,2).front,grounded,air);fflush(stdout);
+    assert(grounded>100 && air>10);
+}
+static void pweapon_run(void) {sgun_left_run(2);sgun_left_run(7);chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);chaser_run_id(6);chaser_run_id(0x0b);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
  * (0C3B46/0C419E) instead of firing, and the cuts kill. */
@@ -586,6 +675,7 @@ int main(int argc,char **argv) {
     // boss's end sequence completes depends on the fight's timing.
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
+    draw_order_run();
     chaser_run();
     pweapon_run();
     knife_run();

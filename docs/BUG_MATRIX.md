@@ -62,9 +62,9 @@ Abreviaturas:
 | B21 | El título salta un fotograma (2→4) en la ROM 21 | `tools/test_logo_ares.py mslugx-explorer.z64` (ROM de `/home/user/ws-logo`) | 0 saltados, `late=0` | `MSX TITLE miss from=2 to=4`, `dropped=1`, `late=1` | `cinematic.c`: la comprobación de las tablas de HOW TO PLAY (2691 entradas) y la reserva de su anillo en un solo paso (3,4 ms) pasaban el blanco; 10 `.o` fríos de `/home/user/ws-logo` seguían compilados -O2 (logo más lento, el título sin cargar entero al empezar) | A: ROM idéntica byte a byte reconstruida | P5 | corregido (ares) `work-perf21`: tablas por trozos con plazo, `Makefile` recompila los fríos al cambiar la lista -Os; falta MiSTer |
 | B22 | Montón libre 234 KB al final del jefe de la M1 (margen 256) | `MSX_DIAG`, recorrido M1 | ≥ 256 KB | 234 KB | `scene_assets.c`: la reserva de `actor_init` (640 KB) no contaba la tira del HUD (133 KB); `scene_renderer.c`: los bloques del fondo grababan hasta 192 KB libres | A | P1 | corregido (ares) `work-perf21`: tira del HUD en CI8 (133 → 67 KB), reserva de `actor_init` 672 KB (medida 654), bloques del fondo solo con ≥ 288 KB libres; M1: mínimo 344 KB, M2: 283 KB, 213 ranuras (ref.) / 214 (rel.) |
 | B23 | Balas de pistola 8/8 con rechazos | `MSX_DIAG` (pools) | el arcade no limita la pistola (`10C71C` = FF, `0C08A8[0]`): solo su pool de objetos | 8 balas, rechazos en ráfagas | `gameplay.h` `MSX_BULLETS` | A, ROM | P4 | corregido (ares) `work-perf21`: 16; pico 10/16 (M1) y 14/16 (M2), 0 rechazos |
-| B24 | Al vencer al jefe de la M2 (columna donde se salta y se dispara hacia abajo) el juego no continúa | jugar el jefe de la M2 con la ROM 22 | fin del jefe → MISSION COMPLETE | se queda parado | `neo_m2boss.c`, flujo de misión | U | P2 | en curso (`work-m2fix1`) |
-| B25 | La escopeta no dispara bien hacia la izquierda | coger la S y disparar a la izquierda | estallido a la izquierda | solo derecha, arriba y abajo | `neo_pweapon.c` 0644C4, `gameplay.c` | U | P4 | en curso (`work-m2fix1`) |
-| B26 | Marco cruza el borde de las puertas en vez de pasar por dentro | atravesar una puerta de la M2 | Marco detrás del marco de la puerta | Marco delante del borde | prioridad +1E, capas | U | P5 | en curso (`work-m2fix1`) |
+| B24 | Al vencer al jefe de la M2 (columna donde se salta y se dispara hacia abajo) el juego no continúa | jugar el jefe de la M2 con la ROM 22 | fin del jefe → MISSION COMPLETE | se queda parado | `neo_m2boss.c` `026E4A` (`018F40`), `gameplay.c` `msx_game_stage_end`, `neo_mission.c` | U, H (`test_neo_mission`: 5 fines de misión de `run4` predichos; `test_gameplay`: 420 actualizaciones hasta la Misión 3; falla con el código anterior), A | P2 | corregido (ares) `work-m2fix1`: el `018F40` del jefe iba al paso de etapa y el flujo quedaba en `NEO_MISSION_END` sin etapa que cargar, con cualquier muerte del jefe; ahora va a `018846` como la M1 (JEFE_MISION2.md); falta MiSTer |
+| B25 | La escopeta no dispara bien hacia la izquierda | coger la S y disparar a la izquierda | estallido a la izquierda | solo derecha, arriba y abajo | `gameplay.c` (creación, `0C4434` → `01AC94`) | U, M (`s2`/`s7`: 11 de 23 estallidos con +15 = 01), H (`sgun_left_run`: 131 a la izquierda, 0 erróneos; 131 con el código anterior) | P4 | corregido (PC) `work-m2fix1`: el proyectil no recibía el +15 & 3 del jugador (giro); vale para todas las armas de `0C42AA` (ARMAS_VEHICULOS.md Paso 14); falta MiSTer |
+| B26 | Marco cruza el borde de las puertas en vez de pasar por dentro | atravesar una puerta de la M2 | Marco detrás del marco de la puerta | Marco delante del borde | `actor.c`, `scene_renderer.c`, `gameplay.c` `msx_draw_order`/`msx_game_depth` | U, M (`run4` 19860 y 26040: marcador `0B6F6A` y marco `03A82E` en la ventana B, ranuras sobre Marco), H (`draw_order_run`), A | P5 | corregido (ares) `work-m2fix1`: Marco se dibujaba siempre el último; ahora ventanas A/B y capas en orden de ranuras por etapa y Marco en su +1E (MISION2.md «Orden de dibujo»); M3 sin aplicar; falta MiSTer |
 | B27 | Faltan premios en la M2 | jugar la M2 | premios del arcade | faltan | objetos y guion de la M2 | U | P4 | en curso (`work-m2fix2`) |
 | B28 | No sale humo cuando Marco se convierte en momia | aliento de momia | humo (C4DD8/C5286) | no hay | efectos de la forma 3 | U (= B13) | P5 | en curso (`work-m2fix2`) |
 | B29 | No sale el arma al coger el láser | coger la L | se ve el arma | no se ve | recogida 06, poses | U | P4 | en curso (`work-m2fix2`) |
@@ -76,13 +76,13 @@ Abreviaturas:
 | --- | --- | --- |
 | Pistola, H, C | P | P (fixtures) |
 | R (lanzacohetes) | F (B04, al llegar al jefe) | ? |
-| S/F/D (02/07, 04/09, 0D) | P (familias) | ? en juego real |
+| S/F/D (02/07, 04/09, 0D) | P (familias; a la izquierda desde B25) | ? en juego real |
 | Láser | — | P (familias, `pweapon`) |
 | Muerte de soldados por F/S | P (B12) | ? en juego real |
 | Forma momia | — | P (lógica) / F (dibujo, B10) |
 | Vehículos | P | ? |
 | Jefe | P | P (8 piezas en ares, ROM de referencia) |
-| Transición entre misiones | F (B05) | — |
+| Transición entre misiones | P (B05) | P en ares (B24: M2 → M3) |
 | Música | P | F al entrar desde la M1 (B06) |
 | Eventos y oleadas | P | F (B09) |
 | Reinicio tras morir / CONTINUE | P | ? |

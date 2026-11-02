@@ -1348,6 +1348,27 @@ y `040DF0`. Falta la evidencia de MAME (un soldado muerto por la llama o el
 estallido con volcados por fotograma, `extract_soldier_ticks.py`) y la
 variante de `NEO_SOLDIER_EVENT_DEATH_CHILD` con el programa `24039C`.
 
+**Escopeta hacia la izquierda (B25, rama `work-m2fix1`).** Informe de la
+ROM 22: la S dispara bien a la derecha, arriba y abajo, pero no a la
+izquierda. `0C4434` llama a `01AC94` tras crear el proyectil de la tabla
+`0C42AA`: copia `+15 & 3` del jugador (el giro, bit 0) al proyectil, como
+`0C43E4` al destello. `gameplay.c` creaba todos los proyectiles con `+15`
+= 0: el estallido `0644C4/0646B0` mirando a la izquierda se dibujaba
+hacia la derecha y su fila `E1412` (que `0049E8` refleja por `+15` bit 0)
+golpeaba a la derecha; arriba y abajo se ven casi simétricos. Las capturas
+`s2`/`s7` (`MSX_WEAPONS_ASSIST_ID=2/7`, plan `air`, mitad de cada postura
+mirando a la izquierda) ya tenían esos disparos: 11 de los 23 estallidos
+nacen con `+15` = 01 (`+6E` = 80 de frente, 40 arriba, C0 abajo) y la
+familia (con los bytes y las filas de ataque grabados) pasaba; el fallo
+estaba solo en la creación del juego. Las familias `flame4/9`, `dball`,
+`chaser` y `rlaunch8` muestran lo mismo (`+15` = 01 a la izquierda), así
+que el arreglo (`left?1:0` como el destello) vale para todas las armas de
+`0C42AA`. Pruebas: `test_neo_family` cuenta los estallidos de `sgun2/sgun7`
+a la izquierda (11 de 23) y exige los dos sentidos; `test_gameplay`
+(`sgun_left_run`, en `pweapon`) dispara 02 y 07 a ambos lados, arriba,
+agachado y abajo en el aire: 131 estallidos a la izquierda con `+15` bit 0
+y el ángulo de MAME, 0 erróneos (131 erróneos con el código anterior).
+
 ### Paso 16: el rayo 06/0B y las muertes por llama y estallido (rama `work-laser`, B11 y B12)
 
 **Rayo (`neo_pweapon.c`, `beam_tick`).** Traducción de `01E22C..01F094`

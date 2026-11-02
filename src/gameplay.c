@@ -56,6 +56,7 @@ void msx_game_init(msx_game_t *g) {
     for (unsigned k=0;k<40 && g->flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&g->flow);
     g->x=MSX_START_X;g->y=msx_ground_offset(g->x);
     g->facing=1;g->grounded=true;g->health=1;
+    g->depth1e=0x8834;
     // The original region script starts at its first record with the RNG
     // ring the mission handoff left (data/soldier_ai_tables.json).
     neo_world_init(&g->world,-(int32_t)((uint32_t)g->camera<<16));g->world_enabled=true;
@@ -157,6 +158,7 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
     if (g->mission_start) marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     neo_world_init_stage(&g->world,0,st);
+    g->world.front_window=msx_draw_order(g->flow.mission,g->flow.stage).front_window;   /* 012022 (B26) */
     g->world.script_skip_unported=MSX_REFERENCE_INVULNERABLE!=0;   /* reference: skip unported script records */
 
     g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
@@ -187,7 +189,17 @@ void msx_game_stage_actors(msx_game_t *g) {
     neo_world_mission_actor(&g->world,0x5287c,0,0);
 }
 void msx_game_stage_end(msx_game_t *g) {
-    if (g->stage_step) return;
+    if (g->stage_step || g->complete) return;
+    /* A 018F40 whose next record is the mission end (Mission 2's boss
+     * 026254 at 026E4A, Mission 3's only stage): the stage loop 0186A0
+     * takes 018722 -> 018846, the mission end of mission_end_step (which
+     * makes the record step itself), as Mission 1's boss (mission_step 2).
+     * The stage step would leave the flow at NEO_MISSION_END with no stage
+     * to load and nothing to leave it: the B24 softlock. */
+    if (neo_mission_ends_after_stage(&g->flow)) {
+        g->mission_complete=true;g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));
+        return;
+    }
     /* 018F40 then 018722: the next record (the flow's exit kind). */
     g->flow.end=0;neo_mission_stage_done(&g->flow);
     g->stage_step=1;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));
@@ -494,6 +506,43 @@ static void mount_after_world(msx_game_t *g) {
         return;
     }
     if (r==MARCO_MOUNT_STOP) {g->mount_stops++;g->mount_stop=stop;g->mount=MSX_MOUNT_NONE;}
+}
+uint16_t msx_game_depth(const msx_game_t *g) {return g->depth1e;}
+/* MAME run4 RAM at each stage (constant from the stage load to its end;
+ * docs/BUG_MATRIX.md B26): words 10B954 (window A first slot), 10B95C
+ * (window B, FFFF none) and +2C of 10E83E, 10D7B6, 10E8C6, 10C72E (FFFF:
+ * no layer). The slot allocator that writes them (01A97A..01AABA, 00A002)
+ * is not translated. Mission 1 (40/88: 10E83E 0, 10D7B6 20, 10C72E 68,
+ * B 40, A 88) is the default order. */
+static const struct {uint8_t mission,stage;uint16_t a,b,layer[4];} draw_windows[]={
+    {0,0,0x88,0x40,{0x00,0x20,0xffff,0x68}},        /* Mission 1 from 2100 */
+    {1,1,0x40,0x14a,{0x12a,0x00,0xffff,0x20}},      /* Mission 2 stage 1 (19410..19920) */
+    {1,2,0x20,0x15c,{0xffff,0x13c,0xffff,0x00}},    /* stage 2 (19950..26070) */
+    {1,3,0x50,0x20,{0x00,0xffff,0xffff,0x30}},      /* stage 3 (26160..117930) */
+};
+msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage) {
+    msx_draw_order_t o={0x07,0x18,false,false,false};   /* layers 0..2, window B, 3..4, window A */
+    for (unsigned i=0;i<sizeof(draw_windows)/sizeof(draw_windows[0]);i++) {
+        if (draw_windows[i].mission!=mission || draw_windows[i].stage!=stage) continue;
+        /* Port layers of each object: 10E83E 0, 10D7B6 1 and 2 (the same
+         * object at reduced/full speed, tools/neo_scene.py ram_slots),
+         * 10C72E 3 and 4 (the Mission 1 props scroll with it). */
+        static const uint8_t bits[4]={0x01,0x06,0x00,0x18};
+        uint16_t first=draw_windows[i].a<draw_windows[i].b?draw_windows[i].a:draw_windows[i].b;
+        uint16_t second=draw_windows[i].a<draw_windows[i].b?draw_windows[i].b:draw_windows[i].a;
+        o.back=o.front=0;
+        for (unsigned l=0;l<4;l++) {
+            uint16_t base=draw_windows[i].layer[l];
+            if (base==0xffff) continue;
+            if (base<first) o.back|=bits[l];
+            else if (base<second) o.front|=bits[l];
+            else return (msx_draw_order_t){0x07,0x18,false,false,false};   /* a third pass: not modelled */
+        }
+        o.normal_mid=draw_windows[i].a<draw_windows[i].b;o.known=true;
+        o.front_window=(int16_t)draw_windows[i].a<(int16_t)draw_windows[i].b;   /* 012022: cmp.w, bge */
+        return o;
+    }
+    return o;
 }
 void msx_game_projected(const msx_game_t *g,uint16_t *x,uint16_t *y) {
     neo_world_player_t p=player_frame(g);*x=p.px;*y=p.py;
@@ -880,7 +929,8 @@ static void end_actors(msx_game_t *g,bool jump,bool fire) {
     neo_end_ram_t *m=&g->end_ram;
     m->pressed[0]=(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u));
     m->video=(uint16_t)(g->ticks>>1);
-    neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program,m};
+    /* 06090A draws the number of the mission that ends (RAM 10C2F4, 060F7C). */
+    neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,g->world.front_window,g->flow.mission,neo_world_program,m};
     neo_end_update(&g->end,&in);
     for (unsigned p=0;p<2;p++) {g->world.ga_flags.rescued[p]=m->rescued[p];memcpy(g->world.pickup.score[p],m->score[p],4);}
     for (unsigned i=0;i<m->sound_count;i++) {
@@ -947,7 +997,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         }
     } else g->lock_held=0;
 #endif
-    /* Stage exit 0B6ED2 (neo_goarrow.c): 018F40 ends the stage. */
+    /* Stage exit 0B6ED2 (neo_goarrow.c), the boss 026254 (026E4A): 018F40. */
     if (g->world_enabled && g->world.ga_flags.stage_done) {g->world.ga_flags.stage_done=0;msx_game_stage_end(g);return;}
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
@@ -1014,7 +1064,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (!(g->ticks&1) && g->start_letters) {
         /* The MISSION n START letters after the mission actor (neo_end.c;
          * RAM 10C2F4 = 42F4, the flow's mission). */
-        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,g->flow.mission,neo_world_program,NULL};
+        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,g->world.front_window,g->flow.mission,neo_world_program,NULL};
         neo_end_update(&g->end,&in);
         g->start_stops+=g->end.unsupported;
         if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}
@@ -1339,7 +1389,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
                 if (k.group==MSX_FIRE_C) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                if (neo_world_player_actor(&g->world,k.constructor,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,0,g->world.player_node[0][0x5e],0))
+                /* 0C4434: 01AC94 copies the player's +15 & 3 (the facing
+                 * bit 0) to the projectile, as 0C43E4 to the flash: the
+                 * blast 0644C4/0646B0 draws and mirrors its row E1412 by
+                 * it (B25; MAME s2/s7: +15 = 01 for every shot facing
+                 * left, +6E = 80 level, 40 up, C0 down). */
+                if (neo_world_player_actor(&g->world,k.constructor,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,g->world.player_node[0][0x5e],0))
                     g->world.weapon_player.combo95++;
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }
@@ -1427,6 +1482,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u) && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
         hud_step(g);
+        /* +1E (depth1e): E0EC dying or hanging; back to +66 = 8834 with
+         * the new life or the landing (0C10DE, 0C1580..); 01AD8C on the
+         * ground with the update's projected +40. */
+        if (g->life.phase!=MARCO_ALIVE || g->descent) g->depth1e=0xe0ec;
+        else {
+            if (g->depth1e>=0xe000u) g->depth1e=0x8834;
+            if (g->grounded) g->depth1e=(uint16_t)(0x8834u-player_frame(g).py);
+        }
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;

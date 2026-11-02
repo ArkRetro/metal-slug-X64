@@ -10,7 +10,8 @@ would (ground fire, the downward shot, frequent jumps). Checks: stage 1
 ends by its native exit, stage 2 with its script (06835C native, vertical
 modes 4/5) ends and loads stage 3, whose tower (writer 0B7C38: collision
 and drawing from the same piece types) is climbed up to the boss arena,
-to the boss 026254 (native) and the mission end. Screenshots at each milestone;
+to the boss 026254 (native) and the mission end (018F40 after the
+sinking, tally, MISSION COMPLETE, Mission 3 loaded). Screenshots at each milestone;
 the stage ends, tower pieces and the perf numbers are reported and the
 last line is RESULT: PASS/FAIL. Stage 3 is walked by the reference build's
 route planner (src/msx_autopilot.h, docs/MISION2.md "Fase 2f"), turned on
@@ -101,6 +102,10 @@ try:
     worker.start()
     wait_for(r'MSX stage 1 camera x=(1\d\d)',timeout=120);snap('stage1-middle')
     wait_for(r'MSX stage 1 camera x=320 ',timeout=240);time.sleep(.5);snap('stage1-end');walked.append(1)
+    # B26: the exit 0B6ED2 walks the player into the doorway (handlers
+    # 0CA3EC): the marker 0B6F6A (+15 bit 2, window B) over him.
+    wait_for(r'MSX player handlers=054B18',timeout=240)
+    for k in range(4):time.sleep(.4);snap('stage1-door-%d'%k)
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 2',timeout=240)
     m=wait_for(r'MSX stage load mission 2 stage 2: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 2 start',timeout=30);time.sleep(1.5);snap('stage2-start');walked.append(2)
@@ -109,6 +114,10 @@ try:
         time.sleep(2);
         if time.monotonic()>end-args.stage_seconds+(shots+1)*args.stage_seconds/6:snap('stage2-%d'%shots);shots+=1
         if re.search(r'MSX stage end \(018722\) mission 2: next stage 3',log()):break
+        # B26: the gate 03A6EA open, the player walked through its frame 03A82E.
+        if 'door2' not in walked and 'MSX player handlers=054B18' in log()[log().find('MSX mission 2 stage 2 start'):]:
+            walked.append('door2')
+            for k in range(4):time.sleep(.4);snap('stage2-door-%d'%k)
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 3',timeout=5);walked.append('2 done')
     m=wait_for(r'MSX stage load mission 2 stage 3: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 3 start',timeout=30);time.sleep(2);snap('stage3-start');walked.append(3)
@@ -132,6 +141,14 @@ try:
         assert not stopped,stopped.group(0)
     assert done,'stage 3: no mission complete within %d s'%(3*args.stage_seconds)
     time.sleep(1);snap('mission-complete');walked.append('mission complete')
+    # B24: the boss sinks and ends the stage (018F40 at 026E4A); its next
+    # record is the mission end 018846: the tally, MISSION COMPLETE, the
+    # fade and 01891E's Mission 3 (no softlock after the boss).
+    wait_for(r'MSX mission complete camera=',timeout=120);walked.append('018F40')
+    wait_for(r'MSX prisoner tally done',timeout=120)
+    wait_for(r'MSX mission end letters arrived',timeout=60);snap('mission-complete-letters')
+    wait_for(r'MSX mission end 018846 done',timeout=60)
+    wait_for(r'MSX mission 3 stage \d+ start',timeout=60);time.sleep(2);snap('mission3-start');walked.append('mission 3')
 finally:
     stop.set()
     for name in ('Right','Left','Up','a','b','Return'):
@@ -158,4 +175,4 @@ if rdp:print('RDP samples=%d draws max=%d CPU max=%d us misses max=%d'%(len(rdp)
 if audio:print('audio underruns max=%d'%max(audio))
 complete=[s for s in ('2','3') if any(e[0]==s for e in ends)]
 print('script records of unported constructors skipped (reference):',max([int(n) for n in re.findall(r'unported constructor skipped \(count=(\d+)\)',text)] or [0]))
-print('RESULT: %s Mission 2 walked: %s'%('PASS' if complete==['2','3'] and 'mission complete' in walked and pieces else 'FAIL',', '.join(map(str,walked)) or 'none'))
+print('RESULT: %s Mission 2 walked: %s'%('PASS' if complete==['2','3'] and 'mission complete' in walked and 'mission 3' in walked and pieces else 'FAIL',', '.join(map(str,walked)) or 'none'))

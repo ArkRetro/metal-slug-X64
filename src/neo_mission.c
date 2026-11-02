@@ -117,6 +117,17 @@ void neo_mission_next(neo_mission_t *m) {
     if ((uint8_t)m->mission>=6) {m->state=NEO_MISSION_GAME_END;m->routine=0x1893e;stop(m,0x1893e);return;}
     neo_mission_start(m,m->mission);
 }
+bool neo_mission_ends_after_stage(const neo_mission_t *m) {
+    uint32_t a=m->record+(uint32_t)(int16_t)rw(m->record+2);           /* 0182C8 */
+    for (unsigned guard=0;guard<64;guard++) {
+        uint16_t t=rw(a);
+        if (t!=4) return t!=0;                                           /* 0182B6 */
+        uint16_t to=rw(a+4);
+        if (!to) return true;                                            /* 0182DA */
+        a=find(m->index,to);
+    }
+    return false;
+}
 uint32_t neo_mission_map_list(const neo_mission_t *m) {return rl(m->descriptor);}
 uint32_t neo_mission_players(const neo_mission_t *m) {return rl(m->descriptor+4);}
 uint16_t neo_mission_script_entry(const neo_mission_t *m) {return rw(m->descriptor+0xa);}

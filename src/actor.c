@@ -275,6 +275,63 @@ void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) 
 void actor_set_active(bool active) {
     (void)active;scene_clock_reset(&simulation_clock);pending_a=pending_b=false;
 }
+/* Window A (B26): the vehicle renderer, then the sprites without +15 bit
+ * 2 in +1E order with player 1 at its +1E (msx_game_depth; it is near the
+ * list head, so it draws under an actor of the same word): the parachute
+ * canopy (+1E = the player's - 1) right before it and the landing marker
+ * (+1E = FFFE) at its word. */
+static void draw_marco(unsigned bank_id,unsigned frame);
+static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) {
+    vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
+    uint16_t z=msx_game_depth(&game);bool player=false,marker=false;
+    for (unsigned k=0;k<=game.world.draw_count;k++) {
+        const neo_world_draw_t *d=k<game.world.draw_count?&game.world.draws[order[k]]:NULL;
+        if (d && (d->attributes&4u)) continue;
+        if (!player && (!d || d->z>=z)) {
+            player=true;
+            for (unsigned i=game.landing.marker_draws;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],false);
+            draw_marco(bank_id,frame);
+        }
+        if (player && !marker && (!d || d->z>=0xfffeu)) {
+            marker=true;
+            for (unsigned i=0;i<game.landing.marker_draws;i++) draw_end(&game.landing.draws[i],false);
+        }
+        if (d) draw_native(d,false);
+    }
+}
+static void draw_marco(unsigned bank_id,unsigned frame) {
+    /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
+    if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
+    {
+        static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
+        neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
+        if (marco_native && game.life.phase!=MARCO_ALIVE) {
+            uint16_t bx,by;msx_game_projected(&game,&bx,&by);
+            n=marco_death_draw(&game.life,bx,by,game.facing,&next[0])?1u:0u;
+        }
+        /* A descriptor outside the audited catalog (one run-start pose,
+         * 188930, never reached the screen in the captures) keeps the
+         * previous pose for that update instead of a blank frame. */
+        bool known=n>0;unsigned pose;
+        for (unsigned i=0;i<n && known;i++) known=marco_renderer_find(next[i].descriptor,&pose);
+        if (known) {for (unsigned i=0;i<n;i++) parts[i]=next[i];shown=n;}
+        else if (n && !missing++) debugf("MSX marco descriptor outside the catalog: %06lx\n",(unsigned long)next[0].descriptor);
+        n=shown;
+        if (n) {
+            /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
+            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
+            unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
+            /* The mummy (form 3): slots 63/64 hold its two palettes
+             * (marco-mz2 palette dumps). The transformation's body
+             * (1887E0/1887CC) keeps the player's own palettes: marco-mz2's
+             * audit uses them in its first 37 frames (2101..2137, the
+             * transformation), the mummy's from the end of it on. */
+            bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3 && !game.mummy_transform;
+            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
+            scene_render_forget_texture();
+        } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
+    }
+}
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
     load_target=&surface;
@@ -581,8 +638,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
     scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
     scene_render_set_layer_offset(1,game.world.train.on,(int)neo_train_scroll(&game.world.train));
-    scene_render_back(game.camera,game.camera_height,game.backdrop_after,game.ticks);
-    /* Sprites with attribute bit 2 (+15 bit 2) lie behind layers 3/4. Every
+    /* B26: the frame's sprite windows and layers in their SCB slot order
+     * (msx_draw_order, gameplay.c): window A holds the sprites in +1E
+     * order, the player among them at its +1E (msx_game_depth), window B
+     * the +15 bit 2 ones (e.g. Mission 2's exit marker 0B6F6A, +1E FFF1,
+     * and the gate's frame 03A82E: over Marco when he walks through). */
+    msx_draw_order_t layout=game.in_stage?msx_draw_order(game.flow.mission,game.flow.stage):msx_draw_order(0,0);
+    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,game.ticks,layout.back,true);
+    /* Sprites with attribute bit 2 (+15 bit 2) lie in window B. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */
     rdpq_set_scissor(8,8,312,232);
     /* 0113EA: the original sorts the frame's sprite-list entries by the
@@ -599,46 +662,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             order[j]=(uint8_t)i;
         }
     }
-    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}
-    scene_render_front(game.camera,game.camera_height,game.backdrop_after,game.ticks);
+    if (layout.normal_mid) draw_window_a(order,bank_id,frame);
+    else for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}
+    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,game.ticks,layout.front,false);
     rdpq_set_scissor(8,8,312,232);
-    vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
-    for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (!(d->attributes&4u)) draw_native(d,false);}
-    /* The parachute canopy (+1E = the player's - 1): behind the player. */
-    for (unsigned i=game.landing.marker_draws;i<game.landing.draw_count;i++) draw_end(&game.landing.draws[i],false);
-    /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
-    if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
-    {
-        static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
-        neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
-        if (marco_native && game.life.phase!=MARCO_ALIVE) {
-            uint16_t bx,by;msx_game_projected(&game,&bx,&by);
-            n=marco_death_draw(&game.life,bx,by,game.facing,&next[0])?1u:0u;
-        }
-        /* A descriptor outside the audited catalog (one run-start pose,
-         * 188930, never reached the screen in the captures) keeps the
-         * previous pose for that update instead of a blank frame. */
-        bool known=n>0;unsigned pose;
-        for (unsigned i=0;i<n && known;i++) known=marco_renderer_find(next[i].descriptor,&pose);
-        if (known) {for (unsigned i=0;i<n;i++) parts[i]=next[i];shown=n;}
-        else if (n && !missing++) debugf("MSX marco descriptor outside the catalog: %06lx\n",(unsigned long)next[0].descriptor);
-        n=shown;
-        if (n) {
-            /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
-            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
-            unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
-            /* The mummy (form 3): slots 63/64 hold its two palettes
-             * (marco-mz2 palette dumps). The transformation's body
-             * (1887E0/1887CC) keeps the player's own palettes: marco-mz2's
-             * audit uses them in its first 37 frames (2101..2137, the
-             * transformation), the mummy's from the end of it on. */
-            bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3 && !game.mummy_transform;
-            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
-            scene_render_forget_texture();
-        } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
-    }
-    /* The landing's player marker (+1E = FFFE): over the player. */
-    for (unsigned i=0;i<game.landing.marker_draws;i++) draw_end(&game.landing.draws[i],false);
+    if (layout.normal_mid) {for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}}
+    else draw_window_a(order,bank_id,frame);
     for (unsigned owner=0;owner<2;owner++) {
         const msx_bullet_t *list=owner?game.enemy_bullets:game.bullets;
         unsigned n=owner?MSX_ENEMY_BULLETS:MSX_BULLETS;

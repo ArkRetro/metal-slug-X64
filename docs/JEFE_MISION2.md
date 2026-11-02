@@ -150,8 +150,50 @@ explosiones; sin explicar uno por uno). 1260105 píxeles con dos piezas
 del jefe superpuestas no se comparan (el orden del hardware decide) y 299
 entradas autoanimadas quedan fuera.
 
+## Fin de la misión tras el jefe (B24, rama `work-m2fix1`)
+
+Informe del usuario (MiSTer, ROM 22): al vencer al jefe desde la columna
+(saltando y disparando hacia abajo) el juego no continúa.
+
+**Causa.** La muerte `026C30..026E7A` es lineal y no depende de dónde ni
+cómo muere el jefe: `018F92` (10C300 = FF, manejadores `0C0538`), se hunde
+y en `026E4A` (+40 < 0x60) llama a `018F40` (`flags.stage_done`). El port
+mandaba ese `018F40` a `msx_game_stage_end` como si fuera la salida de una
+etapa: `neo_mission_stage_done` pasaba al registro `017274` (tipo 4, +4 =
+0: fin de misión), el flujo quedaba en `NEO_MISSION_END` y `stage_end_step`
+esperaba para siempre una carga de etapa que no llega (`018846` solo lo
+arrancaba el jefe de la Misión 1 por `mission_step`). Es un bloqueo en
+cualquier muerte del jefe, no solo desde la columna. La prueba de ares
+(`test_mission2_ares.py`) daba PASS con la señal `018F92` y se paraba un
+segundo después, antes del `018F40`: no podía verlo.
+
+**Arreglo** (`gameplay.c`, `neo_mission.c`): `neo_mission_ends_after_stage`
+lee (sin cambiar el flujo) adónde lleva `018722` desde el registro actual
+(`0182C8`, saltos de tipo 4 de `0182DA`); si es el fin de misión,
+`msx_game_stage_end` hace lo de la Misión 1: `complete` y `mission_end_step`
+(`018846`: espera 0x1E, recuento `0308C0`, `0020`+`1137` y MISSION COMPLETE
+`06090A`, fundido `9C0A`, `01891E` → Misión 3). Vale también para la única
+etapa de la Misión 3.
+
+**Pruebas.**
+- `tools/test_neo_mission.c`: en cada uno de los 11 fines de etapa de la
+  captura completa `run4` la lectura coincide con la decisión del arcade
+  (`0186A0` → `018870` o etapa siguiente): **5 fines de misión
+  predichos**, entre ellos el del jefe de la Misión 2 (fotograma 117325).
+- `tools/test_gameplay.c` (`release_run`): desde el fin de la Misión 1, el
+  flujo en la etapa 3 de la Misión 2 y `flags.stage_done` como lo deja
+  `026E4A`: fin de misión en 420 actualizaciones (30 + recuento + 160 +
+  32), sin paradas, Misión 3 elegida (registro `0173F6`, etapas 0F). Con el
+  código anterior falla (`stage_step` se queda en 1).
+- ares (`tools/test_mission2_ares.py`, ahora exige `018F40`, el recuento,
+  las letras, `018846` y la carga de la Misión 3): ver `BUG_MATRIX.md` B24.
+  El piloto de referencia mata al jefe desde la columna de la torre
+  saltando con Abajo (disparo hacia abajo), que es el caso del informe.
+- La primera pasada en ares (antes del arreglo siguiente) mostró **MISSION 1
+  COMPLETE** tras la Misión 2. `end_actors` (`gameplay.c`) pasaba la misión
+  0 a `06090A`. Ahora pasa la del flujo (RAM 10C2F4, número `060F7C`).
+
 ## Pendiente
 
-- La reaparición del jugador y el resto de la etapa tras `018F40` siguen
-  el flujo de misión existente; la integración en partida (cámara de la
-  arena, colisión del jugador con el cuerpo) no se ha jugado entera.
+- La integración en partida (cámara de la arena, colisión del jugador con
+  el cuerpo) no se ha jugado entera a mano.

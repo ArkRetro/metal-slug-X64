@@ -179,6 +179,12 @@ typedef struct {
      * stage loop 01860A (4302 = FF); counts for the log. */
     unsigned entry_updates,entry_fade_updates;bool mission_start,entry_letters;
     int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;int32_t lock_value;
+    /* Player 1's priority word +1E (the sprite list is sorted by it,
+     * 0113EA): +66 = 8834 on foot (0C10DE/0C14D0/0C157A/0C1EBE/0C1F70),
+     * 0143EE's ground sweep ends with 01AD8C (+1E = +66 - +40) while +15
+     * bit 6 (ground) is set, and the air keeps it; E0EC dying (0C2980,
+     * 0C2D6A) and in the descent (0C15C6). */
+    uint16_t depth1e;
     /* Reference build only (msx_autopilot.h): the test's stage-3 pilot. */
     struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;} pilot;
 } msx_game_t;
@@ -202,6 +208,17 @@ void msx_game_autopilot(msx_game_t *game,int *direction,bool *jump);
 void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int start_x,int camera_max);
 /* 01860A of a packed mission's stage: MISSION n START (42FA = 0) and the GO arrow. */
 void msx_game_stage_actors(msx_game_t *g);
+/* The order of the frame's sprite windows and background layers, by SCB
+ * slot (the hardware draws a higher slot over a lower one). Window A (RAM
+ * 10B954, the sprites in +1E order) and window B (10B95C, the sprites with
+ * +15 bit 2: 012022 sets it when A starts below B) and the layer objects'
+ * first slots (+2C: 10E83E layer 0, 10D7B6 layer 1/2, 10E8C6 layer 2 in
+ * Mission 3, 10C72E layers 3/4). Two layer passes: `back` (first, with
+ * the backdrop), the window `mid`, `front`, the other window. */
+typedef struct {uint8_t back,front;bool normal_mid;bool known;bool front_window;} msx_draw_order_t;   /* front_window: 012022 sets +15 bit 2 (A < B, signed words) */
+msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage);
+/* Player 1's +1E for the sprite order (depth1e). */
+uint16_t msx_game_depth(const msx_game_t *game);
 /* Stage end (018F40 + 018722 for a stage whose next record is a stage). */
 void msx_game_stage_end(msx_game_t *game);
 /* A hit on the player (from: world x of the attacker, used without the

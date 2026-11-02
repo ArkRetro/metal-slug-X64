@@ -46,6 +46,20 @@
    la M2, 213 ranuras) y B23 (balas de pistola 16, como el arcade sin tope).
    Al reconstruir la ROM en `/home/user/ws-logo`, comprobar que se rehacen
    los diez objetos fríos (`neo_hud.o` de texto 7675 B, no 10982).
-7. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
+7. **Rama `work-m2fix1` (B24–B26 del informe de la ROM 22):**
+   - B24: el fin del jefe de la M2 lleva al recuento, a MISSION 2 COMPLETE
+     y a la Misión 3 (antes se quedaba parado en cualquier muerte del jefe).
+   - B25: la escopeta y las demás armas de `0C42AA` disparan con el giro del
+     jugador (+15).
+   - B26: orden de dibujo por ranuras SCB en la M2 y Marco en su +1E.
+
+   Falta:
+   - Confirmarlo en MiSTer.
+   - Aplicar a la Misión 3 su fila de la tabla de ventanas (`MISION2.md`,
+     «Orden de dibujo»): con 10E8C6 la capa 2 pasa delante de la ventana
+     B. Hay que comprobarlo en ares antes.
+   - Traducir el repartidor `01A97A`.
+   - Las balas de pistola siguen dibujándose al final.
+8. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
    (bucles de motor 10A5/1026), pool de actores genéricos (pico 93/96 en la
    M1).

@@ -334,7 +334,7 @@ static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return fal
 /* 012022: RAM 10B954 against 10B95C; the only call in Mission 1 is the
  * banners' constructor at camera 1600, where the trace reads 0x88 and 0x40
  * (bge: +15 bit 2 clear). */
-static bool g_front_layer(void *ctx) {(void)ctx;return false;}
+static bool g_front_layer(void *ctx) {tick_t *t=ctx;return t->w->front_window;}   /* set per stage by gameplay.c (B26) */
 static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);

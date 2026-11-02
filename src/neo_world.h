@@ -165,6 +165,7 @@ typedef struct {
     uint16_t boss_palette[32];uint8_t boss_palette_refs[32];
     int16_t boss_boxes[NEO_BOSS_NODES],last_boss_boxes[NEO_BOSS_NODES];unsigned boss_box_count,last_boss_box_count;
     uint8_t mission_step;           /* 018F92 (1) / 018F40 (2) requested by the boss */
+    bool front_window;              /* 012022: RAM 10B954 < 10B95C (signed), the stage's sprite windows (gameplay.c msx_draw_order) */
     uint8_t flag606;                /* RAM 10C606 */
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;

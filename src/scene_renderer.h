@@ -26,6 +26,7 @@ void scene_render_image_scaled(const scene_image_t *image,float x,float y,float 
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
+void scene_render_layers(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first);
 void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool flash);
 /* A sprite part with the Neo Geo flips: mirror = attribute bit 0 (H),
  * flip_y = bit 1 (V); the caller places the part (flipped offsets). */

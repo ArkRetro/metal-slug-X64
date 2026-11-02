@@ -967,3 +967,70 @@ bloqueos de cámara (`op 4`, `052A5C`), torre `0B7C38`, jefe `026254` y su
 música `059F76`, música por etapa, fin de misión `018F92`/`018F40`. La
 flecha GO de la **Misión 1** sigue sin crearse: sus sprites no están en el
 paquete de la Misión 1 (parada).
+
+## Orden de dibujo por ranuras SCB (B26, rama `work-m2fix1`)
+
+Informe del usuario (MiSTer, ROM 22): al cruzar las puertas de la Misión 2
+Marco se dibuja sobre el borde de la puerta en vez de pasar por dentro.
+
+**MAME** (`captures-fullgame/run4`, volcados de VRAM, RAM y capturas cada
+30 fotogramas). Puerta de la etapa 1 (19830/19860): Marco (paleta de
+hardware A5) en las ranuras 80..82 y 288..290; el marcador de salida
+`0B6F6A` (programa `2A8B70`, +1E = FFF1, +15 bit 2 por `012022`) en
+338..341 / 377..380, encima: en 19860 tapa a Marco dentro del arco. Puerta
+de la etapa 2 (25980/26040): la puerta `03A6EA` (+1E = 0, +15 = 0) en
+33..36; su marco `03A82E` (+15 bit 2) en 349..355, encima de Marco (90..94).
+
+**Ventanas.** La lista de sprites se reparte en dos ventanas de ranuras:
+A (RAM 10B954: los sprites en orden de +1E, `0113EA`) y B (10B95C: los de
++15 bit 2; `012022` pone el bit cuando A empieza por debajo de B). Las capas
+del mapa ocupan sus ranuras desde +2C de cada objeto. Valores de `run4`,
+constantes desde la carga de cada etapa hasta su fin:
+
+| Etapa | A | B | 10E83E (capa 0) | 10D7B6 (1/2) | 10C72E (3/4) | Orden |
+| --- | --- | --- | --- | --- | --- | --- |
+| M1 | 88 | 40 | 0 | 20 | 68 | capas 0..2, B, 3..4, A |
+| M2 e1 | 40 | 14A | 12A | 0 | 20 | capas 1..4, A, capa 0, B |
+| M2 e2 | 20 | 15C | — | 13C | 0 | capas 3..4, A, capas 1/2, B |
+| M2 e3 | 50 | 20 | 0 | — | 30 | como M1 |
+| M3 | B0 | 40 | 0 | 20 | 90 (10E8C6 = 70, capa 2) | capas 0..1, B, 2..3, A (no aplicado) |
+
+**Causa en el port.** `actor.c` dibujaba siempre capas 0..2, sprites de
+bit 2, capas 3..4, el resto de sprites y Marco al final, encima de todo,
+sin mirar su +1E. Es el orden de la Misión 1. En la Misión 2 el marcador y
+el marco de la puerta (ventana B) quedaban debajo de Marco; además la
+franja inferior de la etapa 1 (capa 0: arena y agua) y la capa 10D7B6 de la
+etapa 2 van en el arcade por encima de la ventana A.
+
+**Arreglo.**
+- `gameplay.c` `msx_draw_order`: la tabla medida de arriba y el orden
+  deducido comparando ranuras (dos pasadas de capas; una tercera para).
+  El repartidor de ranuras que escribe esos valores (`01A97A..01AABA`,
+  `00A002`) no está traducido.
+- `scene_renderer.c`: las pasadas toman una máscara de capas
+  (`scene_render_layers`).
+- `actor.c`: la ventana A dibuja el vehículo y los sprites sin bit 2 en
+  orden de +1E con Marco en su +1E. La vela va justo antes que él y el
+  marcador de aterrizaje en FFFE.
+- `msx_game_depth`, el +1E del jugador: +66 = 8834 a pie; `0143EE` acaba
+  con `01AD8C` en el suelo (+1E = +66 − +40) y el aire lo conserva; E0EC
+  muriendo (`0C2980`) y en el descenso (`0C15C6`). `run4`: +40 = 312 →
+  86FC, 362 → 86CA.
+- La Misión 1 y la etapa 3 de la Misión 2 conservan el orden de capas de
+  antes. La Misión 3 sigue con el de la Misión 1: su fila no está en
+  `msx_draw_order`. Con 10E8C6 activo, 10D7B6 es la capa 1 y 10E8C6 la capa
+  2, que iría delante de la ventana B. Falta comprobarlo en ares.
+- En todas las misiones Marco va ahora en su +1E dentro de la ventana A: un
+  actor con un +1E mayor (objetos 8838, escombros 8800, efectos E0xx) se
+  dibuja encima, como en el arcade.
+- `012022` en el mundo (`neo_world.c`) devolvía siempre «no». Ahora usa la
+  comparación con signo A < B de la etapa (`front_window`). En las etapas 1
+  y 2 de la Misión 2 el marcador `0B6F6A` y los demás que la llaman van a la
+  ventana B, como en MAME.
+- **Desviación:** las balas de pistola del port se dibujan al final.
+
+**Pruebas.**
+- `test_gameplay` (`draw_order_run`): el orden de cada etapa; el +1E en el
+  suelo (1122 actualizaciones) y conservado en el aire (377).
+- ares: capturas `stage1-door-*` y `stage2-door-*` de
+  `test_mission2_ares.py` (`BUG_MATRIX.md` B26).

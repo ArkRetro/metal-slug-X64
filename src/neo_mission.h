@@ -42,6 +42,10 @@ uint8_t neo_mission_update(neo_mission_t *m);
 void neo_mission_stage_done(neo_mission_t *m);
 /* 01891E after the mission end: the next mission or the game end. */
 void neo_mission_next(neo_mission_t *m);
+/* Whether the stage end 018F40 + 018722 (4303 = 0: record +2, 0182C8, and
+ * the jumps of type 4 of 0182DA) leads to the mission end 018846 (type 8,
+ * or type 4 with +4 = 0) rather than another stage record. Read only. */
+bool neo_mission_ends_after_stage(const neo_mission_t *m);
 /* Descriptor words of the current stage (record +A). */
 uint32_t neo_mission_map_list(const neo_mission_t *m);    /* +0 */
 uint32_t neo_mission_players(const neo_mission_t *m);     /* +4 */

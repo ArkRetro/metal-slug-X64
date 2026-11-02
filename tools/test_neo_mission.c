@@ -19,10 +19,15 @@ int main(void) {
     CHECK(m.record==0x1714E && m.routine==0x184B4 && m.load && m.stage==0,"Mission 1 start record %X routine %X",m.record,m.routine);
     for (unsigned k=0;k<40 && m.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&m);
     CHECK(m.state==NEO_MISSION_PLAYING && m.letters,"Mission 1 stage loop");
-    unsigned n=sizeof mission_flow_events/sizeof mission_flow_events[0],checked=0,rams=0,stages=0,missions=0,wipes=0;
+    unsigned n=sizeof mission_flow_events/sizeof mission_flow_events[0],mission_ends=0,checked=0,rams=0,stages=0,missions=0,wipes=0;
     for (unsigned i=0;i<n;i++) {
         const mission_flow_event_t *e=&mission_flow_events[i];
         if (e->previous==0x186A0) {
+            /* gameplay.c routes a 018F40 that ends the mission (Mission 2's
+             * boss 026254, Mission 3) to mission_end_step: the peek must
+             * agree with the arcade's choice at every stage end. */
+            CHECK(neo_mission_ends_after_stage(&m)==(e->routine==0x18870),"frame %u: mission-end peek %d, routine %X",e->frame,neo_mission_ends_after_stage(&m),e->routine);
+            if (e->routine==0x18870) mission_ends++;
             m.end=0;neo_mission_stage_done(&m);stages++;                       /* 018F40, 018722 */
             if (e->routine==0x18870) {CHECK(m.state==NEO_MISSION_END && m.routine==0x18846,"frame %u: mission end expected (routine %X)",e->frame,m.routine);m.routine=e->routine;}
             else CHECK(m.routine==e->routine,"frame %u: routine %X expected %X",e->frame,m.routine,e->routine);
@@ -46,6 +51,6 @@ int main(void) {
         }
     }
     CHECK(m.stops==0 && wipes==12,"stops %u, wipes %u",m.stops,wipes);
-    printf("%s: mission flow %u routine changes, %u RAM samples, %u stage ends, %u mission starts, %u transition waits of 35 updates, %u explicit stops\n",fails?"FAIL":"PASS",checked,rams,stages,missions,wipes,m.stops);
+    printf("%s: mission flow %u routine changes, %u RAM samples, %u stage ends (%u mission ends predicted), %u mission starts, %u transition waits of 35 updates, %u explicit stops\n",fails?"FAIL":"PASS",checked,rams,stages,mission_ends,missions,wipes,m.stops);
     return fails!=0;
 }

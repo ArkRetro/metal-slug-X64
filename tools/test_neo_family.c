@@ -489,6 +489,7 @@ int main(void) {
 #ifdef FAMILY_EXIT_GLOBALS
     ram[0x73]=expect[0x73]=0xff;   /* RAM 10C303 until 018F40 */
 #endif
+    unsigned sgun_born=0,sgun_left=0;
     unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
@@ -549,6 +550,9 @@ int main(void) {
         for (unsigned r=0;r<64;r++) if (u->ring[r][0]<NEO_RNG_WORDS) rng.words[u->ring[r][0]]=u->ring[r][1];
         /* Bytes other actors wrote into the node since its last update. */
         for (unsigned x=0;x<16 && u->ext[x][0];x++) a->m[u->ext[x][0]]=u->ext[x][1];
+        /* B25: the blasts 0644C4/0646B0 (sgun2/sgun7) are born with the
+         * player's +15 & 3 (0C4434: 01AC94); count the ones facing left. */
+        if (u->routine==0x644c4u || u->routine==0x646b0u) {sgun_born++;if (a->m[0x15]&1u) sgun_left++;}
         /* Static collision objects (the world keeps terrain and root
          * together). */
         kernel.root=(neo_kobj_t){root.x,root.y,root.previous_x,root.previous_y};
@@ -740,6 +744,10 @@ int main(void) {
 #ifdef FAMILY_RAM
     printf("RAM outside the nodes (slots, input words, weapon block, player nodes): %u bytes compared\n",ram_bytes);
 #endif
+    if (sgun_born) {
+        printf("blasts 0644C4/0646B0: %u born, %u facing left (+15 bit 0)\n",sgun_born,sgun_left);
+        if (!sgun_left || sgun_left==sgun_born) {fprintf(stderr,"the blast family must hold shots facing both ways\n");return 1;}
+    }
     printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups%s\n",
         STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,swapped?", map swap requested":"");
     return 0;

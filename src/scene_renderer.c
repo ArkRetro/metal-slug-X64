@@ -302,7 +302,7 @@ static scene_cell_window_t layer_window(unsigned layer,int offset,float size,flo
     if (depth_mode) return (scene_cell_window_t){depth_views[layer].scale,depth_views[layer].offset_x,size,left,right,inclusive};
     return (scene_cell_window_t){1.0f,(float)-offset,size,left,right,inclusive};
 }
-static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end);
+static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first);
 static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *view,const int *offsets,unsigned video_tick,unsigned n) {
     float x=background_x(cell,cell->x-offsets[cell->layer]);
     float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
@@ -311,20 +311,24 @@ static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *vi
     // The depth camera carries the height (actor.c), so planes keep their own parallax.
     blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false,false);
 }
-void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,5);}
+void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0x1fu,true);}
 /* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
-void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0,3);}
-void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,3,5);}
+void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0x07u,true);}
+void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0x18u,false);}
+/* The layers of `mask` (bit n = layer n, drawn in index order, which is
+ * their SCB slot order within one pass); `first`: the frame's first pass
+ * (backdrop, prefetch, the white flash). */
+void scene_render_layers(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first) {background(camera,height,backdrop_after,video_tick,mask,first);}
 /* Per-layer cost of the sampled frame (index 5: the tower), "MSX BG" line. */
 static uint32_t layer_ticks[6];static unsigned layer_draws[6],layer_uploads[6],layer_visits[6];
-static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
+static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     if (!depth_mode) {
         // Pack order is layer order (checked at init), so walking the layers
         // in turn draws the same cells in the same order as one array walk.
-        for (unsigned layer=begin;layer<end;layer++) {
-          if (!visible[layer]) continue;
+        for (unsigned layer=0;layer<5;layer++) {
+          if (!(mask&(1u<<layer)) || !visible[layer]) continue;
           uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
           scene_cell_window_t w=layer_window(layer,offsets[layer],16,8,312,false);
           unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
@@ -361,13 +365,13 @@ static void draw_layers(unsigned begin,unsigned end,const int *offsets,const int
         }
         // Any other pack order: the plain array walk.
         if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
-            if (cells[i].layer>=begin && cells[i].layer<end && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
+            if (cells[i].layer<5 && (mask&(1u<<cells[i].layer)) && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
         return;
     }
-    // Same split as the classic path: layers begin..end-1 only (the bit-2
-    // sprites are drawn between the two passes); the mesh after layer 4.
-    for (unsigned layer=begin;layer<end;layer++) {
-      if (!visible[layer]) continue;
+    // Same split as the classic path: the layers of the mask only (the
+    // sprite windows are drawn between the passes); the mesh after layer 4.
+    for (unsigned layer=0;layer<5;layer++) {
+      if (!(mask&(1u<<layer)) || !visible[layer]) continue;
       const retro_plane_view_t *view=&depth_views[layer];
       uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
       scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
@@ -481,7 +485,7 @@ static void bg_tail_run(void) {
     if (!bg_tail) {rspq_block_begin();rdpq_set_scissor(8,8,312,232);bg_tail=rspq_block_end();}
     rspq_block_run(bg_tail);
 }
-static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
+static void draw_layers_cached(unsigned mask,bool first,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
     bg_key_t key;memset(&key,0,sizeof(key));
@@ -496,15 +500,15 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
      * rspq_block_begin/__rdpq_block_next_buffer wrote through address 0
      * (uncached KSEG1) and the RSP/RDP hung (docs/MISION2.md, fase 2c). */
     static bg_key_t previous;static unsigned held;
-    if (!begin) {held=memcmp(&key,&previous,sizeof(key))?0:held+1;previous=key;}
+    if (first) {held=memcmp(&key,&previous,sizeof(key))?0:held+1;previous=key;}
     if (!cacheable || memcmp(&key,&bg_key,sizeof(key))) {
         if (bg_key.valid) bg_retire();
         bool repeat=cacheable && !bg_retired[bg_group].pending && held>=BG_RECORD_HELD && !memcmp(&key,&previous,sizeof(key)) && bg_heap_ok();
-        if (!repeat) {draw_layers(begin,end,offsets,rises,visible,video_tick);return;}
+        if (!repeat) {draw_layers(mask,offsets,rises,visible,video_tick);return;}
         bg_key=key;
     }
-    unsigned pass=begin?1u:0u,phase=video_tick&7u;
-    if (!bg_blocks[pass][phase] && !bg_heap_ok()) {draw_layers(begin,end,offsets,rises,visible,video_tick);return;}
+    unsigned pass=first?0u:1u,phase=video_tick&7u;
+    if (!bg_blocks[pass][phase] && !bg_heap_ok()) {draw_layers(mask,offsets,rises,visible,video_tick);return;}
     if (!bg_blocks[pass][phase]) {
         reset_texture_state();
         unsigned before=draws;
@@ -513,7 +517,7 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
         heap_stats_t h0;sys_get_heap_stats(&h0);
 #endif
         rspq_block_begin();
-        draw_layers(begin,end,offsets,rises,visible,video_tick);
+        draw_layers(mask,offsets,rises,visible,video_tick);
         bg_blocks[pass][phase]=rspq_block_end();
 #if MSX_DIAG
         {heap_stats_t h1;sys_get_heap_stats(&h1);if (h1.used-h0.used>bg_block_max) bg_block_max=h1.used-h0.used;}
@@ -524,7 +528,7 @@ static void draw_layers_cached(unsigned begin,unsigned end,const int *offsets,co
     rspq_block_run(bg_blocks[pass][phase]);bg_replays++;bg_last_used=frame;draws+=bg_block_draws[pass][phase];
     reset_texture_state();bg_tail_run();
 }
-static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned begin,unsigned end) {
+static void background(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
     int offsets[5],rises[5];bool visible[5];
@@ -567,7 +571,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     // a no-op: skip the walk.
     // Every phase of both passes recorded for these exact inputs: the chunks
     // they read are pinned (resident), so every request would be a no-op.
-    unsigned last_now=~0u,last_next=~0u;bool prefetch=begin==0 && !scene_assets_map_resident() && !bg_static(offsets,rises,visible);
+    unsigned last_now=~0u,last_next=~0u;bool prefetch=first && !scene_assets_map_resident() && !bg_static(offsets,rises,visible);
     for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
         scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
@@ -582,14 +586,14 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             }
         }
     }
-    if (begin==0) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}
+    if (first) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}
     rdpq_set_scissor(8,8,312,232);
     if (flash) {
-        if (begin) {rdpq_set_scissor(0,0,320,240);return;}
+        if (!first) {rdpq_set_scissor(0,0,320,240);return;}
         scene_render_box(8,8,304,224,RGBA32(255,255,255,255));
         rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;
     }
-    if (begin==0) {
+    if (first) {
         color_t backdrop=color_from_packed32(scene_map_backdrop(backdrop_after));
         if (fade_on) {   /* the backdrop entry 0xFFF fades with the others (MAME runK) */
             backdrop.r=(uint8_t)(neo_fade_channel(backdrop.r>>3,fade_offset[0])<<3);
@@ -598,10 +602,10 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
         }
         scene_render_box(8,8,304,224,backdrop);
     }
-    draw_layers_cached(begin,end,offsets,rises,visible,video_tick);
+    draw_layers_cached(mask,first,offsets,rises,visible,video_tick);
     if (!depth_mode) {rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;}
     msx_perf_mark(MSX_PERF_BG_DRAW);
-    if (end==5) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
+    if (mask&0x10u) {retro_effects_mesh(&depth_frame);msx_perf_mark(MSX_PERF_MESH);}
     rdpq_set_scissor(0,0,320,240);
 }
 /* A mission pack stage was loaded or Mission 1 restored (scene_assets.c):

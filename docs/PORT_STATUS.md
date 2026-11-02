@@ -117,4 +117,4 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   El disco tiene unos 2 GB libres; hay que borrar las capturas después de
   usarlas.
 - **RAM de la N64:** 8 MiB. Margen de montón de 256 KB, caché de escena de
-  208 o más ranuras.
+  208 o más ranuras (213 en las ROM de referencia y 214 en la normal en `work-perf21`; mínimo libre en juego 344 KB en la M1 y 283 KB en la M2).

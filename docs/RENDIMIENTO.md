@@ -1043,10 +1043,13 @@ Correcciones:
 | Recorrido (ares, `MSX_DIAG`) | Antes | Después |
 | --- | ---: | ---: |
 | M1 referencia: ranuras | 217 (ROM obsoleta) / 215 | **213** |
-| M1: libre al cargar | 510 KB | 605 KB |
-| M1: mínimo libre | 234 KB | **342 KB** (con reserva 736 y HUD RGBA16, 209 ranuras) |
-| M2 referencia: mínimo libre | — | M2_MIN |
+| M1: libre al cargar | 510 KB | 607 KB |
+| M1: mínimo libre (recorrido PASS) | 234 KB | **344 KB** |
+| M2 referencia (`test_mission2_ares.py` PASS): ranuras / mínimo libre | 215 / — | **213 / 283 KB** |
 | ROM normal: ranuras | 216 | **214** (libre 608 KB) |
+
+Paso intermedio medido: reserva 736 con la tira RGBA16 daba 209 ranuras y
+342 KB de mínimo; la tira CI8 devuelve 4 ranuras.
 
 ### Balas de la pistola (B23)
 
@@ -1054,5 +1057,5 @@ El pool de 8 rechazaba disparos en ráfagas. En el arcade la pistola no
 tiene tope propio: `0C0D64` concede si `10C71A < 10C71C` y `10C71C` es
 `0C08A8[0]` = `FF` (sin límite); la bala `01B782` sale del pool de objetos
 con `00411C`. A 6 px por tick y una pulsación cada 4 ticks caben hasta 10 en
-pantalla. `MSX_BULLETS` = 16: recorrido M1 de referencia, pico **10/16, 0
-rechazos** (antes 8/8 con 3–5).
+pantalla. `MSX_BULLETS` = 16: pico **10/16** en el recorrido M1 y **14/16**
+en la M2 de referencia, 0 rechazos (antes 8/8 con 3–5).

@@ -39,5 +39,13 @@
    `sfx_10f8` ya está en el directorio compartido) y fusionar en
    `ccr-09eb2f6b-8rwl8l`. Paradas que quedan de B12: el cuerpo en llamas
    `040920` (sin captura) y las entradas `040B46/040BA8/040BE6`.
-6. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
-   (bucles de motor 10A5/1026), pool de actores genéricos y balas.
+6. **Hecho (rama `work-perf21`):** B21 (salto del título en la ROM 21:
+   tablas de cinemática por trozos; `build/cold-objs.flags` recompila los
+   objetos fríos), B22 (montón: HUD CI8, reserva de `actor_init` 672 KB,
+   bloques del fondo con ≥ 288 KB libres; mínimo 344 KB en la M1 y 283 KB en
+   la M2, 213 ranuras) y B23 (balas de pistola 16, como el arcade sin tope).
+   Al reconstruir la ROM en `/home/user/ws-logo`, comprobar que se rehacen
+   los diez objetos fríos (`neo_hud.o` de texto 7675 B, no 10982).
+7. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
+   (bucles de motor 10A5/1026), pool de actores genéricos (pico 93/96 en la
+   M1).

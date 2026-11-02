@@ -19,6 +19,8 @@ bool neo_m2gate_routine(uint32_t routine);
 ga_result_t neo_m2props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_drone_routine(uint32_t routine);
 ga_result_t neo_drone_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m2traps_routine(uint32_t routine);
+ga_result_t neo_m2traps_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_hostage_routine(uint32_t routine);
 ga_result_t neo_hostage_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m2boss_routine(uint32_t routine);

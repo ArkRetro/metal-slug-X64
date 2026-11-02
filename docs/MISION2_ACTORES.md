@@ -46,6 +46,10 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `099DE2` prisionero atado (+86 bit 0, sin `01B1DC`) | `src/neo_prisoner.c` | familia `prisoner3` (`s2a`): 561 actualizaciones |
 | `099DF0` prisioneros colgados y la cuerda `09A9C4` (`011FF6`: `ga_draw` del +7A del prisionero) | `src/neo_prisoner.c`, `src/neo_gactor.c` | familia `prisoner4` (`p3`, `MSX_FULL_FAMILY_ROOTS=99df0` desde 22900): 6 nodos, **2275 actualizaciones** |
 | `021A1C/021A26` mineros (etapa 2), polvo `021F96`, destello `02206E`, regalo por `08CDB2` | `src/neo_hostage.c` | familias `miner` (`s2b`, jugador quieto junto al minero): 20 nodos, **1244 actualizaciones**, 18 borrados, 1225 dibujos; `minerrun` (`s2a`, el piloto pasa corriendo): 19 nodos, 1015 actualizaciones |
+| `0995EC` tesoro oculto (etapa 3), explosión `01C7AE` | `src/neo_m2traps.c`, `src/neo_effects.c` | familia `treasure` (`gem`): 1 nodo, **446 actualizaciones** (golpes, abierto, 50000 puntos, explosión) |
+| `032DE2` soldado envuelto como momia, destello `021CB6`, `068E94` → soldado `067AB4` | `src/neo_m2traps.c`, `src/neo_rebel3.c` | familia `wrapped` (`wrap2`): 2 nodos, **2641 actualizaciones**, el aliento de una momia lo despierta en 36426 |
+| `03A05A` respiradero de gas y sus bocanadas `03A1AE` | `src/neo_m2traps.c` | familias `vent` (`vent`): 21 nodos, **1120 actualizaciones**, 20 borrados; `ventwait` (`rope2`): constructor y espera, 546 |
+| `082BCE` soldado colgado de una cuerda, cuchillo `0830FE`, cabo `083212`, salpicadura `0682F0` | `src/neo_m2traps.c` | familias `rope` (`rope`): 8 nodos, **1627 actualizaciones**, 7 cuchillos; `ropedeath` (`rope3`): 12 nodos, **1351 actualizaciones**, 2 muertes con caída y cuerpo |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -685,6 +689,111 @@ el objeto se devuelve como externo y la línea `MSX item kind` lo cuenta):
   tipo de bomba 2 (`0C0A7C`, `10C722+p`) y la etiqueta `08CD10`; el port no
   tiene bombas de otro tipo (sus lanzamientos y el HUD): parada de la
   recogida (`ga_fail 08B5FA`, `MSX item pickup stopped explicitly`).
-- `032DE2` (etapa 3, `2D8C68/2D8C76`, regalo `2D`/`2A` en `+74`): sin portar
-  (registro del guion saltado); en MAME el aliento de una momia lo convierte
-  en el soldado `067AB4`, que suelta su regalo al morir.
+- `032DE2` (etapa 3, `2D8C68/2D8C76`, regalo `2D`/`2A` en `+74`): **nativo
+  desde `work-m2fix4`** (B31, familia `wrapped`): el aliento de una momia lo
+  convierte en el soldado `067AB4`, que suelta su regalo al morir.
+
+## Etapa 3: actores de las fotos de la ROM 23 (B31, rama `work-m2fix4`)
+
+Informe de MiSTer (ROM 23): faltan actores en la etapa 3; seis fotos de las
+posiciones. Cada foto se situó por el fondo contra las capturas de `run4`
+(`game<f>.png` cada 30 fotogramas, progreso de cámara 10E99E y `cam_x/cam_y`
+de `trace.csv`), y los registros del guion de la etapa 3 de esa zona
+(`data/mission2_script.json`) contra los nodos de `actors.csv`:
+
+| Foto | Zona (progreso, cámara) | Lo que el arcade crea allí | Estado |
+| --- | --- | --- | --- |
+| `6af4` (tres carteles, panel del ojo) | 336–377, y 16 | tesoro oculto `0995EC` (2D89EE, cámara 272, (624, 88)): se rompe a tiros y da 50000 puntos al tocarlo | nativo |
+| `9feb` (pilar con cartel) | 784–944, y 336 | soldado envuelto `032DE2` (2D8C68/2D8C76, (280, 424)) junto al pilar; soldado de la cuerda `082BCE` (2D8D6A, cámara 944, (312, 512)) | nativos |
+| `0bdb`, `692f` (cofre arriba, agujeros con calaveras) | 1640–1834, y 736 | respiradero `03A05A` (2D8E58, (466, 775), mientras el progreso < 2144): columnas de gas morado (tipo 0x10, momia); soldados de la cuerda `082BCE` (2D8E12, 2D8F8A/2D8F9C) | nativos |
+| `ccc7` (murciélagos sobre un cartel, camino que sube) | ~2080–2128 | el nido `035D12` y la bandada de puntos `035B66` (+6E = 1) de las cajas `08C154` vacías (2D922A/2D923C, 2D9296/2D92A8): rama al azar que ni `run4` ni estas capturas ejecutan | parada explícita (`0364D2`, `035FD0`) |
+| `fd11` (jefe, CONTINUE) | 3391–3888 | el jefe (nativo) y, en la torre, `09692C` (2D9BEA/2D9BF6, elección al azar): un vehículo montable (torreta `03B4E0`, servicios de ranura `0AA610/0AA760`) | `09692C` sin traducir (externo contado) |
+
+Capturas (MAME 0.264, `capture_fullgame.lua`; `MSX_FULL_SAVE_AT` acepta
+ahora una lista de fotogramas). La reproducción desde un estado intermedio
+pierde el estado Lua del piloto y diverge de `run4`: las trazas que
+necesitan la misma partida (el aliento de la momia sobre `032DE2`, las
+muertes de `082BCE`) se toman desde `sec03_26140` con `MSX_FULL_FAMILY_FROM`
+tarde:
+
+```sh
+export MSX_FULL_STATES=<estados> MSX_FULL_VRAM_TRACE=1 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+# estados intermedios (sin traza): MSX_FULL_SAVE_AT=26470,31480,37120,37960,38090,53680,57300
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_FIRST_DUMP=26480 MSX_FULL_FAMILY_ROOTS=995ec MSX_FULL_FAMILY_FROM=26141 MSX_FULL_LAST=27500 ... gem
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_FIRST_DUMP=36000 MSX_FULL_FAMILY_ROOTS=32de2 MSX_FULL_FAMILY_FROM=31481 MSX_FULL_LAST=37200 ... wrap2
+MSX_FULL_LOAD=at_57300 MSX_FULL_LOAD_FRAME=57300 MSX_FULL_FIRST_DUMP=57305 MSX_FULL_FAMILY_ROOTS=3a05a,3a09c MSX_FULL_FAMILY_FROM=57301 MSX_FULL_LAST=58700 ... vent
+MSX_FULL_LOAD=at_37120 MSX_FULL_LOAD_FRAME=37120 MSX_FULL_FIRST_DUMP=37125 MSX_FULL_FAMILY_ROOTS=82bce,3a2aa,3a05a MSX_FULL_FAMILY_FROM=37121 MSX_FULL_LAST=40000 ... rope
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 (mismas raíces) MSX_FULL_FAMILY_FROM=37121 MSX_FULL_LAST=39200 ... rope2
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_FIRST_DUMP=53690 MSX_FULL_FAMILY_ROOTS=82bce MSX_FULL_FAMILY_FROM=53681 MSX_FULL_LAST=55600 ... rope3
+python3 tools/extract_family_fixture.py gem/boss-trace.txt --output data/treasure_fixture.json.gz --range 995ec-99860 --range 1c6e8-1ca9a --range 8d330-8d900 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 1014ec-1014f4 --ram 1014fc-101500
+python3 tools/extract_family_fixture.py wrap2/boss-trace.txt --output data/wrapped_fixture.json.gz --range 32de2-32fb4 --range 678a2-69700 --range 21cb6-21cee (mismos --ram)
+python3 tools/extract_family_fixture.py vent/boss-trace.txt --output data/vent_fixture.json.gz --range 3a05a-3a2aa (mismos --ram)
+python3 tools/extract_family_fixture.py rope2/boss-trace.txt --output data/ventwait_fixture.json.gz --range 3a05a-3a1ae (mismos --ram)
+python3 tools/extract_family_fixture.py rope/boss-trace.txt --output data/rope_fixture.json.gz --range 82bce-83300 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 1014c4-101624
+python3 tools/extract_family_fixture.py rope3/boss-trace.txt --output data/ropedeath_fixture.json.gz --range 82bce-83300 (mismos --ram que rope)
+```
+
+Traducción (`src/neo_m2traps.c`; detalle de rutinas en su cabecera):
+
+- `0995EC`: el tesoro oculto. Cada golpe (`004C24`) reinicia el programa
+  `29F586`; al acabar, `29F5D8` (abierto) espera a que un jugador en juego
+  (primero el 2) entre en el rectángulo `099830` (`01AF3C`): `08CECC` suma
+  los puntos de `099858` (+6E = 1: 50000 en BCD) con `057948`, sonido 1121
+  y la etiqueta `08D330`; después `29F602`, la fila `099844`, sonido 1022 y
+  el nodo se convierte en la explosión `01C7AE` (paleta 0x26C, nueva entrada
+  de la tabla de `neo_effects.c`). El recorte `099828` pasa a `09972E`
+  (comprobación anticopia y `004188`) en la actualización siguiente.
+- `032DE2`: no puede morir (cada golpe deja +4E = 0x64 y borra +5F bit 7);
+  solo un contacto de tipo 0x10 (el aliento de las momias) lo despierta:
+  destello `021CB6`, cuya llamada `022230` sube su +80 a 3, y entonces
+  `068E94` lo convierte en el soldado `067AB4` de `neo_rebel3.c` con su
+  regalo en +74/+76 (los `2D`/`2A` de B27). El programa `239492` llama a
+  `239604` (+7E = FF una vez de cada cuatro).
+- `03A05A`: cada +74 actualizaciones (`2D3A76`), en el rectángulo `03A900`,
+  dos bocanadas `03A1AE` a (−20, −5) y (20, 5) o, cada +7A-ésima vez
+  (`2D3AD8`), una en el centro; sonido 10EE. La bocanada (programa
+  `23CABA[+72]`, paleta 0x4BB) ataca con la fila `3A8A0[+72][+78]` (tipo
+  0x10) mientras su programa deja +78 ≥ 0. Se borra (`0041AC`) cuando el
+  progreso de cámara llega a +70.
+- `082BCE`: baja por la cuerda (`2818E4`, con caja y cuerpo sólido por la
+  llamada `0833A8`), cuelga con colisión dinámica `E4C2E`, se gira hacia el
+  jugador y lanza cuchillos (`083350` → `0830FE`, fila `E1A76[+60]`) cada
+  `2D53B6` actualizaciones; cada golpe crea la salpicadura `0682F0` (como
+  mucho una cada 0x18). Muerto: `082EAA` (sonido 1143), la llamada `083380`
+  suelta el cabo `083212` y lo deja caer a −3,0 hasta el suelo (`082F1A`),
+  cuerpo `281D66`. La muerte quemada (+5A = 0x0A/0x0B: `083018`, `068D32`)
+  no sale en ninguna captura: **parada explícita** (`ga_fail 83018`).
+- Banco de familias: `dyn_set` toma una ranura de colisión dinámica ocupada
+  por un actor de fuera de la familia como ocupada (la RAM 10C06E.. tal como
+  la leyó el original), igual que `0140D2`.
+
+**Píxeles** (`export_rest_sprites.py ... gem@995ec-99860 gem@1c7ae-1ca9a
+wrap2@32de2-32fb4 vent@3a05a-3a2aa rope@82bce-83300 rope3@82bce-83300
+--mask-auto`): tesoro 62 volcados, 53610 iguales, 0 distintos; soldado
+envuelto 31, 17658/0; respiradero 32, 4721/0; cuerda 10, 10038/0 y 103,
+142458 iguales y **70 distintos en un volcado** (54495, tomado 3 fotogramas
+después de la actualización; sin explicar). Paletas nuevas 0x104, 0x105,
+0x26C, 0x16A. `romfs/mission2.pack` reempaquetado (3,47 MB).
+
+**Ares** (`9e2b3cb`, `mslugx-m2-reference.z64`, `test_mission2_ares.py
+--stage-seconds 800`: PASS hasta la Misión 3, crash=0): los registros
+`2D89EE` (`0995EC`), `2D8C76` (`032DE2`), `2D8D6A`/`2D8E12`/`2D8F8A`/`2D8F9C`
+(`082BCE`) y `2D8E58` (`03A05A`) se crean nativos (`MSX script spawn ...
+native 1`); `03A2AA` sigue externo (`native 0`) y `09692C` se cuenta como
+externo (5). Recorrido de la Misión 1: PASS, crash=0, 1 fallo de audio.
+
+**Lo que queda de la etapa 3** (sin traducir, contado como externo o como
+parada):
+
+- `03A2AA` (2D8D82, cámara 952): la roca que cae. Su secuencia se vio en `rope2`
+  (38000..39200; traza borrada por espacio, se repite con la orden de arriba): `03A344` cae, `03A3A2` sonido 1035, temblor `0C801A`, polvo
+  `03A464`, humo `01DA40` con las listas `3A918/3A92A`, la losa `03A528`,
+  los parches de mapa `0B7A2C` y las piedras `03A58A`). No se traduce aún:
+  `0B7A2C` copia submapas de `0B7436` con desplazamientos de origen (D0/D1
+  ≠ 0), que `g_map_patch` no admite (para con `0C72EC`), y el renderizador no
+  dibuja los parches de tiles.
+- `09692C` (torre, elección al azar): vehículo montable, no ejecutado en las
+  capturas.
+- El nido `035D12` y el murciélago de puntos (`0364D2`): ramas al azar de
+  las cajas `08C154` sin captura.
+- `083018`/`068D32`: muerte quemada del soldado de la cuerda.

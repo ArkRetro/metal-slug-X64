@@ -809,7 +809,7 @@ lleva su grupo (< 9) y retiene las esperas del guion.
 | `09A67E` / `09A692` | 1,2,3 | 55 / 4 | 25 / 1 | sí / no | sí | cajas ocultas |
 | `01913C` | 2,3 | 6 | 6 | no | sí (ya lo aplicaba; ahora contado como nativo) | reinicio del tiempo |
 | **`021A1C` / `021A26`** | 2 | 8 / 9 | 8 / 2 | no | **sí (nuevo)** | **mineros** (excavan, se asustan y regalan un objeto, huyen) |
-| `035B66` / `035C68` / `035D12` | 2,3 | 8 / 4 / 3 | 5 / 4 / 1 | no | **no (parada)** | murciélagos: bandada, murciélago con recorrido, nido |
+| **`035B66` / `035C68`** / `035D12` | 2,3 | 8 / 4 / 3 | 5 / 4 / 1 | no | **sí (nuevo)** / **sí (nuevo)** / no (parada) | murciélagos: bandada, murciélago con recorrido; el nido de la etapa 3 sigue parado |
 | `03A892` | 2 | 1 | 1 | sí | sí | señal de la puerta de la etapa 2 |
 | **`0529C0`** | 2,3 | 21 | 21 | no | **sí (nuevo)** | dirección de la flecha GO (10C44A) |
 | `0613CA/D8/E6` | 2,3 | 137 | 41 | sí | sí | momias |
@@ -830,8 +830,8 @@ lleva su grupo (< 9) y retiene las esperas del guion.
 | `0995EC` | 3 | 1 | 1 | no | no (parada) | objeto golpeable (caja `099838`, vida +72) |
 | `099862` / `099DCC` | 3 | 1 / 1 | 1 / 1 | no | sí | prisioneros |
 
-Apariciones que el port pierde: de 17 constructores no contados a **9**
-(`032DE2 035B66 035C68 035D12 03A05A 03A2AA 082BCE 09692C 0995EC`);
+Apariciones que el port pierde: de 17 constructores no contados a **7**
+(`032DE2 035D12 03A05A 03A2AA 082BCE 09692C 0995EC`, todos de la etapa 3);
 contadas perdidas: 0. Todas son paradas explícitas: el mundo cuenta el
 constructor (`external_spawns`) y el registro de ares dice `native 0`.
 
@@ -867,7 +867,7 @@ Lo que la cadena no tenía y ahora tiene (además de los actores de arriba):
 | flecha GO `05287C` (`01860A`, cada etapa; `run4`: 19429, 20009, 26216) | sí | nunca creada | creada en cada etapa de una misión empaquetada; entorno 10E9A0/10E9BC/10C44A del mundo (antes 0: siempre en reposo) |
 | dirección de la flecha `0529C0` (21 registros) | 10C44A | perdida | `neo_world.c` |
 | tiempo `01913C` | reinicio | ya se aplicaba (el auditor lo contaba como perdido) | igual; nativo para el auditor |
-| actores de las secciones 2/3 no contados | creados | 17 constructores perdidos | 9 perdidos (paradas, arriba) |
+| actores de las secciones 2/3 no contados | creados | 17 constructores perdidos | 7 perdidos, todos de la etapa 3 (paradas, arriba) |
 
 Sin cambios (ya nativos y comprobados en fases anteriores): cortinas
 `3AED8/3AEF0`, puertas `03882A`/`03A6EA` y salidas `0B6ED2`, esperas y

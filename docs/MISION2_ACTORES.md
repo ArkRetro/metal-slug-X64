@@ -546,9 +546,20 @@ colgados `p3@99dcc-9aa9e`, 78 volcados, 105991 iguales, **0 distintos**. La
 paleta 0x4B8 (carteles de la etapa 3, +70 = 0) no está en ningún volcado
 (parada de paleta: se dibujan con la de reserva).
 
-**Murciélagos** `035B66/035C68/035D12` (`+96` = 0..3: bandada de 5 con
-`035BF8`, murciélago con recorrido de cuatro puntos en +6E.., nido que
-suelta `035E0A` cada 0x28..0x77 actualizaciones): trazados en `s2a`
-(`35c42`, `35fd0`, `35f32`) pero **sin traducir** (≈ 0x0C00 bytes de
-`035A40..0366F0` con vuelo polar `002E7C`/`002EB4`, caída, muerte y
-`08C0C2/08CE42`): parada explícita, el mundo los cuenta.
+**Murciélagos** `035B66/035C68` (`neo_drone.c`, el mismo módulo de ROM
+`035A40..0366F0` que el dron): constructor común `0362EE` (paleta 0x94, o
+0xB7 y +97 = 1 para el murciélago de puntos con +6E ≠ 0, que ningún
+registro de la Misión 2 usa: parada), la bandada `035B66` (`03635E`: +70
+murciélagos `035BF8` con +86 distintos de 0..4, velocidad inicial
+`035ADC[+86]` y +30 al azar), el murciélago con recorrido `035C68` (posado
+`23B838` con estiramientos `23B88E/23B912`, despega por +92 o por el
+progreso de cámara +90, vuela a uno de sus tres puntos a 1,0 px con
+`002EB4` ± 0x18 y `002E7C`, se vuelve a posar a 3 px; +60: susto
+`036254`), la muerte `036068` (sonido 10F0, quemado con +9F = 7), la caída
+`03610E` y el gateo `03618A`/`03663E` hasta 0x50 actualizaciones. Familia
+`bats` (`s2a`, `--range 35a40-366f0`): **25 nodos, 2181 actualizaciones
+iguales**, 25 borrados. Sprites (`s2a@35a40-366f0`): 75 volcados, 18611
+píxeles iguales y 538 distintos en 4 volcados (uno tomado en el fotograma
+de la actualización; 20490, 20820 y 20865 con explosiones encima, sin
+explicar). Paradas explícitas: +96 = 1/3 (el nido `035D12` de la etapa 3,
+`035EEC`, `035C76/035D04`, `035E0A`, `0361EC`), sin traza todavía.

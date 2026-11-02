@@ -218,6 +218,11 @@ ROOTS+=[0x23cdd0,0x23cddc,0x22d372]
 # of the fading phase 22EE6A/22EF3A/22F00A and 22F2CA/22F39A/22F46A) and its
 # sparks 01E582.. (22F476).
 ROOTS+=[0x22ebb6,0x22ec92,0x22ed6e,0x22f016,0x22f0f2,0x22f1ce,0x22ee6a,0x22ef3a,0x22f00a,0x22f2ca,0x22f39a,0x22f46a,0x22f476]
+# Mission 2 stage 3 (neo_m2traps.c): the hidden treasure 0995EC (idle, hit,
+# open, taken) and the soldier wrapped as a mummy 032DE2.
+ROOTS+=[0x29f57a,0x29f586,0x29f5d8,0x29f602,0x239492]
+# The gas vent 03A05A: its puffs 03A1AE (23CABA[+72]).
+ROOTS+=[0x23cac2,0x23cb9e]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

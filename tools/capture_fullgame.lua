@@ -379,8 +379,10 @@ emu.register_frame_done(function()
    -- Iteration aid only (MSX_FULL_SAVE=1): a MAME state per section start.
    if os.getenv('MSX_FULL_SAVE')=='1' and sec>=0 and sec<30 and frame>(tonumber(os.getenv('MSX_FULL_LOAD_FRAME') or '0'))+10 then machine:save(string.format('sec%02d_%d',sec,frame)) end
   end
-  -- Iteration aid only (MSX_FULL_SAVE_AT=<frame>): a MAME state at that frame.
-  if frame==tonumber(os.getenv('MSX_FULL_SAVE_AT') or '-1') then machine:save(string.format('at_%d',frame)) end
+  -- Iteration aid only (MSX_FULL_SAVE_AT=<frame>[,<frame>...]): a MAME state at each frame.
+  for h in string.gmatch(os.getenv('MSX_FULL_SAVE_AT') or '','(%d+)') do
+   if frame==tonumber(h) then machine:save(string.format('at_%d',frame)) end
+  end
   -- Capture only (MSX_FULL_GIVE_MUMMY=<frame>): the form request +94 = 3 at
   -- that frame, as a contact of kind 0x10 (the mummy's breath) does in
   -- 0C36C0 (tools/mame/capture_marco_catalog.lua MSX_GIVE_MUMMY); the

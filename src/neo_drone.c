@@ -149,8 +149,9 @@ static ga_result_t bomb_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 /* ---- Bats 035B66 / 035C68 (the same module, 035A40..0366F0) ------------
  * Common constructor 0362EE: palette 0xB7 and +97 = 1 when +96 != 3 and
- * +6E != 0 (the bat worth points, 0364D2: 08C0C8 pickup / 08CE42; not in
- * Mission 2's records: explicit stop), else 0x94; 036326 (+96 = 2: +90 =
+ * +6E != 0 (the bat worth points, 0364D2: 08C0C8 pickup / 08CE42; the
+ * stage-3 swarms (record 2D923C..) were not executed in the MAME runs:
+ * explicit stop), else 0x94; 036326 (+96 = 2: +90 =
  * +70, the first waypoint (+6E, +70) = its place); depth E0ED; hurtbox +50 =
  * 035A78 (+96 = 0), 035A90 (3) or 035A6C; +4E = 0260C8(2D0C7C); +9D/+98/+9F
  * = 0, +92 = 7FFF.
@@ -195,7 +196,7 @@ static bool bat_wings(neo_gactor_t *a,neo_genv_t *e) {                 /* 035B1A
     return ga_anim_start(a,e,r==0?0x23b672:r==1?0x23b654:0x23b636,0x100);
 }
 static int bat_anim(neo_gactor_t *a,neo_genv_t *e) {                   /* 0364D2 */
-    if (B(0x97)) {ga_fail(e,0x364d2);return -1;}                        /* points bat: not in Mission 2 */
+    if (B(0x97)) {ga_fail(e,0x364d2);return -1;}                        /* points bat: no capture (explicit stop) */
     return ga_anim_step(a,e,NULL);
 }
 static void bat_waypoint(neo_gactor_t *a,int16_t *x,int16_t *y) {       /* 0365A4 */

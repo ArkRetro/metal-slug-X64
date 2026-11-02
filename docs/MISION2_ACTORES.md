@@ -548,8 +548,10 @@ paleta 0x4B8 (carteles de la etapa 3, +70 = 0) no está en ningún volcado
 
 **Murciélagos** `035B66/035C68` (`neo_drone.c`, el mismo módulo de ROM
 `035A40..0366F0` que el dron): constructor común `0362EE` (paleta 0x94, o
-0xB7 y +97 = 1 para el murciélago de puntos con +6E ≠ 0, que ningún
-registro de la Misión 2 usa: parada), la bandada `035B66` (`03635E`: +70
+0xB7 y +97 = 1 para el murciélago de puntos con +6E ≠ 0: las bandadas de
+la etapa 3 (registro `2D923C`, cámara 2128) lo usan, pero no se ejecutaron
+en `run4`/`run4-debug`; sin captura es parada explícita, `0364D2`, que el
+recorrido de ares registra una vez), la bandada `035B66` (`03635E`: +70
 murciélagos `035BF8` con +86 distintos de 0..4, velocidad inicial
 `035ADC[+86]` y +30 al azar), el murciélago con recorrido `035C68` (posado
 `23B838` con estiramientos `23B88E/23B912`, despega por +92 o por el

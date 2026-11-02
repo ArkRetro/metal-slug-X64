@@ -193,6 +193,8 @@ ROOTS+=[0x230984,0x230654,0x23066a]
 # item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
 # 02206E (the dust 021F96 is the bullets' impact 22E504).
 ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
+# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl.
+ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,0x23b7aa,0x23b6de,0x23b7ec,0x23b720]
 # The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
 # pieces 09A9C4 falling (neo_prisoner.c).
 ROOTS+=[0x29fb62,0x29fbe8,0x29fc42,0x29fc8a]

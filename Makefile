@@ -370,7 +370,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -484,6 +484,9 @@ FAMILY_ARGS_prisoner3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7
 # pieces 09A9C4 (011FF6 draws the prisoner's +7A), neo_prisoner.c, p3 from
 # sec02_19932 (MSX_FULL_FAMILY_ROOTS=99df0, frames 22900..24400).
 FAMILY_ARGS_prisoner4 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# bats = the Mission 2 stage-2 bats 035B66 (swarm of 035BF8) and 035C68
+# (waypoints), their death, fall and crawl (neo_drone.c), s2a.
+FAMILY_ARGS_bats := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # m2boss<n> = the Mission 2 stage-3 boss 026254 (neo_m2boss.c) in pieces of
 # one fight (capture_fullgame.lua from at_92700, MSX_FULL_FAMILY_RANGE=
 # 26254-27e8e): body, parts, shots, the column, the music delay 059F76 and

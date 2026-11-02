@@ -112,6 +112,14 @@ void game_audio_music(bool play) {
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
 static void request(uint16_t word) {
+    /* 012192 (the actors' stop request, word | 0x8000): the channel playing
+     * that word stops (the beam's 10F8 at its end 01E4D4). */
+    if (word&0x8000u) {
+        for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.current[c]>=0 && msx_sfx_defs[policy.current[c]].word==(word&0x7fffu)) {
+            mixer_ch_stop(mixer_of(c));msx_sfx_finished(&policy,c);
+        }
+        return;
+    }
     /* Bank 00 music words from actors (the Mission 2 boss's 059F76: 0x27)
      * replace the music; 0x0Axx is its fade command (01228C): the music
      * stops (the fade itself is not rendered). */

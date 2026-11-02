@@ -24,5 +24,13 @@
    anillo con los últimos 64 eventos, la memoria máxima, la ocupación de los
    pools y las paradas. Debe volcarse en el registro de ISViewer cuando hay
    una aserción o una parada.
-5. **Siguientes fallos de la matriz por orden:** B14, B11, B12, B03, B13,
-   B15.
+5. **B11 y B12 corregidos en ares** (rama `work-laser`, ARMAS_VEHICULOS.md
+   Paso 16): rayo `06/0B` nativo y muertes de soldado por llama y estallido.
+   Falta: probar el láser en la M2 en MiSTer (la L de la sección 1), copiar
+   a `/home/user/ws-logo` las entradas privadas regeneradas
+   (`build/marco_campaign.h` con los papeles `W1L_*`/`B1L_*`,
+   `filesystem/rest-native.json` con los descriptores del rayo; el audio
+   `sfx_10f8` ya está en el directorio compartido) y fusionar en
+   `ccr-09eb2f6b-8rwl8l`. Paradas que quedan de B12: el cuerpo en llamas
+   `040920` (sin captura) y las entradas `040B46/040BA8/040BE6`.
+6. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15.

@@ -263,6 +263,16 @@ bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     if (!neo_kernel_sweep(e->kernel,&q2,&k2)) {ga_fail(e,0x14850);return false;}
     return (k2.flags&1u)!=0;
 }
+uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
+    neo_contact_actor_t c=ga_contact(a);
+    uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x14906);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,(int32_t)((uint32_t)(int32_t)dx<<16),(int32_t)((uint32_t)(int32_t)dy<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x14906);return 0;}
+    return k.flags;
+}
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
     const neo_anim_program_t *p=e->program?e->program(tag):NULL;
     if (!p) {ga_fail(e,tag);return false;}

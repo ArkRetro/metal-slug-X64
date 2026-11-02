@@ -248,7 +248,7 @@ static unsigned stand_2336(int at) {
 static void chaser_run_id(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
     unsigned stops_before=neo_soldier_death_stops;
-    unsigned blasts=0,trails=0,grants=0,rockets=0,rolls=0;bool seen[NEO_WORLD_GACTORS]={false};
+    unsigned blasts=0,trails=0,grants=0,rockets=0,rolls=0,beams=0,sparks=0;bool seen[NEO_WORLD_GACTORS]={false};
     for (unsigned steps=0;steps<9000;steps++) {
         if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
             uint16_t sound=0;if (marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound)) grants++;
@@ -267,25 +267,24 @@ static void chaser_run_id(uint8_t id) {
             bool blast=a->active && (r==0x63740u || r==0x63756u || r==0x86450u || r==0x86466u);
             if (a->active && (r==0x86260u || r==0x861e2u)) rolls++;
             if (a->active && (r==0x6381cu || r==0x641ecu)) rockets++;
+            if (a->active && (r==0x1e28eu || r==0x1e2fcu || r==0x1e3b2u || r==0x1e41cu)) beams++;
+            if (a->active && r==0x1e604u) sparks++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
-    printf("%s run: grants=%u shells=%u rockets=%u rolls=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        id==3?"R":id==8?"R8":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
-    assert(g.c_shots>=40 && grants>=1 && g.kills>0);
+    printf("%s run: grants=%u shells=%u rockets=%u rolls=%u beam calls=%u beams=%u beam updates=%u spark updates=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
+        id==3?"R":id==8?"R8":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":id==6?"06":id==0x0b?"0B":"C",grants,g.c_shots,rockets,rolls,g.laser_calls,g.world.lasers,beams,sparks,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+    if (id==6 || id==0x0b) assert(g.laser_calls>=40 && g.world.lasers>0 && beams>0 && sparks>0 && grants>=1 && g.kills>0);
+    else assert(g.c_shots>=40 && grants>=1 && g.kills>0);
     if (id==3 || id==8 || id==0x0c) assert(blasts>0 && trails>0);
     if (id==0x0d) assert(blasts>0 && rolls>0);
     /* Weapons 02/07 (rows of kind 0A/0B) and 04/09 (kind 7): a soldier
-     * killed by them takes a death entry of 0406EA/040750/0407F4 that is
-     * not translated (explicit stop, the soldier is removed); nothing
-     * else may stop. */
-    bool kinds_ok=!(neo_soldier_death_stop_kinds&~((1u<<7)|(1u<<0xa)|(1u<<0xb)));
-    if (id==2 || id==7 || id==4 || id==9) {
-        printf("  soldier death stops (kinds %08lx): %u\n",(unsigned long)neo_soldier_death_stop_kinds,neo_soldier_death_stops);
-        assert(kinds_ok && g.world.unsupported==neo_soldier_death_stops-stops_before);
-    } else assert(!g.world.unsupported);
+     * killed by them takes the death entries 040AF6/040A7C/040A40 of
+     * 0406EA/040750/0407F4 (native): no death stop, nothing else stops. */
+    if (id==2 || id==7 || id==4 || id==9) printf("  soldier death stops (kinds %08lx): %u\n",(unsigned long)neo_soldier_death_stop_kinds,neo_soldier_death_stops-stops_before);
+    assert(neo_soldier_death_stops==stops_before && !g.world.unsupported);
     assert(!missing_draws && !g.weapon_stops);
     if (id==3 || id==8) assert(rockets>=40);
     assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
@@ -300,7 +299,9 @@ static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id
 /* Weapons 02 / 07 (the blasts 0644C4 / 0646B0) and 04 / 09 (the flames
  * 0A71F8 / 0A716E, neo_pweapon.c) with their own fire programs: native,
  * no stop, every descriptor in the scene pack, and they kill. */
-static void pweapon_run(void) {chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);}
+/* Weapons 06 / 0B: the beam 01E22C (neo_pweapon.c) made by the steps of
+ * its fire programs (0C46D6), its sparks. */
+static void pweapon_run(void) {chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);chaser_run_id(6);chaser_run_id(0x0b);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
  * (0C3B46/0C419E) instead of firing, and the cuts kill. */

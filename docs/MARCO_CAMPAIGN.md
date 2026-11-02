@@ -368,7 +368,7 @@ traducir, 2, y 6 de la fase del reposo que le sigue).
 
 ```sh
 python3 tools/convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --extra-capture K1 --extra-capture K2 --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
-python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --w6-capture $N/marco-w6 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
 python3 tools/extract_mummy_fixture.py $N/marco-mz2 --output data/marco_mummy_fixture.json
 ```
 
@@ -394,8 +394,10 @@ genérica con las tablas `0C0928`): **1220 fotogramas auditados en cada una,
 `256030`, `B1S_CROUCH_FIRE` `256F26` (tablas `0BFFD8..0C0098`, ids
 02/07/0F) y `W1F_*`/`B1F_*` `25391A`, `2539FA`, `256078`, `256FAA`
 (`0C00D8..0C0198`, ids 04/09); `marco_visual.c` los elige por `cgroup`.
-Los programas del rayo (`253594`, `2536FC`, `256132`, `256DE8`) están en el
-grafo y el catálogo, sin papel (el rayo no está portado). Catálogo:
+Los programas del rayo (`253594`, `2536FC`, `256132`, `256DE8`) tienen papel
+desde la rama `work-laser` (`W1L_FIRE`, `W1L_FIRE_UP`, `W1L_FIRE_DOWN`,
+`B1L_CROUCH_FIRE`, comprobados contra `marco-w6` con `--w6-capture`;
+`marco_visual.c` los elige con `cgroup` 4; ver ARMAS_VEHICULOS.md, Paso 16). Catálogo:
 **562 poses (las 411 anteriores idénticas), 585 piezas CI4, 436304 bytes,
 7 perfiles**. Grafo con un segundo `UNRECOVERED` (`256CCA`, retrollamada
 `0C53C4` de un cuerpo agachado de `marco-w4` que la campaña no usa).
@@ -409,7 +411,7 @@ python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output $N/marco-mz2 --c
 # auditoría, extract_marco_steps.py y extract_marco_controller.py de cada una
 python3 convert_marco_programs.py CAP1 ... --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
 python3 build_marco_poses.py CAP1 ... --extra-audit DSC1/audit.json --extra-audit $N/marco-w2/audit.json --extra-audit $N/marco-w4/audit.json --extra-audit $N/marco-w6/audit.json --extra-audit $N/marco-mz2/audit.json --extra-profile-min-uses 40 --name-palette BURNT=7FFF,6FF0,4840 --name-palette MUMMY=7FFE,6CB8,3863 --name-palette MUMMY2=7FFE,3DC9,7986 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite
-python3 compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+python3 compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --w6-capture $N/marco-w6 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
 ```
 
 ## Entradas privadas: comprobación por contenido

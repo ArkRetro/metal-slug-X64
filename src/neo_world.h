@@ -32,7 +32,7 @@ typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
 /* A player shot waiting for its list insertion (neo_world_player_shot). */
-typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; bool actor;uint8_t f5e; } neo_world_shot_request_t;
+typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; bool actor;uint8_t f5e; bool laser; } neo_world_shot_request_t;
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
 /* Dynamic collision object owned by a generic actor (RAM 10C06E + 64*i):
  * local position block relative to its parent (+00..+25). */
@@ -45,6 +45,7 @@ typedef struct {
     neo_anim_state_t anim;
     neo_anim_render_t render;
     bool active,started;
+    uint32_t program;   /* 2402FA (040F88, kind 6) or 24039C (040F60, kinds 0A/0B) */
 } neo_world_splash_t;
 /* One emitted animation draw (ROM 004364), with the logical palette resource
  * the renderer must use (requested through 009EA8 by the original). */
@@ -196,6 +197,9 @@ typedef struct {
      * original. */
     neo_world_shot_request_t shot_requests[8];unsigned shot_request_count,shot_dropped;
     unsigned player_shots;
+    /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B
+     * (neo_world_laser, neo_pweapon.c); beams made (01E19E). */
+    uint8_t laser[16];unsigned lasers;
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */
@@ -243,6 +247,14 @@ bool neo_world_player_grenade(neo_world_t *world,uint32_t constructor,int32_t x,
  * flash 0C58D2 placed by 01ACF2, the shell 063F32 by 0C482E). A shell
  * 063F32 the world cannot insert gives its projectile back (0C4526). */
 bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player);
+/* 01E19E + 01E166 of the beam call 0C46D6 (weapons 06/0B, gameplay.c):
+ * the player's block in `laser` gets the point (x, y: the fire program's
+ * point plus +72/+74, facing forward, y up), the direction (+92: 0 level,
+ * 1 up, FF down) and the life 4; with no beam alive (+6) the sound 10F8
+ * (unless the other player's +7) and the beam 01E22C after the player
+ * (0040BC reserve 0xE; inserted here after the list head with the next
+ * shots, placed by 01B220 (0, 0) on the player's node record). */
+void neo_world_laser(neo_world_t *world,uint8_t player,int16_t x,int16_t y,uint8_t direction);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true

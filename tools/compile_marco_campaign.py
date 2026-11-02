@@ -86,6 +86,13 @@ ROLES_WEAPONS=[
  ('W1F_FIRE_UP',1,0x2539FA,'w4',('c_aim_up_fire_right',)),
  ('W1F_FIRE_DOWN',1,0x256078,'w4',('c_jump_down_fire_right',)),
  ('B1F_CROUCH_FIRE',0,0x256FAA,'w4',('c_crouch_fire_right',)),
+ # Ids 06/0B, the beam (0C01D8..0C0298: 253594 level, 2536FC up, 256132
+ # down in the air, crouched 256DE8; each step CALLs 0C46D6, gameplay.c):
+ # marco-w6 (run_marco_catalog.py --give-weapon 6 --keep-bombs).
+ ('W1L_FIRE',1,0x253594,'w6',('c_stand_fire_right','c_run_fire_right','c_stand_fire_left')),
+ ('W1L_FIRE_UP',1,0x2536FC,'w6',('c_aim_up_fire_right','c_jump_up_fire_right')),
+ ('W1L_FIRE_DOWN',1,0x256132,'w6',('c_jump_down_fire_right',)),
+ ('B1L_CROUCH_FIRE',0,0x256DE8,'w6',('c_crouch_fire_right',)),
 ]
 # Form 3, the mummy (+93 = 3: rows +0x30 of the weapon tables; the body
 # programs come from the mummy controller's own tables, below).
@@ -151,6 +158,7 @@ def main():
     p.add_argument('--knife-h-capture',type=Path,help='knife capture with the H (ROLES_KNIFE)')
     p.add_argument('--w2-capture',type=Path,help='weapon 02 capture (ROLES_WEAPONS)')
     p.add_argument('--w4-capture',type=Path,help='weapon 04 capture (ROLES_WEAPONS)')
+    p.add_argument('--w6-capture',type=Path,help='weapon 06 capture (ROLES_WEAPONS)')
     p.add_argument('--mummy-capture',type=Path,help='form-3 capture (ROLES_MUMMY)')
     p.add_argument('--descent-capture',type=Path,help='parachute descent capture (ROLES_DESCENT)')
     a=p.parse_args();c=a.capture
@@ -214,7 +222,7 @@ def main():
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}: {", ".join(conds)} */')
     else:assert not any(knife.values()),'--knife-capture and --knife-h-capture go together'
-    wcap={'w2':a.w2_capture,'w4':a.w4_capture}
+    wcap={'w2':a.w2_capture,'w4':a.w4_capture,'w6':a.w6_capture}
     if all(wcap.values()):
         for role,part,addr,key,conds in ROLES_WEAPONS:
             w=wcap[key];wplan={x['name']:x for x in json.loads((w/'plan.json').read_text())['cases']}
@@ -226,7 +234,7 @@ def main():
                 assert seen,(role,hex(addr),key,cond)
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 1, {key}: {", ".join(conds)} */')
-    else:assert not any(wcap.values()),'--w2-capture and --w4-capture go together'
+    else:assert not any(wcap.values()),'--w2-capture, --w4-capture and --w6-capture go together'
     if a.mummy_capture:
         m=a.mummy_capture;mplan={x['name']:x for x in json.loads((m/'plan.json').read_text())['cases']}
         mchoices=json.loads((m/'controller.json').read_text())['choices']

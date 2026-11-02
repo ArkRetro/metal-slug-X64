@@ -601,6 +601,7 @@ int main(void) {
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);
+        e.laser=&wram[0xc340];   /* RAM 10C340..10C34F: the beam blocks (neo_pweapon.c) */
 #ifdef FAMILY_RING
         kernel.ring=&wram[(FAMILY_RING+0x88u)&0xffffu];
 #endif

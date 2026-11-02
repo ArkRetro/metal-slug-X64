@@ -289,6 +289,23 @@ cartucho de transición (`tools/test_m1m2_ares.py`): `MSX AUDIO stage music
 0022` seguido de `MSX AUDIO music start` (antes del arreglo: sin `music
 start`). Ver MISION2.md, «Transición Misión 1 → Misión 2».
 
+## 11. El rayo `10F8` (sonido sostenido, rama `work-laser`)
+
+`01E19E` pide `10F8` al crear el rayo de las armas `06/0B` (si el otro
+jugador no lo tiene sonando) y `01E4D4` lo para con `012192` al acabar. El
+render aislado (`render_sound_commands.py --labels sfx_10f8`) sigue sonando
+al final de su ventana (`ACTIVE_AT_WINDOW_END`, 5,015 s) y no tiene un
+periodo exacto medible (ruido modulado): no es un bucle de muestra. Se
+empaqueta la ventana entera (`data/sound_map.json` `"stop": "012192"`,
+`pack_game_audio.py`), a 32 kHz porque el 30 % de su energía está por encima
+de 11 kHz, y `game_audio.c` atiende ahora la petición de parada de los
+actores (`palabra | 0x8000`): el canal que suena esa palabra se para. Un
+rayo que dure más de 5 s queda en silencio antes que en la recreativa
+(desviación declarada). Pares medidos (`measure_sound_pairs.py --labels
+sfx_10f8` y, en modo explícito, contra `1056`, `1069`, `109B`, `10A7`,
+`10E8`, `1121`, `1137`): sin corte ni caída claros: canal propio
+`ch_10f8`.
+
 ## Regenerar
 
 ```sh

@@ -107,9 +107,22 @@ bool neo_world_spawn_stop(uint32_t constructor) {
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
     if (neo_world_spawn_stop(r)) return false;
-    return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au;
+    return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au || r==0x1913cu || r==0x529c0u;
 }
+static void spawn_log(neo_world_t *w,const neo_script_spawn_t *sp,bool created) {
+    if (w->spawn_log_count<sizeof(w->spawn_log)/sizeof(w->spawn_log[0])) {
+        w->spawn_log[w->spawn_log_count].record=sp->record;w->spawn_log[w->spawn_log_count].constructor=sp->constructor&0xffffffu;
+        w->spawn_log[w->spawn_log_count++].created=created;
+    } else w->spawn_log_dropped++;
+}
+static void script_spawn_one(void *context,const neo_script_spawn_t *sp);
 static void script_spawn(void *context,const neo_script_spawn_t *sp) {
+    tick_t *t=context;neo_world_t *w=t->w;
+    unsigned external=w->external_spawns;
+    script_spawn_one(context,sp);
+    spawn_log(w,sp,w->external_spawns==external);
+}
+static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
     tick_t *t=context;neo_world_t *w=t->w;
     /* A sub-script actor (generic actor 019E82) creates after itself. */
     bool sub=sp->creator<0 && t->sub_owner>=0;
@@ -137,6 +150,12 @@ static void script_spawn(void *context,const neo_script_spawn_t *sp) {
          * to its start value 003586; the actor then leaves (004188 after the
          * cartridge check). The player's HUD applies it (neo_hud.c). */
         w->timer_resets++;return;
+    }
+    if (routine==0x529c0u) {
+        /* Spawn-table entry 0529C0 (uncounted): RAM 10C44A = +6E & 7, the
+         * direction of the GO arrow 05287C; the actor then leaves (004188
+         * after the cartridge check). */
+        w->arrow=(uint8_t)((sp->word_count?sp->words[0]:0)&7u);return;
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
@@ -1149,6 +1168,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
+     * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
+    g->arrow=&w->arrow;
+    g->camera_low=w->camera_native?(uint16_t)w->camera.progress:0;g->camera_stop=w->camera_native?w->camera.lock:0;
     /* Pickup state (neo_item.c); RAM 10C590 counts the logic updates. */
     w->pickup.weapons=&w->weapons;w->pickup.player[0]=t.player_valid?&w->weapon_player:NULL;w->pickup.player[1]=NULL;
     w->pickup.slot[0]=w->vslots.slot[0].b;w->pickup.slot[1]=NULL;w->pickup.frame++;g->pickup=&w->pickup;

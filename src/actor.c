@@ -91,6 +91,7 @@ static bool load_stage(void) {
     int start_x=st->players_len>=4?(int)(int16_t)(st->players[2]<<8|st->players[3]):0x68;
     msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
     for (unsigned k=0;k<40 && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
+    if (game.flow.state==NEO_MISSION_PLAYING) msx_game_stage_actors(&game);   /* 01860A */
     debugf("MSX mission %u stage %u start: record %06lX descriptor %06lX camera list %06lX script %06lX (%u bytes) walk-in to x=%d\n",
         (unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,(unsigned long)game.flow.record,(unsigned long)game.flow.descriptor,
         (unsigned long)st->camera_rom,(unsigned long)st->script_rom,st->script_len,start_x);
@@ -394,6 +395,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         observed_wreck_contact=true;debugf("MSX player on wreck\n");
     }
     if (game.kills!=old_kills) debugf("MSX defeated=%u\n",game.kills);
+    /* Every level-script record the world ran (tools/compare_m2_events.py). */
+    for (unsigned i=0;i<game.world.spawn_log_count;i++)
+        debugf("MSX script spawn record %06lx constructor %06lx native %u camera %u\n",(unsigned long)game.world.spawn_log[i].record,
+            (unsigned long)game.world.spawn_log[i].constructor,(unsigned)game.world.spawn_log[i].created,(unsigned)neo_camera_progress(&game.world.camera));
+    game.world.spawn_log_count=0;
     {static unsigned skipped;
      if (game.world.script.skipped!=skipped) {skipped=game.world.script.skipped;if (skipped) debugf("MSX reference: script record of an unported constructor skipped (count=%u) record %06lx constructor %06lx\n",skipped,(unsigned long)game.world.script.skipped_address,(unsigned long)(game.world.script.skipped_entry&0x7fffffffu));}}
     {static unsigned tower_logged;

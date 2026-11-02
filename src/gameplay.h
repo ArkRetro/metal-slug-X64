@@ -79,7 +79,8 @@ typedef struct {
     /* Stage flow of the mission actor (neo_mission.c): Mission 1 stage
      * 016DCE until 01891E selects the next mission. */
     neo_mission_t flow;
-    bool start_letters;unsigned start_stops;   /* MISSION 1 START 0607DE in end (descent) */
+    bool start_letters;unsigned start_stops;   /* MISSION n START 0607DE in end (descent, 01860A) */
+    unsigned start_voices;                     /* its voice 607D2[mission] not requested (no render) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
@@ -187,6 +188,8 @@ void msx_game_autopilot(msx_game_t *game,int *direction,bool *jump);
  * enters walking from the left edge to start_x (pixels), as in the run4
  * capture of Mission 2 (19440..19530). */
 void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int start_x,int camera_max);
+/* 01860A of a packed mission's stage: MISSION n START (42FA = 0) and the GO arrow. */
+void msx_game_stage_actors(msx_game_t *g);
 /* Stage end (018F40 + 018722 for a stage whose next record is a stage). */
 void msx_game_stage_end(msx_game_t *game);
 /* A hit on the player (from: world x of the attacker, used without the

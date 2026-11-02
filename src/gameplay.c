@@ -141,6 +141,7 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
     neo_world_init_stage(&g->world,0,st);
     g->world.script_skip_unported=MSX_REFERENCE_INVULNERABLE!=0;   /* reference: skip unported script records */
+
     g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
@@ -157,6 +158,16 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->y=neo_surface_at(0,(int32_t)neo_collision_rows()*8*MSX_UNIT,0,(int32_t)neo_collision_rows()*8*MSX_UNIT,&top)?56*MSX_UNIT-top.height:msx_ground_offset(0);
     neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
+}
+/* 01860A (the flow's stage_loop, each stage of a packed mission): MISSION
+ * n START 0607DE when 42FA = 0 (018632), then the GO arrow 05287C (018656),
+ * both after the mission actor (0040BC). run4: the arrow is made again at
+ * every stage start (19429, 20009, 26216, ...). The letters' voice
+ * (607D2[mission], 0x1132 for Mission 2) has no render: not requested
+ * (counted in start_voices). */
+void msx_game_stage_actors(msx_game_t *g) {
+    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->start_voices++;}
+    neo_world_mission_actor(&g->world,0x5287c,0,0);
 }
 void msx_game_stage_end(msx_game_t *g) {
     if (g->stage_step) return;
@@ -926,8 +937,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
 #endif
     g->descent_fire|=fire && !g->fire_was && g->descent;
     if (!(g->ticks&1) && g->start_letters) {
-        /* The MISSION 1 START letters after the mission actor (neo_end.c). */
-        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program,NULL};
+        /* The MISSION n START letters after the mission actor (neo_end.c;
+         * RAM 10C2F4 = 42F4, the flow's mission). */
+        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,g->flow.mission,neo_world_program,NULL};
         neo_end_update(&g->end,&in);
         g->start_stops+=g->end.unsupported;
         if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}

@@ -370,7 +370,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -474,6 +474,12 @@ FAMILY_ARGS_hostage := --node-fields 86 --attacks --terrain 10c72e --ring 10c72e
 # running through the stage start (frames 19933..22800).
 FAMILY_ARGS_miner := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 FAMILY_ARGS_minerrun := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# signs = the Mission 2 stage-2 signs 0B829C (collision stamp) and 0B833A
+# (wiggles with a player near), neo_m2props.c, s2a; prisoner3 = the tied
+# prisoner 099DE2 (no 01B1DC, +86 bit 0) of the stage-2 random record
+# 2D778E.., neo_prisoner.c, s2a.
+FAMILY_ARGS_signs := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+FAMILY_ARGS_prisoner3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # m2boss<n> = the Mission 2 stage-3 boss 026254 (neo_m2boss.c) in pieces of
 # one fight (capture_fullgame.lua from at_92700, MSX_FULL_FAMILY_RANGE=
 # 26254-27e8e): body, parts, shots, the column, the music delay 059F76 and

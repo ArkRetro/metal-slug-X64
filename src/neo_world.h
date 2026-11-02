@@ -126,6 +126,11 @@ typedef struct {
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
+    uint8_t arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, read by 05287C) */
+    /* Level-script records executed (op 7, script_spawn), in order, for the
+     * reference log (actor.c drains them): created = the world made the
+     * actor (or applied its effect), 0 = dropped. */
+    struct {uint32_t record,constructor;uint8_t created;} spawn_log[16];unsigned spawn_log_count,spawn_log_dropped;
     /* Spawn-table vehicles stopped explicitly (none left: the Camel Slug
      * 03458E and the SV-001 092A32 are native, neo_slug.c / neo_tank.c). */
     unsigned vehicle_stops;uint32_t vehicle_stop_constructor;

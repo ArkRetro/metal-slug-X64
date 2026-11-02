@@ -30,5 +30,14 @@
    91/96 antes del jefe), las balas de pistola (8/8, rechazos) y los
    fotogramas de render con descodificación síncrona (40–45 ms en 1920 y
    3030).
-5. **Siguientes fallos de la matriz por orden:** B14, B11, B12, B03, B13,
-   B15.
+5. **B11 y B12 corregidos en el PC (familias y soldados contra MAME)** (rama `work-laser`, ARMAS_VEHICULOS.md
+   Paso 16): rayo `06/0B` nativo y muertes de soldado por llama y estallido.
+   Falta: probar el láser en la M2 en MiSTer (la L de la sección 1), copiar
+   a `/home/user/ws-logo` las entradas privadas regeneradas
+   (`build/marco_campaign.h` con los papeles `W1L_*`/`B1L_*`,
+   `filesystem/rest-native.json` con los descriptores del rayo; el audio
+   `sfx_10f8` ya está en el directorio compartido) y fusionar en
+   `ccr-09eb2f6b-8rwl8l`. Paradas que quedan de B12: el cuerpo en llamas
+   `040920` (sin captura) y las entradas `040B46/040BA8/040BE6`.
+6. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15, B20
+   (bucles de motor 10A5/1026), pool de actores genéricos y balas.

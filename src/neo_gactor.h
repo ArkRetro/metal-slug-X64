@@ -222,6 +222,10 @@ struct neo_genv {
     neo_pickup_env_t *pickup;
     neo_vehicle_env_t *vehicle;
     neo_m2boss_env_t *m2boss;
+    /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
+     * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;
+     * 01E13A/01E166/01E19E, neo_pweapon.c); NULL: the beam stops explicitly. */
+    uint8_t *laser;
     /* Low word of the node's address as the slot services keep it (slot
      * +00, 0AA760; a turret's +0E): a nonzero id per node (NULL: 8000|index). */
     uint16_t (*node_word)(void *ctx,const neo_gactor_t *a);
@@ -295,4 +299,8 @@ int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id); /* 0402E6 */
 void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy); /* 014A02 */
 /* 014A02 with its D0 (0: 10C008 = FF) and the result D6 & 15. */
 uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0);
+/* 014906: the sweep from the actor's block by (dx,dy) pixels (10C004 = 0,
+ * 10C008 = FF unless +15 bit 5, 10C009 = 0), nothing written back; the D6
+ * of 013968 (bit 1: the carry). */
+uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
 #endif

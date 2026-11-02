@@ -50,8 +50,8 @@ Abreviaturas:
 | B08 | Faltan actores secundarios de la M2 (mineros, arqueólogos) | jugar la M2 | aparecen | no aparecen | `neo_world` (creadores no traducidos) | U | P4 | corregido (ares) `ab76871`; faltan 7 actores de la etapa 3 |
 | B09 | El orden de los eventos de la M2 no es el del arcade | jugar la M2 | el orden de MAME | distinto | `neo_mission.c`, guion, lista de cámara | U | P3 | corregido (ares) `ab76871`; por confirmar en MiSTer |
 | B10 | Momia con el sprite de Marco superpuesto | recibir el aliento de la momia | solo la momia | dos cuerpos | `marco_visual.c`, forma 3 | U | P4 | corregido (ares) `ab76871`; por confirmar en MiSTer |
-| B11 | El láser (06/0B) dispara la bala de la pistola | coger la L en la M2 | rayo de varios segmentos | bala de pistola | parada en `gameplay.c` | H: cuenta en `weapon_stops` | P4 | abierto |
-| B12 | Soldados muertos por fuego o explosión desaparecen | matar con F o S | animación de muerte (tipos 7, 0A, 0B) | desaparecen | `neo_soldier_ai.c` | H: `neo_soldier_death_stops` | P4 | abierto |
+| B11 | El láser (06/0B) dispara la bala de la pistola | coger la L en la M2 | rayo de varios segmentos | bala de pistola | `neo_pweapon.c` (rayo 01E22C), `gameplay.c` (0C46D6) | H: familias `laser6`/`laserb`, `pweapon`; M: 45230/1996 píxeles | P4 | corregido en el PC (familias contra MAME) `8ceca05`; ares bloqueado por el presupuesto de RAM (NEXT_STEPS 6); falta MiSTer |
+| B12 | Soldados muertos por fuego o explosión desaparecen | matar con F o S | animación de muerte (tipos 7, 0A, 0B) | desaparecen | `neo_soldier_ai.c` | H: `soldier_death` (1468 actualizaciones), `pweapon` 0 paradas | P4 | corregido en el PC (contra MAME) `8ceca05`; ares bloqueado por el presupuesto de RAM; queda la parada `040920` (cuerpo en llamas, sin captura) |
 | B13 | Faltan los efectos de la transformación en momia (C4DD8, C5286) y el cambio de paleta | transformación | efectos | no hay | `gameplay.c`, render | doc | P5 | abierto |
 | B14 | Caídas sueltas: M2 etapa 2 en x 2281, etapa 3 en x 348 y x 611 | `test_mission2_ares.py` | no hay caída | rescate de la ROM de referencia | `wall_stop` con el obstáculo dinámico del hueco 7 | A, M | P2 | abierto |
 | B15 | Puerta de la etapa 2: no se dibujan sus tiles una vez abierta y falta el sonido 103B | final de la etapa 2 | tiles y sonido | no hay | render y audio | doc | P5 | abierto |
@@ -68,8 +68,8 @@ Abreviaturas:
 | Pistola, H, C | P | P (fixtures) |
 | R (lanzacohetes) | F (B04, al llegar al jefe) | ? |
 | S/F/D (02/07, 04/09, 0D) | P (familias) | ? en juego real |
-| Láser | — | N (B11) |
-| Muerte de soldados por F/S | N (B12) | N |
+| Láser | — | P (familias, `pweapon`) |
+| Muerte de soldados por F/S | P (B12) | ? en juego real |
 | Forma momia | — | P (lógica) / F (dibujo, B10) |
 | Vehículos | P | ? |
 | Jefe | P | P (8 piezas en ares, ROM de referencia) |

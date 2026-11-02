@@ -4,6 +4,7 @@ import gzip,json,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 src=Path(sys.argv[1]) if len(sys.argv)>1 else ROOT/'data/soldier_tick_fixture.json.gz'
+dst=Path(sys.argv[2]) if len(sys.argv)>2 else ROOT/'build/soldier_tick_fixture.h'
 with gzip.open(src,'rt') as f:d=json.load(f)
 F=['routine','flags15','flash','field18','word1e','anim','timer','speed','x','y','vx','vy','parent','px','py','cx','cy',
    'mark','correction','health','field50','timer5a','f5b','f5c','f5d','f5e','flags5f','scalar62','field66','variant68','group69','kind_angle']
@@ -38,5 +39,5 @@ for i,c in enumerate(d['cases']):
         ','.join(str(sc['bounds'][k]) for k in ('left','top','right','bottom'))))
     assert not c['scene']['bounds']['parent'],'Bounds parent not modelled in this fixture'
 L.append('};')
-(ROOT/'build/soldier_tick_fixture.h').write_text('\n'.join(L)+'\n')
+dst.write_text('\n'.join(L)+'\n')
 print(len(d['cases']),'cases')

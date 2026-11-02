@@ -266,7 +266,7 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         else if (in->form==1) {
             if (in->thrown) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_GRENADE);
             else if (hgun_start) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_FIRE);
-            else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,in->cgroup==2?MARCO_CAMPAIGN_B1S_CROUCH_FIRE:in->cgroup==3?MARCO_CAMPAIGN_B1F_CROUCH_FIRE:MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
+            else if (in->cgun && in->cgun_fire) start(v,MARCO_BODY,in->cgroup==2?MARCO_CAMPAIGN_B1S_CROUCH_FIRE:in->cgroup==3?MARCO_CAMPAIGN_B1F_CROUCH_FIRE:in->cgroup==4?MARCO_CAMPAIGN_B1L_CROUCH_FIRE:MARCO_CAMPAIGN_B1C_CROUCH_FIRE);
             else if (!crouch_role(v->body_role)) start(v,MARCO_BODY,MARCO_CAMPAIGN_B1_CROUCH_IN);
             else if (v->body_done) start(v,MARCO_BODY,v->body_role==MARCO_CAMPAIGN_B1_CROUCH_GRENADE?MARCO_CAMPAIGN_B1_CROUCH_AFTER_GRENADE:MARCO_CAMPAIGN_B1_CROUCH);
         } else {
@@ -293,13 +293,15 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         else if (in->form==1 && in->cgun && in->cgun_fire)
         {
             /* The weapon's tables 0C3C10/0C3C50/0C3C90 (+0x10): the C's
-             * C02D8.., ids 02/07 0BFFD8.., ids 04/09 0C00D8... */
-            static const int fire[4][3]={
+             * C02D8.., ids 02/07 0BFFD8.., ids 04/09 0C00D8.., ids 06/0B
+             * the beam's 0C01D8... */
+            static const int fire[5][3]={
                 {MARCO_CAMPAIGN_W1C_FIRE,MARCO_CAMPAIGN_W1C_FIRE_UP,MARCO_CAMPAIGN_W1C_FIRE_DOWN},
                 {MARCO_CAMPAIGN_W1C_FIRE,MARCO_CAMPAIGN_W1C_FIRE_UP,MARCO_CAMPAIGN_W1C_FIRE_DOWN},
                 {MARCO_CAMPAIGN_W1S_FIRE,MARCO_CAMPAIGN_W1S_FIRE_UP,MARCO_CAMPAIGN_W1S_FIRE_DOWN},
-                {MARCO_CAMPAIGN_W1F_FIRE,MARCO_CAMPAIGN_W1F_FIRE_UP,MARCO_CAMPAIGN_W1F_FIRE_DOWN}};
-            const int *f=fire[in->cgroup&3u];
+                {MARCO_CAMPAIGN_W1F_FIRE,MARCO_CAMPAIGN_W1F_FIRE_UP,MARCO_CAMPAIGN_W1F_FIRE_DOWN},
+                {MARCO_CAMPAIGN_W1L_FIRE,MARCO_CAMPAIGN_W1L_FIRE_UP,MARCO_CAMPAIGN_W1L_FIRE_DOWN}};
+            const int *f=fire[in->cgroup<5u?in->cgroup:0u];
             start(v,MARCO_WEAPON,in->aim_up?f[1]:in->aim_down && !in->grounded?f[2]:f[0]);
         }
         else if (in->form!=1 && in->fired) start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W_FIRE_DOWN:MARCO_CAMPAIGN_W_FIRE);

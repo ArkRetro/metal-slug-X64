@@ -257,7 +257,7 @@ static uint8_t hit_player(ctx_t *c,const int16_t *attack,bool damage) {
 }
 bool neo_soldier_hurtbox(const neo_soldier_t *s,neo_hurtbox_t *out) {
     /* 040A00: a dying soldier registers only while +73 is zero. */
-    if ((s->routine==0x40db4 || s->routine==0x40df0 || s->routine==0x40d06 || s->routine==0x40dc0) && B(0x73)) return false;
+    if ((s->routine==0x40db4 || s->routine==0x40df0 || s->routine==0x40d06 || s->routine==0x40dc0 || s->routine==0x40ae0) && B(0x73)) return false;
     const int16_t *d=soldier_hurtbox(s->anim.field50_tag);
     if (!d) return false;
     *out=(neo_hurtbox_t){HI(s->b.projected_x),HI(s->b.projected_y),s->b.flags15,5,1,{d[0],d[1],d[2],d[3]},
@@ -519,9 +519,18 @@ static bool death_40c8e(ctx_t *c) {
     s->b.flags15&=191u;
     s->routine=0x40d06;return true;
 }
-static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
+static int death_body(ctx_t *c);
+/* 040F04 (kinds 0A/0B): the child 040F60 (program 24039C) at (8, 0) with
+ * the facing flipped for 0040BC/01B220 (the flip restored after). */
+static void death_child_40f04(ctx_t *c) {
+    neo_contact_actor_t seed=c->s->b;seed.flags15^=1u;
+    event(c,NEO_SOLDIER_EVENT_DEATH_CHILD,1,&seed);
+}
+/* 0 done, 1 deleted (004188 in the 040DF0 body that 040A7C runs), -1 an
+ * explicit stop. */
+static int death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     neo_soldier_t *s=c->s;uint8_t kind=s->b.timer5a;
-    if (!kind) return true;
+    if (!kind) return 0;
     death_setup(c);
     kind=s->b.timer5a;s->b.timer5a=0;
     if (crouch) s->f5b=0; /* 0407DA writes a word over +5A/+5B */
@@ -530,9 +539,37 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
      * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;
      * 040D66 (grounded pistol) and 040A10 (air pistol) are the observed kills;
      * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast; kind 9
-     * grounded: the grenade's explosion) is translated;
-     * the remaining entries (040B46, 040BA8, 040A40, 040AF6, 040A7C,
-     * 040BE6) are not translated and stop explicitly. */
+     * grounded: the grenade's explosion) is translated; kinds 7 (the flame:
+     * 040A40), 0A and 0B (the blast of weapons 02/07: 040AF6, 040A7C) in
+     * the three tables; the remaining entries (040B46, 040BA8, 040BE6) are
+     * not translated and stop explicitly. */
+    if (kind==7) { /* 040A40 */
+        uint32_t d0=(uint32_t)(neo_rng_next(c->e->rng)&0xffffu)<<2;
+        if (s->f5b&0x80u) d0=0u-d0;
+        SL(0x76,d0);s->b.vy=0;
+        if (!anim_start(c,0x240e8eu)) return -1;
+        s->routine=0x40df0;return 0;
+    }
+    if (kind==0xa) { /* 040AF6 */
+        death_child_40f04(c);
+        bool facing=(s->b.flags15&1u)!=0;
+        bool negative=(int8_t)(s->f5b^(facing?0xffu:0u))<0;
+        if (!anim_start(c,negative?0x240c6eu:0x240d2eu)) return -1;
+        s->b.vy=0x20000;s->b.flags15&=191u;
+        s->routine=0x40df0;return 0;
+    }
+    if (kind==0xb) { /* 040A7C */
+        death_child_40f04(c);
+        bool negative=(neo_rng_next(c->e->rng)&0x8000u)!=0;
+        if (!anim_start(c,negative?0x240ae6u:0x240dc0u)) return -1;
+        uint32_t d0=(uint32_t)(neo_rng_next(c->e->rng)&0xffffu)<<2;
+        if (s->f5b&0x80u) d0=0u-d0;
+        s->b.vx=S32(d0);s->b.vy=0x100000;s->b.flags15&=191u;
+        s->routine=0x40ae0;
+        /* 040AE0 and its 040DF0 body run in this update. */
+        if (s->b.vy>=0) s->b.vy=S32((uint32_t)s->b.vy-ASR((uint32_t)s->b.vy,4));
+        return death_body(c);
+    }
     uint32_t program=0;
     if (crouch) {
         if (kind==0||kind==1||kind==2||kind==6||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x240f8eu; /* 040A28 */
@@ -544,21 +581,21 @@ static bool death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
             }
             uint8_t d=s->f5b;bool facing=(s->b.flags15&1u)!=0;
             bool same=(int8_t)(d^(facing?0xffu:0u))>=0;
-            if (!anim_start(c,same?0x240588u:0x2406ecu)) return false;
-            s->routine=0x40db4;return true;
+            if (!anim_start(c,same?0x240588u:0x2406ecu)) return -1;
+            s->routine=0x40db4;return 0;
         }
-        if (kind==1||kind==9) return death_40c8e(c);   /* 0406EA entries 1 and 9 */
+        if (kind==1||kind==9) return death_40c8e(c)?0:-1;   /* 0406EA entries 1 and 9 */
         if (kind==0||kind==2||kind==8||kind==0xe||kind==0xf||(kind>=0x10&&kind<0x14)) program=0x2404feu; /* 040DC0 */
         else if (kind==0xc||kind==0xd) program=0x240454u; /* 040DD8 */
     } else {
-        if (kind==1) return death_40c8e(c);
+        if (kind==1) return death_40c8e(c)?0:-1;
         if (kind==6) program=0x24103cu; /* 040A10 */
         else if (kind==0||kind==2||kind==5||kind==8||kind==9||(kind>=0xc&&kind<0x14)) program=0x2404feu; /* 040DC0 */
     }
-    if (program) {if (!anim_start(c,program)) return false;s->routine=0x40df0;return true;}
+    if (program) {if (!anim_start(c,program)) return -1;s->routine=0x40df0;return 0;}
     neo_soldier_unsupported_detail=(uint32_t)kind|(grounded?0x100u:0u)|(crouch?0x200u:0u);
     neo_soldier_death_stops++;if (kind<32u) neo_soldier_death_stop_kinds|=1u<<kind;
-    UNSUPPORTED_AT();return false;
+    UNSUPPORTED_AT();return -1;
 }
 static bool death_motion(ctx_t *c) { /* 040852 */
     neo_soldier_t *s=c->s;
@@ -573,6 +610,9 @@ static bool death_motion(ctx_t *c) { /* 040852 */
         s->b.vy=S32((uint32_t)s->b.vy+ASR(0xfff40000u-(uint32_t)s->b.vy,5));
         s->b.vx=S32((uint32_t)s->b.vx+ASR(L(0x76)-(uint32_t)s->b.vx,5));
         s->b.scalar62=s->b.vx;
+        /* +74 (a grounded death by a kind 7 or 9 row with +15 bit 5): 040920
+         * (the block to the scene root, 01AC4C, then 01AC38) has no MAME
+         * evidence yet: explicit stop. */
         if (B(0x74)) {UNSUPPORTED_AT();return false;}
         uint16_t f=(s->b.flags15&32u) && B(0x72)?air(c,0xff):air(c,0);
         if (f&0x200u) s->b.flags15|=32u;
@@ -581,10 +621,30 @@ static bool death_motion(ctx_t *c) { /* 040852 */
     SB(0x70,(s->b.flags15&64u)?0xff:0);
     return true;
 }
-static neo_soldier_result_t death_tick(ctx_t *c) { /* 040DB4 / 040DF0 / 040D06 / 040DC0 */
+/* 040DF0: 1 deleted (0405CE, 004188), 0 more, -1 an explicit stop. */
+static int death_body(ctx_t *c) {
+    neo_soldier_t *s=c->s;
+    /* 0405CE: off-screen removal */
+    uint16_t x=(uint16_t)(HI(s->b.projected_x)+0x20u);
+    if (x>=0x180u || HI(s->b.projected_y)<0xe0u) return 1;
+    if (!death_motion(c)) return -1;
+    if (anim_step(c)) return 1;
+    if (c->unsupported) return -1;
+    if (!(s->b.flags5f&8u)) {
+        uint8_t t=B(0x71);
+        if (t) {t--;if (!t) {s->b.flags5f|=8u;t=0x1e;} SB(0x71,t);}
+        return 0;
+    }
+    uint8_t t=B(0x71);
+    if (!t) return 1;
+    SB(0x71,t-1u);return 0;
+}
+static neo_soldier_result_t death_tick(ctx_t *c) { /* 040DB4 / 040DF0 / 040D06 / 040DC0 / 040AE0 */
     neo_soldier_t *s=c->s;
     if (s->routine==0x40dc0) {if (!anim_start(c,0x2404feu)) return NEO_SOLDIER_UNSUPPORTED;s->routine=0x40df0;return NEO_SOLDIER_MORE;}
-    if (s->routine==0x40d06) {
+    if (s->routine==0x40ae0) { /* 040AE0: +34 -= +34 >> 4 while not negative */
+        if (s->b.vy>=0) s->b.vy=S32((uint32_t)s->b.vy-ASR((uint32_t)s->b.vy,4));
+    } else if (s->routine==0x40d06) {
         if (!(s->b.flags15&64u)) {
             uint16_t d0=(uint16_t)((neo_rng_next(c->e->rng)&0xfu)-0xau+s->anim.speed);
             if (S16((uint16_t)(d0-0x20u))<0) d0=0x20;
@@ -595,28 +655,18 @@ static neo_soldier_result_t death_tick(ctx_t *c) { /* 040DB4 / 040DF0 / 040D06 /
         if (!B(0x73) && s->b.timer5a) s->routine=0x40dc0;
     } else if (s->routine==0x40db4) {
         /* 040A00 registers the hurtbox only when +73 is zero (owner side). */
-        if (!death_dispatch(c,false)) return NEO_SOLDIER_UNSUPPORTED;
+        int r=death_dispatch(c,false);
+        if (r<0) return NEO_SOLDIER_UNSUPPORTED;
+        if (r>0) return NEO_SOLDIER_DELETED;
     }
-    /* 0405CE: off-screen removal */
-    uint16_t x=(uint16_t)(HI(s->b.projected_x)+0x20u);
-    if (x>=0x180u || HI(s->b.projected_y)<0xe0u) return NEO_SOLDIER_DELETED;
-    if (!death_motion(c)) return NEO_SOLDIER_UNSUPPORTED;
-    if (anim_step(c)) return NEO_SOLDIER_DELETED;
-    if (c->unsupported) return NEO_SOLDIER_UNSUPPORTED;
-    if (!(s->b.flags5f&8u)) {
-        uint8_t t=B(0x71);
-        if (t) {t--;if (!t) {s->b.flags5f|=8u;t=0x1e;} SB(0x71,t);}
-        return NEO_SOLDIER_MORE;
-    }
-    uint8_t t=B(0x71);
-    if (!t) return NEO_SOLDIER_DELETED;
-    SB(0x71,t-1u);return NEO_SOLDIER_MORE;
+    int r=death_body(c);
+    return r<0?NEO_SOLDIER_UNSUPPORTED:r?NEO_SOLDIER_DELETED:NEO_SOLDIER_MORE;
 }
 
 /* ---- common tails ---------------------------------------------------------- */
 static neo_soldier_result_t tail(ctx_t *c,bool crouch) { /* 0B051E / 0B0504 */
     neo_soldier_t *s=c->s;
-    if (s->b.flags5f&128u) {if (!death_dispatch(c,crouch)) return NEO_SOLDIER_UNSUPPORTED;}
+    if (s->b.flags5f&128u) {int r=death_dispatch(c,crouch);if (r<0) return NEO_SOLDIER_UNSUPPORTED;if (r) return NEO_SOLDIER_DELETED;}
     target(c);
     neo_cull_bounds_t bounds=c->e->bounds;
     if (neo_cull_outside(&s->b,&bounds,soldier_cull_rect)) return NEO_SOLDIER_DELETED;
@@ -662,7 +712,7 @@ static neo_soldier_result_t retreat_tail(ctx_t *c) { /* 0B08EE */
     b-=d1l;b+=v;SL(0x88,b);
     int64_t sum=(int64_t)S32(b)+S32(L(0x84));
     if (sum>=-2147483648LL && sum<=2147483647LL) SL(0x84,(uint32_t)sum);
-    if (s->b.flags5f&128u) {if (!death_dispatch(c,false)) return NEO_SOLDIER_UNSUPPORTED;}
+    if (s->b.flags5f&128u) {int r=death_dispatch(c,false);if (r<0) return NEO_SOLDIER_UNSUPPORTED;if (r) return NEO_SOLDIER_DELETED;}
     prefix(c);
     return c->unsupported?NEO_SOLDIER_UNSUPPORTED:NEO_SOLDIER_MORE;
 }
@@ -703,12 +753,12 @@ static bool v_all_in_front(ctx_t *c) {
 }
 /* 041464/041472: timer, registration, death (0407CA with +7C, else 0406B6)
  * and the 01945C removal with the rectangle ROM 040FF2. */
-static bool death_dispatch(ctx_t *c,bool crouch);
+static int death_dispatch(ctx_t *c,bool crouch);
 static bool b05dc(ctx_t *c);
 static neo_soldier_result_t v_tail(ctx_t *c,bool timer) {
     neo_soldier_t *s=c->s;
     if (timer && W(0x70)) SW(0x70,W(0x70)-1u);
-    if (s->b.flags5f&128u) {if (!death_dispatch(c,B(0x7c)!=0)) return NEO_SOLDIER_UNSUPPORTED;}
+    if (s->b.flags5f&128u) {int r=death_dispatch(c,B(0x7c)!=0);if (r<0) return NEO_SOLDIER_UNSUPPORTED;if (r) return NEO_SOLDIER_DELETED;}
     neo_cull_bounds_t bounds=c->e->bounds;
     if (neo_cull_outside(&s->b,&bounds,soldier_variant_cull_rect)) return NEO_SOLDIER_DELETED;
     return c->unsupported?NEO_SOLDIER_UNSUPPORTED:NEO_SOLDIER_MORE;
@@ -1129,7 +1179,7 @@ static neo_soldier_result_t run(ctx_t *c) {
         ground(c,NULL);
         if (anim_step(c)) s->routine=0xb063e;
         return retreat_tail(c);
-    case 0x40db4:case 0x40df0:case 0x40d06:case 0x40dc0:return death_tick(c);
+    case 0x40db4:case 0x40df0:case 0x40d06:case 0x40dc0:case 0x40ae0:return death_tick(c);
     default:return NEO_SOLDIER_UNSUPPORTED;
     }
     return NEO_SOLDIER_UNSUPPORTED;

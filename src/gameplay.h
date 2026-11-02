@@ -148,6 +148,10 @@ typedef struct {
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
     unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */
     unsigned c_fires;   /* C fire states entered (0C3CD0: its program starts even when 0C0D64 refuses) */
+    /* Weapons 06/0B: the step of the beam's fire program (0..7 CALL 0C46D6,
+     * 8 done) and its table (0 level 253594, 1 up 2536FC, 2 down 256132,
+     * 3 crouched 256DE8); laser_calls counts the 0C46D6 calls. */
+    uint8_t laser_step,laser_aim;unsigned laser_calls;
     unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
     bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
@@ -221,8 +225,9 @@ void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);
  * (id 0C) and the R (id 3). */
 bool msx_game_c_programs(const msx_game_t *game);
 /* Fire-program group of the current weapon (gameplay.c fire_kind):
- * MSX_FIRE_C (ids 3, 0C, 0D), MSX_FIRE_S (02, 07), MSX_FIRE_F (04, 09). */
-enum { MSX_FIRE_NONE, MSX_FIRE_C, MSX_FIRE_S, MSX_FIRE_F };
+ * MSX_FIRE_C (ids 3, 0C, 0D), MSX_FIRE_S (02, 07), MSX_FIRE_F (04, 09),
+ * MSX_FIRE_L (06, 0B: the beam). */
+enum { MSX_FIRE_NONE, MSX_FIRE_C, MSX_FIRE_S, MSX_FIRE_F, MSX_FIRE_L };
 uint8_t msx_game_fire_group(const msx_game_t *game);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */

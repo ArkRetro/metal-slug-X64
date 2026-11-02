@@ -82,6 +82,7 @@ def main():
     p.add_argument('--music-rate',type=int,default=24000);a=p.parse_args()
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
     render=json.loads((a.source/'render.json').read_text())['sounds']
+    smap={x['label']:x for x in json.loads((ROOT/'data/sound_map.json').read_text())['sounds']}
     staging=a.output/'wav';staging.mkdir(parents=True,exist_ok=True);manifest={}
     old=json.loads((a.output/'manifest.json').read_text())['sounds'] if (a.output/'manifest.json').exists() else {}
     for label,info in render.items():
@@ -89,8 +90,12 @@ def main():
         # The music render (77 MB) need not stay on disk: keep its pack.
         if label.startswith('music') and not (a.source/(label+'.wav')).exists() and label in old:manifest[label]=old[label];continue
         # A sound still playing at the end of its render window is a loop
-        # (engine 10A5, 1026), not a one-shot effect: not packed.
-        if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END':manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
+        # (engine 10A5, 1026), not a one-shot effect: not packed. A
+        # sustained sound that its actor stops (data/sound_map.json "stop":
+        # the beam's 10F8, stopped by 012192 at the beam's end) is packed as
+        # its render window: exact while it lasts less than the window.
+        sustained=bool(smap.get(label,{}).get('stop'))
+        if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END' and not sustained:manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
         pcm=read(a.source/(label+'.wav'))
         if label.startswith('music') and info['status']=='OK':
             # A music command that ends inside its render window (the
@@ -122,10 +127,15 @@ def main():
                        intro_sha256=hashlib.sha256(intro.read_bytes()).hexdigest(),rate=a.music_rate,channels=2,compression='vadpcm')
         else:
             assert not info['stereo'],label
-            out=resample(pcm[:,0],a.sfx_rate)
-            write(staging/(label+'.wav'),out,a.sfx_rate)
+            # A render with energy above 11 kHz (the beam's 10F8: 30 %; the
+            # ADPCM-A effects stay below 4 % above 8 kHz) keeps 32 kHz, the
+            # mixer's rate.
+            rate=a.sfx_rate if info.get('energy_above_11khz',0)<0.05 else 32000
+            out=resample(pcm[:,0],rate)
+            write(staging/(label+'.wav'),out,rate)
             cmd=[conv,'--wav-mono','--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'.wav'))]
-            entry=dict(samples=len(out),rate=a.sfx_rate,channels=1,compression='vadpcm')
+            entry=dict(samples=len(out),rate=rate,channels=1,compression='vadpcm')
+            if sustained:entry.update(status='SUSTAINED: render window, stopped by its actor',window_s=info['seconds'])
         subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
         wav64=a.output/(label+'.wav64')
         entry.update(word=info['word'],seconds=round(entry['samples']/entry['rate'],3),bytes=wav64.stat().st_size,

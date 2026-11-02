@@ -49,7 +49,7 @@ int msx_game_animation(const msx_game_t *g) {
 }
 void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
-    memset(g,0,sizeof(*g));
+    memset(g,0,sizeof(*g));g->laser_step=8;   /* no beam program running */
     /* 01829E for Mission 1 (record 01714E): the port's entry runs the
      * stage start, so the flow only keeps its words (docs/MISION2.md). */
     neo_mission_start(&g->flow,0);
@@ -377,6 +377,7 @@ static void mount_record(msx_game_t *g,const neo_world_player_t *p) {
     nwl(m,0x30,(uint32_t)g->velocity_x);nwl(m,0x34,(uint32_t)(g->grounded?0:-g->velocity_y));nwl(m,0x38,0x10e968u);
     m[0x5e]=1;m[0x5f]=(uint8_t)((m[0x5f]&0x7fu)|(p->dead?0x80u:0u));
     m[0x6e]=m[0x6f]=m[0x70]=m[0x71]=0;m[0x93]=g->world.weapon_player.form93;m[0x9c]=0xff;
+    m[0x6a]=0xff;   /* no dynamic collision object (RAM dumps: FF) */
     nwl(m,0,0);
 }
 /* 0CA1B8 from the port's buttons: stick up/down/left/right (bits 0..3), A
@@ -775,7 +776,10 @@ static void end_ram_start(msx_game_t *g) {
  *    crouched (253896, 253962, 256F26), 2 down (256030);
  *  - 0C00D8/0C0118/0C0158/0C0198 (ids 04, 09): the flames 0A71F8 /
  *    0A716E (neo_pweapon.c), no flash; +76 after 2 updates (25391A,
- *    2539FA, 256078, 256FAA).
+ *    2539FA, 256078, 256FAA);
+ *  - 0C01D8/0C0218/0C0258/0C0298 (ids 06, 0B): the beam (laser_call
+ *    below): 8 steps that CALL 0C46D6, +76 after 8 updates level
+ *    (253594), 7 up, down and crouched (2536FC, 256132, 256DE8).
  * The other ids keep the explicit stop below. */
 typedef struct {uint32_t constructor;uint8_t group,level,up,down,crouch;} fire_kind_t;
 static fire_kind_t fire_kind(uint8_t id) {
@@ -788,6 +792,7 @@ static fire_kind_t fire_kind(uint8_t id) {
     case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,14,14,6,14};
     case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,6,6,6,6};
     case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,6,6,6,6};
+    case 6: case 0x0b: return (fire_kind_t){0x1e22cu,MSX_FIRE_L,18,16,16,16};
     default: return (fire_kind_t){0,MSX_FIRE_NONE,0,0,0,0};
     }
 }
@@ -795,6 +800,34 @@ uint8_t msx_game_fire_group(const msx_game_t *g) {
     return fire_kind(marco_weapons_id(&g->world.weapons,0)).group;
 }
 bool msx_game_c_programs(const msx_game_t *g) {return msx_game_fire_group(g)!=MSX_FIRE_NONE;}
+/* One step of the beam's fire program (weapons 06/0B): its CALL 0C46D6
+ * with the step's point (A0: dx, dy of the program; 253594, 2536FC,
+ * 256132, 256DE8). 0C46D6: another weapon returns; +95 + 1, an even +95
+ * takes a round (0C0D64; refused: no call); 01E19E (player, D1 = 0,
+ * D2 = 4) and 01E166 with the point plus +72/+74 (+90 is not FF on foot)
+ * and the direction +92 (the program's aim: 1 up, FF down, else 0). */
+static void laser_call(msx_game_t *g) {
+    static const int8_t point[4][8][2]={
+        {{24,5},{24,4},{24,3},{24,2},{24,6},{24,5},{24,4},{24,3}},
+        {{-1,49},{-2,50},{1,50},{2,49},{-1,48},{-2,48},{1,50},{2,49}},
+        {{-6,-20},{-5,-20},{-3,-21},{-4,-21},{-6,-20},{-5,-19},{-3,-21},{-4,-21}},
+        {{27,17},{25,16},{24,15},{25,14},{27,18},{26,17},{24,16},{25,15}}};
+    uint8_t step=g->laser_step,aim=g->laser_aim&3u;
+    g->laser_step++;
+    uint8_t id=marco_weapons_id(&g->world.weapons,0);
+    if (id!=6 && id!=0x0b) return;
+    marco_weapon_player_t *m=&g->world.weapon_player;
+    m->combo95++;
+    if (!(m->combo95&1u)) {
+        marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
+        bool allowed=marco_ammo_reserve(&ammo,id,false,false);
+        marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
+        if (!allowed) return;
+    }
+    neo_world_laser(&g->world,0,(int16_t)(point[aim][step][0]+g->legs.x72),(int16_t)(point[aim][step][1]+g->legs.y74),
+        aim==1?1u:aim==2?0xffu:0u);
+    g->laser_calls++;g->shot_age=0;g->shooting=true;
+}
 static void end_sound(msx_game_t *g,uint16_t word) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
 }
@@ -1291,10 +1324,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * 0C3C50/0C3C90: 0C02D8/0C0318/0C0358 for both) and flash;
              * its projectile is the rocket 06381C (neo_chaser.c). */
             uint8_t id=ammo.kind;
-            bool allowed=marco_ammo_reserve(&ammo,id,false,false);
-            marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
             fire_kind_t k=fire_kind(id);
+            /* The beam's program takes its rounds at its steps (laser_call). */
+            bool allowed=k.group!=MSX_FIRE_L && marco_ammo_reserve(&ammo,id,false,false);
+            if (k.group!=MSX_FIRE_L) marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
             g->pistol_wait=g->aim_up?k.up:g->aim_down?k.down:g->crouching?k.crouch:k.level;
+            if (k.group==MSX_FIRE_L) {g->laser_step=0;g->laser_aim=g->aim_up?1u:g->aim_down?2u:g->crouching?3u:0u;}
             if (allowed) {
                 bool left=g->facing<0;
                 int aim92=g->aim_up?1:g->aim_down?-1:0;
@@ -1309,6 +1344,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->c_shots++;
             }
         }
+        /* The beam's program CALLs 0C46D6 at each of its first 8 steps,
+         * one per update, from the update it starts. */
+        if (g->laser_step<8u && !(g->ticks&1) && !g->complete) laser_call(g);
     } else if (!hgun) {
         /* The bullet of the callback two ticks (one update) ago: its
          * constructor (01B782) runs one update after 00411C allocated it. */

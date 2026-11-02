@@ -25,7 +25,7 @@ typedef struct {
     bool thrown;           /* a grenade thrown in this update (0C3BCC / crouched 0C2458) */
     bool cgun;             /* a weapon of the general fire state with native programs (gameplay.c fire_kind; form 1) */
     bool cgun_fire;        /* its fire state 0C3CD0 entered in this update */
-    uint8_t cgroup;        /* with cgun, the weapon's fire tables: 1 the C's (C02D8..), 2 0BFFD8.. (ids 02/07), 3 0C00D8.. (ids 04/09) */
+    uint8_t cgroup;        /* with cgun, the weapon's fire tables: 1 the C's (C02D8..), 2 0BFFD8.. (ids 02/07), 3 0C00D8.. (ids 04/09), 4 0C01D8.. (ids 06/0B) */
     bool knife;            /* a knife cut 0C3B46 started in this update */
     bool hanging;          /* parachute descent 0C162A (marco_descent.c), before the cut */
     bool transforming;     /* form 3: the transformation 0C17A0..0C182A (no control) */

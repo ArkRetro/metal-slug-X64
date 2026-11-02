@@ -223,7 +223,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         neo_throw_actor_start(&w->throws[i],&body,(uint16_t)(e->value&0xffu),0xff,&graphics);
         break;
     }
-    case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0: immediate child 040F88 */
+    case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0 / 040F04: immediate child 040F88 / 040F60 (value 1) */
         unsigned i;for (i=0;i<NEO_WORLD_SPLASHES && w->splashes[i].active;i++) {}
         if (i==NEO_WORLD_SPLASHES) MSX_DIAG_POOL_FAIL(MSX_POOL_SPLASH);
         if (i==NEO_WORLD_SPLASHES || !insert(w,(unsigned)t->current+1,(neo_world_slot_t){NEO_WORLD_SPLASH,(uint8_t)i,(uint8_t)(w->order[t->current].depth+1u)})) {w->overflow++;break;}
@@ -232,6 +232,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         uint8_t flags=e->actor.flags15&7u;
         place(&s->body,&e->actor,(flags&1u)?-8:8,0,&w->root,w->epoch);
         s->body.flags15=flags;s->body.field66=e->actor.field66;s->body.word1e=e->actor.word1e;
+        s->program=e->value==1u?0x24039cu:SPLASH_PROGRAM;
         s->active=true;
         break;
     }
@@ -1014,8 +1015,8 @@ static bool run_soldier(tick_t *t,unsigned i) {
 }
 static bool run_splash(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_world_splash_t *s=&w->splashes[i];
-    if (!s->started) { /* 040F88 */
-        neo_anim_start(&s->anim,program(SPLASH_PROGRAM),0x100);
+    if (!s->started) { /* 040F88 / 040F60: the program, then 040F98 */
+        neo_anim_start(&s->anim,program(s->program?s->program:SPLASH_PROGRAM),0x100);
         s->anim.flash=0xff;s->body.field66=0xe0ed;s->body.word1e=0xe0ed;s->started=true;
     }
     /* 040FD4: 01ABC8 projection, 00427A; finished -> 004188. */
@@ -1197,6 +1198,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         }
         g->vehicle=v;
     }
+    g->laser=w->laser;
     w->kernel.shake_y=w->camera_native?(uint32_t)w->camera.shake_applied:0;   /* RAM 10E9CC (0138A0) */
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
@@ -1300,10 +1302,18 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             w->shot_dropped++;
             /* 0C4526: 0C0DFC with the current weapon (the projectiles of
              * table 0C42AA, not the flash 0C58D2). */
-            if (q->actor && q->routine!=0xc58d2u && q->player<2u) {
+            if (q->actor && !q->laser && q->routine!=0xc58d2u && q->player<2u) {
                 marco_ammo_t m=marco_weapons_ammo(&w->weapons,q->player);marco_ammo_release(&m,m.kind);marco_weapons_set_ammo(&w->weapons,q->player,&m);
             }
             continue;
+        }
+        if (q->laser) {
+            /* 01E19E: +5E the player's, +6E the player, +70 = 0; 01B220
+             * (0, 0) from the player's node record. */
+            neo_gactor_t pl;memset(&pl,0,sizeof(pl));memcpy(pl.m,w->player_node[q->player&1u],0xb0);pl.index=-1;
+            ga_place_from(a,&pl,&t.genv,0,0);
+            ga_sb(a,0x5e,pl.m[0x5e]);ga_sw(a,0x6e,q->player);ga_sb(a,0x70,0);
+            w->player_shots++;w->lasers++;continue;
         }
         if (q->actor) {
             ga_sb(a,0x6e,q->angle);ga_sw(a,0x70,q->player);ga_sb(a,0x15,q->flags15);ga_sb(a,0x5e,q->f5e);
@@ -1320,19 +1330,33 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     w->player_hits+=t.hits;
     return t.hits;
 }
+void neo_world_laser(neo_world_t *w,uint8_t player,int16_t x,int16_t y,uint8_t direction) {
+    uint8_t *k=&w->laser[player?8:0],*o=&w->laser[player?0:8];
+    if (!k[6]) {
+        k[7]=1;
+        if (!o[7]) sound_request(w,0x10f8);                            /* 0120F8 */
+        if (w->shot_request_count<sizeof(w->shot_requests)/sizeof(w->shot_requests[0]))
+            w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){0x1e22cu,0,0,0,0,0,player,0,false,true,0,true};
+        else w->shot_dropped++;
+        k[6]=1;
+    }
+    k[5]=4;k[4]=0;                                                      /* D2 = 4, D1 = 0 */
+    k[0]=(uint8_t)((uint16_t)x>>8);k[1]=(uint8_t)x;k[2]=(uint8_t)((uint16_t)y>>8);k[3]=(uint8_t)y;   /* 01E166 */
+    if (k[4]!=direction) {k[4]=direction;if ((int8_t)k[5]<=0) k[6]=0;}
+}
 bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false,false,0};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false,false,0,false};
     return true;
 }
 bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0,false};
     return true;
 }
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
-    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
+    w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e,false};
     return true;
 }
 /* An actor the mission actor 101364 creates (0040BC from a map command

@@ -532,6 +532,13 @@
    "word": "115A",
    "callers": [],
    "event": "requested by weapon grant 0C0928 of id 0D (table 0C08F8)"
+  },
+  {
+   "label": "sfx_10f8",
+   "word": "10F8",
+   "callers": [],
+   "event": "requested by the beam call 01E19E of weapons 06/0B (0120F8, unless the other player's beam sounds); stopped by 01E4D4 (012192) at the beam's end (neo_pweapon.c)",
+   "stop": "012192"
   }
  ]
 }

@@ -211,6 +211,11 @@ ROOTS+=[0x23502c,0x234f10,0x234fcc,0x234f3c,0x23508c,0x235a8a,0x235872,0x23581c,
 # Mission 2: the stage-2 gate 03A6EA (23CDD0), its overlay 03A82E (23CDDC)
 # and the dust 03A464 (22D372) of 03A776 (neo_m2gate.c).
 ROOTS+=[0x23cdd0,0x23cddc,0x22d372]
+# Weapons 06 / 0B (neo_pweapon.c): the beam 01E22C (muzzle, segments and
+# end cap of the firing phase 22EBB6/22EC92/22ED6E and 22F016/22F0F2/22F1CE,
+# of the fading phase 22EE6A/22EF3A/22F00A and 22F2CA/22F39A/22F46A) and its
+# sparks 01E582.. (22F476).
+ROOTS+=[0x22ebb6,0x22ec92,0x22ed6e,0x22f016,0x22f0f2,0x22f1ce,0x22ee6a,0x22ef3a,0x22f00a,0x22f2ca,0x22f39a,0x22f46a,0x22f476]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

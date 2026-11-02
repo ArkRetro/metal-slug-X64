@@ -1286,20 +1286,15 @@ de la Misión 1 solo se añaden los descriptores de esas raíces.
 Sonidos: `10F5`, `10F6`, `10F3`, `116A`, `1168`, `112F`, `112C`, `115A` en
 `data/sound_map.json` (render aislado `OK`).
 
-**Paradas explícitas que quedan**: soldados muertos por una fila de tipo 7
-(llama) o `0A/0B` (estallido): sus entradas de `0406EA/040750/0407F4`
-(`040B46..040BE6`) no están traducidas: el soldado se retira
-(`neo_soldier_death_stops`, comprobado en `pweapon`); el agua bajo la bola
+**Paradas explícitas que quedan** (las muertes de soldado por filas de tipo
+7, `0A` y `0B` y el rayo `06/0B` son nativos desde el Paso 16): el agua bajo la bola
 0D (`03C5CC` → salpicadura `03C962`); la misión 9 de `0644EE` (`012022`);
 las variantes `+93 = 2` (tabla `0C42EA`: `0646C8/0646E0`, `0A7226/0A719C`,
-`063F10`, `0C44C2/0C44E0`); las armas `01` (`0C5508`), `06/0B` (rayo
-`0C46D6` → `01E19E/01E166`, actor de varios segmentos con la RAM
-`10C340/10C348`; sus poses `0C01D8..` ya están capturadas en `marco-w6`),
+`063F10`, `0C44C2/0C44E0`); las armas `01` (`0C5508`),
 `0E` (`0DE4DA`) y `0F` (`0DEA20`) (la `08` es nativa desde el Paso 15): siguen disparando la
 bala de pistola del port (`weapon_stops`).
 
-**Rayo 06/0B: análisis (rama `work-m2gate`, sin traducir, sigue como
-parada explícita `weapon_stops`).** Captura MAME 0.264 (privada,
+**Rayo 06/0B: análisis (rama `work-m2gate`; traducido en el Paso 16).** Captura MAME 0.264 (privada,
 `/home/user/captures-m2gate/w6`, borrada al acabar; repetible):
 
 ```sh
@@ -1335,8 +1330,8 @@ múltiples por actualización, `014A02` sobre el nodo del jugador), los papeles
 de las poses `marco-w6` en `compile_marco_campaign.py`, el sonido 10F8 en
 `data/sound_map.json` y la llamada de `fire_kind`.
 
-**Muertes de soldado por fila de tipo 7, 0A y 0B (análisis, sin traducir;
-`neo_soldier_death_stops`).** Tablas de `0406B6`/`0407CA` (destino de cada
+**Muertes de soldado por fila de tipo 7, 0A y 0B (análisis; traducidas en
+el Paso 16).** Tablas de `0406B6`/`0407CA` (destino de cada
 tipo 0..13; ≥ 14 va a `040DC0`/`040A28`): suelo `0406EA` = 40DC0 40C8E
 40DC0 40B46 40B46 40BA8 40D66 **40A40** 40DC0 40C8E **40AF6 40A7C** 40DD8
 40DD8 40DC0×6; aire `040750` = 40DC0 40C8E 40DC0 40B46 40B46 40DC0 40A10
@@ -1352,6 +1347,125 @@ por `01B2BE`), programa `240D2E` o `240C6E` según +5B ^ giro, +34 = 2,0,
 y `040DF0`. Falta la evidencia de MAME (un soldado muerto por la llama o el
 estallido con volcados por fotograma, `extract_soldier_ticks.py`) y la
 variante de `NEO_SOLDIER_EVENT_DEATH_CHILD` con el programa `24039C`.
+
+### Paso 16: el rayo 06/0B y las muertes por llama y estallido (rama `work-laser`, B11 y B12)
+
+**Rayo (`neo_pweapon.c`, `beam_tick`).** Traducción de `01E22C..01F094`
+con el análisis de arriba: constructor `01E22C`, fase de disparo
+`01E28E`/`01E2FC` (horizontal/vertical), fase de apagado `01E398`
+(`01E3B2`/`01E41C`), fin `01E4D4` y chispas `01E582/01E58A/01E596` +
+`01E604`. Cada actualización vuelve a arrancar sus programas (`004256`) y
+dibuja varias veces (`00427A`): la boca, un segmento por cada paso de 16 px
+del recorrido `01ED60`/`01EDF6` y el extremo cuando acaba en una pared
+(`014906`, D6 bit 1) o en un blanco (`0049E8` ≠ 0). `01EC1E` lee el bloque
+RAM `10C340`/`10C348` (`neo_genv_t.laser`, una vez por valor de `10000E`),
+copia el giro del jugador y coloca el rayo con `014A02` desde el nodo del
+jugador (`+2C`/`+40` + 1, solo para `+84`), `01AD6E` sobre su bloque `+28`,
+`01AD52` a la raíz y `01ABC8` dos veces. Ayudas nuevas: `ga_sweep_probe`
+(`014906`). Filas `1F096..1F156`, rectángulo `1F166` y tabla de chispas
+`1F16E` en `data/region_rom.json`. El cambio de forma (`+88` bit 1:
+`009F88` y paleta `875`) está traducido pero no aparece en las capturas.
+
+**El jugador (`gameplay.c`).** `fire_kind` da a `06`/`0B` el grupo
+`MSX_FIRE_L`: la pulsación arranca el programa del rayo (`laser_step`,
+`laser_aim`) y cada una de las 8 actualizaciones siguientes hace la llamada
+`0C46D6` (`laser_call`) con el punto de la tabla del programa (`253594`
+nivel, `2536FC` arriba, `256132` abajo en el aire, `256DE8` agachado: los
+`dx, dy` de cada `CALL`) más `+72/+74`; `+95` impar no gasta munición, par
+`0C0D64`; `neo_world_laser` hace `01E19E` (sonido `10F8`, el rayo después
+de la cabeza de la lista, `01B220` (0, 0) desde el registro del jugador) y
+`01E166`. La espera de `+76`: 18 tics de nivel, 16 arriba, abajo y
+agachado (`SET_BYTE +76` tras 8 / 7 esperas). El registro del jugador
+tiene ahora `+6A` = FF (volcados de MAME). Visual: papeles `W1L_FIRE`
+`253594`, `W1L_FIRE_UP` `2536FC`, `W1L_FIRE_DOWN` `256132` y
+`B1L_CROUCH_FIRE` `256DE8` de `marco-w6` en `compile_marco_campaign.py`
+(`--w6-capture`), `cgroup` 4 en `marco_visual.c`.
+
+**Evidencia del rayo.** Capturas MAME 0.264 `w6` y `wb` (privadas,
+`/home/user/cap-laser`, borradas tras extraer; repetibles):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=6 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=1e22c,c58d2 MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=2160 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT   # y ASSIST_ID=B
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/laser6_fixture.json.gz --range 1e100-1f100 \
+  --ram 10c340-10c350 --ram 1014c4-101574 --ram 10000e-100010 --ram 10c718-10c730 --attacks
+python3 tools/export_rest_sprites.py ZIP OUT6@1e100-1f100 OUTB@1e100-1f100 --output SCRATCH/rest.json   # solo los descriptores del rayo
+```
+
+- Familias `laser6` y `laserb` (`make check`, terreno `10C72E`): **74
+  nodos, 1669 actualizaciones en bucle cerrado (2193..3139), 223860 bytes
+  iguales, 3488 dibujos**, 9 rayos, 65 chispas; las escrituras al bloque
+  `10C340` y al nodo del jugador (350490 bytes de RAM) iguales a las del
+  original. Sin cubrir en las capturas: `01E3B2` (apagado horizontal),
+  `01E58A` y `+88` bit 1.
+- Gráficos: 224 descriptores de los programas `22EBB6..22F476` y las
+  paletas `98/99/9A` añadidos a `filesystem/rest-native.json`
+  (`export_rest_sprites.py`, raíces y paletas nuevas). Validación contra la
+  VRAM de `w6`/`wb`: **45230 píxeles iguales y 1996 distintos en 62
+  volcados (50 volcados exactos)**; la paleta `875` (forma 2) no se capturó.
+- Sonido `10F8`: render aislado `ACTIVE_AT_WINDOW_END` (sonido sostenido:
+  ventana de 5,015 s, sin bucle exacto medible); `data/sound_map.json`
+  `"stop": "012192"` y `pack_game_audio.py` lo empaqueta como su ventana
+  (32 kHz: 30 % de la energía por encima de 11 kHz; no residente, desde
+  `rom:/`); `game_audio.c` atiende
+  la petición de parada `palabra | 0x8000` (`012192`). Pares contra las
+  referencias y los primeros de cada canal nuevo: todos `unclear` u
+  `overlap`: canal propio `ch_10f8` (`data/sound_policy.json`).
+- `tools/test_gameplay.c pweapon`: `06` 4052 llamadas `0C46D6`, 8 rayos,
+  8773 actualizaciones de rayo, 47 muertes; `0B` 3966, 9 rayos, 47 muertes;
+  sin paradas ni dibujos ausentes (antes: `weapon_stops`).
+
+**Muertes de soldado por filas de tipo 7, 0A y 0B (`neo_soldier_ai.c`).**
+`death_dispatch` traduce las entradas `040A40` (7: `+76` =
+(`0029C6` & FFFF) << 2 con el signo de `+5B`, `+34` = 0, programa
+`240E8E`), `040AF6` (`0A`: hijo `040F04`, programa `240C6E`/`240D2E` por
+`+5B` ^ giro, `+34` = 0x20000, `+15` bit 6 a 0) y `040A7C` (`0B`: hijo,
+programa `240AE6`/`240DC0` por el signo de `0029C6`, `+30`, `+34` =
+0x100000, `+15` bit 6 a 0, y **en la misma actualización** `040AE0` y el
+cuerpo `040DF0`; la rutina queda en `040AE0`: `+34` −= `+34` >> 4 y
+`040DF0`). Las tres tablas (suelo, aire, agachado) usan las mismas
+entradas. El hijo `040F60` (programa `24039C`, paleta `37A/3BA` por
+`01B2BE`) es la salpicadura del mundo con su programa
+(`NEO_SOLDIER_EVENT_DEATH_CHILD` con valor 1). `death_dispatch` devuelve
+ahora borrado cuando ese cuerpo llega a `004188`.
+
+Evidencia (MAME 0.264, `tools/mame/trace_soldier_campaign.lua` con las
+opciones nuevas `MSX_ASSIST_WEAPON` (la ayuda de `capture_weapons.lua`),
+`MSX_SOLDIER_ENTRY=1` (los 0xB0 bytes de cada soldado al empezar su
+actualización: el golpe de la llama o del estallido, que corren antes en la
+lista, ya está en ellos) y `MSX_FORCE_DEATH` (escritura de referencia: cada
+37 fotogramas el primer soldado en pantalla recibe `+5A` = tipo y `+5F` bit
+7, como lo dejaría `0049E8`; el estallido hacia arriba no alcanza a ningún
+soldado con las entradas porque de cerca el jugador acuchilla)):
+
+```sh
+D=OUT; MSX_CAPTURE_DIR=$D MSX_RAM_FIRST=2100 MSX_CAPTURE_END_FRAME=3400 MSX_FIRE_FRAME=2190 MSX_RIGHT_FRAME=2280 \
+  MSX_UP_FRAME=2400 MSX_ASSIST_WEAPON=4 MSX_SOLDIER_ENTRY=1 mame mslugx -rompath ROMS -bios euro -video none -sound none \
+  -skip_gameinfo -nothrottle -autoboot_delay 0 -autoboot_script tools/mame/trace_soldier_campaign.lua \
+  -cfg_directory $D/cfg -nvram_directory $D/nvram -debug -debugger none -debuglog -debugscript tools/mame/start.cmd
+# b12w4 (ASSIST_WEAPON=4), b12w2 (=2), b12f (=2, END 3250, MSX_FORCE_DEATH=b MSX_FORCE_PERIOD=37)
+python3 tools/extract_soldier_ticks.py b12w4:3270 b12w2:3270 b12f:3250 --entry --only-deaths \
+  --output data/soldier_death_tick_fixture.json.gz
+```
+
+`extract_soldier_ticks.py --entry` parte de los bytes de entrada y deja
+fuera las actualizaciones con el jugador 1 muriendo (`10C33C` = 0: el
+arnés no modela sus entradas); el corte en 3270 deja fuera la capa
+`10D7B6` (más allá de la cámara 1023, tampoco modelada por el arnés).
+`make check` (`soldier_death`): **1468 actualizaciones de soldados
+moribundos iguales (estado, cursor de animación y RNG)**: tipo 7 en el
+suelo 5 y en el aire 1, `0A` en el suelo 5, `0B` en el suelo 7 y en el
+aire 1 (forzadas) con 813 actualizaciones de `040AE0`, y 628 de `040DF0`.
+`tools/test_gameplay.c pweapon`: 02, 07, 04 y 09 con **0 paradas de
+muerte** (antes 13/40/68/91) y sin dibujos ausentes.
+
+Paradas que quedan: el cuerpo en llamas `040920` (`+74`: un soldado
+muerto en el suelo con `+15` bit 5 y una fila de tipo 7 o 9 en `+6C`; la
+raíz `01AC4C` y `01AC38`) no aparece en ninguna captura: sigue como parada
+explícita (`UNSUPPORTED_AT`). El hijo `040F60` no se compara con MAME
+(solo sus descriptores, sin dibujos ausentes). Las entradas `040B46`,
+`040BA8` y `040BE6` (tipos 3, 4, 5) siguen sin traducir.
 
 ### Paso 15: arma 08, el lanzacohetes del final de la Misión 1 (`0x0641EC`, rama `work-m1m2flow`)
 

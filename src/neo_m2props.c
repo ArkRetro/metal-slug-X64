@@ -188,15 +188,73 @@ static ga_result_t gate_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- Signs 0B829C / 0B833A (script records of sections 2 and 3, uncounted) ----
+ * - 0B829C: floor 0146E8, layer 0, palette 0x474, +6E & 3, the collision
+ *   stamp B8454[+6E] (0C88B0: templates B8464/B8492), program B84AC[+6E];
+ *   0B8302: 01ABC8, 00427A; +70 nonzero and below the camera progress
+ *   10E99E (unsigned) or outside B8444 (0C8BEC): 0B843C (0041AC).
+ * - 0B833A: palette 0x4B8 (+70 = 0) or 0x4C3, layer 0, +6E & 0xF (0 from
+ *   9 on); 0B8384: program B84BC[+6E]; 0B83A4: 01ABC8, 00427A; a player in
+ *   B844C (01AFFC) wiggles it (0B83F0: B84E0[+6E], back to 0B8384 at its
+ *   end); +72 below the progress or outside B8444: 0B843C. */
+static uint32_t rl(uint32_t at) {const uint8_t *p=ga_rom(at);return p?((uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]):0;}
+static bool sign_gone(neo_gactor_t *a,neo_genv_t *e,uint16_t limit) {
+    return (limit && limit<e->camera) || ga_outside_view(a,e,0xb8444);
+}
+static ga_result_t sign_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0xb829c:
+        ga_floor(a,e);SW(0x66,0);SW(0x1e,0);ga_palette(a,0x474);
+        SW(0x6e,W(0x6e)&3u);
+        if (e->stamp) e->stamp(e->ctx,a,rl(0xb8454u+4u*W(0x6e)));
+        START(rl(0xb84acu+4u*W(0x6e)));SL(0,0xb8302);
+        /* fall through */
+    case 0xb8302:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (sign_gone(a,e,W(0x70))) SL(0,0xb843c);
+        return GA_MORE;
+    case 0xb833a:
+        ga_palette(a,W(0x70)?0x4c3:0x4b8);SW(0x66,0);SW(0x1e,0);
+        SW(0x6e,W(0x6e)&0xfu);if (W(0x6e)>=9u) SW(0x6e,0);
+        /* fall through */
+    case 0xb8384:
+        START(rl(0xb84bcu+4u*W(0x6e)));SL(0,0xb83a4);
+        /* fall through */
+    case 0xb83a4:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (!ga_players_in(a,e,0xb844c)) SL(0,0xb83f0);
+        if (sign_gone(a,e,W(0x72))) SL(0,0xb843c);
+        return GA_MORE;
+    case 0xb83f0:
+        START(rl(0xb84e0u+4u*W(0x6e)));SL(0,0xb8410);
+        /* fall through */
+    case 0xb8410:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xb8384);
+        if (ga_outside_view(a,e,0xb8444)) SL(0,0xb843c);
+        return GA_MORE;
+    case 0xb843c:
+        return GA_DELETE_TREE;                                          /* 0041AC */
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool sign_routine(uint32_t r) {
+    return r==0xb829cu || r==0xb8302u || r==0xb833au || r==0xb8384u || r==0xb83a4u || r==0xb83f0u || r==0xb8410u || r==0xb843cu;
+}
 bool neo_m2gate_routine(uint32_t r) {
     return r==0x3a6eau || r==0x3a75au || r==0x3a768u || r==0x3a776u || r==0x3a7bau || r==0x3a7deu || r==0x3a7e8u ||
         r==0x3a82eu || r==0x3a86au || r==0x3a464u || r==0x3a488u;
 }
 bool neo_m2props_routine(uint32_t r) {
-    return neo_m2gate_routine(r) || r==0x6851au || r==0x685c8u || r==0x6875au || r==0x6878eu || r==0x685feu || r==0x6865cu || r==0x3a892u || r==0x52a5cu || r==0x52a74u;
+    return neo_m2gate_routine(r) || sign_routine(r) || r==0x6851au || r==0x685c8u || r==0x6875au || r==0x6878eu || r==0x685feu || r==0x6865cu || r==0x3a892u || r==0x52a5cu || r==0x52a74u;
 }
 ga_result_t neo_m2props_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_m2gate_routine(L(0))) return gate_tick(a,e);
+    if (sign_routine(L(0))) return sign_tick(a,e);
     if (L(0)==0x3a892u) {if (e->flags) e->flags->signal358=1;return GA_DELETE;}
     if (L(0)==0x52a5cu) {if (!W(0x6e)) SW(0x6e,e->camera+1u);SL(0,0x52a74);}
     if (L(0)==0x52a74u) return W(0x6e)>e->camera?GA_MORE:GA_DELETE;

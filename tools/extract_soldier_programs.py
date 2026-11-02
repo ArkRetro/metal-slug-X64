@@ -192,6 +192,17 @@ ROOTS+=[0x26939a,0x2693a6,0x2693b2,0x269382,0x26938e]
 ROOTS+=[0x23ba74,0x23bb52,0x23bbd0,0x23bc72,0x23bcf2]
 # Mission 2: the hostage 021B46.. of 06835C (neo_hostage.c).
 ROOTS+=[0x230984,0x230654,0x23066a]
+# The miners 021A1C/021A26 (neo_hostage.c): digs, pause, startled, the
+# item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
+# 02206E (the dust 021F96 is the bullets' impact 22E504).
+ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
+# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl.
+ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,0x23b7aa,0x23b6de,0x23b7ec,0x23b720]
+# The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
+# pieces 09A9C4 falling (neo_prisoner.c).
+ROOTS+=[0x29fb62,0x29fbe8,0x29fc42,0x29fc8a]
+# The stage-2/3 signs 0B829C (tables B84AC) and 0B833A (B84BC, wiggle B84E0) (neo_m2props.c).
+ROOTS+=[0x2a8da4,0x2a8db0,0x2a8dbc,0x2a8dc8,0x2a8dd4,0x2a8de0,0x2a8dec,0x2a8df8,0x2a8e04,0x2a8e10,0x2a8e1c,0x2a8e28,0x2a8e34,0x2a8bac,0x2a8be4,0x2a8c1c,0x2a8c54,0x2a8c8c,0x2a8cc4,0x2a8cfc,0x2a8d34,0x2a8d6c]
 # Mission 2 stage-3 boss 026254 (neo_m2boss.c): body 23502C/234F10/234FCC/
 # 234F3C/23508C/235A8A, parts by 027D74 (+87), shots 235872/23581C.
 ROOTS+=[0x23502c,0x234f10,0x234fcc,0x234f3c,0x23508c,0x235a8a,0x235872,0x23581c,

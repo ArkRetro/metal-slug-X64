@@ -42,6 +42,10 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
 | `06835C` soldado con rehén: rehén `021B46..` y soldado `0683FA/0684CA` | `src/neo_hostage.c`, `src/neo_rebel3.c` | familia `hostage` (etapa 2, `h1`): 2 nodos, **186 actualizaciones**, 2 borrados |
 | `09A692` caja oculta → prisionero `099E1C` (`09A842`) | `src/neo_secret.c`, `src/neo_prisoner.c` | familia `secret2` (etapa 1, `pr1`): 8 nodos, **1477 actualizaciones**, 4 borrados, 246 dibujos |
+| `0B829C/0B833A` carteles (etapas 2 y 3; `0B829C` sella colisión `0C88B0`) | `src/neo_m2props.c` | familia `signs` (`s2a`): 3 nodos, **3067 actualizaciones**, el sello en el anillo igual (el banco traduce `0C88B0` sobre el anillo +88) |
+| `099DE2` prisionero atado (+86 bit 0, sin `01B1DC`) | `src/neo_prisoner.c` | familia `prisoner3` (`s2a`): 561 actualizaciones |
+| `099DF0` prisioneros colgados y la cuerda `09A9C4` (`011FF6`: `ga_draw` del +7A del prisionero) | `src/neo_prisoner.c`, `src/neo_gactor.c` | familia `prisoner4` (`p3`, `MSX_FULL_FAMILY_ROOTS=99df0` desde 22900): 6 nodos, **2275 actualizaciones** |
+| `021A1C/021A26` mineros (etapa 2), polvo `021F96`, destello `02206E`, regalo por `08CDB2` | `src/neo_hostage.c` | familias `miner` (`s2b`, jugador quieto junto al minero): 20 nodos, **1244 actualizaciones**, 18 borrados, 1225 dibujos; `minerrun` (`s2a`, el piloto pasa corriendo): 19 nodos, 1015 actualizaciones |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
 rellena las columnas desde el cursor (filas 1..30, VRAM `7000+32c+f`) con la
@@ -475,3 +479,89 @@ Del guion (`data/mission2_script.json`, palabra de tipo de objeto de
 disparo y sonidos: ARMAS_VEHICULOS.md, «Paso 14»), H y R. El rayo `06`
 sigue siendo una parada explícita (dispara la bala de pistola del port).
 La momia (forma 3) tiene ya sus poses (MARCO_CAMPAIGN.md, «Forma 3»).
+
+## Mineros `021A1C/021A26` (rama `work-m2events`)
+
+Informe del usuario (hardware real): faltan los mineros de la Misión 2. Son
+registros **no contados** del guion de la sección 2 (`2D7568..2D7826`:
+`021A26` en las elecciones al azar de x 184 y 384, `021A1C` en x 320 y en el
+borde derecho de la pantalla), que el port dejaba caer (`audit_script_events`).
+Pertenecen a la misma familia de ROM que el rehén `021B46` (`021A1C..022258`,
+paleta 0x1F) y se traducen en `neo_hostage.c`:
+
+- `021A1C` (+81 = 0) / `021A26` (+81 = 1, las palabras +70/+72/+74 pasan a
+  +72/+74/+76). `021A3E`: `009F88`, capa 8820, paleta 0x1F, +61 = 0, mira
+  según +6E, suelo `0146E8`, una de las tres excavaciones
+  `23058A/2305CC/230608` por `0029C6` & 3.
+- `021AE6` (excavar; `021AD0` vuelve a `23058A`): `01436A`, `01AD8C`,
+  `00427A`. Con +81 = 1, un jugador dentro de `E0056` (−0x20, −0x10, 0x40,
+  0x30; `022178` → `01AFFC`) lo asusta (`021E24`); con +81 = 0, el progreso de
+  cámara 10E99E ≥ +70 (con signo, +70 ≠ 0) lo hace huir (`021F4E`). La
+  llamada `022162` del programa (`0029C6` & 3 = 0) pasa a la pausa `021D98`
+  (`2308CE`, las mismas pruebas antes de `00427A`; al acabar, `021AD0` o la
+  huida si +61).
+- `021E24` (`2306EE`) y `021E5C`: +61 = FF, `23072C`, cuya llamada `0221C2`
+  regala el objeto +74 (vida +76) por `08CDB2` 0x18 px por delante (+12/+13
+  = 4, +34 = 0x90000) y crea el destello `02206E` allí; después la pausa.
+- `021F4E`: `2306AC`, +62 = +72 << 8 (mira a la derecha si es positiva),
+  `021F84` anda con `01456A`.
+- `022196` (llamada de las excavaciones): polvo `021F96` (capa 8820,
+  paleta 0x204, `22E504`) 0x18 px por delante. `02206E`: capa 1001, paleta
+  0xAD, `22DF54`; **sigue sin `rts` hasta `02209E`** (su primer paso es en la
+  misma actualización). Los dos siguen a la raíz (`01ABC8`, `01AD8C`) y se
+  borran al acabar el programa. Cola de todos: `0220BC` (`01945C` con
+  `E004E`).
+
+Trazas (MAME 0.264, `sec02_19932`):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_FROM=19933 MSX_FULL_VRAM_TRACE=1 MSX_FULL_GRID_TAP=0
+MSX_FULL_FAMILY_ROOTS=35b66,35c68,35d12,21a1c,21a26,b829c,b833a,99de2,529c0 MSX_FULL_FIRST_DUMP=19950 MSX_FULL_PERIOD=15 MSX_FULL_LAST=23300 sh tools/run_capture_fullgame.sh /home/user/captures-m2ev/s2a
+MSX_FULL_FAMILY_ROOTS=21a1c,21a26 MSX_FULL_FIRST_DUMP=20150 MSX_FULL_PERIOD=15 MSX_FULL_IDLE=20158-20700 MSX_FULL_LAST=20750 sh tools/run_capture_fullgame.sh /home/user/captures-m2ev/s2b
+python3 tools/extract_family_fixture.py .../s2b/boss-trace.txt --output data/miner_fixture.json.gz --range 21a1c-22260 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 1014ec-1014f4 --ram 1014fc-101500
+# minerrun: lo mismo sobre s2a
+```
+
+En `s2b` el jugador se queda quieto (x ≈ 170) junto al minero `021A26` de
+x 184: susto, regalo (el objeto de su palabra +74), destello, pausa
+y huida; en `s2a` el piloto pasa corriendo (excavar, huir, polvo). Familias
+`miner` y `minerrun` iguales en bucle cerrado. Programas en
+`data/soldier_programs.json` (`extract_soldier_programs.py`, raíces de los
+mineros; el banco es el mismo de `marco-mz2`).
+
+Sprites: `export_rest_sprites.py /home/user/roms/mslugx.zip
+/home/user/captures-m2ev/s2b@21a1c-22260 --mask-auto --output
+filesystem/mission2/rest-native.json --keep <export anterior>` (raíces y
+paleta 0xAD añadidas; 0x1F y 0x204 ya estaban): **40 volcados, 55175
+píxeles iguales, 0 distintos**. `pack_mission.py 2 ...` vuelve a empaquetar
+`romfs/mission2.pack` (3,19 MB, 980 actores).
+
+### Carteles, prisioneros `099DE2`/`099DF0` (misma rama)
+
+Sprites (`export_rest_sprites.py`, con el exportador tomando también los
+descriptores que `29FB62` escribe en +7A): carteles `s2a@b829c-b8444`, 154
+volcados, 590018 píxeles iguales y 817 distintos en un solo volcado tomado
+en el fotograma de la actualización (21480; los demás 0); prisioneros
+colgados `p3@99dcc-9aa9e`, 78 volcados, 105991 iguales, **0 distintos**. La
+paleta 0x4B8 (carteles de la etapa 3, +70 = 0) no está en ningún volcado
+(parada de paleta: se dibujan con la de reserva).
+
+**Murciélagos** `035B66/035C68` (`neo_drone.c`, el mismo módulo de ROM
+`035A40..0366F0` que el dron): constructor común `0362EE` (paleta 0x94, o
+0xB7 y +97 = 1 para el murciélago de puntos con +6E ≠ 0: las bandadas de
+la etapa 3 (registro `2D923C`, cámara 2128) lo usan, pero no se ejecutaron
+en `run4`/`run4-debug`; sin captura es parada explícita, `0364D2`, que el
+recorrido de ares registra una vez), la bandada `035B66` (`03635E`: +70
+murciélagos `035BF8` con +86 distintos de 0..4, velocidad inicial
+`035ADC[+86]` y +30 al azar), el murciélago con recorrido `035C68` (posado
+`23B838` con estiramientos `23B88E/23B912`, despega por +92 o por el
+progreso de cámara +90, vuela a uno de sus tres puntos a 1,0 px con
+`002EB4` ± 0x18 y `002E7C`, se vuelve a posar a 3 px; +60: susto
+`036254`), la muerte `036068` (sonido 10F0, quemado con +9F = 7), la caída
+`03610E` y el gateo `03618A`/`03663E` hasta 0x50 actualizaciones. Familia
+`bats` (`s2a`, `--range 35a40-366f0`): **25 nodos, 2181 actualizaciones
+iguales**, 25 borrados. Sprites (`s2a@35a40-366f0`): 75 volcados, 18611
+píxeles iguales y 538 distintos en 4 volcados (uno tomado en el fotograma
+de la actualización; 20490, 20820 y 20865 con explosiones encima, sin
+explicar). Paradas explícitas: +96 = 1/3 (el nido `035D12` de la etapa 3,
+`035EEC`, `035C76/035D04`, `035E0A`, `0361EC`), sin traza todavía.

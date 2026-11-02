@@ -328,6 +328,13 @@ int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {
     if (res!=NEO_ANIM_MORE && res!=NEO_ANIM_COMPLETE) {ga_fail(e,c.missing?c.missing:0x427a);return -1;}
     return res==NEO_ANIM_COMPLETE;
 }
+void ga_draw(neo_gactor_t *a,neo_genv_t *e,uint32_t descriptor) {
+    if (!descriptor || !e->emit) return;                               /* 00A044: D7 = 0 draws nothing */
+    uint8_t c=ga_b(a,0x4d);
+    neo_anim_draw_t d={descriptor,(uint16_t)(ga_w(a,0x3c)-(c&1u)),(uint16_t)(ga_w(a,0x40)-((c>>1)&1u)),
+        (uint16_t)(ga_b(a,0x14)<<8|ga_b(a,0x15)),ga_w(a,0x1e)};
+    e->emit(e->emit_ctx,&d);
+}
 void ga_palette(neo_gactor_t *a,uint16_t resource) {
     uint8_t slot=ga_b(a,0x1d);
     if (slot>=4u) return; /* original traps */

@@ -10,7 +10,7 @@ capture's recorded table selections, so a role can never point at a program
 the original did not select for that condition. Output: the converted command
 array (graph marco_script.h) plus the native entry index of each role.
 Nothing here is an executable 68000 address."""
-import argparse,json
+import argparse,json,re,struct
 from pathlib import Path
 # role, part (0 body, 1 weapon), program address, condition(s) where chosen
 ROLES=[
@@ -87,9 +87,9 @@ ROLES_WEAPONS=[
  ('W1F_FIRE_DOWN',1,0x256078,'w4',('c_jump_down_fire_right',)),
  ('B1F_CROUCH_FIRE',0,0x256FAA,'w4',('c_crouch_fire_right',)),
 ]
-# Form 3, the mummy (+93 = 3: rows +0x30 of the tables; the controller
-# 0C18B4 never selects a body program: the transformation's body 0BF258
-# stays). run_marco_catalog.py --give-mummy (the default plan): marco-mz2.
+# Form 3, the mummy (+93 = 3: rows +0x30 of the weapon tables; the body
+# programs come from the mummy controller's own tables, below).
+# run_marco_catalog.py --give-mummy (the default plan): marco-mz2.
 # 0BFB58 25F794 / 0BFB98 25F7A0 (the gun raised/lowered in the air) are in
 # the graph and the catalog but not selected by the port.
 ROLES_MUMMY=[
@@ -105,6 +105,24 @@ ROLES_MUMMY=[
  ('W3_GRENADE',1,0x25F626,('grenade_stand','grenade_jump')),
  ('W3_AIR_UP',1,0x25F794,('run_jump_right',)),
  ('W3_AIR_DOWN',1,0x25F7A0,('run_jump_right',)),
+]
+# The mummy's body (0C18B4..0C1CCC): the controller initialises its body
+# programs directly from the 4-character tables C0408.. (0C0FB6, character
+# 0 = Marco), not through the selection 0C0F32/0C0F62; marco-mz2 logs them
+# as MARCO_INIT. Each role: (table, conditions where it was initialised).
+# C0438 (25F4BC, walking off a ledge), C0458/C0468 (turns with +92 set and
+# crawling) and C04A8/C04C8 (crawl, crouched throw) were not initialised in
+# the capture: no role.
+ROLES_MUMMY_BODY=[
+ ('B3_IDLE',0x25F3B4,0xC0408,('idle_right','idle_long')),
+ ('B3_WALK',0x25F3CC,0xC0418,('walk_right','run_cycle_right')),
+ ('B3_JUMP',0x25F486,0xC0428,('jump_left','run_jump_right')),
+ ('B3_TURN',0x260B1C,0xC0448,('run_cycle_right','run_cycle_left')),
+ ('B3_LAND',0x25F4EE,0xC0478,('jump_left','grenade_jump')),
+ ('B3_CROUCH_IN',0x260B5E,0xC0488,('crouch_right','crouch_left')),
+ ('B3_CROUCH',0x260BE6,0xC0498,('crouch_right','crouch_left')),
+ ('B3_CROUCH_FIRE',0x260C8A,0xC04B8,('crouch_fire_right','crouch_fire_left')),
+ ('B3_STAND',0x260BA2,0xC04D8,('stand_fire_right','aim_up_fire_left')),
 ]
 # The knife (0C3B46: a fire press with +9A bit 0, a hurtbox of type 4/5 in
 # reach): weapon table 0BF958 standing (form 1: row +0x10), body table
@@ -220,6 +238,15 @@ def main():
                 assert seen,(role,hex(addr),cond)
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form 3: {", ".join(conds)} */')
+        fixed=(m/'program-fixed.bin').read_bytes();program=lambda at:struct.unpack_from('>I',fixed,at)[0]
+        inits=[(int(f),int(v,16)) for f,v in re.findall(r'MARCO_INIT frame=(\d+) program=([0-9A-F]+)',(m/'debug.log').read_text())]
+        for role,addr,table,conds in ROLES_MUMMY_BODY:
+            assert program(table)==addr,(role,hex(table))
+            for cond in conds:
+                case=mplan[cond]
+                assert any(case['first']<=f<=case['last'] and v==addr for f,v in inits),(role,hex(addr),cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, body table {table:06X}, form 3: {", ".join(conds)} */')
     if a.descent_capture:
         d=a.descent_capture;dplan={x['name']:x for x in json.loads((d/'plan.json').read_text())['cases']}
         dchoices=json.loads((d/'controller.json').read_text())['choices']

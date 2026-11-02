@@ -345,8 +345,49 @@ static void solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
     if (i<16) ga_sb(a,0x6b,(uint8_t)i);
 }
 static unsigned stamps;
-static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {(void)ctx;(void)a;(void)t;stamps++;}
 #if defined(FAMILY_RING) && defined(FAMILY_RAM)
+static void stamp_ring(neo_gactor_t *a,uint32_t t);
+#endif
+static void stamp(void *ctx,neo_gactor_t *a,uint32_t t) {
+    (void)ctx;(void)a;(void)t;stamps++;
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+    stamp_ring(a,t);
+#endif
+}
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+/* 0C88B0 into the ring +88 of the actor's layer (+38 = 10C72E or 10D7B6,
+ * else nothing): template dx,dy (cells), w, h, material +4, mask +6, the
+ * w*h shapes (columns of h from the bottom row up) at +10; window +14/+18
+ * of the layer; an existing shape s survives unless mask bit s is set;
+ * bits 5..7 of the old cell stay. */
+static void stamp_ring(neo_gactor_t *a,uint32_t t) {
+    uint32_t parent=ga_l(a,0x38);
+    if (parent!=0x10c72eu && parent!=0x10d7b6u) return;
+    const uint8_t *tp=ga_rom(t);assert(tp);
+    unsigned L=parent&0xffffu;
+    int16_t d0=(int16_t)ga_w(a,0x28),d1=(int16_t)ga_w(a,0x2c);
+    int16_t d2=(int16_t)(0xffc0-(wram[L+0x14]<<8|wram[L+0x15])),d3=(int16_t)(0x80-(wram[L+0x18]<<8|wram[L+0x19]));
+    d0=(int16_t)(d0>>3);d1=(int16_t)(d1>>3);d2=(int16_t)(d2>>3);d3=(int16_t)(d3>>3);
+    d0=(int16_t)(d0+(int8_t)tp[0]);d1=(int16_t)(d1+(int8_t)tp[1]);
+    unsigned d4=tp[2],d5=tp[3];
+    uint32_t mask=(uint32_t)tp[6]<<24|(uint32_t)tp[7]<<16|(uint32_t)tp[8]<<8|tp[9];
+    d1=(int16_t)-(d1+(int16_t)d5);d3=(int16_t)-(d3+0x3f);
+    uint8_t *ring=&wram[(L+0x88u)&0xffffu];
+    const uint8_t *a1=tp+10;
+    for (;d4;d4--,a1++,d0++) {
+        if ((uint16_t)(d0-d2)>=0x40u) continue;
+        const uint8_t *a2=a1;int16_t r=d1;
+        for (unsigned k=d5;k;k--,a2+=tp[2],r++) {
+            if ((uint16_t)(r-d3)>=0x40u) continue;
+            uint8_t *cell=&ring[((unsigned)(d0&0x3f)<<6)+(unsigned)(r&0x3f)];
+            unsigned shape=*cell&15u;
+            if (shape && !((mask>>shape)&1u)) continue;
+            uint8_t v=*a2;assert(v<0x10);
+            if (tp[4]) v|=0x10;
+            *cell=(uint8_t)(v+(*cell&0xe0u));
+        }
+    }
+}
 /* 0C70FC (collision part, 0C72EC): the sub-map's cells into the ring +88
  * of the --ring layer, clipped to its 32x32-block window (+36/+38 as read). */
 static unsigned patches;

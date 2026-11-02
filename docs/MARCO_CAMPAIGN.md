@@ -294,8 +294,8 @@ convertirse en momia». En el port el contacto mataba a Marco.
   --command-trace --paired-trace --controller-trace --give-mummy`, plan por
   defecto, 2948 fotogramas auditados, 92 descriptores, 1765484 píxeles
   iguales). Filas `+0x30` de las tablas: cuerpo de la transformación
-  `0BF258` `24EDE0` (el mando `0C18B4` no elige otro cuerpo: se queda; sin
-  agacharse), arma en reposo `0BF858` `25F520` (también las tablas de salto
+  `0BF258` `24EDE0` (los cuerpos de la momia: abajo, «dos cuerpos a la
+  vez»), arma en reposo `0BF858` `25F520` (también las tablas de salto
   `0BFC58/0BFC98`), andar `0BF8D8` `25F562`, disparo `0BFD18` `25F5CA`,
   arriba `0BFD58` `25F89E`, abajo en el aire `0BFD98` `25F932`, granada
   `0BF998` `25F626`, subir/mantener/bajar el arma `0BF9D8` `25F74C`,
@@ -307,13 +307,82 @@ convertirse en momia». En el port el contacto mataba a Marco.
   (volcados de actor); en forma 3 la `63` y la `64` tienen las dos paletas
   de la momia (`--name-palette MUMMY=7FFE,6CB8,3863 MUMMY2=7FFE,3DC9,7986`);
   `marco_visual.c` pone esas ranuras en `+19..+1C` y `actor.c` dibuja cada
-  parte con la de su byte alto. **Aproximación declarada**: el cambio de
-  paleta durante la transformación (`C4DD8`) no se modela (desde la
-  petición de forma). Los efectos `C4DD8`/`C5286` siguen sin traducir.
+  parte con la de su byte alto; durante la transformación, las normales
+  (abajo). Los efectos `C4DD8`/`C5286` siguen sin traducir.
 Prueba: `tools/test_gameplay.c` (`mummy_run`): el aliento pide la forma 3 y
 deja la pistola, 19 actualizaciones quieto, protección `0x5A`, la H
 rechazada, 29,7 px en 20 actualizaciones andando y la muerte con el
 segundo aliento.
+
+### Forma 3: dos cuerpos a la vez (rama `work-m2events`)
+
+Informe del usuario (hardware real, ROM 20): al convertirse en momia el
+sprite normal de Marco sigue visible bajo la momia. **Causa**: lo de arriba
+(«el mando `0C18B4` no elige otro cuerpo: se queda») era falso. El cuerpo
+de la transformación `24EDE0` dibuja `1887E0` y se queda en `1887CC`, que es
+Marco **normal y entero** (29×39, la cara de susto); el port lo dejaba como
+cuerpo de la momia toda la forma 3 y encima ponía el arma de la momia
+(`14ADEE`, 35×26): dos cuerpos. En MAME (`marco-mz2`, `debug.log`:
+`MARCO_INIT`/`MARCO_DRAW` por actualización) la transformación dibuja **solo**
+`1887E0`, `1887CC` ×17 (sin arma: `0C17CA` llama a `0C0F16`) y, desde
+`0C182A`, el mando de la momia arranca sus propios cuerpos con `0C0FB6`
+desde las tablas de cuatro personajes `C0408..` (fila 0 = Marco; no pasan
+por `0C0F32`/`0C0F62`, por eso `controller.json` no las tenía):
+
+| Situación (rutina) | Tabla | Programa | Arma |
+| --- | --- | --- | --- |
+| reposo `0C18B4` (cada actualización) | `C0408` | `25F3B4` (`14AD2E`) | sí (+90 = 0) |
+| andar `0C196A` (+26 = 0x80) | `C0418` | `25F3CC` | sí (+90 = 1; `25F562` elegido cada actualización por +77) |
+| giro `0C1924` (+9A bit 3; +98 = 2 solo voltea) | `C0448` (`C0458` con +92) | `260B1C` | no (`0C0F16`) |
+| despegue `0C19E4` / aire | `C0428` | `25F486` | sí |
+| aterrizaje `0C1AC8` (3 actualizaciones, +62 = 0) | `C0478` | `25F4EE` | sí |
+| agacharse `0C1B14` / agachado `0C1B66` | `C0488` / `C0498` | `260B5E` / `260BE6` | no |
+| disparo agachado `0C1CCC` | `C04B8` | `260C8A` | no |
+| levantarse `0C1882` | `C04D8` | `260BA2` | no |
+
+Cambios: `convert_marco_programs.py` toma también los `MARCO_INIT` de las
+capturas extra (las raíces de `0C0FB6`); `compile_marco_campaign.py` añade
+los papeles `B3_IDLE/WALK/JUMP/TURN/LAND/CROUCH_IN/CROUCH/CROUCH_FIRE/STAND`
+comprobados contra esos `MARCO_INIT` y la tabla de la ROM;
+`marco_visual.c` (`mummy_step`) los elige como el mando: sin arma durante la
+transformación, el giro y agachado; el arma se elige otra vez cuando cambia
++90; el disparo hacia arriba acabado baja el arma (`25F7AC`, 3555); el
+aterrizaje empieza en la actualización siguiente a la que toca el suelo.
+`actor.c` usa las paletas normales durante la transformación (el
+`audit.json` de `marco-mz2` usa el perfil normal en sus 37 primeros
+fotogramas y el de la momia después). `gameplay.c`: el aire de la momia
+`0C1A72..0C1AA6` exacto (objetivo ±0x3E000 con desplazamiento 3 con
+dirección, 0 con 5 sin ella; antes una aproximación declarada), el
+aterrizaje sin andar tres actualizaciones (`0C1ADE`) y el despegue cuenta
+como aire para apuntar abajo (3831: abajo y disparo dibujan `25F932`).
+
+**Prueba** (`make check-marco-campaign`, privada): `tools/extract_mummy_fixture.py`
+saca de `marco-mz2` las 1475 actualizaciones (2101..5049) con la situación
+que el juego del port da a `marco_visual.c` (de la rutina del mando y los
+mandos) y los descriptores que el original dibujó para el cuerpo y el arma
+(`data/marco_mummy_fixture.json`); `test_marco_visual.c` las repite:
+**cuerpo 1474 iguales, 0 distintos; arma 1462 iguales, 12 distintos**
+(conocidos: el disparo de la actualización del aterrizaje apunta abajo en
+el original, 4; el arma subida/bajada en el aire `25F7A0/25F794` sin
+traducir, 2, y 6 de la fase del reposo que le sigue).
+
+```sh
+python3 tools/convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --extra-capture K1 --extra-capture K2 --extra-capture DSC0 --extra-capture DSC1 --extra-capture $N/marco-w2 --extra-capture $N/marco-w4 --extra-capture $N/marco-w6 --extra-capture $N/marco-mz2 --equivalent-calls --output GRAFO
+python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture $N/marco-w2 --w4-capture $N/marco-w4 --mummy-capture $N/marco-mz2 --output build/marco_campaign.h
+python3 tools/extract_mummy_fixture.py $N/marco-mz2 --output data/marco_mummy_fixture.json
+```
+
+(CAP1 = `captures-m1full/marco-cat1`, H2/H3 = `captures/weapons/marco-h2/h3`,
+G1/C1/K1/K2 = `captures-grenade/marco-*`, DSC0/DSC1 = `captures-end/marco-dsc*`;
+el grafo sin el cambio reproduce byte a byte el de `marco-graph-w`.) El
+catálogo de poses no cambia (las 92 poses de `marco-mz2` ya estaban): solo
+`build/marco_campaign.h` (privado) debe regenerarse.
+
+Paradas explícitas (el cuerpo se queda, contador `stops` de
+`marco_visual_t`): bajar de un borde sin saltar (`C0438`, `25F4BC`), el giro
+con +92 (`C0458`), reptar y su giro (`C04A8`/`C0468`; el port no repta) y la
+granada agachada (`C04C8`): no aparecen en `marco-mz2`. El efecto `C4DD8`
+de la transformación y `C5286` siguen sin traducir.
 
 ## Disparo de las armas 02/07 y 04/09 (rama `work-m2mummy`)
 

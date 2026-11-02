@@ -834,3 +834,44 @@ Apariciones que el port pierde: de 17 constructores no contados a **10**
 (`032DE2 035B66 035C68 035D12 03A05A 03A2AA 082BCE 09692C 0995EC 099DF0`);
 contadas perdidas: 0. Todas son paradas explícitas: el mundo cuenta el
 constructor (`external_spawns`) y el registro de ares dice `native 0`.
+
+### Cadena de eventos: recreativa contra port
+
+`tools/compare_m2_events.py LOG` compara los registros del guion que ejecutó
+la recreativa (`run4-debug`, en orden) con los que ejecuta el port (líneas
+`MSX script spawn record R constructor C native N camera P` que `actor.c`
+escribe para cada registro que pasa por `script_spawn` de `neo_world.c`).
+Las alternativas de una elección al azar (op 10) cuentan como un evento (el
+RNG elige otra). Recorrido de ares de esta rama (`mslugx-m2-reference.z64`,
+`test_mission2_ares.py --stage-seconds 800`, PASS):
+
+| Etapa | Registros (arcade) | Registros (port) | Mismo orden (LCS) | Solo arcade | Solo port |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 10 | 13 | **10** (todos los del arcade) | — | `2D74D4` `2D74EA` `2D7500` (cajas `09A692` de la cámara 320: la puerta `03882A` del arcade se rompió antes y `018F92` borró el guion) |
+| 2 | 80 | 84 | **76** | `2D7B90` (`if` grupo 2 < 1) | `2D7B58` (`if` grupo 1 = 1), `2D7FA2` (`if` grupo 2 < 1), `2D8120` (`if` grupo 7 < 1); `2D7B24` 1 vez en el arcade y 2 en el port |
+| 3 | 208 | 151 | **139** | 52 registros dentro de `if` de grupo vacío (`2D8EE4` g2, `2D9110` g4, `2D9358` g8: los 14 objetos de la caja `09A67E` rota, `2D997E` g8, `2D9B12` g2), la elección `2D9228` (nido `035D12`) y `2D97EE` | `2D98F2` `2D9904` (`if` 0B: posición del jugador), `2D9ABC`; `2D979C` 8/7, `2D9CB8` 8/2 |
+
+Todas las diferencias restantes son **del jugador**, no de la lógica: los
+`if` del guion leen los recuentos de grupo (enemigos o cajas destruidos a
+tiempo) o la posición del jugador (`01903A`), y el piloto de la prueba no
+juega como el de la captura; el intérprete (`neo_script.c`) es el de la
+Misión 1, ya bit a bit (`test_neo_script`). En el mismo orden quedan todos
+los eventos que ejecutaron los dos lados.
+
+Lo que la cadena no tenía y ahora tiene (además de los actores de arriba):
+
+| Evento (ROM) | Recreativa | Port antes | Port ahora |
+| --- | --- | --- | --- |
+| MISSION 2 START `0607DE` (`01860A`, 42FA = 0) | letras en la etapa 1 | nunca (solo la Misión 1 por el paracaídas) | `msx_game_stage_actors` al entrar en `0186A0`, con la misión del flujo (RAM 10C2F4 = 42F4) |
+| voz `607D2[misión]` (0x1132) | sí | no | **parada**: sin render en `sound_map.json` (`start_voices`) |
+| flecha GO `05287C` (`01860A`, cada etapa; `run4`: 19429, 20009, 26216) | sí | nunca creada | creada en cada etapa de una misión empaquetada; entorno 10E9A0/10E9BC/10C44A del mundo (antes 0: siempre en reposo) |
+| dirección de la flecha `0529C0` (21 registros) | 10C44A | perdida | `neo_world.c` |
+| tiempo `01913C` | reinicio | ya se aplicaba (el auditor lo contaba como perdido) | igual; nativo para el auditor |
+| actores de las secciones 2/3 no contados | creados | 17 constructores perdidos | 9 perdidos (paradas, arriba) |
+
+Sin cambios (ya nativos y comprobados en fases anteriores): cortinas
+`3AED8/3AEF0`, puertas `03882A`/`03A6EA` y salidas `0B6ED2`, esperas y
+bloqueos de cámara (`op 4`, `052A5C`), torre `0B7C38`, jefe `026254` y su
+música `059F76`, música por etapa, fin de misión `018F92`/`018F40`. La
+flecha GO de la **Misión 1** sigue sin crearse: sus sprites no están en el
+paquete de la Misión 1 (parada).

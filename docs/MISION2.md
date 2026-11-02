@@ -1034,3 +1034,38 @@ etapa 2 van en el arcade por encima de la ventana A.
   suelo (1122 actualizaciones) y conservado en el aire (377).
 - ares: capturas `stage1-door-*` y `stage2-door-*` de
   `test_mission2_ares.py` (`BUG_MATRIX.md` B26).
+
+## Parches de mapa `0C70FC` en el render (B37 = B15, rama `work-m2fix6`)
+
+`0C70FC` copia un submapa (cabecera: `+0` tiles, `+4` celdas de colisión,
+`+8` ancho, `+A` alto, en bloques de 16 px) a la ventana del objeto de capa:
+las palabras de tile (código, atributo) van directas a sus entradas SCB1.
+El port solo aplicaba la colisión (`g_map_patch`), así que la puerta de la
+pirámide (`0B7350` → `0B706C`, 8×10 bloques en (0xA2, 0x2F)) subía pero el
+fondo seguía cerrado; igual la verja de la etapa 1 (`0B6E06`: `0B6BEC`,
+`0B6C02` en `10C72E` y `0B6C18` en `10E83E`).
+
+- `tools/extract_map_patches.py 2 filesystem/mission2/sK` lee los bloques de
+  la ROM (P2 lineal: dirección − 0x100000), los sitúa en `x = 16·(D4+col)`,
+  `y = 240 − 16·(D5+1) + 16·fila −` desplazamiento vertical de la capa
+  respecto a la 3 (8 en la capa 0) y toma los colores de la celda o variante
+  observada con el mismo código en esa posición (todas las de la puerta:
+  80/80; verja: 49/49, 21/28 y 21/28; los bloques no vistos toman su número
+  de paleta). Los colores coinciden con la RAM de paletas de `run4` (19770 y
+  26040) en los 185 bloques. Bits 0–1 del atributo: giro; 2/3:
+  autoanimación de 4/8.
+- `pack_mission.py` añade las celdas con el byte de capa `0x80 | i<<3 | L`
+  al final de la etapa y una tabla (submapa, objeto de capa) en el registro
+  de etapa (`patch_offset`, `patch_count`); `scene_stage_load` las separa.
+- `g_map_patch` apunta cada parche aplicado (`map_patch`, por etapa);
+  `actor.c` se los pasa al render, que dibuja las celdas del parche y oculta
+  las de su capa dentro del rectángulo del parche (también en los bloques
+  grabados: la máscara entra en la clave).
+- Píxeles: en `game26040.png` los 23 bloques que cambian dan 2033 de 5888
+  píxeles iguales con el parche frente a 874 con la puerta cerrada (el resto
+  lo tapan el marco `03A82E`, la puerta que sube y las llamas).
+- Fuera: la roca `03A2AA` (`0B7A2C`, submapas de `0B7436` con
+  desplazamientos de origen D0/D1 ≠ 0; el actor no está traducido). Como en
+  el arcade el parche solo vale mientras esos bloques están en la ventana; el
+  port lo mantiene toda la etapa (las dos puertas están al final, la cámara
+  no vuelve).

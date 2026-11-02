@@ -30,6 +30,9 @@ src/scene_assets.c scene_mission_*):
                     records (descriptor +4, 019604): u32 rom u32 offset u32 length
                   layer[4]: u8 x_num u8 x_den u8 y_num u8 y_den i16 visible_min
                     i16 visible_max (layer camera x range where it is drawn)
+                  u32 patch_offset u16 patch_count: map patches 0C70FC
+                    (u32 sub-map, u32 layer object each; their cells are
+                    the stage's last, layer byte 0x80 | patch << 3 | layer)
                   pad to 128
   cell[]:    u8 layer u8 0 i16 x i16 y u16 image[8]        (22 bytes)
   image[]:   u16 page u16 palette u16 y u16 h              (8 bytes)
@@ -91,6 +94,20 @@ def build(mission,stage_dirs,crom,rom=None):
         base=len(images)
         tower=tower_templates(model,rom) if rom is not None else None
         merged=merge_swapped(model)
+        # Map patches 0C70FC (tools/extract_map_patches.py, B37): cells of
+        # patch i on layer L packed with layer byte 0x80 | i << 3 | L, after
+        # the stage's cells (the layer sort keeps them last); the runtime
+        # draws them instead of the cells they cover once the game applies
+        # the patch (its sub-map, layer object).
+        patch_list=[]
+        if (d/'patches.json').exists():
+            for i,pt in enumerate(json.loads((d/'patches.json').read_text())['patches']):
+                assert i<16
+                patch_list.append((int(pt['submap'],16),int(pt['layer_object'],16)))
+                for c in pt['cells']:
+                    if c['colors'] not in model['palettes']:model['palettes'].append(c['colors'])
+                    model['cells'].append(dict(layer=0x80|i<<3|c['layer'],x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],
+                                               animation_mask=c['animation_mask'],palette=model['palettes'].index(c['colors']),observations=0))
         if LOOSE[0]:
             # The column origin (+32) wraps at 4096 columns (16 * 4096 = 65536
             # px): cell x of a moving layer is taken modulo 65536 (first kept).
@@ -120,7 +137,7 @@ def build(mission,stage_dirs,crom,rom=None):
         stages.append(dict(descriptor=DESCRIPTORS.get(mission,(0,)*len(stage_dirs))[k],width=model['width'],camera_max=model['camera_max'],
                            backdrop=int.from_bytes(bytes((*palette_rgb(backdrops[0]),255)),'big') if backdrops else 0xff,
                            first=first,count=len(st_cells),columns=col['columns'],rows=col['rows'],origin=col['origin_cells'],
-                           grid=offset,unknown=unknown,image_first=base,image_count=len(st_images),rules=rules))
+                           grid=offset,unknown=unknown,image_first=base,image_count=len(st_images),rules=rules,patches=patch_list))
         report.append(dict(stage=d.name,cells=len(st_cells),images=len(st_images),coordinate_variants=len(model['conflicts']),
                            backdrops=sorted(set(backdrops)),grid=[col['columns'],col['rows']],grid_unknown=col.get('unknown_cells'),
                            grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower,merged_maps=merged))
@@ -132,6 +149,11 @@ def build(mission,stage_dirs,crom,rom=None):
                 while len(blobs)%4:blobs.append(0)
                 st['blobs'].append((rom_at,len(blobs),len(data)));blobs.extend(data)
             report[k]['blobs']=[(f'0x{r:06X}',n) for r,_,n in st['blobs']]
+    for k,st in enumerate(stages):
+        while len(blobs)%4:blobs.append(0)
+        st['patch_at']=len(blobs)
+        for sub,obj in st['patches']:blobs.extend(struct.pack('>II',sub,obj))
+        if st['patches']:report[k]['map_patches']=[f'0x{sub:06X}' for sub,_ in st['patches']]
     # Mission actors (docs/MISION2.md "Fase 2e"): <=64x64 parts on their own
     # pages after the maps; the draw overrides the palette with the logical
     # resource (scene_native_palette, mission resources after the scene's).
@@ -183,6 +205,7 @@ def build(mission,stage_dirs,crom,rom=None):
                         st['image_first'],st['image_count'])
         for r,o,n in st.get('blobs',[(0,0,0)]*3):rec+=struct.pack('>III',r,blobs_at+o if n else 0,n)
         for xn,xd,yn,yd,lo,hi in st['rules']:rec+=struct.pack('>BBBBhh',xn,xd,yn,yd,lo,hi)
+        rec+=struct.pack('>IH',blobs_at+st['patch_at'] if st['patches'] else 0,len(st['patches']))
         assert len(rec)<=STAGE_BYTES;head[stage_at+STAGE_BYTES*k:stage_at+STAGE_BYTES*k+len(rec)]=rec
     blob=bytes(head)+bytes(body)
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),

@@ -648,6 +648,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
+    scene_render_set_map_patches((const uint32_t (*)[2])game.world.map_patch,game.world.map_patches);
     scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
     scene_render_set_layer_offset(1,game.world.train.on,(int)neo_train_scroll(&game.world.train));
     /* B26: the frame's sprite windows and layers in their SCB slot order

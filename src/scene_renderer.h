@@ -13,6 +13,9 @@ void scene_render_begin(surface_t *surface);
  * rules); backdrop_after selects the palette loaded at progress 2304. */
 void scene_render_set_collapse(bool collapsed,bool flash);
 void scene_render_set_patch(bool patched);
+/* Map patches 0C70FC applied in the loaded stage ((sub-map, layer object)
+ * pairs, neo_world_t map_patch): drawn from the stage pack (B37). */
+void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n);
 /* Mission 2 stage 3 tower (docs/MISION2.md "Fase 2d"): pieces 0..count-1
  * of the writer 0B7C38, types[k] drawn from the stage's templates (layer-3
  * cells at x >= SCENE_TOWER_TEMPLATE_X, tools/pack_mission.py) at

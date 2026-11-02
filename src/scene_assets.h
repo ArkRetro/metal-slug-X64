@@ -6,7 +6,7 @@ enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
-enum { SCENE_MISSION_CHUNKS_MAX=320 };
+enum { SCENE_MISSION_CHUNKS_MAX=336 };   /* Mission 2 with its map patches (B37): 322 */
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
@@ -124,6 +124,10 @@ typedef struct {
     const uint8_t *players;uint32_t players_rom;uint16_t players_len;     /* +4 (019604 records) */
     scene_layer_rule_t rules[4];
     const scene_map_cell_t *cells;unsigned cell_count;
+    /* Map patches 0C70FC (B37, tools/extract_map_patches.py): patch i's cells
+     * follow the stage's cells with layer byte 0x80 | i << 3 | layer. */
+    const scene_map_cell_t *patch_cells;unsigned patch_cell_count,patch_count;
+    uint32_t patch_submap[16],patch_layer_object[16];
     void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
 } scene_stage_t;
 /* Opens /missionN.pack (header only; Mission 1's map goes back to the LRU). */

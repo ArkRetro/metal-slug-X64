@@ -445,6 +445,14 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
     neo_genv_t *e=&((tick_t *)ctx)->genv;
     const uint8_t *s=ga_rom(submap);
     if (!s) {ga_fail(e,submap);return;}
+    /* The tile part (+0): recorded for the renderer (B37), which draws the
+     * stage pack's cells of this sub-map instead of the blocks it covers. */
+    neo_world_t *w=((tick_t *)ctx)->w;
+    if ((s[0]|s[1]|s[2]|s[3]) && !d[0] && !d[1] && w->map_patches<16u) {
+        bool known=false;
+        for (unsigned i=0;i<w->map_patches;i++) known|=w->map_patch[i][0]==submap && w->map_patch[i][1]==layer;
+        if (!known) {w->map_patch[w->map_patches][0]=submap;w->map_patch[w->map_patches][1]=layer;w->map_patches++;}
+    }
     uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
     if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
     if (c==0xffffffffu || d[0] || d[1]) {ga_fail(e,0xc72ec);return;}

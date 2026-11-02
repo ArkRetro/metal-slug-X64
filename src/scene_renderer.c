@@ -58,6 +58,49 @@ static bool collapsed,flash,patched;
 static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n);
 void scene_render_set_collapse(bool done,bool white) {collapsed=done;flash=white;}
 void scene_render_set_patch(bool done) {patched=done;}
+/* Map patches 0C70FC of a mission stage (B37 = B15): the active patches'
+ * cells (scene_stage_t patch_cells) are drawn instead of the stage's cells
+ * of their layer inside each patch's rectangle (the original's SCB1 words
+ * of those blocks are overwritten). */
+typedef struct { uint8_t layer;int16_t x0,y0,x1,y1;unsigned first,count; } map_patch_t;
+static map_patch_t map_patches[16];static unsigned map_patch_total;static uint16_t map_patch_mask;
+void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n) {
+    const scene_stage_t *st=scene_stage();uint16_t mask=0;
+    if (st) for (unsigned k=0;k<n;k++) for (unsigned i=0;i<st->patch_count && i<map_patch_total;i++)
+        if (st->patch_submap[i]==list[k][0] && st->patch_layer_object[i]==list[k][1]) mask|=(uint16_t)(1u<<i);
+    map_patch_mask=mask;
+}
+static void map_patch_index(const scene_stage_t *st) {
+    map_patch_total=0;map_patch_mask=0;
+    if (!st) return;
+    for (unsigned i=0;i<st->patch_count && i<16;i++) {
+        map_patch_t *m=&map_patches[i];*m=(map_patch_t){0,32767,32767,-32768,-32768,0,0};
+        for (unsigned c=0;c<st->patch_cell_count;c++) {
+            const scene_map_cell_t *cell=&st->patch_cells[c];
+            if (((cell->layer>>3)&15u)!=i) continue;
+            if (!m->count) m->first=c;
+            m->count=c+1-m->first;m->layer=cell->layer&7u;
+            if (cell->x<m->x0) m->x0=cell->x;
+            if (cell->y<m->y0) m->y0=cell->y;
+            if (cell->x+16>m->x1) m->x1=(int16_t)(cell->x+16);
+            if (cell->y+16>m->y1) m->y1=(int16_t)(cell->y+16);
+        }
+        map_patch_total=i+1;
+    }
+}
+static inline bool map_patch_column(const scene_map_cell_t *cell) {
+    for (unsigned i=0;i<map_patch_total;i++)
+        if ((map_patch_mask>>i)&1u && map_patches[i].layer==cell->layer && cell->x>=map_patches[i].x0 && cell->x<map_patches[i].x1) return true;
+    return false;
+}
+static inline bool map_patch_hides(const scene_map_cell_t *cell) {
+    for (unsigned i=0;i<map_patch_total;i++) {
+        const map_patch_t *m=&map_patches[i];
+        if ((map_patch_mask>>i)&1u && m->layer==cell->layer && cell->x>=m->x0 && cell->x<m->x1 && cell->y>=m->y0 && cell->y<m->y1) return true;
+    }
+    return false;
+}
+static void map_patch_draw(unsigned layer,const retro_plane_view_t *view,const int *offsets,const int *rises,unsigned video_tick);
 /* Tower templates of the loaded stage (cell index per type, row, column;
  * 0xFFFF: none) and the pieces to draw (scene_render_set_tower). */
 static uint16_t tower_cell[SCENE_TOWER_TYPES][3][24];static bool tower_stage;
@@ -133,6 +176,7 @@ static bool patch_cell(const scene_map_cell_t *cell) {
 }
 static inline bool hidden(const scene_map_cell_t *cell) {
     if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    if (map_patch_mask && map_patch_hides(cell)) return true;
     /* Destroyed shop: column 0x9F-3.. of layer 10D7B6 (0B6882). */
     return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16 && patch_cell(cell);
 }
@@ -140,6 +184,7 @@ static inline bool hidden(const scene_map_cell_t *cell) {
  * mix hidden and kept cells (the others keep their merged single draw). */
 static inline bool column_may_hide(const scene_map_cell_t *cell) {
     if (collapsed && cell->layer==3 && cell->x>=COLLAPSE_FACADE_X) return true;
+    if (map_patch_mask && map_patch_column(cell)) return true;
     return patched && cell->layer==2 && cell->x>=(0x9f-3)*16 && cell->x<(0x9f+8)*16;
 }
 static void draw_cells(const scene_map_cell_t *p,unsigned n,const int *offsets,const int *rises,unsigned video_tick) {
@@ -311,6 +356,21 @@ static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *vi
     // The depth camera carries the height (actor.c), so planes keep their own parallax.
     blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false,false);
 }
+/* The active patches' cells of `layer` (cell layer byte 0x80 | i << 3 | L:
+ * drawn as a cell of layer L). */
+static void map_patch_draw(unsigned layer,const retro_plane_view_t *view,const int *offsets,const int *rises,unsigned video_tick) {
+    const scene_stage_t *st=scene_stage();
+    if (!st) return;
+    for (unsigned i=0;i<map_patch_total;i++) {
+        const map_patch_t *m=&map_patches[i];
+        if (!((map_patch_mask>>i)&1u) || m->layer!=layer) continue;
+        for (unsigned c=0;c<m->count;c++) {
+            scene_map_cell_t cell=st->patch_cells[m->first+c];cell.layer=(uint8_t)layer;
+            if (view) depth_cell(&cell,view,offsets,video_tick,1);
+            else if (cell.x-offsets[layer]>-16 && cell.x-offsets[layer]<320) classic_cell(&cell,offsets,rises,video_tick,1);
+        }
+    }
+}
 void scene_render_background(unsigned camera,int height,bool backdrop_after,unsigned video_tick) {background(camera,height,backdrop_after,video_tick,0x1fu,true);}
 /* Layers 0..2, then (scene_render_front) 3 and 4: sprites whose attribute
  * bit 2 is set (actor +15 bit 2, e.g. the domes 054C2C) go between them. */
@@ -358,6 +418,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
           }
           if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
           if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
+          if (map_patch_mask) map_patch_draw(layer,NULL,offsets,rises,video_tick);
           uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
           if (layer==3) draw_tower(offsets,rises,NULL,video_tick);
           layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
@@ -401,6 +462,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
       // Replacement cells (shop patch, post-collapse rubble) on their layer.
       if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
       if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      if (map_patch_mask) map_patch_draw(layer,view,offsets,rises,video_tick);
       uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
       if (layer==3) draw_tower(offsets,rises,view,video_tick);
       layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
@@ -420,7 +482,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
  * pinned until the RDP has finished the last frame that ran it; then the
  * blocks are freed. Off while a fade or the white flash is on. */
 typedef struct {
-    bool valid;bool collapsed,patched;unsigned tower;int offsets[5],rises[5];bool visible[5];
+    bool valid;bool collapsed,patched;uint16_t map_patches;unsigned tower;int offsets[5],rises[5];bool visible[5];
     retro_plane_view_t views[5];
 } bg_key_t;
 static bg_key_t bg_key;
@@ -454,7 +516,7 @@ static bool bg_retire(void) {
     return false;
 }
 static bool bg_static(const int *offsets,const int *rises,const bool *visible) {
-    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched || bg_key.tower!=tower_count) return false;
+    if (!bg_key.valid || bg_key.collapsed!=collapsed || bg_key.patched!=patched || bg_key.map_patches!=map_patch_mask || bg_key.tower!=tower_count) return false;
     for (unsigned i=0;i<5;i++) if (bg_key.offsets[i]!=offsets[i] || bg_key.rises[i]!=rises[i] || bg_key.visible[i]!=visible[i]) return false;
     if (depth_mode && memcmp(bg_key.views,depth_views,sizeof(bg_key.views))) return false;
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (!bg_blocks[p][t]) return false;
@@ -489,7 +551,7 @@ static void draw_layers_cached(unsigned mask,bool first,const int *offsets,const
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
     bg_key_t key;memset(&key,0,sizeof(key));
-    key.valid=true;key.collapsed=collapsed;key.patched=patched;key.tower=tower_count;
+    key.valid=true;key.collapsed=collapsed;key.patched=patched;key.map_patches=map_patch_mask;key.tower=tower_count;
     for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
     if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
     /* Frames the inputs have held, counted once per frame (back pass): the
@@ -620,7 +682,7 @@ void scene_renderer_stage_changed(void) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
     bg_key.valid=false;collapsed=flash=patched=false;
     const scene_stage_t *st=scene_stage();
-    tower_index(st);
+    tower_index(st);map_patch_index(st);
     if (st) {
         bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
         assertf(indexed,"Stage cell index");(void)indexed;

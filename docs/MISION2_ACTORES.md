@@ -775,6 +775,13 @@ envuelto 31, 17658/0; respiradero 32, 4721/0; cuerda 10, 10038/0 y 103,
 después de la actualización; sin explicar). Paletas nuevas 0x104, 0x105,
 0x26C, 0x16A. `romfs/mission2.pack` reempaquetado (3,47 MB).
 
+**Ares** (`9e2b3cb`, `mslugx-m2-reference.z64`, `test_mission2_ares.py
+--stage-seconds 800`: PASS hasta la Misión 3, crash=0): los registros
+`2D89EE` (`0995EC`), `2D8C76` (`032DE2`), `2D8D6A`/`2D8E12`/`2D8F8A`/`2D8F9C`
+(`082BCE`) y `2D8E58` (`03A05A`) se crean nativos (`MSX script spawn ...
+native 1`); `03A2AA` sigue externo (`native 0`) y `09692C` se cuenta como
+externo (5). Recorrido de la Misión 1: PASS, crash=0, 1 fallo de audio.
+
 **Lo que queda de la etapa 3** (sin traducir, contado como externo o como
 parada):
 

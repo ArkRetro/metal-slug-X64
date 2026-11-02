@@ -113,7 +113,7 @@ static void draw_tower(const int *offsets,const int *rises,const retro_plane_vie
             int cx=256+16*(int)i,cy=top+16*(int)j;
             if (!view) {int sx=cx-offsets[3],sy=8+cy+rises[3];if (sx+16<=8 || sx>=312 || sy+16<=8 || sy>=232) continue;}
             else {float sx=cx*view->scale+view->offset_x;if (sx>=320 || sx+16*view->scale<=0) continue;}
-            list[n++]=(tower_draw_t){scene_map_image(st->cells[id].phases[video_tick&7]),(int16_t)cx,(int16_t)cy};
+            list[n++]=(tower_draw_t){scene_map_image(scene_cell_phase(&st->cells[id],video_tick)),(int16_t)cx,(int16_t)cy};
         }
     }
     qsort(list,n,sizeof(*list),tower_draw_cmp);
@@ -279,12 +279,12 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
  * (format 2), so one rectangle draws them all with the same texels. */
 static unsigned column_run(const scene_map_cell_t *cells,const uint16_t *order,unsigned k,unsigned end,unsigned video_tick) {
     const scene_map_cell_t *c=&cells[order[k]];
-    const scene_image_t *im=scene_map_image(c->phases[video_tick&7]);
+    const scene_image_t *im=scene_map_image(scene_cell_phase(c,video_tick));
     unsigned n=1;
     if (im->format!=2) return 1;
     while (k+n<end && n<16) {
         const scene_map_cell_t *d=&cells[order[k+n]];
-        const scene_image_t *jm=scene_map_image(d->phases[video_tick&7]);
+        const scene_image_t *jm=scene_map_image(scene_cell_phase(d,video_tick));
         if (d->layer!=c->layer || d->x!=c->x || d->y!=c->y+16*(int)n || jm->page!=im->page || jm->palette!=im->palette ||
             jm->x!=im->x || jm->y!=im->y+16*(int)n) break;
         n++;
@@ -294,7 +294,7 @@ static unsigned column_run(const scene_map_cell_t *cells,const uint16_t *order,u
 static void classic_cell(const scene_map_cell_t *cell,const int *offsets,const int *rises,unsigned video_tick,unsigned n) {
     int x=cell->x-offsets[cell->layer],y=8+cell->y+rises[cell->layer];
     if (x+16<=8 || x>=312 || y+16*(int)n<=8 || y>=232) return;
-    const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+    const scene_image_t *im=scene_map_image(scene_cell_phase(cell,video_tick));
     blit(im,x,y,im->x,im->y,16,16*(int)n,false,false);
 }
 // Cull window of one layer: the same v=x*scale+offset the full scan computed.
@@ -307,7 +307,7 @@ static void depth_cell(const scene_map_cell_t *cell,const retro_plane_view_t *vi
     float x=background_x(cell,cell->x-offsets[cell->layer]);
     float y=(8+cell->y)*view->scale+view->offset_y,size=16*view->scale;
     if (x>=320 || x+size<=0) return;
-    const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+    const scene_image_t *im=scene_map_image(scene_cell_phase(cell,video_tick));
     // The depth camera carries the height (actor.c), so planes keep their own parallax.
     blit_scaled(im,x,y,im->x,im->y,16,16*(int)n,size,size*(float)n,false,false,false);
 }
@@ -565,8 +565,8 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             for (unsigned k=first;k<end;k++) {
                 const scene_map_cell_t *cell=&cells[cell_index.order[k]];
-                const scene_image_t *now=scene_map_image(cell->phases[video_tick&7]);
-                const scene_image_t *next=scene_map_image(cell->phases[(video_tick+1)&7]);
+                const scene_image_t *now=scene_map_image(scene_cell_phase(cell,video_tick));
+                const scene_image_t *next=scene_map_image(scene_cell_phase(cell,video_tick+1));
                 if (now->page/8!=last_now) {scene_request_image(now,2);last_now=now->page/8;}
                 if (next->page/8!=last_next) {scene_request_image(next,1);last_next=next->page/8;}
             }

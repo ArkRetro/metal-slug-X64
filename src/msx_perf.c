@@ -1,5 +1,6 @@
 #include <libdragon.h>
 #include "msx_perf.h"
+#include "msx_diag.h"
 #if MSX_PROFILE
 static const char *const names[MSX_PERF_COUNT]={"sim","prep","begin","bgreq","bg","mesh","actors","hud","end","wait","asset","step","audio"};
 static uint32_t last,frame_ticks[MSX_PERF_COUNT];
@@ -23,7 +24,7 @@ void msx_perf_counts(unsigned draws,unsigned soldiers) {
     if (soldiers>soldiers_max) soldiers_max=soldiers;
 }
 void msx_perf_frame_end(void) {
-    uint32_t build=0,total=0;
+    uint32_t build=0,total=0,logic=frame_ticks[MSX_PERF_SIM],asset=frame_ticks[MSX_PERF_ASSET];
     for (unsigned i=0;i<MSX_PERF_COUNT;i++) {
         if (i<MSX_PERF_OUTSIDE) total+=frame_ticks[i];
         if (i>=MSX_PERF_BEGIN && i<=MSX_PERF_END) build+=frame_ticks[i];
@@ -33,6 +34,7 @@ void msx_perf_frame_end(void) {
         }
         frame_ticks[i]=0;
     }
+    msx_diag_frame(logic,build,total,asset);   /* MSX_DIAG: logic vs render per frame */
     sum_build+=build;sum_total+=total;
     if (build>peak_build) peak_build=build;
     if (total>peak_total) peak_total=total;

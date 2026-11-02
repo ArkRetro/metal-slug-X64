@@ -66,7 +66,7 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   audio.
 - **Punto de recuperación:** etiqueta local `base-rom20`.
 
-## Instrumentación existente
+## Instrumentación
 
 - **Registro de la ROM de referencia:**
   - `PERF`: peor fotograma y fallos de la caché.
@@ -76,8 +76,39 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   - Rescates y muertes por caída, con x, y y la cámara.
 - Las paradas explícitas se cuentan y se registran con su rutina 68K. Nunca
   se ocultan devolviendo éxito.
-- **Falta:** un modo de depuración en la ROM normal con memoria máxima, pools
-  y anillo de eventos (ver `NEXT_STEPS.md`).
+- **Modo de diagnóstico (`MSX_DIAG`, `src/msx_diag*.{c,h}`):** activo en las
+  ROM de referencia (M1/M2/M3) y en `mslugx-diag.z64` (el juego normal con
+  diagnóstico); apagado en `mslugx-explorer.z64`, donde cada gancho es una
+  función vacía en línea (ningún símbolo `msx_diag` en el ELF).
+  `make MSX_REFERENCE_DIAG=0 mslugx-reference.z64` enlaza la referencia sin él.
+  - Cada 300 fotogramas, línea `MSX DIAG`: lógica (`sim`) y render (`build`)
+    por fotograma (media/máx.), fotogramas ≥25 ms, montón usado/pico en
+    juego/pico de arranque/mínimo libre/arena (muestra cada 30 fotogramas y
+    en cada `MSX MEM`), ranuras de la caché de escena usadas/total/pico.
+  - Línea `MSX DIAG pools`: por pool `usado/pico/capacidad` y `!fallos`
+    (asignaciones rechazadas) de la lista de nodos, soldados, lanzamientos,
+    salpicaduras, actores genéricos, nodos del jefe, dibujos, cajas,
+    registro 004C24, sonidos, disparos, subguiones, sólidos, objetos
+    dinámicos y balas de pistola.
+  - Cada 30 s: `MSX DIAG stops` (paradas explícitas unificadas con la
+    rutina: mundo, jefe, muerte de soldado, arma, granada, montura,
+    vehículo, objeto, HUD, guion detenido/saltado, familias sin portar,
+    cámara, Marco, 004E76) y `MSX DIAG slowest` (5 peores fotogramas con
+    lógica/render/asset y cámara).
+  - Anillo fijo de 128 eventos (etapa, flujo, reinicio, apariciones del
+    guion, soldados, bajas, muerte, arma, montura, jefe, paradas, rechazos
+    de pool, fotogramas lentos). Se vuelca (`MSX DIAG dump`) en una
+    aserción (`--wrap=debug_assert_func_f` y `assert`), una excepción, la
+    primera parada de cada tipo y con C-izquierda + C-derecha. Como mucho
+    16 volcados por sesión, salvo los fatales.
+  - C-arriba + C-abajo selecciona el siguiente nodo de la lista y registra
+    su tipo, rutina, posición y estado.
+  - `MSX_DIAG_CHECK`: comprobaciones baratas de índices de la lista y de
+    los pools en `neo_world.c`; solo en diagnóstico.
+  - No cambia la simulación: `make check` compila la prueba de juego con
+    `MSX_DIAG=1` y exige la misma salida. Prueba del anillo:
+    `tools/test_msx_diag.c` (`make check-core`). Coste medido en
+    `RENDIMIENTO.md` («Modo de diagnóstico»).
 
 ## Distinción de "memoria"
 

@@ -1,6 +1,12 @@
 #include "marco_visual.h"
 #include <string.h>
+/* Catalogs generated before the 24-bit command asset (src/neo_animation.h)
+ * write SET/WRITE_LONG constants as 0xFFFExxxx: the field keeps the same
+ * value (sign-extended 24-bit, checked by tools/convert_marco_programs.py). */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Woverflow"
 #include "marco_campaign.h"
+#pragma GCC diagnostic pop
 /* Program choice per situation. Every role is a program the original chose
  * in the named capture condition (tools/compile_marco_campaign.py). */
 static void emit(void *context,const neo_anim_draw_t *d) {

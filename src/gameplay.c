@@ -7,6 +7,7 @@
 #include "mission_camera.h"
 #include "marco_mount.h"
 #include "marco_descent.h"
+#include "msx_diag.h"
 #if defined(__mips__)
 #include <debug.h>
 #define FALL_LOG(...) debugf(__VA_ARGS__)
@@ -795,7 +796,7 @@ uint8_t msx_game_fire_group(const msx_game_t *g) {
 }
 bool msx_game_c_programs(const msx_game_t *g) {return msx_game_fire_group(g)!=MSX_FIRE_NONE;}
 static void end_sound(msx_game_t *g,uint16_t word) {
-    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else g->world.sound_dropped++;
+    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
 }
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {
@@ -851,7 +852,7 @@ static void end_actors(msx_game_t *g,bool jump,bool fire) {
     for (unsigned p=0;p<2;p++) {g->world.ga_flags.rescued[p]=m->rescued[p];memcpy(g->world.pickup.score[p],m->score[p],4);}
     for (unsigned i=0;i<m->sound_count;i++) {
         if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=m->sounds[i];
-        else g->world.sound_dropped++;
+        else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
     }
     m->sound_count=0;
 }
@@ -1312,7 +1313,10 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         /* The bullet of the callback two ticks (one update) ago: its
          * constructor (01B782) runs one update after 00411C allocated it. */
         if (g->pistol_pending && !--g->pistol_pending)
-            for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {g->bullets[i]=g->pistol_next;break;}
+            for (unsigned i=0;i<=MSX_BULLETS;i++) {
+                if (i==MSX_BULLETS) {MSX_DIAG_POOL_FAIL(MSX_POOL_BULLET);break;}
+                if (!g->bullets[i].active) {g->bullets[i]=g->pistol_next;break;}
+            }
         if (g->pistol_wait) g->pistol_wait--;
         /* 0C3CD0: a new press (+9B bit 4) once the previous program wrote
          * +76; the pistol never fires while the button is merely held (hold2:

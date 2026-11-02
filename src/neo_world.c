@@ -5,6 +5,7 @@
 #include "neo_hit.h"
 #include "neo_collision.h"
 #include "neo_region.h"
+#include "msx_diag.h"
 #include "soldier_ai_tables.h"
 /* See neo_world.h. Every routine executed here is one of the translated and
  * fixture-verified pieces; this file only orders them as the original actor
@@ -56,15 +57,17 @@ typedef struct {
 } tick_t;
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
-    if (w->draw_count==NEO_WORLD_DRAWS) return;
+    if (w->draw_count==NEO_WORLD_DRAWS) {MSX_DIAG_POOL_FAIL(MSX_POOL_DRAW);return;}
     w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,t->draw_palette,t->draw_flash,t->draw_kind,0xff,0xff,d->z};
 }
 static bool insert(neo_world_t *w,unsigned at,neo_world_slot_t slot) {
-    if (w->order_count==NEO_WORLD_ORDER) return false;
+    if (w->order_count==NEO_WORLD_ORDER) {MSX_DIAG_POOL_FAIL(MSX_POOL_ORDER);return false;}
+    MSX_DIAG_CHECK(at<=w->order_count && slot.depth>0);
     memmove(&w->order[at+1],&w->order[at],(w->order_count-at)*sizeof(slot));
     w->order[at]=slot;w->order_count++;return true;
 }
 static void remove_at(neo_world_t *w,unsigned at) {
+    MSX_DIAG_CHECK(at<w->order_count);
     memmove(&w->order[at],&w->order[at+1],(w->order_count-at-1)*sizeof(w->order[0]));w->order_count--;
 }
 static int find(const neo_world_t *w,uint8_t kind,unsigned index) {
@@ -159,6 +162,7 @@ static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
     }
     if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
+    if (i==NEO_WORLD_SOLDIERS) MSX_DIAG_POOL_FAIL(MSX_POOL_SOLDIER);
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
     neo_soldier_spawn_t *p=&w->pending[i];memset(p,0,sizeof(*p));
     p->x=sp->x;p->y=sp->y;p->variant68=sp->variant68;p->group69=sp->group69;p->constructor=routine==SOLDIER_CONSTRUCTOR?0:routine;
@@ -169,7 +173,7 @@ static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
     w->spawned++;
 }
 static void sound_request(neo_world_t *w,uint16_t word) {
-    if (w->sound_count<NEO_WORLD_SOUNDS) w->sounds[w->sound_count++]=word;else w->sound_dropped++;
+    if (w->sound_count<NEO_WORLD_SOUNDS) w->sounds[w->sound_count++]=word;else {w->sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
 }
 /* ---- soldier events -------------------------------------------------------- */
 static void place(neo_contact_actor_t *a,const neo_contact_actor_t *source,int dx,int dy,
@@ -207,6 +211,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         break;
     case NEO_SOLDIER_EVENT_THROW: { /* 03BB8E: 00411C inserts after the script actor */
         unsigned i;for (i=0;i<NEO_WORLD_THROWS && w->throws[i].active;i++) {}
+        if (i==NEO_WORLD_THROWS) MSX_DIAG_POOL_FAIL(MSX_POOL_THROW);
         int at=find(w,NEO_WORLD_SCRIPT,0);
         if (i==NEO_WORLD_THROWS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_THROW,(uint8_t)i,1})) {w->overflow++;break;}
         /* neo_throw_spawn applies the (0,32) offset of 03BB8E; 03BBBC uses 24. */
@@ -220,6 +225,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
     }
     case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0: immediate child 040F88 */
         unsigned i;for (i=0;i<NEO_WORLD_SPLASHES && w->splashes[i].active;i++) {}
+        if (i==NEO_WORLD_SPLASHES) MSX_DIAG_POOL_FAIL(MSX_POOL_SPLASH);
         if (i==NEO_WORLD_SPLASHES || !insert(w,(unsigned)t->current+1,(neo_world_slot_t){NEO_WORLD_SPLASH,(uint8_t)i,(uint8_t)(w->order[t->current].depth+1u)})) {w->overflow++;break;}
         neo_world_splash_t *s=&w->splashes[i];memset(s,0,sizeof(*s));
         /* 01B242 copies flip bits 0..2; 01B220 negates the offset per flip. */
@@ -271,7 +277,7 @@ static int order_of_gactor(const neo_world_t *w,const neo_gactor_t *a) {return f
  * then 0040BC: +0C creator, +10 depth, +68 from the creator. */
 static neo_gactor_t *ga_alloc(neo_world_t *w,uint32_t routine,uint32_t creator_tag,uint8_t v68,uint8_t depth) {
     unsigned i;for (i=0;i<NEO_WORLD_GACTORS && w->gactors[i].active;i++) {}
-    if (i==NEO_WORLD_GACTORS) {w->overflow++;return NULL;}
+    if (i==NEO_WORLD_GACTORS) {w->overflow++;MSX_DIAG_POOL_FAIL(MSX_POOL_GACTOR);return NULL;}
     neo_gactor_t *a=&w->gactors[i];memset(a,0,sizeof(*a));a->index=(int16_t)i;a->active=true;
     ga_sl(a,0,routine);ga_sl(a,0x0c,creator_tag);ga_sw(a,0x10,depth);
     ga_sb(a,0x12,0xff);ga_sb(a,0x13,0xff);ga_sw(a,0x1e,0xffff);ga_sb(a,0x17,0xff);ga_sw(a,0x58,0xffff);
@@ -371,7 +377,7 @@ static void g_dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t 
     unsigned i=ga_b(a,0x6a);
     if (i==0xffu) { /* 0140D2: first free slot from 7 down */
         int k;for (k=NEO_KDYN_COUNT-1;k>=0 && (w->kernel.dyn[k].map || w->kernel.dyn[k].countdown);k--) {}
-        if (k<0) return;
+        if (k<0) {MSX_DIAG_POOL_FAIL(MSX_POOL_DYN);return;}
         i=(unsigned)k;ga_sb(a,0x6a,(uint8_t)i);
         w->kernel.dyn[i].map=m;
         neo_world_dyn_t *d=&w->dyn[i];memset(d,0,sizeof(*d));d->used=true;d->owner=a->index;
@@ -415,7 +421,7 @@ static void g_solid(void *ctx,neo_gactor_t *a,uint32_t desc) {
     uint8_t slot=ga_b(a,0x6b);
     if (slot==0xffu) {
         for (slot=0;slot<NEO_WORLD_SOLIDS && w->solids[slot].actor>=0;slot++) {}
-        if (slot==NEO_WORLD_SOLIDS) return;                            /* 004EB6 */
+        if (slot==NEO_WORLD_SOLIDS) {MSX_DIAG_POOL_FAIL(MSX_POOL_SOLID);return;}                            /* 004EB6 */
         ga_sb(a,0x6b,slot);
     } else if (slot>=NEO_WORLD_SOLIDS) {                               /* 004EC0: TRAP #15 */
         w->solid_unsupported++;ga_fail(&((tick_t *)ctx)->genv,0x4ec0);return;
@@ -470,7 +476,7 @@ static bool clip_bins(int16_t x,int16_t y,int16_t w,int16_t h,uint16_t *xbins,ui
 }
 /* 004C24: the next registry slot (none past 0x40). */
 static void reg_add(neo_world_t *w,uint8_t kind,unsigned index,uint16_t xb,uint8_t yb) {
-    if (w->reg_count>=COUNT(w->regs)) return;
+    if (w->reg_count>=COUNT(w->regs)) {MSX_DIAG_POOL_FAIL(MSX_POOL_REG);return;}
     w->regs[w->reg_count].kind=kind;w->regs[w->reg_count].index=(uint8_t)index;
     w->regs[w->reg_count].xbins=xb;w->regs[w->reg_count].ybins=yb;w->reg_count++;
 }
@@ -487,6 +493,7 @@ static void g_register(void *ctx,neo_gactor_t *a) {
     if (!d) {ga_fail(&t->genv,ga_l(a,0x50));return;}
     bool any=false;uint16_t xb=0;uint8_t yb=0;
     for (unsigned at=2;(d[at]<<8|d[at+1])!=0x8000;at+=8) any|=ga_rect_bins(a,d+at,&xb,&yb);
+    if (any && w->box_count>=NEO_WORLD_BOXES) MSX_DIAG_POOL_FAIL(MSX_POOL_BOX);
     if (any && w->box_count<NEO_WORLD_BOXES) {w->boxes[w->box_count].owner=(uint8_t)a->index;w->boxes[w->box_count].xbins=xb;w->boxes[w->box_count].ybins=yb;w->box_count++;}
     if (any) reg_add(w,NEO_WORLD_GACTOR,(unsigned)a->index,xb,yb);
 }
@@ -713,7 +720,7 @@ static uint16_t b_random(void *c) {(void)c;return neo_rng_next(&boss_tick_ctx->w
 static bool b_allocate(void *c,uint16_t reserve,uint8_t image[NEO_BOSS_FIELDS]) {
     neo_world_t *w=c;unsigned used=0;
     for (unsigned i=0;i<NEO_BOSS_NODES;i++) used+=w->boss.nodes[i].routine!=0;
-    if (NEO_BOSS_NODES-used<=reserve) return false;
+    if (NEO_BOSS_NODES-used<=reserve) {MSX_DIAG_POOL_FAIL(MSX_POOL_BOSS);return false;}
     memset(image,0,NEO_BOSS_FIELDS);
     image[0x12]=image[0x13]=0xff;image[0x17]=0xff;image[0x1e]=image[0x1f]=0xff;image[0x58]=image[0x59]=0xff;
     image[0x69]=image[0x6a]=image[0x6b]=0xff;
@@ -765,7 +772,7 @@ static bool b_platform(void *c,int16_t node,uint8_t slot,uint32_t table,const in
     unsigned i=slot;
     if (i==0xffu) {
         int k;for (k=NEO_KDYN_COUNT-1;k>=0 && (w->kernel.dyn[k].map || w->kernel.dyn[k].countdown);k--) {}
-        if (k<0) {*slot_out=0xff;return true;}
+        if (k<0) {MSX_DIAG_POOL_FAIL(MSX_POOL_DYN);*slot_out=0xff;return true;}
         i=(unsigned)k;memset(&w->dyn[i],0,sizeof(w->dyn[i]));w->dyn[i].used=true;w->dyn[i].owner=(int16_t)(0x4000|node);
     }
     if (i>=NEO_KDYN_COUNT) return false;
@@ -838,7 +845,7 @@ static bool b_attack(void *c,int16_t node,uint32_t rows,uint16_t *result) {
 static bool b_bounds(void *c,neo_cull_bounds_t *out) {(void)c;*out=boss_tick_ctx->bounds;return true;}
 static void b_draw(void *c,int16_t node,const neo_anim_draw_t *d) {
     neo_world_t *w=c;
-    if (w->draw_count==NEO_WORLD_DRAWS) return;
+    if (w->draw_count==NEO_WORLD_DRAWS) {MSX_DIAG_POOL_FAIL(MSX_POOL_DRAW);return;}
     const neo_boss_node_t *n=&w->boss.nodes[node];
     uint8_t slot=(uint8_t)(d->attributes>>8);
     w->draws[w->draw_count++]=(neo_world_draw_t){d->descriptor,d->x,d->y,d->attributes,slot<32?w->boss_palette[slot]:0,
@@ -1068,6 +1075,7 @@ static bool g_subscript(void *ctx,neo_gactor_t *a,uint32_t record) {
     for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (w->subs[i].used && w->subs[i].owner==a->index) sub=&w->subs[i];
     if (!sub) {
         for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS && !sub;i++) if (!w->subs[i].used) sub=&w->subs[i];
+        if (!sub) MSX_DIAG_POOL_FAIL(MSX_POOL_SUB);
         const uint8_t *code=ga_rom(record);
         if (!sub || !code) {ga_fail(&t->genv,record);return false;}
         sub->used=true;sub->owner=a->index;
@@ -1244,6 +1252,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     t.se=&se;t.sub_owner=-1;
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
+        MSX_DIAG_CHECK((slot.kind==NEO_WORLD_SOLDIER?slot.index<NEO_WORLD_SOLDIERS:slot.kind==NEO_WORLD_THROW?slot.index<NEO_WORLD_THROWS:
+            slot.kind==NEO_WORLD_SPLASH?slot.index<NEO_WORLD_SPLASHES:slot.kind==NEO_WORLD_GACTOR?slot.index<NEO_WORLD_GACTORS && w->gactors[slot.index].active:
+            slot.kind<=NEO_WORLD_BOSS));
         if (slot.kind==NEO_WORLD_GACTOR && w->gactors[slot.index].placeholder) {
             /* 00417E: freed once no deeper node follows it. */
             if (at+1u<w->order_count && w->order[at+1u].depth>slot.depth) {at++;continue;}
@@ -1310,17 +1321,17 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     return t.hits;
 }
 bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,uint8_t angle,uint8_t player) {
-    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,0,0,angle,player,0,false,false,0};
     return true;
 }
 bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
-    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0};
     return true;
 }
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {
-    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;return false;}
+    if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,angle,player,flags15,false,true,f5e};
     return true;
 }

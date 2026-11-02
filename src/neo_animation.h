@@ -21,17 +21,26 @@ typedef enum { NEO_ANIM_WAIT,NEO_ANIM_POSE,NEO_ANIM_JUMP,NEO_ANIM_FIELD50,
      * (provenance only), target = parameter word. */
     NEO_ANIM_SET_BYTE,NEO_ANIM_SET_WORD,NEO_ANIM_SET_LONG,NEO_ANIM_DEC_BYTE,
     NEO_ANIM_COND_JUMP,NEO_ANIM_SWITCH,NEO_ANIM_SOUND,NEO_ANIM_CALL } neo_anim_kind_t;
-/* Packed to 12 bytes (was 16): ~30k converted commands live in the program
- * image, so the layout is a RAM budget item (docs/RENDIMIENTO.md). Field
- * order and values are unchanged; asset is read unaligned. */
-typedef struct __attribute__((packed,aligned(4))) {
+/* Packed to 10 bytes (16, then 12): ~34k converted commands live in the
+ * program image, so the layout is a RAM budget item (docs/RENDIMIENTO.md).
+ * Field order is unchanged. asset shares the first word with the kind as a
+ * signed 24-bit field: every value is a 68K address (24 bits, < 0x800000) or
+ * a SET_LONG/WRITE_LONG constant that is a sign-extended 24-bit number
+ * (0xFFFE000B...); reading it gives the 32-bit value back. The generators
+ * check the range (tools/compile_soldier_ai_tables.py, compile_boss_tables.py,
+ * compile_marco_campaign.py) and write such constants as negative numbers. */
+typedef struct __attribute__((packed,aligned(2))) {
     neo_anim_kind_t kind:8;
-    uint32_t asset;
+    int32_t asset:24;
     uint16_t target;
     uint8_t operand,flags;
     int8_t dx,dy;
 } neo_anim_command_t;
-_Static_assert(sizeof(neo_anim_command_t)==12,"neo_anim_command_t layout");
+_Static_assert(sizeof(neo_anim_command_t)==10,"neo_anim_command_t layout");
+/* An asset value as a table initializer (generators; negative when the
+ * 32-bit value is a sign-extended 24-bit constant). */
+#define NEO_ANIM_ASSET_MIN (-0x800000)
+#define NEO_ANIM_ASSET_MAX 0x7fffff
 typedef struct { const neo_anim_command_t *commands; uint16_t count; } neo_anim_program_t;
 typedef struct {
     const neo_anim_program_t *program;

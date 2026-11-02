@@ -7,6 +7,7 @@
 #include "msx_audio.h"
 #include "game_audio.h"
 #include "msx_perf.h"
+#include "msx_diag.h"
 #include "neogeo_logo.h"
 #include "msx_ramfs.h"
 #include "marco_renderer.h"
@@ -187,6 +188,7 @@ static void load_page(FILE *file, unsigned page) {
 #endif
 int main(void) {
     debug_init_emulog();
+    msx_diag_init();   /* MSX_DIAG builds: ring dump on assertion/exception */
     console_init();
     if (dfs_init(DFS_DEFAULT_LOCATION) != DFS_ESUCCESS) fail("DragonFS");
 #if MSX_GRAPHICS_LAB

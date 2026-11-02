@@ -82,6 +82,14 @@ void msx_diag_stop(msx_diag_stop_t kind,unsigned count,uint32_t routine);
 void msx_diag_dump(const char *reason);
 void msx_diag_check_failed(const char *file,int line,const char *expr);
 void msx_diag_set_frame(uint32_t frame);
+/* Player trail (B14): one entry per player update (x, y in pixels, the
+ * horizontal speed in 1/256 px, flags MSX_TRAIL_*), the last
+ * MSX_DIAG_TRAIL printed by msx_diag_trail_dump (each fall rescue or fall
+ * death of the reference cartridge, within the 16-dump limit). */
+#define MSX_DIAG_TRAIL 48
+enum {MSX_TRAIL_GROUND=1,MSX_TRAIL_RIDE=2,MSX_TRAIL_WALL=4,MSX_TRAIL_KLAND=8,MSX_TRAIL_PUSH=16,MSX_TRAIL_AIR=32};
+void msx_diag_trail(int x,int y,int vx,unsigned flags,uint8_t dyn_mask);
+void msx_diag_trail_dump(const char *reason);
 /* Cheap consistency checks (pool indices, list links), diagnostic builds only. */
 #define MSX_DIAG_CHECK(expr) ((expr)?(void)0:msx_diag_check_failed(__FILE__,__LINE__,#expr))
 #define MSX_DIAG_POOL_FAIL(pool) msx_diag_pool_fail(pool)
@@ -92,6 +100,8 @@ static inline void msx_diag_pool_sample(msx_diag_pool_t pool,unsigned used) {(vo
 static inline void msx_diag_stop(msx_diag_stop_t kind,unsigned count,uint32_t routine) {(void)kind;(void)count;(void)routine;}
 static inline void msx_diag_dump(const char *reason) {(void)reason;}
 static inline void msx_diag_set_frame(uint32_t frame) {(void)frame;}
+static inline void msx_diag_trail(int x,int y,int vx,unsigned flags,uint8_t dyn_mask) {(void)x;(void)y;(void)vx;(void)flags;(void)dyn_mask;}
+static inline void msx_diag_trail_dump(const char *reason) {(void)reason;}
 #define MSX_DIAG_CHECK(expr) ((void)0)
 #define MSX_DIAG_POOL_FAIL(pool) ((void)0)
 #endif

@@ -947,7 +947,7 @@ check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture
 	$(BUILD_DIR)/host/scene-pack romfs/scene.pack
 	python3 tools/test_marco_sprite_edges.py
 	$(BUILD_DIR)/host/collision
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/vehicle
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/vehicle
 	$(BUILD_DIR)/host/vehicle
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_contact.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o $(BUILD_DIR)/host/contact
 	$(BUILD_DIR)/host/contact
@@ -967,6 +967,9 @@ check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture
 	$(BUILD_DIR)/host/kernel
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_stairs.c src/neo_kernel.c src/neo_collision.c -o $(BUILD_DIR)/host/m2stairs
 	$(BUILD_DIR)/host/m2stairs
+	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
+	$(BUILD_DIR)/host/m2wall
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_soldier_ai.c src/neo_soldier_ai.c src/neo_blood.c src/neo_target.c src/neo_kernel.c src/neo_collision.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c -o $(BUILD_DIR)/host/soldier_ai
 	$(BUILD_DIR)/host/soldier_ai
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DTICK_FIXTURE_HEADER='"soldier_death_tick_fixture.h"' -DTICK_MAX_EXTERNAL=0 tools/test_neo_soldier_ai.c src/neo_soldier_ai.c src/neo_blood.c src/neo_target.c src/neo_kernel.c src/neo_collision.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c -o $(BUILD_DIR)/host/soldier_death

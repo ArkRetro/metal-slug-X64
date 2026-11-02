@@ -74,7 +74,7 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
         int tx=g->pilot.kind==2?g->pilot.take_x:g->pilot.goal_x;
         if (g->pilot.kind==1 || abs(X-tx)>3) {*direction=X<tx-2?1:X>tx+2?-1:0;return;}
         g->pilot.air_dir=g->pilot.jdir;g->pilot.pre_dir=g->pilot.jpre;g->pilot.air_y=g->pilot.jair_y;
-        *direction=g->pilot.pre_dir;*jump=true;g->pilot.jumps++;g->pilot.kind=0;return;
+        *direction=g->pilot.pre_dir;*jump=true;g->pilot.jumps++;g->pilot.kind=0;g->pilot.why=1;g->pilot.from_x=(int16_t)X;g->pilot.from_y=(int16_t)Y;return;
     }
     g->pilot.kind=0;g->pilot.plan_tick=(uint16_t)g->ticks;
     /* The floors: columns around the player, rows from 24 below it. */
@@ -93,7 +93,12 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
             if (i==X/8-c0 && (self<0 || abs(h-Y)<abs(ap_h[self]-Y))) self=n;
         }
     }
-    if (self<0 || abs(ap_h[self]-Y)>8) {*direction=g->pilot.pre_dir?g->pilot.pre_dir:1;if (g->pilot.still>40) *jump=(g->ticks&8)!=0;return;}
+    if (self<0 || abs(ap_h[self]-Y)>8) {
+        *direction=g->pilot.pre_dir?g->pilot.pre_dir:1;
+        if (g->pilot.still>40) *jump=(g->ticks&8)!=0;
+        if (*jump) {g->pilot.why=2;g->pilot.from_x=(int16_t)X;g->pilot.from_y=(int16_t)Y;g->pilot.to_x=g->pilot.to_y=0;}
+        return;
+    }
     /* Cheapest paths (walk 1, jump 3) by cost levels. */
     /* Dial's buckets: the count of nodes per cost skips empty levels. */
     uint16_t at_level[256];memset(at_level,0,sizeof at_level);
@@ -125,7 +130,10 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
     g->pilot.plans++;
     if (best<0 || best==self) {
         *direction=0;
-        if (!best_inside && g->pilot.still>90) {*direction=(g->ticks&256)?1:-1;*jump=(g->ticks&16)!=0;}
+        if (!best_inside && g->pilot.still>90) {
+            *direction=(g->ticks&256)?1:-1;*jump=(g->ticks&16)!=0;
+            if (*jump) {g->pilot.why=3;g->pilot.from_x=(int16_t)X;g->pilot.from_y=(int16_t)Y;g->pilot.to_x=g->pilot.to_y=0;}
+        }
         return;
     }
     /* The first jump of the path: walk to its take-off, then jump. */
@@ -140,11 +148,11 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
     int tx=(c0+jfrom/AP_PER)*8+4,lx=(c0+jto/AP_PER)*8+4,dy=ap_h[jto]-ap_h[jfrom];
     /* Jump: up a ledge close above, rise first; else the whole way across. */
     int dir=lx>tx+2?1:lx<tx-2?-1:0;
-    g->pilot.take_x=(int16_t)tx;g->pilot.kind=2;g->pilot.jdir=(int8_t)dir;
+    g->pilot.take_x=(int16_t)tx;g->pilot.kind=2;g->pilot.jdir=(int8_t)dir;g->pilot.to_x=(int16_t)lx;g->pilot.to_y=ap_h[jto];
     g->pilot.jpre=(int8_t)(dy>24 && abs(lx-tx)<=40?0:dir);g->pilot.jair_y=(int16_t)(ap_h[jto]+4);
     if (abs(X-tx)>3) {*direction=X<tx?1:-1;return;}
     g->pilot.air_dir=g->pilot.jdir;g->pilot.pre_dir=g->pilot.jpre;g->pilot.air_y=g->pilot.jair_y;g->pilot.kind=0;
-    *direction=g->pilot.pre_dir;*jump=true;g->pilot.jumps++;
+    *direction=g->pilot.pre_dir;*jump=true;g->pilot.jumps++;g->pilot.why=1;g->pilot.from_x=(int16_t)X;g->pilot.from_y=(int16_t)Y;
 }
 /* Blocked on the ground (a soldier's solid body 0E1B4E at an edge): jump
  * the way it walks. */
@@ -156,6 +164,7 @@ void msx_game_autopilot(msx_game_t *g,int *direction,bool *jump) {
          * ledge (stage 3's stair at x 415: a long jump left fell to the
          * floor under the camera, which never comes back). */
         *jump=true;g->pilot.air_dir=(int8_t)*direction;g->pilot.pre_dir=0;
+        g->pilot.why=4;g->pilot.from_x=(int16_t)((g->x)>>16);g->pilot.from_y=(int16_t)((56*MSX_UNIT-g->y)>>16);g->pilot.to_x=g->pilot.to_y=0;
         g->pilot.air_y=(int16_t)(((56*MSX_UNIT-g->y)>>16)+40);g->pilot.still=0;g->pilot.kind=0;*direction=0;
     }
 }

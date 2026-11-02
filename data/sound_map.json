@@ -95,7 +95,7 @@
    "callers": [
     "0294AC"
    ],
-   "event": "vehicle destroyed, health 0 (ROM 0294A2 via 012192: 0x0C then 0x10A5). Rendered silent: 0x10A5 alone is a continuous (looping) sound started when the vehicle appears (ROM 029220) and 0x0C+0x10A5 stops it. Not packed: the native vehicle has no appearance event and the engine loop point was not measured."
+   "event": "vehicle destroyed, health 0 (ROM 0294A2 via 012192: 0x0C then 0x10A5). Rendered silent: 0x0C+0x10A5 stops the engine 0x10A5 (sfx_10a5, an 11.58 s one-shot started by the truck 029220); the port sends it as the stop request 0x10A5|0x8000 (neo_truck.c)"
   },
   {
    "label": "vehicle_burst",
@@ -247,7 +247,8 @@
    "label": "sfx_10a5",
    "word": "10A5",
    "callers": [],
-   "event": "requested by the native world actors at ROM 02916E (port host traversal of tools/test_gameplay.c)"
+   "event": "the truck 02916E's engine (0120F8 at 029220/029428, also 0296C0; 012192 stops it at 02935C/0294A2). A one-shot of 11.58 s, not a loop: the 300-frame window ended inside it (B20, render with 1500 frames: OK, silent after)",
+   "frames": 1500
   },
   {
    "label": "sfx_1072",
@@ -259,7 +260,8 @@
    "label": "sfx_1026",
    "word": "1026",
    "callers": [],
-   "event": "requested by the native world actors at ROM 054A2E (port host traversal of tools/test_gameplay.c)"
+   "event": "the dome building's collapse 054A2E (0120F8 at 054A60; also 022B56, 046C40, 04A9D4, 0A13DA; never stopped by 012192). A one-shot of 6.16 s, not a loop: the 300-frame window ended inside it (B20, render with 1500 frames: OK, silent after)",
+   "frames": 1500
   },
   {
    "label": "sfx_1142",
@@ -556,6 +558,14 @@
     "0C2D96"
    ],
    "event": "Marco's death voice: 0C2956 (hit death) and 0C2D6A (fall death) request table 0C294E[+6E] (Marco 1123, Tarma 1087, Eri 1125, Fio 114E) before anything else (MAME capboss: 1123 at every death, return 0C2D96)"
+  },
+  {
+   "label": "sfx_1132",
+   "word": "1132",
+   "callers": [
+    "060888"
+   ],
+   "event": "MISSION 2 START voice: the letters 0607DE request 607D2[mission] at 060878 (0120F8; 607D2 = 1131..1136 for Missions 1..6; Mission 1's 1131 is in the entry audio). MAME sec01_19391: 1132 at 19428, return 060888"
   }
  ]
 }

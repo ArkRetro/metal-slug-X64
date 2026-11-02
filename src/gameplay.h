@@ -85,7 +85,7 @@ typedef struct {
      * 016DCE until 01891E selects the next mission. */
     neo_mission_t flow;
     bool start_letters;unsigned start_stops;   /* MISSION n START 0607DE in end (descent, 01860A) */
-    unsigned start_voices;                     /* its voice 607D2[mission] not requested (no render) */
+    unsigned start_voices;                     /* its voice 607D2[mission] requested without a render (msx_sfx_lookup) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
@@ -195,7 +195,8 @@ typedef struct {
      * 0C2D6A) and in the descent (0C15C6). */
     uint16_t depth1e;
     /* Reference build only (msx_autopilot.h): the test's stage-3 pilot. */
-    struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;} pilot;
+    struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;
+        uint8_t why;int16_t from_x,from_y,to_x,to_y;} pilot;   /* why/from/to: the last jump (B14 fall log) */
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);

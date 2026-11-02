@@ -92,6 +92,10 @@ worker=threading.Thread(target=pad,daemon=True);tapper=threading.Thread(target=b
 try:
     tapper.start()
     wait_for('MSX v10 scene loaded',timeout=400)
+    # The next line of the log: read again for a moment (the log can be
+    # read between the two lines).
+    deadline=time.monotonic()+10
+    while 'MSX reference build: player invulnerable' not in log() and time.monotonic()<deadline:time.sleep(.05)
     assert 'MSX reference build: player invulnerable' in log(),'run the Mission 2 reference cartridge (make mslugx-m2-reference.z64)'
     wait_for('MSX first frame ready')
     m=wait_for(r'MSX stage load mission 2 stage 1: .*',timeout=120);print(m.group(0))

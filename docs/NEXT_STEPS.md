@@ -104,3 +104,26 @@
     `/home/user/metal-slug-X64/filesystem/audio`, ya con `sfx_1123.wav64`):
     comprobar `MSX AUDIO game sounds=71/71` y `MSX CACHE slots` ≥ 208 en las
     dos ROM de referencia.
+11. **Rama `work-m2fix5`:**
+    - B14 etapa 2 (x 2281): la parada en pared del barrido de suelo toma
+      x/y (MISION2.md, «Caída en x 2281 resuelta»). Etapa 3 (x 348/490/611):
+      ver BUG_MATRIX B14.
+    - B35: voz MISSION 2 START `1132` pedida por las letras, de `rom:/`.
+    - B20: `10A5` y `1026` no son bucles (11,6 s y 6,2 s); `10A5` de
+      `rom:/`; `1026` sin política (sus pares unen dos canales del port).
+    Al reconstruir en `/home/user/ws-logo` (audio compartido ya con
+    `sfx_1132`, `sfx_10a5`, `sfx_1026`): `MSX AUDIO game sounds=73/73`,
+    `MSX CACHE slots=209` en la referencia de la M2.
+12. **Pendiente de `work-m2fix5` (B14 etapa 3 y B17):** parche local
+    `scratchpad/f5/b17-pilot.patch` (sin fusionar):
+    - B17: `neo_jump_vx` (`neo_motion.h`): salto sin dirección → +30 = 0
+      (`0C2654`); `test_m2_stairs` comprueba los 17 pasos del plan eE.
+    - Piloto: despegar con la dirección del salto salvo repisa encima a
+      ≤ 24 px (`ap_takeoff`), registro `MSX pilot jump`.
+    Con B17 solo, el piloto de la etapa 3 saltaba en vertical en x 284 sin
+    avanzar (recorrido sin terminar); con el parche del piloto el recorrido
+    de 400 s se quedó en la puerta de la etapa 2 (x 2655; con 400 s la
+    etapa 2 a veces no termina): falta un recorrido de la etapa 3 con
+    `--stage-seconds 800`. La caída x 616 es el salto «bloqueado» del piloto
+    sobre el soldado de la cuerda `082DB0`: mejorar esa regla (disparar o
+    esperar en vez de saltar al hueco x 632..663).

@@ -430,6 +430,19 @@ Misiones 1 y 2: B16) se leen de `rom:/` como `115A`. `1130` era residente
 referencia de la M2 quedó en 207 ranuras (suelo 208, aserción en
 `scene_assets_begin`): `1130` también se lee de `rom:/`.
 
+## 15. Voz al coger el molotov (B35, rama `work-molotov`)
+
+`0C0A7C` pide `0C0A66[tipo]` (`0000 1157 1156 1155`): `1156` para el
+molotov, después del `1124` de `0C0B32`. `sfx_1156` en
+`data/sound_map.json`; render aislado (`render_sound_commands.py --labels
+sfx_1156` a un directorio aparte, `pack_game_audio.py --source` ese
+directorio): 1,568 s, `OK`, latencia 12,9 ms, WAV64 de 21 392 bytes. Pares
+(`measure_sound_pairs.py --pairs`, 145: consigo misma y contra las 72
+etiquetas en los dos órdenes; en `data/sound_pairs.json`): corta `1124`
+(y cae si `1124` va después), corta y es cortada como las otras voces de
+recogida. `derive_sound_policy.py`: `ch_1056`, nivel 1; ningún otro sonido
+cambia. Se lee de `rom:/` (rara, como `1130`).
+
 ## Regenerar
 
 ```sh

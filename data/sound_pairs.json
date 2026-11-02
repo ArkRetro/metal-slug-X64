@@ -1,5 +1,5 @@
 {
- "source": "MAME 0.264 isolated pair renders, tools/measure_sound_pairs.py (spacing 12 frames): round 1 every new label with itself and against pistol/explosion/rebel_1041 (both orders), round 2 explicit pairs; B30 (work-m2fix3): sfx_1123 (Marco's death voice) with itself and against every label of the policy in both orders (133 pairs); B36 (work-m2fix6): sfx_1130 (L pickup voice, 0C08F8 ids 06/0B), sfx_115b (id 0E) and sfx_1159 (id 0F) with themselves, each other and every label of the policy in both orders (411 pairs)",
+ "source": "MAME 0.264 isolated pair renders, tools/measure_sound_pairs.py (spacing 12 frames): round 1 every new label with itself and against pistol/explosion/rebel_1041 (both orders), round 2 explicit pairs; B30 (work-m2fix3): sfx_1123 (Marco's death voice) with itself and against every label of the policy in both orders (133 pairs); B36 (work-m2fix6): sfx_1130 (L pickup voice, 0C08F8 ids 06/0B), sfx_115b (id 0E) and sfx_1159 (id 0F) with themselves, each other and every label of the policy in both orders (411 pairs); B35 (work-molotov): sfx_1156 (molotov pickup voice) with itself and against every label of the policy in both orders (145 pairs)",
  "pairs": {
   "sfx_1022>sfx_1022": {
    "wave": {
@@ -49433,6 +49433,2471 @@
     "second": "cut",
     "second_error": 0.272,
     "margin": 0.067
+   }
+  },
+  "sfx_1156>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2363.1,
+    "second": "overlap",
+    "second_residual": 3679.9,
+    "mix_rms": 3221.1,
+    "latency_b": 12.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.037,
+    "second": "overlap",
+    "second_error": 0.338,
+    "margin": 0.301
+   }
+  },
+  "sfx_1156>explosion": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3005.7,
+    "second": "overlap",
+    "second_residual": 3227.4,
+    "mix_rms": 3437.5,
+    "latency_b": 14.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.181,
+    "margin": 0.17
+   }
+  },
+  "explosion>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2280.0,
+    "second": "cut",
+    "second_residual": 2408.5,
+    "mix_rms": 3268.3,
+    "latency_b": 15.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.037,
+    "second": "cut",
+    "second_error": 0.077,
+    "margin": 0.04
+   }
+  },
+  "sfx_1156>knife_hit": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3009.1,
+    "second": "overlap",
+    "second_residual": 3288.7,
+    "mix_rms": 3442.8,
+    "latency_b": 11.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.183,
+    "margin": 0.168
+   }
+  },
+  "knife_hit>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2137.6,
+    "second": "cut",
+    "second_residual": 2235.3,
+    "mix_rms": 3280.6,
+    "latency_b": 11.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.059,
+    "margin": 0.031
+   }
+  },
+  "sfx_1156>pistol": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2521.5,
+    "second": "drop",
+    "second_residual": 2695.3,
+    "mix_rms": 3366.8,
+    "latency_b": 13.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.009,
+    "second": "drop",
+    "second_error": 0.159,
+    "margin": 0.15
+   }
+  },
+  "pistol>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2173.7,
+    "second": "cut",
+    "second_residual": 2265.3,
+    "mix_rms": 3205.8,
+    "latency_b": 14.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.038,
+    "second": "cut",
+    "second_error": 0.065,
+    "margin": 0.027
+   }
+  },
+  "sfx_1156>rebel_103e": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3024.1,
+    "second": "overlap",
+    "second_residual": 3234.3,
+    "mix_rms": 4464.4,
+    "latency_b": 11.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.327,
+    "margin": 0.312
+   }
+  },
+  "rebel_103e>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2217.4,
+    "second": "drop",
+    "second_residual": 3024.6,
+    "mix_rms": 4227.6,
+    "latency_b": 11.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.049,
+    "second": "cut",
+    "second_error": 0.231,
+    "margin": 0.183
+   }
+  },
+  "sfx_1156>rebel_1041": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2966.5,
+    "second": "overlap",
+    "second_residual": 3311.9,
+    "mix_rms": 4326.4,
+    "latency_b": 13.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.012,
+    "second": "drop",
+    "second_error": 0.291,
+    "margin": 0.279
+   }
+  },
+  "rebel_1041>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2190.9,
+    "second": "drop",
+    "second_residual": 3065.0,
+    "mix_rms": 4167.3,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.025,
+    "second": "cut",
+    "second_error": 0.14,
+    "margin": 0.115
+   }
+  },
+  "sfx_1156>sfx_1021": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3062.4,
+    "second": "overlap",
+    "second_residual": 3344.5,
+    "mix_rms": 4160.4,
+    "latency_b": 10.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.035,
+    "second": "cut",
+    "second_error": 0.175,
+    "margin": 0.139
+   }
+  },
+  "sfx_1021>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2106.4,
+    "second": "drop",
+    "second_residual": 3025.3,
+    "mix_rms": 4085.1,
+    "latency_b": 12.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.022,
+    "second": "cut",
+    "second_error": 0.318,
+    "margin": 0.297
+   }
+  },
+  "sfx_1156>sfx_1022": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3012.9,
+    "second": "overlap",
+    "second_residual": 3337.4,
+    "mix_rms": 3564.4,
+    "latency_b": 16.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.21,
+    "margin": 0.198
+   }
+  },
+  "sfx_1022>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2148.4,
+    "second": "cut",
+    "second_residual": 2416.9,
+    "mix_rms": 3397.4,
+    "latency_b": 14.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.012,
+    "second": "cut",
+    "second_error": 0.076,
+    "margin": 0.063
+   }
+  },
+  "sfx_1156>sfx_1025": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2482.5,
+    "second": "cut",
+    "second_residual": 3028.0,
+    "mix_rms": 3938.7,
+    "latency_b": 11.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.273,
+    "margin": 0.261
+   }
+  },
+  "sfx_1025>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2416.3,
+    "second": "cut",
+    "second_residual": 2986.0,
+    "mix_rms": 3777.5,
+    "latency_b": 11.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.023,
+    "second": "cut",
+    "second_error": 0.214,
+    "margin": 0.192
+   }
+  },
+  "sfx_1156>sfx_102c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3138.4,
+    "second": "overlap",
+    "second_residual": 3368.3,
+    "mix_rms": 4016.1,
+    "latency_b": 13.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.027,
+    "second": "cut",
+    "second_error": 0.195,
+    "margin": 0.168
+   }
+  },
+  "sfx_102c>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2105.4,
+    "second": "cut",
+    "second_residual": 2952.9,
+    "mix_rms": 3846.0,
+    "latency_b": 14.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.029,
+    "second": "cut",
+    "second_error": 0.285,
+    "margin": 0.257
+   }
+  },
+  "sfx_1156>sfx_102f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2515.9,
+    "second": "overlap",
+    "second_residual": 2724.4,
+    "mix_rms": 3811.1,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "cut",
+    "second_error": 0.102,
+    "margin": 0.055
+   }
+  },
+  "sfx_102f>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2102.4,
+    "second": "drop",
+    "second_residual": 2597.6,
+    "mix_rms": 3939.9,
+    "latency_b": 10.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "drop",
+    "second_error": 0.101,
+    "margin": 0.082
+   }
+  },
+  "sfx_1156>sfx_1032": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2003.1,
+    "second": "overlap",
+    "second_residual": 2168.2,
+    "mix_rms": 4300.9,
+    "latency_b": 11.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.073,
+    "second": "cut",
+    "second_error": 0.104,
+    "margin": 0.032
+   }
+  },
+  "sfx_1032>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1524.4,
+    "second": "drop",
+    "second_residual": 2117.6,
+    "mix_rms": 4379.3,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.006,
+    "second": "drop",
+    "second_error": 0.051,
+    "margin": 0.045
+   }
+  },
+  "sfx_1156>sfx_1034": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2698.7,
+    "second": "overlap",
+    "second_residual": 2925.4,
+    "mix_rms": 4981.7,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.031,
+    "second": "cut",
+    "second_error": 0.076,
+    "margin": 0.045
+   }
+  },
+  "sfx_1034>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2096.2,
+    "second": "drop",
+    "second_residual": 2622.0,
+    "mix_rms": 5159.8,
+    "latency_b": 14.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.067,
+    "margin": 0.057
+   }
+  },
+  "sfx_1156>sfx_1035": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 3056.6,
+    "second": "cut",
+    "second_residual": 3412.3,
+    "mix_rms": 4559.3,
+    "latency_b": 11.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.029,
+    "second": "cut",
+    "second_error": 0.206,
+    "margin": 0.177
+   }
+  },
+  "sfx_1035>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2279.5,
+    "second": "drop",
+    "second_residual": 3140.0,
+    "mix_rms": 4358.9,
+    "latency_b": 12.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.026,
+    "second": "cut",
+    "second_error": 0.33,
+    "margin": 0.304
+   }
+  },
+  "sfx_1156>sfx_1048": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2947.5,
+    "second": "overlap",
+    "second_residual": 3288.3,
+    "mix_rms": 3316.4,
+    "latency_b": 14.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.052,
+    "margin": 0.039
+   }
+  },
+  "sfx_1048>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2284.3,
+    "second": "cut",
+    "second_residual": 2284.3,
+    "mix_rms": 3162.3,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.024,
+    "margin": 0.0
+   }
+  },
+  "sfx_1156>sfx_104a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3129.6,
+    "second": "overlap",
+    "second_residual": 3339.7,
+    "mix_rms": 4684.8,
+    "latency_b": 11.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "drop",
+    "second_error": 0.353,
+    "margin": 0.334
+   }
+  },
+  "sfx_104a>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2193.6,
+    "second": "drop",
+    "second_residual": 3023.7,
+    "mix_rms": 4422.0,
+    "latency_b": 11.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.039,
+    "second": "cut",
+    "second_error": 0.307,
+    "margin": 0.267
+   }
+  },
+  "sfx_1156>sfx_104f": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2820.1,
+    "second": "cut",
+    "second_residual": 3110.9,
+    "mix_rms": 4260.6,
+    "latency_b": 14.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.185,
+    "margin": 0.165
+   }
+  },
+  "sfx_104f>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2225.7,
+    "second": "drop",
+    "second_residual": 3096.2,
+    "mix_rms": 4048.8,
+    "latency_b": 14.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.022,
+    "second": "cut",
+    "second_error": 0.302,
+    "margin": 0.281
+   }
+  },
+  "sfx_1156>sfx_1056": {
+   "wave": {
+    "mode": "drop",
+    "residual": 36.3,
+    "second": "overlap",
+    "second_residual": 1425.7,
+    "mix_rms": 3189.3,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.0,
+    "second": "overlap",
+    "second_error": 0.069,
+    "margin": 0.069
+   }
+  },
+  "sfx_1056>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2353.0,
+    "second": "cut",
+    "second_residual": 2353.0,
+    "mix_rms": 3341.4,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.062,
+    "second": "cut",
+    "second_error": 0.062,
+    "margin": 0.0
+   }
+  },
+  "sfx_1156>sfx_105d": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2712.9,
+    "second": "overlap",
+    "second_residual": 2976.3,
+    "mix_rms": 3741.2,
+    "latency_b": 14.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.068,
+    "second": "cut",
+    "second_error": 0.222,
+    "margin": 0.154
+   }
+  },
+  "sfx_105d>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2140.3,
+    "second": "drop",
+    "second_residual": 2996.8,
+    "mix_rms": 3871.5,
+    "latency_b": 12.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.02,
+    "second": "drop",
+    "second_error": 0.221,
+    "margin": 0.201
+   }
+  },
+  "sfx_1156>sfx_1064": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3007.6,
+    "second": "overlap",
+    "second_residual": 3276.5,
+    "mix_rms": 3945.6,
+    "latency_b": 12.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.026,
+    "second": "cut",
+    "second_error": 0.282,
+    "margin": 0.257
+   }
+  },
+  "sfx_1064>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2244.9,
+    "second": "cut",
+    "second_residual": 2859.8,
+    "mix_rms": 3740.5,
+    "latency_b": 12.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.025,
+    "second": "cut",
+    "second_error": 0.257,
+    "margin": 0.232
+   }
+  },
+  "sfx_1156>sfx_1067": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2945.5,
+    "second": "overlap",
+    "second_residual": 3295.2,
+    "mix_rms": 3911.5,
+    "latency_b": 16.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "drop",
+    "second_error": 0.296,
+    "margin": 0.272
+   }
+  },
+  "sfx_1067>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1742.0,
+    "second": "cut",
+    "second_residual": 2450.0,
+    "mix_rms": 3709.9,
+    "latency_b": 9.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.043,
+    "second": "cut",
+    "second_error": 0.269,
+    "margin": 0.226
+   }
+  },
+  "sfx_1156>sfx_1069": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2498.9,
+    "second": "drop",
+    "second_residual": 2643.6,
+    "mix_rms": 3318.5,
+    "latency_b": 11.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.133,
+    "margin": 0.122
+   }
+  },
+  "sfx_1069>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2330.6,
+    "second": "cut",
+    "second_residual": 2345.0,
+    "mix_rms": 3164.8,
+    "latency_b": 11.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.045,
+    "margin": 0.017
+   }
+  },
+  "sfx_1156>sfx_1072": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2826.2,
+    "second": "overlap",
+    "second_residual": 3085.3,
+    "mix_rms": 3929.2,
+    "latency_b": 16.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.077,
+    "second": "cut",
+    "second_error": 0.248,
+    "margin": 0.171
+   }
+  },
+  "sfx_1072>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2248.9,
+    "second": "drop",
+    "second_residual": 3052.7,
+    "mix_rms": 3969.7,
+    "latency_b": 12.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.023,
+    "second": "drop",
+    "second_error": 0.255,
+    "margin": 0.232
+   }
+  },
+  "sfx_1156>sfx_1073": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1872.0,
+    "second": "cut",
+    "second_residual": 2107.3,
+    "mix_rms": 4174.1,
+    "latency_b": 15.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.075,
+    "second": "cut",
+    "second_error": 0.16,
+    "margin": 0.085
+   }
+  },
+  "sfx_1073>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1652.8,
+    "second": "drop",
+    "second_residual": 2321.5,
+    "mix_rms": 4290.9,
+    "latency_b": 12.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.101,
+    "margin": 0.091
+   }
+  },
+  "sfx_1156>sfx_1074": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2266.9,
+    "second": "cut",
+    "second_residual": 2599.2,
+    "mix_rms": 3443.9,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.04,
+    "second": "cut",
+    "second_error": 0.211,
+    "margin": 0.172
+   }
+  },
+  "sfx_1074>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2007.9,
+    "second": "cut",
+    "second_residual": 2763.5,
+    "mix_rms": 3570.9,
+    "latency_b": 10.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "drop",
+    "second_error": 0.225,
+    "margin": 0.197
+   }
+  },
+  "sfx_1156>sfx_1075": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3032.2,
+    "second": "overlap",
+    "second_residual": 3222.5,
+    "mix_rms": 3490.3,
+    "latency_b": 9.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.016,
+    "second": "drop",
+    "second_error": 0.201,
+    "margin": 0.184
+   }
+  },
+  "sfx_1075>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2268.1,
+    "second": "cut",
+    "second_residual": 2460.1,
+    "mix_rms": 3345.6,
+    "latency_b": 10.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.054,
+    "second": "cut",
+    "second_error": 0.096,
+    "margin": 0.042
+   }
+  },
+  "sfx_1156>sfx_1084": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2588.7,
+    "second": "drop",
+    "second_residual": 2952.2,
+    "mix_rms": 3515.5,
+    "latency_b": 11.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.202,
+    "margin": 0.191
+   }
+  },
+  "sfx_1084>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2187.0,
+    "second": "cut",
+    "second_residual": 2308.0,
+    "mix_rms": 3340.7,
+    "latency_b": 12.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.033,
+    "second": "cut",
+    "second_error": 0.149,
+    "margin": 0.115
+   }
+  },
+  "sfx_1156>sfx_108c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2970.0,
+    "second": "overlap",
+    "second_residual": 3263.2,
+    "mix_rms": 3371.4,
+    "latency_b": 14.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.176,
+    "margin": 0.166
+   }
+  },
+  "sfx_108c>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1440.7,
+    "second": "cut",
+    "second_residual": 1594.8,
+    "mix_rms": 3226.6,
+    "latency_b": 9.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.056,
+    "second": "cut",
+    "second_error": 0.083,
+    "margin": 0.027
+   }
+  },
+  "sfx_1156>sfx_108e": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3136.4,
+    "second": "overlap",
+    "second_residual": 3324.8,
+    "mix_rms": 3601.9,
+    "latency_b": 12.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.224,
+    "margin": 0.213
+   }
+  },
+  "sfx_108e>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2257.1,
+    "second": "cut",
+    "second_residual": 2557.5,
+    "mix_rms": 3431.5,
+    "latency_b": 12.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.164,
+    "margin": 0.145
+   }
+  },
+  "sfx_1156>sfx_108f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3017.9,
+    "second": "overlap",
+    "second_residual": 3238.8,
+    "mix_rms": 3463.4,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.012,
+    "second": "drop",
+    "second_error": 0.193,
+    "margin": 0.182
+   }
+  },
+  "sfx_108f>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2270.3,
+    "second": "cut",
+    "second_residual": 2425.7,
+    "mix_rms": 3309.1,
+    "latency_b": 14.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.026,
+    "second": "cut",
+    "second_error": 0.068,
+    "margin": 0.043
+   }
+  },
+  "sfx_1156>sfx_1090": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3031.7,
+    "second": "overlap",
+    "second_residual": 3304.0,
+    "mix_rms": 3537.1,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.207,
+    "margin": 0.195
+   }
+  },
+  "sfx_1090>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2352.9,
+    "second": "cut",
+    "second_residual": 2594.3,
+    "mix_rms": 3382.1,
+    "latency_b": 11.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.032,
+    "second": "cut",
+    "second_error": 0.088,
+    "margin": 0.056
+   }
+  },
+  "sfx_1156>sfx_1091": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3091.6,
+    "second": "overlap",
+    "second_residual": 3327.2,
+    "mix_rms": 3411.2,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.185,
+    "margin": 0.175
+   }
+  },
+  "sfx_1091>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2108.5,
+    "second": "cut",
+    "second_residual": 2198.1,
+    "mix_rms": 3248.8,
+    "latency_b": 14.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.029,
+    "second": "cut",
+    "second_error": 0.062,
+    "margin": 0.033
+   }
+  },
+  "sfx_1156>sfx_1092": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3017.2,
+    "second": "overlap",
+    "second_residual": 3226.4,
+    "mix_rms": 3337.1,
+    "latency_b": 10.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.01,
+    "second": "drop",
+    "second_error": 0.16,
+    "margin": 0.15
+   }
+  },
+  "sfx_1092>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2416.5,
+    "second": "cut",
+    "second_residual": 2488.5,
+    "mix_rms": 3191.3,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.061,
+    "second": "cut",
+    "second_error": 0.086,
+    "margin": 0.025
+   }
+  },
+  "sfx_1156>sfx_109b": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2926.3,
+    "second": "overlap",
+    "second_residual": 4423.9,
+    "mix_rms": 3232.7,
+    "latency_b": 22.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.02,
+    "second": "drop",
+    "second_error": 0.09,
+    "margin": 0.07
+   }
+  },
+  "sfx_109b>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2196.5,
+    "second": "overlap",
+    "second_residual": 2239.1,
+    "mix_rms": 3092.5,
+    "latency_b": 13.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "cut",
+    "second_error": 0.065,
+    "margin": 0.019
+   }
+  },
+  "sfx_1156>sfx_10a3": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3375.0,
+    "second": "drop",
+    "second_residual": 3921.0,
+    "mix_rms": 3033.6,
+    "latency_b": 13.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.161,
+    "margin": 0.133
+   }
+  },
+  "sfx_10a3>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2673.2,
+    "second": "overlap",
+    "second_residual": 3137.2,
+    "mix_rms": 3086.7,
+    "latency_b": 14.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.035,
+    "second": "drop",
+    "second_error": 0.207,
+    "margin": 0.172
+   }
+  },
+  "sfx_1156>sfx_10a4": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3304.8,
+    "second": "drop",
+    "second_residual": 4590.7,
+    "mix_rms": 3416.5,
+    "latency_b": 30.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "drop",
+    "second_error": 0.182,
+    "margin": 0.164
+   }
+  },
+  "sfx_10a4>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2702.9,
+    "second": "overlap",
+    "second_residual": 2776.4,
+    "mix_rms": 3254.8,
+    "latency_b": 12.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.039,
+    "second": "cut",
+    "second_error": 0.066,
+    "margin": 0.027
+   }
+  },
+  "sfx_1156>sfx_10a5": {
+   "wave": {
+    "mode": "cut",
+    "residual": 1825.0,
+    "second": "overlap",
+    "second_residual": 2341.6,
+    "mix_rms": 1891.0,
+    "latency_b": 11.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.082,
+    "second": "cut",
+    "second_error": 0.147,
+    "margin": 0.066
+   }
+  },
+  "sfx_10a5>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1653.1,
+    "second": "cut",
+    "second_residual": 1664.4,
+    "mix_rms": 1900.7,
+    "latency_b": 14.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.09,
+    "second": "drop",
+    "second_error": 0.161,
+    "margin": 0.071
+   }
+  },
+  "sfx_1156>sfx_10a7": {
+   "wave": {
+    "mode": "drop",
+    "residual": 3130.0,
+    "second": "cut",
+    "second_residual": 3307.5,
+    "mix_rms": 2918.8,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.138,
+    "margin": 0.11
+   }
+  },
+  "sfx_10a7>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2540.3,
+    "second": "overlap",
+    "second_residual": 3265.9,
+    "mix_rms": 2996.2,
+    "latency_b": 12.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.034,
+    "second": "drop",
+    "second_error": 0.166,
+    "margin": 0.132
+   }
+  },
+  "sfx_1156>sfx_10c6": {
+   "wave": {
+    "mode": "drop",
+    "residual": 4236.6,
+    "second": "cut",
+    "second_residual": 4610.7,
+    "mix_rms": 3993.1,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "cut",
+    "second_error": 0.149,
+    "margin": 0.102
+   }
+  },
+  "sfx_10c6>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3785.2,
+    "second": "overlap",
+    "second_residual": 4512.7,
+    "mix_rms": 4209.7,
+    "latency_b": 10.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "drop",
+    "second_error": 0.223,
+    "margin": 0.177
+   }
+  },
+  "sfx_1156>sfx_10e8": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2701.3,
+    "second": "overlap",
+    "second_residual": 3838.8,
+    "mix_rms": 2923.6,
+    "latency_b": 29.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.052,
+    "second": "cut",
+    "second_error": 0.311,
+    "margin": 0.259
+   }
+  },
+  "sfx_10e8>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2269.7,
+    "second": "cut",
+    "second_residual": 2320.8,
+    "mix_rms": 3031.5,
+    "latency_b": 15.0
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.057,
+    "second": "drop",
+    "second_error": 0.334,
+    "margin": 0.277
+   }
+  },
+  "sfx_1156>sfx_10e9": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2426.5,
+    "second": "overlap",
+    "second_residual": 3241.9,
+    "mix_rms": 4239.2,
+    "latency_b": 11.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.019,
+    "second": "cut",
+    "second_error": 0.172,
+    "margin": 0.153
+   }
+  },
+  "sfx_10e9>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1767.1,
+    "second": "drop",
+    "second_residual": 2592.7,
+    "mix_rms": 4370.9,
+    "latency_b": 14.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "drop",
+    "second_error": 0.188,
+    "margin": 0.16
+   }
+  },
+  "sfx_1156>sfx_10ea": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3461.1,
+    "second": "overlap",
+    "second_residual": 4383.9,
+    "mix_rms": 3698.3,
+    "latency_b": 29.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.041,
+    "second": "drop",
+    "second_error": 0.259,
+    "margin": 0.218
+   }
+  },
+  "sfx_10ea>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2886.1,
+    "second": "cut",
+    "second_residual": 2916.8,
+    "mix_rms": 3549.0,
+    "latency_b": 14.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.065,
+    "second": "cut",
+    "second_error": 0.246,
+    "margin": 0.181
+   }
+  },
+  "sfx_1156>sfx_10f2": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3001.5,
+    "second": "overlap",
+    "second_residual": 3239.2,
+    "mix_rms": 4198.0,
+    "latency_b": 9.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "cut",
+    "second_error": 0.239,
+    "margin": 0.192
+   }
+  },
+  "sfx_10f2>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2194.8,
+    "second": "cut",
+    "second_residual": 2943.5,
+    "mix_rms": 4007.4,
+    "latency_b": 10.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.039,
+    "second": "cut",
+    "second_error": 0.263,
+    "margin": 0.225
+   }
+  },
+  "sfx_1156>sfx_10f3": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3026.2,
+    "second": "overlap",
+    "second_residual": 3229.7,
+    "mix_rms": 3741.3,
+    "latency_b": 12.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.034,
+    "second": "drop",
+    "second_error": 0.237,
+    "margin": 0.202
+   }
+  },
+  "sfx_10f3>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2182.4,
+    "second": "cut",
+    "second_residual": 2718.1,
+    "mix_rms": 3543.5,
+    "latency_b": 13.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.241,
+    "margin": 0.213
+   }
+  },
+  "sfx_1156>sfx_10f4": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2615.4,
+    "second": "drop",
+    "second_residual": 3053.4,
+    "mix_rms": 3626.2,
+    "latency_b": 15.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.018,
+    "second": "drop",
+    "second_error": 0.226,
+    "margin": 0.208
+   }
+  },
+  "sfx_10f4>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1616.9,
+    "second": "cut",
+    "second_residual": 2138.1,
+    "mix_rms": 3464.8,
+    "latency_b": 9.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.043,
+    "second": "cut",
+    "second_error": 0.229,
+    "margin": 0.186
+   }
+  },
+  "sfx_1156>sfx_10f5": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3033.3,
+    "second": "overlap",
+    "second_residual": 3330.0,
+    "mix_rms": 3588.2,
+    "latency_b": 12.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.014,
+    "second": "drop",
+    "second_error": 0.217,
+    "margin": 0.204
+   }
+  },
+  "sfx_10f5>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2123.4,
+    "second": "cut",
+    "second_residual": 2481.0,
+    "mix_rms": 3441.0,
+    "latency_b": 12.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.033,
+    "second": "cut",
+    "second_error": 0.151,
+    "margin": 0.118
+   }
+  },
+  "sfx_1156>sfx_10f6": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3111.4,
+    "second": "overlap",
+    "second_residual": 3307.5,
+    "mix_rms": 3701.8,
+    "latency_b": 14.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.016,
+    "second": "drop",
+    "second_error": 0.237,
+    "margin": 0.221
+   }
+  },
+  "sfx_10f6>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2201.0,
+    "second": "cut",
+    "second_residual": 2513.5,
+    "mix_rms": 3527.2,
+    "latency_b": 15.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.033,
+    "second": "cut",
+    "second_error": 0.109,
+    "margin": 0.077
+   }
+  },
+  "sfx_1156>sfx_10f8": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 951.2,
+    "second": "cut",
+    "second_residual": 1989.3,
+    "mix_rms": 2794.9,
+    "latency_b": 23.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.292,
+    "second": "cut",
+    "second_error": 0.389,
+    "margin": 0.097
+   }
+  },
+  "sfx_10f8>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2584.1,
+    "second": "overlap",
+    "second_residual": 3003.7,
+    "mix_rms": 2847.1,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.322,
+    "second": "drop",
+    "second_error": 0.438,
+    "margin": 0.115
+   }
+  },
+  "sfx_1156>sfx_10f9": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3066.6,
+    "second": "overlap",
+    "second_residual": 3415.9,
+    "mix_rms": 3540.8,
+    "latency_b": 11.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.162,
+    "margin": 0.151
+   }
+  },
+  "sfx_10f9>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2169.8,
+    "second": "cut",
+    "second_residual": 2188.2,
+    "mix_rms": 3377.9,
+    "latency_b": 12.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.04,
+    "second": "cut",
+    "second_error": 0.057,
+    "margin": 0.017
+   }
+  },
+  "sfx_1156>sfx_10fb": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3002.5,
+    "second": "overlap",
+    "second_residual": 3333.6,
+    "mix_rms": 3411.7,
+    "latency_b": 14.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.013,
+    "second": "drop",
+    "second_error": 0.18,
+    "margin": 0.167
+   }
+  },
+  "sfx_10fb>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2324.0,
+    "second": "cut",
+    "second_residual": 2459.4,
+    "mix_rms": 3250.6,
+    "latency_b": 14.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.067,
+    "margin": 0.038
+   }
+  },
+  "sfx_1156>sfx_10ff": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3073.1,
+    "second": "overlap",
+    "second_residual": 3292.0,
+    "mix_rms": 3647.7,
+    "latency_b": 11.5
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.018,
+    "second": "drop",
+    "second_error": 0.221,
+    "margin": 0.203
+   }
+  },
+  "sfx_10ff>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2427.0,
+    "second": "cut",
+    "second_residual": 2705.6,
+    "mix_rms": 3491.2,
+    "latency_b": 11.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.082,
+    "margin": 0.054
+   }
+  },
+  "sfx_1156>sfx_1121": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3065.5,
+    "second": "overlap",
+    "second_residual": 4131.3,
+    "mix_rms": 3569.5,
+    "latency_b": 8.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.211,
+    "margin": 0.196
+   }
+  },
+  "sfx_1121>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2483.6,
+    "second": "overlap",
+    "second_residual": 2509.6,
+    "mix_rms": 3417.4,
+    "latency_b": 14.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.052,
+    "second": "cut",
+    "second_error": 0.104,
+    "margin": 0.052
+   }
+  },
+  "sfx_1156>sfx_1123": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3050.1,
+    "second": "overlap",
+    "second_residual": 3351.4,
+    "mix_rms": 4625.7,
+    "latency_b": 13.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.028,
+    "second": "cut",
+    "second_error": 0.265,
+    "margin": 0.237
+   }
+  },
+  "sfx_1123>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2194.6,
+    "second": "drop",
+    "second_residual": 3023.9,
+    "mix_rms": 4539.6,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.027,
+    "second": "cut",
+    "second_error": 0.344,
+    "margin": 0.317
+   }
+  },
+  "sfx_1156>sfx_1124": {
+   "wave": {
+    "mode": "drop",
+    "residual": 197.5,
+    "second": "overlap",
+    "second_residual": 3160.8,
+    "mix_rms": 3189.5,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.435,
+    "margin": 0.434
+   }
+  },
+  "sfx_1124>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2365.4,
+    "second": "overlap",
+    "second_residual": 3678.6,
+    "mix_rms": 3208.3,
+    "latency_b": 10.4
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.072,
+    "second": "overlap",
+    "second_error": 0.324,
+    "margin": 0.252
+   }
+  },
+  "sfx_1156>sfx_112c": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2223.8,
+    "second": "overlap",
+    "second_residual": 3490.7,
+    "mix_rms": 3407.7,
+    "latency_b": 12.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.036,
+    "second": "overlap",
+    "second_error": 0.288,
+    "margin": 0.251
+   }
+  },
+  "sfx_112c>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 333.0,
+    "second": "overlap",
+    "second_residual": 3015.9,
+    "mix_rms": 3397.5,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.295,
+    "margin": 0.294
+   }
+  },
+  "sfx_1156>sfx_112d": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2662.5,
+    "second": "overlap",
+    "second_residual": 3755.7,
+    "mix_rms": 3577.7,
+    "latency_b": 9.3
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.072,
+    "second": "overlap",
+    "second_error": 0.269,
+    "margin": 0.197
+   }
+  },
+  "sfx_112d>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 1587.9,
+    "second": "overlap",
+    "second_residual": 3330.5,
+    "mix_rms": 3592.6,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.233,
+    "margin": 0.232
+   }
+  },
+  "sfx_1156>sfx_112e": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2179.4,
+    "second": "overlap",
+    "second_residual": 3463.5,
+    "mix_rms": 3587.8,
+    "latency_b": 13.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.045,
+    "second": "overlap",
+    "second_error": 0.259,
+    "margin": 0.213
+   }
+  },
+  "sfx_112e>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 1868.7,
+    "second": "overlap",
+    "second_residual": 3516.2,
+    "mix_rms": 3588.6,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.002,
+    "second": "overlap",
+    "second_error": 0.251,
+    "margin": 0.249
+   }
+  },
+  "sfx_1156>sfx_112f": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2564.6,
+    "second": "overlap",
+    "second_residual": 3838.4,
+    "mix_rms": 3408.7,
+    "latency_b": 14.5
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.037,
+    "second": "overlap",
+    "second_error": 0.301,
+    "margin": 0.264
+   }
+  },
+  "sfx_112f>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 1115.2,
+    "second": "overlap",
+    "second_residual": 3211.0,
+    "mix_rms": 3182.5,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.465,
+    "margin": 0.464
+   }
+  },
+  "sfx_1156>sfx_1130": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2596.2,
+    "second": "overlap",
+    "second_residual": 3924.4,
+    "mix_rms": 3145.5,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.034,
+    "second": "overlap",
+    "second_error": 0.301,
+    "margin": 0.267
+   }
+  },
+  "sfx_1130>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 344.8,
+    "second": "overlap",
+    "second_residual": 3040.3,
+    "mix_rms": 2820.9,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.588,
+    "margin": 0.587
+   }
+  },
+  "sfx_1156>sfx_1132": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 3086.4,
+    "second": "cut",
+    "second_residual": 3320.0,
+    "mix_rms": 3831.0,
+    "latency_b": 11.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.025,
+    "second": "cut",
+    "second_error": 0.254,
+    "margin": 0.228
+   }
+  },
+  "sfx_1132>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2818.7,
+    "second": "cut",
+    "second_residual": 3288.3,
+    "mix_rms": 3954.2,
+    "latency_b": 13.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.033,
+    "second": "drop",
+    "second_error": 0.273,
+    "margin": 0.24
+   }
+  },
+  "sfx_1156>sfx_1137": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2626.1,
+    "second": "overlap",
+    "second_residual": 2902.9,
+    "mix_rms": 4153.8,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.363,
+    "margin": 0.339
+   }
+  },
+  "sfx_1137>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2232.5,
+    "second": "drop",
+    "second_residual": 2891.7,
+    "mix_rms": 4325.8,
+    "latency_b": 9.9
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.029,
+    "second": "drop",
+    "second_error": 0.317,
+    "margin": 0.288
+   }
+  },
+  "sfx_1156>sfx_113a": {
+   "wave": {
+    "mode": "drop",
+    "residual": 953.2,
+    "second": "overlap",
+    "second_residual": 1750.8,
+    "mix_rms": 3191.8,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.002,
+    "second": "overlap",
+    "second_error": 0.136,
+    "margin": 0.134
+   }
+  },
+  "sfx_113a>sfx_1156": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2355.5,
+    "second": "overlap",
+    "second_residual": 2507.5,
+    "mix_rms": 3245.0,
+    "latency_b": 12.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.062,
+    "second": "overlap",
+    "second_error": 0.092,
+    "margin": 0.029
+   }
+  },
+  "sfx_1156>sfx_1142": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2992.5,
+    "second": "overlap",
+    "second_residual": 3232.5,
+    "mix_rms": 3661.3,
+    "latency_b": 13.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.007,
+    "second": "drop",
+    "second_error": 0.232,
+    "margin": 0.225
+   }
+  },
+  "sfx_1142>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2272.5,
+    "second": "cut",
+    "second_residual": 2606.1,
+    "mix_rms": 3507.6,
+    "latency_b": 14.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.035,
+    "second": "cut",
+    "second_error": 0.092,
+    "margin": 0.057
+   }
+  },
+  "sfx_1156>sfx_1158": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2126.1,
+    "second": "overlap",
+    "second_residual": 3459.1,
+    "mix_rms": 3709.3,
+    "latency_b": 10.7
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.073,
+    "second": "overlap",
+    "second_error": 0.253,
+    "margin": 0.18
+   }
+  },
+  "sfx_1158>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 3358.6,
+    "second": "overlap",
+    "second_residual": 4474.2,
+    "mix_rms": 3708.4,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.002,
+    "second": "overlap",
+    "second_error": 0.239,
+    "margin": 0.236
+   }
+  },
+  "sfx_1156>sfx_1159": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2117.4,
+    "second": "overlap",
+    "second_residual": 3396.9,
+    "mix_rms": 3305.8,
+    "latency_b": 13.2
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.039,
+    "second": "overlap",
+    "second_error": 0.284,
+    "margin": 0.245
+   }
+  },
+  "sfx_1159>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 897.9,
+    "second": "overlap",
+    "second_residual": 3083.7,
+    "mix_rms": 3287.7,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.002,
+    "second": "overlap",
+    "second_error": 0.256,
+    "margin": 0.255
+   }
+  },
+  "sfx_1156>sfx_115a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2318.4,
+    "second": "overlap",
+    "second_residual": 3602.7,
+    "mix_rms": 3680.7,
+    "latency_b": 13.0
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.03,
+    "second": "overlap",
+    "second_error": 0.24,
+    "margin": 0.21
+   }
+  },
+  "sfx_115a>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 276.7,
+    "second": "overlap",
+    "second_residual": 3033.2,
+    "mix_rms": 3626.2,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.001,
+    "second": "overlap",
+    "second_error": 0.234,
+    "margin": 0.233
+   }
+  },
+  "sfx_1156>sfx_115b": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2512.7,
+    "second": "overlap",
+    "second_residual": 3816.2,
+    "mix_rms": 3191.6,
+    "latency_b": 12.3
+   },
+   "envelope": {
+    "mode": "cut",
+    "error": 0.033,
+    "second": "overlap",
+    "second_error": 0.323,
+    "margin": 0.29
+   }
+  },
+  "sfx_115b>sfx_1156": {
+   "wave": {
+    "mode": "drop",
+    "residual": 129.1,
+    "second": "overlap",
+    "second_residual": 3024.3,
+    "mix_rms": 2964.3,
+    "latency_b": null
+   },
+   "envelope": {
+    "mode": "drop",
+    "error": 0.0,
+    "second": "overlap",
+    "second_error": 0.494,
+    "margin": 0.493
+   }
+  },
+  "sfx_1156>sfx_1168": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2972.7,
+    "second": "overlap",
+    "second_residual": 3286.6,
+    "mix_rms": 3238.6,
+    "latency_b": 12.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.012,
+    "second": "drop",
+    "second_error": 0.108,
+    "margin": 0.096
+   }
+  },
+  "sfx_1168>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2170.8,
+    "second": "cut",
+    "second_residual": 2183.5,
+    "mix_rms": 3088.3,
+    "latency_b": 12.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.024,
+    "second": "cut",
+    "second_error": 0.038,
+    "margin": 0.014
+   }
+  },
+  "sfx_1156>sfx_116a": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3019.3,
+    "second": "overlap",
+    "second_residual": 3235.0,
+    "mix_rms": 3337.7,
+    "latency_b": 14.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.012,
+    "second": "drop",
+    "second_error": 0.149,
+    "margin": 0.137
+   }
+  },
+  "sfx_116a>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2052.8,
+    "second": "cut",
+    "second_residual": 2070.8,
+    "mix_rms": 3187.2,
+    "latency_b": 15.1
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.03,
+    "second": "cut",
+    "second_error": 0.045,
+    "margin": 0.015
+   }
+  },
+  "sfx_1156>sfx_116e": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 485.4,
+    "second": "drop",
+    "second_residual": 836.0,
+    "mix_rms": 3306.7,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.004,
+    "second": "drop",
+    "second_error": 0.033,
+    "margin": 0.03
+   }
+  },
+  "sfx_116e>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 574.1,
+    "second": "cut",
+    "second_residual": 574.1,
+    "mix_rms": 3141.5,
+    "latency_b": 11.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.043,
+    "second": "cut",
+    "second_error": 0.043,
+    "margin": 0.0
+   }
+  },
+  "sfx_1156>vehicle_burst": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2283.2,
+    "second": "overlap",
+    "second_residual": 2515.8,
+    "mix_rms": 4671.4,
+    "latency_b": 15.2
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.047,
+    "second": "cut",
+    "second_error": 0.098,
+    "margin": 0.051
+   }
+  },
+  "vehicle_burst>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 1992.5,
+    "second": "drop",
+    "second_residual": 2504.3,
+    "mix_rms": 4783.4,
+    "latency_b": 10.8
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.015,
+    "second": "drop",
+    "second_error": 0.072,
+    "margin": 0.057
+   }
+  },
+  "sfx_1156>vehicle_hit": {
+   "wave": {
+    "mode": "cut",
+    "residual": 2977.9,
+    "second": "overlap",
+    "second_residual": 3286.2,
+    "mix_rms": 3464.1,
+    "latency_b": 13.6
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.011,
+    "second": "drop",
+    "second_error": 0.174,
+    "margin": 0.164
+   }
+  },
+  "vehicle_hit>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2323.2,
+    "second": "cut",
+    "second_residual": 2396.7,
+    "mix_rms": 3304.8,
+    "latency_b": 13.7
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.027,
+    "second": "cut",
+    "second_error": 0.056,
+    "margin": 0.029
+   }
+  },
+  "sfx_1156>vehicle_smoke": {
+   "wave": {
+    "mode": "cut",
+    "residual": 3024.6,
+    "second": "overlap",
+    "second_residual": 3224.1,
+    "mix_rms": 4251.0,
+    "latency_b": 9.3
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.022,
+    "second": "cut",
+    "second_error": 0.206,
+    "margin": 0.183
+   }
+  },
+  "vehicle_smoke>sfx_1156": {
+   "wave": {
+    "mode": "overlap",
+    "residual": 2245.7,
+    "second": "drop",
+    "second_residual": 3036.4,
+    "mix_rms": 4040.0,
+    "latency_b": 10.4
+   },
+   "envelope": {
+    "mode": "overlap",
+    "error": 0.037,
+    "second": "cut",
+    "second_error": 0.304,
+    "margin": 0.267
    }
   }
  }

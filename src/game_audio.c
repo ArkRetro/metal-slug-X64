@@ -49,11 +49,12 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
 /* B36: the pickup voices of the weapons 0E (115B) and 0F (1159), which no
  * Mission 1/2 item gives (B16), play from rom:/ too; with 1132 and 10A5 also
  * in the policy the L's 1130 (19 KB) left the M2 reference at 207 slots
- * (floor 208): it streams as well. */
+ * (floor 208): it streams as well. B35: the molotov pickup voice 1156
+ * (0C0A66[2], rare) streams too. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
-        || w==0x115bu || w==0x1159u || w==0x1130u;
+        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
@@ -140,7 +141,7 @@ void game_audio_music(bool play) {
 }
 /* Logged as "MSX AUDIO voice" with the policy's verdict: the player's
  * voices, the MISSION n START voices and the long streamed effects (B20). */
-static bool voice_word(uint16_t w) {return w==0x10a5u || w==0x1026u || w==0x1123u || w==0x1124u || (w>=0x1131u && w<=0x1136u) || (w>=0x112cu && w<=0x1130u) || (w>=0x1158u && w<=0x115bu);}
+static bool voice_word(uint16_t w) {return w==0x10a5u || w==0x1026u || w==0x1123u || w==0x1124u || (w>=0x1131u && w<=0x1136u) || (w>=0x112cu && w<=0x1130u) || (w>=0x1156u && w<=0x115bu);}
 static void request(uint16_t word) {
     /* 012192 (the actors' stop request, word | 0x8000): the channel playing
      * that word stops (the beam's 10F8 at its end 01E4D4). */

@@ -584,6 +584,12 @@
     "060888"
    ],
    "event": "MISSION 2 START voice: the letters 0607DE request 607D2[mission] at 060878 (0120F8; 607D2 = 1131..1136 for Missions 1..6; Mission 1's 1131 is in the entry audio). MAME sec01_19391: 1132 at 19428, return 060888"
+  },
+  {
+   "label": "sfx_1156",
+   "word": "1156",
+   "callers": [],
+   "event": "requested by the bomb-type pickup 0C0A7C of type 2 (molotov, item 08B5FA; table 0C0A66)"
   }
  ]
 }

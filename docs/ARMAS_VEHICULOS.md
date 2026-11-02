@@ -588,6 +588,38 @@ posición de `0x0C4806` aproximada (`+72/+74` del jugador = −1/0x15, el valor
 de pie de `cfam`; el port no tiene esos campos) y la velocidad del jugador
 (`0x0C4834`). Otros tipos de bomba: parada explícita (`grenade_stops`).
 
+### Molotov: bomba de tipo 2 (`src/neo_bullet.c`, B35)
+
+Recogida `08B5FA` (objeto 09) → `0C0A7C` con D1 = 2
+(`marco_weapons_bomb_type`): `0C0B32` +10 bombas (`1124`), mismo tipo →
+rechazado (puntos, `1121`), si no tipo = 2, voz `0C0A66[2]` = `1156` y
+etiqueta `08CD10` (externa). Con B, `0C4756` tipo 2: `01E648` (en marcha) /
+`01E664` (quieto). Vuelo `01E738` (fila `01F126`; con resultado 2/3
+`01E7B0`: sonido `1027`, explosión `01C7EA` en `neo_effects.c`, fila
+`01F136`), al tocar suelo `01E80E` (sonido `10F3`), `01E894` crea las
+llamas `01E9B6` de dos en dos (±0x100000, 4 veces); cada llama avanza
+`+86` pasos de `01456A`, golpea con `01F146` (tipo 7) y anima hasta su fin.
+El tipo 3 (`+88` = 1: `01E680/01E69C`, llamas `01EA7A`) es una parada.
+Programas `22F5B8`/`242B52` en `data/soldier_programs.json`; sprites en
+`filesystem/mission2/rest-native.json` (paletas 0x203, 0xD5, 0x363).
+
+Captura (MAME 0.264, privada, borrada tras extraer; ~2 min):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=23700 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_ROOTS=1e648,1e664 MSX_FULL_FAMILY_FROM=23700 \
+  MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh OUT
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/molotov_fixture.json.gz --range 1e4f0-1ea80 \
+  --range 1c7ea-1c7f0 --range 1c9d2-1ca96 --attacks --ram 10c718-10c730 --ram 10000e-100010 --ram 10c7b6-10d7b6
+python3 tools/export_rest_sprites.py ZIP OUT@1e4f0-1ea80 OUT@1c7ea-1ca96 --mask-auto \
+  --output filesystem/mission2/rest-native.json --keep <export anterior>
+```
+
+Familia `molotov` (`make check`): 228 nodos, 8393 actualizaciones en bucle
+cerrado (23943..26109), 28 lanzamientos, 2 impactos en vuelo, 34 contactos,
+igual a MAME. Sprites: 124 volcados, 213924 píxeles iguales, 756 distintos
+(687 en un volcado de 25290).
+
 ### `tools/test_gameplay.c`
 
 La carrera de la misión toma la H y dispara sus 200 balas nativas (18

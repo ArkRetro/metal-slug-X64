@@ -47,9 +47,9 @@ Abreviaturas:
 | B05 | Transición M1 → M2 incorrecta | vencer al jefe de la M1 | MISSION COMPLETE → recuento → fundido → MISSION 2 START | distinta | `neo_mission.c`, `neo_end.c` | U | P2 | corregido (ares) `0b68f14`: fundido, 1805C, letras MISSION 2 START |
 | B06 | Sin música al empezar la M2 | entrar en la M2 viniendo de la M1 | suena la palabra 0022 | silencio | `game_audio_stage_music` | U (A vio la música en la M2 de la ROM de referencia) | P5 | corregido (ares) `0b68f14`: la música de etapa siempre suena |
 | B07 | El suelo del inicio de la M2 se desplaza raro | inicio de la etapa 1 de la M2 | desplazamiento igual al de MAME | raro | scroll o capas de la escena | U | P5 | corregido (ares) `0b68f14`: scroll por capa de la misión |
-| B08 | Faltan actores secundarios de la M2 (mineros, arqueólogos) | jugar la M2 | aparecen | no aparecen | `neo_world` (creadores no traducidos) | U | P4 | en curso (`work-m2events`) |
-| B09 | El orden de los eventos de la M2 no es el del arcade | jugar la M2 | el orden de MAME | distinto | `neo_mission.c`, guion, lista de cámara | U | P3 | en curso (`work-m2events`) |
-| B10 | Momia con el sprite de Marco superpuesto | recibir el aliento de la momia | solo la momia | dos cuerpos | `marco_visual.c`, forma 3 | U | P4 | en curso (`work-m2events`) |
+| B08 | Faltan actores secundarios de la M2 (mineros, arqueólogos) | jugar la M2 | aparecen | no aparecen | `neo_world` (creadores no traducidos) | U | P4 | corregido (ares) `ab76871`; faltan 7 actores de la etapa 3 |
+| B09 | El orden de los eventos de la M2 no es el del arcade | jugar la M2 | el orden de MAME | distinto | `neo_mission.c`, guion, lista de cámara | U | P3 | corregido (ares) `ab76871`; por confirmar en MiSTer |
+| B10 | Momia con el sprite de Marco superpuesto | recibir el aliento de la momia | solo la momia | dos cuerpos | `marco_visual.c`, forma 3 | U | P4 | corregido (ares) `ab76871`; por confirmar en MiSTer |
 | B11 | El láser (06/0B) dispara la bala de la pistola | coger la L en la M2 | rayo de varios segmentos | bala de pistola | parada en `gameplay.c` | H: cuenta en `weapon_stops` | P4 | abierto |
 | B12 | Soldados muertos por fuego o explosión desaparecen | matar con F o S | animación de muerte (tipos 7, 0A, 0B) | desaparecen | `neo_soldier_ai.c` | H: `neo_soldier_death_stops` | P4 | abierto |
 | B13 | Faltan los efectos de la transformación en momia (C4DD8, C5286) y el cambio de paleta | transformación | efectos | no hay | `gameplay.c`, render | doc | P5 | abierto |
@@ -57,6 +57,8 @@ Abreviaturas:
 | B15 | Puerta de la etapa 2: no se dibujan sus tiles una vez abierta y falta el sonido 103B | final de la etapa 2 | tiles y sonido | no hay | render y audio | doc | P5 | abierto |
 | B16 | Armas 01, 08, 0E y 0F | — | nativas | bala de pistola | `gameplay.c` | H | P4 | abierto (no salen en la M2) |
 | B17 | Salto sin dirección después de correr: el arcade pone la velocidad horizontal a 0 | M | 0 | se conserva | `gameplay.c` | M | P4 | sospecha (rutina sin probar) |
+| B19 | La ROM de referencia se para al arrancar por falta de RAM | arrancar `mslugx-reference.z64` o `mslugx-m2-reference.z64` en `ab76871` | caché de escena de 208 ranuras o más | `ASSERTION room>=MIN_SLOTS`: faltan 2 KB (quedan 3326 KB y hacen falta 3328 KB) | presupuesto de RAM (ELF, efectos residentes) | A: `/home/user/g21` | P1 | en curso (`work-diag`) |
+| B20 | Faltan los efectos `sfx_10a5` y `sfx_1026` | registro de audio | 69 de 69 | 63 de 69 | audio | A | P5 | en curso (`work-diag`) |
 | B18 | M3: el paseo se para en la cámara 1902 | M3 | sigue | se para | suelo de los vagones | A | P2 | en pausa (por orden del usuario) |
 
 ## Cobertura (P = probado, F = fallido, N = no implementado, ? = no probado)

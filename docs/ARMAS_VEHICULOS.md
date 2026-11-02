@@ -123,7 +123,7 @@ Los tipos de la Misión 1 (registro `0x0E581A`; puntos en BCD):
 | `18`, `1C`, `29`, `2A`, `2B`, `2F` | `0x08B7FC` | puntos 100 / 1000 / 100 / 100 / 100 / 1000 | `2A` y `2B` tomados en `pickups2`/`vehicles2` (`score_popup value=100`); el resto solo estático |
 | `4B` | `0x08B58C` | arma `0x0C` (C, Enemy Chaser: icono "C" en `pickups/game8340.png`) | `pickups` 8370 y `pickups2` 5875 |
 | `4F` | `0x08B59E` | arma `0x0A` (H) | `pickups2` 11199, `vehicles2` 10926 |
-| `51` | `0x08B5B0` | arma `0x08` | no tomado en estas capturas |
+| `51` | `0x08B5B0` | arma `0x08` (lanzacohetes, Paso 15) | prisionero `2D70C4` (cámara 3224, antes del jefe) |
 
 También se tomaron tipos de puntos/comida `1A, 24, 30, 35, 36, 58` (comida
 sin efecto en Misión 1: `food_item ... food=0`, `10C728` sigue a 0).
@@ -147,7 +147,7 @@ tope 999. Sonido `0x0C08F8[id]`.
 | 5 | 200 | 150 | FF | 112D | especial `0x01B6DC` | H (tipo `00`, no en M1) |
 | 6 | 200 | 150 | FF | 1130 | rayo `0x0C46D6` | desconocido (rayo `0x01E19E`) |
 | 7 | 15 | 10 | 1 | 112F | `0x0646B0` | variante de 2 (no observada) |
-| 8 | 30 | 20 | 2 | 112E | `0x0641EC` + `0x0C58D2` | variante de 3 (tipo `51`, no tomada) |
+| 8 | 30 | 20 | 2 | 112E | `0x0641EC` + `0x0C58D2` | lanzacohetes (tipo `51`: el prisionero `2D70C4` antes del jefe; Paso 15) |
 | 9 | 30 | 15 | 1 | 112C | `0x0A716E` | variante de 4 (no observada) |
 | A | 200 | 150 | FF | 112D | especial `0x01B716` | H (tipo `4F`, observada) |
 | B | 200 | 150 | FF | 1130 | rayo | variante de 6 (no observada) |
@@ -1295,7 +1295,7 @@ las variantes `+93 = 2` (tabla `0C42EA`: `0646C8/0646E0`, `0A7226/0A719C`,
 `063F10`, `0C44C2/0C44E0`); las armas `01` (`0C5508`), `06/0B` (rayo
 `0C46D6` → `01E19E/01E166`, actor de varios segmentos con la RAM
 `10C340/10C348`; sus poses `0C01D8..` ya están capturadas en `marco-w6`),
-`08` (`0641EC`), `0E` (`0DE4DA`) y `0F` (`0DEA20`): siguen disparando la
+`0E` (`0DE4DA`) y `0F` (`0DEA20`) (la `08` es nativa desde el Paso 15): siguen disparando la
 bala de pistola del port (`weapon_stops`).
 
 **Rayo 06/0B: análisis (rama `work-m2gate`, sin traducir, sigue como
@@ -1352,3 +1352,59 @@ por `01B2BE`), programa `240D2E` o `240C6E` según +5B ^ giro, +34 = 2,0,
 y `040DF0`. Falta la evidencia de MAME (un soldado muerto por la llama o el
 estallido con volcados por fotograma, `extract_soldier_ticks.py`) y la
 variante de `NEO_SOLDIER_EVENT_DEATH_CHILD` con el programa `24039C`.
+
+### Paso 15: arma 08, el lanzacohetes del final de la Misión 1 (`0x0641EC`, rama `work-m1m2flow`)
+
+Informe del usuario (hardware real, ROM 20): al llegar al jefe final no hay
+lanzacohetes. El guion de la Misión 1 (`data/mission1_script.json`) crea en
+la cámara 3224, justo antes del jefe `0D5976` (cámara 3308), un prisionero
+`099DCC` (registro `2D70C4`, palabras `0 0 0 81 180`): `+74` = `0x51`. Su
+saludo (`09ACD6`) suelta el objeto de tipo `51`, cuya recogida `08B5B0` da
+el arma `0x08` (`0C0928`: 30 cohetes, tope 2, voz `112E` «Rocket
+launcher»). La R del port era la `3` (`06381C`); la `8` caía en la parada
+explícita `weapon_stops` y disparaba la bala de pistola: en la recreativa
+hay lanzacohetes, en el port no.
+
+`0641EC..0644C2` es `06381C..063AEC` con cuatro cambios (desensamblado
+comparado instrucción a instrucción): programas `2684D2` (horizontal) /
+`2684AA` (vertical) con cohetes más grandes (descriptores `142910..14299E`,
+`145066`), filas de contacto `063640/063650` (`0x30×0x10` en vez de
+`0x18×0x08`), rectángulo de recorte `06380C` (sus ocho primeros bytes son
+los de `063804`) y el id `8` devuelto a `0C0DFC`; la búsqueda (`063660/
+063670`), el vuelo, la estela `063D9E` y la explosión (`26858A/2685CA`) son
+los de la R, y la comprobación de cartucho tras `0C0DFC` desaparece
+(`004188` directo). Las tablas `0C3C10/0C3C50/0C3C90` dan a la `8` los
+programas de disparo de la `3` (`0C02D8/0C0318/0C0358`) y `0C432A` el mismo
+destello `0C58D2`.
+
+- `neo_chaser.c`: `06381C`/`0641EC`, `0638B4`/`064284`, `063A92`/`0643DA`,
+  `063AD6`/`06441E` con esos parámetros; `gameplay.c` (`fire_kind`): id 8
+  por el grupo de la C.
+- Programas `2684D2/2684AA` en `extract_soldier_programs.py` y
+  `export_rest_sprites.py`; `data/region_rom.json`: `063804` ampliado a 16
+  bytes (`06380C`). `extract_family_fixture.py` registra también las
+  lecturas del objetivo en `0642AE/0642EC` (como `0638DE/06391C`).
+- Captura MAME 0.264 `r8` (privada, `/home/user/cap-m1m2/r8`, repetible):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=8 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=641ec,c58d2,63d9e MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=2160 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/rlaunch8_fixture.json.gz \
+  --range 63600-64700 --range c5800-c5a00 --ram 10c718-10c72c --attacks
+```
+
+  Familia `rlaunch8` (`make check`, terreno `10C72E`: la captura está en el
+  pueblo): **505 nodos, 8747 actualizaciones en bucle cerrado (2195..3139),
+  1156120 bytes iguales**, 42 cohetes, 489 borrados.
+- Gráficos: los 11 descriptores nuevos se añaden a la exportación privada
+  `filesystem/rest-native.json` (`export_rest_sprites.py ZIP OUT@641ec-6441e
+  --keep <anterior>`, de la salida solo los descriptores de `2684D2/
+  2684AA`; paleta `0x37C` ya presente). Validación contra la VRAM de `r8`:
+  9655 píxeles iguales y 2742 distintos en 31 volcados; la misma medida con
+  la R ya validada (`r3`, misma captura con `ASSIST_ID=3`) da 5466/1518: la
+  diferencia es el desfase de una actualización de los cohetes rápidos en
+  el validador, no los descriptores.
+- `tools/test_gameplay.c` (`chaser`): carrera con la `8` hasta la cámara
+  3520: 1134 cohetes, 711 explosiones, 58 muertes, sin paradas ni dibujos
+  ausentes.

@@ -784,3 +784,91 @@ Desviaciones vistas y no tocadas (sin prueba de la rutina): el salto sin
 dirección desde la carrera deja +30 = 0 en el original (plan eE; el port
 conserva la velocidad), y el jugador parado en la cuarta de pendiente
 y 226 avanza ~1 px por actualización en el original (eC/eD).
+
+## Transición Misión 1 → Misión 2 (rama `work-m1m2flow`)
+
+Informe del usuario (hardware real, ROM 20, *release*): la transición de la
+Misión 1 a la 2 no es la del arcade, la Misión 2 empieza sin música y el
+suelo se ve raro al empezar.
+
+**Captura MAME 0.264** (`/home/user/cap-m1m2/t1`, privada, repetible): el
+plan de `capture_fullgame.lua` de `run4` desde su estado `sec00_2100`
+(`MSX_FULL_LOAD=sec00_2100 MSX_FULL_LOAD_FRAME=2100 MSX_FULL_FIRST_DUMP=18900
+MSX_FULL_PERIOD=2 MSX_FULL_LAST=19760`; `trace.csv` cada fotograma, igual a
+`run4`: sección 1 en 19391). Secuencia: jefe vencido, MISSION COMPLETE y
+recuento, fundido `9C0A` a negro con el marcador visible, carga en 19391
+(`0183D0`; arma `10C71E` 5 → 0), 16 pasos de fundido de entrada (paletas
+19397..19428), bucle de etapa `01860A` (letras MISSION 2 START, el jugador
+anda desde 19429/19431).
+
+Del código (`0182E8..01860A`, `1805C`):
+
+- `0183EE`: en el primer registro de una misión (`42FA` = 0) `1805C`
+  manda el reinicio del controlador de sonido `03` (`012240` → `01205E`),
+  borra los rescates (`09AA9E`: `10C5FC..10C603` de los dos jugadores) y
+  `0C0E42` (por jugador `0C0E6E`: `+93` = 0, diez bombas, pistola `0C0EE2`,
+  `+94` = FF, `+95` = 0); entre etapas de una misión no (`18080`; `run4`:
+  arma 3 en 19920 y 19950, etapa 2 en 19932). `01829E` pone `+80` = FFFF:
+  la música del descriptor se pide siempre al empezar una misión.
+- Etapa 1 de la Misión 2: entrada `0` (`018324`: negro inmediato), salida
+  `8` (`0184F6`: `9C0A` a 0 en 16 pasos y `01851A` espera 16 + 1
+  actualizaciones) y `01860A` (`4302` = FF: los jugadores se mueven;
+  MISSION n START `0607DE` con `42FA` = 0).
+
+**Causas en el port.** (1) `load_stage` (actor.c) recorría el flujo hasta
+el bucle de etapa en la misma llamada: el fundido de entrada no se veía
+(pantalla encendida de golpe), las letras MISSION 2 START no se creaban
+nunca (`flow.letters` sin lector) y Marco entraba andando antes de tiempo.
+(2) La música: `game_audio_stage_music` solo arrancaba la música nueva si la
+anterior sonaba o si el juego no estaba en fin de misión; tras la Misión 1
+la había parado el *jingle* `0020` y el estado de fin seguía marcado: la
+`0022` se abría y no sonaba (`MSX AUDIO stage music 0022` sin `music
+start`, cartucho de transición antes del arreglo). (3) `msx_game_begin_stage`
+conservaba arma, bombas y rescates también al empezar misión.
+
+**Arreglo.** `gameplay.c`: `msx_game_begin_stage` conserva el fundido y,
+con `42FA` = 0, hace lo de `1805C` (`marco_weapons_life`, rescates a 0);
+`stage_entry_step` ejecuta el flujo una vez por actualización entre la carga
+y el bucle de etapa (paso del fundido en la cabeza de lista, actualización
+del actor de misión, fundido de entrada y letras `0607DE` con la misión del
+flujo), con los jugadores quietos. `game_audio.c`: `game_audio_mission_start`
+(el `03`: canales, voz del *jingle* y música parados, `+80` = FFFF) y la
+música pedida en la carga siempre suena.
+
+**Prueba en ares** (`make mslugx-m1end.z64`: el juego *release* con la Misión
+1 terminada 600 actualizaciones después del aterrizaje, `MSX_TEST_QUICK_END`
+en actor.c, nunca un *release*; `tools/test_m1m2_ares.py`): recuento, letras,
+fundido, carga, `MSX AUDIO stage music 0022` y `music start`, `MSX mission
+start 1805C: weapon=0 bombs=10 rescued=0`, fundido de entrada y bucle de etapa
+a las 17 actualizaciones de la carga (MAME: 16 pasos + 1), letras MISSION 2
+START y entrada andando: `RESULT: PASS`.
+
+**Paradas explícitas.** La voz MISSION 2 START (`607D2[1]` = `1132`) no está
+renderizada (`data/sound_map.json` no la tiene): las letras salen sin voz.
+La cortina `3AEF0` de las etapas 2 y 3 ya no se resuelve en la carga sino
+actualización a actualización (35 en MAME), pero sigue sin dibujarse.
+
+### El suelo de la etapa 1 (informe del usuario, ROM 20)
+
+«Al empezar la Misión 2 el suelo se desplaza raro.» Comparación fotograma a
+fotograma con la captura `cap-m1m2/t1` (cámaras 66/129/192/258/320): en MAME
+la franja inferior (capa 0 del paquete: el suelo de arena con barriles y el
+agua, mapa `0B6BD6`) se desplaza 1:1 con el primer plano (`trace.csv`:
+`fore_x` = `sky_x` = −cámara, `mid_x` = −cámara/2) y a la cámara 258 ya solo
+hay agua; en el port el suelo del principio seguía casi quieto en pantalla
+y Marco parecía andar sobre él. Un render del paquete fuera de línea
+(`romfs/mission2.pack`: celdas, imágenes y reglas de la etapa 1) da la
+imagen de MAME, así que los datos estaban bien. Causa: el *release* dibuja
+con el modo de profundidad (`MSX_RETRO25D`, actor.c) y
+`retro_layered_2d_projection` aplicaba a todas las misiones el paralaje de la
+Misión 1 (capa 0 a 0,04 con escala 1,08, capa 1 a 0,45): en la etapa 1 de
+la Misión 2 la capa 0 es esa franja inferior. Arreglo (`scene_renderer.c`):
+en una etapa de paquete los planos usan las reglas ajustadas de la propia
+etapa (desplazamiento y subida de cada capa, escala 1), las mismas del
+camino clásico. En ares (`tools/test_m1m2_ares.py --walk 25`, cartucho de
+transición): las cinco cámaras comparadas muestran los mismos planos que
+MAME (agua bajo Marco desde la cámara ~150).
+
+**Parada explícita vista en la comparación.** En MAME aparece la flecha P1
+sobre Marco al empezar la Misión 2; el port no la crea en las etapas de
+paquete (sin traducir quién la crea en esta entrada).

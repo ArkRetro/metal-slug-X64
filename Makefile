@@ -190,6 +190,17 @@ mslugx-m2-reference.z64: N64_ROM_TITLE = "MSX M2 REFERENCE"
 mslugx-m2-reference.z64: $(BUILD_DIR)/mslugx-m2-reference.dfs
 $(BUILD_DIR)/mslugx-m2-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-m2-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Transition cartridge (never a release): the release game ending Mission 1
+# 600 steps after the landing (MSX_TEST_QUICK_END, actor.c), for the mission
+# end, the tally, the fade and the first stage of Mission 2 in ares.
+$(BUILD_DIR)/m1end/actor.o: src/actor.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_TEST_QUICK_END=600 -o $@ $<
+$(BUILD_DIR)/mslugx-m1end.elf: $(BUILD_DIR)/m1end/actor.o $(filter-out $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+mslugx-m1end.z64: N64_ROM_TITLE = "MSX M1 END TEST"
+mslugx-m1end.z64: $(BUILD_DIR)/mslugx-m1end.dfs
+$(BUILD_DIR)/mslugx-m1end.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-m1end.dfs: $(BUILD_DIR)/game-romfs.stamp
 # Mission 3 reference cartridge (tools/test_mission3_ares.py, never a
 # release): the same hooks starting at Mission 3's record 0173F6.
 $(BUILD_DIR)/m3ref/actor.o: src/actor.c
@@ -370,7 +381,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch rlaunch8 dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -520,6 +531,12 @@ FAMILY_ARGS_sgun7 := $(FAMILY_ARGS_sgun2)
 FAMILY_ARGS_flame4 := --attacks --previous --terrain 10c72e
 FAMILY_ARGS_flame9 := $(FAMILY_ARGS_flame4)
 FAMILY_ARGS_rlaunch := --script-actor 101414 --script-routines 6371e --attacks --previous --spawn-window 2
+# Weapon 8 (item kind 51; capture r8: capture_weapons.lua PLAN=air ASSIST_ID=8,
+# FAMILY 2150..3140 ROOTS=641ec,c58d2,63d9e; extract_family_fixture.py --range
+# 63600-64700 --range c5800-c5a00 --ram 10c718-10c72c --attacks): 42 rockets
+# 0641EC (bigger frames, rows 063640/063650), trails, flashes, explosions;
+# the capture is in the village (camera 0): terrain object 10C72E.
+FAMILY_ARGS_rlaunch8 := $(FAMILY_ARGS_rlaunch) --terrain 10c72e
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.
 FAMILY_ARGS_grenade := --hit-to 1c152

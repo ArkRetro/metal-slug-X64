@@ -56,10 +56,11 @@ def main():
                 elif pc==0x4b96 and ad==0x106754:cur['attacks'][-1][0]=data
                 elif pc==0x4b9a:cur['attacks'][-1][1]=(cur['attacks'][-1][1]<<16|data)&0xffffffff
                 elif pc==0x4b9e:cur['attacks'][-1][2]=(cur['attacks'][-1][2]<<16|data)&0xffffffff
-                elif pc in (0x638de,0x6391c):
-                    # The rocket 06381C reads the target's +42 after 01B162
-                    # (level) or its +3C long (vertical: the low word +3E).
-                    if pc==0x638de:base,slot=ad-0x42,3
+                elif pc in (0x638de,0x6391c,0x642ae,0x642ec):
+                    # The rocket 06381C (weapon 8's 0641EC: 0642AE/0642EC)
+                    # reads the target's +42 after 01B162 (level) or its +3C
+                    # long (vertical: the low word +3E).
+                    if pc in (0x638de,0x642ae):base,slot=ad-0x42,3
                     elif ad&2:base,slot=ad-0x3e,4
                     else:base,slot=ad-0x3c,0
                     tg=cur['targets'].setdefault('%x'%base,[None,None,0,0,0])

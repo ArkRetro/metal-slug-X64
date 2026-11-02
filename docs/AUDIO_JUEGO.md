@@ -275,6 +275,20 @@ y luego a `0120F8` con `0x0020` y `0x1137`, antes de crear las letras
   259, recuento 229), con las letras ya creadas (`+7C` = 0x9F tras su primer
   `subq`).
 
+## 10. Música al empezar la Misión 2 (informe del usuario, ROM 20)
+
+En hardware real la Misión 2 empezaba sin música tras jugar la Misión 1.
+`game_audio_stage_music` abría la `0022` pero solo la tocaba si la música
+anterior sonaba o si el juego no estaba en fin de misión: el *jingle* `0020`
+la había parado y el fin de misión seguía marcado. En el original `018434`
+pide la palabra y el controlador la toca; además `1805C` (primer registro de
+cada misión) manda antes el reinicio `03` y `01829E` pone `+80` = FFFF.
+Ahora: `game_audio_mission_start` (el `03`: efectos, voz del *jingle* y
+música parados) y la música pedida en la carga suena siempre. En ares con el
+cartucho de transición (`tools/test_m1m2_ares.py`): `MSX AUDIO stage music
+0022` seguido de `MSX AUDIO music start` (antes del arreglo: sin `music
+start`). Ver MISION2.md, «Transición Misión 1 → Misión 2».
+
 ## Regenerar
 
 ```sh

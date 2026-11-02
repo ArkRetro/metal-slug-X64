@@ -217,19 +217,27 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r<0) return GA_UNSUPPORTED;
         return r?GA_DELETE:GA_MORE;
     }
-    /* ---- the R's rocket 06381C ---- */
-    case 0x6381c: {
+    /* ---- the R's rocket 06381C and weapon 8's 0641EC ----
+     * 0641EC..0644C2 is 06381C..063AEC with the programs 2684D2/2684AA
+     * (bigger rocket frames), the contact rows 063640/063650 (0x30 x 0x10
+     * instead of 0x18 x 0x08), the cull rectangle 06380C (its first eight
+     * bytes are 063804's) and the weapon id 8 handed back by 0C0DFC; the
+     * search rows, flight, trail 063D9E and explosion programs are the
+     * same (the cartridge check after 0C0DFC is gone: 004188 directly). */
+    case 0x6381c: case 0x641ec: {
+        bool big=L(0)==0x641ecu;
         sound(e,0x10f5);SW(0x66,0xe000);SW(0x1e,0xe000);SB(0x15,B(0x15)|0x20u);ga_palette(a,0x37c);
         if (!(B(0x6e)&0x7fu)) {
-            SL(0x76,0x63660);START(0x2683f2);SL(0x7e,0xffff0000u);SL(0x82,0);
+            SL(0x76,0x63660);START(big?0x2684d2:0x2683f2);SL(0x7e,0xffff0000u);SL(0x82,0);
         } else {
-            SL(0x76,0x63670);START(0x2683b6);
+            SL(0x76,0x63670);START(big?0x2684aa:0x2683b6);
             if (B(0x6e)&0x80u) SB(0x15,B(0x15)|2u);
         }
-        SL(0x34,0);SW(0x74,0);SL(0,0x638b4);
+        SL(0x34,0);SW(0x74,0);SL(0,big?0x64284:0x638b4);
         return GA_MORE;
     }
-    case 0x638b4: {
+    case 0x638b4: case 0x64284: {
+        bool big=L(0)==0x64284u;
         /* 0638B4: home on the target of the search row +76 (A0, the
          * highest +4E): level, +34 towards (centre y : target +42) / 4 with
          * the lift +7E (decaying through +82); vertical, +30 towards the
@@ -259,11 +267,11 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
             SL(0x34,L(0x34)+((B(0x15)&2u)?0xffffa000u:0x6000u));
         }
         ga_air(a,e);
-        if ((B(0x15)&0x80u) && (!(B(0x15)&0x40u) || !(L(0x7e)&0x80000000u))) {SL(0,0x63a92);continue;}   /* 06398E */
+        if ((B(0x15)&0x80u) && (!(B(0x15)&0x40u) || !(L(0x7e)&0x80000000u))) {SL(0,big?0x643da:0x63a92);continue;}   /* 06398E / 06435E */
         if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
-        if (ga_attack(a,e,level?0x63620:0x63630)) SL(0,0x63a92);
+        if (ga_attack(a,e,big?(level?0x63640:0x63650):(level?0x63620:0x63630))) SL(0,big?0x643da:0x63a92);
         if (e->unsupported) return GA_UNSUPPORTED;
-        if (ga_cull_rect(a,e,0x63804)) return release_id(a,e,3)?GA_DELETE:GA_UNSUPPORTED;
+        if (ga_cull_rect(a,e,big?0x6380c:0x63804)) return release_id(a,e,big?8:3)?GA_DELETE:GA_UNSUPPORTED;
         uint8_t b74=B(0x74);SB(0x74,b74-0x70u);
         if (b74<0x70u) {
             neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC, 01ACF2 (0, 0) */
@@ -271,11 +279,13 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
         }
         return GA_MORE;
     }
-    case 0x63a92:
-        if (!release_id(a,e,3)) return GA_UNSUPPORTED;
-        START((B(0x6e)&0x7fu)?0x2685ca:0x26858a);SL(0,0x63ad6);
+    case 0x63a92: case 0x643da: {
+        bool big=L(0)==0x643dau;
+        if (!release_id(a,e,big?8:3)) return GA_UNSUPPORTED;
+        START((B(0x6e)&0x7fu)?0x2685ca:0x26858a);SL(0,big?0x6441e:0x63ad6);
+    }
         /* fall through */
-    case 0x63ad6: {
+    case 0x63ad6: case 0x6441e: {
         ga_project(a,e);
         int r=ga_anim_step(a,e,rocket_call);
         if (r<0 || e->unsupported) return GA_UNSUPPORTED;
@@ -303,9 +313,10 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
 bool neo_chaser_routine(uint32_t r) {
     return r==0x63f32 || r==0x63fdc || r==0x64128 || r==0x6414c || r==0x6371e || r==0x63740 || r==0x63756 ||
         r==0x63d9e || r==0x63e48 || r==0xc58d2 || r==0xc5930 ||
-        r==0x6381c || r==0x638b4 || r==0x63a92 || r==0x63ad6;
+        r==0x6381c || r==0x638b4 || r==0x63a92 || r==0x63ad6 ||
+        r==0x641ec || r==0x64284 || r==0x643da || r==0x6441e;
 }
 /* Attackers of the player's side (their rows may hit the boss): the shell's
  * contact row and the blast. */
-bool neo_chaser_attacker(uint32_t r) {return r==0x63fdc || r==0x63740 || r==0x638b4;}
+bool neo_chaser_attacker(uint32_t r) {return r==0x63fdc || r==0x63740 || r==0x638b4 || r==0x64284;}
 ga_result_t neo_chaser_tick(neo_gactor_t *a,neo_genv_t *e) {return chaser_tick(a,e);}

@@ -47,6 +47,13 @@ static marco_visual_t marco;static bool marco_native;static unsigned marco_shots
 #ifndef MSX_REFERENCE_START_MISSION
 #define MSX_REFERENCE_START_MISSION 0
 #endif
+/* Transition cartridge (mslugx-m1end.z64, never a release): the release game
+ * whose Mission 1 ends (018F40, mission step 2) this many updates after the
+ * landing, to check the mission end, the tally, the fade and Mission 2's
+ * first stage (load, fade-in, MISSION 2 START, walk-in, music) quickly. */
+#ifndef MSX_TEST_QUICK_END
+#define MSX_TEST_QUICK_END 0
+#endif
 /* Mission packs (docs/MISION2.md "Fase 2"): the stage the flow selected,
  * loaded at its 0183D0. The pack holds the mission's stage records in play
  * order: index = 42FA (Mission 2: 0..2 for stages 1..3; Mission 3: its one
@@ -84,13 +91,20 @@ static bool load_stage(void) {
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
     neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
+    /* 1805C on the mission's first record: the sound driver reset 03
+     * (0120F8 via 01205E) and the mission actor's +80 = FFFF (01829E), so
+     * the descriptor's music is requested again (018412..01842E). */
+    if (game.flow.record_index==0) game_audio_mission_start();
     game_audio_stage_music(neo_mission_music(&game.flow));   /* 018412..01842E */
     scene_renderer_stage_changed();
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */
     int start_x=st->players_len>=4?(int)(int16_t)(st->players[2]<<8|st->players[3]):0x68;
     msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
-    for (unsigned k=0;k<40 && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
+    /* The exit kind (fade-in, wipe) and the stage loop run in the game's
+     * updates (gameplay.c, stage_entry_step). */
+    if (game.mission_start) debugf("MSX mission start 1805C: weapon=%u bombs=%u rescued=%u\n",(unsigned)marco_weapons_id(&game.world.weapons,0),
+        (unsigned)marco_weapons_bomb_count(&game.world.weapons,0),(unsigned)game.world.ga_flags.rescued[0]);
     debugf("MSX mission %u stage %u start: record %06lX descriptor %06lX camera list %06lX script %06lX (%u bytes) walk-in to x=%d\n",
         (unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,(unsigned long)game.flow.record,(unsigned long)game.flow.descriptor,
         (unsigned long)st->camera_rom,(unsigned long)st->script_rom,st->script_len,start_x);
@@ -339,6 +353,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         game.grenade=input.btn.z;   /* bomb (the arcade's C button) */
         int pilot_direction=direction;bool pilot_jump=input.btn.a || pending_a;
         msx_game_autopilot(&game,&pilot_direction,&pilot_jump);
+#if MSX_TEST_QUICK_END
+        {static unsigned updates;
+         if (game.flow.mission==0u && game.world_enabled && !game.complete && game.grounded && ++updates==MSX_TEST_QUICK_END) {
+             game.world.mission_step=2;debugf("MSX test cartridge: Mission 1 ended now (not a release)\n");
+         }}
+#endif
         msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
         /* Dying, lying and the entrance (marco_death.c): the death and
          * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
@@ -481,6 +501,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             }
             seen_end=game.mission_end;
         }
+    }
+    {   /* Stage entry (gameplay.c, stage_entry_step): the exit kind's fade-in
+         * done when the stage loop 01860A starts; its letters. */
+        static bool entering;
+        bool now=game.in_stage && (game.flow.state==NEO_MISSION_STAGE_ENTRY || game.flow.state==NEO_MISSION_STAGE_EXIT);
+        if (entering && !now && game.in_stage)
+            debugf("MSX stage fade-in done: stage loop 01860A after %u updates (fade started at update %u, offset %d)%s\n",game.entry_updates,game.entry_fade_updates,
+                (int)neo_fade_offset(&game.fade,0),game.entry_letters?"; MSX mission start letters 0607DE":"");
+        entering=now;
     }
     {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
         static bool logged;

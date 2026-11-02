@@ -266,16 +266,16 @@ static void chaser_run_id(uint8_t id) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
             bool blast=a->active && (r==0x63740u || r==0x63756u || r==0x86450u || r==0x86466u);
             if (a->active && (r==0x86260u || r==0x861e2u)) rolls++;
-            if (a->active && r==0x6381cu) rockets++;
+            if (a->active && (r==0x6381cu || r==0x641ecu)) rockets++;
             if (blast && !seen[i]) blasts++;
             seen[i]=blast;
             if (a->active && r==0x63e48u && ga_b(a,0x18)==0) trails++;
         }
     }
     printf("%s run: grants=%u shells=%u rockets=%u rolls=%u (native requests %u, dropped %u) blasts=%u trail updates=%u kills=%u unsupported=%u (%05lx) camera=%d missing draws=%u\n",
-        id==3?"R":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
+        id==3?"R":id==8?"R8":id==0x0d?"0D":id==2?"02":id==7?"07":id==4?"04":id==9?"09":"C",grants,g.c_shots,rockets,rolls,g.world.player_shots,g.world.shot_dropped,blasts,trails,g.kills,g.world.unsupported,(unsigned long)g.world.unsupported_routine,g.camera,missing_draws);fflush(stdout);
     assert(g.c_shots>=40 && grants>=1 && g.kills>0);
-    if (id==3 || id==0x0c) assert(blasts>0 && trails>0);
+    if (id==3 || id==8 || id==0x0c) assert(blasts>0 && trails>0);
     if (id==0x0d) assert(blasts>0 && rolls>0);
     /* Weapons 02/07 (rows of kind 0A/0B) and 04/09 (kind 7): a soldier
      * killed by them takes a death entry of 0406EA/040750/0407F4 that is
@@ -287,14 +287,16 @@ static void chaser_run_id(uint8_t id) {
         assert(kinds_ok && g.world.unsupported==neo_soldier_death_stops-stops_before);
     } else assert(!g.world.unsupported);
     assert(!missing_draws && !g.weapon_stops);
-    if (id==3) assert(rockets>=40);
+    if (id==3 || id==8) assert(rockets>=40);
     assert(msx_game_c_programs(&g)==(marco_weapons_id(&g.world.weapons,0)==id));
 }
 /* The C (0C) and the R (3, rocket 06381C with the C's fire programs and
  * flash; MiSTer report: no rockets drawn). */
 /* Weapon 0D (the ball 08606A, neo_pweapon.c: rolls, bursts and blasts)
  * fired with the same programs and flash. */
-static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id(0x0d);}
+/* Weapon 8 (item kind 51, the prisoner of 2D70C4 at the camera 3224 before
+ * the boss): the rocket 0641EC, bigger, with the R's fire programs. */
+static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id(8);chaser_run_id(0x0d);}
 /* Weapons 02 / 07 (the blasts 0644C4 / 0646B0) and 04 / 09 (the flames
  * 0A71F8 / 0A716E, neo_pweapon.c) with their own fire programs: native,
  * no stop, every descriptor in the scene pack, and they kill. */

@@ -470,8 +470,8 @@
   },
   {
    "rom": "0x063804",
-   "reader": "0638B4 R rocket cull rectangle 063804 (019504)",
-   "hex": "ffd0ffd000600060"
+   "reader": "0638B4 R rocket / 064284 weapon 8 rocket: cull rectangles 063804 / 06380C (019504)",
+   "hex": "ffd0ffd000600060ffd0ffd000600060"
   },
   {
    "rom": "0x2D0AE4",

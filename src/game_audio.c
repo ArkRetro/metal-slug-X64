@@ -85,13 +85,25 @@ static bool open_music(uint16_t word) {
     if (ok) music_word=word;
     return ok;
 }
+/* 018434 requests the word (0120F8) and the driver plays it: whatever
+ * stopped the previous music (the mission complete jingle 0020 at the end
+ * of Mission 1), the new stage's music starts. */
 void game_audio_stage_music(uint16_t word) {
     if (!active || !word || word==music_word) return;
-    bool was_on=music_on;
     msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
     music_ready=open_music(word);
     debugf("MSX AUDIO stage music %04X %s\n",(unsigned)word,music_ready?"":"missing");
-    if (music_ready && (was_on || !complete)) game_audio_music(true);
+    if (music_ready) game_audio_music(true);
+}
+/* 1805C (a mission's first record): 01205E sends the driver reset 03
+ * (every channel silent, the jingle cut) and 01829E sets the mission
+ * actor's +80 = FFFF: the descriptor's music is requested even when it is
+ * the one already playing. */
+void game_audio_mission_start(void) {
+    if (!active) return;
+    for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.current[c]>=0) mixer_ch_stop(mixer_of(c));
+    msx_sfx_reset(&policy);msx_audio_stop(MSX_AUDIO_INTRO);
+    msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;music_word=0;complete=false;
 }
 void game_audio_music(bool play) {
     if (!active || !music_ready) return;

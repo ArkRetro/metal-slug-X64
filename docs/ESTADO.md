@@ -19,11 +19,11 @@ privados y no están en git.
 | Área | Nativo | Pendiente / paradas explícitas |
 | --- | --- | --- |
 | Recorrido, cámara, guion, colisiones | completo de inicio a fin | — |
-| Marco | movimiento, pistola, H (barridos), C (proyectil buscador), R, armas 0D, 02/07, 04/09 (con poses y sonidos), granadas, cuchillo con pose, disparo abajo en el aire, muerte/reaparición, momia (forma 3) con sus poses | tabla de cuchillo 0BF918 sin captura; armas 01, 06/0B (rayo), 08, 0E, 0F; muertes de soldado por filas de tipo 7/0A/0B |
+| Marco | movimiento, pistola, H (barridos), C (proyectil buscador), R, lanzacohetes 08 (prisionero antes del jefe), armas 0D, 02/07, 04/09 (con poses y sonidos), granadas, cuchillo con pose, disparo abajo en el aire, muerte/reaparición, momia (forma 3) con sus poses | tabla de cuchillo 0BF918 sin captura; armas 01, 06/0B (rayo), 0E, 0F; muertes de soldado por filas de tipo 7/0A/0B |
 | Vehículos | Camel Slug y tanque SV-001 montables | reacciones de daño del SV-001 sin captura |
 | Enemigos y actores | soldados, camión, helicópteros, lanzacohetes, camelleros, civiles, prisioneros, premios | rótulo de bombas 08C752, puesto de fruta 03FC5A |
 | Jefe | completo (torreta, fases, explosiones, prisioneros de la escotilla que caen al suelo) | — |
-| Fin de misión | MISSION COMPLETE, recuento de prisioneros | textos japoneses, 2 jugadores, medallas |
+| Fin de misión | MISSION COMPLETE, recuento de prisioneros, fundido, carga de la Misión 2 con su música, fundido de entrada y MISSION 2 START (MISION2.md, «Transición») | textos japoneses, 2 jugadores, medallas |
 | Continuar | CONTINUE? con cuenta atrás | objeto 019798 |
 | Marcador | HUD original en modo consola doméstica (PRESS START, sin CREDIT) | — |
 | Sonido | música y 57 efectos originales residentes en RAM | — |
@@ -63,3 +63,8 @@ el bloque de x 944 y cae al foso de x 992.Fase 2, actores y datos (rama `work-m2
 `3AED8`/`3AEF0`, flecha GO `05287C` y marcador `0B6F6A` nativos; rejilla de
 la etapa 2 completa desde la ROM. Misiones 3–6 y efecto diorama (en
 pausa, `work-diorama`) después.
+
+ROM 21 (rama `work-m1m2flow`, informe de ROM 20): lanzacohetes `08` del
+prisionero de la cámara 3224 (ARMAS_VEHICULOS.md, Paso 15); transición
+Misión 1 → 2 como el arcade (`1805C`, fundido de entrada, letras, música
+`0022`) y suelo de la etapa 1 con el desplazamiento de MAME (MISION2.md).

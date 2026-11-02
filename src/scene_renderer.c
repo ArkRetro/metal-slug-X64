@@ -536,7 +536,13 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     if (collapsed) offsets[0]+=COLLAPSE_SKY_SHIFT;
     // Keep the projection outside assert(): NDEBUG would otherwise drop it.
     if (depth_mode) for (unsigned i=0;i<5;i++) {
-        bool ok=(MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
+        /* Mission pack stages: the planes keep the stage's own scroll
+         * (the fitted rules above: MAME's layer objects, e.g. Mission 2
+         * stage 1's water strip 1:1 and 10D7B6 at 1/2), unscaled. The
+         * Mission 1 parallax (sky at 0.04, scale 1.08) left that stage's
+         * bottom strip almost still under the moving foreground. */
+        bool ok=st?(depth_views[i]=(retro_plane_view_t){1.0f,(float)-offsets[i],(float)rises[i]},true):
+            (MSX_DEPTH_STYLE&DEPTH_PERSPECTIVE)?
             retro_background_projection(depth_frame.camera,i,retro_effects_layer_depth(i),&depth_views[i]):
             retro_layered_2d_projection(depth_frame.camera,i,&depth_views[i]);
         assertf(ok,"Retro plane projection");(void)ok;

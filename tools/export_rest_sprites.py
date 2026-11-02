@@ -104,6 +104,8 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     0x267f92,0x268622,0x22ce6c,0x26863a,0xc586c,0xc5806,
     # The R weapon's rocket 06381C and its explosion 063A92.
     0x2683f2,0x2683b6,0x26858a,0x2685ca,
+    # Weapon 8's rocket 0641EC (its explosion is the R's).
+    0x2684d2,0x2684aa,
     # Weapon 0D (neo_pweapon.c): ball 08606A, glow 08651C, explosions
     # 2830DA / 28311A (blasts 22CDD4 / 22CE6C / 22CF2C).
     0x282c18,0x282bf0,0x282c22,0x282c2c,0x282dcc,0x282ee6,0x2830da,0x28311a,0x22cdd4,0x22cf2c,

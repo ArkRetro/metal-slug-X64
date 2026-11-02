@@ -19,6 +19,7 @@ void game_audio_music(bool play);
 /* A stage starts: its descriptor's music word (+C, 018434); a different
  * word than the playing one restarts the music voice with that music. */
 void game_audio_stage_music(uint16_t word);
+void game_audio_mission_start(void);
 /* Forget previous gameplay state after a reset/handoff (no sounds). */
 void game_audio_sync(msx_game_t *game);
 /* Once per video frame after the simulation: drain the world's sound

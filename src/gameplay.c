@@ -131,14 +131,30 @@ void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_
 void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
     neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
+    /* The fade outlives the load: the entry kind left the screen black
+     * (9C0A from 018324/01836C, or the mission end's), the exit kind fades
+     * it back in (0184F6, stage_entry_step). */
+    neo_fade_t fade=g->fade;
     msx_game_init(g);
-    g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;
+    g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;g->fade=fade;
     /* Only the rescue counts outlive the stage: the exit's handlers, walk
      * target, screen box (10C00B) and end requests belong to the old one. */
     neo_ga_flags_t kept;memset(&kept,0,sizeof(kept));
     memcpy(kept.rescued,flags.rescued,sizeof(kept.rescued));memcpy(kept.tally,flags.tally,sizeof(kept.tally));
     memcpy(kept.gifts,flags.gifts,sizeof(kept.gifts));memcpy(kept.special,flags.special,sizeof(kept.special));
+    /* 0183EE: the mission's first record (42FA = 0) runs 1805C: the sound
+     * driver reset (03, game_audio_mission_start), 09AA9E (rescue counts
+     * 10C5FC..10C603 of both players cleared) and 0C0E42 (each player's
+     * 0C0E6E: +93 = 0, ten bombs, the pistol 0C0EE2, +94 = FF, +95 = 0,
+     * 4718+A = 1: marco_weapons_life). MAME run4: 10C71E 5 -> 0 at the
+     * Mission 2 load (19391); kept across the stages of a mission (3 at
+     * 19920 and 19950, stage 2 at 19932). */
+    g->mission_start=g->flow.record_index==0;
+    if (g->mission_start) {
+        memset(kept.rescued,0,sizeof(kept.rescued));memset(kept.gifts,0,sizeof(kept.gifts));memset(kept.special,0,sizeof(kept.special));
+    }
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
+    if (g->mission_start) marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     neo_world_init_stage(&g->world,0,st);
     g->world.script_skip_unported=MSX_REFERENCE_INVULNERABLE!=0;   /* reference: skip unported script records */
     g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
@@ -163,6 +179,20 @@ void msx_game_stage_end(msx_game_t *g) {
     /* 018F40 then 018722: the next record (the flow's exit kind). */
     g->flow.end=0;neo_mission_stage_done(&g->flow);
     g->stage_step=1;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));
+}
+/* One update of the mission actor between a stage load and its stage loop:
+ * the list head steps the fade (003918 -> 00698C) before the mission actor;
+ * its exit kind starts the fade-in (0184D8/0184F6: 9C0A to 0 in +6's
+ * steps) or the wipe 3AEF0, then 01860A creates MISSION n START 0607DE
+ * (42FA = 0) after it and releases the players (4302 = FF). MAME
+ * cap-m1m2 (run4's input plan from sec00_2100): load at 19391, palette
+ * steps 19397..19428, the player walks from 19429/19431. */
+static void stage_entry_step(msx_game_t *g) {
+    neo_fade_step(&g->fade);
+    neo_mission_update(&g->flow);
+    g->entry_updates++;
+    if (g->flow.fade_in) {neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);g->entry_fade_updates=g->entry_updates;}
+    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->entry_letters=true;}
 }
 /* Stage end to the next stage's 0183D0, one flow update per game update;
  * the exit fade of kind 8 (16 steps, 0184F6) is the port's palette fade. */
@@ -721,7 +751,8 @@ static void end_ram_start(msx_game_t *g) {
  * of table 0C42AA is native, with the fire programs of the tables
  * 0C3C10/0C3C50/0C3C90 (+0x10) and the crouched C0098.. table:
  *  - the C group (C02D8/C0318/C0358: ids 3, 8, 0C, 0D, 0E): the R 06381C,
- *    the C 063F32 (neo_chaser.c) and the 0D ball 08606A (neo_pweapon.c),
+ *    weapon 8's rocket 0641EC (the prisoner of 2D70C4 before the boss
+ *    gives it: item kind 51), the C 063F32 (neo_chaser.c) and the 0D ball 08606A (neo_pweapon.c),
  *    all with the flash 0C58D2 of table 0C432A; +76 after 5 updates level,
  *    2 up/down/crouched;
  *  - 0BFFD8/0C0018/0C0058/0C0098 (ids 02, 07, 0F): the blasts 0644C4 /
@@ -735,6 +766,7 @@ typedef struct {uint32_t constructor;uint8_t group,level,up,down,crouch;} fire_k
 static fire_kind_t fire_kind(uint8_t id) {
     switch (id) {
     case 3: return (fire_kind_t){0x6381cu,MSX_FIRE_C,12,6,6,6};
+    case 8: return (fire_kind_t){0x641ecu,MSX_FIRE_C,12,6,6,6};   /* tables 0C3C10.. and 0C432A: as 3 */
     case 0x0c: return (fire_kind_t){0x63f32u,MSX_FIRE_C,12,6,6,6};
     case 0x0d: return (fire_kind_t){0x8606au,MSX_FIRE_C,12,6,6,6};
     case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,14,14,6,14};
@@ -823,8 +855,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         return;
     }
     if (g->stage_step) {g->ticks++;if (!(g->ticks&1)) stage_end_step(g);return;}
+    /* Between the stage load and the stage loop: the mission actor's exit
+     * kind, the players held (4302 = 0). */
+    if (g->in_stage && (g->flow.state==NEO_MISSION_STAGE_ENTRY || g->flow.state==NEO_MISSION_STAGE_EXIT)) {
+        direction=0;jump=false;fire=false;g->grenade=false;
+        if (g->ticks&1) stage_entry_step(g);       /* the update's step (ticks++ below) */
+    }
     /* Stage start of a mission pack: the player walks in (no control). */
-    if (g->walk_in_x) {
+    else if (g->walk_in_x) {
         if (g->x<g->walk_in_x && g->life.phase==MARCO_ALIVE) {direction=1;jump=false;fire=false;}
         else g->walk_in_x=0;
     }
@@ -922,7 +960,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     g->descent_fire|=fire && !g->fire_was && g->descent;
     if (!(g->ticks&1) && g->start_letters) {
         /* The MISSION 1 START letters after the mission actor (neo_end.c). */
-        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,0,neo_world_program,NULL};
+        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,false,g->flow.mission,neo_world_program,NULL};
         neo_end_update(&g->end,&in);
         g->start_stops+=g->end.unsupported;
         if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}

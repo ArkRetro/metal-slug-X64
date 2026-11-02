@@ -151,6 +151,9 @@ ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
 # The R weapon (neo_chaser.c): rocket 06381C (level 2683F2, vertical 2683B6)
 # and its explosion 063A92 (26858A / 2685CA).
 ROOTS+=[0x2683f2,0x2683b6,0x26858a,0x2685ca]
+# Weapon 8 (neo_chaser.c): its rocket 0641EC (level 2684D2, vertical
+# 2684AA); the explosion is the R's.
+ROOTS+=[0x2684d2,0x2684aa]
 # Weapon 0D (neo_pweapon.c): ball 08606A (282C18, 282BF0, 282C22, 282C2C,
 # burst 282DCC), glow 08651C (282EE6), explosions 2830DA / 28311A (CALL
 # 0866A6; the blasts use 22CDD4 / 22CE6C / 22CF2C, above).

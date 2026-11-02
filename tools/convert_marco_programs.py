@@ -27,10 +27,13 @@ def convert(capture,output,event_evidence=None,additional_roots=None,extra_evide
     v=verified_events[e['site']];assert (v['kind'],v.get('target'),v.get('payload'),v.get('token'))==(e['kind'],e.get('target'),e.get('payload'),e.get('token'))
     v['count']+=e['count']
    else:verified_events[e['site']]=dict(e,evidence=extra.name)
- # Every root seen as a program choice of an extra capture is an observed seed.
+ # Every root seen as a program choice of an extra capture is an observed seed,
+ # and so is every program it initialised directly (0C0FB6: the mummy's body
+ # tables C0408.., marco-mz2; the main capture's MARCO_INIT roots above).
  for extra in extra_evidence or ():
   t=(extra/'debug.log').read_text()
   initial_roots|={int(v,16) for v in re.findall(r'MARCO_PROGRAM_CHOICE .*?program=([0-9A-F]+)',t)}-{0}
+  initial_roots|={int(v,16) for v in re.findall(r'MARCO_INIT frame=\d+ program=([0-9A-F]+)',t)}-{0}
  by_call={(e['target'],e['payload']):e for e in verified_events.values() if e['kind']=='CALLBACK'}
  selected_roots={int(v,16) for v in re.findall(r'MARCO_PROGRAM_CHOICE .*?program=([0-9A-F]+)',text)}-{0}
  roots=set(initial_roots)|selected_roots

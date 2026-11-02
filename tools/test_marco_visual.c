@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,7 @@
 #include "marco_death.h"
 #include "legs_fixture.h"
 #include "marco_throw_fixture.h"
+#include "marco_mummy_fixture.h"
 static bool reserve(void *c){(void)c;return true;}
 #include "marco_pose_meta.h"
 static int find(uint32_t t){for(unsigned i=0;i<MARCO_POSES;i++)if(marco_poses[i].source_tag==t)return 1;return 0;}
@@ -127,6 +129,31 @@ int main(void){
       else{tbad++;if(bad++<3)printf("%s step %u: %06x, capture %06x\n",c->name,k,(unsigned)got,throw_descriptors[c->first+k]);}
     }
     assert(!v.failures);
+  }
+  /* The mummy update by update (data/marco_mummy_fixture.json, marco-mz2:
+   * 1475 updates from the transformation through 29 input cases): the
+   * situation derived from the original controller, the body and weapon
+   * descriptors the original drew. */
+  {
+    marco_visual_reset(&v);unsigned bok=0,bbad=0,wok=0,wbad=0,shown=0;
+    for(unsigned k=0;k<MUMMY_STEPS;k++){
+      const mummy_step_t*m=&mummy_steps[k];
+      marco_visual_input_t in={.grounded=m->grounded,.moving=m->moving,.crouch=m->crouch,.aim_up=m->aim_up,.aim_down=m->aim_down,.fired=m->fired,
+        .facing=m->facing,.x=120,.y=350,.form=(uint8_t)(k?3:0),.hgun_program=-1,.thrown=m->thrown,.transforming=m->transforming,.takeoff=m->takeoff};
+      marco_visual_step(&v,&in);
+      uint32_t b=v.body_count?v.body_draws[0].descriptor:0,w=v.weapon_role>=0&&v.weapon_count?v.weapon_draws[0].descriptor:0;
+      if(!k)continue;   /* form 0, mid-program in the capture */
+      if(b==m->body)bok++;else{bbad++;if(shown++<40||getenv("MUMMY_ALL"))printf("mummy step %u: body %06x, capture %06x\n",k,(unsigned)b,(unsigned)m->body);}
+      if(w==m->weapon)wok++;else{wbad++;if(shown++<40||getenv("MUMMY_ALL"))printf("mummy step %u: weapon %06x, capture %06x\n",k,(unsigned)w,(unsigned)m->weapon);}
+    }
+    printf("mummy: body %u equal %u different, weapon %u equal %u different, %u stops\n",bok,bbad,wok,wbad,v.stops);
+    /* Known weapon differences (12): the landing update's shot aims down in
+     * the original (its fire state runs in the air routine; the port's
+     * player has landed: 4 steps from 3903) and the gun raised/lowered in
+     * the air 25F7A0/25F794 at the takeoff (0C3A5E not translated: 2 steps,
+     * then the idle program 6 steps out of phase). */
+    assert(!bbad && wbad<=12 && !v.failures);
+    puts("PASS: the mummy (form 3) against marco-mz2 update by update: transformation, idle, walk, turn, jumps, landings, crouch, crouched fire, stand-up (body exact)");
   }
   printf("throws/C/S/F/H down/knife/descent/mummy: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
   assert(tok>=400&&!tbad);

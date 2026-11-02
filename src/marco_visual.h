@@ -28,6 +28,8 @@ typedef struct {
     uint8_t cgroup;        /* with cgun, the weapon's fire tables: 1 the C's (C02D8..), 2 0BFFD8.. (ids 02/07), 3 0C00D8.. (ids 04/09) */
     bool knife;            /* a knife cut 0C3B46 started in this update */
     bool hanging;          /* parachute descent 0C162A (marco_descent.c), before the cut */
+    bool transforming;     /* form 3: the transformation 0C17A0..0C182A (no control) */
+    bool takeoff;          /* form 3: the takeoff 0C19E4/0C1A0C (crouched before the jump) */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;
@@ -36,6 +38,9 @@ typedef struct {
     bool body_done,weapon_done;    /* program finished: its last draws stay */
     bool grounded,crouch,moving,running_jump;
     uint8_t form;                  /* +93 of the previous update */
+    int facing;                    /* facing of the previous update (form 3: the turn 0C1924) */
+    unsigned stops;                /* form 3: situations without a captured body program (the body stays) */
+    uint8_t m90;                   /* form 3: +90, the controller's state for the weapon (0 idle, 1 walk, 3 jump, FF none) */
     uint16_t base_x,base_y;
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */

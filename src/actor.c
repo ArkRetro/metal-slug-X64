@@ -362,6 +362,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             mi.hanging=game.descent==MSX_DESCENT_HANG;
+            mi.transforming=game.mummy_transform!=0;mi.takeoff=game.mummy_takeoff!=0;
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;}
@@ -587,9 +588,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
             unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
             /* The mummy (form 3): slots 63/64 hold its two palettes
-             * (marco-mz2 palette dumps; the switch during the
-             * transformation is not modelled: from the form request on). */
-            bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3;
+             * (marco-mz2 palette dumps). The transformation's body
+             * (1887E0/1887CC) keeps the player's own palettes: marco-mz2's
+             * audit uses them in its first 37 frames (2101..2137, the
+             * transformation), the mummy's from the end of it on. */
+            bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3 && !game.mummy_transform;
             for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);

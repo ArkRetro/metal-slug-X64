@@ -189,6 +189,10 @@ ROOTS+=[0x26939a,0x2693a6,0x2693b2,0x269382,0x26938e]
 ROOTS+=[0x23ba74,0x23bb52,0x23bbd0,0x23bc72,0x23bcf2]
 # Mission 2: the hostage 021B46.. of 06835C (neo_hostage.c).
 ROOTS+=[0x230984,0x230654,0x23066a]
+# The miners 021A1C/021A26 (neo_hostage.c): digs, pause, startled, the
+# item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
+# 02206E (the dust 021F96 is the bullets' impact 22E504).
+ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
 # Mission 2 stage-3 boss 026254 (neo_m2boss.c): body 23502C/234F10/234FCC/
 # 234F3C/23508C/235A8A, parts by 027D74 (+87), shots 235872/23581C.
 ROOTS+=[0x23502c,0x234f10,0x234fcc,0x234f3c,0x23508c,0x235a8a,0x235872,0x23581c,

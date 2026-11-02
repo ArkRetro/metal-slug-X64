@@ -217,7 +217,7 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
-    g->mummy_transform=g->mummy_guard=g->mummy_takeoff=0;
+    g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;
     marco_hgun_reset(&g->hgun);
     g->mount=MSX_MOUNT_NONE;
 }
@@ -879,11 +879,16 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     /* 0C17A0/0C17F0/0C182A: the transformation holds the player still
      * (+30/+34 = 0) with no control; 0C1A0C, the mummy's takeoff, too. */
     if (g->mummy_transform || g->mummy_takeoff) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
+    /* 0C1AC8..0C1B0A: the mummy's landing (body table C0478, 25F4EE, three
+     * updates in marco-mz2) moves with +62 = 0; jump, fire and the bomb
+     * stay (0C1ADE..0C1AF6). */
+    if (g->mummy_landing) direction=0;
     if (!(g->ticks&1)) {
+        if (g->mummy_landing) g->mummy_landing--;
         if (g->mummy_transform && !--g->mummy_transform) g->mummy_guard=0x5a;   /* 0C182A: +84 = 0x5A */
         else if (g->mummy_guard) g->mummy_guard--;
     }
-    g->crouching=g->crouch && g->grounded && !g->ride && g->mount==MSX_MOUNT_NONE;
+    g->crouching=g->crouch && g->grounded && !g->ride && g->mount==MSX_MOUNT_NONE && !g->mummy_takeoff;
     if (g->crouching && direction) {g->facing=direction<0?-1:1;direction=0;}  /* turns in place */
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
@@ -944,6 +949,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;g->ride=0;g->jump_moving=direction!=0;
         }
         g->jump_pending=false;
+        const bool was_grounded=g->grounded;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
         if (dying) {
             /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
@@ -993,10 +999,11 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             if (dying) {}
             else if (mummy) {
                 /* 0C1A62 (mummy in the air, marco-mz1): +34 by (-14 px - +34) >> 5
-                 * each update; across, the walk's half speed (declared
-                 * approximation: the capture jumped straight up). */
+                 * each update; across (0C1A72..0C1AA6), +30 by (target - +30)
+                 * >> shift: target -0x3E000 with left (bit 2), +0x3E000 with
+                 * right (bit 3), shift 3; no direction: target 0, shift 5. */
                 body.vy+=neo_asr(-14*(int64_t)NEO_UNIT-body.vy,5);
-                body.vx+=neo_asr(direction*2*(int64_t)NEO_UNIT-body.vx,direction?2:5);
+                body.vx+=neo_asr((int64_t)direction*0x3e000-body.vx,direction?3:5);
             } else neo_air_accel(&body,direction);
             solid_push_t s=solid_push(g,&body,body.vx,body.vy);
             if (s.top && !dying) {
@@ -1030,6 +1037,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 }
             }
         }
+        if (mummy && !was_grounded && g->grounded && !dying) g->mummy_landing=3;
         clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
@@ -1125,7 +1133,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * fan BE/C0/C2 and its sweeps C8..F8, mirrored B8..88), muzzle the
      * 0C4204 down row plus the jump programs' +72/+74 (tools/
      * test_marco_muzzle.c). Up wins over down (0C3D30 tests bit 0 first). */
-    g->aim_down=g->crouch && !g->grounded && !g->aim_up && g->mount==MSX_MOUNT_NONE && !g->ride;
+    /* The mummy's takeoff 0C1A0C counts as the air (marco-mz2 3831: down and
+     * fire there draw the down fire 25F932). */
+    g->aim_down=g->crouch && (!g->grounded || g->mummy_takeoff) && !g->aim_up && g->mount==MSX_MOUNT_NONE && !g->ride;
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
     /* The knife. 0C3744 (each player update): the query row 2D0AE4 (kind
      * 0, no damage) at the player; a hurtbox of type 4 or 5 in reach sets

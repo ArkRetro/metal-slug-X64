@@ -370,7 +370,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -467,6 +467,13 @@ FAMILY_ARGS_drone := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # node becomes the hostage 021B46.. and its holder is 0683FA (neo_hostage.c,
 # neo_rebel3.c), h1 from sec02_19932, frames 20590..20960.
 FAMILY_ARGS_hostage := --node-fields 86 --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# miner = the Mission 2 stage-2 miners 021A1C/021A26 (script records of
+# section 2, uncounted), their dust 021F96 and sparkle 02206E, the item gift
+# (neo_hostage.c): s2b from sec02_19932 with the player idle next to the
+# miner of 2D7598 (MSX_FULL_IDLE=20158-20700); minerrun: s2a, the pilot
+# running through the stage start (frames 19933..22800).
+FAMILY_ARGS_miner := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+FAMILY_ARGS_minerrun := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # m2boss<n> = the Mission 2 stage-3 boss 026254 (neo_m2boss.c) in pieces of
 # one fight (capture_fullgame.lua from at_92700, MSX_FULL_FAMILY_RANGE=
 # 26254-27e8e): body, parts, shots, the column, the music delay 059F76 and
@@ -989,7 +996,9 @@ filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64
 # Throw/C/H-down poses per step (tools/extract_throw_fixture.py, data/marco_throw_fixture.json).
 $(BUILD_DIR)/marco_throw_fixture.h: tools/extract_throw_fixture.py data/marco_throw_fixture.json
 	python3 tools/extract_throw_fixture.py --from-json data/marco_throw_fixture.json --header $@
-check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/marco_throw_fixture.h
+$(BUILD_DIR)/marco_mummy_fixture.h: tools/extract_mummy_fixture.py data/marco_mummy_fixture.json
+	python3 tools/extract_mummy_fixture.py --from-json data/marco_mummy_fixture.json --header $@
+check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/marco_throw_fixture.h $(BUILD_DIR)/marco_mummy_fixture.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_marco_visual.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/marco_visual
 	$(BUILD_DIR)/host/marco_visual

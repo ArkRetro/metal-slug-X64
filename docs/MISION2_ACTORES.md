@@ -42,6 +42,9 @@ sección 2 en 19932). Unos 20 s por ejecución.
 | `03670E` dron y su bomba `0369AC` | `src/neo_drone.c` | familia `drone` (`c1`): 10 nodos, **1134 actualizaciones**, 10 borrados, 22 contactos |
 | `06835C` soldado con rehén: rehén `021B46..` y soldado `0683FA/0684CA` | `src/neo_hostage.c`, `src/neo_rebel3.c` | familia `hostage` (etapa 2, `h1`): 2 nodos, **186 actualizaciones**, 2 borrados |
 | `09A692` caja oculta → prisionero `099E1C` (`09A842`) | `src/neo_secret.c`, `src/neo_prisoner.c` | familia `secret2` (etapa 1, `pr1`): 8 nodos, **1477 actualizaciones**, 4 borrados, 246 dibujos |
+| `0B829C/0B833A` carteles (etapas 2 y 3; `0B829C` sella colisión `0C88B0`) | `src/neo_m2props.c` | familia `signs` (`s2a`): 3 nodos, **3067 actualizaciones**, el sello en el anillo igual (el banco traduce `0C88B0` sobre el anillo +88) |
+| `099DE2` prisionero atado (+86 bit 0, sin `01B1DC`) | `src/neo_prisoner.c` | familia `prisoner3` (`s2a`): 561 actualizaciones |
+| `099DF0` prisioneros colgados y la cuerda `09A9C4` (`011FF6`: `ga_draw` del +7A del prisionero) | `src/neo_prisoner.c`, `src/neo_gactor.c` | familia `prisoner4` (`p3`, `MSX_FULL_FAMILY_ROOTS=99df0` desde 22900): 6 nodos, **2275 actualizaciones** |
 | `021A1C/021A26` mineros (etapa 2), polvo `021F96`, destello `02206E`, regalo por `08CDB2` | `src/neo_hostage.c` | familias `miner` (`s2b`, jugador quieto junto al minero): 20 nodos, **1244 actualizaciones**, 18 borrados, 1225 dibujos; `minerrun` (`s2a`, el piloto pasa corriendo): 19 nodos, 1015 actualizaciones |
 
 `3AED8`/`3AEF0`: cursor +72 de −30 a 0x46 en pasos de 3; cada actualización
@@ -532,3 +535,20 @@ filesystem/mission2/rest-native.json --keep <export anterior>` (raíces y
 paleta 0xAD añadidas; 0x1F y 0x204 ya estaban): **40 volcados, 55175
 píxeles iguales, 0 distintos**. `pack_mission.py 2 ...` vuelve a empaquetar
 `romfs/mission2.pack` (3,19 MB, 980 actores).
+
+### Carteles, prisioneros `099DE2`/`099DF0` (misma rama)
+
+Sprites (`export_rest_sprites.py`, con el exportador tomando también los
+descriptores que `29FB62` escribe en +7A): carteles `s2a@b829c-b8444`, 154
+volcados, 590018 píxeles iguales y 817 distintos en un solo volcado tomado
+en el fotograma de la actualización (21480; los demás 0); prisioneros
+colgados `p3@99dcc-9aa9e`, 78 volcados, 105991 iguales, **0 distintos**. La
+paleta 0x4B8 (carteles de la etapa 3, +70 = 0) no está en ningún volcado
+(parada de paleta: se dibujan con la de reserva).
+
+**Murciélagos** `035B66/035C68/035D12` (`+96` = 0..3: bandada de 5 con
+`035BF8`, murciélago con recorrido de cuatro puntos en +6E.., nido que
+suelta `035E0A` cada 0x28..0x77 actualizaciones): trazados en `s2a`
+(`35c42`, `35fd0`, `35f32`) pero **sin traducir** (≈ 0x0C00 bytes de
+`035A40..0366F0` con vuelo polar `002E7C`/`002EB4`, caída, muerte y
+`08C0C2/08CE42`): parada explícita, el mundo los cuenta.

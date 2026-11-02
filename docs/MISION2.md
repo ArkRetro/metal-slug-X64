@@ -817,7 +817,7 @@ lleva su grupo (< 9) y retiene las esperas del guion.
 | `06835C` | 2 | 1 | 1 | sí | sí | soldado con rehén |
 | `06851A` | 2 | 3 | 3 | sí | sí | sacos |
 | **`099DE2`** | 2 | 4 | 1 | no | **sí (nuevo)** | prisionero atado (variante +86 bit 0) |
-| `099DF0` | 2 | 3 | 3 | no | **no (parada)** | prisioneros colgados de una cuerda (`09A9C4`: dibujo directo `011FF6`) |
+| **`099DF0`** | 2 | 3 | 3 | no | **sí (nuevo)** | prisioneros colgados de una cuerda (trozos `09A9C4`, dibujo directo `011FF6`) |
 | **`0B829C` / `0B833A`** | 2,3 | 1 / 24 | 1 / 24 | no | **sí (nuevo)** | carteles de madera (el primero con sello de colisión) |
 | `026254` | 3 | 1 | 1 | sí | sí | jefe |
 | `032DE2` | 3 | 2 | 1 | no | no (parada) | sin identificar: paleta 0x105, programa `239492`, andador `08CCD4`, sigue en `067AB4` (soldado) |
@@ -830,8 +830,8 @@ lleva su grupo (< 9) y retiene las esperas del guion.
 | `0995EC` | 3 | 1 | 1 | no | no (parada) | objeto golpeable (caja `099838`, vida +72) |
 | `099862` / `099DCC` | 3 | 1 / 1 | 1 / 1 | no | sí | prisioneros |
 
-Apariciones que el port pierde: de 17 constructores no contados a **10**
-(`032DE2 035B66 035C68 035D12 03A05A 03A2AA 082BCE 09692C 0995EC 099DF0`);
+Apariciones que el port pierde: de 17 constructores no contados a **9**
+(`032DE2 035B66 035C68 035D12 03A05A 03A2AA 082BCE 09692C 0995EC`);
 contadas perdidas: 0. Todas son paradas explícitas: el mundo cuenta el
 constructor (`external_spawns`) y el registro de ares dice `native 0`.
 

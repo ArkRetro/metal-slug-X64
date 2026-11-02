@@ -662,6 +662,16 @@ sueltas. Píxeles (captura `coinv`, `sec03_26140`, volcados cada 15
 fotogramas 55430..56190, `export_rest_sprites.py ... coinv@8c374-8d900`):
 **51 volcados, 28193 píxeles iguales, 0 distintos**.
 
+**Ares** (`mslugx-m2-reference.z64`, `test_mission2_ares.py --stage-seconds
+800`: PASS; últimas líneas `MSX item kind` creados/externos/cogidos): `00`
+7/0/3, `01` 2/0/1, `03` 2/0/1, `04` 1/0/0, `06` 1/0/0, `18` 1/0/0, `1C`
+2/0/2, `22` 1/0/1, `24` 3/0/2, `29` 7/0/4, `2A` 10/0/3, `2B` 5/0/3, `2C`
+1/0/0, `2F` 1/0/0, `32` 7/0/6, `35` 1/0/0, `36` 3/0/0, `40` **0/2/0**
+(parada explícita, abajo), `44` 1/0/0, `46` 1/0/0, `48` 1/0/0, `4A` 1/0/0,
+`50` 1/0/1, `52` 1/0/1, `54` 6/0/4. El piloto del port no pasa por los
+registros de las monedas (ramas del guion de la etapa 3 distintas de las de
+MAME): el tipo `56` lo prueba la familia `coin`.
+
 **Paradas explícitas que quedan** (sin captura: el piloto no los produce;
 el objeto se devuelve como externo y la línea `MSX item kind` lo cuenta):
 

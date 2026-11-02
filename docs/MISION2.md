@@ -848,8 +848,12 @@ RNG elige otra). Recorrido de ares de esta rama (`mslugx-m2-reference.z64`,
 | Etapa | Registros (arcade) | Registros (port) | Mismo orden (LCS) | Solo arcade | Solo port |
 | --- | --- | --- | --- | --- | --- |
 | 1 | 10 | 13 | **10** (todos los del arcade) | — | `2D74D4` `2D74EA` `2D7500` (cajas `09A692` de la cámara 320: la puerta `03882A` del arcade se rompió antes y `018F92` borró el guion) |
-| 2 | 80 | 84 | **76** | `2D7B90` (`if` grupo 2 < 1) | `2D7B58` (`if` grupo 1 = 1), `2D7FA2` (`if` grupo 2 < 1), `2D8120` (`if` grupo 7 < 1); `2D7B24` 1 vez en el arcade y 2 en el port |
-| 3 | 208 | 151 | **139** | 52 registros dentro de `if` de grupo vacío (`2D8EE4` g2, `2D9110` g4, `2D9358` g8: los 14 objetos de la caja `09A67E` rota, `2D997E` g8, `2D9B12` g2), la elección `2D9228` (nido `035D12`) y `2D97EE` | `2D98F2` `2D9904` (`if` 0B: posición del jugador), `2D9ABC`; `2D979C` 8/7, `2D9CB8` 8/2 |
+| 2 | 80 | 83 | **78** | — | `2D7B58` (`if` grupo 1 = 1), `2D7FA2` (`if` grupo 2 < 1), `2D8120` (`if` grupo 7 < 1) |
+| 3 | 208 | 149 | **137** | 52 registros dentro de `if` de grupo vacío (`2D8EE4` g2, `2D9110` g4, `2D9358` g8: los 14 objetos de la caja `09A67E` rota, `2D997E` g8, `2D9B12` g2), `2D97EE` | `2D9294` (elección al azar), `2D98F2` `2D9904` (`if` 0B: posición del jugador); `2D979C` 8/5, `2D9CB8` 8/1 |
+
+(Recorrido D, el último: `PASS`, 0 caídas mortales, 2 rescates; un
+recorrido anterior con cuatro ares en la máquina se quedó sin tiempo en la
+parada 2368 de la etapa 2 sin cambio de lógica.)
 
 Todas las diferencias restantes son **del jugador**, no de la lógica: los
 `if` del guion leen los recuentos de grupo (enemigos o cajas destruidos a

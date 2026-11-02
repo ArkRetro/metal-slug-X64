@@ -354,6 +354,36 @@ en 8658 (con `108C` cada 5 fotogramas) y la de la R en 14145 (con `10F5` 6
 fotogramas después) no (0,04, el nivel de base): en la recreativa también
 puede no oírse si se dispara al coger el arma; falta medir ese par.
 
+## 13. Voz al coger el láser y las armas 0E/0F (ROM 24, rama `work-m2fix6`)
+
+**B36: no sonaba la voz al coger la L.** `0C0928` pide la palabra de la
+tabla `0C08F8` (leída de la ROM: `0000 0000 112F 112E 112C 112D 1130 112F
+112E 112C 112D 1130 1158 115A 115B 1159`); el port ya la pedía
+(`marco_weapons_grant`), pero `1130` (ids 06/0B), `115B` (0E) y `1159` (0F)
+no estaban en `data/sound_map.json`: nunca se renderizaron y la política no
+las conocía. Render aislado (`render_sound_commands.py --labels sfx_1130
+sfx_115b sfx_1159`, a un directorio aparte y `pack_game_audio.py --source`
+ese directorio, que funde el manifiesto): 1,388 s / 1,508 s / 1,867 s, `OK`,
+latencia 9,7–12,9 ms; WAV64 de 18 962, 20 582 y 25 442 bytes.
+
+Pares (`measure_sound_pairs.py --pairs`, 411: cada una consigo misma, entre
+ellas y contra las 67 etiquetas de la política en los dos órdenes; en
+`data/sound_pairs.json`): cortan y son cortadas por las otras voces de
+recogida (`112C..112F`, `1158`, `115A`), caen bajo `1124`, `113A` y `1056`;
+con el resto solapan o no está claro. `derive_sound_policy.py`: canal
+`ch_1056`, nivel 1, como sus hermanas. Dos pares (`1159>1032`,
+`115B>vehicle_burst`) son cortes solo por onda (residuo en el límite de
+media mezcla) que la envolvente lee como solape, y habrían unido todo el
+grupo de `1056` al canal de impacto aunque los demás pares cruzados de los
+dos grupos solapan (ninguno corta ni cae; decenas son solapes claros en los
+dos órdenes): la herramienta los deja como puentes (`--bridge`, por
+defecto, listados en `bridges`). Ningún otro sonido cambia de canal ni de
+nivel (comprobado: la política anterior se reproduce igual sin los pares
+nuevos).
+
+Memoria: `1130` es residente (19 KB); `115B` y `1159` (armas 0E/0F, que no
+da ningún objeto de las Misiones 1 y 2: B16) se leen de `rom:/` como `115A`.
+
 ## Regenerar
 
 ```sh

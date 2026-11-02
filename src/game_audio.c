@@ -40,7 +40,10 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * (3323 of 3332 KB): the mission complete voice 1137 (played at the
  * mission end, when the cache is idle) and the D's pickup voice 115A (rare)
  * play from rom:/ too (51 KB). */
-static bool streamed(unsigned i) {uint16_t w=msx_sfx_defs[i].word;return w==0x10f8u || w==0x1137u || w==0x115au;}
+/* B36: the pickup voices of the weapons 0E (115B) and 0F (1159), which no
+ * Mission 1/2 item gives (B16), play from rom:/ too; the L's 1130 is
+ * resident (scene cache floor kept). */
+static bool streamed(unsigned i) {uint16_t w=msx_sfx_defs[i].word;return w==0x10f8u || w==0x1137u || w==0x115au || w==0x115bu || w==0x1159u;}
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
     for (unsigned i=0;i<MSX_SFX_COUNT;i++) {

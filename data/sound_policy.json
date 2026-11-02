@@ -124,7 +124,13 @@
     "explosion>sfx_10f8": "unclear",
     "sfx_10f8>explosion": "unclear",
     "sfx_1123>explosion": "overlap",
-    "explosion>sfx_1123": "overlap"
+    "explosion>sfx_1123": "overlap",
+    "sfx_1130>explosion": "overlap",
+    "explosion>sfx_1130": "unclear",
+    "sfx_115b>explosion": "overlap",
+    "explosion>sfx_115b": "unclear",
+    "sfx_1159>explosion": "overlap",
+    "explosion>sfx_1159": "unclear"
    }
   },
   "knife_hit": {
@@ -175,7 +181,13 @@
     "sfx_1069>knife_hit": "unclear",
     "knife_hit>sfx_1069": "overlap",
     "sfx_1123>knife_hit": "overlap",
-    "knife_hit>sfx_1123": "overlap"
+    "knife_hit>sfx_1123": "overlap",
+    "sfx_1130>knife_hit": "overlap",
+    "knife_hit>sfx_1130": "unclear",
+    "sfx_115b>knife_hit": "overlap",
+    "knife_hit>sfx_115b": "unclear",
+    "sfx_1159>knife_hit": "overlap",
+    "knife_hit>sfx_1159": "unclear"
    }
   },
   "pistol": {
@@ -300,7 +312,13 @@
     "pistol>sfx_10f8": "unclear",
     "sfx_10f8>pistol": "unclear",
     "sfx_1123>pistol": "overlap",
-    "pistol>sfx_1123": "overlap"
+    "pistol>sfx_1123": "overlap",
+    "sfx_1130>pistol": "overlap",
+    "pistol>sfx_1130": "unclear",
+    "sfx_115b>pistol": "overlap",
+    "pistol>sfx_115b": "unclear",
+    "sfx_1159>pistol": "overlap",
+    "pistol>sfx_1159": "unclear"
    }
   },
   "rebel_103e": {
@@ -337,7 +355,13 @@
     "sfx_1069>rebel_103e": "unclear",
     "rebel_103e>sfx_1069": "overlap",
     "sfx_1123>rebel_103e": "drop",
-    "rebel_103e>sfx_1123": "cut"
+    "rebel_103e>sfx_1123": "cut",
+    "sfx_1130>rebel_103e": "overlap",
+    "rebel_103e>sfx_1130": "overlap",
+    "sfx_115b>rebel_103e": "overlap",
+    "rebel_103e>sfx_115b": "overlap",
+    "sfx_1159>rebel_103e": "overlap",
+    "rebel_103e>sfx_1159": "overlap"
    }
   },
   "rebel_1041": {
@@ -462,7 +486,13 @@
     "rebel_1041>sfx_10f8": "unclear",
     "sfx_10f8>rebel_1041": "unclear",
     "sfx_1123>rebel_1041": "drop",
-    "rebel_1041>sfx_1123": "cut"
+    "rebel_1041>sfx_1123": "cut",
+    "sfx_1130>rebel_1041": "overlap",
+    "rebel_1041>sfx_1130": "overlap",
+    "sfx_115b>rebel_1041": "overlap",
+    "rebel_1041>sfx_115b": "overlap",
+    "sfx_1159>rebel_1041": "overlap",
+    "rebel_1041>sfx_1159": "overlap"
    }
   },
   "sfx_1021": {
@@ -524,7 +554,13 @@
     "sfx_1069>sfx_1021": "unclear",
     "sfx_1021>sfx_1069": "overlap",
     "sfx_1123>sfx_1021": "overlap",
-    "sfx_1021>sfx_1123": "overlap"
+    "sfx_1021>sfx_1123": "overlap",
+    "sfx_1130>sfx_1021": "overlap",
+    "sfx_1021>sfx_1130": "overlap",
+    "sfx_115b>sfx_1021": "overlap",
+    "sfx_1021>sfx_115b": "overlap",
+    "sfx_1159>sfx_1021": "overlap",
+    "sfx_1021>sfx_1159": "overlap"
    }
   },
   "sfx_1022": {
@@ -586,7 +622,13 @@
     "sfx_1069>sfx_1022": "unclear",
     "sfx_1022>sfx_1069": "overlap",
     "sfx_1123>sfx_1022": "overlap",
-    "sfx_1022>sfx_1123": "overlap"
+    "sfx_1022>sfx_1123": "overlap",
+    "sfx_1130>sfx_1022": "overlap",
+    "sfx_1022>sfx_1130": "overlap",
+    "sfx_115b>sfx_1022": "overlap",
+    "sfx_1022>sfx_115b": "overlap",
+    "sfx_1159>sfx_1022": "overlap",
+    "sfx_1022>sfx_1159": "overlap"
    }
   },
   "sfx_1025": {
@@ -648,7 +690,13 @@
     "sfx_1069>sfx_1025": "unclear",
     "sfx_1025>sfx_1069": "overlap",
     "sfx_1123>sfx_1025": "overlap",
-    "sfx_1025>sfx_1123": "overlap"
+    "sfx_1025>sfx_1123": "overlap",
+    "sfx_1130>sfx_1025": "overlap",
+    "sfx_1025>sfx_1130": "overlap",
+    "sfx_115b>sfx_1025": "overlap",
+    "sfx_1025>sfx_115b": "overlap",
+    "sfx_1159>sfx_1025": "overlap",
+    "sfx_1025>sfx_1159": "overlap"
    }
   },
   "sfx_102c": {
@@ -710,7 +758,13 @@
     "sfx_1069>sfx_102c": "unclear",
     "sfx_102c>sfx_1069": "unclear",
     "sfx_1123>sfx_102c": "overlap",
-    "sfx_102c>sfx_1123": "overlap"
+    "sfx_102c>sfx_1123": "overlap",
+    "sfx_1130>sfx_102c": "overlap",
+    "sfx_102c>sfx_1130": "overlap",
+    "sfx_115b>sfx_102c": "overlap",
+    "sfx_102c>sfx_115b": "overlap",
+    "sfx_1159>sfx_102c": "overlap",
+    "sfx_102c>sfx_1159": "overlap"
    }
   },
   "sfx_102f": {
@@ -772,7 +826,13 @@
     "sfx_1069>sfx_102f": "unclear",
     "sfx_102f>sfx_1069": "unclear",
     "sfx_1123>sfx_102f": "overlap",
-    "sfx_102f>sfx_1123": "overlap"
+    "sfx_102f>sfx_1123": "overlap",
+    "sfx_1130>sfx_102f": "unclear",
+    "sfx_102f>sfx_1130": "overlap",
+    "sfx_115b>sfx_102f": "overlap",
+    "sfx_102f>sfx_115b": "overlap",
+    "sfx_1159>sfx_102f": "overlap",
+    "sfx_102f>sfx_1159": "overlap"
    }
   },
   "sfx_1032": {
@@ -834,7 +894,13 @@
     "sfx_1069>sfx_1032": "unclear",
     "sfx_1032>sfx_1069": "unclear",
     "sfx_1123>sfx_1032": "overlap",
-    "sfx_1032>sfx_1123": "overlap"
+    "sfx_1032>sfx_1123": "overlap",
+    "sfx_1130>sfx_1032": "unclear",
+    "sfx_1032>sfx_1130": "overlap",
+    "sfx_115b>sfx_1032": "unclear",
+    "sfx_1032>sfx_115b": "unclear",
+    "sfx_1159>sfx_1032": "cut",
+    "sfx_1032>sfx_1159": "overlap"
    }
   },
   "sfx_1034": {
@@ -954,7 +1020,13 @@
     "sfx_1069>sfx_1034": "unclear",
     "sfx_1034>sfx_1069": "unclear",
     "sfx_1123>sfx_1034": "overlap",
-    "sfx_1034>sfx_1123": "overlap"
+    "sfx_1034>sfx_1123": "overlap",
+    "sfx_1130>sfx_1034": "unclear",
+    "sfx_1034>sfx_1130": "unclear",
+    "sfx_115b>sfx_1034": "unclear",
+    "sfx_1034>sfx_115b": "unclear",
+    "sfx_1159>sfx_1034": "overlap",
+    "sfx_1034>sfx_1159": "overlap"
    }
   },
   "sfx_1035": {
@@ -1016,7 +1088,13 @@
     "sfx_1069>sfx_1035": "unclear",
     "sfx_1035>sfx_1069": "unclear",
     "sfx_1123>sfx_1035": "overlap",
-    "sfx_1035>sfx_1123": "overlap"
+    "sfx_1035>sfx_1123": "overlap",
+    "sfx_1130>sfx_1035": "overlap",
+    "sfx_1035>sfx_1130": "overlap",
+    "sfx_115b>sfx_1035": "overlap",
+    "sfx_1035>sfx_115b": "overlap",
+    "sfx_1159>sfx_1035": "overlap",
+    "sfx_1035>sfx_1159": "overlap"
    }
   },
   "sfx_1048": {
@@ -1096,7 +1174,13 @@
     "sfx_1069>sfx_1048": "overlap",
     "sfx_1048>sfx_1069": "unclear",
     "sfx_1123>sfx_1048": "drop",
-    "sfx_1048>sfx_1123": "unclear"
+    "sfx_1048>sfx_1123": "unclear",
+    "sfx_1130>sfx_1048": "unclear",
+    "sfx_1048>sfx_1130": "unclear",
+    "sfx_115b>sfx_1048": "unclear",
+    "sfx_1048>sfx_115b": "unclear",
+    "sfx_1159>sfx_1048": "unclear",
+    "sfx_1048>sfx_1159": "unclear"
    }
   },
   "sfx_104a": {
@@ -1140,7 +1224,13 @@
     "sfx_1069>sfx_104a": "unclear",
     "sfx_104a>sfx_1069": "unclear",
     "sfx_1123>sfx_104a": "drop",
-    "sfx_104a>sfx_1123": "cut"
+    "sfx_104a>sfx_1123": "cut",
+    "sfx_1130>sfx_104a": "overlap",
+    "sfx_104a>sfx_1130": "overlap",
+    "sfx_115b>sfx_104a": "overlap",
+    "sfx_104a>sfx_115b": "overlap",
+    "sfx_1159>sfx_104a": "overlap",
+    "sfx_104a>sfx_1159": "overlap"
    }
   },
   "sfx_104f": {
@@ -1184,7 +1274,13 @@
     "sfx_1069>sfx_104f": "unclear",
     "sfx_104f>sfx_1069": "unclear",
     "sfx_1123>sfx_104f": "drop",
-    "sfx_104f>sfx_1123": "cut"
+    "sfx_104f>sfx_1123": "cut",
+    "sfx_1130>sfx_104f": "overlap",
+    "sfx_104f>sfx_1130": "overlap",
+    "sfx_115b>sfx_104f": "overlap",
+    "sfx_104f>sfx_115b": "overlap",
+    "sfx_1159>sfx_104f": "overlap",
+    "sfx_104f>sfx_1159": "overlap"
    }
   },
   "sfx_1056": {
@@ -1268,7 +1364,13 @@
     "sfx_1056>sfx_10f8": "unclear",
     "sfx_10f8>sfx_1056": "unclear",
     "sfx_1123>sfx_1056": "overlap",
-    "sfx_1056>sfx_1123": "unclear"
+    "sfx_1056>sfx_1123": "unclear",
+    "sfx_1130>sfx_1056": "drop",
+    "sfx_1056>sfx_1130": "unclear",
+    "sfx_115b>sfx_1056": "drop",
+    "sfx_1056>sfx_115b": "unclear",
+    "sfx_1159>sfx_1056": "drop",
+    "sfx_1056>sfx_1159": "unclear"
    }
   },
   "sfx_105d": {
@@ -1348,7 +1450,13 @@
     "sfx_1069>sfx_105d": "unclear",
     "sfx_105d>sfx_1069": "unclear",
     "sfx_1123>sfx_105d": "overlap",
-    "sfx_105d>sfx_1123": "overlap"
+    "sfx_105d>sfx_1123": "overlap",
+    "sfx_1130>sfx_105d": "overlap",
+    "sfx_105d>sfx_1130": "overlap",
+    "sfx_115b>sfx_105d": "overlap",
+    "sfx_105d>sfx_115b": "overlap",
+    "sfx_1159>sfx_105d": "overlap",
+    "sfx_105d>sfx_1159": "overlap"
    }
   },
   "sfx_1064": {
@@ -1410,7 +1518,13 @@
     "sfx_1069>sfx_1064": "unclear",
     "sfx_1064>sfx_1069": "unclear",
     "sfx_1123>sfx_1064": "overlap",
-    "sfx_1064>sfx_1123": "overlap"
+    "sfx_1064>sfx_1123": "overlap",
+    "sfx_1130>sfx_1064": "overlap",
+    "sfx_1064>sfx_1130": "overlap",
+    "sfx_115b>sfx_1064": "overlap",
+    "sfx_1064>sfx_115b": "overlap",
+    "sfx_1159>sfx_1064": "overlap",
+    "sfx_1064>sfx_1159": "overlap"
    }
   },
   "sfx_1067": {
@@ -1472,7 +1586,13 @@
     "sfx_1069>sfx_1067": "unclear",
     "sfx_1067>sfx_1069": "overlap",
     "sfx_1123>sfx_1067": "overlap",
-    "sfx_1067>sfx_1123": "overlap"
+    "sfx_1067>sfx_1123": "overlap",
+    "sfx_1130>sfx_1067": "overlap",
+    "sfx_1067>sfx_1130": "overlap",
+    "sfx_115b>sfx_1067": "overlap",
+    "sfx_1067>sfx_115b": "overlap",
+    "sfx_1159>sfx_1067": "overlap",
+    "sfx_1067>sfx_1159": "overlap"
    }
   },
   "sfx_1069": {
@@ -1594,7 +1714,13 @@
     "sfx_1069>sfx_10f8": "unclear",
     "sfx_10f8>sfx_1069": "unclear",
     "sfx_1123>sfx_1069": "unclear",
-    "sfx_1069>sfx_1123": "overlap"
+    "sfx_1069>sfx_1123": "overlap",
+    "sfx_1130>sfx_1069": "overlap",
+    "sfx_1069>sfx_1130": "unclear",
+    "sfx_115b>sfx_1069": "overlap",
+    "sfx_1069>sfx_115b": "unclear",
+    "sfx_1159>sfx_1069": "overlap",
+    "sfx_1069>sfx_1159": "unclear"
    }
   },
   "sfx_1072": {
@@ -1674,7 +1800,13 @@
     "sfx_1069>sfx_1072": "unclear",
     "sfx_1072>sfx_1069": "unclear",
     "sfx_1123>sfx_1072": "overlap",
-    "sfx_1072>sfx_1123": "overlap"
+    "sfx_1072>sfx_1123": "overlap",
+    "sfx_1130>sfx_1072": "overlap",
+    "sfx_1072>sfx_1130": "overlap",
+    "sfx_115b>sfx_1072": "overlap",
+    "sfx_1072>sfx_115b": "overlap",
+    "sfx_1159>sfx_1072": "overlap",
+    "sfx_1072>sfx_1159": "overlap"
    }
   },
   "sfx_1073": {
@@ -1754,7 +1886,13 @@
     "sfx_1069>sfx_1073": "unclear",
     "sfx_1073>sfx_1069": "overlap",
     "sfx_1123>sfx_1073": "overlap",
-    "sfx_1073>sfx_1123": "overlap"
+    "sfx_1073>sfx_1123": "overlap",
+    "sfx_1130>sfx_1073": "overlap",
+    "sfx_1073>sfx_1130": "overlap",
+    "sfx_115b>sfx_1073": "overlap",
+    "sfx_1073>sfx_115b": "overlap",
+    "sfx_1159>sfx_1073": "overlap",
+    "sfx_1073>sfx_1159": "overlap"
    }
   },
   "sfx_1074": {
@@ -1834,7 +1972,13 @@
     "sfx_1069>sfx_1074": "unclear",
     "sfx_1074>sfx_1069": "unclear",
     "sfx_1123>sfx_1074": "overlap",
-    "sfx_1074>sfx_1123": "overlap"
+    "sfx_1074>sfx_1123": "overlap",
+    "sfx_1130>sfx_1074": "overlap",
+    "sfx_1074>sfx_1130": "overlap",
+    "sfx_115b>sfx_1074": "overlap",
+    "sfx_1074>sfx_115b": "overlap",
+    "sfx_1159>sfx_1074": "overlap",
+    "sfx_1074>sfx_1159": "overlap"
    }
   },
   "sfx_1075": {
@@ -1914,7 +2058,13 @@
     "sfx_1069>sfx_1075": "unclear",
     "sfx_1075>sfx_1069": "overlap",
     "sfx_1123>sfx_1075": "overlap",
-    "sfx_1075>sfx_1123": "overlap"
+    "sfx_1075>sfx_1123": "overlap",
+    "sfx_1130>sfx_1075": "overlap",
+    "sfx_1075>sfx_1130": "unclear",
+    "sfx_115b>sfx_1075": "overlap",
+    "sfx_1075>sfx_115b": "unclear",
+    "sfx_1159>sfx_1075": "overlap",
+    "sfx_1075>sfx_1159": "unclear"
    }
   },
   "sfx_1084": {
@@ -2034,7 +2184,13 @@
     "sfx_1069>sfx_1084": "unclear",
     "sfx_1084>sfx_1069": "overlap",
     "sfx_1123>sfx_1084": "overlap",
-    "sfx_1084>sfx_1123": "overlap"
+    "sfx_1084>sfx_1123": "overlap",
+    "sfx_1130>sfx_1084": "overlap",
+    "sfx_1084>sfx_1130": "overlap",
+    "sfx_115b>sfx_1084": "overlap",
+    "sfx_1084>sfx_115b": "overlap",
+    "sfx_1159>sfx_1084": "overlap",
+    "sfx_1084>sfx_1159": "overlap"
    }
   },
   "sfx_108c": {
@@ -2076,7 +2232,13 @@
     "sfx_1069>sfx_108c": "unclear",
     "sfx_108c>sfx_1069": "overlap",
     "sfx_1123>sfx_108c": "overlap",
-    "sfx_108c>sfx_1123": "overlap"
+    "sfx_108c>sfx_1123": "overlap",
+    "sfx_1130>sfx_108c": "overlap",
+    "sfx_108c>sfx_1130": "unclear",
+    "sfx_115b>sfx_108c": "overlap",
+    "sfx_108c>sfx_115b": "unclear",
+    "sfx_1159>sfx_108c": "overlap",
+    "sfx_108c>sfx_1159": "unclear"
    }
   },
   "sfx_108e": {
@@ -2156,7 +2318,13 @@
     "sfx_1069>sfx_108e": "unclear",
     "sfx_108e>sfx_1069": "overlap",
     "sfx_1123>sfx_108e": "overlap",
-    "sfx_108e>sfx_1123": "overlap"
+    "sfx_108e>sfx_1123": "overlap",
+    "sfx_1130>sfx_108e": "overlap",
+    "sfx_108e>sfx_1130": "overlap",
+    "sfx_115b>sfx_108e": "overlap",
+    "sfx_108e>sfx_115b": "overlap",
+    "sfx_1159>sfx_108e": "overlap",
+    "sfx_108e>sfx_1159": "overlap"
    }
   },
   "sfx_108f": {
@@ -2276,7 +2444,13 @@
     "sfx_1069>sfx_108f": "unclear",
     "sfx_108f>sfx_1069": "overlap",
     "sfx_1123>sfx_108f": "overlap",
-    "sfx_108f>sfx_1123": "overlap"
+    "sfx_108f>sfx_1123": "overlap",
+    "sfx_1130>sfx_108f": "overlap",
+    "sfx_108f>sfx_1130": "unclear",
+    "sfx_115b>sfx_108f": "overlap",
+    "sfx_108f>sfx_115b": "unclear",
+    "sfx_1159>sfx_108f": "overlap",
+    "sfx_108f>sfx_1159": "unclear"
    }
   },
   "sfx_1090": {
@@ -2396,7 +2570,13 @@
     "sfx_1069>sfx_1090": "unclear",
     "sfx_1090>sfx_1069": "overlap",
     "sfx_1123>sfx_1090": "overlap",
-    "sfx_1090>sfx_1123": "overlap"
+    "sfx_1090>sfx_1123": "overlap",
+    "sfx_1130>sfx_1090": "overlap",
+    "sfx_1090>sfx_1130": "overlap",
+    "sfx_115b>sfx_1090": "overlap",
+    "sfx_1090>sfx_115b": "overlap",
+    "sfx_1159>sfx_1090": "overlap",
+    "sfx_1090>sfx_1159": "unclear"
    }
   },
   "sfx_1091": {
@@ -2516,7 +2696,13 @@
     "sfx_1069>sfx_1091": "unclear",
     "sfx_1091>sfx_1069": "overlap",
     "sfx_1123>sfx_1091": "unclear",
-    "sfx_1091>sfx_1123": "overlap"
+    "sfx_1091>sfx_1123": "overlap",
+    "sfx_1130>sfx_1091": "overlap",
+    "sfx_1091>sfx_1130": "unclear",
+    "sfx_115b>sfx_1091": "overlap",
+    "sfx_1091>sfx_115b": "unclear",
+    "sfx_1159>sfx_1091": "overlap",
+    "sfx_1091>sfx_1159": "unclear"
    }
   },
   "sfx_1092": {
@@ -2636,7 +2822,13 @@
     "sfx_1069>sfx_1092": "unclear",
     "sfx_1092>sfx_1069": "overlap",
     "sfx_1123>sfx_1092": "unclear",
-    "sfx_1092>sfx_1123": "overlap"
+    "sfx_1092>sfx_1123": "overlap",
+    "sfx_1130>sfx_1092": "overlap",
+    "sfx_1092>sfx_1130": "unclear",
+    "sfx_115b>sfx_1092": "overlap",
+    "sfx_1092>sfx_115b": "unclear",
+    "sfx_1159>sfx_1092": "overlap",
+    "sfx_1092>sfx_1159": "overlap"
    }
   },
   "sfx_109b": {
@@ -2718,7 +2910,13 @@
     "sfx_109b>sfx_10f8": "unclear",
     "sfx_10f8>sfx_109b": "unclear",
     "sfx_1123>sfx_109b": "unclear",
-    "sfx_109b>sfx_1123": "overlap"
+    "sfx_109b>sfx_1123": "overlap",
+    "sfx_1130>sfx_109b": "unclear",
+    "sfx_109b>sfx_1130": "unclear",
+    "sfx_115b>sfx_109b": "overlap",
+    "sfx_109b>sfx_115b": "unclear",
+    "sfx_1159>sfx_109b": "unclear",
+    "sfx_109b>sfx_1159": "unclear"
    }
   },
   "sfx_10a3": {
@@ -2798,7 +2996,13 @@
     "sfx_1069>sfx_10a3": "unclear",
     "sfx_10a3>sfx_1069": "unclear",
     "sfx_1123>sfx_10a3": "overlap",
-    "sfx_10a3>sfx_1123": "overlap"
+    "sfx_10a3>sfx_1123": "overlap",
+    "sfx_1130>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_1130": "overlap",
+    "sfx_115b>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_115b": "overlap",
+    "sfx_1159>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_1159": "overlap"
    }
   },
   "sfx_10a4": {
@@ -2878,7 +3082,13 @@
     "sfx_1069>sfx_10a4": "unclear",
     "sfx_10a4>sfx_1069": "unclear",
     "sfx_1123>sfx_10a4": "unclear",
-    "sfx_10a4>sfx_1123": "overlap"
+    "sfx_10a4>sfx_1123": "overlap",
+    "sfx_1130>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_1130": "unclear",
+    "sfx_115b>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_115b": "unclear",
+    "sfx_1159>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_1159": "unclear"
    }
   },
   "sfx_10a7": {
@@ -2960,7 +3170,13 @@
     "sfx_10a7>sfx_10f8": "overlap",
     "sfx_10f8>sfx_10a7": "overlap",
     "sfx_1123>sfx_10a7": "overlap",
-    "sfx_10a7>sfx_1123": "overlap"
+    "sfx_10a7>sfx_1123": "overlap",
+    "sfx_1130>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_1130": "overlap",
+    "sfx_115b>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_115b": "overlap",
+    "sfx_1159>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_1159": "overlap"
    }
   },
   "sfx_10c6": {
@@ -3040,7 +3256,13 @@
     "sfx_1069>sfx_10c6": "unclear",
     "sfx_10c6>sfx_1069": "unclear",
     "sfx_1123>sfx_10c6": "overlap",
-    "sfx_10c6>sfx_1123": "overlap"
+    "sfx_10c6>sfx_1123": "overlap",
+    "sfx_1130>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_1130": "overlap",
+    "sfx_115b>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_115b": "overlap",
+    "sfx_1159>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_1159": "overlap"
    }
   },
   "sfx_10e8": {
@@ -3122,7 +3344,13 @@
     "sfx_10e8>sfx_10f8": "unclear",
     "sfx_10f8>sfx_10e8": "overlap",
     "sfx_1123>sfx_10e8": "overlap",
-    "sfx_10e8>sfx_1123": "overlap"
+    "sfx_10e8>sfx_1123": "overlap",
+    "sfx_1130>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_1130": "overlap",
+    "sfx_115b>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_115b": "overlap",
+    "sfx_1159>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_1159": "overlap"
    }
   },
   "sfx_10e9": {
@@ -3242,7 +3470,13 @@
     "sfx_1069>sfx_10e9": "unclear",
     "sfx_10e9>sfx_1069": "overlap",
     "sfx_1123>sfx_10e9": "overlap",
-    "sfx_10e9>sfx_1123": "overlap"
+    "sfx_10e9>sfx_1123": "overlap",
+    "sfx_1130>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_1130": "overlap",
+    "sfx_115b>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_115b": "overlap",
+    "sfx_1159>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_1159": "overlap"
    }
   },
   "sfx_10ea": {
@@ -3322,7 +3556,13 @@
     "sfx_1069>sfx_10ea": "unclear",
     "sfx_10ea>sfx_1069": "unclear",
     "sfx_1123>sfx_10ea": "overlap",
-    "sfx_10ea>sfx_1123": "overlap"
+    "sfx_10ea>sfx_1123": "overlap",
+    "sfx_1130>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_1130": "overlap",
+    "sfx_115b>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_115b": "overlap",
+    "sfx_1159>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_1159": "overlap"
    }
   },
   "sfx_10f2": {
@@ -3442,7 +3682,13 @@
     "sfx_1069>sfx_10f2": "unclear",
     "sfx_10f2>sfx_1069": "overlap",
     "sfx_1123>sfx_10f2": "overlap",
-    "sfx_10f2>sfx_1123": "overlap"
+    "sfx_10f2>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_1159": "overlap"
    }
   },
   "sfx_10f3": {
@@ -3458,7 +3704,13 @@
     "rebel_1041>sfx_10f3": "overlap",
     "sfx_10f3>rebel_1041": "overlap",
     "sfx_1123>sfx_10f3": "overlap",
-    "sfx_10f3>sfx_1123": "overlap"
+    "sfx_10f3>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_1159": "overlap"
    }
   },
   "sfx_10f4": {
@@ -3500,7 +3752,13 @@
     "sfx_1069>sfx_10f4": "unclear",
     "sfx_10f4>sfx_1069": "overlap",
     "sfx_1123>sfx_10f4": "overlap",
-    "sfx_10f4>sfx_1123": "overlap"
+    "sfx_10f4>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_1159": "overlap"
    }
   },
   "sfx_10f5": {
@@ -3516,7 +3774,13 @@
     "rebel_1041>sfx_10f5": "overlap",
     "sfx_10f5>rebel_1041": "overlap",
     "sfx_1123>sfx_10f5": "overlap",
-    "sfx_10f5>sfx_1123": "overlap"
+    "sfx_10f5>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_1159": "overlap"
    }
   },
   "sfx_10f6": {
@@ -3532,7 +3796,13 @@
     "rebel_1041>sfx_10f6": "overlap",
     "sfx_10f6>rebel_1041": "overlap",
     "sfx_1123>sfx_10f6": "overlap",
-    "sfx_10f6>sfx_1123": "overlap"
+    "sfx_10f6>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_1159": "overlap"
    }
   },
   "sfx_10f8": {
@@ -3562,7 +3832,13 @@
     "sfx_1137>sfx_10f8": "overlap",
     "sfx_10f8>sfx_1137": "overlap",
     "sfx_1123>sfx_10f8": "overlap",
-    "sfx_10f8>sfx_1123": "overlap"
+    "sfx_10f8>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_1130": "overlap",
+    "sfx_115b>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_115b": "overlap",
+    "sfx_1159>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_1159": "overlap"
    }
   },
   "sfx_10f9": {
@@ -3682,7 +3958,13 @@
     "sfx_10f9>sfx_1069": "unclear",
     "sfx_1069>sfx_10f9": "unclear",
     "sfx_1123>sfx_10f9": "overlap",
-    "sfx_10f9>sfx_1123": "overlap"
+    "sfx_10f9>sfx_1123": "overlap",
+    "sfx_1130>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_1130": "unclear",
+    "sfx_115b>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_115b": "unclear",
+    "sfx_1159>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_1159": "unclear"
    }
   },
   "sfx_10fb": {
@@ -3802,7 +4084,13 @@
     "sfx_10fb>sfx_1069": "overlap",
     "sfx_1069>sfx_10fb": "unclear",
     "sfx_1123>sfx_10fb": "overlap",
-    "sfx_10fb>sfx_1123": "overlap"
+    "sfx_10fb>sfx_1123": "overlap",
+    "sfx_1130>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_1130": "unclear",
+    "sfx_115b>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_115b": "unclear",
+    "sfx_1159>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_1159": "unclear"
    }
   },
   "sfx_10ff": {
@@ -3864,7 +4152,13 @@
     "sfx_1069>sfx_10ff": "unclear",
     "sfx_10ff>sfx_1069": "overlap",
     "sfx_1123>sfx_10ff": "overlap",
-    "sfx_10ff>sfx_1123": "overlap"
+    "sfx_10ff>sfx_1123": "overlap",
+    "sfx_1130>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_1130": "overlap",
+    "sfx_115b>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_115b": "overlap",
+    "sfx_1159>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_1159": "unclear"
    }
   },
   "sfx_1121": {
@@ -3946,7 +4240,13 @@
     "sfx_1121>sfx_10f8": "unclear",
     "sfx_10f8>sfx_1121": "unclear",
     "sfx_1123>sfx_1121": "overlap",
-    "sfx_1121>sfx_1123": "overlap"
+    "sfx_1121>sfx_1123": "overlap",
+    "sfx_1130>sfx_1121": "overlap",
+    "sfx_1121>sfx_1130": "overlap",
+    "sfx_115b>sfx_1121": "overlap",
+    "sfx_1121>sfx_115b": "overlap",
+    "sfx_1159>sfx_1121": "overlap",
+    "sfx_1121>sfx_1159": "unclear"
    }
   },
   "sfx_1123": {
@@ -4086,7 +4386,13 @@
     "sfx_1123>vehicle_hit": "overlap",
     "vehicle_hit>sfx_1123": "overlap",
     "sfx_1123>vehicle_smoke": "overlap",
-    "vehicle_smoke>sfx_1123": "overlap"
+    "vehicle_smoke>sfx_1123": "overlap",
+    "sfx_1130>sfx_1123": "overlap",
+    "sfx_1123>sfx_1130": "overlap",
+    "sfx_115b>sfx_1123": "overlap",
+    "sfx_1123>sfx_115b": "overlap",
+    "sfx_1159>sfx_1123": "overlap",
+    "sfx_1123>sfx_1159": "overlap"
    }
   },
   "sfx_1124": {
@@ -4166,7 +4472,13 @@
     "sfx_1069>sfx_1124": "unclear",
     "sfx_1124>sfx_1069": "overlap",
     "sfx_1123>sfx_1124": "overlap",
-    "sfx_1124>sfx_1123": "overlap"
+    "sfx_1124>sfx_1123": "overlap",
+    "sfx_1130>sfx_1124": "drop",
+    "sfx_1124>sfx_1130": "cut",
+    "sfx_115b>sfx_1124": "drop",
+    "sfx_1124>sfx_115b": "cut",
+    "sfx_1159>sfx_1124": "drop",
+    "sfx_1124>sfx_1159": "cut"
    }
   },
   "sfx_112c": {
@@ -4186,7 +4498,13 @@
     "sfx_112c>sfx_1158": "cut",
     "sfx_1158>sfx_112c": "cut",
     "sfx_1123>sfx_112c": "overlap",
-    "sfx_112c>sfx_1123": "overlap"
+    "sfx_112c>sfx_1123": "overlap",
+    "sfx_1130>sfx_112c": "cut",
+    "sfx_112c>sfx_1130": "cut",
+    "sfx_115b>sfx_112c": "cut",
+    "sfx_112c>sfx_115b": "cut",
+    "sfx_1159>sfx_112c": "cut",
+    "sfx_112c>sfx_1159": "cut"
    }
   },
   "sfx_112d": {
@@ -4268,7 +4586,13 @@
     "sfx_112f>sfx_112d": "cut",
     "sfx_112d>sfx_112f": "cut",
     "sfx_1123>sfx_112d": "overlap",
-    "sfx_112d>sfx_1123": "overlap"
+    "sfx_112d>sfx_1123": "overlap",
+    "sfx_1130>sfx_112d": "cut",
+    "sfx_112d>sfx_1130": "cut",
+    "sfx_115b>sfx_112d": "cut",
+    "sfx_112d>sfx_115b": "cut",
+    "sfx_1159>sfx_112d": "cut",
+    "sfx_112d>sfx_1159": "cut"
    }
   },
   "sfx_112e": {
@@ -4350,7 +4674,13 @@
     "sfx_115a>sfx_112e": "cut",
     "sfx_112e>sfx_115a": "cut",
     "sfx_1123>sfx_112e": "overlap",
-    "sfx_112e>sfx_1123": "overlap"
+    "sfx_112e>sfx_1123": "overlap",
+    "sfx_1130>sfx_112e": "cut",
+    "sfx_112e>sfx_1130": "cut",
+    "sfx_115b>sfx_112e": "cut",
+    "sfx_112e>sfx_115b": "cut",
+    "sfx_1159>sfx_112e": "cut",
+    "sfx_112e>sfx_1159": "cut"
    }
   },
   "sfx_112f": {
@@ -4374,7 +4704,159 @@
     "sfx_112f>sfx_1056": "drop",
     "sfx_1056>sfx_112f": "unclear",
     "sfx_1123>sfx_112f": "overlap",
-    "sfx_112f>sfx_1123": "overlap"
+    "sfx_112f>sfx_1123": "overlap",
+    "sfx_1130>sfx_112f": "cut",
+    "sfx_112f>sfx_1130": "cut",
+    "sfx_115b>sfx_112f": "cut",
+    "sfx_112f>sfx_115b": "cut",
+    "sfx_1159>sfx_112f": "cut",
+    "sfx_112f>sfx_1159": "cut"
+   }
+  },
+  "sfx_1130": {
+   "word": "1130",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_1130>sfx_1130": "cut",
+    "sfx_1130>explosion": "overlap",
+    "explosion>sfx_1130": "unclear",
+    "sfx_1130>knife_hit": "overlap",
+    "knife_hit>sfx_1130": "unclear",
+    "sfx_1130>pistol": "overlap",
+    "pistol>sfx_1130": "unclear",
+    "sfx_1130>rebel_103e": "overlap",
+    "rebel_103e>sfx_1130": "overlap",
+    "sfx_1130>rebel_1041": "overlap",
+    "rebel_1041>sfx_1130": "overlap",
+    "sfx_1130>sfx_1021": "overlap",
+    "sfx_1021>sfx_1130": "overlap",
+    "sfx_1130>sfx_1022": "overlap",
+    "sfx_1022>sfx_1130": "overlap",
+    "sfx_1130>sfx_1025": "overlap",
+    "sfx_1025>sfx_1130": "overlap",
+    "sfx_1130>sfx_102c": "overlap",
+    "sfx_102c>sfx_1130": "overlap",
+    "sfx_1130>sfx_102f": "unclear",
+    "sfx_102f>sfx_1130": "overlap",
+    "sfx_1130>sfx_1032": "unclear",
+    "sfx_1032>sfx_1130": "overlap",
+    "sfx_1130>sfx_1034": "unclear",
+    "sfx_1034>sfx_1130": "unclear",
+    "sfx_1130>sfx_1035": "overlap",
+    "sfx_1035>sfx_1130": "overlap",
+    "sfx_1130>sfx_1048": "unclear",
+    "sfx_1048>sfx_1130": "unclear",
+    "sfx_1130>sfx_104a": "overlap",
+    "sfx_104a>sfx_1130": "overlap",
+    "sfx_1130>sfx_104f": "overlap",
+    "sfx_104f>sfx_1130": "overlap",
+    "sfx_1130>sfx_1056": "drop",
+    "sfx_1056>sfx_1130": "unclear",
+    "sfx_1130>sfx_105d": "overlap",
+    "sfx_105d>sfx_1130": "overlap",
+    "sfx_1130>sfx_1064": "overlap",
+    "sfx_1064>sfx_1130": "overlap",
+    "sfx_1130>sfx_1067": "overlap",
+    "sfx_1067>sfx_1130": "overlap",
+    "sfx_1130>sfx_1069": "overlap",
+    "sfx_1069>sfx_1130": "unclear",
+    "sfx_1130>sfx_1072": "overlap",
+    "sfx_1072>sfx_1130": "overlap",
+    "sfx_1130>sfx_1073": "overlap",
+    "sfx_1073>sfx_1130": "overlap",
+    "sfx_1130>sfx_1074": "overlap",
+    "sfx_1074>sfx_1130": "overlap",
+    "sfx_1130>sfx_1075": "overlap",
+    "sfx_1075>sfx_1130": "unclear",
+    "sfx_1130>sfx_1084": "overlap",
+    "sfx_1084>sfx_1130": "overlap",
+    "sfx_1130>sfx_108c": "overlap",
+    "sfx_108c>sfx_1130": "unclear",
+    "sfx_1130>sfx_108e": "overlap",
+    "sfx_108e>sfx_1130": "overlap",
+    "sfx_1130>sfx_108f": "overlap",
+    "sfx_108f>sfx_1130": "unclear",
+    "sfx_1130>sfx_1090": "overlap",
+    "sfx_1090>sfx_1130": "overlap",
+    "sfx_1130>sfx_1091": "overlap",
+    "sfx_1091>sfx_1130": "unclear",
+    "sfx_1130>sfx_1092": "overlap",
+    "sfx_1092>sfx_1130": "unclear",
+    "sfx_1130>sfx_109b": "unclear",
+    "sfx_109b>sfx_1130": "unclear",
+    "sfx_1130>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_1130": "overlap",
+    "sfx_1130>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_1130": "unclear",
+    "sfx_1130>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_1130": "overlap",
+    "sfx_1130>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_1130": "overlap",
+    "sfx_1130>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_1130": "overlap",
+    "sfx_1130>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_1130": "overlap",
+    "sfx_1130>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_1130": "overlap",
+    "sfx_1130>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_1130": "unclear",
+    "sfx_1130>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_1130": "unclear",
+    "sfx_1130>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_1130": "overlap",
+    "sfx_1130>sfx_1121": "overlap",
+    "sfx_1121>sfx_1130": "overlap",
+    "sfx_1130>sfx_1123": "overlap",
+    "sfx_1123>sfx_1130": "overlap",
+    "sfx_1130>sfx_1124": "drop",
+    "sfx_1124>sfx_1130": "cut",
+    "sfx_1130>sfx_112c": "cut",
+    "sfx_112c>sfx_1130": "cut",
+    "sfx_1130>sfx_112d": "cut",
+    "sfx_112d>sfx_1130": "cut",
+    "sfx_1130>sfx_112e": "cut",
+    "sfx_112e>sfx_1130": "cut",
+    "sfx_1130>sfx_112f": "cut",
+    "sfx_112f>sfx_1130": "cut",
+    "sfx_1130>sfx_1137": "overlap",
+    "sfx_1137>sfx_1130": "overlap",
+    "sfx_1130>sfx_113a": "drop",
+    "sfx_113a>sfx_1130": "unclear",
+    "sfx_1130>sfx_1142": "overlap",
+    "sfx_1142>sfx_1130": "overlap",
+    "sfx_1130>sfx_1158": "cut",
+    "sfx_1158>sfx_1130": "cut",
+    "sfx_1130>sfx_115a": "cut",
+    "sfx_115a>sfx_1130": "cut",
+    "sfx_1130>sfx_1168": "overlap",
+    "sfx_1168>sfx_1130": "unclear",
+    "sfx_1130>sfx_116a": "overlap",
+    "sfx_116a>sfx_1130": "unclear",
+    "sfx_1130>sfx_116e": "unclear",
+    "sfx_116e>sfx_1130": "unclear",
+    "sfx_1130>vehicle_burst": "unclear",
+    "vehicle_burst>sfx_1130": "overlap",
+    "sfx_1130>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_1130": "unclear",
+    "sfx_1130>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_1130": "overlap",
+    "sfx_1130>sfx_115b": "cut",
+    "sfx_115b>sfx_1130": "cut",
+    "sfx_1130>sfx_1159": "cut",
+    "sfx_1159>sfx_1130": "cut"
    }
   },
   "sfx_1137": {
@@ -4392,7 +4874,13 @@
     "sfx_1137>sfx_10f8": "overlap",
     "sfx_10f8>sfx_1137": "overlap",
     "sfx_1123>sfx_1137": "overlap",
-    "sfx_1137>sfx_1123": "overlap"
+    "sfx_1137>sfx_1123": "overlap",
+    "sfx_1130>sfx_1137": "overlap",
+    "sfx_1137>sfx_1130": "overlap",
+    "sfx_115b>sfx_1137": "overlap",
+    "sfx_1137>sfx_115b": "overlap",
+    "sfx_1159>sfx_1137": "overlap",
+    "sfx_1137>sfx_1159": "overlap"
    }
   },
   "sfx_113a": {
@@ -4472,7 +4960,13 @@
     "sfx_1069>sfx_113a": "overlap",
     "sfx_113a>sfx_1069": "overlap",
     "sfx_1123>sfx_113a": "overlap",
-    "sfx_113a>sfx_1123": "overlap"
+    "sfx_113a>sfx_1123": "overlap",
+    "sfx_1130>sfx_113a": "drop",
+    "sfx_113a>sfx_1130": "unclear",
+    "sfx_115b>sfx_113a": "drop",
+    "sfx_113a>sfx_115b": "unclear",
+    "sfx_1159>sfx_113a": "drop",
+    "sfx_113a>sfx_1159": "unclear"
    }
   },
   "sfx_1142": {
@@ -4516,7 +5010,13 @@
     "sfx_1069>sfx_1142": "overlap",
     "sfx_1142>sfx_1069": "overlap",
     "sfx_1123>sfx_1142": "drop",
-    "sfx_1142>sfx_1123": "cut"
+    "sfx_1142>sfx_1123": "cut",
+    "sfx_1130>sfx_1142": "overlap",
+    "sfx_1142>sfx_1130": "overlap",
+    "sfx_115b>sfx_1142": "overlap",
+    "sfx_1142>sfx_115b": "overlap",
+    "sfx_1159>sfx_1142": "overlap",
+    "sfx_1142>sfx_1159": "overlap"
    }
   },
   "sfx_1158": {
@@ -4598,7 +5098,159 @@
     "sfx_112c>sfx_1158": "cut",
     "sfx_1158>sfx_112c": "cut",
     "sfx_1123>sfx_1158": "overlap",
-    "sfx_1158>sfx_1123": "overlap"
+    "sfx_1158>sfx_1123": "overlap",
+    "sfx_1130>sfx_1158": "cut",
+    "sfx_1158>sfx_1130": "cut",
+    "sfx_115b>sfx_1158": "cut",
+    "sfx_1158>sfx_115b": "cut",
+    "sfx_1159>sfx_1158": "cut",
+    "sfx_1158>sfx_1159": "cut"
+   }
+  },
+  "sfx_1159": {
+   "word": "1159",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_1130>sfx_1159": "cut",
+    "sfx_1159>sfx_1130": "cut",
+    "sfx_115b>sfx_1159": "cut",
+    "sfx_1159>sfx_115b": "cut",
+    "sfx_1159>sfx_1159": "cut",
+    "sfx_1159>explosion": "overlap",
+    "explosion>sfx_1159": "unclear",
+    "sfx_1159>knife_hit": "overlap",
+    "knife_hit>sfx_1159": "unclear",
+    "sfx_1159>pistol": "overlap",
+    "pistol>sfx_1159": "unclear",
+    "sfx_1159>rebel_103e": "overlap",
+    "rebel_103e>sfx_1159": "overlap",
+    "sfx_1159>rebel_1041": "overlap",
+    "rebel_1041>sfx_1159": "overlap",
+    "sfx_1159>sfx_1021": "overlap",
+    "sfx_1021>sfx_1159": "overlap",
+    "sfx_1159>sfx_1022": "overlap",
+    "sfx_1022>sfx_1159": "overlap",
+    "sfx_1159>sfx_1025": "overlap",
+    "sfx_1025>sfx_1159": "overlap",
+    "sfx_1159>sfx_102c": "overlap",
+    "sfx_102c>sfx_1159": "overlap",
+    "sfx_1159>sfx_102f": "overlap",
+    "sfx_102f>sfx_1159": "overlap",
+    "sfx_1159>sfx_1032": "cut",
+    "sfx_1032>sfx_1159": "overlap",
+    "sfx_1159>sfx_1034": "overlap",
+    "sfx_1034>sfx_1159": "overlap",
+    "sfx_1159>sfx_1035": "overlap",
+    "sfx_1035>sfx_1159": "overlap",
+    "sfx_1159>sfx_1048": "unclear",
+    "sfx_1048>sfx_1159": "unclear",
+    "sfx_1159>sfx_104a": "overlap",
+    "sfx_104a>sfx_1159": "overlap",
+    "sfx_1159>sfx_104f": "overlap",
+    "sfx_104f>sfx_1159": "overlap",
+    "sfx_1159>sfx_1056": "drop",
+    "sfx_1056>sfx_1159": "unclear",
+    "sfx_1159>sfx_105d": "overlap",
+    "sfx_105d>sfx_1159": "overlap",
+    "sfx_1159>sfx_1064": "overlap",
+    "sfx_1064>sfx_1159": "overlap",
+    "sfx_1159>sfx_1067": "overlap",
+    "sfx_1067>sfx_1159": "overlap",
+    "sfx_1159>sfx_1069": "overlap",
+    "sfx_1069>sfx_1159": "unclear",
+    "sfx_1159>sfx_1072": "overlap",
+    "sfx_1072>sfx_1159": "overlap",
+    "sfx_1159>sfx_1073": "overlap",
+    "sfx_1073>sfx_1159": "overlap",
+    "sfx_1159>sfx_1074": "overlap",
+    "sfx_1074>sfx_1159": "overlap",
+    "sfx_1159>sfx_1075": "overlap",
+    "sfx_1075>sfx_1159": "unclear",
+    "sfx_1159>sfx_1084": "overlap",
+    "sfx_1084>sfx_1159": "overlap",
+    "sfx_1159>sfx_108c": "overlap",
+    "sfx_108c>sfx_1159": "unclear",
+    "sfx_1159>sfx_108e": "overlap",
+    "sfx_108e>sfx_1159": "overlap",
+    "sfx_1159>sfx_108f": "overlap",
+    "sfx_108f>sfx_1159": "unclear",
+    "sfx_1159>sfx_1090": "overlap",
+    "sfx_1090>sfx_1159": "unclear",
+    "sfx_1159>sfx_1091": "overlap",
+    "sfx_1091>sfx_1159": "unclear",
+    "sfx_1159>sfx_1092": "overlap",
+    "sfx_1092>sfx_1159": "overlap",
+    "sfx_1159>sfx_109b": "unclear",
+    "sfx_109b>sfx_1159": "unclear",
+    "sfx_1159>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_1159": "overlap",
+    "sfx_1159>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_1159": "unclear",
+    "sfx_1159>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_1159": "overlap",
+    "sfx_1159>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_1159": "overlap",
+    "sfx_1159>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_1159": "overlap",
+    "sfx_1159>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_1159": "overlap",
+    "sfx_1159>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_1159": "overlap",
+    "sfx_1159>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_1159": "unclear",
+    "sfx_1159>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_1159": "unclear",
+    "sfx_1159>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_1159": "unclear",
+    "sfx_1159>sfx_1121": "overlap",
+    "sfx_1121>sfx_1159": "unclear",
+    "sfx_1159>sfx_1123": "overlap",
+    "sfx_1123>sfx_1159": "overlap",
+    "sfx_1159>sfx_1124": "drop",
+    "sfx_1124>sfx_1159": "cut",
+    "sfx_1159>sfx_112c": "cut",
+    "sfx_112c>sfx_1159": "cut",
+    "sfx_1159>sfx_112d": "cut",
+    "sfx_112d>sfx_1159": "cut",
+    "sfx_1159>sfx_112e": "cut",
+    "sfx_112e>sfx_1159": "cut",
+    "sfx_1159>sfx_112f": "cut",
+    "sfx_112f>sfx_1159": "cut",
+    "sfx_1159>sfx_1137": "overlap",
+    "sfx_1137>sfx_1159": "overlap",
+    "sfx_1159>sfx_113a": "drop",
+    "sfx_113a>sfx_1159": "unclear",
+    "sfx_1159>sfx_1142": "overlap",
+    "sfx_1142>sfx_1159": "overlap",
+    "sfx_1159>sfx_1158": "cut",
+    "sfx_1158>sfx_1159": "cut",
+    "sfx_1159>sfx_115a": "cut",
+    "sfx_115a>sfx_1159": "cut",
+    "sfx_1159>sfx_1168": "overlap",
+    "sfx_1168>sfx_1159": "unclear",
+    "sfx_1159>sfx_116a": "overlap",
+    "sfx_116a>sfx_1159": "unclear",
+    "sfx_1159>sfx_116e": "unclear",
+    "sfx_116e>sfx_1159": "unclear",
+    "sfx_1159>vehicle_burst": "overlap",
+    "vehicle_burst>sfx_1159": "overlap",
+    "sfx_1159>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_1159": "unclear",
+    "sfx_1159>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_1159": "overlap"
    }
   },
   "sfx_115a": {
@@ -4618,7 +5270,159 @@
     "sfx_115a>sfx_112e": "cut",
     "sfx_112e>sfx_115a": "cut",
     "sfx_1123>sfx_115a": "overlap",
-    "sfx_115a>sfx_1123": "overlap"
+    "sfx_115a>sfx_1123": "overlap",
+    "sfx_1130>sfx_115a": "cut",
+    "sfx_115a>sfx_1130": "cut",
+    "sfx_115b>sfx_115a": "cut",
+    "sfx_115a>sfx_115b": "cut",
+    "sfx_1159>sfx_115a": "cut",
+    "sfx_115a>sfx_1159": "cut"
+   }
+  },
+  "sfx_115b": {
+   "word": "115B",
+   "channel": "ch_1056",
+   "level": 1,
+   "pairs": {
+    "sfx_1130>sfx_115b": "cut",
+    "sfx_115b>sfx_1130": "cut",
+    "sfx_115b>sfx_115b": "cut",
+    "sfx_115b>explosion": "overlap",
+    "explosion>sfx_115b": "unclear",
+    "sfx_115b>knife_hit": "overlap",
+    "knife_hit>sfx_115b": "unclear",
+    "sfx_115b>pistol": "overlap",
+    "pistol>sfx_115b": "unclear",
+    "sfx_115b>rebel_103e": "overlap",
+    "rebel_103e>sfx_115b": "overlap",
+    "sfx_115b>rebel_1041": "overlap",
+    "rebel_1041>sfx_115b": "overlap",
+    "sfx_115b>sfx_1021": "overlap",
+    "sfx_1021>sfx_115b": "overlap",
+    "sfx_115b>sfx_1022": "overlap",
+    "sfx_1022>sfx_115b": "overlap",
+    "sfx_115b>sfx_1025": "overlap",
+    "sfx_1025>sfx_115b": "overlap",
+    "sfx_115b>sfx_102c": "overlap",
+    "sfx_102c>sfx_115b": "overlap",
+    "sfx_115b>sfx_102f": "overlap",
+    "sfx_102f>sfx_115b": "overlap",
+    "sfx_115b>sfx_1032": "unclear",
+    "sfx_1032>sfx_115b": "unclear",
+    "sfx_115b>sfx_1034": "unclear",
+    "sfx_1034>sfx_115b": "unclear",
+    "sfx_115b>sfx_1035": "overlap",
+    "sfx_1035>sfx_115b": "overlap",
+    "sfx_115b>sfx_1048": "unclear",
+    "sfx_1048>sfx_115b": "unclear",
+    "sfx_115b>sfx_104a": "overlap",
+    "sfx_104a>sfx_115b": "overlap",
+    "sfx_115b>sfx_104f": "overlap",
+    "sfx_104f>sfx_115b": "overlap",
+    "sfx_115b>sfx_1056": "drop",
+    "sfx_1056>sfx_115b": "unclear",
+    "sfx_115b>sfx_105d": "overlap",
+    "sfx_105d>sfx_115b": "overlap",
+    "sfx_115b>sfx_1064": "overlap",
+    "sfx_1064>sfx_115b": "overlap",
+    "sfx_115b>sfx_1067": "overlap",
+    "sfx_1067>sfx_115b": "overlap",
+    "sfx_115b>sfx_1069": "overlap",
+    "sfx_1069>sfx_115b": "unclear",
+    "sfx_115b>sfx_1072": "overlap",
+    "sfx_1072>sfx_115b": "overlap",
+    "sfx_115b>sfx_1073": "overlap",
+    "sfx_1073>sfx_115b": "overlap",
+    "sfx_115b>sfx_1074": "overlap",
+    "sfx_1074>sfx_115b": "overlap",
+    "sfx_115b>sfx_1075": "overlap",
+    "sfx_1075>sfx_115b": "unclear",
+    "sfx_115b>sfx_1084": "overlap",
+    "sfx_1084>sfx_115b": "overlap",
+    "sfx_115b>sfx_108c": "overlap",
+    "sfx_108c>sfx_115b": "unclear",
+    "sfx_115b>sfx_108e": "overlap",
+    "sfx_108e>sfx_115b": "overlap",
+    "sfx_115b>sfx_108f": "overlap",
+    "sfx_108f>sfx_115b": "unclear",
+    "sfx_115b>sfx_1090": "overlap",
+    "sfx_1090>sfx_115b": "overlap",
+    "sfx_115b>sfx_1091": "overlap",
+    "sfx_1091>sfx_115b": "unclear",
+    "sfx_115b>sfx_1092": "overlap",
+    "sfx_1092>sfx_115b": "unclear",
+    "sfx_115b>sfx_109b": "overlap",
+    "sfx_109b>sfx_115b": "unclear",
+    "sfx_115b>sfx_10a3": "overlap",
+    "sfx_10a3>sfx_115b": "overlap",
+    "sfx_115b>sfx_10a4": "overlap",
+    "sfx_10a4>sfx_115b": "unclear",
+    "sfx_115b>sfx_10a7": "overlap",
+    "sfx_10a7>sfx_115b": "overlap",
+    "sfx_115b>sfx_10c6": "overlap",
+    "sfx_10c6>sfx_115b": "overlap",
+    "sfx_115b>sfx_10e8": "overlap",
+    "sfx_10e8>sfx_115b": "overlap",
+    "sfx_115b>sfx_10e9": "overlap",
+    "sfx_10e9>sfx_115b": "overlap",
+    "sfx_115b>sfx_10ea": "overlap",
+    "sfx_10ea>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f2": "overlap",
+    "sfx_10f2>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f3": "overlap",
+    "sfx_10f3>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f4": "overlap",
+    "sfx_10f4>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f5": "overlap",
+    "sfx_10f5>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f6": "overlap",
+    "sfx_10f6>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f8": "overlap",
+    "sfx_10f8>sfx_115b": "overlap",
+    "sfx_115b>sfx_10f9": "overlap",
+    "sfx_10f9>sfx_115b": "unclear",
+    "sfx_115b>sfx_10fb": "overlap",
+    "sfx_10fb>sfx_115b": "unclear",
+    "sfx_115b>sfx_10ff": "overlap",
+    "sfx_10ff>sfx_115b": "overlap",
+    "sfx_115b>sfx_1121": "overlap",
+    "sfx_1121>sfx_115b": "overlap",
+    "sfx_115b>sfx_1123": "overlap",
+    "sfx_1123>sfx_115b": "overlap",
+    "sfx_115b>sfx_1124": "drop",
+    "sfx_1124>sfx_115b": "cut",
+    "sfx_115b>sfx_112c": "cut",
+    "sfx_112c>sfx_115b": "cut",
+    "sfx_115b>sfx_112d": "cut",
+    "sfx_112d>sfx_115b": "cut",
+    "sfx_115b>sfx_112e": "cut",
+    "sfx_112e>sfx_115b": "cut",
+    "sfx_115b>sfx_112f": "cut",
+    "sfx_112f>sfx_115b": "cut",
+    "sfx_115b>sfx_1137": "overlap",
+    "sfx_1137>sfx_115b": "overlap",
+    "sfx_115b>sfx_113a": "drop",
+    "sfx_113a>sfx_115b": "unclear",
+    "sfx_115b>sfx_1142": "overlap",
+    "sfx_1142>sfx_115b": "overlap",
+    "sfx_115b>sfx_1158": "cut",
+    "sfx_1158>sfx_115b": "cut",
+    "sfx_115b>sfx_115a": "cut",
+    "sfx_115a>sfx_115b": "cut",
+    "sfx_115b>sfx_1168": "overlap",
+    "sfx_1168>sfx_115b": "unclear",
+    "sfx_115b>sfx_116a": "overlap",
+    "sfx_116a>sfx_115b": "unclear",
+    "sfx_115b>sfx_116e": "unclear",
+    "sfx_116e>sfx_115b": "unclear",
+    "sfx_115b>vehicle_burst": "cut",
+    "vehicle_burst>sfx_115b": "overlap",
+    "sfx_115b>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_115b": "unclear",
+    "sfx_115b>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_115b": "overlap",
+    "sfx_115b>sfx_1159": "cut",
+    "sfx_1159>sfx_115b": "cut"
    }
   },
   "sfx_1168": {
@@ -4634,7 +5438,13 @@
     "rebel_1041>sfx_1168": "overlap",
     "sfx_1168>rebel_1041": "unclear",
     "sfx_1123>sfx_1168": "unclear",
-    "sfx_1168>sfx_1123": "overlap"
+    "sfx_1168>sfx_1123": "overlap",
+    "sfx_1130>sfx_1168": "overlap",
+    "sfx_1168>sfx_1130": "unclear",
+    "sfx_115b>sfx_1168": "overlap",
+    "sfx_1168>sfx_115b": "unclear",
+    "sfx_1159>sfx_1168": "overlap",
+    "sfx_1168>sfx_1159": "unclear"
    }
   },
   "sfx_116a": {
@@ -4650,7 +5460,13 @@
     "rebel_1041>sfx_116a": "unclear",
     "sfx_116a>rebel_1041": "unclear",
     "sfx_1123>sfx_116a": "overlap",
-    "sfx_116a>sfx_1123": "overlap"
+    "sfx_116a>sfx_1123": "overlap",
+    "sfx_1130>sfx_116a": "overlap",
+    "sfx_116a>sfx_1130": "unclear",
+    "sfx_115b>sfx_116a": "overlap",
+    "sfx_116a>sfx_115b": "unclear",
+    "sfx_1159>sfx_116a": "overlap",
+    "sfx_116a>sfx_1159": "unclear"
    }
   },
   "sfx_116e": {
@@ -4730,7 +5546,13 @@
     "sfx_1069>sfx_116e": "overlap",
     "sfx_116e>sfx_1069": "unclear",
     "sfx_1123>sfx_116e": "unclear",
-    "sfx_116e>sfx_1123": "unclear"
+    "sfx_116e>sfx_1123": "unclear",
+    "sfx_1130>sfx_116e": "unclear",
+    "sfx_116e>sfx_1130": "unclear",
+    "sfx_115b>sfx_116e": "unclear",
+    "sfx_116e>sfx_115b": "unclear",
+    "sfx_1159>sfx_116e": "unclear",
+    "sfx_116e>sfx_1159": "unclear"
    }
   },
   "vehicle_burst": {
@@ -4781,7 +5603,13 @@
     "sfx_1069>vehicle_burst": "unclear",
     "vehicle_burst>sfx_1069": "unclear",
     "sfx_1123>vehicle_burst": "overlap",
-    "vehicle_burst>sfx_1123": "overlap"
+    "vehicle_burst>sfx_1123": "overlap",
+    "sfx_1130>vehicle_burst": "unclear",
+    "vehicle_burst>sfx_1130": "overlap",
+    "sfx_115b>vehicle_burst": "cut",
+    "vehicle_burst>sfx_115b": "overlap",
+    "sfx_1159>vehicle_burst": "overlap",
+    "vehicle_burst>sfx_1159": "overlap"
    }
   },
   "vehicle_hit": {
@@ -4816,7 +5644,13 @@
     "sfx_1069>vehicle_hit": "overlap",
     "vehicle_hit>sfx_1069": "overlap",
     "sfx_1123>vehicle_hit": "overlap",
-    "vehicle_hit>sfx_1123": "overlap"
+    "vehicle_hit>sfx_1123": "overlap",
+    "sfx_1130>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_1130": "unclear",
+    "sfx_115b>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_115b": "unclear",
+    "sfx_1159>vehicle_hit": "overlap",
+    "vehicle_hit>sfx_1159": "unclear"
    }
   },
   "vehicle_smoke": {
@@ -4867,7 +5701,13 @@
     "sfx_1069>vehicle_smoke": "unclear",
     "vehicle_smoke>sfx_1069": "overlap",
     "sfx_1123>vehicle_smoke": "overlap",
-    "vehicle_smoke>sfx_1123": "overlap"
+    "vehicle_smoke>sfx_1123": "overlap",
+    "sfx_1130>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_1130": "overlap",
+    "sfx_115b>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_115b": "overlap",
+    "sfx_1159>vehicle_smoke": "overlap",
+    "vehicle_smoke>sfx_1159": "overlap"
    }
   }
  },
@@ -4947,10 +5787,18 @@
   "vehicle_smoke >= sfx_10f9 + 1",
   "sfx_1123 >= sfx_104a + 1",
   "sfx_1123 >= sfx_104f + 1",
-  "sfx_1123 >= sfx_1142 + 1"
+  "sfx_1123 >= sfx_1142 + 1",
+  "sfx_1130 >= sfx_1124 + 1",
+  "sfx_1130 >= sfx_113a + 1",
+  "sfx_115b >= sfx_1124 + 1",
+  "sfx_115b >= sfx_113a + 1",
+  "sfx_1159 >= sfx_1124 + 1",
+  "sfx_1159 >= sfx_113a + 1"
  ],
  "bridges": [
-  "sfx_10f2>sfx_10a4"
+  "sfx_10f2>sfx_10a4",
+  "sfx_1159>sfx_1032",
+  "sfx_115b>vehicle_burst"
  ],
  "unclear": [
   "explosion>sfx_1021",
@@ -4974,9 +5822,12 @@
   "explosion>sfx_112d",
   "explosion>sfx_112e",
   "explosion>sfx_112f",
+  "explosion>sfx_1130",
   "explosion>sfx_1137",
   "explosion>sfx_1158",
+  "explosion>sfx_1159",
   "explosion>sfx_115a",
+  "explosion>sfx_115b",
   "explosion>sfx_116e",
   "knife_hit>sfx_1021",
   "knife_hit>sfx_1022",
@@ -4988,6 +5839,9 @@
   "knife_hit>sfx_10e9",
   "knife_hit>sfx_10f9",
   "knife_hit>sfx_10ff",
+  "knife_hit>sfx_1130",
+  "knife_hit>sfx_1159",
+  "knife_hit>sfx_115b",
   "pistol>sfx_1021",
   "pistol>sfx_102f",
   "pistol>sfx_1032",
@@ -5011,9 +5865,12 @@
   "pistol>sfx_112d",
   "pistol>sfx_112e",
   "pistol>sfx_112f",
+  "pistol>sfx_1130",
   "pistol>sfx_1137",
   "pistol>sfx_1158",
+  "pistol>sfx_1159",
   "pistol>sfx_115a",
+  "pistol>sfx_115b",
   "rebel_1041>sfx_10a3",
   "rebel_1041>sfx_10f8",
   "rebel_1041>sfx_116a",
@@ -5028,6 +5885,7 @@
   "sfx_1032>sfx_1069",
   "sfx_1032>sfx_1090",
   "sfx_1032>sfx_1091",
+  "sfx_1032>sfx_115b",
   "sfx_1034>knife_hit",
   "sfx_1034>pistol",
   "sfx_1034>sfx_1048",
@@ -5042,8 +5900,10 @@
   "sfx_1034>sfx_10ea",
   "sfx_1034>sfx_10f9",
   "sfx_1034>sfx_10fb",
+  "sfx_1034>sfx_1130",
   "sfx_1034>sfx_113a",
   "sfx_1034>sfx_1142",
+  "sfx_1034>sfx_115b",
   "sfx_1034>sfx_116e",
   "sfx_1035>sfx_1069",
   "sfx_1048>explosion",
@@ -5080,8 +5940,11 @@
   "sfx_1048>sfx_1124",
   "sfx_1048>sfx_112d",
   "sfx_1048>sfx_112e",
+  "sfx_1048>sfx_1130",
   "sfx_1048>sfx_113a",
   "sfx_1048>sfx_1158",
+  "sfx_1048>sfx_1159",
+  "sfx_1048>sfx_115b",
   "sfx_1048>sfx_116e",
   "sfx_104a>pistol",
   "sfx_104a>sfx_1069",
@@ -5122,8 +5985,11 @@
   "sfx_1056>sfx_112d",
   "sfx_1056>sfx_112e",
   "sfx_1056>sfx_112f",
+  "sfx_1056>sfx_1130",
   "sfx_1056>sfx_113a",
   "sfx_1056>sfx_1158",
+  "sfx_1056>sfx_1159",
+  "sfx_1056>sfx_115b",
   "sfx_1056>sfx_116e",
   "sfx_105d>sfx_1069",
   "sfx_1064>sfx_1034",
@@ -5176,7 +6042,10 @@
   "sfx_1069>sfx_1124",
   "sfx_1069>sfx_112d",
   "sfx_1069>sfx_112e",
+  "sfx_1069>sfx_1130",
   "sfx_1069>sfx_1158",
+  "sfx_1069>sfx_1159",
+  "sfx_1069>sfx_115b",
   "sfx_1069>vehicle_burst",
   "sfx_1069>vehicle_smoke",
   "sfx_1072>sfx_1034",
@@ -5203,6 +6072,9 @@
   "sfx_1075>sfx_1124",
   "sfx_1075>sfx_112d",
   "sfx_1075>sfx_112e",
+  "sfx_1075>sfx_1130",
+  "sfx_1075>sfx_1159",
+  "sfx_1075>sfx_115b",
   "sfx_1084>rebel_103e",
   "sfx_1084>rebel_1041",
   "sfx_1084>sfx_1025",
@@ -5221,6 +6093,9 @@
   "sfx_108c>sfx_1034",
   "sfx_108c>sfx_1090",
   "sfx_108c>sfx_10e9",
+  "sfx_108c>sfx_1130",
+  "sfx_108c>sfx_1159",
+  "sfx_108c>sfx_115b",
   "sfx_108e>sfx_1072",
   "sfx_108e>sfx_10a3",
   "sfx_108e>sfx_10a7",
@@ -5244,7 +6119,10 @@
   "sfx_108f>sfx_1124",
   "sfx_108f>sfx_112d",
   "sfx_108f>sfx_112e",
+  "sfx_108f>sfx_1130",
   "sfx_108f>sfx_1158",
+  "sfx_108f>sfx_1159",
+  "sfx_108f>sfx_115b",
   "sfx_108f>vehicle_burst",
   "sfx_108f>vehicle_smoke",
   "sfx_1090>sfx_102f",
@@ -5255,6 +6133,7 @@
   "sfx_1090>sfx_10c6",
   "sfx_1090>sfx_10ea",
   "sfx_1090>sfx_112d",
+  "sfx_1090>sfx_1159",
   "sfx_1090>vehicle_burst",
   "sfx_1091>rebel_1041",
   "sfx_1091>sfx_1021",
@@ -5278,7 +6157,10 @@
   "sfx_1091>sfx_1124",
   "sfx_1091>sfx_112d",
   "sfx_1091>sfx_112e",
+  "sfx_1091>sfx_1130",
   "sfx_1091>sfx_1158",
+  "sfx_1091>sfx_1159",
+  "sfx_1091>sfx_115b",
   "sfx_1091>vehicle_burst",
   "sfx_1091>vehicle_smoke",
   "sfx_1092>rebel_103e",
@@ -5307,7 +6189,9 @@
   "sfx_1092>sfx_1124",
   "sfx_1092>sfx_112d",
   "sfx_1092>sfx_112e",
+  "sfx_1092>sfx_1130",
   "sfx_1092>sfx_1158",
+  "sfx_1092>sfx_115b",
   "sfx_1092>vehicle_burst",
   "sfx_1092>vehicle_smoke",
   "sfx_109b>rebel_1041",
@@ -5331,7 +6215,10 @@
   "sfx_109b>sfx_1124",
   "sfx_109b>sfx_112d",
   "sfx_109b>sfx_112e",
+  "sfx_109b>sfx_1130",
   "sfx_109b>sfx_1158",
+  "sfx_109b>sfx_1159",
+  "sfx_109b>sfx_115b",
   "sfx_10a3>explosion",
   "sfx_10a3>pistol",
   "sfx_10a3>sfx_1048",
@@ -5378,7 +6265,10 @@
   "sfx_10a4>sfx_1124",
   "sfx_10a4>sfx_112d",
   "sfx_10a4>sfx_112e",
+  "sfx_10a4>sfx_1130",
   "sfx_10a4>sfx_1158",
+  "sfx_10a4>sfx_1159",
+  "sfx_10a4>sfx_115b",
   "sfx_10a7>explosion",
   "sfx_10a7>pistol",
   "sfx_10a7>sfx_1048",
@@ -5491,7 +6381,10 @@
   "sfx_10f9>sfx_1124",
   "sfx_10f9>sfx_112d",
   "sfx_10f9>sfx_112e",
+  "sfx_10f9>sfx_1130",
   "sfx_10f9>sfx_1158",
+  "sfx_10f9>sfx_1159",
+  "sfx_10f9>sfx_115b",
   "sfx_10f9>sfx_116e",
   "sfx_10f9>vehicle_burst",
   "sfx_10f9>vehicle_hit",
@@ -5513,11 +6406,15 @@
   "sfx_10fb>sfx_1124",
   "sfx_10fb>sfx_112d",
   "sfx_10fb>sfx_112e",
+  "sfx_10fb>sfx_1130",
   "sfx_10fb>sfx_1158",
+  "sfx_10fb>sfx_1159",
+  "sfx_10fb>sfx_115b",
   "sfx_10fb>vehicle_burst",
   "sfx_10fb>vehicle_smoke",
   "sfx_10ff>sfx_1032",
   "sfx_10ff>sfx_1034",
+  "sfx_10ff>sfx_1159",
   "sfx_10ff>vehicle_burst",
   "sfx_10ff>vehicle_smoke",
   "sfx_1121>rebel_1041",
@@ -5539,6 +6436,7 @@
   "sfx_1121>sfx_112d",
   "sfx_1121>sfx_112e",
   "sfx_1121>sfx_1158",
+  "sfx_1121>sfx_1159",
   "sfx_1121>sfx_116e",
   "sfx_1123>sfx_1069",
   "sfx_1123>sfx_1091",
@@ -5557,6 +6455,13 @@
   "sfx_112e>sfx_1048",
   "sfx_112e>sfx_109b",
   "sfx_112e>sfx_116e",
+  "sfx_1130>sfx_102f",
+  "sfx_1130>sfx_1032",
+  "sfx_1130>sfx_1034",
+  "sfx_1130>sfx_1048",
+  "sfx_1130>sfx_109b",
+  "sfx_1130>sfx_116e",
+  "sfx_1130>vehicle_burst",
   "sfx_113a>rebel_1041",
   "sfx_113a>sfx_1034",
   "sfx_113a>sfx_1072",
@@ -5571,16 +6476,32 @@
   "sfx_113a>sfx_1124",
   "sfx_113a>sfx_112d",
   "sfx_113a>sfx_112e",
+  "sfx_113a>sfx_1130",
   "sfx_113a>sfx_1158",
+  "sfx_113a>sfx_1159",
+  "sfx_113a>sfx_115b",
   "sfx_1142>sfx_1034",
   "sfx_1158>sfx_1048",
   "sfx_1158>sfx_109b",
   "sfx_1158>sfx_116e",
+  "sfx_1159>sfx_1048",
+  "sfx_1159>sfx_109b",
+  "sfx_1159>sfx_116e",
+  "sfx_115b>sfx_1032",
+  "sfx_115b>sfx_1034",
+  "sfx_115b>sfx_1048",
+  "sfx_115b>sfx_116e",
   "sfx_1168>explosion",
   "sfx_1168>rebel_1041",
+  "sfx_1168>sfx_1130",
+  "sfx_1168>sfx_1159",
+  "sfx_1168>sfx_115b",
   "sfx_1168>sfx_1168",
   "sfx_116a>explosion",
   "sfx_116a>rebel_1041",
+  "sfx_116a>sfx_1130",
+  "sfx_116a>sfx_1159",
+  "sfx_116a>sfx_115b",
   "sfx_116a>sfx_116a",
   "sfx_116e>explosion",
   "sfx_116e>pistol",
@@ -5616,13 +6537,19 @@
   "sfx_116e>sfx_1124",
   "sfx_116e>sfx_112d",
   "sfx_116e>sfx_112e",
+  "sfx_116e>sfx_1130",
   "sfx_116e>sfx_113a",
   "sfx_116e>sfx_1158",
+  "sfx_116e>sfx_1159",
+  "sfx_116e>sfx_115b",
   "sfx_116e>sfx_116e",
   "vehicle_burst>sfx_1069",
   "vehicle_burst>sfx_1092",
   "vehicle_hit>sfx_1034",
   "vehicle_hit>sfx_10e9",
-  "vehicle_hit>sfx_10fb"
+  "vehicle_hit>sfx_10fb",
+  "vehicle_hit>sfx_1130",
+  "vehicle_hit>sfx_1159",
+  "vehicle_hit>sfx_115b"
  ]
 }

@@ -556,6 +556,24 @@
     "0C2D96"
    ],
    "event": "Marco's death voice: 0C2956 (hit death) and 0C2D6A (fall death) request table 0C294E[+6E] (Marco 1123, Tarma 1087, Eri 1125, Fio 114E) before anything else (MAME capboss: 1123 at every death, return 0C2D96)"
+  },
+  {
+   "label": "sfx_1130",
+   "word": "1130",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 06/0B (table 0C08F8)"
+  },
+  {
+   "label": "sfx_115b",
+   "word": "115B",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0E (table 0C08F8)"
+  },
+  {
+   "label": "sfx_1159",
+   "word": "1159",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0F (table 0C08F8)"
   }
  ]
 }

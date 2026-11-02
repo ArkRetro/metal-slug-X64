@@ -299,7 +299,9 @@ periodo exacto medible (ruido modulado): no es un bucle de muestra. Se
 empaqueta la ventana entera (`data/sound_map.json` `"stop": "012192"`,
 `pack_game_audio.py`), a 32 kHz porque el 30 % de su energía está por encima
 de 11 kHz, y `game_audio.c` atiende ahora la petición de parada de los
-actores (`palabra | 0x8000`): el canal que suena esa palabra se para. Un
+actores (`palabra | 0x8000`): el canal que suena esa palabra se para. Es
+el único efecto no residente: se reproduce desde `rom:/` como la música
+(88 KB que el presupuesto de la caché de escena, 208 ranuras, no tiene). Un
 rayo que dure más de 5 s queda en silencio antes que en la recreativa
 (desviación declarada). Pares medidos (`measure_sound_pairs.py --labels
 sfx_10f8` y, en modo explícito, contra `1056`, `1069`, `109B`, `10A7`,

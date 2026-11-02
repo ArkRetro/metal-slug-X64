@@ -32,9 +32,14 @@ static bool complete;
 static unsigned frames;
 static unsigned mixer_of(unsigned channel) {return MSX_AUDIO_EFFECT_MIXER+channel;}
 _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono mixer channel per driver channel");
+/* The beam's sustained 10F8 (5 s window, 88 KB) is the one effect not
+ * resident: the RAM budget of the scene cache (208 slots) has no room for
+ * it. It plays from rom:/ like the music (docs/AUDIO_JUEGO.md, 11). */
+static bool streamed(unsigned i) {return msx_sfx_defs[i].word==0x10f8u;}
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
     for (unsigned i=0;i<MSX_SFX_COUNT;i++) {
+        if (streamed(i)) continue;
         char name[64];snprintf(name,sizeof(name),"audio/%s.wav64",msx_sfx_defs[i].name);
         msx_ramfs_preload(name);
     }
@@ -49,8 +54,11 @@ bool game_audio_init(void) {
     bool ram=msx_ramfs_init();
     for (unsigned i=0;i<MSX_SFX_COUNT;i++) {
         char name[64],path[72];snprintf(name,sizeof(name),"audio/%s.wav64",msx_sfx_defs[i].name);
-        if (!ram || !msx_ramfs_load(name)) {loaded[i]=false;continue;}
-        snprintf(path,sizeof(path),"ram:/%s",name);
+        if (streamed(i)) snprintf(path,sizeof(path),"rom:/%s",name);
+        else {
+            if (!ram || !msx_ramfs_load(name)) {loaded[i]=false;continue;}
+            snprintf(path,sizeof(path),"ram:/%s",name);
+        }
         wav64_open(&sounds[i],path);wav64_set_loop(&sounds[i],false);loaded[i]=true;count++;
     }
     heap_stats_t after;sys_get_heap_stats(&after);

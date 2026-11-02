@@ -24,7 +24,7 @@
    anillo con los últimos 64 eventos, la memoria máxima, la ocupación de los
    pools y las paradas. Debe volcarse en el registro de ISViewer cuando hay
    una aserción o una parada.
-5. **B11 y B12 corregidos en ares** (rama `work-laser`, ARMAS_VEHICULOS.md
+5. **B11 y B12 corregidos en el PC (familias y soldados contra MAME)** (rama `work-laser`, ARMAS_VEHICULOS.md
    Paso 16): rayo `06/0B` nativo y muertes de soldado por llama y estallido.
    Falta: probar el láser en la M2 en MiSTer (la L de la sección 1), copiar
    a `/home/user/ws-logo` las entradas privadas regeneradas
@@ -33,4 +33,11 @@
    `sfx_10f8` ya está en el directorio compartido) y fusionar en
    `ccr-09eb2f6b-8rwl8l`. Paradas que quedan de B12: el cuerpo en llamas
    `040920` (sin captura) y las entradas `040B46/040BA8/040BE6`.
-6. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15.
+6. **Presupuesto de RAM (bloqueante, anterior a `work-laser`).** La ROM de
+   referencia de `ab76871` (la de `/home/user/ws-logo`) ya no arranca la
+   M1 en ares: `RAM budget: 207 scene slots allocated (minimum 208)`
+   (`scene_assets.c`). Con `work-laser` (el `10F8` desde `rom:/`):
+   `RAM budget: 3310 KB left for the scene cache (minimum 3328 KB)`.
+   Hace falta recuperar unos 32 KB (16 KB de la base más el crecimiento del
+   código y de las tablas de la escena) antes del recorrido de la M1.
+7. **Siguientes fallos de la matriz por orden:** B14, B03, B13, B15.

@@ -1407,7 +1407,8 @@ python3 tools/export_rest_sprites.py ZIP OUT6@1e100-1f100 OUTB@1e100-1f100 --out
 - Sonido `10F8`: render aislado `ACTIVE_AT_WINDOW_END` (sonido sostenido:
   ventana de 5,015 s, sin bucle exacto medible); `data/sound_map.json`
   `"stop": "012192"` y `pack_game_audio.py` lo empaqueta como su ventana
-  (32 kHz: 30 % de la energía por encima de 11 kHz); `game_audio.c` atiende
+  (32 kHz: 30 % de la energía por encima de 11 kHz; no residente, desde
+  `rom:/`); `game_audio.c` atiende
   la petición de parada `palabra | 0x8000` (`012192`). Pares contra las
   referencias y los primeros de cada canal nuevo: todos `unclear` u
   `overlap`: canal propio `ch_10f8` (`data/sound_policy.json`).

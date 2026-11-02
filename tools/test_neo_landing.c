@@ -13,7 +13,7 @@
 #include "../src/neo_landing.h"
 #include "../src/neo_soldier_ai.h"
 #include "soldier_ai_tables.h"
-typedef struct {uint32_t frame;int canopy;uint32_t routine;uint8_t pre[0xb0];int has_post;uint8_t post[0xb0];int ram[24];} landing_update_t;
+typedef struct {uint32_t frame;int kind;uint32_t routine;uint8_t pre[0xb0];int has_post;uint8_t post[0xb0];int ram[26];} landing_update_t;
 #include "landing_fixture.h"
 static const neo_anim_program_t *program(uint32_t tag) {
     for (unsigned i=0;i<sizeof(soldier_programs)/sizeof(soldier_programs[0]);i++) if (soldier_programs[i].tag==tag) return &soldier_programs[i].program;
@@ -49,7 +49,7 @@ static uint32_t lng(const landing_update_t *u,unsigned off,uint32_t keep) {
 int main(void) {
     neo_landing_input_t in;memset(&in,0,sizeof(in));
     const landing_update_t *first[2]={NULL,NULL};
-    for (unsigned i=0;i<NU;i++) if (!first[landing_updates[i].canopy]) first[landing_updates[i].canopy]=&landing_updates[i];
+    for (unsigned i=0;i<NU;i++) if (!first[landing_updates[i].kind]) first[landing_updates[i].kind]=&landing_updates[i];
     assert(first[0] && first[1]);
     neo_landing_start(&s,&in,program);
     for (unsigned k=0;k<2;k++) {
@@ -63,7 +63,7 @@ int main(void) {
     for (unsigned i=0;i<NU;) {
         uint32_t f=landing_updates[i].frame;unsigned j=i;expect[0]=expect[1]=NULL;
         for (;j<NU && landing_updates[j].frame==f;j++) {
-            const landing_update_t *u=&landing_updates[j];expect[u->canopy]=u;
+            const landing_update_t *u=&landing_updates[j];expect[u->kind]=u;
             int v;
             if ((v=field(u,0x15))>=0) in.flags15=(uint8_t)v;
             if ((v=field(u,0x1e))>=0 && field(u,0x1f)>=0) in.z=(uint16_t)(v<<8|field(u,0x1f));

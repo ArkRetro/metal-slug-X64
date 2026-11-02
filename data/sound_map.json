@@ -539,6 +539,14 @@
    "callers": [],
    "event": "requested by the beam call 01E19E of weapons 06/0B (0120F8, unless the other player's beam sounds); stopped by 01E4D4 (012192) at the beam's end (neo_pweapon.c)",
    "stop": "012192"
+  },
+  {
+   "label": "sfx_1085",
+   "word": "1085",
+   "callers": [
+    "0C4E0C"
+   ],
+   "event": "the mummy transformation's smoke 0C4DD8 (0120F8 in its constructor; neo_landing.c)"
   }
  ]
 }

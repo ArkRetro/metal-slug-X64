@@ -381,6 +381,11 @@ emu.register_frame_done(function()
   end
   -- Iteration aid only (MSX_FULL_SAVE_AT=<frame>): a MAME state at that frame.
   if frame==tonumber(os.getenv('MSX_FULL_SAVE_AT') or '-1') then machine:save(string.format('at_%d',frame)) end
+  -- Capture only (MSX_FULL_GIVE_MUMMY=<frame>): the form request +94 = 3 at
+  -- that frame, as a contact of kind 0x10 (the mummy's breath) does in
+  -- 0C36C0 (tools/mame/capture_marco_catalog.lua MSX_GIVE_MUMMY); the
+  -- original forms check 0C3428 then runs the transformation 0C17A0.
+  if frame==tonumber(os.getenv('MSX_FULL_GIVE_MUMMY') or '-1') then cpu:write_u8(0x1014c4+0x94,3) end
   -- Pistol again after a new section (reference-only weapon, as at 2100).
   if frame==section_start+300 and frame>2400 and cpu:read_u8(0x10c71e)==0 then cpu:write_u8(0x10c71e,3) end
   local b=0x10c72e;local m=0x10d7b6;local sky=0x10e83e

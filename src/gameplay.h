@@ -50,6 +50,7 @@ typedef struct {
      * 0C17A0..0C182A, the protection +84 after it, the takeoff wait of
      * 0C1A0C; breaths taken (kind 0x10) and cures (the medicine 08B750). */
     unsigned mummy_transform,mummy_guard,mummy_takeoff,mummy_breaths,mummy_cures;
+    bool mummy_smoke;   /* the transformation's smoke C4DD8 started */
     unsigned mummy_landing;   /* updates left in the landing 0C1AC8 (no walking) */
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     bool aim_up;   /* input: up held (set by the caller before msx_game_update) */

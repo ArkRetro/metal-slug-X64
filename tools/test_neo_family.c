@@ -591,7 +591,9 @@ int main(void) {
                 NODES[i].frame>=u->frame && NODES[i].frame<=u->frame+3u) contact=true;
         }
 #endif
-        unsigned taken=pickup.taken;pickup.frame++;
+        /* RAM 10C590: 08BFD6 counts the game's updates (not the nodes'). */
+        static uint32_t last_update_frame;
+        unsigned taken=pickup.taken;if (u->frame!=last_update_frame) {pickup.frame++;last_update_frame=u->frame;}
 #ifdef FAMILY_LABEL_COUNTS
         /* RAM 10C5B2/10C5B4 (score labels per player, 08D330) as read. */
         {const int32_t (*lc)[3]=CAT(FAMILY_NAME,_label_counts);

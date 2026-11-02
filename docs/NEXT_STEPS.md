@@ -123,10 +123,10 @@
       `10F3`, llamas `01E9B6` de dos en dos cada 2 actualizaciones, 4 veces,
       `+62` = ±0x100000; cada llama avanza `+86` pasos de `01456A`, golpea
       una vez con `01F146` y anima hasta su fin). El HUD no cambia (tipo < 4:
-      «BOMB»). Hay una captura de familia (`/home/user/captures-m2fix6/mol1`,
-      `sec02_19932`, raíces `1e648,1e664`, 23700..26139: 28 lanzamientos,
-      8393 actualizaciones; el `boss-trace.txt` se puede borrar si falta
-      disco). No hay traducción versionada.
+      «BOMB»). Captura de familia hecha y borrada por disco (se repite en ~2 min:
+      `MSX_FULL_LOAD=sec02_19932`, raíces `1e648,1e664`, desde 23700 hasta
+      26139: 28 lanzamientos, 8393 actualizaciones). No hay traducción
+      versionada.
     - B38: es el **Slugnoid** (`09692C`, dos torretas `03B4E0`, flecha «IN»
       `097830`, programas paleta `0x88D`). El guion de la etapa 3
       (`2D9BE8`, `random_choice`) lo crea **siempre** al llegar la cámara a

@@ -36,6 +36,13 @@ def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('pairs',nargs='+',type=Path);p.add_argument('--map',type=Path,default=ROOT/'data/sound_map.json')
     p.add_argument('--output',type=Path,default=ROOT/'data/sound_policy.json')
+    # Pairs not used to join channels (listed in 'bridges'): each is a
+    # waveform-only cut, residual at the half-mix limit, that the envelope
+    # fit reads as an overlap, and it would merge the pickup voices of the
+    # 1056 group into the impact channel although every other measured
+    # cross pair of the two groups overlaps (none cuts or drops; dozens are
+    # clear overlaps in both orders). B36: 1159/115B; docs/AUDIO_JUEGO.md 14.
+    p.add_argument('--bridge',nargs='*',default=['sfx_1159>sfx_1032','sfx_115b>vehicle_burst'])
     a=p.parse_args()
     pairs={}
     for f in a.pairs:
@@ -58,7 +65,7 @@ def main():
     for k,(mode,_) in sorted(res.items()):
         x,y=k.split('>')
         if mode not in ('cut','drop'):continue
-        if len(known_of(find(x))|known_of(find(y)))>1:bridges.append(k);continue
+        if len(known_of(find(x))|known_of(find(y)))>1 or k in a.bridge:bridges.append(k);continue
         parent[find(y)]=find(x)
     comps={}
     for l in labels:comps.setdefault(find(l),[]).append(l)

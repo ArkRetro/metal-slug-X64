@@ -564,6 +564,7 @@ typedef struct __attribute__((packed)) {
     uint16_t columns,rows;int16_t origin_x,origin_y;uint32_t grid,unknown,image_first,image_count;
     struct __attribute__((packed)) {uint32_t rom,offset,length;} blob[3];
     scene_layer_rule_t rules[4];
+    uint32_t patch_offset;uint16_t patch_count;   /* map patches 0C70FC (B37) */
 } pack_stage_t;
 _Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
 typedef struct __attribute__((packed)) {
@@ -753,6 +754,12 @@ bool scene_stage_load(unsigned index) {
     const uint8_t *blob[3];
     for (unsigned b=0;b<3;b++) {uint8_t *d=take(ps.blob[b].length);if (ps.blob[b].length) rom_read(d,ps.blob[b].offset,ps.blob[b].length);blob[b]=d;}
     if (load_idle) load_idle();
+    /* Map patches: their table and the split of the cells (the patch
+     * cells are the stage's last). */
+    unsigned patches=ps.patch_count<16u?ps.patch_count:16u,normal=cells;
+    uint32_t patch_table[32];
+    if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);memcpy(patch_table,raw_patch,8u*patches);}
+    while (normal && (stage_cells[normal-1].layer&0x80u)) normal--;
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
@@ -760,7 +767,9 @@ bool scene_stage_load(unsigned index) {
         .camera_list=blob[0],.camera_rom=ps.blob[0].rom,.camera_len=(uint16_t)ps.blob[0].length,
         .script=blob[1],.script_rom=ps.blob[1].rom,.script_len=(uint16_t)ps.blob[1].length,
         .players=blob[2],.players_rom=ps.blob[2].rom,.players_len=(uint16_t)ps.blob[2].length,
-        .cells=stage_cells,.cell_count=cells,.index_order=order,.index_runs=runs};
+        .cells=stage_cells,.cell_count=normal,.patch_cells=stage_cells+normal,.patch_cell_count=cells-normal,.patch_count=patches,
+        .index_order=order,.index_runs=runs};
+    for (unsigned i=0;i<patches;i++) {stage.patch_submap[i]=patch_table[2*i];stage.patch_layer_object[i]=patch_table[2*i+1];}
     memcpy(stage.rules,ps.rules,sizeof(stage.rules));
     stage_on=true;
     /* The stage map, pinned and loaded now (the screen is black). */

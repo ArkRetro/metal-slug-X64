@@ -127,3 +127,33 @@
     `--stage-seconds 800`. La caída x 616 es el salto «bloqueado» del piloto
     sobre el soldado de la cuerda `082DB0`: mejorar esa regla (disparar o
     esperar en vez de saltar al hueco x 632..663).
+13. **Rama `work-m2fix6` (informe de la ROM 24):**
+    - Hecho: B36 (voz `1130` de la L, `6d00f4a`) y B37 = B15 (parches de
+      mapa `0C70FC` dibujados: puertas de las etapas 1 y 2). Al reconstruir
+      la ROM en `/home/user/ws-logo` copiar (`cp`, sin `-p`)
+      `romfs/mission2.pack` y `filesystem/mission2/s1/patches.json`,
+      `filesystem/mission2/s2/patches.json` (`tools/extract_map_patches.py 2
+      filesystem/mission2/sK`, luego `pack_mission.py`).
+    - B35 (molotov), sin hacer por orden del usuario. Análisis de la ROM:
+      recogida `08B5FA` → `0C0A7C` (D1 = 2): `0AA898` (vehículo; tipos 1/2
+      nunca), tipo ≥ 4 rechazado, `0C0B32` +10 bombas (voz `1124`), mismo
+      tipo → rechazado (puntos y `1121`), si no tipo = 2 y voz
+      `0C0A66[2]` = `1156` (sin render: falta en `sound_map.json`), etiqueta `08CD10` (D1 = tipo + 3). Lanzamiento `0C4786`:
+      tabla `0C4756` tipo 2 = `01E648` (en marcha) / `01E664` (`+90` = FF);
+      vuelo `01E738` (fila `01F126`; resultado 2/3: `01E7B0`, sonido 1027,
+      explosión `01C7EA`, fila `01F136`), al tocar suelo `01E80E` (sonido
+      `10F3`, llamas `01E9B6` de dos en dos cada 2 actualizaciones, 4 veces,
+      `+62` = ±0x100000; cada llama avanza `+86` pasos de `01456A`, golpea
+      una vez con `01F146` y anima hasta su fin). El HUD no cambia (tipo < 4:
+      «BOMB»). Captura de familia hecha y borrada por disco (se repite en ~2 min:
+      `MSX_FULL_LOAD=sec02_19932`, raíces `1e648,1e664`, desde 23700 hasta
+      26139: 28 lanzamientos, 8393 actualizaciones). No hay traducción
+      versionada.
+    - B38: es el **Slugnoid** (`09692C`, dos torretas `03B4E0`, flecha «IN»
+      `097830`, programas paleta `0x88D`). El guion de la etapa 3
+      (`2D9BE8`, `random_choice`) lo crea **siempre** al llegar la cámara a
+      3391, en x 392 o en x 568 (y 1624): no hace falta forzar ninguna rama.
+      En `run4` nace en 87329 y espera (`096A60`) hasta 92270 sin que el
+      piloto suba (`game91500.png`). Traducirlo es un vehículo completo
+      (subida, salto, cañones, daño, salida, sprites y sonidos): queda
+      pendiente; hoy se cuenta como externo y no se dibuja.

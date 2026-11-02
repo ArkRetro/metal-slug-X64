@@ -46,9 +46,14 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
 /* B20: the truck's engine 10A5 is a long one-shot (11.58 s, 157 KB), not a
  * loop: no room in RAM, it plays from rom:/ as well. (The dome's collapse
  * 1026, 6.16 s, is rendered but has no policy entry: AUDIO_JUEGO.md 13.) */
+/* B36: the pickup voices of the weapons 0E (115B) and 0F (1159), which no
+ * Mission 1/2 item gives (B16), play from rom:/ too; with 1132 and 10A5 also
+ * in the policy the L's 1130 (19 KB) left the M2 reference at 207 slots
+ * (floor 208): it streams as well. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
-    return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u;
+    return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
+        || w==0x115bu || w==0x1159u || w==0x1130u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

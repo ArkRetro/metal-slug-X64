@@ -336,6 +336,21 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
             if (!k8b896(a,e,pk,p,rec)) return false;
             k8b850(pk,p);sound(e,0x1121);
         }
+    } else if (r==0x8b5fa) {                                         /* molotov (bomb type 2) */
+        /* 08B612: 0C0A7C; accepted -> 08B642: the label 08CD10 (d1 = type
+         * + 3: external, counted), 08B87A; refused -> the value. */
+        uint16_t snd,voice;
+        marco_weapon_result_t v=marco_weapons_bomb_type(pk->weapons,p,2,pk->player[p],pk->slot[p],&snd,&voice);
+        if (v==MW_STOP) {ga_fail(e,0xc0a7c);return false;}
+        sound(e,snd);
+        if (v==MW_ACCEPTED) {
+            sound(e,voice);
+            pk->labels++;if (e->external) e->external(e->ctx,0x8cd10);
+            k8b87a(pk,p);
+        } else {
+            if (!k8b896(a,e,pk,p,rec)) return false;
+            k8b850(pk,p);sound(e,0x1121);
+        }
     } else if (r==0x8b750) {                                         /* medicine (kind 0x32) */
         /* 08B750: sound 1121, then 0C0C92: a live player in form 3 gets
          * +94 = 0 (the cure; carry) -> 08B87A and the label 08CD10 (d1 = 1,

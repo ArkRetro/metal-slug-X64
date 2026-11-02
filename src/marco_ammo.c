@@ -80,6 +80,19 @@ marco_weapon_result_t marco_weapons_bombs(marco_weapons_t *w,unsigned p,uint8_t 
     if (sound) *sound=0x1124;
     return MW_ACCEPTED;
 }
+marco_weapon_result_t marco_weapons_bomb_type(marco_weapons_t *w,unsigned p,uint8_t type,const marco_weapon_player_t *m,
+    uint8_t *slot,uint16_t *sound,uint16_t *voice) {
+    static const uint16_t voices[4]={0,0x1157,0x1156,0x1155};   /* 0C0A66 */
+    if (sound) *sound=0;
+    if (voice) *voice=0;
+    if (!type || type>=4 || p>=2) return MW_REFUSED;
+    if (type==3) return MW_STOP;                                 /* 0AA898 with D2 = 3: a vehicle takes it */
+    if (marco_weapons_bombs(w,p,10,m,slot,sound)==MW_STOP) return MW_STOP;
+    if (w->b[W_TYPE+p]==type) return MW_REFUSED;
+    w->b[W_TYPE+p]=type;
+    if (voice) *voice=voices[type];
+    return MW_ACCEPTED;
+}
 bool marco_weapons_expire(marco_weapons_t *w,unsigned p,marco_weapon_player_t *m) {
     if (word(w,W_ROUNDS+2*p) && !m->dead) return false;
     marco_weapons_pistol(w,p,m);

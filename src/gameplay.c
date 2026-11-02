@@ -1342,13 +1342,15 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * grenade 01BF46, or 01BF10 with the legs' +90 = FF (observed:
          * standing; 01 running, 03 in the air). Its position (0C4806:
          * the player's +72/+74 words, -1/0x11..0x15 in cfam) uses the
-         * standing value -1/0x15: the port's player has no +72/+74. Other
-         * bomb types are explicit stops. */
+         * standing value -1/0x15: the port's player has no +72/+74. Bomb
+         * type 2 throws the molotov the same way; other types are explicit
+         * stops. */
         if (g->grenade && !g->grenade_was_down && !g->complete && marco_weapons_throw(&g->world.weapons,0,false)) {
             uint8_t type=g->world.weapons.b[10];
-            if (type==1 && g->world_enabled) {
+            if ((type==1 || type==2) && g->world_enabled) {
+                /* 0C4756: type 2 (the molotov) 01E648 / 01E664 (+90 = FF). */
                 bool still=g->grounded && !g->moving;
-                neo_world_player_grenade(&g->world,still?0x1bf10u:0x1bf46u,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
+                neo_world_player_grenade(&g->world,type==2?(still?0x1e664u:0x1e648u):still?0x1bf10u:0x1bf46u,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
                 g->grenades++;marco_hgun_throw(&g->hgun);
             } else g->grenade_stops++;

@@ -432,7 +432,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -641,6 +641,10 @@ FAMILY_ARGS_rlaunch8 := $(FAMILY_ARGS_rlaunch) --terrain 10c72e
 # node as read; the writes compared), 65 sparks; village terrain 10C72E.
 FAMILY_ARGS_laser6 := --attacks --terrain 10c72e
 FAMILY_ARGS_laserb := $(FAMILY_ARGS_laser6)
+# molotov = the bomb type 2 (0C4756: 01E648/01E664, flight 01E738, the
+# hit in flight 01E7B0 with 01C7EA, the fire 01E80E/01E894 and its flames
+# 01E9B6..01EA3A; neo_bullet.c), m from sec02_19932, frames 23700..26139.
+FAMILY_ARGS_molotov := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.
 FAMILY_ARGS_grenade := --hit-to 1c152

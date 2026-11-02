@@ -226,6 +226,8 @@ ROOTS+=[0x23cac2,0x23cb9e]
 # The rope soldier 082BCE (descent, hanging, turn, knife, death, fall, body,
 # rope end 083212); the hit splash 0682F0 (22DB44) is already a root.
 ROOTS+=[0x2818e4,0x281a08,0x281a5c,0x281ac6,0x281c20,0x281d66,0x281e1e,0x281dea]
+# The molotov 01E648 (22F5B8) and its flames 01E9B6 (242B52), neo_bullet.c.
+ROOTS+=[0x22f5b8,0x242b52]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

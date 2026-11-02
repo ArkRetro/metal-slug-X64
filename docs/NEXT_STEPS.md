@@ -70,6 +70,21 @@
      B. Hay que comprobarlo en ares antes.
    - Traducir el repartidor `01A97A`.
    - Las balas de pistola siguen dibujándose al final.
-9. **Siguientes fallos de la matriz por orden:** B14, B03, B15, B20
+9. **Rama `work-m2fix4` (B31, fotos de la ROM 23):** `0995EC` (tesoro),
+   `032DE2` (soldado envuelto), `03A05A` (respiradero de gas) y `082BCE`
+   (soldado de la cuerda) nativos (MISION2_ACTORES.md, «Etapa 3: actores
+   de las fotos»). Al reconstruir la ROM en `/home/user/ws-logo` copiar
+   (`cp`, sin `-p`) `filesystem/mission2/rest-native.json` y
+   `romfs/mission2.pack`. Quedan, por orden:
+   - `03A2AA` (roca de la etapa 3): `g_map_patch` con desplazamientos de
+     origen (D0/D1 de `0C70FC`) y el dibujo de los parches de tiles; luego
+     la traza (ver la orden de `rope2`).
+   - `09692C` (vehículo de la torre): forzar la rama de `2D9BE8` en una
+     captura.
+   - El nido `035D12` y el murciélago de puntos `0364D2`: forzar la rama
+     vacía de las cajas `08C154` (`2D9206`/`2D9272`).
+   - B27: el andador `40` y `3D/3F` (`032FB4`), la caja `3F`, la bomba de
+     tipo 2 (`09`, `0C0A7C`) y la muerte quemada `083018`.
+10. **Siguientes fallos de la matriz por orden:** B14, B03, B15, B20
    (bucles de motor 10A5/1026), pool de actores genéricos (pico 93/96 en la
    M1).

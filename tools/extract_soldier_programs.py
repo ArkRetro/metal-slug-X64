@@ -223,6 +223,9 @@ ROOTS+=[0x22ebb6,0x22ec92,0x22ed6e,0x22f016,0x22f0f2,0x22f1ce,0x22ee6a,0x22ef3a,
 ROOTS+=[0x29f57a,0x29f586,0x29f5d8,0x29f602,0x239492]
 # The gas vent 03A05A: its puffs 03A1AE (23CABA[+72]).
 ROOTS+=[0x23cac2,0x23cb9e]
+# The rope soldier 082BCE (descent, hanging, turn, knife, death, fall, body,
+# rope end 083212); the hit splash 0682F0 (22DB44) is already a root.
+ROOTS+=[0x2818e4,0x281a08,0x281a5c,0x281ac6,0x281c20,0x281d66,0x281e1e,0x281dea]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

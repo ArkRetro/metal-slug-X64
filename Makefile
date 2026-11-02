@@ -432,7 +432,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent wrapped m2boss1 m2boss8
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath m2boss1 m2boss8
 # The whole Mission 2 boss fight (8 pieces, ~30 min): `make check-m2boss`
 # (or FULL_M2BOSS=1 make check). make check runs the first and last piece.
 M2BOSS_ALL := m2boss1 m2boss2 m2boss3 m2boss4 m2boss5 m2boss6 m2boss7 m2boss8
@@ -562,6 +562,18 @@ FAMILY_ARGS_vent := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # flash 021CB6, 068E94 and the soldier 067AB4 (neo_m2traps.c, neo_rebel3.c);
 # wrap2 from sec03_26140 (family frames 31481..37200).
 FAMILY_ARGS_wrapped := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# rope = the Mission 2 stage-3 soldier hanging from a rope 082BCE and its
+# knives 0830FE (neo_m2traps.c): rope from at_37120 (frames 37121..40000,
+# the player kept below it: descent, waits, turns, seven knives).
+FAMILY_ARGS_rope := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# ropedeath = two rope soldiers 082BCE (2D8F8A/2D8F9C) killed by the pilot:
+# 082EAA, the rope end 083212, the fall 082F1A and the body 082F48 (rope3
+# from sec03_26140, family frames 53681..55600).
+FAMILY_ARGS_ropedeath := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
+# ventwait = the gas vent's constructor 03A05A (rank words 2D3A76/2D3AD8)
+# and its wait below the camera limit (rope2 from sec03_26140, frames
+# 37121..39200).
+FAMILY_ARGS_ventwait := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # m2boss<n> = the Mission 2 stage-3 boss 026254 (neo_m2boss.c) in pieces of
 # one fight (capture_fullgame.lua from at_92700, MSX_FULL_FAMILY_RANGE=
 # 26254-27e8e): body, parts, shots, the column, the music delay 059F76 and

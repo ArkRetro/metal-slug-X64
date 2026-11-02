@@ -329,7 +329,14 @@ static uint8_t dyn_countdown[NEO_KDYN_COUNT];
 static void dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t dy) {
     (void)ctx;(void)map;(void)dx;(void)dy;
     if (ga_b(a,0x6a)!=0xffu) return;
-    for (int k=NEO_KDYN_COUNT-1;k>=0;k--) if (!dyn_used[k] && !dyn_countdown[k]) {dyn_used[k]=true;ga_sb(a,0x6a,(uint8_t)k);return;}
+    /* 0140D2: from slot 7 down, the first with no map (+26) and no
+     * countdown (+2A); a slot of an actor outside the family is busy as the
+     * original read it (the rope soldiers 082BCE beside the chests). */
+    for (int k=NEO_KDYN_COUNT-1;k>=0;k--) {
+        const uint8_t *b=&dynram[k*64];
+        bool outside=dyn_seen && ((b[0x26]|b[0x27]|b[0x28]|b[0x29]|b[0x2a]|b[0x2b])!=0);
+        if (!dyn_used[k] && !dyn_countdown[k] && !outside) {dyn_used[k]=true;ga_sb(a,0x6a,(uint8_t)k);return;}
+    }
 }
 static void dyn_release(void *ctx,neo_gactor_t *a) {(void)ctx;if (ga_b(a,0x6a)<NEO_KDYN_COUNT) {dyn_used[ga_b(a,0x6a)]=false;dyn_countdown[ga_b(a,0x6a)]=2;}ga_sb(a,0x6a,0xff);}
 /* 004E76: solid-body slot +6B (the only solid body of the trace: slot 0). */

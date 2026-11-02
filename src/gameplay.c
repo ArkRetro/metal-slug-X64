@@ -8,6 +8,7 @@
 #include "marco_mount.h"
 #include "marco_descent.h"
 #include "msx_diag.h"
+#include "msx_sfx.h"
 #if defined(__mips__)
 #include <debug.h>
 #define FALL_LOG(...) debugf(__VA_ARGS__)
@@ -182,10 +183,9 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
  * n START 0607DE when 42FA = 0 (018632), then the GO arrow 05287C (018656),
  * both after the mission actor (0040BC). run4: the arrow is made again at
  * every stage start (19429, 20009, 26216, ...). The letters' voice
- * (607D2[mission], 0x1132 for Mission 2) has no render: not requested
- * (counted in start_voices). */
+ * 607D2[mission] is requested by their first update (msx_game_update). */
 void msx_game_stage_actors(msx_game_t *g) {
-    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->start_voices++;}
+    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;}
     neo_world_mission_actor(&g->world,0x5287c,0,0);
 }
 void msx_game_stage_end(msx_game_t *g) {
@@ -217,7 +217,7 @@ static void stage_entry_step(msx_game_t *g) {
     neo_mission_update(&g->flow);
     g->entry_updates++;
     if (g->flow.fade_in) {neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);g->entry_fade_updates=g->entry_updates;}
-    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->entry_letters=true;g->start_voices++;}
+    if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->entry_letters=true;}
     /* 01860A also makes the GO arrow 05287C at every stage start. */
     if (!playing && g->flow.state==NEO_MISSION_PLAYING) neo_world_mission_actor(&g->world,0x5287c,0,0);
 }
@@ -717,8 +717,10 @@ static bool parent_motion(const neo_world_t *w,uint32_t tag,uint32_t *dx,uint32_
  * a wall cell, the surface response 0131D6/0131EC (D6 bit 2) clearing d2,
  * which 014492 stores back as +30. The port keeps its own floor model
  * (neo_walk_step/neo_land_step) and takes only that side stop from the
- * native kernel: true with *x the swept x when the sweep hit a wall. */
-static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,bool ground,int32_t *x) {
+ * native kernel: true with *out the swept position and speed (014492
+ * stores them as +28..+34) and *floor the sweep's floor bit (D6 bit 0)
+ * when the sweep hit a wall. */
+static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,bool ground,neo_air_t *out,bool *floor) {
     if (!g->world_enabled || !vx) return false;
     neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
     neo_kreq_t q={body->x,body->y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,(uint8_t)(ground?0xff:0),0,0,0xff};
@@ -733,10 +735,29 @@ static bool wall_stop(msx_game_t *g,const neo_air_t *body,int32_t vx,int32_t vy,
     /* The air sweep that meets a wall can end on the scene root (MAME wq1,
      * Mission 2 stage 3: D6 = 8000000E with A0 = 10E968 at x 624 and in the
      * tower at 759..887, 10C00A = 0): x back to the terrain (01AC4C). */
-    if (r.parent==NEO_KOBJ_ROOT) r.x=(int32_t)((uint32_t)r.x+(uint32_t)k->root.x-(uint32_t)k->terrain.x);
-    else if (r.parent!=NEO_KOBJ_TERRAIN) return false;
-    g->wall_stops++;*x=r.x;
+    if (r.parent==NEO_KOBJ_ROOT) {
+        r.x=(int32_t)((uint32_t)r.x+(uint32_t)k->root.x-(uint32_t)k->terrain.x);
+        r.y=(int32_t)((uint32_t)r.y+(uint32_t)k->root.y-(uint32_t)k->terrain.y);
+    } else if (r.parent!=NEO_KOBJ_TERRAIN) return false;
+    g->wall_stops++;*out=(neo_air_t){r.x,r.y,r.vx,r.vy};*floor=(r.flags&1u)!=0;
     return true;
+}
+/* B14 diagnostics (reference cartridges): the kernel's dynamic objects at
+ * a fall (slot, owner routine, terrain-relative position, map size). */
+static void fall_dyn_log(const msx_game_t *g) {
+#if MSX_DIAG
+    FALL_LOG("MSX fall pilot: on=%u last jump why=%u from %d,%d to %d,%d (1 path, 2 no floor, 3 wander, 4 blocked)\n",g->pilot.on,g->pilot.why,
+        g->pilot.from_x,g->pilot.from_y,g->pilot.to_x,g->pilot.to_y);
+    const neo_kscene_t *k=&g->world.kernel;
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) {
+        const neo_kdyn_t *d=&k->dyn[i];if (!d->map) continue;
+        const neo_world_dyn_t *o=&g->world.dyn[i];(void)o;
+        FALL_LOG("MSX fall dyn %u: owner %06lx x=%ld y=%ld cells %d,%d %ux%u\n",i,o->used?(unsigned long)ga_l(&g->world.gactors[o->owner],0):0ul,
+            (long)(((int64_t)d->pos.x-k->terrain.x)>>16),(long)(((int64_t)d->pos.y-k->terrain.y)>>16),(int8_t)d->map[0],(int8_t)d->map[1],d->map[2],(unsigned)d->map[3]+1u);
+    }
+#else
+    (void)g;
+#endif
 }
 static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t vy) {
     solid_push_t r={false,false,false};
@@ -1106,8 +1127,17 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (!(g->ticks&1) && g->start_letters) {
         /* The MISSION n START letters after the mission actor (neo_end.c;
          * RAM 10C2F4 = 42F4, the flow's mission). */
-        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,g->world.front_window,g->flow.mission,neo_world_program,NULL};
+        /* 060878: the letters request their voice 607D2[mission] (0120F8;
+         * MAME sec01_19391: 1132 at 19428, return 060888) into the world's
+         * list. A voice without a render (Mission 1's 1131 is in the entry
+         * audio; Missions 3..6) is counted in start_voices. */
+        neo_end_ram_t voice;memset(&voice,0,sizeof(voice));
+        neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,g->world.front_window,g->flow.mission,neo_world_program,&voice};
         neo_end_update(&g->end,&in);
+        for (unsigned i=0;i<voice.sound_count;i++) {
+            if (msx_sfx_lookup(voice.sounds[i])<0) g->start_voices++;
+            end_sound(g,voice.sounds[i]);
+        }
         g->start_stops+=g->end.unsupported;
         if (!g->end.count || g->end.unsupported) {g->start_letters=false;neo_end_reset(&g->end);}
     }
@@ -1130,6 +1160,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->jump_pending=false;
         const bool was_grounded=g->grounded;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
+#if MSX_DIAG
+        const unsigned trail_walls=g->wall_stops,trail_lands=g->kernel_landings,trail_pushes=g->solid_pushes;
+#endif
         if (dying) {
             /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
              * air step 0143EE (no gravity of its own) or the ground step. */
@@ -1169,9 +1202,22 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
              * stage 3, x 536: a solid pushes the player up the 1234 steps
              * and the zero-speed walk then found no floor one unit away). */
             if (body.x!=pushed_from && neo_surface_at(body.x,body.y,4*MSX_UNIT,4*MSX_UNIT,&feet)) body.y=feet.height;
-            int32_t wx;
-            if (direction && wall_stop(g,&body,gvx,gvy,true,&wx)) {body.x=wx;direction=0;}
-            g->grounded=neo_walk_step_shift(&body,direction,mummy);
+            neo_air_t w;bool floor=false;
+            if (direction && wall_stop(g,&body,gvx,gvy,true,&w,&floor)) {
+                /* 014594 -> 014492: the ground sweep that meets a wall leaves
+                 * +28/+2C where it stopped, the y advanced along the slope
+                 * (B14, MAME m2wall: Mission 2 stage 2, x 2263.99998 against
+                 * the slot-7 object 06851A, y by the whole step 0xBA00, then
+                 * +0x3255 and still while it stands there). Only x was
+                 * taken: the feet stayed 0.2 px under the slope, the ground
+                 * step's one-unit contact test found no floor and the player
+                 * fell through the slope (ares: x 2263 -> 2293). On a floor
+                 * (D6 bit 0) the sweep is this update's ground step. */
+                body.x=w.x;direction=0;
+                if (floor) {body.y=w.y;body.vx=0;body.vy=0;}
+            }
+            if (floor) g->grounded=true;
+            else g->grounded=neo_walk_step_shift(&body,direction,mummy);
             if (!g->grounded) g->air_ticks=0;
         } else {
             int previous=body.y;
@@ -1192,9 +1238,9 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 body.vy=0x60000;
                 if (s.left) {int32_t v=0u-(uint32_t)body.vx;body.vx=(v>=0?0x40000:-0x40000)+(v>>1);}
             } else if ((s.left && body.vx>=0) || (s.right && body.vx<0)) body.vx=0;   /* 014468..01448A */
-            int32_t wx;
+            neo_air_t w;bool floor;
             const neo_air_t start=body;   /* 014462: +28..+34 into 013968 */
-            if (wall_stop(g,&body,body.vx,body.vy,false,&wx)) {body.x=wx;body.vx=0;}
+            if (wall_stop(g,&body,body.vx,body.vy,false,&w,&floor)) {body.x=w.x;body.vx=0;}
             body.x+=body.vx;body.y+=body.vy;
             g->air_ticks+=2;
             uint8_t object;int32_t top;
@@ -1220,6 +1266,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
+#if MSX_DIAG
+        if (g->world_enabled) {
+            uint8_t dm=0;for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (g->world.kernel.dyn[i].map) dm|=(uint8_t)(1u<<i);
+            msx_diag_trail((int)(g->x/MSX_UNIT),(int)(g->y/MSX_UNIT),(int)(body.vx/256),(g->grounded?MSX_TRAIL_GROUND:0u)|(g->ride?MSX_TRAIL_RIDE:0u)|
+                (g->wall_stops!=trail_walls?MSX_TRAIL_WALL:0u)|(g->kernel_landings!=trail_lands?MSX_TRAIL_KLAND:0u)|(g->solid_pushes!=trail_pushes?MSX_TRAIL_PUSH:0u)|(was_grounded?0u:MSX_TRAIL_AIR),dm);
+        }
+#endif
         if (dying) {
             /* 0C2EC6..0C2F8A: speed, program, landing, count-down, off-screen. */
             int32_t rx,ry;root_xy(g,&rx,&ry);
@@ -1254,10 +1307,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
                  * stage 3, modes 2/4): then the fall death and a new life. */
                 FALL_LOG("MSX fall rescue %u stage %u: x=%ld y=%ld camera=%d,%d back to x=%ld y=%ld\n",g->pit_rescues+1u,(unsigned)g->flow.stage,
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
+                msx_diag_trail_dump("fall rescue");
+                fall_dyn_log(g);
                 g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
             } else if ((int16_t)p.py<0x100) {
                 FALL_LOG("MSX fall death stage %u: x=%ld y=%ld camera=%d,%d last ground x=%ld y=%ld\n",(unsigned)g->flow.stage,
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
+                msx_diag_trail_dump("fall death");
+                fall_dyn_log(g);
                 g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
             else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {
                 unsigned n=g->safe_old;

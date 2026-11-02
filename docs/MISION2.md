@@ -761,6 +761,33 @@ intermitente (recorrido A: 0 rescates en la etapa 2; recorrido B: 1, en x
 llega el jugador (en MAME el piloto lo rompe en el fotograma ~24216 y sigue
 a x 2266,9) o si es el aterrizaje en la pendiente. Parada explícita.
 
+**Caída en x 2281 resuelta (B14, rama `work-m2fix5`).** Rastro del jugador
+de la referencia (`MSX DIAG trail`, 48 actualizaciones antes de cada
+rescate: x, y, velocidad, suelo, parada en pared, aterrizaje del núcleo,
+empuje sólido y la máscara de objetos dinámicos; volcado en cada rescate o
+muerte por caída con los objetos dinámicos `MSX fall dyn` y el último
+salto del piloto `MSX fall pilot`): el jugador sube andando la pendiente de
+cuartos (columnas 256..291, filas 63..71) contra el obstáculo de la ranura 7,
+la parada en pared lo pone en x 2263, pierde el suelo en esa actualización y
+cae a través de la pendiente hasta x 2293. Captura MAME `m2wall`
+(`capture_fullgame.lua` desde `sec02_19932`, `MSX_FULL_DEBUG_CMDS` con
+`bpset 1448c` / `bpset 14492` para A6 = 1014C4 desde el fotograma 0x5E80,
+imprimiendo d0..d3, 10C004..10C00F, 10C018, 10C068, el terreno
+`10C742..10C74E` y la ranura 7 `10C242..10C254`): en 24207 el barrido de
+suelo para en x 08D7FFFF con la y avanzada el paso entero (`022DCDAB` →
+`022E87AB`, D6 = 4F: pared y suelo), después `022EBA00` y quieto hasta que
+el obstáculo se rompe (24218, mapa 0). `014492` guarda d0 y d1; el port
+tomaba solo la x y dejaba los pies en `022DCDAB`, 0,2 px bajo la pendiente
+en la x nueva (558,0): el paso de suelo con dirección 0 exige el contacto a
+una unidad, no lo encontraba y el jugador quedaba en el aire bajo la
+superficie (el aterrizaje solo mira entre la altura anterior y la nueva).
+Ahora, con suelo (D6 bit 0) el resultado del barrido es el paso de suelo de
+esa actualización (x, y). `tools/test_m2_wall.c` (`make check`): los 14
+barridos de MAME exactos con el núcleo nativo, la ranura 7 (`E1B6A`) y las
+celdas del port; solo con la x, el paso de suelo no ve suelo; con x/y, 5
+actualizaciones en la posición de MAME. Ares (`--stage-seconds 400`): etapa
+2 sin rescates.
+
 **Recorrido en ares** (rama `work-m2gate`, `mslugx-m2-reference.z64`,
 `--stage-seconds 800`, dos recorridos): `RESULT: PASS` en los dos; la
 etapa 2 termina por su salida nativa (`exit hooks=0`), 0 caídas mortales;

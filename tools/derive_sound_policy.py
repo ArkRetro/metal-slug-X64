@@ -41,7 +41,7 @@ def main():
     # fit reads as an overlap, and it would merge the pickup voices of the
     # 1056 group into the impact channel although every other measured
     # cross pair of the two groups overlaps (none cuts or drops; dozens are
-    # clear overlaps in both orders). B36: 1159/115B; docs/AUDIO_JUEGO.md 13.
+    # clear overlaps in both orders). B36: 1159/115B; docs/AUDIO_JUEGO.md 14.
     p.add_argument('--bridge',nargs='*',default=['sfx_1159>sfx_1032','sfx_115b>vehicle_burst'])
     a=p.parse_args()
     pairs={}

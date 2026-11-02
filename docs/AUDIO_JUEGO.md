@@ -85,7 +85,8 @@ correlación normalizada (con la música y otros efectos mezclados):
 `0x10A5` del blindado no es un efecto puntual: sola suena continua (motor) y
 `0C`+`10A5`, lo que se envía al destruirlo, la detiene (render silencioso).
 Como el blindado nativo no tiene evento de aparición y no se midió su bucle,
-**no se incluye**. `06` y `0C` no paran la música.
+**no se incluye**. `06` y `0C` no paran la música. (Corregido en §13: `10A5`
+es un efecto de 11,58 s del camión `02916E`, no un bucle.)
 
 ## 4. Política de canales medida
 
@@ -168,8 +169,8 @@ descartan las `>= 0x2000` (`90A5`, `90E8`: `0120F8` las tira) y `002C`
 `data/sound_map.json` (`sfx_<palabra>`, con las rutinas ROM que las piden en
 el port) y se renderizan aisladas como antes (`render_sound_commands.py
 --labels`). `10A5` (motor del blindado) y `1026` siguen sonando al final de la
-ventana de 300 fotogramas: son bucles, no efectos, y no se empaquetan
-(`pack_game_audio.py`: estado `LOOP`). Total de efectos: 49 renders, 63 s.
+ventana de 300 fotogramas y no se empaquetaban (`pack_game_audio.py`:
+estado `LOOP`); con 1500 fotogramas terminan solos (§13). Total de efectos: 49 renders, 63 s.
 
 **Política medida.** `tools/measure_sound_pairs.py` renderiza pares (A y,
 12 fotogramas después, B) y los ajusta contra los renders aislados con dos
@@ -354,7 +355,49 @@ en 8658 (con `108C` cada 5 fotogramas) y la de la R en 14145 (con `10F5` 6
 fotogramas después) no (0,04, el nivel de base): en la recreativa también
 puede no oírse si se dispara al coger el arma; falta medir ese par.
 
-## 13. Voz al coger el láser y las armas 0E/0F (ROM 24, rama `work-m2fix6`)
+## 13. Voz MISSION 2 START y los «bucles» 10A5/1026 (rama `work-m2fix5`)
+
+**Voz `1132`.** Las letras MISSION n START (`0607DE`) piden en su primera
+actualización la palabra `607D2[misión]` (`060878` → `0120F8`; la tabla de
+la ROM es `1131..1136` para las misiones 1 a 6). Captura MAME
+(`capture_fullgame.lua` desde `sec01_19391`, punto de parada en `0120F8`):
+`1132` en el fotograma 19428, retorno `060888`, la única palabra hasta los
+disparos. El port ahora la pide (`gameplay.c`, actualización de las letras
+con un `neo_end_ram_t` propio); `start_voices` cuenta solo las voces sin
+render (la `1131` de la Misión 1 está en el audio de la entrada; `1133+`).
+`tools/test_neo_end.c` (letras de inicio) comprueba una sola petición
+`1131 + 10C2F4` en la primera actualización. Render aislado: 2,677 s,
+`OK`, 36 KB. Pares: 135 medidos (consigo misma y con las 67 etiquetas en
+los dos órdenes): solo corta y es cortada por `1137` (fin de misión), el
+resto se solapa o es dudoso: canal propio con `1137` (`CH_1132`), nivel 0.
+No cabe residente (la referencia quedaba en 209 ranuras, suelo 208): se
+lee de `rom:/` como `1137`. Registro `MSX AUDIO voice 1132: …`.
+
+**B20: `10A5` y `1026` no son bucles.** La ventana de render de 300
+fotogramas (5 s) terminaba dentro de ellos (`ACTIVE_AT_WINDOW_END`) y
+`pack_game_audio.py` los descartaba como bucles. Con `frames: 1500` en
+`sound_map.json` los dos terminan solos (`OK`, silencio hasta el final de
+la ventana): `10A5` 11,578 s (motor del camión `02916E`: `0120F8` en
+`029220`/`029428`, también `0296C0`; `012192` lo para en `02935C`/`0294A2`,
+el port envía `10A5|8000`) y `1026` 6,159 s (derrumbe de la cúpula `054A60`;
+también `022B56`, `046C40`, `04A9D4`, `0A13DA`; nunca parado). No hace falta
+soporte de bucle.
+- `10A5`: 157 KB, de `rom:/`. Pares (138): se corta a sí mismo, corta `10E8`
+  y cae bajo `10EA`: canal de `10E8`/`10EA` (renombrado `CH_10A5`), nivel 1;
+  ningún otro sonido cambia.
+- `1026`: renderizado (83 KB en `filesystem/audio`) pero **sin entrada en la
+  política: parada explícita** (petición `unmapped`, registro
+  `MSX AUDIO voice 1026: unmapped`). Sus 138 pares unen dos canales del
+  port: cae bajo la explosión `1027`, `1021`, `1025`, `102C`, `1035`, `1064`,
+  `1067`, `10F9`, `10FF` y el humo, y corta o es cortado por `102F`, `1032`,
+  `1034`, `1158`, el estallido. Con ellos `derive_sound_policy.py` junta el
+  canal de las voces de las armas (`1056`, `112C..112F`, `1158`, `115A`…)
+  con el de impacto y cambia el nivel de 14 sonidos ya medidos: el modelo
+  de un canal por grupo no lo representa. Esos pares no están en
+  `data/sound_pairs.json` (medida repetible con
+  `measure_sound_pairs.py --pairs`, lista `1026` × las 68 etiquetas).
+
+## 14. Voz al coger el láser y las armas 0E/0F (ROM 24, rama `work-m2fix6`)
 
 **B36: no sonaba la voz al coger la L.** `0C0928` pide la palabra de la
 tabla `0C08F8` (leída de la ROM: `0000 0000 112F 112E 112C 112D 1130 112F
@@ -381,8 +424,11 @@ defecto, listados en `bridges`). Ningún otro sonido cambia de canal ni de
 nivel (comprobado: la política anterior se reproduce igual sin los pares
 nuevos).
 
-Memoria: `1130` es residente (19 KB); `115B` y `1159` (armas 0E/0F, que no
-da ningún objeto de las Misiones 1 y 2: B16) se leen de `rom:/` como `115A`.
+Memoria: `115B` y `1159` (armas 0E/0F, que no da ningún objeto de las
+Misiones 1 y 2: B16) se leen de `rom:/` como `115A`. `1130` era residente
+(19 KB); al fusionar `work-m2fix5` (`1132` y `10A5` en la política) la
+referencia de la M2 quedó en 207 ranuras (suelo 208, aserción en
+`scene_assets_begin`): `1130` también se lee de `rom:/`.
 
 ## Regenerar
 
@@ -403,7 +449,7 @@ Los pares de la sección 4 se reproducen con `MSX_RENDER_PLAN`, p. ej.
 
 ## Pendiente
 
-- Motor del blindado (`10A5`) y `1026` (bucles, sin empaquetar); sonidos
+- `1026` sin política (§13); sonidos
   del jugador fuera de la pistola que el port no pide (granadas, muerte de
   Marco, `1123`…), voces de selección, música de jefe/continuación
   (`002C`/`002D`) y del resto de misiones.

@@ -784,3 +784,53 @@ Desviaciones vistas y no tocadas (sin prueba de la rutina): el salto sin
 dirección desde la carrera deja +30 = 0 en el original (plan eE; el port
 conserva la velocidad), y el jugador parado en la cuarta de pendiente
 y 226 avanza ~1 px por actualización en el original (eC/eD).
+
+## Fase 3: actores secundarios y cadena de eventos (rama `work-m2events`)
+
+Informe del usuario (hardware real, ROM 20): faltan actores secundarios de
+la Misión 2 (mineros, arqueólogos…) y la cadena de eventos no sigue a la
+recreativa.
+
+### Inventario: lo que crea el guion de la recreativa y lo que crea el port
+
+Arcade: `data/mission2_inventory.json` (`run4-debug`, sonda SPAWN `01A132`:
+298 registros de aparición ejecutados de las etapas 1 a 3 y el jefe) y las
+capturas de familia de esta rama (`captures-m2ev/s2a`, `s2b`). Port: el
+auditor (`tools/audit_script_events.py`, `script_native.c`) y el registro de
+ares (`MSX script spawn record … native N`, abajo). «Contado»: el registro
+lleva su grupo (< 9) y retiene las esperas del guion.
+
+| Constructor | Etapas | Registros | Ejecutados (arcade) | Contado | Port | Qué es |
+| --- | --- | --- | --- | --- | --- | --- |
+| `03882A` | 1 | 1 | 1 | no | sí | puerta de la etapa 1 |
+| `039590` | 1 | 8 | 5 | sí | sí | espadachines |
+| `08C37C` | 1,2,3 | 70 | 64 | no | sí | objetos |
+| `099E06` | 1,2 | 4 | 4 | no | sí | prisionero en la silla |
+| `09A67E` / `09A692` | 1,2,3 | 55 / 4 | 25 / 1 | sí / no | sí | cajas ocultas |
+| `01913C` | 2,3 | 6 | 6 | no | sí (ya lo aplicaba; ahora contado como nativo) | reinicio del tiempo |
+| **`021A1C` / `021A26`** | 2 | 8 / 9 | 8 / 2 | no | **sí (nuevo)** | **mineros** (excavan, se asustan y regalan un objeto, huyen) |
+| `035B66` / `035C68` / `035D12` | 2,3 | 8 / 4 / 3 | 5 / 4 / 1 | no | **no (parada)** | murciélagos: bandada, murciélago con recorrido, nido |
+| `03A892` | 2 | 1 | 1 | sí | sí | señal de la puerta de la etapa 2 |
+| **`0529C0`** | 2,3 | 21 | 21 | no | **sí (nuevo)** | dirección de la flecha GO (10C44A) |
+| `0613CA/D8/E6` | 2,3 | 137 | 41 | sí | sí | momias |
+| `0678CA` `067902` `0692B2` `0678A2` `0678B6` | 2,3 | 48 | 35 | sí | sí | soldados |
+| `06835C` | 2 | 1 | 1 | sí | sí | soldado con rehén |
+| `06851A` | 2 | 3 | 3 | sí | sí | sacos |
+| **`099DE2`** | 2 | 4 | 1 | no | **sí (nuevo)** | prisionero atado (variante +86 bit 0) |
+| `099DF0` | 2 | 3 | 3 | no | **no (parada)** | prisioneros colgados de una cuerda (`09A9C4`: dibujo directo `011FF6`) |
+| **`0B829C` / `0B833A`** | 2,3 | 1 / 24 | 1 / 24 | no | **sí (nuevo)** | carteles de madera (el primero con sello de colisión) |
+| `026254` | 3 | 1 | 1 | sí | sí | jefe |
+| `032DE2` | 3 | 2 | 1 | no | no (parada) | sin identificar: paleta 0x105, programa `239492`, andador `08CCD4`, sigue en `067AB4` (soldado) |
+| `03670E` | 3 | 8 | 7 | sí | sí | dron |
+| `03A05A` / `03A2AA` | 3 | 1 / 1 | 1 / 1 | no | no (parada) | sin identificar: espera de cámara +70 y sonido 10EE / hijos `03A344`, `03A58A` |
+| `052A5C` | 3 | 1 | 1 | sí | sí | espera de cámara |
+| `082BCE` | 3 | 6 | 6 | no | no (parada) | sin identificar: busca al jugador (`01AF9A`), `0832A6`.. |
+| `08C154` / `08C168` | 3 | 7 / 18 | 3 / 16 | sí | sí | cajas de suministros |
+| `09692C` | 3 | 2 | 1 | no | no (parada) | sin identificar: crea `03B4E0` |
+| `0995EC` | 3 | 1 | 1 | no | no (parada) | objeto golpeable (caja `099838`, vida +72) |
+| `099862` / `099DCC` | 3 | 1 / 1 | 1 / 1 | no | sí | prisioneros |
+
+Apariciones que el port pierde: de 17 constructores no contados a **10**
+(`032DE2 035B66 035C68 035D12 03A05A 03A2AA 082BCE 09692C 0995EC 099DF0`);
+contadas perdidas: 0. Todas son paradas explícitas: el mundo cuenta el
+constructor (`external_spawns`) y el registro de ares dice `native 0`.

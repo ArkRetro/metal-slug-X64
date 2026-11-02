@@ -259,6 +259,9 @@ bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed); /
 typedef bool (*ga_call_t)(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter);
 int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call);
 void ga_palette(neo_gactor_t *a,uint16_t resource);           /* 009EA8 (slot = +1D++) */
+/* 011FF6 with D0 = 0: the descriptor drawn at the actor's projected words
+ * (+3C/+40 less the +4D correction bits), attribute +14/+15, depth +1E. */
+void ga_draw(neo_gactor_t *a,neo_genv_t *e,uint32_t descriptor);
 void ga_flash_palette(neo_gactor_t *a,uint16_t resource);     /* 004520 */
 uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row); /* 0049E8 */
 /* 0049E8 with its A0/A1 results in e->target[0]/[1] (cleared first). */

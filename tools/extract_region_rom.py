@@ -118,6 +118,8 @@ BLOBS=[
     (0xE1A5E,0x10C,'0678B6 / 0692B2 Mission 2 soldiers: cull rectangles E1A5E/E1A66 (01945C), knife rows E1A76.. (0049E8), hurtboxes E1A96/E1AA2 (+50), solid boxes E1B4E/E1B5C (004E76)'),
     (0xB6ECA,0x08,'0B6ED2 stage-1 exit rectangle (+6E, 01AF3C)'),
     (0xE0818,0x7C,'03AF08 stage transition fix-map columns: entry 3AED8 (E0818) and exit 3AEF0 (E0856)'),
+    (0x963D8,0x318,'09692C Slugnoid: attack rows 0963D8 (shell) / 0963E8 (flight) / 0963F8 (blown up) / 096408 (killed) (0049E8), program table 096418 (+72, sub-tables 09645C/096474), pilot tables 09649C by character (097830), hurtbox 0966BC (+50), cull 0966C8 (0C8BEC/01945C), shell rectangle 0966D0 (019504), mount rectangle 0966D8 (0AA610)'),
+    (0x97E88,0x56,'097EDE / 097F52 Slugnoid palette list (009EA8)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)

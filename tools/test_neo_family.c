@@ -145,7 +145,7 @@ static uint32_t native_tag(uint32_t recorded) {
     for (unsigned i=0;i<NN;i++) if (node_address[i] && recorded>node_address[i] && recorded<node_address[i]+0xc0u) return NEO_GA_TAG(i)|((recorded-node_address[i])<<16);
     return recorded;
 }
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
 /* A node alive before the piece: its native program and cursor from the
  * recorded program pointer +20 (the ROM address of its next command). */
 static void resume_program(neo_gactor_t *a) {
@@ -490,7 +490,7 @@ int main(void) {
     unsigned pickups_checked=0;
     bound[0]=true;memcpy(actors[0].m,NODES[0].pre,0xb0);actors[0].active=true;actors[0].index=0;
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
     ga_sl(&actors[0],0x0c,native_tag(ga_l(&actors[0],0x0c)));resume_program(&actors[0]);
 #endif
 #ifdef FAMILY_EXIT_GLOBALS
@@ -506,7 +506,7 @@ int main(void) {
          last_frame=u->frame;}
         /* A node created by an actor outside the family (another family's
          * test) starts from its recorded bytes at its first update. */
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
         /* A piece of a long fight: a node made before its creator's first
          * recorded update (the trace starts in the middle of that update)
          * starts from its recorded bytes too. */
@@ -520,13 +520,17 @@ int main(void) {
         if (!bound[u->node] && (NODES[u->node].creator==-1 || early)) {
             bound[u->node]=true;memset(a,0,sizeof(*a));a->active=true;a->index=(int16_t)u->node;
             memcpy(a->m,NODES[u->node].pre,0xb0);ga_sl(a,0x38,native_tag(ga_l(a,0x38)));injected++;
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
             /* A node already alive when the piece starts: its creator (+0C)
              * is a node of the fixture (the boss's parts). */
             ga_sl(a,0x0c,native_tag(ga_l(a,0x0c)));resume_program(a);
+#if defined(FAMILY_RESUME) && defined(FAMILY_NODE_FIELDS)
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;   /* node pointers (the turrets' anchors) */
+             for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) ga_sl(a,nf[i],native_tag(ga_l(a,nf[i])));}
+#endif
 #endif
         }
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
         /* Its creator alive before the piece and not yet run: from its
          * recorded bytes (the node reads its creator's fields). */
         if (bound[u->node]) {uint32_t t=ga_l(a,0x0c);unsigned c=t&0xffffu;

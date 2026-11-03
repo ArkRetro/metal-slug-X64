@@ -707,7 +707,7 @@ de `trace.csv`), y los registros del guion de la etapa 3 de esa zona
 | `9feb` (pilar con cartel) | 784–944, y 336 | soldado envuelto `032DE2` (2D8C68/2D8C76, (280, 424)) junto al pilar; soldado de la cuerda `082BCE` (2D8D6A, cámara 944, (312, 512)) | nativos |
 | `0bdb`, `692f` (cofre arriba, agujeros con calaveras) | 1640–1834, y 736 | respiradero `03A05A` (2D8E58, (466, 775), mientras el progreso < 2144): columnas de gas morado (tipo 0x10, momia); soldados de la cuerda `082BCE` (2D8E12, 2D8F8A/2D8F9C) | nativos |
 | `ccc7` (murciélagos sobre un cartel, camino que sube) | ~2080–2128 | el nido `035D12` y la bandada de puntos `035B66` (+6E = 1) de las cajas `08C154` vacías (2D922A/2D923C, 2D9296/2D92A8): rama al azar que ni `run4` ni estas capturas ejecutan | parada explícita (`0364D2`, `035FD0`) |
-| `fd11` (jefe, CONTINUE) | 3391–3888 | el jefe (nativo) y, en la torre, `09692C` (2D9BEA/2D9BF6, elección al azar): un vehículo montable (torreta `03B4E0`, servicios de ranura `0AA610/0AA760`) | `09692C` sin traducir (externo contado) |
+| `fd11` (jefe, CONTINUE) | 3391–3888 | el jefe (nativo) y, en la torre, `09692C` (2D9BEA/2D9BF6, elección al azar): el Slugnoid (dos torretas `03B4E0`, servicios de ranura `0AA610/0AA760`) | nativo (`neo_slugnoid.c`, ARMAS_VEHICULOS.md paso 17) |
 
 Capturas (MAME 0.264, `capture_fullgame.lua`; `MSX_FULL_SAVE_AT` acepta
 ahora una lista de fotogramas). La reproducción desde un estado intermedio
@@ -792,8 +792,7 @@ parada):
   `0B7A2C` copia submapas de `0B7436` con desplazamientos de origen (D0/D1
   ≠ 0), que `g_map_patch` no admite (para con `0C72EC`), y el renderizador no
   dibuja los parches de tiles.
-- `09692C` (torre, elección al azar): vehículo montable, no ejecutado en las
-  capturas.
+- ~~`09692C`~~: el Slugnoid, nativo (`neo_slugnoid.c`, B38).
 - El nido `035D12` y el murciélago de puntos (`0364D2`): ramas al azar de
   las cajas `08C154` sin captura.
 - `083018`/`068D32`: muerte quemada del soldado de la cuerda.

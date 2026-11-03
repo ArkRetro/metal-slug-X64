@@ -262,9 +262,14 @@ static neo_gactor_t *child(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,uint16
     if (c) ga_place_from(c,a,e,0,0);
     return c;
 }
-/* 01E99A: 0C0D48 (a vehicle's +6E < 0: 097B24, not translated), 01E4F2. */
+/* 01E99A: 0C0D48, or with +6E < 0 (the Slugnoid's shell, 01EC0E) 097B24:
+ * the walker that fired it gets its shell back (its +8A - 1); 01E4F2. */
 static ga_result_t molotov_end(neo_gactor_t *a,neo_genv_t *e) {
-    if (W(0x6e)&0x8000u) {ga_fail(e,0x97b24);return GA_UNSUPPORTED;}
+    if (W(0x6e)&0x8000u) {
+        neo_gactor_t *w=e->creator?e->creator(e->ctx,a):NULL;
+        if (w) ga_sb(w,0x8a,(uint8_t)(ga_b(w,0x8a)-1u));
+        return GA_DELETE;
+    }
     landed(a,e);return GA_DELETE;
 }
 static bool flame_pair(neo_gactor_t *a,neo_genv_t *e) {
@@ -314,14 +319,15 @@ static ga_result_t molotov_tick(neo_gactor_t *a,neo_genv_t *e) {
         neo_gactor_t *c=child(a,e,0x1e9b6,0xe);
         if (c) {ga_sb(c,0x5e,B(0x5e));ga_sb(c,0x88,B(0x88));}
         SL(0x62,0x100000);
-        SW(0x7c,0);SB(0x87,0);sound(e,0x10f3);
+        if (B(0x88)==1u) {SW(0x7c,4);SB(0x87,0x18);sound(e,0x116c);}   /* type 3 (01EC0E) */
+        else {SW(0x7c,0);SB(0x87,0);sound(e,0x10f3);}
         SL(0,0x1e894);
     }   /* fall through */
     case 0x1e894:
         ga_project(a,e);
         SW(0x7c,W(0x7c)-1u);
         if ((int16_t)W(0x7c)<=0) {
-            SW(0x7c,2);SB(0x86,B(0x86)+1u);
+            SW(0x7c,B(0x88)==1u?3:2);SB(0x86,B(0x86)+1u);
             flame_pair(a,e);
             if ((int8_t)B(0x86)>=4) SL(0,0x1e97a);
         }
@@ -338,9 +344,44 @@ static ga_result_t molotov_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_floor(a,e);
         if (e->unsupported) return GA_UNSUPPORTED;
         SW(0x66,0x1001);SW(0x1e,0x1001);
-        if (B(0x88)==1u) {ga_fail(e,0x1ea7a);return GA_UNSUPPORTED;}
+        if (B(0x88)==1u) {
+            /* 01EA7A: the type-3 flame (palette 0x873, program 22F704,
+             * zoom +12/+13 = 0x7F). */
+            ga_palette(a,0x873);START(0x22f704);SB(0x12,0x7f);SB(0x13,0x7f);
+            SL(0,0x1eaac);return GA_MORE;
+        }
         ga_palette(a,0xd5);START(0x242b52);
         SL(0,0x1e9f8);return GA_MORE;
+    case 0x1eaac:
+        while ((int8_t)B(0x86)>0) {
+            ga_ground(a,e,NULL);
+            if (e->unsupported) return GA_UNSUPPORTED;
+            if (!(B(0x15)&0x40u)) return GA_DELETE;                   /* cartridge check, 004188 */
+            SB(0x86,B(0x86)-1u);
+        }
+        SL(0x76,0x1f156);SL(0x30,0);SL(0x34,0);SL(0x62,0);            /* 01B1DC */
+        SL(0,0x1eb72);
+        /* fall through */
+    case 0x1eb72: {
+        /* 01EB72: 01436A, the attack row +76 until it touches, the
+         * program, the zoom +12/+13 growing to full size. */
+        ga_stationary(a,e);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (L(0x76) && ga_attack(a,e,L(0x76))) SL(0x76,0);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x1e4f2);
+        if (!(B(0x15)&0x40u)) return GA_DELETE;                       /* cartridge check, 004188 */
+        if (W(0x3c)>=0x140u || (uint16_t)(W(0x40)-0x100u)>=0x140u) SL(0,0x1e4f2);
+        uint8_t d1=B(0x12);
+        if (d1!=0xffu) {
+            d1=(uint8_t)(d1+((uint8_t)(0xffu-d1)>>2));
+            if (d1>0xe0u) d1=0xff;
+            SB(0x12,d1);SB(0x13,d1);
+        }
+        return GA_MORE;
+    }
     case 0x1e9f8:
         while ((int8_t)B(0x86)>0) {
             ga_ground(a,e,NULL);
@@ -367,7 +408,7 @@ static ga_result_t molotov_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 static bool molotov_routine(uint32_t r) {
     return r==0x1e648 || r==0x1e664 || r==0x1e738 || r==0x1e80e || r==0x1e894 || r==0x1e97a || r==0x1e99a ||
-        r==0x1e9b6 || r==0x1e9f8 || r==0x1ea3a;
+        r==0x1e9b6 || r==0x1e9f8 || r==0x1ea3a || r==0x1eaac || r==0x1eb72;
 }
 bool neo_bullet_routine(uint32_t r) {
     return r==0x1b6a0 || r==0x1be24 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r);

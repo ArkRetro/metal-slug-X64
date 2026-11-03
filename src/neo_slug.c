@@ -95,15 +95,25 @@ static bool k4ed2(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool air) {
 }
 /* 014594 / 0143EE / 0143AC / 014574, then 03546A's +8F (kind 5). */
 static uint16_t kind_of(uint32_t k) {return (uint16_t)(k>>16);}
-static uint32_t ground_ride(neo_gactor_t *a,neo_genv_t *e) {
+uint32_t neo_slug_k14594(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0,v30=L(0x30);config(a,e);SL(0x30,L(0x62));
     if (!k4ed2(a,e,0xff,false)) return 0;
-    SL(0x30,v30);ga_ground_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
+    SL(0x30,v30);ga_ground_flags(a,e,0,0xff,&k);return k;
 }
-static uint32_t air_ride(neo_gactor_t *a,neo_genv_t *e) {
+uint32_t neo_slug_k143ee(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t k=0;config(a,e);
     if (!k4ed2(a,e,0,true)) return 0;
-    ga_air_flags(a,e,0,0xff,&k);SB(0x8f,kind_of(k)==5u?0xff:0);return k;
+    ga_air_flags(a,e,0,0xff,&k);return k;
+}
+static uint32_t ground_ride(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t k=neo_slug_k14594(a,e);
+    if (!e->unsupported) SB(0x8f,kind_of(k)==5u?0xff:0);
+    return k;
+}
+static uint32_t air_ride(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t k=neo_slug_k143ee(a,e);
+    if (!e->unsupported) SB(0x8f,kind_of(k)==5u?0xff:0);
+    return k;
 }
 static uint32_t air_free(neo_gactor_t *a,neo_genv_t *e) {uint32_t k=0;ga_air_flags(a,e,0xff,0xff,&k);return k;}
 static uint32_t ground_free(neo_gactor_t *a,neo_genv_t *e) {uint32_t k=0;ga_ground_flags(a,e,0xff,0xff,&k);return k;}

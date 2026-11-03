@@ -79,8 +79,6 @@
    - `03A2AA` (roca de la etapa 3): `g_map_patch` con desplazamientos de
      origen (D0/D1 de `0C70FC`) y el dibujo de los parches de tiles; luego
      la traza (ver la orden de `rope2`).
-   - `09692C` (vehículo de la torre): forzar la rama de `2D9BE8` en una
-     captura.
    - El nido `035D12` y el murciélago de puntos `0364D2`: forzar la rama
      vacía de las cajas `08C154` (`2D9206`/`2D9272`).
    - B27: el andador `40` y `3D/3F` (`032FB4`), la caja `3F`, la bomba de
@@ -139,11 +137,9 @@
       llamas `01E9B6`, voz `1156` (de `rom:/`). Familia `molotov` igual a
       MAME. Falta oírlo/verlo en MiSTer; tipo 3 (`01E680`, `+88` = 1, llamas
       `01EA7A`) y la recogida de los tipos 3..5 siguen como paradas.
-    - B38: es el **Slugnoid** (`09692C`, dos torretas `03B4E0`, flecha «IN»
-      `097830`, programas paleta `0x88D`). El guion de la etapa 3
-      (`2D9BE8`, `random_choice`) lo crea **siempre** al llegar la cámara a
-      3391, en x 392 o en x 568 (y 1624): no hace falta forzar ninguna rama.
-      En `run4` nace en 87329 y espera (`096A60`) hasta 92270 sin que el
-      piloto suba (`game91500.png`). Traducirlo es un vehículo completo
-      (subida, salto, cañones, daño, salida, sprites y sonidos): queda
-      pendiente; hoy se cuenta como externo y no se dibuja.
+    - B38 (**Slugnoid** `09692C`): **traducido** (rama `work-slugnoid`,
+      `neo_slugnoid.c`, ARMAS_VEHICULOS.md paso 17): familias `slugidle`,
+      `slugfall`, `slugtour`, `sluglaunch` iguales a MAME. Falta verlo en
+      ares/MiSTer (subir a la repisa de x 392, y 1624 de la torre), capturar
+      el daño (`097308/09737E`, `0977DC`), traducir `0353C2`/`03533A`
+      (parada `0973E2`) y renderizar los sonidos `116C` y `1089`.

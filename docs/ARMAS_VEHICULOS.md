@@ -1592,3 +1592,97 @@ python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/rlaunch
 - `tools/test_gameplay.c` (`chaser`): carrera con la `8` hasta la cámara
   3520: 1134 cohetes, 711 explosiones, 58 muertes, sin paradas ni dibujos
   ausentes.
+
+### Paso 17: Slugnoid `0x09692C` (`src/neo_slugnoid.c`, B38, rama `work-slugnoid`)
+
+Traducción manual de `0966F0..097E06` y `097EDE..097FC4` (andador, piloto,
+destello y obús del cañón, polvo, llamas de las patas, estallido `0AD8A2`).
+Las dos torretas vulcan son las de la Camel (`03B4E0`, `+72` = 3 y 2, ráfaga
+cada 4, anclas `+78`/`+7C` del andador); los pasos de suelo y aire
+`014594`/`0143EE` son los de la Camel, ahora exportados
+(`neo_slug_k14594`/`neo_slug_k143ee`). El guion de la etapa 3 lo crea
+siempre al llegar el progreso de cámara a 3391 (`2D9BEA`/`2D9BF6`, x 392 o
+568, y 1624); el mundo ya lo crea nativo (`neo_region_routine`).
+
+**Estados.** Constructor (capa `8810`, caja `0966BC`, suelo `0146E8`, salud
+`0x30`, dos torretas, 10 obuses `+8B`, piloto `097830`), espera `096A10/
+096A60` (paletas `0x88D`/`0x2`, marcador «IN» `0353A4(0, 0x28)` si se ve;
+cae con `01AC38` bajo el borde inferior (`+40` < RAM `10C72C` = 0x100);
+`0C8BEC 0966C8` → `0041AC`; `0AA610` con el rectángulo `0966D8`, `0AA760
+(0, 0)`, `0AA83A` tipo 3), subida `096B32` (sonido `1092`, programa `0x18`),
+parado `096C22/096C3A`, marcha `096CCC/096CEA` (`+62` = ±0x20000),
+agachado `096DC4/096E02` (al final, abajo+B: `0AA7FC` tipo 1) y vuelta
+`096EAA/096EEA`, caída `096F6A`, salto `096F86` (`+34` = 0xE4000, polvo
+`097DD0`, llamas `097C46`/`097D22`, sonido `1090`) y aire `097028` (palanca
+±0xAAAA hasta ±0x38000, pose `+86` por `096794`, empuje `0968C0` solo con
+`+93` = 1), aterrizaje `0970FC/097136` (`014850` frena en las paredes),
+A+B `0971F8/0972A6` (el jinete sale con `0AA7FC` tipo 1 y el andador sube
+con `+34` = 0x1A4000 hasta tocar, la fila `0963E8` o `+40` ≤ 0x120;
+lista de paletas `097E88` desde `+8C` = 3), voladura `09749A/0974C0`
+(destello `0AE220(1,0)`, `004192`, fuego `01DBAA`, cuatro piezas `0AD9E6`,
+estallido `0AD8A2`, fila `0963F8`, sonido `1034`, programa `0x40`),
+destrucción con jinete `09756A` (`0AA7FC` tipo 0, fila `096408`, explosión
+`01C71E`), hundido bajo la pantalla `0975C6/0975EA/09760E` y la cola común
+`0976C8` (parpadeo `+8E`, `0AA760`: sin jinete → `096BA6`; `0AAA88` tipo 3
+copia los obuses; `0AA9E4`: con causa, `0977DC` quita una torreta (sonido
+`1089`) y reacción `09737E`/`097308`; salud 0 en el suelo → `0973E2`).
+Cañón `096728` (C): sin obús en vuelo (`+8A`) y `0AA956`, destello `097972`
+en `(0, +82)` y obús `097A36` (0x100000 en el ángulo 0xC0, fila `0963D8`;
+contra algo → el estallido del obús del SV-001 `094FF8`; en el suelo →
+`01EC0E`, la bomba de tipo 3: `01E80E` con `+88` = 1 (sonido `116C`,
+`+7C` = 4/3, `+87` = 0x18) y sus llamas `01EA7A..01EBE0` (paleta `0x873`,
+programa `22F704`, fila `01F156`, zoom `+12/+13` hasta 0xFF), traducidas en
+`neo_bullet.c`; al final `097B24` devuelve el obús al andador).
+
+**Capturas** (MAME 0.264, `tools/capture_fullgame.lua` con `MSX_FULL_RIDE`,
+privadas, borradas tras extraer): estado `at_87300` de `sec03_26140` (la
+misma partida que `run4`) y `at_91340` de él con el plan `fall` (el piloto
+automático sube la torre y cae sobre el andador en 91347).
+
+```sh
+export MSX_FULL_STATES=CAP/states MSX_FULL_FAMILY_ROOTS=96a60,96c3a,3b57c,97886,3527e MSX_FULL_FAMILY_RANGE=966f0-97e08 \
+  MSX_FULL_VRAM_TRACE=1 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_SAVE_AT=87300 MSX_FULL_FAMILY_FROM=0 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_LAST=87310 ... st
+MSX_FULL_LOAD=at_87300 MSX_FULL_LOAD_FRAME=87300 MSX_FULL_RIDE=fall MSX_FULL_SAVE_AT=91340 MSX_FULL_FAMILY_FROM=0 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_LAST=91345 ... t1
+MSX_FULL_LOAD=at_87300 MSX_FULL_LOAD_FRAME=87300 MSX_FULL_RIDE=tour MSX_FULL_FAMILY_FROM=87301 MSX_FULL_FIRST_DUMP=87330 MSX_FULL_LAST=87700 ... idle
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=fall MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=91800 ... fall
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=tour MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=93500 ... tour
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=launch MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=92000 ... launch
+A="--range 966f0-97e08 --range 3b4e0-3bb00 --range 3523c-352ff --range 1b6a0-1b6a0 --range ae1dc-ae220 --range ad884-ad9e6 --range 94ff8-9503c \
+  --range 1e4f0-1ec20 --range 1d31c-1d6e4 --range 1c6ee-1ca9a --attacks --ram 10c608-10c650 --ram 10c2e8-10c2f0 --ram 10e9ec-10e9f8 \
+  --ram 10f084-10f086 --ram 10c300-10c302 --ram 10f000-10f002 --ram 10c718-10c72e --ram 1014c4-101634 --ram 10000e-100010 --ram 10c7b6-10d7b6"
+python3 tools/extract_family_fixture.py CAP/<captura>/boss-trace.txt --output data/slug<captura>_fixture.json.gz $A
+```
+
+**Pruebas de familia** (`make check`; `SLUGNOID_ARGS`, y `--resume` en las
+que empiezan en un estado: los nodos vivos antes de la traza parten de sus
+bytes, su creador, su programa y sus punteros de nodo, como `--m2boss`):
+
+| Familia | Nodos | Actualizaciones (fotogramas) | Contenido |
+| --- | ---: | ---: | --- |
+| `slugidle` | 5 | 929 (87328..87699) | constructor, torretas, piloto, marcador «IN», espera |
+| `slugfall` | 7 | 705 (91342..91686) | subida, marcha, caída de la repisa, aterrizajes con polvo, hundido, destrucción con jinete (`09756A`) |
+| `slugtour` | 48 | 5020 (91342..93498) | marcha con ráfagas y la palanca arriba, 4 saltos con llamas, 7 cañonazos, agachado y salida abajo+B, espera sin jinete, segunda subida y saltos |
+| `sluglaunch` | 30 | 1278 (91342..91815) | agachado con cañón, vuelta, A+B, vuelo y voladura, obús en el suelo → bomba de tipo 3 y sus llamas |
+
+Todas iguales bit a bit.
+
+**Sprites.** `export_rest_sprites.py` con las raíces nuevas (tablas
+`096418`/`09649C`, polvo, llamas, destello, `22F704`) y paletas `0x88D`,
+`0x2`, `0x2D`, `0x3`, `0xD1`, `0x891`, `0x8`, `0x9` (`filesystem/mission2/
+rest-native.json`, 6930 descriptores, 327 nuevos): 239 volcados, 323663
+píxeles iguales, **4047 distintos en 7 volcados**, todos en saltos (91815..
+92655; sin explicar: en esos volcados se ven balas vulcan `01B6A0`, que no
+son de la familia, delante del andador). Faltan las paletas `0x873`
+(llamas de tipo 3: ningún volcado las tiene asignadas), `0x6`, `0x7`,
+`0xA..0xC` (lista `097E88` de la muerte en espera, sin captura), `0x377`
+y `0x4`/`0x5` (pilotos 2..4).
+
+**No capturado** (traducido de la ROM, sin prueba): la reacción al daño
+`097308/09737E` y `0977DC`, la caída por debajo de la pantalla en espera,
+la lista de muerte `097EDE`, el doble salto `096F7A`, `096EA6`, el empuje
+del tipo 1 (`+93` = 1, Misión 5). **Parada explícita**: `0973E2` (muerte
+con jinete en el suelo: el hijo `03533A` de `0353C2` no está traducido) y
+el TRAP #F de `097EDE`/`097F52`. Sonidos: `1092`, `1090`, `1084`, `1034`,
+`10E9`, `10F2` ya están en la política; `116C` (bomba de tipo 3) y `1089`
+(torreta perdida) no están renderizados (se cuentan como `unmapped`).

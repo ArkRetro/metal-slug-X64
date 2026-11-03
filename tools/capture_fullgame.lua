@@ -255,6 +255,83 @@ local function plan_inputs(screen_x)
  button('P1 A',frame%12<6 and 1 or 0)
  button('P1 C',frame%60<8 and 1 or 0)
 end
+-- MSX_FULL_RIDE=<plan> (capture only, with MSX_FULL_LOAD): from the load
+-- frame on, the inputs come from this controller instead of plan_inputs: walk
+-- to the Slugnoid 09692C (the node whose routine lies in 096A10..09782F,
+-- creator the script actor), jump onto it and run the plan's timed segments
+-- while the vehicle slot 10C608 is in use. Plans: 'tour' (drive, vulcan with
+-- the stick, jumps, cannon, crouch, down+B exit, board again, A+B launch),
+-- 'fall' (drive off the ledge), 'launch' (crouch, rise, A+B).
+local ride_plan=os.getenv('MSX_FULL_RIDE')
+local ride_mounts,ride_from,ride_was=0,0,false
+local ride_px,ride_blocked,ride_detour,ride_dir=nil,0,0,1
+local function slugnoid_node()
+ local n=ROOT;local count=0
+ while n~=0 and n>=0x100000 and n<0x110000 and count<400 do
+  count=count+1
+  local r=cpu:read_u32(n)
+  if r>=0x96a10 and r<0x97830 and cpu:read_u32(n+0x0c)==SCRIPT then return n end
+  n=cpu:read_u32(n+8)
+ end
+ return nil
+end
+local function ride_inputs()
+ local b={L=0,R=0,U=0,D=0,A=0,B=0,C=0}
+ local mounted=cpu:read_u16(0x10c608)~=0
+ if mounted and not ride_was then ride_mounts=ride_mounts+1;ride_from=frame;print('MOUNT '..ride_mounts..' '..frame) end
+ if not mounted and ride_was then print('UNMOUNT '..frame) end
+ ride_was=mounted
+ local t=frame-ride_from
+ if not mounted then
+  local n=slugnoid_node()
+  -- Not born yet (the script waits for the camera progress 3391): the
+  -- usual plan until it is.
+  if not n and ride_mounts==0 then plan_inputs(cpu:read_u16(0x101500)&511);return end
+  if n and ride_mounts<2 then
+   -- Tower ledges (Y up): the usual plan until the player stands level
+   -- with it (run4 reaches its ledge at 91340); then walk to it and jump.
+   local px=cpu:read_i16(0x1014ec)
+   local vx=cpu:read_i16(n+0x28);local dy=cpu:read_i16(n+0x2c)-cpu:read_i16(0x1014f0)
+   local ground=(cpu:read_u8(0x1014d9)&0x40)~=0
+   if dy>12 or dy<-40 then plan_inputs(cpu:read_u16(0x101500)&511);return end
+   local d=vx-px
+   if d>3 then b.R=1 elseif d<-3 then b.L=1 end
+   if d>=-10 and d<=10 and ground and frame%30<6 then b.B=1 end
+  end
+ elseif ride_plan=='launch' then
+  -- 'launch': crouch with the cannon, rise, then A+B on the ground (the
+  -- walker flies up and blows: 0971F8, 0972A6, 09749A).
+  if t>=60 and t<200 then b.D=1;b.C=frame%30<4 and 1 or 0
+  elseif t>=300 and t<306 then b.A=1;b.B=1 end
+ elseif ride_plan=='fall' then
+  -- 'fall': stand, then drive right off the ledge (the walker falls below
+  -- the screen: 0975C6, 09756A with the rider).
+  if t>=120 then b.R=1;b.A=frame%10<5 and 1 or 0 end
+ elseif ride_mounts==1 then
+  -- 'tour': walk between x 400 and 440 on its ledge (the walker's +28),
+  -- the turrets' aim with Up, jumps, the cannon, crouch, down+B out (A
+  -- is released while B is new: A held + B new reads as A+B).
+  local n=slugnoid_node();local wx=n and cpu:read_i16(n+0x28) or 420
+  if wx>=440 then ride_dir=-1 elseif wx<=400 then ride_dir=1 end
+  local function walk() if ride_dir>0 then b.R=1 else b.L=1 end end
+  if t<120 then
+  elseif t<400 then walk();b.A=frame%10<5 and 1 or 0;b.U=t>=260 and 1 or 0
+  elseif t<640 then walk();b.B=frame%60<6 and 1 or 0;b.A=(frame%10<5 and frame%60>=10) and 1 or 0;b.C=(t>=500 and frame%40<4) and 1 or 0
+  elseif t<840 then b.C=frame%30<4 and 1 or 0
+  elseif t<980 then b.D=1;b.A=frame%10<5 and 1 or 0;b.C=frame%30<4 and 1 or 0
+  elseif t<1040 then b.D=1;b.B=(t>=1000 and t<1006) and 1 or 0
+  end
+ else
+  -- Second ride: walk and jump, then A+B (the walker flies up and blows).
+  local n=slugnoid_node();local wx=n and cpu:read_i16(n+0x28) or 420
+  if wx>=440 then ride_dir=-1 elseif wx<=400 then ride_dir=1 end
+  if t<60 then
+  elseif t<200 then if ride_dir>0 then b.R=1 else b.L=1 end;b.A=(frame%10<5 and frame%60>=10) and 1 or 0;b.B=frame%60<6 and 1 or 0
+  elseif t<206 then b.A=1;b.B=1
+  end
+ end
+ for k,name in pairs({L='P1 Left',R='P1 Right',U='P1 Up',D='P1 Down',A='P1 A',B='P1 B',C='P1 C'}) do button(name,b[k]) end
+end
 -- MSX_FULL_LOAD=<state name> MSX_FULL_LOAD_FRAME=<frame>: resume from a state
 -- saved by MSX_FULL_SAVE (iteration only; canonical captures run from boot).
 local load_name=os.getenv('MSX_FULL_LOAD')
@@ -358,7 +435,7 @@ emu.register_frame_done(function()
   local key=string.format('%d %x %d %x',cpu:read_u16(0x10e99e),spc,sec,cpu:read_u32(0x10e964))
   if key==last_key then still=still+1 else still=0 end
   last_key=key
-  plan_inputs(cpu:read_u16(0x101500)&511)
+  if ride_plan and load_name and frame>tonumber(os.getenv('MSX_FULL_LOAD_FRAME')) then plan='ride';ride_inputs() else plan_inputs(cpu:read_u16(0x101500)&511) end
   -- MSX_FULL_IDLE="lo-hi": capture-only, no input in those frames (an idle
   -- player for the GO arrow 05287C).
   local il,ih=string.match(os.getenv('MSX_FULL_IDLE') or '','(%d+)-(%d+)')

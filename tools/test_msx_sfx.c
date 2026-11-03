@@ -9,7 +9,7 @@ int main(void) {
         assert(msx_sfx_defs[i].name && msx_sfx_defs[i].channel<MSX_SFX_CHANNELS);
         assert(msx_sfx_lookup(msx_sfx_defs[i].word)==i);
     }
-    assert(msx_sfx_lookup(0x10a5)<0 && msx_sfx_lookup(0x0021)<0); // engine loop / music: not effects
+    assert(msx_sfx_lookup(0x1026)<0 && msx_sfx_lookup(0x0021)<0); // 1026 left out of the policy (AUDIO_JUEGO §13) / music: not effects
     // Unmapped request: ignored and counted.
     assert(msx_sfx_request(&s,0x1026)==-1 && s.unmapped==1);      // loop sound (render still active at the window end): not an effect
     // Same sound retriggers on its channel (pistol fire rate).

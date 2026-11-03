@@ -177,7 +177,8 @@ GAME_AUDIO := $(wildcard filesystem/audio/*.wav64)
 BOOT_LOGO := $(wildcard filesystem/logo/neogeo-logo.mesh filesystem/logo/neogeo-jingle.wav64)
 # HOW TO PLAY, SOLDIER SELECT and the choice between the title and the entry
 # (tools/pack_cinematic.py --name howto/select/confirm, docs/MISSION_ENTRY.md).
-BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64))
+# The select music's continuation (tools/pack_select_music.py, B44) rides along.
+BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64) filesystem/cinematics/select-music-head.wav64 filesystem/cinematics/select-music-loop.wav64)
 # The fix-layer HUD (src/hud_renderer.c) draws the S-ROM tiles with the fix
 # palettes of tools/build_hud_assets.py (docs/ARMAS_VEHICULOS.md §11).
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
@@ -925,6 +926,8 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	python3 tools/check_boss_budget.py
 check: check-boss $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
+	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
+	python3 tools/test_wav64_vadpcm.py
 	# The Mission 2 export (private) carries the Mission 1 sprites: the
 	# player's weapons and effects (BUG_MATRIX B29: the beam of the laser).
 	# (Mission 3's export is still its own actors only: paused, NEXT_STEPS.)

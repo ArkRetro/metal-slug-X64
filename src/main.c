@@ -81,7 +81,9 @@ static void spare_time(void) {
 static void lifebar_choice(bool z) {
     msx_lifebar_request=z;if (z) debugf("MSX LIFEBAR on\n");
 }
-static bool play_cinematic(const char *label,const char *movie,const char *sound,int hold,bool entry,const char *next) {
+/* loop: an optional loop body played after `sound` (msx_audio_open_loop),
+ * sample-exact, until the next movie opens its own audio. */
+static bool play_cinematic(const char *label,const char *movie,const char *sound,const char *loop,int hold,bool entry,const char *next) {
     uint32_t s0=TICKS_READ();
     if (!msx_cinematic_open(movie)) return false;
     uint32_t s1=TICKS_READ();
@@ -92,7 +94,9 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
     if (hold==-2) hold=(int)msx_cinematic_stats().frames-1;   // its last frame (capture 3619)
     uint32_t s3=TICKS_READ();
     bool audio=msx_audio_open(MSX_AUDIO_INTRO,sound);
-    if (audio) msx_audio_play(MSX_AUDIO_INTRO,false,0.8f);
+    bool looped=audio && loop && msx_audio_open_loop(MSX_AUDIO_INTRO,loop);
+    if (audio) msx_audio_play(MSX_AUDIO_INTRO,looped,0.8f);
+    if (loop) debugf("MSX CINE %s audio loop %s\n",label,looped?"on":"missing");
     debugf("MSX CINE %s setup open_us=%lu prepare_us=%lu check_us=%lu audio_us=%lu\n",label,(unsigned long)TICKS_TO_US(s1-s0),(unsigned long)TICKS_TO_US(s2-s1),(unsigned long)TICKS_TO_US(s3-s2),(unsigned long)TICKS_TO_US(TICKS_READ()-s3));
     unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,previous_a=true,start_skip=false,held=false;uint32_t draw_ticks=0,idle_ticks=0;
     uint32_t started=TICKS_READ();
@@ -110,7 +114,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         previous=start;previous_a=buttons.a;
         if (held) {
             /* Waiting on the choice: the clock stands on the hold frame. */
-            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen\n",label);lifebar_choice(buttons.z);}
+            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen audio=%u\n",label,(unsigned)msx_audio_playing(MSX_AUDIO_INTRO));lifebar_choice(buttons.z);}
             else {surface_t *surface=display_get();msx_audio_service();msx_cinematic_draw(surface);msx_frames_present();rendered++;
                 spare_time();
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
@@ -173,13 +177,20 @@ static const char *first_after_title(void) {
 static bool entry_cinematic(void) {
     bool howto=rom_file("/howto.msxc"),select=rom_file("/select.msxc"),confirm=rom_file("/confirm.msxc");
     const char *after_select=confirm?"rom:/confirm.msxc":"rom:/entry.msxc";
-    if (howto) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",-1,false,select?"rom:/select.msxc":after_select);
+    if (howto) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",NULL,-1,false,select?"rom:/select.msxc":after_select);
     msx_ramfs_preload("fixed.bin");game_audio_preload();game_preloading=true;
-    if (select) play_cinematic("select","rom:/select.msxc","rom:/select.wav64",-2,false,after_select);
+    /* B44: the arcade keeps playing the select music 0030 until the choice;
+     * the movie's audio holds only its first 2.70 s. With the measured
+     * continuation (tools/pack_select_music.py: the movie's audio + the
+     * render of 0030 up to its loop splice, then the 50 s loop body) the
+     * hold keeps the music; without it the movie's own audio, as before. */
+    bool select_music=rom_file("/select-music-head.wav64") && rom_file("/select-music-loop.wav64");
+    if (select) play_cinematic("select","rom:/select.msxc",select_music?"rom:/select-music-head.wav64":"rom:/select.wav64",
+        select_music?"rom:/select-music-loop.wav64":NULL,-2,false,after_select);
     scene_early=1;
-    if (confirm) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",-1,false,"rom:/entry.msxc");
+    if (confirm) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",NULL,-1,false,"rom:/entry.msxc");
     if (scene_early==2) scene_assets_grow_early(msx_cinematic_heap_reserve());   // the choice's movie is gone: more slots to warm
-    return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",-1,true,NULL);
+    return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",NULL,-1,true,NULL);
 }
 #endif
 #if MSX_GRAPHICS_LAB

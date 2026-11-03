@@ -177,7 +177,17 @@
     - Pendiente: ver el indicador bajar con daño real en ares/MiSTer.
     - B42, modo opcional «Barra de vida» (PORT_STATUS.md): Z al confirmar a
       Marco en SOLDIER SELECT. Pendiente: probarlo en ares/MiSTer.
-16. **Rama `work-m1boss` (B46, informe de la ROM 28):**
+16. **Rama `work-m1fix` (informe de la ROM 28):**
+    - B43: el motor `10A5` del camión sonaba con ráfagas: su VADPCM no
+      descodifica (fallo del codificador de audioconv64 con esa señal).
+      `pack_game_audio.py` descodifica cada efecto (`tools/wav64_vadpcm.py`)
+      y guarda en PCM16 el que falla; `make check` lo comprueba.
+    - B44: SOLDIER SELECT sigue con la música `0030` (render aislado, bucle
+      de 50 s) hasta la elección (`tools/pack_select_music.py`).
+    - B45: el arcade no crea actores en llamas al destruir el camión
+      (55 capturas). Nada que traducir.
+    - Pendiente: oír los dos arreglos en MiSTer.
+17. **Rama `work-m1boss` (B46, informe de la ROM 28):**
     - El mundo sigue durante el fin de misión (antes se congelaba en
       `018F40`): hundimiento/escombros del jefe de la M1, el espadachín que
       se rinde con bandera blanca (`0A9010`, familia `robeflag`) y la

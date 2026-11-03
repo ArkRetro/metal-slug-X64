@@ -443,6 +443,15 @@ etiquetas en los dos órdenes; en `data/sound_pairs.json`): corta `1124`
 recogida. `derive_sound_policy.py`: `ch_1056`, nivel 1; ningún otro sonido
 cambia. Se lee de `rom:/` (rara, como `1130`).
 
+## 16. `10E9` desde `rom:/` (B38)
+
+El Slugnoid (`neo_slugnoid.c`) dejó la referencia de la M2 por debajo del
+suelo de la caché de escena (3306 de 3332 KB con todos sus pilotos, 14 KB
+de menos con solo el de Marco). `10E9` (37 KB: la salida A+B del SV-001 y
+la muerte del Slugnoid con jinete, raros) se lee de `rom:/` como `1156`:
+209 ranuras (suelo 208). Los sonidos nuevos del Slugnoid `116C` (bomba de
+tipo 3) y `1089` (torreta perdida) no están renderizados.
+
 ## Regenerar
 
 ```sh

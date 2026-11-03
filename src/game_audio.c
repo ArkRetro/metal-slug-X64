@@ -51,10 +51,15 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * in the policy the L's 1130 (19 KB) left the M2 reference at 207 slots
  * (floor 208): it streams as well. B35: the molotov pickup voice 1156
  * (0C0A66[2], rare) streams too. */
+/* B38: the Slugnoid (neo_slugnoid.c: its programs and the pilot's) left the
+ * M2 reference 26 KB under the floor; with the pilot tables of the other
+ * characters left out it was still 14 KB under: the vehicles' exit/death
+ * 10E9 (37 KB; the SV-001's A+B exit, the Slugnoid's death with a rider)
+ * streams from rom:/. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
-        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u;
+        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

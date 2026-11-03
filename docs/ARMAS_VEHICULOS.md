@@ -1670,7 +1670,10 @@ Todas iguales bit a bit.
 **Sprites.** `export_rest_sprites.py` con las raíces nuevas (tablas
 `096418`/`09649C`, polvo, llamas, destello, `22F704`) y paletas `0x88D`,
 `0x2`, `0x2D`, `0x3`, `0xD1`, `0x891`, `0x8`, `0x9` (`filesystem/mission2/
-rest-native.json`, 6930 descriptores, 327 nuevos): 239 volcados, 323663
+rest-native.json`, 6780 descriptores, 177 nuevos; del piloto solo la tabla
+de Marco `09649C[0]`, el único personaje del port: los otros paran
+explícitamente en `ga_anim_start`). El paquete de la Misión 2 pasa a 351
+fragmentos (`SCENE_MISSION_CHUNKS_MAX` = 368): 239 volcados, 323663
 píxeles iguales, **4047 distintos en 7 volcados**, todos en saltos (91815..
 92655; sin explicar: en esos volcados se ven balas vulcan `01B6A0`, que no
 son de la familia, delante del andador). Faltan las paletas `0x873`
@@ -1686,3 +1689,7 @@ con jinete en el suelo: el hijo `03533A` de `0353C2` no está traducido) y
 el TRAP #F de `097EDE`/`097F52`. Sonidos: `1092`, `1090`, `1084`, `1034`,
 `10E9`, `10F2` ya están en la política; `116C` (bomba de tipo 3) y `1089`
 (torreta perdida) no están renderizados (se cuentan como `unmapped`).
+Memoria: con el código y los programas del Slugnoid la referencia de la M2
+quedaba 26 KB por debajo del suelo de la caché (3306 de 3332 KB); sin las
+tablas de los otros pilotos, 14 KB; `10E9` (37 KB, salida A+B del SV-001 y
+muerte con jinete) se lee ahora de `rom:/`: 209 ranuras (suelo 208).

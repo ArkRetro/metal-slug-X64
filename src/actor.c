@@ -508,6 +508,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.pickup.taken!=old_served) debugf("MSX item served=%u score=%02x%02x%02x%02x\n",game.world.pickup.taken,
         game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3]);
     {
+        /* Life bar (B42): absorbed hits and food refills. */
+        static unsigned seen_absorbed,seen_refills;
+        if (game.lifebar_absorbed!=seen_absorbed || game.lifebar_refills!=seen_refills) {
+            seen_absorbed=game.lifebar_absorbed;seen_refills=game.lifebar_refills;
+            debugf("MSX LIFEBAR hits=%u absorbed=%u refills=%u\n",game.life_hits,seen_absorbed,seen_refills);
+        }
+    }
+    {
         /* Items by kind (neo_item.c counters): a line when one changes. */
         static uint16_t seen[3][NEO_ITEM_KINDS];
         const neo_pickup_env_t *pk=&game.world.pickup;

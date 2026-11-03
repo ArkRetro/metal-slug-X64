@@ -390,6 +390,7 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
         }
         if (!k8b896(a,e,pk,p,rec)) return false;
         k8b850(pk,p);
+        if (rb(rec+3)) {pk->foods[p]++;pk->food_points[p]=pk->points[p];}   /* port counter (B42), no arcade effect */
     } else {ga_fail(e,r);return false;}                              /* bomb types, others */
     k8b834(pk,p,rec);pk->taken++;pk->item_taken[W(0x6e)<NEO_ITEM_KINDS?W(0x6e):0]++;
     return true;

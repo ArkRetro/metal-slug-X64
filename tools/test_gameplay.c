@@ -540,6 +540,62 @@ static void fall_run(unsigned cut_at,unsigned left_from,bool print) {
     assert(g.x>=(g.camera+28)*MSX_UNIT);
     if (left_from<1200) assert(g.x==(g.camera+28)*MSX_UNIT);   /* MAME: x 28.0, feet on the floor */
 }
+/* Optional life bar (B42, not arcade). The same run (stand at the first
+ * spawn until the soldier's knife hits, then keep the input) with the flag
+ * off and on: the game state (position, camera, actors, score, timer,
+ * lives) is identical up to the hit; off, the hit
+ * kills (the arcade); on, it takes one of 10 hits with the 2*0x78 blink.
+ * Then the rules: 10 hits kill, kinds 8/0x12 kill at once, a new life
+ * restores 10, food gives max(1, points/100) up to 10, the HUD gauge shows
+ * hits/10 on foot. */
+static uint32_t observe(const msx_game_t *g) {
+    uint32_t h=2166136261u;
+    #define MIX(v) do { uint32_t x=(uint32_t)(v);for (int b=0;b<4;b++) {h^=(x>>(8*b))&0xffu;h*=16777619u;} } while (0)
+    MIX(g->x);MIX(g->y);MIX(g->camera);MIX(g->ticks);MIX(g->deaths);MIX(g->world.player_hits);MIX(g->kills);MIX(g->invulnerable);MIX(g->life.phase);
+    for (unsigned i=0;i<4;i++) MIX(g->world.pickup.score[0][i]);
+    MIX(g->hud.timer);MIX(g->hud.panel[0].f84);   /* the fix map differs by the gauge itself */
+    for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) if (g->world.gactors[i].active) {MIX(i);MIX(ga_l(&g->world.gactors[i],0));MIX(ga_w(&g->world.gactors[i],0x3c));}
+    #undef MIX
+    return h;
+}
+static void lifebar_run(void) {
+    static msx_game_t off,on;static uint32_t trace[1300];
+    msx_lifebar_request=false;msx_game_init(&off);
+    msx_lifebar_request=true;msx_game_init(&on);msx_lifebar_request=false;
+    assert(!off.lifebar && on.lifebar && on.life_hits==MSX_LIFEBAR_HITS);
+    unsigned hit_off=0,hit_on=0;
+    for (unsigned i=0;i<1200 && !hit_off;i++) {msx_game_update(&off,i<170?1:0,false,false);trace[i]=observe(&off);if (off.world.player_hits) hit_off=i;}
+    for (unsigned i=0;i<1200 && !hit_on;i++) {
+        msx_game_update(&on,i<170?1:0,false,false);
+        if (on.world.player_hits) hit_on=i; else assert(observe(&on)==trace[i]);   /* identical until the hit */
+    }
+    assert(hit_off && hit_off==hit_on);
+    assert(off.deaths==1 && off.life.phase==MARCO_DYING);                       /* arcade: one hit kills */
+    assert(on.deaths==0 && on.life.phase==MARCO_ALIVE && on.life_hits==9 && on.invulnerable==2*0x78-0 && on.lifebar_absorbed==1);
+    /* The HUD gauge (0C9B94) shows 9/10 on foot: target +7E = 9*0x3000/10. */
+    msx_game_update(&on,0,false,false);msx_game_update(&on,0,false,false);
+    assert(on.hud.panel[0].f7e==(uint16_t)(9u*0x3000u/10u));
+    /* Protected while blinking; then each hit takes one; the 10th kills. */
+    on.world.hit_kind=1;msx_game_hurt(&on,0);assert(on.life_hits==9);
+    for (unsigned k=0;k<8;k++) {on.invulnerable=0;on.world.hit_kind=1;msx_game_hurt(&on,0);}
+    assert(on.life_hits==1 && on.deaths==0 && on.life.phase==MARCO_ALIVE);
+    /* Food: 10 points -> 1, 300 -> 3, 1000 -> capped at 10. */
+    uint32_t pts[3]={0x10,0x300,0x1000};uint8_t want[3]={2,5,10};
+    for (unsigned k=0;k<3;k++) {
+        on.invulnerable=2*0x78;   /* the soldier still stabs: protected here */
+        on.world.pickup.foods[0]++;on.world.pickup.food_points[0]=pts[k];msx_game_update(&on,0,false,false);msx_game_update(&on,0,false,false);
+        if (on.life_hits!=want[k]) fprintf(stderr,"food %u: hits %u phase %d refills %u\n",k,on.life_hits,(int)on.life.phase,on.lifebar_refills);
+        assert(on.life_hits==want[k]);
+    }
+    assert(msx_lifebar_food_hits(0)==1 && msx_lifebar_food_hits(0x100)==1 && msx_lifebar_food_hits(0x500)==5 && msx_lifebar_food_hits(0x50000)==10);
+    on.invulnerable=0;on.world.hit_kind=8;msx_game_hurt(&on,0);                 /* kind 8: still lethal */
+    assert(on.deaths==1 && on.life.phase==MARCO_DYING && on.life_hits==10);
+    unsigned s=0;for (;s<2000 && on.life.phase!=MARCO_ALIVE;s++) msx_game_update(&on,0,false,false);
+    assert(on.life.phase==MARCO_ALIVE && on.life_hits==MSX_LIFEBAR_HITS);      /* new life: 10 */
+    for (unsigned k=0;k<10;k++) {on.invulnerable=0;on.world.hit_kind=1;msx_game_hurt(&on,0);}
+    assert(on.deaths==2 && on.life_hits==0);                                    /* the 10th hit kills */
+    printf("PASS: life bar (B42): arcade run identical up to the hit at update %u (one-hit death with the flag off); 10 hits, kinds 8/0x12 lethal, food refill, HUD gauge\n",hit_on);
+}
 int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"fall")) {fall_run(argc>2?(unsigned)atoi(argv[2]):0,argc>3?(unsigned)atoi(argv[3]):0,argc>4);return 0;}
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
@@ -548,6 +604,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"pweapon")) {pweapon_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"lifebar")) {lifebar_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -814,5 +871,6 @@ int main(int argc,char **argv) {
     unsigned hit_at=0;
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
     assert(hit_at && g.deaths==1 && g.life.phase==MARCO_DYING && g.world.player_hits==1);
+    lifebar_run();
     puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

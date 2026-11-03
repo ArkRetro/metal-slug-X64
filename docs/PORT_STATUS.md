@@ -115,6 +115,23 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
     `tools/test_msx_diag.c` (`make check-core`). Coste medido en
     `RENDIMIENTO.md` («Modo de diagnóstico»).
 
+## Modo opcional «Barra de vida» (no arcade, B42)
+
+- Por defecto el juego es el arcade (un golpe mata) y ningún camino del modo
+  corre (`msx_game_t.lifebar` = falso). Se activa en SOLDIER SELECT
+  manteniendo Z al confirmar a Marco con A/Start (`main.c`; registro
+  `MSX LIFEBAR on`). Marco aguanta 10 golpes: cada golpe que lo mataría
+  (`msx_game_hurt`) quita uno y da la protección con parpadeo de una vida
+  nueva (`2*0x78` actualizaciones). Matan igual que en el arcade: los tipos
+  8 y 0x12 (muertes propias `0C2ACC`/`0C2A70`), las caídas, el fin de tiempo
+  y el vehículo destruido. Con 0 muere normal (vidas y continuación del
+  arcade); cada vida nueva vuelve a 10. El HUD muestra la vida en el
+  indicador `0C9B94` a pie (vida/10); montado, el del vehículo. La comida
+  (objetos con el byte 3 del registro, tabla en ARMAS_VEHICULOS.md) devuelve
+  max(1, puntos/100) golpes hasta 10; la puntuación es la del arcade.
+  Prueba: `test_gameplay lifebar` (misma partida igual hasta el golpe con el
+  modo apagado y encendido; reglas del modo).
+
 ## Distinción de "memoria"
 
 - **Contexto de la conversación:** se resuelve con estos documentos.

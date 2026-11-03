@@ -50,6 +50,11 @@ typedef struct {
      * 0C17A0..0C182A, the protection +84 after it, the takeoff wait of
      * 0C1A0C; breaths taken (kind 0x10) and cures (the medicine 08B750). */
     unsigned mummy_transform,mummy_guard,mummy_takeoff,mummy_breaths,mummy_cures;
+    /* Optional non-arcade "Barra de vida" (docs/PORT_STATUS.md, B42): chosen
+     * at SOLDIER SELECT (msx_lifebar_request); off = the arcade (one hit
+     * kills) with every lifebar path skipped. life_hits 0..10 (10 per new
+     * life), food_seen = world.pickup.foods already turned into hits. */
+    bool lifebar;uint8_t life_hits;unsigned food_seen,lifebar_absorbed,lifebar_refills;
     bool mummy_smoke;   /* the transformation's smoke C4DD8 started */
     unsigned mummy_landing;   /* updates left in the landing 0C1AC8 (no walking) */
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
@@ -234,6 +239,12 @@ void msx_game_stage_end(msx_game_t *game);
 /* A hit on the player (from: world x of the attacker, used without the
  * native world): the death 0C2956 unless invulnerable or already dying. */
 void msx_game_hurt(msx_game_t *game,int from);
+/* Life-bar mode request (SOLDIER SELECT with Z held, main.c): read by
+ * msx_game_init. LIFEBAR_HITS hits; food gives max(1, points/100). */
+enum { MSX_LIFEBAR_HITS=10 };
+extern bool msx_lifebar_request;
+/* Hits a food worth `points` (BCD, the pickup's value) gives back. */
+unsigned msx_lifebar_food_hits(uint32_t points);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
 /* Layout of msx_game_t as one object file sees it. gameplay.c exports its

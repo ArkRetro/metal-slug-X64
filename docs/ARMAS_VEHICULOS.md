@@ -503,6 +503,45 @@ valor `10C5A0`, el sello `10C594`, el contador `10C590`, el combo
   `FFE8,0000,0030,0038`, igual que la RAM de `hudv2` (fotograma 10500).
   `neo_world.c` la pone cada actualización (blob `0xE541E` de
   `data/region_rom.json`); a pie sigue la caja de pie.
+- Comida (B42, modo opcional «Barra de vida»): los objetos de `0x08B7FC`
+  con el byte 3 del registro (`0x0E581A + 0x18·tipo`) puesto; el valor real
+  es el de `0x08B896` (registro `+0C` en BCD, la tabla `0xE5526` con `+7B` o
+  el combo `0xE5556`/`0xE559A` si el byte 0 está puesto), y la barra suma
+  max(1, puntos/100) golpes hasta 10 (`msx_lifebar_food_hits`). Registro:
+
+| Objeto | Programa | Puntos (`+0C`) | Golpes (barra de vida) |
+| --- | --- | --- | --- |
+| `13` | `0x2871C2` | 1000 | 10 |
+| `15` | `0x28741A` | 500 | 5 |
+| `1E` | `0x286C6C` | 1000 | 10 |
+| `1F` | `0x286B54` | 1000 | 10 |
+| `20` | `0x287144` | 1000 | 10 |
+| `24` | `0x2876E6` | 300 | 3 |
+| `25` | `0x28741A` | 50000 | 10 |
+| `28` | `0x2869D6` | 1000 | 10 |
+| `34` | `0x287C7E` | 300 | 3 |
+| `35` | `0x287D64` | 100 | 1 |
+| `36` | `0x28829A` | 10 | 1 |
+| `37` | `0x288396` | 1000 | 10 |
+| `38` | `0x28851A` | 100 | 1 |
+| `39` | `0x2887D2` | 300 | 3 |
+| `3A` | `0x288AF2` | 100 | 1 |
+| `3B` | `0x288C1E` | 300 | 3 |
+| `3C` | `0x288E1C` | 300 | 3 |
+| `3D` | `0x28988E` | 10 | 1 |
+| `3E` | `0x28988E` | 10 | 1 |
+| `3F` | `0x289AA8` | 0 | 1 |
+| `40` | `0x289082` | 500 | 5 |
+| `41` | `0x289CD6` | 500 | 5 |
+| `42` | `0x28A12C` | 500 | 5 |
+| `43` | `0x28A94C` | 100 | 1 |
+| `44` | `0x28A720` | 300 | 3 |
+| `45` | `0x28A582` | 100 | 1 |
+| `46` | `0x288D18` | 300 | 3 |
+| `47` | `0x28A672` | 300 | 3 |
+| `57` | `0x288340` | 10 | 1 |
+| `58` | `0x28AA8C` | 100 | 1 |
+
 - Después `0x08C628`: chispa `0x08C68E/0x08C6B2` (programa `0x28617E` hasta su
   fin; la comprobación de cartucho `2FFFE0` acaba en `0x004188` en hardware
   genuino, como la otra rama) y dos actualizaciones de `0x08C66A`.

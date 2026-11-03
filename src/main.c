@@ -4,6 +4,7 @@
 #include "fixed.h"
 #include "sprites.h"
 #include "actor.h"
+#include "gameplay.h"
 #include "msx_audio.h"
 #include "game_audio.h"
 #include "msx_perf.h"
@@ -75,6 +76,11 @@ static void spare_time(void) {
     {uint32_t deadline=msx_cinematic_idle_deadline();if (deadline) scene_assets_plan_step(deadline);}
     while (game_preload_idle()) {}
 }
+/* SOLDIER SELECT: Z held while Marco is confirmed turns on the optional
+ * life bar (not arcade; docs/PORT_STATUS.md, B42). */
+static void lifebar_choice(bool z) {
+    msx_lifebar_request=z;if (z) debugf("MSX LIFEBAR on\n");
+}
 static bool play_cinematic(const char *label,const char *movie,const char *sound,int hold,bool entry,const char *next) {
     uint32_t s0=TICKS_READ();
     if (!msx_cinematic_open(movie)) return false;
@@ -104,12 +110,12 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         previous=start;previous_a=buttons.a;
         if (held) {
             /* Waiting on the choice: the clock stands on the hold frame. */
-            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen\n",label);}
+            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen\n",label);lifebar_choice(buttons.z);}
             else {surface_t *surface=display_get();msx_audio_service();msx_cinematic_draw(surface);msx_frames_present();rendered++;
                 spare_time();
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
         } else if (target>=30 && press) {
-            if (hold>=0) {hold=-1;debugf("MSX CINE %s chosen early\n",label);}   // the choice made before the cursor settles
+            if (hold>=0) {hold=-1;debugf("MSX CINE %s chosen early\n",label);lifebar_choice(buttons.z);}   // the choice made before the cursor settles
             else {start_skip=true;break;}
         }
         uint32_t w0=TICKS_READ();surface_t *surface=display_get();uint32_t waited=TICKS_READ()-w0;

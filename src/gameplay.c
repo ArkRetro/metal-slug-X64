@@ -48,9 +48,31 @@ int msx_game_animation(const msx_game_t *g) {
     if (g->shooting) return g->moving?MSX_RUN_FIRE:MSX_FIRE;
     return g->moving?MSX_RUN:MSX_IDLE;
 }
+bool msx_lifebar_request;
+unsigned msx_lifebar_food_hits(uint32_t points) {
+    uint32_t d=0;for (int i=7;i>=0;i--) d=d*10u+((points>>(4*i))&15u);
+    uint32_t h=d/100u;return h<1u?1u:h>MSX_LIFEBAR_HITS?MSX_LIFEBAR_HITS:(unsigned)h;
+}
+/* Life bar (B42): a lethal hit through msx_game_hurt takes one of the
+ * hits instead, with the new life's protection (2*0x78, the blink of
+ * actor.c); kinds 8 and 0x12 (own deaths 0C2ACC/0C2A70), the falls, time
+ * over and a destroyed vehicle still kill. True when absorbed. */
+static bool lifebar_absorb(msx_game_t *g,uint8_t kind) {
+    if (!g->lifebar || kind==8u || kind==0x12u) return false;
+    if (g->life_hits>1u) {g->life_hits--;g->invulnerable=2*0x78;g->lifebar_absorbed++;return true;}
+    g->life_hits=0;return false;
+}
+static void lifebar_food(msx_game_t *g) {
+    if (!g->lifebar || g->world.pickup.foods[0]==g->food_seen) return;
+    g->food_seen=g->world.pickup.foods[0];
+    if (g->life.phase!=MARCO_ALIVE) return;
+    unsigned h=g->life_hits+msx_lifebar_food_hits(g->world.pickup.food_points[0]);
+    g->life_hits=(uint8_t)(h>MSX_LIFEBAR_HITS?MSX_LIFEBAR_HITS:h);g->lifebar_refills++;
+}
 void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
-    memset(g,0,sizeof(*g));g->laser_step=8;   /* no beam program running */
+    memset(g,0,sizeof(*g));
+    if (msx_lifebar_request) {g->lifebar=true;g->life_hits=MSX_LIFEBAR_HITS;}g->laser_step=8;   /* no beam program running */
     /* 01829E for Mission 1 (record 01714E): the port's entry runs the
      * stage start, so the flow only keeps its words (docs/MISION2.md). */
     neo_mission_start(&g->flow,0);
@@ -92,6 +114,8 @@ static void hud_step(msx_game_t *g) {
     /* 0C9B94 -> 0AAAE0 (d1 = 0): the gauge of player 1's vehicle (SV-001,
      * Slugnoid: +18 health, +14 maximum; the Camel, kind 2, has none). */
     in.gauge=neo_vslot_gauge(g->world.vslots.slot[0].b,0,&in.gauge_health,&in.gauge_max);
+    /* Life bar (B42, not arcade): Marco's hits on the same gauge on foot. */
+    if (g->lifebar && !in.gauge) {in.gauge=true;in.gauge_health=g->life_hits;in.gauge_max=MSX_LIFEBAR_HITS;}
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
     in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;
@@ -142,8 +166,10 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
      * (9C0A from 018324/01836C, or the mission end's), the exit kind fades
      * it back in (0184F6, stage_entry_step). */
     neo_fade_t fade=g->fade;
+    bool lifebar=g->lifebar;uint8_t life_hits=g->life_hits;unsigned food_seen=g->food_seen,absorbed=g->lifebar_absorbed,refills=g->lifebar_refills;
     msx_game_init(g);
     g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;g->fade=fade;
+    g->lifebar=lifebar;g->life_hits=life_hits;g->food_seen=food_seen;g->lifebar_absorbed=absorbed;g->lifebar_refills=refills;   /* B42 */
     /* Only the rescue counts outlive the stage: the exit's handlers, walk
      * target, screen box (10C00B) and end requests belong to the old one. */
     neo_ga_flags_t kept;memset(&kept,0,sizeof(kept));
@@ -316,6 +342,7 @@ void msx_game_hurt(msx_game_t *g,int from) {
         g->velocity_x=0;g->moving=g->shooting=false;g->jump_pending=false;g->knife_t=0;
         return;
     }
+    if (g->lifebar && lifebar_absorb(g,g->world_enabled?g->world.hit_kind:0)) return;
     /* 0C2956 with the update's +5A/+5B (neo_world.c player_hit). */
     if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
     else start_death(g,0,g->x/MSX_UNIT<from);
@@ -360,6 +387,7 @@ static void new_life(msx_game_t *g) {
      * next HUD update; the player stays gone until its continue. */
     if (!neo_hud_life_lost(&g->hud,0)) {g->hud_game_over++;g->no_life=true;g->awaiting_continue=true;return;}
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
+    if (g->lifebar) g->life_hits=MSX_LIFEBAR_HITS;
     marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     memset(g->bullets,0,sizeof(g->bullets));
     g->velocity_x=g->velocity_y=0;g->facing=1;g->ride=0;g->air_ticks=0;   /* 0C10FE: facing right */
@@ -1599,6 +1627,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * gates 0B6ED2 of stages 1/2 run it too). Mission 3 is one stage (record 0173F6): its 018F92 ends it. */
         if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u) && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
+        if (g->lifebar) lifebar_food(g);
         hud_step(g);
         /* +1E (depth1e): E0EC dying or hanging; back to +66 = 8834 with
          * the new life or the landing (0C10DE, 0C1580..); 01AD8C on the

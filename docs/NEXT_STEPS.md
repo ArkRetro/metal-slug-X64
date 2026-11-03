@@ -175,4 +175,5 @@
       la ROM), así que solo se verá en misiones siguientes.
     - Caja de recogida del jugador montado (`08D268`, blob `E541E`).
     - Pendiente: ver el indicador bajar con daño real en ares/MiSTer.
-
+    - B42, modo opcional «Barra de vida» (PORT_STATUS.md): Z al confirmar a
+      Marco en SOLDIER SELECT. Pendiente: probarlo en ares/MiSTer.

@@ -445,21 +445,35 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
     neo_genv_t *e=&((tick_t *)ctx)->genv;
     const uint8_t *s=ga_rom(submap);
     if (!s) {ga_fail(e,submap);return;}
+    /* 0C714E: the source offsets D0/D1 (12-bit) clipped to the sub-map
+     * (+8 width, +A height in blocks), the count and the target with them
+     * (the 03A2AA boulder's patches 0B7A2C; the window clip before it is
+     * not modelled: the patches are made on screen). Nothing left: carry
+     * clear, nothing copied (0B7A2C's last patch, D1 = 9 of 9 rows). */
+    int w=(int16_t)(s[8]<<8|s[9]),h=(int16_t)(s[10]<<8|s[11]);
+    int d0=(int16_t)(uint16_t)(d[0]<<4)>>4,d1=(int16_t)(uint16_t)(d[1]<<4)>>4,d2=d[2],d3=d[3],d4=d[4],d5=d[5];
+    if (d0>=w || d1>=h) return;
+    if (d0<0) {d2+=d0;if (d2<=0) return;d4-=d0;d0=0;}
+    if (d1<0) {d3+=d1;if (d3<=0) return;d5+=d1;d1=0;}
+    if (d0+d2>w) {d2=w-d0;if (d2<=0) return;}
+    if (d1+d3>h) {d3=h-d1;if (d3<=0) return;}
     /* The tile part (+0): recorded for the renderer (B37), which draws the
-     * stage pack's cells of this sub-map instead of the blocks it covers. */
-    neo_world_t *w=((tick_t *)ctx)->w;
-    if ((s[0]|s[1]|s[2]|s[3]) && !d[0] && !d[1] && w->map_patches<16u) {
+     * stage pack's cells of this sub-map instead of the blocks it covers;
+     * a patch is the sub-map with its source offsets (pack_mission.py:
+     * D0 in bits 24..27, D1 in 28..31). */
+    neo_world_t *wd=((tick_t *)ctx)->w;
+    uint32_t key=submap|(uint32_t)(d[0]&15)<<24|(uint32_t)(d[1]&15)<<28;
+    if ((s[0]|s[1]|s[2]|s[3]) && wd->map_patches<16u) {
         bool known=false;
-        for (unsigned i=0;i<w->map_patches;i++) known|=w->map_patch[i][0]==submap && w->map_patch[i][1]==layer;
-        if (!known) {w->map_patch[w->map_patches][0]=submap;w->map_patch[w->map_patches][1]=layer;w->map_patches++;}
+        for (unsigned i=0;i<wd->map_patches;i++) known|=wd->map_patch[i][0]==key && wd->map_patch[i][1]==layer;
+        if (!known) {wd->map_patch[wd->map_patches][0]=key;wd->map_patch[wd->map_patches][1]=layer;wd->map_patches++;}
     }
     uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
     if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
-    if (c==0xffffffffu || d[0] || d[1]) {ga_fail(e,0xc72ec);return;}
-    unsigned h=(unsigned)(s[10]<<8|s[11]);
-    const uint8_t *cells=ga_rom(c);
-    if (!cells || (unsigned)d[3]!=h) {ga_fail(e,c);return;}
-    neo_collision_patch(cells,(unsigned)d[2],h,2*d[4],2*d[5]+1);
+    if (c==0xffffffffu) {ga_fail(e,0xc72ec);return;}
+    const uint8_t *cells=ga_rom(c+(uint32_t)(d0*h+d1)*4u);
+    if (!cells) {ga_fail(e,c);return;}
+    neo_collision_patch(cells,(unsigned)d2,(unsigned)d3,(unsigned)h,2*d4,2*d5+1);
 }
 /* ROM 004C24: the actor is registered when one of its rectangles is inside
  * the registry area (x -32..383, y 264..503 projected); the query (0049E8 ->
@@ -1441,8 +1455,9 @@ bool neo_world_hit_actor(neo_world_t *w,unsigned index,const neo_contact_actor_t
 }
 void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_t *st) {
     neo_rng_t rng=w->rng;marco_weapons_t weapons=w->weapons;neo_pickup_env_t pickup=w->pickup;neo_ga_flags_t flags=w->ga_flags;
+    marco_weapon_player_t weapon_player=w->weapon_player;
     neo_world_init(w,scroll_x);
-    w->rng=rng;w->weapons=weapons;w->pickup=pickup;
+    w->rng=rng;w->weapons=weapons;w->pickup=pickup;w->weapon_player=weapon_player;   /* +93..+95 (B40) */
     memcpy(w->ga_flags.rescued,flags.rescued,sizeof(flags.rescued));memcpy(w->ga_flags.special,flags.special,sizeof(flags.special));memcpy(w->ga_flags.gifts,flags.gifts,sizeof(flags.gifts));
     neo_script_init(&w->script,st->script,st->script_size,st->script_base);
     w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;

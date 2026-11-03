@@ -108,9 +108,10 @@ static bool load_stage(void) {
      * updates (gameplay.c, stage_entry_step). */
     if (game.mission_start) debugf("MSX mission start 1805C: weapon=%u bombs=%u rescued=%u\n",(unsigned)marco_weapons_id(&game.world.weapons,0),
         (unsigned)marco_weapons_bomb_count(&game.world.weapons,0),(unsigned)game.world.ga_flags.rescued[0]);
-    debugf("MSX mission %u stage %u start: record %06lX descriptor %06lX camera list %06lX script %06lX (%u bytes) walk-in to x=%d\n",
+    debugf("MSX mission %u stage %u start: record %06lX descriptor %06lX camera list %06lX script %06lX (%u bytes) walk-in to x=%d weapon=%u form=%u\n",
         (unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,(unsigned long)game.flow.record,(unsigned long)game.flow.descriptor,
-        (unsigned long)st->camera_rom,(unsigned long)st->script_rom,st->script_len,start_x);
+        (unsigned long)st->camera_rom,(unsigned long)st->script_rom,st->script_len,start_x,
+        (unsigned)marco_weapons_id(&game.world.weapons,0),(unsigned)game.world.weapon_player.form93);   /* B40 */
     return true;
 }
 /* The flow's mission (42F4) from its first record: pack and stage 1. */
@@ -400,6 +401,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool start_press=input.btn.start && !previous_start;
     if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
         game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
+    }
+    /* Reference build: Start in Mission 2 stages 1 and 2 ends the stage
+     * (018F40 as the stage's own exit), for targeted stage-3 checks. */
+    if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage<3u && !game.stage_step) {
+        msx_game_stage_end(&game);start_press=false;debugf("MSX reference: stage %u ended by Start\n",(unsigned)game.flow.stage);
     }
     game.start_edge|=start_press;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
     previous_a=input.btn.a;previous_b=input.btn.b;

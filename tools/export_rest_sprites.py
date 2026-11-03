@@ -164,6 +164,8 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     0x235448,0x235466,0x235484,0x235490,0x2354d8,0x23558a,0x2356ba,0x2356b0,0x23574c,0x235742,0x235762,
     # Mission 2 stage-2 gate 03A6EA (23CDD0), overlay 03A82E (23CDDC), dust 03A464 (22D372).
     0x23cdd0,0x23cddc,0x22d372,
+    # Mission 2 stage-3 boulder 03A2AA: boulder/stones 23CC7E/23CD24, slab 23CDE8.
+    0x23cc7e,0x23cd24,0x23cde8,
     # Mission 2 stage-2 miners 021A1C/021A26 (neo_hostage.c): digs, pause,
     # startled, gift, flight, and the sparkle 02206E (22DF54).
     0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54,

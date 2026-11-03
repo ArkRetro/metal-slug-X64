@@ -98,12 +98,15 @@ def build(mission,stage_dirs,crom,rom=None):
         # patch i on layer L packed with layer byte 0x80 | i << 3 | L, after
         # the stage's cells (the layer sort keeps them last); the runtime
         # draws them instead of the cells they cover once the game applies
-        # the patch (its sub-map, layer object).
+        # the patch (its sub-map with the source offsets D0 in bits 24..27
+        # and D1 in 28..31, as neo_world.c g_map_patch keys it; layer object).
         patch_list=[]
         if (d/'patches.json').exists():
             for i,pt in enumerate(json.loads((d/'patches.json').read_text())['patches']):
                 assert i<16
-                patch_list.append((int(pt['submap'],16),int(pt['layer_object'],16)))
+                d0,d1=pt['d'][0],pt['d'][1]
+                patch_list.append((int(pt['submap'],16)|(d0&15)<<24|(d1&15)<<28,int(pt['layer_object'],16)))
+                assert len(set(patch_list))==len(patch_list),'two patches with the same key'
                 for c in pt['cells']:
                     if c['colors'] not in model['palettes']:model['palettes'].append(c['colors'])
                     model['cells'].append(dict(layer=0x80|i<<3|c['layer'],x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],
@@ -153,7 +156,7 @@ def build(mission,stage_dirs,crom,rom=None):
         while len(blobs)%4:blobs.append(0)
         st['patch_at']=len(blobs)
         for sub,obj in st['patches']:blobs.extend(struct.pack('>II',sub,obj))
-        if st['patches']:report[k]['map_patches']=[f'0x{sub:06X}' for sub,_ in st['patches']]
+        if st['patches']:report[k]['map_patches']=[f'0x{sub:08X}' if sub>>24 else f'0x{sub:06X}' for sub,_ in st['patches']]
     # Mission actors (docs/MISION2.md "Fase 2e"): <=64x64 parts on their own
     # pages after the maps; the draw overrides the palette with the logical
     # resource (scene_native_palette, mission resources after the scene's).

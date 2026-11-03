@@ -1,4 +1,5 @@
 #include "neo_region.h"
+#include "neo_vslot.h"
 /* Items 08C374 (dropped: +8A set) / 08C37C (script), manual translation;
  * ROM labels are provenance only.
  *
@@ -351,6 +352,22 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
             if (!k8b896(a,e,pk,p,rec)) return false;
             k8b850(pk,p);sound(e,0x1121);
         }
+    } else if (r==0x8b710) {                                         /* gas can (kind 7) */
+        /* 08B710: d1 = 0x10, 0C0BA8 -> 0AAAE0: a ridden SV-001/Slugnoid (or
+         * other gauge vehicle) below its maximum takes 0x10 into its pending
+         * health change +16 (added to +18 by the vehicle's 0AA994/0AA9E4)
+         * -> 08B742: no value (08B87A) and the label 08CD10 with d1 = 0
+         * (08C752: external, counted). Otherwise (on foot, Camel, full
+         * gauge) the value 08B896, 08B850 and sound 1121. No sound of its
+         * own when accepted. */
+        uint16_t h,mx;
+        if (neo_vslot_gauge(pk->slot[p],0x10,&h,&mx)) {
+            k8b87a(pk,p);pk->refuels++;
+            pk->labels++;if (e->external) e->external(e->ctx,0x8c752);
+        } else {
+            if (!k8b896(a,e,pk,p,rec)) return false;
+            k8b850(pk,p);sound(e,0x1121);
+        }
     } else if (r==0x8b750) {                                         /* medicine (kind 0x32) */
         /* 08B750: sound 1121, then 0C0C92: a live player in form 3 gets
          * +94 = 0 (the cure; carry) -> 08B87A and the label 08CD10 (d1 = 1,
@@ -589,4 +606,5 @@ bool neo_item_routine(uint32_t r) {return label_routine(r) || r==0x8c374 || r==0
 bool neo_item_pickup(uint32_t routine) {
     return (routine>=0x8b568 && routine<=0x8b9b0) || routine==0xc0764 || routine==0xc0c14;
 }
+bool neo_item_take(neo_gactor_t *a,neo_genv_t *e,unsigned p) {return W(0x6e)<0x5au && pickup(a,e,p,RECORDS+0x18u*W(0x6e));}
 ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e) {return label_routine(ga_l(a,0))?label_tick(a,e):item_tick(a,e);}

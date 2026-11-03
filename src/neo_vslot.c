@@ -180,3 +180,15 @@ uint8_t neo_vslot_route(uint8_t held,uint8_t pressed,const uint8_t masks[4],uint
     if ((masks[2]&masks[1]) && (d7&0x40u)) {d7&=(uint8_t)~0x20u;d6&=(uint8_t)~0x20u;}
     *fresh=d6;return d7;
 }
+bool neo_vslot_gauge(uint8_t *slot,uint16_t d1,uint16_t *health,uint16_t *max) {
+    *health=0;*max=0;
+    if (!slot || !(slot[0]|slot[1])) return false;                      /* 0AAAF2 */
+    uint8_t k=slot[0x21];
+    *health=(uint16_t)(slot[0x18]<<8|slot[0x19]);*max=(uint16_t)(slot[0x14]<<8|slot[0x15]);
+    if (!(k==1||k==3||k==4||k==8||k==9||k==0xa||k==0xb)) return false;  /* 0AAB34 */
+    if (d1) {                                                           /* 0AAB42 */
+        if (*health>=*max) return false;                                /* 0AAB52 bcc */
+        uint16_t v=(uint16_t)((slot[0x16]<<8|slot[0x17])+d1);slot[0x16]=(uint8_t)(v>>8);slot[0x17]=(uint8_t)v;
+    }
+    return true;
+}

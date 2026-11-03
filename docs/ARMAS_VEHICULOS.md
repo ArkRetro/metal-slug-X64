@@ -478,11 +478,36 @@ valor `10C5A0`, el sello `10C594`, el contador `10C590`, el combo
   combo `0xE5556`/`0xE559A` (registro byte 0 y ≤ 15 fotogramas). El rótulo de
   puntuación `0x08D330` es un actor externo contado (`popups`); un valor
   `> 0x50000` es el `TRAP #F` del original (parada explícita).
+- Bidón de gasolina (objeto `07`, registro `0x0E58C2`, programa `0x28657C`,
+  paletas `0x380`/`0x3A9`) `0x08B710`: `d1 = 0x10` y `0x0C0BA8` → `0x0AAAE0`
+  (`neo_vslot_gauge`). Montado en un vehículo con indicador (tipos 1, 3, 4,
+  8–B: SV-001, Slugnoid) por debajo de su máximo `+14`, suma `0x10` al cambio
+  pendiente `+16` del hueco (el vehículo lo pasa a `+18`/`+4E` en
+  `0x0AA9E4`): sin valor (`0x08B87A`), rótulo `0x08C752` con `d1 = 0`
+  (externo, contado en `labels` y `refuels`) y **sin sonido propio**. A pie,
+  en la Camel (tipo 2, máximo 0) o con el indicador lleno: los 1000 puntos del
+  registro, `0x08B850` y sonido `0x1121`. Un golpe (`0x0AAA32`) quita `0x10`:
+  el SV-001 y el Slugnoid (`+14 = 0x30`) aguantan 3 y un bidón devuelve uno.
+  **Fuentes en las misiones 1 y 2: ninguna.** El único creador con el tipo 7
+  es la lista 0 de `0x2D0BEC` (ocho `07`) del prisionero `0x099D12`, y solo la
+  usan las llamadas `0x099C9C`/`0x099CEE`/`0x099CCC` del prisionero atado
+  `0x099862` (programa `0x29F9AC`), cuyo `+70` es 6 en la M1 y 3 en la M2;
+  ninguna palabra de aparición de los guiones de la M1 y la M2
+  (`data/mission{1,2}_script.json`) da un 7 a un objeto, ni hay un objeto `07`
+  en `actors.csv` de ninguna captura de MAME. El código queda listo para las
+  misiones siguientes; el destello de la recogida usa la paleta `0x3A9`, que
+  ninguna captura tiene (no se exporta).
+- Caja de recogida del jugador montado (`0x08C02C` → `0x08D268`): con un
+  vehículo de tipo k = 1..12 la caja `0x10C5EC` es `0xE541E[t[k]]` (tabla
+  `0x08D234`: 8, A, C, D, E, F, 11, 13, 14, 15, 16, 17); en el SV-001
+  `FFE8,0000,0030,0038`, igual que la RAM de `hudv2` (fotograma 10500).
+  `neo_world.c` la pone cada actualización (blob `0xE541E` de
+  `data/region_rom.json`); a pie sigue la caja de pie.
 - Después `0x08C628`: chispa `0x08C68E/0x08C6B2` (programa `0x28617E` hasta su
   fin; la comprobación de cartucho `2FFFE0` acaba en `0x004188` en hardware
   genuino, como la otra rama) y dos actualizaciones de `0x08C66A`.
 - Paradas explícitas que quedan: tipos de bomba `0x08B5F4..0x08B60C`
-  (`0x0C0A7C`), `0x08B650`, `0x08B710`, `0x08B750`, `0x08B78E`, `0x08B7CC`,
+  (`0x0C0A7C`), `0x08B650`, `0x08B750`, `0x08B78E`, `0x08B7CC`,
   vehículo de tipo 4 (`0x0C0764`), recogida del jugador 2.
 
 Pruebas (`make check`): familia `hitem` (H tomada en 8081, ya sin `--stop`:
@@ -743,7 +768,7 @@ N-1. Las apariciones `01913C` corren después del actor de misión (la
 actualización del reinicio muestra `xxFF`, no `xxFD`).
 
 **Prueba** (`tools/test_neo_hud.c`, `make check-core`): `data/hud_fixture.json.gz`
-(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`
+(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`, `hudg`
 de `tools/capture_weapons.lua`; solo RAM/VRAM de las capturas) tiene 993
 intervalos de 30 fotogramas entre volcados. Cada intervalo parte del mapa,
 los campos de los paneles, los contadores de parpadeo y el tiempo del
@@ -754,6 +779,20 @@ excluyen porque un indicador de RAM de la cuenta atrás, conocido solo en f0 y
 f1, cambia dentro del intervalo). Además, la primera actualización con el HUD
 encendido redibuja el marco completo del primer volcado (178 palabras; se
 excluye la fase de parpadeo de INSERT COIN). Resultado: 0 diferencias.
+
+**Indicador del vehículo (B41).** `0C9B94` pide `0AAAE0` con `d1 = 0`
+(`neo_vslot_gauge`): hueco `10C608` ocupado y tipo 1, 3, 4, 8–B → vida `+18`
+y máximo `+14`. `gameplay.c` (`hud_step`) lo conecta con el hueco del jugador
+1: SV-001 y Slugnoid (`+14 = 0x30`) lo muestran; la Camel (tipo 2, máximo 0)
+no tiene indicador en el arcade (en `hudv2` y `vehicles2` su hueco tiene
+`+14 = +18 = 0` y el HUD no lo dibuja; muere de un golpe, fotograma 10091).
+Captura `hudg` (`PLAN=vehicles ASSIST_CAMERA=2000 LAST=10900 FIRST_DUMP=10380
+PERIOD=6`, más `MSX_WEAPONS_GAUGE=10450:28,10530:18,10610:8,10700:30,10790:20`:
+escritura solo de referencia de `+18` del hueco montado en el SV-001, que el
+vehículo copia a `+4E`): 106 intervalos con bajadas (paso rápido, `+89` bit
+3), el parpadeo por debajo de `0x1800` (atributo `7B00`) y la subida de 8 a
+48 (pasos de `0x200`); el modelo reproduce las filas del HUD palabra a
+palabra (1099 intervalos, 0 diferencias).
 
 **Dibujo** (`hud_renderer.c`): tiles de `rom:/fixed.bin` (S-ROM,
 `tools/import_rom.py`) con las paletas fijas `rom:/hud-palette.bin`

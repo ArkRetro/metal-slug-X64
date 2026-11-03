@@ -60,6 +60,7 @@ BLOBS=[
     (0x9ADA0,0x78,'09A67E hidden item box: hurtboxes 09ADA0.., view rectangle 09ADD8 (0C8BEC), hurtbox table 09ADF8 and scatter ranges 09AE08 by +6E'),
     (0x1B4C2,0x14C,'01B882 player bullet attack rows 01B4C2..01B5B2 (by direction) and 01B5C2 (01BBE2); grenade 01B5D2 (01BFD0), its explosion rows 01B5E2/01B5F2 and their list 01B602 (01C19A); 0049E8'),
     (0x1B842,0x40,'01B882 player bullet attack row table (direction +6F)'),
+    (0xE541E,0x108,'08C02C/08D268 player item pickup boxes: pointers E541E (0x18) and rectangles E547E..E5525 (riding: index by vehicle kind, 08D234)'),
     (0xE5526,0x78,'08B896 item points: special values E5526 (+7B), combo values E5556, repeated value E559A'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
     (0x8FC46,0x36,'08F058 generic projectile attack rows 08FC46/08FC56 and cull rectangle 08FC74 (019504)'),

@@ -71,6 +71,12 @@ local keep_timer=os.getenv('MSX_WEAPONS_KEEP_TIMER')=='1'
 -- death/respawn fields every frame (docs/JEFE_MISION1.md, respawn).
 local mortal_camera=tonumber(os.getenv('MSX_WEAPONS_MORTAL_CAMERA') or '0')
 local mortal=false
+-- MSX_WEAPONS_GAUGE=frame:health,..: reference-only HUD gauge check
+-- (docs/ARMAS_VEHICULOS.md §11, B41): at each frame the P1 vehicle slot health
+-- +18 (10C620) is written, while a vehicle is ridden (slot +00 nonzero); the
+-- vehicle copies it to its +4E (0AAA74) and the gauge 0C9B94 shows it.
+local gauge_pokes={}
+for f,h in (os.getenv('MSX_WEAPONS_GAUGE') or ''):gmatch('(%d+):(%x+)') do gauge_pokes[tonumber(f)]=tonumber(h,16) end
 local frame=0
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local mstate=manager.machine.devices[':maincpu'].state
@@ -339,6 +345,7 @@ emu.register_frame_done(function()
   if not mortal then cpu:write_u8(0x101523,cpu:read_u8(0x101523)|0x40) end -- P1 invulnerability, capture only.
   if not mortal then cpu:write_u8(0x101549,0x99) end -- P1 +84 low byte (invulnerability count), capture only.
   cpu:write_u8(0x101288,2)
+  if gauge_pokes[frame] and cpu:read_u16(0x10c608)~=0 then cpu:write_u16(0x10c620,gauge_pokes[frame]);print('GAUGE '..frame..' '..gauge_pokes[frame]) end
  end
  local camera=cpu:read_u16(0x102036)
  if assisting and frame>=2100 then

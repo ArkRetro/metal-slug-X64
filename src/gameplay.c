@@ -78,9 +78,9 @@ void msx_game_init(msx_game_t *g) {
  * START, and the continue takes the AES branch of 0C987A. The home credits
  * are never spent in the port (deviation: the cartridge's own count of 5 is
  * not modelled). The credit counter 01A7F4 needs the soft-DIP bit 1 of
- * 10FD91, which only the MVS BIOS sets: off (no CREDIT text). No vehicle
- * gauge (no native vehicle binds player 1's slot yet), timer running while
- * the mission is in play. */
+ * 10FD91, which only the MVS BIOS sets: off (no CREDIT text). Vehicle
+ * gauge of player 1's slot 10C608 (0AAAE0), timer running while the mission
+ * is in play. */
 static void hud_step(msx_game_t *g) {
     if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
     neo_hud_input_t in={0};
@@ -89,6 +89,9 @@ static void hud_step(msx_game_t *g) {
      * the vehicle's shells while riding). */
     in.arms=neo_hud_arms(g->world.weapons.b,g->world.vslots.slot[0].b,0,false,0);
     neo_hud_bombs(g->world.weapons.b,g->world.vslots.slot[0].b,0,0,0,&in.bombs,&in.bomb_type);
+    /* 0C9B94 -> 0AAAE0 (d1 = 0): the gauge of player 1's vehicle (SV-001,
+     * Slugnoid: +18 health, +14 maximum; the Camel, kind 2, has none). */
+    in.gauge=neo_vslot_gauge(g->world.vslots.slot[0].b,0,&in.gauge_health,&in.gauge_max);
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
     in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;

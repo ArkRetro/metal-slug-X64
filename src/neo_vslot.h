@@ -82,6 +82,12 @@ void neo_vslot_angle(neo_vslots_t *v,unsigned p,uint16_t angle);
 /* 0AAA88: kind of the ridden vehicle (0 none) and +1F/+20/+18/+14. A slot
  * of kind 0 is the TRAP #F of the original: false (explicit stop). */
 bool neo_vslot_ridden(const neo_vslots_t *v,unsigned p,bool exists,uint8_t *kind,uint8_t *shells,uint8_t *type,uint16_t *health,uint16_t *d4);
+/* 0AAAE0 (0C9B94 with d1 = 0; the gas can 08B710 through 0C0BA8 with d1 =
+ * 0x10): a bound slot (+00 nonzero) of a vehicle kind 1, 3, 4, 8, 9, A or B
+ * has a gauge (carry, true): *health = +18, *max = +14. With d1 != 0 and
+ * health < max, d1 is added to the pending change +16; with health >= max
+ * the carry is clear (false, the item gives its points). */
+bool neo_vslot_gauge(uint8_t *slot,uint16_t d1,uint16_t *health,uint16_t *max);
 /* 0CA1B8: the player's input words (RAM 10E9EC+2 held / +0 new, 10E9F2 for
  * P2; 0CA2CE returns their address) from the BIOS bytes `held`/`pressed`
  * (RAM 10C35C/10C35D): bits 0-3 the stick (held, in both words), bits 4-7

@@ -52,6 +52,9 @@ bool neo_prisoner_routine(uint32_t routine);
 ga_result_t neo_item_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_item_routine(uint32_t routine);
 bool neo_item_pickup(uint32_t routine);
+/* The pickup routine (record +10) of item `a` (kind +6E) served to player p
+ * (host tests; the item's own update calls it on contact). */
+bool neo_item_take(neo_gactor_t *a,neo_genv_t *e,unsigned p);
 void neo_item_add_score(uint8_t score[4],uint32_t value);   /* 057948 */
 ga_result_t neo_heli_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_heli_routine(uint32_t routine);

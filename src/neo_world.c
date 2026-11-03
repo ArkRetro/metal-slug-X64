@@ -1228,6 +1228,19 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * others are the tank and one more pose the port has not); no player 2. */
     for (unsigned i=0;i<8;i++) g->pickup_box[i]=0x8000u;
     if (t.player_valid) {g->pickup_box[0]=0xfff8u;g->pickup_box[1]=0;g->pickup_box[2]=0x10;g->pickup_box[3]=0x20;}
+    /* 08C02C -> 08D268: a player riding a vehicle (0AAA88 kind 1..12) takes
+     * the box E541E[08D234 table: 8, A, C, D, E, F, 11, 13, 14, 15, 16, 17]
+     * (MAME hudv2 RAM 10C5EC in the SV-001: FFE8,0000,0030,0038 = index 8). */
+    {
+        const uint8_t *s=w->vslots.slot[0].b;uint8_t k=(s[0]|s[1])?s[0x21]:0;
+        static const uint8_t index[12]={8,0xa,0xc,0xd,0xe,0xf,0x11,0x13,0x14,0x15,0x16,0x17};
+        const uint8_t *e=ga_rom(0xe541eu);
+        if (t.player_valid && k>=1u && k<=12u && e) {
+            const uint8_t *q=e+4u*index[k-1u];uint32_t box=(uint32_t)q[0]<<24|(uint32_t)q[1]<<16|(uint32_t)q[2]<<8|q[3];
+            const uint8_t *b=ga_rom(box);
+            if (b) for (unsigned i=0;i<4;i++) g->pickup_box[i]=(uint16_t)(b[2*i]<<8|b[2*i+1]);
+        }
+    }
     if (w->pickup_input) memcpy(g->pickup_box,w->pickup_input,sizeof(g->pickup_box));
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
     g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;

@@ -99,7 +99,7 @@ typedef struct neo_pickup_env {
     uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
     unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
     uint16_t label_count[2];             /* RAM 10C5B2+2p: score labels 08D330 made (08D33C) */
-    unsigned taken,popups,labels,cures;        /* pickups served; score labels 08D330 and
+    unsigned taken,popups,labels,cures,refuels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
     /* Per item kind (+6E < 0x5A, records 0E581A): items constructed with a
      * native motion, items handed back as external (motion not translated:

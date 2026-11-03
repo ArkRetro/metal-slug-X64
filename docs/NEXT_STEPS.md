@@ -166,3 +166,13 @@
       `filesystem/mission2/s3/patches.json` (`extract_map_patches.py 2
       filesystem/mission2/s3 --capture-frame <vram38130.bin>` de la captura
       `boulder`, MISION2.md «Parches de mapa»).
+15. **Rama `work-gauge` (B41):**
+    - Indicador del vehículo: `hud_step` lee el hueco del jugador 1 con
+      `neo_vslot_gauge` (`0AAAE0`). SV-001 y Slugnoid lo muestran; la Camel
+      no (arcade). Comprobado con la captura `hudg` (fixture del HUD).
+    - Bidón de gasolina (objeto 07, `08B710`) traducido con su prueba
+      `test_neo_fuel`; no aparece en la M1 ni en la M2 (fuentes revisadas en
+      la ROM), así que solo se verá en misiones siguientes.
+    - Caja de recogida del jugador montado (`08D268`, blob `E541E`).
+    - Pendiente: ver el indicador bajar con daño real en ares/MiSTer.
+

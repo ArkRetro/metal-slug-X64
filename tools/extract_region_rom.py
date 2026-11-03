@@ -32,6 +32,7 @@ BLOBS=[
     (0x2D2244,0x31C,'09D846 swordsmen rank tables 2D2244..2D24B0 and knife 09ECCC tables 2D2512/2D252C/2D253C (0260C8)'),
     (0x2D2FC0,0x80,'0A8CA0 robed swordsman rank tables 2D2FC0/2D2FDA/2D2FF4 (0260C8)'),
     (0x0E64D8,0x08,'0A9A56 robed swordsman cull rectangle (01945C)'),
+    (0x0E64EC,0x0C,'0A908E robed swordsman surrendering (white flag 0A9010, +80 = 1): hurtbox (+50, 004C24)'),
     (0x00087A,0x10,'0A8F38 sub-script records of the robed swordsman (+74 index)'),
     (0x2D7214,0x02,'019F1A sub-script record 2D7214 (op 3)'),
     (0x33924,0x374,'033C98 covered wagon: body/roof/wreck cell maps (0140C0), hurtbox, cull rectangle, debris list'),

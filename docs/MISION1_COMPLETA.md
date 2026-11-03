@@ -137,7 +137,9 @@ llamada `0x0A9EDA` pone `+60` bit 0; con `+93 = 1`, `0x0A8F12` invierte
 actualización (`0x01A02C`) pone `+60` bit 7 del espadachín. Traducido como
 actor genérico en `src/neo_rest.c` (constructor, entrada, espera, giro hacia
 el jugador más cercano `0x01AF9A`, gesto, bucle, retirada `0x0A9A56`) con el
-subguion; la salida `0x0A8FE0` (cuando el grupo 6 llega a 0) y la rama `+93 =
+subguion; la salida `0x0A8FE0` (cuando el grupo 6 llega a 0) con `+72 ≠ 0`
+es la rendición con bandera blanca `0x0A9010`, nativa desde B46
+(JEFE_MISION1.md, «Fin del combate»); su muerte `0x0A93DC` y la rama `+93 =
 0` (espadachines del mercado `0x0A8C62/84`) se detienen explícitamente.
 `10C606` vale `0xFF` al aparecer el jefe en los dos combates grabados.
 
@@ -565,7 +567,7 @@ exacta.
   traducido sin captura (falta una captura en la que dispare para
   verificarlo); `0x08F1A0` sigue como parada explícita.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista
-  del jefe como bloque, salida del espadachín (`0x0A8FE0`).
+  del jefe como bloque, muerte del espadachín rendido (`0x0A93DC`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).

@@ -108,7 +108,9 @@ static void release_run(unsigned seed) {
          * tally 0308C0 (0188B0 waits for its +60), 0188F4 (0xA0, subq/bcc)
          * and 018916 (0x20, subq/bcc) entered in the same update as the
          * previous wait ends: 30 + tally + 160 + 32 updates. */
-        static msx_game_t e;e=g;unsigned updates=0,tally=0,jingle=0,voice=0;
+        /* The copy's world runs on through the mission end: the boss
+         * services' context is the copy's world. */
+        static msx_game_t e;e=g;e.world.boss.services.context=&e.world;unsigned updates=0,tally=0,jingle=0,voice=0;
         uint16_t rescued=g.world.ga_flags.rescued[0];
         uint8_t before[4];memcpy(before,g.world.pickup.score[0],4);
         while (e.mission_end!=MSX_END_DONE && updates<4000) {
@@ -161,7 +163,7 @@ static void release_run(unsigned seed) {
          * above, then 01891E selects Mission 3 (record 0173F6, stage bits
          * 0F). The stage step used to take it as a stage exit and wait for
          * a stage load that never came. */
-        static msx_game_t m;m=e;
+        static msx_game_t m;m=e;m.world.boss.services.context=&m.world;
         for (unsigned stage=1;stage<=3;stage++) {
             for (unsigned k=0;k<200 && m.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&m.flow);   /* the wipes 3AED8/3AEF0: 35 updates */
             assert(m.flow.state==NEO_MISSION_PLAYING && m.flow.mission==1 && m.flow.stage==stage);

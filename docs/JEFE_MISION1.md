@@ -408,3 +408,57 @@ soldados y objetos sin jugador activo no están traducidas (los estados
 al jugador activo. Las poses de los programas de muerte no están en el
 catálogo de poses auditado: el port mantiene la última pose mientras muere
 (registrado una vez).
+
+## Fin del combate: hundimiento, bandera blanca y victoria (B46)
+
+Informe de MiSTer (ROM 28): al vencer al jefe no se ve su destrucción ni el
+soldado árabe que agita la bandera blanca. MAME `runK` (13632..14456) y
+`m1end/flag3` (19207..20028, desde `sec00_2100` de `states3`):
+
+| Fotograma (`runK`) | Arcade |
+| --- | --- |
+| 13632 | `0D5E5C`: `018F92`, sonido `1033`, programas `2ACDE4`/`2ACDF4` del casco; la tapa `0D6A16` crea `01D7B8` y sus 30 escombros `01D1B0`, explosiones `01C9E6` |
+| ~13700 | `018F40`; 13701 `018846` (RAM `10C301` = FF); Marco `0C1E84` |
+| 13762 | `0D5EDA`: tres explosiones `01C71E`, escombros `0E933C`, sonido `102F`, borrado |
+| 13816 | el espadachín de túnica `0A8C46` (`+72` = 2, `+80` = 1, `+7E` = FFFF) pasa a `0A8FE0` → `0A9010`: bandera blanca `2A74E0` hasta 14456 (`3889C`, cambio de misión) |
+| 13759.. | recuento `0308C0`, letras `06090A`, fundido: el mundo sigue en marcha debajo |
+
+**Causa** (port): `msx_game_update` dejaba de ejecutar el mundo en cuanto el
+jefe pedía `018F40` (`complete`): el casco, las explosiones, el espadachín y
+Marco quedaban congelados en la imagen de esa actualización durante el
+recuento (prueba de anfitrión: los mismos 8 actores y 33 dibujos en las 600
+actualizaciones del fin). Además `0A8FE0` con `+72 ≠ 0` era una parada
+explícita (rama sin captura).
+
+**Arreglo**: durante el fin de misión, después del actor de misión (fundido,
+`018846`, recuento, letras), el resto de la lista sigue (`play_update` sin
+entrada: los manejadores `0C0538` de `018F92`; el jugador no recibe daño)
+hasta `01891E`. `0A8FF0..0A9144` nativo (`src/neo_rest.c`): `019DFC`
+(`+69` = FF), bandera `2A74E0` en bucle (`00427A`/`004256`), `0A9B1C`
+(`+7E` frente a la cámara `10E99E`), con `+80` = 0 la cuenta `+90` = 0x28 y
+la salida `0A935A`, con `+80` = 1 la caja `0E64EC` (nueva en
+`region_rom.json`) registrada con `004C24`. **Paradas explícitas**: su muerte
+`0A93DC` (en `flag1` el último obús `02A794` del jefe le alcanzó: piezas
+`0A98CE/0A9510/0A9550/0A9814`), `0A9B60` (vigilancia del jugador y ataques
+`0A914A/0A927E`) y `+80 > 1` (hijo `0A9938`). `018F92` guarda el `+5E` del
+jefe en `ga_flags.end_kind` (RAM `10C304`), que lee la victoria de Marco
+(MARCO_CAMPAIGN.md, «Victoria»).
+
+**Pruebas**: familia `robeflag` (`data/robeflag_fixture.json.gz`,
+`extract_family_fixture.py flag3/boss-trace.txt --range a8fe0-a9160
+--attacks`): **301 actualizaciones en bucle cerrado (19349..20020), 42140
+bytes iguales, 301 dibujos**. Píxeles (`export_rest_sprites.py ...
+flag3@a8fe0-a9160`, [robeflag-sprites-validation.json](robeflag-sprites-validation.json)):
+**165 volcados, 182172 píxeles iguales, 851 distintos, todos en el primero**
+(19352, la actualización del cambio de programa: la lista de sprites aún no
+ha llegado a la VRAM). `test_gameplay` (`release 1`): el casco termina y se
+borra, 30 escombros `01D1B0`, explosiones, y el espadachín en `0A9010` hasta
+`01891E`; recuento, letras y fundido con la misma duración (30 + recuento +
+160 + 32).
+
+```sh
+export MSX_FULL_STATES=<dir con mslugx/sec00_2100.sta de states3> MSX_FULL_LOAD=sec00_2100 MSX_FULL_LOAD_FRAME=2100
+MSX_FULL_FAMILY_FROM=19200 MSX_FULL_FAMILY_ROOTS=a8fe0 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=19200 \
+  MSX_FULL_PERIOD=4 MSX_FULL_LAST=20200 sh tools/run_capture_fullgame.sh CAP/flag3
+python3 tools/extract_family_fixture.py CAP/flag3/boss-trace.txt --output data/robeflag_fixture.json.gz --range a8fe0-a9160 --attacks
+```

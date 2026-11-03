@@ -30,6 +30,7 @@ typedef struct {
     bool hanging;          /* parachute descent 0C162A (marco_descent.c), before the cut */
     bool transforming;     /* form 3: the transformation 0C17A0..0C182A (no control) */
     bool takeoff;          /* form 3: the takeoff 0C19E4/0C1A0C (crouched before the jump) */
+    bool victory;          /* the mission end: RAM 10C301 set (018846) and 10C304 >> 2 & +5E (018FFE): the idle 0C2022 takes 0BF658 */
 } marco_visual_input_t;
 typedef struct {
     marco_animation_t anim;
@@ -45,6 +46,7 @@ typedef struct {
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */
     unsigned failures,starts;
+    bool victory_armed;            /* 0C2046 set the routine 0C1E84: its program starts in the next update */
 } marco_visual_t;
 void marco_visual_reset(marco_visual_t *v);
 /* One logic update. */

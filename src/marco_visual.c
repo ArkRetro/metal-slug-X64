@@ -238,6 +238,31 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     if (v->form!=in->form) {v->body_role=v->weapon_role=-1;v->body_count=v->weapon_count=0;v->weapon_done=false;}
     v->form=in->form;
     if (in->form==3) {mummy_step(v,in);return;}
+    /* The mission end (0C2016..0C2046): standing idle with RAM 10C301 set
+     * and 10C304 >> 2 & +5E, the idle sets the routine 0C1E84, which in the
+     * next update starts the victory table 0BF658 (body; 0C0F16: no weapon
+     * thread) and goes back to the idle 0C1FA6, whose check is then off
+     * (+9A bit 5 cleared by 0C1F32): the program runs on to the end of the
+     * mission (MAME runK 13701..14456, run4 18648, 117325). */
+    {
+        const int role=in->form==1?MARCO_CAMPAIGN_B1_VICTORY:MARCO_CAMPAIGN_B_VICTORY;
+        if (v->body_role==role && in->victory) {
+            v->weapon_role=-1;v->weapon_count=0;v->weapon_done=false;
+            step_part(v,MARCO_BODY);
+            v->grounded=in->grounded;v->crouch=false;v->moving=in->moving;v->facing=in->facing;
+            return;
+        }
+        if (in->victory && in->grounded && !in->crouch && !in->moving && !in->fired && !in->thrown) {
+            if (v->victory_armed) {
+                v->victory_armed=false;start(v,MARCO_BODY,role);
+                v->weapon_role=-1;v->weapon_count=0;v->weapon_done=false;
+                step_part(v,MARCO_BODY);
+                v->grounded=in->grounded;v->crouch=false;v->moving=false;v->facing=in->facing;
+                return;
+            }
+            v->victory_armed=true;
+        } else v->victory_armed=false;
+    }
     bool hgun_start=in->form==1 && in->hgun_start && in->hgun_program>=0 && in->hgun_program<7;
     /* Body. */
     if (!in->grounded && in->hanging) {

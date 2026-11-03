@@ -169,6 +169,11 @@
    "hex": "ffc0ffe000800040"
   },
   {
+   "rom": "0x0E64EC",
+   "reader": "0A908E robed swordsman surrendering (white flag 0A9010, +80 = 1): hurtbox (+50, 004C24)",
+   "hex": "0501fffafffe000c00248000"
+  },
+  {
    "rom": "0x00087A",
    "reader": "0A8F38 sub-script records of the robed swordsman (+74 index)",
    "hex": "002d7134002d719a002d7214002d7214"

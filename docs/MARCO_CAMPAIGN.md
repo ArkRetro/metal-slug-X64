@@ -491,3 +491,47 @@ catálogo nativo.
   suelo (`2503D4`, sin captura), otras armas y la Camel Slug.
 - Efectos de los eventos de animación (fogonazo, casquillos).
 - Cambio de banco de paleta al reaparecer (perfil 1).
+
+## Victoria al acabar la misión (B46)
+
+Informe de MiSTer (ROM 28): al completar la misión y durante el recuento
+Marco no hace su pose de victoria. En el arcade `018846` pone RAM `10C301`
+y, en la misma actualización, el reposo `0C2016..0C2046` (solo si entró en
+reposo por `0C1F4A`: `+9A` bit 5) comprueba `018F24` y `10C304 >> 2 & +5E`
+(`018FFE`; `10C304` = `+5E` del jefe en `018F92`, 04 en `runK`) y pone la
+rutina `0C1E84`, que en la actualización siguiente elige la tabla `0BF658`
+(`0C0F32`; `0C0F16`: sin hilo de arma) y vuelve a `0C1FA6` con el bit 5
+borrado: el programa sigue hasta el cambio de misión (MAME `runK` 13701,
+`run4` 18648 en la M1 y 117325 en la M2). Forma 0 `24FEDC`, forma 1
+`257F86`; las formas 2/3 no tienen fila (sin victoria).
+
+Port: `msx_game_victory` (`10C301` = el fin de misión ya empezó,
+`ga_flags.end_kind` bit 2), `marco_visual.c` arma la victoria en reposo y
+arranca `B_VICTORY`/`B1_VICTORY` en la actualización siguiente; `actor.c`
+sigue animando a Marco durante el fin de misión (antes se congelaba).
+
+Capturas (solo captura: `--victory N`, escribe `10C304 = 04` y `10C301 =
+FF` N fotogramas después del primero del plan `marco-victory.json`, como
+dejan `018F92`/`018846`): `marco-v0` (pistola) y `marco-v1`
+(`--give-hgun`): **236 fotogramas cada una, 8 y 10 descriptores, 181316 y
+209266 píxeles iguales**. Catálogo: **570 poses (las 562 anteriores
+idénticas: CRC, límites, ancla), 593 piezas CI4, 444008 bytes, 7 perfiles**.
+`make check-marco-campaign`: **786 pasos iguales, 0 distintos (36 casos)**;
+los casos `v_victory`/`vh_victory` (110 y 98 pasos, la victoria en bucle)
+se añadieron a `data/marco_throw_fixture.json`.
+
+Las capturas de `captures-weap2` y `captures-grenade` ya no estaban en el
+disco: `marco-g1`, `marco-c1`, `marco-k1`/`k2` (plan `marco-knife.json`),
+`marco-w2/w4/w6` y `marco-mz2` se repitieron con las mismas órdenes y dieron
+las mismas auditorías (g1 764/79/596066, c1 1208/109/904263, w2/w4/w6
+1220 fotogramas y 120/155/131 descriptores, mz2 2948 fotogramas); el grafo
+nuevo tiene los mismos dos `UNRECOVERED`.
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output V0 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-victory.json --victory 16
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output V1 --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-victory.json --give-hgun --victory 40
+# auditoría, extract_marco_steps.py y extract_marco_controller.py de cada una; luego
+# convert_marco_programs.py / build_marco_poses.py de arriba con --extra-capture V0 --extra-capture V1 / --extra-audit V0/audit.json --extra-audit V1/audit.json
+python3 tools/compile_marco_campaign.py CAP1 ... --victory-capture V0 --victory-h-capture V1 --output build/marco_campaign.h
+python3 tools/extract_throw_fixture.py --output /tmp/v.json v_victory=V0:victory:0:24fedc:0:stand vh_victory=V1:victory:0:257f86:1:stand   # añadidos a data/marco_throw_fixture.json
+```

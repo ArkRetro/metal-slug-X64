@@ -114,7 +114,10 @@ int main(void){
       .cgroup=(uint8_t)(c->name[0]=='s'?2:c->name[0]=='f'?3:1)};
     if(c->situation==3)in.moving=1;
     if(cut){in.grounded=false;in.hanging=true;}   /* the descent: hanging before the cut */
-    for(unsigned k=0;k<6;k++){if(c->situation==2&&k==4&&!hang)in.grounded=false;if(c->situation==1&&!grenade)in.crouch=1;marco_visual_step(&v,&in);}
+    /* v_: the mission end's victory (marco-v0/v1, --victory): 0C2046 sets
+     * the routine 0C1E84 in the update before its program starts. */
+    bool victory=c->name[0]=='v';
+    for(unsigned k=0;k<6;k++){if(c->situation==2&&k==4&&!hang)in.grounded=false;if(c->situation==1&&!grenade)in.crouch=1;if(victory&&k==5)in.victory=true;marco_visual_step(&v,&in);}
     if(c->situation==1)in.crouch=1;
     in.aim_up=strstr(c->name,"_up")!=NULL;in.aim_down=down;
     unsigned bad=0;
@@ -156,6 +159,6 @@ int main(void){
     puts("PASS: the mummy (form 3) against marco-mz2 update by update: transformation, idle, walk, turn, jumps, landings, crouch, crouched fire, stand-up (body exact)");
   }
   printf("throws/C/S/F/H down/knife/descent/mummy: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
-  assert(tok>=400&&!tbad);
-  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched), the parachute descent (hanging, cut), the fire of weapons 02 and 04 and the mummy's fire and throw pose by pose against the captures");
+  assert(tok>=780&&!tbad);
+  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched), the parachute descent (hanging, cut), the mission end's victory (pistol, H), the fire of weapons 02 and 04 and the mummy's fire and throw pose by pose against the captures");
 }

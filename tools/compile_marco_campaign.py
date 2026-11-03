@@ -147,6 +147,15 @@ ROLES_KNIFE=[
 # jump's 0BFC58 24E5BC). tools/mame/plans/marco-descent.json with
 # run_marco_catalog.py --first 1830 (marco-dsc0, no input).
 ROLES_DESCENT=[('B_HANG',0,0x24E5AA,('d_hang',))]
+# The mission end (018846 sets RAM 10C301; the idle 0C2022 with RAM 10C304
+# >> 2 & +5E takes the victory table 0BF658 at 0C1E84, body only: 0C0F16
+# leaves +90/+91 = FF). tools/mame/plans/marco-victory.json with
+# run_marco_catalog.py --victory (marco-v0 pistol, marco-v1 --give-hgun).
+# Each role: (capture option, form, conditions).
+ROLES_VICTORY=[
+ ('B_VICTORY',0,0x24FEDC,'victory',0,('victory',)),
+ ('B1_VICTORY',0,0x257F86,'victory_h',1,('victory',)),
+]
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
@@ -161,6 +170,8 @@ def main():
     p.add_argument('--w6-capture',type=Path,help='weapon 06 capture (ROLES_WEAPONS)')
     p.add_argument('--mummy-capture',type=Path,help='form-3 capture (ROLES_MUMMY)')
     p.add_argument('--descent-capture',type=Path,help='parachute descent capture (ROLES_DESCENT)')
+    p.add_argument('--victory-capture',type=Path,help='mission-end victory capture, pistol (ROLES_VICTORY)')
+    p.add_argument('--victory-h-capture',type=Path,help='mission-end victory capture with the H (ROLES_VICTORY)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
     choices=json.loads((c/'controller.json').read_text())['choices']
@@ -265,6 +276,19 @@ def main():
                 assert seen,(role,hex(addr),cond)
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}: {", ".join(conds)} */')
+    vcap={'victory':a.victory_capture,'victory_h':a.victory_h_capture}
+    if all(vcap.values()):
+        for role,part,addr,key,form,conds in ROLES_VICTORY:
+            v=vcap[key];vplan={x['name']:x for x in json.loads((v/'plan.json').read_text())['cases']}
+            vchoices=json.loads((v/'controller.json').read_text())['choices']
+            for cond in conds:
+                case=vplan[cond]
+                seen=[x for x in vchoices if case['first']<=x['choice']['frame']<=case['last']
+                      and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==form]
+                assert seen,(role,hex(addr),key,cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}, {key}: {", ".join(conds)} */')
+    else:assert not any(vcap.values()),'--victory-capture and --victory-h-capture go together'
     lines+=['};','#endif','']
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(lines))
     print('Marco campaign roles:',len(ROLES),'commands from',c)

@@ -210,6 +210,12 @@ emu.register_frame_done(function()
  -- (the mummy's breath); the original forms check 0C3428 then runs the
  -- transformation 0C17A0/0C182A and the mummy controller 0C18B4.
  if os.getenv('MSX_GIVE_MUMMY')=='1' and frame==plan.first then cpu:write_u8(0x1014c4+0x94,3) end
+ -- Capture only (MSX_VICTORY=<frames after the first plan frame>): the
+ -- mission end as 018F92/018846 leave it for player 1 (RAM 10C304 = 04, the
+ -- boss's +5E in MAME runK; 10C301 = FF): the idle 0C2022 then takes the
+ -- victory table 0BF658 (0C1E84).
+ local victory=tonumber(os.getenv('MSX_VICTORY') or '-1')
+ if victory>=0 and frame==plan.first+victory then cpu:write_u8(0x10c304,4);cpu:write_u8(0x10c301,0xff) end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end

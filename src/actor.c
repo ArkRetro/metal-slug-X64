@@ -425,7 +425,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #if MSX_TEST_QUICK_END
         {static unsigned updates;
          if (game.flow.mission==0u && game.world_enabled && !game.complete && game.grounded && ++updates==MSX_TEST_QUICK_END) {
-             game.world.mission_step=2;debugf("MSX test cartridge: Mission 1 ended now (not a release)\n");
+             game.world.mission_step=2;game.world.ga_flags.end_kind=4;   /* 018F92's 10C304 of a boss killed by player 1 (MAME runK) */
+             debugf("MSX test cartridge: Mission 1 ended now (not a release)\n");
          }}
 #endif
         msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
@@ -435,7 +436,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (game.life.phase==MARCO_DYING && !death_logged) {death_logged=true;debugf("MSX player death kind=%u\n",game.world.hit_kind);}
         if (game.life.phase==MARCO_ALIVE) death_logged=false;
         if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;marco_grenades=game.grenades;marco_cfires=game.c_fires;marco_knives=game.knife_cuts;}
-        if (!(game.ticks&1) && !game.complete && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
+        /* The players run on through the mission end with no input (their
+         * handlers 0C0538 since 018F92): their idle takes the victory. */
+        if (!(game.ticks&1) && (!game.complete || game.mission_end!=MSX_END_DONE) && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
                 game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1 || game.world.weapon_player.form93==3?game.world.weapon_player.form93:0u,-1,false};
@@ -452,6 +455,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             mi.hanging=game.descent==MSX_DESCENT_HANG;
             mi.transforming=game.mummy_transform!=0;mi.takeoff=game.mummy_takeoff!=0;
+            mi.victory=msx_game_victory(&game);
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;msx_diag_stop(MSX_STOP_MARCO,marco.failures,0);}

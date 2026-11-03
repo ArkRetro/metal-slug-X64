@@ -909,7 +909,13 @@ static bool b_effect(void *c,const neo_boss_effect_t *e) {
     ga_sl(a,0x0c,0);
     return true;
 }
-static void b_mission(void *c,int16_t node,uint8_t step) {neo_world_t *w=c;(void)node;if (step>w->mission_step) w->mission_step=step;}
+static void b_mission(void *c,int16_t node,uint8_t step) {
+    neo_world_t *w=c;
+    /* 018FB4: RAM 10C304 = the caller's +5E (read by the players' idle
+     * 0C2022 at the mission end: 018FFE). */
+    if (step==1u && node>=0 && node<NEO_BOSS_NODES) w->ga_flags.end_kind=neo_boss_b(&w->boss.nodes[node],0x5e);
+    if (step>w->mission_step) w->mission_step=step;
+}
 static void boss_spawn(tick_t *t,int at,const neo_script_spawn_t *sp) {
     neo_world_t *w=t->w;
     if (w->boss_active || at<0) {w->overflow++;return;}

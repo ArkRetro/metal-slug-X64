@@ -23,9 +23,16 @@
  * Sub-scripts other than a lone op 3 run in the world's interpreter
  * (neo_genv_t.subscript).
  *
- * Not translated (explicit stop): 0A8FE0 with +72 != 0 (the boss-arena
- * figure's fight, not reached in the recordings), its death 0A93DC, and the
- * +93 = 0 branch 0A8EF8. */
+ * 0A8FE0 with +72 != 0 (the boss-arena figure, once the boss's group is
+ * empty): 0A8FF0 leaves the groups (019DFC) and waves the white flag
+ * (program 2A74E0, 0A9010) until the mission ends; with +80 = 1 (the arena
+ * record) its hurtbox 0E64EC registers every update (004C24).
+ *
+ * Not translated (explicit stop): the figure's death 0A93DC (its pieces
+ * 0A98CE/0A9510/0A9550/0A9814; MAME m1end flag1: the boss's last shell
+ * 02A794 hit it), 0A9010's branches with +7E = 0 or past the camera (0A9B60
+ * player watch and attacks 0A914A/0A927E) and +80 > 1 (child 0A9938), and
+ * the +93 = 0 branch 0A8EF8. */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -161,8 +168,32 @@ static ga_result_t robe(neo_gactor_t *a,neo_genv_t *e) {
     }
     case 0xa8fe0:
         SL(0x50,0);
-        if (W(0x72)) {ga_fail(e,0xa8ff0);return GA_UNSUPPORTED;}   /* fight path: not reached */
-        SL(0,0xa935a);continue;
+        if (!W(0x72)) {SL(0,0xa935a);continue;}
+        /* 0A8FF0: the boss-arena figure surrenders (white flag 2A74E0):
+         * 019DFC (+69 = FF, out of the groups), +88 = 0. */
+        SB(0x69,0xff);START(0x2a74e0);SW(0x88,0);
+        SL(0,0xa9010);continue;
+    case 0xa9010: {
+        hold(a,e);
+        int r=step(a,e);
+        if (r<0) return GA_UNSUPPORTED;
+        if (r>0) START(0x2a74e0);                 /* 00427A carry: the flag again */
+        /* 0A9B1C: carry when +7E != 0 and the camera progress reached it. */
+        bool reached=W(0x7e) && !(S16(W(0x7e))>S16(e->camera));
+        if (!reached) {ga_fail(e,0xa90e0);return GA_UNSUPPORTED;}   /* 0A9B60 player watch: not recorded */
+        if (!W(0x80)) {
+            /* 0A9052: +90 = 0x28 once (+94 = FF), then the count-down and
+             * the walk away 0A935A. */
+            if (!B(0x94)) {SW(0x90,0x28);SB(0x94,0xff);}
+            else if (!W(0x90)) SL(0,0xa935a);
+            else SW(0x90,W(0x90)-1u);
+        } else if (W(0x80)==1u) SL(0x50,0xe64ec);    /* 0A908E: the figure can be hit */
+        else if (!B(0x94)) {ga_fail(e,0xa90a2);return GA_UNSUPPORTED;}   /* 0A90A2: child A9938 not recorded */
+        /* 0A9126: 004C24 registration; a kill goes to the death 0A93DC. */
+        if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+        if (B(0x5f)&0x80u) SL(0,0xa93dc);
+        return k9a56(a,e);
+    }
     case 0xa935a:
         SL(0x50,0);START(0x2a759c);to_root(a,e);
         SL(0x62,(uint32_t)W(0x86)<<8);CLR(0x15,0);
@@ -198,7 +229,7 @@ static ga_result_t subscript(neo_gactor_t *a,neo_genv_t *e) {
 bool neo_rest_routine(uint32_t r) {
     if (r==0x19e72 || r==0x19e82) return true;
     return r==0xa8c46 || r==0xa8c62 || r==0xa8ca0 || r==0xa8d22 || r==0xa8d38 || r==0xa8d6a || r==0xa8daa || r==0xa8dec ||
-        r==0xa8df6 || r==0xa8dfc || r==0xa8e1a || r==0xa8e8e || r==0xa8ece || r==0xa8fe0 || r==0xa935a || r==0xa9390;
+        r==0xa8df6 || r==0xa8dfc || r==0xa8e1a || r==0xa8e8e || r==0xa8ece || r==0xa8fe0 || r==0xa9010 || r==0xa935a || r==0xa9390;
 }
 ga_result_t neo_rest_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (L(0)==0x19e72 || L(0)==0x19e82) return subscript(a,e);

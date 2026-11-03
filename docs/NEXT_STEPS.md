@@ -177,3 +177,15 @@
     - Pendiente: ver el indicador bajar con daño real en ares/MiSTer.
     - B42, modo opcional «Barra de vida» (PORT_STATUS.md): Z al confirmar a
       Marco en SOLDIER SELECT. Pendiente: probarlo en ares/MiSTer.
+16. **Rama `work-m1boss` (B46, informe de la ROM 28):**
+    - El mundo sigue durante el fin de misión (antes se congelaba en
+      `018F40`): hundimiento/escombros del jefe de la M1, el espadachín que
+      se rinde con bandera blanca (`0A9010`, familia `robeflag`) y la
+      victoria de Marco (`0BF658`, pistola y forma 1; catálogo 570 poses).
+      Vale también para el fin de la M2.
+    - Pendiente: verlo en MiSTer; paradas explícitas: muerte del espadachín
+      rendido `0A93DC` (en una captura le alcanzó el último obús del jefe) y
+      sus ramas `0A9B60`/`+80 > 1`.
+    - Capturas privadas de Marco repetidas (se habían borrado): guardar las
+      de `captures-weap2`/`captures-grenade` fuera de los directorios que se
+      limpian, o el catálogo no puede regenerarse.

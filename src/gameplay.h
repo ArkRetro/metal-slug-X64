@@ -205,6 +205,10 @@ typedef struct {
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
+/* The mission end's victory of player 1 (0C2016): RAM 10C301 set by 018846
+ * (the mission end has started) and 10C304 >> 2 & +5E (018FFE; player 1's
+ * +5E is 1). */
+bool msx_game_victory(const msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
 enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };

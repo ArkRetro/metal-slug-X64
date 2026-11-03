@@ -1028,6 +1028,9 @@ static void mission_end_step(msx_game_t *g) {
  * world's request list. */
 static void end_actors(msx_game_t *g,bool jump,bool fire) {
     neo_end_ram_t *m=&g->end_ram;
+    /* One RAM in the original: what the world wrote since (points of the
+     * actors that go on during the mission end) is the tally's too. */
+    for (unsigned p=0;p<2;p++) {m->rescued[p]=g->world.ga_flags.rescued[p];memcpy(m->score[p],g->world.pickup.score[p],4);}
     m->pressed[0]=(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u));
     m->video=(uint16_t)(g->ticks>>1);
     /* 06090A draws the number of the mission that ends (RAM 10C2F4, 060F7C). */
@@ -1040,10 +1043,13 @@ static void end_actors(msx_game_t *g,bool jump,bool fire) {
     }
     m->sound_count=0;
 }
+bool msx_game_victory(const msx_game_t *g) {
+    return g->complete && g->mission_end!=MSX_END_NONE && ((g->world.ga_flags.end_kind>>2)&1u);
+}
+static void play_update(msx_game_t *g,int direction,bool jump,bool fire);
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->complete) {
-        g->ticks++;
-        if (!(g->ticks&1) && g->end_started) {
+        if (!((g->ticks+1u)&1u) && g->end_started) {
             neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */
             mission_end_step(g);
             /* The end actors after the mission actor in the list. */
@@ -1051,8 +1057,17 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->end_fire_was=fire;g->end_jump_was=jump;
         }
         g->end_started=true;
+        /* The rest of the list goes on until 01891E: the boss's wreck
+         * (0D5EBC/0D5EDA), the effects, the surrendering figure 0A9010 and
+         * the players, whose input handlers are 0C0538 (no input) since
+         * 018F92 (MAME runK 13632..14456). */
+        if (g->world_enabled && g->mission_end!=MSX_END_DONE) {g->grenade=false;play_update(g,0,false,false);}
+        else g->ticks++;
         return;
     }
+    play_update(g,direction,jump,fire);
+}
+static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->stage_step) {g->ticks++;if (!(g->ticks&1)) stage_end_step(g);return;}
     /* Between the stage load and the stage loop: the mission actor's exit
      * kind, the players held (4302 = 0). */

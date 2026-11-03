@@ -134,6 +134,7 @@ void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_
 void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
     neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
+    marco_weapon_player_t weapon_player=g->world.weapon_player;
     /* The fade outlives the load: the entry kind left the screen black
      * (9C0A from 018324/01836C, or the mission end's), the exit kind fades
      * it back in (0184F6, stage_entry_step). */
@@ -157,6 +158,12 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
         memset(kept.rescued,0,sizeof(kept.rescued));memset(kept.gifts,0,sizeof(kept.gifts));memset(kept.special,0,sizeof(kept.special));
     }
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
+    /* The player actor 1014C4 outlives the stage: its form +93, request +94
+     * and combo +95 too (MAME run4, stage 2 -> 3 at 26140: weapon 9, +93 = 1,
+     * +95 = 47 in 26130 and 26160). msx_game_init cleared them to the
+     * pistol form while the weapon stayed: a heavy weapon (the L's beam)
+     * fired with the pistol's programs from the second stage on (B40). */
+    g->world.weapon_player=weapon_player;
     if (g->mission_start) marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     neo_world_init_stage(&g->world,0,st);
     g->world.front_window=msx_draw_order(g->flow.mission,g->flow.stage).front_window;   /* 012022 (B26) */

@@ -1091,8 +1091,17 @@ fondo seguía cerrado; igual la verja de la etapa 1 (`0B6E06`: `0B6BEC`,
 - Píxeles: en `game26040.png` los 23 bloques que cambian dan 2033 de 5888
   píxeles iguales con el parche frente a 874 con la puerta cerrada (el resto
   lo tapan el marco `03A82E`, la puerta que sube y las llamas).
-- Fuera: la roca `03A2AA` (`0B7A2C`, submapas de `0B7436` con
-  desplazamientos de origen D0/D1 ≠ 0; el actor no está traducido). Como en
-  el arcade el parche solo vale mientras esos bloques están en la ventana; el
-  port lo mantiene toda la etapa (las dos puertas están al final, la cámara
-  no vuelve).
+- La roca `03A2AA` (rama `work-m2fix7`): `0B7A2C` hace cinco copias del
+  submapa `0B7436` (8×9) con desplazamientos de origen (D0, D1) = (1, 1),
+  (0, 4), (1, 5), (2, 7) y (2, 9); la última empieza bajo la última fila y
+  no copia nada (`0C714E`). `g_map_patch` recorta como `0C714E`, la
+  colisión copia columnas de `+A` bloques (`0C7360`) y cada parche se
+  identifica por submapa | D0 << 24 | D1 << 28 (también en el paquete). Los
+  bloques de la etapa 3: y = 224 − 16·D5 + 16·fila, igual que la fila
+  `135 − D5` del mapa `0B740A` en el modelo (548 bloques alineados). Colores:
+  `extract_map_patches.py --capture-frame vram38130.bin` (captura `boulder`)
+  comprueba cada columna del parche en las palabras SCB1 (23 de 24) y toma
+  la RAM de paletas (igual a los colores observados del modelo).
+- Como en el arcade el parche solo vale mientras esos bloques están en la
+  ventana; el port lo mantiene toda la etapa (las dos puertas están al
+  final, la cámara no vuelve).

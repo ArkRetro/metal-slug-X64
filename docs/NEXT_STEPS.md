@@ -147,3 +147,25 @@
       piloto suba (`game91500.png`). Traducirlo es un vehículo completo
       (subida, salto, cañones, daño, salida, sprites y sonidos): queda
       pendiente; hoy se cuenta como externo y no se dibuja.
+14. **Rama `work-m2fix7` (informe de la ROM 25):**
+    - B40: el arma del láser (y de toda arma de forma 1) desaparecía al
+      cambiar de etapa: `+93..+95` del jugador se reiniciaban con la etapa
+      (`msx_game_begin_stage`). Ahora sobreviven, como en MAME (`run4`
+      26130/26160).
+    - Roca `03A2AA` nativa (`neo_m2props.c`): roca `03A344`, polvo,
+      escombros, losa `03A528`, piedras `03A58A` y los parches `0B7A2C`
+      (`0C70FC` con D0/D1: colisión en `neo_collision_patch` con paso de
+      columna, clave del parche = submapa | D0 << 24 | D1 << 28 en
+      `g_map_patch` y `pack_mission.py`). Familia `boulder` igual a MAME; las
+      piedras `03A58A` no salieron en la captura (código compartido con la
+      caída de la roca).
+    - ares (ref. M2; Start en las etapas 1 y 2 de la referencia termina la
+      etapa para llegar antes a la 3): `03A2AA native 1` en la cámara 956,
+      la roca cae, la losa y el suelo roto se dibujan; registro
+      `MSX mission 2 stage N start ... weapon= form=` para ver B40 en
+      MiSTer. Sin paradas nuevas.
+    - Al reconstruir en `/home/user/ws-logo` copiar (`cp`, sin `-p`)
+      `romfs/mission2.pack`, `filesystem/mission2/rest-native.json` y
+      `filesystem/mission2/s3/patches.json` (`extract_map_patches.py 2
+      filesystem/mission2/s3 --capture-frame <vram38130.bin>` de la captura
+      `boulder`, MISION2.md «Parches de mapa»).

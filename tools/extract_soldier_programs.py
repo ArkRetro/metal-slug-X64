@@ -228,6 +228,9 @@ ROOTS+=[0x23cac2,0x23cb9e]
 ROOTS+=[0x2818e4,0x281a08,0x281a5c,0x281ac6,0x281c20,0x281d66,0x281e1e,0x281dea]
 # The molotov 01E648 (22F5B8) and its flames 01E9B6 (242B52), neo_bullet.c.
 ROOTS+=[0x22f5b8,0x242b52]
+# The stage-3 boulder 03A2AA (neo_m2props.c): boulder and stones 03A5E6
+# (23CC7E), their fall 23CD24 and the slab 03A528 (23CDE8).
+ROOTS+=[0x23cc7e,0x23cd24,0x23cde8]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

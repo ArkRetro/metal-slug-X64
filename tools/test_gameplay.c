@@ -393,6 +393,22 @@ static void draw_order_run(void) {
         msx_draw_order(1,1).back,msx_draw_order(1,1).front,msx_draw_order(1,2).back,msx_draw_order(1,2).front,grounded,air);fflush(stdout);
     assert(grounded>100 && air>10);
 }
+/* B40 (ROM 25: the L's gun gone in the crypt): the player actor keeps its
+ * form +93 and combo +95 across a stage load (MAME run4 26130/26160:
+ * weapon 9, +93 = 1, +95 = 47 on both sides of the stage 2 -> 3 load). */
+static void stage_form_run(void) {
+    static msx_game_t g;msx_game_init(&g);g.flow.record_index=1;
+    for (unsigned id=0;id<MARCO_WEAPON_IDS;id++) {
+        if (!marco_weapons_grant(&g.world.weapons,0,(uint8_t)id,&g.world.weapon_player,NULL)) continue;
+        g.world.weapon_player.form93=g.world.weapon_player.form94==0xff?0:g.world.weapon_player.form94;
+        g.world.weapon_player.form94=0xff;g.world.weapon_player.combo95=0x47;
+        marco_weapon_player_t before=g.world.weapon_player;
+        neo_world_stage_t st={0};msx_game_begin_stage(&g,&st,0x68,0);
+        assert(marco_weapons_id(&g.world.weapons,0)==id && !memcmp(&before,&g.world.weapon_player,sizeof(before)));
+        g.flow.record_index=1;
+    }
+    printf("stage form: +93/+94/+95 kept across a stage load for every weapon\n");fflush(stdout);
+}
 static void pweapon_run(void) {sgun_left_run(2);sgun_left_run(7);chaser_run_id(2);chaser_run_id(7);chaser_run_id(4);chaser_run_id(9);chaser_run_id(6);chaser_run_id(0x0b);}
 /* The knife (MiSTer report: enemies could not be knifed): walk right with
  * the pistol tapping fire; with a rebel in reach (0C3744) a press cuts
@@ -679,6 +695,7 @@ int main(int argc,char **argv) {
     assert(max_progress==3376 && g.camera>=3376 && g.camera<=MSX_CAMERA_MAX);
     assert(g.world.ga_flags.collapsed && max_height>=30 && max_height<=32 && g.world.ga_flags.barrel_patched); // domed building down: camera rose 15..16 from 16 (31 with one pistol shot per press; 30 once the village porter and awning are native and change the scripted walk) (14 before the region prisoners were native; measured before the wagon stop: standing on the wreck or the boss lifts the view)
     draw_order_run();
+    stage_form_run();
     chaser_run();
     pweapon_run();
     knife_run();

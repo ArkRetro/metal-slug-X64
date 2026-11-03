@@ -785,13 +785,23 @@ externo (5). Recorrido de la Misión 1: PASS, crash=0, 1 fallo de audio.
 **Lo que queda de la etapa 3** (sin traducir, contado como externo o como
 parada):
 
-- `03A2AA` (2D8D82, cámara 952): la roca que cae. Su secuencia se vio en `rope2`
-  (38000..39200; traza borrada por espacio, se repite con la orden de arriba): `03A344` cae, `03A3A2` sonido 1035, temblor `0C801A`, polvo
-  `03A464`, humo `01DA40` con las listas `3A918/3A92A`, la losa `03A528`,
-  los parches de mapa `0B7A2C` y las piedras `03A58A`). No se traduce aún:
-  `0B7A2C` copia submapas de `0B7436` con desplazamientos de origen (D0/D1
-  ≠ 0), que `g_map_patch` no admite (para con `0C72EC`), y el renderizador no
-  dibuja los parches de tiles.
+- `03A2AA` (2D8D82, cámara 952): la roca que cae, **nativa** en
+  `work-m2fix7` (`neo_m2props.c`, cabecera): `03A344` cae (programa
+  `23CD24`, fila `03A8E4` mientras cae), `03A3A2` sonido 1035, temblor
+  `0C801A`, polvo `03A464`, escombros `01DA40` (`3A918/3A92A`), losa
+  `03A528`, el creador +74 = 1, parches `0B7A2C` y la roca sigue cayendo
+  hasta salir del rectángulo `03A908`; luego el creador suelta piedras
+  `03A58A` cada +6E (`2D3B3A`). Captura (borrada tras extraer):
+  `MSX_FULL_LOAD=sec03_26140 MSX_FULL_STATES=/home/user/captures-b31/states
+  MSX_FULL_VRAM_TRACE=1 MSX_FULL_PERIOD=15 MSX_FULL_FIRST_DUMP=37900
+  MSX_FULL_FAMILY_ROOTS=3a2aa MSX_FULL_FAMILY_FROM=37121 MSX_FULL_LAST=39300`;
+  `extract_family_fixture.py ... --range 3a2aa-3a6ea --attacks` (mismos
+  --ram que `gem`): familia `boulder`, 4 nodos, 283 actualizaciones
+  (37979..38223), anillo de 10C72E igual. Las piedras `03A58A` no nacen en
+  esa ventana: su rama no tiene captura propia. Píxeles
+  (`export_rest_sprites.py ... boulder@3a2aa-3a6ea --mask-auto`): 13
+  volcados, 18826 iguales, 61 distintos en uno (38115, dos fotogramas tras
+  la actualización; sin explicar, como el de `rope`).
 - `09692C` (torre, elección al azar): vehículo montable, no ejecutado en las
   capturas.
 - El nido `035D12` y el murciélago de puntos (`0364D2`): ramas al azar de

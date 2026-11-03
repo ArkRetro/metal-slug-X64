@@ -99,14 +99,16 @@ unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
     return changed;
 }
 
-unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,int column,int top) {
+unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,unsigned stride,int column,int top) {
     /* 0C72EC layout of a sub-map's collision cells (4 bytes per 2x2 block,
-     * (x,r) (x+1,r) (x,r+1) (x+1,r+1), r counting up from world row `top`). */
+     * (x,r) (x+1,r) (x,r+1) (x+1,r+1), r counting up from world row `top`;
+     * a column of the sub-map is `stride` blocks: 0C7360 skips the rows
+     * after the copied ones). */
     make_dynamic();unsigned changed=0;
     for (unsigned p=0;p<pairs;p++) for (unsigned b=0;b<blocks;b++) for (unsigned k=0;k<4;k++) {
         int cx=column+2*(int)p+(int)(k&1u),cy=top-2*(int)b-(int)(k>>1);
         if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
-        uint8_t v=cells[(p*blocks+b)*4u+k],*cell=&dynamic_grid[cx*rows+cy];
+        uint8_t v=cells[(p*stride+b)*4u+k],*cell=&dynamic_grid[cx*rows+cy];
         if (*cell!=v) {*cell=v;changed++;ring_touch(cx,cy);}
     }
     return changed;

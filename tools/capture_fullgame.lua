@@ -388,6 +388,11 @@ emu.register_frame_done(function()
   -- 0C36C0 (tools/mame/capture_marco_catalog.lua MSX_GIVE_MUMMY); the
   -- original forms check 0C3428 then runs the transformation 0C17A0.
   if frame==tonumber(os.getenv('MSX_FULL_GIVE_MUMMY') or '-1') then cpu:write_u8(0x1014c4+0x94,3) end
+  -- Capture only (MSX_FULL_GIVE_WEAPON=<frame>:<hex id>): the weapon id
+  -- 10C71E at that frame (as the reference weapon at 2100); the ammo is the
+  -- reference's 10C725 = FF of every frame.
+  local gf,gid=string.match(os.getenv('MSX_FULL_GIVE_WEAPON') or '','(%d+):(%x+)')
+  if gf and frame==tonumber(gf) then cpu:write_u8(0x10c71e,tonumber(gid,16)) end
   -- Pistol again after a new section (reference-only weapon, as at 2100).
   if frame==section_start+300 and frame>2400 and cpu:read_u8(0x10c71e)==0 then cpu:write_u8(0x10c71e,3) end
   local b=0x10c72e;local m=0x10d7b6;local sky=0x10e83e

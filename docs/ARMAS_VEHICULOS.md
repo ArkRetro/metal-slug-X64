@@ -1681,6 +1681,13 @@ son de la familia, delante del andador). Faltan las paletas `0x873`
 `0xA..0xC` (lista `097E88` de la muerte en espera, sin captura), `0x377`
 y `0x4`/`0x5` (pilotos 2..4).
 
+**Ares** (`mslugx-m2-reference.z64`, `test_mission2_ares.py --stage-seconds
+800`, Xvfb `:88`): PASS hasta la Misión 3, crash=0; `MSX script spawn record
+2d9bea constructor 09692c native 1 camera 3395` y el andador dibujado en su
+repisa (x 392) como en `run4` 87600; `CACHE slots=209` (suelo 208),
+`mission2.pack` de 351 fragmentos cargado. No se montó en ares (el piloto
+automático no sube a esa repisa).
+
 **No capturado** (traducido de la ROM, sin prueba): la reacción al daño
 `097308/09737E` y `0977DC`, la caída por debajo de la pantalla en espera,
 la lista de muerte `097EDE`, el doble salto `096F7A`, `096EA6`, el empuje

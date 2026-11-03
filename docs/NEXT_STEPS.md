@@ -139,7 +139,8 @@
       `01EA7A`) y la recogida de los tipos 3..5 siguen como paradas.
     - B38 (**Slugnoid** `09692C`): **traducido** (rama `work-slugnoid`,
       `neo_slugnoid.c`, ARMAS_VEHICULOS.md paso 17): familias `slugidle`,
-      `slugfall`, `slugtour`, `sluglaunch` iguales a MAME. Falta verlo en
-      ares/MiSTer (subir a la repisa de x 392, y 1624 de la torre), capturar
+      `slugfall`, `slugtour`, `sluglaunch` iguales a MAME; en ares nace y se
+      dibuja (M2 PASS). Falta montarlo en ares/MiSTer (la repisa de x 392,
+      y 1624 de la torre), capturar
       el daño (`097308/09737E`, `0977DC`), traducir `0353C2`/`03533A`
       (parada `0973E2`) y renderizar los sonidos `116C` y `1089`.

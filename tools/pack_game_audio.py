@@ -23,6 +23,8 @@ import argparse,hashlib,json,subprocess,wave
 from pathlib import Path
 import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
+import sys;sys.path.insert(0,str(ROOT/'tools'))
+import wav64_vadpcm as W
 SRC=48000
 def read(path):
     with wave.open(str(path)) as w:
@@ -138,6 +140,18 @@ def main():
             if sustained:entry.update(status='SUSTAINED: render window, stopped by its actor',window_s=info['seconds'])
         subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
         wav64=a.output/(label+'.wav64')
+        if not label.startswith('music'):
+            # B43: audioconv64's VADPCM encoder can fail on a signal (the
+            # truck engine 10A5 decoded with bursts over a quarter of its
+            # 10 ms windows): decode every effect pack (tools/wav64_vadpcm.py,
+            # the C reference decoder) and keep it as PCM16 when it fails.
+            pcm16=np.clip(np.round(out),-32768,32767)
+            check=W.check(W.decode(wav64)[0][:,0],pcm16,entry['rate'])
+            entry['vadpcm_check']=check
+            if not check['ok']:
+                cmd=[c if c!='1' or cmd[i-1]!='--wav-compress' else '0' for i,c in enumerate(cmd)]
+                subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
+                entry['compression']='pcm16 (VADPCM failed its decode check)'
         entry.update(word=info['word'],seconds=round(entry['samples']/entry['rate'],3),bytes=wav64.stat().st_size,
                      sha256=hashlib.sha256(wav64.read_bytes()).hexdigest(),conversion=cmd[:-3]+[cmd[-1].rsplit('/',1)[-1]])
         manifest[label]=entry

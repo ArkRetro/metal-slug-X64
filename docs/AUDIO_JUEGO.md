@@ -506,3 +506,44 @@ fuera una lectura PI). Con el arreglo: 0,04 %, sin recorte.
 La entrada en paracaídas (`entry.wav64`, VADPCM) también medía 2–3,5 % en su
 ventana frente a 0,33 % de la fuente; sin comprimir (como el título) mide
 0,01–0,3 %. `pack_cinematic.py` usa ahora `--wav-compress 0` (≈800 KB).
+
+## B43: el motor del camión `10A5` (ROM 28) y la comprobación del VADPCM
+
+Informe del usuario en MiSTer: fallo de audio con el camión de la M1.
+Peticiones del arcade (MAME `fight1`, `capture_gameplay_audio.lua`):
+`10A5` desde `02922A` en el fotograma 4855 y, 78 fotogramas después, `0C`,
+`10`, `A5` desde `029366` (la parada `012192`); el render de referencia deja
+de contener el motor justo ahí. El port hace lo mismo (`test_gameplay`:
+`10A5` en la actualización 739, `90A5` en 817; ares: `voice 10A5: started`,
+`stopped`). La lógica era correcta.
+
+El fallo estaba en el fichero: `tools/wav64_vadpcm.py` (descodificador de
+`audioconv64/vadpcm/decode.c`, idéntico bit a bit en `sfx_10a5`,
+`explosion` y `sfx_1032`) da para `sfx_10a5.wav64` 281 de 1157 ventanas de
+10 ms con error mayor que la propia señal (peor 15799 RMS sobre 1091): el
+codificador elige escalas de 9 a 12 en ~1500 tramas y la reconstrucción se
+dispara, con o sin desbordamiento de 32 bits. Los otros 63 efectos, las
+músicas de la M1 y la M2 y el bucle de SOLDIER SELECT pasan la misma
+comprobación (error de ventana < máx(1000, señal)).
+
+`pack_game_audio.py` descodifica ahora cada efecto empaquetado y, si falla,
+lo guarda en PCM16 (`compression` y `vadpcm_check` en el manifiesto).
+`sfx_10a5` queda en PCM16 mono 24 kHz: 555 748 bytes en la ROM (antes
+156 536), sigue leyéndose de `rom:/` (48 KB/s). `tools/test_wav64_vadpcm.py`
+(en `make check`) prueba el descodificador con una señal sintética y, si
+están los paquetes privados, todos los efectos.
+
+## B44: la música de SOLDIER SELECT
+
+El arcade pide `0000`,`0030` desde `0208A2` (fotograma 3453 de `fight1`) y
+la mantiene hasta `06` (3804); la película `select` solo guarda 2,70 s
+(3460..3619). Render aislado de `0030` (`data/select_music_map.json`, 7200
+fotogramas): sigue sonando al final de la ventana; `find_loop`: periodo
+50,0 s desde 0,54 s, similitud 0,991. El último segundo de `select.wav`
+cae en la muestra 100761 del render (correlación de onda 0,72).
+`tools/pack_select_music.py` escribe `select-music-head.wav64` (el audio de
+la película + el render hasta el empalme, fundido de 10 ms en la unión;
+PCM16 32 kHz, 2,95 s) y `select-music-loop.wav64` (VADPCM 32 kHz, 49,995 s,
+empalme 0,959, comprobado). `main.c` los reproduce en la espera de SOLDIER
+SELECT (`msx_audio_open_loop`); la elección abre el audio de `confirm` como
+antes. ares: `MSX CINE select chosen audio=1` tras 25 s de espera.

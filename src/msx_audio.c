@@ -44,6 +44,9 @@ bool msx_audio_open(unsigned voice,const char *path) {
     FILE *file=fopen(path,"rb");if (!file) return false;fclose(file);
     msx_audio_stop(voice);
     if (opened[voice]) {wav64_close(&waves[voice]);opened[voice]=false;}
+    /* A new file drops the previous loop body (open_loop comes after this):
+     * the select music's (B44) must not follow the next movie's audio. */
+    if (tail_open[voice]) {wav64_close(&tails[voice]);tail_open[voice]=false;}
     wav64_open(&waves[voice],path);
     waveform_t *w=&waves[voice].wave;
     if ((w->channels!=1 && w->channels!=2) || w->bits!=16 || w->frequency<=0 || w->frequency>MSX_AUDIO_RATE) {

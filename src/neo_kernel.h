@@ -54,6 +54,9 @@ typedef struct {
      * and its column origin +32 (neo_train.c). Off: the list stops at the
      * terrain as in Missions 1 and 2. */
     bool train_on; neo_kobj_t train; int16_t train_origin;
+    /* The train's RAM ring (10D7B6 +88) as the original read it (the
+     * family tests); NULL: the ROM map through neo_kernel_train_ring. */
+    const uint8_t *train_ring;
 } neo_kscene_t;
 /* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
  * row 0 at the bottom); 0 outside. */

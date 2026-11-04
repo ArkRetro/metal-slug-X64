@@ -28,6 +28,7 @@ static void sort_blobs(void) {
     }
     blob_sorted=true;
 }
+static const uint8_t *(*rom_extra)(uint32_t);
 const uint8_t *ga_rom(uint32_t address) {
     /* Blobs may overlap (the truck solid box 029BC2 runs into the rectangle
      * 029BCA): take the one with the most bytes left after the address so a
@@ -46,9 +47,14 @@ const uint8_t *ga_rom(uint32_t address) {
     if (best) return best;
     /* The boss's ROM regions (debris lists 0E932A.. read by the generic
      * actors it creates). */
-    return neo_boss_rom(address,1);
+    const uint8_t *boss=neo_boss_rom(address,1);
+    if (boss) return boss;
+    /* The stage's own ROM data held by its mission pack (the dynamic maps
+     * of the 'MSXR' block, Mission 3: scene_stage_rom). */
+    return rom_extra?rom_extra(address):NULL;
 }
-bool neo_region_routine(uint32_t r) {return neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r) || neo_dome_routine(r) || neo_barrel_routine(r) || neo_wagon_routine(r) || neo_arab_routine(r) || neo_prisoner_routine(r) || neo_item_routine(r) || neo_armored_routine(r) || neo_secret_routine(r) || neo_swords_routine(r) || neo_rocket_routine(r) || neo_heli_routine(r) || neo_camel_routine(r) || neo_porter_routine(r) || neo_civil_routine(r) || neo_slug_routine(r) || neo_tank_routine(r) || neo_slugnoid_routine(r) || neo_bullet_routine(r) || neo_chaser_routine(r) || neo_pweapon_routine(r) || neo_goarrow_routine(r) || neo_rebel2_routine(r) || neo_rebel3_routine(r) || neo_gate_routine(r) || neo_crate_routine(r) || neo_m2props_routine(r) || neo_drone_routine(r) || neo_m2traps_routine(r) || neo_hostage_routine(r) || neo_m2boss_routine(r);}
+void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address)) {rom_extra=lookup;}
+bool neo_region_routine(uint32_t r) {return neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r) || neo_dome_routine(r) || neo_barrel_routine(r) || neo_wagon_routine(r) || neo_arab_routine(r) || neo_prisoner_routine(r) || neo_item_routine(r) || neo_armored_routine(r) || neo_secret_routine(r) || neo_swords_routine(r) || neo_rocket_routine(r) || neo_heli_routine(r) || neo_camel_routine(r) || neo_porter_routine(r) || neo_civil_routine(r) || neo_slug_routine(r) || neo_tank_routine(r) || neo_slugnoid_routine(r) || neo_bullet_routine(r) || neo_chaser_routine(r) || neo_pweapon_routine(r) || neo_goarrow_routine(r) || neo_rebel2_routine(r) || neo_rebel3_routine(r) || neo_gate_routine(r) || neo_crate_routine(r) || neo_m2props_routine(r) || neo_m3props_routine(r) || neo_drone_routine(r) || neo_m2traps_routine(r) || neo_hostage_routine(r) || neo_m2boss_routine(r);}
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (neo_truck_routine(r)) return neo_truck_tick(a,e);
@@ -82,6 +88,7 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_gate_routine(r)) return neo_gate_tick(a,e);
     if (neo_crate_routine(r)) return neo_crate_tick(a,e);
     if (neo_m2props_routine(r)) return neo_m2props_tick(a,e);
+    if (neo_m3props_routine(r)) return neo_m3props_tick(a,e);
     if (neo_drone_routine(r)) return neo_drone_tick(a,e);
     if (neo_m2traps_routine(r)) return neo_m2traps_tick(a,e);
     if (neo_hostage_routine(r)) return neo_hostage_tick(a,e);

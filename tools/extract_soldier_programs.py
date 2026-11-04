@@ -241,6 +241,12 @@ ROOTS+=[
 # The stage-3 boulder 03A2AA (neo_m2props.c): boulder and stones 03A5E6
 # (23CC7E), their fall 23CD24 and the slab 03A528 (23CDE8).
 ROOTS+=[0x23cc7e,0x23cd24,0x23cde8]
+# Mission 3: the wagon box 039382/03938A (neo_m3props.c).
+ROOTS+=[0x23c762]
+# Mission 3 wagons 038D1E/038D26 (23C624/23C62C), doors 038B06 (23C574[+70],
+# broken 23C5D8), targets 038F38 (23C638[rand]), pieces 0390A6 (03957A[rand])
+# and the platform 0B9286/0B93B4 (2A8E50/2A8EA6), neo_m3props.c.
+ROOTS+=[0x23c624,0x23c62c,0x23c57c,0x23c5aa,0x23c5d8,0x23c640,0x23c64c,0x22d4e8,0x22d552,0x22d5bc,0x22d626,0x2a8e50,0x2a8ea6]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

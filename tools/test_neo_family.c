@@ -112,9 +112,16 @@ static bool front_layer(void *ctx) {(void)ctx;return front_value>0;}
 static bool swapped;
 static bool map_swap(void *ctx) {(void)ctx;swapped=true;return true;}
 static int index_of(const neo_gactor_t *a) {return (int)(a-actors);}
+#ifdef FAMILY_TRAIN
+static neo_kobj_t train_now;
+#endif
 static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     (void)ctx;
     if (tag==0x10e968u) {*out=root;return true;}
+#ifdef FAMILY_TRAIN
+    /* Mission 3: the train 10D7B6 as read (+14..+20, +24 correction 0). */
+    if (tag==0x10d7b6u) {*out=(neo_contact_parent_t){tag,train_now.x,train_now.y,train_now.prev_x,train_now.prev_y,0};return true;}
+#endif
     /* Layer objects (the world keeps them with the terrain). */
     if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=terrain_seen?terrain:root;out->tag=tag;return true;}
     /* Dynamic collision objects as read (dyn_inputs). */
@@ -471,7 +478,8 @@ int main(void) {
     static uint8_t marker_seq=FAMILY_MARKER_SEQ;e.marker_seq=&marker_seq;
 #endif
 #ifdef FAMILY_GROUP_MAP
-    kernel.group_map=ga_rom(FAMILY_GROUP_MAP);assert(kernel.group_map);
+    /* --group-map 0: RAM 10C00E = 0 (Mission 3), 012970 keeps the group. */
+    if (FAMILY_GROUP_MAP) {kernel.group_map=ga_rom(FAMILY_GROUP_MAP);assert(kernel.group_map);} else kernel.group_map=NULL;
 #endif
 #ifdef FAMILY_GRID_COLUMNS
     /* A stage grid of another mission (collision.json, --grid). */
@@ -580,6 +588,15 @@ int main(void) {
         for (int m=0;m<u->marker_count;m++) marks[m]=(neo_marker_t){u->markers[m][0],u->markers[m][1],(uint8_t)u->markers[m][2],(uint8_t)u->markers[m][3]};
         e.markers=marks;e.marker_count=(unsigned)u->marker_count;
         kernel.terrain=terrain_seen?(neo_kobj_t){terrain.x,terrain.y,terrain.previous_x,terrain.previous_y}:kernel.root;
+#ifdef FAMILY_TRAIN
+        /* Mission 3: the train 10D7B6 as read (+14..+20) and its RAM ring. */
+        {static neo_kobj_t train;const int32_t *tr=CAT(FAMILY_NAME,_train)[k];
+         if (tr[0]&1) train.x=tr[1];
+         if (tr[0]&2) train.y=tr[2];
+         if (tr[0]&4) train.prev_x=tr[3];
+         if (tr[0]&8) train.prev_y=tr[4];
+         kernel.train_on=true;kernel.train=train;train_now=train;kernel.train_ring=&wram[0xd83e];}
+#endif
         e.epoch=epoch;e.players.p1x=(uint16_t)p1x;e.players.p1y=(uint16_t)p1y;e.player_low[0]=(uint16_t)p1xl;
         /* RAM 1067E2 holds 1067E3 for the logic update after the request. */
         if (kill_frame && !kill_at && u->frame>kill_frame) kill_at=u->frame;
@@ -639,6 +656,16 @@ int main(void) {
         bool watch358=false;
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c358u && 0x10c358u<ram_ranges[g][1]) watch358=true;
         if (watch358) flags.signal358=wram[0xc358];
+        /* RAM 10C700 (0BC542/0BC548, the Mission 3 wagon 038D26) and 10C6BD
+         * (the platform 0B9286 / 0B9400) when the family watches them. */
+        bool watch700=false,watch6bd=false;
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) {
+            if (ram_ranges[g][0]<=0x10c700u && 0x10c701u<ram_ranges[g][1]) watch700=true;
+            if (ram_ranges[g][0]<=0x10c6bdu && 0x10c6bdu<ram_ranges[g][1]) watch6bd=true;
+        }
+        if (watch700) flags.limit700=w16(0x10c700);
+        if (watch6bd) flags.platform6bd=wram[0xc6bd];
+        flags.camera_restart=w16(0x10e9d0);
 #endif
 #ifdef FAMILY_ATTACKS
         answer_first=ATTACK_SPANS[k][0];answer_count=ATTACK_SPANS[k][1];answer_used=0;
@@ -653,6 +680,8 @@ int main(void) {
 #ifdef FAMILY_RAM
         env_to_ram(&weapons);
         if (watch358) wram[0xc358]=flags.signal358;
+        if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
+        if (watch6bd) wram[0xc6bd]=flags.platform6bd;
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;
         for (unsigned i=0;i<8;i++) wram[0x13d6+i]=(uint8_t)((uint32_t)m2.speed[i>>2]>>(24-8*(i&3)));

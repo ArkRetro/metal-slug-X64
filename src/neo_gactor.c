@@ -67,13 +67,19 @@ void ga_move(neo_gactor_t *a,neo_genv_t *e) {
     ga_sl(a,0x28,ga_l(a,0x28)+ga_l(a,0x30));ga_sl(a,0x2c,ga_l(a,0x2c)+ga_l(a,0x34));
     ga_project(a,e);
 }
+/* Mission 3 (docs/MISION3.md): with the train in the kernel's list
+ * (neo_kscene_t.train_on) 10D7B6 is the train, not the terrain. */
+static bool k_train;
+static void kset(const neo_genv_t *e) {k_train=e->kernel && e->kernel->train_on;}
 static uint8_t kobj(uint32_t tag) {
     if (tag>=DYN_TAG(0) && tag<DYN_TAG(NEO_KDYN_COUNT) && !((tag-DYN_TAG(0))&63u)) return (uint8_t)(NEO_KOBJ_DYN0+(tag-DYN_TAG(0))/64u);
+    if (tag==0x10d7b6u && k_train) return NEO_KOBJ_TRAIN;
     return tag==TERRAIN_TAG || tag==0x10d7b6u?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
 }
 static uint32_t terrain_tag=TERRAIN_TAG;
 static uint32_t ktag(uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return DYN_TAG(id-NEO_KOBJ_DYN0);
+    if (id==NEO_KOBJ_TRAIN) return 0x10d7b6u;
     return id==NEO_KOBJ_TERRAIN?terrain_tag:id==NEO_KOBJ_ROOT?ROOT_TAG:0;
 }
 static void self(neo_gactor_t *a,neo_genv_t *e) {
@@ -150,7 +156,7 @@ static uint8_t sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep 
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {
     uint8_t b400b=sweep_400b,b400d=sweep_400d;sweep_400b=sweep_400d=0;
-    uint8_t parent=kobj(r->parent_tag);
+    kset(e);uint8_t parent=kobj(r->parent_tag);
     int32_t x=r->x,y=r->y,dx=r->dx,dy=r->dy;
     if (parent==0xff) {
         /* An actor's position block as A0 (the camel rider 09FEAA dying on
@@ -213,7 +219,7 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e) {
 }
 void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {
         /* A0 = another actor's position block (the civilians 031F52 placed
          * on their leader by 01AD6E): 013DB2 reads its +14/+18 (actor
@@ -235,7 +241,7 @@ void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
  * carry when the sweep meets a surface. */
 bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x1495c);return false;}
     self(a,e);
     neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
@@ -247,7 +253,7 @@ bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
      * a downward one from its end by |distance| + 8 (carry on either hit). */
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x14850);return false;}
     self(a,e);
     uint8_t b4008=(uint8_t)(c.flags15&32u?0:255);
@@ -265,7 +271,7 @@ bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
 }
 uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x14906);return 0;}
     self(a,e);
     neo_kreq_t q={c.x,c.y,(int32_t)((uint32_t)(int32_t)dx<<16),(int32_t)((uint32_t)(int32_t)dy<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
@@ -531,7 +537,7 @@ void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx
     (void)ga_sweep_place_d0(a,e,child,dx,dy,0);
 }
 uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0) {
-    uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
+    kset(e);uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
     int32_t x=(int32_t)ga_l(a,0x28),y=(int32_t)ga_l(a,0x2c),ddx=(int32_t)((uint32_t)(int32_t)dx<<16),ddy=(int32_t)((uint32_t)(int32_t)dy<<16);
     if (parent==0xff) {
         /* An actor's position block (the turret on its vehicle): 01AC4C

@@ -31,6 +31,8 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes);
 /* 0C70FC collision part over the whole stage grid: sub-map cells (pairs x
  * blocks) at cell column `column`, world row `top` for r = 0. */
 unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,unsigned stride,int column,int top);
+/* 0C70FC window clip of D0..D5 on the ring (stages taller than 32 rows). */
+bool neo_collision_window_clip(int d[6]);
 unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags);
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out);
 /* The player's floor of one cell row (the sweeps' group-1 clearing): the

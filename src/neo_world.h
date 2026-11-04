@@ -197,6 +197,10 @@ typedef struct {
      * next tick, so their constructor runs on the update after, as in the
      * original. */
     neo_world_shot_request_t shot_requests[8];unsigned shot_request_count,shot_dropped;
+    /* Camera-list calls that create an actor after the mission actor (0040BC
+     * from the camera step; Mission 3 wagon boxes 0B918C/0B91AE): made at
+     * the end of the next tick, like the shots. */
+    uint32_t camera_calls[4];unsigned camera_call_count;
     unsigned player_shots;
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B
      * (neo_world_laser, neo_pweapon.c); beams made (01E19E). */

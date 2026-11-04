@@ -113,6 +113,20 @@ unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks
     }
     return changed;
 }
+bool neo_collision_window_clip(int d[6]) {
+    /* 0C70FC on the ring of a stage taller than 32 rows: D0..D5 clipped to
+     * the loaded window (+36/+38, 32 blocks each) before 0C714E; false when
+     * nothing is left (carry clear, nothing copied). Mission 3's wagon
+     * ledges (0B8FA8, docs/MISION3.md). */
+    if (!ring_on) return false;
+    int b36=ring_c0/2,b38=ring_r0/2,d6=b36-d[4];
+    if (d6>=0) {d[4]+=d6;d[0]+=d6;d[2]-=d6;if (d[2]<=0) return false;d6=0;}
+    d6+=d[2]-32;if (d6>=0) {d[2]-=d6;if (d[2]<=0) return false;}
+    d6=b38-d[5];
+    if (d6>=0) {d[5]+=d6;d[1]-=d6;d[3]-=d6;if (d[3]<=0) return false;d6=0;}
+    d6+=d[3]-32;if (d6>=0) {d[3]-=d6;if (d[3]<=0) return false;}
+    return true;
+}
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
     /* ROM 0C88B0 (tools/collision_stamp.py): template dx,dy,w,h,material,
      * -,mask.l, w*h shape nibbles (top row first) at the actor's integer

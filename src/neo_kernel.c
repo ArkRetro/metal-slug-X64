@@ -54,7 +54,10 @@ uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin) {
     c%=784;if (c<0) c+=784;
     return neo_kernel_train_cell(c,(q-24)&63);
 }
-static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {return neo_kernel_train_ring(x,y,s->train_origin);}
+static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    if (s->train_ring) return s->train_ring[((x&0x1f8u)<<3)|(((uint16_t)~y&0x1f8u)>>3)];   /* 0C79FE */
+    return neo_kernel_train_ring(x,y,s->train_origin);
+}
 static uint16_t w4024(const kr_t *k) {return (uint16_t)((k->b4024[0]<<8)|k->b4024[1]);}
 static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b4024[3]);}
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}

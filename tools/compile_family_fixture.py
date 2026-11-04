@@ -34,6 +34,7 @@ def main():
     p.add_argument('--late-creator',action='store_true',help='a node first seen in the frame its creator was deleted, or the next (a program callback spawning on its FINISH update: the creator stays a placeholder, 003F1E) keeps that creator')
     p.add_argument('--attacks',action='store_true',help='the 0049E8 answers of every update (extract_family_fixture.py --attacks): D0 and the A0/A1 targets as 01B162 read them (rectangle from data/region_rom.json); a target the update did not read gets 7FFF,7FFF and no box')
     p.add_argument('--ring',help='LAYER (hex): the kernel reads the cell ring of this layer object (+88) from the RAM bytes the original read (extract with --ram covering it)')
+    p.add_argument('--train',action='store_true',help='Mission 3: the train layer 10D7B6 (+14..+20 as read) is the second terrain object of the kernel, its cells from the RAM ring 10D83E (extract with --ram 10d83e-10e83e)')
     p.add_argument('--group-map',help='ADDRESS (hex): the cell group map RAM 10C00E points to (Mission 2: 0B7000; default the Mission 1 map)')
     p.add_argument('--grid',type=Path,help='stage collision grid (collision.json of a mission stage, private): the static grid of the test instead of Mission 1 (neo_collision_set_grid)')
     p.add_argument('--resume',action='store_true',help='a trace started from a saved state: the nodes alive before it start from their recorded bytes, creator and program (as --m2boss, without its RAM)')
@@ -124,6 +125,7 @@ def main():
     if a.ring:L.append('#define FAMILY_RING 0x%xu'%int(a.ring,16))
     if a.m2boss:L.append('#define FAMILY_M2BOSS 1')
     if a.resume:L.append('#define FAMILY_RESUME 1')
+    if a.train:L.append('#define FAMILY_TRAIN 1')
     if a.group_map:L.append('#define FAMILY_GROUP_MAP 0x%xu'%int(a.group_map,16))
     if a.grid:
         g=json.load(open(a.grid));cells=bytes.fromhex(g['cells_hex']);assert len(cells)==g['columns']*g['rows']
@@ -152,6 +154,16 @@ def main():
         L.append('#define FAMILY_RAM {%s}'%','.join('{0x%s,0x%s}'%tuple(r.split('-')) for r in d['ram']))
         L.append('static const uint32_t %s_ram_in[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rin) or '{0,0}'))
         L.append('static const uint32_t %s_ram_out[][2]={%s};'%(n,','.join('{0x%x,%d}'%x for x in rout) or '{0,0}'))
+    # --train: the train object 10D7B6 +14..+20 (x, y, previous x, y) as
+    # read, per update: mask (bit i: long i read) and the four longs.
+    if a.train:
+        tr=[]
+        for u in d['updates']:
+            w=[rd(u,x) for x in range(0x10d7ca,0x10d7da,2)];m=0;v=[0,0,0,0]
+            for i in range(4):
+                if w[2*i] is not None and w[2*i+1] is not None:m|=1<<i;v[i]=s32(w[2*i]<<16|w[2*i+1])
+            tr.append((m,*v))
+        L.append('static const int32_t %s_train[][5]={%s};'%(n,','.join('{%d,%d,%d,%d,%d}'%t for t in tr)))
     # Score-label counts RAM 10C5B2/10C5B4 (08D330) as read: inputs.
     lc=[(k,rd(u,0x10c5b2),rd(u,0x10c5b4)) for k,u in enumerate(d['updates'])]
     lc=[(k,x if x is not None else -1,y if y is not None else -1) for k,x,y in lc if x is not None or y is not None]

@@ -451,7 +451,12 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
      * not modelled: the patches are made on screen). Nothing left: carry
      * clear, nothing copied (0B7A2C's last patch, D1 = 9 of 9 rows). */
     int w=(int16_t)(s[8]<<8|s[9]),h=(int16_t)(s[10]<<8|s[11]);
-    int d0=(int16_t)(uint16_t)(d[0]<<4)>>4,d1=(int16_t)(uint16_t)(d[1]<<4)>>4,d2=d[2],d3=d[3],d4=d[4],d5=d[5];
+    /* Stages taller than 32 rows (Mission 3): 0C70FC clips to the ring
+     * window first (neo_collision_window_clip); outside it nothing is
+     * copied. The renderer's record below keeps the unclipped key. */
+    int dw[6]={d[0],d[1],d[2],d[3],d[4],d[5]};
+    if (neo_collision_rows()>32u && !neo_collision_window_clip(dw)) return;
+    int d0=(int16_t)(uint16_t)(dw[0]<<4)>>4,d1=(int16_t)(uint16_t)(dw[1]<<4)>>4,d2=dw[2],d3=dw[3],d4=dw[4],d5=dw[5];
     if (d0>=w || d1>=h) return;
     if (d0<0) {d2+=d0;if (d2<=0) return;d4-=d0;d0=0;}
     if (d1<0) {d3+=d1;if (d3<=0) return;d5+=d1;d1=0;}
@@ -1148,6 +1153,9 @@ static void scene_at(neo_world_t *w,int32_t x,bool reset) {
      * 00 01 02 03 04 05 0A 07). */
     static const uint8_t mission2_group_map[8]={0,1,2,3,4,5,10,7};
     w->kernel.group_map=w->camera.l400e==0x0B7000u?mission2_group_map:soldier_group_map;
+    /* Mission 3 (camera list 0B8968, no op 0x50): RAM 10C00E = 0 in run4,
+     * so 012970 keeps the cell's group (docs/MISION3.md). */
+    if (w->stage_camera_base==0x0B8968u && !w->camera.l400e) w->kernel.group_map=NULL;
     w->scroll_x=x;
 }
 void neo_world_init(neo_world_t *w,int32_t scroll_x) {
@@ -1368,6 +1376,15 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         w->player_shots++;
     }
     w->shot_request_count=0;
+    /* 0B918C / 0B91AE: the wagon box 039382 / 03938A at (0770 / 0870, 0040)
+     * of 10C72E (neo_m3props.c). */
+    for (unsigned i=0;i<w->camera_call_count;i++) {
+        bool second=w->camera_calls[i]==0x0B91AEu;
+        neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),second?0x3938au:0x39382u,SCRIPT_TAG,0);
+        if (!a) continue;
+        ga_sl(a,0x28,second?0x08700000u:0x07700000u);ga_sl(a,0x2c,0x00400000u);
+    }
+    w->camera_call_count=0;
     w->player_hits+=t.hits;
     return t.hits;
 }
@@ -1499,6 +1516,11 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     }
     neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0},{false,0,0,0,0}};
     neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
+    for (unsigned i=0;i<w->camera.event_count;i++) {
+        uint32_t at=w->camera.events[i].address;
+        if (w->camera.events[i].kind==NEO_CAMERA_EV_CALL && (at==0x0B918Cu || at==0x0B91AEu) && w->camera_call_count<COUNT(w->camera_calls))
+            w->camera_calls[w->camera_call_count++]=at;
+    }
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}
 unsigned neo_world_alive(const neo_world_t *w) {

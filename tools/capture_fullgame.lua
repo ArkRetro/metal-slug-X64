@@ -443,6 +443,26 @@ local function cell_frame_done(f)
   out:close()
  end
 end
+-- MSX_FULL_FLOOR_TAP=<lo>-<hi>: floor-query trace (floor.txt): every read
+-- by the collision kernel (PC 012800..013A00) with frame, PC, address, data;
+-- one P line per frame with the player node (1014C4) +28/+2C/+38.
+local floor_lo,floor_hi=string.match(os.getenv('MSX_FULL_FLOOR_TAP') or '','(%d+)-(%d+)')
+local floor_log=nil
+local function floor_frame(f)
+ if not floor_lo then return end
+ if f==tonumber(floor_lo) then
+  floor_log=assert(io.open(output..'/floor.txt','w'))
+  floor_tap=cpu:install_read_tap(0x000000,0x2fffff,'floor_r',function(address,data,mask)
+   if in_lua then return end
+   local pc=mstate['CURPC'].value
+   if (address>=0x10c7b6 and address<0x10e83e) or (pc>=0x12800 and pc<0x13a00) then floor_log:write(string.format('R %x %x %x %x %x %x %x %x\n',pc,address,mask,data,mstate['A0'].value,mstate['D0'].value,mstate['D1'].value,mstate['D2'].value)) end
+  end)
+ end
+ if floor_log then
+  floor_log:write(string.format('P %d %d %d %x %d\n',f,cpu:read_i16(0x1014c4+0x28),cpu:read_i16(0x1014c4+0x2c),cpu:read_u32(0x1014c4+0x38),cpu:read_i16(0x10c72e+0x18)))
+  if f>=tonumber(floor_hi) then floor_log:close();floor_log=nil;floor_tap:remove() end
+ end
+end
 emu.register_frame_done(function()
  in_lua=true
  frame=frame+1
@@ -544,6 +564,7 @@ emu.register_frame_done(function()
  end
  fam_frame(frame)
  cell_frame_done(frame)
+ floor_frame(frame)
  in_lua=false
  if frame>=last_frame then
   if fam_log then fam_log:close() end

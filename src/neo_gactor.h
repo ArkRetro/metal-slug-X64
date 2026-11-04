@@ -76,6 +76,9 @@ typedef struct neo_ga_flags {
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
     uint8_t gate_patched;            /* 0B6E06 ran (Mission 2 stage 1): map patches 0B6E4A/0B6E74 (0C70FC) */
     uint8_t signal358;               /* RAM 10C358 = 1 (03A892; read by 03A75A) */
+    uint16_t limit700;               /* RAM 10C700: x limit of 08A732 (08A654), written by 0BC542/0BC548 (Mission 3 wagon 038D26) */
+    uint8_t platform6bd;             /* RAM 10C6BD: Mission 3 platform 0B9286 locked (read by 0B9400) */
+    uint16_t camera_restart;         /* RAM 10E9D0 (camera 69D0, read by 0B9286) */
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
     uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
@@ -241,6 +244,8 @@ struct neo_genv {
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
 /* ROM rom data imported by tools/extract_region_rom.py. */
 const uint8_t *ga_rom(uint32_t address);
+/* A lookup tried after the program's ROM blobs (the stage pack's ROM data). */
+void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address));
 /* Dispatch one update of a generic actor by its routine label. */
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_region_routine(uint32_t routine);

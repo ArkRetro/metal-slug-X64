@@ -48,7 +48,7 @@
   "native_c_port": false,
   "index": "full-p1-index.tsv",
   "candidate_roots_may_be_data": true,
-  "index_sha256": "3e94640c98e07ebbd7680351c0efbbe3a286693394fa1ea7b1eaf93bd971e2fd",
+  "index_sha256": "a1be54b9c2aa22eb8ed6877be98f4fcc9dd01930d89674754c8cadfd414be79a",
   "character_preservation_check": {
     "status": "PASS",
     "files": 5168,
@@ -80,5 +80,14 @@
     }
   ],
   "published_c_files_scope": "5168 historical automatic tentative files, including the superseded automatic 01A5CA body; two additional manual addressed C modules are indexed. The condition module covers the dispatch and 14 handler entries in one shared C body.",
-  "current_index_addresses": 5183
+  "current_index_addresses": 5183,
+  "native_query_recoveries": [
+    {
+      "entry": "0x0AAA88",
+      "helper": "0x0040AC",
+      "file": "../src/neo_player_query.c",
+      "cases": 96,
+      "mips_validation": "../docs/native-logic-mips-validation.json"
+    }
+  ]
 }

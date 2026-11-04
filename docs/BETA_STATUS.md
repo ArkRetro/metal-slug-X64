@@ -1,3 +1,10 @@
+Native CPU update: `neo_player_query.c` implements AAA88 with the 0040AC
+object guard. 96 original M68000 calls match at return/trap boundaries.
+The compiled MIPS regression passes in ares: 447 condition cases and 96 player
+queries. Condition helpers still use synthetic outputs in that independent
+suite. Native query binding, 01903A and campaign integration remain pending.
+See native-logic-mips-validation.json and decomp/recovered/player-query/README.md.
+
 Current source recovery covers all program-ROM inputs (P1, four physical P2
 banks, M1/Z80). `decomp/` publishes 5,168 tentative P1 C bodies and 154 tentative
 Z80 bodies for its initial map. These are not verified native game code;

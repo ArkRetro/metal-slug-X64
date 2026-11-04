@@ -87,3 +87,11 @@ La [tabla de condiciones](recovered/condition-dispatch/README.md) ya tiene
 auxiliares. Sus dos auxiliares se interceptan con salidas sintéticas; no se
 reclama su semántica ni integración en campaña. Las 22 entradas y 14 manejadores
 comparten un módulo C; no se suman como 14 archivos C independientes.
+
+## Nueva consulta nativa y prueba MIPS
+
+[AAA88 y su guardia de objeto](recovered/player-query/README.md) ya tienen
+C nativo en `src/neo_player_query.c`, contrastado con 96 llamadas originales.
+La regresión MIPS pasa en ares con 447 casos del despacho de condiciones y
+96 consultas; no constituye integración de campaña. Véase
+[estado de entrega de fuentes](../SOURCE_STATUS.md).

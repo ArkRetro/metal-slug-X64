@@ -497,8 +497,22 @@ $(BUILD_DIR)/marco-environment-regression.elf: $(BUILD_DIR)/tools/test_marco_env
 marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
 
 .PHONY: check-recovered
-check-recovered:
+check-recovered: $(BUILD_DIR)/native_logic_fixture.h
 	python3 tools/test_recovered_palette.py
 	python3 tools/test_recovered_conditions.py
+	@mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_native_logic.c decomp/recovered/rom_01a5ca.c src/neo_player_query.c -o $(BUILD_DIR)/host/native-logic
+	$(BUILD_DIR)/host/native-logic
 
 check-core: check-recovered
+
+$(BUILD_DIR)/native_logic_fixture.h: tools/compile_native_logic.py tools/condition_harness.py data/condition_ram_patches.json data/player_query_fixture.json decomp/recovered/rom_01a5ca.validation.json
+	python3 tools/compile_native_logic.py
+$(BUILD_DIR)/tools/test_native_logic.o: tools/test_native_logic.c $(BUILD_DIR)/native_logic_fixture.h src/neo_player_query.h decomp/recovered/rom_01a5ca.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/recovered/rom_01a5ca.o: decomp/recovered/rom_01a5ca.c decomp/recovered/rom_01a5ca.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/native-logic-regression.elf: $(BUILD_DIR)/tools/test_native_logic.o $(BUILD_DIR)/recovered/rom_01a5ca.o $(BUILD_DIR)/src/neo_player_query.o
+native-logic-regression.z64: N64_ROM_TITLE = "MSX NATIVE LOGIC"

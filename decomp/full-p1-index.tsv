@@ -4155,7 +4155,7 @@ owner	status	file
 0aa956	tentative_c	tentative/all_p1/unverified/0a/rom_0aa956.c
 0aa994	tentative_c	tentative/all_p1/unverified/0a/rom_0aa994.c
 0aa9e4	tentative_c	tentative/all_p1/unverified/0a/rom_0aa9e4.c
-0aaa88	tentative_c	tentative/all_p1/unverified/0a/rom_0aaa88.c
+0aaa88	native_C_controlled_original_query	../src/neo_player_query.c
 0aaae0	tentative_c	tentative/all_p1/unverified/0a/rom_0aaae0.c
 0aab66	tentative_c	tentative/all_p1/unverified/0a/rom_0aab66.c
 0aab84	tentative_c	tentative/all_p1/unverified/0a/rom_0aab84.c

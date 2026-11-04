@@ -10,11 +10,13 @@
     "Recover computed/external calls and state-dependent mappings",
     "Classify P2 and remaining M1 bank regions; do not fabricate executable code from data",
     "Integrate verified native code with libdragon backends",
-    "Recover/bind native semantics of condition helpers 01903A/0AAA88 and their campaign callers"
+    "Recover 01903A; bind native AAA88 query and the condition dispatch to campaign callers"
   ],
   "limits": "Exhausting a candidate worklist is not proof of complete code coverage or a finished native game.",
   "m68k_manual_c_files": 2,
   "recent_recovery": "0x008512..0x009B82 reconstructed in C and matched against 18 controlled original M68000 calls; no native hardware backend integration",
   "manual_condition_handler_entries": 14,
-  "recent_condition_recovery": "01A5CA..01A7F2 C recovery: 447 controlled original dispatch/handler calls match RAM, registers, SR and intercepted helper boundaries; helper semantics unverified"
+  "recent_condition_recovery": "01A5CA..01A7F2 C recovery: 447 controlled original dispatch/handler calls match RAM, registers, SR and intercepted helper boundaries; helper semantics unverified",
+  "native_player_query": "AAA88 and object guard 0040AC translated to src/neo_player_query.c; 96 controlled original calls matched; exception handler and campaign binding unresolved",
+  "mips_validation": "ares 146: 447 condition calls plus 96 native player-query cases passed"
 }

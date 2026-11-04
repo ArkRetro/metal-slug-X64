@@ -209,3 +209,21 @@ R4300/MIPS-III big endian. No está enlazado a campaña ni probado como juego
 en ares. Los cuerpos automáticos que perdían CCR permanecen rechazados; el
 índice principal dirige ahora al módulo manual, compartido por el despacho
 y los 14 destinos, sin inflar el recuento de archivos C.
+
+## Código nativo MIPS: consulta de jugador AAA88
+
+`src/neo_player_query.c/.h` sustituye los accesos originales por dos estructuras
+nativas de entrada. Conserva los resultados de los cinco registros y SR hasta
+recuperar completamente la ABI de los consumidores. 96 casos controlados
+MAME ejecutan AAA88 y su guardia 0040AC reales, sin interceptar auxiliares.
+La comparación se detiene en los RTS o antes de TRAP #15: la excepción se
+representa como error explícito, sin inventar su manejador ni descartarla.
+
+`native-logic-regression.z64` compila este módulo y el despacho de condiciones
+para R4300. En ares 146 pasa 447 casos del despacho y 96 de la consulta. Las
+5374 diferencias de bytes RAM de las condiciones proceden del original y se
+verifican contra los hashes de salida antes de compilar las fixtures. No se
+utiliza el C traducido para generar los resultados esperados. Los servicios de
+las condiciones siguen siendo sintéticos en su suite; la prueba no demuestra
+su integración con esta consulta ni con campaña. Es un cartucho interno de
+regresión de CPU, sin entrega de demo. Informe native-logic-mips-validation.json.

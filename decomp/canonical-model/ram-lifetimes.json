@@ -1,7 +1,7 @@
 {
   "status": "STATIC_RAM_CODE_LIFETIME_CONFLICTS_NOT_EXECUTION_PROOF",
   "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
-  "decoder_validation_sha256": "8d77dcfe2bc9216185bad47556572c1a82f677a0b4f3386fc0b4f52a6d890d17",
+  "decoder_validation_sha256": "cc39ed2a48ca640abc85fb8bb6b4783e93b42e74f479b427521297f6437276eb",
   "initializer": "RAM_COPY_100000:00100000",
   "prefix_end": "RAM_COPY_100000:0010005a",
   "derived_a5": 1081344,

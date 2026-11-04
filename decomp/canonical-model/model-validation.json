@@ -9,14 +9,16 @@
       "program": "M68K_FIXED_P1",
       "processor": "68000:BE:32:MC68020",
       "roots": 12,
-      "candidate_functions": 157,
+      "candidate_functions": 159,
       "files": {
         "memory.tsv": "9aa8552dcca23a915484bd5df20f592432c3314163d39935b71fcbd5f1e99280",
         "roots.tsv": "868482eae63210a6c27373771e0f6c3e4ac441763f5da4b429d901ad9c245871",
-        "functions.tsv": "df65bf2f4db9c92724d10ea5b6c190b9a9003642b88331145ef17f9f4118eb65",
-        "edges.tsv": "a59d87702efe018d3d240142f9757009f88d713ae12fc7341bdbad2be75b55fe",
-        "instructions.tsv": "16ca17d8fbbb2fcdfdba47a07bd0eaa43f424fcb2da8afcce1d40aefb84e59c2",
-        "descriptor-seeds.tsv": "a3a2905ad0c96801caa17af0579f8e0ec0f463193a927ed5a7c8202f4e310dfa"
+        "functions.tsv": "d3273e14c2a5195bbc488d922891c75d6a54f06fb067be655d6c30509750ac56",
+        "edges.tsv": "6a716c831af3f1786578e73dbee3dd3db6db698ff8fa2e1dd1b57f940a489349",
+        "instructions.tsv": "c7890f62f0bb2897f61ae338100cdc2edc6b47fe2a3c3448d48aead48e5dafc6",
+        "descriptor-seeds.tsv": "a3a2905ad0c96801caa17af0579f8e0ec0f463193a927ed5a7c8202f4e310dfa",
+        "allocator-seeds.tsv": "a4ce7973fdc9bebde560ed41214d62de959fcf255a9623d677fd3414e5ce8c38",
+        "runtime-seeds.tsv": "53ea135ce902a5577202dea3163a1655935e7b29c07067437ddc80ce16dc2e64"
       }
     },
     {
@@ -30,7 +32,9 @@
         "functions.tsv": "c6c7d7d72dbeeb939c10cdb7f65efe320c9855bdacfce0f22385c0c59d962f19",
         "edges.tsv": "d1192452049d8bfc3dfe4cee9be4e1fe73d30bc1d6470906825a493cc3e1dd8d",
         "instructions.tsv": "51a43f2e5e2f92b1986b6d1900834abaa3643b6fd95a350793e90955fb7310dd",
-        "descriptor-seeds.tsv": "83ca560ebb680148eebf71e3db6f02247473a744356220c8109c855c1e1d85b5"
+        "descriptor-seeds.tsv": "83ca560ebb680148eebf71e3db6f02247473a744356220c8109c855c1e1d85b5",
+        "allocator-seeds.tsv": "2fa81e373d682648e6a99b536f76c327c644fb41c04bd99b02868408625e3ef4",
+        "runtime-seeds.tsv": "fc1ae78049f64aee3175830e1b9080022b0f1c64fb3aad665751638f1bd66f45"
       }
     },
     {
@@ -44,7 +48,9 @@
         "functions.tsv": "a908e97bb5555b3bd4395f09b875b88a3d13ea3801f62af17d53116465058d8d",
         "edges.tsv": "45625dad1d8f74247891717147ec1121170462b948efca6efe00516bff8054aa",
         "instructions.tsv": "6fc2d5f6b2a54042246e474ed5130201a80021d13d506e6761d12afd6b27bd24",
-        "descriptor-seeds.tsv": "83ca560ebb680148eebf71e3db6f02247473a744356220c8109c855c1e1d85b5"
+        "descriptor-seeds.tsv": "83ca560ebb680148eebf71e3db6f02247473a744356220c8109c855c1e1d85b5",
+        "allocator-seeds.tsv": "2fa81e373d682648e6a99b536f76c327c644fb41c04bd99b02868408625e3ef4",
+        "runtime-seeds.tsv": "fc1ae78049f64aee3175830e1b9080022b0f1c64fb3aad665751638f1bd66f45"
       }
     }
   ],

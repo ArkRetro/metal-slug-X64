@@ -119,6 +119,14 @@ seguir su código y sus datos; no se marca todo el blob como instrucciones.
 
 ## Criterio de avance
 
+La observación original posterior confirma dos entradas a RAM:10FC00 y la
+llamada indirecta 0022DA -> 002850, incorporada al modelo con su opcode RTS.
+La ruta RAM:100000 sigue sin observarse en ese recorrido; el asignador aporta
+dos destinos estáticos adicionales y el dominio candidato suma 32. Se
+conservan logs y hashes por fotograma en canonical-model/runtime; el punto 1
+permanece abierto y esas observaciones no cierran la equivalencia C. Véase
+CANONICAL_MODEL.md para reproducción y límites de las capturas.
+
 El punto 1 ya tiene nueve contextos y quince raíces sembradas, incluidas las
 entradas de vectores y las copias RAM ausentes del grafo anterior. Las reglas
 de banca/vectores se contrastaron con MAME; los dominios nativos, la partición

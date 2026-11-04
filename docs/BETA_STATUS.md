@@ -1,3 +1,12 @@
+Natural execution update: an input-only original MAME run observes two entries
+to RAM 10FC00 and the indirect IRQ call 0022DA -> 002850. The latter RTS leaf
+is now modeled with observed call linkage and matching P1 bytes. RAM 100000
+remains unobserved in this run. Two constant allocator arguments expand the
+RAM candidate domain to 32 targets and give the prior unowned fragments
+candidate owners. The updated 13,482 static decoder comparisons pass. Native
+domains and campaign C remain incomplete; no new demo or ZIP. See
+CANONICAL_MODEL.md and decomp/canonical-model/runtime/euro-start-mission1.
+
 Static decoder update: all 13,463 candidate boundaries/lengths in the expanded
 context model agree with MAME's M68000/Z80 decoders, with no normalized mnemonic
 differences. Thirty-three descriptor pointer stores expose 30 candidate RAM

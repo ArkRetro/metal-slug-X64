@@ -1,0 +1,3 @@
+load_site	call_site	callback_store_site	target	analysis_pass	status
+RAM_COPY_100000:001000a8	RAM_COPY_100000:001000ae	RAM_COPY_100000:001008be	RAM_COPY_100000:0010015a	1	constant_A0_allocator_callback_candidate
+RAM_COPY_100000:001002c4	RAM_COPY_100000:001002ca	RAM_COPY_100000:001008be	RAM_COPY_100000:001005e6	1	constant_A0_allocator_callback_candidate

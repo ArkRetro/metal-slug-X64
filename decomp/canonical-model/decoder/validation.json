@@ -3,12 +3,12 @@
   "mame_version": "0.276",
   "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
   "candidate_inputs_sha256": {
-    "decomp/canonical-model/M68K_FIXED_P1/instructions.tsv": "16ca17d8fbbb2fcdfdba47a07bd0eaa43f424fcb2da8afcce1d40aefb84e59c2",
+    "decomp/canonical-model/M68K_FIXED_P1/instructions.tsv": "c7890f62f0bb2897f61ae338100cdc2edc6b47fe2a3c3448d48aead48e5dafc6",
     "decomp/canonical-model/Z80_INITIAL_CART/instructions.tsv": "51a43f2e5e2f92b1986b6d1900834abaa3643b6fd95a350793e90955fb7310dd"
   },
-  "candidate_instructions": 13463,
+  "candidate_instructions": 13482,
   "statuses": {
-    "boundary_length_match": 13463
+    "boundary_length_match": 13482
   },
   "contexts": [
     {
@@ -97,9 +97,9 @@
     },
     {
       "context": "M68K_FIXED_P1",
-      "start": 10322,
+      "start": 10320,
       "end": 10346,
-      "file": "assembly/M68K_FIXED_P1-00002852.asm"
+      "file": "assembly/M68K_FIXED_P1-00002850.asm"
     },
     {
       "context": "M68K_FIXED_P1",
@@ -530,26 +530,8 @@
     {
       "context": "RAM_COPY_100000",
       "start": 1048576,
-      "end": 1048922,
-      "file": "assembly/RAM_COPY_100000-00100000.asm"
-    },
-    {
-      "context": "RAM_COPY_100000",
-      "start": 1048934,
-      "end": 1048940,
-      "file": "assembly/RAM_COPY_100000-00100166.asm"
-    },
-    {
-      "context": "RAM_COPY_100000",
-      "start": 1048942,
-      "end": 1050086,
-      "file": "assembly/RAM_COPY_100000-0010016e.asm"
-    },
-    {
-      "context": "RAM_COPY_100000",
-      "start": 1050160,
       "end": 1051170,
-      "file": "assembly/RAM_COPY_100000-00100630.asm"
+      "file": "assembly/RAM_COPY_100000-00100000.asm"
     },
     {
       "context": "RAM_COPY_100000",
@@ -714,7 +696,7 @@
       "file": "assembly/Z80_INITIAL_CART-00005414.asm"
     }
   ],
-  "comparison_sha256": "3634e9aad6d5f56de97428b41a8f38e586470a384d068c070f7d80266e0023cb",
+  "comparison_sha256": "b60f33d08b9ff368ebd7177d2f44621701a7cef44df4d55808b6a1f7b3699648",
   "assembly_sha256": {
     "assembly/M68K_FIXED_P1-00001000.asm": "cf3fd674a7fe5e631c43784feb6c6ca43bcb27604ea4b0bee90707c1eed354a2",
     "assembly/M68K_FIXED_P1-00001722.asm": "81affeffd984543adc1aa18e22ac6f78b0401b6fc64877d5438f33c2fce8730b",
@@ -725,7 +707,7 @@
     "assembly/M68K_FIXED_P1-00002382.asm": "5ab21d347a9e2ab384803269170f3a304640a49b3e2fd5c40ecb857c080ac6e8",
     "assembly/M68K_FIXED_P1-0000272a.asm": "55c0adbbb1faadb795debf7818d0a0b9c8d9451e4d05b35ccce08edde46690e9",
     "assembly/M68K_FIXED_P1-000027f6.asm": "b08c639ace844ccffc2a4550d4ab3e3fb5c72f04accb710974e6876dd87c3538",
-    "assembly/M68K_FIXED_P1-00002852.asm": "7cf0808e41d6b43d9ffd700b7588209ecceb3c6b1f6da5222571ac17d8126aa0",
+    "assembly/M68K_FIXED_P1-00002850.asm": "3df7cc2efa3ebed8f73811ea29df2fa89df8a6d823264e27f48b7984daf16dce",
     "assembly/M68K_FIXED_P1-000029c6.asm": "1b241475312ab5742322462219397fd9ccbfd402e2ad7ffb71fe510d2e3788a4",
     "assembly/M68K_FIXED_P1-00002e7c.asm": "37ea2b2f9989c2b2308e48e39a8bf7a8fbfe88f10bb4f79713d4090adde655d4",
     "assembly/M68K_FIXED_P1-00003596.asm": "972cade6b71bbb671a0edfe3e5c809e7f0edf10e612c4240decf9c10fced5c44",
@@ -797,10 +779,7 @@
     "assembly/M68K_FIXED_P1-000ca5ee.asm": "d387252e673a7aa079280856fadac451e8531072f6dd72cc7a577556c33d53e1",
     "assembly/M68K_FIXED_P1-000ca6a0.asm": "7ba3878e750af8d4e93eaf0a566979736323768c167a389d02579554baa43057",
     "assembly/M68K_FIXED_P1-000ca812.asm": "67df4b070ff4321335ab5cee5a58833a032c2f834b45031a889052ea1e0127e7",
-    "assembly/RAM_COPY_100000-00100000.asm": "127e45595a7a094878d81fa0ee7cbac6e9c7e4dfa9a9beedbf06d0af8c88af34",
-    "assembly/RAM_COPY_100000-00100166.asm": "01a3dc1fb93e6a19b20d5ee975a2011f3c69830bc472c81e1ee024287381c498",
-    "assembly/RAM_COPY_100000-0010016e.asm": "ebfe083fc1b9781e7a92803548305746b9553088c5e114d546232bbb12ad58f7",
-    "assembly/RAM_COPY_100000-00100630.asm": "2ac69013d212e262eaa170772349a0550208f1cc1d2bda471d5ba28cd9054e31",
+    "assembly/RAM_COPY_100000-00100000.asm": "a913470706ab9e586143b637e341f1c7b6d153078f59dfe3ea7f3ad75705ebb1",
     "assembly/RAM_COPY_100000-00100a54.asm": "c4f046fa221ffd298800c086749bfcfb6ba399da59a671d6d01bd7e619d21ec0",
     "assembly/RAM_COPY_10FC00-0010fc00.asm": "a97255749d3416ac0ece194254dbf28086d3771f6c609798e2363f2a502b7cd9",
     "assembly/Z80_INITIAL_CART-00000000.asm": "03e695a8df9debd41863fbc0431e0f4e28c7652fda5216f95ef78a48b86ee26f",

@@ -1,0 +1,112 @@
+{
+  "status": "BOUNDED_ORIGINAL_RAM_CONTEXT_EXECUTION_EVIDENCE",
+  "bios": "euro",
+  "completed_frames": 2460,
+  "frame_convention": "Event frame is the last completed frame_done counter; RAM frame N is read at the end of N. reported_pc is the CPU debugger register, not the breakpoint instruction site.",
+  "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
+  "files": {
+    "events.jsonl": "0150feab46c273ab353c457216bc741e3561e8972d4a16a1f28df0a60ff95b31",
+    "inputs.jsonl": "7cd01b1902334ceb236d6320c0a8ded963089683ec4fb962c1fd104d34e713c0",
+    "debug.log": "71c31d9fc7ddca2432fbb115be89ae030ce56e2accc72a20d0efb5caded13a4c",
+    "capture.lua": "e2c913f28482302bf36c9449f5655b413593b854369b886847d17dfdde4e3089",
+    "capture.json": "62117802f601783cc3e8a58ad37f4edc61f97d1b0525d0c0e484920381c83e18",
+    "copy_10fc00.log": "54267b3e1b1dc7378aa88a22a4f3edb0d45bd0f7c3a3d2e87d69639300e3ac5e",
+    "frames.tsv": "760483701a1d6718c924449d06b2dfbfb6918a79410cddff6a03b5badc760f7e"
+  },
+  "event_counts": {
+    "write_code_prefix": 3268,
+    "write_descriptor_or_code": 108,
+    "rom_001070": 3,
+    "copy_10fc00": 1,
+    "rom_0010ea": 2,
+    "ram_10fc00": 2,
+    "ram_10fc68": 2,
+    "irq_target_change": 1,
+    "irq_idle_entry": 1,
+    "capture_end": 1
+  },
+  "contexts": [
+    {
+      "context": "RAM_COPY_100000",
+      "entry_count": 0,
+      "entry_frames": [],
+      "last_entry_image_sha256": null,
+      "frame_end_image_matches": 0,
+      "first_frame_end_match": null,
+      "last_frame_end_match": null,
+      "execution": "not_observed_in_this_run",
+      "native_domain_closed": false
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "entry_count": 2,
+      "entry_frames": [
+        285,
+        703
+      ],
+      "last_entry_image_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+      "frame_end_image_matches": 2175,
+      "first_frame_end_match": 286,
+      "last_frame_end_match": 2460,
+      "execution": "observed_at_breakpoint_site",
+      "native_domain_closed": false
+    }
+  ],
+  "traces": [
+    {
+      "context": "RAM_COPY_10FC00",
+      "file": "copy_10fc00.log",
+      "ram_instruction_records": 38,
+      "distinct_ram_addresses": [
+        "0x10FC00",
+        "0x10FC04",
+        "0x10FC0A",
+        "0x10FC10",
+        "0x10FC12",
+        "0x10FC14",
+        "0x10FC16",
+        "0x10FC1A",
+        "0x10FC20",
+        "0x10FC28",
+        "0x10FC2A",
+        "0x10FC30",
+        "0x10FC32",
+        "0x10FC34",
+        "0x10FC36",
+        "0x10FC3C",
+        "0x10FC3E",
+        "0x10FC44",
+        "0x10FC46",
+        "0x10FC4A",
+        "0x10FC4C",
+        "0x10FC4E",
+        "0x10FC52",
+        "0x10FC54",
+        "0x10FC5A",
+        "0x10FC60",
+        "0x10FC64",
+        "0x10FC68"
+      ],
+      "trace_scope": "First-copy breakpoint until next frame_done only; does not cover every activation"
+    }
+  ],
+  "indirect_call_observations": [
+    {
+      "site": "0x0022DA",
+      "observed_targets": [
+        "0x002850"
+      ],
+      "exhaustive": false,
+      "event_scope": "Logged on target change, not every call"
+    },
+    {
+      "site": "0x002354",
+      "observed_targets": [],
+      "exhaustive": false,
+      "event_scope": "Logged on target change, not every call"
+    }
+  ],
+  "native_domain_closed": false,
+  "whole_program_decompiled": false,
+  "limits": "Input-only observation, not injected code execution or native C equivalence. No observation is not a proof of unreachability. Frame-end presence alone is not execution; last-entry files certify only the last activation image. Instruction traces cover bounded first-copy intervals. Original instruction semantics and all runtime mutation/alias domains remain open."
+}

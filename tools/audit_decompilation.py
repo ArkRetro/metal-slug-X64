@@ -9,6 +9,7 @@ from pathlib import Path
 from ghidra.audit_canonical_model import inspect as inspect_context_model
 from mame.audit_context_decoders import inspect as inspect_decoder_evidence
 from mame.catalog_ram_lifetimes import catalog as catalog_ram_lifetimes
+from mame.analyze_program_context_run import inspect_published as inspect_runtime_observations
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'decomp/completeness-audit.json');p.add_argument('--coverage',type=Path,default=ROOT/'decomp/coverage.json');a=p.parse_args()
 coverage=json.loads(a.coverage.read_text());programs=json.loads((ROOT/'decomp/program-set.json').read_text())
@@ -67,6 +68,10 @@ context_roots=set()
 try:
     context_model=inspect_context_model(ROOT/'decomp/canonical-model')
     inspect_decoder_evidence(ROOT/'decomp/canonical-model')
+    runtime_observations=inspect_runtime_observations(ROOT/'decomp/canonical-model/runtime/euro-start-mission1',ROOT/'decomp/canonical-model')
+    modeled_locations={r['location'] for r in csv.DictReader((ROOT/'decomp/canonical-model/M68K_FIXED_P1/instructions.tsv').open(),delimiter='\t')}
+    missing_observed_targets=sorted({target for site in runtime_observations.get('indirect_call_observations',[]) for target in site['observed_targets'] if int(target,16)<0x100000 and f'M68K_FIXED_P1:{int(target,16):08x}' not in modeled_locations})
+    if missing_observed_targets:blockers.append(dict(kind='OBSERVED_FIXED_ROM_TARGETS_WITHOUT_MODELED_INSTRUCTION',targets=missing_observed_targets))
     lifetime_path=ROOT/'decomp/canonical-model/ram-lifetimes.json'
     if json.loads(lifetime_path.read_text())!=catalog_ram_lifetimes(ROOT/'decomp/canonical-model'):
         raise ValueError('RAM lifetime catalogue is stale')

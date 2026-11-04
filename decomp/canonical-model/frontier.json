@@ -111,8 +111,8 @@
     {
       "context": "M68K_FIXED_P1",
       "container_bytes": 1048576,
-      "candidate_instruction_bytes": 20246,
-      "bytes_without_candidate_instruction": 1028330,
+      "candidate_instruction_bytes": 20248,
+      "bytes_without_candidate_instruction": 1028328,
       "verified_code_data_partition": false
     },
     {
@@ -146,8 +146,8 @@
     {
       "context": "RAM_COPY_100000",
       "container_bytes": 4426,
-      "candidate_instruction_bytes": 2540,
-      "bytes_without_candidate_instruction": 1886,
+      "candidate_instruction_bytes": 2628,
+      "bytes_without_candidate_instruction": 1798,
       "verified_code_data_partition": false
     },
     {
@@ -221,7 +221,7 @@
         "target": "RAM_COPY_100000:0010016e",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "-",
+        "source_owner": "RAM_COPY_100000:0010015a",
         "target_owner": "RAM_COPY_100000:0010016e"
       },
       {
@@ -373,72 +373,94 @@
         "target": "RAM_COPY_100000:00100636",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "-",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:0010066e",
         "target": "RAM_COPY_100000:00100674",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:0010067a",
         "target": "RAM_COPY_100000:00100636",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:001006a0",
         "target": "RAM_COPY_100000:001006a6",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:001006e6",
         "target": "RAM_COPY_100000:001006ec",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:00100702",
         "target": "RAM_COPY_100000:001006b0",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:00100750",
         "target": "RAM_COPY_100000:00100756",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:00100782",
         "target": "RAM_COPY_100000:00100788",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       },
       {
         "store_site": "RAM_COPY_100000:001007a4",
         "target": "RAM_COPY_100000:00100756",
         "analysis_pass": "1",
         "status": "constant_descriptor_slot_store_candidate",
-        "source_owner": "RAM_COPY_100000:00100636",
-        "target_owner": "RAM_COPY_100000:00100636"
+        "source_owner": "RAM_COPY_100000:001005e6",
+        "target_owner": "RAM_COPY_100000:001005e6"
+      }
+    ],
+    "allocator_arguments": [
+      {
+        "load_site": "RAM_COPY_100000:001000a8",
+        "call_site": "RAM_COPY_100000:001000ae",
+        "callback_store_site": "RAM_COPY_100000:001008be",
+        "target": "RAM_COPY_100000:0010015a",
+        "analysis_pass": "1",
+        "status": "constant_A0_allocator_callback_candidate",
+        "source_owner": "RAM_COPY_100000:001000a4",
+        "target_owner": "RAM_COPY_100000:0010015a"
+      },
+      {
+        "load_site": "RAM_COPY_100000:001002c4",
+        "call_site": "RAM_COPY_100000:001002ca",
+        "callback_store_site": "RAM_COPY_100000:001008be",
+        "target": "RAM_COPY_100000:001005e6",
+        "analysis_pass": "1",
+        "status": "constant_A0_allocator_callback_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001005e6"
       }
     ],
     "distinct_targets": [
@@ -447,6 +469,7 @@
       "RAM_COPY_100000:001000c0",
       "RAM_COPY_100000:00100136",
       "RAM_COPY_100000:00100158",
+      "RAM_COPY_100000:0010015a",
       "RAM_COPY_100000:0010016e",
       "RAM_COPY_100000:001002b6",
       "RAM_COPY_100000:001002dc",
@@ -465,6 +488,7 @@
       "RAM_COPY_100000:00100598",
       "RAM_COPY_100000:001005a4",
       "RAM_COPY_100000:001005bc",
+      "RAM_COPY_100000:001005e6",
       "RAM_COPY_100000:00100636",
       "RAM_COPY_100000:00100674",
       "RAM_COPY_100000:001006a6",
@@ -474,7 +498,7 @@
       "RAM_COPY_100000:00100788"
     ],
     "exhaustive": false,
-    "limits": "Constant stores to (A4) are candidate descriptor states. They may be unowned listing fragments; execution, aliasing and other pointer producers remain open."
+    "limits": "Constant stores to (A4), plus constant A0 arguments followed immediately by BSR 10082E, are candidate descriptor states. The allocator conditionally stores A0 at (A1) in 1008BE. Allocation success, execution, aliasing and other pointer producers remain open."
   },
   "candidate_flow_frontier": [
     {
@@ -695,6 +719,24 @@
     },
     {
       "program": "M68K_FIXED_P1",
+      "owner": "RAM_COPY_100000:0010015a",
+      "site": "RAM_COPY_100000:0010015a",
+      "target": "PLATFORM_MAIN_BIOS:00c004c8",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "RAM_COPY_100000:0010015a",
+      "site": "RAM_COPY_100000:00100160",
+      "target": "PLATFORM_MAIN_BIOS:00c004c2",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
       "owner": "RAM_COPY_100000:00100490",
       "site": "RAM_COPY_100000:001004b6",
       "target": "PLATFORM_MAIN_BIOS:00c004ce",
@@ -827,6 +869,16 @@
       "target_owner": "-",
       "kind": "computed_jump",
       "disposition": "unresolved_in_this_candidate_model"
+    }
+  ],
+  "derived_observed_leaf_seeds": [
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002850",
+      "opcode": "4e75",
+      "evidence_file": "decomp/canonical-model/runtime/euro-start-mission1/debug.log",
+      "evidence_sha256": "71c31d9fc7ddca2432fbb115be89ae030ce56e2accc72a20d0efb5caded13a4c",
+      "status": "observed_RTS_leaf_model_seed_not_native_C"
     }
   ],
   "limits": "Candidate instructions are not verified code; remaining bytes are not proven data. A flow missing in this graph may exist in another recovery artifact. Roots and byte totals do not measure whole-game completion."

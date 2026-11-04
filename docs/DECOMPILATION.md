@@ -268,6 +268,14 @@ Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 
 ## Enfoque por programa completo
 
+La observación original con entradas de mando confirma dos ejecuciones de la
+copia 10FC00 y la llamada indirecta 0022DA -> 002850. La hoja RTS se incorpora
+al modelo con bytes P1 contrastados. La copia 100000 sigue sin observarse en
+ese recorrido; sus candidatos no se declaran ejecutados. Dos argumentos del
+asignador añaden 10015A y 1005E6 al dominio candidato y dan propietarios a los
+fragmentos previos. El contraste estático actualizado cubre 13.482 límites y
+tamaños. Los contratos nativos siguen abiertos; véase CANONICAL_MODEL.md.
+
 El contraste estático MAME del modelo ampliado coincide en 13.463 límites y
 tamaños, sin diferencias de mnemónico normalizado. Se siguen 33 escrituras de
 punteros de descriptores RAM a 30 destinos candidatos; dos fuentes siguen sin

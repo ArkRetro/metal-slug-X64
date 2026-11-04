@@ -1,0 +1,9 @@
+{
+  "status": "ORIGINAL_INPUT_ONLY_CONTEXT_CAPTURE",
+  "frames": 2460,
+  "bios": "euro",
+  "script_sha256": "e2c913f28482302bf36c9449f5655b413593b854369b886847d17dfdde4e3089",
+  "debugger_log_sha256": "71c31d9fc7ddca2432fbb115be89ae030ce56e2accc72a20d0efb5caded13a4c",
+  "inputs_sha256": "7cd01b1902334ceb236d6320c0a8ded963089683ec4fb962c1fd104d34e713c0",
+  "limits": "Fresh MVS BIOS and scripted inputs; no emulated RAM/register patches. Breakpoint site and reported PC are distinct (prefetch). Observation window and VI-end snapshots do not cover every execution path or intra-frame RAM version. Entry files retain the last entry image; traces are capped at one partial VI after each first-copy breakpoint."
+}

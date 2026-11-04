@@ -23,7 +23,7 @@ def inspect(base):
     assert report['mapping_validation_sha256'] == digest(base / 'mapping-validation.json')
     contexts = {c['id']: c for c in layout['contexts']}
     assert len(contexts) == len(layout['contexts']) == report['contexts']
-    all_roots, frontier, descriptor_stores = [], [], []
+    all_roots, frontier, descriptor_stores, allocator_callbacks, runtime_leaves = [], [], [], [], []
     occupied = {name: set() for name in contexts}
     models = {}
     instruction_rows = {}
@@ -40,6 +40,7 @@ def inspect(base):
         functions = {r['entry'] for r in tables['functions.tsv']}
         assert len(functions) == len(tables['functions.tsv']) == program['candidate_functions']
         seed_sites = {r['store_site'] for r in tables.get('descriptor-seeds.tsv', [])}
+        seed_sites.update(site for r in tables.get('allocator-seeds.tsv', []) for site in (r['load_site'], r['call_site']))
         for row in tables['instructions.tsv']:
             context, pc = row['location'].split(':')
             c = contexts[context]
@@ -63,6 +64,26 @@ def inspect(base):
             pointer = int(target.split(':')[1], 16)
             assert instruction_rows[site]['instruction'] == f'move.l #0x{pointer:x},(A4)'
             descriptor_stores.append(dict(**row, source_owner=models[site], target_owner=models[target]))
+        for row in tables.get('allocator-seeds.tsv', []):
+            load, call, store, target = (row[k] for k in ('load_site', 'call_site', 'callback_store_site', 'target'))
+            assert all(site in models for site in (load, call, store, target))
+            assert row['status'] == 'constant_A0_allocator_callback_candidate'
+            pointer = int(target.split(':')[1], 16)
+            assert instruction_rows[load]['instruction'] == f'lea (0x{pointer:x}).l,A0'
+            assert instruction_rows[call]['instruction'] == 'bsr.w 0x0010082e'
+            assert instruction_rows[store]['instruction'] == 'move.l A0,(A1)'
+            assert int(call.split(':')[1], 16) == int(load.split(':')[1], 16) + 6
+            allocator_callbacks.append(dict(**row, source_owner=models[load], target_owner=models[target]))
+        for row in tables.get('runtime-seeds.tsv', []):
+            location = row['context'] + ':' + row['pc']
+            assert row['status'] == 'observed_RTS_leaf_model_seed_not_native_C'
+            assert location in models and models[location] == location
+            assert instruction_rows[location]['instruction'] == 'rts' and instruction_rows[location]['length'] == '2'
+            assert row['opcode'] == '4e75'
+            proof = ROOT / row['evidence_file']
+            assert proof.resolve().is_relative_to(ROOT)
+            assert digest(proof) == row['evidence_sha256']
+            runtime_leaves.append(row)
         all_roots.extend(tables['roots.tsv'])
         for row in tables['edges.tsv']:
             assert row['owner'] in functions and row['site'] in models
@@ -86,10 +107,12 @@ def inspect(base):
             site='RAM_COPY_100000:0010081a',
             value_source='longword at A4, loaded into A0 at RAM_COPY_100000:00100818',
             stores=descriptor_stores,
-            distinct_targets=sorted({r['target'] for r in descriptor_stores}),
+            allocator_arguments=allocator_callbacks,
+            distinct_targets=sorted({r['target'] for r in descriptor_stores + allocator_callbacks}),
             exhaustive=False,
-            limits='Constant stores to (A4) are candidate descriptor states. They may be unowned listing fragments; execution, aliasing and other pointer producers remain open.'),
+            limits='Constant stores to (A4), plus constant A0 arguments followed immediately by BSR 10082E, are candidate descriptor states. The allocator conditionally stores A0 at (A1) in 1008BE. Allocation success, execution, aliasing and other pointer producers remain open.'),
         candidate_flow_frontier=frontier,
+        derived_observed_leaf_seeds=runtime_leaves,
         limits='Candidate instructions are not verified code; remaining bytes are not proven data. '
                'A flow missing in this graph may exist in another recovery artifact. '
                'Roots and byte totals do not measure whole-game completion.')

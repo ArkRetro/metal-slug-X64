@@ -81,9 +81,32 @@ def inspect(base):
             assert decoded[row['store_site']]['bytes'] == bytes.fromhex('28bc') + pointer.to_bytes(4, 'big')
             assert row['target'] in decoded
             store_count += 1
+    allocator_count = 0
+    arguments = base / 'M68K_FIXED_P1/allocator-seeds.tsv'
+    if arguments.is_file():
+        for row in csv.DictReader(arguments.open(), delimiter='\t'):
+            pointer = int(row['target'].split(':')[1], 16)
+            assert decoded[row['load_site']]['bytes'] == bytes.fromhex('41f9') + pointer.to_bytes(4, 'big')
+            call_pc = int(row['call_site'].split(':')[1], 16)
+            encoded = decoded[row['call_site']]['bytes']
+            assert len(encoded) == 4 and encoded[:2] == bytes.fromhex('6100')
+            assert call_pc + 2 + int.from_bytes(encoded[2:], 'big', signed=True) == 0x10082e
+            assert decoded[row['callback_store_site']]['bytes'] == bytes.fromhex('2288')
+            assert row['target'] in decoded
+            allocator_count += 1
+    leaves = base / 'M68K_FIXED_P1/runtime-seeds.tsv'
+    leaf_count = 0
+    if leaves.is_file():
+        for row in csv.DictReader(leaves.open(), delimiter='\t'):
+            location = row['context'] + ':' + row['pc']
+            assert decoded[location]['bytes'].hex() == row['opcode'] == '4e75'
+            assert decoded[location]['text'] == 'rts'
+            leaf_count += 1
     return dict(status='STATIC_DECODER_EVIDENCE_INTEGRITY_PASS', candidate_instructions=len(rows),
                 statuses=counts, normalized_mnemonic_differences=mismatches,
                 descriptor_store_encodings_matched=store_count,
+                allocator_argument_encodings_matched=allocator_count,
+                observed_leaf_encodings_matched=leaf_count,
                 limits='Matching boundary/length/mnemonic does not prove operand semantics, code reachability, native C equivalence or game completion.')
 
 

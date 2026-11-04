@@ -499,5 +499,7 @@
     "source_image_offset",
     "copy_version_or_lifetime"
   ],
-  "limits": "Cartridge vector table may be hidden by BIOS vector selection at a given time. Physical P1 offsets and RAM execution addresses are different locations. Never flatten RAM copies, P2 bank windows or Z80 bank states into one PC-only map. These observations do not prove all bytes executable or a completed recovery."
+  "limits": "Cartridge vector table may be hidden by BIOS vector selection at a given time. Physical P1 offsets and RAM execution addresses are different locations. Never flatten RAM copies, P2 bank windows or Z80 bank states into one PC-only map. These observations do not prove all bytes executable or a completed recovery.",
+  "current_runtime_observation_catalog": "decomp/canonical-model/runtime/euro-start-mission1/observations.json",
+  "current_runtime_observation_limits": "The initial catalogue is static. A later bounded input-only MVS euro run observes RAM_COPY_10FC00 entry twice, while RAM_COPY_100000 remains unobserved. Neither native domain is closed."
 }

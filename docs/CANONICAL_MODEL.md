@@ -54,14 +54,14 @@ de miles de funciones candidatas: propaga estas raíces en proyectos nuevos.
 Ghidra usa el lenguaje MC68020 disponible como superset. El contraste estático
 descrito abajo coincide en límites/tamaños y nombres de operación; sus
 propuestas no se publican como C nativo verificado.
-`frontier.json` enumera 39 transferencias calculadas o sin propietario en este
+`frontier.json` enumera 41 transferencias calculadas o sin propietario en este
 grafo, incluidos imports y referencias a RAM sin versión. Algunas pueden tener
 evidencia parcial en otros artefactos; la lista no es un total global pendiente.
 
 ## Decodificación y estados de descriptores RAM
 
 `decoder/validation.json` y las salidas `.asm` conservan la comparación de
-**13.463 instrucciones candidatas** con los decodificadores M68000/Z80 de
+**13.482 instrucciones candidatas** con los decodificadores M68000/Z80 de
 MAME. Coinciden todos los límites y tamaños y no hay diferencias de mnemónico
 tras normalizar alias. Los operandos se conservan para revisión, sin declarar
 equivalencia semántica. Los bytes leídos de cada contexto coinciden con su
@@ -77,11 +77,18 @@ contrastó también la codificación de cada escritura y su inmediato con MAME.
 Los destinos son candidatos del dominio indirecto, todavía no un conjunto
 exhaustivo ni una reconstrucción de la lógica de campaña.
 
-`descriptor-seeds.tsv` registra cada origen y pasada de análisis. Las escrituras
-100166 y 100630 están en fragmentos sin propietario de función; sus
-instrucciones se exportan con propietario `-`. No se inventa una función para
-esos fragmentos. Las quince raíces explícitas originales siguen siendo quince;
-los nuevos destinos son semillas derivadas, con su evidencia separada.
+`descriptor-seeds.tsv` registra cada origen y pasada de análisis.
+`allocator-seeds.tsv` añade dos argumentos constantes en A0: 10015A se carga
+en 1000A8 antes de llamar a 10082E desde 1000AE, y 1005E6 se carga en 1002C4
+antes de la llamada en 1002CA. El asignador guarda A0 en `(A1)` en 1008BE
+cuando tiene capacidad. Se contrastan los opcodes y los inmediatos con MAME;
+el éxito de la asignación y todos los productores posibles siguen abiertos.
+
+Los inicializadores descubiertos proporcionan propietarios candidatos para
+las escrituras 100166 y 100630. El dominio suma 32 destinos candidatos:
+30 proceden de escrituras inmediatas y dos de argumentos del asignador.
+Las quince raíces explícitas originales siguen siendo quince; las semillas
+derivadas conservan evidencia separada.
 
 `ram-lifetimes.json` documenta además dos invalidaciones condicionales de la
 otra imagen RAM: 10003E escribe `0010008C` en 10FC00 y 10005A escribe
@@ -96,6 +103,46 @@ como `a6`, podía resolverse como un registro del debugger. Las órdenes `dasm`
 ahora usan `0x` explícito y la captura rechaza direcciones fuera del intervalo
 solicitado. La captura inicial defectuosa se descartó y no forma parte de la
 evidencia publicada.
+
+## Observación de ejecución original
+
+`runtime/euro-start-mission1/` conserva logs, entradas, observador Lua, trazas y
+un índice de hashes de RAM para 2.460 llamadas `frame_done`. Se usan BIOS MVS
+euro, directorios nuevos y mandos programados. No se inyectan código, RAM,
+registros de CPU ni escrituras en registros de vídeo. Los snapshots binarios
+quedan fuera de Git.
+
+- La entrada 10FC00 y su salida antes de RTS en 10FC68 se observan dos veces,
+  con contador de último fotograma completado 285 y 703. El snapshot de la
+  última entrada coincide en sus 106 bytes con la copia estática conocida.
+  La traza del primer intervalo incluye 38 registros de instrucciones RAM
+  en 28 direcciones, contrastados con el desensamblado MAME publicado.
+- La misma imagen aparece al final de los fotogramas 286..2460. Esa presencia
+  por sí sola no demuestra ejecución; las entradas y la traza son evidencia
+  distinta. La instantánea de entrada conservada corresponde a la última
+  activación, y la traza cubre solo el primer intervalo parcial de VI.
+- No se observan entradas a 100000 ni a su despachador 10081A en ese recorrido.
+  Sus destinos siguen siendo candidatos estáticos. Esto no prueba que sean
+  inalcanzables en otros modos o recorridos.
+- En el contador 300 se observa A0=002850 en la llamada indirecta 0022DA,
+  seguida de la entrada en 002850 con retorno 0022DC y opcode 4E75 (RTS).
+  `runtime-seeds.tsv` incorpora esa hoja al modelo tras contrastar los bytes
+  P1 aportados. No se observa la llamada indirecta 002354 en este recorrido.
+  La instrumentación de IRQ registra cambios de destino, no todas las llamadas.
+
+El valor `reported_pc` del debugger puede estar adelantado por el prefetch
+(por ejemplo, 10FC02 al detenerse en 10FC00). `site` conserva la dirección
+configurada del breakpoint; no se usa el PC interno como dirección de la
+instrucción ni se atribuyen escrituras a partir de él sin más evidencia.
+Los patrones temporales de la prueba de RAM tampoco se promueven a raíces
+solo por parecer direcciones.
+
+Esta observación no prueba equivalencia C ni replay determinista integral.
+Las comparaciones entre capturas muestran diferencias posteriores en algunas
+palabras RAM y zonas de pila que requieren investigación antes de emplearlas
+como una referencia integral. Las observaciones de copia y de IRQ descritas
+ocurren antes de esas diferencias. No se modificó C de ejecución de la campaña
+ni se repitieron las regresiones MIPS de módulos que permanecen sin cambios.
 
 ## Reproducción
 
@@ -112,6 +159,7 @@ antes de preparar las entradas. Las carpetas de salida deben ser nuevas.
 
 ```sh
 python3 tools/ghidra/prepare_canonical_model.py --inputs /ruta/binarios-normalizados --bios-zip /ruta/roms/neogeo.zip --output /tmp/msx-context-inputs --layout decomp/canonical-model/layout.json
+python3 tools/mame/catalog_runtime_roots.py --inputs /ruta/binarios-normalizados --output /tmp/msx-context-inputs/runtime-seeds.tsv
 python3 tools/ghidra/build_canonical_model.py --inputs /tmp/msx-context-inputs --output /tmp/msx-context-model
 ```
 
@@ -134,6 +182,7 @@ revisión. La comprobación de lo publicado no necesita ROM, Ghidra ni red:
 python3 tools/ghidra/audit_canonical_model.py --output decomp/canonical-model/frontier.json
 python3 tools/mame/audit_context_decoders.py
 python3 tools/mame/catalog_ram_lifetimes.py
+python3 tools/mame/analyze_program_context_run.py --output decomp/canonical-model/runtime/euro-start-mission1 --verify-published
 python3 tools/audit_decompilation.py
 ```
 
@@ -142,6 +191,17 @@ y frontera candidata, y se reproduce el catálogo de invalidaciones RAM.
 La auditoría global debe seguir terminando con `BLOCKED_INCOMPLETE`: reconoce las
 raíces modeladas, pero mantiene abiertos sus contratos nativos y el resto del
 programa. Ninguna de estas comprobaciones ejecuta la campaña en ares.
+
+Para repetir la observación original en una carpeta nueva:
+
+```sh
+python3 tools/mame/run_program_contexts.py --rom-dir /ruta/roms --output /tmp/msx-context-run
+python3 tools/mame/analyze_program_context_run.py --capture /tmp/msx-context-run --output /tmp/msx-runtime-publication
+python3 tools/mame/analyze_program_context_run.py --output /tmp/msx-runtime-publication --verify-published
+```
+
+El runner conserva una copia del Lua utilizado; la publicación contiene hashes
+de los volcados, no las instantáneas binarias de RAM ni imágenes ROM.
 
 ## Puerta de cierre pendiente
 

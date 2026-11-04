@@ -34,7 +34,10 @@ python3 tools/extract_region_collision.py $C --rom mslugx.zip --descriptor-layer
 F=filesystem/mission3/s1/collision.json
 python3 tools/fill_collision_rom.py $F --rom mslugx.zip --descriptor b853a --top 45 --columns 860
 python3 tools/fill_collision_rom.py $F --rom mslugx.zip --descriptor b8550 --column 520 --top 33 --outside-empty
+python3 tools/rebase_collision.py $F --ring-tail 64   # "Reconocimiento del mapa"
+python3 tools/export_m3_layers.py && python3 tools/export_m3_stage.py   # after extract_m3_recon.py
 python3 tools/pack_mission.py 3 filesystem/mission3/s1 --loose-layers --report build/mission3_pack_report.json
+python3 tools/render_m3_sections.py --report filesystem/mission3/s1/renders.json
 ```
 
 **Novedades del motor que la Misión 3 usa** (es la etapa del tren):
@@ -185,10 +188,172 @@ identificar sobre qué celda se apoya (la conversión de y entre la RAM y la
 rejilla del paquete no está cerrada; con y local = y + `10C72E +18` − 256 da
 la fila 17).
 
+## Reconocimiento del mapa (rama `work-m3map`)
+
+Encargo: el mapa entero de la Misión 3 guardado (no jugable todavía): capas,
+colisión, plataformas dinámicas, listas de cámara, reglas de capa,
+descriptores, y los puntos de suelo iguales al arcade. Sin trabajo de
+actores ni de jugabilidad.
+
+**Captura** (MAME 0.264, desde `states4/sec04_117966`; la reproducción es
+`run4` fotograma a fotograma: 0 diferencias de posición del jugador en
+117967..149300). `capture_fullgame.lua` gana `MSX_FULL_CELL_TAP` (cada celda
+que lee `0C79FE`, PC `0C7A18`, de los anillos `10C72E`/`10D7B6 +88`, con x/y
+locales, agrupadas en `cells.txt`) y `MSX_FULL_NO_PROBES` (solo las órdenes
+propias del depurador):
+
+```sh
+sh tools/capture_m3_map.sh OUT          # 117966..149300; breakpoints in the script
+python3 tools/extract_m3_recon.py OUT --report filesystem/mission3/s1/recon.json --dynamic-output filesystem/mission3/s1/dynamic.json
+```
+
+Resultado: 187 153 lecturas distintas del anillo del terreno, 225 547 del
+tren, 14 540 barridos del jugador (01448C → 014492), 28 parches `0C70FC` y 0
+sellos `0C88B0`. La captura se borró tras extraer (3 min de MAME).
+
+**Secciones** (lista de cámara `0B8968`; la sección empieza cuando el
+puntero de la lista pasa la orden indicada):
+
+| Sección | Cámara | Fotogramas | Mapa del primer plano |
+| --- | --- | --- | --- |
+| 1 salida | 0..320 | 117966..118732 | `0B853A` |
+| 2 vagones | 318..3391 | 118733..124728 (`0B8A50`, progreso 0x140) | `0B853A` |
+| 3 hueco | 3391..3709 | 124729..126288 (`0B8BB8`, 0xD40) | `0B8600` (sin mosaicos ni colisión: FFFFFFFF) |
+| 4 tramo final | 3709..6304 | 126289..144371 (`0B8C1C`, 0xE80) | `0B8550` |
+| 5 jefe | 6304..6496 | 144372..149300 (`0B8CAC`, 0x18A0) | `0B8550` |
+
+**Lo que estaba mal (datos) y se corrige:**
+
+1. **Rejilla desplazada 8 filas (64 px).** La rejilla privada tenía el
+   origen −8 (la ventana observada empezaba 64 px bajo la fila 0 del
+   núcleo) y el paquete lo guardaba, pero el runtime (`neo_collision.c`,
+   `cell()` de `neo_kernel.c`) lee la fila `y >> 3` y no mira el origen:
+   todo suelo de la Misión 3 quedaba 64 px fuera de su sitio. Con el
+   origen aplicado, las lecturas del arcade coinciden con la rejilla.
+   `tools/rebase_collision.py` quita las 8 filas (vacías, comprobado) y
+   `pack_mission.py` se niega a empaquetar un origen distinto de (0, 0).
+   **Este era el problema del suelo de grupo 1 de los vagones** (fase 2):
+   el jugador del port pisaba las filas 17/18 del paquete, que son las
+   filas 9/10 del núcleo; en el arcade no pisa nunca una celda de grupo 1
+   (de los 14 540 barridos, ninguno acaba en grupo 1; 17 en grupo 2 y 8
+   en grupo 7). La repisa por la que sube (`0x0B`, fila 16 del núcleo) es un
+   parche de `0B8FA8` (submapa `0B85EA`), dato dinámico que ahora se guarda
+   (abajo); crearla en el juego es trabajo de actores (rama `work-m3c`, sin
+   fusionar).
+2. **Columnas más allá del mapa.** `0B8550` acaba en la columna 859; el
+   hueco del anillo de las columnas 860.. conserva la columna c − 64
+   (`0C714E` no recarga), y en el jefe el núcleo lee suelo `0x0B` en
+   860..862 (celdas de 796..798). `rebase_collision.py --ring-tail 64`
+   añade esas 64 columnas (rejilla 924 × 39).
+3. **Filas del anillo del tren.** La ranura `q = ((~y) & 0x1F8) >> 3` del
+   anillo de `10D7B6` guarda la fila de mapa `(q − 24) & 63`, no `q − 20`:
+   la plataforma `0x2B` (fila 36) está en la ranura 60 y el `0xA0` de las
+   filas 46/47 en las ranuras 6/7 (todas las lecturas de la misión y la RAM
+   `10D83E` de `run4`, `+34 = 19` siempre). `neo_kernel_train_ring`
+   (`neo_kernel.c`) lo corrige (antes: 32 px más abajo).
+
+**Modelo del anillo comprobado** (`extract_m3_recon.py` se detiene si una
+lectura no se explica): terreno, la ranura de la columna c guarda la
+columna `first + ((c − first) & 63)`, `first = (−64 − X) >> 3` (X = `+14`
+entero de la capa; no `− 1` como en la Misión 1), fila de núcleo `y >> 3`;
+tren, la columna `((x − 16·(+32)) >> 3) mod 784`, y en el borde izquierdo
+de la pantalla la ranura ya tiene la columna 64 más adelante (176
+lecturas). Las 187 153 + 225 547 lecturas quedan explicadas.
+
+**Prueba** (`tools/test_m3_map.c`): en `make check` con
+`data/m3_map_fixture.json.gz` (133 KB: 18 824 lecturas del terreno
+deduplicadas, 7 846 del tren, los 28 parches) contra `romfs/mission3.pack`
+(`neo_collision_cell` y `neo_kernel_train_ring`, como el runtime), y la
+sección `MSXR` del paquete (abajo); `make check-m3sweeps` además reproduce
+los 14 540 barridos con el núcleo nativo, la rejilla del paquete, el tren y
+los objetos dinámicos capturados (fixture privado
+`filesystem/mission3/m3_sweeps.json.gz`, 0,7 MB).
+
+| Sección | Columnas | Celdas ≠ 0 | Terreno (antes → ahora) | Tren (antes → ahora) | Barridos (antes → ahora) | Sobre objetos dinámicos |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 salida | 0..79 | 80 | 1472/1603 → **1603/1603** | 118/176 → **176/176** | 57,2 % → **346/346** | 0 |
+| 2 vagones | 39..462 | 1102 | 6559/7914 → **7914/7914** | 1405/1632 → **1632/1632** | 52,4 % → **2285/2285** | 61 (`029CDC`) |
+| 3 hueco | 423..502 | 137 | 437/481 → **481/481** | — | 35,8 % → **777/777** | 0 |
+| 4 tramo final | 463..827 | 1232 | 6483/7594 → **7594/7594** | 5720/6016 → **6016/6016** | 87,6 % → **8668/8668** | 2363 (`0E6896`) |
+| 5 jefe | 788..923 | 128 | 1142/1232 → **1232/1232** | 19/22 → **22/22** | 42,6 % → **2464/2464** | 98 (`0E0D00`) |
+
+(Terreno y tren: lecturas distintas; «antes» = paquete y núcleo de
+`0f13394` con los mismos parches. Barridos: con su multiplicidad.)
+
+**Datos exportados** (privados, `filesystem/mission3/s1/` y
+`romfs/mission3.pack`):
+
+- `collision.json`: rejilla 924 × 39, origen 0, sin celdas desconocidas,
+  145 mutables (las de los parches).
+- `layers_rom.json` (`tools/export_m3_layers.py`): los mapas completos de
+  ROM de cada objeto de capa, con colisión 2 × 2 por bloque y los colores
+  de la RAM de paletas de `run4` por sección: primer plano `0B853A`
+  (240 × 16 bloques, x 0), `0B8600` (vacío), `0B8550` (170 × 10, x 4160);
+  tren `0B8566` (392 × 24); cielo `0B857C` (32 × 20, se repite cada 512 px;
+  desde el progreso 0x140 el mapa es 0 y lo dibuja otro escritor);
+  superposición `2A6142` (19 × 10) de `10E8C6` y los submapas `2A6158`,
+  `2A616E`, `2A6184`, `2A619A` que el actor `0A6C8C` copia con `0C70FC`
+  (listas en P2 `2A620E..2A62FA`). Colocación comprobada contra MAME: 1569
+  + 948 bloques del primer plano, 448 del cielo y 115 de la superposición
+  iguales; 0 distintos.
+- `dynamic.json`: el movimiento del tren (`+14`, `+32` en cada cambio,
+  14 317 puntos; nativo en `neo_train.c`), los 19 usos de objetos dinámicos
+  (14 mapas de ROM: `0E5640` ×5 al inicio, hijos del tren y del terreno;
+  restos `029C9A/029CDC/029D1E`; `0E112E` ×2; `0E53D4/0E53C2`; `0E6896`,
+  la plataforma de 126245..141259; `0AAC94`, `0E4FF2`, `02C5BA/02C5C8`;
+  jefe `0E0D00`/`0E0E36`) con su recorrido y los 28 parches (6 repisas de
+  `0B8FA8`, submapa `0B85EA`).
+- `stage.json` (`tools/export_m3_stage.py`): registro `0173F6`, descriptor
+  `016E0E`, la lista de cámara descodificada (99 órdenes), las reglas de
+  capa y la rejilla del paquete, las secciones.
+- `romfs/mission3.pack`: el registro de etapa gana `recon_offset/length`
+  (bytes libres del registro, `scene_assets.c` no los lee aún): bloque
+  `MSXR` de 145 KB con los mapas de ROM (palabras de mosaico y colisión),
+  parches, mapas dinámicos y secciones con sus paletas
+  (`pack_mission.py recon_blob`). `test_m3_map` comprueba que la colisión
+  de ROM del primer plano es la rejilla, la del tren `neo_kernel_train_cell`
+  y los parches los capturados.
+
+**Dibujos fuera de línea** (`tools/render_m3_sections.py`, 4 instantáneas
+de `run4` por sección, imágenes en `build/m3_renders/`: MAME | ROM | SCB de
+fondo de MAME): cada bloque de fondo de MAME contra el bloque de ROM en esa
+posición.
+
+| Sección | Primer plano | Tren (columnas) | Cielo | Superposición | Píxeles |
+| --- | --- | --- | --- | --- | --- |
+| 1 | 254/254 | 80/80 | 1120/1120 | — | 100 % |
+| 2 | 508/508 | 80/80 | otro escritor (1060) | — | 100 % |
+| 3 | 1011/1011 | 80/80 | otro escritor (1140) | — | 99,49 % |
+| 4 | 355/355 | 80/80 | otro escritor (1160) | 81 en su sitio + 34 de los submapas | 98,84 % |
+| 5 | 260/260 | 80/80 | otro escritor (1140) | — | 100 % |
+
+Píxeles: el dibujo de ROM contra los SCB de fondo de MAME de las mismas
+capas (sin el cielo del otro escritor). Lo que falta: en la sección 4 los
+34 bloques de los submapas que el actor coloca; en las secciones 2 a 5, 41
+de 1907 bloques del tren tienen el mismo código con otra paleta (filas de
+otra columna del anillo del tren; solo cambian píxeles en la 3 y la 4).
+
+**Límites** (sin cerrar, sin adivinar):
+
+- El cielo desde el progreso 0x140 (mapa 0): otro escritor (probablemente
+  `0B8EDC`, ver «Pendiente»); en el paquete siguen las celdas observadas.
+- La superposición de `10E8C6`: los mapas están, la secuencia de parches
+  del actor `0A6C8C` (y su movimiento vertical) no.
+- Las celdas de mapa empaquetadas para dibujar (tabla de celdas) son las de
+  antes (observadas; tren por posición); los mapas completos están en
+  `MSXR` y `layers_rom.json`, sin uso en el runtime.
+- La comprobación cubre lo que el piloto recorrió (las celdas que leyó el
+  núcleo para cualquier actor); las celdas nunca leídas se comprueban solo
+  contra la ROM (colisión de `0B853A`/`0B8550` igual a la rejilla).
+- Los objetos dinámicos y las repisas necesitan sus actores nativos
+  (`0B8FA8` y la caja `039382` están en `work-m3c`, sin fusionar).
+
 ## Pendiente
 
-1. Recorrido: el suelo de grupo 1 del vagón (x 1904..2095, ver arriba); luego
-   más allá de la cámara 1900 hasta el jefe y el fin de misión.
+1. Recorrido: el suelo del vagón ya está en su sitio (rejilla sin el
+   desplazamiento de 64 px, «Reconocimiento del mapa»); falta la repisa
+   (actor `0B8FA8` y caja `039382`, rama `work-m3c`) y luego más allá de la
+   cámara 1900 hasta el jefe y el fin de misión.
 2. Capas: el cielo (`10E83E`) usa también `10E94E` desde el progreso 0x140
    (velocidad 0x40) pero su mapa pasa a 0; su escritor (probablemente el actor
    `0B8EDC` de `0B8D34`, tabla `0B8EC2`) y la superposición `2A6142` de

@@ -565,6 +565,7 @@ typedef struct __attribute__((packed)) {
     struct __attribute__((packed)) {uint32_t rom,offset,length;} blob[3];
     scene_layer_rule_t rules[4];
     uint32_t patch_offset;uint16_t patch_count;   /* map patches 0C70FC (B37) */
+    uint32_t recon_offset,recon_length;           /* map reconnaissance 'MSXR' (Mission 3), not read yet */
 } pack_stage_t;
 _Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
 typedef struct __attribute__((packed)) {

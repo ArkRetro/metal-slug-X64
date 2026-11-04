@@ -199,3 +199,15 @@
     - Capturas privadas de Marco repetidas (se habían borrado): guardar las
       de `captures-weap2`/`captures-grenade` fuera de los directorios que se
       limpian, o el catálogo no puede regenerarse.
+
+- **Misión 3, mapa reconocido (rama `work-m3map`, MISION3.md «Reconocimiento
+  del mapa»)**: rejilla sin el desplazamiento de 64 px, anillo del tren
+  corregido, mapas completos de ROM, colisión dinámica (tren, 14 mapas
+  dinámicos con su recorrido, 28 parches de repisa), lista de cámara y
+  secciones guardados en `filesystem/mission3/s1` y en el bloque `MSXR` de
+  `romfs/mission3.pack`; `test_m3_map` (make check) y `make check-m3sweeps`
+  al 100 % en las 5 secciones. Siguiente: fusionar la repisa de `work-m3c`
+  (`0B8FA8`, caja `039382`; quitar su `origin_rows`, la rejilla ya va desde
+  la fila 0), el escritor del cielo tras el progreso 0x140, el actor
+  `0A6C8C` de la superposición `10E8C6` y los actores de los objetos
+  dinámicos (`0E6896`, `0E0D00`, ...); luego el paseo en ares (B18).

@@ -33,6 +33,9 @@ src/scene_assets.c scene_mission_*):
                   u32 patch_offset u16 patch_count: map patches 0C70FC
                     (u32 sub-map, u32 layer object each; their cells are
                     the stage's last, layer byte 0x80 | patch << 3 | layer)
+                  u32 recon_offset u32 recon_length: the stage's map
+                    reconnaissance blob 'MSXR' (recon_blob; 0 = none; not
+                    read by the runtime yet)
                   pad to 128
   cell[]:    u8 layer u8 0 i16 x i16 y u16 image[8]        (22 bytes)
   image[]:   u16 page u16 palette u16 y u16 h              (8 bytes)
@@ -124,6 +127,9 @@ def build(mission,stage_dirs,crom,rom=None):
         first=len(cells);cells.extend((layer,x,y,[base+i for i in phases]) for layer,x,y,phases in st_cells)
         col=json.loads((d/'collision.json').read_text())
         grid=bytes.fromhex(col['cells_hex']);assert len(grid)==col['columns']*col['rows']
+        # The runtime reads grid row y >> 3 of the kernel's y and never the
+        # origin (tools/rebase_collision.py, docs/MISION3.md).
+        assert col['origin_cells']==[0,0],('grid origin: run tools/rebase_collision.py',d,col['origin_cells'])
         while len(grids)%4:grids.append(0)
         offset=len(grids);grids.extend(grid)
         unknown=0
@@ -152,6 +158,15 @@ def build(mission,stage_dirs,crom,rom=None):
                 while len(blobs)%4:blobs.append(0)
                 st['blobs'].append((rom_at,len(blobs),len(data)));blobs.extend(data)
             report[k]['blobs']=[(f'0x{r:06X}',n) for r,_,n in st['blobs']]
+    for k,st in enumerate(stages):
+        # Map reconnaissance (Mission 3, docs/MISION3.md): the ROM maps of
+        # every layer, the dynamic collision and the sections; kept in the
+        # pack, not read by the runtime yet.
+        st['recon']=None
+        if rom is not None and (stage_dirs[k]/'layers_rom.json').exists():
+            while len(blobs)%4:blobs.append(0)
+            data=recon_blob(stage_dirs[k],rom);st['recon']=(len(blobs),len(data));blobs.extend(data)
+            report[k]['recon_bytes']=len(data)
     for k,st in enumerate(stages):
         while len(blobs)%4:blobs.append(0)
         st['patch_at']=len(blobs)
@@ -209,6 +224,7 @@ def build(mission,stage_dirs,crom,rom=None):
         for r,o,n in st.get('blobs',[(0,0,0)]*3):rec+=struct.pack('>III',r,blobs_at+o if n else 0,n)
         for xn,xd,yn,yd,lo,hi in st['rules']:rec+=struct.pack('>BBBBhh',xn,xd,yn,yd,lo,hi)
         rec+=struct.pack('>IH',blobs_at+st['patch_at'] if st['patches'] else 0,len(st['patches']))
+        rec+=struct.pack('>II',blobs_at+st['recon'][0] if st['recon'] else 0,st['recon'][1] if st['recon'] else 0)
         assert len(rec)<=STAGE_BYTES;head[stage_at+STAGE_BYTES*k:stage_at+STAGE_BYTES*k+len(rec)]=rec
     blob=bytes(head)+bytes(body)
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),
@@ -216,6 +232,59 @@ def build(mission,stage_dirs,crom,rom=None):
                      header_bytes=len(head),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128
+def recon_blob(stage,rom):
+    """'MSXR' map reconnaissance of a stage (docs/MISION3.md), big endian:
+      'MSXR' u16 version=1 u16 maps u16 patches u16 dynamic_maps u16 sections
+      u8 train_slot_row u8 palette_numbers
+      map[maps] (28 bytes): u32 layer_object u32 descriptor u16 block_columns
+        u16 block_rows i16 x0 i16 y0 (model px) u16 camera_progress (FFFF:
+        placed by an actor or a patch) u16 kind (1 tiles, 2 collision)
+        u32 tiles_offset u32 collision_offset (from the blob start: the ROM
+        words, tile u16 + attribute u16 per block, and the 4 collision bytes
+        per block, column major as 0C72EC reads them)
+      patch[patches] (20 bytes): u32 frame u32 sub-map u16 d0..d5 (0C70FC)
+      dynamic[dynamic_maps] (12 bytes): u32 ROM map u32 offset u32 length
+        (+0 dx dy w h, +4 flag, +5 group, 4 bytes, w*h cells; 0140C0)
+      section[sections] (20 bytes): u32 first_frame u32 last_frame i16 camera0
+        i16 camera1 u32 foreground map u32 palette_offset (palette_numbers x
+        (u8 number, u8 0, u16 colours[16]) of the section's palette RAM)"""
+    lay=json.loads((stage/'layers_rom.json').read_text());dyn=json.loads((stage/'dynamic.json').read_text())
+    sections=json.loads((stage/'stage.json').read_text())['sections']
+    subs=sorted({int(p['submap'],16) for p in dyn['patches']})
+    maps=list(lay['maps'])+[dict(object='10C72E',descriptor='%06X'%sub,tiles='%06X'%rom_u32(rom,sub),collision='%06X'%rom_u32(rom,sub+4),
+                                block_columns=rom_u16(rom,sub+8),block_rows=rom_u16(rom,sub+10),x0=0,y0=0) for sub in subs]
+    pal=lay['section_palettes'];numbers=sorted(pal[0]['palettes'])
+    dmaps=sorted(dyn['dynamic_maps'].items())
+    base=16+28*len(maps)+20*len(dyn['patches'])+12*len(dmaps)+20*len(sections)
+    body=bytearray()
+    def put(data):
+        while (base+len(body))%4:body.append(0)
+        at=base+len(body);body.extend(data);return at
+    recs=[]
+    for m in maps:
+        w,h=m['block_columns'],m['block_rows'];t,c=int(m['tiles'],16),int(m['collision'],16)
+        to=put(rom_p2(rom,t,4*w*h)) if t not in (0,0xffffffff) else 0
+        co=put(rom_p2(rom,c,4*w*h)) if c not in (0,0xffffffff) else 0
+        cam=m.get('camera_progress');cam=0xffff if cam is None else cam
+        recs.append(struct.pack('>IIHHhhHHII',int(m['object'],16),int(m['descriptor'],16),w,h,m['x0'],m['y0'],cam,(1 if to else 0)|(2 if co else 0),to,co))
+    pats=[struct.pack('>II6H',p['frame'],int(p['submap'],16),*p['d']) for p in dyn['patches']]
+    dm=[]
+    for name,hexd in dmaps:
+        data=bytes.fromhex(hexd);dm.append(struct.pack('>III',int(name,16),put(data),len(data)))
+    secs=[]
+    for sec in sections:
+        pp=next(p for p in pal if p['section']==sec['id'])
+        at=put(b''.join(struct.pack('>BB16H',int(n,16),0,*pp['palettes'][n]) for n in numbers))
+        secs.append(struct.pack('>IIhhII',sec['frames'][0],sec['frames'][1],sec['camera'][0],sec['camera'][1],int(sec['map'],16),at))
+    head=b'MSXR'+struct.pack('>HHHHHBB',1,len(recs),len(pats),len(dm),len(secs),dyn['train']['ring_slot_row'],len(numbers))
+    head+=b''.join(recs)+b''.join(pats)+b''.join(dm)+b''.join(secs)
+    assert len(head)==base
+    return head+bytes(body)
+def rom_u32(rom,a):return struct.unpack('>I',rom.read(a,4))[0]
+def rom_u16(rom,a):return struct.unpack('>H',rom.read(a,2))[0]
+def rom_p2(rom,a,n):
+    # Map data pointers are linear P2 addresses (0C71CC): offset a - 0x100000.
+    return bytes(rom.p2[a-0x100000:a-0x100000+n])
 def merge_swapped(model):
     """Foreground maps swapped in place (Mission 3: 0B853A -> 0B8600 ->
     0B8550, docs/MISION3.md) whose cells agree with the main map wherever

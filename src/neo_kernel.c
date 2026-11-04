@@ -44,14 +44,17 @@ uint8_t neo_kernel_train_cell(int column,int row) {
     return row==36?0x2b:0;
 }
 /* 0C79FE on the train's ring: slot row q = ((~y)&0x1F8)>>3 holds map row
- * q - 20 (run4 RAM 10D83E: map row 36 in slot row 56, layer +34 = 19); the
- * column is the map column under the local x (+32 origin, neo_train.c). */
-static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+ * (q - 24) & 63 (layer +34 = 19 all mission: the platform row 36 is in
+ * slot 60 and the 0xA0 rows 46/47 in slots 6/7; MAME, every read of the
+ * mission and run4 RAM 10D83E, docs/MISION3.md "Reconocimiento del mapa");
+ * the column is the map column under the local x (+32 origin, neo_train.c). */
+uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin) {
     int q=(int)(((uint16_t)~y&0x1f8u)>>3);
-    int c=((int)(int16_t)x-16*(int)s->train_origin)>>3;
+    int c=((int)(int16_t)x-16*(int)origin)>>3;
     c%=784;if (c<0) c+=784;
-    return neo_kernel_train_cell(c,q-20);
+    return neo_kernel_train_cell(c,(q-24)&63);
 }
+static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {return neo_kernel_train_ring(x,y,s->train_origin);}
 static uint16_t w4024(const kr_t *k) {return (uint16_t)((k->b4024[0]<<8)|k->b4024[1]);}
 static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b4024[3]);}
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}

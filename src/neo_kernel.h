@@ -58,6 +58,8 @@ typedef struct {
 /* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
  * row 0 at the bottom); 0 outside. */
 uint8_t neo_kernel_train_cell(int column,int row);
+/* 0C79FE on the train layer's ring: local pixel (x, y), column origin +32. */
+uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin);
 typedef struct {
     int32_t x,y,dx,dy;          /* d0..d3 at entry, relative to `parent` */
     uint8_t parent;             /* NEO_KOBJ_* (A0) */

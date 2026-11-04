@@ -151,6 +151,11 @@ end
 local dbg=os.getenv('MSX_FULL_DEBUG')=='1' and machine.debugger or nil
 local draw_every=tonumber(os.getenv('MSX_FULL_DRAW_EVERY') or '1')
 local function probes()
+ -- MSX_FULL_NO_PROBES=1: only MSX_FULL_DEBUG_CMDS (no default probes, spawn or draw lines).
+ if os.getenv('MSX_FULL_NO_PROBES')=='1' then
+  for c in string.gmatch(os.getenv('MSX_FULL_DEBUG_CMDS') or '','[^|]+') do dbg:command(c) end
+  return
+ end
  local regs='temp9,curpc,a6,a0,a1,a4,d0,d1,d@(sp)'
  local fmt='frame=%d pc=%06X a6=%08X a0=%08X a1=%08X a4=%08X d0=%08X d1=%08X ret=%08X'
  local list={0xc702a,0xc85f0,0xc8646,0xc865a,0xc88b0,0xc8764,0xc8084,0x9d8c,0x1aa28}
@@ -407,6 +412,37 @@ local function fam_frame(f)
  end
  if fam_log then fam_log:write(string.format('F %d\n',f));if f%600==0 then fam_log:flush() end end
 end
+-- MSX_FULL_CELL_TAP=<lo>-<hi>: every collision cell the kernel reads with
+-- 0C79FE (the byte read at PC 0C7A18 from a layer ring, 10C72E/10D7B6 +88)
+-- in those frames, aggregated: cells.txt lines
+--   C <a0> <x> <y> <value> <first frame> <last frame> <reads> <player reads>
+-- with x/y the local pixel words D0/D1 of 0C79FE (column x>>3, row y>>3)
+-- and player reads those made while A6 = 1014C4 (docs/MISION3.md
+-- "Reconocimiento del mapa").
+local cell_lo,cell_hi=string.match(os.getenv('MSX_FULL_CELL_TAP') or '','(%d+)-(%d+)')
+local cell_seen,cell_order,cell_tap,cell_frame=nil,{},nil,0
+local function cell_read(address,data,mask)
+ if in_lua or mstate['CURPC'].value~=0xc7a18 then return end
+ local a0=mstate['A0'].value
+ local v=(address&1)==1 and (data&0xff) or ((data>>8)&0xff)
+ if mask==0x00ff then v=data&0xff elseif mask==0xff00 then v=(data>>8)&0xff end
+ local key=string.format('%x %d %d %d',a0,mstate['D0'].value&0xffff,mstate['D1'].value&0xffff,v)
+ local e=cell_seen[key]
+ if not e then e={cell_frame,cell_frame,0,0};cell_seen[key]=e;cell_order[#cell_order+1]=key end
+ e[2]=cell_frame;e[3]=e[3]+1
+ if mstate['A6'].value==0x1014c4 then e[4]=e[4]+1 end
+end
+local function cell_frame_done(f)
+ if not cell_lo then return end
+ if f==tonumber(cell_lo) then cell_seen={};cell_tap=cpu:install_read_tap(0x10c7b6,0x10e83d,'cell_r',cell_read) end
+ cell_frame=f   -- same convention as temp9 (last completed frame)
+ if cell_tap and f>=tonumber(cell_hi) then
+  cell_tap:remove();cell_tap=nil
+  local out=assert(io.open(output..'/cells.txt','w'))
+  for _,k in ipairs(cell_order) do local e=cell_seen[k];out:write(string.format('C %s %d %d %d %d\n',k,e[1],e[2],e[3],e[4])) end
+  out:close()
+ end
+end
 emu.register_frame_done(function()
  in_lua=true
  frame=frame+1
@@ -507,6 +543,7 @@ emu.register_frame_done(function()
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' section '..sec..' plan '..plan..' still '..still..string.format(' script %x',spc));trace:flush();actors:flush();scriptlog:flush();if events then events:flush() end end
  end
  fam_frame(frame)
+ cell_frame_done(frame)
  in_lua=false
  if frame>=last_frame then
   if fam_log then fam_log:close() end

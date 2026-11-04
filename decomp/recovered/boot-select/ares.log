@@ -1,0 +1,5 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded boot-select-regression
+Vulkan Enabled: using paraLLEl-RDP
+PASS: 48 original boot-selector fixtures (synthetic platform imports)
+MSX BOOTSELECT REGRESSION PASS cases=48

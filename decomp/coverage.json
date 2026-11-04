@@ -14,12 +14,12 @@
     "Recover campaign data producers and integrate the native condition dispatch into the campaign scheduler"
   ],
   "limits": "Exhausting a candidate worklist is not proof of complete code coverage or a finished native game.",
-  "m68k_manual_c_files": 2,
+  "m68k_manual_c_files": 3,
   "recent_recovery": "0x008512..0x009B82 reconstructed in C and matched against 18 controlled original M68000 calls; no native hardware backend integration",
   "manual_condition_handler_entries": 14,
   "recent_condition_recovery": "01A5CA dispatch now binds real native AAA88/01903A services: 451 original calls match full RAM/registers/SR, including four pre-trap boundaries; passes compiled MIPS in ares",
   "native_player_query": "AAA88 and object guard 0040AC translated to src/neo_player_query.c; 96 controlled original calls matched; exception handler and campaign binding unresolved",
-  "mips_validation": "ares 146: 447 controlled-helper cases, 96 queries, 96 position queries, 451 real-service conditions and 264 consumer transitions passed",
+  "mips_validation": "ares 146: 447 controlled-helper cases, 96 queries, 96 position queries, 451 real-service conditions and 264 consumer transitions passed; separate boot-selector suite: 48 original CPU fixtures with synthetic platform imports passed MIPS/ares",
   "native_position_query": "01903A with real 01964A/0040AC helpers matched 96 controlled original calls and passed compiled MIPS regression in ares",
   "completeness_audit": "decomp/completeness-audit.json; incomplete, no whole-game certificate",
   "native_consumer_blocks": {
@@ -36,5 +36,16 @@
   "strategy": "docs/WHOLE_GAME_RECOVERY.md; decomp/recovery-roadmap.json",
   "native_component_registry": "decomp/native-components.json (initial, not exhaustive)",
   "program_model": "decomp/analysis/p1-program-model/summary.json (candidate model, not code coverage)",
-  "known_missing_root_contexts": "decomp/analysis/program-roots.json: 3 unmodeled cartridge vector targets and 2 static RAM code-copy containers"
+  "m68k_manual_c_files_scope": "Addressed full-routine files in this legacy counter: palette, condition dispatch, RAM boot selector. Excludes native src modules and partial consumer blocks; not project coverage.",
+  "native_boot_selector": {
+    "mapping": "RAM_COPY_10FC00",
+    "pc": "0x10FC00",
+    "physical_source": "P1:0010EE..001157",
+    "c_source": "decomp/recovered/ram_10fc00.c",
+    "original_cases": 48,
+    "mips_ares": true,
+    "platform_imports": "synthetic in the controlled comparison; native binding pending",
+    "native_domain_closed": false
+  },
+  "root_context_status": "decomp/canonical-model/: vectors and initial RAM contexts modeled; native domains, mutations and physical code/data classification remain open"
 }

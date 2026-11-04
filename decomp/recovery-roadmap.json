@@ -61,6 +61,11 @@
           "id": "observed_irq_leaf_reconciliation",
           "state": "0022DA_to_002850_observed_and_modeled_not_native_binding",
           "evidence": "decomp/canonical-model/M68K_FIXED_P1/runtime-seeds.tsv"
+        },
+        {
+          "id": "ram_10fc00_native_cpu_logic",
+          "state": "C_matches_48_controlled_original_calls_and_passes_MIPS_ares_platform_binding_open",
+          "evidence": "decomp/recovered/boot-select/validation.json"
         }
       ]
     },

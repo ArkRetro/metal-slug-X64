@@ -7,7 +7,7 @@ export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := verify-decompilation check-recovered check check-core check-cinematic preview-depth clean
+HOST_GOALS := verify-decompilation check-recovered check-boot-select check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -497,7 +497,7 @@ $(BUILD_DIR)/marco-environment-regression.elf: $(BUILD_DIR)/tools/test_marco_env
 marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
 
 .PHONY: check-recovered
-check-recovered: $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h $(BUILD_DIR)/condition_consumers_fixture.h
+check-recovered: $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h $(BUILD_DIR)/condition_consumers_fixture.h check-boot-select
 	python3 tools/test_recovered_palette.py
 	python3 tools/test_recovered_conditions.py
 	@mkdir -p $(BUILD_DIR)/host
@@ -516,6 +516,23 @@ $(BUILD_DIR)/recovered/rom_01a5ca.o: decomp/recovered/rom_01a5ca.c decomp/recove
 	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
 $(BUILD_DIR)/native-logic-regression.elf: $(BUILD_DIR)/tools/test_native_logic.o $(BUILD_DIR)/recovered/rom_01a5ca.o $(BUILD_DIR)/src/neo_player_query.o $(BUILD_DIR)/src/neo_player_positions.o $(BUILD_DIR)/recovered/condition_services.o $(BUILD_DIR)/recovered/condition_consumers.o
 native-logic-regression.z64: N64_ROM_TITLE = "MSX NATIVE LOGIC"
+
+.PHONY: check-boot-select
+check-boot-select: $(BUILD_DIR)/boot_select_fixture.h
+	@mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_boot_select.c decomp/recovered/ram_10fc00.c -o $(BUILD_DIR)/host/boot-select
+	$(BUILD_DIR)/host/boot-select
+
+$(BUILD_DIR)/boot_select_fixture.h: tools/compile_boot_select.py data/boot_select_fixture.json decomp/recovered/ram_10fc00.c decomp/recovered/ram_10fc00.h
+	python3 tools/compile_boot_select.py
+$(BUILD_DIR)/tools/test_boot_select.o: tools/test_boot_select.c $(BUILD_DIR)/boot_select_fixture.h decomp/recovered/ram_10fc00.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/recovered/ram_10fc00.o: decomp/recovered/ram_10fc00.c decomp/recovered/ram_10fc00.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/boot-select-regression.elf: $(BUILD_DIR)/tools/test_boot_select.o $(BUILD_DIR)/recovered/ram_10fc00.o
+boot-select-regression.z64: N64_ROM_TITLE = "MSX BOOT SELECT"
 
 $(BUILD_DIR)/native_conditions_fixture.h: tools/compile_native_conditions.py tools/native_conditions_harness.py tools/condition_harness.py data/native_conditions_fixture.json data/native_condition_ram_patches.json
 	python3 tools/compile_native_conditions.py

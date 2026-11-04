@@ -1,0 +1,24 @@
+{
+  "status": "PASS_ORIGINAL_BOOT_SELECTOR_WITH_SYNTHETIC_PLATFORM_IMPORTS",
+  "entry": "RAM_COPY_10FC00:0010fc00",
+  "cases": 48,
+  "code_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+  "source_sha256": {
+    "decomp/recovered/ram_10fc00.c": "9125c7bc9d9b69965e2f8a57edd67fe936bdb3b1fe84f2e455c20531ecb03095",
+    "decomp/recovered/ram_10fc00.h": "c6815127863698471285385857bf289c8c930cc89a49394aa8f77c67957b511f"
+  },
+  "evidence_files_sha256": {
+    "decomp/recovered/boot-select/debug.log": "3d024c62c93f73ddb63a8480a7e57f61a289c203a236b6b70f48f342b94c7e7b",
+    "decomp/recovered/boot-select/case-30.trace": "d0b8bd06633594ab99a39ab683dc1834734717afc32a17617cf913d14033364a",
+    "decomp/recovered/boot-select/capture.lua": "c011af2fc3f0bb665704665185d2bd2ebdb3875770c46abe588b196ec48465db",
+    "decomp/recovered/boot-select/case-20.trace": "d0b8bd06633594ab99a39ab683dc1834734717afc32a17617cf913d14033364a",
+    "decomp/recovered/boot-select/ares.log": "6dd71bf09567f4e59f8907160827833144ed769ace46d3e67eeb4827cd5b0633",
+    "decomp/recovered/boot-select/case-0.trace": "7a16bcb75a0353006ce0b9d8fb982ba5ffd436d3e3145b4ccf372302f811a89a"
+  },
+  "fixture": "data/boot_select_fixture.json",
+  "mips": "docs/boot-select-mips-validation.json",
+  "natural_execution_evidence": "decomp/canonical-model/runtime/euro-start-mission1/observations.json",
+  "native_platform_binding": false,
+  "native_domain_closed": false,
+  "limits": "Injected work RAM/NV/registers and masked IRQ. Header/NV read taps supply fixture imports; slot writes are recorded then forced to physical slot zero. Original 106-byte CPU routine executes unchanged. Full import byte streams, 64-KiB work RAM/code, 64-KiB NV memory, registers and final SR compared. Not natural replay, real multi-slot validation, interrupt/cycle timing, N64 platform binding or campaign integration. Stops before outer RTS."
+}

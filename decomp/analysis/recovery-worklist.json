@@ -1,7 +1,7 @@
 {
   "status": "NATIVE_AND_CANDIDATE_RECONCILIATION",
   "registry_exhaustive": false,
-  "components": 8,
+  "components": 9,
   "associated_entries": 22,
   "associated_model_owners": 14,
   "priority_candidates": [
@@ -374,7 +374,9 @@
       "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
     }
   ],
-  "registry_sha256": "1b6e4b482e7c5e13cb47224453edea5710951abb206b3497fa386bbdc0ef503e",
+  "registry_sha256": "c3911e7eee001ccc1e64b8ac33cdfa9f6304cd53d235d8c714d9004f4026fcd2",
   "graph_summary_sha256": "22639c79d4666f225b20ce6d8cf55d79cfab4b2e3789e154a9b75c3f0df23c90",
-  "limits": "Graph caller counts are model edges, not execution frequency. Native components have bounded evidence and are not complete-function proofs. Missing overlay is not proof that no implementation exists; this registry is intentionally incomplete. No progress percentage is calculated."
+  "limits": "Graph caller counts are model edges, not execution frequency. Native components have bounded evidence and are not complete-function proofs. Missing overlay is not proof that no implementation exists; this registry is intentionally incomplete. No progress percentage is calculated.",
+  "associated_context_entries": 1,
+  "context_model_sha256": "b29b3fba58d1f79bcf59a8a8c5c5ca924c8852a1cb9960dd93bbe0c4152cedea"
 }

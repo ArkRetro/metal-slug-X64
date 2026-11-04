@@ -1,3 +1,10 @@
+Native RAM boot-selector update: RAM_COPY_10FC00 now has manual structured C
+matching 48 original CPU calls with explicit synthetic platform imports. Exact
+import streams, full RAM/NV, registers and SR match on host; UBSan and compiled
+MIPS/ares pass. The context-aware registry tracks this RAM version separately
+from its P1 source container. Native platform/caller binding and campaign
+integration remain open. See NATIVE_BOOT_SELECTOR.md. No new demo or source ZIP.
+
 Natural execution update: an input-only original MAME run observes two entries
 to RAM 10FC00 and the indirect IRQ call 0022DA -> 002850. The latter RTS leaf
 is now modeled with observed call linkage and matching P1 bytes. RAM 100000

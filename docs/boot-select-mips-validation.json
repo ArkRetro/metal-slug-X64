@@ -1,0 +1,18 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "2b4a0f546f21b36d858a94254efdaaa2a4cb25683dcb0d9e4d885b5ca21068c5",
+  "suite": "bootselect",
+  "limit": "48 original boot-selector CPU fixtures with synthetic platform imports. MIPS registers/SR, import count/FNV32 and NV memory checked; exact byte streams compared by the MAME/host probe. No native platform/campaign binding or timing claim.",
+  "cases": 48,
+  "source_sha256": {
+    "decomp/recovered/ram_10fc00.c": "9125c7bc9d9b69965e2f8a57edd67fe936bdb3b1fe84f2e455c20531ecb03095",
+    "decomp/recovered/ram_10fc00.h": "c6815127863698471285385857bf289c8c930cc89a49394aa8f77c67957b511f",
+    "data/boot_select_fixture.json": "c0d327be2106c51e2dba25d54eb3b590d39186d2dd03910b0f25e0345dc4b244",
+    "tools/test_boot_select.c": "e7ca70f16c82e66047bfaa32f43345887ca312858ddeb9ed3b55c8a4a0a42465",
+    "tools/compile_boot_select.py": "3148efde42194ce88b4a4fed6b6ff49186872cf8e98303c461729990a4586800"
+  },
+  "marker": "MSX BOOTSELECT REGRESSION PASS cases=48",
+  "elf_format": "ELF 32-bit MSB, MIPS-III",
+  "host_ubsan": "48 fixtures passed"
+}

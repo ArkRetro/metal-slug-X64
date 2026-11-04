@@ -1,0 +1,2 @@
+cpu	mapping	pc	model_owner	component	native_state	scope
+m68000	RAM_COPY_10FC00	0x10FC00	RAM_COPY_10FC00:0010fc00	ram_boot_selector	native_cpu_logic_with_scoped_fixture_evidence	Manual structured C for the 106-byte initial RAM copy. 48 original CPU calls compared with synthetic header/NV imports and slot writes routed to physical slot zero; native hardware/campaign binding remains open.

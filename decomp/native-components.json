@@ -188,6 +188,34 @@
       "scope": "Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.",
       "next_gate": "Bind environment/world providers to a complete actor tick and replay that tick without injected mid-step state.",
       "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "ram_boot_selector",
+      "entries": [],
+      "execution_entries": [
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_10FC00",
+          "pc": "0x10FC00",
+          "code_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41"
+        }
+      ],
+      "sources": [
+        "decomp/recovered/ram_10fc00.c",
+        "decomp/recovered/ram_10fc00.h"
+      ],
+      "symbols": [
+        "msx_boot_select"
+      ],
+      "evidence": [
+        "data/boot_select_fixture.json",
+        "decomp/recovered/boot-select/validation.json",
+        "docs/boot-select-mips-validation.json",
+        "docs/NATIVE_BOOT_SELECTOR.md"
+      ],
+      "scope": "Manual structured C for the 106-byte initial RAM copy. 48 original CPU calls compared with synthetic header/NV imports and slot writes routed to physical slot zero; native hardware/campaign binding remains open.",
+      "next_gate": "Replace addressed platform imports with a native N64 boot policy; verify caller ABI and interrupt/cycle assumptions at the integration boundary.",
+      "state": "native_cpu_logic_with_scoped_fixture_evidence"
     }
   ],
   "limits": "Entry-to-component association reconciles existing native subsets with tentative Ghidra models. Evidence scopes are mandatory; no whole function or project completion percentage is inferred. This initial registry is not all native modules in src/."

@@ -268,6 +268,13 @@ Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 
 ## Enfoque por programa completo
 
+RAM_COPY_10FC00 dispone ahora de C estructurado manual, con los 106 bytes de
+P1:0010EE como procedencia. Coinciden 48 llamadas originales con imports de
+plataforma sintéticos: registros/SR, RAM/NV y flujos completos de accesos.
+Pasan host/UBSan y MIPS/ares. El registro distingue el contexto RAM del
+contenedor P1; la integración de plataforma y campaña continúa pendiente.
+Véase NATIVE_BOOT_SELECTOR.md.
+
 La observación original con entradas de mando confirma dos ejecuciones de la
 copia 10FC00 y la llamada indirecta 0022DA -> 002850. La hoja RTS se incorpora
 al modelo con bytes P1 contrastados. La copia 100000 sigue sin observarse en

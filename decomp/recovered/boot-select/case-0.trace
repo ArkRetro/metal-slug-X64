@@ -1,0 +1,18 @@
+10FC00: move.b  D0, ($3,A1)
+10FC04: move.b  $d00108.l, D7
+10FC0A: move.b  $d00047.l, D6
+10FC10: subq.b  #1, D6
+10FC12: moveq   #$0, D0
+10FC14: move.b  D0, D1
+10FC16: move.b  D0, ($1d,A1)
+10FC1A: move.b  D0, $380021.l
+10FC20: cmpi.l  #$4e454f2d, $100.w
+10FC28: bne     $10fc4c
+10FC4C: addq.b  #1, D0
+10FC4E: dbra    D6, $10fc16
+10FC52: move.b  D2, D0
+10FC54: move.b  D0, $d00058.l
+10FC5A: move.b  D7, $380021.l
+10FC60: move.b  D0, ($d,A1)
+10FC64: move.b  D0, ($13,A1)
+10FC68: rts

@@ -225,3 +225,12 @@
   subrutina de la superposición); (5) vehículos `093C9A`/`0AC866`; (6) jefe
   `04A2C2`, del que depende el fin de misión (`018F92`); (7) la forma
   `+93 = 2` del jugador y el arma E.
+
+- **Misión 3, jefe `04A2C2` y aeronave `0A4A94` investigados (rama
+  `work-m3boss`, [JEFE_MISION3.md](JEFE_MISION3.md))**: 9 piezas coordinadas
+  por `+9D/+9E`, 5500 de vida solo en el cuerpo (fase 2 con ≤ 2500), órdenes
+  0/1 lanzallamas, 2 misiles, 5 bombas, 7 trampilla; muerte `018F92` →
+  `018F40` 590 fotogramas después. Estados pequeños y tramos con
+  `tools/capture_m3_boss.sh` (`states`, `boss`, `mid`). Siguiente: módulo
+  nativo por piezas (esqueleto, brazo, mortero, trampilla, lanzadera,
+  muerte) con los fixtures `m3boss1..5`, luego la aeronave (`m3mid1..4`).

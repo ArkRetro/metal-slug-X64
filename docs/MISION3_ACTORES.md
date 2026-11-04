@@ -678,6 +678,7 @@ Lo que bloquea el recorrido primero (el cartucho de referencia de
    constructores: `0A606E/0A6078/0A61E8/0A61F2`, `0A64E2` ×286, `0A6598`
    ×56, `0A4DB6`→`0A4F3A/0A4F52`→`0A5398`, `0A5D6A`, `0A5E88`, `0A4DB0`,
    `08D0D2`; la pantalla blanca `0AE1DC` ya es nativa) y su superposición `10E8C6` (`0A6C8C`).
+   Estados, ataques, vida y muerte: [JEFE_MISION3.md](JEFE_MISION3.md).
 5. **Vehículos**: `093C9A` (oruga, torreta y marcador del SV-001 ya
    nativos: probablemente una entrada nueva de `neo_tank.c`) y `0AC866`
    (14 constructores, 10 sin traducir; programas en P1 `0AB028..0AD738`, mapa
@@ -685,6 +686,8 @@ Lo que bloquea el recorrido primero (el cartucho de referencia de
 6. **Jefe `04A2C2`** (23 constructores, 21 sin traducir, mapa dinámico `0E0D00` que el
    jugador pisa, `0E0E36`): **sin él no hay fin de misión** (`018F92` lo
    llama su nodo). Música `059F76` ya nativa.
+   Piezas, estados, ataques, vida, muerte, plan por piezas y tramos de
+   captura (`tools/capture_m3_boss.sh`): [JEFE_MISION3.md](JEFE_MISION3.md).
 7. **Jugador**: la forma `+93 = 2` (tabla de disparo `0C42EA`: cohete
    `063AEE` ×153, C `063F10` ×188; granadas de la tabla `0C4762`: `01BEDA`
    ×68, `01C362` ×36 → `01C654`; `0C4E86` ×88 de `0C1ED6`; `0C5064`) es lo

@@ -1,0 +1,10 @@
+context	address_space	start	end_inclusive	initialized	writable	executable
+M68K_FIXED_P1	ram	00000000	000fffff	true	false	true
+M68K_RAM_UNVERSIONED	ram	00100000	0010ffff	false	true	false
+M68K_BANK_UNSELECTED	ram	00200000	002fffff	false	false	false
+M68K_P2_BANK_0	M68K_P2_BANK_0	00200000	002fffff	true	false	false
+M68K_P2_BANK_1	M68K_P2_BANK_1	00200000	002fffff	true	false	false
+M68K_P2_BANK_2	M68K_P2_BANK_2	00200000	002fffff	true	false	false
+M68K_P2_BANK_3	M68K_P2_BANK_3	00200000	002fffff	true	false	false
+RAM_COPY_100000	RAM_COPY_100000	00100000	00101149	true	true	true
+RAM_COPY_10FC00	RAM_COPY_10FC00	0010fc00	0010fc69	true	true	true

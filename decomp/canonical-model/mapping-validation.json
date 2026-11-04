@@ -1,0 +1,119 @@
+{
+  "status": "PASS_CONTROLLED_CPU_MAPPING_COMPARISON",
+  "m68k_p2_selectors": [
+    {
+      "selector": 0,
+      "physical_p2_bank": 0,
+      "source_offset": 0,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+    },
+    {
+      "selector": 1,
+      "physical_p2_bank": 1,
+      "source_offset": 1048576,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc"
+    },
+    {
+      "selector": 2,
+      "physical_p2_bank": 2,
+      "source_offset": 2097152,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "83ad6f805e3ff74155ca545d08923fbf51a703af50de2ea08d5af44ad1f02299"
+    },
+    {
+      "selector": 3,
+      "physical_p2_bank": 3,
+      "source_offset": 3145728,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "dbf1503d39020b8613b3f4d813d073ec327b024324819795b09bb0cf96f6d5bb"
+    },
+    {
+      "selector": 4,
+      "physical_p2_bank": 0,
+      "source_offset": 0,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+    },
+    {
+      "selector": 5,
+      "physical_p2_bank": 0,
+      "source_offset": 0,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+    },
+    {
+      "selector": 6,
+      "physical_p2_bank": 0,
+      "source_offset": 0,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+    },
+    {
+      "selector": 7,
+      "physical_p2_bank": 0,
+      "source_offset": 0,
+      "compared_bytes": 1048560,
+      "protection_overlay_excluded": "0x2FFFE0..0x2FFFEF",
+      "observed_sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80"
+    }
+  ],
+  "z80_windows": [
+    {
+      "io_port": 8,
+      "cpu_base": 61440,
+      "window_size": 2048,
+      "selector_count": 256,
+      "unique_source_pages": 64,
+      "source_formula": "(selector << 11) & 0x1FFFF",
+      "observed_sha256": "7ee418fffec26c6c8d18aa13e5202e0ba73cc0894fbc0bab49fe2f947c4a8264"
+    },
+    {
+      "io_port": 9,
+      "cpu_base": 57344,
+      "window_size": 4096,
+      "selector_count": 256,
+      "unique_source_pages": 32,
+      "source_formula": "(selector << 12) & 0x1FFFF",
+      "observed_sha256": "b41780df2b5bf1463d6745172eba7285db5f36237850d21ed7e9fa55b80df94c"
+    },
+    {
+      "io_port": 10,
+      "cpu_base": 49152,
+      "window_size": 8192,
+      "selector_count": 256,
+      "unique_source_pages": 16,
+      "source_formula": "(selector << 13) & 0x1FFFF",
+      "observed_sha256": "0062d0b65e49a8b4703dfbeeecd26ae0919bf8b780a1e9b9ccec0e3cdf0c920b"
+    },
+    {
+      "io_port": 11,
+      "cpu_base": 32768,
+      "window_size": 16384,
+      "selector_count": 256,
+      "unique_source_pages": 8,
+      "source_formula": "(selector << 14) & 0x1FFFF",
+      "observed_sha256": "764786e46e4e833845b9256bc1231547352fa5a5b7e216b5460f4ccfa0af4930"
+    }
+  ],
+  "z80_selector_states_compared": 1024,
+  "vector_overlay_bytes": 128,
+  "vector_modes_compared": 2,
+  "audio_fixed_bytes": 32768,
+  "audio_fixed_modes_compared": 2,
+  "audio_bios_sha1": "42f9d7ddd6c0931fd64226a60dc73602b2819dcf",
+  "inputs": {
+    "250-p1.p1": "4c19f2e9824e606178ac1c9d4b0516fbaa625035",
+    "250-p2.ep1": "18aaa7a3ba8da99f78c430e9be69ccde04bc04d9",
+    "250-m1.m1": "55769bad4860f64ef53a333e0da9e073db483d6a"
+  },
+  "limits": "Controlled mapping writes/IO reads in one frame callback; original mapping device executes. Not natural gameplay, execution coverage, code/data classification, sound synthesis or full protection-device semantics. P2 protection reads 2FFFE0..2FFFEF excluded from ROM byte comparison."
+}

@@ -1,0 +1,111 @@
+{
+  "status": "MODEL_ROOTS_ONLY_NOT_NATIVE_RECOVERY",
+  "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
+  "roots": [
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001000",
+      "location": "M68K_FIXED_P1:00001000",
+      "owner": "M68K_FIXED_P1:00001000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001004",
+      "location": "M68K_FIXED_P1:00001004",
+      "owner": "M68K_FIXED_P1:00001004",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001070",
+      "location": "M68K_FIXED_P1:00001070",
+      "owner": "M68K_FIXED_P1:00001070",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000022a2",
+      "location": "M68K_FIXED_P1:000022a2",
+      "owner": "M68K_FIXED_P1:000022a2",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000022ac",
+      "location": "M68K_FIXED_P1:000022ac",
+      "owner": "M68K_FIXED_P1:000022ac",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002322",
+      "location": "M68K_FIXED_P1:00002322",
+      "owner": "M68K_FIXED_P1:00002322",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002432",
+      "location": "M68K_FIXED_P1:00002432",
+      "owner": "M68K_FIXED_P1:00002432",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002658",
+      "location": "M68K_FIXED_P1:00002658",
+      "owner": "M68K_FIXED_P1:00002658",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000027f6",
+      "location": "M68K_FIXED_P1:000027f6",
+      "owner": "M68K_FIXED_P1:000027f6",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002800",
+      "location": "M68K_FIXED_P1:00002800",
+      "owner": "M68K_FIXED_P1:00002800",
+      "instruction_present": "true"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "pc": "00100000",
+      "location": "RAM_COPY_100000:00100000",
+      "owner": "RAM_COPY_100000:00100000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "pc": "0010fc00",
+      "location": "RAM_COPY_10FC00:0010fc00",
+      "owner": "RAM_COPY_10FC00:0010fc00",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000000",
+      "location": "Z80_INITIAL_CART:00000000",
+      "owner": "Z80_INITIAL_CART:00000000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000038",
+      "location": "Z80_INITIAL_CART:00000038",
+      "owner": "Z80_INITIAL_CART:00000038",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000066",
+      "location": "Z80_INITIAL_CART:00000066",
+      "owner": "Z80_INITIAL_CART:00000066",
+      "instruction_present": "true"
+    }
+  ]
+}

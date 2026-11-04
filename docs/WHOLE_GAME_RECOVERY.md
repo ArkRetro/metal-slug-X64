@@ -119,6 +119,13 @@ seguir su código y sus datos; no se marca todo el blob como instrucciones.
 
 ## Criterio de avance
 
+El punto 1 ya tiene nueve contextos y quince raíces sembradas, incluidas las
+entradas de vectores y las copias RAM ausentes del grafo anterior. Las reglas
+de banca/vectores se contrastaron con MAME; los dominios nativos, la partición
+código/datos y los estados runtime siguen abiertos. El catálogo anterior se
+conserva como evidencia histórica, no como estado del modelo nuevo. Véase
+CANONICAL_MODEL.md y `decomp/canonical-model/model-validation.json`.
+
 `decomp/recovery-roadmap.json` fija dependencias y puertas de cierre. El grafo
 ofrece candidatos de alto impacto; la ejecución original confirma sus contratos.
 Se cuentan regiones clasificadas, destinos resueltos, dominios cerrados y

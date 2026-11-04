@@ -1,3 +1,11 @@
+Canonical context update: nine distinct source contexts and fifteen seeded
+roots now include the previously missing vectors and initial RAM copies.
+Controlled MAME comparisons cover eight P2 selectors, 1,024 Z80 window views,
+both vector modes and both fixed audio sources (SM1 BIOS/M1 game). Candidate
+graphs remain unverified native code; code/data partition, runtime contexts
+and campaign completion remain open. See CANONICAL_MODEL.md. No game runtime
+C changed and no new demo or source ZIP is published in this update.
+
 Whole-program strategy update: candidate Ghidra models are now reconciled
 with an initial registry of existing native components. Do not interpret the
 tentative-C index fraction as project completion. The dependency model points

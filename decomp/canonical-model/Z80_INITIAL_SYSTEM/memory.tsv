@@ -1,0 +1,3 @@
+context	address_space	start	end_inclusive	initialized	writable	executable
+Z80_INITIAL_SYSTEM	ram	00000000	0000f7ff	true	false	false
+Z80_RAM_UNVERSIONED	ram	0000f800	0000ffff	false	true	false

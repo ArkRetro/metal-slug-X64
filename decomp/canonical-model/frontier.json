@@ -1,0 +1,511 @@
+{
+  "status": "STRUCTURAL_INTEGRITY_PASS_NATIVE_RECOVERY_OPEN",
+  "roots": [
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001000",
+      "location": "M68K_FIXED_P1:00001000",
+      "owner": "M68K_FIXED_P1:00001000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001004",
+      "location": "M68K_FIXED_P1:00001004",
+      "owner": "M68K_FIXED_P1:00001004",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00001070",
+      "location": "M68K_FIXED_P1:00001070",
+      "owner": "M68K_FIXED_P1:00001070",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000022a2",
+      "location": "M68K_FIXED_P1:000022a2",
+      "owner": "M68K_FIXED_P1:000022a2",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000022ac",
+      "location": "M68K_FIXED_P1:000022ac",
+      "owner": "M68K_FIXED_P1:000022ac",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002322",
+      "location": "M68K_FIXED_P1:00002322",
+      "owner": "M68K_FIXED_P1:00002322",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002432",
+      "location": "M68K_FIXED_P1:00002432",
+      "owner": "M68K_FIXED_P1:00002432",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002658",
+      "location": "M68K_FIXED_P1:00002658",
+      "owner": "M68K_FIXED_P1:00002658",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "000027f6",
+      "location": "M68K_FIXED_P1:000027f6",
+      "owner": "M68K_FIXED_P1:000027f6",
+      "instruction_present": "true"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "pc": "00002800",
+      "location": "M68K_FIXED_P1:00002800",
+      "owner": "M68K_FIXED_P1:00002800",
+      "instruction_present": "true"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "pc": "00100000",
+      "location": "RAM_COPY_100000:00100000",
+      "owner": "RAM_COPY_100000:00100000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "pc": "0010fc00",
+      "location": "RAM_COPY_10FC00:0010fc00",
+      "owner": "RAM_COPY_10FC00:0010fc00",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000000",
+      "location": "Z80_INITIAL_CART:00000000",
+      "owner": "Z80_INITIAL_CART:00000000",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000038",
+      "location": "Z80_INITIAL_CART:00000038",
+      "owner": "Z80_INITIAL_CART:00000038",
+      "instruction_present": "true"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "pc": "00000066",
+      "location": "Z80_INITIAL_CART:00000066",
+      "owner": "Z80_INITIAL_CART:00000066",
+      "instruction_present": "true"
+    }
+  ],
+  "candidate_contexts": [
+    {
+      "context": "M68K_FIXED_P1",
+      "container_bytes": 1048576,
+      "candidate_instruction_bytes": 20230,
+      "bytes_without_candidate_instruction": 1028346,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "M68K_P2_BANK_0",
+      "container_bytes": 1048576,
+      "candidate_instruction_bytes": 0,
+      "bytes_without_candidate_instruction": 1048576,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "M68K_P2_BANK_1",
+      "container_bytes": 1048576,
+      "candidate_instruction_bytes": 0,
+      "bytes_without_candidate_instruction": 1048576,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "M68K_P2_BANK_2",
+      "container_bytes": 1048576,
+      "candidate_instruction_bytes": 0,
+      "bytes_without_candidate_instruction": 1048576,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "M68K_P2_BANK_3",
+      "container_bytes": 1048576,
+      "candidate_instruction_bytes": 0,
+      "bytes_without_candidate_instruction": 1048576,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "container_bytes": 4426,
+      "candidate_instruction_bytes": 186,
+      "bytes_without_candidate_instruction": 4240,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "container_bytes": 106,
+      "candidate_instruction_bytes": 106,
+      "bytes_without_candidate_instruction": 0,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "container_bytes": 63488,
+      "candidate_instruction_bytes": 12770,
+      "bytes_without_candidate_instruction": 50718,
+      "verified_code_data_partition": false
+    },
+    {
+      "context": "Z80_INITIAL_SYSTEM",
+      "container_bytes": 63488,
+      "candidate_instruction_bytes": 0,
+      "bytes_without_candidate_instruction": 63488,
+      "verified_code_data_partition": false
+    }
+  ],
+  "candidate_flow_frontier": [
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00001004",
+      "site": "M68K_FIXED_P1:00001040",
+      "target": "M68K_RAM_UNVERSIONED:00100000",
+      "target_owner": "M68K_RAM_UNVERSIONED:00100000",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00001004",
+      "site": "M68K_FIXED_P1:0000106a",
+      "target": "PLATFORM_MAIN_BIOS:00c00444",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00001070",
+      "site": "M68K_FIXED_P1:000010a2",
+      "target": "PLATFORM_MAIN_BIOS:00c004c2",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00001070",
+      "site": "M68K_FIXED_P1:000010ea",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00001966",
+      "site": "M68K_FIXED_P1:00001972",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000022a2",
+      "site": "M68K_FIXED_P1:000022aa",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000022ac",
+      "site": "M68K_FIXED_P1:000022be",
+      "target": "PLATFORM_MAIN_BIOS:00c00438",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000022ac",
+      "site": "M68K_FIXED_P1:000022da",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000022ac",
+      "site": "M68K_FIXED_P1:000022e2",
+      "target": "PLATFORM_MAIN_BIOS:00c0044a",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00002322",
+      "site": "M68K_FIXED_P1:00002354",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00002432",
+      "site": "M68K_FIXED_P1:000024b0",
+      "target": "PLATFORM_MAIN_BIOS:00c00444",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00002432",
+      "site": "M68K_FIXED_P1:00002582",
+      "target": "PLATFORM_MAIN_BIOS:00c00444",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00004234",
+      "site": "M68K_FIXED_P1:00004248",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0000427a",
+      "site": "M68K_FIXED_P1:000042a4",
+      "target": "M68K_FIXED_P1:000042bc",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0000a03e",
+      "site": "M68K_FIXED_P1:0000a042",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000103a6",
+      "site": "M68K_FIXED_P1:000103c2",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00010bc8",
+      "site": "M68K_FIXED_P1:00010be4",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00011e60",
+      "site": "M68K_FIXED_P1:00011ece",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:00011e60",
+      "site": "M68K_FIXED_P1:00011f8c",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0001a97a",
+      "site": "M68K_FIXED_P1:0001a9a4",
+      "target": "M68K_FIXED_P1:0001aa1a",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0001aa10",
+      "site": "M68K_FIXED_P1:0001aa12",
+      "target": "M68K_FIXED_P1:0001aa82",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0001aa10",
+      "site": "M68K_FIXED_P1:0001aa14",
+      "target": "M68K_FIXED_P1:0001aa7f",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:0003d25a",
+      "site": "M68K_FIXED_P1:0003d26a",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "M68K_FIXED_P1:000ca6a0",
+      "site": "M68K_FIXED_P1:000ca6cc",
+      "target": "PLATFORM_MAIN_BIOS:00c00468",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "RAM_COPY_100000:0010080e",
+      "site": "RAM_COPY_100000:0010081a",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002001",
+      "site": "Z80_INITIAL_CART:00002026",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002001",
+      "site": "Z80_INITIAL_CART:00002063",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002633",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002633",
+      "target": "Z80_INITIAL_CART:00002670",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002861",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002861",
+      "target": "Z80_INITIAL_CART:0000289e",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002a8f",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00002548",
+      "site": "Z80_INITIAL_CART:00002a8f",
+      "target": "Z80_INITIAL_CART:00002acc",
+      "target_owner": "-",
+      "kind": "tail_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00004a2a",
+      "site": "Z80_INITIAL_CART:00004ac6",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00004a2a",
+      "site": "Z80_INITIAL_CART:00004ae2",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:00004a2a",
+      "site": "Z80_INITIAL_CART:00004afe",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "owner": "Z80_INITIAL_CART:0000531f",
+      "site": "Z80_INITIAL_CART:00005396",
+      "target": "-",
+      "target_owner": "-",
+      "kind": "computed_jump",
+      "disposition": "unresolved_in_this_candidate_model"
+    }
+  ],
+  "limits": "Candidate instructions are not verified code; remaining bytes are not proven data. A flow missing in this graph may exist in another recovery artifact. Roots and byte totals do not measure whole-game completion."
+}

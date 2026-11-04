@@ -268,6 +268,13 @@ Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 
 ## Enfoque por programa completo
 
+Actualización del modelo: se contrastaron con MAME ocho selectores P2, 1.024
+vistas de ventanas Z80, ambos modos de vectores y ambos modos de fuente fija
+de sonido. Se construyeron nueve contextos con quince raíces, incluidas las
+copias RAM y los tres destinos de vector que faltaban. Son modelos candidatos;
+la decompilación sigue incompleta. CANONICAL_MODEL.md documenta direcciones,
+reproducción y las puertas de cierre pendientes.
+
 Se introduce un grafo reproducible del modelo P1 (funciones, rangos, llamadas,
 asignaciones de estado y usos de registros tras retorno), más un registro
 curado inicial de componentes nativos. El análisis reconoce consumidores CCR

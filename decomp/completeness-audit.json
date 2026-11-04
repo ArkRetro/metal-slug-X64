@@ -115,12 +115,13 @@
       ]
     },
     {
-      "kind": "UNMODELED_CARTRIDGE_VECTOR_ROOTS",
+      "kind": "CARTRIDGE_VECTOR_NATIVE_DOMAINS_NOT_CLOSED",
       "targets": [
         "0x000022A2",
         "0x000022AC",
         "0x00002322"
-      ]
+      ],
+      "detail": "Historical missing roots are now checked against the context model; native handler equivalence remains open"
     },
     {
       "kind": "RELOCATED_CODE_CONTEXTS_NOT_CLOSED",

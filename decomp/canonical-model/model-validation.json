@@ -1,0 +1,56 @@
+{
+  "status": "STRUCTURAL_CONTEXT_MODEL_PASS_SEMANTICS_OPEN",
+  "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
+  "mapping_validation_sha256": "6f6522e19ad13248654df11bd9409025f77a6b607d2c4e7bf69f9d9415c6a5bd",
+  "contexts": 9,
+  "seeded_context_roots": 15,
+  "programs": [
+    {
+      "program": "M68K_FIXED_P1",
+      "processor": "68000:BE:32:MC68020",
+      "roots": 12,
+      "candidate_functions": 131,
+      "files": {
+        "memory.tsv": "9aa8552dcca23a915484bd5df20f592432c3314163d39935b71fcbd5f1e99280",
+        "roots.tsv": "868482eae63210a6c27373771e0f6c3e4ac441763f5da4b429d901ad9c245871",
+        "functions.tsv": "284a807b6231d40503bc5d50be8a2b860e8cb106b8d236fc1ce808d22ad791d3",
+        "edges.tsv": "c0d8eeea41f2a247afbfe41fb79d2d7ebc422372a59ba1caf43dd2d493408d39",
+        "instructions.tsv": "29df2e47cc7151c318d4f90bc43feecc42d02f6311254dfe6b2d4b79e305677f"
+      }
+    },
+    {
+      "program": "Z80_INITIAL_CART",
+      "processor": "z80:LE:16:default",
+      "roots": 3,
+      "candidate_functions": 68,
+      "files": {
+        "memory.tsv": "6568b284b73145f274de9a6ff778972dbca6319317582e499b307a4bcdfbfd05",
+        "roots.tsv": "63eabb890ec1cc8b753c3327bc3f1d6dab50e39cede2fe6a382afad26059a06d",
+        "functions.tsv": "c6c7d7d72dbeeb939c10cdb7f65efe320c9855bdacfce0f22385c0c59d962f19",
+        "edges.tsv": "d1192452049d8bfc3dfe4cee9be4e1fe73d30bc1d6470906825a493cc3e1dd8d",
+        "instructions.tsv": "51a43f2e5e2f92b1986b6d1900834abaa3643b6fd95a350793e90955fb7310dd"
+      }
+    },
+    {
+      "program": "Z80_INITIAL_SYSTEM",
+      "processor": "z80:LE:16:default",
+      "roots": 0,
+      "candidate_functions": 0,
+      "files": {
+        "memory.tsv": "bafbc47793993d25aefdb0f53421430f0dd478f6df78462383063f99fb5ea1e8",
+        "roots.tsv": "f52a14e8df32b69206eca75f764b6b34dc4f3a0a8351c45eaf556f142fba2e6c",
+        "functions.tsv": "a908e97bb5555b3bd4395f09b875b88a3d13ea3801f62af17d53116465058d8d",
+        "edges.tsv": "45625dad1d8f74247891717147ec1121170462b948efca6efe00516bff8054aa",
+        "instructions.tsv": "6fc2d5f6b2a54042246e474ed5130201a80021d13d506e6761d12afd6b27bd24"
+      }
+    }
+  ],
+  "known_vector_roots_seeded": true,
+  "known_ram_copy_roots_seeded": true,
+  "initial_z80_cart_roots_seeded": true,
+  "p2_code_data_partition_verified": false,
+  "ram_copy_native_domains_closed": false,
+  "all_runtime_z80_contexts_recovered": false,
+  "whole_program_decompiled": false,
+  "limits": "Ghidra candidate CFG only. M68000 model uses MC68020 superset; execution/liveness/code-data/native equivalence remains unverified. Initial Z80 maps do not model all selector tuples. Fixed-system audio BIOS is imported as a context, not decompiled as game code. P2 blocks are data-only analysis containers, not proven non-code."
+}

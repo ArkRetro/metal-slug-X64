@@ -6,6 +6,7 @@ This audit checks independent structural evidence, not just coverage.complete.
 """
 import argparse,collections,csv,hashlib,json,re
 from pathlib import Path
+from ghidra.audit_canonical_model import inspect as inspect_context_model
 ROOT=Path(__file__).resolve().parents[1]
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('--output',type=Path,default=ROOT/'decomp/completeness-audit.json');p.add_argument('--coverage',type=Path,default=ROOT/'decomp/coverage.json');a=p.parse_args()
 coverage=json.loads(a.coverage.read_text());programs=json.loads((ROOT/'decomp/program-set.json').read_text())
@@ -60,9 +61,18 @@ for row in flows:
     if not resolution or not proof.is_file() or not resolution.get('disposition'):unproven.append(row)
 if unproven:blockers.append(dict(kind='FLOW_SITES_WITHOUT_VERIFIED_DISPOSITION',count=len(unproven),scope='Historical P1 frontier; includes imports and computed calls. A site may have partial recovery without an exhaustive domain proof.',sample=unproven[:4]))
 root_catalog=ROOT/'decomp/analysis/program-roots.json'
+context_roots=set()
+try:
+    context_model=inspect_context_model(ROOT/'decomp/canonical-model')
+    context_roots={(r['context'],int(r['pc'],16)) for r in context_model['roots']}
+except (AssertionError,KeyError,ValueError,OSError) as error:
+    integrity.append(dict(file='decomp/canonical-model',problem='invalid_context_evidence',detail=str(error)))
 if root_catalog.is_file():
     roots=json.loads(root_catalog.read_text())
-    if roots.get('unmodeled_internal_vectors'):blockers.append(dict(kind='UNMODELED_CARTRIDGE_VECTOR_ROOTS',targets=roots['unmodeled_internal_vectors']))
+    missing_vectors=[target for target in roots.get('unmodeled_internal_vectors',[]) if ('M68K_FIXED_P1',int(target,16)) not in context_roots]
+    if missing_vectors:blockers.append(dict(kind='UNMODELED_CARTRIDGE_VECTOR_ROOTS',targets=missing_vectors))
+    # Structural roots do not establish native handlers, imports or exception ABI.
+    if roots.get('unmodeled_internal_vectors'):blockers.append(dict(kind='CARTRIDGE_VECTOR_NATIVE_DOMAINS_NOT_CLOSED',targets=roots['unmodeled_internal_vectors'],detail='Historical missing roots are now checked against the context model; native handler equivalence remains open'))
     copies=[x for x in roots.get('runtime_copy_paths',[]) if not x.get('native_domain_closed',False)]
     if copies:blockers.append(dict(kind='RELOCATED_CODE_CONTEXTS_NOT_CLOSED',contexts=[dict(mapping=x['execution_mapping'],pc=x['runtime_pc'],source=x['source_offset'],container_bytes=x['container_bytes']) for x in copies]))
 if not (ROOT/'decomp/full-game-validation.json').is_file():blockers.append(dict(kind='FULL_PROGRAM_MIPS_VALIDATION_MISSING',detail='Only module regressions exist; no whole-game equivalence/build validation record'))

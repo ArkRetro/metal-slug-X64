@@ -1,0 +1,393 @@
+{
+  "schema_version": 1,
+  "status": "STRUCTURAL_CPU_CONTEXTS_PREPARED_NOT_CODE_DATA_CLOSED",
+  "input_programs": [
+    {
+      "source": "250-p1.p1",
+      "size": 1048576,
+      "source_sha1": "4c19f2e9824e606178ac1c9d4b0516fbaa625035",
+      "cpu_order_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "role": "Program ROM; full code/data partition not yet verified"
+    },
+    {
+      "source": "250-p2.ep1",
+      "size": 4194304,
+      "source_sha1": "18aaa7a3ba8da99f78c430e9be69ccde04bc04d9",
+      "cpu_order_sha256": "ebbda9e171db126bb51da12bf14fd0c1cbfa51f7bf8bea4cb06fb0ddf4d3413c",
+      "role": "Program ROM; full code/data partition not yet verified"
+    },
+    {
+      "source": "250-m1.m1",
+      "size": 131072,
+      "source_sha1": "55769bad4860f64ef53a333e0da9e073db483d6a",
+      "cpu_order_sha256": "6a132323fa9f41ae0712644cc804e113257baf04b270c63f93dbd5193f02ffad",
+      "role": "Program ROM; full code/data partition not yet verified"
+    }
+  ],
+  "platform_imports": [
+    {
+      "id": "BIOS:sm1.sm1",
+      "size": 131072,
+      "sha1": "42f9d7ddd6c0931fd64226a60dc73602b2819dcf",
+      "role": "Platform audio BIOS; not game M1 source"
+    }
+  ],
+  "location_identity": [
+    "cpu",
+    "full_mapping_state",
+    "runtime_pc",
+    "source_image_offset",
+    "code_version_or_lifetime"
+  ],
+  "contexts": [
+    {
+      "id": "M68K_FIXED_P1",
+      "cpu": "m68000",
+      "cpu_base": 0,
+      "size": 1048576,
+      "source_pieces": [
+        {
+          "image": "250-p1.p1",
+          "offset": 0,
+          "size": 1048576
+        }
+      ],
+      "sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "initial_analysis_executable": true,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [
+        4096,
+        4100,
+        4208,
+        8866,
+        8876,
+        8994,
+        9266,
+        9816,
+        10230,
+        10240
+      ],
+      "lifetime": "immutable_image"
+    },
+    {
+      "id": "M68K_P2_BANK_0",
+      "cpu": "m68000",
+      "cpu_base": 2097152,
+      "size": 1048576,
+      "source_pieces": [
+        {
+          "image": "250-p2.ep1",
+          "offset": 0,
+          "size": 1048576
+        }
+      ],
+      "sha256": "82b2cd45b6eedf265080ca6e512d002f33b2e114edd6c3bd826fca36f022ea80",
+      "initial_analysis_executable": false,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [],
+      "lifetime": "immutable_image"
+    },
+    {
+      "id": "M68K_P2_BANK_1",
+      "cpu": "m68000",
+      "cpu_base": 2097152,
+      "size": 1048576,
+      "source_pieces": [
+        {
+          "image": "250-p2.ep1",
+          "offset": 1048576,
+          "size": 1048576
+        }
+      ],
+      "sha256": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc",
+      "initial_analysis_executable": false,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [],
+      "lifetime": "immutable_image"
+    },
+    {
+      "id": "M68K_P2_BANK_2",
+      "cpu": "m68000",
+      "cpu_base": 2097152,
+      "size": 1048576,
+      "source_pieces": [
+        {
+          "image": "250-p2.ep1",
+          "offset": 2097152,
+          "size": 1048576
+        }
+      ],
+      "sha256": "83ad6f805e3ff74155ca545d08923fbf51a703af50de2ea08d5af44ad1f02299",
+      "initial_analysis_executable": false,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [],
+      "lifetime": "immutable_image"
+    },
+    {
+      "id": "M68K_P2_BANK_3",
+      "cpu": "m68000",
+      "cpu_base": 2097152,
+      "size": 1048576,
+      "source_pieces": [
+        {
+          "image": "250-p2.ep1",
+          "offset": 3145728,
+          "size": 1048576
+        }
+      ],
+      "sha256": "dbf1503d39020b8613b3f4d813d073ec327b024324819795b09bb0cf96f6d5bb",
+      "initial_analysis_executable": false,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [],
+      "lifetime": "immutable_image"
+    },
+    {
+      "id": "RAM_COPY_100000",
+      "cpu": "m68000",
+      "cpu_base": 1048576,
+      "size": 4426,
+      "source_pieces": [
+        {
+          "image": "250-p1.p1",
+          "offset": 4440,
+          "size": 4426
+        }
+      ],
+      "sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769",
+      "initial_analysis_executable": true,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [
+        1048576
+      ],
+      "lifetime": "initial_post_copy_image; subsequent RAM writes and alternate versions unresolved"
+    },
+    {
+      "id": "RAM_COPY_10FC00",
+      "cpu": "m68000",
+      "cpu_base": 1113088,
+      "size": 106,
+      "source_pieces": [
+        {
+          "image": "250-p1.p1",
+          "offset": 4334,
+          "size": 106
+        }
+      ],
+      "sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+      "initial_analysis_executable": true,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [
+        1113088
+      ],
+      "lifetime": "initial_post_copy_image; subsequent RAM writes and alternate versions unresolved"
+    },
+    {
+      "id": "Z80_INITIAL_CART",
+      "cpu": "z80",
+      "cpu_base": 0,
+      "size": 63488,
+      "source_pieces": [
+        {
+          "image": "250-m1.m1",
+          "offset": 0,
+          "size": 32768
+        },
+        {
+          "image": "250-m1.m1",
+          "offset": 32768,
+          "size": 30720
+        }
+      ],
+      "sha256": "eb0219fed4a9e93f8c3216ff78d46918f88f3cdca4f6ce82ce351c1459a8ad3b",
+      "initial_analysis_executable": true,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [
+        0,
+        56,
+        102
+      ],
+      "lifetime": "initial bank selectors F000=1E,E000=0E,C000=06,8000=02; other full map states selected by rules"
+    },
+    {
+      "id": "Z80_INITIAL_SYSTEM",
+      "cpu": "z80",
+      "cpu_base": 0,
+      "size": 63488,
+      "source_pieces": [
+        {
+          "image": "BIOS:sm1.sm1",
+          "offset": 0,
+          "size": 32768
+        },
+        {
+          "image": "250-m1.m1",
+          "offset": 32768,
+          "size": 30720
+        }
+      ],
+      "sha256": "e40a1eec296fd30ce9af32f13f1bc9b82aa6ed47f78212fb745220ecca5f51a0",
+      "initial_analysis_executable": false,
+      "classification": "unverified_internal_code_data",
+      "root_pcs": [],
+      "lifetime": "initial bank selectors F000=1E,E000=0E,C000=06,8000=02; other full map states selected by rules"
+    }
+  ],
+  "mapping_rules": [
+    {
+      "id": "main_vectors",
+      "cpu": "m68000",
+      "start": 0,
+      "end_inclusive": 127,
+      "selector": "use_cart_vectors",
+      "sources": [
+        "BIOS:c00000+offset",
+        "250-p1.p1:offset"
+      ],
+      "control_addresses": [
+        3801091,
+        3801107
+      ],
+      "verified_modes": 2,
+      "note": "Only first 128 bytes switch; vector table 0x80..0xFF remains P1"
+    },
+    {
+      "id": "main_p2",
+      "cpu": "m68000",
+      "start": 2097152,
+      "end_inclusive": 3145727,
+      "access": [
+        "read",
+        "execute"
+      ],
+      "selector": "data & 7; values 4..7 select P2 bank 0",
+      "selector_write_start": 3145712,
+      "selector_write_end": 3145727,
+      "read_overrides": [
+        {
+          "start": 3145696,
+          "end_inclusive": 3145711,
+          "device": "MSLUGX_protection",
+          "semantics": "not_recovered"
+        }
+      ],
+      "verified_selectors": 8
+    },
+    {
+      "id": "main_work_ram",
+      "cpu": "m68000",
+      "start": 1048576,
+      "end_inclusive": 2097151,
+      "physical_size": 65536,
+      "mirror_mask": 983040,
+      "note": "Mutable data and runtime code versions; aliases retain execution-PC context"
+    },
+    {
+      "id": "z80_fixed",
+      "cpu": "z80",
+      "start": 0,
+      "end_inclusive": 32767,
+      "selector": "use_cart_audio",
+      "sources": [
+        "BIOS:sm1.sm1",
+        "250-m1.m1"
+      ],
+      "control_addresses_main_cpu": [
+        3801099,
+        3801115
+      ],
+      "verified_modes": 2
+    },
+    {
+      "id": "z80_window_f000",
+      "cpu": "z80",
+      "start": 61440,
+      "end_inclusive": 63487,
+      "source": "250-m1.m1",
+      "selector_io_port": 8,
+      "port_low_byte_mirror_mask": 240,
+      "selector_value": "IO port upper byte",
+      "source_offset_expression": "(selector << 11) & 0x1FFFF",
+      "verified_selector_values": 256,
+      "unique_source_pages": 64
+    },
+    {
+      "id": "z80_window_e000",
+      "cpu": "z80",
+      "start": 57344,
+      "end_inclusive": 61439,
+      "source": "250-m1.m1",
+      "selector_io_port": 9,
+      "port_low_byte_mirror_mask": 240,
+      "selector_value": "IO port upper byte",
+      "source_offset_expression": "(selector << 12) & 0x1FFFF",
+      "verified_selector_values": 256,
+      "unique_source_pages": 32
+    },
+    {
+      "id": "z80_window_c000",
+      "cpu": "z80",
+      "start": 49152,
+      "end_inclusive": 57343,
+      "source": "250-m1.m1",
+      "selector_io_port": 10,
+      "port_low_byte_mirror_mask": 240,
+      "selector_value": "IO port upper byte",
+      "source_offset_expression": "(selector << 13) & 0x1FFFF",
+      "verified_selector_values": 256,
+      "unique_source_pages": 16
+    },
+    {
+      "id": "z80_window_8000",
+      "cpu": "z80",
+      "start": 32768,
+      "end_inclusive": 49151,
+      "source": "250-m1.m1",
+      "selector_io_port": 11,
+      "port_low_byte_mirror_mask": 240,
+      "selector_value": "IO port upper byte",
+      "source_offset_expression": "(selector << 14) & 0x1FFFF",
+      "verified_selector_values": 256,
+      "unique_source_pages": 8
+    },
+    {
+      "id": "z80_work_ram",
+      "cpu": "z80",
+      "start": 63488,
+      "end_inclusive": 65535,
+      "classification": "mutable; executable use unresolved"
+    }
+  ],
+  "header_jump_roots": [
+    {
+      "site": 290,
+      "target": 9266
+    },
+    {
+      "site": 296,
+      "target": 9816
+    },
+    {
+      "site": 302,
+      "target": 10240
+    },
+    {
+      "site": 308,
+      "target": 10230
+    }
+  ],
+  "cartridge_internal_vector_targets": [
+    8866,
+    8876,
+    8994
+  ],
+  "z80_full_map_identity": [
+    "fixed_source",
+    "selector_8000",
+    "selector_C000",
+    "selector_E000",
+    "selector_F000",
+    "RAM_code_version"
+  ],
+  "mapping_validation": "decomp/canonical-model/mapping-validation.json",
+  "limits": "Verified mapping byte views do not classify code/data or prove execution. Z80 contexts are two initial full maps, not all runtime selector tuples. P2 banks remain non-executable analysis containers until code evidence. RAM contexts are only initial copy images; writes/lifetimes and native semantics remain unresolved. BIOS/protection hardware contracts must be recovered separately."
+}

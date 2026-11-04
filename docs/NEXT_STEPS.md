@@ -211,3 +211,17 @@
   la fila 0), el escritor del cielo tras el progreso 0x140, el actor
   `0A6C8C` de la superposición `10E8C6` y los actores de los objetos
   dinámicos (`0E6896`, `0E0D00`, ...); luego el paseo en ares (B18).
+
+- **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
+  [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:
+  captura `tools/capture_m3_actors.sh` (creaciones `0040BC`, guion, programas,
+  sonidos, objetos, lista de cámara) y `tools/compare_m3_events.py`: 233
+  constructores (10 871 creaciones), 76 nativos, 4 en `work-m3c`, 152 faltan.
+  Orden: (1) suelos de actores: fusionar `work-m3c`, estampadores de
+  `038D1E/038D26` y la **plataforma `0B9286`** (mapa `0E6896`: sin ella no se
+  cruza el hueco de la sección 3); (2) `0B8EDC` y las llamadas del tren;
+  (3) enemigos del camino (`09BA2A`, `08A732`, `08DA12`, `05D916`,
+  `04E990`, `097FCC`, `0569xx`...); (4) aeronave `0A4A94` (`0A6C8C` es su
+  subrutina de la superposición); (5) vehículos `093C9A`/`0AC866`; (6) jefe
+  `04A2C2`, del que depende el fin de misión (`018F92`); (7) la forma
+  `+93 = 2` del jugador y el arma E.

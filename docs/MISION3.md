@@ -359,7 +359,8 @@ otra columna del anillo del tren; solo cambian píxeles en la 3 y la 4).
    `0B8EDC` de `0B8D34`, tabla `0B8EC2`) y la superposición `2A6142` de
    `10E8C6`; los 7 valores de fondo. Las celdas empaquetadas del tren son las
    primeras vistas por posición; el bucle de columnas no se refleja en ellas.
-3. Familias nativas, por frecuencia: `097FCC` (sonido 10BA, `0985A0`, hijo
+3. Inventario completo de eventos y actores (233 constructores, plan por
+   prioridades): [MISION3_ACTORES.md](MISION3_ACTORES.md). Familias nativas, por frecuencia: `097FCC` (sonido 10BA, `0985A0`, hijo
    `098E4A`), `09BA2A`, `02B202`, `08A732`, `08DA12`, `0A2F2E`, `05D916`, y
    las rutinas `0AF17E` (constructor de soldado) y `09A842` (trazas con
    `MSX_FULL_FAMILY_ROOTS` desde `states4/sec04_117966`, como

@@ -270,7 +270,7 @@ owner	status	file
 019604	tentative_c	tentative/all_p1/unverified/01/rom_019604.c
 019632	tentative_c	tentative/all_p1/unverified/01/rom_019632.c
 01963a	tentative_c	tentative/all_p1/unverified/01/rom_01963a.c
-01964a	native_inline_enable_guard	../src/neo_player_positions.c
+01964a	native_guard_in_01903a_context	../src/neo_player_positions.c
 019658	tentative_c	tentative/all_p1/unverified/01/rom_019658.c
 0196e8	tentative_c	tentative/all_p1/unverified/01/rom_0196e8.c
 019798	tentative_c	tentative/all_p1/unverified/01/rom_019798.c

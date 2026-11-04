@@ -29,3 +29,6 @@ El informe es `docs/native-logic-mips-validation.json`. Las condiciones aún
 usan respuestas auxiliares sintéticas en su suite independiente: sigue
 pendiente enlazar los dos servicios nativos a sus consumidores de campaña.
 Esta traducción no completa la descompilación ni genera un nuevo ZIP de entrega.
+
+La guardia 01964A está incorporada en el contexto de esta consulta; no se
+presenta una API independiente que conserve su ABI para todos sus llamadores.

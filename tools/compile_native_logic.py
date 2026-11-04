@@ -38,5 +38,13 @@ for row in queries['results']:
     slots='{'+','.join('{'+','.join(str(s[k]) for k in ('object_header','active','field18','field14','state21','field1f','field20'))+'}' for s in c['slots'])+'}'
     qcases.append('{'+slots+',{'+nums(c['registers'][:5])+f",{c['sr']},255"+'},{'+nums(e['registers'][:5])+f",{e['sr']},{e['selected_slot']}"+'},'+str(e['status'])+'}')
 lines+=['static const query_case_t query_cases[]={\n'+',\n'.join(qcases)+'\n};']
+positions=json.loads((ROOT/'data/player_positions_fixture.json').read_text());pcases=[]
+lines+=['typedef struct { neo_player_positions_frame_t frame; neo_player_positions_registers_t input,expected; } position_case_t;']
+for row in positions['results']:
+    c=row['input'];e=row['expected'];f=c['frame']
+    players='{'+','.join('{'+','.join(str(p[k]) for k in ('object_header','x','y','use_x','use_y'))+'}' for p in f['players'])+'}'
+    frame='{'+players+f",{f['fallback_x']},{f['fallback_y']},{f['enabled']}"+'}'
+    pcases.append('{'+frame+',{'+nums(c['registers'][:8])+f",{c['sr']}"+'},{'+nums(e['registers'][:8])+f",{e['sr']}"+'}}')
+lines+=['static const position_case_t position_cases[]={\n'+',\n'.join(pcases)+'\n};']
 out=ROOT/'build/native_logic_fixture.h';out.parent.mkdir(exist_ok=True);out.write_text('\n'.join(lines)+'\n')
-print('Generated',len(cases),'condition cases,',len(qcases),'query cases;',len(allpatch),'original sparse RAM bytes')
+print('Generated',len(cases),'condition cases,',len(qcases),'query cases;',len(allpatch),'original sparse RAM bytes;',len(pcases),'position cases')

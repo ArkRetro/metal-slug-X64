@@ -48,7 +48,7 @@
   "native_c_port": false,
   "index": "full-p1-index.tsv",
   "candidate_roots_may_be_data": true,
-  "index_sha256": "a1be54b9c2aa22eb8ed6877be98f4fcc9dd01930d89674754c8cadfd414be79a",
+  "index_sha256": "b2686cc2162dd5a6214a67d007df477110f92859e990f4751d34e0c41b11239c",
   "character_preservation_check": {
     "status": "PASS",
     "files": 5168,
@@ -89,5 +89,15 @@
       "cases": 96,
       "mips_validation": "../docs/native-logic-mips-validation.json"
     }
-  ]
+  ],
+  "native_position_query": {
+    "entry": "0x01903A",
+    "helpers": [
+      "0x01964A",
+      "0x0040AC"
+    ],
+    "file": "../src/neo_player_positions.c",
+    "cases": 96,
+    "helpers_intercepted": false
+  }
 }

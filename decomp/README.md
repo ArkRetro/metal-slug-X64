@@ -95,3 +95,7 @@ C nativo en `src/neo_player_query.c`, contrastado con 96 llamadas originales.
 La regresión MIPS pasa en ares con 447 casos del despacho de condiciones y
 96 consultas; no constituye integración de campaña. Véase
 [estado de entrega de fuentes](../SOURCE_STATUS.md).
+
+[01903A y sus guardias](../docs/NATIVE_PLAYER_POSITIONS.md) también tienen C
+nativo: 96 casos con auxiliares originales reales coinciden y pasan en MIPS/ares.
+La conexión de ambos servicios de jugador con campaña sigue pendiente.

@@ -5,6 +5,7 @@
 #include <string.h>
 #include "../decomp/recovered/rom_01a5ca.h"
 #include "../src/neo_player_query.h"
+#include "../src/neo_player_positions.h"
 #include "native_logic_fixture.h"
 #ifdef __mips__
 #include <libdragon.h>
@@ -56,14 +57,21 @@ static void queries(void) {
         assert(!memcmp(r.d,c->expected.d,sizeof(r.d)) && r.sr==c->expected.sr && r.selected_slot==c->expected.selected_slot);
     }
 }
+static void positions(void) {
+    for(unsigned i=0;i<sizeof(position_cases)/sizeof(*position_cases);i++) {
+        const position_case_t *c=&position_cases[i];neo_player_positions_registers_t r=c->input;
+        neo_player_positions(&c->frame,&r);
+        assert(!memcmp(r.d,c->expected.d,sizeof(r.d)) && r.sr==c->expected.sr);
+    }
+}
 int main(void) {
 #ifdef __mips__
     debug_init_emulog();console_init();console_set_render_mode(RENDER_MANUAL);
 #endif
-    conditions();queries();
-    puts("PASS: 447 condition calls and 96 player queries against original M68000 fixtures");
+    conditions();queries();positions();
+    puts("PASS: 447 conditions, 96 player queries and 96 position queries against original M68000 fixtures");
 #ifdef __mips__
-    debugf("MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96\n");console_render();while(1) {}
+    debugf("MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96\n");console_render();while(1) {}
 #endif
     return 0;
 }

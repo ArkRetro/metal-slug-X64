@@ -1,12 +1,12 @@
 {
   "status": "PASS",
   "emulator": "ares 146",
-  "rom_sha256": "dee828c6b5f92870b3943aa93602e082d83fafadadc9ab55cfb2637d370c5790",
+  "rom_sha256": "bf4125fc8059cf1fa206043349d9ddfd9c8673c73a3961e08a85a70fc88e26eb",
   "suite": "nativelogic",
-  "limit": "447 original condition calls with intercepted helper outputs and 96 original player queries including real object guard. CPU regression only; no campaign/rendering claim.",
+  "limit": "447 original condition calls with intercepted helper outputs plus 96 original player queries and 96 original position queries with real helpers. CPU regression only; no campaign/rendering claim.",
   "conditions": 447,
   "player_queries": 96,
-  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96",
-  "player_query_helper": "Real original 0040AC guard executes in reference; no helper stub for AAA88 reference",
-  "condition_helpers": "01903A/0AAA88 remain synthetic for the 447 condition fixtures; this does not claim their campaign integration"
+  "position_queries": 96,
+  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96",
+  "limits": "CPU fixtures only. Condition helpers remain synthetic in the 447-call suite. Both native query suites use real original helpers in reference. No campaign binding, rendering or physical hardware performance claim."
 }

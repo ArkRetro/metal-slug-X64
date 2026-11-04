@@ -12,12 +12,13 @@ primera misión terminada. El estado estructurado es `decomp/coverage.json`.
 - `tools/`, `data/`, `docs/`: extractores, fixtures sintéticas y evidencia.
 
 Última prueba MIPS: ares 146 reproduce 447 casos de condiciones con auxiliares
-controladas y 96 consultas de jugador contrastadas con las rutinas originales.
+controladas y 96 consultas de jugador más 96 consultas de posiciones contrastadas
+con sus rutinas y auxiliares originales.
 El guardia 0040AC sí se ejecuta en las referencias de la consulta AAA88.
 Esto es verificación de CPU, no campaña ni rendimiento de hardware físico.
 
 Faltan código/datos bancados, destinos indirectos, tipos y ABI pendientes,
-01903A, conexión de servicios nativos, campaña, actores y audio completos.
+conexión de AAA88/01903A con sus productores de datos y servicios nativos, campaña, actores y audio completos.
 Los 5168 archivos automáticos del 68000 y 154 del Z80 son material tentativo,
 no un porcentaje de juego nativo terminado.
 
@@ -27,3 +28,7 @@ El cartucho de pruebas es interno; no se incluye en el ZIP como demo.
 Las ROM de juego, BIOS, SDK, archivos de build y assets locales ignorados
 no están incluidos. Una compilación completa del prototipo requiere recuperar
 sus assets mediante las herramientas y los archivos originales del usuario.
+
+El ZIP parcial histórico no satisface la entrega completa solicitada. No se
+presenta como resultado final ni se genera otra entrega mientras siga faltando
+código por recuperar. El trabajo de recuperación permanece en las fuentes.

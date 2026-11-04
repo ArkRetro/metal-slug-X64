@@ -227,3 +227,14 @@ utiliza el C traducido para generar los resultados esperados. Los servicios de
 las condiciones siguen siendo sintéticos en su suite; la prueba no demuestra
 su integración con esta consulta ni con campaña. Es un cartucho interno de
 regresión de CPU, sin entrega de demo. Informe native-logic-mips-validation.json.
+
+## Consulta de posiciones y auxiliares reales
+
+`src/neo_player_positions.c/.h` traduce 01903A..0190BA y las condiciones de
+01964A/0040AC a campos nativos. Conserva fallback por eje, duplicación del
+jugador ausente, firma D7.word, registros parciales y flags finales. Se
+comparan 96 llamadas con MAME sin auxiliares sintéticas; pasan en host/UBSan
+y, compiladas para R4300, en ares junto a las 447 condiciones y 96 AAA88.
+No se ha enlazado la consulta a campaña ni recuperado sus productores de
+estado global. Véase NATIVE_PLAYER_POSITIONS.md. La cobertura global sigue
+siendo incompleta; no se genera otro ZIP como entrega final.

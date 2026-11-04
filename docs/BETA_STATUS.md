@@ -1,3 +1,9 @@
+Native position query update: 01903A and its 01964A/0040AC guards are now C
+with 96 original-reference cases. The compiled MIPS test passes in ares with
+447 condition cases, 96 AAA88 queries and 96 position queries. Condition
+service binding and campaign data producers remain incomplete. No new source
+ZIP is offered as a complete delivery. See NATIVE_PLAYER_POSITIONS.md.
+
 Native CPU update: `neo_player_query.c` implements AAA88 with the 0040AC
 object guard. 96 original M68000 calls match at return/trap boundaries.
 The compiled MIPS regression passes in ares: 447 condition cases and 96 player

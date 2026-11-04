@@ -328,8 +328,8 @@ identificar» cuando no hay más.
 | 〃 | `0218C4` | 7 | 118248 / 185 | 1:7 | `0214EA` | `230538` | — | **falta** |  |
 | `0403A0` | `0403A0` | 23 | 118200 / 97 | 1:2 2:14 4:7 | guion | — | — | nativo | marcador de escalera/repisa (lista de objetos) |
 | `03EE8A` | `03EE8A` | 8 | 118210 / 112 | 1:8 | guion | `23FE6C` `23FEA0` `23FEAC` +2 | — | **falta** | sin identificar (8 en la salida, programas `23FE6C..23FEFA`, sin sonido) |
-| `09AE2C` | `09AE2C` | 1 | 118652 / 312 | 1:1 | guion | `2404FE` `2A037A` `2A03C6` +2 | 1043 | **falta** | programas de soldado `2404FE` y propios `2A037A..2A048C`; hijo `09C46C` |
-| `09BA2A` | `09BA2A` | 8 | 118744 / 360 | 2:5 4:3 | guion | `240DEE` `2A037A` `2A03C6` +3 | 103E 1041 1042 | **falta** | programas de soldado `240DEE` y propios `2A037A..2A0E04`; hijo `09C46C` |
+| `09AE2C` | `09AE2C` | 1 | 118652 / 312 | 1:1 | guion | `2404FE` `2A037A` `2A03C6` +2 | 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE` y propios `2A037A..2A048C`; hijo `09C46C` |
+| `09BA2A` | `09BA2A` | 8 | 118744 / 360 | 2:5 4:3 | guion | `240DEE` `2A037A` `2A03C6` +3 | 103E 1041 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `2A037A..2A0E04`; hijo `09C46C` |
 | `08DA12` | `08DA12` | 5 | 118836 / 627 | 2:5 | guion | `23D510` `23D62A` `23DB34` +4 | 103E 1041 1042 1043 | **falta** | programas de soldado `23D510 23DB34 2404FE 240DEE` y propios `28AC56 28ACCE` |
 | `09A67E` | `09A67E` | 5 | 118892 / 704 | 2:5 | guion | — | — | nativo | caja oculta (regalo en la palabra 3) |
 | `02B202` | `02B202` | 4 | 119050 / 849 | 2:2 4:2 | guion×2 corredor×2 | `236D00` `236D88` | 1021 | **falta** | sin identificar; hijos `02B61C`, `02BBBA`, explosiones; mapa dinámico de la raíz `02C5BA` (y `02C5C8` en la sección 4) |
@@ -350,12 +350,12 @@ identificar» cuando no hay más.
 | 〃 | `0B911E` | 1 | 121043 / 1709 | 2:1 | `039382` | — | — | `work-m3c` |  |
 | `0391EA` | `0391EA` | 2 | 120997 / 1633 | 2:2 | guion | `23C658` `23C6B4` | — | **falta** | sin identificar; hijos `08AE76` ×8 |
 | 〃 | `08AE76` | 8 | 120997 / 1633 | 2:8 | `0391EA` | `285BBE` | — | **falta** |  |
-| `08A732` | `08A732` | 5 | 121045 / 1712 | 2:1 4:4 | guion | `2404FE` `240DEE` `285864` +1 | 103E 1041 1042 1043 10A4 | **falta** | programas de soldado `2404FE 240DEE` y propios `285864 2858FE`; hijos `08AA6E`, `08AC54`→`08AE70`, `08AB70` |
-| 〃 | `08AA6E` | 5 | 121246 / 1864 | 2:1 4:4 | `08A732` | `285A0C` | — | **falta** |  |
-| 〃 | `08AB70` | 1 | 142390 / 5508 | 4:1 | `08A732` | `2859BA` | — | **falta** |  |
-| 〃 | `08AC54` | 1 | 142390 / 5508 | 4:1 | `08A732` | `285AB2` | — | **falta** |  |
-| 〃 | `08AE70` | 13 | 142393 / 5508 | 4:13 | `08AC54` | `285BBE` | — | **falta** |  |
-| `09AE1E` | `09AE1E` | 2 | 121109 / 1768 | 2:2 | guion | `240DEE` `2A037A` `2A0E04` | 103E 1041 1042 | **falta** | programas de soldado `240DEE` y propios `2A037A`, `2A0E04`; hijo `09C46C` |
+| `08A732` | `08A732` | 5 | 121045 / 1712 | 2:1 4:4 | guion | `2404FE` `240DEE` `285864` +1 | 103E 1041 1042 1043 10A4 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `285864 2858FE`; hijos `08AA6E`, `08AC54`→`08AE70`, `08AB70` |
+| 〃 | `08AA6E` | 5 | 121246 / 1864 | 2:1 4:4 | `08A732` | `285A0C` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `08AB70` | 1 | 142390 / 5508 | 4:1 | `08A732` | `2859BA` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `08AC54` | 1 | 142390 / 5508 | 4:1 | `08A732` | `285AB2` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `08AE70` | 13 | 142393 / 5508 | 4:13 | `08AC54` | `285BBE` | — | nativo (`neo_m3enemy.c`) |  |
+| `09AE1E` | `09AE1E` | 2 | 121109 / 1768 | 2:2 | guion | `240DEE` `2A037A` `2A0E04` | 103E 1041 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `2A037A`, `2A0E04`; hijo `09C46C` |
 | `03938A` | `03938A` | 1 | 121188 / 1808 | 2:1 | misión | `23C762` | 1069 | `work-m3c` | caja del vagón → estampador `0B9140` (repisa `0B8FA8`) |
 | 〃 | `0B9140` | 1 | 121321 / 1956 | 2:1 | `03938A` | — | — | `work-m3c` |  |
 | `05D226` | `05D226` | 1 | 121289 / 1929 | 2:1 | guion | `2404FE` `262B1A` `262DCC` | 1043 | **falta** | programas de soldado `2404FE` y propios `262B1A 262DCC` |
@@ -482,7 +482,7 @@ identificar» cuando no hay más.
 | 〃 | `01BC2E` | 431 | 118090 / 0 | 1:3 4:204 5:224 | `01B782`×244 `01B6DC`×170 `01B6A0`×17 | `22E504` | — | nativo | impacto de bala |
 | 〃 | `08D330` | 32 | 118149 / 31 | 1:3 2:15 4:13 5:1 | `08C374`×28 `08C37C`×3 `0B9748`×1 | `285EF2` `285EFE` `285F0A` +5 | — | nativo | etiqueta de puntos |
 | 〃 | `08C374` | 76 | 118245 / 177 | 1:2 2:36 3:2 4:35 5:1 | `0A4A94`×30 `08C374`×15 `09A67E`×14 `099DCC`×9 `08C172`×2 `0214EA`×1 `027F54`×1 `099E1C`×1 `087E36`×1 `0A2F2E`×1 `099862`×1 | `286216` `286258` `28631E` +15 | 1121 112D 1155 1158 115B | nativo | objeto soltado |
-| 〃 | `09C46C` | 11 | 118652 / 312 | 1:1 2:7 4:3 | `09BA2A`×8 `09AE1E`×2 `09AE2C`×1 | `2A0B34` `2A0E78` `2A0EDA` +1 | — | **falta** |  |
+| 〃 | `09C46C` | 11 | 118652 / 312 | 1:1 2:7 4:3 | `09BA2A`×8 `09AE1E`×2 `09AE2C`×1 | `2A0B34` `2A0E78` `2A0EDA` +1 | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `01C71E` | 59 | 119324 / 1028 | 2:14 3:1 4:25 5:19 | `01D764`×35 `02916E`×6 `0A2F2E`×4 `02B202`×3 `04E990`×3 `027F54`×2 `097FE4`×2 `097FCC`×1 `0DC97E`×1 `084588`×1 `04A2C2`×1 | `22CF2C` | — | nativo | efecto |
 | 〃 | `01D86C` | 16 | 119579 / 1267 | 2:6 4:9 5:1 | `097FCC`×5 `097FE4`×5 `02916E`×2 `0A2F2E`×2 `027F54`×1 `04A2C2`×1 | `22EAC2` | — | nativo | efecto |
 | 〃 | `01D764` | 280 | 120062 / 1520 | 2:9 4:260 5:11 | `0A5D6A`×235 `0A4A94`×16 `04A2C2`×11 `097FCC`×5 `02916E`×4 `097FE4`×3 `08B3E6`×2 `087E36`×2 `027F54`×1 `0DC97E`×1 | — | — | nativo | explosión |

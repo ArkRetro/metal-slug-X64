@@ -449,6 +449,83 @@ registros de constructores no portados (enemigos, saltados y registrados),
 `2869D6` y `0AF17E` como rutinas sin soporte del mundo, el guion parado en
 `2DB148` (op 0x15) y 2493 dibujos sin descriptor (`descriptor=0 palette=2`).
 
+## Paso 2: enemigos del camino (rama `work-m3step2`, en curso)
+
+Plan: [PLAN_MISION3.md](PLAN_MISION3.md), pasos 2 y 6. Módulo nuevo
+`src/neo_m3enemy.c` (traducción manual, cabecera con cada dirección):
+
+- **Muerte de soldado sobre un nodo genérico** (`0406B6`/`0407B6`): la que
+  usan casi todos los enemigos de la M3 (`jmp 0406B6`). Mismas entradas que
+  `neo_soldier_ai.c` (`040DC0`, `040DD8`, `040A10`, `040A40`, `040A7C`,
+  `040AF6`, `040B46`, `040BA8`, `040C8E`, `040D66`) y sus ticks `040DF0`,
+  `040D06`, `040DB4`, `040AE0`, las salpicaduras `040F88/040F60/040F74`
+  como actores genéricos y las llamadas de programa `040948/040956/04095E`.
+  Paradas explícitas: `040920` (muerte en el suelo con `+74` en el aire) y
+  `040BE6` (tabla de agachado: lee el byte alto de D1).
+- **Granadero `08A732`**: casco `08AA6E`, lanzamiento (llamada de programa
+  `08A9A4`), destello `08AB70`, obús `08AC54` (`03B332`, fila `08AF82`,
+  explosión `01C706`), humo `08AE70`. Parada explícita: la salpicadura de
+  agua `03C962` de `03C5C6` (no vista en la M3).
+- **Soldados del escudo `09AE2C`/`09AE1E`/`09BA2A`** (y las variantes
+  `09BA40/09BA68/09BA8A`): todos los estados de `09AE1E..09D62A` (andar,
+  agacharse, disparar, levantar el escudo con su mapa `0140C0`, saltar,
+  retroceder), el escudo `09C46C` (`+72`, poses `09D804`, el cuerpo sólido
+  `004E76`), su capa `09C6B0`, los disparos `09C744/09C76C/09C780`, los
+  destellos `09CAE8..` y el portador de objeto (`+90` bit 6, `08CDB2`).
+  Paradas explícitas: `0B0626` / `04611C` (al romperse el escudo el nodo se
+  convierte en soldado normal: falta pasar un nodo genérico al soldado
+  nativo) y `044930` (`+90` bit 4, variante `09BA40`, no vista).
+
+Arreglos compartidos: `0260C8` de tipo 2 (lista de ocho palabras al azar:
+`neo_m3enemy.c`, `rank`), las llamadas de programa que escriben `+50`
+(`neo_gactor.c`), `0143CC` (RAM `10C00A`, `ga_air_400a`) y `01495C` con D6
+(`ga_probe_vertical_d6`). Pruebas de familia: `--root-words` (`01AD7C` lee
+solo la palabra alta de la raíz), punteros de nodo con bytes pisados
+(`--node-fields 72`) y la instancia viva primero al traducir un nodo.
+
+**Familias contra MAME** (capturas A y B desde `states4/sec04_117966`,
+borradas tras extraer; árbol de cada familia con un filtro de nodos):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_VRAM_TRACE=1 MSX_FULL_GRID_TAP=0
+MSX_FULL_FIRST_DUMP=118600 MSX_FULL_PERIOD=30 MSX_FULL_FAMILY_ROOTS=9ae1e,9ae2c,9ba2a,8a732,8da12,5d916,5c53c,5d226,4e990,97fcc MSX_FULL_FAMILY_FROM=118600 MSX_FULL_LAST=123850 sh tools/run_capture_fullgame.sh A
+MSX_FULL_FIRST_DUMP=141000 MSX_FULL_PERIOD=30 MSX_FULL_FAMILY_ROOTS=8a732,569b4,569d0,569e6,97fcc,9ba2a,84588,9ae1e,9ae2c MSX_FULL_FAMILY_FROM=141000 MSX_FULL_LAST=144300 sh tools/run_capture_fullgame.sh B
+R='--attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 10d83e-10e83e --ram 10c2f6-10c2f8'
+python3 tools/extract_family_fixture.py A/shield-trace.txt --output data/m3shield_fixture.json.gz --range 3f1f-ffffff $R   # y gren-trace, B
+python3 tools/export_rest_sprites.py ZIP A@8a5d4-8afb6 A@9ae1e-9d630 B@8a5d4-8afb6 B@9ae1e-9d630 --mask-auto --output filesystem/mission3/rest-native.json --keep <export anterior> --keep filesystem/mission2/rest-native.json --keep filesystem/rest-native.json
+python3 tools/pack_mission.py 3 filesystem/mission3/s1 --loose-layers --report build/mission3_pack_report.json
+```
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3grenade` (granadero de la sección 2, muerte `040C8E`→`040D06`) | 2 | 213 | 121045..121615 | iguales a MAME |
+| `m3grenade4` (los 4 granaderos de la sección 4: lanzamientos, obuses, humo) | 23 | 996 | 141202..142782 | iguales |
+| `m3shield` (`09AE2C`, `09AE1E` ×2, `09BA2A` ×5, escudos, muertes) | 22 | 1938 | 118652..122134 | iguales |
+| `m3shield4` (`09BA2A` ×3 de la sección 4) | 9 | 1033 | 141398..142343 | iguales |
+
+Sprites: 7068 descripciones (+219), 56 423 píxeles iguales y 1058 distintos
+en 89 volcados (los distintos, volcados con la actualización del nodo
+anterior al volcado o con la figura ya cambiada); paletas sin captura:
+`0x3C7/0x171/0x39F/0x3A3` (el soldado del escudo portador de objeto, `+90`
+bit 6, no salió en las capturas). `mission3.pack` 3,18 MB, 342 trozos.
+
+Recorrido en ares (`mslugx-m3-reference.z64`, `test_mission3_ares.py --hop
+--pilot`, 300 s): PASS hasta la arena del jefe, 0 rescates; ranuras de caché
+208 (mínimo 208). Paradas explícitas por sección (registros de constructores
+no portados; antes del paso 2 entre paréntesis): salida 10 (11), vagones 17
+(25), hueco 0 (0), tramo final 10 (17), jefe 0 (0); los nativos nuevos se
+crean (`09BA2A` ×8, `08A732` ×5, `09AE1E` ×2, `09AE2C`). Rutinas sin soporte
+del mundo: `0AF17E` ×11 y `2869D6` ×4 (como antes) y `040DB4` ×1 (muerte de
+un soldado nativo de `neo_soldier_ai.c` con un tipo de golpe sin traducir
+allí); 1827 dibujos sin descriptor (antes 2493).
+
+Pendiente del paso 2: `08DA12` y `05D916/05C53C/05D226` (pasan al soldado
+normal por `0B05FE`/`0B0632`: hace falta convertir un nodo genérico en el
+soldado nativo, la misma pieza que el escudo roto), `04E990`, `097FCC`,
+`0569xx`. En la M3 la RAM `10C2F6` vale 4 (no el índice de misión 2 del
+port): las ondas `03C62A` de `03C52C` no salen en el mundo (`neo_gate.c`
+mira `pickup.mission`).
+
 ## Pendiente
 
 1. Recorrido: hecho hasta la arena del jefe (paso 1); falta la entrada en

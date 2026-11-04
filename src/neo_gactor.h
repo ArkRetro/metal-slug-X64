@@ -67,6 +67,7 @@ typedef struct neo_ga_flags {
     uint8_t mission_end;             /* RAM 10C300 = FF (018F92: halt; the level script actor 101414 is deleted, 0041D0) */
     uint8_t end_kind;                /* RAM 10C304 (018F92: +5E of the caller) */
     uint8_t scroll_lock;             /* RAM 10C00B = FF (0B6EF4) */
+    uint8_t ram400a,wrote400a;       /* RAM 10C00A as the last sweep left it (0128DA: 0; 0143CC: FF), and whether one ran */
     uint8_t stage_done;              /* 018F40 ran (RAM 10C303 = 0: the flow's 018722 ends the stage) */
     uint8_t player_guard;            /* 0C09D8 ran: each player's +84 = FFFF, +5F bit 6 set, +9A bit 2 clear */
     uint8_t flash_request;           /* RAM 1067E5 (004C06) */
@@ -258,6 +259,7 @@ void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t paren
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
+uint16_t ga_air_400a(neo_gactor_t *a,neo_genv_t *e);            /* 0143CC (RAM 10C00A = FF) */
 uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */
 uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D4.w at its return (the sweep's 13968) */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
@@ -269,6 +271,7 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 014850: carry */
 bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 01495C: carry */
+uint16_t ga_probe_vertical_d6(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 01495C: D6 */
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed); /* 004256 */
 /* 00427A. `call` handles family callbacks (NEO_ANIM_CALL / events); returns
  * 1 complete, 0 more, -1 unsupported. */

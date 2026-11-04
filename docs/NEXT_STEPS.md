@@ -222,6 +222,15 @@
   plataforma → suelo de x 4272 (comprobar en MAME) y el op 0x15 del guion
   (`2DB148`).
 
+- **Misión 3, paso 2 en curso (rama `work-m3step2`, MISION3.md «Paso 2»)**:
+  `neo_m3enemy.c` con la muerte `0406B6` sobre nodos genéricos, el
+  granadero `08A732` y los soldados del escudo `09AE2C/09AE1E/09BA2A`
+  (familias `m3grenade`, `m3grenade4`, `m3shield`, `m3shield4` iguales a
+  MAME). Siguiente: convertir un nodo genérico en el soldado nativo (`0B05FE`
+  / `0B0626` / `0B0632`, la parada del escudo roto), y con ello `08DA12` y
+  `05D916`; después `04E990`, `097FCC`, `0569xx`, `0B9748`, el op 0x15
+  (`2DB148`) y la entrada en paracaídas.
+
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:
   captura `tools/capture_m3_actors.sh` (creaciones `0040BC`, guion, programas,

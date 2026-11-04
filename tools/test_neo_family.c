@@ -148,6 +148,8 @@ static const neo_anim_program_t *program(uint32_t tag) {
  * 16..23 (a turret's +6E into its vehicle). */
 static uint32_t node_address[NN];
 static uint32_t native_tag(uint32_t recorded) {
+    /* A reused node address: the instance alive now first. */
+    for (unsigned i=0;i<NN;i++) if (node_address[i] && bound[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     for (unsigned i=0;i<NN;i++) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     for (unsigned i=0;i<NN;i++) if (node_address[i] && recorded>node_address[i] && recorded<node_address[i]+0xc0u) return NEO_GA_TAG(i)|((recorded-node_address[i])<<16);
     return recorded;
@@ -737,6 +739,7 @@ int main(void) {
         if (flags.flash_request) put(0x1067e5,flags.flash_request);
         for (unsigned p=0;p<2;p++) {put(0x10ea00+2*p,(uint8_t)(flags.walk_to[p]>>8));put(0x10ea01+2*p,(uint8_t)flags.walk_to[p]);}
         put(0x10c300,flags.mission_end);put(0x10c304,flags.end_kind);put(0x10c00b,flags.scroll_lock);
+        if (flags.wrote400a) {put(0x10c00a,flags.ram400a);flags.wrote400a=0;}
         if (flags.stage_done) put(0x10c303,0);
 #endif
         put(0x109944,flags.flash);
@@ -765,6 +768,16 @@ int main(void) {
                  uint32_t v=native_tag((uint32_t)u->post[nf[k]]<<24|(uint32_t)u->post[nf[k]+1]<<16|(uint32_t)u->post[nf[k]+2]<<8|u->post[nf[k]+3]);
                  want=(uint8_t)(v>>(24-8*(o-nf[k])));
              }}
+#endif
+#ifdef FAMILY_NODE_FIELDS
+            /* A node pointer partly overwritten by byte fields (the shield
+             * soldier's +72 under 04097A's +72/+74 bytes): its remaining
+             * bytes are the node's address in the original, its tag here. */
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;bool stale=false;
+             for (unsigned k=0;k<sizeof(nf)/sizeof(nf[0]) && !stale;k++) if (o>=nf[k] && o<nf[k]+4u && a->m[o]!=want)
+                 for (unsigned i=0;i<NN && !stale;i++) {unsigned sh=24u-8u*(o-nf[k]);
+                     stale=node_address[i] && ((NEO_GA_TAG(i)>>sh)&0xffu)==a->m[o] && ((node_address[i]>>sh)&0xffu)==want;}
+             if (stale) {compared++;continue;}}
 #endif
             if (a->m[o]!=want) {
                 fprintf(stderr,"frame %u node %d routine %05x +%02X=%02x expected %02x\n",u->frame,u->node,u->routine,o,a->m[o],want);

@@ -26,4 +26,12 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   (con el mando ciego `--hop`, 0 o 1 rescate según la pasada). Paradas
   explícitas: la entrada en paracaídas (tipo 2), `0B9748` (puntos), los
   enemigos (registros saltados), el guion en `2DB148`.
-
+- **Paso 2: en curso** (rama `work-m3step2`, [MISION3.md](MISION3.md) «Paso
+  2»). Nativos en `neo_m3enemy.c`: la muerte de soldado `0406B6` sobre un
+  nodo genérico (compartida), el granadero `08A732` (casco, obús, destello,
+  humo) y los soldados del escudo `09AE2C/09AE1E/09BA2A` (escudo `09C46C`,
+  capa, disparos); familias `m3grenade`, `m3grenade4`, `m3shield`,
+  `m3shield4` iguales a MAME (4180 actualizaciones). Faltan `08DA12`,
+  `05D916` (y `05C53C/05D226`), `04E990`, `097FCC`, `0569xx`; la pieza común
+  que falta es convertir un nodo genérico en el soldado nativo (`0B05FE`,
+  `0B0626`, `0B0632`: el escudo roto, `08DA12`, `05D916`).

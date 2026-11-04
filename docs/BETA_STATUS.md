@@ -1,3 +1,12 @@
+Playable demo delivery — 2026-11-04: the latest user request authorizes a
+playable snapshot of the existing partial campaign. See PLAYABLE_DEMO.md.
+This supersedes the earlier no-partial-demo delivery gate only for this
+requested snapshot. It does not claim complete Mission 1, complete Marco
+controls or integration of the newly recovered C kernels. The exact ROM passed
+title/entry/handoff and partial-region traversal in ares 146; the report and log
+are in docs/playable-demo-validation/. Hardware verification remains pending.
+Earlier entries below describe the scope at the time of each recovery update.
+
 Native RAM descriptor update: 10082E allocation and 1008D8 unlinking now have
 manual C, with 10080E dispatch bindings for 10008C/100158. 118 original controlled
 transitions match RAM/registers/SR and ordered writes; 105 reach kernel returns

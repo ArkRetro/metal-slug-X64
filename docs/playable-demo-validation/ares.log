@@ -1,0 +1,53 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded msx64-playable-demo
+Vulkan Enabled: using paraLLEl-RDP
+MSX CINEMATIC open frames=601 size=304x224 packet=112034
+MSX CINEMATIC cache=3147898 streaming=0 prepared=23 prepared_bytes=3132416
+[WARN]: Stalled compile (compute, a2d3c33efb49ccd2): thread 0 - 11118.129 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, ff6863004fc9ee60): thread 0 - 5011.757 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 5e969bd158b09fb3): thread 0 - 8556.718 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, d4db6236f1bec5e8): thread 0 - 209768.990 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 471d277cbebc0024): thread 0 - 16054.955 us (mode: sync, success: yes).
+MSX TITLE start crc=8e705c2a audio=1
+MSX TITLE timing audio_max_us=4378 decode_max_us=14351 draw_max_us=1006
+MSX TITLE cadence unique=601 dropped=0 source=601
+MSX TITLE complete frames=669 skipped=0 crc=c0a8e830
+MSX CINEMATIC open frames=230 size=304x224 packet=105690
+MSX CINEMATIC cache=1246644 streaming=0 prepared=15 prepared_bytes=2042880
+MSX INTRO start source=3830 frames=230
+MSX INTRO cadence unique=230 skipped=0
+MSX INTRO complete frames=230 rendered=235 crc=db681cc3 reads=1246644 audio=1
+MSX INTRO timing decode_max_us=12913 decode_mean_us=1527 draw_max_us=940
+MSX pack: 296 pages, 101 palettes, 37 chunks; cache=592 KB DMA=388352 bytes startup evictions=0
+MSX DEPTH mode enabled (depth25d default)
+MSX v10 scene loaded: original collision grid + slope motion
+MSX mission handoff x=7852402 y=6157405
+MSX first frame ready
+MSX run-fire
+MSX projectile sprite owner=0 direction=1 size=10x6
+MSX jump
+MSX run-jump
+MSX camera moving
+MSX enemy hit=1
+MSX enemy hit=2
+MSX defeated=1
+MSX landed height=-19
+MSX run-fire
+MSX enemy hit=3
+MSX enemy hit=4
+MSX defeated=2
+MSX first roof x=598
+MSX checkpoint=640
+MSX enemy hit=5
+MSX enemy hit=6
+MSX defeated=3
+MSX DEPTH: triangles=8 limit=96 fog=0 B lights=0 fog_uploads=0 planes=0 shadows=1 shadow_tris=8
+MSX RDP: draws=530 tex=44 TLUT=15 TMEM=87048 B CPU=19325 us PI=37 loads/388352 bytes misses=0 evictions=0
+MSX camera raised=1006
+MSX middle bank full speed=1024
+MSX DEPTH: triangles=8 limit=96 fog=0 B lights=0 fog_uploads=0 planes=0 shadows=1 shadow_tris=8
+MSX RDP: draws=479 tex=44 TLUT=21 TMEM=87184 B CPU=18451 us PI=37 loads/388352 bytes misses=0 evictions=0
+MSX observed region end camera=1920 x=144965631
+MSX diagnostics on
+MSX diagnostics off
+MSX reset

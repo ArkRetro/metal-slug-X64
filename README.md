@@ -1,15 +1,18 @@
 # Metal Slug X para Nintendo 64: trabajo en curso
 
-La próxima entrega solicitada es una **demo jugable de la Misión 1 completa, con intro y sonido**,
-validada en ares antes de probarla en MiSTer. Aún no está terminada.
+La demo jugable del tramo actual se publica por petición del usuario el 4 de noviembre de 2026.
+Incluye título X64 con audio, entrada en paracaídas y recorrido parcial con tres guardias.
+**No es la Misión 1 completa.** Descarga, controles y límites en
+[la guía de la demo](docs/PLAYABLE_DEMO.md).
+El objetivo de completar la misión y recuperar la lógica original sigue pendiente.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
 La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
 el controlador completo todavía está pendiente y no se declara un 100%.
 El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)
 ya pasa comparaciones con MAME y con framebuffer real del RDP en ares.
-El [modo visual 2.5D](docs/RETRO25D.md) está activo por defecto: paralaje en
-perspectiva, iluminación por vértice, sombras de contacto, pulsos de luz en
-impactos y explosiones, y niebla, sin tocar el pixel art ni la jugabilidad 2D.
+La demo usa [capas de paralaje y sombras de contacto](docs/RETRO25D.md),
+sin extrusión de edificios, niebla ni iluminación dinámica adicional.
+El pixel art y la acción se mantienen en 2D.
 `make MSX_VISUAL_MODE=classic` compila la ruta plana original.
 Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
 con contorno, paleta y transparencia, también al disparar hacia la izquierda.

@@ -9,7 +9,7 @@ commit=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).st
 tracked=subprocess.check_output(['git','ls-files','-z'],cwd=ROOT).decode().split('\0')
 prefixes={'src','tools','decomp','data','docs','.github'}
 root_names={'Makefile','README.md','SOURCE_STATUS.md','LICENSE','LICENSE.md','.gitignore'}
-extensions={'.c','.h','.cpp','.hpp','.S','.s','.py','.lua','.java','.sh','.mk','.md','.txt','.json','.csv','.tsv','.toml','.yml','.yaml'}
+extensions={'.asm','.cmd','.inc','.c','.h','.cpp','.hpp','.S','.s','.py','.lua','.java','.sh','.mk','.md','.txt','.json','.csv','.tsv','.toml','.yml','.yaml'}
 selected=[name for name in tracked if name and (name in root_names or (name.split('/')[0] in prefixes and Path(name).suffix in extensions))]
 assert 'SOURCE_STATUS.md' in selected and 'src/neo_player_query.c' in selected
 manifest=dict(commit=commit,decompilation_complete=False,package='Current partial source recovery and port sources',excludes=['Game ROMs/BIOS','Demo and regression ROMs','Original graphics/audio assets','Build products and SDK'],files={})

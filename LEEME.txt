@@ -1,0 +1,19 @@
+Metal Slug X64 - Demo jugable parcial - 2026-11-04
+
+Requiere 8 MB (Expansion Pak). Cargar msx64-demo.z64 en el core N64 de MiSTer.
+Controles: cruceta/stick mover, A salto, B disparo, R reiniciar tramo,
+L diagnostico, START omitir titulo.
+
+Incluye titulo X64 y entrada en paracaidas con audio, un tramo con tres
+guardias provisionales, colisiones, paralaje y sombras. Acaba en REGION END.
+NO es la Mision 1 completa. Faltan jefe, resto de eventos, controlador completo,
+armas/granadas, IA original integrada y audio continuo durante el juego.
+Los ultimos modulos de C recuperados no estan integrados en esta campana.
+
+Probada en ares 146: titulo, entrada completa, salto/aterrizaje, carrera/disparo,
+tres guardias, final del tramo, diagnostico y reinicio. Sin misses de texturas.
+Esta compilacion queda pendiente de tu prueba en MiSTer; no se garantiza 60 FPS.
+El audio se comprobo por estado del reproductor, sin captura acustica.
+
+Codigo y evidencia:
+https://github.com/ArkRetro/metal-slug-X64/tree/e3d55d8cb044e999a36a08aaba1323558f74b25a

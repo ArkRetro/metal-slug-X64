@@ -12,3 +12,18 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
 | 4 | Jefe final `04A2C2` en las 7 piezas de `JEFE_MISION3.md` (familias m3boss1..5) y fin de misión `018F92`/`018F40` | La M3 termina y pasa a la M4 |
 | 5 | Vehículos `093C9A` y `0AC866`; armas en la forma `+93 = 2`; arma E | Vehículos y armas de la M3 |
 | 6 | Resto de actores, premios, prisioneros y ramas al azar | Inventario completo |
+
+## Estado
+
+- **Paso 1: hecho** (rama `work-m3step1`, [MISION3.md](MISION3.md) «Paso 1»).
+  `work-m3c` fusionada sin desfase de filas; vagones `038D1E/038D26` (puertas,
+  blancos, piezas, 4 estampadores), plataforma `0B9286` (mapa `0E6896`),
+  `0B93B4` y `0B9400` nativos; familias `m3wagon` (3515 actualizaciones) y
+  `m3platform` (14 506) iguales a MAME en `make check`. La M3 carga tras la M2
+  con la rejilla nueva, el tren y el bloque `MSXR` (mapas dinámicos). En ares
+  (`mslugx-m3-reference.z64`, `test_mission3_ares.py --hop --pilot`) Marco
+  cruza las 5 secciones hasta la arena del jefe con 0 rescates y 0 caídas
+  (con el mando ciego `--hop`, 0 o 1 rescate según la pasada). Paradas
+  explícitas: la entrada en paracaídas (tipo 2), `0B9748` (puntos), los
+  enemigos (registros saltados), el guion en `2DB148`.
+

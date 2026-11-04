@@ -410,10 +410,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
     pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
-    /* Reference build: Start in Mission 2 stage 3 toggles the test's route
+    /* Reference build: Start in Mission 2 stage 3 and in Mission 3 toggles
+     * the test's route
      * planner (gameplay.h, msx_autopilot.h) instead of reaching the HUD. */
     bool start_press=input.btn.start && !previous_start;
-    if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage==3u) {
+    if (msx_reference_invulnerable && start_press && game.in_stage && ((game.flow.mission==1u && game.flow.stage==3u) || game.flow.mission==2u)) {
         game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
     }
     /* Reference build: Start in Mission 2 stages 1 and 2 ends the stage

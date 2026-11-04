@@ -92,6 +92,17 @@ static void ap_step(msx_game_t *g,int *direction,bool *jump) {
             int n=i*AP_PER+ap_n[i]++;ap_h[n]=(int16_t)h;ap_prev[n]=-1;ap_cost[n]=255;
             if (i==X/8-c0 && (self<0 || abs(h-Y)<abs(ap_h[self]-Y))) self=n;
         }
+        /* Mission 3: the platform 0B9286 over the gap (dynamic map 0E6896)
+         * is a floor too, where it is now (it moves 1 px per update). */
+        uint8_t obj;int32_t top;
+        if (g->flow.mission==2u && ap_n[i]<AP_PER &&
+            platform_floor(g,x*MSX_UNIT,(r0+AP_ROWS)*8*MSX_UNIT,-AP_ROWS*8*MSX_UNIT,&obj,&top) && obj!=NEO_KOBJ_TRAIN) {
+            int h=top>>16;
+            if (h+ry>=0x108) {
+                int n=i*AP_PER+ap_n[i]++;ap_h[n]=(int16_t)h;ap_prev[n]=-1;ap_cost[n]=255;
+                if (i==X/8-c0 && (self<0 || abs(h-Y)<abs(ap_h[self]-Y))) self=n;
+            }
+        }
     }
     if (self<0 || abs(ap_h[self]-Y)>8) {
         *direction=g->pilot.pre_dir?g->pilot.pre_dir:1;

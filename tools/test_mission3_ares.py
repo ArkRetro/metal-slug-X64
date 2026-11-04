@@ -18,6 +18,7 @@ parser.add_argument('--log',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--stage-seconds',type=float,default=300)
 parser.add_argument('--min-progress',type=int,default=1000)
+parser.add_argument('--pilot',action='store_true',help='Start at the stage start: the reference route planner (msx_autopilot.h, with the platform 0B9286 as a floor) drives direction and jumps; the pad fires')
 parser.add_argument('--hop',action='store_true',help='the Mission 3 pad: right, fire and repeated jumps, never left')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 XD='/usr/bin/xdotool'
@@ -87,9 +88,18 @@ try:
     subprocess.run([XD,'windowmove',window,'0','0'],check=True)
     subprocess.run([XD,'windowfocus','--sync',window],check=True);time.sleep(1.0);snap('stage4-start');walked.append('stage 4 loaded')
     worker.start()
+    if args.pilot:
+        time.sleep(1.0);key('keydown','Return');time.sleep(.1);key('keyup','Return')
+        wait_for('MSX autopilot on',timeout=10);walked.append('autopilot on')
     end=time.monotonic()+args.stage_seconds;shots=0
     while time.monotonic()<end:
         time.sleep(2)
+        if args.pilot:
+            # A second Start edge (seen once in ares) turns the planner off:
+            # press again (counted).
+            states=re.findall(r'MSX autopilot (on|off)',log())
+            if states and states[-1]=='off':
+                key('keydown','Return');time.sleep(.1);key('keyup','Return');walked.append('autopilot on again')
         if time.monotonic()>end-args.stage_seconds+(shots+1)*args.stage_seconds/8:snap('stage4-%d'%shots);shots+=1
         if re.search(r'MSX (mission complete signal \(018F92\)|stage end \(018722\) mission 3|mission end 018846 done)',log()):walked.append('stage end');break
         if re.search(r'MSX game over|Mission 1 restarts',log()):walked.append('game over');break

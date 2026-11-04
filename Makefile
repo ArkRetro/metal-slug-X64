@@ -957,8 +957,8 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	python3 tools/test_wav64_vadpcm.py
 	# The Mission 2 export (private) carries the Mission 1 sprites: the
 	# player's weapons and effects (BUG_MATRIX B29: the beam of the laser).
-	# (Mission 3's export is still its own actors only: paused, NEXT_STEPS.)
-	for m in $(wildcard filesystem/mission2/rest-native.json); do python3 tools/check_mission_sprites.py filesystem/rest-native.json $$m || exit 1; done
+	# Mission 3's export (step 1, docs/MISION3.md) carries them too.
+	for m in $(wildcard filesystem/mission2/rest-native.json filesystem/mission3/rest-native.json); do python3 tools/check_mission_sprites.py filesystem/rest-native.json $$m || exit 1; done
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision

@@ -206,11 +206,21 @@
   dinámicos con su recorrido, 28 parches de repisa), lista de cámara y
   secciones guardados en `filesystem/mission3/s1` y en el bloque `MSXR` de
   `romfs/mission3.pack`; `test_m3_map` (make check) y `make check-m3sweeps`
-  al 100 % en las 5 secciones. Siguiente: fusionar la repisa de `work-m3c`
-  (`0B8FA8`, caja `039382`; quitar su `origin_rows`, la rejilla ya va desde
-  la fila 0), el escritor del cielo tras el progreso 0x140, el actor
-  `0A6C8C` de la superposición `10E8C6` y los actores de los objetos
-  dinámicos (`0E6896`, `0E0D00`, ...); luego el paseo en ares (B18).
+  al 100 % en las 5 secciones. Siguiente: el escritor del cielo tras el
+  progreso 0x140, el actor `0A6C8C` de la superposición `10E8C6` y el mapa
+  dinámico del jefe `0E0D00`.
+
+- **Misión 3, paso 1 hecho (rama `work-m3step1`, MISION3.md «Paso 1»,
+  B18)**: `work-m3c` fusionada, vagones y plataforma nativos (familias
+  `m3wagon`/`m3platform` iguales a MAME), bloque `MSXR` leído, Marco recorre
+  la M3 hasta la arena del jefe en ares (0 rescates). Siguiente (paso 2 de
+  [PLAN_MISION3.md](PLAN_MISION3.md)): enemigos del camino (`09BA2A`,
+  `08A732` —lee `10C700`, ya escrito por `038D26`—, `08DA12`, `05D916`,
+  `04E990`, `097FCC`, `0569xx`); pendientes del paso 1: la entrada en
+  paracaídas de tipo 2 (`0C15B4`, hoy el jugador aparece en x 0x48), `0B9748`
+  (necesita `+15` del jugador en el entorno de los actores), el paso
+  plataforma → suelo de x 4272 (comprobar en MAME) y el op 0x15 del guion
+  (`2DB148`).
 
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:

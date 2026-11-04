@@ -348,12 +348,112 @@ otra columna del anillo del tren; solo cambian píxeles en la 3 y la 4).
 - Los objetos dinámicos y las repisas necesitan sus actores nativos
   (`0B8FA8` y la caja `039382` están en `work-m3c`, sin fusionar).
 
+## Paso 1: la M3 de principio a fin sin enemigos (rama `work-m3step1`)
+
+Plan: [PLAN_MISION3.md](PLAN_MISION3.md), paso 1. Suelos que ponen los
+actores, carga con el paquete nuevo y recorrido en ares.
+
+**Fusión de `work-m3c`** (cajas `039382/03938A`, estampador `0B8FA8`): sin
+su desfase de filas (`origin_rows`, `scene_stage_t.origin_y` fuera; la
+rejilla empieza en la fila 0). `0C70FC` recorta a la ventana del anillo
+(`neo_collision_window_clip`) y luego al submapa como en la M2
+(`g_map_patch`); `data/m3ledge_fixture.json` va en filas del núcleo (fila
+= 63 − fila del anillo): `test_neo_m3props`, 5 copias, 320 celdas iguales.
+
+**Nativos nuevos** (`src/neo_m3props.c`, comentario de cabecera con cada
+dirección):
+
+- Vagones `038D1E/038D26` (llamadas `0B9148/0B916A`, (09D0/0AB0, 0048)):
+  puertas `038B06` (al romperse: sonido 1029, bit del creador `+74`, el
+  estampador `039562[+6E]`, caída con rebote), blancos `038F38` (al
+  romperse: programa al azar y dos piezas `0390A6`), y `038D26` mantiene
+  `10C700 = +3C − 58` (`0BC542`; lo lee `08A654` de `08A732`) hasta que se
+  rompe una puerta (`0BC548`: 7FFF).
+- Estampadores `0B90BC/0B90FA/0B9106/0B9112` (`+78` = 95/9E/A3/AC, `+7A` =
+  8, programas `0B9040/0B9064`) sobre `0B8FA8`.
+- Plataforma `0B9286` (llamada `0B925C`, (0FA0, 0030) de la raíz): va y
+  viene entre x F60 y FA0 hasta que la cámara llega a F10, se queda en FA0
+  (`10C6BD = 1`), mapa dinámico `0E6896` (`0140C0`), se borra en la cámara
+  10F0; su pieza `0B93B4` (01AD6E a +C0) y el registro del guion `0B9400`
+  (se borra con `10C6BD ≠ 0`). `0B9748` (puntos al saltar a la plataforma:
+  lee `+15` del jugador, que el entorno de los actores no lleva) queda fuera:
+  se crea como externo y se cuenta.
+
+**Familias contra MAME** (capturas desde `states4/sec04_117966`, borradas
+tras extraer):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_VRAM_TRACE=1 MSX_FULL_GRID_TAP=0
+MSX_FULL_FIRST_DUMP=120900 MSX_FULL_PERIOD=15 MSX_FULL_FAMILY_ROOTS=39382,3938a,38d1e,38d26 MSX_FULL_FAMILY_FROM=120900 MSX_FULL_LAST=122400 sh tools/run_capture_fullgame.sh W
+MSX_FULL_FIRST_DUMP=126200 MSX_FULL_PERIOD=60 MSX_FULL_FAMILY_ROOTS=b9286,b9400 MSX_FULL_FAMILY_FROM=126200 MSX_FULL_LAST=141300 sh tools/run_capture_fullgame.sh P
+R='--attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 10d83e-10e83e'
+python3 tools/extract_family_fixture.py W/boss-trace.txt --output data/m3wagon_fixture.json.gz --range 38b06-391e8 --range 39382-39470 --range b8fa8-b9148 $R --ram 10c700-10c702
+python3 tools/extract_family_fixture.py P/boss-trace.txt --output data/m3platform_fixture.json.gz --range b9286-b9418 $R --ram 10c6bc-10c6be --ram 10e9d0-10e9d2
+python3 tools/export_rest_sprites.py ZIP W@38b06-39470 P@b9286-b9418 --mask-auto --output filesystem/mission3/rest-native.json --keep <export anterior de la M3> --keep filesystem/mission2/rest-native.json --keep filesystem/rest-native.json
+python3 tools/pack_mission.py 3 filesystem/mission3/s1 --loose-layers --report build/mission3_pack_report.json
+```
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3wagon` (cajas, vagones, puertas, blancos, piezas, 6 estampadores) | 39 | 3515 | 120945..122187 | iguales a MAME, con los anillos de `10C72E` (parches) y del tren y `10C700` |
+| `m3platform` (`0B9286`, `0B93B4`, `0B9400`) | 3 | 14506 | 126244..141260 | iguales, con `10C6BD` y `10E9D0` |
+
+Para eso las pruebas de familia ganan `--train` (el tren `10D7B6` como
+segundo objeto de terreno del núcleo, `+14..+20` leídos y su anillo RAM
+`10D83E`: `neo_kscene_t.train_ring`) y `--group-map 0` (`10C00E = 0`:
+`012970` no traduce el grupo; el mundo hace lo mismo en la lista `0B8968`).
+Los actores genéricos ven `10D7B6` como el tren (`NEO_KOBJ_TRAIN`) cuando el
+núcleo lo lleva, y en la M3 su terreno es siempre `10C72E`. Sprites:
+`export_rest_sprites.py` con las raíces y paletas nuevas (523 107 píxeles
+iguales, 59 distintos en 96 volcados; 44 volcados sin validar porque otra
+figura con la misma paleta se autoanima); el export lleva ya los sprites y
+paletas de la M1 (`check_mission_sprites.py` en `make check`, como el de la
+M2) y `mission3.pack` las 6849 descripciones (3,0 MB, 317 trozos de 432).
+
+**Carga** (`actor.c`, `scene_assets.c`): el bloque `MSXR` del paquete se lee:
+sus 14 mapas dinámicos (los bytes de la ROM) se sirven a `ga_rom`
+(`scene_stage_rom`, `ga_rom_set_extra`). Entrada: el registro de etapa +0E
+es el registro de entrada de `019604` (A0); el de la M3 (`2D5E7C`) es de
+tipo 2 (`0C15B4`, paracaídas desde y 0x100): el jugador empieza en x 0x48
+sobre el suelo **sin el paracaídas (parada explícita registrada)**; la M2
+(tipos 6/3, x 0x68) sigue con su entrada a pie. El límite derecho del
+jugador usaba el ancho de la M1 (3840): ahora el de la etapa (cámara máxima
++ 320). RAM: el cartucho de referencia quedaba en 207 ranuras (mínimo 208):
+`10A7` (transformación del jefe de la M1, 52 KB, una vez) se toca desde
+`rom:/`.
+
+**Recorrido** (`mslugx-m3-reference.z64`, `tools/test_mission3_ares.py
+--hop --pilot`: Start enciende en la M3 el planificador de rutas de
+referencia, `msx_autopilot.h`, que ahora ve también la plataforma `0B9286`
+como suelo donde está; el mando dispara; resumen por sección):
+
+| Sección | Progreso | Jugador x | Rescates | Muertes por caída |
+| --- | --- | --- | --- | --- |
+| 1 salida | 0..256 | 72..389 | 0 | 0 |
+| 2 vagones | 320..3391 | 485..3527 | 0 | 0 |
+| 3 hueco | 3456..3650 | 3590..3804 | 0 | 0 |
+| 4 tramo final | 3712..6272 | 3807..6406 | 0 | 0 |
+| 5 jefe | 6336..6465 | 6472..6601 | 0 | 0 |
+
+(360 s, dos pasadas con 0 rescates; llega a la arena del jefe y la etapa
+acaba al final de la lista de cámara por el gancho de referencia. En ares
+llega a veces un segundo flanco de Start que apaga el planificador: la
+prueba lo vuelve a encender y lo anota, «autopilot on again».) Con el mando ciego `--hop` (derecha y
+salto cada 0,2 s, sin planificador) una de tres pasadas no tuvo rescates;
+las otras, uno: el salto al hueco cuando la plataforma está lejos (hasta
+88 px entre el suelo, que acaba en x 3808, y su borde) y una bajada por su
+borde derecho (x 4263) que llega a la tierra de x 4272 ya 5 px por debajo
+(pendiente: comprobar en MAME el paso plataforma → suelo). Paradas
+explícitas del recorrido: la entrada en paracaídas, `0B9748`, los
+registros de constructores no portados (enemigos, saltados y registrados),
+`2869D6` y `0AF17E` como rutinas sin soporte del mundo, el guion parado en
+`2DB148` (op 0x15) y 2493 dibujos sin descriptor (`descriptor=0 palette=2`).
+
 ## Pendiente
 
-1. Recorrido: el suelo del vagón ya está en su sitio (rejilla sin el
-   desplazamiento de 64 px, «Reconocimiento del mapa»); falta la repisa
-   (actor `0B8FA8` y caja `039382`, rama `work-m3c`) y luego más allá de la
-   cámara 1900 hasta el jefe y el fin de misión.
+1. Recorrido: hecho hasta la arena del jefe (paso 1); falta la entrada en
+   paracaídas (tipo 2), `0B9748`, el paso plataforma → suelo de x 4272, los
+   enemigos (paso 2) y el jefe con el fin de misión (paso 4).
 2. Capas: el cielo (`10E83E`) usa también `10E94E` desde el progreso 0x140
    (velocidad 0x40) pero su mapa pasa a 0; su escritor (probablemente el actor
    `0B8EDC` de `0B8D34`, tabla `0B8EC2`) y la superposición `2A6142` de

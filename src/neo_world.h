@@ -125,6 +125,7 @@ typedef struct {
     uint16_t sounds[NEO_WORLD_SOUNDS];unsigned sound_count,sound_dropped;
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
+    unsigned converted;          /* generic nodes turned soldiers (0B05FE/0B0626/0B0632) */
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
     uint8_t arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, read by 05287C) */

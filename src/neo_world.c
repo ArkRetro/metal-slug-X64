@@ -54,6 +54,7 @@ typedef struct {
     neo_m2boss_env_t m2boss;     /* the Mission 2 boss's RAM (neo_m2boss.c) */
     const neo_script_env_t *se;  /* the script environment of this tick */
     int sub_owner;               /* generic actor running a sub-script (-1) */
+    uint32_t convert;            /* 0B05FE/0B0626/0B0632 asked by the running generic actor */
 } tick_t;
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
@@ -338,6 +339,32 @@ static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return fal
  * banners' constructor at camera 1600, where the trace reads 0x88 and 0x40
  * (bge: +15 bit 2 clear). */
 static bool g_front_layer(void *ctx) {tick_t *t=ctx;return t->w->front_window;}   /* set per stage by gameplay.c (B26) */
+static bool g_become_soldier(void *ctx,neo_gactor_t *a,uint32_t entry) {
+    tick_t *t=ctx;(void)a;
+    unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && t->w->soldiers[i].active;i++) {}
+    if (i==NEO_WORLD_SOLDIERS) {MSX_DIAG_POOL_FAIL(MSX_POOL_SOLDIER);return false;}
+    t->convert=entry;return true;
+}
+/* The generic node `gi` becomes soldier slot `si`: its record moves into the
+ * soldier's fields (+00..+6D named, +6E..+93 locals), the program and cursor
+ * stay, then 0B05DC and the entry (neo_soldier_become). */
+static bool convert_soldier(tick_t *t,unsigned gi,unsigned *si) {
+    neo_world_t *w=t->w;neo_gactor_t *a=&w->gactors[gi];
+    unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
+    if (i==NEO_WORLD_SOLDIERS) return false;
+    neo_soldier_t *s=&w->soldiers[i];memset(s,0,sizeof(*s));
+    s->active=true;s->b=ga_contact(a);
+    s->anim=(neo_anim_state_t){a->program,ga_l(a,0x50),a->cursor,ga_w(a,0x24),ga_w(a,0x26),ga_b(a,0x17),ga_b(a,0x18)};
+    s->render.attributes=(uint16_t)(ga_b(a,0x14)<<8|ga_b(a,0x15));
+    s->palette_resource=a->palette[0];s->health=ga_w(a,0x4e);
+    s->f16=ga_b(a,0x16);s->f5b=ga_b(a,0x5b);s->f5c=ga_b(a,0x5c);s->f5d=ga_b(a,0x5d);s->f5e=ga_b(a,0x5e);s->f60=ga_b(a,0x60);
+    s->variant68=ga_b(a,0x68);s->group69=ga_b(a,0x69);
+    memcpy(s->locals,&a->m[0x6e],NEO_SOLDIER_LOCALS);
+    t->env.event_context=t;
+    if (!neo_soldier_become(s,t->convert,&t->env)) {s->active=false;return false;}
+    w->constructed[i]=true;a->active=false;*si=i;w->converted++;
+    return true;
+}
 static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
@@ -1215,7 +1242,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
-    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
      * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
     g->arrow=&w->arrow;
@@ -1305,7 +1332,8 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (w->script.runners[i].active && w->script.runners[i].group69<9u) w->script.groups[w->script.runners[i].group69]++;
     memcpy(w->last_boss_boxes,w->boss_boxes,sizeof(w->boss_boxes));w->last_boss_box_count=w->boss_box_count;
     neo_script_env_t se={camera,w->terrain.x,w->terrain.y,
-        {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py},{false,0,0,0,0}},
+        {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py,
+          (uint8_t)(t.player_valid && neo_vslot_node(&w->vslots.slot[0]) && w->vslots.slot[0].b[0x21])},{false,0,0,0,0,0}},
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native,w->script_skip_unported};
     t.se=&se;t.sub_owner=-1;
     for (unsigned at=0;at<w->order_count;) {
@@ -1329,7 +1357,20 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         case NEO_WORLD_SOLDIER: keep=run_soldier(&t,slot.index);break;
         case NEO_WORLD_THROW: keep=run_throw(&t,slot.index);break;
         case NEO_WORLD_SPLASH: keep=run_splash(&t,slot.index);break;
-        case NEO_WORLD_GACTOR: {int r=run_gactor(&t,slot.index);keep=r==1;tree=r==2;break;}
+        case NEO_WORLD_GACTOR: {
+            t.convert=0;
+            int r=run_gactor(&t,slot.index);keep=r==1;tree=r==2;
+            if (t.convert && keep) {
+                /* JMP 0B0626..: the node goes on as a soldier, in this update. */
+                unsigned si;int at0=find(w,NEO_WORLD_GACTOR,slot.index);
+                if (at0>=0 && convert_soldier(&t,slot.index,&si)) {
+                    w->order[at0].kind=NEO_WORLD_SOLDIER;w->order[at0].index=(uint8_t)si;
+                    slot.kind=NEO_WORLD_SOLDIER;slot.index=(uint8_t)si;t.current=at0;
+                    keep=run_soldier(&t,si);
+                } else {w->unsupported++;w->unsupported_routine=t.convert;keep=false;}
+            }
+            t.convert=0;break;
+        }
         case NEO_WORLD_BOSS: keep=run_boss(&t);if (!keep) w->boss_active=false;break;
         }
         /* The running actor may have inserted others after itself. */

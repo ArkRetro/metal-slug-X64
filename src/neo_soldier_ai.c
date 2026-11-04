@@ -541,7 +541,7 @@ static int death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
      * 040C8E (kind 1 grounded or in the air: the armoured vehicle's blast; kind 9
      * grounded: the grenade's explosion) is translated; kinds 7 (the flame:
      * 040A40), 0A and 0B (the blast of weapons 02/07: 040AF6, 040A7C) in
-     * the three tables; the remaining entries (040B46, 040BA8, 040BE6) are
+     * the three tables; 040B46 and 040BA8 as neo_m3enemy.c; the crouch entry 040BE6 is
      * not translated and stop explicitly. */
     if (kind==7) { /* 040A40 */
         uint32_t d0=(uint32_t)(neo_rng_next(c->e->rng)&0xffffu)<<2;
@@ -569,6 +569,18 @@ static int death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
         /* 040AE0 and its 040DF0 body run in this update. */
         if (s->b.vy>=0) s->b.vy=S32((uint32_t)s->b.vy-ASR((uint32_t)s->b.vy,4));
         return death_body(c);
+    }
+    { /* 040B46 (kinds 3/4) and 040BA8 (kind 5, grounded): +5B against the facing. */
+        bool facing=(s->b.flags15&1u)!=0;
+        bool negative=(int8_t)(s->f5b^(facing?0xffu:0u))<0;
+        if (kind==3||kind==4) {
+            if (!anim_start(c,!negative?0x240a3eu:B(0x72)?0x240ae6u:0x240c76u)) return -1;
+            s->b.vy=0x20000;s->routine=0x40df0;return 0;
+        }
+        if (kind==5 && !crouch && (s->b.flags15&64u)) {
+            if (!anim_start(c,negative?0x240c76u:0x240d3cu)) return -1;
+            s->routine=0x40df0;return 0;
+        }
     }
     uint32_t program=0;
     if (crouch) {
@@ -1244,6 +1256,18 @@ static bool b05dc(ctx_t *c) {
     if (!aef30(c)) return false;
     SW(0x70,0xffff);
     return true;
+}
+/* ROM 0B05FE / 0B0626 / 0B0632: a generic node of another family (its
+ * record already moved into `s` by the world) becomes a regular soldier:
+ * 0B05DC (0AEF30 with the words +6E.. cleared), +7C bit 7 set / set /
+ * clear, then 0B0750 / 0B063E / 0B063E (run by the caller's next tick). */
+bool neo_soldier_become(neo_soldier_t *s,uint32_t entry,neo_soldier_env_t *e) {
+    ctx_t c={s,e,false};
+    if (entry!=0xb05feu && entry!=0xb0626u && entry!=0xb0632u) return false;
+    if (!b05dc(&c)) return false;
+    if (entry==0xb0632u) SB(0x7c,B(0x7c)&0x7fu); else SB(0x7c,B(0x7c)|0x80u);
+    s->routine=entry==0xb05feu?0xb0750u:0xb063eu;
+    return !c.unsupported;
 }
 /* ROM 04115A constructor (soldier variant walking a set distance). */
 static void ctor_4115a(ctx_t *c) {

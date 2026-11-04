@@ -660,6 +660,11 @@ int main(void) {
         if (watch358) flags.signal358=wram[0xc358];
         /* RAM 10C700 (0BC542/0BC548, the Mission 3 wagon 038D26) and 10C6BD
          * (the platform 0B9286 / 0B9400) when the family watches them. */
+        /* The delay grid RAM 1067E6 (16 x 8 words, 005106 / 00505A) when
+         * the family watches it. */
+        static uint16_t dgrid[128];bool watchgrid=false;
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x1067e6u && 0x1068e6u<=ram_ranges[g][1]) watchgrid=true;
+        if (watchgrid) {for (unsigned q=0;q<128;q++) dgrid[q]=w16(0x1067e6+2*q);e.grid=dgrid;}
         bool watch700=false,watch6bd=false;
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) {
             if (ram_ranges[g][0]<=0x10c700u && 0x10c701u<ram_ranges[g][1]) watch700=true;
@@ -683,6 +688,7 @@ int main(void) {
         env_to_ram(&weapons);
         if (watch358) wram[0xc358]=flags.signal358;
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
+        if (watchgrid) for (unsigned q=0;q<128;q++) {wram[(0x67e6+2*q)&0xffff]=(uint8_t)(dgrid[q]>>8);wram[(0x67e7+2*q)&0xffff]=(uint8_t)dgrid[q];}
         if (watch6bd) wram[0xc6bd]=flags.platform6bd;
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;

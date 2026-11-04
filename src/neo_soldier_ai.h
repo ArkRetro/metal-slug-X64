@@ -87,6 +87,8 @@ extern uint32_t neo_soldier_unsupported_detail; /* animation result<<28 | comman
 extern unsigned neo_soldier_death_stops;extern uint32_t neo_soldier_death_stop_kinds;
 /* One original actor update (every second video tick). */
 neo_soldier_result_t neo_soldier_tick(neo_soldier_t *s,neo_soldier_env_t *env);
+/* ROM 0B05FE / 0B0626 / 0B0632 on a converted generic node (see the .c). */
+bool neo_soldier_become(neo_soldier_t *s,uint32_t entry,neo_soldier_env_t *env);
 /* Big-endian accessors of the routine-private block. */
 uint8_t neo_soldier_b(const neo_soldier_t *s,unsigned offset);
 uint16_t neo_soldier_w(const neo_soldier_t *s,unsigned offset);

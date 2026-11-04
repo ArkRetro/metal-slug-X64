@@ -330,7 +330,7 @@ identificar» cuando no hay más.
 | `03EE8A` | `03EE8A` | 8 | 118210 / 112 | 1:8 | guion | `23FE6C` `23FEA0` `23FEAC` +2 | — | **falta** | sin identificar (8 en la salida, programas `23FE6C..23FEFA`, sin sonido) |
 | `09AE2C` | `09AE2C` | 1 | 118652 / 312 | 1:1 | guion | `2404FE` `2A037A` `2A03C6` +2 | 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE` y propios `2A037A..2A048C`; hijo `09C46C` |
 | `09BA2A` | `09BA2A` | 8 | 118744 / 360 | 2:5 4:3 | guion | `240DEE` `2A037A` `2A03C6` +3 | 103E 1041 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `2A037A..2A0E04`; hijo `09C46C` |
-| `08DA12` | `08DA12` | 5 | 118836 / 627 | 2:5 | guion | `23D510` `23D62A` `23DB34` +4 | 103E 1041 1042 1043 | **falta** | programas de soldado `23D510 23DB34 2404FE 240DEE` y propios `28AC56 28ACCE` |
+| `08DA12` | `08DA12` | 5 | 118836 / 627 | 2:5 | guion | `23D510` `23D62A` `23DB34` +4 | 103E 1041 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `23D510 23DB34 2404FE 240DEE` y propios `28AC56 28ACCE` |
 | `09A67E` | `09A67E` | 5 | 118892 / 704 | 2:5 | guion | — | — | nativo | caja oculta (regalo en la palabra 3) |
 | `02B202` | `02B202` | 4 | 119050 / 849 | 2:2 4:2 | guion×2 corredor×2 | `236D00` `236D88` | 1021 | **falta** | sin identificar; hijos `02B61C`, `02BBBA`, explosiones; mapa dinámico de la raíz `02C5BA` (y `02C5C8` en la sección 4) |
 | 〃 | `02B61C` | 4 | 119050 / 849 | 2:2 4:2 | `02B202` | `23739E` | — | **falta** |  |

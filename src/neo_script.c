@@ -70,6 +70,12 @@ static bool condition(vm_t *v,uint16_t at) {
         default: return d7==0xffffu;        /* 01A790 */
         }
     }
+    else if (type==0x14u || type==0x15u) {
+        /* 01A7A2 / 01A7C8: a player rides a vehicle (0AAA88 of player 1,
+         * then 2) / none does. */
+        bool any=v->e->players[0].riding || v->e->players[1].riding;
+        return type==0x14u?any:!any;
+    }
     else {halt(v,at);return false;}
     uint16_t value=word(v,at,2);
     switch (cmp) {

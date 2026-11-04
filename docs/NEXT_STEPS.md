@@ -226,10 +226,11 @@
   `neo_m3enemy.c` con la muerte `0406B6` sobre nodos genéricos, el
   granadero `08A732` y los soldados del escudo `09AE2C/09AE1E/09BA2A`
   (familias `m3grenade`, `m3grenade4`, `m3shield`, `m3shield4` iguales a
-  MAME). Siguiente: convertir un nodo genérico en el soldado nativo (`0B05FE`
-  / `0B0626` / `0B0632`, la parada del escudo roto), y con ello `08DA12` y
-  `05D916`; después `04E990`, `097FCC`, `0569xx`, `0B9748`, el op 0x15
-  (`2DB148`) y la entrada en paracaídas.
+  MAME), el soldado de ventana `08DA12` (`m3window`), la conversión nodo
+  genérico → soldado nativo, las ondas (10C2F6 = 4) y las condiciones
+  0x14/0x15 del guion (`2DB148`). Siguiente: `05D916` (con `05C53C/05D226`),
+  `04E990`, `097FCC`, `0569xx`, `0B9748` y la entrada en paracaídas; las
+  trazas están en /home/user/captures-m3s2 (A: sección 2, B: sección 4).
 
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:

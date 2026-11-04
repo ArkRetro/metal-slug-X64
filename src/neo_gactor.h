@@ -240,6 +240,10 @@ struct neo_genv {
     /* Low word of the node's address as the slot services keep it (slot
      * +00, 0AA760; a turret's +0E): a nonzero id per node (NULL: 8000|index). */
     uint16_t (*node_word)(void *ctx,const neo_gactor_t *a);
+    /* JMP 0B05FE / 0B0626 / 0B0632 from a generic node: the node becomes a
+     * native soldier after this update (the world moves the record); false
+     * when the world has no soldier slot (NULL: explicit stop). */
+    bool (*become_soldier)(void *ctx,neo_gactor_t *a,uint32_t entry);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

@@ -152,10 +152,11 @@ bool ga_push_solids(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool *top) {
     }
     return !e->unsupported;
 }
-static uint8_t sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
+static uint8_t sweep_400a,sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {
-    uint8_t b400b=sweep_400b,b400d=sweep_400d;sweep_400b=sweep_400d=0;
+    uint8_t b400a=sweep_400a,b400b=sweep_400b,b400d=sweep_400d;sweep_400a=sweep_400b=sweep_400d=0;
+    if (e->flags) {e->flags->ram400a=b400a;e->flags->wrote400a=1;}   /* 0128DA / 0143CC */
     kset(e);uint8_t parent=kobj(r->parent_tag);
     int32_t x=r->x,y=r->y,dx=r->dx,dy=r->dy;
     if (parent==0xff) {
@@ -170,7 +171,7 @@ static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo
         parent=NEO_KOBJ_NONE;
     }
     self(a,e);
-    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,0,b400b,b400d};
+    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,b400a,b400b,b400d};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return false;}
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,kobj(r->parent_tag)==k.parent?r->parent_tag:ktag(k.parent),k.kind,k.flags};
@@ -191,6 +192,7 @@ uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     ga_set_contact(a,&c);if (kind) *kind=k.kind;return k.flags;
 }
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e) {return ga_air_kind(a,e,NULL);}
+uint16_t ga_air_400a(neo_gactor_t *a,neo_genv_t *e) {sweep_400a=0xff;uint16_t f=ga_air_kind(a,e,NULL);sweep_400a=0;return f;}
 uint16_t ga_air_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind) {
     sweep_400b=b400b;sweep_400d=b400d;uint16_t f=ga_air_kind(a,e,kind);sweep_400b=sweep_400d=0;return f;
 }
@@ -248,6 +250,17 @@ bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
     return (k.flags&1u)!=0;
+}
+/* 01495C with D6 (013968's flags) as the result. */
+uint16_t ga_probe_vertical_d6(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return 0;}
+    return k.flags;
 }
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
@@ -307,14 +320,16 @@ static bool wr(void *context,uint16_t field,unsigned size,uint32_t value) {
 }
 static void snd(void *context,uint16_t id) {anim_ctx_t *c=context;if (c->e->sound) c->e->sound(c->e->ctx,id);}
 /* A callback reads and writes the node: the program's timer +24, speed +26,
- * flash +17 and counter +18 are in the node while it runs. */
+ * flash +17, counter +18 and hurtbox +50 are in the node while it runs. */
 static void state_out(anim_ctx_t *c) {
     if (!c->s) return;
     ga_sw(c->a,0x24,c->s->timer);ga_sw(c->a,0x26,c->s->speed);ga_sb(c->a,0x17,c->s->flash);ga_sb(c->a,0x18,c->s->field18);
+    ga_sl(c->a,0x50,c->s->field50_tag);
 }
 static void state_in(anim_ctx_t *c) {
     if (!c->s) return;
     c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);c->s->flash=ga_b(c->a,0x17);c->s->field18=ga_b(c->a,0x18);
+    c->s->field50_tag=ga_l(c->a,0x50);   /* a callback may set the hurtbox (09D310..) */
 }
 static bool cl(void *context,uint32_t routine,uint16_t parameter,neo_anim_render_t *render) {
     anim_ctx_t *c=context;

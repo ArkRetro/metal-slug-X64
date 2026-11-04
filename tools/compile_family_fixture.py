@@ -40,6 +40,7 @@ def main():
     p.add_argument('--resume',action='store_true',help='a trace started from a saved state: the nodes alive before it start from their recorded bytes, creator and program (as --m2boss, without its RAM)')
     p.add_argument('--m2boss',action='store_true',help='the Mission 2 boss 026254 (neo_m2boss.c): RAM 10E99A/10E9BA/1013D6/10C354/10008A/10F009 through neo_m2boss_env_t (extract with --ram covering them); nodes alive before the piece keep their creator')
     p.add_argument('--m3mid',action='store_true',help='the Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6, RAM 10E959, 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them); pieces resume like --m2boss')
+    p.add_argument('--root-words',action='store_true',help='a single word read of the root\'s +14..+20 (01AD7C) updates it with the other word as last known')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
@@ -186,6 +187,7 @@ def main():
     L.append('static const family_update_t %s_updates[]={'%n)
     last={}
     maxext=0
+    root_last=[None]*4
     for k,u in enumerate(d['updates']):
         post=bytes.fromhex(u['post']) if u['post'] else bytes(0xb0)
         # Bytes other actors (the player's shots, 0049E8) changed in the node
@@ -204,6 +206,13 @@ def main():
         rmask=0;rv=[0,0,0,0]
         for i in range(4):
             if root[2*i] is not None and root[2*i+1] is not None:rmask|=1<<i;rv[i]=s32(root[2*i]<<16|root[2*i+1])
+            # A word read alone (01AD7C adds the root's +14/+18 words): the
+            # other word as last known.
+            elif a.root_words and (root[2*i] is not None or root[2*i+1] is not None) and root_last[i] is not None:
+                hi=root[2*i] if root[2*i] is not None else (root_last[i]>>16)&0xffff
+                lo=root[2*i+1] if root[2*i+1] is not None else root_last[i]&0xffff
+                rmask|=1<<i;rv[i]=s32(hi<<16|lo)
+            if rmask>>i&1:root_last[i]=rv[i]&0xffffffff
         corr=rd(u,0x10e98c)
         # Layer object 10D7B6 (+14..+24) when the trace has its reads (older
         # fixtures: same position as the root, checked in the RAM dumps).

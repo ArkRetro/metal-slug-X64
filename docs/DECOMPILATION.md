@@ -265,3 +265,24 @@ y MIPS/ares. Se conservan el orden descriptor/avance y la recarga diferida de
 Los bloques no se contabilizan como funciones padre completamente recuperadas.
 Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 `decomp/recovered/condition-consumers/blocks.json`.
+
+## Enfoque por programa completo
+
+Se introduce un grafo reproducible del modelo P1 (funciones, rangos, llamadas,
+asignaciones de estado y usos de registros tras retorno), más un registro
+curado inicial de componentes nativos. El análisis reconoce consumidores CCR
+ya contrastados y detecta ámbitos que el índice de C no representaba bien.
+Estas son hipótesis del modelo MC68020 de Ghidra, no una partición verificada.
+
+La inspección de raíces encuentra destinos de vectores 0022A2/0022AC/002322
+sin modelo y dos rutas de copia de código a RAM: P1:001158 -> RAM:100000
+(4426 bytes) y P1:0010EE -> RAM:10FC00 (106 bytes, hasta el primer word RTS).
+Los operandos y el contexto M68000 se conservan como evidencia; la presencia
+de la segunda copia en RAM no demuestra toda su ejecución. El siguiente
+modelo debe incluir mapeos/vidas de esas copias, además de los bancos.
+
+El catálogo del intérprete de animación contiene trece stubs, con valores
+00,04,...,30. El conversor de Marco actual no reconoce 2C, y los servicios
+14/30 tienen dominios parcialmente recuperados. El plan prioriza cerrar esos
+contratos y el núcleo común, reutilizando `neo_animation.c`, sobre multiplicar
+traducciones parciales aisladas. Véase WHOLE_GAME_RECOVERY.md.

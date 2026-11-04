@@ -183,3 +183,8 @@ El [despacho de condiciones](decomp/recovered/condition-dispatch/README.md)
 ya conserva el retorno CCR.C en C y coincide con 447 llamadas controladas.
 Sus auxiliares se interceptaron con respuestas sintéticas y siguen pendientes
 de recuperación/enlace nativo.
+
+La [estrategia de recuperación completa](docs/WHOLE_GAME_RECOVERY.md) organiza
+el trabajo por modelo, contratos y subsistemas integrados. Los
+[análisis de dependencias y raíces](decomp/analysis/README.md) son evidencia
+para planificar; no una declaración de que la descompilación esté terminada.

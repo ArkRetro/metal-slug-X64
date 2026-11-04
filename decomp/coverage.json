@@ -5,6 +5,7 @@
   "m68k_c_files": 5168,
   "z80_c_files": 154,
   "remaining": [
+    "Account for cartridge exception/interrupt roots and versioned relocated RAM code before claiming a closed program model",
     "Resolve unverified C types, ABI/register state and function boundaries",
     "Review signature roots which may actually be data",
     "Recover computed/external calls and state-dependent mappings",
@@ -31,5 +32,9 @@
     "original_transitions": 264,
     "whole_parent_functions": false,
     "campaign_scheduler_verified": false
-  }
+  },
+  "strategy": "docs/WHOLE_GAME_RECOVERY.md; decomp/recovery-roadmap.json",
+  "native_component_registry": "decomp/native-components.json (initial, not exhaustive)",
+  "program_model": "decomp/analysis/p1-program-model/summary.json (candidate model, not code coverage)",
+  "known_missing_root_contexts": "decomp/analysis/program-roots.json: 3 unmodeled cartridge vector targets and 2 static RAM code-copy containers"
 }

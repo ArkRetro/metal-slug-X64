@@ -115,12 +115,38 @@
       ]
     },
     {
+      "kind": "UNMODELED_CARTRIDGE_VECTOR_ROOTS",
+      "targets": [
+        "0x000022A2",
+        "0x000022AC",
+        "0x00002322"
+      ]
+    },
+    {
+      "kind": "RELOCATED_CODE_CONTEXTS_NOT_CLOSED",
+      "contexts": [
+        {
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x100000",
+          "source": "0x001158",
+          "container_bytes": 4426
+        },
+        {
+          "mapping": "RAM_COPY_10FC00",
+          "pc": "0x10FC00",
+          "source": "0x0010EE",
+          "container_bytes": 106
+        }
+      ]
+    },
+    {
       "kind": "FULL_PROGRAM_MIPS_VALIDATION_MISSING",
       "detail": "Only module regressions exist; no whole-game equivalence/build validation record"
     },
     {
       "kind": "RECORDED_OPEN_WORK",
       "items": [
+        "Account for cartridge exception/interrupt roots and versioned relocated RAM code before claiming a closed program model",
         "Resolve unverified C types, ABI/register state and function boundaries",
         "Review signature roots which may actually be data",
         "Recover computed/external calls and state-dependent mappings",

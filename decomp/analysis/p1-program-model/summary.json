@@ -1,0 +1,341 @@
+{
+  "status": "WHOLE_STORED_P1_MODEL_ANALYSIS_NOT_VERIFIED_CODE",
+  "input_cpu_order_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "language": "68000:BE:32:MC68020",
+  "canonical_processor": "MAME M68000 must validate candidate instructions; Ghidra language is a superset",
+  "models": 5180,
+  "model_edge_rows": 30101,
+  "edge_kinds": {
+    "tail_jump": 3794,
+    "call": 20446,
+    "computed_jump": 85,
+    "computed_call": 46,
+    "state_assignment_candidate": 5730
+  },
+  "model_ranges": 5778,
+  "overlapping_model_ranges": 0,
+  "modeled_body_bytes": 610590,
+  "p1_bytes_outside_model_bodies": 437986,
+  "code_data_partition_verified": false,
+  "header_targets_to_model_owners": {
+    "002432": "002432",
+    "002658": "002658",
+    "002800": "002800",
+    "0027f6": "0027f6"
+  },
+  "header_direct_model_closure": 65,
+  "header_scheduling_model_closure": 65,
+  "direct_sccs": 5070,
+  "largest_direct_scc": 11,
+  "scheduling_sccs": 4331,
+  "largest_scheduling_scc": 42,
+  "model_functions_without_index": [
+    "001070",
+    "0042f4",
+    "00445a",
+    "004464",
+    "00447c",
+    "00449e",
+    "0044a6",
+    "0044bc",
+    "04560c",
+    "04685c",
+    "081e40"
+  ],
+  "indexed_addresses_without_model": [
+    "01a636",
+    "01a644",
+    "01a698",
+    "01a69e",
+    "01a6be",
+    "01a6de",
+    "01a702",
+    "01a722",
+    "01a742",
+    "01a766",
+    "01a778",
+    "01a790",
+    "01a7a2",
+    "01a7c8"
+  ],
+  "empty_automatic_c_with_model_register_writes": [
+    "002800",
+    "004c0e",
+    "012190",
+    "012d36",
+    "012dee",
+    "012e64",
+    "016b98",
+    "018f16",
+    "018f24",
+    "018f32",
+    "019424",
+    "01b1ec",
+    "01b284",
+    "01b2be",
+    "01ed32",
+    "024a94",
+    "024ab0",
+    "024acc",
+    "030b08",
+    "0320ee",
+    "03fb40",
+    "041578",
+    "042514",
+    "044930",
+    "04647c",
+    "0464e2",
+    "04d74a",
+    "04f960",
+    "065d02",
+    "066e50",
+    "076844",
+    "07685c",
+    "0769b2",
+    "078d7a",
+    "07c150",
+    "085f84",
+    "087998",
+    "08f636",
+    "09160a",
+    "0916c4",
+    "0918e4",
+    "0919a4",
+    "09901e",
+    "0a0532",
+    "0a055c",
+    "0a24f8",
+    "0a9af6",
+    "0a9b1c",
+    "0a9b42",
+    "0be446",
+    "0c0644",
+    "0c07f8",
+    "0c0f96",
+    "0c4244",
+    "0c6baa",
+    "0c6f6a",
+    "0c6f7a",
+    "0c79fe",
+    "0c8c7e",
+    "0c8cfc",
+    "0ca614",
+    "0ca62c",
+    "0d15be"
+  ],
+  "immediate_possible_live_return_sites": 11907,
+  "immediate_possible_live_flag_sites": 5243,
+  "later_isa_review_sites": 0,
+  "top_dependency_models": [
+    {
+      "entry": "00427a",
+      "unique_callers": 1914,
+      "model_bytes": 48,
+      "immediate_flag_sites": 1068
+    },
+    {
+      "entry": "004256",
+      "unique_callers": 1674,
+      "model_bytes": 36,
+      "immediate_flag_sites": 25
+    },
+    {
+      "entry": "01abc8",
+      "unique_callers": 1037,
+      "model_bytes": 112,
+      "immediate_flag_sites": 82
+    },
+    {
+      "entry": "004188",
+      "unique_callers": 740,
+      "model_bytes": 10,
+      "immediate_flag_sites": 0
+    },
+    {
+      "entry": "009ea8",
+      "unique_callers": 672,
+      "model_bytes": 224,
+      "immediate_flag_sites": 6
+    },
+    {
+      "entry": "0040bc",
+      "unique_callers": 439,
+      "model_bytes": 96,
+      "immediate_flag_sites": 349
+    },
+    {
+      "entry": "0143dc",
+      "unique_callers": 384,
+      "model_bytes": 18,
+      "immediate_flag_sites": 14
+    },
+    {
+      "entry": "004c24",
+      "unique_callers": 338,
+      "model_bytes": 422,
+      "immediate_flag_sites": 295
+    },
+    {
+      "entry": "0120f8",
+      "unique_callers": 334,
+      "model_bytes": 152,
+      "immediate_flag_sites": 8
+    },
+    {
+      "entry": "0260c8",
+      "unique_callers": 312,
+      "model_bytes": 194,
+      "immediate_flag_sites": 35
+    },
+    {
+      "entry": "01ad6e",
+      "unique_callers": 275,
+      "model_bytes": 14,
+      "immediate_flag_sites": 0
+    },
+    {
+      "entry": "0029c6",
+      "unique_callers": 274,
+      "model_bytes": 44,
+      "immediate_flag_sites": 16
+    },
+    {
+      "entry": "01945c",
+      "unique_callers": 271,
+      "model_bytes": 168,
+      "immediate_flag_sites": 279
+    },
+    {
+      "entry": "0049e8",
+      "unique_callers": 252,
+      "model_bytes": 452,
+      "immediate_flag_sites": 95
+    },
+    {
+      "entry": "01ac38",
+      "unique_callers": 238,
+      "model_bytes": 20,
+      "immediate_flag_sites": 11
+    },
+    {
+      "entry": "01b1dc",
+      "unique_callers": 236,
+      "model_bytes": 16,
+      "immediate_flag_sites": 4
+    },
+    {
+      "entry": "009f88",
+      "unique_callers": 231,
+      "model_bytes": 68,
+      "immediate_flag_sites": 5
+    },
+    {
+      "entry": "01b220",
+      "unique_callers": 197,
+      "model_bytes": 34,
+      "immediate_flag_sites": 297
+    },
+    {
+      "entry": "01436a",
+      "unique_callers": 196,
+      "model_bytes": 66,
+      "immediate_flag_sites": 1
+    },
+    {
+      "entry": "003b6a",
+      "unique_callers": 169,
+      "model_bytes": 468,
+      "immediate_flag_sites": 0
+    }
+  ],
+  "largest_direct_clusters": [
+    [
+      "0a3b50",
+      "0aef30",
+      "0af17e",
+      "0afbc0",
+      "0afce2",
+      "0b0466",
+      "0b05dc",
+      "0b0626",
+      "0b0632",
+      "0b0750",
+      "0b08ac"
+    ],
+    [
+      "018364",
+      "01839a",
+      "01851a",
+      "018554",
+      "018600",
+      "018870",
+      "018aa2",
+      "018b10",
+      "0c81a6",
+      "0c8774"
+    ],
+    [
+      "0c1126",
+      "0c1d82",
+      "0c1e84",
+      "0c1ebe",
+      "0c229c",
+      "0c2d6a",
+      "0c2f06",
+      "0c3078",
+      "0c3214"
+    ],
+    [
+      "0c37ce",
+      "0c38b2",
+      "0c397e",
+      "0c3e66",
+      "0c3f1a",
+      "0c3ffa"
+    ],
+    [
+      "0699bc",
+      "0699e0",
+      "069a46",
+      "069a90",
+      "069bf4"
+    ],
+    [
+      "01a97a",
+      "01aa10",
+      "01aa28",
+      "01aac2"
+    ],
+    [
+      "062652",
+      "06268a",
+      "062962",
+      "062b7a"
+    ],
+    [
+      "019f7e",
+      "01a056",
+      "01a0a6"
+    ],
+    [
+      "034546",
+      "0348d8",
+      "0349be"
+    ],
+    [
+      "039820",
+      "0a93dc",
+      "0a9a56"
+    ]
+  ],
+  "files": {
+    "function-models.tsv": "3d5b79197adc699719cadb9ae78345d7f550e5e186c49712fd4f9aa5073c0af9",
+    "model-ranges.tsv": "55462b962aa3cec65c774d32796678f2ebcc414b9596a5ced4816e666e3fd568",
+    "model-edges.tsv": "36c06ffa36f57674ed8b810153a1a57c45e85b5aee8c927f34f4bf42b08c4eae",
+    "return-consumers.tsv": "38f03304b14e3123be245498e1526580f0df7ac89b8bb88081f01243dcc92bb8",
+    "isa-review.tsv": "184cac9ec622b37572a030525a908b6f86011cc6798888398f67872d80d4c80a",
+    "abi-review.tsv": "29f11e702b5d034eeaa28ff1895fa0e080aa85c5a6dcc594603936d2846f28a0",
+    "dependency-review.tsv": "5232ecad878f4b82fe4299b72d6ca7b5a0584e1907b6817d5735ce0878e9bdaf"
+  },
+  "limits": "Candidate ownership/edges/ISA come from stored Ghidra analysis and may decode data or omit indirect reachability. Raw p-code reads/writes are not complete calling conventions or liveness proofs. Empty C plus register writes is a review signal, not proof of a bug. Model byte coverage and header closure are NOT recovery percentages. P2/Z80/BIOS/native overlays are not part of this P1 graph."
+}

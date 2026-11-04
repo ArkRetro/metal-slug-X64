@@ -1,0 +1,380 @@
+{
+  "status": "NATIVE_AND_CANDIDATE_RECONCILIATION",
+  "registry_exhaustive": false,
+  "components": 8,
+  "associated_entries": 22,
+  "associated_model_owners": 14,
+  "priority_candidates": [
+    {
+      "entry": "00427a",
+      "modeled_unique_callers": 1914,
+      "model_bytes": 48,
+      "immediate_flag_sites": 1068,
+      "native_subsets": [
+        "animation_vm"
+      ],
+      "next_action": "Audit and extend existing native subset/domain",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "004256",
+      "modeled_unique_callers": 1674,
+      "model_bytes": 36,
+      "immediate_flag_sites": 25,
+      "native_subsets": [
+        "animation_vm"
+      ],
+      "next_action": "Audit and extend existing native subset/domain",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01abc8",
+      "modeled_unique_callers": 1037,
+      "model_bytes": 112,
+      "immediate_flag_sites": 82,
+      "native_subsets": [
+        "projection_history"
+      ],
+      "next_action": "Audit and extend existing native subset/domain",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "004188",
+      "modeled_unique_callers": 740,
+      "model_bytes": 10,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "009ea8",
+      "modeled_unique_callers": 672,
+      "model_bytes": 224,
+      "immediate_flag_sites": 6,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0040bc",
+      "modeled_unique_callers": 439,
+      "model_bytes": 96,
+      "immediate_flag_sites": 349,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0143dc",
+      "modeled_unique_callers": 384,
+      "model_bytes": 18,
+      "immediate_flag_sites": 14,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "004c24",
+      "modeled_unique_callers": 338,
+      "model_bytes": 422,
+      "immediate_flag_sites": 295,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0120f8",
+      "modeled_unique_callers": 334,
+      "model_bytes": 152,
+      "immediate_flag_sites": 8,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0260c8",
+      "modeled_unique_callers": 312,
+      "model_bytes": 194,
+      "immediate_flag_sites": 35,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01ad6e",
+      "modeled_unique_callers": 275,
+      "model_bytes": 14,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0029c6",
+      "modeled_unique_callers": 274,
+      "model_bytes": 44,
+      "immediate_flag_sites": 16,
+      "native_subsets": [
+        "rng_ring"
+      ],
+      "next_action": "Audit and extend existing native subset/domain",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01945c",
+      "modeled_unique_callers": 271,
+      "model_bytes": 168,
+      "immediate_flag_sites": 279,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0049e8",
+      "modeled_unique_callers": 252,
+      "model_bytes": 452,
+      "immediate_flag_sites": 95,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01ac38",
+      "modeled_unique_callers": 238,
+      "model_bytes": 20,
+      "immediate_flag_sites": 11,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01b1dc",
+      "modeled_unique_callers": 236,
+      "model_bytes": 16,
+      "immediate_flag_sites": 4,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "009f88",
+      "modeled_unique_callers": 231,
+      "model_bytes": 68,
+      "immediate_flag_sites": 5,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01b220",
+      "modeled_unique_callers": 197,
+      "model_bytes": 34,
+      "immediate_flag_sites": 297,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01436a",
+      "modeled_unique_callers": 196,
+      "model_bytes": 66,
+      "immediate_flag_sites": 1,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "003b6a",
+      "modeled_unique_callers": 169,
+      "model_bytes": 468,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01acf2",
+      "modeled_unique_callers": 163,
+      "model_bytes": 76,
+      "immediate_flag_sites": 13,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01ad8c",
+      "modeled_unique_callers": 157,
+      "model_bytes": 30,
+      "immediate_flag_sites": 6,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "019504",
+      "modeled_unique_callers": 142,
+      "model_bytes": 126,
+      "immediate_flag_sites": 140,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "00409a",
+      "modeled_unique_callers": 122,
+      "model_bytes": 34,
+      "immediate_flag_sites": 143,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "002e7c",
+      "modeled_unique_callers": 116,
+      "model_bytes": 28,
+      "immediate_flag_sites": 30,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01af9a",
+      "modeled_unique_callers": 103,
+      "model_bytes": 98,
+      "immediate_flag_sites": 73,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01456a",
+      "modeled_unique_callers": 101,
+      "model_bytes": 10,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "00411c",
+      "modeled_unique_callers": 92,
+      "model_bytes": 10,
+      "immediate_flag_sites": 6,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0029f2",
+      "modeled_unique_callers": 89,
+      "model_bytes": 10,
+      "immediate_flag_sites": 67,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01da40",
+      "modeled_unique_callers": 89,
+      "model_bytes": 60,
+      "immediate_flag_sites": 13,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0041ac",
+      "modeled_unique_callers": 89,
+      "model_bytes": 4,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0140c0",
+      "modeled_unique_callers": 86,
+      "model_bytes": 392,
+      "immediate_flag_sites": 5,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "004520",
+      "modeled_unique_callers": 77,
+      "model_bytes": 30,
+      "immediate_flag_sites": 2,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "002eb4",
+      "modeled_unique_callers": 62,
+      "model_bytes": 102,
+      "immediate_flag_sites": 18,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "019dfc",
+      "modeled_unique_callers": 61,
+      "model_bytes": 8,
+      "immediate_flag_sites": 4,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "03fada",
+      "modeled_unique_callers": 56,
+      "model_bytes": 24,
+      "immediate_flag_sites": 0,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "013f1e",
+      "modeled_unique_callers": 50,
+      "model_bytes": 62,
+      "immediate_flag_sites": 5,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01ab98",
+      "modeled_unique_callers": 50,
+      "model_bytes": 30,
+      "immediate_flag_sites": 1,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "01affc",
+      "modeled_unique_callers": 45,
+      "model_bytes": 78,
+      "immediate_flag_sites": 44,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    },
+    {
+      "entry": "0044f6",
+      "modeled_unique_callers": 45,
+      "model_bytes": 42,
+      "immediate_flag_sites": 2,
+      "native_subsets": [],
+      "next_action": "Identify original contract, then recover or locate an unregistered native implementation",
+      "status": "MODEL_PRIORITY_REQUIRES_RUNTIME_CORROBORATION"
+    }
+  ],
+  "registry_sha256": "1b6e4b482e7c5e13cb47224453edea5710951abb206b3497fa386bbdc0ef503e",
+  "graph_summary_sha256": "22639c79d4666f225b20ce6d8cf55d79cfab4b2e3789e154a9b75c3f0df23c90",
+  "limits": "Graph caller counts are model edges, not execution frequency. Native components have bounded evidence and are not complete-function proofs. Missing overlay is not proof that no implementation exists; this registry is intentionally incomplete. No progress percentage is calculated."
+}

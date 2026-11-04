@@ -1,0 +1,109 @@
+{
+  "status": "WHOLE_PROGRAM_RECOVERY_PLAN_NOT_COMPLETED",
+  "project_completion_percent": null,
+  "phases": [
+    {
+      "id": "canonical_model",
+      "state": "in_progress",
+      "depends": [],
+      "deliverable": "One versioned code/data/bank/import map reconciled with native subsets; candidate evidence stays separate",
+      "gate": "No native module is counted as absent solely because the automatic index remains tentative; all unclassified regions explicit"
+    },
+    {
+      "id": "core_runtime",
+      "state": "in_progress",
+      "depends": [
+        "canonical_model"
+      ],
+      "deliverable": "Actor allocation/lists/scheduler, animation/event VMs, RNG, scene/parent contracts and explicit return ABI",
+      "gate": "Whole actor/frame updates run with actual native dependencies and deterministic state; no injected mid-step state at the chosen integration boundary"
+    },
+    {
+      "id": "all_game_logic",
+      "state": "blocked_by_core_closure",
+      "depends": [
+        "core_runtime"
+      ],
+      "deliverable": "All executable M68000 logic and script/data producers for six missions, UI, weapons, vehicles, bosses, death/continue and two-player states",
+      "gate": "Every classified code region maps to compilable C and all indirect domains have a verified disposition; static-only paths remain explicitly unverified until reviewed"
+    },
+    {
+      "id": "audio_program",
+      "state": "initial_map_only",
+      "depends": [
+        "canonical_model"
+      ],
+      "deliverable": "All M1 banking states, Z80 command/voice sequencing, YM2610/sample contract and native N64 audio binding",
+      "gate": "No unexplained banked sound-code regions; reference commands/timing and chosen audio output tolerances reproduced"
+    },
+    {
+      "id": "portable_reference",
+      "state": "module_runners_only",
+      "depends": [
+        "all_game_logic",
+        "audio_program"
+      ],
+      "deliverable": "One executable portable C reference with deterministic original-vs-C replay",
+      "gate": "Boot-to-end replay across six missions and documented variant corpus; compare RNG, actors, state transitions, collisions, draw requests and audio requests, with failures retained"
+    },
+    {
+      "id": "n64_integration",
+      "state": "partial_backend_exists",
+      "depends": [
+        "portable_reference"
+      ],
+      "deliverable": "Same logic compiled for R4300 with libdragon/RDP/audio backends and memory budgets",
+      "gate": "Whole-program ares runs plus hardware tests; original logical tick order preserved across VI cadence, no assumed universal 60-Hz actor updates"
+    },
+    {
+      "id": "complete_source_delivery",
+      "state": "blocked",
+      "depends": [
+        "n64_integration"
+      ],
+      "deliverable": "Complete reviewed source ZIP, build/asset-generation instructions and validation manifests",
+      "gate": "No unresolved reachable services/commands or unclassified program regions; completeness review passes; no tentative C is relabeled as native"
+    }
+  ],
+  "immediate_focus": [
+    {
+      "component": "missing_roots_and_relocation_contexts",
+      "model_entries": [
+        "0022a2",
+        "0022ac",
+        "002322"
+      ],
+      "runtime_locations": [
+        "RAM_COPY_100000:0x100000",
+        "RAM_COPY_10FC00:0x10FC00"
+      ],
+      "reason": "Cartridge vectors and statically copied executable containers are outside current stored model coverage; baseline must account for them before using graph closure as reachability evidence"
+    },
+    {
+      "component": "actor_core",
+      "model_entries": [
+        "0040bc",
+        "004188"
+      ],
+      "reason": "Common allocation/list/scheduler dependencies have no matching entry in the initial curated native registry; first identify exact contracts and existing unregistered code"
+    },
+    {
+      "component": "animation_vm",
+      "model_entries": [
+        "00427a",
+        "004256"
+      ],
+      "reason": "Existing native subset; reconcile all 13 original dispatch slots, callback domains and banked data catalogue. Current Marco parser lacks a 0x2C branch"
+    },
+    {
+      "component": "abi_model",
+      "reason": "Resolve live return registers/CCR at module boundaries; do not accept void C that discards those outputs"
+    }
+  ],
+  "rules": [
+    "Candidate graphs and caller counts are not execution or verification coverage",
+    "Registry and graph must converge into a shared model; registry is initially incomplete",
+    "No scope gate is satisfied by artifact counts or toggling a status flag",
+    "Original source names/comments are not recoverable by assertion; behavior and data contracts must be reconstructed"
+  ]
+}

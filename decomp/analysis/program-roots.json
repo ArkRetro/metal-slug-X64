@@ -1,0 +1,503 @@
+{
+  "status": "STATIC_ROOTS_AND_RAM_COPY_CONTEXTS_NOT_GLOBAL_COVERAGE",
+  "input_cpu_order_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "cartridge_vectors": [
+    {
+      "vector": 1,
+      "table_offset": "0x000004",
+      "target": "0x00C00402",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 2,
+      "table_offset": "0x000008",
+      "target": "0x00C00408",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 3,
+      "table_offset": "0x00000C",
+      "target": "0x00C0040E",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 4,
+      "table_offset": "0x000010",
+      "target": "0x00C00414",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 5,
+      "table_offset": "0x000014",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 6,
+      "table_offset": "0x000018",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 7,
+      "table_offset": "0x00001C",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 8,
+      "table_offset": "0x000020",
+      "target": "0x00C0041A",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 9,
+      "table_offset": "0x000024",
+      "target": "0x00C00420",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 10,
+      "table_offset": "0x000028",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 11,
+      "table_offset": "0x00002C",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 12,
+      "table_offset": "0x000030",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 13,
+      "table_offset": "0x000034",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 14,
+      "table_offset": "0x000038",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 15,
+      "table_offset": "0x00003C",
+      "target": "0x00C0042C",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 16,
+      "table_offset": "0x000040",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 17,
+      "table_offset": "0x000044",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 18,
+      "table_offset": "0x000048",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 19,
+      "table_offset": "0x00004C",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 20,
+      "table_offset": "0x000050",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 21,
+      "table_offset": "0x000054",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 22,
+      "table_offset": "0x000058",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 23,
+      "table_offset": "0x00005C",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 24,
+      "table_offset": "0x000060",
+      "target": "0x00C00432",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 25,
+      "table_offset": "0x000064",
+      "target": "0x000022AC",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 26,
+      "table_offset": "0x000068",
+      "target": "0x00002322",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 27,
+      "table_offset": "0x00006C",
+      "target": "0x000022AC",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 28,
+      "table_offset": "0x000070",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 29,
+      "table_offset": "0x000074",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 30,
+      "table_offset": "0x000078",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 31,
+      "table_offset": "0x00007C",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 32,
+      "table_offset": "0x000080",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 33,
+      "table_offset": "0x000084",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 34,
+      "table_offset": "0x000088",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 35,
+      "table_offset": "0x00008C",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 36,
+      "table_offset": "0x000090",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 37,
+      "table_offset": "0x000094",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 38,
+      "table_offset": "0x000098",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 39,
+      "table_offset": "0x00009C",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 40,
+      "table_offset": "0x0000A0",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 41,
+      "table_offset": "0x0000A4",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 42,
+      "table_offset": "0x0000A8",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 43,
+      "table_offset": "0x0000AC",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 44,
+      "table_offset": "0x0000B0",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 45,
+      "table_offset": "0x0000B4",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 46,
+      "table_offset": "0x0000B8",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 47,
+      "table_offset": "0x0000BC",
+      "target": "0x000022A2",
+      "mapping": "fixed_P1",
+      "model_owner": null
+    },
+    {
+      "vector": 48,
+      "table_offset": "0x0000C0",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 49,
+      "table_offset": "0x0000C4",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 50,
+      "table_offset": "0x0000C8",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 51,
+      "table_offset": "0x0000CC",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 52,
+      "table_offset": "0x0000D0",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 53,
+      "table_offset": "0x0000D4",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 54,
+      "table_offset": "0x0000D8",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 55,
+      "table_offset": "0x0000DC",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 56,
+      "table_offset": "0x0000E0",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 57,
+      "table_offset": "0x0000E4",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 58,
+      "table_offset": "0x0000E8",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 59,
+      "table_offset": "0x0000EC",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 60,
+      "table_offset": "0x0000F0",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 61,
+      "table_offset": "0x0000F4",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 62,
+      "table_offset": "0x0000F8",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    },
+    {
+      "vector": 63,
+      "table_offset": "0x0000FC",
+      "target": "0x00C00426",
+      "mapping": "BIOS_import",
+      "model_owner": null
+    }
+  ],
+  "distinct_internal_vector_targets": [
+    "0x000022A2",
+    "0x000022AC",
+    "0x00002322"
+  ],
+  "unmodeled_internal_vectors": [
+    "0x000022A2",
+    "0x000022AC",
+    "0x00002322"
+  ],
+  "runtime_copy_paths": [
+    {
+      "id": "word_count_copy",
+      "cpu": "m68000",
+      "source_mapping": "fixed_P1",
+      "source_offset": "0x001158",
+      "container_bytes": 4426,
+      "source_bytes_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769",
+      "execution_mapping": "RAM_COPY_100000",
+      "runtime_pc": "0x100000",
+      "transfer_site": "0x001040",
+      "source_model_owner": null,
+      "status": "STATIC_COPY_AND_CONTROL_TRANSFER_PATH_VERIFIED",
+      "limits": "Container may contain code and embedded data; decode at runtime base and preserve lifetime/relocation context. Dynamic entry execution and domain completeness not established."
+    },
+    {
+      "id": "copy_through_first_RTS_word",
+      "cpu": "m68000",
+      "source_mapping": "fixed_P1",
+      "source_offset": "0x0010EE",
+      "container_bytes": 106,
+      "source_bytes_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+      "execution_mapping": "RAM_COPY_10FC00",
+      "runtime_pc": "0x10FC00",
+      "transfer_site": "0x0010EA",
+      "source_model_owner": null,
+      "status": "STATIC_COPY_AND_CONTROL_TRANSFER_PATH_VERIFIED",
+      "limits": "Container may contain code and embedded data; decode at runtime base and preserve lifetime/relocation context. Dynamic entry execution and domain completeness not established."
+    }
+  ],
+  "ram_presence_observation": {
+    "bytes": 65536,
+    "sha256": "ffafae76172e4b1d54ae5ad07df12e7afa26024474f919a446709d1dc1c8a40a",
+    "runtime_range_start": "0x10FC00",
+    "matched_bytes": 106,
+    "matched_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+    "scope": "Existing frame-2360 RAM snapshot equality only; harness context and actual execution are not certified by byte equality"
+  },
+  "location_identity": [
+    "cpu",
+    "mapping_or_bank",
+    "runtime_pc",
+    "source_image_offset",
+    "copy_version_or_lifetime"
+  ],
+  "limits": "Cartridge vector table may be hidden by BIOS vector selection at a given time. Physical P1 offsets and RAM execution addresses are different locations. Never flatten RAM copies, P2 bank windows or Z80 bank states into one PC-only map. These observations do not prove all bytes executable or a completed recovery."
+}

@@ -44,3 +44,9 @@ Los consumidores de condiciones añaden 264 transiciones originales verificadas
 en MIPS/ares. El porcentaje de entradas tentativas del índice se publica solo
 como métrica del índice; el porcentaje global de proyecto permanece desconocido.
 No se deduce de ese dato cuánto trabajo ni cuántos bytes de programa faltan.
+
+La estrategia de programa completo está en `docs/WHOLE_GAME_RECOVERY.md`.
+El registro de componentes nativos y el grafo candidato se reconcilian por
+alcance, sin porcentajes de archivo como avance. El mapa debe incorporar
+vectores y contextos de código trasladado a RAM además de las regiones fijas
+y bancadas. El modelo global aún no está cerrado.

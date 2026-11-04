@@ -59,6 +59,12 @@ for row in flows:
     resolution=resolutions.get(row['source']);proof=ROOT/resolution.get('proof','') if resolution else None
     if not resolution or not proof.is_file() or not resolution.get('disposition'):unproven.append(row)
 if unproven:blockers.append(dict(kind='FLOW_SITES_WITHOUT_VERIFIED_DISPOSITION',count=len(unproven),scope='Historical P1 frontier; includes imports and computed calls. A site may have partial recovery without an exhaustive domain proof.',sample=unproven[:4]))
+root_catalog=ROOT/'decomp/analysis/program-roots.json'
+if root_catalog.is_file():
+    roots=json.loads(root_catalog.read_text())
+    if roots.get('unmodeled_internal_vectors'):blockers.append(dict(kind='UNMODELED_CARTRIDGE_VECTOR_ROOTS',targets=roots['unmodeled_internal_vectors']))
+    copies=[x for x in roots.get('runtime_copy_paths',[]) if not x.get('native_domain_closed',False)]
+    if copies:blockers.append(dict(kind='RELOCATED_CODE_CONTEXTS_NOT_CLOSED',contexts=[dict(mapping=x['execution_mapping'],pc=x['runtime_pc'],source=x['source_offset'],container_bytes=x['container_bytes']) for x in copies]))
 if not (ROOT/'decomp/full-game-validation.json').is_file():blockers.append(dict(kind='FULL_PROGRAM_MIPS_VALIDATION_MISSING',detail='Only module regressions exist; no whole-game equivalence/build validation record'))
 if coverage.get('remaining'):blockers.append(dict(kind='RECORDED_OPEN_WORK',items=coverage['remaining']))
 if not coverage.get('complete'):blockers.append(dict(kind='RECOVERY_NOT_DECLARED_COMPLETE'))

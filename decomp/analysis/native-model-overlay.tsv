@@ -1,0 +1,23 @@
+entry	model_owner	component	native_state	scope
+004256	004256	animation_vm	native_subset_with_scoped_evidence	Converted animation commands and observed actor/player paths; unsupported commands/callbacks and complete program catalogue remain.
+004260	004256	animation_vm	native_subset_with_scoped_evidence	Converted animation commands and observed actor/player paths; unsupported commands/callbacks and complete program catalogue remain.
+00427a	00427a	animation_vm	native_subset_with_scoped_evidence	Converted animation commands and observed actor/player paths; unsupported commands/callbacks and complete program catalogue remain.
+00427e	00427a	animation_vm	native_subset_with_scoped_evidence	Converted animation commands and observed actor/player paths; unsupported commands/callbacks and complete program catalogue remain.
+002976	002976	rng_ring	native_subset_with_scoped_evidence	Native ring state and separately returned value/final flags; recorded decisions pass. Global caller order and all contexts are not recovered.
+0029c6	0029c6	rng_ring	native_subset_with_scoped_evidence	Native ring state and separately returned value/final flags; recorded decisions pass. Global caller order and all contexts are not recovered.
+01abc8	01abc8	projection_history	native_subset_with_scoped_evidence	Projection/history path and bounded static terrain/contact subset; not all dynamic objects, parents or collision kernel cases.
+0aaa88	0aaa88	player_query	native_subset_with_scoped_evidence	96 original query/guard cases and native MIPS fixtures; explicit pre-TRAP status, exception handler remains external.
+01903a	01903a	player_positions	native_subset_with_scoped_evidence	96 original calls with real guards; 01964A is inlined for this consumer, not an all-callers standalone ABI.
+01964a	01964a	player_positions	native_subset_with_scoped_evidence	96 original calls with real guards; 01964A is inlined for this consumer, not an all-callers standalone ABI.
+01a5ca	01a5ca	condition_vm	native_subset_with_scoped_evidence	Known 22 slots/14 handlers with addressed data ABI; 451 integrated original calls including four pre-traps. Runtime domain and campaign scheduler remain unverified.
+01a01e	019f7e	condition_consumers	native_subset_with_scoped_evidence	264 transitions for selected blocks only; parent functions and returned continuation owners are not complete.
+01a2d8	01a0a6	condition_consumers	native_subset_with_scoped_evidence	264 transitions for selected blocks only; parent functions and returned continuation owners are not complete.
+01a4f2	01a422	condition_consumers	native_subset_with_scoped_evidence	264 transitions for selected blocks only; parent functions and returned continuation owners are not complete.
+0c3078	0c3078	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c30f0	0c3078	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c315a	0c3078	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c31b8	0c3078	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c3214	0c3214	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c3232	0c3214	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c3250	0c3214	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.
+0c32d0	0c3214	marco_environment	native_subset_with_scoped_evidence	Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.

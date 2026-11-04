@@ -1,0 +1,194 @@
+{
+  "schema_version": 1,
+  "status": "CURATED_NATIVE_OVERLAY_NOT_GLOBAL_COMPLETION",
+  "exhaustive": false,
+  "components": [
+    {
+      "id": "animation_vm",
+      "entries": [
+        "004256",
+        "004260",
+        "00427a",
+        "00427e"
+      ],
+      "sources": [
+        "src/neo_animation.c",
+        "src/neo_animation.h",
+        "src/marco_animation.c",
+        "src/marco_animation.h"
+      ],
+      "symbols": [
+        "neo_anim_start",
+        "neo_anim_step_fields"
+      ],
+      "evidence": [
+        "docs/SOLDIER_ANIMATION.md",
+        "docs/soldier-animation-validation.json",
+        "docs/MARCO_ANIMATIONS.md"
+      ],
+      "scope": "Converted animation commands and observed actor/player paths; unsupported commands/callbacks and complete program catalogue remain.",
+      "next_gate": "Enumerate original command handlers and callbacks, map supported native semantics, close missing commands before expanding actor content.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "rng_ring",
+      "entries": [
+        "002976",
+        "0029c6"
+      ],
+      "sources": [
+        "src/neo_rng.c",
+        "src/neo_rng.h"
+      ],
+      "symbols": [
+        "neo_rng_seed",
+        "neo_rng_next_result"
+      ],
+      "evidence": [
+        "docs/SOLDIER_RNG.md",
+        "docs/soldier-rng-validation.json"
+      ],
+      "scope": "Native ring state and separately returned value/final flags; recorded decisions pass. Global caller order and all contexts are not recovered.",
+      "next_gate": "Bind deterministic RNG ownership/order to the recovered scheduler.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "projection_history",
+      "entries": [
+        "01abc8"
+      ],
+      "sources": [
+        "src/neo_contact.c",
+        "src/neo_contact.h"
+      ],
+      "symbols": [
+        "neo_contact_project"
+      ],
+      "evidence": [
+        "docs/SOLDIER_CONTACT.md",
+        "docs/soldier-contact-validation.json"
+      ],
+      "scope": "Projection/history path and bounded static terrain/contact subset; not all dynamic objects, parents or collision kernel cases.",
+      "next_gate": "Recover parent/epoch producers and close movement/collision contracts across actor classes.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "player_query",
+      "entries": [
+        "0aaa88"
+      ],
+      "sources": [
+        "src/neo_player_query.c",
+        "src/neo_player_query.h"
+      ],
+      "symbols": [
+        "neo_player_query"
+      ],
+      "evidence": [
+        "data/player_query_fixture.json",
+        "decomp/recovered/player-query/README.md",
+        "docs/native-logic-mips-validation.json"
+      ],
+      "scope": "96 original query/guard cases and native MIPS fixtures; explicit pre-TRAP status, exception handler remains external.",
+      "next_gate": "Bind native world data producers and define native invariant-failure ownership.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "player_positions",
+      "entries": [
+        "01903a",
+        "01964a"
+      ],
+      "sources": [
+        "src/neo_player_positions.c",
+        "src/neo_player_positions.h"
+      ],
+      "symbols": [
+        "neo_player_positions"
+      ],
+      "evidence": [
+        "data/player_positions_fixture.json",
+        "docs/NATIVE_PLAYER_POSITIONS.md",
+        "docs/native-logic-mips-validation.json"
+      ],
+      "scope": "96 original calls with real guards; 01964A is inlined for this consumer, not an all-callers standalone ABI.",
+      "next_gate": "Recover shared scene/player-data producer and its update order.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "condition_vm",
+      "entries": [
+        "01a5ca"
+      ],
+      "sources": [
+        "decomp/recovered/rom_01a5ca.c",
+        "decomp/recovered/condition_services.c",
+        "decomp/recovered/condition_services.h"
+      ],
+      "symbols": [
+        "msx_rom_01a5ca",
+        "msx_condition_evaluate_native"
+      ],
+      "evidence": [
+        "data/native_conditions_fixture.json",
+        "docs/NATIVE_CONDITION_SERVICES.md",
+        "docs/native-logic-mips-validation.json"
+      ],
+      "scope": "Known 22 slots/14 handlers with addressed data ABI; 451 integrated original calls including four pre-traps. Runtime domain and campaign scheduler remain unverified.",
+      "next_gate": "Close event interpreter commands and data producers; eliminate addressed compatibility contract at native integration boundary.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "condition_consumers",
+      "entries": [
+        "01a01e",
+        "01a2d8",
+        "01a4f2"
+      ],
+      "sources": [
+        "decomp/recovered/condition_consumers.c",
+        "decomp/recovered/condition_consumers.h"
+      ],
+      "symbols": [
+        "msx_condition_consume"
+      ],
+      "evidence": [
+        "data/condition_consumers_fixture.json",
+        "decomp/recovered/condition-consumers/blocks.json",
+        "docs/CONDITION_CONSUMERS.md"
+      ],
+      "scope": "264 transitions for selected blocks only; parent functions and returned continuation owners are not complete.",
+      "next_gate": "Recover the event interpreter owner and continuations as one module rather than marking individual blocks as full functions.",
+      "state": "native_subset_with_scoped_evidence"
+    },
+    {
+      "id": "marco_environment",
+      "entries": [
+        "0c3078",
+        "0c30f0",
+        "0c315a",
+        "0c31b8",
+        "0c3214",
+        "0c3232",
+        "0c3250",
+        "0c32d0"
+      ],
+      "sources": [
+        "src/marco_environment.c",
+        "src/marco_environment.h"
+      ],
+      "symbols": [
+        "marco_environment_update"
+      ],
+      "evidence": [
+        "data/marco_environment_fixture.json",
+        "docs/marco-environment-validation.json",
+        "docs/DECOMPILATION.md"
+      ],
+      "scope": "Original arithmetic plus synthetic branch/service boundaries; world services and complete campaign controller remain incomplete.",
+      "next_gate": "Bind environment/world providers to a complete actor tick and replay that tick without injected mid-step state.",
+      "state": "native_subset_with_scoped_evidence"
+    }
+  ],
+  "limits": "Entry-to-component association reconciles existing native subsets with tentative Ghidra models. Evidence scopes are mandatory; no whole function or project completion percentage is inferred. This initial registry is not all native modules in src/."
+}

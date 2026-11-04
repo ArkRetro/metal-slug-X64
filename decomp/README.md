@@ -120,3 +120,13 @@ make verify-decompilation  # falla expresamente mientras persistan los bloqueos
 [Los consumidores del despacho](../docs/CONDITION_CONSUMERS.md) añaden 264
 transiciones originales contrastadas en C y MIPS/ares. Son bloques con límites
 explícitos; no se incrementa artificialmente el número de funciones completas.
+
+## Recuperación dirigida por el programa completo
+
+[La estrategia](../docs/WHOLE_GAME_RECOVERY.md) relaciona raíces, bancos,
+dependencias, ABI y componentes nativos existentes. El
+[modelo analizado](analysis/README.md) y el
+[registro inicial](native-components.json) evitan interpretar el C automático
+como todo el trabajo pendiente. El catálogo de raíces añade vectores y copias
+de código a RAM que faltaban en el modelo fijo. Nada de ello certifica todavía
+completitud; los candidatos y la evidencia validada se mantienen separados.

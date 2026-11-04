@@ -1,3 +1,11 @@
+Whole-program strategy update: candidate Ghidra models are now reconciled
+with an initial registry of existing native components. Do not interpret the
+tentative-C index fraction as project completion. The dependency model points
+to high fan-in core services, and the root catalogue exposes missing cartridge
+vectors and two static RAM code-copy containers. No runtime C changed in this
+analysis pass; no new game/MIPS completion claim. See WHOLE_GAME_RECOVERY.md,
+decomp/recovery-roadmap.json and decomp/analysis/README.md.
+
 Native event-consumer update: three selected blocks (01A01E, 01A2D8,
 01A4F2) match 264 original MAME transitions and pass compiled R4300 MIPS in
 ares. Conditions use real native services. Script advancement, deferred timer

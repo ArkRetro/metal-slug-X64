@@ -1,0 +1,122 @@
+{
+  "status": "STATIC_ANIMATION_VM_DISPATCH_AND_CONVERTER_RECONCILIATION",
+  "entry": "0x00427A",
+  "guard": "0x0042A0",
+  "guard_upper_exclusive": 52,
+  "dispatch": "0x0042BC",
+  "table": "0x0042C0",
+  "table_slots": 13,
+  "entries": [
+    {
+      "opcode": "0x00",
+      "stub": "0x0042C0",
+      "target": "0x0042F4",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x04",
+      "stub": "0x0042C4",
+      "target": "0x00435C",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x08",
+      "stub": "0x0042C8",
+      "target": "0x00449E",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x0C",
+      "stub": "0x0042CC",
+      "target": "0x0044A6",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x10",
+      "stub": "0x0042D0",
+      "target": "0x004412",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x14",
+      "stub": "0x0042D4",
+      "target": "0x0044DA",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "partially_recovered"
+    },
+    {
+      "opcode": "0x18",
+      "stub": "0x0042D8",
+      "target": "0x00445A",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x1C",
+      "stub": "0x0042DC",
+      "target": "0x004464",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x20",
+      "stub": "0x0042E0",
+      "target": "0x004470",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x24",
+      "stub": "0x0042E4",
+      "target": "0x00447C",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x28",
+      "stub": "0x0042E8",
+      "target": "0x004352",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x2C",
+      "stub": "0x0042EC",
+      "target": "0x0044BC",
+      "current_marco_converter_has_branch": false,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "not_classified_here"
+    },
+    {
+      "opcode": "0x30",
+      "stub": "0x0042F0",
+      "target": "0x004486",
+      "current_marco_converter_has_branch": true,
+      "semantic_coverage": "NOT_PROVEN_COMPLETE",
+      "callback_service_domain": "partially_recovered"
+    }
+  ],
+  "missing_marco_converter_opcodes": [
+    "0x2C"
+  ],
+  "runtime_domain_proven": false,
+  "original_input_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "converter_sha256": "12233b36d84ee9db10bb0550adc9ad0aa48ac28ffc3db1e6799a87a5a2b0c1c9",
+  "limits": "13 four-byte BRA.W slots, not 52 distinct commands. Guard checks byte <0x34, not an explicit alignment proof. A recognized converter branch may still assert on unproven data or produce UNRECOVERED callbacks. Neither 12/13 syntax branches nor table bytes measure whole-game recovery."
+}

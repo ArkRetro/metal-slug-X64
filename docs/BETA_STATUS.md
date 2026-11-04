@@ -1,3 +1,10 @@
+Native event-consumer update: three selected blocks (01A01E, 01A2D8,
+01A4F2) match 264 original MAME transitions and pass compiled R4300 MIPS in
+ares. Conditions use real native services. Script advancement, deferred timer
+reload, word overflow and explicit continuation boundaries are preserved.
+The parent event interpreter, continuation owners and campaign scheduler are
+not complete. See CONDITION_CONSUMERS.md. No new source ZIP is delivered.
+
 Native condition service update: 451 original calls now match with real
 AAA88/01903A/01964A/0040AC execution in the reference and native C services in
 the ported block. Full RAM/register/SR and four pre-trap boundaries pass on

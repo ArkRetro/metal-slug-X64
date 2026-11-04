@@ -10,7 +10,7 @@ def make_cases():
     return cases
 
 def ram_input(case):
-    ram=base_ram(case);i=case['index'];mask=(i//3)%4;ram[0xc322]=[0,1,128][i%3]
+    ram=base_ram(case);i=case.get('world_index',case['index']);mask=(i//3)%4;ram[0xc322]=[0,1,128][i%3]
     ram[0xe9b8:0xe9ba]=case['x'].to_bytes(2,'big');ram[0xe9ba:0xe9bc]=case['y'].to_bytes(2,'big')
     for p in range(2):
         obj=0x14c4+p*0xb0;table=0xc608+p*0x24

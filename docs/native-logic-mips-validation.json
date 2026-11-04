@@ -1,13 +1,14 @@
 {
   "status": "PASS",
   "emulator": "ares 146",
-  "rom_sha256": "6e909ffcdae96d6f025eab5e2eb274a26a8d10deaacfd9e9961aec769b68affd",
+  "rom_sha256": "8737aca6a4c6357dbf93761be923da5175aa904dd7b71aa6df7268343d739812",
   "suite": "nativelogic",
-  "limit": "447 original condition calls with intercepted helper outputs plus 96 original player queries, 96 original position queries, and 451 condition calls with real native services. CPU regression only; no campaign/rendering claim.",
+  "limit": "447 original condition calls with intercepted helper outputs plus 96 original player queries, 96 original position queries, 451 condition calls with real native services, and 264 event-consumer transitions. CPU regression only; no campaign/rendering claim.",
   "conditions": 447,
   "player_queries": 96,
   "position_queries": 96,
   "real_service_conditions": 451,
-  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96 real_services=451",
-  "limits": "CPU fixtures only. The original 447-case suite retains synthetic helpers for regression; the additional 451-case suite executes/binds real 01903A/AAA88/01964A/0040AC semantics including four pre-TRAP15 boundaries. No whole-game, campaign producer or cycle timing claim."
+  "consumer_transitions": 264,
+  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96 real_services=451 consumers=264",
+  "limits": "CPU module fixtures only; 264 event-consumer blocks stop at declared continuations/RTS/trap boundaries. No whole-game interpreter, campaign scheduler or physical performance claim."
 }

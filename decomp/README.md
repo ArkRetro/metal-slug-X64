@@ -116,3 +116,7 @@ presenta como el juego entero ni como un ZIP completo.
 ```sh
 make verify-decompilation  # falla expresamente mientras persistan los bloqueos
 ```
+
+[Los consumidores del despacho](../docs/CONDITION_CONSUMERS.md) añaden 264
+transiciones originales contrastadas en C y MIPS/ares. Son bloques con límites
+explícitos; no se incrementa artificialmente el número de funciones completas.

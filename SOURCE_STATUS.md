@@ -39,3 +39,8 @@ ramas anteriores a TRAP #15. Pasan en ares/R4300. Esto no sustituye el mapa
 completo ni la verificación de las 5164 entradas 68000 y 154 Z80 tentativas.
 `make verify-decompilation` rechaza el estado actual; el informe de integridad
 y completitud está en `decomp/completeness-audit.json`.
+
+Los consumidores de condiciones añaden 264 transiciones originales verificadas
+en MIPS/ares. El porcentaje de entradas tentativas del índice se publica solo
+como métrica del índice; el porcentaje global de proyecto permanece desconocido.
+No se deduce de ese dato cuánto trabajo ni cuántos bytes de programa faltan.

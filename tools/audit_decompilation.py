@@ -24,7 +24,7 @@ for label,name in [('m68000','full-p1-index.tsv'),('z80','full-audio-index.tsv')
             if re.search(pattern,text):signals[key]+=1;samples.setdefault(key,[]);samples[key]=samples[key]+[str(path.relative_to(ROOT))] if len(samples[key])<3 else samples[key]
 
 # Exact source output hashes, without treating them as whole-program proof.
-for name in ['data/player_query_fixture.json','data/player_positions_fixture.json','data/native_conditions_fixture.json','decomp/recovered/rom_008512.validation.json','decomp/recovered/rom_01a5ca.validation.json']:
+for name in ['data/player_query_fixture.json','data/player_positions_fixture.json','data/native_conditions_fixture.json','data/condition_consumers_fixture.json','decomp/recovered/rom_008512.validation.json','decomp/recovered/rom_01a5ca.validation.json']:
     path=ROOT/name
     if not path.is_file():integrity.append(dict(file=name,problem='missing_fixture'));continue
     f=json.loads(path.read_text());hashes=f.get('source_sha256')
@@ -63,7 +63,8 @@ if not (ROOT/'decomp/full-game-validation.json').is_file():blockers.append(dict(
 if coverage.get('remaining'):blockers.append(dict(kind='RECORDED_OPEN_WORK',items=coverage['remaining']))
 if not coverage.get('complete'):blockers.append(dict(kind='RECOVERY_NOT_DECLARED_COMPLETE'))
 if integrity:blockers.append(dict(kind='ARTIFACT_INTEGRITY_FAILURE',issues=integrity))
-report=dict(status='BLOCKED_INCOMPLETE' if blockers else 'STRUCTURAL_REQUIREMENTS_PASS_REQUIRES_SEMANTIC_REVIEW',complete=False,structural_checks_pass=not blockers,artifact_integrity='PASS' if not integrity else 'FAIL',indices=indices,lexical_risk_signals=dict(signals),signal_samples=samples,blockers=blockers,limits='Lexical signals are review hints, not counts of broken functions. Exhausting roots or passing unit fixtures is not whole-game equivalence. No completion percentage is inferred. Even a structural pass requires review of semantic validation evidence.')
+indexed_total=sum(x['addresses'] for x in indices.values());tentative_total=sum(x['tentative_entries'] for x in indices.values())
+report=dict(status='BLOCKED_INCOMPLETE' if blockers else 'STRUCTURAL_REQUIREMENTS_PASS_REQUIRES_SEMANTIC_REVIEW',complete=False,structural_checks_pass=not blockers,artifact_integrity='PASS' if not integrity else 'FAIL',indices=indices,project_completion_percent=None,indexed_tentative_entries=dict(numerator=tentative_total,denominator=indexed_total,percent=round(100*tentative_total/indexed_total,2),meaning='Fraction of index entries still tentative; NOT global project completion, workload remaining or percentage of game code bytes'),lexical_risk_signals=dict(signals),signal_samples=samples,blockers=blockers,limits='Lexical signals are review hints, not counts of broken functions. Exhausting roots or passing unit fixtures is not whole-game equivalence. No completion percentage is inferred. Even a structural pass requires review of semantic validation evidence.')
 a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(report,indent=2)+'\n')
 print(report['status']+'; integrity='+report['artifact_integrity'])
 for item in blockers:print(' - '+item['kind']+((': '+str(item['count'])) if 'count' in item else ''))

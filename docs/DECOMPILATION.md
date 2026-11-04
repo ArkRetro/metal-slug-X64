@@ -254,3 +254,14 @@ de programa completo. Rechaza el estado actual por entradas automáticas sin
 verificar, bancos sin partición exhaustiva y ausencia de validación integral.
 Contar funciones o poner complete=true no satisface esos requisitos. El informe
 es `decomp/completeness-audit.json`; no se entrega un ZIP como completo.
+
+## Consumidores del despacho
+
+01A01E, 01A2D8 y la parte recuperada de 01A4F2 se traducen en
+`condition_consumers.c`. 264 transiciones originales con auxiliares reales
+coinciden en RAM, registros, SR y etiqueta de continuación. Pasan en host/UBSan
+y MIPS/ares. Se conservan el orden descriptor/avance y la recarga diferida de
++72, y se devuelven límites explícitos antes de sus propietarios pendientes.
+Los bloques no se contabilizan como funciones padre completamente recuperadas.
+Véase CONDITION_CONSUMERS.md y el mapa de rangos en
+`decomp/recovered/condition-consumers/blocks.json`.

@@ -17,7 +17,7 @@ with (a.output/'xvfb.log').open('w') as xlog,(a.output/'ares.log').open('w') as 
    if 'MSX '+a.suite.upper()+' REGRESSION PASS' in text:break
    assert process.poll() is None;time.sleep(.1)
   else:raise AssertionError('No completion marker')
-  result=dict(status='PASS',emulator='ares 146',rom_sha256=hashlib.sha256(a.rom.read_bytes()).hexdigest(),suite=a.suite,limit='447 original condition calls with intercepted helper outputs plus 96 original player queries, 96 original position queries, and 451 condition calls with real native services. CPU regression only; no campaign/rendering claim.' if a.suite=='nativelogic' else '256 controlled original-M68000 arithmetic outputs plus synthetic branch/service tests; not gameplay/world/campaign coverage.' if a.suite=='environment' else 'Synthetic native backend/service boundaries only; not dynamic original-game replay, rendering or campaign integration.')
+  result=dict(status='PASS',emulator='ares 146',rom_sha256=hashlib.sha256(a.rom.read_bytes()).hexdigest(),suite=a.suite,limit='447 original condition calls with intercepted helper outputs plus 96 original player queries, 96 original position queries, 451 condition calls with real native services, and 264 event-consumer transitions. CPU regression only; no campaign/rendering claim.' if a.suite=='nativelogic' else '256 controlled original-M68000 arithmetic outputs plus synthetic branch/service tests; not gameplay/world/campaign coverage.' if a.suite=='environment' else 'Synthetic native backend/service boundaries only; not dynamic original-game replay, rendering or campaign integration.')
   (a.output/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print('PASS: native MIPS',a.suite,'in ares')
  finally:
   if process is not None:

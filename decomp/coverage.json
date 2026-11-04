@@ -18,7 +18,18 @@
   "manual_condition_handler_entries": 14,
   "recent_condition_recovery": "01A5CA dispatch now binds real native AAA88/01903A services: 451 original calls match full RAM/registers/SR, including four pre-trap boundaries; passes compiled MIPS in ares",
   "native_player_query": "AAA88 and object guard 0040AC translated to src/neo_player_query.c; 96 controlled original calls matched; exception handler and campaign binding unresolved",
-  "mips_validation": "ares 146: 447 original controlled-helper regressions, 96 query regressions, 96 position regressions and 451 real-service condition calls passed",
+  "mips_validation": "ares 146: 447 controlled-helper cases, 96 queries, 96 position queries, 451 real-service conditions and 264 consumer transitions passed",
   "native_position_query": "01903A with real 01964A/0040AC helpers matched 96 controlled original calls and passed compiled MIPS regression in ares",
-  "completeness_audit": "decomp/completeness-audit.json; incomplete, no whole-game certificate"
+  "completeness_audit": "decomp/completeness-audit.json; incomplete, no whole-game certificate",
+  "native_consumer_blocks": {
+    "entries": [
+      "0x01A01E",
+      "0x01A2D8",
+      "0x01A4F2"
+    ],
+    "c_source": "decomp/recovered/condition_consumers.c",
+    "original_transitions": 264,
+    "whole_parent_functions": false,
+    "campaign_scheduler_verified": false
+  }
 }

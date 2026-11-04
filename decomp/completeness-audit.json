@@ -27,6 +27,13 @@
       "tentative_entries": 154
     }
   },
+  "project_completion_percent": null,
+  "indexed_tentative_entries": {
+    "numerator": 5318,
+    "denominator": 5337,
+    "percent": 99.64,
+    "meaning": "Fraction of index entries still tentative; NOT global project completion, workload remaining or percentage of game code bytes"
+  },
   "lexical_risk_signals": {
     "implicit_register_values": 4840,
     "inferred_undefined_types": 4365,

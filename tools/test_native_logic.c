@@ -9,6 +9,8 @@
 #include "native_logic_fixture.h"
 #include "../decomp/recovered/condition_services.h"
 #include "native_conditions_fixture.h"
+#include "../decomp/recovered/condition_consumers.h"
+#include "condition_consumers_fixture.h"
 #ifdef __mips__
 #include <libdragon.h>
 #endif
@@ -86,14 +88,33 @@ static void real_services(void) {
         assert(r.sr==c->base.expected.sr && !memcmp(ram,expected_ram,sizeof(ram)));
     }
 }
+static void consumers(void) {
+    const msx_condition_bus bus={.read8=rb,.read16=rw,.write8=wb,.write16=ww};
+    for(unsigned n=0;n<sizeof(consumer_cases)/sizeof(*consumer_cases);n++) {
+        const consumer_case_t *row=&consumer_cases[n];const native_service_case_t *c=&row->base;
+        prepare_ram(&c->base,n);
+        for(unsigned i=0;i<c->input_count;i++) {
+            const logic_patch_t *p=&consumer_input_patches[c->input_first+i];ram[p->offset]=p->value;
+        }
+        memcpy(expected_ram,ram,sizeof(ram));
+        for(unsigned i=0;i<c->output_count;i++) {
+            const logic_patch_t *p=&consumer_output_patches[c->output_first+i];expected_ram[p->offset]=p->value;
+        }
+        msx_condition_registers r=c->base.input;
+        msx_consumer_result result=msx_condition_consume((msx_condition_consumer)row->entry,&r,&bus);
+        assert((unsigned)result.status==c->status && result.target==row->target);
+        assert(!memcmp(r.d,c->base.expected.d,sizeof(r.d)) && !memcmp(r.a,c->base.expected.a,sizeof(r.a)));
+        assert(r.sr==c->base.expected.sr && !memcmp(ram,expected_ram,sizeof(ram)));
+    }
+}
 int main(void) {
 #ifdef __mips__
     debug_init_emulog();console_init();console_set_render_mode(RENDER_MANUAL);
 #endif
-    conditions();queries();positions();real_services();
-    puts("PASS: 447 conditions, 96 player queries and 96 position queries plus 451 real-service calls against original M68000 fixtures");
+    conditions();queries();positions();real_services();consumers();
+    puts("PASS: 447 conditions, 96 player queries and 96 position queries plus 451 real-service calls and 264 consumer transitions against original M68000 fixtures");
 #ifdef __mips__
-    debugf("MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96 real_services=451\n");console_render();while(1) {}
+    debugf("MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96 real_services=451 consumers=264\n");console_render();while(1) {}
 #endif
     return 0;
 }

@@ -1,0 +1,47 @@
+{
+  "scope": "Selected consumer blocks, NOT full parent functions or whole interpreter",
+  "c_source": "../condition_consumers.c",
+  "validation": "../../../data/condition_consumers_fixture.json",
+  "entries": [
+    {
+      "entry": "0x01A01E",
+      "instruction_ranges": [
+        [
+          "0x01A01E",
+          "0x01A02A"
+        ],
+        [
+          "0x01A046",
+          "0x01A052"
+        ]
+      ],
+      "end_exclusive": true
+    },
+    {
+      "entry": "0x01A2D8",
+      "instruction_ranges": [
+        [
+          "0x01A2D8",
+          "0x01A2F0"
+        ]
+      ],
+      "end_exclusive": true
+    },
+    {
+      "entry": "0x01A4F2",
+      "instruction_ranges": [
+        [
+          "0x01A4F2",
+          "0x01A510"
+        ],
+        [
+          "0x01A512",
+          "0x01A526"
+        ]
+      ],
+      "end_exclusive": true
+    }
+  ],
+  "boundary_scope": "RTS and continuation instructions at returned endpoints are not executed",
+  "cases": 264
+}

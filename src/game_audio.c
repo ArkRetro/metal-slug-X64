@@ -56,10 +56,14 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * characters left out it was still 14 KB under: the vehicles' exit/death
  * 10E9 (37 KB; the SV-001's A+B exit, the Slugnoid's death with a rider)
  * streams from rom:/. */
+/* Mission 3 step 1 (neo_m3props.c: the wagons, the platform and their
+ * programs and ROM tables) left the reference cartridges at 207 slots
+ * (floor 208): the Mission 1 boss's transformation 10A7 (52 KB, once per
+ * game, 0D5D04) streams from rom:/ too. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
-        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u;
+        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

@@ -215,6 +215,17 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
 }
+void msx_game_stage_entry_at(msx_game_t *g,int x) {
+    /* Entry kind 2 (0C15B4: the parachute from the record's y, Mission 3,
+     * run4 117972: x 0x48 -> 88, falling from y 256): the player starts at
+     * the record's x on the highest floor there, without the descent
+     * (explicit stop, counted in entry_drops; docs/MISION3.md "Paso 1"). */
+    neo_surface_t top;g->x=x*MSX_UNIT;neo_collision_ring_bypass(true);
+    int32_t h=(int32_t)neo_collision_rows()*8*MSX_UNIT;
+    g->y=neo_surface_at(g->x,h,0,h,&top)?56*MSX_UNIT-top.height:msx_ground_offset(g->x);
+    neo_collision_ring_bypass(false);
+    g->walk_in_x=0;g->entry_drops++;
+}
 /* 01860A (the flow's stage_loop, each stage of a packed mission): MISSION
  * n START 0607DE when 42FA = 0 (018632), then the GO arrow 05287C (018656),
  * both after the mission actor (0040BC). run4: the arrow is made again at
@@ -502,10 +513,12 @@ static void mount_place(msx_game_t *g) {
  * left held after the landing: x 28.0 at camera 0, y on the floor there).
  * Clamping x alone left the feet at the height of the unclamped x, inside
  * the slope, and the next walk step found no floor (ROM 12, MiSTer). */
+static int end_x(const msx_game_t *g);
+static int right_limit(const msx_game_t *g);
 static void clamp_feet(msx_game_t *g,neo_air_t *body,bool grounded) {
     /* 10C00B = FF (stage exit 0B6ED2): the sweeps 0143AC/014574 skip the
      * screen box, so the exit's walk 0CA3EC leaves the screen. */
-    if (g->world_enabled && g->world.ga_flags.scroll_lock) {g->x=body->x<MSX_END_X?body->x:MSX_END_X;return;}
+    if (g->world_enabled && g->world.ga_flags.scroll_lock) {g->x=body->x<end_x(g)?body->x:end_x(g);return;}
     g->x=clamp(body->x,(g->camera+28)*MSX_UNIT,right_limit(g));
     neo_surface_t s;
     if (g->x!=body->x && grounded && neo_surface_at(g->x,body->y,4*NEO_UNIT,4*NEO_UNIT,&s)) body->y=s.height;
@@ -691,9 +704,16 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
 }
 /* Right limit of the player: camera+292-1/65536 (the arcade value behind
  * MSX_END_X), so a script camera lock also stops the player at the screen. */
+/* The end of the world: Mission 1's MSX_END_X, or a pack stage's camera
+ * maximum + 320 when wider (Mission 3: 6496 + 320; the M1 width capped the
+ * player at x 3839, before the platform 0B9286). */
+static int end_x(const msx_game_t *g) {
+    int64_t e=(int64_t)(g->stage_camera_max+320)*MSX_UNIT-1;
+    return g->in_stage && e>MSX_END_X?(int)e:MSX_END_X;
+}
 static int right_limit(const msx_game_t *g) {
     int64_t r=(int64_t)(g->camera+292)*MSX_UNIT-1;
-    return r<MSX_END_X?(int)r:MSX_END_X;
+    return r<end_x(g)?(int)r:end_x(g);
 }
 /* Floor search 013DB2 of the native world's collision kernel from the
  * player's feet (terrain-relative, y up) down `depth` (negative, Q16.16):

@@ -113,6 +113,7 @@ scene_cache_stats_t scene_cache_stats(void);
  * a stage scrolls by camera*x_num/x_den and rises by camera_y*y_num/y_den;
  * it is drawn while visible_min <= camera x <= visible_max. */
 typedef struct { uint8_t x_num,x_den,y_num,y_den; int16_t visible_min,visible_max; } scene_layer_rule_t;
+enum { SCENE_STAGE_DYNAMIC_MAPS=16 };
 typedef struct {
     unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */
     uint32_t descriptor;             /* stage descriptor (016DDE..) */
@@ -129,7 +130,14 @@ typedef struct {
     const scene_map_cell_t *patch_cells;unsigned patch_cell_count,patch_count;
     uint32_t patch_submap[16],patch_layer_object[16];
     void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
+    /* Dynamic maps (0140C0) of the pack's 'MSXR' block (Mission 3): ROM
+     * label, bytes (the ROM's, docs/MISION3.md "Reconocimiento del mapa"). */
+    unsigned dynamic_map_count;uint32_t dynamic_map_rom[SCENE_STAGE_DYNAMIC_MAPS];uint16_t dynamic_map_length[SCENE_STAGE_DYNAMIC_MAPS];
+    const uint8_t *dynamic_map[SCENE_STAGE_DYNAMIC_MAPS];
 } scene_stage_t;
+/* ROM bytes at `address` held by the loaded stage (its dynamic maps), or
+ * NULL: the generic actors' ga_rom fallback (ga_rom_set_extra). */
+const uint8_t *scene_stage_rom(uint32_t address);
 /* Opens /missionN.pack (header only; Mission 1's map goes back to the LRU). */
 bool scene_mission_load(unsigned mission);
 /* Reads one stage's tables into reserved cache slots and pins its map. */

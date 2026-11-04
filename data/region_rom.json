@@ -842,6 +842,16 @@
    "rom": "0x23C638",
    "reader": "038F38 target programs 23C638[rand]",
    "hex": "0023c6400023c64c"
+  },
+  {
+   "rom": "0x2D5C60",
+   "reader": "0183D0 stage records +0E: the player entry records of 019604 (A0): Mission 2 2D5C60/2D5C78/2D5C90 (x, y, flags, speed, kind +8), Mission 3 2D5E7C",
+   "hex": "00680100010100100600000000680100010100100000ffff00680100010100100300000000680100010100100000ffff006801000101001003000000006800500101001000000150"
+  },
+  {
+   "rom": "0x2D5E7C",
+   "reader": "0183D0 stage record 0173F6 +0E: the Mission 3 player entry record of 019604 (x 0x48, kind 2: 0C15B4)",
+   "hex": "004801000101001002000000"
   }
  ]
 }

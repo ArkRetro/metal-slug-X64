@@ -18,6 +18,7 @@ parser.add_argument('--log',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--stage-seconds',type=float,default=300)
 parser.add_argument('--min-progress',type=int,default=1000)
+parser.add_argument('--hop',action='store_true',help='the Mission 3 pad: right, fire and repeated jumps, never left')
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 XD='/usr/bin/xdotool'
 def key(action,name):subprocess.run([XD,action,name],check=True)
@@ -46,6 +47,15 @@ def pad():
         if cam!=last[0]:last=(cam,now)
         stuck=now-last[1]
         fire=int(t*20)%2==0;right=True;left=False;down=False;jump=(t%3.0)<0.2
+        if args.hop:
+            # Mission 3 pad (--hop): right and fire with a jump pressed
+            # again every 0.2 s, never left: the player is on the ground a
+            # few frames at a time, so it does not walk off the end of the
+            # ground at x 3840 before the platform 0B9286 (gap up to 56 px)
+            # nor off the platform's ends while the camera stop holds it.
+            jump=int(t*10)%2==0
+            hold('b',fire);hold('Right',right);hold('Left',False);hold('Down',False);hold('a',jump)
+            time.sleep(.03);continue
         if stuck>5:
             phase=int((stuck-5)/4)%4;u=(stuck-5)%4
             if phase==0:left=u<1.2;right=not left;jump=False
@@ -92,6 +102,21 @@ text=log();text=text[text.find('MSX mission 3 stage 4 start'):]
 rows=[tuple(int(v) for v in m) for m in re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+) progress=(\d+) mode=(\d+) player x=(-?\d+) y=(-?\d+)',text)]
 progress=max([r[2] for r in rows] or [0])
 if rows:print('stage 4: camera x max=%d y range=%d..%d progress max=%d modes=%s player x max=%d'%(max(r[0] for r in rows),min(r[1] for r in rows),max(r[1] for r in rows),progress,sorted({r[3] for r in rows}),max(r[4] for r in rows)))
+# Per section of the camera list 0B8968 (docs/MISION3.md "Reconocimiento
+# del mapa"): progress bounds, lines seen, player x range, rescues and fall
+# deaths added while in it (the periodic stage line's counters).
+SECTIONS=[('1 salida',0,320),('2 vagones',320,3392),('3 hueco',3392,3712),('4 tramo final',3712,6304),('5 jefe',6304,1<<30)]
+full=[tuple(int(v) for v in m) for m in re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+) progress=(\d+) mode=\d+ player x=(-?\d+) y=(-?\d+) .*?pit deaths=(\d+) rescues=(\d+)',text)]
+prev=None;reached=[]
+for name,lo,hi in SECTIONS:
+    rs=[r for r in full if lo<=r[2]<hi]
+    if not rs:print('section %s: not reached'%name);continue
+    reached.append(name)
+    i0=full.index(rs[0]);base=full[i0-1] if i0 else rs[0]
+    print('section %s: %d lines, progress %d..%d, player x %d..%d, rescues %d, fall deaths %d'%(name,len(rs),min(r[2] for r in rs),max(r[2] for r in rs),
+        min(r[3] for r in rs),max(r[3] for r in rs),rs[-1][6]-base[6],rs[-1][5]-base[5]))
+if full:print('total rescues %d, fall deaths %d; boss arena (section 5) %s'%(full[-1][6],full[-1][5],'reached' if '5 jefe' in reached else 'not reached'))
+for m in sorted(set(re.findall(r'MSX stage entry \w+ kind 2 .*',text))):print(m)
 print('unknown cells read max:',max([int(n) for n in re.findall(r'unknown cells read=(\d+)',text)] or [0]))
 print('camera list events unsupported (max):',max([int(n) for n in re.findall(r'camera events unsupported=(\d+)',text)] or [0]))
 skips=sorted(set(re.findall(r'unported constructor skipped \(count=\d+\) record (\w+) constructor (\w+)',text)))

@@ -104,6 +104,7 @@ typedef struct {
      * start: hanging (0C162A) or falling after the cut (0C170C); fire
      * latched for its update; the scene root of the previous update (01AD52). */
     uint8_t descent;bool descent_fire;int32_t landing_root_x,landing_root_y;unsigned descent_cuts;
+    unsigned entry_drops;   /* stage entries of kind 2 placed without the parachute (explicit stop) */
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
@@ -225,6 +226,9 @@ void msx_game_autopilot(msx_game_t *game,int *direction,bool *jump);
  * enters walking from the left edge to start_x (pixels), as in the run4
  * capture of Mission 2 (19440..19530). */
 void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int start_x,int camera_max);
+/* Entry kind 2 of the stage record (0C15B4, Mission 3): the player at the
+ * record's x on the floor, without the parachute (explicit stop). */
+void msx_game_stage_entry_at(msx_game_t *g,int x);
 /* 01860A of a packed mission's stage: MISSION n START (42FA = 0) and the GO arrow. */
 void msx_game_stage_actors(msx_game_t *g);
 /* The order of the frame's sprite windows and background layers, by SCB

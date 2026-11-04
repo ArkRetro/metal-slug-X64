@@ -565,7 +565,7 @@ typedef struct __attribute__((packed)) {
     struct __attribute__((packed)) {uint32_t rom,offset,length;} blob[3];
     scene_layer_rule_t rules[4];
     uint32_t patch_offset;uint16_t patch_count;   /* map patches 0C70FC (B37) */
-    uint32_t recon_offset,recon_length;           /* map reconnaissance 'MSXR' (Mission 3), not read yet */
+    uint32_t recon_offset,recon_length;           /* map reconnaissance 'MSXR' (Mission 3): its dynamic maps are read */
 } pack_stage_t;
 _Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
 typedef struct __attribute__((packed)) {
@@ -604,6 +604,12 @@ static void *take(unsigned bytes) {
     return p;
 }
 const scene_stage_t *scene_stage(void) { return stage_on?&stage:NULL; }
+const uint8_t *scene_stage_rom(uint32_t address) {
+    if (!stage_on) return NULL;
+    for (unsigned i=0;i<stage.dynamic_map_count;i++)
+        if (address>=stage.dynamic_map_rom[i] && address<stage.dynamic_map_rom[i]+stage.dynamic_map_length[i]) return stage.dynamic_map[i]+(address-stage.dynamic_map_rom[i]);
+    return NULL;
+}
 static void release_reserved(void) {
     if (reserved_first<0) return;
     for (unsigned i=0;i<reserved_count;i++) slots[reserved_first+i].reserved=false;
@@ -695,6 +701,22 @@ bool scene_stage_load(unsigned index) {
     unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
         2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
     for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
+    /* 'MSXR' (pack_mission.py recon_blob, docs/MISION3.md): the dynamic maps
+     * (0140C0) of the stage's actors, served to ga_rom (scene_stage_rom). */
+    static uint8_t recon_head[16] __attribute__((aligned(16)));
+    static struct __attribute__((packed)) {uint32_t rom,offset,length;} recon_dyn[SCENE_STAGE_DYNAMIC_MAPS] __attribute__((aligned(16)));
+    unsigned dmaps=0;
+    if (ps.recon_length>=16u) {
+        rom_read(recon_head,ps.recon_offset,16);
+        unsigned maps=recon_head[6]<<8|recon_head[7],pats=recon_head[8]<<8|recon_head[9];
+        dmaps=recon_head[10]<<8|recon_head[11];
+        if (memcmp(recon_head,"MSXR",4) || (recon_head[4]<<8|recon_head[5])!=1u || dmaps>SCENE_STAGE_DYNAMIC_MAPS) {
+            debugf("MSX stage %u: map reconnaissance block not read (version %u, %u dynamic maps; explicit stop)\n",index+1,recon_head[4]<<8|recon_head[5],dmaps);dmaps=0;
+        } else if (dmaps) {
+            rom_read(recon_dyn,ps.recon_offset+16u+28u*maps+20u*pats,12u*dmaps);
+            for (unsigned i=0;i<dmaps;i++) need+=(recon_dyn[i].length+15)&~15u;
+        }
+    }
     need+=((8u*mission_head.actors+15)&~15u)+((mission_head.actor_images*sizeof(scene_image_t)+15)&~15u)+((4u*mission_head.resources+15)&~15u);
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
@@ -762,6 +784,8 @@ bool scene_stage_load(unsigned index) {
     if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);memcpy(patch_table,raw_patch,8u*patches);}
     while (normal && (stage_cells[normal-1].layer&0x80u)) normal--;
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
+    const uint8_t *dyn_data[SCENE_STAGE_DYNAMIC_MAPS];
+    for (unsigned i=0;i<dmaps;i++) {uint8_t *d=take(recon_dyn[i].length);rom_read(d,ps.recon_offset+recon_dyn[i].offset,recon_dyn[i].length);dyn_data[i]=d;}
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
         .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,
@@ -771,6 +795,8 @@ bool scene_stage_load(unsigned index) {
         .cells=stage_cells,.cell_count=normal,.patch_cells=stage_cells+normal,.patch_cell_count=cells-normal,.patch_count=patches,
         .index_order=order,.index_runs=runs};
     for (unsigned i=0;i<patches;i++) {stage.patch_submap[i]=patch_table[2*i];stage.patch_layer_object[i]=patch_table[2*i+1];}
+    stage.dynamic_map_count=dmaps;
+    for (unsigned i=0;i<dmaps;i++) {stage.dynamic_map_rom[i]=recon_dyn[i].rom;stage.dynamic_map_length[i]=(uint16_t)recon_dyn[i].length;stage.dynamic_map[i]=dyn_data[i];}
     memcpy(stage.rules,ps.rules,sizeof(stage.rules));
     stage_on=true;
     /* The stage map, pinned and loaded now (the screen is black). */

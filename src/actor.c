@@ -98,10 +98,24 @@ static bool load_stage(void) {
     if (game.flow.record_index==0) game_audio_mission_start();
     game_audio_stage_music(neo_mission_music(&game.flow));   /* 018412..01842E */
     scene_renderer_stage_changed();
+    /* The stage's own ROM data in the pack (Mission 3 'MSXR': the dynamic
+     * maps of the platform 0B9286 and the others) for the generic actors. */
+    ga_rom_set_extra(scene_stage_rom);
+    if (st->dynamic_map_count) debugf("MSX stage %u: %u dynamic maps from the pack's map reconnaissance\n",index+1,st->dynamic_map_count);
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */
     int start_x=st->players_len>=4?(int)(int16_t)(st->players[2]<<8|st->players[3]):0x68;
+    /* 01846C: the stage record's +0E is the player's entry record (019604
+     * A0): x, y, flags, speed, kind +8 (0C1260). Mission 2: kinds 6/3, x
+     * 0x68 (the walk-in); Mission 3 (0173F6 -> 2D5E7C): kind 2, x 0x48. */
+    const uint8_t *rec=ga_rom(game.flow.record+0xeu);
+    uint32_t entry=rec?(uint32_t)rec[0]<<24|(uint32_t)rec[1]<<16|(uint32_t)rec[2]<<8|rec[3]:0;
+    const uint8_t *er=entry?ga_rom(entry):NULL;
     msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
+    if (er && er[8]==2u) {
+        msx_game_stage_entry_at(&game,(int16_t)(er[0]<<8|er[1]));
+        debugf("MSX stage entry %06lX kind 2 (0C15B4 parachute) not reproduced: placed on the floor at x=%d (explicit stop)\n",(unsigned long)entry,(int16_t)(er[0]<<8|er[1]));
+    }
     /* 019604 +4: the stage's respawn entries (019658/0196E8, B33). */
     game.respawn_table=st->players;game.respawn_length=st->players_len;
     /* The exit kind (fade-in, wipe) and the stage loop run in the game's

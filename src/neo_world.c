@@ -300,6 +300,9 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
         *out=(neo_contact_parent_t){tag,(int32_t)neo_boss_l(n,0x3c),(int32_t)neo_boss_l(n,0x40),(int32_t)neo_boss_l(n,0x44),(int32_t)neo_boss_l(n,0x48),neo_boss_b(n,0x4d)};
         return true;
     }
+    /* Mission 3: 10D7B6 is the train (neo_train.c), the kernel's second
+     * terrain object. */
+    if (tag==0x10d7b6u && w->kernel.train_on) {*out=(neo_contact_parent_t){tag,w->kernel.train.x,w->kernel.train.y,w->kernel.train.prev_x,w->kernel.train.prev_y,0};return true;}
     /* Layer objects 10D7B6/10E8C6 scroll with the foreground once the middle
      * bank runs at full speed (camera >= 1023, docs/MISSION1_REST.md). */
     if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
@@ -1257,7 +1260,11 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     }
     if (w->pickup_input) memcpy(g->pickup_box,w->pickup_input,sizeof(g->pickup_box));
     g->terrain_tag=camera>=1023u?0x10d7b6u:0x10c72eu;
-    g->flags=&w->ga_flags;g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
+    /* Mission 3: the terrain stays 10C72E; 10D7B6 is the train (+38 of what
+     * lands on it, kernel object TRAIN; docs/MISION3.md). */
+    if (w->stage_camera_base==0x0B8968u) g->terrain_tag=0x10c72eu;
+    g->flags=&w->ga_flags;w->ga_flags.camera_restart=w->camera.restart;   /* RAM 10E9D0 (0B9286) */
+    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
@@ -1376,13 +1383,21 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         w->player_shots++;
     }
     w->shot_request_count=0;
-    /* 0B918C / 0B91AE: the wagon box 039382 / 03938A at (0770 / 0870, 0040)
-     * of 10C72E (neo_m3props.c). */
+    /* Mission 3 camera-list calls (neo_m3props.c): 0B918C / 0B91AE the
+     * wagon boxes 039382 / 03938A at (0770 / 0870, 0040), 0B9148 / 0B916A
+     * the wagons 038D1E / 038D26 at (09D0 / 0AB0, 0048) (their 039502 puts
+     * them on 10C72E), 0B925C the platform 0B9286 at (0FA0, 0030) of the
+     * root 10E968. */
     for (unsigned i=0;i<w->camera_call_count;i++) {
-        bool second=w->camera_calls[i]==0x0B91AEu;
-        neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),second?0x3938au:0x39382u,SCRIPT_TAG,0);
-        if (!a) continue;
-        ga_sl(a,0x28,second?0x08700000u:0x07700000u);ga_sl(a,0x2c,0x00400000u);
+        static const uint32_t calls[][4]={{0x0B918Cu,0x39382u,0x07700000u,0x00400000u},{0x0B91AEu,0x3938au,0x08700000u,0x00400000u},
+            {0x0B9148u,0x38d1eu,0x09d00000u,0x00480000u},{0x0B916Au,0x38d26u,0x0ab00000u,0x00480000u},{0x0B925Cu,0xb9286u,0x0fa00000u,0x00300000u}};
+        for (unsigned k=0;k<sizeof(calls)/sizeof(calls[0]);k++) if (calls[k][0]==w->camera_calls[i]) {
+            neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),calls[k][1],SCRIPT_TAG,0);
+            if (!a) break;
+            ga_sl(a,0x28,calls[k][2]);ga_sl(a,0x2c,calls[k][3]);
+            if (calls[k][0]==0x0B925Cu) ga_sl(a,0x38,ROOT_TAG);
+            break;
+        }
     }
     w->camera_call_count=0;
     w->player_hits+=t.hits;
@@ -1518,7 +1533,9 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
     for (unsigned i=0;i<w->camera.event_count;i++) {
         uint32_t at=w->camera.events[i].address;
-        if (w->camera.events[i].kind==NEO_CAMERA_EV_CALL && (at==0x0B918Cu || at==0x0B91AEu) && w->camera_call_count<COUNT(w->camera_calls))
+        if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
+        if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
+        if ((at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu) && w->camera_call_count<COUNT(w->camera_calls))
             w->camera_calls[w->camera_call_count++]=at;
     }
 }

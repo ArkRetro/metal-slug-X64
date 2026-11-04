@@ -7,7 +7,7 @@ export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := check-recovered check check-core check-cinematic preview-depth clean
+HOST_GOALS := verify-decompilation check-recovered check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -497,22 +497,32 @@ $(BUILD_DIR)/marco-environment-regression.elf: $(BUILD_DIR)/tools/test_marco_env
 marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
 
 .PHONY: check-recovered
-check-recovered: $(BUILD_DIR)/native_logic_fixture.h
+check-recovered: $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h
 	python3 tools/test_recovered_palette.py
 	python3 tools/test_recovered_conditions.py
 	@mkdir -p $(BUILD_DIR)/host
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_native_logic.c decomp/recovered/rom_01a5ca.c src/neo_player_query.c src/neo_player_positions.c -o $(BUILD_DIR)/host/native-logic
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_native_logic.c decomp/recovered/rom_01a5ca.c src/neo_player_query.c src/neo_player_positions.c decomp/recovered/condition_services.c -o $(BUILD_DIR)/host/native-logic
 	$(BUILD_DIR)/host/native-logic
 
 check-core: check-recovered
 
 $(BUILD_DIR)/native_logic_fixture.h: tools/compile_native_logic.py tools/condition_harness.py data/condition_ram_patches.json data/player_query_fixture.json data/player_positions_fixture.json decomp/recovered/rom_01a5ca.validation.json
 	python3 tools/compile_native_logic.py
-$(BUILD_DIR)/tools/test_native_logic.o: tools/test_native_logic.c $(BUILD_DIR)/native_logic_fixture.h src/neo_player_query.h decomp/recovered/rom_01a5ca.h
+$(BUILD_DIR)/tools/test_native_logic.o: tools/test_native_logic.c $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h src/neo_player_query.h decomp/recovered/rom_01a5ca.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
 $(BUILD_DIR)/recovered/rom_01a5ca.o: decomp/recovered/rom_01a5ca.c decomp/recovered/rom_01a5ca.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
-$(BUILD_DIR)/native-logic-regression.elf: $(BUILD_DIR)/tools/test_native_logic.o $(BUILD_DIR)/recovered/rom_01a5ca.o $(BUILD_DIR)/src/neo_player_query.o $(BUILD_DIR)/src/neo_player_positions.o
+$(BUILD_DIR)/native-logic-regression.elf: $(BUILD_DIR)/tools/test_native_logic.o $(BUILD_DIR)/recovered/rom_01a5ca.o $(BUILD_DIR)/src/neo_player_query.o $(BUILD_DIR)/src/neo_player_positions.o $(BUILD_DIR)/recovered/condition_services.o
 native-logic-regression.z64: N64_ROM_TITLE = "MSX NATIVE LOGIC"
+
+$(BUILD_DIR)/native_conditions_fixture.h: tools/compile_native_conditions.py tools/native_conditions_harness.py tools/condition_harness.py data/native_conditions_fixture.json data/native_condition_ram_patches.json
+	python3 tools/compile_native_conditions.py
+$(BUILD_DIR)/recovered/condition_services.o: decomp/recovered/condition_services.c decomp/recovered/condition_services.h src/neo_player_query.h src/neo_player_positions.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+
+.PHONY: verify-decompilation
+verify-decompilation:
+	python3 tools/audit_decompilation.py

@@ -99,3 +99,20 @@ La regresión MIPS pasa en ares con 447 casos del despacho de condiciones y
 [01903A y sus guardias](../docs/NATIVE_PLAYER_POSITIONS.md) también tienen C
 nativo: 96 casos con auxiliares originales reales coinciden y pasan en MIPS/ares.
 La conexión de ambos servicios de jugador con campaña sigue pendiente.
+
+## Completitud global: rechazada
+
+[La auditoría](completeness-audit.json) distingue integridad de artefactos y
+recuperación completa. Los archivos y hashes comprobados pasan, pero quedan
+5164 entradas tentativas del 68000, 154 del Z80, una partición exhaustiva de
+código/datos y disposición verificada para 101 sitios del flujo histórico.
+No existe validación MIPS del programa original completo. Cambiar el flag
+`complete` no elimina esos bloqueos independientes.
+
+El [puente de servicios](../docs/NATIVE_CONDITION_SERVICES.md) ya pasa 451
+llamadas con auxiliares reales, además de las regresiones anteriores. No se
+presenta como el juego entero ni como un ZIP completo.
+
+```sh
+make verify-decompilation  # falla expresamente mientras persistan los bloqueos
+```

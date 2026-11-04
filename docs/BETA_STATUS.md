@@ -1,3 +1,10 @@
+Native condition service update: 451 original calls now match with real
+AAA88/01903A/01964A/0040AC execution in the reference and native C services in
+the ported block. Full RAM/register/SR and four pre-trap boundaries pass on
+host/UBSan and compiled R4300 MIPS in ares. Campaign scheduling/data producers
+remain unrecovered. See NATIVE_CONDITION_SERVICES.md. The global audit still
+rejects whole-game completion; no complete ZIP is being delivered.
+
 Native position query update: 01903A and its 01964A/0040AC guards are now C
 with 96 original-reference cases. The compiled MIPS test passes in ares with
 447 condition cases, 96 AAA88 queries and 96 position queries. Condition

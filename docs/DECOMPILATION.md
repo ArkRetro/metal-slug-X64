@@ -238,3 +238,19 @@ y, compiladas para R4300, en ares junto a las 447 condiciones y 96 AAA88.
 No se ha enlazado la consulta a campaña ni recuperado sus productores de
 estado global. Véase NATIVE_PLAYER_POSITIONS.md. La cobertura global sigue
 siendo incompleta; no se genera otro ZIP como entrega final.
+
+## Conexión real de los servicios y verificación global
+
+`condition_services.c` elimina las respuestas sintéticas del camino integrado
+del despacho. 451 llamadas adicionales ejecutan las rutinas originales completas
+con sus auxiliares reales y coinciden en RAM, registros y SR, incluidas cuatro
+ramas de excepción antes de TRAP #15. Pasan en MIPS/ares y UBSan host.
+La suite anterior de 447 casos se conserva independiente, con sus límites.
+Sigue pendiente el productor/scheduler de campaña y la recuperación restante.
+
+`tools/audit_decompilation.py` comprueba índices, hashes de fuentes, clasificación
+física de código/datos, disposición documentada de flujos pendientes y evidencia
+de programa completo. Rechaza el estado actual por entradas automáticas sin
+verificar, bancos sin partición exhaustiva y ausencia de validación integral.
+Contar funciones o poner complete=true no satisface esos requisitos. El informe
+es `decomp/completeness-audit.json`; no se entrega un ZIP como completo.

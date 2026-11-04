@@ -32,3 +32,10 @@ sus assets mediante las herramientas y los archivos originales del usuario.
 El ZIP parcial histórico no satisface la entrega completa solicitada. No se
 presenta como resultado final ni se genera otra entrega mientras siga faltando
 código por recuperar. El trabajo de recuperación permanece en las fuentes.
+
+Actualización de servicios: otras 451 llamadas del despacho ya se contrastan
+con auxiliares originales reales y servicios C nativos, incluidas cuatro
+ramas anteriores a TRAP #15. Pasan en ares/R4300. Esto no sustituye el mapa
+completo ni la verificación de las 5164 entradas 68000 y 154 Z80 tentativas.
+`make verify-decompilation` rechaza el estado actual; el informe de integridad
+y completitud está en `decomp/completeness-audit.json`.

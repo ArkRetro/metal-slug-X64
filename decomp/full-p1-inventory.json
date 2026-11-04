@@ -48,7 +48,7 @@
   "native_c_port": false,
   "index": "full-p1-index.tsv",
   "candidate_roots_may_be_data": true,
-  "index_sha256": "bd45106e84c6ddae48d2ff8bce42bb36d85e757abf4207a70de435079a9f4182",
+  "index_sha256": "e3d9da5465f1161fe84290ccffce4ec4ce78c0032a6b4afd567ca081aab051f1",
   "character_preservation_check": {
     "status": "PASS",
     "files": 5168,
@@ -100,5 +100,13 @@
     "cases": 96,
     "helpers_intercepted": false,
     "guard_scope": "Guard behavior recovered within the 01903A native API, not a standalone all-callers register ABI"
+  },
+  "integrated_native_condition_services": {
+    "file": "recovered/condition_services.c",
+    "validation": "../data/native_conditions_fixture.json",
+    "original_calls": 451,
+    "helpers_intercepted": false,
+    "trap_boundaries": 4,
+    "campaign_producers_verified": false
   }
 }

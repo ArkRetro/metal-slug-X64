@@ -52,3 +52,12 @@ Las fixtures reproducen entradas sintéticas y comparan contra resultados
 originales almacenados, sin ROM ni MAME. Pasan con UndefinedBehaviorSanitizer.
 El módulo compila como objeto MIPS-III big endian para R4300; no se ha
 integrado ni probado como campaña en ares.
+
+## Servicios reales conectados posteriormente
+
+[condition_services.c](../condition_services.c) ya conecta ambos servicios
+nativos: 451 llamadas adicionales se contrastan contra los manejadores y las
+auxiliares originales sin respuestas sintéticas. Coinciden RAM, registros y SR,
+y pasan en MIPS/ares. La antigua suite de 447 casos descrita arriba conserva
+sus servicios controlados como regresión independiente. Continúa pendiente
+la campaña; véase [NATIVE_CONDITION_SERVICES](../../../docs/NATIVE_CONDITION_SERVICES.md).

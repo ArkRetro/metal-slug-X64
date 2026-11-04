@@ -288,7 +288,7 @@ owner	status	file
 01a0a6	tentative_c	tentative/all_p1/unverified/01/rom_01a0a6.c
 01a134	tentative_c	tentative/all_p1/unverified/01/rom_01a134.c
 01a422	tentative_c	tentative/all_p1/unverified/01/rom_01a422.c
-01a5ca	manual_C_controlled_helpers	recovered/rom_01a5ca.c
+01a5ca	manual_C_with_real_native_services	recovered/rom_01a5ca.c
 01a636	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
 01a644	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c
 01a698	manual_handler_in_shared_dispatch_C	recovered/rom_01a5ca.c

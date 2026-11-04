@@ -1,0 +1,130 @@
+{
+  "status": "BLOCKED_INCOMPLETE",
+  "complete": false,
+  "structural_checks_pass": false,
+  "artifact_integrity": "PASS",
+  "indices": {
+    "m68000": {
+      "addresses": 5183,
+      "statuses": {
+        "tentative_c": 5081,
+        "tentative_c_with_diagnostics": 83,
+        "manual_c_controlled_m68000_comparison": 1,
+        "native_C_original_position_query": 1,
+        "native_guard_in_01903a_context": 1,
+        "manual_C_with_real_native_services": 1,
+        "manual_handler_in_shared_dispatch_C": 14,
+        "native_C_controlled_original_query": 1
+      },
+      "tentative_entries": 5164
+    },
+    "z80": {
+      "addresses": 154,
+      "statuses": {
+        "tentative_c": 130,
+        "tentative_c_with_diagnostics": 24
+      },
+      "tentative_entries": 154
+    }
+  },
+  "lexical_risk_signals": {
+    "implicit_register_values": 4840,
+    "inferred_undefined_types": 4365,
+    "bad_instruction_diagnostics": 95,
+    "m68000_runtime_intrinsics": 137
+  },
+  "signal_samples": {
+    "implicit_register_values": [
+      "decomp/tentative/all_p1/unverified/00/rom_000c00.c",
+      "decomp/tentative/all_p1/unverified/00/rom_001000.c",
+      "decomp/tentative/all_p1/unverified/00/rom_002624.c"
+    ],
+    "inferred_undefined_types": [
+      "decomp/tentative/all_p1/with_diagnostics/00/rom_001004.c",
+      "decomp/tentative/all_p1/with_diagnostics/00/rom_002432.c",
+      "decomp/tentative/all_p1/unverified/00/rom_0026fa.c"
+    ],
+    "bad_instruction_diagnostics": [
+      "decomp/tentative/all_p1/with_diagnostics/00/rom_001004.c",
+      "decomp/tentative/all_p1/with_diagnostics/00/rom_002432.c",
+      "decomp/tentative/all_p1/with_diagnostics/00/rom_00427a.c"
+    ],
+    "m68000_runtime_intrinsics": [
+      "decomp/tentative/all_p1/unverified/00/rom_0027c4.c",
+      "decomp/tentative/all_p1/unverified/00/rom_003918.c",
+      "decomp/tentative/all_p1/unverified/00/rom_003f9e.c"
+    ]
+  },
+  "blockers": [
+    {
+      "kind": "UNVERIFIED_AUTOMATIC_C",
+      "cpu": "m68000",
+      "count": 5164,
+      "index": "decomp/full-p1-index.tsv"
+    },
+    {
+      "kind": "UNVERIFIED_AUTOMATIC_C",
+      "cpu": "z80",
+      "count": 154,
+      "index": "decomp/full-audio-index.tsv"
+    },
+    {
+      "kind": "EXHAUSTIVE_CODE_DATA_MAP_MISSING",
+      "images": [
+        "250-p1.p1",
+        "250-p2.ep1",
+        "250-m1.m1"
+      ],
+      "input_bytes": 5373952,
+      "issues": [
+        "No exhaustive verified physical code/data partition exists"
+      ]
+    },
+    {
+      "kind": "FLOW_SITES_WITHOUT_VERIFIED_DISPOSITION",
+      "count": 101,
+      "scope": "Historical P1 frontier; includes imports and computed calls. A site may have partial recovery without an exhaustive domain proof.",
+      "sample": [
+        {
+          "source": "00001040",
+          "kind": "external_or_invalid_call",
+          "target": "00100000"
+        },
+        {
+          "source": "000010a2",
+          "kind": "external_or_invalid_call",
+          "target": "00c004c2"
+        },
+        {
+          "source": "000010ea",
+          "kind": "computed_flow",
+          "target": "jmp (0x7c00,A5)"
+        },
+        {
+          "source": "00003a76",
+          "kind": "computed_flow",
+          "target": "jsr (A0)"
+        }
+      ]
+    },
+    {
+      "kind": "FULL_PROGRAM_MIPS_VALIDATION_MISSING",
+      "detail": "Only module regressions exist; no whole-game equivalence/build validation record"
+    },
+    {
+      "kind": "RECORDED_OPEN_WORK",
+      "items": [
+        "Resolve unverified C types, ABI/register state and function boundaries",
+        "Review signature roots which may actually be data",
+        "Recover computed/external calls and state-dependent mappings",
+        "Classify P2 and remaining M1 bank regions; do not fabricate executable code from data",
+        "Integrate verified native code with libdragon backends",
+        "Recover campaign data producers and integrate the native condition dispatch into the campaign scheduler"
+      ]
+    },
+    {
+      "kind": "RECOVERY_NOT_DECLARED_COMPLETE"
+    }
+  ],
+  "limits": "Lexical signals are review hints, not counts of broken functions. Exhausting roots or passing unit fixtures is not whole-game equivalence. No completion percentage is inferred. Even a structural pass requires review of semantic validation evidence."
+}

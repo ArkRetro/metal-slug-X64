@@ -1,12 +1,13 @@
 {
   "status": "PASS",
   "emulator": "ares 146",
-  "rom_sha256": "bf4125fc8059cf1fa206043349d9ddfd9c8673c73a3961e08a85a70fc88e26eb",
+  "rom_sha256": "6e909ffcdae96d6f025eab5e2eb274a26a8d10deaacfd9e9961aec769b68affd",
   "suite": "nativelogic",
-  "limit": "447 original condition calls with intercepted helper outputs plus 96 original player queries and 96 original position queries with real helpers. CPU regression only; no campaign/rendering claim.",
+  "limit": "447 original condition calls with intercepted helper outputs plus 96 original player queries, 96 original position queries, and 451 condition calls with real native services. CPU regression only; no campaign/rendering claim.",
   "conditions": 447,
   "player_queries": 96,
   "position_queries": 96,
-  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96",
-  "limits": "CPU fixtures only. Condition helpers remain synthetic in the 447-call suite. Both native query suites use real original helpers in reference. No campaign binding, rendering or physical hardware performance claim."
+  "real_service_conditions": 451,
+  "marker": "MSX NATIVELOGIC REGRESSION PASS conditions=447 queries=96 positions=96 real_services=451",
+  "limits": "CPU fixtures only. The original 447-case suite retains synthetic helpers for regression; the additional 451-case suite executes/binds real 01903A/AAA88/01964A/0040AC semantics including four pre-TRAP15 boundaries. No whole-game, campaign producer or cycle timing claim."
 }

@@ -11,7 +11,7 @@ for n in ('cfg','nvram'):(out/n).mkdir()
 lines=['local f=0','emu.register_frame_done(function()','f=f+1','if f==2 then']
 for start,length in ranges:
  name=out/f'dasm-{start:06x}.txt';assert ',' not in str(name) and '"' not in str(name)
- lines.append('manager.machine.debugger:command('+json.dumps(f'dasm "{name}",{start:x},{length:x},1')+')')
+ lines.append('manager.machine.debugger:command('+json.dumps(f'dasm "{name}",0x{start:x},0x{length:x},1')+')')
 lines+=['local p=assert(io.open('+json.dumps(str(out/'program-fixed.bin'))+",'wb'))", "p:write(manager.machine.devices[':maincpu'].spaces.program:read_range(0,0xfffff,8));p:close()",'manager.machine:exit()','end',"end,'frame')"]
 (out/'capture.lua').write_text('\n'.join(lines)+'\n')
 env=dict(os.environ,LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu')

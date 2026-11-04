@@ -2,6 +2,7 @@
 //@category MetalSlugX
 import java.io.*;
 import java.util.*;
+import java.util.regex.*;
 import ghidra.app.script.GhidraScript;
 import ghidra.program.model.address.*;
 import ghidra.program.model.data.*;
@@ -50,6 +51,39 @@ public class BuildCanonicalContexts extends GhidraScript {
    }
   }
   if(!rootAddresses.isEmpty())analyzeChanges(currentProgram);
+  // 100818 reads (A4) into A0 and 10081A calls A0 in this initial RAM image.
+  // Follow in-container constant stores to that descriptor slot as candidates.
+  // This does not close the indirect domain or prove those stores execute.
+  List<String> seeds=new ArrayList<>();Set<String> seededSites=new HashSet<>();
+  if(main) {
+   MemoryBlock ramCopy=blocks.get("RAM_COPY_100000");
+   Address call=ramCopy.getStart().add(0x81a);
+   if(getInstructionAt(call)==null || !getInstructionAt(call).toString().equals("jsr (A0)"))throw new IOException("RAM descriptor call site changed");
+   Pattern store=Pattern.compile("move\\.l #0x([0-9a-f]+),\\(A4\\)");
+   for(int pass=0;pass<ramCopy.getSize()/2;pass++) {
+    List<Address> pending=new ArrayList<>();
+    InstructionIterator existing=currentProgram.getListing().getInstructions(ramCopy.getStart(),true);
+    while(existing.hasNext()) {
+     Instruction i=existing.next();if(!ramCopy.contains(i.getAddress()))break;
+     Matcher match=store.matcher(i.toString());if(!match.matches())continue;
+     long pc=Long.parseLong(match.group(1),16);
+     if(pc<ramCopy.getStart().getOffset() || pc>ramCopy.getEnd().getOffset() || pc%2!=0)continue;
+     Address target=ramCopy.getStart().add(pc-ramCopy.getStart().getOffset());
+     if(!seededSites.add(id(i.getAddress())))continue;
+     seeds.add(id(i.getAddress())+"\t"+id(target)+"\t"+pass+"\tconstant_descriptor_slot_store_candidate");
+     pending.add(target);
+    }
+    if(pending.isEmpty())break;
+    for(Address target:pending) {
+     disassemble(target);
+     if(getFunctionContaining(target)==null)createFunction(target,"candidate_descriptor_"+String.format("%06x",target.getOffset()));
+    }
+    analyzeChanges(currentProgram);
+   }
+  }
+  try(PrintWriter extra=new PrintWriter(new File(out,"descriptor-seeds.tsv"))) {
+   extra.println("store_site\ttarget\tanalysis_pass\tstatus");for(String seed:seeds)extra.println(seed);
+  }
   try(PrintWriter memory=new PrintWriter(new File(out,"memory.tsv"));PrintWriter roots=new PrintWriter(new File(out,"roots.tsv"));PrintWriter functions=new PrintWriter(new File(out,"functions.tsv"));PrintWriter edges=new PrintWriter(new File(out,"edges.tsv"));PrintWriter code=new PrintWriter(new File(out,"instructions.tsv"))) {
    memory.println("context\taddress_space\tstart\tend_inclusive\tinitialized\twritable\texecutable");
    for(MemoryBlock b:currentProgram.getMemory().getBlocks())memory.printf("%s\t%s\t%08x\t%08x\t%b\t%b\t%b%n",b.getName(),b.getStart().getAddressSpace().getName(),b.getStart().getOffset(),b.getEnd().getOffset(),b.isInitialized(),b.isWrite(),b.isExecute());
@@ -71,6 +105,15 @@ public class BuildCanonicalContexts extends GhidraScript {
      }
     }
     functions.printf("%s\t%s\t%d\t%d%n",owner,f.getName(),f.getBody().getNumAddresses(),count);
+   }
+   // A discovered pointer store can be in an unowned listing fragment. Keep
+   // its instruction as evidence without inventing a containing function.
+   if(main)for(String seed:seeds) {
+    String site=seed.split("\t")[0];long pc=Long.parseLong(site.substring(site.indexOf(':')+1),16);
+    Address address=blocks.get("RAM_COPY_100000").getStart().add(pc-0x100000);
+    if(getFunctionContaining(address)!=null)continue;
+    Instruction i=getInstructionAt(address);if(i==null)throw new IOException("Pointer store vanished: "+site);
+    code.printf("-\t%s\t%d\t%s%n",site,i.getLength(),i);
    }
   }
  }

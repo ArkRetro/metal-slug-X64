@@ -1,0 +1,9 @@
+0C7ADA: 41F9 0010 C72E lea     $10c72e.l, A0
+0C7AE0: 4EB9 000C 75EE jsr     $c75ee.l
+0C7AE6: 41F9 0010 D7B6 lea     $10d7b6.l, A0
+0C7AEC: 4EB9 000C 75EE jsr     $c75ee.l
+0C7AF2: 41F9 0010 E83E lea     $10e83e.l, A0
+0C7AF8: 4EB9 000C 75EE jsr     $c75ee.l
+0C7AFE: 41F9 0010 E8C6 lea     $10e8c6.l, A0
+0C7B04: 4EB9 000C 75EE jsr     $c75ee.l
+0C7B0A: 4E75           rts

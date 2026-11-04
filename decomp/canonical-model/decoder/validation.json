@@ -1,0 +1,833 @@
+{
+  "status": "STATIC_DECODER_COMPARISON_NOT_EXECUTION",
+  "mame_version": "0.276",
+  "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
+  "candidate_inputs_sha256": {
+    "decomp/canonical-model/M68K_FIXED_P1/instructions.tsv": "16ca17d8fbbb2fcdfdba47a07bd0eaa43f424fcb2da8afcce1d40aefb84e59c2",
+    "decomp/canonical-model/Z80_INITIAL_CART/instructions.tsv": "51a43f2e5e2f92b1986b6d1900834abaa3643b6fd95a350793e90955fb7310dd"
+  },
+  "candidate_instructions": 13463,
+  "statuses": {
+    "boundary_length_match": 13463
+  },
+  "contexts": [
+    {
+      "context": "M68K_FIXED_P1",
+      "cpu": "m68000",
+      "readback_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "size": 1048576,
+      "ram_image_installed": false
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "cpu": "m68000",
+      "readback_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769",
+      "size": 4426,
+      "ram_image_installed": true
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "cpu": "m68000",
+      "readback_sha256": "4e85ae9cb2943c1621fa9db4f5863ce55d35b597b011a7e1c921071a1c772d41",
+      "size": 106,
+      "ram_image_installed": true
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "cpu": "z80",
+      "readback_sha256": "eb0219fed4a9e93f8c3216ff78d46918f88f3cdca4f6ce82ce351c1459a8ad3b",
+      "size": 63488,
+      "ram_image_installed": false
+    }
+  ],
+  "groups": [
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 4096,
+      "end": 4334,
+      "file": "assembly/M68K_FIXED_P1-00001000.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 5922,
+      "end": 5950,
+      "file": "assembly/M68K_FIXED_P1-00001722.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 6502,
+      "end": 6534,
+      "file": "assembly/M68K_FIXED_P1-00001966.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 6704,
+      "end": 6780,
+      "file": "assembly/M68K_FIXED_P1-00001a30.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 6886,
+      "end": 6932,
+      "file": "assembly/M68K_FIXED_P1-00001ae6.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 8866,
+      "end": 9084,
+      "file": "assembly/M68K_FIXED_P1-000022a2.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 9090,
+      "end": 9978,
+      "file": "assembly/M68K_FIXED_P1-00002382.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 10026,
+      "end": 10074,
+      "file": "assembly/M68K_FIXED_P1-0000272a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 10230,
+      "end": 10242,
+      "file": "assembly/M68K_FIXED_P1-000027f6.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 10322,
+      "end": 10346,
+      "file": "assembly/M68K_FIXED_P1-00002852.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 10694,
+      "end": 10748,
+      "file": "assembly/M68K_FIXED_P1-000029c6.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 11900,
+      "end": 11928,
+      "file": "assembly/M68K_FIXED_P1-00002e7c.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 13718,
+      "end": 13728,
+      "file": "assembly/M68K_FIXED_P1-00003596.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 13746,
+      "end": 13988,
+      "file": "assembly/M68K_FIXED_P1-000035b2.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 14028,
+      "end": 14220,
+      "file": "assembly/M68K_FIXED_P1-000036cc.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 14232,
+      "end": 14374,
+      "file": "assembly/M68K_FIXED_P1-00003798.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 15210,
+      "end": 15678,
+      "file": "assembly/M68K_FIXED_P1-00003b6a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 16164,
+      "end": 16538,
+      "file": "assembly/M68K_FIXED_P1-00003f24.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 16572,
+      "end": 16668,
+      "file": "assembly/M68K_FIXED_P1-000040bc.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 16678,
+      "end": 16786,
+      "file": "assembly/M68K_FIXED_P1-00004126.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 16948,
+      "end": 16976,
+      "file": "assembly/M68K_FIXED_P1-00004234.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 16982,
+      "end": 17066,
+      "file": "assembly/M68K_FIXED_P1-00004256.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 17914,
+      "end": 17956,
+      "file": "assembly/M68K_FIXED_P1-000045fa.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 19372,
+      "end": 19454,
+      "file": "assembly/M68K_FIXED_P1-00004bac.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 19492,
+      "end": 19914,
+      "file": "assembly/M68K_FIXED_P1-00004c24.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 19924,
+      "end": 19934,
+      "file": "assembly/M68K_FIXED_P1-00004dd4.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 19944,
+      "end": 20086,
+      "file": "assembly/M68K_FIXED_P1-00004de8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 20818,
+      "end": 20984,
+      "file": "assembly/M68K_FIXED_P1-00005152.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 34066,
+      "end": 39812,
+      "file": "assembly/M68K_FIXED_P1-00008512.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 40500,
+      "end": 40556,
+      "file": "assembly/M68K_FIXED_P1-00009e34.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 40608,
+      "end": 40616,
+      "file": "assembly/M68K_FIXED_P1-00009ea0.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 40840,
+      "end": 40908,
+      "file": "assembly/M68K_FIXED_P1-00009f88.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 40914,
+      "end": 41016,
+      "file": "assembly/M68K_FIXED_P1-00009fd2.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 41022,
+      "end": 41094,
+      "file": "assembly/M68K_FIXED_P1-0000a03e.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 66470,
+      "end": 66502,
+      "file": "assembly/M68K_FIXED_P1-000103a6.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 66506,
+      "end": 68584,
+      "file": "assembly/M68K_FIXED_P1-000103ca.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 68588,
+      "end": 70634,
+      "file": "assembly/M68K_FIXED_P1-00010bec.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 73276,
+      "end": 73718,
+      "file": "assembly/M68K_FIXED_P1-00011e3c.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 73822,
+      "end": 74128,
+      "file": "assembly/M68K_FIXED_P1-0001205e.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 74202,
+      "end": 74304,
+      "file": "assembly/M68K_FIXED_P1-000121da.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 81686,
+      "end": 81756,
+      "file": "assembly/M68K_FIXED_P1-00013f16.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 91320,
+      "end": 91372,
+      "file": "assembly/M68K_FIXED_P1-000164b8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 103516,
+      "end": 103684,
+      "file": "assembly/M68K_FIXED_P1-0001945c.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 105916,
+      "end": 105930,
+      "file": "assembly/M68K_FIXED_P1-00019dbc.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 108824,
+      "end": 108970,
+      "file": "assembly/M68K_FIXED_P1-0001a918.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 108976,
+      "end": 109028,
+      "file": "assembly/M68K_FIXED_P1-0001a9b0.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109034,
+      "end": 109070,
+      "file": "assembly/M68K_FIXED_P1-0001a9ea.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109072,
+      "end": 109078,
+      "file": "assembly/M68K_FIXED_P1-0001aa10.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109096,
+      "end": 109178,
+      "file": "assembly/M68K_FIXED_P1-0001aa28.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109202,
+      "end": 109386,
+      "file": "assembly/M68K_FIXED_P1-0001aa92.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109408,
+      "end": 109464,
+      "file": "assembly/M68K_FIXED_P1-0001ab60.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 109512,
+      "end": 109644,
+      "file": "assembly/M68K_FIXED_P1-0001abc8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 110222,
+      "end": 110298,
+      "file": "assembly/M68K_FIXED_P1-0001ae8e.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 110490,
+      "end": 110588,
+      "file": "assembly/M68K_FIXED_P1-0001af9a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 110730,
+      "end": 110782,
+      "file": "assembly/M68K_FIXED_P1-0001b08a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 110946,
+      "end": 111040,
+      "file": "assembly/M68K_FIXED_P1-0001b162.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 111068,
+      "end": 111084,
+      "file": "assembly/M68K_FIXED_P1-0001b1dc.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 248436,
+      "end": 248500,
+      "file": "assembly/M68K_FIXED_P1-0003ca74.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 248530,
+      "end": 248634,
+      "file": "assembly/M68K_FIXED_P1-0003cad2.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 249618,
+      "end": 249696,
+      "file": "assembly/M68K_FIXED_P1-0003cf12.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 249754,
+      "end": 249786,
+      "file": "assembly/M68K_FIXED_P1-0003cf9a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 250296,
+      "end": 250410,
+      "file": "assembly/M68K_FIXED_P1-0003d1b8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 250436,
+      "end": 250478,
+      "file": "assembly/M68K_FIXED_P1-0003d244.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 254632,
+      "end": 254642,
+      "file": "assembly/M68K_FIXED_P1-0003e2a8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 359064,
+      "end": 359078,
+      "file": "assembly/M68K_FIXED_P1-00057a98.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 359208,
+      "end": 359236,
+      "file": "assembly/M68K_FIXED_P1-00057b28.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 531976,
+      "end": 532020,
+      "file": "assembly/M68K_FIXED_P1-00081e08.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 532022,
+      "end": 532632,
+      "file": "assembly/M68K_FIXED_P1-00081e36.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 532728,
+      "end": 532800,
+      "file": "assembly/M68K_FIXED_P1-000820f8.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 814218,
+      "end": 814332,
+      "file": "assembly/M68K_FIXED_P1-000c6c8a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 814340,
+      "end": 814900,
+      "file": "assembly/M68K_FIXED_P1-000c6d04.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 815146,
+      "end": 815292,
+      "file": "assembly/M68K_FIXED_P1-000c702a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 816622,
+      "end": 817662,
+      "file": "assembly/M68K_FIXED_P1-000c75ee.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 817700,
+      "end": 817832,
+      "file": "assembly/M68K_FIXED_P1-000c7a24.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 817882,
+      "end": 817932,
+      "file": "assembly/M68K_FIXED_P1-000c7ada.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 828674,
+      "end": 828704,
+      "file": "assembly/M68K_FIXED_P1-000ca502.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 828746,
+      "end": 828770,
+      "file": "assembly/M68K_FIXED_P1-000ca54a.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 828824,
+      "end": 828892,
+      "file": "assembly/M68K_FIXED_P1-000ca598.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 828910,
+      "end": 828928,
+      "file": "assembly/M68K_FIXED_P1-000ca5ee.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 829088,
+      "end": 829192,
+      "file": "assembly/M68K_FIXED_P1-000ca6a0.asm"
+    },
+    {
+      "context": "M68K_FIXED_P1",
+      "start": 829458,
+      "end": 829514,
+      "file": "assembly/M68K_FIXED_P1-000ca812.asm"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "start": 1048576,
+      "end": 1048922,
+      "file": "assembly/RAM_COPY_100000-00100000.asm"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "start": 1048934,
+      "end": 1048940,
+      "file": "assembly/RAM_COPY_100000-00100166.asm"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "start": 1048942,
+      "end": 1050086,
+      "file": "assembly/RAM_COPY_100000-0010016e.asm"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "start": 1050160,
+      "end": 1051170,
+      "file": "assembly/RAM_COPY_100000-00100630.asm"
+    },
+    {
+      "context": "RAM_COPY_100000",
+      "start": 1051220,
+      "end": 1051254,
+      "file": "assembly/RAM_COPY_100000-00100a54.asm"
+    },
+    {
+      "context": "RAM_COPY_10FC00",
+      "start": 1113088,
+      "end": 1113194,
+      "file": "assembly/RAM_COPY_10FC00-0010fc00.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 0,
+      "end": 6,
+      "file": "assembly/Z80_INITIAL_CART-00000000.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 8,
+      "end": 30,
+      "file": "assembly/Z80_INITIAL_CART-00000008.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 48,
+      "end": 59,
+      "file": "assembly/Z80_INITIAL_CART-00000030.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 102,
+      "end": 105,
+      "file": "assembly/Z80_INITIAL_CART-00000066.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 7680,
+      "end": 8231,
+      "file": "assembly/Z80_INITIAL_CART-00001e00.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 8263,
+      "end": 8292,
+      "file": "assembly/Z80_INITIAL_CART-00002047.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 8324,
+      "end": 8524,
+      "file": "assembly/Z80_INITIAL_CART-00002084.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 8650,
+      "end": 8793,
+      "file": "assembly/Z80_INITIAL_CART-000021ca.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 8911,
+      "end": 9127,
+      "file": "assembly/Z80_INITIAL_CART-000022cf.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 9279,
+      "end": 9359,
+      "file": "assembly/Z80_INITIAL_CART-0000243f.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 9414,
+      "end": 9780,
+      "file": "assembly/Z80_INITIAL_CART-000024c6.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 9924,
+      "end": 10338,
+      "file": "assembly/Z80_INITIAL_CART-000026c4.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 10482,
+      "end": 10896,
+      "file": "assembly/Z80_INITIAL_CART-000028f2.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 11040,
+      "end": 11256,
+      "file": "assembly/Z80_INITIAL_CART-00002b20.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 11411,
+      "end": 13948,
+      "file": "assembly/Z80_INITIAL_CART-00002c93.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 14237,
+      "end": 16324,
+      "file": "assembly/Z80_INITIAL_CART-0000379d.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 16474,
+      "end": 17176,
+      "file": "assembly/Z80_INITIAL_CART-0000405a.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 17442,
+      "end": 19143,
+      "file": "assembly/Z80_INITIAL_CART-00004422.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 19151,
+      "end": 19171,
+      "file": "assembly/Z80_INITIAL_CART-00004acf.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 19179,
+      "end": 19199,
+      "file": "assembly/Z80_INITIAL_CART-00004aeb.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 19209,
+      "end": 19371,
+      "file": "assembly/Z80_INITIAL_CART-00004b09.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 19627,
+      "end": 20685,
+      "file": "assembly/Z80_INITIAL_CART-00004cab.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 20686,
+      "end": 21477,
+      "file": "assembly/Z80_INITIAL_CART-000050ce.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 21480,
+      "end": 21507,
+      "file": "assembly/Z80_INITIAL_CART-000053e8.asm"
+    },
+    {
+      "context": "Z80_INITIAL_CART",
+      "start": 21524,
+      "end": 22518,
+      "file": "assembly/Z80_INITIAL_CART-00005414.asm"
+    }
+  ],
+  "comparison_sha256": "3634e9aad6d5f56de97428b41a8f38e586470a384d068c070f7d80266e0023cb",
+  "assembly_sha256": {
+    "assembly/M68K_FIXED_P1-00001000.asm": "cf3fd674a7fe5e631c43784feb6c6ca43bcb27604ea4b0bee90707c1eed354a2",
+    "assembly/M68K_FIXED_P1-00001722.asm": "81affeffd984543adc1aa18e22ac6f78b0401b6fc64877d5438f33c2fce8730b",
+    "assembly/M68K_FIXED_P1-00001966.asm": "300a7264ea1affb516fa65f7c091b34565b59df2a31232e4d5038a08866674be",
+    "assembly/M68K_FIXED_P1-00001a30.asm": "ed11db36227c561ffb7448168eb5e7dc7d1aa1447de1a84438c2692f106fd127",
+    "assembly/M68K_FIXED_P1-00001ae6.asm": "3b4d69e1b43b1cd4fcfb0636696d6f9f2b7e860b2c7d2b1ca88c84b2b232dcf4",
+    "assembly/M68K_FIXED_P1-000022a2.asm": "9d8d5ebf28089b5d3091d681589933e90e00298abc398259841e6f584d8939f5",
+    "assembly/M68K_FIXED_P1-00002382.asm": "5ab21d347a9e2ab384803269170f3a304640a49b3e2fd5c40ecb857c080ac6e8",
+    "assembly/M68K_FIXED_P1-0000272a.asm": "55c0adbbb1faadb795debf7818d0a0b9c8d9451e4d05b35ccce08edde46690e9",
+    "assembly/M68K_FIXED_P1-000027f6.asm": "b08c639ace844ccffc2a4550d4ab3e3fb5c72f04accb710974e6876dd87c3538",
+    "assembly/M68K_FIXED_P1-00002852.asm": "7cf0808e41d6b43d9ffd700b7588209ecceb3c6b1f6da5222571ac17d8126aa0",
+    "assembly/M68K_FIXED_P1-000029c6.asm": "1b241475312ab5742322462219397fd9ccbfd402e2ad7ffb71fe510d2e3788a4",
+    "assembly/M68K_FIXED_P1-00002e7c.asm": "37ea2b2f9989c2b2308e48e39a8bf7a8fbfe88f10bb4f79713d4090adde655d4",
+    "assembly/M68K_FIXED_P1-00003596.asm": "972cade6b71bbb671a0edfe3e5c809e7f0edf10e612c4240decf9c10fced5c44",
+    "assembly/M68K_FIXED_P1-000035b2.asm": "306c117ba72d624f15b0386f691db9c2bc9386085f167dc620e4b3e15a4d775c",
+    "assembly/M68K_FIXED_P1-000036cc.asm": "4ab23d6c80635e2b1b472480fac1e7a21c5f08bd7087d924b07a8daeff8b4e5a",
+    "assembly/M68K_FIXED_P1-00003798.asm": "0d788e6997139b0d667a5e9c50ef6023a5023486a021018486c87c32b2b71fbb",
+    "assembly/M68K_FIXED_P1-00003b6a.asm": "a41acbb006346e6026ec7b539ead6b4946b8326cc71414b62cff51e431755c5a",
+    "assembly/M68K_FIXED_P1-00003f24.asm": "d77645ce51402cf9134b81946294ab809ef29aae6befbb4265adf8611fda3107",
+    "assembly/M68K_FIXED_P1-000040bc.asm": "826b41d5a030bedae9c7b2b82343bd7991b8faa2a16ae3e759b5053a3b6cf28d",
+    "assembly/M68K_FIXED_P1-00004126.asm": "7e2c6c9b6f95a9bcf0ba014926856e25111c1b9115b4e939235e9eedc025bdae",
+    "assembly/M68K_FIXED_P1-00004234.asm": "d951c30f1137bd81e22c5f1e3a99fa32bd5296f04204ed7acbad39354ef3500d",
+    "assembly/M68K_FIXED_P1-00004256.asm": "ac0ada9452fab8c6f50766d6d9b200d8d6ffd085a50881050dd427200ec4c712",
+    "assembly/M68K_FIXED_P1-000045fa.asm": "720b2f50bd37ad4e59c2baeed2684419c07fe6afec7fc38ac8808e0bde071956",
+    "assembly/M68K_FIXED_P1-00004bac.asm": "dc3c0d76bf211b0b8b727e64a5ea6ceeeb3a4339355819bc0abd7ea77c924cec",
+    "assembly/M68K_FIXED_P1-00004c24.asm": "90f874a9a30eb1825b221b525bc446a32741ad458e557a1b3fb1c75b732b0efe",
+    "assembly/M68K_FIXED_P1-00004dd4.asm": "c2ce3ddb0062238f8a669aaf940ed894b72edec8aedd4a9d78e2e90f9d1c0666",
+    "assembly/M68K_FIXED_P1-00004de8.asm": "28120986c775117331512631681a2073dae6d8577f56be6ae8e7695d481ef9a1",
+    "assembly/M68K_FIXED_P1-00005152.asm": "9d918733728c40cded70bdd5127e561604651d1217182aaddf16b60733b2f201",
+    "assembly/M68K_FIXED_P1-00008512.asm": "4fc234902e229151308d0b68a1e0f88e5d5c456ced3ad7f6c4ed01451e9efb6b",
+    "assembly/M68K_FIXED_P1-00009e34.asm": "0507ba11a13276425bc0ce08f8cb42e44a0814c3c4201b49a5699e7d8cecd355",
+    "assembly/M68K_FIXED_P1-00009ea0.asm": "7c3b2451eeb05dbe34b98483bbcc531e77a141a137ab7fff79a097d2a08949c8",
+    "assembly/M68K_FIXED_P1-00009f88.asm": "3255bc678d4dcd441f022c4dc1960551f45351b0547e9fa25a3a50fe8a68e74a",
+    "assembly/M68K_FIXED_P1-00009fd2.asm": "d9d81c05aa3d7806c6f3bcc4984daf35aae301c21775c6c28df0a7a568f65472",
+    "assembly/M68K_FIXED_P1-0000a03e.asm": "25495b2e44887322359d44a8103ddaee199090e9af618bf4768f66c9883c2840",
+    "assembly/M68K_FIXED_P1-000103a6.asm": "86ccedba5370cbdb5ab9dd9fddc526c4b814cd53e453a2f88c58398d5f24bd95",
+    "assembly/M68K_FIXED_P1-000103ca.asm": "b8024634613571ee977fd867835e03d4862d1614140d94138b9d2422b88fe470",
+    "assembly/M68K_FIXED_P1-00010bec.asm": "0b94aed2b768d24a860ccda1e5dcc71aa646696832b16f402c0817b5e46f30ff",
+    "assembly/M68K_FIXED_P1-00011e3c.asm": "3d3fe298e890e18b8f329da5e0a599507fc7a3309774643c288ca45686f9dcde",
+    "assembly/M68K_FIXED_P1-0001205e.asm": "eb08257540430b7bbe2ae820aa9754f75c43a4de88abb0a45e6d7cf5ff167d50",
+    "assembly/M68K_FIXED_P1-000121da.asm": "e093f2e26f3e0e7f1d2689396887a924fc69fdcc7249e8036a35d9e7885203d4",
+    "assembly/M68K_FIXED_P1-00013f16.asm": "0c7326193fd6c5368cd2d9b1b6a60aeefc0db263303e2634b59d75f9610e2a29",
+    "assembly/M68K_FIXED_P1-000164b8.asm": "cb1a5438d11962a47dc4b39a45a2a6294fd74debebe4e9df8e5f9abcd2af2b88",
+    "assembly/M68K_FIXED_P1-0001945c.asm": "b582d5743ec51b22fc11372b7178cb8e887254b9f8e4e6dfa3cdd74af246d990",
+    "assembly/M68K_FIXED_P1-00019dbc.asm": "2140075744eee4c766d83589502a2cc3b0665417b20e06271f9c3c4ba4482594",
+    "assembly/M68K_FIXED_P1-0001a918.asm": "c36beeac792c76af34a7af5bab74ed276cebc1b73a2841d85a640d4de2e9b39e",
+    "assembly/M68K_FIXED_P1-0001a9b0.asm": "23b05e9f3af1928f85627fcb99bd749f7bc86e92d4366d004410a076db34ea8b",
+    "assembly/M68K_FIXED_P1-0001a9ea.asm": "f50b4431b245640e8f5341401d579b59972f08838065380ec3ba50290cc0b83f",
+    "assembly/M68K_FIXED_P1-0001aa10.asm": "e5185420b216bda08036b3e4002cdb70797816d7e7b37c22a4d476da14aa5b00",
+    "assembly/M68K_FIXED_P1-0001aa28.asm": "1c0f67c656d3dafd0495aad5f50bf57f7ce80ae59c17134723cab348862546bf",
+    "assembly/M68K_FIXED_P1-0001aa92.asm": "c39c3fca9916f481a27c9f1a2d67db032f53d15ed62827fc6f15d9504193fdfc",
+    "assembly/M68K_FIXED_P1-0001ab60.asm": "95fb5207c74f0b7fae5871315baf94bb1bbfd4d7e48ed85dc4d851d58921397d",
+    "assembly/M68K_FIXED_P1-0001abc8.asm": "8d3f5facaa5033cacaa3157c2d28b9f5a4a0ecefe2b8393b4ac1e700eba49766",
+    "assembly/M68K_FIXED_P1-0001ae8e.asm": "a0fac9add4dfec8dbbcb9645715f4cfae735ea7df6dc50eb1ff8564b65984810",
+    "assembly/M68K_FIXED_P1-0001af9a.asm": "93ad08b26071e6c8bcca8b37abaa7e1b0a3d5c360ed67582063e348cbd3419a8",
+    "assembly/M68K_FIXED_P1-0001b08a.asm": "3d779061bbf5a84f286b29004796a6fce5953bd3ce4188c9d03a7b8bc851a9ab",
+    "assembly/M68K_FIXED_P1-0001b162.asm": "cdcf283d9debc9061b8a8407012c9f04b776d9052ae708e00c2266c3eb772927",
+    "assembly/M68K_FIXED_P1-0001b1dc.asm": "0d3e070c07932ab597a2e8a7017484ccde0dac04a9c8dfeea665733b4648f859",
+    "assembly/M68K_FIXED_P1-0003ca74.asm": "9c926bef0e5b59dca6f2f4e670dae1639bceca46210175b18f66fb7d5c0bc0c4",
+    "assembly/M68K_FIXED_P1-0003cad2.asm": "86b9fd1560aa9c7fe1cefef6ff9b339b757ccd4e28202c4cab4e752a32b21299",
+    "assembly/M68K_FIXED_P1-0003cf12.asm": "fbcb36056394c5c37309680698eac9fdcb67515c6bc58984f3b044d65f5c8c90",
+    "assembly/M68K_FIXED_P1-0003cf9a.asm": "9f39ce8321be56993c7c8619de69a7f8dcdf3fd41b1727ddfc6ff144a3f3ae9c",
+    "assembly/M68K_FIXED_P1-0003d1b8.asm": "77a4e9bb7ff7dc6a4ee108f03d37a7b31cde9aa285b36e761838f40a0ca501f3",
+    "assembly/M68K_FIXED_P1-0003d244.asm": "fd39387b60b8603698b0a609ac8db99ab4f4530d1f1e7bf3a489eff72bad721c",
+    "assembly/M68K_FIXED_P1-0003e2a8.asm": "b49811451454439253ed5c2872cb2d79a835740fc9253d1c5ef5304bc656d8c1",
+    "assembly/M68K_FIXED_P1-00057a98.asm": "df8f8f3cbfe16ff6e04d9489ff7291d950fa52242ce6c23ed62c42645e2abc9b",
+    "assembly/M68K_FIXED_P1-00057b28.asm": "8350ee0557eb429c5862b7415fd9bfac814d4312b1eaba5739e1677f0f047c22",
+    "assembly/M68K_FIXED_P1-00081e08.asm": "70822a6c59fc5ce8db7567d514db2bf525bb6c3079e48060f689ab24ca12f023",
+    "assembly/M68K_FIXED_P1-00081e36.asm": "77610976cc0df6043b8c7c936487eafebd5983be8a9b0489b9d66025f819a9f7",
+    "assembly/M68K_FIXED_P1-000820f8.asm": "dc5224f9d5ccbd2dc9e2f40b437094c874d751b1a7c0a9340ee5f8562f281bd4",
+    "assembly/M68K_FIXED_P1-000c6c8a.asm": "d1021e6a1225a1802fb90fbc45058dbe1ab93bccb51fa98bdd4e3f40facb4029",
+    "assembly/M68K_FIXED_P1-000c6d04.asm": "9e14a6c9cff978ce1b763f0f483e7829d2f9791a4a7c5a9bf405c41c5835cac2",
+    "assembly/M68K_FIXED_P1-000c702a.asm": "b866678ff83036609aa9b9f899d5fb7e953a5487280f21432fa033db6cba81ed",
+    "assembly/M68K_FIXED_P1-000c75ee.asm": "d28d4f9fcf56bc60dd1e817c81785d9267a3a9f0a1f47b75057990e5a8b5205f",
+    "assembly/M68K_FIXED_P1-000c7a24.asm": "ee454d0cfd5978db4ebcc4ba9702ffa36341cd36bba0b9a6cf725fa87cdfd095",
+    "assembly/M68K_FIXED_P1-000c7ada.asm": "dfcca7ae0a8594b55de17c518d589ad5fba05aa230f7d86901cd6b509bc538be",
+    "assembly/M68K_FIXED_P1-000ca502.asm": "dffd9f26884119c23e644100d195895e8e8e723cb9501dae802a7fb5355a5ed6",
+    "assembly/M68K_FIXED_P1-000ca54a.asm": "8e50f15ebbd1639ef28db931103b1cfd2f8a367232bad00d6101775f29e2321b",
+    "assembly/M68K_FIXED_P1-000ca598.asm": "817abb9e9201ac4e9565b3e82b1b1966549cfe947c6036d3bdb4ee109e32ddb3",
+    "assembly/M68K_FIXED_P1-000ca5ee.asm": "d387252e673a7aa079280856fadac451e8531072f6dd72cc7a577556c33d53e1",
+    "assembly/M68K_FIXED_P1-000ca6a0.asm": "7ba3878e750af8d4e93eaf0a566979736323768c167a389d02579554baa43057",
+    "assembly/M68K_FIXED_P1-000ca812.asm": "67df4b070ff4321335ab5cee5a58833a032c2f834b45031a889052ea1e0127e7",
+    "assembly/RAM_COPY_100000-00100000.asm": "127e45595a7a094878d81fa0ee7cbac6e9c7e4dfa9a9beedbf06d0af8c88af34",
+    "assembly/RAM_COPY_100000-00100166.asm": "01a3dc1fb93e6a19b20d5ee975a2011f3c69830bc472c81e1ee024287381c498",
+    "assembly/RAM_COPY_100000-0010016e.asm": "ebfe083fc1b9781e7a92803548305746b9553088c5e114d546232bbb12ad58f7",
+    "assembly/RAM_COPY_100000-00100630.asm": "2ac69013d212e262eaa170772349a0550208f1cc1d2bda471d5ba28cd9054e31",
+    "assembly/RAM_COPY_100000-00100a54.asm": "c4f046fa221ffd298800c086749bfcfb6ba399da59a671d6d01bd7e619d21ec0",
+    "assembly/RAM_COPY_10FC00-0010fc00.asm": "a97255749d3416ac0ece194254dbf28086d3771f6c609798e2363f2a502b7cd9",
+    "assembly/Z80_INITIAL_CART-00000000.asm": "03e695a8df9debd41863fbc0431e0f4e28c7652fda5216f95ef78a48b86ee26f",
+    "assembly/Z80_INITIAL_CART-00000008.asm": "38534b739fa55a50374dd47a05738f0bd0cb07aaffec3b3c0777c2a162f73408",
+    "assembly/Z80_INITIAL_CART-00000030.asm": "a380aa4db9a5c73bfc3f556a52974202555118c2472ec221217d6a34f2b2356d",
+    "assembly/Z80_INITIAL_CART-00000066.asm": "a760745bbee14687d7f059df764ac9f77b3a5f22a2cb32429f7651cf42052215",
+    "assembly/Z80_INITIAL_CART-00001e00.asm": "c648c0ed1fdb309cdddaf0ea5eeaae70621c62f4c8cd589eaae75a8bb9230058",
+    "assembly/Z80_INITIAL_CART-00002047.asm": "80d6b5b53e4bca7d346c5d63091d984129999acd3c6fb22642a92dc516e048df",
+    "assembly/Z80_INITIAL_CART-00002084.asm": "fbb6580c2b6cd98b82e588708c254487303ec8a483597f3ec4a001075fbe228e",
+    "assembly/Z80_INITIAL_CART-000021ca.asm": "4c20cc9024f1733a886a11f2006b8de374918322356282557c5547c09f548414",
+    "assembly/Z80_INITIAL_CART-000022cf.asm": "07962883d686357e806fc693bef1b2b996bee684b6646180f05efb84025f0ce0",
+    "assembly/Z80_INITIAL_CART-0000243f.asm": "78a779cebe7bc33d07ebe32c8b491d6c5bc11ecc45a43b1e32e83aec999970f7",
+    "assembly/Z80_INITIAL_CART-000024c6.asm": "8e0545a795255f4461f02a57020223c53b55e01a4f8ad2d8fc74552d4a49e36f",
+    "assembly/Z80_INITIAL_CART-000026c4.asm": "ecbadcebc9c44845de1cae91d3b94d6855e00c1e365ff08a1a07384fb70bd9d3",
+    "assembly/Z80_INITIAL_CART-000028f2.asm": "7c5b93b472093727aa0e3a35d2dbee2eff73b295370148bd6f2396e33d531496",
+    "assembly/Z80_INITIAL_CART-00002b20.asm": "fdecac5084bd8827c28eace21ba8def389473e443ceba9889242f2d388fbd850",
+    "assembly/Z80_INITIAL_CART-00002c93.asm": "c51d4bb1886c8405bbdabac6d40e52c6ebbfd5f61a3ae28e9077dde15edbe6c1",
+    "assembly/Z80_INITIAL_CART-0000379d.asm": "7f1ba62f4a62bc6e0e06ac0045c649ec9ddec11b04777915b473b405d69b7404",
+    "assembly/Z80_INITIAL_CART-0000405a.asm": "e1e8eb54d7b797eafaffa8aef0d19864e5a56b64015f136e705b826c4cf14447",
+    "assembly/Z80_INITIAL_CART-00004422.asm": "3e85d03a06641a87f18b2bf690cf0357ec3cc67eddbb501e677b96c6470ce724",
+    "assembly/Z80_INITIAL_CART-00004acf.asm": "7ad57b093c9f41d5b6b4c15c0b760d1dd4fcdabb050de29794b21ae9966af82c",
+    "assembly/Z80_INITIAL_CART-00004aeb.asm": "1bec657af975ff6e6217c0a47c4b71459900bbc1a26612749a468b7981809cf7",
+    "assembly/Z80_INITIAL_CART-00004b09.asm": "d1894be97600904c6747e865d5ce590f615fadcceec8904c355ae9da07dd68f3",
+    "assembly/Z80_INITIAL_CART-00004cab.asm": "2d8bbd7de3a88c0c1b9a3ba6f35d2f070bb8c47955cec2b394ccdf98a69acd0b",
+    "assembly/Z80_INITIAL_CART-000050ce.asm": "c5f3724e3de84f9217b3868e0cb28a8a2a67bb530db06f9967483d56049043ed",
+    "assembly/Z80_INITIAL_CART-000053e8.asm": "24e2ea328e039973bf7237fe9e3c86e968c5c009e28bdc578e6e5a1ccf279e00",
+    "assembly/Z80_INITIAL_CART-00005414.asm": "742576ead9a02a0f46fc0865f3e759bb5e68dddebbbaf10bbb84626f34165ddf"
+  },
+  "limits": "Static boundaries, lengths and encoding acceptance only. Text differences are retained without equating semantics. RAM images are installed by the harness, not observed execution. No candidate is promoted to verified executable code or recovered C. A stream mismatch can hide later candidate boundaries."
+}

@@ -1,3 +1,10 @@
+Static decoder update: all 13,463 candidate boundaries/lengths in the expanded
+context model agree with MAME's M68000/Z80 decoders, with no normalized mnemonic
+differences. Thirty-three descriptor pointer stores expose 30 candidate RAM
+targets; two source fragments remain unowned. Two conditional writes invalidate
+another RAM code image. This is static evidence, not natural execution, recovered
+C or a completed indirect domain. No runtime C changed. See CANONICAL_MODEL.md.
+
 Canonical context update: nine distinct source contexts and fifteen seeded
 roots now include the previously missing vectors and initial RAM copies.
 Controlled MAME comparisons cover eight P2 selectors, 1,024 Z80 window views,

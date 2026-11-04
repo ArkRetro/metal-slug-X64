@@ -18,7 +18,7 @@ for context,language in [('M68K_FIXED_P1','68000:BE:32:MC68020'),('Z80_INITIAL_C
  with (destination/'headless.log').open('w') as log:subprocess.run(cmd,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=600)
  assert (destination/'roots.tsv').is_file(),'Inspect Ghidra log; script did not finish'
  roots=list(csv.DictReader((destination/'roots.tsv').open(),delimiter='\t'));assert all(r['instruction_present']=='true' and r['owner']!='-' for r in roots),roots
- reports.append(dict(program=context,processor=language,roots=len(roots),models=len((destination/'functions.tsv').read_text().splitlines())-1,files={n:hashlib.sha256((destination/n).read_bytes()).hexdigest() for n in ['memory.tsv','roots.tsv','functions.tsv','edges.tsv','instructions.tsv']}))
+ reports.append(dict(program=context,processor=language,roots=len(roots),models=len((destination/'functions.tsv').read_text().splitlines())-1,files={n:hashlib.sha256((destination/n).read_bytes()).hexdigest() for n in ['memory.tsv','roots.tsv','functions.tsv','edges.tsv','instructions.tsv','descriptor-seeds.tsv']}))
  print(context,':',reports[-1]['roots'],'seeded roots,',reports[-1]['models'],'candidate functions',flush=True)
 report=dict(status='CONTEXT_MODELS_BUILT_NOT_NATIVE_RECOVERY',layout_sha256=hashlib.sha256((inputs/'layout.json').read_bytes()).hexdigest(),programs=reports,limits='Ghidra candidate CFG only. M68000 model uses MC68020 superset; execution/liveness/code-data/native equivalence remains unverified. Initial Z80 maps do not model all selector tuples. Fixed-system audio BIOS is imported as a context, not decompiled as game code. P2 blocks are data-only analysis containers, not proven non-code.')
 (out/'validation.json').write_text(json.dumps(report,indent=2)+'\n')

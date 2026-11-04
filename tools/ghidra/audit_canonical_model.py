@@ -23,9 +23,10 @@ def inspect(base):
     assert report['mapping_validation_sha256'] == digest(base / 'mapping-validation.json')
     contexts = {c['id']: c for c in layout['contexts']}
     assert len(contexts) == len(layout['contexts']) == report['contexts']
-    all_roots, frontier = [], []
+    all_roots, frontier, descriptor_stores = [], [], []
     occupied = {name: set() for name in contexts}
     models = {}
+    instruction_rows = {}
     for program in report['programs']:
         folder = base / program['program']
         assert folder.resolve().is_relative_to(base.resolve())
@@ -38,20 +39,30 @@ def inspect(base):
                 tables[filename] = list(csv.DictReader(stream, delimiter='\t'))
         functions = {r['entry'] for r in tables['functions.tsv']}
         assert len(functions) == len(tables['functions.tsv']) == program['candidate_functions']
+        seed_sites = {r['store_site'] for r in tables.get('descriptor-seeds.tsv', [])}
         for row in tables['instructions.tsv']:
             context, pc = row['location'].split(':')
             c = contexts[context]
             address, size = int(pc, 16), int(row['length'])
             assert c['cpu_base'] <= address < address + size <= c['cpu_base'] + c['size']
-            assert row['owner'] in functions
+            assert row['owner'] in functions or (row['owner'] == '-' and row['location'] in seed_sites)
             occupied[context].update(range(address, address + size))
             assert row['location'] not in models, 'Duplicate instruction location'
             models[row['location']] = row['owner']
+            instruction_rows[row['location']] = row
         for row in tables['roots.tsv']:
             assert row['instruction_present'] == 'true'
             assert models.get(row['location']) == row['owner']
             assert row['owner'] in functions
             assert row['location'] == row['context'] + ':' + row['pc']
+        for row in tables.get('descriptor-seeds.tsv', []):
+            site, target = row['store_site'], row['target']
+            assert site in models and target in models
+            assert site.startswith('RAM_COPY_100000:') and target.startswith('RAM_COPY_100000:')
+            assert row['status'] == 'constant_descriptor_slot_store_candidate'
+            pointer = int(target.split(':')[1], 16)
+            assert instruction_rows[site]['instruction'] == f'move.l #0x{pointer:x},(A4)'
+            descriptor_stores.append(dict(**row, source_owner=models[site], target_owner=models[target]))
         all_roots.extend(tables['roots.tsv'])
         for row in tables['edges.tsv']:
             assert row['owner'] in functions and row['site'] in models
@@ -71,6 +82,13 @@ def inspect(base):
                                  bytes_without_candidate_instruction=c['size'] - len(occupied[name]),
                                  verified_code_data_partition=False)
                             for name, c in contexts.items()],
+        descriptor_dispatch_candidates=dict(
+            site='RAM_COPY_100000:0010081a',
+            value_source='longword at A4, loaded into A0 at RAM_COPY_100000:00100818',
+            stores=descriptor_stores,
+            distinct_targets=sorted({r['target'] for r in descriptor_stores}),
+            exhaustive=False,
+            limits='Constant stores to (A4) are candidate descriptor states. They may be unowned listing fragments; execution, aliasing and other pointer producers remain open.'),
         candidate_flow_frontier=frontier,
         limits='Candidate instructions are not verified code; remaining bytes are not proven data. '
                'A flow missing in this graph may exist in another recovery artifact. '

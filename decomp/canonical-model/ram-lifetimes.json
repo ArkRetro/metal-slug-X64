@@ -1,0 +1,48 @@
+{
+  "status": "STATIC_RAM_CODE_LIFETIME_CONFLICTS_NOT_EXECUTION_PROOF",
+  "layout_sha256": "a6061dd6e54766eb8a9d3f59a11541919c4cdd5a7b113d277cb76dad11f6308a",
+  "decoder_validation_sha256": "8d77dcfe2bc9216185bad47556572c1a82f677a0b4f3386fc0b4f52a6d890d17",
+  "initializer": "RAM_COPY_100000:00100000",
+  "prefix_end": "RAM_COPY_100000:0010005a",
+  "derived_a5": 1081344,
+  "initial_descriptor_address": 1113088,
+  "writes": [
+    {
+      "store_site": "RAM_COPY_100000:0010003e",
+      "runtime_address": 1113088,
+      "value_be_hex": "0010008c",
+      "overlapping_initial_code": [
+        {
+          "location": "RAM_COPY_10FC00:0010fc00",
+          "instruction": "move.b D0, ($3,A1)",
+          "write_interval": [
+            1113088,
+            1113092
+          ],
+          "original_bytes": "13400003",
+          "replacement_bytes": "0010008c"
+        }
+      ],
+      "consequence": "Initial RAM_COPY_10FC00 image cannot be reused after this write without restoration/version change"
+    },
+    {
+      "store_site": "RAM_COPY_100000:0010005a",
+      "runtime_address": 1113120,
+      "value_be_hex": "00100158",
+      "overlapping_initial_code": [
+        {
+          "location": "RAM_COPY_10FC00:0010fc20",
+          "instruction": "cmpi.l #$4e454f2d, $100.w",
+          "write_interval": [
+            1113120,
+            1113124
+          ],
+          "original_bytes": "0cb84e45",
+          "replacement_bytes": "00100158"
+        }
+      ],
+      "consequence": "Initial RAM_COPY_10FC00 image cannot be reused after this write without restoration/version change"
+    }
+  ],
+  "limits": "Conditional on straight-line execution of this initializer prefix with the captured initial bytes and no intervening register clobber. Interrupt preservation is not proven here. No natural run or complete write/alias analysis is claimed. Two static copy images are distinct lifetimes, not simultaneously valid immutable code."
+}

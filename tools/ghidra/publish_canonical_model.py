@@ -3,8 +3,8 @@
 import argparse,csv,hashlib,json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
-p=argparse.ArgumentParser(description=__doc__);p.add_argument('--model',type=Path,required=True);a=p.parse_args()
-public=ROOT/'decomp/canonical-model';layout=json.loads((public/'layout.json').read_text());report=json.loads((a.model/'validation.json').read_text())
+p=argparse.ArgumentParser(description=__doc__);p.add_argument('--model',type=Path,required=True);p.add_argument('--output',type=Path,default=ROOT/'decomp/canonical-model');a=p.parse_args()
+public=a.output;layout=json.loads((public/'layout.json').read_text());report=json.loads((a.model/'validation.json').read_text())
 assert report['layout_sha256']==hashlib.sha256((public/'layout.json').read_bytes()).hexdigest()
 expected_contexts={c['id']:c for c in layout['contexts']};roots=[];programs=[]
 for program in report['programs']:

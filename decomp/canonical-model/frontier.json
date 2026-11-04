@@ -111,8 +111,8 @@
     {
       "context": "M68K_FIXED_P1",
       "container_bytes": 1048576,
-      "candidate_instruction_bytes": 20230,
-      "bytes_without_candidate_instruction": 1028346,
+      "candidate_instruction_bytes": 20246,
+      "bytes_without_candidate_instruction": 1028330,
       "verified_code_data_partition": false
     },
     {
@@ -146,8 +146,8 @@
     {
       "context": "RAM_COPY_100000",
       "container_bytes": 4426,
-      "candidate_instruction_bytes": 186,
-      "bytes_without_candidate_instruction": 4240,
+      "candidate_instruction_bytes": 2540,
+      "bytes_without_candidate_instruction": 1886,
       "verified_code_data_partition": false
     },
     {
@@ -172,6 +172,310 @@
       "verified_code_data_partition": false
     }
   ],
+  "descriptor_dispatch_candidates": {
+    "site": "RAM_COPY_100000:0010081a",
+    "value_source": "longword at A4, loaded into A0 at RAM_COPY_100000:00100818",
+    "stores": [
+      {
+        "store_site": "RAM_COPY_100000:0010003e",
+        "target": "RAM_COPY_100000:0010008c",
+        "analysis_pass": "0",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100000",
+        "target_owner": "RAM_COPY_100000:0010008c"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010005a",
+        "target": "RAM_COPY_100000:00100158",
+        "analysis_pass": "0",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100000",
+        "target_owner": "RAM_COPY_100000:00100158"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010009c",
+        "target": "RAM_COPY_100000:001000a4",
+        "analysis_pass": "0",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:0010008c",
+        "target_owner": "RAM_COPY_100000:001000a4"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001000ba",
+        "target": "RAM_COPY_100000:001000c0",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001000a4",
+        "target_owner": "RAM_COPY_100000:001000a4"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010012e",
+        "target": "RAM_COPY_100000:00100136",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001000a4",
+        "target_owner": "RAM_COPY_100000:00100136"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100166",
+        "target": "RAM_COPY_100000:0010016e",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "-",
+        "target_owner": "RAM_COPY_100000:0010016e"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001002ae",
+        "target": "RAM_COPY_100000:001002b6",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:0010016e",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001002d6",
+        "target": "RAM_COPY_100000:001002dc",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010030e",
+        "target": "RAM_COPY_100000:00100314",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010038c",
+        "target": "RAM_COPY_100000:00100392",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001003b4",
+        "target": "RAM_COPY_100000:001003ba",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001003c6",
+        "target": "RAM_COPY_100000:001003d8",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100402",
+        "target": "RAM_COPY_100000:00100408",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010041a",
+        "target": "RAM_COPY_100000:001003d8",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100428",
+        "target": "RAM_COPY_100000:0010042e",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010044a",
+        "target": "RAM_COPY_100000:00100450",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100472",
+        "target": "RAM_COPY_100000:00100478",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:001002b6"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100488",
+        "target": "RAM_COPY_100000:00100490",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:001002b6",
+        "target_owner": "RAM_COPY_100000:00100490"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001004c0",
+        "target": "RAM_COPY_100000:00100598",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100490",
+        "target_owner": "RAM_COPY_100000:00100598"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100516",
+        "target": "RAM_COPY_100000:0010051e",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100490",
+        "target_owner": "RAM_COPY_100000:0010051e"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100554",
+        "target": "RAM_COPY_100000:0010055a",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:0010051e",
+        "target_owner": "RAM_COPY_100000:0010051e"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010056c",
+        "target": "RAM_COPY_100000:00100574",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:0010051e",
+        "target_owner": "RAM_COPY_100000:00100574"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010059e",
+        "target": "RAM_COPY_100000:001005a4",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100598",
+        "target_owner": "RAM_COPY_100000:00100598"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001005b4",
+        "target": "RAM_COPY_100000:001005bc",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100598",
+        "target_owner": "RAM_COPY_100000:001005bc"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100630",
+        "target": "RAM_COPY_100000:00100636",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "-",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010066e",
+        "target": "RAM_COPY_100000:00100674",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:0010067a",
+        "target": "RAM_COPY_100000:00100636",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001006a0",
+        "target": "RAM_COPY_100000:001006a6",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001006e6",
+        "target": "RAM_COPY_100000:001006ec",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100702",
+        "target": "RAM_COPY_100000:001006b0",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100750",
+        "target": "RAM_COPY_100000:00100756",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:00100782",
+        "target": "RAM_COPY_100000:00100788",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      },
+      {
+        "store_site": "RAM_COPY_100000:001007a4",
+        "target": "RAM_COPY_100000:00100756",
+        "analysis_pass": "1",
+        "status": "constant_descriptor_slot_store_candidate",
+        "source_owner": "RAM_COPY_100000:00100636",
+        "target_owner": "RAM_COPY_100000:00100636"
+      }
+    ],
+    "distinct_targets": [
+      "RAM_COPY_100000:0010008c",
+      "RAM_COPY_100000:001000a4",
+      "RAM_COPY_100000:001000c0",
+      "RAM_COPY_100000:00100136",
+      "RAM_COPY_100000:00100158",
+      "RAM_COPY_100000:0010016e",
+      "RAM_COPY_100000:001002b6",
+      "RAM_COPY_100000:001002dc",
+      "RAM_COPY_100000:00100314",
+      "RAM_COPY_100000:00100392",
+      "RAM_COPY_100000:001003ba",
+      "RAM_COPY_100000:001003d8",
+      "RAM_COPY_100000:00100408",
+      "RAM_COPY_100000:0010042e",
+      "RAM_COPY_100000:00100450",
+      "RAM_COPY_100000:00100478",
+      "RAM_COPY_100000:00100490",
+      "RAM_COPY_100000:0010051e",
+      "RAM_COPY_100000:0010055a",
+      "RAM_COPY_100000:00100574",
+      "RAM_COPY_100000:00100598",
+      "RAM_COPY_100000:001005a4",
+      "RAM_COPY_100000:001005bc",
+      "RAM_COPY_100000:00100636",
+      "RAM_COPY_100000:00100674",
+      "RAM_COPY_100000:001006a6",
+      "RAM_COPY_100000:001006b0",
+      "RAM_COPY_100000:001006ec",
+      "RAM_COPY_100000:00100756",
+      "RAM_COPY_100000:00100788"
+    ],
+    "exhaustive": false,
+    "limits": "Constant stores to (A4) are candidate descriptor states. They may be unowned listing fragments; execution, aliasing and other pointer producers remain open."
+  },
   "candidate_flow_frontier": [
     {
       "program": "M68K_FIXED_P1",
@@ -385,6 +689,24 @@
       "owner": "M68K_FIXED_P1:000ca6a0",
       "site": "M68K_FIXED_P1:000ca6cc",
       "target": "PLATFORM_MAIN_BIOS:00c00468",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "RAM_COPY_100000:00100490",
+      "site": "RAM_COPY_100000:001004b6",
+      "target": "PLATFORM_MAIN_BIOS:00c004ce",
+      "target_owner": "-",
+      "kind": "call",
+      "disposition": "unresolved_in_this_candidate_model"
+    },
+    {
+      "program": "M68K_FIXED_P1",
+      "owner": "RAM_COPY_100000:00100490",
+      "site": "RAM_COPY_100000:00100506",
+      "target": "PLATFORM_MAIN_BIOS:00c004ce",
       "target_owner": "-",
       "kind": "call",
       "disposition": "unresolved_in_this_candidate_model"

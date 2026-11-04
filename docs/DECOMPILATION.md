@@ -268,6 +268,13 @@ Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 
 ## Enfoque por programa completo
 
+El contraste estático MAME del modelo ampliado coincide en 13.463 límites y
+tamaños, sin diferencias de mnemónico normalizado. Se siguen 33 escrituras de
+punteros de descriptores RAM a 30 destinos candidatos; dos fuentes siguen sin
+propietario de función. También se documentan dos escrituras que invalidarían
+otra imagen RAM si se ejecuta ese prefijo. Esto no prueba ejecución natural,
+equivalencia C ni completitud; véase CANONICAL_MODEL.md.
+
 Actualización del modelo: se contrastaron con MAME ocho selectores P2, 1.024
 vistas de ventanas Z80, ambos modos de vectores y ambos modos de fuente fija
 de sonido. Se construyeron nueve contextos con quince raíces, incluidas las

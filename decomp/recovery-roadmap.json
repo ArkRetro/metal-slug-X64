@@ -36,6 +36,21 @@
         {
           "id": "all_runtime_z80_contexts",
           "state": "open"
+        },
+        {
+          "id": "static_cpu_decoder_comparison",
+          "state": "13463_candidate_boundaries_and_lengths_matched_not_execution",
+          "evidence": "decomp/canonical-model/decoder/validation.json"
+        },
+        {
+          "id": "ram_descriptor_pointer_producers",
+          "state": "33_stores_30_candidate_targets_not_exhaustive",
+          "evidence": "decomp/canonical-model/frontier.json"
+        },
+        {
+          "id": "known_ram_lifetime_conflicts",
+          "state": "two_conditional_code_image_invalidations_documented",
+          "evidence": "decomp/canonical-model/ram-lifetimes.json"
         }
       ]
     },

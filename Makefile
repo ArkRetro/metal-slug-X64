@@ -7,7 +7,7 @@ export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := verify-decompilation check-recovered check-boot-select check check-core check-cinematic preview-depth clean
+HOST_GOALS := verify-decompilation check-recovered check-boot-select check-ram-descriptors check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -497,7 +497,7 @@ $(BUILD_DIR)/marco-environment-regression.elf: $(BUILD_DIR)/tools/test_marco_env
 marco-environment-regression.z64: N64_ROM_TITLE = "MSX MARCO ENV"
 
 .PHONY: check-recovered
-check-recovered: $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h $(BUILD_DIR)/condition_consumers_fixture.h check-boot-select
+check-recovered: $(BUILD_DIR)/native_logic_fixture.h $(BUILD_DIR)/native_conditions_fixture.h $(BUILD_DIR)/condition_consumers_fixture.h check-boot-select check-ram-descriptors
 	python3 tools/test_recovered_palette.py
 	python3 tools/test_recovered_conditions.py
 	@mkdir -p $(BUILD_DIR)/host
@@ -533,6 +533,22 @@ $(BUILD_DIR)/recovered/ram_10fc00.o: decomp/recovered/ram_10fc00.c decomp/recove
 	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
 $(BUILD_DIR)/boot-select-regression.elf: $(BUILD_DIR)/tools/test_boot_select.o $(BUILD_DIR)/recovered/ram_10fc00.o
 boot-select-regression.z64: N64_ROM_TITLE = "MSX BOOT SELECT"
+
+.PHONY: check-ram-descriptors
+check-ram-descriptors: $(BUILD_DIR)/ram_descriptors_fixture.h
+	@mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_ram_descriptors.c decomp/recovered/ram_descriptors.c -o $(BUILD_DIR)/host/ram-descriptors
+	$(BUILD_DIR)/host/ram-descriptors
+$(BUILD_DIR)/ram_descriptors_fixture.h: tools/compile_ram_descriptors.py tools/descriptor_harness.py data/ram_descriptors_fixture.json decomp/recovered/ram_descriptors.c decomp/recovered/ram_descriptors.h
+	python3 tools/compile_ram_descriptors.py
+$(BUILD_DIR)/tools/test_ram_descriptors.o: tools/test_ram_descriptors.c $(BUILD_DIR)/ram_descriptors_fixture.h decomp/recovered/ram_descriptors.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/recovered/ram_descriptors.o: decomp/recovered/ram_descriptors.c decomp/recovered/ram_descriptors.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -MMD -c $< -o $@
+$(BUILD_DIR)/ram-descriptors-regression.elf: $(BUILD_DIR)/tools/test_ram_descriptors.o $(BUILD_DIR)/recovered/ram_descriptors.o
+ram-descriptors-regression.z64: N64_ROM_TITLE = "MSX DESCRIPTORS"
 
 $(BUILD_DIR)/native_conditions_fixture.h: tools/compile_native_conditions.py tools/native_conditions_harness.py tools/condition_harness.py data/native_conditions_fixture.json data/native_condition_ram_patches.json
 	python3 tools/compile_native_conditions.py

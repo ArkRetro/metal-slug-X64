@@ -66,6 +66,11 @@
           "id": "ram_10fc00_native_cpu_logic",
           "state": "C_matches_48_controlled_original_calls_and_passes_MIPS_ares_platform_binding_open",
           "evidence": "decomp/recovered/boot-select/validation.json"
+        },
+        {
+          "id": "ram_descriptor_cpu_kernels",
+          "state": "C_matches_118_original_transitions_including_13_pending_boundaries_MIPS_ares_passed",
+          "evidence": "decomp/recovered/ram-descriptors/validation.json"
         }
       ]
     },

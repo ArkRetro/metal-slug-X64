@@ -28,7 +28,7 @@ for label,name in [('m68000','full-p1-index.tsv'),('z80','full-audio-index.tsv')
             if re.search(pattern,text):signals[key]+=1;samples.setdefault(key,[]);samples[key]=samples[key]+[str(path.relative_to(ROOT))] if len(samples[key])<3 else samples[key]
 
 # Exact source output hashes, without treating them as whole-program proof.
-for name in ['data/player_query_fixture.json','data/player_positions_fixture.json','data/native_conditions_fixture.json','data/condition_consumers_fixture.json','data/boot_select_fixture.json','docs/boot-select-mips-validation.json','decomp/recovered/boot-select/validation.json','decomp/recovered/rom_008512.validation.json','decomp/recovered/rom_01a5ca.validation.json']:
+for name in ['data/player_query_fixture.json','data/player_positions_fixture.json','data/native_conditions_fixture.json','data/condition_consumers_fixture.json','data/boot_select_fixture.json','data/ram_descriptors_fixture.json','docs/boot-select-mips-validation.json','docs/ram-descriptors-mips-validation.json','decomp/recovered/boot-select/validation.json','decomp/recovered/ram-descriptors/validation.json','decomp/recovered/rom_008512.validation.json','decomp/recovered/rom_01a5ca.validation.json']:
     path=ROOT/name
     if not path.is_file():integrity.append(dict(file=name,problem='missing_fixture'));continue
     f=json.loads(path.read_text());hashes=f.get('source_sha256')

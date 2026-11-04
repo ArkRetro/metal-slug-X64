@@ -1,0 +1,34 @@
+10082E: tst.b   ($7ce9,A5)
+100832: bne     $100836
+100836: movem.l D1-D3/A2, -(A7)
+10083A: move.l  #$10fc00, D1
+100840: movea.l A4, A2
+100842: move.l  A4, D1
+100844: cmp.b   ($6,A2), D0
+100848: bcc     $100884
+100884: move.b  ($5,A2), D1
+100888: movea.l D1, A2
+10088A: cmp.b   ($6,A2), D0
+10088E: bcc     $100884
+100890: lea     ($7ce0,A5), A1
+100894: moveq   #$0, D2
+100896: move.b  ($7ce7,A5), D2
+10089A: move.b  (A1,D2.w), D1
+10089E: movea.l D1, A1
+1008A0: move.w  A2, D3
+1008A2: move.b  D3, ($5,A1)
+1008A6: move.b  ($4,A2), D1
+1008AA: move.b  D1, ($4,A1)
+1008AE: move.w  A1, D3
+1008B0: move.b  D3, ($4,A2)
+1008B4: movea.l D1, A2
+1008B6: move.b  D3, ($5,A2)
+1008BA: move.b  D0, ($6,A1)
+1008BE: move.l  A0, (A1)
+1008C0: addq.b  #1, D2
+1008C2: cmpi.w  #$7, D2
+1008C6: bcs     $1008ca
+1008CA: move.b  D2, ($7ce7,A5)
+1008CE: subq.b  #1, ($7ce9,A5)
+1008D2: movem.l (A7)+, D1-D3/A2
+1008D6: rts

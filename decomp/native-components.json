@@ -216,6 +216,60 @@
       "scope": "Manual structured C for the 106-byte initial RAM copy. 48 original CPU calls compared with synthetic header/NV imports and slot writes routed to physical slot zero; native hardware/campaign binding remains open.",
       "next_gate": "Replace addressed platform imports with a native N64 boot policy; verify caller ABI and interrupt/cycle assumptions at the integration boundary.",
       "state": "native_cpu_logic_with_scoped_fixture_evidence"
+    },
+    {
+      "id": "ram_descriptors",
+      "entries": [],
+      "execution_entries": [
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x10082E",
+          "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769"
+        },
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x1008D8",
+          "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769"
+        },
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x10080E",
+          "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769"
+        },
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x10008C",
+          "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769"
+        },
+        {
+          "cpu": "m68000",
+          "mapping": "RAM_COPY_100000",
+          "pc": "0x100158",
+          "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769"
+        }
+      ],
+      "sources": [
+        "decomp/recovered/ram_descriptors.c",
+        "decomp/recovered/ram_descriptors.h"
+      ],
+      "symbols": [
+        "msx_descriptor_allocate",
+        "msx_descriptor_remove",
+        "msx_descriptor_dispatch"
+      ],
+      "evidence": [
+        "data/ram_descriptors_fixture.json",
+        "decomp/recovered/ram-descriptors/validation.json",
+        "docs/ram-descriptors-mips-validation.json",
+        "docs/NATIVE_RAM_DESCRIPTORS.md"
+      ],
+      "scope": "Initial RAM image only: allocator/remover and dispatcher with native 10008C/100158 bindings. 118 original transitions include 105 normal kernel returns and 13 explicit pending boundaries. No complete callback/caller domain or campaign binding.",
+      "next_gate": "Recover callback 1000A4 and subsequent states/services; prove producer/list/priority/lifetime domains before binding a complete native update.",
+      "state": "native_kernel_subset_with_explicit_boundaries"
     }
   ],
   "limits": "Entry-to-component association reconciles existing native subsets with tentative Ghidra models. Evidence scopes are mandatory; no whole function or project completion percentage is inferred. This initial registry is not all native modules in src/."

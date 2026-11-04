@@ -1,0 +1,5 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded ram-descriptors-regression
+Vulkan Enabled: using paraLLEl-RDP
+PASS: 118 original RAM descriptor transitions
+MSX DESCRIPTORS REGRESSION PASS cases=118

@@ -268,6 +268,14 @@ Véase CONDITION_CONSUMERS.md y el mapa de rangos en
 
 ## Enfoque por programa completo
 
+Los servicios de descriptores de RAM_COPY_100000 disponen de C para 10082E y
+1008D8, más 10080E con bindings 10008C/100158 y fronteras explícitas para lo
+pendiente. Coinciden 118 transiciones originales controladas en RAM, registros,
+SR y escrituras ordenadas. Incluyen 105 retornos de kernel y 13 fronteras;
+pasan host/UBSan y MIPS/ares, incluida una secuencia sin reinyección entre pasos.
+El asignador principal de actores 0040BC y la campaña siguen abiertos.
+Véase NATIVE_RAM_DESCRIPTORS.md.
+
 RAM_COPY_10FC00 dispone ahora de C estructurado manual, con los 106 bytes de
 P1:0010EE como procedencia. Coinciden 48 llamadas originales con imports de
 plataforma sintéticos: registros/SR, RAM/NV y flujos completos de accesos.

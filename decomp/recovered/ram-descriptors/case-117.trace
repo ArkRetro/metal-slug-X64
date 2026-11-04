@@ -1,0 +1,22 @@
+10080E: lea     ($7c00,A5), A4
+100812: lea     $108000.l, A5
+100818: movea.l (A4), A0
+10081A: jsr     (A0)
+100158: rts
+10081C: move.b  ($5,A4), D0
+100820: beq     $10082c
+100824: move.l  A4, D1
+100826: move.b  D0, D1
+100828: movea.l D1, A4
+10082A: bra     $100818
+100818: movea.l (A4), A0
+10081A: jsr     (A0)
+100158: rts
+10081C: move.b  ($5,A4), D0
+100820: beq     $10082c
+100824: move.l  A4, D1
+100826: move.b  D0, D1
+100828: movea.l D1, A4
+10082A: bra     $100818
+100818: movea.l (A4), A0
+10081A: jsr     (A0)

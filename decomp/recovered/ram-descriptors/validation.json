@@ -1,0 +1,28 @@
+{
+  "status": "PASS_ORIGINAL_RAM_DESCRIPTOR_HELPERS_WITH_NATIVE_CALLBACK_SUBSET",
+  "cases": 118,
+  "allocator_transitions": 64,
+  "remove_transitions": 33,
+  "dispatch_transitions": 21,
+  "normal_kernel_returns": 105,
+  "pending_callback_boundaries": 10,
+  "pending_return_boundaries": 3,
+  "source_sha256": {
+    "decomp/recovered/ram_descriptors.c": "8f575e7c4cb71244edd2c1c865879122c264ee383574cd54a65456fe967fd5b2",
+    "decomp/recovered/ram_descriptors.h": "f103ac1c332d1a38f30e1f064252bada54e80a5cc1f5baf53b7e64692bc0ec24"
+  },
+  "code_sha256": "087ce071f1ee14653540b248da5e8fcc9da44f4f1b0aec913c66f6c70e3f6769",
+  "evidence_files_sha256": {
+    "decomp/recovered/ram-descriptors/debug.log": "71e7d21c927c0185ab28c2c6720f6e02fbb30b59bfe1a1cc619625723a7e29f9",
+    "decomp/recovered/ram-descriptors/capture.lua": "c8abb4955f0c2f8d7514f7d365dd4b2611eff84245fefd802bca2158d012567a",
+    "decomp/recovered/ram-descriptors/case-116.trace": "e6d87c8b7cba23e97abfddfeb439e30c9ad4016f1a7e7550b3aa959eeead8d10",
+    "decomp/recovered/ram-descriptors/case-117.trace": "6172ce2c905a68385520d2a3c323b21814da0ac78e9baf536072927684d31171",
+    "decomp/recovered/ram-descriptors/ares.log": "57017804845d638b4346eec6b84eb9dc8ac311e21f31b435c2fac225914f4d61",
+    "decomp/recovered/ram-descriptors/case-0.trace": "da69f24e09d161bc540da8578ddb94dd3c56281d281fa6f4ea251422be4dd852"
+  },
+  "fixture": "data/ram_descriptors_fixture.json",
+  "mips": "docs/ram-descriptors-mips-validation.json",
+  "native_domain_closed": false,
+  "campaign_binding": false,
+  "limits": "Controlled RAM/register inputs, masked IRQ, pure work-RAM imports. Original allocator/remover/dispatcher and callbacks 10008C/100158 execute unchanged. Unknown callbacks stop before JSR; changed return links stop before callback RTS. Final pipeline inherits RAM and registers without reinjection. Full RAM/registers/SR and ordered writes compared. No bus-read/cycle timing, malformed nonterminating lists, outer RTS pop, complete callback domain, natural gameplay or campaign binding claim."
+}

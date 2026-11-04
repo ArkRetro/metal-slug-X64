@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "rom_sha256": "2ed062f2a4f89251e75892f42deff7a3b9baeae35ba9478ce02498780fe9821d",
+  "suite": "descriptors",
+  "limit": "118 original descriptor transitions with controlled RAM/register inputs and real original callbacks 10008C/100158. Unknown callbacks and changed returns stop at explicit boundaries. MIPS checks full normalized RAM, registers/SR, write counts/FNV32 and the inherited pipeline; the MAME/host probe compares complete ordered write streams. No full callback-domain, cycle timing, natural gameplay or campaign binding claim.",
+  "cases": 118,
+  "source_sha256": {
+    "decomp/recovered/ram_descriptors.c": "8f575e7c4cb71244edd2c1c865879122c264ee383574cd54a65456fe967fd5b2",
+    "decomp/recovered/ram_descriptors.h": "f103ac1c332d1a38f30e1f064252bada54e80a5cc1f5baf53b7e64692bc0ec24",
+    "data/ram_descriptors_fixture.json": "57816c6de5fa380f79373b54998c531fbea45956744d3840dd8556cc941d78c3",
+    "tools/test_ram_descriptors.c": "cbaeaa1451a3d79d431ffd9a1d25765f03d26448d6a53ed7e04463a10d040726",
+    "tools/compile_ram_descriptors.py": "9f4bd519cbb044f01a302c35199bd83513dcad6d0969132a7ed08ce37f31ffeb",
+    "tools/descriptor_harness.py": "a11cda296e6f112c4fe95eac9c86224525170a86ed084df5eaa57a4259c5d098"
+  },
+  "marker": "MSX DESCRIPTORS REGRESSION PASS cases=118",
+  "elf_format": "ELF 32-bit MSB, MIPS-III",
+  "host_ubsan": "118 transitions passed"
+}

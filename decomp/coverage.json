@@ -47,5 +47,24 @@
     "platform_imports": "synthetic in the controlled comparison; native binding pending",
     "native_domain_closed": false
   },
-  "root_context_status": "decomp/canonical-model/: vectors and initial RAM contexts modeled; native domains, mutations and physical code/data classification remain open"
+  "root_context_status": "decomp/canonical-model/: vectors and initial RAM contexts modeled; native domains, mutations and physical code/data classification remain open",
+  "native_ram_descriptors": {
+    "context": "RAM_COPY_100000",
+    "c_source": "decomp/recovered/ram_descriptors.c",
+    "entries": [
+      "0x10082E",
+      "0x1008D8",
+      "0x10080E"
+    ],
+    "native_callbacks": [
+      "0x10008C",
+      "0x100158"
+    ],
+    "original_transitions": 118,
+    "normal_kernel_returns": 105,
+    "pending_boundaries": 13,
+    "mips_ares": true,
+    "native_domain_closed": false,
+    "campaign_binding": false
+  }
 }

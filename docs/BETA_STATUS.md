@@ -1,3 +1,11 @@
+Native RAM descriptor update: 10082E allocation and 1008D8 unlinking now have
+manual C, with 10080E dispatch bindings for 10008C/100158. 118 original controlled
+transitions match RAM/registers/SR and ordered writes; 105 reach kernel returns
+and 13 stop at explicit pending callback/return boundaries. Host/UBSan and
+MIPS/ares pass, including a three-step inherited-state pipeline. This is the
+RAM-copy descriptor system, not the main 0040BC actor allocator or campaign
+scheduler. See NATIVE_RAM_DESCRIPTORS.md. No demo or complete ZIP is published.
+
 Native RAM boot-selector update: RAM_COPY_10FC00 now has manual structured C
 matching 48 original CPU calls with explicit synthetic platform imports. Exact
 import streams, full RAM/NV, registers and SR match on host; UBSan and compiled

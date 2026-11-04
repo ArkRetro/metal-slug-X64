@@ -26,4 +26,12 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   (con el mando ciego `--hop`, 0 o 1 rescate según la pasada). Paradas
   explícitas: la entrada en paracaídas (tipo 2), `0B9748` (puntos), los
   enemigos (registros saltados), el guion en `2DB148`.
-
+- **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
+  «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
+  (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se
+  crea desde el guion (`2DAE20`) en el mundo. Falta: dibujar la capa
+  `10E8C6` (el cuerpo del avión), parada registrada.
+- **Paso 5: sin empezar** (vehículos `093C9A`/`0AC866`, la forma `+93 = 2`
+  —probablemente Marco gordo tras la comida, sin comprobar— y el arma E
+  `0DE4DA`): siguen como paradas explícitas (`weapon_stops`, constructores
+  externos).

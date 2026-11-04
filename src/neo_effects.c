@@ -27,6 +27,9 @@ static const fx_t simple[]={
     {0x1c7ea,0x22cf2c,0x1dec8,0x363},
     /* 01C7AE: palette 0x26C, then 01C7F8 (the treasure 0995EC, neo_m2traps.c). */
     {0x1c7ae,0x22cf2c,0x1dec8,0x26c},
+    /* 01C8D2: palette 0x20D, rectangle 01DEF8 (the burning engine 0A5D6A of
+     * the Mission 3 mid-boss, list 2A6468; neo_m3mid.c). */
+    {0x1c8d2,0x22e8ae,0x1def8,0x20d},
 };
 static const fx_t *simple_of(uint32_t r) {
     for (unsigned i=0;i<sizeof(simple)/sizeof(simple[0]);i++) if (simple[i].routine==r) return &simple[i];

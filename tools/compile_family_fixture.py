@@ -39,6 +39,7 @@ def main():
     p.add_argument('--grid',type=Path,help='stage collision grid (collision.json of a mission stage, private): the static grid of the test instead of Mission 1 (neo_collision_set_grid)')
     p.add_argument('--resume',action='store_true',help='a trace started from a saved state: the nodes alive before it start from their recorded bytes, creator and program (as --m2boss, without its RAM)')
     p.add_argument('--m2boss',action='store_true',help='the Mission 2 boss 026254 (neo_m2boss.c): RAM 10E99A/10E9BA/1013D6/10C354/10008A/10F009 through neo_m2boss_env_t (extract with --ram covering them); nodes alive before the piece keep their creator')
+    p.add_argument('--m3mid',action='store_true',help='the Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6, RAM 10E959, 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them); pieces resume like --m2boss')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
@@ -124,6 +125,7 @@ def main():
     if a.terrain:L.append('#define FAMILY_TERRAIN 0x%xu'%int(a.terrain,16))
     if a.ring:L.append('#define FAMILY_RING 0x%xu'%int(a.ring,16))
     if a.m2boss:L.append('#define FAMILY_M2BOSS 1')
+    if a.m3mid:L.append('#define FAMILY_M3MID 1')
     if a.resume:L.append('#define FAMILY_RESUME 1')
     if a.train:L.append('#define FAMILY_TRAIN 1')
     if a.group_map:L.append('#define FAMILY_GROUP_MAP 0x%xu'%int(a.group_map,16))

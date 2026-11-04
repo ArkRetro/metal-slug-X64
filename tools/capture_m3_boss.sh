@@ -18,6 +18,7 @@
 #      Every boss/mid tranche loads the same state, so all tranches belong to one
 #      (deterministic) run; with a fresh Lua the input plan counters restart at the
 #      load, so that run is not run4 (frames are close, see the doc).
+#      MSX_M3BOSS_DUMPS=FRAME: vram/ram/palette dumps every 30 frames from FRAME (sprite export).
 #      MSX_M3BOSS_FILTER=1: boss-trace.txt is a FIFO filtered to U/V/B/X/A/F lines
 #      (research: a few MB instead of ~60 MB per 1000 frames; not usable for fixtures,
 #      which need R/W: tools/extract_family_fixture.py).
@@ -27,7 +28,7 @@ mode=$1;OUT=$2
 ST=${MSX_M3BOSS_STATES:-/home/user/captures-m3boss/states}
 mkdir -p "$ST/mslugx" "$OUT"
 [ -f "$ST/mslugx/sec04_117966.sta" ] || cp /home/user/captures-fullgame/states4/mslugx/sec04_117966.sta "$ST/mslugx/"
-export MSX_FULL_STATES=$ST MSX_FULL_GRID_TAP=0 MSX_FULL_FIRST_DUMP=9999999
+export MSX_FULL_STATES=$ST MSX_FULL_GRID_TAP=0 MSX_FULL_FIRST_DUMP=${MSX_M3BOSS_DUMPS:-9999999}
 case $mode in
 states)
   export MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_SAVE_AT=132300,144400 MSX_FULL_LAST=144410

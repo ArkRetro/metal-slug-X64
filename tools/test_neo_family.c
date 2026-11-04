@@ -43,6 +43,18 @@ typedef struct {
     int32_t solid_busy; /* RAM 106756: used entries of the solid-body table as read (004E76), -1: not read */
 } family_update_t;
 #include FAMILY_HEADER
+/* The Mission 3 mid-boss 0A4A94 (neo_m3mid.c): pieces of one long fight
+ * like the Mission 2 boss (nodes alive before a piece, the reserve of
+ * 0040BC), its layer object 10E8C6 and RAM 10E959 from the RAM image. */
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_M3MID)
+#define FAMILY_BOSSLIKE 1
+#endif
+#if defined(FAMILY_M3MID) && !defined(FAMILY_RESUME)
+#define FAMILY_RESUME 1
+#endif
+#ifdef FAMILY_M3MID
+static uint8_t wram[0x10000];   /* tentative: the RAM image below */
+#endif
 #define STR2(a) #a
 #define STR(a) STR2(a)
 #define CAT2(a,b) a##b
@@ -106,7 +118,23 @@ static int slot(uint32_t ad) {
 static void put(uint32_t ad,uint8_t v) {int s=slot(ad);if (s>=0) ram[s]=v;}
 static void camera_mode(void *ctx,uint8_t m) {(void)ctx;put(0x10e95a,m);}
 static void camera_rise(void *ctx,int32_t vy) {(void)ctx;for (unsigned i=0;i<4;i++) put(0x10e960+i,(uint8_t)((uint32_t)vy>>(24-8*i)));}
-static void shake(void *ctx) {(void)ctx;put(0x10e9c8,0);put(0x10e9c9,8);}
+static void shake(void *ctx) {(void)ctx;put(0x10e9c8,0);put(0x10e9c9,8);
+#if defined(FAMILY_M3MID)
+    wram[0xe9c8]=0;wram[0xe9c9]=8;
+#endif
+}
+#if defined(FAMILY_M3MID)
+/* 0C8022: RAM 10E9C8 as read; bits 0..1 set, or (negative) cleared and
+ * 10E9CC = (10E9C8 long + 0x8000) & FFFF0000. */
+static void shake_pulse(void *ctx) {
+    (void)ctx;uint8_t *r=&wram[0xe9c8];
+    if (!(r[0]&0x80u)) {r[1]|=3u;put(0x10e9c8u,r[0]);put(0x10e9c9u,r[1]);return;}
+    r[1]&=0xfcu;
+    uint32_t v=((uint32_t)r[0]<<24|(uint32_t)r[1]<<16|(uint32_t)r[2]<<8|r[3])+0x8000u;
+    r[4]=(uint8_t)(v>>24);r[5]=(uint8_t)(v>>16);r[6]=0;r[7]=0;
+    put(0x10e9c8u,r[0]);put(0x10e9c9u,r[1]);for (unsigned i=4;i<8;i++) put(0x10e9c8u+i,r[i]);
+}
+#endif
 static int front_value;
 static bool front_layer(void *ctx) {(void)ctx;return front_value>0;}
 static bool swapped;
@@ -121,6 +149,16 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
 #ifdef FAMILY_TRAIN
     /* Mission 3: the train 10D7B6 as read (+14..+20, +24 correction 0). */
     if (tag==0x10d7b6u) {*out=(neo_contact_parent_t){tag,train_now.x,train_now.y,train_now.prev_x,train_now.prev_y,0};return true;}
+#endif
+#if defined(FAMILY_M3MID) && defined(FAMILY_RAM)
+    /* Mission 3: the mid-boss moves the layer object 10E8C6 (as read). */
+    if (tag==0x10e8c6u) {
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        const uint8_t *b=&wram[0xe8c6];
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
 #endif
     /* Layer objects (the world keeps them with the terrain). */
     if (tag==0x10c72eu || tag==0x10d7b6u || tag==0x10e8c6u) {*out=terrain_seen?terrain:root;out->tag=tag;return true;}
@@ -147,7 +185,12 @@ static const neo_anim_program_t *program(uint32_t tag) {
  * address inside a node other than its block (+28) keeps the offset in bits
  * 16..23 (a turret's +6E into its vehicle). */
 static uint32_t node_address[NN];
+static neo_gactor_t actors[NN+1];
 static uint32_t native_tag(uint32_t recorded) {
+#ifdef FAMILY_M3MID
+    /* Node addresses are reused in a long fight: a live node first. */
+    for (unsigned i=0;i<NN;i++) if (node_address[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
+#endif
     for (unsigned i=0;i<NN;i++) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     for (unsigned i=0;i<NN;i++) if (node_address[i] && recorded>node_address[i] && recorded<node_address[i]+0xc0u) return NEO_GA_TAG(i)|((recorded-node_address[i])<<16);
     return recorded;
@@ -229,7 +272,7 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
         if (pick<0 || NODES[i].frame<NODES[pick].frame) pick=(int)i;
         else if (NODES[i].frame==NODES[pick].frame) pick=(int)i;
     }
-#ifdef FAMILY_M2BOSS
+#ifdef FAMILY_BOSSLIKE
     /* The frame mark can fall inside the list walk after the creator: the
      * children of one update (inserted after it, newest first) then split
      * over two frames; the first made is the last of them in the list. */
@@ -253,7 +296,7 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     if (creator) ga_sl(s,0x0c,NEO_GA_TAG((unsigned)c));
     return s;
 }
-#ifdef FAMILY_M2BOSS
+#ifdef FAMILY_BOSSLIKE
 /* 0040BC with its reserve: the free-node count RAM 1063D8 as the update
  * first read it, one less per node made. */
 static uint16_t free_nodes;
@@ -500,6 +543,9 @@ int main(void) {
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
 #if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
     ga_sl(&actors[0],0x0c,native_tag(ga_l(&actors[0],0x0c)));resume_program(&actors[0]);
+#if defined(FAMILY_M3MID) && defined(FAMILY_NODE_FIELDS)
+    {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) ga_sl(&actors[0],nf[i],native_tag(ga_l(&actors[0],nf[i])));}
+#endif
 #endif
 #ifdef FAMILY_EXIT_GLOBALS
     ram[0x73]=expect[0x73]=0xff;   /* RAM 10C303 until 018F40 */
@@ -542,10 +588,31 @@ int main(void) {
         /* Its creator alive before the piece and not yet run: from its
          * recorded bytes (the node reads its creator's fields). */
         if (bound[u->node]) {uint32_t t=ga_l(a,0x0c);unsigned c=t&0xffffu;
-         if ((t&0xff000000u)==NEO_GA_TAG_BASE && c<NN && !bound[c] && NODES[c].creator==-1) {
+         if ((t&0xff000000u)==NEO_GA_TAG_BASE && c<NN && !bound[c] && (NODES[c].creator==-1
+#ifdef FAMILY_M3MID
+             || u->frame<=UPDATES[0].frame+1u   /* alive at the start, first run later in the list */
+#endif
+             )) {
             neo_gactor_t *p=&actors[c];bound[c]=true;memset(p,0,sizeof(*p));p->active=true;p->index=(int16_t)c;
             memcpy(p->m,NODES[c].pre,0xb0);ga_sl(p,0x38,native_tag(ga_l(p,0x38)));ga_sl(p,0x0c,native_tag(ga_l(p,0x0c)));resume_program(p);injected++;
+#if defined(FAMILY_M3MID) && defined(FAMILY_NODE_FIELDS)
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) ga_sl(p,nf[i],native_tag(ga_l(p,nf[i])));}
+#endif
          }}
+#endif
+#if defined(FAMILY_M3MID) && defined(FAMILY_NODE_FIELDS)
+        /* The node a node field names (the body in +6E), alive at the start
+         * and not yet run: from its recorded bytes. */
+        if (bound[u->node] && u->frame<=UPDATES[0].frame+1u) {
+            static const unsigned nf[]=FAMILY_NODE_FIELDS;
+            for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) {
+                uint32_t t=ga_l(a,nf[i]);unsigned c=t&0xffffu;
+                if ((t&0xff000000u)!=NEO_GA_TAG_BASE || c>=NN || bound[c]) continue;
+                neo_gactor_t *p=&actors[c];bound[c]=true;memset(p,0,sizeof(*p));p->active=true;p->index=(int16_t)c;
+                memcpy(p->m,NODES[c].pre,0xb0);ga_sl(p,0x38,native_tag(ga_l(p,0x38)));ga_sl(p,0x0c,native_tag(ga_l(p,0x0c)));resume_program(p);injected++;
+                for (unsigned j=0;j<sizeof(nf)/sizeof(nf[0]);j++) ga_sl(p,nf[j],native_tag(ga_l(p,nf[j])));
+            }
+        }
 #endif
         if (!bound[u->node] || !a->active) {fprintf(stderr,"frame %u node %d (%05x) not created natively\n",u->frame,u->node,u->routine);return 1;}
         if (ga_l(a,0)!=u->routine) {fprintf(stderr,"frame %u node %d routine %05x expected %05x\n",u->frame,u->node,ga_l(a,0),u->routine);return 1;}
@@ -567,6 +634,16 @@ int main(void) {
         front_value=u->front;
         if (u->cursor>=0) rng.cursor=(uint8_t)u->cursor;
         for (unsigned r=0;r<64;r++) if (u->ring[r][0]<NEO_RNG_WORDS) rng.words[u->ring[r][0]]=u->ring[r][1];
+#ifdef FAMILY_M3MID
+        /* A node killed by a player's shot between its updates (+5F bit 7,
+         * 004892): the nodes running before its next update in the same
+         * logic update read it already (the bombs of a dying body). */
+        for (unsigned q=k+1;q<NU && UPDATES[q].frame==u->frame;q++) {
+            const family_update_t *v=&UPDATES[q];
+            if (v->node==u->node || !actors[v->node].active) continue;
+            for (unsigned x=0;x<16 && v->ext[x][0];x++) if (v->ext[x][0]==0x5f && (v->ext[x][1]&0x80u) && !(actors[v->node].m[0x5f]&0x80u)) actors[v->node].m[0x5f]=v->ext[x][1];
+        }
+#endif
         /* Bytes other actors wrote into the node since its last update. */
         for (unsigned x=0;x<16 && u->ext[x][0];x++) a->m[u->ext[x][0]]=u->ext[x][1];
         /* B25: the blasts 0644C4/0646B0 (sgun2/sgun7) are born with the
@@ -651,6 +728,10 @@ int main(void) {
         m2.camera_dy=(int32_t)w32(0x10e99a);m2.point69ba=w16(0x10e9ba);m2.speed[0]=(int32_t)w32(0x1013d6);m2.speed[1]=(int32_t)w32(0x1013da);
         m2.tower_mode=(int16_t)w16(0x10c354);m2.frame_step=(uint8_t)(wram[0x008a]+wram[0xf009]);
 #endif
+#ifdef FAMILY_M3MID
+        static neo_m3mid_env_t m3;m3.layer=&wram[0xe8c6];m3.flags959=wram[0xe959];e.m3mid=&m3;
+        e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);e.shake_pulse=shake_pulse;
+#endif
         e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
         /* RAM 10C358 (03A892 / 03A740 / 03A75A) when the family watches it. */
         bool watch358=false;
@@ -682,6 +763,9 @@ int main(void) {
         if (watch358) wram[0xc358]=flags.signal358;
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
         if (watch6bd) wram[0xc6bd]=flags.platform6bd;
+#ifdef FAMILY_M3MID
+        wram[0xe959]=m3.flags959;
+#endif
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;
         for (unsigned i=0;i<8;i++) wram[0x13d6+i]=(uint8_t)((uint32_t)m2.speed[i>>2]>>(24-8*(i&3)));
@@ -693,7 +777,7 @@ int main(void) {
              * node next to them is inserted or deleted (0040BC/004188, the
              * node pool is not modelled). */
             if ((ad>=0x1014c8u && ad<0x1014d0u) || (ad>=0x101578u && ad<0x101580u)) continue;
-#ifdef FAMILY_M2BOSS
+#ifdef FAMILY_BOSSLIKE
             /* The vertical interrupt's frame counters (0036EE..00381E) may
              * run inside an update. */
             if (ad>=0x10f008u && ad<0x10f00au) continue;
@@ -749,6 +833,9 @@ int main(void) {
         }
         if (!u->has_post) {
             if (r!=GA_DELETE && r!=GA_DELETE_TREE) {fprintf(stderr,"frame %u node %d %05x: original deletes, native result %d\n",u->frame,u->node,u->routine,r);return 1;}
+#ifdef FAMILY_M3MID
+            if (r==GA_DELETE_TREE) kill_children(NULL,a);   /* 0041AC: 004192 first */
+#endif
             a->active=false;deleted++;continue;
         }
         if (r!=GA_MORE) {fprintf(stderr,"frame %u node %d %05x: native result %d, original keeps it\n",u->frame,u->node,u->routine,r);return 1;}

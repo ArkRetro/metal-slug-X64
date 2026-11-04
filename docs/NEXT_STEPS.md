@@ -236,6 +236,14 @@
   `04A2C2`, del que depende el fin de misión (`018F92`); (7) la forma
   `+93 = 2` del jugador y el arma E.
 
+- **Misión 3, paso 3 (rama `work-m3step3`)**: la aeronave `0A4A94` nativa
+  (`neo_m3mid.c`, 15 constructores y la capa `10E8C6`), familias `m3mid1..4`
+  iguales a MAME (JEFE_MISION3.md «Jefe intermedio: estado del port»).
+  Siguiente: dibujar la capa `10E8C6` (empaquetar las celdas de `2A6142`,
+  sus parches `2A6210` y `2A619A` y desplazar la capa 2 con `+14/+18` del
+  objeto), luego el paso 5 (vehículos `093C9A`/`0AC866`, forma `+93 = 2`,
+  arma E).
+
 - **Misión 3, jefe `04A2C2` y aeronave `0A4A94` investigados (rama
   `work-m3boss`, [JEFE_MISION3.md](JEFE_MISION3.md))**: 9 piezas coordinadas
   por `+9D/+9E`, 5500 de vida solo en el cuerpo (fase 2 con ≤ 2500), órdenes

@@ -26,6 +26,8 @@ ga_result_t neo_m2traps_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_hostage_routine(uint32_t routine);
 ga_result_t neo_hostage_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m2boss_routine(uint32_t routine);
+bool neo_m3mid_routine(uint32_t routine);
+ga_result_t neo_m3mid_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_m2boss_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 03C520..03C532: the water ripple 03C62A (+6E = kind) when 019240 has a
  * palette for the mission; false on an explicit stop. */

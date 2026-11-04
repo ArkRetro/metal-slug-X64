@@ -297,8 +297,36 @@ void actor_set_active(bool active) {
  * list head, so it draws under an actor of the same word): the parachute
  * canopy (+1E = the player's - 1) right before it and the landing marker
  * (+1E = FFFE) at its word. */
+/* Mission 3 mid-boss 0A4A94: its layer object 10E8C6 (neo_m3mid.c) as the
+ * blocks 0C714E left (world m3grid), block (c, r) at x = +14 + 16 c, image
+ * y = 337 - +18 + 16 r (MAME SCB of the layer's columns, captures-m3boss
+ * spr 134100/135000), with the frames F0000000 | code << 2 | flip and the
+ * palette F000 | number of tools/export_m3_overlay.py. Under every sprite
+ * of window A (the original draws it as layer 2, under the foreground
+ * 10C72E: approximation). */
+static unsigned m3_overlay_missing;
+static void draw_m3_overlay(bool request_only) {
+    const neo_world_t *w=&game.world;
+    if (!w->m3layer_used || !w->m3layer_map) return;
+    int x0=(int16_t)(w->m3layer[0x14]<<8|w->m3layer[0x15]),y0=(int16_t)(w->m3layer[0x18]<<8|w->m3layer[0x19]);
+    for (unsigned c=0;c<19;c++) for (unsigned r=0;r<10;r++) {
+        uint32_t b=w->m3grid[c*10+r];uint16_t code=(uint16_t)(b>>16),attr=(uint16_t)b;
+        if (!code) continue;
+        int x=x0+16*(int)c,y=8+337-y0+16*(int)r;
+        if (x+16<=0 || x>=320 || y+16<=0 || y>=240) continue;
+        uint32_t full=code|((uint32_t)(attr>>4)&15u)<<16;
+        const scene_native_descriptor_t *desc=scene_native_descriptor(0xf0000000u|full<<2|(attr&3u));
+        int palette=scene_native_palette(0xf000u|(attr>>8));
+        if (!desc || !desc->count || palette<0) {m3_overlay_missing++;continue;}
+        const scene_image_t *im=scene_frame(SCENE_NATIVE,desc->first);
+        if (request_only) {scene_request_image(im,2);continue;}
+        scene_image_t part=*im;part.palette=(uint16_t)palette;
+        scene_render_sprite(&part,x,y,false,false,false);
+    }
+}
 static void draw_marco(unsigned bank_id,unsigned frame);
 static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) {
+    draw_m3_overlay(false);
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     uint16_t z=msx_game_depth(&game);bool player=false,marker=false;
     for (unsigned k=0;k<=game.world.draw_count;k++) {
@@ -557,6 +585,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         debugf("MSX native draw missing descriptor=%u palette=%u last=%06lX\n",native_missing_descriptor,native_missing_palette,(unsigned long)native_missing_tag);
         native_missing_descriptor=native_missing_palette=0;
     }
+    if (m3_overlay_missing) {debugf("MSX mid-boss layer 10E8C6: %u blocks without a frame or palette\n",m3_overlay_missing);m3_overlay_missing=0;}
+    {static uint32_t m3_map;static unsigned m3_patches;
+     if (game.world.m3layer_map!=m3_map || game.world.m3patch_count!=m3_patches) {
+        m3_map=game.world.m3layer_map;m3_patches=game.world.m3patch_count;
+        debugf("MSX mid-boss layer 10E8C6 map=%06lX patches=%u\n",(unsigned long)m3_map,m3_patches);
+     }}
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
     if (!old_camera && game.camera) debugf("MSX camera moving\n");
@@ -652,6 +686,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned next=0;next<3;next++)
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
+    draw_m3_overlay(true);
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);

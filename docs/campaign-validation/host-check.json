@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "command": "make check",
+  "log_sha256": "e72483d7bc14e0b55c2e452ccd8ae011de5dfb73b807aac4809d1ddfbb77c6a1",
+  "limits": "Host suite plus source-art/metadata regressions; native framebuffer/flow checks reported separately."
+}

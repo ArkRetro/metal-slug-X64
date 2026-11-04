@@ -1,8 +1,11 @@
 .DEFAULT_GOAL := all
 N64_INST ?= /workspace/toolchains/package/opt/libdragon
-# depth25d (default): subtle 2.5D parallax/lighting/shadows/fog; classic: original flat path.
+# depth25d: layered parallax and contact shadows; classic: original flat path.
 MSX_VISUAL_MODE ?= depth25d
 MSX_SCENARIO ?= campaign
+MSX_BACKGROUND ?= prerender
+MSX_HUD_CAPTURE ?= /workspace/research/mission1
+MSX_HUD_FRAME ?= 2100
 export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
@@ -77,6 +80,13 @@ $(BUILD_DIR)/scene-debug.dfs $(BUILD_DIR)/scene-release.dfs: $(BUILD_DIR)/scene-
 scene-debug.z64 scene-release.z64: N64_ROM_TITLE = "MSX RELEASE TEST"
 scene-debug.z64: $(BUILD_DIR)/scene-debug.dfs
 scene-release.z64: $(BUILD_DIR)/scene-release.dfs
+$(BUILD_DIR)/tools/test_prerender_scene.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_prerender_scene.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/background-regression.elf: $(BUILD_DIR)/tools/test_prerender_scene.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o
+$(BUILD_DIR)/background-regression.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/scene-test-romfs
+$(BUILD_DIR)/background-regression.dfs: $(BUILD_DIR)/scene-test-romfs/scene.pack
+background-regression.z64: N64_ROM_TITLE = "MSX BACKGROUND TEST"
+background-regression.z64: $(BUILD_DIR)/background-regression.dfs
 
 # Internal integration cartridge: not the requested complete Mission 1 demo.
 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64 $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/title.msxc &: tools/build_mission_fs.py art/audio/sixty-four.wav filesystem/cinematics/title-motion.json filesystem/cinematics/title-motion.msxc filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp
@@ -86,16 +96,39 @@ $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/ent
 $(BUILD_DIR)/src/mission_main.o: $(BUILD_DIR)/entry_meta.h
 $(BUILD_DIR)/mission1-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
 $(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
-$(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 mission1-internal.z64: N64_ROM_TITLE = "MSX M1 INTERNAL"
 mission1-internal.z64: $(BUILD_DIR)/mission1-internal.dfs
 # User-requested playable snapshot of the existing partial campaign.
 # Shares title/entry assets; it is not a complete Mission 1 beta.
-$(BUILD_DIR)/msx64-playable-demo.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/msx64-playable-demo.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 $(BUILD_DIR)/msx64-playable-demo.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
 $(BUILD_DIR)/msx64-playable-demo.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
 msx64-playable-demo.z64: N64_ROM_TITLE = "METAL SLUG X64 DEMO"
 msx64-playable-demo.z64: $(BUILD_DIR)/msx64-playable-demo.dfs
+# Internal integration of the original tutorial and Marco-only confirmation.
+# This target is not a complete campaign or a four-character implementation.
+$(BUILD_DIR)/src/campaign_main.o: src/mission_main.c $(BUILD_DIR)/entry_meta.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -DMSX_FRONTEND -MMD -c $< -o $@
+$(BUILD_DIR)/frontend_meta.h $(BUILD_DIR)/frontend_fixture.h &: tools/compile_frontend_meta.py filesystem/cinematics/frontend/frontend.json
+	python3 tools/compile_frontend_meta.py
+$(BUILD_DIR)/src/frontend.o: $(BUILD_DIR)/frontend_meta.h
+$(BUILD_DIR)/tools/test_frontend_cinematic_native.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_frontend_cinematic_native.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/tools/test_frontend_cinematic_native.o: $(BUILD_DIR)/frontend_fixture.h
+$(BUILD_DIR)/frontend-codec-regression.elf: $(BUILD_DIR)/tools/test_frontend_cinematic_native.o $(BUILD_DIR)/src/cinematic.o
+$(BUILD_DIR)/frontend-codec-regression.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
+$(BUILD_DIR)/frontend-codec-regression.dfs: $(BUILD_DIR)/mission1-romfs/frontend/frontend.json
+frontend-codec-regression.z64: N64_ROM_TITLE = "MSX FRONTEND CODEC"
+frontend-codec-regression.z64: $(BUILD_DIR)/frontend-codec-regression.dfs
+$(BUILD_DIR)/campaign-internal.elf: $(BUILD_DIR)/src/campaign_main.o $(BUILD_DIR)/src/frontend.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/campaign-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
+$(BUILD_DIR)/campaign-internal.dfs: $(BUILD_DIR)/mission1-romfs/frontend/frontend.json $(BUILD_DIR)/mission1-romfs/scene.pack
+$(BUILD_DIR)/mission1-romfs/frontend/frontend.json: tools/stage_frontend.py filesystem/cinematics/frontend/frontend.json filesystem/cinematics/frontend/tutorial.msxc filesystem/cinematics/frontend/tutorial.wav64 filesystem/cinematics/frontend/select.msxc filesystem/cinematics/frontend/select.wav64 filesystem/cinematics/frontend/select-confirm.msxc filesystem/cinematics/frontend/select-confirm.wav64
+	python3 tools/stage_frontend.py
+campaign-internal.z64: N64_ROM_TITLE = "MSX CAMPAIGN TEST"
+campaign-internal.z64: $(BUILD_DIR)/campaign-internal.dfs
 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64:
 	@echo "Run tools/pack_cinematic.py with the local golden entry capture; see docs/INTRO_AUDIO.md"
 	@exit 1
@@ -103,13 +136,22 @@ filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cin
 .PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
 all: mslugx-explorer.z64
-$(BUILD_DIR)/mslugx-explorer.elf: $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/mslugx-explorer.elf: $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
 $(BUILD_DIR)/mslugx-explorer.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
-$(BUILD_DIR)/scene_meta.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin
-	python3 tools/pack_scene.py
+$(BUILD_DIR)/background_mode.txt: FORCE
+	@mkdir -p $(BUILD_DIR)
+	@python3 -c 'from pathlib import Path; p=Path("$@"); s="$(MSX_BACKGROUND)\n"; p.write_text(s) if not p.exists() or p.read_text()!=s else None'
+$(BUILD_DIR)/scene_meta.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/build_prerender_background.py tools/export_marco.py $(BUILD_DIR)/background_mode.txt filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin
+	python3 tools/pack_scene.py --background $(MSX_BACKGROUND)
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
+$(BUILD_DIR)/hud_source.txt: FORCE
+	@mkdir -p $(BUILD_DIR)
+	@python3 -c 'from pathlib import Path; p=Path("$@"); s="$(MSX_HUD_CAPTURE)\n$(MSX_HUD_FRAME)\n"; p.write_text(s) if not p.exists() or p.read_text()!=s else None'
+$(BUILD_DIR)/hud_assets.h: tools/build_hud.py tools/export_marco.py filesystem/fixed.bin $(BUILD_DIR)/hud_source.txt $(MSX_HUD_CAPTURE)/palette$(MSX_HUD_FRAME).bin $(MSX_HUD_CAPTURE)/vram$(MSX_HUD_FRAME).bin $(MSX_HUD_CAPTURE)/game$(MSX_HUD_FRAME).png
+	python3 tools/build_hud.py --capture "$(MSX_HUD_CAPTURE)" --frame $(MSX_HUD_FRAME)
+$(BUILD_DIR)/src/hud.o: $(BUILD_DIR)/hud_assets.h
 $(BUILD_DIR)/src/actor.o: $(BUILD_DIR)/visual_config.h
 $(BUILD_DIR)/visual_config.h: FORCE tools/build_visual_config.py
 	python3 tools/build_visual_config.py $(MSX_VISUAL_MODE) --scenario $(MSX_SCENARIO) --output $@
@@ -285,6 +327,9 @@ check-core: $(BUILD_DIR)/marco_environment_fixture.h $(BUILD_DIR)/marco_idle_fix
 	$(BUILD_DIR)/host/clock
 	$(BUILD_DIR)/host/cinematic-codec
 	python3 tools/test_neo_scene.py
+	python3 tools/test_prerender_background.py
+	python3 tools/test_hud_assets.py
+	python3 tools/test_mission_map_range.py
 	python3 tools/test_collision_audit.py
 	python3 tools/test_neo_queue_publication.py
 	python3 tools/test_vehicle_wreckage.py
@@ -485,7 +530,7 @@ filesystem/cinematics/title-announcement.wav64: art/audio/title-announcement.wav
 $(BUILD_DIR)/tools/intro_preview.o: src/mission_main.c $(BUILD_DIR)/entry_meta.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -MMD -Isrc -DMSX_INTRO_PREVIEW -c $< -o $@
-$(BUILD_DIR)/intro-preview.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/tools/intro_preview.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+$(BUILD_DIR)/intro-preview.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/tools/intro_preview.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 $(BUILD_DIR)/intro-preview.dfs: $(BUILD_DIR)/mission1-internal.dfs
 	cp $< $@
 intro-preview.z64: N64_ROM_TITLE = "METAL SLUG X64"

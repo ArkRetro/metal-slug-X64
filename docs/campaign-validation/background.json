@@ -1,0 +1,2594 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "tiles": {
+    "samples": [
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "0",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "1",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "2",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "3",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "4",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "5",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "6",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "7",
+        "crc": "c4e06b72",
+        "draws": "397",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "0",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "1",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "2",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "3",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "4",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "5",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "6",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "7",
+        "crc": "7bd5fb93",
+        "draws": "395",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "0",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "1",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "2",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "3",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "4",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "5",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "6",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "7",
+        "crc": "fe26ee4b",
+        "draws": "393",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "0",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "1",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "2",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "3",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "4",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "5",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "6",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "7",
+        "crc": "2dd2b793",
+        "draws": "462",
+        "uploads": "39",
+        "tlut": "10",
+        "bytes": "79872"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "0",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "1",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "2",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "3",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "4",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "5",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "6",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "7",
+        "crc": "e33e9ceb",
+        "draws": "544",
+        "uploads": "40",
+        "tlut": "10",
+        "bytes": "81920"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "0",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "1",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "2",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "3",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "4",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "5",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "6",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "7",
+        "crc": "65c32fa4",
+        "draws": "492",
+        "uploads": "44",
+        "tlut": "19",
+        "bytes": "90112"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "0",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "1",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "2",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "3",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "4",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "5",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "6",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "7",
+        "crc": "986dee0e",
+        "draws": "408",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "0",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "1",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "2",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "3",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "4",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "5",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "6",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "7",
+        "crc": "199047c9",
+        "draws": "507",
+        "uploads": "38",
+        "tlut": "11",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "0",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "1",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "2",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "3",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "4",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "5",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "6",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "7",
+        "crc": "74f98adc",
+        "draws": "381",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "0",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "1",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "2",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "3",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "4",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "5",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "6",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "7",
+        "crc": "8a016ad0",
+        "draws": "373",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "0",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "1",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "2",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "3",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "4",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "5",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "6",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "7",
+        "crc": "de32844a",
+        "draws": "371",
+        "uploads": "23",
+        "tlut": "7",
+        "bytes": "47104"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "0",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "1",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "2",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "3",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "4",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "5",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "6",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "7",
+        "crc": "7f57719b",
+        "draws": "448",
+        "uploads": "35",
+        "tlut": "10",
+        "bytes": "71680"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "0",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "1",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "2",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "3",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "4",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "5",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "6",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "7",
+        "crc": "7ab20f0b",
+        "draws": "523",
+        "uploads": "36",
+        "tlut": "10",
+        "bytes": "73728"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "0",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "1",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "2",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "3",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "4",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "5",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "6",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "7",
+        "crc": "795e22aa",
+        "draws": "526",
+        "uploads": "41",
+        "tlut": "19",
+        "bytes": "83968"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "0",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "1",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "2",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "3",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "4",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "5",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "6",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "7",
+        "crc": "60286421",
+        "draws": "412",
+        "uploads": "33",
+        "tlut": "18",
+        "bytes": "67584"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "0",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "1",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "2",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "3",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "4",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "5",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "6",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "7",
+        "crc": "d3e6a2b7",
+        "draws": "515",
+        "uploads": "38",
+        "tlut": "12",
+        "bytes": "77824"
+      }
+    ],
+    "palette_switch_crc": "00fbdceb",
+    "rom_sha256": "47f0e10ce957c1263707550472dc506deb408c74f89d0c0b902ad9b94b71b2c9",
+    "log_sha256": "7d583768b790d9a7279b3f087fe152606b88667231433c4c4f0a5b1054aecfdf"
+  },
+  "prerender": {
+    "samples": [
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "0",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "1",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "2",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "3",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "4",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "5",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "6",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "0",
+        "phase": "7",
+        "crc": "c4e06b72",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "0",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "1",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "2",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "3",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "4",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "5",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "6",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "31",
+        "phase": "7",
+        "crc": "7bd5fb93",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "0",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "1",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "2",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "3",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "4",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "5",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "6",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "64",
+        "phase": "7",
+        "crc": "fe26ee4b",
+        "draws": "310",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "0",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "1",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "2",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "3",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "4",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "5",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "6",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "320",
+        "phase": "7",
+        "crc": "2dd2b793",
+        "draws": "329",
+        "uploads": "68",
+        "tlut": "4",
+        "bytes": "89088"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "0",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "1",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "2",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "3",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "4",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "5",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "6",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "872",
+        "phase": "7",
+        "crc": "e33e9ceb",
+        "draws": "349",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "111616"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "0",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "1",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "2",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "3",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "4",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "5",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "6",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1022",
+        "phase": "7",
+        "crc": "65c32fa4",
+        "draws": "315",
+        "uploads": "89",
+        "tlut": "4",
+        "bytes": "109568"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "0",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "1",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "2",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "3",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "4",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "5",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "6",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1023",
+        "phase": "7",
+        "crc": "986dee0e",
+        "draws": "231",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "0",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "1",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "2",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "3",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "4",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "5",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "6",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "0",
+        "camera": "1920",
+        "phase": "7",
+        "crc": "199047c9",
+        "draws": "264",
+        "uploads": "113",
+        "tlut": "3",
+        "bytes": "124928"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "0",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "1",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "2",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "3",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "4",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "5",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "6",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "0",
+        "phase": "7",
+        "crc": "74f98adc",
+        "draws": "294",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "0",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "1",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "2",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "3",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "4",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "5",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "6",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "31",
+        "phase": "7",
+        "crc": "8a016ad0",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "0",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "1",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "2",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "3",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "4",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "5",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "6",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "64",
+        "phase": "7",
+        "crc": "de32844a",
+        "draws": "288",
+        "uploads": "43",
+        "tlut": "4",
+        "bytes": "57344"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "0",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "1",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "2",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "3",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "4",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "5",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "6",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "320",
+        "phase": "7",
+        "crc": "7f57719b",
+        "draws": "315",
+        "uploads": "64",
+        "tlut": "4",
+        "bytes": "80896"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "0",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "1",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "2",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "3",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "4",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "5",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "6",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "872",
+        "phase": "7",
+        "crc": "7ab20f0b",
+        "draws": "328",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "104448"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "0",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "1",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "2",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "3",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "4",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "5",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "6",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1022",
+        "phase": "7",
+        "crc": "795e22aa",
+        "draws": "337",
+        "uploads": "86",
+        "tlut": "4",
+        "bytes": "103424"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "0",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "1",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "2",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "3",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "4",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "5",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "6",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1023",
+        "phase": "7",
+        "crc": "60286421",
+        "draws": "223",
+        "uploads": "78",
+        "tlut": "3",
+        "bytes": "87040"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "0",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "1",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "2",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "3",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "4",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "5",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "6",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      },
+      {
+        "mode": "1",
+        "camera": "1920",
+        "phase": "7",
+        "crc": "d3e6a2b7",
+        "draws": "256",
+        "uploads": "112",
+        "tlut": "3",
+        "bytes": "122880"
+      }
+    ],
+    "palette_switch_crc": "00fbdceb",
+    "rom_sha256": "897d2434f34a59f24c4e211711db15e2ff44a0d72fa4ae711ff57d5893573386",
+    "log_sha256": "e61a8cc2a0b3f1c978cb95d8fc952aac00be70551f6dec3b368c8748011984df"
+  },
+  "differences": [],
+  "totals": {
+    "tiles": {
+      "draws": 57176,
+      "uploads": 4120,
+      "tlut": 1432,
+      "bytes": 8437760
+    },
+    "prerender": {
+      "draws": 37976,
+      "uploads": 8968,
+      "tlut": 480,
+      "bytes": 10919936
+    }
+  },
+  "limits": "128 fixed backgrounds: both presentations, eight cameras, eight animation phases. Command counts do not establish frame rate or hardware performance; campaign completion is not tested."
+}

@@ -87,6 +87,10 @@ const void *scene_page(const scene_image_t *image) {
     return cache+(unsigned)chunk_slot[chunk]*SCENE_CHUNK_BYTES+(image->page%8)*SCENE_PAGE_BYTES;
 }
 void scene_assets_init(void) {
+    if (SCENE_MAP_CELL_SIZE==32 && get_memory_size()<8*1024*1024) {
+        debugf("MSX ERROR: prerender backgrounds require Expansion Pak (8 MiB)\n");
+        assertf(false,"Prerender backgrounds require 8 MiB");abort();
+    }
     rom=PhysicalAddr((void*)(uintptr_t)dfs_rom_addr("/scene.pack"));
     assertf(rom && dfs_rom_size("/scene.pack")==SCENE_PACK_BYTES && !(rom&7),"Scene ROM pack");
     capacity=(get_memory_size()>=8*1024*1024?3*1024*1024:512*1024)/SCENE_CHUNK_BYTES;
@@ -98,6 +102,7 @@ void scene_assets_init(void) {
     for (unsigned i=0;i<SCENE_CHUNK_COUNT;i++) chunk_slot[i]=-1;
     stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
     data_cache_hit_writeback((void*)scene_palettes,sizeof(scene_palettes));
+    data_cache_hit_writeback((void*)scene_ci8_palettes,sizeof(scene_ci8_palettes));
     // Warm the present zone outside gameplay. Marco's branch transitions stay pinned.
     for (unsigned bank=0;bank<SCENE_BANK_COUNT;bank++) if (bank!=SCENE_SOLDIER) {
         const scene_bank_t *b=&scene_banks[bank];
@@ -126,8 +131,12 @@ const scene_image_t *scene_background_tile(unsigned row,unsigned col) { assert(r
 const scene_map_cell_t *scene_map_cells(unsigned *count) { *count=SCENE_MAP_CELL_COUNT;return scene_map_cells_data; }
 const scene_image_t *scene_map_image(unsigned id) { assert(id<sizeof(scene_map_images)/sizeof(*scene_map_images));return &scene_map_images[id]; }
 unsigned scene_map_camera_max(void) { return SCENE_MAP_CAMERA_MAX; }
+unsigned scene_map_cell_size(void) { return SCENE_MAP_CELL_SIZE; }
 uint32_t scene_map_backdrop(void) { return SCENE_MAP_BACKDROP; }
 const uint16_t *scene_palette(unsigned id) { assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id]; }
+const uint16_t *scene_ci8_palette(unsigned id) {
+    assert(id<sizeof(scene_ci8_palettes)/sizeof(scene_ci8_palettes[0]));return scene_ci8_palettes[id];
+}
 void scene_begin_epoch(unsigned next) { epoch=next; }
 void scene_complete_epoch(unsigned done) { completed=done; }
 scene_cache_stats_t scene_cache_stats(void) { return stats; }

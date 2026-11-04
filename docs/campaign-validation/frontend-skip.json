@@ -1,0 +1,49 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "segments": [
+    {
+      "name": "tutorial",
+      "source_frames": 2680,
+      "presented": 55,
+      "dropped": 0,
+      "skipped": true,
+      "first_crc32": "f93e8c5f",
+      "last_crc32": "bc9ebacb",
+      "audio_active": true
+    },
+    {
+      "name": "select",
+      "source_frames": 160,
+      "presented": 160,
+      "dropped": 0,
+      "skipped": false,
+      "first_crc32": "e56a9764",
+      "last_crc32": "ad129003",
+      "audio_active": true
+    },
+    {
+      "name": "select-confirm",
+      "source_frames": 210,
+      "presented": 210,
+      "dropped": 0,
+      "skipped": false,
+      "first_crc32": "ad129003",
+      "last_crc32": "342b3c8e",
+      "audio_active": true
+    }
+  ],
+  "held_confirm_rejected": true,
+  "marco_confirm": true,
+  "native_handoff": true,
+  "rom_sha256": "ee513fac0fbb604fc6d5e1208b980863896806bc97bfb329f34ae012edbec8fb",
+  "log_sha256": "97e9a74608f6648e52f7ec947e80e730cc0cc61b283ae271e082efb6ff18c8dc",
+  "frontend_provenance": {
+    "capture.json": "e2fb93e38ab3149a0d49367acda4a1f0aada99acc813d009d92f069d46942d16",
+    "frames.jsonl": "87134024ee0d908eedeafda81ba8f018ce73eb0069975f1314588a78376567ee",
+    "raster.jsonl": "f88a6666364a67fb11f79fca570d1a221db2e910b9fdfe58eda7d5e7b1e6839b",
+    "reference.wav": "daf06d5a9acf3a2671d3e3e2cbb7c0a911fa8da4a20f0c01134410d63909aa96",
+    "inputs.jsonl": "fae387b843f68d487b56c37206e5bb42770e3e9efaf9c821020e41df59740df8"
+  },
+  "limits": "Tutorial and Marco-only selection/confirmation; no other playable characters, complete campaign, acoustic recording or hardware performance claim."
+}

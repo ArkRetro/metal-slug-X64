@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "emulator": "ares 146",
+  "decoded_frame_crcs": 3050,
+  "rom_sha256": "2e48ddb66ac6170755aef5557a5037233270c3b49b1e2301c09ff10f0401ddbb",
+  "log_sha256": "175cfaf238f4bb0174558792ce70197b19f336882503bf31bef58fff34e3f7fa",
+  "frontend_movie_sha256": {
+    "tutorial": "a6903ebc8b96f74dd7b6d60fb180f9d9755c0a3fe61076526de9beb3bca485b4",
+    "select": "1635b7d4dfb9f0403d5e739ef6205e5a2956c97f9a26f70d17b40b602667f4ff",
+    "select-confirm": "43dc0a8089ed7c2c51c70a363c33a81bdc80875d39b3e5fdab2dd22b1f5487a7"
+  },
+  "limits": "All3050 decoded RGBA5551 CRCs on native MIPS, including compact cache. Nine smoke-test RDP blits have no readback comparison. No timing/audio/gameplay/hardware claim."
+}

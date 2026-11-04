@@ -1,0 +1,17 @@
+{
+  "background_mode": "prerender",
+  "map_cells": 1530,
+  "map_cell_size": 32,
+  "frames": 189,
+  "pages": 625,
+  "palettes": 54,
+  "ci8_palettes": 1,
+  "ci8_colors": 226,
+  "chunks": 79,
+  "decoded_bytes": 1294336,
+  "packed_bytes": 498752,
+  "source_rgba_bytes": 1913408,
+  "sha256": "49ebab98db25841653cbd741483ee6c5f4c10918d7444a23ff9899c23ee95f85",
+  "background_ci4": 67,
+  "background_rgba16": 3
+}

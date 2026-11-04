@@ -1,0 +1,21 @@
+{
+  "status": "TARGETED_CORRECTION_PASS",
+  "corrected_cells": 160,
+  "visually_observed_corrected_cells": 68,
+  "source_opaque_corrected_cells": 160,
+  "visible_source_pixels": 22376,
+  "covered_or_unseen_cells": 92,
+  "failures": [],
+  "sampled_frames": 86,
+  "first_frame": 2100,
+  "last_frame": 7200,
+  "old_map_sha256": "5d2d01795e407493589ff242b17d534e0ad553ef7e02e2f224830b95ff3e58be",
+  "candidate_map_sha256": "9c2496856479aebdeaf2d84bb6eacf9c725c19a57828693d8082e84f60dd7e1c",
+  "crom_sha256": "e25c05202f3d5f0d9c1a9087f6244389eafc2e305be13f9f159195e88021ba61",
+  "fixed_sha256": "c791e646e247d0dfa28f4f5074c4331bbb67964d466d3487e15a0cb30ce75a8e",
+  "zoom_sha256": "2a76f023dc578804c6bcd58ed514ffc04fcb433b3bd75d4452575ffda57a0707",
+  "animation_metadata_sha256": {
+    "/workspace/research/mission1-device-phase-191": "2b5e02a4f373d69ec5fba13d61a5c0c0bf3aa7de93aca73162d3b1431553bf1f"
+  },
+  "limits": "Targeted source-art check only. Uses measured disabled animation and original source alpha/zoom/FIX for visibility. Does not waive any independent full-map audit failure or validate all map/actors/events. Covered/unseen cells have direct SCB/metadata provenance, not independent visible-pixel coverage."
+}

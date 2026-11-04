@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Lossless RGBA5551 -> CI4 pages, deduplicated and RLE-packed in 16 KiB chunks."""
 from pathlib import Path
-import hashlib,json,shutil,struct,zlib
-from mission_tiles import pack_map
+import argparse,hashlib,json,shutil,struct,zlib
+from mission_tiles import pack_map,rgba16
+from build_prerender_background import pack_prerender_map
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
 PAGE=2048; CHUNK=16384
@@ -22,16 +23,29 @@ def unrle(data):
     return out
 
 def main():
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--background',choices=('tiles','prerender'),default='prerender')
+    args=parser.parse_args()
     pages=[]; page_ids={}; palettes=[(0,)+(0xffff,)*15]; pal_ids={palettes[0]:0}
-    images=[];banks=[];background=[];source_bytes=0
+    images=[];banks=[];background=[];source_bytes=0;ci8_palettes=[]
     def palette_id(values):
         key=tuple(values)+(0,)*(16-len(values))
         if key not in pal_ids:pal_ids[key]=len(palettes);palettes.append(key)
         return pal_ids[key]
-    def image(pixels,w,h,dx=0,dy=0,force_actor=False,indices=None,source_palette=None):
+    def image(pixels,w,h,dx=0,dy=0,force_actor=False,indices=None,source_palette=None,force_rgba=False,force_ci8=False):
         colors=sorted(set(pixels)-{0}); indexed=indices is not None or len(colors)<=15 or (0 not in pixels and len(colors)<=16)
+        if force_rgba:indexed=False
         if force_actor:assert len(colors)<=15
-        if indexed:
+        if force_ci8:
+            assert w==32 and h==32 and len(ci8_palettes)==1
+            values=ci8_palettes[0];mapping={v:i for i,v in enumerate(values)}
+            data=bytearray(PAGE)
+            for y in range(h):
+                for x in range(w):
+                    data[y*32+x]=mapping[pixels[y*w+x]]
+                    assert values[data[y*32+x]]==pixels[y*w+x]
+            pal=0;fmt=2
+        elif indexed:
             values=list(source_palette) if indices is not None else ([0]+colors if len(colors)<=15 else colors)
             mapping={v:i for i,v in enumerate(values)};data=bytearray(PAGE)
             for y in range(h):
@@ -99,7 +113,26 @@ def main():
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
     backdrop=palette_rgb(mission['backdrop'])
-    map_images,map_cells=pack_map(mission,(ROOT/'filesystem/sprites.bin').read_bytes(),image)
+    crom=(ROOT/'filesystem/sprites.bin').read_bytes()
+    if args.background=='prerender':
+        # Scaled distant layers retain their original CI4 sampling intervals.
+        # Baking their atlas boundaries changes RDP edge samples at fractional
+        # scales. Terrain/buildings/props (unit scale) can be composed exactly.
+        distant=dict(mission,cells=[c for c in mission['cells'] if c['layer']<2])
+        scenery=dict(mission,cells=[c for c in mission['cells'] if c['layer']>=2])
+        map_images,map_cells=pack_map(distant,crom,image)
+        colors=sorted({v for c in scenery['cells'] for v in rgba16(mission['palettes'][c['palette']])})
+        if len(colors)<=256:ci8_palettes.append(tuple(colors))
+        baked_images,baked_cells,prerender_report=pack_prerender_map(scenery,crom,image,'ci8' if ci8_palettes else 'rgba16')
+        prerender_report['shared_palette_colors']=len(colors) if ci8_palettes else 0
+        base=len(map_images);map_images.extend(baked_images)
+        map_cells.extend((layer,x,y,[base+p for p in phases]) for layer,x,y,phases in baked_cells)
+        prerender_report['distant_layer_policy']='Original CI4 tiles on scaled layers 0/1; prerendered unit-scale layers 2/3/4'
+        cell_size=32
+        (ROOT/'build/prerender_background_report.json').write_text(json.dumps(prerender_report,indent=2)+'\n')
+    else:
+        map_images,map_cells=pack_map(mission,crom,image)
+        cell_size=16
     real_pages=len(pages)
     while len(pages)%8:pages.append(bytes(PAGE))
     blob=bytearray();chunks=[]
@@ -117,6 +150,7 @@ def main():
            f'#define SCENE_PAGE_COUNT {real_pages}',f'#define SCENE_CHUNK_COUNT {len(chunks)}',
            f'#define SCENE_PALETTE_COUNT {len(palettes)}',f'#define SCENE_PACK_BYTES {len(blob)}',
            f'#define SCENE_MAP_CELL_COUNT {len(map_cells)}',f'#define SCENE_MAP_CAMERA_MAX {mission["camera_max"]}',
+           f'#define SCENE_MAP_CELL_SIZE {cell_size}',
            f'#define SCENE_MAP_BACKDROP 0x{bytes((*backdrop,255)).hex()}u']
     for ctype,name,items in [('scene_chunk_t','scene_chunks',chunks),('scene_bank_t','scene_banks',banks),('scene_image_t','scene_images',images),('scene_image_t','scene_background',background)]:
         lines.append(f'static const {ctype} {name}[]={{')
@@ -124,11 +158,13 @@ def main():
     lines.append('static const scene_image_t scene_map_images[]={')
     lines.extend('  {'+','.join(map(str,item))+'},' for item in map_images);lines.append('};')
     lines.append('static const scene_map_cell_t scene_map_cells_data[]={')
-    lines.extend('  {'+f'{layer},{x},{y},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in map_cells);lines.append('};')
+    lines.extend('  {'+f'{layer},{x},{y},{16 if args.background=="tiles" or layer<2 else 32},'+'{'+','.join(map(str,phases))+'}},' for layer,x,y,phases in map_cells);lines.append('};')
     lines.append('static const uint16_t scene_palettes[][16] __attribute__((aligned(16)))={')
-    lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.extend(['};','#endif'])
+    lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in palettes);lines.append('};')
+    lines.append('static const uint16_t scene_ci8_palettes[][256] __attribute__((aligned(16)))={')
+    lines.extend('  {'+','.join(hex(v) for v in pal)+'},' for pal in (ci8_palettes or [(0,)]));lines.extend(['};','#endif'])
     (ROOT/'build/scene_meta.h').write_text('\n'.join(lines)+'\n')
-    report=dict(frames=len(images),pages=real_pages,palettes=len(palettes),chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
+    report=dict(background_mode=args.background,map_cells=len(map_cells),map_cell_size=cell_size,frames=len(images),pages=real_pages,palettes=len(palettes),ci8_palettes=len(ci8_palettes),ci8_colors=len(ci8_palettes[0]) if ci8_palettes else 0,chunks=len(chunks),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),source_rgba_bytes=source_bytes,sha256=hashlib.sha256(blob).hexdigest(),background_ci4=sum(i[-1]==0 for i in background),background_rgba16=sum(i[-1]==1 for i in background))
     (ROOT/'build/scene_pack_report.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps(report))
 
 if __name__=='__main__':main()

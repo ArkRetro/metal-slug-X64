@@ -14,4 +14,6 @@ void scene_render_set_depth_mode(bool enabled);
 void scene_render_depth_frame(const retro_frame_t *frame);
 void scene_render_foreground_fog(void);
 void scene_render_forget_texture(void);
+typedef struct { unsigned draws,uploads,palette_uploads,tmem_bytes; } scene_render_stats_t;
+scene_render_stats_t scene_render_stats(void);
 #endif

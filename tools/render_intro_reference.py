@@ -27,13 +27,20 @@ class Renderer:
  def colors(self,palette):return np.array([palette_rgb(w) for w in palette],dtype=np.uint8)
  def render(self,v,p,counter,line_states=None,animation_disabled=False,palette_states=None):
   pixels=np.full((224,320),4095,dtype=np.uint16);columns=[];x=y=rows=zx=zy=0;drawn=zoomed=0
+  # Raster states share immutable VRAM tuples across unchanged scanlines.
+  # Cache by identity while retaining the tuple, so Python cannot reuse an id.
+  # Parsing 381 descriptors again on every line changes no hardware behavior.
+  column_states={}
   def columns_for(words):
+   saved=column_states.get(id(words))
+   if saved is not None:return saved[1]
    columns=[];x=y=rows=zx=zy=0
    for slot in range(381):
     control,z=words[0x8200+slot],words[0x8000+slot]
     if control&64:x=(x+zx+1)&511;zx=z>>8&15
     else:x=words[0x8400+slot]>>7;y=512-(control>>7);rows=control&63;zx=z>>8&15;zy=z&255
     columns.append((slot,x,y,rows,zx,zy))
+   column_states[id(words)]=(words,columns)
    return columns
   columns=columns_for(v)
   for sy in range(16,240):

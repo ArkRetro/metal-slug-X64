@@ -11,6 +11,13 @@ assert(last_frame>=7200 and last_frame<=36000)
 local last_x=-1;local stuck=0;local aim_until=0
 local positions=assert(io.open(output..'/positions.csv','w'))
 positions:write('frame,x16,y16,vx16,vy16,flags\n')
+-- The animation phase is device state, not frame & 7. Keep the exact sampled
+-- counter with each map snapshot so transparent animated tiles are audited
+-- using their actual phase rather than an invented per-VI counter.
+local sprite=manager.machine.devices[':spritegen']
+local animation_counter=emu.item(assert(sprite.items['0/m_auto_animation_counter']))
+local animation_disabled=emu.item(assert(sprite.items['0/m_auto_animation_disabled']))
+local timing=assert(io.open(output..'/frames.jsonl','w'))
 local fields={}
 for _,port in pairs(manager.machine.ioport.ports) do
  for name,field in pairs(port.fields) do fields[name]=field end
@@ -18,6 +25,7 @@ end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0}}
 local cpu=manager.machine.devices[':maincpu'].spaces['program']
 local function dump(f)
+ timing:write(string.format('{"frame":%d,"animation_counter":%d,"animation_disabled":%s}\n',f,animation_counter:read(0),animation_disabled:read(0)~=0 and 'true' or 'false'));timing:flush()
  local v=io.open(output..'/vram'..f..'.bin','wb')
  for i=0,0x85ff do
   cpu:write_u16(0x3c0000,i)
@@ -81,5 +89,5 @@ emu.register_frame_done(function()
  elseif sweep and frame>=7200 then button('P1 Left',0) end
  if frame>=2100 then positions:write(string.format('%d,%u,%u,%u,%u,%u\n',frame,cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9))) end
  if frame>=2100 and (frame==2100 or frame%60==0) then dump(frame) end
- if frame==last_frame then positions:close();manager.machine:exit() end
+ if frame==last_frame then positions:close();timing:close();manager.machine:exit() end
 end, 'frame')

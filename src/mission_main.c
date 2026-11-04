@@ -5,6 +5,9 @@
 #include "msx_audio.h"
 #include "entry_meta.h"
 #include "title_intro.h"
+#ifdef MSX_FRONTEND
+#include "frontend.h"
+#endif
 static void fail(const char *message) {
     console_init();printf("MSX ERROR: %s\n",message);debugf("MSX ERROR: %s\n",message);
     for (;;) wait_ms(100);
@@ -16,6 +19,9 @@ int main(void) {
     rdpq_init();msx_audio_init();
     console_close();display_init(RESOLUTION_320x240,DEPTH_16_BPP,2,GAMMA_NONE,FILTERS_RESAMPLE);joypad_init();
     if (!msx_title_intro()) fail("Presentacion inicial");
+#ifdef MSX_FRONTEND
+    if (!msx_frontend_after_title()) fail("Tutorial y seleccion");
+#endif
     if (!msx_cinematic_open("rom:/entry.msxc")) fail("Entrada cinematica");
     if (msx_cinematic_stats().frames!=MSX_ENTRY_FRAMES || msx_cinematic_pixels_crc()!=msx_entry_crc[0]) fail("CRC primer frame");
     if (!msx_audio_open(MSX_AUDIO_INTRO,"rom:/entry.wav64")) fail("Audio de entrada");

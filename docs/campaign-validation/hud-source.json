@@ -1,0 +1,15 @@
+{
+  "status": "PASS",
+  "source_frame": 2100,
+  "palette_id": 0,
+  "fixed_sha256": "c791e646e247d0dfa28f4f5074c4331bbb67964d466d3487e15a0cb30ce75a8e",
+  "palette_sha256": "e6ee9cfbfbbb031d306b0d493e7d79bd534b37890f18cae70844a85beaef8135",
+  "vram_sha256": "6f9945bdae53025d676d50450ea55b77f45e8abaf6544904bed299ee02b493b8",
+  "screenshot_sha256": "c5971d014b2e9a5397b59a4fad504cddc936a33ab64d0a308dbb12db62c046b7",
+  "atlas_sha256": "9da3829cdcc3092f0dbff010834bfc621eb9b5db2729f55615fc3e7549078597",
+  "atlas_bytes": 2048,
+  "glyph_instances": 8,
+  "opaque_pixels": 379,
+  "observed_characters": "0CDEIRT",
+  "limits": "Original S-ROM font and captured palette, not original HUD logic. HP/KILLS/PISTOL labels/layout are authored and must use current native counters; no invented score, lives, ammo or timer."
+}

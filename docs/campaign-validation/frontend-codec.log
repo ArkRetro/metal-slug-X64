@@ -1,0 +1,18 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded frontend-codec-regression
+Vulkan Enabled: using paraLLEl-RDP
+MSX CINEMATIC compact encoded=3741174 prepared=2179072 budget=6029312 heap_used=6548192 heap_total=8114440
+MSX CINEMATIC open frames=2680 size=304x224 packet=110650
+MSX CINEMATIC cache=3741174 streaming=0 prepared=16 prepared_bytes=2179072
+[WARN]: Stalled compile (compute, ff6863004fc9ee60): thread 0 - 6369.362 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 5e969bd158b09fb3): thread 0 - 10050.954 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, d4db6236f1bec5e8): thread 0 - 230520.343 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 471d277cbebc0024): thread 0 - 12162.784 us (mode: sync, success: yes).
+MSX FRONTEND CODEC case=0 frames=2680 PASS
+MSX CINEMATIC open frames=160 size=304x224 packet=97950
+MSX CINEMATIC cache=725760 streaming=0 prepared=15 prepared_bytes=2042880
+MSX FRONTEND CODEC case=1 frames=160 PASS
+MSX CINEMATIC open frames=210 size=304x224 packet=106748
+MSX CINEMATIC cache=324328 streaming=0 prepared=1 prepared_bytes=136192
+MSX FRONTEND CODEC case=2 frames=210 PASS
+MSX FRONTEND CODEC PASS frames=3050

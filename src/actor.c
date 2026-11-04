@@ -8,6 +8,7 @@
 #include "vehicle_renderer.h"
 #include "retro_events.h"
 #include "mission_camera.h"
+#include "hud.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -168,6 +169,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
     }
     scene_render_foreground_fog();
+    msx_hud_draw(&(msx_hud_state_t){.health=game.health,.kills=game.kills});
+    scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);
     }
@@ -179,7 +182,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (game.vehicle.active) snprintf(status,sizeof(status),"HP:%u VEHICLE:%u",game.health,game.vehicle.health);
         else snprintf(status,sizeof(status),"HP:%u GUARDS:%u/3 CP:%s",game.health,game.kills,game.checkpoint?"YES":"NO");
         scene_render_text(32,38,status);
-        scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"START:LAB R:RESTART");
+        scene_render_text(32,204,"MOVE / A:JUMP B:FIRE");scene_render_text(32,216,"L:DEBUG R:RESTART");
     }
     if (game.complete) {scene_render_text(104,102,"REGION END");scene_render_text(88,120,"R: PLAY AGAIN");}
     scene_render_end();

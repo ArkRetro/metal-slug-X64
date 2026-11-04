@@ -1,5 +1,12 @@
 # Recuperación del recorrido posterior al mercado
 
+Actualización: se ha corregido la suposición `frame & 7` del auditor y una
+autoanimación indebida de 160 celdas del tramo inicial. Véase
+[evidencia, aplicación y límites](MAP_AUTOANIMATION.md). El fallo histórico de
+13320 descrito abajo implicaba la fase equivocada de un tile de fondo; la
+captura nueva revela otras discrepancias que siguen abiertas. Esta actualización
+no valida el mapa completo ni integra el jefe en C.
+
 La captura privada `mission1-gate-sweep-47` alcanza visualmente el jefe y la
 secuencia de final de la primera misión original. **Esto no completa el port:**
 el ejecutable nativo sigue terminando en la región parcial de cámara 1920.

@@ -1,0 +1,47 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded campaign-internal
+Vulkan Enabled: using paraLLEl-RDP
+MSX CINEMATIC open frames=601 size=304x224 packet=112034
+MSX CINEMATIC cache=3147898 streaming=0 prepared=23 prepared_bytes=3132416
+[WARN]: Stalled compile (compute, 5e969bd158b09fb3): thread 0 - 8524.179 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, d4db6236f1bec5e8): thread 0 - 160506.829 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 471d277cbebc0024): thread 0 - 10220.967 us (mode: sync, success: yes).
+MSX TITLE start crc=8e705c2a audio=1
+MSX TITLE timing audio_max_us=4400 decode_max_us=14318 draw_max_us=959
+MSX TITLE cadence unique=601 dropped=0 source=601
+MSX TITLE complete frames=669 skipped=0 crc=c0a8e830
+MSX CINEMATIC compact encoded=3741174 prepared=2179072 budget=6029312 heap_used=6566736 heap_total=7928992
+MSX CINEMATIC open frames=2680 size=304x224 packet=110650
+MSX CINEMATIC cache=3741174 streaming=0 prepared=16 prepared_bytes=2179072
+MSX FRONTEND tutorial start frames=2680 crc=f93e8c5f audio=1
+MSX FRONTEND tutorial timing decode_max_us=13038 draw_max_us=1051
+MSX FRONTEND tutorial complete rendered=56 unique=55 dropped=0 skipped=1 crc=bc9ebacb
+MSX CINEMATIC open frames=160 size=304x224 packet=97950
+MSX CINEMATIC cache=725760 streaming=0 prepared=15 prepared_bytes=2042880
+MSX FRONTEND select start frames=160 crc=e56a9764 audio=1
+MSX FRONTEND select timing decode_max_us=13137 draw_max_us=1064
+MSX FRONTEND select complete rendered=163 unique=160 dropped=0 skipped=0 crc=ad129003
+MSX FRONTEND select waiting character=MARCO
+MSX FRONTEND select confirmed character=MARCO
+MSX CINEMATIC open frames=210 size=304x224 packet=106748
+MSX CINEMATIC cache=324328 streaming=0 prepared=1 prepared_bytes=136192
+MSX FRONTEND select-confirm start frames=210 crc=ad129003 audio=1
+MSX FRONTEND select-confirm timing decode_max_us=12751 draw_max_us=914
+MSX FRONTEND select-confirm complete rendered=213 unique=210 dropped=0 skipped=0 crc=342b3c8e
+MSX CINEMATIC open frames=230 size=304x224 packet=105690
+MSX CINEMATIC cache=1246644 streaming=0 prepared=15 prepared_bytes=2042880
+MSX INTRO start source=3830 frames=230
+MSX INTRO cadence unique=230 skipped=0
+MSX INTRO complete frames=230 rendered=235 crc=db681cc3 reads=1246644 audio=1
+MSX INTRO timing decode_max_us=12907 decode_mean_us=1522 draw_max_us=959
+MSX pack: 625 pages, 54 palettes, 79 chunks; cache=1264 KB DMA=498752 bytes startup evictions=0
+MSX DEPTH mode enabled (depth25d default)
+MSX v10 scene loaded: original collision grid + slope motion
+MSX mission handoff x=7852402 y=6157405
+MSX first frame ready
+MSX jump
+MSX run-jump
+MSX projectile sprite owner=0 direction=1 size=10x6
+MSX camera moving
+MSX landed height=-26
+MSX run-fire

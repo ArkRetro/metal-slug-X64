@@ -1,0 +1,30 @@
+{
+  "format": "CI8",
+  "chunk_width": 32,
+  "chunk_height": 32,
+  "tmem_bytes_per_page": 1024,
+  "phases": 8,
+  "layer_origins": {
+    "2": [
+      0,
+      0
+    ],
+    "3": [
+      0,
+      0
+    ],
+    "4": [
+      0,
+      0
+    ]
+  },
+  "source_cells": 1728,
+  "baked_cells": 488,
+  "unique_pages": 446,
+  "decoded_bytes": 913408,
+  "animated_cells": 0,
+  "independent_comparison_pixels": 6422528,
+  "scope": "Only supplied observed scenery; no inferred terrain, actors or events",
+  "shared_palette_colors": 226,
+  "distant_layer_policy": "Original CI4 tiles on scaled layers 0/1; prerendered unit-scale layers 2/3/4"
+}

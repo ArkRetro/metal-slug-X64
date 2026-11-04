@@ -35,7 +35,7 @@ def check(meta_path,camera_path):
     per_camera=[]
     for c in range(camera_max+1):
         used=set()
-        for layer,x,y,*phases in cells:
+        for layer,x,y,size,*phases in cells:
             source=min(layer,3)
             if (source==1 and c>=switch) or (source==2 and c<switch):continue
             if -48<=x-scroll(source,c)<352:used.update(map_images[p][0]//8 for p in phases)
@@ -48,7 +48,14 @@ def check(meta_path,camera_path):
     report=dict(chunks=chunks,fixed_actor_chunks=len(fixed),worst_working_set=worst[0],worst_camera=worst[1],
                 cache_slots={k:min(v,chunks) for k,v in caches.items()},
                 fits_without_eviction={k:chunks<=v for k,v in caches.items()})
+    cell_size=int(re.search(r'SCENE_MAP_CELL_SIZE (\d+)',meta).group(1))
+    report['cell_size']=cell_size
+    report['requires_expansion_pak']=cell_size==32
+    report['working_set_fits']={k:worst[0]<=v for k,v in report['cache_slots'].items()}
     for name,slots in report['cache_slots'].items():
+        # The prerender campaign explicitly requires 8 MiB. The CI4 reference
+        # path must continue to fit both supported cache sizes.
+        if cell_size==32 and name=='4MiB':continue
         assert worst[0]<=slots,('Scene working set exceeds cache',name,worst,slots)
     return report
 

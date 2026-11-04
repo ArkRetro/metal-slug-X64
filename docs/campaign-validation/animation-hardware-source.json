@@ -1,0 +1,13 @@
+{
+  "url": "https://raw.githubusercontent.com/mamedev/mame/mame0276/src/mame/neogeo/neogeo_spr.cpp",
+  "sha256": "1ad3de4bd399c4dff3ea131f181e45746db623b4feac320af3eab807e93f2668",
+  "animation_timer_lines": [
+    136,
+    144
+  ],
+  "disabled_gate_lines": [
+    377,
+    385
+  ],
+  "scope": "MAME hardware reference, not recovered game event/speed writes or native campaign completion"
+}

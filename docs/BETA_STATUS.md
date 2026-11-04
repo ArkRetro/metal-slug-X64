@@ -1,3 +1,15 @@
+Campaign integration update — 2026-11-04: the internal campaign now connects
+original HOW TO PLAY, a Marco-only confirmation screen and confirmation movie
+to the existing title/parachute/native handoff. Terrain/buildings/props use
+prerendered layer chunks with independent collision; scaled distant layers keep
+their original CI4 sampling. A native FIX-font HUD shows actual prototype health
+and kills. This is NOT complete Mission 1 or four-character gameplay. See
+CAMPAIGN_INTEGRATION.md, FRONTEND.md and PRERENDER_BACKGROUNDS.md.
+
+A measured source-state correction disables unintended animation on 160 cloud
+cells. Full-map reference audits still have independent unresolved discrepancies;
+see MAP_AUTOANIMATION.md. No additional demo is published by this integration.
+
 Playable demo delivery — 2026-11-04: the latest user request authorizes a
 playable snapshot of the existing partial campaign. See PLAYABLE_DEMO.md.
 This supersedes the earlier no-partial-demo delivery gate only for this

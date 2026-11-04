@@ -6,6 +6,9 @@ Incluye título X64 con audio, entrada en paracaídas y recorrido parcial con tr
 [la guía de la demo](docs/PLAYABLE_DEMO.md).
 El objetivo de completar la misión y recuperar la lógica original sigue pendiente.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
+La integración posterior de [pantallas, decorado prerenderizado y HUD](docs/CAMPAIGN_INTEGRATION.md)
+se desarrolla en `campaign-internal.z64`; sigue siendo una campaña incompleta,
+con selección limitada a Marco.
 La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
 el controlador completo todavía está pendiente y no se declara un 100%.
 El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)

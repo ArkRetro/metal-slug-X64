@@ -9,6 +9,9 @@ typedef struct { uint32_t frames,index,read_bytes,max_packet,max_decode_ticks,to
 bool msx_cinematic_open(const char *path);
 bool msx_cinematic_next(void);
 void msx_cinematic_draw(surface_t *target);
+/* Optional native UI over the decoded movie. Called with an attached RDP;
+ * canvas CRCs remain those of the unmodified original source pixels. */
+void msx_cinematic_draw_overlay(surface_t *target,void (*overlay)(void));
 msx_cinematic_stats_t msx_cinematic_stats(void);
 /* Linear scan for internal verification, not per-frame rendering. */
 uint32_t msx_cinematic_pixels_crc(void);

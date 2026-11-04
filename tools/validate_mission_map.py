@@ -11,6 +11,17 @@ from PIL import Image
 from export_marco import palette_rgb
 from mission_tiles import decode
 
+def animation_phase(observation):
+    counter=observation.get('animation_counter');disabled=observation.get('animation_disabled')
+    if not isinstance(counter,int) or isinstance(counter,bool) or counter<0 or disabled not in (False,True):
+        raise ValueError(f'Missing measured autoanimation device state at frame {observation["frame"]}; recapture with capture_advance.lua, never infer phase from frame & 7')
+    return counter&7
+
+def animated_tile_code(low,attr,phase,disabled):
+    code=low|((attr<<12)&0xf0000)
+    mask=0 if disabled else 7 if attr&8 else 3 if attr&4 else 0
+    return (code&~mask)|(phase&mask)
+
 def validate(captures,model_path,crom_path,out):
     model=json.loads(model_path.read_text());crom=crom_path.read_bytes()
     fixed=(crom_path.parent/'fixed.bin').read_bytes()
@@ -22,7 +33,7 @@ def validate(captures,model_path,crom_path,out):
     total=changed=checked=0
     out.mkdir(parents=True,exist_ok=True)
     for observation in model['observations']:
-        frame=observation['frame'];camera=observation['camera'];phase=frame&7
+        frame=observation['frame'];camera=observation['camera'];phase=animation_phase(observation)
         offsets=observation.get('offsets',((camera+1)//2,(camera*3+2)//4,camera,camera))
         vertical=observation.get('vertical_offsets',(0,0,0,0))
         active=observation.get('active',(True,True,True,True))
@@ -50,8 +61,7 @@ def validate(captures,model_path,crom_path,out):
                 yy-=16
                 if yy>=224 or yy+16<=0:continue
                 low,attr=v[slot*64+row*2:slot*64+row*2+2]
-                mask=7 if attr&8 else 3 if attr&4 else 0
-                code=(low|((attr<<12)&0xf0000))&~mask;code|=phase&mask
+                code=animated_tile_code(low,attr,phase,observation['animation_disabled'])
                 im=tile(code,attr&3,tuple(p[(attr>>8)*16:(attr>>8)*16+16]))
                 if is_background and (attr&0xf0)==0x40:
                     assert zx==15 and zy==255,('Scaled background requires a recovered transform',frame,slot,zx,zy)

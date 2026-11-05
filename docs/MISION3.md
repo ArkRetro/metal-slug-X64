@@ -598,7 +598,10 @@ explosión de muerte de los jefes `1032` (60 KB, una vez por jefe) suena desde
 (`--hop --pilot`) ya no llega a la arena del jefe en 300 s (progreso 5888;
 en otras dos pasadas, de 420 s y de 300 s tras fusionar `ccr` con el paso 3,
 4379: la cámara se queda en el bloqueo de 4380 del tramo final, con
-`099DCC/04115A/0DC97E` vivos). Registros
+`099DCC/04115A/0DC97E` vivos). Tras fusionar los datos de misión en el
+bloque `MSXD` (`ccr`, paso 3): PASS, 211 ranuras, progreso 4060 en 300 s,
+registros saltados: vagones 10 (los mismos), rutinas sin soporte `2869D6`,
+`08DBC8`, `0AF17E`; 2392 dibujos sin paleta. Registros
 saltados (constructores no portados) por sección: salida 0, vagones 10
 (`02B202` ×4, `027F54`, `0391EA` ×2, `097FCC` ×2, `08AFB6`), hueco 0, tramo
 final 7 (`0A4A94`, `0569D0` ×2, `02B202`, `084588`, `0A2F2E`, `097FCC`), jefe

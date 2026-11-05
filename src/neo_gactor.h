@@ -139,6 +139,22 @@ typedef struct neo_m2boss_env {
     int16_t tower_mode;              /* RAM 10C354 (02624C/026230/026244) */
     uint8_t frame_step;              /* 003B4C: RAM 10008A + 10F009 (byte sum) */
 } neo_m2boss_env_t;
+/* The Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6
+ * (RAM 10E8C6..10E94D: block +0..+25, map +2E, offsets +32/+34, window
+ * +36/+38, column list +3E, column table +42..+81, flags +82/+83) and RAM
+ * 10E959 (0C7BD0); the drawing is the renderer's: `draw` (0C73CE: d0..d5
+ * of 0C714E, the layer's map +2E), `patch` (0A6D7C: 0C714E with the
+ * sub-map) and `clear` (0C702A/0C703C/0C6D04). NULL in neo_genv_t: the
+ * body stops explicitly. */
+#if !defined(N64) || defined(MSX_M3MID)
+#define MSX_HAS_M3MID 1   /* the mid-boss is built in (RAM budget: MSX_M3MID on the console) */
+#endif
+typedef struct neo_m3mid_env {
+    uint8_t *layer;uint8_t flags959;
+    void (*draw)(void *ctx,uint32_t map,const int16_t d[6]);
+    void (*patch)(void *ctx,uint32_t submap,const int16_t d[6]);
+    void (*clear)(void *ctx);
+} neo_m3mid_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -233,6 +249,8 @@ struct neo_genv {
     neo_pickup_env_t *pickup;
     neo_vehicle_env_t *vehicle;
     neo_m2boss_env_t *m2boss;
+    neo_m3mid_env_t *m3mid;
+    void (*shake_pulse)(void *ctx);  /* 0C8022 (RAM 10E9C8/10E9CC) */
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
      * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;
      * 01E13A/01E166/01E19E, neo_pweapon.c); NULL: the beam stops explicitly. */

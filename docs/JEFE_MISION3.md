@@ -252,6 +252,81 @@ Pantallas `game133500`, `game135000`.
   (140898, puntos/comida; sus etiquetas `08D330`); 107B y borrado de la
   familia (`0041AC`, 140988). El guion sigue al vaciarse el grupo 0.
 
+## Jefe intermedio: estado del port (paso 3, rama `work-m3step3`)
+
+**Nativo** en `src/neo_m3mid.c` (traducción a mano de `0A4A94..0A7140`):
+cuerpo y su objeto de capa `10E8C6` (`0A6C18`: `0C7BD0`, `0C6F34`,
+`0C6BDE`, `0C73CE`, `0C6CFC`, `01AB9C`; el paso `+8/+C` de `0A5B3C`; en el
+mundo el objeto se mueve en la cámara con `10E959` bit 7, `0C82F4`), el
+ciclo `2A610A` (`0A5882..0A59CE`), daño y etapas (`0A56E4`, `0A6BE2`,
+`0A5C04`: parches `0A6D7C`, restos `0A6598`, motores `0A5D6A`), piezas
+laterales `0A606E/0A6078`, cañones `0A61E8/0A61F2` (rayo `2A5FAE`, puntos
+`08D1D0`), piezas `0A64E2`, escotilla `0A5E88`, bodega `0A4DB6` y sus
+soldados `0A4F3A/0A4F52` (bombas `0A5398` por la llamada `0A530C`, objetos
+`2C0C6C`), muerte `0A4BDA..0A4D52` (`0A4DB0`, listas `2A6526/2A647A`, mapa
+del naufragio `2A619A`, `0AE220(3,1)`, 30 objetos `55`, `0A5604`, `0041AC`)
+y el efecto común `01C8D2` (`neo_effects.c`). Las lecturas de la ROM nuevas
+están en `data/region_rom.json` (`2A5FAA..2A6559`, `2C001A..2C0C7F`,
+`0A534E`, `E61BC`, el mapa de la plataforma `0E6896`) y los programas en
+`data/soldier_programs.json`.
+
+**Comprobado** (`make check`, bucle cerrado contra MAME 0.264, capturas
+`capture_m3_boss.sh mid` desde `sec04_117966`; extracción con
+`--range a4a94-a7140 --range 1d764-1d7b8 --range 1c6ee-1c796 --range
+1d31c-1d6e4 --range 1c8d2-1c8d2 --range 8c374-8c37c --range 94ff8-95060
+--attacks --ram 10000e-100010 --ram 10c7b6-10d7b6 --ram 10d83e-10e83e --ram
+10e8c6-10e94e --ram 10e958-10e95a --ram 10e9c8-10e9d0 --ram 1063d8-1063da`):
+
+| Fixture | Fotogramas | Nodos | Actualizaciones | Contenido |
+| --- | --- | ---: | ---: | --- |
+| `m3mid1` | 132378..134399 | 95 | 10 181 | llegada, cañones, piezas, bodega (134292) |
+| `m3mid2` | 134400..136599 | 288 | 16 809 | soldados, bombas, motor 134729, cañón izquierdo a 0 (135108) |
+| `m3mid3` | 136600..138799 | 331 | 17 469 | fase 2, motores, bombas |
+| `m3mid4` | 138801..140988 | 373 | 15 732 | cañón derecho a 0, muerte 140653, pantalla blanca, 30 objetos, borrado |
+
+Las cabeceras de la capa (`10E8C6..10E94D`), `10E959` y el temblor
+`10E9C8..10E9CF` (`0C8022`) se comparan byte a byte. La prueba de familia
+gana `--m3mid` (piezas que se reanudan como `--m2boss`, nodos reutilizados,
+`0041AC` borra los descendientes, el bit 7 de `+5F` que pone un disparo
+entre dos actualizaciones del cuerpo). Dos fugas de registro del original
+reproducidas: `0A4F1E` (bits 8..11 de D0 en `+8B` de la bodega) y
+`0A5604` (D0/D1 que deja el último `01DA40`: `+32/+34` de la capa).
+
+**RAM (parada explícita del cartucho)**: el módulo, sus bloques de ROM y
+sus 38 programas suman ≈ 48 KB de imagen (texto 23 KB de `neo_m3mid.o`,
+1000 órdenes de programa, 9 KB de datos); con ellos el cartucho de
+referencia de la M3 no arranca (`RAM budget: 3296 KB left for the scene
+cache (minimum 3332 KB)`, 208 ranuras). Por eso van en el grupo `m3mid`
+(`group` en `data/region_rom.json` y `data/soldier_programs.json`,
+`compile_region_rom.py`/`compile_soldier_ai_tables.py`) y la consola los
+compila solo con `make MSX_M3MID=1`; sin él el registro `2DAE20` sigue
+saltado (constructor no portado) y la prueba de familia del anfitrión los
+compila siempre. Para meterlo en la imagen hace falta sacar a los paquetes
+de misión los programas y bloques de ROM de cada misión (o liberar ≈ 40 KB
+en otra parte). El código del mundo y del renderizador para la capa
+(`MSX_HAS_M3MID`, `neo_gactor.h`) va en el mismo grupo. Con el grupo fuera:
+`mslugx-m3-reference.z64` arranca con 208 ranuras y `test_mission3_ares.py
+--hop --pilot` (300 s) da PASS (registro `2DAE20` saltado y registrado).
+
+**Paradas explícitas**: la segunda tabla del ciclo `2A6126` (`+A3` solo
+vale 0), la apertura de la escotilla `0A5EDA` (soldados `09D846..` de
+`2A63D0`, nunca alcanzada), las trampas de depuración de `0A6918`/
+`0A6A32`, un `divu` desbordado en `0A6918`; la comprobación del cartucho
+antes de los borrados no se porta. **Dibujo de la capa `10E8C6`** (el
+avión en sí: mapa `2A6142` de 19 × 10 bloques, parches `0C714E`, naufragio
+`2A619A`): el mundo lleva la rejilla de 19 × 10 bloques que deja
+`0C714E` (`m3grid`) y `actor.c` la dibuja en `x = +14 + 16c`, `y = 337 −
++18 + 16r` (SCB de MAME en los volcados 134100/135000) con 390 marcos
+`F0000000 | código << 2 | giro` y la paleta `F05E` que
+`tools/export_m3_overlay.py` añade al export privado de la M3 (paleta igual
+a la RAM de MAME); bajo todos los sprites (el original la pone bajo la capa
+`10C72E`: aproximación). `mission3.pack` pasa a 446 trozos (límite 480).
+Sonidos `10EB/10EC/10ED/107B/1020` sin entrada en `data/sound_map.json`. Las piezas con
+sprite (cañones, piezas, soldados, bombas, motores) sí: `export_rest_sprites.py`
+con las raíces nuevas (captura `MSX_M3BOSS_DUMPS=133500`, 133500..136000:
+15 453 píxeles iguales, 1339 distintos en 3 de 10 volcados, donde la
+actualización coincide con el volcado).
+
 ## Implementación propuesta (piezas comprobables)
 
 Como el jefe de la M2: módulo nativo `neo_m3boss.c` (actor genérico, rutinas

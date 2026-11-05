@@ -52,6 +52,9 @@ typedef struct {
     uint16_t draw_palette;bool draw_flash;uint8_t draw_kind;
     neo_genv_t genv;
     neo_m2boss_env_t m2boss;     /* the Mission 2 boss's RAM (neo_m2boss.c) */
+#ifdef MSX_HAS_M3MID
+    neo_m3mid_env_t m3mid;       /* the Mission 3 mid-boss's layer 10E8C6 (neo_m3mid.c) */
+#endif
     const neo_script_env_t *se;  /* the script environment of this tick */
     int sub_owner;               /* generic actor running a sub-script (-1) */
     uint32_t convert;            /* 0B05FE/0B0626/0B0632 asked by the running generic actor */
@@ -304,6 +307,16 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
     /* Mission 3: 10D7B6 is the train (neo_train.c), the kernel's second
      * terrain object. */
     if (tag==0x10d7b6u && w->kernel.train_on) {*out=(neo_contact_parent_t){tag,w->kernel.train.x,w->kernel.train.y,w->kernel.train.prev_x,w->kernel.train.prev_y,0};return true;}
+#ifdef MSX_HAS_M3MID
+    /* Mission 3: the mid-boss's layer object 10E8C6 (neo_m3mid.c). */
+    if (tag==0x10e8c6u && w->m3layer_used) {
+        const uint8_t *b=w->m3layer;
+        #define L32(p) ((int32_t)((uint32_t)(p)[0]<<24|(uint32_t)(p)[1]<<16|(uint32_t)(p)[2]<<8|(p)[3]))
+        *out=(neo_contact_parent_t){tag,L32(b+0x14),L32(b+0x18),L32(b+0x1c),L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
+#endif
     /* Layer objects 10D7B6/10E8C6 scroll with the foreground once the middle
      * bank runs at full speed (camera >= 1023, docs/MISSION1_REST.md). */
     if (tag==0x10d7b6u || tag==0x10e8c6u) {*out=w->terrain;out->tag=tag;return true;}
@@ -334,6 +347,34 @@ static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id)
 static void g_camera_mode(void *ctx,uint8_t mode) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_set_auto(&t->w->camera,mode);}
 static void g_camera_rise(void *ctx,int32_t vy) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vy=vy;}
 static void g_shake(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_start(&t->w->camera);}
+static void g_shake_pulse(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_pulse(&t->w->camera);}
+#ifdef MSX_HAS_M3MID
+/* The mid-boss layer's drawing (neo_m3mid.c): 0C73CE draws d2 x d3 blocks
+ * of the layer's map from (d0, d1), 0A6D7C a patch (0C714E with the
+ * sub-map), at ring column d4 / row d5 (map row 9 - d5: +34 = 9, +32 = 0);
+ * the blocks go into the grid the renderer draws. */
+static void m3_blocks(neo_world_t *w,uint32_t map,const int16_t d[6]) {
+    const uint8_t *m=ga_rom(map);
+    if (!m) return;
+    uint32_t t=(uint32_t)m[0]<<24|(uint32_t)m[1]<<16|(uint32_t)m[2]<<8|m[3];
+    int mw=m[8]<<8|m[9],mh=m[10]<<8|m[11];
+    const uint8_t *tiles=ga_rom(t);
+    if (!tiles) return;
+    for (int c=0;c<d[2];c++) for (int r=0;r<d[3];r++) {
+        int sc=d[0]+c,sr=d[1]+r,gc=d[4]+c,gr=9-d[5]+r;
+        if (sc<0 || sr<0 || sc>=mw || sr>=mh || gc<0 || gc>=19 || gr<0 || gr>=10) continue;
+        const uint8_t *b=tiles+4*(sc*mh+sr);
+        w->m3grid[gc*10+gr]=(uint32_t)b[0]<<24|(uint32_t)b[1]<<16|(uint32_t)b[2]<<8|b[3];
+    }
+}
+static void g_m3_draw(void *ctx,uint32_t map,const int16_t d[6]) {
+    neo_world_t *w=((tick_t *)ctx)->w;w->m3layer_map=map;m3_blocks(w,map,d);
+}
+static void g_m3_patch(void *ctx,uint32_t submap,const int16_t d[6]) {
+    neo_world_t *w=((tick_t *)ctx)->w;w->m3patch_count++;m3_blocks(w,submap,d);
+}
+static void g_m3_clear(void *ctx) {neo_world_t *w=((tick_t *)ctx)->w;w->m3layer_map=0;w->m3patch_count=0;memset(w->m3grid,0,sizeof(w->m3grid));}
+#endif
 static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return false;t->w->swap_step=1;return true;}
 /* 012022: RAM 10B954 against 10B95C; the only call in Mission 1 is the
  * banners' constructor at camera 1600, where the trace reads 0x88 and 0x40
@@ -721,6 +762,14 @@ static int run_gactor(tick_t *t,unsigned i) {
     /* RAM the Mission 2 boss 026254 reads and writes (neo_m2boss.c): camera
      * 699A, point 69BA, the mission actor's speeds, the tower mode 10C354;
      * one frame per logic update (003B4C). */
+#ifdef MSX_HAS_M3MID
+    bool m3=neo_m3mid_routine(ga_l(a,0));
+    if (m3) {
+        neo_m3mid_env_t *m=&t->m3mid;
+        m->layer=w->m3layer;m->flags959=w->m3layer959;m->draw=g_m3_draw;m->patch=g_m3_patch;m->clear=g_m3_clear;
+        t->genv.m3mid=m;w->m3layer_used=true;
+    }
+#endif
     bool m2=neo_m2boss_routine(ga_l(a,0));
     if (m2) {
         neo_m2boss_env_t *m=&t->m2boss;
@@ -729,6 +778,9 @@ static int run_gactor(tick_t *t,unsigned i) {
         t->genv.m2boss=m;
     }
     ga_result_t r=neo_region_tick(a,&t->genv);
+#ifdef MSX_HAS_M3MID
+    if (m3) {w->m3layer959=t->m3mid.flags959;t->genv.m3mid=NULL;}
+#endif
     if (m2) {
         neo_m2boss_env_t *m=&t->m2boss;
         w->script.w69ba=m->point69ba;w->camera.speed_x=m->speed[0];w->camera.speed_y=m->speed[1];w->tower.mode=m->tower_mode;
@@ -1291,7 +1343,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * lands on it, kernel object TRAIN; docs/MISION3.md). */
     if (w->stage_camera_base==0x0B8968u) g->terrain_tag=0x10c72eu;
     g->flags=&w->ga_flags;w->ga_flags.camera_restart=w->camera.restart;   /* RAM 10E9D0 (0B9286) */
-    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;
+    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
@@ -1301,6 +1353,25 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * now (ROM 004C24 double buffer). */
     memcpy(w->last_boxes,w->boxes,sizeof(w->boxes));w->last_box_count=w->box_count;w->box_count=0;
     memcpy(w->last_regs,w->regs,sizeof(w->regs));w->last_reg_count=w->reg_count;w->reg_count=0;
+#ifdef MSX_HAS_M3MID
+    /* 0C82F4: with RAM 10E959 bit 7 the layer object 10E8C6 moves by its
+     * own +8/+C (01AC3C; the mid-boss writes them, neo_m3mid.c). */
+    if (w->m3layer_used && (w->m3layer959&0x80u)) {
+        uint8_t *b=w->m3layer;
+        #define L32(o) ((uint32_t)b[o]<<24|(uint32_t)b[(o)+1]<<16|(uint32_t)b[(o)+2]<<8|b[(o)+3])
+        #define P32(o,v) do {uint32_t v_=(v);b[o]=(uint8_t)(v_>>24);b[(o)+1]=(uint8_t)(v_>>16);b[(o)+2]=(uint8_t)(v_>>8);b[(o)+3]=(uint8_t)v_;} while (0)
+        P32(0,L32(0)+L32(8));P32(4,L32(4)+L32(0xc));
+        /* 01ABCC against the scene root. */
+        uint32_t d0=L32(0),d1=L32(4),d2=L32(0x14),d3=L32(0x18);
+        uint8_t d7=(uint8_t)(((uint32_t)(uint16_t)d1+(uint16_t)w->root.y>0xffffu)?1u:0u);
+        d7=(uint8_t)(d7<<1|(((uint32_t)(uint16_t)d0+(uint16_t)w->root.x>0xffffu)?1u:0u));
+        d0+=(uint32_t)w->root.x;d1+=(uint32_t)w->root.y;b[0x25]=(uint8_t)(d7|w->root.correction);P32(0x14,d0);P32(0x18,d1);
+        if (!b[0x24]) {b[0x24]=w->epoch;P32(0x1c,d0);P32(0x20,d1);}
+        else if (b[0x24]!=w->epoch) {b[0x24]=w->epoch;P32(0x1c,d2);P32(0x20,d3);}
+        #undef L32
+        #undef P32
+    }
+#endif
     /* End of the camera update (ROM 01406A): dynamic collision objects. */
     neo_kernel_dyn_begin(&w->kernel);
     for (int i=NEO_KDYN_COUNT-1;i>=0;i--) {

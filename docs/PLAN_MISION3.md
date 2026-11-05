@@ -40,3 +40,18 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   ares PASS con 208 ranuras, pero el piloto ciego ya no llega a la arena del
   jefe en 300 s. Faltan `097FCC`, `0569xx`, `084588` y el resto de la lista
   de MISION3.md «Paso 2».
+- **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
+  «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
+  (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se
+  crea desde el guion (`2DAE20`) y la capa `10E8C6` se dibuja, pero en la
+  consola solo con `make MSX_M3MID=1`: con el módulo el cartucho de la M3
+  queda 36 KB por debajo del mínimo de 208 ranuras (parada explícita; hace
+  falta mover programas y datos por misión a los paquetes).
+- **Paso 5: sin empezar** (vehículos `093C9A`/`0AC866`, la forma `+93 = 2`
+  —probablemente Marco gordo tras la comida, sin comprobar— y el arma E
+  `0DE4DA`): siguen como paradas explícitas (`weapon_stops`, constructores
+  externos). Visto: `093C9A` no es una entrada de `neo_tank.c` sino una
+  copia aparte del código del SV-001 (`093C9A..094xxx`: paletas
+  `0x87D/0x39D/0x87A`, torreta `03B4E0` con `+72 = 4`, sin la comprobación
+  del cartucho, rutinas `094A26/094B9A/0949EA/094872/094ABA/094CDA`): hace
+  falta traducirla y capturarla como el SV-001 (y caber en la RAM).

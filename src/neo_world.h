@@ -206,6 +206,18 @@ typedef struct {
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B
      * (neo_world_laser, neo_pweapon.c); beams made (01E19E). */
     uint8_t laser[16];unsigned lasers;
+#ifdef MSX_HAS_M3MID
+    /* Mission 3 mid-boss 0A4A94 (neo_m3mid.c): the layer object 10E8C6
+     * (RAM 10E8C6..10E94D) it sets up and moves, RAM 10E959 (bit 7: the
+     * camera moves the layer by its own +8/+C, 0C82F4), and what the
+     * renderer draws of it: the map 0C73CE drew (+2E then) and the patches
+     * 0A6D7C applied since (0C714E: sub-map, d0..d5). */
+    uint8_t m3layer[0x88];uint8_t m3layer959;bool m3layer_used;
+    uint32_t m3layer_map;unsigned m3patch_count;
+    /* The layer's 19 x 10 blocks as 0C714E left them (tile << 16 |
+     * attribute; column major), drawn by actor.c. */
+    uint32_t m3grid[19*10];
+#endif
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */

@@ -10,9 +10,10 @@ single stage 4 for --stage-seconds. Report: how far the camera list went
 (progress, camera x/y), the stage end if reached, every script record of an
 unported constructor (record and constructor addresses), the world's
 unsupported routines and missing draws. Last line: RESULT: PASS (the stage
-loaded and the camera moved past --min-progress) or FAIL."""
+loaded and the camera moved past --min-progress) or FAIL. MSX_XDOTOOL can
+override the detected system/workspace xdotool executable."""
 from pathlib import Path
-import argparse,re,subprocess,threading,time
+import argparse,os,re,shutil,subprocess,threading,time
 parser=argparse.ArgumentParser()
 parser.add_argument('--log',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
@@ -20,8 +21,17 @@ parser.add_argument('--stage-seconds',type=float,default=300)
 parser.add_argument('--min-progress',type=int,default=1000)
 parser.add_argument('--pilot',action='store_true',help='Start at the stage start: the reference route planner (msx_autopilot.h, with the platform 0B9286 as a floor) drives direction and jumps; the pad fires')
 parser.add_argument('--hop',action='store_true',help='the Mission 3 pad: right, fire and repeated jumps, never left')
-args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
-XD='/usr/bin/xdotool'
+args=parser.parse_args()
+override=os.environ.get('MSX_XDOTOOL')
+if override:
+    XD=shutil.which(override)
+    if not XD:parser.error('MSX_XDOTOOL does not name an executable: '+override)
+else:
+    XD=next((p for p in ('/usr/bin/xdotool','/workspace/emulator/root/usr/bin/xdotool')
+             if os.path.isfile(p) and os.access(p,os.X_OK)),None) or shutil.which('xdotool')
+    if not XD:parser.error('xdotool not found; set MSX_XDOTOOL to an installed executable')
+XD=str(Path(XD).resolve())
+args.output.mkdir(parents=True,exist_ok=True)
 def key(action,name):subprocess.run([XD,action,name],check=True)
 def snap(name):subprocess.run(['import','-window','root',str(args.output/(name+'.png'))],check=True)
 def log():return args.log.read_text(errors='replace')

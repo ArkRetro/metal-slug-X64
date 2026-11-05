@@ -1,0 +1,84 @@
+{
+  "status": "PASS",
+  "date_utc": "2026-11-05",
+  "base_branch": "ccr-09eb2f6b-8rwl8l",
+  "base_commit": "bea67fe072db933097623162d542f5fd1ca9c5ce",
+  "continuation_branch": "codex/continue-claude",
+  "source_ranges": {
+    "0b9748-0b97d8": "7d040ae2c385bd2ad60199cf99ad24808504c0f34e7cfd6ecbb087feac91aba7",
+    "0b9860-0b99e8": "1dad6fd043f613078e224bad85662ac1b58cb94664c8d123bf9131154f6c234a",
+    "01ab98-01ac38": "9a2a015de343ab00e2a654b6680b1982f332a3b941806f1fca8020d12d87d03b",
+    "01ad6e-01ad8c": "197852ffbe33ee27d24c1f27873733ad29882f1ee6aabe4aacfe4f3c98834b6a",
+    "01aeb0-01aeda": "f3907cff7d652155f4402b93d1f8072d2078ad05f2c2551b29ae817bb8c7deef",
+    "01af1a-01af9a": "6f0b578472d91200b05818b0af9849e0d4aedecde66c51abf7443646008a4b19",
+    "00409a-0040bc": "8a45505f9ee7cc351af834d42956c0ec76d6146c030c9d8f9999a7550a5bd841"
+  },
+  "p1_cpu_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+  "original_event_counts": {
+    "cases": 140,
+    "deletion_requests": 31,
+    "reward_requests": 45
+  },
+  "original_effect_counts": {
+    "cases": 140,
+    "deletion_requests": 31,
+    "reward_requests": 45,
+    "labels": 45,
+    "sounds": 45
+  },
+  "fixture_sha256": {
+    "data/m3_platform_reward_fixture.json": "7e2e09ea2799a8f22d7b20fd017d5264e270bde43e2482965099b4c5bf0e90dd",
+    "data/m3_platform_reward_effects_fixture.json": "8dafb504ef76a29ddc04bd340d4e9d7e6f3b0cd0b0447544f5f3097b6d1b2010"
+  },
+  "native_mips": {
+    "status": "PASS",
+    "emulator": "ares146",
+    "cases": 140,
+    "requests": 45,
+    "deletions": 31,
+    "rom_sha256": "6d232852a8ef2eaaacc8dc8c85ff61dc2da0abcf64cc55eaf7d511c1f9a71c05",
+    "log_sha256": "8d65f4f7d2746f37b57e32227169e40122626355cd50b7ca3b8474a6ca844ff1",
+    "fixture_sha256": "7e2e09ea2799a8f22d7b20fd017d5264e270bde43e2482965099b4c5bf0e90dd",
+    "effects_fixture_sha256": "8dafb504ef76a29ddc04bd340d4e9d7e6f3b0cd0b0447544f5f3097b6d1b2010",
+    "limits": "Controlled original event, BCD score and label-placement references on MIPS. Allocator/sound queue are stub boundaries in MAME; no full mission, visual, PCM or hardware performance claim."
+  },
+  "host_status": "PASS",
+  "ubsan_status": "PASS",
+  "check_core_status": "PASS",
+  "mips_dispatch_and_world_objects": "COMPILE_PASS",
+  "scope": "Original event/controller, BCD score, sound requests and label placement with controlled scene inputs. Native runtime dispatch and actual player view connected; not a full-game cartridge traversal.",
+  "reference_boundaries": [
+    "Injected actor/player/scene RAM, IRQ masked, not natural gameplay",
+    "First reference intercepts08CECC; second executes08CECC/057948/01ACBE and stubs only successful allocation00411C plus sound queue0120F8",
+    "Source004188 is observed at deletion entry, not actual node unlinking",
+    "Cartridge protection tail falls through to deletion on genuine hardware; native event returns deletion directly",
+    "No pool-exhaustion, subsequent label lifecycle, acoustic output or hardware timing claim"
+  ],
+  "environment": {
+    "n64_inst": "/workspace/claude-toolchains/package/opt/libdragon",
+    "libdragon_base": "e356bf3f56f7afbf7e5246329562f145965cfdfc",
+    "patch_commits": 2,
+    "installed_head": "4a46075ccf6b63f7a80d5bf2e5d05984d07f4dbc",
+    "original_sdk_unchanged": true
+  },
+  "full_campaign_status": "NOT_RUN: matching private maps/mission packs/pose catalog/captures absent in this checkout; old beta-work assets not substituted.",
+  "evidence_logs": {
+    "docs/m3-platform-reward-validation/original-event.log": "e9094efa4147706aac707d532ffcce7224d4e38bd7811185c60f4df530af047e",
+    "docs/m3-platform-reward-validation/original-effects.log": "8b59bee82f7c399b8903a8797c8d980e09d720a91411feac932461c1f192af90",
+    "docs/m3-platform-reward-validation/host.log": "c2a8d0a1402caa7a2cd2631b11d6572abf019cee2a73af25ceb4219b572b50ed",
+    "docs/m3-platform-reward-validation/ubsan.log": "a00229b4bd57975d38aed152ad7d483a641ff9b78d2cad7cd33a074956968759",
+    "docs/m3-platform-reward-validation/ares.log": "8d65f4f7d2746f37b57e32227169e40122626355cd50b7ca3b8474a6ca844ff1",
+    "docs/m3-platform-reward-validation/check-core.log": "5f9ea73a5184a7bdee05dec403b2a62fac897e01e9cfa25bf0f352a34257698d",
+    "docs/m3-platform-reward-validation/mips-integration-build.log": "89ab9ea4129e6d08cd1b4cb7c05920564ada049b85d452143fb63d79eb2254eb"
+  },
+  "source_sha256": {
+    "src/neo_m3reward.c": "a0708b88617472c10c80d20be4af6f5d89a287e62338f6a6c7770cbf35ecba7b",
+    "src/neo_gactor.h": "c0f3c3d21508c41b7222203ddb2f42fb7da081c125da14c780e2db0a7b8d1dee",
+    "src/neo_m3props.c": "bf4a7ce0f03d9fad803e496d09bafe053a80020ad8313e6c54fa7943f9f8d286",
+    "src/neo_world.c": "8601f009d57d6d69f4c4318ac135d998a1620e6cfb8c0d1d95fa59cce50beadd",
+    "tools/test_m3_reward.c": "2fcffa14acf286baf9cfe99fa9f14ace72dc93f8145ffe0ac9328f0db0bf8de5",
+    "tools/compile_m3_reward_fixture.py": "d7141b65d1b53e697db9ce464a660850de5dbe68ddfafcd6e6b7f8a18367fa77",
+    "tools/mame/probe_m3_platform_reward.py": "561bd476fcd70c0c2597f714e7a75cfaa034850350963b9357cf559aab79703c"
+  },
+  "evidence_log_normalization": "Removed trailing blank lines from stored MAME debug logs only; raw reference-file hashes remain in the fixtures."
+}

@@ -1,0 +1,3 @@
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -ffunction-sections -fdata-sections -Ibuild tools/test_m3_reward.c src/neo_m3reward.c src/neo_gactor.c src/neo_contact.c src/neo_item.c -Wl,--gc-sections -o build/host/m3-reward
+build/host/m3-reward
+PASS: M3 platform reward cases=140 requests=45 deletions=31; original score/sound/label effects

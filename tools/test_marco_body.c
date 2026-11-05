@@ -6,12 +6,14 @@
 #include <libdragon.h>
 #endif
 static unsigned selects,moves,animations;
+static marco_stance_table_t selected_stance;
+static uint16_t input_latch;
 static bool land,finish;
 static bool ms(void *c,marco_motion_table_t t,marco_motion_t *s,marco_animation_t *a) {
     (void)c;(void)t;(void)s;(void)a;++selects;return true;
 }
 static bool ss(void *c,marco_stance_table_t t,marco_stance_t *st,marco_motion_t *m,marco_animation_t *a) {
-    (void)c;(void)t;(void)st;(void)m;(void)a;++selects;return true;
+    (void)c;(void)st;(void)m;(void)a;selected_stance=t;++selects;return true;
 }
 static bool cs(void *c,marco_crouch_table_t t,marco_crouch_t *s,marco_animation_t *a) {
     (void)c;(void)t;(void)s;(void)a;++selects;return true;
@@ -33,6 +35,7 @@ static bool ma(void *c,marco_motion_t *s,marco_animation_t *a,bool *done) {
 static bool ca(void *c,marco_crouch_t *s,marco_animation_t *a,bool *done) {
     (void)c;(void)s;(void)a;++animations;*done=false;return true;
 }
+static bool latch(void *ctx,uint16_t mask) {(void)ctx;input_latch|=mask;return true;}
 static marco_body_t actor(marco_body_domain_t domain,uint16_t buttons) {
     marco_body_t b={.domain=domain};
     b.motion.player.upper.input.attributes=64;
@@ -54,7 +57,7 @@ int main(void) {
 #endif
     marco_motion_services_t mv={.select=ms,.move=mm,.animate=ma};
     marco_crouch_services_t cv={.select=cs,.move=cm,.animate=ca};
-    marco_stance_services_t sv={.select=ss};
+    marco_stance_services_t sv={.select=ss,.latch_input=latch};
     marco_animation_t a;marco_animation_reset(&a);
     marco_body_t idle=actor(MARCO_BODY_STANCE,32);idle.stance.mode=MST_IDLE;
     assert(marco_body_update(&idle,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
@@ -112,6 +115,31 @@ int main(void) {
     assert(b.domain==MARCO_BODY_STANCE && b.stance.mode==MST_IDLE);
     assert(b.motion.player.upper.mode==MUP_ACTIVE && b.motion.player.upper.aim92==1);
     assert(selects==1 && !moves && !animations);
+    /* ROM C1E44..C1EBA variants select their tested table and enter C1FA6
+     * in the same update. Idle scheduling must not create an external stop. */
+    static const marco_stance_mode_t variant_modes[]={MST_VARIANT_E44,MST_VARIANT_E54,
+        MST_VARIANT_E64,MST_VARIANT_E74,MST_VARIANT_E84,MST_VARIANT_EAA};
+    static const marco_stance_table_t variant_tables[]={MST_20DA,MST_20B6,
+        MST_2100,MST_2124,MST_203A,MST_2056};
+    for(unsigned i=0;i<sizeof(variant_modes)/sizeof(*variant_modes);i++) {
+        b=actor(MARCO_BODY_STANCE,0);b.stance.mode=variant_modes[i];marco_animation_reset(&a);
+        b.motion.player.upper.mode=MUP_ACTIVE;b.motion.player.upper.aim92=1;
+        assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+        assert(selected_stance==variant_tables[i] && selects==1 && moves==1 && animations==1);
+        assert(b.stance.mode==MST_IDLE && !b.motion.player.upper.aim92);
+        assert(b.motion.player.upper.mode==MUP_RESET && a.field50_tag==0x2d0aa8);
+    }
+    /* ROM C215E enters C2198 immediately; the body latch is distinct from
+     * upper-controller mask 2. Opening +76 permits a live run continuation. */
+    b=actor(MARCO_BODY_STANCE,16);b.stance.mode=MST_IDLE;
+    b.motion.player.field9d=255;b.motion.player.upper.input.flags9a=1;
+    input_latch=0;marco_animation_reset(&a);
+    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(b.motion.mode==MMR_MELEE && selected_stance==MST_2178);
+    assert(input_latch==1 && selects==1 && moves==1 && animations==1);
+    a.fields.field76=1;b.motion.player.upper.packed=8u<<16;
+    assert(marco_body_update(&b,&a,&mv,&cv,&sv)==MARCO_BODY_COMMON);
+    assert(b.motion.mode==MMR_RUN && selects==2 && moves==2 && animations==2);
     /* Missing stance support fails instead of silently dropping the transition. */
     b=actor(MARCO_BODY_CROUCH,0);b.motion.player.mode=MCR_IDLE;
     marco_animation_reset(&a);

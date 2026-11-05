@@ -1,0 +1,30 @@
+{
+  "status": "PASS",
+  "scope": "Native Mission-1 floor/roof adapter and exact player clipping-policy service; not the full 013968 collision kernel",
+  "walk": {
+    "original_states": 350,
+    "tolerance_q16_units": 2
+  },
+  "roof": {
+    "original_states": 24,
+    "bit_exact": true
+  },
+  "clipping": {
+    "source_range": "0x0138A0..0x013966",
+    "controlled_original_cases": 136,
+    "selected_checked_in_cases": 20,
+    "comparison": [
+      "requested horizontal displacement",
+      "requested vertical displacement",
+      "four boundary scratch bytes"
+    ],
+    "limits": "Isolated original service execution with injected inputs, not natural gameplay or full-kernel coverage",
+    "debug_sha256": "ba96f3bf0341a7303afa4bd118cf1167b9db404867ba898f8e3d5b9026a66b9c"
+  },
+  "open_boundaries": [
+    "Moving supports",
+    "Solid ceiling terrain",
+    "Actor push broadphase",
+    "Full original corner/edge resolver"
+  ]
+}

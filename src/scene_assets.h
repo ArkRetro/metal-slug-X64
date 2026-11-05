@@ -15,6 +15,12 @@ const scene_image_t *scene_frame(unsigned id,unsigned frame);
 const scene_image_t *scene_background_tile(unsigned row,unsigned col);
 const scene_map_cell_t *scene_map_cells(unsigned *count);
 const scene_image_t *scene_map_image(unsigned id);
+const scene_image_t *scene_map_cell_image(unsigned cell,unsigned phase);
+const scene_map_cell_t *scene_map_extra_cells(unsigned *count);
+/* Between frames only. Copy-on-write foreground tile replacement preserves
+ * transparent erasure and never modifies a shared cartridge cache page. */
+bool scene_replace_foreground_tile(int x,int y,const uint16_t rgba[256]);
+void scene_clear_replacements(void);
 unsigned scene_map_camera_max(void);
 unsigned scene_map_cell_size(void);
 uint32_t scene_map_backdrop(void);

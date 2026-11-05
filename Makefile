@@ -6,11 +6,12 @@ MSX_SCENARIO ?= campaign
 MSX_BACKGROUND ?= prerender
 MSX_HUD_CAPTURE ?= /workspace/research/mission1
 MSX_HUD_FRAME ?= 2100
+MSX_ROM ?= /workspace/research/roms/mslugx.zip
 export N64_INST
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
-HOST_GOALS := verify-decompilation check-recovered check-boot-select check-ram-descriptors check check-core check-cinematic preview-depth clean
+HOST_GOALS := verify-decompilation check-recovered check-boot-select check-ram-descriptors check-marco-live check check-core check-cinematic preview-depth clean
 ifeq ($(MAKECMDGOALS),)
 NEED_SDK := 1
 else ifneq ($(filter-out $(HOST_GOALS),$(MAKECMDGOALS)),)
@@ -18,7 +19,7 @@ NEED_SDK := 1
 endif
 ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
-N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d $(MSX_EXTRA_CFLAGS)
+N64_CFLAGS += -I$(BUILD_DIR) -Isrc -I$(BUILD_DIR)/retro25d $(MSX_EXTRA_CFLAGS)
 endif
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
@@ -122,20 +123,64 @@ $(BUILD_DIR)/frontend-codec-regression.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/missio
 $(BUILD_DIR)/frontend-codec-regression.dfs: $(BUILD_DIR)/mission1-romfs/frontend/frontend.json
 frontend-codec-regression.z64: N64_ROM_TITLE = "MSX FRONTEND CODEC"
 frontend-codec-regression.z64: $(BUILD_DIR)/frontend-codec-regression.dfs
-$(BUILD_DIR)/campaign-internal.elf: $(BUILD_DIR)/src/campaign_main.o $(BUILD_DIR)/src/frontend.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
+MARCO_LIVE_NAMES := player_runtime marco_campaign marco_campaign_world marco_campaign_sensing marco_campaign_queries marco_campaign_pistol marco_campaign_palette marco_campaign_renderer campaign_audio campaign_footprint_renderer marco_body marco_common marco_stance marco_motion marco_crouch marco_upper marco_ammo marco_controller marco_animation neo_animation neo_contact neo_hit neo_rng
+MARCO_LIVE_OBJECTS := $(addprefix $(BUILD_DIR)/src/,$(addsuffix .o,$(MARCO_LIVE_NAMES)))
+MARCO_HOST_NAMES := $(filter-out marco_campaign_renderer campaign_audio campaign_footprint_renderer,$(MARCO_LIVE_NAMES)) gameplay neo_collision neo_vehicle
+MARCO_HOST_SOURCES := $(addprefix src/,$(addsuffix .c,$(MARCO_HOST_NAMES)))
+.PHONY: check-marco-live
+check-marco-live: $(BUILD_DIR)/marco_campaign_assets.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/mission_collision.h
+	mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_player_runtime.c $(MARCO_HOST_SOURCES) -o $(BUILD_DIR)/host/player-runtime
+	$(BUILD_DIR)/host/player-runtime
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_pistol.c $(MARCO_HOST_SOURCES) -o $(BUILD_DIR)/host/campaign-pistol
+	$(BUILD_DIR)/host/campaign-pistol
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_melee.c src/marco_campaign_queries.c src/neo_hit.c -o $(BUILD_DIR)/host/campaign-melee
+	$(BUILD_DIR)/host/campaign-melee
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_queries.c src/marco_campaign_queries.c src/neo_hit.c -o $(BUILD_DIR)/host/campaign-queries
+	$(BUILD_DIR)/host/campaign-queries
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_world.c $(MARCO_HOST_SOURCES) -o $(BUILD_DIR)/host/campaign-world
+	$(BUILD_DIR)/host/campaign-world
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_sensing.c src/marco_campaign_sensing.c src/marco_ammo.c -o $(BUILD_DIR)/host/campaign-sensing
+	$(BUILD_DIR)/host/campaign-sensing
+	$(HOST_CC) $(HOST_CFLAGS) -Ibuild -Isrc tools/test_marco_campaign_palette.c src/marco_campaign_palette.c -o $(BUILD_DIR)/host/campaign-palette
+	$(BUILD_DIR)/host/campaign-palette
+$(BUILD_DIR)/campaign/actor.o: src/actor.c $(BUILD_DIR)/visual_config.h
+	@mkdir -p $(dir $@)
+	$(N64_CC) $(N64_CFLAGS) -DMSX_NATIVE_MARCO -MMD -c $< -o $@
+$(BUILD_DIR)/marco_campaign_assets.h $(BUILD_DIR)/marco_campaign_pose_meta.h $(BUILD_DIR)/marco-campaign-assets.stamp &: tools/build_marco_campaign_assets.py src/marco_stance.h src/marco_motion.h src/marco_crouch.h src/marco_upper.h $(MSX_ROM)
+	python3 tools/build_marco_campaign_assets.py --rom "$(MSX_ROM)" --mksprite $(N64_INST)/bin/mksprite
+$(BUILD_DIR)/src/marco_campaign.o: $(BUILD_DIR)/marco_campaign_assets.h
+$(BUILD_DIR)/src/marco_campaign_renderer.o: $(BUILD_DIR)/marco_campaign_pose_meta.h
+$(BUILD_DIR)/src/marco_campaign_world.o: $(BUILD_DIR)/contact_tables.h
+$(BUILD_DIR)/campaign_footprint_meta.h $(BUILD_DIR)/footprint_expected.h $(BUILD_DIR)/campaign-footprints.stamp &: tools/build_campaign_footprints.py filesystem/mission1/map.json filesystem/mission1/props.json $(MSX_ROM)
+	python3 tools/build_campaign_footprints.py --rom "$(MSX_ROM)" --mksprite $(N64_INST)/bin/mksprite
+$(BUILD_DIR)/src/campaign_footprint_renderer.o: $(BUILD_DIR)/campaign_footprint_meta.h
+$(BUILD_DIR)/campaign-internal.elf: $(BUILD_DIR)/src/campaign_main.o $(BUILD_DIR)/src/frontend.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/campaign/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(MARCO_LIVE_OBJECTS)
 $(BUILD_DIR)/campaign-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
-$(BUILD_DIR)/campaign-internal.dfs: $(BUILD_DIR)/mission1-romfs/frontend/frontend.json $(BUILD_DIR)/mission1-romfs/scene.pack
+$(BUILD_DIR)/campaign-internal.dfs: $(BUILD_DIR)/mission1-romfs/frontend/frontend.json $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/live-player.stamp
+$(BUILD_DIR)/mission1-romfs/live-player.stamp: $(BUILD_DIR)/marco-campaign-assets.stamp $(BUILD_DIR)/campaign-footprints.stamp romfs/effects/pistol.wav64 romfs/effects/body-10fc.wav64 romfs/effects/body-1146.wav64 romfs/effects/melee-10fb.wav64 romfs/effects/melee-10f9.wav64 romfs/effects/melee-1069.wav64 tools/stage_live_player.py
+	python3 tools/stage_live_player.py
 $(BUILD_DIR)/mission1-romfs/frontend/frontend.json: tools/stage_frontend.py filesystem/cinematics/frontend/frontend.json filesystem/cinematics/frontend/tutorial.msxc filesystem/cinematics/frontend/tutorial.wav64 filesystem/cinematics/frontend/select.msxc filesystem/cinematics/frontend/select.wav64 filesystem/cinematics/frontend/select-confirm.msxc filesystem/cinematics/frontend/select-confirm.wav64
 	python3 tools/stage_frontend.py
 campaign-internal.z64: N64_ROM_TITLE = "MSX CAMPAIGN TEST"
 campaign-internal.z64: $(BUILD_DIR)/campaign-internal.dfs
+
+# Internal actual-RDP equivalence check for persistent original footprint edits.
+$(BUILD_DIR)/tools/test_campaign_footprint_cow.o: CC = $(N64_CC)
+$(BUILD_DIR)/tools/test_campaign_footprint_cow.o: CFLAGS = $(N64_CFLAGS) -MMD
+$(BUILD_DIR)/tools/test_campaign_footprint_cow.o: $(BUILD_DIR)/campaign-footprints.stamp $(BUILD_DIR)/footprint_expected.h
+$(BUILD_DIR)/footprint-cow.elf: $(BUILD_DIR)/tools/test_campaign_footprint_cow.o $(BUILD_DIR)/src/campaign_footprint_renderer.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o
+$(BUILD_DIR)/footprint-cow.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
+$(BUILD_DIR)/footprint-cow.dfs: $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/live-player.stamp
+footprint-cow.z64: N64_ROM_TITLE = "MSX FOOTPRINT COW"
+footprint-cow.z64: $(BUILD_DIR)/footprint-cow.dfs
 filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64:
 	@echo "Run tools/pack_cinematic.py with the local golden entry capture; see docs/INTRO_AUDIO.md"
 	@exit 1
 
 .PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
-all: mslugx-explorer.z64
+all: campaign-internal.z64
 $(BUILD_DIR)/mslugx-explorer.elf: $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/hud.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
@@ -143,7 +188,9 @@ $(BUILD_DIR)/mslugx-explorer.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites
 $(BUILD_DIR)/background_mode.txt: FORCE
 	@mkdir -p $(BUILD_DIR)
 	@python3 -c 'from pathlib import Path; p=Path("$@"); s="$(MSX_BACKGROUND)\n"; p.write_text(s) if not p.exists() or p.read_text()!=s else None'
-$(BUILD_DIR)/scene_meta.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/build_prerender_background.py tools/export_marco.py $(BUILD_DIR)/background_mode.txt filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin
+filesystem/campaign-projectiles.json: tools/build_campaign_projectiles.py $(MSX_ROM)
+	python3 tools/build_campaign_projectiles.py --rom "$(MSX_ROM)"
+$(BUILD_DIR)/scene_meta.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/build_prerender_background.py tools/export_marco.py $(BUILD_DIR)/background_mode.txt filesystem/projectiles.json filesystem/campaign-projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin
 	python3 tools/pack_scene.py --background $(MSX_BACKGROUND)
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/hud_source.txt: FORCE
@@ -377,7 +424,7 @@ check-core: $(BUILD_DIR)/marco_environment_fixture.h $(BUILD_DIR)/marco_idle_fix
 	$(BUILD_DIR)/host/marco-common
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_environment.c src/marco_environment.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-environment
 	$(BUILD_DIR)/host/marco-environment
-check: check-core $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: check-core check-marco-live $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision

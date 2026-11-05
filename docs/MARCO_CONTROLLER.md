@@ -2,8 +2,16 @@
 
 El nuevo backend ejecuta el filtrado de entradas, la selección del programa y
 los pasos de cuerpo/arma como funciones C. Sus emisiones ya se conectan al RDP
-con anclajes originales y coordenadas de 9 bits. **Esto no completa el controlador
-del jugador ni sustituye aún el selector histórico de seis estados de campaña.**
+con anclajes originales y coordenadas de 9 bits. `campaign-internal.z64` ya lo
+conecta al mando y al mundo mediante `player_runtime.c` y `marco_campaign.c`,
+reemplazando el selector histórico en ese ejecutable. **Esto no completa el
+controlador del jugador:** la integración cubre la forma normal/pistola y
+mantiene pendientes otras armas/formas/acciones y el daño/muerte originales.
+Véase [el alcance actual de campaña](CAMPAIGN_INTEGRATION.md).
+
+Las secciones siguientes conservan las fronteras y la evidencia de cada corpus
+de recuperación. Una prueba grabada o sintética no adquiere cobertura original
+adicional por estar ahora conectada a una campaña con entradas en vivo.
 
 ## Verificado mediante ejecución
 
@@ -208,7 +216,8 @@ desplazarse, disparar, lanzar una granada y las transiciones posteriores.
 La prioridad de salto, giro, disparo y granada se conserva por estado; no se
 sustituye por una prioridad común. Las solicitudes de levantarse, saltar o caer
 son destinos explícitos que el controlador general debe despachar **en la misma
-actualización**. El procesamiento común `0x0C32F4` sigue pendiente de integración.
+actualización**. El procesamiento común `0x0C32F4` se conecta ahora mediante
+`marco_common_update`; este corpus aislado no valida por sí solo esa unión.
 
 Dos planes con entradas reales, sin escribir RAM, comprueban 227 y 416 bloques
 completos. En el segundo, los programas nativos reales producen los 414 dibujos
@@ -237,8 +246,8 @@ python3 tools/test_rng_ares.py marco-crouch-regression.z64 --suite crouch --crou
 `CAPTURA` se obtiene con `run_marco_catalog.py --upper-trace --body-trace
 --controller-trace --paired-trace --command-trace --logic-only --plan
 tools/mame/plans/marco-crouch.json`. Los ROM de regresión permanecen privados.
-La campaña activa aún no usa estos controladores; las transiciones generales,
-variantes, acciones especiales y su integración no están al 100%.
+La campaña interna ya usa estos controladores para la forma normal/pistola.
+Las variantes, acciones especiales y la integración completa siguen pendientes.
 
 ## Carrera, salto y unión de controladores
 
@@ -263,12 +272,12 @@ esa distinción con el punto real de salida de cada llamada. Los ensayos
 sintéticos adicionales comprueban salto desde agachado, agacharse corriendo,
 aterrizaje diferido y parada ante servicios ausentes.
 
-**Límite:** los resultados de colisión de `0x014594`, `0x0C109C` y `0x0143EE`
-siguen siendo entradas grabadas en el replay. La actualización de reposo, el
-ataque de cuerpo y el procesamiento común necesitan todavía su propietario nativo.
-Las entradas de incorporación/aterrizaje ya se resuelven como se describe abajo.
-El dispatcher devuelve `MARCO_BODY_EXTERNAL` en esas fronteras; no las disfraza
-de éxito ni sustituye todavía el controlador de seis estados de campaña.
+**Límite de este replay:** los resultados de colisión de `0x014594`, `0x0C109C`
+y `0x0143EE` son entradas grabadas. La campaña interna aporta ahora el subconjunto
+de terreno medido mediante `marco_campaign_world`, además de reposo, ataque
+cercano y procesamiento común nativos. Esa integración no convierte este replay
+en una validación del resolvedor genérico. Las fronteras no implementadas
+conservan una salida explícita de error; no se sustituyen por éxito.
 
 ## Contabilidad de munición y proyectiles
 
@@ -291,8 +300,9 @@ munición. Esta función tiene evidencia estática y ensayos sintéticos; falta
 capturar sus llamadas originales. El caller nativo recibe un objeto de jugador,
 en vez de reproducir el acceso indexado a RAM (el original exige índice <2).
 
-Las rutinas aún no están conectadas al allocator de proyectiles de campaña.
-No se ha completado la física, impacto, daño ni sonido de todas las armas.
+La campaña interna conecta estas rutinas a su propietario nativo de pistola,
+con creación y retirada de los proyectiles reales del prototipo. No se ha
+completado la física, impacto, daño ni sonido de todas las armas.
 
 ## Incorporación, aterrizaje y entradas al reposo
 
@@ -320,10 +330,10 @@ contenido no se sustituye por un efecto inventado. Tiene evidencia estática y
 pruebas sintéticas de orden y ausencia de servicio, no cobertura dinámica en
 esta captura. Lo mismo aplica a la rama de +86 >= 32 hacia `0x0C1E94`.
 
-**Pendiente:** ejecutar `0x0C1FA6` con sus consultas al mundo, ataque de cuerpo,
-procesamiento común y conexión al controlador de campaña. `MARCO_BODY_EXTERNAL`
-en el estado `MST_IDLE` exige resolver esa frontera en el mismo tick; no es un
-reposo implementado ni un resultado válido para mostrar otro frame.
+**Frontera de esta prueba:** no ejecuta `0x0C1FA6` con el mundo y el procesamiento
+común completos. La campaña interna ya los encadena para el camino admitido;
+una salida `MARCO_BODY_EXTERNAL` sigue exigiendo resolver la frontera en el
+mismo tick o detener el actor, sin mostrarla como reposo completado.
 
 Reproducción (capturas y ROM de prueba privadas):
 
@@ -345,12 +355,13 @@ los filtrados repetidos y sus efectos en +5F/+9A/+9B.
 
 El dispatcher conecta las salidas de reposo a carrera/salto/agachado en el mismo
 tick. `MSI_DRAW` señala la continuación en `0x0C2144`; `MSI_WORLD`, las consultas
-que empiezan en `0x0C2022`. `MSI_WORLD` sigue devolviendo `MARCO_BODY_EXTERNAL` y requiere completar
-la misma actualización, sin reintentar el filtrado ni presentar otro frame.
+que empiezan en `0x0C2022`. Estas consultas se resuelven en la misma actualización,
+sin reintentar el filtrado ni presentar otro frame.
 `MSI_DRAW` ya ejecuta los servicios de apoyo y animación en el orden de
 `0x0C2144..0x0C215A`, programa `MST_IDLE_FAST` al completar y devuelve
-`MARCO_BODY_COMMON`. La rama de ataque cercano también permanece externa.
-Esta comprobación no avanza animaciones ni sustituye el controlador de campaña.
+`MARCO_BODY_COMMON`. La campaña interna conecta también la solicitud original
+de ataque cercano, con respuesta de daño todavía provisional del enemigo.
+Esta comprobación aislada no avanza animaciones ni valida esa respuesta.
 Ver `marco-idle-validation.json`. No se publica un cartucho parcial.
 
 
@@ -370,8 +381,8 @@ Mantiene las consultas `0x018F24`, `0x018FFE`, `0x014850` y `0x0191FC`
 como servicios explícitos, además del RNG de 16 bits y disponibilidad de
 programas. Incrementa +96 con saturación, conserva los umbrales originales y
 el orden en que una decisión posterior puede sustituir la variante programada.
-Los destinos E84/EAA/E54/E44/E64/E74 son estados nativos pendientes, nunca
-punteros 68000 ejecutables. Se programan para el siguiente tick; los servicios
+Los destinos E84/EAA/E54/E44/E64/E74 son estados nativos, nunca punteros 68000
+ejecutables. Se programan para el siguiente tick; los servicios
 de apoyo y animación del tick actual siguen ejecutándose, y el fin de animación
 puede sustituir ese destino por `MST_IDLE_FAST`, como en C2154.
 
@@ -380,9 +391,9 @@ en host/ASan/UBSan y MIPS/ares para contador, RNG, prioridad y servicios ausente
 La prueba de cuerpo añade la secuencia de consultas -> apoyo -> animación.
 **No hay todavía una captura dinámica de estos nuevos servicios**; las 800
 entradas medidas anteriormente solo cubren el prefijo de decisión. Las consultas
-concretas al mundo, las rutinas de las variantes y el procesamiento común siguen
-pendientes de recuperación/integración. Esto no completa el controlador de
-campaña ni la demo jugable de la misión.
+de escena implementadas, variantes de reposo y procesamiento común se conectan
+ahora en la campaña interna. Los demás servicios y rutas siguen incompletos;
+esto no completa el controlador ni la demo jugable de la misión.
 
 ## Tramo final del procesamiento común
 
@@ -401,12 +412,11 @@ fronteras del contador, conservación de flags, protección y prioridad de muert
 `make marco-common-regression.z64` y `tools/test_marco_body_ares.py ROM
 --suite common --output RESULTADO_NUEVO` reproducen la prueba interna.
 
-No está conectado a `actor.c` ni sustituye el controlador provisional. Antes de
-usarlo deben implementarse C32F4..C3634 (upper, cambios de forma y paleta), los
-servicios de mundo y las rutinas de daño/muerte. También siguen pendientes
-variantes de reposo, acciones especiales, todas las armas y la unión del catálogo
-de programas y eventos al renderizador activo. **El controlador de Marco no
-está integrado al 100 % en campaña.**
+Está conectado a `actor.c` mediante el propietario del jugador y la secuencia
+común descrita abajo, con los servicios de la forma normal/pistola. Siguen
+pendientes las rutas originales de daño/muerte, acciones especiales, otras
+armas/formas y sus servicios/efectos. **El controlador de Marco no está integrado
+al 100 % en campaña.**
 
 ## Orden de entrada y paleta del procesamiento común
 
@@ -451,9 +461,9 @@ no se ejecutan direcciones de ROM.
 Las pruebas sintéticas en host, ASan/UBSan y MIPS/ares cubren cambios de forma,
 servicios ausentes, expiración del temporizador, salida inmediata y la secuencia
 común conectada con el upper nativo. No hay aún replay dinámico MAME de este
-bloque ni adaptación de todos sus servicios al mundo de campaña. Faltan rutinas
-de transición/daño/muerte, acciones especiales y unión del catálogo/renderizador.
-La campaña sigue usando el controlador provisional; no se declara integración
+bloque ni adaptación de todos sus servicios al mundo de campaña. El camino
+normal/pistola y su catálogo/renderizador ya están conectados. Faltan las demás
+transiciones, daño/muerte y acciones especiales; no se declara integración
 completa ni se publica otro cartucho parcial.
 
 

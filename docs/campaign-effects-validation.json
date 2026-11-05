@@ -1,0 +1,137 @@
+{
+  "source": "MAME 0.276 / supplied mslugx euro sound-board driver, controlled original token injection",
+  "isolation": "Matching no-token baseline is exactly zero across all stereo PCM frames; event PCM contains only 7 separated requested effect responses",
+  "control": "After frame200 original01222A queue sends are skipped, executing the original read-index increment at012232. Original Z80 restart byte03 is sent via actual maincpu soundlatch320000. Only verified token high/low byte pairs are added; no YM register/voice patches.",
+  "source_token_paths": {
+    "0x10F7": "01B782 -> 0120F8 -> 01209C -> 01222A; latch bytes10,F7",
+    "0x10FC": "Recovered body animation requests0120F8 token10FC; latch bytes10,FC",
+    "0x1146": "Recovered body animation requests0120F8 token1146; latch bytes11,46",
+    "0x10FB": "0C41CE tests class5 target type2; 0C41D8 ->0120F8 token10FB; latch bytes10,FB",
+    "0x10F9": "0C41CE class5 target type!=2; 0C41E4 ->0120F8 token10F9; latch bytes10,F9",
+    "0x1069": "0C41EE tests target class4; 0C41F6 ->0120F8 token1069; latch bytes10,69"
+  },
+  "melee_source_immediates_match_supplied_p1": true,
+  "baseline_pcm_frames": 2066880,
+  "baseline_nonzero_samples": 0,
+  "repeated_pistol": {
+    "first_audible_frames": 22999,
+    "second_audible_frames": 22998,
+    "waveform_correlation": 0.9976276237255162,
+    "interpretation": "Same peak and support, correlation>.99; raw samples differ with YM/output clock phase"
+  },
+  "processing": "Untouched stereo16bit PCM windows including original digital-zero margins; libdragon resamples48000->32000; WAV64 compression0, loopingfalse. No music separation/subtraction, normalization, filtering or synthesized replacement.",
+  "outputs": [
+    {
+      "token": "0x10F7",
+      "path": "rom:/effects/pistol.wav64",
+      "source_pcm_frames": [
+        486990,
+        510373
+      ],
+      "audible_frames": 22999,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 7012,
+      "source_wav_sha256": "726feadd0566d6e7bbeb55a1c2b4cdb486df933109cada1f8dd8cd9602c07c51",
+      "wav64_sha256": "9c2fec2fb8e6cbed26b3adbd046b7821d554bff9549190fe63d882f025a4d110",
+      "native_bytes": 62380
+    },
+    {
+      "token": "0x10FC",
+      "path": "rom:/effects/body-10fc.wav64",
+      "source_pcm_frames": [
+        730394,
+        752626
+      ],
+      "audible_frames": 21848,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 6507,
+      "source_wav_sha256": "140bd9db76ddbc1c7a8052eb86694d7feafefd2430334dadcf5b2c6d2020506e",
+      "wav64_sha256": "6c26608fc98522ab4e993bfd1da43eb7bc4774d00fa20d8a613d6471c3426cf3",
+      "native_bytes": 59308
+    },
+    {
+      "token": "0x1146",
+      "path": "rom:/effects/body-1146.wav64",
+      "source_pcm_frames": [
+        973514,
+        981357
+      ],
+      "audible_frames": 7459,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 12230,
+      "source_wav_sha256": "ba630d6a86cadd90f43c919cf5c09320ec71e1d5d87db30b21484fb841dcaa0e",
+      "wav64_sha256": "8a7e6eb97c5018f4783a676729e4f81ff66eeabd058dff8d7735c0a9e9dc3697",
+      "native_bytes": 20940
+    },
+    {
+      "token": "0x10FB",
+      "path": "rom:/effects/melee-10fb.wav64",
+      "source_pcm_frames": [
+        1460322,
+        1486003
+      ],
+      "audible_frames": 25297,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 9360,
+      "source_wav_sha256": "dcb862f81e08e75cc90fe94ddc5aac339902cac65ac2af8927dd4196346b569e",
+      "wav64_sha256": "d9a8c0642f297fa6a4413c689195d50b4a6d66b4683512926d07f57c30978169",
+      "native_bytes": 68508
+    },
+    {
+      "token": "0x10F9",
+      "path": "rom:/effects/melee-10f9.wav64",
+      "source_pcm_frames": [
+        1703436,
+        1721065
+      ],
+      "audible_frames": 17245,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 11896,
+      "source_wav_sha256": "dc2d97d320426bbb9212053b754e21dbbe662ed4edd14c7eb7d109ba3ad0acc6",
+      "wav64_sha256": "1f3e37150065535cfad7457562ac18ab4b4f5c96d57567c70715de01798336a9",
+      "native_bytes": 47036
+    },
+    {
+      "token": "0x1069",
+      "path": "rom:/effects/melee-1069.wav64",
+      "source_pcm_frames": [
+        1946843,
+        1974827
+      ],
+      "audible_frames": 27600,
+      "source_rate": 48000,
+      "native_rate": 32000,
+      "channels": 2,
+      "peak": 5495,
+      "source_wav_sha256": "570e77a786e272b3e9d41f7663897ff218813ef68ccd6d5641a671521022d0b2",
+      "wav64_sha256": "9ad9907f2a585194b14ecf1851dd968b1b3ad55ce315590b65314dfb856f8e5a",
+      "native_bytes": 74648
+    }
+  ],
+  "audio_rom_sha256": {
+    "250-m1.m1": "6a132323fa9f41ae0712644cc804e113257baf04b270c63f93dbd5193f02ffad",
+    "250-v1.v1": "4d54661225ed8a9c9fb004b7f500d868628bc96b50102bc0e7302114536a41d6",
+    "250-v2.v2": "e06228c8233596bb49488ad4980e595310f630d65c69b52696a08cf0d53b0e26",
+    "250-v3.v3": "36db7a32f8ffe30a5535ede71df2de92f2d3273c745891e9d21ecfd625eac3ee"
+  },
+  "validated_rom_sha256": "9678a794d64e6a519284d2fa95fc855064ca2c843634bfb529c0883b2e30d381",
+  "provenance": {
+    "/workspace/research/campaign-effects-isolated-melee-203/event/reference.wav": "d2d483d0b1cb5e38862734873d40306fc85b4bf1a94d656637151b9b0fb2cfaf",
+    "/workspace/research/campaign-effects-isolated-melee-203/baseline/reference.wav": "0a568d56a5567747a1606ada15ce7f4c47669676490d9b64c4f618ac6da903f2",
+    "/workspace/research/campaign-effects-isolated-melee-203/event/debug.log": "dbc757ffdf8da0f84144541e5afe3f1b836404449fe2dce4b67b6ef73d02d959",
+    "/workspace/research/campaign-effects-isolated-melee-203/baseline/debug.log": "ab317148aa50b1989f8b615eb973bd676f13e3ea8548e6311ec3be9677ba661e",
+    "/workspace/research/campaign-effects-isolated-melee-203/capture.lua": "ca848fc6b717c8457331f9c824db3dfeee83c465ce967c44ecfc1dd1e414f325",
+    "/workspace/metal-slug-X64/tools/build_campaign_effects.py": "6027d0a31cea5948115665fedb8a7db56bf5eb17bc1627e94ce08e554ba2527e",
+    "/workspace/toolchains/package/opt/libdragon/bin/audioconv64": "f72c4329a32c4bbcb5819deac9742004a7307bc1ddbb3e21a4c3ddd929e9d6cf"
+  }
+}

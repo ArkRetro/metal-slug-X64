@@ -29,8 +29,19 @@ bool marco_stance_enter(marco_stance_t *s,marco_motion_t *m,marco_animation_t *a
         goto idle_start;
     case MST_IDLE_START:goto idle_start;
     case MST_IDLE_FAST:goto idle_fast;
+    /* C1E44..C1EBA: all variants enter the same C1F24 reset/select path.
+     * Their tables are the exact same tables tested at the idle query sites. */
+    case MST_VARIANT_E44:table=MST_20DA;goto variant;
+    case MST_VARIANT_E54:table=MST_20B6;goto variant;
+    case MST_VARIANT_E64:table=MST_2100;goto variant;
+    case MST_VARIANT_E74:table=MST_2124;goto variant;
+    case MST_VARIANT_E84:table=MST_203A;goto variant;
+    case MST_VARIANT_EAA:
+        a->field50_tag=0x2d0aa8;marco_upper_reset(u);table=MST_2056;goto reset_select;
     default:goto fail;
     }
+variant:
+    a->field50_tag=0x2d0aa8;goto reset_select;
 idle_start: // C1EFA: TST.B/BGT uses signed byte semantics.
     s->field7b=255;a->field50_tag=0x2d0aa8;
     if(u->aim92 && u->aim92<128) goto idle_fast;

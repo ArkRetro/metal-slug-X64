@@ -1,0 +1,106 @@
+{
+  "status": "PASS",
+  "source_effect": "Original019432 -> B5870 -> C70FC; B53BE tilemap descriptor",
+  "source_graphics": "0x306780 (P2 physical offset0x206780)",
+  "source_tiles": 360,
+  "ci4_atlases": 82,
+  "atlas_rom_bytes": 181712,
+  "maximum_texture_upload": 2048,
+  "emulator": "ares146 / paraLLEl-RDP",
+  "rdp_samples": 12,
+  "independent_classic_reference_pixels": 1536,
+  "camera_values": [
+    0,
+    320,
+    640,
+    1024
+  ],
+  "checks": [
+    "All atlas source indices and ROM palettes validated during native load",
+    "All classic patch pixels match an independent cartridge-bitplane full-scene reference",
+    "Every pixel outside each16x16 scissor remains unchanged in classic and depth modes",
+    "Repeating each edit is idempotent in classic and depth modes"
+  ],
+  "framebuffers": [
+    {
+      "sample": 0,
+      "depth": false,
+      "camera": 0,
+      "crc32": "c4e06b72"
+    },
+    {
+      "sample": 1,
+      "depth": false,
+      "camera": 0,
+      "crc32": "048ff22b"
+    },
+    {
+      "sample": 2,
+      "depth": false,
+      "camera": 0,
+      "crc32": "c4e06b72"
+    },
+    {
+      "sample": 3,
+      "depth": false,
+      "camera": 320,
+      "crc32": "2dd2b793"
+    },
+    {
+      "sample": 4,
+      "depth": false,
+      "camera": 640,
+      "crc32": "2035c142"
+    },
+    {
+      "sample": 5,
+      "depth": false,
+      "camera": 1024,
+      "crc32": "2f8a1edc"
+    },
+    {
+      "sample": 0,
+      "depth": true,
+      "camera": 0,
+      "crc32": "74f98adc"
+    },
+    {
+      "sample": 1,
+      "depth": true,
+      "camera": 0,
+      "crc32": "b4961385"
+    },
+    {
+      "sample": 2,
+      "depth": true,
+      "camera": 0,
+      "crc32": "74f98adc"
+    },
+    {
+      "sample": 3,
+      "depth": true,
+      "camera": 320,
+      "crc32": "7f57719b"
+    },
+    {
+      "sample": 4,
+      "depth": true,
+      "camera": 640,
+      "crc32": "7f87de22"
+    },
+    {
+      "sample": 5,
+      "depth": true,
+      "camera": 1024,
+      "crc32": "5dcbc92d"
+    }
+  ],
+  "rom_sha256": "44887fe88119713742b12024530a6517743ee1c2ef55e61d1812062720758c41",
+  "asset_metadata_sha256": "02312acdcb558bd459e33d9c0ebb565ad9444422f7d652d5384a9f2b31578f5d",
+  "log_sha256": "b47cf472793ec97281638f3225e5546e1dfd4680f7eb22acc8b390cefc30241a",
+  "limits": [
+    "Synthetic resource/render verification only; live footprint guards,timing,and32x32 window ownership are tested by the player runtime separately.",
+    "Depth samples check scissor boundaries and idempotence; independent pixel-color reference is classic-only.",
+    "Map coordinates cover the existing recovered Mission1 region; no claim of complete Mission1 native scene logic."
+  ]
+}

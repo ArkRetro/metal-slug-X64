@@ -27,15 +27,20 @@ def main():
     xdotool='/workspace/emulator/root/usr/bin/xdotool';process=None
     def key(action,value):
         subprocess.run([xdotool,action,value],env=env,check=True)
-    def wait(marker,seconds=90):
+    def read_log():
+        text=(out/'ares.log').read_text()
+        assert not re.search(r'ASSERTION FAILED|Assertion failed|RSP CRASH|MSX ERROR:|MSX PLAYER (STOP|DRAW missing|SOUND unsupported|FOOTPRINT missing)',text),text[-3000:]
+        return text
+    def wait(marker,seconds=90,start=0):
         deadline=time.monotonic()+seconds
         while time.monotonic()<deadline:
-            text=(out/'ares.log').read_text()
-            assert all(s not in text for s in ('ASSERTION FAILED','Assertion failed','RSP CRASH','MSX ERROR:')),text[-3000:]
-            if marker in text:return text
+            text=read_log()
+            if marker in text[start:]:return text
             assert process.poll() is None,'ares exited'
             time.sleep(.05)
-        raise AssertionError('Timeout: '+marker)
+        raise AssertionError('Timeout: '+marker+'\n'+read_log()[-3000:])
+    def tap(value,hold=.12):
+        key('keydown',value);time.sleep(hold);key('keyup',value)
     def screenshot(name):
         ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/name)
     with (out/'xvfb.log').open('w') as xlog:
@@ -56,11 +61,11 @@ def main():
                 key('keydown','a')
                 wait('MSX FRONTEND select waiting character=MARCO')
                 time.sleep(.25)
-                text=(out/'ares.log').read_text()
+                text=read_log()
                 assert 'MSX FRONTEND select confirmed' not in text,'Held input bypassed confirmation gate'
                 key('keyup','a');time.sleep(.15)
                 key('keydown','Right');time.sleep(.2);key('keyup','Right')
-                assert 'MSX FRONTEND select confirmed' not in (out/'ares.log').read_text()
+                assert 'MSX FRONTEND select confirmed' not in read_log()
                 screenshot('soldier-select-marco.png')
                 key('keydown','a');time.sleep(.2);key('keyup','a')
                 wait('MSX FRONTEND select confirmed character=MARCO')
@@ -69,12 +74,33 @@ def main():
                 wait('MSX first frame ready');time.sleep(.15)
                 screenshot('playable-handoff.png')
                 assert f"MSX mission handoff x={entry['handoff']['x']} y={entry['handoff']['y']}" in text
-                # Verify actual handoff accepts native movement/jump/fire inputs.
-                key('keydown','Right');key('keydown','b');key('keydown','a');time.sleep(.6);key('keyup','a')
-                text=wait('MSX run-fire');wait('MSX landed')
+                # Recovered Marco is semiautomatic; the historical controller
+                # repeats while B is held. Exercise each path's real inputs.
+                text=read_log();native_player='MSX PLAYER state ' in text
+                handoff_start=len(text)
+                key('keydown','Right');key('keydown','a')
+                if native_player:
+                    time.sleep(.3);key('keyup','a');tap('b')
+                    wait('MSX jump',start=handoff_start)
+                    wait('MSX PLAYER SOUND token=10f7',start=handoff_start)
+                    text=wait('MSX landed',start=handoff_start)
+                    states=re.findall(r'MSX PLAYER state .* draws=(\d+) x=(-?\d+) y=(-?\d+)',text[handoff_start:])
+                    assert states and all(int(draws)>0 for draws,x,y in states),'No live player draws after handoff'
+                    assert max(int(x) for draws,x,y in states)>entry['handoff']['x']//65536,'Native player did not move after handoff'
+                else:
+                    key('keydown','b');time.sleep(.6);key('keyup','a')
+                    wait('MSX run-fire',start=handoff_start)
+                    text=wait('MSX landed',start=handoff_start)
                 region=None
                 if args.region:
-                    text=wait('MSX observed region end',180)
+                    if native_player:
+                        deadline=time.monotonic()+180
+                        while time.monotonic()<deadline:
+                            text=read_log()
+                            if 'MSX observed region end' in text[handoff_start:]:break
+                            tap('b');time.sleep(.12)
+                        else:raise AssertionError('Native region traversal timeout\n'+read_log()[-3000:])
+                    else:text=wait('MSX observed region end',180,start=handoff_start)
                     end=re.search(r'MSX observed region end camera=(\d+) x=(\d+)',text);assert end
                     assert int(end[1])==1920 and int(end[2])==2212*65536-1
                     assert all(marker in text for marker in ('MSX defeated=3','MSX camera raised=','MSX middle bank full speed='))
@@ -86,6 +112,7 @@ def main():
                                 sampled_cpu_us=[int(cpu) for cpu,m,e in cache],limits='Existing three provisional guards and camera-1920 limit; not full Mission 1, original AI or hardware performance.')
                     time.sleep(.1);screenshot('partial-region-end.png')
                 key('keyup','Right');key('keyup','b')
+                text=read_log()
             results=[]
             for name,source in fixture.items():
                 start=re.search(r'MSX FRONTEND '+re.escape(name)+r' start frames=(\d+) crc=([0-9a-f]+) audio=(\d+)',text)
@@ -98,7 +125,8 @@ def main():
                     assert int(end[2])==source['frames'] and int(end[3])==0,(name,'presentation dropped source frames',end.groups())
                 results.append(dict(name=name,source_frames=source['frames'],presented=int(end[2]),dropped=int(end[3]),skipped=skipped,first_crc32=start[2],last_crc32=end[5],audio_active=True))
             sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
-            result=dict(status='PASS',emulator='ares 146',segments=results,held_confirm_rejected=True,marco_confirm=True,native_handoff=True,rom_sha256=sha(args.rom),log_sha256=sha(out/'ares.log'),frontend_provenance=assets['provenance'],limits='Tutorial and Marco-only selection/confirmation; no other playable characters, complete campaign, acoustic recording or hardware performance claim.')
+            result=dict(status='PASS',emulator='ares 146',segments=results,held_confirm_rejected=True,marco_confirm=True,native_handoff=True,player_controller='recovered-native' if native_player else 'historical',rom_sha256=sha(args.rom),log_sha256=sha(out/'ares.log'),frontend_provenance=assets['provenance'],limits='Tutorial and Marco-only selection/confirmation; no other playable characters, complete campaign, acoustic recording or hardware performance claim.')
+            if native_player:result['native_pistol_sounds']=text.count('MSX PLAYER SOUND token=10f7')
             if region:result['partial_region']=region
             (out/'validation.json').write_text(json.dumps(result,indent=2)+'\n');print(result)
         finally:

@@ -1,3 +1,20 @@
+Live player integration update — 2026-11-05: `campaign-internal.z64` now uses
+the recovered native Marco body/common/stance/motion/crouch/weapon pipeline
+with live controls and cartridge animation programs, replacing the historical
+six-state selector in this target. Normal Marco/pistol supports turning,
+jumping, crouching, cardinal aiming and original melee requests; enemy damage
+responses remain provisional. The final ares partial-region run reached camera
+1920 with three provisional guards defeated, 114 pistol sound events, 249 state
+changes and zero texture-cache misses. This is not all weapons/forms/actions,
+original damage/death, enemy AI or complete Mission 1. No new demo is published.
+See CAMPAIGN_INTEGRATION.md for controls and reproduction.
+
+Foreground edits now use private RAM copies of affected pages rather than
+recomposing footprint tiles every frame. The ares regression matches 5,377,536
+framebuffer pixels across 22 samples, including transparent erasure, shadows,
+multiple edits, reset and unchanged source pages. This verifies the rendering
+change, not hardware FPS or campaign completion.
+
 Campaign integration update — 2026-11-04: the internal campaign now connects
 original HOW TO PLAY, a Marco-only confirmation screen and confirmation movie
 to the existing title/parachute/native handoff. Terrain/buildings/props use
@@ -131,22 +148,25 @@ Current priority from the user: complete **all Marco animations** before further
 level expansion. This is not complete: see [Marco animation recovery](MARCO_ANIMATIONS.md).
 The observed-descriptor renderer, script primitives and paired body/weapon helper
 are validated separately (2,452 whole calls, 2,574 draws and 152 effect requests
-match MAME in host C and MIPS/ares);
-the active campaign still uses the historical six-state visual selector.
+match MAME in host C and MIPS/ares). The internal campaign now binds those
+components through its live normal-form/pistol controller; the published
+snapshot retains the historical six-state visual selector.
 
 The [native Marco input/selection/render pipeline](MARCO_CONTROLLER.md) now
 matches original calls and actual RDP compositions in two captured trajectories.
 The observed resource catalog has 178 descriptors. Combat verification follows
 actual queue publications rather than assuming a fixed physical-frame delay.
-Outer controller transitions, remaining variants and campaign integration are
-still incomplete; none of the internal regression ROMs is a demo delivery.
+Remaining weapons/forms/actions, original damage/death and full world-service
+coverage are still incomplete; none of the internal regression ROMs is a demo
+delivery. The two captured trajectories retain their own limited proof scope.
 
 Whole upper-controller updates now match 1,450 reference calls and 642 combat
 calls; their native animation programs pass in ares. Crouch-body transitions
 match another 643 blocks across two input plans; the turn/movement plan also
 passes in ares with 414 actual native animation draws and 38 effect requests.
-These are recorded-boundary regressions. Standing/air/common body processing,
-all weapon/forms coverage and active campaign integration remain incomplete.
+These are recorded-boundary regressions. Standing/air/common body processing
+is now connected for the supported normal-form/pistol campaign path; complete
+weapon/forms coverage and the original damage/death routines remain pending.
 See [Marco controller recovery](MARCO_CONTROLLER.md).
 
 The latest user instruction supersedes the earlier complete-campaign-beta gate:
@@ -165,8 +185,9 @@ The noninteractive parachute entry is now integrated with audio in an internal
 N64 target. All 230 source frames are validated and presented without omissions
 in ares, followed by a measured grounded handoff and working controls in the
 existing partial region. Native pixel CRCs and three actual RDP framebuffer CRCs
-match. The complete title/tutorial/select presentation, gameplay sound effects
-and continuous music remain pending. See `docs/MISSION_ENTRY.md` and
+match. The internal campaign now connects title/tutorial/Marco selection and
+six original player effects. Continuous campaign music and the remaining
+gameplay audio remain pending. See `docs/MISSION_ENTRY.md` and
 `docs/INTRO_AUDIO.md`. Reviewed prototype fixes from PR #2 and SDK-free host CI
 are adapted in this branch; see `docs/PR2_REVIEW.md`.
 

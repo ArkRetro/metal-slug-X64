@@ -1,0 +1,58 @@
+{
+  "source": "MAME 0.276, supplied mslugx ROM/euro BIOS; scheduled joypad input and read-only breakpoints",
+  "cases": 134,
+  "cardinal_angles": [
+    0,
+    64,
+    128,
+    192
+  ],
+  "successive_projectile_steps": 633,
+  "allocation_to_first_step_video_ticks": 2,
+  "projectile_actor_step_video_ticks": 2,
+  "allocation_to_first_draw_video_ticks": 4,
+  "visible_children": 84,
+  "original_draws": 625,
+  "initializer_sound_calls": 134,
+  "initializer_sound_token": "0x10F7",
+  "sound_handler": "0x0120F8 validates the token; 0x012182..0x01218C sends 10,F7 via 0x01209C",
+  "cardinal_graphics": [
+    {
+      "angle": 0,
+      "descriptor": "0x1c7270",
+      "flips": 0
+    },
+    {
+      "angle": 64,
+      "descriptor": "0x1c7298",
+      "flips": 1
+    },
+    {
+      "angle": 128,
+      "descriptor": "0x1c7270",
+      "flips": 3
+    },
+    {
+      "angle": 192,
+      "descriptor": "0x1c7298",
+      "flips": 2
+    }
+  ],
+  "scalar_q16": 1048576,
+  "callback_target": "0x0C4372",
+  "initializer": "0x01B782",
+  "provenance": {
+    "/tmp/marco-pistol-art-trace/debug.log": "16ca9b7203267aa463bc24527c3a6860e9cff1a5b6c55b6c87f6daa51afd066f",
+    "/tmp/marco-pistol-art-trace/program-fixed.bin": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "/workspace/research/marco-ammo-calls-53/plan.lua": "477382139e346daea4bba829dfa58ab9c1ac48d526f49b8a05f0a62db316c14a",
+    "/workspace/metal-slug-X64/tools/mame/probe_marco_pistol.lua": "38375b579b888d923c0669b0587736a3fb15943e2a8cd09e329dcdbd59340f48",
+    "/workspace/metal-slug-X64/data/original-pistol-trace.csv": "25257d4de331c2cdc782ca446a60f86fecd65b61258869f2f7dd518e3400ac3c"
+  },
+  "selected_source_ranges_match_supplied_rom": true,
+  "limits": [
+    "Normal form, weapon kind zero. Original cardinal muzzle/velocity initialization and captured actor-call cadence are verified.",
+    "Other weapons/forms, damage values, hit shapes, impact animations, audio playback and the complete original projectile collision/scheduler remain outside this backend.",
+    "World storage capacity and world collisions are native scene services; the original pistol cap is FF.",
+    "The CSV is host-test evidence only and is never read by campaign runtime."
+  ]
+}

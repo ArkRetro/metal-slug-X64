@@ -64,7 +64,16 @@ static bool swept_hit(int previous,int current,int half,int left,int right) {
     return hi+half>=left && lo-half<=right;
 }
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
-    if (g->complete) return;
+    const msx_game_input_t input={.direction=direction,.jump=jump,.fire=fire};
+    msx_game_update_controlled(g,&input,NULL,NULL);
+}
+void msx_game_update_controlled(msx_game_t *g,const msx_game_input_t *input,
+    msx_player_step_t player_step,void *context) {
+    int direction=input->direction;bool jump=input->jump,fire=input->fire;
+    if (g->complete || g->player_failed) return;
+    uint16_t held=(uint16_t)((input->up?1:0)|(input->down?2:0)|
+        (direction<0?4:direction>0?8:0)|(fire?16:0)|(jump?32:0)|(input->grenade?64:0));
+    g->player_pressed|=(uint16_t)(input->pressed|(held&~g->player_previous));g->player_previous=held;
     g->ticks++;g->moving=direction!=0;
     if (g->invulnerable) g->invulnerable--;
     if (g->vehicle_flash) g->vehicle_flash--;
@@ -76,6 +85,12 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         unsigned events=neo_vehicle_step(&g->vehicle);g->vehicle_events|=events;
         if (events&NEO_VEHICLE_STAMP)
             g->wreckage_cells=neo_collision_vehicle_wreckage(g->vehicle.x,g->vehicle.y,g->vehicle.flags);
+        if (player_step) {
+            msx_game_input_t latched=*input;latched.jump|=g->jump_pending;
+            latched.pressed=g->player_pressed;g->player_pressed=0;
+            g->jump_pending=false;
+            if (!player_step(context,g,&latched)) {g->player_failed=true;return;}
+        } else {
         if (g->jump_pending && g->grounded) {
             g->grounded=false;g->velocity_y=-NEO_JUMP_VY;g->air_ticks=0;
         }
@@ -93,13 +108,14 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         g->x=clamp(body.x,(g->camera+28)*MSX_UNIT,MSX_END_X);
         if (g->x!=body.x) body.vx=0;
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
+        }
     }
     int player=g->x/MSX_UNIT;
     if (player>=640 && g->kills>=1) g->checkpoint=640;
     if (g->cooldown) g->cooldown--;
     if (g->shooting && ++g->shot_age>=8) g->shooting=false;
-    if (fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
-        g->bullets[i]=(msx_bullet_t){player+g->facing*24,168+g->y/MSX_UNIT,g->facing,true};
+    if (!player_step && fire && !g->cooldown) for (unsigned i=0;i<MSX_BULLETS;i++) if (!g->bullets[i].active) {
+        g->bullets[i]=(msx_bullet_t){.x=player+g->facing*24,.y=168+g->y/MSX_UNIT,.direction=g->facing,.active=true};
         g->cooldown=8;g->shot_age=0;g->shooting=true;break;
     }
     msx_enemy_t *e=&g->enemy;
@@ -110,13 +126,26 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (abs(e->x-player)>64 && !(g->ticks&1)) e->x+=e->facing;
         if (e->cooldown) e->cooldown--;
         if (!e->cooldown) for (unsigned i=0;i<MSX_ENEMY_BULLETS;i++) if (!g->enemy_bullets[i].active) {
-            g->enemy_bullets[i]=(msx_bullet_t){e->x+e->facing*16,168+msx_ground_offset(e->x*MSX_UNIT)/MSX_UNIT,e->facing,true};
+            g->enemy_bullets[i]=(msx_bullet_t){.x=e->x+e->facing*16,.y=168+msx_ground_offset(e->x*MSX_UNIT)/MSX_UNIT,.direction=e->facing,.active=true};
             e->cooldown=90;break;
         }
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;
-        int previous=b->x;b->x+=b->direction*6;
+        int previous=b->x;
+        if (b->native) {
+            if (g->ticks-b->born_tick<2) continue; // Original child starts two VI after creation.
+            if (!(g->ticks&1)) {b->world_x+=b->vx;b->world_y+=b->vy;}
+            b->x=b->world_x/MSX_UNIT;b->y=248-b->world_y/MSX_UNIT;
+            /* Native viewport lifetime, pending recovery of the complete
+             * original child scheduler/culling routine. Vertical shots must
+             * release their real slot after leaving the view, just as
+             * horizontal shots do. Keep the source child's four-VI art delay
+             * before applying this provisional 32-pixel viewport margin. */
+            if (g->ticks-b->born_tick>=4 && (b->y< -32 || b->y>240+32)) {
+                b->active=false;continue;
+            }
+        } else b->x+=b->direction*6;
         int enemy_feet=192+msx_ground_offset(e->x*MSX_UNIT)/MSX_UNIT;
         if (b->y>=192+msx_ground_offset(b->x*MSX_UNIT)/MSX_UNIT) b->active=false;
         else if (e->alive && swept_hit(previous,b->x,4,e->x-10,e->x+10) && b->y+2>=enemy_feet-38 && b->y<=enemy_feet) {
@@ -131,8 +160,13 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
         msx_bullet_t *b=&g->enemy_bullets[i];if (!b->active) continue;
         int previous=b->x;b->x+=b->direction*4;
         int feet=192+g->y/MSX_UNIT;
+        int left=g->x/MSX_UNIT-9,right=g->x/MSX_UNIT+9,top=feet-(g->crouched?18:34),bottom=feet;
+        if (g->player_hitbox.valid) {
+            left=g->player_hitbox.x;right=left+g->player_hitbox.width;
+            top=g->player_hitbox.y;bottom=top+g->player_hitbox.height;
+        }
         if (b->y>=192+msx_ground_offset(b->x*MSX_UNIT)/MSX_UNIT) b->active=false;
-        else if (swept_hit(previous,b->x,3,g->x/MSX_UNIT-9,g->x/MSX_UNIT+9) && b->y+2>=feet-34 && b->y<=feet) {
+        else if ((!player_step || g->player_hitbox.valid) && swept_hit(previous,b->x,3,left,right) && b->y+2>=top && b->y<=bottom) {
             b->active=false;damage(g,b->x-b->direction*4);
         } else if (b->x<g->camera-32 || b->x>g->camera+352) b->active=false;
     }

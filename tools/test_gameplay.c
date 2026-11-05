@@ -56,13 +56,13 @@ int main(void) {
     int final_x=g.x;msx_game_update(&g,-1,true,true);assert(g.x==final_x);
     msx_game_init(&g);g.x=640*MSX_UNIT;g.y=msx_ground_offset(g.x);g.checkpoint=640;
     g.health=1;g.invulnerable=0;g.enemy.alive=false;
-    g.enemy_bullets[0]=(msx_bullet_t){g.x/MSX_UNIT+12,168+g.y/MSX_UNIT,-1,true};
+    g.enemy_bullets[0]=(msx_bullet_t){.x=g.x/MSX_UNIT+12,.y=168+g.y/MSX_UNIT,.direction=-1,.active=true};
     msx_game_update(&g,0,false,false);
     assert(g.deaths==1 && g.health==3 && g.x==640*MSX_UNIT && g.invulnerable);
     assert(g.camera==496);
     for (unsigned i=0;i<MSX_ENEMY_BULLETS;i++) assert(!g.enemy_bullets[i].active);
     msx_game_init(&g);g.x=200*MSX_UNIT;g.y=msx_ground_offset(g.x);g.camera=56;g.enemy.alive=false;
-    g.enemy_bullets[0]=(msx_bullet_t){212,168+g.y/MSX_UNIT,-1,true};
+    g.enemy_bullets[0]=(msx_bullet_t){.x=212,.y=168+g.y/MSX_UNIT,.direction=-1,.active=true};
     msx_game_update(&g,0,false,false);
     assert(g.health==2 && g.x==180*MSX_UNIT && g.y==msx_ground_offset(g.x));
     for (unsigned i=0;i<100;i++) msx_game_update(&g,0,false,false);

@@ -1,0 +1,105 @@
+{
+  "source": "Supplied original cartridge P1 initializer, P2 pose/descriptor/palette data, C-ROM",
+  "sound_token": 4343,
+  "palette_source_descriptor": 514,
+  "palette_source_address": 2113600,
+  "provenance": {
+    "rom_sha256": "9678a794d64e6a519284d2fa95fc855064ca2c843634bfb529c0883b2e30d381",
+    "fixed_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+    "bank_sha256": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc",
+    "crom_sha256": "e25c05202f3d5f0d9c1a9087f6244389eafc2e305be13f9f159195e88021ba61"
+  },
+  "limits": "Normal pistol cardinal artwork only. Original flags are baked into pens; preserve per-direction pivot. No rotated horizontal substitute, playback timeline, impact art or weapon variant is included.",
+  "directions": [
+    {
+      "angle": 0,
+      "source_program": 2277678,
+      "source_pose": 2277684,
+      "source_descriptor": 1864304,
+      "source_flags": 64,
+      "code": 183251,
+      "width": 16,
+      "height": 16,
+      "pivot": [
+        8,
+        8
+      ],
+      "bounds": [
+        3,
+        5,
+        13,
+        11
+      ],
+      "indices_sha256": "2e31dd03af4e8109f6d8e6f4310536e57e3366e08487fb54d52e4c9df9700d45",
+      "opaque_pixels": 44
+    },
+    {
+      "angle": 64,
+      "source_program": 2277678,
+      "source_pose": 2277716,
+      "source_descriptor": 1864344,
+      "source_flags": 68,
+      "code": 183255,
+      "width": 16,
+      "height": 16,
+      "pivot": [
+        9,
+        8
+      ],
+      "bounds": [
+        5,
+        3,
+        11,
+        13
+      ],
+      "indices_sha256": "5be1b619213ab12cff9b60adec94dc08d3f73cc5ee4eb5faa0c88460d0615eb7",
+      "opaque_pixels": 44
+    },
+    {
+      "angle": 128,
+      "source_program": 2277678,
+      "source_pose": 2277748,
+      "source_descriptor": 1864304,
+      "source_flags": 76,
+      "code": 183251,
+      "width": 16,
+      "height": 16,
+      "pivot": [
+        9,
+        9
+      ],
+      "bounds": [
+        3,
+        5,
+        13,
+        11
+      ],
+      "indices_sha256": "64fa7f405112d234feed86460412a6aaef94fe5084ba61499d5515b8d48f4279",
+      "opaque_pixels": 44
+    },
+    {
+      "angle": 192,
+      "source_program": 2277678,
+      "source_pose": 2277780,
+      "source_descriptor": 1864344,
+      "source_flags": 72,
+      "code": 183255,
+      "width": 16,
+      "height": 16,
+      "pivot": [
+        8,
+        9
+      ],
+      "bounds": [
+        5,
+        3,
+        11,
+        13
+      ],
+      "indices_sha256": "4f93723755cf5f46dc67cc7879122e9011caa0c17a7086f43a82edc2643a732f",
+      "opaque_pixels": 44
+    }
+  ],
+  "legacy_horizontal_identity": "Original pose0 equals independently measured projectile artwork byte-for-byte; palette identical",
+  "source_dynamic_validation": "marco-pistol-validation.json:625 original draws validate cardinal descriptors and flip flags"
+}

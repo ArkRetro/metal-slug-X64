@@ -8,12 +8,15 @@ static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height,last_ci8_palette;
 static unsigned pal_lru[16];
 static bool depth_mode;
+static bool shadows_deferred;
 static retro_frame_t depth_frame;
 static retro_plane_view_t depth_views[5];
 scene_render_stats_t scene_render_stats(void) {
     return (scene_render_stats_t){draws,uploads,palette_uploads,tmem_bytes};
 }
 void scene_render_set_depth_mode(bool enabled) {depth_mode=enabled;}
+void scene_render_defer_shadows(bool deferred) {shadows_deferred=deferred;}
+void scene_render_shadows(void) {if (depth_mode) retro_effects_mesh(&depth_frame);}
 void scene_render_depth_frame(const retro_frame_t *f) {
     depth_frame=*f;
     // This presentation uses layered 2D scenery and contact shadows only.
@@ -100,6 +103,19 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
     rdpq_mode_filter(FILTER_POINT); // Sprites never inherit the fog sampler.
     blit(image,x,y,0,0,image->width,image->height,mirror,flash);
 }
+static void draw_extra_foreground(int scroll,int rise) {
+    unsigned count;const scene_map_cell_t *cells=scene_map_extra_cells(&count);
+    for (unsigned i=0;i<count;i++) {
+        const scene_map_cell_t *cell=&cells[i];
+        const scene_image_t *im=scene_map_image(cell->phases[0]);
+        if (depth_mode) {
+            const retro_plane_view_t *view=&depth_views[3];
+            float size=cell->size*view->scale;
+            blit_scaled(im,background_x(cell,cell->x-scroll),(8+cell->y)*view->scale+view->offset_y,
+                0,0,cell->size,cell->size,size,size,false,false);
+        } else blit(im,cell->x-scroll,8+cell->y+rise,0,0,cell->size,cell->size,false,false);
+    }
+}
 void scene_render_background(unsigned camera,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Layer 4 holds the market props; it scrolls with the foreground.
@@ -121,22 +137,28 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         if (!visible[cells[i].layer]) continue;
         float x=background_x(&cells[i],cells[i].x-offsets[cells[i].layer]);
         if (x< -48 || x>=352) continue;
-        scene_request_image(scene_map_image(cells[i].phases[video_tick&7]),2);
-        scene_request_image(scene_map_image(cells[i].phases[(video_tick+1)&7]),1);
+        scene_request_image(scene_map_cell_image(i,video_tick&7),2);
+        scene_request_image(scene_map_cell_image(i,(video_tick+1)&7),1);
     }
     scene_service();
     rdpq_set_scissor(8,8,312,232);
     scene_render_box(8,8,304,224,color_from_packed32(scene_map_backdrop()));
     if (!depth_mode) {
+        bool extras_drawn=false;
         for (unsigned i=0;i<count;i++) {
             const scene_map_cell_t *cell=&cells[i];
+            if (cell->layer>3 && !extras_drawn) {
+                if (visible[3]) draw_extra_foreground(offsets[3],rises[3]);
+                extras_drawn=true;
+            }
             const unsigned cell_size=cell->size;
             if (!visible[cell->layer]) continue;
             int x=cell->x-offsets[cell->layer],y=8+cell->y+rises[cell->layer];
             if (x+(int)cell_size<=8 || x>=312 || y+(int)cell_size<=8 || y>=232) continue;
-            const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+            const scene_image_t *im=scene_map_cell_image(i,video_tick&7);
             blit(im,x,y,im->x,im->y,cell_size,cell_size,false,false);
         }
+        if (!extras_drawn && visible[3]) draw_extra_foreground(offsets[3],rises[3]);
         rdpq_set_scissor(0,0,320,240);return;
     }
     for (unsigned layer=0;layer<5;layer++) {
@@ -147,14 +169,15 @@ void scene_render_background(unsigned camera,unsigned video_tick) {
         if (cell->layer!=layer) continue;
         float x=background_x(cell,cell->x-offsets[cell->layer]);
         if (x+cell_size*depth_views[layer].scale<=8 || x>=312) continue;
-        const scene_image_t *im=scene_map_image(cell->phases[video_tick&7]);
+        const scene_image_t *im=scene_map_cell_image(i,video_tick&7);
         const retro_plane_view_t *view=&depth_views[layer];
         // The depth camera carries the height (actor.c), so planes keep their own parallax.
         float y=(8+cell->y)*view->scale+view->offset_y,size=cell_size*view->scale;
         blit_scaled(im,x,y,im->x,im->y,cell_size,cell_size,size,size,false,false);
       }
+      if (layer==3) draw_extra_foreground(offsets[3],rises[3]);
     }
-    retro_effects_mesh(&depth_frame);
+    if (!shadows_deferred) scene_render_shadows();
     rdpq_set_scissor(0,0,320,240);
 }
 void scene_render_box(int x,int y,int width,int height,color_t color) {

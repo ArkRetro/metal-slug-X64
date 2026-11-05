@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "scope": "Controlled original AA458 service execution, not natural gameplay or full environment coverage",
+  "cases": 270,
+  "selected_checked_in_cases": 20,
+  "input_dimensions": {
+    "player_slot": [
+      0,
+      1,
+      65535
+    ],
+    "active": [
+      0,
+      1,
+      65535
+    ],
+    "marker": [
+      0,
+      1,
+      2,
+      128,
+      255
+    ],
+    "epoch_equal": [
+      false,
+      true
+    ],
+    "scene4301": [
+      0,
+      1,
+      128
+    ]
+  },
+  "source": "0x0AA458..0x0AA4C6 and policy words 0x016DBE..0x016DC5, independently compared with provided byte-swapped P1 ROM",
+  "comparison": [
+    "active word",
+    "marker byte",
+    "D0 low word",
+    "carry",
+    "default policy assignment"
+  ],
+  "debug_sha256": "55bc0a2c40423dac91078a605abfe370a682bf8cc79c3fe2a5d0c30c94261e1a",
+  "cases_sha256": "176089b88011566b8ebe15b5720e72e190c3b3355eb55eedf5e0e9693c1064c9"
+}

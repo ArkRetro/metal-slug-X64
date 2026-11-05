@@ -6,19 +6,28 @@ Incluye título X64 con audio, entrada en paracaídas y recorrido parcial con tr
 [la guía de la demo](docs/PLAYABLE_DEMO.md).
 El objetivo de completar la misión y recuperar la lógica original sigue pendiente.
 Véase [estado del port y entrega](docs/BETA_STATUS.md).
-La integración posterior de [pantallas, decorado prerenderizado y HUD](docs/CAMPAIGN_INTEGRATION.md)
-se desarrolla en `campaign-internal.z64`; sigue siendo una campaña incompleta,
-con selección limitada a Marco.
-La prioridad actual es [completar todas las animaciones de Marco](docs/MARCO_ANIMATIONS.md);
-el controlador completo todavía está pendiente y no se declara un 100%.
+La integración posterior de [pantallas, decorado prerenderizado, HUD y controlador
+nativo de Marco](docs/CAMPAIGN_INTEGRATION.md) se desarrolla en
+`campaign-internal.z64`; sigue siendo una campaña incompleta, con selección
+limitada a Marco. Este ejecutable conecta las rutinas C recuperadas de cuerpo,
+postura, movimiento, agachado y arma con el mando y el mundo jugable. Ya no usa
+el selector histórico de seis estados de la demo publicada. Los programas de
+animación y sprites se extraen de la ROM; no se reproduce una secuencia de
+estados capturada. La forma normal y la pistola están integradas, con giro,
+salto, agachado, apuntado vertical y solicitudes originales de ataque cercano.
+Faltan variantes de armas, formas, acciones especiales y daño/muerte originales;
+no se declara un [controlador completo al 100%](docs/MARCO_ANIMATIONS.md).
 El [pipeline nativo de entradas, selección y cuerpo/arma](docs/MARCO_CONTROLLER.md)
 ya pasa comparaciones con MAME y con framebuffer real del RDP en ares.
 La demo usa [capas de paralaje y sombras de contacto](docs/RETRO25D.md),
 sin extrusión de edificios, niebla ni iluminación dinámica adicional.
 El pixel art y la acción se mantienen en 2D.
 `make MSX_VISUAL_MODE=classic` compila la ruta plana original.
-Los [proyectiles de pistola](docs/PROJECTILES.md) usan ya el sprite original
-con contorno, paleta y transparencia, también al disparar hacia la izquierda.
+Los [proyectiles de pistola](docs/PROJECTILES.md) usan el sprite original
+con contorno, paleta y transparencia. La campaña interna añade los recursos
+originales para las cuatro direcciones y seis efectos de sonido originales
+conectados a eventos nativos; véanse sus límites en la
+[integración de campaña](docs/CAMPAIGN_INTEGRATION.md).
 El [backend nativo del blindado](docs/NATIVE_BACKEND.md) ya separa lógica C,
 gráficos `.sprite` de libdragon y colisiones de los restos. Se valida en un
 escenario interno; su oleada y aparición originales siguen pendientes.
@@ -45,11 +54,13 @@ velocidades, seis inicios de animación y las transiciones observadas durante
 originales, incluida una selección de ataque. Esto aún no sustituye los guardias
 provisionales ni completa la Misión 1.
 
-La entrega pendiente incluye la **intro completa y sonido**. El nuevo
-[backend de audio y las referencias de intro](docs/INTRO_AUDIO.md) ya tienen
-pruebas internas en ares. La [entrada en paracaídas](docs/MISSION_ENTRY.md) ya
-entrega el control a Marco con audio; la presentación completa y el resto de
-la misión siguen pendientes.
+La campaña interna encadena el título X64 con audio, el tutorial original,
+la selección y confirmación de Marco y la
+[entrada en paracaídas](docs/MISSION_ENTRY.md), que entrega el control nativo.
+Las pantallas previas usan streams de recursos y estados medidos del arcade;
+no son lógica de presentación recompilada. El
+[backend de audio](docs/INTRO_AUDIO.md) y los efectos conectados al jugador
+no completan la música ni el audio del resto de la misión.
 
 El [ataque observado](docs/SOLDIER_ATTACK.md) ya produce eventos nativos de paleta
 y creación diferida, con 20 dibujos del soldado y 41 del objeto hasta su retirada.
@@ -67,6 +78,8 @@ La v9 anterior está confirmada por el usuario en MiSTer.
 Se conserva el escenario observado hasta el pueblo de la misión 1, tres capas
 con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea original.
 
+Controles de la demo publicada y del objetivo histórico `mslugx-explorer.z64`:
+
 | Control | Acción |
 | --- | --- |
 | Cruceta o stick | Mover a Marco y avanzar la cámara |
@@ -74,6 +87,11 @@ con parallax, CI4/RDP y streaming PI DMA. El salto usa la ecuación aérea origi
 | B | Disparar; mantener para repetir |
 | R | Reiniciar la zona |
 | START | Alternar escena y laboratorio de tiles |
+
+En `campaign-internal.z64`, la cruceta arriba apunta, abajo agacha o apunta
+hacia abajo en el aire, A salta y B dispara **por pulsación**. Los controles
+de laboratorio y el disparo repetido de la demo histórica no describen esta
+ruta nueva. Las granadas todavía no están conectadas al mando.
 
 Puedes recorrer el tramo, saltar y combatir con los tres guardias provisionales.
 El tramo llega ahora a la cámara 1920 (antes 872), con el cambio de banco medio
@@ -103,16 +121,29 @@ make check-core
 make check
 ```
 
+Para la integración interna actual del jugador:
+
+```sh
+make campaign-internal.z64 MSX_BACKGROUND=prerender
+make check-marco-live
+python3 tools/test_live_marco_ares.py campaign-internal.z64 --region --output /tmp/msx-marco-live
+```
+
+La última orden necesita ares y las herramientas gráficas del entorno de prueba;
+recorre únicamente la región parcial existente, no la misión completa.
+
 `make check-core` no requiere SDK ni ROMs: usa código y los CSV numéricos
 versionados. CI lo ejecuta en cada push y PR. `make check` también es host y
 requiere los metadatos/assets derivados que utilizan las pruebas completas.
 `make check-cinematic` añade los 230 frames del segmento local de entrada.
-`make -j4` compila el modo 2.5D (`depth25d`); `make -j4 MSX_VISUAL_MODE=classic`,
-la ruta plana. `make preview-depth` genera vistas previas offline de los
+`make -j4` compila `campaign-internal.z64` en modo 2.5D (`depth25d`);
+`make -j4 MSX_VISUAL_MODE=classic`, la ruta plana. `make preview-depth` genera vistas previas offline de los
 efectos sin arte original.
 Las [correcciones del PR #2](docs/PR2_REVIEW.md) están adaptadas a esta rama.
 
-Resultado: `mslugx-explorer.z64`, aproximadamente 50 MiB. Las ROM originales
+El objetivo histórico `mslugx-explorer.z64` produce una ROM de aproximadamente
+50 MiB; `campaign-internal.z64` incluye los recursos adicionales de integración.
+Las ROM originales
 se comprueban contra CRC32 y SHA1 de MAME. ZIP, assets y ROM generada quedan
 ignorados por Git. La ROM compilada contiene gráficos aportados por el usuario.
 
@@ -160,8 +191,9 @@ siendo una prueba adicional pendiente.
 El usuario confirmó v9 en MiSTer; v10 pendiente de prueba física; véase [evidencia y pruebas](docs/PROGRESS.md).
 La página FIX 8 es negra porque sus datos son todos cero.
 
-El siguiente trabajo es completar el mapa y su resolvedor de colisiones, ampliar animaciones
-de combate y añadir audio. El original incluye
+El siguiente trabajo es completar el controlador del jugador, sustituir los
+enemigos y respuestas de daño provisionales, completar el mapa y su resolvedor
+de colisiones y conectar el resto de eventos y audio. El original incluye
 68000, Z80 y YM2610: disponer de las ROM y la BIOS no equivale a tener código
 fuente recompilable. Se está investigando una reconstrucción nativa 2D.
 

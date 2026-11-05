@@ -100,6 +100,20 @@ def main():
     banks.append((len(images),1,0,1,w,h))
     images.append(image([palette[p] for p in crop],x1-x0,y1-y0,x0,y0,True,crop,palette))
     source_bytes+=w*h*2
+    # Actual cardinal pistol poses. The old frame stays at zero for legacy
+    # references; live original angles select 1 + angle/64 without mirroring.
+    native_projectiles=json.loads((ROOT/'filesystem/campaign-projectiles.json').read_text())
+    for index,frame in enumerate(native_projectiles['directions']):
+        assert frame['angle']==index*64 and (frame['width'],frame['height'])==(16,16)
+        raw=bytes.fromhex(frame['indices_hex'])
+        assert hashlib.sha256(raw).hexdigest()==frame['indices_sha256']
+        indices=[(raw[i//2]>>(0 if i&1 else 4))&15 for i in range(256)]
+        palette=frame['palette_rgba5551'];x0,y0,x1,y1=frame['bounds']
+        crop=[indices[y*16+x] for y in range(y0,y1) for x in range(x0,x1)]
+        dx=x0+8-frame['pivot'][0];dy=y0+8-frame['pivot'][1]
+        images.append(image([palette[p] for p in crop],x1-x0,y1-y0,dx,dy,True,crop,palette))
+        source_bytes+=512
+    start,*_=banks[-1];banks[-1]=(start,5,0,1,16,16)
     raw=(ROOT/'filesystem/desert.bin').read_bytes();source_bytes+=len(raw)
     pixels=struct.unpack('>71680H',raw)
     for row in range(7):

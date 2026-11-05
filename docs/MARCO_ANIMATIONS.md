@@ -1,15 +1,21 @@
 # Marco: recuperación del conjunto completo de animaciones
 
 **Prioridad actual: terminar Marco antes de ampliar el resto del port. El 100%
-todavía no está conseguido.** El ejecutable de campaña conserva los seis estados
-visuales históricos. La biblioteca nueva se comprueba aparte; todavía no está
-conectada al controlador completo del jugador. No se publica otra demo parcial.
+todavía no está conseguido.** `campaign-internal.z64` ya conecta los controladores
+C recuperados con el mando y el mundo, en lugar de los seis estados visuales
+históricos que conserva la demo publicada. Están integradas la forma normal y
+la pistola, con marcha, giro, salto, agachado, apuntado y solicitudes de ataque
+cercano. Armas, formas, acciones especiales y daño/muerte originales siguen
+incompletos. [Alcance y controles actuales](CAMPAIGN_INTEGRATION.md).
+No se publica otra demo parcial.
 
 La [continuación del controlador y la composición nativa](MARCO_CONTROLLER.md)
 añade filtrado de entradas, selección original de programas y dibujo conjunto
 cuerpo/arma. Dos recorridos pasan en ares; el catálogo combinado llega a 178
 descriptores. El recorrido de combate usa publicaciones reales de cola para
 resolver las llamadas que atraviesan VBlank. Esto no declara completo Marco.
+Las cifras siguientes describen esos corpus independientes; no enumeran las
+animaciones completas ni se convierten en un porcentaje de integración.
 
 ## Resultado comprobado
 
@@ -150,9 +156,10 @@ Se corrigen además dos fallos del camino anterior:
 
 ## Trabajo necesario para poder declarar el 100%
 
-- Sustituir la selección histórica de seis bancos/muestras por el controlador
-  completo de cuerpo y arma: entradas, prioridades, transiciones, velocidad,
-  temporizadores, origen lógico y parpadeo, sin mezclar secuencias provisionales.
+- Completar el controlador de cuerpo y arma ya conectado a la campaña interna:
+  entradas, prioridades, transiciones y servicios para todas las acciones y
+  variantes, conservando temporizadores, origen lógico y parpadeo. La conexión
+  actual de forma normal/pistola no acredita esas rutas restantes.
 - Resolver los callbacks pendientes y sus efectos/solicitudes. No dar por
   completada una acción que se detiene en un callback sin recuperar.
 - Completar y contrastar las variantes de armas, ataques de proximidad, toma y

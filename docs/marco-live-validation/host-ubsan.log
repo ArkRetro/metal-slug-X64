@@ -1,0 +1,22 @@
+mkdir -p build/host
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_player_runtime.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/player-runtime
+build/host/player-runtime
+PASS: live native player input, cadence, projection, terrain, real projectile lifetime and explicit unsupported boundary
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_pistol.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/campaign-pistol
+build/host/campaign-pistol
+Marco campaign pistol: 134 original shots and real allocation/ammunition boundaries passed
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_melee.c src/marco_campaign_queries.c src/neo_hit.c -o build/host/campaign-melee
+build/host/campaign-melee
+PASS: actual melee descriptors, facing, contact edges and typed world damage requests
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_queries.c src/marco_campaign_queries.c src/neo_hit.c -o build/host/campaign-queries
+build/host/campaign-queries
+PASS: original ROM hit metadata, registration, live refresh and read-only common proximity
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_world.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/campaign-world
+build/host/campaign-world
+PASS: original clipping requests, live Marco scalar/C109C, 350 walk and 24 roof states
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_sensing.c src/marco_campaign_sensing.c src/marco_ammo.c -o build/host/campaign-sensing
+build/host/campaign-sensing
+PASS: native environment transitions/policy writes, scene query widths, pistol reset and damage return
+cc -std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all -Ibuild -Isrc tools/test_marco_campaign_palette.c src/marco_campaign_palette.c -o build/host/campaign-palette
+build/host/campaign-palette
+PASS: 12 original common palette words and unsupported character/key bounds

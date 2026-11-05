@@ -1,0 +1,208 @@
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_boot_select.c decomp/recovered/ram_10fc00.c -o build/host/boot-select
+build/host/boot-select
+PASS: 48 original boot-selector fixtures (synthetic platform imports)
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_ram_descriptors.c decomp/recovered/ram_descriptors.c -o build/host/ram-descriptors
+build/host/ram-descriptors
+PASS: 118 original RAM descriptor transitions
+python3 tools/test_recovered_palette.py
+PASS: 18 original-M68000 palette fixtures
+python3 tools/test_recovered_conditions.py
+PASS: 447 original-M68000 condition fixtures and explicit failure contracts
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_native_logic.c decomp/recovered/rom_01a5ca.c src/neo_player_query.c src/neo_player_positions.c decomp/recovered/condition_services.c decomp/recovered/condition_consumers.c -o build/host/native-logic
+build/host/native-logic
+PASS: 447 conditions, 96 player queries and 96 position queries plus 451 real-service calls and 264 consumer transitions against original M68000 fixtures
+mkdir -p build/host
+cc -std=c11 -Wall -Wextra -Werror tools/test_fixed.c -o build/host/fixed
+cc -std=c11 -Wall -Wextra -Werror tools/test_sprites.c -o build/host/sprites
+cc -std=c11 -Wall -Wextra -Werror tools/test_neo_motion.c -o build/host/motion
+cc -std=c11 -Wall -Wextra -Werror tools/test_scene_codec.c -o build/host/codec
+cc -std=c11 -Wall -Wextra -Werror tools/test_scene_clock.c -o build/host/clock
+cc -std=c11 -Wall -Wextra -Werror tools/test_cinematic_codec.c -o build/host/cinematic-codec
+build/host/fixed
+PASS: 262144 pixel checks and known row
+build/host/sprites
+PASS: 262144 sprite bitplane checks
+build/host/motion
+PASS: arcade air trajectory, 22 full Q16.16 states match; signed shift and left acceleration
+build/host/codec
+PASS: codec exact size, malformed streams, output guards and standard CRC32
+build/host/clock
+PASS: original cadence, pause/reset, timer wrap and retained catch-up debt
+build/host/cinematic-codec
+PASS: cinematic delta edits, truncation, bounds, atomic rejection and standard CRC32
+python3 tools/test_neo_scene.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.001s
+
+OK
+python3 tools/test_prerender_background.py
+.......
+----------------------------------------------------------------------
+Ran 7 tests in 0.030s
+
+OK
+python3 tools/test_hud_assets.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.007s
+
+OK
+python3 tools/test_mission_map_range.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.022s
+
+OK
+python3 tools/test_collision_audit.py
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.551s
+
+OK
+python3 tools/test_neo_queue_publication.py
+PASS: synthetic sprite publication ordering, cross-video submissions and explicit empty buffers
+python3 tools/test_vehicle_wreckage.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_soldier.c src/neo_soldier.c src/neo_rng.c -o build/host/soldier
+build/host/soldier
+PASS: native AF65A arithmetic equals captured M68000 RNG inputs and RAM outputs; complete AI remains unported
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_rng.c src/neo_soldier.c src/neo_rng.c -o build/host/rng
+build/host/rng
+PASS: 4 seed calls, 276 RNG states, 2 initializers, 26 decisions, 17 damping updates
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_animation.c src/neo_animation.c -o build/host/animation
+build/host/animation
+PASS: 6 animation starts, 54 helper steps and 54 exact descriptor/position/palette draws
+cc -std=c11 -Wall -Wextra -Werror tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o build/host/retro25d
+build/host/retro25d
+measured synthetic 4000-px level: worst 88 triangles, 5 planes in view
+PASS: perspective/parallax, near plane, depth normals, light falloff/backfaces, normalized RDP shades and 96-triangle budget
+PASS: contact-shadow fans, light slots, pulse time decay, impact/explosion events, fog focus, plane culling and measured budgets
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_history.c -o build/host/history
+build/host/history
+PASS: 180 original history-token writes; all byte inputs advance to nonzero 1/2
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_fields.c src/neo_animation.c -o build/host/marco-fields
+build/host/marco-fields
+PASS: 734 original Marco field/branch operations and 366 inline pose selections
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_animation.c src/marco_animation.c src/neo_animation.c -o build/host/marco-animation
+build/host/marco-animation
+PASS: synthetic paired clocks, shared fields, latched anchors and failure boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-controller
+build/host/marco-controller
+PASS: Marco controller inputs=3711 choices=376
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-advance tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-advance-controller
+build/host/marco-advance-controller
+PASS: Marco controller inputs=1632 choices=202
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_upper.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper
+build/host/marco-upper
+PASS: upper calls=1450 resets=57 services=1753
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-upper-combat tools/test_marco_upper.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper-combat-core
+build/host/marco-upper-combat-core
+PASS: upper calls=642 resets=14 services=967
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_upper_limits.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper-limits
+build/host/marco-upper-limits
+PASS: synthetic upper-controller reset, allocation counters, grenade gates, D7/null semantics and missing-service stop
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_crouch.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-crouch
+build/host/marco-crouch
+PASS: crouch calls=227 services=482 draws=222 events=33
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-crouch-turn tools/test_marco_crouch.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-crouch-turn
+build/host/marco-crouch-turn
+PASS: crouch calls=416 services=887 draws=414 events=38
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-motion tools/test_marco_motion.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-motion
+build/host/marco-motion
+PASS: motion calls=437 services=890 draws=434 events=0
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_body.c src/marco_body.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-body
+build/host/marco-body
+PASS: cross-controller same-tick branches, deferred landing and explicit external/failure boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_ammo.c src/marco_ammo.c -o build/host/marco-ammo
+build/host/marco-ammo
+PASS: ammunition calls=134 and synthetic accounting boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-stance
+build/host/marco-stance
+PASS: stance calls=80 services=80
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_idle.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-idle
+build/host/marco-idle
+PASS: idle decisions=800
+cc -std=c11 -Wall -Wextra -Werror tools/test_diorama_building.c src/diorama_building.c src/retro25d.c -lm -o build/host/diorama-building
+build/host/diorama-building
+PASS: building cutout bounds, projected side extent and full-region triangle budget
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_common.c src/marco_common.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-common
+build/host/marco-common
+PASS: common-tail timer/palette width, query order, immunity, form request and death precedence
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_environment.c src/marco_environment.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-environment
+build/host/marco-environment
+PASS: 256 original M68000 arithmetic cases, environment branch/order/alias and missing-service boundaries
+mkdir -p build/host
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_player_runtime.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/player-runtime
+build/host/player-runtime
+PASS: live native player input, cadence, projection, terrain, real projectile lifetime and explicit unsupported boundary
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_pistol.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/campaign-pistol
+build/host/campaign-pistol
+Marco campaign pistol: 134 original shots and real allocation/ammunition boundaries passed
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_melee.c src/marco_campaign_queries.c src/neo_hit.c -o build/host/campaign-melee
+build/host/campaign-melee
+PASS: actual melee descriptors, facing, contact edges and typed world damage requests
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_queries.c src/marco_campaign_queries.c src/neo_hit.c -o build/host/campaign-queries
+build/host/campaign-queries
+PASS: original ROM hit metadata, registration, live refresh and read-only common proximity
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_world.c src/player_runtime.c src/marco_campaign.c src/marco_campaign_world.c src/marco_campaign_sensing.c src/marco_campaign_queries.c src/marco_campaign_pistol.c src/marco_campaign_palette.c src/marco_body.c src/marco_common.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_ammo.c src/marco_controller.c src/marco_animation.c src/neo_animation.c src/neo_contact.c src/neo_hit.c src/neo_rng.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/campaign-world
+build/host/campaign-world
+PASS: original clipping requests, live Marco scalar/C109C, 350 walk and 24 roof states
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_sensing.c src/marco_campaign_sensing.c src/marco_ammo.c -o build/host/campaign-sensing
+build/host/campaign-sensing
+PASS: native environment transitions/policy writes, scene query widths, pistol reset and damage return
+cc -std=c11 -Wall -Wextra -Werror -Ibuild -Isrc tools/test_marco_campaign_palette.c src/marco_campaign_palette.c -o build/host/campaign-palette
+build/host/campaign-palette
+PASS: 12 original common palette words and unsupported character/key bounds
+mkdir -p build/host
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_gameplay.c src/gameplay.c src/neo_collision.c src/neo_vehicle.c -o build/host/gameplay
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_collision.c src/neo_collision.c -o build/host/collision
+build/host/gameplay
+PASS: half-rate input, air landing, dune/village support, camera 0..1920 bounds and height, extended terrain, provisional encounters and respawn
+python3 tools/check_scene_budget.py
+{"chunks": 79, "fixed_actor_chunks": 12, "worst_working_set": 36, "worst_camera": 1872, "cache_slots": {"4MiB": 32, "8MiB": 79}, "fits_without_eviction": {"4MiB": false, "8MiB": true}, "cell_size": 32, "requires_expansion_pak": true, "working_set_fits": {"4MiB": false, "8MiB": true}}
+python3 tools/test_marco_sprite_edges.py
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.008s
+
+OK
+build/host/collision
+PASS: 350 walk states within 2/65536px; 24 original roof-jump/landing states bit-exact; stacked surfaces and bounds
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c -o build/host/vehicle
+build/host/vehicle
+PASS: original vehicle movement, mirrored hitboxes, strict damage threshold, one-shot death events, wreck geometry, 30 pistol hits and walkable ramp
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_contact.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o build/host/contact
+build/host/contact
+PASS: 54 original vectors/ground updates and 54 coupled animation draws
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_control.c src/neo_control.c src/neo_rng.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o build/host/control
+build/host/control
+PASS: 276 RNG flags, 55 control cycles, 54 movements and 54 draws without injected flags5f
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_state.c src/neo_cull.c src/neo_soldier_state.c src/neo_soldier_action.c src/neo_soldier.c src/neo_control.c src/neo_rng.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o build/host/state
+build/host/state
+PASS: 105 measured cull decisions (1 removed)
+PASS: 84 measured action choices (1 nonzero), 54 native state cycles, six starts and two speed calculations without injected scalar62/speed/program/routine
+PASS: 276 RNG flags, 55 control cycles, 54 movements and 54 draws without injected flags5f
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_throw.c src/neo_throw.c src/neo_target.c src/neo_contact.c src/neo_collision.c -o build/host/throw
+build/host/throw
+PASS: native spawn, targeted launch and 33 persistent free-flight/contact updates
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_attack.c src/neo_hit.c src/neo_soldier_state.c src/neo_soldier.c src/neo_soldier_action.c src/neo_rng.c src/neo_throw_actor.c src/neo_cull.c src/neo_animation.c src/neo_soldier_effects.c src/neo_throw.c src/neo_target.c src/neo_contact.c src/neo_collision.c -o build/host/attack
+build/host/attack
+PASS: 20 native attack states/draws, 40 ground queries, deferred spawn, 41 child draws, burst/cleanup, 8 hit geometries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_object.c src/neo_throw_actor.c src/neo_animation.c src/neo_throw.c src/neo_target.c src/neo_contact.c src/neo_collision.c src/neo_cull.c -o build/host/object
+build/host/object
+PASS: 11 terminal failure/cancel cases; no palette leaks or duplicate sound requests
+PASS: native throw lifecycle: 41 draws, palette cycling, deferred burst, sound request and resource release
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_locomotion.c src/neo_soldier_state.c src/neo_soldier.c src/neo_soldier_action.c src/neo_rng.c src/neo_contact.c src/neo_collision.c src/neo_animation.c -o build/host/locomotion
+build/host/locomotion
+PASS: 34 native reposition updates/draws, five starts, six RNG calls and inline pose selection
+cc -std=c11 -Wall -Wextra -Werror -DRETRO_REAL_ASSETS -Ibuild/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o build/host/retro25d
+build/host/retro25d
+measured synthetic 4000-px level: worst 88 triangles, 5 planes in view
+measured authored level (2240 px, 4 planes): worst 80/96 triangles, 4 planes in view
+PASS: perspective/parallax, near plane, depth normals, light falloff/backfaces, normalized RDP shades and 96-triangle budget
+PASS: contact-shadow fans, light slots, pulse time decay, impact/explosion events, fog focus, plane culling and measured budgets

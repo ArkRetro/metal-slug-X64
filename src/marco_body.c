@@ -18,7 +18,33 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
                 b->stance.mode=MST_IDLE_FAST;b->domain=MARCO_BODY_STANCE;continue;
             case MMR_IDLE_REQUEST:
                 b->stance.mode=MST_IDLE_START;b->domain=MARCO_BODY_STANCE;continue;
-            case MMR_MELEE_REQUEST:return MARCO_BODY_EXTERNAL;
+            case MMR_MELEE_REQUEST: { // C215E..C2192, then C2198 in this tick.
+                bool alternate=(p->upper.input.flags9a&2u)!=0;
+                p->motion62=0;a->field50_tag=0x2d0aa8;p->upper.input.flags9a^=2;
+                if(!stance || !stance->select || !stance->select(stance->context,
+                   alternate?MST_2180:MST_2178,&b->stance,m,a)) goto fail;
+                marco_upper_reset(&p->upper);a->fields.field76=0;m->mode=MMR_MELEE;
+                /* fall through to the recovered wait body below. */
+            }
+                /* fall through */
+            case MMR_MELEE: { // C2198..C2210.
+                uint32_t buttons=marco_input_filter(&p->upper.input,p->upper.packed,p->upper.gate);
+                if(buttons&32u) {m->mode=MMR_IDLE_FAST_REQUEST;continue;}
+                if(a->fields.field76) {
+                    if(buttons&2u) {m->mode=MMR_CROUCH_REQUEST;continue;}
+                    if(buttons&80u) {m->mode=MMR_IDLE_FAST_REQUEST;continue;}
+                    if(buttons&12u) {m->mode=MMR_RUN_START;continue;}
+                } else {
+                    if(!stance || !stance->latch_input || !stance->latch_input(stance->context,1)) goto fail;
+                    if(p->upper.input.flags9a&8u) {m->mode=MMR_RUN_START;continue;}
+                }
+                p->motion62=0;bool complete=false;
+                if(!motion || !motion->move || !motion->animate ||
+                   !motion->move(motion->context,MMM_GROUND,m,a) ||
+                   !motion->animate(motion->context,m,a,&complete)) goto fail;
+                if(complete) m->mode=MMR_IDLE_FAST_REQUEST;
+                return MARCO_BODY_COMMON;
+            }
             default:break;
             }
             if(!marco_motion_update(m,a,motion)) return MARCO_BODY_FAILED;
@@ -45,7 +71,7 @@ marco_body_result_t marco_body_update(marco_body_t *b,marco_animation_t *a,
                 case MSI_FALL:m->mode=MMR_FALL;b->domain=MARCO_BODY_MOTION;continue;
                 case MSI_CROUCH:p->mode=MCR_ENTER;b->domain=MARCO_BODY_CROUCH;continue;
                 case MSI_FAST:b->stance.mode=MST_IDLE_FAST;continue;
-                case MSI_MELEE:m->mode=MMR_MELEE_REQUEST;b->domain=MARCO_BODY_MOTION;return MARCO_BODY_EXTERNAL;
+                case MSI_MELEE:m->mode=MMR_MELEE_REQUEST;b->domain=MARCO_BODY_MOTION;continue;
                 case MSI_DRAW: {
 idle_draw:; // C2144..C215A: support first, then body clock.
                     bool complete=false;
@@ -62,7 +88,6 @@ idle_draw:; // C2144..C215A: support first, then body clock.
                 }
                 goto fail;
             }
-            if(b->stance.mode>MST_IDLE) return MARCO_BODY_EXTERNAL;
             if(!stance || !marco_stance_enter(&b->stance,m,a,stance)) goto fail;
             break;
         default:goto fail;

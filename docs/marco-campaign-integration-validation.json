@@ -1,0 +1,193 @@
+{
+  "status": "PASS",
+  "date_utc": "2026-11-05",
+  "scope": "Live normal Marco/pistol controller integrated into the current partial campaign. Not complete Marco, Mission1 or full decompilation.",
+  "fixture_replay": false,
+  "assets": {
+    "rom_tables": 79,
+    "animation_commands": 1180,
+    "descriptor_resources": 320,
+    "ci4_parts": 321,
+    "explicit_animation_requests": 21,
+    "provenance": {
+      "rom_sha256": "9678a794d64e6a519284d2fa95fc855064ca2c843634bfb529c0883b2e30d381",
+      "fixed_sha256": "ff01fa7dc27b2d0db15e8e4f6f75aaf6fa943761277c0e00ca96c730fcebe37a",
+      "bank_sha256": "7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc",
+      "crom_sha256": "e25c05202f3d5f0d9c1a9087f6244389eafc2e305be13f9f159195e88021ba61"
+    },
+    "limits": "Static resource reachability is not execution or animation coverage."
+  },
+  "host": {
+    "command": "make check",
+    "log_sha256": "f012fb37749c4b456f1081ebbba7956f95f3b21027c596bc5be7ace8eebd07a2",
+    "checks": [
+      "Production native input/cadence, movement/crouch/jump, actual original hit descriptors",
+      "Original pistol allocation, delayed creation/sound, cardinal motion and real world retirement",
+      "1200 VI repeated upward fire releases and reuses projectile slots",
+      "Authored relocation updates support angle/projection/depth/history transactionally",
+      "Original melee requests with explicitly provisional enemy damage response",
+      "Original world clipping/environment policy and palette comparisons",
+      "Existing recovered module/gameplay regressions"
+    ],
+    "ubsan_command": "make check-marco-live HOST_CFLAGS='-std=c11 -Wall -Wextra -Werror -fsanitize=undefined -fno-sanitize-recover=all'",
+    "ubsan_status": "PASS"
+  },
+  "live_campaign": {
+    "status": "PASS",
+    "emulator": "ares146",
+    "live_player": true,
+    "fixture_replay": false,
+    "native_pistol_sounds": 114,
+    "native_state_changes": 249,
+    "crouch_hitbox": [
+      19,
+      14
+    ],
+    "stand_hitbox": [
+      16,
+      28
+    ],
+    "rom_sha256": "224d60ea849a6645a56b5199dc7dab51b001770e94fdf2ea186aab753ba99051",
+    "log_sha256": "68d591764c1fcebb1c206eeaf029d4f44b64714230ea44927c735154f5ae8347",
+    "limits": "Live normal Marco/pistol controls with current measured terrain and provisional enemies. Not full character/weapon/mission coverage, acoustic readback or hardware performance.",
+    "partial_region": {
+      "camera": 1920,
+      "guards_defeated": 3,
+      "cache_misses": 0,
+      "sampled_cpu_us": [
+        12448,
+        14783,
+        13904,
+        15080
+      ],
+      "source_footprints": true,
+      "limits": "Existing partial map and authored enemy responses, not complete Mission1/originalAI/hardware FPS."
+    }
+  },
+  "full_frontend": {
+    "status": "PASS",
+    "emulator": "ares 146",
+    "segments": [
+      {
+        "name": "tutorial",
+        "source_frames": 2680,
+        "presented": 2680,
+        "dropped": 0,
+        "skipped": false,
+        "first_crc32": "f93e8c5f",
+        "last_crc32": "47fe0a98",
+        "audio_active": true
+      },
+      {
+        "name": "select",
+        "source_frames": 160,
+        "presented": 160,
+        "dropped": 0,
+        "skipped": false,
+        "first_crc32": "e56a9764",
+        "last_crc32": "ad129003",
+        "audio_active": true
+      },
+      {
+        "name": "select-confirm",
+        "source_frames": 210,
+        "presented": 210,
+        "dropped": 0,
+        "skipped": false,
+        "first_crc32": "ad129003",
+        "last_crc32": "342b3c8e",
+        "audio_active": true
+      }
+    ],
+    "held_confirm_rejected": true,
+    "marco_confirm": true,
+    "native_handoff": true,
+    "player_controller": "recovered-native",
+    "rom_sha256": "224d60ea849a6645a56b5199dc7dab51b001770e94fdf2ea186aab753ba99051",
+    "log_sha256": "32003eca1a085cb694a377f28d21398276d77553e43978cdef93e2b16a0bd484",
+    "frontend_provenance": {
+      "capture.json": "e2fb93e38ab3149a0d49367acda4a1f0aada99acc813d009d92f069d46942d16",
+      "frames.jsonl": "87134024ee0d908eedeafda81ba8f018ce73eb0069975f1314588a78376567ee",
+      "raster.jsonl": "f88a6666364a67fb11f79fca570d1a221db2e910b9fdfe58eda7d5e7b1e6839b",
+      "reference.wav": "daf06d5a9acf3a2671d3e3e2cbb7c0a911fa8da4a20f0c01134410d63909aa96",
+      "inputs.jsonl": "fae387b843f68d487b56c37206e5bb42770e3e9efaf9c821020e41df59740df8"
+    },
+    "limits": "Tutorial and Marco-only selection/confirmation; no other playable characters, complete campaign, acoustic recording or hardware performance claim.",
+    "native_pistol_sounds": 1
+  },
+  "foreground_copy_on_write": {
+    "status": "PASS",
+    "emulator": "ares146",
+    "samples": 22,
+    "checked_pixels": 5377536,
+    "transparent_pen_visits": 800248,
+    "changed_edits": 2830,
+    "no_op_samples": 2,
+    "multi_edit_samples": 10,
+    "maximum_texture_upload": 2048,
+    "rom_sha256": "8b7b4023eeddca2037fe9cab6c0c6fdeb12b312bccc4e78dc94badd1b8de7749",
+    "log_sha256": "a59545ab02b159f169c54bef1ce4546d3e0639150bbbafdd8647cdfde0389078",
+    "checks": [
+      "Full framebuffer equivalence to independently checked original-tile overlay",
+      "Classic and layered backgrounds, single and multiple source edits",
+      "Transparent erasure, shadows, idempotence, reset, immutable source pages"
+    ],
+    "limits": "Foreground edit rendering only; no campaign completion or hardware FPS claim."
+  },
+  "performance": {
+    "before_sampled_draw_cpu_us": [
+      22234,
+      11815,
+      11727,
+      12259
+    ],
+    "after_sampled_draw_cpu_us": [
+      12448,
+      14783,
+      13904,
+      15080
+    ],
+    "before_rom_sha256": "46dc084da8e81f7b6047dd655831cf870815c30ee9fd12586094f9a8edfd4343",
+    "before_log_sha256": "02658d53c1b7c6bd11045787c44c2a94246c1a0f14a9b180d79e814c60be5be0",
+    "limits": "Sparse ares CPU measurements inside scene_render_begin/end exclude simulation, scene edits before begin and asynchronous RDP completion. These samples do not establish hardware frame rate."
+  },
+  "provisional": [
+    "Native projectile viewport retirement margin pending original child scheduler/culling recovery",
+    "Current measured terrain subset, original clipping service but incomplete generic contact resolver",
+    "Three authored guards and their hit/respawn/health responses; original melee request does not make damage handler original",
+    "Authored player health, knockback, invulnerability and respawn; original damage/death routines not integrated",
+    "Native RNG initialization and world update order differ from complete original scheduler"
+  ],
+  "open_boundaries": [
+    "Other weapons/forms/characters and special actions",
+    "Grenades: unmapped input, unsupported original event stops explicitly",
+    "Original enemy AI, spawn/event schedule and complete map",
+    "Campaign music/effects for remaining actors, encounters and boss"
+  ],
+  "source_sha256": {
+    "src/player_runtime.c": "abc268ed39e68ff245f8f3ac832f97048d6ba4a7e3178f0c68f3c07d42dd8360",
+    "src/gameplay.c": "bb6cfb66771eaa95feab01d4dc1d73b5d776e2013caef7b085b82e2d7f697e94",
+    "src/actor.c": "34b12591a2722b1c32ca9fb7124f73989e91db90c08cbb22c376131e4c053774",
+    "src/marco_campaign.c": "5e10190484d619fc2d765d0098ae7c04796332700dfdab3ea0c3498887dd2d3b",
+    "src/marco_campaign_world.c": "f57414d6c74b9ab5ffd8086067bb09b05e6b6eaaccc2dee609c1a7253463f72b",
+    "src/marco_campaign_queries.c": "9e7da0c8c8bbd9f8798f3592b3714d69b297f7ae6eace7a3e7fba3fa67841327",
+    "src/marco_campaign_pistol.c": "804619ba9bc1e54df44aeb87295d36d7502b4863323ab8ff903c7be71caaa5cd",
+    "src/marco_campaign_renderer.c": "454091d44fb37499eb710d9f84669454584ef9721ce8c261516b1f4cacaccd62",
+    "src/scene_assets.c": "232d743fc0045114093812278f052913748d8978930388398ad98375f01b4407",
+    "src/scene_renderer.c": "bf1778902287ffd3dab59d7fe3bc5e190d1916ce3fb7d455e4c72f68795626ec",
+    "src/campaign_audio.c": "a9c5c2d3487c52735d5d744cab8ac23f0c92fe615014a85ae07abdeaeef167e1",
+    "src/campaign_footprint_renderer.c": "fb46fe8ffaed292a999d4327180b3a81a073991a808dacafda25ff94cdeeb911",
+    "tools/build_marco_campaign_assets.py": "652e3b2a7288d55f5e492919877ad48acc65f3c153a921717785bd3faf278d2c",
+    "tools/test_player_runtime.c": "43cefdfbd73b793d5306dc9e8a1ec8f4d1ec1ad952a1ce533a359b0fd2c4d3d2",
+    "tools/test_campaign_footprint_cow.c": "cdd20abee0557a2c07c55216fc9d13bf27ec3bb2faa9a1c544f7ad2f9a36b7d0",
+    "tools/test_live_marco_ares.py": "29aadb6e2b5ffaf80d871162e70f6a2434f254e5519ee117a4c344793f62b5c4",
+    "tools/test_frontend_ares.py": "35487d8fd70d9bb0d2ff4462712a29d74c54044c3faa95e82613a16542560eb3"
+  },
+  "evidence_logs": {
+    "docs/marco-live-validation/ares-region.log": "68d591764c1fcebb1c206eeaf029d4f44b64714230ea44927c735154f5ae8347",
+    "docs/marco-live-validation/ares-frontend.log": "32003eca1a085cb694a377f28d21398276d77553e43978cdef93e2b16a0bd484",
+    "docs/marco-live-validation/ares-footprints.log": "a59545ab02b159f169c54bef1ce4546d3e0639150bbbafdd8647cdfde0389078",
+    "docs/marco-live-validation/host-check.log": "f012fb37749c4b456f1081ebbba7956f95f3b21027c596bc5be7ace8eebd07a2",
+    "docs/marco-live-validation/host-ubsan.log": "d4d321a0cad23f430b7a8dbe2b0697e60292d3aa8d6a33afc2d8b7da7e01ee89"
+  }
+}

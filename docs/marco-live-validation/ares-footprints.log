@@ -1,0 +1,31 @@
+OpenGL: Failed to load librashader: shaders will be disabled
+Loaded footprint-cow
+Vulkan Enabled: using paraLLEl-RDP
+MSX pack: 628 pages, 54 palettes, 79 chunks; cache=1264 KB DMA=498560 bytes startup evictions=0
+[WARN]: Stalled compile (compute, 5e969bd158b09fb3): thread 0 - 6585.232 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, d4db6236f1bec5e8): thread 0 - 161348.699 us (mode: sync, success: yes).
+[WARN]: Stalled compile (compute, 471d277cbebc0024): thread 0 - 11884.605 us (mode: sync, success: yes).
+MSX first frame ready
+MSX FOOTPRINT COW sample=1 mode=0 camera=0 phase=0 edits=1 changed=1 crc=c4e06b72
+MSX FOOTPRINT COW sample=2 mode=0 camera=0 phase=0 edits=1 changed=1 crc=048ff22b
+MSX FOOTPRINT COW sample=3 mode=0 camera=0 phase=0 edits=1 changed=1 crc=c4e06b72
+MSX FOOTPRINT COW sample=4 mode=0 camera=320 phase=0 edits=1 changed=0 crc=2dd2b793
+MSX FOOTPRINT COW sample=5 mode=0 camera=640 phase=0 edits=1 changed=1 crc=2035c142
+MSX FOOTPRINT COW sample=6 mode=0 camera=1024 phase=0 edits=1 changed=1 crc=2f8a1edc
+MSX FOOTPRINT COW sample=7 mode=0 camera=0 phase=0 edits=360 changed=282 crc=6fa6e3ee
+MSX FOOTPRINT COW sample=8 mode=0 camera=31 phase=0 edits=360 changed=282 crc=2461e5be
+MSX FOOTPRINT COW sample=9 mode=0 camera=320 phase=0 edits=360 changed=282 crc=ef69c031
+MSX FOOTPRINT COW sample=10 mode=0 camera=640 phase=0 edits=360 changed=282 crc=4f8196eb
+MSX FOOTPRINT COW sample=11 mode=0 camera=1024 phase=0 edits=360 changed=282 crc=723ea46a
+MSX FOOTPRINT COW sample=12 mode=1 camera=0 phase=0 edits=1 changed=1 crc=4020f5e2
+MSX FOOTPRINT COW sample=13 mode=1 camera=0 phase=0 edits=1 changed=1 crc=804f6cbb
+MSX FOOTPRINT COW sample=14 mode=1 camera=0 phase=0 edits=1 changed=1 crc=4020f5e2
+MSX FOOTPRINT COW sample=15 mode=1 camera=320 phase=0 edits=1 changed=0 crc=5cb098de
+MSX FOOTPRINT COW sample=16 mode=1 camera=640 phase=0 edits=1 changed=1 crc=c8cca139
+MSX FOOTPRINT COW sample=17 mode=1 camera=1024 phase=0 edits=1 changed=1 crc=d3a5ad53
+MSX FOOTPRINT COW sample=18 mode=1 camera=0 phase=0 edits=360 changed=282 crc=eb667d7e
+MSX FOOTPRINT COW sample=19 mode=1 camera=31 phase=0 edits=360 changed=282 crc=b28f18fb
+MSX FOOTPRINT COW sample=20 mode=1 camera=320 phase=0 edits=360 changed=282 crc=476217c1
+MSX FOOTPRINT COW sample=21 mode=1 camera=640 phase=0 edits=360 changed=282 crc=4ebf8ea9
+MSX FOOTPRINT COW sample=22 mode=1 camera=1024 phase=0 edits=360 changed=282 crc=8e1117e5
+MSX FOOTPRINT COW PASS samples=22 pixels=5377536 transparent=800248 changed=2830 noops=2 multi=10 max_upload=2048

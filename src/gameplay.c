@@ -198,7 +198,11 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->world.front_window=msx_draw_order(g->flow.mission,g->flow.stage).front_window;   /* 012022 (B26) */
     g->world.script_skip_unported=MSX_REFERENCE_INVULNERABLE!=0;   /* reference: skip unported script records */
 
-    g->world.pickup.mission=g->flow.mission;                        /* RAM 10C2F6 (0C0BAE) */
+    /* RAM 10C2F6 (0C0BAE): the arcade's mission value, 0 / 1 in Missions 1 / 2
+     * and 4 in Mission 3 (MAME RAM dumps of the capture from states4
+     * sec04_117966; 019240 selects the ripple palette 14C by it). Later
+     * missions keep the index until their value is read in a capture. */
+    g->world.pickup.mission=g->flow.mission==2u?4u:g->flow.mission;
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     g->in_stage=true;g->stage_camera_max=camera_max;

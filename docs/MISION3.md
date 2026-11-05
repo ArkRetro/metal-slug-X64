@@ -519,12 +519,41 @@ del mundo: `0AF17E` ×11 y `2869D6` ×4 (como antes) y `040DB4` ×1 (muerte de
 un soldado nativo de `neo_soldier_ai.c` con un tipo de golpe sin traducir
 allí); 1827 dibujos sin descriptor (antes 2493).
 
-Pendiente del paso 2: `08DA12` y `05D916/05C53C/05D226` (pasan al soldado
-normal por `0B05FE`/`0B0632`: hace falta convertir un nodo genérico en el
-soldado nativo, la misma pieza que el escudo roto), `04E990`, `097FCC`,
-`0569xx`. En la M3 la RAM `10C2F6` vale 4 (no el índice de misión 2 del
-port): las ondas `03C62A` de `03C52C` no salen en el mundo (`neo_gate.c`
-mira `pickup.mission`).
+**Segunda tanda** (misma rama):
+
+- **Nodo genérico → soldier nativo** (`0B05FE`/`0B0626`/`0B0632`): el actor
+  pide `become_soldier` y el mundo mueve el registro (`+00..+6D` con nombre,
+  `+6E..+93` locales, programa y cursor) a un soldado libre,
+  `neo_soldier_become` corre `0B05DC` y la entrada (`+7C` bit 7, `0B0750` /
+  `0B063E`) y el soldado sigue en la misma actualización. Lo usan el escudo
+  roto (`09B500`) y `08DA12`. Sin prueba de familia del tramo de soldado (el
+  soldado nativo tiene sus propias pruebas); la familia llega hasta la
+  conversión (la palabra de rutina `0B05FE` comparada).
+- **Soldados de ventana `08DA12`/`08DA34`**: salto desde la ventana,
+  aterrizaje, la rejilla de retardo `1067E6` (`00510C`) que los manda al
+  soldado normal, disparo `08DBE8`. Paradas explícitas: la granada de los
+  programas `23D976/28ABD4/23E82E` (`03BB8E` desde un nodo genérico) y
+  `08DBC4` con `+90 = 0` (compara `+90` como palabra con el byte alto de D0
+  tras `00427A`). Familia `m3window` (4 nodos, 237 actualizaciones) igual a
+  MAME; la prueba de familia lee la rejilla `1067E6` (`--ram 1067e6-1068e6`).
+- **Ondas `03C62A`**: RAM `10C2F6` vale 4 en la M3 (`gameplay.c`), la paleta
+  `0x14C` (`019240` → `01930A`) entra en el export.
+- **Guion**: las condiciones `0x14`/`0x15` (`01A7A2`/`01A7C8`: algún / ningún
+  jugador montado, `0AAA88`) que paraban el guion en `2DB148`.
+- **`neo_soldier_ai.c`**: las entradas de muerte `040B46` (tipos 3/4) y
+  `040BA8` (tipo 5 en el suelo) que paraban en `040DB4`.
+
+Recorrido en ares tras la segunda tanda (300 s): PASS, la lista de cámara
+llega a 6496 (antes 6465: el guion ya no para en `2DB148` y crea los
+registros del tramo final y el del jefe), 208 ranuras. Paradas explícitas
+por sección: salida 10, vagones 12 (antes 18), hueco 0, tramo final 20 (los
+registros que el guion parado no alcanzaba), jefe 1 (`04A2C2`, de la otra
+rama). Rutinas sin soporte del mundo: `0AF17E` ×13, `2869D6` ×4, `08DBC8`
+×1 (parada documentada de `08DA12`); `040DB4` desaparece. 1283 dibujos sin
+descriptor (antes 1827).
+
+Pendiente del paso 2: `05D916/05C53C/05D226` (con la conversión ya hecha),
+`04E990`, `097FCC`, `0569xx`, `0B9748`, la entrada en paracaídas.
 
 ## Pendiente
 

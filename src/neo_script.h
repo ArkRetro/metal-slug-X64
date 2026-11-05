@@ -55,6 +55,7 @@ typedef struct {
     bool alive;            /* routine != 003F1E */
     uint8_t follow_x,follow_y; /* +7A/+7B: use +3C/+40 instead of the 69B8/69BA point */
     uint16_t px,py;        /* +3C/+40 projected words */
+    uint8_t riding;        /* 0AAA88 nonzero: the player holds a vehicle slot (conditions 14/15) */
 } neo_script_player_t;
 typedef struct {
     uint16_t camera;       /* RAM 10E99E */

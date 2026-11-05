@@ -443,7 +443,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3mid1 m3mid2 m3mid3 m3mid4
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -471,6 +471,10 @@ FAMILY_ARGS_m3grenade4 := --attacks --terrain 10c72e --ring 10c72e --group-map 0
 FAMILY_ARGS_m3shield := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --node-fields 72 --root-words
 # m3shield4 = the three shield soldiers 09BA2A of section 4, capture B.
 FAMILY_ARGS_m3shield4 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --node-fields 72 --root-words
+# m3window = the Mission 3 window soldiers 08DA12 of section 2 (jump out,
+# land, the delay grid 1067E6 through 00510C -> 0B05FE: the node becomes a
+# soldier, its soldier updates left out), capture A.
+FAMILY_ARGS_m3window := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
 # m3mid<n> = the Mission 3 mid-boss aircraft 0A4A94 (neo_m3mid.c) in pieces
 # of one fight (tools/capture_m3_boss.sh mid, run4 from states4/sec04_117966,
 # MSX_FULL_FAMILY_RANGE=a4a94-a6ce9): body and its layer object 10E8C6, side

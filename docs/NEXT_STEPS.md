@@ -228,9 +228,13 @@
   (familias `m3grenade`, `m3grenade4`, `m3shield`, `m3shield4` iguales a
   MAME), el soldado de ventana `08DA12` (`m3window`), la conversión nodo
   genérico → soldado nativo, las ondas (10C2F6 = 4) y las condiciones
-  0x14/0x15 del guion (`2DB148`). Siguiente: `05D916` (con `05C53C/05D226`),
-  `04E990`, `097FCC`, `0569xx`, `0B9748` y la entrada en paracaídas; las
-  trazas están en /home/user/captures-m3s2 (A: sección 2, B: sección 4).
+  0x14/0x15 del guion (`2DB148`), los soldados `05D916/05D226/05C53C`
+  (`m3para`) y la máquina voladora `04E990` (`m3pod`). Siguiente: `097FCC`,
+  `0569xx`, `084588`, `0B9748` y la entrada en paracaídas; las trazas están
+  en /home/user/captures-m3s2 (A: sección 2, B: sección 4). En ares el
+  piloto ciego ya no llega a la arena del jefe en 300 s (progreso 5888) y
+  hay una parada nueva `0413D4` (soldado nativo); `1032` suena desde rom:/
+  (RAM de la caché).
 
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:

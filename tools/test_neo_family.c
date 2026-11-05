@@ -231,7 +231,7 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
         if (pick<0 || NODES[i].frame<NODES[pick].frame) pick=(int)i;
         else if (NODES[i].frame==NODES[pick].frame) pick=(int)i;
     }
-#ifdef FAMILY_M2BOSS
+#if defined(FAMILY_M2BOSS) || defined(FAMILY_SPLIT_CHILDREN)
     /* The frame mark can fall inside the list walk after the creator: the
      * children of one update (inserted after it, newest first) then split
      * over two frames; the first made is the last of them in the list. */

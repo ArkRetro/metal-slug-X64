@@ -596,7 +596,9 @@ PASS, 0 rescates, 208 ranuras (3328 KB). El código nuevo dejaba la caché
 explosión de muerte de los jefes `1032` (60 KB, una vez por jefe) suena desde
 `rom:/` (`game_audio.c`). Con los enemigos nuevos disparando, el piloto ciego
 (`--hop --pilot`) ya no llega a la arena del jefe en 300 s (progreso 5888;
-en otra pasada de 420 s, 4379: se queda en el tramo final). Registros
+en otras dos pasadas, de 420 s y de 300 s tras fusionar `ccr` con el paso 3,
+4379: la cámara se queda en el bloqueo de 4380 del tramo final, con
+`099DCC/04115A/0DC97E` vivos). Registros
 saltados (constructores no portados) por sección: salida 0, vagones 10
 (`02B202` ×4, `027F54`, `0391EA` ×2, `097FCC` ×2, `08AFB6`), hueco 0, tramo
 final 7 (`0A4A94`, `0569D0` ×2, `02B202`, `084588`, `0A2F2E`, `097FCC`), jefe

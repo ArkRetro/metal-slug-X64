@@ -1,0 +1,158 @@
+cc -std=c11 -Wall -Wextra -Werror -ffunction-sections -fdata-sections -Ibuild tools/test_m3_reward.c src/neo_m3reward.c src/neo_gactor.c src/neo_contact.c src/neo_item.c -Wl,--gc-sections -o build/host/m3-reward
+build/host/m3-reward
+PASS: M3 platform reward cases=140 requests=45 deletions=31; original score/sound/label effects
+mkdir -p build/host
+cc -std=c11 -Wall -Wextra -Werror tools/test_fixed.c -o build/host/fixed
+cc -std=c11 -Wall -Wextra -Werror tools/test_sprites.c -o build/host/sprites
+cc -std=c11 -Wall -Wextra -Werror tools/test_neo_motion.c -o build/host/motion
+cc -std=c11 -Wall -Wextra -Werror tools/test_scene_codec.c -o build/host/codec
+cc -std=c11 -Wall -Wextra -Werror tools/test_scene_clock.c -o build/host/clock
+cc -std=c11 -Wall -Wextra -Werror tools/test_cinematic_codec.c -o build/host/cinematic-codec
+cc -std=c11 -Wall -Wextra -Werror tools/test_msx_sfx.c src/msx_sfx.c -o build/host/msx-sfx
+cc -std=c11 -Wall -Wextra -Werror -DMSX_DIAG=1 tools/test_msx_diag.c src/msx_diag_core.c -o build/host/msx-diag
+build/host/msx-diag 2>/dev/null
+PASS: msx_diag ring (128 entries, wrap and order), pool peaks/refusals, stops and dump limit
+build/host/msx-sfx
+PASS: sound request map, channel retrigger/priority policy
+build/host/fixed
+PASS: 262144 pixel checks and known row
+build/host/sprites
+PASS: 262144 sprite bitplane checks
+build/host/motion
+PASS: arcade air trajectory, 22 full Q16.16 states match; signed shift and left acceleration
+build/host/codec
+PASS: codec exact size, malformed streams, output guards, standard CRC32, table CRC == bitwise CRC
+build/host/clock
+PASS: original cadence, pause/reset, timer wrap and retained catch-up debt, deferred steps
+build/host/cinematic-codec
+PASS: cinematic delta edits, truncation, bounds, atomic rejection and standard CRC32
+python3 tools/test_neo_scene.py
+......
+----------------------------------------------------------------------
+Ran 6 tests in 0.002s
+
+OK
+python3 tools/test_collision_audit.py
+.........
+----------------------------------------------------------------------
+Ran 9 tests in 0.480s
+
+OK
+python3 tools/test_mission_rest.py
+............
+----------------------------------------------------------------------
+Ran 12 tests in 2.731s
+
+OK
+python3 tools/test_neo_queue_publication.py
+PASS: synthetic sprite publication ordering, cross-video submissions and explicit empty buffers
+python3 tools/test_vehicle_wreckage.py
+....
+----------------------------------------------------------------------
+Ran 4 tests in 0.000s
+
+OK
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_soldier.c src/neo_soldier.c src/neo_rng.c -o build/host/soldier
+build/host/soldier
+PASS: native AF65A arithmetic equals captured M68000 RNG inputs and RAM outputs; complete AI remains unported
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_rng.c src/neo_soldier.c src/neo_rng.c -o build/host/rng
+build/host/rng
+PASS: 4 seed calls, 276 RNG states, 2 initializers, 26 decisions, 17 damping updates
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_animation.c src/neo_animation.c -o build/host/animation
+build/host/animation
+PASS: 6 animation starts, 54 helper steps and 54 exact descriptor/position/palette draws
+cc -std=c11 -Wall -Wextra -Werror tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o build/host/retro25d
+build/host/retro25d
+measured synthetic 4000-px level: worst 88 triangles, 5 planes in view
+PASS: perspective/parallax, near plane, depth normals, light falloff/backfaces, normalized RDP shades and 96-triangle budget
+PASS: contact-shadow fans, light slots, pulse time decay, impact/explosion events, fog focus, plane culling and measured budgets
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_history.c -o build/host/history
+build/host/history
+PASS: 180 original history-token writes; all byte inputs advance to nonzero 1/2
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_fields.c src/neo_animation.c -o build/host/marco-fields
+build/host/marco-fields
+PASS: 734 original Marco field/branch operations and 366 inline pose selections
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_animation.c src/marco_animation.c src/neo_animation.c -o build/host/marco-animation
+build/host/marco-animation
+PASS: synthetic paired clocks, shared fields, latched anchors and failure boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-controller
+build/host/marco-controller
+PASS: Marco controller inputs=3711 choices=376
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-advance tools/test_marco_controller.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-advance-controller
+build/host/marco-advance-controller
+PASS: Marco controller inputs=1632 choices=202
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_upper.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper
+build/host/marco-upper
+PASS: upper calls=1450 resets=57 services=1753
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-upper-combat tools/test_marco_upper.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper-combat-core
+build/host/marco-upper-combat-core
+PASS: upper calls=642 resets=14 services=967
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_upper_limits.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-upper-limits
+build/host/marco-upper-limits
+PASS: synthetic upper-controller reset, allocation counters, grenade gates, D7/null semantics and missing-service stop
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_crouch.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-crouch
+build/host/marco-crouch
+PASS: crouch calls=227 services=482 draws=222 events=33
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-crouch-turn tools/test_marco_crouch.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-crouch-turn
+build/host/marco-crouch-turn
+PASS: crouch calls=416 services=887 draws=414 events=38
+cc -std=c11 -Wall -Wextra -Werror -Ibuild/marco-motion tools/test_marco_motion.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-motion
+build/host/marco-motion
+PASS: motion calls=437 services=890 draws=434 events=0
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_body.c src/marco_body.c src/marco_stance.c src/marco_motion.c src/marco_crouch.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-body
+build/host/marco-body
+PASS: cross-controller same-tick branches, deferred landing and explicit external/failure boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_ammo.c src/marco_ammo.c -o build/host/marco-ammo
+build/host/marco-ammo
+PASS: ammunition calls=134 and synthetic accounting boundaries
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_weapons.c src/marco_ammo.c -o build/host/marco-weapons
+build/host/marco-weapons
+PASS: weapon block: 1840 closed-loop frames, 1849 events (3 grants, 1 bomb pickups, 3 expiries)
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_hud.c src/neo_hud.c src/neo_vslot.c -o build/host/hud
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_continue.c src/neo_hud.c -o build/host/continue
+build/host/continue
+HUD: explicit stop continue item 019798 0
+HUD: explicit stop continue item 019798 0
+HUD: explicit stop continue item 019798 0
+go1: 545 updates from frame 3554, panel GAME OVER
+go2: 155 updates from frame 3554, panel continued
+go3: 318 updates from frame 3554, panel GAME OVER
+PASS: continue/game over, 1018 updates, 48816 panel words, timer and +88 equal to MAME
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_vslot.c src/neo_vslot.c -o build/host/vslot
+build/host/vslot
+PASS: vehicle slot services (camelfam tankfam): 3918 calls closed-loop (476 bindings, 551 accepts, 64 selections, 4 exits), 282096 slot bytes compared, 26201 reads of native state; 0CA1B8 3533 input samples (3 with A+B)
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_neo_vulcan.c src/neo_vulcan.c -o build/host/vulcan
+build/host/vulcan
+PASS: vulcan turret control (camelfam tankfam): 543 closed-loop updates, 235 bullets (101 spread +-2), 150 turning updates, 13575 control bytes
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_mount.c src/marco_mount.c src/neo_vslot.c -o build/host/mount
+build/host/mount
+mount: 517 updates (free 36, enter 2, mount 2, ride 472, die 1, eject 1, jump 3), 12470 node bytes, 691 slot/record bytes, 0 failures
+build/host/hud
+HUD: 1099 intervals, 219800 fix words, 1095 timers; mismatching intervals 0 (stars 0, score/lives/gauge 0, ARMS/BOMB 0, timer 0, P2 0); first frame 178 words; 0 intervals of unknown parity; 11 timer resets 01913C; 4 timers left out (RAM flag changed in the interval)
+PASS: fix-layer HUD bit-exact
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_hgun.c src/marco_hgun.c -o build/host/hgun
+build/host/hgun
+air replay: 144 updates compared (71 bullets, 32 sweep steps), 332 left out (knife, crouch landing)
+H aim: 22 logged diagonal bullets in 6 sweeps are steps of 0C453A programs (facing-mirrored); scripted states checked; 0 mismatches
+PASS: H fire states and diagonal sweeps (0C3E9C..0C4006, 0C453A)
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_death.c src/marco_death.c src/neo_animation.c -o build/host/death
+build/host/death
+respawn (Mission 2 boss tower): 15 respawns, 810 floor searches of 014742 replayed; 0 mismatches
+death: 15 deaths, 251 airborne velocities, 617 speeds, 15 end/gone updates, 15 respawn points, 15 entrances, 315 update poses equal (498 updates with swept motion not compared); 0 mismatches
+PASS: player death 0C2956..0C2F96 and respawn 019658/0196E8/014742/0C1438
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_legs.c src/marco_legs.c src/neo_animation.c -o build/host/legs
+build/host/legs
+legs: 194 body steps equal, 0 different
+PASS: +72/+74 of the run (speed 0x1C1), jump and running jump programs, update by update
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-stance
+build/host/marco-stance
+PASS: stance calls=80 services=80
+cc -std=c11 -Wall -Wextra -Werror -Ibuild tools/test_marco_idle.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-idle
+build/host/marco-idle
+PASS: idle decisions=800
+cc -std=c11 -Wall -Wextra -Werror tools/test_diorama_building.c src/diorama_building.c src/retro25d.c -lm -o build/host/diorama-building
+build/host/diorama-building
+PASS: building cutout bounds, projected side extent and full-region triangle budget
+cc -std=c11 -Wall -Wextra -Werror tools/test_marco_common.c src/marco_common.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o build/host/marco-common
+build/host/marco-common
+PASS: common-tail timer/palette width, query order, immunity, form request and death precedence

@@ -244,6 +244,11 @@ struct neo_genv {
      * native soldier after this update (the world moves the record); false
      * when the world has no soldier slot (NULL: explicit stop). */
     bool (*become_soldier)(void *ctx,neo_gactor_t *a,uint32_t entry);
+    /* Actual player nodes, before script-point substitution in `players`.
+     * 0B9876/0B98F8 read +3C/+40 and +15 bit6 directly. The active mask
+     * still comes from players (01AEB0, RAM 10C33C). False: unavailable. */
+    struct {uint16_t x,y;uint8_t flags15;} live_player[2];
+    bool live_players_valid;
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

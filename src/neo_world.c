@@ -1235,6 +1235,8 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;
+    g->live_players_valid=true;
+    g->live_player[0].x=px;g->live_player[0].y=py;g->live_player[0].flags15=pl?pl->flags15:0;
     /* RAM 10000E as the actors read it: the counter has already advanced for
      * this update (video_phase is the value before it). */
     g->video=(uint16_t)(w->video_phase+1u);g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;

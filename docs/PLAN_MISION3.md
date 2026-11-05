@@ -15,6 +15,12 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
 
 ## Estado
 
+- **Continuación sobre `bea67fe`** (`codex/continue-claude`): evento de
+  puntos de la plataforma `0B9748/0B9780` nativo. Coinciden 140 llamadas
+  controladas de MAME en host y MIPS/ares, incluida la puntuación BCD y las
+  etiquetas. No es un nuevo recorrido completo de la misión. Véanse
+  [la continuación y sus límites](CONTINUACION_CLAUDE.md).
+
 - **Paso 1: hecho** (rama `work-m3step1`, [MISION3.md](MISION3.md) «Paso 1»).
   `work-m3c` fusionada sin desfase de filas; vagones `038D1E/038D26` (puertas,
   blancos, piezas, 4 estampadores), plataforma `0B9286` (mapa `0E6896`),

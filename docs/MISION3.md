@@ -375,9 +375,10 @@ dirección):
   viene entre x F60 y FA0 hasta que la cámara llega a F10, se queda en FA0
   (`10C6BD = 1`), mapa dinámico `0E6896` (`0140C0`), se borra en la cámara
   10F0; su pieza `0B93B4` (01AD6E a +C0) y el registro del guion `0B9400`
-  (se borra con `10C6BD ≠ 0`). `0B9748` (puntos al saltar a la plataforma:
-  lee `+15` del jugador, que el entorno de los actores no lleva) queda fuera:
-  se crea como externo y se cuenta.
+  (se borra con `10C6BD ≠ 0`). El evento `0B9748` se creó inicialmente
+  como externo. La [continuación sobre `bea67fe`](CONTINUACION_CLAUDE.md)
+  añade su ejecución nativa y una vista real de `+15/+3C/+40` del jugador,
+  con referencias controladas del evento, puntuación y etiquetas.
 
 **Familias contra MAME** (capturas desde `states4/sec04_117966`, borradas
 tras extraer):
@@ -553,7 +554,8 @@ rama). Rutinas sin soporte del mundo: `0AF17E` ×13, `2869D6` ×4, `08DBC8`
 descriptor (antes 1827).
 
 Pendiente del paso 2: `05D916/05C53C/05D226` (con la conversión ya hecha),
-`04E990`, `097FCC`, `0569xx`, `0B9748`, la entrada en paracaídas.
+`04E990`, `097FCC`, `0569xx`, la entrada en paracaídas. `0B9748` está
+traducido en la continuación indicada arriba, sin nuevo recorrido completo.
 
 ## Pendiente
 

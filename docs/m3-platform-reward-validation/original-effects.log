@@ -1,0 +1,556 @@
+MAME debugger version 0.276 (unknown)
+Currently targeting mslugx (Metal Slug X - Super Vehicle-001 (NGM-2500 ~ NGH-2500))
+Breakpoint 1 set
+Breakpoint 2 set
+Breakpoint 3 set
+Breakpoint 4 set
+Breakpoint 5 set
+RETURN case=0
+
+RETURN case=1
+
+REWARD case=2 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=2 token=1121
+
+ALLOC case=2 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=2 pc=00418A
+
+REWARD case=3 player=1 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=3 token=1121
+
+ALLOC case=3 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=3 pc=00418A
+
+REWARD case=4 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=4 token=1121
+
+ALLOC case=4 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=4 pc=00418A
+
+RETURN case=5
+
+REWARD case=6 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=6 token=1121
+
+ALLOC case=6 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=6 pc=00418A
+
+RETURN case=7
+
+RETURN case=8
+
+RETURN case=9
+
+RETURN case=10
+
+RETURN case=11
+
+RETURN case=12
+
+RETURN case=13
+
+RETURN case=14
+
+RETURN case=15
+
+RETURN case=16
+
+RETURN case=17
+
+RETURN case=18
+
+RETURN case=19
+
+RETURN case=20
+
+RETURN case=21
+
+RETURN case=22
+
+RETURN case=23
+
+RETURN case=24
+
+RETURN case=25
+
+RETURN case=26
+
+RETURN case=27
+
+RETURN case=28
+
+RETURN case=29
+
+RETURN case=30
+
+RETURN case=31
+
+RETURN case=32
+
+RETURN case=33
+
+RETURN case=34
+
+RETURN case=35
+
+RETURN case=36
+
+RETURN case=37
+
+RETURN case=38
+
+RETURN case=39
+
+RETURN case=40
+
+RETURN case=41
+
+RETURN case=42
+
+RETURN case=43
+
+RETURN case=44
+
+RETURN case=45
+
+RETURN case=46
+
+RETURN case=47
+
+RETURN case=48
+
+RETURN case=49
+
+RETURN case=50
+
+RETURN case=51
+
+RETURN case=52
+
+RETURN case=53
+
+RETURN case=54
+
+RETURN case=55
+
+RETURN case=56
+
+RETURN case=57
+
+RETURN case=58
+
+RETURN case=59
+
+RETURN case=60
+
+RETURN case=61
+
+RETURN case=62
+
+RETURN case=63
+
+RETURN case=64
+
+RETURN case=65
+
+RETURN case=66
+
+RETURN case=67
+
+RETURN case=68
+
+RETURN case=69
+
+RETURN case=70
+
+RETURN case=71
+
+RETURN case=72
+
+RETURN case=73
+
+RETURN case=74
+
+RETURN case=75
+
+RETURN case=76
+
+RETURN case=77
+
+RETURN case=78
+
+RETURN case=79
+
+REWARD case=80 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=80 token=1121
+
+ALLOC case=80 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=80 pc=00418A
+
+REWARD case=81 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=81 token=1121
+
+ALLOC case=81 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=81 pc=00418A
+
+REWARD case=82 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=82 token=1121
+
+ALLOC case=82 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=82 pc=00418A
+
+RETURN case=83
+
+RETURN case=84
+
+RETURN case=85
+
+RETURN case=86
+
+REWARD case=87 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=87 token=1121
+
+ALLOC case=87 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=87 pc=00418A
+
+REWARD case=88 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=88 token=1121
+
+ALLOC case=88 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=88 pc=00418A
+
+REWARD case=89 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=89 token=1121
+
+ALLOC case=89 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=89 pc=00418A
+
+RETURN case=90
+
+RETURN case=91
+
+RETURN case=92
+
+RETURN case=93
+
+REWARD case=94 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=94 token=1121
+
+ALLOC case=94 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=94 pc=00418A
+
+REWARD case=95 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=95 token=1121
+
+ALLOC case=95 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=95 pc=00418A
+
+REWARD case=96 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=96 token=1121
+
+ALLOC case=96 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=96 pc=00418A
+
+RETURN case=97
+
+REWARD case=98 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=98 token=1121
+
+ALLOC case=98 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=98
+
+REWARD case=99 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=99 token=1121
+
+ALLOC case=99 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=99
+
+REWARD case=100 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=100 token=1121
+
+ALLOC case=100 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=100
+
+REWARD case=101 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=101 token=1121
+
+ALLOC case=101 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=101
+
+REWARD case=102 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=102 token=1121
+
+ALLOC case=102 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=102
+
+REWARD case=103 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=103 token=1121
+
+ALLOC case=103 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=103
+
+REWARD case=104 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=104 token=1121
+
+ALLOC case=104 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=104
+
+REWARD case=105 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F2F8000 py=01B84000
+
+SOUND case=105 token=1121
+
+ALLOC case=105 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=105
+
+REWARD case=106 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F308000 py=01B84000
+
+SOUND case=106 token=1121
+
+ALLOC case=106 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=106 pc=00418A
+
+REWARD case=107 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F318000 py=01B84000
+
+SOUND case=107 token=1121
+
+ALLOC case=107 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=107 pc=00418A
+
+REWARD case=108 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=108 token=1121
+
+ALLOC case=108 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=108 pc=00418A
+
+DELETE case=109 pc=00418A
+
+DELETE case=110 pc=00418A
+
+REWARD case=111 player=1 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=111 token=1121
+
+ALLOC case=111 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=111 pc=00418A
+
+REWARD case=112 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=112 token=1121
+
+ALLOC case=112 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=112 pc=00418A
+
+RETURN case=113
+
+REWARD case=114 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=114 token=1121
+
+ALLOC case=114 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=114 player=1 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=114 token=1121
+
+ALLOC case=114 index=1 reserve=14 routine=08D330 creator=101414
+
+RETURN case=114
+
+REWARD case=115 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=115 token=1121
+
+ALLOC case=115 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=115 player=1 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=115 token=1121
+
+ALLOC case=115 index=1 reserve=14 routine=08D330 creator=101414
+
+RETURN case=115
+
+REWARD case=116 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=116 token=1121
+
+ALLOC case=116 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=116 player=1 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=116 token=1121
+
+ALLOC case=116 index=1 reserve=14 routine=08D330 creator=101414
+
+RETURN case=116
+
+REWARD case=117 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=117 token=1121
+
+ALLOC case=117 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=117 pc=00418A
+
+REWARD case=118 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=118 token=1121
+
+ALLOC case=118 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=118 player=1 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=118 token=1121
+
+ALLOC case=118 index=1 reserve=14 routine=08D330 creator=101414
+
+RETURN case=118
+
+REWARD case=119 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=119 token=1121
+
+ALLOC case=119 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=119 player=1 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=119 token=1121
+
+ALLOC case=119 index=1 reserve=14 routine=08D330 creator=101414
+
+DELETE case=119 pc=00418A
+
+REWARD case=120 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=120 token=1121
+
+ALLOC case=120 index=0 reserve=14 routine=08D330 creator=101414
+
+REWARD case=120 player=1 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA08000 y=00284000 px=0F228000 py=01B84000
+
+SOUND case=120 token=1121
+
+ALLOC case=120 index=1 reserve=14 routine=08D330 creator=101414
+
+RETURN case=120
+
+REWARD case=121 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=121 token=1121
+
+ALLOC case=121 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=121 pc=00418A
+
+RETURN case=122
+
+RETURN case=123
+
+DELETE case=124 pc=00418A
+
+RETURN case=125
+
+DELETE case=126 pc=00418A
+
+REWARD case=127 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0EC64000 py=01C94000
+
+SOUND case=127 token=1121
+
+ALLOC case=127 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=127 pc=00418A
+
+RETURN case=128
+
+REWARD case=129 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA08000 y=00284000 px=0F408000 py=01B84000
+
+SOUND case=129 token=1121
+
+ALLOC case=129 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=129 pc=00418A
+
+RETURN case=130
+
+RETURN case=131
+
+REWARD case=132 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA00000 y=00280000 px=0F400000 py=01B80000
+
+SOUND case=132 token=1121
+
+ALLOC case=132 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=132 pc=00418A
+
+DELETE case=133 pc=00418A
+
+RETURN case=134
+
+REWARD case=135 player=0 d1=1 tag=0B99E4 w0=0000 w1=0000 x=FFA00000 y=00280000 px=0F220000 py=01B80000
+
+SOUND case=135 token=1121
+
+ALLOC case=135 index=0 reserve=14 routine=08D330 creator=101414
+
+RETURN case=135
+
+RETURN case=136
+
+RETURN case=137
+
+REWARD case=138 player=0 d1=1 tag=0B99E0 w0=0005 w1=0000 x=FFA00000 y=00280000 px=0F400000 py=01B80000
+
+SOUND case=138 token=1121
+
+ALLOC case=138 index=0 reserve=14 routine=08D330 creator=101414
+
+DELETE case=138 pc=00418A
+
+DELETE case=139 pc=00418A

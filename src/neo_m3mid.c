@@ -1,5 +1,4 @@
 #include "neo_region.h"
-#if !defined(N64) || defined(MSX_M3MID)
 /* Mission 3: the mid-boss aircraft 0A4A94 (script record 2DAE20, camera
  * 3944), manual translation of 0A4A94..0A7140 (ROM labels as provenance;
  * docs/JEFE_MISION3.md, "Jefe intermedio").
@@ -985,4 +984,3 @@ ga_result_t neo_m3mid_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (r==0xa54ac || r==0xa54b8 || r==0xa54e2) return bomb_end(a,e);
     return soldier_tick(a,e);
 }
-#endif

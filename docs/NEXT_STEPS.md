@@ -249,11 +249,10 @@
 - **Misión 3, paso 3 (rama `work-m3step3`)**: la aeronave `0A4A94` nativa
   (`neo_m3mid.c`, 15 constructores y la capa `10E8C6`), familias `m3mid1..4`
   iguales a MAME (JEFE_MISION3.md «Jefe intermedio: estado del port»).
-  La consola lo compila solo con `make MSX_M3MID=1` (+48 KB: el cartucho
-  de la M3 no llega a las 208 ranuras). Siguiente: servir los programas y
-  bloques de ROM de cada misión desde su paquete para que quepa; probarlo
-  en ares hasta matar la aeronave; luego el paso 5 (vehículos
-  `093C9A`/`0AC866`, forma `+93 = 2`, arma E).
+  Los programas y bloques de ROM de la M2 y la M3 van en el bloque `MSXD`
+  de sus paquetes (MEMORY_OPTIMIZATION.md 5b): 210 ranuras con el jefe
+  dentro. Siguiente: el paso 5 (vehículos `093C9A`/`0AC866`, forma
+  `+93 = 2`, arma E).
 
 - **Misión 3, jefe `04A2C2` y aeronave `0A4A94` investigados (rama
   `work-m3boss`, [JEFE_MISION3.md](JEFE_MISION3.md))**: 9 piezas coordinadas

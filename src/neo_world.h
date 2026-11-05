@@ -308,4 +308,7 @@ unsigned neo_world_alive(const neo_world_t *world);
 void neo_world_camera(neo_world_t *world,const neo_world_player_t *player);
 /* Native animation program of a ROM program tag (tools/extract_soldier_programs.py). */
 const neo_anim_program_t *neo_world_program(uint32_t tag);
+/* Programs looked up after the image's (the loaded mission's, actor.c:
+ * scene_stage_program). */
+void neo_world_set_program_extra(const neo_anim_program_t *(*lookup)(uint32_t tag));
 #endif

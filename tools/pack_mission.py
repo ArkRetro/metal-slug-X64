@@ -17,8 +17,12 @@ their native events) are counted, not packed.
 
 Layout (big endian, every table 4-byte aligned; version 3, read by
 src/scene_assets.c scene_mission_*):
-  'MSXM' u16 version=3 u16 mission u16 stages u16 palettes u32 images u32 chunks
+  'MSXM' u16 version=4 u16 mission u16 stages u16 palettes u32 images u32 chunks
   u32 cells_total u32 grid_bytes u32 actors u32 actor_images u32 resources
+  u32 data_offset u32 data_length: the mission's own data 'MSXD' (mission_data;
+    0 = none): the ROM blobs and animation programs of the mission's actors
+    that the console image leaves out (groups m2/m3 of data/region_rom.json
+    and data/soldier_programs.json; docs/MEMORY_OPTIMIZATION.md rule 5)
   stage[stages] (128 bytes):
                   u32 descriptor u16 width u16 camera_max u32 backdrop_rgba
                   u32 first_cell u32 cell_count u16 grid_columns u16 grid_rows
@@ -78,6 +82,47 @@ def actor_frames(mission):
     empty=[e for e in m.get('empty',[]) if e not in known and e not in {f['descriptor'] for f in frames}]
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
+GROUPS={2:('m2',),3:('m3',)}
+def anim_kinds():
+    """Numbers of neo_anim_kind_t (src/neo_animation.h, in declaration order)."""
+    import re
+    text=(ROOT/'src/neo_animation.h').read_text()
+    body=re.search(r'typedef enum \{(.*?)\} neo_anim_kind_t;',text,re.S).group(1)
+    body=re.sub(r'/\*.*?\*/','',body,flags=re.S)
+    return {n.strip():i for i,n in enumerate(x for x in body.split(',') if x.strip())}
+KIND_NAMES={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP','FIELD50':'NEO_ANIM_FIELD50','FINISH':'NEO_ANIM_FINISH',
+    'FLIP_FACING':'NEO_ANIM_FLIP_FACING','UNRECOVERED':'NEO_ANIM_UNRECOVERED','REPLACE_PALETTE':'NEO_ANIM_REPLACE_PALETTE',
+    'SPAWN_THROW':'NEO_ANIM_SPAWN_THROW','SELECT_POSE':'NEO_ANIM_SELECT_POSE','SET_BYTE':'NEO_ANIM_SET_BYTE','SET_WORD':'NEO_ANIM_SET_WORD',
+    'SET_LONG':'NEO_ANIM_SET_LONG','DEC_BYTE':'NEO_ANIM_DEC_BYTE','COND_JUMP':'NEO_ANIM_COND_JUMP','SWITCH':'NEO_ANIM_SWITCH',
+    'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL','SELECT_FIELD_POSE':'NEO_ANIM_SELECT_FIELD_POSE'}
+def mission_data(mission):
+    """'MSXD' u16 version=1 u16 blobs u16 programs u16 0, blob[] (u32 rom
+    address, u32 offset, u32 length), program[] (u32 tag, u32 offset, u16
+    commands, u16 0; tags ascending), then the data: blob bytes and
+    10-byte commands (u8 kind, i24 asset, u16 target, u8 operand, u8 flags,
+    i8 dx, i8 dy: neo_anim_command_t, as compile_soldier_ai_tables.py
+    writes them). Offsets from the block start, 2-byte aligned."""
+    groups=GROUPS.get(mission,())
+    rom=json.loads((ROOT/'data/region_rom.json').read_text());progs=json.loads((ROOT/'data/soldier_programs.json').read_text())
+    blobs=[b for b in rom['blobs'] if b.get('group') in groups]
+    programs=sorted((p for p in progs['programs'] if p.get('group') in groups),key=lambda p:p['root'])
+    if not blobs and not programs:return b'',{}
+    kinds=anim_kinds()
+    base=12+12*len(blobs)+12*len(programs);body=bytearray();recs=bytearray()
+    for b in blobs:
+        data=bytes.fromhex(b['hex']);recs+=struct.pack('>III',int(b['rom'],16),base+len(body),len(data));body+=data
+        if len(body)&1:body.append(0)
+    seen=set()
+    for p in programs:
+        assert p['root'] not in seen;seen.add(p['root'])
+        recs+=struct.pack('>IIHH',p['root'],base+len(body),len(p['commands']),0)
+        for c in p['commands']:
+            asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
+            asset&=0xffffffff
+            assert asset<0x800000 or asset>=0xff800000,('asset',hex(asset))
+            body+=struct.pack('>B',kinds[KIND_NAMES[c['kind']]])+(asset&0xffffff).to_bytes(3,'big')+struct.pack('>HBBbb',c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
+    blob=b'MSXD'+struct.pack('>HHHH',1,len(blobs),len(programs),0)+bytes(recs)+bytes(body)
+    return blob,dict(blobs=len(blobs),blob_bytes=sum(len(b['hex'])//2 for b in blobs),programs=len(programs),commands=sum(len(p['commands']) for p in programs),bytes=len(blob))
 def build(mission,stage_dirs,crom,rom=None):
     MISSION[0]=mission
     pages=[];page_ids={};palettes=[];pal_ids={}
@@ -203,7 +248,8 @@ def build(mission,stage_dirs,crom,rom=None):
         else:codec=0;packed=decoded
         chunks.append([len(body),len(packed),zlib.crc32(decoded),codec])
         body.extend(packed);body.extend(bytes((-len(body))%64))
-    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIII',3,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res))
+    data,data_report=mission_data(mission)
+    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',4,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
     stage_at=len(head);head+=bytes(STAGE_BYTES*len(stages))
     for layer,x,y,ph in cells:head+=struct.pack('>BBhh8H',layer,0,x,y,*ph)
     for im in images:head+=struct.pack('>4H',*im)
@@ -215,6 +261,8 @@ def build(mission,stage_dirs,crom,rom=None):
     grids_at=len(head);head+=grids
     while len(head)%4:head.append(0)
     blobs_at=len(head);head+=blobs
+    while len(head)%4:head.append(0)
+    if data:struct.pack_into('>I',head,40,len(head));head+=data
     head+=bytes((-len(head))%64)
     for i,c in enumerate(chunks):c[0]+=len(head);struct.pack_into('>4I',head,table_at+16*i,*c)
     for k,st in enumerate(stages):
@@ -229,7 +277,7 @@ def build(mission,stage_dirs,crom,rom=None):
     blob=bytes(head)+bytes(body)
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),
                      actors=len(actors),actor_images=len(actor_images),actor_pages=len({im[0] for im in actor_images}),resources=len(res),
-                     header_bytes=len(head),decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
+                     header_bytes=len(head),mission_data=data_report,decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128
 def recon_blob(stage,rom):

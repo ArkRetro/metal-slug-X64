@@ -100,7 +100,7 @@ static bool load_stage(void) {
     scene_renderer_stage_changed();
     /* The stage's own ROM data in the pack (Mission 3 'MSXR': the dynamic
      * maps of the platform 0B9286 and the others) for the generic actors. */
-    ga_rom_set_extra(scene_stage_rom);
+    ga_rom_set_extra(scene_stage_rom);neo_world_set_program_extra(scene_stage_program);
     if (st->dynamic_map_count) debugf("MSX stage %u: %u dynamic maps from the pack's map reconnaissance\n",index+1,st->dynamic_map_count);
     neo_world_stage_t ws={st->script,st->script_len,st->script_rom,st->camera_list,st->camera_len,st->camera_rom};
     /* 019604 record +2: the x the player is placed at (0x68 from the left). */

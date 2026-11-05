@@ -270,6 +270,28 @@ M3MID_ROOTS=[0x2a4d16,0x2a4dc4,0x2a4d2e,0x2a4d22,0x2a4e66,0x2a4dd0,0x2a4eee,0x2a
     0x22da42,0x22da98,0x22daee,0x22dc2c,0x22dc82,0x2a5626,0x2a5950,0x2a5a62,0x2a5a90,0x2a5b14,0x2a5b66,0x2a5be8,
     0x2a5c4e,0x2a5c8c,0x2a5d3e,0x2a5df0,0x2a5ea2,0x2a5f54,0x2a595c]
 ROOTS+=M3MID_ROOTS
+# Mission-only programs (docs/MEMORY_OPTIMIZATION.md, rule 5): the blocks of
+# ROOTS whose comment starts with one of these lines belong to one mission
+# ("m2", "m3"): they go into that mission's pack (pack_mission.py, 'MSXD'),
+# not into the console image (compile_soldier_ai_tables.py). A root also
+# listed in another block stays in the image.
+MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
+    '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
+    '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
+    'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
+    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine')}
+def root_groups():
+    import re
+    text=Path(__file__).read_text();seen={};other=set()
+    for com,body in re.findall(r'((?:^#[^\n]*\n)+)((?:^(?!#)[^\n]*\n)+)',text,re.M):
+        if 'ROOTS' not in body:continue
+        first=com.split('\n')[0]
+        g=next((k for k,v in MISSION_BLOCKS.items() if first.startswith(v)),None)
+        roots=[int(x,16) for x in re.findall(r'0x[0-9a-f]+',body)]
+        if g:
+            for r in roots:seen.setdefault(r,g)
+        else:other.update(roots)
+    return {r:g for r,g in seen.items() if r not in other}
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):
@@ -343,7 +365,8 @@ def main():
     bank=(a.capture/'program-bank.bin').read_bytes();fixed=(a.capture/'program-fixed.bin').read_bytes()
     # Programs of a group (m3mid: the Mission 3 mid-boss) are left out of
     # the console image unless the build enables it (compile_soldier_ai_tables.py).
-    programs=[dict(root=r,commands=convert(bank,r,fixed),**({'group':'m3mid'} if r in M3MID_ROOTS and r not in ROOTS[:ROOTS.index(M3MID_ROOTS[0])] else {})) for r in ROOTS]
+    group=root_groups()
+    programs=[dict(root=r,commands=convert(bank,r,fixed),**({'group':group[r]} if r in group else {})) for r in ROOTS]
     kinds={}
     for prog in programs:
         for c in prog['commands']:kinds[c['kind']]=kinds.get(c['kind'],0)+1

@@ -1,6 +1,7 @@
 #ifndef MSX_SCENE_ASSETS_H
 #define MSX_SCENE_ASSETS_H
 #include <stdint.h>
+#include "neo_animation.h"
 #include <stdbool.h>
 enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
@@ -138,6 +139,9 @@ typedef struct {
 /* ROM bytes at `address` held by the loaded stage (its dynamic maps), or
  * NULL: the generic actors' ga_rom fallback (ga_rom_set_extra). */
 const uint8_t *scene_stage_rom(uint32_t address);
+/* An animation program of the loaded mission's own data (pack 'MSXD'),
+ * NULL when none (neo_world.c: after the image's soldier_programs). */
+const neo_anim_program_t *scene_stage_program(uint32_t tag);
 /* Opens /missionN.pack (header only; Mission 1's map goes back to the LRU). */
 bool scene_mission_load(unsigned mission);
 /* Reads one stage's tables into reserved cache slots and pins its map. */

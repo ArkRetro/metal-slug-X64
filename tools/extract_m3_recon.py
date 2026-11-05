@@ -49,7 +49,7 @@ def s16(v):return v-65536 if v&0x8000 else v
 def s32(v):return v-(1<<32) if v&0x80000000 else v
 def load_pack_grid(path):
     pack=path.read_bytes();assert pack[:4]==b'MSXM'
-    st=struct.unpack_from('>IHHIIIHHhhIIII',pack,40)
+    st=struct.unpack_from('>IHHIIIHHhhIIII',pack,48 if struct.unpack_from('>H',pack,4)[0]>=4 else 40)   # pack version 4: 48-byte header
     C,R,ox,oy,go=st[6],st[7],st[8],st[9],st[10]
     return pack[go:go+C*R],C,R,ox,oy
 def main():

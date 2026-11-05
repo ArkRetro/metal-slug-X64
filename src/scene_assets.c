@@ -570,7 +570,9 @@ typedef struct __attribute__((packed)) {
 _Static_assert(sizeof(pack_stage_t)<=128,"pack_mission.py stage record");
 typedef struct __attribute__((packed)) {
     char magic[4];uint16_t version,mission,stages,palettes;uint32_t images,chunks,cells,grid_bytes,actors,actor_images,resources;
+    uint32_t data_offset,data_length;   /* version 4: the mission's own data 'MSXD' (pack_mission.py mission_data) */
 } pack_header_t;
+static uint32_t mission_header_bytes;
 static pack_header_t mission_head;
 static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_chunks_at,mission_actors_at;
 /* The mission's native actors (pack version 3, docs/MISION2.md "Fase 2e"):
@@ -604,10 +606,48 @@ static void *take(unsigned bytes) {
     return p;
 }
 const scene_stage_t *scene_stage(void) { return stage_on?&stage:NULL; }
+/* The mission's own data 'MSXD' (pack version 4, docs/MEMORY_OPTIMIZATION.md
+ * rule 5): ROM blobs served to ga_rom and animation programs served to the
+ * world (neo_world.c program) while a stage of the mission is loaded. */
+typedef struct { uint32_t tag; neo_anim_program_t program; } stage_program_t;
+static const uint8_t *mission_data;static unsigned mission_blobs;static stage_program_t *stage_programs;static unsigned stage_program_count;
+static uint32_t rd32(const uint8_t *p) {return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];}
+static void load_mission_data(unsigned programs) {
+    mission_data=NULL;mission_blobs=0;stage_programs=NULL;stage_program_count=0;
+    if (mission_head.data_length<12u) return;
+    uint8_t *d=take(mission_head.data_length);rom_read(d,mission_head.data_offset,mission_head.data_length);
+    if (memcmp(d,"MSXD",4) || (d[4]<<8|d[5])!=1u) {debugf("MSX mission data block not read (explicit stop)\n");return;}
+    mission_data=d;mission_blobs=d[6]<<8|d[7];
+    stage_programs=take(programs*sizeof(stage_program_t));
+    _Static_assert(sizeof(neo_anim_command_t)==10,"MSXD command record");
+    for (unsigned i=0;i<programs;i++) {
+        const uint8_t *r=d+12u+12u*mission_blobs+12u*i;
+        uint32_t tag=rd32(r),at=rd32(r+4);unsigned n=r[8]<<8|r[9];
+        neo_anim_command_t *c=(neo_anim_command_t*)(d+at);
+        for (unsigned k=0;k<n;k++) {   /* in place: the record and the struct are 10 bytes */
+            const uint8_t *q=d+at+10u*k;
+            int32_t asset=(int32_t)((uint32_t)q[1]<<16|(uint32_t)q[2]<<8|q[3]);if (asset&0x800000) asset-=0x1000000;
+            neo_anim_command_t v={(neo_anim_kind_t)q[0],asset,(uint16_t)(q[4]<<8|q[5]),q[6],q[7],(int8_t)q[8],(int8_t)q[9]};
+            c[k]=v;
+        }
+        stage_programs[i]=(stage_program_t){tag,{c,(uint16_t)n}};
+    }
+    stage_program_count=programs;
+}
+const neo_anim_program_t *scene_stage_program(uint32_t tag) {
+    if (!stage_on) return NULL;
+    unsigned lo=0,hi=stage_program_count;
+    while (lo<hi) {unsigned m=(lo+hi)/2;if (stage_programs[m].tag<tag) lo=m+1; else hi=m;}
+    return lo<stage_program_count && stage_programs[lo].tag==tag?&stage_programs[lo].program:NULL;
+}
 const uint8_t *scene_stage_rom(uint32_t address) {
     if (!stage_on) return NULL;
     for (unsigned i=0;i<stage.dynamic_map_count;i++)
         if (address>=stage.dynamic_map_rom[i] && address<stage.dynamic_map_rom[i]+stage.dynamic_map_length[i]) return stage.dynamic_map[i]+(address-stage.dynamic_map_rom[i]);
+    for (unsigned i=0;i<mission_blobs;i++) {
+        const uint8_t *r=mission_data+12u+12u*i;uint32_t rom=rd32(r),len=rd32(r+8);
+        if (address>=rom && address<rom+len) return mission_data+rd32(r+4)+(address-rom);
+    }
     return NULL;
 }
 static void release_reserved(void) {
@@ -651,11 +691,14 @@ bool scene_mission_load(unsigned mission) {
     mission_rom=PhysicalAddr((void*)(uintptr_t)at);mission_bytes=(uint32_t)dfs_rom_size(path);
     static pack_header_t head __attribute__((aligned(16)));
     data_cache_hit_writeback_invalidate(&head,sizeof(head));dma_read(&head,mission_rom,sizeof(head));
-    if (memcmp(head.magic,"MSXM",4) || head.version!=3 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
+    if (memcmp(head.magic,"MSXM",4) || (head.version!=3 && head.version!=4) || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
         debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);return false;
     }
+    /* Version 3 has no mission data (its header ends at `resources`). */
+    mission_header_bytes=head.version>=4?sizeof(head):sizeof(head)-8u;
+    if (head.version<4) head.data_offset=head.data_length=0;
     mission_head=head;
-    uint32_t o=sizeof(head)+128u*head.stages;
+    uint32_t o=mission_header_bytes+128u*head.stages;
     mission_cells_at=o;o+=22u*head.cells;
     mission_images_at=o;o+=8u*head.images;
     mission_palettes_at=o;o+=32u*head.palettes;
@@ -694,7 +737,7 @@ bool scene_stage_load(unsigned index) {
     uint32_t began=TICKS_READ();
     quiesce();
     static pack_stage_t ps __attribute__((aligned(16)));
-    data_cache_hit_writeback_invalidate(&ps,sizeof(ps));dma_read(&ps,mission_rom+sizeof(pack_header_t)+128u*index,sizeof(ps));
+    data_cache_hit_writeback_invalidate(&ps,sizeof(ps));dma_read(&ps,mission_rom+mission_header_bytes+128u*index,sizeof(ps));
     /* The previous stage's chunks and tables. */
     release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
     unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
@@ -718,6 +761,15 @@ bool scene_stage_load(unsigned index) {
         }
     }
     need+=((8u*mission_head.actors+15)&~15u)+((mission_head.actor_images*sizeof(scene_image_t)+15)&~15u)+((4u*mission_head.resources+15)&~15u);
+    /* 'MSXD': the mission's ROM blobs and programs (read whole, the
+     * commands converted in place) and the program table. */
+    static uint8_t data_head[16] __attribute__((aligned(16)));
+    unsigned data_programs=0;
+    if (mission_head.data_length>=12u) {
+        rom_read(data_head,mission_head.data_offset,16);
+        data_programs=data_head[8]<<8|data_head[9];
+        need+=((mission_head.data_length+15)&~15u)+((data_programs*sizeof(stage_program_t)+15)&~15u);
+    }
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
@@ -786,6 +838,7 @@ bool scene_stage_load(unsigned index) {
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     const uint8_t *dyn_data[SCENE_STAGE_DYNAMIC_MAPS];
     for (unsigned i=0;i<dmaps;i++) {uint8_t *d=take(recon_dyn[i].length);rom_read(d,ps.recon_offset+recon_dyn[i].offset,recon_dyn[i].length);dyn_data[i]=d;}
+    load_mission_data(data_programs);
     data_cache_hit_writeback(reserve_mem,reserve_used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
         .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,

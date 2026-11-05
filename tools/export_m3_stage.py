@@ -35,7 +35,7 @@ def main():
         cam.append(dict(at='%06X'%at,op='%02X'%op,name=OPS.get(op,'?'),length=n,words=words))
         if op==8:break
         assert n and n<0x40;at+=n
-    pack=a.pack.read_bytes();st=pack[40:40+128]
+    pack=a.pack.read_bytes();h=48 if struct.unpack_from('>H',pack,4)[0]>=4 else 40;st=pack[h:h+128]   # pack version 4: 48-byte header
     f=struct.unpack_from('>IHHIIIHHhhIIII',st,0)
     rules=[dict(zip(('x_num','x_den','y_num','y_den','visible_min','visible_max'),struct.unpack_from('>BBBBhh',st,80+8*i))) for i in range(4)]
     sections=json.load(gzip.open(a.fixture))['sections']

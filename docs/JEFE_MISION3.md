@@ -292,21 +292,11 @@ entre dos actualizaciones del cuerpo). Dos fugas de registro del original
 reproducidas: `0A4F1E` (bits 8..11 de D0 en `+8B` de la bodega) y
 `0A5604` (D0/D1 que deja el último `01DA40`: `+32/+34` de la capa).
 
-**RAM (parada explícita del cartucho)**: el módulo, sus bloques de ROM y
-sus 38 programas suman ≈ 48 KB de imagen (texto 23 KB de `neo_m3mid.o`,
-1000 órdenes de programa, 9 KB de datos); con ellos el cartucho de
-referencia de la M3 no arranca (`RAM budget: 3296 KB left for the scene
-cache (minimum 3332 KB)`, 208 ranuras). Por eso van en el grupo `m3mid`
-(`group` en `data/region_rom.json` y `data/soldier_programs.json`,
-`compile_region_rom.py`/`compile_soldier_ai_tables.py`) y la consola los
-compila solo con `make MSX_M3MID=1`; sin él el registro `2DAE20` sigue
-saltado (constructor no portado) y la prueba de familia del anfitrión los
-compila siempre. Para meterlo en la imagen hace falta sacar a los paquetes
-de misión los programas y bloques de ROM de cada misión (o liberar ≈ 40 KB
-en otra parte). El código del mundo y del renderizador para la capa
-(`MSX_HAS_M3MID`, `neo_gactor.h`) va en el mismo grupo. Con el grupo fuera:
-`mslugx-m3-reference.z64` arranca con 208 ranuras y `test_mission3_ares.py
---hop --pilot` (300 s) da PASS (registro `2DAE20` saltado y registrado).
+**RAM**: el módulo está en la imagen; sus datos de ROM y sus 38 programas
+(grupo `m3`, como los del resto de actores de la M3 y los de la M2 en `m2`)
+van al bloque `MSXD` de `mission3.pack` y se cargan con la etapa
+(MEMORY_OPTIMIZATION.md, acción 5b): `mslugx-m3-reference.z64` arranca con
+210 ranuras (mínimo 208).
 
 **Paradas explícitas**: la segunda tabla del ciclo `2A6126` (`+A3` solo
 vale 0), la apertura de la escotilla `0A5EDA` (soldados `09D846..` de

@@ -23,6 +23,7 @@ static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
  * first entry of a tag, as the linear scan it replaces). */
 static uint16_t program_order[COUNT(soldier_programs)];
 static bool programs_sorted;
+static const neo_anim_program_t *(*program_extra)(uint32_t tag);
 static const neo_anim_program_t *program(uint32_t tag) {
     enum {N=COUNT(soldier_programs)};
     if (!programs_sorted) {
@@ -36,8 +37,11 @@ static const neo_anim_program_t *program(uint32_t tag) {
     }
     unsigned lo=0,hi=N;                                /* first tag >= tag */
     while (lo<hi) {unsigned m=(lo+hi)/2;if (soldier_programs[program_order[m]].tag<tag) lo=m+1; else hi=m;}
-    return lo<N && soldier_programs[program_order[lo]].tag==tag?&soldier_programs[program_order[lo]].program:NULL;
+    if (lo<N && soldier_programs[program_order[lo]].tag==tag) return &soldier_programs[program_order[lo]].program;
+    /* A mission's own programs (its pack, docs/MEMORY_OPTIMIZATION.md rule 5). */
+    return program_extra?program_extra(tag):NULL;
 }
+void neo_world_set_program_extra(const neo_anim_program_t *(*lookup)(uint32_t tag)) {program_extra=lookup;}
 static uint8_t kobj(uint32_t tag) {return tag==TERRAIN_TAG?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:NEO_KOBJ_NONE;}
 static uint32_t ktag(uint8_t obj) {return obj==NEO_KOBJ_TERRAIN?TERRAIN_TAG:obj==NEO_KOBJ_ROOT?ROOT_TAG:0;}
 /* ---- per-update context ---------------------------------------------------- */

@@ -72,6 +72,7 @@ en los bloques que haya (fragmentación controlada).
 | 3 | Películas: mantener la caché comprimida en RAM y descomprimir cada fotograma | −1,7 MB del pico del título, permite cachear HOW TO PLAY | medio (tiempo por fotograma; medir `late`) | pendiente |
 | 4 | Efectos residentes (851 KB) | — | — | se conservan (decisión del proyecto) |
 | 5 | Datos de misión siempre en `missionN.pack` (ranuras reservadas), nunca en `.rodata` | evita +100–300 KB por misión | bajo | regla (RENDIMIENTO) |
+| 5b | Programas y bloques de ROM de los actores de una sola misión (grupos `m2`/`m3` de `data/soldier_programs.json` y `data/region_rom.json`) en el bloque `MSXD` del paquete (versión 4), cargados en las ranuras reservadas de cada etapa (`scene_stage_program`, `scene_stage_rom`) | M2: 141 programas, 3808 órdenes, 13 bloques 5,7 KB (`MSXD` 45,7 KB); M3: 117 programas, 2008 órdenes, 17 bloques 10,6 KB (32,3 KB); imagen −30,8 KB **con** el jefe intermedio dentro (2 061 872 → 2 031 056 B): 210 ranuras (antes 208 sin él) | bajo (mismos valores; `make check` los compila en el anfitrión) | **hecho** |
 | 6 | `scene.pack`: códec con más ratio solo si el tiempo de descodificación (≤ 7,3 ms) no sube | hasta −3 MB ROM (estimación) | alto (picos de `asset`) | no ahora |
 
 ### Perfil de 4 MiB (no se persigue)

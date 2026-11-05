@@ -38,8 +38,10 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se
-  crea desde el guion (`2DAE20`) en el mundo. Falta: dibujar la capa
-  `10E8C6` (el cuerpo del avión), parada registrada.
+  crea desde el guion (`2DAE20`) y la capa `10E8C6` se dibuja, pero en la
+  consola solo con `make MSX_M3MID=1`: con el módulo el cartucho de la M3
+  queda 36 KB por debajo del mínimo de 208 ranuras (parada explícita; hace
+  falta mover programas y datos por misión a los paquetes).
 - **Paso 5: sin empezar** (vehículos `093C9A`/`0AC866`, la forma `+93 = 2`
   —probablemente Marco gordo tras la comida, sin comprobar— y el arma E
   `0DE4DA`): siguen como paradas explícitas (`weapon_stops`, constructores

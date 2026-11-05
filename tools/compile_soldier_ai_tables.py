@@ -84,12 +84,18 @@ texts=[tuple(command_text(c) for c in prog['commands']) for prog in p['programs'
 # in the console image (docs/RENDIMIENTO.md, RAM budget).
 storage={}   # program index -> (array program, offset)
 tails={}
+# A program of a group (data/soldier_programs.json "group", e.g. m3mid) is
+# left out of the console image unless the build enables the group; tails
+# are shared only inside the same group.
+GUARD={'m3mid':'!defined(N64) || defined(MSX_M3MID)'}
+group=[prog.get('group') for prog in p['programs']]
 for i in sorted(range(len(texts)),key=lambda k:(-len(texts[k]),k)):
     t=texts[i]
-    if t and t in tails: storage[i]=tails[t];continue
+    if t and (group[i],t) in tails: storage[i]=tails[(group[i],t)];continue
     storage[i]=(i,0)
-    for k in range(len(t)): tails.setdefault(t[k:],(i,k))
+    for k in range(len(t)): tails.setdefault((group[i],t[k:]),(i,k))
 for i,prog in enumerate(p['programs']):
+    if group[i]: L.append('#if %s'%GUARD[group[i]])
     if storage[i][0]==i:
         L.append('static const neo_anim_command_t soldier_program_%d[]={'%i)
         for t in texts[i]: L.append('  %s,'%t)
@@ -99,13 +105,19 @@ for i,prog in enumerate(p['programs']):
     L.append('#ifndef N64')
     L.append('static const int32_t soldier_program_address_%d[]={%s};'%(i,','.join(str(c['address']) for c in prog['commands'])))
     L.append('#endif')
+    if group[i]: L.append('#endif')
 L.append('#ifdef N64')
 L.append('#define SOLDIER_PROGRAM_ADDRESS(i) NULL')
 L.append('#else')
 L.append('#define SOLDIER_PROGRAM_ADDRESS(i) soldier_program_address_##i')
 L.append('#endif')
 L.append('typedef struct { uint32_t tag; neo_anim_program_t program; const int32_t *address; } soldier_program_t;')
-L.append('static const soldier_program_t soldier_programs[]={'+','.join('{0x%x,{soldier_program_%d+%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)}'%(prog['root'],storage[i][0],storage[i][1],len(prog['commands']),i) for i,prog in enumerate(p['programs']))+'};')
+L.append('static const soldier_program_t soldier_programs[]={')
+for i,prog in enumerate(p['programs']):
+    if group[i]: L.append('#if %s'%GUARD[group[i]])
+    L.append('{0x%x,{soldier_program_%d+%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)},'%(prog['root'],storage[i][0],storage[i][1],len(prog['commands']),i))
+    if group[i]: L.append('#endif')
+L.append('};')
 L.append('#endif')
 L.append('#endif')
 (ROOT/'build').mkdir(exist_ok=True);(ROOT/'build/soldier_ai_tables.h').write_text('\n'.join(L)+'\n')

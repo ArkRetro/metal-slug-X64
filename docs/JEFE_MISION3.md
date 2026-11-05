@@ -292,15 +292,33 @@ entre dos actualizaciones del cuerpo). Dos fugas de registro del original
 reproducidas: `0A4F1E` (bits 8..11 de D0 en `+8B` de la bodega) y
 `0A5604` (D0/D1 que deja el último `01DA40`: `+32/+34` de la capa).
 
+**RAM (parada explícita del cartucho)**: el módulo, sus bloques de ROM y
+sus 38 programas suman ≈ 48 KB de imagen (texto 23 KB de `neo_m3mid.o`,
+1000 órdenes de programa, 9 KB de datos); con ellos el cartucho de
+referencia de la M3 no arranca (`RAM budget: 3296 KB left for the scene
+cache (minimum 3332 KB)`, 208 ranuras). Por eso van en el grupo `m3mid`
+(`group` en `data/region_rom.json` y `data/soldier_programs.json`,
+`compile_region_rom.py`/`compile_soldier_ai_tables.py`) y la consola los
+compila solo con `make MSX_M3MID=1`; sin él el registro `2DAE20` sigue
+saltado (constructor no portado) y la prueba de familia del anfitrión los
+compila siempre. Para meterlo en la imagen hace falta sacar a los paquetes
+de misión los programas y bloques de ROM de cada misión (o liberar ≈ 40 KB
+en otra parte).
+
 **Paradas explícitas**: la segunda tabla del ciclo `2A6126` (`+A3` solo
 vale 0), la apertura de la escotilla `0A5EDA` (soldados `09D846..` de
 `2A63D0`, nunca alcanzada), las trampas de depuración de `0A6918`/
 `0A6A32`, un `divu` desbordado en `0A6918`; la comprobación del cartucho
 antes de los borrados no se porta. **Dibujo de la capa `10E8C6`** (el
 avión en sí: mapa `2A6142` de 19 × 10 bloques, parches `0C714E`, naufragio
-`2A619A`): el mundo guarda el mapa y los parches (`m3layer_map`,
-`m3patch`), pero el renderizador **no lo dibuja aún** (las celdas de la
-superposición no están en el paquete): parada registrada. Las piezas con
+`2A619A`): el mundo lleva la rejilla de 19 × 10 bloques que deja
+`0C714E` (`m3grid`) y `actor.c` la dibuja en `x = +14 + 16c`, `y = 337 −
++18 + 16r` (SCB de MAME en los volcados 134100/135000) con 390 marcos
+`F0000000 | código << 2 | giro` y la paleta `F05E` que
+`tools/export_m3_overlay.py` añade al export privado de la M3 (paleta igual
+a la RAM de MAME); bajo todos los sprites (el original la pone bajo la capa
+`10C72E`: aproximación). `mission3.pack` pasa a 446 trozos (límite 480).
+Sonidos `10EB/10EC/10ED/107B/1020` sin entrada en `data/sound_map.json`. Las piezas con
 sprite (cañones, piezas, soldados, bombas, motores) sí: `export_rest_sprites.py`
 con las raíces nuevas (captura `MSX_M3BOSS_DUMPS=133500`, 133500..136000:
 15 453 píxeles iguales, 1339 distintos en 3 de 10 volcados, donde la

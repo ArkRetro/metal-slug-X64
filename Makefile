@@ -20,6 +20,14 @@ endif
 ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
 N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
+# The Mission 3 mid-boss 0A4A94 (neo_m3mid.c, its ROM blobs and programs,
+# groups "m3mid" of data/region_rom.json / soldier_programs.json): +48 KB of
+# program image, over the RAM budget (208 scene slots) for now; MSX_M3MID=1
+# builds it in (docs/JEFE_MISION3.md).
+MSX_M3MID ?= 0
+ifeq ($(MSX_M3MID),1)
+N64_CFLAGS += -DMSX_M3MID=1
+endif
 endif
 WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))

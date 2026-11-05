@@ -258,10 +258,11 @@ ROOTS+=[0x2a037a,0x2a03c6,0x2a044e,0x2a048c,0x2a04e2,0x2a0562,0x2a05c8,0x2a0654,
 # 0A64E2 (2A601A), debris 0A6598 (2A653C), burning engine 0A5D6A, hatch
 # 0A5E88, bay soldiers 0A4F3A/0A4F52 (and their table 2A63DC), bomb 0A5398
 # and the spark 0A68A0.
-ROOTS+=[0x2a4d16,0x2a4dc4,0x2a4d2e,0x2a4d22,0x2a4e66,0x2a4dd0,0x2a4eee,0x2a4f26,0x2a4f5e,0x2a4f8e,0x2a4fbe,0x2a50f6,
+M3MID_ROOTS=[0x2a4d16,0x2a4dc4,0x2a4d2e,0x2a4d22,0x2a4e66,0x2a4dd0,0x2a4eee,0x2a4f26,0x2a4f5e,0x2a4f8e,0x2a4fbe,0x2a50f6,
     0x2a550e,0x2a4e72,0x2a522e,0x2a52e2,0x2a544e,0x2a4ea6,0x2a529a,0x2a539a,0x2a55c2,0x2a566e,0x2a571c,0x2a57ca,
     0x22da42,0x22da98,0x22daee,0x22dc2c,0x22dc82,0x2a5626,0x2a5950,0x2a5a62,0x2a5a90,0x2a5b14,0x2a5b66,0x2a5be8,
     0x2a5c4e,0x2a5c8c,0x2a5d3e,0x2a5df0,0x2a5ea2,0x2a5f54,0x2a595c]
+ROOTS+=M3MID_ROOTS
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):
@@ -333,7 +334,9 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path)
     p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     bank=(a.capture/'program-bank.bin').read_bytes();fixed=(a.capture/'program-fixed.bin').read_bytes()
-    programs=[dict(root=r,commands=convert(bank,r,fixed)) for r in ROOTS]
+    # Programs of a group (m3mid: the Mission 3 mid-boss) are left out of
+    # the console image unless the build enables it (compile_soldier_ai_tables.py).
+    programs=[dict(root=r,commands=convert(bank,r,fixed),**({'group':'m3mid'} if r in M3MID_ROOTS and r not in ROOTS[:ROOTS.index(M3MID_ROOTS[0])] else {})) for r in ROOTS]
     kinds={}
     for prog in programs:
         for c in prog['commands']:kinds[c['kind']]=kinds.get(c['kind'],0)+1

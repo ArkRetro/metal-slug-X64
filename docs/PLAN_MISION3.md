@@ -45,4 +45,8 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
 - **Paso 5: sin empezar** (vehículos `093C9A`/`0AC866`, la forma `+93 = 2`
   —probablemente Marco gordo tras la comida, sin comprobar— y el arma E
   `0DE4DA`): siguen como paradas explícitas (`weapon_stops`, constructores
-  externos).
+  externos). Visto: `093C9A` no es una entrada de `neo_tank.c` sino una
+  copia aparte del código del SV-001 (`093C9A..094xxx`: paletas
+  `0x87D/0x39D/0x87A`, torreta `03B4E0` con `+72 = 4`, sin la comprobación
+  del cartucho, rutinas `094A26/094B9A/0949EA/094872/094ABA/094CDA`): hace
+  falta traducirla y capturarla como el SV-001 (y caber en la RAM).

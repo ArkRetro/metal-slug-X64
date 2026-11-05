@@ -304,6 +304,7 @@ void actor_set_active(bool active) {
  * palette F000 | number of tools/export_m3_overlay.py. Under every sprite
  * of window A (the original draws it as layer 2, under the foreground
  * 10C72E: approximation). */
+#ifdef MSX_HAS_M3MID
 static unsigned m3_overlay_missing;
 static void draw_m3_overlay(bool request_only) {
     const neo_world_t *w=&game.world;
@@ -324,9 +325,12 @@ static void draw_m3_overlay(bool request_only) {
         scene_render_sprite(&part,x,y,false,false,false);
     }
 }
+#endif
 static void draw_marco(unsigned bank_id,unsigned frame);
 static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) {
+#ifdef MSX_HAS_M3MID
     draw_m3_overlay(false);
+#endif
     vehicle_renderer_draw(&game.vehicle,game.camera,game.camera_height,game.vehicle_flash && (game.ticks&2));
     uint16_t z=msx_game_depth(&game);bool player=false,marker=false;
     for (unsigned k=0;k<=game.world.draw_count;k++) {
@@ -585,12 +589,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         debugf("MSX native draw missing descriptor=%u palette=%u last=%06lX\n",native_missing_descriptor,native_missing_palette,(unsigned long)native_missing_tag);
         native_missing_descriptor=native_missing_palette=0;
     }
+#ifdef MSX_HAS_M3MID
     if (m3_overlay_missing) {debugf("MSX mid-boss layer 10E8C6: %u blocks without a frame or palette\n",m3_overlay_missing);m3_overlay_missing=0;}
     {static uint32_t m3_map;static unsigned m3_patches;
      if (game.world.m3layer_map!=m3_map || game.world.m3patch_count!=m3_patches) {
         m3_map=game.world.m3layer_map;m3_patches=game.world.m3patch_count;
         debugf("MSX mid-boss layer 10E8C6 map=%06lX patches=%u\n",(unsigned long)m3_map,m3_patches);
      }}
+#endif
     if (game.deaths!=old_deaths) debugf("MSX respawn checkpoint=%d\n",game.checkpoint);
     if (game.checkpoint!=old_checkpoint) debugf("MSX checkpoint=%d\n",game.checkpoint);
     if (!old_camera && game.camera) debugf("MSX camera moving\n");
@@ -686,7 +692,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     for (unsigned next=0;next<3;next++)
         scene_request_image(scene_frame(bank_id,(sample+next)%count+(second?bank->first:0)),3);
     scene_request_image(scene_frame(SCENE_PROJECTILES,0),3);
+#ifdef MSX_HAS_M3MID
     draw_m3_overlay(true);
+#endif
     for (unsigned i=0;i<game.world.draw_count;i++) draw_native(&game.world.draws[i],true);
     for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],true);
     for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],true);

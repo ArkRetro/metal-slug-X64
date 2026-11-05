@@ -146,6 +146,9 @@ typedef struct neo_m2boss_env {
  * of 0C714E, the layer's map +2E), `patch` (0A6D7C: 0C714E with the
  * sub-map) and `clear` (0C702A/0C703C/0C6D04). NULL in neo_genv_t: the
  * body stops explicitly. */
+#if !defined(N64) || defined(MSX_M3MID)
+#define MSX_HAS_M3MID 1   /* the mid-boss is built in (RAM budget: MSX_M3MID on the console) */
+#endif
 typedef struct neo_m3mid_env {
     uint8_t *layer;uint8_t flags959;
     void (*draw)(void *ctx,uint32_t map,const int16_t d[6]);

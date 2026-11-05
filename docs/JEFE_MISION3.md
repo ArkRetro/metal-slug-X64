@@ -303,7 +303,10 @@ compila solo con `make MSX_M3MID=1`; sin él el registro `2DAE20` sigue
 saltado (constructor no portado) y la prueba de familia del anfitrión los
 compila siempre. Para meterlo en la imagen hace falta sacar a los paquetes
 de misión los programas y bloques de ROM de cada misión (o liberar ≈ 40 KB
-en otra parte).
+en otra parte). El código del mundo y del renderizador para la capa
+(`MSX_HAS_M3MID`, `neo_gactor.h`) va en el mismo grupo. Con el grupo fuera:
+`mslugx-m3-reference.z64` arranca con 208 ranuras y `test_mission3_ares.py
+--hop --pilot` (300 s) da PASS (registro `2DAE20` saltado y registrado).
 
 **Paradas explícitas**: la segunda tabla del ciclo `2A6126` (`+A3` solo
 vale 0), la apertura de la escotilla `0A5EDA` (soldados `09D846..` de

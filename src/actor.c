@@ -113,8 +113,12 @@ static bool load_stage(void) {
     const uint8_t *er=entry?ga_rom(entry):NULL;
     msx_game_begin_stage(&game,&ws,start_x,st->camera_max);
     if (er && er[8]==2u) {
-        msx_game_stage_entry_at(&game,(int16_t)(er[0]<<8|er[1]));
-        debugf("MSX stage entry %06lX kind 2 (0C15B4 parachute) not reproduced: placed on the floor at x=%d (explicit stop)\n",(unsigned long)entry,(int16_t)(er[0]<<8|er[1]));
+        /* 0196E8: x - the root's x (-10 at the stage start) when +4 is set, y +
+         * 100 - the root's y (100) when +5 is set; 0C15B4 waits for the stage
+         * loop and descends (msx_game_stage_descent_at). */
+        int ex=(int16_t)(er[0]<<8|er[1])+(er[4]?0x10:0),ey=(int16_t)(er[2]<<8|er[3])+(er[5]?0:0x100);
+        msx_game_stage_descent_at(&game,ex,ey);
+        debugf("MSX stage entry %06lX kind 2 (0C15B4): the parachute descent from (%d, %d) after the fade-in\n",(unsigned long)entry,ex,ey);
     }
     /* 019604 +4: the stage's respawn entries (019658/0196E8, B33). */
     game.respawn_table=st->players;game.respawn_length=st->players_len;
@@ -179,7 +183,7 @@ static void draw_frame(unsigned bank_id,unsigned frame,int center,int dy,bool mi
  * palette table, mirrored draws one pixel left (observed, see
  * tools/export_soldier_sprites.py). Screen y = 248 - original y (+ the
  * camera height applied to every gameplay sprite). */
-static unsigned native_missing_descriptor,native_missing_palette;static uint32_t native_missing_tag;
+static unsigned native_missing_descriptor,native_missing_palette,native_missing_palette_id;static uint32_t native_missing_tag;
 static int native_screen_y(uint16_t projected_y) {
     /* The projected word already includes the scene root (camera height). */
     return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
@@ -202,7 +206,7 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     const scene_native_descriptor_t *desc=scene_native_descriptor(d->descriptor);
     if (!desc) {native_missing_descriptor++;native_missing_tag=d->descriptor;return;}
     int palette=scene_native_palette(d->palette);
-    if (palette<0) {native_missing_palette++;palette=scene_native_palette(0x20e);}
+    if (palette<0) {native_missing_palette++;native_missing_palette_id=d->palette;native_missing_tag=d->descriptor;palette=scene_native_palette(0x20e);}
     /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'
      * 32 directions 22C3BE are 9 shapes with both flips; ignoring bit 1
      * drew the bullets going up-right as "\", MiSTer report). Parts are
@@ -586,7 +590,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);
     if (game.grenade_stops!=old_grenade_stops) debugf("MSX bomb type %u stopped explicitly (0C4756 entry not ported)\n",game.world.weapons.b[10]);
     if (native_missing_descriptor || native_missing_palette) {
-        debugf("MSX native draw missing descriptor=%u palette=%u last=%06lX\n",native_missing_descriptor,native_missing_palette,(unsigned long)native_missing_tag);
+        debugf("MSX native draw missing descriptor=%u palette=%u last=%06lX palette_id=%03X\n",native_missing_descriptor,native_missing_palette,(unsigned long)native_missing_tag,native_missing_palette_id);
         native_missing_descriptor=native_missing_palette=0;
     }
 #ifdef MSX_HAS_M3MID

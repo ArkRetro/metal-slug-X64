@@ -159,6 +159,24 @@ void msx_game_begin_descent(msx_game_t *g,int32_t world_x,int32_t world_y,int32_
      * constructor (ms2 capture: 1838). Its voice is in the entry audio. */
     neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;
 }
+/* Entry kind 2 (0C15B4, Mission 3's 2D5E7C): the player waits in 0C15BA at
+ * the record's position (x - the root's x, which is -10 at the stage start;
+ * y + 100 - the root's 100) until the stage loop 01860A sets 10C302 (the
+ * fade-in done), then 0C15C6: the descent of marco_descent.c with +30 = 0,
+ * +34 = -80000, the canopy 0C4A58 (0C1604) and the hanging state 0C162A
+ * (run4: 0C15BA 117978..118018, 0C162A from 118026). */
+void msx_game_stage_descent_at(msx_game_t *g,int x,int y) {
+    g->x=x*MSX_UNIT;g->y=56*MSX_UNIT-y*MSX_UNIT;g->grounded=false;g->air_ticks=0;g->walk_in_x=0;
+    g->velocity_x=0;g->velocity_y=0;g->descent=MSX_DESCENT_WAIT;g->entry_descent_pending=true;
+}
+static void stage_descent_start(msx_game_t *g) {   /* 0C15C6 */
+    uint8_t *m=g->world.player_node[0];const int32_t vy=-0x80000;
+    marco_descent_begin(m);
+    m[0x30]=m[0x31]=m[0x32]=m[0x33]=0;
+    m[0x34]=(uint8_t)((uint32_t)vy>>24);m[0x35]=(uint8_t)((uint32_t)vy>>16);m[0x36]=(uint8_t)((uint32_t)vy>>8);m[0x37]=(uint8_t)vy;
+    g->velocity_x=0;g->velocity_y=-vy;g->descent=MSX_DESCENT_HANG;g->entry_descent_pending=false;
+    neo_landing_descent(&g->landing);g->landing_on=true;
+}
 void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
     neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
@@ -271,7 +289,10 @@ static void stage_entry_step(msx_game_t *g) {
     if (g->flow.fade_in) {neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);g->entry_fade_updates=g->entry_updates;}
     if (g->flow.letters) {neo_end_reset(&g->end);neo_end_start(&g->end,0x607de);g->start_letters=true;g->entry_letters=true;}
     /* 01860A also makes the GO arrow 05287C at every stage start. */
-    if (!playing && g->flow.state==NEO_MISSION_PLAYING) neo_world_mission_actor(&g->world,0x5287c,0,0);
+    if (!playing && g->flow.state==NEO_MISSION_PLAYING) {
+        neo_world_mission_actor(&g->world,0x5287c,0,0);
+        if (g->entry_descent_pending) stage_descent_start(g);   /* 0C15BA: 10C302 set by 01860A */
+    }
 }
 /* Stage end to the next stage's 0183D0, one flow update per game update;
  * the exit fade of kind 8 (16 steps, 0184F6) is the port's palette fade. */
@@ -532,6 +553,7 @@ static void clamp_feet(msx_game_t *g,neo_air_t *body,bool grounded) {
  * the cut, with the port's air step for the sweep (0143EE, 0C109C). The
  * input of 0C0FEA: B (jump press) bit 5, A (fire press) bit 4. */
 static void descent_step(msx_game_t *g) {
+    if (g->descent==MSX_DESCENT_WAIT) return;                              /* 0C15BA: nothing until 10C302 */
     uint8_t *m=g->world.player_node[0];
     int32_t rx,ry;root_xy(g,&rx,&ry);
     nwl(m,0x40,(uint32_t)(56*MSX_UNIT-g->y)+(uint32_t)ry);                /* +40: projected */

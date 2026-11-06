@@ -207,6 +207,13 @@ local function plan_inputs(screen_x)
   button('P1 B',frame%180<12 and 1 or 0);button('P1 A',frame%6<3 and 1 or 0)
   return
  end
+ -- MSX_FULL_PLAN=to:<hex x>: walk right to the world x and stand still there
+ -- (the birds 03EE8A take off with a player within 60 px: their flight poses).
+ if fixed_plan and fixed_plan:sub(1,3)=='to:' then
+  plan='to';local tx=tonumber(fixed_plan:sub(4),16) or 0
+  button('P1 Right',px<tx and 1 or 0);button('P1 Left',0);button('P1 Up',0);button('P1 Down',0);button('P1 B',0);button('P1 A',0)
+  return
+ end
  -- Map command list waiting for a player inside a rectangle (ROM 0C84BE,
  -- op 4: [layer.l][x][y][w][h], layer-relative = world coordinates, Y up as
  -- player +2C): steer towards it, jumping when it is higher.

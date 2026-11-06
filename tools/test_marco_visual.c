@@ -107,7 +107,8 @@ int main(void){
     /* c_/s_/f_: the C's, 0BFFD8.. (ids 02/07) and 0C00D8.. (ids 04/09) fire
      * tables (marco-c1, marco-w2, marco-w4); m_: the mummy, form 3
      * (marco-mz2), whose fire is the pistol's. */
-    bool mummy=c->name[0]=='m';
+    /* g_: fat Marco, form 2 (marco-f2): the pistol's fire through the rows +0x20. */
+    bool mummy=c->name[0]=='m' || c->name[0]=='g';
     bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c' || c->name[0]=='s' || c->name[0]=='f',down=strstr(c->name,"down")!=NULL,knife=strstr(c->name,"knife")!=NULL,hang=!strncmp(c->name,"d_hang",6),cut=!strncmp(c->name,"d_cut",5);
     marco_visual_reset(&v);
     marco_visual_input_t in={.grounded=true,.facing=1,.x=120,.y=350,.form=(uint8_t)c->form,.hgun_program=-1,.cgun=cgun,
@@ -158,7 +159,7 @@ int main(void){
     assert(!bbad && wbad<=12 && !v.failures);
     puts("PASS: the mummy (form 3) against marco-mz2 update by update: transformation, idle, walk, turn, jumps, landings, crouch, crouched fire, stand-up (body exact)");
   }
-  printf("throws/C/S/F/H down/knife/descent/mummy: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
+  printf("throws/C/S/F/H down/knife/descent/mummy/fat: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
   assert(tok>=780&&!tbad);
-  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched), the parachute descent (hanging, cut), the mission end's victory (pistol, H), the fire of weapons 02 and 04 and the mummy's fire and throw pose by pose against the captures");
+  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched), the parachute descent (hanging, cut), the mission end's victory (pistol, H), the fire of weapons 02 and 04 and the mummy's and fat Marco's fire and throw pose by pose against the captures");
 }

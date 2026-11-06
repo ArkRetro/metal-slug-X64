@@ -26,8 +26,9 @@ enum { MARCO_WEAPON_BLOCK=0x14, MARCO_WEAPON_IDS=16 };
 typedef struct { uint8_t b[MARCO_WEAPON_BLOCK]; } marco_weapons_t;
 /* The player actor fields the block's routines read or write: exists
  * (0040AC carry), +93 current form, +94 requested form (FF none), +95 shot
- * counter, +5F bit 7 dead. */
-typedef struct { bool exists,dead; uint8_t form93,form94,combo95; } marco_weapon_player_t;
+ * counter, +5F bit 7 dead, +9A bit 4 food eaten (0C0BF4 sets it; in form 2
+ * 0C3A30 clears it and plays the weapon table C0528). */
+typedef struct { bool exists,dead; uint8_t form93,form94,combo95; bool ate9a; } marco_weapon_player_t;
 typedef enum { MW_REFUSED, MW_ACCEPTED, MW_STOP } marco_weapon_result_t;
 extern const uint8_t marco_weapon_cap[MARCO_WEAPON_IDS],marco_weapon_form[MARCO_WEAPON_IDS];
 extern const uint16_t marco_weapon_rounds[MARCO_WEAPON_IDS],marco_weapon_refill[MARCO_WEAPON_IDS],marco_weapon_sound[MARCO_WEAPON_IDS];

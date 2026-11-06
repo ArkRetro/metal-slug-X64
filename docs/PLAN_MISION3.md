@@ -120,7 +120,14 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   `0DE8EE` y `0C0DFC` id `0E`). Familia `m3wepe` (1506 actualizaciones,
   136577..137398, desde `at_132300` con el plan normal) igual a MAME;
   sprites y paleta `0x81E` del export privado (17 253 píxeles iguales,
-  113 distintos). Sigue sin empezar la forma
-  `+93 = 2` —probablemente Marco gordo tras la comida, sin comprobar— y el
-  arma E `0DE4DA`): siguen como paradas explícitas (`weapon_stops`,
-  constructores externos).
+  113 distintos).
+- **Paso 5 (c), forma `+93 = 2` (Marco gordo), parte 1:** comprobado en la
+  ROM: la comida `0C0BF4` (misiones con valor 4-7, 9, 10; Misión 3 = 4)
+  suma 0x100 al contador `10C718+0x10`; a 0x780 pide `+94 = 2`; `0C33AE`
+  lo descuenta en la forma 2. Captura del catálogo `marco-f2`
+  (`--give-fat`), roles `ROLES_FAT`/`ROLES_FAT_BODY`, 720 poses; el visual
+  de la forma 2 (filas +0x20, `fat_role`), la transformación `0C1D70` y el
+  contador en `gameplay.c`, la comida en `neo_item.c`
+  (docs/MARCO_CAMPAIGN.md). Siguen como paradas explícitas las armas de la
+  forma 2 (`weapon_stops`: `063AEE`, `063F10`, `01BEDA`, `01C362/01C654`,
+  `01B668/01BDD2`, `0C4E86`, `0C5064`).

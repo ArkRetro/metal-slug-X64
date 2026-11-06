@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "../src/marco_renderer.h"
 #include "../src/cinematic_codec.h"
+#define MARCO_POSE_CRC
 #include "marco_pose_meta.h"
 int main(void) {
     debug_init_emulog();assert(dfs_init(DFS_DEFAULT_LOCATION)==DFS_ESUCCESS);
@@ -14,8 +15,8 @@ int main(void) {
         rdpq_set_mode_fill(RGBA32(0,0,0,255));rdpq_fill_rectangle(0,0,320,240);
         assert(marco_renderer_draw_palette(pose,marco_poses[pose].anchor_x,marco_poses[pose].anchor_y,mirror!=0,palette));rdpq_detach_wait();
         uint32_t crc=msx_cine_crc32(surface->buffer,surface->stride*surface->height);
-        if (crc!=marco_poses[pose].crc[palette][mirror]) debugf("MSX MARCO PIXELS mismatch pose=%u mirror=%u palette=%u got=%08lx expected=%08lx\n",pose,mirror,palette,(unsigned long)crc,(unsigned long)marco_poses[pose].crc[palette][mirror]);
-        assert(crc==marco_poses[pose].crc[palette][mirror]);display_show(surface);frames++;
+        if (crc!=marco_pose_crc[pose][palette][mirror]) debugf("MSX MARCO PIXELS mismatch pose=%u mirror=%u palette=%u got=%08lx expected=%08lx\n",pose,mirror,palette,(unsigned long)crc,(unsigned long)marco_pose_crc[pose][palette][mirror]);
+        assert(crc==marco_pose_crc[pose][palette][mirror]);display_show(surface);frames++;
     }
     assert(!marco_renderer_draw(MARCO_POSES,0,0,false));
     assert(!marco_renderer_draw_palette(0,0,0,false,MARCO_PALETTES));

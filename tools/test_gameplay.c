@@ -456,6 +456,24 @@ static void mummy_run(void) {
         g.mummy_breaths,walked/65536,(walked%65536)*10000/65536,g.world.weapon_player.form93,(int)g.life.phase);fflush(stdout);
     assert(walked>=28*65536 && walked<=30*65536 && g.life.phase!=MARCO_ALIVE);
 }
+/* Form 2, fat Marco (0C0BF4 / 0C32E4 rule 2 / 0C33AE): +94 = 2 on the
+ * ground runs the transformation 0C1D70 (19 updates without control, +84 =
+ * 0x5A); in form 2 the food counter 10C718+0x10 counts down and at 0 the
+ * form +94 = 0 (thin again: 0C1D82 not captured, counted in fat_stops). */
+static void fat_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    for (unsigned s=0;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE);
+    g.world.pickup.mission=4;g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=40;g.world.weapon_player.form94=2;
+    for (unsigned k=0;k<2;k++) msx_game_update(&g,0,false,false);
+    assert(g.world.weapon_player.form93==2 && g.fat_transform && g.mummy_guard && g.fat_starts==1);
+    int x0=g.x;
+    for (unsigned k=0;k<30;k++) msx_game_update(&g,1,false,false);
+    assert(g.x==x0 && g.fat_transform);   /* held still */
+    for (unsigned k=0;k<100 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
+    printf("fat: starts=%u stops=%u form=%u\n",g.fat_starts,g.fat_stops,g.world.weapon_player.form93);fflush(stdout);
+    assert(g.world.weapon_player.form93==0 && g.fat_stops==1);
+}
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
  * at C0, the H's fan and its downward sweeps), from the mission start. */
@@ -759,6 +777,7 @@ int main(int argc,char **argv) {
     pweapon_run();
     knife_run();
     mummy_run();
+    fat_run();
     air_down_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);

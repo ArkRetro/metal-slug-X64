@@ -90,9 +90,14 @@ def main():
  'static const uint16_t marco_palettes[MARCO_PALETTES][16] __attribute__((aligned(16)))={'+','.join('{'+','.join(str(v) for v in palette)+'}' for palette in palettes)+'};',
  'static const struct {int16_t x,y;uint16_t width,height;uint32_t indices_fnv;} marco_parts[]={']
  lines += ['{'+','.join(str(part[k]) for k in ('x','y','width','height','indices_fnv'))+'},' for part in parts]
- lines += ['};','static const struct {uint32_t source_tag;uint16_t first,count;int16_t anchor_x,anchor_y;uint32_t crc[MARCO_PALETTES][2];} marco_poses[]={']
- for pose in poses:lines.append('{'+str(pose['tag'])+'u,'+str(pose['first'])+','+str(pose['count'])+','+str(pose['anchor'][0])+','+str(pose['anchor'][1])+',{'+','.join('{'+','.join(str(v)+'u' for v in pair)+'}' for pair in pose['crc'])+'}},')
+ lines += ['};','static const struct {uint32_t source_tag;uint16_t first,count;int16_t anchor_x,anchor_y;} marco_poses[]={']
+ for pose in poses:lines.append('{'+str(pose['tag'])+'u,'+str(pose['first'])+','+str(pose['count'])+','+str(pose['anchor'][0])+','+str(pose['anchor'][1])+'},')
  lines.append('};')
+ # The pixel checks of every pose, palette and mirror: only the test ROM
+ # (tools/test_marco_render.c) reads them, the game does not carry them.
+ lines += ['#ifdef MARCO_POSE_CRC','static const uint32_t marco_pose_crc[MARCO_POSES][MARCO_PALETTES][2]={']
+ for pose in poses:lines.append('{'+','.join('{'+','.join(str(v)+'u' for v in pair)+'}' for pair in pose['crc'])+'},')
+ lines += ['};','#endif']
  for spec in a.name_palette:
   name,_,words=spec.partition('=');prefix=[int(w,16) for w in words.split(',')]
   found=[i for i,pal in enumerate(palettes) if convert_palette([0]+prefix+[0]*(15-len(prefix)))[1:1+len(prefix)]==pal[1:1+len(prefix)]]

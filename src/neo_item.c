@@ -390,9 +390,19 @@ static bool pickup(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rec) {
     } else if (r==0x8b7fc) {                                         /* points / food */
         sound(e,0x1121);
         if (rb(rec+3) && !B(0x7a)) {
-            /* 0C0BF4: food counts only in missions 4-7, 9, 10 (0C0BAE). */
+            /* 0C0BF4: food counts only in missions 4-7, 9, 10 (0C0BAE):
+             * +9A bit 4 of the player, 0x100 more in its counter 10C718
+             * +0x10+2p; at 0x780 or more the form +94 = 2 (fat) unless
+             * +93 of a6, the item itself (0C0C2A), is 2. Its return is
+             * not read (08B828). */
             uint16_t m=pk->mission;
-            if (m==4 || m==5 || m==6 || m==7 || m==9 || m==10) {ga_fail(e,0xc0c14);return false;}
+            if (m==4 || m==5 || m==6 || m==7 || m==9 || m==10) {
+                marco_weapon_player_t *pl=pk->player[p];
+                uint8_t *c=&pk->weapons->b[0x10+2*p];
+                uint16_t v=(uint16_t)((c[0]<<8|c[1])+0x100u);c[0]=(uint8_t)(v>>8);c[1]=(uint8_t)v;
+                pl->ate9a=true;
+                if (B(0x93)!=2 && v>=0x780) pl->form94=2;
+            }
         }
         if (!k8b896(a,e,pk,p,rec)) return false;
         k8b850(pk,p);

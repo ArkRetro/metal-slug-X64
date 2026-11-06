@@ -19,7 +19,7 @@ typedef struct {
     bool running_jump;     /* takeoff while moving */
     int facing;            /* -1 left, 1 right */
     uint16_t x,y;          /* projected words of the player (+3C/+40) */
-    uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables), 3 the mummy (+0x30) */
+    uint8_t form;          /* +93: 1 with the H (the form-1 rows, +0x10, of the tables), 2 fat (+0x20), 3 the mummy (+0x30) */
     int hgun_program;      /* H upper body (marco_hgun.c): its program (marco_hgun_program_t), -1 none */
     bool hgun_start;       /* that program started (or restarted) in this update */
     bool thrown;           /* a grenade thrown in this update (0C3BCC / crouched 0C2458) */
@@ -28,7 +28,7 @@ typedef struct {
     uint8_t cgroup;        /* with cgun, the weapon's fire tables: 1 the C's (C02D8..), 2 0BFFD8.. (ids 02/07), 3 0C00D8.. (ids 04/09), 4 0C01D8.. (ids 06/0B) */
     bool knife;            /* a knife cut 0C3B46 started in this update */
     bool hanging;          /* parachute descent 0C162A (marco_descent.c), before the cut */
-    bool transforming;     /* form 3: the transformation 0C17A0..0C182A (no control) */
+    bool transforming;     /* form 3: the transformation 0C17A0..0C182A; form 2: 0C1D70..0C1DA8 (no control) */
     bool takeoff;          /* form 3: the takeoff 0C19E4/0C1A0C (crouched before the jump) */
     bool victory;          /* the mission end: RAM 10C301 set (018846) and 10C304 >> 2 & +5E (018FFE): the idle 0C2022 takes 0BF658 */
 } marco_visual_input_t;

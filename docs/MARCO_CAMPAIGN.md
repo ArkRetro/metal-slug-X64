@@ -535,3 +535,39 @@ python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output V1 --command-tra
 python3 tools/compile_marco_campaign.py CAP1 ... --victory-capture V0 --victory-h-capture V1 --output build/marco_campaign.h
 python3 tools/extract_throw_fixture.py --output /tmp/v.json v_victory=V0:victory:0:24fedc:0:stand vh_victory=V1:victory:0:257f86:1:stand   # añadidos a data/marco_throw_fixture.json
 ```
+
+### Forma 2: Marco gordo (`+93 = 2`)
+
+La comida `0C0BF4` suma 0x100 a `10C718+0x10+2·jugador` y, si llega a 0x780,
+pide `+94 = 2` (solo cuando `0C0BAE` acepta la misión: valor `10C2F6` en
+4,5,6,7,9,10); `0C33AE` lo descuenta cada fotograma y a 0 vuelve a `+94 = 0`.
+`run_marco_catalog.py --give-fat` (solo captura: escribe `10C2F6 = 4` y
+`+94 = 2` en el primer fotograma del plan, lo que la comida pide) da
+`marco-f2`: 2952 fotogramas, auditoría 2948/198/2395000, 383 selecciones.
+La transformación es `C04F8` (`25CDEA`, `0C1D70`); las filas de las tablas
+son +0x20 (`0C0F32/0C0F62` con desplazamiento 32). Marco muere a 4423
+(`0C2A06`, cuerpo `C0518` `25CF70`) y desde `idle_long` vuelve a la forma 0:
+solo los 25 casos anteriores son prueba de la forma 2.
+`compile_marco_campaign.py --fat-capture` comprueba `ROLES_FAT` (12 cuerpos,
+10 armas) y `ROLES_FAT_BODY` (2 iniciados directamente). El catálogo pasa a
+720 poses / 745 partes.
+
+```sh
+python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output F2 --command-trace --paired-trace --controller-trace --give-fat
+# auditoría, extract_marco_steps.py, extract_marco_controller.py; luego
+# convert_marco_programs.py / build_marco_poses.py de arriba con --extra-capture F2 / --extra-audit F2/audit.json
+python3 tools/compile_marco_campaign.py CAP1 ... --mummy-capture $N/marco-mz2 --fat-capture F2 --victory-capture V0 --victory-h-capture V1 --output build/marco_campaign.h
+```
+
+En el port (`src/marco_visual.c`, `fat_role`): la forma 2 sigue la misma
+elección de la forma 0 (los mismos estados del mando eligen las mismas
+tablas) y arranca el programa de la fila +0x20; el arma subida se mantiene
+(`0BFA18 25A7FE`) y se baja (`0BFA98 25A73A`) como con la H. Una fila no
+capturada (victoria, cuchillo, colgado, fuego de la H/C) no arranca nada:
+parada explícita (`stops`). `data/marco_throw_fixture.json` añade seis
+casos `g_*` de `marco-f2` (fuego de pie/arriba/abajo en el aire, granada de
+pie, fuego y granada agachado): 66 pasos iguales. La transformación
+(`0C1D70`, 19 actualizaciones sin control, `+84 = 0x5A`) y el contador
+`0C33AE` están en `src/gameplay.c`; la comida `0C0BF4` en `src/neo_item.c`.
+Sin capturar (paradas explícitas): la vuelta a delgado `0C1D82` (`C0508`),
+el bocado del arma `C0528` (`0C3A30`, +9A bit 4) y las poses de `idle_long`.

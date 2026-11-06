@@ -505,7 +505,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.cgun_fire=game.c_fires!=marco_cfires;marco_cfires=game.c_fires;
             mi.knife=game.knife_cuts!=marco_knives;marco_knives=game.knife_cuts;
             mi.hanging=game.descent==MSX_DESCENT_HANG;
-            mi.transforming=game.mummy_transform!=0;mi.takeoff=game.mummy_takeoff!=0;
+            mi.transforming=game.mummy_transform!=0 || game.fat_transform!=0;mi.takeoff=game.mummy_takeoff!=0;
             mi.victory=msx_game_victory(&game);
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);

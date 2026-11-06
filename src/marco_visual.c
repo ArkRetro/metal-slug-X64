@@ -22,15 +22,51 @@ static void emit(void *context,const neo_anim_draw_t *d) {
 static bool event(void *context,neo_anim_kind_t kind,uint32_t id,neo_anim_render_t *r) {
     (void)context;(void)id;(void)r;return kind==NEO_ANIM_EVENT;
 }
+/* Form 2, fat Marco (marco-f2, run_marco_catalog.py --give-fat): the same
+ * controller states choose the same tables with rows +0x20 (0C0F32/0C0F62
+ * offset 32). The visual keeps the form-0 role of the situation and starts
+ * the program of its +0x20 row: body 0BF6D8 259D4C idle, 0BF718 259D68 run,
+ * 0BF758/0BF798 259E64 jumps, 0BEE18 25D1C2 / 0BEE58 25CFFE turns, 0BEED8
+ * 25D088 / 0BEF18 and 0BEF98 25D0D0 / 0BF058 25D10E / 0BF098 25D040 the
+ * crouch; weapon 0BF858 259EE2 idle (also the jumps 0BFC58/0BFC98), 0BF8D8
+ * 259E7C run, 0BF998 25A5EA grenade, 0BF9D8 25A724 up, 0BFD18/0BFD58/0BFD98
+ * 25A8F4/25A83C/25A898 fire. The raised gun held/lowered (0BFA18 25A7FE /
+ * 0BFA98 25A73A) are form-2 roles of their own. A row not captured
+ * (victory, knife, hanging, H/C fire) has no program: explicit stop, the
+ * part keeps its last pose (counted in `stops`). */
+static int fat_role(int role) {
+    static const int map[][2]={
+        {MARCO_CAMPAIGN_B_IDLE,MARCO_CAMPAIGN_B2_IDLE},{MARCO_CAMPAIGN_B_RUN,MARCO_CAMPAIGN_B2_RUN},
+        {MARCO_CAMPAIGN_B_JUMP,MARCO_CAMPAIGN_B2_JUMP},{MARCO_CAMPAIGN_B_RUN_JUMP,MARCO_CAMPAIGN_B2_JUMP},
+        {MARCO_CAMPAIGN_B_TURN,MARCO_CAMPAIGN_B2_TURN},{MARCO_CAMPAIGN_B_TURN_RUN,MARCO_CAMPAIGN_B2_TURN_RUN},
+        {MARCO_CAMPAIGN_B_CROUCH_IN,MARCO_CAMPAIGN_B2_CROUCH_IN},{MARCO_CAMPAIGN_B_CROUCH,MARCO_CAMPAIGN_B2_CROUCH},
+        {MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE,MARCO_CAMPAIGN_B2_CROUCH},{MARCO_CAMPAIGN_B_CROUCH_FIRE,MARCO_CAMPAIGN_B2_CROUCH_FIRE},
+        {MARCO_CAMPAIGN_B_CROUCH_GRENADE,MARCO_CAMPAIGN_B2_CROUCH_GRENADE},
+        {MARCO_CAMPAIGN_W_IDLE,MARCO_CAMPAIGN_W2_IDLE},{MARCO_CAMPAIGN_W_JUMP,MARCO_CAMPAIGN_W2_IDLE},
+        {MARCO_CAMPAIGN_W_RUN_JUMP,MARCO_CAMPAIGN_W2_IDLE},{MARCO_CAMPAIGN_W_RUN,MARCO_CAMPAIGN_W2_RUN},
+        {MARCO_CAMPAIGN_W_GRENADE,MARCO_CAMPAIGN_W2_GRENADE},{MARCO_CAMPAIGN_W_AIM_UP,MARCO_CAMPAIGN_W2_AIM_UP},
+        {MARCO_CAMPAIGN_W_FIRE,MARCO_CAMPAIGN_W2_FIRE},{MARCO_CAMPAIGN_W_FIRE_UP,MARCO_CAMPAIGN_W2_FIRE_UP},
+        {MARCO_CAMPAIGN_W_FIRE_DOWN,MARCO_CAMPAIGN_W2_FIRE_DOWN},
+        {MARCO_CAMPAIGN_W2_AIM_HOLD,MARCO_CAMPAIGN_W2_AIM_HOLD},{MARCO_CAMPAIGN_W2_AIM_DOWN,MARCO_CAMPAIGN_W2_AIM_DOWN},
+        {MARCO_CAMPAIGN_B2_TRANSFORM,MARCO_CAMPAIGN_B2_TRANSFORM}};
+    for (unsigned i=0;i<sizeof map/sizeof map[0];i++) if (map[i][0]==role) return map[i][1];
+    return -1;
+}
 static void start(marco_visual_t *v,marco_part_t part,int role) {
     if (part==MARCO_BODY) {v->body_role=role;v->body_done=false;}
     else {v->weapon_role=role;v->weapon_done=false;}
     if (role<0) return;
+    int program=role;
+    if (v->form==2 && (program=fat_role(role))<0) {
+        v->stops++;
+        if (part==MARCO_BODY) v->body_done=true; else v->weapon_done=true;
+        return;
+    }
     /* Body speed +26: the run starts at 0x1C1 (C285C, marco_motion.c; cat1:
      * every run update of 24DD18 has 01C1), every other program at 0x100. */
     /* The mummy's walk 0C196A: +26 = 0x80 (marco-mz2, every update of 25F3CC). */
     uint16_t speed=part==MARCO_BODY && role==MARCO_CAMPAIGN_B_RUN?0x1c1:part==MARCO_BODY && role==MARCO_CAMPAIGN_B3_WALK?0x80:0x100;
-    if (!marco_animation_start(&v->anim,part,&marco_script,(uint16_t)role,speed)) v->failures++;
+    if (!marco_animation_start(&v->anim,part,&marco_script,(uint16_t)program,speed)) v->failures++;
     v->starts++;
 }
 void marco_visual_reset(marco_visual_t *v) {
@@ -50,7 +86,7 @@ static bool weapon_default(int r) {
         r==MARCO_CAMPAIGN_W_RUN_JUMP || r==MARCO_CAMPAIGN_W_AIM_UP ||
         r==MARCO_CAMPAIGN_W1_IDLE || r==MARCO_CAMPAIGN_W1_RUN || r==MARCO_CAMPAIGN_W1_JUMP ||
         r==MARCO_CAMPAIGN_W1_RUN_JUMP || r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD ||
-        r==MARCO_CAMPAIGN_W1_AIM_DOWN;
+        r==MARCO_CAMPAIGN_W1_AIM_DOWN || r==MARCO_CAMPAIGN_W2_AIM_HOLD || r==MARCO_CAMPAIGN_W2_AIM_DOWN;
 }
 /* H programs (marco_hgun_program_t order): tables 0BFDD8..0BFF58 + 0x10.
  * Down in the air (marco-g1): burst 0BFE58 2560C0 and sweep forward->down
@@ -74,6 +110,19 @@ static bool hgun_role(int r) {
  * then holds it 0BFA18 253450 (also after an upward sweep), and released
  * lowers it 0BFA98 2534B4 before the idle program. */
 static int weapon_rest(const marco_visual_t *v,const marco_visual_input_t *in,bool running_jump) {
+    if (in->form==2 && in->grounded) {
+        /* Fat: up raises 0BF9D8, then holds 0BFA18; released lowers 0BFA98
+         * (marco-f2 aim_up_right, walk_right). */
+        int r=v->weapon_role;bool done=v->weapon_done;
+        if (in->aim_up) {
+            if (r==MARCO_CAMPAIGN_W_AIM_UP && !done) return r;
+            if (r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W2_AIM_HOLD || r==MARCO_CAMPAIGN_W_FIRE_UP) return MARCO_CAMPAIGN_W2_AIM_HOLD;
+            return MARCO_CAMPAIGN_W_AIM_UP;
+        }
+        if ((r==MARCO_CAMPAIGN_W2_AIM_DOWN && !done) || r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W2_AIM_HOLD)
+            return MARCO_CAMPAIGN_W2_AIM_DOWN;
+        return in->moving?MARCO_CAMPAIGN_W_RUN:MARCO_CAMPAIGN_W_IDLE;
+    }
     if (in->form!=1) {
         if (!in->grounded) return running_jump?MARCO_CAMPAIGN_W_RUN_JUMP:MARCO_CAMPAIGN_W_JUMP;
         if (in->aim_up) return MARCO_CAMPAIGN_W_AIM_UP;
@@ -238,6 +287,15 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     if (v->form!=in->form) {v->body_role=v->weapon_role=-1;v->body_count=v->weapon_count=0;v->weapon_done=false;}
     v->form=in->form;
     if (in->form==3) {mummy_step(v,in);return;}
+    /* The fat transformation 0C1D70: body C04F8 25CDEA alone (0C0FB6 /
+     * 0C0F16), +84 = 0x5A, until 0C1DA8 ends it (marco-f2 2103). */
+    if (in->form==2 && in->transforming) {
+        if (v->body_role!=MARCO_CAMPAIGN_B2_TRANSFORM) start(v,MARCO_BODY,MARCO_CAMPAIGN_B2_TRANSFORM);
+        v->weapon_role=-1;v->weapon_count=0;v->weapon_done=false;
+        step_part(v,MARCO_BODY);
+        v->grounded=in->grounded;v->crouch=false;v->moving=in->moving;v->facing=in->facing;
+        return;
+    }
     /* The mission end (0C2016..0C2046): standing idle with RAM 10C301 set
      * and 10C304 >> 2 & +5E, the idle sets the routine 0C1E84, which in the
      * next update starts the victory table 0BF658 (body; 0C0F16: no weapon

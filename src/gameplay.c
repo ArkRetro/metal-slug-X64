@@ -356,7 +356,7 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
-    g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;
+    g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;g->fat_transform=0;
     marco_hgun_reset(&g->hgun);
     g->mount=MSX_MOUNT_NONE;
 }
@@ -1196,7 +1196,8 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->mount!=MSX_MOUNT_NONE) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
     /* 0C17A0/0C17F0/0C182A: the transformation holds the player still
      * (+30/+34 = 0) with no control; 0C1A0C, the mummy's takeoff, too. */
-    if (g->mummy_transform || g->mummy_takeoff) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
+    /* 0C1D70/0C1DA8, the fat transformation: no control either. */
+    if (g->mummy_transform || g->mummy_takeoff || g->fat_transform) {direction=0;jump=false;fire=false;g->grenade=false;g->jump_pending=false;}
     /* 0C1AC8..0C1B0A: the mummy's landing (body table C0478, 25F4EE, three
      * updates in marco-mz2) moves with +62 = 0; jump, fire and the bomb
      * stay (0C1ADE..0C1AF6). */
@@ -1205,6 +1206,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->mummy_landing) g->mummy_landing--;
         if (g->mummy_transform && !--g->mummy_transform) g->mummy_guard=0x5a;   /* 0C182A: +84 = 0x5A */
         else if (g->mummy_guard) g->mummy_guard--;
+        if (g->fat_transform) g->fat_transform--;
     }
     g->crouching=g->crouch && g->grounded && !g->ride && g->mount==MSX_MOUNT_NONE && !g->mummy_takeoff;
     if (g->crouching && direction) {g->facing=direction<0?-1:1;direction=0;}  /* turns in place */
@@ -1471,8 +1473,33 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * form +94 into +93 (observed in weapons.csv), then the expiry
          * check 0C337A of the common processing 0C32F4. */
         marco_weapon_player_t *m=&g->world.weapon_player;
-        if (m->form94!=0xffu) {m->form93=m->form94;m->form94=0xff;}
+        if (m->form94==2u && m->form93<2u) {
+            /* Rule 2 of 0C32E4 (forms 0/1 -> 2): on the ground (+15 bit
+             * 6) 0C1D70: sound 1153, body C04F8 25CDEA alone, +84 = 0x5A,
+             * +62 = 0; 0C1DA8 holds until the program ends (marco-f2:
+             * 0C1D70 at 2102, 0C1DA8 2104..2138, 0C1F4A 2140: 19 updates
+             * without control). In the air it waits. */
+            if (g->grounded && g->life.phase==MARCO_ALIVE && g->mount==MSX_MOUNT_NONE) {
+                end_sound(g,0x1153);
+                m->form93=2;m->form94=0xff;g->fat_transform=19;g->mummy_guard=0x5a;g->fat_starts++;
+                g->velocity_x=0;g->moving=g->shooting=false;g->jump_pending=false;
+            }
+        } else if (m->form94==0u && m->form93==2u) {
+            /* 0C1D82 (thin again: body C0508 25CEB0) was not captured:
+             * explicit stop, the form changes without its program. */
+            g->fat_stops++;m->form93=0;m->form94=0xff;
+        } else if (m->form94!=0xffu) {m->form93=m->form94;m->form94=0xff;}
         if (marco_weapons_expire(&g->world.weapons,0,m)) g->expiries++;
+        if (m->form93==2u) {
+            /* 0C33AE: in a food mission (0C0BAE) the counter 10C718+0x10
+             * counts down; at 0 the form +94 = 0. (Other missions: 0C33C0
+             * CA2F8, not reached: Mission 3's value is 4.) */
+            const uint16_t mi=g->world.pickup.mission;
+            uint8_t *c=&g->world.weapons.b[0x10];
+            uint16_t v=(uint16_t)(c[0]<<8|c[1]);
+            if (!(mi==4 || mi==5 || mi==6 || mi==7 || mi==9 || mi==10)) g->fat_stops++;
+            else if (v) {v--;c[0]=(uint8_t)(v>>8);c[1]=(uint8_t)v;if (!v) m->form94=0;}
+        }
         /* Bomb button: 0C478E consumes one; bomb type 1 (0C47BA) throws the
          * grenade 01BF46, or 01BF10 with the legs' +90 = FF (observed:
          * standing; 01 running, 03 in the air). Its position (0C4806:

@@ -210,6 +210,10 @@ emu.register_frame_done(function()
  -- (the mummy's breath); the original forms check 0C3428 then runs the
  -- transformation 0C17A0/0C182A and the mummy controller 0C18B4.
  if os.getenv('MSX_GIVE_MUMMY')=='1' and frame==plan.first then cpu:write_u8(0x1014c4+0x94,3) end
+ -- Capture only (MSX_GIVE_FAT): form 2 as the food 0C0BF4 requests it
+ -- (+94 = 2) with the mission value RAM 10C2F6 = 4 (Mission 3), the one
+ -- for which 0C0BAE keeps the form (else the forms check drops it).
+ if os.getenv('MSX_GIVE_FAT')=='1' and frame==plan.first then cpu:write_u16(0x10c2f6,4);cpu:write_u8(0x1014c4+0x94,2) end
  -- Capture only (MSX_VICTORY=<frames after the first plan frame>): the
  -- mission end as 018F92/018846 leave it for player 1 (RAM 10C304 = 04, the
  -- boss's +5E in MAME runK; 10C301 = FF): the idle 0C2022 then takes the

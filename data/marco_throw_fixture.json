@@ -1293,6 +1293,157 @@
 1624308,
 1624308
 ]
+},
+{
+"name": "g_fire",
+"capture": "marco-f2",
+"case": "stand_fire_right",
+"part": 1,
+"chain": [
+2468084
+],
+"form": 2,
+"situation": "stand",
+"first": 2773,
+"descriptors": [
+1210688,
+1210714,
+1210746,
+1210780,
+1210810
+]
+},
+{
+"name": "g_fire_up",
+"capture": "marco-f2",
+"case": "aim_up_fire_right",
+"part": 1,
+"chain": [
+2467900
+],
+"form": 2,
+"situation": "stand",
+"first": 2933,
+"descriptors": [
+1211462,
+1211488,
+1211516,
+1211546,
+1211546
+]
+},
+{
+"name": "g_fire_down",
+"capture": "marco-f2",
+"case": "jump_down_fire_left",
+"part": 1,
+"chain": [
+2467992
+],
+"form": 2,
+"situation": "air",
+"first": 3837,
+"descriptors": [
+1211698,
+1211724,
+1211752,
+1211780,
+1211780
+]
+},
+{
+"name": "g_grenade_stand",
+"capture": "marco-f2",
+"case": "grenade_stand",
+"part": 1,
+"chain": [
+2467306
+],
+"form": 2,
+"situation": "stand",
+"first": 4187,
+"descriptors": [
+1211932,
+1211956,
+1211980,
+1212004,
+1212036,
+1212068
+]
+},
+{
+"name": "g_crouch_fire",
+"capture": "marco-f2",
+"case": "crouch_fire_right",
+"part": 0,
+"chain": [
+2478350
+],
+"form": 2,
+"situation": "crouch",
+"first": 2677,
+"descriptors": [
+1211064,
+1211092,
+1211120,
+1211150,
+1211150
+]
+},
+{
+"name": "g_grenade_crouch",
+"capture": "marco-f2",
+"case": "grenade_crouch",
+"part": 0,
+"chain": [
+2478144,
+2478288
+],
+"form": 2,
+"situation": "crouch",
+"first": 4261,
+"descriptors": [
+1212096,
+1212096,
+1212124,
+1212124,
+1212144,
+1212144,
+1212164,
+1212184,
+1212204,
+1212204,
+1211004,
+1211004,
+1211004,
+1211004,
+1211004,
+1212678,
+1212678,
+1212678,
+1212698,
+1212698,
+1212698,
+1212718,
+1212718,
+1212718,
+1212698,
+1212698,
+1212698,
+1212698,
+1212678,
+1212678,
+1212678,
+1212678,
+1211004,
+1211004,
+1211004,
+1211004,
+1211004,
+1212678,
+1212678,
+1212678
+]
 }
 ]
 }

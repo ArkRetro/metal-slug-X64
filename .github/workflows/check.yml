@@ -1,5 +1,8 @@
 name: check
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, ccr-09eb2f6b-8rwl8l]
+  pull_request:
 jobs:
   core:
     runs-on: ubuntu-latest

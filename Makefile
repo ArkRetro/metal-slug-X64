@@ -263,6 +263,17 @@ mslugx-m3-reference.z64: N64_ROM_TITLE = "MSX M3 REFERENCE"
 mslugx-m3-reference.z64: $(BUILD_DIR)/mslugx-m3-reference.dfs
 $(BUILD_DIR)/mslugx-m3-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-m3-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Release-like Mission 3 cartridge (never a release): the release game
+# (mortal player, no script skips, no lock releases, no autopilot) starting
+# at Mission 3's record 0173F6, for hand-like play in ares (B56-B58).
+$(BUILD_DIR)/m3rel/actor.o: src/actor.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=3 -o $@ $<
+$(BUILD_DIR)/mslugx-m3-release.elf: $(BUILD_DIR)/m3rel/actor.o $(filter-out $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+mslugx-m3-release.z64: N64_ROM_TITLE = "MSX M3 RELEASE TEST"
+mslugx-m3-release.z64: $(BUILD_DIR)/mslugx-m3-release.dfs
+$(BUILD_DIR)/mslugx-m3-release.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-m3-release.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-reference.z64: N64_ROM_TITLE = "MSX M1 REFERENCE"
 mslugx-reference.z64: $(BUILD_DIR)/mslugx-reference.dfs
 $(BUILD_DIR)/mslugx-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -880,7 +891,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build mslugx-camel-shot.z64 intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 mslugx-lab.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
+	rm -rf build mslugx-camel-shot.z64 intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 mslugx-m3-release.z64 mslugx-lab.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
@@ -1148,6 +1159,8 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	$(BUILD_DIR)/host/m2stairs
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_map.c src/neo_kernel.c src/neo_collision.c -o $(BUILD_DIR)/host/m3map
 	$(BUILD_DIR)/host/m3map romfs/mission3.pack
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_camera_start.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m3camstart
+	$(BUILD_DIR)/host/m3camstart romfs/mission3.pack
 	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
 	$(BUILD_DIR)/host/m2wall
@@ -1185,7 +1198,7 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/diag/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference*/*.d $(BUILD_DIR)/m2ref*/*.d $(BUILD_DIR)/m3ref*/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/diag/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference*/*.d $(BUILD_DIR)/m2ref*/*.d $(BUILD_DIR)/m3ref*/*.d $(BUILD_DIR)/m3rel/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

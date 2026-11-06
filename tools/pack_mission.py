@@ -167,6 +167,8 @@ def build(mission,stage_dirs,crom,rom=None):
                 c['x']=(c['x']+32768)%65536-32768
                 if (c['layer'],c['x'],c['y']) not in seen:seen.add((c['layer'],c['x'],c['y']));keep.append(c)
             model['cells']=keep
+        if (d/'layers_rom.json').exists():report_fill=fill_loop_layer(model,json.loads((d/'layers_rom.json').read_text()),crom)
+        else:report_fill=None
         st_images,st_cells=pack_map(model,crom,image)
         images.extend((pg,pal,y,h) for pg,pal,_,y,_,h,_ in st_images)
         first=len(cells);cells.extend((layer,x,y,[base+i for i in phases]) for layer,x,y,phases in st_cells)
@@ -187,6 +189,12 @@ def build(mission,stage_dirs,crom,rom=None):
             while len(grids)%4:grids.append(0)
             unknown=len(grids);grids.extend(mask)
         backdrops=[o.get('backdrop') for o in model['observations'] if o.get('backdrop') is not None]
+        # The stage's first value held by three observations in a row: the
+        # first ones can be frames of the stage's fade-in (Mission 3: 0 and
+        # 22627 before 23173; B58, a black backdrop behind the train layer's
+        # empty blocks). The later values (palette events not ported) stay out.
+        stable=next((backdrops[i] for i in range(len(backdrops)-2) if backdrops[i]==backdrops[i+1]==backdrops[i+2]),None)
+        if stable is not None:backdrops=[stable]+[b for b in backdrops if b!=stable]
         rules=layer_rules(model)
         stages.append(dict(descriptor=DESCRIPTORS.get(mission,(0,)*len(stage_dirs))[k],width=model['width'],camera_max=model['camera_max'],
                            backdrop=int.from_bytes(bytes((*palette_rgb(backdrops[0]),255)),'big') if backdrops else 0xff,
@@ -194,7 +202,7 @@ def build(mission,stage_dirs,crom,rom=None):
                            grid=offset,unknown=unknown,image_first=base,image_count=len(st_images),rules=rules,patches=patch_list))
         report.append(dict(stage=d.name,cells=len(st_cells),images=len(st_images),coordinate_variants=len(model['conflicts']),
                            backdrops=sorted(set(backdrops)),grid=[col['columns'],col['rows']],grid_unknown=col.get('unknown_cells'),
-                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower,merged_maps=merged))
+                           grid_mutable=len(col.get('mutable_cells',[])),layer_rules=rules,tower=tower,merged_maps=merged,loop_layer_fill=report_fill))
     blobs=bytearray()
     if rom is not None:
         for k,st in enumerate(stages):
@@ -333,6 +341,32 @@ def rom_u16(rom,a):return struct.unpack('>H',rom.read(a,2))[0]
 def rom_p2(rom,a,n):
     # Map data pointers are linear P2 addresses (0C71CC): offset a - 0x100000.
     return bytes(rom.p2[a-0x100000:a-0x100000+n])
+def fill_loop_layer(model,lay,crom):
+    """Mission 3, the train 10D7B6 (layer 1, ROM map 0B8566): its column
+    origin loops (neo_train.c), so MAME showed each layer x only at some
+    camera/train phases and the first-seen cells leave holes (B58: black
+    background where the port's phase differs). Layer x = 16 * block column
+    of the ROM map (export_m3_layers.py: 3814 observed cells equal at their
+    x, the others seen across an origin step): every position MAME never
+    showed takes the ROM block (code, flip, auto-animation) with the colours
+    the observed cells of the same palette number had at an equal block.
+    Observed cells are kept; empty blocks (all pens 0) are left out."""
+    from mission_tiles import decode
+    m=next((m for m in lay['maps'] if m['object']=='10D7B6' and m.get('cells')),None)
+    if m is None:return None
+    layer=m['layer'];seen={(c['x'],c['y']):c for c in model['cells'] if c['layer']==layer}
+    votes={}
+    for x,y,code,flip,anim,n in m['cells']:
+        c=seen.get((x,y))
+        if c and c['code']==code and c['flip']==flip:votes.setdefault(n,{}).setdefault(c['palette'],0);votes[n][c['palette']]+=1
+    pal={n:max(v,key=v.get) for n,v in votes.items()}
+    added=empty=unknown=0
+    for x,y,code,flip,anim,n in m['cells']:
+        if (x,y) in seen:continue
+        if not any(decode(crom,code|ph,flip)!=[0]*256 for ph in range(anim+1)):empty+=1;continue
+        if n not in pal:unknown+=1;continue
+        model['cells'].append(dict(layer=layer,x=x,y=y,code=code,flip=flip,animation_mask=anim,palette=pal[n],observations=0));added+=1
+    return dict(added=added,empty=empty,palette_unknown=unknown,palettes=len(pal))
 def merge_swapped(model):
     """Foreground maps swapped in place (Mission 3: 0B853A -> 0B8600 ->
     0B8550, docs/MISION3.md) whose cells agree with the main map wherever

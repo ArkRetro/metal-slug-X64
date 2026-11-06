@@ -615,12 +615,23 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #if MSX_DIAG
             /* B48: what holds the player up (ride object, air ticks, vy) and
              * the dynamic collision objects (slot: owner, position, map). */
-            {const neo_kscene_t *k=&game.world.kernel;char line[256];int n=snprintf(line,sizeof(line),"MSX player support: ride=%u air_ticks=%u vy=%ld dyn",game.ride,game.air_ticks,(long)game.velocity_y);
+            {const neo_kscene_t *k=&game.world.kernel;char line[256];int n=snprintf(line,sizeof(line),"MSX player support: phase=%d inv=%u walk_in=%ld pilot=%u/%u mummy=%u/%u/%u/%u form93=%u moving=%u ride=%u air_ticks=%u vy=%ld dyn",
+                (int)game.life.phase,game.invulnerable,(long)(game.walk_in_x/MSX_UNIT),game.pilot.on,game.pilot.why,game.mummy_transform,game.mummy_guard,game.mummy_takeoff,game.mummy_landing,
+                game.world.weapon_player.form93,game.moving,game.ride,game.air_ticks,(long)game.velocity_y);
              for (unsigned i=0;i<NEO_KDYN_COUNT && n<(int)sizeof(line)-40;i++) {
                 const neo_kdyn_t *d=&k->dyn[i];if (!d->map) continue;
                 const neo_world_dyn_t *o=&game.world.dyn[i];
                 n+=snprintf(line+n,sizeof(line)-n," [%u:%06lx %ld,%ld %dx%d]",i,o->used?(unsigned long)ga_l(&game.world.gactors[o->owner],0):0ul,
                     (long)(((int64_t)d->pos.x-k->terrain.x)>>16),(long)(((int64_t)d->pos.y-k->terrain.y)>>16),d->map[2],(int)d->map[3]+1);
+             }
+             debugf("%s\n",line);
+             /* B48: the Mission 2 rebels 0613CA.. (mummies) and their decision fields. */
+             n=snprintf(line,sizeof(line),"MSX rebels:");
+             for (unsigned i=0;i<NEO_WORLD_GACTORS && n<(int)sizeof(line)-70;i++) {
+                const neo_gactor_t *r=&game.world.gactors[i];uint32_t rt=ga_l(r,0);
+                if (!r->active || rt<0x613cau || rt>0x62634u) continue;
+                n+=snprintf(line+n,sizeof(line)-n," [%05lx x%d +6e%04x +84 %d +8a %d +8c %d +8e %d +94 %d +96 %02x +9a %02x +9c %02x]",(unsigned long)rt,(int16_t)ga_w(r,0x3c),ga_w(r,0x6e),
+                    (int16_t)ga_w(r,0x84),(int16_t)ga_w(r,0x8a),(int16_t)ga_w(r,0x8c),(int16_t)ga_w(r,0x8e),(int16_t)ga_w(r,0x94),ga_b(r,0x96),ga_b(r,0x9a),ga_b(r,0x9c));
              }
              debugf("%s\n",line);}
 #endif

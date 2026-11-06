@@ -696,9 +696,22 @@ bloqueo, cuando el guion aún espera al grupo 0: los registros `2DAB44/2DAB52`
 salen en 3117 y los de `2DAB6E..2DAD56` en 4060), y `stop=3716` se fija en
 4060, detrás de la cámara (`neo_camera_lock` la deja clavada en 4380 hasta
 que el grupo 6 muera; el piloto ciego no derriba ni las máquinas ni la
-aeronave). Por investigar: quién libera el bloqueo 2888 en 2890 (el guion
-no ha llegado al `camera unlock`) y si el `04E990` nativo cuenta en el grupo
-0 del mundo desde su primera actualización.
+aeronave). Resuelto: el bloqueo 2888 lo soltaba la ROM de referencia
+(`gameplay.c`, `MSX_REFERENCE_STAGE_EXIT`: tras 2400 pasos en un bloqueo que
+el mando no despeja soltaba el bloqueo, `lock_timeouts`); la ROM normal lo
+mantiene como MAME hasta que el guion ve el grupo 0 vacío, y el `04E990`
+nativo cuenta en el grupo 0 desde su creación (`+69` del registro, `neo_world.c`
+1403). Ahora el primer tiempo de espera pide la muerte general `1067E3`
+(`004BFE`, como las bombas del juego: `lock_kills`), con lo que el guion
+libera el bloqueo él mismo y sigue a la par de la cámara; solo un segundo
+tiempo de espera suelta el bloqueo. Comprobado en ares (r9, 300 s): el
+bloqueo 2888 se fija hacia el fotograma 2700 y lo suelta el propio guion
+hacia el 6000; `2DAB44/2DAB52` salen con la cámara en 2888 y `2DAB6E` en
+3470; `stop=3716` se fija con el avance en 3567 (por delante de la cámara) y
+la carrera termina en 3716 esperando al jefe intermedio (grupo 6). Tras la
+muerte general apareció una parada nueva `world unsupported routine=800040`
+(rutina de muerte de soldado tipo 6 bajo `1067E3`, por investigar junto a las
+demás paradas del mundo).
 
 Pendiente del paso 2 (en orden): `027F54`, `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
 mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en

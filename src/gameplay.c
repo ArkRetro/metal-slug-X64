@@ -1138,11 +1138,21 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     int lock_at=g->world.camera_native?(int)neo_camera_progress(&g->world.camera):g->camera;   /* 0C7C12 compares the list progress */
     /* The count starts at the stop and survives the camera's jitter around
      * it (Mission 2 stage 2: x 2366..2368 at the stop 2368 in ares). */
-    if (g->world.camera_lock!=g->lock_value) {g->lock_value=g->world.camera_lock;g->lock_held=0;}
+    if (g->world.camera_lock!=g->lock_value) {g->lock_value=g->world.camera_lock;g->lock_held=0;g->lock_killed=false;}
     if (g->in_stage && g->world_enabled && g->world.camera_lock>=0 && (g->lock_held || lock_at>=g->world.camera_lock)) {
         if (++g->lock_held>=2400u) {
-            g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
-            g->stage_lock_releases++;g->lock_timeouts++;g->lock_held=0;
+            /* First the kill request 1067E3 (004BFE: every registered body
+             * not of class 1 dies, as the game's own bombs do): the script
+             * then sees its group empty and releases the stop itself, in
+             * step with the camera (Mission 3: the lock 2888 waits for the
+             * flying machines 04E990; releasing the lock instead left the
+             * script behind the camera and the next lock 3716 behind it,
+             * MISION3.md). Only a second timeout releases the lock. */
+            if (!g->lock_killed) {g->world.ga_flags.kill_request=0xff;g->lock_killed=true;g->lock_kills++;g->lock_held=0;}
+            else {
+                g->world.camera_lock=-1;if (g->world.camera_native) neo_camera_release(&g->world.camera);
+                g->stage_lock_releases++;g->lock_timeouts++;g->lock_held=0;
+            }
         }
     } else g->lock_held=0;
 #endif

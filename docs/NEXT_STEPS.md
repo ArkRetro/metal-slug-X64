@@ -236,9 +236,13 @@
   (`m3raft`). Siguiente: `027F54`, `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`
   (sus trazas filtradas están en el scratchpad `w5d/A2-*.txt` y la captura
   `/home/user/captures-m3s2c/A` guarda sus sprites: borrarla al terminar),
-  las paradas del mundo, `0B9748` y la entrada en paracaídas. En ares el piloto ciego se queda en 4380: el guion
-  va retrasado respecto a la cámara (MISION3.md «Bloqueo de la cámara en
-  4380»); `1032` suena desde rom:/ (RAM de la caché).
+  las paradas del mundo (`2869D6`, `08DBC8`, `0AF17E`, `0413D4`, `800040`),
+  `0B9748` y la entrada en paracaídas. El bloqueo de la cámara en 4380 está
+  resuelto: lo soltaba el tiempo de espera de la ROM de referencia; ahora el
+  primer tiempo de espera pide la muerte general `1067E3` y el guion sigue a
+  la par de la cámara (MISION3.md «Bloqueo de la cámara en 4380»; ares r9
+  llega a 3716 esperando al jefe intermedio); `1032` suena desde rom:/ (RAM de
+  la caché).
 
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:

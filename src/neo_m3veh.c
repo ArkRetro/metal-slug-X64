@@ -67,6 +67,7 @@ static neo_gactor_t *after_script(neo_gactor_t *a,neo_genv_t *e,uint32_t routine
 }
 /* 0AE220: the white screen 0AE1DC after the script actor (+6E = d0, +70 = d1). */
 static void flashout(neo_gactor_t *a,neo_genv_t *e,uint16_t d0,uint8_t d1) {
+    (void)a;
     neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0xae1dc,true):NULL;
     if (c) {ga_sb(c,0x70,d1);ga_sw(c,0x6e,d0);}
 }

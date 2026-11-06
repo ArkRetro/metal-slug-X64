@@ -470,7 +470,41 @@ static ga_result_t walker_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r) SL(0,0x96c22);
         if (!BIT(0x15,6)) {SB(0x8e,0x2a);SB(0x5f,B(0x5f)|0x40u);SL(0,0x96f6a);}
         return tail(a,e);
-    case 0x973e2: STOP(0x973e2);                                        /* 0353C2 (03533A) */
+    case 0x973e2: {
+        /* 0973E2 (B50): wrecked on the ground with its rider: program 0x38,
+         * sound 10E9, the marker 03533A (0353C2 at 0, 0x40). Then 097414
+         * each update: B (+85 bit 5) ejects the rider (0AA7FC kind 1); a
+         * rider no longer bound (0AA760 fails) leaves it empty (+6E = FFFF,
+         * program 0x3C, +92 = 1); the death palette 097EDE ends in 09756A.
+         * Before: an explicit stop here killed the node with the player
+         * still bound to its slot, which froze the player for good. */
+        SB(0x14,B(0x1a));k1b1dc(a);SB(0x84,1);
+        if (!program(a,e,0x38)) return GA_UNSUPPORTED;
+        sound(e,0x10e9);
+        neo_gactor_t *m=e->spawn?e->spawn(e->ctx,a,0x3533a,false):NULL;
+        if (m) {ga_sw(m,0x6e,0);ga_sw(m,0x70,0x40);}
+        SL(0,0x97414);
+    }   /* fall through */
+    case 0x97414: {
+        if ((int16_t)W(0x6e)>=0) read_pad(a,e); else SB(0x85,(uint8_t)e->vehicle->input[1][0]);
+        SL(0x30,0);SL(0x34,L(0x34)+0xffffb000u);
+        if ((int16_t)W(0x6e)<0) ga_air(a,e);                            /* 0143E4 */
+        else {
+            if (B(0x85)&0x20u) {neo_vslot_exit(v->slots,rider_p(a),a->m,node_word(e,a),1);touched(a);}
+            neo_vslot_player_t pl=player(e,rider_p(a));uint16_t p6e;
+            if (!neo_vslot_bind(v->slots,rider_p(a),a->m,node_word(e,a),&pl,e->video,0,0,&p6e)) {
+                SW(0x6e,0xffff);
+                if (!program(a,e,0x3c)) return GA_UNSUPPORTED;
+                SB(0x92,1);
+            }
+            touched(a);
+            (void)neo_slug_k143ee(a,e);
+        }
+        CHECK;
+        if (step(a,e)<0) return GA_UNSUPPORTED;
+        if (fade(a,e,0x28,0x53,0x97ee8)) SL(0,0x9756a);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     case 0x9749a:
         SW(0x78,0x8000);SB(0x80,0);SW(0x7c,0x8000);SB(0x81,0);
         {neo_gactor_t *f=e->spawn?e->spawn(e->ctx,a,0xae1dc,true):NULL;if (f) {ga_sb(f,0x70,0);ga_sw(f,0x6e,1);}}   /* 0AE220 (1, 0) */
@@ -666,7 +700,7 @@ bool neo_slugnoid_routine(uint32_t r) {
     case 0x96c22: case 0x96c3a: case 0x96ccc: case 0x96cea: case 0x96dc4: case 0x96dc8: case 0x96e02:
     case 0x96ea6: case 0x96eaa: case 0x96eea: case 0x96f6a: case 0x96f7a: case 0x96f86: case 0x97028:
     case 0x970fc: case 0x97136: case 0x971ee: case 0x971f8: case 0x972a6: case 0x97308: case 0x9731a:
-    case 0x9737e: case 0x97396: case 0x973e2: case 0x9749a: case 0x974c0: case 0x9756a: case 0x975c6:
+    case 0x9737e: case 0x97396: case 0x973e2: case 0x97414: case 0x9749a: case 0x974c0: case 0x9756a: case 0x975c6:
     case 0x975ea: case 0x9760e: case 0x97638:
     case 0x97830: case 0x97886: case 0x97972: case 0x97996: case 0x97a36: case 0x97a86: case 0x97b02: case 0x97b18:
     case 0x97c46: case 0x97c72: case 0x97d22: case 0x97d52: case 0x97dd0: case 0x97df0: case 0xad8a2: return true;

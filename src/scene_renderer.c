@@ -464,11 +464,15 @@ static void strips_attach(const scene_stage_t *st) {
  * disjoint and in allocation order), so a rebuild gets the space of the
  * strips already dropped without dropping the others. */
 static void strips_compact(void) {
-    unsigned items=0,groups=0;
+    /* B50: each strip moves once (a strip with no items, e.g. an empty
+     * layer window at the top of Mission 2 stage 3, has first_item ==
+     * items and was picked again for ever: the game hung there). */
+    unsigned items=0,groups=0;bool moved[5]={false,false,false,false,false};
     for (;;) {
-        scene_strip_t *s=NULL;
-        for (unsigned i=0;i<5;i++) if (strips[i].valid && strips[i].first_item>=items && (!s || strips[i].first_item<s->first_item)) s=&strips[i];
+        scene_strip_t *s=NULL;unsigned pick=0;
+        for (unsigned i=0;i<5;i++) if (strips[i].valid && !moved[i] && (!s || strips[i].first_item<s->first_item)) {s=&strips[i];pick=i;}
         if (!s) break;
+        moved[pick]=true;
         if (s->first_item!=items) {
             memmove(&strip_items[items],&strip_items[s->first_item],s->items*sizeof(*strip_items));
             memmove(&strip_groups[groups],&strip_groups[s->first_group],s->groups*sizeof(*strip_groups));

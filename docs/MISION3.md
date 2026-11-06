@@ -882,10 +882,20 @@ plataforma `0B9286`) y E (118000..119700, pájaros) desde `sec04_117966`:
 Recorrido en ares tras la séptima tanda (300 s): PASS, progreso 3911, 210
 ranuras, registros saltados 0, rutinas sin soporte del mundo: ninguna.
 
-Pendiente del paso 2 (en orden): la entrada en paracaídas (`0C15B4`: el
-descenso de `marco_descent.c` desde el registro (`0048`, `0100`), falta su
-fixture desde `sec04_117966`), `03C306` con traza, los sprites de vuelo de
-los pájaros, premios y ramas al azar.
+Entrada en paracaídas (`0C15B4`, pendiente): en `run4/trace.csv` el
+jugador espera en `0C15BA` en (0x58, 0x100) desde 117978 (`018F32`: hasta
+que `10C302` se pone, el fundido de entrada), cuelga en `0C162A` desde
+118026, corta (`0C170C`) hacia 118050 y aterriza (`0C2692`) en 118098 con y
+0x58; el registro `2D5E7C` (`0048 0100 0101 0010 02..`) se coloca por
+`0196E8` (x absoluta, y + 0x100 − raíz). Falta: un `msx_game_begin_descent`
+sin `msx_game_init` para el arranque de etapa, la espera de `10C302` y la x
+0x58 (0x48 del registro + 0x10, por aclarar en `0C1260`), y su fixture
+(`extract_descent_fixture.py` necesita trazas de `capture_mission_rest.lua`,
+que no carga estados: hace falta una captura desde el arranque hasta la M3
+o adaptar `capture_fullgame.lua` al nodo del jugador).
+
+Pendiente del paso 2 (en orden): la entrada en paracaídas, `03C306` con
+traza, los sprites de vuelo de los pájaros, premios y ramas al azar.
 
 ## Pendiente
 

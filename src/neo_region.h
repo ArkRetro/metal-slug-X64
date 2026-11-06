@@ -73,6 +73,9 @@ bool neo_porter_routine(uint32_t routine);
 ga_result_t neo_civil_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_civil_routine(uint32_t routine);
 ga_result_t neo_slug_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Mission 3 vehicle 0AC866 and its children (neo_m3veh.c). */
+bool neo_m3veh_routine(uint32_t routine);
+ga_result_t neo_m3veh_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_slug_routine(uint32_t routine);
 ga_result_t neo_tank_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_tank_routine(uint32_t routine);

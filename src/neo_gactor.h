@@ -351,4 +351,6 @@ bool ga_probe_point(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
 /* 01495C with its D0: carry (true) with the vertical distance in pixels to the
  * surface met (the absolute y after the sweep less the one before). */
 bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy);
+/* The same with 013968's D7 (group << 16 | angle word) in *kind. */
+bool ga_probe_vertical_kind(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy,uint32_t *kind);
 #endif

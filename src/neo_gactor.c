@@ -293,13 +293,17 @@ uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
     return k.flags;
 }
 bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy) {
-    neo_contact_actor_t c=ga_contact(a);
+    uint32_t kind;return ga_probe_vertical_kind(a,e,distance,dy,&kind);
+}
+bool ga_probe_vertical_kind(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy,uint32_t *kind) {
+    neo_contact_actor_t c=ga_contact(a);*kind=0;
     kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x1495c);return false;}
     self(a,e);
     neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
+    *kind=k.kind;
     if (!(k.flags&1u)) return false;
     neo_contact_parent_t p;uint32_t oy=(uint32_t)c.y,ny=(uint32_t)k.y;
     if (c.parent_tag && ga_parent(e,c.parent_tag,&p)) oy+=(uint32_t)p.y;

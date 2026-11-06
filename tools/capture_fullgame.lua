@@ -320,11 +320,20 @@ local function ride_inputs()
    -- with it (run4 reaches its ledge at 91340); then walk to it and jump.
    local px=cpu:read_i16(0x1014ec)
    local vx=cpu:read_i16(n+0x28);local dy=cpu:read_i16(n+0x2c)-cpu:read_i16(0x1014f0)
+   -- MSX_FULL_RIDE_SCREEN=<dx>: steer by the projected words +3C (the
+   -- mount rectangle's frame, 0AA6F4) to the vehicle's +3C + dx (0AC866:
+   -- its +28 is ~40 px left of its sprite origin).
+   local rs=tonumber(os.getenv('MSX_FULL_RIDE_SCREEN') or '')
+   if rs then px=cpu:read_i16(0x101500);vx=cpu:read_i16(n+0x3c)+rs end
    local ground=(cpu:read_u8(0x1014d9)&0x40)~=0
-   if dy>12 or dy<-40 then plan_inputs(cpu:read_u16(0x101500)&511);return end
+   if not rs and (dy>12 or dy<-40) then plan_inputs(cpu:read_u16(0x101500)&511);return end
    local d=vx-px
+   if rs and frame%60==0 then print(string.format('RIDE f=%d node=%x px=%d vx=%d d=%d dy=%d ground=%s',frame,n,px,vx,d,dy,tostring(ground))) end
    if d>3 then b.R=1 elseif d<-3 then b.L=1 end
-   if d>=-10 and d<=10 and ground and frame%30<6 then b.B=1 end
+   -- With MSX_FULL_RIDE_SCREEN the vehicle's solid body stops the walk
+   -- beside it: jump from up to 48 px away and keep steering in the air.
+   local reach=rs and 48 or 10
+   if d>=-reach and d<=reach and ground and frame%30<6 then b.B=1 end
   end
  elseif ride_plan=='tank' then
   -- 'tank' (the Mission 3 SV-001 093C9A, docs/PLAN_MISION3.md step 5):

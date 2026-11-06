@@ -177,6 +177,10 @@ static bool call(void *context,uint32_t routine,uint16_t parameter,neo_anim_rend
         render->x=HI(s->b.projected_x);render->y=HI(s->b.projected_y);render->correction=s->b.correction;
         return true;
     }
+    case 0x3c2de: { /* the grenade 03C306 (00411C after the script actor, 01ACF2 (0, 2C), 01AC94: facing bits 0..1) */
+        neo_contact_actor_t seed=s->b;seed.flags15=(uint8_t)render->attributes;
+        event(c,NEO_SOLDIER_EVENT_GRENADE,0,&seed);return true;
+    }
     case 0xaef14: /* knife: 0049E8 with ROM 0AE980, sound 10FA on any hit. */
         if (hit_player(c,soldier_attack_knife,true)) event(c,NEO_SOLDIER_EVENT_SOUND,0x10fa,NULL);
         return true;
@@ -888,9 +892,13 @@ static neo_soldier_result_t run(ctx_t *c) {
         if (!W(0x74)) s->routine=0xb063e;
         return tail(c,false);
     }
+    case 0xaf92c:START(0x23da62);goto af950;                      /* action 2 (+81 bit 2): 23DA62 (03C2DE grenade) */
+    case 0xaf998:                                                  /* action 4: bra 0AF940 */
+    case 0xaf940:START(0x23d9ea);goto af950;                       /* action 3 */
     case 0xaf918:
         START(0x23d7ee);
-        SW(0x70,W(0x72));a->scalar62=0;s->routine=0xaf964; /* fall through */
+    af950:SW(0x70,W(0x72));a->scalar62=0;s->routine=0xaf964;   /* 0AF950 */
+        /* fall through */
     case 0xaf964:
         stationary(c);
         if (a->flags15&64u) ground(c,NULL); else air_drop(c);
@@ -1281,6 +1289,17 @@ static bool b05dc(ctx_t *c) {
  * clear, then 0B0750 / 0B063E / 0B063E (run by the caller's next tick). */
 bool neo_soldier_become(neo_soldier_t *s,uint32_t entry,neo_soldier_env_t *e) {
     ctx_t c={s,e,false};
+    if (entry==0xaf14cu) {
+        /* 0AF14C (the jeep's rider 0A3B50 with +95 != 0): 009F88, +6E = 2,
+         * +72 = +70 = 1E, +74 = 5A, +76 = 0, 0AEF30, +81 = E2, then 0AF1EE
+         * (mode 0: the +78 bit 0 probe, else the ground / air start). */
+        SW(0x6e,2);SW(0x72,0x1e);SW(0x70,0x1e);SW(0x74,0x5a);SW(0x76,0);
+        if (!aef30(&c)) return false;
+        SB(0x81,0xe2);
+        s->routine=(s->b.flags15&64u)?((uint8_t)(s->b.kind_angle>>8)==3u?0xaf380:0xaf65a):0xafce2;
+        if (W(0x78)&1u) {uint16_t f=0;probe_vertical(&c,0,&f);if (f&0x200u) s->routine=0xaf7f6;}
+        return !c.unsupported;
+    }
     if (entry!=0xb05feu && entry!=0xb0626u && entry!=0xb0632u) return false;
     if (!b05dc(&c)) return false;
     if (entry==0xb0632u) SB(0x7c,B(0x7c)&0x7fu); else SB(0x7c,B(0x7c)|0x80u);
@@ -1353,7 +1372,7 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_so
     SW(0x84,(uint16_t)(neo_asr(S16((uint16_t)(HI(s->b.projected_x)-0xa0u)),2)+0xa0));
     SW(0x86,neo_rng_next(e->rng));
     target(&c);prefix(&c);
-    SB(0x81,2);
+    SB(0x81,sp->flags81?sp->flags81:2);
     s->routine=(s->b.flags15&64u)?((uint8_t)(s->b.kind_angle>>8)==3u?0xaf380:0xaf65a):0xafce2;
     if (sp->words[4]==2u) s->routine=0xaff16;
     else if (sp->words[4]==3u) {s->b.flags15&=(uint8_t)~1u;s->routine=0xb0396;}

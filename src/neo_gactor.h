@@ -156,6 +156,7 @@ typedef struct neo_m3mid_env {
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
+    uint8_t player_flags15[2];       /* the players' +15 (RAM 1014D9 / 101589): bit 6 on the ground (01AF1A) */
     neo_cull_bounds_t bounds;        /* RAM 10C2F0 scene descriptor */
     uint16_t video;                  /* RAM 10000E */
     uint16_t ref69b8;                /* RAM 10E9B8: the script's player reference x (op 10, 01A30C; read by 098678) */

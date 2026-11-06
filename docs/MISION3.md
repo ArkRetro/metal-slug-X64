@@ -846,8 +846,56 @@ carrera 4379, la espera del jefe intermedio), 211 ranuras, registro saltado
 jugadores (`01AF1A`) y `01AF3C`: necesita el bit de suelo de los jugadores
 en `neo_genv_t` (pendiente).
 
-Pendiente del paso 2 (en orden): `03C306` (parada `040DB4`), `0B9748`, la
-entrada en paracaídas, premios y ramas al azar.
+**Séptima tanda** (misma rama): capturas C (118000..122400, soldados
+`04115A`, soldados de ventana, rango `03BB8E..03C4FF`), D (126000..128400,
+plataforma `0B9286`) y E (118000..119700, pájaros) desde `sec04_117966`:
+
+- `0B9748` (puntos al saltar a la plataforma del hueco) nativo en
+  `neo_m3props.c`: `+15` de los jugadores en `neo_genv_t.player_flags15`
+  (el mundo lo toma del jugador; la prueba de familia lo lee de la RAM
+  `1014D9/101589` con `--ram`, y la máscara de presencia `10C33C` de
+  `01AEB0` igual). Familia `m3bonus` (plataforma `0B9286`, suelo `0B93B4` y
+  sensor): 3 nodos, 3234 actualizaciones iguales a MAME (el jugador cae al
+  hueco en la captura: el sensor no paga, el camino de `08CECC` queda
+  literal).
+- `0A3BA4` → `040846` (`04097A`, estado `040C8E`) y la entrada `0AF14C` del
+  pasajero del jeep (`neo_soldier_become`: `0AEF30` con `+81` = E2, `0AF1EE`)
+  traducidos literalmente (sin traza).
+- Entradas de soldado `0AF17E..0AF1E0` con su `+81` (`0AF18C` 10, `0AF19A`
+  12, `0AF1B6` 4, `0AF1C4` 8, `0AF1D2` C, `0AF1E0` E; `0AF1A8` E0 sigue
+  externa: sus acciones `0AF99A` no están portadas) y las acciones `0AF92C`
+  (programa `23DA62`) / `0AF940` / `0AF998` (`23D9EA`) → `0AF964` como
+  `0AF918`. El registro `2DA174`→`0AF1B6` deja de saltarse.
+- La granada `03C306` de los programas `23DA62`/`24124C` (`CALL 03C2DE`):
+  evento `NEO_SOLDIER_EVENT_GRENADE` → el mundo la crea tras el actor del
+  guion a (0, 2C) con la cara del soldado; `grenade_tick` en `neo_m3enemy.c`
+  (sonda `01495C`, agua `03C55C` → parada explícita en `03C962`, fila
+  `03C2C2`, explosión `03C4F8`). **Sin traza**: ni la captura C ni ninguna
+  anterior llegan a `03C2DE` (los soldados `04115A` mueren antes, azar):
+  traducción literal; sus sprites (`23F2A0`) no están exportados.
+- Pájaros: los fotogramas de vuelo `23FECC` (descripciones `18524E..18526C`)
+  no aparecen en ninguna captura (en MAME los pájaros no despegan cerca del
+  jugador del plan; en ares sí): son los «dibujos sin descriptor» desde la
+  cámara 1217 (~6–7k por carrera). Falta una captura con los pájaros
+  volando a la vista.
+
+Recorrido en ares tras la séptima tanda (300 s): PASS, progreso 3911, 210
+ranuras, registros saltados 0, rutinas sin soporte del mundo: ninguna.
+
+Entrada en paracaídas (`0C15B4`, pendiente): en `run4/trace.csv` el
+jugador espera en `0C15BA` en (0x58, 0x100) desde 117978 (`018F32`: hasta
+que `10C302` se pone, el fundido de entrada), cuelga en `0C162A` desde
+118026, corta (`0C170C`) hacia 118050 y aterriza (`0C2692`) en 118098 con y
+0x58; el registro `2D5E7C` (`0048 0100 0101 0010 02..`) se coloca por
+`0196E8` (x absoluta, y + 0x100 − raíz). Falta: un `msx_game_begin_descent`
+sin `msx_game_init` para el arranque de etapa, la espera de `10C302` y la x
+0x58 (0x48 del registro + 0x10, por aclarar en `0C1260`), y su fixture
+(`extract_descent_fixture.py` necesita trazas de `capture_mission_rest.lua`,
+que no carga estados: hace falta una captura desde el arranque hasta la M3
+o adaptar `capture_fullgame.lua` al nodo del jugador).
+
+Pendiente del paso 2 (en orden): la entrada en paracaídas, `03C306` con
+traza, los sprites de vuelo de los pájaros, premios y ramas al azar.
 
 ## Pendiente
 

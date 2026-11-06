@@ -335,7 +335,7 @@ identificar» cuando no hay más.
 | `02B202` | `02B202` | 4 | 119050 / 849 | 2:2 4:2 | guion×2 corredor×2 | `236D00` `236D88` | 1021 | nativo (`neo_m3enemy.c`) | sin identificar; hijos `02B61C`, `02BBBA`, explosiones; mapa dinámico de la raíz `02C5BA` (y `02C5C8` en la sección 4) |
 | 〃 | `02B61C` | 4 | 119050 / 849 | 2:2 4:2 | `02B202` | `23739E` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `02BBBA` | 6 | 119324 / 1028 | 2:2 4:4 | `02B202` | `2373CC` `2373E6` | — | nativo (`neo_m3enemy.c`) |  |
-| `0AF1B6` | `0AF1B6` | 1 | 119050 / 849 | 2:1 | guion | `23D5E2` `23E43C` | — | **falta** | programas de soldado (los de `0AF17E` `23D5E2 23E43C`) |
+| `0AF1B6` | `0AF1B6` | 1 | 119050 / 849 | 2:1 | guion | `23D5E2` `23E43C` | — | nativo (`neo_soldier_ai.c`, `+81` = 4) | programas de soldado (los de `0AF17E` `23D5E2 23E43C`) |
 | `01A422` | `01A422` | 14 | 119254 / 993 | 2:8 4:6 | guion | — | — | nativo (`neo_script.c`) | corredor del guion (op 8) |
 | `04115A` | `04115A` | 7 | 119335 / 1043 | 2:6 3:1 | guion | `240DEE` `240F8E` `24116E` +3 | 103E 1041 1042 | nativo | soldado (familia de la Misión 1) |
 | `027F54` | `027F54` | 1 | 119579 / 1267 | 2:1 | guion | `235BAA` `235FE0` `23606E` +1 | 1021 1033 109D | nativo (`neo_m3enemy.c`) | coche con pasajero (`cv_tick`); regalo `00` (H); hijo `0287FA`, explosiones; sonidos 1021/1033/109D |
@@ -359,8 +359,8 @@ identificar» cuando no hay más.
 | `03938A` | `03938A` | 1 | 121188 / 1808 | 2:1 | misión | `23C762` | 1069 | `work-m3c` | caja del vagón → estampador `0B9140` (repisa `0B8FA8`) |
 | 〃 | `0B9140` | 1 | 121321 / 1956 | 2:1 | `03938A` | — | — | `work-m3c` |  |
 | `05D226` | `05D226` | 1 | 121289 / 1929 | 2:1 | guion | `2404FE` `262B1A` `262DCC` | 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE` y propios `262B1A 262DCC` |
-| `038D1E` | `038D1E` | 1 | 121466 / 2080 | 2:1 | misión | `23C624` `23C62C` | — | **falta** | llamada de cámara `0B9148`: hijos `038B06` (→ estampadores `0B90FA/0B90BC/0B9106/0B9112`, 4 de los 6 grupos de parches `0B85EA`), `038F38`→`0390A6` |
-| `038D26` | `038D26` | 1 | 121700 / 2304 | 2:1 | misión | `23C624` `23C62C` | — | **falta** | llamada de cámara `0B916A`: como `038D1E` |
+| `038D1E` | `038D1E` | 1 | 121466 / 2080 | 2:1 | misión | `23C624` `23C62C` | — | nativo (`neo_m3props.c`) | llamada de cámara `0B9148`: hijos `038B06` (→ estampadores `0B90FA/0B90BC/0B9106/0B9112`, 4 de los 6 grupos de parches `0B85EA`), `038F38`→`0390A6` |
+| `038D26` | `038D26` | 1 | 121700 / 2304 | 2:1 | misión | `23C624` `23C62C` | — | nativo (`neo_m3props.c`) | llamada de cámara `0B916A`: como `038D1E` |
 | `01913C` | `01913C` | 3 | 122097 / 2721 | 2:1 4:1 5:1 | guion | — | — | nativo | reinicio del tiempo |
 | `097FCC` | `097FCC` | 5 | 122133 / 2769 | 2:2 4:3 | guion | `29ED1A` `29EE20` `29EF26` | 1023 10BA | nativo (`neo_m3enemy.c`) | helicóptero (sonido 10BA); hijos `097FE4`, `098E4A`, `098886`, `098CB6`, `09879C`→`098974`→`098EA2`, `098C0C/20/34`, `098E18` |
 | 〃 | `098886` | 10 | 122133 / 2769 | 2:2 4:8 | `097FCC`×5 `097FE4`×5 | `29EF7C` | — | nativo (`neo_m3enemy.c`) |  |
@@ -393,14 +393,14 @@ identificar» cuando no hay más.
 | 〃 | `0A3BD6` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `2A4866` | — | nativo (`neo_m3enemy.c`) | pieza del jeep |
 | 〃 | `0A3C24` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `22CE6C` `2A48FE` | 1022 | nativo (`neo_m3enemy.c`) | proyectil del jeep (guiado `01B04A/01B12E`) |
 | `0B91FA` | `0B91FA` | 1 | 124034 / 3296 | 2:1 | misión | `2A8E40` | — | **falta** | llamada de cámara `0B8BA2` (progreso 3296), programa `2A8E40` |
-| `0B9286` | `0B9286` | 1 | 126244 / 3536 | 3:1 | misión | `2A8E50` | — | **falta** | llamada de cámara `0B8BF0` (3536): plataforma del hueco, mapa dinámico `0E6896` (ROM `0B9376/0B93A8`, 126245..141259); hijos `0B9748` (sonido 1121), `0B93B4` |
-| 〃 | `0B93B4` | 1 | 126244 / 3536 | 3:1 | `0B9286` | `2A8EA6` | — | **falta** |  |
-| 〃 | `0B9748` | 1 | 126244 / 3536 | 3:1 | `0B9286` | — | 1121 | **falta** |  |
+| `0B9286` | `0B9286` | 1 | 126244 / 3536 | 3:1 | misión | `2A8E50` | — | nativo (`neo_m3props.c`) | llamada de cámara `0B8BF0` (3536): plataforma del hueco, mapa dinámico `0E6896` (ROM `0B9376/0B93A8`, 126245..141259); hijos `0B9748` (sonido 1121), `0B93B4` |
+| 〃 | `0B93B4` | 1 | 126244 / 3536 | 3:1 | `0B9286` | `2A8EA6` | — | nativo (`neo_m3props.c`) | suelo de la plataforma |
+| 〃 | `0B9748` | 1 | 126244 / 3536 | 3:1 | `0B9286` | — | 1121 | nativo (`neo_m3props.c`) | puntos al saltar a la plataforma (`m3bonus`) |
 | `0DC97E` | `0DC97E` | 1 | 126292 / 3716 | 4:1 | guion | `2AF47A` `2AFB56` | 102F 10E8 | nativo | bombarderos (Misión 1, `neo_flyer.c`) |
 | 〃 | `0DD3E0` | 1 | 126292 / 3716 | 4:1 | `0DC97E` | `2AF960` | — | nativo |  |
 | 〃 | `0DD642` | 192 | 126372 / 3716 | 4:192 | `0DC97E` | `2919FE` `2AFC60` | 1021 1022 109B | nativo |  |
 | 〃 | `0DD802` | 192 | 126372 / 3716 | 4:192 | `0DC97E` | `2AFCCA` | — | nativo |  |
-| `0B9400` | `0B9400` | 1 | 132302 / 3904 | 4:1 | guion | — | — | **falta** | sin identificar (sin programa ni sonido ni hijos; antes de `group7 == 0`) |
+| `0B9400` | `0B9400` | 1 | 132302 / 3904 | 4:1 | guion | — | — | nativo (`neo_m3props.c`) | sin identificar (sin programa ni sonido ni hijos; antes de `group7 == 0`) |
 | `0A4A94` | `0A4A94` | 1 | 132378 / 3944 | 4:1 | guion | — | 1023 1032 1033 107B 10EB 10EC 10ED | **falta** | jefe intermedio: la aeronave «96» (pantalla `game133500`); superposición `10E8C6` (`0A6C8C`, mapa `2A6142`); 8615 fotogramas de `group0 == 0` |
 | 〃 | `0A606E` | 1 | 132378 / 3944 | 4:1 | `0A4A94` | `2A4D16` `2A4D2E` `2A4DC4` | — | **falta** |  |
 | 〃 | `0A6078` | 1 | 132378 / 3944 | 4:1 | `0A4A94` | `2A4D22` `2A4DD0` `2A4E66` | — | **falta** |  |
@@ -493,13 +493,13 @@ identificar» cuando no hay más.
 | 〃 | `01D944` | 282 | 120463 / 1520 | 2:42 4:76 5:164 | `01D86C` | `22E7F2` | — | nativo | efecto |
 | 〃 | `01D958` | 57 | 120488 / 1520 | 2:9 4:21 5:27 | `01D86C` | `22E8AE` | — | nativo | efecto |
 | 〃 | `05DD2A` | 6 | 120807 / 1520 | 2:6 | `05D916`×4 `05D226`×1 `05C53C`×1 | `263AD0` | — | nativo (`neo_m3enemy.c`) |  |
-| 〃 | `038B06` | 4 | 121466 / 2080 | 2:4 | `038D1E`×2 `038D26`×2 | `23C57C` `23C5AA` `23C5D8` | 1029 | **falta** |  |
-| 〃 | `038F38` | 14 | 121466 / 2080 | 2:14 | `038D1E`×7 `038D26`×7 | `23C640` `23C64C` | — | **falta** |  |
-| 〃 | `0390A6` | 11 | 121589 / 2199 | 2:11 | `038F38` | `22D4E8` `22D552` `22D5BC` +1 | — | **falta** |  |
-| 〃 | `0B90FA` | 1 | 121732 / 2331 | 2:1 | `038B06` | — | — | **falta** |  |
-| 〃 | `0B90BC` | 1 | 121778 / 2384 | 2:1 | `038B06` | — | — | **falta** |  |
-| 〃 | `0B9106` | 1 | 121814 / 2422 | 2:1 | `038B06` | — | — | **falta** |  |
-| 〃 | `0B9112` | 1 | 121983 / 2592 | 2:1 | `038B06` | — | — | **falta** |  |
+| 〃 | `038B06` | 4 | 121466 / 2080 | 2:4 | `038D1E`×2 `038D26`×2 | `23C57C` `23C5AA` `23C5D8` | 1029 | nativo (`neo_m3props.c`) |  |
+| 〃 | `038F38` | 14 | 121466 / 2080 | 2:14 | `038D1E`×7 `038D26`×7 | `23C640` `23C64C` | — | nativo (`neo_m3props.c`) |  |
+| 〃 | `0390A6` | 11 | 121589 / 2199 | 2:11 | `038F38` | `22D4E8` `22D552` `22D5BC` +1 | — | nativo (`neo_m3props.c`) |  |
+| 〃 | `0B90FA` | 1 | 121732 / 2331 | 2:1 | `038B06` | — | — | nativo (`neo_m3props.c`) |  |
+| 〃 | `0B90BC` | 1 | 121778 / 2384 | 2:1 | `038B06` | — | — | nativo (`neo_m3props.c`) |  |
+| 〃 | `0B9106` | 1 | 121814 / 2422 | 2:1 | `038B06` | — | — | nativo (`neo_m3props.c`) |  |
+| 〃 | `0B9112` | 1 | 121983 / 2592 | 2:1 | `038B06` | — | — | nativo (`neo_m3props.c`) |  |
 | 〃 | `01CE38` | 25 | 122243 / 2888 | 2:1 4:5 5:19 | `01D764` | `22DC2C` | — | nativo | efecto |
 | 〃 | `08C68E` | 5 | 122580 / 2888 | 2:2 4:2 5:1 | `08C374` | `28617E` | — | nativo | destello de objeto |
 | 〃 | `08C752` | 1 | 124085 / 3296 | 2:1 | `08C374` | — | — | externo contado |  |

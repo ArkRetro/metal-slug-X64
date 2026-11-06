@@ -238,8 +238,9 @@
   `03EE8A` (`m3bird`), los sacos `0214EA` (`m3sack`) y el campamento
   `01F1D4` (`m3camp`); paradas del mundo resueltas salvo `040DB4` (el
   resto `03C306` de la muerte de `04115A`: capturar y traducir). Siguiente:
-  `03C306`, `0B9748` (bit de suelo de los jugadores en `neo_genv_t`), la
-  entrada en paracaídas, premios y ramas al azar. El bloqueo de la cámara en 4380 está
+  la entrada en paracaídas (`0C15B4`), `03C306` con traza (traducido sin
+  ella), los sprites de vuelo de los pájaros (`23FECC`), premios y ramas al
+  azar. `0B9748` ya es nativo (`m3bonus`). El bloqueo de la cámara en 4380 está
   resuelto: lo soltaba el tiempo de espera de la ROM de referencia; ahora el
   primer tiempo de espera pide la muerte general `1067E3` y el guion sigue a
   la par de la cámara (MISION3.md «Bloqueo de la cámara en 4380»; ares r9

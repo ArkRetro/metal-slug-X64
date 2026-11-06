@@ -1111,6 +1111,21 @@
    "hex": "00010001000100020502fff800000010001080000102fff80000001000108000ffc0ffa0008000c0ffc0ffa0008000c0"
   },
   {
+   "rom": "0x03BC18",
+   "reader": "03C306 soldiers' grenade (neo_m3enemy.c): cull rectangle 03BC18 (019504)",
+   "hex": "fff0ffc000200050fec0ff0001400200"
+  },
+  {
+   "rom": "0x03C2C2",
+   "reader": "03C306 soldiers' grenade: attack row 03C2C2 (0049E8), hurtbox 03C2D2 (+50)",
+   "hex": "fff8fffc00080008000900000010ffff0102fff8fff8001000108000"
+  },
+  {
+   "rom": "0x0B99CC",
+   "reader": "0B9748 platform bonus (neo_m3props.c): rectangle 0B99CC, player rectangle 0B99D8 (01AF3C), points 0B99E0 / 0B99E4 (08CECC)",
+   "hex": "0502ffe4fffc002000088000ffe4fffc002000080005000000000000"
+  },
+  {
    "rom": "0x094A62",
    "reader": "093C9A Mission 3 SV-001 exit: palette list 094A62 (093882 relocated, 093A08 + 0x11E0)",
    "hex": "039c039c0396039c039c0397039c039c0398039c039c0399039d039d0396039d039d0397039d039d0398039d039d0399039e039e0396039e039e0397039e039e0398039e039e0399039e039e039a039e039e039afffffff4",

@@ -104,6 +104,61 @@ static ga_result_t stamper(neo_gactor_t *a,neo_genv_t *e) {
     if (e->map_patch) e->map_patch(e->ctx,0x10c72eu,L(0x72),d);
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
+#define CLR15(n) SB(0x15,B(0x15)&~(1u<<(n)))
+/* 0B9748 (child of the platform 0B9286 at (-50, 28), layers FFFF): the
+ * points for jumping onto the platform. +78/+79 the players paid, +76/+77
+ * the players seen left of it and no higher than 8 px above (0B9868: the
+ * player exists (01AEB0), on the ground (+15 bit 6), dx < -24, dy > -8;
+ * cleared when paid or gone), +7A done, +7B = 1 when x >= 0F40 + the root's
+ * x (01AD7C). 0B98F8 per player: not done, not paid, exists, on the ground
+ * (01AF1A), dx <= 4 and inside 0B99D8 (01AF3C): with +76/+77 and +7B the
+ * points 0B99E0 (+7A = 1), else 0B99E4 (0 points); paid, 08CECC (D1 = 1:
+ * 01ACBE) with the node 16 px to the left. Deleted at x < 0, when done or
+ * when the creator is gone (00409A). The players' +15 comes from
+ * neo_genv_t player_flags15. */
+static uint16_t pl_x(const neo_genv_t *e,unsigned p) {return p?e->players.p2x:e->players.p1x;}
+static uint16_t pl_y(const neo_genv_t *e,unsigned p) {return p?e->players.p2y:e->players.p1y;}
+static void bonus_mark(neo_gactor_t *a,neo_genv_t *e,unsigned p) {
+    SW(0x7c,(uint16_t)p);
+    if (B(0x78+p) || !((e->players.active_mask>>p)&1u)) {SB(0x76+p,0);return;}
+    if (!(e->player_flags15[p]&0x40u)) return;
+    int16_t dx=(int16_t)(pl_x(e,p)-W(0x3c)),dy=(int16_t)(pl_y(e,p)-W(0x40));
+    if (dx>=-0x24) return;
+    if (dy>-8) SB(0x76+p,1);
+}
+/* 01AF3C: the player inside the rectangle `rect` (x, y, w, h) of the node, by its facing. */
+static bool bonus_inside(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t rect) {
+    const uint8_t *r=ga_rom(rect);
+    if (!r) {ga_fail(e,rect);return false;}
+    int16_t q[4];for (unsigned i=0;i<4;i++) q[i]=(int16_t)(r[2*i]<<8|r[2*i+1]);
+    int16_t dx=(int16_t)(pl_x(e,p)-W(0x3c)),dy=(int16_t)(pl_y(e,p)-W(0x40));
+    if (B(0x15)&1u) dx=(int16_t)-dx;
+    return dx>=q[0] && dx<(int16_t)(q[0]+q[2]) && dy>=q[1] && dy<(int16_t)(q[1]+q[3]);
+}
+/* 08CECC: the points of `table` for player p, the label 08D330 after the script actor. */
+static bool bonus_award(neo_gactor_t *a,neo_genv_t *e,unsigned p,uint32_t table) {
+    uint32_t value=rl(table);
+    neo_pickup_env_t *pk=e->pickup;
+    if (!pk) {ga_fail(e,0x8cedc);return false;}
+    neo_item_add_score(pk->score[p],value);                           /* 057948 */
+    if (e->sound) e->sound(e->ctx,0x1121);
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8d330,true):NULL;  /* 00411C */
+    if (c) {ga_sl(c,0x6e,value);ga_sb(c,0x8a,(uint8_t)(p&1u));ga_place_at(c,a,e,-0x10,0);}   /* 01ACBE at x - 10 */
+    return true;
+}
+static bool bonus_check(neo_gactor_t *a,neo_genv_t *e,unsigned p) {
+    if (B(0x7a)) return true;
+    SW(0x7c,(uint16_t)p);
+    if (B(0x78+p) || !((e->players.active_mask>>p)&1u)) return true;
+    if (!(e->player_flags15[p]&0x40u)) return true;                   /* 01AF1A */
+    uint32_t table=0xb99e4;
+    if ((int16_t)(pl_x(e,p)-W(0x3c))<=4) {
+        if (!bonus_inside(a,e,p,0xb99d8)) return !e->unsupported;
+        if (B(0x76+p) && B(0x7b)) {SB(0x7a,1);table=0xb99e0;}
+    }
+    SB(0x78+p,1);
+    return bonus_award(a,e,p,table);
+}
 static ga_result_t m3props_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     switch (L(0)) {
@@ -313,13 +368,30 @@ static ga_result_t m3props_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     case 0xb9400:
         return e->flags && e->flags->platform6bd?GA_DELETE:GA_MORE;
+    /* ---- the bonus of the platform 0B9748 ---- */
+    case 0xb9748: {
+        CLR15(0);CLR15(2);SW(0x66,0xffff);SW(0x1e,0xffff);SB(0x78,0);SB(0x79,0);SB(0x7a,0);
+        neo_gactor_t *p=e->creator?e->creator(e->ctx,a):NULL;
+        ga_place(a,e,-0x50,0x28,p?NEO_GA_TAG(p->index):0);                /* 01AD6E */
+        SL(0,0xb9780);
+    }   /* fall through */
+    case 0xb9780: {
+        ga_project(a,e);
+        neo_contact_parent_t root;int16_t d0=0xf40;                       /* 01AD7C: 0F40 of the root */
+        if (ga_parent(e,0x10e968u,&root)) d0=(int16_t)(0xf40+(int16_t)((uint32_t)root.x>>16));
+        SB(0x7b,d0>(int16_t)W(0x3c)?0:1);
+        bonus_mark(a,e,0);bonus_mark(a,e,1);                                /* 0B9868 */
+        if (!bonus_check(a,e,0) || !bonus_check(a,e,1)) return GA_UNSUPPORTED;   /* 0B98F8 */
+        if ((int16_t)W(0x3c)<0 || B(0x7a) || !ga_creator_alive(a,e)) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
 bool neo_m3props_routine(uint32_t r) {
     static const uint32_t k[]={0x39382,0x3938a,0x393dc,0x39406,0x3941c,0x39436,0x39458,0xb911e,0xb9140,0xb8fa8,
         0xb90bc,0xb90fa,0xb9106,0xb9112,0x38d1e,0x38d26,0x38ec6,0x38eda,0x38efa,0x38b06,0x38b78,0x38bb0,0x38c20,
-        0x38f38,0x38f4c,0x38f74,0x38fb6,0x390a6,0x39130,0xb9286,0xb930e,0xb939a,0xb9380,0xb93b4,0xb93f0,0xb9400};
+        0x38f38,0x38f4c,0x38f74,0x38fb6,0x390a6,0x39130,0xb9286,0xb930e,0xb939a,0xb9380,0xb93b4,0xb93f0,0xb9400,0xb9748,0xb9780};
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
     return false;
 }

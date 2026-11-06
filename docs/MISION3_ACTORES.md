@@ -393,9 +393,9 @@ identificar» cuando no hay más.
 | 〃 | `0A3BD6` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `2A4866` | — | nativo (`neo_m3enemy.c`) | pieza del jeep |
 | 〃 | `0A3C24` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `22CE6C` `2A48FE` | 1022 | nativo (`neo_m3enemy.c`) | proyectil del jeep (guiado `01B04A/01B12E`) |
 | `0B91FA` | `0B91FA` | 1 | 124034 / 3296 | 2:1 | misión | `2A8E40` | — | **falta** | llamada de cámara `0B8BA2` (progreso 3296), programa `2A8E40` |
-| `0B9286` | `0B9286` | 1 | 126244 / 3536 | 3:1 | misión | `2A8E50` | — | **falta** | llamada de cámara `0B8BF0` (3536): plataforma del hueco, mapa dinámico `0E6896` (ROM `0B9376/0B93A8`, 126245..141259); hijos `0B9748` (sonido 1121), `0B93B4` |
-| 〃 | `0B93B4` | 1 | 126244 / 3536 | 3:1 | `0B9286` | `2A8EA6` | — | **falta** |  |
-| 〃 | `0B9748` | 1 | 126244 / 3536 | 3:1 | `0B9286` | — | 1121 | **falta** |  |
+| `0B9286` | `0B9286` | 1 | 126244 / 3536 | 3:1 | misión | `2A8E50` | — | nativo (`neo_m3props.c`) | llamada de cámara `0B8BF0` (3536): plataforma del hueco, mapa dinámico `0E6896` (ROM `0B9376/0B93A8`, 126245..141259); hijos `0B9748` (sonido 1121), `0B93B4` |
+| 〃 | `0B93B4` | 1 | 126244 / 3536 | 3:1 | `0B9286` | `2A8EA6` | — | nativo (`neo_m3props.c`) | suelo de la plataforma |
+| 〃 | `0B9748` | 1 | 126244 / 3536 | 3:1 | `0B9286` | — | 1121 | nativo (`neo_m3props.c`) | puntos al saltar a la plataforma (`m3bonus`) |
 | `0DC97E` | `0DC97E` | 1 | 126292 / 3716 | 4:1 | guion | `2AF47A` `2AFB56` | 102F 10E8 | nativo | bombarderos (Misión 1, `neo_flyer.c`) |
 | 〃 | `0DD3E0` | 1 | 126292 / 3716 | 4:1 | `0DC97E` | `2AF960` | — | nativo |  |
 | 〃 | `0DD642` | 192 | 126372 / 3716 | 4:192 | `0DC97E` | `2919FE` `2AFC60` | 1021 1022 109B | nativo |  |

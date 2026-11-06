@@ -13,6 +13,15 @@
 #define COUNT(a) (sizeof(a)/sizeof((a)[0]))
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
 enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414 };
+/* The soldier entries 0AF17E.. (0AEF30 then +81): 0 for any other routine.
+ * 0AF1A8 (+81 = E0: the actions 0AF99A, not ported) stays external. */
+static uint8_t soldier_entry_flags81(uint32_t r) {
+    switch (r) {
+    case 0xaf17e:return 2;case 0xaf18c:return 0x10;case 0xaf19a:return 0x12;
+    case 0xaf1b6:return 4;case 0xaf1c4:return 8;case 0xaf1d2:return 0xc;case 0xaf1e0:return 0xe;
+    default:return 0;
+    }
+}
 #define RUNNER_TAG(i) (0x50000000u|(uint32_t)(i))
 /* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player.
  * RAM 10FD8F (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
@@ -118,7 +127,7 @@ bool neo_world_spawn_stop(uint32_t constructor) {
 bool neo_world_spawn_native(uint32_t constructor) {
     uint32_t r=constructor&0xffffffu;
     if (neo_world_spawn_stop(r)) return false;
-    return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || r==SOLDIER_CONSTRUCTOR || r==0x4115au || r==0x1913cu || r==0x529c0u;
+    return neo_region_routine(r) || r==BOSS_CONSTRUCTOR || r==0x5486au || soldier_entry_flags81(r) || r==0x4115au || r==0x1913cu || r==0x529c0u;
 }
 static void spawn_log(neo_world_t *w,const neo_script_spawn_t *sp,bool created) {
     if (w->spawn_log_count<sizeof(w->spawn_log)/sizeof(w->spawn_log[0])) {
@@ -139,7 +148,7 @@ static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
     bool sub=sp->creator<0 && t->sub_owner>=0;
     int at=sub?find(w,NEO_WORLD_GACTOR,(unsigned)t->sub_owner):sp->creator<0?find(w,NEO_WORLD_SCRIPT,0):find(w,NEO_WORLD_RUNNER,(unsigned)sp->creator);
     uint32_t routine=sp->constructor&0xffffffu;
-    if (routine!=SOLDIER_CONSTRUCTOR && at>=0 && neo_region_routine(routine) && !neo_world_spawn_stop(routine)) {
+    if (!soldier_entry_flags81(routine) && at>=0 && neo_region_routine(routine) && !neo_world_spawn_stop(routine)) {
         /* 01A10A: 0040BC after the creator, words to +6E.., +69 group,
          * +68 variant, +28/+2C at the scene root (01ABB6). */
         neo_gactor_t *a=ga_insert(t,at,routine,sub?NEO_GA_TAG((unsigned)t->sub_owner):sp->creator<0?SCRIPT_TAG:RUNNER_TAG(sp->creator),0);
@@ -168,12 +177,12 @@ static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
          * after the cartridge check). */
         w->arrow=(uint8_t)((sp->word_count?sp->words[0]:0)&7u);return;
     }
-    if (routine!=SOLDIER_CONSTRUCTOR && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
+    if (!soldier_entry_flags81(routine) && routine!=0x4115au) {w->external_spawns++;w->external_constructor=sp->constructor;return;}
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
     if (i==NEO_WORLD_SOLDIERS) MSX_DIAG_POOL_FAIL(MSX_POOL_SOLDIER);
     if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return;}
     neo_soldier_spawn_t *p=&w->pending[i];memset(p,0,sizeof(*p));
-    p->x=sp->x;p->y=sp->y;p->variant68=sp->variant68;p->group69=sp->group69;p->constructor=routine==SOLDIER_CONSTRUCTOR?0:routine;
+    p->x=sp->x;p->y=sp->y;p->variant68=sp->variant68;p->group69=sp->group69;p->constructor=soldier_entry_flags81(routine)?0:routine;p->flags81=soldier_entry_flags81(routine);
     for (unsigned k=0;k<6 && k<sp->word_count;k++) p->words[k]=sp->words[k];
     /* The node exists from now on; its constructor runs when the list
      * traversal reaches it (after the creator has finished its update). */
@@ -206,6 +215,7 @@ static void player_hit(tick_t *t,int32_t projected_x,int32_t cached_x,uint8_t ki
     if (!t->hits || kind>w->hit_kind) {w->hit_kind=kind;w->hit_right=(int16_t)(uint16_t)(t->player.x-(uint16_t)HI(cached_x))<0;}
     t->hits++;w->hit_x=HI(projected_x);
 }
+static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script);
 static void soldier_event(void *context,const neo_soldier_event_t *e) {
     tick_t *t=context;neo_world_t *w=t->w;
     switch (e->kind) {
@@ -229,6 +239,14 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         neo_contact_actor_t body;neo_throw_spawn(&body,&seed,&w->root,w->epoch);
         neo_anim_render_t graphics;memset(&graphics,0,sizeof(graphics));graphics.attributes=body.flags15;
         neo_throw_actor_start(&w->throws[i],&body,(uint16_t)(e->value&0xffu),0xff,&graphics);
+        break;
+    }
+    case NEO_SOLDIER_EVENT_GRENADE: { /* 03C2DE: the grenade 03C306 after the script actor, at (0, 2C) of the soldier, its facing bits 0..1 */
+        neo_gactor_t *c=g_spawn(t,NULL,0x3c306,true);
+        if (!c) break;
+        int32_t rx=HI(w->root.x),ry=HI(w->root.y);
+        ga_place(c,&t->genv,(int16_t)(HI(e->actor.projected_x)-rx),(int16_t)(HI(e->actor.projected_y)+0x2c-ry),0x10e968u);
+        ga_sb(c,0x15,(uint8_t)(e->actor.flags15&3u));
         break;
     }
     case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0 / 040F04: immediate child 040F88 / 040F60 (value 1) */
@@ -1314,6 +1332,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;
+    g->player_flags15[0]=pl?pl->flags15:0;g->player_flags15[1]=0;
     /* RAM 10000E as the actors read it: the counter has already advanced for
      * this update (video_phase is the value before it). */
     g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;

@@ -723,6 +723,9 @@ int main(void) {
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
+        e.player_flags15[0]=wram[0x14d9];e.player_flags15[1]=wram[0x1589];   /* the players' +15 as read */
+        /* RAM 10C33C (01AEB0: the players present) when the family watches it. */
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c33cu && 0x10c33du<ram_ranges[g][1]) e.players.active_mask=wram[0xc33c]&3u;   /* btst.l d0 on the byte 10C33C */
         e.laser=&wram[0xc340];   /* RAM 10C340..10C34F: the beam blocks (neo_pweapon.c) */
 #ifdef FAMILY_RING
         kernel.ring=&wram[(FAMILY_RING+0x88u)&0xffffu];

@@ -48,10 +48,12 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   más iguales a MAME. El bloqueo de la cámara en 4380 está resuelto (la ROM
   de referencia pide la muerte general antes de soltar un bloqueo). Paradas
   del mundo resueltas (regalos 28/39, soldados con `+76` = 5/6/7, `08DBC8`,
-  granadas de los soldados de ventana, el pasajero convertido): queda
-  `040DB4` (el resto `03C306` de la muerte del soldado `04115A`, sin
-  captura). Faltan `0B9748`, la entrada en paracaídas, los regalos y las
-  ramas al azar de MISION3.md «Paso 2».
+  granadas de los soldados de ventana, el pasajero convertido): la
+  granada `03C306` de los soldados va traducida sin traza. `0B9748`
+  (`m3bonus`), las entradas de soldado `0AF17E..0AF1E0` y las acciones
+  `0AF92C/0AF940` también. Faltan la entrada en paracaídas, los sprites de
+  vuelo de los pájaros, los regalos y las ramas al azar de MISION3.md
+  «Paso 2».
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se

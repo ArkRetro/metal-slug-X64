@@ -87,8 +87,8 @@ $(BUILD_DIR)/tools/test_scene_release.o: CFLAGS = $(N64_CFLAGS) -MMD
 $(BUILD_DIR)/release/%.o: src/%.c $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/retro25d/retro_assets.h
 	@mkdir -p $(dir $@)
 	$(N64_CC) $(N64_CFLAGS) -DNDEBUG -MMD -c $< -o $@
-$(BUILD_DIR)/scene-debug.elf: $(BUILD_DIR)/tools/test_scene_release.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o
-$(BUILD_DIR)/scene-release.elf: $(BUILD_DIR)/tools/test_scene_release.o $(BUILD_DIR)/release/scene_renderer.o $(BUILD_DIR)/release/scene_assets.o $(BUILD_DIR)/release/msx_perf.o $(BUILD_DIR)/release/scene_cull.o $(BUILD_DIR)/release/scene_strips.o $(BUILD_DIR)/release/retro_effects.o $(BUILD_DIR)/release/diorama_building.o $(BUILD_DIR)/release/retro25d.o
+$(BUILD_DIR)/scene-debug.elf: $(BUILD_DIR)/tools/test_scene_release.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o
+$(BUILD_DIR)/scene-release.elf: $(BUILD_DIR)/tools/test_scene_release.o $(BUILD_DIR)/release/scene_renderer.o $(BUILD_DIR)/release/scene_assets.o $(BUILD_DIR)/release/msx_perf.o $(BUILD_DIR)/release/scene_cull.o $(BUILD_DIR)/release/scene_strips.o $(BUILD_DIR)/release/scene_prerender.o $(BUILD_DIR)/release/retro_effects.o $(BUILD_DIR)/release/diorama_building.o $(BUILD_DIR)/release/retro25d.o
 $(BUILD_DIR)/scene-debug.dfs $(BUILD_DIR)/scene-release.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/scene-test-romfs
 $(BUILD_DIR)/scene-test-romfs/scene.pack: romfs/scene.pack
 	mkdir -p $(dir $@)
@@ -126,7 +126,7 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -184,18 +184,22 @@ BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematic
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
 # the mission switch; without them the game stops there and restarts Mission 1.
 MISSION_PACKS := $(wildcard romfs/mission[2-6].pack)
+# Pre-rendered stage backgrounds (prototype, tools/prerender_stage.py render;
+# private, read only by MSX_BG_PRERENDER builds).
+MISSION_BGP := $(wildcard romfs/m[2-6]s[1-9].bgp)
 # The private Marco inputs are compared by content, not by time
 # (tools/marco_inputs_sum.sh): a catalog copied with its old time (cp -p)
 # left marco_renderer.o compiled against the previous catalog in test ROM 18.
 MARCO_INPUTS_SUM := $(BUILD_DIR)/marco-inputs.sum
 MARCO_INPUTS_SUM_RUN := $(shell sh tools/marco_inputs_sum.sh $(BUILD_DIR))
 $(MARCO_INPUTS_SUM): ;
-$(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS)
+$(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
+	$(if $(MISSION_BGP),cp $(MISSION_BGP) $(BUILD_DIR)/game-romfs/)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)

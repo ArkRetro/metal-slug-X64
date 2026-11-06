@@ -5,6 +5,7 @@
 #include "msx_perf.h"
 #include "scene_cull.h"
 #include "scene_strips.h"
+#include "scene_prerender.h"
 #include "visual_config.h"
 #include <stdlib.h>
 #include <math.h>
@@ -619,6 +620,64 @@ static void draw_layer_direct(unsigned layer,const int *offsets,const int *rises
         }
     }
 }
+/* Pre-rendered columns (scene_prerender.h, prototype): each run of a
+ * resident column is one upload of the ring's texels (the 16x256 CI4 page
+ * layout from the run's first texel) and one rectangle; a column a map
+ * patch may replace goes cell by cell (hidden, as the tile path). Animated
+ * cells of the layer keep the tile path. */
+#if MSX_BG_PRERENDER
+static bool prerender_on=true;
+static uint16_t *prerender_anim[4];static unsigned prerender_anim_count[4];
+static void blit_raw(const uint8_t *texels,unsigned palette,int x,int y,unsigned cells) {
+    set_tlut(TLUT_RGBA16);unsigned slot=palette_slot(palette);
+    surface_t texture=surface_make((void*)texels,FMT_CI4,16,256,8);
+    uint32_t u0=TICKS_READ();tmem_bytes+=(unsigned)page_upload(&texture,2,slot);upload_ticks+=TICKS_READ()-u0;uploads++;
+    last_page=-1;last_slot=(int)slot;last_format=2;last_width=16;last_height=256;
+    uint32_t r0=TICKS_READ();
+    rdpq_texture_rectangle_scaled(TILE0,x,y,x+16,y+16*(int)cells,0,0,16,16*(int)cells);
+    rect_ticks+=TICKS_READ()-r0;draws++;
+}
+static void draw_layer_prerender(unsigned layer,const int *offsets,const int *rises,unsigned video_tick) {
+    int off=offsets[layer],first,end,cx;
+    scene_prerender_prefetch(layer,off+8-15-64,off+312+64);
+    scene_prerender_range(layer,off+8-15,off+312,&first,&end,&cx);
+    unsigned base=scene_prerender_palette_base();
+    for (int c=first;c<end;c++) {
+        unsigned n;const uint8_t *tex;const scene_prerender_run_t *r=scene_prerender_column(layer,c,&n,&tex);
+        if (!r) continue;
+        layer_visits[layer]+=n;
+        scene_map_cell_t probe={(uint8_t)layer,SCENE_CELL_STATIC,(int16_t)(cx+16*c),0,0};
+        bool may=column_may_hide(&probe);int sx=probe.x-off;
+        for (unsigned k=0;k<n;k++) {
+            int y=8+r[k].y+rises[layer];unsigned cells=r[k].n;
+            if (!(y+16*(int)cells<=8 || y>=232)) {
+                if (!may) blit_raw(tex,base+r[k].palette,sx,y,cells);
+                else for (unsigned j=0;j<cells;j++) {probe.y=(int16_t)(r[k].y+16*(int)j);if (!hidden(&probe)) blit_raw(tex+128*j,base+r[k].palette,sx,y+16*(int)j,1);}
+            }
+            tex+=128*cells;
+        }
+    }
+    const scene_map_cell_t *cells=cell_index.cells;
+    for (unsigned i=0;i<prerender_anim_count[layer];i++) {
+        const scene_map_cell_t *cell=&cells[prerender_anim[layer][i]];
+        if (cell->x-off>-16 && cell->x-off<320 && !hidden(cell)) classic_cell(cell,offsets,rises,video_tick,1);
+    }
+}
+/* The animated cells of the pre-rendered layers of the loaded stage. */
+static void prerender_attach(const scene_stage_t *st) {
+    for (unsigned l=0;l<4;l++) {free(prerender_anim[l]);prerender_anim[l]=NULL;prerender_anim_count[l]=0;}
+    unsigned m=st?scene_prerender_layers():0u;
+    for (unsigned l=0;l<4;l++) if (m>>l&1u) {
+        unsigned n=0;
+        for (unsigned i=0;i<st->cell_count;i++) if (st->cells[i].layer==l && st->cells[i].anim!=SCENE_CELL_STATIC) n++;
+        if (!n) continue;
+        prerender_anim[l]=malloc(n*sizeof(uint16_t));
+        for (unsigned i=0;i<st->cell_count;i++) if (st->cells[i].layer==l && st->cells[i].anim!=SCENE_CELL_STATIC) prerender_anim[l][prerender_anim_count[l]++]=(uint16_t)i;
+    }
+}
+#else
+static void prerender_attach(const scene_stage_t *st) {(void)st;}
+#endif
 static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Pack order is layer order (checked at init), so walking the layers
@@ -628,6 +687,12 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
     for (unsigned layer=0;layer<5;layer++) {
       if (!(mask&(1u<<layer)) || !visible[layer]) continue;
       uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
+#if MSX_BG_PRERENDER
+      /* Only mission pack stages have pre-rendered layers: their depth views
+       * are 1:1 at (-offsets, rises), the classic coordinates. */
+      if (prerender_on && (scene_prerender_layers()>>layer&1u)) draw_layer_prerender(layer,offsets,rises,video_tick);
+      else
+#endif
       if (depth_mode || cell_index.layer_major) {
           const scene_strip_t *s=NULL;
           if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offsets,rises,&wx0,&wx1,&wy0,&wy1);s=layer_strip(layer,wx0,wx1,wy0,wy1);}
@@ -850,7 +915,11 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     if (!(frame%97) && !fade_on) {
         uint32_t sums[2],raw[2];
         for (unsigned way=0;way<2;way++) {
-            strips_on=raw_upload=!way;reset_texture_state();
+            strips_on=raw_upload=!way;
+#if MSX_BG_PRERENDER
+            prerender_on=!way;
+#endif
+           reset_texture_state();
             draw_layers(mask,offsets,rises,visible,video_tick);
             rspq_wait();
             const surface_t *fb=current->surface;const uint8_t *base=fb->buffer;uint32_t h=2166136261u,g=h;
@@ -862,6 +931,10 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             sums[way]=h;raw[way]=g;reset_texture_state();
         }
         strips_on=raw_upload=true;
+#if MSX_BG_PRERENDER
+        prerender_on=true;
+#endif
+       
         debugf("MSX BG CRC frame=%u camera=%u mask=%x rgb new=%08lx old=%08lx %s (with coverage %08lx/%08lx)\n",frame,camera,mask,(unsigned long)sums[0],(unsigned long)sums[1],sums[0]==sums[1]?"same":"DIFFERENT",(unsigned long)raw[0],(unsigned long)raw[1]);
     }
 #endif
@@ -883,7 +956,7 @@ void scene_renderer_stage_changed(void) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
     bg_key.valid=false;collapsed=flash=patched=false;
     const scene_stage_t *st=scene_stage();
-    tower_index(st);map_patch_index(st);strips_attach(st);
+    tower_index(st);map_patch_index(st);strips_attach(st);prerender_attach(st);
     if (st) {
         bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
         assertf(indexed,"Stage cell index");(void)indexed;
@@ -920,6 +993,12 @@ void scene_render_end(void) {
         (unsigned long)TICKS_TO_US(upload_ticks/300),(unsigned long)TICKS_TO_US(rect_ticks/300),
         (unsigned long)TICKS_TO_US(layer_blit[0]/300),layer_touch[0]/300,(unsigned long)TICKS_TO_US(layer_blit[1]/300),layer_touch[1]/300,(unsigned long)TICKS_TO_US(layer_blit[2]/300),layer_touch[2]/300,(unsigned long)TICKS_TO_US(layer_blit[3]/300),layer_touch[3]/300,
         strip_builds,(unsigned long)TICKS_TO_US(strip_build_ticks),strip_resets,strip_direct,strip_pool.items_used);
+#if MSX_BG_PRERENDER
+    if (!(frame%300) && scene_prerender_layers()) {
+        unsigned ring,sync,async;scene_prerender_stats(&ring,&sync,&async);
+        debugf("MSX PRERENDER: layers=%x ring=%u KB column reads sync=%u async=%u\n",scene_prerender_layers(),ring/1024,sync,async);
+    }
+#endif
     if (!(frame%300)) {
         memset(layer_blit,0,sizeof(layer_blit));memset(layer_touch,0,sizeof(layer_touch));upload_ticks=rect_ticks=0;
         memset(layer_ticks,0,sizeof(layer_ticks));memset(layer_draws,0,sizeof(layer_draws));memset(layer_uploads,0,sizeof(layer_uploads));memset(layer_visits,0,sizeof(layer_visits));

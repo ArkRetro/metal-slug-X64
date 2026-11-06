@@ -1147,3 +1147,92 @@ queda como opción para hardware real si se identifica la diferencia.
 
 Ares añade su propia espera de pantalla (`wait` 6–16 ms), así que la
 medida real sigue siendo la del usuario.
+
+## Fondos pre-renderizados (prototipo) (rama `work-prebg`)
+
+**Pregunta.** Con la RAM en el suelo (208 ranuras, 486–496 KB libres tras
+cargar), ¿libera RAM sustituir las celdas del fondo (mapa entero fijado en la
+caché de escena) por las capas de cada etapa pre-renderizadas y leídas del
+cartucho por columnas según avanza la cámara?
+
+**Estimación** (`tools/prerender_stage.py estimate romfs/mission2.pack
+romfs/mission3.pack`; «fijado»: fragmentos de 16 KiB del mapa que la etapa
+fija hoy; «resto»: los que siguen haciendo falta para las celdas animadas
+(LSPC) y las de parches, que comparten fragmentos con las fijas; «denso»: esas
+mismas imágenes reempaquetadas sin huecos; ROM: celdas estáticas sin la
+deduplicación de páginas; anillo: 26–29 columnas de 16 px por capa,
+304 px + 64 px de margen a cada lado, o una ventana 2-D de 352 px de alto en
+las capas altas):
+
+| Etapa | Fijado hoy | Resto / denso | ROM CI4 (CI8) | Anillo | Balance |
+| --- | ---: | ---: | ---: | ---: | --- |
+| M2 e1 (4 capas, 138 celdas animadas, parches) | 14 (224 KB) | 14 / 10 | 113 KB (223) | 114–135 KB | pierde |
+| M2 e2 (capas 2+3, sin animadas) | 25 (400 KB) | 5 / 1 | 499 KB (986) | 139–175 KB | **gana 9 ranuras (medido)** |
+| M2 e3 (torre, 559 animadas en la capa 3) | 54 (864 KB) | 35 / 32 | 1060 KB (2106) | 168 KB (2-D) | gana ≈ 8 ranuras con anillo 2-D |
+| M3 e1 (1232 animadas en la capa 3) | 44 (704 KB) | 28 / 25 | 758 KB (1479) | 158 KB | gana ≈ 6 ranuras |
+
+CI8 por capa duplica la ROM y, con la TLUT de 256 entradas, solo deja 2 KB de
+TMEM (16×128 texeles por subida): CI4 con una paleta por *run* conserva los
+mismos texeles y las mismas subidas de 2048 bytes que hoy. Crecimiento del
+cartucho para las misiones 2 y 3 en CI4: ≈ 2,4 MB (sin comprimir; gzip deja
+M2 e2 en 193 KB de 501).
+
+**Lo que el pre-renderizado no cubre directamente.**
+- *Celdas animadas (auto-animación del LSPC):* fuera de las columnas, por el
+  camino de las celdas; sus fragmentos siguen fijados (en M2 e1, e3 y M3 son la
+  mayoría). Reempaquetarlas densas (columna «denso») apenas reduce: hay 8
+  imágenes por celda. Alternativa: una variante de columna por fase (×8 en ROM
+  de esas columnas) o dejarlas en la caché.
+- *Paletas y fundidos:* sin cambio (las columnas guardan índices CI4 y el id de
+  paleta; la TLUT se sube con `scene_render_fade_palette`).
+- *Parches del mapa (puertas, roca, capas de la M3), derrumbe, tienda:* las
+  celdas sustitutas siguen por el camino de las celdas; en las columnas, una
+  columna que un parche activo puede tapar se dibuja celda a celda con el mismo
+  `hidden()` (probado en la e2 de la M2).
+- *Desplazamiento vertical (torre de la M2 e3, M3):* las columnas enteras de la
+  e3 ocupan 23 KB (capa 0) y 12,6 KB (capa 3) cada una: el anillo de columnas
+  llegaría a 1,1 MB; hace falta un anillo 2-D de bloques (≈ 84 KB por capa).
+- *Modo de profundidad de la M1:* las etapas de los packs usan vistas 1:1, que
+  el prototipo dibuja igual; la M1 (tablas compiladas, planos escalados) queda
+  fuera.
+- *Tren y capas dinámicas (M3, `MSXR`):* mapas que el juego reescribe en
+  tiempo de ejecución; no se pueden pre-renderizar, siguen como celdas.
+
+**Prototipo** (M2 e2, la más sencilla: dos capas, ninguna celda animada).
+`tools/prerender_stage.py render romfs/mission2.pack 2 romfs/m2s2.bgp`
+(privado, `romfs/` no se versiona) escribe las celdas estáticas de cada capa
+por columnas de 16 px (*runs* de celdas consecutivas con una paleta, texeles
+CI4 con la misma disposición de las páginas). `src/scene_prerender.c`
+(solo con `MSX_EXTRA_CFLAGS=-DMSX_BG_PRERENDER=1`; sin la marca no entra en
+la imagen) lee la cabecera al cargar la etapa, reserva tablas y anillos
+(32 columnas por capa) en las ranuras de la etapa en lugar de fijar sus
+fragmentos estáticos, adelanta por DMA asíncrona del PI las columnas que
+entran en el margen y, si una no ha llegado, la lee en el acto (contada).
+`draw_layer_prerender` sube cada *run* con `page_upload` y dibuja un
+rectángulo; las celdas animadas y de parche siguen por su camino.
+
+**Medidas** (ares 146, `mslugx-m2-reference.z64` con `MSX_REFERENCE_DIAG=0`,
+`tools/test_mission2_ares.py`; local: con estos datos privados ese cartucho
+reserva 207 ranuras y falla el mínimo de 208 también sin el prototipo, así que
+las tres compilaciones se midieron con el mínimo bajado a 200, sin publicar).
+- Píxeles: con `-DMSX_BG_CRC=1` cada 97 fotogramas la pasada con columnas se
+  compara con la de recorrido directo + `rdpq_tex_upload_sub`: **140
+  comparaciones iguales, 0 distintas** (M2 e1 8, e2 132, cámara de la e2 0–2368).
+- RAM, e2: fragmentos fijados del mapa 25 → 5 y tablas 22 → 33 ranuras
+  (+11 del anillo, 175 KB): **47 → 38 ranuras (−144 KB)** para la caché de
+  actores; carga de la etapa 328 → 131 ms; lecturas síncronas 0 (232
+  columnas leídas por adelantado en el recorrido). e1: 14 fijados siguen
+  (animadas y parches) + 8 ranuras de anillo: **pierde 128 KB**; en la
+  versión sin prototipo se descarta.
+- CPU, e2 (`MSX BG`, media por fotograma en ventanas de 300): capa 2
+  217 → 79 µs, capa 3 486 → 278 µs (menos rectángulos: *runs* de hasta 16
+  celdas por paleta, sin recorrer índice ni listas); `bg` 1917 → 1746 µs,
+  `cpu` 8523 → 8294 µs, `multi` 17 → 12.
+
+**Recomendación: parcial.** Solo capas sin celdas animadas y que no se
+reescriben: M2 e2 (−9 ranuras, ≈ 0,5 MB de ROM) y, con un anillo 2-D, la
+capa 0 de la torre de la M2 e3 y la capa 1 de la M3 e1 (≈ −8 y −6 ranuras,
+1,1 y 0,5 MB de ROM). No compensa en la M2 e1 ni en capas dominadas por
+celdas animadas (capa 3 de la M2 e3 y de la M3), y la migración completa
+liberaría ≈ 8 ranuras en la etapa peor (la e3 de la M2 fija el
+suelo de la misión): ayuda, pero no saca la RAM del suelo por sí sola.

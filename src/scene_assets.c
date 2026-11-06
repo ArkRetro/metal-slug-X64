@@ -3,6 +3,10 @@
 #include <string.h>
 #include <stdlib.h>
 #include "scene_assets.h"
+#include "scene_prerender.h"
+#ifndef MSX_BG_CRC
+#define MSX_BG_CRC 0
+#endif
 #include "scene_codec.h"
 #include "scene_meta.h"
 #include "mission_camera.h"
@@ -771,9 +775,13 @@ bool scene_stage_load(unsigned index) {
         data_programs=data_head[8]<<8|data_head[9];
         need+=((mission_head.data_length+15)&~15u)+((data_programs*sizeof(stage_program_t)+15)&~15u);
     }
+    /* Pre-rendered columns (scene_prerender.h, prototype): tables and rings
+     * in the stage's slots, in place of its pinned static map chunks. */
+    unsigned prerender_bytes=scene_prerender_probe(mission_head.mission,index);need+=prerender_bytes;
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
+    uint8_t *prerender_mem=prerender_bytes?take(prerender_bytes):NULL;
     scene_chunk_t *chunks=take(16u*mission_head.chunks);rom_read(chunks,mission_chunks_at,16u*mission_head.chunks);
     mission_chunks=chunks;mission_chunk_count=mission_head.chunks;
     stage_palettes=take(32u*mission_head.palettes);rom_read(stage_palettes,mission_palettes_at,32u*mission_head.palettes);
@@ -857,7 +865,13 @@ bool scene_stage_load(unsigned index) {
     /* The stage map, pinned and loaded now (the screen is black). */
     stage_map_first=min_page/8u;stage_map_count=images?max_page/8u-min_page/8u+1u:0;
     map_chunks=0;
+    /* Pre-rendered layers (scene_prerender.h, prototype): their static
+     * cells stream as columns, not pinned (kept pinned in MSX_BG_CRC
+     * builds, whose reference pass draws them through the tiles). */
+    unsigned prerendered=scene_prerender_open(prerender_mem,SCENE_PALETTE_COUNT)?scene_prerender_layers():0u;
+    if (MSX_BG_CRC) prerendered=0;
     for (unsigned i=0;i<cells;i++) for (unsigned k=0;k<8;k++) {
+        if (stage_cells[i].layer<4 && stage_cells[i].anim==SCENE_CELL_STATIC && (prerendered>>stage_cells[i].layer&1u)) break;
         unsigned c=SCENE_CHUNK_COUNT+stage_images[scene_cell_phase(&stage_cells[i],k)].page/8u-SCENE_MISSION_PAGE_BASE/8u;
         if (!map_chunk[c]) {map_chunk[c]=true;pinned[c]=true;map_chunks++;}
     }
@@ -875,7 +889,7 @@ bool scene_stage_load(unsigned index) {
 }
 void scene_mission_unload(void) {
     if (!mission_bytes) return;
-    quiesce();release_reserved();forget_mission_chunks();
+    quiesce();release_reserved();forget_mission_chunks();scene_prerender_close();
     stage_on=false;mission_chunk_count=0;mission_bytes=0;mission_chunks=NULL;
     /* Mission 1's map pinned and resident again. */
     map_chunks=0;

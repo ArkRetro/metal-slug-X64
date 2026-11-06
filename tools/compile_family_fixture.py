@@ -42,6 +42,8 @@ def main():
     p.add_argument('--m3mid',action='store_true',help='the Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6, RAM 10E959, 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them); pieces resume like --m2boss')
     p.add_argument('--root-words',action='store_true',help='a single word read of the root\'s +14..+20 (01AD7C) updates it with the other word as last known')
     p.add_argument('--split-children',action='store_true',help='the children one update makes may split over two frames (the frame mark inside the list walk, as --m2boss): the first made is the last of them in the list')
+    p.add_argument('--fresh-program',action='store_true',help='a constructor that steps the program (00427A) before starting one: the original steps the previous occupant\'s program (+20), the world\'s fresh node has none, so +24..+27 are not compared in a node\'s first update without a program')
+    p.add_argument('--reserve',action='store_true',help='0040BC refuses a node unless more than its reserve are free: RAM 1063D8 as the update first read it (extract with --ram 1063d8-1063da); the world has no such limit')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
@@ -128,6 +130,8 @@ def main():
     if a.ring:L.append('#define FAMILY_RING 0x%xu'%int(a.ring,16))
     if a.m2boss:L.append('#define FAMILY_M2BOSS 1')
     if a.split_children:L.append('#define FAMILY_SPLIT_CHILDREN 1')
+    if a.fresh_program:L.append('#define FAMILY_FRESH_PROGRAM 1')
+    if a.reserve:L.append('#define FAMILY_RESERVE 1')
     if a.m3mid:L.append('#define FAMILY_M3MID 1')
     if a.resume:L.append('#define FAMILY_RESUME 1')
     if a.train:L.append('#define FAMILY_TRAIN 1')

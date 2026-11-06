@@ -78,7 +78,8 @@ static void emit_one(neo_gactor_t *a,neo_genv_t *e) {
         routine=(uint32_t)t[0]<<24|(uint32_t)t[1]<<16|(uint32_t)t[2]<<8|t[3];
     }
     #undef LW
-    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    /* 0040BC with its reserve D0 = 2A. */
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,0x2a):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
     if (!c) return;
     ga_sw(c,0x1e,W(0x1e));
     if (B(0x15)&4u) ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|4u));
@@ -220,6 +221,41 @@ static const frag_t *frag_of(uint32_t r) {
     return NULL;
 }
 static uint32_t rom_l(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]:0;}
+/* 01D51A (tail 0) / 01D54A (1) / 01D578 (2) with the program started: +66/+1E
+ * = E0ED, +92/+93 = 1, the angle +8A, then the launch 01D5EC -> 01D6E4. */
+static void frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {
+    SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
+    uint16_t d0=ga_rand(e);
+    if (tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
+    else if (tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
+    else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
+    /* 01D5EC */
+    if (S16(W(0x62))<=0) SW(0x62,0x200);
+    uint16_t d3=ga_rand(e);
+    uint8_t ang=(uint8_t)W(0x8a);
+    int16_t d1=ga_sine(ang),d2=ga_cosine(ang);
+    d3=(uint16_t)((d3&7u)+1u);
+    int16_t m=(int16_t)(uint16_t)((int32_t)d1*(int16_t)d3);     /* muls.w, low word */
+    m=(int16_t)(m>>2);                                           /* asr.w #2 */
+    int32_t vy=(int32_t)m*S16(W(0x62)),vx=(int32_t)d2*S16(W(0x62));
+    SL(0x34,(uint32_t)vy);SL(0x30,(uint32_t)vx);
+    d0=ga_rand(e);
+    if ((int8_t)(uint8_t)d0<=0) {
+        int16_t k=(int16_t)((ga_rand(e)&3u)+2u);
+        uint32_t d1l=(uint32_t)(S32(L(0x30))>>8);                       /* move.l, asr.l #8 */
+        int16_t v=(int16_t)(uint16_t)d1l;
+        int16_t q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x30,(uint16_t)(int16_t)(q>>1));
+        k=(int16_t)((ga_rand(e)&3u)+2u);
+        /* move.w $34(a6),d1 keeps the upper word of D1, asr.l #8 */
+        d1l=(uint32_t)(S32((d1l&0xffff0000u)|W(0x34))>>8);
+        v=(int16_t)(uint16_t)d1l;
+        q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x34,(uint16_t)(int16_t)(q>>1));
+    }
+    int32_t c=S32(L(0x34));if (c>0x100000) c=0x100000;if (c<0) c=0;SL(0x34,(uint32_t)c);
+    c=S32(L(0x30));if (c>0x80000) c=0x80000;if (c<-0x80000) c=-0x80000;SL(0x30,(uint32_t)c);
+    SL(0x7a,L(0x34));SL(0x7e,0xffffb000u);SB(0x15,B(0x15)|0x20u);
+    SL(0,0x1d6e4);
+}
 static ga_result_t frag_tick(neo_gactor_t *a,neo_genv_t *e) {
     const frag_t *f=frag_of(L(0));
     if (f) {
@@ -231,38 +267,7 @@ static ga_result_t frag_tick(neo_gactor_t *a,neo_genv_t *e) {
         else if (!(d0&2u)) {prog=f->prog0;pal=f->pal0;} else {prog=f->prog1;pal=f->pal1;}
         if (!prog || !ga_anim_start(a,e,prog,0x100)) return GA_UNSUPPORTED;
         ga_palette(a,pal);
-        /* 01D51A / 01D54A / 01D578 */
-        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
-        d0=ga_rand(e);
-        if (f->tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
-        else if (f->tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
-        else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
-        /* 01D5EC */
-        if (S16(W(0x62))<=0) SW(0x62,0x200);
-        uint16_t d3=ga_rand(e);
-        uint8_t ang=(uint8_t)W(0x8a);
-        int16_t d1=ga_sine(ang),d2=ga_cosine(ang);
-        d3=(uint16_t)((d3&7u)+1u);
-        int16_t m=(int16_t)(uint16_t)((int32_t)d1*(int16_t)d3);     /* muls.w, low word */
-        m=(int16_t)(m>>2);                                           /* asr.w #2 */
-        int32_t vy=(int32_t)m*S16(W(0x62)),vx=(int32_t)d2*S16(W(0x62));
-        SL(0x34,(uint32_t)vy);SL(0x30,(uint32_t)vx);
-        d0=ga_rand(e);
-        if ((int8_t)(uint8_t)d0<=0) {
-            int16_t k=(int16_t)((ga_rand(e)&3u)+2u);
-            uint32_t d1l=(uint32_t)(S32(L(0x30))>>8);                       /* move.l, asr.l #8 */
-            int16_t v=(int16_t)(uint16_t)d1l;
-            int16_t q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x30,(uint16_t)(int16_t)(q>>1));
-            k=(int16_t)((ga_rand(e)&3u)+2u);
-            /* move.w $34(a6),d1 keeps the upper word of D1, asr.l #8 */
-            d1l=(uint32_t)(S32((d1l&0xffff0000u)|W(0x34))>>8);
-            v=(int16_t)(uint16_t)d1l;
-            q=(int16_t)(uint16_t)((int32_t)v*k);SW(0x34,(uint16_t)(int16_t)(q>>1));
-        }
-        int32_t c=S32(L(0x34));if (c>0x100000) c=0x100000;if (c<0) c=0;SL(0x34,(uint32_t)c);
-        c=S32(L(0x30));if (c>0x80000) c=0x80000;if (c<-0x80000) c=-0x80000;SL(0x30,(uint32_t)c);
-        SL(0x7a,L(0x34));SL(0x7e,0xffffb000u);SB(0x15,B(0x15)|0x20u);
-        SL(0,0x1d6e4);
+        frag_launch(a,e,f->tail);
     }
     /* 01D6E4 */
     ga_air(a,e);
@@ -430,6 +435,7 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
 static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
+ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {frag_launch(a,e,tail);return frag_tick(a,e);}
 bool neo_effects_routine(uint32_t r) {
     return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
 }

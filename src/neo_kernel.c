@@ -785,6 +785,22 @@ bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int3
     }
     return false;
 }
+bool neo_kernel_point_solid(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint8_t b4008) {
+    kr_t k={0};k.s=scene;k.b4008=b4008;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
+    k.iterator=0;k14160(&k,k.d0,k.d1,0,0);k1382a(&k);
+    while (k.a1!=NEO_KOBJ_NONE) {
+        const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);
+        if (!b) return false;
+        if (a) {k.d0+=(uint32_t)a->x;k.d1+=(uint32_t)a->y;}
+        k.d0-=(uint32_t)b->x;k.d1-=(uint32_t)b->y;k.a0=k.a1;
+        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d1=SWAP(k.d1);k.d0=SWAP(k.d0);
+        if (k.unsupported) return false;
+        if (k.d7&0xffffu) return true;
+        k1382a(&k);
+    }
+    return false;
+}
 /* 013C1A (01381C, 01382A): the surface under the point (x,y) of `parent`
  * among the collision objects: per object the cell at the point (012938)
  * and, without a surface there, the one 8 px above; the highest surface

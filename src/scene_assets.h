@@ -7,7 +7,7 @@ enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
-enum { SCENE_MISSION_CHUNKS_MAX=480 };   /* Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) */
+enum { SCENE_MISSION_CHUNKS_MAX=544 };   /* Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (519) */
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;

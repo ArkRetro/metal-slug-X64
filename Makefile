@@ -435,7 +435,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -485,6 +485,29 @@ FAMILY_ARGS_m3mid1 := $(M3MID_ARGS)
 FAMILY_ARGS_m3mid2 := $(M3MID_ARGS)
 FAMILY_ARGS_m3mid3 := $(M3MID_ARGS)
 FAMILY_ARGS_m3mid4 := $(M3MID_ARGS)
+# m3gun = the Mission 3 gunships 097FCC of section 2 (rotor 098886, hurtbox
+# 098E4A, exhaust 01D86C, death debris), capture A; m3gun4 = the three ships
+# of section 4 (bombs 09879C, missiles 098974 after the script actor, smoke,
+# pieces 098C0C/098CB6/098E18), capture B.
+M3GUN_ARGS := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --fresh-program --reserve --script-actor 101414 --script-routines 98cb6,98e18,98974
+FAMILY_ARGS_m3gun := $(M3GUN_ARGS)
+FAMILY_ARGS_m3gun4 := $(M3GUN_ARGS)
+# m3thrower = the Mission 3 molotov throwers 0569B4/0569D0/0569E6 of section 4
+# (hurtbox 056E5A, shield 056D76, molotovs 056B00, helmets), capture B.
+FAMILY_ARGS_m3thrower := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve
+# m3bomber = the Mission 3 flying bomber 084588 of section 4 (rotor 083B30, bomb
+# 08471A with its trail, helmet 084948, debris 08497E), capture B; its creator
+# is a script runner (injected root).
+FAMILY_ARGS_m3bomber := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve
+# m3drum = the Mission 3 oil drums 0391EA of section 2 (hit kind 13 -> fall,
+# four smokes 08AE76), capture A (second capture, captures-m3s2c).
+FAMILY_ARGS_m3drum := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve
+# m3truck = the Mission 3 armed trucks 02B202 of section 2 (gunner 02B61C,
+# tyres 02BBBA), capture A (captures-m3s2c).
+FAMILY_ARGS_m3truck := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve
+# m3raft = the Mission 3 floating platform 08AFB6 of section 2 with its floor
+# 08B3E6 (dynamic map), capture A (captures-m3s2c).
+FAMILY_ARGS_m3raft := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve
 # robeflag = the boss-arena robed swordsman 0A8C46 surrendering after the
 # Mission 1 boss (0A8FE0 +72 != 0 -> 0A9010, white flag 2A74E0, hurtbox
 # 0E64EC) until the mission change (m1end/flag3 from states3 sec00_2100,

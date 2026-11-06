@@ -229,12 +229,16 @@
   MAME), el soldado de ventana `08DA12` (`m3window`), la conversión nodo
   genérico → soldado nativo, las ondas (10C2F6 = 4) y las condiciones
   0x14/0x15 del guion (`2DB148`), los soldados `05D916/05D226/05C53C`
-  (`m3para`) y la máquina voladora `04E990` (`m3pod`). Siguiente: `097FCC`,
-  `0569xx`, `084588`, `0B9748` y la entrada en paracaídas; las trazas están
-  en /home/user/captures-m3s2 (A: sección 2, B: sección 4). En ares el
-  piloto ciego ya no llega a la arena del jefe en 300 s (progreso 5888) y
-  hay una parada nueva `0413D4` (soldado nativo); `1032` suena desde rom:/
-  (RAM de la caché).
+  (`m3para`), la máquina voladora `04E990` (`m3pod`), el helicóptero
+  `097FCC` (`m3gun`, `m3gun4`), los lanzadores de molotov `0569xx`
+  (`m3thrower`), el bombardero `084588` (`m3bomber`), los bidones `0391EA`
+  (`m3drum`), el camión `02B202` (`m3truck`) y la plataforma `08AFB6`
+  (`m3raft`). Siguiente: `027F54`, `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`
+  (sus trazas filtradas están en el scratchpad `w5d/A2-*.txt` y la captura
+  `/home/user/captures-m3s2c/A` guarda sus sprites: borrarla al terminar),
+  las paradas del mundo, `0B9748` y la entrada en paracaídas. En ares el piloto ciego se queda en 4380: el guion
+  va retrasado respecto a la cámara (MISION3.md «Bloqueo de la cámara en
+  4380»); `1032` suena desde rom:/ (RAM de la caché).
 
 - **Misión 3, inventario de eventos y actores (rama `work-m3inv`,
   [MISION3_ACTORES.md](MISION3_ACTORES.md), `data/mission3_actors.json`)**:

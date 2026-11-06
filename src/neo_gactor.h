@@ -158,6 +158,7 @@ struct neo_genv {
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
     neo_cull_bounds_t bounds;        /* RAM 10C2F0 scene descriptor */
     uint16_t video;                  /* RAM 10000E */
+    uint16_t ref69b8;                /* RAM 10E9B8: the script's player reference x (op 10, 01A30C; read by 098678) */
     uint16_t camera;                 /* RAM 10E99E */
     uint16_t camera_low;             /* RAM 10E9A0 (low word of the progress long, 0C7B26) */
     uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
@@ -338,4 +339,10 @@ uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int
  * 10C008 = FF unless +15 bit 5, 10C009 = 0), nothing written back; the D6
  * of 013968 (bit 1: the carry). */
 uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
+/* 0149CA: carry when a solid cell lies under the block + (dx,dy) (013D5E,
+ * 10C008 = FF unless +15 bit 5). */
+bool ga_probe_point(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
+/* 01495C with its D0: carry (true) with the vertical distance in pixels to the
+ * surface met (the absolute y after the sweep less the one before). */
+bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy);
 #endif

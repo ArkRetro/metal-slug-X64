@@ -38,8 +38,12 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   máquina voladora `04E990` (piloto, suelo dinámico `0E112E`, misiles,
   bombas, piezas; `m3pod`), 12 437 actualizaciones más iguales a MAME. En
   ares PASS con 208 ranuras, pero el piloto ciego ya no llega a la arena del
-  jefe en 300 s. Faltan `097FCC`, `0569xx`, `084588` y el resto de la lista
-  de MISION3.md «Paso 2».
+  jefe en 300 s. El helicóptero `097FCC` (`m3gun`, `m3gun4`), los lanzadores
+  de molotov `0569B4/0569D0/0569E6` (`m3thrower`) y el bombardero `084588`
+  (`m3bomber`), los bidones `0391EA` (`m3drum`), el camión armado `02B202`
+  (`m3truck`) y la plataforma flotante `08AFB6` (`m3raft`): 10 672
+  actualizaciones más iguales a MAME. Faltan `027F54`, `0A2F2E`, `03EE8A`,
+  `0214EA`, `01F1D4` y el resto de la lista de MISION3.md «Paso 2».
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se

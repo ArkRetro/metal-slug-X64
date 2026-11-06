@@ -870,7 +870,7 @@ static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t 
         /* B48: which body pushes (one push in 40 of a stage). */
         {static unsigned logged;static uint8_t logged_stage;
          if (logged_stage!=g->flow.stage) {logged_stage=g->flow.stage;logged=0;}
-         if (logged<2000u && (logged++%40u)==0u) {debugf("MSX solid push: owner %06lx (+9C %02x +5F %02x +15 %02x) slot %u desc %06lx box %d,%d %ux%u kind %u at %d,%d player %d,%d side %s%s top=%u push %d\n",
+         if (logged<2000u && (logged++%40u)==0u) {FALL_LOG("MSX solid push: owner %06lx (+9C %02x +5F %02x +15 %02x) slot %u desc %06lx box %d,%d %ux%u kind %u at %d,%d player %d,%d side %s%s top=%u push %d\n",
             (unsigned long)ga_l(a,0),ga_b(a,0x9c),ga_b(a,0x5f),ga_b(a,0x15),i,(unsigned long)w->solids[i].desc,(int16_t)ox,(int16_t)oy,wd,h,DW(0),
             (int16_t)ga_w(a,0x3c),(int16_t)ga_w(a,0x40),(int16_t)(px>>16),(int16_t)(py>>16),r.left?"L":"",r.right?"R":"",(unsigned)(above>=0 && DW(0)==1u),push);}}
 #endif
@@ -1247,7 +1247,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         const bool was_grounded=g->grounded;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
 #if MSX_DIAG
-        neo_air_t trace_in=body;solid_push_t trace_push={false,false,false};
+        neo_air_t trace_in=body;solid_push_t trace_push={false,false,false};(void)trace_in;(void)trace_push;
 #endif
 #if MSX_DIAG
         const unsigned trail_walls=g->wall_stops,trail_lands=g->kernel_landings,trail_pushes=g->solid_pushes;
@@ -1360,7 +1360,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
 #if MSX_DIAG
         if (!g->ride && !g->grounded && !was_grounded && g->air_ticks>300u && g->air_trace_left) {
             g->air_trace_left--;
-            debugf("MSX air trace: in x=%ld y=%ld vx=%ld vy=%ld -> x=%ld y=%ld vx=%ld vy=%ld top=%u L=%u R=%u landings=%u\n",
+            FALL_LOG("MSX air trace: in x=%ld y=%ld vx=%ld vy=%ld -> x=%ld y=%ld vx=%ld vy=%ld top=%u L=%u R=%u landings=%u\n",
                 (long)trace_in.x,(long)trace_in.y,(long)trace_in.vx,(long)trace_in.vy,(long)body.x,(long)body.y,(long)body.vx,(long)body.vy,trace_push.top,trace_push.left,trace_push.right,g->kernel_landings);
         }
 #endif

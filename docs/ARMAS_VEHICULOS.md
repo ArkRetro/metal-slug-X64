@@ -1109,9 +1109,10 @@ la exportación anterior, la de más volcados). Faltan `0x4/0x5` (entrada de
 los personajes 2/3, `0954D4`). Validación contra VRAM: 49 volcados, 198118
 píxeles iguales, 7803 distintos (solapes y parpadeo `+7E`).
 
-**Paradas explícitas** (sin captura): reacción al daño `09351A` (y su
-caída `0935A8..093684`), destrucción con jinete `0938DA` (hijo `03533A` de
-`0353C2`, no traducido), obús de tipo 5 `0950DC`, `0933D6` sin nodo de
+**Paradas explícitas** (sin captura): la reacción al daño en el aire
+(`0935A8..093684`); la reacción en tierra `09351A`/`093576` y la destrucción
+con jinete `0938DA`/`09391E` son nativas desde B52 (familias `tankhit` y
+`tankkill`, BUG_MATRIX), obús de tipo 5 `0950DC`, `0933D6` sin nodo de
 orugas. No se reproducen las comprobaciones de cartucho antes de
 `004188`.
 

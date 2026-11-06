@@ -373,6 +373,13 @@ local function ride_inputs()
    elseif t<306 then b.A=1;b.B=1
    end
   end
+ elseif ride_plan=='sit' then
+  -- 'sit' (the Mission 1 SV-001 092A32, B52): drive right for 2 s, then
+  -- wait still without firing so the enemies' shots reach the tank (the
+  -- damage reaction 09351A; with MSX_FULL_VEHICLE_CHEAT=0 the destruction
+  -- 0938DA); every 8 s a short drive right.
+  if t>=60 and t<180 then b.R=1
+  elseif t>=180 and (t%480)<40 then b.R=1 end
  elseif ride_plan=='launch' then
   -- 'launch': crouch with the cannon, rise, then A+B on the ground (the
   -- walker flies up and blows: 0971F8, 0972A6, 09749A).
@@ -562,6 +569,11 @@ emu.register_frame_done(function()
   -- with MSX_FULL_VEHICLE_CHEAT=0 (a vehicle family trace: the slot bytes
   -- are the game's own, shells spent and damage taken).
   if os.getenv('MSX_FULL_VEHICLE_CHEAT')~='0' then cpu:write_u8(0x10c621,0x30);cpu:write_u8(0x10c627,0x63) end
+  -- Capture only (MSX_FULL_VEHICLE_HEALTH=<frame>:<hex>): the mounted
+  -- slot's health 10C621 (+18, copied to the vehicle's +4E) written once,
+  -- as the gauge writes of capture_weapons.lua (B52: the next hit destroys).
+  local hf,hv=string.match(os.getenv('MSX_FULL_VEHICLE_HEALTH') or '','(%d+):(%x+)')
+  if hf and frame==tonumber(hf) then cpu:write_u8(0x10c621,tonumber(hv,16)) end
   -- Progress word 0x10E99E (equal to 0x102036 in Mission 1 only).
   -- Camera Y is left out: it follows the player's jumps and would reset the
   -- count forever; vertical paths advance the progress word itself.

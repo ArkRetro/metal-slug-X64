@@ -1238,6 +1238,11 @@
    "reader": "neo_chaser.c 063BC0: contact rows 0635E0 (hit) and 0635F0 (targets) of the R's rocket with +93 = 2",
    "hex": "fffafffa000c000c00090001001effffff80ff8001000100000000010000ffff",
    "group": "m3"
+  },
+  {
+   "rom": "0x087CEE",
+   "reader": "08732C burning figures of the shop 0B6566: cull rectangle 087CEE (01945C, 087184)",
+   "hex": "fff8000000100020"
   }
  ]
 }

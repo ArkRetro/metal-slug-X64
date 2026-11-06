@@ -90,16 +90,26 @@ static ga_result_t result(int r) {return r==RUN?GA_MORE:r==DONE?GA_DELETE:GA_UNS
 static ga_result_t bullet_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t program;
     switch (L(0)) {
+    /* Form 2 (fat Marco, table 0C42EA / 0C4454 / 0C447C): the pistol
+     * 01B62C (program 22C0A6) and the H 01B668 (+7A 22C040, program
+     * 22C000), as 01B782/01B6DC with their own programs. */
+    case 0x1b62c: sound(e,0x10f7);program=0x22c0a6;goto build;
+    case 0x1b668: throttled(e,0x10f4);SL(0x7a,0x22c040);program=0x22c000;goto build7a;
     case 0x1b6dc: throttled(e,0x10f4);program=0x22c1b6;goto build;
     case 0x1b716: throttled(e,0x10f4);program=0x22c3be;goto build;
     case 0x1b750: program=0x22c12e;goto build;
     case 0x1b782: sound(e,0x10f7);program=0x22c12e;
     build:
-        SL(0x7a,0x22e504);SL(0x72,0x100000);
+        SL(0x7a,0x22e504);
+    build7a:
+        SL(0x72,0x100000);
         START(program);ga_palette(a,0x202);
         goto common;
+    case 0x1bdd2:                                                    /* the H's other bullet with +93 = 2 (0C447C) */
+        ga_palette(a,0x874);throttled(e,0x10f4);goto vulcan;
     case 0x1be24:                                                    /* the Camel Slug's vulcan */
         ga_palette(a,0x884);sound(e,0x108c);
+    vulcan:
         SL(0x7a,0x22c040);SL(0x72,0x100000);START(0x22c4c6);         /* 01BDE8 */
         SB(0x7e,0);SB(0x7f,(uint8_t)ga_rand(e)>>4);SB(0x80,1);
         goto common;
@@ -179,11 +189,14 @@ static void k1c6ac(int32_t *d0,int32_t *d1,uint8_t d4,int32_t *d2o,int32_t *d3o)
 static void landed(neo_gactor_t *a,neo_genv_t *e) {if (e->pickup && e->pickup->weapons) marco_weapons_landed(e->pickup->weapons,W(0x6e));}  /* 0C0D48 */
 static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t vy;
+    uint16_t palette=0x27c;uint32_t program=0x22c950;
     switch (L(0)) {
+    case 0x1bea4: vy=0x6448f;palette=0x204;program=0x22ca58;goto build;   /* +93 = 2 (table 0C476E), +90 = FF */
+    case 0x1beda: vy=0x85b6a;palette=0x204;program=0x22ca58;goto build;   /* +93 = 2 (table 0C476E) */
     case 0x1bf10: vy=0x6448f;goto build;
     case 0x1bf46: vy=0x85b6a;
     build: {
-        ga_palette(a,0x27c);START(0x22c950);
+        ga_palette(a,palette);START(program);
         SL(0x84,0xfff053a0);
         uint32_t vx=0x90000;uint16_t spin=0x320;
         if (B(0x15)&1u) {vx=0u-vx;spin=(uint16_t)(0u-spin);}
@@ -254,7 +267,7 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-static bool grenade_routine(uint32_t r) {return r==0x1bf10 || r==0x1bf46 || r==0x1bfd0 || r==0x1c152 || r==0x1c19a;}
+static bool grenade_routine(uint32_t r) {return r==0x1bea4 || r==0x1beda || r==0x1bf10 || r==0x1bf46 || r==0x1bfd0 || r==0x1c152 || r==0x1c19a;}
 /* ---- molotov 01E648 / 01E664 (0C4786, bomb type 2; +88 = 0) ------------- */
 /* 0040BC with D0 = reserve, then 01B220 (0, 0). */
 static neo_gactor_t *child(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,uint16_t reserve) {
@@ -411,6 +424,6 @@ static bool molotov_routine(uint32_t r) {
         r==0x1e9b6 || r==0x1e9f8 || r==0x1ea3a || r==0x1eaac || r==0x1eb72;
 }
 bool neo_bullet_routine(uint32_t r) {
-    return r==0x1b6a0 || r==0x1be24 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r);
+    return r==0x1b6a0 || r==0x1be24 || r==0x1bdd2 || r==0x1b62c || r==0x1b668 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r);
 }
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {return molotov_routine(ga_l(a,0))?molotov_tick(a,e):grenade_routine(ga_l(a,0))?grenade_tick(a,e):bullet_tick(a,e);}

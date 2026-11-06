@@ -128,6 +128,19 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   (`--give-fat`), roles `ROLES_FAT`/`ROLES_FAT_BODY`, 720 poses; el visual
   de la forma 2 (filas +0x20, `fat_role`), la transformación `0C1D70` y el
   contador en `gameplay.c`, la comida en `neo_item.c`
-  (docs/MARCO_CAMPAIGN.md). Siguen como paradas explícitas las armas de la
-  forma 2 (`weapon_stops`: `063AEE`, `063F10`, `01BEDA`, `01C362/01C654`,
-  `01B668/01BDD2`, `0C4E86`, `0C5064`).
+  (docs/MARCO_CAMPAIGN.md).
+- **Paso 5 (c), forma 2, parte 2 (armas):** todo arma gorda dispara con los
+  programas gordos (`25A8F4/25A83C/25A898`, agachado `25D10E`; `marco-f3`
+  con la R): CALL `0C436A` al empezar, `+76` a los 12 ticks; tabla
+  `0C42EA`. Nativos: el cohete R `063AEE`/`063B22` (`063BC0`, explosión
+  `063D60` con `26860A` y su `0636B0` `22CF2C`), la C `063F10`, las balas
+  `01B62C`/`01B668`/`01BDD2`, la granada `01BEDA`/`01BEA4` (tabla
+  `0C476E`). Familias `m3fat` (119212..120399, 618 nodos) y `m3fat2`
+  (122564..123299, 328 nodos) iguales a MAME desde `sec04_117966`; la estela
+  `063D9E` respeta la reserva 0x2A de `0040BC` (también en `063FDC` y
+  `0638B4`). Sprites del export privado (176 marcos, paleta `0x86E`; el
+  paquete pasa a 648 trozos, límite 672). Siguen como paradas explícitas:
+  la bomba `01C362/01C334` y su hijo `01C654`, el molotov gordo
+  `01E680/01E69C`, `0C4E86` (aterrizaje gordo, `0C1ED6`), `0C5064`
+  (`0C359A`, al dejar la forma 1), las balas `01B62C/01B668/01BDD2` sin
+  captura (sin sprites) y las armas gordas sin proyectil nativo.

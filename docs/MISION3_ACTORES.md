@@ -532,10 +532,10 @@ identificar» cuando no hay más.
 | 〃 | `0C58D2` | 463 | 118275 / 231 | 1:25 2:269 3:80 4:89 | jugador | `0C5806` `0C586C` | — | nativo | fogonazo |
 | 〃 | `063D9E` | 2688 | 118278 / 237 | 1:198 2:2293 3:170 4:27 | `063AEE`×1504 `063F10`×810 `06381C`×374 | `26863A` | — | nativo | estela |
 | 〃 | `06371E` | 226 | 118288 / 252 | 1:9 2:167 3:46 4:4 | `063F10`×121 `063AEE`×79 `06381C`×26 | — | — | nativo | explosión del cohete |
-| 〃 | `063AEE` | 153 | 119210 / 959 | 2:153 | jugador | `267C74` `26860A` | 1025 10F5 | **falta** | cohete R con `+93 = 2` (tabla `0C42EA`) |
-| 〃 | `01BEDA` | 68 | 119225 / 964 | 2:68 | jugador | `22CA58` `22CB60` | 1027 | **falta** | granada con `+93 = 2` (tabla `0C4762`) |
+| 〃 | `063AEE` | 153 | 119210 / 959 | 2:153 | jugador | `267C74` `26860A` | 1025 10F5 | nativo (`neo_chaser.c`, familia `m3fat`) | cohete R con `+93 = 2` (tabla `0C42EA`) |
+| 〃 | `01BEDA` | 68 | 119225 / 964 | 2:68 | jugador | `22CA58` `22CB60` | 1027 | nativo (`neo_bullet.c`, familias `m3fat`/`m3fat2`) | granada con `+93 = 2` (tabla `0C4762`) |
 | 〃 | `0C4E86` | 88 | 119246 / 984 | 2:54 3:33 4:1 | jugador | `0C4E48` | — | **falta** | del jugador con `+93 = 2` (`0C1ED6`) |
-| 〃 | `063F10` | 188 | 122619 / 2888 | 2:106 3:80 4:2 | jugador | `2681A4` `268622` | 1025 10F5 | **falta** | arma C con `+93 = 2` (tabla `0C42EA`) |
+| 〃 | `063F10` | 188 | 122619 / 2888 | 2:106 3:80 4:2 | jugador | `2681A4` `268622` | 1025 10F5 | nativo (`neo_chaser.c`, familia `m3fat2`) | arma C con `+93 = 2` (tabla `0C42EA`) |
 | 〃 | `01C362` | 36 | 124142 / 3296 | 2:10 3:25 4:1 | jugador | `22CD04` | 116D | **falta** | bomba de la tabla `0C4762` (`+93 = 2`) |
 | 〃 | `01C654` | 71 | 124148 / 3296 | 2:12 3:54 4:5 | `01C362` | `22CD5A` | — | **falta** | hijo de `01C362` |
 | 〃 | `0DE4DA` | 87 | 141254 / 4326 | 4:87 | jugador | `2B01A6` `2B01B0` `2B01DE` | 1022 1169 116A | nativo (`neo_pweapon.c`, familia `m3wepe`) | arma E (`0C42AA`, objeto `4D`) |

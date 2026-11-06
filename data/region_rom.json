@@ -1226,6 +1226,18 @@
    "reader": "0DE4DA Mission 3 weapon E: cull EB5BE/EB5C6, attack rows EB5D6/EB5E6 and the burst's EB5F6/EB606",
    "hex": "fff0000000200020ffe0ffe000400040ffd0ffd000480040fffb0002000a000a00090001001efffffff800030010001000090001001effffffe8fff000300040000100010001ffffffd8ffe800500060000100010001ffff",
    "group": "m3"
+  },
+  {
+   "rom": "0x03BB7C",
+   "reader": "m3fat: contact rectangle read by the fat weapons (0049E8)",
+   "hex": "0502fff000100020000c80004ef90000",
+   "group": "m3"
+  },
+  {
+   "rom": "0x0635E0",
+   "reader": "neo_chaser.c 063BC0: contact rows 0635E0 (hit) and 0635F0 (targets) of the R's rocket with +93 = 2",
+   "hex": "fffafffa000c000c00090001001effffff80ff8001000100000000010000ffff",
+   "group": "m3"
   }
  ]
 }

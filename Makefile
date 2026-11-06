@@ -435,7 +435,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe
+FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -535,6 +535,19 @@ FAMILY_ARGS_m3veh2 := $(FAMILY_ARGS_m3veh)
 # and its burst 0DE8EE: from at_132300 with the usual plan (family
 # 136400..137400, the player holds weapon E in section 4).
 FAMILY_ARGS_m3wepe := --script-actor 101414 --script-routines de8ee,de92e --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
+# m3fat = the weapons with +93 = 2 (fat Marco, table 0C42EA / 0C476E):
+# the R's rocket 063AEE (063BC0/063D60, neo_chaser.c), its trails 063D9E,
+# the grenade 01BEDA (neo_bullet.c) and its ripples 03C62A: from
+# sec04_117966 with the usual plan, family 119100..120400 (ROOTS
+# 63aee,63f10,1beda,1c362,c4e86,c5064,1b62c,1b668,1bdd2, node 1014C4;
+# extract_family_fixture.py --range 63600-64200 --range 1beda-1c200
+# --range 3c600-3c700, the m3wepe --ram list).
+FAMILY_ARGS_m3fat := --reserve --script-actor 101414 --script-routines 6371e --attacks --previous --hit-to 1c152 --terrain 10c72e --ring 10c72e --group-map 0 --train
+# m3fat2 = the same weapons later in the capture (family 122550..123300):
+# the C 063F10 (neo_chaser.c, 063FDC as 063F32), R rockets and grenades
+# (--range 63600-64200 --range 1beda-1c200: the ripples 03C62A stay outside
+# the family, their water probe 013CF8 under the train is not modelled).
+FAMILY_ARGS_m3fat2 := $(FAMILY_ARGS_m3fat)
 FAMILY_ARGS_m3car := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve --soldier 28948
 # m3jeep = the Mission 3 armed jeep 0A2F2E of section 2 (idle at camera 3296: bursts
 # of shells 0A3C24, the gunner 0A38F4 killed, the death with the rider 0A3A54 of

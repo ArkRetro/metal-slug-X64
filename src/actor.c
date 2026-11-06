@@ -492,7 +492,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (!(game.ticks&1) && (!game.complete || game.mission_end!=MSX_END_DONE) && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
-                game.jump_moving,game.facing,0,0,game.world.weapon_player.form93==1 || game.world.weapon_player.form93==3?game.world.weapon_player.form93:0u,-1,false};
+                game.jump_moving,game.facing,0,0,game.world.weapon_player.form93<=3u?game.world.weapon_player.form93:0u,-1,false};
             if (game.hgun.state==MARCO_HGUN_BURST || game.hgun.state==MARCO_HGUN_SWEEP) {
                 mi.hgun_program=game.hgun.program;mi.hgun_start=game.hgun.t==1;
             }

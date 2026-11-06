@@ -82,8 +82,12 @@ static bool blast(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t p
     return ga_anim_start(c,e,program,0x100);                           /* 004260 */
 }
 static bool chaser_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
-    if (kind!=NEO_ANIM_CALL || routine!=0x636b0u || a->program_tag!=0x268622u || parameter) return false;
-    return blast(a,e,0,0,0x22ce6c,0x63690);
+    if (kind!=NEO_ANIM_CALL || routine!=0x636b0u || parameter) return false;
+    /* 268622 (the C): 22CE6C, row 063690; 26860A (the R with +93 = 2,
+     * 063D60): 22CF2C, row 0636A0 (their 0636B0 payloads). */
+    if (a->program_tag==0x268622u) return blast(a,e,0,0,0x22ce6c,0x63690);
+    if (a->program_tag==0x26860au) return blast(a,e,0,0,0x22cf2c,0x636a0);
+    return false;
 }
 /* The R's explosion programs 26858A (level) / 2685CA (vertical): three
  * 0636B0 calls with the payloads (dx, dy, program, row) (0x10/0x20/0x30
@@ -113,8 +117,11 @@ static bool rocket_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint3
 }
 static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
     for (int guard=0;guard<2;guard++) switch (L(0)) {
-    case 0x63f32: {
-        START(0x267f92);ga_palette(a,0x202);
+    /* 063F10, the C with +93 = 2 (table 0C42EA): program 2681A4,
+     * palette 86E, then 063F50 as 063F32. */
+    case 0x63f10: case 0x63f32: {
+        if (L(0)==0x63f10u) {START(0x2681a4);ga_palette(a,0x86e);}
+        else {START(0x267f92);ga_palette(a,0x202);}
         SW(0x66,0xe000);SW(0x1e,0xe000);sound(e,0x10f5);
         SL(0x76,0x63610);SB(0x15,(B(0x15)|0x20u)&0xfeu);
         SL(0x62,0x80000);
@@ -157,7 +164,7 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (ga_cull_rect(a,e,0x63814)) return release(a,e)?GA_DELETE:GA_UNSUPPORTED;
         uint8_t b74=B(0x74);SB(0x74,b74-0x70u);
         if (b74<0x70u) {
-            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC */
+            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x63d9e,0x2a):e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC, reserve 0x2A */
             if (c) {
                 ga_polar(0xfff00000u,angle,&vx,&vy);
                 ga_place_at(c,a,e,(int16_t)(vx>>16),(int16_t)(vy>>16));
@@ -165,6 +172,81 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
         }
         if (e->grid) neo_grid_splat(e->grid,W(0x3c),W(0x40));
         return GA_MORE;
+    }
+    /* ---- the R's rocket with +93 = 2: 063AEE (id 3) and 063B22 (id 8),
+     * table 0C42EA ----
+     * 063AEE: palette 202, program 267C74, +66/+1E E000, +8C = 3; 063B22:
+     * palette 37C, program 267E86, +66/+1E 1110, +8C = 8. Both 063B52:
+     * sound 10F5, contact rows 0635F0, +15 bit 5 set / bit 0 cleared,
+     * +62 = 0x40000, the speed 0x20000 along +6E (002E7C), +74 = 0, +88 =
+     * random & FFF - 800 + (4000 - +6E) >> 4 (asr), +86 = +6E. */
+    case 0x63aee: case 0x63b22: {
+        bool r8=L(0)==0x63b22u;
+        ga_palette(a,r8?0x37c:0x202);START(r8?0x267e86:0x267c74);
+        SW(0x66,r8?0x1110:0xe000);SW(0x1e,r8?0x1110:0xe000);SB(0x8c,r8?8:3);
+        sound(e,0x10f5);
+        SL(0x76,0x635f0);SB(0x15,(B(0x15)|0x20u)&0xfeu);
+        SL(0x62,0x40000);
+        uint32_t vx,vy;ga_polar(0x20000,B(0x6e),&vx,&vy);SL(0x30,vx);SL(0x34,vy);
+        SW(0x74,0);
+        uint16_t d0=(uint16_t)((ga_rand(e)&0xfffu)-0x800u);
+        d0=(uint16_t)(d0+(uint16_t)asr16((int16_t)(uint16_t)(0x4000u-W(0x6e)),4));
+        SW(0x88,d0);SW(0x86,W(0x6e));
+        SL(0,0x63bc0);
+        return GA_MORE;
+    }
+    /* 063BC0: the first target of +76 (0049E8) sets the high byte of +86
+     * to its angle (01B14A); no target, no change. Turn (+86 - +6E) >> 2
+     * - +88, >> 3 into +88 (asr), +6E += +88; +8A/+72 as 063FDC; +62 +=
+     * 0x4000 (no cap); the velocity moves 1/16 towards +62 along +6E. Then
+     * as 063FDC: 0143E4, 00427A, +15 bit 7 or a contact of 0635E0 ->
+     * 063D60; out of 063814 (019504): 0C0DFC with +8C and 004188 (the
+     * cartridge check between them is gone, as for 0638B4); the trail
+     * 063D9E every 0x70 of +74; 00505A. */
+    case 0x63bc0: {
+        ga_attack_targets(a,e,L(0x76));
+        if (e->unsupported) return GA_UNSUPPORTED;
+        const neo_ga_target_t *t=&e->target[0];
+        if (t->valid) SB(0x86,aim(a,t));
+        int16_t turn=asr16((int16_t)(uint16_t)(W(0x86)-W(0x6e)),2);
+        turn=asr16((int16_t)(uint16_t)(turn-W(0x88)),3);
+        SW(0x88,W(0x88)+(uint16_t)turn);
+        SW(0x6e,W(0x6e)+W(0x88));
+        uint8_t angle=B(0x6e);
+        SB(0x8a,(uint8_t)(((int8_t)angle>>3)+((angle>>2)&1u))&0x1fu);   /* asr.b #3, addx.b */
+        SW(0x72,(uint16_t)(((W(0x88)&0xff00u)|angle)+0x80u));
+        SL(0x62,L(0x62)+0x4000u);
+        uint32_t vx,vy;ga_polar(L(0x62),angle,&vx,&vy);
+        SL(0x30,L(0x30)+(uint32_t)asr32((int32_t)(vx-L(0x30)),4));
+        SL(0x34,L(0x34)+(uint32_t)asr32((int32_t)(vy-L(0x34)),4));
+        ga_air(a,e);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (B(0x15)&0x80u) SL(0,0x63d60);
+        if (ga_attack(a,e,0x635e0)) SL(0,0x63d60);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (ga_cull_rect(a,e,0x63814)) return release_id(a,e,B(0x8c))?GA_DELETE:GA_UNSUPPORTED;
+        uint8_t b74=B(0x74);SB(0x74,b74-0x70u);
+        if (b74<0x70u) {
+            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x63d9e,0x2a):e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC, reserve 0x2A */
+            if (c) {
+                ga_polar(0xfff00000u,angle,&vx,&vy);
+                ga_place_at(c,a,e,(int16_t)(vx>>16),(int16_t)(vy>>16));
+            }
+        }
+        if (e->grid) neo_grid_splat(e->grid,W(0x3c),W(0x40));
+        return GA_MORE;
+    }
+    /* 063D60: 0C0DFC with +8C, the explosion 26860A, 01ABC8 and 00427A
+     * until its end (004188). */
+    case 0x63d60:
+        if (!release_id(a,e,B(0x8c))) return GA_UNSUPPORTED;
+        START(0x26860a);SL(0,0x63d86);
+        /* fall through */
+    case 0x63d86: {
+        ga_project(a,e);
+        int r=ga_anim_step(a,e,chaser_call);
+        if (r<0 || e->unsupported) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
     }
     case 0x64128:
         if (!release(a,e)) return GA_UNSUPPORTED;
@@ -274,7 +356,7 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (ga_cull_rect(a,e,big?0x6380c:0x63804)) return release_id(a,e,big?8:3)?GA_DELETE:GA_UNSUPPORTED;
         uint8_t b74=B(0x74);SB(0x74,b74-0x70u);
         if (b74<0x70u) {
-            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC, 01ACF2 (0, 0) */
+            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x63d9e,0x2a):e->spawn?e->spawn(e->ctx,a,0x63d9e,false):NULL;   /* 0040BC (reserve 0x2A), 01ACF2 (0, 0) */
             if (c) ga_place_at(c,a,e,0,0);
         }
         return GA_MORE;
@@ -311,7 +393,7 @@ static ga_result_t chaser_tick(neo_gactor_t *a,neo_genv_t *e) {
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
 bool neo_chaser_routine(uint32_t r) {
-    return r==0x63f32 || r==0x63fdc || r==0x64128 || r==0x6414c || r==0x6371e || r==0x63740 || r==0x63756 ||
+    return r==0x63f10 || r==0x63f32 || r==0x63aee || r==0x63b22 || r==0x63bc0 || r==0x63d60 || r==0x63d86 || r==0x63fdc || r==0x64128 || r==0x6414c || r==0x6371e || r==0x63740 || r==0x63756 ||
         r==0x63d9e || r==0x63e48 || r==0xc58d2 || r==0xc5930 ||
         r==0x6381c || r==0x638b4 || r==0x63a92 || r==0x63ad6 ||
         r==0x641ec || r==0x64284 || r==0x643da || r==0x6441e;

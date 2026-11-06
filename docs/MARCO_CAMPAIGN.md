@@ -571,3 +571,11 @@ pie, fuego y granada agachado): 66 pasos iguales. La transformación
 `0C33AE` están en `src/gameplay.c`; la comida `0C0BF4` en `src/neo_item.c`.
 Sin capturar (paradas explícitas): la vuelta a delgado `0C1D82` (`C0508`),
 el bocado del arma `C0528` (`0C3A30`, +9A bit 4) y las poses de `idle_long`.
+
+`marco-f3` (`--give-fat --give-weapon 3 --keep-bombs`, plan
+`marco-cgun.json`; auditoría con `--sparse`: 1220 fotogramas, 115
+descriptores, una sonda alternativa en 2896, sin exclusiones; 136
+selecciones): con la R gorda el disparo usa los mismos programas que la
+pistola gorda (`0C02D8/0C0318/0C0358 + 0x20` = `25A8F4/25A83C/25A898`,
+agachado `0C0398 + 0x20` = `25D10E`), cuyo primer mando es el CALL
+`0C436A`; no hace falta ningún rol nuevo.

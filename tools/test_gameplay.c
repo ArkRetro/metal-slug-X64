@@ -464,14 +464,21 @@ static void fat_run(void) {
     static msx_game_t g;msx_game_init(&g);
     for (unsigned s=0;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
     assert(g.grounded && g.life.phase==MARCO_ALIVE);
-    g.world.pickup.mission=4;g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=40;g.world.weapon_player.form94=2;
+    g.world.pickup.mission=4;g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=80;g.world.weapon_player.form94=2;
     for (unsigned k=0;k<2;k++) msx_game_update(&g,0,false,false);
     assert(g.world.weapon_player.form93==2 && g.fat_transform && g.mummy_guard && g.fat_starts==1);
     int x0=g.x;
     for (unsigned k=0;k<30;k++) msx_game_update(&g,1,false,false);
     assert(g.x==x0 && g.fat_transform);   /* held still */
-    for (unsigned k=0;k<100 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
-    printf("fat: starts=%u stops=%u form=%u\n",g.fat_starts,g.fat_stops,g.world.weapon_player.form93);fflush(stdout);
+    while (g.fat_transform) msx_game_update(&g,0,false,false);
+    /* The fat fire 0C436A: the R's rocket 063AEE (table 0C42EA), one per
+     * press every 12 ticks at most. */
+    uint16_t snd=0;marco_weapons_grant(&g.world.weapons,0,0x03,&g.world.weapon_player,&snd);
+    assert(g.world.weapon_player.form93==2);
+    for (unsigned k=0;k<16;k++) {msx_game_update(&g,0,false,(k&3)==0);g.invulnerable=2;}
+    assert(g.fat_shots>=1 && g.fat_shots<=2 && !g.world.unsupported);
+    for (unsigned k=0;k<200 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
+    printf("fat: starts=%u stops=%u shots=%u form=%u\n",g.fat_starts,g.fat_stops,g.fat_shots,g.world.weapon_player.form93);fflush(stdout);
     assert(g.world.weapon_player.form93==0 && g.fat_stops==1);
 }
 /* Aiming down in the air (+92 = FF): jumps with down held and fire

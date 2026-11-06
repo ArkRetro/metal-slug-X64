@@ -1214,6 +1214,18 @@
    "reader": "0ADA9E Mission 3 vehicle bomb homing: a target without a hurtbox (+50 = 0) reads its box words through address 0 (the vector table)",
    "hex": "0010f30000c0040200c0040800c0040e",
    "group": "m3"
+  },
+  {
+   "rom": "0x2B0272",
+   "reader": "0DE4DA Mission 3 weapon E: programs by variant 2B0272/2B027A/2B0282",
+   "hex": "002b01a6002b020c002b01b0002b0216002b01de002b0244",
+   "group": "m3"
+  },
+  {
+   "rom": "0x0EB5BE",
+   "reader": "0DE4DA Mission 3 weapon E: cull EB5BE/EB5C6, attack rows EB5D6/EB5E6 and the burst's EB5F6/EB606",
+   "hex": "fff0000000200020ffe0ffe000400040ffd0ffd000480040fffb0002000a000a00090001001efffffff800030010001000090001001effffffe8fff000300040000100010001ffffffd8ffe800500060000100010001ffff",
+   "group": "m3"
   }
  ]
 }

@@ -993,6 +993,7 @@ static fire_kind_t fire_kind(uint8_t id) {
     case 8: return (fire_kind_t){0x641ecu,MSX_FIRE_C,12,6,6,6};   /* tables 0C3C10.. and 0C432A: as 3 */
     case 0x0c: return (fire_kind_t){0x63f32u,MSX_FIRE_C,12,6,6,6};
     case 0x0d: return (fire_kind_t){0x8606au,MSX_FIRE_C,12,6,6,6};
+    case 0x0e: return (fire_kind_t){0xde4dau,MSX_FIRE_C,12,6,6,6};   /* weapon E (neo_pweapon.c) */
     case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,14,14,6,14};
     case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,14,14,6,14};
     case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,6,6,6,6};

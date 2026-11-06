@@ -538,8 +538,8 @@ identificar» cuando no hay más.
 | 〃 | `063F10` | 188 | 122619 / 2888 | 2:106 3:80 4:2 | jugador | `2681A4` `268622` | 1025 10F5 | **falta** | arma C con `+93 = 2` (tabla `0C42EA`) |
 | 〃 | `01C362` | 36 | 124142 / 3296 | 2:10 3:25 4:1 | jugador | `22CD04` | 116D | **falta** | bomba de la tabla `0C4762` (`+93 = 2`) |
 | 〃 | `01C654` | 71 | 124148 / 3296 | 2:12 3:54 4:5 | `01C362` | `22CD5A` | — | **falta** | hijo de `01C362` |
-| 〃 | `0DE4DA` | 87 | 141254 / 4326 | 4:87 | jugador | `2B01A6` `2B01B0` `2B01DE` | 1022 1169 116A | **falta** | arma E (`0C42AA`, objeto `4D`) |
-| 〃 | `0DE8EE` | 57 | 141262 / 4339 | 4:57 | `0DE4DA` | `22CE6C` | — | **falta** | hijo de `0DE4DA` |
+| 〃 | `0DE4DA` | 87 | 141254 / 4326 | 4:87 | jugador | `2B01A6` `2B01B0` `2B01DE` | 1022 1169 116A | nativo (`neo_pweapon.c`, familia `m3wepe`) | arma E (`0C42AA`, objeto `4D`) |
+| 〃 | `0DE8EE` | 57 | 141262 / 4339 | 4:57 | `0DE4DA` | `22CE6C` | — | nativo | hijo de `0DE4DA` |
 | 〃 | `01B6DC` | 565 | 143245 / 5980 | 4:219 5:346 | jugador | `22C1B6` | 108D 10F4 | nativo | bala H |
 | 〃 | `0C5064` | 1 | 146069 / 6496 | 5:1 | jugador | `0C4F58` | — | **falta** | del jugador con la forma `+93 = 2` (`0C359A`) |
 

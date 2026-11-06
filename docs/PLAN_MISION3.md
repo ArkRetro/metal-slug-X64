@@ -112,7 +112,15 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   una actualización de la familia) deja de ser RAM de `--ram`. Sin captura
   (traducido del código): `0AD01A/0AD08E` (D, caída y choque), `0ACCBE..`
   (el suelo con la palanca) y las granadas en el suelo.
-- **Paso 5 (c): sin empezar** (la forma
+- **Paso 5 (c), arma E hecha:** `0DE4DA` (tabla `0C42AA` id `0E`, los
+  programas de disparo del grupo C como `0D`; `neo_pweapon.c`): la pelota
+  que rebota (gravedad `-0x20000`, después `-0x15000`; primer bote
+  `0xD0000` hacia arriba, luego 7/8 de la caída; en pendiente `+30` por
+  cosenos `0DED6A/0DEDA6`; al cuarto bote o al tocar, el estallido
+  `0DE8EE` y `0C0DFC` id `0E`). Familia `m3wepe` (1506 actualizaciones,
+  136577..137398, desde `at_132300` con el plan normal) igual a MAME;
+  sprites y paleta `0x81E` del export privado (17 253 píxeles iguales,
+  113 distintos). Sigue sin empezar la forma
   `+93 = 2` —probablemente Marco gordo tras la comida, sin comprobar— y el
   arma E `0DE4DA`): siguen como paradas explícitas (`weapon_stops`,
   constructores externos).

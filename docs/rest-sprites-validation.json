@@ -1,5 +1,5 @@
 {
- "descriptors": 8986,
+ "descriptors": 8994,
  "palettes": [
   "0x10",
   "0x103",
@@ -182,6 +182,7 @@
   "0x78",
   "0x8",
   "0x811",
+  "0x81e",
   "0x822",
   "0x823",
   "0x828",
@@ -268,6 +269,7 @@
   "0x86c",
   "0x4",
   "0x5",
+  "0x870",
   "0x377",
   "0x17e",
   "0x17f",
@@ -286,264 +288,102 @@
  "stats": {
   "zoomed_entries_skipped": 0,
   "auto_animation_entries_skipped": 0,
-  "frames": 36,
-  "pixels_equal": 105232,
-  "pixels_different": 2413,
-  "pixels_overlapping": 7970,
-  "rank_2": 32,
-  "rank_1": 4
+  "frames": 13,
+  "pixels_equal": 17253,
+  "pixels_different": 113,
+  "pixels_overlapping": 6342,
+  "rank_2": 13
  },
  "frames": [
   {
-   "capture": "flyerd",
-   "frame": 137460,
-   "update_frame": 137457,
-   "equal": 885,
+   "capture": "wepd",
+   "frame": 136620,
+   "update_frame": 136617,
+   "equal": 1326,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137490,
-   "update_frame": 137487,
-   "equal": 2302,
+   "capture": "wepd",
+   "frame": 136650,
+   "update_frame": 136647,
+   "equal": 1202,
+   "different": 41
+  },
+  {
+   "capture": "wepd",
+   "frame": 136680,
+   "update_frame": 136677,
+   "equal": 1491,
+   "different": 72
+  },
+  {
+   "capture": "wepd",
+   "frame": 136710,
+   "update_frame": 136707,
+   "equal": 807,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137520,
-   "update_frame": 137517,
-   "equal": 2302,
+   "capture": "wepd",
+   "frame": 136740,
+   "update_frame": 136737,
+   "equal": 1314,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137550,
-   "update_frame": 137547,
-   "equal": 2302,
+   "capture": "wepd",
+   "frame": 136770,
+   "update_frame": 136767,
+   "equal": 1352,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137580,
-   "update_frame": 137577,
-   "equal": 2302,
+   "capture": "wepd",
+   "frame": 136800,
+   "update_frame": 136797,
+   "equal": 242,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137610,
-   "update_frame": 137607,
-   "equal": 2523,
+   "capture": "wepd",
+   "frame": 136830,
+   "update_frame": 136827,
+   "equal": 288,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137640,
-   "update_frame": 137637,
-   "equal": 2832,
+   "capture": "wepd",
+   "frame": 136860,
+   "update_frame": 136857,
+   "equal": 2975,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137670,
-   "update_frame": 137667,
-   "equal": 2687,
+   "capture": "wepd",
+   "frame": 136890,
+   "update_frame": 136887,
+   "equal": 1598,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137700,
-   "update_frame": 137697,
-   "equal": 3169,
+   "capture": "wepd",
+   "frame": 136920,
+   "update_frame": 136917,
+   "equal": 804,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137730,
-   "update_frame": 137727,
-   "equal": 9763,
-   "different": 573
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137760,
-   "update_frame": 137757,
-   "equal": 5358,
-   "different": 1032
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137790,
-   "update_frame": 137787,
-   "equal": 10237,
-   "different": 508
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137820,
-   "update_frame": 137817,
-   "equal": 1741,
+   "capture": "wepd",
+   "frame": 136950,
+   "update_frame": 136947,
+   "equal": 1276,
    "different": 0
   },
   {
-   "capture": "flyerd",
-   "frame": 137850,
-   "update_frame": 137847,
-   "equal": 1765,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137880,
-   "update_frame": 137877,
-   "equal": 1900,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137910,
-   "update_frame": 137907,
-   "equal": 1934,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137940,
-   "update_frame": 137937,
-   "equal": 1880,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 137970,
-   "update_frame": 137969,
-   "equal": 1880,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138000,
-   "update_frame": 137999,
-   "equal": 1880,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138030,
-   "update_frame": 138029,
-   "equal": 1880,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138060,
-   "update_frame": 138059,
-   "equal": 1998,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138090,
-   "update_frame": 138087,
-   "equal": 2378,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138120,
-   "update_frame": 138117,
-   "equal": 2164,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138150,
-   "update_frame": 138147,
-   "equal": 2862,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138180,
-   "update_frame": 138177,
-   "equal": 9978,
-   "different": 169
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138210,
-   "update_frame": 138207,
-   "equal": 2075,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138240,
-   "update_frame": 138237,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138270,
-   "update_frame": 138267,
-   "equal": 2191,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138300,
-   "update_frame": 138298,
-   "equal": 2104,
-   "different": 131
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138330,
-   "update_frame": 138328,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138360,
-   "update_frame": 138358,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138390,
-   "update_frame": 138388,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138420,
-   "update_frame": 138418,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138450,
-   "update_frame": 138448,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138480,
-   "update_frame": 138478,
-   "equal": 2245,
-   "different": 0
-  },
-  {
-   "capture": "flyerd",
-   "frame": 138510,
-   "update_frame": 138508,
-   "equal": 2245,
+   "capture": "wepd",
+   "frame": 136980,
+   "update_frame": 136977,
+   "equal": 2578,
    "different": 0
   }
  ]

@@ -140,3 +140,12 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   usarlas.
 - **RAM de la N64:** 8 MiB. Margen de montón de 256 KB, caché de escena de
   208 o más ranuras (213 en las ROM de referencia y 214 en la normal en `work-perf21`; mínimo libre en juego 344 KB en la M1 y 283 KB en la M2).
+
+## Vídeo de referencia del usuario (privado, no en git)
+
+Partida completa del arcade, 44 min, 640×360, 30 fps:
+`/home/user/ref-video/videoplayback.mp4`. Índice de fotogramas cada 15 s en
+`/home/user/ref-video/idx/tNNNN.jpg` (segundo = (NNNN−1)×15). Uso: localizar
+visualmente un momento que el usuario cite por minuto; la prueba exacta sigue
+siendo la captura de MAME de la ROM del usuario. Fotograma suelto:
+`ffmpeg -ss MM:SS -i videoplayback.mp4 -frames:v 1 out.png`.

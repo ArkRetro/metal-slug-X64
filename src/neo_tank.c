@@ -37,9 +37,10 @@
  * the record's cannon offset, the shell 094EAA (0950DC with kind 5: an
  * explicit stop) with +5E and +84, placed by 014A02 (D0 = FF).
  *
- * Explicit stops (no capture holds them): destruction 0938DA / 093AFA (the
- * tank killed: 0353C2's child, 0AE220, 0AD9E6 pieces), the damage reaction
- * 09351A, the jump 09333A (sound 1090), the air 09339E / 0933C2 / 09347A,
+ * The damage reaction 09351A / 093576 on the ground and the destruction
+ * with a rider 0938DA / 09391E (B52, MAME b52dmg / b52kill). Explicit
+ * stops (no capture holds them): the damage reaction in the air 0935A8,
+ * the jump 09333A (sound 1090), the air 09339E / 0933C2 / 09347A,
  * down 093138 / 09315E (sound 108F), 093204 / 09321A, 0937C6 (exit with
  * +77 >= 5), the bombs 0929E6 (0C0808) and the kind-5 shell 0950DC. */
 #define B(o) ga_b(a,(o))
@@ -273,7 +274,7 @@ static ga_result_t tank_tick(neo_gactor_t *a,neo_genv_t *e) {
         SL(0,lab(0x92b0e));
     }   /* fall through */
     case 0x92b0e: {
-        if (!W(0x4e)) STOP(lab(0x938da));
+        if (!W(0x4e)) {SL(0,lab(0x938da));continue;}
         if (BIT(0x5f,7)) {SL(0,lab(0x93afa));continue;}
         SB(0x5a,0);SW(0x7e,8);
         if (!tread(a,e,false)) return GA_UNSUPPORTED;
@@ -479,7 +480,64 @@ static ga_result_t tank_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (b) ga_place_at(b,a,e,0,0x10);
         return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
     }
-    case 0x9351a: STOP(lab(0x9351a));
+    case 0x9351a:
+        /* 09351A: the damage reaction (B52; MAME b52dmg/b52kill: the hit
+         * of 11351 with the tank on the ground). Health 0 -> 0938DA; +5A =
+         * 0; on the ground the program by +5B's sign (sound 1089 and
+         * 29C308 from behind, else 108A and 29C746), +62 = 0, 093576 in
+         * the same update. In the air 0935A8 (29B690/29B6F2, the fall
+         * 0935EC..093684): no capture, an explicit stop. */
+        if (!W(0x4e)) {SL(0,lab(0x938da));continue;}
+        SB(0x5a,0);
+        if (!BIT(0x15,6)) STOP(lab(0x935a8));
+        if (B(0x5b)&0x80u) {sound(e,0x1089);START(0x29c308);} else {sound(e,0x108a);START(0x29c746);}
+        SL(0x62,0);SL(0,lab(0x93576));
+        /* fall through */
+    case 0x93576:
+        /* 093576: +7E |= 3E (flicker), 09380A, 092832; the program's end:
+         * +90 = 0, 092C9A (0938DA with health 0); 093692. */
+        SB(0x7e,B(0x7e)|0x3eu);
+        if (!tread(a,e,true)) return GA_UNSUPPORTED;
+        if ((r=k92832(a,e))<0) return GA_UNSUPPORTED;
+        if (r) {SL(0x90,0);SL(0,lab(W(0x4e)?0x92c9a:0x938da));}
+        return tail(a,e);
+    case 0x938da: {
+        /* 0938DA: destroyed with its rider (b52kill: 11352, health
+         * written to 1 at 11340 as the gauge writes of capture_weapons.lua):
+         * sounds 1089 and 10E9, program 2942D4, the palette list 093882,
+         * the marker 0353C2 (03533A with +6E = 0, +70 = 0x38), +8A = 0x60,
+         * then 09391E in the same update. */
+        sound(e,0x1089);sound(e,0x10e9);START(0x2942d4);SL(0x90,lab(0x93882));
+        neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x3533a,false):NULL;   /* 0353C2 */
+        if (c) {ga_sw(c,0x6e,0);ga_sw(c,0x70,0x38);}
+        SW(0x8a,0x60);SL(0,lab(0x9391e));
+    }   /* fall through */
+    case 0x9391e: {
+        /* 09391E: the palette list (009D1E), +62 = 0, +7E = FF; with a
+         * rider (+80 >= 0): its pad bit 5 ejects it (0AA7FC kind 1), 0AA760
+         * (d2 = d3 = 0) not bound -> +80 = FF, 09380A; without, 093846;
+         * 092832; +8A - 1 < 0 -> 093AFA; 0939BA. */
+        if (L(0x90)) {
+            SB(0x14,B(0x1a));uint32_t q=L(0x90);uint16_t d1=rw(q);q+=2u;
+            if (d1==0xffffu) {q+=(uint32_t)(int32_t)S16(rw(q));d1=rw(q);q+=2u;}
+            SL(0x90,q);pal_swap(a,d1);                                  /* 009D1E */
+        }
+        SL(0x62,0);SB(0x7e,0xff);
+        bool ride=!(W(0x80)&0x8000u);
+        if (ride) {
+            unsigned p=rider_p(a);
+            if (pad(a,e)&0x20u) {neo_vslot_exit(v->slots,p,a->m,node_word(e,a),1);touched(a);}
+            neo_vslot_player_t pl=player(e,p);uint16_t p6e;
+            if (!neo_vslot_bind(v->slots,p,a->m,node_word(e,a),&pl,e->video,0,0,&p6e)) SB(0x80,0xff);
+            touched(a);
+        }
+        if (!tread(a,e,ride)) return GA_UNSUPPORTED;
+        if (k92832(a,e)<0) return GA_UNSUPPORTED;
+        SW(0x8a,W(0x8a)-1u);
+        if (W(0x8a)&0x8000u) SL(0,lab(0x93afa));
+        anchor(a);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     case 0x93138:
         /* 093138: crouch (sound 108F, program 2934EC; restarted when +76
          * changes); the end -> 093204 (+8A = 0). */
@@ -790,7 +848,7 @@ bool neo_tank_routine(uint32_t r) {
     switch (r) {
     case 0x92a32: case 0x92ad8: case 0x92b0e: case 0x92c18: case 0x92c38: case 0x92c76: case 0x92c9a:
     case 0x92cc2: case 0x92dda: case 0x92f94: case 0x93054: case 0x9307c: case 0x93278: case 0x9329e:
-    case 0x93a08: case 0x93a46: case 0x93afa: case 0x9351a: case 0x9339e: case 0x93204:
+    case 0x93a08: case 0x93a46: case 0x93afa: case 0x9351a: case 0x93576: case 0x938da: case 0x9391e: case 0x9339e: case 0x93204:
     case 0x93138: case 0x9315e: case 0x9321a: case 0x9333a: case 0x93362: case 0x933c2: case 0x9347a: case 0x934a2:
     case 0x937c6: case 0x937e4:
     case 0x94eaa: case 0x94f1c: case 0x94ff8: case 0x9503c:

@@ -20,7 +20,7 @@
  * mission_camera.h. Map commands that touch layers, palettes or sound are
  * reported as events (the extracted map already contains what they load).
  * Positions are Q16.16; y grows upwards (camera height). */
-enum { NEO_CAMERA_EVENTS=8 };
+enum { NEO_CAMERA_EVENTS=32 };   /* a stage start runs the whole list head: Mission 3 has 20 events */
 typedef enum {
     NEO_CAMERA_EV_PALETTE=0x0c,     /* 009D8C with the ROM block `address` */
     NEO_CAMERA_EV_LOAD_LAYER=0x18, NEO_CAMERA_EV_LAYER_ATTR=0x1c, NEO_CAMERA_EV_LAYER_RELOAD=0x20,

@@ -173,6 +173,7 @@ typedef struct {
      * 3 crouched 256DE8); laser_calls counts the 0C46D6 calls. */
     uint8_t laser_step,laser_aim;unsigned laser_calls;
     unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
+    unsigned up_shots;   /* pistol shots aimed up: native 01B782 at angle 40 (B53) */
     bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
      * node record world.player_node[0]: mount = none, riding (0C3078/

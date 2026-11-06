@@ -1770,6 +1770,20 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                     marco_muzzle_t m=marco_muzzle_aim(&g->legs,-1,0,g->facing<0);
                     neo_world_player_shot(&g->world,0x1b782u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,0xc0,0);
                     g->shot_age=0;g->shooting=true;g->shots++;g->down_shots++;
+                } else if (g->aim_up && !ammo.kind && g->world_enabled) {
+                    /* Up (+92 = 1): the native 01B782 at angle 40 (both
+                     * facings, 0x80 - 40 = 40) from the 0C4204 up row
+                     * (0,40) plus +72/+74 (MAME hold2: born at 2792 after
+                     * the press at 2790, x 120 y 151, +6E = 40; the level
+                     * shot of 2192 at x 136 y 121: (-16,+30) = up row minus
+                     * level row). The port's provisional bullet was culled
+                     * at a fixed world height (y < -32 without the camera
+                     * height): no up shot once the view had risen, as in
+                     * Mission 2's stage 2 and tower (B53); 01B882 culls on
+                     * the screen (01945C). */
+                    marco_muzzle_t m=marco_muzzle_aim(&g->legs,1,0,g->facing<0);
+                    neo_world_player_shot(&g->world,0x1b782u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,0x40,0);
+                    g->shot_age=0;g->shooting=true;g->shots++;g->up_shots++;
                 } else {
                 marco_muzzle_t m=marco_muzzle_aim(&g->legs,g->aim_up?1:0,0,g->facing<0);
                 int mx=g->facing*m.x,my=m.y;

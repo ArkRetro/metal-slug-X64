@@ -328,6 +328,8 @@ ROOTS+=[0x23f2a0,0x23da62,0x23d9ea]
 ROOTS+=[0x2869d6]
 # Mission 3 birds 03ED00.., sandbags 0214EA/0216BA with their pieces 0218C4, camp 01F1D4 (soldiers 01F2D6/01F386, stove 01F562, pot 01F4DA) (neo_m3enemy.c).
 ROOTS+=[0x23fe3e,0x23fecc,0x23fefa,0x23fea0,0x23feac,0x23fe6c,0x23ff04,0x230238,0x23035e,0x2303e4,0x2303ca,0x2303f0,0x230438,0x23052c,0x230512,0x230538,0x22f81a,0x22f868,0x22f89c,0x22f9d8,0x22f8c2,0x22f98a,0x22f8f6]
+# Burning pieces 08732C of the destroyed shop 0B6566 (0B68B4, Mission 1; neo_barrel.c, B51): flight and landing.
+ROOTS+=[0x283b7a,0x283bf8]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

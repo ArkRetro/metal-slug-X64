@@ -183,6 +183,11 @@ def main():
     palette_base=len(mission['palettes']);mission['palettes'].extend(props['palettes'])
     mission['cells'].extend(dict(c,palette=c['palette']+palette_base) for c in props['cells'])
     backdrop=palette_rgb(mission['backdrop'])
+    # The map's pages start on a chunk (8 pages): the streamed map working
+    # set (check_scene_budget.py, 32 chunks with the 4 MiB cache) no longer
+    # depends on how many actor pages come before it (B51: the burning
+    # figures 08732C shifted the map by part of a chunk: 33 at camera 303).
+    while len(pages)%8:pages.append(bytes(PAGE))
     map_images,map_cells=pack_map(mission,(ROOT/'filesystem/sprites.bin').read_bytes(),image)
     patch_cells=[c for c in map_cells if c[0]==5];collapse_cells=[c for c in map_cells if c[0]==6];map_cells=[c for c in map_cells if c[0]<5]
     real_pages=len(pages)

@@ -1672,11 +1672,17 @@ void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_
     w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;
 }
 void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
+    /* Events of the stage start's commands (0C8774): the update below
+     * clears the list (neo_camera_finish), so they are kept and handed out
+     * first, in list order (Mission 3: call 0B8D34, the train's driver,
+     * and 0BC548 at progress 0, MISION3_ACTORES.md section 1). */
+    neo_camera_event_t first[NEO_CAMERA_EVENTS];unsigned firsts=0;
     if (!w->camera_native && w->stage_camera) {
         /* 0C8774 with 69D0 = 0 (a stage start): the whole list from its
          * first command; its point (op 34) sets 69B8/69BA. */
         neo_camera_init(&w->camera,w->stage_camera,w->stage_camera_size,w->stage_camera_base);w->camera_native=true;
         neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
+        firsts=w->camera.event_count;memcpy(first,w->camera.events,sizeof(first));
     }
     if (!w->camera_native) {
         const uint8_t *list=ga_rom(0x0B57BE);
@@ -1689,6 +1695,12 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     }
     neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0},{false,0,0,0,0}};
     neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
+    if (firsts) {
+        neo_camera_t *c=&w->camera;unsigned keep=c->event_count;
+        if (firsts+keep>NEO_CAMERA_EVENTS) {c->event_dropped+=firsts+keep-NEO_CAMERA_EVENTS;keep=NEO_CAMERA_EVENTS-firsts;}
+        memmove(c->events+firsts,c->events,keep*sizeof(c->events[0]));memcpy(c->events,first,firsts*sizeof(first[0]));
+        c->event_count=firsts+keep;
+    }
     for (unsigned i=0;i<w->camera.event_count;i++) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;

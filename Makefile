@@ -263,6 +263,17 @@ mslugx-m3-reference.z64: N64_ROM_TITLE = "MSX M3 REFERENCE"
 mslugx-m3-reference.z64: $(BUILD_DIR)/mslugx-m3-reference.dfs
 $(BUILD_DIR)/mslugx-m3-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-m3-reference.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Release-like Mission 3 cartridge (never a release): the release game
+# (mortal player, no script skips, no lock releases, no autopilot) starting
+# at Mission 3's record 0173F6, for hand-like play in ares (B56-B58).
+$(BUILD_DIR)/m3rel/actor.o: src/actor.c
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_REFERENCE_START_MISSION=3 -o $@ $<
+$(BUILD_DIR)/mslugx-m3-release.elf: $(BUILD_DIR)/m3rel/actor.o $(filter-out $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS))
+mslugx-m3-release.z64: N64_ROM_TITLE = "MSX M3 RELEASE TEST"
+mslugx-m3-release.z64: $(BUILD_DIR)/mslugx-m3-release.dfs
+$(BUILD_DIR)/mslugx-m3-release.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-m3-release.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-reference.z64: N64_ROM_TITLE = "MSX M1 REFERENCE"
 mslugx-reference.z64: $(BUILD_DIR)/mslugx-reference.dfs
 $(BUILD_DIR)/mslugx-reference.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
@@ -446,7 +457,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2
+FAMILIES := dome barrel figure tankhit tankkill truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -608,6 +619,16 @@ FAMILY_ARGS_awning := --terrain 10c72e
 # (--ram of the extraction) are compared byte for byte.
 FAMILY_ARGS_slug := --script-actor 101414 --script-routines 1be24,59e30 --node-fields 6e
 FAMILY_ARGS_tank := --script-actor 101414 --script-routines 1b6a0 --node-fields 6e,8c --shared 14a4e --attacks --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
+# tankhit / tankkill = the SV-001 hit on the ground (09351A -> 093576) and destroyed
+# with its rider (0938DA -> 09391E -> 093AFA), B52: MAME at_9000 (b51b states),
+# MSX_FULL_RIDE=sit, VEHICLE_CHEAT=0, FAMILY_FROM=9100 (the hit of 11351; tankkill
+# with MSX_FULL_VEHICLE_HEALTH=11340:1), ranges and RAM of the tank family.
+FAMILY_ARGS_tankhit := $(FAMILY_ARGS_tank)
+FAMILY_ARGS_tankkill := $(FAMILY_ARGS_tank)
+# figure = the burning figures 08732C of the destroyed shop 0B6566 (B51, MAME b51f:
+# sec00_2100, FAMILY_ROOTS=8732c FROM=8600, the shop falls at 8660): they land
+# on the ground the shop raised and cleared (its roof 0B680E stamps).
+FAMILY_ARGS_figure := --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
 FAMILY_ARGS_tankpush := --script-actor 101414 --script-routines 1b6a0 --node-fields 6e,8c --shared 14a4e --attacks --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
 FAMILY_ARGS_tankcrouch := --script-actor 101414 --script-routines 1b6a0,1bf10 --node-fields 6e,8c --shared 14a4e --attacks --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
 FAMILY_ARGS_tankjump := --script-actor 101414 --script-routines 1b6a0 --node-fields 6e,8c --shared 14a4e --attacks --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
@@ -880,7 +901,7 @@ filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesyst
 	@echo 'Falta $@: consultar docs/MARCO.md, docs/ACTION.md y docs/ENCOUNTER.md' >&2
 	@exit 1
 clean:
-	rm -rf build mslugx-camel-shot.z64 intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 mslugx-lab.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
+	rm -rf build mslugx-camel-shot.z64 intro-preview.z64 marco-upper-limits-regression.z64 marco-common-regression.z64 marco-body-regression.z64 marco-idle-regression.z64 marco-stance-regression.z64 marco-ammo-regression.z64 marco-motion-regression.z64 marco-crouch-regression.z64 marco-upper-regression.z64 marco-upper-combat-regression.z64 marco-advance-pixels.z64 marco-advance-regression.z64 marco-coupled-pixels.z64 marco-controller-regression.z64 marco-coupled-regression.z64 marco-pair-regression.z64 marco-render.z64 marco-regression.z64 mslugx-explorer.z64 mslugx-m3-release.z64 mslugx-lab.z64 rng-regression.z64 animation-regression.z64 contact-regression.z64 control-regression.z64 state-regression.z64 throw-regression.z64 attack-regression.z64 object-regression.z64 locomotion-regression.z64 kernel-regression.z64 audio-regression.z64 cinematic-regression.z64 mission1-internal.z64 scene-debug.z64 scene-release.z64
 # Offline effect previews (proxy level, no original art) from the real mesh code.
 preview-depth: $(BUILD_DIR)/retro25d/retro_assets.h
 	python3 tools/export_effect_previews.py
@@ -1148,6 +1169,8 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	$(BUILD_DIR)/host/m2stairs
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_map.c src/neo_kernel.c src/neo_collision.c -o $(BUILD_DIR)/host/m3map
 	$(BUILD_DIR)/host/m3map romfs/mission3.pack
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_camera_start.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m3camstart
+	$(BUILD_DIR)/host/m3camstart romfs/mission3.pack
 	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
 	$(BUILD_DIR)/host/m2wall
@@ -1185,7 +1208,7 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -DRETRO_REAL_ASSETS -I$(BUILD_DIR)/retro25d tools/test_retro25d.c src/retro25d.c src/retro_events.c -lm -o $(BUILD_DIR)/host/retro25d
 	$(BUILD_DIR)/host/retro25d
--include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/diag/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference*/*.d $(BUILD_DIR)/m2ref*/*.d $(BUILD_DIR)/m3ref*/*.d)
+-include $(wildcard $(BUILD_DIR)/src/*.d $(BUILD_DIR)/diag/*.d $(BUILD_DIR)/tools/*.d $(BUILD_DIR)/release/*.d $(BUILD_DIR)/reference*/*.d $(BUILD_DIR)/m2ref*/*.d $(BUILD_DIR)/m3ref*/*.d $(BUILD_DIR)/m3rel/*.d)
 
 # Internal whole-helper regression. Headers derive from private ROM journals.
 $(BUILD_DIR)/tools/test_marco_steps.o: CC = $(N64_CC)

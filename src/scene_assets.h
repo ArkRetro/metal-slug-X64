@@ -4,6 +4,7 @@
 #include "neo_animation.h"
 #include <stdbool.h>
 enum { SCENE_PAGE_BYTES=2048, SCENE_CHUNK_BYTES=16384 };
+enum { SCENE_STRIP_ITEMS=2048, SCENE_STRIP_GROUPS=512, SCENE_STRIP_ENTRY_BYTES=8 };
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
@@ -131,6 +132,11 @@ typedef struct {
     const scene_map_cell_t *patch_cells;unsigned patch_cell_count,patch_count;
     uint32_t patch_submap[16],patch_layer_object[16];
     void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
+    /* Memory for the renderer's background draw lists (scene_strips.h, B47):
+     * SCENE_STRIP_ITEMS items and SCENE_STRIP_GROUPS groups of 8 bytes, with
+     * the stage's tables (slots), not the program image: Mission 1 draws
+     * through the direct walk. */
+    void *strip_items,*strip_groups;
     /* Dynamic maps (0140C0) of the pack's 'MSXR' block (Mission 3): ROM
      * label, bytes (the ROM's, docs/MISION3.md "Reconocimiento del mapa"). */
     unsigned dynamic_map_count;uint32_t dynamic_map_rom[SCENE_STAGE_DYNAMIC_MAPS];uint16_t dynamic_map_length[SCENE_STAGE_DYNAMIC_MAPS];

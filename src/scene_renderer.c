@@ -441,14 +441,24 @@ static uint32_t layer_ticks[6],layer_blit[6];static unsigned layer_draws[6],laye
  * allocator: when a rebuild does not fit, every strip is dropped and rebuilt
  * on demand (the cost of one old-style walk per layer). A layer whose window
  * does not fit even alone draws through the direct walk (draw_layer_direct). */
-enum { STRIP_ITEMS=2048, STRIP_GROUPS=512, STRIP_MARGIN=96 };
-static scene_strip_item_t strip_items[STRIP_ITEMS];static scene_strip_group_t strip_groups[STRIP_GROUPS];
-static scene_strip_pool_t strip_pool={strip_items,strip_groups,STRIP_ITEMS,STRIP_GROUPS,0,0};
+enum { STRIP_MARGIN=96 };
+/* The pool lives with the loaded stage's tables (scene_stage_t, cache
+ * slots): the program image keeps the RAM floor (208 slots). Without a
+ * stage (Mission 1) the layers draw through the direct walk. */
+_Static_assert(sizeof(scene_strip_item_t)==SCENE_STRIP_ENTRY_BYTES && sizeof(scene_strip_group_t)==SCENE_STRIP_ENTRY_BYTES,"strip entry size");
+static scene_strip_item_t *strip_items;static scene_strip_group_t *strip_groups;
+static scene_strip_pool_t strip_pool;
 static scene_strip_t strips[5];static uint32_t strip_state=~0u;static unsigned strip_builds,strip_resets,strip_direct;static uint32_t strip_build_ticks;
 static const scene_strip_env_t strip_env={scene_map_image,column_may_hide};
 static void strips_drop(void) {
     for (unsigned i=0;i<5;i++) strips[i].valid=false;
     strip_pool.items_used=strip_pool.groups_used=0;
+}
+/* The pool of the loaded stage (scene_renderer_stage_changed), or none. */
+static void strips_attach(const scene_stage_t *st) {
+    strips_drop();
+    strip_items=st?st->strip_items:NULL;strip_groups=st?st->strip_groups:NULL;
+    strip_pool=(scene_strip_pool_t){strip_items,strip_groups,st?SCENE_STRIP_ITEMS:0u,st?SCENE_STRIP_GROUPS:0u,0,0};
 }
 /* The live strips moved to the front of the pool (their regions are
  * disjoint and in allocation order), so a rebuild gets the space of the
@@ -616,7 +626,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
       uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
       if (depth_mode || cell_index.layer_major) {
           const scene_strip_t *s=NULL;
-          if (strips_on) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offsets,rises,&wx0,&wx1,&wy0,&wy1);s=layer_strip(layer,wx0,wx1,wy0,wy1);}
+          if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offsets,rises,&wx0,&wx1,&wy0,&wy1);s=layer_strip(layer,wx0,wx1,wy0,wy1);}
           if (s) draw_layer_strip(layer,s,offsets,rises,video_tick); else draw_layer_direct(layer,offsets,rises,video_tick);
       }
       const retro_plane_view_t *view=depth_mode?&depth_views[layer]:NULL;
@@ -869,7 +879,7 @@ void scene_renderer_stage_changed(void) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
     bg_key.valid=false;collapsed=flash=patched=false;
     const scene_stage_t *st=scene_stage();
-    tower_index(st);map_patch_index(st);
+    tower_index(st);map_patch_index(st);strips_attach(st);
     if (st) {
         bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
         assertf(indexed,"Stage cell index");(void)indexed;

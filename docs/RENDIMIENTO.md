@@ -1090,10 +1090,14 @@ dibujos y 1941 celdas visitadas, costaba 1,9 ms).
   estado de reemplazo (`collapsed`, `patched`, parches de mapa) o la etapa;
   una capa por fotograma se reconstruye por adelantado (mitad del margen)
   para que las capas 2 y 3, que se desplazan juntas, no coincidan. *Pool*
-  de 2048 elementos y 512 grupos (20 KB de BSS, 1 ranura: 211 → 209
-  ranuras, suelo 208) con compactación; si una capa no cabe ni sin margen,
-  esa capa dibuja con el recorrido directo (`draw_layer_direct`, el código
-  anterior, que sigue siendo la referencia).
+  de 2048 elementos y 512 grupos (20 KB) con compactación, reservado con
+  las tablas de la etapa cargada (`scene_stage_t`, ranuras de la caché:
+  +2 ranuras de tablas por etapa), no en la imagen del programa, que con
+  las familias de la Misión 3 ya dejaba el presupuesto en el suelo (3314 KB
+  con el *pool* estático: `RAM budget` falla por debajo de 3332); la Misión
+  1, sin etapa, sigue con el recorrido directo. Si una capa no cabe ni sin
+  margen, esa capa dibuja con el recorrido directo (`draw_layer_direct`,
+  el código anterior, que sigue siendo la referencia).
 - **Subidas de página directas** (`page_upload`): los mismos comandos que
   `rdpq_tex_upload_sub` emite para las tres superficies fijas (64×64 CI4,
   32×32 RGBA16, 16×256 CI4: `SET_TEXTURE_IMAGE`, dos `SET_TILE`,

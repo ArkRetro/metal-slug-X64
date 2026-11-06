@@ -51,9 +51,10 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   granadas de los soldados de ventana, el pasajero convertido): la
   granada `03C306` de los soldados va traducida sin traza. `0B9748`
   (`m3bonus`), las entradas de soldado `0AF17E..0AF1E0` y las acciones
-  `0AF92C/0AF940` también. Faltan la entrada en paracaídas, los sprites de
-  vuelo de los pájaros, los regalos y las ramas al azar de MISION3.md
-  «Paso 2».
+  `0AF92C/0AF940` también. La entrada en paracaídas (`0C15B4`) arranca
+  como en la recreativa; las paletas de las familias nuevas están
+  exportadas. Faltan `03C306` con traza, `348/3CC/3CF` y `05D234`
+  (MISION3.md «Paso 2»).
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se

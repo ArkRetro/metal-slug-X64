@@ -194,6 +194,7 @@ typedef struct {
      * fade-in, wipe) runs once per update with the players held until its
      * stage loop 01860A (4302 = FF); counts for the log. */
     unsigned entry_updates,entry_fade_updates;bool mission_start,entry_letters;
+    bool entry_descent_pending;   /* entry kind 2 (0C15B4): the descent starts with the stage loop */
     int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts,lock_kills;bool lock_killed;int32_t lock_value;
     /* Player 1's priority word +1E (the sprite list is sorted by it,
      * 0113EA): +66 = 8834 on foot (0C10DE/0C14D0/0C157A/0C1EBE/0C1F70),
@@ -213,9 +214,10 @@ void msx_game_init(msx_game_t *game);
 bool msx_game_victory(const msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
-enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };
+enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL, MSX_DESCENT_WAIT };   /* WAIT: 0C15BA until the stage loop 01860A (10C302) */
 /* The handoff at the start of the parachute descent (MAME 3860: +28/+2C,
  * +30/+34 after the player's first 0C162A update), with the canopy. */
+void msx_game_stage_descent_at(msx_game_t *game,int x,int y);
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 /* Reference build: the route planner of Mission 2 stage 3 (msx_autopilot.h)

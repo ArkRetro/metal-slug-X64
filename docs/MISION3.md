@@ -894,8 +894,43 @@ sin `msx_game_init` para el arranque de etapa, la espera de `10C302` y la x
 que no carga estados: hace falta una captura desde el arranque hasta la M3
 o adaptar `capture_fullgame.lua` al nodo del jugador).
 
-Pendiente del paso 2 (en orden): la entrada en paracaídas, `03C306` con
-traza, los sprites de vuelo de los pájaros, premios y ramas al azar.
+**Octava tanda** (misma rama): la entrada en paracaídas y las paletas.
+
+- Entrada de tipo 2 (`0C15B4`): `msx_game_stage_descent_at` (`gameplay.c`)
+  deja al jugador en `MSX_DESCENT_WAIT` en el (x − raíz, y + 100 − raíz) del
+  registro `2D5E7C` ((0x58, 0x100): la raíz está en −0x10 al arrancar) y, al
+  empezar el bucle de etapa `01860A` (`10C302`: el fundido de entrada hecho,
+  `stage_entry_step`), `stage_descent_start` arranca el descenso de
+  `marco_descent.c` como `0C15C6` (`+30` = 0, `+34` = −80000, la vela
+  `0C4A58`, `0C162A`); el aterrizaje, el corte y el marcador son los del
+  descenso de la M1 (ya probados contra MAME, MISSION_ENTRY.md). Sin fixture
+  propio de la M3 (`capture_mission_rest.lua` no carga estados): la
+  referencia es `run4/trace.csv` (`0C15BA` 117978..118018, `0C162A` 118026,
+  aterrizaje 118098). Diferencia conocida: el fundido del port dura 17
+  actualizaciones y el de MAME 28 (el bucle `0183D0`, pendiente).
+- Paletas: los «dibujos sin descriptor» eran paletas sin exportar (el
+  diagnóstico de `actor.c` imprime ahora `palette_id`): `2F8` (pájaros),
+  `2F2` (coche), `22E` (fogón), `21B/223` (jeep)... `export_rest_sprites.py`
+  solo guarda las paletas de su lista `RESOURCES`: añadidas las de las
+  familias nuevas y exportadas desde una captura H (118000..124800): 218 →
+  228 paletas; faltan `348`, `3CC`, `3CF` (piezas y bomba del coche sin
+  traza). Las descripciones de vuelo de los pájaros ya estaban en el paquete.
+- `capture_fullgame.lua`: plan `MSX_FULL_PLAN=to:<x>` (andar hasta una x y
+  quedarse); en la salida el jugador se para en x 0x78 (un borde): sin uso
+  por ahora.
+- Premios y ramas al azar: el inventario (MISION3_ACTORES.md «Solo en ramas
+  que la captura no tomó») lista 72 registros op 7 no ejecutados en `run4`;
+  ningún constructor queda solo en ramas no vistas salvo `05D234`; los
+  regalos de esas ramas son los tipos ya nativos de `neo_item.c`. Sin nueva
+  captura de otra partida no hay más que comprobar.
+
+Recorrido en ares tras la octava tanda (300 s): PASS, progreso 3971, 210
+ranuras, 0 registros saltados, ninguna rutina sin soporte; dibujos sin
+paleta 4821 (antes 7–8k): quedan `0A7` (el piloto de `04E990` con sangre,
+sin captura), `3CF`/`348` (bomba y piezas del coche sin traza) y `899`.
+
+Pendiente del paso 2: `03C306` con traza, las paletas `0A7/348/3CC/3CF/899`,
+el fundido de entrada de 28 actualizaciones y `05D234`.
 
 ## Pendiente
 

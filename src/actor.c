@@ -510,7 +510,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         pending_a=pending_b=false;
         msx_perf_add(MSX_PERF_STEP,TICKS_READ()-step_start);
     }
-    msx_perf_steps(steps);msx_perf_mark(MSX_PERF_SIM);
+    msx_perf_steps(steps);msx_perf_where((unsigned)game.camera,(unsigned)game.flow.stage);msx_perf_mark(MSX_PERF_SIM);
     /* MSX_DIAG: pools, stops and events of this frame's updates (read only). */
     msx_diag_game(&game,(uint16_t)(input.btn.c_left|input.btn.c_right<<1|input.btn.c_up<<2|input.btn.c_down<<3));
     game_audio_update(&game);
@@ -612,6 +612,18 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u\n",
                 (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
                 game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues,game.wall_stops,game.solid_pushes,game.kernel_landings);
+#if MSX_DIAG
+            /* B48: what holds the player up (ride object, air ticks, vy) and
+             * the dynamic collision objects (slot: owner, position, map). */
+            {const neo_kscene_t *k=&game.world.kernel;char line[256];int n=snprintf(line,sizeof(line),"MSX player support: ride=%u air_ticks=%u vy=%ld dyn",game.ride,game.air_ticks,(long)game.velocity_y);
+             for (unsigned i=0;i<NEO_KDYN_COUNT && n<(int)sizeof(line)-40;i++) {
+                const neo_kdyn_t *d=&k->dyn[i];if (!d->map) continue;
+                const neo_world_dyn_t *o=&game.world.dyn[i];
+                n+=snprintf(line+n,sizeof(line)-n," [%u:%06lx %ld,%ld %dx%d]",i,o->used?(unsigned long)ga_l(&game.world.gactors[o->owner],0):0ul,
+                    (long)(((int64_t)d->pos.x-k->terrain.x)>>16),(long)(((int64_t)d->pos.y-k->terrain.y)>>16),d->map[2],(int)d->map[3]+1);
+             }
+             debugf("%s\n",line);}
+#endif
         }
     }
     if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));

@@ -72,6 +72,7 @@ static void lifebar_food(msx_game_t *g) {
 void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
     memset(g,0,sizeof(*g));
+    g->air_trace_left=12;   /* MSX_DIAG: B48 air-step trace */
     if (msx_lifebar_request) {g->lifebar=true;g->life_hits=MSX_LIFEBAR_HITS;}g->laser_step=8;   /* no beam program running */
     /* 01829E for Mission 1 (record 01714E): the port's entry runs the
      * stage start, so the flow only keeps its words (docs/MISION2.md). */
@@ -865,6 +866,14 @@ static solid_push_t solid_push(msx_game_t *g,neo_air_t *body,int32_t vx,int32_t 
         if (above>=0 && DW(0)==1u) r.top=true;                 /* 004FE0 */
         body->x=start+(int32_t)push*(MSX_UNIT/16);             /* 004FF4..00503E */
         hit=true;
+#if MSX_DIAG
+        /* B48: which body pushes (one push in 40 of a stage). */
+        {static unsigned logged;static uint8_t logged_stage;
+         if (logged_stage!=g->flow.stage) {logged_stage=g->flow.stage;logged=0;}
+         if (logged<2000u && (logged++%40u)==0u) {debugf("MSX solid push: owner %06lx (+9C %02x +5F %02x +15 %02x) slot %u desc %06lx box %d,%d %ux%u kind %u at %d,%d player %d,%d side %s%s top=%u push %d\n",
+            (unsigned long)ga_l(a,0),ga_b(a,0x9c),ga_b(a,0x5f),ga_b(a,0x15),i,(unsigned long)w->solids[i].desc,(int16_t)ox,(int16_t)oy,wd,h,DW(0),
+            (int16_t)ga_w(a,0x3c),(int16_t)ga_w(a,0x40),(int16_t)(px>>16),(int16_t)(py>>16),r.left?"L":"",r.right?"R":"",(unsigned)(above>=0 && DW(0)==1u),push);}}
+#endif
         #undef DW
     }
     if (hit) g->solid_pushes++;
@@ -1238,6 +1247,9 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         const bool was_grounded=g->grounded;
         neo_air_t body={g->x,56*MSX_UNIT-g->y,g->velocity_x,-g->velocity_y};
 #if MSX_DIAG
+        neo_air_t trace_in=body;solid_push_t trace_push={false,false,false};
+#endif
+#if MSX_DIAG
         const unsigned trail_walls=g->wall_stops,trail_lands=g->kernel_landings,trail_pushes=g->solid_pushes;
 #endif
         if (dying) {
@@ -1307,7 +1319,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 body.vy+=neo_asr(-14*(int64_t)NEO_UNIT-body.vy,5);
                 body.vx+=neo_asr((int64_t)direction*0x3e000-body.vx,direction?3:5);
             } else neo_air_accel(&body,direction);
+#if MSX_DIAG
+            trace_in=body;   /* B48 trace: an air step that goes on and on */
+#endif
             solid_push_t s=solid_push(g,&body,body.vx,body.vy);
+#if MSX_DIAG
+            trace_push=s;
+#endif
             if (s.top && !dying) {
                 /* 014408: on top of a kind-1 body (player +5F bit 7, dying,
                  * has no equivalent here): thrown up, and away when it was
@@ -1339,6 +1357,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 }
             }
         }
+#if MSX_DIAG
+        if (!g->ride && !g->grounded && !was_grounded && g->air_ticks>300u && g->air_trace_left) {
+            g->air_trace_left--;
+            debugf("MSX air trace: in x=%ld y=%ld vx=%ld vy=%ld -> x=%ld y=%ld vx=%ld vy=%ld top=%u L=%u R=%u landings=%u\n",
+                (long)trace_in.x,(long)trace_in.y,(long)trace_in.vx,(long)trace_in.vy,(long)body.x,(long)body.y,(long)body.vx,(long)body.vy,trace_push.top,trace_push.left,trace_push.right,g->kernel_landings);
+        }
+#endif
         if (mummy && !was_grounded && g->grounded && !dying) g->mummy_landing=3;
         clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}

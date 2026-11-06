@@ -110,6 +110,9 @@ bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls
     int32_t *ox,int32_t *oy,uint8_t *object);
 bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
     int32_t *ox,int32_t *oy,uint8_t *object);
+/* ROM 013D5E: true when a collision object has a solid cell (012938's D7
+ * word nonzero) under the point (x,y) of `parent`. */
+bool neo_kernel_point_solid(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint8_t b4008);
 /* ROM 013C1A: surface probe under (x,y) of `parent`; D5 (the surface word
  * before 012E64), D6 (height), D7 and the object (10C060). */
 bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uint8_t b4008,uint8_t b400a,uint8_t b400d,

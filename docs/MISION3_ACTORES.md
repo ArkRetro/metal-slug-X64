@@ -332,14 +332,14 @@ identificar» cuando no hay más.
 | `09BA2A` | `09BA2A` | 8 | 118744 / 360 | 2:5 4:3 | guion | `240DEE` `2A037A` `2A03C6` +3 | 103E 1041 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `2A037A..2A0E04`; hijo `09C46C` |
 | `08DA12` | `08DA12` | 5 | 118836 / 627 | 2:5 | guion | `23D510` `23D62A` `23DB34` +4 | 103E 1041 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `23D510 23DB34 2404FE 240DEE` y propios `28AC56 28ACCE` |
 | `09A67E` | `09A67E` | 5 | 118892 / 704 | 2:5 | guion | — | — | nativo | caja oculta (regalo en la palabra 3) |
-| `02B202` | `02B202` | 4 | 119050 / 849 | 2:2 4:2 | guion×2 corredor×2 | `236D00` `236D88` | 1021 | **falta** | sin identificar; hijos `02B61C`, `02BBBA`, explosiones; mapa dinámico de la raíz `02C5BA` (y `02C5C8` en la sección 4) |
-| 〃 | `02B61C` | 4 | 119050 / 849 | 2:2 4:2 | `02B202` | `23739E` | — | **falta** |  |
-| 〃 | `02BBBA` | 6 | 119324 / 1028 | 2:2 4:4 | `02B202` | `2373CC` `2373E6` | — | **falta** |  |
+| `02B202` | `02B202` | 4 | 119050 / 849 | 2:2 4:2 | guion×2 corredor×2 | `236D00` `236D88` | 1021 | nativo (`neo_m3enemy.c`) | sin identificar; hijos `02B61C`, `02BBBA`, explosiones; mapa dinámico de la raíz `02C5BA` (y `02C5C8` en la sección 4) |
+| 〃 | `02B61C` | 4 | 119050 / 849 | 2:2 4:2 | `02B202` | `23739E` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `02BBBA` | 6 | 119324 / 1028 | 2:2 4:4 | `02B202` | `2373CC` `2373E6` | — | nativo (`neo_m3enemy.c`) |  |
 | `0AF1B6` | `0AF1B6` | 1 | 119050 / 849 | 2:1 | guion | `23D5E2` `23E43C` | — | **falta** | programas de soldado (los de `0AF17E` `23D5E2 23E43C`) |
 | `01A422` | `01A422` | 14 | 119254 / 993 | 2:8 4:6 | guion | — | — | nativo (`neo_script.c`) | corredor del guion (op 8) |
 | `04115A` | `04115A` | 7 | 119335 / 1043 | 2:6 3:1 | guion | `240DEE` `240F8E` `24116E` +3 | 103E 1041 1042 | nativo | soldado (familia de la Misión 1) |
-| `027F54` | `027F54` | 1 | 119579 / 1267 | 2:1 | guion | `235BAA` `235FE0` `23606E` +1 | 1021 1033 109D | **falta** | sin identificar; regalo `00` (H); hijo `0287FA`, explosiones; sonidos 1021/1033/109D |
-| 〃 | `0287FA` | 1 | 119932 / 1520 | 2:1 | `027F54` | `236314` `23D510` `23DFE4` +1 | — | **falta** |  |
+| `027F54` | `027F54` | 1 | 119579 / 1267 | 2:1 | guion | `235BAA` `235FE0` `23606E` +1 | 1021 1033 109D | nativo (`neo_m3enemy.c`) | coche con pasajero (`cv_tick`); regalo `00` (H); hijo `0287FA`, explosiones; sonidos 1021/1033/109D |
+| 〃 | `0287FA` | 1 | 119932 / 1520 | 2:1 | `027F54` | `236314` `23D510` `23DFE4` +1 | — | nativo (`neo_m3enemy.c`) | pasajero: salta o se queda y pasa a soldado (`0B0626/0B0632`) |
 | `02916E` | `02916E` | 2 | 120124 / 1520 | 2:2 | guion | `2367E4` `2367FE` `236818` +1 | 1023 102F 1033 10A5 | nativo | camión (Misión 1); mapas dinámicos `029C9A/029CDC/029D1E` |
 | 〃 | `029802` | 2 | 120124 / 1520 | 2:2 | `02916E` | — | — | nativo |  |
 | `05D916` | `05D916` | 4 | 120554 / 1520 | 2:4 | guion | `2404FE` `240DEE` `262AD8` +3 | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `262AD8..263498`; hijos `05DDA4 05DF3E 05DFC2 05DD2A` |
@@ -348,8 +348,8 @@ identificar» cuando no hay más.
 | 〃 | `05DFC2` | 1 | 120732 / 1520 | 2:1 | `05D916` | `22CE6C` `263A00` | 1064 | nativo (`neo_m3enemy.c`) |  |
 | `039382` | `039382` | 1 | 120945 / 1552 | 2:1 | misión | `23C762` | 1069 | `work-m3c` | caja del vagón → estampador `0B911E` (repisa `0B8FA8`) |
 | 〃 | `0B911E` | 1 | 121043 / 1709 | 2:1 | `039382` | — | — | `work-m3c` |  |
-| `0391EA` | `0391EA` | 2 | 120997 / 1633 | 2:2 | guion | `23C658` `23C6B4` | — | **falta** | sin identificar; hijos `08AE76` ×8 |
-| 〃 | `08AE76` | 8 | 120997 / 1633 | 2:8 | `0391EA` | `285BBE` | — | **falta** |  |
+| `0391EA` | `0391EA` | 2 | 120997 / 1633 | 2:2 | guion | `23C658` `23C6B4` | — | nativo (`neo_m3enemy.c`) | sin identificar; hijos `08AE76` ×8 |
+| 〃 | `08AE76` | 8 | 120997 / 1633 | 2:8 | `0391EA` | `285BBE` | — | nativo (`neo_m3enemy.c`) |  |
 | `08A732` | `08A732` | 5 | 121045 / 1712 | 2:1 4:4 | guion | `2404FE` `240DEE` `285864` +1 | 103E 1041 1042 1043 10A4 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `285864 2858FE`; hijos `08AA6E`, `08AC54`→`08AE70`, `08AB70` |
 | 〃 | `08AA6E` | 5 | 121246 / 1864 | 2:1 4:4 | `08A732` | `285A0C` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `08AB70` | 1 | 142390 / 5508 | 4:1 | `08A732` | `2859BA` | — | nativo (`neo_m3enemy.c`) |  |
@@ -362,18 +362,18 @@ identificar» cuando no hay más.
 | `038D1E` | `038D1E` | 1 | 121466 / 2080 | 2:1 | misión | `23C624` `23C62C` | — | **falta** | llamada de cámara `0B9148`: hijos `038B06` (→ estampadores `0B90FA/0B90BC/0B9106/0B9112`, 4 de los 6 grupos de parches `0B85EA`), `038F38`→`0390A6` |
 | `038D26` | `038D26` | 1 | 121700 / 2304 | 2:1 | misión | `23C624` `23C62C` | — | **falta** | llamada de cámara `0B916A`: como `038D1E` |
 | `01913C` | `01913C` | 3 | 122097 / 2721 | 2:1 4:1 5:1 | guion | — | — | nativo | reinicio del tiempo |
-| `097FCC` | `097FCC` | 5 | 122133 / 2769 | 2:2 4:3 | guion | `29ED1A` `29EE20` `29EF26` | 1023 10BA | **falta** | sin identificar (sonido 10BA); hijos `097FE4`, `098E4A`, `098886`, `098CB6`, `09879C`→`098974`→`098EA2`, `098C0C/20/34`, `098E18` |
-| 〃 | `098886` | 10 | 122133 / 2769 | 2:2 4:8 | `097FCC`×5 `097FE4`×5 | `29EF7C` | — | **falta** |  |
-| 〃 | `098E4A` | 10 | 122133 / 2769 | 2:2 4:8 | `097FCC`×5 `097FE4`×5 | — | — | **falta** |  |
-| 〃 | `098CB6` | 25 | 122381 / 2888 | 2:1 4:24 | `097FCC`×19 `097FE4`×6 | `22DA42` `22DA98` `22DAEE` +2 | — | **falta** |  |
-| 〃 | `097FE4` | 5 | 142790 / 5912 | 4:5 | `097FCC` | `29ED1A` `29EE20` `29EF26` | 1023 | **falta** |  |
-| 〃 | `09879C` | 6 | 143069 / 5980 | 4:6 | `097FCC`×3 `097FE4`×3 | `29F032` | — | **falta** |  |
-| 〃 | `098974` | 6 | 143081 / 5980 | 4:6 | `09879C` | `22CE6C` `29F06C` | 1022 | **falta** |  |
-| 〃 | `098EA2` | 43 | 143083 / 5980 | 4:43 | `098974` | `29F192` | — | **falta** |  |
-| 〃 | `098C0C` | 4 | 143187 / 5980 | 4:4 | `097FE4` | `29F090` | — | **falta** |  |
-| 〃 | `098C20` | 2 | 143187 / 5980 | 4:2 | `097FE4` | `29F0E6` | — | **falta** |  |
-| 〃 | `098C34` | 2 | 143187 / 5980 | 4:2 | `097FE4` | `29F13C` | — | **falta** |  |
-| 〃 | `098E18` | 4 | 143310 / 5980 | 4:4 | `097FCC`×3 `097FE4`×1 | `22CF2C` | — | **falta** | (registros del guion y de `097FCC`) |
+| `097FCC` | `097FCC` | 5 | 122133 / 2769 | 2:2 4:3 | guion | `29ED1A` `29EE20` `29EF26` | 1023 10BA | nativo (`neo_m3enemy.c`) | helicóptero (sonido 10BA); hijos `097FE4`, `098E4A`, `098886`, `098CB6`, `09879C`→`098974`→`098EA2`, `098C0C/20/34`, `098E18` |
+| 〃 | `098886` | 10 | 122133 / 2769 | 2:2 4:8 | `097FCC`×5 `097FE4`×5 | `29EF7C` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098E4A` | 10 | 122133 / 2769 | 2:2 4:8 | `097FCC`×5 `097FE4`×5 | — | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098CB6` | 25 | 122381 / 2888 | 2:1 4:24 | `097FCC`×19 `097FE4`×6 | `22DA42` `22DA98` `22DAEE` +2 | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `097FE4` | 5 | 142790 / 5912 | 4:5 | `097FCC` | `29ED1A` `29EE20` `29EF26` | 1023 | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `09879C` | 6 | 143069 / 5980 | 4:6 | `097FCC`×3 `097FE4`×3 | `29F032` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098974` | 6 | 143081 / 5980 | 4:6 | `09879C` | `22CE6C` `29F06C` | 1022 | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098EA2` | 43 | 143083 / 5980 | 4:43 | `098974` | `29F192` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098C0C` | 4 | 143187 / 5980 | 4:4 | `097FE4` | `29F090` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098C20` | 2 | 143187 / 5980 | 4:2 | `097FE4` | `29F0E6` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098C34` | 2 | 143187 / 5980 | 4:2 | `097FE4` | `29F13C` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `098E18` | 4 | 143310 / 5980 | 4:4 | `097FCC`×3 `097FE4`×1 | `22CF2C` | — | nativo (`neo_m3enemy.c`) | (registros del guion y de `097FCC`) |
 | `04E990` | `04E990` | 3 | 122232 / 2888 | 2:3 | guion | `247730` | 1021 105E | nativo (`neo_m3enemy.c`) | sin identificar; mapa dinámico `0E112E` (ROM `04EEDC`); 9 hijos, `04F720` ×241 |
 | 〃 | `04EE18` | 3 | 122232 / 2888 | 2:3 | `04E990` | `2477C2` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `04EE88` | 3 | 122232 / 2888 | 2:3 | `04E990` | — | — | nativo (`neo_m3enemy.c`) |  |
@@ -385,8 +385,8 @@ identificar» cuando no hay más.
 | 〃 | `04F720` | 241 | 122436 / 2888 | 2:241 | `04F464`×127 `04F44E`×114 | `247DA8` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `04EC8C` | 18 | 123036 / 2888 | 2:18 | `04E990` | `22DA42` `22DA98` `22DAEE` +2 | — | nativo (`neo_m3enemy.c`) |  |
 | `05C53C` | `05C53C` | 1 | 122232 / 2888 | 2:1 | guion | `2404FE` `240DEE` `262AD8` | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propio `262AD8` |
-| `08AFB6` | `08AFB6` | 1 | 124034 / 3296 | 2:1 | guion | `285C6A` `285D3A` | — | **falta** | sin identificar; mapas dinámicos `0E53D4/0E53C2`; hijo `08B3E6` |
-| 〃 | `08B3E6` | 1 | 124034 / 3296 | 2:1 | `08AFB6` | `285D96` `285EAA` | — | **falta** |  |
+| `08AFB6` | `08AFB6` | 1 | 124034 / 3296 | 2:1 | guion | `285C6A` `285D3A` | — | nativo (`neo_m3enemy.c`) | plataforma flotante; mapas dinámicos `0E53D4/0E53C2`; hijo `08B3E6` |
+| 〃 | `08B3E6` | 1 | 124034 / 3296 | 2:1 | `08AFB6` | `285D96` `285EAA` | — | nativo (`neo_m3enemy.c`) |  |
 | `0A2F2E` | `0A2F2E` | 2 | 124034 / 3296 | 2:1 4:1 | guion | `2A392A` `2A3E92` `2A4056` +3 | 1021 1033 1064 109E | **falta** | sin identificar; regalo `00` (H); hijos `0A3A0A 0A38F4 0A3BD6 0A3C24` |
 | 〃 | `0A38F4` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2A3958` `2A3EDA` `2A409E` +4 | 102D | **falta** |  |
 | 〃 | `0A3A0A` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2404FE` `2A3990` `2A3FB4` +5 | 1043 | **falta** |  |
@@ -416,10 +416,10 @@ identificar» cuando no hay más.
 | 〃 | `0A5D6A` | 2 | 134729 / 3944 | 4:2 | `0A4A94` | `2A5626` | — | **falta** |  |
 | 〃 | `08D0D2` | 2 | 135108 / 3944 | 4:2 | `0A61E8`×1 `0A61F2`×1 | `285EC0` `285EE8` | — | **falta** |  |
 | 〃 | `0A4DB0` | 1 | 140655 / 3944 | 4:1 | `0A4A94` | — | — | **falta** |  |
-| `0569E6` | `0569E6` | 2 | 141236 / 4298 | 4:2 | guion | `240DEE` `24AC4C` `24AC56` +5 | 103E 1042 | **falta** | programas de soldado `240DEE` y propios `24AC4C..24B5CC`; hijos `056E5A 056C94 056B00 056A6A` |
-| `0569D0` | `0569D0` | 4 | 141276 / 4372 | 4:4 | guion | `2404FE` `240DEE` `24AC4C` +7 | 103E 1042 1043 | **falta** | programas de soldado `2404FE 240DEE` y propios `24AC4C..24B7AE`; hijos `056E5A 056D76 056C94 056B00 056A6A` |
-| 〃 | `056D76` | 4 | 141294 / 4392 | 4:4 | `0569D0` | — | — | **falta** |  |
-| `0569B4` | `0569B4` | 1 | 141486 / 4553 | 4:1 | guion | `2404FE` `240DEE` `24AC4C` +5 | 1042 1043 | **falta** | programas de soldado `2404FE 240DEE` y propios `24AC4C..24B5CC` |
+| `0569E6` | `0569E6` | 2 | 141236 / 4298 | 4:2 | guion | `240DEE` `24AC4C` `24AC56` +5 | 103E 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `24AC4C..24B5CC`; hijos `056E5A 056C94 056B00 056A6A` |
+| `0569D0` | `0569D0` | 4 | 141276 / 4372 | 4:4 | guion | `2404FE` `240DEE` `24AC4C` +7 | 103E 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `24AC4C..24B7AE`; hijos `056E5A 056D76 056C94 056B00 056A6A` |
+| 〃 | `056D76` | 4 | 141294 / 4392 | 4:4 | `0569D0` | — | — | nativo (`neo_m3enemy.c`) |  |
+| `0569B4` | `0569B4` | 1 | 141486 / 4553 | 4:1 | guion | `2404FE` `240DEE` `24AC4C` +5 | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `24AC4C..24B5CC` |
 | `093C9A` | `093C9A` | 1 | 142068 / 5099 | 4:1 | guion | `291CE4` | — | **falta** | vehículo: crea la oruga `014A4E`, la torreta `03B4E0` y el marcador `03523C` del SV-001 (programa `291CE4`) |
 | 〃 | `014A4E` | 1 | 142068 / 5099 | 4:1 | `093C9A` | — | — | nativo |  |
 | `0AC866` | `0AC866` | 1 | 142126 / 5160 | 4:1 | guion | `0AB028` `0AB09E` `0AB0AC` +2 | 1034 108B 1090 10E9 | **falta** | vehículo con marcador «IN» (pantalla `game142140`); torreta `03B4E0`, marcador `03523C`, piezas `0AD9B8`; mapa dinámico `0AAC94` |
@@ -442,12 +442,12 @@ identificar» cuando no hay más.
 | 〃 | `08982A` | 1 | 142347 / 5508 | 4:1 | `087E36` | `239BCA` | — | nativo | humo del blindado |
 | 〃 | `08943C` | 6 | 142357 / 5508 | 4:6 | `087E36` | `247DA8` | — | nativo | piezas del blindado |
 | 〃 | `0897E2` | 1 | 142431 / 5508 | 4:1 | `087E36` | `24855C` | 1025 | nativo | humo del blindado |
-| `084588` | `084588` | 1 | 142611 / 5707 | 4:1 | corredor | `281FFC` | 1021 105D | **falta** | sin identificar (de un corredor); hijos `083B30`, `08471A`→`0848EE` ×18, `084948`, `08497E` |
-| 〃 | `083B30` | 1 | 142611 / 5707 | 4:1 | `084588` | `28207A` | — | **falta** |  |
-| 〃 | `08471A` | 1 | 142656 / 5782 | 4:1 | `084588` | `24855C` `2824F4` | 1021 1025 | **falta** |  |
-| 〃 | `0848EE` | 18 | 142656 / 5782 | 4:18 | `08471A` | `282518` | — | **falta** |  |
-| 〃 | `084948` | 1 | 142658 / 5785 | 4:1 | `084588` | `240C76` | 103F | **falta** |  |
-| 〃 | `08497E` | 2 | 142658 / 5785 | 4:2 | `084588` | `28236E` `282388` | — | **falta** |  |
+| `084588` | `084588` | 1 | 142611 / 5707 | 4:1 | corredor | `281FFC` | 1021 105D | nativo (`neo_m3enemy.c`) | bombardero volador (de un corredor); hijos `083B30`, `08471A`→`0848EE` ×18, `084948`, `08497E` |
+| 〃 | `083B30` | 1 | 142611 / 5707 | 4:1 | `084588` | `28207A` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `08471A` | 1 | 142656 / 5782 | 4:1 | `084588` | `24855C` `2824F4` | 1021 1025 | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `0848EE` | 18 | 142656 / 5782 | 4:18 | `08471A` | `282518` | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `084948` | 1 | 142658 / 5785 | 4:1 | `084588` | `240C76` | 103F | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `08497E` | 2 | 142658 / 5785 | 4:2 | `084588` | `28236E` `282388` | — | nativo (`neo_m3enemy.c`) |  |
 | `04A2C2` | `04A2C2` | 1 | 144483 / 6496 | 5:1 | guion | `2451DC` | 1026 1032 1033 | **falta** | jefe: robot andante (pantalla `game146490`); mapa dinámico `0E0D00` (ROM `04E06A`), música `059F76`; `018F92` lo llama `04A9D4` (nodo del jefe) |
 | 〃 | `04AF02` | 1 | 144483 / 6496 | 5:1 | `04A2C2` | `2451E8` `24569C` `24585A` +1 | — | **falta** |  |
 | 〃 | `04B0E6` | 1 | 144483 / 6496 | 5:1 | `04A2C2` | `245294` `24571E` `2458C8` +1 | — | **falta** |  |
@@ -510,11 +510,11 @@ identificar» cuando no hay más.
 | 〃 | `01CF70` | 1 | 132256 / 3716 | 4:1 | `01D764` | `22DAEE` | — | nativo |  |
 | 〃 | `01C8D2` | 235 | 134785 / 3944 | 4:235 | `01D764` | `22E8AE` | — | **falta** |  |
 | 〃 | `0AE1DC` | 2 | 140890 / 3944 | 4:2 | `0A4A94`×1 `0AC866`×1 | — | — | nativo |  |
-| 〃 | `056E5A` | 7 | 141236 / 4298 | 4:7 | `0569D0`×4 `0569E6`×2 `0569B4`×1 | — | — | **falta** |  |
-| 〃 | `056B00` | 4 | 141310 / 4392 | 4:4 | `0569D0`×2 `0569E6`×1 `0569B4`×1 | `24BA1A` | 10FF | **falta** |  |
-| 〃 | `056C94` | 4 | 141310 / 4392 | 4:4 | `0569D0`×2 `0569E6`×1 `0569B4`×1 | `24B966` | — | **falta** |  |
+| 〃 | `056E5A` | 7 | 141236 / 4298 | 4:7 | `0569D0`×4 `0569E6`×2 `0569B4`×1 | — | — | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `056B00` | 4 | 141310 / 4392 | 4:4 | `0569D0`×2 `0569E6`×1 `0569B4`×1 | `24BA1A` | 10FF | nativo (`neo_m3enemy.c`) |  |
+| 〃 | `056C94` | 4 | 141310 / 4392 | 4:4 | `0569D0`×2 `0569E6`×1 `0569B4`×1 | `24B966` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `01C950` | 3 | 141338 / 4412 | 4:3 | `056B00` | `22E504` | — | **falta** |  |
-| 〃 | `056A6A` | 7 | 141397 / 4460 | 4:7 | `0569D0`×4 `0569E6`×2 `0569B4`×1 | `24B9B8` | — | **falta** |  |
+| 〃 | `056A6A` | 7 | 141397 / 4460 | 4:7 | `0569D0`×4 `0569E6`×2 `0569B4`×1 | `24B9B8` | — | nativo (`neo_m3enemy.c`) |  |
 | 〃 | `03B4E0` | 2 | 142068 / 5099 | 4:2 | `093C9A`×1 `0AC866`×1 | `23CE0C` | — | nativo |  |
 | 〃 | `03523C` | 2 | 142070 / 5102 | 4:2 | `093C9A`×1 `0AC866`×1 | `23B288` | — | nativo |  |
 | 〃 | `01B6A0` | 18 | 142248 / 5377 | 4:18 | `03B4E0` | `22C1B8` | 108C 108D | nativo | bala de vulcan |

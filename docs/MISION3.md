@@ -611,9 +611,137 @@ no alcanzado. Rutinas sin soporte del mundo: `2869D6`, `0AF17E`, `08DBC8`
 al pasar a soldado). Dibujos sin paleta: 4420 (la paleta `0xA7` del piloto
 de `04E990` con sangre, sin captura).
 
-Pendiente del paso 2 (en orden): `097FCC`, `0569xx`, `084588` (trazas en
-`/home/user/captures-m3s2` A y B, sin borrar todavía), `02B202`, `027F54`,
-`0391EA`, `08AFB6/0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
+**Cuarta tanda** (misma rama):
+
+- **Helicóptero `097FCC`** (`097FCC..099070`; `+6E..+7A` del registro: x base,
+  temporizador, velocidad y periodo de los misiles, fila de `0E619C`, número
+  de aparatos (`0985A0` crea hermanos `097FE4`), bombas): rotor `098886`,
+  caja de golpes `098E4A` (un golpe de frente pide otro punto, `+8C` bit 0),
+  escape `01D86C`, vuelo `098012..09861E` (punto de destino `098664` contra
+  la referencia del guion `10E9B8`, nueva en `neo_genv_t.ref69b8`), bomba
+  `09879C` → misil `098974` (guiado, luego planeo `098A12`, humo `098EA2`),
+  muerte `0981F8` (restos `01DA40`, piezas `098C0C..` por `01D51A`:
+  `neo_effects_frag_launch`, trozos `098CB6`, destello `098E18`). Detalles
+  del original reproducidos: `09849C` suma `rand >> 4 & F` al temporizador,
+  `09861E` calcula el ángulo con `±80` por el signo de `+30` (`ext.w`), el
+  programa de vuelo arranca en `098114` solo con bombas y `+8D = 0`.
+- **Lanzadores de molotov `0569B4`/`0569D0`/`0569E6`** (`0558C0..056EEE`):
+  tres comportamientos (parado, inmóvil y patrulla alrededor de `+90`),
+  seguidor de caja `056E5A`, escudo `056D76`, molotov `056B00` (sonda
+  `0149CA`: `ga_probe_point` / `neo_kernel_point_solid` nuevos, fuego
+  `01C950`), destello `056C94`, casco `056A6A`. `055D9C` elige el programa
+  con `random(rank 2D0DAA) != 0`; `055E64` salta cuando sí hay jugador en
+  `055974`.
+- **Bombardero volador `084588`** (`083B30..08513C`, registro de corredor
+  `2DB248`): rotor `083B30`, bomba `08471A` (tiempo de caída `084FAE`/
+  `085026` con la tabla `085070`, estela `0848EE`), casco `084948`
+  (`0406B6`), restos `08497E`; la variante `083C8A` (soldado que cae,
+  `0842A8` → `0AF17E`, humo `084B9C`) no la alcanza el registro: parada.
+- **Bidón `0391EA`** (`0391EA..039380`): reaprovechado a la capa `10C72E`
+  (`039502`), un golpe de tipo `13` lo tumba (`23C6B4`, cae) y su programa
+  `23C658` llama a `039296`: cuatro humos `08AE76` (la entrada del humo del
+  granadero sin `01B1DC`).
+- **Camión armado `02B202`** (`02AE46..02C5D6`; registros de las secciones 2
+  y 4): llega hasta `+7E`, se va cuando la cámara pasa `+80`, mapa dinámico
+  `02C5BA/02C5C8`, artillero `02B61C` (`02B660` compara el `D0` que `01AD8C`
+  deja —la palabra de profundidad—, no el `+60` del creador: nunca entra en
+  `02B5DC`), muerte `02AE46` (explosión y dos ruedas `02BBBA`, como los
+  restos del bombardero). El artillero montado `02B39E..` (programas
+  `02C4BE` por `+60`, misiles `02B83E/02B976`) es de otro registro y no se
+  alcanza. Captura nueva de la sección 2 (`captures-m3s2c/A`, raíces
+  `1F1D4,214EA,3EE8A,2B202,27F54,391EA,8AFB6,A2F2E`) para estas dos familias
+  y las que faltan.
+- **Plataforma flotante `08AFB6`** (`08AFB6..08B55C`): sube con un vaivén
+  (`08B31A`, seno de `+76`), su suelo `08B3E6` lleva el mapa dinámico
+  `0E53C2/0E53D4` por `0140C4` con desplazamientos de sus programas
+  (`+82/+83`); al llegar a la altura `+70` (sonda `01495C` con su distancia:
+  `ga_probe_vertical_dy`) parpadea y desaparece; el suelo suelta restos
+  `0E53FA/0E540C` (`01DA40`). La variante que se hunde (`+74` del registro,
+  `08B144`) no sale: parada explícita.
+- Prueba de familia: `--fresh-program` (el constructor pasa el programa del
+  ocupante anterior por `00427A` antes de arrancar el suyo: `+24..+27` sin
+  comparar en la primera actualización sin programa; el mundo asigna nodos
+  limpios) y `--reserve` (la reserva de `0040BC` con RAM `1063D8`; el mundo
+  no la tiene); un bloque de posición cuya dirección se reutiliza se compara
+  por dirección; `test_neo_family.c` ya no compara `+5A..+5D` de los
+  jugadores (el daño de `0049E8` que `attack()` no escribe).
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3gun` (`097FCC` ×2 de la sección 2) | 17 | 639 | 122133..122429 | iguales a MAME |
+| `m3gun4` (`097FCC` ×3 + `097FE4` ×2 de la sección 4: bombas, misiles, muertes) | 114 | 6658 | 142790..144181 | iguales |
+| `m3thrower` (`0569E6` ×2, `0569D0` ×4, `0569B4`, molotovs, cascos) | 33 | 2015 | 141236..142139 | iguales |
+| `m3bomber` (`084588`, bomba, estela, restos) | 24 | 647 | 142611..142854 | iguales |
+| `m3drum` (bidones `0391EA` ×2 y sus humos `08AE76`) | 10 | 225 | 120997..121513 | iguales |
+| `m3truck` (camiones `02B202` ×2 con artillero `02B61C` y ruedas `02BBBA`) | 7 | 339 | 119050..119525 | iguales |
+| `m3raft` (plataforma flotante `08AFB6` y su suelo `08B3E6`) | 2 | 149 | 124034..124208 | iguales |
+
+Sprites: 7329 → 8230 descripciones (el helicóptero desde las capturas A y B;
+las capturas A y B se borraron (disco) antes de exportar los lanzadores y el
+bombardero: captura B repetida solo para ellos y borrada después); sin
+paletas nuevas sin captura.
+
+Recorrido en ares tras la cuarta tanda (300 s): PASS, 209 ranuras (3344 KB;
+`SCENE_MISSION_CHUNKS_MAX` 480 → 544: `mission3.pack` tiene 519 trozos),
+progreso 4379; registros saltados: 3 (`2DA174`→`0AF1B6`, `2DA4A6`→`027F54`,
+`2DAC58`→`0A2F2E`); rutinas sin soporte `2869D6`, `0413D4`, `08DBC8`,
+`0AF17E`; 3531 dibujos sin paleta.
+
+**Bloqueo de la cámara en 4380** (la pregunta del piloto): en MAME el guion
+bloquea la cámara en 2888 hasta que mueren las máquinas `04E990` (grupo 0,
+872 + 732 fotogramas: el jugador las derriba) y luego en 3716 hasta que
+muere el jefe intermedio (grupo 6). En el port el registro muestra `camera
+stop=2888` en 2784 y `stop=-1` en 2890 (desbloqueo dos píxeles después del
+bloqueo, cuando el guion aún espera al grupo 0: los registros `2DAB44/2DAB52`
+salen en 3117 y los de `2DAB6E..2DAD56` en 4060), y `stop=3716` se fija en
+4060, detrás de la cámara (`neo_camera_lock` la deja clavada en 4380 hasta
+que el grupo 6 muera; el piloto ciego no derriba ni las máquinas ni la
+aeronave). Resuelto: el bloqueo 2888 lo soltaba la ROM de referencia
+(`gameplay.c`, `MSX_REFERENCE_STAGE_EXIT`: tras 2400 pasos en un bloqueo que
+el mando no despeja soltaba el bloqueo, `lock_timeouts`); la ROM normal lo
+mantiene como MAME hasta que el guion ve el grupo 0 vacío, y el `04E990`
+nativo cuenta en el grupo 0 desde su creación (`+69` del registro, `neo_world.c`
+1403). Ahora el primer tiempo de espera pide la muerte general `1067E3`
+(`004BFE`, como las bombas del juego: `lock_kills`), con lo que el guion
+libera el bloqueo él mismo y sigue a la par de la cámara; solo un segundo
+tiempo de espera suelta el bloqueo. Comprobado en ares (r9, 300 s): el
+bloqueo 2888 se fija hacia el fotograma 2700 y lo suelta el propio guion
+hacia el 6000; `2DAB44/2DAB52` salen con la cámara en 2888 y `2DAB6E` en
+3470; `stop=3716` se fija con el avance en 3567 (por delante de la cámara) y
+la carrera termina en 3716 esperando al jefe intermedio (grupo 6). Tras la
+muerte general apareció una parada nueva `world unsupported routine=800040`
+(rutina de muerte de soldado tipo 6 bajo `1067E3`, por investigar junto a las
+demás paradas del mundo).
+
+**Quinta tanda** (coche con pasajero `027F54`): `027F54..02916A` nativo en
+`neo_m3enemy.c` (`cv_tick`): el registro `2DA4A6` lo deja parado (`+6E` ≠ 0:
+bit 5 de `+7D`, programa `235BAA`, ráfagas `02834A` por `028DA8`, giro
+`02818E` por `028DEA`), el modo de conducción `0280B6..028300` (sonido `109D`,
+`0146A8`, giro en los bordes `028D52`, frenada `0282A4`), el daño `02849A`, la
+muerte `0284F2` (`01C71E`, `+60` = 1 hasta que el pasajero salta, `23606E` →
+`23611C`/`236170`, `028EAA`: `1033`, `01C71E`, 16 × `01D31C`), el pasajero
+`0287FA` (`01AD6E` (±4, 28), modo `+7C`: salta con `23638A/2363D8` o se queda
+con `236314`; en `028948` pasa a soldado por `JMP 0B0626/0B0632`), la bomba
+`0286F8` (velocidad de rango `2CD05A`), el casquillo `0287AC`, el motor
+`028A88`, los cascos `028BA8/028BBC`, las piezas `028C3E/028C76/028CA4`, los
+avisos de programa `028E16..02903C` (regalo `029010` → `08CDB2`, sello
+`0C88B0` `029124/029146`). Datos: `029084..02916A` y rangos `2CCFF8..2CD19E`
+en `region_rom.json`; programas `235A96..236758` en `soldier_programs.json`.
+Prueba de familia `m3car` con la conversión en soldado: nueva opción
+`--soldier RUTINAS` de `compile_family_fixture.py` (la actualización que
+salta a `0B0626/0B0632` exige `become_soldier` y no compara los bytes; las
+actualizaciones posteriores del nodo y los hijos que crea desde entonces, la
+onda `03C62A` del soldado, se descartan) y `FAMILY_LEAVE` en
+`test_neo_family.c`.
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3car` (coche `027F54` parado en 1264, daño, muerte, pasajero `0287FA` → soldado) | 31 | 1064 | 119579..120321 | iguales a MAME |
+
+Sin traza: la conducción, las ráfagas, la bomba y el casquillo (traducción
+literal).
+
+Pendiente del paso 2 (en orden): `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
 mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
 paracaídas, premios y ramas al azar.
 

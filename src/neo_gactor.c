@@ -292,6 +292,29 @@ uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x14906);return 0;}
     return k.flags;
 }
+bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return false;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
+    if (!(k.flags&1u)) return false;
+    neo_contact_parent_t p;uint32_t oy=(uint32_t)c.y,ny=(uint32_t)k.y;
+    if (c.parent_tag && ga_parent(e,c.parent_tag,&p)) oy+=(uint32_t)p.y;
+    uint32_t nt=kobj(c.parent_tag)==k.parent?c.parent_tag:ktag(k.parent);
+    if (nt && ga_parent(e,nt,&p)) ny+=(uint32_t)p.y;
+    *dy=(int16_t)((ny-oy)>>16);
+    return true;
+}
+bool ga_probe_point(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x149ca);return false;}
+    self(a,e);
+    return neo_kernel_point_solid(e->kernel,parent,(int32_t)((uint32_t)c.x+((uint32_t)(int32_t)dx<<16)),(int32_t)((uint32_t)c.y+((uint32_t)(int32_t)dy<<16)),(uint8_t)(c.flags15&32u?0:255));
+}
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
     const neo_anim_program_t *p=e->program?e->program(tag):NULL;
     if (!p) {ga_fail(e,tag);return false;}

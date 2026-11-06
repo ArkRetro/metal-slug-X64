@@ -279,7 +279,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
-    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine')}
+    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -292,6 +292,20 @@ def root_groups():
             for r in roots:seen.setdefault(r,g)
         else:other.update(roots)
     return {r:g for r,g in seen.items() if r not in other}
+# Mission 3 gunship 097FCC, its rotor 098886, bomb 09879C, missile 098974, pieces 098C0C.. and smoke 098EA2 (neo_m3enemy.c).
+ROOTS+=[0x29ed1a,0x29ee20,0x29ef26,0x29ef7c,0x29f032,0x29f06c,0x29f090,0x29f0e6,0x29f13c,0x29f192]
+# Mission 3 molotov throwers 0569B4/0569D0/0569E6, their shield 056D76, molotov 056B00, flash 056C94 and helmet 056A6A (neo_m3enemy.c).
+ROOTS+=[0x24ac4c,0x24ac56,0x24ad2a,0x24ad9a,0x24adf2,0x24aed2,0x24b106,0x24b1f6,0x24b426,0x24b50a,0x24b548,0x24b58a,0x24b5cc,0x24b616,0x24b680,0x24b730,0x24b7ae,0x24b810,0x24b8b6,0x24b966,0x24b9b8,0x24ba1a]
+# Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).
+ROOTS+=[0x281ffc,0x28207a,0x2824f4,0x282518,0x282362,0x28236e,0x282388]
+# Mission 3 oil drum 0391EA (neo_m3enemy.c).
+ROOTS+=[0x23c658,0x23c6b4]
+# Mission 3 armed truck 02B202, gunner 02B61C, rider 02B670, tyres 02BBBA (neo_m3enemy.c).
+ROOTS+=[0x236d00,0x236d88,0x23739e,0x2373cc,0x2373e6,0x23787c,0x2378aa]
+# Mission 3 floating platform 08AFB6 and its floor 08B3E6 (neo_m3enemy.c).
+ROOTS+=[0x285c6a,0x285c84,0x285cb2,0x285cbc,0x285d3a,0x285d68,0x285d96,0x285da8,0x285dba,0x285dcc,0x285eaa,0x285ebe]
+# Mission 3 rider car 027F54, its rider 0287FA, bomb 0286F8, shell 0287AC and pieces 028A88.. (neo_m3enemy.c; 236272 and 22D372 above).
+ROOTS+=[0x235baa,0x235a96,0x235ad8,0x235b1a,0x235c78,0x235d58,0x235be8,0x235c30,0x235e38,0x235f3e,0x235eaa,0x235fb6,0x235fe0,0x23606e,0x23611c,0x236170,0x236244,0x23638a,0x2363d8,0x236356,0x236314,0x23643a,0x2364d4,0x236758,0x23660c,0x2366b2,0x23657a,0x2361de]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

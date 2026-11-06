@@ -194,7 +194,7 @@ typedef struct {
      * fade-in, wipe) runs once per update with the players held until its
      * stage loop 01860A (4302 = FF); counts for the log. */
     unsigned entry_updates,entry_fade_updates;bool mission_start,entry_letters;
-    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts;int32_t lock_value;
+    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts,lock_kills;bool lock_killed;int32_t lock_value;
     /* Player 1's priority word +1E (the sprite list is sorted by it,
      * 0113EA): +66 = 8834 on foot (0C10DE/0C14D0/0C157A/0C1EBE/0C1F70),
      * 0143EE's ground sweep ends with 01AD8C (+1E = +66 - +40) while +15

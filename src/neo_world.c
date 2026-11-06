@@ -801,7 +801,7 @@ static int run_gactor(tick_t *t,unsigned i) {
         /* Explicit stop: an item taken by the player (its pickup routine
          * serves the original player's weapons/points, not ported). */
         w->item_pickups++;w->item_pickup_routine=t->genv.unsupported_at;t->genv.unsupported=0;
-        w->draw_count=before;a->active=false;return 0;
+        w->draw_count=before;ga_kill(t,a);return 0;
     }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
         w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
@@ -809,7 +809,12 @@ static int run_gactor(tick_t *t,unsigned i) {
          * must not outlive it (the Camel Slug stopped at 004ED2 left its
          * rider graphic 034F1A, a second Marco, drawn where it stopped). */
         {int at=find(w,NEO_WORLD_GACTOR,(unsigned)a->index);if (at>=0) delete_tree(t,(unsigned)at);}
-        w->draw_count=before;a->active=false;return 0;
+        /* ... and leaves as a deleted node (003F90): its solid body +6B,
+         * dynamic object +6A and sub-script released. B48: a stopped
+         * soldier 0678B6 (death 06914A untraced) kept its solid body 0E1B4E
+         * in the table; the player landing on it was thrown up (014408)
+         * for ever at Mission 2 stage 3, camera 944. */
+        w->draw_count=before;ga_kill(t,a);return 0;
     }
     if (r==GA_DELETE) {ga_kill(t,a);return 0;}
     if (r==GA_DELETE_TREE) {ga_kill(t,a);return 2;}

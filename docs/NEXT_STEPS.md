@@ -254,6 +254,15 @@
   `04A2C2`, del que depende el fin de misión (`018F92`); (7) la forma
   `+93 = 2` del jugador y el arma E.
 
+- **M2 (rama `work-m3step3`, BUG_MATRIX B47–B49)**: B48 corregido (los
+  actores con parada explícita se borran con `ga_kill`: sin cuerpos sólidos
+  fantasma); B49 corregido (paletas `0x4BA`/`0x456` en el export de la M2);
+  B47 medido (`MSX multi-step`: el fondo de dos capas de la M2 supera los
+  16,7 ms al desplazarse; abaratar `draw_layers` queda pendiente). El
+  recorrido de la M2 con los datos en `MSXD` da PASS entero (420 s: ares va a
+  ≈30 VPS, los 150 s por defecto de `test_mission2_ares.py` ya no llegan a
+  la etapa 3; no es una regresión del paquete).
+
 - **Misión 3, paso 3 (rama `work-m3step3`)**: la aeronave `0A4A94` nativa
   (`neo_m3mid.c`, 15 constructores y la capa `10E8C6`), familias `m3mid1..4`
   iguales a MAME (JEFE_MISION3.md «Jefe intermedio: estado del port»).

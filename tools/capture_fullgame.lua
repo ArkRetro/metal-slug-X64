@@ -194,10 +194,19 @@ local function edge_ahead(px,py,dir)
  for dy=2,26,4 do if cell(px+dir*14,py-dy)~=0 then return false end end
  return true
 end
+local fixed_plan=os.getenv('MSX_FULL_PLAN')
 local function plan_inputs(screen_x)
  local px=cpu:read_i16(0x1014ec);local py=cpu:read_i16(0x1014f0)
  if px==last_px then blocked=blocked+1 else blocked=0 end
  last_px=px
+ -- MSX_FULL_PLAN=hop: the pad of the port's walk scripts (right, fire,
+ -- a jump every 3 s), to compare a spot with ares (B48).
+ if fixed_plan=='hop' then
+  plan='hop'
+  button('P1 Right',1);button('P1 Left',0);button('P1 Up',0);button('P1 Down',0)
+  button('P1 B',frame%180<12 and 1 or 0);button('P1 A',frame%6<3 and 1 or 0)
+  return
+ end
  -- Map command list waiting for a player inside a rectangle (ROM 0C84BE,
  -- op 4: [layer.l][x][y][w][h], layer-relative = world coordinates, Y up as
  -- player +2C): steer towards it, jumping when it is higher.

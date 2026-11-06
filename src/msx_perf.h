@@ -32,6 +32,8 @@ void msx_perf_frame_start(void);
 void msx_perf_mark(unsigned phase);
 void msx_perf_add(unsigned bucket,uint32_t ticks);
 void msx_perf_steps(unsigned steps);
+/* Where the frame is (camera x, stage): the multi-step lines name it. */
+void msx_perf_where(unsigned camera,unsigned stage);
 void msx_perf_counts(unsigned draws,unsigned soldiers);
 void msx_perf_frame_end(void);
 #else
@@ -39,6 +41,7 @@ static inline void msx_perf_frame_start(void) {}
 static inline void msx_perf_mark(unsigned phase) {(void)phase;}
 static inline void msx_perf_add(unsigned bucket,uint32_t ticks) {(void)bucket;(void)ticks;}
 static inline void msx_perf_steps(unsigned steps) {(void)steps;}
+static inline void msx_perf_where(unsigned camera,unsigned stage) {(void)camera;(void)stage;}
 static inline void msx_perf_counts(unsigned draws,unsigned soldiers) {(void)draws;(void)soldiers;}
 static inline void msx_perf_frame_end(void) {}
 #endif

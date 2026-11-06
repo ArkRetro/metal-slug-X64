@@ -189,6 +189,7 @@ typedef struct {
      * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
      * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
     int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
+    unsigned air_trace_left;   /* MSX_DIAG: air steps left to log (B48) */
     /* After a stage load, the mission actor's exit kind (0184B4..01851A:
      * fade-in, wipe) runs once per update with the players held until its
      * stage loop 01860A (4302 = FF); counts for the log. */

@@ -279,7 +279,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
-    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car')}
+    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -306,6 +306,10 @@ ROOTS+=[0x236d00,0x236d88,0x23739e,0x2373cc,0x2373e6,0x23787c,0x2378aa]
 ROOTS+=[0x285c6a,0x285c84,0x285cb2,0x285cbc,0x285d3a,0x285d68,0x285d96,0x285da8,0x285dba,0x285dcc,0x285eaa,0x285ebe]
 # Mission 3 rider car 027F54, its rider 0287FA, bomb 0286F8, shell 0287AC and pieces 028A88.. (neo_m3enemy.c; 236272 and 22D372 above).
 ROOTS+=[0x235baa,0x235a96,0x235ad8,0x235b1a,0x235c78,0x235d58,0x235be8,0x235c30,0x235e38,0x235f3e,0x235eaa,0x235fb6,0x235fe0,0x23606e,0x23611c,0x236170,0x236244,0x23638a,0x2363d8,0x236356,0x236314,0x23643a,0x2364d4,0x236758,0x23660c,0x2366b2,0x23657a,0x2361de]
+# Mission 3 armed jeep 0A2F2E, gunner 0A38F4 (table 0A4396), turret 0A3A0A (table 0A436A), rider, pieces 0A3BC2/0A3BD6, shell 0A3C24 (neo_m3enemy.c; 2404FE above).
+ROOTS+=[0x2a392a,0x2a39be,0x2a3aca,0x2a3b80,0x2a3cbc,0x2a3e92,0x2a40fa,0x2a426a,0x2a4056,0x2a440a,0x2a4350,0x2a4578,0x2a45fe,0x2a3958,0x2a3a14,0x2a3b20,0x2a3be6,0x2a3d88,0x2a3eda,0x2a3f42,0x2a409e,0x2a4170,0x2a42e0,0x2a438e,0x2a4484,0x2a4592,0x2a46c0,0x2a3990,0x2a3a74,0x2a3c56,0x2a3e5e,0x2a3f58,0x2a3fb4,0x2a41e6,0x2a43cc,0x2a44fe,0x2a45ac,0x2a473a,0x2a478e,0x2a47c4,0x2a4866,0x2a48fe]
+# Mission 3 birds 03ED00.., sandbags 0214EA/0216BA with their pieces 0218C4, camp 01F1D4 (soldiers 01F2D6/01F386, stove 01F562, pot 01F4DA) (neo_m3enemy.c).
+ROOTS+=[0x23fe3e,0x23fecc,0x23fefa,0x23fea0,0x23feac,0x23fe6c,0x23ff04,0x230238,0x23035e,0x2303e4,0x2303ca,0x2303f0,0x230438,0x23052c,0x230512,0x230538,0x22f81a,0x22f868,0x22f89c,0x22f9d8,0x22f8c2,0x22f98a,0x22f8f6]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

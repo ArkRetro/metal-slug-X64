@@ -233,11 +233,10 @@
   `097FCC` (`m3gun`, `m3gun4`), los lanzadores de molotov `0569xx`
   (`m3thrower`), el bombardero `084588` (`m3bomber`), los bidones `0391EA`
   (`m3drum`), el camión `02B202` (`m3truck`) y la plataforma `08AFB6`
-  (`m3raft`) y el coche con pasajero `027F54` (`m3car`, con `--soldier`
-  para la conversión en soldado). Siguiente: `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`
-  (sus trazas filtradas están en el scratchpad `w5d/A2-*.txt` y la captura
-  `/home/user/captures-m3s2c/A` guarda sus sprites: borrarla al terminar),
-  las paradas del mundo (`2869D6`, `08DBC8`, `0AF17E`, `0413D4`, `800040`),
+  (`m3raft`), el coche con pasajero `027F54` (`m3car`, con `--soldier`
+  para la conversión en soldado), el jeep `0A2F2E` (`m3jeep`), los pájaros
+  `03EE8A` (`m3bird`), los sacos `0214EA` (`m3sack`) y el campamento
+  `01F1D4` (`m3camp`). Siguiente: las paradas del mundo (`2869D6`, `08DBC8`, `0AF17E`, `0413D4`, `800040`),
   `0B9748` y la entrada en paracaídas. El bloqueo de la cámara en 4380 está
   resuelto: lo soltaba el tiempo de espera de la ROM de referencia; ahora el
   primer tiempo de espera pide la muerte general `1067E3` y el guion sigue a

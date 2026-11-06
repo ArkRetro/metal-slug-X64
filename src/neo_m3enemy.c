@@ -4760,6 +4760,950 @@ again:
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- armed jeep 0A2F2E --------------------------------------------------------- */
+/* 0A2F2E..0A41E2 (records 2DAC58 of section 2 at camera 3296 and 2DB29E of
+ * section 4; tables 0A41E2..0A4402, ranks 2CD236..2CD452). 0A3DB0 takes the
+ * record words: +8E = +74 / +90 = +76 (the item 08CDB2 of 0A3E76, -1 none),
+ * +6E != 0 -> +96 bit 6 (it idles instead of driving), +70 != 0 -> bit 3
+ * (palette 21C instead of 21B), +95 = +72 (the rider's mode at the death:
+ * 0 jumps off as a soldier, 1 another entry, 2 random); +6E..+76 = 0. The
+ * entries set +96 bits 0..2 (0A2F2E none; 0A2F48 bits 0 and 2; 0A2F62 bits
+ * 0..2; 0A2F7C bit 2): bit 0 the wreck stamp 0C88B0 (0A42C4 / 0A42E6 by bit
+ * 1, 0A4154), bit 2 no gunner. Constructor 0A2F92: 0146E8, palette, 01ABC8,
+ * flash 306, 8800, +86 = rank 2CD32A (the burst delay), +88 = rank 2CD38C,
+ * +8B = 0, +4E = 64, +50 = 0A41E2, solid 0A428E, the turret 0A3A0A (D0 = 0E,
+ * +7A; +96 / +95 copied) and the gunner 0A38F4 (D0 = 0E, +76; +96 copied),
+ * x > E0: faces left, +82 = E0, else faces right, bit 7, +82 = 60; exhaust
+ * 01DC8E (0); bit 6 -> 0A322A else 0A3116. The children's programs come from
+ * the tables 0A436A (turret) / 0A4396 (gunner) by index (0A3EF0: 004256 on
+ * the child); 0A3F22 sets the turret's state. 0A3116 (drive): sound 109E,
+ * +62 = +-30000 by bit 7, +8A = 0, 0A3F6C (facing != bit 7) selects 2A3ACA
+ * (gunner 2, turret 1) or 2A39BE (gunner 1, turret 1), +26 by 0A3FE2 from
+ * the +8A counter; 0A31D6: 0146A8, a contact, +30 = 0 or the edge 0A3FA0
+ * (+82 against x) -> 0A32A8 (bit 7 flipped) / 0A32AE (brake: +6E = -+62 >>
+ * 4, 109E stopped; 0A32CE adds +6E to +62 until its high bytes clear: 2A3B80,
+ * gunner 3, turret 2; then 0A322A), 0A3FC0 (+86 expired with x <= 120) ->
+ * 0A32AE, row 0A425E. 0A322A (idle): +84 = F, 2A392A (gunner 0, turret 0);
+ * 0A3274: 0A3F52 (+30/+34/+6E/+72 = 0, 0143E4), without bit 6 +84 counts
+ * down to 0A3352, 0A3FC0 -> 0A33C4. 0A3352: bit 6 -> 0A322A, 0A3FC0 ->
+ * 0A33C4, else 2A3CBC (gunner 4, turret 3) and 0A33A2 -> 0A3116 at its end,
+ * row 0A425E. Burst 0A33C4: +8B != 0 -> 0A344A; +84 = 32, bit 4, 2A3E92
+ * (gunner 5, turret 5); 0A341E counts +84 down to 0A343A (+8B = rank
+ * 2CD3D6) -> 0A344A: +88 = rank 2CD38C, 2A40FA (gunner 8, turret 6) or with
+ * bit 4 2A426A (gunner 9, turret 6); 0A34DE: at its end with +8B <= 0 ->
+ * 0A352C; +88 counts down, then +8B, back to 0A344A. 0A352C: +8B = 0, +86 =
+ * rank 2CD32A, bit 4 clear -> 0A322A, else 2A4056 (gunner 7, turret 0) and
+ * 0A3590 -> 0A322A. 0A35A8 (the gunner dead: gunner D, turret 8, 2A440A, +76
+ * = 0), 0A35E8 (hit: gunner A, turret 8, 2A4350), 0A3624 (hit of 01B206:
+ * gunner B, turret 8, 2A440A) -> 0A365C: 109E stopped; 0A3672 -> 0A3352 at
+ * its end, +15 bit 6 clear -> 0A30B2, 004C24. 0A30B2 (in the air): gunner 0,
+ * turret 0, 2A392A; 0A30F6: 0143DC, +15 bit 6 -> 0A322A. Tails 0A37C2 (+15
+ * bit 6 clear -> 0A30B2; 004C24 -> 0A35E8 / 0A3624 by 01B206), 0A383C
+ * (004C24 only) and 0A37F6 (+5F bit 7 -> 0A36AC / 0A36F4 by 01B206, or
+ * 0A378A in the air; 01945C 0A42A4 -> 0A385C deleted). Death 0A36AC (turret
+ * state 0A3A54, gunner C, turret A, 2A4578) / 0A36F4 (turret 0A3BA4, gunner
+ * D, turret A, 2A45FE) -> 0A3738: +92 = 0, 019DFC, +50 = 0; 0A3752 (+92
+ * counts down) ends with +96 bit 0 clear -> 0A37BA (0A407A: 1033, 01C71E, 16
+ * x 01D31C) -> 0A385C. 0A378A: turret 0A3BA4, 019DFC, the item 0A3E76 and
+ * 0A407A at once. Program calls: 0A3E76 (item), 0A3F32 / 0A3F4A (carry
+ * tests), 0A404A (01C71E, 1001), 0A407A, 0A40AE (1064, the piece 0A3BD6 at
+ * (-28, 30) and the shell 0A3C24 at (-28, 3E)), 0A4106 (1064, 0A3BC2),
+ * 0A4134 (palette 20E), 0A4144 (21A), 0A4154 (8820, the stamp, row 0A427E,
+ * solid released), 0A419C (the shell 0A3C58 preset with D0: +8D = D0 << 3,
+ * +84 = 258, +62 = 400, +8C = 5, +86 = 1E).
+ * - 0A38F4 (gunner): palette by bit 3, 01AD6E (0, 0), flash 306, +4E = rank
+ *   2CD236, 2A3958; 0A3932: 0A3EC0 (01ABC8, the creator's facing and +1E),
+ *   +26 = the creator's, 00427A, +93 = 1: rows 0A421E / 0A422E, 2: 0A423E /
+ *   0A424E (unless +5F bit 7), 004C24 clears +5F bit 7; +4E <= 0 (unless +60
+ *   is 33 or 77): +60 = 33, sound 102D, the creator -> 0A35A8; +60 == 77 ->
+ *   0A39FE (the creator's +76 = 0, deleted); 00409A -> 0A38EC.
+ * - 0A3A0A (turret): +94 = FF, palette 21D, 2A3990, 01AD6E; 0A3A3E: 0A3E28
+ *   (+28 = +-10, +2C = 18 on the creator, 01ABC8, +1E = the creator's - 1),
+ *   +26 = the creator's, 00427A (no tail). 0A3A54 (the rider at the death):
+ *   +95 (2: random bit) -> 2A473A / 2A478E; 0A3AA0 ends -> 0A3B50 (8820, y +
+ *   8; +95 = 0: flipped, +34 = 22222, +72 = FFFFB72F, +30 = FFFEEEEF, 0405EA,
+ *   JMP 0B0626; else 0405EA, y + 4, JMP 0AF14C: not a soldier entry of this
+ *   port, an explicit stop); 004C24, +5F bit 7 -> 0A3ACC (2A45AC; 0A3AE2
+ *   until the creator's +92 is 0 -> 0A3B02: 0405EA, 2404FE, 0A3B24 ends or
+ *   019504 0A42BC -> 0A38EC). 0A3BA4: E0ED, 040846 (04097A, then 040C8E: not
+ *   ported, an explicit stop).
+ * - 0A3BC2 / 0A3BD6 (pieces 2A47C4 / 2A4866 flipped): palette 208, 1001;
+ *   0A3C0C ends -> 0A38EC.
+ * - 0A3C24 (shell): +8D = C, +62 = rank 2CD438, +8C = 0A4308[+62 >> 8], +86
+ *   = 0A4318[+62 >> 8], +84 = 5A, palette 223, +4E = 5, E0EF, +15 bit 5,
+ *   004C1C, 2A48FE, 0A4006 (+30/+34 = cos/sin(+8D << 3) * +62); 0A3C9E: +86
+ *   expired -> 0A3D26 (homing: +86 = 258, +7E = 01B04A; 0A3D3C: every +8C
+ *   updates +8D steps toward the angle 01B12E >> 3 and 0A4006), +84 expired
+ *   -> 0A3CB2 (no more homing), 0143E4, +15 bit 7 / row 0A426E / +5F bit 7
+ *   -> 0A3D86 (009F88, 1001, sound 1022, +50 = 0, JMP 01C706), 019504 0A42B4
+ *   -> 0A38EC.
+ * The cartridge checks before 004188 / 0041AC are not reproduced. Proven by
+ * the family m3jeep (capture A of captures-m3s2c: the idle jeep at 3296, its
+ * bursts, shells, the gunner's death, the jeep's death and its rider); the
+ * drive and the entries 0A2F48.. are literal. */
+static bool jp(uint32_t r) {return r>=0xa2f2e && r<0xa3db0;}
+static uint8_t rb(neo_genv_t *e,uint32_t at) {const uint8_t *t=ga_rom(at);if (!t) {ga_fail(e,at);return 0;}return t[0];}
+/* 0A3DB0 */
+static void jp_db0(neo_gactor_t *a) {
+    SB(0x96,0);SW(0x8e,W(0x74));SW(0x90,W(0x76));
+    if (W(0x6e)) SET(0x96,6);
+    if (W(0x70)) SET(0x96,3);
+    SB(0x95,W(0x72));
+    SW(0x6e,0);SW(0x70,0);SW(0x72,0);SW(0x74,0);SW(0x76,0);
+}
+/* 0A3EF0: the program `table`[d0 & F] on the child +o (nothing without one). */
+static bool jp_prog(neo_gactor_t *a,neo_genv_t *e,unsigned o,uint32_t table,unsigned d0) {
+    if (!L(o)) return true;
+    neo_gactor_t *c=e->actor?e->actor(e->ctx,L(o)):NULL;
+    if (!c) return true;                                             /* a deleted child: the write goes nowhere */
+    uint32_t t=rl(e,table+4u*(d0&0xfu));
+    if (!t) return true;
+    return ga_anim_start(c,e,t,0x100);
+}
+#define JPROG(g,t) do { if (!jp_prog(a,e,0x76,0xa4396,(g)) || !jp_prog(a,e,0x7a,0xa436a,(t))) return GA_UNSUPPORTED; } while (0)
+/* 0A3F22: the turret's state. */
+static void jp_turret_state(neo_gactor_t *a,neo_genv_t *e,uint32_t state) {
+    if (!L(0x7a)) return;
+    neo_gactor_t *c=e->actor?e->actor(e->ctx,L(0x7a)):NULL;
+    if (c) ga_sl(c,0,state);
+}
+/* 0A3F52 */
+static void jp_f52(neo_gactor_t *a,neo_genv_t *e) {SL(0x30,0);SL(0x34,0);SL(0x6e,0);SL(0x72,0);ga_air(a,e);}
+/* 0A3F6C: carry when the facing differs from +96 bit 7. */
+static bool jp_f6c(neo_gactor_t *a) {return BIT(0x15,0)!=BIT(0x96,7);}
+/* 0A3FA0: the edge +82 passed (unsigned x). */
+static bool jp_fa0(neo_gactor_t *a) {
+    uint16_t x=W(0x3c),d0=W(0x82);
+    return BIT(0x96,7)?d0<x:x<d0;
+}
+/* 0A3FC0: carry when +86 has expired with x <= 120. */
+static bool jp_fc0(neo_gactor_t *a) {
+    SW(0x86,W(0x86)-1u);
+    if (S16(W(0x86))>0) return false;
+    SW(0x86,0);
+    return S16(W(0x3c))<=0x120;
+}
+/* 0A3FE2: +26 from the +8A counter. */
+static void jp_fe2(neo_gactor_t *a) {
+    uint8_t d0=B(0x8a);SB(0x8a,d0+1u);d0>>=4;
+    if ((int8_t)d0>3) d0=3;
+    SW(0x26,(uint16_t)(((d0&3u)+1u)<<7));
+}
+/* 0A4006: +30/+34 from the angle +8D (steps of 8) and the speed +62. */
+static void jp_006(neo_gactor_t *a) {
+    uint8_t angle=(uint8_t)((B(0x8d)&0x1fu)<<3);
+    int32_t s=S16(W(0x62));
+    SL(0x30,(uint32_t)((int32_t)ga_cosine(angle)*s));SL(0x34,(uint32_t)((int32_t)ga_sine(angle)*s));
+}
+/* 0A407A: sound 1033, 01C71E and 01DBAA. */
+static void jp_07a(neo_gactor_t *a,neo_genv_t *e) {
+    sound(e,0x1033);child(a,e,0x1c71e,0x1c,0,0);
+    for (unsigned i=0;i<16;i++) child(a,e,0x1d31c,0x2a,0,0x18);
+}
+/* 0A3E76 -> 08CDB2: the item +8E / +90 at (+-10, 20) after the script actor. */
+static void jp_e76(neo_gactor_t *a,neo_genv_t *e) {
+    uint16_t kind=W(0x8e);
+    if (kind==0xffffu || kind>=0x5au) return;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (!c) return;
+    ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x90));ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);
+    ga_place_at(c,a,e,BIT(0x15,0)?-0x10:0x10,0x20);
+}
+/* 0A3E28: on the creator at (+-10, 18), one depth above it (+94 = FF). */
+static void jp_e28(neo_gactor_t *a,neo_genv_t *e) {
+    neo_gactor_t *p=sh_creator(a,e);
+    if (!p) {ga_fail(e,0xa3e28);return;}
+    if (ga_b(p,0x15)&1u) {SET(0x15,0);SW(0x28,0xfff0);} else {CLR(0x15,0);SW(0x28,0x10);}
+    SW(0x2c,0x18);ga_project(a,e);
+    SW(0x1e,ga_w(p,0x1e)-(B(0x94)==0xffu?1u:0u));
+}
+/* 0A3EC0: 01ABC8, the creator's facing and depth. */
+static void jp_ec0(neo_gactor_t *a,neo_genv_t *e) {
+    ga_project(a,e);
+    neo_gactor_t *p=sh_creator(a,e);
+    if (!p) {ga_fail(e,0xa3ec0);return;}
+    if (ga_b(p,0x15)&1u) SET(0x15,0); else CLR(0x15,0);
+    SW(0x1e,ga_w(p,0x1e));
+}
+/* 0405EA: the soldier death palette (009F88, 01B2BE). */
+static void k405ea(neo_gactor_t *a,neo_genv_t *e) {SB(0x1d,0);ga_palette(a,neo_blood_palette(NEO_BLOOD_SOLDIER_DEATH,e->blood));}
+static bool jp_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    if (kind!=NEO_ANIM_CALL) return false;
+    switch (routine) {
+    case 0xa3e76:jp_e76(a,e);return true;
+    case 0xa3f32:case 0xa3f4a:return true;                          /* carry tests: no effect on the node */
+    case 0xa404a: {neo_gactor_t *c=child(a,e,0x1c71e,0x1c,0,0);if (c) {ga_sw(c,0x66,0x1001);ga_sw(c,0x1e,0x1001);}return true;}
+    case 0xa407a:jp_07a(a,e);return true;
+    case 0xa40ae:sound(e,0x1064);child(a,e,0xa3bd6,0x1c,-0x28,0x30);child(a,e,0xa3c24,0x1c,-0x28,0x3e);return true;
+    case 0xa4106:sound(e,0x1064);child(a,e,0xa3bc2,0x1c,0,0);return true;
+    case 0xa4134:ga_palette(a,0x20e);return true;
+    case 0xa4144:ga_palette(a,0x21a);return true;
+    case 0xa4154:
+        SW(0x66,0x8820);SW(0x1e,0x8820);
+        if (BIT(0x96,0)) {
+            if (e->stamp) e->stamp(e->ctx,a,BIT(0x96,1)?0xa42e6u:0xa42c4u);   /* 0C88B0 */
+            ga_attack(a,e,0xa427e);
+        }
+        solid(a,e,0);
+        return true;
+    case 0xa419c: {
+        neo_gactor_t *c=child(a,e,0xa3c58,0x1c,0,0);
+        if (!c) return true;
+        ga_sb(c,0x8d,(uint8_t)(parameter<<3));ga_sw(c,0x84,0x258);ga_sw(c,0x62,0x400);ga_sb(c,0x8c,5);ga_sw(c,0x86,0x1e);
+        return true;
+    }
+    }
+    return false;
+}
+/* 0A37F6 */
+static ga_result_t jp_tail7f6(neo_gactor_t *a,neo_genv_t *e) {
+    if (BIT(0x5f,7)) {
+        SL(0,0xa36ac);
+        if (flinch(a,e)) SL(0,0xa36f4);
+        if (!BIT(0x15,6)) SL(0,0xa378a);
+    }
+    if (ga_cull(a,e,0xa42a4)) SL(0,0xa385c);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0A37C2 */
+static ga_result_t jp_tail7c2(neo_gactor_t *a,neo_genv_t *e) {
+    if (!BIT(0x15,6)) SL(0,0xa30b2);
+    if (ga_register(a,e,NULL,NULL)) {SL(0,0xa35e8);if (flinch(a,e)) SL(0,0xa3624);SB(0x5a,0);}
+    return jp_tail7f6(a,e);
+}
+/* 0A383C */
+static ga_result_t jp_tail83c(neo_gactor_t *a,neo_genv_t *e) {
+    if (!BIT(0x15,6)) SL(0,0xa30b2);
+    if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+    return jp_tail7f6(a,e);
+}
+static ga_result_t jeep_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;neo_gactor_t *p,*c;
+again:
+    switch (L(0)) {
+    case 0xa2f2e:jp_db0(a);CLR(0x96,0);CLR(0x96,1);CLR(0x96,2);goto f92;
+    case 0xa2f48:jp_db0(a);SET(0x96,0);CLR(0x96,1);SET(0x96,2);goto f92;
+    case 0xa2f62:jp_db0(a);SET(0x96,0);SET(0x96,1);SET(0x96,2);goto f92;
+    case 0xa2f7c:jp_db0(a);CLR(0x96,0);CLR(0x96,1);SET(0x96,2);
+    f92:
+        ga_floor(a,e);k1b1dc(a);ga_palette(a,BIT(0x96,3)?0x21c:0x21b);ga_project(a,e);ga_flash_palette(a,0x306);
+        SW(0x66,0x8800);SW(0x1e,0x8800);SW(0x86,rank(a,e,0x2cd32a));SW(0x88,rank(a,e,0x2cd38c));SB(0x8b,0);
+        SW(0x4e,0x64);SL(0x50,0xa41e2);solid(a,e,0xa428e);
+        c=child(a,e,0xa3a0a,0x0e,0,0);
+        if (c) {SL(0x7a,NEO_GA_TAG(c->index));ga_sb(c,0x96,B(0x96));ga_sb(c,0x95,B(0x95));}
+        if (!BIT(0x96,2)) {
+            c=child(a,e,0xa38f4,0x0e,0,0);
+            if (c) {SL(0x76,NEO_GA_TAG(c->index));ga_sb(c,0x96,B(0x96));}
+        }
+        if (S16(W(0x3c))>0xe0) {CLR(0x15,0);CLR(0x96,7);SW(0x82,0xe0);} else {SET(0x15,0);SET(0x96,7);SW(0x82,0x60);}
+        exhaust8e(a,e,0);
+        if (BIT(0x96,6)) {SL(0,0xa322a);goto again;}
+        SL(0,0xa3116);goto again;
+    case 0xa30b2:
+        k1b1dc(a);JPROG(0,0);START(0x2a392a);SL(0,0xa30f6);
+        /* fall through */
+    case 0xa30f6:
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);                        /* 0143DC */
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        if (BIT(0x15,6)) SL(0,0xa322a);
+        if (ga_register(a,e,NULL,NULL)) {SL(0,0xa35e8);if (flinch(a,e)) SL(0,0xa3624);SB(0x5a,0);}   /* 0A37D2 */
+        return jp_tail7f6(a,e);
+    case 0xa3116:
+        k1b1dc(a);
+        if (BIT(0x96,6)) {SL(0,0xa322a);goto again;}
+        sound(e,0x109e);k1b1dc(a);SL(0x62,BIT(0x96,7)?0x30000u:0xfffd0000u);SB(0x8a,0);
+        if (jp_f6c(a)) {JPROG(2,1);START(0x2a3aca);} else {JPROG(1,1);START(0x2a39be);}
+        jp_fe2(a);SL(0,0xa31d6);
+        /* fall through */
+    case 0xa31d6:
+        k146a8(a,e);
+        if (BIT(0x5f,0)) SL(0,0xa32ae);
+        if (!L(0x30)) SL(0,0xa32ae);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        if (jp_fa0(a)) SL(0,0xa32a8);
+        if (jp_fc0(a)) SL(0,0xa32ae);
+        ga_attack(a,e,0xa425e);
+        return jp_tail7c2(a,e);
+    case 0xa322a:
+        k1b1dc(a);SW(0x84,0xf);JPROG(0,0);START(0x2a392a);SL(0,0xa3274);
+        /* fall through */
+    case 0xa3274:
+        jp_f52(a,e);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        if (!BIT(0x96,6)) {SW(0x84,W(0x84)-1u);if (!W(0x84)) SL(0,0xa3352);}
+        if (jp_fc0(a)) SL(0,0xa33c4);
+        return jp_tail7c2(a,e);
+    case 0xa32a8:
+        SB(0x96,B(0x96)^0x80u);
+        /* fall through */
+    case 0xa32ae:
+        SB(0x8a,0);SL(0x6e,0u-ASR(L(0x62),4));sound(e,0x8000u|0x109e);SL(0,0xa32ce);   /* 012192 */
+        /* fall through */
+    case 0xa32ce:
+        k146a8(a,e);SL(0x62,L(0x62)+L(0x6e));
+        if (L(0x6e) && !(L(0x62)&0xffffff00u)) {
+            SL(0x6e,0);SL(0x62,0);JPROG(3,2);START(0x2a3b80);
+        }
+        jp_fe2(a);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa322a);
+        jp_fc0(a);
+        return jp_tail7c2(a,e);
+    case 0xa3352:
+        if (BIT(0x96,6)) {SL(0,0xa322a);goto again;}
+        if (jp_fc0(a)) {SL(0,0xa33c4);goto again;}
+        JPROG(4,3);START(0x2a3cbc);SL(0,0xa33a2);
+        /* fall through */
+    case 0xa33a2:
+        jp_f52(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa3116);
+        ga_attack(a,e,0xa425e);
+        return jp_tail7c2(a,e);
+    /* ---- bursts ---- */
+    case 0xa33c4:
+        k1b1dc(a);
+        if (B(0x8b)) {SL(0,0xa344a);goto again;}
+        SW(0x84,0x32);SET(0x96,4);JPROG(5,5);START(0x2a3e92);SL(0,0xa341e);
+        /* fall through */
+    case 0xa341e:
+        jp_f52(a,e);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        SW(0x84,W(0x84)-1u);
+        if (!W(0x84)) SL(0,0xa343a);
+        return jp_tail83c(a,e);
+    case 0xa343a:
+        SB(0x8b,rank(a,e,0x2cd3d6));
+        /* fall through */
+    case 0xa344a:
+        SW(0x88,rank(a,e,0x2cd38c));
+        if (!BIT(0x96,4)) {JPROG(8,6);START(0x2a40fa);} else {JPROG(9,6);START(0x2a426a);}
+        SL(0,0xa34de);
+        /* fall through */
+    case 0xa34de:
+        jp_f52(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r && (int8_t)B(0x8b)<=0) SL(0,0xa352c);
+        if ((int8_t)B(0x8b)>0) {
+            SW(0x88,W(0x88)-1u);
+            if (S16(W(0x88))<=0) {
+                SB(0x8b,B(0x8b)-1u);
+                if ((int8_t)B(0x8b)>0) SL(0,0xa344a);
+            }
+        }
+        return jp_tail83c(a,e);
+    case 0xa352c:
+        SB(0x8b,0);SW(0x86,rank(a,e,0x2cd32a));
+        if (!BIT(0x96,4)) {SL(0,0xa322a);goto again;}
+        CLR(0x96,4);JPROG(7,0);START(0x2a4056);SL(0,0xa3590);
+        /* fall through */
+    case 0xa3590:
+        jp_f52(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa322a);
+        return jp_tail7c2(a,e);
+    /* ---- the gunner dead, hits ---- */
+    case 0xa35a8:JPROG(0xd,8);START(0x2a440a);SL(0x76,0);goto c65c;
+    case 0xa35e8:JPROG(0xa,8);START(0x2a4350);goto c65c;
+    case 0xa3624:JPROG(0xb,8);START(0x2a440a);
+    c65c:
+        k1b1dc(a);sound(e,0x8000u|0x109e);SL(0,0xa3672);
+        /* fall through */
+    case 0xa3672:
+        jp_f52(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa3352);
+        jp_fc0(a);
+        if (!BIT(0x15,6)) SL(0,0xa30b2);
+        if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+        return jp_tail7f6(a,e);
+    /* ---- death ---- */
+    case 0xa36ac:jp_turret_state(a,e,0xa3a54);JPROG(0xc,0xa);START(0x2a4578);goto c738;
+    case 0xa36f4:jp_turret_state(a,e,0xa3ba4);JPROG(0xd,0xa);START(0x2a45fe);
+    c738:
+        SB(0x92,0);k1b1dc(a);SB(0x69,0xff);SL(0x50,0);SL(0,0xa3752);          /* 019DFC */
+        /* fall through */
+    case 0xa3752:
+        jp_f52(a,e);
+        if ((int8_t)B(0x92)>0) SB(0x92,B(0x92)-1u);                          /* 0A4036 */
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r && !BIT(0x96,0)) SL(0,0xa37ba);
+        if (ga_cull(a,e,0xa42a4)) SL(0,0xa385c);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa378a:
+        jp_turret_state(a,e,0xa3ba4);SB(0x92,0);SL(0x50,0);k1b1dc(a);SB(0x69,0xff);
+        jp_e76(a,e);jp_07a(a,e);SL(0,0xa385c);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa37ba:jp_07a(a,e);return e->unsupported?GA_UNSUPPORTED:GA_DELETE;   /* bra 0A385C */
+    case 0xa385c:return GA_DELETE;
+    case 0xa38ec:return GA_DELETE_TREE;
+    /* ---- gunner ---- */
+    case 0xa38f4:
+        ga_palette(a,BIT(0x96,3)?0x21c:0x21b);
+        p=sh_creator(a,e);ga_place(a,e,0,0,p?NEO_GA_TAG(p->index):0);
+        ga_flash_palette(a,0x306);SW(0x4e,rank(a,e,0x2cd236));START(0x2a3958);SL(0,0xa3932);
+        /* fall through */
+    case 0xa3932:
+        jp_ec0(a,e);
+        p=sh_creator(a,e);
+        if (!p) {ga_fail(e,0xa3936);return GA_UNSUPPORTED;}
+        SW(0x26,ga_w(p,0x26));
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        if (!BIT(0x5f,7)) {
+            if (B(0x93)==1u) {ga_attack(a,e,0xa421e);ga_attack(a,e,0xa422e);}
+            if (B(0x93)==2u) {ga_attack(a,e,0xa423e);ga_attack(a,e,0xa424e);}
+        }
+        if (ga_register(a,e,NULL,NULL)) {CLR(0x5f,7);SB(0x5a,0);}
+        if (B(0x60)!=0x33u && B(0x60)!=0x77u && S16(W(0x4e))<=0) {
+            SB(0x60,0x33);sound(e,0x102d);
+            p=sh_creator(a,e);
+            if (p) ga_sl(p,0,0xa35a8);
+        }
+        if (B(0x60)==0x77u) SL(0,0xa39fe);
+        if (!ga_creator_alive(a,e)) SL(0,0xa38ec);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa39fe:
+        p=sh_creator(a,e);
+        if (p) ga_sl(p,0x76,0);
+        return GA_DELETE_TREE;
+    /* ---- turret and rider ---- */
+    case 0xa3a0a:
+        SB(0x94,0xff);ga_palette(a,0x21d);START(0x2a3990);
+        p=sh_creator(a,e);ga_place(a,e,0,0,p?NEO_GA_TAG(p->index):0);SL(0,0xa3a3e);
+        /* fall through */
+    case 0xa3a3e:
+        jp_e28(a,e);
+        p=sh_creator(a,e);
+        if (!p) {ga_fail(e,0xa3a42);return GA_UNSUPPORTED;}
+        SW(0x26,ga_w(p,0x26));
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa3a54: {
+        uint8_t d0=B(0x95);
+        if ((int8_t)d0>=2) d0=(uint8_t)ga_rand(e);
+        d0&=1u;SB(0x95,d0);
+        if (!d0) START(0x2a473a); else START(0x2a478e);
+        SL(0,0xa3aa0);
+    }   /* fall through */
+    case 0xa3aa0:
+        jp_e28(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa3b50);
+        ga_register(a,e,NULL,NULL);
+        if (BIT(0x5f,7)) SL(0,0xa3acc);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa3acc:START(0x2a45ac);SL(0,0xa3ae2);
+        /* fall through */
+    case 0xa3ae2:
+        jp_e28(a,e);
+        p=sh_creator(a,e);
+        if (!p) {ga_fail(e,0xa3ae6);return GA_UNSUPPORTED;}
+        if (!ga_b(p,0x92)) SL(0,0xa3b02);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa3b02:k405ea(a,e);k1b1dc(a);START(0x2404fe);SL(0,0xa3b24);
+        /* fall through */
+    case 0xa3b24:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa38ec);
+        if (ga_cull_rect(a,e,0xa42bc)) SL(0,0xa38ec);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa3b50:
+        SW(0x66,0x8820);SW(0x1e,0x8820);SW(0x2c,W(0x2c)+8u);
+        if (!B(0x95)) {
+            SB(0x15,B(0x15)^1u);SL(0x34,0x22222);SL(0x72,0xffffb72fu);SL(0x30,0xfffeeeefu);k405ea(a,e);
+            /* JMP 0B0626: the node becomes a soldier (the world moves it). */
+            if (!e->become_soldier || !e->become_soldier(e->ctx,a,0xb0626)) {ga_fail(e,0xb0626);return GA_UNSUPPORTED;}
+            return GA_MORE;
+        }
+        k405ea(a,e);SW(0x2c,W(0x2c)+4u);
+        ga_fail(e,0xaf14c);return GA_UNSUPPORTED;                            /* JMP 0AF14C: not ported */
+    case 0xa3ba4:
+        jp_e28(a,e);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
+        ga_fail(e,0x40846);return GA_UNSUPPORTED;                            /* 040846 -> 040C8E: not ported */
+    /* ---- pieces ---- */
+    case 0xa3bc2:START(0x2a47c4);goto bec;
+    case 0xa3bd6:SB(0x15,B(0x15)^1u);START(0x2a4866);
+    bec:ga_palette(a,0x208);SW(0x66,0x1001);SW(0x1e,0x1001);SL(0,0xa3c0c);
+        /* fall through */
+    case 0xa3c0c:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,jp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0xa38ec);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    /* ---- shell ---- */
+    case 0xa3c24: {
+        SB(0x8d,0xc);
+        uint16_t d0=rank(a,e,0x2cd438);SW(0x62,d0);d0>>=8;
+        SB(0x8c,rb(e,0xa4308u+d0));SW(0x86,rw(e,0xa4318u+2u*d0));
+    }   /* fall through */
+    case 0xa3c58:
+        SW(0x84,0x5a);ga_palette(a,0x223);SW(0x4e,5);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);
+        SB(0x5e,B(0x5e)|0x80u);START(0x2a48fe);jp_006(a);SL(0,0xa3c9e);         /* 004C1C */
+        /* fall through */
+    case 0xa3c9e:
+        SW(0x86,W(0x86)-1u);
+        if (S16(W(0x86))<=0) SL(0,0xa3d26);
+        /* fall through */
+    case 0xa3cb2:
+    cb2:
+        SW(0x84,W(0x84)-1u);
+        if (S16(W(0x84))<=0) SL(0,0xa3cb2);
+        ga_air(a,e);
+        if (BIT(0x15,7)) SL(0,0xa3d86);
+        if (ga_anim_step(a,e,jp_call)<0) return GA_UNSUPPORTED;
+        if (ga_attack(a,e,0xa426e)) SL(0,0xa3d86);
+        ga_register(a,e,NULL,NULL);
+        if (BIT(0x5f,7)) SL(0,0xa3d86);
+        if (ga_cull_rect(a,e,0xa42b4)) SL(0,0xa38ec);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa3d26:
+        SW(0x86,0x258);SL(0x7e,k1b04a(e));SL(0,0xa3d3c);
+        /* fall through */
+    case 0xa3d3c:
+        SW(0x86,W(0x86)+1u);
+        if ((int8_t)(uint8_t)W(0x86)>(int8_t)B(0x8c)) {
+            SW(0x86,0);
+            uint8_t d0=(uint8_t)((uint8_t)(k1b12e(a,e,L(0x7e))+8u)>>3);
+            if (d0!=B(0x8d)) {
+                SB(0x8d,(uint8_t)(B(0x8d)+(d0<B(0x8d)?0xffu:1u)));
+                SB(0x8d,B(0x8d)&0x1fu);
+            } else SB(0x8d,B(0x8d)&0x1fu);
+            jp_006(a);
+        }
+        goto cb2;
+    case 0xa3d86:SB(0x1d,0);SW(0x66,0x1001);SW(0x1e,0x1001);sound(e,0x1022);SL(0x50,0);SL(0,0x1c706);return neo_effects_tick(a,e);   /* 009F88, JMP 01C706 */
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* ---- birds 03ED00..03F1D4 ------------------------------------------------------- */
+/* Decorative birds of Mission 3 (records 2DAC.. of section 2 with 03EE8A;
+ * tables 0E08B8 (cull) and 0E08C0 (random states)). Record words: +6E bit 0
+ * the facing (03FAF2), +70 the speed (03FB10: +30 = +70 << 8 toward the
+ * facing; 03FB2C: +76 = the camera progress 10E99E + +70 << 8, 03FB40: carry
+ * once the progress reaches it), +72 the palette variant of other entries.
+ * 03EE8A: no layer word, palette 2F8, 03EEB4 (23FEA0, 01ABC8, 01AD8C,
+ * 00427A; at its end with +70 = 0 a player within 60 px (03FC26: x - P1/P2
+ * +3C < 60) takes off (03EFC0), else 03F138 picks 03EEB4 / 03EF24 (23FEAC)
+ * / 03EF5A (hop: +6E = random bit, +30 = +-8000, 23FE6C, 03FA46 moves +28/+2C
+ * by +30/+34) from 0E08C0; with +70 != 0 the progress 03FB40 decides).
+ * 03EFC0: y + 4, +74 = 1E + rand(10); 03EFF8: +88 = rand(20) + 10 (the
+ * angle); 03F028: +80 = rand(100) + 300 (the speed), 002E7C -> +30/+34, faces
+ * right, 23FECC; 03F084: 03FA46 until +74 expires -> 8838, +30 = +80 << 8,
+ * +34 = 0, 03ED8E (flapping: +86 = E, +74 = 8 + rand(8), 23FECC; 03EDBE:
+ * 03FA74 adds +84/+86 << 8 to +30/+34; y >= 1D0 or +74 expired -> 03EE00:
+ * +86 = -E, 23FEFA, 03EE30 until y < 160 or +74 expired -> 03ED8E). 03FADA:
+ * 01945C 0E08B8 -> 0041AC. Other entries: 03ED00 (palette 328, 23FE3E,
+ * 03ED3A: 03FABA moves +28 by +30), 03ED56 (8838, 2F8, 23FECC -> 03ED8E),
+ * 03EE72 (01AB98 at (40, 150) then 03EE8A), 03F0D0 (2F8, 23FEA0; 03F10E:
+ * 03FC26 -> 03EFC0), 03F152 (01AB98 (40, 150), +70 = 1000, +6E = 1, 2F9,
+ * 23FF04; 03F1BE: 03FABA). The cartridge checks are not reproduced. Proven
+ * by the family m3bird (capture A of captures-m3s2c: two 03EE8A at 3296). */
+static bool bd(uint32_t r) {return r>=0x3ed00 && r<0x3f1da;}
+static void bd_af2(neo_gactor_t *a) {if (W(0x6e)&1u) SET(0x15,0); else CLR(0x15,0);}   /* 03FAF2 */
+static void bd_b10(neo_gactor_t *a) {uint32_t d0=(uint32_t)(int32_t)S16(W(0x70))<<8;SL(0x30,BIT(0x15,0)?d0:0u-d0);}   /* 03FB10 */
+static void bd_b2c(neo_gactor_t *a,neo_genv_t *e) {SL(0x76,((uint32_t)e->camera<<16|e->camera_low)+((uint32_t)(int32_t)S16(W(0x70))<<8));}   /* 03FB2C */
+static bool bd_b40(neo_gactor_t *a,neo_genv_t *e) {return W(0x70) && ((uint32_t)e->camera<<16|e->camera_low)>=L(0x76);}   /* 03FB40 */
+static void bd_a46(neo_gactor_t *a) {SL(0x28,L(0x28)+L(0x30));SL(0x2c,L(0x2c)+L(0x34));}   /* 03FA46 */
+static void bd_a74(neo_gactor_t *a) {bd_a46(a);SL(0x30,L(0x30)+((uint32_t)(int32_t)S16(W(0x84))<<8));SL(0x34,L(0x34)+((uint32_t)(int32_t)S16(W(0x86))<<8));}   /* 03FA74 */
+/* 03FC26: carry when a player's x is less than d0 behind (x - +3C of P1 / P2). */
+static bool bd_c26(neo_gactor_t *a,neo_genv_t *e,int16_t d0) {
+    return S16((uint16_t)(W(0x3c)-e->players.p1x))<d0 || S16((uint16_t)(W(0x3c)-e->players.p2x))<d0;
+}
+/* 03FADA: 01945C 0E08B8 -> 0041AC. */
+static ga_result_t bd_tail(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_cull(a,e,0xe08b8)) return GA_DELETE_TREE;
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+static ga_result_t bird_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x3ed00:
+        SW(0x66,0);SW(0x1e,0);bd_af2(a);bd_b10(a);ga_palette(a,0x328);START(0x23fe3e);SL(0,0x3ed3a);return GA_MORE;
+    case 0x3ed3a:
+        SL(0x28,L(0x28)+L(0x30));                                        /* 03FABA */
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        return bd_tail(a,e);
+    case 0x3ed56:
+        SW(0x66,0x8838);SW(0x1e,0x8838);bd_af2(a);bd_b10(a);ga_palette(a,0x2f8);START(0x23fecc);SL(0,0x3ed8e);
+        /* fall through */
+    case 0x3ed8e:
+        SW(0x86,0xe);SW(0x74,8u+ga_rand_range(e,8));START(0x23fecc);SL(0,0x3edbe);
+        /* fall through */
+    case 0x3edbe:
+        ga_project(a,e);depth8000(a);bd_a74(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (S16(W(0x40))>=0x1d0) {SL(0,0x3ee00);return e->unsupported?GA_UNSUPPORTED:GA_MORE;}
+        SW(0x74,W(0x74)-1u);
+        if (!(W(0x74)>0u)) SL(0,0x3ee00);
+        return bd_tail(a,e);
+    case 0x3ee00:
+        SW(0x86,0xfff2);SW(0x74,8u+ga_rand_range(e,8));START(0x23fefa);SL(0,0x3ee30);
+        /* fall through */
+    case 0x3ee30:
+        ga_project(a,e);depth8000(a);bd_a74(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (S16(W(0x40))<0x160) {SL(0,0x3ed8e);return e->unsupported?GA_UNSUPPORTED:GA_MORE;}
+        SW(0x74,W(0x74)-1u);
+        if (!(W(0x74)>0u)) SL(0,0x3ed8e);
+        return bd_tail(a,e);
+    case 0x3ee72:ga_place(a,e,0x40,0x150,0);                            /* 01AB98 */
+        /* fall through */
+    case 0x3ee8a:
+        SW(0x66,0);SW(0x1e,0);bd_af2(a);bd_b2c(a,e);ga_palette(a,0x2f8);SL(0,0x3eeb4);return GA_MORE;
+    case 0x3eeb4:START(0x23fea0);SL(0,0x3eeca);
+        /* fall through */
+    case 0x3eeca:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) {
+            if (!W(0x70) ? bd_c26(a,e,0x60) : bd_b40(a,e)) SL(0,0x3efc0);
+            else SL(0,rl(e,0xe08c0u+4u*(ga_rand(e)&3u)));                /* 03F138 */
+        }
+        return bd_tail(a,e);
+    case 0x3ef24:START(0x23feac);SL(0,0x3ef3a);
+        /* fall through */
+    case 0x3ef3a:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,rl(e,0xe08c0u+4u*(ga_rand(e)&3u)));                   /* 03F138 */
+        return bd_tail(a,e);
+    case 0x3ef5a:
+        SW(0x6e,ga_rand_range(e,2));SL(0x30,W(0x6e)?0x8000u:0xffff8000u);bd_af2(a);START(0x23fe6c);SL(0,0x3ef9a);
+        /* fall through */
+    case 0x3ef9a:
+        ga_project(a,e);depth8000(a);bd_a46(a);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x3eeb4);
+        return bd_tail(a,e);
+    case 0x3efc0:
+        SW(0x2c,W(0x2c)+4u);SW(0x74,0x1eu+ga_rand_range(e,0x10));ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        SL(0,0x3eff8);return bd_tail(a,e);
+    case 0x3eff8:
+        SB(0x88,ga_rand_range(e,0x20)+0x10u);ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        SL(0,0x3f028);return bd_tail(a,e);
+    case 0x3f028: {
+        SW(0x80,ga_rand_range(e,0x100)+0x300u);
+        uint32_t vx,vy;ga_polar((uint32_t)(int32_t)S16(W(0x80))<<8,B(0x88),&vx,&vy);
+        SL(0x30,vx);SL(0x34,vy);SET(0x15,0);START(0x23fecc);ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        SL(0,0x3f084);return bd_tail(a,e);
+    }
+    case 0x3f084:
+        ga_project(a,e);depth8000(a);bd_a46(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        SW(0x74,W(0x74)-1u);
+        if (!(W(0x74)>0u)) {SW(0x66,0x8838);SW(0x1e,0x8838);SL(0x30,(uint32_t)(int32_t)S16(W(0x80))<<8);SL(0x34,0);SL(0,0x3ed8e);}
+        return bd_tail(a,e);
+    case 0x3f0d0:
+        SW(0x66,0);SW(0x1e,0);bd_af2(a);bd_b10(a);ga_palette(a,0x2f8);SL(0,0x3f0f8);return GA_MORE;
+    case 0x3f0f8:START(0x23fea0);SL(0,0x3f10e);
+        /* fall through */
+    case 0x3f10e:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (bd_c26(a,e,0x60)) SL(0,0x3efc0);
+        return bd_tail(a,e);
+    case 0x3f152:
+        ga_place(a,e,0x40,0x150,0);SW(0x70,0x1000);SW(0x6e,1);
+        SW(0x66,0);SW(0x1e,0);bd_af2(a);bd_b10(a);ga_palette(a,0x2f9);START(0x23ff04);SL(0,0x3f1be);
+        /* fall through */
+    case 0x3f1be:
+        ga_project(a,e);depth8000(a);SL(0x28,L(0x28)+L(0x30));          /* 03FABA */
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        return bd_tail(a,e);
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* ---- sandbags 0214EA / 0216BA ----------------------------------------------------- */
+/* 0214EA..021A2A (record of section 2 at camera 1264 with +70 / +72 the
+ * item 08CDB2 dropped by 0219CC at (0, 0), +6E the facing; tables 021A02
+ * (cull) and 021A0A (the broken hurtbox)). 0214EA: 009F88, palette 219,
+ * 8820, +4E = 1, 230238, 0146E8; 02153C: 01ABC8, 01AD8C, 00427A, 004C24: a
+ * hit with +5F bit 7 throws a piece 0218C4 (D0 = 2A; +5B bit 7 flips it) and
+ * -> 0215A8 (23035E, sound 103F; 0215C8 ends -> 0215EA: 004C1C, +74 = 6,
+ * +50 = 021A0A, 2303E4 / 021612: 2303CA, +5F bit 7 clear, +4E = 1; 021634:
+ * each hit with +5F bit 7 while +74 > 0 counts it down with a piece, back
+ * to 021612; at 0 the item 0219CC: its +12/+13 = 20 and +34 = 20000). 0216BA
+ * (palettes 3D5 and 219, 2303F0; 02171A -> 021790: without blood (01B2BE)
+ * +14 = +19, +50 = 0, 230438, 103F; 0217EA: 23052C / 021812: 230512; 021834
+ * as 021634 with the piece's facing by +5B bit 7). 0218C4 (piece): E0ED,
+ * 230538, palette 37A (blood) / 3BA; 021910 ends -> 004188. 0219B0: 01945C
+ * 021A02 -> +60 = FF, 004188. The cartridge check before 004188 is not
+ * reproduced. Proven by the family m3sack (capture A of captures-m3s2c: the
+ * 0214EA at 1264, seven pieces, the item). */
+static bool sk(uint32_t r) {return r>=0x214ea && r<0x219b0;}
+/* 0219B0 */
+static ga_result_t sk_tail(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_cull(a,e,0x21a02)) {SB(0x60,0xff);return GA_DELETE;}
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* The piece 0218C4 (D0 = 2A) with its facing by +5B bit 7 (set, or copied when `copy`). */
+static void sk_piece(neo_gactor_t *a,neo_genv_t *e,bool copy) {
+    neo_gactor_t *c=child(a,e,0x218c4,0x2a,0,0);
+    if (!c) return;
+    if (BIT(0x5b,7)) ga_sb(c,0x15,ga_b(c,0x15)|1u);
+    else if (copy) ga_sb(c,0x15,ga_b(c,0x15)&~1u);
+}
+/* 0219CC -> 08CDB2: the item +70 / +72 at (0, 0); its +12/+13 = 20, +34 = 20000. */
+static void sk_item(neo_gactor_t *a,neo_genv_t *e) {
+    uint16_t kind=W(0x70);
+    if (kind>=0x5au) return;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (!c) return;
+    ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x72));ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);
+    ga_place_at(c,a,e,0,0);
+    ga_sb(c,0x12,0x20);ga_sb(c,0x13,0x20);ga_sl(c,0x34,0x20000);
+}
+static ga_result_t sack_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x214ea:
+        SB(0x1d,0);ga_palette(a,0x219);SW(0x66,0x8820);SW(0x1e,0x8820);SW(0x4e,1);START(0x230238);
+        if (W(0x6e)) SET(0x15,0);
+        ga_floor(a,e);SL(0,0x2153c);return GA_MORE;
+    case 0x2153c:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (ga_register(a,e,NULL,NULL)) {
+            if (BIT(0x5f,7)) {sk_piece(a,e,false);SL(0,0x215a8);}
+            SB(0x5a,0);
+        }
+        return sk_tail(a,e);
+    case 0x215a8:START(0x23035e);sound(e,0x103f);SL(0,0x215c8);
+        /* fall through */
+    case 0x215c8:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x215ea);
+        return sk_tail(a,e);
+    case 0x215ea:SB(0x5e,B(0x5e)|0x80u);SW(0x74,6);SL(0x50,0x21a0a);START(0x2303e4);goto c622;   /* 004C1C */
+    case 0x21612:START(0x2303ca);
+    c622:CLR(0x5f,7);SW(0x4e,1);SL(0,0x21634);
+        /* fall through */
+    case 0x21634:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (W(0x74) && ga_register(a,e,NULL,NULL)) {
+            SB(0x5a,0);
+            if (BIT(0x5f,7)) {
+                SW(0x74,W(0x74)-1u);sk_piece(a,e,false);SL(0,0x21612);
+                if (!W(0x74)) sk_item(a,e);
+            }
+        }
+        return sk_tail(a,e);
+    case 0x216ba:
+        SB(0x1d,0);ga_palette(a,0x3d5);ga_palette(a,0x219);SW(0x66,0x8820);SW(0x1e,0x8820);SW(0x4e,1);START(0x2303f0);
+        if (W(0x6e)) SET(0x15,0);
+        ga_floor(a,e);SL(0,0x2171a);return GA_MORE;
+    case 0x2171a:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (ga_register(a,e,NULL,NULL)) {
+            if (BIT(0x5f,7)) {sk_piece(a,e,true);SL(0,0x21790);}
+            SB(0x5a,0);
+        }
+        return sk_tail(a,e);
+    case 0x21790:
+        if (!e->blood) SB(0x14,B(0x19));                                   /* 01B2BE */
+        SL(0x50,0);START(0x230438);sound(e,0x103f);SL(0,0x217c8);
+        /* fall through */
+    case 0x217c8:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x217ea);
+        return sk_tail(a,e);
+    case 0x217ea:SB(0x5e,B(0x5e)|0x80u);SW(0x74,6);SL(0x50,0x21a0a);START(0x23052c);goto c822;   /* 004C1C */
+    case 0x21812:START(0x230512);
+    c822:CLR(0x5f,7);SW(0x4e,1);SL(0,0x21834);
+        /* fall through */
+    case 0x21834:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (W(0x74) && ga_register(a,e,NULL,NULL)) {
+            SB(0x5a,0);
+            if (BIT(0x5f,7)) {
+                SW(0x74,W(0x74)-1u);sk_piece(a,e,true);SL(0,0x21812);
+                if (!W(0x74)) sk_item(a,e);
+            }
+        }
+        return sk_tail(a,e);
+    case 0x218c4:
+        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);START(0x230538);ga_palette(a,e->blood?0x37a:0x3ba);SL(0,0x21910);
+        /* fall through */
+    case 0x21910:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* ---- camp 01F1D4 ------------------------------------------------------------------- */
+/* 01F1D4..01F7FC (record of section 2 at camera 1264; tables 0DFDD2 (the
+ * +6E words of 01F7FC), hurtboxes 0DFDDA / 0DFDE6, cull rectangles 0DFDF2 /
+ * 0DFDFA). 01F1D4 (the group): +60 / +61 = 0, the soldiers 01F386 at (-40,
+ * 0) and 01F2D6 at (0, 0) and the stove 01F562 at (-20, 0) (0040BC D0 = 1C,
+ * 01ACF2); 01F236: +61 = FF (the stove exploded) -> 004188, else +6E = 0 each
+ * update (01F7FC from a child's program: +6E = 0DFDD2[rand & 3] of its
+ * creator). 01F2D6 / 01F386 (soldiers, palette 20E, 8844, 22F81A / 22F868):
+ * 01ABC8, 01AD8C, 00427A, 004C24: a hit with +5F bit 7 dies by 0406B6 (JSR),
+ * else when the group's +61 is FF the state 0B05FE (01F386 flipped): a
+ * soldier of the world (the routine 0B05FE of a generic node: window_tick); 01F386 with the group's +6E == 2 -> 01F450 (22F89C,
+ * back to 01F3BC at its end); 01945C 0DFDFA -> 01F75A (004188). 01F562
+ * (stove, palette 22E, 8844): its pot 01F4DA (palette 208, 8843, 22F9D8, +26
+ * = 80 / 100 by the stove's +6E; the stove's +60 = FF -> 01F6E0: +5F bit 3,
+ * 14 updates, 004188), 22F8C2; 01F5C8: the group's +6E 1 / 2 -> +6E, 01F636
+ * (22F98A / 22F8F6, back to 01F5B2 at its end); a hit with +5F bit 7 ->
+ * 01F6C0: +60 = FF, the group's +61 = FF, sound 109F, JMP 01C706; 01945C
+ * 0DFDF2 -> 01F7EA (the group's +61 = FF, 0041AC). 01F81A (JMP 003C64, the
+ * reset trap) is an explicit stop. The cartridge checks are not reproduced.
+ * Proven by the family m3camp (capture A of captures-m3s2c). */
+static bool cp(uint32_t r) {return r>=0x1f1d4 && r<0x1f7fc;}
+/* 0040BC (D0 = 1C) placed by 01ACF2. */
+static neo_gactor_t *child_at(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy) {
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,0x1c):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    if (c) ga_place_at(c,a,e,dx,dy);
+    return c;
+}
+static bool cp_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    if (routine==0x1f7fc) {
+        neo_gactor_t *p=sh_creator(a,e);
+        uint16_t v=rw(e,0xdfdd2u+2u*(ga_rand(e)&3u));
+        if (p) ga_sw(p,0x6e,v);
+        return true;
+    }
+    if (routine==0x1f81a) {ga_fail(e,0x3c64);return true;}             /* JMP 003C64: the reset trap */
+    return false;
+}
+/* 004C24 of the soldiers: a hit with +5F bit 7 dies (0406B6, JSR); else the
+ * group's +61 = FF makes a soldier (0B05FE, `flip` for 01F386). Returns the
+ * 0406B6 result or -1 without a hit. */
+static int cp_hit(neo_gactor_t *a,neo_genv_t *e,bool flip) {
+    if (ga_register(a,e,NULL,NULL)) {
+        if (BIT(0x5f,7)) return dispatch(a,e,false);
+        SB(0x5a,0);return D_MORE;
+    }
+    neo_gactor_t *p=sh_creator(a,e);
+    if (p && ga_b(p,0x61)==0xffu) {if (flip) SB(0x15,B(0x15)^1u);SL(0,0xb05fe);}
+    return D_MORE;
+}
+static ga_result_t cp_soldier_tail(neo_gactor_t *a,neo_genv_t *e,int d) {
+    if (d==D_STOP) return GA_UNSUPPORTED;
+    if (d==D_DELETE) return GA_DELETE;
+    if (ga_cull(a,e,0xdfdfa)) SL(0,0x1f75a);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+static ga_result_t camp_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;neo_gactor_t *p;
+    switch (L(0)) {
+    case 0x1f1d4:
+        SB(0x60,0);SB(0x61,0);
+        child_at(a,e,0x1f386,-0x40,0);child_at(a,e,0x1f562,-0x20,0);child_at(a,e,0x1f2d6,0,0);
+        SL(0,0x1f236);
+        /* fall through */
+    case 0x1f236:
+        if (B(0x61)==0xffu) return GA_DELETE;
+        SW(0x6e,0);return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x1f2d6:
+        ga_floor(a,e);SB(0x1d,0);ga_palette(a,0x20e);SB(0x60,0);SB(0x61,0);SW(0x4e,1);SW(0x66,0x8844);SW(0x1e,0x8844);
+        START(0x22f81a);SL(0,0x1f322);
+        /* fall through */
+    case 0x1f322:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        return cp_soldier_tail(a,e,cp_hit(a,e,false));
+    case 0x1f386:
+        ga_floor(a,e);SB(0x1d,0);ga_palette(a,0x20e);SB(0x60,0);SB(0x61,0);SW(0x4e,1);SW(0x66,0x8844);SW(0x1e,0x8844);
+        /* fall through */
+    case 0x1f3bc:START(0x22f868);SL(0,0x1f3d2);
+        /* fall through */
+    case 0x1f3d2:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        p=sh_creator(a,e);
+        if (p && ga_w(p,0x6e)==2u) SL(0,0x1f450);
+        return cp_soldier_tail(a,e,cp_hit(a,e,true));
+    case 0x1f450:START(0x22f89c);SL(0,0x1f466);
+        /* fall through */
+    case 0x1f466:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,cp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x1f3bc);
+        return cp_soldier_tail(a,e,cp_hit(a,e,true));
+    case 0x1f4da:
+        SB(0x1d,0);ga_palette(a,0x208);SW(0x66,0x8843);SW(0x1e,0x8843);START(0x22f9d8);SL(0,0x1f510);
+        /* fall through */
+    case 0x1f510:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        SW(0x26,0x80);
+        p=sh_creator(a,e);
+        if (!p) {ga_fail(e,0x1f528);return GA_UNSUPPORTED;}
+        if (ga_w(p,0x6e)) SW(0x26,0x100);
+        if (ga_b(p,0x60)==0xffu) SL(0,0x1f6e0);
+        if (ga_cull(a,e,0xdfdf2)) SL(0,0x1f75a);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x1f562:
+        ga_floor(a,e);SB(0x1d,0);ga_palette(a,0x22e);SB(0x60,0);SB(0x61,0);SW(0x4e,1);SW(0x66,0x8844);SW(0x1e,0x8844);
+        child_at(a,e,0x1f4da,0,0);
+        /* fall through */
+    case 0x1f5b2:START(0x22f8c2);SL(0,0x1f5c8);
+        /* fall through */
+    case 0x1f5c8:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        p=sh_creator(a,e);
+        if (!p) {ga_fail(e,0x1f5da);return GA_UNSUPPORTED;}
+        {uint16_t d0=ga_w(p,0x6e);if (d0==1u || d0==2u) {SW(0x6e,d0);SL(0,0x1f636);}}
+        goto c5fc;
+    case 0x1f636:
+        if (W(0x6e)==1u) START(0x22f98a); else START(0x22f8f6);
+        SL(0,0x1f66a);
+        /* fall through */
+    case 0x1f66a:
+        ga_project(a,e);depth8000(a);
+        if ((r=ga_anim_step(a,e,cp_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x1f5b2);
+    c5fc:
+        if (ga_register(a,e,NULL,NULL)) {if (BIT(0x5f,7)) SL(0,0x1f6c0); else SB(0x5a,0);}
+        if (ga_cull(a,e,0xdfdf2)) SL(0,0x1f7ea);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x1f6c0:
+        SB(0x60,0xff);
+        p=sh_creator(a,e);
+        if (p) ga_sb(p,0x61,0xff);
+        sound(e,0x109f);SL(0,0x1c706);return neo_effects_tick(a,e);       /* JMP 01C706 */
+    case 0x1f6e0:SW(0x26,0x100);SET(0x5f,3);SW(0x70,0x14);SL(0,0x1f6f8);
+        /* fall through */
+    case 0x1f6f8:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        if (ga_cull(a,e,0xdfdf2)) SL(0,0x1f7ea);
+        SW(0x70,W(0x70)-1u);
+        if (!W(0x70)) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x1f730:
+        ga_project(a,e);depth8000(a);
+        if (ga_anim_step(a,e,cp_call)<0) return GA_UNSUPPORTED;
+        if (ga_cull(a,e,0xdfdf2)) SL(0,0x1f7ea);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x1f75a:return GA_DELETE;
+    case 0x1f7ea:
+        p=sh_creator(a,e);
+        if (p) ga_sb(p,0x61,0xff);
+        return GA_DELETE_TREE;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static bool para(uint32_t r) {return r>=0x5c53c && r<0x5e0b8;}
 static bool pod(uint32_t r) {return r>=0x4e990 && r<0x4f7e8;}
 static bool gunship(uint32_t r) {return r>=0x97fcc && r<0x99070;}
@@ -4768,7 +5712,7 @@ static bool bomber(uint32_t r) {return r>=0x83b30 && r<0x84b9c;}   /* 084B7E inc
 static bool box(uint32_t r) {return r==0x391ea || r==0x39232 || r==0x39260 || r==0x39276;}
 static const uint32_t rafts[]={0x8afb6,0x8afd0,0x8afde,0x8b090,0x8b138,0x8b18e,0x8b214,0x8b1c4,0x8b3e6,0x8b43e,0x8b4d6,0x8b502};
 static const uint32_t trucks[]={0x2b202,0x2b2ea,0x2b316,0x2ae46,0x2ae72,0x2b138,0x2b1d4,0x2b1cc,0x2b61c,0x2b656,0x2b670,0x2b69e,0x2b6e4,0x2b700,0x2bbba,0x2bc36,0x2bc62,0x2bc84,0x2bcac,0x2bcca,0x2bd3c};
-bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r);}
+bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r) || jp(r) || bd(r) || sk(r) || cp(r);}
 ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (IN(deaths,r)) return death_tick(a,e);
@@ -4785,5 +5729,9 @@ ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (IN(trucks,r)) return truck_tick(a,e);
     if (IN(rafts,r)) return raft_tick(a,e);
     if (cv(r)) return cv_tick(a,e);
+    if (jp(r)) return jeep_tick(a,e);
+    if (bd(r)) return bird_tick(a,e);
+    if (sk(r)) return sack_tick(a,e);
+    if (cp(r)) return camp_tick(a,e);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

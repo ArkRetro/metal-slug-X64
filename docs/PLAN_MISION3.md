@@ -42,11 +42,13 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   de molotov `0569B4/0569D0/0569E6` (`m3thrower`) y el bombardero `084588`
   (`m3bomber`), los bidones `0391EA` (`m3drum`), el camión armado `02B202`
   (`m3truck`), la plataforma flotante `08AFB6` (`m3raft`) y el coche con
-  pasajero `027F54` (`m3car`, el pasajero pasa a soldado): 11 736
-  actualizaciones más iguales a MAME. El bloqueo de la cámara en 4380 está
-  resuelto (la ROM de referencia pide la muerte general antes de soltar un
-  bloqueo). Faltan `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4` y el resto de la
-  lista de MISION3.md «Paso 2».
+  pasajero `027F54` (`m3car`, el pasajero pasa a soldado), el jeep armado
+  `0A2F2E` (`m3jeep`), los pájaros `03EE8A` (`m3bird`), los sacos `0214EA`
+  (`m3sack`) y el campamento `01F1D4` (`m3camp`): 16 823 actualizaciones
+  más iguales a MAME. El bloqueo de la cámara en 4380 está resuelto (la ROM
+  de referencia pide la muerte general antes de soltar un bloqueo). Faltan
+  las paradas del mundo, `0B9748`, la entrada en paracaídas, los regalos y
+  las ramas al azar de MISION3.md «Paso 2».
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se

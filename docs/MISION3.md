@@ -741,7 +741,57 @@ onda `03C62A` del soldado, se descartan) y `FAMILY_LEAVE` en
 Sin traza: la conducción, las ráfagas, la bomba y el casquillo (traducción
 literal).
 
-Pendiente del paso 2 (en orden): `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
+**Sexta tanda** (jeep `0A2F2E`, pájaros `03EE8A`, sacos `0214EA`, campamento
+`01F1D4`), todo en `neo_m3enemy.c`:
+
+- `0A2F2E..0A41E2` (`jeep_tick`): registro `0A3DB0` (`+6E` parado, `+70`
+  paleta 21C, `+72` modo del pasajero, `+74/+76` regalo), entradas
+  `0A2F2E/0A2F48/0A2F62/0A2F7C` (bits 0..2 de `+96`: sello `0C88B0`
+  `0A42C4/0A42E6`, sin artillero), torreta `0A3A0A` y artillero `0A38F4`
+  como hijos en `+7A/+76` (sus programas desde las tablas `0A436A/0A4396`
+  por índice, `0A3EF0`; `0A3F22` cambia el estado de la torreta), parado
+  `0A322A` con ráfagas `0A33C4..0A352C` (rangos `2CD32A/2CD38C/2CD3D6`),
+  conducción `0A3116..0A32CE` (literal, sin traza), daño `0A35E8/0A3624`,
+  artillero muerto `0A35A8` (el artillero pone el estado de su creador),
+  muerte `0A36AC/0A36F4/0A378A`, proyectil guiado `0A3C24` (`01B04A`,
+  `01B12E`, seno/coseno `0A4006`), piezas `0A3BC2/0A3BD6`, pasajero `0A3A54`
+  (salta como soldado `0B0626`; `JMP 0AF14C` y `040846`→`040C8E` paradas
+  explícitas, sin traza). Datos `0A41E2..0A4402` y rangos `2CD236..2CD49A`
+  (los rangos ocupan hasta `+62`: el bloque `2CCFF8` del coche se amplió).
+- `03ED00..03F1D4` (`bird_tick`): pájaros con `+6E` cara, `+70` velocidad
+  (`03FB10`; `03FB2C/03FB40` con el avance `10E99E` para `+70` ≠ 0),
+  quietos `03EEB4`, estados al azar `0E08C0` (`03F138`), saltito `03EF5A`,
+  despegue `03EFC0..03F084` al acercarse un jugador a 60 px (`03FC26` lee
+  `+3C` de P1 y P2), aleteo `03ED8E/03EE00` entre y = 160 y 1D0; otras
+  entradas `03ED00/03ED56/03EE72/03F0D0/03F152` literales.
+- `0214EA..021A2A` (`sack_tick`): sacos `0214EA`/`0216BA`, trozos `0218C4`
+  (paleta 37A/3BA por `01B2BE`), `+74` = 6 golpes rotos, regalo `0219CC`
+  (`08CDB2` con `+12/+13` = 20 y `+34` = 20000).
+- `01F1D4..01F7FC` (`camp_tick`): el grupo `01F1D4` (sus `+60/+61`, `+6E`
+  por `01F7FC` desde los programas), soldados `01F2D6/01F386` (`0406B6` al
+  morir; estado `0B05FE` cuando el fogón estalla → `window_tick` los pasa a
+  soldados), fogón `01F562` (`01C706` al recibir daño, `+61` = FF del grupo)
+  y olla `01F4DA`; `01F81A` (`JMP 003C64`, reinicio) parada explícita.
+- Prueba de familia: `--external-state RUTINAS` (un estado que otro nodo de
+  la familia escribe en el nodo no abre una instancia nueva: `0A35A8`,
+  `0A3A54`, `0A3BA4`); `--soldier` admite la actualización sin `V` (el estado
+  `0B05FE` mueve el registro).
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3jeep` (jeep `0A2F2E` parado en 3296, ráfagas, proyectiles, artillero muerto, muerte y pasajero) | 33 | 2212 | 124034..124753 | iguales a MAME |
+| `m3bird` (pájaros `03EE8A` ×2 de la salida) | 8 | 854 | 118210..118458 | iguales |
+| `m3sack` (sacos `0214EA`, 7 trozos, regalo) | 8 | 410 | 118151..118759 | iguales |
+| `m3camp` (campamento `01F1D4`: 2 soldados, fogón, olla; un soldado pasa al mundo) | 5 | 1611 | 117970..118741 | iguales |
+
+Sprites: 8287 → 8427 descripciones (las cinco rutinas desde la captura A de
+`captures-m3s2c`). Recorrido en ares tras la quinta tanda (300 s, antes de
+la sexta): PASS, progreso 3904; registros saltados 2 (`2DA174`→`0AF1B6`,
+`2DAC58`→`0A2F2E`); rutinas sin soporte `2869D6`, `08DBC8`, `0AF17E`,
+`040DB4` y `2CD184` (el rango `2CD184` del coche leído más allá del bloque
+antiguo de `region_rom.json`: corregido al ampliarlo).
+
+Pendiente del paso 2 (en orden): las paradas del
 mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
 paracaídas, premios y ramas al azar.
 

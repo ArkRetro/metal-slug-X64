@@ -98,8 +98,8 @@ En el mundo:
 
 Vida por rango `0x2D3A5C`, tres estados al reducirse a la mitad (programas
 `0x2A89B8/C4/D0`, escombros `0x0B69B6`, seis humos `0x01D488`), destrucción
-`0x0B66F2` (mata-todo, seis piezas `0x08732C` —externas, pero se consumen sus
-tres números aleatorios—, 16 humos, escombros, parche `0x0B6882`, ruina
+`0x0B66F2` (mata-todo, seis figuras en llamas `0x08732C` —nativas desde B51:
+vuelo `283B7A`, caída `283BF8`, paleta `0x852`, familia `figure`—, 16 humos, escombros, parche `0x0B6882`, ruina
 `0x2A89DC`), capa superpuesta `0x0B6770` y tejado `0x0B680E`: sellos de
 colisión `0x0B69F8/0x0B6A2C` (`0x0C88B0`, ahora genérico en
 `neo_collision_stamp`), objeto dinámico `0x0B6A60` (`0x0140C0`) y borrado

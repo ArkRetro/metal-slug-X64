@@ -481,6 +481,30 @@ static void fat_run(void) {
     printf("fat: starts=%u stops=%u shots=%u form=%u\n",g.fat_starts,g.fat_stops,g.fat_shots,g.world.weapon_player.form93);fflush(stdout);
     assert(g.world.weapon_player.form93==0 && g.fat_stops==1);
 }
+/* Aiming up with the pistol (B53): the native 01B782 at angle 40 in both
+ * facings, standing and in the air; each bullet climbs 16 px per update
+ * (+72 = 0x100000 along 40) until 01945C culls it on the screen. */
+static void pistol_up_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    unsigned seen=0,climbs=0,bad=0;int32_t last_y[NEO_WORLD_GACTORS];memset(last_y,0,sizeof(last_y));
+    for (unsigned steps=0;steps<2400;steps++) {
+        unsigned j=steps%120;g.aim_up=steps>400;g.crouch=false;
+        int stick=steps<1400?((steps/200)&1?-1:1)*(j<30):0;
+        msx_game_update(&g,stick,steps>1400 && j<6,steps%8<4);g.invulnerable=2;g.world.sound_count=0;check_draws(&g);
+        if (g.ticks&1) continue;
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            neo_gactor_t *a=&g.world.gactors[i];
+            if (!a->active || ga_l(a,0)!=0x1b882u) {last_y[i]=0;continue;}
+            if (ga_b(a,0x6e)!=0x40u) bad++;
+            int32_t y=(int32_t)ga_l(a,0x2c);
+            if (last_y[i] && y-last_y[i]==0x100000) climbs++;
+            if (!last_y[i]) seen++;
+            last_y[i]=y;
+        }
+    }
+    printf("pistol up: shots=%u bullets=%u climbs=%u wrong angle=%u unsupported=%u missing draws=%u\n",g.up_shots,seen,climbs,bad,g.world.unsupported,missing_draws);fflush(stdout);
+    assert(g.up_shots>0 && seen>0 && climbs>0 && !bad && !g.world.unsupported && !missing_draws);
+}
 /* Aiming down in the air (+92 = FF): jumps with down held and fire
  * tapped, with the pistol (native 01B782 at C0), then the H and the C (both
  * at C0, the H's fan and its downward sweeps), from the mission start. */
@@ -627,6 +651,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"fall")) {fall_run(argc>2?(unsigned)atoi(argv[2]):0,argc>3?(unsigned)atoi(argv[3]):0,argc>4);return 0;}
     if (argc>1 && !strcmp(argv[1],"camel")) {for (int m=0;m<3;m++) camel_run(m);return 0;}
     if (argc>1 && !strcmp(argv[1],"airdown")) {air_down_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pistolup")) {pistol_up_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"chaser")) {chaser_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"pweapon")) {pweapon_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
@@ -746,7 +771,7 @@ int main(int argc,char **argv) {
     /* The H fires native bullets 01B716 (neo_bullet.c): none is a stop. */
     /* Every H shot is native; the other weapons the prisoners give (their
      * shots are not ported) stop explicitly at their constructor, counted. */
-    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots && !g.world.shot_dropped);
+    assert(g.world.player_shots==g.h_shots+g.grenades+2u*g.c_shots+g.down_shots+g.up_shots && !g.world.shot_dropped);
     assert(g.weapon_stops==g.weapon_shots-g.h_shots-g.c_shots && g.weapon_stop_constructor!=0x1b6dc && g.weapon_stop_constructor!=0x1b716);
     printf("H bullets that hit: %u, diagonal H bullets (0C453A sweeps): %u, grenade blast rows that hit: %u\n",g.world.pickup.bullet_hits,g.hgun_diagonal,g.world.pickup.blast_hits);fflush(stdout);
     /* Aiming up and back during the bursts sweeps the H (marco_hgun.c). */
@@ -786,6 +811,7 @@ int main(int argc,char **argv) {
     mummy_run();
     fat_run();
     air_down_run();
+    pistol_up_run();
     for (int m=0;m<3;m++) camel_run(m);
     for (unsigned seed=1;seed<=4;seed++) release_run(seed);
     // Camera stop 2336 (user report: Marco still mid-screen firing level,

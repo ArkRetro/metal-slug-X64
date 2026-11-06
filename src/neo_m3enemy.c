@@ -1266,8 +1266,11 @@ static void k8dc20(neo_gactor_t *a) {
 /* 08D9D0 / 08D988 / 08D9E2 */
 static uint32_t k8d9d0(neo_gactor_t *a,neo_genv_t *e,bool *carry) {uint32_t n=0;*carry=k1b0be(a,e,&n);return *carry?0:n;}
 static bool w_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
-    (void)a;(void)parameter;
-    if (kind==NEO_ANIM_SPAWN_THROW) {ga_fail(e,routine?routine:0x3bb8e);return false;}   /* the grenade 03BB8E: not ported here */
+    (void)parameter;
+    if (kind==NEO_ANIM_SPAWN_THROW) {   /* the grenades 03BBBC (23D976) / 03BC28 (28ABD4): the world's thrown object */
+        if (!e->spawn_throw || !e->spawn_throw(e->ctx,a,routine?routine:0x3bb8e)) {ga_fail(e,routine?routine:0x3bb8e);return false;}
+        return true;
+    }
     return false;
 }
 static ga_result_t window_tick(neo_gactor_t *a,neo_genv_t *e) {
@@ -1326,11 +1329,19 @@ static ga_result_t window_tick(neo_gactor_t *a,neo_genv_t *e) {
         /* fall through */
     case 0x8dbac:
         k8dc20(a);k8d91e(a,e);
-        if ((r=ga_anim_step(a,e,w_call))<0) return GA_UNSUPPORTED;
-        if (r) SL(0,0x8dad0);
-        /* 08DBC4 compares +90 as a word: its upper byte is D0's after
-         * 00427A (not modelled). */
-        if (!B(0x90)) {ga_fail(e,0x8dbc8);return GA_UNSUPPORTED;}
+        {uint16_t t24=W(0x24);
+         if ((r=ga_anim_step(a,e,w_call))<0) return GA_UNSUPPORTED;
+         if (r) SL(0,0x8dad0);
+         /* 08DBC4 compares +90 as a word: its upper byte is D0's after
+          * 00427A, which a WAIT leaves as +26 (004328) when the timer +24
+          * was not negative (with +26 >= 100 the test never holds). A
+          * program end (004352) leaves D0 as 08D91E's (0143E4 / 01436A:
+          * position words, not zero in practice: the check is skipped, an
+          * assumption); a negative timer is an explicit stop. */
+         if (!B(0x90) && !r) {
+            if (S16(t24)<0) {ga_fail(e,0x8dbc8);return GA_UNSUPPORTED;}
+            if (!(W(0x26)>>8) && k8d940(a,e)) SL(0,0x8dbe8);
+         }}
         d=k8d972(a,e);return w_tail(a,e,d);
     case 0x8dbe8:SSTART(0x28ad18);SL(0,0x8dbfe);
         /* fall through */
@@ -4698,7 +4709,12 @@ again:
         SW(0x66,0x8820);SW(0x1e,0x8820);
         p=sh_creator(a,e);
         if (p) ga_sb(p,0x60,0);
-        /* JMP 0B0626 / 0B0632: the node becomes a soldier (the world moves it). */
+        /* JMP 0B0626 / 0B0632: the node becomes a soldier (the world moves it).
+         * Its block +38 is the car's: the world's soldiers move against the
+         * kernel's objects only, so the record is re-based on the scene root
+         * first (the car stands still until it is deleted; the original keeps
+         * the pointer, to a dead node after 028660). */
+        to_root(a,e);
         uint32_t entry=B(0x7c)==1u?0xb0626u:0xb0632u;
         if (!e->become_soldier || !e->become_soldier(e->ctx,a,entry)) {ga_fail(e,entry);return GA_UNSUPPORTED;}
         return GA_MORE;
@@ -5213,7 +5229,10 @@ again:
         SW(0x66,0x8820);SW(0x1e,0x8820);SW(0x2c,W(0x2c)+8u);
         if (!B(0x95)) {
             SB(0x15,B(0x15)^1u);SL(0x34,0x22222);SL(0x72,0xffffb72fu);SL(0x30,0xfffeeeefu);k405ea(a,e);
-            /* JMP 0B0626: the node becomes a soldier (the world moves it). */
+            /* JMP 0B0626: the node becomes a soldier (the world moves it); its
+             * block +38 (the jeep's) is re-based on the scene root first, as the
+             * car's rider (028948). */
+            to_root(a,e);
             if (!e->become_soldier || !e->become_soldier(e->ctx,a,0xb0626)) {ga_fail(e,0xb0626);return GA_UNSUPPORTED;}
             return GA_MORE;
         }

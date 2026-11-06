@@ -12,7 +12,7 @@ arr('uint8_t','soldier_rank_lookup',t['rank_lookup']['values'])
 arr('uint8_t','soldier_group_map',t['group_map']['values'])
 arr('uint16_t','soldier_timer70_table',t['timer70']['values'])
 arr('uint16_t','soldier_timer72_table',t['timer72']['values'])
-for key,name in (('attack_sense','soldier_attack_sense'),('attack_knife','soldier_attack_knife'),('attack_leap','soldier_attack_leap'),('attack_leap_hit','soldier_attack_leap_hit')):
+for key,name in (('attack_sense','soldier_attack_sense'),('attack_knife','soldier_attack_knife'),('attack_leap','soldier_attack_leap'),('attack_leap_hit','soldier_attack_leap_hit'),('attack_wait','soldier_attack_wait')):
     v=t[key];arr('int16_t',name,v['rect']+[v['kind'],v['klass'],v['damage']])
 L.append('static const int16_t soldier_pistol_attacks[16][7]={'+','.join('{%s}'%','.join(str(x) for x in v['rect']+[v['kind'],v['klass'],v['damage']]) for v in t['pistol'])+'};')
 arr('uint16_t','soldier_cull_rect',[v&0xffff for v in t['cull_rect']['values']])

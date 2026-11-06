@@ -261,6 +261,11 @@ struct neo_genv {
      * native soldier after this update (the world moves the record); false
      * when the world has no soldier slot (NULL: explicit stop). */
     bool (*become_soldier)(void *ctx,neo_gactor_t *a,uint32_t entry);
+    /* A program's SPAWN_THROW (03BB8E / 03BBBC / 03BBEA) on a generic node:
+     * the thrown object (neo_throw) after the script actor, as the soldiers'
+     * NEO_SOLDIER_EVENT_THROW; false when the world has no slot (NULL:
+     * explicit stop). */
+    bool (*spawn_throw)(void *ctx,neo_gactor_t *a,uint32_t routine);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;

@@ -384,6 +384,24 @@ static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return fal
  * banners' constructor at camera 1600, where the trace reads 0x88 and 0x40
  * (bge: +15 bit 2 clear). */
 static bool g_front_layer(void *ctx) {tick_t *t=ctx;return t->w->front_window;}   /* set per stage by gameplay.c (B26) */
+/* 03BB8E / 03BBBC / 03BBEA from a generic node's program: as the soldiers'
+ * NEO_SOLDIER_EVENT_THROW (soldier_event), seeded by the node. */
+static bool g_spawn_throw(void *ctx,neo_gactor_t *a,uint32_t routine) {
+    tick_t *t=ctx;neo_world_t *w=t->w;
+    unsigned i;for (i=0;i<NEO_WORLD_THROWS && w->throws[i].active;i++) {}
+    if (i==NEO_WORLD_THROWS) {MSX_DIAG_POOL_FAIL(MSX_POOL_THROW);return false;}
+    int at=find(w,NEO_WORLD_SCRIPT,0);
+    if (at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_THROW,(uint8_t)i,1})) {w->overflow++;return false;}
+    uint16_t field6e=routine==0x3bbbcu?1u:routine==0x3bbeau?2u:0u;
+    int dy=(routine==0x3bbbcu?0x18:0x20)-0x20;   /* neo_throw_spawn applies 03BB8E's (0, 32) */
+    neo_contact_actor_t seed=ga_contact(a);
+    seed.projected_y=(int32_t)((uint32_t)seed.projected_y+((uint32_t)dy<<16));
+    seed.cached_y=(int32_t)((uint32_t)seed.cached_y+((uint32_t)dy<<16));
+    neo_contact_actor_t body;neo_throw_spawn(&body,&seed,&w->root,w->epoch);
+    neo_anim_render_t graphics;memset(&graphics,0,sizeof(graphics));graphics.attributes=body.flags15;
+    neo_throw_actor_start(&w->throws[i],&body,field6e,0xff,&graphics);
+    return true;
+}
 static bool g_become_soldier(void *ctx,neo_gactor_t *a,uint32_t entry) {
     tick_t *t=ctx;(void)a;
     unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && t->w->soldiers[i].active;i++) {}
@@ -804,7 +822,7 @@ static int run_gactor(tick_t *t,unsigned i) {
         w->draw_count=before;ga_kill(t,a);return 0;
     }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
-        w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);t->genv.unsupported=0;
+        w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);w->unsupported_line=0;w->unsupported_detail=0;t->genv.unsupported=0;
         /* The stopped actor goes with its descendants (0041AC): a child
          * must not outlive it (the Camel Slug stopped at 004ED2 left its
          * rider graphic 034F1A, a second Marco, drawn where it stopped). */
@@ -1124,7 +1142,7 @@ static bool run_soldier(tick_t *t,unsigned i) {
         w->draws[k].flash=(s->anim.flash&1u) && !(s->anim.flash&0x80u);
     }
     if (group<9u && s->group69>=9u) w->kills++;
-    if (r==NEO_SOLDIER_UNSUPPORTED) {w->unsupported++;w->unsupported_routine=s->routine;w->draw_count=before;s->active=false;return false;}
+    if (r==NEO_SOLDIER_UNSUPPORTED) {w->unsupported++;w->unsupported_routine=s->routine;w->unsupported_line=neo_soldier_unsupported_line;w->unsupported_detail=neo_soldier_unsupported_detail;w->draw_count=before;s->active=false;return false;}
     if (r==NEO_SOLDIER_DELETED) {s->active=false;return false;}
     /* 040A00 -> 004C24: the soldier's slot in the registry. */
     neo_hurtbox_t hb;
@@ -1303,7 +1321,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
-    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
      * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
     g->arrow=&w->arrow;

@@ -17,6 +17,7 @@ typedef struct {
     msx_diag_stop_stat_t stop[MSX_STOP_COUNT];
     uint32_t dumped_stops;   /* stop kinds whose first occurrence was dumped */
     unsigned dumps;
+    uint32_t dumped_world_routine;unsigned world_dumps;   /* world stops: one dump per distinct routine */
     msx_diag_trail_t trail[MSX_DIAG_TRAIL];
     unsigned trail_next,trail_count;
     bool fatal;              /* an assertion or exception is being reported */

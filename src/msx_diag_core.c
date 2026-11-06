@@ -59,8 +59,10 @@ void msx_diag_stop(msx_diag_stop_t kind,unsigned count,uint32_t routine) {
     msx_diag_event(MSX_EV_STOP,kind,count,routine);
     /* The first stop of each kind dumps the ring (what led to it); unported
      * spawns and skipped records are routine in the reference: no dump. */
-    if (!(msx_diag.dumped_stops&(1u<<kind)) && kind!=MSX_STOP_EXTERNAL && kind!=MSX_STOP_SKIPPED && kind!=MSX_STOP_CAMERA) {
+    bool again=kind==MSX_STOP_WORLD && routine!=msx_diag.dumped_world_routine && msx_diag.world_dumps<6u;
+    if ((again || !(msx_diag.dumped_stops&(1u<<kind))) && kind!=MSX_STOP_EXTERNAL && kind!=MSX_STOP_SKIPPED && kind!=MSX_STOP_CAMERA) {
         msx_diag.dumped_stops|=1u<<kind;
+        if (kind==MSX_STOP_WORLD) {msx_diag.dumped_world_routine=routine;msx_diag.world_dumps++;}
         char reason[48];snprintf(reason,sizeof(reason),"stop %s %06lx",msx_diag_stop_names[kind],(unsigned long)routine);
         msx_diag_dump(reason);
     }

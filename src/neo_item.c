@@ -1,5 +1,6 @@
 #include "neo_region.h"
 #include "neo_vslot.h"
+#include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 /* Items 08C374 (dropped: +8A set) / 08C37C (script), manual translation;
  * ROM labels are provenance only.
  *
@@ -128,6 +129,11 @@ static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_
         else {ga_project(a,e);SB(0x15,B(0x15)&~1u);if ((int16_t)W(0x3c)<0xa0) SET(0x15,0);}
         /* fall through */
     case 0x286b2c: SL(0x62,BIT(0x15,0)?0xc000u:0u-0xc000u);return true;
+    case 0x288ab6: /* kind 39 (2887D2): +7E = the angle of the velocity / 4, or 30 at rest (+7D = FF) */
+        SB(0x7d,0);
+        if (!L(0x30) && !L(0x34)) {SB(0x7e,0x30);SB(0x7d,0xff);}
+        else SB(0x7e,(uint8_t)(neo_angle((int16_t)((int32_t)L(0x30)>>12),(int16_t)((int32_t)L(0x34)>>12))>>2));   /* 002EB4 */
+        return true;
     case 0x2884c8: /* becomes kind 28 (08D312: record +82; its motion 08BD5A) */
         SW(0x6e,0x28);SL(0x82,RECORDS+0x18u*0x28u);
         SW(0x76,0);SW(0x74,0);SL(0x62,0);SW(0x26,0x100);return true;

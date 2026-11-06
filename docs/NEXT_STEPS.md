@@ -236,8 +236,10 @@
   (`m3raft`), el coche con pasajero `027F54` (`m3car`, con `--soldier`
   para la conversión en soldado), el jeep `0A2F2E` (`m3jeep`), los pájaros
   `03EE8A` (`m3bird`), los sacos `0214EA` (`m3sack`) y el campamento
-  `01F1D4` (`m3camp`). Siguiente: las paradas del mundo (`2869D6`, `08DBC8`, `0AF17E`, `0413D4`, `800040`),
-  `0B9748` y la entrada en paracaídas. El bloqueo de la cámara en 4380 está
+  `01F1D4` (`m3camp`); paradas del mundo resueltas salvo `040DB4` (el
+  resto `03C306` de la muerte de `04115A`: capturar y traducir). Siguiente:
+  `03C306`, `0B9748` (bit de suelo de los jugadores en `neo_genv_t`), la
+  entrada en paracaídas, premios y ramas al azar. El bloqueo de la cámara en 4380 está
   resuelto: lo soltaba el tiempo de espera de la ROM de referencia; ahora el
   primer tiempo de espera pide la muerte general `1067E3` y el guion sigue a
   la par de la cámara (MISION3.md «Bloqueo de la cámara en 4380»; ares r9

@@ -791,9 +791,63 @@ la sexta): PASS, progreso 3904; registros saltados 2 (`2DA174`→`0AF1B6`,
 `040DB4` y `2CD184` (el rango `2CD184` del coche leído más allá del bloque
 antiguo de `region_rom.json`: corregido al ampliarlo).
 
-Pendiente del paso 2 (en orden): las paradas del
-mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
-paracaídas, premios y ramas al azar.
+**Paradas del mundo** (misma rama; diagnóstico: `msx_diag` vuelca el anillo
+en cada rutina distinta de parada del mundo, hasta 6, y `actor.c` imprime la
+línea y el detalle de `neo_soldier_ai.c` de una parada de soldado):
+
+- `2869D6` (cámaras 2049..2304): el programa del regalo de tipo 28 (`08C374`
+  arranca `2869D6`, raíz que `extract_soldier_programs.py` solo recorría
+  dentro del andador `288396`): raíz propia en `soldier_programs.json`.
+- `288AB6` (tras la muerte general): aviso del programa `2887D2` (regalo
+  39) sin atender en `neo_item.c`: `+7E` = ángulo de la velocidad / 4 (`002EB4`
+  con `+30/+34 >> 12`), 30 en reposo con `+7D` = FF.
+- `0AF17E` (1734..2177, el constructor de soldado): registros con `+76` =
+  5/6/7 y `+78` bit 0 que `neo_soldier_construct` rechazaba. Modos 5/6
+  (`0AF302`: `01AD8C`, `23F15A` en el aire, `23F15A`→`23DB34` en el suelo,
+  luego `0AF380`; el 6 pone un bit fuera del nodo, `-$5556(a6)`), modo 7
+  (`0AF2BA`: fila `0AE9B0` (`attack_wait` de `soldier_ai_tables.json`),
+  `23F1BC`, luego `0AF380`) y la sonda `01495C` (0) del bit 0 de `+78` hacia
+  `0AF7F6`.
+- `08DBC8` (897/1088, soldados de ventana): `08DBC4` compara `+90` como
+  palabra con el byte alto de D0 tras `00427A`: un WAIT deja `+26` (`004328`)
+  si el temporizador `+24` no era negativo (con `+26` ≥ 100 la condición
+  nunca se cumple); al acabar el programa D0 queda como lo dejó `08D91E`
+  (palabras de posición, no cero: la comprobación se salta, supuesto
+  razonado); temporizador negativo: parada explícita.
+- `2CD184` (1471): el rango del coche leído más allá del bloque antiguo
+  (ampliado, también `2CD236` del jeep: los rangos ocupan 0x62 bytes).
+- `22D372` (1471): el programa del polvo de la Misión 2 (`03A464`) que usa la
+  pieza `028CA4` del coche iba con grupo `m2` y no entraba en el paquete de
+  la M3: bloque compartido sin grupo (`extract_soldier_programs.py`, raíces
+  sin duplicar con `dict.fromkeys`).
+- `0B0626` (1520, el pasajero del coche): `neo_soldier_become` sondea el
+  suelo contra los objetos del núcleo y el bloque `+38` del pasajero era el
+  coche (un nodo genérico): `to_root` antes de la conversión en `028948` y en
+  `0A3B50` del jeep (el coche está parado hasta borrarse; el original guarda
+  el puntero, a un nodo muerto tras `028660`).
+- `03BBBC` (1088): granada de los programas de los soldados de ventana
+  (`23D976`, `28ABD4`): nuevo gancho `spawn_throw` de `neo_genv_t` (el mundo
+  crea el objeto lanzado tras el actor del guion como con los soldados,
+  `g_spawn_throw`); la prueba de familia lo deja en NULL (parada explícita).
+- `040DB4` (2304): la muerte de un soldado `04115A` cuyo programa (`24124C`
+  o `23DA62`) llama a `03C2DE`: crea tras el actor del guion `03C306` (un
+  resto de la muerte con `23F2A0`, caída con `01495C` y `+50` = `03C2D2`),
+  sin captura MAME de ese actor: sigue como parada explícita (pendiente:
+  capturar y traducir `03C306`).
+- RAM: la sexta tanda dejó la ROM de referencia 15 KB bajo el mínimo (3317
+  de 3332 KB): las voces del jefe de la Misión 1 `1073` (46 KB) y `10C6`
+  (25 KB) pasan a sonar desde rom:/ (`game_audio.c`); 211 ranuras.
+
+Recorrido en ares tras las paradas (300 s): PASS, progreso 3939 (otra
+carrera 4379, la espera del jefe intermedio), 211 ranuras, registro saltado
+1 (`2DA174`→`0AF1B6`), rutina sin soporte solo `040DB4` ×1.
+
+`0B9748` (puntos al saltar a la plataforma del hueco) lee `+15` bit 6 de los
+jugadores (`01AF1A`) y `01AF3C`: necesita el bit de suelo de los jugadores
+en `neo_genv_t` (pendiente).
+
+Pendiente del paso 2 (en orden): `03C306` (parada `040DB4`), `0B9748`, la
+entrada en paracaídas, premios y ramas al azar.
 
 ## Pendiente
 

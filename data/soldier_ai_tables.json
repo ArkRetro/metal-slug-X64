@@ -534,6 +534,18 @@
   "klass": 0,
   "damage": 16
  },
+ "attack_wait": {
+  "rom": "0xae9b0",
+  "rect": [
+   -16,
+   8,
+   32,
+   32
+  ],
+  "kind": 19,
+  "klass": 1,
+  "damage": 0
+ },
  "pistol": [
   {
    "rom": "0x1b4c2",

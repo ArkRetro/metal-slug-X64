@@ -279,7 +279,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
-    '# Mission 3 mid-boss','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
+    '# Mission 3 mid-boss','# Mission 3 SV-001 093C9A','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -296,6 +296,8 @@ def root_groups():
 ROOTS+=[0x29ed1a,0x29ee20,0x29ef26,0x29ef7c,0x29f032,0x29f06c,0x29f090,0x29f0e6,0x29f13c,0x29f192]
 # Mission 3 molotov throwers 0569B4/0569D0/0569E6, their shield 056D76, molotov 056B00, flash 056C94 and helmet 056A6A (neo_m3enemy.c).
 ROOTS+=[0x24ac4c,0x24ac56,0x24ad2a,0x24ad9a,0x24adf2,0x24aed2,0x24b106,0x24b1f6,0x24b426,0x24b50a,0x24b548,0x24b58a,0x24b5cc,0x24b616,0x24b680,0x24b730,0x24b7ae,0x24b810,0x24b8b6,0x24b966,0x24b9b8,0x24ba1a]
+# Mission 3 SV-001 093C9A (neo_tank.c v3, docs/PLAN_MISION3.md step 5): its jump program 299228 (09452C; the original's 299180 is shared).
+ROOTS+=[0x299228]
 # Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).
 ROOTS+=[0x281ffc,0x28207a,0x2824f4,0x282518,0x282362,0x28236e,0x282388]
 # Mission 3 oil drum 0391EA (neo_m3enemy.c).

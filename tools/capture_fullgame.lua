@@ -279,18 +279,25 @@ end
 local ride_plan=os.getenv('MSX_FULL_RIDE')
 local ride_mounts,ride_from,ride_was=0,0,false
 local ride_px,ride_blocked,ride_detour,ride_dir=nil,0,0,1
+-- MSX_FULL_RIDE_RANGE=<lo>-<hi> (hex): the vehicle's routine interval
+-- (default the Slugnoid's; the Mission 3 SV-001 093C9A: 93afa-94e2a).
+local ride_lo,ride_hi=string.match(os.getenv('MSX_FULL_RIDE_RANGE') or '96a10-97830','(%x+)-(%x+)')
+ride_lo,ride_hi=tonumber(ride_lo,16),tonumber(ride_hi,16)
 local function slugnoid_node()
  local n=ROOT;local count=0
  while n~=0 and n>=0x100000 and n<0x110000 and count<400 do
   count=count+1
   local r=cpu:read_u32(n)
-  if r>=0x96a10 and r<0x97830 and cpu:read_u32(n+0x0c)==SCRIPT then return n end
+  if r>=ride_lo and r<ride_hi and cpu:read_u32(n+0x0c)==SCRIPT then return n end
   n=cpu:read_u32(n+8)
  end
  return nil
 end
 local function ride_inputs()
  local b={L=0,R=0,U=0,D=0,A=0,B=0,C=0}
+ -- Until the vehicle exists the usual plan runs (a mount of another kind,
+ -- e.g. the Mission 3 mid-boss hold, is not the ride).
+ if ride_mounts==0 and not slugnoid_node() then plan_inputs(cpu:read_u16(0x101500)&511);return end
  local mounted=cpu:read_u16(0x10c608)~=0
  if mounted and not ride_was then ride_mounts=ride_mounts+1;ride_from=frame;print('MOUNT '..ride_mounts..' '..frame) end
  if not mounted and ride_was then print('UNMOUNT '..frame) end
@@ -311,6 +318,27 @@ local function ride_inputs()
    local d=vx-px
    if d>3 then b.R=1 elseif d<-3 then b.L=1 end
    if d>=-10 and d<=10 and ground and frame%30<6 then b.B=1 end
+  end
+ elseif ride_plan=='tank' then
+  -- 'tank' (the Mission 3 SV-001 093C9A, docs/PLAN_MISION3.md step 5):
+  -- first ride: drive both ways with the vulcan, aim up, jumps, the cannon,
+  -- crouch, A+B out; second ride: drive, cannon, A+B out.
+  local n=slugnoid_node();local wx=n and cpu:read_i16(n+0x28) or 420
+  if wx>=5400 then ride_dir=-1 elseif wx<=5200 then ride_dir=1 end
+  local function walk() if ride_dir>0 then b.R=1 else b.L=1 end end
+  if ride_mounts==1 then
+   if t<60 then
+   elseif t<360 then walk();b.A=frame%10<5 and 1 or 0;b.U=t>=240 and 1 or 0
+   elseif t<600 then walk();b.B=frame%60<6 and 1 or 0;b.A=(frame%10<5 and frame%60>=10) and 1 or 0;b.C=(t>=450 and frame%40<4) and 1 or 0
+   elseif t<780 then b.C=frame%30<4 and 1 or 0
+   elseif t<900 then b.D=1;b.A=frame%10<5 and 1 or 0
+   elseif t<906 then b.A=1;b.B=1
+   end
+  else
+   if t<60 then
+   elseif t<300 then walk();b.A=(frame%10<5 and frame%60>=10) and 1 or 0;b.C=frame%45<4 and 1 or 0
+   elseif t<306 then b.A=1;b.B=1
+   end
   end
  elseif ride_plan=='launch' then
   -- 'launch': crouch with the cannon, rise, then A+B on the ground (the
@@ -356,6 +384,9 @@ local load_name=os.getenv('MSX_FULL_LOAD')
 local fam_from=tonumber(os.getenv('MSX_FULL_FAMILY_FROM') or '0')
 local family_roots={}
 for h in string.gmatch(os.getenv('MSX_FULL_FAMILY_ROOTS') or '','(%x+)') do family_roots[tonumber(h,16)]=true end
+-- MSX_FULL_FAMILY_NODES=<hex list>: nodes in the family from the start (the player's node 1014C0 for a vehicle's rider).
+local family_nodes={}
+for h in string.gmatch(os.getenv('MSX_FULL_FAMILY_NODES') or '','(%x+)') do family_nodes[tonumber(h,16)]=true end
 -- MSX_FULL_FAMILY_RANGE=<lo>-<hi> (hex): also every node dispatched with a
 -- routine in that interval (a piece of a long fight started mid-way).
 local frange_lo,frange_hi=string.match(os.getenv('MSX_FULL_FAMILY_RANGE') or '','(%x+)-(%x+)')
@@ -404,6 +435,7 @@ local function fam_frame(f)
  if fam_from<=0 then return end
  if f==fam_from then
   fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  for n,_ in pairs(family_nodes) do family[n]=true end
   fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
   fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
   if os.getenv('MSX_FULL_VRAM_TRACE')=='1' then
@@ -493,7 +525,10 @@ emu.register_frame_done(function()
  local sec=section_of(spc)
  if frame>=2190 then
   cpu:write_u8(0x10c725,0xff);cpu:write_u8(0x10c720,0x63)
-  cpu:write_u8(0x10c621,0x30);cpu:write_u8(0x10c627,0x63)
+  -- The vehicle slot's health and shells kept full (the traversal); off
+  -- with MSX_FULL_VEHICLE_CHEAT=0 (a vehicle family trace: the slot bytes
+  -- are the game's own, shells spent and damage taken).
+  if os.getenv('MSX_FULL_VEHICLE_CHEAT')~='0' then cpu:write_u8(0x10c621,0x30);cpu:write_u8(0x10c627,0x63) end
   -- Progress word 0x10E99E (equal to 0x102036 in Mission 1 only).
   -- Camera Y is left out: it follows the player's jumps and would reset the
   -- count forever; vertical paths advance the progress word itself.

@@ -58,11 +58,35 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   crea desde el guion (`2DAE20`) y la capa `10E8C6` se dibuja; los
   programas y datos de la M2 y la M3 van en sus paquetes (`MSXD`): 210
   ranuras con el jefe intermedio dentro.
-- **Paso 5: sin empezar** (vehículos `093C9A`/`0AC866`, la forma `+93 = 2`
-  —probablemente Marco gordo tras la comida, sin comprobar— y el arma E
-  `0DE4DA`): siguen como paradas explícitas (`weapon_stops`, constructores
-  externos). Visto: `093C9A` no es una entrada de `neo_tank.c` sino una
-  copia aparte del código del SV-001 (`093C9A..094xxx`: paletas
-  `0x87D/0x39D/0x87A`, torreta `03B4E0` con `+72 = 4`, sin la comprobación
-  del cartucho, rutinas `094A26/094B9A/0949EA/094872/094ABA/094CDA`): hace
-  falta traducirla y capturarla como el SV-001 (y caber en la RAM).
+- **Paso 5 (a) hecho: el vehículo `093C9A`** (rama `work-m3step3`). Es una
+  copia aparte del código del SV-001: los estados `092BCA..093AFE` a
+  `+0x11E0` (`093DAA..094CDE`, con sus tablas `094A62`/`094B9A..`), el
+  constructor y la espera `092A32/092AD8/092B0E` a `+0x1268`
+  (`093C9A/093D40/093D76`), la explosión `093BC2` en `094E2A`; cambia las
+  paletas (`0x87D/0x39D/0x87A`), la torreta `03B4E0` con `+72 = 4`, la
+  velocidad (`0x40000`), la dirección en el aire (`±0x40000 >> 2`), la
+  gravedad (`0xFFA3D740`) y el programa del salto (`299228`); obuses,
+  destellos, entradas, polvo, oruga y explosión son los compartidos. Diff
+  de código normalizado (`tankcopy-diff`, 1080/1045 instrucciones):
+  ninguna otra diferencia fuera de las paradas explícitas (`0938DA`,
+  `09351A` y la cola `094CE4..094DFE` con `1ACF2` y la tabla de bits
+  `0DEDD2`). `neo_tank.c` trabaja sobre las etiquetas originales (`orig()`
+  al despachar, `lab()` al guardar `+0` y leer tablas; `v3` para las
+  constantes). Captura: `tools/capture_fullgame.lua` con `MSX_FULL_RIDE=tank`
+  (`MSX_FULL_RIDE_RANGE=93afa-94e2a`, `MSX_FULL_FAMILY_NODES=1014c4`,
+  `MSX_FULL_VEHICLE_CHEAT=0`: sin ese cheat la ranura `10C627` no vuelve a
+  99 obuses cada fotograma) desde `at_132300` (la pelea del jefe intermedio
+  con un Lua nuevo acaba antes y el tanque nace en 137396, no en 142068):
+  familia `m3tank` (`data/m3tank_fixture.json.gz`, 21 nodos, 2206
+  actualizaciones 137396..138548: nacer, montar 137578, conducir en ambos
+  sentidos con vulcan, apuntar arriba, saltos, cañón, agacharse, A+B 138479 y
+  la explosión) igual a MAME en `make check`. Sprites: `export_rest_sprites.py`
+  con `tankd@93c9a-94e2a` (volcados 137380..138700: 2090 píxeles iguales, 0
+  distintos) y paletas `0x87D/0x87A`; programa `299228` en el grupo `m3`.
+  Sin evidencia (paradas explícitas, como en la M1): daño `09351A` y
+  destrucción `0938DA`.
+- **Paso 5 (b) y (c): sin empezar** (`0AC866`: vehículo con marcador «IN»,
+  14 constructores `0AB028..0AE03A`, mapa dinámico `0AAC94`; la forma
+  `+93 = 2` —probablemente Marco gordo tras la comida, sin comprobar— y el
+  arma E `0DE4DA`): siguen como paradas explícitas (`weapon_stops`,
+  constructores externos).

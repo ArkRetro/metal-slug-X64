@@ -1109,6 +1109,18 @@
    "rom": "0x0DFDD2",
    "reader": "01F1D4 Mission 3 camp (neo_m3enemy.c): the +6E words 0DFDD2 (01F7FC), hurtboxes 0DFDDA/0DFDE6 (+50), cull rectangles 0DFDF2/0DFDFA (01945C)",
    "hex": "00010001000100020502fff800000010001080000102fff80000001000108000ffc0ffa0008000c0ffc0ffa0008000c0"
+  },
+  {
+   "rom": "0x094A62",
+   "reader": "093C9A Mission 3 SV-001 exit: palette list 094A62 (093882 relocated, 093A08 + 0x11E0)",
+   "hex": "039c039c0396039c039c0397039c039c0398039c039c0399039d039d0396039d039d0397039d039d0398039d039d0399039e039e0396039e039e0397039e039e0398039e039e0399039e039e039a039e039e039afffffff4",
+   "group": "m3"
+  },
+  {
+   "rom": "0x094BA8",
+   "reader": "093C9A Mission 3 SV-001 attack rows 094BA8 / 094BB8, push row 094BC8 and blast row 094BD8 (0939C8 + 0x11E0)",
+   "hex": "ffe0fff800400030000c00010190fffffec001000280020000010001000affffffeafff8002c0010000500010032ffffffd0fff800600040000100010064ffff",
+   "group": "m3"
   }
  ]
 }

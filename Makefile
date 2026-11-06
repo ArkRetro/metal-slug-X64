@@ -184,9 +184,16 @@ BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematic
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
 # the mission switch; without them the game stops there and restarts Mission 1.
 MISSION_PACKS := $(wildcard romfs/mission[2-6].pack)
-# Pre-rendered stage backgrounds (prototype, tools/prerender_stage.py render;
-# private, read only by MSX_BG_PRERENDER builds).
-MISSION_BGP := $(wildcard romfs/m[2-6]s[1-9].bgp)
+# Pre-rendered stage backgrounds (docs/RENDIMIENTO.md "Fondos
+# pre-renderizados"): generated from the private packs for Mission 2 stage 2
+# and Mission 3, only the stages and layers whose columns save RAM
+# (tools/prerender_stage.py build); none without the packs.
+PRERENDER_SPECS := romfs/mission2.pack:2 romfs/mission3.pack:all
+MISSION_BGP := $(if $(MISSION_PACKS),$(BUILD_DIR)/bgp.stamp)
+$(BUILD_DIR)/bgp.stamp: tools/prerender_stage.py $(MISSION_PACKS)
+	@mkdir -p $(BUILD_DIR)
+	python3 -I tools/prerender_stage.py build $(BUILD_DIR)/bgp $(PRERENDER_SPECS)
+	touch $@
 # The private Marco inputs are compared by content, not by time
 # (tools/marco_inputs_sum.sh): a catalog copied with its old time (cp -p)
 # left marco_renderer.o compiled against the previous catalog in test ROM 18.
@@ -199,7 +206,7 @@ $(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_D
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
-	$(if $(MISSION_BGP),cp $(MISSION_BGP) $(BUILD_DIR)/game-romfs/)
+	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)

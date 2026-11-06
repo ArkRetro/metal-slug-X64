@@ -135,8 +135,34 @@ def estimate(paths):
             print(f'M{pk.mission} s{k+1} w={st["width"]} pinned={len(chunks)}ch={len(chunks)*16}K resid={len(resid)}ch dense={dense}ch window={ws}ch patchcells={patch} ROM ci4={tot_ci4//1024}K ci8={tot_ci8//1024}K ring={ring//1024}K')
             for l in line:print('  '+l)
 
-def render(path,k,out):
+def chunk_set(pk,k,pre):
+    """Map chunks the stage pins when the layers of `pre` stream as columns."""
+    out=set()
+    for layer,x,y,ph in pk.cells(k):
+        if layer in pre and len(set(ph))==1:continue
+        for p in ph:out.add(pk.image(p)[0]//8)
+    return out
+
+def ring_bytes(pk,cells):
+    cols=columns(pk,cells);n=(max(cols)-min(cols))//16+1
+    return ((8*n+15)&~15)+32*((max(column_bytes(r) for r in cols.values())+15)&~15)+2048
+
+def select_layers(pk,k):
+    """Greedy: a layer streams when the chunks it unpins outweigh its ring
+    (the runtime's 32 columns, tools/scene_prerender.c), so only where it saves."""
+    lay,_,_=layer_cells(pk,k);pre=set();base=len(chunk_set(pk,k,pre))*CHUNK
+    while True:
+        best=None
+        for l in sorted(lay):
+            if l in pre or l>3:continue
+            gain=base-len(chunk_set(pk,k,pre|{l}))*CHUNK-ring_bytes(pk,lay[l])
+            if gain>0 and (best is None or gain>best[0]):best=(gain,l)
+        if not best:return pre
+        pre.add(best[1]);base=len(chunk_set(pk,k,pre))*CHUNK
+
+def render(path,k,out,only=None):
     pk=Pack(path);lay,_,_=layer_cells(pk,k)
+    if only is not None:lay={l:c for l,c in lay.items() if l in only}
     head=bytearray(b'MSXB'+struct.pack('>HHHHI',1,k,sum(1 for l in lay if l<4),0,0))
     head+=bytes(16*4);body=bytearray();tables=bytearray();layer_tables=[]
     for layer in range(4):
@@ -173,7 +199,21 @@ def main():
     ap=argparse.ArgumentParser();sub=ap.add_subparsers(dest='cmd',required=True)
     e=sub.add_parser('estimate');e.add_argument('packs',nargs='+')
     r=sub.add_parser('render');r.add_argument('pack');r.add_argument('stage',type=int);r.add_argument('out')
+    b=sub.add_parser('build',help='the cartridge files: PACK:STAGES (comma list or all) into OUTDIR, only stages and layers that save RAM')
+
+    b.add_argument('outdir');b.add_argument('specs',nargs='+')
     a=ap.parse_args()
     if a.cmd=='estimate':estimate(a.packs)
-    else:render(a.pack,a.stage-1,a.out)
+    elif a.cmd=='render':render(a.pack,a.stage-1,a.out)
+    else:
+        outdir=Path(a.outdir);outdir.mkdir(parents=True,exist_ok=True)
+        for f in outdir.glob('m*s*.bgp'):f.unlink()
+        for spec in a.specs:
+            path,stages=spec.rsplit(':',1)
+            if not Path(path).exists():continue
+            pk=Pack(path)
+            for k in (range(len(pk.stages)) if stages=='all' else [int(v)-1 for v in stages.split(',')]):
+                pre=select_layers(pk,k)
+                if pre:render(path,k,outdir/f'm{pk.mission}s{k+1}.bgp',pre)
+                else:print(f'M{pk.mission} s{k+1}: no layer saves RAM, tile path')
 if __name__=='__main__':main()

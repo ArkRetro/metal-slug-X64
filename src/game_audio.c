@@ -70,11 +70,16 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * the M3 reference 15 KB under the floor (3317 of 3332 KB): the Mission 1
  * boss's voices 1073 (46 KB, 0D5B4C) and 10C6 (25 KB, neo_boss.c), once per
  * game, stream from rom:/ too. */
+/* The M2 and M3 reference cartridges stood at 207 slots (3313 of 3332 KB)
+ * with the Mission 3 step 5 data; 210 are asked of them: the dome's collapse / rocket flash voice 10A3
+ * (43 KB, once per game, neo_dome.c, neo_rocket.c) and the vehicles'
+ * destruction 1034 (34 KB, once per vehicle: tank, Slugnoid, Mission 3
+ * vehicles) stream from rom:/ too. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1032u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
         || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
-        || w==0x1073u || w==0x10c6u;
+        || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

@@ -620,7 +620,7 @@ static void draw_layer_direct(unsigned layer,const int *offsets,const int *rises
         }
     }
 }
-/* Pre-rendered columns (scene_prerender.h, prototype): each run of a
+/* Pre-rendered columns (scene_prerender.h): each run of a
  * resident column is one upload of the ring's texels (the 16x256 CI4 page
  * layout from the run's first texel) and one rectangle; a column a map
  * patch may replace goes cell by cell (hidden, as the tile path). Animated

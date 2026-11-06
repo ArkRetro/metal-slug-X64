@@ -775,7 +775,7 @@ bool scene_stage_load(unsigned index) {
         data_programs=data_head[8]<<8|data_head[9];
         need+=((mission_head.data_length+15)&~15u)+((data_programs*sizeof(stage_program_t)+15)&~15u);
     }
-    /* Pre-rendered columns (scene_prerender.h, prototype): tables and rings
+    /* Pre-rendered columns (scene_prerender.h): tables and rings
      * in the stage's slots, in place of its pinned static map chunks. */
     unsigned prerender_bytes=scene_prerender_probe(mission_head.mission,index);need+=prerender_bytes;
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
@@ -865,7 +865,7 @@ bool scene_stage_load(unsigned index) {
     /* The stage map, pinned and loaded now (the screen is black). */
     stage_map_first=min_page/8u;stage_map_count=images?max_page/8u-min_page/8u+1u:0;
     map_chunks=0;
-    /* Pre-rendered layers (scene_prerender.h, prototype): their static
+    /* Pre-rendered layers (scene_prerender.h): their static
      * cells stream as columns, not pinned (kept pinned in MSX_BG_CRC
      * builds, whose reference pass draws them through the tiles). */
     unsigned prerendered=scene_prerender_open(prerender_mem,SCENE_PALETTE_COUNT)?scene_prerender_layers():0u;

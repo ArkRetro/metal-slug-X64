@@ -1150,6 +1150,8 @@ medida real sigue siendo la del usuario.
 
 ## Fondos pre-renderizados (prototipo) (rama `work-prebg`)
 
+*Estado: en producción (ver «En producción» al final de esta sección).*
+
 **Pregunta.** Con la RAM en el suelo (208 ranuras, 486–496 KB libres tras
 cargar), ¿libera RAM sustituir las celdas del fondo (mapa entero fijado en la
 caché de escena) por las capas de cada etapa pre-renderizadas y leídas del
@@ -1236,3 +1238,28 @@ capa 0 de la torre de la M2 e3 y la capa 1 de la M3 e1 (≈ −8 y −6 ranuras,
 celdas animadas (capa 3 de la M2 e3 y de la M3), y la migración completa
 liberaría ≈ 8 ranuras en la etapa peor (la e3 de la M2 fija el
 suelo de la misión): ayuda, pero no saca la RAM del suelo por sí sola.
+
+**En producción** (decisión del usuario: solo donde ahorra). `MSX_BG_PRERENDER`
+vale 1 por defecto. El Makefile genera `build/bgp/` desde los packs privados
+(`tools/prerender_stage.py build`, `PRERENDER_SPECS`: M2 etapa 2 y todas las
+de la M3) y solo copia al cartucho esos ficheros; sin packs no hay ninguno.
+`build` elige por etapa, de forma voraz, las capas cuyas columnas liberan más
+fragmentos de los que cuesta su anillo: M2 e2 capas 2+3 (175 KB), M3 e1 capa 1
+(90 KB; la 3, con 1232 celdas animadas, no ahorra). M2 e1 y e3 se quedan con
+las teselas (en la e3, con columnas enteras, el anillo no compensa; el
+anillo 2-D queda pendiente). La M1 no cambia (no tiene etapa).
+
+Ranuras de los cartuchos de referencia: con los datos de la Misión 3 paso 5
+la M2 y la M3 se quedaban en 207 (3313 KB de 3332). Ahora se piden ≥ 210. Para
+llegar, `10A3` (voz del derrumbe de la cúpula y del destello del cohete,
+43 KB, una vez por partida) y `1034` (destrucción del tanque, el Slugnoid y
+los vehículos de la M3, 34 KB, una vez por vehículo) se leen de `rom:/`, como
+los demás efectos raros (`game_audio.c`): **211 ranuras** (3376 KB) en las
+dos.
+
+Medidas (ares 146, referencias con `MSX_DIAG`):
+- Píxeles con `-DMSX_BG_CRC=1`: en la M2 e2, 130 iguales y 0 distintas
+  (cámara 0–2368); en la M3 e1, 236 iguales y 0 distintas (cámara 0–4393,
+  `test_mission3_ares.py` PASS).
+- M2 e2: mapa fijado 25 → 5 fragmentos, 0 lecturas síncronas.
+- M3 e1: mapa fijado 44 → 31 fragmentos, a cambio de 6 ranuras de anillo.

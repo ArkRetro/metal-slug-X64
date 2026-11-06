@@ -1,8 +1,8 @@
 #ifndef MSX_SCENE_PRERENDER_H
 #define MSX_SCENE_PRERENDER_H
-/* Pre-rendered background columns (feasibility prototype, docs/RENDIMIENTO.md
- * "Fondos pre-renderizados (prototipo)"; build with
- * MSX_EXTRA_CFLAGS=-DMSX_BG_PRERENDER=1). A private file /mMsS.bgp
+/* Pre-rendered background columns (docs/RENDIMIENTO.md
+ * "Fondos pre-renderizados"; on by default,
+ * -DMSX_BG_PRERENDER=0 leaves it out). A private file /mMsS.bgp
  * (tools/prerender_stage.py render) holds every static cell of each layer of
  * one stage laid out by 16-px column; the columns the camera reaches stream
  * from the cartridge into a ring per layer (async PI DMA, a margin ahead),
@@ -11,7 +11,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #ifndef MSX_BG_PRERENDER
-#define MSX_BG_PRERENDER 0
+#define MSX_BG_PRERENDER 1
 #endif
 /* A column run: n cells from y (layer coordinates), one palette (the pack's
  * mission palette index), 128 bytes of CI4 texels per cell after the runs. */

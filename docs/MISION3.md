@@ -713,7 +713,35 @@ muerte general apareció una parada nueva `world unsupported routine=800040`
 (rutina de muerte de soldado tipo 6 bajo `1067E3`, por investigar junto a las
 demás paradas del mundo).
 
-Pendiente del paso 2 (en orden): `027F54`, `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
+**Quinta tanda** (coche con pasajero `027F54`): `027F54..02916A` nativo en
+`neo_m3enemy.c` (`cv_tick`): el registro `2DA4A6` lo deja parado (`+6E` ≠ 0:
+bit 5 de `+7D`, programa `235BAA`, ráfagas `02834A` por `028DA8`, giro
+`02818E` por `028DEA`), el modo de conducción `0280B6..028300` (sonido `109D`,
+`0146A8`, giro en los bordes `028D52`, frenada `0282A4`), el daño `02849A`, la
+muerte `0284F2` (`01C71E`, `+60` = 1 hasta que el pasajero salta, `23606E` →
+`23611C`/`236170`, `028EAA`: `1033`, `01C71E`, 16 × `01D31C`), el pasajero
+`0287FA` (`01AD6E` (±4, 28), modo `+7C`: salta con `23638A/2363D8` o se queda
+con `236314`; en `028948` pasa a soldado por `JMP 0B0626/0B0632`), la bomba
+`0286F8` (velocidad de rango `2CD05A`), el casquillo `0287AC`, el motor
+`028A88`, los cascos `028BA8/028BBC`, las piezas `028C3E/028C76/028CA4`, los
+avisos de programa `028E16..02903C` (regalo `029010` → `08CDB2`, sello
+`0C88B0` `029124/029146`). Datos: `029084..02916A` y rangos `2CCFF8..2CD19E`
+en `region_rom.json`; programas `235A96..236758` en `soldier_programs.json`.
+Prueba de familia `m3car` con la conversión en soldado: nueva opción
+`--soldier RUTINAS` de `compile_family_fixture.py` (la actualización que
+salta a `0B0626/0B0632` exige `become_soldier` y no compara los bytes; las
+actualizaciones posteriores del nodo y los hijos que crea desde entonces, la
+onda `03C62A` del soldado, se descartan) y `FAMILY_LEAVE` en
+`test_neo_family.c`.
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3car` (coche `027F54` parado en 1264, daño, muerte, pasajero `0287FA` → soldado) | 31 | 1064 | 119579..120321 | iguales a MAME |
+
+Sin traza: la conducción, las ráfagas, la bomba y el casquillo (traducción
+literal).
+
+Pendiente del paso 2 (en orden): `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
 mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
 paracaídas, premios y ramas al azar.
 

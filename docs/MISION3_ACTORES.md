@@ -338,8 +338,8 @@ identificar» cuando no hay más.
 | `0AF1B6` | `0AF1B6` | 1 | 119050 / 849 | 2:1 | guion | `23D5E2` `23E43C` | — | **falta** | programas de soldado (los de `0AF17E` `23D5E2 23E43C`) |
 | `01A422` | `01A422` | 14 | 119254 / 993 | 2:8 4:6 | guion | — | — | nativo (`neo_script.c`) | corredor del guion (op 8) |
 | `04115A` | `04115A` | 7 | 119335 / 1043 | 2:6 3:1 | guion | `240DEE` `240F8E` `24116E` +3 | 103E 1041 1042 | nativo | soldado (familia de la Misión 1) |
-| `027F54` | `027F54` | 1 | 119579 / 1267 | 2:1 | guion | `235BAA` `235FE0` `23606E` +1 | 1021 1033 109D | **falta** | sin identificar; regalo `00` (H); hijo `0287FA`, explosiones; sonidos 1021/1033/109D |
-| 〃 | `0287FA` | 1 | 119932 / 1520 | 2:1 | `027F54` | `236314` `23D510` `23DFE4` +1 | — | **falta** |  |
+| `027F54` | `027F54` | 1 | 119579 / 1267 | 2:1 | guion | `235BAA` `235FE0` `23606E` +1 | 1021 1033 109D | nativo (`neo_m3enemy.c`) | coche con pasajero (`cv_tick`); regalo `00` (H); hijo `0287FA`, explosiones; sonidos 1021/1033/109D |
+| 〃 | `0287FA` | 1 | 119932 / 1520 | 2:1 | `027F54` | `236314` `23D510` `23DFE4` +1 | — | nativo (`neo_m3enemy.c`) | pasajero: salta o se queda y pasa a soldado (`0B0626/0B0632`) |
 | `02916E` | `02916E` | 2 | 120124 / 1520 | 2:2 | guion | `2367E4` `2367FE` `236818` +1 | 1023 102F 1033 10A5 | nativo | camión (Misión 1); mapas dinámicos `029C9A/029CDC/029D1E` |
 | 〃 | `029802` | 2 | 120124 / 1520 | 2:2 | `02916E` | — | — | nativo |  |
 | `05D916` | `05D916` | 4 | 120554 / 1520 | 2:4 | guion | `2404FE` `240DEE` `262AD8` +3 | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `262AD8..263498`; hijos `05DDA4 05DF3E 05DFC2 05DD2A` |

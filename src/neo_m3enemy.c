@@ -4290,6 +4290,476 @@ static bool in(const uint32_t *k,unsigned n,uint32_t r) {for (unsigned i=0;i<n;i
 #define IN(t,r) in(t,sizeof t/sizeof t[0],r)
 static const uint32_t windowed[]={0x8da12,0x8da34,0x8dad0,0x8dae4,0x8db2a,0x8db40,0x8db66,0x8db7c,0x8db98,0x8dbac,0x8dbe8,0x8dbfe,0xb05fe,0xb0626,0xb0632};
 static bool shielded(uint32_t r) {return (r>=0x9ae1e && r<0x9cb70) || r==0x9ba2a;}
+/* ---- rider vehicle 027F54 --------------------------------------------------------- */
+/* 027F54..02916A (record 2DA4A6 of section 2 at camera 1264: an armed car
+ * with a rider; tables 029084..02916A, ranks 2CCFF8..2CD19E). 028FB2 takes
+ * the record words: +6E != 0 -> +7D bit 5 (it idles instead of driving),
+ * +70 -> bit 3 (the bomb 0286F8 starts 8 px lower), +74 -> bit 2 (palette
+ * 3CC instead of 2F2), +7C = +72 (the rider's mode: 0 stays on, 1 jumps off,
+ * 2 random), +7E = +76 / +80 = +78 (the item 08CDB2 dropped by 029010, -1
+ * none); +6E..+78 = 0. Constructor: 0146E8, 01ABC8, 8810, flash 305, +4E =
+ * rank 2CCFF8, +76 = rank 2CD0BC, x >= A0 -> bit 6 (the far screen range of
+ * 028D52), +50 = 029084, solid 0290E8, exhaust 01DC8E (0), 0143E4; +6C == 3
+ * -> 02802C (235BAA until +6C changes), else 028052: with bit 5 the idle
+ * 028118 (235BAA, 01436A; 028DA8: +76 expired with a player on screen ->
+ * the burst 02834A; 028DEA: +7B expired and no player in front -> the turn
+ * 02818E: 235B1A, +7B = rank 2CD16A, +26 from rank 2CD184, then 028118),
+ * else the drive 0280B6 (sound 109D, 235A96 / 235AD8 by 028D24 = facing !=
+ * bit 7, +62 = -+1 << 16, +26 by 028D04 from the +78 counter; 0146A8; a
+ * contact, +30 = 0 or the screen edge 028D52 -> 02829E (bit 7 flipped) /
+ * 0282A4 (235BE8 / 235C30 brake, 109D stopped, +72 = -+62 >> 5; 028300
+ * slows to 028118); 028DA8 / 028DEA -> 0282A4; row 0290A8). 02820A: 028DA8
+ * -> 02834A, bit 5 -> 028118, else 235C78 / 235D58 (+72 = +-0x10000 >> 5)
+ * and 028272 accelerates to 028052. 02834A: 235E38 then 028386: +7A = rank
+ * 2CD11E bursts of +76 = rank 2CD138 (235F3E when +7A > 1 and +76 <= 3C,
+ * else 235EAA; 0283F0 counts them down, 02839C re-ranks +76; then 028118
+ * with +76 = rank 2CD0BC). 028450 (235FB6, unreached) and the flinch 02849A
+ * (235FE0, 109D stopped) go back to 02820A. Tails 0285F6 (004C24: a hit of
+ * 01B206 -> 02849A), 028650 and 028614 (+5F bit 7 -> 0284F2, or 02858C for
+ * a hit of 01B206; 01945C 0290FE -> 028660 deleted). Death 0284F2: 01C71E
+ * at (-18, 0), +60 = 1 (the rider clears it), 23606E; 02853E waits for +60
+ * = 0 -> 028572 (23611C) / 02858C (236170) -> 0285A2: 019DFC, 0285B4 until
+ * bit 0 of +7D is clear -> 0285EA (028EAA: sound 1033, 01C71E, 16 x 01D31C)
+ * -> 028660. Program calls: 028E16 (1033, debris 01DA40 029112), 028E42 /
+ * 028E5A (carry tests), 028E62 (028C76), 028E86 (028CA4, D0 = 2A), 028EAA,
+ * 028EDE (the rider 0287FA, D0 = 0E, +7C copied), 028F08 (1067, the bomb
+ * 0286F8 at (-1E, 2C), the shell 0287AC at (0, A)), 028F5E (10AA, 028C3E
+ * and 028A88 at (-10, 10)), 029010 (the item), 029034 (+5F bit 3), 02903C
+ * (8820; bit 0 of +7D: the wreck stamp 0C88B0 029124 / 029146 by bit 1 and
+ * the row 0290D8; solid released).
+ * - 0287FA (rider): 01AD6E (+-4, 28) on the creator, palette 21A, faces the
+ *   nearest player (01AF9A), +7C (2: random bit): nonzero -> +7C = 0, bit 4,
+ *   23638A then 2363D8 then 0288D2 (028BBC, 236356); zero -> +7C = 1, 236314;
+ *   028930 (028E2C: 01ABC8, +1E = the creator's - 1) -> 028948: flipped,
+ *   +34 = 44444, +6E = FFFF6E5E, +30 = +-11111, 8820, the creator's +60 = 0,
+ *   JMP 0B0626 (+7C == 1) / 0B0632: a soldier. Tail 028A5C: 004C24, +5F bit
+ *   7 -> 0289A6 (23643A / 2364D4 by the facing, 028BA8 / 028BBC by bit 4,
+ *   the creator's +60 = 0; 028A32: +1E + 1, ends or the creator gone ->
+ *   028660); 00409A -> 028660.
+ * - 0286F8 (bomb): +30 = +-rank 2CD05A << 8, bit 3 -> y + 8, 236244, palette
+ *   3CF, E0EF, +15 bit 5; 028762: 0143E4, row 0290C8 or +15 bit 7 -> 028B8C
+ *   (009F88, 1001, +50 = 0, JMP 01C706), 019504 0290F6 -> 0286F0.
+ * - 0287AC (shell): palette 208, facing flipped, 1001, 236272; 0287E2 ends
+ *   -> 0286F0.
+ * - 028A88 (engine): E0EF, +15 bit 5, palettes 216 / 3D2 / 367, +30 =
+ *   +-10000, +4E = 1, 236758; 028AFA: 0143E4, +30 += +30 >> 5, +34 += +6E,
+ *   +14 = the byte +19 / +1A / +1B by 10000E & 3, row 0290B8 / +15 bit 7 /
+ *   +5F bit 7 -> 028B8C, 019504 0290F6 -> 0286F0.
+ * - 028BA8 / 028BBC (helmet pieces 23660C / 2366B2): palette 21A, +34 =
+ *   99999, +6E = FFFF0A3E, +30 = CCCC, E0ED; 028C04: 0143E4, +34 += +6E, +15
+ *   bit 7 or 019504 0290F6 -> 0286F0.
+ * - 028C3E (23657A on the creator, palette 218, 1001), 028C76 (2361DE, 348,
+ *   E0ED), 028CA4 (22D372, 204, E0ED): 028CD8 ends or 019504 -> 0286F0.
+ * The cartridge checks before 004188 / 0041AC are not reproduced. Proven by
+ * the family m3car (capture A of captures-m3s2c: the idle car at 1264, its
+ * flinch, death and rider); the drive, burst and bomb paths are literal. */
+static bool cv(uint32_t r) {return r>=0x27f54 && r<0x28d04;}
+/* 028FB2 */
+static void cv_fb2(neo_gactor_t *a) {
+    SB(0x7d,0);
+    if (W(0x6e)) SET(0x7d,5);
+    if (W(0x70)) SET(0x7d,3);
+    if (W(0x74)) SET(0x7d,2);
+    SB(0x7c,W(0x72));SW(0x7e,W(0x76));SW(0x80,W(0x78));
+    SW(0x6e,0);SW(0x70,0);SW(0x72,0);SW(0x74,0);SW(0x76,0);SW(0x78,0);
+}
+/* 01DC8E: the exhaust 01D86C with +70 = d0 and +94 = 0. */
+static void exhaust8e(neo_gactor_t *a,neo_genv_t *e,int16_t d0) {
+    neo_gactor_t *c=child(a,e,0x1d86c,0x1c,0,0);
+    if (!c) return;
+    ga_sb(c,0x94,0);ga_sw(c,0x6e,0);ga_sw(c,0x70,(uint16_t)d0);ga_sw(c,0x72,0x3f);ga_sw(c,0x74,0x1f);
+}
+/* 028D04: +26 from the +78 counter. */
+static void cv_d04(neo_gactor_t *a) {
+    uint16_t d0=W(0x78);SW(0x78,d0+1u);d0>>=4;
+    if (S16(d0)>3) d0=3;
+    SW(0x26,(uint16_t)((d0+1u)<<7));
+}
+/* 028D24: carry when the facing differs from +7D bit 7. */
+static bool cv_d24(neo_gactor_t *a) {return BIT(0x15,0)!=BIT(0x7d,7);}
+/* 028D52: carry at the screen edge of the drive (bit 6: the far range). */
+static bool cv_d52(neo_gactor_t *a) {
+    int16_t x=S16(W(0x3c));bool left=S16(W(0x30))<0;
+    if (!BIT(0x7d,6)) return left?x<0x28:x>0x90;
+    return left?x<0xb0:x>0x118;
+}
+/* 028DA8: carry when +76 has expired with a live player and x in 10..120. */
+static bool cv_da8(neo_gactor_t *a,neo_genv_t *e) {
+    SW(0x76,W(0x76)-1u);
+    if (S16(W(0x76))>0) return false;
+    SW(0x76,0);
+    uint32_t n;
+    if (nearest(a,e,&n)) return false;
+    int16_t x=S16(W(0x3c));
+    if (x<0x10 || x>0x120) return false;
+    return true;
+}
+/* 028DEA: +7B counts down; carry when no live player is in front (01B0BE). */
+static bool cv_dea(neo_gactor_t *a,neo_genv_t *e) {
+    if ((int8_t)B(0x7b)>0) {SB(0x7b,B(0x7b)-1u);return false;}
+    uint32_t n;
+    if (nearest(a,e,&n)) return false;
+    return k1b0be(a,e,&n);
+}
+/* 028E2C: 01ABC8 and the depth one above the creator's. */
+static void cv_e2c(neo_gactor_t *a,neo_genv_t *e) {
+    ga_project(a,e);
+    neo_gactor_t *p=sh_creator(a,e);
+    if (!p) {ga_fail(e,0x28e2c);return;}
+    SW(0x1e,ga_w(p,0x1e)-1u);
+}
+/* 028EAA: sound 1033, 01C71E and 01DBAA (16 x 01D31C at (0, 18)). */
+static void cv_eaa(neo_gactor_t *a,neo_genv_t *e) {
+    sound(e,0x1033);child(a,e,0x1c71e,0x1c,0,0);
+    for (unsigned i=0;i<16;i++) child(a,e,0x1d31c,0x2a,0,0x18);
+}
+/* 029010 -> 08CDB2: the item +7E / +80 after the script actor at (0, 0). */
+static void cv_010(neo_gactor_t *a,neo_genv_t *e) {
+    uint16_t kind=W(0x7e);
+    if (kind==0xffffu || kind>=0x5au) return;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (!c) return;
+    ga_sb(c,0x8b,0);ga_sw(c,0x70,W(0x80));ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);
+    ga_place_at(c,a,e,0,0);
+}
+static bool cv_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    switch (routine) {
+    case 0x28e16:sound(e,0x1033);debris40(a,e,0x29112);return true;
+    case 0x28e42:case 0x28e5a:return true;                          /* carry tests: no effect on the node */
+    case 0x28e62:child(a,e,0x28c76,0x1c,0,0);return true;
+    case 0x28e86:child(a,e,0x28ca4,0x2a,0,0);return true;
+    case 0x28eaa:cv_eaa(a,e);return true;
+    case 0x28ede: {neo_gactor_t *c=child(a,e,0x287fa,0x0e,0,0);if (c) ga_sb(c,0x7c,B(0x7c));return true;}
+    case 0x28f08:sound(e,0x1067);child(a,e,0x286f8,0x1c,-0x1e,0x2c);child(a,e,0x287ac,0x1c,0,0x0a);return true;
+    case 0x28f5e:sound(e,0x10aa);child(a,e,0x28c3e,0x1c,0,0);child(a,e,0x28a88,0x1c,-0x10,0x10);return true;
+    case 0x29010:cv_010(a,e);return true;
+    case 0x29034:SET(0x5f,3);return true;
+    case 0x2903c:
+        SW(0x66,0x8820);SW(0x1e,0x8820);
+        if (BIT(0x7d,0)) {
+            if (e->stamp) e->stamp(e->ctx,a,BIT(0x7d,1)?0x29146u:0x29124u);   /* 0C88B0 */
+            ga_attack(a,e,0x290d8);
+        }
+        solid(a,e,0);
+        return true;
+    }
+    return false;
+}
+/* 028614 */
+static ga_result_t cv_tail614(neo_gactor_t *a,neo_genv_t *e) {
+    if (BIT(0x5f,7)) {SL(0,0x284f2);if (flinch(a,e)) SL(0,0x2858c);}
+    SB(0x5a,0);
+    if (ga_cull(a,e,0x290fe)) SL(0,0x28660);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0285F6 */
+static ga_result_t cv_tail5f6(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_register(a,e,NULL,NULL)) {if (flinch(a,e)) SL(0,0x2849a);SB(0x5a,0);}
+    return cv_tail614(a,e);
+}
+/* 028650 */
+static ga_result_t cv_tail650(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+    return cv_tail614(a,e);
+}
+/* 028A5C */
+static ga_result_t cv_taila5c(neo_gactor_t *a,neo_genv_t *e) {
+    ga_register(a,e,NULL,NULL);
+    if (BIT(0x5f,7)) {SL(0,0x289a6);SB(0x5a,0);}
+    if (!ga_creator_alive(a,e)) SL(0,0x28660);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0146A8: ground step; a non-flat contact restores the position and sets
+ * +5F bit 0 (as neo_armored.c). */
+static void k146a8(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t x=L(0x28),y=L(0x2c),p=L(0x38),kind=0;
+    ga_ground(a,e,&kind);
+    if (BIT(0x15,6) && (uint16_t)kind!=0x4000u) {SL(0x38,p);SL(0x2c,y);SL(0x28,x);SET(0x5f,0);ga_project(a,e);}
+}
+static ga_result_t cv_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;neo_gactor_t *p;uint32_t n;
+again:
+    switch (L(0)) {
+    case 0x27f54:
+        cv_fb2(a);CLR(0x7d,0);CLR(0x7d,1);ga_floor(a,e);ga_project(a,e);k1b1dc(a);
+        SW(0x66,0x8810);SW(0x1e,0x8810);ga_palette(a,BIT(0x7d,2)?0x3cc:0x2f2);ga_flash_palette(a,0x305);
+        SW(0x4e,rank(a,e,0x2ccff8));SW(0x76,rank(a,e,0x2cd0bc));
+        if (S16(W(0x3c))>=0xa0) SET(0x7d,6);
+        CLR(0x7d,7);SL(0x50,0x29084);solid(a,e,0x290e8);exhaust8e(a,e,0);ga_air(a,e);
+        if (B(0x6c)!=3u) {SL(0,0x28052);goto again;}                /* 01B284 */
+        START(0x235baa);SL(0,0x2802c);
+        /* fall through */
+    case 0x2802c:
+        ga_air(a,e);
+        if (B(0x6c)!=3u) SL(0,0x28052);
+        if (ga_anim_step(a,e,cv_call)<0) return GA_UNSUPPORTED;
+        ga_register(a,e,NULL,NULL);
+        return cv_tail614(a,e);
+    case 0x28052:
+        if (BIT(0x7d,5)) {SL(0,0x28118);goto again;}
+        sound(e,0x109d);k1b1dc(a);
+        if (cv_d24(a)) {START(0x235ad8);SL(0x62,0x10000);} else {START(0x235a96);SL(0x62,0xffff0000u);}
+        SW(0x78,0);cv_d04(a);SL(0,0x280b6);
+        /* fall through */
+    case 0x280b6:
+        k146a8(a,e);
+        if (BIT(0x5f,0)) SL(0,0x2829e);
+        if (!L(0x30)) SL(0,0x2829e);
+        if (ga_anim_step(a,e,cv_call)<0) return GA_UNSUPPORTED;
+        if (cv_d52(a)) SL(0,0x2829e);
+        if (cv_da8(a,e)) SL(0,0x282a4);
+        if (cv_dea(a,e)) SL(0,0x282a4);
+        ga_attack(a,e,0x290a8);
+        return cv_tail5f6(a,e);
+    case 0x28118:
+        k1b1dc(a);SW(0x26,0x100);START(0x235baa);SL(0,0x2813a);
+        /* fall through */
+    case 0x2813a:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) {if (BIT(0x7d,5)) START(0x235baa); else SL(0,0x2820a);}
+        if (cv_da8(a,e)) SL(0,0x2834a);
+        if (cv_dea(a,e)) SL(0,0x2818e);
+        return cv_tail5f6(a,e);
+    case 0x2818e:
+        k1b1dc(a);sound(e,0x109d);SB(0x7b,rank(a,e,0x2cd16a));
+        SW(0x26,(uint16_t)(((rank(a,e,0x2cd184)&3u)+1u)<<7));START(0x235b1a);SL(0,0x281dc);
+        /* fall through */
+    case 0x281dc:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28118);
+        ga_attack(a,e,0x290a8);ga_register(a,e,NULL,NULL);SB(0x5a,0);
+        return cv_tail614(a,e);
+    case 0x2820a: {
+        SW(0x26,0x100);
+        if (cv_da8(a,e)) {SL(0,0x2834a);goto again;}                 /* bcs 02834A */
+        if (BIT(0x7d,5)) {SL(0,0x28118);goto again;}
+        uint32_t d0;
+        if (cv_d24(a)) {START(0x235d58);d0=0x10000;} else {START(0x235c78);d0=0xffff0000u;}
+        if (BIT(0x15,0)) d0=0u-d0;
+        SL(0x72,ASR(d0,5));SL(0,0x28272);
+    }   /* fall through */
+    case 0x28272:
+        k146a8(a,e);SL(0x62,L(0x62)+L(0x72));
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28052);
+        ga_attack(a,e,0x290a8);
+        return cv_tail5f6(a,e);
+    case 0x2829e:
+        SB(0x7d,B(0x7d)^0x80u);
+        /* fall through */
+    case 0x282a4: {
+        uint16_t d0=W(0x62);
+        if (BIT(0x15,0)) d0=0u-d0;
+        if (S16(d0)>0) START(0x235c30); else START(0x235be8);
+        SW(0x78,0);SL(0x72,0u-ASR(L(0x62),5));sound(e,0x8000u|0x109d);SL(0,0x28300);   /* 012192 */
+    }   /* fall through */
+    case 0x28300:
+        k146a8(a,e);
+        if (L(0x72)) {if (L(0x62)) SL(0x62,L(0x62)+L(0x72)); else SL(0x72,0);} else SL(0x62,0);
+        cv_d04(a);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28118);
+        cv_da8(a,e);
+        return cv_tail5f6(a,e);
+    case 0x2834a:
+        k1b1dc(a);SW(0x26,0x100);START(0x235e38);SL(0,0x2836c);
+        /* fall through */
+    case 0x2836c:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28386);
+        return cv_tail650(a,e);
+    case 0x28386:
+        SW(0x26,0x100);SB(0x7a,rank(a,e,0x2cd11e));
+        /* fall through */
+    case 0x2839c:
+        SW(0x76,rank(a,e,0x2cd138));
+        if ((int8_t)B(0x7a)>1 && S16(W(0x76))<=0x3c) START(0x235f3e); else START(0x235eaa);
+        k1b1dc(a);SL(0,0x283f0);
+        /* fall through */
+    case 0x283f0:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r && (int8_t)B(0x7a)<=1) {SL(0,0x28118);SW(0x76,rank(a,e,0x2cd0bc));}
+        if ((int8_t)B(0x7a)>0) {
+            SW(0x76,W(0x76)-1u);
+            if (S16(W(0x76))<=0) {
+                SB(0x7a,B(0x7a)-1u);
+                if ((int8_t)B(0x7a)>0) SL(0,0x2839c);
+            }
+        }
+        return cv_tail650(a,e);
+    case 0x28450:
+        SW(0x26,0x100);k1b1dc(a);sound(e,0x8000u|0x109d);START(0x235fb6);SL(0,0x2847c);
+        /* fall through */
+    case 0x2847c:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x2820a);
+        cv_da8(a,e);
+        return cv_tail5f6(a,e);
+    case 0x2849a:
+        SW(0x26,0x100);k1b1dc(a);sound(e,0x8000u|0x109d);START(0x235fe0);SL(0,0x284c6);
+        /* fall through */
+    case 0x284c6:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x2820a);
+        cv_da8(a,e);
+        if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+        return cv_tail614(a,e);
+    /* ---- death ---- */
+    case 0x284f2:
+        SW(0x26,0x100);k1b1dc(a);child(a,e,0x1c71e,0x1c,-0x18,0);SB(0x60,1);START(0x23606e);SL(0,0x2853e);
+        /* fall through */
+    case 0x2853e:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r && !B(0x60)) SL(0,0x28572);
+        if (ga_cull(a,e,0x290fe)) SL(0,0x28660);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x28572:SW(0x26,0x100);START(0x23611c);goto a2;
+    case 0x2858c:SW(0x26,0x100);START(0x236170);
+    a2: SB(0x69,0xff);k1b1dc(a);SL(0,0x285b4);                       /* 019DFC */
+        /* fall through */
+    case 0x285b4:
+        ga_stationary(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r && !BIT(0x7d,0)) SL(0,0x285ea);
+        if (ga_cull(a,e,0x290fe)) SL(0,0x28660);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x285ea:cv_eaa(a,e);SL(0,0x28660);return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x28660:return GA_DELETE;
+    case 0x286f0:return GA_DELETE_TREE;
+    /* ---- bomb and shell ---- */
+    case 0x286f8: {
+        uint32_t d0=(uint32_t)rank(a,e,0x2cd05a)<<8;
+        if (!BIT(0x15,0)) d0=0u-d0;
+        SL(0x30,d0);SL(0x34,0);
+        if (BIT(0x7d,3)) SW(0x2c,W(0x2c)+8u);
+        START(0x236244);ga_palette(a,0x3cf);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);SL(0,0x28762);
+    }   /* fall through */
+    case 0x28762:
+        ga_air(a,e);
+        if (ga_anim_step(a,e,cv_call)<0) return GA_UNSUPPORTED;
+        if (ga_attack(a,e,0x290c8)) SL(0,0x28b8c);
+        if (BIT(0x15,7)) SL(0,0x28b8c);
+        if (ga_cull_rect(a,e,0x290f6)) SL(0,0x286f0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x287ac:
+        ga_palette(a,0x208);SB(0x15,B(0x15)^1u);SW(0x66,0x1001);SW(0x1e,0x1001);START(0x236272);SL(0,0x287e2);
+        /* fall through */
+    case 0x287e2:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x286f0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    /* ---- rider ---- */
+    case 0x287fa: {
+        p=sh_creator(a,e);
+        int16_t dx=(p && (ga_b(p,0x15)&1u))?4:-4;
+        ga_place(a,e,dx,0x28,p?NEO_GA_TAG(p->index):0);                 /* 01AD6E */
+        ga_palette(a,0x21a);
+        if (!nearest(a,e,&n)) {CLR(0x15,0);if (px(e,n)>=W(0x3c)) SET(0x15,0);}
+        uint8_t d0=B(0x7c);
+        if (d0==2u) d0=(uint8_t)(ga_rand(e)&1u);
+        if (d0) {SB(0x7c,0);SET(0x7d,4);START(0x23638a);SL(0,0x28886);}
+        else {SB(0x7c,1);CLR(0x7d,4);START(0x236314);SL(0,0x28930);}
+        goto again;
+    }
+    case 0x28886:
+        cv_e2c(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x2889e);
+        return cv_taila5c(a,e);
+    case 0x2889e:
+        CLR(0x7d,4);START(0x2363d8);SL(0,0x288ba);
+        /* fall through */
+    case 0x288ba:
+        cv_e2c(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x288d2);
+        return cv_taila5c(a,e);
+    case 0x288d2:
+        child(a,e,0x28bbc,0x1c,0,0);CLR(0x7d,4);START(0x236356);SL(0,0x28930);
+        /* fall through */
+    case 0x28930:
+        cv_e2c(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28948);
+        return cv_taila5c(a,e);
+    case 0x28948: {
+        SB(0x15,B(0x15)^1u);SL(0x34,0x44444);SL(0x6e,0xffff6e5eu);
+        SL(0x30,BIT(0x15,0)?0x11111u:0xfffeeeefu);
+        SW(0x66,0x8820);SW(0x1e,0x8820);
+        p=sh_creator(a,e);
+        if (p) ga_sb(p,0x60,0);
+        /* JMP 0B0626 / 0B0632: the node becomes a soldier (the world moves it). */
+        uint32_t entry=B(0x7c)==1u?0xb0626u:0xb0632u;
+        if (!e->become_soldier || !e->become_soldier(e->ctx,a,entry)) {ga_fail(e,entry);return GA_UNSUPPORTED;}
+        return GA_MORE;
+    }
+    case 0x289a6:
+        if (BIT(0x15,0)) START(0x23643a); else START(0x2364d4);        /* 028E42 */
+        child(a,e,BIT(0x7d,4)?0x28ba8:0x28bbc,0x1c,0,0);
+        p=sh_creator(a,e);
+        if (p) ga_sb(p,0x60,0);
+        SL(0,0x28a32);
+        /* fall through */
+    case 0x28a32:
+        cv_e2c(a,e);SW(0x1e,W(0x1e)+1u);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x28660);
+        if (!ga_creator_alive(a,e)) SL(0,0x28660);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    /* ---- pieces ---- */
+    case 0x28a88:
+        SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);ga_palette(a,0x216);ga_palette(a,0x3d2);ga_palette(a,0x367);
+        SL(0x30,BIT(0x15,0)?0x10000u:0xffff0000u);SL(0x34,0);SW(0x4e,1);START(0x236758);SL(0,0x28afa);
+        /* fall through */
+    case 0x28afa: {
+        static const uint8_t t[4]={0x19,0x1a,0x19,0x1b};               /* 02910E */
+        ga_air(a,e);SL(0x30,L(0x30)+ASR(L(0x30),5));SL(0x34,L(0x34)+L(0x6e));
+        SB(0x14,B(t[e->video&3u]));
+        if (ga_anim_step(a,e,cv_call)<0) return GA_UNSUPPORTED;
+        if (ga_attack(a,e,0x290b8)) SL(0,0x28b8c);
+        if (BIT(0x15,7)) SL(0,0x28b8c);
+        ga_register(a,e,NULL,NULL);SB(0x5a,0);
+        if (BIT(0x5f,7)) SL(0,0x28b8c);
+        if (ga_cull_rect(a,e,0x290f6)) SL(0,0x286f0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x28b8c:SB(0x1d,0);SW(0x66,0x1001);SW(0x1e,0x1001);SL(0x50,0);SL(0,0x1c706);return neo_effects_tick(a,e);   /* 009F88, JMP 01C706 */
+    case 0x28ba8:START(0x23660c);goto bcc;
+    case 0x28bbc:START(0x2366b2);
+    bcc:ga_palette(a,0x21a);SL(0x34,0x99999);SL(0x6e,0xffff0a3eu);SL(0x30,0xcccc);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SL(0,0x28c04);
+        /* fall through */
+    case 0x28c04:
+        ga_air(a,e);SL(0x34,L(0x34)+L(0x6e));
+        if (BIT(0x15,7)) SL(0,0x286f0);
+        if (ga_anim_step(a,e,cv_call)<0) return GA_UNSUPPORTED;
+        if (ga_cull_rect(a,e,0x290f6)) SL(0,0x286f0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x28c3e:
+        ga_palette(a,0x218);SW(0x66,0x1001);SW(0x1e,0x1001);START(0x23657a);
+        p=sh_creator(a,e);ga_place(a,e,0,0,p?NEO_GA_TAG(p->index):0);goto cd2;
+    case 0x28c76:ga_palette(a,0x348);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);START(0x2361de);goto cd2;
+    case 0x28ca4:ga_palette(a,0x204);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);START(0x22d372);
+    cd2:SL(0,0x28cd8);
+        /* fall through */
+    case 0x28cd8:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,cv_call))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x286f0);
+        if (ga_cull_rect(a,e,0x290f6)) SL(0,0x286f0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static bool para(uint32_t r) {return r>=0x5c53c && r<0x5e0b8;}
 static bool pod(uint32_t r) {return r>=0x4e990 && r<0x4f7e8;}
 static bool gunship(uint32_t r) {return r>=0x97fcc && r<0x99070;}
@@ -4298,7 +4768,7 @@ static bool bomber(uint32_t r) {return r>=0x83b30 && r<0x84b9c;}   /* 084B7E inc
 static bool box(uint32_t r) {return r==0x391ea || r==0x39232 || r==0x39260 || r==0x39276;}
 static const uint32_t rafts[]={0x8afb6,0x8afd0,0x8afde,0x8b090,0x8b138,0x8b18e,0x8b214,0x8b1c4,0x8b3e6,0x8b43e,0x8b4d6,0x8b502};
 static const uint32_t trucks[]={0x2b202,0x2b2ea,0x2b316,0x2ae46,0x2ae72,0x2b138,0x2b1d4,0x2b1cc,0x2b61c,0x2b656,0x2b670,0x2b69e,0x2b6e4,0x2b700,0x2bbba,0x2bc36,0x2bc62,0x2bc84,0x2bcac,0x2bcca,0x2bd3c};
-bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r);}
+bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r);}
 ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (IN(deaths,r)) return death_tick(a,e);
@@ -4314,5 +4784,6 @@ ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (box(r)) return box_tick(a,e);
     if (IN(trucks,r)) return truck_tick(a,e);
     if (IN(rafts,r)) return raft_tick(a,e);
+    if (cv(r)) return cv_tick(a,e);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

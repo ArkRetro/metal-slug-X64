@@ -303,6 +303,11 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
 /* 0040BC with its reserve: the free-node count RAM 1063D8 as the update
  * first read it, one less per node made. */
 static uint16_t free_nodes;
+#ifdef FAMILY_LEAVE
+static uint32_t leave_entry;
+/* JMP 0B0626 / 0B0632: the node becomes a soldier (the world moves it). */
+static bool leave_soldier(void *ctx,neo_gactor_t *a,uint32_t entry) {(void)ctx;(void)a;leave_entry=entry;return true;}
+#endif
 static neo_gactor_t *spawn_reserve(void *ctx,neo_gactor_t *creator,uint32_t routine,uint16_t reserve) {
     if (reserve>=free_nodes) return NULL;
     free_nodes--;return spawn(ctx,creator,routine,false);
@@ -554,7 +559,7 @@ int main(void) {
     ram[0x73]=expect[0x73]=0xff;   /* RAM 10C303 until 018F40 */
 #endif
     unsigned sgun_born=0,sgun_left=0;
-    unsigned compared=0,deleted=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
+    unsigned compared=0,deleted=0,left=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
 #ifdef FAMILY_FRESH_PROGRAM
@@ -741,6 +746,9 @@ int main(void) {
 #ifdef FAMILY_RESERVE
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);
 #endif
+#ifdef FAMILY_LEAVE
+        e.become_soldier=leave_soldier;
+#endif
         e.camera_low=w16(0x10e9a0);e.camera_stop=w32(0x10e9bc);e.arrow=&wram[0xc44a];
         /* RAM 10C358 (03A892 / 03A740 / 03A75A) when the family watches it. */
         bool watch358=false;
@@ -769,6 +777,20 @@ int main(void) {
         previous_node=PREVIOUS[k];
 #endif
         ga_result_t r=neo_region_tick(a,&e);
+#ifdef FAMILY_LEAVE
+        {static const uint32_t lv[][2]=FAMILY_LEAVE;bool leave=false;
+         for (unsigned i=0;i<sizeof(lv)/sizeof(lv[0]);i++) if (lv[i][0]==u->frame && (int)lv[i][1]==u->node) leave=true;
+         if (leave) {
+            /* JMP 0B0626 / 0B0632 in this update: the node becomes a soldier
+             * (the world moves the record; the soldier's code is another
+             * test's). The native code keeps the node; what the soldier's
+             * entry wrote, its later updates and its children are not
+             * compared (compile_family_fixture.py --soldier). */
+            if (!(r==GA_MORE && !e.unsupported && leave_entry)) {fprintf(stderr,"frame %u node %d %05x: expected the soldier conversion (result %d, entry %05x, stop %05x)\n",u->frame,u->node,u->routine,r,(unsigned)leave_entry,(unsigned)e.unsupported_at);return 1;}
+            leave_entry=0;a->active=false;left++;continue;
+         }}
+        if (leave_entry) {fprintf(stderr,"frame %u node %d %05x: unexpected soldier conversion %05x\n",u->frame,u->node,u->routine,(unsigned)leave_entry);return 1;}
+#endif
 #ifdef FAMILY_ATTACKS
         if (answer_used!=answer_count) {fprintf(stderr,"frame %u node %d %05x: %u calls of 0049E8, original %u (result %d, stop %05x)\n",u->frame,u->node,u->routine,answer_used,answer_count,r,(unsigned)e.unsupported_at);return 1;}
 #endif
@@ -923,7 +945,7 @@ int main(void) {
         printf("blasts 0644C4/0646B0: %u born, %u facing left (+15 bit 0)\n",sgun_born,sgun_left);
         if (!sgun_left || sgun_left==sgun_born) {fprintf(stderr,"the blast family must hold shots facing both ways\n");return 1;}
     }
-    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups%s\n",
-        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,swapped?", map swap requested":"");
+    printf("PASS: family %s%s: %u nodes, %u closed-loop updates (frames %u..%u), %u bytes, %u deletions, %u draws, %u player contacts, %u collision stamps, %u children outside the family, %u deleted by 004192, %u created outside, %u pickups, %u soldiers%s\n",
+        STR(FAMILY_NAME),stopped?" (to its explicit stop)":"",(unsigned)NN,(unsigned)NU,UPDATES[0].frame,UPDATES[NU-1].frame,compared,deleted,draws,contacts,stamps,externals,killed_children,injected,pickups_checked,left,swapped?", map swap requested":"");
     return 0;
 }

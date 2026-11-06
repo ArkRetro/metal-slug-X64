@@ -33,8 +33,13 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   capa, disparos); familias `m3grenade`, `m3grenade4`, `m3shield`,
   `m3shield4`, `m3window` iguales a MAME (4417 actualizaciones); el soldado
   de ventana `08DA12` y la conversión de un nodo genérico en el soldado
-  nativo (`0B05FE/0B0626/0B0632`). Faltan `05D916` (y `05C53C/05D226`),
-  `04E990`, `097FCC`, `0569xx`.
+  nativo (`0B05FE/0B0626/0B0632`); los soldados `05D916/05D226/05C53C`
+  (paracaidista con su vela, soldado de a pie, casco, balas; `m3para`) y la
+  máquina voladora `04E990` (piloto, suelo dinámico `0E112E`, misiles,
+  bombas, piezas; `m3pod`), 12 437 actualizaciones más iguales a MAME. En
+  ares PASS con 208 ranuras, pero el piloto ciego ya no llega a la arena del
+  jefe en 300 s. Faltan `097FCC`, `0569xx`, `084588` y el resto de la lista
+  de MISION3.md «Paso 2».
 - **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
   «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
   (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se

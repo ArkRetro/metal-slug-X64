@@ -552,8 +552,70 @@ rama). Rutinas sin soporte del mundo: `0AF17E` ×13, `2869D6` ×4, `08DBC8`
 ×1 (parada documentada de `08DA12`); `040DB4` desaparece. 1283 dibujos sin
 descriptor (antes 1827).
 
-Pendiente del paso 2: `05D916/05C53C/05D226` (con la conversión ya hecha),
-`04E990`, `097FCC`, `0569xx`, `0B9748`, la entrada en paracaídas.
+**Tercera tanda** (misma rama):
+
+- **Soldados `05D916` / `05D226` / `05C53C`** (`05C53C..05E918`, un solo
+  registro para tres comportamientos): el paracaidista `05D916/05D924` (vaivén
+  `05E19C`, puntería `05E388`, disparo `05E7D8` con las tablas `05EA38`, la
+  vela `05DDA4` que sigue el `+86` del creador y le pasa los golpes, aterriza
+  en `05C5B4`); el soldado de a pie `05C53C..05C5A0` (todos los estados
+  `05C694..05D200`: andar, correr, girar, saltar, caer, apuntar con las tablas
+  `05E9B8/05E9F8` y el disparo `05E800`, disparo agachado si el blanco se
+  agacha, `01AE00`); `05D226/05D234` (anda hasta `+80`, salta o se para,
+  dispara y en `05D732` lanza el casco y pasa a soldado nativo, `JMP 0B0632`);
+  `05D76A` (saltos de `2CFEAA`); casco `05DD2A`, destello `05DF3E`, balas
+  `05DF9A/05DFC2` (`05E03E`, explosión `01C706`); muertes `05DB18/05DB92/05DC32`
+  (`JSR 0406B6/0407CA` y la rutina que deja en la misma actualización).
+  Paradas explícitas: la salpicadura `03C962`, `01AE00` sin los nodos de los
+  jugadores (`e->vehicle`), `0AAA88` con ranura de tipo 0.
+- **Máquina voladora `04E990`** (`04E990..04FCA0`): piloto `04EF88` (paleta
+  `A7/B9` por `01B2BE`; su golpe pone el `+8E` bit 0 del creador), suelo
+  `04EE88` con el mapa dinámico `0E112E` (el suelo de `05C53C` en `2DAB20`),
+  piezas `04EE18/04F2DC`, bombas `04F358`, misiles `04F44E/04F464` por el
+  camino `0E1168` (`021288` con sus llamadas `04F97A..04F9B6`) y luego
+  guiados (`04F9FA`, `002E7C`), humo `04F720`, la caída `04EB36..04EC78`
+  (explosiones `01C706/01C71E`, seis piezas `04EC8C`, fila `0E111E`).
+  `04F6F2` (golpe al creador de un misil guiado) no salta: corre `04FA8E`
+  igual (sin `BRA`, al contrario que `04F5EA`).
+- Prueba de familia: `--split-children` (`compile_family_fixture.py`): los
+  hijos de una actualización repartidos en dos fotogramas (la marca de
+  fotograma dentro del recorrido de la lista, como `--m2boss`).
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3para` (`05D916` ×4 con velas y disparos, `05D226`, `05C53C`, cascos, muertes) | 20 | 1167 | 120554..122417 | iguales a MAME |
+| `m3pod` (`04E990` ×3: piloto, suelo, misiles, bombas, humo, piezas) | 323 | 11 270 | 122232..123832 | iguales |
+
+Sprites: 7329 descripciones (+87 de `05C53C..05E918` y `04E990..04FFFF` en la
+captura A); paleta sin captura `0xA7` (el piloto con sangre: la captura es sin
+sangre, `0xB9`). Capturas A y B borradas tras extraer.
+
+Recorrido en ares tras la tercera tanda (`mslugx-m3-reference.z64`, 300 s):
+PASS, 0 rescates, 208 ranuras (3328 KB). El código nuevo dejaba la caché
+44 KB bajo el mínimo (3288 de 3332 KB, aserción en `scene_assets.c`): la
+explosión de muerte de los jefes `1032` (60 KB, una vez por jefe) suena desde
+`rom:/` (`game_audio.c`). Con los enemigos nuevos disparando, el piloto ciego
+(`--hop --pilot`) ya no llega a la arena del jefe en 300 s (progreso 5888;
+en otras dos pasadas, de 420 s y de 300 s tras fusionar `ccr` con el paso 3,
+4379: la cámara se queda en el bloqueo de 4380 del tramo final, con
+`099DCC/04115A/0DC97E` vivos). Tras fusionar los datos de misión en el
+bloque `MSXD` (`ccr`, paso 3): PASS, 211 ranuras, progreso 4060 en 300 s,
+registros saltados: vagones 10 (los mismos), rutinas sin soporte `2869D6`,
+`08DBC8`, `0AF17E`; 2392 dibujos sin paleta. Registros
+saltados (constructores no portados) por sección: salida 0, vagones 10
+(`02B202` ×4, `027F54`, `0391EA` ×2, `097FCC` ×2, `08AFB6`), hueco 0, tramo
+final 7 (`0A4A94`, `0569D0` ×2, `02B202`, `084588`, `0A2F2E`, `097FCC`), jefe
+no alcanzado. Rutinas sin soporte del mundo: `2869D6`, `0AF17E`, `08DBC8`
+(paradas ya documentadas) y `0413D4` ×1 (nueva: un soldado nativo de
+`neo_soldier_ai.c` en `0413B0..0413D4`, probablemente el que deja `05D226`
+al pasar a soldado). Dibujos sin paleta: 4420 (la paleta `0xA7` del piloto
+de `04E990` con sangre, sin captura).
+
+Pendiente del paso 2 (en orden): `097FCC`, `0569xx`, `084588` (trazas en
+`/home/user/captures-m3s2` A y B, sin borrar todavía), `02B202`, `027F54`,
+`0391EA`, `08AFB6/0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
+mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
+paracaídas, premios y ramas al azar.
 
 ## Pendiente
 

@@ -742,7 +742,8 @@ bool scene_stage_load(unsigned index) {
     release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
     unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
     unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
-        2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u);
+        2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u)+
+        (SCENE_STRIP_ITEMS+SCENE_STRIP_GROUPS)*SCENE_STRIP_ENTRY_BYTES;
     for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
     /* 'MSXR' (pack_mission.py recon_blob, docs/MISION3.md): the dynamic maps
      * (0140C0) of the stage's actors, served to ga_rom (scene_stage_rom). */
@@ -836,6 +837,7 @@ bool scene_stage_load(unsigned index) {
     if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);memcpy(patch_table,raw_patch,8u*patches);}
     while (normal && (stage_cells[normal-1].layer&0x80u)) normal--;
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
+    void *strip_items=take(SCENE_STRIP_ITEMS*SCENE_STRIP_ENTRY_BYTES),*strip_groups=take(SCENE_STRIP_GROUPS*SCENE_STRIP_ENTRY_BYTES);
     const uint8_t *dyn_data[SCENE_STAGE_DYNAMIC_MAPS];
     for (unsigned i=0;i<dmaps;i++) {uint8_t *d=take(recon_dyn[i].length);rom_read(d,ps.recon_offset+recon_dyn[i].offset,recon_dyn[i].length);dyn_data[i]=d;}
     load_mission_data(data_programs);
@@ -846,7 +848,7 @@ bool scene_stage_load(unsigned index) {
         .script=blob[1],.script_rom=ps.blob[1].rom,.script_len=(uint16_t)ps.blob[1].length,
         .players=blob[2],.players_rom=ps.blob[2].rom,.players_len=(uint16_t)ps.blob[2].length,
         .cells=stage_cells,.cell_count=normal,.patch_cells=stage_cells+normal,.patch_cell_count=cells-normal,.patch_count=patches,
-        .index_order=order,.index_runs=runs};
+        .index_order=order,.index_runs=runs,.strip_items=strip_items,.strip_groups=strip_groups};
     for (unsigned i=0;i<patches;i++) {stage.patch_submap[i]=patch_table[2*i];stage.patch_layer_object[i]=patch_table[2*i+1];}
     stage.dynamic_map_count=dmaps;
     for (unsigned i=0;i<dmaps;i++) {stage.dynamic_map_rom[i]=recon_dyn[i].rom;stage.dynamic_map_length[i]=(uint16_t)recon_dyn[i].length;stage.dynamic_map[i]=dyn_data[i];}

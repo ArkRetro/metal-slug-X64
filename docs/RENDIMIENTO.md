@@ -1059,3 +1059,91 @@ tiene tope propio: `0C0D64` concede si `10C71A < 10C71C` y `10C71C` es
 con `00411C`. A 6 px por tick y una pulsación cada 4 ticks caben hasta 10 en
 pantalla. `MSX_BULLETS` = 16: pico **10/16** en el recorrido M1 y **14/16**
 en la M2 de referencia, 0 rechazos (antes 8/8 con 3–5).
+
+## Fondo de la Misión 2: listas por capa y subidas de página directas (B47, rama `work-m3step3`)
+
+**Síntoma (B47).** En la M2 el juego se aceleraba a ratos: `MSX multi-step`
+(línea nueva de `msx_perf.c`: cámara y coste del fotograma anterior a cada
+fotograma de dos pasos) señalaba al **fondo**: `bg` 12,6–18,9 ms con las dos
+capas de la etapa 2 o la 3 a la vista, no la simulación.
+
+**Medida (línea `MSX BG`, ares, `MSX_DIAG`).** Con el tiempo de las
+subidas de textura y de los rectángulos contado aparte, el coste del fondo
+no estaba en los comandos RDP sino en el **recorrido del índice de celdas**:
+la capa 2 de la etapa 1 tardaba 3,2 ms por fotograma de los que 1,2 ms eran
+`rdpq_tex_upload_sub` + `rdpq_texture_rectangle` (187 dibujos, 13
+subidas); el resto, visitar 280 celdas (lecturas aleatorias de 8 bytes, su
+imagen, la fusión de columnas de `column_run`) y las dos búsquedas binarias
+de cada *run* (~2 µs por celda visitada; la capa 3 de la etapa 3, con 0
+dibujos y 1941 celdas visitadas, costaba 1,9 ms).
+
+**Corrección.**
+
+- `scene_strips.c` (nuevo, comprobable en el anfitrión): por capa, una
+  **lista de dibujo** (*strip*) con las columnas ya fusionadas (posición,
+  imagen, celdas) de una ventana 96 px mayor que la pantalla por cada lado,
+  agrupadas como los *runs* del índice (x no decrece dentro de un grupo).
+  Cada fotograma descarta un grupo por su rango de x o encuentra sus
+  elementos visibles con una búsqueda binaria sobre un vector compacto
+  (8 bytes por elemento). La lista se reconstruye cuando la cámara sale de
+  su ventana (cada ~96 px de desplazamiento de esa capa), al cambiar el
+  estado de reemplazo (`collapsed`, `patched`, parches de mapa) o la etapa;
+  una capa por fotograma se reconstruye por adelantado (mitad del margen)
+  para que las capas 2 y 3, que se desplazan juntas, no coincidan. *Pool*
+  de 2048 elementos y 512 grupos (20 KB) con compactación, reservado con
+  las tablas de la etapa cargada (`scene_stage_t`, ranuras de la caché:
+  +2 ranuras de tablas por etapa), no en la imagen del programa, que con
+  las familias de la Misión 3 ya dejaba el presupuesto en el suelo (3314 KB
+  con el *pool* estático: `RAM budget` falla por debajo de 3332); la Misión
+  1, sin etapa, sigue con el recorrido directo. Si una capa no cabe ni sin
+  margen, esa capa dibuja con el recorrido directo (`draw_layer_direct`,
+  el código anterior, que sigue siendo la referencia).
+- **Subidas de página directas** (`page_upload`): los mismos comandos que
+  `rdpq_tex_upload_sub` emite para las tres superficies fijas (64×64 CI4,
+  32×32 RGBA16, 16×256 CI4: `SET_TEXTURE_IMAGE`, dos `SET_TILE`,
+  `LOAD_BLOCK`, `SET_TILE_SIZE`), sin su preparación por llamada y sin
+  repetir los descriptores de *tile* mientras formato y ranura de paleta
+  son los de la subida anterior.
+- Torre de la etapa 3 (`draw_tower`): la lista ordenada (`qsort` de hasta
+  300 celdas por fotograma) se conserva mientras no cambien las piezas que
+  llegan a la pantalla, la fase de vídeo ni la cámara horizontal.
+
+**Comprobaciones.** `tools/test_scene_strips.c` (`make check`): para el
+mapa de la Misión 1 (todas las cámaras) y 200 mapas aleatorios al estilo de
+los packs (páginas altas, columnas de códigos consecutivos, celdas animadas,
+columnas reemplazadas) los elementos de la lista dibujan exactamente los
+texels del recorrido directo bajo cada celda en pantalla, en todas las
+fases. En ares, compilación local `MSX_EXTRA_CFLAGS=-DMSX_BG_CRC=1`: cada 97
+fotogramas se dibujan las dos pasadas con la lista + subidas directas y con
+el recorrido + `rdpq_tex_upload_sub`, y se compara el *hash* del
+framebuffer: **312 comparaciones iguales** en el recorrido completo de la M2
+(`test_mission2_ares.py` PASS).
+
+**Resultado (ares 146, `MSX PERF` por ventanas de 300 fotogramas; `multi`
+= fotogramas de dos pasos por ventana, `bg` media/máximo).**
+
+| Tramo | Antes | Después |
+| --- | --- | --- |
+| Etapa 1 (capas 2+3) | `multi` 121–171, `bg` 4,8–6,3 / 15–26 ms | `multi` 0–44, `bg` 0,9–2,9 / 6–14 ms |
+| Etapa 2 (capa 3, propias) | `multi` 5–30, `bg` 1,2–2,5 / 8–11 ms | `multi` 0–10, `bg` 0,8–2 / 1–7 ms |
+| Etapa 3, arranque (capas 0+3 densas) | `multi` 272–300, `cpu` 26 ms media, `bg` 10–13 / 21–24 ms | `multi` 159–217, `cpu` 16–19 ms media, `bg` 4,3–5,6 / 12–22 ms |
+| Etapa 3, torre | `bg` 3,1 / 22 ms | `bg` 1,4 / 14 ms |
+
+Por capa (línea `MSX BG`, medias por fotograma): etapa 1, capa 2 3,2 → 2,1
+ms (187 dibujos, 15 subidas), capa 3 3,6 → 2,0 ms; etapa 3, capa 0 7,6 → 2,0–2,5
+ms (183–208 dibujos). Lo que queda es casi todo el coste de los comandos
+RDP (`upload` 0,3–0,5 ms, `rect` 1,1–1,4 ms) más la espera del RSP/RDP
+dentro de ellos. Las reconstrucciones de las listas cuestan 2–6 ms cada una
+(una capa por fotograma, 6–9 por ventana de 300 en la etapa 3). El arranque
+de la etapa 3 sigue en dos pasos: `sim` 7,4 ms de media (dos pasos),
+`prep` 2,5 ms, actores 2 ms y el fondo 4–6 ms.
+
+Probado y descartado: el **modo copia** del RDP para las capas 1:1
+(`rdpq_set_mode_copy`, 4 píxeles por ciclo). En ares no cambia el coste
+por capa (2,2 ms con copia, 2,1 sin) y la comparación `MSX_BG_CRC` da
+píxeles distintos en 18 de 26 fotogramas (solo RGB, aun con el *scissor*
+reasignado tras cada cambio de modo, que el RSP corrige según el modo);
+queda como opción para hardware real si se identifica la diferencia.
+
+Ares añade su propia espera de pantalla (`wait` 6–16 ms), así que la
+medida real sigue siendo la del usuario.

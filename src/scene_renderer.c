@@ -4,6 +4,7 @@
 #include "mission_camera.h"
 #include "msx_perf.h"
 #include "scene_cull.h"
+#include "scene_strips.h"
 #include "visual_config.h"
 #include <stdlib.h>
 #include <math.h>
@@ -15,8 +16,15 @@ enum { DEPTH_PERSPECTIVE=1, DEPTH_LIGHTS=2, DEPTH_FOG=4 };
 typedef struct { surface_t *surface; unsigned epoch,start_ticks; } completion_t;
 static completion_t completions[4],*current;
 static unsigned frame,clock_pal,draws,uploads,palette_uploads,tmem_bytes;
+static uint32_t upload_ticks,rect_ticks;   /* B47: time inside rdpq_tex_upload_sub / rdpq_texture_rectangle (MSX BG line) */
 static int pal_ids[16],last_page,last_slot,last_format,last_width,last_height;
 static bool deferrable;
+#ifndef MSX_BG_DIRECT
+#define MSX_BG_DIRECT 0   /* 1: the direct walk and rdpq_tex_upload_sub by default (local baseline builds) */
+#endif
+/* B47: the strips (scene_strips.h) and the raw page uploads; false: the
+ * direct index walk and rdpq_tex_upload_sub (the MSX_BG_CRC comparison). */
+static bool strips_on=!MSX_BG_DIRECT,raw_upload=!MSX_BG_DIRECT;
 void scene_render_set_deferrable(bool on) { deferrable=on; }
 /* Palette fade (neo_fade.c, RAM 10991A..): each TLUT uploaded while it is on
  * is a converted copy, every 5-bit channel plus its offset clamped to 0..31
@@ -143,9 +151,26 @@ static int tower_draw_cmp(const void *a,const void *b) {
 static void draw_tower(const int *offsets,const int *rises,const retro_plane_view_t *view,unsigned video_tick) {
     if (!tower_count || !tower_types) return;
     enum { TOWER_DRAWS=8*72 };
-    static tower_draw_t list[TOWER_DRAWS];unsigned n=0;
+    static tower_draw_t list[TOWER_DRAWS];static unsigned n;
     const scene_stage_t *st=scene_stage();
+    /* The sorted list depends on the pieces whose rows reach the screen and
+     * on the video phase only (B47): kept while they repeat. The pieces are
+     * taken whole, so a piece partly on screen lists its off-screen cells too
+     * (blit_scaled drops them, as the per-cell test did). */
+    unsigned k0=tower_count,k1=0;
     for (unsigned k=0;k<tower_count;k++) {
+        int top=SCENE_TOWER_BASE_Y-48*(int)k,y=8+top+rises[3];
+        if (!view && (y+48<=8 || y>=232)) continue;
+        if (view) {float py=(8+top)*view->scale+view->offset_y;if (py+48*view->scale<=0 || py>=240) continue;}
+        if (k<k0) k0=k;
+        k1=k+1;
+    }
+    static unsigned key_k0=~0u,key_k1,key_phase,key_count;static const uint8_t *key_types;static float key_x0,key_x1;
+    float x0=view?view->offset_x:(float)-offsets[3],x1=view?view->scale:1.0f;   /* the horizontal test's inputs */
+    bool same=strips_on && key_k0==k0 && key_k1==k1 && key_phase==(video_tick&7u) && key_count==tower_count && key_types==tower_types && key_x0==x0 && key_x1==x1;
+    if (!same) {
+    key_k0=k0;key_k1=k1;key_phase=video_tick&7u;key_count=tower_count;key_types=tower_types;key_x0=x0;key_x1=x1;n=0;
+    for (unsigned k=k0;k<k1;k++) {
         int top=SCENE_TOWER_BASE_Y-48*(int)k,y=8+top+rises[3];
         if (!view && (y+48<=8 || y>=232)) continue;
         if (view) {float py=(8+top)*view->scale+view->offset_y;if (py+48*view->scale<=0 || py>=240) continue;}
@@ -153,13 +178,15 @@ static void draw_tower(const int *offsets,const int *rises,const retro_plane_vie
         for (unsigned j=0;j<3;j++) for (unsigned i=0;i<24;i++) {
             uint16_t id=tower_cell[t][j][i];if (id==0xffff || n==TOWER_DRAWS) continue;
             /* Map coordinates; the screen tests are classic_cell's/depth_cell's. */
+            /* Map coordinates; the horizontal screen test is classic_cell's/depth_cell's. */
             int cx=256+16*(int)i,cy=top+16*(int)j;
-            if (!view) {int sx=cx-offsets[3],sy=8+cy+rises[3];if (sx+16<=8 || sx>=312 || sy+16<=8 || sy>=232) continue;}
+            if (!view) {int sx=cx-offsets[3];if (sx+16<=8 || sx>=312) continue;}
             else {float sx=cx*view->scale+view->offset_x;if (sx>=320 || sx+16*view->scale<=0) continue;}
             list[n++]=(tower_draw_t){scene_map_image(scene_cell_phase(&st->cells[id],video_tick)),(int16_t)cx,(int16_t)cy};
         }
     }
     qsort(list,n,sizeof(*list),tower_draw_cmp);
+    }
     for (unsigned k=0;k<n;) {
         const scene_image_t *im=list[k].im;unsigned m=1;
         while (im->format==2 && k+m<n && m<16 && list[k+m].im->page==im->page && list[k+m].im->palette==im->palette &&
@@ -272,6 +299,26 @@ static unsigned palette_slot(unsigned id) {
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }
+/* A whole 2048-byte page into TMEM (B47): the commands rdpq_tex_upload_sub
+ * emits for these three fixed surfaces (texload_block / texload_block_4bpp,
+ * libdragon rdpq_tex.c) without its per-call setup, and without repeating
+ * the tile descriptors while the page format and palette slot stay those of
+ * the previous upload: SET_TEXTURE_IMAGE and LOAD_BLOCK only. The tiles are
+ * re-sent after scene_render_forget_texture (last_format=-1) and at every
+ * frame start. The autosync of the public inline commands still applies. */
+static int page_upload(const surface_t *texture,int format,unsigned slot) {
+    /* Formats: 0 CI4 64x64 (pitch 32), 1 RGBA16 32x32 (pitch 64), 2 CI4 16x256 (pitch 8); 1024 texels per LOAD_BLOCK. */
+    static const uint16_t pitch[3]={32,64,8},image_width[3]={16,32,4},image_height[3]={64,32,256},tile_s1[3]={64*4,32*4,16*4},tile_t1[3]={64*4,32*4,256*4};
+    tex_format_t fmt=format==1?FMT_RGBA16:FMT_CI4;
+    rdpq_set_texture_image_raw(surface_get_placeholder_index(texture),PhysicalAddr(texture->buffer),FMT_RGBA16,image_width[format],image_height[format]);
+    if (last_format!=format || last_slot!=(int)slot) {
+        rdpq_set_tile(TILE1,FMT_RGBA16,0,0,NULL);
+        rdpq_set_tile(TILE0,fmt,0,pitch[format],&(rdpq_tileparms_t){.palette=(uint8_t)slot,.s.clamp=true,.t.clamp=true});
+    }
+    rdpq_load_block(TILE1,0,0,1024,pitch[format]);
+    if (last_format!=format) rdpq_set_tile_size_fx(TILE0,0,0,tile_s1[format],tile_t1[format]);
+    return 2048;
+}
 static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,int width,int height,float draw_width,float draw_height,bool mirror,bool flip_y,bool flash) {
     if (x>=320 || y>=240 || x+draw_width<=0 || y+draw_height<=0) return;
     /* A shrink below 1/16 (sprite zoom near 0, e.g. a missile leaving its
@@ -287,13 +334,17 @@ static void blit_scaled(const scene_image_t *image,float x,float y,int s,int t,i
         /* Formats: 0 CI4 64x64, 1 RGBA16 32x32, 2 CI4 16x256 (map tiles stacked). */
         surface_t texture=image->format==1?surface_make((void*)data,FMT_RGBA16,32,32,64):
             image->format==2?surface_make((void*)data,FMT_CI4,16,256,8):surface_make((void*)data,FMT_CI4,64,64,32);
-        int bytes=rdpq_tex_upload_sub(TILE0,&texture,&(rdpq_texparms_t){.palette=(int)slot},0,0,image->width,image->height);
+        uint32_t u0=TICKS_READ();
+        int bytes=raw_upload?page_upload(&texture,image->format,slot):rdpq_tex_upload_sub(TILE0,&texture,&(rdpq_texparms_t){.palette=(int)slot},0,0,image->width,image->height);
+        upload_ticks+=TICKS_READ()-u0;
         assertf(bytes<=2048,"Scene TMEM page overflow");
         last_page=image->page;last_slot=(int)slot;last_format=image->format;
         last_width=image->width;last_height=image->height;uploads++;tmem_bytes+=(unsigned)bytes;
     }
+    uint32_t r0=TICKS_READ();
     rdpq_texture_rectangle_scaled(TILE0,x,y,x+draw_width,y+draw_height,
         mirror?s+width-1:s,flip_y?t+height-1:t,mirror?s-1:s+width,flip_y?t-1:t+height);
+    rect_ticks+=TICKS_READ()-r0;
     draws++;
 }
 static float background_x(const scene_map_cell_t *cell,int fallback) {
@@ -322,14 +373,15 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
 /* Cells following `k` in the window that continue cell k's column: same
  * layer and x, 16 px lower each, and the next texels of the same tall page
  * (format 2), so one rectangle draws them all with the same texels. */
+static unsigned run_touch;   /* B47 diagnostics: cells column_run examined */
 static unsigned column_run(const scene_map_cell_t *cells,const uint16_t *order,unsigned k,unsigned end,unsigned video_tick) {
-    const scene_map_cell_t *c=&cells[order[k]];
+    const scene_map_cell_t *c=&cells[order[k]];run_touch++;
     const scene_image_t *im=scene_map_image(scene_cell_phase(c,video_tick));
     unsigned n=1;
     if (im->format!=2) return 1;
     while (k+n<end && n<16) {
         const scene_map_cell_t *d=&cells[order[k+n]];
-        const scene_image_t *jm=scene_map_image(scene_cell_phase(d,video_tick));
+        const scene_image_t *jm=scene_map_image(scene_cell_phase(d,video_tick));run_touch++;
         if (d->layer!=c->layer || d->x!=c->x || d->y!=c->y+16*(int)n || jm->page!=im->page || jm->palette!=im->palette ||
             jm->x!=im->x || jm->y!=im->y+16*(int)n) break;
         n++;
@@ -381,18 +433,137 @@ void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned 
  * (backdrop, prefetch, the white flash). */
 void scene_render_layers(unsigned camera,int height,bool backdrop_after,unsigned video_tick,unsigned mask,bool first) {background(camera,height,backdrop_after,video_tick,mask,first);}
 /* Per-layer cost of the sampled frame (index 5: the tower), "MSX BG" line. */
-static uint32_t layer_ticks[6];static unsigned layer_draws[6],layer_uploads[6],layer_visits[6];
-static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
-    unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
+static uint32_t layer_ticks[6],layer_blit[6];static unsigned layer_draws[6],layer_uploads[6],layer_visits[6],layer_touch[6];
+/* Background draw lists (scene_strips.h): one strip per layer over a window
+ * STRIP_MARGIN wider than the screen on every side, rebuilt when the camera
+ * leaves it (every ~96 px of that layer's scroll), when a replacement state
+ * changes (strip_state) or when the stage changes. The pool is a bump
+ * allocator: when a rebuild does not fit, every strip is dropped and rebuilt
+ * on demand (the cost of one old-style walk per layer). A layer whose window
+ * does not fit even alone draws through the direct walk (draw_layer_direct). */
+enum { STRIP_MARGIN=96 };
+/* The pool lives with the loaded stage's tables (scene_stage_t, cache
+ * slots): the program image keeps the RAM floor (208 slots). Without a
+ * stage (Mission 1) the layers draw through the direct walk. */
+_Static_assert(sizeof(scene_strip_item_t)==SCENE_STRIP_ENTRY_BYTES && sizeof(scene_strip_group_t)==SCENE_STRIP_ENTRY_BYTES,"strip entry size");
+static scene_strip_item_t *strip_items;static scene_strip_group_t *strip_groups;
+static scene_strip_pool_t strip_pool;
+static scene_strip_t strips[5];static uint32_t strip_state=~0u;static unsigned strip_builds,strip_resets,strip_direct;static uint32_t strip_build_ticks;
+static const scene_strip_env_t strip_env={scene_map_image,column_may_hide};
+static void strips_drop(void) {
+    for (unsigned i=0;i<5;i++) strips[i].valid=false;
+    strip_pool.items_used=strip_pool.groups_used=0;
+}
+/* The pool of the loaded stage (scene_renderer_stage_changed), or none. */
+static void strips_attach(const scene_stage_t *st) {
+    strips_drop();
+    strip_items=st?st->strip_items:NULL;strip_groups=st?st->strip_groups:NULL;
+    strip_pool=(scene_strip_pool_t){strip_items,strip_groups,st?SCENE_STRIP_ITEMS:0u,st?SCENE_STRIP_GROUPS:0u,0,0};
+}
+/* The live strips moved to the front of the pool (their regions are
+ * disjoint and in allocation order), so a rebuild gets the space of the
+ * strips already dropped without dropping the others. */
+static void strips_compact(void) {
+    unsigned items=0,groups=0;
+    for (;;) {
+        scene_strip_t *s=NULL;
+        for (unsigned i=0;i<5;i++) if (strips[i].valid && strips[i].first_item>=items && (!s || strips[i].first_item<s->first_item)) s=&strips[i];
+        if (!s) break;
+        if (s->first_item!=items) {
+            memmove(&strip_items[items],&strip_items[s->first_item],s->items*sizeof(*strip_items));
+            memmove(&strip_groups[groups],&strip_groups[s->first_group],s->groups*sizeof(*strip_groups));
+            unsigned delta=s->first_item-items;
+            for (unsigned g=0;g<s->groups;g++) {strip_groups[groups+g].first-=(uint16_t)delta;strip_groups[groups+g].end-=(uint16_t)delta;}
+            s->first_item=items;s->first_group=groups;
+        }
+        items+=s->items;groups+=s->groups;
+    }
+    strip_pool.items_used=items;strip_pool.groups_used=groups;
+}
+static scene_strip_t *strip_rebuild(unsigned layer,int wx0,int wx1,int wy0,int wy1) {
+    scene_strip_t *s=&strips[layer];uint32_t t0=TICKS_READ();
+    s->valid=false;strips_compact();   /* the space of this and any other dropped strip first (a failed build walks the whole window) */
+    for (int margin=STRIP_MARGIN;;margin/=2) {
+        for (unsigned tries=0;tries<2;tries++) {
+            if (scene_strip_build(s,&strip_pool,&cell_index,layer,wx0-margin,wx1+margin,wy0-margin,wy1+margin,&strip_env)) {strip_builds++;strip_build_ticks+=TICKS_READ()-t0;return s;}
+            if (!tries) {strips_drop();strip_resets++;}   /* full even compacted: start over */
+        }
+        if (!margin) {strip_direct++;return NULL;}
+    }
+}
+static const scene_strip_t *layer_strip(unsigned layer,int wx0,int wx1,int wy0,int wy1) {
+    uint32_t state=(collapsed?1u:0u)|(patched?2u:0u)|((uint32_t)map_patch_mask<<2);
+    if (state!=strip_state) {strips_drop();strip_state=state;}
+    scene_strip_t *s=&strips[layer];
+    if (!scene_strip_covers(s,wx0,wx1,wy0,wy1)) return strip_rebuild(layer,wx0,wx1,wy0,wy1);
+    /* Ahead of need, one layer per frame: a strip that still covers the
+     * window but with less than STRIP_AHEAD of its margin left is rebuilt
+     * now, so layers that scroll together (2 and 3 at the camera's speed)
+     * do not all rebuild on the same frame. */
+    enum { STRIP_AHEAD=16 };
+    static unsigned refresh_frame;
+    if (refresh_frame!=frame && (s->x0>wx0-STRIP_AHEAD || s->x1<wx1+STRIP_AHEAD || s->y0>wy0-STRIP_AHEAD || s->y1<wy1+STRIP_AHEAD)) {
+        refresh_frame=frame;return strip_rebuild(layer,wx0,wx1,wy0,wy1);
+    }
+    return s;
+}
+/* The image of an item in a video phase (scene_cell_phase for a merged column). */
+static inline const scene_image_t *strip_image(const scene_strip_item_t *it,unsigned video_tick) {
+    return scene_map_image(it->anim==SCENE_CELL_STATIC?it->image:(uint16_t)(it->image+scene_cell_patterns[it->anim][video_tick&7u]));
+}
+/* The window of `layer` in cell coordinates (x+16>wx0, x<wx1, y+16>wy0,
+ * y<wy1 is what the renderer's own tests pass; see scene_strips.h). */
+static void layer_bounds(unsigned layer,const int *offsets,const int *rises,int *wx0,int *wx1,int *wy0,int *wy1) {
+    if (!depth_mode) {*wx0=offsets[layer]+8;*wx1=offsets[layer]+312;*wy0=-rises[layer];*wy1=224-rises[layer];return;}
+    const retro_plane_view_t *view=&depth_views[layer];
+    *wx0=(int)floorf((8.0f-view->offset_x)/view->scale);*wx1=(int)ceilf((312.0f-view->offset_x)/view->scale);
+    int ytop=(int)floorf(-view->offset_y/view->scale)-24-32,ybot=(int)ceilf((240.0f-view->offset_y)/view->scale)-8+32;
+    *wy0=ytop-16;*wy1=ybot;
+}
+static void draw_strip_item(const scene_strip_item_t *it,unsigned layer,const int *offsets,const int *rises,unsigned video_tick) {
+    const scene_map_cell_t *cells=cell_index.cells;
+    if (it->anim==SCENE_STRIP_CELL) {
+        const scene_map_cell_t *c=&cells[it->image];
+        if (hidden(c)) return;
+        if (depth_mode) depth_cell(c,&depth_views[layer],offsets,video_tick,1); else classic_cell(c,offsets,rises,video_tick,1);
+        return;
+    }
+    const scene_image_t *im=strip_image(it,video_tick);
     if (!depth_mode) {
-        // Pack order is layer order (checked at init), so walking the layers
-        // in turn draws the same cells in the same order as one array walk.
-        for (unsigned layer=0;layer<5;layer++) {
-          if (!(mask&(1u<<layer)) || !visible[layer]) continue;
-          uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
-          scene_cell_window_t w=layer_window(layer,offsets[layer],16,8,312,false);
-          unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
-          for (unsigned r=cell_index.layer_runs[layer];r<runs;r++) {
+        int x=it->x-offsets[layer],y=8+it->y+rises[layer];
+        if (x+16<=8 || x>=312 || y+16*(int)it->n<=8 || y>=232) return;
+        blit(im,x,y,im->x,im->y,16,16*(int)it->n,false,false);return;
+    }
+    const retro_plane_view_t *view=&depth_views[layer];
+    float x=it->x*view->scale+view->offset_x,y=(8+it->y)*view->scale+view->offset_y,size=16*view->scale;
+    if (x>=320 || x+size<=0) return;
+    blit_scaled(im,x,y,im->x,im->y,16,16*(int)it->n,size,size*(float)it->n,false,false,false);
+}
+/* The visible items of a strip: the group's x range first, then one binary
+ * search per group that reaches the screen, then the vertical test. */
+static void draw_layer_strip(unsigned layer,const scene_strip_t *s,const int *offsets,const int *rises,unsigned video_tick) {
+    scene_cell_window_t w=layer_window(layer,offsets[layer],depth_mode?16*depth_views[layer].scale:16,8,312,false);
+    int ytop=0,ybot=0;
+    if (depth_mode) {const retro_plane_view_t *view=&depth_views[layer];ytop=(int)floorf(-view->offset_y/view->scale)-24-32;ybot=(int)ceilf((240.0f-view->offset_y)/view->scale)-8+32;}
+    for (unsigned g=s->first_group;g<s->first_group+s->groups;g++) {
+        unsigned first,end;
+        if (!scene_strip_group_window(&strip_pool,&strip_groups[g],&w,&first,&end)) continue;
+        layer_visits[layer]+=end-first;
+        for (unsigned k=first;k<end;k++) {
+            const scene_strip_item_t *it=&strip_items[k];
+            if (depth_mode && (it->y>=ybot || it->y+16*(int)it->n<=ytop)) continue;
+            draw_strip_item(it,layer,offsets,rises,video_tick);
+        }
+    }
+}
+/* The direct walk of the cell index (the renderer before the strips):
+ * the fallback when a strip does not fit, and the reference of MSX_BG_CRC. */
+static void draw_layer_direct(unsigned layer,const int *offsets,const int *rises,unsigned video_tick) {
+    const scene_map_cell_t *cells=cell_index.cells;
+    if (!depth_mode) {
+        scene_cell_window_t w=layer_window(layer,offsets[layer],16,8,312,false);
+        unsigned runs=cell_index.layer_major?cell_index.layer_runs[layer+1]:cell_index.layer_runs[layer];
+        for (unsigned r=cell_index.layer_runs[layer];r<runs;r++) {
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             layer_visits[layer]+=end-first;
             for (unsigned k=first;k<end;) {
@@ -415,62 +586,65 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
                 }
                 classic_cell(&cells[cell_index.order[k]],offsets,rises,video_tick,n);k+=n;
             }
-          }
-          if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
-          if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);draw_cells(p,n,offsets,rises,video_tick);}
-          if (map_patch_mask) map_patch_draw(layer,NULL,offsets,rises,video_tick);
-          uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
-          if (layer==3) draw_tower(offsets,rises,NULL,video_tick);
-          layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
-          layer_ticks[5]+=TICKS_READ()-t1;layer_draws[5]+=draws-d1;layer_uploads[5]+=uploads-u1;
         }
-        // Any other pack order: the plain array walk.
-        if (!cell_index.layer_major) for (unsigned i=0;i<count;i++)
-            if (cells[i].layer<5 && (mask&(1u<<cells[i].layer)) && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
         return;
     }
-    // Same split as the classic path: the layers of the mask only (the
-    // sprite windows are drawn between the passes); the mesh after layer 4.
-    for (unsigned layer=0;layer<5;layer++) {
-      if (!(mask&(1u<<layer)) || !visible[layer]) continue;
-      const retro_plane_view_t *view=&depth_views[layer];
-      uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;
-      scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
-      /* Vertical cull (as the classic path): cell rows whose projected
-       * square lies wholly outside the screen, with two rows of margin. */
-      int ytop=(int)floorf(-view->offset_y/view->scale)-24-32,ybot=(int)ceilf((240.0f-view->offset_y)/view->scale)-8+32;
-      for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
+    const retro_plane_view_t *view=&depth_views[layer];
+    scene_cell_window_t w=layer_window(layer,offsets[layer],16*view->scale,8,312,false);
+    /* Vertical cull (as the classic path): cell rows whose projected
+     * square lies wholly outside the screen, with two rows of margin. */
+    int ytop=(int)floorf(-view->offset_y/view->scale)-24-32,ybot=(int)ceilf((240.0f-view->offset_y)/view->scale)-8+32;
+    for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
         unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
         layer_visits[layer]+=end-first;
         for (unsigned k=first;k<end;) {
-          const scene_map_cell_t *cell=&cells[cell_index.order[k]];
-          if (cell->y<ytop) {k=scene_cell_column_from(&cell_index,k,scene_cell_column_end(&cell_index,k,end),ytop);continue;}
-          if (cell->y>=ybot) {k=scene_cell_column_end(&cell_index,k,end);continue;}
-          unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
-          /* Same rule as the classic path: once a replacement is active, a
-           * merged column may mix hidden and kept cells, so go cell by cell. */
-          if (column_may_hide(cell)) {
-              for (unsigned j=0;j<n;j++)
-                  if (!hidden(&cells[cell_index.order[k+j]])) depth_cell(&cells[cell_index.order[k+j]],view,offsets,video_tick,1);
-              k+=n;continue;
-          }
-          if (hidden(cell)) {k+=n;continue;}
-          depth_cell(cell,view,offsets,video_tick,n);
-          k+=n;
+            const scene_map_cell_t *cell=&cells[cell_index.order[k]];
+            if (cell->y<ytop) {k=scene_cell_column_from(&cell_index,k,scene_cell_column_end(&cell_index,k,end),ytop);continue;}
+            if (cell->y>=ybot) {k=scene_cell_column_end(&cell_index,k,end);continue;}
+            unsigned n=column_run(cells,cell_index.order,k,end,video_tick);
+            /* Same rule as the classic path: once a replacement is active, a
+             * merged column may mix hidden and kept cells, so go cell by cell. */
+            if (column_may_hide(cell)) {
+                for (unsigned j=0;j<n;j++)
+                    if (!hidden(&cells[cell_index.order[k+j]])) depth_cell(&cells[cell_index.order[k+j]],view,offsets,video_tick,1);
+                k+=n;continue;
+            }
+            if (hidden(cell)) {k+=n;continue;}
+            depth_cell(cell,view,offsets,video_tick,n);
+            k+=n;
         }
+    }
+}
+static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
+    unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
+    // Pack order is layer order (checked at init), so walking the layers
+    // in turn draws the same cells in the same order as one array walk.
+    // Same split in both render modes: the layers of the mask only (the
+    // sprite windows are drawn between the passes); the mesh after layer 4.
+    for (unsigned layer=0;layer<5;layer++) {
+      if (!(mask&(1u<<layer)) || !visible[layer]) continue;
+      uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
+      if (depth_mode || cell_index.layer_major) {
+          const scene_strip_t *s=NULL;
+          if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offsets,rises,&wx0,&wx1,&wy0,&wy1);s=layer_strip(layer,wx0,wx1,wy0,wy1);}
+          if (s) draw_layer_strip(layer,s,offsets,rises,video_tick); else draw_layer_direct(layer,offsets,rises,video_tick);
       }
+      const retro_plane_view_t *view=depth_mode?&depth_views[layer]:NULL;
       // Replacement cells (shop patch, post-collapse rubble) on their layer.
-      if (layer==2 && patched) {unsigned m;const scene_map_cell_t *p=scene_patch_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
-      if (layer==3 && collapsed) {unsigned m;const scene_map_cell_t *p=scene_collapse_cells(&m);for (unsigned i=0;i<m;i++) depth_cell(&p[i],view,offsets,video_tick,1);}
+      if (layer==2 && patched) {unsigned n;const scene_map_cell_t *p=scene_patch_cells(&n);if (view) for (unsigned i=0;i<n;i++) depth_cell(&p[i],view,offsets,video_tick,1); else draw_cells(p,n,offsets,rises,video_tick);}
+      if (layer==3 && collapsed) {unsigned n;const scene_map_cell_t *p=scene_collapse_cells(&n);if (view) for (unsigned i=0;i<n;i++) depth_cell(&p[i],view,offsets,video_tick,1); else draw_cells(p,n,offsets,rises,video_tick);}
       if (map_patch_mask) map_patch_draw(layer,view,offsets,rises,video_tick);
-      uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;
+      uint32_t t1=TICKS_READ();unsigned d1=draws,u1=uploads;layer_blit[layer]+=upload_ticks+rect_ticks-b0;layer_touch[layer]+=run_touch-c0;
       if (layer==3) draw_tower(offsets,rises,view,video_tick);
       layer_ticks[layer]+=t1-t0;layer_draws[layer]+=d1-d0;layer_uploads[layer]+=u1-u0;
       layer_ticks[5]+=TICKS_READ()-t1;layer_draws[5]+=draws-d1;layer_uploads[5]+=uploads-u1;
-      if ((MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
+      if (depth_mode && (MSX_DEPTH_STYLE&DEPTH_FOG) && layer<2) {
           retro_effects_fog(&depth_frame,layer);rdpq_set_scissor(8,8,312,232);
       }
     }
+    // Any other pack order (classic mode): the plain array walk.
+    if (!depth_mode && !cell_index.layer_major) for (unsigned i=0;i<count;i++)
+        if (cells[i].layer<5 && (mask&(1u<<cells[i].layer)) && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
 }
 /* Static backgrounds as recorded rspq blocks. While the layer inputs (scroll
  * offsets, rises, visibility, replacement cells, depth projection) stay the
@@ -664,6 +838,29 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
         }
         scene_render_box(8,8,304,224,backdrop);
     }
+#if MSX_BG_CRC
+    /* Pixel check of the strips and the raw page uploads (B47, local
+     * builds: MSX_EXTRA_CFLAGS=-DMSX_BG_CRC=1): every 97th frame each pass
+     * is drawn twice before the real one, new path then old path, and the
+     * framebuffer hashed after each; the hashes must agree. */
+    if (!(frame%97) && !fade_on) {
+        uint32_t sums[2],raw[2];
+        for (unsigned way=0;way<2;way++) {
+            strips_on=raw_upload=!way;reset_texture_state();
+            draw_layers(mask,offsets,rises,visible,video_tick);
+            rspq_wait();
+            const surface_t *fb=current->surface;const uint8_t *base=fb->buffer;uint32_t h=2166136261u,g=h;
+            data_cache_hit_invalidate(fb->buffer,fb->stride*fb->height);
+            /* The colour bits (RGB 5:5:5); the low bit is the coverage the
+             * RDP writes (1 in copy mode, the texel's alpha; 7 in 1-cycle
+             * mode), which FILTERS_RESAMPLE never shows: hashed apart. */
+            for (unsigned y=8;y<232;y++) {const uint16_t *row=(const uint16_t*)(base+y*fb->stride);for (unsigned x=8;x<312;x++) {h=(h^(row[x]&0xfffeu))*16777619u;g=(g^row[x])*16777619u;}}
+            sums[way]=h;raw[way]=g;reset_texture_state();
+        }
+        strips_on=raw_upload=true;
+        debugf("MSX BG CRC frame=%u camera=%u mask=%x rgb new=%08lx old=%08lx %s (with coverage %08lx/%08lx)\n",frame,camera,mask,(unsigned long)sums[0],(unsigned long)sums[1],sums[0]==sums[1]?"same":"DIFFERENT",(unsigned long)raw[0],(unsigned long)raw[1]);
+    }
+#endif
     draw_layers_cached(mask,first,offsets,rises,visible,video_tick);
     if (!depth_mode) {rdpq_set_scissor(0,0,320,240);msx_perf_mark(MSX_PERF_BG_DRAW);return;}
     msx_perf_mark(MSX_PERF_BG_DRAW);
@@ -682,7 +879,7 @@ void scene_renderer_stage_changed(void) {
     for (unsigned p=0;p<2;p++) for (unsigned t=0;t<8;t++) if (bg_blocks[p][t]) {rspq_block_free(bg_blocks[p][t]);bg_blocks[p][t]=NULL;}
     bg_key.valid=false;collapsed=flash=patched=false;
     const scene_stage_t *st=scene_stage();
-    tower_index(st);map_patch_index(st);
+    tower_index(st);map_patch_index(st);strips_attach(st);
     if (st) {
         bool indexed=scene_cell_index_build_into(&cell_index,st->cells,st->cell_count,st->index_order,st->index_runs);
         assertf(indexed,"Stage cell index");(void)indexed;
@@ -712,11 +909,18 @@ void scene_render_end(void) {
             draws,uploads,palette_uploads,tmem_bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(current->start_ticks)),
             s.loads,s.dma_bytes,s.misses,s.evictions,s.deferred,s.held,s.sync_misses,s.idle_decodes,(unsigned long)TICKS_TO_US(s.decode_max_ticks),scene_assets_heap_low()/1024,bg_replays,bg_records,bg_block_max/1024);
     }
-    if (!(frame%300)) debugf("MSX BG: layer us/draws/uploads/visits 0=%lu/%u/%u/%u 1=%lu/%u/%u/%u 2=%lu/%u/%u/%u 3=%lu/%u/%u/%u 4=%lu/%u/%u/%u tower=%lu/%u/%u\n",
-        (unsigned long)TICKS_TO_US(layer_ticks[0]),layer_draws[0],layer_uploads[0],layer_visits[0],(unsigned long)TICKS_TO_US(layer_ticks[1]),layer_draws[1],layer_uploads[1],layer_visits[1],
-        (unsigned long)TICKS_TO_US(layer_ticks[2]),layer_draws[2],layer_uploads[2],layer_visits[2],(unsigned long)TICKS_TO_US(layer_ticks[3]),layer_draws[3],layer_uploads[3],layer_visits[3],
-        (unsigned long)TICKS_TO_US(layer_ticks[4]),layer_draws[4],layer_uploads[4],layer_visits[4],(unsigned long)TICKS_TO_US(layer_ticks[5]),layer_draws[5],layer_uploads[5]);
-    memset(layer_ticks,0,sizeof(layer_ticks));memset(layer_draws,0,sizeof(layer_draws));memset(layer_uploads,0,sizeof(layer_uploads));memset(layer_visits,0,sizeof(layer_visits));
+    if (!(frame%300)) debugf("MSX BG: per frame (300) layer us/draws/uploads/visits 0=%lu/%u/%u/%u 1=%lu/%u/%u/%u 2=%lu/%u/%u/%u 3=%lu/%u/%u/%u 4=%lu/%u/%u/%u tower=%lu/%u/%u upload=%lu us rect=%lu us blit/touch 0=%lu/%u 1=%lu/%u 2=%lu/%u 3=%lu/%u strips builds=%u (%lu us) resets=%u direct=%u items=%u\n",
+        (unsigned long)TICKS_TO_US(layer_ticks[0]/300),layer_draws[0]/300,layer_uploads[0]/300,layer_visits[0]/300,(unsigned long)TICKS_TO_US(layer_ticks[1]/300),layer_draws[1]/300,layer_uploads[1]/300,layer_visits[1]/300,
+        (unsigned long)TICKS_TO_US(layer_ticks[2]/300),layer_draws[2]/300,layer_uploads[2]/300,layer_visits[2]/300,(unsigned long)TICKS_TO_US(layer_ticks[3]/300),layer_draws[3]/300,layer_uploads[3]/300,layer_visits[3]/300,
+        (unsigned long)TICKS_TO_US(layer_ticks[4]/300),layer_draws[4]/300,layer_uploads[4]/300,layer_visits[4]/300,(unsigned long)TICKS_TO_US(layer_ticks[5]/300),layer_draws[5]/300,layer_uploads[5]/300,
+        (unsigned long)TICKS_TO_US(upload_ticks/300),(unsigned long)TICKS_TO_US(rect_ticks/300),
+        (unsigned long)TICKS_TO_US(layer_blit[0]/300),layer_touch[0]/300,(unsigned long)TICKS_TO_US(layer_blit[1]/300),layer_touch[1]/300,(unsigned long)TICKS_TO_US(layer_blit[2]/300),layer_touch[2]/300,(unsigned long)TICKS_TO_US(layer_blit[3]/300),layer_touch[3]/300,
+        strip_builds,(unsigned long)TICKS_TO_US(strip_build_ticks),strip_resets,strip_direct,strip_pool.items_used);
+    if (!(frame%300)) {
+        memset(layer_blit,0,sizeof(layer_blit));memset(layer_touch,0,sizeof(layer_touch));upload_ticks=rect_ticks=0;
+        memset(layer_ticks,0,sizeof(layer_ticks));memset(layer_draws,0,sizeof(layer_draws));memset(layer_uploads,0,sizeof(layer_uploads));memset(layer_visits,0,sizeof(layer_visits));
+        strip_builds=strip_resets=strip_direct=0;strip_build_ticks=0;
+    }
     // One completion fence per frame: RDRAM pages stay pinned until RDP is done.
     rdpq_detach_cb(finished,current);
 }

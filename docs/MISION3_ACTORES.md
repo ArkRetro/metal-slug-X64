@@ -422,7 +422,7 @@ identificar» cuando no hay más.
 | `0569B4` | `0569B4` | 1 | 141486 / 4553 | 4:1 | guion | `2404FE` `240DEE` `24AC4C` +5 | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `24AC4C..24B5CC` |
 | `093C9A` | `093C9A` | 1 | 142068 / 5099 | 4:1 | guion | `291CE4` | — | nativo (`neo_tank.c` v3, familia `m3tank`) | copia aparte del SV-001 (`092BCA..` a `+0x11E0`; paletas `0x87D/0x39D/0x87A`, `+72 = 4`, velocidad `0x40000`, salto `299228`): crea la oruga `014A4E`, la torreta `03B4E0` y el marcador `03523C` ([PLAN_MISION3.md](PLAN_MISION3.md) paso 5) |
 | 〃 | `014A4E` | 1 | 142068 / 5099 | 4:1 | `093C9A` | — | — | nativo |  |
-| `0AC866` | `0AC866` | 1 | 142126 / 5160 | 4:1 | guion | `0AB028` `0AB09E` `0AB0AC` +2 | 1034 108B 1090 10E9 | **falta** | vehículo con marcador «IN» (pantalla `game142140`); torreta `03B4E0`, marcador `03523C`, piezas `0AD9B8`; mapa dinámico `0AAC94` |
+| `0AC866` | `0AC866` | 1 | 142126 / 5160 | 4:1 | guion | `0AB028` `0AB09E` `0AB0AC` +2 | 1034 108B 1090 10E9 | nativo (`neo_m3veh.c`, familias `m3veh`/`m3veh2`) | vehículo con marcador «IN» (pantalla `game142140`); torreta `03B4E0`, marcador `03523C`, piezas `0AD9B8`; mapa dinámico `0AAC94` |
 | 〃 | `0AD2AC` | 1 | 142246 / 5373 | 4:1 | `0AC866` | `0AB48C` `0AB654` | — | **falta** |  |
 | 〃 | `0ADEDA` | 1 | 142246 / 5373 | 4:1 | `0AC866` | `0AC288` `0AC2D2` | — | **falta** |  |
 | 〃 | `01BF10` | 1 | 142260 / 5400 | 4:1 | `0AC866` | `22C950` `22CB60` | 1027 | nativo | granada |

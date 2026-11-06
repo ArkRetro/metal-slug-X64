@@ -29,7 +29,7 @@ def main():
     rams=[tuple(int(x,16) for x in r.split('-')) for r in a.ram]
     inram=lambda ad:any(lo<=ad<hi for lo,hi in rams)
     keep=lambda r:any(lo<=r<=hi for lo,hi in ranges)
-    updates=[];cur=None;frame=0
+    updates=[];cur=None;frame=0;famnodes=set()
     for line in open(a.trace):
         t=line.split()
         if not t:continue
@@ -37,9 +37,16 @@ def main():
         if t[0]=='U':
             if cur is not None:cur['post']=None;updates.append(cur)
             r=int(t[2],16)
+            # A node of the family (kept routine) is not RAM for --ram while
+            # it is one: a pool node reused by a family child after a
+            # foreign body (whose fields a --ram range covers) is compared as
+            # a node, not as RAM.
+            if keep(r):famnodes.add(int(t[1],16))
+            else:famnodes.discard(int(t[1],16))
             cur=dict(frame=frame,node=t[1],routine=r,pre=t[3],reads={},writes=[],ram_in={},ram_out=[]) if keep(r) else None
             if cur is not None and a.attacks:cur['attacks']=[];cur['targets']={}
             continue
+        if t[0]=='B':famnodes.add(int(t[1],16))
         if cur is None:continue
         if t[0]=='V':cur['post']=t[2];updates.append(cur);cur=None;continue
         if t[0] in 'RW':
@@ -74,7 +81,10 @@ def main():
                     if pc==0x1b176:tg[0]=data
                     elif pc==0x1b17a:tg[1]=data
                     else:tg[2]=(tg[2]<<16|data)&0xffffffff
-            if inram(ad):
+            # A node allocated in a family update (0040BC / 00411C write its
+            # routine at +00) is a family node from then on.
+            if t[0]=='W' and 0x1010a4<=ad<0x1010a4+0xb0*100 and (ad-0x1010a4)%0xb0==0 and pc==0x410e:famnodes.add(ad)
+            if inram(ad) and not any(n<=ad<n+0xb0 for n in famnodes):
                 for b,m in ((ad,0xff00),(ad+1,0xff)):
                     if not mask&m:continue
                     v=(data>>8)&255 if m==0xff00 else data&255

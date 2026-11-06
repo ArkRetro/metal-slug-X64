@@ -470,7 +470,7 @@ static ga_result_t tank_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (f) {ga_sb(f,0x70,0);ga_sw(f,0x6e,1);}
         static const uint32_t piece[4][3]={{0xfff20000u,0x280000u,0xa},{0xa0000u,0x250000u,7},{0xfff70000u,0x10000u,7},{0x70000u,0xfffc0000u,5}};
         for (unsigned i=0;i<4;i++) {
-            neo_gactor_t *q=e->spawn?e->spawn(e->ctx,a,0xad9b8,true):NULL;
+            neo_gactor_t *q=e->spawn?e->spawn(e->ctx,NULL,0xad9b8,true):NULL;
             if (!q) continue;
             ga_place_at(q,a,e,0,0);
             ga_sl(q,0x30,piece[i][0]);ga_sl(q,0x34,piece[i][1]);ga_sw(q,0x4e,(uint16_t)piece[i][2]);
@@ -772,7 +772,7 @@ static bool piece_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
     (void)parameter;
     if (kind!=NEO_ANIM_CALL || routine!=0xad96c) return false;
     if (!W(0x4e)) return true;
-    neo_gactor_t *q=e->spawn?e->spawn(e->ctx,a,0xad9b8,true):NULL;
+    neo_gactor_t *q=e->spawn?e->spawn(e->ctx,NULL,0xad9b8,true):NULL;
     if (!q) return true;
     ga_place_at(q,a,e,(int16_t)W(0x30),(int16_t)W(0x34));
     ga_sw(q,0x4e,(uint16_t)(W(0x4e)-1u));

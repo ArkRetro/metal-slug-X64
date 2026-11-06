@@ -1208,6 +1208,12 @@
    "reader": "0AE03A Mission 3 vehicle pilot throw programs by character 23A59E",
    "hex": "0023a84e0023ab2c0023ae0a0023b0e8",
    "group": "m3"
+  },
+  {
+   "rom": "0x000000",
+   "reader": "0ADA9E Mission 3 vehicle bomb homing: a target without a hurtbox (+50 = 0) reads its box words through address 0 (the vector table)",
+   "hex": "0010f30000c0040200c0040800c0040e",
+   "group": "m3"
   }
  ]
 }

@@ -1,9 +1,8 @@
 #include "neo_region.h"
-/* 0AC866 (neo_m3veh.c) is work in progress: off until its family m3veh
- * matches MAME (docs/PLAN_MISION3.md step 5 b); the vehicle stays an
+/* 0AC866 (neo_m3veh.c, family m3veh); MSX_M3VEH=0 turns it back into an
  * explicit stop. */
 #ifndef MSX_M3VEH
-#define MSX_M3VEH 0
+#define MSX_M3VEH 1
 #endif
 #include "region_rom.h"
 #include "neo_boss.h"

@@ -88,20 +88,30 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   distintos) y paletas `0x87D/0x87A`; programa `299228` en el grupo `m3`.
   Sin evidencia (paradas explícitas, como en la M1): daño `09351A` y
   destrucción `0938DA`.
-- **Paso 5 (b): investigado, sin traducir.** `0AC866` (`0AC866..0AE91A`,
-  1568 instrucciones, 34 estados, hijos `0AD2AC 0AD3E2 0AD58C 0AD5D4
-  0AD6E4 0AD856 0AD8A2 0AD9B8 0ADD2C 0ADEDA 01C71E`) **no** es una copia
-  del Slugnoid (solo 4 bloques de ~42 instrucciones iguales: el *cull* con
-  la comprobación del cartucho y las piezas). Init `0AC6D4`: +50 `0AACA4`,
-  tabla de programas +78 `0AAF72`, torreta `03B4E0` con `+72 = 1`,
-  paletas `0x0D/0xCE` (o `0x1C2/0xCE` si `10C2E7`), +4E `0x30`/`0x10`.
-  Subida: rectángulo `0AACB8` por `0AA610` → `0C0556` (jugador vivo,
-  `+93 != 3`) y `0AA760` tipo `0x0C`. Captura `MSX_FULL_RIDE=tank` con
-  `MSX_FULL_RIDE_RANGE=ac866-ae1dc` desde `at_132300`: nace en 137446 en x
-  5512, el jugador salta encima y alrededor 3000 fotogramas y **no sube**
-  (1419 actualizaciones de la espera `0AC8D4`): falta entender la entrada
-  (cruce del borde con +44/+48 del jugador en `0AA6F4..`) antes de la
-  traza de familia.
+- **Paso 5 (b) hecho: el vehículo `0AC866`** (`neo_m3veh.c`, `0AC6D4..0AE96A`):
+  un asiento volador propio (no es copia del Slugnoid): el mando mueve
+  `+30/+34` (`0AE2D2`), B impulsa (`0ACB96`), C suelta bombas en el aire
+  (`0ADA16`, con su guiado `+9C` hacia la caja del blanco de `0049E8`) o
+  lanza las granadas del jugador en el suelo (`0C0808`), abajo aterriza
+  (`0ACD76`), abajo+B sale (`0ACE44`), D lo despide (`0AD01A`), sin vida
+  expulsa y se destroza (`0ACEB0` → `0ACFB2` → `0041AC`). Hijos: piloto
+  `0AD2AC` (tabla `0AB40C` por personaje), alas `0ADEDA` (estado por el
+  `+7C` del vehículo, `0ADE66`), llamas `0AD3E2/0AD6E4`, destello `0AD452`,
+  polvo `0AD776`, humo `0AD856`, estela `0ADD2C`, lanzamiento del piloto
+  `0AE03A`, pieza `0AD5D4`/chispa `0AD58C`; marcador `03533A` en
+  `neo_slug.c`. Subida: `0AA610` → `0C0556` (jugador cayendo, vivo, forma
+  ≠ 3) y el cruce del rectángulo `0AACB8` con `+3C/+40` y `+44/+48`; el
+  `+3C` del vehículo está 40 px a la derecha de su `+28` y su cuerpo
+  sólido para la marcha al lado: la captura sube con
+  `MSX_FULL_RIDE_SCREEN=8` (saltar desde 48 px y guiar en el aire).
+  Familias `m3veh` (2146 actualizaciones: subir, volar, bombas guiadas,
+  destrozo con piloto) y `m3veh2` (3366: además aterrizar, abajo+B, volver
+  a subir, el empuje del cuerpo sólido de otro actor con
+  `--ram 106756-1067d6` y los campos del cuerpo) iguales a MAME en `make
+  check`. `extract_family_fixture.py`: un nodo de la familia (o creado en
+  una actualización de la familia) deja de ser RAM de `--ram`. Sin captura
+  (traducido del código): `0AD01A/0AD08E` (D, caída y choque), `0ACCBE..`
+  (el suelo con la palanca) y las granadas en el suelo.
 - **Paso 5 (c): sin empezar** (la forma
   `+93 = 2` —probablemente Marco gordo tras la comida, sin comprobar— y el
   arma E `0DE4DA`): siguen como paradas explícitas (`weapon_stops`,

@@ -335,6 +335,23 @@ local function ride_inputs()
    local reach=rs and 48 or 10
    if d>=-reach and d<=reach and ground and frame%30<6 then b.B=1 end
   end
+ elseif ride_plan=='flyer' then
+  -- 'flyer' (the Mission 3 vehicle 0AC866): first ride: fly right and
+  -- left with C (bombs), hold down to land (0ACD76), down+B out (0ACE44);
+  -- second ride: fly, then D (0AD01A: the seat thrown off).
+  if ride_mounts==1 then
+   if t<60 then
+   elseif t<140 then b.R=1;b.C=frame%20<4 and 1 or 0
+   elseif t<200 then b.L=1;b.U=1;b.C=frame%20<4 and 1 or 0
+   elseif t<330 then b.D=1
+   elseif t<336 then b.D=1;b.B=1
+   end
+  else
+   if t<60 then
+   elseif t<150 then b.R=frame%60<30 and 1 or 0;b.L=frame%60>=30 and 1 or 0;b.C=frame%30<4 and 1 or 0
+   elseif t<156 then b.Dbtn=1
+   end
+  end
  elseif ride_plan=='tank' then
   -- 'tank' (the Mission 3 SV-001 093C9A, docs/PLAN_MISION3.md step 5):
   -- first ride: drive both ways with the vulcan, aim up, jumps, the cannon,
@@ -388,7 +405,7 @@ local function ride_inputs()
   elseif t<206 then b.A=1;b.B=1
   end
  end
- for k,name in pairs({L='P1 Left',R='P1 Right',U='P1 Up',D='P1 Down',A='P1 A',B='P1 B',C='P1 C'}) do button(name,b[k]) end
+ for k,name in pairs({L='P1 Left',R='P1 Right',U='P1 Up',D='P1 Down',A='P1 A',B='P1 B',C='P1 C',Dbtn='P1 D'}) do button(name,b[k] or 0) end
 end
 -- MSX_FULL_LOAD=<state name> MSX_FULL_LOAD_FRAME=<frame>: resume from a state
 -- saved by MSX_FULL_SAVE (iteration only; canonical captures run from boot).

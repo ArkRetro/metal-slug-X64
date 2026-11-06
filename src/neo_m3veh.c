@@ -1,8 +1,5 @@
 #include "neo_region.h"
 #include "marco_ammo.h"
-#if defined(VEHDBG)
-#include <stdio.h>
-#endif
 /* Mission 3 vehicle 0AC866 (script record 2DB108, camera 5160; marker "IN"):
  * manual translation of ROM 0AC6D4..0AE96A and its own children, not a copy
  * of another vehicle (docs/PLAN_MISION3.md step 5). ROM labels are
@@ -25,8 +22,7 @@
  * +98 fire cool-down, +99 down held on landing, +9A bob step, +9B dust in
  * flight, +9D ejected.
  *
- * Explicit stops (no capture holds them): the bomb's homing (+9C set by its
- * program, 0ADA7C) and the death palette index 0xF2 (0AE752: trap). */
+ * Explicit stop: the death palette index 0xF2 (0AE752: trap). */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -281,25 +277,18 @@ static ga_result_t tail(neo_gactor_t *a,neo_genv_t *e) {
             bump(a,e);
         }
         neo_vslot_player_t pl=player(e,p);uint16_t p6e;
-        bool bound=neo_vslot_bind(v->slots,p,a->m,node_word(e,a),&pl,e->video,0xc,(int16_t)W(0x72),&p6e);
-#if defined(VEHDBG)
-        fprintf(stderr,"VEH tail p=%u bound=%d exists=%d 5f=%02x node=%04x slot0=%04x 1c=%02x video=%04x\n",p,bound,pl.exists,pl.m?pl.m[0x5f]:0,node_word(e,a),v->slots->slot[p].b[0]<<8|v->slots->slot[p].b[1],v->slots->slot[p].b[0x1c],e->video);
-#endif
-        if (!bound) SL(0,0xac870);
+        if (!neo_vslot_bind(v->slots,p,a->m,node_word(e,a),&pl,e->video,0xc,(int16_t)W(0x72),&p6e)) SL(0,0xac870);
         if (e->dyn_set) e->dyn_set(e->ctx,a,0xaac94,0,0);               /* 0140C0 */
     }
     if (B(0x98)) SB(0x98,B(0x98)-1u);
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
 /* 0ACE44 / 0ACEB0 / 0ACFB2 / 0AD01A: the ways out (see exits()). */
-#define EXIT_TO(r) do { SL(0,(r)==0?0xace44u:(r)==2?0xacfb2u:0xaceb0u);continue; } while (0)
+#define EXIT_TO(r) {SL(0,(r)==0?0xace44u:(r)==2?0xacfb2u:0xaceb0u);continue;}   /* no do-while: the continue is the state loop's */
 static ga_result_t vehicle_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (!e->vehicle) STOP(L(0));
     neo_vehicle_env_t *v=e->vehicle;
     uint16_t d0;int r,x;
-#if defined(VEHDBG)
-    fprintf(stderr,"VEH tick %05x 96=%02x 15=%02x\n",(unsigned)L(0),B(0x96),B(0x15));
-#endif
     for (int guard=0;guard<8;guard++) { switch (L(0)) {
     case 0xac866:
         ga_floor(a,e);                                                  /* 0146E8 */
@@ -510,6 +499,17 @@ static ga_result_t vehicle_tick(neo_gactor_t *a,neo_genv_t *e) {
  * 0AD5D4 and spark 0AD58C, the flight dust 0AD776, the take-off smoke
  * 0AD856, the bomb 0ADA16 and its trail 0ADD2C, the wings 0ADEDA (by the
  * vehicle's +7C: 0ADE66) and the pilot's throw 0AE03A. */
+/* The bomb 0ADA16 and the eject's piece 0AD5D4 are made by 00411C: their
+ * creator is the level script actor 101414 (+0C = 101414), not an actor of
+ * the port. Its +1E is FFFF (every read of the capture); its +97, which the
+ * bomb lowers and raises again (0ADA1A / 0ADC84) and nothing in the
+ * capture reads, is not kept: explicit approximation. */
+static uint16_t creator_depth(neo_gactor_t *a,neo_genv_t *e) {
+    neo_gactor_t *c=creator(a,e);
+    if (c) return ga_w(c,0x1e);
+    if (L(0x0c)!=0x101414u) ga_fail(e,L(0));
+    return 0xffff;
+}
 static ga_result_t piece_end(neo_gactor_t *a,neo_genv_t *e) {
     int r;STEP(r);
     return r?GA_DELETE:(e->unsupported?GA_UNSUPPORTED:GA_MORE);
@@ -636,7 +636,7 @@ static ga_result_t child_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_air(a,e);
         if (grounded(a)) {(void)after_script(a,e,0xad58c,2,0xc);return GA_DELETE;}
         SL(0x34,L(0x34)+0xffffb000u);
-        if (c) SW(0x1e,ga_w(c,0x1e)+3u);
+        SW(0x1e,creator_depth(a,e)+3u);
         STEP(r);(void)r;
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     case 0xad6e4:
@@ -667,7 +667,22 @@ static ga_result_t child_tick(neo_gactor_t *a,neo_genv_t *e) {
         SL(0,0xada74);
         /* fall through */
     case 0xada74: {
-        if (B(0x9c)) {ga_fail(e,0xada7c);return GA_UNSUPPORTED;}       /* the homing: explicit stop */
+        if (B(0x9c)) {
+            /* 0ADA7C: homing (+9C set by its program): +90 steers towards
+             * the middle of the first box of the body 0049E8 returns in A0. */
+            uint8_t t=ga_attack_targets(a,e,0xada06);
+            if (e->unsupported) return GA_UNSUPPORTED;
+            const neo_ga_target_t *g=&e->target[0];
+            if (g->valid && t) {
+                /* +50 = 0: the words at 000004 / 000008 (the vector table). */
+                uint16_t r4=g->box?(uint16_t)g->rect[1]:rw(0x4),r8=g->box?(uint16_t)g->rect[3]:rw(0x8);
+                int16_t d7=(int16_t)(W(0x40)+4u);
+                int16_t d5=(int16_t)(r4-(uint16_t)(r8>>1)+g->y);
+                if (d7>d5) SL(0x90,L(0x90)+0xffffd000u);
+                else if ((int16_t)(d7-8)<d5) SL(0x90,L(0x90)+0x3000u);
+                else SL(0x90,0);
+            }
+        }
         uint32_t keep=L(0x34);SL(0x34,keep+L(0x90));ga_air(a,e);SL(0x34,keep);
         if (ga_cull(a,e,0xaacb0)) {if (c) ga_sb(c,0x97,(uint8_t)(ga_b(c,0x97)+1u));return GA_DELETE;}
         unsigned d7=(unsigned)(W(0x30)>>4);if (d7>3u) d7=3;
@@ -677,7 +692,7 @@ static ga_result_t child_tick(neo_gactor_t *a,neo_genv_t *e) {
             (void)after_script(a,e,0xad8a2,0,0);
         } else if (grounded(a)) piece(a,e,0,0,0);
         else {
-            if (c) SW(0x1e,ga_w(c,0x1e)+3u);
+            SW(0x1e,creator_depth(a,e)+3u);
             STEP(r);(void)r;
             neo_gactor_t *q=child(a,e,0xadd2c);
             if (q) {ga_sw(q,0x6e,0xffec);ga_sw(q,0x70,4);}

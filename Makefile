@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := all
 N64_INST ?= /workspace/toolchains/package/opt/libdragon
 # depth25d (default): subtle 2.5D parallax/lighting/shadows/fog; classic: original flat path.
-MSX_VISUAL_MODE ?= depth25d
+MSX_VISUAL_MODE ?= classic
 MSX_SCENARIO ?= campaign
 # Arcade soft-DIP "BLOOD" (RAM 10FD8F): 1 = ON (default, uncensored), 0 = OFF (US/EU default).
 MSX_BLOOD ?= 1
@@ -268,7 +268,7 @@ $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fix
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/neo_world.o $(BUILD_DIR)/src/neo_boss.o: $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h
-$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m2ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/m3ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
+$(BUILD_DIR)/src/actor.o $(BUILD_DIR)/m1end/actor.o $(BUILD_DIR)/m2ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/m3ref$(REF_SUFFIX)/actor.o $(BUILD_DIR)/src/scene_renderer.o: $(BUILD_DIR)/visual_config.h
 $(BUILD_DIR)/visual_config.h: FORCE tools/build_visual_config.py
 	python3 tools/build_visual_config.py $(MSX_VISUAL_MODE) --scenario $(MSX_SCENARIO) --depth-style $(MSX_DEPTH_STYLE) --output $@
 $(BUILD_DIR)/src/neo_collision.o: $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_wreckage.h

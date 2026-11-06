@@ -88,8 +88,21 @@ de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
   distintos) y paletas `0x87D/0x87A`; programa `299228` en el grupo `m3`.
   Sin evidencia (paradas explícitas, como en la M1): daño `09351A` y
   destrucción `0938DA`.
-- **Paso 5 (b) y (c): sin empezar** (`0AC866`: vehículo con marcador «IN»,
-  14 constructores `0AB028..0AE03A`, mapa dinámico `0AAC94`; la forma
+- **Paso 5 (b): investigado, sin traducir.** `0AC866` (`0AC866..0AE91A`,
+  1568 instrucciones, 34 estados, hijos `0AD2AC 0AD3E2 0AD58C 0AD5D4
+  0AD6E4 0AD856 0AD8A2 0AD9B8 0ADD2C 0ADEDA 01C71E`) **no** es una copia
+  del Slugnoid (solo 4 bloques de ~42 instrucciones iguales: el *cull* con
+  la comprobación del cartucho y las piezas). Init `0AC6D4`: +50 `0AACA4`,
+  tabla de programas +78 `0AAF72`, torreta `03B4E0` con `+72 = 1`,
+  paletas `0x0D/0xCE` (o `0x1C2/0xCE` si `10C2E7`), +4E `0x30`/`0x10`.
+  Subida: rectángulo `0AACB8` por `0AA610` → `0C0556` (jugador vivo,
+  `+93 != 3`) y `0AA760` tipo `0x0C`. Captura `MSX_FULL_RIDE=tank` con
+  `MSX_FULL_RIDE_RANGE=ac866-ae1dc` desde `at_132300`: nace en 137446 en x
+  5512, el jugador salta encima y alrededor 3000 fotogramas y **no sube**
+  (1419 actualizaciones de la espera `0AC8D4`): falta entender la entrada
+  (cruce del borde con +44/+48 del jugador en `0AA6F4..`) antes de la
+  traza de familia.
+- **Paso 5 (c): sin empezar** (la forma
   `+93 = 2` —probablemente Marco gordo tras la comida, sin comprobar— y el
   arma E `0DE4DA`): siguen como paradas explícitas (`weapon_stops`,
   constructores externos).

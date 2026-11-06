@@ -814,6 +814,24 @@ static neo_soldier_result_t run(ctx_t *c) {
         ground(c,NULL);
         if (anim_step(c)) s->routine=0xaf65a;
         return tail(c,false);
+    case 0xaf2ba: /* +76 = 7: a wait in the air with the row 0AE9B0 */
+        hit_player(c,soldier_attack_wait,false);START(0x23f1bc);a->scalar62=0;a->vx=0;a->vy=0;s->routine=0xaf2e8; /* fall through */
+    case 0xaf2e8:
+        air(c,0);
+        if (anim_step(c)) s->routine=0xaf380;
+        return tail(c,false);
+    case 0xaf302: /* +76 = 5 / 6: a wait in the air, then on the ground */
+        if ((a->field66&0xf000u)==0x8000u) a->word1e=(uint16_t)(a->field66-HI(a->projected_y)); /* 01AD8C */
+        START(0x23f15a);s->routine=0xaf31e; /* fall through */
+    case 0xaf31e:
+        a->vx=0;a->vy=0;air(c,0);
+        if (anim_step(c)) s->routine=0xaf348;
+        return tail(c,false);
+    case 0xaf348:START(0x23db34);a->scalar62=0;s->routine=0xaf366; /* fall through */
+    case 0xaf366:
+        ground(c,NULL);
+        if (anim_step(c)) s->routine=0xaf380;
+        return tail(c,false);
     case 0xaf380:START(0x23d5e2);a->scalar62=0;s->routine=0xaf39e; /* fall through */
     case 0xaf39e: {
         if (!(a->flags15&64u)) {s->routine=0xafce2;continue;}
@@ -1289,10 +1307,12 @@ static void ctor_4115a(ctx_t *c) {
     s->routine=0x411e6;
 }
 bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_soldier_env_t *e) {
-    /* +76 modes 1..4 (0AF1EE): 1 ground, 2 run in (0AFF16), 3/4 idle on a
-     * vehicle facing right/left (0B0396). 0/5/6/7 and +78 bit 0 (01495C
-     * probe) are not used by the region script. */
-    if (sp->constructor!=0x4115au && (sp->words[4]<1u || sp->words[4]>4u || (sp->words[5]&1u))) return false;
+    /* +76 modes 1..7 (0AF1EE): 1 ground, 2 run in (0AFF16), 3/4 idle on a
+     * vehicle facing right/left (0B0396), 5/6 a wait in the air then on the
+     * ground (0AF302; 6 sets a bit outside the node), 7 a wait in the air
+     * with the row 0AE9B0 (0AF2BA); +78 bit 0: the probe 01495C (0) with its
+     * flag 200 starts at 0AF7F6 (Mission 3). Mode 0 is not used. */
+    if (sp->constructor!=0x4115au && (sp->words[4]<1u || sp->words[4]>7u)) return false;
     if (sp->variant68>=12u) return false;
     neo_soldier_t backup=*s;
     memset(s,0,sizeof(*s));
@@ -1338,6 +1358,10 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_so
     if (sp->words[4]==2u) s->routine=0xaff16;
     else if (sp->words[4]==3u) {s->b.flags15&=(uint8_t)~1u;s->routine=0xb0396;}
     else if (sp->words[4]==4u) {s->b.flags15|=1u;s->routine=0xb0396;}
+    else if (sp->words[4]==7u) s->routine=0xaf2ba;
+    else if (sp->words[4]==5u) {s->b.flags15&=(uint8_t)~1u;s->routine=0xaf302;}
+    else if (sp->words[4]==6u) s->routine=0xaf302;   /* 0AF25C: bset.b #0,-$5556(a6), outside the node */
+    else if (sp->words[5]&1u) {uint16_t f=0;probe_vertical(&c,0,&f);if (f&0x200u) s->routine=0xaf7f6;}   /* 0AF26A */
     if (c.unsupported) {*s=backup;return false;}
     return true;
 }

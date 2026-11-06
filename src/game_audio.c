@@ -65,10 +65,16 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * floor (3288 of 3332 KB; the dome's collapse 1026 is not resident): the
  * bosses' death blast 1032 (60 KB, once per boss: 0D5D04's end and the
  * Mission 2 boss 026E08) streams from rom:/ too. */
+/* Mission 3 step 2, sixth batch (the jeep 0A2F2E, the birds, the sandbags
+ * and the camp of neo_m3enemy.c, and the grown mission3.pack header) left
+ * the M3 reference 15 KB under the floor (3317 of 3332 KB): the Mission 1
+ * boss's voices 1073 (46 KB, 0D5B4C) and 10C6 (25 KB, neo_boss.c), once per
+ * game, stream from rom:/ too. */
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1032u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
-        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u;
+        || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
+        || w==0x1073u || w==0x10c6u;
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

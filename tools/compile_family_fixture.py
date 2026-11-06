@@ -45,8 +45,10 @@ def main():
     p.add_argument('--fresh-program',action='store_true',help='a constructor that steps the program (00427A) before starting one: the original steps the previous occupant\'s program (+20), the world\'s fresh node has none, so +24..+27 are not compared in a node\'s first update without a program')
     p.add_argument('--reserve',action='store_true',help='0040BC refuses a node unless more than its reserve are free: RAM 1063D8 as the update first read it (extract with --ram 1063d8-1063da); the world has no such limit')
     p.add_argument('--soldier',help='ROUTINES (comma hex): an update of one of these routines ends with JMP 0B0626 / 0B0632 (the node becomes a soldier): the native code must keep the node (the world moves it), its bytes are not compared, and the node\'s later updates and the nodes it creates from then on (the soldier\'s own code) are dropped until the node is deleted')
+    p.add_argument('--external-state',default='',help='ROUTINES (comma hex): states another node of the family sets on a node between its updates (the jeep gunner 0A39D6 sets its creator to 0A35A8): an update of such a routine goes on with the same node instance')
     p.add_argument('--previous',action='store_true',help='per update, the node before it in the list (+04 of its bytes), as a node of the fixture (-1: none)')
     a=p.parse_args();n=a.name
+    ext_states=[int(x,16) for x in a.external_state.split(',')] if a.external_state else []
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
     script=int(a.script_actor,16) if a.script_actor else None
     used=[]
@@ -64,7 +66,7 @@ def main():
         used.clear()
         live={};order=[];inst=[];lastroutine={};dead=[];claimed=set();gone={}
         for u in updates:
-            if u['node'] in live and lastroutine.get(u['node'])!=u['routine']:del live[u['node']]
+            if u['node'] in live and lastroutine.get(u['node'])!=u['routine'] and u['routine'] not in ext_states:del live[u['node']]
             if u['post']:lastroutine[u['node']]=int(u['post'][:8],16)
             if u['node'] not in live:
                 pre=bytes.fromhex(u['pre']);cr='%06x'%int.from_bytes(pre[0x0c:0x10],'big')
@@ -113,7 +115,7 @@ def main():
                 if u['post']:alive.add(nd)
                 continue
             if u['routine'] in sold:
-                assert u['post'],(u['frame'],nd)
+                # The entry moves the record (0B05FE as a state: no V line).
                 u['leave']=True;leaving.add(nd)
             if u['post']:alive.add(nd)
             else:alive.discard(nd)

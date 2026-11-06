@@ -311,11 +311,11 @@ identificar» cuando no hay más.
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `0B8D64` | `0B8D64` | 1 | 117969 / 0 | 1:1 | misión | — | — | nativo (`neo_train.c`) | conductor del tren (`10E94E`) |
 | `0B8EDC` | `0B8EDC` | 1 | 117969 / 0 | 1:1 | misión | — | — | **falta** | creado con el conductor por la llamada `0B8D34`; probable escritor del cielo tras el progreso 0x140 (MISION3.md, sin comprobar) |
-| `01F1D4` | `01F1D4` | 1 | 117970 / 0 | 1:1 | guion | — | — | **falta** | sin identificar; hijos `01F386 01F562 01F2D6 01F4DA` (programas `22F8xx`) |
-| 〃 | `01F2D6` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F81A` `23DB34` | — | **falta** |  |
-| 〃 | `01F386` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F868` | — | **falta** |  |
-| 〃 | `01F4DA` | 1 | 117970 / 0 | 1:1 | `01F562` | `22F9D8` | — | **falta** |  |
-| 〃 | `01F562` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F8C2` `22F8F6` `22F98A` | — | **falta** |  |
+| `01F1D4` | `01F1D4` | 1 | 117970 / 0 | 1:1 | guion | — | — | nativo (`neo_m3enemy.c`) | campamento (`camp_tick`): dos soldados, el fogón `01F562` y su olla `01F4DA`; los soldados pasan a soldados del mundo (`0B05FE`) cuando el fogón estalla |
+| 〃 | `01F2D6` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F81A` `23DB34` | — | nativo (`neo_m3enemy.c`) | soldado del campamento (`0406B6` al morir) |
+| 〃 | `01F386` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F868` | — | nativo (`neo_m3enemy.c`) | soldado del campamento (`+6E` = 2 → `22F89C`) |
+| 〃 | `01F4DA` | 1 | 117970 / 0 | 1:1 | `01F562` | `22F9D8` | — | nativo (`neo_m3enemy.c`) | olla del fogón |
+| 〃 | `01F562` | 1 | 117970 / 0 | 1:1 | `01F1D4` | `22F8C2` `22F8F6` `22F98A` | — | nativo (`neo_m3enemy.c`) | fogón: estalla (`01C706`) al recibir daño |
 | `08C172` | `08C172` | 7 | 117970 / 0 | 1:5 2:1 4:1 | guion | `286896` `2868A2` | — | nativo | caja de suministros (mapa dinámico `0E5640`, ROM `08C1DE`) |
 | `08C37C` | `08C37C` | 12 | 117970 / 0 | 1:4 2:8 | guion | `2869D6` `286C6C` `287078` +1 | 1121 | nativo | objeto del guion |
 | `099DCC` | `099DCC` | 12 | 117970 / 0 | 1:1 2:9 4:2 | guion | `29FAD8` `29FB34` `29FE52` +4 | 1048 1056 113A | nativo | prisionero (regalo en la palabra 3) |
@@ -324,10 +324,10 @@ identificar» cuando no hay más.
 | 〃 | `040F88` | 5 | 118104 / 0 | 1:2 4:3 | `0AF17E` | `2402FA` | — | nativo (`neo_world.c`) | sangre del soldado |
 | `05287C` | `05287C` | 1 | 118022 / 0 | 1:1 | misión | `24953C` `249546` | 10D5 | nativo | flecha GO |
 | `0607DE` | `0607DE` | 1 | 118022 / 0 | 1:1 | misión | — | 1133 | nativo (`neo_end.c`) | letras MISSION 3 START |
-| `0214EA` | `0214EA` | 1 | 118151 / 35 | 1:1 | guion | `230238` `23035E` `2303CA` +1 | 103F | **falta** | sin identificar; regalo en la palabra 1 (`43`); hijos `0218C4` ×7 |
-| 〃 | `0218C4` | 7 | 118248 / 185 | 1:7 | `0214EA` | `230538` | — | **falta** |  |
+| `0214EA` | `0214EA` | 1 | 118151 / 35 | 1:1 | guion | `230238` `23035E` `2303CA` +1 | 103F | nativo (`neo_m3enemy.c`) | sacos (`sack_tick`); regalo en la palabra 1 (`43`); hijos `0218C4` ×7 |
+| 〃 | `0218C4` | 7 | 118248 / 185 | 1:7 | `0214EA` | `230538` | — | nativo (`neo_m3enemy.c`) | trozo de saco |
 | `0403A0` | `0403A0` | 23 | 118200 / 97 | 1:2 2:14 4:7 | guion | — | — | nativo | marcador de escalera/repisa (lista de objetos) |
-| `03EE8A` | `03EE8A` | 8 | 118210 / 112 | 1:8 | guion | `23FE6C` `23FEA0` `23FEAC` +2 | — | **falta** | sin identificar (8 en la salida, programas `23FE6C..23FEFA`, sin sonido) |
+| `03EE8A` | `03EE8A` | 8 | 118210 / 112 | 1:8 | guion | `23FE6C` `23FEA0` `23FEAC` +2 | — | nativo (`neo_m3enemy.c`) | pájaros (`bird_tick`): quietos, saltitos y vuelo al acercarse el jugador (8 en la salida, sin sonido) |
 | `09AE2C` | `09AE2C` | 1 | 118652 / 312 | 1:1 | guion | `2404FE` `2A037A` `2A03C6` +2 | 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE` y propios `2A037A..2A048C`; hijo `09C46C` |
 | `09BA2A` | `09BA2A` | 8 | 118744 / 360 | 2:5 4:3 | guion | `240DEE` `2A037A` `2A03C6` +3 | 103E 1041 1042 | nativo (`neo_m3enemy.c`) | programas de soldado `240DEE` y propios `2A037A..2A0E04`; hijo `09C46C` |
 | `08DA12` | `08DA12` | 5 | 118836 / 627 | 2:5 | guion | `23D510` `23D62A` `23DB34` +4 | 103E 1041 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `23D510 23DB34 2404FE 240DEE` y propios `28AC56 28ACCE` |
@@ -387,11 +387,11 @@ identificar» cuando no hay más.
 | `05C53C` | `05C53C` | 1 | 122232 / 2888 | 2:1 | guion | `2404FE` `240DEE` `262AD8` | 1042 1043 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propio `262AD8` |
 | `08AFB6` | `08AFB6` | 1 | 124034 / 3296 | 2:1 | guion | `285C6A` `285D3A` | — | nativo (`neo_m3enemy.c`) | plataforma flotante; mapas dinámicos `0E53D4/0E53C2`; hijo `08B3E6` |
 | 〃 | `08B3E6` | 1 | 124034 / 3296 | 2:1 | `08AFB6` | `285D96` `285EAA` | — | nativo (`neo_m3enemy.c`) |  |
-| `0A2F2E` | `0A2F2E` | 2 | 124034 / 3296 | 2:1 4:1 | guion | `2A392A` `2A3E92` `2A4056` +3 | 1021 1033 1064 109E | **falta** | sin identificar; regalo `00` (H); hijos `0A3A0A 0A38F4 0A3BD6 0A3C24` |
-| 〃 | `0A38F4` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2A3958` `2A3EDA` `2A409E` +4 | 102D | **falta** |  |
-| 〃 | `0A3A0A` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2404FE` `2A3990` `2A3FB4` +5 | 1043 | **falta** |  |
-| 〃 | `0A3BD6` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `2A4866` | — | **falta** |  |
-| 〃 | `0A3C24` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `22CE6C` `2A48FE` | 1022 | **falta** |  |
+| `0A2F2E` | `0A2F2E` | 2 | 124034 / 3296 | 2:1 4:1 | guion | `2A392A` `2A3E92` `2A4056` +3 | 1021 1033 1064 109E | nativo (`neo_m3enemy.c`) | jeep armado (`jeep_tick`); regalo `00` (H); hijos `0A3A0A 0A38F4 0A3BD6 0A3C24` |
+| 〃 | `0A38F4` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2A3958` `2A3EDA` `2A409E` +4 | 102D | nativo (`neo_m3enemy.c`) | artillero del jeep |
+| 〃 | `0A3A0A` | 2 | 124034 / 3296 | 2:1 4:1 | `0A2F2E` | `2404FE` `2A3990` `2A3FB4` +5 | 1043 | nativo (`neo_m3enemy.c`) | torreta y pasajero del jeep (salta como soldado `0B0626` al morir el jeep; `0AF14C` parada explícita) |
+| 〃 | `0A3BD6` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `2A4866` | — | nativo (`neo_m3enemy.c`) | pieza del jeep |
+| 〃 | `0A3C24` | 6 | 124176 / 3296 | 2:4 4:2 | `0A2F2E` | `22CE6C` `2A48FE` | 1022 | nativo (`neo_m3enemy.c`) | proyectil del jeep (guiado `01B04A/01B12E`) |
 | `0B91FA` | `0B91FA` | 1 | 124034 / 3296 | 2:1 | misión | `2A8E40` | — | **falta** | llamada de cámara `0B8BA2` (progreso 3296), programa `2A8E40` |
 | `0B9286` | `0B9286` | 1 | 126244 / 3536 | 3:1 | misión | `2A8E50` | — | **falta** | llamada de cámara `0B8BF0` (3536): plataforma del hueco, mapa dinámico `0E6896` (ROM `0B9376/0B93A8`, 126245..141259); hijos `0B9748` (sonido 1121), `0B93B4` |
 | 〃 | `0B93B4` | 1 | 126244 / 3536 | 3:1 | `0B9286` | `2A8EA6` | — | **falta** |  |

@@ -171,6 +171,7 @@ typedef struct {
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
+    uint32_t unsupported_line,unsupported_detail;   /* neo_soldier_ai.c's line and detail of that stop (0: not a soldier's) */
     unsigned item_pickups;uint32_t item_pickup_routine; /* items whose pickup stopped explicitly (neo_item.c) */
     /* The players' weapon block (RAM 10C718), player 1's weapon fields and
      * the score/pickup state the items serve (neo_item.c); the caller (the

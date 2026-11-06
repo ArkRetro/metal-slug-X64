@@ -38,7 +38,7 @@ def main():
         timer70=dict(rom='0x2D3C16',header=list(bank[0xd3c16:0xd3c18]),values=words(bank,0xd3c18,96)),
         timer72=dict(rom='0x2D3B54',header=list(bank[0xd3b54:0xd3b56]),values=words(bank,0xd3b56,96)),
         attack_sense=attack(fixed,0xae970),attack_knife=attack(fixed,0xae980),
-        attack_leap=attack(fixed,0xae990),attack_leap_hit=attack(fixed,0xae9a0),
+        attack_leap=attack(fixed,0xae990),attack_leap_hit=attack(fixed,0xae9a0),attack_wait=attack(fixed,0xae9b0),
         pistol=[attack(fixed,0x1b4c2+16*i) for i in range(16)],
         cull_rect=dict(rom='0x0B04F4',values=words(fixed,0xb04f4,4,True)),
         retreat_rect=dict(rom='0x0B04FC',values=words(fixed,0xb04fc,4,True)),

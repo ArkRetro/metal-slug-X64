@@ -741,9 +741,113 @@ onda `03C62A` del soldado, se descartan) y `FAMILY_LEAVE` en
 Sin traza: la conducción, las ráfagas, la bomba y el casquillo (traducción
 literal).
 
-Pendiente del paso 2 (en orden): `0A2F2E`, `03EE8A`, `0214EA`, `01F1D4`, las paradas del
-mundo `0AF17E` y `2869D6`, `08DBC8`, `0413D4`, `0B9748`, la entrada en
-paracaídas, premios y ramas al azar.
+**Sexta tanda** (jeep `0A2F2E`, pájaros `03EE8A`, sacos `0214EA`, campamento
+`01F1D4`), todo en `neo_m3enemy.c`:
+
+- `0A2F2E..0A41E2` (`jeep_tick`): registro `0A3DB0` (`+6E` parado, `+70`
+  paleta 21C, `+72` modo del pasajero, `+74/+76` regalo), entradas
+  `0A2F2E/0A2F48/0A2F62/0A2F7C` (bits 0..2 de `+96`: sello `0C88B0`
+  `0A42C4/0A42E6`, sin artillero), torreta `0A3A0A` y artillero `0A38F4`
+  como hijos en `+7A/+76` (sus programas desde las tablas `0A436A/0A4396`
+  por índice, `0A3EF0`; `0A3F22` cambia el estado de la torreta), parado
+  `0A322A` con ráfagas `0A33C4..0A352C` (rangos `2CD32A/2CD38C/2CD3D6`),
+  conducción `0A3116..0A32CE` (literal, sin traza), daño `0A35E8/0A3624`,
+  artillero muerto `0A35A8` (el artillero pone el estado de su creador),
+  muerte `0A36AC/0A36F4/0A378A`, proyectil guiado `0A3C24` (`01B04A`,
+  `01B12E`, seno/coseno `0A4006`), piezas `0A3BC2/0A3BD6`, pasajero `0A3A54`
+  (salta como soldado `0B0626`; `JMP 0AF14C` y `040846`→`040C8E` paradas
+  explícitas, sin traza). Datos `0A41E2..0A4402` y rangos `2CD236..2CD49A`
+  (los rangos ocupan hasta `+62`: el bloque `2CCFF8` del coche se amplió).
+- `03ED00..03F1D4` (`bird_tick`): pájaros con `+6E` cara, `+70` velocidad
+  (`03FB10`; `03FB2C/03FB40` con el avance `10E99E` para `+70` ≠ 0),
+  quietos `03EEB4`, estados al azar `0E08C0` (`03F138`), saltito `03EF5A`,
+  despegue `03EFC0..03F084` al acercarse un jugador a 60 px (`03FC26` lee
+  `+3C` de P1 y P2), aleteo `03ED8E/03EE00` entre y = 160 y 1D0; otras
+  entradas `03ED00/03ED56/03EE72/03F0D0/03F152` literales.
+- `0214EA..021A2A` (`sack_tick`): sacos `0214EA`/`0216BA`, trozos `0218C4`
+  (paleta 37A/3BA por `01B2BE`), `+74` = 6 golpes rotos, regalo `0219CC`
+  (`08CDB2` con `+12/+13` = 20 y `+34` = 20000).
+- `01F1D4..01F7FC` (`camp_tick`): el grupo `01F1D4` (sus `+60/+61`, `+6E`
+  por `01F7FC` desde los programas), soldados `01F2D6/01F386` (`0406B6` al
+  morir; estado `0B05FE` cuando el fogón estalla → `window_tick` los pasa a
+  soldados), fogón `01F562` (`01C706` al recibir daño, `+61` = FF del grupo)
+  y olla `01F4DA`; `01F81A` (`JMP 003C64`, reinicio) parada explícita.
+- Prueba de familia: `--external-state RUTINAS` (un estado que otro nodo de
+  la familia escribe en el nodo no abre una instancia nueva: `0A35A8`,
+  `0A3A54`, `0A3BA4`); `--soldier` admite la actualización sin `V` (el estado
+  `0B05FE` mueve el registro).
+
+| Familia | Nodos | Actualizaciones | Fotogramas | Resultado |
+| --- | --- | --- | --- | --- |
+| `m3jeep` (jeep `0A2F2E` parado en 3296, ráfagas, proyectiles, artillero muerto, muerte y pasajero) | 33 | 2212 | 124034..124753 | iguales a MAME |
+| `m3bird` (pájaros `03EE8A` ×2 de la salida) | 8 | 854 | 118210..118458 | iguales |
+| `m3sack` (sacos `0214EA`, 7 trozos, regalo) | 8 | 410 | 118151..118759 | iguales |
+| `m3camp` (campamento `01F1D4`: 2 soldados, fogón, olla; un soldado pasa al mundo) | 5 | 1611 | 117970..118741 | iguales |
+
+Sprites: 8287 → 8427 descripciones (las cinco rutinas desde la captura A de
+`captures-m3s2c`). Recorrido en ares tras la quinta tanda (300 s, antes de
+la sexta): PASS, progreso 3904; registros saltados 2 (`2DA174`→`0AF1B6`,
+`2DAC58`→`0A2F2E`); rutinas sin soporte `2869D6`, `08DBC8`, `0AF17E`,
+`040DB4` y `2CD184` (el rango `2CD184` del coche leído más allá del bloque
+antiguo de `region_rom.json`: corregido al ampliarlo).
+
+**Paradas del mundo** (misma rama; diagnóstico: `msx_diag` vuelca el anillo
+en cada rutina distinta de parada del mundo, hasta 6, y `actor.c` imprime la
+línea y el detalle de `neo_soldier_ai.c` de una parada de soldado):
+
+- `2869D6` (cámaras 2049..2304): el programa del regalo de tipo 28 (`08C374`
+  arranca `2869D6`, raíz que `extract_soldier_programs.py` solo recorría
+  dentro del andador `288396`): raíz propia en `soldier_programs.json`.
+- `288AB6` (tras la muerte general): aviso del programa `2887D2` (regalo
+  39) sin atender en `neo_item.c`: `+7E` = ángulo de la velocidad / 4 (`002EB4`
+  con `+30/+34 >> 12`), 30 en reposo con `+7D` = FF.
+- `0AF17E` (1734..2177, el constructor de soldado): registros con `+76` =
+  5/6/7 y `+78` bit 0 que `neo_soldier_construct` rechazaba. Modos 5/6
+  (`0AF302`: `01AD8C`, `23F15A` en el aire, `23F15A`→`23DB34` en el suelo,
+  luego `0AF380`; el 6 pone un bit fuera del nodo, `-$5556(a6)`), modo 7
+  (`0AF2BA`: fila `0AE9B0` (`attack_wait` de `soldier_ai_tables.json`),
+  `23F1BC`, luego `0AF380`) y la sonda `01495C` (0) del bit 0 de `+78` hacia
+  `0AF7F6`.
+- `08DBC8` (897/1088, soldados de ventana): `08DBC4` compara `+90` como
+  palabra con el byte alto de D0 tras `00427A`: un WAIT deja `+26` (`004328`)
+  si el temporizador `+24` no era negativo (con `+26` ≥ 100 la condición
+  nunca se cumple); al acabar el programa D0 queda como lo dejó `08D91E`
+  (palabras de posición, no cero: la comprobación se salta, supuesto
+  razonado); temporizador negativo: parada explícita.
+- `2CD184` (1471): el rango del coche leído más allá del bloque antiguo
+  (ampliado, también `2CD236` del jeep: los rangos ocupan 0x62 bytes).
+- `22D372` (1471): el programa del polvo de la Misión 2 (`03A464`) que usa la
+  pieza `028CA4` del coche iba con grupo `m2` y no entraba en el paquete de
+  la M3: bloque compartido sin grupo (`extract_soldier_programs.py`, raíces
+  sin duplicar con `dict.fromkeys`).
+- `0B0626` (1520, el pasajero del coche): `neo_soldier_become` sondea el
+  suelo contra los objetos del núcleo y el bloque `+38` del pasajero era el
+  coche (un nodo genérico): `to_root` antes de la conversión en `028948` y en
+  `0A3B50` del jeep (el coche está parado hasta borrarse; el original guarda
+  el puntero, a un nodo muerto tras `028660`).
+- `03BBBC` (1088): granada de los programas de los soldados de ventana
+  (`23D976`, `28ABD4`): nuevo gancho `spawn_throw` de `neo_genv_t` (el mundo
+  crea el objeto lanzado tras el actor del guion como con los soldados,
+  `g_spawn_throw`); la prueba de familia lo deja en NULL (parada explícita).
+- `040DB4` (2304): la muerte de un soldado `04115A` cuyo programa (`24124C`
+  o `23DA62`) llama a `03C2DE`: crea tras el actor del guion `03C306` (un
+  resto de la muerte con `23F2A0`, caída con `01495C` y `+50` = `03C2D2`),
+  sin captura MAME de ese actor: sigue como parada explícita (pendiente:
+  capturar y traducir `03C306`).
+- RAM: la sexta tanda dejó la ROM de referencia 15 KB bajo el mínimo (3317
+  de 3332 KB): las voces del jefe de la Misión 1 `1073` (46 KB) y `10C6`
+  (25 KB) pasan a sonar desde rom:/ (`game_audio.c`); 211 ranuras.
+
+Recorrido en ares tras las paradas (300 s): PASS, progreso 3939 (otra
+carrera 4379, la espera del jefe intermedio), 211 ranuras, registro saltado
+1 (`2DA174`→`0AF1B6`), rutina sin soporte solo `040DB4` ×1.
+
+`0B9748` (puntos al saltar a la plataforma del hueco) lee `+15` bit 6 de los
+jugadores (`01AF1A`) y `01AF3C`: necesita el bit de suelo de los jugadores
+en `neo_genv_t` (pendiente).
+
+Pendiente del paso 2 (en orden): `03C306` (parada `040DB4`), `0B9748`, la
+entrada en paracaídas, premios y ramas al azar.
 
 ## Pendiente
 

@@ -337,6 +337,15 @@ static neo_gactor_t *actor_of(void *ctx,uint32_t t) {
 static neo_gactor_t *creator_of(void *ctx,neo_gactor_t *a) {
     (void)ctx;uint32_t t=ga_l(a,0x0c);
     if ((t&0xff000000u)==NEO_GA_TAG_BASE && (t&0xffffu)<NN) return &actors[t&0xffffu];
+#ifdef FAMILY_RAM_CREATORS
+    /* A creator outside the family (the player 1014C4, the gate 03889C):
+     * its node from the RAM image, as the update read it. */
+    if (t>=0x1010a4u && t<0x1010a4u+0xb0u*100u && !((t-0x1010a4u)%0xb0u)) {
+        static neo_gactor_t view[100];neo_gactor_t *v=&view[(t-0x1010a4u)/0xb0u];
+        memcpy(v->m,&wram[t&0xffffu],0xb0);v->active=true;v->index=-1;
+        return v;
+    }
+#endif
     return NULL;
 }
 /* 004192: the nodes deeper than `a` (its descendants) are deleted. */
@@ -361,7 +370,7 @@ static bool has_children(void *ctx,neo_gactor_t *a) {
     }
     return false;
 }
-static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=creator_of(NULL,a);return !c || c->active;}
+static bool creator_alive(void *ctx,neo_gactor_t *a) {(void)ctx;neo_gactor_t *c=creator_of(NULL,a);return !c || (c->active && (c->index>=0 || ga_l(c,0)!=0x3f1eu));}   /* 00409A on a RAM view */
 /* 0049E8 against the player (class 0): the player's hurtbox is not in the
  * trace; a contact is taken from the update's outcome (the original deletes
  * the attacker in that update). */
@@ -833,6 +842,12 @@ int main(void) {
              * node next to them is inserted or deleted (0040BC/004188, the
              * node pool is not modelled). */
             if ((ad>=0x1014c8u && ad<0x1014d0u) || (ad>=0x101578u && ad<0x101580u)) continue;
+#ifdef FAMILY_RAM_CREATORS
+            /* The node pool is RAM only for the creators' reads: what the
+             * list management writes there (links, a placeholder creator
+             * freed with its last child, 004188) is not modelled. */
+            if (ad>=0x1010a4u && ad<0x1010a4u+0xb0u*100u) continue;
+#endif
             /* 0049E8's damage to a player (+5A..+5D of 1014C4 / 101574): the
              * attack() stub answers the recorded hit without writing it. */
             if ((ad>=0x10151eu && ad<0x101522u) || (ad>=0x1015ceu && ad<0x1015d2u)) continue;

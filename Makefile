@@ -457,7 +457,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature m2ripple
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -721,6 +721,16 @@ FAMILY_ARGS_rebel3 := --attacks --terrain 10c72e --ring 10c72e --group-map b7000
 # gate = the Mission 2 stage-1 gate 03882A and its water ripple 03C62A
 # (neo_gate.c, g1 from sec01_19391: shot open at 19740, 0B6E06).
 FAMILY_ARGS_gate := --attacks --terrain 10c72e --ring 10c72e
+# m2ripple = the water ripples 03C62A (neo_gate.c) of the Mission 2 stage-1
+# river, with the creators the port missed: the player 1014C4 (0C124C, at
+# the stage start; it outlives the death at 19621) and the swordsmen 039590
+# (039E5A, neo_arab.c), plus the gate's and the prisoner's (capture_fullgame.lua
+# from sec01_19391, MSX_FULL_PLAN=hop, ROOTS 3c62a,39590,395b6, family
+# 19392..20400; extract_family_fixture.py --range 3c62a-3c961 --range
+# 39590-3a0ff --range a9400-a98ff --range 35600-35a00 --attacks, the gate's
+# --ram list and --ram 1010a4-104924: the creators outside the family are
+# read from the node pool, --ram-creators).
+FAMILY_ARGS_m2ripple := --attacks --terrain 10c72e --ring 10c72e --ram-creators
 # secret2 = the Mission 2 stage-1 hidden boxes 09A692 (camera 320) and the
 # prisoners 099E1C they release (09A842; neo_secret.c, neo_prisoner.c), pr1
 # from sec01_19391 (19393..22600: three boxes shot open, three prisoners).

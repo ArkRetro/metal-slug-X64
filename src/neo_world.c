@@ -12,7 +12,7 @@
  * list does and connects their inputs/outputs. */
 #define COUNT(a) (sizeof(a)/sizeof((a)[0]))
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
-enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414 };
+enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414, PLAYER1_TAG=0x1014c4 };
 /* The soldier entries 0AF17E.. (0AEF30 then +81): 0 for any other routine.
  * 0AF1A8 (+81 = E0: the actions 0AF99A, not ported) stays external. */
 static uint8_t soldier_entry_flags81(uint32_t r) {
@@ -363,6 +363,8 @@ static neo_gactor_t *ga_insert(tick_t *t,int at,uint32_t routine,uint32_t creato
 }
 static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script) {
     tick_t *t=ctx;neo_world_t *w=t->w;
+    /* Player 1's node (its ripple): after the script actor, as 1014C4. */
+    if (creator==&w->player_view) return ga_insert(t,find(w,NEO_WORLD_SCRIPT,0),routine,PLAYER1_TAG,ga_b(creator,0x68));
     int at=after_script?find(w,NEO_WORLD_SCRIPT,0):(creator?order_of_gactor(w,creator):t->current);
     /* 0040BC copies +68 from its A6: the creator, or the script actor for
      * 00411C (+68 = 0). */
@@ -472,8 +474,19 @@ static neo_gactor_t *g_actor(void *ctx,uint32_t tag) {
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[tag&0xffffu].active) return &t->w->gactors[tag&0xffffu];
     return NULL;
 }
+/* Player 1's node record as a creator (its ripple reads +15, +1E, +28..+40
+ * and +6D): +6D is the angle of the floor the last sweep found, kept in the
+ * air; the port's player has no angle: 40 (flat), as in 79 of the 83 reads
+ * of family m2ripple (20 on a slope by the bank). */
+static neo_gactor_t *player_view(neo_world_t *w) {
+    neo_gactor_t *v=&w->player_view;
+    memcpy(v->m,w->player_node[0],sizeof(w->player_node[0]));
+    v->m[0x6d]=0x40;v->active=true;v->index=-1;
+    return v;
+}
 static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
+    if (c==PLAYER1_TAG) return player_view(t->w);
     if ((c&0xff000000u)==NEO_GA_TAG_BASE && (c&0xffffu)<NEO_WORLD_GACTORS) return &t->w->gactors[c&0xffffu];
     return NULL;
 }
@@ -1483,6 +1496,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
           (uint8_t)(t.player_valid && neo_vslot_node(&w->vslots.slot[0]) && w->vslots.slot[0].b[0x21])},{false,0,0,0,0,0}},
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native,w->script_skip_unported};
     t.se=&se;t.sub_owner=-1;
+    if (w->player_ripple) {w->player_ripple=false;neo_gate_ripple(player_view(w),&t.genv,2);}   /* 0C124C: 03C52C */
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         MSX_DIAG_CHECK((slot.kind==NEO_WORLD_SOLDIER?slot.index<NEO_WORLD_SOLDIERS:slot.kind==NEO_WORLD_THROW?slot.index<NEO_WORLD_THROWS:
@@ -1700,6 +1714,7 @@ void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_
     memcpy(w->ga_flags.rescued,flags.rescued,sizeof(flags.rescued));memcpy(w->ga_flags.special,flags.special,sizeof(flags.special));memcpy(w->ga_flags.gifts,flags.gifts,sizeof(flags.gifts));
     neo_script_init(&w->script,st->script,st->script_size,st->script_base);
     w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;
+    w->player_ripple=true;   /* 0C0CD6: the player's 0C10FE again */
 }
 void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     /* Events of the stage start's commands (0C8774): the update below

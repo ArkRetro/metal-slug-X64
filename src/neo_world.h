@@ -188,6 +188,12 @@ typedef struct {
      * world no longer runs player 1's 0AA458: the port's player does, after
      * the actors (the original player 1014C4 runs after the Camel). */
     uint8_t player_node[2][0xc0];
+    /* Player 1's water ripple 03C62A (0C124C -> 03C52C, +6E = 2: made by
+     * the player's constructor 0C10FE at each stage start, 0C0CD6): made at
+     * the start of the stage's first tick, after the script actor (the
+     * player 1014C4 follows it); its creator +0C is 1014C4, read through
+     * player_view (a copy of player_node[0], +6D the floor angle). */
+    bool player_ripple;neo_gactor_t player_view;
     uint16_t pad[2];
     neo_vehicle_env_t vehicle_env;
     /* RAM 10F000, the original's debug-flag word (cleared at 002488): bit 7

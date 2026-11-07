@@ -643,6 +643,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #endif
         }
     }
+#if MSX_DIAG
+    /* B54: the Mission 2 creatures 080170.. (neo_m2creature.c) as they appear and go. */
+    {static unsigned last_creatures;unsigned c=0;
+     for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {const neo_gactor_t *r=&game.world.gactors[i];uint32_t rt=ga_l(r,0);if (r->active && rt>=0x80170u && rt<=0x822b2u) c++;}
+     if (c!=last_creatures) {debugf("MSX creatures 080170: %u camera=%d\n",c,game.camera);last_creatures=c;}}
+#endif
     if (game.world.camera_lock!=old_lock) debugf("MSX camera stop=%ld progress=%u\n",(long)game.world.camera_lock,neo_camera_progress(&game.world.camera));
     if (game.world.camera.auto_mode!=old_auto) debugf("MSX camera autoscroll=%u progress=%u\n",game.world.camera.auto_mode,neo_camera_progress(&game.world.camera));
     if (game.world.boss_active && !old_boss) debugf("MSX boss spawned camera=%d\n",game.camera);

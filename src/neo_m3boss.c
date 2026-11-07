@@ -1,4 +1,5 @@
 #include "neo_region.h"
+#include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 /* Mission 3: the final boss 04A2C2 (script record 2DB5E4, camera 6496),
  * manual translation in pieces (ROM labels as provenance;
  * docs/JEFE_MISION3.md, "Implementación propuesta").
@@ -18,9 +19,16 @@
  *   handshake 04DF02 at the pose points E0F9A (04D9DE).
  * - Footsteps 04E2EA/04E3BE (callbacks 04E296/04E2C0) and dust
  *   04AD12/04AD94 (04E520/04E53C).
- * Explicit stops: the attacks (arm 04B52C, pod 04BA16, hatch 04C4D2, mortar
- * 04CF92), the death 04A9D4 and the leg/torso deaths 04B01E/04B208 until
- * their pieces. The cartridge check before some deletions (10F00A/10F00C)
+ * Piece 2, the flamethrower 04B52C (orders 0/1; fixtures m3boss1, m3boss3):
+ *   aim 04D798 (tables 04D91A/04D92A, 04D8C6) and turn 04D768, flame emitter
+ *   04B79C (program 245BA0) and segments 04B87E (row E0F4A), fireball
+ *   04CAB4 (03B36E parabola, 04E5D0/04E962 fixed point, 002F1A, trails
+ *   04CD32, puddle 04CCE4).
+ * Piece 3, the missile pod 04BA16 (order 2; m3boss3): open, aim 04D94A,
+ *   volleys of 3 missiles 04C194 (04E154, points 04E19E), close.
+ * Explicit stops: order 6 of the pod (04BAB2, 04BB88..04BF66, 04C220),
+ * the hatch 04C4D2, the mortar 04CF92, the death 04A9D4 and the leg/torso
+ * deaths 04B01E/04B208 until their pieces. The cartridge check before some deletions (10F00A/10F00C)
  * is not reproduced (as in neo_m3mid.c). */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
@@ -138,6 +146,86 @@ static const uint8_t *player(neo_genv_t *e,unsigned p) {
     if (!n) ga_fail(e,0x1b04a);
     return n;
 }
+/* ---- arithmetic of the arm and the pod ----------------------------------------- */
+static void sound(neo_genv_t *e,uint16_t id) {if (e->sound) e->sound(e->ctx,id);}
+static uint16_t absw(uint16_t v) {return S16(v)<0?(uint16_t)-v:v;}
+/* 002F1A: |dx| + |dy| with the smaller halved (words). */
+static uint16_t k2f1a(uint16_t d0,uint16_t d1) {
+    d0=absw(d0);d1=absw(d1);
+    if (d1>d0) return (uint16_t)((d0>>1)+d1);
+    return (uint16_t)(d0+(d1>>1));
+}
+/* 04E57A: the unsigned 64-bit product of d0 and d1 (d1:d0). */
+static uint64_t k4e57a(uint32_t d0,uint32_t d1) {return (uint64_t)d0*d1;}
+/* 04E5D0: the signed 16.16 product. Both below 0x10000: mulu.w and >>16
+ * (negated after: towards zero); else bits 16..47 of the 64-bit product
+ * negated as a whole (04E5BE; TRAP #15 when its top bit is set). */
+static uint32_t k4e5d0(neo_genv_t *e,uint32_t d0,uint32_t d1) {
+    bool neg=false;
+    if ((int32_t)d0<0) {d0=(uint32_t)-d0;neg=!neg;}
+    if ((int32_t)d1<0) {d1=(uint32_t)-d1;neg=!neg;}
+    if (d0<0x10000u && d1<0x10000u) {uint32_t r=(d0*d1)>>16;return neg?(uint32_t)-r:r;}
+    uint64_t q=k4e57a(d0,d1);
+    if (q>>63) {ga_fail(e,0x4e5c2);return 0;}
+    if (neg) q=(uint64_t)-q;
+    return (uint32_t)(q>>16);
+}
+/* 04E648: (d0<<16)/d1 by 48 restoring steps (d0 = 0: 0; d1 = 0: TRAP #15). */
+static uint32_t k4e648(neo_genv_t *e,uint32_t d0,uint32_t d1) {
+    if (!d0) return 0;
+    if (!d1) {ga_fail(e,0x4e578);return 0;}
+    uint32_t d2=d1,d3=0,q=d0<<16;uint16_t w=(uint16_t)(d0>>16);
+    for (unsigned i=0;i<48;i++) {
+        unsigned x=q>>31;q<<=1;
+        unsigned x2=w>>15;w=(uint16_t)(w<<1|x);
+        d3=d3<<1|x2;
+        if (d3>=d2) {q=(q&0xffff0000u)|(uint16_t)(q+1u);d3-=d2;}
+    }
+    return q;
+}
+/* 04E962: the signed form of 04E648. */
+static uint32_t k4e962(neo_genv_t *e,uint32_t d0,uint32_t d1) {
+    bool neg=false;
+    if ((int32_t)d0<0) {d0=(uint32_t)-d0;neg=!neg;}
+    if ((int32_t)d1<0) {d1=(uint32_t)-d1;neg=!neg;}
+    uint32_t r=k4e648(e,d0,d1);return neg?(uint32_t)-r:r;
+}
+/* 03B3D0: d7 / d0, signed, towards zero (two divu.w by the low word of |d0|). */
+static int32_t k3b3d0(int32_t d7,int32_t d0) {
+    bool neg=d0<0;uint32_t n=(uint32_t)d7,d=(uint32_t)d0;
+    if (neg) d=(uint32_t)-d;
+    if (d7<0) {n=(uint32_t)-n;neg=!neg;}
+    if (d) {uint16_t dw=(uint16_t)d;uint32_t hi=(n>>16)/dw,r=(n>>16)%dw,lo=((r<<16)|(n&0xffffu))/dw;n=(hi<<16)|(lo&0xffffu);}
+    return neg?-(int32_t)n:(int32_t)n;
+}
+/* 03B36E: the parabola to (dx, dy) at the speed d2 and the angle d3:
+ * velocity (d0, d1) and accelerations (d2, d3). */
+static void k3b36e(int16_t dx,int16_t dy,uint32_t speed,uint8_t angle,uint32_t out[4]) {
+    uint32_t vx,vy;ga_polar(speed,angle,&vx,&vy);
+    int32_t d0=dx?dx:1,d1=dy;
+    int16_t x=(int16_t)(uint16_t)((int32_t)vx>>8),y=(int16_t)(uint16_t)((int32_t)vy>>8);
+    int32_t d4=-(k3b3d0((int32_t)x*x,d0)>>1);
+    int32_t d5=(k3b3d0((int32_t)x*(int16_t)d1,d0)>>1)-y;
+    d5=(int32_t)(int16_t)(uint16_t)d5*x;
+    out[0]=(uint32_t)(int32_t)x<<8;out[1]=(uint32_t)(int32_t)y<<8;out[2]=(uint32_t)d4;out[3]=(uint32_t)k3b3d0(d5,d0);
+}
+/* A table of (limit, value) words read until d0 <= limit (signed), or, when
+ * stop, until the limit 0xFF (04D812, 04D892, 04D998). */
+static uint16_t lookup(neo_genv_t *e,uint32_t t,int16_t d0,bool stop) {
+    for (unsigned i=0;i<64;i++,t+=4) {
+        uint16_t v=rw(e,t);
+        if (d0<=S16(v) || (stop && v==0xffu)) return rw(e,t+2);
+    }
+    ga_fail(e,t);return 0;
+}
+static const uint8_t *target(neo_gactor_t *a,neo_genv_t *e) {return player(e,L(0x6e)==0x1014c4u?0u:1u);}
+/* 0AAA88 for player p: the kind (+21) of its vehicle slot, 0 without one. */
+static uint8_t vkind(neo_genv_t *e,unsigned p) {
+    if (!e->vehicle || !e->vehicle->slots || !e->vehicle->exists[p] || !neo_vslot_node(&e->vehicle->slots->slot[p])) return 0;
+    uint8_t k=e->vehicle->slots->slot[p].b[0x21];
+    if (!k) ga_fail(e,0xaaacc);                                     /* TRAP #15 */
+    return k;
+}
 static bool k4da38(neo_gactor_t *a,neo_genv_t *e) {                       /* carry: order 8 or 4 */
     unsigned p;
     if (B(0x9e)) return false;
@@ -186,6 +274,27 @@ static bool call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t rou
         if (ga_b(c,0x60)&bit) {child(a,e,routine==0x4e296?0x4e2ea:0x4e3be,0xe);ga_sb(c,0x60,(uint8_t)(ga_b(c,0x60)&~bit));}
         return !e->unsupported;
     }
+    case 0x4ceb8: {                                                    /* 04CEB8: the fireball 04CAB4 */
+        if (W(0x86)) return true;
+        sound(e,0x1065);
+        neo_gactor_t *b=child(a,e,0x4cab4,0x1c);
+        if (!b) return !e->unsupported;
+        ga_sw(b,0x8c,W(0x8c));ga_sb(b,0xa2,B(0xa2));ga_sl(b,0x6e,L(0x6e));ga_sw(b,0x72,W(0x72));ga_sw(b,0x74,W(0x74));
+        uint32_t t=0x4cf18u+(uint32_t)(B(0x9a)>>1)*4u;
+        ga_place_at(b,a,e,S16(rw(e,t)),S16(rw(e,t+2)));
+        return !e->unsupported;
+    }
+    case 0x4e154: {                                                    /* 04E154: one missile 04C194 */
+        neo_gactor_t *m=child(a,e,0x4c194,0x1c);
+        if (m) {
+            ga_sb(m,0x9a,B(0x9a));
+            uint32_t t=0x4e19eu+(uint32_t)B(0x9a)*8u;
+            ga_sb(m,0xa2,(uint8_t)rw(e,t+4));ga_place_at(m,a,e,S16(rw(e,t)),S16(rw(e,t+2)));
+        }
+        SB(0x9e,0xff);sound(e,0x1062);
+        return !e->unsupported;
+    }
+    case 0x4e140: ga_fail(e,0x4e140);return false;                     /* the missile 04C220 (order 6): not seen */
     case 0x4e520: case 0x4e53c: {
         neo_gactor_t *d=child(a,e,routine==0x4e520?0x4ad12:0x4ad94,0x2a);
         if (d) ga_place_at(d,a,e,routine==0x4e520?0x40:-0x38,routine==0x4e520?0x10:0x30);
@@ -349,8 +458,9 @@ static bool k4df02(neo_gactor_t *a,neo_genv_t *e) {
 static bool k4d74a(neo_gactor_t *a,neo_genv_t *e) {neo_gactor_t *t=creator(a,e),*p=t?creator(t,e):NULL;return p && ga_b(p,0x61);}
 static neo_gactor_t *grand(neo_gactor_t *a,neo_genv_t *e) {neo_gactor_t *t=creator(a,e);return t?creator(t,e):NULL;}
 /* 04D9DE: the program step at the torso's pose point E0F9A[+98]. */
-static bool k4d9de(neo_gactor_t *a,neo_genv_t *e,bool *fin) {
-    flash_share(a,e);
+static bool k4d9e4(neo_gactor_t *a,neo_genv_t *e,bool *fin);
+static bool k4d9de(neo_gactor_t *a,neo_genv_t *e,bool *fin) {flash_share(a,e);return k4d9e4(a,e,fin);}
+static bool k4d9e4(neo_gactor_t *a,neo_genv_t *e,bool *fin) {
     neo_gactor_t *c=creator(a,e);if (!c) return false;
     uint32_t x=L(0x3c),y=L(0x40);
     uint16_t pose=ga_w(c,0x98);SW(0x98,pose);
@@ -434,6 +544,337 @@ static ga_result_t piece_init(neo_gactor_t *a,neo_genv_t *e,uint16_t pal2,uint16
     SB(0xa1,role);SB(0x9d,3);SB(0x61,0);
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
+/* ---- the flamethrower arm (orders 0/1) --------------------------------------------- */
+/* 04D768: +9A one step towards +9C; carry (true) when there. */
+static bool k4d768(neo_gactor_t *a) {
+    int8_t d0=(int8_t)B(0x9a),t=(int8_t)B(0x9c);
+    if (d0==t) return true;
+    SB(0x9a,d0>=t?d0-1:d0+1);
+    return false;
+}
+/* 04D718: the body's phase into +A4; carry in phase 2. */
+static bool k4d718(neo_gactor_t *a,neo_genv_t *e) {neo_gactor_t *g=grand(a,e);uint8_t v=g&&ga_b(g,0xa4)?1u:0u;SB(0xa4,v);return v!=0;}
+/* The pose point E0F9A[+98] of the torso (the creator), into +98. */
+static void pose_point(neo_gactor_t *a,neo_genv_t *e,int16_t *x,int16_t *y) {
+    neo_gactor_t *c=creator(a,e);uint16_t pose=c?ga_w(c,0x98):0;SW(0x98,pose);
+    uint32_t t=(uint32_t)(0xe0f9a+(int16_t)(uint16_t)(pose<<2));
+    *x=S16(W(0x3c)+rw(e,t));*y=S16(W(0x40)+rw(e,t+2));
+}
+/* 04D798: the arm's aim: the landing point +72/+74 of the fireball (order
+ * 0: a random distance 0x10..0xAF, else the player's), its angle +A2, the
+ * target angle +9C (table 04D8C6) and the distance +8C. */
+static void k4d798(neo_gactor_t *a,neo_genv_t *e) {
+    int16_t x,y;pose_point(a,e,&x,&y);
+    uint16_t d0;
+    if (!B(0x9d)) {uint16_t d1=(uint16_t)(ga_rand_range(e,0xa0)+0x10u);d0=(uint16_t)(x-d1);}
+    else {const uint8_t *n=target(a,e);if (!n) return;d0=(uint16_t)(x-(n[0x3c]<<8|n[0x3d]));}
+    d0=absw(d0);
+    uint32_t t=k4d718(a,e)?0x4d92au:0x4d91au;
+    SW(0x72,(uint16_t)(x-lookup(e,t,S16(d0),true)));SW(0x74,0x120);
+    uint8_t an=(uint8_t)-neo_angle(S16(W(0x72)-(uint16_t)x),S16(0x120-(uint16_t)y));
+    SB(0xa2,an);SB(0x9c,(uint8_t)lookup(e,0x4d8c6,an,false));
+    SW(0x8c,absw((uint16_t)(x-W(0x72))));
+}
+static ga_result_t arm_attack(neo_gactor_t *a,neo_genv_t *e) {
+    bool f=false;neo_gactor_t *g;
+    switch (L(0)) {
+    case 0x4b52c:
+        if (!(g=grand(a,e))) return GA_UNSUPPORTED;
+        if (!ga_b(g,0xa4)) {SB(0xa4,0);SW(0x80,rank(a,e,0x2c21ae));SW(0x82,rank(a,e,0x2c21e2));}
+        else {SB(0xa4,1);SW(0x80,rank(a,e,0x2c21c8));SW(0x82,rank(a,e,0x2c2244));}
+        /* fall through */
+    case 0x4b58e:
+        if (!W(0x82)) goto aim_back;
+        START(0x2459f4);SW(0x88,3);SW(0x84,W(0x80));k4d798(a,e);SL(0,0x4b5bc);
+        /* fall through */
+    case 0x4b5bc:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            SW(0x88,3);
+            if (k4d768(a)) {if (W(0x84)) k4d798(a,e);else SL(0,0x4b658);}
+        } else SW(0x88,W(0x88)-1u);
+        if (W(0x84)) SW(0x84,W(0x84)-1u);
+        if (!(g=creator(a,e))) return GA_UNSUPPORTED;
+        SW(0x98,ga_w(g,0x98));
+        START(S16(ga_w(g,0x98))>=0x25?0x2459e8:0x2459f4);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4b732);}
+        break;
+    case 0x4b658:
+        SB(0x60,0);SB(0x61,0);
+        if (!child(a,e,0x4b79c,0xe)) SB(0x60,0xff);                    /* 0040BC without room */
+        if (e->unsupported) return GA_UNSUPPORTED;
+        SL(0,0x4b680);
+        /* fall through */
+    case 0x4b680:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (B(0x60)) SL(0,0x4b6ae);
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4b732);}
+        break;
+    case 0x4b6ae:
+        START(0x245a48);SW(0x86,0);SL(0,0x4b6c8);
+        /* fall through */
+    case 0x4b6c8:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;                    /* CALL 04CEB8 */
+        if (f) {
+            SW(0x86,W(0x86)+1u);
+            if (S16(W(0x86))>3) {
+                unsigned p;SET(0x61,0);
+                if (!k1b04a(e,&p)) SL(0,0x4b732);
+                else {SW(0x82,W(0x82)-1u);SL(0,0x4b58e);}
+            } else START(0x245a48);
+        }
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4b732);}
+        break;
+    case 0x4b732:
+    aim_back:
+        SW(0x88,4);SB(0x9c,0);START(0x2459f4);SL(0,0x4b752);
+        /* fall through */
+    case 0x4b752:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            SW(0x88,4);
+            if (k4d768(a)) {if (!(g=grand(a,e))) return GA_UNSUPPORTED;ga_sb(g,0x9e,0);SL(0,0x4b40c);}
+        } else SW(0x88,W(0x88)-1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    default: STOP(L(0));
+    }
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 04B79C: the flame emitter (program 245BA0 sets +60 and +9F). */
+static ga_result_t emitter_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool f=false;neo_gactor_t *c;
+    if (L(0)==0x4b79c) {
+        SB(0x1d,0);ga_palette(a,0xbb);SW(0x66,0xe06f);SW(0x1e,0xe06f);SB(0x61,0);SB(0x60,0);SB(0x9f,0);
+        place(a,e,0,0);START(0x245ba0);SL(0,0x4b7ec);
+    }
+    if (!(c=creator(a,e))) return GA_UNSUPPORTED;
+    SB(0x9a,ga_b(c,0x9a));
+    ga_project(a,e);
+    if (!k4d9e4(a,e,&f)) return GA_UNSUPPORTED;
+    if (!B(0x61) && B(0x60)) {ga_sb(c,0x60,0xff);SB(0x61,0xff);}
+    if (B(0x9f)) {
+        neo_gactor_t *s=child(a,e,0x4b87e,0x1c);
+        uint16_t pose=ga_w(c,0x98);SW(0x98,pose);
+        uint32_t t=(uint32_t)(0xe0f9a+(int16_t)(uint16_t)(pose<<2));
+        int16_t dx=S16(rw(e,t)-0x10u),dy=S16(rw(e,t+2)-2u*B(0x9a));
+        if (s) ga_place_at(s,a,e,dx,dy);
+    }
+    if (ga_b(c,0x61)&1u) return GA_DELETE;                             /* 004188 */
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 04B87E: one flame segment, one update (the cartridge check, then 004188). */
+static ga_result_t segment_tick(neo_gactor_t *a,neo_genv_t *e) {
+    ga_project(a,e);ga_attack(a,e,0xe0f4a);
+    return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+}
+/* 04CAB4: the fireball: a parabola 03B36E to (+72, +74), a trail 04CD32
+ * every 0x1200 of path, the explosion 01C706 on a hit (or when the arm's +61
+ * bit 1 is set) and the puddle 04CCE4 on landing. */
+static ga_result_t ball_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool f;neo_gactor_t *c;
+    switch (L(0)) {
+    case 0x4cab4: {
+        SB(0x1d,0);ga_palette(a,0xbd);START(0x247656);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);
+        uint32_t d0=k4e962(e,(uint32_t)k2f1a((uint16_t)(W(0x72)-W(0x3c)),(uint16_t)(W(0x74)-W(0x40)))<<16,0x1000000u);
+        if (!(c=creator(a,e))) return GA_UNSUPPORTED;
+        uint16_t v=rank(a,e,ga_b(c,0xa4)?0x2c214cu:0x2c20eau);
+        uint32_t d2=k4e5d0(e,d0,(uint32_t)(int32_t)S16(v)<<8),o[4];
+        k3b36e(S16(W(0x72)-W(0x3c)),S16(0x120u-W(0x40)),d2,B(0xa2),o);
+        SL(0x30,o[0]);SL(0x34,o[1]);SL(0x76,o[2]);SL(0x7a,o[3]);SW(0x96,0);SW(0x84,0);SL(0,0x4cb74);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x4cb74:
+        if ((int32_t)L(0x30)>=0) {SL(0x30,0);SL(0x76,0);SL(0,0x4cb96);}
+        else SL(0x30,L(0x30)+L(0x76));
+        /* fall through */
+    case 0x4cb96: break;
+    default: STOP(L(0));
+    }
+    SW(0x88,W(0x1e));
+    SL(0x34,L(0x34)+L(0x7a));
+    SW(0x96,W(0x96)+k2f1a((uint16_t)((int32_t)L(0x30)>>8),(uint16_t)((int32_t)L(0x34)>>8)));
+    ga_air(a,e);
+    if (!step(a,e,call,&f)) return GA_UNSUPPORTED;
+    if (S16(W(0x96))>=0x1200) {
+        SW(0x96,W(0x96)-0x1200u);
+        neo_gactor_t *t=child(a,e,0x4cd32,0x2a);
+        if (t) ga_place_at(t,a,e,0,0);
+    }
+    if (!W(0x86)) {if (ga_attack(a,e,0xe0f5a)) {SL(0,0x1c706);sound(e,0x1021);}}
+    else SW(0x86,W(0x86)-1u);
+    if (BIT(0x15,6)) SL(0,0x4cce4);
+    if (!(c=creator(a,e))) return GA_UNSUPPORTED;
+    if (ga_b(c,0x61)&2u) SL(0,0x1c706);
+    if (ga_cull(a,e,0xe0e72)) return GA_DELETE;                        /* 04E092, the cartridge check, 004188 */
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 04CCE4: the puddle (program 24855C, sound 1025). */
+static ga_result_t puddle_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool f;
+    if (L(0)==0x4cce4) {SW(0x66,0x1001);SW(0x1e,0x1001);SB(0x1d,0);ga_palette(a,0x113);START(0x24855c);SL(0,0x4cd1a);}
+    ga_project(a,e);
+    if (!step(a,e,call,&f)) return GA_UNSUPPORTED;
+    if (f) return GA_DELETE;
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 04CD32: a trail piece; its depth counts down in the ball's +88. */
+static ga_result_t trail_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool f;neo_gactor_t *c;
+    if (L(0)==0x4cd32) {SB(0x1d,0);ga_palette(a,0xbd);START(0x24767a);SL(0x30,0);SL(0x34,0);SL(0,0x4cd64);}
+    if (!(c=creator(a,e))) return GA_UNSUPPORTED;
+    ga_sw(c,0x88,(uint16_t)(ga_w(c,0x88)-1u));SW(0x1e,ga_w(c,0x88));
+    ga_project(a,e);
+    if (!step(a,e,call,&f)) return GA_UNSUPPORTED;
+    if (f) return GA_DELETE;                                           /* the cartridge check, 004188 */
+    if (ga_cull(a,e,0xe0e72)) return GA_DELETE;                        /* 04E07A */
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* ---- the missile pod (order 2) ----------------------------------------------------- */
+/* 04D94A: the pod's target angle +9C (table 04D9BA) to the player (+18 lower). */
+static void k4d94a(neo_gactor_t *a,neo_genv_t *e) {
+    int16_t x,y;pose_point(a,e,&x,&y);
+    const uint8_t *n=target(a,e);if (!n) return;
+    uint8_t an=neo_angle(S16((uint16_t)(n[0x3c]<<8|n[0x3d])-(uint16_t)x),S16((uint16_t)((n[0x40]<<8|n[0x41])+0x18u)-(uint16_t)y));
+    SB(0x9c,(uint8_t)lookup(e,0x4d9ba,an,false));
+}
+static uint16_t open_speed(neo_gactor_t *a,neo_genv_t *e) {neo_gactor_t *g=grand(a,e);return g && ga_b(g,0xa4)==1?0x400:0x200;}
+static ga_result_t pod_attack(neo_gactor_t *a,neo_genv_t *e) {
+    bool f=false;neo_gactor_t *g;
+    switch (L(0)) {
+    case 0x4ba16:
+        START(0x2460d8);sound(e,0x1075);SB(0x9e,0);SW(0x26,open_speed(a,e));SL(0,0x4ba5c);
+        /* fall through */
+    case 0x4ba5c:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (f) SL(0,B(0x9d)==6?0x4ba94:0x4beec);
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    case 0x4beec:
+        START(0x245efc);SB(0x14,B(0x1a));SW(0x26,1);SW(0x88,2);SL(0,0x4bf14);
+        /* fall through */
+    case 0x4bf14:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            if (W(0x26)==0x100) {sound(e,0x10a1);SL(0,0x4bf80);}
+            else {SW(0x88,2);SW(0x26,W(0x26)<<1);}
+        } else SW(0x88,W(0x88)-1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    case 0x4bf80: {
+        SW(0x88,4);
+        if (!(g=grand(a,e))) return GA_UNSUPPORTED;
+        bool two=ga_b(g,0xa4)!=0;
+        SB(0xa4,two?1:0);SW(0x80,rank(a,e,two?0x2c23a4u:0x2c2372u));
+        uint8_t k=vkind(e,L(0x6e)==0x1014c4u?0u:1u);
+        SW(0x82,rank(a,e,k?(two?0x2c2518u:0x2c24b6u):(two?0x2c2594u:0x2c257au)));
+        SW(0x86,0);
+    }
+        /* fall through */
+    case 0x4c060:
+        START(0x245efc);SW(0x84,0);SL(0,0x4c07a);
+        /* fall through */
+    case 0x4c07a:
+        ga_project(a,e);
+        k4d94a(a,e);
+        if (!W(0x88)) {k4d768(a);SW(0x88,4);}
+        else SW(0x88,W(0x88)-1u);
+        if (S16(W(0x84))>=S16(W(0x80))) SL(0,0x4c0d2);
+        else SW(0x84,W(0x84)+1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4be04);}
+        break;
+    case 0x4c0d2:
+        START(0x245df2);SW(0x84,2);SL(0,0x4c0ee);
+        /* fall through */
+    case 0x4c0ee:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;                    /* CALL 04E154 */
+        if (f) {
+            if (!W(0x84)) {
+                SW(0x86,W(0x86)+1u);
+                if (S16(W(0x86))>=S16(W(0x82))) SL(0,0x4be04);
+                else {
+                    if (!(g=grand(a,e))) return GA_UNSUPPORTED;
+                    bool two=ga_b(g,0xa4)!=0;
+                    SB(0xa4,two?1:0);SW(0x80,rank(a,e,two?0x2c2408u:0x2c23d6u));SL(0,0x4c060);
+                }
+            } else {START(0x245df2);SW(0x84,W(0x84)-1u);}
+        }
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4be04);}
+        break;
+    case 0x4be04:
+        START(0x245efc);SW(0x26,0x100);SW(0x88,0);SL(0,0x4be26);
+        /* fall through */
+    case 0x4be26:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            if (W(0x26)==1) {SB(0x9e,0xff);SL(0,0x4ba94);}
+            else {SW(0x88,0);SW(0x26,W(0x26)>>1);}
+        } else SW(0x88,W(0x88)-1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    case 0x4ba94:
+        SW(0x26,0x100);START(0x245d92);
+        if (!B(0x9e)) STOP(0x4bab2);                                   /* order 6: the aim at the player (not seen) */
+        SB(0x9c,2);SB(0x14,B(0x1a));SW(0x88,0);SL(0,0x4bb2c);
+        /* fall through */
+    case 0x4bb2c:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            SW(0x88,0);
+            if (k4d768(a)) {
+                if (!B(0x9e)) STOP(0x4bb88);                           /* order 6 */
+                SL(0,0x4be74);
+            }
+        } else SW(0x88,W(0x88)-1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) {SB(0x61,0xff);SB(0x9e,0xff);SB(0x9c,2);}
+        break;
+    case 0x4be74:
+        START(0x2461a2);SB(0x14,B(0x19));sound(e,0x1075);SW(0x26,open_speed(a,e));SL(0,0x4bebc);
+        /* fall through */
+    case 0x4bebc:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (f) {if (!(g=grand(a,e))) return GA_UNSUPPORTED;ga_sb(g,0x9e,0);SL(0,0x4b97e);}
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    default: STOP(L(0));                                               /* the order-6 states 04BB88..04BF66 */
+    }
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 04C194: a missile in a straight line (speed 2C22DA/2C22F4, angle +A2 less
+ * 4 per missile left); 01C6EE on a hit or when the pod's +61 is set. */
+static ga_result_t missile_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool f;neo_gactor_t *c;
+    if (!(c=creator(a,e))) return GA_UNSUPPORTED;
+    switch (L(0)) {
+    case 0x4c194: {
+        SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SB(0x1d,0);ga_palette(a,0xbb);START(0x24683a);
+        uint16_t v=rank(a,e,ga_b(c,0xa4)?0x2c22f4u:0x2c22dau);
+        uint8_t an=(uint8_t)(B(0xa2)-(uint8_t)((ga_w(c,0x84)-1u)<<2));
+        uint32_t vx,vy;ga_polar((uint32_t)(int32_t)S16(v)<<8,an,&vx,&vy);
+        SL(0x30,vx);SL(0x34,vy);SL(0,0x4c298);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x4c298: break;
+    default: STOP(L(0));                                               /* 04C220 (order 6) */
+    }
+    ga_move(a,e);
+    if (!step(a,e,call,&f)) return GA_UNSUPPORTED;
+    if (ga_attack(a,e,0xe0f8a)) {if (e->kill_children) e->kill_children(e->ctx,a);SL(0,0x1c6ee);sound(e,0x109f);}   /* 004192 */
+    if (ga_b(c,0x61)) {if (e->kill_children) e->kill_children(e->ctx,a);SL(0,0x1c6ee);}
+    if (ga_cull(a,e,0xe0e72)) return GA_DELETE_TREE;                   /* 04E092, 0041AC */
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
 static ga_result_t arm_tick(neo_gactor_t *a,neo_genv_t *e) {
     bool f=false;neo_gactor_t *p,*g;
     switch (L(0)) {
@@ -441,7 +882,7 @@ static ga_result_t arm_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x4b40c: SB(0x9a,0);START(0x2459f4);SL(0,0x4b426);
         /* fall through */
     case 0x4b426: break;
-    default: STOP(L(0));                                               /* 04B52C: the flamethrower, piece 2 */
+    default: return arm_attack(a,e);                                   /* 04B52C: the flamethrower (piece 2) */
     }
     ga_project(a,e);
     if (!(p=creator(a,e))) return GA_UNSUPPORTED;
@@ -461,7 +902,7 @@ static ga_result_t pod_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x4b97e: START(0x245d86);SB(0x14,B(0x19));SL(0,0x4b99a);
         /* fall through */
     case 0x4b99a: break;
-    default: STOP(L(0));                                               /* 04BA16: the missiles, piece 5 */
+    default: return pod_attack(a,e);                                   /* 04BA16: the missiles (piece 3) */
     }
     ga_project(a,e);
     if (!(p=creator(a,e))) return GA_UNSUPPORTED;
@@ -560,13 +1001,15 @@ static bool in(uint32_t r,const uint32_t *s,unsigned n) {for (unsigned i=0;i<n;i
 static const uint32_t BODY[]={0x4a2c2,0x4a380,0x4a3f0,0x4a488,0x4a4c2,0x4a57c,0x4a5de,0x4a618,0x4a668,0x4a74a,0x4a7cc,0x4a89e,0x4a8ca,0x4a94c,0x4a974,0x4a9d4};
 static const uint32_t LEGS[]={0x4af02,0x4af72,0x4afaa,0x4afce,0x4b01e,0x4b034,0x4b0e6,0x4b15c,0x4b194,0x4b1b8,0x4b208,0x4b21e};
 static const uint32_t TORSO[]={0x4b252,0x4b2f6,0x4b32e,0x4b352};
-static const uint32_t ARM[]={0x4b3bc,0x4b40c,0x4b426,0x4b52c};
-static const uint32_t POD[]={0x4b920,0x4b97e,0x4b99a,0x4ba16};
+static const uint32_t ARM[]={0x4b3bc,0x4b40c,0x4b426,0x4b52c,0x4b58e,0x4b5bc,0x4b658,0x4b680,0x4b6ae,0x4b6c8,0x4b732,0x4b752};
+static const uint32_t POD[]={0x4b920,0x4b97e,0x4b99a,0x4ba16,0x4ba5c,0x4ba94,0x4bb2c,0x4bb88,0x4bbaa,0x4bbfc,0x4bc68,0x4bca2,0x4bcd2,
+    0x4bd32,0x4be04,0x4be26,0x4be74,0x4bebc,0x4beec,0x4bf14,0x4bf66,0x4bf80,0x4c060,0x4c07a,0x4c0d2,0x4c0ee};
+static const uint32_t SHOTS[]={0x4b79c,0x4b7ec,0x4b87e,0x4cab4,0x4cb74,0x4cb96,0x4cce4,0x4cd1a,0x4cd32,0x4cd64,0x4c194,0x4c220,0x4c298};
 static const uint32_t HATCH[]={0x4c38a,0x4c3ea,0x4c412,0x4c4d2};
 static const uint32_t MORTAR[]={0x4cf2c,0x4cf56,0x4cf5c,0x4cf92};
 #define IN(r,s) in((r),(s),sizeof(s)/sizeof((s)[0]))
 bool neo_m3boss_routine(uint32_t r) {
-    return IN(r,BODY) || IN(r,LEGS) || IN(r,TORSO) || IN(r,ARM) || IN(r,POD) || IN(r,HATCH) || IN(r,MORTAR) ||
+    return IN(r,BODY) || IN(r,LEGS) || IN(r,SHOTS) || IN(r,TORSO) || IN(r,ARM) || IN(r,POD) || IN(r,HATCH) || IN(r,MORTAR) ||
         r==0x4c69e || r==0x4c6c2 || r==0x4e2ea || r==0x4e376 || r==0x4e3be || r==0x4e450 || r==0x4ad12 || r==0x4ad94 || r==0x4ae1c;
 }
 ga_result_t neo_m3boss_tick(neo_gactor_t *a,neo_genv_t *e) {
@@ -578,6 +1021,12 @@ ga_result_t neo_m3boss_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (IN(r,POD)) return pod_tick(a,e);
     if (IN(r,HATCH)) return hatch_tick(a,e);
     if (IN(r,MORTAR)) return mortar_tick(a,e);
+    if (r==0x4b79c || r==0x4b7ec) return emitter_tick(a,e);
+    if (r==0x4b87e) return segment_tick(a,e);
+    if (r==0x4cab4 || r==0x4cb74 || r==0x4cb96) return ball_tick(a,e);
+    if (r==0x4cce4 || r==0x4cd1a) return puddle_tick(a,e);
+    if (r==0x4cd32 || r==0x4cd64) return trail_tick(a,e);
+    if (r==0x4c194 || r==0x4c220 || r==0x4c298) return missile_tick(a,e);
     if (r==0x4c69e || r==0x4c6c2) return floor_tick(a,e);
     if (r>=0x4e2ea && r<=0x4e450) return foot_tick(a,e);
     if (r==0x4ad12 || r==0x4ad94 || r==0x4ae1c) return dust_tick(a,e);

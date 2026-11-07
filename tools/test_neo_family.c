@@ -254,6 +254,8 @@ static void env_to_ram(const marco_weapons_t *weapons) {
  * could not make (node pool exhausted: the shell 047DE0 of the bomb at
  * heli2 frame 11363), counted as external. */
 static uint32_t current_frame;
+/* Index of the update being replayed (UPDATES[current_update]). */
+static unsigned current_update;
 /* Frames after its creator's update in which a recorded child may first
  * appear (compile_family_fixture.py --spawn-window; default 8). With a
  * full node pool the original makes no child: a later recorded node is
@@ -283,6 +285,15 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
         uint32_t minf=NODES[pick].frame;
         for (unsigned i=0;i<NN;i++) {
             if (bound[i] || NODES[i].creator!=c || NODES[i].routine!=routine || NODES[i].frame>minf+1u) continue;
+            /* A child first run after the creator's next update is that
+             * update's (a creator making one child per update, frames
+             * apart: the flame emitter 04B79C of m3boss1). */
+            bool later=false;
+            for (unsigned k=current_update+1u;k<NU;k++) {
+                if (UPDATES[k].node==(int)i) break;
+                if (UPDATES[k].node==c) {later=true;break;}
+            }
+            if (later) continue;
             if ((int)i>pick) pick=(int)i;
         }
     }
@@ -565,7 +576,7 @@ int main(void) {
 #ifdef FAMILY_FRESH_PROGRAM
         first_update[u->node]=!updated[u->node];updated[u->node]=true;
 #endif
-        neo_gactor_t *a=&actors[u->node];current_frame=u->frame;
+        neo_gactor_t *a=&actors[u->node];current_frame=u->frame;current_update=k;
         {static uint32_t last_frame;
          if (k && u->frame!=last_frame) for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (dyn_countdown[i]) dyn_countdown[i]--;
          last_frame=u->frame;}

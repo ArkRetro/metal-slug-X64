@@ -413,6 +413,9 @@ grabados, como en la M2.
   (`test_mission3_ares.py --hop --stage-seconds 150`): PASS, caché de 212
   ranuras (sin llegar a la arena del jefe).
 
+- **Piezas 2 y 3 (lanzallamas `04B52C`, órdenes 0/1; lanzadera `04BA16`, orden 2): hechas en el anfitrión.** Familias `m3boss1` (144410..145024 de `b1`: 3421 actualizaciones, 74 nodos) y `m3boss3` (146600..147176 de `spr`: 4299, 117 nodos, 3 misiles al jugador) iguales a MAME; `--ram 10c33c-10c33e` (con `-10c33d` el banco no leía `10C33C`). La orden 6 de la lanzadera y `04C220` siguen como paradas.
+- **Sin comprobar:** el aterrizaje de la bola (`0143E4` ve el suelo de `10C72E`, mapa `0B8550`, con la palabra de tipo 0x4000; el banco no lo da) y el charco `04CCE4`: los tramos acaban antes (145025, 147177). Sprites: raíces `245BA0..24683A` (con `1082CA..108322` y `108E5A`) y paletas 0xBB/0xBD/0x113; `mission3.pack` 784 trozos.
+
 ## Dificultades
 
 - **Coordinación por `+9D/+9E`** entre ocho nodos (y el abuelo en los hijos

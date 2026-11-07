@@ -170,6 +170,18 @@ def build(mission,stage_dirs,crom,rom=None):
         if (d/'layers_rom.json').exists():report_fill=fill_loop_layer(model,json.loads((d/'layers_rom.json').read_text()),crom)
         else:report_fill=None
         st_images,st_cells=pack_map(model,crom,image)
+        if (d/'layers_rom.json').exists():
+            # Mission 3 sky pictures (docs/MISSION3_DEBUG.md G2): drawn only from
+            # the pre-rendered columns (tools/prerender_stage.py sky_cells); the
+            # pack carries just their palettes (palette RAM of run4).
+            from mission_tiles import rgba16
+            lay=json.loads((d/'layers_rom.json').read_text())
+            sec=lay['section_palettes'][0]['palettes']
+            for m in lay['maps']:
+                if m['layer']==0 and m.get('placement','').startswith('0C714E'):
+                    for n in sorted({c[5] for c in m['cells']}):
+                        key=tuple(rgba16(sec['%02X'%n]));key=key+(0,)*(16-len(key))
+                        if key not in pal_ids:pal_ids[key]=len(palettes);palettes.append(key)
         images.extend((pg,pal,y,h) for pg,pal,_,y,_,h,_ in st_images)
         first=len(cells);cells.extend((layer,x,y,[base+i for i in phases]) for layer,x,y,phases in st_cells)
         col=json.loads((d/'collision.json').read_text())

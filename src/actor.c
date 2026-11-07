@@ -783,6 +783,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_map_patches((const uint32_t (*)[2])game.world.map_patch,game.world.map_patches);
     scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
     scene_render_set_layer_offset(1,game.world.train.on,(int)neo_train_scroll(&game.world.train));
+    {   /* Mission 3 sky (MISSION3_DEBUG.md G2): from progress 0x140 the layer
+         * 10E83E has no map; 0B8EDC copies picture neo_train_sky into it and
+         * its x is the train's / 4 - 240 (run4), the 512-px picture repeating.
+         * The pictures exist only as pre-rendered columns of layer 0 at
+         * MSX_SKY_TEMPLATE_X + 1024 k (tools/prerender_stage.py sky_cells). */
+        enum { MSX_SKY_TEMPLATE_X=0x6000 };
+        bool sky=game.world.train.on && game.world.stage_camera_base==0x0B8968u && neo_camera_progress(&game.world.camera)>=0x140u;
+        int v=(int)(int16_t)(uint16_t)(-(game.world.train.x>>16))/4+240;v%=512;if (v<0) v+=512;
+        scene_render_set_layer_offset(0,sky,MSX_SKY_TEMPLATE_X+1024*(int)neo_train_sky(&game.world.train)+v);
+    }
     /* B26: the frame's sprite windows and layers in their SCB slot order
      * (msx_draw_order, gameplay.c): window A holds the sprites in +1E
      * order, the player among them at its +1E (msx_game_depth), window B

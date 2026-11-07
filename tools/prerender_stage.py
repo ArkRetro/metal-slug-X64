@@ -82,7 +82,7 @@ def columns(pack,cells):
     for x,lst in sorted(cols.items()):
         lst.sort();runs=[]
         for y,img in lst:
-            pal=pack.image(img)[1]
+            pal=img[1] if isinstance(img,tuple) else pack.image(img)[1]
             if runs and runs[-1][0]+16*len(runs[-1][1])==y and runs[-1][2]==pal and len(runs[-1][1])<16:runs[-1][1].append(img)
             else:runs.append((y,[img],pal))
         out[x]=runs
@@ -160,9 +160,46 @@ def select_layers(pk,k):
         if not best:return pre
         pre.add(best[1]);base=len(chunk_set(pk,k,pre))*CHUNK
 
+# Mission 3 sky (docs/MISSION3_DEBUG.md G2): from progress 0x140 0B8EDC
+# copies a 32 x 20 picture into the sky layer 10E83E (0C714E) as the train
+# comes in (src/neo_train.c neo_train_sky). The five pictures (0B857C, then
+# 0B8592 / 0B85A8 / 0B85BE / 0B85D4 of the private layers_rom.json) go to the
+# stage's pre-rendered layer 0 only (the pack keeps no cells for them: its
+# chunks and tables do not grow) at SKY_TEMPLATE_X + 1024 k, with their first
+# SKY_WRAP px again after them (the picture repeats every 512 px; the view
+# and its margin are 352 px): the runtime draws layer 0 at SKY_TEMPLATE_X +
+# 1024 k + (scroll mod 512) (actor.c, MSX_SKY_TEMPLATE_X). Texels from the
+# C-ROM (filesystem/sprites.bin), colours from the pack's palettes (the
+# palette RAM of run4, tools/pack_mission.py sky_palettes); animated cells
+# (picture 4: 352) are drawn with their first image.
+SKY_TEMPLATE_X=0x6000;SKY_WRAP=352;SKY_MAPS=('0B857C','0B8592','0B85A8','0B85BE','0B85D4')
+ROOT=Path(__file__).resolve().parents[1]
+def sky_cells(pk,k):
+    lay_path=ROOT/f'filesystem/mission{pk.mission}/s{k+1}/layers_rom.json';crom_path=ROOT/'filesystem/sprites.bin'
+    if not lay_path.exists() or not crom_path.exists():return None
+    import json
+    sys.path.insert(0,str(ROOT/'tools'))
+    from mission_tiles import decode,rgba16
+    lay=json.loads(lay_path.read_text());maps={m['descriptor']:m for m in lay['maps'] if m['layer']==0}
+    if not all(d in maps for d in SKY_MAPS):return None
+    pals=[tuple(struct.unpack_from('>16H',pk.raw,pk.pal_at+32*i)) for i in range((pk.chunks_at-pk.pal_at)//32)]
+    sec=lay['section_palettes'][0]['palettes'];crom=crom_path.read_bytes();out={}
+    for t,d in enumerate(SKY_MAPS):
+        m=maps[d]
+        for x,y,code,flip,anim,n in m['cells']:
+            key=tuple(rgba16(sec['%02X'%n]));key=key+(0,)*(16-len(key))
+            assert key in pals,('sky palette not in the pack',d,hex(n))
+            pens=decode(crom,code,flip);tex=bytearray(128)
+            for i,v in enumerate(pens):tex[i//2]|=v<<(0 if i&1 else 4)
+            for rep in ((0,512) if x-m['x0']<SKY_WRAP else (0,)):
+                out[(SKY_TEMPLATE_X+1024*t+rep+x-m['x0'],y)]=(bytes(tex),pals.index(key))
+    return out
+
 def render(path,k,out,only=None):
     pk=Pack(path);lay,_,_=layer_cells(pk,k)
     if only is not None:lay={l:c for l,c in lay.items() if l in only}
+    sky=sky_cells(pk,k) if only is None or 0 in only else None
+    if sky:lay.setdefault(0,{}).update(sky)
     head=bytearray(b'MSXB'+struct.pack('>HHHHI',1,k,sum(1 for l in lay if l<4),0,0))
     head+=bytes(16*4);body=bytearray();tables=bytearray();layer_tables=[]
     for layer in range(4):
@@ -177,7 +214,7 @@ def render(path,k,out,only=None):
             for y,imgs,pal in runs:rec+=struct.pack('>hBBHH',y,len(imgs),0,pal,0)
             while len(rec)%16:rec.append(0)
             for y,imgs,pal in runs:
-                for i in imgs:rec+=pk.texels(i)[0]
+                for i in imgs:rec+=i[0] if isinstance(i,tuple) else pk.texels(i)[0]
             body+=rec;slot=max(slot,len(rec));table.append((at,len(rec),len(runs)))
         layer_tables.append((layer,x0,n,slot,table))
     o=len(head)
@@ -214,6 +251,7 @@ def main():
             pk=Pack(path)
             for k in (range(len(pk.stages)) if stages=='all' else [int(v)-1 for v in stages.split(',')]):
                 pre=select_layers(pk,k)
+                if sky_cells(pk,k):pre=pre|{0}   # the sky pictures exist only as columns
                 if pre:render(path,k,outdir/f'm{pk.mission}s{k+1}.bgp',pre)
                 else:print(f'M{pk.mission} s{k+1}: no layer saves RAM, tile path')
 if __name__=='__main__':main()

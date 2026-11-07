@@ -397,11 +397,21 @@ grabados, como en la M2.
   velocidad del paso en curso (`neo_gactor.c`, `wr`).
 - **Paradas explícitas**: los ataques (`04B52C` brazo, `04BA16`
   lanzadera, `04C4D2` trampilla, `04CF92` mortero), la muerte `04A9D4` y
-  las de patas y torso (`04B01E/04B208`). El jefe va **solo en el
-  anfitrión** (`MSX_M3BOSS`, 0 en los cartuchos): faltan sus gráficos
-  (`export_rest_sprites.py`, raíces `2451DC..2475xx`, paletas `0xBA`,
-  `0x157`, `0xBC`, `0x130`, `0xF0`, `0x148`) y los ataques; mientras, los
-  cartuchos saltan el registro `2DB5E4` como antes.
+  las de patas y torso (`04B01E/04B208`). El jefe va también **en los cartuchos**
+  (`MSX_M3BOSS=1`; con 0 vuelve a ser una parada explícita: se salta el
+  registro `2DB5E4`). Gráficos: `export_rest_sprites.py` con las raíces
+  `2451DC..247598` y las paletas `0xBA`, `0x157`, `0xBC`, `0x130`, `0xF0`,
+  `0x148` sobre la captura `MSX_M3BOSS_DUMPS=144480 capture_m3_boss.sh boss
+  spr 144410 149300` (`spr@4a2c2-4e577`; 137 volcados, 120 validados:
+  1 145 685 píxeles iguales, 27 205 distintos, casi todos donde la
+  actualización cae en el fotograma del volcado o con las llamas/disparos
+  encima); `mission3.pack` pasa a 779 trozos (`SCENE_MISSION_CHUNKS_MAX`
+  800). **Pendiente para las piezas 2–7**: descriptores que el código
+  escribe sin programa (no exportados: `108EBA..108F6E` de `04D284/04D390`,
+  `1082CA..108322` de `04B79C/04B7EC`, `108E5A` de `04C298`, `10D8B0/10D69A`
+  de `04C88C`); `1C3F06` (cuerpo) es el descriptor vacío. Recorrido corto en ares
+  (`test_mission3_ares.py --hop --stage-seconds 150`): PASS, caché de 212
+  ranuras (sin llegar a la arena del jefe).
 
 ## Dificultades
 

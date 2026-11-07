@@ -1205,6 +1205,8 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	$(BUILD_DIR)/host/m3map romfs/mission3.pack
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_camera_start.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m3camstart
 	$(BUILD_DIR)/host/m3camstart romfs/mission3.pack
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_camera_bridge.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m3cambridge
+	$(BUILD_DIR)/host/m3cambridge romfs/mission3.pack
 	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
 	$(BUILD_DIR)/host/m2wall

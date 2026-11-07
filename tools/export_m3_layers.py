@@ -39,7 +39,15 @@ MAPS=[(3,0x10c72e,0x0b853a,0x000,0x12,0,-64,0,'camera list 0B898E'),
       (2,0x10e8c6,0x2a6158,None,None,'patch',None,None,'sub-map of the 0A6C8C patch list 2A620E'),
       (2,0x10e8c6,0x2a616e,None,None,'patch',None,None,'sub-map of the 0A6C8C patch list 2A6274'),
       (2,0x10e8c6,0x2a6184,None,None,'patch',None,None,'sub-map of the 0A6C8C patch list 2A62EC'),
-      (2,0x10e8c6,0x2a619a,None,None,'patch',None,None,'sub-map of 0A6F3C')]
+      (2,0x10e8c6,0x2a619a,None,None,'patch',None,None,'sub-map of 0A6F3C'),
+      # The sky pictures of 0B8EDC (made by 0B8D34; table 0B8EC2): when the
+      # train's column 0x50 / 0xB0 / 0x110 / 0x160 comes in, 009D8C and 0C714E
+      # copy the 32 x 20 map to 10E83E at (0, 0) (neo_train.c neo_train_sky).
+      (0,0x10e83e,0x0b8592,None,None,'sky',None,None,'0B8EDC picture 1 (0B8F44, train column 0x50)'),
+      (0,0x10e83e,0x0b85a8,None,None,'sky',None,None,'0B8EDC picture 2 (0B8F78, train column 0xB0)'),
+      (0,0x10e83e,0x0b85be,None,None,'sky',None,None,'0B8EDC picture 3 (0B8F88, train column 0x110)'),
+      (0,0x10e83e,0x0b85d4,None,None,'sky',None,None,'0B8EDC picture 4 (0B8F98, train column 0x160)')]
+LOOSE_PLACEMENTS=('0C70FC','0C714E')
 def blocks(rom,desc):
     t,c,w,h=rom.u32(desc),rom.u32(desc+4),rom.u16(desc+8),rom.u16(desc+10)
     tiles={};coll={}
@@ -71,7 +79,9 @@ def main():
     for layer,obj,desc,col,top,x0,y0,cam,note in MAPS:
         t,c,w,h,tiles,coll=blocks(rom,desc)
         rec=dict(layer=layer,object='%06X'%obj,descriptor='%06X'%desc,tiles='%06X'%t,collision='%06X'%c,block_columns=w,block_rows=h,note=note)
-        if x0=='patch':
+        if x0=='sky':
+            x0,y0=0,-88;rec['placement']='0C714E sky picture (0B8EDC): at (0, 0) of 10E83E, top block row 0x13 as 0B857C'
+        elif x0=='patch':
             # Placed by the actor's patches (D4/D5 of each list entry): kept
             # in sub-map coordinates (block i, j at 16 i, 16 j).
             x0=y0=0;rec['placement']='0C70FC sub-map (actor)'
@@ -85,14 +95,14 @@ def main():
         rec.update(x0=x0,y0=y0)
         same=diff=0
         for (i,j),(code,attr) in tiles.items():
-            if rec.get('placement','').startswith('0C70FC'):break
+            if rec.get('placement','').startswith(LOOSE_PLACEMENTS):break
             o=seen.get((layer,x0+16*i,y0+16*j))
             if o is None:continue
             if (code,attr&3) in o:same+=1
             else:diff+=1
-        if rec.get('placement','').startswith('0C70FC'):same=diff=None
+        if rec.get('placement','').startswith(LOOSE_PLACEMENTS):same=diff=None
         rec['observed_equal']=same;rec['observed_other']=diff
-        if layer in (0,3):assert diff==0,(hex(desc),same,diff)
+        if layer in (0,3) and diff is not None:assert diff==0,(hex(desc),same,diff)
         rec['cells']=[[x0+16*i,y0+16*j,code,attr&3,7 if attr&8 else 3 if attr&4 else 0,attr>>8] for (i,j),(code,attr) in sorted(tiles.items())]
         used.update(attr>>8 for code,attr in tiles.values())
         if coll:

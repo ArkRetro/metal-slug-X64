@@ -25,8 +25,19 @@ bool neo_train_call(neo_train_t *t,uint32_t routine) {
     }
     return false;
 }
+/* 0B8EC2: columnas de 0B8EDC (la rutina de cada una copia el cuadro). */
+static const uint16_t sky_columns[]={0x50,0xb0,0x110,0x160};
+static int o36_of(int32_t x) {return s12((int)((uint32_t)-(int64_t)x>>20)-4);}   /* 0C748E */
 void neo_train_update(neo_train_t *t,int32_t root_dx,bool own) {
     int32_t dx=root_dx;
+    /* 0B8EDC (creado antes que el conductor 0B8D64: corre antes que él y que
+     * el paso de la capa): 0C6F6A d4 = columna + +32; a la vista cuando
+     * (+36 << 4) + 0x1F0 - (d4 << 4) >= 0 (palabras); con FFFF acaba. */
+    if (t->on && t->sky<sizeof sky_columns/sizeof sky_columns[0]) {
+        uint16_t d4=(uint16_t)(sky_columns[t->sky]+(uint16_t)t->origin);
+        int16_t d3=(int16_t)(uint16_t)(((unsigned)o36_of(t->x)<<4)+0x1f0u-((unsigned)d4<<4));
+        if (d3>=0) t->sky++;
+    }
     if (own && t->on) {
         /* 0B8D64 (10E94E) runs after the layers: the layer adds the root
          * step of the previous update with the mode in force now. 10E9D0 =
@@ -45,6 +56,7 @@ void neo_train_update(neo_train_t *t,int32_t root_dx,bool own) {
         }
     }
 }
+unsigned neo_train_sky(const neo_train_t *t) {return t->sky;}
 int32_t neo_train_scroll(const neo_train_t *t) {
     return (int32_t)(int16_t)(uint16_t)(-(t->x>>16)-16*(int)t->origin);
 }

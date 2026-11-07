@@ -45,7 +45,7 @@ def main():
     overlay=set()
     for m in lay['maps']:
         if m['layer']==2:overlay.update((code&~anim,flip) for x,y,code,flip,anim,pal in m['cells'])
-        if m.get('placement','').startswith('0C70FC'):continue
+        if m.get('placement','').startswith(('0C70FC','0C714E')):continue
         for x,y,code,flip,anim,pal in m['cells']:
             if m['layer']==1:train_by_col.setdefault(x//16,{})[y]=(code,flip,anim,pal)
             else:rom[m['layer']][(x,y)]=(code,flip,anim,pal)

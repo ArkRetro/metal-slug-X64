@@ -149,7 +149,12 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
         }
         case 0x18: case 0x1c: case 0x20: case 0x24: case 0x28: case 0x44: case 0x48:
             event(c,(uint8_t)op,ll(c,a+4),0);break;
-        case 0x2c: event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),0);break;
+        case 0x2c:
+            /* 0C8764 calls the routine with A0 = the command + 8. 0B8EBC
+             * (Mission 3: the bridge 122145, the gap 123924..126262, the
+             * end 132302/141008): MOVE.L (A0),6960 = the autoscroll y. */
+            if (ll(c,a+4)==0x0B8EBCu) c->auto_vy=(int32_t)ll(c,a+8);
+            event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),0);break;
         case 0x30: for (unsigned i=0;i<4;i++) c->bounds[i]=(int16_t)lw(c,a+4+2*i);break;
         case 0x34: *p8=lw(c,a+4);*pa=lw(c,a+6);break;
         case 0x38: event(c,NEO_CAMERA_EV_SOUND,0,lw(c,a+4));break;

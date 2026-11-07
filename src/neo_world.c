@@ -438,6 +438,12 @@ static bool convert_soldier(tick_t *t,unsigned gi,unsigned *si) {
     if (i==NEO_WORLD_SOLDIERS) return false;
     neo_soldier_t *s=&w->soldiers[i];memset(s,0,sizeof(*s));
     s->active=true;s->b=ga_contact(a);
+    /* Mission 3: a node on the train layer 10D7B6 (the camp's soldiers
+     * 01F386/01F2D6 by 0B05FE, MAME m3camp 118741: +38 = 0010D7B6). The
+     * soldier module has no train parent: what lands on the train is a
+     * soldier without parent (neo_soldier_ai.c ktag), so it keeps its
+     * projected position. */
+    if (s->b.parent_tag==0x10d7b6u) {s->b.x=s->b.projected_x;s->b.y=s->b.projected_y;s->b.parent_tag=0;}
     s->anim=(neo_anim_state_t){a->program,ga_l(a,0x50),a->cursor,ga_w(a,0x24),ga_w(a,0x26),ga_b(a,0x17),ga_b(a,0x18)};
     s->render.attributes=(uint16_t)(ga_b(a,0x14)<<8|ga_b(a,0x15));
     s->palette_resource=a->palette[0];s->health=ga_w(a,0x4e);

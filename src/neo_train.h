@@ -17,6 +17,7 @@ typedef struct {
     int16_t origin;     /* capa +32: origen de columnas (12 bits con signo) */
     int16_t index;      /* 10C6B4 (bytes en 0B8E36) */
     uint16_t count;     /* 10C6B6 (0xFFFF = sin fin) */
+    uint8_t sky;        /* 0B8EDC +6E / 6: cuadros del cielo ya copiados (0..4) */
 } neo_train_t;
 void neo_train_reset(neo_train_t *t,int32_t x);
 /* Llamadas de la lista de cámara (op 0x2C/0x58) del tren; false: no es suya. */
@@ -26,6 +27,11 @@ bool neo_train_call(neo_train_t *t,uint32_t routine);
 void neo_train_update(neo_train_t *t,int32_t root_dx,bool own);
 /* Desplazamiento de dibujo de la capa: -x - 16 * origen (módulo 65536). */
 int32_t neo_train_scroll(const neo_train_t *t);
+/* Cuadro del cielo 10E83E (0B8EDC): 0 = el mapa 0B857C de la etapa, 1..4 =
+ * 0B8592 / 0B85A8 / 0B85BE / 0B85D4, copiados por 0C714E cuando la columna
+ * de la tabla 0B8EC2 (0x50, 0xB0, 0x110, 0x160) más el origen +32 entra
+ * por la derecha: (+36 << 4) + 0x1F0 - ((columna + +32) << 4) >= 0. */
+unsigned neo_train_sky(const neo_train_t *t);
 /* Columna (8 px) del mapa 0B8566 bajo el x local de la capa. */
 int neo_train_column(const neo_train_t *t,int local_x);
 #endif

@@ -277,7 +277,7 @@ ROOTS+=M3MID_ROOTS
 # listed in another block stays in the image.
 MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
     '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
-    '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
+    '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
 def root_groups():
@@ -330,6 +330,8 @@ ROOTS+=[0x2869d6]
 ROOTS+=[0x23fe3e,0x23fecc,0x23fefa,0x23fea0,0x23feac,0x23fe6c,0x23ff04,0x230238,0x23035e,0x2303e4,0x2303ca,0x2303f0,0x230438,0x23052c,0x230512,0x230538,0x22f81a,0x22f868,0x22f89c,0x22f9d8,0x22f8c2,0x22f98a,0x22f8f6]
 # Burning pieces 08732C of the destroyed shop 0B6566 (0B68B4, Mission 1; neo_barrel.c, B51): flight and landing.
 ROOTS+=[0x283b7a,0x283bf8]
+# Mission 2 stage 3: the creature 080170 thrown by the soldiers 0678B6 of +9C = 8 (06899A -> 0689D2), its pieces and its egg 0808AA (neo_m2creature.c, B54).
+ROOTS+=[0x280142,0x280198,0x2801cc,0x2802c2,0x2803bc,0x2804a0,0x280436,0x28050a,0x280342,0x28034c]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

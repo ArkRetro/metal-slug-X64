@@ -806,3 +806,32 @@ parada):
 - El nido `035D12` y el murciélago de puntos (`0364D2`): ramas al azar de
   las cajas `08C154` sin captura.
 - `083018`/`068D32`: muerte quemada del soldado de la cuerda.
+
+## La criatura `080170` (`neo_m2creature.c`, B54)
+
+En la etapa 3 los soldados `0678B6` con `+9C = 8` lanzan, en la llamada
+`06899A` de su programa `268DCC` (orden `268E4A`, rutina `0689D2`), `+7C`
+criaturas `080170` (al menos una) detrás del actor del guion, a (±8, 0x1C)
+con su `+68` y `+15 & 3`; el lanzador sigue con `067E98` y muere (`067C20`).
+Traza (estado `at_38090`, 38091..38700):
+
+```sh
+export MSX_FULL_STATES=<estados> MSX_FULL_VRAM_TRACE=1 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=at_38090 MSX_FULL_LOAD_FRAME=38090 MSX_FULL_FIRST_DUMP=38095 MSX_FULL_FAMILY_ROOTS=80170,808e0,67e98 \
+  MSX_FULL_FAMILY_FROM=38091 MSX_FULL_LAST=38700 sh tools/run_capture_fullgame.sh <dir>
+python3 tools/extract_family_fixture.py <dir>/boss-trace.txt --output data/m2creature_fixture.json.gz \
+  --range 80170-822b2 --range 678a2-69700 --attacks --ram 10000e-100010 --ram 10c7b6-10d7b6
+```
+
+Familia `m2creature` (`--resume`): 11 nodos, 529 actualizaciones, 10
+borrados, iguales a MAME (dos criaturas, tres lanzadores, el huevo y diez
+piezas). Traducción en la cabecera de `neo_m2creature.c`: vuelo `0802CE`
+(`080942`, `0809D6`, `08086A`), mordisco `0049E8` (`E496C`, programa
+`2802C2` cuya llamada `08088E` pone el huevo `0808AA`), muerte (`0803A8`:
+dos `08070C`, dos `080634`, una `0805D4`, reserva 0x2A; objeto `08083C`).
+Paradas explícitas: `+7C ≠ 0` (`0801D0`, espera de la RAM `10E99E`) y las
+demás entradas de `080A62..0822B2` (sin captura). Datos: `region_rom.json`
+(`2D4874`, `E4958`, grupo m2), programas `280142..28050A` (grupo m2, bloque
+MSXD de `mission2.pack`); sprites: paletas 0x836/0x837 y 85 marcos en
+`filesystem/mission2/rest-native.json` (16 volcados: 14 iguales píxel a
+píxel, 2 distintos sin explicar: 38415 y 38490).

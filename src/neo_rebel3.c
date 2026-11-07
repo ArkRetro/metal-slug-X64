@@ -13,7 +13,7 @@
  * think 067A40 (068BB8 / 068CAE); walk 067AB4/067B42 with the walker
  * 08CCD4 (+62 = +8A by facing; 068CD4, 068ABA, 068B08); turn 067BA6;
  * throw 067E66 (program 268DCC, callback 06899A: the knife 067FC0 for
- * +9C = 0); death 067C20 (program 269024: 068F26 item by 08CDB2, 068F4A).
+ * +9C = 0, the creatures 080170 of 0689D2 for +9C = 8); death 067C20 (program 269024: 068F26 item by 08CDB2, 068F4A).
  * Tails 069280 (+9A, 004C24, 06914A, spark 06918E) and 0688D6 (cull E1A5E).
  * Family c 0692B2 (+9C = 0) drops from above (06932E: 06951C keeps the
  * absolute position on the new floor object, +34 by 2D29B4, program 269530
@@ -21,7 +21,7 @@
  * actor), stands 0693CA and goes to 067A40; its death in the air 069448.
  * 067EE4/067F12 (stand at an edge, ROM-translated without MAME capture).
  * Paths without MAME evidence stop explicitly (ga_fail): 067D06 / 067D80 / 069478 (pieces 068D32, +7A), the
- * knife of +9C = 4/8 (0689D2, 069696), 0691D2 with +7A.
+ * knife of +9C = 4 (069696), 0691D2 with +7A.
  * 0683FA (the hostage holder of 06835C, neo_hostage.c; +9C = 0, +81 = FF,
  * +86 = the hostage): program 268D0C, +94 = 0x38 - rand(0x18), +4E by
  * 2D271E, +62 = +8A by +6E; 0684CA stands (01456A, 00427A) until 068CD4
@@ -192,7 +192,19 @@ static bool call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t rou
     case 0x691d2:return !W(0x7a);                                      /* +7A: the bombs 0687F6 (not observed) */
     case 0x69262:return !W(0x7a) || B(0x61);                           /* +7A: 0687AA (not observed) */
     case 0x6899a:                                                      /* by +9C (table 0689AA) */
-        if (B(0x9c)) return false;                                     /* 069696 / 0689D2: not observed */
+        if (B(0x9c)==8u) {                                             /* 0689D2: +7C creatures 080170 (neo_m2creature.c) */
+            sound(e,0x1144);
+            unsigned n=W(0x7c)?W(0x7c):1u;
+            for (unsigned i=0;i<n;i++) {
+                neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x80170,true):NULL;   /* 00411C */
+                if (!c) continue;
+                ga_sb(c,0x68,B(0x68));ga_sw(c,0x6e,0);ga_sw(c,0x70,0xffff);ga_sw(c,0x72,0);
+                ga_place_at(c,a,e,BIT(0x15,0)?8:-8,0x1c);                 /* 01ACF2 */
+                ga_sb(c,0x15,B(0x15)&3u);                                  /* 01AC94 */
+            }
+            return true;
+        }
+        if (B(0x9c)) return false;                                     /* 069696 (+9C = 4): not observed */
         sound(e,0x1144);
         if (e->spawn) e->spawn(e->ctx,a,0x67fc0,false);
         return true;

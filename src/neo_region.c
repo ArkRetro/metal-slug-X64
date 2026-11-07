@@ -1,15 +1,11 @@
 #include "neo_region.h"
 /* 0AC866 (neo_m3veh.c, family m3veh); MSX_M3VEH=0 turns it back into an
  * explicit stop. */
-/* 04A2C2 (neo_m3boss.c, families m3boss<n>): host tests only until its
- * sprites and attacks are in (explicit stop: the cartridges skip the
- * script record 2DB5E4 as an unported constructor, as before). */
+/* 04A2C2 (neo_m3boss.c, families m3boss<n>): MSX_M3BOSS=0 turns it back
+ * into an explicit stop (the script record 2DB5E4 skipped as an unported
+ * constructor); its unported attacks and deaths are explicit stops. */
 #ifndef MSX_M3BOSS
-#ifdef __mips__
-#define MSX_M3BOSS 0
-#else
 #define MSX_M3BOSS 1
-#endif
 #endif
 #ifndef MSX_M3VEH
 #define MSX_M3VEH 1

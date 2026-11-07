@@ -15,8 +15,12 @@
 #include <stdint.h>
 #include "neo_animation.h"
 typedef enum { MARCO_LEGS_IDLE,MARCO_LEGS_RUN,MARCO_LEGS_JUMP,MARCO_LEGS_RUN_JUMP,MARCO_LEGS_RUN_LOOP,MARCO_LEGS_CROUCH } marco_legs_program_t;
-typedef struct { marco_legs_program_t program; neo_anim_state_t anim; bool grounded,started,done,rising; int8_t x72,y74; } marco_legs_t;
+typedef struct { marco_legs_program_t program; neo_anim_state_t anim; bool grounded,started,done,rising,fat; int8_t x72,y74; } marco_legs_t;
 void marco_legs_reset(marco_legs_t *l);
+/* Form 2 (fat Marco, +93 = 2): the body programs of the rows +0x20 (idle
+ * 259D4C and jump 259E64: (0,16); the walk 259D68: (0, 15..17), speed
+ * 0x1C1; crouched the 16 stays). A change of form restarts the program. */
+void marco_legs_set_fat(marco_legs_t *l,bool fat);
 /* One player update with the situation of marco_visual_input_t. */
 /* rising: the vertical velocity is upward (+78 stays FF while rising: the
  * jumps hold their top pose; cat1: +78 = 0 from the first falling update). */
@@ -33,4 +37,12 @@ bool marco_legs_entry(marco_legs_program_t program,unsigned i,int8_t *x72,int8_t
 typedef struct { int16_t x,y; } marco_muzzle_t;
 marco_muzzle_t marco_muzzle_aim(const marco_legs_t *l,int aim92,uint8_t form,bool facing_left);
 marco_muzzle_t marco_muzzle_sweep(const marco_legs_t *l,uint8_t angle,int16_t sine,int16_t cosine);
+/* 0C4610 (the H's sweep step with +93 = 2): the angle of the computation
+ * is marco_sweep_fat_angle of the program's angle (the bullet's +6E stays
+ * the program's, mirrored facing left); x = int(16 cos) / 2 + 7, y =
+ * int(16 sin) + 8, no +72/+74, x negated facing left. */
+uint8_t marco_sweep_fat_angle(uint8_t angle);
+marco_muzzle_t marco_muzzle_sweep_fat(uint8_t angle,int16_t sine,int16_t cosine,bool facing_left);
+/* The fat programs' entries (marco_legs_entry for form 2). */
+bool marco_legs_fat_entry(marco_legs_program_t program,unsigned i,int8_t *x72,int8_t *y74);
 #endif

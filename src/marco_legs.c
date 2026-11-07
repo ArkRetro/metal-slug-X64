@@ -37,6 +37,15 @@ static const neo_anim_command_t run_jump_cmds[]={  /* 24E858, then 24DF6C */
     WL(0xffff000f),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),P,W(2),
     {NEO_ANIM_JUMP,0,25,0,0,0,0},
 };
+/* Form 2 (fat Marco, 0C0F32 rows +0x20): the walk 259D68 writes the long
+ * +72 = 0F/11/11/11/11/10/0F/11/11/11/11/10 (x 0), one per W2 pose, and
+ * loops (MAME capture_fat_weapons.lua: +26 = 01C1, +77 the pose); the idle
+ * 259D4C and the jump 259E64 write 0x10 once. */
+static const neo_anim_command_t fat_run_cmds[]={   /* 259D68 */
+    WL(0xf),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x10),P,W(2),
+    WL(0xf),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x11),P,W(2),WL(0x10),P,W(2),
+    {NEO_ANIM_JUMP,0,0,0,0,0,0},
+};
 #undef WW
 #undef WL
 #undef P
@@ -44,7 +53,7 @@ static const neo_anim_command_t run_jump_cmds[]={  /* 24E858, then 24DF6C */
 #undef RUNP
 static const neo_anim_program_t programs[]={
     {run_cmds,sizeof run_cmds/sizeof *run_cmds},{jump_cmds,sizeof jump_cmds/sizeof *jump_cmds},
-    {run_jump_cmds,sizeof run_jump_cmds/sizeof *run_jump_cmds}};
+    {run_jump_cmds,sizeof run_jump_cmds/sizeof *run_jump_cmds},{fat_run_cmds,sizeof fat_run_cmds/sizeof *fat_run_cmds}};
 static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *value) {
     marco_legs_t *l=context;
     if (f==0x78 && !write) {*value=l->rising?0xffu:0u;return true;}
@@ -57,11 +66,17 @@ static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *v
 /* Body speed +26: 0x1C1 for the run (C285C, marco_motion.c), else 0x100. */
 static void start(marco_legs_t *l,marco_legs_program_t p) {
     l->program=p;l->started=true;l->done=false;
+    if (l->fat) {if (p==MARCO_LEGS_RUN) neo_anim_start(&l->anim,&programs[3],0x1c1);return;}
     if (p==MARCO_LEGS_RUN) neo_anim_start(&l->anim,&programs[0],0x1c1);
     else if (p==MARCO_LEGS_JUMP) neo_anim_start(&l->anim,&programs[1],0x100);
     else if (p==MARCO_LEGS_RUN_JUMP) neo_anim_start(&l->anim,&programs[2],0x100);
 }
 void marco_legs_reset(marco_legs_t *l) {memset(l,0,sizeof *l);l->grounded=true;l->x72=0;l->y74=17;}
+void marco_legs_set_fat(marco_legs_t *l,bool fat) {
+    if (l->fat==fat) return;
+    /* The form's tables choose new body programs (0C0F32 + 0x20). */
+    l->fat=fat;l->started=false;
+}
 void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool running_jump,bool hgun,bool rising) {
     l->rising=rising;
     /* The program of the situation (marco_visual_step's body choice). */
@@ -74,6 +89,7 @@ void marco_legs_step(marco_legs_t *l,bool grounded,bool moving,bool crouch,bool 
         if (!l->grounded || l->program!=p || !l->started) start(l,p);
     }
     l->grounded=grounded;
+    if (l->fat && l->program!=MARCO_LEGS_RUN) {l->x72=0;l->y74=16;return;}   /* 259D4C, 259E64; crouched: kept */
     switch (l->program) {
     case MARCO_LEGS_IDLE: l->x72=0;l->y74=17;return;          /* 24C5EA */
     case MARCO_LEGS_CROUCH: l->x72=hgun?4:0;l->y74=hgun?12:6;return;
@@ -100,6 +116,28 @@ marco_muzzle_t marco_muzzle_sweep(const marco_legs_t *l,uint8_t angle,int16_t si
     int y=yi;
     if (!(angle&0x80u)) y+=yi>>1;                                 /* 0C45EC..0C45F6 */
     return (marco_muzzle_t){(int16_t)(xi+l->x72),(int16_t)(y+l->y74+2)};
+}
+marco_muzzle_t marco_muzzle_sweep_fat(uint8_t angle,int16_t sine,int16_t cosine,bool facing_left) {
+    (void)angle;   /* the caller gives the sine and cosine of it */
+    /* 002E7C with d0 = 0x100000: muls.w of 0x1000; x = int / 2 + 7, y =
+     * int + 8, x negated facing left (0C46B6..0C46CA); no +72/+74. */
+    int32_t s=(int32_t)0x1000*sine,c=(int32_t)0x1000*cosine;
+    int16_t xi=(int16_t)((uint32_t)c>>16),yi=(int16_t)((uint32_t)s>>16);
+    int x=(xi>>1)+7;
+    return (marco_muzzle_t){(int16_t)(facing_left?-x:x),(int16_t)(yi+8)};
+}
+uint8_t marco_sweep_fat_angle(uint8_t angle) {
+    /* 0C469E..0C46A8 on the program's (unmirrored) word: a - 0x40 less an
+     * eighth of it, + 0x40. */
+    int16_t d1=(int16_t)(angle-0x40),d2=(int16_t)(d1>>3);
+    return (uint8_t)(d1-d2+0x40);
+}
+/* 259D68 (fat walk). */
+static const entry_t fat_run[12]={{2,0,15},{2,0,17},{2,0,17},{2,0,17},{2,0,17},{2,0,16},{2,0,15},{2,0,17},{2,0,17},{2,0,17},{2,0,17},{2,0,16}};
+bool marco_legs_fat_entry(marco_legs_program_t program,unsigned i,int8_t *x72,int8_t *y74) {
+    if (program!=MARCO_LEGS_RUN) {if (i) return false;*x72=0;*y74=16;return true;}
+    if (i>=12) return false;
+    *x72=fat_run[i].x;*y74=fat_run[i].y;return true;
 }
 bool marco_legs_entry(marco_legs_program_t program,unsigned i,int8_t *x72,int8_t *y74) {
     const entry_t *t=NULL;unsigned n=1;int8_t x=0,y=17;

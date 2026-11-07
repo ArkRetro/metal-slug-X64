@@ -164,6 +164,8 @@ ROOTS+=[0x282c18,0x282bf0,0x282c22,0x282c2c,0x282dcc,0x282ee6,0x2830da,0x28311a]
 ROOTS+=[0x2686dc,0x2687e4,0x2688ec,0x2689f4,0x268760,0x268868,0x268970,0x268a78]
 # Weapons 04/09 (neo_pweapon.c): the flame 0A71F8/0A716E and its puffs 0A74E4/0A751C.
 ROOTS+=[0x2a655a,0x2a696e,0x2a6574,0x2a676c,0x2a6666,0x2a6988,0x2a6868,0x2a6a8e]
+# The flames with +93 = 2 (fat Marco) 0A7226 / 0A719C (level, vertical; G21).
+ROOTS+=[0x2a6b8a,0x2a6c08,0x2a6c86,0x2a6d04]
 # The SV-001 092A32 (neo_tank.c): its state programs, the shell 094EAA
 # (290FC0, burst 2919FE), the muzzle flash 0952F8 (29090E / 290C9E), the dust
 # 0956CE (291AF0) and the rider's entry 0954DC (tables 0954A4 / 0954B4 /

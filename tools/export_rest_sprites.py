@@ -218,6 +218,11 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
 ROOTS+=(0x267c74,0x267e86,0x26860a,0x2681a4,0x22ca58)
 # The Mission 3 fat bomb 01C362 22CD04 and its piece 01C654 22CD5A, the fat landing dust 0C4E86 0C4E48, the fat molotov 01E680 22F65E and its flames 01EA7A 22F704 (neo_bullet.c).
 ROOTS+=(0x22cd04,0x22cd5a,0x0c4e48,0x22f65e,0x22f704)
+# Fat Marco's bullets (+93 = 2, table 0C42EA; neo_bullet.c): the pistol 01B62C 22C0A6, the H
+# 01B668 22C000 / 01BDD2 22C4C6 and their impact 22C040 (MISSION3_DEBUG.md G21).
+ROOTS+=(0x22c0a6,0x22c000,0x22c4c6,0x22c040)
+# Its flames 0A7226 / 0A719C (level, vertical; neo_pweapon.c, palette 877).
+ROOTS+=(0x2a6b8a,0x2a6c08,0x2a6c86,0x2a6d04)
 # The splash 03C962 (neo_gate.c), palette 152 in Mission 3.
 ROOTS+=(0x22e064,0x22e0f2,0x22df54,0x22e1f0)
 # The Mission 3 weapon E 0DE4DA (neo_pweapon.c).
@@ -350,6 +355,9 @@ RESOURCES=RESOURCES+(0xba,0x157,0xbc,0x130,0xf0,0x148,0xbb,0xbd,0x113)
 # Mission 3: the bombers 0DC97E (0DC8FE/0DC902: 0x898/0x899), the turret 03B4E0 of
 # the tank 093C9A (03B4C8: 0x87B), the decoration 0B91FA (0x4B4) (MISSION3_DEBUG.md).
 RESOURCES=RESOURCES+(0x898,0x899,0x87b,0x4b4)
+# Fat Marco's weapons (+93 = 2): the H bullet 01BDD2 (0x874), the flame 0A7226 (0x877), the
+# weapon 0D 0A7960 (0x871) (capture_fat_weapons.lua palette dumps; 86C/870/875 listed above).
+RESOURCES=RESOURCES+(0x874,0x877,0x871)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

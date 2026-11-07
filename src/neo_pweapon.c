@@ -477,8 +477,10 @@ static int32_t e_sdiv(int32_t d0,int16_t d1) {                         /* 0DEDA6
 static ga_result_t weapon_e_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     switch (L(0)) {
-    case 0xde4da: {
-        ga_palette(a,0x81e);SW(0x66,0xe000);SW(0x1e,0xe000);SB(0x7d,0);
+    case 0xde4da: case 0xde4fe: {
+        /* 0DE4FE (+93 = 2, table 0C42EA): palette 870, +66/+1E 1110, +7D = 1. */
+        bool fat=L(0)==0xde4feu;
+        ga_palette(a,fat?0x870:0x81e);SW(0x66,fat?0x1110:0xe000);SW(0x1e,fat?0x1110:0xe000);SB(0x7d,fat?1u:0u);
         sound(e,0x116a);SB(0x15,B(0x15)|0x20u);
         uint32_t vx,vy;ga_polar(0x80000,B(0x6e),&vx,&vy);
         SL(0x34,L(0x34)+vy);
@@ -684,8 +686,10 @@ static ga_result_t pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
         return r?GA_DELETE:GA_MORE;
     }
     /* ---- weapons 02 / 07: the blast 0644C4 / 0646B0 ---- */
-    case 0x644c4: case 0x646b0: {
-        SB(0x72,L(0)==0x646b0u?1u:0u);ga_palette(a,0x39b);
+    case 0x644c4: case 0x646b0: case 0x646c8: case 0x646e0: {
+        /* 0646C8 / 0646E0 (+93 = 2, table 0C42EA): +72 = 2 / 3, palette 86C. */
+        uint32_t r0=L(0);
+        SB(0x72,r0==0x646b0u?1u:r0==0x646c8u?2u:r0==0x646e0u?3u:0u);ga_palette(a,r0==0x646c8u || r0==0x646e0u?0x86c:0x39b);
         sound(e,0x10f6);SW(0x66,0x1110);SW(0x1e,0x1110);
         if (!e->pickup) {ga_fail(e,0x644ee);return GA_UNSUPPORTED;}
         if (e->pickup->mission==9u) {ga_fail(e,0x12022);return GA_UNSUPPORTED;}
@@ -725,10 +729,19 @@ static ga_result_t pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
         return release(a,e,id[B(0x72)&3u])?GA_DELETE:GA_UNSUPPORTED;
     }
     /* ---- weapons 04 / 09: the flame 0A71F8 / 0A716E ---- */
-    case 0xa71f8: case 0xa716e: {
-        bool nine=L(0)==0xa716eu;
+    case 0xa71f8: case 0xa716e: case 0xa7226: case 0xa719c: {
+        bool nine=L(0)==0xa716eu || L(0)==0xa719cu;
+        if (L(0)==0xa7226u || L(0)==0xa719cu) {
+            /* +93 = 2 (table 0C42EA): palette 877, the level or vertical
+             * program (a downward one flipped, +15 bit 1), +7B = FF. */
+            ga_palette(a,0x877);
+            if (B(0x6e)&0x40u) {START(nine?0x2a6d04:0x2a6c08);if (B(0x6e)&0x80u) SB(0x15,B(0x15)|2u);}
+            else START(nine?0x2a6c86:0x2a6b8a);
+            SB(0x7a,nine?0xffu:0u);SB(0x7b,0xff);
+        } else {
         ga_palette(a,nine?0x876:0x384);START(nine?0x2a696e:0x2a655a);
         SB(0x7a,nine?0xffu:0u);SB(0x7b,0);
+        }
         sound(e,0x10f3);SW(0x66,0x1110);SW(0x1e,0x1110);SB(0x15,B(0x15)|0x20u);
         uint32_t vx,vy;ga_polar(0xc0000,B(0x6e),&vx,&vy);SL(0x30,vx);SL(0x34,vy);
         SB(0x78,0);SB(0x79,0);SW(0x72,12);
@@ -837,11 +850,11 @@ static ga_result_t pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
 bool neo_pweapon_routine(uint32_t r) {
     return r==0x8606a || r==0x86124 || r==0x8613a || r==0x8619e || r==0x861c6 || r==0x861e2 || r==0x86216 ||
         r==0x86260 || r==0x86304 || r==0x8637a || r==0x8642e || r==0x86450 || r==0x86466 || r==0x8651c || r==0x8654a ||
-        r==0x644c4 || r==0x646b0 || r==0x64556 || r==0x645d2 || r==0x645e0 ||
-        r==0xa71f8 || r==0xa716e || r==0xa72ce || r==0xa73b4 || r==0xa73da || r==0xa74e4 || r==0xa751c || r==0xa7654 ||
+        r==0x644c4 || r==0x646b0 || r==0x646c8 || r==0x646e0 || r==0x64556 || r==0x645d2 || r==0x645e0 ||
+        r==0xa71f8 || r==0xa716e || r==0xa7226 || r==0xa719c || r==0xa72ce || r==0xa73b4 || r==0xa73da || r==0xa74e4 || r==0xa751c || r==0xa7654 ||
         r==0x1e22c || r==0x1e274 || r==0x1e28e || r==0x1e2fc || r==0x1e398 || r==0x1e3b2 || r==0x1e41c || r==0x1e4d4 || r==0x1e4f2 ||
         r==0x1e582 || r==0x1e58a || r==0x1e596 || r==0x1e604 ||
-        r==0xde4da || r==0xde5b4 || r==0xde5ba || r==0xde6a6 || r==0xde702 || r==0xde7f2 || r==0xde8ee || r==0xde92e || r==0xde96a;
+        r==0xde4da || r==0xde4fe || r==0xde5b4 || r==0xde5ba || r==0xde6a6 || r==0xde702 || r==0xde7f2 || r==0xde8ee || r==0xde92e || r==0xde96a;
 }
 /* Attackers of the player's side (their rows may hit the boss). */
 bool neo_pweapon_attacker(uint32_t r) {

@@ -1018,7 +1018,15 @@ static void laser_call(msx_game_t *g) {
         {{-1,49},{-2,50},{1,50},{2,49},{-1,48},{-2,48},{1,50},{2,49}},
         {{-6,-20},{-5,-20},{-3,-21},{-4,-21},{-6,-20},{-5,-19},{-3,-21},{-4,-21}},
         {{27,17},{25,16},{24,15},{25,14},{27,18},{26,17},{24,16},{25,15}}};
+    /* Form 2 (fat Marco): the programs of the rows +0x20 (25A0E0, 25A21C,
+     * 25A38C, crouched 25D2B2; MAME capture_fat_weapons.lua, weapon 06). */
+    static const int8_t fat_point[4][8][2]={
+        {{24,9},{24,8},{24,7},{24,6},{24,10},{24,9},{24,7},{24,8}},
+        {{9,32},{8,32},{7,32},{6,32},{10,32},{9,32},{8,32},{7,32}},
+        {{17,0},{15,0},{14,0},{13,0},{18,0},{17,0},{16,0},{15,0}},
+        {{16,15},{16,16},{16,17},{16,18},{16,14},{16,15},{16,16},{16,17}}};
     uint8_t step=g->laser_step,aim=g->laser_aim&3u;
+    const bool fat=g->world.weapon_player.form93==2u;
     g->laser_step++;
     uint8_t id=marco_weapons_id(&g->world.weapons,0);
     if (id!=6 && id!=0x0b) return;
@@ -1030,6 +1038,12 @@ static void laser_call(msx_game_t *g) {
         marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
         if (!allowed) return;
     }
+    if (fat) {
+        /* 0C4728: crouched (+90 = FF) the point alone and direction 0. */
+        bool crouched=aim==3u;
+        neo_world_laser(&g->world,0,(int16_t)(fat_point[aim][step][0]+(crouched?0:g->legs.x72)),
+            (int16_t)(fat_point[aim][step][1]+(crouched?0:g->legs.y74)),aim==1?1u:aim==2?0xffu:0u);
+    } else
     neo_world_laser(&g->world,0,(int16_t)(point[aim][step][0]+g->legs.x72),(int16_t)(point[aim][step][1]+g->legs.y74),
         aim==1?1u:aim==2?0xffu:0u);
     g->laser_calls++;g->shot_age=0;g->shooting=true;
@@ -1489,9 +1503,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 g->velocity_x=0;g->moving=g->shooting=false;g->jump_pending=false;
             }
         } else if (m->form94==0u && m->form93==2u) {
-            /* 0C1D82 (thin again: body C0508 25CEB0) was not captured:
-             * explicit stop, the form changes without its program. */
-            g->fat_stops++;m->form93=0;m->form94=0xff;
+            /* 0C1D82 (thin again; MAME capture_fat_weapons.lua, the fat
+             * counter run out at 126505): 0C1D70 without its sound, body
+             * C0508 25CEB0 alone, +84 = 0x5A, +62 = 0; 0C1DA8 holds the
+             * player until the program ends (0C1F4A 18 updates later, as
+             * the fat transformation). The visual keeps the thin rows. */
+            m->form93=0;m->form94=0xff;g->fat_transform=19;g->mummy_guard=0x5a;
+            g->velocity_x=0;g->moving=g->shooting=false;g->jump_pending=false;
         } else if ((m->form93==2u && m->form94==1u) || (m->form93==3u && (m->form94==1u || m->form94==2u))) {
             /* Rule FF of 0C32E4 (forms 2/3 with +94 = 1, form 3 with 2):
              * nothing; the request stays (a weapon taken fat keeps the
@@ -1519,12 +1537,18 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->grenade && !g->grenade_was_down && !g->complete && marco_weapons_throw(&g->world.weapons,0,false)) {
             uint8_t type=g->world.weapons.b[10];
             const bool fatg=g->world.weapon_player.form93==2;
+            /* Form 2 (MAME capture_fat_weapons.lua: every fat throw standing
+             * has +90 = 00): the second constructor only crouched (+90 =
+             * FF), and 0C4806 places at (+72, 4 + +74) of the fat body
+             * programs, crouched (0, 16). */
+            const bool fat_still=g->grounded && g->crouching;
+            const int32_t fat_x=g->x+(fat_still?0:g->legs.x72)*MSX_UNIT,fat_y=(56+(fat_still?16:4+g->legs.y74))*MSX_UNIT-g->y;
             if (((type==1 && !fatg) || type==2) && g->world_enabled) {
                 /* 0C4756: type 2 (the molotov) 01E648 / 01E664 (+90 = FF);
                  * with +93 = 2 (0C476E) 01E680 / 01E69C (family m3molotov). */
                 bool still=g->grounded && !g->moving;
-                neo_world_player_grenade(&g->world,type==2?(fatg?(still?0x1e69cu:0x1e680u):(still?0x1e664u:0x1e648u)):still?0x1bf10u:0x1bf46u,
-                    g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
+                neo_world_player_grenade(&g->world,type==2?(fatg?(fat_still?0x1e69cu:0x1e680u):(still?0x1e664u:0x1e648u)):still?0x1bf10u:0x1bf46u,
+                    fatg?fat_x:g->x-MSX_UNIT,fatg?fat_y:(56+4+0x15)*MSX_UNIT-g->y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
                 g->grenades++;marco_hgun_throw(&g->hgun);
             } else if ((type==1 || type==3) && fatg && g->world_enabled) {
@@ -1532,8 +1556,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                  * FF), program 22CA58, palette 204 (families m3fat/m3fat2);
                  * type 3 the bomb 01C362 / 01C334 (family m3bomb). Same
                  * position as type 1. */
-                bool still=g->grounded && !g->moving;
-                neo_world_player_grenade(&g->world,type==3?(still?0x1c334u:0x1c362u):still?0x1bea4u:0x1bedau,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
+                neo_world_player_grenade(&g->world,type==3?(fat_still?0x1c334u:0x1c362u):fat_still?0x1bea4u:0x1bedau,fat_x,fat_y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
                 g->grenades++;marco_hgun_throw(&g->hgun);
             } else g->grenade_stops++;
@@ -1598,14 +1621,22 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     }
     if (fire_edge && !g->complete) g->fire_request=true;   /* +9B bit 4 */
     if (g->knife_t) g->pistol_wait=g->pistol_wait>g->knife_t?g->pistol_wait:g->knife_t;
-    bool hgun=false,chaser=false;
+    bool hgun=false,chaser=false,fat_beam=false;
     const bool fat=g->world_enabled && g->world.weapon_player.form93==2;
-    if (g->world_enabled && g->world.weapon_player.form93!=2) {
-        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;chaser=fire_kind(kind).group!=MSX_FIRE_NONE;
+    if (g->world_enabled) {
+        /* The H (0C3D0A: ids 5/0A) takes its own fire states in every form
+         * (form 2: the programs of the rows +0x20, marco_hgun.c); the
+         * beam (ids 6/0B, 0C3E02) too. */
+        uint8_t kind=marco_weapons_ammo(&g->world.weapons,0).kind;hgun=kind==5 || kind==10;
+        if (!fat) chaser=fire_kind(kind).group!=MSX_FIRE_NONE;
+        else fat_beam=kind==6 || kind==0x0b;
     }
+    if (g->hgun.fat!=fat) {marco_hgun_reset(&g->hgun);g->hgun.fat=fat;}
     if (!hgun) marco_hgun_reset(&g->hgun);
     /* The body program's +72/+74 of this update, before the upper body
-     * (00427A then 0C3778) reads them for the muzzle. */
+     * (00427A then 0C3778) reads them for the muzzle; form 2 has its own
+     * body programs (marco_legs.c). */
+    marco_legs_set_fat(&g->legs,fat);
     if (!(g->ticks&1)) marco_legs_step(&g->legs,g->grounded,g->moving,g->grounded && g->crouching,g->jump_moving,hgun || chaser,!g->grounded && g->velocity_y<0);
     if (hgun) {
         if (fire_edge && !g->complete) marco_hgun_press(&g->hgun);
@@ -1627,6 +1658,28 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                  * single point. */
                 uint8_t a=shots[k].angle;
                 int base=g->facing<0?(0x80-(int)shots[k].base)&0xff:shots[k].base;
+                if (fat) {
+                    /* Form 2 (MAME capture_fat_weapons.lua, weapon 0A): the
+                     * fan 0C436A -> 0C44E0/0C44FE: 01B668/01BDD2 at 0C4244
+                     * (form-2 column plus the fat +72/+74; crouched 0C4234
+                     * (16,16)), +6E + 3 x ((+95 % 3) - 1), 01AC94 the
+                     * facing; the sweep 0C4610: 0x100000 at the program's
+                     * angle less an eighth of its distance to 0x40, (x / 2
+                     * + 7, y + 8), mirrored, no +72/+74 and no 01AC94. The
+                     * motion of 0C4834 as the other fat shots. */
+                    bool left=g->facing<0;
+                    marco_muzzle_t m;
+                    if (shots[k].sweep) {
+                        uint8_t pa=left?(uint8_t)(0x80-a):a,fa=marco_sweep_fat_angle(pa);
+                        m=marco_muzzle_sweep_fat(fa,ga_sine(fa),ga_cosine(fa),left);
+                    } else m=g->crouching?(marco_muzzle_t){(int16_t)(left?-16:16),16}:marco_muzzle_aim(&g->legs,base==0x40?1:base==0xc0?-1:0,2,left);
+                    int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
+                    neo_world_player_actor(&g->world,g->hgun_kind==5?0x1b668u:0x1bdd2u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,a,
+                        shots[k].sweep?0u:left?1u:0u,g->world.player_node[0][0x5e],0);
+                    g->hgun_diagonal+=shots[k].sweep;
+                    g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots++;g->h_shots++;g->fat_shots++;
+                    continue;
+                }
                 marco_muzzle_t m=shots[k].sweep?marco_muzzle_sweep(&g->legs,a,ga_sine(a),ga_cosine(a)):
                     marco_muzzle_aim(&g->legs,base==0x40?1:base==0xc0?-1:0,1,g->facing<0);
                 int32_t x=g->x+m.x*MSX_UNIT;
@@ -1687,23 +1740,26 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         /* The beam's program CALLs 0C46D6 at each of its first 8 steps,
          * one per update, from the update it starts. */
         if (g->laser_step<8u && !(g->ticks&1) && !g->complete) laser_call(g);
-    } else if (fat) {
-        /* Form 2, fat Marco: every weapon fires through the fat programs
-         * (rows +0x20 of 0BFD18.. and 0C3C10..: level 25A8F4, up 25A83C,
-         * down in the air 25A898, crouched 25D10E; marco-f2 with the
-         * pistol, marco-f3 with the R): their first command CALLs 0C436A
-         * (table 0C42EA), +76 comes after three poses of two updates (12
-         * ticks for every aim). 0C436A: 0C0D64, the flash 0C58D2 of table
-         * 0C432A (ids 3, 8, C..F) at the muzzle minus +72/+74, then the
-         * projectile at the muzzle 0C4244 (form-2 column of 0C4204, or
-         * crouched C4234 (16,16)) with +95 + 1, +6E = the aim (mirrored
-         * facing left), +70, +5E. The H (ids 5/0A, 0C4454/0C447C):
-         * 01B668/01BDD2 with +95 + 1 and +6E + 3 x ((+95 % 3) - 1)
-         * (0C44FE). The +72/+74 of the port's legs are the form-0 body
-         * programs' (declared approximation: the fat bodies' are not
-         * modelled). Ids without a native fat projectile (01B62C's
-         * neighbours 0646C8, 0A7226, 0646E0, 0A719C, 0A7960, 0DE4FE,
-         * 0DEA44) are explicit stops. */
+    } else if (fat && !hgun) {
+        /* Form 2, fat Marco (MAME capture_fat_weapons.lua from at_122100,
+         * every weapon; docs/MISSION3_DEBUG.md G21): every weapon but the H
+         * and the beam fires through the fat programs (rows +0x20 of
+         * 0BFD18.. and 0C3C10..: level 25A8F4, up 25A83C, down in the air
+         * 25A898, crouched 25D10E): their first command CALLs 0C436A
+         * (table 0C42EA) and +76 is written in the fourth update, seen by
+         * 0C3D9A in the fifth, which starts 0C3CD0 for the sixth: a shot
+         * every 5 updates (10 ticks) while presses come. 0C436A: 0C0D64,
+         * the flash 0C58D2 of table 0C432A (ids 3, 8, C..F), then the
+         * projectile at the muzzle 0C4244 (form-2 column of 0C4204 plus the
+         * fat +72/+74, or crouched 0C4234 (16,16)) with +95 + 1, +6E = the
+         * aim (mirrored facing left), +70, +5E. The flash: 0C43CC takes the
+         * muzzle minus +72/+74, and 01ACF2 adds the player's +3C/+40,
+         * which then hold the upper body (+74 included): its +28/+2C are
+         * the projectile's (every fat flash of the capture). The beam (ids
+         * 6/0B, 0C3E02): 8 updates of 0C46D6 (laser_call), +76 in the
+         * ninth; a held press restarts it in the update that sees it
+         * (0C3E66 jumps to 0C3CD0): 9 updates. Ids without a native fat
+         * projectile (0C5508, 0A7960, 0DEA44) are explicit stops. */
         g->pistol_pending=0;
         if (g->pistol_wait) g->pistol_wait--;
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
@@ -1712,11 +1768,16 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 0x63b22,0xa719c,0x1bdd2,0,0x63f10,0xa7960,0xde4fe,0xdea44};
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             uint8_t id=ammo.kind&15u;
+            if (fat_beam) {
+                g->pistol_wait=18;g->laser_step=0;g->laser_aim=g->aim_up?1u:g->aim_down && !g->grounded?2u:g->crouching?3u:0u;
+                g->shots++;g->fat_shots++;
+            } else {
             bool allowed=marco_ammo_reserve(&ammo,ammo.kind,false,false);
             marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-            g->pistol_wait=12;
+            g->pistol_wait=10;
             uint32_t ctor=fat_table[id];
-            bool native=ctor==0x1b62cu || ctor==0x1b668u || ctor==0x1bdd2u || ctor==0x63aeeu || ctor==0x63b22u || ctor==0x63f10u;
+            bool native=ctor==0x1b62cu || ctor==0x63aeeu || ctor==0x63b22u || ctor==0x63f10u || ctor==0x646c8u || ctor==0x646e0u ||
+                ctor==0xa7226u || ctor==0xa719cu || ctor==0xde4feu;
             if (allowed && !native) {g->weapon_stops++;g->weapon_stop_constructor=ctor;}
             else if (allowed) {
                 bool left=g->facing<0;
@@ -1726,17 +1787,15 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 if (left) angle=(uint8_t)(0x80-angle);
                 marco_weapon_player_t *wp=&g->world.weapon_player;
                 wp->combo95++;
-                if (id==5 || id==10) {int d=(int)(wp->combo95%3u)-1;angle=(uint8_t)(angle+3*d);}
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
                 bool flash=id==3 || id==8 || id>=12;
-                if (flash) {
-                    int fx=g->crouching?m.x:m.x-g->legs.x72,fy=g->crouching?m.y:m.y-g->legs.y74;
-                    neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
-                }
+                if (flash) neo_world_player_actor(&g->world,0xc58d2u,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
                 neo_world_player_actor(&g->world,ctor,g->x+m.x*MSX_UNIT,(56+m.y)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,g->world.player_node[0][0x5e],0);
                 g->shot_age=0;g->shooting=true;g->shots++;g->weapon_shots+=id!=0;g->fat_shots++;
             }
+            }
         }
+        if (fat_beam && g->laser_step<8u && !(g->ticks&1) && !g->complete) laser_call(g);
     } else if (!hgun) {
         /* The bullet of the callback two ticks (one update) ago: its
          * constructor (01B782) runs one update after 00411C allocated it. */

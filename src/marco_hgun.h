@@ -19,6 +19,7 @@ typedef struct {
     bool flag76;         /* +76: the burst may restart (written at t=7) */
     bool request;        /* +9B bit 4: fire pressed since it was last taken */
     uint8_t combo95;     /* +95 (shared with marco_weapon_player_t) */
+    bool fat;            /* +93 = 2: the programs of the rows +0x20 (0C436A, 0C4610); kept by reset */
 } marco_hgun_t;
 typedef struct { bool up,down,facing_left; } marco_hgun_input_t;
 /* One bullet request of a callback; the caller reserves it with 0C0D64 and

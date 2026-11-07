@@ -472,14 +472,36 @@ static void fat_run(void) {
     assert(g.x==x0 && g.fat_transform);   /* held still */
     while (g.fat_transform) msx_game_update(&g,0,false,false);
     /* The fat fire 0C436A: the R's rocket 063AEE (table 0C42EA), one per
-     * press every 12 ticks at most. */
+     * press every 10 ticks at most. */
     uint16_t snd=0;marco_weapons_grant(&g.world.weapons,0,0x03,&g.world.weapon_player,&snd);
     assert(g.world.weapon_player.form93==2);
     for (unsigned k=0;k<16;k++) {msx_game_update(&g,0,false,(k&3)==0);g.invulnerable=2;}
     assert(g.fat_shots>=1 && g.fat_shots<=2 && !g.world.unsupported);
-    for (unsigned k=0;k<200 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
+    /* Every weapon fat Marco can hold creates its native projectile
+     * (MAME capture_fat_weapons.lua, G21): pistol 01B62C, S 0646C8, R
+     * 063AEE, F 0A7226, H 01BDD2 (bursts), beam, C 063F10, E 0DE4FE;
+     * presses every 4 ticks give a shot every 10 ticks (5 updates) up to
+     * the weapon's cap of active projectiles (0C08A8). */
+    static const uint8_t ids[]={0,2,3,4,0x0a,6,0x0c,0x0e};
+    for (unsigned w=0;w<sizeof ids;w++) {
+        g.world.weapons.b[0x10]=0;g.world.weapons.b[0x11]=200;
+        if (ids[w]) marco_weapons_grant(&g.world.weapons,0,ids[w],&g.world.weapon_player,&snd);
+        else marco_weapons_life(&g.world.weapons,0,&g.world.weapon_player),g.world.weapon_player.form93=2,g.world.weapon_player.form94=0xff;
+        unsigned shots0=g.world.player_shots,lasers0=g.world.lasers,stops0=g.weapon_stops,fat0=g.fat_shots;
+        for (unsigned k=0;k<80;k++) {msx_game_update(&g,0,false,(k&3)==0);g.invulnerable=2;}
+        unsigned made=g.world.player_shots-shots0+g.world.lasers-lasers0;
+        printf("fat weapon %02X: %u projectiles, %u fat shots, %u stops\n",ids[w],made,g.fat_shots-fat0,g.weapon_stops-stops0);fflush(stdout);
+        assert(g.world.weapon_player.form93==2 && made>=1 && g.weapon_stops==stops0 && !g.world.unsupported);
+        if (!ids[w]) assert(g.fat_shots-fat0==8);   /* uncapped: 80 ticks / 10 */
+        if (ids[w]==0x0a) assert(made>=16);            /* H bursts */
+    }
+    for (unsigned k=0;k<1000 && g.world.weapon_player.form93==2;k++) msx_game_update(&g,0,false,false);
     printf("fat: starts=%u stops=%u shots=%u form=%u\n",g.fat_starts,g.fat_stops,g.fat_shots,g.world.weapon_player.form93);fflush(stdout);
-    assert(g.world.weapon_player.form93==0 && g.fat_stops==1);
+    /* 0C1D82: thin again with the hold of the transformation. */
+    assert(g.world.weapon_player.form93==0 && g.fat_stops==0 && g.fat_transform);
+    int x1=g.x;
+    for (unsigned k=0;k<20;k++) msx_game_update(&g,1,false,false);
+    assert(g.x==x1);
 }
 /* Aiming up with the pistol (B53): the native 01B782 at angle 40 in both
  * facings, standing and in the air; each bullet climbs 16 px per update

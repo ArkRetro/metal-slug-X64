@@ -81,6 +81,54 @@ static void spare_time(void) {
 static void lifebar_choice(bool z) {
     msx_lifebar_request=z;if (z) debugf("MSX LIFEBAR on\n");
 }
+/* Test menu (docs/PORT_STATUS.md, "Menú de pruebas"; not arcade): A or
+ * Start pressed at SOLDIER SELECT with L+R or Z+R held opens a text list of
+ * the missions and their stages; D-pad moves, Z toggles the life bar, A or
+ * Start starts, B goes back to SOLDIER SELECT. The choice is applied on the
+ * first gameplay frame (actor_select_mission) by the mission transition's
+ * own path; the remaining Mission 1 movies are skipped then. */
+static bool mselect_skip;
+static bool mselect_combo(joypad_buttons_t b) { return b.r && (b.l || b.z); }
+static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1}};
+#define MSELECT_ITEMS (sizeof(mselect_items)/sizeof(mselect_items[0]))
+static bool mission_select_menu(void) {
+    static unsigned cursor;bool lifebar=false,first=true;joypad_buttons_t was={0};
+    debugf("MSX MSELECT menu open\n");
+    for (;;) {
+        joypad_poll();
+        joypad_buttons_t b=joypad_get_buttons(JOYPAD_PORT_1);
+        if (first) {was=b;first=false;}   // the opening press is not a choice
+        bool up=b.d_up && !was.d_up,down=b.d_down && !was.d_down,ok=(b.a && !was.a) || (b.start && !was.start),back=b.b && !was.b;
+        if (b.z && !was.z) lifebar=!lifebar;
+        was=b;
+        if (up) cursor=(cursor+MSELECT_ITEMS-1)%MSELECT_ITEMS;
+        if (down) cursor=(cursor+1)%MSELECT_ITEMS;
+        if (back) {debugf("MSX MSELECT back\n");return false;}
+        if (ok) {
+            unsigned m=mselect_items[cursor].mission,st=mselect_items[cursor].stage;
+            debugf("MSX MSELECT mission=%u stage=%u\n",m,st);
+            msx_lifebar_request=lifebar;if (lifebar) debugf("MSX LIFEBAR on\n");
+            if (m>1) {actor_select_mission(m,st);mselect_skip=true;}
+            return true;
+        }
+        surface_t *surface=display_get();
+        msx_audio_service();
+        uint32_t black=graphics_make_color(0,0,0,255),white=graphics_make_color(255,255,255,255),yellow=graphics_make_color(255,208,0,255);
+        graphics_fill_screen(surface,black);
+        graphics_set_color(white,black);graphics_draw_text(surface,96,40,"MISSION SELECT");
+        for (unsigned i=0;i<MSELECT_ITEMS;i++) {
+            char line[32];unsigned m=mselect_items[i].mission;
+            bool stages=m==2;
+            snprintf(line,sizeof(line),"%c MISSION %u%s",i==cursor?'>':' ',m,stages?(mselect_items[i].stage==1?" STAGE 1":mselect_items[i].stage==2?" STAGE 2":" STAGE 3"):"");
+            graphics_set_color(i==cursor?yellow:white,black);graphics_draw_text(surface,88,72+(int)i*14,line);
+        }
+        graphics_set_color(white,black);
+        graphics_draw_text(surface,64,160,lifebar?"Z  LIFE BAR: ON":"Z  LIFE BAR: OFF");
+        graphics_draw_text(surface,64,184,"A START   B BACK");
+        display_show(surface);msx_frames_present();
+        spare_time();
+    }
+}
 /* loop: an optional loop body played after `sound` (msx_audio_open_loop),
  * sample-exact, until the next movie opens its own audio. */
 static bool play_cinematic(const char *label,const char *movie,const char *sound,const char *loop,int hold,bool entry,const char *next) {
@@ -114,14 +162,20 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         previous=start;previous_a=buttons.a;
         if (held) {
             /* Waiting on the choice: the clock stands on the hold frame. */
+            if (press && mselect_combo(buttons)) {
+                if (mission_select_menu()) {held=false;hold=-1;debugf("MSX CINE %s chosen (test menu)\n",label);}
+                started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);previous=previous_a=true;continue;
+            }
             if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen audio=%u\n",label,(unsigned)msx_audio_playing(MSX_AUDIO_INTRO));lifebar_choice(buttons.z);}
             else {surface_t *surface=display_get();msx_audio_service();msx_cinematic_draw(surface);msx_frames_present();rendered++;
                 spare_time();
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
         } else if (target>=30 && press) {
+            if (hold>=0 && mselect_combo(buttons)) {if (mission_select_menu()) hold=-1;started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);previous=previous_a=true;continue;}
             if (hold>=0) {hold=-1;debugf("MSX CINE %s chosen early\n",label);lifebar_choice(buttons.z);}   // the choice made before the cursor settles
             else {start_skip=true;break;}
         }
+        if (mselect_skip && hold<0) {start_skip=true;break;}   // test menu: Mission N chosen
         uint32_t w0=TICKS_READ();surface_t *surface=display_get();uint32_t waited=TICKS_READ()-w0;
         // The frame shown is the one due when this framebuffer frees (as the title does).
         target=(unsigned)(((uint64_t)(uint32_t)(TICKS_READ()-started)*59185606u)/((uint64_t)TICKS_PER_SECOND*1000000u));

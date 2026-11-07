@@ -132,6 +132,12 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   Prueba: `test_gameplay lifebar` (misma partida igual hasta el golpe con el
   modo apagado y encendido; reglas del modo).
 
+## Menú de pruebas (no arcade)
+
+- En SOLDIER SELECT, mantener L+R (o Z+R) y pulsar A/Start abre MISSION SELECT (`main.c`): MISSION 1, MISSION 2 STAGE 1/2/3, MISSION 3; cruceta mueve, A/Start empieza, B vuelve, Z alterna la barra de vida (combina con B42; sin menú sigue siendo Z al confirmar).
+- Misión N>1: se saltan las películas de M1 y el primer fotograma entra por el camino del cambio de misión (`actor.c` `selected_mission`: 42F4/42F8, registro 0 con 1805C, pack, fundido, MISSION n START, paracaídas en M3; etapas previas cerradas con 018F40/018722). Registro `MSX MSELECT mission=N stage=S`.
+- Sin el combo nada cambia; R no reinicia hasta soltarlo. Comprobado en ares (cartucho normal): M2 E1, M2 E3 y M3 llegan a jugar.
+
 ## Distinción de "memoria"
 
 - **Contexto de la conversación:** se resuelve con estos documentos.

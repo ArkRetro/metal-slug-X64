@@ -385,6 +385,26 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
 }
+static unsigned select_mission,select_stage;
+void actor_select_mission(unsigned mission,unsigned stage) {select_mission=mission;select_stage=stage;}
+/* The test menu's mission: 01891E's own start of that mission (42F4/42F8,
+ * record 0: 1805C in msx_game_begin_stage, the pack load, the entry kind's
+ * fade or wipe, MISSION n START, the stage entry record's walk-in or
+ * parachute), each earlier stage of it ended by 018F40/018722 first. */
+static void selected_mission(void) {
+    unsigned m=select_mission,st=select_stage?select_stage:1u;select_mission=0;
+    game.flow.mission=(uint16_t)(m-1u);neo_mission_start(&game.flow,(uint16_t)(m-1u));
+    for (unsigned s=1;s<st;s++) {
+        for (unsigned k=0;k<40 && !game.flow.load && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
+        if (neo_mission_ends_after_stage(&game.flow)) break;
+        game.flow.end=0;neo_mission_stage_done(&game.flow);
+    }
+    debugf("MSX MSELECT enter mission %u record %u descriptor %06lX\n",m,(unsigned)game.flow.record_index,(unsigned long)game.flow.descriptor);
+    if (game.flow.record_index) game_audio_mission_start();   // 1805C's sound reset, as at the mission's first record
+    if (!enter_mission()) {debugf("MSX MSELECT mission %u not loaded (explicit stop): Mission 1 restarts\n",m);reset_game();}
+    restart_was_down=true;   // R still held from the menu's L+R/Z+R: no reset until it is pressed again
+    previous_animation=-1;scene_clock_reset(&simulation_clock);
+}
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
     load_target=&surface;
@@ -408,6 +428,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         previous_animation=-1;scene_clock_reset(&simulation_clock);
      }}
 #endif
+    if (select_mission>1) selected_mission();
     if (game.mission_end==MSX_END_DONE) {
         /* 01891E (neo_mission.c) selected the next mission's first stage:
          * its pack is loaded now (docs/MISION2.md "Fase 2"). Without the

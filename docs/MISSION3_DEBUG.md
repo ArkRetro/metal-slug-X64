@@ -83,7 +83,7 @@ paletas (`at_119570` con el plan `to:6c0`, `at_124100`). Orden: visibilidad.
 | G16 | Granada `03C306` de la muerte de `04115A` | sin traza en `run4` | abierto: parada explícita |
 | G17 | Superposición `10E8C6` (`0A6C8C`, 34 bloques de submapa en 3944) y 41 bloques del tren con otra paleta | `render_m3_sections.py`: 98,84 % / 99,49 % de píxeles en las secciones 4 / 3 | abierto (poco visible) |
 | G19 | En 1520 el port mostraba un bosque espeso detrás del tren donde MAME ve el cañón con un árbol | el mapa del tren `0B8566` tiene tramos de bosque; 209 celdas observadas de la capa 1 no eran el bloque de ROM de su x (vistas a través de un paso del origen `+32`) | **corregido**: `pack_mission.py fill_loop_layer` les pone el bloque de ROM con sus colores votados (797 trozos); ares (piloto) en 1520: cañón y árbol como MAME |
-| G20 | **Tablas de la M3 sin sitio** cuando la caché de escenas empieza pronto (`MSX pack: ... begun early`: los cinemáticos dejan tiempo libre, depende del instante del arranque): bloques de ranuras troceados (63 → 117 → 210, racha contigua más larga 52) y la M3 pide 55 ranuras contiguas (889 648 bytes antes de `work-m3g7`, 892 288 después): `MSX stage 1 tables: 55 contiguous slots not found` → «mission 3 pack not loaded: Mission 1 goes on» | ares, cartucho de referencia: 2 de 4 arranques con `begun early` (racha 52 de 210) fallan; los otros (`211 slots`, racha 105) cargan. Ya fallaba con el paquete anterior en ese camino (necesitaba 55 igual). `scene_assets.c` imprime ahora bytes, ranuras y racha más larga | abierto: probable causa de cargas fallidas de la M3 en MiSTer; arreglo candidato: reservar las tablas de la etapa antes de completar la caché o pedir el bloque grande primero en `allocate_slots` del camino temprano |
+| G20 | **Tablas de la M3 sin sitio** cuando la caché de escenas empieza pronto (`begun early`, cinemáticos de CONFIRM/ENTRY; el menú de pruebas nunca la empieza pronto). Causa (`work-g20`, log `MSX cache block`): no hay ranuras fijadas; las 212 ranuras son 12 bloques del heap (53, 6, 6, 37, 9, 4, 2, 1, 47, 23, 23, 1) puestos en los huecos que dejan los búferes de las películas, y la reserva exigía un solo bloque de 55 ranuras (892 272 bytes) | ares, cartucho release con el menú sin saltar CONFIRM/ENTRY (copia de diagnóstico, no en git): 2/2 `begun early`, racha 53, `55 contiguous slots not found` | **corregido (`work-g20`)**: `reserve_slots` (scene_assets.c) prueba primero una racha (igual que antes); si no hay, toma varias rachas, la más larga primero, cada una de al menos la tabla más grande (`largest`, 197 104 B en la M3), y `take` pasa a la siguiente racha cuando una tabla no cabe: n rachas piden need+(n-1)·largest. Camino temprano: `67 slots in 2 runs`, M3 cargada y jugable (3/3); menú normal 6/6 en una racha de 106; caché sin cambios (212, suelo 208) |
 | G18 | HUD: `continue item 019798` (parada al acabar las vidas) | ares release | abierto (común a todas las misiones) |
 
 Registros del guion por sección (`--port`): release (hasta 1520) sección 1
@@ -107,8 +107,7 @@ on=1 mode=1 own=1`). No hay diferencia en ares: falta verlo en MiSTer.
 
 ## Siguiente experimento (uno solo)
 
-G20: en ares, forzar el camino `begun early` (o simularlo) y comprobar la
-racha contigua; después decidir el arreglo (una hipótesis). Luego G9–G14 por
+G20 corregido (`work-g20`): falta confirmarlo en MiSTer (la M3 tras arrancar con los cinemáticos completos). Luego G9–G14 por
 visibilidad. Verificado en `work-m3g7`: ares (referencia, piloto, 330 s, sin
 `begun early`) hasta el puente 2888 sin rutinas no soportadas (solo los 16
 externos `02A448` de G11) y 1235 dibujos sin paleta `0A7` (G12) o sin los
@@ -135,4 +134,4 @@ están al lado (`run_f.sh`: G6, `run_c.sh`: molotov).
 `tools/capture_fullgame.lua` (`MSX_FULL_PLAN=dive:<x>`, `MSX_FULL_GIVE_BOMB`,
 `MSX_FULL_GIVE_FORM`), `tools/extract_soldier_programs.py`,
 `tools/export_rest_sprites.py`, `data/m3bomb|m3molotov|m3splash_fixture.json.gz`;
-privados: `filesystem/mission3/rest-native.json`, `romfs/mission3.pack`.
+privados: `filesystem/mission3/rest-native.json`, `romfs/mission3.pack`; `work-g20`: `src/scene_assets.c` (G20, reserva de las tablas en varias rachas).

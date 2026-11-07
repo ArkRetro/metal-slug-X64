@@ -415,6 +415,7 @@ static void allocate_slots(unsigned target,int keep) {
         if (!m) {block/=2;continue;}
         if (!cache) cache=m;
         for (unsigned i=0;i<block;i++) slot_mem[capacity++]=m+i*SCENE_CHUNK_BYTES;
+        debugf("MSX cache block %u slots at %p (slots %u..%u)\n",block,(void*)m,capacity-block,capacity-1);
     }
     stats.cache_bytes=capacity*SCENE_CHUNK_BYTES;
 }
@@ -586,9 +587,13 @@ typedef struct { uint16_t resource,palette; } mission_resource_t;
 static scene_native_descriptor_t *stage_actors;static scene_image_t *stage_actor_images;static mission_resource_t *stage_resources;
 static scene_stage_t stage;static bool stage_on;
 static unsigned stage_images_count(void);
-static int reserved_first=-1;static unsigned reserved_count;
+/* The stage tables' slots: one run of contiguous slots (one heap block), or
+ * several when the cache has none that long (reserve_slots). */
+enum { RESERVE_RUNS=8 };
+static struct { int first;unsigned count,used;uint8_t *mem; } reserve[RESERVE_RUNS];
+static unsigned reserve_runs,reserve_run,reserve_slots_total;
 static unsigned stage_map_first,stage_map_count;   // mission chunk ids of the stage map
-static uint8_t *reserve_mem;static unsigned reserve_used,reserve_size;
+static unsigned reserve_used;
 static scene_map_cell_t *stage_cells;static scene_image_t *stage_images;static uint16_t (*stage_palettes)[16];static unsigned stage_image_total;
 static unsigned stage_images_count(void) {return stage_image_total;}
 const scene_image_t *scene_frame(unsigned id,unsigned frame) {
@@ -604,9 +609,13 @@ static void rom_read(void *dst,uint32_t offset,uint32_t length) {
     if (!length) return;   /* empty table (Mission 3: no actor section yet) */
     data_cache_hit_writeback_invalidate(dst,length);dma_read(dst,mission_rom+offset,length);
 }
+/* In order, each table whole in a run: one that does not fit the rest of
+ * the current run starts the next (reserve_slots sizes them for it). */
 static void *take(unsigned bytes) {
-    void *p=reserve_mem+reserve_used;reserve_used+=(bytes+15)&~15u;
-    assertf(reserve_used<=reserve_size,"Stage tables exceed their slots");
+    unsigned b=(bytes+15)&~15u;
+    while (reserve_run<reserve_runs && reserve[reserve_run].used+b>reserve[reserve_run].count*SCENE_CHUNK_BYTES) reserve_run++;
+    assertf(reserve_run<reserve_runs,"Stage tables exceed their slots");
+    void *p=reserve[reserve_run].mem+reserve[reserve_run].used;reserve[reserve_run].used+=b;reserve_used+=b;
     return p;
 }
 const scene_stage_t *scene_stage(void) { return stage_on?&stage:NULL; }
@@ -655,26 +664,48 @@ const uint8_t *scene_stage_rom(uint32_t address) {
     return NULL;
 }
 static void release_reserved(void) {
-    if (reserved_first<0) return;
-    for (unsigned i=0;i<reserved_count;i++) slots[reserved_first+i].reserved=false;
-    reserved_first=-1;reserved_count=0;reserve_mem=NULL;
+    for (unsigned r=0;r<reserve_runs;r++) for (unsigned i=0;i<reserve[r].count;i++) slots[reserve[r].first+i].reserved=false;
+    reserve_runs=reserve_run=reserve_slots_total=reserve_used=0;
 }
-/* Takes `count` contiguous slots (one heap block) out of the cache, the last
- * such run so the pinned player banks (warmed first) are rarely in it. */
-static bool reserve_slots(unsigned count) {
+static void reserve_at(unsigned first,unsigned count) {
+    for (unsigned i=0;i<count;i++) {
+        cache_slot_t *sl=&slots[first+i];
+        if (sl->chunk>=0) {chunk_slot[sl->chunk]=-1;if (sl->ready) resident--;stats.evictions++;}
+        *sl=(cache_slot_t){.chunk=-1,.reserved=true};
+    }
+    reserve[reserve_runs++]=(typeof(reserve[0])){(int)first,count,0,slot_mem[first]};reserve_slots_total+=count;
+}
+/* Takes slots for `need` bytes of tables (none larger than `largest`) out of
+ * the cache: `count` contiguous slots (one heap block), the last such run so
+ * the pinned player banks (warmed first) are rarely in it. A cache begun
+ * early (G20) lies in the holes between the movies' buffers, a dozen heap
+ * blocks (longest 53 slots, Mission 3 needs 55): then several runs, the
+ * longest first, each holding the largest table; a run loses less than
+ * `largest` at its end, so n runs need need+(n-1)*largest bytes. */
+static bool reserve_slots(unsigned need,unsigned largest) {
+    unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES,least=(largest+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     for (int first=(int)capacity-(int)count;first>=0;first--) {
         bool ok=true;
         for (unsigned i=1;i<count && ok;i++) ok=slot_mem[first+i]==slot_mem[first]+i*SCENE_CHUNK_BYTES;
-        if (!ok) continue;
-        for (unsigned i=0;i<count;i++) {
-            cache_slot_t *sl=&slots[first+i];
-            if (sl->chunk>=0) {chunk_slot[sl->chunk]=-1;if (sl->ready) resident--;stats.evictions++;}
-            *sl=(cache_slot_t){.chunk=-1,.reserved=true};
-        }
-        reserved_first=first;reserved_count=count;reserve_mem=slot_mem[first];reserve_used=0;reserve_size=count*SCENE_CHUNK_BYTES;
-        return true;
+        if (ok) {reserve_at((unsigned)first,count);return true;}
     }
-    return false;
+    if (!least) least=1;
+    while (reserve_runs<RESERVE_RUNS) {
+        unsigned want=need+reserve_runs*largest,have=reserve_slots_total*SCENE_CHUNK_BYTES;
+        if (reserve_runs && have>=want-largest) return true;
+        unsigned run=0,best=0,best_end=0;
+        for (unsigned i=0;i<capacity;i++) {
+            if (slots[i].reserved) {run=0;continue;}
+            run=run && slot_mem[i]==slot_mem[i-1]+SCENE_CHUNK_BYTES?run+1:1;
+            if (run>=best) {best=run;best_end=i+1;}
+        }
+        if (best<least) break;
+        unsigned k=(want-have+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
+        if (k<least) k=least;
+        if (k>best) k=best;
+        reserve_at(best_end-k,k);
+    }
+    release_reserved();return false;
 }
 static void forget_mission_chunks(void) {
     for (unsigned c=SCENE_CHUNK_COUNT;c<CHUNKS_ALL;c++) {
@@ -745,10 +776,16 @@ bool scene_stage_load(unsigned index) {
     /* The previous stage's chunks and tables. */
     release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
     unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
-    unsigned need=((cells*22u+15)&~15u)+((images*sizeof(scene_image_t)+15)&~15u)+32u*mission_head.palettes+16u*mission_head.chunks+
-        2u*((grid+15)&~15u)+(ps.rows>32u?4096u:0u)+(ps.unknown?((grid+7)/8+16):0)+((cells*(sizeof(uint16_t)+sizeof(scene_cell_run_t))+31)&~15u)+
-        (SCENE_STRIP_ITEMS+SCENE_STRIP_GROUPS)*SCENE_STRIP_ENTRY_BYTES;
-    for (unsigned b=0;b<3;b++) need+=(ps.blob[b].length+15)&~15u;
+    /* Every table taken below (take), each rounded to 16 bytes; `largest`
+     * bounds one table (reserve_slots). */
+    unsigned need=0,largest=0;
+#define NEED(x) do {unsigned n_=((unsigned)(x)+15)&~15u;need+=n_;if (n_>largest) largest=n_;} while (0)
+    NEED(cells*22u);NEED(images*sizeof(scene_image_t));NEED(32u*mission_head.palettes);NEED(16u*mission_head.chunks);
+    NEED(grid);NEED(grid);if (ps.rows>32u) NEED(4096u);
+    if (ps.unknown) NEED((grid+7)/8);
+    NEED(cells*sizeof(uint16_t));NEED(cells*sizeof(scene_cell_run_t));
+    NEED(SCENE_STRIP_ITEMS*SCENE_STRIP_ENTRY_BYTES);NEED(SCENE_STRIP_GROUPS*SCENE_STRIP_ENTRY_BYTES);
+    for (unsigned b=0;b<3;b++) NEED(ps.blob[b].length);
     /* 'MSXR' (pack_mission.py recon_blob, docs/MISION3.md): the dynamic maps
      * (0140C0) of the stage's actors, served to ga_rom (scene_stage_rom). */
     static uint8_t recon_head[16] __attribute__((aligned(16)));
@@ -762,10 +799,10 @@ bool scene_stage_load(unsigned index) {
             debugf("MSX stage %u: map reconnaissance block not read (version %u, %u dynamic maps; explicit stop)\n",index+1,recon_head[4]<<8|recon_head[5],dmaps);dmaps=0;
         } else if (dmaps) {
             rom_read(recon_dyn,ps.recon_offset+16u+28u*maps+20u*pats,12u*dmaps);
-            for (unsigned i=0;i<dmaps;i++) need+=(recon_dyn[i].length+15)&~15u;
+            for (unsigned i=0;i<dmaps;i++) NEED(recon_dyn[i].length);
         }
     }
-    need+=((8u*mission_head.actors+15)&~15u)+((mission_head.actor_images*sizeof(scene_image_t)+15)&~15u)+((4u*mission_head.resources+15)&~15u);
+    NEED(8u*mission_head.actors);NEED(mission_head.actor_images*sizeof(scene_image_t));NEED(4u*mission_head.resources);
     /* 'MSXD': the mission's ROM blobs and programs (read whole, the
      * commands converted in place) and the program table. */
     static uint8_t data_head[16] __attribute__((aligned(16)));
@@ -773,18 +810,20 @@ bool scene_stage_load(unsigned index) {
     if (mission_head.data_length>=12u) {
         rom_read(data_head,mission_head.data_offset,16);
         data_programs=data_head[8]<<8|data_head[9];
-        need+=((mission_head.data_length+15)&~15u)+((data_programs*sizeof(stage_program_t)+15)&~15u);
+        NEED(mission_head.data_length);NEED(data_programs*sizeof(stage_program_t));
     }
     /* Pre-rendered columns (scene_prerender.h): tables and rings
      * in the stage's slots, in place of its pinned static map chunks. */
-    unsigned prerender_bytes=scene_prerender_probe(mission_head.mission,index);need+=prerender_bytes;
+    unsigned prerender_bytes=scene_prerender_probe(mission_head.mission,index);if (prerender_bytes) NEED(prerender_bytes);
+#undef NEED
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
     {
         unsigned run=0,best=0;
         for (unsigned i=0;i<capacity;i++) {run=i && slot_mem[i]==slot_mem[i-1]+SCENE_CHUNK_BYTES?run+1:1;if (run>best) best=run;}
-        debugf("MSX stage %u tables: %u bytes in %u slots, longest run %u of %u slots\n",index+1,need,count,best,capacity);
+        debugf("MSX stage %u tables: %u bytes in %u slots (largest table %u), longest run %u of %u slots\n",index+1,need,count,largest,best,capacity);
     }
-    if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
+    if (!reserve_slots(need,largest)) {debugf("MSX stage %u tables: %u slots not found (no %u-slot runs enough)\n",index+1,count,(largest+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES);return false;}
+    if (reserve_runs>1) debugf("MSX stage %u tables: %u slots in %u runs (no %u-slot run)\n",index+1,reserve_slots_total,reserve_runs,count);
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
     uint8_t *prerender_mem=prerender_bytes?take(prerender_bytes):NULL;
     scene_chunk_t *chunks=take(16u*mission_head.chunks);rom_read(chunks,mission_chunks_at,16u*mission_head.chunks);
@@ -854,7 +893,7 @@ bool scene_stage_load(unsigned index) {
     const uint8_t *dyn_data[SCENE_STAGE_DYNAMIC_MAPS];
     for (unsigned i=0;i<dmaps;i++) {uint8_t *d=take(recon_dyn[i].length);rom_read(d,ps.recon_offset+recon_dyn[i].offset,recon_dyn[i].length);dyn_data[i]=d;}
     load_mission_data(data_programs);
-    data_cache_hit_writeback(reserve_mem,reserve_used);
+    for (unsigned r=0;r<reserve_runs;r++) data_cache_hit_writeback(reserve[r].mem,reserve[r].used);
     stage=(scene_stage_t){.mission=mission_head.mission,.index=index,.descriptor=ps.descriptor,.width=ps.width,.camera_max=ps.camera_max,
         .backdrop=ps.backdrop,.columns=ps.columns,.rows=ps.rows,.grid=g,.grid_dynamic=dyn,.ring=ring,.unknown=unknown,
         .camera_list=blob[0],.camera_rom=ps.blob[0].rom,.camera_len=(uint16_t)ps.blob[0].length,
@@ -888,7 +927,7 @@ bool scene_stage_load(unsigned index) {
     map_resident_all=true;
     debugf("MSX stage load mission %u stage %u: descriptor %06lX %u cells %u images grid %ux%u%s, tables %u KB in %u slots, map %u chunks (%u loads) in %lu us\n",
         stage.mission,index+1,(unsigned long)ps.descriptor,cells,images,ps.columns,ps.rows,unknown?" (unknown cells masked)":"",
-        reserve_used/1024,count,map_chunks,stats.loads-before,(unsigned long)TICKS_TO_US(TICKS_READ()-began));
+        reserve_used/1024,reserve_slots_total,map_chunks,stats.loads-before,(unsigned long)TICKS_TO_US(TICKS_READ()-began));
     stats.misses=stats.sync_misses=0;
     return true;
 }

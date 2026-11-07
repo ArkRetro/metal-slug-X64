@@ -29,7 +29,7 @@ MAME: carga en 117975, bucle `0186A0` en 118023, fin de misión `018870` en
 
 ```sh
 C=/home/user/captures-fullgame/run4
-python3 tools/extract_mission_map.py $C --ram-layers --allow-backdrop-timeline --frames 117966:149171 --output filesystem/mission3/s1
+python3 tools/extract_mission_map.py $C --ram-layers --allow-backdrop-timeline --skip-fade --frames 117966:149171 --output filesystem/mission3/s1   # B60: sin los 2 fotogramas del fundido
 python3 tools/extract_region_collision.py $C --rom mslugx.zip --descriptor-layers --layer-camera --both-layers foreground --frames 117966:149171 --output filesystem/mission3/s1/collision.json
 F=filesystem/mission3/s1/collision.json
 python3 tools/fill_collision_rom.py $F --rom mslugx.zip --descriptor b853a --top 45 --columns 860

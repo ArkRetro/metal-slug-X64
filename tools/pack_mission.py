@@ -372,13 +372,22 @@ def fill_loop_layer(model,lay,crom):
         c=seen.get((x,y))
         if c and c['code']==code and c['flip']==flip:votes.setdefault(n,{}).setdefault(c['palette'],0);votes[n][c['palette']]+=1
     pal={n:max(v,key=v.get) for n,v in votes.items()}
-    added=empty=unknown=0
+    added=empty=unknown=replaced=0
+    # Observed cells that are not the ROM block at their x were seen across an
+    # origin step (a frame whose +32 moved within the snapshot lag): the
+    # wrong column there (G19: a forest at camera 1520 where MAME shows the
+    # canyon). They take the ROM block with its voted colours.
+    rom={(x,y):(code,flip,anim,n) for x,y,code,flip,anim,n in m['cells']}
+    for c in [c for c in model['cells'] if c['layer']==layer]:
+        r=rom.get((c['x'],c['y']))
+        if r is None or (r[0],r[1])==(c['code'],c['flip']) or r[3] not in pal:continue
+        c.update(code=r[0],flip=r[1],animation_mask=r[2],palette=pal[r[3]]);replaced+=1
     for x,y,code,flip,anim,n in m['cells']:
         if (x,y) in seen:continue
         if not any(decode(crom,code|ph,flip)!=[0]*256 for ph in range(anim+1)):empty+=1;continue
         if n not in pal:unknown+=1;continue
         model['cells'].append(dict(layer=layer,x=x,y=y,code=code,flip=flip,animation_mask=anim,palette=pal[n],observations=0));added+=1
-    return dict(added=added,empty=empty,palette_unknown=unknown,palettes=len(pal))
+    return dict(added=added,empty=empty,palette_unknown=unknown,palettes=len(pal),replaced=replaced)
 def merge_swapped(model):
     """Foreground maps swapped in place (Mission 3: 0B853A -> 0B8600 ->
     0B8550, docs/MISION3.md) whose cells agree with the main map wherever

@@ -241,6 +241,9 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         neo_throw_actor_start(&w->throws[i],&body,(uint16_t)(e->value&0xffu),0xff,&graphics);
         break;
     }
+    case NEO_SOLDIER_EVENT_ATTACK: /* 0049E8 of a soldier with a class-1 row (0AF2BA: 0AE9B0) */
+        neo_world_soldier_attack(w,t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER?(int)w->order[t->current].index:-1,&e->actor,(uint8_t)e->value,e->row);
+        break;
     case NEO_SOLDIER_EVENT_GRENADE: { /* 03C2DE: the grenade 03C306 after the script actor, at (0, 2C) of the soldier, its facing bits 0..1 */
         neo_gactor_t *c=g_spawn(t,NULL,0x3c306,true);
         if (!c) break;
@@ -684,9 +687,11 @@ static bool ga_receive(neo_gactor_t *g,const neo_contact_actor_t *a,uint8_t a5e,
             if (!(h>dmg)) {ga_sb(g,0x5f,(uint8_t)(ga_b(g,0x5f)|0x80u));if (at[5]==1 && grid) neo_grid_splat(grid,HI(a->projected_x),HI(a->projected_y));h=0;}
             else h=(uint16_t)(h-dmg);
             ga_sw(g,0x4e,h);
+            /* 0049CC: only after a damage (00491E/004974 return before it:
+             * +5F bit 7 or 6, no damage; MAME 121357, the door 0391EA). */
+            ga_sb(g,0x5e,(uint8_t)(((a5e&3u)<<2)|(ga_b(g,0x5e)&0xf3u)));
         }
     }
-    ga_sb(g,0x5e,(uint8_t)(((a5e&3u)<<2)|(ga_b(g,0x5e)&0xf3u)));
     return true;
 }
 static bool ga_class(const neo_gactor_t *g,unsigned cls) {
@@ -792,6 +797,25 @@ static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
         if (ga_receive(g,&c,ga_b(a,0x5e),row,w->grid)) {uint8_t ty=ga_rom(ga_l(g,0x50))[0];if (ty>best) best=ty;}
     }
     return best;
+}
+/* 0049E8 of soldier `self` with a row of class row[5] != 0: the bodies of the
+ * class-1 list, the other soldiers (00476C skips the attacker) and the
+ * generic actors registered during the previous update, as g_attack. */
+void neo_world_soldier_attack(neo_world_t *w,int self,const neo_contact_actor_t *c,uint8_t a5e,const int16_t row[7]) {
+    if (!row || row[5]==0) return;
+    for (unsigned at=0;at<w->order_count;at++) {
+        if (w->order[at].kind!=NEO_WORLD_SOLDIER || !w->constructed[w->order[at].index] || (int)w->order[at].index==self) continue;
+        neo_soldier_t *s=&w->soldiers[w->order[at].index];neo_hurtbox_t hb;
+        if (neo_soldier_hurtbox(s,&hb)) neo_soldier_receive(s,c,a5e,row,w->grid);
+    }
+    uint16_t qx;uint8_t qy;
+    if (!attack_bins(c,row,&qx,&qy)) return;
+    for (unsigned b=0;b<w->last_box_count;b++) {
+        neo_gactor_t *g=&w->gactors[w->last_boxes[b].owner];
+        if (!(w->last_boxes[b].xbins&qx) || !(w->last_boxes[b].ybins&qy)) continue;
+        if (!g->active || g->placeholder || !ga_l(g,0x50) || !ga_class(g,(unsigned)row[5])) continue;
+        ga_receive(g,c,a5e,row,w->grid);
+    }
 }
 static void delete_tree(tick_t *t,unsigned at);
 static int run_gactor(tick_t *t,unsigned i) {

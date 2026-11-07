@@ -141,7 +141,7 @@ static bool anim_start(ctx_t *c,uint32_t tag) {
 }
 static void event(ctx_t *c,neo_soldier_event_kind_t kind,uint16_t value,const neo_contact_actor_t *seed) {
     if (!c->e->event) return;
-    neo_soldier_event_t ev={kind,value,{0}};if (seed) ev.actor=*seed;
+    neo_soldier_event_t ev={.kind=kind,.value=value};if (seed) ev.actor=*seed;
     c->e->event(c->e->event_context,&ev);
 }
 static bool field_read(void *context,uint16_t field,uint8_t *value) {
@@ -312,8 +312,8 @@ bool neo_soldier_receive(neo_soldier_t *s,const neo_contact_actor_t *a,uint8_t a
         uint16_t h=(uint16_t)(s->health-(uint16_t)at[6]);
         if (!(s->health>(uint16_t)at[6])) {s->b.flags5f|=128u;if (grid) neo_grid_splat(grid,HI(a->projected_x),HI(a->projected_y));h=0;}
         s->health=h;
+        s->f5e=(uint8_t)(((a5e&3u)<<2)|(s->f5e&0xf3u));   /* 0049CC: only after a damage */
     }
-    s->f5e=(uint8_t)(((a5e&3u)<<2)|(s->f5e&0xf3u));
     return true;
 }
 void neo_grid_splat(uint16_t *g,uint16_t px,uint16_t py) {
@@ -818,8 +818,10 @@ static neo_soldier_result_t run(ctx_t *c) {
         ground(c,NULL);
         if (anim_step(c)) s->routine=0xaf65a;
         return tail(c,false);
-    case 0xaf2ba: /* +76 = 7: a wait in the air with the row 0AE9B0 */
-        hit_player(c,soldier_attack_wait,false);START(0x23f1bc);a->scalar62=0;a->vx=0;a->vy=0;s->routine=0xaf2e8; /* fall through */
+    case 0xaf2ba: /* +76 = 7: a wait in the air; 0049E8 with the row 0AE9B0 (kind 13, class 1: the other
+                   * actors' bodies, not the player): the push that opens the wagon door 0391EA (MAME run4
+                   * 121357: soldier 104BC4 -> door 101E64 +5A = 13). The result is not used. */
+        {neo_soldier_event_t ev={.kind=NEO_SOLDIER_EVENT_ATTACK,.value=s->f5e,.actor=s->b,.row=soldier_attack_wait};if (c->e->event) c->e->event(c->e->event_context,&ev);}START(0x23f1bc);a->scalar62=0;a->vx=0;a->vy=0;s->routine=0xaf2e8; /* fall through */
     case 0xaf2e8:
         air(c,0);
         if (anim_step(c)) s->routine=0xaf380;

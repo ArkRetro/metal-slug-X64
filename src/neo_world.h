@@ -293,6 +293,10 @@ bool neo_world_shot_row(neo_world_t *world,int32_t previous_x,int32_t previous_y
  * highest hurtbox type hit (D0), 0 for none. The knife: 0C3744 (query
  * 2D0AE4) and 0C419E (cut 2D0AF4). */
 uint8_t neo_world_player_attack(neo_world_t *w,int32_t x,int32_t y,bool left,const int16_t row[7]);
+/* 0049E8 of soldier `self` (world soldier index, -1: none) with a row of
+ * class row[5] != 0 (0AF2BA: 0AE9B0, the push of the wagon door 0391EA): the
+ * other soldiers and the generic actors registered in the previous update. */
+void neo_world_soldier_attack(neo_world_t *w,int self,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
 /* Attack row (ROM 0049E8 format) of an outside attacker against generic
  * actor `index`, as registered during the previous update (ROM 004762). */
 bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);

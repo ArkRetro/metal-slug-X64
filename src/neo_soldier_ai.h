@@ -39,11 +39,13 @@ typedef struct {
     bool dead;             /* +5F bit 7 or 6 */
 } neo_hurtbox_t;
 typedef enum { NEO_SOLDIER_EVENT_SOUND,NEO_SOLDIER_EVENT_THROW,NEO_SOLDIER_EVENT_DEATH_CHILD,
-    NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C) */
+    NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE,NEO_SOLDIER_EVENT_ATTACK } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C);
+    ATTACK: 0049E8 with `row` against the other actors' bodies (class row[5] != 0), `actor` the attacker, value its +5E */
 typedef struct {
     neo_soldier_event_kind_t kind;
     uint16_t value;
-    neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD */
+    neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD, the attacker for ATTACK */
+    const int16_t *row;        /* ATTACK: x,y,w,h,kind,class,damage */
 } neo_soldier_event_t;
 typedef struct {
     neo_kscene_t *kernel;

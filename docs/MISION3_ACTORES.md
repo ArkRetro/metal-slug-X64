@@ -348,7 +348,7 @@ identificar» cuando no hay más.
 | 〃 | `05DFC2` | 1 | 120732 / 1520 | 2:1 | `05D916` | `22CE6C` `263A00` | 1064 | nativo (`neo_m3enemy.c`) |  |
 | `039382` | `039382` | 1 | 120945 / 1552 | 2:1 | misión | `23C762` | 1069 | `work-m3c` | caja del vagón → estampador `0B911E` (repisa `0B8FA8`) |
 | 〃 | `0B911E` | 1 | 121043 / 1709 | 2:1 | `039382` | — | — | `work-m3c` |  |
-| `0391EA` | `0391EA` | 2 | 120997 / 1633 | 2:2 | guion | `23C658` `23C6B4` | — | nativo (`neo_m3enemy.c`) | sin identificar; hijos `08AE76` ×8 |
+| `0391EA` | `0391EA` | 2 | 120997 / 1633 | 2:2 | guion | `23C658` `23C6B4` | — | nativo (`neo_m3enemy.c`) | puerta corredera central del vagón 7-24 (la tumba el empujón de tipo 13 de los soldados `0AF17E` `+76` = 7, B57); hijos `08AE76` ×8 |
 | 〃 | `08AE76` | 8 | 120997 / 1633 | 2:8 | `0391EA` | `285BBE` | — | nativo (`neo_m3enemy.c`) |  |
 | `08A732` | `08A732` | 5 | 121045 / 1712 | 2:1 4:4 | guion | `2404FE` `240DEE` `285864` +1 | 103E 1041 1042 1043 10A4 | nativo (`neo_m3enemy.c`) | programas de soldado `2404FE 240DEE` y propios `285864 2858FE`; hijos `08AA6E`, `08AC54`→`08AE70`, `08AB70` |
 | 〃 | `08AA6E` | 5 | 121246 / 1864 | 2:1 4:4 | `08A732` | `285A0C` | — | nativo (`neo_m3enemy.c`) |  |

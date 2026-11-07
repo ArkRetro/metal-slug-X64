@@ -637,10 +637,17 @@ de `04E990` con sangre, sin captura).
   `085026` con la tabla `085070`, estela `0848EE`), casco `084948`
   (`0406B6`), restos `08497E`; la variante `083C8A` (soldado que cae,
   `0842A8` → `0AF17E`, humo `084B9C`) no la alcanza el registro: parada.
-- **Bidón `0391EA`** (`0391EA..039380`): reaprovechado a la capa `10C72E`
-  (`039502`), un golpe de tipo `13` lo tumba (`23C6B4`, cae) y su programa
+- **Puerta corredera `0391EA`** (`0391EA..039380`; antes «bidón», B57: es la
+  puerta central de los vagones 7-24): reaprovechada a la capa `10C72E`
+  (`039502`), un golpe de tipo `13` la tumba (`23C6B4`, cae) y su programa
   `23C658` llama a `039296`: cuatro humos `08AE76` (la entrada del humo del
-  granadero sin `01B1DC`).
+  granadero sin `01B1DC`). El golpe de tipo `13` lo dan los soldados de dentro
+  (`0AF17E` con `+76` = 7, registros `2DA880/2DA896` junto a la puerta de
+  `2DA800`): `0AF2BA` llama a `0049E8` con la fila `0AE9B0` (−16, 8, 32, 32,
+  tipo 13, clase 1, daño 0) contra los cuerpos de clase 1, no contra el
+  jugador (`neo_world_soldier_attack`; MAME `run4` 121357: `104BC4` →
+  `101E64`, `test_neo_m3push.c`). La palanca del vagón (puerta `038B06`
+  izquierda) no interviene.
 - **Camión armado `02B202`** (`02AE46..02C5D6`; registros de las secciones 2
   y 4): llega hasta `+7E`, se va cuando la cámara pasa `+80`, mapa dinámico
   `02C5BA/02C5C8`, artillero `02B61C` (`02B660` compara el `D0` que `01AD8C`

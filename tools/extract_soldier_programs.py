@@ -270,6 +270,11 @@ M3MID_ROOTS=[0x2a4d16,0x2a4dc4,0x2a4d2e,0x2a4d22,0x2a4e66,0x2a4dd0,0x2a4eee,0x2a
     0x22da42,0x22da98,0x22daee,0x22dc2c,0x22dc82,0x2a5626,0x2a5950,0x2a5a62,0x2a5a90,0x2a5b14,0x2a5b66,0x2a5be8,
     0x2a5c4e,0x2a5c8c,0x2a5d3e,0x2a5df0,0x2a5ea2,0x2a5f54,0x2a595c]
 ROOTS+=M3MID_ROOTS
+# Mission 3 boss 04A2C2 (neo_m3boss.c): body, legs, torso, arm, missile pod,
+# hatch, hatch floor and the dust and step pieces (docs/JEFE_MISION3.md).
+ROOTS+=[0x2451dc,0x2451e8,0x245294,0x245340,0x24585a,0x24569c,0x2459d0,0x2458c8,0x24571e,0x2459dc,0x245936,0x2457a0,
+    0x2459f4,0x2459e8,0x245a48,0x245d86,0x2460d8,0x245efc,0x245df2,0x246262,0x2463ea,0x2463ee,0x246480,0x246484,0x246326,
+    0x246ad2,0x246b4c,0x247034,0x246eb2,0x2470f6,0x247598,0x24741e]
 # Mission-only programs (docs/MEMORY_OPTIMIZATION.md, rule 5): the blocks of
 # ROOTS whose comment starts with one of these lines belong to one mission
 # ("m2", "m3"): they go into that mission's pack (pack_mission.py, 'MSXD'),
@@ -279,7 +284,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
-    '# Mission 3 mid-boss','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
+    '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()

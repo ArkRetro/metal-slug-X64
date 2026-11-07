@@ -343,6 +343,10 @@ static bool wr(void *context,uint16_t field,unsigned size,uint32_t value) {
     if (field+size>NEO_GA_BYTES) return false;
     if (size==1) ga_sb(c->a,field,(uint8_t)value); else if (size==2) ga_sw(c->a,field,(uint16_t)value); else ga_sl(c->a,field,value);
     if (c->s && field<=0x18 && field+size>0x18) c->s->field18=c->a->m[0x18];
+    /* 004464 on +24..+27 (the boss legs 04AF02 set their speed +26 in
+     * the program): the running timer and speed are the node's words. */
+    if (c->s && field<0x28 && field+size>0x24) {c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);}
+    if (c->s && field<=0x17 && field+size>0x17) c->s->flash=c->a->m[0x17];
     return true;
 }
 static void snd(void *context,uint16_t id) {anim_ctx_t *c=context;if (c->e->sound) c->e->sound(c->e->ctx,id);}

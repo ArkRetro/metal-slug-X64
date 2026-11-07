@@ -379,6 +379,30 @@ solo intervalo; en los tramos 2..5 el humo `01D86C` (creado en 144483) no
 entra en la familia, y los nodos vivos al empezar arrancan de sus bytes
 grabados, como en la M2.
 
+## Jefe final: estado del port (paso 4, rama `work-m3boss2`)
+
+- **Pieza 1 (esqueleto): hecha en el anfitrión.** `src/neo_m3boss.c`:
+  cuerpo `04A2C2` (llegada, decisión `04DA38`, pasos, parada, agachada con
+  la segunda elección `04DC5C`, levantarse, vuelta a 0x100, fase
+  `04D6F2`, caja `04E008` y mapa `0E0D00`), patas, torso, apretones
+  `04DDD4/04DF02`, pisadas `04E2EA/04E3BE`, polvo `04AD12/04AD94`, y la
+  espera del brazo, la lanzadera, la trampilla (con su suelo `0E0E36`) y el
+  mortero. Familia `m3boss0` (tramo 144410..144886 de `b1`, 2265
+  actualizaciones de 19 nodos) igual a MAME. Extracción: los `--range` de
+  arriba más `--ram 10c2f6-10c2f8 --ram 10008a-10008b --ram 10f009-10f00a
+  --ram 10c33c-10c33d --ram 101500-101506 --ram 1015b0-1015b6 --ram
+  10c608-10c650`, con `M3BOSS_ARGS` (`--m2boss`: la música `059F76`).
+- Arreglo común: una orden de programa que escribe `+24..+27` (las patas
+  ponen su velocidad `+26` con `004464`) cambia el temporizador y la
+  velocidad del paso en curso (`neo_gactor.c`, `wr`).
+- **Paradas explícitas**: los ataques (`04B52C` brazo, `04BA16`
+  lanzadera, `04C4D2` trampilla, `04CF92` mortero), la muerte `04A9D4` y
+  las de patas y torso (`04B01E/04B208`). El jefe va **solo en el
+  anfitrión** (`MSX_M3BOSS`, 0 en los cartuchos): faltan sus gráficos
+  (`export_rest_sprites.py`, raíces `2451DC..2475xx`, paletas `0xBA`,
+  `0x157`, `0xBC`, `0x130`, `0xF0`, `0x148`) y los ataques; mientras, los
+  cartuchos saltan el registro `2DB5E4` como antes.
+
 ## Dificultades
 
 - **Coordinación por `+9D/+9E`** entre ocho nodos (y el abuelo en los hijos

@@ -457,7 +457,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2 m3boss0 m3boss1 m3boss3 m2creature
+FAMILIES := dome barrel figure tankhit tankkill truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2 m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -514,10 +514,18 @@ FAMILY_ARGS_m3mid4 := $(M3MID_ARGS)
 # (the flamethrower, order 0: flames 04B79C/04B87E, fireballs 04CAB4, trails,
 # puddles), m3boss3 = 146600..147600 of the full trace spr (the missile pod,
 # order 2: missiles 04C194; the flamethrower at the player, order 1).
+# m3boss2 = 146200..146560 of spr (the hatch, order 7: shots 04C7B6/04C840),
+# m3boss4 = 145160..145600 of spr (the mortar, order 5: 4 volleys of bombs
+# 04D1DA), m3boss5 = 148541..149200 of spr (the death 04A9D4, 018F92, the
+# drag, 018F40 and the deletion at 149169; extracted with --range
+# 1d86c-1d93b --range 1d93d-1da3f: the debris 01D3D2 becomes smoke 01D93C).
 M3BOSS_ARGS := --m2boss --late-creator --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --node-fields 6e
 FAMILY_ARGS_m3boss0 := $(M3BOSS_ARGS)
 FAMILY_ARGS_m3boss1 := $(M3BOSS_ARGS)
 FAMILY_ARGS_m3boss3 := $(M3BOSS_ARGS) --resume
+FAMILY_ARGS_m3boss5 := $(M3BOSS_ARGS) --resume
+FAMILY_ARGS_m3boss4 := $(M3BOSS_ARGS) --resume
+FAMILY_ARGS_m3boss2 := $(M3BOSS_ARGS) --resume
 # m3gun = the Mission 3 gunships 097FCC of section 2 (rotor 098886, hurtbox
 # 098E4A, exhaust 01D86C, death debris), capture A; m3gun4 = the three ships
 # of section 4 (bombs 09879C, missiles 098974 after the script actor, smoke,

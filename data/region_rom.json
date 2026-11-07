@@ -1291,6 +1291,18 @@
    "reader": "080170 Mission 2 creature (B54): cull rectangle E4958 (01945C/019504), hurtbox E4960 (+50), attack row E496C (0049E8)",
    "hex": "fff0fff0002000200502fff2fff6001c00148000fffcfffc00080008000900000010ffffffd0ffc000600150fff0fff0002000200102fff4fff8001800208000",
    "group": "m2"
+  },
+  {
+   "rom": "0x04D1B2",
+   "reader": "04A2C2 Mission 3 boss: mortar bomb start speeds and x offsets by +86 (04D210)",
+   "hex": "ffff0000fff00000ffffc000000000000000e00000100000fffec000ffe80000fffe8000ffe00000",
+   "group": "m3"
+  },
+  {
+   "rom": "0x04AD0C",
+   "reader": "04A2C2 Mission 3 boss: death drag distances (04AB4A)",
+   "hex": "00200030ffff",
+   "group": "m3"
   }
  ]
 }

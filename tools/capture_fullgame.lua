@@ -214,6 +214,16 @@ local function plan_inputs(screen_x)
   button('P1 Right',px<tx and 1 or 0);button('P1 Left',0);button('P1 Up',0);button('P1 Down',0);button('P1 B',0);button('P1 A',0)
   return
  end
+ -- MSX_FULL_PLAN=dive:<hex x>: walk right to the world x, then jump every
+ -- 40 frames holding Down and firing (shots straight down: the splash
+ -- 03C962 of the bullets 01B8AE over the river, G6).
+ if fixed_plan and fixed_plan:sub(1,5)=='dive:' then
+  plan='dive';local tx=tonumber(fixed_plan:sub(6),16) or 0
+  local walk=px<tx
+  button('P1 Right',walk and 1 or 0);button('P1 Left',0);button('P1 Up',0);button('P1 Down',walk and 0 or 1)
+  button('P1 B',(not walk and frame%40<4) and 1 or 0);button('P1 A',(not walk and frame%6<3) and 1 or 0)
+  return
+ end
  -- Map command list waiting for a player inside a rectangle (ROM 0C84BE,
  -- op 4: [layer.l][x][y][w][h], layer-relative = world coordinates, Y up as
  -- player +2C): steer towards it, jumping when it is higher.
@@ -623,7 +633,20 @@ emu.register_frame_done(function()
   -- 10C71E at that frame (as the reference weapon at 2100); the ammo is the
   -- reference's 10C725 = FF of every frame.
   local gf,gid=string.match(os.getenv('MSX_FULL_GIVE_WEAPON') or '','(%d+):(%x+)')
-  if gf and frame==tonumber(gf) then cpu:write_u8(0x10c71e,tonumber(gid,16)) end
+  if gf and frame==tonumber(gf) then
+   cpu:write_u8(0x10c71e,tonumber(gid,16))
+   -- The pistol (id 0): no rounds left of the previous weapon (10C724).
+   if tonumber(gid,16)==0 then cpu:write_u16(0x10c724,0) end
+  end
+  -- Capture only (MSX_FULL_GIVE_FORM=<frame>:<form>): the form request +94
+  -- (0 leaves the fat form 2: 0C1D82 and 0C5064 of 0C359A, G7).
+  local ff,fv=string.match(os.getenv('MSX_FULL_GIVE_FORM') or '','(%d+):(%x+)')
+  if ff and frame==tonumber(ff) then cpu:write_u8(0x1014c4+0x94,tonumber(fv,16)) end
+  -- Capture only (MSX_FULL_GIVE_BOMB=<frame>:<type>): player 1's bomb type
+  -- 10C722 (0C4786: 1 grenade, 2 molotov, 3 stone; as an item of kind 09
+  -- gives 2) and 10 bombs 10C720 at that frame (the fat molotov 01E680).
+  local bf,bt=string.match(os.getenv('MSX_FULL_GIVE_BOMB') or '','(%d+):(%x+)')
+  if bf and frame==tonumber(bf) then cpu:write_u8(0x10c722,tonumber(bt,16));cpu:write_u8(0x10c720,10) end
   -- Pistol again after a new section (reference-only weapon, as at 2100).
   if frame==section_start+300 and frame>2400 and cpu:read_u8(0x10c71e)==0 then cpu:write_u8(0x10c71e,3) end
   local b=0x10c72e;local m=0x10d7b6;local sky=0x10e83e

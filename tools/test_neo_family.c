@@ -264,6 +264,11 @@ static unsigned current_update;
 #define FAMILY_SPAWN_WINDOW 8u
 #endif
 #define SPAWN_WINDOW FAMILY_SPAWN_WINDOW
+/* 009EA8's D0.w: the slot the original's allocator gave, as recorded. */
+static uint8_t palette_slot(void *ctx,neo_gactor_t *a,unsigned n) {
+    (void)ctx;(void)a;const family_update_t *u=&UPDATES[current_update];
+    return u->has_post && n<4u?u->post[0x19+n]:0;
+}
 static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script) {
     (void)ctx;
     int c=creator?index_of(creator):after_script?-2:-1;
@@ -523,7 +528,7 @@ int main(void) {
 #ifdef FAMILY_PREVIOUS
     e.previous=previous;
 #endif
-    e.spawn=spawn;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.palette_slot=palette_slot;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;

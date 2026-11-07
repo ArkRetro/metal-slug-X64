@@ -14,8 +14,8 @@
  * a hit of type 3 ricochets (sound 108E, random turn, impact 01BC2E, one
  * update with row 01B5C2 at 01BBE2), type 2 sounds 108D, every hit leaves an
  * impact 01BC2E and the bullet goes. 013CF8 looks for water (class 5) under
- * the bullet: its splash 03C962 is not translated (explicit stop; Mission 1
- * has no class-5 cell). A wall (+15 bit 7) turns the bullet into its wall
+ * the bullet: found, the splash 03C962 (neo_gate.c) and +79 = FF (the
+ * bullet goes at its next wall). A wall (+15 bit 7) turns the bullet into its wall
  * impact (programs 22C884 / 22C81E, routine 01BC82). It goes when its x
  * word leaves 0..13F or its y word 100..1FF. The paths that would run the
  * cartridge check (2FFFE0) end in 004188 on genuine hardware: delete. */
@@ -50,14 +50,7 @@ static void impact(neo_gactor_t *a,neo_genv_t *e) {
 enum { RUN, DONE, STOP };
 /* 01B8A6..01BA44 (and the wall impact 01BA46). */
 static int after_attack(neo_gactor_t *a,neo_genv_t *e) {
-    if (!B(0x79)) {
-        /* 03C5C6 -> 03C55C: water (class 5) at y-1, y+7, y+15 (013CF8). */
-        bool water=false;
-        for (unsigned i=0;i<3 && !water;i++)
-            water=neo_kernel_point_class(e->kernel,(int32_t)L(0x3c),(int32_t)(L(0x40)-0x10000u+0x80000u*i),5,0,NULL,NULL,NULL);
-        if (water) {ga_fail(e,0x3c962);return STOP;}                 /* splash */
-        SB(0x79,0);
-    }
+    if (!B(0x79)) SB(0x79,neo_gate_splash(a,e,0)?0xff:0);         /* 03C5C6 (the splash 03C962), SCS */
     if (B(0x15)&0x80u) {
         if (B(0x15)&0x40u) {if (e->grid) neo_grid_splat(e->grid,W(0x3c),W(0x40));}  /* 00505A */
         if (B(0x79)) return DONE;
@@ -268,6 +261,118 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 static bool grenade_routine(uint32_t r) {return r==0x1bea4 || r==0x1beda || r==0x1bf10 || r==0x1bf46 || r==0x1bfd0 || r==0x1c152 || r==0x1c19a;}
+/* ---- bomb type 3 01C362 / 01C334 (+93 = 2, table 0C476E; family m3bomb) ---
+ * 01C362 (+90 = FF: 01C334): +82 = FF, program 22CD04, palette 20A, +30 +=
+ * 90000 (facing), +34 += 85B6A (6448F), gravity +7E = FFF053A0, three
+ * bounces (+70), the ripple 03C526. 01C448 each update: unless stopped
+ * (+5F bit 3) the attack row 01C308; a hit sounds 10F9 (type 5) or 116D,
+ * stops (01C318), reverses +30, makes +34 positive and leaves the piece
+ * 01C654. 0143E4 (+72 = D4); on a bounce 00505A and the reflection 01C6AC,
+ * a piece when the rebound's +34 word > 2, the third stops. 01C318: +5F
+ * bit 3, 0x1E updates (+74) to go, 0C0D48. Out of the x words 0..13F or
+ * the y words 100..23F: 0C0D48 unless stopped, the cartridge check (on
+ * genuine hardware 004188: delete). The thin 01C3BE / 01C390 (+82 = 0,
+ * 22CC34) share the code; no capture. */
+static void bomb_stop(neo_gactor_t *a,neo_genv_t *e) {
+    if (B(0x5f)&8u) return;
+    SB(0x5f,B(0x5f)|8u);SW(0x74,0x1e);landed(a,e);
+}
+static void bomb_piece(neo_gactor_t *a,neo_genv_t *e) {
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x1c654,true):NULL;   /* 00411C (+0C = 101414), reserve 0x2A */
+    if (!c) return;
+    ga_sb(c,0x82,B(0x82));ga_place_at(c,a,e,0,0);                     /* 01ACF2 */
+}
+static ga_result_t bomb_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x1c334: case 0x1c362: case 0x1c390: case 0x1c3be: {
+        const uint32_t r=L(0);const bool fat=r==0x1c334u || r==0x1c362u;
+        SB(0x82,fat?0xff:0);START(fat?0x22cd04:0x22cc34);
+        /* 01C3EC: the palette call 009EA8 replaces the low words of the
+         * speeds D0/D1: D0.w = its hardware slot, D1.w = 20A. */
+        const unsigned n=B(0x1d);
+        uint32_t vx=0x90000u|(e->palette_slot?e->palette_slot(e->ctx,a,n):0u),vy=((r==0x1c334u || r==0x1c390u)?0x60000u:0x80000u)|0x20au;
+        SL(0x7e,0xfff053a0u);
+        ga_palette(a,0x20a);
+        if (B(0x15)&1u) vx=0u-vx;
+        SL(0x30,L(0x30)+vx);SL(0x34,L(0x34)+vy);
+        SW(0x66,0xe000);SW(0x1e,0xe000);SB(0x15,B(0x15)&0xfeu);SW(0x70,3);
+        if (!neo_gate_ripple(a,e,1)) return GA_UNSUPPORTED;            /* 03C526 */
+        SW(0x74,0);
+        if (e->pickup && e->pickup->weapons) marco_weapons_armed(e->pickup->weapons,W(0x6e));  /* 0C0D34 */
+        SB(0x15,B(0x15)|0x20u);SL(0,0x1c448);
+    }   /* fall through */
+    case 0x1c448: {
+        if (!(B(0x5f)&8u)) {
+            uint8_t t=ga_attack(a,e,0x1c308);
+            if (e->unsupported) return GA_UNSUPPORTED;
+            if (t) {
+                sound(e,t==5u?0x10f9:0x116d);
+                bomb_stop(a,e);
+                SL(0x30,0u-L(0x30));
+                if ((int32_t)L(0x34)<0) SL(0x34,0u-L(0x34));
+                bomb_piece(a,e);
+            }
+        }
+        SL(0x76,L(0x30));SL(0x7a,L(0x34));
+        uint16_t d4=0;ga_air_d4(a,e,&d4);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        SW(0x72,d4);
+        if ((B(0x15)&0x40u) || ((B(0x15)&0x80u) && !(B(0x5f)&3u))) {
+            if (e->grid) neo_grid_splat(e->grid,W(0x3c),W(0x40));      /* 00505A */
+            int32_t d0=(int32_t)L(0x76),d1=(int32_t)L(0x7a),d2,d3;
+            k1c6ac(&d0,&d1,B(0x72),&d2,&d3);
+            SL(0x30,(uint32_t)d0);SL(0x34,(uint32_t)d1);
+            if ((int16_t)W(0x34)>2) bomb_piece(a,e);
+            SW(0x70,W(0x70)-1u);
+            if (!W(0x70)) bomb_stop(a,e);
+        }
+        if (W(0x74)) {
+            SW(0x74,W(0x74)-1u);
+            if (!W(0x74)) return GA_DELETE;                              /* 004188 */
+            SB(0x5f,B(0x5f)|8u);
+        }
+        SL(0x34,L(0x34)+(uint32_t)asr((int32_t)(L(0x7e)-L(0x34)),4));
+        SL(0x30,L(0x30)-(uint32_t)asr((int32_t)L(0x30),4));
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (W(0x3c)<0x140u && (uint16_t)(W(0x40)-0x100u)<0x140u) return GA_MORE;
+        if (!(B(0x5f)&8u)) landed(a,e);                                 /* 0C0D48 */
+        return GA_DELETE;                                               /* cartridge check, 004188 */
+    }
+    /* 01C654: the piece (+82 = 0: 22CC8A, else 22CD5A), palette 204,
+     * 01ABC8 until its program ends. */
+    case 0x1c654:
+        START(B(0x82)?0x22cd5a:0x22cc8a);ga_palette(a,0x204);SL(0,0x1c694);
+        /* fall through */
+    case 0x1c694: {
+        ga_project(a,e);
+        int r=ga_anim_step(a,e,NULL);
+        if (r<0) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
+    }
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool bomb_routine(uint32_t r) {return r==0x1c334 || r==0x1c362 || r==0x1c390 || r==0x1c3be || r==0x1c448 || r==0x1c654 || r==0x1c694;}
+/* ---- 0C4E86: the fat player's landing dust (0C1ED6, 0040BC reserve 0x2A,
+ * 01ACF2 (0, 0)): program 0C4E48, palette 2D; 0C4EAA each update: +1E =
+ * the creator's +1E - 1 (the player's: 8834 from 0C1EC4), 01ABC8, 00427A;
+ * at its end the cartridge check (004188 on genuine hardware: delete). */
+static const uint8_t *player_node(const neo_gactor_t *a,const neo_genv_t *e) {
+    if (!e->vehicle) return NULL;
+    return e->vehicle->player[L(0x0c)==0x101574u?1:0];
+}
+static ga_result_t dust_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0xc4e86u) {START(0xc4e48);ga_palette(a,0x2d);SL(0,0xc4eaa);}
+    const uint8_t *p=player_node(a,e);
+    uint16_t z=p?(uint16_t)(p[0x1e]<<8|p[0x1f]):0x8834u;
+    SW(0x1e,(uint16_t)(z-1u));
+    ga_project(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:GA_MORE;
+}
+static bool dust_routine(uint32_t r) {return r==0xc4e86 || r==0xc4eaa;}
 /* ---- molotov 01E648 / 01E664 (0C4786, bomb type 2; +88 = 0) ------------- */
 /* 0040BC with D0 = reserve, then 01B220 (0, 0). */
 static neo_gactor_t *child(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,uint16_t reserve) {
@@ -295,15 +400,19 @@ static bool flame_pair(neo_gactor_t *a,neo_genv_t *e) {
 }
 static ga_result_t molotov_tick(neo_gactor_t *a,neo_genv_t *e) {
     for (;;) switch (L(0)) {
-    case 0x1e648: case 0x1e664: {
-        if (B(0x88)) {ga_fail(e,L(0));return GA_UNSUPPORTED;}        /* 01E680/01E69C: bomb type 3 */
-        uint32_t vx=0x80000,vy=L(0)==0x1e648u?0x85b6au:0x6448fu;
+    case 0x1e648: case 0x1e664: case 0x1e680: case 0x1e69c: {
+        /* 01E680/01E69C (+93 = 2, table 0C476E): +88 = 1, palette 872,
+         * program 22F65E; the flames 01EA7A (family m3molotov). */
+        const uint32_t r=L(0);const bool fat=r==0x1e680u || r==0x1e69cu;
+        SB(0x88,fat?1:0);
+        uint32_t vx=0x80000,vy=(r==0x1e648u || r==0x1e680u)?0x85b6au:0x6448fu;
         SB(0x15,B(0x15)|0x20u);
         if (B(0x15)&1u) vx=0u-vx;
         SL(0x30,L(0x30)+vx);SL(0x34,L(0x34)+vy);SL(0x72,0xfff053a0u);
         if (e->pickup && e->pickup->weapons) marco_weapons_armed(e->pickup->weapons,W(0x6e));  /* 0C0D34 */
         SW(0x66,0xe000);SW(0x1e,0xe000);
-        ga_palette(a,0x203);START(0x22f5b8);
+        if (fat) {ga_palette(a,0x872);START(0x22f65e);}
+        else {ga_palette(a,0x203);START(0x22f5b8);}
         SL(0,0x1e738);
     }   /* fall through */
     case 0x1e738: {
@@ -420,10 +529,10 @@ static ga_result_t molotov_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 static bool molotov_routine(uint32_t r) {
-    return r==0x1e648 || r==0x1e664 || r==0x1e738 || r==0x1e80e || r==0x1e894 || r==0x1e97a || r==0x1e99a ||
+    return r==0x1e648 || r==0x1e664 || r==0x1e680 || r==0x1e69c || r==0x1e738 || r==0x1e80e || r==0x1e894 || r==0x1e97a || r==0x1e99a ||
         r==0x1e9b6 || r==0x1e9f8 || r==0x1ea3a || r==0x1eaac || r==0x1eb72;
 }
 bool neo_bullet_routine(uint32_t r) {
-    return r==0x1b6a0 || r==0x1be24 || r==0x1bdd2 || r==0x1b62c || r==0x1b668 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r);
+    return r==0x1b6a0 || r==0x1be24 || r==0x1bdd2 || r==0x1b62c || r==0x1b668 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r) || bomb_routine(r) || dust_routine(r);
 }
-ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {return molotov_routine(ga_l(a,0))?molotov_tick(a,e):grenade_routine(ga_l(a,0))?grenade_tick(a,e):bullet_tick(a,e);}
+ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {return molotov_routine(ga_l(a,0))?molotov_tick(a,e):bomb_routine(ga_l(a,0))?bomb_tick(a,e):dust_routine(ga_l(a,0))?dust_tick(a,e):grenade_routine(ga_l(a,0))?grenade_tick(a,e):bullet_tick(a,e);}

@@ -457,7 +457,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -594,6 +594,28 @@ FAMILY_ARGS_m3fat := --reserve --script-actor 101414 --script-routines 6371e --a
 # (--range 63600-64200 --range 1beda-1c200: the ripples 03C62A stay outside
 # the family, their water probe 013CF8 under the train is not modelled).
 FAMILY_ARGS_m3fat2 := $(FAMILY_ARGS_m3fat)
+# m3bomb = the fat bomb type 3 01C362 (neo_bullet.c, table 0C476E), its pieces
+# 01C654 and ripples 03C62A, and the fat landing dust 0C4E86 (0C1ED6): from
+# sec04_117966 with the usual plan (run4), family 124100..124700 (ROOTS
+# 1c362,1c654,c4e86,c5064, node 1014C4; extract_family_fixture.py --range
+# 1c300-1c700 --range c4e00-c5100 --range 3c600-3c700, the m3fat --ram list
+# and 1014e2-1014e4: the player's +1E the dust reads).
+FAMILY_ARGS_m3bomb := --reserve --script-actor 101414 --script-routines 1c654 --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
+# m3molotov = the fat molotov 01E680 (bomb type 2 with +93 = 2, table 0C476E;
+# neo_bullet.c), its fire 01E80E/01E894 and the type-3 flames 01EA7A..01EB72:
+# from sec04_117966 with the usual plan and MSX_FULL_GIVE_BOMB=124740:2 (the
+# fat player gets bomb type 2, as an item of kind 09), family 124750..125350
+# (ROOTS 1e680,1e69c, node 1014C4; --range 1e4f0-1ec00 --range 1c7ea-1c7f0
+# --range 1c9d2-1ca96, the m3fat --ram list with 10c718-10c730).
+FAMILY_ARGS_m3molotov := --reserve --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
+# m3splash = the splash 03C962 (neo_gate.c) of the player's pistol shots
+# 01B782 fired down into the river from the bridge (01B8AE -> 03C5C6): from
+# the state at_122200 (run4 replayed from sec04_117966, MSX_FULL_SAVE_AT)
+# with MSX_FULL_PLAN=dive:bb2, MSX_FULL_GIVE_FORM=122505:0 (thin again) and
+# MSX_FULL_GIVE_WEAPON=122510:0 (the pistol), family 122500..123100 (ROOTS
+# 3c962,c5064,c1d82, RANGE 1b600-1bd00; --range 1b600-1bd00 --range
+# 3c900-3ca80, the m3fat --ram list).
+FAMILY_ARGS_m3splash := --reserve --script-actor 101414 --script-routines 3c962 --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
 FAMILY_ARGS_m3car := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train --root-words --reserve --soldier 28948
 # m3jeep = the Mission 3 armed jeep 0A2F2E of section 2 (idle at camera 3296: bursts
 # of shells 0A3C24, the gunner 0A38F4 killed, the death with the rider 0A3A54 of

@@ -779,6 +779,11 @@ bool scene_stage_load(unsigned index) {
      * in the stage's slots, in place of its pinned static map chunks. */
     unsigned prerender_bytes=scene_prerender_probe(mission_head.mission,index);need+=prerender_bytes;
     unsigned count=(need+SCENE_CHUNK_BYTES-1)/SCENE_CHUNK_BYTES;
+    {
+        unsigned run=0,best=0;
+        for (unsigned i=0;i<capacity;i++) {run=i && slot_mem[i]==slot_mem[i-1]+SCENE_CHUNK_BYTES?run+1:1;if (run>best) best=run;}
+        debugf("MSX stage %u tables: %u bytes in %u slots, longest run %u of %u slots\n",index+1,need,count,best,capacity);
+    }
     if (!reserve_slots(count)) {debugf("MSX stage %u tables: %u contiguous slots not found\n",index+1,count);return false;}
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
     uint8_t *prerender_mem=prerender_bytes?take(prerender_bytes):NULL;

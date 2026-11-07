@@ -67,7 +67,7 @@
  *   = 1001, +50 = 0, the explosion 01C706 (jmp).
  * - 08AE70 (smoke): 01B1DC, 1001, palette 37C, 285BBE; 08AEA6: 01AC38,
  *   00427A (end deletes), 01945C (08AF92).
- * Explicit stop: the water splash 03C962 of 03C5C6 (not ported). */
+ * Water: 03C5C6, the splash 03C962 (neo_gate.c, family m3splash). */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -346,12 +346,6 @@ static ga_result_t g_tail(neo_gactor_t *a,neo_genv_t *e) {
     }
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
-/* 03C55C: water (class 5) at y-1, y+7, y+15 of the node (013CF8). */
-static bool water(neo_gactor_t *a,neo_genv_t *e) {
-    for (unsigned i=0;i<3;i++)
-        if (neo_kernel_point_class(e->kernel,(int32_t)L(0x3c),(int32_t)(L(0x40)-0x10000u+0x80000u*i),5,0,NULL,NULL,NULL)) return true;
-    return false;
-}
 /* 03B332: speeds to cover D0/D1 in D3 updates under D2. */
 static void launch(int16_t d0,int16_t d1,uint32_t d2,uint16_t d3,uint32_t *vx,uint32_t *vy) {
     uint32_t g=(d2&0x80000000u)?0u-d2:d2;
@@ -446,8 +440,7 @@ static ga_result_t grenadier_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_air(a,e);
         if (ga_cull(a,e,0x8af9a)) return GA_DELETE;
         if (!B(0x82)) {
-            if (water(a,e)) {ga_fail(e,0x3c962);return GA_UNSUPPORTED;}   /* 03C5C6: the splash 03C962 */
-            SB(0x82,0);
+            SB(0x82,neo_gate_splash(a,e,0)?0xff:0);                      /* 03C5C6 (the splash 03C962), SCS */
         }
         if (BIT(0x15,7)) {
             if (B(0x82)) return GA_DELETE;
@@ -1178,8 +1171,7 @@ static ga_result_t shield_tick(neo_gactor_t *a,neo_genv_t *e) {
             SSTART(0x22e504);SL(0,0x9c998);return GA_MORE;
         }
         if (!B(0x85)) {
-            if (water(a,e)) {ga_fail(e,0x3c962);return GA_UNSUPPORTED;}   /* 03C5C6: the splash 03C962 */
-            SB(0x85,0);
+            SB(0x85,neo_gate_splash(a,e,0)?0xff:0);                      /* 03C5C6 (the splash 03C962), SCS */
         }
         if (!BIT(0x15,7)) {
             ANIM();
@@ -1406,7 +1398,7 @@ static ga_result_t window_tick(neo_gactor_t *a,neo_genv_t *e) {
  * - 05DD2A (helmet): +34 = 4CCCC, +76 = -7AE1, +30 = -CCCC, palette 238,
  *   263AD0, falls to the ground (05DD0A) or out of 05E9A8. 05DF3E (flash):
  *   palette 204, 1001, 263A2E.
- * Explicit stops: the splash 03C962 of 03C5C6, 01AE00 without the players'
+ * Explicit stops: 01AE00 without the players'
  * nodes (e->vehicle), 0AAA88 with a slot of kind 0 (TRAP #15). */
 static uint32_t rl(neo_genv_t *e,uint32_t at) {
     const uint8_t *t=ga_rom(at);
@@ -2342,8 +2334,7 @@ again:
     case 0x5e03e:
         ga_air(a,e);
         if (!B(0x92)) {
-            if (water(a,e)) {ga_fail(e,0x3c962);return GA_UNSUPPORTED;}   /* 03C5C6: the splash 03C962 */
-            SB(0x92,0);
+            SB(0x92,neo_gate_splash(a,e,0)?0xff:0);                      /* 03C5C6 (the splash 03C962), SCS */
         }
         if (BIT(0x15,7)) {
             if (B(0x92)) return GA_DELETE;
@@ -5734,7 +5725,7 @@ static ga_result_t camp_tick(neo_gactor_t *a,neo_genv_t *e) {
  * the probe 01495C (-40) sets the fall (+34 += ((dy + 18 or -40) << 16 >> 7)
  * - +34 >> 3), +6E = 0 / 1 / 2 by +34's word + 4 (negative / < 8 / else),
  * water (03C5CC: 03C55C under it -> the splash 03C962, 009F88, E0ED, state
- * 01C706: an explicit stop), 0143E4 with +30 kept (+70), 00427A, 019504
+ * 01C706), 0143E4 with +30 kept (+70), 00427A, 019504
  * 03BC18 -> 004188, the row 03C2C2 or +5F bit 0 -> 03C4F8 (sound 1022,
  * 009F88, 1001, JMP 01C706), 004C24: a hit clears +5A, +34 + 4 and +30 = 0.
  * Translated without a MAME trace of it (no capture reached 03C2DE: a
@@ -5754,7 +5745,7 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
         SL(0x34,L(0x34)+d0l-ASR(L(0x34),3));
         int16_t v=(int16_t)(W(0x34)+4u);
         if (v<0) SB(0x6e,0); else if ((uint16_t)v<8u) SB(0x6e,1); else SB(0x6e,2);
-        if (water(a,e)) {ga_fail(e,0x3c962);return GA_UNSUPPORTED;}      /* 03C5CC: the splash 03C962 */
+        if (neo_gate_splash(a,e,1)) {SB(0x1d,0);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SL(0,0x1c706);return GA_MORE;}   /* 03C5CC (the splash 03C962): 009F88, 01C706 */
         {uint32_t v30=L(0x30);ga_air(a,e);SL(0x30,v30);}
         if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
         if (ga_cull_rect(a,e,0x3bc18)) return GA_DELETE;

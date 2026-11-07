@@ -216,6 +216,10 @@ ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
     0x2a5c4e,0x2a5c8c,0x2a5d3e,0x2a5df0,0x2a5ea2,0x2a5f54,0x2a595c,0x22e8ae)
 # The Mission 3 weapons with +93 = 2 (fat Marco): the R's rockets 063AEE 267C74 / 063B22 267E86 and explosion 26860A, the C 063F10 2681A4, the grenade 01BEDA 22CA58 (neo_chaser.c, neo_bullet.c).
 ROOTS+=(0x267c74,0x267e86,0x26860a,0x2681a4,0x22ca58)
+# The Mission 3 fat bomb 01C362 22CD04 and its piece 01C654 22CD5A, the fat landing dust 0C4E86 0C4E48, the fat molotov 01E680 22F65E and its flames 01EA7A 22F704 (neo_bullet.c).
+ROOTS+=(0x22cd04,0x22cd5a,0x0c4e48,0x22f65e,0x22f704)
+# The splash 03C962 (neo_gate.c), palette 152 in Mission 3.
+ROOTS+=(0x22e064,0x22e0f2,0x22df54,0x22e1f0)
 # The Mission 3 weapon E 0DE4DA (neo_pweapon.c).
 ROOTS+=(0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244)
 # The Mission 3 vehicle 0AC866 (neo_m3veh.c) and the SV-001 093C9A's jump 299228.
@@ -269,6 +273,10 @@ RESOURCES=(0x1b,0x20b,0x3ba,0x472,0x475,0x476,0x477,0x478,0x4b9,0x87f,0x883,0x46
     0x87d,0x87a,
     # The Mission 3 weapon E 0DE4DA: ball 0x81E (0x870 the other variant).
     0x81e,0x870,0x86e,
+    # The Mission 3 fat bomb 01C362 (20A, its piece 204), dust 0C4E86 (2D), fat molotov 01E680 (872) and its flames (873).
+    0x872,0x873,
+    # The splash 03C962 (019240: 151 in Mission 2, 152 in Mission 3).
+    0x151,0x152,
     # The Mission 3 vehicle 0AC866 (neo_m3veh.c): body 0xD/0xCE (0x1C2 two players), flames/bombs 0xE/0xF, dust 0x2D, trail 0x37C, marker 0x3B0, pilot 0x376/0x377, death 0xD..0x12.
     0xd,0xce,0xe,0xf,0x2d,0x37c,0x3b0,0x376,0x377,0x10,0x11,0x12,
     # Prisoner tally 0308C0: parade icon (0x381, 0x3FA, 0x9B listed above).

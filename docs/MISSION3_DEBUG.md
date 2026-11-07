@@ -14,8 +14,9 @@ Referencias: `MISION3.md`, `MISION3_ACTORES.md`, `JEFE_MISION3.md`,
 - **Jefe intermedio y final:** nativos (familias m3mid1..4, m3boss0..5).
   El fin de misión cae en la parada explícita "falta mission4.pack", que
   reinicia la M1.
-- **Vehículos:** `093C9A` y `0AC866`. Arma E. Marco gordo y sus armas, salvo
-  la bomba, el molotov y el polvo.
+- **Vehículos:** `093C9A` y `0AC866`. Arma E. Marco gordo y sus armas (bomba,
+  molotov y polvo nativos desde `work-m3g7`; falta `0C5064`). Salpicadura
+  `03C962` nativa.
 - **Fondo:** columnas pre-renderizadas en la capa 1 (`build/bgp/m3s1.bgp`).
   El resto va por la caché de piezas.
 
@@ -69,8 +70,8 @@ paletas (`at_119570` con el plan `to:6c0`, `at_124100`). Orden: visibilidad.
 | G3 | Paletas `3CF` (bomba `0286F8` del coche `027F54`) y `348` (pieza `028C76`) | ares release: 959 dibujos con la paleta de reserva en la espera de 1520; en `run4` el coche muere antes de tirar | **corregido** (export): captura `at_119570` + `to:6c0` (el jugador no dispara), paletas en `filesystem/mission3/rest-native.json`, paquete rehecho |
 | G4 | Paletas `898/899` (bombarderos `0DC97E`), `87B` (torreta `03B4E0` del tanque), `4B4` (`0B91FA`) | ares piloto: 466+466 y 128 dibujos sin paleta | **corregido** (export, captura `at_124100`; las 6 paletas en `mission3.pack`); `4B4` sin uso hasta G9 |
 | G5 | Soldados del campamento (`01F386/01F2D6` → `0B05FE`) desaparecen al explotar el fogón | ares (los dos cartuchos, f≈223): `world unsupported routine=b05fe`; MAME `m3camp` 118741: `+38 = 0010D7B6` (la capa del tren); el módulo de soldados no tiene padre tren | **corregido**: `neo_world.c` `convert_soldier` lo deja sin padre en su posición proyectada (como lo que aterriza en el tren); ares: sin `b05fe` ni aserción |
-| G6 | Salpicadura `03C962` (balas, granadas y armas en el agua) | ahora que se ve el río: 21 paradas `3c962` en ares (granadas de `08A732`); `run4` no tiene ninguna (sin traza) | abierto: parada explícita. Desensamblado: `03C5C6..03C5D8` (+6E = 0..3) llaman a `03C55C` (agua, clase 5 de `013CF8`, en y−1/+7/+15 de `+3C/+40`; si la hay baja de 8 en 8 hasta salir y deja y = (y & ~7FFFF) − 1) y crean `03C962` tras el actor del guion (`00411C`, reserva 2A) en ese punto (`01AB9C`, `+38` = el objeto) con su `+6E`; quien llama sigue (p. ej. `01B8A6`: `SCS +79`, la bala no se borra). `03C962`: `012022`, paleta = D1 de `019240` (0x151 / 0x152 por misión), programa `03C952[+6E]` (`22E064/22E0F2/22DF54/22E1F0`), `+26` = (4 − `+6E`)·4 + 0x100, velocidad 0; `03C9BA`: `01ABC8`, `03C55C` cada actualización (sin agua → `004188`), sigue la superficie, fin del programa → borrado (lo que va antes de `004188` es la comprobación del cartucho). Falta la traza: `run4` no salpica nunca; plan: estado en ~122200 (puente) y `MSX_FULL_PLAN=to:<x>` con `MSX_FULL_FAMILY_ROOTS=3c962` para que los granaderos `08A732` tiren al río |
-| G7 | Marco gordo: bomba `01C362`→`01C654` (36/71), polvo de aterrizaje `0C4E86` (88), `0C5064` (al dejar la forma, 1); molotov gordo `01E680/01E69C` (no sale en `run4`) | `compare_m3_events.py --list`: `port=missing`; `gameplay.c` parada | abierto: falta la familia (captura `sec04_117966` 124100..124700 con `MSX_FULL_FAMILY_ROOTS=1c362,1c654,c4e86,c5064` y `--range 1c300-1c700 --range c4e00-c5100`; el molotov gordo necesita además un plan con el objeto 09 siendo gordo) |
+| G6 | Salpicadura `03C962` (balas, granadas y armas en el agua) | ahora que se ve el río: 21 paradas `3c962` en ares (granadas de `08A732`); `run4` no tiene ninguna | **corregido** (`work-m3g7`): `neo_gate_splash` (`03C5DE`: `03C55C` agua de clase 5 en y−1/+7/+15, sube de 8 en 8 por el objeto de la celda, y = (y & ~7FFFF) − 1; `03C962` tras el actor del guion en píxeles enteros con `+4C` = 0 y `+6E`) y `03C962/03C9BA` (paleta D1 de `019240`: 151 / 152, programas `03C952`, `+26`); las paradas de las balas `01B8AE`, granadas `08AD4A`, cohetes `05E04C`, `09C83E`, arma E `0DE656/0DE660`, `0862F2` y la granada `03C3DC` (G16: `009F88`, E0ED, `01C706`) pasan a `SCS`. Familia `m3splash` igual a MAME: `at_122200` (puente) con `MSX_FULL_PLAN=dive:bb2`, `MSX_FULL_GIVE_FORM=122505:0` (vuelve a flaco) y `MSX_FULL_GIVE_WEAPON=122510:0` (pistola): tiros hacia abajo por el hueco entre vagones (una salpicadura, 13 actualizaciones). Sprites validados (243 píxeles iguales). Sin `08A732` en el río: aparcado a la izquierda (`to:734/780/7c0`) solo tira 4 granadas al suelo; `08AD4A` y los demás no tienen traza propia |
+| G7 | Marco gordo: bomba `01C362`→`01C654` (36/71), polvo de aterrizaje `0C4E86` (88), `0C5064` (al dejar la forma, 1); molotov gordo `01E680/01E69C` (no sale en `run4`) | `compare_m3_events.py --list`: `port=missing`; `gameplay.c` parada | **corregido salvo `0C5064`** (`work-m3g7`, `neo_bullet.c`): bomba tipo 3 (`0C476E`; `009EA8` deja en D0.w la ranura de paleta y en D1.w 20A, que el original suma a la velocidad: `neo_genv_t.palette_slot`, en el mundo 0), su pieza `01C654`, el polvo `0C4E86` (`+1E` del jugador − 1; `gameplay.c` lo crea al aterrizar con `+93 = 2` y guarda `depth1e` en el nodo del jugador) y el molotov gordo (`+88 = 1`, paleta 872, `22F65E`; las llamas `01EA7A` ya eran nativas). Familias `m3bomb` (`sec04_117966`, 124100..124700, raíces `1c362,1c654,c4e86,c5064` y nodo `1014C4`) y `m3molotov` (igual con `MSX_FULL_GIVE_BOMB=124740:2`, 124750..125350) iguales a MAME; sprites del export privado (paletas 872/873, 152), paquete de 811 trozos (`SCENE_MISSION_CHUNKS_MAX` 832). Falta `0C5064` (`0C359A`): `MSX_FULL_GIVE_FORM=122505:0` deja la forma por `0C1D82` sin crearlo; en `run4` sale en 146069 (jefe). El `01C3BE/01C390` flaco comparte código, sin captura (sigue parada en `gameplay.c`) |
 | G8 | Sonidos sin efecto: 31 palabras | SND de la captura contra `msx_sfx_policy.h`: `1020` ×13 y `102D`/`109E` (aeronave/jeep), `10EB` ×33, `10EC` ×32, `10ED` (jefe intermedio), `1169` ×40 (arma E), `1062/1065/1078/109A/109F/10A1/10EE/10EF/1026` (jefe), `1079/107A/107B` (`0186A0`, órdenes de cámara 0B8D10..28), `1029` (puertas), `105E` (`04E990`), `108B` (`0AC866`), `109D` (`027F54`), `10BA` (`097FCC`), `10D5` (flecha), `10FC`, `1133` (voz MISSION 3 START), `1139`, `1153`, `1155`, `116D` | abierto (render aislado `render_sound_commands.py` + medida de pares) |
 | G9 | `0B91FA` (adorno en (0xE00, 0x40) de la raíz, programa `2A8E40`, paleta 4B4, hasta el progreso 0xF80) | `0B91D0` de la lista (124034) | abierto: falta el programa en `soldier_programs.json` |
 | G10 | Rutinas de soldado `0AF7B0` y `0AF99A` (acciones de `0AF1A8`, externo) | ares piloto: 2 + 1 paradas | abierto |
@@ -82,6 +83,7 @@ paletas (`at_119570` con el plan `to:6c0`, `at_124100`). Orden: visibilidad.
 | G16 | Granada `03C306` de la muerte de `04115A` | sin traza en `run4` | abierto: parada explícita |
 | G17 | Superposición `10E8C6` (`0A6C8C`, 34 bloques de submapa en 3944) y 41 bloques del tren con otra paleta | `render_m3_sections.py`: 98,84 % / 99,49 % de píxeles en las secciones 4 / 3 | abierto (poco visible) |
 | G19 | En 1520 el port mostraba un bosque espeso detrás del tren donde MAME ve el cañón con un árbol | el mapa del tren `0B8566` tiene tramos de bosque; 209 celdas observadas de la capa 1 no eran el bloque de ROM de su x (vistas a través de un paso del origen `+32`) | **corregido**: `pack_mission.py fill_loop_layer` les pone el bloque de ROM con sus colores votados (797 trozos); ares (piloto) en 1520: cañón y árbol como MAME |
+| G20 | **Tablas de la M3 sin sitio** cuando la caché de escenas empieza pronto (`MSX pack: ... begun early`: los cinemáticos dejan tiempo libre, depende del instante del arranque): bloques de ranuras troceados (63 → 117 → 210, racha contigua más larga 52) y la M3 pide 55 ranuras contiguas (889 648 bytes antes de `work-m3g7`, 892 288 después): `MSX stage 1 tables: 55 contiguous slots not found` → «mission 3 pack not loaded: Mission 1 goes on» | ares, cartucho de referencia: 2 de 4 arranques con `begun early` (racha 52 de 210) fallan; los otros (`211 slots`, racha 105) cargan. Ya fallaba con el paquete anterior en ese camino (necesitaba 55 igual). `scene_assets.c` imprime ahora bytes, ranuras y racha más larga | abierto: probable causa de cargas fallidas de la M3 en MiSTer; arreglo candidato: reservar las tablas de la etapa antes de completar la caché o pedir el bloque grande primero en `allocate_slots` del camino temprano |
 | G18 | HUD: `continue item 019798` (parada al acabar las vidas) | ares release | abierto (común a todas las misiones) |
 
 Registros del guion por sección (`--port`): release (hasta 1520) sección 1
@@ -105,9 +107,15 @@ on=1 mode=1 own=1`). No hay diferencia en ares: falta verlo en MiSTer.
 
 ## Siguiente experimento (uno solo)
 
-Cartucho normal en MiSTer (ROM 42): el puente de 2888 (la cámara baja 64 px:
-caballetes, río y balsas, G1), los soldados del fogón (G5) y el tren de la
-salida. Después, en el PC, G2 (cielo) por columnas pre-renderizadas.
+G20: en ares, forzar el camino `begun early` (o simularlo) y comprobar la
+racha contigua; después decidir el arreglo (una hipótesis). Luego G9–G14 por
+visibilidad. Verificado en `work-m3g7`: ares (referencia, piloto, 330 s, sin
+`begun early`) hasta el puente 2888 sin rutinas no soportadas (solo los 16
+externos `02A448` de G11) y 1235 dibujos sin paleta `0A7` (G12) o sin los
+sprites de `03C306` (`23F2A0`, G16).
+Estados MAME de `run4` guardados: `/home/user/captures-m3g7/states/mslugx/at_120950|122100|122200.sta`
+(con `MSX_FULL_STATES=/home/user/captures-m3g7/states`); los guiones de captura de esta sesión
+están al lado (`run_f.sh`: G6, `run_c.sh`: molotov).
 
 ## Archivos tocados por la M3
 
@@ -121,4 +129,10 @@ salida. Después, en el PC, G2 (cielo) por columnas pre-renderizadas.
 `tools/export_rest_sprites.py` (paletas), `tools/export_m3_layers.py` y
 `tools/render_m3_sections.py` (cuadros del cielo); privados:
 `filesystem/mission3/rest-native.json`, `filesystem/mission3/s1/layers_rom.json`,
-`romfs/mission3.pack`.
+`romfs/mission3.pack`.; `work-m3g7`: `src/neo_bullet.c` (G7), `src/neo_gate.c` (G6, `neo_gate_splash`),
+`src/neo_m3enemy.c`, `src/neo_pweapon.c`, `src/gameplay.c`, `src/neo_gactor.h`
+(`palette_slot`), `src/scene_assets.h` (832 trozos), `tools/test_neo_family.c`,
+`tools/capture_fullgame.lua` (`MSX_FULL_PLAN=dive:<x>`, `MSX_FULL_GIVE_BOMB`,
+`MSX_FULL_GIVE_FORM`), `tools/extract_soldier_programs.py`,
+`tools/export_rest_sprites.py`, `data/m3bomb|m3molotov|m3splash_fixture.json.gz`;
+privados: `filesystem/mission3/rest-native.json`, `romfs/mission3.pack`.

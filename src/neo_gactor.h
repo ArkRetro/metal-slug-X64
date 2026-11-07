@@ -178,6 +178,10 @@ struct neo_genv {
     /* ROM 0040BC with its reserve D0: no node unless more than `reserve`
      * nodes are free (RAM 1063D8). NULL: `spawn` (the reserve is ignored). */
     neo_gactor_t *(*spawn_reserve)(void *ctx,neo_gactor_t *creator,uint32_t routine,uint16_t reserve);
+    /* ROM 009EA8 leaves in D0.w the hardware palette slot it gave (the
+     * byte it stores at +19+n); the bomb 01C362 adds D0/D1 to its speed
+     * after the call. The allocator is not modelled: NULL reads 0. */
+    uint8_t (*palette_slot)(void *ctx,neo_gactor_t *a,unsigned n);
     /* Soldier spawned by an actor (spawn-table entry 0AF17E style). */
     void (*sound)(void *ctx,uint16_t id);
     /* ROM 0049E8: attack row against the registered hurtboxes of the given

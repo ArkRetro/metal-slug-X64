@@ -312,6 +312,10 @@ ROOTS+=[0x0ab09e,0x0ab1aa,0x0ab29e,0x0ab0ac,0x0ab250,0x0aafa2,0x0aafb2,0x0ab028,
     0x0ac61c,0x0ac66e,0x0ad738,0x0ac398,0x0adc8a,0x0ac23e,0x0ac288,0x0ac2d2,0x23ae0a,0x23b0e8]
 # Mission 3 fat weapons (+93 = 2, table 0C42EA / 0C476E): the R's rockets 063AEE 267C74 / 063B22 267E86 and their explosion 26860A, the C 063F10 2681A4, the bullets 01B62C 22C0A6 / 01B668 22C000, the grenade 01BEDA 22CA58.
 ROOTS+=[0x267c74,0x267e86,0x26860a,0x2681a4,0x22c0a6,0x22c000,0x22ca58]
+# Mission 3 fat bomb type 3 01C362 / 01C334 22CD04 (thin 01C3BE / 01C390 22CC34) and its piece 01C654 (22CD5A / 22CC8A), the fat landing dust 0C4E86 0C4E48, the fat molotov 01E680 / 01E69C 22F65E (neo_bullet.c).
+ROOTS+=[0x22cd04,0x22cc34,0x22cd5a,0x22cc8a,0x0c4e48,0x22f65e]
+# The splash 03C962 (programs 03C952: 22E064 / 22E0F2 / 22DF54 / 22E1F0; neo_gate.c).
+ROOTS+=[0x22e064,0x22e0f2,0x22df54,0x22e1f0]
 # Mission 3 weapon E 0DE4DA (neo_pweapon.c): the ball's programs 2B0272/2B027A/2B0282 (two variants).
 ROOTS+=[0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244]
 # Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).

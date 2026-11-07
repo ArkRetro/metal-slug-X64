@@ -1403,6 +1403,10 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         clamp_feet(g,&body,g->grounded && !g->ride);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
+        /* 0C1ED6 (the landing 0C1EBE with +93 = 2): the dust 0C4E86
+         * (0040BC reserve 0x2A, 01ACF2 (0, 0); family m3bomb). */
+        if (!was_grounded && g->grounded && !dying && !mummy && !g->ride && g->mount==MSX_MOUNT_NONE && g->world_enabled && g->world.weapon_player.form93==2u)
+            neo_world_player_actor(&g->world,0xc4e86u,body.x,body.y,0,0,0,g->facing<0?1u:0u,g->world.player_node[0][0x5e],0);
 #if MSX_DIAG
         if (g->world_enabled) {
             uint8_t dm=0;for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (g->world.kernel.dyn[i].map) dm|=(uint8_t)(1u<<i);
@@ -1509,25 +1513,27 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * standing; 01 running, 03 in the air). Its position (0C4806:
          * the player's +72/+74 words, -1/0x11..0x15 in cfam) uses the
          * standing value -1/0x15: the port's player has no +72/+74. Bomb
-         * type 2 throws the molotov the same way; other types are explicit
-         * stops. */
+         * type 2 throws the molotov the same way, type 3 with +93 = 2 the
+         * bomb 01C362; the thin type 3 (01C3BE) and other types are
+         * explicit stops. */
         if (g->grenade && !g->grenade_was_down && !g->complete && marco_weapons_throw(&g->world.weapons,0,false)) {
             uint8_t type=g->world.weapons.b[10];
             const bool fatg=g->world.weapon_player.form93==2;
-            if (((type==1 && !fatg) || type==2) && g->world_enabled && !(fatg && type==2)) {
-                /* 0C4756: type 2 (the molotov) 01E648 / 01E664 (+90 = FF). */
+            if (((type==1 && !fatg) || type==2) && g->world_enabled) {
+                /* 0C4756: type 2 (the molotov) 01E648 / 01E664 (+90 = FF);
+                 * with +93 = 2 (0C476E) 01E680 / 01E69C (family m3molotov). */
                 bool still=g->grounded && !g->moving;
-                neo_world_player_grenade(&g->world,type==2?(still?0x1e664u:0x1e648u):still?0x1bf10u:0x1bf46u,
+                neo_world_player_grenade(&g->world,type==2?(fatg?(still?0x1e69cu:0x1e680u):(still?0x1e664u:0x1e648u)):still?0x1bf10u:0x1bf46u,
                     g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
                 g->grenades++;marco_hgun_throw(&g->hgun);
-            } else if (type==1 && fatg && g->world_enabled) {
+            } else if ((type==1 || type==3) && fatg && g->world_enabled) {
                 /* Form 2: table 0C476E, the grenade 01BEDA / 01BEA4 (+90 =
                  * FF), program 22CA58, palette 204 (families m3fat/m3fat2);
-                 * its molotov 01E680/01E69C and bomb 01C362/01C334 are not
-                 * translated (explicit stops). Same position as type 1. */
+                 * type 3 the bomb 01C362 / 01C334 (family m3bomb). Same
+                 * position as type 1. */
                 bool still=g->grounded && !g->moving;
-                neo_world_player_grenade(&g->world,still?0x1bea4u:0x1bedau,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
+                neo_world_player_grenade(&g->world,type==3?(still?0x1c334u:0x1c362u):still?0x1bea4u:0x1bedau,g->x-MSX_UNIT,(56+4+0x15)*MSX_UNIT-g->y,
                     g->velocity_x,g->grounded?0:-g->velocity_y,g->facing<0,0);
                 g->grenades++;marco_hgun_throw(&g->hgun);
             } else g->grenade_stops++;
@@ -1840,6 +1846,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             if (g->depth1e>=0xe000u) g->depth1e=0x8834;
             if (g->grounded) g->depth1e=(uint16_t)(0x8834u-player_frame(g).py);
         }
+        g->world.player_node[0][0x1e]=(uint8_t)(g->depth1e>>8);g->world.player_node[0][0x1f]=(uint8_t)g->depth1e;   /* read by the dust 0C4E86 */
     }
     for (unsigned i=0;i<MSX_BULLETS;i++) {
         msx_bullet_t *b=&g->bullets[i];if (!b->active) continue;

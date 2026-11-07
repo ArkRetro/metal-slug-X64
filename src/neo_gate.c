@@ -213,12 +213,71 @@ static ga_result_t gate_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- the splash 03C962 (03C5C6..03C5D8, family m3splash) ---------------
+ * 03C55C: water (class 5, 013CF8) at the node's +3C/+40 - 1, + 7 or + 15
+ * px; found, 8 px higher while there is water (relative to the object of
+ * the cell), then y = (y & ~7FFFF) - 1: the surface. 03C5DE (+6E = 0..3):
+ * found, the splash 03C962 after the script actor (00411C, reserve 0x2A)
+ * at that point of that object (01AB9C: whole pixels, +4C = 0) with the
+ * caller's +6E; carry for the caller. 03C962: 012022, the palette D1 of
+ * 019240 (mission 1: 151, 4: 152), program 03C952[+6E], +26 = (4 - +6E)
+ * * 4 + 100, no speed; 03C9BA each update: 01ABC8, 03C55C (none: 004188),
+ * +28/+2C/+38 the surface, 00427A; at its end the cartridge check (004188
+ * on genuine hardware: delete). */
+static bool surface(neo_genv_t *e,int32_t x,int32_t y,int32_t *ox,int32_t *oy,uint32_t *otag) {
+    int32_t lx=0,ly=0;uint8_t o=0;bool found=false;
+    for (unsigned i=0;i<3 && !found;i++)
+        found=neo_kernel_point_class(e->kernel,x,(int32_t)((uint32_t)y-0x10000u+0x80000u*i),5,0,&lx,&ly,&o);
+    if (!found) return false;
+    for (;;) {
+        int32_t nx,ny;uint8_t no;
+        ly=(int32_t)((uint32_t)ly+0x80000u);
+        if (!neo_kernel_point_class_in(e->kernel,o,lx,ly,5,0,&nx,&ny,&no)) break;
+        lx=nx;ly=ny;o=no;
+    }
+    *ox=lx;*oy=(int32_t)(((uint32_t)ly&0xfff80000u)-1u);*otag=ga_ktag(o);
+    return true;
+}
+static uint16_t splash_palette(const neo_genv_t *e) {   /* 019240 D1 */
+    switch (e->pickup?e->pickup->mission:0u) {
+    case 1: return 0x151;case 4: return 0x152;
+    default: return 0;
+    }
+}
+bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind) {
+    int32_t x,y;uint32_t t;
+    if (!surface(e,(int32_t)L(0x3c),(int32_t)L(0x40),&x,&y,&t)) return false;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x3c962,true):NULL;
+    if (c) {
+        ga_sl(c,0x28,(uint32_t)x&0xffff0000u);ga_sl(c,0x2c,(uint32_t)y&0xffff0000u);ga_sl(c,0x38,t);ga_sw(c,0x4c,0);
+        ga_project(c,e);ga_sw(c,0x6e,kind);
+    }
+    return true;
+}
+static const uint32_t splash_program[4]={0x22e064,0x22e0f2,0x22df54,0x22e1f0};   /* 03C952 */
+static ga_result_t splash_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x3c962u) {
+        front(a,e);
+        uint16_t p=splash_palette(e);
+        if (!p) {ga_fail(e,0x19240);return GA_UNSUPPORTED;}
+        ga_palette(a,p);START(splash_program[W(0x6e)&3u]);
+        SW(0x26,(uint16_t)((4u-W(0x6e))*4u+0x100u));SL(0x30,0);SL(0x34,0);SL(0,0x3c9ba);
+    }
+    ga_project(a,e);
+    int32_t x,y;uint32_t t;
+    if (!surface(e,(int32_t)L(0x3c),(int32_t)L(0x40),&x,&y,&t)) return GA_DELETE;
+    SL(0x28,(uint32_t)x);SL(0x2c,(uint32_t)y);SL(0x38,t);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:GA_MORE;
+}
 bool neo_gate_routine(uint32_t r) {
     return r==0x3882au || r==0x3889cu || r==0x38994u || r==0x389f2u ||
-        r==0x3c62au || r==0x3c656u || r==0x3c77eu || r==0x3c7e6u || r==0x3c820u || r==0x3c85eu || r==0x3c87eu;
+        r==0x3c62au || r==0x3c656u || r==0x3c77eu || r==0x3c7e6u || r==0x3c820u || r==0x3c85eu || r==0x3c87eu || r==0x3c962u || r==0x3c9bau;
 }
 ga_result_t neo_gate_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
+    if (r==0x3c962u || r==0x3c9bau) return splash_tick(a,e);
     if (r>=0x3c62au) return ripple_tick(a,e);
     return gate_tick(a,e);
 }

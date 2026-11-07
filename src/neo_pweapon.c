@@ -28,7 +28,7 @@
  * 0865F4, +76, 08661C, 00427A; +5F bit 0: 086304.
  * Common tail 0862AE: after +61 updates, the contact row E4E44 (0049E8);
  * a hit or +76: 086304; out of E4E2C (019504): 0C0DFC and delete; once
- * (+74), 03C5CC (water: the splash 03C962, explicit stop); 00505A.
+ * (+74), 03C5CC (water: the splash 03C962, neo_gate.c); 00505A.
  * Explosion 086304: 0C0DFC id 0D; the down ball (+75) flips y and takes
  * 28311A; else 28311A when the velocity angle (002EB4, +0x10, >> 5) is 2
  * (up), 2830DA otherwise; 08637A: 01ABC8, 00427A until its end. The
@@ -94,13 +94,9 @@ static bool release(neo_gactor_t *a,neo_genv_t *e,uint8_t id) {
     marco_ammo_release(&m,id);marco_weapons_set_ammo(e->pickup->weapons,W(0x70),&m);
     return true;
 }
-/* 03C5CC: water (class 5) at y-1, y+7, y+15 (03C55C, 013CF8): the splash
- * 03C962 is not translated (explicit stop). Carry: water. */
-static bool water(neo_gactor_t *a,neo_genv_t *e) {
-    for (unsigned i=0;i<3;i++)
-        if (neo_kernel_point_class(e->kernel,(int32_t)L(0x3c),(int32_t)(L(0x40)-0x10000u+0x80000u*i),5,0,NULL,NULL,NULL)) {ga_fail(e,0x3c962);return true;}
-    return false;
-}
+/* 03C5CC: water (class 5) at y-1, y+7, y+15 (03C55C, 013CF8) makes the
+ * splash 03C962 (neo_gate.c). Carry: water. */
+static bool water(neo_gactor_t *a,neo_genv_t *e) {return neo_gate_splash(a,e,1);}
 /* 0866A6: a blast 08642E of the explosion programs 2830DA / 28311A. */
 static bool dblast(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t program,uint32_t row) {
     neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8642e,true):NULL;
@@ -463,10 +459,7 @@ static ga_result_t beam_tick(neo_gactor_t *a,neo_genv_t *e) {
  * 01ABC8, 00427A to its end, out of EB5C6 (019504): delete. */
 static uint32_t e_rl(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]:0;}
 static bool e_water(neo_gactor_t *a,neo_genv_t *e) {                   /* 03C5C6 / 03C5CC */
-    if (B(0x7d)) return water(a,e);
-    for (unsigned i=0;i<3;i++)
-        if (neo_kernel_point_class(e->kernel,(int32_t)L(0x3c),(int32_t)(L(0x40)-0x10000u+0x80000u*i),5,0,NULL,NULL,NULL)) {ga_fail(e,0x3c5de);return true;}
-    return false;
+    return neo_gate_splash(a,e,B(0x7d)?1:0);
 }
 static uint32_t e_mul(uint32_t d0,uint16_t d1) {return (uint32_t)(uint16_t)d0*d1+(((uint32_t)(uint16_t)(d0>>16)*d1)<<16);}   /* 0DED5A */
 static int32_t e_smul(int32_t d0,int16_t d1) {                         /* 0DED6A */

@@ -380,6 +380,15 @@ local function ride_inputs()
   -- 0938DA); every 8 s a short drive right.
   if t>=60 and t<180 then b.R=1
   elseif t>=180 and (t%480)<40 then b.R=1 end
+ elseif ride_plan=='dmg' then
+  -- 'dmg' (the Mission 1 SV-001, B59): drive right 90 frames, stop 60,
+  -- a jump every 75 frames (hits in the air 0935A8), never firing, so the
+  -- enemies' bullets and rockets take the tank down to its destruction.
+  if t>=60 then
+   local c=(t-60)%150
+   if c<90 then b.R=1 end
+   if (t-60)%75<4 then b.B=1 end
+  end
  elseif ride_plan=='launch' then
   -- 'launch': crouch with the cannon, rise, then A+B on the ground (the
   -- walker flies up and blows: 0971F8, 0972A6, 09749A).

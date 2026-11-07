@@ -457,7 +457,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3veh m3veh2 m3wepe m3fat m3fat2 m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m2creature
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;
@@ -561,6 +561,11 @@ FAMILY_ARGS_m3raft := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --t
 # driven both ways with the vulcan, aimed, jumps, cannon, crouch, A+B out
 # 138479, blast 138546).
 FAMILY_ARGS_m3tank := --script-actor 101414 --script-routines 1b6a0 --node-fields 6e,8c --shared 14a4e --attacks --terrain 10c72e --ring 10c72e --group-map 0 --train
+# m3tankair = B59 on the Mission 3 copy 093C9A (MAME b59m3: at_132300, ride plan
+# 'dmg', VEHICLE_CHEAT=0, FAMILY_ROOTS=93c9a,ae1dc,ad9b8, FROM=137300, LAST=138700):
+# hits in the air 0946FA -> 094788 -> 0947CC from behind (137880) and the front
+# (138123), the destruction 094ABA at 138361; the solid bodies' nodes as --ram.
+FAMILY_ARGS_m3tankair := $(FAMILY_ARGS_m3tank)
 # m3veh = the Mission 3 vehicle 0AC866 (neo_m3veh.c), its pilot, wings,
 # flames, bombs and trails, the turret 03B4E0, the markers 03523C/03533A
 # and the rider (node 1014C4) from the vehicle slots: capture from at_132300
@@ -644,6 +649,11 @@ FAMILY_ARGS_tank := --script-actor 101414 --script-routines 1b6a0 --node-fields 
 # with MSX_FULL_VEHICLE_HEALTH=11340:1), ranges and RAM of the tank family.
 FAMILY_ARGS_tankhit := $(FAMILY_ARGS_tank)
 FAMILY_ARGS_tankkill := $(FAMILY_ARGS_tank)
+# tankair = B59: a full damage sequence while riding (MAME b59a: at_9000, ride plan
+# 'dmg' with MSX_FULL_RIDE_SCREEN=8, VEHICLE_CHEAT=0, FAMILY_ROOTS=92a32,ae1dc,ad9b8,
+# FROM=9100, LAST=10900): two rocket hits in the air (0935A8 -> 0935EC -> 093576,
+# 9718 and 10149) and the third on the ground with health 0 (0938DA, 093AFA at 10739).
+FAMILY_ARGS_tankair := $(FAMILY_ARGS_tank)
 # figure = the burning figures 08732C of the destroyed shop 0B6566 (B51, MAME b51f:
 # sec00_2100, FAMILY_ROOTS=8732c FROM=8600, the shop falls at 8660): they land
 # on the ground the shop raised and cleared (its roof 0B680E stamps).

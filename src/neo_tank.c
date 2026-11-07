@@ -38,9 +38,9 @@
  * explicit stop) with +5E and +84, placed by 014A02 (D0 = FF).
  *
  * The damage reaction 09351A / 093576 on the ground and the destruction
- * with a rider 0938DA / 09391E (B52, MAME b52dmg / b52kill). Explicit
- * stops (no capture holds them): the damage reaction in the air 0935A8,
- * the jump 09333A (sound 1090), the air 09339E / 0933C2 / 09347A,
+ * with a rider 0938DA / 09391E (B52, MAME b52dmg / b52kill), in the air
+ * 0935A8 / 0935EC (B59). Explicit stops (no capture holds them): the
+ * jump 09333A (sound 1090), the air 09339E / 0933C2 / 09347A,
  * down 093138 / 09315E (sound 108F), 093204 / 09321A, 0937C6 (exit with
  * +77 >= 5), the bombs 0929E6 (0C0808) and the kind-5 shell 0950DC. */
 #define B(o) ga_b(a,(o))
@@ -485,11 +485,10 @@ static ga_result_t tank_tick(neo_gactor_t *a,neo_genv_t *e) {
          * of 11351 with the tank on the ground). Health 0 -> 0938DA; +5A =
          * 0; on the ground the program by +5B's sign (sound 1089 and
          * 29C308 from behind, else 108A and 29C746), +62 = 0, 093576 in
-         * the same update. In the air 0935A8 (29B690/29B6F2, the fall
-         * 0935EC..093684): no capture, an explicit stop. */
+         * the same update; in the air 0935A8. */
         if (!W(0x4e)) {SL(0,lab(0x938da));continue;}
         SB(0x5a,0);
-        if (!BIT(0x15,6)) STOP(lab(0x935a8));
+        if (!BIT(0x15,6)) {SL(0,lab(0x935a8));continue;}
         if (B(0x5b)&0x80u) {sound(e,0x1089);START(0x29c308);} else {sound(e,0x108a);START(0x29c746);}
         SL(0x62,0);SL(0,lab(0x93576));
         /* fall through */
@@ -500,6 +499,27 @@ static ga_result_t tank_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (!tread(a,e,true)) return GA_UNSUPPORTED;
         if ((r=k92832(a,e))<0) return GA_UNSUPPORTED;
         if (r) {SL(0x90,0);SL(0,lab(W(0x4e)?0x92c9a:0x938da));}
+        return tail(a,e);
+    case 0x935a8:
+        /* 0935A8: the damage reaction in the air (B59): the program by
+         * +5B's sign (sound 1089 and 29B690 from behind, else 108A and
+         * 29B6F2), +34 += 0x3A550 (093C9A: 0x7C32F), then 0935EC. */
+        if (B(0x5b)&0x80u) {sound(e,0x1089);START(0x29b690);} else {sound(e,0x108a);START(0x29b6f2);}
+        SL(0x34,L(0x34)+(v3?0x7c32fu:0x3a550u));SL(0,lab(0x935ec));
+        /* fall through */
+    case 0x935ec:
+        /* 0935EC: +7E |= 3E, gravity, the stick (0933EC's), 014C0C;
+         * landing (+15 bit 6) -> the ground program by +5B (29B734 /
+         * 29BCD6), +62 = 0, 093576; 092832; 093692. */
+        SB(0x7e,B(0x7e)|0x3eu);
+        gravity(a);
+        air_steer(a,pad(a,e));
+        if (!air_step(a,e)) return GA_UNSUPPORTED;
+        if (BIT(0x15,6)) {
+            START((B(0x5b)&0x80u)?0x29b734:0x29bcd6);
+            SL(0x62,0);SL(0,lab(0x93576));
+        }
+        if (k92832(a,e)<0) return GA_UNSUPPORTED;
         return tail(a,e);
     case 0x938da: {
         /* 0938DA: destroyed with its rider (b52kill: 11352, health
@@ -850,7 +870,7 @@ bool neo_tank_routine(uint32_t r) {
     case 0x92cc2: case 0x92dda: case 0x92f94: case 0x93054: case 0x9307c: case 0x93278: case 0x9329e:
     case 0x93a08: case 0x93a46: case 0x93afa: case 0x9351a: case 0x93576: case 0x938da: case 0x9391e: case 0x9339e: case 0x93204:
     case 0x93138: case 0x9315e: case 0x9321a: case 0x9333a: case 0x93362: case 0x933c2: case 0x9347a: case 0x934a2:
-    case 0x937c6: case 0x937e4:
+    case 0x937c6: case 0x937e4: case 0x935a8: case 0x935ec:
     case 0x94eaa: case 0x94f1c: case 0x94ff8: case 0x9503c:
     case 0x952f8: case 0x9533c: case 0x95448:
     case 0x954dc: case 0x95580: case 0x956ce: case 0x95768:

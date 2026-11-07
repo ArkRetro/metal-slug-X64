@@ -30,12 +30,19 @@ def main():
     inram=lambda ad:any(lo<=ad<hi for lo,hi in rams)
     keep=lambda r:any(lo<=r<=hi for lo,hi in ranges)
     updates=[];cur=None;frame=0;famnodes=set()
+    # Round of each family node's last update (a round = a frame with family
+    # updates): a family node missing from the previous round was deleted and
+    # its pool slot may hold a foreign node now (B59: the marker 0353A4's node
+    # reused by a solid body of the table 106756), RAM again for --ram.
+    last_round={};rnd=0;rnd_frame=None
     for line in open(a.trace):
         t=line.split()
         if not t:continue
         if t[0]=='F':frame=int(t[1]);continue
         if t[0]=='U':
             if cur is not None:cur['post']=None;updates.append(cur)
+            if rnd_frame!=frame:rnd+=1;rnd_frame=frame
+            last_round[int(t[1],16)]=rnd
             r=int(t[2],16)
             # A node of the family (kept routine) is not RAM for --ram while
             # it is one: a pool node reused by a family child after a
@@ -46,7 +53,7 @@ def main():
             cur=dict(frame=frame,node=t[1],routine=r,pre=t[3],reads={},writes=[],ram_in={},ram_out=[]) if keep(r) else None
             if cur is not None and a.attacks:cur['attacks']=[];cur['targets']={}
             continue
-        if t[0]=='B':famnodes.add(int(t[1],16))
+        if t[0]=='B':famnodes.add(int(t[1],16));last_round[int(t[1],16)]=rnd+1
         if cur is None:continue
         if t[0]=='V':cur['post']=t[2];updates.append(cur);cur=None;continue
         if t[0] in 'RW':
@@ -83,8 +90,11 @@ def main():
                     else:tg[2]=(tg[2]<<16|data)&0xffffffff
             # A node allocated in a family update (0040BC / 00411C write its
             # routine at +00) is a family node from then on.
-            if t[0]=='W' and 0x1010a4<=ad<0x1010a4+0xb0*100 and (ad-0x1010a4)%0xb0==0 and pc==0x410e:famnodes.add(ad)
-            if inram(ad) and not any(n<=ad<n+0xb0 for n in famnodes):
+            if t[0]=='W' and 0x1010a4<=ad<0x1010a4+0xb0*100 and (ad-0x1010a4)%0xb0==0 and pc==0x410e:famnodes.add(ad);last_round[ad]=rnd+1
+            # The allocator 0040BC / 00411C (0040D0..004126) taking a pool node
+            # for a family child is not RAM traffic of a --ram range.
+            if 0x40d0<=pc<0x4126 and 0x1010a4<=ad<0x1010a4+0xb0*100:continue
+            if inram(ad) and not any(n<=ad<n+0xb0 and last_round.get(n,rnd)>=rnd-1 for n in famnodes):
                 for b,m in ((ad,0xff00),(ad+1,0xff)):
                     if not mask&m:continue
                     v=(data>>8)&255 if m==0xff00 else data&255

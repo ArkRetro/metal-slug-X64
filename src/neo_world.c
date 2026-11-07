@@ -601,10 +601,18 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
      * D0 in bits 24..27, D1 in 28..31). */
     neo_world_t *wd=((tick_t *)ctx)->w;
     uint32_t key=submap|(uint32_t)(d[0]&15)<<24|(uint32_t)(d[1]&15)<<28;
-    if ((s[0]|s[1]|s[2]|s[3]) && wd->map_patches<16u) {
-        bool known=false;
-        for (unsigned i=0;i<wd->map_patches;i++) known|=wd->map_patch[i][0]==key && wd->map_patch[i][1]==layer;
-        if (!known) {wd->map_patch[wd->map_patches][0]=key;wd->map_patch[wd->map_patches][1]=layer;wd->map_patches++;}
+    /* B63: the target column in the layer word (the Mission 3 stampers
+     * 0B8FA8 copy the same frame of 0B85EA to several wagons) and one
+     * record per target: each stamper copies 4-6 frames to one target and
+     * only the last stays (they also overflowed the 16 records). */
+    uint32_t obj=layer|(uint32_t)(d[4]&0x7ff)<<21,at=(uint32_t)(uint16_t)d[4]<<16|(uint16_t)d[5];
+    if (s[0]|s[1]|s[2]|s[3]) {
+        unsigned i=0;
+        while (i<wd->map_patches && !((wd->map_patch[i][1]&0x1fffffu)==layer && wd->map_patch_at[i]==at)) i++;
+        if (i<16u) {
+            wd->map_patch[i][0]=key;wd->map_patch[i][1]=obj;wd->map_patch_at[i]=at;
+            if (i==wd->map_patches) wd->map_patches++;
+        }
     }
     uint32_t c=(uint32_t)s[4]<<24|(uint32_t)s[5]<<16|(uint32_t)s[6]<<8|s[7];
     if (layer!=0x10c72eu || !c) return;                            /* tiles only (the renderer's) */
@@ -1589,15 +1597,17 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * wagon boxes 039382 / 03938A at (0770 / 0870, 0040), 0B9148 / 0B916A
      * the wagons 038D1E / 038D26 at (09D0 / 0AB0, 0048) (their 039502 puts
      * them on 10C72E), 0B925C the platform 0B9286 at (0FA0, 0030) of the
-     * root 10E968. */
+     * root 10E968; 0B91D0 the decoration 0B91FA at (0E00, 0040) of the root
+     * (G9). */
     for (unsigned i=0;i<w->camera_call_count;i++) {
         static const uint32_t calls[][4]={{0x0B918Cu,0x39382u,0x07700000u,0x00400000u},{0x0B91AEu,0x3938au,0x08700000u,0x00400000u},
-            {0x0B9148u,0x38d1eu,0x09d00000u,0x00480000u},{0x0B916Au,0x38d26u,0x0ab00000u,0x00480000u},{0x0B925Cu,0xb9286u,0x0fa00000u,0x00300000u}};
+            {0x0B9148u,0x38d1eu,0x09d00000u,0x00480000u},{0x0B916Au,0x38d26u,0x0ab00000u,0x00480000u},{0x0B925Cu,0xb9286u,0x0fa00000u,0x00300000u},
+            {0x0B91D0u,0xb91fau,0x0e000000u,0x00400000u}};
         for (unsigned k=0;k<sizeof(calls)/sizeof(calls[0]);k++) if (calls[k][0]==w->camera_calls[i]) {
             neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),calls[k][1],SCRIPT_TAG,0);
             if (!a) break;
             ga_sl(a,0x28,calls[k][2]);ga_sl(a,0x2c,calls[k][3]);
-            if (calls[k][0]==0x0B925Cu) ga_sl(a,0x38,ROOT_TAG);
+            if (calls[k][0]==0x0B925Cu || calls[k][0]==0x0B91D0u) ga_sl(a,0x38,ROOT_TAG);
             break;
         }
     }
@@ -1750,7 +1760,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
-        if ((at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu) && w->camera_call_count<COUNT(w->camera_calls))
+        if ((at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u) && w->camera_call_count<COUNT(w->camera_calls))
             w->camera_calls[w->camera_call_count++]=at;
     }
 }

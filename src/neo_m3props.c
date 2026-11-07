@@ -54,7 +54,11 @@
  *   10E99E >= 10F0. 0B939A: 01ABC8, 0140C0, then as 0B930E's tail.
  * - 0B93B4: layer 0, palette 04B7, program 2A8EA6; 0B93F0: 01AD6E (C0, 0),
  *   the tail of 0B9286.
- * - 0B9400 (script record 2DADF4): 004188 once 10C6BD != 0. */
+ * - 0B9400 (script record 2DADF4): 004188 once 10C6BD != 0.
+ * - 0B91D0 (camera-list call, 124034): the decoration 0B91FA at (0E00,
+ *   0040) of the root 10E968. 0B91FA: layer FFF1, palette 04B4, +15 bit 0
+ *   clear, program 2A8E40 (0x100); 0B9236: 01ABC8, 00427A, 004188 at
+ *   10E99E >= F80 (MISSION3_DEBUG.md G9). */
 #define B(o) ga_b(a,(o))
 #define W(o) ga_w(a,(o))
 #define L(o) ga_l(a,(o))
@@ -368,6 +372,16 @@ static ga_result_t m3props_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     case 0xb9400:
         return e->flags && e->flags->platform6bd?GA_DELETE:GA_MORE;
+    /* ---- the decoration 0B91FA (G9) ---- */
+    case 0xb91fa:
+        SW(0x66,0xfff1);SW(0x1e,0xfff1);ga_palette(a,0x4b4);SB(0x15,B(0x15)&0xfeu);
+        if (!ga_anim_start(a,e,0x2a8e40,0x100)) return GA_UNSUPPORTED;
+        SL(0,0xb9236);
+        /* fall through */
+    case 0xb9236:
+        ga_project(a,e);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return e->camera>=0xf80u?GA_DELETE:GA_MORE;
     /* ---- the bonus of the platform 0B9748 ---- */
     case 0xb9748: {
         CLR15(0);CLR15(2);SW(0x66,0xffff);SW(0x1e,0xffff);SB(0x78,0);SB(0x79,0);SB(0x7a,0);
@@ -391,7 +405,7 @@ static ga_result_t m3props_tick(neo_gactor_t *a,neo_genv_t *e) {
 bool neo_m3props_routine(uint32_t r) {
     static const uint32_t k[]={0x39382,0x3938a,0x393dc,0x39406,0x3941c,0x39436,0x39458,0xb911e,0xb9140,0xb8fa8,
         0xb90bc,0xb90fa,0xb9106,0xb9112,0x38d1e,0x38d26,0x38ec6,0x38eda,0x38efa,0x38b06,0x38b78,0x38bb0,0x38c20,
-        0x38f38,0x38f4c,0x38f74,0x38fb6,0x390a6,0x39130,0xb9286,0xb930e,0xb939a,0xb9380,0xb93b4,0xb93f0,0xb9400,0xb9748,0xb9780};
+        0x38f38,0x38f4c,0x38f74,0x38fb6,0x390a6,0x39130,0xb9286,0xb930e,0xb939a,0xb9380,0xb93b4,0xb93f0,0xb9400,0xb9748,0xb9780,0xb91fa,0xb9236};
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
     return false;
 }

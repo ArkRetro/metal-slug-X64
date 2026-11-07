@@ -41,6 +41,18 @@ PATCHES={
               (0x10c72e,0x0b7436,(0,4,7,1,0x19,0x22)),
               (0x10c72e,0x0b7436,(1,5,6,2,0x1a,0x21)),
               (0x10c72e,0x0b7436,(2,7,5,2,0x1b,0x1f))],
+    # The ledges of the wagons (stampers 0B8FA8 on the sub-map 0B85EA,
+    # neo_m3props.c): each program copies a few 4x4 frames to one target
+    # (the platform coming out); only the last frame stays, so the pack
+    # keeps that one. Boxes 0B911E / 0B9140 (program 0B9090, last record
+    # (C, 8)); the lever doors' 0B90BC / 0B9106 (0B9040, (8, 0)) and
+    # 0B90FA / 0B9112 (0B9064, (14, 0)).
+    (3,'s1'):[(0x10c72e,0x0b85ea,(0xc,8,4,4,0x74,0xb)),
+              (0x10c72e,0x0b85ea,(0xc,8,4,4,0x84,0xb)),
+              (0x10c72e,0x0b85ea,(8,0,4,4,0x95,8)),
+              (0x10c72e,0x0b85ea,(0x14,0,4,4,0x9e,8)),
+              (0x10c72e,0x0b85ea,(8,0,4,4,0xa3,8)),
+              (0x10c72e,0x0b85ea,(0x14,0,4,4,0xac,8))],
 }
 def swap(d):
     b=bytearray(d);b[0::2],b[1::2]=d[1::2],d[0::2];return bytes(b)
@@ -94,7 +106,7 @@ def main():
     for c in model['cells']:
         seen.setdefault((c['layer'],c['x'],c['y'],c['code'],c['flip']),[]).append(model['palettes'][c['palette']])
     for c in model['conflicts']:
-        for ch in c['choices']:seen.setdefault((c['layer'],c['x'],c['y'],ch['code'],ch['flip']),[]).append(ch['palette'])
+        for ch in c.get('choices',()):seen.setdefault((c['layer'],c['x'],c['y'],ch['code'],ch['flip']),[]).append(ch['palette'])
     out=[];report=[]
     for obj,submap,d in todo:
         layer=LAYERS[obj];cells=[];bypal={};missing=[]

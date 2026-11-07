@@ -564,7 +564,7 @@ referencia del mapa en la ROM):
 | `0E0D00` (raíz) | 144486..148578 | jefe `04A2C2` | ROM `04E06A` | falta (el jugador está encima 98 barridos) |
 | `0E0E36` | 146240..147948 | `04C38A` (pieza del jefe) | nodo dueño; ROM `04C6F4` | falta |
 | parches `0B85EA` ×5 | 121043.., 121321.. | `0B911E`, `0B9140` (cajas `039382/03938A`) | nodo del parche | `work-m3c` |
-| parches `0B85EA` ×18 | 121732..122007 | `0B90FA`, `0B90BC`, `0B9106`, `0B9112` (de `038B06`, de `038D1E/038D26`) | nodo del parche | falta |
+| parches `0B85EA` ×18 | 121732..122007 | `0B90FA`, `0B90BC`, `0B9106`, `0B9112` (de `038B06`, de `038D1E/038D26`) | nodo del parche | nativo; dibujo de los cuadros finales en `work-m3lever` (B63, MISSION3_DEBUG.md G22) |
 
 `0A6C8C` no es un constructor: es una subrutina de la familia `0A4A94`
 (`0A6C8C`: `0C6F34` con el mapa `2A6142`, `0C73CE`, `0C6CFC` y `01AB98`

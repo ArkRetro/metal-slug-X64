@@ -73,10 +73,18 @@ void scene_render_set_patch(bool done) {patched=done;}
  * of those blocks are overwritten). */
 typedef struct { uint8_t layer;int16_t x0,y0,x1,y1;unsigned first,count; } map_patch_t;
 static map_patch_t map_patches[16];static unsigned map_patch_total;static uint16_t map_patch_mask;
+/* The pack's layer word against the game's (B63: target column D4 in bits
+ * 21..31; a pack entry without it, Mission 2 before B63, takes any). */
+static bool patch_object_match(uint32_t pack,uint32_t game) {
+    return !((pack^game)&0x1fffffu) && (!(pack>>21) || pack>>21==game>>21);
+}
 void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n) {
     const scene_stage_t *st=scene_stage();uint16_t mask=0;
     if (st) for (unsigned k=0;k<n;k++) for (unsigned i=0;i<st->patch_count && i<map_patch_total;i++)
-        if (st->patch_submap[i]==list[k][0] && st->patch_layer_object[i]==list[k][1]) mask|=(uint16_t)(1u<<i);
+        if (st->patch_submap[i]==list[k][0] && patch_object_match(st->patch_layer_object[i],list[k][1])) mask|=(uint16_t)(1u<<i);
+    static uint32_t seen_key;uint32_t key=n?list[n-1][0]^list[n-1][1]:0;
+    if (mask!=map_patch_mask || key!=seen_key) debugf("MSX map patches drawn mask=%04x (%u recorded, last %08lx %08lx)\n",mask,n,n?(unsigned long)list[n-1][0]:0ul,n?(unsigned long)list[n-1][1]:0ul);
+    seen_key=key;
     map_patch_mask=mask;
 }
 static void map_patch_index(const scene_stage_t *st) {

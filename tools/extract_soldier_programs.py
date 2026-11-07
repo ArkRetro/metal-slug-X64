@@ -249,6 +249,8 @@ ROOTS+=[0x23c762]
 # broken 23C5D8), targets 038F38 (23C638[rand]), pieces 0390A6 (03957A[rand])
 # and the platform 0B9286/0B93B4 (2A8E50/2A8EA6), neo_m3props.c.
 ROOTS+=[0x23c624,0x23c62c,0x23c57c,0x23c5aa,0x23c5d8,0x23c640,0x23c64c,0x22d4e8,0x22d552,0x22d5bc,0x22d626,0x2a8e50,0x2a8ea6]
+# Mission 3 decoration 0B91FA (camera-list call 0B91D0, MISSION3_DEBUG.md G9).
+ROOTS+=[0x2a8e40]
 # Mission 3 grenadier 08A732 (285864/2858A6/2858FE), helmet 08AA6E (285A0C),
 # flash 08AB70 (2859BA), shell 08AC54 (285AB2) and smoke 08AE70 (285BBE), neo_m3enemy.c.
 ROOTS+=[0x285864,0x2858a6,0x2858fe,0x285a0c,0x2859ba,0x285ab2,0x285bbe]

@@ -233,8 +233,11 @@ typedef struct {
     bool shots_clear;               /* RAM 1067E4 (0046E0: copy of the 004C06 request 1067E5) */
     uint8_t swap_step;
     /* Map patches 0C70FC applied this stage (sub-map, layer object), for the
-     * renderer: their tile part replaces the drawn blocks (B37). */
-    uint32_t map_patch[16][2];uint8_t map_patches;
+     * renderer: their tile part replaces the drawn blocks (B37). The layer
+     * object word carries the target column D4 in bits 21..31 and
+     * map_patch_at the target (D4, D5): a later patch at the same target
+     * replaces the record, as its words overwrite the SCB1 entries (B63). */
+    uint32_t map_patch[16][2];uint8_t map_patches;uint32_t map_patch_at[16];
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
      * nonzero). neo_world_init sets MSX_BLOOD (default 1: ON, the Japanese

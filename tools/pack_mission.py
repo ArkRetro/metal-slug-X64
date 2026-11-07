@@ -147,13 +147,15 @@ def build(mission,stage_dirs,crom,rom=None):
         # the stage's cells (the layer sort keeps them last); the runtime
         # draws them instead of the cells they cover once the game applies
         # the patch (its sub-map with the source offsets D0 in bits 24..27
-        # and D1 in 28..31, as neo_world.c g_map_patch keys it; layer object).
+        # and D1 in 28..31, as neo_world.c g_map_patch keys it; layer object
+        # with the target column D4 in bits 21..31, B63: the Mission 3
+        # stampers copy the same frame of 0B85EA to several wagons).
         patch_list=[]
         if (d/'patches.json').exists():
             for i,pt in enumerate(json.loads((d/'patches.json').read_text())['patches']):
                 assert i<16
                 d0,d1=pt['d'][0],pt['d'][1]
-                patch_list.append((int(pt['submap'],16)|(d0&15)<<24|(d1&15)<<28,int(pt['layer_object'],16)))
+                patch_list.append((int(pt['submap'],16)|(d0&15)<<24|(d1&15)<<28,int(pt['layer_object'],16)|(pt['d'][4]&0x7ff)<<21))
                 assert len(set(patch_list))==len(patch_list),'two patches with the same key'
                 for c in pt['cells']:
                     if c['colors'] not in model['palettes']:model['palettes'].append(c['colors'])

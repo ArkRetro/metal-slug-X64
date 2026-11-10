@@ -144,6 +144,13 @@ static const char *music_name(uint16_t word) {
     case 0x0026: return "music_mission5";
     case 0x002a: return "music_mission5_stage2";
     case 0x002b: return "music_mission5_stage3";
+    /* Mission 6: no stage word of its own. 016E5E +C asks for 0x28 (MAME
+     * run4 latch 06, 00 28 at 292684..292686: the word of Mission 3's boss
+     * above), 016E6E for 0x27 (00 27 at 304272: Mission 2's boss) and 016E7E
+     * for 0x2B (00 2B at 322340: the sewer's). In the last stage the actors
+     * ask for 0x2C (0A 60 at 324391, 00 2C at 324635) and 0x29 (0A 40 at
+     * 347135, 00 29 at 348850). */
+    case 0x0029: return "music_mission6_boss";
     default: return NULL;
     }
 }

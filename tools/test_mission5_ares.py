@@ -41,13 +41,13 @@ try:
         if r:win=r[-1]
         time.sleep(.5)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Up 4 - stage times (MISSION 5 STAGE 3 is the last item), A.
+    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Up 7 - stage times (the three stages of Mission 6 follow MISSION 5 STAGE 3), A.
     end=time.monotonic()+400
     while 'MSX MSELECT mission=' not in log():
         assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
         if re.search(r'MSX CINE select (start|waiting)',log()):
             time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(4-a.stage)];tap('a');time.sleep(.5)
+            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7-a.stage)];tap('a');time.sleep(.5)
             continue
         # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
         # or the press lands on SOLDIER SELECT and chooses before the menu combo.

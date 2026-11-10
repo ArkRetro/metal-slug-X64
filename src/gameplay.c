@@ -644,6 +644,9 @@ static const struct {uint8_t mission,stage;uint16_t a,b,layer[4];} draw_windows[
     {4,6,0x44,0x20,{0xffff,0x00,0xffff,0x24}},      /* Mission 5 stage 1 (247710..252810): 10D7B6, window B, 10C72E, window A */
     {4,7,0x20,0xffff,{0xffff,0xffff,0xffff,0x00}},  /* stage 2 (252840..274380): 10C72E, window A; no window B */
     {4,8,0x20,0xffff,{0xffff,0xffff,0xffff,0x00}},  /* stage 3 (274410..292050) */
+    {5,9,0x60,0x144,{0x20,0x00,0x124,0x40}},        /* Mission 6 stage 1 (292710..304260): 10D7B6 (no tiles), 10E83E, 10C72E, window A, 10E8C6 (over the sprites), window B */
+    {5,10,0x40,0xffff,{0x00,0xffff,0xffff,0x20}},   /* stage 2 (304290..322320): 10E83E, 10C72E, window A; no window B */
+    {5,11,0xc0,0x20,{0x00,0x80,0xffff,0xa0}},       /* stage 3 (322350..358800): 10E83E, window B, 10D7B6, 10C72E, window A */
 };
 msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage) {
     msx_draw_order_t o={0x07,0x18,false,false,false};   /* layers 0..2, window B, 3..4, window A */
@@ -652,7 +655,10 @@ msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage) {
         /* Port layers of each object: 10E83E 0, 10D7B6 1 and 2 (the same
          * object at reduced/full speed, tools/neo_scene.py ram_slots),
          * 10C72E 3 and 4 (the Mission 1 props scroll with it). */
-        static const uint8_t bits[4]={0x01,0x06,0x00,0x18};
+        static const uint8_t bits3[4]={0x01,0x06,0x00,0x18},bits4[4]={0x01,0x02,0x04,0x18};
+        /* With a map in 10E8C6 (Mission 6 stage 1) the model's layer 1 is
+         * 10D7B6 and its layer 2 is 10E8C6 (tools/export_stage_rom.py). */
+        const uint8_t *bits=draw_windows[i].layer[2]!=0xffff?bits4:bits3;
         uint16_t first=draw_windows[i].a<draw_windows[i].b?draw_windows[i].a:draw_windows[i].b;
         uint16_t second=draw_windows[i].a<draw_windows[i].b?draw_windows[i].b:draw_windows[i].a;
         o.back=o.front=0;

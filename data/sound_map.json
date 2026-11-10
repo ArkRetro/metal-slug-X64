@@ -538,6 +538,16 @@
    "frames": 24000
   },
   {
+   "label": "music_mission6_boss",
+   "word": "0029",
+   "callers": [
+    "042100"
+   ],
+   "event": "Mission 6 stage 3, the last enemy's second music (0120F8 from the actor 0417B8, return 042106; MAME run4 latch: fade 0A 40 at 347135, 00 29 at 348850). The stages' own words are other missions' (016E5E +C = 0x28, 016E6E 0x27, 016E7E 0x2B) and the first music of the last stage is 0x2C (0415CC, return 041B3E: 0A 60 at 324391, 00 2C at 324635)",
+   "music": true,
+   "frames": 24000
+  },
+  {
    "label": "sfx_10f5",
    "word": "10F5",
    "callers": [],

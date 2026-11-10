@@ -215,6 +215,11 @@ sobre `mslugx-explorer.z64`, etapas 1, 2 y 3: `RESULT: PASS`, con
 `MSX stage entry 2D602C kind 2 (0C15B4): the parachute descent from (104,
 256)` y las letras MISSION 5 START.
 
+Fusionado en `ccr` (`07fbc14`) y subido (`git push`). `/home/user/ws-logo`
+está en ese commit con `romfs/mission5.pack` (`build_packs.py 5`, idéntico al
+de este árbol), `filesystem/mission5/` y los `music_mission5*.wav64`; su
+árbol `build/` no se ha recompilado.
+
 Durante la fase, `make check` de este árbol no depende de los datos de la M4
 que el otro agente tiene a medias en `ws-logo/filesystem/mission4`
 (`patches.json` con más de 16 parches, que el `pack_mission.py` de `ccr`

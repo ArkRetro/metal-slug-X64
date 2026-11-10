@@ -15,9 +15,12 @@ Input per stage: filesystem/missionN/sK/map.json (tools/extract_mission_map.py
 --descriptor-layers). Coordinate variants (dynamic map writes, still needing
 their native events) are counted, not packed.
 
-Layout (big endian, every table 4-byte aligned; version 3, read by
-src/scene_assets.c scene_mission_*):
-  'MSXM' u16 version=4 u16 mission u16 stages u16 palettes u32 images u32 chunks
+Layout (big endian, every table 4-byte aligned; read by
+src/scene_assets.c scene_mission_*). Version 5 (docs/COMPRESION.md) is
+version 4 with the chunks stored as LZ4 blocks, the actor pages another
+mission's pack already holds taken from that pack (chunk word bits 8..15)
+and a 64-byte trailer naming those packs; --format 4 writes version 4:
+  'MSXM' u16 version=5 u16 mission u16 stages u16 palettes u32 images u32 chunks
   u32 cells_total u32 grid_bytes u32 actors u32 actor_images u32 resources
   u32 data_offset u32 data_length: the mission's own data 'MSXD' (mission_data;
     0 = none): the ROM blobs and animation programs of the mission's actors
@@ -44,7 +47,10 @@ src/scene_assets.c scene_mission_*):
   cell[]:    u8 layer u8 0 i16 x i16 y u16 image[8]        (22 bytes)
   image[]:   u16 page u16 palette u16 y u16 h              (8 bytes)
   palette[]: u16 rgba5551[16]
-  chunk[]:   u32 offset u32 length u32 crc32 u32 codec
+  chunk[]:   u32 offset u32 length u32 crc32 u32 word: codec in bits 0..7
+               (0 raw, 1 run pairs, 2 one LZ4 block; tools/pack_store.py),
+               bits 8..15 the mission whose pack holds the chunk at `offset`
+               (0: this pack). The CRC is of the decoded 16 KiB.
   actor[]:   u32 descriptor u16 first u16 count               (8 bytes)
   actor_image[]: u16 page u16 palette i16 x i16 y u16 w u16 h (12 bytes)
   resource[]: u16 logical palette resource u16 palette        (4 bytes)
@@ -52,11 +58,16 @@ src/scene_assets.c scene_mission_*):
   then the chunks (64-byte aligned). Grids with never observed cells are
   packed with their mask: the runtime treats an unknown cell as empty and
   counts it (explicit stop, docs/MISION2.md "Fase 2"). The runtime loads the tables of
-  one stage at a time (stage table offsets)."""
+  one stage at a time (stage table offsets).
+  Version 5, the file's last 64 bytes: 'MSXX' u16 packs u16 0, then per pack
+  whose chunks are used (at most 5): u16 mission u16 0 u32 its size in bytes
+  u32 the CRC-32 of the whole pack (the runtime refuses the mission when the
+  pack on the cartridge has another size; pack_store.py checks the CRC)."""
 import argparse,hashlib,json,struct,zlib
 from pathlib import Path
 from mission_tiles import pack_map
-from pack_scene import rle,unrle,PAGE
+from pack_scene import PAGE
+import pack_store
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
 DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,)}
@@ -123,8 +134,8 @@ def mission_data(mission):
             body+=struct.pack('>B',kinds[KIND_NAMES[c['kind']]])+(asset&0xffffff).to_bytes(3,'big')+struct.pack('>HBBbb',c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
     blob=b'MSXD'+struct.pack('>HHHH',1,len(blobs),len(programs),0)+bytes(recs)+bytes(body)
     return blob,dict(blobs=len(blobs),blob_bytes=sum(len(b['hex'])//2 for b in blobs),programs=len(programs),commands=sum(len(p['commands']) for p in programs),bytes=len(blob))
-def build(mission,stage_dirs,crom,rom=None):
-    MISSION[0]=mission
+def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
+    MISSION[0]=mission;assert fmt in (4,5) and (fmt==5 or not shared)
     pages=[];page_ids={};palettes=[];pal_ids={}
     def image(pixels,w,h,dx=0,dy=0,force_actor=False,indices=None,source_palette=None):
         assert indices is not None and w==64 and h==64
@@ -244,6 +255,7 @@ def build(mission,stage_dirs,crom,rom=None):
     # resource (scene_native_palette, mission resources after the scene's).
     frames,resources,empty=actor_frames(mission)
     while len(pages)%8:pages.append(bytes(PAGE))   # the actors start a chunk
+    actor_base=len(pages)
     actors=[];actor_images=[];res=[]
     for k,v in sorted(resources.items(),key=lambda t:int(t[0],16)):
         key=tuple(v)+(0,)*(16-len(v))
@@ -261,17 +273,42 @@ def build(mission,stage_dirs,crom,rom=None):
                 actor_images.append((page_ids[data],0,f['x']+px0,f['y']+py0,pw,ph))
         actors.append((int(f['descriptor'],16),first,len(actor_images)-first))
     actors+=[(int(e,16),0,0) for e in empty];actors.sort()
-    real_pages=len(pages)
+    # Actor pages another mission's pack already holds (docs/COMPRESION.md):
+    # a chunk of that pack with at least SHARED_MIN pages this mission's
+    # actors draw is not stored again; its record points into that pack and
+    # its 8 pages become this pack's last ones. The other actor pages keep
+    # their order; the map pages and their ids do not change.
+    borrowed=[];trailer=[]
+    if shared:
+        need={pages[i]:i for i in range(actor_base,len(pages))};found={}
+        for other in shared:
+            assert other.version>=5 and other.mission!=mission
+            used=False
+            for c,(off,ln,crc,word) in enumerate(other.chunks):
+                if word>>8&0xff:continue   # held by a third pack: taken from that one, if given
+                ps=[other.page(8*c+k) for k in range(8)]
+                if sum(1 for x in set(ps) if x in need and x not in found)<SHARED_MIN:continue
+                for k,x in enumerate(ps):
+                    if x in need:found.setdefault(x,8*len(borrowed)+k)
+                borrowed.append((ps,[off,ln,crc,(word&0xff)|other.mission<<8]));used=True
+            if used:trailer.append((other.mission,len(other.raw),zlib.crc32(other.raw)))
+        own=[x for x in pages[actor_base:] if x not in found]
+        while len(own)%8:own.append(bytes(PAGE))
+        first_borrowed=actor_base+len(own);new={x:actor_base+i for i,x in reversed(list(enumerate(own)))}
+        new.update((x,first_borrowed+i) for x,i in found.items())
+        actor_images=[(new[pages[im[0]]] if im[0]>=actor_base else im[0],)+im[1:] for im in actor_images]
+        pages=pages[:actor_base]+own
+    real_pages=len(pages)+8*len(borrowed)
     while len(pages)%8:pages.append(bytes(PAGE))
     chunks=[];body=bytearray()
-    for start in range(0,len(pages),8):
-        decoded=b''.join(pages[start:start+8]);packed=rle(decoded)
-        if len(packed)<len(decoded):codec=1;assert unrle(packed)==decoded
-        else:codec=0;packed=decoded
+    decoded_chunks=[b''.join(pages[start:start+8]) for start in range(0,len(pages),8)]
+    for decoded,(packed,codec) in zip(decoded_chunks,pack_store.encode(decoded_chunks,legacy=fmt<5)):
         chunks.append([len(body),len(packed),zlib.crc32(decoded),codec])
         body.extend(packed);body.extend(bytes((-len(body))%64))
+    own_chunks=len(chunks);chunks+=[rec for _,rec in borrowed]
+    pages+=[x for ps,_ in borrowed for x in ps]
     data,data_report=mission_data(mission)
-    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',4,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
+    head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',fmt,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
     stage_at=len(head);head+=bytes(STAGE_BYTES*len(stages))
     for layer,x,y,ph in cells:head+=struct.pack('>BBhh8H',layer,0,x,y,*ph)
     for im in images:head+=struct.pack('>4H',*im)
@@ -286,7 +323,9 @@ def build(mission,stage_dirs,crom,rom=None):
     while len(head)%4:head.append(0)
     if data:struct.pack_into('>I',head,40,len(head));head+=data
     head+=bytes((-len(head))%64)
-    for i,c in enumerate(chunks):c[0]+=len(head);struct.pack_into('>4I',head,table_at+16*i,*c)
+    for i,c in enumerate(chunks):
+        if i<own_chunks:c[0]+=len(head)
+        struct.pack_into('>4I',head,table_at+16*i,*c)
     for k,st in enumerate(stages):
         rec=struct.pack('>IHHIIIHHhhIIII',st['descriptor'],st['width'],st['camera_max'],st['backdrop'],st['first'],st['count'],
                         st['columns'],st['rows'],st['origin'][0],st['origin'][1],grids_at+st['grid'],grids_at+st['unknown'] if st['unknown'] else 0,
@@ -297,11 +336,17 @@ def build(mission,stage_dirs,crom,rom=None):
         rec+=struct.pack('>II',blobs_at+st['recon'][0] if st['recon'] else 0,st['recon'][1] if st['recon'] else 0)
         assert len(rec)<=STAGE_BYTES;head[stage_at+STAGE_BYTES*k:stage_at+STAGE_BYTES*k+len(rec)]=rec
     blob=bytes(head)+bytes(body)
+    if fmt>=5:
+        assert len(blob)%64==0 and len(trailer)<=5
+        tail=b'MSXX'+struct.pack('>HH',len(trailer),0)+b''.join(struct.pack('>HHII',m,0,n,crc) for m,n,crc in trailer)
+        blob+=tail+bytes(64-len(tail))
     return blob,dict(mission=mission,stages=report,pages=real_pages,chunks=len(chunks),palettes=len(palettes),images=len(images),cells=len(cells),
                      actors=len(actors),actor_images=len(actor_images),actor_pages=len({im[0] for im in actor_images}),resources=len(res),
-                     header_bytes=len(head),mission_data=data_report,decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),sha256=hashlib.sha256(blob).hexdigest())
+                     header_bytes=len(head),mission_data=data_report,decoded_bytes=len(pages)*PAGE,packed_bytes=len(blob),version=fmt,
+                     chunk_bytes=len(body),borrowed_chunks={m:sum(1 for _,r in borrowed if r[3]>>8==m) for m,_,_ in trailer},sha256=hashlib.sha256(blob).hexdigest())
 
 STAGE_BYTES=128
+SHARED_MIN=5   # pages of a chunk (of 8) the mission must use to take it from another pack
 def recon_blob(stage,rom):
     """'MSXR' map reconnaissance of a stage (docs/MISION3.md), big endian:
       'MSXR' u16 version=1 u16 maps u16 patches u16 dynamic_maps u16 sections
@@ -564,11 +609,23 @@ def main():
     p.add_argument('--report',type=Path)
     p.add_argument('--loose-layers',action='store_true',help='Mission 3: layers that move on their own get the best median fit (worst error in the report)')
     p.add_argument('--rom',type=Path,default=Path('/home/user/roms/mslugx.zip'),help='MAME set (P ROMs) for the per-stage ROM tables')
+    p.add_argument('--format',type=int,choices=(4,5),default=5,help='pack version (4: run-pair chunks, nothing taken from other packs; for the comparison test)')
+    p.add_argument('--shared',type=Path,nargs='*',help='version 5 packs whose chunks this one may use (default: the lower-numbered missionN.pack beside the output)')
     a=p.parse_args();LOOSE[0]=a.loose_layers
     from decode_level_script import Program
-    blob,report=build(a.mission,a.stages,a.crom.read_bytes(),Program(a.rom))
+    out=a.output or ROOT/f'romfs/mission{a.mission}.pack'
+    shared=[]
+    if a.format>=5:
+        paths=a.shared if a.shared is not None else [q for m in range(2,a.mission) for q in [out.with_name(f'mission{m}.pack')] if q.exists()]
+        shared=[pack_store.MissionPack(q) for q in paths]
+        # A pack another one uses must sit beside the output under its own name (the cartridge's layout).
+        assert all(q.path.resolve()==out.with_name(f'mission{q.mission}.pack').resolve() for q in shared),'--shared packs must be missionN.pack beside the output'
+    blob,report=build(a.mission,a.stages,a.crom.read_bytes(),Program(a.rom),a.format,shared)
     # romfs/: the game loads it at the mission switch (docs/MISION2.md).
-    out=a.output or ROOT/f'romfs/mission{a.mission}.pack';out.parent.mkdir(exist_ok=True);out.write_bytes(blob)
+    out.parent.mkdir(exist_ok=True);out.write_bytes(blob)
+    if a.format>=5:   # read back as every tool does: each chunk decodes to its CRC, here or in the pack that holds it
+        back=pack_store.MissionPack(out)
+        for i in range(len(back.chunks)):back.chunk(i)
     if LOOSE_ERRORS:report['loose_layer_errors']=[dict(layer=L,worst=w,median=m) for L,w,m in LOOSE_ERRORS]
     if a.report:a.report.write_text(json.dumps(report,indent=1)+'\n')
     print(json.dumps({k:v for k,v in report.items() if k!='stages'}))

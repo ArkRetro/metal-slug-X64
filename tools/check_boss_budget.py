@@ -17,11 +17,13 @@ def main():
     assert all(images[start+f+i][4]<=64 and images[start+f+i][5]<=64 for f,c in descs.values() for i in range(c)),'part above one TMEM page'
     # Round trip: every boss descriptor rebuilt from the packed CI4 pages
     # (romfs/scene.pack) must equal the exported pens exactly.
-    from pack_scene import unrle
+    import pack_store,zlib
     chunks=table(meta,'scene_chunks');blob=(ROOT/'romfs/scene.pack').read_bytes()
+    decoded={}
     def page(i):
-        off,length,crc,codec=chunks[i//8];raw=blob[off:off+length]
-        dec=unrle(raw) if codec else raw
+        if i//8 not in decoded:
+            off,length,crc,codec=chunks[i//8];decoded[i//8]=pack_store.decode(blob[off:off+length],crc,codec)
+        dec=decoded[i//8]
         return dec[(i%8)*2048:(i%8+1)*2048]
     boss=json.loads((ROOT/'filesystem/boss-native.json').read_text());checked=0
     for f in boss['frames']:

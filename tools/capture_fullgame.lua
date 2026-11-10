@@ -300,6 +300,7 @@ local ride_px,ride_blocked,ride_detour,ride_dir=nil,0,0,1
 -- (default the Slugnoid's; the Mission 3 SV-001 093C9A: 93afa-94e2a).
 local ride_lo,ride_hi=string.match(os.getenv('MSX_FULL_RIDE_RANGE') or '96a10-97830','(%x+)-(%x+)')
 ride_lo,ride_hi=tonumber(ride_lo,16),tonumber(ride_hi,16)
+local saved_progress=false
 local function slugnoid_node()
  local n=ROOT;local count=0
  while n~=0 and n>=0x100000 and n<0x110000 and count<400 do
@@ -390,6 +391,21 @@ local function ride_inputs()
   -- 0938DA); every 8 s a short drive right.
   if t>=60 and t<180 then b.R=1
   elseif t>=180 and (t%480)<40 then b.R=1 end
+ elseif ride_plan=='boss' then
+  -- 'boss' (the Mission 3 SV-001 093C9A into the final boss 04A2C2, G15):
+  -- drive right until the camera progress 10E99E reaches the arena's 6494,
+  -- firing, then hold the vehicle at the screen x MSX_FULL_RIDE_HOLD (default 96:
+  -- farther than 0x40 from the boss, so 04DA38 draws from its vehicle
+  -- tables 2C1556/2C15A4) without firing, never leaving the seat.
+  local hold=tonumber(os.getenv('MSX_FULL_RIDE_HOLD') or '96')
+  local sx=cpu:read_i16(0x101500)
+  if t>=60 then
+   if cpu:read_u16(0x10e99e)<6494 then
+    -- On the way (the camera waits 2DB140.. for the soldiers): vulcan and
+    -- cannon as the 'tank' plan's.
+    b.R=1;b.A=frame%10<5 and 1 or 0;b.C=frame%40<4 and 1 or 0
+   elseif sx<hold-4 then b.R=1 elseif sx>hold+4 then b.L=1 end
+  end
  elseif ride_plan=='dmg' then
   -- 'dmg' (the Mission 1 SV-001, B59): drive right 90 frames, stop 60,
   -- a jump every 75 frames (hits in the air 0935A8), never firing, so the
@@ -620,6 +636,10 @@ emu.register_frame_done(function()
    -- Iteration aid only (MSX_FULL_SAVE=1): a MAME state per section start.
    if os.getenv('MSX_FULL_SAVE')=='1' and sec>=0 and sec<30 and frame>(tonumber(os.getenv('MSX_FULL_LOAD_FRAME') or '0'))+10 then machine:save(string.format('sec%02d_%d',sec,frame)) end
   end
+  -- Iteration aid only (MSX_FULL_SAVE_PROGRESS=<n>): one MAME state
+  -- prog_<frame> the first frame the camera progress 10E99E reaches n.
+  local sp=tonumber(os.getenv('MSX_FULL_SAVE_PROGRESS') or '')
+  if sp and not saved_progress and cpu:read_u16(0x10e99e)>=sp then saved_progress=true;machine:save(string.format('prog_%d',frame));print('SAVED prog_'..frame) end
   -- Iteration aid only (MSX_FULL_SAVE_AT=<frame>[,<frame>...]): a MAME state at each frame.
   for h in string.gmatch(os.getenv('MSX_FULL_SAVE_AT') or '','(%d+)') do
    if frame==tonumber(h) then machine:save(string.format('at_%d',frame)) end

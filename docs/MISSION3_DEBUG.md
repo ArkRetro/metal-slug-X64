@@ -11,7 +11,8 @@ Referencias: `MISION3.md`, `MISION3_ACTORES.md`, `JEFE_MISION3.md`,
 - **Mapa y colisión:** 100 % frente a MAME en las 5 secciones (`test_m3_map`).
 - **Actores:** todos los del recorrido de `run4` antes del jefe son nativos.
   Faltan las ramas al azar no vistas y `03C306` (granada, sin traza).
-- **Jefe intermedio y final:** nativos (familias m3mid1..4, m3boss0..5).
+- **Jefe intermedio y final:** nativos (familias m3mid1..4, m3boss0..6; la 6 con el
+  jugador en el SV-001: orden 6 de la lanzadera, G15).
   El fin de misión cae en la parada explícita "falta mission4.pack", que
   reinicia la M1.
 - **Vehículos:** `093C9A` y `0AC866`. Arma E. Marco gordo y sus armas (bomba,
@@ -79,7 +80,7 @@ paletas (`at_119570` con el plan `to:6c0`, `at_124100`). Orden: visibilidad.
 | G12 | Paleta `0A7` (piloto `04EF88` de `04E990` con sangre) | ares: ~2400 dibujos; `run4` va sin sangre | **corregido** (`work-m3lever`): `tools/capture_fullgame_blood.lua` (10FD8F = 1, como `capture_blood.lua`) desde `sec04_117966`, volcados 122230..123300 (`captures-m3lever/g12`): 100 volcados con 0A7, un solo juego de colores; `export_rest_sprites.py --palette-capture`; las otras paletas, sin cambios |
 | G13 | Etiquetas: letras `08C954` del rótulo de bombas (`08C752`, externo, 5), puntos `08D0D2` de los cañones del jefe intermedio (2) | `--list` | abierto |
 | G14 | Fuego `01C950` del molotov `056B00` de los lanzadores (3) | `--list` | abierto |
-| G15 | Jefe: orden 6 de la lanzadera (`04BA94`, misil `04C220`), bola recta `04C952` | no salen en `run4` (ramas al azar) | abierto: paradas explícitas |
+| G15 | **El jefe deja de atacar con el jugador montado** (MiSTer, ROM 44; B64): orden 6 de la lanzadera (`04BA94`, misil `04C220`) | las tablas de elección con un jugador en vehículo (`04DA38`: `2C1556`/`2C15A4`; agachado `04DC5C`: `2C168E`/`2C16DC`) dan la orden 6 en 3 de 8 casillas; `run4` va a pie (piloto). En el port era una parada explícita (`04BAB2`): la lanzadera se borraba con su árbol y el `+9E = 7F` que le había puesto al cuerpo no se limpiaba nunca, así que `04DA38` no volvía a elegir: el jefe se quedaba quieto. Captura nueva `capture_m3_boss.sh ridestates/ride` (plan `boss` de `capture_fullgame.lua`: sube al SV-001 `093C9A`, avanza disparando y espera en x 96 sin disparar; estado `prog_140352`): MAME usa la orden 6 al menos 18 veces en 140352..152000 | **corregido** (`work-m3order6`): `04BAB2` (lado del jugador por `01B04A`/`01B12E` desde el punto de la pose: `+9C` = 0 u 8), `04BB88/04BBAA` (abre), `04BBFC/04BC68` (espera `2C230E`/`2C2340`, barridos `2C243A`/`2C2454`), `04BCA2..04BD32` (uno de 8 patrones `2C25E2`/`2C2602` con `0029F2(8)`; programa `245DE6` = `CALL 04E140` → misil `04C220`, paleta 202, programa `246794`, velocidad `2C22A6`/`2C22C0`) y `04BF66` (una andanada de la orden 2). Familia `m3boss6` (140589..141879: 99 nodos, 8898 actualizaciones, 16 misiles `04C220`) igual a MAME; sprites ya en el export (volcados 141420..141690: 0 píxeles distintos). `04C952` (bola recta) y `04E1E6` (piezas `04C2F6/04C30A`) no tienen ninguna referencia en la ROM (código muerto): no se portan. Con el código anterior la familia se para en 141431 (`4BA94 unsupported 4BAB2`). ares (`mslugx-m3-reference.z64`, piloto hasta 4914 y luego mando: sube al SV-001, llega a 6496 montado y espera a la izquierda 150 s sin disparar): el jefe ataca todo el rato (misiles de la orden 6 y de la 2, lanzallamas, mortero), sin paradas del jefe; a pie, lejos y pegado a él, también. El cartucho normal no llega solo al jefe (el mando automático pierde las vidas en 2888 con la barra de vida); el código del jefe es el mismo. De paso: el gancho de referencia `MSX_REFERENCE_STAGE_EXIT` terminaba la M3 al llegar al borde derecho de la arena con el jefe recién nacido (`gameplay.c`: la M3 queda fuera, como la M2). Queda sin comprobar el aterrizaje de la bola (`0143E4`; la captura falla ahí en 141895, como en `m3boss1`) |
 | G16 | Granada `03C306` de la muerte de `04115A` | sin traza en `run4`; ares (cartucho normal) `native draw missing last=162D90..162DCC` | **sprites corregidos** (`work-m3lever`): raíz `23F2A0` en `export_rest_sprites.py` (18 descriptores de la ROM, sin captura que validar; paleta 20E ya estaba). La conducta sigue sin traza |
 | G17 | Superposición `10E8C6` (`0A6C8C`, 34 bloques de submapa en 3944) y 41 bloques del tren con otra paleta | `render_m3_sections.py`: 98,84 % / 99,49 % de píxeles en las secciones 4 / 3 | abierto (poco visible) |
 | G19 | En 1520 el port mostraba un bosque espeso detrás del tren donde MAME ve el cañón con un árbol | el mapa del tren `0B8566` tiene tramos de bosque; 209 celdas observadas de la capa 1 no eran el bloque de ROM de su x (vistas a través de un paso del origen `+32`) | **corregido**: `pack_mission.py fill_loop_layer` les pone el bloque de ROM con sus colores votados (797 trozos); ares (piloto) en 1520: cañón y árbol como MAME |
@@ -110,7 +111,7 @@ on=1 mode=1 own=1`). No hay diferencia en ares: falta verlo en MiSTer.
 
 ## Siguiente experimento (uno solo)
 
-G22 (plataforma de la palanca) y G20: falta confirmarlos en MiSTer (disparar a las palancas de los vagones 7-24 y subir; la M3 tras arrancar con los cinemáticos completos). Luego G10, G11, G13, G14 y G23 por
+G15 (el jefe con el jugador montado en el SV-001), G22 (plataforma de la palanca) y G20: falta confirmarlos en MiSTer (disparar a las palancas de los vagones 7-24 y subir; la M3 tras arrancar con los cinemáticos completos). Luego G10, G11, G13, G14 y G23 por
 visibilidad. Verificado en `work-m3g7`: ares (referencia, piloto, 330 s, sin
 `begun early`) hasta el puente 2888 sin rutinas no soportadas (solo los 16
 externos `02A448` de G11) y 1235 dibujos sin paleta `0A7` (G12) o sin los
@@ -146,4 +147,6 @@ privados: `filesystem/mission3/rest-native.json`, `romfs/mission3.pack`; `work-g
 `0B91D0`), `src/scene_renderer.c`, `src/neo_m3props.c`, `tools/extract_map_patches.py`, `tools/pack_mission.py`,
 `tools/extract_soldier_programs.py`, `tools/export_rest_sprites.py`, `tools/capture_fullgame_blood.lua`,
 `data/soldier_programs.json`; privados: `filesystem/mission3/s1/patches.json`, `filesystem/mission3/rest-native.json`,
-`romfs/mission3.pack`.
+`romfs/mission3.pack`.; `work-m3order6` (G15, B64): `src/neo_m3boss.c`, `src/gameplay.c` (gancho de referencia), `data/region_rom.json`, `data/soldier_programs.json`,
+`data/m3boss6_fixture.json.gz`, `Makefile`, `tools/capture_fullgame.lua` (plan `boss`, `MSX_FULL_SAVE_PROGRESS`), `tools/capture_m3_boss.sh` (`ridestates`, `ride`),
+`tools/extract_soldier_programs.py`, `tools/export_rest_sprites.py`; privado: `romfs/mission3.pack` (bloque MSXD).

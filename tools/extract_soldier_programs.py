@@ -291,7 +291,8 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van')}
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van'),
+    'm5':('# Mission 5 sewer gates',)}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -358,6 +359,8 @@ ROOTS+=[0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x248a42,
 ROOTS+=[0x23bdd2,0x23bddc,0x23be08,0x23bdf2,0x23bebe]
 # Mission 4 van 0A9F0C (neo_m4props.c): 2A7E1A and its stages 0E6836, the overlay 0AA37C (2A7E10 and 0E6862).
 ROOTS+=[0x2a7e1a,0x2a7e10,0x2a7f28,0x2a80d8,0x2a8192,0x2a82e4,0x2a83e4,0x2a8546,0x2a8646,0x2a8712,0x2a896c,0x2a8994,0x2a7e2c,0x2a80cc,0x2a8186,0x2a82d8,0x2a83d0,0x2a8532,0x2a8632,0x2a86fe,0x2a8880,0x2a8988]
+# Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE.
+ROOTS+=[0x2a91d0,0x2a91ee]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

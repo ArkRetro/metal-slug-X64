@@ -478,6 +478,28 @@ static void stamp_ring(neo_gactor_t *a,uint32_t t) {
         }
     }
 }
+/* 0C8A3C (A0 = 10C72E, 0BC38E): the template over the ring +88 at the cell
+ * (+28 word >> 3 + dx, +2C word >> 3 + dy), rows from the top, every cell
+ * replaced by shape | bit 4 by +4 | +5 << 5; no window, no mask. */
+static void stamp_cells(void *ctx,neo_gactor_t *a,uint32_t t) {
+    (void)ctx;stamps++;
+    const uint8_t *tp=ga_rom(t);assert(tp);
+    uint16_t d0=(uint16_t)((ga_w(a,0x28)>>3)+(int8_t)tp[0]),d1=(uint16_t)((ga_w(a,0x2c)>>3)+(int8_t)tp[1]);
+    unsigned d4=tp[2],d5=tp[3];
+    d1=(uint16_t)-(int16_t)(d1+d5);
+    uint8_t *ring=&wram[(0xc72eu+0x88u)&0xffffu];
+    const uint8_t *a1=tp+10;
+    for (;d4;d4--,a1++,d0++) {
+        const uint8_t *a2=a1;uint16_t r=d1;
+        for (unsigned k=d5;k;k--,a2+=tp[2],r++) {
+            uint8_t v=*a2;assert(v<0x10);
+            if (tp[4]) v|=0x10;
+            ring[((unsigned)(d0&0x3f)<<6)+(unsigned)(r&0x3f)]=(uint8_t)(v|(tp[5]<<5));
+        }
+    }
+}
+#endif
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
 /* 0C70FC (collision part, 0C72EC): the sub-map's cells into the ring +88
  * of the --ring layer, clipped to its 32x32-block window (+36/+38 as read). */
 static unsigned patches;
@@ -537,7 +559,11 @@ int main(void) {
 #ifdef FAMILY_PREVIOUS
     e.previous=previous;
 #endif
-    e.spawn=spawn;e.palette_slot=palette_slot;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.palette_slot=palette_slot;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+    e.stamp_cells=stamp_cells;
+#endif
+e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;

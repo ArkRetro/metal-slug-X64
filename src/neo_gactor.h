@@ -215,6 +215,10 @@ struct neo_genv {
     neo_gactor_t *(*previous)(void *ctx,neo_gactor_t *a);
     /* ROM 0C88B0: wreck template stamped into the static collision grid. */
     void (*stamp)(void *ctx,neo_gactor_t *a,uint32_t template_address);
+    /* ROM 0C8A3C (A0 = 10C72E): the template's cells written over the
+     * ring at the cell (+28 word >> 3, +2C word >> 3), no mask and no
+     * window (0BC38E, the Mission 5 sewer gates 0BC3A6). */
+    void (*stamp_cells)(void *ctx,neo_gactor_t *a,uint32_t template_address);
     /* ROM 0C70FC: copy the sub-map at ROM `submap` (+0 tiles, +4 collision,
      * +8 column pairs, +A blocks) into layer `layer` at block column d4,
      * block row d5 (d0/d1 source offsets, d2/d3 counts). */

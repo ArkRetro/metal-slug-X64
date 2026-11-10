@@ -1297,6 +1297,34 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	python3 tools/compile_camera_fixture.py data/m5tas3_camera_fixture.json.gz $(BUILD_DIR)/m5tas3/m5_camera_fixture.h
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m5tas3 -I$(BUILD_DIR) -DM5_STAGE=2 '-DM5_SOURCE="TAS, no memory writes"' tools/test_m5_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m5tascamera3
 	$(BUILD_DIR)/host/m5tascamera3 romfs/mission5.pack
+	python3 tools/compile_m6_map_fixture.py data/m6_map_fixture.json.gz $(BUILD_DIR)/m6_map_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m6_map.c src/neo_collision.c -o $(BUILD_DIR)/host/m6map
+	$(BUILD_DIR)/host/m6map romfs/mission6.pack
+	mkdir -p $(BUILD_DIR)/m6tas
+	python3 tools/compile_m6_map_fixture.py data/m6tas_map_fixture.json.gz $(BUILD_DIR)/m6tas/m6_map_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6tas -I$(BUILD_DIR) '-DM6_SOURCE="TAS, no memory writes"' tools/test_m6_map.c src/neo_collision.c -o $(BUILD_DIR)/host/m6tasmap
+	$(BUILD_DIR)/host/m6tasmap romfs/mission6.pack
+	mkdir -p $(BUILD_DIR)/m6s1 $(BUILD_DIR)/m6tas1
+	python3 tools/compile_camera_fixture.py data/m6s1_camera_fixture.json.gz $(BUILD_DIR)/m6s1/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6s1 -I$(BUILD_DIR) -DM6_STAGE=0 tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6camera1
+	$(BUILD_DIR)/host/m6camera1 romfs/mission6.pack
+	python3 tools/compile_camera_fixture.py data/m6tas1_camera_fixture.json.gz $(BUILD_DIR)/m6tas1/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6tas1 -I$(BUILD_DIR) -DM6_STAGE=0 '-DM6_SOURCE="TAS, no memory writes"' tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6tascamera1
+	$(BUILD_DIR)/host/m6tascamera1 romfs/mission6.pack
+	mkdir -p $(BUILD_DIR)/m6s2 $(BUILD_DIR)/m6tas2
+	python3 tools/compile_camera_fixture.py data/m6s2_camera_fixture.json.gz $(BUILD_DIR)/m6s2/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6s2 -I$(BUILD_DIR) -DM6_STAGE=1 tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6camera2
+	$(BUILD_DIR)/host/m6camera2 romfs/mission6.pack
+	python3 tools/compile_camera_fixture.py data/m6tas2_camera_fixture.json.gz $(BUILD_DIR)/m6tas2/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6tas2 -I$(BUILD_DIR) -DM6_STAGE=1 '-DM6_SOURCE="TAS, no memory writes"' tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6tascamera2
+	$(BUILD_DIR)/host/m6tascamera2 romfs/mission6.pack
+	mkdir -p $(BUILD_DIR)/m6s3 $(BUILD_DIR)/m6tas3
+	python3 tools/compile_camera_fixture.py data/m6s3_camera_fixture.json.gz $(BUILD_DIR)/m6s3/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6s3 -I$(BUILD_DIR) -DM6_STAGE=2 tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6camera3
+	$(BUILD_DIR)/host/m6camera3 romfs/mission6.pack
+	python3 tools/compile_camera_fixture.py data/m6tas3_camera_fixture.json.gz $(BUILD_DIR)/m6tas3/m6_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR)/m6tas3 -I$(BUILD_DIR) -DM6_STAGE=2 '-DM6_SOURCE="TAS, no memory writes"' tools/test_m6_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m6tascamera3
+	$(BUILD_DIR)/host/m6tascamera3 romfs/mission6.pack
 	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
 	$(BUILD_DIR)/host/m2wall

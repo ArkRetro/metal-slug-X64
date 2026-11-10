@@ -62,6 +62,24 @@ def list_factors(rom,descriptor):
     for a,op in list_ops(rom,descriptor):
         if op==0x1c:out.setdefault(rom.u32(a+4),set()).add((s16(rom.u16(a+8)),s16(rom.u16(a+10))))
     return out
+LOAD_PAGE=0x2000
+def load_span(rom,descriptor,load):
+    """Layer x (px) of the object of `load` at the progress of that load and at the progress of the object's next load
+    (or the list's final limit, op 8): the list's factor segments of the object (op 0x1C, +26 = x factor / 256) in list
+    order; the waits (op 0) give the progress of each op. The object must not be rebased (op 0x44 / 0x14 after the head)."""
+    x=0.0;progress=0;factor=0;start=None;s16=lambda v:v-65536 if v>=32768 else v
+    for a,op in list_ops(rom,descriptor):
+        target=progress
+        if op==0:target=rom.u16(a+4)
+        elif op==8:target=rom.u16(a+4)
+        if target>progress:x+=(target-progress)*factor/256;progress=target
+        if op==0x44 and rom.u32(a+4)==load['object']:assert start is None and progress==0,('rebase of a paged layer',hex(a))
+        if op==0x1c and rom.u32(a+4)==load['object']:factor=s16(rom.u16(a+8))
+        if op==0x18 and rom.u32(a+4)==load['object']:
+            if start is not None:return start,int(x)
+            if a==load['at']:start=int(x)
+    assert start is not None
+    return start,int(x)
 def list_limit(rom,descriptor):
     """Op 8 (0C855C): the list's final progress limit."""
     for a,op in list_ops(rom,descriptor):
@@ -90,11 +108,32 @@ def main():
     a=ap.parse_args();rom=Rom(a.rom)
     loads=camera_maps(rom,a.descriptor);rep=dict(descriptor='%06X'%a.descriptor,camera_list='%06X'%rom.u32(a.descriptor),loads=[])
     cells={};last=0
+    loopers={rom.u32(x+8):(rom.u16(x+12),rom.u16(x+14)) for x,op in list_ops(rom,a.descriptor) if op==0x2c and rom.u32(x+4)==0x0b0b72}
     for l in loads:
         t,c,w,h,tiles,coll=map_blocks(rom,l['map']) if l['map'] else (0,0,0,0,{},{})
+        # The map looper 0B0B72 (a call of the list with the layer object, a block column and a step; its actor 0B0B94
+        # adds the step to the object's column origin +32 with 0C6F82 every time the ring's right edge, +36 + 0x20 - +32,
+        # reaches that column): from that column on the map shows its last `step` columns again and again. The model
+        # and the grid repeat them up to the list's final limit plus a view (Mission 6 stage 016E6E: 10C72E, 160, 32).
+        lp=loopers.get(l['object'])
+        if lp and l['map']:
+            assert l['column']+w==lp[0] and not l['table'],('looper at the map end',hex(l['map']),lp)
+            # The ring's last column is +36 + 0x1F, so the shift comes when that column would show the map column
+            # limit - 1: the block column limit - 1 itself already shows the column `step` before it (MAME: the cells of
+            # the columns 159, 191, 223, 255 of the stage 016E6E are those of the map column 127, not 159).
+            for i in range(w-1,-(-(list_limit(rom,a.descriptor)+352)//16)-l['column']):
+                src=w-1-lp[1]+(i-(w-1))%lp[1]
+                for j in range(h):
+                    if (src,j) in tiles:tiles[(i,j)]=tiles[(src,j)]
+                    else:tiles.pop((i,j),None)
+                for k in range(2):
+                    for rr in range(2*h):
+                        if (2*src+k,rr) in coll:coll[(2*i+k,rr)]=coll[(2*src+k,rr)]
+                        else:coll.pop((2*i+k,rr),None)
+            l['loop_from']=w-1;w=max(i for i,_ in tiles)+1
         l.update(tiles_at=t,collision_at=c,width=w,height=h,tiles=tiles)
         rep['loads'].append(dict(at='%06X'%l['at'],progress=l['progress'],object='%06X'%l['object'],column=l['column'],top=l['top'],map='%06X'%l['map'],
-                                 column_table='%06X'%l['table'],tiles='%06X'%t,collision='%06X'%c,blocks=[w,h]))
+                                 column_table='%06X'%l['table'],tiles='%06X'%t,collision='%06X'%c,blocks=[w,h],loop_from=l.get('loop_from')))
         if l['object']==0x10c72e and coll:
             # The map's top cell row is the kernel row 2 T + 1.
             for (x,r),v in coll.items():
@@ -197,6 +236,7 @@ def main():
                 i,j=c['x']//16-l['column'],(c['y']-y0)//16
                 while l['ring'] and i>=l['width']:i-=32
                 while not l['ring'] and i>=l['width'] and l['width']>=32 and l['object']==0x10c72e:i-=32
+                while not l['ring'] and i>=l['width'] and l['width']==32 and l['object']!=0x10c72e and sum(1 for q in loads if q['object']==l['object'])>1:i-=32   # a paged looping map (below)
                 b=l['tiles'].get((i,j))
                 if b is None:outside.append(c);continue
                 if b[0]&~mask(b[1])!=c['code'] or (b[1]&3)!=c['flip']:continue
@@ -220,17 +260,28 @@ def main():
             # hold the whole map and 0C714E clips every later load, so the picture repeats every 512 px (the observed
             # blocks in "ring columns" above). The model repeats it up to the last x the layer shows: the list's final
             # progress limit (op 8) times the object's x factor (op 0x1C, one pair) / 256, plus the 352 px of a view.
-            repeats=1
+            repeats=1;page=0
             if not l['ring'] and l['object']!=0x10c72e and l['width']==32:
-                f=list_factors(rom,a.descriptor).get(l['object'],set());assert len(f)==1,('factors of a looping map',hex(l['object']),f)
-                reach=list_limit(rom,a.descriptor)*next(iter(f))[0]//256+352;repeats=max(1,-(-(reach-16*l['column'])//512))
+                f=list_factors(rom,a.descriptor).get(l['object'],set())
+                if len(f)==1 and sum(1 for q in loads if q['object']==l['object'])==1:
+                    reach=list_limit(rom,a.descriptor)*next(iter(f))[0]//256+352;repeats=max(1,-(-(reach-16*l['column'])//512))
+                else:
+                    # Several maps loaded in turn into one background object (Mission 6, docs/MISION6.md: 10E83E of the list
+                    # 0BCA00 takes 0BC712, 0BC728 and 0BC73E at progress 0, 1056 and 2320, and its factors change): each load
+                    # shows from the layer x of its own progress to the layer x of the next load of the object (or the list's
+                    # final limit) plus a view; the layer x at a progress is the sum of the list's own factor segments
+                    # (op 0x1C in list order). The n-th load of the object goes to the model's x page LOAD_PAGE * n (the
+                    # runtime adds the page of the object's current load, src/actor.c), since their x ranges overlap.
+                    x0,x1=load_span(rom,a.descriptor,l);n=[q['at'] for q in loads if q['object']==l['object']].index(l['at'])
+                    page=LOAD_PAGE*n;repeats=range((x0-16*l['column'])//512,-(-(x1+352-16*l['column'])//512))
+                    assert repeats.start>=0,('a map shown before its first column',hex(l['map']),x0)
             for (i,j),(code,attr) in sorted(l['tiles'].items()):
                 if not code&0xffff and not attr:continue
                 first,count=table_rows(l['table'],i)
                 if not first<=j<first+count:continue
                 if attr>>8 not in votes and attr>>8 not in ram_pal:uncoloured[attr>>8]+=1;continue
                 pal=votes[attr>>8].most_common(1)[0][0] if attr>>8 in votes else ram_pal[attr>>8]
-                xs=[base+16*i,base+16*i+512] if l['ring'] else [16*(l['column']+i)+512*k for k in range(repeats)]
+                xs=[base+16*i,base+16*i+512] if l['ring'] else [page+16*(l['column']+i)+512*k for k in (repeats if isinstance(repeats,range) else range(repeats))]
                 for x in xs:
                     if l['ring'] and x>=base+512+352:continue
                     cells.append(dict(layer=layer,x=x,y=y0+16*j,code=code&~mask(attr),flip=attr&3,animation_mask=mask(attr),palette=pal,observations=0));emitted+=1
@@ -251,7 +302,7 @@ def main():
                     if c['x']>=16*(l['column']+l['width']) and c['x']<a.outside_limit and (layer,c['x'],c['y']) not in have:
                         have.add((layer,c['x'],c['y']));kept+=1
                         cells.append(dict(layer=layer,x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],animation_mask=c['animation_mask'],palette=c['palette'],observations=c.get('observations',1)))
-            stats.append(dict(map='%06X'%l['map'],model_layer=layer,ring=l['ring'],ring_base=base,loop_repeats=repeats,observed_equal=seen,rom_blocks=emitted,observed_outside_kept=kept,
+            stats.append(dict(map='%06X'%l['map'],model_layer=layer,ring=l['ring'],ring_base=base,loop_repeats=len(repeats) if isinstance(repeats,range) else repeats,x_page=page,observed_equal=seen,rom_blocks=emitted,observed_outside_kept=kept,
                               palette_numbers=len(votes),palette_numbers_from_palette_ram=sorted(ram_pal),palette_numbers_with_several_colour_sets=changes,blocks_without_observed_colours=dict(uncoloured)))
             print('ROM model: map %06X layer %d: %d ROM blocks, %d observed blocks outside the map kept, %d palette numbers (%d with more than one colour set), %d blocks without colours'%(
                 l['map'],layer,emitted,kept,len(votes),len(changes),sum(uncoloured.values())))

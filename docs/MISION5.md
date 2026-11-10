@@ -154,6 +154,12 @@ etapas; `10D7B6` de la calle (factores 0xC0/0) → regla «nunca» (visible
   (Slugnoid `09692C`) solo se había visto en un registro de grupo 9 (M2), que
   no lee el bit 31; el primer registro de grupo < 9 (la alcantarilla, grupo 6)
   le da su bit (ROM `80 09 69 2C`).
+- `data/region_rom.json`: los tres registros de entrada del jugador
+  `2D602C..2D6049` (30 bytes, lector `0183D0`/`019604`), para que
+  `load_stage` lea la clase de entrada de cada etapa como en la M2 y la M3
+  (la calle: clase 2, el descenso `0C15B4` desde x 0x68, y 0x100). Sin ellos
+  `ga_rom` no encontraba el registro y la etapa empezaba andando. (El de la
+  M4, `2D5F54`, también clase 2, no está en la imagen: es de su fase 2.)
 - Sin cambios en `neo_camera.c`, `neo_train.c` ni `neo_collision.c`.
 
 ## Pruebas (`make check`)
@@ -199,6 +205,31 @@ descriptor `last=1C3F06` y `1875FA..1876D6` (`palette_id=125`: el paracaídas
 y la entrada). Sin el guion no hay paradas de cámara (las ponen sus órdenes),
 por eso el recorrido llega al final de cada mapa.
 
+## Puertas (10-XI)
+
+`make -j4` (RC 0), `make check` (**202 PASS**, RC 0: los 184 de antes y 18 de
+la M5), `tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho
+(`rm -rf build/m1end`): `RESULT: PASS` (205 fotos); `test_mission5_ares.py`
+sobre `mslugx-explorer.z64`, etapas 1, 2 y 3: `RESULT: PASS`, con
+`MSX AUDIO stage music 0026` / `002A` / `002B` sonando y, en la calle,
+`MSX stage entry 2D602C kind 2 (0C15B4): the parachute descent from (104,
+256)` y las letras MISSION 5 START.
+
+Durante la fase, `make check` de este árbol no depende de los datos de la M4
+que el otro agente tiene a medias en `ws-logo/filesystem/mission4`
+(`patches.json` con más de 16 parches, que el `pack_mission.py` de `ccr`
+todavía rechaza): `filesystem/` es aquí un directorio de enlaces a
+`ws-logo/filesystem/*` salvo `mission4/s1`, regenerado con
+`tools/build_mission4.sh` (paquete idéntico al de `ccr`, md5 `d547e502…`).
+Al fusionar la fase 2 de la M4 se vuelve al enlace único.
+
+**Para seguir** (otra sesión): `git worktree` `/home/user/ws-m5` (rama
+`work-m5`), `romfs/` propio (copias de `ws-logo/romfs` + `mission5.pack`),
+`build/marco_*`, `marco-poses.stamp` y `marco-inputs.sum` copiados de
+`ws-logo/build`; estados MAME en `/home/user/captures-m5/states`; Xvfb propio
+(`:75` se usó aquí; `:67` y `:92` son de otros); datos de ares en una copia
+de `/workspace/emulator/data146`.
+
 ## Sonido y música
 
 *Latch* `320000` (`latch6/7/8`): etapa 6: `06`, `00 26` en 247662..247664
@@ -240,9 +271,13 @@ renderizar (pendiente 6).
 2. **Estampadores**: `0C88B0` (2 sellos en el metro, 2 en la alcantarilla) y
    `0C8A3C` (tres escrituras de 126 celdas sobre las paredes `1F`; su actor
    no está capturado: la sonda estaba solo en `0C88B0`; hay que poner otra en
-   `0C8A3C`). En ares Marco cruza hoy las paredes `1F`: hay que desensamblar
-   qué consulta del núcleo las trata como pared (o si lo que para al jugador
-   es el cuerpo del actor) antes de tocar nada; no se ha ajustado.
+   `0C8A3C`). **En ares Marco cruza hoy las paredes `1F`** y en MAME no:
+   el barrido del jugador lee esas celdas (39 lecturas con A6 = `1014C4` en
+   x 792..795 durante 274933..275046, `s8/cells.txt`) y el jugador no pasa
+   de ahí hasta la escritura de 275049. El barrido nativo
+   (`neo_kernel_player_sweep`) no se para en ellas: falta trazar en MAME si
+   lo retienen las celdas (tipo `F` con el bit 4) o el cuerpo sólido de la
+   verja, y traducir lo que falte; no se ha ajustado nada.
 3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**
    `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
    estados `at_277000` (antes) y `at_280000..291500`.

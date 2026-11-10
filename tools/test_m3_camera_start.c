@@ -22,7 +22,7 @@ int main(int argc,char **argv) {
     const uint8_t *st=p+48;assert(rd32(st)==0x016E0Eu);
     uint32_t rom=rd32(st+44),off=rd32(st+48),len=rd32(st+52);assert(rom==0x0B8968u && off+len<=(uint32_t)n);
     w.stage_camera=p+off;w.stage_camera_size=(uint16_t)len;w.stage_camera_base=rom;
-    neo_world_player_t pl;memset(&pl,0,sizeof(pl));pl.alive=true;pl.follow_x=pl.follow_y=0xff;pl.px=0x58;pl.py=0x100;
+    neo_world_player_t pl;memset(&pl,0,sizeof(pl));pl.alive=true;pl.follow_x=pl.follow_y=0xff;pl.flags15=0x40;   /* on the ground: op 4 (0C8524) tests +15 bit 6 */pl.px=0x58;pl.py=0x100;
     neo_world_camera(&w,&pl);
     static const uint32_t want[]={0x0B8CE8,0x0B8EAC,0x0B8D34,0x0BC548};unsigned k=0;
     for (unsigned i=0;i<w.camera.event_count;i++)

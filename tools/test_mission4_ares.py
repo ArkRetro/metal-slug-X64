@@ -41,19 +41,24 @@ try:
         if r:win=r[-1]
         time.sleep(.5)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    while 'MSX CINE select start' not in log():
-        assert proc.poll() is None
-        if re.search(r'MSX (TITLE start|CINE (?!select)\w+ start)',log()):tap('Return')
+    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Up once (MISSION 4 is the last item), A.
+    end=time.monotonic()+400
+    while 'MSX MSELECT mission=' not in log():
+        assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
+        if re.search(r'MSX CINE select (start|waiting)',log()):
+            time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
+            if 'MSX MSELECT menu open' in log():time.sleep(.5);tap('Up');time.sleep(.3);tap('a');time.sleep(.5)
+            continue
+        # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
+        # or the press lands on SOLDIER SELECT and chooses before the menu combo.
+        t=log()
+        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t):tap('Return')
         time.sleep(1.0)
-    time.sleep(2.0)
-    key('keydown','q');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','q')
-    wait(r'MSX MSELECT menu open',20);time.sleep(.5)
-    for _ in range(5):tap('Down');time.sleep(.2)
-    tap('a')
     wait(r'MSX MSELECT mission=4',20)
     m=wait(r'MSX mission 4 stage \d+ start: record (\w+) descriptor (\w+) camera list (\w+)',120)
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
+    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
     t0=time.monotonic();nextgrab=0;k=0;held={}
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on

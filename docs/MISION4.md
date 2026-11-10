@@ -310,6 +310,32 @@ parche (`MSX map patches drawn mask=…580`: el accesorio 2, como en `run4`).
 Paradas contadas hasta ahí (cámara 0..1000): **solo** `af17e` del jinete (10)
 y la voz `1134` sin política; ningún registro del guion saltado.
 
+### Puertas de la fase 2 (10-XI, `work-m4` `15e49c1` con `ccr` de la M5 fusionado)
+
+`make -j4` RC 0; `make check` RC 0 (**207 PASS**, con `m4props`, `m4flyer`,
+`m4flyer2`, `m4bin`, `m4urn`; tarda ≈ 40 min con la máquina compartida);
+`tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf
+build/m1end`): `RESULT: PASS`; `tools/test_mission4_ares.py
+mslugx-explorer.z64 --seconds 100 --jump 2.5 --fire` (menú de pruebas, `Xvfb
+:67`, datos de ares copiados de `scratchpad/aresdata`): `RESULT: PASS`, hasta
+la cámara 1000 con las paradas de arriba.
+
+**Para seguir** (otra sesión): `/home/user/ws-m4` (`work-m4`); capturas en
+`/home/user/captures-m4/fam/{A,B,C}` (A sirve para todas las familias que
+faltan menos el jefe); utilidades de la sesión en el scratchpad (`dis2.py`,
+`dis3.py` desensamblan P1 con capstone plegando la comprobación del
+cartucho; `prog.py` lista las órdenes de un programa; `exA.sh FAMILIA
+RANGOS` extrae un fixture de la captura A; `fam.sh FAMILIA` compila y corre
+una sola familia; `export4.sh CAPTURA@lo-hi…` exporta sprites y rehace el
+paquete; `m4run.sh NOMBRE SEGUNDOS --fire` hace el recorrido en ares).
+Receta por familia: tablas de ROM a `data/region_rom.json` (grupo `m4`),
+programas a `extract_soldier_programs.py` (bloque «# Mission 4 …») y
+`export_rest_sprites.py` (ROOTS/RESOURCES), código en `neo_m4props.c` o el
+módulo de la familia original, `FAMILIES` + `FAMILY_ARGS_` en el Makefile.
+Los nodos que crea el guion necesitan `--script-actor 101414
+--script-routines <los que crea la familia con 00411C>`. **No editar fuentes
+mientras corre `make check`.**
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

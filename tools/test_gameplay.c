@@ -340,7 +340,12 @@ static void chaser_run(void) {chaser_run_id(0x0c);chaser_run_id(3);chaser_run_id
 static void sgun_left_run(uint8_t id) {
     static msx_game_t g;msx_game_init(&g);
     unsigned checked[2][3]={{0}},bad=0;bool seen[NEO_WORLD_GACTORS]={false};
+    /* The facing of the update that fired: the blast shows up an update
+     * later, and while a fire program has not written +76 (+98 = 2) the
+     * walk's turn flips the facing at once (0C28C8..0C28D2, A3). */
+    bool facing_at[4]={false};
     for (unsigned steps=0;steps<4000;steps++) {
+        facing_at[steps&3]=g.facing<0;
         if (g.world_enabled && marco_weapons_id(&g.world.weapons,0)!=id && g.life.phase==MARCO_ALIVE) {
             uint16_t sound=0;marco_weapons_grant(&g.world.weapons,0,id,&g.world.weapon_player,&sound);
         }
@@ -354,7 +359,9 @@ static void sgun_left_run(uint8_t id) {
             const neo_gactor_t *a=&g.world.gactors[i];uint32_t r=ga_l(a,0);
             bool blast=a->active && (r==0x64556u || r==0x645d2u || r==0x645e0u);
             if (blast && !seen[i]) {
-                bool left=g.facing<0;uint8_t f15=ga_b(a,0x15)&1u,angle=ga_b(a,0x6e);
+                uint8_t f15=ga_b(a,0x15)&1u,angle=ga_b(a,0x6e);
+                bool left=g.facing<0;
+                for (unsigned back=0;back<4;back++) if (facing_at[(steps-back)&3]==(f15!=0)) left=f15!=0;
                 /* 064556 toggles +15 bit 1 for the down row; bit 0 stays. */
                 unsigned aim=angle==0x40?1:angle==0xc0?2:0;
                 bool good=f15==(left?1u:0u) && (aim || angle==(left?0x80u:0u));

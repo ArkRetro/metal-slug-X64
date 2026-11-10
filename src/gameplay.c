@@ -7,6 +7,7 @@
 #include "mission_camera.h"
 #include "marco_mount.h"
 #include "marco_descent.h"
+#include "marco_thinfire.h"
 #include "msx_diag.h"
 #include "msx_sfx.h"
 #if defined(__mips__)
@@ -1713,8 +1714,30 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * left, +70 = 0, +5E = the player's. The shells give their
          * projectile back themselves (0C0DFC, neo_chaser.c). */
         g->pistol_pending=0;
-        if (g->pistol_wait) g->pistol_wait--;
-        if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
+        /* C/R/0D/E, S and F: the upper-body states 0C3A5E/0C4176/0C3CD0/
+         * 0C3D9A and the crouched 0C246A/0C2588 (marco_thinfire.c,
+         * docs/APROXIMACIONES.md A3), one step per player update with the
+         * presses since the previous one; the beam keeps its own count. */
+        const bool thin_states=fire_kind(marco_weapons_ammo(&g->world.weapons,0).kind).group!=MSX_FIRE_L;
+        bool thin_fire=false;int thin_aim=0;
+        if (thin_states) {
+            if (!g->thin_on) {marco_thin_reset(&g->thin);g->thin_on=true;g->thin_g1=g->thin_g2=g->grounded;g->thin_facing=g->facing;}
+            if (fire_edge && !g->complete) g->thin_fresh=true;
+            g->fire_request=false;g->pistol_wait=0;
+            if (!(g->ticks&1)) {
+                const bool g0=g->grounded;
+                marco_thin_in_t in={marco_weapons_ammo(&g->world.weapons,0).kind,g->thin_fresh && !g->knife_t,g->aim_up,g->crouch,g0,g->crouching,
+                    g0 && g->thin_g1 && !g->thin_g2,g0 && !g->crouching && g->facing!=g->thin_facing,g0 && !g->crouching && direction!=0,
+                    !g0 && g->thin_g1,g->knife_reach,g->world.weapons.b[2],g->world.weapons.b[4]};
+                marco_thin_out_t o=marco_thin_step(&g->thin,&in);
+                g->thin_fresh=false;g->thin_g2=g->thin_g1;g->thin_g1=g0;g->thin_facing=g->facing;
+                thin_fire=o.fire && !g->complete && !g->knife_t;thin_aim=o.aim;
+            }
+        } else {
+            g->thin_on=false;
+            if (g->pistol_wait) g->pistol_wait--;
+        }
+        if (thin_states?thin_fire:(g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1))) {
             g->fire_request=false;g->c_fires++;
             marco_ammo_t ammo=marco_weapons_ammo(&g->world.weapons,0);
             /* The R (id 3) shares the C's fire programs (tables 0C3C10/
@@ -1725,11 +1748,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* The beam's program takes its rounds at its steps (laser_call). */
             bool allowed=k.group!=MSX_FIRE_L && marco_ammo_reserve(&ammo,id,false,false);
             if (k.group!=MSX_FIRE_L) marco_weapons_set_ammo(&g->world.weapons,0,&ammo);
-            g->pistol_wait=g->aim_up?k.up:g->aim_down?k.down:g->crouching?k.crouch:k.level;
-            if (k.group==MSX_FIRE_L) {g->laser_step=0;g->laser_aim=g->aim_up?1u:g->aim_down?2u:g->crouching?3u:0u;}
+            if (k.group==MSX_FIRE_L) {
+                g->pistol_wait=g->aim_up?k.up:g->aim_down?k.down:g->crouching?k.crouch:k.level;
+                g->laser_step=0;g->laser_aim=g->aim_up?1u:g->aim_down?2u:g->crouching?3u:0u;
+            }
             if (allowed) {
                 bool left=g->facing<0;
-                int aim92=g->aim_up?1:g->aim_down?-1:0;
+                int aim92=thin_states?thin_aim:g->aim_up?1:g->aim_down?-1:0;
                 marco_muzzle_t m=marco_muzzle_aim(&g->legs,aim92,1,left);
                 uint8_t angle=aim92>0?0x40:aim92<0?0xc0:0;
                 if (left) angle=(uint8_t)(0x80-angle);

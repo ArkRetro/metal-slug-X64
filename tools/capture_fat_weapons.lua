@@ -16,6 +16,8 @@
 --  fat.txt   P <frame> <inputs> <player 1014C4 bytes +00..+AF>   every frame
 --            N <frame> <node> <old routine> <new routine> <bytes +00..+AF>
 --                         every node whose routine changed in that frame
+--            W <frame> <input words 10E9EC..10E9F1> <weapon block 10C718..10C727>
+--                         every frame
 --            G <frame> <weapon id>  at each grant
 --            E <frame>  the end of the segments: the fat counter is set to
 --                       0x20 and left alone (0C33AE: +94 = 0, 0C1D82 and
@@ -75,6 +77,9 @@ local function dump(f)
  local p=assert(io.open(output..'/palette'..f..'.bin','wb'));p:write(table.concat(parts));p:close()
 end
 local tail=tonumber(os.getenv('MSX_FAT_TAIL') or '300')
+-- MSX_FAT_THIN=1: the fat counter 10C728 is never written (a state with a
+-- thin player: the same pattern for the thin fire programs).
+local thin=os.getenv('MSX_FAT_THIN')=='1'
 local frame=0;local segment=0;local seg_start=nil;local ended=nil
 emu.register_frame_done(function()
  frame=frame+1
@@ -91,9 +96,9 @@ emu.register_frame_done(function()
  cpu:write_u8(0x10c720,10);cpu:write_u8(0x10c722,bomb)
  local t=frame-seg_start
  if t>=seg then segment=segment+1;seg_start=frame;t=0 end
- if segment>=#ids and not ended then ended=frame;cpu:write_u16(0x10c728,0x20);out:write(string.format('E %d\n',frame)) end
+ if segment>=#ids and not ended then ended=frame;if not thin then cpu:write_u16(0x10c728,0x20) end;out:write(string.format('E %d\n',frame)) end
  if ended and frame>=ended+tail then out:close();machine:exit();return end
- if not ended then cpu:write_u16(0x10c728,0x400) end
+ if not ended and not thin then cpu:write_u16(0x10c728,0x400) end
  local id=ids[math.min(segment+1,#ids)]
  if t==0 and not ended then
   cpu:write_u8(0x10c71e,id);cpu:write_u8(0x10c71c,cpu:read_u8(0xc08a8+id));cpu:write_u8(0x10c71a,0)
@@ -108,6 +113,7 @@ emu.register_frame_done(function()
  button('P1 A',b.A);button('P1 B',b.B);button('P1 C',b.C)
  local keys=(b.L==1 and 'L' or '')..(b.R==1 and 'R' or '')..(b.U==1 and 'U' or '')..(b.D==1 and 'D' or '')..(b.A==1 and 'A' or '')..(b.B==1 and 'B' or '')..(b.C==1 and 'C' or '')
  out:write(string.format('P %d %s %s\n',frame,keys=='' and '-' or keys,hexbytes(P,0xb0)))
+ out:write(string.format('W %d %s %s\n',frame,hexbytes(0x10e9ec,6),hexbytes(0x10c718,16)))
  if dump_every>0 and frame%dump_every==0 then dump(frame) end
  for i=0,NODES-1 do
   local n=POOL0+i*0xb0

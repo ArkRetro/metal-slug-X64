@@ -12,6 +12,7 @@
 #include "neo_fade.h"
 #include "neo_mission.h"
 #include "marco_hgun.h"
+#include "marco_thinfire.h"
 #include "marco_legs.h"
 #include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
@@ -149,6 +150,11 @@ typedef struct {
      * a press fires on the tick it arrives, as the original's state does in
      * the update of the press (hold2: press 2190, callback 2191). */
     bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
+    /* The thin fire states of C/R/0D/E, S and F (marco_thinfire.h): the
+     * presses since the last player update, the ground of the last two
+     * updates (the landing 0C1EBE runs in the update after the one that
+     * finds the ground) and the facing of the last update (the turn). */
+    marco_thin_t thin;bool thin_on,thin_fresh,thin_g1,thin_g2;int thin_facing;
     /* The knife 0C3B46: reach of 0C3744 (+9A bit 0), ticks left of the cut
      * program, cuts, cuts that hit. */
     bool knife_reach;unsigned knife_t,knife_cuts,knife_hits;

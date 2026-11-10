@@ -452,6 +452,83 @@ la muerte del Slugnoid con jinete, raros) se lee de `rom:/` como `1156`:
 209 ranuras (suelo 208). Los sonidos nuevos del Slugnoid `116C` (bomba de
 tipo 3) y `1089` (torreta perdida) no están renderizados.
 
+## 17. Música y efectos de la Misión 3 (B66, G8, rama `work-m3music`)
+
+La M3 no tenía música: `game_audio_stage_music` recibía la `0024` del
+descriptor y no tenía fichero (`MSX AUDIO stage music 0024 missing`).
+
+**Peticiones de la M3** (grifo nuevo: `capture_fullgame.lua` desde
+`states4/sec03_26140`, réplica de `run4`, con `wpset 320000` sobre el
+*latch* y `bpset 0120F8`; el byte de banco `<0x20` solo se envía cuando
+cambia, `0120A4`):
+
+| Fotograma | Bytes | Origen |
+| --- | --- | --- |
+| 117383 / 117582 | `0A 80` / `00 20` | fin de la M2 (fundido, *jingle*) |
+| 117965..117968 | `03`, `06`, `00 24` | `1805C` (reinicio) y `018412..01842E`: descriptor `016E0E` +C = `0024` (el único de la M3) |
+| 144484 | `0A 80` | `059F76` (hijo del jefe `04A2C2`, `0E11AA[0]` = `0060 00C0`): fundido `01228C` |
+| 144676/144677 | `00 28` | `059FBA` tras la espera de 0xC0 (192 fotogramas) |
+| 149230 / 149430 | `0A 80` / `00 20` | fin de la M3 |
+| 149828..149831 | `03`, `06`, `00 25` | Misión 4 |
+
+No hay más órdenes de música: ninguna sección de la M3 ni el jefe
+intermedio `0A4A94` piden música, y no hay *jingle* de entrada (la voz
+MISSION 3 START `1133` es un efecto, `0607DE`).
+
+**Render** (`render_sound_commands.py --labels music_mission3
+music_mission3_boss`, 24000 fotogramas, a un directorio aparte;
+`pack_game_audio.py --source`): `0024` periodo 98,77 s desde 2,14 s
+(similitud 0,986, empalme 0,927; el candidato de 296,3 s es su triple: la
+similitud a 98,77 s es 0,98–0,99 en todo el render), `0028` 119,19 s desde
+0,80 s (0,987, empalme 0,943). `music_mission3*.wav64`: 2 759 060 y
+3 274 220 bytes (intro + bucle). `game_audio.c`: `0x24` y `0x28` en
+`music_name`; el `0x28` llega por la lista de sonidos del mundo como el
+`0x27` de la M2 (`neo_m3boss.c` crea `059F76`, que corre `neo_m2boss.c`).
+
+**El fundido del controlador** (Z80, desensamblado con `dasm` del depurador
+de MAME y volcados de la RAM `F800..FFFF` por fotograma): `0A xx` guarda
+`F806 = 0x0700[xx−0x20]·16` (`4FB9`; `0A 80` → `0x0070`) y la dirección
+`F808 = 1` (`2136`); cada interrupción del temporizador A (`24 AC`, `25 03`:
+TA = 691, (1024 − 691)·144 / 8 MHz = 5,994 ms, 2,81 por fotograma) resta
+`F806` del nivel maestro `F804` (`4D67..4D97`, de `FFFF` a 0 en 585
+interrupciones, ≈ 208 fotogramas). Cada canal multiplica su nivel por
+`F805` con las tablas log/exp `0x0600/0x0700` (`2716`, `3547`…) y lo pasa
+a atenuación con tablas por chip (`0x0A80`…). Al llegar el `00 28` el
+maestro va por `0x1B`; el byte de banco `00` lo devuelve a `FFFF`
+(`4FFF..5003` y `F806 = FFFF`), así que la música del jefe empieza entera,
+como su render aislado. El port sigue parando la música en el `0A..`
+(como en la M2): reproducir el fundido exige la curva de salida de cada
+chip, no solo el maestro (medida contra el render sin fundido: −7 dB a los
+100 fotogramas, −25 dB a los 180, más rápido que `F805/255`). **Pendiente.**
+
+**Efectos (G8).** Las 30 palabras sin política de la captura (más `1026`,
+§13) en `data/sound_map.json` con sus llamadas y fotogramas. Render
+aislado: 22 terminan en 5 s; `109D`, `109E` (`0284B0`, `0A366C`), `10EB`,
+`10EC` (jefe intermedio) y `10ED` terminan con 1500 fotogramas (5,9–7,1 s;
+las cuatro primeras las para su actor con `012192`: `"stop"`, como `10F8`);
+**`1078`, `1079`, `107A`, `107B` son bucles del controlador** (siguen a los
+25 s; `1079..107B` de las órdenes de cámara `0B8D1A..32` vía `0186A0`,
+`1078` del programa del jefe `04B352`): sin paquete, sin soporte de bucle
+para efectos. **Pendiente.**
+
+Pares (`measure_sound_pairs.py --pairs`, 4472: las 26 consigo mismas, entre
+ellas y contra las 73 etiquetas de la política en los dos órdenes; tres
+procesos de MAME en paralelo, cada trozo borrado tras medirlo). Con todos
+ellos `derive_sound_policy.py` movía 27 sonidos ya medidos (las voces de
+recogida de `1056` al canal de impacto, etc.). Se añaden de una en una,
+por frecuencia en la captura, y se queda cada palabra que no cambia el
+canal (los compañeros) ni el nivel de ningún sonido medido: **18 con
+política** (`1169` `ch_1169`; `10EB/10EC/10ED` `ch_10eb`; `1065`, `1029`,
+`102D` impacto 2; `10EF`, `10D5` impacto 0; `10BA` `ch_10ba`; `105E` voz 2;
+`109F` voz 0; `109D`, `109E`, `10EE` con `10A5/10E8/10EA`, nivel 1, canal
+renombrado `ch_109d`; `10FC` arma 0; `1133` `ch_1132` 0; `1153` `ch_1056`
+1). **Sin política, como `1026`** (`MSX AUDIO … unmapped`): `1020`, `1062`,
+`109A`, `116D`, `108B`, `10A1`, `1139`, `1155`; sus pares están en
+`data/sound_pairs_m3_unmapped.json`. Las 18 se leen de `rom:/`
+(`game_audio.c` `m3_word`, 1,23 MB): las referencias no tienen RAM sobre
+el suelo de la caché. `109D`, `109E`, `10D5` y `1169` quedan en PCM16 (su
+VADPCM no pasa la comprobación de B43).
+
 ## Regenerar
 
 ```sh
@@ -474,7 +551,8 @@ Los pares de la sección 4 se reproducen con `MSX_RENDER_PLAN`, p. ej.
 - `1026` sin política (§13); sonidos
   del jugador fuera de la pistola que el port no pide (granadas, muerte de
   Marco, `1123`…), voces de selección, música de jefe/continuación
-  (`002C`/`002D`) y del resto de misiones.
+  (`002C`/`002D`) y de las misiones 4 a 6; el fundido `0A` del controlador
+  y los bucles `1078..107B` de la M3 (§17).
 - En una de dos ejecuciones del recorrido en ares el mundo paró una rutina
   (`MSX world unsupported routine=afff0`): cobertura de la IA rebelde
   dependiente del ritmo de entradas, sin relación con el audio (0 underruns

@@ -75,11 +75,21 @@ _Static_assert((int)MSX_SFX_CHANNELS<=(int)MSX_AUDIO_EFFECT_CHANNELS,"one mono m
  * (43 KB, once per game, neo_dome.c, neo_rocket.c) and the vehicles'
  * destruction 1034 (34 KB, once per vehicle: tank, Slugnoid, Mission 3
  * vehicles) stream from rom:/ too. */
+/* The Mission 3 effects of G8 (docs/MISSION3_DEBUG.md, AUDIO_JUEGO.md 17:
+ * 18 words with a policy entry, 1.23 MB packed) all stream from rom:/: the
+ * reference cartridges have no RAM left above the scene cache floor (210
+ * slots asked, 208 the floor). */
+static bool m3_word(uint16_t w) {
+    static const uint16_t M3[]={0x1029,0x102d,0x105e,0x1065,0x109d,0x109e,0x109f,0x10ba,0x10d5,0x10eb,0x10ec,0x10ed,0x10ee,
+        0x10ef,0x10fc,0x1133,0x1153,0x1169};
+    for (unsigned k=0;k<sizeof(M3)/sizeof(M3[0]);k++) if (M3[k]==w) return true;
+    return false;
+}
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1032u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
         || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
-        || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u;
+        || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u || m3_word(w);
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
@@ -123,6 +133,11 @@ static const char *music_name(uint16_t word) {
     case 0x0022: return "music_mission2";
     case 0x0023: return "music_mission2_stage3";
     case 0x0027: return "music_mission2_boss";
+    /* Mission 3: descriptor 016E0E +C = 0x24 (one descriptor for the whole
+     * mission, no other music request until the boss); the boss 04A2C2's
+     * 059F76 child: fade 0A,80 at its birth, 0x28 192 frames later. */
+    case 0x0024: return "music_mission3";
+    case 0x0028: return "music_mission3_boss";
     default: return NULL;
     }
 }
@@ -177,9 +192,12 @@ static void request(uint16_t word) {
         }
         return;
     }
-    /* Bank 00 music words from actors (the Mission 2 boss's 059F76: 0x27)
-     * replace the music; 0x0Axx is its fade command (01228C): the music
-     * stops (the fade itself is not rendered). */
+    /* Bank 00 music words from actors (the boss's 059F76: 0x27 in Mission
+     * 2, 0x28 in Mission 3) replace the music; 0x0Axx is its fade command
+     * (01228C): the music stops. The driver's fade is not reproduced
+     * (pending, docs/AUDIO_JUEGO.md 17): it lowers the master level F804 by
+     * 0x0700[xx-0x20]*16 per timer A tick and the chips' level tables shape the
+     * output; the next music's bank byte 00 restores the level. */
     if (word>=0x0021 && word<0x0100 && music_name(word)) {music_word=0;game_audio_stage_music(word);return;}
     if ((word&0xff00u)==0x0a00u) {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;debugf("MSX AUDIO music fade %04X\n",(unsigned)word);return;}
     if (word==0x0020) {

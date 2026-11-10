@@ -188,7 +188,7 @@ def main():
                 at+=4
             return cur
         mask=lambda attr:7 if attr&8 else 3 if attr&4 else 0
-        cells=[];palettes=list(m['palettes']);stats=[];pal_frames={k.upper():int(v) for k,v in (x.split(':') for x in a.palette_frames.split(',') if x)}
+        cells=[];palettes=list(m['palettes']);stats=[];numbers={};pal_frames={k.upper():int(v) for k,v in (x.split(':') for x in a.palette_frames.split(',') if x)}
         for l in loads:
             if not l['tiles']:continue
             layer=model_layer[l['object']];y0=240-16*(l['top']+1)-(8 if layer<2 else 0)
@@ -251,12 +251,14 @@ def main():
                     if c['x']>=16*(l['column']+l['width']) and c['x']<a.outside_limit and (layer,c['x'],c['y']) not in have:
                         have.add((layer,c['x'],c['y']));kept+=1
                         cells.append(dict(layer=layer,x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],animation_mask=c['animation_mask'],palette=c['palette'],observations=c.get('observations',1)))
+            # Palette number -> colour set of this map (tools/extract_map_patches.py: the blocks of its patches).
+            numbers['%06X'%l['map']]={str(n):(votes[n].most_common(1)[0][0] if n in votes else ram_pal[n]) for n in sorted(set(votes)|set(ram_pal))}
             stats.append(dict(map='%06X'%l['map'],model_layer=layer,ring=l['ring'],ring_base=base,loop_repeats=repeats,observed_equal=seen,rom_blocks=emitted,observed_outside_kept=kept,
                               palette_numbers=len(votes),palette_numbers_from_palette_ram=sorted(ram_pal),palette_numbers_with_several_colour_sets=changes,blocks_without_observed_colours=dict(uncoloured)))
             print('ROM model: map %06X layer %d: %d ROM blocks, %d observed blocks outside the map kept, %d palette numbers (%d with more than one colour set), %d blocks without colours'%(
                 l['map'],layer,emitted,kept,len(votes),len(changes),sum(uncoloured.values())))
         out=dict(m);out['source']='tools/export_stage_rom.py: ROM blocks of the maps of the camera list %06X; colours of the observed blocks (%s)'%(rom.u32(a.descriptor),m['source'])
-        out['cells']=cells;out['swapped_cells']=[];out['conflicts']=[];out['palettes']=palettes
+        out['cells']=cells;out['swapped_cells']=[];out['conflicts']=[];out['palettes']=palettes;out['palette_numbers']=numbers
         out['width']=max(c['x'] for c in cells if c['layer']==3)+16;out['camera_max']=a.camera_max if a.camera_max is not None else m['camera_max']
         out['selection']='ROM maps (pre-patch state); observed blocks only outside the maps'
         a.rom_model.write_text(json.dumps(out)+'\n');rep['rom_model']=stats

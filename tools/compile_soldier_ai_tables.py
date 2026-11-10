@@ -93,7 +93,7 @@ tails={}
 # A program of a mission group (data/soldier_programs.json "group": m2, m3)
 # is left out of the console image (its mission pack carries it, MSXD); tails
 # are shared only inside the same group.
-GUARD={'m2':'!defined(N64)','m3':'!defined(N64)'}
+GUARD={'m2':'!defined(N64)','m3':'!defined(N64)','m4':'!defined(N64)'}
 group=[prog.get('group') for prog in p['programs']]
 for i in sorted(range(len(texts)),key=lambda k:(-len(texts[k]),k)):
     t=texts[i]

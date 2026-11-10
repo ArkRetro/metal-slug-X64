@@ -72,31 +72,31 @@ void scene_render_set_patch(bool done) {patched=done;}
  * of their layer inside each patch's rectangle (the original's SCB1 words
  * of those blocks are overwritten). */
 typedef struct { uint8_t layer;int16_t x0,y0,x1,y1;unsigned first,count; } map_patch_t;
-static map_patch_t map_patches[16];static unsigned map_patch_total;static uint16_t map_patch_mask;
+static map_patch_t map_patches[SCENE_STAGE_PATCHES];static unsigned map_patch_total;static uint64_t map_patch_mask;
 /* The pack's layer word against the game's (B63: target column D4 in bits
  * 21..31; a pack entry without it, Mission 2 before B63, takes any). */
 static bool patch_object_match(uint32_t pack,uint32_t game) {
     return !((pack^game)&0x1fffffu) && (!(pack>>21) || pack>>21==game>>21);
 }
 void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n) {
-    const scene_stage_t *st=scene_stage();uint16_t mask=0;
+    const scene_stage_t *st=scene_stage();uint64_t mask=0;
     if (st) for (unsigned k=0;k<n;k++) for (unsigned i=0;i<st->patch_count && i<map_patch_total;i++)
-        if (st->patch_submap[i]==list[k][0] && patch_object_match(st->patch_layer_object[i],list[k][1])) mask|=(uint16_t)(1u<<i);
+        if (st->patch_submap[i]==list[k][0] && patch_object_match(st->patch_layer_object[i],list[k][1])) mask|=1ull<<i;
     static uint32_t seen_key;uint32_t key=n?list[n-1][0]^list[n-1][1]:0;
-    if (mask!=map_patch_mask || key!=seen_key) debugf("MSX map patches drawn mask=%04x (%u recorded, last %08lx %08lx)\n",mask,n,n?(unsigned long)list[n-1][0]:0ul,n?(unsigned long)list[n-1][1]:0ul);
+    if (mask!=map_patch_mask || key!=seen_key) debugf("MSX map patches drawn mask=%08lx%08lx (%u recorded, last %08lx %08lx)\n",(unsigned long)(mask>>32),(unsigned long)(mask&0xffffffffu),n,n?(unsigned long)list[n-1][0]:0ul,n?(unsigned long)list[n-1][1]:0ul);
     seen_key=key;
     map_patch_mask=mask;
 }
 static void map_patch_index(const scene_stage_t *st) {
     map_patch_total=0;map_patch_mask=0;
     if (!st) return;
-    for (unsigned i=0;i<st->patch_count && i<16;i++) {
+    for (unsigned i=0;i<st->patch_count && i<SCENE_STAGE_PATCHES;i++) {
         map_patch_t *m=&map_patches[i];*m=(map_patch_t){0,32767,32767,-32768,-32768,0,0};
         for (unsigned c=0;c<st->patch_cell_count;c++) {
             const scene_map_cell_t *cell=&st->patch_cells[c];
-            if (((cell->layer>>3)&15u)!=i) continue;
+            if (scene_patch_cell_index(cell->layer)!=i) continue;
             if (!m->count) m->first=c;
-            m->count=c+1-m->first;m->layer=cell->layer&7u;
+            m->count=c+1-m->first;m->layer=(uint8_t)scene_patch_cell_layer(cell->layer);
             if (cell->x<m->x0) m->x0=cell->x;
             if (cell->y<m->y0) m->y0=cell->y;
             if (cell->x+16>m->x1) m->x1=(int16_t)(cell->x+16);
@@ -529,8 +529,8 @@ static scene_strip_t *strip_rebuild(unsigned layer,int wx0,int wx1,int wy0,int w
     }
 }
 static const scene_strip_t *layer_strip(unsigned layer,int wx0,int wx1,int wy0,int wy1) {
-    uint32_t state=(collapsed?1u:0u)|(patched?2u:0u)|((uint32_t)map_patch_mask<<2);
-    if (state!=strip_state) {strips_drop();strip_state=state;}
+    uint32_t state=(collapsed?1u:0u)|(patched?2u:0u);static uint64_t strip_patches;
+    if (state!=strip_state || map_patch_mask!=strip_patches) {strips_drop();strip_state=state;strip_patches=map_patch_mask;}
     scene_strip_t *s=&strips[layer];
     if (!scene_strip_covers(s,wx0,wx1,wy0,wy1)) return strip_rebuild(layer,wx0,wx1,wy0,wy1);
     /* Ahead of need, one layer per frame: a strip that still covers the
@@ -829,7 +829,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
  * pinned until the RDP has finished the last frame that ran it; then the
  * blocks are freed. Off while a fade or the white flash is on. */
 typedef struct {
-    bool valid;bool collapsed,patched;uint16_t map_patches;unsigned tower;int offsets[5],rises[5];bool visible[5];
+    bool valid;bool collapsed,patched;uint64_t map_patches;unsigned tower;int offsets[5],rises[5];bool visible[5];
     retro_plane_view_t views[5];
     layer_ring_t rings[4];
 } bg_key_t;

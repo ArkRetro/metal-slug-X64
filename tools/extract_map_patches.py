@@ -54,6 +54,29 @@ PATCHES={
               (0x10c72e,0x0b85ea,(8,0,4,4,0xa3,8)),
               (0x10c72e,0x0b85ea,(0x14,0,4,4,0xac,8))],
 }
+# Mission 4 (neo_m4props.c): every patch the props 0B9F4A can make before the
+# boss's road (callbacks 0BA288..0BA7AA, record +E of 0E68D0): the street's
+# fronts 0..5 with both variants of each shared edge, one sub-map for the
+# props 6..1A, 1C and 1E at their record's column/row (+6/+8), two for 1B
+# and 1D (the second hit). The copies of the stage map 0E6DA8 (prop 1F and
+# the callbacks +1C, 0x20 columns further each time) belong to the boss.
+def mission4_patches(rom):
+    T=0x10c72e
+    out=[(T,0xe6e16,(0,0,3,8,0x2a,0xb)),(T,0xe6e42,(0,0,3,8,0x2a,0xb)),(T,0xe6e00,(0,0,6,8,0x24,0xb)),(T,0xe6e2c,(0,0,3,8,0x2a,0xb)),
+         (T,0xe6e6e,(0,0,2,8,0x31,0xb)),(T,0xe6e9a,(0,0,2,8,0x31,0xb)),(T,0xe6e58,(0,0,4,8,0x2d,0xb)),(T,0xe6e84,(0,0,2,8,0x31,0xb)),
+         (T,0xe6ec6,(0,0,3,8,0x35,0xb)),(T,0xe6ef2,(0,0,3,8,0x35,0xb)),(T,0xe6eb0,(0,0,2,8,0x33,0xb)),(T,0xe6edc,(0,0,3,8,0x35,0xb)),
+         (T,0xe6f1e,(0,0,3,0xc,0x3f,0xf)),(T,0xe6f4a,(0,0,3,0xc,0x3f,0xf)),(T,0xe6f08,(0,0,7,8,0x38,0xb)),(T,0xe6f34,(0,0,3,0xc,0x3f,0xf)),
+         (T,0xe6f76,(0,0,3,0xc,0x4a,0xf)),(T,0xe6fa2,(0,0,3,0xc,0x4a,0xf)),(T,0xe6f60,(0,0,8,0xc,0x42,0xf)),(T,0xe6f8c,(0,0,3,0xc,0x4a,0xf)),
+         (T,0xe6fb8,(0,0,7,0xc,0x4d,0xf))]
+    one={6:0xe6fce,7:0xe6fe4,8:0xe6ffa,9:0xe7010,0xa:0xe7026,0xb:0xe70aa,0xc:0xe70c0,0xd:0xe70d6,0xe:0xe6ffa,0xf:0xe7010,0x10:0xe70ec,
+         0x11:0xe70c0,0x12:0xe7102,0x13:0xe703c,0x14:0xe6ffa,0x15:0xe7010,0x16:0xe7118,0x17:0xe712e,0x18:0xe7144,0x19:0xe715a,0x1a:0xe7052,
+         0x1b:(0xe7068,0xe7170),0x1c:0xe7186,0x1d:(0xe707e,0xe719c),0x1e:0xe7094}
+    s16=lambda v:v-0x10000 if v&0x8000 else v
+    for n,subs in sorted(one.items()):
+        rec=0xe68d0+0x24*n;col,row=rom.u16(rec+6),s16(rom.u16(rec+8))
+        for sub in (subs if isinstance(subs,tuple) else (subs,)):
+            out.append((T,sub,(0,0,rom.u16(sub+8),rom.u16(sub+10),col,row)))
+    return out
 def swap(d):
     b=bytearray(d);b[0::2],b[1::2]=d[1::2],d[0::2];return bytes(b)
 class Rom:
@@ -85,6 +108,8 @@ def main():
     p.add_argument('--capture-frame',type=Path,help='vram<f>.bin of a MAME capture after the patches (capture_fullgame.lua, '
         'palette<f>.bin beside it): a patch whose blocks the stage model never observed (the stage-3 boulder 0B7A2C) is '
         'checked by its columns in the SCB1 words (code and attribute, in order) and takes the colours of the palette RAM')
+    p.add_argument('--palette-capture',type=Path,help='ROM model: capture directory with palette<frame>.bin, for the palette numbers no block of the map uses (as tools/export_stage_rom.py)')
+    p.add_argument('--palette-frames',default='',help='MAP:FRAME,... (hex map)')
     a=p.parse_args()
     rom=Rom(a.rom)
     model=json.loads((a.stage/'map.json').read_text())
@@ -94,6 +119,41 @@ def main():
         vram=struct.unpack('>34304H',a.capture_frame.read_bytes())
         pal=struct.unpack('>4096H',a.capture_frame.with_name(a.capture_frame.name.replace('vram','palette')).read_bytes())
     todo=PATCHES.get((a.mission,a.stage.name),[])
+    if 'palette_numbers' in model:
+        # A ROM model (tools/export_stage_rom.py, Mission 4): the blocks at
+        # the placement of that model (no vertical offset) with the colour
+        # set of their palette number in the map they are copied into; the
+        # observed model only counts how many it saw at that place.
+        todo=mission4_patches(rom) if a.mission==4 else todo
+        pal_frames={k.upper():int(v) for k,v in (x.split(':') for x in a.palette_frames.split(',') if x)}
+        seen=set()
+        if (a.stage/'map_observed.json').exists():
+            ob=json.loads((a.stage/'map_observed.json').read_text())
+            for c in ob['cells']:seen.add((c['layer'],c['x'],c['y'],c['code'],c['flip']))
+            for c in ob['conflicts']:
+                for ch in c.get('choices',()):seen.add((c['layer'],c['x'],c['y'],ch['code'],ch['flip']))
+        out=[];report=[]
+        for obj,submap,d in todo:
+            layer=LAYERS[obj];mapname='0E6D7C' if d[4]<0xc8 else '0E6DA8';numbers=model['palette_numbers'][mapname];cells=[];from_ram=set()
+            for col,row,code,attr in blocks(rom,submap,d):
+                mask=7 if attr&8 else 3 if attr&4 else 0
+                if not code&0xffff and not attr:continue
+                n=attr>>8
+                if str(n) in numbers:colors=model['palettes'][numbers[str(n)]]
+                else:
+                    # Not used by the map's own blocks: the palette RAM of the capture (export_stage_rom.py checked
+                    # that every number the map uses has there the colours MAME drew).
+                    assert mapname in pal_frames and a.palette_capture,('palette number without colours',hex(submap),n)
+                    raw=(a.palette_capture/('palette%d.bin'%pal_frames[mapname])).read_bytes()
+                    colors=[0]+[int.from_bytes(raw[32*n+2*k:32*n+2*k+2],'big') for k in range(1,16)];from_ram.add(n)
+                cells.append(dict(layer=layer,x=16*(d[4]+col),y=240-16*(d[5]+1)+16*row,code=code&~mask,flip=attr&3,animation_mask=mask,
+                                  palette_number=n,colors=colors))
+            assert cells,('empty patch',hex(submap))
+            observed=sum(1 for c in cells if (c['layer'],c['x'],c['y'],c['code'],c['flip']) in seen)
+            out.append(dict(layer_object='%06X'%obj,submap='%06X'%submap,d=list(d),layer=layer,cells=cells))
+            report.append(dict(submap='%06X'%submap,d=list(d),blocks=len(cells),observed=observed,palette_numbers_from_palette_ram=sorted(from_ram)))
+        (a.stage/'patches.json').write_text(json.dumps(dict(source='tools/extract_map_patches.py: ROM sub-maps (0C70FC tile part), colours of the palette numbers of the ROM model',patches=out),indent=0)+'\n')
+        print(json.dumps(report));return
     if not todo:print('[]');return
     # Each layer's vertical offset relative to the terrain layer 3 (the
     # observations' offsets also carry the camera's rise).

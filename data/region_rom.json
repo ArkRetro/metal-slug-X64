@@ -870,6 +870,11 @@
    "hex": "004801000101001002000000"
   },
   {
+   "rom": "0x2D602C",
+   "reader": "0183D0 stage records 01752C / 017550 / 017574 +0E: the Mission 5 player entry records of 019604 (2D602C the street: x 0x68, y 0x100, kind 2: 0C15B4; 2D6036 and 2D6040: x 0x68, y 0x80, kind 3)",
+   "hex": "006801000001001002000068008000000010030000680080000000100300"
+  },
+  {
    "rom": "0x08AF76",
    "reader": "08A732 Mission 3 grenadier: hurtbox 08AF76 (+50), the shell attack row 08AF82 (0049E8), cull rectangles 08AF92/08AF9A (01945C/019504)",
    "hex": "0502fff00000002000188000fffcfffc00080008000900000010ffffffd0fff000600030fff0fff000200020",

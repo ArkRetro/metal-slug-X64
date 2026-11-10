@@ -159,6 +159,68 @@ tas_taps={
   if m&0xff00~=0 and dev.state['CURPC'].value<0xc00000 then read_mask=applied;read_frame=frame+1 end
  end)),
 }
+-- Read-only capture taps for a section of the movie (docs/MISION5.md), in the formats of
+-- tools/capture_fullgame.lua so the same extractors read them; `frame` = frames completed, as there:
+--  MSX_TAS_CAMERA=1     camera.csv: one line per camera update (the last store of ROM 0C7CA6, RAM 10E9D8):
+--                       players, mission actor, flags, the block 10E94E.., the four layer objects +0..+2B.
+--  MSX_TAS_CELLS=1      cells.txt: every collision cell the kernel reads with 0C79FE (PC 0C7A18) from a layer
+--                       ring, aggregated (a0, x, y, value, first and last frame, reads, player reads), and
+--                       events.csv: every write to the rings 10C7B6.. with its PC.
+--  MSX_TAS_CAPTURE_FROM=<U>: the taps count from that update on (the section's first; default 0).
+local cap_from=tonumber(os.getenv('MSX_TAS_CAPTURE_FROM') or '0')
+local mstate=dev.state
+local function hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+if os.getenv('MSX_TAS_CAMERA')=='1' then
+ local camera_csv=assert(io.open(out..'/camera.csv','w'))
+ camera_csv:write('frame,p1,p2,mission,flags,block,d8,layers\n')
+ local function player(b) return string.format('%08x:%s:%02x%02x:%02x%02x',cpu:read_u32(b),hex(b+0x3c,8),cpu:read_u8(b+0x7a),cpu:read_u8(b+0x7b),cpu:read_u8(b+0x5f),cpu:read_u8(b+0x15)) end
+ tas_taps[#tas_taps+1]=cpu:install_write_tap(0x10e9d8,0x10e9d9,'tas_camera',guarded(function(address,data,mask)
+  if updates<cap_from then return end
+  camera_csv:write(string.format('%d,%s,%s,%08x:%s,%02x%02x%02x,%s,%04x,%s:%s:%s:%s\n',frame,player(0x1014c4),player(0x101574),
+   cpu:read_u32(0x101364),hex(0x101364+0x72,8),cpu:read_u8(0x10c322),cpu:read_u8(0x10f000),cpu:read_u8(0x10c300),hex(0x10e94e,0x8e),data&0xffff,
+   hex(0x10c72e,0x2c),hex(0x10d7b6,0x2c),hex(0x10e83e,0x2c),hex(0x10e8c6,0x2c)))
+  if frame%600==0 then camera_csv:flush() end
+ end))
+ tas_camera_csv=camera_csv
+end
+local cell_seen,cell_order=nil,{}
+if os.getenv('MSX_TAS_CELLS')=='1' then
+ cell_seen={}
+ local events=assert(io.open(out..'/events.csv','w'))
+ events:write('frame,kind,address,old,new,pc,camera\n')
+ tas_taps[#tas_taps+1]=cpu:install_write_tap(0x10c7b6,0x10e83d,'tas_grid',guarded(function(address,data,mask)
+  if updates<cap_from or (address>=0x10d7b6 and address<0x10d83e) then return end
+  local pc=(mstate['PC'] or mstate['rPC']).value   -- as tools/capture_fullgame.lua msx_pc: the extractors know the writers by this value
+  for lane=0,1 do
+   local shift=lane==0 and 8 or 0
+   if (mask&(0xff<<shift))~=0 then
+    local a=address+lane
+    events:write(string.format('%d,grid,%x,%d,%d,%x,%d\n',frame,a,cpu:read_u8(a),(data>>shift)&255,pc,cpu:read_u16(0x10e99e)))
+   end
+  end
+ end))
+ tas_taps[#tas_taps+1]=cpu:install_read_tap(0x10c7b6,0x10e83d,'tas_cell',guarded(function(address,data,mask)
+  if updates<cap_from or mstate['CURPC'].value~=0xc7a18 then return end
+  local a0=mstate['A0'].value
+  local v=(address&1)==1 and (data&0xff) or ((data>>8)&0xff)
+  if mask==0x00ff then v=data&0xff elseif mask==0xff00 then v=(data>>8)&0xff end
+  local key=string.format('%x %d %d %d',a0,mstate['D0'].value&0xffff,mstate['D1'].value&0xffff,v)
+  local e=cell_seen[key]
+  if not e then e={frame,frame,0,0};cell_seen[key]=e;cell_order[#cell_order+1]=key end
+  e[2]=frame;e[3]=e[3]+1
+  if mstate['A6'].value==0x1014c4 then e[4]=e[4]+1 end
+ end))
+ tas_events_csv=events
+end
+local function capture_close()
+ if tas_camera_csv then tas_camera_csv:close() end
+ if tas_events_csv then tas_events_csv:close() end
+ if cell_seen then
+  local o=assert(io.open(out..'/cells.txt','w'))
+  for _,k in ipairs(cell_order) do local e=cell_seen[k];o:write(string.format('C %s %d %d %d %d\n',k,e[1],e[2],e[3],e[4])) end
+  o:close()
+ end
+end
 apply(masks[1])
 local first=true
 emu.register_frame_done(function()
@@ -177,6 +239,6 @@ emu.register_frame_done(function()
  if play_path and updates>=from then apply(rec_mask[updates+1]) else apply(masks[frame+1]) end
  if frame%3000==0 then log:flush();print(string.format('FRAME %d update %d',frame,updates)) end
  if frame>=last or (last_upd>0 and updates>=last_upd) or (desync and stop_on_desync) then
-  done=true;log:close();event(string.format('END frame %d update %d first desync %s, %d updates differ',frame,updates,tostring(desync),differ));ev:close();machine:exit()
+  done=true;log:close();capture_close();event(string.format('END frame %d update %d first desync %s, %d updates differ',frame,updates,tostring(desync),differ));ev:close();machine:exit()
  end
 end,'tas')

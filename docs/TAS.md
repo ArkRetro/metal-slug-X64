@@ -166,5 +166,17 @@ no se han derivado de la RAM). El estado tiene el mismo nombre que la foto:
   final (sección 11) `u23700..u26400`. Después de 26423 (final y créditos)
   no hay estados.
 
+Capturas desde el TAS (sin ninguna escritura en la memoria): `tas_updates.lua`
+tiene grifos de solo lectura con los formatos de `capture_fullgame.lua`:
+`MSX_TAS_CAMERA=1` (`camera.csv`, una línea por actualización de cámara) y
+`MSX_TAS_CELLS=1` (`cells.txt`, cada celda que lee `0C79FE`, y `events.csv`,
+cada escritura en el anillo con su PC), desde `MSX_TAS_CAPTURE_FROM=<U>`.
+Primer uso: la Misión 5 (`tools/capture_m5_tas.sh`, [MISION5.md](MISION5.md)):
+sus pruebas de mapa y cámara pasan también con estas capturas. Los estados de
+sección se guardan cuando cambia el puntero del guion, **después** del borrado
+del anillo de celdas de la carga: para tener la historia entera del anillo se
+carga el estado anterior (`u12420`, `u13740`, `u16380`; entre secciones no hay
+estados `u<U>`).
+
 Reproducir por fotograma: `tools/run_tas_play.sh /home/user/captures-tas/full`
 (2 min, 4 MB; `MSX_TAS_LAST`, `MSX_TAS_SNAP_AT=4320,4360,...`).

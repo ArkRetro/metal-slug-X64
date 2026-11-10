@@ -160,6 +160,34 @@ runtime la dibuja en el `+14/+18` de su objeto.
 | `test_m4_map` (`data/m4_map_fixture.json.gz`, paquete privado) | 73 099 lecturas del núcleo en 149829..157581, todas explicadas por la ROM: 69 820 estáticas (**11 540 de 11 540 celdas distintas iguales** en `neo_collision_cell` sobre la rejilla del paquete), 3197 en celdas de los 42 parches `0C70FC`, 81 en sellos `0C88B0`, 1 por el anillo; registro de etapa (descriptor, lista, reglas) |
 | `test_m4_camera` (`data/m4_camera_fixture.json.gz`) | **4314 de 4314 actualizaciones** de cámara iguales en lazo cerrado (149884..160498: órdenes, raíz, progreso, límites, vista) con la lista del paquete, y **15 798 estados de capa** iguales (x, y, factores, restos) con 7 órdenes de capa; 1458 estados de `10D7B6` en el jefe son de su dueño (byte 6957 = 3), no se comprueban |
 
+## Recorrido en ares (`tools/test_mission4_ares.py`, cartucho normal)
+
+`mslugx-explorer.z64` (nunca el de referencia), menú de pruebas → `MISSION 4`
+(L+R y A en SOLDIER SELECT; `Xvfb :66` propio):
+
+```sh
+DISPLAY=:66 python3 tools/test_mission4_ares.py mslugx-explorer.z64 --data <aresdata> --out OUT --seconds 100 --period 4 --jump 2.5
+```
+
+`RESULT: PASS`: `MSX MSELECT mission=4`, carga `descriptor 016E1E 15450 cells
+4894 images grid 688x88, tables 641 KB in 41 slots, map 44 chunks` en 0,65 s,
+`mission 4 stage 5 start: record 017462 descriptor 016E1E camera list 0E741A
+script 2DB696 (5286 bytes)`, `MISSION 4 START`, y Marco (derecha + salto,
+sin disparar) recorre la etapa: cámara x 0 → 5504..5696 en 100 s con la
+cámara bajando 0 → −64 → −128 → −440 px **como MAME** (`fore_y` 256 → 696);
+0 caídas, 0 rescates, 0 órdenes de cámara sin soporte. Fotos por cámara
+contra `run4` (misma cámara): calle con el rótulo, mercado, callejón, muro
+verde, pueblo de madera, ruinas con el cielo 2 (`0E6DD4`) y el cielo 3
+(`0E6DEA`): el mismo mapa y los mismos fondos. Los soldados compartidos
+(`0AF17E`…) salen del guion de la M4 ya nativos.
+
+Paradas contadas en ese recorrido (explícitas, a portar en la fase 2):
+`world unsupported routine=83c8a` y `2d3c16` (soldado), dibujos sin
+descriptor `last=1C3F06 palette_id=125` (4 clases), `MSX AUDIO stage music
+0025 missing`, y los registros del guion de constructores nuevos (saltados
+con su dirección). En x ≥ 5504 no hay suelo todavía (lo ponen los parches
+del jefe): el recorrido de prueba acaba ahí.
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

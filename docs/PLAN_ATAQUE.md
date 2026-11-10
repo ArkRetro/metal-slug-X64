@@ -72,3 +72,14 @@ Objetivo: que quepan las misiones 4–6 en ROM y en RAM sin perder exactitud
    tiempos de carga y las ranuras de caché no empeoren.
 
 ## Fase 3 (orden): M4 → M5 → M6 (última), con las capturas del TAS.
+
+## Estado de la Fase 3
+
+- **M4, fase 1 hecha** (`work-m4`, [MISION4.md](MISION4.md)): `run4` ya tenía la
+  M4 entera; estados por sección, vehículo y jefe en `/home/user/captures-m4`;
+  mapa y colisión de la ROM (`export_stage_rom.py`), `test_m4_map` 11 540/11 540
+  y `test_m4_camera` 4314/4314 (+ 15 798 estados de capa) iguales a MAME;
+  `mission4.pack` enlazado tras la M3 y en el menú; inventario de 151
+  constructores (87 nativos, 56 nuevos) en [MISION4_ACTORES.md](MISION4_ACTORES.md).
+  Siguiente: fase 2 (parches `0C70FC`, llamadas `0BA8xx/0BA9xx`, actores
+  nuevos, jefe `0BB028`, música 0x25/0x2C).

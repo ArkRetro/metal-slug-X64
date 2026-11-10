@@ -53,3 +53,22 @@ Por misión:
 
 ## Estado
 Se actualiza al final de cada fase aquí y en `MISSION3_DEBUG.md`.
+
+## Fase 2b: compresión y datos repetidos (antes de la M4)
+Objetivo: que quepan las misiones 4–6 en ROM y en RAM sin perder exactitud
+(todo sin pérdida; los datos siguen siendo los de la ROM del usuario).
+1. Medir: tamaño por sección de cada `missionN.pack`, de `filesystem/` y del
+   audio; RAM por tabla al cargar. Informe en `docs/COMPRESION.md`.
+2. Detectar repetidos por hash: piezas (tiles), paletas, programas de
+   sprites, bloques de mapa y tablas MSXD iguales entre misiones y dentro de
+   cada una; wav64 iguales o contenidos en otros.
+3. Deduplicar: un banco común (`common.pack`) para lo compartido entre
+   misiones y referencias dentro de cada pack; el cargador resuelve las
+   referencias.
+4. Comprimir sin pérdida lo que queda (el códec que ya trae libdragon, por
+   bloques, descompresión durante la carga, sin coste por fotograma).
+5. Puertas: los datos descomprimidos son idénticos byte a byte a los de hoy
+   (prueba en `make check`), `make -j4`, pruebas cortas en ares, y que los
+   tiempos de carga y las ranuras de caché no empeoren.
+
+## Fase 3 (orden): M4 → M5 → M6 (última), con las capturas del TAS.

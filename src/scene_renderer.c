@@ -853,7 +853,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             const scene_layer_rule_t *r=&st->rules[source];
             offsets[i]=((int)camera*r->x_num+r->x_den-1)/r->x_den;
             if (i<4 && layer_own[i]) offsets[i]=layer_own_offset[i];
-            rises[i]=height>=0?(height*r->y_num+r->y_den-1)/r->y_den:-((-height*r->y_num)/r->y_den);
+            rises[i]=scene_layer_rise(r,source,height);
             visible[i]=i<4 && (((int)camera>=r->visible_min && (int)camera<=r->visible_max) || layer_own[i]);
             continue;
         }

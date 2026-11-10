@@ -115,6 +115,19 @@ scene_cache_stats_t scene_cache_stats(void);
  * a stage scrolls by camera*x_num/x_den and rises by camera_y*y_num/y_den;
  * it is drawn while visible_min <= camera x <= visible_max. */
 typedef struct { uint8_t x_num,x_den,y_num,y_den; int16_t visible_min,visible_max; } scene_layer_rule_t;
+/* Rise of pack layer `layer` (0..3) for the foreground's vertical offset
+ * `height`: height*y_num/y_den (rounded away from zero as the fit) plus the
+ * layer's phase. tools/neo_scene.py reads layers 0/1 with Mission 1's
+ * Y_PHASE 8 (10E83E/10D7B6 at y 264 there) and map.json stores their cells
+ * 8 px higher; in the packs every layer object starts at y 256 (MAME run4
+ * trace: sky_y = mid_y = fore_y = 256 at 19440, 19950, 26160, 117990), so
+ * the screen row of a cell is map y + vertical offset, the offset of
+ * layers 0/1 being 8 + the fitted rise (VRAM of run4 at 19680, 26670, 28620,
+ * 119100, 119460: tools/test_scene_layer_y.c). */
+static inline int scene_layer_rise(const scene_layer_rule_t *r,unsigned layer,int height) {
+    int rise=height>=0?(height*r->y_num+r->y_den-1)/r->y_den:-((-height*r->y_num)/r->y_den);
+    return rise+(layer<2?8:0);
+}
 enum { SCENE_STAGE_DYNAMIC_MAPS=16 };
 typedef struct {
     unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */

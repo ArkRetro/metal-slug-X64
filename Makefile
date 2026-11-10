@@ -1212,6 +1212,8 @@ check: check-boss $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(
 	python3 tools/check_scene_budget.py
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_cull.c src/scene_cull.c src/retro25d.c -lm -o $(BUILD_DIR)/host/scene-cull
 	$(BUILD_DIR)/host/scene-cull
+	$(HOST_CC) $(HOST_CFLAGS) tools/test_scene_layer_y.c -o $(BUILD_DIR)/host/scene-layer-y
+	$(BUILD_DIR)/host/scene-layer-y
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_strips.c src/scene_strips.c src/scene_cull.c -lm -o $(BUILD_DIR)/host/scene-strips
 	$(BUILD_DIR)/host/scene-strips
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_pack.c -o $(BUILD_DIR)/host/scene-pack

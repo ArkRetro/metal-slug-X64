@@ -367,6 +367,11 @@ RESOURCES=RESOURCES+(0x874,0x877,0x871)
 # and the debris 0BB106 (22D414.., 0x574 / 0x20A).
 ROOTS=ROOTS+(0x2a8efc,0x2a8f3e,0x2a8f4a,0x2a8f6e,0x2a8f7a,0x2a8f86,0x2a8f92,0x2a8f9e,0x2a8faa,0x22d414,0x22d47e)
 RESOURCES=RESOURCES+(0xe0,0x532,0x54e,0x574,0x575)
+# Mission 4 flyers 083C8A / 08391C (neo_m3enemy.c): body 244 (flash 850), rotors 220, rider 177 / 20E, explosion 204, trail 01C82A 345.
+ROOTS=ROOTS+(0x2820f8,0x282126,0x282154,0x282182,0x2821ac,0x2823b2,0x2823e0,0x28240a)
+RESOURCES=RESOURCES+(0x345,)
+# 04061C: the soldiers' palette 0x385 (the charred death of the generic node, 0406B6 with +5A = 7: the flyer's rider 0843F8 on odd frames).
+RESOURCES=RESOURCES+(0x385,)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

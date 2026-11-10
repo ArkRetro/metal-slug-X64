@@ -949,6 +949,15 @@ int main(void) {
              }}
 #endif
 #ifdef FAMILY_NODE_FIELDS
+            /* A node pointer to a child outside the family (the scratch
+             * node: the soldier 0AF17E of the Mission 4 flyer's rider
+             * 0842A8, +7A): the original holds an address the fixture
+             * does not record. */
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;bool outside=false;
+             for (unsigned k=0;k<sizeof(nf)/sizeof(nf[0]);k++) if (o>=nf[k] && o<nf[k]+4u && ga_l(a,nf[k])==NEO_GA_TAG(NN)) outside=true;
+             if (outside) {compared++;continue;}}
+#endif
+#ifdef FAMILY_NODE_FIELDS
             /* A node pointer partly overwritten by byte fields (the shield
              * soldier's +72 under 04097A's +72/+74 bytes): its remaining
              * bytes are the node's address in the original, its tag here. */

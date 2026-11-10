@@ -638,6 +638,11 @@ emu.register_frame_done(function()
   if il and frame>=tonumber(il) and frame<=tonumber(ih) then
    for _,b in ipairs({'P1 Left','P1 Right','P1 Up','P1 Down','P1 A','P1 B','P1 C'}) do button(b,0) end
   end
+  -- MSX_FULL_NOFIRE="lo-hi": capture-only, the plan's pad without A (fire)
+  -- and C (grenade) in those frames (enemies the plan kills at once: the
+  -- Mission 4 flyers 083C8A land, drop their rider and crash).
+  local nl,nh=string.match(os.getenv('MSX_FULL_NOFIRE') or '','(%d+)-(%d+)')
+  if nl and frame>=tonumber(nl) and frame<=tonumber(nh) then button('P1 A',0);button('P1 C',0) end
   if still>=stall_limit then print('STALL '..frame);last_frame=frame end
  end
  if frame>=2100 then

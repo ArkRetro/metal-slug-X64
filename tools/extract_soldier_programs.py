@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props',)}
+    'm4':('# Mission 4 props','# Mission 4 flyers')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -350,6 +350,8 @@ ROOTS+=[0x283b7a,0x283bf8]
 ROOTS+=[0x280142,0x280198,0x2801cc,0x2802c2,0x2803bc,0x2804a0,0x280436,0x28050a,0x280342,0x28034c]
 # Mission 4 props (neo_m4props.c): the decorations 0B99EE (2A8EFC), 0B9AD6 (2A8F3E) and 0B9B24 (2A8F4A), the collapse pieces 0B9D88 (tables 2A8F56 / 2A8F62) and the debris 0BB106 (table 0BB0B6).
 ROOTS+=[0x2a8efc,0x2a8f3e,0x2a8f4a,0x2a8f6e,0x2a8f7a,0x2a8f86,0x2a8f92,0x2a8f9e,0x2a8faa,0x22d414,0x22d47e,0x22d4e8,0x22d552,0x22d5bc,0x22d626]
+# Mission 4 flyers 083C8A / 08391C (neo_m3enemy.c, the family of the Mission 3 bomber 084588): body 2820F8 / 282154 / 2821AC, rotors 282126 / 282182, rider 2823B2 / 2823E0, explosion 28240A (281FFC, 28207A, 282362 above).
+ROOTS+=[0x2820f8,0x282126,0x282154,0x282182,0x2821ac,0x2823b2,0x2823e0,0x28240a]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

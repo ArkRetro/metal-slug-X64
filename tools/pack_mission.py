@@ -93,7 +93,8 @@ def actor_frames(mission):
     empty=[e for e in m.get('empty',[]) if e not in known and e not in {f['descriptor'] for f in frames}]
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
-GROUPS={2:('m2',),3:('m3',),4:('m4',)}
+# Mission 4 shares enemies with Mission 3 (grenadiers, shield soldiers, the bomber's family...): its pack carries both groups.
+GROUPS={2:('m2',),3:('m3',),4:('m3','m4')}
 def c_layer(patch):
     layers={c['layer'] for c in patch['cells']};assert len(layers)==1;return layers.pop()
 def anim_kinds():

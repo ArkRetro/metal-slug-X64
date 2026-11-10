@@ -86,3 +86,15 @@ Objetivo: que quepan las misiones 4–6 en ROM y en RAM sin perder exactitud
   constructores (87 nativos, 56 nuevos) en [MISION4_ACTORES.md](MISION4_ACTORES.md).
   Siguiente: fase 2 (parches `0C70FC`, llamadas `0BA8xx/0BA9xx`, actores
   nuevos, jefe `0BB028`, música 0x25/0x2C).
+
+## Plan 11-XI (tres agentes)
+- **A, Misión 4:** retomar `work-m4` (WIP sin verificar), terminar enemigos, jefe
+  `02267E` y fin de misión; luego Misión 6 fase 2.
+- **B, Misión 5 fase 2:** enemigos por orden de guion, compuertas 0x1F de la
+  alcantarilla, jefe; después ayuda a la M6.
+- **C, personajes y pausa:** Tarma, Eri y Fio (selección en SOLDIER SELECT,
+  sprites y voces de la ROM, diferencias de cada uno según la ROM) y botón de
+  pausa (mejora no arcade, como la barra de vida; Start durante el juego).
+- Restaurar el mínimo de 208 ranuras de caché si las medidas lo permiten.
+- Cada agente: pruebas bit a bit, `make check`, prueba corta en ares, fusión
+  en ccr al estar en verde. ROM de prueba cuando haya algo jugable nuevo.

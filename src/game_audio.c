@@ -138,6 +138,11 @@ static const char *music_name(uint16_t word) {
      * 059F76 child: fade 0A,80 at its birth, 0x28 192 frames later. */
     case 0x0024: return "music_mission3";
     case 0x0028: return "music_mission3_boss";
+    /* Mission 4: descriptor 016E1E +C = 0x25 (one stage record); the boss
+     * order 0BB028 creates 059F76 (+72 = 0x2C): fade 0A,80, then 0x2C
+     * (MAME run4: 157772). */
+    case 0x0025: return "music_mission4";
+    case 0x002c: return "music_mission4_boss";
     default: return NULL;
     }
 }

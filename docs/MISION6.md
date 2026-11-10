@@ -209,8 +209,11 @@ Ninguna de estas rutinas está portada salvo la cuenta y las letras de MISSION C
 Captura `m5gate/out/debug.log` (réplica de `run4` desde `sec08_274387` con la sonda nueva en `0C8A3C`): las tres
 escrituras de 126 celdas son del actor **`0BC42C`** (retorno `0BC496`), plantilla `0BBBE4`, sobre `10C72E`, con D0 =
 0x64, 0xA4 y 0xE4 (las columnas de bloques 100, 164 y 228: las tres paredes `1F`) y D1 = 6, en 275049, 275434 y
-275893. Falta: traducir `0BC42C` (cuándo abre) y el paso del barrido del jugador por las celdas `1F`; no se ha
-portado ni ajustado nada.
+275893. `0BC42C` (desensamblado): cada impacto (`+5F` bit 7) suma 1 a `+7A`, vuelve a registrar el cuerpo `2D3F80` con
+`0260C8` y pide el sonido `1027`; al quinto (`0BC48E`) estampa la plantilla `0BBBE4` con `0BC38E` → `0C8A3C` (las 126
+celdas a 0), suelta los restos `0BBD8A` (`01DA40`), pide `102D`, llama a `019DFC` y a `0BC550` y se borra. Falta:
+traducirlo con su constructor, el estampador `0C8A3C` nativo y el paso del barrido del jugador por las celdas `1F`
+(prueba bit a bit con una familia desde `at_277000` o `sec08_274387`); no se ha portado ni ajustado nada.
 
 ## Puertas (10-XI)
 

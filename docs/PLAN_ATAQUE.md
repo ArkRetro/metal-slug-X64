@@ -20,6 +20,12 @@ de Marco en el agua de la M2, cadencia de las armas finas, ...).
 - Si no sincroniza: localizar el primer fotograma divergente (BIOS, reloj,
   versión) y corregir el arranque; si es imposible, registrarlo y seguir con
   capturas propias.
+- **Estado (`docs/TAS.md`):** lector y reloj fijo hechos; el TAS no sincroniza
+  en MAME 0.264 (juega bien hasta ~4316, el grupo de helicópteros de la M1;
+  fin de partida en 10469). Causa probable: BizHawk 2.9.1 usa MAME 0.252 y la
+  ralentización del bucle de 30 Hz depende de los ciclos del 68000. Pendiente:
+  comparar con 0.251/0.252 (ejecutar ese binario necesita permiso). Se sigue con
+  capturas propias (`run4`).
 
 ## Fase 2: cerrar la M3 (en este orden)
 1. Jefe final que no ataca (cartucho normal, sin piloto).

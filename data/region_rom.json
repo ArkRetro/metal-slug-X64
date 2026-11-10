@@ -1485,6 +1485,18 @@
    "reader": "08346E / 0834F4 Mission 5 sewer drips: cull rectangle E4C48 (01945C)",
    "hex": "fff8fff800100010",
    "group": "m5"
+  },
+  {
+   "rom": "0x0BBAEC",
+   "reader": "0BBE16 Mission 5 street end: the stage exit's rectangle 0BBAEC (0B6ED2 +6E)",
+   "hex": "fff4ffff00800032",
+   "group": "m5"
+  },
+  {
+   "rom": "0x0BBE00",
+   "reader": "0BC4F4 Mission 5 sewer decoration: palettes 0BBE00[+6E]",
+   "hex": "059605920592",
+   "group": "m5"
   }
  ]
 }

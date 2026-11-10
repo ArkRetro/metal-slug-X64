@@ -388,6 +388,9 @@ RESOURCES=RESOURCES+(0x59c,0x59d,0x59e,0x59f)
 # Mission 5 sewer drips 08346E: the drop 0834F4 (AC8, 281E98 and the splash 281EA2).
 ROOTS=ROOTS+(0x281e98,0x281ea2)
 RESOURCES=RESOURCES+(0xac8,)
+# Mission 5 decorations 0BBE5E (5BB), 0BBED0 (5DC), 0BC4F4 (596 / 592) and 0BC4BA (591).
+ROOTS=ROOTS+(0x2a8fb6,0x2a8fc0,0x2a918a,0x2a921e,0x2a921c)
+RESOURCES=RESOURCES+(0x5bb,0x5dc,0x596,0x592,0x591)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

@@ -166,5 +166,69 @@ static ga_result_t drip_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x834f4u || r==0x83540u || r==0x83568u || r==0x8358au;}
-bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
-ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {return drip_routine(L(0))?drip_tick(a,e):gate_tick(a,e);}
+/* ---- decorations of the street and the sewer, and the street's end ----------------
+ * - 0BBE5E (street, camera 0): palette 5BB, layers 0, program 2A8FB6 (+6E =
+ *   0) or 2A8FC0, +78 = FFD0. 0BBEAA -> 0BBEB0: 01ABC8, 00427A; deleted
+ *   once +3C < +78.
+ * - 0BC4F4 (sewer): 012022, palette 0BBE00[+6E], layers FFF1, program
+ *   2A921E, +7A = +6E, +78 = FEF0, then 0BBEAA. 0BC4BA: 012022, palette
+ *   591, layers FFF1, program 2A921C, +78 = FFC0, then 0BBEAA.
+ * - 0BBED0 (street, camera 1584): palette 5DC, layers FFF1, program 2A918A;
+ *   0BBF00: 01ABC8, 00427A.
+ * - 0BBE16 (street, camera 1640): +7B = 3C; 0BBE22: 01ABC8 and, at the end
+ *   of the count, the stage exit 0B6ED2 at (7A0, -28) of the root with the
+ *   rectangle 0BBAEC and the walk target 7A8 (neo_goarrow.c). */
+static void front(neo_gactor_t *a,neo_genv_t *e) {                       /* 012022 */
+    if (!e->front_layer) return;
+    if (e->front_layer(e->ctx)) SB(0x15,B(0x15)|4u); else SB(0x15,B(0x15)&0xfbu);
+}
+static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0xbbe5e:
+        ga_palette(a,0x5bb);SW(0x66,0);SW(0x1e,0);
+        if (!ga_anim_start(a,e,W(0x6e)?0x2a8fc0:0x2a8fb6,0x100)) return GA_UNSUPPORTED;
+        SW(0x78,0xffd0);SL(0,0xbbeb0);
+        goto run;
+    case 0xbc4f4: {
+        front(a,e);
+        const uint8_t *t=ga_rom(0xbbe00u+2u*W(0x6e));
+        if (!t) {ga_fail(e,0xbbe00);return GA_UNSUPPORTED;}
+        ga_palette(a,(uint16_t)(t[0]<<8|t[1]));SW(0x66,0xfff1);SW(0x1e,0xfff1);
+        if (!ga_anim_start(a,e,0x2a921e,0x100)) return GA_UNSUPPORTED;
+        SB(0x7a,W(0x6e));SW(0x78,0xfef0);SL(0,0xbbeb0);
+        goto run;}
+    case 0xbc4ba:
+        front(a,e);ga_palette(a,0x591);SW(0x66,0xfff1);SW(0x1e,0xfff1);
+        if (!ga_anim_start(a,e,0x2a921c,0x100)) return GA_UNSUPPORTED;
+        SW(0x78,0xffc0);SL(0,0xbbeb0);
+        /* fall through */
+    case 0xbbeb0:
+    run:
+        ga_project(a,e);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return (int16_t)W(0x3c)<(int16_t)W(0x78)?GA_DELETE:GA_MORE;
+    case 0xbbed0:
+        ga_palette(a,0x5dc);SW(0x66,0xfff1);SW(0x1e,0xfff1);
+        if (!ga_anim_start(a,e,0x2a918a,0x100)) return GA_UNSUPPORTED;
+        SL(0,0xbbf00);
+        /* fall through */
+    case 0xbbf00:
+        ga_project(a,e);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_MORE;
+    case 0xbbe16:
+        SB(0x7b,0x3c);SL(0,0xbbe22);
+        /* fall through */
+    case 0xbbe22:
+        ga_project(a,e);
+        SB(0x7b,B(0x7b)-1u);
+        if (B(0x7b)) return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+        SL(0x38,0x10e968u);SL(0x28,0x7a00000u);SL(0x2c,0xffd80000u);SL(0x6e,0xbbaec);SW(0x72,0x7a8);
+        SL(0,0xb6ed2);return neo_goarrow_tick(a,e);                    /* jmp 0B6ED2 */
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u;}
+bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || deco_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
+ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {return drip_routine(L(0))?drip_tick(a,e):deco_routine(L(0))?deco_tick(a,e):gate_tick(a,e);}

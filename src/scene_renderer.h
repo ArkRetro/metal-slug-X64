@@ -25,6 +25,9 @@ void scene_render_set_tower(const uint8_t *types,unsigned count);
 /* Mission packs: layer `layer` drawn at `offset` (its own motion, e.g. the
  * Mission 3 sky, neo_train.c sky_x) instead of its camera rule. */
 void scene_render_set_layer_offset(unsigned layer,bool on,int offset);
+/* The same for the layer's vertical offset (screen row = map y + rise): a
+ * layer object the camera list moves by its own y factor (Mission 4 sky). */
+void scene_render_set_layer_rise(unsigned layer,bool on,int rise);
 /* Mission packs: layer `layer` drawn by its hardware column ring (the
  * Mission 3 train 10D7B6, neo_train.c ring): 32 columns of 16 px, column k at
  * screen x + 16 k in ring slot (first_slot + k) & 31, showing the pack's

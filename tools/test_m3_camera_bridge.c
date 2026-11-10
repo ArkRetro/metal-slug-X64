@@ -32,7 +32,7 @@ int main(int argc,char **argv) {
     int seen[3]={99999,99999,99999};int lo[3]={99999,99999,99999},hi[3]={-99999,-99999,-99999};
     unsigned prev=0,updates=0;int vmax=0,y0=0;
     for (;updates<20000;updates++) {
-        neo_world_player_t pl;memset(&pl,0,sizeof(pl));pl.alive=true;pl.follow_x=pl.follow_y=0xff;
+        neo_world_player_t pl;memset(&pl,0,sizeof(pl));pl.alive=true;pl.follow_x=pl.follow_y=0xff;pl.flags15=0x40;   /* on the ground: op 4 (0C8524) tests +15 bit 6 */
         pl.px=0x140;pl.py=w.camera_native?w.script.w69ba:0x100;
         neo_world_camera(&w,&pl);
         unsigned pr=neo_camera_progress(&w.camera);int y=(int)(((int64_t)w.camera.y+0xffff)>>16);

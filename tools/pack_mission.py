@@ -70,7 +70,7 @@ from pack_scene import PAGE
 import pack_store
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
-DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,)}
+DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,),4:(0x016E1E,)}
 
 def actor_frames(mission):
     """Native actor descriptors of the mission (filesystem/missionN/rest-native.json,
@@ -201,7 +201,9 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         grid=bytes.fromhex(col['cells_hex']);assert len(grid)==col['columns']*col['rows']
         # The runtime reads grid row y >> 3 of the kernel's y and never the
         # origin (tools/rebase_collision.py, docs/MISION3.md).
-        assert col['origin_cells']==[0,0],('grid origin: run tools/rebase_collision.py',d,col['origin_cells'])
+        # A ROM grid in kernel rows (tools/export_stage_rom.py, Mission 4) may start below the kernel's row 0:
+        # its row origin is packed (grid_origin_y) and the runtime applies it (neo_collision_set_row_origin).
+        assert col['origin_cells']==[0,0] or (ROM_LAYERS[0] and col['origin_cells'][0]==0 and col['origin_cells'][1]<0),('grid origin: run tools/rebase_collision.py',d,col['origin_cells'])
         while len(grids)%4:grids.append(0)
         offset=len(grids);grids.extend(grid)
         unknown=0
@@ -220,7 +222,7 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         # empty blocks). The later values (palette events not ported) stay out.
         stable=next((backdrops[i] for i in range(len(backdrops)-2) if backdrops[i]==backdrops[i+1]==backdrops[i+2]),None)
         if stable is not None:backdrops=[stable]+[b for b in backdrops if b!=stable]
-        rules=rom_layer_rules(rom,DESCRIPTORS[mission][k]) if LOOSE[0] and rom is not None else layer_rules(model)
+        rules=rom_native_rules(rom,DESCRIPTORS[mission][k],model) if ROM_LAYERS[0] else rom_layer_rules(rom,DESCRIPTORS[mission][k]) if LOOSE[0] and rom is not None else layer_rules(model)
         stages.append(dict(descriptor=DESCRIPTORS.get(mission,(0,)*len(stage_dirs))[k],width=model['width'],camera_max=model['camera_max'],
                            backdrop=int.from_bytes(bytes((*palette_rgb(backdrops[0]),255)),'big') if backdrops else 0xff,
                            first=first,count=len(st_cells),columns=col['columns'],rows=col['rows'],origin=col['origin_cells'],
@@ -489,6 +491,31 @@ def rom_layer_rules(rom,descriptor):
         lo=-32768;hi=stop if o in end else 32767
         rules.append((fx.numerator,fx.denominator,fy.numerator,fy.denominator,lo,hi))
     return rules
+def rom_native_rules(rom,descriptor,model):
+    """Mission 4 on (docs/MISION4.md): the rules from the camera list, for a
+    runtime that moves the layer objects itself (src/neo_train.c neo_layers_*:
+    0C81C0 / 0C6F9E, ops 0x14 / 0x1C / 0x44). A layer whose factors stay
+    0x100 / 0x100 and that is never put back at the root (op 0x44) follows the
+    camera: rule 1/1. Any other mapped layer (the sky 10E83E: factors 0x40/0,
+    0x80/0x80, 0x80/0 and two op 0x44) gets the rule that never draws
+    (visible 1..0): the runtime draws it at its object's own +14/+18. The
+    object 10D7B6 is the model's layer 2 while 10E8C6 has no map
+    (tools/neo_scene.py), layer 1 otherwise. Nothing is fitted."""
+    a=rom.u32(descriptor);factors={};rebased=set();mapped=set()
+    for _ in range(4000):
+        op,n=rom.u16(a),rom.u16(a+2)
+        if op==8:break
+        assert n and n<0x40,('camera list',hex(a),op,n)
+        if op==0x1c:factors.setdefault(rom.u32(a+4),set()).add((rom.s16(a+8),rom.s16(a+10)))
+        elif op==0x44:rebased.add(rom.u32(a+4))
+        elif op==0x18 and rom.u32(a+12):mapped.add(rom.u32(a+4))
+        a+=n
+    never=(1,1,1,1,1,0);rules=[never]*4
+    slots={0x10E83E:0,0x10D7B6:1 if 0x10E8C6 in mapped else 2,0x10E8C6:2,0x10C72E:3}
+    for o in mapped:
+        if factors.get(o)=={(0x100,0x100)} and o not in rebased:rules[slots[o]]=(1,1,1,1,-32768,32767)
+    assert rules[3]!=never,'the terrain layer does not follow the camera'
+    return rules
 def layer_rules(model):
     """Per-layer scroll rules fitted to the observations (docs/MISION2.md
     "Fase 2"): x = camera*x_num/x_den, rise = camera_y*y_num/y_den (camera_y
@@ -600,7 +627,7 @@ def stage_blobs(rom,descriptor):
     while rom.u16(a+12)!=0xffff:a+=12
     out.append((players,rom.read(players,a+14-players)))
     return out
-MISSION=[0];LOOSE=[False];LOOSE_ERRORS=[]
+MISSION=[0];LOOSE=[False];LOOSE_ERRORS=[];ROM_LAYERS=[False]
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
@@ -609,9 +636,10 @@ def main():
     p.add_argument('--report',type=Path)
     p.add_argument('--loose-layers',action='store_true',help='Mission 3: layers that move on their own get the best median fit (worst error in the report)')
     p.add_argument('--rom',type=Path,default=Path('/home/user/roms/mslugx.zip'),help='MAME set (P ROMs) for the per-stage ROM tables')
+    p.add_argument('--rom-layers',action='store_true',help='Mission 4 on: layer rules from the camera list for the native layer objects, ROM grid with its row origin')
     p.add_argument('--format',type=int,choices=(4,5),default=5,help='pack version (4: run-pair chunks, nothing taken from other packs; for the comparison test)')
     p.add_argument('--shared',type=Path,nargs='*',help='version 5 packs whose chunks this one may use (default: the lower-numbered missionN.pack beside the output)')
-    a=p.parse_args();LOOSE[0]=a.loose_layers
+    a=p.parse_args();LOOSE[0]=a.loose_layers;ROM_LAYERS[0]=a.rom_layers
     from decode_level_script import Program
     out=a.output or ROOT/f'romfs/mission{a.mission}.pack'
     shared=[]

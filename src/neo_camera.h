@@ -32,7 +32,7 @@ typedef enum {
     NEO_CAMERA_EV_COND_CALL=0x54,   /* 0x54/0x58 condition true: routine `address` */
     NEO_CAMERA_EV_UNSUPPORTED=0xff
 } neo_camera_event_kind_t;
-typedef struct { uint8_t kind; uint32_t address; uint16_t value; uint16_t progress; } neo_camera_event_t;
+typedef struct { uint8_t kind; uint32_t address; uint16_t value; uint16_t progress; uint16_t at; /* list offset of the op */ } neo_camera_event_t;
 typedef struct {
     uint32_t vx694e,vy6952;          /* custom layer velocities (unused in Mission 1) */
     uint8_t layer_flags[4];          /* 6956..6959 */
@@ -61,10 +61,11 @@ typedef struct {
     neo_camera_event_t events[NEO_CAMERA_EVENTS];unsigned event_count,event_dropped;
     unsigned unsupported;uint32_t unsupported_at;
     /* Players of the last update (+3C/+40 projected words) for op 4. */
-    struct { bool alive; uint16_t px,py; } op4_players[2];
+    struct { bool alive; uint16_t px,py; bool rect_ok; } op4_players[2];
 } neo_camera_t;
 /* One player as ROM 01903A reads it. */
-typedef struct { bool alive; uint8_t follow_x,follow_y; uint16_t px,py; } neo_camera_player_t;
+/* rect_ok: +5F bit 7 clear and +15 bit 6 set (0C8524, the test of op 4's rectangle). */
+typedef struct { bool alive; uint8_t follow_x,follow_y; uint16_t px,py; bool rect_ok; } neo_camera_player_t;
 /* State of a mission start (0C7C1A/0C8084 after the list pointer is set):
  * list = ROM bytes of the mission's command list at `base`. */
 void neo_camera_init(neo_camera_t *c,const uint8_t *list,uint16_t size,uint32_t base);

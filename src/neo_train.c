@@ -98,3 +98,30 @@ int neo_train_column(const neo_train_t *t,int local_x) {
     c%=784;if (c<0) c+=784;   /* 0B8566: 392 pares de columnas */
     return c;
 }
+
+/* Generic layer objects (neo_train.h, docs/MISION4.md). */
+int neo_layer_index(uint32_t object) {
+    return object==0x10C72Eu?NEO_LAYER_FORE:object==0x10D7B6u?NEO_LAYER_MID:object==0x10E83Eu?NEO_LAYER_SKY:object==0x10E8C6u?NEO_LAYER_OBJ4:-1;
+}
+static void layer_rebase(neo_layer_t *l,int32_t x,int32_t y) {l->x=x;l->y=y;l->frac_x=l->frac_y=0;}   /* 0C6FF2 */
+static uint16_t list_word(const uint8_t *p) {return (uint16_t)(p[0]<<8|p[1]);}
+void neo_layers_event(neo_layer_t l[NEO_LAYERS],const uint8_t *list,uint8_t kind,uint32_t object,uint16_t at,int32_t root_x,int32_t root_y) {
+    if (kind==0x44u && !object) {for (unsigned i=0;i<NEO_LAYERS;i++) layer_rebase(&l[i],root_x,root_y);return;}   /* op 0x14: 0C85F0 */
+    int i=neo_layer_index(object);if (i<0) return;
+    const uint8_t *op=list+at;
+    if (kind==0x44u) layer_rebase(&l[i],root_x,root_y);                                  /* 0C8646 */
+    else if (kind==0x1cu) {l[i].fx=(int16_t)list_word(op+8);l[i].fy=(int16_t)list_word(op+10);}   /* 0C86C8: +26, +28 */
+    else if (kind==0x18u) {                                                              /* 0C8654 */
+        l[i].column=(int16_t)list_word(op+8);l[i].top=(int16_t)list_word(op+10);
+        l[i].map=(uint32_t)list_word(op+12)<<16|list_word(op+14);l[i].loads++;l[i].ring=false;
+    } else if (kind==0x48u && !list_word(op+8) && !list_word(op+10) && list_word(op+12)==0x20u) {   /* 0C73CE */
+        l[i].ring=true;l[i].ring_base=(int32_t)(-(int32_t)neo_layer_word(l[i].x))&~511;
+    }
+}
+void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4]) {
+    for (unsigned i=0;i<NEO_LAYERS;i++) {
+        if (i<4 && flags[i]) continue;
+        l[i].x=(int32_t)((uint32_t)l[i].x+(uint32_t)neo_layer_step(root_vx,l[i].fx,&l[i].frac_x));
+        l[i].y=(int32_t)((uint32_t)l[i].y+(uint32_t)neo_layer_step(root_vy,l[i].fy,&l[i].frac_y));
+    }
+}

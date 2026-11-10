@@ -1738,6 +1738,9 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_camera_init(&w->camera,w->stage_camera,w->stage_camera_size,w->stage_camera_base);w->camera_native=true;
         neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
         firsts=w->camera.event_count;memcpy(first,w->camera.events,sizeof(first));
+        /* The head's layer ops (0x14, 0x18, 0x1C) before the first step. */
+        memset(w->layers,0,sizeof(w->layers));
+        for (unsigned i=0;i<firsts;i++) neo_layers_event(w->layers,w->camera.list,first[i].kind,first[i].address,first[i].at,neo_camera_root_x(&w->camera),neo_camera_root_y(&w->camera));
     }
     if (!w->camera_native) {
         const uint8_t *list=ga_rom(0x0B57BE);
@@ -1748,8 +1751,19 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         w->script.w69b8=0x80;w->script.w69ba=0x180;
         neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
     }
-    neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0},{false,0,0,0,0}};
-    neo_camera_update(&w->camera,p,true,&w->script.w69b8,&w->script.w69ba);
+    neo_camera_player_t p[2]={{pl && pl->alive,pl?pl->follow_x:0,pl?pl->follow_y:0,pl?pl->px:0,pl?pl->py:0,pl && !pl->dead && (pl->flags15&0x40u)},{false,0,0,0,0,false}};
+    {   /* neo_camera_update in its parts: 0C81C0 steps the layers between the
+         * camera update 0C7CA6 and the list's commands (docs/MISION4.md). */
+        neo_camera_t *c=&w->camera;
+        for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=p[i].alive;c->op4_players[i].px=p[i].px;c->op4_players[i].py=p[i].py;c->op4_players[i].rect_ok=p[i].rect_ok;}
+        neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
+        neo_layers_step(w->layers,c->root_vx,c->root_vy,c->layer_flags);
+        neo_camera_finish(c,&w->script.w69b8,&w->script.w69ba);
+        for (unsigned i=0;i<c->event_count;i++) {
+            const neo_camera_event_t *e=&c->events[i];
+            neo_layers_event(w->layers,c->list,e->kind,e->address,e->at,neo_camera_root_x(c),neo_camera_root_y(c));
+        }
+    }
     if (firsts) {
         neo_camera_t *c=&w->camera;unsigned keep=c->event_count;
         if (firsts+keep>NEO_CAMERA_EVENTS) {c->event_dropped+=firsts+keep-NEO_CAMERA_EVENTS;keep=NEO_CAMERA_EVENTS-firsts;}

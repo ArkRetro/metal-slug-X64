@@ -74,6 +74,22 @@ if os.getenv('MSX_FULL_GRID_TAP')~='0' then
   end
  end)
 end
+-- MSX_FULL_CAMERA=1: camera.csv, one line per camera update (write tap on the
+-- last store of ROM 0C7CA6, RAM 10E9D8), as tools/capture_mission_rest.lua
+-- MSX_REST_CAMERA, plus the layer objects 10C72E / 10D7B6 / 10E83E / 10E8C6
+-- +0..+2B as the previous layer step 0C81C0 left them (tools/extract_camera_fixture.py).
+local camera_csv=nil
+if os.getenv('MSX_FULL_CAMERA')=='1' then
+ camera_csv=assert(io.open(output..'/camera.csv','w'))
+ camera_csv:write('frame,p1,p2,mission,flags,block,d8,layers\n')
+ local function hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+ local function player(b) return string.format('%08x:%s:%02x%02x:%02x%02x',cpu:read_u32(b),hex(b+0x3c,8),cpu:read_u8(b+0x7a),cpu:read_u8(b+0x7b),cpu:read_u8(b+0x5f),cpu:read_u8(b+0x15)) end
+ camera_tap=cpu:install_write_tap(0x10e9d8,0x10e9d9,'full_camera',function(address,data,mask)
+  camera_csv:write(string.format('%d,%s,%s,%08x:%s,%02x%02x%02x,%s,%04x,%s:%s:%s:%s\n',frame,player(0x1014c4),player(0x101574),
+   cpu:read_u32(0x101364),hex(0x101364+0x72,8),cpu:read_u8(0x10c322),cpu:read_u8(0x10f000),cpu:read_u8(0x10c300),hex(0x10e94e,0x8e),data&0xffff,
+   hex(0x10c72e,0x2c),hex(0x10d7b6,0x2c),hex(0x10e83e,0x2c),hex(0x10e8c6,0x2c)))
+ end)
+end
 lspc_tap=cpu:install_write_tap(0x3c0006,0x3c0007,'full_lspc',function(address,data,mask)
  lspc_writes:write(string.format('%d,%04x\n',frame,data&0xffff))
 end)

@@ -10,6 +10,10 @@ static bool dynamic_active;
  * (neo_collision_set_grid, docs/MISION2.md "Fase 2"). */
 static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid=dynamic_grid_m1;static const uint8_t *unknown;
 static unsigned columns=NEO_GRID_COLUMNS,rows=32,unknown_reads;
+/* Kernel row of the grid's row 0 (neo_collision_set_row_origin): 0, or the
+ * negative row of a map that goes below the kernel's y 0 (Mission 4: the
+ * map 0E6DA8 with +34 = 7 is 36 blocks tall, rows 15 down to -56). */
+static int row0;
 /* The terrain layer's 64x64 cell ring (object 10C72E +88) of the vertical
  * stages: what the kernel's 0C79FE reads (neo_kscene_t.ring). */
 static uint8_t *ring;static bool ring_on,ring_bypass;static int ring_c0,ring_r0;
@@ -18,8 +22,8 @@ static void ring_put(int c,int r) {
      * ring byte (c & 63) * 64 + ((~(8r)) >> 3 & 63), the index 0C79FE reads
      * for the local pixel (8c, 8r). Rows and columns beyond the map are
      * clipped (0C714E) and keep what the slot held. */
-    if (c<0 || c>=(int)columns || r<0 || r>=(int)rows) return;
-    ring[((unsigned)(c&63)<<6)|(63u-((unsigned)r&63u))]=(dynamic_active?dynamic_grid:grid)[(unsigned)c*rows+(unsigned)r];
+    if (c<0 || c>=(int)columns || r<row0 || r>=row0+(int)rows) return;
+    ring[((unsigned)(c&63)<<6)|(63u-((unsigned)r&63u))]=(dynamic_active?dynamic_grid:grid)[(unsigned)c*rows+(unsigned)(r-row0)];
 }
 static void ring_touch(int c,int r) {
     if (ring_on && c>=ring_c0 && c<ring_c0+64 && r>=ring_r0 && r<ring_r0+64) ring_put(c,r);
@@ -72,8 +76,10 @@ void neo_collision_reset(void) {dynamic_active=false;ring_on=false;}
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned column_count,unsigned row_count) {
     if (!cells) {grid=neo_grid;dynamic_grid=dynamic_grid_m1;unknown=NULL;columns=NEO_GRID_COLUMNS;rows=32;}
     else {grid=cells;dynamic_grid=dynamic;unknown=unknown_mask;columns=column_count;rows=row_count;}
-    dynamic_active=false;unknown_reads=0;ring_on=false;ring=NULL;
+    dynamic_active=false;unknown_reads=0;ring_on=false;ring=NULL;row0=0;
 }
+void neo_collision_set_row_origin(int row) {row0=row;}
+int neo_collision_row_origin(void) {return row0;}
 void neo_collision_set_ring(uint8_t *buffer) {ring=buffer;ring_on=false;}
 void neo_collision_ring_bypass(bool on) {ring_bypass=on;}
 unsigned neo_collision_rows(void) {return rows;}
@@ -90,8 +96,8 @@ unsigned neo_collision_vehicle_wreckage(int32_t x,int32_t y,uint8_t flags) {
     int base_x=cell_floor(x)-7,base_y=cell_floor(y);unsigned changed=0;
     for (unsigned col=0;col<13;col++) for (unsigned row=0;row<3;row++) {
         int cx=base_x+(int)col,cy=base_y+2-(int)row;
-        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
-        uint8_t *cell=&dynamic_grid[cx*rows+cy];
+        if (cx<0 || cx>=(int)columns || cy<row0 || cy>=row0+(int)rows) continue;
+        uint8_t *cell=&dynamic_grid[cx*rows+(cy-row0)];
         if (*cell&15) continue;
         uint8_t value=(*cell&0xe0)|(flags&2?16:0)|vehicle_wreckage[row][col];
         if (value!=*cell) { *cell=value;changed++;ring_touch(cx,cy); }
@@ -107,8 +113,8 @@ unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks
     make_dynamic();unsigned changed=0;
     for (unsigned p=0;p<pairs;p++) for (unsigned b=0;b<blocks;b++) for (unsigned k=0;k<4;k++) {
         int cx=column+2*(int)p+(int)(k&1u),cy=top-2*(int)b-(int)(k>>1);
-        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
-        uint8_t v=cells[(p*stride+b)*4u+k],*cell=&dynamic_grid[cx*rows+cy];
+        if (cx<0 || cx>=(int)columns || cy<row0 || cy>=row0+(int)rows) continue;
+        uint8_t v=cells[(p*stride+b)*4u+k],*cell=&dynamic_grid[cx*rows+(cy-row0)];
         if (*cell!=v) {*cell=v;changed++;ring_touch(cx,cy);}
     }
     return changed;
@@ -139,8 +145,8 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
     int base_x=cell_floor(x)+dx,base_y=cell_floor(y)+dy+h-1;unsigned changed=0;
     for (int col=0;col<w;col++) for (int row=0;row<h;row++) {
         int cx=base_x+col,cy=base_y-row;
-        if (cx<0 || cx>=(int)columns || cy<0 || cy>=(int)rows) continue;
-        uint8_t *cell=&dynamic_grid[cx*rows+cy];unsigned shape=*cell&15u;
+        if (cx<0 || cx>=(int)columns || cy<row0 || cy>=row0+(int)rows) continue;
+        uint8_t *cell=&dynamic_grid[cx*rows+(cy-row0)];unsigned shape=*cell&15u;
         if (shape && !((mask>>shape)&1u)) continue;
         uint8_t value=(uint8_t)((t[10+row*w+col]|(t[4]?16:0))+(*cell&0xe0));
         if (value!=*cell) {*cell=value;changed++;ring_touch(cx,cy);}
@@ -151,10 +157,10 @@ unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
     /* Vertical stages: every reader sees the kernel's ring (0C79FE), which
      * the tower writer 0B7C38 fills beyond the map's rows. */
-    if (x<0 || x>=(int)columns*8 || y<0) return 0;
+    if (x<0 || x>=(int)columns*8 || y<row0*8) return 0;
     if (ring_on && !ring_bypass) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
-    if (y>=(int)rows*8) return 0;
-    unsigned at=(unsigned)(x/8)*rows+(unsigned)(y/8);
+    if (y>=(row0+(int)rows)*8) return 0;
+    unsigned at=(unsigned)(x/8)*rows+(unsigned)((y>>3)-row0);
     /* A never observed cell (mission packs only) reads as empty and is
      * counted: an explicit stop of the collision coverage. */
     if (unknown && (unknown[at>>3]>>(at&7)&1u)) {unknown_reads++;return 0;}
@@ -165,8 +171,8 @@ uint8_t neo_collision_cell(int x,int y) {
  * row reads the window row sharing its slot: Mission 2 stage 3's tower
  * rises above the map's 272 rows (y 2176+), where the map loop found no
  * floor and the player fell through the pieces it stood on. */
-static int row_lo(void) {return ring_on && !ring_bypass?ring_r0:0;}
-static int row_hi(void) {return ring_on && !ring_bypass?ring_r0+64:(int)rows;}
+static int row_lo(void) {return ring_on && !ring_bypass?ring_r0:row0;}
+static int row_hi(void) {return ring_on && !ring_bypass?ring_r0+64:row0+(int)rows;}
 static bool surface(int32_t x,int row,neo_surface_t *out) {
     if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
     uint8_t code=neo_collision_cell(x/NEO_UNIT,row*8);

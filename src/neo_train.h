@@ -48,6 +48,30 @@ void neo_train_sky_factor(neo_train_t *t,int16_t factor);
 /* 0C6F9E: velocidad x de una capa para el paso `step` (Q16.16) con el factor
  * +26 y el resto +2A (que actualiza). */
 int32_t neo_layer_step(int32_t step,int16_t factor,uint8_t *frac);
+/* Layer objects 10C72E / 10D7B6 / 10E83E / 10E8C6 as the camera list moves
+ * them (docs/MISION4.md): +0/+4 position (Q16.16; +14/+18 without a parent,
+ * 01ABCC), +26/+28 factors (op 0x1C, 0C86C8), +2A/+2B remainders, the map of
+ * the last op 0x18 (0C8654: +2E map, +32 block column, +34 top block row).
+ * 0C81C0 steps each one by the root's velocity through 0C6F9E unless its
+ * flag byte 10E956+i (op 0x3C) gives it another speed; ops 0x14 / 0x44
+ * (0C6FF2) put it at the root with its remainders cleared. */
+typedef struct {
+    int32_t x,y; int16_t fx,fy; uint8_t frac_x,frac_y;
+    uint32_t map; int16_t column,top; uint16_t loads;
+    /* Op 0x48 (0C73CE) with (0, 0, 0x20 columns): the map's 32 columns are
+     * copied once into the object's 32 sprite columns, so the picture
+     * repeats every 512 px; ring_base = the 512-px step of the layer's x
+     * at that moment (the pack holds the picture from there). */
+    bool ring; int32_t ring_base;
+} neo_layer_t;
+enum { NEO_LAYER_FORE,NEO_LAYER_MID,NEO_LAYER_SKY,NEO_LAYER_OBJ4,NEO_LAYERS };
+int neo_layer_index(uint32_t object);
+/* One camera-list event (kind = op, object, list offset `at` of the op in
+ * `list`) at the root position (6968/696C). */
+void neo_layers_event(neo_layer_t l[NEO_LAYERS],const uint8_t *list,uint8_t kind,uint32_t object,uint16_t at,int32_t root_x,int32_t root_y);
+/* 0C81C0 after the camera update: the root's velocity 6970/6974 through each
+ * layer's factors; a layer whose flag byte is not 0 is left to its owner. */
+void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4]);
 /* +84 de una capa sin padre (0C75B2): palabra alta de +14. */
 static inline int16_t neo_layer_word(int32_t x) {return (int16_t)(uint16_t)((uint32_t)x>>16);}
 /* Cuadro del cielo 10E83E (0B8EDC): 0 = el mapa 0B857C de la etapa, 1..4 =

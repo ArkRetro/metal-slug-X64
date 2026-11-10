@@ -133,6 +133,7 @@ typedef struct {
     unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */
     uint32_t descriptor;             /* stage descriptor (016DDE..) */
     uint16_t width,camera_max;uint32_t backdrop;
+    int16_t grid_row0;               /* kernel row of the grid's row 0 (pack grid_origin_y; neo_collision_set_row_origin) */
     uint16_t columns,rows;           /* collision grid (8-px cells, column major, row 0 at the bottom) */
     const uint8_t *grid;uint8_t *grid_dynamic;const uint8_t *unknown;uint8_t *ring; /* kernel cell ring (rows > 32) */
     const uint8_t *camera_list;uint32_t camera_rom;uint16_t camera_len;   /* descriptor +0 */

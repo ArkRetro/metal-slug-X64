@@ -23,23 +23,30 @@ def player(text):
     routine,words,follow,flags=text.split(':')
     w=bytes.fromhex(words);routine=int(routine,16)
     return [1 if routine not in (0x3f1e,0x55555555,0xaaaaaaaa) and routine<0x1000000 else 0,int(follow[:2],16),int(follow[2:],16),
-            int.from_bytes(w[0:2],'big'),int.from_bytes(w[4:6],'big')]
+            int.from_bytes(w[0:2],'big'),int.from_bytes(w[4:6],'big'),int(flags[:2],16),int(flags[2:],16)]   # ..., +5F, +15
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();records=[];list_base=0x0B57BE
+    p.add_argument('--list-base',type=lambda v:int(v,16),default=0x0B57BE,help='camera list of the stage (Mission 4: e741a, capture of tools/capture_fullgame.lua MSX_FULL_CAMERA=1)')
+    p.add_argument('--list-size',type=lambda v:int(v,16),default=0x200)
+    a=p.parse_args();records=[];list_base=a.list_base
     for r in csv.DictReader(open(a.capture/'camera.csv')):
         mission=r['mission'].split(':')
         if int(mission[0],16)!=0x0186a0:
             if records:break
             continue
-        assert mission[1]=='000a0000000a0000','mission actor +72/+76'
+        assert mission[1]=='000a0000000a0000' or 'layers' in r,'mission actor +72/+76'
         flags=bytes.fromhex(r['flags']);assert not flags[1]&0x18,'10F000 bits 3/4 (debug camera) set'
         b=bytearray(bytes.fromhex(r['block']));b[0x8a:0x8c]=int(r['d8'],16).to_bytes(2,'big')
         rec=dict(frame=int(r['frame']),players=[player(r['p1']),player(r['p2'])],follow=1 if flags[0] else 0)
         for k in FIELDS:rec[k]=field(b,k)
-        rec['command']-=list_base;assert 0<=rec['command']<0x200
+        rec['command']-=list_base;assert 0<=rec['command']<a.list_size,hex(rec['command'])
+        if r.get('layers'):
+            rec['speed']=[int(mission[1][:8],16),int(mission[1][8:],16)]   # mission actor +72/+76 (Mission 4: 0x8000 from the boss call)
+            # Layer objects 10C72E / 10D7B6 / 10E83E / 10E8C6: +0 x, +4 y, +26 / +28 factors, +2A / +2B remainders.
+            rec['layers']=[[int.from_bytes(h[0:4],'big',signed=True),int.from_bytes(h[4:8],'big',signed=True),int.from_bytes(h[0x26:0x28],'big',signed=True),
+                            int.from_bytes(h[0x28:0x2a],'big',signed=True),h[0x2a],h[0x2b]] for h in map(bytes.fromhex,r['layers'].split(':'))]
         records.append(rec)
-    out=dict(source=f'MAME 0.264 mslugx euro, tools/capture_mission_rest.lua MSX_REST_CAMERA=1 ({a.capture.name})',list_base=hex(list_base),records=records)
+    out=dict(source=f'MAME 0.264 mslugx euro, tools/capture_mission_rest.lua MSX_REST_CAMERA=1 or tools/capture_fullgame.lua MSX_FULL_CAMERA=1 ({a.capture.name})',list_base=hex(list_base),records=records)
     with gzip.open(a.output,'wt') as f:json.dump(out,f,separators=(',',':'))
     print(len(records),'camera updates',records[0]['frame'],'..',records[-1]['frame'])
 if __name__=='__main__':main()

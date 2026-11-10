@@ -75,6 +75,9 @@ def extract(roots,output,allow_backdrop_timeline=False,frames=None,ram_layers=Fa
         # --skip-fade: a palette fade (neo_fade.c, RAM 10991A..10991F: the
         # three channel offsets) is running, the pens are not the map's.
         if skip_fade and any(ram[0x991a:0x9920]):faded.append(frame);continue
+        # A snapshot one or two frames after an LSPC mode write is ambiguous
+        # (animation_disabled): left out with the fade frames (Mission 4: 158550).
+        if skip_fade and lspc_writes.get(root) is not None and any(frame-2<=f<frame for f,_ in lspc_writes[root]):faded.append(frame);continue
         p=struct.unpack('>4096H',(root/f'palette{frame}.bin').read_bytes())
         trace=traces[root]
         fore_base=None

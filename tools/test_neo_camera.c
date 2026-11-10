@@ -55,7 +55,7 @@ int main(void) {
             shakes++;
         }
         neo_camera_player_t pl[2];
-        for (unsigned i=0;i<2;i++) pl[i]=(neo_camera_player_t){r->players[i][0]!=0,r->players[i][1],r->players[i][2],r->words[i][0],r->words[i][1]};
+        for (unsigned i=0;i<2;i++) pl[i]=(neo_camera_player_t){r->players[i][0]!=0,r->players[i][1],r->players[i][2],r->words[i][0],r->words[i][1],false};   /* rect_ok: the list 0B57BE has no op 4 */
         int32_t before=c.x;
         neo_camera_track(&c,pl,r->follow!=0,p8,pa);
         moved+=c.x!=before;

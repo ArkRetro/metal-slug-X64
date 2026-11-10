@@ -281,7 +281,13 @@ def main():
     p.add_argument('--chain',action='store_true',help='print the full event chain')
     p.add_argument('--list',action='store_true',help='print one line per constructor')
     p.add_argument('--port',type=Path,help='ares log of the reference cartridge')
+    p.add_argument('--sections',help='another mission: "2:0E756E:name,3:..." (section, camera-list order that starts it, name) with "1:0:name" first')
+    p.add_argument('--source',help='source line of --json for another mission')
     a=p.parse_args()
+    if a.sections:
+        global SECTION_ORDERS,SECTION_NAMES
+        t=[x.split(':') for x in a.sections.split(',')]
+        SECTION_ORDERS=tuple((int(n),int(o,16)) for n,o,_ in t if int(n)>1);SECTION_NAMES={int(n):name for n,_,name in t}
     ev=parse(a.log);script=script_index(a.script);clist=camera_list(a.stage)
     r=build(ev,script,clist);ctor=r['ctor']
     nat=native_status(set(ctor));fam=family(ctor)
@@ -295,7 +301,7 @@ def main():
             ' '.join(sorted(i['programs'])),' '.join('%s×%d'%x for x in sorted(i['sounds'].items()))))
     if a.markdown:markdown(r,script,nat)
     if a.json:
-        out={'source':'MAME 0.264 mslugx euro, tools/capture_m3_actors.sh from states4/sec04_117966 (frame-exact replay of run4) to the start of Mission 4; tools/compare_m3_events.py',
+        out={'source':a.source or 'MAME 0.264 mslugx euro, tools/capture_m3_actors.sh from states4/sec04_117966 (frame-exact replay of run4) to the start of Mission 4; tools/compare_m3_events.py',
             'sections':{str(s):f for f,s in r['starts']},
             'port':'native = neo_world_spawn_native (build/host/script-native); native-module:<file> = run by another module; work-m3c = only on the unmerged branch; external = counted, not created; missing',
             'counts':dict(collections.Counter(port_status(c,nat).split(':')[0] for c in ctor),constructors=len(ctor),allocations=sum(i['count'] for i in ctor.values())),

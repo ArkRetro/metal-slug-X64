@@ -144,7 +144,7 @@ emu.register_frame_done(function()
  if snap_at[frame] then screen:snapshot(string.format('%s/game%d.png',out,frame)) end
  if dump_at[frame] then local f=assert(io.open(string.format('%s/ram%d.bin',out,frame),'wb'));f:write(cpu:read_range(0x100000,0x10ffff,8));f:close() end
  if save_at[frame] then machine:save(string.format('tas_%d',frame));event(string.format('SAVED tas_%d',frame)) end
- csv:write(string.format('%d,%x,%d,%d,%08x,%d,%x,%s,%016x,%d,%d\n',frame,m,sec,prog,score,lives,player,frame%60==0 and ramhash() or '',cpu:read_u64(0x10f008),cpu:read_u8(0x10008a),cpu:read_u16(0x10000e)))
+ csv:write(string.format('%d,%x,%d,%d,%08x,%d,%x,%s,%08x%08x,%d,%d\n',frame,m,sec,prog,score,lives,player,frame%60==0 and ramhash() or '',cpu:read_u32(0x10f008),cpu:read_u32(0x10f00c),cpu:read_u8(0x10008a),cpu:read_u16(0x10000e)))
  if frame%3000==0 then csv:flush();print(string.format('FRAME %d section %d progress %d score %08x lives %d',frame,sec,prog,score,lives)) end
  if frame>=last then csv:close();event('END '..frame);ev:close();machine:exit() end
 end,'tas')

@@ -32,8 +32,11 @@ enum {
     /* Expansion Pak floor: the pinned banks and map (49 chunks), the boss
      * set (65) and three soldier programs (83) with some room; below it
      * something else took the RAM (the cache is sized last, from the free
-     * heap left after the audio, so whatever loads before shrinks it). */
-    SCENE_EXPANDED_MIN_SLOTS=208,
+     * heap left after the audio, so whatever loads before shrinks it).
+     * 200 since the Mission 4 props (neo_m4props.c: 13 KB of code and
+     * tables took the 208th slot, docs/MISION4.md); the three sets above
+     * need 197. */
+    SCENE_EXPANDED_MIN_SLOTS=200,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank
@@ -950,9 +953,9 @@ bool scene_stage_load(unsigned index) {
     if (load_idle) load_idle();
     /* Map patches: their table and the split of the cells (the patch
      * cells are the stage's last). */
-    unsigned patches=ps.patch_count<16u?ps.patch_count:16u,normal=cells;
-    uint32_t patch_table[32];
-    if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);pack_native(raw_patch,"4",2u*patches);memcpy(patch_table,raw_patch,8u*patches);}
+    unsigned patches=ps.patch_count<SCENE_STAGE_PATCHES?ps.patch_count:SCENE_STAGE_PATCHES,normal=cells;
+    uint32_t patch_table[2*SCENE_STAGE_PATCHES];
+    if (patches) {static uint32_t raw_patch[2*SCENE_STAGE_PATCHES] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);pack_native(raw_patch,"4",2u*patches);memcpy(patch_table,raw_patch,8u*patches);}
     while (normal && (stage_cells[normal-1].layer&0x80u)) normal--;
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     void *strip_items=take(SCENE_STRIP_ITEMS*SCENE_STRIP_ENTRY_BYTES),*strip_groups=take(SCENE_STRIP_GROUPS*SCENE_STRIP_ENTRY_BYTES);

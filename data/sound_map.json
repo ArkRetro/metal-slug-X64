@@ -908,6 +908,108 @@
     "01C47C"
    ],
    "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124148): 01C47C (routine 01C448) x3"
+  },
+  {
+   "label": "music_mission4",
+   "word": "0025",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 4 music (descriptor 016E1E +C = 0x25, requested by 018412..01842E; MAME run4 latch 03, 06, 00 25 in 149828..149831)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission4_boss",
+   "word": "002C",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 4 boss music: 059F76 (routine 059FA8 in MAME run4 frame 157772, created in the boss start 157582) sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests +72 = 0x2C",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "sfx_102e",
+   "word": "102E",
+   "callers": [
+    "0B9E98"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 152341): 0B9E98 (routine 0B9DE4) x17"
+  },
+  {
+   "label": "sfx_1030",
+   "word": "1030",
+   "callers": [
+    "0BA026"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 150481): 0BA026 (routine 0B9FD8) x33"
+  },
+  {
+   "label": "sfx_1036",
+   "word": "1036",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 150433): 004492 sprite program op (routine 036E3A) x2"
+  },
+  {
+   "label": "sfx_1053",
+   "word": "1053",
+   "callers": [
+    "01FCCE"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 152272): 01FCCE (routine 01FC9E) x10"
+  },
+  {
+   "label": "sfx_1060",
+   "word": "1060",
+   "callers": [
+    "058C5A"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 156878): 058C5A (routine 058C2E) x1"
+  },
+  {
+   "label": "sfx_1066",
+   "word": "1066",
+   "callers": [
+    "024DC2",
+    "024E2A",
+    "024E9E"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 157888): 024DC2 (routine 0238D4) x15; 024E2A (routine 023DFE) x14; 024E9E (routine 023DFE) x14"
+  },
+  {
+   "label": "sfx_1071",
+   "word": "1071",
+   "callers": [
+    "022E3C"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 157586): 022E3C (routine 022E38) x5"
+  },
+  {
+   "label": "sfx_10d1",
+   "word": "10D1",
+   "callers": [
+    "085A10"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 154535): 085A10 (routine 0859E4) x7"
+  },
+  {
+   "label": "sfx_1134",
+   "word": "1134",
+   "callers": [
+    "060882"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 149884): 060882 (routine 0607DE) x1"
+  },
+  {
+   "label": "sfx_113b",
+   "word": "113B",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 153704): 004492 sprite program op (routine 0DDE9E) x33"
   }
  ]
 }

@@ -80,6 +80,7 @@ typedef struct neo_ga_flags {
     uint16_t limit700;               /* RAM 10C700: x limit of 08A732 (08A654), written by 0BC542/0BC548 (Mission 3 wagon 038D26) */
     uint8_t platform6bd;             /* RAM 10C6BD: Mission 3 platform 0B9286 locked (read by 0B9400) */
     uint16_t camera_restart;         /* RAM 10E9D0 (camera 69D0, read by 0B9286) */
+    uint8_t m4[0x40];                /* RAM 10C6C0..10C6FF: the Mission 4 props (neo_m4props.c; 0BA942 resets them) */
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
     uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */

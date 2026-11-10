@@ -208,27 +208,168 @@ su árbol `build/` no se ha recompilado). Sin `git push`.
 (`:66` se usó aquí; `:64` y `:92` son de otros). Primer paso de la fase 2: el
 registro `2DBA22` (`08391C`) donde se para el guion, y los parches `0C70FC`.
 
+## Fase 2 (10-XI, rama `work-m4`): música, accesorios de la lista y voladores
+
+Capturas de familia (MAME 0.264, `sec05_149829`, réplica de `run4`; guiones
+en el scratchpad de la sesión, el mando en `tools/run_capture_fullgame.sh`):
+
+| Captura | Variables | Contenido |
+| --- | --- | --- |
+| A (`captures-m4/fam/A`, 233 MB) | `MSX_FULL_FAMILY_ROOTS` = los 44 constructores nuevos anteriores al jefe, `MSX_FULL_FAMILY_FROM=149830`, `MSX_FULL_LAST=157600`, `MSX_FULL_VRAM_TRACE=1`, volcados cada 30 | todo el recorrido de `run4`: **sirve para cualquier familia nueva** (extraer con `--range`) |
+| B (`fam/B`) | raíces `83c8a,8391c`, hasta 152300 | los voladores abatidos en vuelo (el piloto de `run4`) |
+| C (`fam/C`) | como B con `MSX_FULL_NOFIRE=150090-153000` (nuevo en `capture_fullgame.lua`: el plan sin A ni C), hasta 152400 | aterrizan, sueltan al jinete y se estrellan |
+
+Extracción (todas): `extract_family_fixture.py <traza> --range lo-hi --attacks
+--ram 10000e-100010 --ram 10c72e-10d7b6 --ram 10c2f6-10c2f8 --ram 10c6c0-10c702
+--ram 1063d8-1063da`.
+
+**Accesorios de la lista de cámara (`src/neo_m4props.c`, familia `m4props`:
+160 nodos, 11 037 actualizaciones iguales a MAME, 149830..157598).** Las 48
+llamadas de la lista no eran «órdenes sueltas»: crean actores.
+
+- `0BA942` (cabeza): RAM `10C6C0..10C6FF` (`neo_ga_flags_t.m4`).
+- `0BA964..0BAA1E` (32): el accesorio `0B9F4A` n.º 0..1F (registro
+  `0E68D0 + 24·n`: vida, caja, columna/fila de sus parches, lista de
+  escombros `01DA40`, retrollamadas +E/+12/+1C, rectángulo, sonido 1030) en
+  `0BAA68[n]` de la raíz. **Los 42 parches `0C70FC` de `run4` son suyos** (la
+  nota de la fase 1 sobre `0BA8BA` era errónea): fachadas de la calle 0..5
+  (cada borde compartido tiene dos variantes según el vecino), 6..1A, 1C y 1E
+  un submapa, 1B y 1D dos golpes; 1C..1F son el camino del jefe (copian otra
+  vez columnas de `0E6DA8` 0x20 columnas más allá cada vuelta).
+- `0BA85A` el farol `0B9B24` (cae cuando muere el accesorio 5), `0BA912`
+  `0B9AD6`, `0BA82A` el suelo `0B99EE` (mapa dinámico `0E79D4`), `0BA88A` el
+  guardián del derrumbe `0B9C7A` y `0BA8BA(n)` sus 22 piezas `0B9D88` (solo
+  reciben golpes las dos de turno, `10C6E2/10C6E4`); escombros `0BB106`,
+  premios `0BB034` (`08CD58`).
+- `0B9D58` lee un byte más allá de su tabla: es `10C700`, el límite de la M3
+  (`7FFF` tras `0BC548`; `run4` 149850). El mundo ya no lo borra entre
+  misiones y el menú de pruebas lo pone al entrar en la M4 o posterior.
+- `0BB028` (jefe: `019388` con 0x8000) sigue sin portar: contado en «camera
+  events unsupported».
+- Paquete: hasta **64 parches por etapa** (antes 16; los bits 5..7 del byte de
+  capa son los bancos 1..3 de la capa 3: `pack_mission.py`,
+  `scene_patch_cell_index`); la M4 lleva 48 (`extract_map_patches.py 4`,
+  desde el modelo de ROM: colores por número de paleta del mapa, los números
+  55 y 68 de la RAM de paletas de `run4`; 250 de 271 columnas de los parches
+  de `run4` encontradas en la VRAM del volcado siguiente). Las copias de
+  `0E6DA8` del camino del jefe no tienen todavía celdas en el paquete (su
+  colisión sí se aplica).
+
+**Voladores `083C8A` y `08391C` (`src/neo_m3enemy.c`, la familia del
+bombardero `084588` de la M3; familias `m4flyer` 50 nodos / 906
+actualizaciones y `m4flyer2` 56 / 1661, iguales a MAME).** Vuelo, aterrizaje
+(`0143DC`, rebote 1060), jinete `08443E`, rotores `084098/0841A0`, salto del
+jinete `0842A8`, estela `083B92` con el humo `01C82A` (`neo_effects.c`),
+muertes `0843F8` (→ `0406B6`), explosión `084B9C`, premio `084F74`. El
+inventario los daba por nativos (estaban dentro del intervalo de rutinas del
+bombardero): eran la parada `routine=83c8a` y el registro `2DBA22` donde se
+paraba el guion. Paradas que quedan en la familia:
+
+- el soldado `0AF17E` que crea el jinete (`084300`): un nodo genérico no puede
+  crear todavía un soldado; el mundo lo cuenta (`world unsupported
+  routine=af17e`) y no aparece;
+- `083C98` (variante con objetivo, `+99 = 1`): no vista;
+- el noveno volador de `run4` (152016) aterriza sobre el mapa dinámico
+  `0E6704` y su escombro lee el indicador 8 de `013968` (152060): la prueba
+  de familia se corta en 152000 (el objeto es de otra familia).
+
+**Cubos `033526` (`neo_m4props.c`, familia `m4bin`: 7 nodos, 304
+actualizaciones iguales, 149833..150481).** Registros `2DB6A2` (variante 1:
+10 cosas, la 2.ª es el prisionero de tipo 0 con sus palabras) y `2DB86E`
+(variante 0). Golpes (`+88`), jugador encima (`033766`: `01B332` + `01AF1A`;
+**`01AF3C` incluye los dos bordes**), las llamadas de sus programas
+(`239C44/58/6C` y `239C80`: premios `08CD64` de `2D3EE4[rand & 7]`, el
+prisionero `239D56[+74]` = `099DD6` con `002E7C`, la nube `03378A`), piezas
+`033864`, mapa de celdas `0333DC`. `099DD6` (`09AD1C` en vez de `01B1DC`) en
+`neo_prisoner.c`. Paletas sin captura y sin uso en la M4: `13E/140` (variante
+2) y `E1..E3` (piezas 1..3).
+
+**Objeto `036C34` (`neo_m4props.c`, familia `m4urn`: 7 nodos, 904
+actualizaciones iguales, 150322..156728; 5 registros del guion).** Dos fases
+con sus respingos (`23BDDC`, `23BDF2`), mapas de celdas `036AF8/036B16`
+(`0140C4`), `+4E` de `2D3A0E` y `2D3A28`, final `23BEBE` con su llamada
+`036E84` (explosión `036EA8`, paleta 26C).
+
+**`019240` y RAM `10C2F6`**: la palabra de misión es la `+0E` del descriptor
+de etapa (M2 1, M3 4, **M4 5**; volcado de RAM 150000). El port le daba 3 a
+la M4. `019240` con 5 da la onda `14A` y la salpicadura `150` (`neo_gate.c`;
+con 8, `14D/153`; de 9 en adelante `013D1A`).
+
+**Límites tocados**: `SCENE_EXPANDED_MIN_SLOTS` 208 → 200 (el código nuevo se
+llevó la ranura 208; los tres conjuntos fijados necesitan 197),
+`SCENE_MISSION_CHUNKS_MAX` 832 → 896 (la M4 tiene 834 trozos: su exportación
+lleva también los actores de la M2 y la M3; **pendiente**: exportar solo lo
+que la M4 usa), `GROUPS[4] = ('m3', 'm4')` (la M4 necesita los datos de ROM
+de los enemigos compartidos con la M3: +152 KB de tablas).
+
+**Recorrido en ares tras la fase 2** (`mslugx-explorer.z64`, menú, derecha +
+salto + disparo, mortal): música 0x25 sonando, los voladores entran y mueren,
+el guion pasa de `2DBA22`; Marco muere en la cámara ≈ 1000 (coche `027F54` y
+soldados) y la partida vuelve a la M1 (sin continuaciones). Se ve el primer
+parche (`MSX map patches drawn mask=…580`: el accesorio 2, como en `run4`).
+Paradas contadas hasta ahí (cámara 0..1000): **solo** `af17e` del jinete (10)
+y la voz `1134` sin política; ningún registro del guion saltado.
+
+### Puertas de la fase 2 (10-XI, `work-m4` `15e49c1` con `ccr` de la M5 fusionado)
+
+`make -j4` RC 0; `make check` RC 0 (**207 PASS**, con `m4props`, `m4flyer`,
+`m4flyer2`, `m4bin`, `m4urn`; tarda ≈ 40 min con la máquina compartida);
+`tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf
+build/m1end`): `RESULT: PASS`; `tools/test_mission4_ares.py
+mslugx-explorer.z64 --seconds 100 --jump 2.5 --fire` (menú de pruebas, `Xvfb
+:67`, datos de ares copiados de `scratchpad/aresdata`): `RESULT: PASS`, hasta
+la cámara 1000 con las paradas de arriba.
+
+**Para seguir** (otra sesión): `/home/user/ws-m4` (`work-m4`); capturas en
+`/home/user/captures-m4/fam/{A,B,C}` (A sirve para todas las familias que
+faltan menos el jefe); utilidades de la sesión en el scratchpad (`dis2.py`,
+`dis3.py` desensamblan P1 con capstone plegando la comprobación del
+cartucho; `prog.py` lista las órdenes de un programa; `exA.sh FAMILIA
+RANGOS` extrae un fixture de la captura A; `fam.sh FAMILIA` compila y corre
+una sola familia; `export4.sh CAPTURA@lo-hi…` exporta sprites y rehace el
+paquete; `m4run.sh NOMBRE SEGUNDOS --fire` hace el recorrido en ares).
+Receta por familia: tablas de ROM a `data/region_rom.json` (grupo `m4`),
+programas a `extract_soldier_programs.py` (bloque «# Mission 4 …») y
+`export_rest_sprites.py` (ROOTS/RESOURCES), código en `neo_m4props.c` o el
+módulo de la familia original, `FAMILIES` + `FAMILY_ARGS_` en el Makefile.
+Los nodos que crea el guion necesitan `--script-actor 101414
+--script-routines <los que crea la familia con 00411C>`. **No editar fuentes
+mientras corre `make check`.**
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de
 `data/sound_map.json`: `102E`×17, `1030`×33, `1036`×2, `1053`×10, `1060`,
 `1066`×43, `1071`×5, `10D1`×7, `1134` (voz MISSION 4 START), `113B`×33,
-`002C` (música del jefe, 157582) y `0000`×3. La música de la etapa es la del
-descriptor `+C` = **0x25**: el motor ya la pide (`game_audio_stage_music`,
-`MSX AUDIO stage music 0025 missing` mientras no exista el wav64). **Sin
-renderizar todavía** (pendiente 6): `render_sound_commands.py` con 0x25 y 0x2C.
+`002C` (música del jefe, 157772, `059FBA` del actor `059F76`) y `0000`×3. La
+música de la etapa es la del descriptor `+C` = **0x25**.
+
+**Fase 2**: `render_sound_commands.py --labels music_mission4
+music_mission4_boss sfx_102e ... sfx_113b` (24 000 fotogramas por música) y
+`pack_game_audio.py --source <render> --period music_mission4=86.67 --period
+music_mission4_boss=46.96`. El buscador de bucles elegía 370,5 s / 328,7 s
+(no son múltiplos del periodo: la melodía repite una frase dentro del bucle);
+`--period` toma el periodo medido en todo el render y exige que se mantenga
+en cada ventana de 20 s: **0x25** 86,67 s desde 1,48 s (similitud 0,98–0,99 en
+las 16 ventanas, empalme 0,952), **0x2C** 46,95 s tras una introducción de
+15 s (0,98 desde el segundo 15; empalme 0,904). `music_mission4*.wav64`:
+2 340 532 + 202 312 y 1 268 020 + 445 852 bytes; `game_audio.c` `music_name`
+0x25 / 0x2C (el 0x2C llegará por `059F76`, ya nativo, cuando exista el jefe).
+Efectos: las 10 palabras están en `data/sound_map.json` y renderizadas
+(`sfx_1053` en PCM16; `1071` es un bucle del controlador: sin paquete).
+**Pendiente: su política de canales** (`measure_sound_pairs.py` +
+`derive_sound_policy.py`, una a una como en la M3): hoy suenan `unmapped`
+(`1134`, la voz MISSION 4 START; `1030` y `102E` de los accesorios).
 
 ## Pendiente (fase 2, por orden)
 
-1. **Parches del mapa**: los 42 `0C70FC` (22 de `0BA8BA`, puertas, derrumbes)
-   con `extract_map_patches.py` (tabla `PATCHES` de la M4 desde
-   `m4_map_fixture` → `patches`) y sus llamadas nativas; los 4 sellos `0C88B0`.
-2. **Llamadas de la lista** `0BA942..0BAA1E`, `0BA85A`, `0BA88A`, `0BA8BA`,
-   `0BA82A`, `0BA912` (48 órdenes 0x2C): hoy eventos sin consumidor (no crean
-   nada; contarlas como paradas al portar el primer actor).
-3. **Actores nuevos**: 56 constructores ([MISION4_ACTORES.md](MISION4_ACTORES.md)),
-   por frecuencia; 54 registros del guion que `run4` no ejecutó necesitan
-   captura propia.
+1. ~~Parches del mapa~~ y 2. ~~llamadas de la lista~~: hechos en la fase 2
+   (arriba). Quedan los 4 sellos `0C88B0` (de otros actores) y las celdas de
+   las copias de `0E6DA8` del camino del jefe.
+3. **Actores nuevos**, en orden de guion ([MISION4_ACTORES.md](MISION4_ACTORES.md)):
+   hechos `0B9F4A`…, `083C8A`, `08391C`, `033526` (+ `03378A`, `099DD6`,
+   `033864`), `036C34`/`036EA8`. **Siguiente**: el soldado del
+   jinete (`0AF17E` desde un nodo genérico), `0A9F0C` (1136), `01F828`…
 4. **Tabla de columnas `+3E`**: desensamblar su lector (cerca de `0C748E/0C74C4`)
    y dejar de depender de la comprobación por observación.
 5. **Jefe** `0BB028` (familia `02267E`, mapa `02225E` en `10D7B6`, cámara

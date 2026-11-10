@@ -48,17 +48,31 @@ def spectral_frames(mono,hop=480,size=4096,bands=64):
     return F/(np.linalg.norm(F,axis=1,keepdims=True)+1e-9)
 def lag_score(F,lag,lo=None,hi=None):
     s=(F[:len(F)-lag]*F[lag:]).sum(axis=1);return float(np.median(s[lo:hi])),s
-def find_loop(pcm,min_period=30.0):
-    """Coarse search at 100 ms, refinement at 10 ms around the best lags."""
+def find_loop(pcm,min_period=30.0,measured=None):
+    """Coarse search at 100 ms, refinement at 10 ms around the best lags.
+    `measured` (--period label=seconds): a period measured over the whole
+    render when the best coarse lag is not a multiple of the period (a tune
+    with a phrase repeated inside its loop: Mission 4, 86.67 s with its best
+    lag at 370.5 s); it is refined the same way and must hold in every 20 s
+    window after the start."""
     mono=pcm.mean(axis=1);hop=480;F=spectral_frames(mono,hop);C=F[::10];n=len(C)
     coarse=sorted(((lag_score(C,lag,-min(300,n-lag))[0],lag) for lag in range(int(min_period*10),n-50)),reverse=True)
     best=coarse[0]
     # Multiples of the period score alike: take the shortest lag that divides
     # the best one and scores within 0.15 of it.
-    period=min(l for c,l in coarse[:40] if c>=best[0]-0.15 and any(abs(l*k-best[1])<=1 for k in range(1,6)))
+    period=int(round(measured*10)) if measured else min(l for c,l in coarse[:40] if c>=best[0]-0.15 and any(abs(l*k-best[1])<=1 for k in range(1,6)))
     fine=max(range(period*10-15,period*10+16),key=lambda l:lag_score(F,l,1000,5000)[0])
     level,s=lag_score(F,fine,1000,5000);smooth=np.convolve(s,np.ones(50)/50,'same')
     start=next(t for t in range(len(smooth)) if all(smooth[t:t+300]>level-0.15))
+    if measured:
+        # The repeated part starts where the one-second medians stay at the
+        # level for the rest of the render (the boss tune's intro scores 0.8
+        # to 0.94 for 15 s: above the 0.15 margin of the search above).
+        sec=[float(np.median(s[i:i+100])) for i in range(0,len(s)-100,100)]
+        low=[i for i,v in enumerate(sec) if v<level-0.1]
+        start=max(start,(low[-1]+1)*100 if low else 0)
+        windows=[float(np.median(s[i:i+2000])) for i in range(start,len(s)-1000,2000)]
+        assert min(windows)>level-0.05,('the measured period does not hold in the whole render',windows)
     return dict(period_s=fine*hop/SRC,start_s=start*hop/SRC,similarity=round(level,3),
                 candidates=[dict(lag_s=l/10,similarity=round(c,3)) for c,l in coarse[:6]])
 def splice(pcm,start,period,good=0.9):
@@ -81,7 +95,9 @@ def main():
     p.add_argument('--source',type=Path,default=ROOT/'filesystem/audio-src')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/audio')
     p.add_argument('--audioconv',default=None);p.add_argument('--sfx-rate',type=int,default=24000)
-    p.add_argument('--music-rate',type=int,default=24000);a=p.parse_args()
+    p.add_argument('--music-rate',type=int,default=24000)
+    p.add_argument('--period',action='append',default=[],metavar='LABEL=SECONDS',help='loop period measured over the whole render')
+    a=p.parse_args();measured={k:float(v) for k,v in (x.split('=') for x in a.period)}
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
     render=json.loads((a.source/'render.json').read_text())['sounds']
     smap={x['label']:x for x in json.loads((ROOT/'data/sound_map.json').read_text())['sounds']}
@@ -107,7 +123,7 @@ def main():
             cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'.wav'))]
             entry=dict(samples=len(out),rate=a.music_rate,channels=2,compression='vadpcm',one_shot=True)
         elif label.startswith('music'):
-            loop=find_loop(pcm);period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
+            loop=find_loop(pcm,measured=measured.get(label));period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
             t0,end,seam=splice(pcm,start,period)
             # VADPCM loops need a loop start and loop length multiple of 16
             # samples (libdragon wav64_vadpcm.c): round both down.

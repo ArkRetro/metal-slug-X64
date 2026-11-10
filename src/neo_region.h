@@ -18,6 +18,9 @@ bool neo_m2props_routine(uint32_t routine);
 bool neo_m2gate_routine(uint32_t routine);
 ga_result_t neo_m2props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m3props_routine(uint32_t routine);
+bool neo_m4props_routine(uint32_t routine);
+void neo_m4props_reset(neo_ga_flags_t *flags);   /* 0BA942 */
+ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m3enemy_routine(uint32_t routine);
 ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_m3props_tick(neo_gactor_t *a,neo_genv_t *e);

@@ -789,13 +789,15 @@ int main(void) {
         static uint16_t dgrid[128];bool watchgrid=false;
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x1067e6u && 0x1068e6u<=ram_ranges[g][1]) watchgrid=true;
         if (watchgrid) {for (unsigned q=0;q<128;q++) dgrid[q]=w16(0x1067e6+2*q);e.grid=dgrid;}
-        bool watch700=false,watch6bd=false;
+        bool watch700=false,watch6bd=false,watchm4=false;   /* RAM 10C6C0..10C6FF: the Mission 4 props (neo_m4props.c) */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) {
             if (ram_ranges[g][0]<=0x10c700u && 0x10c701u<ram_ranges[g][1]) watch700=true;
             if (ram_ranges[g][0]<=0x10c6bdu && 0x10c6bdu<ram_ranges[g][1]) watch6bd=true;
+            if (ram_ranges[g][0]<=0x10c6c0u && 0x10c6ffu<ram_ranges[g][1]) watchm4=true;
         }
         if (watch700) flags.limit700=w16(0x10c700);
         if (watch6bd) flags.platform6bd=wram[0xc6bd];
+        if (watchm4) memcpy(flags.m4,&wram[0xc6c0],sizeof(flags.m4));
         flags.camera_restart=w16(0x10e9d0);
 #endif
 #ifdef FAMILY_ATTACKS
@@ -828,6 +830,7 @@ int main(void) {
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
         if (watchgrid) for (unsigned q=0;q<128;q++) {wram[(0x67e6+2*q)&0xffff]=(uint8_t)(dgrid[q]>>8);wram[(0x67e7+2*q)&0xffff]=(uint8_t)dgrid[q];}
         if (watch6bd) wram[0xc6bd]=flags.platform6bd;
+        if (watchm4) memcpy(&wram[0xc6c0],flags.m4,sizeof(flags.m4));
 #ifdef FAMILY_M3MID
         wram[0xe959]=m3.flags959;
 #endif
@@ -944,6 +947,15 @@ int main(void) {
                  uint32_t v=native_tag((uint32_t)u->post[nf[k]]<<24|(uint32_t)u->post[nf[k]+1]<<16|(uint32_t)u->post[nf[k]+2]<<8|u->post[nf[k]+3]);
                  want=(uint8_t)(v>>(24-8*(o-nf[k])));
              }}
+#endif
+#ifdef FAMILY_NODE_FIELDS
+            /* A node pointer to a child outside the family (the scratch
+             * node: the soldier 0AF17E of the Mission 4 flyer's rider
+             * 0842A8, +7A): the original holds an address the fixture
+             * does not record. */
+            {static const unsigned nf[]=FAMILY_NODE_FIELDS;bool outside=false;
+             for (unsigned k=0;k<sizeof(nf)/sizeof(nf[0]);k++) if (o>=nf[k] && o<nf[k]+4u && ga_l(a,nf[k])==NEO_GA_TAG(NN)) outside=true;
+             if (outside) {compared++;continue;}}
 #endif
 #ifdef FAMILY_NODE_FIELDS
             /* A node pointer partly overwritten by byte fields (the shield

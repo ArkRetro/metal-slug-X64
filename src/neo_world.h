@@ -209,7 +209,7 @@ typedef struct {
     /* Camera-list calls that create an actor after the mission actor (0040BC
      * from the camera step; Mission 3 wagon boxes 0B918C/0B91AE): made at
      * the end of the next tick, like the shots. */
-    uint32_t camera_calls[4];unsigned camera_call_count;
+    uint32_t camera_calls[8];uint16_t camera_call_args[8];unsigned camera_call_count;   /* camera-list calls (op 2C) and their word argument (command + 8) */
     unsigned player_shots;
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B
      * (neo_world_laser, neo_pweapon.c); beams made (01E19E). */
@@ -238,7 +238,7 @@ typedef struct {
      * object word carries the target column D4 in bits 21..31 and
      * map_patch_at the target (D4, D5): a later patch at the same target
      * replaces the record, as its words overwrite the SCB1 entries (B63). */
-    uint32_t map_patch[16][2];uint8_t map_patches;uint32_t map_patch_at[16];
+    uint32_t map_patch[64][2];uint8_t map_patches;uint32_t map_patch_at[64];   /* SCENE_STAGE_PATCHES */
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
      * nonzero). neo_world_init sets MSX_BLOOD (default 1: ON, the Japanese

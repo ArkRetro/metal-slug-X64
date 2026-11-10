@@ -8,7 +8,7 @@ enum { SCENE_STRIP_ITEMS=2048, SCENE_STRIP_GROUPS=512, SCENE_STRIP_ENTRY_BYTES=8
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
-enum { SCENE_MISSION_CHUNKS_MAX=832 };   /* Mission 3 with the fat bomb, dust and molotov (800); Mission 3 with the final boss 04A2C2 (779); Mission 3 with the fat Marco's weapons (648); Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (544 after the rider car) */
+enum { SCENE_MISSION_CHUNKS_MAX=896 };   /* Mission 4 with the props and flyers (834: its export carries the Mission 2 and 3 actors too); Mission 3 with the fat bomb, dust and molotov (800); Mission 3 with the final boss 04A2C2 (779); Mission 3 with the fat Marco's weapons (648); Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (544 after the rider car) */
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
@@ -129,6 +129,12 @@ static inline int scene_layer_rise(const scene_layer_rule_t *r,unsigned layer,in
     return rise+(layer<2?8:0);
 }
 enum { SCENE_STAGE_DYNAMIC_MAPS=16 };
+/* Map patches of a stage: 16 with their layer in the cell's layer byte
+ * (0x80 | patch << 3 | layer); Mission 4 has 48: the layer bits 5..7 are the
+ * banks 1..3 of the terrain layer 3 (tools/pack_mission.py). */
+enum { SCENE_STAGE_PATCHES=64 };
+static inline unsigned scene_patch_cell_index(uint8_t layer) {return ((layer>>3)&15u)+((layer&7u)>=5u?16u*((layer&7u)-4u):0u);}
+static inline unsigned scene_patch_cell_layer(uint8_t layer) {return (layer&7u)>=5u?3u:(layer&7u);}
 typedef struct {
     unsigned mission,index;          /* mission number (2..), stage index in the pack (0..) */
     uint32_t descriptor;             /* stage descriptor (016DDE..) */
@@ -144,7 +150,7 @@ typedef struct {
     /* Map patches 0C70FC (B37, tools/extract_map_patches.py): patch i's cells
      * follow the stage's cells with layer byte 0x80 | i << 3 | layer. */
     const scene_map_cell_t *patch_cells;unsigned patch_cell_count,patch_count;
-    uint32_t patch_submap[16],patch_layer_object[16];
+    uint32_t patch_submap[SCENE_STAGE_PATCHES],patch_layer_object[SCENE_STAGE_PATCHES];
     void *index_order,*index_runs;   /* memory for the renderer's cull index (scene_cull.h) */
     /* Memory for the renderer's background draw lists (scene_strips.h, B47):
      * SCENE_STRIP_ITEMS items and SCENE_STRIP_GROUPS groups of 8 bytes, with

@@ -44,6 +44,11 @@ bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);
 /* 019240: the ripple palette of the mission (0: none; the caller stops on missions past 8, 013D1A). */
 uint16_t neo_gate_ripple_palette(const neo_genv_t *e);
 bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);   /* 03C5C6..03C5D8: carry */
+/* 03C55C: the water (class 5) surface under the node: long x, long y (the
+ * cell top less 1) and the terrain tag; false when there is none. */
+bool neo_gate_surface(neo_gactor_t *a,neo_genv_t *e,int32_t *x,int32_t *y,uint32_t *tag);
+/* 019240 D1: the splash palette of the mission (0: none in the table). */
+uint16_t neo_gate_splash_palette(const neo_genv_t *e);
 bool neo_rebel3_routine(uint32_t routine);
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_truck_routine(uint32_t routine);

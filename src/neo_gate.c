@@ -247,6 +247,11 @@ static uint16_t splash_palette(const neo_genv_t *e) {   /* 019240 D1 */
     default: return 0;
     }
 }
+/* 03C55C for other families: the water surface under the node (x, y, terrain tag). */
+bool neo_gate_surface(neo_gactor_t *a,neo_genv_t *e,int32_t *x,int32_t *y,uint32_t *tag) {
+    return surface(e,(int32_t)L(0x3c),(int32_t)L(0x40),x,y,tag);
+}
+uint16_t neo_gate_splash_palette(const neo_genv_t *e) {return splash_palette(e);}
 bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind) {
     int32_t x,y;uint32_t t;
     if (!surface(e,(int32_t)L(0x3c),(int32_t)L(0x40),&x,&y,&t)) return false;

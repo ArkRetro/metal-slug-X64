@@ -461,7 +461,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -502,6 +502,12 @@ FAMILY_ARGS_m4van := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --ro
 # what 0049E8 wrote into the other nodes of the family and the test applies
 # it before the next update (FAMILY_HITW).
 FAMILY_ARGS_m4van2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374
+# m4rock = the Mission 4 hatches 01F828 / 01F866 (four script records; neo_m4props.c):
+# the emitter, the two halves of the hatch 01F9B8 / 01FA08 with their states
+# by the distance to the last rock (emitter +82), the puffs 020004, fifteen
+# rocks 01FABA with their shadows 01FF82 down to y 0x200; capture A, --range
+# 1f828-2055f.
+FAMILY_ARGS_m4rock := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --node-fields 82
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;

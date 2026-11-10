@@ -85,6 +85,7 @@ try:
     for s in stops[:40]:print('  ',s)
     ok=cam>=a.progress and 'not loaded' not in text
 finally:
+    for n in ('Right','Left','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)   # a key left down would be read by the next run's menu
     proc.terminate()
     try:proc.wait(5)
     except Exception:proc.kill()

@@ -924,9 +924,7 @@ int main(void) {
         }
         if (!u->has_post) {
             if (r!=GA_DELETE && r!=GA_DELETE_TREE) {fprintf(stderr,"frame %u node %d %05x: original deletes, native result %d\n",u->frame,u->node,u->routine,r);return 1;}
-#ifdef FAMILY_M3MID
             if (r==GA_DELETE_TREE) kill_children(NULL,a);   /* 0041AC: 004192 first */
-#endif
             /* 004126 -> 0164D0: a deleted node releases its dynamic object. */
             if (ga_b(a,0x6a)!=0xffu) dyn_release(NULL,a);
             a->active=false;deleted++;continue;

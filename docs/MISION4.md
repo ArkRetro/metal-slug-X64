@@ -185,7 +185,10 @@ Paradas contadas en ese recorrido (explícitas, a portar en la fase 2):
 `world unsupported routine=83c8a` y `2d3c16` (soldado), dibujos sin
 descriptor `last=1C3F06 palette_id=125` (4 clases), `MSX AUDIO stage music
 0025 missing`, y los registros del guion de constructores nuevos (saltados
-con su dirección). En x ≥ 5504 no hay suelo todavía (lo ponen los parches
+con su dirección). El guion se detiene de forma explícita en su primer registro contado sin
+portar: `MSX script stopped at 2dba22` (constructor `08391C`, grupo 0, cámara
+≈ 928; antes, 29 registros ejecutados, 3 de ellos de `033526`/`036C34`
+saltados con `native 0`). En x ≥ 5504 no hay suelo todavía (lo ponen los parches
 del jefe): el recorrido de prueba acaba ahí.
 
 ## Sonido y música

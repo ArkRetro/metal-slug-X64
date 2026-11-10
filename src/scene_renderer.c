@@ -124,6 +124,28 @@ static uint16_t tower_cell[SCENE_TOWER_TYPES][3][24];static bool tower_stage;
 static const uint8_t *tower_types;static unsigned tower_count;
 static bool layer_own[4];static int layer_own_offset[4];
 void scene_render_set_layer_offset(unsigned layer,bool on,int offset) {if (layer<4) {layer_own[layer]=on;layer_own_offset[layer]=offset;}}
+/* Layers drawn by their hardware column ring (scene_render_set_layer_ring). */
+typedef struct { bool on;uint8_t first;int16_t x;int16_t map_x[32]; } layer_ring_t;
+static layer_ring_t layer_ring[4];
+void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]) {
+    if (layer>=4) return;
+    layer_ring_t *r=&layer_ring[layer];
+    if (!on) {memset(r,0,sizeof(*r));return;}
+    r->on=true;r->first=(uint8_t)(first_slot&31u);r->x=(int16_t)x;memcpy(r->map_x,map_x,sizeof(r->map_x));
+}
+/* Runs of ring columns with one offset (map x - screen x): [x0, x1) on screen. */
+typedef struct { int x0,x1,offset; } ring_segment_t;
+static unsigned ring_segments(const layer_ring_t *r,ring_segment_t *seg) {
+    unsigned n=0;
+    for (unsigned k=0;k<32;k++) {
+        int sx=r->x+16*(int)k;
+        if (r->map_x[k]==INT16_MIN || sx+16<=8 || sx>=312) continue;
+        int off=r->map_x[k]-sx;
+        if (n && seg[n-1].offset==off && seg[n-1].x1==sx) seg[n-1].x1=sx+16;
+        else seg[n++]=(ring_segment_t){sx,sx+16,off};
+    }
+    return n;
+}
 void scene_render_set_tower(const uint8_t *types,unsigned count) {tower_types=types;tower_count=tower_stage?count:0u;}
 static void tower_index(const scene_stage_t *st) {
     memset(tower_cell,0xff,sizeof(tower_cell));tower_stage=false;tower_count=0;
@@ -686,6 +708,77 @@ static void prerender_attach(const scene_stage_t *st) {
 #else
 static void prerender_attach(const scene_stage_t *st) {(void)st;}
 #endif
+/* A layer drawn by its hardware column ring (Mission 3 train 10D7B6,
+ * neo_train.c; docs/MISSION3_DEBUG.md G24): column k of the ring at screen x
+ * + 16 k shows the pack column at map_x[k], each with its own offset, as the
+ * sprites of the original keep the column loaded with the origin of their
+ * time. Pre-rendered: column k stays in ring slot (first + k) & 31, the
+ * original's slot, which the original reloads only off screen. Tile path:
+ * the runs of one offset, each under its own scissor. */
+static void draw_layer_ring(unsigned layer,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
+    const layer_ring_t *ring=&layer_ring[layer];
+    int offs[5];memcpy(offs,offsets,sizeof(offs));
+    uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
+#if MSX_BG_PRERENDER
+    if (prerender_on && (scene_prerender_layers()>>layer&1u)) {
+        int col[32];
+        for (unsigned k=0;k<32;k++) {
+            col[k]=ring->map_x[k]==INT16_MIN?-1:scene_prerender_column_of(layer,ring->map_x[k]);
+            if (col[k]>=0) scene_prerender_prefetch_slot(layer,ring->first+k,col[k]);
+        }
+        unsigned base=scene_prerender_palette_base();
+        for (unsigned k=0;k<32;k++) {
+            int sx=ring->x+16*(int)k;
+            if (col[k]<0 || sx+16<=8 || sx>=312) continue;
+            unsigned n;const uint8_t *tex;const scene_prerender_run_t *r=scene_prerender_column_slot(layer,ring->first+k,col[k],&n,&tex);
+            if (!r) continue;
+            layer_visits[layer]+=n;
+            scene_map_cell_t probe={(uint8_t)layer,SCENE_CELL_STATIC,ring->map_x[k],0,0};
+            bool may=column_may_hide(&probe);
+            for (unsigned j=0;j<n;j++) {
+                int y=8+r[j].y+rises[layer];unsigned cells=r[j].n;
+                if (!(y+16*(int)cells<=8 || y>=232)) {
+                    if (!may) blit_raw(tex,base+r[j].palette,sx,y,cells);
+                    else for (unsigned i=0;i<cells;i++) {probe.y=(int16_t)(r[j].y+16*(int)i);if (!hidden(&probe)) blit_raw(tex+128*i,base+r[j].palette,sx,y+16*(int)i,1);}
+                }
+                tex+=128*cells;
+            }
+            /* The layer's animated cells keep the tile path (none on 10D7B6). */
+            for (unsigned i=0;i<prerender_anim_count[layer];i++) {
+                const scene_map_cell_t *cell=&cell_index.cells[prerender_anim[layer][i]];
+                if (cell->x==ring->map_x[k] && !hidden(cell)) {offs[layer]=ring->map_x[k]-sx;classic_cell(cell,offs,rises,video_tick,1);}
+            }
+        }
+    } else
+#endif
+    {
+        ring_segment_t seg[32];unsigned segs=ring_segments(ring,seg);
+        for (unsigned g=0;g<segs;g++) {
+            rdpq_set_scissor(seg[g].x0<8?8:seg[g].x0,8,seg[g].x1>312?312:seg[g].x1,232);
+            offs[layer]=seg[g].offset;
+            if (cell_index.layer_major) {
+                const scene_strip_t *st=NULL;
+                if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offs,rises,&wx0,&wx1,&wy0,&wy1);st=layer_strip(layer,wx0,wx1,wy0,wy1);}
+                if (st) draw_layer_strip(layer,st,offs,rises,video_tick); else draw_layer_direct(layer,offs,rises,video_tick);
+            } else {
+                unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
+                for (unsigned i=0;i<count;i++) if (cells[i].layer==layer && !hidden(&cells[i])) classic_cell(&cells[i],offs,rises,video_tick,1);
+            }
+        }
+        rdpq_set_scissor(8,8,312,232);
+    }
+    if (map_patch_mask) {
+        ring_segment_t seg[32];unsigned segs=ring_segments(ring,seg);
+        for (unsigned g=0;g<segs;g++) {
+            rdpq_set_scissor(seg[g].x0<8?8:seg[g].x0,8,seg[g].x1>312?312:seg[g].x1,232);
+            offs[layer]=seg[g].offset;map_patch_draw(layer,NULL,offs,rises,video_tick);
+        }
+        rdpq_set_scissor(8,8,312,232);
+    }
+    (void)visible;
+    layer_blit[layer]+=upload_ticks+rect_ticks-b0;layer_touch[layer]+=run_touch-c0;
+    layer_ticks[layer]+=TICKS_READ()-t0;layer_draws[layer]+=draws-d0;layer_uploads[layer]+=uploads-u0;
+}
 static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     // Pack order is layer order (checked at init), so walking the layers
@@ -694,6 +787,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
     // sprite windows are drawn between the passes); the mesh after layer 4.
     for (unsigned layer=0;layer<5;layer++) {
       if (!(mask&(1u<<layer)) || !visible[layer]) continue;
+      if (layer<4 && layer_ring[layer].on && !depth_mode) {draw_layer_ring(layer,offsets,rises,visible,video_tick);continue;}
       uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
 #if MSX_BG_PRERENDER
       /* Only mission pack stages have pre-rendered layers: their depth views
@@ -721,7 +815,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
     }
     // Any other pack order (classic mode): the plain array walk.
     if (!depth_mode && !cell_index.layer_major) for (unsigned i=0;i<count;i++)
-        if (cells[i].layer<5 && (mask&(1u<<cells[i].layer)) && visible[cells[i].layer] && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
+        if (cells[i].layer<5 && (mask&(1u<<cells[i].layer)) && visible[cells[i].layer] && !(cells[i].layer<4 && layer_ring[cells[i].layer].on) && !hidden(&cells[i])) classic_cell(&cells[i],offsets,rises,video_tick,1);
 }
 /* Static backgrounds as recorded rspq blocks. While the layer inputs (scroll
  * offsets, rises, visibility, replacement cells, depth projection) stay the
@@ -735,6 +829,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
 typedef struct {
     bool valid;bool collapsed,patched;uint16_t map_patches;unsigned tower;int offsets[5],rises[5];bool visible[5];
     retro_plane_view_t views[5];
+    layer_ring_t rings[4];
 } bg_key_t;
 static bg_key_t bg_key;
 static rspq_block_t *bg_blocks[2][8];static unsigned bg_block_draws[2][8];
@@ -804,6 +899,7 @@ static void draw_layers_cached(unsigned mask,bool first,const int *offsets,const
     bg_key_t key;memset(&key,0,sizeof(key));
     key.valid=true;key.collapsed=collapsed;key.patched=patched;key.map_patches=map_patch_mask;key.tower=tower_count;
     for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
+    memcpy(key.rings,layer_ring,sizeof(key.rings));
     if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
     /* Frames the inputs have held, counted once per frame (back pass): the
      * game updates every other frame, so a scrolling camera repeats each
@@ -853,8 +949,10 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             const scene_layer_rule_t *r=&st->rules[source];
             offsets[i]=((int)camera*r->x_num+r->x_den-1)/r->x_den;
             if (i<4 && layer_own[i]) offsets[i]=layer_own_offset[i];
+            /* A ring layer: its columns carry their own offsets (draw_layers). */
+            if (i<4 && layer_ring[i].on) offsets[i]=0;
             rises[i]=scene_layer_rise(r,source,height);
-            visible[i]=i<4 && (((int)camera>=r->visible_min && (int)camera<=r->visible_max) || layer_own[i]);
+            visible[i]=i<4 && (((int)camera>=r->visible_min && (int)camera<=r->visible_max) || layer_own[i] || layer_ring[i].on);
             continue;
         }
         offsets[i]=msx_layer_scroll(source,(int)camera);rises[i]=msx_layer_scroll(source,height);
@@ -887,7 +985,11 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
     unsigned last_now=~0u,last_next=~0u;bool prefetch=first && !scene_assets_map_resident() && !bg_static(offsets,rises,visible);
     for (unsigned layer=0;layer<5 && prefetch;layer++) {
         if (!visible[layer]) continue;
-        scene_cell_window_t w=layer_window(layer,offsets[layer],0,-48,352,true);
+        ring_segment_t seg[32];unsigned segs=1;
+        if (layer<4 && layer_ring[layer].on && !depth_mode) segs=ring_segments(&layer_ring[layer],seg);
+        else seg[0]=(ring_segment_t){-48,352,offsets[layer]};
+        for (unsigned g=0;g<segs;g++) {
+        scene_cell_window_t w=layer_window(layer,seg[g].offset,0,(float)(seg[g].x0<8?-48:seg[g].x0),(float)(seg[g].x1>312?352:seg[g].x1),true);
         for (unsigned r=cell_index.layer_runs[layer];r<cell_index.layer_runs[layer+1];r++) {
             unsigned first,end;scene_cell_run_window(&cell_index,r,&w,&first,&end);
             for (unsigned k=first;k<end;k++) {
@@ -897,6 +999,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
                 if (now->page/8!=last_now) {scene_request_image(now,2);last_now=now->page/8;}
                 if (next->page/8!=last_next) {scene_request_image(next,1);last_next=next->page/8;}
             }
+        }
         }
     }
     if (first) {scene_service();msx_perf_mark(MSX_PERF_BG_PREFETCH);}

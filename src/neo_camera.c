@@ -147,7 +147,8 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
             c->path_x=(int32_t)((uint32_t)lw(c,a+4)<<16);c->path_y=(int32_t)((uint32_t)lw(c,a+6)<<16);
             c->x=c->path_x;c->y=c->path_y;event(c,NEO_CAMERA_EV_REBASE_LAYER,0,0);break;
         }
-        case 0x18: case 0x1c: case 0x20: case 0x24: case 0x28: case 0x44: case 0x48:
+        case 0x1c: event(c,(uint8_t)op,ll(c,a+4),lw(c,a+8));break;   /* 0C86C8: +26 (x factor) of the layer */
+        case 0x18: case 0x20: case 0x24: case 0x28: case 0x44: case 0x48:
             event(c,(uint8_t)op,ll(c,a+4),0);break;
         case 0x2c:
             /* 0C8764 calls the routine with A0 = the command + 8. 0B8EBC

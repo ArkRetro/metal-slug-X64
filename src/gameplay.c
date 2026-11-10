@@ -717,6 +717,8 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
     for (unsigned i=0;i<c->event_count;i++) {
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B8D34) neo_train_reset(&g->world.train,g->world.terrain.x);
         if (c->events[i].kind==NEO_CAMERA_EV_CALL) neo_train_call(&g->world.train,c->events[i].address);
+        /* Op 0x1C on the sky 10E83E (Mission 3, progress 0x140: +26 = 0x40). */
+        if (c->events[i].kind==NEO_CAMERA_EV_LAYER_ATTR && c->events[i].address==0x10E83Eu) neo_train_sky_factor(&g->world.train,(int16_t)c->events[i].value);
         if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7B00) g->world.tower.counter=0;   /* 10C6B2 */
         /* 0B7326 (Mission 2 stage 2): the gate 03A6EA at (0xA70, 0x2C0) (neo_m2props.c). */
@@ -726,7 +728,7 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
             g->world.tower.on=true;g->world.tower.table=8;g->world.tower.at=0;g->world.tower.mode=0;
         }
     }
-    if (g->world.train.on) neo_train_update(&g->world.train,c->root_vx,(c->layer_flags[1]&1u)!=0);
+    if (g->world.train.on) neo_train_update_layers(&g->world.train,c->root_vx,(c->layer_flags[1]&1u)!=0,(c->layer_flags[2]&1u)!=0);
     g->camera=(int)(((int64_t)c->x+0xffff)>>16);
     g->camera_height=(int)(((int64_t)c->y+0xffff)>>16);
 }

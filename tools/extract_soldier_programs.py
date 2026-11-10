@@ -359,8 +359,8 @@ ROOTS+=[0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x248a42,
 ROOTS+=[0x23bdd2,0x23bddc,0x23be08,0x23bdf2,0x23bebe]
 # Mission 4 van 0A9F0C (neo_m4props.c): 2A7E1A and its stages 0E6836, the overlay 0AA37C (2A7E10 and 0E6862).
 ROOTS+=[0x2a7e1a,0x2a7e10,0x2a7f28,0x2a80d8,0x2a8192,0x2a82e4,0x2a83e4,0x2a8546,0x2a8646,0x2a8712,0x2a896c,0x2a8994,0x2a7e2c,0x2a80cc,0x2a8186,0x2a82d8,0x2a83d0,0x2a8532,0x2a8632,0x2a86fe,0x2a8880,0x2a8988]
-# Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE.
-ROOTS+=[0x2a91d0,0x2a91ee]
+# Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
+ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

@@ -87,5 +87,84 @@ static ga_result_t gate_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
-bool neo_m5props_routine(uint32_t r) {return r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
-ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {return gate_tick(a,e);}
+/* ---- the sewer drips 08346E (script and runner records; 717 drops in run4) -------
+ * 08346E: 083630 (+70 = +6E, +72 = +70, +6E = 0: the record's words are the
+ * period and the flag); with +72: 08364C (+30 = 0, +34 = 100 px up, 0143E4)
+ * and, unless it met something (+5F bit 1), +28/+2C/+38 back and 01ABC8.
+ * +6E = 0; 0834B0: 01ABC8; +6E - 1 > 0 waits, else the drop 0834F4 after
+ * the script actor (00411C, D0 = 2A) at its position (01ACF2) and the next
+ * wait 083674: rand <= 2666: +70 * 3/2; <= 4CCC: +70 * 5/4; <= A665: +70;
+ * <= CCCC: +70 / 2; else +70 / 8. Outside E4C48 (01945C): 004188.
+ * - 0834F4: +28 += (rand & 7) - 3, 01ABC8, layers 1, palette AC8, program
+ *   281E98, 01B1DC; 083540: 0143DC, 00427A; on a floor (+15 bit 6) ->
+ *   083568; deleted when +40 < 100. 083568: program 281EA2, 01AD52 (to
+ *   the root), 01B1DC; 08358A: 01ABC8, 00427A, deleted at its end. */
+static void to_root(neo_gactor_t *a,neo_genv_t *e) {                    /* 01AD52 */
+    uint32_t tag=L(0x38);
+    if (tag!=0x10e968u) {
+        neo_contact_parent_t op,np;bool has_old=tag && ga_parent(e,tag,&op),has_new=ga_parent(e,0x10e968u,&np);
+        uint32_t d0=L(0x28),d1=L(0x2c),d2=L(0x30),d3=L(0x34);
+        d2+=d0;d3+=d1;
+        if (has_old) {d0+=(uint32_t)op.previous_x;d1+=(uint32_t)op.previous_y;d2+=(uint32_t)op.x;d3+=(uint32_t)op.y;}
+        if (has_new) {d0-=(uint32_t)np.previous_x;d1-=(uint32_t)np.previous_y;d2-=(uint32_t)np.x;d3-=(uint32_t)np.y;}
+        d2-=d0;d3-=d1;
+        SL(0x28,d0);SL(0x2c,d1);SL(0x30,d2);SL(0x34,d3);SL(0x38,0x10e968u);
+    }
+    ga_project(a,e);
+}
+static void k1b1dc(neo_gactor_t *a) {SL(0x30,0);SL(0x34,0);SL(0x62,0);}
+static ga_result_t drip_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x8346e: {
+        uint16_t d0=W(0x6e),d1=W(0x70);SW(0x6e,0);SW(0x70,0);SW(0x70,d0);SW(0x72,d1);   /* 083630 */
+        if (W(0x72)) {
+            uint32_t x=L(0x28),y=L(0x2c),p=L(0x38);
+            SL(0x30,0);SL(0x34,0x1000000);ga_air(a,e);                     /* 08364C */
+            if (!(B(0x5f)&2u)) {SL(0x28,x);SL(0x2c,y);SL(0x38,p);ga_project(a,e);}
+        }
+        SW(0x6e,0);SL(0,0x834b0);}
+        /* fall through */
+    case 0x834b0:
+        ga_project(a,e);
+        SW(0x6e,W(0x6e)-1u);
+        if ((int16_t)W(0x6e)<=0) {
+            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x834f4,true):NULL;   /* 00411C, D0 = 2A */
+            if (c) ga_place_at(c,a,e,0,0);                                 /* 01ACF2 */
+            uint16_t q=ga_rand(e),v=W(0x70);                               /* 083674 */
+            if (q<=0x2666u) v=(uint16_t)(((int16_t)v>>1)+v);
+            else if (q<=0x4cccu) v=(uint16_t)(((int16_t)v>>2)+v);
+            else if (q<=0xa665u) {}
+            else if (q<=0xccccu) v=(uint16_t)((int16_t)v>>1);
+            else v=(uint16_t)((int16_t)v>>3);
+            SW(0x6e,v);
+        }
+        if (e->unsupported) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0xe4c48)?GA_DELETE:GA_MORE;
+    case 0x834f4:
+        SW(0x28,W(0x28)+(uint16_t)((ga_rand(e)&7u)-3u));ga_project(a,e);
+        SW(0x66,1);SW(0x1e,1);ga_palette(a,0xac8);
+        if (!ga_anim_start(a,e,0x281e98,0x100)) return GA_UNSUPPORTED;
+        k1b1dc(a);SL(0,0x83540);
+        /* fall through */
+    case 0x83540:
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);                          /* 0143DC */
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (B(0x15)&0x40u) SL(0,0x83568);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        return (int16_t)W(0x40)<0x100?GA_DELETE:GA_MORE;
+    case 0x83568:
+        if (!ga_anim_start(a,e,0x281ea2,0x100)) return GA_UNSUPPORTED;
+        to_root(a,e);k1b1dc(a);SL(0,0x8358a);
+        /* fall through */
+    case 0x8358a:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x834f4u || r==0x83540u || r==0x83568u || r==0x8358au;}
+bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
+ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {return drip_routine(L(0))?drip_tick(a,e):gate_tick(a,e);}

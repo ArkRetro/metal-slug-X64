@@ -1,5 +1,5 @@
 {
- "source": "test",
+ "source": "MAME 0.264 mslugx euro, tools/capture_m6.sh from states4 sec09_292683 / sec10_304271 / sec11_322339 (frame-exact replays of run4) 292683..358820; tools/compare_m3_events.py --sections",
  "sections": {"1": 292684, "2": 304273, "3": 322341},
  "port": "native = neo_world_spawn_native (build/host/script-native); native-module:<file> = run by another module; work-m3c = only on the unmerged branch; external = counted, not created; missing",
  "counts": {"missing": 136, "native": 113, "native-module": 8, "constructors": 257, "allocations": 20455},

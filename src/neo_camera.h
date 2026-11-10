@@ -26,7 +26,7 @@ typedef enum {
     NEO_CAMERA_EV_LOAD_LAYER=0x18, NEO_CAMERA_EV_LAYER_ATTR=0x1c, NEO_CAMERA_EV_LAYER_RELOAD=0x20,
     NEO_CAMERA_EV_LAYER_24=0x24, NEO_CAMERA_EV_LAYER_28=0x28,
     NEO_CAMERA_EV_CALL=0x2c,        /* routine `address` (e.g. 0B58AE layer copy) */
-    NEO_CAMERA_EV_SOUND=0x38,       /* 002802 with `value` */
+    NEO_CAMERA_EV_ANIM_SPEED=0x38,  /* 0C85AC: 002802 with `value` (auto-animation, neo_lspc.h) */
     NEO_CAMERA_EV_LAYER_FLAGS=0x3c, NEO_CAMERA_EV_REBASE_LAYER=0x44, NEO_CAMERA_EV_PATCH_LAYER=0x48,
     NEO_CAMERA_EV_GRAPHICS=0x4c,    /* 01AA28 with `address` */
     NEO_CAMERA_EV_COND_CALL=0x54,   /* 0x54/0x58 condition true: routine `address` */

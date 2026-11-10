@@ -719,6 +719,7 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
         if (c->events[i].kind==NEO_CAMERA_EV_CALL) neo_train_call(&g->world.train,c->events[i].address);
         /* Op 0x1C on the sky 10E83E (Mission 3, progress 0x140: +26 = 0x40). */
         if (c->events[i].kind==NEO_CAMERA_EV_LAYER_ATTR && c->events[i].address==0x10E83Eu) neo_train_sky_factor(&g->world.train,(int16_t)c->events[i].value);
+        if (c->events[i].kind==NEO_CAMERA_EV_ANIM_SPEED) neo_lspc_set(&g->lspc,(uint16_t)c->events[i].value);   /* op 0x38 (G25) */
         if (c->events[i].kind==NEO_CAMERA_EV_PALETTE && c->events[i].address==0x0B56CA) g->backdrop_after=true; /* progress 2304 */
         if (c->events[i].kind==NEO_CAMERA_EV_CALL && c->events[i].address==0x0B7B00) g->world.tower.counter=0;   /* 10C6B2 */
         /* 0B7326 (Mission 2 stage 2): the gate 03A6EA at (0xA70, 0x2C0) (neo_m2props.c). */
@@ -1130,6 +1131,7 @@ bool msx_game_victory(const msx_game_t *g) {
 }
 static void play_update(msx_game_t *g,int direction,bool jump,bool fire);
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
+    neo_lspc_frame(&g->lspc);   /* one call per video frame (G25) */
     if (g->complete) {
         if (!((g->ticks+1u)&1u) && g->end_started) {
             neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */

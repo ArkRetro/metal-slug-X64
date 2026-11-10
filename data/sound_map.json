@@ -488,6 +488,26 @@
    "frames": 24000
   },
   {
+   "label": "music_mission3",
+   "word": "0024",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 3 music (descriptor 016E0E +C = 0x24, requested by 018412..01842E)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission3_boss",
+   "word": "0028",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 3 boss music: the boss 04A2C2 creates 059F76 (+72 = 0x28), which sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests 0x28",
+   "music": true,
+   "frames": 24000
+  },
+  {
    "label": "sfx_10f5",
    "word": "10F5",
    "callers": [],
@@ -590,6 +610,264 @@
    "word": "1156",
    "callers": [],
    "event": "requested by the bomb-type pickup 0C0A7C of type 2 (molotov, item 08B5FA; table 0C0A66)"
+  },
+  {
+   "label": "sfx_1020",
+   "word": "1020",
+   "callers": [
+    "0A51D2"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 134598): 0A51D2 (routine 0A51CE) x13"
+  },
+  {
+   "label": "sfx_1029",
+   "word": "1029",
+   "callers": [
+    "038BB4"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 121732): 038BB4 (routine 038BB0) x4"
+  },
+  {
+   "label": "sfx_102d",
+   "word": "102D",
+   "callers": [
+    "0A39CC"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124618): 0A39CC (routine 0A3932) x1"
+  },
+  {
+   "label": "sfx_105e",
+   "word": "105E",
+   "callers": [
+    "04EA7A"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 122232): 04EA7A (routine 04E990) x3"
+  },
+  {
+   "label": "sfx_1062",
+   "word": "1062",
+   "callers": [
+    "04E196"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146695): 04E196 (routine 04C0EE) x9"
+  },
+  {
+   "label": "sfx_1065",
+   "word": "1065",
+   "callers": [
+    "04CEC6"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144919): 04CEC6 (routine 04B6C8) x11"
+  },
+  {
+   "label": "sfx_1078",
+   "word": "1078",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144855): 004492 sprite program op (routine 04B352) x9. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_1079",
+   "word": "1079",
+   "callers": [
+    "0B8D14"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 118732): 0B8D14 (routine 0186A0) x1. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_107a",
+   "word": "107A",
+   "callers": [
+    "0B8D20"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 121005): 0B8D20 (routine 0186A0) x1. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_107b",
+   "word": "107B",
+   "callers": [
+    "0A4D56",
+    "0B8D2C"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 126224): 0A4D56 (routine 0A4D52) x1; 0B8D2C (routine 0186A0) x2. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_108b",
+   "word": "108B",
+   "callers": [
+    "0ACB8A"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 142268): 0ACB8A (routine 0ACB3A) x1"
+  },
+  {
+   "label": "sfx_109a",
+   "word": "109A",
+   "callers": [
+    "04D276"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 145163): 04D276 (routine 04D1DA) x7"
+  },
+  {
+   "label": "sfx_109d",
+   "word": "109D",
+   "callers": [
+    "0284AA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 119719): 0284AA (routine 02849A) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_109e",
+   "word": "109E",
+   "callers": [
+    "0A3666"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124620): 0A3666 (routine 0A35A8) x1; 0A3666 (routine 0A3624) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_109f",
+   "word": "109F",
+   "callers": [
+    "04C2C8"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146787): 04C2C8 (routine 01C6EE) x3"
+  },
+  {
+   "label": "sfx_10a1",
+   "word": "10A1",
+   "callers": [
+    "04BF30"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146683): 04BF30 (routine 04BF14) x1"
+  },
+  {
+   "label": "sfx_10ba",
+   "word": "10BA",
+   "callers": [
+    "097FD0"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 122133): 097FD0 (routine 097FCC) x5"
+  },
+  {
+   "label": "sfx_10d5",
+   "word": "10D5",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144151): 004492 sprite program op (routine 0528DE) x1"
+  },
+  {
+   "label": "sfx_10eb",
+   "word": "10EB",
+   "callers": [
+    "0A58B6",
+    "0A5932",
+    "0A6BD0"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132678): 0A58B6 (routine 0A4BCE) x16; 0A5932 (routine 0A4BCE) x16; 0A6BD0 (routine 0A4BDA) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_10ec",
+   "word": "10EC",
+   "callers": [
+    "0A593C",
+    "0A59C2",
+    "0A6BDA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132832): 0A593C (routine 0A4BCE) x16; 0A59C2 (routine 0A4BCE) x15; 0A6BDA (routine 0A4BDA) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_10ed",
+   "word": "10ED",
+   "callers": [
+    "0A4AB8"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132378): 0A4AB8 (routine 0A4A94) x1",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_10ee",
+   "word": "10EE",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144789): 004492 sprite program op (routine 04E376) x9"
+  },
+  {
+   "label": "sfx_10ef",
+   "word": "10EF",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146269): 004492 sprite program op (routine 04C566) x2; 004492 sprite program op (routine 04C5E6) x2"
+  },
+  {
+   "label": "sfx_10fc",
+   "word": "10FC",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 148682): 004492 sprite program op (routine 0C1FA6) x1"
+  },
+  {
+   "label": "sfx_1133",
+   "word": "1133",
+   "callers": [
+    "060882"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 118022): 060882 (routine 0607DE) x1"
+  },
+  {
+   "label": "sfx_1139",
+   "word": "1139",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146707): 004492 sprite program op (routine 099A70) x1"
+  },
+  {
+   "label": "sfx_1153",
+   "word": "1153",
+   "callers": [
+    "0C1D74"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 119151): 0C1D74 (routine 0C1D70) x1"
+  },
+  {
+   "label": "sfx_1155",
+   "word": "1155",
+   "callers": [
+    "0C0AD4"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124085): 0C0AD4 (routine 08C53C) x1"
+  },
+  {
+   "label": "sfx_1169",
+   "word": "1169",
+   "callers": [
+    "0DE6AA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 141346): 0DE6AA (routine 0DE6A6) x40"
+  },
+  {
+   "label": "sfx_116d",
+   "word": "116D",
+   "callers": [
+    "01C47C"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124148): 01C47C (routine 01C448) x3"
   }
  ]
 }

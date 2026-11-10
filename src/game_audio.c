@@ -123,6 +123,11 @@ static const char *music_name(uint16_t word) {
     case 0x0022: return "music_mission2";
     case 0x0023: return "music_mission2_stage3";
     case 0x0027: return "music_mission2_boss";
+    /* Mission 3: descriptor 016E0E +C = 0x24 (one descriptor for the whole
+     * mission, no other music request until the boss); the boss 04A2C2's
+     * 059F76 child: fade 0A,80 at its birth, 0x28 192 frames later. */
+    case 0x0024: return "music_mission3";
+    case 0x0028: return "music_mission3_boss";
     default: return NULL;
     }
 }

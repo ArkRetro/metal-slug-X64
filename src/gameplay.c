@@ -220,9 +220,11 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
 
     /* RAM 10C2F6 (0C0BAE): the arcade's mission value, 0 / 1 in Missions 1 / 2
      * and 4 in Mission 3 (MAME RAM dumps of the capture from states4
-     * sec04_117966; 019240 selects the ripple palette 14C by it). Later
-     * missions keep the index until their value is read in a capture. */
-    g->world.pickup.mission=g->flow.mission==2u?4u:g->flow.mission;
+     * sec04_117966; 019240 selects the ripple palette 14C by it) and 5 in
+     * Mission 4 (RAM dump of 150000 from sec05_149829): the word +0E of the
+     * stage descriptor (016DDE: 1, 016E0E: 4, 016E1E: 5). Later missions
+     * keep the index until their value is read in a capture. */
+    g->world.pickup.mission=g->flow.mission==2u?4u:g->flow.mission==3u?5u:g->flow.mission;
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
     neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
     g->in_stage=true;g->stage_camera_max=camera_max;

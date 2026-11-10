@@ -45,7 +45,8 @@ static void front(neo_gactor_t *a,neo_genv_t *e) {call(a,e,NEO_ANIM_CALL,0x12022
 static uint16_t ripple_palette(const neo_genv_t *e) {
     switch (e->pickup?e->pickup->mission:0u) {
     case 1: return 0x14b;case 4: return 0x14c;
-    default: return 0;   /* 01937A: missions 0, 2, 3 */
+    case 5: return 0x14a;case 8: return 0x14d;   /* 019316 (Mission 4), 019322 */
+    default: return 0;   /* 01937A: 0, 2, 3, 6, 7 */
     }
 }
 static const uint32_t ripple_idle[4]={0x23f868,0x23f8d0,0x23f960,0x23fa2c};   /* 03C67E */
@@ -53,7 +54,7 @@ static const uint32_t ripple_still[4]={0x23f746,0x23f774,0x23f7a2,0x23f7d0};  /*
 static const uint32_t ripple_moving[4]={0x23f746,0x23f774,0x23f7a2,0x23f7fe}; /* 03C7D6 */
 static const uint32_t ripple_settle[4]={0x23f868,0x23f892,0x23f90e,0x23f9b2}; /* 03C84E */
 bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind) {
-    if (e->pickup && e->pickup->mission>4u) {ga_fail(e,0x19240);return false;}   /* 013D0A */
+    if (e->pickup && e->pickup->mission>8u) {ga_fail(e,0x19240);return false;}   /* 01926E: 013D1A from 9 on */
     if (!ripple_palette(e)) return true;
     neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x3c62a,false):NULL;  /* 0040BC */
     if (c) ga_sw(c,0x6e,kind);
@@ -241,6 +242,7 @@ static bool surface(neo_genv_t *e,int32_t x,int32_t y,int32_t *ox,int32_t *oy,ui
 static uint16_t splash_palette(const neo_genv_t *e) {   /* 019240 D1 */
     switch (e->pickup?e->pickup->mission:0u) {
     case 1: return 0x151;case 4: return 0x152;
+    case 5: return 0x150;case 8: return 0x153;
     default: return 0;
     }
 }

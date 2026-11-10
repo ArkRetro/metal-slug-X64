@@ -8,6 +8,27 @@ réplica fotograma a fotograma de `run4`, 149829..160500: el recorrido entero y 
 Regla: un actor sin portar es una parada explícita contada (`world unsupported routine=...`, registro saltado con su
 dirección en el log); nunca se oculta.
 
+## Estado tras la fase 2 (10-XI)
+
+Nativos nuevos (pruebas de familia contra MAME, `docs/MISION4.md` «Fase 2»):
+`0B9F4A`, `0BB106`, `0B9B24`, `0B9AD6`, `0B9C7A`, `0B9D88`, `0B99EE`
+(`neo_m4props.c`, familia `m4props`) y la familia de los voladores `083C8A` /
+`08391C` con `083B92`, `08443E`, `084098`, `0841A0`, `0842A8`, `0843F8`,
+`084B9C`, `01C82A` (`neo_m3enemy.c` / `neo_effects.c`, familias `m4flyer`,
+`m4flyer2`). **Ojo**: la tabla de abajo es la de la fase 1 y da por nativo
+todo lo que cae en un intervalo de rutinas de un módulo; `083C8A` (9
+creaciones) no lo era. Antes de fiarse de «nativo» hay que ver la rutina en
+el `switch` del módulo.
+
+`033526` con `03378A`, `033864` y el prisionero `099DD6` (familia `m4bin`).
+
+Quedan (orden de guion): `036C34`/`036EA8`, el soldado `0AF17E` del jinete `0842A8`, `0A9F0C`
+(+ `0AA37C`, `0AA2C6`), `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
+`01FF82`, `020004`), `07E554` (+2), `09A71E`, `0AF1A8`, `0DE0FE`/`0DE24A`,
+`08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`,
+`0587C4` (+2), `02A448`, `08CF6E`, `08C954`, y el jefe `02267E` (11) con
+`0259F2` y la orden `0BB028`. Todos menos el jefe están en la captura A.
+
 ## Resumen
 
 | | Constructores | Creaciones |

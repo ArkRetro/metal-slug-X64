@@ -372,6 +372,11 @@ ROOTS=ROOTS+(0x2820f8,0x282126,0x282154,0x282182,0x2821ac,0x2823b2,0x2823e0,0x28
 RESOURCES=RESOURCES+(0x345,)
 # 04061C: the soldiers' palette 0x385 (the charred death of the generic node, 0406B6 with +5A = 7: the flyer's rider 0843F8 on odd frames).
 RESOURCES=RESOURCES+(0x385,)
+# Mission 4 bins 033526 (13D / 13E), their puff 03378A (13F / 140) and pieces 033864 (211, E1..E3).
+ROOTS=ROOTS+(0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x248a42,0x248678,0x2487b8,0x2488f8,0x248a38)
+RESOURCES=RESOURCES+(0x13d,0x13e,0x13f,0x140,0x211,0xe1,0xe2,0xe3)
+# Mission 4 ripple 03C62A and splash 03C962 (019240 with 10C2F6 = 5: 14A / 150).
+RESOURCES=RESOURCES+(0x14a,0x150)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

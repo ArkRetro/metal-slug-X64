@@ -209,7 +209,7 @@ def build(mission,stage_dirs,crom,rom=None):
         # empty blocks). The later values (palette events not ported) stay out.
         stable=next((backdrops[i] for i in range(len(backdrops)-2) if backdrops[i]==backdrops[i+1]==backdrops[i+2]),None)
         if stable is not None:backdrops=[stable]+[b for b in backdrops if b!=stable]
-        rules=layer_rules(model)
+        rules=rom_layer_rules(rom,DESCRIPTORS[mission][k]) if LOOSE[0] and rom is not None else layer_rules(model)
         stages.append(dict(descriptor=DESCRIPTORS.get(mission,(0,)*len(stage_dirs))[k],width=model['width'],camera_max=model['camera_max'],
                            backdrop=int.from_bytes(bytes((*palette_rgb(backdrops[0]),255)),'big') if backdrops else 0xff,
                            first=first,count=len(st_cells),columns=col['columns'],rows=col['rows'],origin=col['origin_cells'],
@@ -403,6 +403,47 @@ def merge_swapped(model):
         for c in new:c.pop('map',None);main[(c['x'],c['y'])]=c
         model['cells'].extend(new);out[m]=len(new)
     return out
+LAYER_OBJECTS=(0x10E83E,0x10D7B6,0x10E8C6,0x10C72E)   # pack layers 0..3 (docs/MISION3.md)
+def rom_layer_rules(rom,descriptor):
+    """Mission 3 (docs/APROXIMACIONES.md A5): the layer rules from the stage's
+    camera list instead of a fit. Op 0x1C (0C86C8) sets a layer object's
+    factors +26/+28; 0C6F9E moves the layer by root step * factor / 256 (the
+    remainder kept in +2A), so 0x100 is the root itself: x = camera. Op 0x18
+    (0C8654) loads a map (+C) or, with 0, leaves the layer without one: it is
+    drawn from its first map to the target where the map goes (progress =
+    camera x on the first path, op 0x14 at (0, 0)). Layers whose motion is not
+    a camera rule draw themselves (actor.c: the train ring, the sky pictures
+    from 0x140). A layer that is never given a map is never drawn."""
+    from fractions import Fraction as F
+    a=rom.u32(descriptor);target=0;factors={};mapped={};start={};end={};rules=[]
+    for _ in range(4000):
+        op,n=rom.u16(a),rom.u16(a+2)
+        if op==8:break
+        assert n and n<0x40,('camera list',hex(a),op,n)
+        if op==0:target=rom.u16(a+4)
+        elif op==0x14:assert start or (rom.u16(a+4),rom.u16(a+6))==(0,0),('first path not at (0, 0)',hex(a))
+        elif op==0x1c:factors.setdefault(rom.u32(a+4),[]).append((target,rom.s16(a+8),rom.s16(a+10)))
+        elif op==0x18:
+            o=rom.u32(a+4);m=rom.u32(a+12)!=0
+            if m and not mapped.get(o):start.setdefault(o,target)
+            if not m and mapped.get(o):end.setdefault(o,target)
+            mapped[o]=m
+        a+=n
+    for o in LAYER_OBJECTS:
+        if o not in start:rules.append((1,1,1,1,1,0));continue
+        stop=end.get(o,1<<16)
+        # The factors in force while the rule draws it: one pair.
+        inside={(fx,fy) for t,fx,fy in factors.get(o,[]) if t<stop}
+        assert len(inside)==1,('layer factor changes while drawn by its rule',hex(o),inside)
+        fx,fy=(F(v,256) for v in inside.pop())
+        # The renderer compares the camera word (the ceiling of the camera x)
+        # with the bounds; the list compares the progress (its floor here):
+        # progress < stop is camera <= stop but at x = stop, where the layer
+        # already draws itself (actor.c). Only a start at 0 is expected.
+        assert start[o]==0,('layer mapped after the start',hex(o))
+        lo=-32768;hi=stop if o in end else 32767
+        rules.append((fx.numerator,fx.denominator,fy.numerator,fy.denominator,lo,hi))
+    return rules
 def layer_rules(model):
     """Per-layer scroll rules fitted to the observations (docs/MISION2.md
     "Fase 2"): x = camera*x_num/x_den, rise = camera_y*y_num/y_den (camera_y

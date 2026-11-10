@@ -33,6 +33,13 @@ void scene_prerender_range(unsigned layer,int x0,int x1,int *first,int *end,int 
 /* Column `c` resident (waits for its DMA, or reads it now): its runs, or
  * NULL when the column is empty. */
 const scene_prerender_run_t *scene_prerender_column(unsigned layer,int c,unsigned *runs,const uint8_t **texels);
+/* The same in ring slot `slot` (0..31) instead of c % 32: a layer drawn by
+ * its hardware ring (scene_render_set_layer_ring) keeps each column in the
+ * slot the original loaded it into, so a slot changes only off screen. */
+const scene_prerender_run_t *scene_prerender_column_slot(unsigned layer,unsigned slot,int c,unsigned *runs,const uint8_t **texels);
+void scene_prerender_prefetch_slot(unsigned layer,unsigned slot,int c);
+/* Column index of the layer's column at x (layer coordinates), or -1. */
+int scene_prerender_column_of(unsigned layer,int x);
 /* Starts the DMA of the columns of [x0,x1) not resident yet (one call per
  * frame and layer; a ring slot is reused only by a column of the window). */
 void scene_prerender_prefetch(unsigned layer,int x0,int x1);

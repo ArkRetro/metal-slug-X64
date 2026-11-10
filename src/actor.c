@@ -782,15 +782,25 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
     scene_render_set_map_patches((const uint32_t (*)[2])game.world.map_patch,game.world.map_patches);
     scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
-    scene_render_set_layer_offset(1,game.world.train.on,(int)neo_train_scroll(&game.world.train));
-    {   /* Mission 3 sky (MISSION3_DEBUG.md G2): from progress 0x140 the layer
-         * 10E83E has no map; 0B8EDC copies picture neo_train_sky into it and
-         * its x is the train's / 4 - 240 (run4), the 512-px picture repeating.
-         * The pictures exist only as pre-rendered columns of layer 0 at
-         * MSX_SKY_TEMPLATE_X + 1024 k (tools/prerender_stage.py sky_cells). */
+    {   /* Mission 3 train 10D7B6 (MISSION3_DEBUG.md G24): its 32 sprites
+         * show the ring of neo_train.c, sprite k at +84 + 16 k (0C75EE; +84 =
+         * the +14 word, 0C75B2): local column +36 + k at 16 (+36 + k) + +84,
+         * each with the map column it was loaded with. */
+        const neo_train_t *t=&game.world.train;int16_t map_x[32];
+        for (unsigned k=0;k<32;k++) {int16_t m=t->ring[(unsigned)(t->o36+(int)k)&31u];map_x[k]=m==NEO_TRAIN_EMPTY?INT16_MIN:(int16_t)(16*m);}
+        scene_render_set_layer_ring(1,t->on,(int16_t)(uint16_t)(16*t->o36+neo_layer_word(t->x)),(unsigned)t->o36&31u,map_x);
+    }
+    {   /* Mission 3 sky (MISSION3_DEBUG.md G2/G24): from progress 0x140 the
+         * layer 10E83E has no map; 0B8EDC copies picture neo_train_sky into
+         * ring columns 0..31 (0C714E, d4 = 0), so sprite k shows picture
+         * column k at +84 + 16 k modulo 512, +84 the word of its +14
+         * (neo_train.c sky_x, 0C6F9E with its factor 0x40). The pictures exist
+         * only as pre-rendered columns of layer 0 at MSX_SKY_TEMPLATE_X +
+         * 1024 k, their first 352 px again at + 512 (tools/prerender_stage.py
+         * sky_cells): screen x shows picture x (x - +84) mod 512. */
         enum { MSX_SKY_TEMPLATE_X=0x6000 };
         bool sky=game.world.train.on && game.world.stage_camera_base==0x0B8968u && neo_camera_progress(&game.world.camera)>=0x140u;
-        int v=(int)(int16_t)(uint16_t)(-(game.world.train.x>>16))/4+240;v%=512;if (v<0) v+=512;
+        int v=(-(int)neo_layer_word(game.world.train.sky_x))&511;
         scene_render_set_layer_offset(0,sky,MSX_SKY_TEMPLATE_X+1024*(int)neo_train_sky(&game.world.train)+v);
     }
     /* B26: the frame's sprite windows and layers in their SCB slot order

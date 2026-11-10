@@ -1,19 +1,27 @@
-/* Mission 3 train layer (src/neo_train.c) against run4 (data/train_fixture.json.gz). */
+/* Mission 3 train layer (src/neo_train.c) against run4 (data/train_fixture.json.gz):
+ * 10D7B6 +14/+32/+36, its column ring (the map column of 0B8566 each sprite
+ * showed in MAME's VRAM) and the sky 10E83E +14 (0C6F9E with its factor). */
 #include <stdio.h>
 #include "../src/neo_train.h"
 #include "train_fixture.h"
 int main(void) {
     neo_train_t t;neo_train_reset(&t,train_start_x);t.origin=train_start_origin;
-    bool own=false;unsigned skies=0,bad=0,n=sizeof train_updates/sizeof train_updates[0];
+    if (t.sky_x!=train_start_sky) {printf("FAIL: sky start %d/%d\n",t.sky_x,train_start_sky);return 1;}
+    bool own=false,sky_own=false;unsigned skies=0,bad=0,sky_bad=0,ring_bad=0,ring_n=0,check=0,n=sizeof train_updates/sizeof train_updates[0];
+    const unsigned checks=sizeof train_ring_checks/sizeof train_ring_checks[0];
     for (unsigned i=0;i<n;i++) {
         for (unsigned k=0;k<train_updates[i].count;k++) {
             unsigned c=train_updates[i].first+k;
-            if (!train_calls[c].own) {if (!neo_train_call(&t,train_calls[c].value)) {printf("FAIL: call %06X\n",(unsigned)train_calls[c].value);return 1;}}
-            else own=train_calls[c].value!=0;
+            switch (train_calls[c].kind) {
+            case 0: if (!neo_train_call(&t,train_calls[c].value)) {printf("FAIL: call %06X\n",(unsigned)train_calls[c].value);return 1;} break;
+            case 1: own=train_calls[c].value!=0;break;
+            case 2: sky_own=train_calls[c].value!=0;break;
+            default: neo_train_sky_factor(&t,(int16_t)train_calls[c].value);break;
+            }
         }
         unsigned sky=neo_train_sky(&t);
         int16_t o32=t.origin;int o36=(int)((((uint32_t)-(int64_t)t.x>>20)-4u)&0xfffu);
-        neo_train_update(&t,train_updates[i].root_dx,own);
+        neo_train_update_layers(&t,train_updates[i].root_dx,own,sky_own);
         if (neo_train_sky(&t)!=sky) {
             /* 0B8EDC's picture calls in MAME run4 (bpset 0B8F3C, sec04_117966):
              * 118892 / 121768 / 124930 / 144579 with +32 / +36 of 10D7B6. */
@@ -23,13 +31,25 @@ int main(void) {
             }
             skies++;
         }
-        if (t.x!=train_updates[i].x || t.origin!=train_updates[i].origin) {
-            if (bad++<5) printf("update %u: x %d/%d origin %d/%d\n",i,t.x,train_updates[i].x,t.origin,train_updates[i].origin);
+        if (t.sky_x!=train_updates[i].sky) {
+            if (sky_bad++<5) printf("update %u: sky +14 %08X/%08X\n",i,(unsigned)t.sky_x,(unsigned)train_updates[i].sky);
+            t.sky_x=train_updates[i].sky;
+        }
+        if (t.x!=train_updates[i].x || t.origin!=train_updates[i].origin || t.o36!=train_updates[i].o36) {
+            if (bad++<5) printf("update %u: x %d/%d origin %d/%d +36 %d/%d\n",i,t.x,train_updates[i].x,t.origin,train_updates[i].origin,t.o36,train_updates[i].o36);
             t.x=train_updates[i].x;t.origin=train_updates[i].origin;
         }
+        for (;check<checks && train_ring_checks[check].update==i;check++)
+            for (unsigned k=0;k<train_ring_checks[check].count;k++) {
+                unsigned s=train_ring_columns[train_ring_checks[check].first+k].sprite,m=train_ring_columns[train_ring_checks[check].first+k].column;
+                ring_n++;
+                if ((unsigned)t.ring[s]!=m && ring_bad++<5) printf("update %u: ring sprite %u column %d/%u\n",i,s,t.ring[s],m);
+            }
     }
     if (bad) {printf("FAIL: train %u of %u updates differ\n",bad,n);return 1;}
+    if (sky_bad) {printf("FAIL: sky %u of %u updates differ\n",sky_bad,n);return 1;}
+    if (ring_bad || check!=checks) {printf("FAIL: ring %u of %u sprite columns differ (%u/%u dumps)\n",ring_bad,ring_n,check,checks);return 1;}
     if (skies!=4) {printf("FAIL: %u sky pictures of 4\n",skies);return 1;}
-    printf("PASS: train layer 10D7B6, %u updates (x +14 and column origin +32 exact), sky pictures 0B8EDC 4/4 at MAME's +32/+36\n",n);
+    printf("PASS: train layer 10D7B6, %u updates (x +14, column origin +32 and +36 exact), ring %u sprite columns of %u VRAM dumps as MAME, sky 10E83E +14 exact, sky pictures 0B8EDC 4/4 at MAME's +32/+36\n",n,ring_n,checks);
     return 0;
 }

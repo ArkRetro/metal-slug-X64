@@ -23,8 +23,13 @@ void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n);
 enum { SCENE_TOWER_TEMPLATE_X=0x4000, SCENE_TOWER_BASE_Y=-1408, SCENE_TOWER_TYPES=13 };
 void scene_render_set_tower(const uint8_t *types,unsigned count);
 /* Mission packs: layer `layer` drawn at `offset` (its own motion, e.g. the
- * Mission 3 train, neo_train_scroll) instead of its camera rule. */
+ * Mission 3 sky, neo_train.c sky_x) instead of its camera rule. */
 void scene_render_set_layer_offset(unsigned layer,bool on,int offset);
+/* Mission packs: layer `layer` drawn by its hardware column ring (the
+ * Mission 3 train 10D7B6, neo_train.c ring): 32 columns of 16 px, column k at
+ * screen x + 16 k in ring slot (first_slot + k) & 31, showing the pack's
+ * column at layer x map_x[k] (INT16_MIN: nothing). Overrides the offset. */
+void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]);
 void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash);
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);

@@ -61,8 +61,8 @@ void scene_prerender_range(unsigned layer,int x0,int x1,int *first,int *end,int 
     *first=a;*end=b<a?a:b;*column_x=ly->x0;
 }
 /* Slot `s` takes column `c` (DMA started; false: the column is empty). */
-static bool start(layer_t *ly,int c) {
-    unsigned s=(unsigned)c%RING_SLOTS;const column_t *t=&ly->table[c];
+static bool start_at(layer_t *ly,unsigned s,int c) {
+    const column_t *t=&ly->table[c];
     ly->slot_column[s]=c;
     if (!t->bytes) {ly->slot_state[s]=2;return false;}
     uint8_t *dst=ly->ring+s*ly->slot_bytes;
@@ -70,9 +70,13 @@ static bool start(layer_t *ly,int c) {
     dma_read_async(dst,rom+t->offset,t->bytes);ly->slot_state[s]=1;
     return true;
 }
+static bool start(layer_t *ly,int c) {return start_at(ly,(unsigned)c%RING_SLOTS,c);}
 const scene_prerender_run_t *scene_prerender_column(unsigned layer,int c,unsigned *runs,const uint8_t **texels) {
-    layer_t *ly=&layers[layer];unsigned s=(unsigned)c%RING_SLOTS;
-    if (ly->slot_column[s]!=c) {if (start(ly,c)) sync_reads++;}
+    return scene_prerender_column_slot(layer,(unsigned)c%RING_SLOTS,c,runs,texels);
+}
+const scene_prerender_run_t *scene_prerender_column_slot(unsigned layer,unsigned s,int c,unsigned *runs,const uint8_t **texels) {
+    layer_t *ly=&layers[layer];s%=RING_SLOTS;
+    if (ly->slot_column[s]!=c) {if (start_at(ly,s,c)) sync_reads++;}
     if (ly->slot_state[s]==1) {dma_wait();for (unsigned k=0;k<RING_SLOTS;k++) if (ly->slot_state[k]==1) ly->slot_state[k]=2;}
     const column_t *t=&ly->table[c];
     if (!t->bytes) return NULL;
@@ -85,6 +89,15 @@ void scene_prerender_prefetch(unsigned layer,int x0,int x1) {
     if (!ly->on) return;
     int first,end,cx;scene_prerender_range(layer,x0,x1,&first,&end,&cx);
     for (int c=first;c<end && c<first+RING_SLOTS;c++) if (ly->slot_column[(unsigned)c%RING_SLOTS]!=c && start(ly,c)) async_reads++;
+}
+void scene_prerender_prefetch_slot(unsigned layer,unsigned s,int c) {
+    layer_t *ly=&layers[layer];s%=RING_SLOTS;
+    if (ly->on && c>=0 && c<(int)ly->columns && ly->slot_column[s]!=c && start_at(ly,s,c)) async_reads++;
+}
+int scene_prerender_column_of(unsigned layer,int x) {
+    const layer_t *ly=&layers[layer];
+    if (!ly->on || x<ly->x0 || (x-ly->x0)%16) return -1;
+    int c=(x-ly->x0)/16;return c<(int)ly->columns?c:-1;
 }
 void scene_prerender_stats(unsigned *ring_bytes,unsigned *sync,unsigned *async) {*ring_bytes=ring_total;*sync=sync_reads;*async=async_reads;}
 #endif

@@ -156,8 +156,9 @@ elige `0B8E7E..0B8EA4`). `test_neo_train` (`data/train_fixture.json.gz`,
 `tools/extract_train_fixture.py` desde run4): **14252 actualizaciones, `x`
 y `+32` exactos**. El desplazamiento observado de la capa es `−x − 16·(+32)`
 con un paso de retraso (553 de 614 observaciones exactas, el resto es el
-retraso de la instantánea): el renderizador dibuja la capa 1 así en vez de
-la regla ajustada (deriva mediana anterior 532 px). Las celdas del paquete
+retraso de la instantánea). Desde `work-m3scroll` (MISSION3_DEBUG.md G24) el
+renderizador dibuja la capa 1 por su anillo de columnas: cada columna con el
+origen que tenía al cargarse (el original no recarga al cambiar `+32`). Las celdas del paquete
 siguen siendo las primeras vistas por posición (módulo 65536).
 
 **Colisión** (`neo_kernel.c`): `01382A` recorre `10D7B6` tras `10C72E` con

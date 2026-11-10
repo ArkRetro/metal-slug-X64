@@ -53,6 +53,7 @@ typedef struct {
     int32_t shake;                   /* 69C8 */
     int32_t shake_applied;           /* 69CC */
     int32_t root_shake;              /* 69CC as added to the root by this update (0C7E36) */
+    int32_t root_slip_x,root_slip_y; /* what actors stored in 698E / 6992 directly (neo_camera_place_*): the root 10E968 does not follow such a store */
     uint16_t restart;                /* 69D0 */
     int16_t view[4];                 /* 69D2..69D8 */
     int32_t speed_x,speed_y;         /* mission actor +72/+76 */
@@ -91,7 +92,13 @@ void neo_camera_shake_start(neo_camera_t *c);                                   
 void neo_camera_shake_pulse(neo_camera_t *c);                                      /* 0C8022 */
 /* Root object 10E968 as the actors see it: x = -camera, y = 0x01000000 -
  * height + the shake applied before this update's decay. */
-static inline int32_t neo_camera_root_x(const neo_camera_t *c) {return (int32_t)(0u-(uint32_t)c->x);}
-static inline int32_t neo_camera_root_y(const neo_camera_t *c) {return (int32_t)(0x01000000u-(uint32_t)c->y+(uint32_t)c->root_shake);}
+static inline int32_t neo_camera_root_x(const neo_camera_t *c) {return (int32_t)(0u-(uint32_t)c->x+(uint32_t)c->root_slip_x);}
+static inline int32_t neo_camera_root_y(const neo_camera_t *c) {return (int32_t)(0x01000000u-(uint32_t)c->y+(uint32_t)c->root_shake+(uint32_t)c->root_slip_y);}
+/* An actor's own store in 698E / 6992 (ROM 044488 / 0444C0, the glide 04445A of
+ * Mission 6's last stage: the camera is put on its point): the root object is
+ * moved only by the camera update's velocity (6970 / 6974), so it keeps its
+ * place and the two differ by the store from then on (MAME, docs/MISION6.md). */
+static inline void neo_camera_place_x(neo_camera_t *c,int32_t x) {c->root_slip_x=(int32_t)((uint32_t)c->root_slip_x+(uint32_t)x-(uint32_t)c->x);c->x=x;}
+static inline void neo_camera_place_y(neo_camera_t *c,int32_t y) {c->root_slip_y=(int32_t)((uint32_t)c->root_slip_y+(uint32_t)y-(uint32_t)c->y);c->y=y;}
 static inline uint16_t neo_camera_progress(const neo_camera_t *c) {return (uint16_t)(c->progress>>16);}
 #endif

@@ -875,6 +875,21 @@
    "hex": "006801000001001002000068008000000010030000680080000000100300"
   },
   {
+   "rom": "0x2D6128",
+   "reader": "0183D0 stage record 0175C6 +0E: the Mission 6 stage 1 player entry record of 019604 (x 0x68, y 0x100, kind 2: 0C15B4)",
+   "hex": "00680100010100100200"
+  },
+  {
+   "rom": "0x2D6224",
+   "reader": "0183D0 stage record 0175E6 +0E: the Mission 6 stage 2 player entry record of 019604 (x 0x68, y 0x100, kind 3)",
+   "hex": "00680100010100100300"
+  },
+  {
+   "rom": "0x2D6278",
+   "reader": "0183D0 stage record 017604 +0E: the Mission 6 stage 3 player entry record of 019604 (x 0xC0, y 0x100, kind 3)",
+   "hex": "00c00100010100100300"
+  },
+  {
    "rom": "0x08AF76",
    "reader": "08A732 Mission 3 grenadier: hurtbox 08AF76 (+50), the shell attack row 08AF82 (0049E8), cull rectangles 08AF92/08AF9A (01945C/019504)",
    "hex": "0502fff00000002000188000fffcfffc00080008000900000010ffffffd0fff000600030fff0fff000200020",

@@ -70,7 +70,7 @@ from pack_scene import PAGE
 import pack_store
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
-DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,),4:(0x016E1E,),5:(0x016E2E,0x016E3E,0x016E4E)}
+DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,),4:(0x016E1E,),5:(0x016E2E,0x016E3E,0x016E4E),6:(0x016E5E,0x016E6E,0x016E7E)}
 
 def actor_frames(mission):
     """Native actor descriptors of the mission (filesystem/missionN/rest-native.json,

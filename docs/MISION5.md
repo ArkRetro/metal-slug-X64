@@ -283,6 +283,9 @@ renderizar (pendiente 6).
    (`neo_kernel_player_sweep`) no se para en ellas: falta trazar en MAME si
    lo retienen las celdas (tipo `F` con el bit 4) o el cuerpo sólido de la
    verja, y traducir lo que falte; no se ha ajustado nada.
+   Trazado después (sesión de la M6, sonda en `0C8A3C`, `captures-m6/m5gate`): las tres escrituras son del actor
+   `0BC42C` (retorno `0BC496`), plantilla `0BBBE4`, D0 = 0x64 / 0xA4 / 0xE4, D1 = 6 ([MISION6.md](MISION6.md),
+   «Verjas de la alcantarilla»). Sigue sin portar.
 3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**
    `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
    estados `at_277000` (antes) y `at_280000..291500`.

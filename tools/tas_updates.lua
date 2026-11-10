@@ -228,6 +228,12 @@ emu.register_frame_done(function()
  local k=math.floor((tm.seconds*1e18+tm.attoseconds)/screen.refresh_attoseconds+0.5)
  if k==frame or done then return end
  frame=k
+ -- MSX_TAS_DEBUG=1 (tools/run_tas_play.sh: -debug -debugger none): the debugger commands MSX_TAS_DEBUG_CMDS ('|'
+ -- separated; print only, read-only probes as in tools/tas_play.lua) are set at the first frame; temp9 = the frame.
+ if first and os.getenv('MSX_TAS_DEBUG')=='1' then
+  for c in string.gmatch(os.getenv('MSX_TAS_DEBUG_CMDS') or '','[^|]+') do machine.debugger:command(c) end
+ end
+ if os.getenv('MSX_TAS_DEBUG')=='1' then machine.debugger:command(string.format('temp9=%x',frame)) end
  if first then
   first=false;event(string.format('FIRST callback frame %d updates %d from %d',frame,updates,from))
   if load_name then machine:load(load_name);updates=tonumber(load_u);loading=true;event(string.format('LOAD %s update %d',load_name,updates)) end

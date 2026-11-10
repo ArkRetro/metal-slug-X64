@@ -816,6 +816,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (own) {
             int off=-(int)neo_layer_word(l->x);
             if (l->ring) off=(int)l->ring_base+((off-(int)l->ring_base)&511);
+            /* Mission 6 on (docs/MISION6.md): the maps a list loads in turn
+             * into 10E83E without rebasing it (0BCA00: 0BC712, 0BC728 at
+             * progress 1056, 0BC73E at 2320) overlap in the layer's x, so the
+             * pack keeps the n-th load at the x page 0x2000 n
+             * (tools/export_stage_rom.py LOAD_PAGE). */
+            else if (st->mission>=6u && l->loads>1u) off+=0x2000*(int)(l->loads-1u);
             scene_render_set_layer_offset(0,true,off);
         }
         scene_render_set_layer_rise(0,own,256-(int)neo_layer_word(l->y)+8);

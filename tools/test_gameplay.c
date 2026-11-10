@@ -456,6 +456,25 @@ static void mummy_run(void) {
         g.mummy_breaths,walked/65536,(walked%65536)*10000/65536,g.world.weapon_player.form93,(int)g.life.phase);fflush(stdout);
     assert(walked>=28*65536 && walked<=30*65536 && g.life.phase!=MARCO_ALIVE);
 }
+/* Thin fire cadence (docs/APROXIMACIONES.md A2): the C (id 0C, level
+ * 253A56: +76 in update 5) fires in update 5 + 2 = 7 after its shot while
+ * presses come (MAME thinfire, MSX_FAT_THIN=1 from sec01_19391: shells at
+ * 21387, 21401, 21415, presses every 4 frames). The first two shots are
+ * taken (cap 3), so the cap does not stop them. */
+static void thin_cadence_run(void) {
+    static msx_game_t g;msx_game_init(&g);
+    for (unsigned s=0;s<3000 && !(g.grounded && g.life.phase==MARCO_ALIVE && !g.descent && g.ticks>400);s++) {msx_game_update(&g,0,false,false);g.invulnerable=2;}
+    assert(g.grounded && g.life.phase==MARCO_ALIVE && g.world.weapon_player.form93!=2);
+    uint16_t snd=0;assert(marco_weapons_grant(&g.world.weapons,0,0x0c,&g.world.weapon_player,&snd));
+    for (unsigned k=0;k<40;k++) msx_game_update(&g,0,false,false);
+    unsigned at[3],n=0,fires0=g.c_fires;
+    for (unsigned k=0;k<64 && n<3;k++) {
+        unsigned before=g.c_fires;msx_game_update(&g,0,false,(k&3)<2);g.invulnerable=2;
+        if (g.c_fires!=before) at[n++]=k;
+    }
+    printf("thin C cadence: shots at %u %u %u (%u fires)\n",at[0],at[1],at[2],g.c_fires-fires0);fflush(stdout);
+    assert(n==3 && at[1]-at[0]==14 && at[2]-at[1]==14);
+}
 /* Form 2, fat Marco (0C0BF4 / 0C32E4 rule 2 / 0C33AE): +94 = 2 on the
  * ground runs the transformation 0C1D70 (19 updates without control, +84 =
  * 0x5A); in form 2 the food counter 10C718+0x10 counts down and at 0 the
@@ -678,6 +697,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"pweapon")) {pweapon_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"knife")) {knife_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"thin")) {thin_cadence_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"lifebar")) {lifebar_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
@@ -831,6 +851,7 @@ int main(int argc,char **argv) {
     pweapon_run();
     knife_run();
     mummy_run();
+    thin_cadence_run();
     fat_run();
     air_down_run();
     pistol_up_run();

@@ -985,19 +985,28 @@ static void end_ram_start(msx_game_t *g) {
  *  - 0C01D8/0C0218/0C0258/0C0298 (ids 06, 0B): the beam (laser_call
  *    below): 8 steps that CALL 0C46D6, +76 after 8 updates level
  *    (253594), 7 up, down and crouched (2536FC, 256132, 256DE8).
- * The other ids keep the explicit stop below. */
+ * The other ids keep the explicit stop below.
+ * Ticks between shots while presses come (level, up, down, crouched): the
+ * program writes +76 in its update t (t of the WRITE_BYTE +76 above); the
+ * wait state 0C3D9A tests +76 before 0C3778 steps the program, so it sees it
+ * in update t + 1 and sets +7C = 0C3CD0, which fires in update t + 2:
+ * 2 (t + 2) ticks (C 5/2/2/2, S 6/6/2/6, F 2/2/2/2: 0C3C10.. + 0x10). MAME
+ * (capture_fat_weapons.lua with MSX_FAT_THIN=1 from sec01_19391, id 0C,
+ * presses every 4 frames): shells at 21387, 21401, 21415 (14 frames); the
+ * fat 25A8F4 (t 3) fires every 10. The beam's state 0C3E02 restarts in the
+ * update that sees +76: 2 (t + 1) (8 level, 7 others). */
 typedef struct {uint32_t constructor;uint8_t group,level,up,down,crouch;} fire_kind_t;
 static fire_kind_t fire_kind(uint8_t id) {
     switch (id) {
-    case 3: return (fire_kind_t){0x6381cu,MSX_FIRE_C,12,6,6,6};
-    case 8: return (fire_kind_t){0x641ecu,MSX_FIRE_C,12,6,6,6};   /* tables 0C3C10.. and 0C432A: as 3 */
-    case 0x0c: return (fire_kind_t){0x63f32u,MSX_FIRE_C,12,6,6,6};
-    case 0x0d: return (fire_kind_t){0x8606au,MSX_FIRE_C,12,6,6,6};
-    case 0x0e: return (fire_kind_t){0xde4dau,MSX_FIRE_C,12,6,6,6};   /* weapon E (neo_pweapon.c) */
-    case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,14,14,6,14};
-    case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,14,14,6,14};
-    case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,6,6,6,6};
-    case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,6,6,6,6};
+    case 3: return (fire_kind_t){0x6381cu,MSX_FIRE_C,14,8,8,8};
+    case 8: return (fire_kind_t){0x641ecu,MSX_FIRE_C,14,8,8,8};   /* tables 0C3C10.. and 0C432A: as 3 */
+    case 0x0c: return (fire_kind_t){0x63f32u,MSX_FIRE_C,14,8,8,8};
+    case 0x0d: return (fire_kind_t){0x8606au,MSX_FIRE_C,14,8,8,8};
+    case 0x0e: return (fire_kind_t){0xde4dau,MSX_FIRE_C,14,8,8,8};   /* weapon E (neo_pweapon.c) */
+    case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,16,16,8,16};
+    case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,16,16,8,16};
+    case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,8,8,8,8};
+    case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,8,8,8,8};
     case 6: case 0x0b: return (fire_kind_t){0x1e22cu,MSX_FIRE_L,18,16,16,16};
     default: return (fire_kind_t){0,MSX_FIRE_NONE,0,0,0,0};
     }
@@ -1694,7 +1703,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         /* The C (id 0C, +93 = 1): the general fire state 0C3CD0 with the
          * programs of the tables 0C3C10/0C3C50/0C3C90 for id 0C (form 1:
          * level 253A56, CALL 0C4372 at 0 and +76 at 5; up 253AC6 and down
-         * 255FDE, +76 at 2), so a new press fires again 6 (3) updates
+         * 255FDE, +76 at 2), so a new press fires again 7 (4) updates
          * later. 0C4372 -> 0C0D64, then after the list head (00411C) the
          * flash 0C58D2 (table 0C432A) at the 0C4244 point minus +72/+74
          * (0C43CC: facing left the x is -(t+x72)-x72) with the player's

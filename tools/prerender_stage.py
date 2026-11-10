@@ -37,6 +37,8 @@ class Pack:
     def __init__(self,path):
         self.raw=Path(path).read_bytes();b=self.raw
         assert b[:4]==b'MSXM'
+        sys.path.insert(0,str(Path(__file__).resolve().parent))   # run with -I
+        import pack_store;self.store=pack_store.MissionPack(path)
         (ver,self.mission,ns,npal,nimg,nchunk,ncell,_g,_a,_ai,_r,_z,_dl)=struct.unpack_from('>HHHHIIIIIIIII',b,4)
         o=48;self.stages=[]
         for k in range(ns):
@@ -59,8 +61,8 @@ class Pack:
     def page(self,p):
         c=p//8
         if c not in self.cache:
-            off,ln,crc,codec=self.chunks[c];d=self.raw[off:off+ln];d=unrle(d) if codec else d
-            assert len(d)==CHUNK and zlib.crc32(d)==crc;self.cache[c]=d
+            # Any chunk codec, here or in the pack that holds it (pack_store.py, docs/COMPRESION.md).
+            self.cache[c]=self.store.chunk(c)
         return self.cache[c][(p%8)*PAGE:(p%8+1)*PAGE]
     def texels(self,img):
         page,pal,y,h=self.image(img);return self.page(page)[8*y:8*(y+16)],pal

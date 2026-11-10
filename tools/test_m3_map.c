@@ -32,7 +32,7 @@ static void load_pack(const char *path) {
     uint8_t *p=malloc((size_t)n);assert(p && fread(p,1,(size_t)n,f)==(size_t)n);fclose(f);
     assert(!memcmp(p,"MSXM",4) && rd16(p+6)==3 && rd16(p+8)==1);
     /* Version 4 adds the mission data offset and length (48-byte header). */
-    unsigned version=rd16(p+4);assert(version==3 || version==4);
+    unsigned version=rd16(p+4);assert(version>=3 && version<=5);   /* 5: version 4's tables (docs/COMPRESION.md) */
     const uint8_t *st=p+(version>=4?48:40);   /* the stage record (pack_mission.py) */
     assert(rd32(st)==0x016E0Eu);
     C=rd16(st+20);R=rd16(st+22);int16_t ox=(int16_t)rd16(st+24),oy=(int16_t)rd16(st+26);

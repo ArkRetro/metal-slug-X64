@@ -4,7 +4,37 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+/* Chunk codecs (the `codec` word of a chunk record; docs/COMPRESION.md):
+ * 0 raw, 1 (run, byte) pairs, 2 one LZ4 block (tools/lz4_blocks.py). Bits
+ * 8.. of the word are not the codec (scene_assets.c: the pack that holds the
+ * chunk). Every codec is lossless; the chunk's CRC-32 is of the decoded
+ * 16 KiB whichever codec stored it. */
+enum { SCENE_CODEC_RAW=0,SCENE_CODEC_RLE=1,SCENE_CODEC_LZ4=2,SCENE_CODEC_MASK=0xff };
+/* One LZ4 block, every read and write bounded: false unless the block is
+ * well formed and decodes to exactly `size` bytes. */
+static inline bool scene_decode_lz4(uint8_t *out,size_t size,const uint8_t *in,size_t length) {
+    const uint8_t *ip=in,*ie=in+length;uint8_t *op=out,*oe=out+size;
+    for (;;) {
+        if (ip>=ie) return false;
+        unsigned t=*ip++;size_t l=t>>4;
+        if (l==15) {unsigned b;do {if (ip>=ie) return false;b=*ip++;l+=b;} while (b==255);}
+        if (l>(size_t)(ie-ip) || l>(size_t)(oe-op)) return false;
+        memcpy(op,ip,l);op+=l;ip+=l;
+        if (ip==ie) return op==oe;   /* the last sequence has no match */
+        if (ie-ip<2) return false;
+        size_t off=(size_t)ip[0]|(size_t)ip[1]<<8,m=t&15u;ip+=2;
+        if (m==15) {unsigned b;do {if (ip>=ie) return false;b=*ip++;m+=b;} while (b==255);}
+        m+=4;
+        if (!off || off>(size_t)(op-out) || m>(size_t)(oe-op)) return false;
+        const uint8_t *s=op-off;
+        if (off>=m) memcpy(op,s,m);
+        else if (off==1) memset(op,*s,m);
+        else for (size_t i=0;i<m;i++) op[i]=s[i];   /* overlapping: byte by byte, as the format defines */
+        op+=m;
+    }
+}
 static inline bool scene_decode(uint8_t *out,size_t size,const uint8_t *in,size_t length,unsigned codec) {
+    if (codec==SCENE_CODEC_LZ4) return scene_decode_lz4(out,size,in,length);
     if (codec==0) {
         if (length!=size) return false;
         for (size_t i=0;i<size;i++) out[i]=in[i];

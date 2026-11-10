@@ -18,7 +18,7 @@ int main(int argc,char **argv) {
     if (!f) {printf("SKIP: Mission 3 camera start (no pack)\n");return 0;}
     fseek(f,0,SEEK_END);long n=ftell(f);fseek(f,0,SEEK_SET);
     uint8_t *p=malloc((size_t)n);assert(p && fread(p,1,(size_t)n,f)==(size_t)n);fclose(f);
-    assert(!memcmp(p,"MSXM",4) && rd16(p+6)==3 && rd16(p+4)==4);
+    assert(!memcmp(p,"MSXM",4) && rd16(p+6)==3 && (rd16(p+4)==4 || rd16(p+4)==5));
     const uint8_t *st=p+48;assert(rd32(st)==0x016E0Eu);
     uint32_t rom=rd32(st+44),off=rd32(st+48),len=rd32(st+52);assert(rom==0x0B8968u && off+len<=(uint32_t)n);
     w.stage_camera=p+off;w.stage_camera_size=(uint16_t)len;w.stage_camera_base=rom;

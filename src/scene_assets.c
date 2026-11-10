@@ -77,10 +77,22 @@ static int last_camera=-1;
 static const scene_chunk_t *mission_chunks;
 static unsigned mission_chunk_count;
 static uint32_t mission_rom,mission_bytes;
+/* Pack version 5 (docs/COMPRESION.md): a chunk record's word has the codec
+ * in bits 0..7 and, in bits 8..15, the mission whose pack holds the chunk
+ * (0: the loaded pack itself): actor pages two missions share are stored
+ * once. other_rom/other_bytes: those packs on the cartridge, checked against
+ * the loaded pack's trailer (scene_mission_load). */
+enum { PACK_MISSIONS=8 };
+static uint32_t other_rom[PACK_MISSIONS],other_bytes[PACK_MISSIONS];
 static const scene_chunk_t *chunk_info(unsigned c,uint32_t *base,uint32_t *size) {
     if (c<SCENE_CHUNK_COUNT) {*base=rom;*size=SCENE_PACK_BYTES;return &scene_chunks[c];}
     assertf(c-SCENE_CHUNK_COUNT<mission_chunk_count,"Mission chunk ID");
-    *base=mission_rom;*size=mission_bytes;return &mission_chunks[c-SCENE_CHUNK_COUNT];
+    const scene_chunk_t *k=&mission_chunks[c-SCENE_CHUNK_COUNT];unsigned holder=k->codec>>8;
+    if (holder) {
+        assertf(holder<PACK_MISSIONS && other_rom[holder],"Chunk %u is held by the pack of mission %u, not loaded",c,holder);
+        *base=other_rom[holder];*size=other_bytes[holder];
+    } else {*base=mission_rom;*size=mission_bytes;}
+    return k;
 }
 // PI status bits 0/1: DMA and IO busy. A nonblocking poll keeps prefetch asynchronous.
 static bool pi_busy(void) { return (*PI_STATUS & 3u)!=0; }
@@ -146,7 +158,7 @@ static uint32_t decode_active(void) {
     // Reserve the other staging buffer and overlap its PI read with this decode.
     start_next();
     uint32_t base,size;const scene_chunk_t *c=chunk_info((unsigned)chunk,&base,&size);uint8_t *dst=slot_mem[slot];(void)size;
-    bool decoded=scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec);
+    bool decoded=scene_decode(dst,SCENE_CHUNK_BYTES,staging[stage],c->length,c->codec&SCENE_CODEC_MASK);
     assertf(decoded,"Bad scene codec chunk=%d codec=%lu length=%lu stage=%u first=%02x/%02x rom=%08x",chunk,(unsigned long)c->codec,(unsigned long)c->length,stage,staging[stage][0],staging[stage][1],(unsigned)(base+c->offset));
     if (!decoded) abort();
     uint32_t crc=scene_crc32(dst,SCENE_CHUNK_BYTES);
@@ -577,6 +589,23 @@ typedef struct __attribute__((packed)) {
     char magic[4];uint16_t version,mission,stages,palettes;uint32_t images,chunks,cells,grid_bytes,actors,actor_images,resources;
     uint32_t data_offset,data_length;   /* version 4: the mission's own data 'MSXD' (pack_mission.py mission_data) */
 } pack_header_t;
+/* The pack's tables are big endian, the console's own order: they are used
+ * as read. Only a little-endian host (tools/test_pack_loader.c, make check)
+ * swaps them: `layout` gives the field sizes of one record ('1', '2', '4'). */
+#if defined(__BYTE_ORDER__) && __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
+static void pack_native(void *p,const char *layout,unsigned count) {
+    uint8_t *b=p;
+    for (unsigned i=0;i<count;i++) for (const char *f=layout;*f;f++) {
+        unsigned n=(unsigned)(*f-'0');
+        for (unsigned k=0;k<n/2;k++) {uint8_t t=b[k];b[k]=b[n-1-k];b[n-1-k]=t;}
+        b+=n;
+    }
+}
+#else
+#define pack_native(p,layout,count) ((void)0)
+#endif
+#define PACK_HEADER_LAYOUT "1111" "2222" "444444444"
+#define PACK_STAGE_LAYOUT "422444" "2222" "4444" "444444444" "111122" "111122" "111122" "111122" "42" "44"
 static uint32_t mission_header_bytes;
 static pack_header_t mission_head;
 static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_chunks_at,mission_actors_at;
@@ -726,8 +755,32 @@ bool scene_mission_load(unsigned mission) {
     mission_rom=PhysicalAddr((void*)(uintptr_t)at);mission_bytes=(uint32_t)dfs_rom_size(path);
     static pack_header_t head __attribute__((aligned(16)));
     data_cache_hit_writeback_invalidate(&head,sizeof(head));dma_read(&head,mission_rom,sizeof(head));
-    if (memcmp(head.magic,"MSXM",4) || (head.version!=3 && head.version!=4) || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
-        debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);return false;
+    pack_native(&head,PACK_HEADER_LAYOUT,1);
+    if (memcmp(head.magic,"MSXM",4) || head.version<3 || head.version>5 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
+        debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);mission_bytes=0;return false;
+    }
+    /* Version 5: the packs that hold chunks of this one (its last 64 bytes,
+     * pack_mission.py), each on the cartridge with the size it had when this
+     * pack was built; else the mission is refused (explicit stop: its chunk
+     * records would point at other bytes). */
+    memset(other_rom,0,sizeof(other_rom));memset(other_bytes,0,sizeof(other_bytes));
+    if (head.version>=5) {
+        static uint8_t tail[64] __attribute__((aligned(16)));
+        if (mission_bytes<sizeof(head)+64u) {mission_bytes=0;return false;}
+        data_cache_hit_writeback_invalidate(tail,sizeof(tail));dma_read(tail,mission_rom+mission_bytes-64u,64);
+        unsigned packs=tail[4]<<8|tail[5];
+        if (memcmp(tail,"MSXX",4) || packs>5u) {debugf("MSX mission pack %s: no trailer (explicit stop)\n",path);mission_bytes=0;return false;}
+        for (unsigned i=0;i<packs;i++) {
+            const uint8_t *r=tail+8u+12u*i;unsigned holder=r[0]<<8|r[1];
+            uint32_t bytes=(uint32_t)r[4]<<24|(uint32_t)r[5]<<16|(uint32_t)r[6]<<8|r[7];
+            char other[32];snprintf(other,sizeof(other),"/mission%u.pack",holder);
+            uint32_t oat=holder<PACK_MISSIONS?(uint32_t)dfs_rom_addr(other):0;
+            if (!oat || (uint32_t)dfs_rom_size(other)!=bytes) {
+                debugf("MSX mission pack %s: needs %s as it was built against (%lu bytes); not on the cartridge (explicit stop: rebuild the pack)\n",path,other,(unsigned long)bytes);
+                mission_bytes=0;return false;
+            }
+            other_rom[holder]=PhysicalAddr((void*)(uintptr_t)oat);other_bytes[holder]=bytes;
+        }
     }
     /* Version 3 has no mission data (its header ends at `resources`). */
     mission_header_bytes=head.version>=4?sizeof(head):sizeof(head)-8u;
@@ -773,6 +826,7 @@ bool scene_stage_load(unsigned index) {
     quiesce();
     static pack_stage_t ps __attribute__((aligned(16)));
     data_cache_hit_writeback_invalidate(&ps,sizeof(ps));dma_read(&ps,mission_rom+mission_header_bytes+128u*index,sizeof(ps));
+    pack_native(&ps,PACK_STAGE_LAYOUT,1);
     /* The previous stage's chunks and tables. */
     release_reserved();forget_mission_chunks();stage_on=false;mission_chunk_count=0;
     unsigned cells=ps.cell_count,images=ps.image_count,grid=(unsigned)ps.columns*ps.rows;
@@ -780,7 +834,7 @@ bool scene_stage_load(unsigned index) {
      * bounds one table (reserve_slots). */
     unsigned need=0,largest=0;
 #define NEED(x) do {unsigned n_=((unsigned)(x)+15)&~15u;need+=n_;if (n_>largest) largest=n_;} while (0)
-    NEED(cells*22u);NEED(images*sizeof(scene_image_t));NEED(32u*mission_head.palettes);NEED(16u*mission_head.chunks);
+    NEED(cells*sizeof(scene_map_cell_t));NEED(images*sizeof(scene_image_t));NEED(32u*mission_head.palettes);NEED(16u*mission_head.chunks);
     NEED(grid);NEED(grid);if (ps.rows>32u) NEED(4096u);
     if (ps.unknown) NEED((grid+7)/8);
     NEED(cells*sizeof(uint16_t));NEED(cells*sizeof(scene_cell_run_t));
@@ -799,6 +853,7 @@ bool scene_stage_load(unsigned index) {
             debugf("MSX stage %u: map reconnaissance block not read (version %u, %u dynamic maps; explicit stop)\n",index+1,recon_head[4]<<8|recon_head[5],dmaps);dmaps=0;
         } else if (dmaps) {
             rom_read(recon_dyn,ps.recon_offset+16u+28u*maps+20u*pats,12u*dmaps);
+            pack_native(recon_dyn,"444",dmaps);
             for (unsigned i=0;i<dmaps;i++) NEED(recon_dyn[i].length);
         }
     }
@@ -827,23 +882,32 @@ bool scene_stage_load(unsigned index) {
     /* Chunk table and palettes (mission palette n = SCENE_PALETTE_COUNT+n). */
     uint8_t *prerender_mem=prerender_bytes?take(prerender_bytes):NULL;
     scene_chunk_t *chunks=take(16u*mission_head.chunks);rom_read(chunks,mission_chunks_at,16u*mission_head.chunks);
+    pack_native(chunks,"4444",mission_head.chunks);
     mission_chunks=chunks;mission_chunk_count=mission_head.chunks;
     stage_palettes=take(32u*mission_head.palettes);rom_read(stage_palettes,mission_palettes_at,32u*mission_head.palettes);
+    pack_native(stage_palettes,"2",16u*mission_head.palettes);
     if (load_idle) load_idle();
-    /* Cells: 22-byte records (u8 layer, 8 image ids) converted in place to
-     * the 8-byte scene_map_cell_t (never over an unread record), the image
+    /* Cells: 22-byte records (u8 layer, 8 image ids) converted to the
+     * 8-byte scene_map_cell_t, the image
      * ids rebased to the stage's images; an animated cell's phase deltas
      * become a pattern (Mission 2: one, 0..7) appended after Mission 1's. */
     _Static_assert(sizeof(scene_map_cell_t)==8,"scene_map_cell_t layout");
-    uint8_t *raw=take(cells*22u);rom_read(raw,mission_cells_at+22u*ps.first_cell,cells*22u);
-    stage_cells=(scene_map_cell_t*)raw;cell_patterns=SCENE_CELL_PATTERN_COUNT;pattern_stops=0;
+    /* The records pass through a scratch block, CELL_PIECE at a time, freed
+     * below: the table takes 8 bytes per cell of the stage's slots, not the
+     * 22 of the record it was converted in (Mission 3: 116 KB, 7 slots). */
+    enum { CELL_PIECE=744 };   /* 16368 bytes */
+    uint8_t *raw=memalign(16,CELL_PIECE*22u);
+    assertf(raw,"Stage cell scratch");
+    stage_cells=take(cells*sizeof(scene_map_cell_t));cell_patterns=SCENE_CELL_PATTERN_COUNT;pattern_stops=0;
     for (unsigned i=0;i<cells;i++) {
-        const uint8_t *r=raw+22u*i;scene_map_cell_t c;uint16_t ph[8];
+        if (i%CELL_PIECE==0) {unsigned n=cells-i<CELL_PIECE?cells-i:CELL_PIECE;rom_read(raw,mission_cells_at+22u*(ps.first_cell+i),n*22u);}
+        const uint8_t *r=raw+22u*(i%CELL_PIECE);scene_map_cell_t c;uint16_t ph[8];
         for (unsigned k=0;k<8;k++) ph[k]=(uint16_t)((r[6+2*k]<<8|r[7+2*k])-ps.image_first);
         c.layer=r[0];c.x=(int16_t)(r[2]<<8|r[3]);c.y=(int16_t)(r[4]<<8|r[5]);c.phase=ph[0];c.anim=cell_pattern(ph);
         memcpy(&stage_cells[i],&c,sizeof(c));
         if (load_idle && (i&1023u)==1023u) load_idle();
     }
+    free(raw);
     if (pattern_stops) debugf("MSX stage %u cells: %u animated cells drawn with their first image (explicit stop: more than %u phase patterns or a delta beyond int8)\n",index+1,pattern_stops,SCENE_CELL_PATTERNS);
     if (load_idle) load_idle();
     /* Images: 8-byte records (page, palette, y, height) read at the end of
@@ -863,6 +927,7 @@ bool scene_stage_load(unsigned index) {
      * map images, the resource map. */
     _Static_assert(sizeof(scene_native_descriptor_t)==8,"pack actor record size");
     stage_actors=take(8u*mission_head.actors);rom_read(stage_actors,mission_actors_at,8u*mission_head.actors);
+    pack_native(stage_actors,"422",mission_head.actors);
     for (unsigned i=0;i<mission_head.actors;i++) stage_actors[i].first=(uint16_t)(stage_actors[i].first+scene_bank(SCENE_NATIVE)->first+scene_bank(SCENE_NATIVE)->second);
     stage_actor_images=take(mission_head.actor_images*sizeof(scene_image_t));
     uint8_t *ra=(uint8_t*)stage_actor_images+mission_head.actor_images*(sizeof(scene_image_t)-12u);
@@ -874,6 +939,7 @@ bool scene_stage_load(unsigned index) {
     }
     stage_resources=take(4u*mission_head.resources);
     rom_read(stage_resources,mission_actors_at+8u*mission_head.actors+12u*mission_head.actor_images,4u*mission_head.resources);
+    pack_native(stage_resources,"22",mission_head.resources);
     for (unsigned i=0;i<mission_head.resources;i++) stage_resources[i].palette=(uint16_t)(SCENE_PALETTE_COUNT+stage_resources[i].palette);
     if (load_idle) load_idle();
     /* Grid, its stamp copy and the unknown mask. */
@@ -886,7 +952,7 @@ bool scene_stage_load(unsigned index) {
      * cells are the stage's last). */
     unsigned patches=ps.patch_count<16u?ps.patch_count:16u,normal=cells;
     uint32_t patch_table[32];
-    if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);memcpy(patch_table,raw_patch,8u*patches);}
+    if (patches) {static uint32_t raw_patch[32] __attribute__((aligned(16)));rom_read(raw_patch,ps.patch_offset,8u*patches);pack_native(raw_patch,"4",2u*patches);memcpy(patch_table,raw_patch,8u*patches);}
     while (normal && (stage_cells[normal-1].layer&0x80u)) normal--;
     uint16_t *order=take(cells*sizeof(uint16_t));scene_cell_run_t *runs=take(cells*sizeof(scene_cell_run_t));
     void *strip_items=take(SCENE_STRIP_ITEMS*SCENE_STRIP_ENTRY_BYTES),*strip_groups=take(SCENE_STRIP_GROUPS*SCENE_STRIP_ENTRY_BYTES);

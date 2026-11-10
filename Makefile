@@ -285,7 +285,7 @@ $(BUILD_DIR)/mslugx-lab.elf: $(BUILD_DIR)/src/main-lab.o $(filter-out $(BUILD_DI
 mslugx-lab.z64: N64_ROM_TITLE = "MSX GRAPHICS LAB"
 mslugx-lab.z64: $(BUILD_DIR)/mslugx-lab.dfs
 $(BUILD_DIR)/mslugx-lab.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
-$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json data/mission1_rest_inventory.json $(wildcard filesystem/mission1/rest/map.json filesystem/rest-native.json filesystem/blood-native.json)
+$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/pack_store.py tools/lz4_blocks.py tools/lz4opt.c tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json data/mission1_rest_inventory.json $(wildcard filesystem/mission1/rest/map.json filesystem/rest-native.json filesystem/blood-native.json)
 	python3 tools/pack_scene.py
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
@@ -1233,6 +1233,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	$(BUILD_DIR)/host/scene-strips
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_pack.c -o $(BUILD_DIR)/host/scene-pack
 	$(BUILD_DIR)/host/scene-pack romfs/scene.pack
+	HOST_CC="$(HOST_CC)" python3 tools/test_pack_compression.py
 	python3 tools/test_marco_sprite_edges.py
 	$(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/vehicle

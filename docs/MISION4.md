@@ -124,11 +124,13 @@ sh tools/build_mission4.sh          # observado (una vez), ROM, paquete
 
 ## Paquete `romfs/mission4.pack`
 
-`python3 tools/pack_mission.py 4 filesystem/mission4/s1 --rom-layers`: 352
-páginas, 44 trozos, 82 paletas, 4894 imágenes, 15 450 celdas, rejilla 688 × 88
-(origen −56), 1,14 MB; sin sección de actores todavía (los nativos compartidos
-dibujan con `scene.pack`; los nuevos no existen). Formato: el vigente de
-`pack_mission.py` (rehacer con el empaquetador nuevo al fusionar `work-comp`).
+`python3 tools/build_packs.py` (receta de la M4 en `RECIPES`: `s1`,
+`--rom-layers`; versión 5, trozos LZ4, [COMPRESION.md](COMPRESION.md); M2 y
+M3 antes, porque los paquetes comparten trozos): 352 páginas, 44 trozos, 82
+paletas, 4894 imágenes, 15 450 celdas, rejilla 688 × 88 (origen −56),
+**793 664 bytes**; sin sección de actores todavía (los nativos compartidos
+dibujan con `scene.pack`; los nuevos no existen). En ares: tablas 430 KB en
+27 ranuras, 44 trozos, carga en 0,58 s.
 
 **Reglas de capa de la lista de cámara** (`rom_native_rules`, sin ajuste):
 `10C72E` y `10D7B6` (capa 2 del paquete: el modelo la llama 2 mientras
@@ -170,10 +172,10 @@ DISPLAY=:66 python3 tools/test_mission4_ares.py mslugx-explorer.z64 --data <ares
 ```
 
 `RESULT: PASS`: `MSX MSELECT mission=4`, carga `descriptor 016E1E 15450 cells
-4894 images grid 688x88, tables 641 KB in 41 slots, map 44 chunks` en 0,65 s,
+4894 images grid 688x88, tables 430 KB in 27 slots, map 44 chunks` en 0,58 s,
 `mission 4 stage 5 start: record 017462 descriptor 016E1E camera list 0E741A
 script 2DB696 (5286 bytes)`, `MISSION 4 START`, y Marco (derecha + salto,
-sin disparar) recorre la etapa: cámara x 0 → 5504..5696 en 100 s con la
+sin disparar) recorre la etapa: cámara x 0 → 5504..5952 en 100 s con la
 cámara bajando 0 → −64 → −128 → −440 px **como MAME** (`fore_y` 256 → 696);
 0 caídas, 0 rescates, 0 órdenes de cámara sin soporte. Fotos por cámara
 contra `run4` (misma cámara): calle con el rótulo, mercado, callejón, muro

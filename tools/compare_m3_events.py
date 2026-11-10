@@ -77,7 +77,8 @@ def camera_list(path):
 PORT_MODULE={0x0B8D64:'neo_train.c',0x0607DE:'neo_end.c',0x060B06:'neo_end.c',0x060A72:'neo_end.c',
     0x0C4A58:'neo_landing.c',0x0C5286:'neo_landing.c',0x0308C0:'neo_tally.c',0x030B0A:'neo_tally.c',
     0x030B08:'neo_tally.c',0x06090A:'neo_end.c',0x01A422:'neo_script.c',
-    0x040F88:'neo_world.c',0x03BC28:'neo_soldier_effects.c'}   # soldier death child / deferred effect
+    0x040F88:'neo_world.c',0x03BC28:'neo_soldier_effects.c',   # soldier death child / deferred effect
+    0x03AED8:'neo_wipe.c',0x03AEF0:'neo_wipe.c'}   # the mission actor's stage wipes (kind 4 transitions, neo_mission.c)
 WORK_M3C={0x039382,0x03938A,0x0B911E,0x0B9140}
 EXTERNAL={0x08C752}
 def port_status(c,nat):

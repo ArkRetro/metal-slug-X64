@@ -508,6 +508,36 @@
    "frames": 24000
   },
   {
+   "label": "music_mission5",
+   "word": "0026",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 1 music (descriptor 016E2E +C = 0x26, requested by 018412..01842E; MAME run4 latch 06, 00 26 in 247662..247664)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission5_stage2",
+   "word": "002A",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 2 music (descriptor 016E3E +C = 0x2A; MAME run4 latch 00 2A in 252828..252829, no 03 between stages)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission5_stage3",
+   "word": "002B",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 3 music (descriptor 016E4E +C = 0x2B; MAME run4 latch 00 2B in 274388..274389; the boss 0A0C00 creates 059F76: fade 0A 80 at 277087, 00 2C at 277279)",
+   "music": true,
+   "frames": 24000
+  },
+  {
    "label": "sfx_10f5",
    "word": "10F5",
    "callers": [],

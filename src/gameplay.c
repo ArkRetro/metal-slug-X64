@@ -641,6 +641,9 @@ static const struct {uint8_t mission,stage;uint16_t a,b,layer[4];} draw_windows[
     {1,2,0x20,0x15c,{0xffff,0x13c,0xffff,0x00}},    /* stage 2 (19950..26070) */
     {1,3,0x50,0x20,{0x00,0xffff,0xffff,0x30}},      /* stage 3 (26160..117930) */
     {3,5,0xc0,0x40,{0x00,0x20,0xffff,0xa0}},        /* Mission 4 (150000..246000): the default order */
+    {4,6,0x44,0x20,{0xffff,0x00,0xffff,0x24}},      /* Mission 5 stage 1 (247710..252810): 10D7B6, window B, 10C72E, window A */
+    {4,7,0x20,0xffff,{0xffff,0xffff,0xffff,0x00}},  /* stage 2 (252840..274380): 10C72E, window A; no window B */
+    {4,8,0x20,0xffff,{0xffff,0xffff,0xffff,0x00}},  /* stage 3 (274410..292050) */
 };
 msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage) {
     msx_draw_order_t o={0x07,0x18,false,false,false};   /* layers 0..2, window B, 3..4, window A */

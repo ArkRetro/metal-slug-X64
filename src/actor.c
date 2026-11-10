@@ -401,6 +401,9 @@ static void selected_mission(void) {
     }
     debugf("MSX MSELECT enter mission %u record %u descriptor %06lX\n",m,(unsigned)game.flow.record_index,(unsigned long)game.flow.descriptor);
     if (game.flow.record_index) game_audio_mission_start();   // 1805C's sound reset, as at the mission's first record
+    /* RAM 10C700 as the missions before leave it (0BC548 of the Mission 3
+     * camera list: 7FFF; MAME run4 149850), which the menu skipped. */
+    if (m>=4u) game.world.ga_flags.limit700=0x7fff;
     if (!enter_mission()) {debugf("MSX MSELECT mission %u not loaded (explicit stop): Mission 1 restarts\n",m);reset_game();}
     restart_was_down=true;   // R still held from the menu's L+R/Z+R: no reset until it is pressed again
     previous_animation=-1;scene_clock_reset(&simulation_clock);

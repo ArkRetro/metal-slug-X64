@@ -157,7 +157,7 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
              * (Mission 3: the bridge 122145, the gap 123924..126262, the
              * end 132302/141008): MOVE.L (A0),6960 = the autoscroll y. */
             if (ll(c,a+4)==0x0B8EBCu) c->auto_vy=(int32_t)ll(c,a+8);
-            event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),0);break;
+            event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),lw(c,a+8));break;   /* value: the word at A0 (0BA8BA's index) */
         case 0x30: for (unsigned i=0;i<4;i++) c->bounds[i]=(int16_t)lw(c,a+4+2*i);break;
         case 0x34: *p8=lw(c,a+4);*pa=lw(c,a+6);break;
         case 0x38: event(c,NEO_CAMERA_EV_ANIM_SPEED,0,lw(c,a+4));break;   /* 0C85AC -> 002802 */

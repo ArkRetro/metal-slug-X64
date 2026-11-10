@@ -362,6 +362,11 @@ RESOURCES=RESOURCES+(0x898,0x899,0x87b,0x4b4)
 # Fat Marco's weapons (+93 = 2): the H bullet 01BDD2 (0x874), the flame 0A7226 (0x877), the
 # weapon 0D 0A7960 (0x871) (capture_fat_weapons.lua palette dumps; 86C/870/875 listed above).
 RESOURCES=RESOURCES+(0x874,0x877,0x871)
+# Mission 4 props (neo_m4props.c): the floor piece 0B99EE (2A8EFC, 0xE0), the decoration 0B9AD6
+# (2A8F3E, 0x532), the lamp 0B9B24 (2A8F4A, 0x54E), the collapse pieces 0B9D88 (2A8F6E.., 0x575)
+# and the debris 0BB106 (22D414.., 0x574 / 0x20A).
+ROOTS=ROOTS+(0x2a8efc,0x2a8f3e,0x2a8f4a,0x2a8f6e,0x2a8f7a,0x2a8f86,0x2a8f92,0x2a8f9e,0x2a8faa,0x22d414,0x22d47e)
+RESOURCES=RESOURCES+(0xe0,0x532,0x54e,0x574,0x575)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

@@ -93,7 +93,9 @@ def actor_frames(mission):
     empty=[e for e in m.get('empty',[]) if e not in known and e not in {f['descriptor'] for f in frames}]
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
-GROUPS={2:('m2',),3:('m3',)}
+GROUPS={2:('m2',),3:('m3',),4:('m4',)}
+def c_layer(patch):
+    layers={c['layer'] for c in patch['cells']};assert len(layers)==1;return layers.pop()
 def anim_kinds():
     """Numbers of neo_anim_kind_t (src/neo_animation.h, in declaration order)."""
     import re
@@ -164,13 +166,15 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         patch_list=[]
         if (d/'patches.json').exists():
             for i,pt in enumerate(json.loads((d/'patches.json').read_text())['patches']):
-                assert i<16
+                # Patches 16..63 (Mission 4, docs/MISION4.md): the layer bits 5..7 are the banks 1..3 of the
+                # terrain layer 3 (patch = 16 * bank + bits 3..6); bank 0 keeps its layer in bits 0..2.
+                assert i<64 and (i<16 or c_layer(pt)==3)
                 d0,d1=pt['d'][0],pt['d'][1]
                 patch_list.append((int(pt['submap'],16)|(d0&15)<<24|(d1&15)<<28,int(pt['layer_object'],16)|(pt['d'][4]&0x7ff)<<21))
                 assert len(set(patch_list))==len(patch_list),'two patches with the same key'
                 for c in pt['cells']:
                     if c['colors'] not in model['palettes']:model['palettes'].append(c['colors'])
-                    model['cells'].append(dict(layer=0x80|i<<3|c['layer'],x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],
+                    model['cells'].append(dict(layer=0x80|(i&15)<<3|(c['layer'] if i<16 else 4+(i>>4)),x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],
                                                animation_mask=c['animation_mask'],palette=model['palettes'].index(c['colors']),observations=0))
         if LOOSE[0]:
             # The column origin (+32) wraps at 4096 columns (16 * 4096 = 65536

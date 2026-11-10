@@ -609,7 +609,7 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
     if (s[0]|s[1]|s[2]|s[3]) {
         unsigned i=0;
         while (i<wd->map_patches && !((wd->map_patch[i][1]&0x1fffffu)==layer && wd->map_patch_at[i]==at)) i++;
-        if (i<16u) {
+        if (i<COUNT(wd->map_patch)) {
             wd->map_patch[i][0]=key;wd->map_patch[i][1]=obj;wd->map_patch_at[i]=at;
             if (i==wd->map_patches) wd->map_patches++;
         }
@@ -1611,6 +1611,44 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             break;
         }
     }
+    /* Mission 4 camera-list calls (neo_m4props.c): 0BA964..0BAA1E (0BAA24, D7
+     * = 0..1F) the prop 0B9F4A with +6E = D7 at 0BAA68[D7] of the root;
+     * 0BA82A / 0BA85A / 0BA88A / 0BA912 the floor piece 0B99EE, the lamp
+     * 0B9B24, the collapse keeper 0B9C7A and the decoration 0B9AD6; 0BA8BA
+     * (word argument n) the collapse piece 0B9D88 at (0E7A20[n], 0028) of
+     * the root (01AB9C) unless 0E7A20[n] < the camera x 10E98E. All after
+     * the script actor (00411C). */
+    for (unsigned i=0;i<w->camera_call_count;i++) {
+        uint32_t at=w->camera_calls[i];
+        if (at<0x0BA82Au || at>0x0BAA1Eu) continue;
+        int script=find(w,NEO_WORLD_SCRIPT,0);
+        if (at>=0x0BA964u) {
+            unsigned n=(at-0x0BA964u)/6u;const uint8_t *p=ga_rom(0xbaa68u+4u*n);
+            if ((at-0x0BA964u)%6u || !p) {w->camera_events_unsupported++;continue;}
+            neo_gactor_t *a=ga_insert(&t,script,0xb9f4a,SCRIPT_TAG,0);
+            if (!a) continue;
+            ga_sw(a,0x6e,(uint16_t)n);ga_sl(a,0x28,(uint32_t)(p[0]<<8|p[1])<<16);ga_sl(a,0x2c,(uint32_t)(p[2]<<8|p[3])<<16);ga_sl(a,0x38,ROOT_TAG);
+            continue;
+        }
+        if (at==0x0BA8BAu) {
+            unsigned n=w->camera_call_args[i];const uint8_t *p=ga_rom(0xe7a20u+4u*n);
+            if (!p) {w->camera_events_unsupported++;continue;}
+            uint16_t x=(uint16_t)(p[0]<<8|p[1]);
+            if (x<(uint16_t)((uint32_t)w->camera.x>>16)) continue;
+            neo_gactor_t *a=ga_insert(&t,script,0xb9d88,SCRIPT_TAG,0);
+            if (!a) continue;
+            ga_sw(a,0x70,(uint16_t)n);ga_sw(a,0x6e,(uint16_t)(p[2]<<8|p[3]));
+            ga_sl(a,0x28,(uint32_t)x<<16);ga_sl(a,0x2c,0x280000u);ga_sl(a,0x38,ROOT_TAG);ga_sw(a,0x4c,0);ga_project(a,&t.genv);
+            continue;
+        }
+        static const uint32_t calls[][4]={{0x0BA82Au,0xb99eeu,0x0b600000u,0xffa80000u},{0x0BA85Au,0xb9b24u,0x05000000u,0x00e00000u},
+            {0x0BA88Au,0xb9c7au,0x07300000u,0x00280000u},{0x0BA912u,0xb9ad6u,0x06a00000u,0xff800000u}};
+        unsigned k=0;
+        while (k<COUNT(calls) && calls[k][0]!=at) k++;
+        if (k==COUNT(calls)) {w->camera_events_unsupported++;continue;}
+        neo_gactor_t *a=ga_insert(&t,script,calls[k][1],SCRIPT_TAG,0);
+        if (a) {ga_sl(a,0x28,calls[k][2]);ga_sl(a,0x2c,calls[k][3]);ga_sl(a,0x38,ROOT_TAG);}
+    }
     w->camera_call_count=0;
     w->player_hits+=t.hits;
     return t.hits;
@@ -1722,6 +1760,9 @@ void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_
     neo_world_init(w,scroll_x);
     w->rng=rng;w->weapons=weapons;w->pickup=pickup;w->weapon_player=weapon_player;   /* +93..+95 (B40) */
     memcpy(w->ga_flags.rescued,flags.rescued,sizeof(flags.rescued));memcpy(w->ga_flags.special,flags.special,sizeof(flags.special));memcpy(w->ga_flags.gifts,flags.gifts,sizeof(flags.gifts));
+    /* RAM 10C700 is not cleared between missions: Mission 4 reads its high
+     * byte (0B9D58) as Mission 3's 0BC548 left it (MAME run4 149850: 7FFF). */
+    w->ga_flags.limit700=flags.limit700;
     neo_script_init(&w->script,st->script,st->script_size,st->script_base);
     w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;
     w->player_ripple=true;   /* 0C0CD6: the player's 0C10FE again */
@@ -1774,8 +1815,12 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
-        if ((at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u) && w->camera_call_count<COUNT(w->camera_calls))
-            w->camera_calls[w->camera_call_count++]=at;
+        if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */
+        if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
+        if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)) {
+            if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
+            else w->camera_events_unsupported++;
+        }
     }
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}

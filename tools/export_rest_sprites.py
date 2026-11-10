@@ -377,6 +377,8 @@ ROOTS=ROOTS+(0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x24
 RESOURCES=RESOURCES+(0x13d,0x13e,0x13f,0x140,0x211,0xe1,0xe2,0xe3)
 # Mission 4 ripple 03C62A and splash 03C962 (019240 with 10C2F6 = 5: 14A / 150).
 RESOURCES=RESOURCES+(0x14a,0x150)
+# Mission 4 object 036C34 and its blast 036EA8 (26C).
+ROOTS=ROOTS+(0x23bdd2,0x23bddc,0x23be08,0x23bdf2,0x23bebe)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

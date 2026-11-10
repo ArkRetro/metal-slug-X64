@@ -538,12 +538,129 @@ static ga_result_t bin_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- 036C34 (script records of the street and the climb) ------------------------
+ * 036C34: 0146E8, 036BE8 (palette 26C, layers 8838 or FFF2 with +6E,
+ * hurtbox 036ACC, +4E = rank 2D3A0E), program 23BDD2. 036C4E/036C58: 01ABC8,
+ * 01AD8C, the cell map 036AF8 (0140C4), 00427A; a hit -> 036CA0 (23BDDC,
+ * back to 036C4E at its end); +5F bit 7 -> 036CF4: 23BE08 (sound 109F,
+ * hurtbox 036AE0), +4E = rank 2D3A28. 036D24 / 036D76 / 036DD4 the same
+ * with the map 036B16 and the flinch 23BDF2; +5F bit 7 -> 036E12: 23BEBE
+ * (sound 1036, its call 036E84: the blast 036EA8 at (0, 0)), 013F1E;
+ * 036E3A to its end, 036E5A / 036E6C: +50 = 0, one more update, deleted.
+ * Every state before ends in 036B4A: 004188 outside 036AC4.
+ * - 036EA8: palette 26C, 22CF2C, 1001; deleted at its end. */
+static bool urn_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL || routine!=0x36e84u) return false;
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x36ea8,0x1c):e->spawn?e->spawn(e->ctx,a,0x36ea8,false):NULL;
+    if (c) ga_place_from(c,a,e,0,0);
+    return true;
+}
+/* 01ABC8, 01AD8C, the cell map (0 none), 00427A: the program's result. */
+static int urn_step(neo_gactor_t *a,neo_genv_t *e,uint32_t map) {
+    ga_project(a,e);
+    if ((W(0x66)&0xf000u)==0x8000u) SW(0x1e,W(0x66)-W(0x40));
+    if (map && e->dyn_set) e->dyn_set(e->ctx,a,map,0,0);
+    return ga_anim_step(a,e,urn_call);
+}
+static ga_result_t urn_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0x36c34:
+        ga_floor(a,e);
+        if (!rom_ok(e,0x2d3a0e)) return GA_UNSUPPORTED;
+        ga_palette(a,0x26c);
+        if (!W(0x6e)) {SW(0x66,0x8838);SW(0x1e,0x8838);} else {SW(0x66,0xfff2);SW(0x1e,0xfff2);}
+        SL(0x50,0x36acc);SW(0x4e,ga_rank_word(a,e,ga_rom(0x2d3a0e)));
+        if (!ga_anim_start(a,e,0x23bdd2,0x100)) return GA_UNSUPPORTED;
+        /* fall through */
+    case 0x36c4e:
+        SB(0x5a,0);SL(0,0x36c58);
+        /* fall through */
+    case 0x36c58:
+        if (urn_step(a,e,0x36af8)<0) return GA_UNSUPPORTED;
+        if (ga_register(a,e,NULL,NULL)) {SB(0x5a,0);SL(0,0x36ca0);}
+        if (B(0x5f)&0x80u) SL(0,0x36cf4);
+        break;
+    case 0x36ca0:
+        if (!ga_anim_start(a,e,0x23bddc,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x36cb6);
+        /* fall through */
+    case 0x36cb6:
+        if ((r=urn_step(a,e,0x36af8))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x36c4e);
+        if (B(0x5f)&0x80u) SL(0,0x36cf4);
+        break;
+    case 0x36cf4:
+        if (!rom_ok(e,0x2d3a28) || !ga_anim_start(a,e,0x23be08,0x100)) return GA_UNSUPPORTED;
+        SB(0x5f,B(0x5f)&0x7fu);SB(0x5a,0);SW(0x4e,ga_rank_word(a,e,ga_rom(0x2d3a28)));SL(0,0x36d24);
+        /* fall through */
+    case 0x36d24:
+        if ((r=urn_step(a,e,0x36b16))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x36d70);
+        if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+        if (B(0x5f)&0x80u) SL(0,0x36e12);
+        break;
+    case 0x36d70:
+        SL(0,0x36d76);
+        /* fall through */
+    case 0x36d76:
+        if (urn_step(a,e,0x36b16)<0) return GA_UNSUPPORTED;
+        if (ga_register(a,e,NULL,NULL)) {SB(0x5a,0);SL(0,0x36dbe);}
+        if (B(0x5f)&0x80u) SL(0,0x36e12);
+        break;
+    case 0x36dbe:
+        if (!ga_anim_start(a,e,0x23bdf2,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x36dd4);
+        /* fall through */
+    case 0x36dd4:
+        if ((r=urn_step(a,e,0x36b16))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x36d70);
+        if (B(0x5f)&0x80u) SL(0,0x36e12);
+        break;
+    case 0x36e12:
+        SB(0x5f,B(0x5f)&0x7fu);ga_project(a,e);
+        if (!ga_anim_start(a,e,0x23bebe,0x100)) return GA_UNSUPPORTED;
+        if (e->dyn_release) e->dyn_release(e->ctx,a);                    /* 013F1E */
+        SL(0,0x36e3a);
+        /* fall through */
+    case 0x36e3a:
+        if ((r=urn_step(a,e,0))<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x36e5a);
+        break;
+    case 0x36e5a:
+        SL(0x50,0);SB(0x5a,0);SL(0,0x36e6c);
+        /* fall through */
+    case 0x36e6c:
+        if (urn_step(a,e,0)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_DELETE;
+    case 0x36ea8:
+        ga_palette(a,0x26c);
+        if (!ga_anim_start(a,e,0x22cf2c,0x100)) return GA_UNSUPPORTED;
+        SW(0x66,0x1001);SW(0x1e,0x1001);SL(0,0x36ed8);
+        /* fall through */
+    case 0x36ed8:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+    /* 036B4A */
+    if (e->unsupported) return GA_UNSUPPORTED;
+    return ga_cull(a,e,0x36ac4)?GA_DELETE:GA_MORE;
+}
+static bool urn_routine(uint32_t r) {
+    static const uint32_t k[]={0x36c34,0x36c4e,0x36c58,0x36ca0,0x36cb6,0x36cf4,0x36d24,0x36d70,0x36d76,0x36dbe,0x36dd4,0x36e12,0x36e3a,0x36e5a,0x36e6c,0x36ea8,0x36ed8};
+    for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
+    return false;
+}
 static bool bin_routine(uint32_t r) {return r==0x33526u || r==0x335c6u || r==0x3378au || r==0x337c4u || r==0x33864u || r==0x338b8u;}
 bool neo_m4props_routine(uint32_t r) {
-    if (bin_routine(r)) return true;
+    if (bin_routine(r) || urn_routine(r)) return true;
     static const uint32_t k[]={0xb9f4a,0xb9fbc,0xb9fd8,0xba192,0xba1b8,0xba1f4,0xbb106,0xbb15c,0xb99ee,0xb9a1e,0xb9ad6,0xb9b06,
         0xb9b24,0xb9b54,0xb9b6c,0xb9b7a,0xb9ba2,0xb9bb4,0xb9c7a,0xb9c8e,0xb9d88,0xb9de4,0xb9ea4};
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
     return false;
 }
-ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e) {return bin_routine(L(0))?bin_tick(a,e):m4props_tick(a,e);}
+ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e) {return bin_routine(L(0))?bin_tick(a,e):urn_routine(L(0))?urn_tick(a,e):m4props_tick(a,e);}

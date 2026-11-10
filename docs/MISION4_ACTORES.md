@@ -22,7 +22,9 @@ el `switch` del módulo.
 
 `033526` con `03378A`, `033864` y el prisionero `099DD6` (familia `m4bin`).
 
-Quedan (orden de guion): `036C34`/`036EA8`, el soldado `0AF17E` del jinete `0842A8`, `0A9F0C`
+`036C34` / `036EA8` (familia `m4urn`).
+
+Quedan (orden de guion): el soldado `0AF17E` del jinete `0842A8`, `0A9F0C`
 (+ `0AA37C`, `0AA2C6`), `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
 `01FF82`, `020004`), `07E554` (+2), `09A71E`, `0AF1A8`, `0DE0FE`/`0DE24A`,
 `08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`,

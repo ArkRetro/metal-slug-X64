@@ -284,6 +284,12 @@ prisionero `239D56[+74]` = `099DD6` con `002E7C`, la nube `03378A`), piezas
 `neo_prisoner.c`. Paletas sin captura y sin uso en la M4: `13E/140` (variante
 2) y `E1..E3` (piezas 1..3).
 
+**Objeto `036C34` (`neo_m4props.c`, familia `m4urn`: 7 nodos, 904
+actualizaciones iguales, 150322..156728; 5 registros del guion).** Dos fases
+con sus respingos (`23BDDC`, `23BDF2`), mapas de celdas `036AF8/036B16`
+(`0140C4`), `+4E` de `2D3A0E` y `2D3A28`, final `23BEBE` con su llamada
+`036E84` (explosión `036EA8`, paleta 26C).
+
 **`019240` y RAM `10C2F6`**: la palabra de misión es la `+0E` del descriptor
 de etapa (M2 1, M3 4, **M4 5**; volcado de RAM 150000). El port le daba 3 a
 la M4. `019240` con 5 da la onda `14A` y la salpicadura `150` (`neo_gate.c`;
@@ -301,8 +307,8 @@ salto + disparo, mortal): música 0x25 sonando, los voladores entran y mueren,
 el guion pasa de `2DBA22`; Marco muere en la cámara ≈ 1000 (coche `027F54` y
 soldados) y la partida vuelve a la M1 (sin continuaciones). Se ve el primer
 parche (`MSX map patches drawn mask=…580`: el accesorio 2, como en `run4`).
-Paradas contadas hasta ahí: el registro `036C34` (cámara 466) saltado,
-`af17e` del jinete (10), voz `1134` sin política.
+Paradas contadas hasta ahí (cámara 0..1000): **solo** `af17e` del jinete (10)
+y la voz `1134` sin política; ningún registro del guion saltado.
 
 ## Sonido y música
 
@@ -336,7 +342,7 @@ Efectos: las 10 palabras están en `data/sound_map.json` y renderizadas
    las copias de `0E6DA8` del camino del jefe.
 3. **Actores nuevos**, en orden de guion ([MISION4_ACTORES.md](MISION4_ACTORES.md)):
    hechos `0B9F4A`…, `083C8A`, `08391C`, `033526` (+ `03378A`, `099DD6`,
-   `033864`). **Siguiente**: `036C34`/`036EA8` (466), el soldado del
+   `033864`), `036C34`/`036EA8`. **Siguiente**: el soldado del
    jinete (`0AF17E` desde un nodo genérico), `0A9F0C` (1136), `01F828`…
 4. **Tabla de columnas `+3E`**: desensamblar su lector (cerca de `0C748E/0C74C4`)
    y dejar de depender de la comprobación por observación.

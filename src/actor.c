@@ -120,6 +120,11 @@ static bool load_stage(void) {
         msx_game_stage_descent_at(&game,ex,ey);
         debugf("MSX stage entry %06lX kind 2 (0C15B4): the parachute descent from (%d, %d) after the fade-in\n",(unsigned long)entry,ex,ey);
     }
+    if (er && er[8]==3u && !er[5]) {
+        bool on=msx_game_stage_entry_walk(&game,(int16_t)(er[2]<<8|er[3]));
+        debugf("MSX stage entry %06lX kind 3 (0C14E6): x 0, floor below y %d of the terrain: %s y=%d\n",(unsigned long)entry,(int16_t)(er[2]<<8|er[3]),
+            on?"found":"none (scan kept)",(int)((56*MSX_UNIT-game.y)/MSX_UNIT));
+    }
     /* 019604 +4: the stage's respawn entries (019658/0196E8, B33). */
     game.respawn_table=st->players;game.respawn_length=st->players_len;
     /* The exit kind (fade-in, wipe) and the stage loop run in the game's

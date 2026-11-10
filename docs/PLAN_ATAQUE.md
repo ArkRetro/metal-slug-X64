@@ -55,6 +55,9 @@ Por misión:
 Se actualiza al final de cada fase aquí y en `MISSION3_DEBUG.md`.
 
 ## Fase 2b: compresión y datos repetidos (antes de la M4)
+**Hecha** (`docs/COMPRESION.md`): paquetes 18,0 → 8,5 MB, cartucho 59,3 →
+49,8 MB, tablas de etapa de la M3 55 → 48 ranuras; pendiente allí lo que se
+dejó (tablas de los paquetes, `.bgp`, tablas de la M1 en el programa).
 Objetivo: que quepan las misiones 4–6 en ROM y en RAM sin perder exactitud
 (todo sin pérdida; los datos siguen siendo los de la ROM del usuario).
 1. Medir: tamaño por sección de cada `missionN.pack`, de `filesystem/` y del

@@ -38,7 +38,9 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
 - **Datos:**
   - Se extraen de la ROM del usuario con las herramientas de `tools/`.
   - Son privados y no van en git: `filesystem/`, `romfs/`, `build/marco_*.h`.
-  - Cada misión tiene su `romfs/missionN.pack` (formato v3).
+  - Cada misión tiene su `romfs/missionN.pack` (formato v5: fragmentos LZ4
+    y páginas de actores compartidas entre misiones, `docs/COMPRESION.md`;
+    se reconstruyen con `tools/build_packs.py`).
 
 ## Compilación y pruebas
 

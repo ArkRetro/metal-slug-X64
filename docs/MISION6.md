@@ -217,8 +217,9 @@ traducirlo con su constructor, el estampador `0C8A3C` nativo y el paso del barri
 
 ## Puertas (10-XI)
 
-- `make -j4`: RC 0. `make check`: **220 PASS**, RC 0 (los 202 de antes y 18 de la M6).
-- `tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf build/m1end`): `RESULT: PASS` (188
+- `make -j4`: RC 0. `make check`: **225 PASS**, RC 0, con `ccr` (fase 2 de la M4, `f798dc1`) fusionado; antes de
+  fusionar, 220 (los 202 de la M5 y 18 de la M6).
+- `tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf build/m1end`): `RESULT: PASS` (208
   fotos).
 - ares, `mslugx-explorer.z64`, menú → `MISSION 6 STAGE n` (`tools/test_mission6_ares.py`): **etapas 2 y 3 PASS**
   (Marco recorre el mapa entero con sus fondos y su música); **etapa 1 no**: mapa, fondos, música y entrada bien, pero
@@ -229,7 +230,7 @@ traducirlo con su constructor, el estampador `0C8A3C` nativo y el paso del barri
 `filesystem/audio/music_mission6_boss*.wav64` con su entrada en `manifest.json`; no se ha tocado nada del otro agente.
 
 **Para seguir** (otra sesión): árbol `/home/user/ws-m6` (rama `work-m6`), `romfs/` propio, `filesystem/` de enlaces a
-`ws-logo/filesystem/*` salvo `mission4/s1` (como en la M5, hasta que se fusione la fase 2 de la M4); estados MAME en
+`ws-logo/filesystem/*` (con la fase 2 de la M4 fusionada, `mission4` vuelve a ser un enlace); estados MAME en
 `/home/user/captures-m6/states`; Xvfb propio (`:76` aquí); datos de ares en una copia de `data146` con
 `L-Bumper: 0x1/0/38;;` en `settings.bml` (sin esa tecla el menú de pruebas no se abre: «select chosen early»).
 
@@ -245,7 +246,7 @@ traducirlo con su constructor, el estampador `0C8A3C` nativo y el paso del barri
 4. **Parches y sellos de la etapa 2**: 4 parches `0C70FC` (submapa `0BDBB2`; 304505, 304596, 304973, 309159) sin
    `patches.json` todavía, y 4 sellos `0C88B0` (313437, 313441, 314099, 314129; plantillas `0A42C4`, `0E1A2C`,
    `0E1A3A`).
-5. **Actores**: 136 constructores sin portar (123 propios), 3606 creaciones ([MISION6_ACTORES.md](MISION6_ACTORES.md));
+5. **Actores**: 134 constructores sin portar (123 propios), 3582 creaciones ([MISION6_ACTORES.md](MISION6_ACTORES.md));
    el jefe intermedio `05310E`, y la familia `04153E` del último enemigo con `04445A` (`neo_camera_place_*`).
 6. **Final y créditos** (tabla de arriba) y sus tres músicas; el registro de etapa `017624` (la huida): captura, mapa y paquete.
 7. Paletas que cambian (22 y 16 en la fábrica, 35 en la arena) y las 30 palabras de efectos sin política.

@@ -3895,14 +3895,14 @@ static ga_result_t bomber_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x84010:child(a,e,0x843f8,0x1c,0,0);
         /* fall through */
     case 0x84032: case 0x83a72:
-        sound(e,0x1021);SL(0x50,0);SB(0x69,0xff);k84e74(a,e);k84f74(a,e);   /* 019DFC */
+        sound(e,0x1021);SB(0x69,0xff);k84e74(a,e);k84f74(a,e);   /* 019DFC: +69 = FF */
         return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
     case 0x8404e:
         if (S16(W(0x30))>=0) SET(0x5b,7);
         child(a,e,0x843f8,0x1c,0,0);
         /* fall through */
     case 0x8407e: case 0x83a8e:
-        sound(e,0x1021);SL(0x50,0);SB(0x69,0xff);k84ee2(a,e);              /* 019DFC */
+        sound(e,0x1021);SB(0x69,0xff);k84ee2(a,e);              /* 019DFC: +69 = FF */
         return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
     case 0x8391c: {                                                          /* 084C9A */
         uint16_t d0=W(0x6e),d1=W(0x70);SW(0x6e,0);SW(0x70,0);SW(0x86,d0);SW(0x88,d1);

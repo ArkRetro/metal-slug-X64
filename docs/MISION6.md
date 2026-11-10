@@ -212,9 +212,23 @@ escrituras de 126 celdas son del actor **`0BC42C`** (retorno `0BC496`), plantill
 275893. Falta: traducir `0BC42C` (cuándo abre) y el paso del barrido del jugador por las celdas `1F`; no se ha
 portado ni ajustado nada.
 
-## Puertas
+## Puertas (10-XI)
 
-Ver el final de este documento («Estado»), que se rellena al cerrar la sesión.
+- `make -j4`: RC 0. `make check`: **220 PASS**, RC 0 (los 202 de antes y 18 de la M6).
+- `tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf build/m1end`): `RESULT: PASS` (188
+  fotos).
+- ares, `mslugx-explorer.z64`, menú → `MISSION 6 STAGE n` (`tools/test_mission6_ares.py`): **etapas 2 y 3 PASS**
+  (Marco recorre el mapa entero con sus fondos y su música); **etapa 1 no**: mapa, fondos, música y entrada bien, pero
+  Marco cae al agua desde x 160 (balsas, puente y segundo terreno sin portar; arriba, «Recorrido en ares»). Es la
+  parada explícita más visible de la fase 1; no se ha tapado.
+
+`/home/user/ws-logo` tiene `romfs/mission6.pack` (`build_packs.py 6`), `filesystem/mission6/` y
+`filesystem/audio/music_mission6_boss*.wav64` con su entrada en `manifest.json`; no se ha tocado nada del otro agente.
+
+**Para seguir** (otra sesión): árbol `/home/user/ws-m6` (rama `work-m6`), `romfs/` propio, `filesystem/` de enlaces a
+`ws-logo/filesystem/*` salvo `mission4/s1` (como en la M5, hasta que se fusione la fase 2 de la M4); estados MAME en
+`/home/user/captures-m6/states`; Xvfb propio (`:76` aquí); datos de ares en una copia de `data146` con
+`L-Bumper: 0x1/0/38;;` en `settings.bml` (sin esa tecla el menú de pruebas no se abre: «select chosen early»).
 
 ## Pendiente (fase 2, por orden)
 

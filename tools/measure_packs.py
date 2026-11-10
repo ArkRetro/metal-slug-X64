@@ -8,70 +8,63 @@ wav64 files; prints the size of each section, the RAM each stage's tables
 take when loaded, and what is repeated (SHA-1 of pages, 16x16 tiles,
 palettes, programs, blobs, grids, wav64). Nothing is written.
 
-usage: measure_packs.py [--root DIR] [--json]
+usage: measure_packs.py [--root DIR] [--romfs DIR]   (JSON on stdout)
 """
 import argparse,hashlib,json,re,struct,sys,zlib
 from collections import Counter,defaultdict
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 from msxc_compress import lz4_block
+import pack_store
 PAGE=2048;CHUNK=16384
 def h(b):return hashlib.sha1(b).digest()
 def unrle(d):return b''.join(bytes([d[i+1]])*d[i] for i in range(0,len(d),2))
 
-def parse_mission(blob):
-    """v4 layout (tools/pack_mission.py) -> sections (name, offset, length) and tables."""
-    import pack_store
-    blob=pack_store.plain(blob)
-    ver,mission,stages,palettes,images,chunks,cells,grid_bytes,actors,actor_images,resources,data_at,data_len=struct.unpack_from('>HHHHIIIIIIIII',blob,4)
-    assert blob[:4]==b'MSXM' and ver==4
-    o=48;sec=[('header',0,48)]
-    def add(name,n):
-        nonlocal o;sec.append((name,o,n));o+=n
-    add('stages',128*stages);add('cells',22*cells);add('images',8*images);add('palettes',32*palettes);add('chunk_table',16*chunks)
-    add('actors',8*actors);add('actor_images',12*actor_images);add('resources',4*resources);add('grids',grid_bytes)
-    o=(o+3)&~3
-    ch=[struct.unpack_from('>4I',blob,sec[5][1]+16*i) for i in range(chunks)]
-    body_at=ch[0][0] if ch else len(blob)
-    blobs_end=data_at if data_len else body_at
-    sec.append(('stage_blobs',o,blobs_end-o))
-    if data_len:sec.append(('msxd',data_at,data_len))
+def parse_mission(path):
+    """Sections (name, offset, length) and tables of a mission pack (versions 3..5)."""
+    mp=pack_store.MissionPack(path);blob=mp.raw
+    sec=[('header',0,mp.header_bytes),('stages',mp.header_bytes,128*mp.stages),('cells',mp.cells_at,22*mp.cells),('images',mp.images_at,8*mp.images),
+         ('palettes',mp.palettes_at,32*mp.palettes),('chunk_table',mp.chunks_at,16*len(mp.chunks)),('actors',mp.actors_at,8*mp.actors),
+         ('actor_images',mp.actor_images_at,12*mp.actor_images),('resources',mp.resources_at,4*mp.resources),('grids',mp.grids_at,mp.grid_bytes)]
+    own=[c for c in mp.chunks if not c[3]>>8]
+    body_at=min(c[0] for c in own) if own else len(blob)
+    o=(mp.grids_at+mp.grid_bytes+3)&~3
+    sec.append(('stage_blobs',o,(mp.data_offset if mp.data_length else body_at)-o))
+    if mp.data_length:sec.append(('msxd',mp.data_offset,mp.data_length))
     sec.append(('chunks',body_at,len(blob)-body_at))
-    return dict(blob=blob,mission=mission,sections=sec,chunks=ch,stages=stages,counts=dict(palettes=palettes,images=images,cells=cells,actors=actors,actor_images=actor_images,resources=resources))
+    return dict(pack=mp,blob=blob,mission=mp.mission,sections=sec,chunks=mp.chunks,stages=mp.stages,version=mp.version,
+                counts=dict(palettes=mp.palettes,images=mp.images,cells=mp.cells,actors=mp.actors,actor_images=mp.actor_images,resources=mp.resources))
 def decode_chunks(blob,ch):
-    out=[]
-    for off,ln,crc,codec in ch:
-        d=blob[off:off+ln];d=unrle(d) if codec==1 else d
-        assert len(d)==CHUNK and zlib.crc32(d)==crc;out.append(d)
-    return out
-def scene_chunks(root):
-    meta=(root/'build/scene_meta.h').read_text()
+    return [pack_store.decode(blob[off:off+ln],crc,codec) for off,ln,crc,codec in ch]
+def scene_chunks(root,meta_path=None):
+    meta=(meta_path or root/'build/scene_meta.h').read_text()
     body=re.search(r'scene_chunks\[[^\]]*\]\s*=\s*\{(.*?)\};',meta,re.S).group(1)
     return [tuple(int(x,0) for x in m) for m in re.findall(r'\{\s*(\w+)u?,\s*(\w+)u?,\s*(\w+)u?,\s*(\w+)u?\s*\}',body.replace('u,',',').replace('u}','}'))]
 def stage_ram(p,k):
     """Bytes scene_stage_load takes in the stage's slots (its NEED list)."""
-    b=p['blob'];st=struct.unpack_from('>IHHIIIHHhhIIII',b,48+128*k);blobs=struct.unpack_from('>9I',b,48+128*k+40)
+    b=p['blob'];hb=p['pack'].header_bytes;st=struct.unpack_from('>IHHIIIHHhhIIII',b,hb+128*k);blobs=struct.unpack_from('>9I',b,hb+128*k+44)
     cells,images,grid=st[5],st[13],st[6]*st[7];c=p['counts'];r=lambda x:(x+15)&~15
-    t=dict(cells=r(cells*22),images=r(images*12),palettes=r(32*c['palettes']),chunk_table=r(16*len(p['chunks'])),grid=r(grid),grid_dynamic=r(grid),
-           ring=4096 if st[7]>32 else 0,unknown=r((grid+7)//8) if st[11] else 0,index_order=r(cells*2),index_runs=r(cells*8),strips='(scene_strips.h)',
+    t=dict(cells=r(cells*8),cells_before=r(cells*22),images=r(images*12),palettes=r(32*c['palettes']),chunk_table=r(16*len(p['chunks'])),grid=r(grid),grid_dynamic=r(grid),
+           ring=4096 if st[7]>32 else 0,unknown=r((grid+7)//8) if st[11] else 0,index_order=r(cells*2),index_runs=r(cells*8),strips=r(2048*8)+r(512*8),
            stage_blobs=sum(r(blobs[3*i+2]) for i in range(3)),actors=r(8*c['actors']),actor_images=r(12*c['actor_images']),resources=r(4*c['resources']))
     data=next((s for s in p['sections'] if s[0]=='msxd'),None)
     if data:
         programs=struct.unpack_from('>H',b,data[1]+8)[0];t['msxd']=r(data[2]);t['program_table']=r(programs*12)
     return t
 def main():
-    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);ap.add_argument('--json',action='store_true')
-    a=ap.parse_args();root=a.root;out={}
+    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--root',type=Path,default=Path(__file__).resolve().parents[1]);ap.add_argument('--romfs',type=Path,help='directory of the packs (default ROOT/romfs)')
+    a=ap.parse_args();root=a.root;out={};romfs=a.romfs or root/'romfs'
     packs={};pages={}   # name -> list of 2048-byte pages
-    sp=root/'romfs/scene.pack'
+    sp=romfs/'scene.pack'
     if sp.exists():
-        blob=sp.read_bytes();ch=scene_chunks(root);dec=decode_chunks(blob,ch)
+        blob=sp.read_bytes();ch=scene_chunks(root,romfs/'scene_meta.h' if (romfs/'scene_meta.h').exists() else None);dec=decode_chunks(blob,ch)
         pages['scene']=[d[i:i+PAGE] for d in dec for i in range(0,CHUNK,PAGE)]
-        out['scene.pack']=dict(bytes=len(blob),chunks=len(ch),rle_chunks=sum(c[3]==1 for c in ch),decoded=len(ch)*CHUNK)
-    for f in sorted((root/'romfs').glob('mission[2-6].pack')):
-        raw=f.read_bytes();p=parse_mission(raw);packs[f.name]=p;dec=decode_chunks(p['blob'],p['chunks'])
+        out['scene.pack']=dict(bytes=len(blob),chunks=len(ch),codecs=dict(Counter(('raw','run pairs','lz4')[c[3]] for c in ch)),decoded=len(ch)*CHUNK)
+    for f in sorted(romfs.glob('mission[2-6].pack')):
+        p=parse_mission(f);raw=p['blob'];packs[f.name]=p;dec=[p['pack'].chunk(i) for i in range(len(p['chunks']))]
         pages[f.stem]=[d[i:i+PAGE] for d in dec for i in range(0,CHUNK,PAGE)]
-        out[f.name]=dict(bytes=len(raw),plain_bytes=len(p['blob']),sections={n:l for n,_,l in p['sections']},chunks=len(p['chunks']),rle_chunks=sum(c[3]==1 for c in p['chunks']),
+        out[f.name]=dict(bytes=len(raw),version=p['version'],sections={n:l for n,_,l in p['sections']},chunks=len(p['chunks']),
+            codecs=dict(Counter(('raw','run pairs','lz4')[c[3]&255] for c in p['chunks'] if not c[3]>>8)),held_by_other_packs=dict(Counter(c[3]>>8 for c in p['chunks'] if c[3]>>8)),
             stage_ram={f's{k+1}':stage_ram(p,k) for k in range(p['stages'])},
             tables_zlib=len(zlib.compress(p['blob'][:p['sections'][-1][1]],9)),tables_lz4=len(lz4_block(p['blob'][:p['sections'][-1][1]])))
     # Compression the chunks would still take (per 16 KiB chunk, so the cache can decode any one alone).
@@ -118,7 +111,7 @@ def main():
             for i in range(np_):
                 tag,at,n=struct.unpack_from('>IIH',b,o+12+12*nb+12*i);k=b[o+at:o+at+10*n];prog[k]+=1;progw[k].add(name)
         for k in range(p['stages']):
-            st=struct.unpack_from('>IHHIIIHHhhIIII',b,48+128*k);g=b[st[10]:st[10]+st[6]*st[7]];grid[h(g)]+=1
+            st=struct.unpack_from('>IHHIIIHHhhIIII',b,p['pack'].header_bytes+128*k);g=b[st[10]:st[10]+st[6]*st[7]];grid[h(g)]+=1
             # 8x8 blocks of the grid (column major): how much of it repeats.
     rep=lambda c,size=None:dict(total=sum(c.values()),distinct=len(c),repeated_bytes=sum((v-1)*(len(k) if size is None else size) for k,v in c.items()))
     dup['palettes (mission packs)']=dict(rep(pal),shared_between_packs=sum(1 for v in palw.values() if len(v)>1))

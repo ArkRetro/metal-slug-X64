@@ -24,8 +24,9 @@ el `switch` del módulo.
 
 `036C34` / `036EA8` (familia `m4urn`).
 
-Quedan (orden de guion): el soldado `0AF17E` del jinete `0842A8`, `0A9F0C`
-(+ `0AA37C`, `0AA2C6`), `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
+`0A9F0C` con `0AA37C` y `0AA2C6` (familias `m4van`, `m4van2`).
+
+Quedan (orden de guion): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
 `01FF82`, `020004`), `07E554` (+2), `09A71E`, `0AF1A8`, `0DE0FE`/`0DE24A`,
 `08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`,
 `0587C4` (+2), `02A448`, `08CF6E`, `08C954`, y el jefe `02267E` (11) con

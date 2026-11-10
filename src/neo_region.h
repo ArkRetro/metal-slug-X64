@@ -41,6 +41,8 @@ ga_result_t neo_m2boss_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 03C520..03C532: the water ripple 03C62A (+6E = kind) when 019240 has a
  * palette for the mission; false on an explicit stop. */
 bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);
+/* 019240: the ripple palette of the mission (0: none; the caller stops on missions past 8, 013D1A). */
+uint16_t neo_gate_ripple_palette(const neo_genv_t *e);
 bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);   /* 03C5C6..03C5D8: carry */
 bool neo_rebel3_routine(uint32_t routine);
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);

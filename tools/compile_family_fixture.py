@@ -344,6 +344,13 @@ def main():
         L.append('#define FAMILY_ATTACKS 1')
         L.append('static const int32_t %s_attacks[][21]={%s};'%(n,','.join('{%s}'%','.join(map(str,r)) for r in rows) or '{0}'))
         L.append('static const uint16_t %s_attack_spans[][2]={%s};'%(n,','.join('{%d,%d}'%x for x in spans)))
+    if any(u.get('hitw') for u in d['updates']):
+        where={};rows=[]
+        for k,u in enumerate(d['updates']):
+            where[u['node']]=inst[k]
+            for nd,off,val in u.get('hitw',[]):rows.append((k,where.get(nd,where.get(nd.zfill(6),-1)),off,val))
+        L.append('#define FAMILY_HITW 1')
+        L.append('static const int32_t %s_hitw[][4]={%s};'%(n,','.join('{%d,%d,%d,%d}'%r for r in rows)))
     if a.previous:
         where={};prev=[]
         for k,u in enumerate(d['updates']):

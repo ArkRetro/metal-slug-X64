@@ -39,7 +39,8 @@ typedef struct {
     bool dead;             /* +5F bit 7 or 6 */
 } neo_hurtbox_t;
 typedef enum { NEO_SOLDIER_EVENT_SOUND,NEO_SOLDIER_EVENT_THROW,NEO_SOLDIER_EVENT_DEATH_CHILD,
-    NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE,NEO_SOLDIER_EVENT_ATTACK } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C);
+    NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE,NEO_SOLDIER_EVENT_ATTACK,
+    NEO_SOLDIER_EVENT_RIPPLE /* 03C52C at the head of 0AEF30: the ripple 03C62A (+6E = value) after the soldier, when 019240 has a palette for the mission */ } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C);
     ATTACK: 0049E8 with `row` against the other actors' bodies (class row[5] != 0), `actor` the attacker, value its +5E */
 typedef struct {
     neo_soldier_event_kind_t kind;
@@ -76,7 +77,11 @@ typedef struct {
     uint16_t words[6];      /* +6E,+70,+72,+74,+76,+78 */
     uint8_t variant68,group69;
     uint32_t constructor;   /* spawn-table entry: 0 = 0AF17E.., or 04115A */
-    uint8_t flags81;        /* +81 of the entry (0AF17E 2, 0AF18C 10, 0AF19A 12, 0AF1B6 4, 0AF1C4 8, 0AF1D2 C, 0AF1E0 E; 0: 2) */
+    uint8_t flags81;        /* +81 of the entry (0AF17E 2, 0AF18C 10, 0AF19A 12, 0AF1A8 E0, 0AF1B6 4, 0AF1C4 8, 0AF1D2 C, 0AF1E0 E; 0: 2) */
+    /* Created by another actor with 0040BC (the Mission 4 flyer's rider
+     * 084300) instead of the script's 01A10A: no 01ABB6 placement (position
+     * block zero, no parent), +68 = the creator's (variant68), +69 = FF. */
+    bool from_node;
 } neo_soldier_spawn_t;
 /* ROM 01ABB6 placement + 0AF17E/0AEF30 constructor, including its control
  * target/prefix/probes. Returns false (state untouched) for an unrecovered

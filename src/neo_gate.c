@@ -53,6 +53,7 @@ static const uint32_t ripple_idle[4]={0x23f868,0x23f8d0,0x23f960,0x23fa2c};   /*
 static const uint32_t ripple_still[4]={0x23f746,0x23f774,0x23f7a2,0x23f7d0};  /* 03C7C6 */
 static const uint32_t ripple_moving[4]={0x23f746,0x23f774,0x23f7a2,0x23f7fe}; /* 03C7D6 */
 static const uint32_t ripple_settle[4]={0x23f868,0x23f892,0x23f90e,0x23f9b2}; /* 03C84E */
+uint16_t neo_gate_ripple_palette(const neo_genv_t *e) {return ripple_palette(e);}
 bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind) {
     if (e->pickup && e->pickup->mission>8u) {ga_fail(e,0x19240);return false;}   /* 01926E: 013D1A from 9 on */
     if (!ripple_palette(e)) return true;

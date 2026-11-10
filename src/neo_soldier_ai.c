@@ -1244,6 +1244,7 @@ static uint16_t table_word(const uint16_t *table,const neo_control_frame_t *f,ui
  * prefix; false on an unrecovered context. */
 static bool aef30(ctx_t *c) {
     neo_soldier_t *s=c->s;neo_soldier_env_t *e=c->e;
+    event(c,NEO_SOLDIER_EVENT_RIPPLE,2,NULL);                                   /* 03C52C */
     neo_control_frame_t f=frame(c);
     uint16_t d0=table_word(soldier_timer70_table,&f,s->variant68);
     if (W(0x70)) d0=(uint16_t)(((uint32_t)d0*W(0x70))>>8); else d0=(uint16_t)(d0>>8);
@@ -1328,12 +1329,14 @@ static void ctor_4115a(ctx_t *c) {
     s->routine=0x411e6;
 }
 bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_soldier_env_t *e) {
-    /* +76 modes 1..7 (0AF1EE): 1 ground, 2 run in (0AFF16), 3/4 idle on a
-     * vehicle facing right/left (0B0396), 5/6 a wait in the air then on the
-     * ground (0AF302; 6 sets a bit outside the node), 7 a wait in the air
-     * with the row 0AE9B0 (0AF2BA); +78 bit 0: the probe 01495C (0) with its
-     * flag 200 starts at 0AF7F6 (Mission 3). Mode 0 is not used. */
-    if (sp->constructor!=0x4115au && (sp->words[4]<1u || sp->words[4]>7u)) return false;
+    /* +76 (0AF1EE): 0 / 1 start in the air or on the ground (0AF26A..),
+     * 2 run in (0AFF16), 3/4 idle on a vehicle facing right/left (0B0396),
+     * 5/6 a wait in the air then on the ground (0AF302), 7 a wait in the
+     * air with the row 0AE9B0 (0AF2BA); +78 bit 0: the probe 01495C (0)
+     * with its flag 200 starts at 0AF7F6 (Mission 3). 0AEF30 looks for the
+     * floor (0146E8) in the modes 1..4 and probes one pixel up (01495C) in
+     * 0, 5, 6 and 7. */
+    if (sp->constructor!=0x4115au && sp->words[4]>7u) return false;
     if (sp->variant68>=12u) return false;
     neo_soldier_t backup=*s;
     memset(s,0,sizeof(*s));
@@ -1341,48 +1344,32 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *sp,neo_so
     /* Fresh node (003F24/01AB6E): position block, +15/+5F/+60/+61, +6E..+AF zero,
      * +1E=FFFF; flash 0xFF as in every observed construction. */
     s->active=true;s->anim.flash=0xff;s->b.word1e=0xffff;
-    s->variant68=sp->variant68;s->group69=sp->group69;
+    s->variant68=sp->variant68;s->group69=sp->from_node?0xff:sp->group69;
     for (unsigned i=0;i<6;i++) SW(0x6e + 2*i,sp->words[i]);
-    /* 01ABB6: placed relative to the scene root, mark/correction cleared. */
-    s->b.x=sp->x;s->b.y=sp->y;s->b.parent_tag=ROOT_TAG;s->b.mark=0;s->b.correction=0;
-    project(&c);
+    if (!sp->from_node) {
+        /* 01ABB6: placed relative to the scene root, mark/correction cleared. */
+        s->b.x=sp->x;s->b.y=sp->y;s->b.parent_tag=ROOT_TAG;s->b.mark=0;s->b.correction=0;
+        project(&c);
+    }
     if (sp->constructor==0x4115au) {
+        if (sp->from_node) {*s=backup;return false;}
         ctor_4115a(&c);
         if (c.unsupported) {*s=backup;return false;}
         return true;
     }
-    /* 0AEF30 */
-    neo_control_frame_t f=frame(&c);
-    uint16_t d0=table_word(soldier_timer70_table,&f,s->variant68);
-    if (W(0x70)) d0=(uint16_t)(((uint32_t)d0*W(0x70))>>8); else d0=(uint16_t)(d0>>8);
-    SW(0x70,d0);
-    d0=table_word(soldier_timer72_table,&f,s->variant68);
-    uint16_t d1=W(0x72)?W(0x72):0x1e;
-    SW(0x72,(uint16_t)(((uint32_t)d0*d1)>>8));
-    SW(0x72,(uint16_t)(W(0x72)+(neo_rng_next(e->rng)&7u)));
-    if (!W(0x74)) SW(0x74,0x5a);
-    s->palette_resource=0x20e;
-    s->b.field66=0x8820;s->b.word1e=0x8820;
-    /* +76==1: 0146E8 floor search, then projection. */
-    neo_kfloor_t fl;
-    if (!neo_kernel_floor(e->kernel,s->b.x,s->b.y,kobj(s->b.parent_tag),(int32_t)0xff000000,
-        (uint8_t)(s->b.flags15&32u?0:255),0,0,&fl)) {*s=backup;return false;}
-    s->b.kind_angle=(uint16_t)(fl.kind>>8);s->b.x=fl.x;s->b.y=fl.y;s->b.vx=0;s->b.vy=0;s->b.parent_tag=ktag(fl.parent);
-    project(&c);s->b.flags15|=64u;
-    project(&c);
-    if (S16(HI(s->b.projected_x))<0xa0) s->b.flags15|=1u;
-    SW(0x84,(uint16_t)(neo_asr(S16((uint16_t)(HI(s->b.projected_x)-0xa0u)),2)+0xa0));
-    SW(0x86,neo_rng_next(e->rng));
-    target(&c);prefix(&c);
+    if (!aef30(&c)) {*s=backup;return false;}
     SB(0x81,sp->flags81?sp->flags81:2);
-    s->routine=(s->b.flags15&64u)?((uint8_t)(s->b.kind_angle>>8)==3u?0xaf380:0xaf65a):0xafce2;
-    if (sp->words[4]==2u) s->routine=0xaff16;
-    else if (sp->words[4]==3u) {s->b.flags15&=(uint8_t)~1u;s->routine=0xb0396;}
-    else if (sp->words[4]==4u) {s->b.flags15|=1u;s->routine=0xb0396;}
-    else if (sp->words[4]==7u) s->routine=0xaf2ba;
-    else if (sp->words[4]==5u) {s->b.flags15&=(uint8_t)~1u;s->routine=0xaf302;}
-    else if (sp->words[4]==6u) s->routine=0xaf302;   /* 0AF25C: bset.b #0,-$5556(a6), outside the node */
-    else if (sp->words[5]&1u) {uint16_t f=0;probe_vertical(&c,0,&f);if (f&0x200u) s->routine=0xaf7f6;}   /* 0AF26A */
+    switch (W(0x76)) {                                                  /* 0AF1EE */
+    case 2: s->routine=0xaff16;break;
+    case 3: s->b.flags15&=(uint8_t)~1u;s->routine=0xb0396;break;
+    case 4: s->b.flags15|=1u;s->routine=0xb0396;break;
+    case 7: s->routine=0xaf2ba;break;
+    case 5: s->b.flags15&=(uint8_t)~1u;s->routine=0xaf302;break;
+    case 6: s->b.flags15|=1u;s->routine=0xaf302;break;                  /* 0AF25C: bset.b #0,$15(a6) */
+    default:
+        s->routine=(s->b.flags15&64u)?((uint8_t)(s->b.kind_angle>>8)==3u?0xaf380:0xaf65a):0xafce2;
+        if (W(0x78)&1u) {uint16_t f=0;probe_vertical(&c,0,&f);if (f&0x200u) s->routine=0xaf7f6;}   /* 0AF26A */
+    }
     if (c.unsupported) {*s=backup;return false;}
     return true;
 }

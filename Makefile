@@ -470,8 +470,11 @@ FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab crea
 # docs/MISION4.md "Fase 2"). RAM 10C6C0..10C6FF through neo_ga_flags_t m4.
 FAMILY_ARGS_m4props := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines bb106
 # m4flyer / m4flyer2 = the Mission 4 flyers 083C8A and 08391C (neo_m3enemy.c,
-# the family of the Mission 3 bomber): m4flyer = capture B (run4's own pad
-# from sec05_149829: nine 083C8A and the 08391C shot down in flight),
+# the family of the Mission 3 bomber): m4flyer = capture D (run4's own pad
+# from sec05_149829, roots 83c8a,8391c,a9f0c,aa37c,aa2c6 up to 152400: nine
+# 083C8A and the 08391C shot down in flight, together with the van 0A9F0C:
+# the ninth flyer lands on the van's dynamic map 0E6704; extracted with
+# --range 8391c-84c98 --range a9f0c-aa458 --hit-writes),
 # m4flyer2 = capture C (MSX_FULL_NOFIRE=150090-153000: they land, drop the
 # rider 0842A8 and crash; the trail 083B92 of 08391C). The rider's soldier
 # 0AF17E is outside the family.
@@ -479,8 +482,10 @@ FAMILY_ARGS_m4flyer := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --
 FAMILY_ARGS_m4flyer2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374 --late-creator --split-children --node-fields 7a
 # m4bin = the Mission 4 bins 033526 (script records 2DB6A2 / 2DB86E; neo_m4props.c):
 # hits, the items and the prisoner 099DD6 thrown out by the program call
-# 239C80 (the prisoner's constructor update only: neo_prisoner.c), the puffs
-# 03378A, the pieces 033864; capture A.
+# 239C80 with its whole life (neo_prisoner.c; the other prisoners of capture
+# A come along), the puffs 03378A, the pieces 033864; capture A, --range
+# 33526-33920 --range 99dcc-9a71d --range 9a97c-9aa9e (the ripples 03C62A
+# stay outside: the soldiers' are in the same capture).
 FAMILY_ARGS_m4bin := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 3378a,33864,99dd6
 # m4urn = the Mission 4 object 036C34 (five script records; neo_m4props.c): two
 # stages with their flinches, the end 23BEBE and the blast 036EA8; capture A.
@@ -491,9 +496,11 @@ FAMILY_ARGS_m4urn := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --ro
 FAMILY_ARGS_m4van := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374
 # m4van2 = the whole life of the van without its overlay (routines 0A9F0C..
 # 0AA2DF only: the wreck 0AA176, the blast 0AA2C6, 0AA1FE / 0AA252). m4van
-# (van and overlay) stops at 152048: in 152049 the blast's 0049E8 flashes
-# the van (+17) between the van's update and the overlay's 0044F6, a write
-# the family test only replays at the van's next update.
+# (van and overlay, --range a9f0c-aa458 --hit-writes) runs to the end too: in
+# 152049 the blast's 0049E8 flashes the van (+17) between the van's update
+# and the overlay's 0044F6; extract_family_fixture.py --hit-writes records
+# what 0049E8 wrote into the other nodes of the family and the test applies
+# it before the next update (FAMILY_HITW).
 FAMILY_ARGS_m4van2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers

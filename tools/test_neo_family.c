@@ -587,6 +587,17 @@ int main(void) {
     unsigned compared=0,deleted=0,left=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
+#ifdef FAMILY_HITW
+        /* What 0049E8 (0047xx..0049E7) of an earlier update wrote into the
+         * other nodes of the family (+5A.., +17 flash): the attack answers
+         * are the original's, so are their side effects, at the moment of
+         * the call (compile_family_fixture.py, extract --hit-writes). */
+        {static unsigned hw;
+         for (;hw<sizeof(CAT(FAMILY_NAME,_hitw))/sizeof(CAT(FAMILY_NAME,_hitw)[0]) && CAT(FAMILY_NAME,_hitw)[hw][0]<(int32_t)k;hw++) {
+             const int32_t *h=CAT(FAMILY_NAME,_hitw)[hw];
+             if (h[1]>=0 && actors[h[1]].active) actors[h[1]].m[h[2]]=(uint8_t)h[3];
+         }}
+#endif
 #ifdef FAMILY_FRESH_PROGRAM
         first_update[u->node]=!updated[u->node];updated[u->node]=true;
 #endif

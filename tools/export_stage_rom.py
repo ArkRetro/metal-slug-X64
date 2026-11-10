@@ -49,6 +49,23 @@ def camera_maps(rom,descriptor):
                 if l['object']==rom.u32(a+4):l['ring']=(rom.u16(a+8),rom.u16(a+10),rom.u16(a+12))==(0,0,0x20);break
         a+=n
     return out
+def list_ops(rom,descriptor):
+    a=rom.u32(descriptor)
+    for _ in range(4000):
+        op,n=rom.u16(a),rom.u16(a+2)
+        yield a,op
+        if op==8:return
+        a+=n
+def list_factors(rom,descriptor):
+    """Op 0x1C (0C86C8): the factor pairs +26/+28 each layer object is given."""
+    s16=lambda v:v-65536 if v>=32768 else v;out={}
+    for a,op in list_ops(rom,descriptor):
+        if op==0x1c:out.setdefault(rom.u32(a+4),set()).add((s16(rom.u16(a+8)),s16(rom.u16(a+10))))
+    return out
+def list_limit(rom,descriptor):
+    """Op 8 (0C855C): the list's final progress limit."""
+    for a,op in list_ops(rom,descriptor):
+        if op==8:return rom.u16(a+4)
 def map_blocks(rom,desc):
     t,c,w,h=rom.u32(desc),rom.u32(desc+4),rom.u16(desc+8),rom.u16(desc+10)
     tiles={};coll={}
@@ -199,13 +216,21 @@ def main():
                     if cols not in palettes:palettes.append(cols)
                     ram_pal[n]=palettes.index(cols)
             base=(l['progress']&~511) if l['ring'] else 0;emitted=0;uncoloured=Counter()
+            # A 32-column map of a background object loaded by op 0x18 alone (no 0C73CE picture): its 32 sprite columns
+            # hold the whole map and 0C714E clips every later load, so the picture repeats every 512 px (the observed
+            # blocks in "ring columns" above). The model repeats it up to the last x the layer shows: the list's final
+            # progress limit (op 8) times the object's x factor (op 0x1C, one pair) / 256, plus the 352 px of a view.
+            repeats=1
+            if not l['ring'] and l['object']!=0x10c72e and l['width']==32:
+                f=list_factors(rom,a.descriptor).get(l['object'],set());assert len(f)==1,('factors of a looping map',hex(l['object']),f)
+                reach=list_limit(rom,a.descriptor)*next(iter(f))[0]//256+352;repeats=max(1,-(-(reach-16*l['column'])//512))
             for (i,j),(code,attr) in sorted(l['tiles'].items()):
                 if not code&0xffff and not attr:continue
                 first,count=table_rows(l['table'],i)
                 if not first<=j<first+count:continue
                 if attr>>8 not in votes and attr>>8 not in ram_pal:uncoloured[attr>>8]+=1;continue
                 pal=votes[attr>>8].most_common(1)[0][0] if attr>>8 in votes else ram_pal[attr>>8]
-                xs=[base+16*i,base+16*i+512] if l['ring'] else [16*(l['column']+i)]
+                xs=[base+16*i,base+16*i+512] if l['ring'] else [16*(l['column']+i)+512*k for k in range(repeats)]
                 for x in xs:
                     if l['ring'] and x>=base+512+352:continue
                     cells.append(dict(layer=layer,x=x,y=y0+16*j,code=code&~mask(attr),flip=attr&3,animation_mask=mask(attr),palette=pal,observations=0));emitted+=1
@@ -228,7 +253,7 @@ def main():
                         cells.append(dict(layer=layer,x=c['x'],y=c['y'],code=c['code'],flip=c['flip'],animation_mask=c['animation_mask'],palette=c['palette'],observations=c.get('observations',1)))
             # Palette number -> colour set of this map (tools/extract_map_patches.py: the blocks of its patches).
             numbers['%06X'%l['map']]={str(n):(votes[n].most_common(1)[0][0] if n in votes else ram_pal[n]) for n in sorted(set(votes)|set(ram_pal))}
-            stats.append(dict(map='%06X'%l['map'],model_layer=layer,ring=l['ring'],ring_base=base,observed_equal=seen,rom_blocks=emitted,observed_outside_kept=kept,
+            stats.append(dict(map='%06X'%l['map'],model_layer=layer,ring=l['ring'],ring_base=base,loop_repeats=repeats,observed_equal=seen,rom_blocks=emitted,observed_outside_kept=kept,
                               palette_numbers=len(votes),palette_numbers_from_palette_ram=sorted(ram_pal),palette_numbers_with_several_colour_sets=changes,blocks_without_observed_colours=dict(uncoloured)))
             print('ROM model: map %06X layer %d: %d ROM blocks, %d observed blocks outside the map kept, %d palette numbers (%d with more than one colour set), %d blocks without colours'%(
                 l['map'],layer,emitted,kept,len(votes),len(changes),sum(uncoloured.values())))

@@ -819,6 +819,19 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             scene_render_set_layer_offset(0,true,off);
         }
         scene_render_set_layer_rise(0,own,256-(int)neo_layer_word(l->y)+8);
+        /* Mission 5 on (docs/MISION5.md): the same for the object 10D7B6
+         * (stage 016E2E: factors 0xC0 / 0 from op 0x1C; the model's layer 2
+         * while 10E8C6 has no map, layer 1 otherwise, tools/pack_mission.py
+         * rom_native_rules). Its 32-column map repeats every 512 px in the
+         * pack (tools/export_stage_rom.py). */
+        const neo_layer_t *mid=&game.world.layers[NEO_LAYER_MID];
+        unsigned ml=game.world.layers[NEO_LAYER_OBJ4].map?1u:2u;
+        bool mid_own=st && st->mission>=5u && st->rules[ml].visible_min>st->rules[ml].visible_max && mid->map;
+        for (unsigned p=1;p<3;p++) {
+            bool on=mid_own && p==ml;
+            scene_render_set_layer_offset(p,on,on?-(int)neo_layer_word(mid->x):0);
+            scene_render_set_layer_rise(p,on,256-(int)neo_layer_word(mid->y)+(p<2?8:0));
+        }
     }
     /* B26: the frame's sprite windows and layers in their SCB slot order
      * (msx_draw_order, gameplay.c): window A holds the sprites in +1E

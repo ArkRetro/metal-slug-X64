@@ -1,6 +1,7 @@
 #!/bin/sh
 # Usage: tools/run_tas_play.sh OUTPUT_DIR   (MSX_TAS_* options exported; docs/TAS.md)
 # Replays the converted TAS (tools/tas_convert.py) on MAME 0.264 from power-on
+# (MSX_TAS_SCRIPT=tas_updates.lua: by game update, docs/TAS.md)
 # with fresh cfg/nvram (as tools/run_capture_fullgame.sh), headless, and the
 # wall clock fixed at the movie's RTC InitialTime 2010-01-01T00:00:00.
 # MSX_TAS_DEBUG=1 adds the debugger (MSX_TAS_DEBUG_SCRIPT: a debugger script).
@@ -16,8 +17,10 @@ if [ "${MSX_TAS_DEBUG:-0}" = 1 ]; then debug="-debug -debugger none -debuglog -d
 # The movie's RTC: MAME's wall clock fixed at InitialTime (MSX_FIXED_TIME).
 shim=${MSX_TAS_SHIM:-/home/user/captures-tas/fixed_time.so}
 [ -f "$shim" ] || gcc -shared -fPIC -O2 -o "$shim" "$here/mame/fixed_time.c" -ldl
+# MSX_MAME: another MAME binary (docs/TAS.md: 0.251 for the TAS); MSX_MAME_LIBS: its libraries.
+if [ -n "${MSX_MAME_LIBS:-}" ]; then export LD_LIBRARY_PATH="$MSX_MAME_LIBS${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"; fi
 cd "$out"
-TZ=UTC LD_PRELOAD=$shim MSX_FIXED_TIME=${MSX_FIXED_TIME:-1262304000} timeout ${MSX_TIMEOUT:-7200} /usr/games/mame mslugx -rompath "$ROMS" -bios euro \
+TZ=UTC LD_PRELOAD=$shim MSX_FIXED_TIME=${MSX_FIXED_TIME:-1262304000} timeout ${MSX_TIMEOUT:-7200} "${MSX_MAME:-/usr/games/mame}" mslugx ${MSX_MAME_ARGS:-} -rompath "$ROMS" -bios euro \
   -video none -sound none $debug -skip_gameinfo -nothrottle -autoboot_delay 0 -joystick_contradictory \
   -autoboot_script "$here/${MSX_TAS_SCRIPT:-tas_play.lua}" \
   -state_directory "${MSX_TAS_STATES:-$out/states}" -cfg_directory "$out/cfg" -nvram_directory "$out/nvram" > "$out/mame.log" 2>&1

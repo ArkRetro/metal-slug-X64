@@ -599,6 +599,14 @@ emu.register_frame_done(function()
  in_lua=true
  frame=frame+1
  if load_name and frame==1 then machine:load(load_name);frame=tonumber(os.getenv('MSX_FULL_LOAD_FRAME'));last_section=-3 end
+ -- MSX_FULL_LOAD_SECTION=1 (a state sec<NN>_<frame> of MSX_FULL_SAVE, taken on the frame its section started):
+ -- the plan's own counters as the saving run had them there, so the replay presses what that run pressed:
+ -- section_start = the load frame (the reference weapon write at +300) and MSX_FULL_LOAD_BLOCKED = the
+ -- count of frames with the player's x unchanged (the jump of a blocked `run` plan).
+ -- (The state is in memory from the callback after the one that asked for it.)
+ if load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1 and os.getenv('MSX_FULL_LOAD_SECTION')=='1' then
+  blocked=tonumber(os.getenv('MSX_FULL_LOAD_BLOCKED') or '0');last_px=cpu:read_i16(0x1014ec)
+ end
  if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 or (load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1) then probes() end end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
  if frame>=1550 and frame<=1700 then button('P1 A',1) end
@@ -654,6 +662,7 @@ emu.register_frame_done(function()
    if (sec==20 or sec==21) and seen_ending and last_frame>frame+600 then last_frame=frame+600 end
    if sec==22 then seen_ending=true end
    last_section=sec;section_start=frame
+   if load_name and os.getenv('MSX_FULL_LOAD_SECTION')=='1' and frame<=tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+3 then section_start=tonumber(os.getenv('MSX_FULL_LOAD_FRAME')) end
    -- Iteration aid only (MSX_FULL_SAVE=1): a MAME state per section start.
    if os.getenv('MSX_FULL_SAVE')=='1' and sec>=0 and sec<30 and frame>(tonumber(os.getenv('MSX_FULL_LOAD_FRAME') or '0'))+10 then machine:save(string.format('sec%02d_%d',sec,frame)) end
   end

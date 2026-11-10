@@ -34,10 +34,11 @@ arr('int16_t','soldier_throw_attack',t['throw_attack']['values'])
 L.append('enum { MISSION1_SCRIPT_BASE=%s, MISSION1_SCRIPT_END=%s, MISSION1_REGION_END=%s };'%(t['mission_script']['rom'],t['mission_script']['end'],t['mission_script']['region_end']))
 # The spawn table ROM 0197DC is shared by every mission: Mission 1's
 # entries come from the ROM dump; Missions 2 and 3 from their decoded
-# scripts (data/mission2_script.json, data/mission3_script.json, data/mission4_script.json). Bit 31 (not counted in the group) is
+# scripts (data/mission2_script.json, data/mission3_script.json, data/mission4_script.json, data/mission5_script.json). Bit 31 (not counted in the group) is
 # only read for groups < 9 (neo_script.c), so it is rebuilt from
 # group_counted there and left 0 otherwise.
 spawn=dict(t['spawn_table']['entries'])
+bit_unknown=set()
 def spawn_records(statements):
     for st in statements:
         if st.get('name')=='spawn':yield st
@@ -46,14 +47,19 @@ def spawn_records(statements):
             if isinstance(v,dict):v=[v]
             if isinstance(v,list):yield from spawn_records(v)
 # Mission 3 too (docs/MISION3.md: 8 bytes per offset, ~1 KB of .rodata).
-for sec in [sec for n in (2,3,4) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]:
+for sec in [sec for n in (2,3,4,5) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]:
     for st in spawn_records(sec['statements']):
         off=hex(int(st['table_offset'],16));ctor=int(st['constructor'],16)
         bit=(0 if st['group_counted'] else 1<<31) if st['group']<9 else None
         if off in spawn:
             old=int(spawn[off],16)
-            assert old&0xffffff==ctor and (bit is None or old&(1<<31)==bit),(off,spawn[off],st['constructor'])
-        else:spawn[off]='0x%08X'%(ctor|(bit or 0))
+            assert old&0xffffff==ctor and (bit is None or off in bit_unknown or old&(1<<31)==bit),(off,spawn[off],st['constructor'])
+            # An entry first met in a group >= 9 record (bit not read there) takes the bit of the first group < 9 record
+            # (Mission 5: offset 0x2FC, the Slugnoid 09692C, group 9 in Mission 2 and group 6 in the sewer; ROM 80 09 69 2C).
+            if bit is not None and off in bit_unknown:spawn[off]='0x%08X'%(ctor|bit);bit_unknown.discard(off)
+        else:
+            spawn[off]='0x%08X'%(ctor|(bit or 0))
+            if bit is None:bit_unknown.add(off)
 L.append('static const uint32_t mission1_spawn_table[][2]={'+','.join('{%s,%s}'%(k,v) for k,v in spawn.items())+'};')
 L.append('static const uint8_t soldier_hit_matrix[8][20]={'+','.join('{%s}'%','.join(map(str,r)) for r in t['hit_matrix']['rows'])+'};')
 L.append('static inline const int16_t *soldier_hurtbox(uint32_t tag) {')

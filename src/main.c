@@ -89,7 +89,7 @@ static void lifebar_choice(bool z) {
  * own path; the remaining Mission 1 movies are skipped then. */
 static bool mselect_skip;
 static bool mselect_combo(joypad_buttons_t b) { return b.r && (b.l || b.z); }
-static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1},{4,1}};
+static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1},{4,1},{5,1},{5,2},{5,3}};
 #define MSELECT_ITEMS (sizeof(mselect_items)/sizeof(mselect_items[0]))
 static bool mission_select_menu(void) {
     static unsigned cursor;bool lifebar=false,first=true;joypad_buttons_t was={0};
@@ -118,13 +118,13 @@ static bool mission_select_menu(void) {
         graphics_set_color(white,black);graphics_draw_text(surface,96,40,"MISSION SELECT");
         for (unsigned i=0;i<MSELECT_ITEMS;i++) {
             char line[32];unsigned m=mselect_items[i].mission;
-            bool stages=m==2;
+            bool stages=m==2 || m==5;   /* the missions with more than one stage record ported */
             snprintf(line,sizeof(line),"%c MISSION %u%s",i==cursor?'>':' ',m,stages?(mselect_items[i].stage==1?" STAGE 1":mselect_items[i].stage==2?" STAGE 2":" STAGE 3"):"");
-            graphics_set_color(i==cursor?yellow:white,black);graphics_draw_text(surface,88,72+(int)i*14,line);
+            graphics_set_color(i==cursor?yellow:white,black);graphics_draw_text(surface,88,60+(int)i*12,line);
         }
         graphics_set_color(white,black);
-        graphics_draw_text(surface,64,160,lifebar?"Z  LIFE BAR: ON":"Z  LIFE BAR: OFF");
-        graphics_draw_text(surface,64,184,"A START   B BACK");
+        graphics_draw_text(surface,64,176,lifebar?"Z  LIFE BAR: ON":"Z  LIFE BAR: OFF");
+        graphics_draw_text(surface,64,196,"A START   B BACK");
         display_show(surface);msx_frames_present();
         spare_time();
     }

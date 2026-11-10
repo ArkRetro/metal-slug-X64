@@ -143,6 +143,12 @@ static const char *music_name(uint16_t word) {
      * (MAME run4: 157772). */
     case 0x0025: return "music_mission4";
     case 0x002c: return "music_mission4_boss";
+    /* Mission 5: one word per stage descriptor (016E2E / 016E3E / 016E4E
+     * +C; MAME run4 latch 00 26 at 247663, 00 2A at 252828, 00 2B at 274388,
+     * no reset 03 between the stages). */
+    case 0x0026: return "music_mission5";
+    case 0x002a: return "music_mission5_stage2";
+    case 0x002b: return "music_mission5_stage3";
     default: return NULL;
     }
 }

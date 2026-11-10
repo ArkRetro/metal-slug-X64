@@ -18,6 +18,13 @@
 #      Every boss/mid tranche loads the same state, so all tranches belong to one
 #      (deterministic) run; with a fresh Lua the input plan counters restart at the
 #      load, so that run is not run4 (frames are close, see the doc).
+#  tools/capture_m3_boss.sh ridestates OUT
+#      From at_132300 with the ride plan 'boss' (capture_fullgame.lua: mount the SV-001
+#      093C9A, drive and fire to the arena, then hold the tank at screen x 96 without
+#      firing): saves prog_140352 (camera progress 6200; the body is born in 140552).
+#  tools/capture_m3_boss.sh ride OUT [FROM LAST]     (default 140360 142500)
+#      Load prog_140352 with the same plan and write the family trace: the boss with a
+#      rider (vehicle tables of 04DA38, order 6 of the pod 04BA94.., missile 04C220; G15).
 #      MSX_M3BOSS_DUMPS=FRAME: vram/ram/palette dumps every 30 frames from FRAME (sprite export).
 #      MSX_M3BOSS_FILTER=1: boss-trace.txt is a FIFO filtered to U/V/B/X/A/F lines
 #      (research: a few MB instead of ~60 MB per 1000 frames; not usable for fixtures,
@@ -33,11 +40,16 @@ case $mode in
 states)
   export MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_SAVE_AT=132300,144400 MSX_FULL_LAST=144410
   exec sh "$here/run_capture_fullgame.sh" "$OUT";;
+ridestates)
+  export MSX_FULL_LOAD=at_132300 MSX_FULL_LOAD_FRAME=132300 MSX_FULL_RIDE=boss MSX_FULL_RIDE_RANGE=93afa-94e2a MSX_FULL_SAVE_PROGRESS=6200 MSX_FULL_LAST=140400
+  exec sh "$here/run_capture_fullgame.sh" "$OUT";;
+ride) export MSX_FULL_LOAD=prog_140352 MSX_FULL_LOAD_FRAME=140352 MSX_FULL_RIDE=boss MSX_FULL_RIDE_RANGE=93afa-94e2a MSX_FULL_FAMILY_ROOTS=4a2c2 MSX_FULL_FAMILY_RANGE=4a2c2-4e577
+  FROM=${3:-140360};LAST=${4:-142500};;
 boss) export MSX_FULL_LOAD=at_144400 MSX_FULL_LOAD_FRAME=144400 MSX_FULL_FAMILY_ROOTS=4a2c2 MSX_FULL_FAMILY_RANGE=4a2c2-4e577
   FROM=${3:-144410};LAST=${4:-149300};;
 mid) export MSX_FULL_LOAD=sec04_117966 MSX_FULL_LOAD_FRAME=117966 MSX_FULL_FAMILY_ROOTS=a4a94 MSX_FULL_FAMILY_RANGE=a4a94-a6ce9
   FROM=${3:-132310};LAST=${4:-141100};;
-*) echo "usage: $0 states|boss|mid OUT [FROM LAST]" >&2;exit 2;;
+*) echo "usage: $0 states|ridestates|boss|mid|ride OUT [FROM LAST]" >&2;exit 2;;
 esac
 export MSX_FULL_FAMILY_FROM=$FROM MSX_FULL_LAST=$LAST MSX_FULL_DEBUG=1 MSX_FULL_NO_PROBES=1
 A="bpset 410e,1,{printf \"ALLOC f=%d n=%08X r=%08X c=%08X cr=%08X ret=%08X o=%08X\n\",temp9,a0,d@(sp),a6,d@a6,d@(sp+4),d@(sp+8);g}"

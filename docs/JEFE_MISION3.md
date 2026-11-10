@@ -163,7 +163,9 @@ trampilla y la espera del mortero (abajo).
 | 148487 / 148513 | se agacha / ataca | 4 / **0** ×2 | 200 |
 | 148577 | vida 0 | → `04A9D4` | 0 |
 
-Órdenes 6 y 8 no salieron en esta partida (**sin comprobar** en ejecución).
+Órdenes 6 y 8 no salieron en esta partida. La 6 sale con un jugador montado
+(tablas «en vehículo»): captura `ride` (abajo, «Orden 6»). La 8 no está en
+ninguna tabla de la partida de 1 jugador.
 
 ## Ataques
 
@@ -180,9 +182,9 @@ Filas de ataque `E0F4A..E0F8A` (para `0049E8`): rectángulo (x, y, ancho,
 alto), luego 7 (6 la del misil), 0, 0x10, FFFF (campos sin interpretar). El
 cuerpo y las piezas **no llaman a `0049E8`**: no hay daño por contacto en su
 código (**sin comprobar** si el núcleo del jugador lo hace por el mapa
-dinámico `0E0D00`). Alternativas en la ROM que no se ejecutaron: `04C952`
-(bola recta, `2C20B6`/`2C20D0`), `04E140` (`04C220`), la orden 6 de la
-lanzadera (`04BA94`).
+dinámico `0E0D00`). `04C952` (bola recta, `2C20B6`/`2C20D0`) y `04E1E6` (piezas `04C2F6/04C30A`)
+no tienen ninguna referencia en la ROM (código muerto); la orden 6 de la
+lanzadera (`04BA94`) y su misil `04C220` sí: ver «Orden 6».
 
 ## Vida y daño
 
@@ -413,7 +415,7 @@ grabados, como en la M2.
   (`test_mission3_ares.py --hop --stage-seconds 150`): PASS, caché de 212
   ranuras (sin llegar a la arena del jefe).
 
-- **Piezas 2 y 3 (lanzallamas `04B52C`, órdenes 0/1; lanzadera `04BA16`, orden 2): hechas en el anfitrión.** Familias `m3boss1` (144410..145024 de `b1`: 3421 actualizaciones, 74 nodos) y `m3boss3` (146600..147176 de `spr`: 4299, 117 nodos, 3 misiles al jugador) iguales a MAME; `--ram 10c33c-10c33e` (con `-10c33d` el banco no leía `10C33C`). La orden 6 de la lanzadera y `04C220` siguen como paradas.
+- **Piezas 2 y 3 (lanzallamas `04B52C`, órdenes 0/1; lanzadera `04BA16`, orden 2): hechas en el anfitrión.** Familias `m3boss1` (144410..145024 de `b1`: 3421 actualizaciones, 74 nodos) y `m3boss3` (146600..147176 de `spr`: 4299, 117 nodos, 3 misiles al jugador) iguales a MAME; `--ram 10c33c-10c33e` (con `-10c33d` el banco no leía `10C33C`). La orden 6 de la lanzadera y `04C220`: ver «Orden 6» (familia `m3boss6`).
 - **Sin comprobar:** el aterrizaje de la bola (`0143E4` ve el suelo de `10C72E`, mapa `0B8550`, con la palabra de tipo 0x4000; el banco no lo da) y el charco `04CCE4`: los tramos acaban antes (145025, 147177). Sprites: raíces `245BA0..24683A` (con `1082CA..108322` y `108E5A`) y paletas 0xBB/0xBD/0x113; `mission3.pack` 784 trozos.
 
 - **Piezas 4–7 (trampilla `04C4D2`, mortero `04CF92`, muerte `04A9D4`, fin de misión): hechas en el anfitrión.** Familias de `spr` con `--resume`, iguales a MAME: `m3boss2` (146200..146560: trampilla, orden 7, 7 disparos `04C7B6` y 16 `04C840` por `04CE78/04CE98`, su suelo `04C69E`; 2527 act., 52 nodos), `m3boss4` (145160..145600: mortero, orden 5, 4 andanadas de 4 bombas `04D1DA`, registro `004C24` y `04D608`; 2858 act., 39 nodos; en 145100 el tramo choca con el aterrizaje sin comprobar de la bola) y `m3boss5` (148541..149200: muerte, explosiones `01C71E`, listas `01DA40`, `04E558/04E568`, `+9D = 7F`, patas `04B01E/04B208`, arrastre, `01DB74`, `018F92`, `018F40` y borrado en 149169; 2550 act., 211 nodos). `m3boss5` se extrae con `--range 1d86c-1d93b --range 1d93d-1da3f` en vez de `1d86c-1da3f`: los restos `01D3D2` (fuera de la familia) acaban en el humo `01D93C`, y con los restos dentro el aterrizaje (`+6D = 40`, el mismo suelo sin comprobar de la bola) falla en 149165. Tramos: `awk` de `spr/boss-trace.txt` desde un fotograma impar (el cuerpo antes que las piezas) y los `--range/--ram` de arriba. Datos: `04D1B2` (velocidades de las bombas) y `04AD0C` en `region_rom.json`; programas `246694`, `2465DA`, `2464BA` (raíces de programas y sprites; `mission3.pack` 798 trozos). Fin de misión: `018F92` pone `10C300` y `018F40` `stage_done`; `gameplay.c` (B24) va al fin de misión y `01891E` a la Misión 4, cuyo paquete no existe: `scene_mission_load` registra «mission pack /mission4.pack missing» y `actor.c` hace la parada explícita («mission 4 not loaded (explicit stop): Mission 1 restarts»).
@@ -436,3 +438,45 @@ grabados, como en la M2.
 - Aeronave: 8615 fotogramas, la superposición `10E8C6`, 286 balas y 235
   explosiones encadenadas; con el plan de entradas reiniciado la pelea es
   otra (por eso `mid` repite desde `sec04_117966`).
+
+## Orden 6 (jugador montado; G15, B64)
+
+Con un jugador en un vehículo (`0AAA88 ≠ 0`; en la M3, el SV-001 `093C9A`
+o `0AC866` de 5099/5160, justo antes del jefe) `04DA38` elige de
+`2C1556`/`2C15A4` y `04DC5C` de `2C168E`/`2C16DC`: la orden 6 sale en 3 de
+8 casillas (fase 1). La orden 7 se cancela (`04DD86`). En el port era una
+parada explícita en `04BAB2`: la lanzadera se borraba con su árbol y el
+`+9E` del cuerpo quedaba en `7F` para siempre (nadie lo limpia): el jefe
+no volvía a atacar. Es el informe de MiSTer (ROM 44): la referencia con
+piloto va a pie y no lo veía.
+
+- `04BAB2`: `+9A = 2`; desde el punto de la pose (`E0F9A[+98]`), ángulo
+  `01B12E` al jugador de `01B04A`: `+9C = 8` si es ≤ 0x80, si no 0. Tras
+  cerrar (`04BE26`) la lanzadera vuelve a `04BA94` con `+9E = FF`: entonces
+  `+9C = 2` (`04BB14`) y no abre. Gira (`04D768`) cada actualización.
+- `04BB88/04BBAA`: abre (`245EFC`, `+26` de 1 a 0x100 doblando), 10A1.
+- `04BBFC/04BC68`: espera `+80` = `2C230E` (fase 2 `2C2340`) y `+82` =
+  `2C243A`/`2C2454` barridos.
+- `04BCA2`: patrón `0029F2(8)` de `2C25E2`/`2C2602` (8 punteros a bytes
+  `2C2622..2C2663`); `04BCD2/04BD32`: por cada barrido dos destinos `+9B`
+  (bytes `2·+84` y `2·+84+1`) con `+9C` alternando 0/8; programa `245FEC`
+  si `+9B = +9A`, si no `245DE6`, que empieza con `CALL 04E140`: misil
+  `04C220` (como `04E154`: punto y ángulo de `04E19E[+9A]`, `+9E = FF`,
+  1062), paleta 202, programa `246794`, velocidad `2C22A6`/`2C22C0` en
+  línea recta por `+A2` (`04C298`, como `04C194`).
+- `04BF66`: una andanada de la orden 2 (`+80 = 0x10`, `+82 = 1`), cierre
+  `04BE04` y vuelta.
+
+Captura: `tools/capture_m3_boss.sh ridestates OUT` (desde `at_132300`, plan
+`boss` de `capture_fullgame.lua`: sube al SV-001, avanza disparando, y en la
+arena espera en x 96 sin disparar; guarda `prog_140352`) y
+`capture_m3_boss.sh ride OUT 140360 142500` (traza de la familia, el cuerpo
+nace en 140552). En 140352..152000 MAME usa la orden 6 al menos 18 veces y
+el jefe no deja de atacar. Familia `m3boss6`: tramo 140360..141879 (la bola
+aterriza en 141895 en el suelo sin comprobar), 99 nodos, 8898
+actualizaciones, 16 misiles `04C220`, igual a MAME. Datos: `2C25E0..2C2663`
+en `region_rom.json`, programa `246794` en `soldier_programs.json` (grupo
+`m3`). Los descriptores `1C7270..1C7298` y la paleta 202 ya estaban en los
+export: los volcados 141420..141690 (con los misiles) dan 0 píxeles
+distintos.
+

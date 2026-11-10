@@ -35,7 +35,11 @@
  *   04B01E/04B208 fall, torso and pieces deleted), the drag left 04AB10 and
  *   01DB74; 018F92 at the start and 018F40 out of view (piece 7: the
  *   mission end of gameplay.c, B24).
- * Explicit stops: order 6 of the pod (04BAB2, 04BB88..04BF66, 04C220).
+ * Order 6 of the pod (G15; the vehicle tables of 04DA38/04DC5C): aim 04BAB2
+ *   to the player's side, open 04BB88, sweeps 04BCA2..04BD32 (patterns
+ *   2C25E2/2C2602) with the missiles 04C220 (CALL 04E140 of 245DE6), then
+ *   one volley of order 2 (04BF66). 04E1E6 (the pieces 04C2F6/04C30A) has
+ *   no caller in the ROM.
  * The cartridge check before some deletions (10F00A/10F00C) is not
  * reproduced (as in neo_m3mid.c). */
 #define B(o) ga_b(a,(o))
@@ -292,8 +296,8 @@ static bool call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t rou
         ga_place_at(b,a,e,S16(rw(e,t)),S16(rw(e,t+2)));
         return !e->unsupported;
     }
-    case 0x4e154: {                                                    /* 04E154: one missile 04C194 */
-        neo_gactor_t *m=child(a,e,0x4c194,0x1c);
+    case 0x4e140: case 0x4e154: {                                      /* 04E140 / 04E154: one missile 04C220 / 04C194 */
+        neo_gactor_t *m=child(a,e,routine==0x4e140?0x4c220:0x4c194,0x1c);
         if (m) {
             ga_sb(m,0x9a,B(0x9a));
             uint32_t t=0x4e19eu+(uint32_t)B(0x9a)*8u;
@@ -307,7 +311,6 @@ static bool call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t rou
         if (s) ga_place_at(s,a,e,routine==0x4ce78?-0x38:-0x34,-0x44);
         return !e->unsupported;
     }
-    case 0x4e140: ga_fail(e,0x4e140);return false;                     /* the missile 04C220 (order 6): not seen */
     case 0x4e520: case 0x4e53c: {
         neo_gactor_t *d=child(a,e,routine==0x4e520?0x4ad12:0x4ad94,0x2a);
         if (d) ga_place_at(d,a,e,routine==0x4e520?0x40:-0x38,routine==0x4e520?0x10:0x30);
@@ -909,6 +912,7 @@ static ga_result_t pod_attack(neo_gactor_t *a,neo_genv_t *e) {
     }
         /* fall through */
     case 0x4c060:
+    k4c060:
         START(0x245efc);SW(0x84,0);SL(0,0x4c07a);
         /* fall through */
     case 0x4c07a:
@@ -954,21 +958,78 @@ static ga_result_t pod_attack(neo_gactor_t *a,neo_genv_t *e) {
         break;
     case 0x4ba94:
         SW(0x26,0x100);START(0x245d92);
-        if (!B(0x9e)) STOP(0x4bab2);                                   /* order 6: the aim at the player (not seen) */
-        SB(0x9c,2);SB(0x14,B(0x1a));SW(0x88,0);SL(0,0x4bb2c);
+        if (!B(0x9e)) {                                                /* 04BAB2 (order 6): 9 or 0 by the side of a player */
+            unsigned p;SB(0x9a,2);
+            int16_t x,y;pose_point(a,e,&x,&y);
+            k1b04a(e,&p);
+            const uint8_t *n=player(e,p);if (!n) return GA_UNSUPPORTED;
+            uint16_t an=neo_angle(S16((uint16_t)(n[0x3c]<<8|n[0x3d])-(uint16_t)x),S16((uint16_t)(n[0x40]<<8|n[0x41])-(uint16_t)y))&0xffu;   /* 01B12E */
+            SB(0x9c,S16(an)>0x80?0:8);
+        } else SB(0x9c,2);
+        SB(0x14,B(0x1a));SW(0x88,0);SL(0,0x4bb2c);
         /* fall through */
     case 0x4bb2c:
         ga_project(a,e);
         if (!W(0x88)) {
             SW(0x88,0);
-            if (k4d768(a)) {
-                if (!B(0x9e)) STOP(0x4bb88);                           /* order 6 */
-                SL(0,0x4be74);
-            }
+            if (k4d768(a)) SL(0,B(0x9e)?0x4be74:0x4bb88);
         } else SW(0x88,W(0x88)-1u);
         if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
         if (k4d74a(a,e)) {SB(0x61,0xff);SB(0x9e,0xff);SB(0x9c,2);}
         break;
+    case 0x4bb88:                                                      /* order 6: open (245EFC, +26 from 1 to 0x100) */
+        START(0x245efc);SW(0x26,1);SW(0x88,0);SL(0,0x4bbaa);
+        /* fall through */
+    case 0x4bbaa:
+        ga_project(a,e);
+        if (!W(0x88)) {
+            if (W(0x26)==0x100) {sound(e,0x10a1);SL(0,0x4bbfc);}
+            else {SW(0x88,0);SW(0x26,W(0x26)<<1);}
+        } else SW(0x88,W(0x88)-1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) SB(0x61,0xff);
+        break;
+    case 0x4bbfc: {                                                    /* the wait +80 and the sweeps +82 */
+        if (!(g=grand(a,e))) return GA_UNSUPPORTED;
+        bool two=ga_b(g,0xa4)!=0;
+        SB(0xa4,two?1:0);SW(0x80,rank(a,e,two?0x2c2340u:0x2c230eu));SW(0x82,rank(a,e,two?0x2c2454u:0x2c243au));
+        SW(0x84,0);SL(0,0x4bc68);
+    }
+        /* fall through */
+    case 0x4bc68:
+        ga_project(a,e);
+        if (S16(W(0x84))>=S16(W(0x80))) SL(0,0x4bca2);
+        else SW(0x84,W(0x84)+1u);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4be04);}
+        break;
+    case 0x4bca2: {                                                    /* one of 8 sweep patterns (2C25E2 / 2C2602) */
+        SW(0x84,0);
+        uint16_t d0=(uint16_t)(ga_rand_range(e,8)<<2);
+        SL(0x92,rl(e,(B(0xa4)?0x2c2602u:0x2c25e2u)+d0));
+    }
+        /* fall through */
+    case 0x4bcd2:
+        SB(0x9b,rb(e,L(0x92)+(uint32_t)(uint16_t)(W(0x84)*2u)));
+        START(B(0x9b)==B(0x9a)?0x245fec:0x245de6);                     /* 245DE6: CALL 04E140 */
+        SB(0x9c,B(0x9c)?0:8);SB(0x9f,0);SL(0,0x4bd32);
+        /* fall through */
+    case 0x4bd32:
+        ga_project(a,e);
+        if (!k4d9de(a,e,&f)) return GA_UNSUPPORTED;
+        if (f) {
+            SB(0x9f,B(0x9f)^1u);
+            if (k4d768(a)) {
+                if (!BIT(0x9f,1)) {SET(0x9f,1);SB(0x9c,B(0x9c)?0:8);SB(0x9b,rb(e,L(0x92)+(uint32_t)(uint16_t)(W(0x84)*2u)+1u));}
+                else {SW(0x84,W(0x84)+1u);SL(0,S16(W(0x84))>=S16(W(0x82))?0x4bf66:0x4bcd2);}
+            }
+            START(B(0x9b)==B(0x9a)?0x245fec:0x245de6);
+        }
+        if (k4d74a(a,e)) {SB(0x61,0xff);SL(0,0x4be04);}
+        break;
+    case 0x4bf66:                                                      /* then one volley of order 2 */
+        SW(0x88,4);SW(0x80,0x10);SW(0x82,1);SW(0x86,0);
+        goto k4c060;
     case 0x4be74:
         START(0x2461a2);SB(0x14,B(0x19));sound(e,0x1075);SW(0x26,open_speed(a,e));SL(0,0x4bebc);
         /* fall through */
@@ -978,7 +1039,7 @@ static ga_result_t pod_attack(neo_gactor_t *a,neo_genv_t *e) {
         if (f) {if (!(g=grand(a,e))) return GA_UNSUPPORTED;ga_sb(g,0x9e,0);SL(0,0x4b97e);}
         if (k4d74a(a,e)) SB(0x61,0xff);
         break;
-    default: STOP(L(0));                                               /* the order-6 states 04BB88..04BF66 */
+    default: STOP(L(0));
     }
     return e->unsupported?GA_UNSUPPORTED:GA_MORE;
 }
@@ -996,8 +1057,15 @@ static ga_result_t missile_tick(neo_gactor_t *a,neo_genv_t *e) {
         SL(0x30,vx);SL(0x34,vy);SL(0,0x4c298);
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     }
+    case 0x4c220: {                                                    /* order 6: palette 202, program 246794 */
+        SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SB(0x1d,0);ga_palette(a,0x202);START(0x246794);
+        uint16_t v=rank(a,e,ga_b(c,0xa4)?0x2c22c0u:0x2c22a6u);
+        uint32_t vx,vy;ga_polar((uint32_t)(int32_t)S16(v)<<8,B(0xa2),&vx,&vy);
+        SL(0x30,vx);SL(0x34,vy);SL(0,0x4c298);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     case 0x4c298: break;
-    default: STOP(L(0));                                               /* 04C220 (order 6) */
+    default: STOP(L(0));
     }
     ga_move(a,e);
     if (!step(a,e,call,&f)) return GA_UNSUPPORTED;

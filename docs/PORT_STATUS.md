@@ -164,6 +164,10 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   basura (todos los botones, Start mantenida y suelta): el estado del juego
   es idéntico byte a byte al final, igual tras cada fotograma que corre
   (con sus aristas) y no cambia durante cada bloque.
+- ares (`tools/test_pause_ares.py`, cartucho normal): Start pausa, la imagen
+  queda quieta 3 s con Derecha/A/B pulsados y sin registro de simulación,
+  Start reanuda y el juego sigue; R reinicia desde la pausa. Una Start
+  pulsada justo tras el traspaso de la película ya es la pausa.
 
 ## Menú de pruebas (no arcade)
 

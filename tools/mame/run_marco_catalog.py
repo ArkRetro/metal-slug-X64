@@ -77,9 +77,12 @@ def main():
  if a.motion_trace:
   env['MSX_MOTION_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
-  server=subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
+  # MSX_DISPLAY=:N: an X server already running (one shared display per agent).
+  shared=os.environ.get('MSX_DISPLAY')
+  server=None if shared else subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:
-   number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
+   if shared:env['DISPLAY']=shared
+   else:number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
    cmd=[MAME,'mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]
    (out/'run-command.json').write_text(json.dumps(cmd,indent=2)+'\n')
    with (out/'mame.log').open('w') as log:subprocess.run(cmd,cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=int(os.environ.get('MSX_CATALOG_TIMEOUT','480')))
@@ -88,5 +91,6 @@ def main():
    sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
    (out/'capture.json').write_text(json.dumps(dict(status='CAPTURED',frames=last-a.first+1,script_sha256=sha(script),plan_sha256=sha(out/'plan.json'),program_fixed_sha256=sha(out/'program-fixed.bin'),program_bank_sha256=sha(out/'program-bank.bin')),indent=2)+'\n')
    print('CAPTURED',last-a.first+1,'frames /',len(rows),'input conditions')
-  finally:server.terminate();server.wait(timeout=8)
+  finally:
+   if server:server.terminate();server.wait(timeout=8)
 if __name__=='__main__':main()

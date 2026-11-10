@@ -464,6 +464,14 @@ Constructores del guion que `run4` no creó nunca (solo en ramas no ejecutadas):
   `0B6ED2` en 274222 (cámara 1608: la salida de etapa que ya usa la M2, `neo_goarrow.c`). Los barridos `03AED8` /
   `03AEF0` del actor de misión son nativos (`neo_wipe.c`).
 
+## Fase 2: portados (11-XI)
+
+Nativos nuevos (`src/neo_m5props.c`, familias de `make check` iguales a MAME): verjas `0BC296`/`0BC3A6`
+(`m5gate`), goteos `08346E`/`0834F4` (`m5drip`), decoración `0BC4F4`/`0BC4BA` (`m5deco`), `0BBE5E`/`0BBED0` y el
+fin de la calle `0BBE16` (`m5street`). Siguiente parada del guion: calle `09624E`/`050542` (`2DCBAE`..),
+metro `0BC1E6` (`2DDB5E`), alcantarilla `08996A` (`2DEA8C`; familia `089948`/`08995A`/`08996A` con `08A264`,
+que lee el límite 10C700 de las verjas).
+
 ## Plan de la fase 2
 
 1. Los tres registros donde se para hoy el guion: `2DCB42` → `0BBE5E` (calle, cámara 0; 2 creaciones), `2DDB5E` →

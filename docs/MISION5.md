@@ -266,6 +266,51 @@ Peticiones `0120F8`: 27 palabras / 648 peticiones (calle), 46 / 1971
 `1097`×105, `1098`×4, `10D0`×17, `10D6`×8, `10F1`×13, `1144`×24. Sin
 renderizar (pendiente 6).
 
+## Fase 2 (11-XI, agente B, rama `work-m5`)
+
+Capturas de familia (MAME 0.264, réplica de `run4`, `MSX_FULL_FAMILY_ROOTS`, `MSX_FULL_VRAM_TRACE=1`;
+guiones `captures-m5/fam/runG.sh` y `runS.sh`, que no van a git): `fam/G` (verjas, 274388..276000), `fam/D`
+(goteos, ..275600), `fam/E` (decoración de la alcantarilla, ..275100), `fam/S` (calle, 247662..252800, volcados
+desde 247800, después del fundido).
+
+**Las verjas `1F` de la alcantarilla (pendiente 2).** Lo que retenía a Marco en MAME son las celdas: `1F` es
+grupo 0, forma F con el bit 4, y con 10C008 = FF (el barrido del jugador) la forma F es pared (`0129EC`/`012AD4`).
+El barrido nativo ya lo hacía; el fallo era otro: **Marco empezaba la alcantarilla en el techo**. La colocación
+de `msx_game_begin_stage` (el suelo más alto del borde izquierdo, una búsqueda del port) lo ponía sobre la celda
+`0D` del techo (y 216), por encima de las paredes. Traducido de la ROM, **entrada de clase 3** (`0C1260` →
+`0C14E6`, registros `2D6036` y `2D6040`): `0196E8` pone al jugador en (x, y) del registro respecto a la raíz,
+`0C14E6` en (0, +40) absoluto y `01473A` (`0128E8` + `0146EE`: 013DB2 hacia abajo 256 px, 10C008 = FF) lo baja
+al suelo; una forma 13 (techo) no para una búsqueda hacia abajo. MAME (sonda en `1014EC`, 274581): (0x68, 0x80)
+de la raíz, (0, 0x180) absoluto y (0, 0x30) de `10C72E`. Nativo: `msx_game_stage_entry_walk` (`gameplay.c`)
+con `neo_kernel_floor`: y 48, el mismo valor; ahora Marco se para en x 791 ante la primera verja.
+
+**Verjas `0BC296` / `0BC3A6`** (`src/neo_m5props.c`, familia **`m5gate`: 56 nodos, 2125 actualizaciones
+iguales a MAME**, 5 sellos en el anillo, 10C700 comparado): la verja 0 (x 120, 3 golpes, el muro `0BBB28` por
+`0C88B0` al nacer y `0BBBE4` al morir) y las tres de `0BC3A6` (x 320/520/720, 5 golpes, `0BBBE4` por
+`0BC38E` → **`0C8A3C`**, nuevo: `neo_collision_stamp_cells`, sin máscara ni ventana; callback `stamp_cells`),
+restos `0BBD78`/`0BBD8A` (`01DA40`), sonidos 1027/102D, **10C700 = +3C** en cada actualización (`0BC542`, el
+límite de los soldados `08A654`) y 0x200 al morir (`0BC550`; también la llamada de la cabeza de la lista
+`0BBA24`, ahora consumida en `neo_world.c`).
+
+**Goteos `08346E`** (familia **`m5drip`: 79 nodos, 3732 actualizaciones**): periodo por azar `083674`, gota
+`0834F4` tras el actor de guion (`00411C`, D0 = 2A), caída `0143DC`, salpicadura `281EA2` con `01AD52`.
+**Decoración** `0BC4F4`/`0BC4BA` (**`m5deco`, 415 actualizaciones**), `0BBE5E`/`0BBED0` y **el fin de la calle
+`0BBE16`** → `0B6ED2` (rectángulo `0BBAEC`, destino 7A8) (**`m5street`, 1439 actualizaciones**, con las
+escrituras de 10C300.. del fin de etapa).
+
+**Guion:** la op 0A (`01A272`) apila todas las alternativas; el port tenía 16 y el corredor de los goteos
+`2DE83A` tiene 27 (la M6 también): ahora 32, y si alguna lista pasa de ahí sigue siendo parada explícita.
+
+Datos: grupo **`m5`** en `region_rom.json` (tablas de rango `2D3F1E`, bloque `0BBAC8..0BBE00`, `0E4C48`,
+`0BBAEC`, `0BBE00`), programas (`extract_soldier_programs.py`, bloque «# Mission 5 sewer gates») y
+`pack_mission.py` `GROUPS[5]`. Sprites y paletas (`export_rest_sprites.py`, 59C..59F, AC8, 5BB, 5DC, 591, 592,
+596) en `filesystem/mission5/rest-native.json`: 200 fotos, **0 píxeles distintos**; el paquete lleva 4719
+descriptores de actores. La paleta 0x208 de la captura de la calle sale con otros colores que la del paquete
+de escena: se deja la de la escena (solo los recursos de la M5 salen de sus capturas).
+
+Recorrido en ares (alcantarilla, disparando): la verja 0 cae, la cámara se suelta (grupo 7 = 0), los goteos
+caen y el guion llega a `2DEA8C` (`08996A`, el soldado de la alcantarilla), primera parada que queda.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: 103 constructores sin portar (102 propios), 2583
@@ -273,19 +318,8 @@ renderizar (pendiente 6).
    constructores del guion; 141 registros del guion que `run4` no ejecutó
    necesitan captura propia. Primer paso: los registros donde se para el
    guion (`2DCB42` → `0BBE5E`, `2DDB5E` → `0BC1E6`, `2DE9D0` → `08346E`).
-2. **Estampadores**: `0C88B0` (2 sellos en el metro, 2 en la alcantarilla) y
-   `0C8A3C` (tres escrituras de 126 celdas sobre las paredes `1F`; su actor
-   no está capturado: la sonda estaba solo en `0C88B0`; hay que poner otra en
-   `0C8A3C`). **En ares Marco cruza hoy las paredes `1F`** y en MAME no:
-   el barrido del jugador lee esas celdas (39 lecturas con A6 = `1014C4` en
-   x 792..795 durante 274933..275046, `s8/cells.txt`) y el jugador no pasa
-   de ahí hasta la escritura de 275049. El barrido nativo
-   (`neo_kernel_player_sweep`) no se para en ellas: falta trazar en MAME si
-   lo retienen las celdas (tipo `F` con el bit 4) o el cuerpo sólido de la
-   verja, y traducir lo que falte; no se ha ajustado nada.
-   Trazado después (sesión de la M6, sonda en `0C8A3C`, `captures-m6/m5gate`): las tres escrituras son del actor
-   `0BC42C` (retorno `0BC496`), plantilla `0BBBE4`, D0 = 0x64 / 0xA4 / 0xE4, D1 = 6 ([MISION6.md](MISION6.md),
-   «Verjas de la alcantarilla»). Sigue sin portar.
+2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
+   `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
 3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**
    `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
    estados `at_277000` (antes) y `at_280000..291500`.

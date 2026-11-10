@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "neo_lspc.h"
 #include "neo_vehicle.h"
 #include "neo_world.h"
 #include "neo_hud.h"
@@ -108,6 +109,7 @@ typedef struct {
     uint8_t descent;bool descent_fire;int32_t landing_root_x,landing_root_y;unsigned descent_cuts;
     unsigned entry_drops;   /* stage entries of kind 2 placed without the parachute (explicit stop) */
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
+    neo_lspc_t lspc;   /* LSPC auto-animation (RAM 100012, 3C0006; G25) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */

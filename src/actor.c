@@ -809,7 +809,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
      * the +15 bit 2 ones (e.g. Mission 2's exit marker 0B6F6A, +1E FFF1,
      * and the gate's frame 03A82E: over Marco when he walks through). */
     msx_draw_order_t layout=game.in_stage?msx_draw_order(game.flow.mission,game.flow.stage):msx_draw_order(0,0);
-    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,game.ticks,layout.back,true);
+    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,neo_lspc_phase(&game.lspc),layout.back,true);
     /* Sprites with attribute bit 2 (+15 bit 2) lie in window B. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */
     rdpq_set_scissor(8,8,312,232);
@@ -829,7 +829,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     if (layout.normal_mid) draw_window_a(order,bank_id,frame);
     else for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}
-    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,game.ticks,layout.front,false);
+    scene_render_layers(game.camera,game.camera_height,game.backdrop_after,neo_lspc_phase(&game.lspc),layout.front,false);
     rdpq_set_scissor(8,8,312,232);
     if (layout.normal_mid) {for (unsigned k=0;k<game.world.draw_count;k++) {const neo_world_draw_t *d=&game.world.draws[order[k]];if (d->attributes&4u) draw_native(d,false);}}
     else draw_window_a(order,bank_id,frame);

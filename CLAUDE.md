@@ -9,5 +9,5 @@
   traduce. Si falta la captura, se hace; si no se puede, se registra como
   pendiente (no se rellena).
 - Cada cambio se prueba bit a bit contra MAME (familias, `make check`).
-- Un solo agente cada vez. ROM y datos derivados nunca en git.
+- Como máximo dos agentes a la vez, con tareas que no se pisen. ROM y datos derivados nunca en git.
 - Protocolo de la M3: `docs/MISSION3_DEBUG.md`.

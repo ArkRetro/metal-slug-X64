@@ -1167,9 +1167,12 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * boss (the tower stairs reach the screen's right edge at camera x
      * 624, MAME run4 player x 915: the climb goes on). */
     /* Mission 2 stage 2 ends by the native gate 03A6EA (map command 0B7326;
-     * 03A776 -> 0B7350: map patch 0B706C, exit 0B6ED2), neo_m2props.c. */
+     * 03A776 -> 0B7350: map patch 0B706C, exit 0B6ED2), neo_m2props.c.
+     * Mission 3 ends by its boss (04AB82: 018F40 out of view): the hook
+     * ended it as soon as the player (or the SV-001) reached the right
+     * edge of the arena, with the boss just born (G15 checks in ares). */
     if (g->in_stage && g->camera>=g->stage_camera_max && g->x>=(g->camera+280)*MSX_UNIT &&
-        !(g->flow.mission==1u && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
+        !((g->flow.mission==1u || g->flow.mission==2u) && g->world_enabled)) {g->stage_exit_hooks++;msx_game_stage_end(g);return;}
     /* The level script stopped at a record of an unported actor (explicit
      * stop): its camera lock would hold the stage there for good. The
      * reference build releases it (0C7C12) to walk the engine further;

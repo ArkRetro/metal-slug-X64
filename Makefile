@@ -510,9 +510,10 @@ FAMILY_ARGS_m3mid4 := $(M3MID_ARGS)
 # m3boss<n> = the Mission 3 final boss 04A2C2 (neo_m3boss.c) in pieces of
 # one fight (tools/capture_m3_boss.sh boss from at_144400, family range
 # 4a2c2-4e577; docs/JEFE_MISION3.md): m3boss0 = 144410..144886 (arrival,
-# stop, footsteps, crouch; the pieces waiting), m3boss1 = 144410..145160
-# (the flamethrower, order 0: flames 04B79C/04B87E, fireballs 04CAB4, trails,
-# puddles), m3boss3 = 146600..147600 of the full trace spr (the missile pod,
+# stop, footsteps, crouch; the pieces waiting), m3boss1 = 144410..145600
+# (the flamethrower, order 0: flames 04B79C/04B87E, fireballs 04CAB4 with
+# their landing on 10C72E by 0143E4 in 145025, trails, puddles 04CCE4, the
+# mortar; extracted with --ram 10c72e-10d7b6 too: the ring the sweep reads), m3boss3 = 146600..147600 of the full trace spr (the missile pod,
 # order 2: missiles 04C194; the flamethrower at the player, order 1).
 # m3boss2 = 146200..146560 of spr (the hatch, order 7: shots 04C7B6/04C840),
 # m3boss4 = 145160..145600 of spr (the mortar, order 5: 4 volleys of bombs

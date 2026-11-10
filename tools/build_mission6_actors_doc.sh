@@ -36,7 +36,7 @@ cat <<'EOF'
 
 ## Vehículos, jefes y fin de etapa
 
-- **Etapa 1 (costa y puente)**: el actor de misión (lista `0BCA00`, 16 llamadas) crea en la cabeza los actores propios
+- **Etapa 1 (costa y puente)**: el actor de misión (lista `0BCA00`, 18 llamadas) crea en la cabeza los actores propios
   `0BCE2C`, `0BD18E`, `0BD2BA` (+`0BCFA4`/`0BCFC4`), `0BD2CE` (+`0BCFE4`/`0BD004`), `0BD822`/`0BD836`/`0BD84A`
   (+`0BD8F4`/`0BD906`/`0BD918`: comprueban al jugador con `01B332` y suben o bajan) y `0BDA4E`×3, y en la cámara 32
   `0BDAB8` (registra el cuerpo `2D3FEE` con `0260C8`). **Sin ellos Marco cae al agua** (celdas `A0` del mapa, columnas

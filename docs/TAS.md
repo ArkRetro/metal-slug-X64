@@ -178,5 +178,14 @@ del anillo de celdas de la carga: para tener la historia entera del anillo se
 carga el estado anterior (`u12420`, `u13740`, `u16380`; entre secciones no hay
 estados `u<U>`).
 
+Segundo uso: la Misión 6 (`tools/capture_m6_tas.sh`, [MISION6.md](MISION6.md); estados anteriores a la carga
+`u18060`, `u20160`, `u23460`). `tas_updates.lua` acepta además `MSX_TAS_DEBUG=1` con `MSX_TAS_DEBUG_CMDS` (órdenes
+del depurador separadas por `|`, solo `printf`; `temp9` = fotograma), como `tas_play.lua`: con ellas se capturó **el
+final y los créditos** dejando correr el TAS desde `u26400` hasta el fotograma 75 000 (después del último fotograma de
+la película la entrada es 0): el último enemigo muere en 57035..57038, la huida (registro de etapa `017624`) hasta
+60038, MISSION COMPLETE, la escena final `0570A0` desde 60920, los créditos (sección 22 del guion) de 62172 a 72300,
+el logotipo de SNK en 72801 y la demostración (sección 20) desde 73677. Estados `end26480`, `end28960` y `end34170`
+en `/home/user/captures-m6/states/mslugx/`; fotos y registro en `/home/user/captures-m6/ending/out/`.
+
 Reproducir por fotograma: `tools/run_tas_play.sh /home/user/captures-tas/full`
 (2 min, 4 MB; `MSX_TAS_LAST`, `MSX_TAS_SNAP_AT=4320,4360,...`).

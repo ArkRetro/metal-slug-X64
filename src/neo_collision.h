@@ -12,6 +12,10 @@ void neo_collision_reset(void);
  * holds columns*rows bytes for the stamps; `unknown_mask` (or NULL) is a bit
  * per cell, set for cells no capture observed (read as empty, counted). */
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned columns,unsigned rows);
+/* Kernel row of the grid's row 0 (0 after neo_collision_set_grid; the pack's
+ * grid_origin_y, Mission 4). */
+void neo_collision_set_row_origin(int row);
+int neo_collision_row_origin(void);
 unsigned neo_collision_rows(void);
 /* Readers see the map grid instead of the ring while `on` (the ring holds
  * only its 64-row window: a row outside it reads another row's cells). */

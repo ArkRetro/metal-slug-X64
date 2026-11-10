@@ -91,7 +91,7 @@ static bool load_stage(void) {
     if (!loaded) return false;
     const scene_stage_t *st=scene_stage();
     if (st->descriptor!=game.flow.descriptor) {debugf("MSX stage %u: pack descriptor %06lX is not the flow's %06lX (explicit stop)\n",index+1u,(unsigned long)st->descriptor,(unsigned long)game.flow.descriptor);return false;}
-    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_ring(st->ring);
+    neo_collision_set_grid(st->grid,st->grid_dynamic,st->unknown,st->columns,st->rows);neo_collision_set_row_origin(st->grid_row0);neo_collision_set_ring(st->ring);
     /* 1805C on the mission's first record: the sound driver reset 03
      * (0120F8 via 01205E) and the mission actor's +80 = FFFF (01829E), so
      * the descriptor's music is requested again (018412..01842E). */
@@ -802,6 +802,20 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         bool sky=game.world.train.on && game.world.stage_camera_base==0x0B8968u && neo_camera_progress(&game.world.camera)>=0x140u;
         int v=(-(int)neo_layer_word(game.world.train.sky_x))&511;
         scene_render_set_layer_offset(0,sky,MSX_SKY_TEMPLATE_X+1024*(int)neo_train_sky(&game.world.train)+v);
+        /* Mission 4 on (docs/MISION4.md): a pack layer whose rule never
+         * draws (tools/pack_mission.py rom_native_rules) is drawn at its
+         * layer object's own +14/+18 (neo_layers_*: the camera list's
+         * factors and op 0x44): map x = screen x - +14, screen row = map y
+         * + 256 - +18 (+ 8 on the model's layers 0/1, scene_layer_rise); a
+         * 32-column picture (op 0x48) repeats every 512 px from its base. */
+        const scene_stage_t *st=scene_stage();const neo_layer_t *l=&game.world.layers[NEO_LAYER_SKY];
+        bool own=st && !sky && st->rules[0].visible_min>st->rules[0].visible_max && l->map;
+        if (own) {
+            int off=-(int)neo_layer_word(l->x);
+            if (l->ring) off=(int)l->ring_base+((off-(int)l->ring_base)&511);
+            scene_render_set_layer_offset(0,true,off);
+        }
+        scene_render_set_layer_rise(0,own,256-(int)neo_layer_word(l->y)+8);
     }
     /* B26: the frame's sprite windows and layers in their SCB slot order
      * (msx_draw_order, gameplay.c): window A holds the sprites in +1E

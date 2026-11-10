@@ -385,7 +385,7 @@ $(BUILD_DIR)/locomotion_fixture.h: tools/compile_locomotion_fixture.py data/sold
 $(BUILD_DIR)/tools/test_neo_locomotion.o: $(BUILD_DIR)/locomotion_fixture.h
 $(BUILD_DIR)/locomotion-regression.elf: $(BUILD_DIR)/tools/test_neo_locomotion.o $(BUILD_DIR)/src/neo_soldier_state.o $(BUILD_DIR)/src/neo_soldier.o $(BUILD_DIR)/src/neo_soldier_action.o $(BUILD_DIR)/src/neo_rng.o $(BUILD_DIR)/src/neo_contact.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/neo_animation.o
 locomotion-regression.z64: N64_ROM_TITLE = "MSX LOCO TEST"
-$(BUILD_DIR)/soldier_ai_tables.h: tools/compile_soldier_ai_tables.py data/soldier_ai_tables.json data/soldier_programs.json data/mission2_script.json data/mission3_script.json
+$(BUILD_DIR)/soldier_ai_tables.h: tools/compile_soldier_ai_tables.py data/soldier_ai_tables.json data/soldier_programs.json data/mission2_script.json data/mission3_script.json data/mission4_script.json
 	python3 tools/compile_soldier_ai_tables.py
 $(BUILD_DIR)/soldier_tick_fixture.h: tools/compile_soldier_ticks.py data/soldier_tick_fixture.json.gz
 	python3 tools/compile_soldier_ticks.py
@@ -1220,6 +1220,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native
 	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native --script data/mission2_script.json
 	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native --script data/mission3_script.json
+	python3 tools/audit_script_events.py $(BUILD_DIR)/host/script-native --script data/mission4_script.json
 	python3 tools/check_scene_budget.py
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_cull.c src/scene_cull.c src/retro25d.c -lm -o $(BUILD_DIR)/host/scene-cull
 	$(BUILD_DIR)/host/scene-cull
@@ -1260,6 +1261,12 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	$(BUILD_DIR)/host/m3camstart romfs/mission3.pack
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m3_camera_bridge.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m3cambridge
 	$(BUILD_DIR)/host/m3cambridge romfs/mission3.pack
+	python3 tools/compile_m4_map_fixture.py data/m4_map_fixture.json.gz $(BUILD_DIR)/m4_map_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m4_map.c src/neo_collision.c -o $(BUILD_DIR)/host/m4map
+	$(BUILD_DIR)/host/m4map romfs/mission4.pack
+	python3 tools/compile_camera_fixture.py data/m4_camera_fixture.json.gz $(BUILD_DIR)/m4_camera_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m4_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m4camera
+	$(BUILD_DIR)/host/m4camera romfs/mission4.pack
 	# B14: the ground sweep's wall stop at the slot-7 object of Mission 2 stage 2 (MAME m2wall).
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m2_wall.c src/neo_collision.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/m2wall
 	$(BUILD_DIR)/host/m2wall

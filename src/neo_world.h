@@ -145,6 +145,7 @@ typedef struct {
      * world tests, which take the scroll from the captures. */
     neo_camera_t camera;bool camera_native;
     neo_train_t train;           /* Misión 3: capa del tren 10D7B6 (neo_train.c) */
+    neo_layer_t layers[NEO_LAYERS];   /* layer objects moved by the camera list (neo_train.h, docs/MISION4.md) */
     bool script_skip_unported;   /* reference cartridge: neo_script_env_t.skip_unported */
     /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
      * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */

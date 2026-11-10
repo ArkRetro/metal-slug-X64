@@ -124,6 +124,8 @@ static uint16_t tower_cell[SCENE_TOWER_TYPES][3][24];static bool tower_stage;
 static const uint8_t *tower_types;static unsigned tower_count;
 static bool layer_own[4];static int layer_own_offset[4];
 void scene_render_set_layer_offset(unsigned layer,bool on,int offset) {if (layer<4) {layer_own[layer]=on;layer_own_offset[layer]=offset;}}
+static bool layer_rise_own[4];static int layer_own_rise[4];
+void scene_render_set_layer_rise(unsigned layer,bool on,int rise) {if (layer<4) {layer_rise_own[layer]=on;layer_own_rise[layer]=rise;}}
 /* Layers drawn by their hardware column ring (scene_render_set_layer_ring). */
 typedef struct { bool on;uint8_t first;int16_t x;int16_t map_x[32]; } layer_ring_t;
 static layer_ring_t layer_ring[4];
@@ -952,6 +954,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             /* A ring layer: its columns carry their own offsets (draw_layers). */
             if (i<4 && layer_ring[i].on) offsets[i]=0;
             rises[i]=scene_layer_rise(r,source,height);
+            if (i<4 && layer_rise_own[i]) rises[i]=layer_own_rise[i];
             visible[i]=i<4 && (((int)camera>=r->visible_min && (int)camera<=r->visible_max) || layer_own[i] || layer_ring[i].on);
             continue;
         }

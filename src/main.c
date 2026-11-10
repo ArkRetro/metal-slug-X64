@@ -89,7 +89,7 @@ static void lifebar_choice(bool z) {
  * own path; the remaining Mission 1 movies are skipped then. */
 static bool mselect_skip;
 static bool mselect_combo(joypad_buttons_t b) { return b.r && (b.l || b.z); }
-static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1}};
+static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1},{4,1}};
 #define MSELECT_ITEMS (sizeof(mselect_items)/sizeof(mselect_items[0]))
 static bool mission_select_menu(void) {
     static unsigned cursor;bool lifebar=false,first=true;joypad_buttons_t was={0};

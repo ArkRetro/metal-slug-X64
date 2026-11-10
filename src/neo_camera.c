@@ -10,7 +10,7 @@ static uint16_t lw(const neo_camera_t *c,unsigned o) {
 }
 static uint32_t ll(const neo_camera_t *c,unsigned o) {return (uint32_t)lw(c,o)<<16|lw(c,o+2);}
 static void event(neo_camera_t *c,uint8_t kind,uint32_t address,uint16_t value) {
-    if (c->event_count<NEO_CAMERA_EVENTS) c->events[c->event_count++]=(neo_camera_event_t){kind,address,value,neo_camera_progress(c)};
+    if (c->event_count<NEO_CAMERA_EVENTS) c->events[c->event_count++]=(neo_camera_event_t){kind,address,value,neo_camera_progress(c),c->command};
     else c->event_dropped++;
 }
 void neo_camera_init(neo_camera_t *c,const uint8_t *list,uint16_t size,uint32_t base) {
@@ -135,7 +135,9 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
                 uint16_t d2=(uint16_t)(lw(c,a+8)+(uint16_t)lx),d3=(uint16_t)(lw(c,a+10)+(uint16_t)ly),w=lw(c,a+12),h=lw(c,a+14);
                 bool in[2],any=false;
                 for (unsigned i=0;i<2;i++) {
-                    in[i]=!c->op4_players[i].alive || ((uint16_t)(c->op4_players[i].px-d2)<w && (uint16_t)(c->op4_players[i].py-d3)<h);
+                    /* 0C8524: +5F bit 7 clear, +15 bit 6 set (on the ground), then the rectangle
+                     * (Mission 4, 0E757A: MAME waits for the landing, run4 152253). */
+                    in[i]=!c->op4_players[i].alive || (c->op4_players[i].rect_ok && (uint16_t)(c->op4_players[i].px-d2)<w && (uint16_t)(c->op4_players[i].py-d3)<h);
                     any|=c->op4_players[i].alive;
                 }
                 if (!any || !in[0] || !in[1]) return;
@@ -225,7 +227,7 @@ void neo_camera_finish(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
     neo_camera_commands(c,p8,pa);
 }
 void neo_camera_update(neo_camera_t *c,const neo_camera_player_t players[2],bool follow,uint16_t *p8,uint16_t *pa) {
-    for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=players[i].alive;c->op4_players[i].px=players[i].px;c->op4_players[i].py=players[i].py;}
+    for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=players[i].alive;c->op4_players[i].px=players[i].px;c->op4_players[i].py=players[i].py;c->op4_players[i].rect_ok=players[i].rect_ok;}
     neo_camera_track(c,players,follow,*p8,*pa);
     neo_camera_finish(c,p8,pa);
 }

@@ -158,7 +158,7 @@ void neo_camera_commands(neo_camera_t *c,uint16_t *p8,uint16_t *pa) {
             event(c,NEO_CAMERA_EV_CALL,ll(c,a+4),0);break;
         case 0x30: for (unsigned i=0;i<4;i++) c->bounds[i]=(int16_t)lw(c,a+4+2*i);break;
         case 0x34: *p8=lw(c,a+4);*pa=lw(c,a+6);break;
-        case 0x38: event(c,NEO_CAMERA_EV_SOUND,0,lw(c,a+4));break;
+        case 0x38: event(c,NEO_CAMERA_EV_ANIM_SPEED,0,lw(c,a+4));break;   /* 0C85AC -> 002802 */
         case 0x3c: for (unsigned i=0;i<4;i++) c->layer_flags[i]=(uint8_t)(lw(c,a+4+(i&2))>>((i&1)?0:8));event(c,NEO_CAMERA_EV_LAYER_FLAGS,0,0);break;
         case 0x40: c->auto_mode=(uint8_t)(lw(c,a+4)>>8);break;
         case 0x4c: event(c,NEO_CAMERA_EV_GRAPHICS,ll(c,a+4),0);break;

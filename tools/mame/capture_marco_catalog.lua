@@ -172,6 +172,18 @@ probe(0x4406,'MARCO_DRAW','descriptor=%08X xy=%08X attr=%04X z=%04X','d7,d0,d1&f
 probe(0x44ec,'MARCO_CALLBACK','target=%08X','a1')
 dbg:command('wpset 1014e4,4,w,temp9>='..string.format('%x',plan.first)..',{printf "MARCO_CURSOR_WRITE frame=%d pc=%08X a6=%08X address=%08X data=%08X\\n",temp9,pc,a6,wpaddr,wpdata;g}')
 local boot={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0},[1550]={'P1 A',1},[1701]={'P1 A',0}}
+-- MSX_CHARACTER=n (player field +6E: 0 Marco, 1 Tarma, 2 Eri, 3 Fio;
+-- docs/PERSONAJES.md): chosen with the controller only. The P1 cursor shows
+-- on Marco at about 1650 (screen order Marco, Eri, Tarma, Fio); Right is
+-- pressed once per place from 1700 and A at 1800 (the landing then comes
+-- 250 frames later than with the A at 1550: plan.first >= 2350).
+local character=tonumber(os.getenv('MSX_CHARACTER') or '-1')
+if character>=0 then
+ local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_CHARACTER 0..3')
+ boot[1550]=nil;boot[1701]=nil
+ for k=0,place-1 do boot[1700+20*k]={'P1 Right',1};boot[1710+20*k]={'P1 Right',0} end
+ boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
+end
 emu.register_frame_done(function()
  frame=frame+1;dbg:command(string.format('temp9=%x',frame))
  if boot[frame] then button(boot[frame][1],boot[frame][2]) end

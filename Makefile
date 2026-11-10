@@ -126,7 +126,7 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_pause.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -1219,7 +1219,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	# Mission 3's export (step 1, docs/MISION3.md) carries them too.
 	for m in $(wildcard filesystem/mission2/rest-native.json filesystem/mission3/rest-native.json); do python3 tools/check_mission_sprites.py filesystem/rest-native.json $$m || exit 1; done
 	mkdir -p $(BUILD_DIR)/host
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_mission.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/mission
 	$(BUILD_DIR)/host/mission
@@ -1237,7 +1237,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	$(BUILD_DIR)/host/gameplay > $(BUILD_DIR)/host/gameplay.out; s=$$?; cat $(BUILD_DIR)/host/gameplay.out; exit $$s
 	# Determinism: the same test built at -O2 prints the same results, and
 	# every release seed run alone (in another order) prints its line again.
-	$(HOST_CC) $(HOST_CFLAGS) -O2 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-O2
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-O2
 	$(BUILD_DIR)/host/gameplay-O2 > $(BUILD_DIR)/host/gameplay-O2.out
 	diff $(BUILD_DIR)/host/gameplay.out $(BUILD_DIR)/host/gameplay-O2.out
 	$(BUILD_DIR)/host/gameplay-O2 release 4 3 2 1 | sort > $(BUILD_DIR)/host/gameplay-seeds.out
@@ -1245,7 +1245,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	@echo "PASS: gameplay determinism (-O2 output identical, each release seed alone identical)"
 	# Diagnostic mode (src/msx_diag.h): the same test with MSX_DIAG=1 (pool
 	# hooks and list checks compiled in) prints the same results.
-	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_DIAG=1 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c src/msx_diag_core.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-diag
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_DIAG=1 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c src/msx_diag_core.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-diag
 	$(BUILD_DIR)/host/gameplay-diag > $(BUILD_DIR)/host/gameplay-diag.out 2> $(BUILD_DIR)/host/gameplay-diag.err
 	diff $(BUILD_DIR)/host/gameplay.out $(BUILD_DIR)/host/gameplay-diag.out
 	@echo "PASS: MSX_DIAG=1 gameplay output identical (diagnostic hooks only read the simulation)"

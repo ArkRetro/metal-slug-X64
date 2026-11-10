@@ -18,6 +18,8 @@
 #include "marco_visual.h"
 #include "marco_renderer.h"
 #include "hud_renderer.h"
+#include "msx_pause.h"
+#include "neo_text.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -33,7 +35,9 @@ static bool descent_fresh;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
-static bool previous_a,previous_b,pending_a,pending_b,previous_start;
+static bool pending_a,pending_b;
+/* Pause (not arcade, msx_pause.h): it also keeps the A/B/Start history. */
+static msx_pause_t pause;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
 static unsigned observed_projectiles;
@@ -144,6 +148,7 @@ static void leave_mission(void) {
 }
 static void reset_game(void) {
     msx_diag_event(MSX_EV_RESET,game.flow.mission+1u,game.deaths,(uint32_t)game.camera);
+    if (pause.paused) {msx_pause_reset(&pause);msx_audio_pause(false);debugf("MSX PAUSE off (reset)\n");}
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
     leave_mission();
@@ -273,7 +278,7 @@ void actor_init(void) {
 bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     if (!msx_game_begin_at(&game,world_x,world_y)) return false;
     has_entry=true;entry_x=world_x;entry_y=world_y;
-    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    previous_animation=-1;pending_a=pending_b=pause.prev_a=pause.prev_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();
     game_audio_sync(&game);
     debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
@@ -288,7 +293,7 @@ void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) 
         msx_game_begin_descent(&game,world_x,world_y,vx,vy);
     descent_fresh=false;
     has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
-    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    previous_animation=-1;pending_a=pending_b=pause.prev_a=pause.prev_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();
     game_audio_sync(&game);
     debugf("MSX mission handoff (descent) x=%ld y=%ld vx=%ld vy=%ld\n",(long)world_x,(long)world_y,(long)vx,(long)vy);
@@ -408,6 +413,27 @@ static void selected_mission(void) {
     restart_was_down=true;   // R still held from the menu's L+R/Z+R: no reset until it is pressed again
     previous_animation=-1;scene_clock_reset(&simulation_clock);
 }
+/* Pause screen (not arcade): the frame dimmed to half and PAUSE in the
+ * game's own fix font (the two-row font 'a' of 03DD96 with palette 4, as
+ * PRESS START 0C90DA) through the original's string printer 03D25A, written
+ * on a copy of the fix map so the game's own map is untouched. */
+static void draw_pause(void) {
+    rdpq_mode_push();rdpq_set_mode_standard();rdpq_mode_combiner(RDPQ_COMBINER_FLAT);rdpq_mode_blender(RDPQ_BLENDER_MULTIPLY);
+    rdpq_set_prim_color(RGBA32(0,0,0,128));rdpq_fill_rectangle(8,8,312,232);rdpq_mode_pop();
+    scene_render_forget_texture();
+}
+static const neo_hud_t *pause_hud(void) {
+    static neo_hud_t shown;
+    shown=game.hud;
+    neo_text_t t={&shown,NULL,NULL,0};uint16_t d1=0;
+    /* columns 17..21, rows 15..16 (VRAM 7000 + 32 column + row): the
+     * middle of the 304x224 window (fix columns 1..38, rows 2..29). */
+    neo_text_string(&t,(uint16_t)(0x7000u+17u*32u+15u),&d1,(const uint8_t *)"\\ca\\p\x04PAUSE");
+    /* Another serial than any of the game's map near it: the renderer redraws
+     * the changed cells on the pause and again on the resume. */
+    shown.serial=game.hud.serial^0x80000000u;
+    return &shown;
+}
 void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_frame_start();
     load_target=&surface;
@@ -469,22 +495,31 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
-    pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
     /* Reference build: Start in Mission 2 stage 3 and in Mission 3 toggles
-     * the test's route
-     * planner (gameplay.h, msx_autopilot.h) instead of reaching the HUD. */
-    bool start_press=input.btn.start && !previous_start;
+     * the test's route planner (gameplay.h, msx_autopilot.h) and in Mission
+     * 2 stages 1 and 2 ends the stage: no pause there. */
+    bool reference_start=msx_reference_invulnerable && game.in_stage && (game.flow.mission==2u || (game.flow.mission==1u && (game.flow.stage==3u || (game.flow.stage<3u && !game.stage_step))));
+    /* Pause (msx_pause.h): Start while player 1's panel runs its play
+     * routine, where the arcade ignores Start (the continue reads it). */
+    bool can_pause=!reference_start && game.hud.panel[0].state==NEO_PANEL_PLAY && !game.awaiting_continue;
+    msx_pause_frame_t pf=msx_pause_frame(&pause,input.btn.start,input.btn.a,input.btn.b,can_pause);
+    if (pf.toggled) {
+        msx_audio_pause(pause.paused);
+        if (!pause.paused) scene_clock_reset(&simulation_clock);   // the paused time is no debt
+        debugf("MSX PAUSE %s (frames paused=%u pauses=%u)\n",pause.paused?"on":"off",pause.paused_frames,pause.pauses);
+    }
+    if (pf.step) {
+    pending_a|=pf.a_edge;pending_b|=pf.b_edge;
+    bool start_press=pf.start_edge;
     if (msx_reference_invulnerable && start_press && game.in_stage && ((game.flow.mission==1u && game.flow.stage==3u) || game.flow.mission==2u)) {
         game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
     }
-    /* Reference build: Start in Mission 2 stages 1 and 2 ends the stage
-     * (018F40 as the stage's own exit), for targeted stage-3 checks. */
     if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage<3u && !game.stage_step) {
         msx_game_stage_end(&game);start_press=false;debugf("MSX reference: stage %u ended by Start\n",(unsigned)game.flow.stage);
     }
-    game.start_edge|=start_press;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
-    previous_a=input.btn.a;previous_b=input.btn.b;
-    unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+    game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
+    }
+    unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND):0;
     /* At most two steps per frame: the world updates on every second step
      * (gameplay.c), so a frame never runs two world updates (10-13 ms each
      * around camera 2336). The rest of the catch-up stays as debt for the
@@ -541,7 +576,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_steps(steps);msx_perf_where((unsigned)game.camera,(unsigned)game.flow.stage);msx_perf_mark(MSX_PERF_SIM);
     /* MSX_DIAG: pools, stops and events of this frame's updates (read only). */
     msx_diag_game(&game,(uint16_t)(input.btn.c_left|input.btn.c_right<<1|input.btn.c_up<<2|input.btn.c_down<<3));
-    game_audio_update(&game);
+    if (pf.step) game_audio_update(&game);   // paused: no sound word is new, the mixer stands
     /* A second AI service per frame, between the simulation and the draw:
      * a slow frame (two updates plus a full redraw) no longer drains both
      * buffers before the main loop's service. */
@@ -888,7 +923,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* The original fix layer above every layer, on the 304x224 window. */
     /* The fix layer's palettes are outside the fade (MAME runK: slots 0..9 keep their colours). */
     scene_render_set_fade(0,0,0);
-    rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
+    rdpq_set_scissor(8,8,312,232);
+    if (pause.paused) draw_pause();
+    hud_renderer_draw(pause.paused?pause_hud():&game.hud);rdpq_set_scissor(0,0,320,240);
     scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);

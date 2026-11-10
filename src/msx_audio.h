@@ -34,5 +34,9 @@ unsigned msx_audio_service(void);
  * 40 ms buffers do not run dry. */
 void msx_audio_idle(void);
 msx_audio_stats_t msx_audio_stats(void);
+/* Pause (not arcade, msx_pause.h): while on, the mixer is not polled (every
+ * voice resumes exactly where it stopped) and the AI gets silence. */
+void msx_audio_pause(bool on);
+bool msx_audio_paused(void);
 void msx_audio_close(void);
 #endif

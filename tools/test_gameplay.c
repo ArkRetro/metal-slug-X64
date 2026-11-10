@@ -10,6 +10,7 @@
 #include "../src/scene_cull.h"
 #include "../src/neo_soldier_ai.h"
 #include "../src/neo_region.h"
+#include "../src/msx_pause.h"
 #include "scene_meta.h"
 /* Every native draw must find its descriptor and logical palette in the
  * scene pack (src/actor.c and boss_renderer.c log "native draw missing"
@@ -657,6 +658,70 @@ static uint32_t observe(const msx_game_t *g) {
     #undef MIX
     return h;
 }
+/* Pause (not arcade, src/msx_pause.h): the main loop's frame (actor.c:
+ * msx_pause_frame, the A/B edges kept pending over frames that run no
+ * step, 0..2 steps per frame) driven twice with the same input stream: once
+ * as is, once with pause blocks inserted (Start pressed, junk input with
+ * every button and Start held or released, Start pressed again). The game
+ * state, compared byte for byte (same object, msx_game_init) at the end and
+ * hashed after every frame that runs, is the same: a paused run is the
+ * unpaused run with the pause frames removed. Start during the continue
+ * still reaches the arcade (the run takes its continues). */
+typedef struct {int dir;bool a,b,up,down,z,start;} pause_in_t;
+static bool pause_pa,pause_pb;static unsigned pause_edges;   /* the last frame's edges (A, B, Start) */
+static bool pause_frame(msx_game_t *g,msx_pause_t *p,const pause_in_t *in,unsigned steps) {
+    msx_pause_frame_t f=msx_pause_frame(p,in->start,in->a,in->b,g->hud.panel[0].state==NEO_PANEL_PLAY && !g->awaiting_continue);
+    if (!f.step) return false;
+    pause_edges=(unsigned)f.a_edge|(unsigned)f.b_edge<<1|(unsigned)f.start_edge<<2;
+    pause_pa|=f.a_edge;pause_pb|=f.b_edge;g->start_edge|=f.start_edge;g->jump_edge|=f.a_edge;
+    for (unsigned s=0;s<steps;s++) {
+        g->aim_up=in->up;g->crouch=in->down;g->grenade=in->z;
+        msx_game_update(g,in->dir,in->a || pause_pa,in->b || pause_pb);pause_pa=pause_pb=false;
+    }
+    return true;
+}
+static unsigned pause_rand(unsigned *r) {*r=*r*1103515245u+12345u;return *r>>16;}
+static void pause_input(const msx_game_t *g,unsigned i,unsigned *r,pause_in_t *in,unsigned *steps) {
+    unsigned v=pause_rand(r);
+    in->dir=v%10<6?1:v%10<8?0:-1;in->a=(v>>4)%7==0;in->b=(v>>7)%3!=0;in->up=(v>>9)%5==0;in->down=(v>>11)%9==0;in->z=(v>>13)%61==0;
+    in->start=g->awaiting_continue && i%4==0;   /* the continue: Start for the arcade */
+    *steps=pause_rand(r)%3;
+}
+static uint32_t pause_trace[12000];
+static void pause_run(void) {
+    static msx_game_t g,snap;msx_pause_t p;
+    enum { FRAMES=12000 };
+    unsigned r=7,steps,ran=0,deaths;pause_in_t in;
+    msx_game_init(&g);memset(&p,0,sizeof p);pause_pa=pause_pb=false;
+    for (unsigned i=0;i<FRAMES;i++) {pause_input(&g,i,&r,&in,&steps);bool ran_frame=pause_frame(&g,&p,&in,steps);assert(ran_frame);pause_trace[i]=observe(&g)^pause_edges<<29;}
+    memcpy(&snap,&g,sizeof g);deaths=g.deaths;unsigned continues=g.continues;
+    msx_game_init(&g);memset(&p,0,sizeof p);pause_pa=pause_pb=false;r=7;
+    unsigned junk=99,blocks=0,held=0;
+    for (unsigned i=0;i<FRAMES;) {
+        /* A pause block before this frame now and then, when play is on. */
+        if (i%517==3 && g.hud.panel[0].state==NEO_PANEL_PLAY && !g.awaiting_continue) {
+            static msx_game_t before;memcpy(&before,&g,sizeof g);
+            pause_in_t j={0};j.start=true;j.a=true;j.dir=-1;
+            assert(!pause_frame(&g,&p,&j,2) && p.paused);
+            unsigned n=1+pause_rand(&junk)%90;
+            for (unsigned k=0;k<n;k++) {
+                unsigned v=pause_rand(&junk);
+                j=(pause_in_t){(int)(v%3)-1,(v>>2&1)!=0,(v>>3&1)!=0,(v>>4&1)!=0,(v>>5&1)!=0,(v>>6&1)!=0,k<n/2};
+                held+=j.start;assert(!pause_frame(&g,&p,&j,2) && p.paused);
+            }
+            j.start=true;j.b=true;assert(!pause_frame(&g,&p,&j,2) && !p.paused);
+            assert(!memcmp(&before,&g,sizeof g));   /* nothing moved while paused */
+            blocks++;
+        }
+        pause_input(&g,i,&r,&in,&steps);
+        assert(pause_frame(&g,&p,&in,steps));ran++;
+        assert((observe(&g)^pause_edges<<29)==pause_trace[i]);   /* the same edges too */
+        i++;
+    }
+    assert(!memcmp(&snap,&g,sizeof g));
+    assert(blocks>=10 && deaths>0 && continues>0 && held>0 && ran==FRAMES);
+    printf("PASS: pause (not arcade): %u pause blocks (%u paused frames) cut out of a %u-frame run (camera %d, %u kills, %u deaths, %u continues by Start) leave the same game, byte for byte\n",blocks,p.paused_frames,FRAMES,g.camera,g.kills,deaths,continues);
+}
 static void lifebar_run(void) {
     static msx_game_t off,on;static uint32_t trace[1300];
     msx_lifebar_request=false;msx_game_init(&off);
@@ -706,6 +771,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"thin")) {thin_cadence_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"lifebar")) {lifebar_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pause")) {pause_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -976,5 +1042,6 @@ int main(int argc,char **argv) {
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
     assert(hit_at && g.deaths==1 && g.life.phase==MARCO_DYING && g.world.player_hits==1);
     lifebar_run();
+    pause_run();
     puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

@@ -336,6 +336,19 @@ mslugx-explorer.z64 --seconds 100 --jump 2.5 --fire` (menú de pruebas, `Xvfb
 :67`, datos de ares copiados de `scratchpad/aresdata`): `RESULT: PASS`, hasta
 la cámara 1000 con las paradas de arriba.
 
+Segunda fusión (furgoneta `0A9F0C`, `99b81e4`): `make check` RC 0 (**209
+PASS**), `make -j4`, `test_m1m2_ares.py` (m1end nuevo) PASS y el recorrido de
+la M4 PASS (cámara 1000; esta vez caen los accesorios 1 y 2: máscaras de
+parches `…58` y `…568`). `ws-logo` queda en el commit de `ccr` con
+`romfs/mission4.pack` y `mission5.pack` rehechos (`build_packs.py 4`); **el
+`mission6.pack` de otra rama apunta a trozos de los paquetes anteriores: hay
+que rehacerlo tras cada cambio del de la M4**.
+
+**Pendiente de la prueba de familia**: reponer las escrituras de un nodo de
+la familia sobre otro *dentro del mismo fotograma* (hoy se reponen en la
+siguiente actualización del nodo escrito): con eso `m4van` llegaría al final
+con la capa `0AA37C`.
+
 **Para seguir** (otra sesión): `/home/user/ws-m4` (`work-m4`); capturas en
 `/home/user/captures-m4/fam/{A,B,C}` (A sirve para todas las familias que
 faltan menos el jefe); utilidades de la sesión en el scratchpad (`dis2.py`,

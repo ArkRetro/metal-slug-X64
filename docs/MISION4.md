@@ -193,6 +193,21 @@ portar: `MSX script stopped at 2dba22` (constructor `08391C`, grupo 0, cámara
 saltados con `native 0`). En x ≥ 5504 no hay suelo todavía (lo ponen los parches
 del jefe): el recorrido de prueba acaba ahí.
 
+## Puertas (10-XI, tras fusionar `ccr` con el paquete versión 5)
+
+`make -j4` (RC 0), `make check` (184 PASS, RC 0, con `test_m4_map` y
+`test_m4_camera`), `tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64`
+recién hecho (`rm -rf build/m1end`): `RESULT: PASS`; `test_mission4_ares.py`
+sobre `mslugx-explorer.z64`: `RESULT: PASS`. Fusionado en `ccr` (`68e06f0`);
+`/home/user/ws-logo` está en ese commit con los paquetes v5 (`build_packs.py`;
+su árbol `build/` no se ha recompilado). Sin `git push`.
+
+**Para seguir** (otra sesión): `git worktree` `/home/user/ws-m4` (rama
+`work-m4`), `filesystem` → `ws-logo/filesystem`, `build/marco_*` copiados de
+`ws-logo/build`; estados MAME en `/home/user/captures-m4/states`; Xvfb propio
+(`:66` se usó aquí; `:64` y `:92` son de otros). Primer paso de la fase 2: el
+registro `2DBA22` (`08391C`) donde se para el guion, y los parches `0C70FC`.
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

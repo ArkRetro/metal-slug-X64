@@ -307,6 +307,13 @@ comparan uno a uno (390 cargas / 2,92 MB antes, 370 / 1,33 MB después).
 El programa crece 1.544 B de código y 128 B de bss (2 KB menos de montón
 libre); las ranuras no cambian.
 
+Repetidas las dos pruebas con `ccr` fusionado (`3bcb33f`, G25): M1→M2
+**PASS** (209 ranuras, carga de la etapa 158.333 µs, `decode_max` 6664 µs,
+`sync` 0); M3 por el menú: 48 ranuras de tablas, carga 397.272 µs,
+`decode_max` 6797 µs, `sync` 0, sin aserciones. El número de ranuras de un
+arranque (208 o 209) depende de cuándo se saltan las cinemáticas, no del
+paquete: 208/209 antes y después.
+
 ## Estado y avisos
 
 - **Para el agente de la Misión 3** (árbol `ws-logo`): tras fusionar
@@ -333,3 +340,11 @@ libre); las ranuras no cambian.
   `build_packs.py` 28 s (15 s antes). La prueba añade ≈50 s a `make check`.
 - `SCENE_MISSION_CHUNKS_MAX` (832) cuenta también los fragmentos prestados:
   la M3 sigue en 821.
+- **Misión 4 y siguientes**: añadir la misión a `RECIPES` de
+  `tools/build_packs.py` (y a `DESCRIPTORS`/`GROUPS` de `pack_mission.py`,
+  como siempre). Su paquete tomará de `mission2.pack` y `mission3.pack` los
+  fragmentos de actores que comparta; la prueba de `make check` la incluye
+  sola en cuanto exista `filesystem/mission4/…/map.json`.
+- Las pruebas de ares de esta rama usaron los Xvfb `:63` y `:64`; el agente
+  de la M4 también arrancó en `:64` mientras tanto. Conviene repartir los
+  números de pantalla.

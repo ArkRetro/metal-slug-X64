@@ -388,8 +388,8 @@ static uint8_t k2eb4(neo_genv_t *e,int16_t x,int16_t y) {
  * the ground or +5F bit 0 -> 08F1E0 (sound 1025, 08EFDE), +8A = 002EB4 of
  * the velocity >> 3, gravity, 0427A, attack row 08FC46 (08FC56 with +93 bit
  * 5) -> 08EFDE on a hit, outside 08FC74 (019504) -> 08EFD6. 08EFDE: +66/+1E
- * = E0ED, +50 = 0, the explosion 01C706 in place. Translated from the ROM:
- * no capture holds the turret's fire. */
+ * = E0ED, +50 = 0, the explosion 01C706 in place. Proven by the family m5tank
+ * (the Mission 5 street tank 08DCB2 fires the same flash and shell: capture K). */
 static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     switch (L(0)) {

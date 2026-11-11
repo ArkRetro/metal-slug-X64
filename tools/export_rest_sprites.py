@@ -429,6 +429,13 @@ ROOTS=ROOTS+(0x281ee0,0x281f82)
 RESOURCES=RESOURCES+(0x851,)   # 869 is the +77 = 0 variant (0836DE), which Mission 5 never makes: no capture has it
 # Mission 5: the debris pieces 01CE50..01CE98 of the sewer gates' lists 0BBD78 / 0BBD8A (palettes 168 / 167, 01D1B0).
 RESOURCES=RESOURCES+(0x167,0x168)
+# Mission 5 street tank 08DCB2 / 08EB18 (22B / 347 by +89, flash 306), its flash 08EFFA (208) and shell 08F058 (373); the prizes
+# of class 0x55 the wrecked cars 050542 drop (892).
+ROOTS=ROOTS+(0x28aef0,0x28ad3a,0x28adf4,0x28b03c,0x28af3e,0x28b13a,0x28b250,0x28b366,0x28b5cc,0x28b6f6,0x28bcdc,0x28c10e,0x22d264,0x28c32c,
+    0x28b7bc,0x28b80e,0x28b860,0x28b8b2,0x28b904,0x28b956,0x28b9a8,0x28b9fa,0x28ba4c,0x28ba9e,0x28baf0,0x28bb42,0x28bb94,0x28bbe6,0x28bc38,0x28bc8a)
+RESOURCES=RESOURCES+(0x22b,0x892)   # 347 is the +89 = 1 variant, which no Mission 5 record makes: no capture has it
+# Mission 5 lone helicopter 0474B6: its stop 0E0C32[+96 & 3] (the other programs and the palettes 20 / 21 / 22 / 15C are the formation's).
+ROOTS=ROOTS+(0x244792,0x2447a0,0x2447ae,0x2447bc)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
@@ -510,9 +517,17 @@ def validate(capture,nodes,descs,crom,stats,per):
     by=collections.defaultdict(list)
     for u in parse(capture/'boss-trace.txt'):
         if isinstance(nodes,tuple):
-            if not nodes[0]<=u['routine']<=nodes[1]:continue
+            if not nodes[0]<=u['routine']<=nodes[1]:
+                # A node of the family that left the routine range (a car turned into the blast 01C71E): its entries
+                # are not rasterized, but the update counts, so that "the previous update" of the second try is
+                # the same update for every node.
+                if u['node'] in by:by[u['node']].append((u['frame'],[]))
+                continue
         elif u['node'] not in nodes:continue
-        if u['post'] is None or u['post'][:4]==bytes.fromhex('00003f1e'):continue   # deleting update: nothing drawn after it
+        if u['post'] is None or u['post'][:4]==bytes.fromhex('00003f1e'):
+            # Deleting update: nothing drawn after it (it counts as an update with no entries, as above).
+            if u['node'] in by:by[u['node']].append((u['frame'],[]))
+            continue
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:
@@ -524,33 +539,13 @@ def validate(capture,nodes,descs,crom,stats,per):
         if not (capture/f'palette{frame}.bin').exists():continue
         if not any(x[0]<=frame and x[1] for ups in by.values() for x in ups):continue
         v=struct.unpack('>34304H',vf.read_bytes());pw=struct.unpack('>4096H',(capture/f'palette{frame}.bin').read_bytes())
-        best=None
-        for rank in (1,2):
-            dl=[];f=0
-            for ups in by.values():
-                # Updates up to the dump; a node deleted since then draws nothing.
-                done=[x for x in ups if x[0]<=frame]
-                if len(done)>=rank and done[-1][0]>=frame-2:
-                    f=max(f,done[-rank][0]);dl+=done[-rank][1]
-            if not dl:continue
-            zoomed=zoomed_slots(v)
-            stats['zoomed_entries_skipped']+=sum(1 for d in dl if d['attr']>>8 in zoomed)
+        best=None;zoomed=zoomed_slots(v);skipped=False
+        def entries(dl):
+            # Zoomed sprites are not rasterized; auto-animated entries (attr bits 2/3: the LSPC counter picks the
+            # tile, e.g. the GO arrow 05287C) neither.
             dl=[d for d in dl if d['attr']>>8 not in zoomed]
-            # Auto-animated entries (attr bits 2/3: the LSPC counter picks the
-            # tile, e.g. the GO arrow 05287C) are not rasterized here.
-            stats['auto_animation_entries_skipped']+=sum(1 for d in dl if d['attr']&12)
-            auto=[d for d in dl if d['attr']&12]
-            if auto and not MASK_AUTO:continue
-            dl=[d for d in dl if not d['attr']&12]
-            slots={d['attr']>>8 for d in dl}
-            try:im,_=reconstruct(v,pw,crom,slots)
-            except AssertionError as err:
-                # Another sprite of the screen with one of these palette
-                # numbers is auto-animated (Mission 3: the train's wheels):
-                # the dump is not validated (counted).
-                if 'auto-animation' not in str(err):raise
-                stats['dumps_skipped_auto_animation']+=1;break
-            mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
+            return [d for d in dl if not d['attr']&12],[d for d in dl if d['attr']&12]
+        def paint(dl,auto):
             native=[0]*(320*256)
             for d in dl:
                 g=descs.get(d['desc'])
@@ -582,11 +577,51 @@ def validate(capture,nodes,descs,crom,stats,per):
                 left=d['x']+(-(g['x']+g['width'])-1 if d['attr']&1 else g['x']);top=((512-d['y'])&511)+g['y']
                 for sy in range(max(top,0),min(top+g['height'],256)):
                     for sx in range(max(left,0),min(left+g['width'],320)):native[sy*320+sx]=-1
+            return native
+        def score(native,mame):
             same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
-            diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])
-            overlap=sum(1 for i in range(320*256) if native[i]<0)
-            if best is None or diff<best[1]:best=(same,diff,rank,f,overlap)
+            # A pixel where the dump shows a pen of another palette slot: a sprite outside the family (drawn with a
+            # slot some family entry also uses, e.g. the fire 01C9E6 and a shell's blast 01C706) lies on top of
+            # the family's; counted apart, not a difference of the descriptor.
+            covered=sum(1 for i in range(320*256) if native[i]>0 and mame[i] and (mame[i]>>4)!=(native[i]>>4))
+            diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])-covered
+            return same,diff,sum(1 for i in range(320*256) if native[i]<0),covered
+        # Per node, the entries of its last update and of the one before (a node deleted since then draws nothing).
+        cand={}
+        for node,ups in by.items():
+            done=[x for x in ups if x[0]<=frame]
+            if done and done[-1][0]>=frame-2:cand[node]=[done[-1]]+([done[-2]] if len(done)>=2 else [(done[-1][0],[])])
+        if not cand:continue
+        every=[d for c in cand.values() for x in c for d in x[1]]
+        stats['zoomed_entries_skipped']+=sum(1 for d in every if d['attr']>>8 in zoomed)
+        stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&12)
+        if any(d['attr']&12 for d in every) and not MASK_AUTO:continue
+        slots={d['attr']>>8 for d in entries(every)[0]}
+        try:im,_=reconstruct(v,pw,crom,slots)
+        except AssertionError as err:
+            # Another sprite of the screen with one of these palette
+            # numbers is auto-animated (Mission 3: the train's wheels):
+            # the dump is not validated (counted).
+            if 'auto-animation' not in str(err):raise
+            stats['dumps_skipped_auto_animation']+=1;continue
+        mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
+        # First and second try: every node's last update, or every node's previous one (the dump shows the last
+        # sprite list the game finished). Third try: the walk of one game update split by the dump (the game
+        # runs slower than the screen: an update takes several frames, and a node made or deleted in it has no
+        # previous entries): per node, whichever of its two updates is the one on screen.
+        for rank in (1,2,3):
+            if rank<3:picks={n:c[rank-1] for n,c in cand.items()}
+            else:
+                if best is not None and not best[1]:break
+                picks={}
+                for n,c in cand.items():
+                    s=[score(paint(*entries(x[1])),mame)[1] for x in c]
+                    picks[n]=c[1] if s[1]<s[0] else c[0]
+            dl=[d for x in picks.values() for d in x[1]];f=max(x[0] for x in picks.values())
+            same,diff,overlap,covered=score(paint(*entries(dl)),mame)
+            if best is None or diff<best[1]:best=(same,diff,rank,f,overlap,covered)
         if best is None:continue
         stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['pixels_overlapping']+=best[4];stats['rank_%d'%best[2]]+=1
+        stats['pixels_covered']+=best[5]
         per.append(dict(capture=capture.name,frame=frame,update_frame=best[3],equal=best[0],different=best[1]))
 if __name__=='__main__':main()

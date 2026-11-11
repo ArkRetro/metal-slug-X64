@@ -18,24 +18,22 @@ Las «secciones» de este inventario son las tres etapas (cada una con su lista 
 
 | | Constructores | Creaciones |
 | --- | --- | --- |
-| nativos (compartidos con misiones anteriores) | 130 | 17535 |
+| nativos (compartidos con misiones anteriores) | 135 | 17925 |
 | nativos en otro módulo (fin de misión, aterrizaje, guion, efectos) | 13 | 130 |
-| **nuevos, sin portar** | 79 | 1707 |
+| **nuevos, sin portar** | 74 | 1317 |
 | total | 222 | 19372 |
 
-De los 79 sin portar, 1 ya estaban en el inventario de una misión anterior (los porta su fase 2: M4) y **78 son propios de esta misión**.
+De los 74 sin portar, 1 ya estaban en el inventario de una misión anterior (los porta su fase 2: M4) y **73 son propios de esta misión**.
 
 Secciones (fotograma de `run4` en que empieza cada una): 1 calle desde 247663, 2 metro desde 252828, 3 alcantarilla desde 274388.
 
 Registros del guion que `run4` no ejecutó (ramas `si`/azar; a capturar en la fase 2): 141.
 
-## Nuevos (sin portar): 79 constructores, 1707 creaciones
+## Nuevos (sin portar): 74 constructores, 1317 creaciones
 
 Por familia (raíz = registro del guion, llamada de la lista de cámara o actor de misión del que descienden), en orden de primera aparición:
 
-- `08DCB2` (2): `08DCB2` `08EB18`; sección 1, primera cámara 408, 2 creaciones
 - `08FF7E` (4): `08FF7E` `090A62` `091290` `0912EE`; sección 1, primera cámara 600, 16 creaciones
-- `0474B6` (3): `0474B6` `0479B8` `047AFC`; sección 1, primera cámara 880, 388 creaciones
 - `0AF1A8` (1): `0AF1A8`; sección 1, primera cámara 880, 52 creaciones
 - `047F7E` (3): `047F7E` `047A12` `047B10`; sección 1, primera cámara 1208, 293 creaciones
 - `051344` (12): `051344` `0515CE` `051688` `051690` `051772` `0527A2` `052128` `051D70` `051DF2` `051C00` `051FF4` `051FFE`; sección 2, primera cámara 528, 148 creaciones
@@ -49,20 +47,15 @@ Por familia (raíz = registro del guion, llamada de la lista de cámara o actor 
 - `0A0C00` (22): `0A0C00` `0A14FE` `0A167C` `0A1830` `0A21F0` `0A21A8` `0A21CE` `0A1E92` `0A1E7E` `0A1F0E` `0A1958` `0A1EA6` `0A192E` `0A203A` `0A1DF2` `0A1B3A` `0A1BEC` `0A1C0C` `0A1C4C` `0A1D20` `0A1756` `0A18D8`; sección 3, primera cámara 2560, 434 creaciones
 - `0308C0` (1): `030FB2`; sección 3, primera cámara 2560, 8 creaciones
 
-### Sección 1 (calle): 11 constructores nuevos que aparecen aquí por primera vez, por cámara
+### Sección 1 (calle): 6 constructores nuevos que aparecen aquí por primera vez, por cámara
 
 | Constructor | Creaciones | Primer fotograma | Cámara | Por sección | Creadores | Programas | Sonidos | Familia (raíz) |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| `08DCB2` | 1 | 248181 | 408 | 1:1 | `script`×1 | 3 | 1021 1033 | 08DCB2 |
-| `08EB18` | 1 | 248181 | 408 | 1:1 | `08DCB2`×1 | 3 | 1025 | 08DCB2 |
 | `08FF7E` | 6 | 248364 | 600 | 1:2 3:4 | `script`×6 | 7 | 1021 1033 108A | 08FF7E |
 | `090A62` | 6 | 248364 | 600 | 1:2 3:4 | `08FF7E`×6 | 4 | 1064 | 08FF7E |
 | `091290` | 2 | 248714 | 600 | 1:2 | `090A62`×2 | 1 |  | 08FF7E |
 | `0912EE` | 2 | 248714 | 600 | 1:2 | `090A62`×2 | 2 | 1025 | 08FF7E |
-| `0474B6` | 8 | 249523 | 880 | 1:3 2:5 | `script`×8 | 5 | 1021 1022 10E8 | 0474B6 |
 | `0AF1A8` (M4) | 52 | 249614 | 880 | 1:10 2:42 | `01A422`×32, `script`×20 | 23 | 103E 1041 1042 1043 | 0AF1A8 |
-| `0479B8` | 190 | 249882 | 880 | 1:22 2:168 | `0474B6`×190 | 1 | 10FF | 0474B6 |
-| `047AFC` | 190 | 249887 | 880 | 1:22 2:168 | `0479B8`×190 | 3 |  | 0474B6 |
 | `047F7E` | 5 | 250762 | 1208 | 1:1 2:4 | `script`×5 | 9 | 1021 1022 10E8 | 047F7E |
 
 ### Sección 2 (metro): 36 constructores nuevos que aparecen aquí por primera vez, por cámara
@@ -143,7 +136,7 @@ Por familia (raíz = registro del guion, llamada de la lista de cámara o actor 
 | `0A2134` | 9 | 291485 | 2560 | 3:9 | `01D764`×7, `0A0C00`×2 | 5 |  | common |
 | `030FB2` | 8 | 292098 | 2560 | 3:8 | `030B0A`×8 | 1 | 10D6 | 0308C0 |
 
-## Nativos ya portados (compartidos): 130 constructores, 17535 creaciones
+## Nativos ya portados (compartidos): 135 constructores, 17925 creaciones
 
 Los que crea directamente el guion, un corredor del guion o el actor de misión:
 
@@ -160,7 +153,9 @@ Los que crea directamente el guion, un corredor del guion o el actor de misión:
 | `05C53C` | 11 | 247842 | 67 | 1:11 | `script`×11 | 7 | 103E 1041 1042 1043 | 05C53C |
 | `08DA12` | 8 | 247892 | 123 | 1:8 | `script`×7, `01A422`×1 | 8 | 103E 1041 1042 1043 | 08DA12 |
 | `092A32` | 1 | 248043 | 280 | 1:1 | `01A422`×1 | 1 |  | 092A32 |
+| `08DCB2` | 1 | 248181 | 408 | 1:1 | `script`×1 | 3 | 1021 1033 | 08DCB2 |
 | `09A692` | 11 | 249258 | 600 | 1:4 2:6 3:1 | `script`×11 | 0 |  | 09A692 |
+| `0474B6` | 8 | 249523 | 880 | 1:3 2:5 | `script`×8 | 5 | 1021 1022 10E8 | 0474B6 |
 | `05D226` | 2 | 250542 | 968 | 1:2 | `script`×2 | 2 | 1041 | 05D226 |
 | `09A67E` | 6 | 251724 | 1530 | 1:5 2:1 | `script`×6 | 0 |  | 09A67E |
 | `0BBED0` | 1 | 251766 | 1584 | 1:1 | `script`×1 | 1 |  | 0BBED0 |
@@ -185,7 +180,7 @@ Los que crea directamente el guion, un corredor del guion o el actor de misión:
 | `0BC3A6` | 3 | 274909 | 440 | 3:3 | `script`×3 | 1 | 1027 102D | 0BC3A6 |
 | `09692C` | 3 | 275061 | 557 | 3:3 | `script`×3 | 4 | 1034 1092 | 09692C |
 
-El resto (hijos, disparos, efectos, premios): `08B3E6` `01B782` `01BF46` `01BC2E` `040F88` `05DD2A` `05090A` `05092C` `05094E` `0509A8` `01C796` `01D764` `06381C` `0C58D2` `063D9E` `06371E` `050B52` `014A4E` `03B4E0` `08C374` `03523C` `08D330` `01CE08` `01CE44` `01CE20` `01C706` `03B936` `01C71E` `01CE38` `01CE14` `05DF3E` `05DFC2` `047874` `01BEDA` `063AEE` `0C4E86` `047DE0` `08C68E` `048EDA` `048EFE` `048F26` `048F4E` `01C6EE` `099E1C` `040396` `08982A` `08943C` `01D31C` `0897E2` `01E22C` `03C306` `01E582` `01E58A` `04870C` `048882` `047A6C` `047B24` `01E596` `035BF8` `01D86C` `01D944` `01D958` `0287FA` `028C3E` `028A88` `028BBC` `01B668` `063F10` `063B22` `01BEA4` `01CF88` `01CF7C` `0BC192` `0BC100` `0B6ED2` `03C62A` `0834F4` `01CE5C` `01CE68` `01CE74` `01CE80` `01CE8C` `083820` `097830` `01CE50` `059F76` `01B6A0` `097C46` `097D22` `097DD0` `0AE1DC` `0AD9B8` `0AD8A2` `0641EC` `01BF10`
+El resto (hijos, disparos, efectos, premios): `08B3E6` `01B782` `01BF46` `01BC2E` `040F88` `05DD2A` `05090A` `05092C` `05094E` `0509A8` `01C796` `01D764` `06381C` `0C58D2` `063D9E` `06371E` `050B52` `014A4E` `03B4E0` `08C374` `03523C` `08D330` `08EB18` `01CE08` `01CE44` `01CE20` `01C706` `03B936` `01C71E` `01CE38` `01CE14` `05DF3E` `05DFC2` `047874` `01BEDA` `063AEE` `0C4E86` `0479B8` `047AFC` `047DE0` `08C68E` `048EDA` `048EFE` `048F26` `048F4E` `01C6EE` `099E1C` `040396` `08982A` `08943C` `01D31C` `0897E2` `01E22C` `03C306` `01E582` `01E58A` `04870C` `048882` `047A6C` `047B24` `01E596` `035BF8` `01D86C` `01D944` `01D958` `0287FA` `028C3E` `028A88` `028BBC` `01B668` `063F10` `063B22` `01BEA4` `01CF88` `01CF7C` `0BC192` `0BC100` `0B6ED2` `03C62A` `0834F4` `01CE5C` `01CE68` `01CE74` `01CE80` `01CE8C` `083820` `097830` `01CE50` `059F76` `01B6A0` `097C46` `097D22` `097DD0` `0AE1DC` `0AD9B8` `0AD8A2` `0641EC` `01BF10`
 
 En otro módulo: `01A422` (neo_script.c), `0308C0` (neo_tally.c), `030B08` (neo_tally.c), `030B0A` (neo_tally.c), `03AED8` (neo_wipe.c), `03AEF0` (neo_wipe.c), `03BC28` (neo_soldier_effects.c), `0607DE` (neo_end.c), `06090A` (neo_end.c), `060A72` (neo_end.c), `060B06` (neo_end.c), `0C4A58` (neo_landing.c), `0C5286` (neo_landing.c).
 
@@ -200,7 +195,7 @@ En otro módulo: `01A422` (neo_script.c), `0308C0` (neo_tally.c), `030B08` (neo_
 | `032B6E` | native | 1 | 3 |
 | `035B66` | native | 8 | 2 |
 | `04115A` | native | 15 | 1 2 |
-| `0474B6` | missing | 8 | 1 2 |
+| `0474B6` | native | 8 | 1 2 |
 | `047F7E` | missing | 5 | 1 2 |
 | `04857C` | native | 1 | 2 |
 | `050542` | native | 9 | 1 |
@@ -217,7 +212,7 @@ En otro módulo: `01A422` (neo_script.c), `0308C0` (neo_tally.c), `030B08` (neo_
 | `08AFB6` | native | 4 | 1 |
 | `08C37C` | native | 5 | 1 |
 | `08DA12` | native | 8 | 1 |
-| `08DCB2` | missing | 1 | 1 |
+| `08DCB2` | native | 1 | 1 |
 | `08FF7E` | missing | 6 | 1 3 |
 | `092A32` | native | 1 | 1 |
 | `095C98` | missing | 4 | 3 |
@@ -458,7 +453,7 @@ Una fila por orden bloqueante del guion principal (fotograma y cámara en que em
 la siguiente: registros op 7 (registro → constructor; `*` = sin portar), elecciones al azar, condiciones, corredores,
 creaciones del actor de misión, fin.
 sections (start frame): 1@247663 2@252828 3@274388
-constructors allocated: 222, allocations 19372, native 130
+constructors allocated: 222, allocations 19372, native 135
 
 #### Sección 1 (calle)
 
@@ -480,7 +475,7 @@ constructors allocated: 222, allocations 19372, native 130
 | 248036 | 274 | camera wait 288 | 17 | si group5 < 1: sí; `2DCE10`→`092A32` (corredor); si player_query_12 == 2060: sí; corredor `2DCE3C` (cada 60, 8 veces, hasta 600); si player_query_13 == 2060: no |
 | 248053 | 288 | camera wait 288 | 0 | si player_query_12 == 2060: sí; corredor `2DCE9A` (cada 90, 8 veces, hasta 600); si player_query_13 == 2060: no |
 | 248053 | 288 | camera wait 304 | 20 | si group2 < 1: sí; `2DCEAC`→`0AF17E` (corredor); si group1 < 2: sí; `2DCE4E`→`0AF17E` (corredor); `2DCEF4`→`05C53C` |
-| 248073 | 305 | camera wait 408 | 108 | `2DCF0A`→`05C53C`; `2DCF1A`→`08DCB2`\* |
+| 248073 | 305 | camera wait 408 | 108 | `2DCF0A`→`05C53C`; `2DCF1A`→`08DCB2` |
 | 248181 | 408 | camera wait 448 | 44 | `2DCF30`→`0BBE5E` |
 | 248225 | 448 | camera wait 528 | 78 | si group1 < 2: sí; `2DCE4E`→`0AF17E` (corredor); `2DCF42`→`05C53C` |
 | 248303 | 528 | camera wait 600 + lock 600 | 61 | — |
@@ -495,10 +490,10 @@ constructors allocated: 222, allocations 19372, native 130
 | 249276 | 609 | camera wait 664 | 51 | si group2 < 1: sí; `2DD19A`→`0AF17E` (corredor); si group1 < 2: sí; `2DD13C`→`0AF17E` (corredor); `2DD1FA`→`08C37C`; `2DD208`→`09624E`; `2DD214`→`05C53C`; `2DD224`→`050542`; `2DD236`→`05C53C` |
 | 249327 | 667 | camera wait 800 | 118 | `2DD24C`→`08DA12`; `2DD25E`→`08DA12`; `2DD270`→`050542` |
 | 249445 | 800 | camera wait 880 + lock 880 | 78 | — |
-| 249523 | 880 | camera wait 880 + lock 880 | 0 | `2DD29E`→`0474B6`\* |
+| 249523 | 880 | camera wait 880 + lock 880 | 0 | `2DD29E`→`0474B6` |
 | 249523 | 880 | timer wait 30 | 91 | `2DD2B4`→`0AF1A8`\* |
 | 249614 | 880 | timer wait 15 | 45 | si group2 < 1: sí; `2DD19A`→`0AF17E` (corredor); si group1 < 2: sí; `2DD13C`→`0AF17E` (corredor); `2DD2CE`→`0AF1A8`\* |
-| 249659 | 880 | timer wait 30 | 70 | `2DD2E8`→`0474B6`\* |
+| 249659 | 880 | timer wait 30 | 70 | `2DD2E8`→`0474B6` |
 | 249729 | 880 | timer wait 30 | 60 | `2DD2FE`→`0AF1A8`\* |
 | 249789 | 880 | timer wait 15 | 31 | `2DD318`→`0AF1A8`\* |
 | 249820 | 880 | timer wait 30 | 61 | `2DD332`→`0AF1A8`\* |
@@ -514,7 +509,7 @@ constructors allocated: 222, allocations 19372, native 130
 | 250660 | 1097 | camera wait 1144 | 54 | `2DD61E`→`05C53C`; `2DD62E`→`050542` |
 | 250714 | 1147 | camera wait 1208 + lock 1208 | 48 | — |
 | 250762 | 1208 | camera wait 1208 + lock 1208 | 0 | `2DD65C`→`047F7E`\*; si player_query_12 == 2306: sí; corredor `2DD674` (cada 90, 8 veces, hasta 1209); corredor `2DD69C` (cada 90, 8 veces, hasta 1209); corredor `2DD6C4` (cada 120, 8 veces, hasta 1209); si player_query_13 == 2306: no |
-| 250762 | 1208 | timer wait 15 | 55 | si group2 < 1: sí; `2DD6AE`→`0AF17E` (corredor); si group1 < 1: sí; `2DD686`→`0AF17E` (corredor); `2DD7A6`→`0474B6`\* |
+| 250762 | 1208 | timer wait 15 | 55 | si group2 < 1: sí; `2DD6AE`→`0AF17E` (corredor); si group1 < 1: sí; `2DD686`→`0AF17E` (corredor); `2DD7A6`→`0474B6` |
 | 250817 | 1208 | condition wait group7 < 1 | 652 | si group3 < 2: sí (×2); azar `2DD6D6`→`2DD6EE`; `2DD6EE`→`0AF1A8`\* (corredor); si group1 < 2: sí (×2); `2DD412`→`0AF17E` (corredor) (×2); azar `2DD4CE`→`2DD4D0`; `2DD4D0`→`0AF1A8`\* (corredor); si group2 < 1: no (×4); si group1 < 1: sí; `2DD686`→`0AF17E` (corredor); si group3 < 2: no (×2); si group1 < 1: no; camera unlock |
 | 251469 | 1208 | camera wait 1216 | 9 | si player_query_12 == 2060: sí; corredor `2DD7CA` (cada 120, 8 veces, hasta 1360); si player_query_13 == 2060: no |
 | 251478 | 1216 | camera wait 1472 | 204 | si group2 < 1: sí; `2DD7DC`→`0AF17E` (corredor); `2DD824`→`0AF17E`; `2DD83A`→`0AF17E` |
@@ -540,14 +535,14 @@ constructors allocated: 222, allocations 19372, native 130
 | 252829 | 0 | camera wait 0 | 0 | `2DDB08`→`099DCC`; `2DDB1A`→`0AF17E`; `2DDB30`→`0AF17E`; `2DDB46`→`099862` |
 | 252829 | 0 | camera wait 40 | 317 | misión→`03AEF0`\*; misión→`05287C`; `2DDB5E`→`0BC1E6`; si player_query_12 == 1814: sí; `2DDB72`→`09A692`; si player_query_13 == 1814: no |
 | 253146 | 44 | camera wait 80 + lock 80 | 8 | — |
-| 253154 | 80 | camera wait 80 + lock 80 | 0 | `2DDBBE`→`0474B6`\* |
+| 253154 | 80 | camera wait 80 + lock 80 | 0 | `2DDBBE`→`0474B6` |
 | 253154 | 80 | timer wait 15 | 33 | `2DDBD4`→`04115A`; `2DDBEA`→`04115A` |
 | 253187 | 80 | condition wait group1 < 1 | 453 | camera unlock |
 | 253640 | 80 | camera wait 192 + lock 192 | 108 | — |
-| 253748 | 192 | camera wait 192 + lock 192 | 0 | `2DDC24`→`0474B6`\* |
+| 253748 | 192 | camera wait 192 + lock 192 | 0 | `2DDC24`→`0474B6` |
 | 253748 | 192 | timer wait 15 | 37 | `2DDC3A`→`04115A` |
 | 253785 | 192 | timer wait 15 | 30 | `2DDC54`→`04115A` |
-| 253815 | 192 | timer wait 60 | 120 | `2DDC6E`→`0474B6`\* |
+| 253815 | 192 | timer wait 60 | 120 | `2DDC6E`→`0474B6` |
 | 253935 | 192 | timer wait 30 | 60 | `2DDC84`→`04115A` |
 | 253995 | 192 | timer wait 15 | 30 | `2DDC9E`→`04115A` |
 | 254025 | 192 | timer wait 15 | 30 | `2DDCB8`→`04115A` |
@@ -583,10 +578,10 @@ constructors allocated: 222, allocations 19372, native 130
 | 263684 | 808 | timer wait 15 | 30 | `2DE28E`→`0AF1A8`\* |
 | 263714 | 808 | timer wait 15 | 30 | `2DE2A8`→`0AF1A8`\* |
 | 263744 | 808 | timer wait 15 | 45 | `2DE2C2`→`0AF1A8`\* |
-| 263789 | 808 | timer wait 45 | 118 | si group2 < 3: sí; azar `2DE1B6`→`2DE1B8`; `2DE1B8`→`0AF17E` (corredor); `2DE2DC`→`0474B6`\* |
+| 263789 | 808 | timer wait 45 | 118 | si group2 < 3: sí; azar `2DE1B6`→`2DE1B8`; `2DE1B8`→`0AF17E` (corredor); `2DE2DC`→`0474B6` |
 | 263907 | 808 | timer wait 30 | 60 | si group2 < 3: sí; azar `2DE1B6`→`2DE1B8`; `2DE1B8`→`0AF17E` (corredor); `2DE2F2`→`047F7E`\*; si player_query_12 == 2060: sí; corredor `2DE308` (cada 120, 8 veces, hasta 809); si player_query_13 == 2060: no |
 | 263967 | 808 | timer wait 60 | 120 | si group5 < 2: no; si group2 < 3: sí; azar `2DE1B6`→`2DE1CE`; `2DE1CE`→`0AF17E` (corredor); `2DE394`→`047F7E`\* |
-| 264087 | 808 | condition wait group1 < 2 | 3671 | si group5 < 2: sí (×8); azar `2DE31A`→`2DE31C` (×6); `2DE31C`→`0AF1A8`\* (corredor) (×6); azar `2DE31A`→`2DE332` (×2); `2DE332`→`0AF1A8`\* (corredor) (×2); `2DE3AC`→`0474B6`\* |
+| 264087 | 808 | condition wait group1 < 2 | 3671 | si group5 < 2: sí (×8); azar `2DE31A`→`2DE31C` (×6); `2DE31C`→`0AF1A8`\* (corredor) (×6); azar `2DE31A`→`2DE332` (×2); `2DE332`→`0AF1A8`\* (corredor) (×2); `2DE3AC`→`0474B6` |
 | 267758 | 808 | timer wait 30 | 60 | `2DE3C2`→`099DCC` |
 | 267818 | 808 | timer wait 30 | 60 | `2DE3DA`→`047F7E`\* |
 | 267878 | 808 | timer wait 30 | 60 | `2DE3F0`→`047F7E`\* |

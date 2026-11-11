@@ -1574,6 +1574,8 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/script
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_world.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/world
 	$(BUILD_DIR)/host/world
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_b69.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/b69
+	$(BUILD_DIR)/host/b69
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DMSX_BLOOD=$(MSX_BLOOD) tools/test_neo_blood.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/blood
 	$(BUILD_DIR)/host/blood
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_m3props.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/m3props

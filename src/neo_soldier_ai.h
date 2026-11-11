@@ -47,6 +47,7 @@ typedef struct {
     uint16_t value;
     neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD, the attacker for ATTACK */
     const int16_t *row;        /* ATTACK: x,y,w,h,kind,class,damage */
+    uint8_t *answer;           /* ATTACK with a class-0 row (B69): the highest type of the class-0 bodies hit, written by the handler */
 } neo_soldier_event_t;
 typedef struct {
     neo_kscene_t *kernel;

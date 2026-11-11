@@ -730,6 +730,14 @@ máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 128
   escena en ares: **208 ranuras** (el suelo; `neo_m5sewer.o` 11 KB de código). ares alcantarilla (`--fire --jump 2.5`,
   300 s): **cámara 1568** (antes 673), 0 rutinas sin portar, la manivela no se agarra.
 
+- **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
+  marcha agachada, nativa en `neo_soldier_ai.c`) sino la muerte del soldado agachado (`0407CA`, tabla `0407F4`) por
+  un golpe de **tipo 5** (`detail` 305 = tipo 5, en el suelo, agachado): la entrada `040BE6`, sin traducir. Elige el
+  programa `2410E2` / `241056` por el bit 15 de `eor.w` entre D0 (`+5B`, que `0407DA` acaba de poner a 0) y D1.w, cuya
+  parte alta es la que deja `01495C` en `04097A`: con contacto, `swap` de (superficie − y) (el signo del dy del sondeo);
+  sin contacto, el resto de `013968`. Solo pasa cuando el mando automático mata a un soldado agachado con ese tipo de
+  golpe (de ahí ~1 de cada 4 pasadas). **Pendiente**: una captura de esa muerte para fijar D1 (sin ella, parada).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

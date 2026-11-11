@@ -1521,6 +1521,24 @@
    "reader": "09624E Mission 5 street ledges: map x offsets by +72 (and the debug row lengths 09635A)",
    "hex": "f4e8dcd00306090c",
    "group": "m5"
+  },
+  {
+   "rom": "0x0BBE06",
+   "reader": "0BBF12 Mission 5 metro's end: programs by its stage +76",
+   "hex": "002a8fca002a906a002a9080002a909c",
+   "group": "m5"
+  },
+  {
+   "rom": "0x2D3F04",
+   "reader": "0BBF12 Mission 5 metro's end: health rank (0260C8)",
+   "hex": "0001005000500050005000500050005000500050005000500050",
+   "group": "m5"
+  },
+  {
+   "rom": "0x032B3E",
+   "reader": "032B46 Mission 5 sewer stains: cull rectangle (01945C)",
+   "hex": "ffe8fff001400050",
+   "group": "m5"
   }
  ]
 }

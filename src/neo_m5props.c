@@ -178,6 +178,9 @@ static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x
  * - 0BBE16 (street, camera 1640): +7B = 3C; 0BBE22: 01ABC8 and, at the end
  *   of the count, the stage exit 0B6ED2 at (7A0, -28) of the root with the
  *   rectangle 0BBAEC and the walk target 7A8 (neo_goarrow.c).
+ * - 032B46 / 032B5A / 032B6E (sewer, camera 0): programs 2393DE / 2393EA /
+ *   2393F6, 019DFC, layers 0, palette 158 with the soft-DIP BLOOD on (RAM
+ *   10FD8F) or 17D; 032BC4: 01ABC8, 00427A, outside 032B3E (01945C): 004188.
  * - 0BC1E6 (metro, +6E = a group, 8 from 9 on): 012022, palette 58F, layers
  *   0, program 2A91C6. 0BC22C: while the group +6E has nobody (019DCA);
  *   else program 2A9194 (its sound 107D) and 0BC252 until the group is
@@ -225,6 +228,17 @@ static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_project(a,e);
         if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
         return GA_MORE;
+    case 0x32b46:case 0x32b5a:case 0x32b6e:
+        if (!ga_anim_start(a,e,L(0)==0x32b46u?0x2393deu:L(0)==0x32b5au?0x2393eau:0x2393f6u,0x100)) return GA_UNSUPPORTED;
+        SB(0x69,0xff);                                                   /* 019DFC */
+        SW(0x66,0);SW(0x1e,0);
+        ga_palette(a,e->blood?0x158:0x17d);                              /* 032B94: RAM 10FD8F */
+        SL(0,0x32bc4);
+        /* fall through */
+    case 0x32bc4:
+        ga_project(a,e);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0x32b3e)?GA_DELETE:GA_MORE;
     case 0xbc1e6:
         front(a,e);ga_palette(a,0x58f);SW(0x66,0);SW(0x1e,0);
         if (!ga_anim_start(a,e,0x2a91c6,0x100)) return GA_UNSUPPORTED;
@@ -258,7 +272,7 @@ static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u || r==0xbc1e6u || r==0xbc22cu || r==0xbc252u;}
+static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u || r==0xbc1e6u || r==0xbc22cu || r==0xbc252u || r==0x32b46u || r==0x32b5au || r==0x32b6eu || r==0x32bc4u;}
 /* ---- the street's ledges 09624E and wrecked cars 050542 -----------------------------
  * - 09624E (script, +6E = 0..3, never drawn): +72 = +6E, +7A = +70, program
  *   0963B8, private palette 124, layers 0. 09628E: 01ABC8, the cell map
@@ -580,9 +594,140 @@ static bool car_routine(uint32_t r) {
     return r==0x9624eu || r==0x9628eu || r==0x50542u || r==0x505acu || r==0x50806u || r==0x5082cu || r==0x50876u || r==0x508dcu || r==0x5090au ||
            r==0x5092cu || r==0x5094eu || r==0x50990u || r==0x509a8u || r==0x50a66u || r==0x50b52u || r==0x50bd0u;
 }
-bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || deco_routine(r) || car_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
+/* ---- the metro's end 0BBF12 (script, camera 1520) -----------------------------------
+ * 0BBF12: at (768, 40) of 10C72E (01AB98), +4E = 0, +76 = FFFF, hurtbox
+ * 0BBAE0, palette 58E, flash 58D, layers 0, the wall 0BBAF4 (0C88B0).
+ * 0BBF6C: with +4E <= 0: +5F bit 7 cleared, +4E = rank 2D3F04, ++(+76) and
+ * the program 0BBE06[+76] (2A906A / 2A9080 call 0BBC7E / 0BBCE0: sound 1027
+ * and two puffs 01C6EE / 01C706; 0BBCD6: the debris list 0BBDAE by 01DA40;
+ * 0BBC6C: the piece 0BC192); at +76 = 3, 0BBFD0: +17 = FF, the piece 0BC100
+ * and the blast 01C71E at (-18, 8 / 0) (01B220), sound 102D, the debris
+ * 0BBD9C with the layers FFF2, both players' input handlers = 0BBF0E (sub.w
+ * d7,d7: no input, the same result as 054B18; 0CA2E0: handlers 4), +7B = 32. Else
+ * 01ABC8, 00427A, 004C24. 0BC068: 01ABC8 while +7B lasts; then 009F88,
+ * palette 587, program 2A909C, layers FFF1, the wall 0BBBB0 (0C88B0) and
+ * the stage exit 0B6ED2 (0040BC, D0 = 0) at (780, 28) of the root with the
+ * rectangle 0BBAEC and the walk target 788; 0BC0EE: +17 = FF, 01ABC8,
+ * 00427A.
+ * - 0BC100: +15 bit 5, palette 58E, layers 0, program 2A910C, +30 = -1.75
+ *   px, +34 = 7 px. 0BC14A: +72 = +34, 0143DC; on a floor: the second time
+ *   004188, else +34 = |+72| / 2 and +5F bit 3; 00427A.
+ * - 0BC192: 64 px above its creator (01AD6E), palette 58E, program 2A90A6,
+ *   layers 0; 0BC1CE: 01ABC8, 00427A, deleted at the end. */
+static neo_gactor_t *door_puff(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy) {   /* 0040BC (D0 = 2A), 01B220 */
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,0x2a):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    if (c) ga_place_from(c,a,e,dx,dy);
+    return c;
+}
+static bool door_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    switch (routine) {
+    case 0xbbc6c:
+        if (e->spawn_reserve) e->spawn_reserve(e->ctx,a,0xbc192,0x1c); else if (e->spawn) e->spawn(e->ctx,a,0xbc192,false);
+        return true;
+    case 0xbbc7e:
+        if (e->sound) e->sound(e->ctx,0x1027);
+        door_puff(a,e,0x1c6ee,-0x14,0x40);door_puff(a,e,0x1c6ee,-0x18,0x10);
+        return true;
+    case 0xbbcd6:
+        debris(a,e,0xbbdae);                                             /* 01DA40 */
+        return true;
+    case 0xbbce0:
+        if (e->sound) e->sound(e->ctx,0x1027);
+        door_puff(a,e,0x1c706,-0x14,0x30);door_puff(a,e,0x1c706,-0x18,0);
+        return true;
+    }
+    return false;
+}
+static ga_result_t door_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;neo_gactor_t *c;
+    switch (L(0)) {
+    case 0xbbf12:
+        ga_place(a,e,0x768,0x40,0x10c72eu);
+        SW(0x4e,0);SW(0x76,0xffff);SL(0x50,0xbbae0);
+        ga_palette(a,0x58e);ga_flash_palette(a,0x58d);SW(0x66,0);SW(0x1e,0);
+        if (e->stamp) e->stamp(e->ctx,a,0xbbaf4);                        /* 0C88B0 */
+        SL(0,0xbbf6c);
+        /* fall through */
+    case 0xbbf6c:
+        if ((int16_t)W(0x4e)<=0) {
+            SB(0x5f,B(0x5f)&0x7fu);
+            if (!rom_ok(e,0x2d3f04)) return GA_UNSUPPORTED;
+            SW(0x4e,ga_rank_word(a,e,ga_rom(0x2d3f04)));
+            SW(0x76,W(0x76)+1u);
+            if (!rom_ok(e,0xbbe06u+4u*W(0x76)) || !ga_anim_start(a,e,rl(0xbbe06u+4u*W(0x76)),0x100)) return GA_UNSUPPORTED;
+            if (W(0x76)>=3u) goto broken;
+        }
+        ga_project(a,e);
+        if (ga_anim_step(a,e,door_call)<0) return GA_UNSUPPORTED;
+        if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);                       /* 004C24 */
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    broken:
+        SB(0x17,0xff);
+        door_puff(a,e,0xbc100,-0x18,8);door_puff(a,e,0x1c71e,-0x18,0);
+        if (e->sound) e->sound(e->ctx,0x102d);
+        c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x1d764,0x1c):e->spawn?e->spawn(e->ctx,a,0x1d764,false):NULL;   /* 01DA40 */
+        if (c) {
+            ga_place_from(c,a,e,0,0);
+            if (B(0x15)&4u) ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|4u));
+            ga_sl(c,0x86,0xbbd9c);ga_sw(c,0x66,0xfff2);ga_sw(c,0x1e,0xfff2);
+        }
+        if (e->flags) e->flags->player_handlers=4;                       /* 0CA2E0 x2 with 0BBF0E */
+        SB(0x7b,0x32);SL(0,0xbc068);
+        /* fall through */
+    case 0xbc068:
+        SB(0x7b,B(0x7b)-1u);
+        if (!(B(0x7b)&0x80u)) {ga_project(a,e);return e->unsupported?GA_UNSUPPORTED:GA_MORE;}
+        SB(0x1d,0);ga_palette(a,0x587);                                  /* 009F88, 009EA8 */
+        if (!ga_anim_start(a,e,0x2a909c,0x100)) return GA_UNSUPPORTED;
+        SW(0x66,0xfff1);SW(0x1e,0xfff1);
+        if (e->stamp) e->stamp(e->ctx,a,0xbbbb0);                        /* 0C88B0 */
+        c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0xb6ed2,0):e->spawn?e->spawn(e->ctx,a,0xb6ed2,false):NULL;
+        if (c) {ga_sl(c,0x38,0x10e968u);ga_sl(c,0x28,0x7800000u);ga_sl(c,0x2c,0x280000u);ga_sl(c,0x6e,0xbbaec);ga_sw(c,0x72,0x788);}
+        SL(0,0xbc0ee);
+        /* fall through */
+    case 0xbc0ee:
+        SB(0x17,0xff);ga_project(a,e);
+        if (ga_anim_step(a,e,door_call)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_MORE;
+    case 0xbc100:
+        SB(0x15,B(0x15)|0x20u);ga_palette(a,0x58e);SW(0x66,0);SW(0x1e,0);
+        if (!ga_anim_start(a,e,0x2a910c,0x100)) return GA_UNSUPPORTED;
+        SL(0x30,0xfffe4000u);SL(0x34,0x70000);SB(0x7c,0);SL(0,0xbc14a);
+        /* fall through */
+    case 0xbc14a:
+        SL(0x72,L(0x34));
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);                        /* 0143DC */
+        if (B(0x15)&0x40u) {
+            SB(0x7c,B(0x7c)+1u);
+            if (B(0x7c)>=2u) return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+            uint32_t v=L(0x72);
+            if (v&0x80000000u) v=0u-v;
+            SL(0x34,(uint32_t)((int32_t)v>>1));SB(0x5f,B(0x5f)|8u);
+        }
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_MORE;
+    case 0xbc192:
+        c=e->creator?e->creator(e->ctx,a):NULL;
+        ga_place(a,e,0,-0x40,c?NEO_GA_TAG(c->index):0);                  /* 01AD6E */
+        ga_palette(a,0x58e);
+        if (!ga_anim_start(a,e,0x2a90a6,0x100)) return GA_UNSUPPORTED;
+        SW(0x66,0);SW(0x1e,0);SL(0,0xbc1ce);
+        /* fall through */
+    case 0xbc1ce:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool door_routine(uint32_t r) {return r==0xbbf12u || r==0xbbf6cu || r==0xbc068u || r==0xbc0eeu || r==0xbc100u || r==0xbc14au || r==0xbc192u || r==0xbc1ceu;}
+bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || deco_routine(r) || car_routine(r) || door_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
 ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (r==0x9624eu || r==0x9628eu) return ledge_tick(a,e);
+    if (door_routine(r)) return door_tick(a,e);
     return drip_routine(r)?drip_tick(a,e):deco_routine(r)?deco_tick(a,e):car_routine(r)?car_tick(a,e):gate_tick(a,e);
 }

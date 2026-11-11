@@ -689,7 +689,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
     if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
     if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
-    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
+    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers==4u?"0BBF0E":game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
     if (game.world.ga_flags.barrel_patched && !old_flags.barrel_patched) debugf("MSX shop destroyed (0B6882 patch) camera=%d\n",game.camera);
     {   /* Armoured vehicle 087E36 of the 1304 stop: standing (+5F bit 7 clear) or not. */
         static bool armored_standing;bool standing=false;

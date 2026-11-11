@@ -401,6 +401,12 @@ RESOURCES=RESOURCES+(0x211,0xe1,0xe2,0xe3,0xe4,0xe5,0x37c,0x113)
 # Mission 5 metro: the signal 0BC1E6 (58F).
 ROOTS=ROOTS+(0x2a91c6,0x2a9194)
 RESOURCES=RESOURCES+(0x58f,)
+# Mission 5 metro's end 0BBF12 (58E, flash 58D, open 587).
+ROOTS=ROOTS+(0x2a8fca,0x2a906a,0x2a9080,0x2a909c,0x2a910c,0x2a90a6)
+RESOURCES=RESOURCES+(0x58e,0x58d,0x587)
+# Mission 5 sewer stains 032B46.. (17D, and 158 with BLOOD on: captures-m5/fam/B8 as a palette capture).
+ROOTS=ROOTS+(0x2393de,0x2393ea,0x2393f6)
+RESOURCES=RESOURCES+(0x17d,0x158)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

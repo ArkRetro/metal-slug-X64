@@ -375,8 +375,8 @@ ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
 ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
 # Mission 4 vehicle 0587C4 (neo_m4veh.c): the body's states 058752 and its flinch 24BA5E, the turret's 058776, the shots 24BFBC / 24C0FC (callback 059770), the muzzle flashes 24BF42 / 24C082, the wreck's piece 24C3AA and the trail 24C53E.
 ROOTS+=[0x24ba74,0x24bb34,0x24bca0,0x24bcba,0x24bdc8,0x24bde2,0x24c1c2,0x24c2f6,0x24bd62,0x24ba5e,0x24bad4,0x24bbea,0x24bd48,0x24bedc,0x24be5c,0x24c25a,0x24be76,0x24bfbc,0x24c0fc,0x24bf42,0x24c082,0x24c3aa,0x24c53e]
-# Mission 4 boss debris 0259F2 / 025A5E (neo_m4boss.c): 246AD2 and 234D04; the flashes 025B6E / 025BE2 / 025CDE (234C06, 234BFC, 234C62) and 025DC2 (table E06DA).
-ROOTS+=[0x246ad2,0x234d04,0x234c06,0x234bfc,0x234c62,0x232a9a,0x232b0a,0x232b7a,0x232bea,0x232c78,0x232d06]
+# Mission 4 boss debris 0259F2 / 025A5E (neo_m4boss.c): 246AD2 and 234D04; the flashes 025B6E / 025BE2 / 025CDE (234C06, 234BFC, 234C62) 025DC2 (table E06DA) and 02591C (2348D4).
+ROOTS+=[0x2348d4,0x246ad2,0x234d04,0x234c06,0x234bfc,0x234c62,0x232a9a,0x232b0a,0x232b7a,0x232bea,0x232c78,0x232d06]
 # Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
 ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 # Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).

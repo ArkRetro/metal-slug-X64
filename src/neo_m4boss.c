@@ -7,7 +7,7 @@
  * (009EA8, D1 = 0), program 246AD2 at speed 0x100, +15 bit 2, and bit 0 (the
  * facing) when the random number's bit 0 is clear (0029C6); then 025A42
  * every update: 01ABC8, the program (004188 at its end), deleted outside the
- * rectangle E007C (024978 -> 019504).
+ * rectangle E007C (024978 -> 019504). 02591C, 025B6E.. below.
  * 025A5E: the same with palette 0x276, +30 = 1000, +34 = C000 and program
  * 234D04; then 025AAA: 01AC38 (moves by +30 / +34), the program (its end
  * falls to the cartridge check 025ABA and 004188), 024978. */
@@ -17,7 +17,7 @@
 #define SB(o,v) ga_sb(a,(o),(uint8_t)(v))
 #define SW(o,v) ga_sw(a,(o),(uint16_t)(v))
 #define SL(o,v) ga_sl(a,(o),(uint32_t)(v))
-static const uint32_t routines[]={0x259f2,0x25a42,0x25a5e,0x25aaa,0x25b6e,0x25baa,0x25be2,0x25c1e,0x25cde,0x25d1a,0x25dc2,0x25e18};
+static const uint32_t routines[]={0x259f2,0x25a42,0x25a5e,0x25aaa,0x25b6e,0x25baa,0x25be2,0x25c1e,0x25cde,0x25d1a,0x25dc2,0x25e18,0x2591c,0x25952};
 bool neo_m4boss_routine(uint32_t r) {
     for (unsigned i=0;i<sizeof(routines)/sizeof(routines[0]);i++) if (routines[i]==r) return true;
     return false;
@@ -81,6 +81,15 @@ ga_result_t neo_m4boss_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (st) return GA_DELETE;
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     }
+    /* 02591C: palette 0xF8, depth 0200, program 2348D4; 025952: 01ABC8 and
+     * the program to its end (the cartridge check 025962 -> 004188). */
+    case 0x2591c:
+        SB(0x1d,0);ga_palette(a,0xf8);                                  /* 009F88, 009EA8 */
+        SW(0x66,0x200);SW(0x1e,0x200);
+        if (!ga_anim_start(a,e,0x2348d4,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x25952);
+        /* fall through */
+    case 0x25952: goto flash;
     case 0x25dc2: {
         SB(0x1d,0);ga_palette(a,0xfc);                                  /* 009F88, 009EA8 */
         SW(0x66,0x1301);SW(0x1e,0x1301);SB(0x15,B(0x15)|0x04u);

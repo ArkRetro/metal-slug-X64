@@ -697,14 +697,14 @@ Tercera fusión (quinto lote de la M5: el metro `051344`): `make check` RC 0 (**
 **208** (no se baja ningún suelo): con `mission6.pack` apartado (cartucho 66 387 968) M4 `RESULT: PASS` **209 ranuras**,
 `heap_low` 279 KB; M1 → M2 `RESULT: PASS`, 210 ranuras.
 
-**Jefe `02267E`, primeras piezas (`src/neo_m4boss.c`, familia `m4bdeb` de la captura T: 134 nodos, 4059
-actualizaciones iguales a MAME).** Escombros `0259F2` (paleta F0, programa `246AD2`, cara al azar `0029C6`; `025A42`:
+**Jefe `02267E`, primeras piezas (`src/neo_m4boss.c`, familia `m4bdeb` de la captura T: 135 nodos, 4069
+actualizaciones iguales a MAME).** El reflejo `02591C` (paleta F8, profundidad 0200, `2348D4`, sin recorte). Escombros `0259F2` (paleta F0, programa `246AD2`, cara al azar `0029C6`; `025A42`:
 `01ABC8`, programa, `024978` = fuera del rectángulo `E007C`) y `025A5E` (paleta 276, `+30` = 1000, `+34` = C000,
 `234D04`; `025AAA`: `01AC38`); destellos `025B6E` / `025BE2` / `025CDE` (profundidad 1301, paleta FC, `234C06` /
 `234BFC` / `234C62`, sin recorte) y `025DC2` (sobre su creador con `01AD6E`: `+38` = creador + 28; programa `+90`
 de la tabla `E06DA`, `024978`). Prueba de familia: con `--ram-creators` un padre de la reserva de nodos se lee de la
 imagen de RAM. **Falta**: el resto del jefe (cuerpo `02267E`, `022CB6`, `023526`, `02391E`, `024226`, `0246D0`,
-`023EB4`, `023FDE`, `024F0E` / `02505C`, `02530E`..`0257DC`, `02591C`), sus sprites en la exportación (los de estas
+`023EB4`, `023FDE`, `024F0E` / `02505C`, `02530E`..`0257DC`), sus sprites en la exportación (los de estas
 piezas tampoco están: no se dibujan hasta que exista el jefe), el mapa `02225E` / la capa `10D7B6`, la cámara
 automática y el fin de misión.
 

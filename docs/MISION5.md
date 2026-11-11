@@ -632,6 +632,29 @@ referencias en la ROM: `0D3F00`, `0D4034`, `0D404C`, `0D4EF0`, `0D4FAA`.
   270180: 94), sin cerrar: el cuerpo y los brazos con el atributo de paleta del destello `+17` (BA00 / 9900);
   probable límite del validador con el destello compartido `0044F6`, sin comprobar.
 
+- **Paletas**: el tren (10F, 110, 111, 112, 115, 116) no tenía sus paletas en el paquete (la quinta tanda puso sus
+  raíces en `ROOTS` pero no sus recursos en `RESOURCES`: en ares 224 avisos `missing ... palette_id=110`). Como `R` y
+  `Q` ya no existen, las paletas salen de la RAM de paletas de `run4` en el metro (`--palette-capture` de sus fotos
+  262380..271500): tren y máquina completos salvo **239** (la granada `0D4D84`, sin foto de `run4` con ella viva:
+  pendiente de captura) y 25B / 25C / 25D (la variante `+7B` / `0D3C5A`, que la M5 no crea). En ares el tren se ve ya
+  con sus colores (cámara 528) y ningún aviso de paleta.
+- **ares, metro** (tarea 2): el mando pasa ahora el helicóptero de la cámara 80 con `--up 1.8` (arriba 1,5 s de cada
+  1,8: dispara hacia arriba casi siempre) y `--continue` (nuevo: Start en el panel CONTINUE? del juego, como un
+  jugador; no cambia nada del juego). `--fire --jump 2.5 --up 1.8 --continue`: cámara 688 en 420 s, el tren de la
+  cámara 528 visto destruido; en 900 s llega a la **cámara 809** y para con `world unsupported routine=23b636
+  (35bf8)`: los murciélagos `035B66` (registro `2DDF4C`) usan los programas `23B636..` del grupo `m2`, que no van en el
+  paquete de la M5 (`GROUPS[5] = ('m3', 'm5')`). Se resuelve con `/programs.bin` del agente A (todos los programas
+  fuera de los paquetes); hasta entonces la máquina de la cámara 992 no se ve en ares (solo la familia).
+- **Caché de escena** (tarea 5): con `neo_m5mech.o` (15 KB de código) la caché queda en **197 ranuras = el suelo**.
+  El suelo 197 es la suma de los tres juegos que se fijan (bancos y mapa 49 + jefe 65 + tres programas de soldado 83,
+  comentario de `SCENE_EXPANDED_MIN_SLOTS` en `scene_assets.c`); era 200 («con algo de margen») y se bajó a 197 en la
+  tercera tanda (tanque `08FF7E`). La caché se dimensiona tras cargar el audio con el montón libre que deja la imagen
+  de consola (código y datos: 1,26 MB de texto, 0,96 MB de datos): lo que la achica es el **código** de los módulos de
+  la M5 (tanque 15 KB, tren 9 KB, máquina 15 KB), no el paquete de la M5, cuyos trozos se leen bajo demanda en la
+  caché (1066 trozos, dentro de 1088). Las tablas nuevas (`region_rom.json`, 3,8 KB) no duplican nada (comprobado
+  contra los bloques existentes). Con el suelo a 208 de A hacen falta 11 ranuras (176 KB) que tiene que liberar
+  `/programs.bin`; si no basta, el siguiente paso es sacar código o tablas de la imagen, no bajar el suelo.
+
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
 
 ## Pendiente (fase 2, por orden)

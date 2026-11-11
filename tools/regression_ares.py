@@ -30,7 +30,7 @@ TESTS = {
     'm5s1':  ('test_mission5_ares.py', ['--stage', '1', '--progress', '100', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s2':  ('test_mission5_ares.py', ['--stage', '2', '--progress', '80', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s3':  ('test_mission5_ares.py', ['--stage', '3', '--progress', '100', '--fire', '--jump', '2.5'], 900, '--out'),
-    'm6s1':  ('test_mission6_ares.py', ['--stage', '1'], 600, '--out'),
+    'm6s1':  ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--continues'], 600, '--out'),   # the rafts need jumps (beach 0..176, raft 226..298)
     'm6s2':  ('test_mission6_ares.py', ['--stage', '2'], 600, '--out'),
     'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 600, '--out'),
 }

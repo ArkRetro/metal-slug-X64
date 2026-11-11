@@ -4537,7 +4537,7 @@ static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
         }
         ga_project(a,e);
         /* 08B52A: 0140C4 with the map 0E53E6[creator +7E] at (+-+82, +83). */
-        {uint32_t map=rl(e,0xe53e6u+4u*(uint8_t)(ga_b(p,0x7e)<<2));
+        {uint32_t map=rl(e,0xe53e6u+(uint8_t)(ga_b(p,0x7e)<<2));   /* 08B52E..08B540: the byte offset (+7E * 4) & FF */
          int16_t dx=(int8_t)B(0x82),dy=(int8_t)B(0x83);
          if (BIT(0x15,0)) dx=(int16_t)-dx;
          if (e->dyn_set) e->dyn_set(e->ctx,a,map,dx,dy);}
@@ -4550,7 +4550,7 @@ static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
         p=sh_creator(a,e);
         if (!p) {ga_fail(e,0x8b4d6);return GA_UNSUPPORTED;}
         ga_project(a,e);
-        {uint32_t map=rl(e,0xe53e6u+4u*(uint8_t)(ga_b(p,0x7e)<<2));
+        {uint32_t map=rl(e,0xe53e6u+(uint8_t)(ga_b(p,0x7e)<<2));   /* 08B52E..08B540: the byte offset (+7E * 4) & FF */
          int16_t dx=(int8_t)B(0x82),dy=(int8_t)B(0x83);
          if (BIT(0x15,0)) dx=(int16_t)-dx;
          if (e->dyn_set) e->dyn_set(e->ctx,a,map,dx,dy);}

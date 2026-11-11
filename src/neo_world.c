@@ -995,7 +995,15 @@ static int run_gactor(tick_t *t,unsigned i) {
         w->draw_count=before;ga_kill(t,a);return 0;
     }
     if (r==GA_UNSUPPORTED || t->genv.unsupported) {
-        w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);w->unsupported_line=0;w->unsupported_detail=0;t->genv.unsupported=0;
+        w->unsupported++;w->unsupported_routine=t->genv.unsupported?t->genv.unsupported_at:ga_l(a,0);w->unsupported_line=0;w->unsupported_detail=0;
+        {
+            /* Diagnostic of the stop: the node's routine +0 (line) and its
+             * parent's routine (detail). */
+            int at=find(w,NEO_WORLD_GACTOR,(unsigned)a->index);w->unsupported_line=ga_l(a,0);
+            if (at>0) {uint8_t d=w->order[at].depth;for (int k=at-1;k>=0;k--) if (w->order[k].depth<d) {
+                neo_world_slot_t s=w->order[k];w->unsupported_detail=s.kind==NEO_WORLD_GACTOR?ga_l(&w->gactors[s.index],0):0xF0000000u|s.kind;break;}}
+        }
+        t->genv.unsupported=0;
         /* The stopped actor goes with its descendants (0041AC): a child
          * must not outlive it (the Camel Slug stopped at 004ED2 left its
          * rider graphic 034F1A, a second Marco, drawn where it stopped). */

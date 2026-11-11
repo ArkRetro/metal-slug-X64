@@ -675,7 +675,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             pc<sc->size?sc->code[pc]:0xffu,pc+1u<sc->size?sc->code[pc+1]:0xffu,pc+2u<sc->size?sc->code[pc+2]:0xffu,
             pc+3u<sc->size?sc->code[pc+3]:0xffu,pc+4u<sc->size?sc->code[pc+4]:0xffu,pc+5u<sc->size?sc->code[pc+5]:0xffu);
     }
-    if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx soldier line=%lu detail=%08lx\n",(unsigned long)game.world.unsupported_routine,(unsigned long)game.world.unsupported_line,(unsigned long)game.world.unsupported_detail);
+    if (game.world.unsupported!=old_unsupported && game.world.boss_unsupported==old_boss_unsupported) debugf("MSX world unsupported routine=%05lx soldier line=%lu (%05lx) detail=%08lx\n",(unsigned long)game.world.unsupported_routine,(unsigned long)game.world.unsupported_line,(unsigned long)game.world.unsupported_line,(unsigned long)game.world.unsupported_detail);
     if (game.world.item_pickups!=old_pickups) debugf("MSX item pickup stopped explicitly at %05lx (untranslated)\n",(unsigned long)game.world.item_pickup_routine);
     if (game.world.pickup.taken!=old_served) debugf("MSX item served=%u score=%02x%02x%02x%02x\n",game.world.pickup.taken,
         game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3]);

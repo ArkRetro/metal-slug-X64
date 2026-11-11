@@ -37,6 +37,7 @@ bool msx_title_intro(const char *next) {
   if(last!=state.index) {if(last==~0u) dropped+=state.index;else if(state.index>last+1) {dropped+=state.index-last-1;debugf("MSX TITLE miss from=%u to=%lu audio_us=%lu draw_us=%lu\n",last,(unsigned long)state.index,(unsigned long)TICKS_TO_US(audio_ticks),(unsigned long)TICKS_TO_US(previous_draw));}unique++;last=state.index;}
   uint32_t draw_started=TICKS_READ();msx_cinematic_draw(surface);msx_frames_present();previous_draw=TICKS_READ()-draw_started;rendered++;
   if(target>=count+MSX_TITLE_HOLD_FRAMES && state.index+1==count) break;   // no spare-time work after the last frame: the next movie follows on the next blank
+  msx_audio_prefetch(msx_cinematic_idle_deadline());   // the audio's next block first (MSXL)
   while(msx_cinematic_prepare_idle()) {}   // this movie's frames ahead, then the next one's
  }
  msx_cinematic_stats_t final=msx_cinematic_stats();

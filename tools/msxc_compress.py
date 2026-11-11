@@ -9,9 +9,12 @@ table (count+1 words) of file offsets of the stored packets (bit 0: one pad
 byte follows the packet); a packet that LZ4 does not shrink is stored raw. The device decompresses with
 libdragon's decompress_lz4_full_fast (docs/RENDIMIENTO.md, ROM budget).
 
-usage: msxc_compress.py in.msxc out.msxc
+usage: msxc_compress.py [--greedy] in.msxc out.msxc
 """
 import struct,sys
+from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+import lz4_blocks
 
 def lz4_block(src):
     """Greedy LZ4 block (format rules: last 5 bytes literal, no match starting
@@ -64,15 +67,19 @@ def lz4_unblock(src,size):
     assert len(out)==size
     return bytes(out)
 
-def main(a,b):
+def main(a,b,greedy=False):
     d=open(a,'rb').read()
     assert d[:4]==b'MSXC' and struct.unpack('>I',d[4:8])[0]==1,a
     count=struct.unpack('>I',d[16:20])[0]
     raw=[struct.unpack('>I',d[32+4*i:36+4*i])[0] for i in range(count+1)]
     assert raw[0]==32+4*(count+1) and raw[count]==len(d)
+    # The optimal parser of the scene chunks (tools/lz4opt.c): the same LZ4
+    # blocks to the player, 7-13 % smaller than the greedy ones (lz4_block,
+    # kept for --greedy and the measurements of docs/COMPRESION.md).
+    packets=[d[raw[i]:raw[i+1]] for i in range(count)]
+    packed=[lz4_block(p) for p in packets] if greedy else lz4_blocks.compress_any(packets)
     blobs=[]
-    for i in range(count):
-        p=d[raw[i]:raw[i+1]];c=lz4_block(p)
+    for p,c in zip(packets,packed):
         assert lz4_unblock(c,len(p))==p
         blobs.append(c if len(c)<len(p) else p)
     at=32+8*(count+1);stored=[]
@@ -86,4 +93,6 @@ def main(a,b):
     open(b,'wb').write(o)
     print('%s: %d -> %d bytes (%d packets)'%(b,len(d),len(o),count))
 
-if __name__=='__main__':main(*sys.argv[1:3])
+if __name__=='__main__':
+    args=[x for x in sys.argv[1:] if x!='--greedy']
+    main(args[0],args[1],'--greedy' in sys.argv[1:])

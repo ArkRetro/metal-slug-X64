@@ -33,6 +33,10 @@ unsigned msx_audio_service(void);
  * inside long work (stage loads, a frame's simulation) so the AI's two
  * 40 ms buffers do not run dry. */
 void msx_audio_idle(void);
+/* Spare frame time until `deadline` (TICKS_READ value, 0: none): the playing
+ * MSXL streams (src/msx_pcm.h) decode their next block ahead, so the mix of
+ * the frames that follow only copies it. First call of a frame's spare time. */
+void msx_audio_prefetch(uint32_t deadline);
 msx_audio_stats_t msx_audio_stats(void);
 void msx_audio_close(void);
 #endif

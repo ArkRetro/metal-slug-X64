@@ -1,5 +1,5 @@
 /* LZ4 block compressor with an optimal parse, for the 16 KiB scene chunks
- * (tools/lz4_blocks.py, docs/COMPRESION.md). Lossless and deterministic: the
+ * and the packets of the movies (tools/lz4_blocks.py, docs/COMPRESION.md). Lossless and deterministic: the
  * same input always gives the same block. Not a copy of the reference
  * encoder: a hash-chain match finder (longest match per position) and a
  * backward dynamic program over (literal run, match) sequences with the exact
@@ -7,7 +7,8 @@
  * position, NEAR lengths and starts around the best), so the parse is near
  * optimal, never wrong: tools/lz4_blocks.py decodes every block back.
  *
- * stdin:  u32le block size, then blocks of that size (the last may be short)
+ * stdin:  u32le block size, then blocks of that size (the last may be short);
+ *         or u32le 0, then per block u32le length and the block
  * stdout: per block u32le length, then the LZ4 block
  *
  * Format rules kept (LZ4 block format): the last 5 bytes are literals, no
@@ -16,7 +17,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-enum { MAXN=65536,HASH=1<<16,DEPTH=512,NEAR=64,INF=0x3fffffff };
+enum { MAXN=1<<20,HASH=1<<16,DEPTH=512,NEAR=64,INF=0x3fffffff };
 static uint8_t in[MAXN],out[MAXN+MAXN/255+64];
 static int head[HASH],prev_[MAXN],mlen[MAXN],moff[MAXN];
 static int f[MAXN+1],fl[MAXN+1],g[MAXN+1],gm[MAXN+1];
@@ -87,9 +88,16 @@ int main(void) {
     uint8_t w[4];
     if (fread(w,1,4,stdin)!=4) return 1;
     uint32_t size=(uint32_t)w[0]|(uint32_t)w[1]<<8|(uint32_t)w[2]<<16|(uint32_t)w[3]<<24;
-    if (!size || size>MAXN) return 1;
+    if (size>MAXN) return 1;
     size_t n;
-    while ((n=fread(in,1,size,stdin))>0) {
+    for (;;) {
+        if (size) n=fread(in,1,size,stdin);
+        else {   /* blocks of their own lengths */
+            if (fread(w,1,4,stdin)!=4) break;
+            n=(uint32_t)w[0]|(uint32_t)w[1]<<8|(uint32_t)w[2]<<16|(uint32_t)w[3]<<24;
+            if (!n || n>MAXN || fread(in,1,n,stdin)!=n) return 1;
+        }
+        if (!n) break;
         size_t o=compress((int)n);
         w[0]=(uint8_t)o;w[1]=(uint8_t)(o>>8);w[2]=(uint8_t)(o>>16);w[3]=(uint8_t)(o>>24);
         if (fwrite(w,1,4,stdout)!=4 || fwrite(out,1,o,stdout)!=o) return 1;

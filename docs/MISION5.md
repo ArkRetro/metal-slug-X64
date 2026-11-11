@@ -604,6 +604,18 @@ nodo (`soldier line=… (rutina)`) y la de su padre (`detail`): era el suelo de 
 cámara 289 de la calle. `08B52A` indexa `0E53E6` con el byte `(+7E del creador × 4) & FF`; `neo_m3enemy.c` lo volvía a
 multiplicar por 4 y con `+7E` = 1 tomaba la palabra `00800040` de la tabla como mapa. Calle en ares sin paradas.
 
+**Siguiente paso (metro, cámara 992): `0D3B36`** y sus 13 hijos (`0D4396`, `0D43C4`, `0D43F2`, `0D4420` / `0D444E`,
+`0D447C`, `0D4762` / `0D4776`, `0D498C`, `0D4A1E`, `0D4A82`, `0D4ABA`, `0D4C26`, `0D4F1C`, `0D5018`). Captura propia
+**`Q`** hecha y **guardada** en `captures-m5/fam/Q` (réplica de `run4` desde `sec07_252827`, raíces de los 14,
+traza 269300..271500, volcados cada 30): el aparato nace en 269327 (registro de cámara 992), dispara y lanza sus
+piezas, se destruye en 270999 (`0D40A6`) y acaba en 271119 (`0D4116`: tres `01C71E`, `0D5730`, `004188`).
+Desensamblado mirado (`0D3B36..0D5730`, unas 1250 instrucciones): tres entradas (`0D3B36` / `0D3B4C` / `0D3C5A` /
+`0D3C76`, paletas 3E5 / 25B / 25C, rangos `2C9D84` / `2C9E46`), los brazos `0D42A4` con su tabla de órdenes
+(`0D5530`, `jmp (a0)` sobre `0E8FBC` / `0E8FD8`), el núcleo `0D447C` (estados `0D44CA..0D470E`, conversión
+`0405EA` / `040846` al morir), los proyectiles `0D4762` / `0D4776` (`2CA75E` / `2CA7BE`, `01B0F6`) y los servicios
+`0D5060..0D5730`. Sin traducir. La familia se extrae con `extract_family_fixture.py … --range d3b36-d5800` y luego
+se borra `Q`.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la quinta tanda quedan **54 constructores sin portar** (los 66 de la cuarta menos los 12 del

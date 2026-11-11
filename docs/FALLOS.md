@@ -52,6 +52,8 @@ dependen del tiempo que la prueba pasa con esos actores en pantalla (90 s), no s
 
 Línea base nueva (B70, `work-chars` sobre ccr `401875e`, cartucho de 62 111 744 B con los paquetes rehechos): todo PASS, también `m6s1` (balsas; corre con `--jump 1.0 --continues`) y `m6s2` (`--fire --jump 2.5 --continues`: sus soldados ya andan con los grupos m3/m4/m5 y matan a un jugador que ni dispara ni salta); 0 dibujos ausentes en las tres etapas de la M6.
 
+Pantalla de opciones (`work-chars`, 11-XI): prueba `options` añadida a la matriz y a la línea base; el resto de la matriz sin cambios con BLOOD OFF por defecto (tabla EU).
+
 ## 5. Abierto ahora
 
 | Fallo | Estado |

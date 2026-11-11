@@ -79,9 +79,11 @@ try:
     checks['game: 5 lives, one taken by the first spawn']=g[1]=='4'
     checks['game: rank 10FD8B = 7']=g[3]=='7'
     checks['game: timer 60, blood off, continue on']=(g[4],g[5],g[2])==('60','0','1')
+    # ares writes the save memory every 30 s (desktop-ui program.cpp, AutoSaveMemory), not on SIGTERM.
+    eep=out/'options.eeprom';deadline=time.monotonic()+75
+    while time.monotonic()<deadline and not (eep.exists() and eep.read_bytes()[:4]==b'MSXO'):time.sleep(1)
+    checks['EEPROM file beside the ROM']=eep.exists() and eep.read_bytes()[:4]==b'MSXO'
     proc.terminate();proc.wait(timeout=10);time.sleep(1)
-    saves=[f.name for f in out.iterdir() if f.name.startswith('options.') and f.name!='options.z64']
-    checks['EEPROM file beside the ROM']=bool(saves)
     proc,log,wait=boot(2)
     m=wait(r'MSX OPTIONS start (.*)',120)
     checks['boot 2: the EEPROM gives the choice back']=m[1].strip()==CHOSEN and 'MSX OPTIONS loaded from EEPROM' in log()

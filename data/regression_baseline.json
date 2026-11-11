@@ -80,6 +80,14 @@
   "stopped": 0,
   "unsupported": 0
  },
+ "options": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 66,
+  "stopped": 0,
+  "unsupported": 0
+ },
  "pause": {
   "missing_draw": 0,
   "missing_part": 0,

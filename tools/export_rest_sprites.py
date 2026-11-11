@@ -388,6 +388,9 @@ RESOURCES=RESOURCES+(0x74,0x75,0x76,0x77)
 # Mission 4 jumping soldier 07E554 and its piece 07EC6A (379), the dust 07EDF0 (22DF54, splash palette 150).
 ROOTS=ROOTS+(0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a,0x22df54)
 RESOURCES=RESOURCES+(0x379,0x150)
+# Mission 4 helicopters 08514A / 085522 / 08571C: body 2825CE (D2 or 88F scaled, D6, D4), death 282834, flashes 28292C (FE) / 282998 (88E), bomb 282A2C (88E), impact 282AEA (D5).
+ROOTS=ROOTS+(0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea)
+RESOURCES=RESOURCES+(0xd2,0x88f,0xd6,0xd4,0xfe,0x88e,0xd5)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

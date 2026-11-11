@@ -166,6 +166,7 @@ struct neo_genv {
     uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
     uint8_t *arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, 05287C) */
     uint16_t player_low[2];          /* RAM 101502/1015B2: the players' +3E (low word of the X long; 0613CA's long compares) */
+    uint16_t player_ylow[2];         /* RAM 101506/1015B6: the players' +42 (low word of the Y long; 085FE4) */
     int32_t scroll_x,scroll_y;       /* RAM 10E97C/10E980 */
     uint16_t *grid;                  /* delay grid RAM 1067E6 */
     void *ctx;

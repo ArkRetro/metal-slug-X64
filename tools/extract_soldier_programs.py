@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier')}
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -362,6 +362,8 @@ ROOTS+=[0x2a7e1a,0x2a7e10,0x2a7f28,0x2a80d8,0x2a8192,0x2a82e4,0x2a83e4,0x2a8546,
 ROOTS+=[0x22fbea,0x22fc02,0x22fc4a,0x22fc92,0x22fbf6,0x22fc26,0x22fc6e,0x22fcb6,0x22fb34,0x22fbbc,0x22fcda]
 # Mission 4 jumping soldier 07E554 (neo_m4props.c): 27F832, 27F884, the jump 27F8AE, the hit 27F932, the piece 07EC6A (27FA3A); the dust 07EDF0 is 22DF54.
 ROOTS+=[0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a]
+# Mission 4 helicopters 08514A / 085522 / 08571C (neo_heli.c): 2825CE, the death 282834, the flashes 28292C / 282998, the bomb 282A2C and its impact 282AEA.
+ROOTS+=[0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

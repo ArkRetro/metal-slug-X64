@@ -655,6 +655,13 @@ referencias en la ROM: `0D3F00`, `0D4034`, `0D404C`, `0D4EF0`, `0D4FAA`.
   contra los bloques existentes). Con el suelo a 208 de A hacen falta 11 ranuras (176 KB) que tiene que liberar
   `/programs.bin`; si no basta, el siguiente paso es sacar código o tablas de la imagen, no bajar el suelo.
 
+**Puertas de la sexta tanda** (tras fusionar ccr con `/programs.bin` de A; cartucho sin `mission6.pack`): `make check`
+y `make -j4` bien; ares `--fire --jump 2.5`: calle cámara 600 PASS, metro (`--up 1.8 --continue`, 420 s) cámara 688
+PASS (única parada contada: los murciélagos `23b636`), alcantarilla cámara 673 PASS; `test_m1m2_ares.py` con
+`mslugx-m1end.z64` recién hecho PASS. Caché de escena: **208 ranuras** en la calle y el metro, 209 en la alcantarilla
+(suelo 208): `/programs.bin` devolvió las ranuras, pero el margen sigue siendo 0..1. `/programs.bin` lleva solo los
+programas sin grupo; los de la M5 van en su paquete (grupo `m5`) y los murciélagos (`m2`) siguen fuera de él.
+
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
 
 ## Pendiente (fase 2, por orden)

@@ -158,6 +158,9 @@ static void k24a30(neo_gactor_t *a) {
 static ga_result_t body_tick(neo_gactor_t *a,neo_genv_t *e) {
     switch (L(0)) {
     case 0x2267e: {
+        /* Without the layer object (the world does not hand it over yet:
+         * docs/MISION4.md, "Jefe"), an explicit stop before anything. */
+        if (!menv(e)) return GA_UNSUPPORTED;
         neo_gactor_t *c=child(a,e,0x59f76,0);                           /* 059F4E: music 2C */
         if (c) ga_sw(c,0x72,0x2c);
         k24bda(a,e);

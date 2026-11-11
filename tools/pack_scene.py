@@ -211,9 +211,12 @@ def main():
            f'#define SCENE_MAP_CELL_COUNT {len(map_cells)}',f'#define SCENE_MAP_CAMERA_MAX {mission["camera_max"]}',
            f'#define SCENE_MAP_BACKDROP 0x{bytes((*backdrop,255)).hex()}u',
            f'#define SCENE_MAP_BACKDROP_AFTER 0x{bytes((*palette_rgb(backdrop_after if backdrop_after is not None else mission["backdrop"]),255)).hex()}u']
+    # scene_image_t is 12 bytes (src/scene_assets.h): width and format are bytes.
+    assert all(0<=im[4]<=255 and 0<=im[6]<=255 for im in list(images)+list(background)+list(map_images)),'scene image width / format above a byte'
     for ctype,name,items in [('scene_chunk_t','scene_chunks',chunks),('scene_bank_t','scene_banks',banks),('scene_image_t','scene_images',images),('scene_image_t','scene_background',background)]:
         lines.append(f'static const {ctype} {name}[]={{')
-        lines.extend('  {'+','.join(str(v) for v in item)+'},' for item in items);lines.append('};')
+        # scene_image_t initializers: page, palette, x, y, height, width, format (the tuples are ..., width, height, format).
+        lines.extend('  {'+','.join(str(v) for v in (item[:4]+(item[5],item[4],item[6]) if ctype=='scene_image_t' else item))+'},' for item in items);lines.append('};')
     lines.append('static const scene_native_descriptor_t scene_native_descriptors[]={')
     lines.extend('  {0x%x,%d,%d},'%d for d in sorted(descriptors));lines.append('};')
     # Streaming working set of the native bank: chunks of each program's poses;
@@ -262,7 +265,7 @@ def main():
     lines.append('static const scene_native_palette_t scene_native_palettes[]={')
     lines.extend('  {0x%x,%d},'%(k,v) for k,v in sorted(native_palettes.items()));lines.append('};')
     lines.append('static const scene_image_t scene_map_images[]={')
-    lines.extend('  {'+','.join(map(str,item))+'},' for item in map_images);lines.append('};')
+    lines.extend('  {'+','.join(map(str,tuple(item[:4])+(item[5],item[4],item[6])))+'},' for item in map_images);lines.append('};')
     # Map cells as 8-byte records (src/scene_assets.h): the first phase's
     # image and, for an animated cell, the index of its phase pattern (image
     # deltas per video phase, shared: Mission 1 has one) instead of 8 ids

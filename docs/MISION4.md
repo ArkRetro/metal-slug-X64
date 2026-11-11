@@ -731,6 +731,58 @@ Paradas nuevas vistas en ese recorrido largo: `routine=1fece` y `routine=2058e` 
 **Siguiente paso**: (0) por qué la cámara se queda en 4360 en ares; (1) el jefe `02267E` con la captura T (`scratchpad/boss4.txt`): ya hay memoria (≈ 4 ranuras
 sobre el suelo de 208); (2) fin de misión; (3) rótulo en la base; (4) `2058E`, `07E832`, `289A80`.
 
+## Fase 2e (11-XI, cuarta sesión): el jefe `02267E` entero en lógica
+
+**Familia `m4boss` (`src/neo_m4boss.c`, captura T del TAS): 227 nodos, 11 403 actualizaciones iguales a MAME en
+lazo cerrado, 26151..27890 (desde que nace el jefe hasta el fin de la sección), 9526 dibujos, 206 borrados.**
+Contiene la antigua `m4bdeb` (borrada). Extracción: `extract_family_fixture.py T/boss-trace.txt --range 2267e-25ec0
+--attacks --ram 1010a4-105564 --ram 1063d8-1063da --ram 10c72e-10d83e --ram 10e94e-10e9dc --ram 10c300-10c308 --ram
+10000e-100010 --ram 10c2f6-10c2f8`; prueba `--root-words --attacks --m4boss --ram-creators --terrain 10c72e --ring
+10c72e --group-map 0`.
+
+- **Cuerpo `02267E`**: música 2C (`059F4E`), `024BDA` (la capa `10D7B6` pasa a ser su dibujo: velocidades
+  `694E/6952` a 0, `0C6D04`, `0C702A`, `0C703C`, colocada en `+28/+2C` del cuerpo, dueño 3 por `0C7BD0`, `+82`, el
+  mapa `02225E` con la lista de columnas `0223A8` por `0C6F34`, sus 20 × 13 bloques `0C73CE`, `0C7072`, `0C741A`,
+  `0C6CFC`; el cuerpo sobre la capa en (0xA8, −0xC0)), las diez piezas (reserva 0xE) y la elección de turno
+  `022872` (`+8A` por la vida `+4E` frente a `+70`/`+6E` y las piezas perdidas `+8F`, `024A30`; `01B04A`; esperas
+  y ráfagas de rango `2C26E0`/`2C2712`/`2C2776`/`2C27D4`; pieza al azar `0029F2(7)` que esté a la derecha de 0x20;
+  `+8C` por la x). Muerte `022B34`: `018F92`, RAM `10E9B8` = 0xE0, sonido 1026, listas `E040E..E055C`, `+61`, `+8D`
+  bit 2, `018F40`.
+- **Piezas**: cañones `023526` (0..2) y `02391E` (3..6, la 3 sobre el cuadro `+9A` del cuerpo con su caja `E0098`):
+  espera, carga `023EB4`, apuntado (`024AEC`, `024B1C`), boca `023FDE`, disparo (`024D06`, programa `E05E6`) con
+  sus llamadas `024DBE`/`024E26`/`024E9A` (proyectil `024F0E`: `03B332` en rango `2C28E2` actualizaciones,
+  paletas 357..359, estela `02505C` por `025132`, estalla con `E0364`, en el suelo o al caer el cuerpo); el daño
+  pasa al cuerpo (`024C94`); retirada `0240EE` y destrucción `024164` (`01C71E`). El gran cañón `024226` (7)
+  (`024CCA`: guarda su vida), ráfagas `2C29DC..2C2A40`, el apuntado `024B62` (umbrales `024BB6`), la bola
+  `025362` (`02525A`: velocidad `2C2A72..2C2AD6`, ángulo `025508`, estelas `025512`, rueda `0255F4`/`025728` como
+  plataforma `0140C4` con el mapa `E006A`), destello `02530E`, casquillo `0257DC` (`025786`), cajas `0258C4`. La
+  pieza 8 `0246D0` (`+60`/`+61` del cuerpo; con su `+8C` a 0, `0247F2` mira su propio `+81`: A0 es aún el
+  nodo + 0x20 que deja `00427A`, traza T 1027D5). Las orugas `022CB6` (9): mueven la capa (RAM `10E94E/10E952`) y
+  la parchean (`0251D6`: secuencias `0223DA..02266A` de 16 bytes: submapa, espera `+94`, cuadro `+9A`, velocidad de
+  `002802`, D0..D5 de `0C714E`), polvo `E04F0/E0502` cada 0x21, las órdenes 7 y 8 (`2349EE`, `234A7A`, `234AD8`,
+  `234B2C`, destellos `025B4E`/`025BC2`/`025CBE`) y la caída final (`023432`: `0C8022`, la capa lanzada).
+- Motor: `neo_layerobj_*` (las rutinas de capa de `neo_m3mid.c`, compartidas), `neo_m4boss_env_t` (la capa
+  `10D7B6`, velocidades, dueño, `10E9B8`, `draw`/`patch`/`clear`/`anim_speed`). Prueba de familia `--m4boss`.
+  Tablas de ROM (grupo `m4`): `E0076..E0817`, `02225E..02267D`, `2C2662..2C2B07` y las tablas de código
+  `024BB6`, `024E0E`, `024E82`, `024EF6`, `0252C6`, `025508`, `0257B8`, `0258BA`, `0258D8`; 107 programas (grupo
+  `m4`).
+- **Memoria**: el módulo añade 23,6 KB de programa; se liberaron con `scene_image_t` de 12 bytes (antes 14: ancho y
+  formato en bytes, `pack_scene.py` lo comprueba): la imagen queda 1808 bytes **por debajo** de la de antes del jefe
+  (2 243 496 frente a 2 245 304 bytes) y las tablas de imágenes de cada misión en sus ranuras reservadas bajan
+  también un 14 %.
+- **`0BB028` no es el jefe**: es `019388` con 0x8000 (velocidades `+72/+76` del actor de misión, RAM
+  `1013D6/1013DA`). El jefe lo crea el guion.
+
+**Falta (en este orden)**: (1) el mundo no da todavía la capa al jefe: sin `e->m4boss` el constructor se para de
+forma explícita antes de la música (`world unsupported routine=2267e`); hace falta el objeto de capa `10D7B6` en
+bytes (como `m3layer` de la M3) coherente con `neo_layer_t` de la cámara, `neo_layers_step` con el dueño 3
+(velocidades `694E/6952` por `0C6F9E`) y la prueba de cámara con esos 1458 estados; (2) el dibujo: los bloques de
+`02225E` y de los submapas (teselas de `332468`) exportados como el `export_m3_overlay.py` de la M3 y validados contra
+los volcados de VRAM de T; los sprites de todas las piezas (no están en la exportación de la M4); (3) `0BB028`
+(trivial: velocidades 0x8000); (4) el fin de misión tras `018F40` (la M4 cierra con `017488`); (5) el rótulo de
+recogida en la base. Sin captura: `024828` (escombro con `25EBC`), `0255F8..0256D2` (código muerto: `0255F4` salta
+a `0256D4`).
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

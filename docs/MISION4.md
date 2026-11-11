@@ -513,25 +513,43 @@ está traducida: parada explícita. Prueba de familia: `--item-kinds` (solo los
 objetos de esos tipos), `--script-kinds` (qué objetos hechos tras el actor del
 guion son de la familia) y `--pickup-ram`.
 
+**Rótulo de recogida `08C752` con sus letras `08C954` (`src/neo_item.c`;
+familia `m4label`: 6 nodos, 390 actualizaciones iguales a MAME, captura M =
+`capF.sh M 8c752,8c954 8c752-8cf6d 152900 153800`).** `08CD10` (D0 = jugador,
+D1 = texto de `0E5782`: 0 gasolina, 1 medicina, 3 munición, tipo de bomba + 3)
+lo crea tras el actor del guion; sin texto (`+72` = 0) es el rótulo de puntos
+`08D330`. Con texto: cuenta `10C5B2[jugador]` en `+80`, una letra `08C954`
+por byte de la lista (programa `0E565A[+76]`, o `0E56EE` con `10C2F6` = 0;
+paletas `0E559E`), que espera su turno, sube `+82` actualizaciones, sigue el
+rebote `0E55EC`, se para (0x96 actualizaciones o hasta que el rótulo pone
+`+89` = 0) y sale parpadeando por `0E55CA`. **Sin captura**: el final de las
+letras (`FF` de `0E55CA`), el borrado del rótulo (`004188`) y el del árbol con
+cuatro rótulos posteriores (`0041AC`: la actualización que borra queda fuera
+de la traza); el sitio de la munición `08B6C8` (D1 = 3) no existe en el port.
+**No está conectado** (`MSX_PICKUP_LABEL` 0 en `neo_item.c`: sigue contado
+como externo): los sprites de las letras solo están en la exportación de la
+M4 y sin validar (las capturas E / M / F2 no tienen volcados de VRAM, 0
+fotogramas validados); hay que exportarlos a `filesystem/rest-native.json`
+(base, todas las misiones) con una captura con volcados y poner el 1.
+
 Lo que falta, con lo que se sabe de cada cosa (nada de esto está portado: son
 paradas explícitas contadas):
 
-- **`08C954`** (las cifras del rótulo de recogida `08C752`, que sigue siendo
-  externo en todas las misiones): `08C752` crea una cifra `08C954` por dígito
-  de `+6E` (o por byte de la lista `+72`, tabla `0E5782`), con la cuenta
-  `10C5B2[+86]`; cada cifra: paletas `0E559E[+86]`, programa `0E565A` /
-  `0E56EE` (`08CF2E`), sube con la tabla `0E55EC`, espera 0x96 y sale con
-  `0E55CA`. Desensamblado en `scratchpad/agA/8c752.asm` (217 líneas hasta
-  `08CAD0`), sin empezar.
 - **`0587C4`** (+ torreta `0592C6`, restos `059B5C`; 1160 líneas,
   `scratchpad/agA/587c4.asm`): vehículo de tierra del registro de cámara 4713
   (`+78` = 1; otras entradas `0587D8` = 3, `058806` = 2), cuerpo sólido
   `004E76` (`0586A6`), vida de rango `2D105E`, velocidad tope `2D1122`,
   estados por `+80` (`059C2C` elige programa). **La captura A no sirve**: en
   `run4` muere 24 actualizaciones después de pararse (`058DD4`), antes de
-  disparar (`058E30` no sale). Hace falta una captura con el mando parado
-  desde 156874 (raíces `587c4,592c6,59b5c`, intervalo `587c4-59f76`) y
-  traducir lo que visite.
+  disparar (`058E30` no sale). **Captura L hecha** (`scratchpad/agA/capL.sh`:
+  `run4` con `MSX_FULL_IDLE=156880-158400`, raíces `587c4,587d8,58806,592c6,
+  59b5c`, intervalo `587c4-59f76`; traza en `/home/user/captures-m4/fam/L`):
+  vive 1520 actualizaciones y dispara — cuerpo `058E30` ×6, `058E48` ×362,
+  `058EFC` ×10, `058F4A` ×230, `058F66` ×10, `058FF2` ×70; torreta `05934C`
+  ×761, `0594B0`, `0594CE`, `0595B2` ×880; disparos `05996A`, `05999A` ×4022,
+  `0599E2`, `059A3E`, `059A62`, `059A9C`. La muerte (`059048`, `0590B8`,
+  `059B5C`) está en la captura A. Falta traducir (≈ 1000 líneas) y probar con
+  las dos.
 - **Jefe `02267E`** (captura T): el constructor crea 3 `023526`, 4 `02391E`,
   `024226`, `0246D0`, `022CB6` y la música `059F76`; después `023EB4`,
   `023FDE`, `025DC2`, `024F0E` → 64 `02505C`, `025CDE`, `025B6E`, `02591C`,
@@ -541,6 +559,16 @@ paradas explícitas contadas):
   `025E18` (3063 líneas desensambladas, `scratchpad/boss4.txt`). El guion de
   la sección se cierra en la actualización 12463 (fotograma 26982) y la
   sección 6 (M5) empieza en 12887 (27901).
+
+**Sprites de esta sesión**: `ws-m4/filesystem` es ahora
+`/home/user/ws-m4-private/filesystem` (enlaces a `ws-logo/filesystem` salvo
+`mission4`, copia propia: `ws-logo` no se toca). La exportación de la M4 con
+el prisionero que pelea, los animales, las frutas y las letras está en
+`/home/user/ws-m4-private/filesystem/mission4/rest-native.json` (10 721
+descriptores; `mission4.pack` 981 trozos); **para que `ccr` la tenga hay que
+copiarla a `ws-logo/filesystem/mission4/` y rehacer los paquetes
+(`build_packs.py 4`)**. Sin validar contra VRAM (0 fotogramas) y con 64
+paletas sin captura (216, 367, 3D2… dibujos que faltan en el recorrido).
 
 ## Sonido y música
 

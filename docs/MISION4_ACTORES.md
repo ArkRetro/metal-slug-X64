@@ -36,7 +36,10 @@ Después (11-XI, segunda sesión): el prisionero que pelea `0DDCDA` con sus disp
 familias `m4pris`/`m4pris2`) y los animales (tipos 40..42 de `08C374`, `neo_item.c`, familia `m4animal`; sus frutas
 3D/3F traducidas sin captura).
 
-Quedan (orden de guion): `08C954` (rótulo de `08C752`), `0587C4` (+2), y el jefe `02267E` con `0259F2` y la orden
+El rótulo de recogida `08C752` con sus letras `08C954` está traducido y probado (`m4label`) pero sin conectar
+(`MSX_PICKUP_LABEL` 0: faltan sus sprites en la exportación base).
+
+Quedan (orden de guion): `0587C4` (+2; captura L hecha), y el jefe `02267E` con `0259F2` y la orden
 `0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), G (camión `02916E` y sus piezas), **T (jefe y fin de
 misión, del TAS)**.
 

@@ -29,6 +29,7 @@ def main():
     p.add_argument('--script-kinds',default='',help='KINDS (comma hex): with --script-actor, an item 08C374 / 08C37C made after the script actor is the family\'s only when its kind (+6E word at its first update) is one of these (the fruits 3D / 3F the Mission 4 animals drop; the animals themselves come from other actors: injected)')
     p.add_argument('--item-kinds',default='',help='KINDS (comma hex): keep only the items 08C374 / 08C37C of these kinds (+6E word at their first update); the other items of the trace are dropped (weapon pickups need the players\' weapon block)')
     p.add_argument('--pickup-ram',action='store_true',help='pickups are checked through the RAM image (extract with --ram 10c718-10c740: the weapon block with the food counters 10C728 after every update), not through --pickup')
+    p.add_argument('--label-counts',action='store_true',help='RAM 10C5B2 / 10C5B4 (labels per player, 08D330 / 08C752) as each update first read them: inputs, without --label-after-pickup')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
@@ -221,7 +222,7 @@ def main():
     # Score-label counts RAM 10C5B2/10C5B4 (08D330) as read: inputs.
     lc=[(k,rd(u,0x10c5b2),rd(u,0x10c5b4)) for k,u in enumerate(d['updates'])]
     lc=[(k,x if x is not None else -1,y if y is not None else -1) for k,x,y in lc if x is not None or y is not None]
-    if lc and a.label_after_pickup:
+    if lc and (a.label_after_pickup or a.label_counts):
         L.append('#define FAMILY_LABEL_COUNTS 1')
         L.append('static const int32_t %s_label_counts[][3]={%s};'%(n,','.join('{%d,%d,%d}'%t for t in lc)))
     # Writes to the watched globals (extract_family_fixture.py GLOBALS), as

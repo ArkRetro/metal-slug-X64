@@ -226,6 +226,16 @@ traducirlo con su constructor, el estampador `0C8A3C` nativo y el paso del barri
   Marco cae al agua desde x 160 (balsas, puente y segundo terreno sin portar; arriba, «Recorrido en ares»). Es la
   parada explícita más visible de la fase 1; no se ha tapado.
 
+**ROM 50 (11-XI, cartucho `aeef1df`, 61 472 768 B): la etapa 3 «FAIL» no era una regresión.** La cámara de la
+arena `016E7E` no pasa de x 320 ni en MAME (máximo de `data/m6s3_camera_fixture.json.gz` y de `m6tas3`: 320), y la
+prueba se lanzó con el `--progress` por defecto, 600, inalcanzable allí; en ROM 47 la cámara también se paró en 320
+(`/home/user/captures-m6/ares/s3`). Los dibujos ausentes `1C3F06` y `1875FA..1876D6` con `palette_id=125` son los de
+ROM 47 (la M6 no tiene `rest-native.json` ni grupo de actores: la paleta lógica `0x125` no está en su paquete; es la
+fase 2, no se tapa): en la etapa 3 el mismo conjunto de etiquetas; en la 1, las de ROM 47 más `1580E8` y `158100`
+(la misma familia `158xxx` que `158166..1581C2`, vistas porque el recorrido difiere). Ahora `test_mission6_ares.py`
+toma por defecto `min(600, x máxima de la cámara en MAME)` y rechaza un `--progress` por encima. Con `r50.z64`:
+etapa 3 PASS (320), etapa 2 PASS (2176 en 90 s), etapa 1 FAIL como en ROM 47 (514, 3 caídas al agua).
+
 `/home/user/ws-logo` tiene `romfs/mission6.pack` (`build_packs.py 6`), `filesystem/mission6/` y
 `filesystem/audio/music_mission6_boss*.wav64` con su entrada en `manifest.json`; no se ha tocado nada del otro agente.
 

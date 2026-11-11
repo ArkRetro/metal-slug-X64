@@ -59,7 +59,9 @@ bool msx_ramfs_init(void) {
  * chunk is issued only while it is idle). */
 enum { PRELOAD_MAX=RAMFS_FILES,PRELOAD_CHUNK=8192 };
 typedef struct { char name[48];uint32_t rom,size,pos;uint8_t *data;bool done; } preload_t;
-static preload_t queue[PRELOAD_MAX];static unsigned queued,queue_next;
+/* In the heap from the first file queued to msx_ramfs_preload_end: 7 KB the
+ * game does not keep (they were bss; docs/COMPRESION.md, section 5). */
+static preload_t *queue;static unsigned queued,queue_next;
 static bool pi_idle(void) {return !(*PI_STATUS & 3u);}
 static preload_t *queued_file(const char *path) {
     for (unsigned i=0;i<queued;i++) if (!queue[i].done && !strcmp(queue[i].name,path)) return &queue[i];
@@ -71,6 +73,7 @@ static void publish(preload_t *p) {
 }
 bool msx_ramfs_preload(const char *path) {
     if (queued==PRELOAD_MAX || file_count+queued>=RAMFS_FILES || strlen(path)>=sizeof(queue[0].name) || find(path) || queued_file(path)) return false;
+    if (!queue && !(queue=malloc(PRELOAD_MAX*sizeof(*queue)))) return false;
     preload_t *p=&queue[queued++];*p=(preload_t){0};strcpy(p->name,path);   // looked up in the ROM when its turn comes
     return true;
 }
@@ -104,6 +107,11 @@ bool msx_ramfs_preload_idle(unsigned long deadline,int keep) {
     }
     publish(p);queue_next++;
     return true;
+}
+void msx_ramfs_preload_end(void) {
+    /* A file still in the queue stays as it was left (msx_ramfs_load has
+     * finished the ones the game uses). */
+    free(queue);queue=NULL;queued=queue_next=0;
 }
 size_t msx_ramfs_load(const char *path) {
     {const ram_file_t *f=find(path);if (f) return f->size;}   // preloaded

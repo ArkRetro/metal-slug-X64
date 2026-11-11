@@ -23,6 +23,8 @@ and, per stage and layer, composes the map cells into layer space.
   column data (16-byte aligned): run[runs] (i16 y u8 n u8 0 u16 palette
     u16 0: n cells from y, 16*n texel rows), padded to 16, then the runs'
     CI4 texels (128 bytes per cell, 8-byte rows, the pages' layout).
+  Columns equal byte for byte are stored once: their table entries hold the
+  same offset (tools/test_bgp_share.py).
 """
 import argparse,struct,sys,zlib
 from pathlib import Path
@@ -197,13 +199,13 @@ def sky_cells(pk,k):
                 out[(SKY_TEMPLATE_X+1024*t+rep+x-m['x0'],y)]=(bytes(tex),pals.index(key))
     return out
 
-def render(path,k,out,only=None):
+def render(path,k,out,only=None,share=True):
     pk=Pack(path);lay,_,_=layer_cells(pk,k)
     if only is not None:lay={l:c for l,c in lay.items() if l in only}
     sky=sky_cells(pk,k) if only is None or 0 in only else None
     if sky:lay.setdefault(0,{}).update(sky)
     head=bytearray(b'MSXB'+struct.pack('>HHHHI',1,k,sum(1 for l in lay if l<4),0,0))
-    head+=bytes(16*4);body=bytearray();tables=bytearray();layer_tables=[]
+    head+=bytes(16*4);body=bytearray();tables=bytearray();layer_tables=[];stored={}
     for layer in range(4):
         if layer not in lay:continue
         cols=columns(pk,lay[layer]);x0=min(cols);n=(max(cols)-x0)//16+1;slot=0
@@ -211,13 +213,16 @@ def render(path,k,out,only=None):
         for c in range(n):
             runs=cols.get(x0+16*c)
             if not runs:table.append((0,0,0));continue
-            while len(body)%16:body.append(0)
-            at=len(body);rec=bytearray()
+            rec=bytearray()
             for y,imgs,pal in runs:rec+=struct.pack('>hBBHH',y,len(imgs),0,pal,0)
             while len(rec)%16:rec.append(0)
             for y,imgs,pal in runs:
                 for i in imgs:rec+=i[0] if isinstance(i,tuple) else pk.texels(i)[0]
-            body+=rec;slot=max(slot,len(rec));table.append((at,len(rec),len(runs)))
+            rec=bytes(rec);at=stored.get(rec) if share else None
+            if at is None:   # a column equal to one already stored points at it (docs/COMPRESION.md, Duplicados)
+                while len(body)%16:body.append(0)
+                at=len(body);body+=rec;stored[rec]=at
+            slot=max(slot,len(rec));table.append((at,len(rec),len(runs)))
         layer_tables.append((layer,x0,n,slot,table))
     o=len(head)
     for layer,x0,n,slot,table in layer_tables:

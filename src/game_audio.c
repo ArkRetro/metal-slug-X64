@@ -124,6 +124,7 @@ bool game_audio_init(void) {
         }
         wav64_open(&sounds[i],path);wav64_set_loop(&sounds[i],false);loaded[i]=true;count++;
     }
+    msx_ramfs_preload_end();   /* every resident effect is loaded: the queue's memory goes back before the scene cache is sized */
     heap_stats_t after;sys_get_heap_stats(&after);
     debugf("MSX AUDIO sfx resident=%u bytes (%u files) heap used %d -> %d of %d, free %d\n",(unsigned)msx_ramfs_bytes(),count,
         before.used,after.used,after.total,after.total-after.used);

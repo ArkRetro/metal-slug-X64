@@ -30,7 +30,7 @@ WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # soldier AI, kernel, animation, contact/collision, camera, gameplay, actor)
 # stays -O2. Integer code only; host checks keep -O0/-O2 (make check).
 HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animation.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_cull.c src/neo_hit.c src/neo_camera.c src/neo_soldier.c src/neo_soldier_action.c src/neo_script.c
-COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/neo_progstore.c src/program_file.c)
+COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c)
 $(COLD_OBJS): CFLAGS += -Os
 # make does not see a flag change: the -Os split is recorded in a stamp the
 # kernel objects depend on, rewritten only when the cold list changes. Without
@@ -38,7 +38,7 @@ $(COLD_OBJS): CFLAGS += -Os
 # -O2 from before the split (+4.5 KB, slower logo: the title missed a frame).
 COLD_FLAGS := $(BUILD_DIR)/cold-objs.flags
 COLD_FLAGS_RUN := $(shell mkdir -p $(BUILD_DIR) && echo '-Os $(sort $(COLD_OBJS))' | cmp -s - $(COLD_FLAGS) || echo '-Os $(sort $(COLD_OBJS))' > $(COLD_FLAGS))
-$(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o: $(COLD_FLAGS)
+$(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_ramfs.o: $(COLD_FLAGS)
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
 # libdragon normally propagates the toolchain from a .z64 goal. Direct object
@@ -62,7 +62,7 @@ $(BUILD_DIR)/tools/test_neo_throw.o $(BUILD_DIR)/tools/test_neo_attack.o $(BUILD
 
 $(BUILD_DIR)/tools/test_msx_audio.o: CC = $(N64_CC)
 $(BUILD_DIR)/tools/test_msx_audio.o: CFLAGS = $(N64_CFLAGS) -MMD
-$(BUILD_DIR)/audio-regression.elf: $(BUILD_DIR)/tools/test_msx_audio.o $(BUILD_DIR)/src/msx_audio.o
+$(BUILD_DIR)/audio-regression.elf: $(BUILD_DIR)/tools/test_msx_audio.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o
 $(BUILD_DIR)/audio-regression.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/audio-romfs
 $(BUILD_DIR)/audio-regression.dfs: $(BUILD_DIR)/audio-romfs/title-reference.wav64
 audio-regression.z64: N64_ROM_TITLE = "MSX AUDIO TEST"
@@ -132,7 +132,7 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -217,7 +217,17 @@ $(BUILD_DIR)/bgp.stamp: tools/prerender_stage.py $(MISSION_PACKS)
 MARCO_INPUTS_SUM := $(BUILD_DIR)/marco-inputs.sum
 MARCO_INPUTS_SUM_RUN := $(shell sh tools/marco_inputs_sum.sh $(BUILD_DIR))
 $(MARCO_INPUTS_SUM): ;
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/soldier_ai_tables.h $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
+# MSXL packer (lossless 16-bit PCM, docs/COMPRESION.md): the raw WAV64s of
+# the cinematics go into the cartridge packed; src/msx_audio.c plays both.
+# make MSX_PCM_STATS=1: the "MSX PCM" measurement lines (after touching src/msx_pcm.h).
+ifdef MSX_PCM_STATS
+$(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_audio.o: N64_CFLAGS += -DMSX_PCM_STATS=$(MSX_PCM_STATS)
+endif
+MSXL_RAW := neogeo-jingle.wav64
+$(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
+	@mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -233,6 +243,12 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/soldier_ai_tables.h $(CHARACTER_PACK
 	$(if $(and $(BOOT_CINE_OBJS),$(BOOT_ATTRACT)),cp $(BOOT_ATTRACT) $(BUILD_DIR)/game-romfs/)
 	# Movies as MSXC v2 (LZ4 per packet, same frames; docs/MEMORY_OPTIMIZATION.md).
 	for f in $(BUILD_DIR)/game-romfs/*.msxc; do [ -f "$$f" ] || continue; python3 -I tools/msxc_compress.py $$f $$f.v2 >/dev/null && mv $$f.v2 $$f || exit 1; done
+	# Raw 16-bit WAV64s of the cinematics as MSXL (same samples; the packer
+	# decodes each file before writing it and leaves the others as they are).
+	# The NEOGEO logo's jingle stays raw (MSXL_RAW): the logo's frame takes
+	# 9-12 ms of CPU and decoding its blocks in the spare time made 16 of
+	# its frames late (docs/COMPRESION.md, Duplicados).
+	for f in $(BUILD_DIR)/game-romfs/*.wav64; do [ -f "$$f" ] || continue; case $$(basename $$f) in $(MSXL_RAW)) continue;; esac; $(BUILD_DIR)/host/msxl pack $$f $$f.msxl >/dev/null || exit 1; if [ -f $$f.msxl ]; then mv $$f.msxl $$f; fi; done
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.
@@ -303,8 +319,8 @@ $(BUILD_DIR)/src/main-lab.o: src/main.c
 $(BUILD_DIR)/mslugx-lab.elf: $(BUILD_DIR)/src/main-lab.o $(filter-out $(BUILD_DIR)/src/main.o,$(MSLUGX_GAME_OBJS))
 mslugx-lab.z64: N64_ROM_TITLE = "MSX GRAPHICS LAB"
 mslugx-lab.z64: $(BUILD_DIR)/mslugx-lab.dfs
-$(BUILD_DIR)/mslugx-lab.dfs: romfs/scene.pack romfs/fixed.bin romfs/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
-$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack romfs/fixed.bin romfs/sprites.bin &: tools/pack_scene.py tools/pack_store.py tools/lz4_blocks.py tools/lz4opt.c tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json data/soldier_programs.json data/mission1_rest_inventory.json $(wildcard filesystem/mission1/rest/map.json filesystem/rest-native.json filesystem/blood-native.json)
+$(BUILD_DIR)/mslugx-lab.dfs: romfs/scene.pack filesystem/fixed.bin filesystem/sprites.bin $(BUILD_DIR)/vehicle-sprites.stamp
+$(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/boss_columns.h romfs/scene.pack &: tools/pack_scene.py tools/pack_store.py tools/lz4_blocks.py tools/lz4opt.c tools/mission_tiles.py tools/export_marco.py filesystem/projectiles.json filesystem/mission1/map.json filesystem/mission1/props.json filesystem/marco.idx4 filesystem/marco-actions.idx4 filesystem/marco-motion.idx4 filesystem/soldier.idx4 filesystem/fixed.bin filesystem/sprites.bin filesystem/marco.bin filesystem/marco-actions.bin filesystem/desert.bin filesystem/soldier.bin filesystem/marco-motion.bin filesystem/soldier-native.json filesystem/boss-native.json data/boss_programs.json data/soldier_programs.json data/mission1_rest_inventory.json $(wildcard filesystem/mission1/rest/map.json filesystem/rest-native.json filesystem/blood-native.json)
 	python3 tools/pack_scene.py
 $(BUILD_DIR)/src/scene_assets.o: $(BUILD_DIR)/scene_meta.h
 $(BUILD_DIR)/src/boss_renderer.o: $(BUILD_DIR)/scene_meta.h
@@ -1371,7 +1387,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
@@ -1430,6 +1446,16 @@ check: $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(B
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_scene_pack.c -o $(BUILD_DIR)/host/scene-pack
 	$(BUILD_DIR)/host/scene-pack romfs/scene.pack
 	HOST_CC="$(HOST_CC)" python3 tools/test_pack_compression.py
+	# MSXL (docs/COMPRESION.md): every sample back, synthetic always, the
+	# private raw WAV64s and the cartridge's packed files when present.
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_PCM_STATS=1 -Itools/host_msxl tools/test_msxl.c src/msx_pcm.c -lm -o $(BUILD_DIR)/host/test-msxl
+	$(BUILD_DIR)/host/test-msxl $(BUILD_DIR)/host/msxl-work.tmp $(wildcard filesystem/cinematics/*.wav64 filesystem/logo/*.wav64 filesystem/audio/*.wav64) --packed $$(for f in $(BUILD_DIR)/game-romfs/*.wav64; do for s in filesystem/cinematics filesystem/logo; do if [ -f "$$f" ] && [ -f $$s/$$(basename $$f) ]; then echo $$f $$s/$$(basename $$f); fi; done; done)
+	# Pre-rendered columns equal byte for byte stored once (docs/COMPRESION.md, Duplicados).
+	python3 tools/test_bgp_share.py $(if $(MISSION_PACKS),$(PRERENDER_SPECS))
+	# The cartridge's movies (optimal LZ4 parser, docs/COMPRESION.md §5)
+	# against their v1 sources through the console's in-place decoder.
+	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/test_cinematic_stream.c -o $(BUILD_DIR)/host/cinematic-stream
+	for f in $(BUILD_DIR)/game-romfs/*.msxc; do [ -f "$$f" ] || continue; b=$$(basename $$f); s=filesystem/cinematics/$$b; [ $$b = title.msxc ] && s=filesystem/cinematics/title-motion.msxc; $(BUILD_DIR)/host/cinematic-stream $$s $$f || exit 1; done
 	python3 tools/test_marco_sprite_edges.py
 	$(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_vehicle.c src/neo_vehicle.c src/neo_collision.c src/gameplay.c src/msx_sfx.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/vehicle

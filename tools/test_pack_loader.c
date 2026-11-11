@@ -122,9 +122,15 @@ static void dump_stage(unsigned mission,unsigned index) {
         for (unsigned k=0;k<16;k++) fprintf(out," %04x",scene_palette((unsigned)pal)[k]);
         fputc('\n',out);
     }
-    /* 'MSXD': ROM blobs and animation programs as the world gets them. */
-    for (unsigned i=0;i<mission_blobs;i++) {
-        const uint8_t *r=mission_data+12u+12u*i;uint32_t rom_at=rd32(r),len=rd32(r+8);
+    /* 'MSXD': ROM blobs and animation programs as the world gets them,
+     * the blobs by ROM address (a version 2 block lists its own groups'
+     * blobs before the lender's: docs/COMPRESION.md, Duplicados). */
+    unsigned order[1024];assertf(mission_blobs<=1024u,"blobs");
+    for (unsigned i=0;i<mission_blobs;i++) order[i]=i;
+    for (unsigned i=1;i<mission_blobs;i++) for (unsigned j=i;j && rd32(mission_records+12u*order[j-1])>rd32(mission_records+12u*order[j]);j--) {unsigned t=order[j];order[j]=order[j-1];order[j-1]=t;}
+    for (unsigned n=0;n<mission_blobs;n++) {
+        unsigned i=order[n];
+        const uint8_t *r=mission_records+12u*i;uint32_t rom_at=rd32(r),len=rd32(r+8);
         /* served: scene_stage_rom answers the blob's first address with these bytes (a dynamic map of the stage may come first). */
         const uint8_t *p=mission_data+rd32(r+4);
         fprintf(out,"blob %06" PRIx32 " served=%u\n",rom_at,len && scene_stage_rom(rom_at)==p);

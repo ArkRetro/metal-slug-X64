@@ -348,3 +348,392 @@ paquete: 208/209 antes y después.
 - Las pruebas de ares de esta rama usaron los Xvfb `:63` y `:64`; el agente
   de la M4 también arrancó en `:64` mientras tanto. Conviene repartir los
   números de pantalla.
+
+## 5. El cartucho bajo el límite del registro de ares (audio PCM y películas)
+
+### El problema, medido
+
+- `mslugx-explorer.z64` con los paquetes privados de las seis misiones:
+  **67.174.400 B**. ares 146 solo ofrece el IS-Viewer (el registro `MSX …`
+  del que dependen todas las pruebas) si el **fichero de la ROM** mide como
+  mucho `0x03FF0000` = 67.043.328 B: `ares/n64/cartridge/cartridge.cpp:50`
+  (`if(rom.size <= 0x03ff'0000) isviewer.ram.allocate(64_KiB)`). Con una ROM
+  mayor, `ares/n64/pi/bus.hpp:48` y `:99` dejan de desviar
+  `0x13FF0000–0x13FFFFFF` al IS-Viewer (lecturas: ROM; escrituras: «ROM is
+  too big so ISViewer is disabled») y la sonda de libdragon
+  (`src/debug.c`, `isviewer_init`, escribe y relee `0x13FF0000`) no lo
+  encuentra. **Es el tamaño del fichero, no la disposición**: dejar libre
+  ese rango dentro del DFS no cambia nada; no hay forma limpia de evitarlo
+  salvo medir menos. (En consola el tope es otro: 64 MiB = 67.108.864 B.)
+- `romfs/sprites.bin` (50.331.648 B, la C-ROM cruda) **no va en el cartucho
+  de lanzamiento**: solo en `mslugx-lab.z64` (`Makefile`, regla de
+  `mslugx-lab.dfs`). El juego lee `build/game-romfs`. Lo que hay ahí
+  (cartucho de 67.174.400 B = 64.812.384 B de ficheros + 394.400 B de DFS +
+  1.967.616 B de cabecera, ELF comprimido y símbolos):
+
+| Grupo | Ficheros | Bytes | Formato |
+| --- | ---: | ---: | --- |
+| `audio/music_*.wav64` | 24 | 27.752.856 | VADPCM estéreo 24 kHz |
+| paquetes (`scene` + misiones 2–6) | 6 | 12.145.024 | fragmentos LZ4 (§3) |
+| wav64 de cinemáticas y logo, PCM crudo 16 bit estéreo 32 kHz | 6 | 9.755.744 | `howto` 5.817.652, `title-motion` 1.429.560, `neogeo-jingle` 878.236, `entry` 798.056, `confirm` 454.188, `select-music-head` 378.052 |
+| películas `.msxc` (v2) | 8 | 5.958.238 | LZ4 por paquete, analizador voraz |
+| `audio/sfx_*.wav64` | 116 | 3.637.434 | 107 VADPCM, 6 PCM crudo mono (1.290.308 B) |
+| wav64 de cinemáticas en VADPCM (`select-music-loop`, `confirm-cN`) | 4 | 2.184.556 | |
+| columnas `.bgp` | 2 | 1.992.336 | |
+| `chars/`, `marco/` (745 partes), `vehicles/`, `fixed.bin`, resto | 787 | 1.386.196 | |
+
+### Opciones medidas
+
+| Opción | Ganancia medida | Coste en ejecución | Decisión |
+| --- | ---: | --- | --- |
+| **Películas con el analizador óptimo `tools/lz4opt.c`** (el de los fragmentos) en vez del voraz de `msxc_compress.py` | 5.958.238 → 4.384.712 B (**−1.573.526**) | ninguno: mismos bloques LZ4, mismo reproductor, menos bytes por DMA | **hecha** |
+| **PCM crudo de las cinemáticas sin pérdida (MSXL)**: predictores fijos + Rice, por bloques de 1024 muestras | 9.755.744 → 5.563.166 B (**−4.192.578**) | ≈2,0 ms de descodificación por bloque (32 ms de audio), en el tiempo libre de la cinemática; nada durante el juego | **hecha** |
+| MSXL con predictor lineal (LPC ≤ 8, 12 bits) además de los fijos | 5.413.048 B (147.358 B menos que con solo fijos) | 8 multiplicaciones por muestra: medido 2,0–4,1 ms por bloque en vez de 1,6–2,1 | no: poco por mucho |
+| FLAC `-compression_level 12` (referencia, ffmpeg) | `howto` 3.194.623 B (MSXL 3.351.290), `title-motion` 558.822 (619.238) | bloques de 4096 y LPC de orden 12 | referencia |
+| Los 6 efectos en PCM crudo (`sfx_1053/109d/109e/10a5/10d5/1169`) como MSXL | 1.290.308 → 852.192 B (−438.116) | 5 de los 6 se leen de la ROM **durante el juego** (`streamed` en `game_audio.c`): la descodificación caería dentro del fotograma; el sexto (66 KB) es residente | no (pendiente si hiciera falta: decodificar adelantado como aquí) |
+| Quitar la tabla de símbolos (`*.elf.sym`) del cartucho | 776.298 B | ninguno; se pierden los nombres en los volcados de pila de una excepción | no: depuración de los otros agentes |
+| Cabecera de fichero del DFS (256 B por fichero + relleno a 256) | 394.400 B en 954 ficheros (745 son `marco/pN.sprite`) | habría que empaquetar las partes de Marco en un fichero y cambiar su carga | no |
+| Partes de Marco comprimidas (`mkasset -c 1`, `asset_load` las abre igual) | 563.304 → ≈300.000 B (zlib −9) | el margen de la descompresión en sitio de libdragon (`(n>>8)+32` B por fichero) × 745 ≈ 30 KB de montón permanente = 2 ranuras de la caché | no |
+| Música VADPCM | xz −9: ≈ −8 % (2,2 MB) | es estéreo real (tramas L = R: 0–3 %, 27 % en una intro corta); haría falta un descodificador de entropía en cada lectura | no |
+| Tablas de los paquetes, columnas `.bgp` | ≈ 0,8 MB y 1,4 MB | ver §3.4 | no |
+| Deduplicar o comprimir `sprites.bin` | 0 | no está en el cartucho | — |
+
+### Resultado
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| wav64 PCM de las cinemáticas (6) | 9.755.744 B | **5.563.166 B** |
+| películas `.msxc` (8) | 5.958.238 B | **4.384.712 B** |
+| `mslugx-explorer.z64`, seis misiones | 67.174.400 B | **61.407.232 B (−5.767.168)** |
+| Margen bajo el límite de ares (67.043.328 B) | −131.072 B | **+5.636.096 B** |
+| Programa (`text` / `bss`) | 1.169.144 / 203.100 B | 1.175.288 / 203.228 B (+6,3 KB) |
+
+### MSXL: formato y lectura
+
+- `tools/msxl.c` (codificador, `tools/msxl_encode.h`) convierte un WAV64
+  crudo de 16 bits (1 o 2 canales, muestras desde el byte 24 hasta el final)
+  y **no escribe nada si al descodificarlo no salen los bytes del origen**;
+  cualquier otro fichero (VADPCM) se queda como está. Lo aplica la regla de
+  `build/game-romfs.stamp` a los `*.wav64` de la raíz del cartucho (las
+  cinemáticas y el logo; `audio/` no). El formato completo está en la
+  cabecera de `src/msx_pcm_codec.h`: bloques independientes de 1024
+  muestras; por bloque, 1 bit de modo estéreo (izquierda/derecha o
+  medio/lado) y, por canal, el predictor fijo de orden 0–4 que menos ocupa
+  (las diferencias de Shorten/FLAC, sin multiplicar) con sus residuos en
+  código de Rice (hasta 8 particiones con su parámetro), o las muestras
+  crudas si nada gana; índice de bloques al final para los saltos. De 2385
+  bloques del cartucho: 2273 en medio/lado; predictor de orden 1 en el 81 %
+  de los primeros canales, orden 2 en el 13 %.
+- `src/msx_pcm_codec.h` es el descodificador, el mismo fuente en la consola
+  y en las herramientas y pruebas, con lecturas y escrituras acotadas (un
+  bloque dañado se rechaza: silencio y `MSX ERROR pcm`).
+- `src/msx_pcm.c` es una forma de onda del mezclador (`waveform_t`) que
+  entrega **las mismas muestras en las mismas posiciones** que el WAV64
+  crudo; `src/msx_audio.c` la usa cuando el fichero empieza por `MSXL`
+  (si no, `wav64_open` como siempre: los cartuchos de prueba con WAV64
+  crudos siguen valiendo).
+- Coste y dónde cae: antes, cada bloque de 1024 muestras eran 4096 B leídos
+  por DMA dentro de la mezcla (≈1,5 ms en ares con los tiempos de PI del
+  cartucho); ahora son ≈2,3 KB leídos y ≈2,0 ms de descodificación. Para
+  que eso no entre en el fotograma, `msx_audio_prefetch` (primera llamada
+  del tiempo libre de cada fotograma de cinemática: `spare_time` y
+  `logo_idle` en `main.c`, `title_intro.c`) descodifica por adelantado
+  hasta dos bloques después del que suena, solo si quedan 4 ms antes del
+  siguiente blanco; la mezcla entonces solo copia. Medido: de 215 / 350 /
+  1421 bloques (logo / título / HOW TO PLAY), todos menos los 2–3 primeros
+  de cada pista van adelantados.
+- Memoria: 16,4 KB de montón (tres bloques descodificados + el leído)
+  mientras suena una pista MSXL; se sueltan en `msx_audio_stop` (antes de
+  que el juego mida el montón para la caché) y al cerrar. El lector (≈200 B)
+  vive en el montón mientras el fichero está abierto.
+
+### Pruebas
+
+- `make check` → `tools/test_msxl.c` (compila `src/msx_pcm.c`, el lector de
+  la consola, para el anfitrión con `tools/host_msxl/libdragon.h`):
+  1. 308 señales sintéticas (silencio, extremos ±32768 en cada muestra y
+     opuestos entre canales, ruido, tonos, longitudes 1…5121, mono y
+     estéreo): siempre.
+  2. Todos los WAV64 crudos privados (`filesystem/cinematics`, `logo`,
+     `audio`): empaquetados y comparados **enteros**.
+  3. Los ficheros MSXL que lleva `build/game-romfs` contra sus orígenes.
+  Cada fichero se descodifica dos veces: bloque a bloque por el índice y
+  con el lector de la consola haciendo las lecturas del mezclador (en
+  orden con longitudes 1…3000 y bloques adelantados, 300 saltos, tras
+  soltar los búferes). 6000 bloques dañados: rechazados o descodificados
+  sin escribir fuera de los búferes.
+  Resultado: `sources: 13 raw 16-bit WAV64 … 11392104 -> 6597604 bytes,
+  every sample back`, `cartridge: 6 MSXL files, 9755744 -> 5563166 bytes,
+  each one decodes to its source`, `PASS: MSXL`.
+- Películas: `msxc_compress.py` descodifica cada paquete antes de aceptarlo
+  (dos descodificadores: el suyo y el de `lz4_blocks.py`) y el reproductor
+  sigue comprobando el CRC de cada paquete en la consola. `lz4opt.c` acepta
+  ahora bloques de hasta 1 MiB y de longitudes distintas (los paquetes de
+  una película); para los fragmentos de 16 KiB produce los mismos bytes
+  (`scene.pack` reconstruido es idéntico al anterior, `cmp`).
+
+### ares 146
+
+«Antes»: `7f2b743`. «Después»: esta rama. Pantalla Xvfb `:73`. Las pruebas
+de menú van por tiempo real (xdotool): dos pasadas del mismo cartucho no
+dan el mismo peor fotograma (M4, mismo cartucho: 35,3 / 48,1 / 53,6 ms), así
+que se dan los intervalos de varias pasadas.
+
+Descodificación (cartucho con `make MSX_PCM_STATS=1`, línea `MSX PCM`), por
+bloque de 1024 muestras estéreo: lectura + descodificación 1,9–2,7 ms de
+media (máximo 3,4 ms), de ellos 1,6–2,1 ms de descodificación; adelantados
+212 de 215 bloques en el logo, 348 de 350 en el título, 1419 de 1421 en
+HOW TO PLAY.
+
+Arranque completo sin saltar nada (`tools/test_logo_ares.py`, **PASS**
+antes y después):
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| Logo: fotogramas / tardíos / fotograma más largo | 546 / 0 / 18,97 ms | 546 / 0 / 17,26 ms |
+| Logo: CPU medio del dibujo por fotograma | 6,98 ms | 8,00 ms |
+| Título: únicos / perdidos / CRC primero y último | 601 / 0 / `8e705c2a` `c0a8e830` | 601 / 0 / `8e705c2a` `c0a8e830` |
+| Título: mezcla de audio más larga | 2,4 ms | 4,9 ms (la primera: los dos primeros bloques aún no están adelantados) |
+| HOW TO PLAY / SELECT / elección / entrada: únicos, saltados | 2690 / 160 / 210 / 30, 0 saltados | 2690 / 160 / 210 / 30, 0 saltados |
+| `MSX FRAMES` de cada cinemática: `late` / `long` | 0 / 0 | 0 / 0 |
+| Fin del título (`title done`) | 20.903 ms | 20.904 ms |
+| `MSX CACHE slots=` / libre con el juego cargado | 203 / 489 KB | 203 / 482 KB |
+
+El CPU del logo sube 1 ms por fotograma (de 16,7): el descodificador corre
+en su tiempo libre y le vacía las cachés; ningún fotograma llega tarde.
+Durante el juego no suena ninguna pista MSXL (la música y los efectos son
+los de antes).
+
+Juego, por el menú de pruebas (`--fire --jump 2.5`). Para comparar con los
+mismos paquetes, «antes» es `7f2b743` con los paquetes de ahora menos
+`mission6.pack` (65.961.984 B, bajo el límite); «después», el cartucho
+entero (61.407.232 B):
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| M4 (100 s): resultado / peor fotograma (3 y 2 pasadas) | PASS / 46,6–50,0 ms | PASS / 37,9–47,2 ms |
+| M4: carga de la etapa / fotogramas en negro | 757,7–758,7 ms / 18 | 758,4–759,6 ms / 18 |
+| M5 etapa 1 (3 y 2 pasadas): resultado / peor fotograma | PASS / 18,5–26,2 ms | PASS / 16,3–16,9 ms |
+| M5 etapa 1: construcción del dibujo, media de la 3.ª ventana de 300 fotogramas | 6,00–6,09 ms | 6,07–6,16 ms |
+| M5 etapa 1: carga de la etapa / fotogramas en negro | 239,6–239,7 ms / 5 | 239,8–240,2 ms / 5 |
+| M5 etapa 2: resultado / peor fotograma | FAIL (la cámara no pasa de 80) / 10,4 ms | FAIL (lo mismo) / 10,6 ms |
+| M5 etapa 3: resultado / peor fotograma | PASS / 18,7 ms | PASS / 15,0 ms |
+| `decode_max` (fragmento más lento) / fallos síncronos | 7,0–7,1 ms / 0 | 7,0–7,1 ms / 0 |
+| `MSX CACHE slots=` | 203 | 203 |
+
+`tools/test_m1m2_ares.py` (con `rm -rf build/m1end`), `tools/test_pause_ares.py`
+y `tools/test_characters_ares.py`: **PASS**.
+
+**El código nuevo va al final del programa.** Con el lector enlazado en su
+sitio natural (entre los objetos del juego), el código de libdragon quedaba
+6 KB desplazado respecto al del juego y la construcción del dibujo de la M5
+etapa 1 costaba 6,8–7,0 ms en vez de 6,0–6,1 (también con los datos de
+antes en el cartucho: era la alineación en la caché de instrucciones, no la
+descodificación). `src/msx_pcm.c` y las funciones nuevas de `msx_audio.c` y
+`main.c` van en secciones `keep.text.*`, que el guion de enlace de
+libdragon coloca detrás de todo: los tiempos son los de antes. Vale para
+cualquier módulo nuevo que no se ejecute en el fotograma.
+
+### Estado y avisos
+
+- **Qué reconstruir tras fusionar** (también en `ws-logo`): solo `make`.
+  La regla de `build/game-romfs.stamp` compila `build/host/msxl` y vuelve a
+  hacer el sistema de ficheros (películas con el analizador óptimo, WAV64
+  crudos de la raíz como MSXL). `romfs/scene.pack` se regenera porque
+  `tools/lz4opt.c` es dependencia suya: sale idéntico byte a byte. Los
+  `missionN.pack` **no** hay que reconstruirlos. El programa de antes no lee
+  MSXL (`wav64_open` se detiene con «invalid ID»): programa y sistema de
+  ficheros van juntos, como siempre que se hace `make`.
+- `make MSX_PCM_STATS=1` (tras `touch src/msx_pcm.h`) añade las líneas
+  `MSX PCM` (bloques, adelantados, tiempos); cuesta 0,3 KB de programa.
+- El programa crece 6,1 KB de código y 128 B de bss. Con `7f2b743` la caché
+  de escena dejaba ≈7 KB sin usar antes de la ranura 204: sigue habiendo
+  203 ranuras, pero ya sin holgura (libre tras la caché: 576 KB de 576). El
+  siguiente crecimiento del programa costará una ranura.
+- Si una cinemática nueva trae su audio en PCM crudo, entra sola (la regla
+  empaqueta todo WAV64 crudo de 16 bits de la raíz). Los efectos de
+  `audio/` no pasan por `msx_audio_open`: no se empaquetan.
+- `make check` entero pasó (salida 0) con la rama en `1357dcc`. Después
+  cambió `filesystem/mission5/rest-native.json` (exportación en curso de la
+  Misión 5, 06:04; `filesystem` es compartido) y
+  `tools/test_pack_compression.py` se detiene en «mission 5 pack refused»
+  al cargar el paquete de la M5 hecho con esas fuentes; pasa lo mismo con
+  las herramientas de `7f2b743`: no es de este trabajo, queda para la
+  fusión de la Misión 5. El resto de pasos de `make check` se ejecutó
+  aparte sobre el código final.
+
+## 6. Duplicados
+
+Búsqueda medida de datos guardados dos veces dentro del cartucho de
+lanzamiento (`build/game-romfs`, 954 ficheros, seis misiones) y en sus
+entradas privadas. `sprites.bin` no va en el cartucho (§5). Herramientas: SHA-1
+por fichero; troceado por contenido (hash de engranaje, trozos de 64 B o más,
+independiente de la alineación) de todos los ficheros del cartucho a la vez y,
+aparte, de todo el PCM de origen (`filesystem/audio-src/*.wav`,
+`cinematics/*.wav`, `logo/*.wav`); y, por formato, páginas de 2048 B
+descodificadas, registros de las tablas, paquetes de película y columnas.
+
+### Qué había (cartucho a `91cf7f6`, 61.702.144 B)
+
+| Qué | Repetido | Qué se hace |
+| --- | ---: | --- |
+| Columnas de los fondos prerrenderizados iguales byte a byte: `m3s1.bgp` 236 de 701 columnas guardadas otra vez, `m2s2.bgp` 11 de 234 | **480.864 B** | **hecho**: una sola copia, la tabla de columnas apunta a ella |
+| Paquetes de película iguales a uno anterior de la misma película: HOW TO PLAY 1854 de 2690 (los fotogramas que se repiten), título 284, SELECT 98, las cuatro elecciones 165–166 cada una, entrada 17 | **601.658 B** guardados (566 KB solo en HOW TO PLAY) | **hecho**: MSXC v3 |
+| Programas y bloques de ROM del grupo `m3` en `mission3.pack` y otra vez en `mission4.pack` y, desde `c00d128`, en `mission5.pack` (`GROUPS[4]=('m3','m4')`, `GROUPS[5]=('m3','m5')`: 63 bloques, 438 programas) | **2 × 122.534 B** | **hecho**: `MSXD` versión 2 |
+| Registros de actores y paletas comunes a las tablas de M3/M4/M5 | ≈60.000 B | no: tablas leídas por desplazamiento fijo (§3.4) |
+| Partes de Marco idénticas (`marco/`: p383=p391, p384=p390, p385=p389, p386=p388, p393=p401, p394=p400, p395=p399, p396=p398) | 5.432 B + 8 cabeceras del DFS | **pendiente** (abajo) |
+| Páginas propias de un paquete de misión que ya guarda uno de número menor | 4 páginas (M4, de la M2) | no: §3.2 ya toma los fragmentos con 5 páginas usadas de 8; 4 páginas sueltas no pagan un fragmento prestado |
+| Paquetes de película iguales entre películas distintas (elecciones, SELECT, entrada, título) | 21 paquetes, 12.684 B sin comprimir | no: necesitaría referencias entre ficheros |
+| Audio: muestras iguales entre ficheros (PCM de origen, a cualquier desfase) | solo `sfx_112d`/`sfx_1155`: 85.887 B de PCM (≈24 KB en VADPCM) | no: los dos efectos se cargan y suenan por separado; cada wav64 VADPCM tiene su libro de códigos |
+| Audio: la misma pista o voz en dos ficheros o a dos frecuencias | nada: las voces de `confirm-c1..c3` son PCM distintos (SHA-256 de `cinematics/*.json`), las músicas de las cinemáticas son capturas de MAME y las de `audio/` renders del controlador: no hay un tramo igual muestra a muestra | — |
+| Ficheros enteros iguales | solo las 8 partes de Marco | — |
+| Tablas compiladas en el programa que también estén en un paquete | ninguna: `scene_meta.h` son las tablas de la M1 (`scene.pack` solo lleva fragmentos); `region_rom.h` y `soldier_ai_tables.h` llevan los bloques y programas sin grupo y el `MSXD` de los paquetes solo los de grupo (conjuntos disjuntos por construcción, `compile_region_rom.py`, `pack_mission.py`) | — |
+| Entradas privadas del árbol iguales a `ws-logo/filesystem` | `romfs/sprites.bin` (50.331.648 B) y `romfs/fixed.bin` (131.072 B) eran copias que hacía `pack_scene.py` | **hecho**: enlaces simbólicos `romfs/X -> ../filesystem/X`; nadie escribe a través de ellos |
+
+### Columnas compartidas (`.bgp`)
+
+`tools/prerender_stage.py render` guarda cada columna distinta una vez; una
+columna igual byte a byte (sus tramos y sus texeles) lleva en la tabla el
+mismo `offset` que la primera. El formato no cambia: `src/scene_prerender.c`
+ya leía cada columna por su `offset` y `bytes`, sin suponer orden. `m3s1.bgp`
+1.479.392 → 1.018.560 B, `m2s2.bgp` 512.944 → 492.912 B. Con `share=False`
+el fichero es byte a byte el de antes (comprobado contra `build/bgp` previo).
+
+Prueba en `make check`: `tools/test_bgp_share.py` genera cada `.bgp` del
+cartucho de las dos maneras y lee cada columna como el lector de la consola
+(cabecera, registros de capa, tabla, `bytes` desde `offset`): misma cabecera,
+mismas capas, mismos tamaños, tramos y bytes de cada columna; y el fichero de
+`build/bgp` (el que va al cartucho) es el compartido. `PASS: bgp share: 2
+files, every column the same, 480864 bytes saved`.
+
+### MSXC v3 (paquetes repetidos)
+
+`tools/msxc_compress.py` escribe v3 cuando ocupa menos que v2: tras las dos
+tablas de v2 va una tercera de `count` u16 (rellena a palabra), el paquete
+cuyos bytes guardados lee cada uno (él mismo o el primero igual). Un paquete
+que lee otro no guarda nada: su palabra de la tabla guardada es el
+desplazamiento del siguiente paquete guardado, sin bit de relleno. El
+reproductor (`src/cinematic.c`) comprueba en `check_part` que la referencia
+apunta atrás a un paquete que se guarda a sí mismo, con la misma longitud
+cruda, y el orden de la tabla; en `L_ROOM` toma `at`/`have` del paquete
+referido. Lo demás (anillo, LZ4 en sitio, CRC de cada paquete, validación,
+aplicación) no cambia: el paquete se lee y descodifica igual, solo que de
+otro sitio de la ROM. Memoria: +2 B por paquete en las tablas (5,4 KB en HOW
+TO PLAY) mientras suena la película. El empaquetador descodifica el fichero
+escrito (su propio lector de v2/v3) y exige el v1 de origen byte a byte antes
+de escribirlo.
+
+| Película | v2 | v3 |
+| --- | ---: | ---: |
+| `howto.msxc` | 2.477.804 | **1.917.274** |
+| `title.msxc` | 980.114 | 977.368 |
+| `select.msxc` | 231.316 | 230.180 |
+| `confirm.msxc`, `confirm-c1..c3.msxc` | 541.644 | 504.474 |
+| `entry.msxc` | 153.834 | 153.758 |
+| total | 4.384.712 | **3.783.054** |
+
+Prueba en `make check`: `tools/test_cinematic_stream.c` (el descodificador en
+sitio de la consola, `src/cinematic_stream.h`) sobre **cada película del
+cartucho** contra su v1 de `filesystem/cinematics`: las reglas de la tabla v3,
+cada paquete descodificado en sitio a trozos aleatorios, su CRC y cada
+fotograma aplicado, píxel a píxel con `msx_cine_*`. Antes esta prueba solo
+corría en `make check-cinematic` y solo para `entry.msxc` en v2.
+
+### `MSXD` versión 2 (grupos de otra misión)
+
+`pack_mission.py` (`lender_data`): si un paquete de número menor tiene un
+`MSXD` de versión 1 con solo grupos que esta misión también lleva (la M3 y
+su grupo `m3`), esos grupos no se guardan otra vez. Cabecera de 20 B:
+`'MSXD' u16 2 u16 bloques u16 programas u16 misión prestadora, u32 offset en
+su paquete de sus datos tras sus registros, u32 longitud`; los registros (los
+propios y los prestados, programas por etiqueta) apuntan a
+`[este bloque | los datos prestados]`. El paquete prestador va en la cola
+`MSXX` (tamaño y CRC: si no es el del cartucho, la misión se rechaza como
+con los fragmentos). `scene_assets.c` lee los datos prestados justo detrás
+del bloque (la misma RAM que antes: el bloque entero ocupaba eso) y convierte
+las órdenes en su sitio como siempre. M4: `mission4.pack` 1.466.112 →
+1.343.616 B; M5: −122.534 B sobre el paquete con el grupo copiado.
+
+Prueba: la de identidad de `make check` (`tools/test_pack_compression.py`):
+los paquetes de formato 4 llevan los grupos copiados, los nuevos prestados, y
+el volcado de cada bloque de ROM (servido por `scene_stage_rom` en su primera
+dirección) y de cada programa, orden por orden, es el mismo (los bloques se
+listan por dirección de ROM: la versión 2 pone los propios antes que los
+prestados). `PASS: … the same 21795966 bytes …`.
+
+**Bloques que se solapan.** `scene_stage_rom` sirve una dirección desde el
+primer registro que la contiene. Con el grupo `m3` en la M5 (`ea69b0e`), la
+tabla de rangos `2D388E` (306 B, grupo `m5`, la lee `neo_m5train.c`) empieza
+en los 2 últimos bytes del bloque `2D36A4` (492 B, grupo `m3`): en el orden
+del JSON (formato 4 y el paquete de versión 1 de `ccr`) se servía desde
+`2D36A4` y una lectura de la tabla seguía más allá de ese bloque; la prueba
+de identidad lo vio como `blob 2d388e served=0` (formato 4) frente a
+`served=1` (versión 2, que ponía los propios primero). Ahora los registros
+van por final descendente en las dos versiones (una dirección se sirve del
+bloque con más bytes detrás) y el empaquetador exige que los bloques que se
+solapan tengan los mismos bytes (los tres solapes que hay: `2D36A4`/`2D388E`,
+`039516`/`039542`, `0BBAC8`/`0BBAEC`, iguales). La prueba pasa con los
+paquetes reconstruidos sobre `ccr` `59fee85`.
+
+### Resultado
+
+| | Antes (`91cf7f6`) | Después |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64`, seis misiones | 61.702.144 B | **60.620.800 B (−1.081.344)** |
+| Margen bajo el límite de ares (67.043.328 B) | 5.341.184 B | **6.422.528 B** |
+| `ccr` sin MSXL (`2f64726`, sin `mission6.pack` para entrar en ares) | 66.256.896 B | — |
+
+ares 146 (pantalla `:73`), «antes» = `2f64726` (ccr sin este trabajo) sin
+`mission6.pack`, «después» = esta rama con las seis misiones:
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| Arranque completo (`test_logo_ares.py`) | — | **PASS**, 546 fotogramas del logo, 0 tardíos; CRC finales de HOW TO PLAY / SELECT / elección / entrada `47fe0a98` `ad129003` `342b3c8e` `be25a626` (los de antes), `late=0 long=0` en todas |
+| M3 por el menú (`--fire --jump 2.5`): carga de la etapa / peor fotograma tras el primero | 398.854 µs / 33,5 ms | 399.211 µs / 30,0 ms (PASS los dos) |
+| M4 (`--fire --jump 2.5`): carga / peor fotograma tras el primero | 765.469 µs / 49,4 ms | 764.886 µs / 32,4 ms (PASS) |
+| M5 etapa 3 (`--fire --jump 2.5`): carga / peor fotograma de juego / construcción media | 233.035 µs / 13,9 ms / 2,11 ms | 232.481 µs / 13,9 ms / 1,96 ms (PASS) |
+| `decode_max` / `sync` / `MSX CACHE slots=` | 6,4–7,0 ms / 0 / 200 | 6,4–6,9 ms / 0 / 200 |
+
+`test_m1m2_ares.py` (con `rm -rf build/m1end`), `test_pause_ares.py`,
+`test_characters_ares.py`: **PASS**. (Los peores fotogramas de M3/M4 caen
+en ventanas con cargas y varían de una pasada a otra, §5.)
+
+### Tras fusionar `ccr` `ea5bb75` (programas bajo demanda)
+
+Con el código de `ea5bb75` el dibujo del logo cuesta 9,0–9,2 ms de CPU por
+fotograma (7,5 antes; `ccr` solo: 9,04 ms, 0 tardíos). Con la sintonía del
+logo en MSXL, descodificar sus bloques en el tiempo libre dejaba 16
+fotogramas tardíos. La sintonía (`neogeo-jingle.wav64`, 878.236 B) vuelve a
+ir en WAV64 crudo (`MSXL_RAW` en el `Makefile`): logo 546 fotogramas, 0
+tardíos, CPU media 9,23 ms, máximo 17,96 ms. El resto de pistas siguen en
+MSXL, y desde `5982c0d` los dos primeros bloques de cada una se descodifican
+al empezar (`msx_pcm_prime`, fuera de los fotogramas): ninguna cinemática
+tiene fotogramas tardíos.
+
+| | `ccr` `ea5bb75` (sin `mission6.pack`) | Esta rama, seis misiones |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64` | 66.994.176 B | **61.472.768 B** (margen 5.570.560 B) |
+| Logo: tardíos / CPU media | 0 / 9,04 ms | 0 / 9,23 ms |
+| M5 etapa 3 / M4: carga de la etapa | — | 284.348 µs / 769.799 µs (PASS) |
+| `MSX CACHE slots=` (suelo 208) | — | 209–210 |
+
+### Pendiente
+
+- **Partes de Marco repetidas** (8, 5,4 KB y 8 ficheros): el catálogo
+  (`marco_pose_meta.h`) podría apuntar las 8 copias a la primera y el
+  cargador compartir el sprite (también ahorraría su RAM). Poco a cambio de
+  tocar el catálogo compartido con los paquetes de personajes.
+
+### Qué reconstruir tras fusionar
+
+`python3 tools/build_packs.py 4` (M4 y siguientes: `MSXD` versión 2) y
+`make` (regla de `build/bgp.stamp` y de `build/game-romfs.stamp`: las
+columnas y las películas se rehacen solas). Un programa anterior rechaza el
+`MSXD` versión 2 («mission data block not read»). El programa de antes no lee MSXC
+v3 (`bad header`/ «cannot open»): programa y sistema de ficheros van juntos.
+Si `romfs/sprites.bin`/`romfs/fixed.bin` son copias, `pack_scene.py` los
+cambia por enlaces la próxima vez que rehaga `scene.pack`; se pueden cambiar
+a mano (`rm romfs/X && ln -s ../filesystem/X romfs/X`) si son iguales. **Un
+`pack_scene.py` anterior a este cambio se detiene** con `SameFileError` sobre
+esos enlaces (no escribe a través de ellos): quitar los enlaces antes de
+ejecutar uno viejo.

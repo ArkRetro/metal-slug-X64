@@ -22,4 +22,7 @@ const void *msx_ramfs_data(const char *path,size_t *size);
 bool msx_ramfs_preload(const char *path);
 /* One step: false when nothing is left or the next file does not fit yet. */
 bool msx_ramfs_preload_idle(unsigned long deadline,int keep);
+/* No more background reads: frees the queue (after the msx_ramfs_load of
+ * every file the game uses; files can be queued again later). */
+void msx_ramfs_preload_end(void);
 #endif

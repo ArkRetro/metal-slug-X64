@@ -429,21 +429,42 @@ que darles; pendiente). Exportación de sprites: 142 entradas con zoom
 saltadas (los de fondo) y 1360 píxeles distintos en 10 fotogramas de
 validación (156030..157410, helicópteros bajo fuego): **sin revisar**.
 
+**Soldado que salta `0AF1A8` (`src/neo_soldier_ai.c`; familias `m4sold`,
+269 actualizaciones, y `m4sold2`, 1099, iguales a MAME).** Es la entrada de
+soldado con `+81 = E0`: solo tiene las acciones 5..7 de la tabla `0AF494`,
+todas `0AF99A`. Corre hacia el jugador (`23D510`, `+62` = ±4 0000, velocidad
+del programa `|+62| >> 10 + 80`; con el jugador montado en un vehículo,
+`0AAA88` = palabra de su ranura RAM `10C608`, hace la acción 1), a menos de
+0x40 del más cercano (`01AF9A`) salta (`0AFA4C`: `23EE3C`, `+34` = 8 A000,
+`+62` = ±(2 8000 + rand + rand)); al caer la fila `0AE990` encuentra al
+jugador (`0AFADA`, `23EEB6`) y la `0AE9A0` le pega (`0AFAF0` → `0AFB44`);
+en el suelo `0AFB88` (`23EEEA`) y vuelve a `0AF380`. **Era la parada del
+guion en `2DBB50`** (cámara 1256: el primer registro contado de `0AF1A8`,
+dentro de un corredor de 20 soldados): el recorrido de ares no pasaba de ahí.
+
+Prueba: los soldados no son actores genéricos; ahora la prueba de familia
+los admite como nodos (`compile_family_fixture.py --soldier-nodes`,
+`soldier_tick_node` de `tools/test_neo_family.c`): los bytes del nodo pasan a
+un `neo_soldier_t`, una llamada a `neo_soldier_construct` (entradas
+`0AF17E..`) o `neo_soldier_tick` con la escena de la actualización (núcleo
+con anillo y objetos dinámicos, RNG, rejilla de retardo `1067E6`, jugadores),
+y vuelta. Se comparan los campos que el módulo modela (los de
+`soldier_capture.py` y el bloque `+6E..+93`); los demás bytes toman el valor
+original. La caja del jugador 1 se ofrece al soldado como en
+`test_neo_soldier_ai.c` (su fase estrecha propia, sin reproducir las
+respuestas grabadas). `m4sold` = captura A (seis soldados, abatidos en el
+aire); `m4sold2` = captura I (`run4` desde `sec05` con
+`MSX_FULL_IDLE=153480-154400`, raíz `af1a8`: el salto cae sobre el jugador
+parado, `0AFADA`×2 y `0AFAF0`×24; **`0AFB44`/`0AFB4A` no salen en ninguna
+captura**: traducidos de la ROM, sin comprobar). Con la captura H (pad sin
+disparo) la misma prueba se para en 153822 (`0AF65A`, `+4D` 0 por 1: rutina
+que ya existía; **pendiente** ver si es el arnés —época de los objetos
+dinámicos— o el módulo). Extracción: `--range af000-b0fff` con el juego de
+RAM de la M4 más `--ram 1067e6-1068e6`.
+
 Lo que falta, con lo que se sabe de cada cosa (nada de esto está portado: son
 paradas explícitas contadas):
 
-- **`0AF1A8`** es la entrada de soldado con `+81 = E0` (acciones 5..7 de la
-  tabla `0AF494`, todas `0AF99A`): corre hacia el jugador (`23D510`, `+62` =
-  ±4 0000), a menos de 0x40 salta (`0AFA4C`: `23EE3C`, `+34` = 8A000, `+62` =
-  ±(2 8000 + rand + rand)), golpea al caer (`0AFA9C`: fila `0AE990`, tipo 5 →
-  `0AFADA` `23EEB6`; `0AFAF0`: fila `0AE9A0` → `0AFB44`), aterriza
-  (`0AFB88`: `23EEEA` → `0AF380`). En la captura A están sus 6 nodos con U/V
-  (`0AF99A`×3, `0AFA4C`×3, `0AFA9C`×24, `0AFB88`, `0AFBA6`×24; ningún golpe
-  acertado). **Falta la prueba**: los soldados se prueban con
-  `extract_soldier_ticks.py` (volcados de RAM por fotograma y registro del
-  RNG de `trace_soldier_campaign.lua`), que no existe para un estado de la
-  M4; hay que hacer ese extractor sobre las líneas U/V/R de la traza de
-  familia o lanzar `trace_soldier_campaign.lua` desde `sec05`.
 - **Prisionero que pelea** (`099E06` con `+74 = FFFE` → `0DDCDA`): sigue al
   nodo del jugador (`+76`), guarda en `+6E` el **nodo** que devuelve `0049E8`
   en A0 (filas `0DE494`/`0DE4A4`), lo mira (`01B08A`), comprueba que vive

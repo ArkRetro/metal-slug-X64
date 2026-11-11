@@ -29,10 +29,11 @@ el `switch` del módulo.
 Hechos después (11-XI, `docs/MISION4.md` «Fase 2c»): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866`
 (+ `01F9B8`, `01FA08`, `01FABA`, `01FF82`, `020004`; familia `m4rock`), `07E554` (+ `07EC6A`, `07EDF0`; `m4jump`) y
 `09A71E` (`m4box`); los helicópteros `08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`) y `08514A`/`085294`
-(`neo_heli.c`, familia `m4heli`).
+(`neo_heli.c`, familia `m4heli`); el soldado que salta `0AF1A8` (`neo_soldier_ai.c`, familias `m4sold`/`m4sold2`), el
+destello `08CF6E` (`m4spark`) y el camión `02916E` de la cámara 4929 con sus piezas `02A448` (`m4truck`).
 
-Quedan (orden de guion): `0AF1A8` (soldado, `+81 = E0`), `0DE0FE`/`0DE24A` (disparos del prisionero que pelea,
-`0DDCDA`), `08CF6E` (destello de los animales, tipos 40..42 de `08C374`), `08C954`, `0587C4` (+2), `02A448`, y el jefe `02267E` con `0259F2` y la orden
+Quedan (orden de guion): `0DE0FE`/`0DE24A` (disparos del prisionero que pelea, `0DDCDA`), los animales (tipos 40..42
+de `08C374`, con sus frutas 3D/3F), `08C954`, `0587C4` (+2), y el jefe `02267E` con `0259F2` y la orden
 `0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), G (camión `02916E` y sus piezas), **T (jefe y fin de
 misión, del TAS)**.
 

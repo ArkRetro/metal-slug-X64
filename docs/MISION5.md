@@ -433,16 +433,27 @@ solapados entre sprites de la familia. Los 268 (calle 248070..248130, 249450..24
 275220, 275670, 275700) son todos píxeles donde el volcado tiene **otro lápiz del mismo número de paleta** (ninguno
 vacío): otro sprite con la misma paleta encima (en 248070, dos ruedas `37C`); no se ha identificado cuál en cada foto.
 
+**El helicóptero suelto `0474B6`** (`neo_heli.c`, junto a la formación de la M1 con la que comparte rotor `047874`,
+bomba `047B34..`, muerte `048B06..` y los servicios `0499A4`, `049A92`, `049E46/74`). Traducidos sus 16 estados
+`0474B6..047872`, los servicios `049324`, `04936C` (con `049CB2` y `01B12E`: el ángulo de bombardeo `+80` de la tabla
+`0E0962[+70]` y el x que lo da), `049A1E`, `049B20` (la inclinación `+96` en nueve pasos, con el acarreo de la última
+comparación o suma del original), `049E9E`, `049ECE`, `049F9E`, `01B04A`, `04900C/049166`, el lanzador `0479B8`, la bomba
+`047AFC` (rango `2D18F0`) y el callback `04A1AE`. Familia **`m5heli`: 46 nodos, 2037 actualizaciones iguales a MAME**
+(captura `T` cortada en 250760, antes de que nazca el `047F7E`: los dos primeros helicópteros de la calle con sus
+rotores, 19 lanzadores, 19 bombas y sus dos muertes, 249523..250531). **Sin cubrir por la captura** (traducido, no
+probado): la marcha `04783A/047856` (`049ECE`, cuando se agota `+86`) y las ramas de `049CB2` con vecinos marcados.
+Datos: `2D146C`, `0E0C32` (16 bytes, separados del bloque `m3` que empezaba ahí), programas `244792..2447BC`.
+
 **Lo siguiente** (sin hacer en esta tanda): `08FF7E` (calle, cámara 600: `08FF7E..0913xx`, con `090A62`, `091290`,
-`0912EE`); los helicópteros sueltos `0474B6` / `047F7E` (calle 880 / 1208 y metro; la captura `T` tiene los estados
-`0474B6..0477BE` y los de `047F7E` hasta `048254`; el bombardeo `04828E..048504` solo ocurre en el metro y la captura
-`M` no lleva esas raíces: hay que repetirla con `474b6,47f7e,479b8,47a12,47afc,47b10,47de0`); después `0AF1A8`,
-trenes `051344`, `0D3B36`, los soldados de la alcantarilla `08996A/089948/08995A`, `095C98`, el jefe `0A0C00` y las
-palabras de sonido.
+`0912EE`); el otro helicóptero suelto `047F7E` (calle 1208 y metro: estados `047F7E..0484FE`, servicios `04940C`
+(1 KB, lógica de dos jugadores) y `049862`, lanzador `047A12`, bomba `047B10`, callback `04A208`; la captura `T` solo
+tiene sus estados hasta `048254`; el bombardeo `04828E..048504` solo ocurre en el metro y la captura `M` no lleva esas
+raíces: hay que repetirla con `474b6,47f7e,479b8,47a12,47afc,47b10`); después `0AF1A8`, trenes `051344`, `0D3B36`,
+los soldados de la alcantarilla `08996A/089948/08995A`, `095C98`, el jefe `0A0C00` y las palabras de sonido.
 
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: quedan **77 constructores sin portar (76 propios), 1705 creaciones** tras la tercera tanda (eran 79 y 1707 tras la segunda) (eran 103 y 2583 al
+1. **Actores nuevos**: quedan **74 constructores sin portar (73 propios), 1317 creaciones** tras la tercera tanda (eran 79 y 1707 tras la segunda) (eran 103 y 2583 al
    acabar la fase 1) ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
    constructores del guion; 141 registros del guion que `run4` no ejecutó
    necesitan captura propia. Primer paso: los registros donde se para el

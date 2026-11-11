@@ -53,7 +53,7 @@ typedef struct {
 #if defined(FAMILY_M3MID) && !defined(FAMILY_RESUME)
 #define FAMILY_RESUME 1
 #endif
-#ifdef FAMILY_M3MID
+#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS)
 static uint8_t wram[0x10000];   /* tentative: the RAM image below */
 #endif
 #define STR2(a) #a
@@ -171,6 +171,17 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
         #undef L32
         return true;
     }
+#ifdef FAMILY_RAM_CREATORS
+    /* A parent outside the family in the node pool (the Mission 4 boss's
+     * part a flash 025DC2 sits on): its node from the RAM image. */
+    if (tag>=0x1010a4u+0x28u && tag<0x1010a4u+0xb0u*100u && !((tag-0x28u-0x1010a4u)%0xb0u)) {   /* its +28 (01AD6E) */
+        const uint8_t *b=&wram[(tag-0x28u)&0xffffu];
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x3c),(int32_t)L32(b+0x40),(int32_t)L32(b+0x44),(int32_t)L32(b+0x48),b[0x4d]};
+        #undef L32
+        return true;
+    }
+#endif
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NN) {
         const neo_gactor_t *a=&actors[tag&0xffffu];
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};

@@ -1716,6 +1716,18 @@
    "reader": "051772 Mission 5 metro train: the panels' programs by +96",
    "hex": "00248f6000248fbc002490180024907e002490d0002491180024917e002491da",
    "group": "m5"
+  },
+  {
+   "rom": "0x0E007C",
+   "reader": "0259F2 / 025A5E Mission 4 boss debris: screen rectangle of 024978 (019504)",
+   "hex": "ffc0ffe000800040",
+   "group": "m4"
+  },
+  {
+   "rom": "0x0E06DA",
+   "reader": "025DC2 Mission 4 boss flash: programs by +90 (232A9A..232D06)",
+   "hex": "00232a9a00232b0a00232b7a00232bea00232c7800232d06",
+   "group": "m4"
   }
  ]
 }

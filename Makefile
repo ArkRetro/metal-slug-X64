@@ -126,7 +126,7 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -179,6 +179,17 @@ BOOT_LOGO := $(wildcard filesystem/logo/neogeo-logo.mesh filesystem/logo/neogeo-
 # (tools/pack_cinematic.py --name howto/select/confirm, docs/MISSION_ENTRY.md).
 # The select music's continuation (tools/pack_select_music.py, B44) rides along.
 BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64) filesystem/cinematics/select-music-head.wav64 filesystem/cinematics/select-music-loop.wav64)
+# select.wav64 is played only without the select music (main.c): with the
+# music in the cartridge it would be 346 KB nobody reads.
+ifneq ($(and $(wildcard filesystem/cinematics/select-music-head.wav64),$(wildcard filesystem/cinematics/select-music-loop.wav64)),)
+BOOT_ATTRACT := $(filter-out filesystem/cinematics/select.wav64,$(BOOT_ATTRACT))
+endif
+# Tarma, Eri and Fio (docs/PERSONAJES.md; private, optional): each
+# character's choice movie with its voice (tools/pack_cinematic.py --name
+# confirm-cN --wav-compress 1) and its pack (tools/export_character.py).
+# main.c offers a character only when the cartridge has all of its files.
+BOOT_ATTRACT += $(wildcard $(foreach n,1 2 3,filesystem/cinematics/confirm-c$(n).msxc filesystem/cinematics/confirm-c$(n).wav64))
+CHARACTER_PACKS := $(wildcard $(foreach n,1 2 3,romfs/chars/c$(n).bin))
 # The fix-layer HUD (src/hud_renderer.c) draws the S-ROM tiles with the fix
 # palettes of tools/build_hud_assets.py (docs/ARMAS_VEHICULOS.md §11).
 # Mission packs (tools/pack_mission.py, docs/MISION2.md): private, loaded at
@@ -200,12 +211,13 @@ $(BUILD_DIR)/bgp.stamp: tools/prerender_stage.py $(MISSION_PACKS)
 MARCO_INPUTS_SUM := $(BUILD_DIR)/marco-inputs.sum
 MARCO_INPUTS_SUM_RUN := $(shell sh tools/marco_inputs_sum.sh $(BUILD_DIR))
 $(MARCO_INPUTS_SUM): ;
-$(BUILD_DIR)/game-romfs.stamp: tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
 	cp romfs/scene.pack $(BUILD_DIR)/game-romfs/ && cp -r romfs/vehicles romfs/marco $(BUILD_DIR)/game-romfs/
 	$(if $(MISSION_PACKS),cp $(MISSION_PACKS) $(BUILD_DIR)/game-romfs/)
+	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
@@ -299,6 +311,13 @@ $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h &: tools/compile_veh
 	python3 tools/compile_vehicle.py
 $(BUILD_DIR)/vehicle-sprites.stamp: tools/build_vehicle_sprites.py filesystem/vehicle.json
 	python3 tools/build_vehicle_sprites.py --mksprite $(N64_INST)/bin/mksprite
+# The original's pause 015520 against its MAME capture (docs/PAUSA.md).
+$(BUILD_DIR)/pause_fixture.h: tools/pause_fixture.py data/pause_fixture.json
+	python3 tools/pause_fixture.py --json data/pause_fixture.json --header $@
+check-pause: $(BUILD_DIR)/pause_fixture.h
+	mkdir -p $(BUILD_DIR)/host
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
+	$(BUILD_DIR)/host/gameplay pause
 $(BUILD_DIR)/soldier_fixture.h: tools/compile_soldier_fixture.py data/first_soldier_init_fixture.json
 	python3 tools/compile_soldier_fixture.py
 $(BUILD_DIR)/rng_fixture.h: tools/compile_rng_fixture.py data/soldier_rng_fixture.json
@@ -1242,7 +1261,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
@@ -1251,7 +1270,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	# Mission 3's export (step 1, docs/MISION3.md) carries them too.
 	for m in $(wildcard filesystem/mission2/rest-native.json filesystem/mission3/rest-native.json); do python3 tools/check_mission_sprites.py filesystem/rest-native.json $$m || exit 1; done
 	mkdir -p $(BUILD_DIR)/host
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_collision.c src/neo_collision.c -o $(BUILD_DIR)/host/collision
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_mission.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/mission
 	$(BUILD_DIR)/host/mission
@@ -1269,7 +1288,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	$(BUILD_DIR)/host/gameplay > $(BUILD_DIR)/host/gameplay.out; s=$$?; cat $(BUILD_DIR)/host/gameplay.out; exit $$s
 	# Determinism: the same test built at -O2 prints the same results, and
 	# every release seed run alone (in another order) prints its line again.
-	$(HOST_CC) $(HOST_CFLAGS) -O2 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-O2
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-O2
 	$(BUILD_DIR)/host/gameplay-O2 > $(BUILD_DIR)/host/gameplay-O2.out
 	diff $(BUILD_DIR)/host/gameplay.out $(BUILD_DIR)/host/gameplay-O2.out
 	$(BUILD_DIR)/host/gameplay-O2 release 4 3 2 1 | sort > $(BUILD_DIR)/host/gameplay-seeds.out
@@ -1277,7 +1296,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	@echo "PASS: gameplay determinism (-O2 output identical, each release seed alone identical)"
 	# Diagnostic mode (src/msx_diag.h): the same test with MSX_DIAG=1 (pool
 	# hooks and list checks compiled in) prints the same results.
-	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_DIAG=1 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c src/msx_diag_core.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-diag
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -DMSX_DIAG=1 -I$(BUILD_DIR) tools/test_gameplay.c src/gameplay.c src/neo_pause.c src/msx_sfx.c src/neo_collision.c src/neo_vehicle.c src/msx_diag_core.c $(WORLD_SRCS) -o $(BUILD_DIR)/host/gameplay-diag
 	$(BUILD_DIR)/host/gameplay-diag > $(BUILD_DIR)/host/gameplay-diag.out 2> $(BUILD_DIR)/host/gameplay-diag.err
 	diff $(BUILD_DIR)/host/gameplay.out $(BUILD_DIR)/host/gameplay-diag.out
 	@echo "PASS: MSX_DIAG=1 gameplay output identical (diagnostic hooks only read the simulation)"
@@ -1577,6 +1596,18 @@ check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_marco_visual.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/marco_visual
 	$(BUILD_DIR)/host/marco_visual
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
+# Playable characters (docs/PERSONAJES.md): private packs of the ROM
+# (tools/export_character.py -> romfs/chars/cN.bin, Marco's own pack
+# build/chars/c0.bin for the comparison with the built-in catalog) against
+# each character's MAME 0.264 captures (data/character_fixture_cN.json).
+$(BUILD_DIR)/character_fixture_c%.h: tools/extract_character_fixture.py data/character_fixture_c%.json
+	python3 tools/extract_character_fixture.py --from-json data/character_fixture_c$*.json --header $@
+.PHONY: check-characters check-pause
+check-characters: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/character_fixture_c1.h $(BUILD_DIR)/character_fixture_c2.h $(BUILD_DIR)/character_fixture_c3.h
+	@mkdir -p $(BUILD_DIR)/host $(BUILD_DIR)/chars
+	cp romfs/chars/c1.bin romfs/chars/c2.bin romfs/chars/c3.bin $(BUILD_DIR)/chars/
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc -Itools tools/test_character.c src/msx_character.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/test_character
+	$(BUILD_DIR)/host/test_character $(BUILD_DIR)/chars
 .PHONY: check-m2boss
 check-m2boss:
 	$(MAKE) FULL_M2BOSS=1 check

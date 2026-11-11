@@ -42,7 +42,7 @@ static void dispatch(neo_mission_t *m) {
         m->state=NEO_MISSION_STAGE_ENTRY;
         switch (m->entry) {
         case 0:  m->fade_black=true;m->fade_steps=1;stage_init(m);return;   /* 018324: 164F0, 9C0A(E1,E1,E1,0) */
-        case 4:  m->routine=0x18364;neo_wipe_create(&m->wipe,false);m->wiping=true;m->signal=false;return; /* 01833E: 15418, +60 = 0, 3AED8 */
+        case 4:  m->pause_off=0xff;m->routine=0x18364;neo_wipe_create(&m->wipe,false);m->wiping=true;m->signal=false;return; /* 01833E: 15418, +60 = 0, 3AED8 */
         case 8:  m->fade_black=true;m->fade_steps=0x10;m->timer=0x10;       /* 018380 */
                  m->routine=0x1839a;m->timer--;return;                     /* 01839A: first subq */
         default: m->routine=0x183d0;stop(m,0x3b2e4);return;                 /* 0183AC: 3B2E4 */
@@ -73,6 +73,7 @@ static void exit_kind(neo_mission_t *m) {
  * the continue program 018120, then the stage loop 0186A0. */
 static void stage_loop(neo_mission_t *m) {
     m->letters=m->record_index==0;
+    m->pause_off=0;                                          /* 01867A: 15422 */
     m->state=NEO_MISSION_PLAYING;m->routine=0x186a0;
 }
 /* The transition actor's update after the mission actor's (its node follows
@@ -83,8 +84,8 @@ static void wipe_step(neo_mission_t *m) {
 }
 void neo_mission_start(neo_mission_t *m,uint16_t mission) {
     unsigned stops=m->stops;uint32_t at=m->stop_at;uint8_t cleared[6];memcpy(cleared,m->cleared,6);
-    uint16_t current=m->mission;
-    memset(m,0,sizeof(*m));m->stops=stops;m->stop_at=at;memcpy(m->cleared,cleared,6);
+    uint16_t current=m->mission;uint8_t pause_off=m->pause_off;   /* 10C2BD is not the mission actor's */
+    memset(m,0,sizeof(*m));m->stops=stops;m->stop_at=at;memcpy(m->cleared,cleared,6);m->pause_off=pause_off;
     m->mission=current;m->index=mission;m->record_index=0;
     m->record=find(m->index,m->record_index);dispatch(m);   /* 01829E */
     wipe_step(m);

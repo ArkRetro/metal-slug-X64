@@ -229,6 +229,8 @@ enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL, MSX_DESCENT_WAIT };
  * +30/+34 after the player's first 0C162A update), with the canopy. */
 void msx_game_stage_descent_at(msx_game_t *game,int x,int y);
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
+/* The buttons that are no new press of the update after a pause (0156FA). */
+void msx_game_resume_inputs(msx_game_t *g,uint8_t held);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 /* Reference build: the route planner of Mission 2 stage 3 (msx_autopilot.h)
  * replaces the pad's direction and jump while game->pilot.on; the release
@@ -265,6 +267,7 @@ void msx_game_hurt(msx_game_t *game,int from);
  * msx_game_init. LIFEBAR_HITS hits; food gives max(1, points/100). */
 enum { MSX_LIFEBAR_HITS=10 };
 extern bool msx_lifebar_request;
+extern uint8_t msx_character_request;   /* player 1's +6E (msx_character.h) */
 /* Hits a food worth `points` (BCD, the pickup's value) gives back. */
 unsigned msx_lifebar_food_hits(uint32_t points);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */

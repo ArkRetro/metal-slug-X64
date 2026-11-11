@@ -30,6 +30,7 @@ typedef struct {
     bool letters;         /* 018646: MISSION n START (42FA = 0) */
     bool fade_black,fade_in;uint8_t fade_steps;   /* 9C0A requests */
     bool signal;          /* +60 of the mission actor */
+    uint8_t pause_off;    /* RAM 10C2BD: 015418 sets FF, 015422 clears (neo_pause.h) */
     neo_wipe_t wipe;bool wiping;  /* 3AED8/3AEF0 after the mission actor (+60) */
     unsigned stops;uint32_t stop_at;              /* explicit stops */
 } neo_mission_t;

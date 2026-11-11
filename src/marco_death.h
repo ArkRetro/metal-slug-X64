@@ -26,6 +26,11 @@ typedef struct {
     unsigned updates;           /* updates in the phase */
 } marco_death_t;
 
+/* The death and entrance programs of the chosen character (msx_character.h):
+ * five programs in the order ground 0BF298, kind 2 on the ground 0BF3D8,
+ * kinds 7/0x10 0BF358, in the air 0BF318, entrance 0BF498, each the
+ * character's column (+6E) of the same table row. NULL: Marco. */
+void marco_death_use_programs(const neo_anim_program_t *five);
 /* 0C2DDA: a hit of kind `kind` (+5A) on the player; attacker_right is +5B
  * bit 7 (the player's projected x left of the attacker's +44). Sets the
  * velocities (+30/+34, Q16 y up) and the facing (-1 left, 1 right): kind 2

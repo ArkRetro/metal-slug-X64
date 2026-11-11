@@ -162,6 +162,77 @@ libdragon, comprimidos en ROM con `N64_ROM_DSOCOMPRESS`, cargados al cambiar
 de misión): hoy el código propio de una misión son ≈57 KB (≈52 KB con `-Os`)
 y la holgura medida (13 ranuras, 208 KB con margen 256) cubre ≈4 misiones así.
 
+## Suelo de la caché de escena: 200, no 208 (medido el 11-XI, `work-m4`)
+
+Pregunta: ¿puede volver `SCENE_EXPANDED_MIN_SLOTS` de 200 a 208? **No con el
+programa de hoy**: la caché recibe 205 ranuras en todas las misiones, así que
+un suelo de 208 pararía el arranque (`RAM budget: 205 scene slots allocated
+(minimum 208)`). Se deja en 200.
+
+Medidas (ares 146, 8 MB, cartucho normal `mslugx-explorer.z64` de `b9e8ca2`;
+M1 por el camino normal con `mslugx-m1end.z64`, el resto por el menú de
+pruebas; `MSX CACHE slots=` al cargar y el mínimo de `heap_low=` de las líneas
+`MSX RDP` del paseo):
+
+| Misión | Ranuras | Libre tras cargar | `heap_low` mínimo | Paseo |
+| --- | ---: | ---: | ---: | --- |
+| M1 (→ M2, `test_m1m2_ares.py`) | 205 | 483 KB | 312 KB | fin de la M1 y 20 s de la M2 |
+| M2 etapa 1 | 205 | 483 KB | 320 KB | 25 s |
+| M3 | 205 | 483 KB | pendiente (la pulsación del menú se perdió; se repite) | — |
+| M4 | 205 | 483 KB | 280 KB | 300 s, cámara 0..1256 con disparo |
+| M5 etapa 1 | 205 | 483 KB | 393 KB | 25 s |
+| M6 etapa 1 | 205 | 483 KB | 320 KB | 25 s |
+
+Las ranuras son las mismas en todas porque la caché se dimensiona **una vez**,
+al acabar el arranque (`scene_assets_begin`): con el audio cargado quedan
+3893 KB libres de un montón de 5880 KB, se apartan la reserva de juego y de
+crecimiento (`SCENE_RESERVE_GAME_KB` 672 menos lo precargado +
+`SCENE_RESERVE_RUNTIME_KB` 320) y el margen (`SCENE_HEAP_MARGIN_KB` 256), y lo
+que queda se divide por el coste de una ranura (16 384 + 12 bytes): 205.
+Después de cargar quedan 483 KB libres (presupuesto 576).
+
+Por qué no llega a 208:
+
+- Harían falta 3 ranuras más = **49 KB** más de montón libre en ese punto
+  (3941 KB en vez de 3893).
+- El montón es lo que queda de los 8 MB tras el programa (`text + data + bss`
+  del ELF: 2 300 KB hoy). Cuando se fijó el suelo de 208 (`906e3f1`) el montón
+  era mayor; desde entonces el programa ha crecido con el código y las tablas
+  enlazadas de las misiones 4, 5 y 6 (accesorios de la M4, voladores,
+  helicópteros, cámaras y capas genéricas, menús de prueba): cada 16,4 KB de
+  programa es una ranura menos. Solo las familias de esta sesión (helicópteros
+  de la M4, soldado `0AF1A8`, piezas, destello) bajaron el montón de 5891 a
+  5880 KB.
+- Tampoco se puede sacar de la reserva sin medir más: con 3 ranuras más
+  quedarían 434 KB libres tras cargar, por debajo del mínimo que comprueba
+  `scene_assets_check_budget` (320 + 128 = 448 KB), y el `heap_low` de la M4
+  (280 KB) bajaría a 231 KB. Los jefes de las misiones 4 a 6 y sus cargas de
+  música no están medidos todavía (no existen en el port): no hay dato para
+  recortar el margen.
+
+Qué lo devolvería (ninguna hecha aquí): `-Os` en los módulos fríos de las
+misiones (≈ 5 KB por misión, sección 3), sacar del ELF las tablas que aún van
+enlazadas, o módulos por misión (DSO) cargados al cambiar de misión: con los
+de las misiones 2 a 6 fuera del programa residente se recuperan bastante más
+de 49 KB. El suelo debe revisarse cuando exista el jefe de la M4 (su
+`heap_low` con la música `0x2C`).
+
+**Segunda medida (11-XI, tras el prisionero que pelea y los animales, `2b9dca8`)**: la caché baja a **202
+ranuras** (`MSX CACHE slots=202 (3232 KB, floor 200) free=489 KB`, M4 por el menú de pruebas, `heap_low` mínimo
+285 KB en 300 s hasta la cámara 2160): el programa creció ≈ 45 KB con la fusión de la M5 y el código nuevo
+(ELF 2 344 936 bytes). Quedan **2 ranuras (≈ 33 KB de programa) hasta el suelo de 200**: el jefe de la M4
+(≈ 3000 líneas de 68K) no cabe sin recuperar memoria antes (`-Os` en los módulos de misión, tablas fuera del
+ELF o módulos por misión). El paquete de la M4 tiene ahora 976 trozos (límite 1024).
+
+**Tercera medida (11-XI, `54adba8`: con `ccr` de los personajes y la pausa fusionado)**: **201 ranuras**
+(`MSX CACHE slots=201 (3216 KB, floor 200) free=486 KB`, ELF 2 362 984 bytes; M4 por el menú, `heap_low` 287 KB).
+Queda **una** ranura (≈ 16 KB de programa) antes de que el arranque se pare por el suelo.
+
+`SCENE_MISSION_CHUNKS_MAX` pasó de 896 a 1024 (la M4 tiene 895 trozos y el
+paquete de formato 4 de la M5 que construye `make check` 935): son 128
+entradas más en las tablas por trozo de `scene_assets.c`; las ranuras medidas
+después siguen en la línea `MSX CACHE` de las puertas (docs/MISION4.md).
+
 ### Proyección de ROM con seis misiones
 
 Cartucho actual 29,8 MB. Cada misión añade su pack (`mission2.pack` 1,97 MB)

@@ -21,6 +21,8 @@ bool neo_m3props_routine(uint32_t routine);
 bool neo_m4props_routine(uint32_t routine);
 bool neo_m5props_routine(uint32_t routine);
 ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m5enemy_routine(uint32_t routine);
+ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 void neo_m4props_reset(neo_ga_flags_t *flags);   /* 0BA942 */
 ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m3enemy_routine(uint32_t routine);
@@ -43,13 +45,21 @@ ga_result_t neo_m2boss_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 03C520..03C532: the water ripple 03C62A (+6E = kind) when 019240 has a
  * palette for the mission; false on an explicit stop. */
 bool neo_gate_ripple(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);
+/* 019240: the ripple palette of the mission (0: none; the caller stops on missions past 8, 013D1A). */
+uint16_t neo_gate_ripple_palette(const neo_genv_t *e);
 bool neo_gate_splash(neo_gactor_t *a,neo_genv_t *e,uint16_t kind);   /* 03C5C6..03C5D8: carry */
+/* 03C55C: the water (class 5) surface under the node: long x, long y (the
+ * cell top less 1) and the terrain tag; false when there is none. */
+bool neo_gate_surface(neo_gactor_t *a,neo_genv_t *e,int32_t *x,int32_t *y,uint32_t *tag);
+/* 019240 D1: the splash palette of the mission (0: none in the table). */
+uint16_t neo_gate_splash_palette(const neo_genv_t *e);
 bool neo_rebel3_routine(uint32_t routine);
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_truck_routine(uint32_t routine);
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 01D51A / 01D54A / 01D578 entered by JMP with the program started (098C0C). */
 ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail);
+ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e);   /* JMP 01D5AA */
 bool neo_effects_routine(uint32_t routine);
 ga_result_t neo_flyer_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_flyer_routine(uint32_t routine);

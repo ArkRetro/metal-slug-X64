@@ -26,6 +26,10 @@ def main():
     p.add_argument('--hit-child',help='ROUTINE (hex): a node first seen with this routine and +0C = list head 101414 (00411C) is the impact of the node deleted last, at most 3 frames before and not yet matched (its creator); a deleting update hits (0049E8 answers a contact) only when it has such a child')
     p.add_argument('--script-actor',help='node address (hex) of the script actor: nodes it created (00411C after the script actor by a family node) get the creator -2, and the native code must create them with after_script')
     p.add_argument('--script-routines',default='',help='ROUTINES (comma hex): with --script-actor, only nodes with these first routines are made by family nodes (the others the script itself creates: injected)')
+    p.add_argument('--script-kinds',default='',help='KINDS (comma hex): with --script-actor, an item 08C374 / 08C37C made after the script actor is the family\'s only when its kind (+6E word at its first update) is one of these (the fruits 3D / 3F the Mission 4 animals drop; the animals themselves come from other actors: injected)')
+    p.add_argument('--item-kinds',default='',help='KINDS (comma hex): keep only the items 08C374 / 08C37C of these kinds (+6E word at their first update); the other items of the trace are dropped (weapon pickups need the players\' weapon block)')
+    p.add_argument('--pickup-ram',action='store_true',help='pickups are checked through the RAM image (extract with --ram 10c718-10c740: the weapon block with the food counters 10C728 after every update), not through --pickup')
+    p.add_argument('--label-counts',action='store_true',help='RAM 10C5B2 / 10C5B4 (labels per player, 08D330 / 08C752) as each update first read them: inputs, without --label-after-pickup')
     p.add_argument('--marker-seq',type=int,help='RAM 10C446 (object-list sequence, 040110) before the first update when the trace lacks its read')
     p.add_argument('--terrain',help='layer object of the static terrain (hex, default 10D7B6: the families past camera 1023; 10C72E in the village)')
     p.add_argument('--node-fields',help='OFFSETS (comma hex): long fields holding a node address (the porter 0327EC keeps its item and the item\'s creator in +72/+76); compared through the node correspondence (every node\'s address is emitted)')
@@ -45,6 +49,7 @@ def main():
     p.add_argument('--fresh-flip',action='store_true',help='a creator that sets its child\'s flip bits (+15 bits 0..2) after placing it with 01B220: the recorded first state of the child already has them, the node 0040BC gave had them clear, so the test clears them in the node it hands out')
     p.add_argument('--fresh-program',action='store_true',help='a constructor that steps the program (00427A) before starting one: the original steps the previous occupant\'s program (+20), the world\'s fresh node has none, so +24..+27 are not compared in a node\'s first update without a program')
     p.add_argument('--reserve',action='store_true',help='0040BC refuses a node unless more than its reserve are free: RAM 1063D8 as the update first read it (extract with --ram 1063d8-1063da); the world has no such limit')
+    p.add_argument('--soldier-nodes',action='store_true',help='the nodes of the soldier module (routines 0AE000..0B0FFF, 040500..040FFF) run through neo_soldier_tick / neo_soldier_construct (tools/test_neo_family.c soldier_tick_node): only the fields the module models are compared')
     p.add_argument('--soldier',help='ROUTINES (comma hex): an update of one of these routines ends with JMP 0B0626 / 0B0632 (the node becomes a soldier): the native code must keep the node (the world moves it), its bytes are not compared, and the node\'s later updates and the nodes it creates from then on (the soldier\'s own code) are dropped until the node is deleted')
     p.add_argument('--external-state',default='',help='ROUTINES (comma hex): states another node of the family sets on a node between its updates (the jeep gunner 0A39D6 sets its creator to 0A35A8): an update of such a routine goes on with the same node instance')
     p.add_argument('--ram-creators',action='store_true',help='a node whose creator (+0C) is a node outside the family (the player 1014C4, a gate) reads that creator from the RAM image (extract with --ram covering the node pool)')
@@ -59,6 +64,13 @@ def main():
     # (routine 003F1E, 004126): a deleting update like any other.
     for u in d['updates']:
         if u['post'] and u['post'][:8]=='00003f1e':u['post']=None
+    if a.item_kinds:
+        kinds=[int(x,16) for x in a.item_kinds.split(',')];kindof={};kept=[]
+        for u in d['updates']:
+            if u['routine'] in (0x8c374,0x8c37c):kindof[u['node']]=int(u['pre'][2*0x6e:2*0x70],16)
+            if 0x8c374<=u['routine']<0x8c752 and kindof.get(u['node']) not in kinds:continue
+            kept.append(u)
+        d['updates']=kept
     # A node instance lives from its first update to its deleting update; a
     # later node at the same address is another instance.
     # A node deleted without a traced update (a creator's tree deletion,
@@ -84,7 +96,7 @@ def main():
                     if cand:
                         cost=lambda x:0x4000 if x[2] is None else abs(((ix-x[2]+0x8000)&0xffff)-0x8000)+abs(((iy-x[3]+0x8000)&0xffff)-0x8000)
                         c=min(cand,key=cost)[0];claimed.add(c)
-                if c<0 and script is not None and int(cr,16)==script and (not a.script_routines or u['routine'] in [int(x,16) for x in a.script_routines.split(',')]):c=-2
+                if c<0 and script is not None and int(cr,16)==script and (not a.script_routines or u['routine'] in [int(x,16) for x in a.script_routines.split(',')]) and not (a.script_kinds and u['routine'] in (0x8c374,0x8c37c) and int.from_bytes(pre[0x6e:0x70],'big') not in [int(x,16) for x in a.script_kinds.split(',')]):c=-2
                 if c<0 and script is not None and int(cr,16)==script and a.label_after_pickup and u['routine']==int(a.label_after_pickup,16):
                     # The score label 08D330 an item's pickup makes (08B944):
                     # one per pickup of the two frames before; the labels
@@ -147,6 +159,7 @@ def main():
         lv=[(u['frame'],inst[k]) for k,u in enumerate(d['updates']) if u.get('leave')]
         assert lv,'no update of --soldier in the fixture'
         L.append('#define FAMILY_LEAVE {%s}'%','.join('{%d,%d}'%x for x in lv))
+    if a.pickup_ram:L.append('#define FAMILY_PICKUPS_RAM 1')
     if a.pickup:L.append('#define FAMILY_PICKUPS {%s}'%','.join('{%d,0x%x,0x%x}'%tuple(int(x,0 if i==0 else 16) for i,x in enumerate(t.split(','))) for t in a.pickup))
     if a.spawn_window is not None:L.append('#define FAMILY_SPAWN_WINDOW %du'%a.spawn_window)
     if a.hit_child:L.append('#define FAMILY_HIT_CHILD 0x%x'%int(a.hit_child,16))
@@ -167,6 +180,7 @@ def main():
     if a.resume:L.append('#define FAMILY_RESUME 1')
     if a.train:L.append('#define FAMILY_TRAIN 1')
     if a.ram_creators:L.append('#define FAMILY_RAM_CREATORS 1')
+    if a.soldier_nodes:L.append('#define FAMILY_SOLDIER_NODES 1')
     if a.group_map:L.append('#define FAMILY_GROUP_MAP 0x%xu'%int(a.group_map,16))
     if a.grid:
         g=json.load(open(a.grid));cells=bytes.fromhex(g['cells_hex']);assert len(cells)==g['columns']*g['rows']
@@ -208,7 +222,7 @@ def main():
     # Score-label counts RAM 10C5B2/10C5B4 (08D330) as read: inputs.
     lc=[(k,rd(u,0x10c5b2),rd(u,0x10c5b4)) for k,u in enumerate(d['updates'])]
     lc=[(k,x if x is not None else -1,y if y is not None else -1) for k,x,y in lc if x is not None or y is not None]
-    if lc and a.label_after_pickup:
+    if lc and (a.label_after_pickup or a.label_counts):
         L.append('#define FAMILY_LABEL_COUNTS 1')
         L.append('static const int32_t %s_label_counts[][3]={%s};'%(n,','.join('{%d,%d,%d}'%t for t in lc)))
     # Writes to the watched globals (extract_family_fixture.py GLOBALS), as
@@ -341,11 +355,19 @@ def main():
                     elif tg is None or tg[0] is None or tg[1] is None:
                         row+=[1,tg[0] if tg and tg[0] is not None else 0x7fff,tg[1] if tg and tg[1] is not None else 0x7fff,0,0,0,0,0,lo(3),lo(4)]
                     else:row+=[1,tg[0],tg[1],*rect(tg[2]),lo(3),lo(4)]
+                row+=[a0,a1]   # the nodes themselves (neo_ga_target_t.tag)
                 rows.append(row)
             spans.append((f,len(rows)-f))
         L.append('#define FAMILY_ATTACKS 1')
-        L.append('static const int32_t %s_attacks[][21]={%s};'%(n,','.join('{%s}'%','.join(map(str,r)) for r in rows) or '{0}'))
+        L.append('static const int32_t %s_attacks[][23]={%s};'%(n,','.join('{%s}'%','.join(map(str,r)) for r in rows) or '{0}'))
         L.append('static const uint16_t %s_attack_spans[][2]={%s};'%(n,','.join('{%d,%d}'%x for x in spans)))
+    if any(u.get('hitw') for u in d['updates']):
+        where={};rows=[]
+        for k,u in enumerate(d['updates']):
+            where[u['node']]=inst[k]
+            for nd,off,val in u.get('hitw',[]):rows.append((k,where.get(nd,where.get(nd.zfill(6),-1)),off,val))
+        L.append('#define FAMILY_HITW 1')
+        L.append('static const int32_t %s_hitw[][4]={%s};'%(n,','.join('{%d,%d,%d,%d}'%r for r in rows)))
     if a.previous:
         where={};prev=[]
         for k,u in enumerate(d['updates']):

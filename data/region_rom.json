@@ -1599,6 +1599,12 @@
    "reader": "0836E8 Mission 5 sewer jets: the ROM word that 0838DA reads with `move.w $70.w,d1` (the pause of the jets)",
    "hex": "00c0",
    "group": "m5"
+  },
+  {
+   "rom": "0x0DE464",
+   "reader": "0DDCDA fighting prisoner and its shot 0DE0FE: attack rows 0DE464 (punch), 0DE474 (shot), 0DE484 (muzzle), 0DE494 / 0DE4A4 / 0DE4B4 (searches), cull rectangles 0DE4C4 / 0DE4CC (019504)",
+   "hex": "ffe8001000100020000300010030fffffffcfffc00080008000c0001000affffffc80000003c001e000c0001000afffffe00ff0004000200000000010000ffffffe8fff000100020000000010000fffffe00fff801d00010000000010000ffffffd8ff60005000e0ffc0ffc000800080",
+   "group": "m4"
   }
  ]
 }

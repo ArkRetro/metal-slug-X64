@@ -559,6 +559,36 @@ static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
     if ((c&0xff000000u)==NEO_GA_TAG_BASE && (c&0xffffu)<NEO_WORLD_GACTORS) return &t->w->gactors[c&0xffffu];
     return NULL;
 }
+/* e->node: the node of a target's tag (attack_targets) or of a player's
+ * address, as the fields another actor reads of it (+00: 3F1E once deleted,
+ * +3C..+43; the players' +5E / +5F). The port keeps soldiers, boss nodes and
+ * generic actors in pools of their own: a tag names the slot (the soldier's
+ * with its generation), so a slot given out again reads as the new occupant
+ * only among generic actors, as in the original's single pool. */
+static const uint8_t *g_node(void *ctx,uint32_t tag) {
+    tick_t *t=ctx;neo_world_t *w=t->w;static uint8_t gone[NEO_GA_BYTES];
+    gone[2]=0x3f;gone[3]=0x1e;
+    if (tag==PLAYER1_TAG) return w->player_node[0];
+    if (tag==0x101574u) return w->player_node[1];
+    if ((tag&0xff000000u)==0x70000000u && (tag&0xffu)<NEO_WORLD_SOLDIERS) {
+        unsigned i=tag&0xffu;
+        if (tag!=SOLDIER_TAG(w,i) || !w->soldiers[i].active) return gone;
+        soldier_view_flush(t);
+        return soldier_view(w,i)->m;
+    }
+    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS) {
+        const neo_gactor_t *g=&w->gactors[tag&0xffffu];
+        return g->active && !g->placeholder?g->m:gone;
+    }
+    if (NEO_BOSS_IS_TAG(tag) && NEO_BOSS_TAG_INDEX(tag)<NEO_BOSS_NODES) {
+        const neo_boss_node_t *n=&w->boss.nodes[NEO_BOSS_TAG_INDEX(tag)];static uint8_t b[NEO_GA_BYTES];
+        if (!w->boss_active || !n->routine) return gone;
+        memset(b,0,sizeof(b));memcpy(b,n->f,sizeof(n->f)<sizeof(b)?sizeof(n->f):sizeof(b));
+        b[0]=(uint8_t)(n->routine>>24);b[1]=(uint8_t)(n->routine>>16);b[2]=(uint8_t)(n->routine>>8);b[3]=(uint8_t)n->routine;
+        return b;
+    }
+    return NULL;
+}
 /* ROM 01ABCC on a dynamic object's block. */
 static void dyn_project(neo_world_t *w,tick_t *t,unsigned i) {
     neo_world_dyn_t *d=&w->dyn[i];neo_contact_parent_t p;
@@ -833,7 +863,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
         if (sl>=w->last_reg_count) continue;
         const uint16_t xb=w->last_regs[sl].xbins;const uint8_t yb=w->last_regs[sl].ybins;
         if (!(xb&qx) || !(yb&qy)) continue;
-        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0},0,0};
+        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0},0,0,0};
         const uint8_t *d=NULL;
         switch (w->last_regs[sl].kind) {
         case NEO_WORLD_GACTOR: {
@@ -841,7 +871,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             if (g==a || !g->active || g->placeholder || !ga_l(g,0x50)) continue;
             d=ga_rom(ga_l(g,0x50));
             if (!candidate(d,ga_w(g,0x3c),ga_w(g,0x40),ga_b(g,0x15),ga_l(g,0x54)?ga_rom(ga_l(g,0x54)):NULL,ga_b(g,0x5f),&q,row)) continue;
-            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);tg.y_low=ga_w(g,0x42);tg.x_low=ga_w(g,0x3e);
+            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);tg.y_low=ga_w(g,0x42);tg.x_low=ga_w(g,0x3e);tg.tag=NEO_GA_TAG(i);
             break;
         }
         case NEO_WORLD_SOLDIER: {
@@ -850,7 +880,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             uint8_t sd[12]={hb.type,(uint8_t)(1u<<hb.klass),(uint8_t)((uint16_t)hb.rect[0]>>8),(uint8_t)hb.rect[0],(uint8_t)((uint16_t)hb.rect[1]>>8),(uint8_t)hb.rect[1],
                 (uint8_t)((uint16_t)hb.rect[2]>>8),(uint8_t)hb.rect[2],(uint8_t)((uint16_t)hb.rect[3]>>8),(uint8_t)hb.rect[3],0x80,0};
             if (!candidate(sd,hb.x,hb.y,hb.flags15,NULL,hb.dead?0x80u:0,&q,row)) continue;
-            h=s->health;tg.x=hb.x;tg.y=hb.y;tg.y_low=(uint16_t)s->b.projected_y;tg.x_low=(uint16_t)s->b.projected_x;d=sd;
+            h=s->health;tg.x=hb.x;tg.y=hb.y;tg.y_low=(uint16_t)s->b.projected_y;tg.x_low=(uint16_t)s->b.projected_x;d=sd;tg.tag=SOLDIER_TAG(w,i);
             for (unsigned k=0;k<4;k++) tg.rect[k]=hb.rect[k];
             break;
         }
@@ -860,7 +890,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             d=neo_boss_rom(neo_boss_l(n,0x50),12);
             const uint8_t *mul=neo_boss_l(n,0x54)?neo_boss_rom(neo_boss_l(n,0x54),40):NULL;
             if (!candidate(d,neo_boss_w(n,0x3c),neo_boss_w(n,0x40),n->f[0x15],mul,n->f[0x5f],&q,row)) continue;
-            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);tg.y_low=neo_boss_w(n,0x42);tg.x_low=neo_boss_w(n,0x3e);
+            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);tg.y_low=neo_boss_w(n,0x42);tg.x_low=neo_boss_w(n,0x3e);tg.tag=NEO_BOSS_TAG(i);
             break;
         }
         default: continue;
@@ -1467,7 +1497,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long

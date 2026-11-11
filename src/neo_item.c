@@ -47,6 +47,24 @@ static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(addres
  * motion 08BD5A walks on the ground (0x01456A) and falls in the air. */
 /* 08CD58 -> 08CDB2: item `kind` (+72 = d5) after the script actor at the
  * actor's place (01ACF2). */
+/* 08CD58 with all its arguments: offset (d0, d1), kind d2, life d3 (+70),
+ * +8B = d4, +72 = d5. Kinds from 5A up are the dummy 101624 (nothing). */
+static neo_gactor_t *k8cd58_at(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t d1,uint16_t kind,uint16_t d3,uint8_t d4,uint16_t d5) {
+    if (kind>=0x5au) return NULL;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (!c) return NULL;
+    ga_sb(c,0x8b,d4);ga_sw(c,0x70,d3);ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);
+    ga_place_at(c,a,e,d0,d1);ga_sw(c,0x72,d5);
+    return c;
+}
+/* 2896B2: the fruit an animal drops (kind 3D or 3F, 0x11 ahead and 7 up,
+ * +30 = d7 by the facing, +74 = d6: the animal). */
+static void k2896b2(neo_gactor_t *a,neo_genv_t *e,uint16_t kind,uint16_t d6,uint32_t d7) {
+    neo_gactor_t *c;
+    if (!BIT(0x15,0)) c=k8cd58_at(a,e,0x11,7,kind,0xffff,0,0);
+    else {d7=0u-d7;c=k8cd58_at(a,e,-0x11,7,kind,0xffff,0,1);}
+    if (c) {ga_sl(c,0x30,d7);ga_sw(c,0x74,d6);}
+}
 static neo_gactor_t *k8cd58(neo_gactor_t *a,neo_genv_t *e,uint16_t kind,uint16_t d5) {
     neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
     if (!c) return NULL;
@@ -76,6 +94,25 @@ static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_
             if (c) ga_place_at(c,a,e,BIT(0x15,0)?-8:8,8);
         }
         return true;
+    /* The animals (kinds 40..42, programs 289082 / 289CD6 / 28A12C). */
+    case 0x289528: if (BIT(0x5f,0)) {SL(0x62,0u-L(0x62));SB(0x15,B(0x15)^1u);}return true;
+    case 0x28953e: SB(0x7e,(uint8_t)(B(0x7e)+1u));if (B(0x7e)>=6u) SB(0x7e,0);return true;
+    case 0x289552: SB(0x7e,(uint8_t)(B(0x7e)+1u));if (B(0x7e)>=0xdu) SB(0x7e,0);SB(0x7d,B(0x7e)==0xcu?0xff:0);return true;
+    case 0x289570: SL(0x62,BIT(0x15,0)?0x14000u:0xfffec000u);return true;
+    case 0x2895a2: SB(0x7d,(ga_rand(e)&1u)?0:0xff);return true;
+    case 0x2895b2: case 0x2895c2: SB(0x7d,(ga_rand(e)&3u)?0:0xff);return true;
+    case 0x2895d8: case 0x2895e6: case 0x2895f4: case 0x289602:
+    case 0x289626: case 0x289634: case 0x289642: case 0x289650: {
+        /* 289610 / 28965E: kind 3D or 3F by the RNG, d6 = 0 / 1; d7 by the entry. */
+        static const uint32_t speed[4]={0x18000,0x13800,0xe000,0x7000};
+        bool second=routine>=0x289626u;unsigned i=(routine-(second?0x289626u:0x2895d8u))/0xeu;
+        uint16_t k=(ga_rand(e)&1u)?0x3du:0x3fu;
+        k2896b2(a,e,k,second?1u:0u,speed[i]);return true;
+    }
+    case 0x289674: case 0x289682: case 0x289690: case 0x28969e: {   /* 2896AC: kind 3F, d6 = 2 */
+        static const uint32_t speed[4]={0x18000,0x13800,0xe000,0x7000};
+        k2896b2(a,e,0x3f,2,speed[(routine-0x289674u)/0xeu]);return true;
+    }
     case 0x287d50: SB(0x7d,BIT(0x15,6)?0xff:0);return true;
     case 0x2881e6: k2881e6(a,e);return true;
     /* The foods (kinds 35.., motion 08BAB2): rolling speed and the
@@ -223,7 +260,49 @@ static bool k8bccc(neo_gactor_t *a,neo_genv_t *e) {
  * fixture); the mummies 0613D8/0613E6 of Mission 2 drop kind 28 directly
  * (their +90): the same record and motion from the constructor. */
 static void k8bd32(neo_gactor_t *a,neo_genv_t *e) {ga_project(a,e);grow(a);}
-static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u || m==0x8bcccu || m==0x8bd32u || m==0x8bd5au;}
+/* 08BAAA (the animals, kinds 40..42): 08CCD4 = the ground step 01456A on
+ * the ground, 0143DC (0xB000 gravity, 0143E4) in the air; the growth. */
+static void k8baaa(neo_gactor_t *a,neo_genv_t *e) {
+    if (BIT(0x15,6)) {uint32_t kind;ga_ground(a,e,&kind);}
+    else {SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);}
+    grow(a);
+}
+/* 08BB3C / 08BB44 (the animals' fruits, kinds 3D / 3F): state +76 of the
+ * tables 08BB24 / 08BB30 (08BD66). 0 08BB4C: the fall, a bounce at half
+ * speed until it is 0x4000 or less (state 1, +8D = 15), +30 slowing by
+ * 0x800. 1 08BBC6 / 08BBEE: 01ABC8, after +8D updates the program 28992A /
+ * 289B44 and state 2. 2 08BC16: 01ABC8. All grow (08B9D8). */
+static bool k8bb3c(neo_gactor_t *a,neo_genv_t *e,uint32_t program) {
+    switch (W(0x76)) {
+    case 0: {
+        ga_air(a,e);
+        if (BIT(0x15,6)) {
+            uint32_t d7=L(0x34);
+            if (d7&0x80000000u) {
+                d7=(uint32_t)((int32_t)(0u-d7)>>1);SL(0x34,d7);
+                if ((int32_t)d7<=0x4000) {SL(0x34,0);SW(0x76,1);SB(0x8d,0xf);}
+            }
+        } else SL(0x34,L(0x34)+0xffffb000u);
+        uint32_t d7=L(0x30);
+        if (d7) {
+            if (d7&0x80000000u) {d7+=0x800u;if (!(d7&0x80000000u)) d7=0;}
+            else {d7-=0x800u;if (d7&0x80000000u) d7=0;}
+            SL(0x30,d7);
+        }
+        break;
+    }
+    case 1:
+        ga_project(a,e);
+        SB(0x8d,(uint8_t)(B(0x8d)-1u));
+        if (B(0x8d)&0x80u) {if (!ga_anim_start(a,e,program,0x100)) return false;SW(0x76,2);}
+        break;
+    case 2: ga_project(a,e);break;
+    default: ga_fail(e,0x8bd66);return false;
+    }
+    grow(a);
+    return true;
+}
+static bool motion_known(uint32_t m) {return m==MOTION_FALL || m==0x8ba10u || m==0x8ba38u || m==0x8bab2u || m==0x8bcccu || m==0x8bd32u || m==0x8bd5au || m==0x8baaau || m==0x8bb3cu || m==0x8bb44u;}
 static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     switch (m) {
     case MOTION_FALL: k8b9b2(a,e);return true;
@@ -233,6 +312,9 @@ static bool motion(neo_gactor_t *a,neo_genv_t *e,uint32_t m) {
     case 0x8bd5a: k8bd5a(a,e);return true;
     case 0x8bccc: return k8bccc(a,e);
     case 0x8bd32: k8bd32(a,e);return true;
+    case 0x8baaa: k8baaa(a,e);return true;
+    case 0x8bb3c: return k8bb3c(a,e,0x28992a);
+    case 0x8bb44: return k8bb3c(a,e,0x289b44);
     default: ga_fail(e,m);return false;
     }
 }

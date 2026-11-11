@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces'),
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals'),
     'm5':('# Mission 5 sewer gates',)}
 def root_groups():
     import re
@@ -367,6 +367,10 @@ ROOTS+=[0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a]
 ROOTS+=[0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea]
 # Mission 4 truck pieces 02A448 (neo_truck.c): the sixteen programs of 02A878; the sparkle 08CF6E of the animals (neo_item.c): 289704.
 ROOTS+=[0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704]
+# Mission 4 fighting prisoner 0DDCDA (neo_prisoner.c): the wait 2AFDAA, the shooting 2AFE14 (callback 0DE3DA), the punch 2AFF14 (0DE3CE) and its shot 0DE0FE (2AFF94).
+ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
+# Mission 4 animals (item kinds 40..42, neo_item.c): 289082, 289CD6, 28A12C; their fruits 3F (289AA8) and the fruits' second programs 28992A / 289B44 (08BBC6 / 08BBEE).
+ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
 # Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
 ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 # Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).

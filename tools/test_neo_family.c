@@ -242,6 +242,8 @@ static void ram_to_env(marco_weapons_t *weapons) {
     }
     memcpy(weapons->b,&wram[0xc718],MARCO_WEAPON_BLOCK);
 }
+/* e->node: another node as the RAM image has it (the bytes the update read). */
+static const uint8_t *ram_node(void *ctx,uint32_t tag) {(void)ctx;return tag>=0x100000u && tag<0x10ff40u?&wram[tag&0xffffu]:NULL;}
 static void env_to_ram(const marco_weapons_t *weapons) {
     memcpy(&wram[0xc608],vslots.slot[0].b,0x24);memcpy(&wram[0xc62c],vslots.slot[1].b,0x24);
     for (unsigned r=0;r<2;r++) for (unsigned i=0;i<4;i++) wram[0xc2e8+4*r+i]=(uint8_t)(vslots.record[r]>>(24-8*i));
@@ -392,7 +394,7 @@ static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {
         const int32_t *t=r+1+10*i;neo_ga_target_t *o=&answer_env->target[i];
-        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]},(uint16_t)t[8],(uint16_t)t[9]};
+        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]},(uint16_t)t[8],(uint16_t)t[9],(uint32_t)r[21+i]};
     }
     if (r[0]) contacts++;
     return (uint8_t)r[0];
@@ -872,7 +874,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         e.player_ylow[0]=w16(0x101506);   /* RAM 101506 (--ram 101500-101508): player 1 +42 */
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
-        ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
+        ram_to_env(&weapons);e.vehicle=&venv;e.node=ram_node;pickup.mission=w16(0x10c2f6);e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
         e.player_flags15[0]=wram[0x14d9];e.player_flags15[1]=wram[0x1589];   /* the players' +15 as read */
         /* RAM 10C33C (01AEB0: the players present) when the family watches it. */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c33cu && 0x10c33du<ram_ranges[g][1]) e.players.active_mask=wram[0xc33c]&3u;   /* btst.l d0 on the byte 10C33C */
@@ -1001,7 +1003,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         memcpy(wram,wexpect,sizeof(wram));
 #endif
         if (pickup.taken!=taken) {
-#ifdef FAMILY_PICKUPS
+#ifdef FAMILY_PICKUPS_RAM
+            /* The weapon block 10C718 (food counters 10C728) is part of the
+             * RAM image compared above. */
+            pickups_checked++;
+#elif defined(FAMILY_PICKUPS)
             static const uint32_t pk[][3]=FAMILY_PICKUPS;bool ok=false;
             for (unsigned i=0;i<sizeof(pk)/sizeof(pk[0]);i++)
                 if (pk[i][0]==u->frame) ok=marco_weapons_id(&weapons,0)==pk[i][1] && marco_weapons_rounds(&weapons,0)==pk[i][2];

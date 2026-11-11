@@ -57,7 +57,7 @@ typedef struct neo_genv neo_genv_t;
  * the +54 multiplier, +5F bits 7 and 6 clear), as 01B162 reads it: +3C/+40
  * words and the first rectangle of its +50 descriptor (`box` false: +50 is
  * 0). */
-typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y_low,x_low; } neo_ga_target_t;   /* +42 / +3E: the low words the rocket 06381C reads */
+typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y_low,x_low; uint32_t tag; } neo_ga_target_t;   /* +42 / +3E: the low words the rocket 06381C reads; tag: the node itself (A0 / A1), for e->node */
 /* RAM bytes shared by the Mission 1 building actors and the mission. */
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
@@ -166,6 +166,7 @@ struct neo_genv {
     uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
     uint8_t *arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, 05287C) */
     uint16_t player_low[2];          /* RAM 101502/1015B2: the players' +3E (low word of the X long; 0613CA's long compares) */
+    uint16_t player_ylow[2];         /* RAM 101506/1015B6: the players' +42 (low word of the Y long; 085FE4) */
     int32_t scroll_x,scroll_y;       /* RAM 10E97C/10E980 */
     uint16_t *grid;                  /* delay grid RAM 1067E6 */
     void *ctx;
@@ -195,6 +196,12 @@ struct neo_genv {
      * 32..47). */
     bool want_targets;
     neo_ga_target_t target[2];
+    /* The node behind a target's tag or a player's node address (1014C4 /
+     * 101574), as the fields the original reads of another node: +00 (0040AC:
+     * 3F1E once deleted), +3C..+43, +5E, +5F. NULL: the tag is unknown. The
+     * fighting prisoner 0DDCDA keeps the node 0049E8 gave it in +6E and its
+     * shot 0DE0FE homes on it. */
+    const uint8_t *(*node)(void *ctx,uint32_t tag);
     /* ROM 004C24: register this actor's hurtbox descriptor (+50). */
     void (*register_box)(void *ctx,neo_gactor_t *a);
     /* ROM 0140C0 / 013F1E: attach or release the actor's dynamic collision

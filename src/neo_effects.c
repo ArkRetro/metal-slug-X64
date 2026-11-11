@@ -225,12 +225,17 @@ static const frag_t *frag_of(uint32_t r) {
 static uint32_t rom_l(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3]:0;}
 /* 01D51A (tail 0) / 01D54A (1) / 01D578 (2) with the program started: +66/+1E
  * = E0ED, +92/+93 = 1, the angle +8A, then the launch 01D5EC -> 01D6E4. */
+static void frag_1d5ec(neo_gactor_t *a,neo_genv_t *e);
 static void frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {
     SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SB(0x92,1);SB(0x93,1);
     uint16_t d0=ga_rand(e);
     if (tail==0) SW(0x8a,(uint16_t)((d0&0x3eu)+0x20u));
     else if (tail==1) SW(0x8a,(uint16_t)((d0&0x3eu)+0x50u));
     else SW(0x8a,(uint16_t)(((d0&0x3eu)-0x10u)&0xffu));
+    frag_1d5ec(a,e);
+}
+static void frag_1d5ec(neo_gactor_t *a,neo_genv_t *e) {
+    uint16_t d0;
     /* 01D5EC */
     if (S16(W(0x62))<=0) SW(0x62,0x200);
     uint16_t d3=ga_rand(e);
@@ -383,8 +388,8 @@ static uint8_t k2eb4(neo_genv_t *e,int16_t x,int16_t y) {
  * the ground or +5F bit 0 -> 08F1E0 (sound 1025, 08EFDE), +8A = 002EB4 of
  * the velocity >> 3, gravity, 0427A, attack row 08FC46 (08FC56 with +93 bit
  * 5) -> 08EFDE on a hit, outside 08FC74 (019504) -> 08EFD6. 08EFDE: +66/+1E
- * = E0ED, +50 = 0, the explosion 01C706 in place. Proven by the family m5tank
- * (the Mission 5 street tank 08DCB2 fires the same flash and shell: capture K). */
+ * = E0ED, +50 = 0, the explosion 01C706 in place. Translated from the ROM:
+ * no capture holds the turret's fire. */
 static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     switch (L(0)) {
@@ -438,6 +443,16 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
 }
 static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
 ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {frag_launch(a,e,tail);return frag_tick(a,e);}
+/* 01D5AA (a piece with its creator's program and palettes: the Mission 4
+ * truck's 02A448): +62 = (rand & 700) + 200, layers 1001, +92 / +93 = 3, the
+ * angle (rand & 3E) + 20, then 01D5EC and the flight 01D6E4. */
+ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e) {
+    SW(0x62,(uint16_t)((ga_rand(e)&0x700u)+0x200u));
+    SW(0x66,0x1001);SW(0x1e,0x1001);SB(0x92,3);SB(0x93,3);
+    SW(0x8a,(uint16_t)((ga_rand(e)&0x3eu)+0x20u));
+    frag_1d5ec(a,e);
+    return frag_tick(a,e);
+}
 bool neo_effects_routine(uint32_t r) {
     return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
 }

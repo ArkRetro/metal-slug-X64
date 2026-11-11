@@ -292,7 +292,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -411,6 +411,13 @@ ROOTS+=[0x28ca64,0x28c9c8,0x28ca16,0x28c440,0x28c6e0,0x28c56c,0x28c626,0x28c90e,
 ROOTS+=[0x248cd6,0x248cf0,0x248d16,0x248d3c,0x248d68,0x248d8e,0x248dd0,0x248e40,0x248e5a,0x248e74,0x248e8e,0x248ea8,0x248ec2,0x248edc,
         0x248f0a,0x248f60,0x248fbc,0x249018,0x24907e,0x2490d0,0x249118,0x24917e,0x2491da,0x24c3aa,0x24924c,0x2492f2,0x249398,0x249420,
         0x2494b2,0x2494f4,0x249518]
+# Mission 5 metro machine 0D3B36 (neo_m5mech.c): the body 2AB858 / 2AB888 / 2AB8B8 / 2AB8F2 / 2AB914 / 2ABA16, the arms'
+# rows E8FF0 / E9004 / E9018 / E902C / E9040, the pilot 2AC67A / 2AC68C / 2AC72A / 2AC7C8 / 23643A, the shells, muzzles, pieces,
+# grenade, helmet and sparks.
+ROOTS+=[0x2ab858,0x2ab888,0x2ab8b8,0x2ab8f2,0x2ab914,0x2aba16,0x2aba2e,0x2abb42,0x2abc3a,0x2abd44,0x2abe26,0x2aba3a,0x2abb4e,0x2abc46,
+        0x2abd50,0x2aba78,0x2abb8c,0x2abc7a,0x2abd7a,0x2abe32,0x2abb04,0x2abbfc,0x2abd06,0x2abd8c,0x2abe44,0x2abdd4,0x2ac67a,0x2ac68c,
+        0x2ac72a,0x2ac7c8,0x23643a,0x2ac1c2,0x2ac312,0x2ac462,0x2ac0bc,0x236272,0x2abe96,0x2abf38,0x2abfb2,0x2abffa,0x2ac074,0x2ac8d0,
+        0x2ac92e,0x263ad0,0x2361de]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

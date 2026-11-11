@@ -32,9 +32,10 @@ static uint32_t ASR(uint32_t v,unsigned n) {return (uint32_t)(S(v)>=0?(int32_t)(
 static const neo_kobj_t *obj(const kr_t *k,uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return &k->s->dyn[id-NEO_KOBJ_DYN0].pos;
     if (id==NEO_KOBJ_TRAIN) return k->s->train_on?&k->s->train:NULL;
+    if (id==NEO_KOBJ_NODE) return &k->s->node;
     return id==NEO_KOBJ_TERRAIN?&k->s->terrain:id==NEO_KOBJ_ROOT?&k->s->root:NULL;
 }
-static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT || id==NEO_KOBJ_TRAIN;}
+static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT || id==NEO_KOBJ_TRAIN || id==NEO_KOBJ_NODE;}
 /* ROM 0B8566 collision (+4 = 4340BA): a one-cell platform 0x2B on row 36
  * of every column but 384..447, which hold 0xA0 on rows 46 and 47
  * (tools/test_train_grid.py checks this against the ROM). */

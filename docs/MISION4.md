@@ -655,6 +655,11 @@ parado desde 153720 con saltos desde 156880 (hasta 158400): en las tres el prisi
 invulnerable (`101523` bit 6, `capture_fullgame.lua`): se probó a borrar el bit desde 153720 y no volver a ponerlo,
 pero el propio juego lo pone otra vez dos fotogramas después (escritor sin identificar; hace falta un punto de
 vigilancia del depurador de MAME en `101523`). Siguen pendientes.
+Fruta: `run4` sin disparo desde 151000 y desde 150400 (`scratchpad/agA/tryV.sh`, raíces de la captura K): ningún
+animal en la traza (los mata otro o no llegan a crearse con ese mando); en ares, en cambio, el recorrido de la prueba
+sí llegó a `289A80` (una vez): el mando de la prueba desde el menú es un camino para la captura si se reproduce en
+MAME. Escritores de `101522` vistos con el depurador (`wpset`, 153700..153760): `0039B0` / `0039B6` / `003A38` /
+`003A3E` (copias), `004392`, `004C76` / `004C94` / `004D1A` / `004D64`, `00A046`, `01293C..0129D6`.
 
 **No hecho**: el jefe `02267E` (captura T, 95 rutinas), el fin de misión, las celdas de las copias de `0E6DA8` del
 camino del jefe y la conexión del rótulo (`MSX_PICKUP_LABEL` sigue en 0): sus letras tienen que estar en la

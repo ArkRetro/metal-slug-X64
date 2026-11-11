@@ -697,6 +697,30 @@ Tercera fusión (quinto lote de la M5: el metro `051344`): `make check` RC 0 (**
 **208** (no se baja ningún suelo): con `mission6.pack` apartado (cartucho 66 387 968) M4 `RESULT: PASS` **209 ranuras**,
 `heap_low` 279 KB; M1 → M2 `RESULT: PASS`, 210 ranuras.
 
+**Jefe `02267E`, primeras piezas (`src/neo_m4boss.c`, familia `m4bdeb` de la captura T: 135 nodos, 4069
+actualizaciones iguales a MAME).** El reflejo `02591C` (paleta F8, profundidad 0200, `2348D4`, sin recorte). Escombros `0259F2` (paleta F0, programa `246AD2`, cara al azar `0029C6`; `025A42`:
+`01ABC8`, programa, `024978` = fuera del rectángulo `E007C`) y `025A5E` (paleta 276, `+30` = 1000, `+34` = C000,
+`234D04`; `025AAA`: `01AC38`); destellos `025B6E` / `025BE2` / `025CDE` (profundidad 1301, paleta FC, `234C06` /
+`234BFC` / `234C62`, sin recorte) y `025DC2` (sobre su creador con `01AD6E`: `+38` = creador + 28; programa `+90`
+de la tabla `E06DA`, `024978`). Prueba de familia: con `--ram-creators` un padre de la reserva de nodos se lee de la
+imagen de RAM. **Falta**: el resto del jefe (cuerpo `02267E`, `022CB6`, `023526`, `02391E`, `024226`, `0246D0`,
+`023EB4`, `023FDE`, `024F0E` / `02505C`, `02530E`..`0257DC`), sus sprites en la exportación (los de estas
+piezas tampoco están: no se dibujan hasta que exista el jefe), el mapa `02225E` / la capa `10D7B6`, la cámara
+automática y el fin de misión.
+
+Tras la línea base de la matriz (`b111a4c`): `make check` RC 0 (275 PASS; un primer intento falló en la prueba de
+compresión porque la exportación compartida de la M6 estaba a medio escribir por otro agente: 1194 trozos en formato 4;
+al repetir, bien); matriz: todo PASS menos M6 etapa 1 (la de la línea base) y M5 etapa 1 con `unsupported` 0 → 1
+(`routine=aff5e`, el soldado `0AF1A8`: **intermitente**, 1 de 4 ejecuciones con el mismo cartucho; sale también
+antes de esta fusión). Tras fusionar además la máquina del metro de la M5 (`467e945`): `make check` RC 0 (**276 PASS**); la misma matriz da lo
+mismo (M6 etapas 1 y 3: solo la paleta 125) y la M4 queda en **208 ranuras = el suelo** (sin margen: el próximo
+módulo necesita liberar RAM). Antes, tras los personajes (`fd40fb6` + jefe): `make check` RC 0 (**275 PASS**); `regression_ares.py` con
+el cartucho entero (61 554 688 bytes, con `romfs/chars` enlazado de `ws-logo`): logo, pausa, personajes, M4 (209
+ranuras), M5 ×3 y M1 → M2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (`missing descriptor … palette_id=125`, el
+fallo abierto que lleva el agente C); `missing_part=1` en cada prueba de misión = `/m4s1.bgp missing` (prerender
+privado que no está en este árbol). Corregido en el ejecutor: la prueba del logo informa con JSON (`"status":
+"PASS"`) y salida 0, no con `RESULT:`, y contaba como FAIL.
+
 **El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
 (derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
 los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. El log da ahí `MSX camera autoscroll=0 progress=4360` (una orden de cámara del guion)

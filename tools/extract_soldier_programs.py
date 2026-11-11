@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle'),
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
     'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank')}
 def root_groups():
     import re
@@ -375,6 +375,8 @@ ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
 ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
 # Mission 4 vehicle 0587C4 (neo_m4veh.c): the body's states 058752 and its flinch 24BA5E, the turret's 058776, the shots 24BFBC / 24C0FC (callback 059770), the muzzle flashes 24BF42 / 24C082, the wreck's piece 24C3AA and the trail 24C53E.
 ROOTS+=[0x24ba74,0x24bb34,0x24bca0,0x24bcba,0x24bdc8,0x24bde2,0x24c1c2,0x24c2f6,0x24bd62,0x24ba5e,0x24bad4,0x24bbea,0x24bd48,0x24bedc,0x24be5c,0x24c25a,0x24be76,0x24bfbc,0x24c0fc,0x24bf42,0x24c082,0x24c3aa,0x24c53e]
+# Mission 4 boss debris 0259F2 / 025A5E (neo_m4boss.c): 246AD2 and 234D04; the flashes 025B6E / 025BE2 / 025CDE (234C06, 234BFC, 234C62) 025DC2 (table E06DA) and 02591C (2348D4).
+ROOTS+=[0x2348d4,0x246ad2,0x234d04,0x234c06,0x234bfc,0x234c62,0x232a9a,0x232b0a,0x232b7a,0x232bea,0x232c78,0x232d06]
 # Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
 ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 # Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).
@@ -425,6 +427,9 @@ ROOTS+=[0x2ab858,0x2ab888,0x2ab8b8,0x2ab8f2,0x2ab914,0x2aba16,0x2aba2e,0x2abb42,
 # dropping 285088 / 285026, hit 285238 / 28538A / 285418, burnt 2854F2 / 285602 / 28563A / 285722, running off 2850DA / 285118.
 ROOTS+=[0x29c9d4,0x284c18,0x284cb2,0x284d36,0x284df0,0x284e7c,0x284c26,0x284f08,0x284f68,0x285088,0x285026,0x2854f2,0x285602,
         0x28563a,0x285722,0x28538a,0x285238,0x285418,0x2850da,0x285118,0x284dc0,0x284ec4]
+# Mission 6 stage 1 rafts and decorations (neo_m6props.c; no mission group: /programs.bin): the float 2A953E, the raft's
+# picture 2A954E (0BDA4E), the decorations 2A946C / 2A947C / 2A948C / 2A949C / 2A94B4 and 0BDAB8's 2A95A4.
+ROOTS+=[0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4,0x2a95a4]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

@@ -1,10 +1,10 @@
 {
- "_cart": "ccr aeef1df + ebc1003 (cart 61472768 B, same bytes as ROM 50), m1end built fresh",
+ "_cart": "work-chars 0f35e18 (ccr 401875e + the Mission 6 rafts and actors, B70; cart 62111744 B, packs rebuilt), m1end built fresh; m6s1 runs with --jump 1.0 --continues, m6s2 with --fire --jump 2.5 --continues",
  "chars": {
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 503,
+  "seconds": 672,
   "stopped": 0,
   "unsupported": 0
  },
@@ -12,7 +12,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 126,
+  "seconds": 188,
   "stopped": 0,
   "unsupported": 0
  },
@@ -20,7 +20,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 114,
+  "seconds": 213,
   "stopped": 0,
   "unsupported": 0
  },
@@ -28,7 +28,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 139,
+  "seconds": 150,
   "stopped": 0,
   "unsupported": 0
  },
@@ -36,7 +36,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 125,
+  "seconds": 155,
   "stopped": 0,
   "unsupported": 0
  },
@@ -44,7 +44,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 122,
+  "seconds": 137,
   "stopped": 0,
   "unsupported": 0
  },
@@ -52,34 +52,31 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 122,
+  "seconds": 138,
   "stopped": 0,
   "unsupported": 0
  },
  "m6s1": {
-  "known": "FAIL known (docs/MISION6.md, B68): Marco falls into the water from x 160 (rafts, bridge and second terrain 10D7B6 not ported); missing draws with palette_id=125 are the Mission 6 actors (phase 2), as at ROM 47",
-  "missing_draw": 2074,
+  "missing_draw": 0,
   "missing_part": 1,
-  "result": "FAIL",
-  "seconds": 121,
+  "result": "PASS",
+  "seconds": 149,
   "stopped": 0,
-  "unsupported": 8
+  "unsupported": 4
  },
  "m6s2": {
-  "known": "missing draws with palette_id=125 (1C3F06, 1875FA..1876D6): Mission 6 actors, phase 2, as at ROM 47",
-  "missing_draw": 2342,
+  "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 121,
+  "seconds": 142,
   "stopped": 0,
-  "unsupported": 13
+  "unsupported": 0
  },
  "m6s3": {
-  "known": "missing draws with palette_id=125 (1C3F06, 1875FA..1876D6): Mission 6 actors, phase 2, as at ROM 47",
-  "missing_draw": 2560,
+  "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 119,
+  "seconds": 151,
   "stopped": 0,
   "unsupported": 0
  },
@@ -87,7 +84,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 72,
+  "seconds": 77,
   "stopped": 0,
   "unsupported": 0
  }

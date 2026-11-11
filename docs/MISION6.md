@@ -244,11 +244,84 @@ etapa 3 PASS (320), etapa 2 PASS (2176 en 90 s), etapa 1 FAIL como en ROM 47 (51
 `/home/user/captures-m6/states`; Xvfb propio (`:76` aquí); datos de ares en una copia de `data146` con
 `L-Bumper: 0x1/0/38;;` en `settings.bml` (sin esa tecla el menú de pruebas no se abre: «select chosen early»).
 
+## Fase 2 (agente C, 11-XI): las balsas, los dibujos y el puente
+
+**Causa del agua (etapa 1).** Entre la playa (suelo de `10C72E` hasta x 176) y el muelle no hay suelo en el mapa:
+el jugador pisa tres **balsas**, actores de la llamada de cabeza **`0BD71E`** de la lista `0BCA00`, que no estaba
+portada (desde la ROM 47; no era regresión). Desensamblado (`neo_m6props.c` lleva el resumen):
+
+- `0BD71E`: las balsas `0BD822` / `0BD836` / `0BD84A` en (010A / 0270 / 02F0, 0020) de la raíz `10E968` con `+74` =
+  0 / 4 / 8 y tres `0BDA4E` (su dibujo, paleta 509, programa `2A954E`) en los mismos puntos.
+- La balsa (sin dibujo) crea su flotador `0BD8F4` / `0BD906` / `0BD918` (`0040BC`, D0 = 1C) y en `0BD898` cuenta los
+  jugadores dentro de `0BDA46` (`01B332`: (−40, 0, 80, 30)) y lleva `+2C` hacia `0BDA0C[+72]` (0020, 001C, 0018: se
+  hunde un píxel por actualización con cada jugador). Se borra con `10E99E` ≥ 0340.
+- El flotador (paletas 4CB / 4CC / 4CD, programa `2A953E`) se mece con la tabla `0BDA12` (actualizaciones, dy) desde
+  la fase `+74`, se pone en (0, dy) de la balsa (`01AD6E`) y registra **el mapa de celdas `0BDA32`** (`0140C0`: 9 × 1
+  celdas `0B` a (−5, +4) celdas): ése es el suelo sobre el agua (MAME: ranuras 5..7 de `10C06E`, caja 318..334).
+- Decoraciones de la misma lista: `0BD2FA` (`0BD416`, `0BD444`, `0BD472`), `0BD386` (`0BD4A6`), `0BD3B6` / `0BD3E6`
+  (`0BD4D4`) y `0BDA8E` (`0BDAB8`, rango `2D3FEE` en `+4E`, sin registro). Comparten `0BD508` / `0BD50E`.
+
+Captura **`captures-m6/fam/R`** (réplica de `run4` desde `sec09_292683`, `MSX_FULL_FAMILY_ROOTS` con balsas,
+decoraciones y los dueños de `10D7B6`, 292684..297000; guion `fam/runR.sh`). Familia **`m6raft`** (`--range
+bd416-bd535 --range bd822-bdaeb --ram 1063d8-1063da --ram 10c33c-10c33e`): 16 nodos, 7528 actualizaciones en lazo
+cerrado iguales a MAME. Sprites (`export_rest_sprites.py ... fam/R@bd416-bdaeb --keep filesystem/rest-native.json
+--keep filesystem/mission5/rest-native.json --output filesystem/mission6/rest-native.json`): 63 volcados, 316 761
+píxeles iguales, 0 distintos; las nueve paletas nuevas salen de los volcados de `R`.
+
+**La paleta `0x125` (dibujos ausentes de las tres etapas).** La M6 no tenía `rest-native.json` ni grupos de programas
+y tablas: los actores ya nativos que comparte con las misiones anteriores (`1875FA..1876D6`, `158xxx`, `1323xx`,
+`1C3F06`, paleta 125) no tenían sus descriptores en el paquete, y sus rutinas paraban en tablas de los grupos m3 / m4
+(`2CFD00`, `2D3A0E`, `0DFF0A`...). Ahora `filesystem/mission6/rest-native.json` (11 848 descriptores, como las
+exportaciones anteriores: guarda los de las misiones 2..5) y `GROUPS[6] = ('m3', 'm4', 'm5')` (presta la M3). Paquete:
+1 790 208 bytes (1195 trozos, 1031 tomados de los paquetes 2..5): `SCENE_MISSION_CHUNKS_MAX` 1088 → 1200. En ares
+(ROM con todo): **0 dibujos ausentes** en las tres etapas; caché de escena 208 ranuras (el suelo); tablas de etapa
+788 / 675 / 530 KB (50 / 43 / 34 ranuras). Los programas nuevos van sin grupo (`/programs.bin`) y las dos tablas nuevas
+de `region_rom.json` (`0BDA0C`, `2D3FEE`, 0xD4 bytes) en la imagen.
+
+**ares** (`test_mission6_ares.py --stage 1 --jump 1.0`): Marco salta a las balsas y llega a la cámara 1056 (PASS,
+600), donde lo matan los soldados (sin disparo). Sin saltar se cae entre la playa y la primera balsa, como en el
+original: la matriz corre `m6s1` con `--jump 1.0 --continues`.
+
+**Puertas (11-XI, tras fusionar ccr `401875e`)**: `make check` RC 0 (familia `m6raft` incluida); matriz de regresión
+sobre el cartucho completo (62 111 744 B, paquetes rehechos) y `m1end` recién hecho: todo PASS, línea base
+actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 --continues`).
+
+**Siguiente: el puente colgante (`10D7B6`)**, de la cámara 1056 en adelante (MAME: 3170 lecturas no vacías de su anillo
+`10D83E` en 294407..296719, cámara 1265..). Es un segundo terreno que **se mueve solo**, como el tren de la M3:
+
+- `0BCE2C` (cabeza de lista) = el conductor `0B8D64` del tren: `10E94E` = paso de la raíz con `10C70A` (modo 1: −2 px
+  con `10C706` −0x4000 por actualización; modo 2: ¾ de la raíz y −8 px), `0BCE18` / `0BCE22` (llamada en 1056) ponen el
+  modo; `0BCEB0` = el bucle `0B8DD0`: con `10C704` ≠ 0, la columna de la tabla `0BCE96` (`10C702`: pares (columna,
+  cuenta) 000C/FFFF, 000C/0000, 001C/FFFF, 0010/FF00, 002C/FFFF, 0010/FFFF) más el origen `+32` entra por la derecha
+  → `0C6F82` adelanta el origen; `0BCF36` / `0BCF86` / `0BCF8C` / `0BCF94` eligen la entrada.
+- `0BD18E`: el balanceo `10C712..10C714` de los dibujos según lo que avanza `10D7B6` cada actualización.
+- `0BD2BA` / `0BD2CE` (`0BD202` / `0BD20E`): cuando la columna `0BD2A8[+6E]` (6, 0x14) más el origen entra por la
+  derecha (`0C6F6A`), crean los tramos `0BCFA4` / `0BCFC4` / `0BCFE4` / `0BD004` (programas `2A923C`, `2A92C8`, `2A9354`,
+  `2A93E0`, paleta 4E1) en (`+36`+1F)·16, 0x58 de `10D7B6`, con `+6E` = `10C714`; `10C70C` / `10C70D` los bloquean.
+- Núcleo: `10D7B6` en la lista estática `013810` como el tren (`NEO_KOBJ_TRAIN`), con el mapa `0BC6E6` (sin teselas;
+  colisión `45FC2A`, 60 × 5 bloques; columna 88, fila alta 11) desde `region_rom.json` (como `0B8566` del tren, sin
+  el registro de etapa del paquete) y su anillo con el origen de cada carga (las 3066 lecturas «con otro origen»).
+  La captura `R` ya tiene a los cuatro dueños (`bce2c`, `bd18e`, `bd2ba`, `bd2ce` y sus hijos): familia y prueba del
+  núcleo con las lecturas de `cells.txt` de `s9`.
+- Comprobado fuera del árbol (lecturas de `R` como entrada, escrituras comparadas): la traducción de `0BCE2C` da
+  `10C706` y `10E94E` iguales en las 1650 actualizaciones (modo 0: `10C706` se queda; con D1 ≤ D3 no se guarda), y la
+  de `0BCEB0` los 12 saltos del origen (`+32` += `0BCE96[e+4]` + ((`+36`+1F) − (columna + `+32`)), en 12 bits;
+  `10C704` − 1 salvo FFFF; `10C70C` &= `0BCE96[e+6]`). Tabla `0BCE96`: entradas de 8 bytes (columna, cuenta, avance,
+  máscara): (000C, FFFF, 000C, 0000), (001C, FFFF, 0010, FF00), (002C, FFFF, 0010, FFFF), FFFF.
+- Celdas: la fila de celda del mapa es `r` = `q` − 64 + 2·(`+34` + 1) con `q` = ((~y) & 1F8) >> 3 (en el tren de la M3,
+  `+34` = 19: `q` − 24) y la columna la del anillo cargada con el origen de su momento (`neo_train_t.ring`); el mapa
+  `0BC6E6` tiene `+C` = 0 (sin la poda vertical de `01384E`). La colisión está en `45FC2A` (P2 lineal: 60 × 5 bloques ×
+  4 bytes, 1200 bytes) y puede ir a `region_rom.json` como el tren.
+- **El jugador de `run4` nunca pisa `10D7B6`** (captura `fam/P`, réplica desde `sec09_292683` con una sonda de
+  escritura en su padre `+38`, `1014FC`, hasta 297000): sus padres son la raíz `10E968` (en el aire), `10C72E` y los
+  mapas dinámicos `10C0AE..10C22E` (las balsas hasta la cámara 943 y otros dos en 1050..1072); ninguna escritura de
+  `10D7B6`. Las lecturas no vacías de su anillo son de barridos que no aterrizan (y de los soldados). El puente no
+  bloquea el camino de `run4`: es la colisión y los dibujos del puente para los demás actores (fase 2, actores).
+
 ## Pendiente (fase 2, por orden)
 
-1. **Etapa 1**: qué sostiene al jugador sobre el agua (actores de la cabeza de la lista: `0BCE2C`, `0BD18E`,
-   `0BD2BA`, `0BD2CE`, `0BD822`/`0BD836`/`0BD84A`, `0BDA4E`, `0BDAB8` con su cuerpo `2D3FEE`); trazarlo con una sonda
-   en el padre `+38` del jugador desde `sec09_292683`.
+1. **Etapa 1**: hecho para las balsas (arriba, «Fase 2»); falta el puente colgante `10D7B6` (`0BCE2C`, `0BD18E`,
+   `0BD2BA`, `0BD2CE`), siguiente paso descrito arriba.
 2. **Segundo objeto de terreno `10D7B6`**: rejilla en el paquete (hoy no cabe en el registro de etapa de 128 bytes:
    quedan 2), objeto en la lista del núcleo `01382A` (como el tren de la M3) y captura de `+32/+34` para explicar las
    3066 lecturas con el origen movido; su dueño y los sprites del puente.

@@ -76,8 +76,8 @@ try:
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
         if cam>=a.until:break
-        # --continues: Start at every CONTINUE? panel (the stage 016E5E has water gaps whose platform actors are phase 2:
-        # Marco falls, loses his lives and goes on from where he fell; the walk is only to see the map and the layers).
+        # --continues: Start at every CONTINUE? panel (a player's choice, nothing of the game changes): the stage 016E5E
+        # has water gaps the rafts 0BD71E bridge only with well-timed jumps, which the fixed --jump period misses at times.
         if a.continues and text.count('MSX panel continue')>continued:
             for n in list(held):hold(n,False)
             time.sleep(1.0);tap('Return');time.sleep(.5);continued=text.count('MSX panel continue')

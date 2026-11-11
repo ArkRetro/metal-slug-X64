@@ -1792,6 +1792,33 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         neo_gactor_t *a=ga_insert(&t,script,calls[k][1],SCRIPT_TAG,0);
         if (a) {ga_sl(a,0x28,calls[k][2]);ga_sl(a,0x2c,calls[k][3]);ga_sl(a,0x38,ROOT_TAG);}
     }
+    /* Mission 6 stage 1 camera-list calls (neo_m6props.c; list 0BCA00):
+     * 0BD71E the rafts 0BD822 / 0BD836 / 0BD84A at (010A / 0270 / 02F0,
+     * 0020) with +74 = 0 / 4 / 8 and three 0BDA4E at the same points;
+     * 0BDA8E 0BDAB8 at (01B0, 0060); 0BD2FA 0BD416 / 0BD444 at (0560,
+     * 0080), +6E = 0580, and 0BD472 at (06A0, 0080), +6E = 06B0; 0BD386
+     * 0BD4A6 at (0880, 0080), +6E = 092F; 0BD3B6 / 0BD3E6 0BD4D4 at
+     * (0560, 00BC), +6E = 0600 / (08A8, 00E8), +6E = 0960. All of the
+     * root 10E968, after the script actor (00411C). */
+    for (unsigned i=0;i<w->camera_call_count;i++) {
+        static const uint32_t calls[][6]={
+            {0x0BD71Eu,0xbd822u,0x010a0000u,0x00200000u,0xffffffffu,0},{0x0BD71Eu,0xbd836u,0x02700000u,0x00200000u,0xffffffffu,4},
+            {0x0BD71Eu,0xbd84au,0x02f00000u,0x00200000u,0xffffffffu,8},{0x0BD71Eu,0xbda4eu,0x010a0000u,0x00200000u,0xffffffffu,0xffffffffu},
+            {0x0BD71Eu,0xbda4eu,0x02700000u,0x00200000u,0xffffffffu,0xffffffffu},{0x0BD71Eu,0xbda4eu,0x02f00000u,0x00200000u,0xffffffffu,0xffffffffu},
+            {0x0BDA8Eu,0xbdab8u,0x01b00000u,0x00600000u,0xffffffffu,0xffffffffu},
+            {0x0BD2FAu,0xbd416u,0x05600000u,0x00800000u,0x580,0xffffffffu},{0x0BD2FAu,0xbd444u,0x05600000u,0x00800000u,0x580,0xffffffffu},
+            {0x0BD2FAu,0xbd472u,0x06a00000u,0x00800000u,0x6b0,0xffffffffu},{0x0BD386u,0xbd4a6u,0x08800000u,0x00800000u,0x92f,0xffffffffu},
+            {0x0BD3B6u,0xbd4d4u,0x05600000u,0x00bc0000u,0x600,0xffffffffu},{0x0BD3E6u,0xbd4d4u,0x08a80000u,0x00e80000u,0x960,0xffffffffu}};
+        int script=find(w,NEO_WORLD_SCRIPT,0);
+        for (unsigned k=0;k<COUNT(calls);k++) {
+            if (calls[k][0]!=w->camera_calls[i]) continue;
+            neo_gactor_t *a=ga_insert(&t,script,calls[k][1],SCRIPT_TAG,0);
+            if (!a) continue;
+            ga_sl(a,0x28,calls[k][2]);ga_sl(a,0x2c,calls[k][3]);ga_sl(a,0x38,ROOT_TAG);
+            if (calls[k][4]!=0xffffffffu) ga_sw(a,0x6e,(uint16_t)calls[k][4]);
+            if (calls[k][5]!=0xffffffffu) ga_sw(a,0x74,(uint16_t)calls[k][5]);
+        }
+    }
     w->camera_call_count=0;
     w->player_hits+=t.hits;
     return t.hits;
@@ -1961,7 +1988,8 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         if (at==0x0BC550u) w->ga_flags.limit700=0x200;                /* Mission 5 sewer list head (0BBA24): 10C700 = 200 */
         if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
-        if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)) {
+        if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)
+            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u) {   /* Mission 6 stage 1 (neo_m6props.c) */
             if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
             else w->camera_events_unsupported++;
         }

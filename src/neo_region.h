@@ -21,6 +21,8 @@ bool neo_m3props_routine(uint32_t routine);
 bool neo_m4props_routine(uint32_t routine);
 bool neo_m5props_routine(uint32_t routine);
 ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e);
+bool neo_m6props_routine(uint32_t routine);   /* Mission 6 stage 1 props (neo_m6props.c) */
+ga_result_t neo_m6props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5enemy_routine(uint32_t routine);
 ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5train_routine(uint32_t routine);
@@ -47,6 +49,9 @@ ga_result_t neo_hostage_tick(neo_gactor_t *a,neo_genv_t *e);
 /* Mission 4 ground vehicle 0587C4 with its turret and shots (neo_m4veh.c). */
 bool neo_m4veh_routine(uint32_t routine);
 ga_result_t neo_m4veh_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Mission 4 boss 02267E: its parts translated so far (neo_m4boss.c). */
+bool neo_m4boss_routine(uint32_t routine);
+ga_result_t neo_m4boss_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m2boss_routine(uint32_t routine);
 bool neo_m3mid_routine(uint32_t routine);
 bool neo_m3boss_routine(uint32_t routine);

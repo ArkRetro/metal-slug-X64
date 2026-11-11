@@ -282,6 +282,10 @@ de `region_rom.json` (`0BDA0C`, `2D3FEE`, 0xD4 bytes) en la imagen.
 600), donde lo matan los soldados (sin disparo). Sin saltar se cae entre la playa y la primera balsa, como en el
 original: la matriz corre `m6s1` con `--jump 1.0 --continues`.
 
+**Puertas (11-XI, tras fusionar ccr `401875e`)**: `make check` RC 0 (familia `m6raft` incluida); matriz de regresión
+sobre el cartucho completo (62 111 744 B, paquetes rehechos) y `m1end` recién hecho: todo PASS, línea base
+actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 --continues`).
+
 **Siguiente: el puente colgante (`10D7B6`)**, de la cámara 1056 en adelante (MAME: 3170 lecturas no vacías de su anillo
 `10D83E` en 294407..296719, cámara 1265..). Es un segundo terreno que **se mueve solo**, como el tren de la M3:
 

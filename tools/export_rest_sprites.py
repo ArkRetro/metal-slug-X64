@@ -409,7 +409,9 @@ ROOTS=ROOTS+(0x2393de,0x2393ea,0x2393f6)
 RESOURCES=RESOURCES+(0x17d,0x158)
 # Mission 5 sewer jets 0836E8: the puff 083820 (869 / 851).
 ROOTS=ROOTS+(0x281ee0,0x281f82)
-RESOURCES=RESOURCES+(0x869,0x851)
+RESOURCES=RESOURCES+(0x851,)   # 869 is the +77 = 0 variant (0836DE), which Mission 5 never makes: no capture has it
+# Mission 5: the debris pieces 01CE50..01CE98 of the sewer gates' lists 0BBD78 / 0BBD8A (palettes 168 / 167, 01D1B0).
+RESOURCES=RESOURCES+(0x167,0x168)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

@@ -120,7 +120,15 @@ filesystem/cinematics/entry.json filesystem/cinematics/entry.msxc filesystem/cin
 
 .PHONY: all clean check check-core check-cinematic preview-depth FORCE
 FORCE:
-all: mslugx-explorer.z64
+all: mslugx-explorer.z64 cart-size
+# Cart size cap (docs/BUG_MATRIX.md B67): the MiSTer N64 core reads only the
+# first 64 MiB of the cart (ROM 49, 67 928 064 bytes: rom:/audio/sfx_1029.wav64
+# not found at boot) and ares writes no log above 67 043 328 bytes; the
+# release cart stays at or under the smaller of the two.
+CART_MAX := 67043328
+.PHONY: cart-size
+cart-size: mslugx-explorer.z64
+	@s=$$(stat -c %s $<); if [ $$s -gt $(CART_MAX) ]; then echo "$<: $$s bytes, over $(CART_MAX) (MiSTer 64 MiB / ares log limit)"; exit 1; fi
 # X64 title and parachute entry (docs/MISSION_ENTRY.md, docs/INTRO_AUDIO.md):
 # private captures; with all six files the game boots logo -> title -> entry
 # -> Mission 1 (src/main.c), without them it boots logo -> Mission 1.

@@ -667,10 +667,32 @@ fusionar la compresión de C, `mslugx-m1end.z64` recién hecho; sin línea base 
 propio script: `test_logo_ares.py` da su veredicto en el JSON `"status": "PASS"`, no en `RESULT:`), pausa PASS, M4
 PASS, M5 ×3 PASS (0 dibujos perdidos, 0 rutinas sin portar), m1m2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (el
 fallo abierto que lleva C; la etapa 1 cuenta también 2CFD00 / 2D3A0E / 0DFF0A), M6 etapa 2 PASS con los mismos
-avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio: la elección del personaje no llega; sin
-mirar, no toca nada de este trabajo).
+avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio). **Causa**: no era el código: `ws-m5` no tenía
+`romfs/chars` (los paquetes de personaje, datos privados) y el juego decía `MSX SELECT place=1 not in this cartridge`.
+Arreglo: `romfs/chars` es un enlace al almacén `/home/user/ws-logo/romfs/chars` (idéntico al de `ws-chars`). Con
+él, matriz completa (61 505 536 bytes): logo, pausa, **personajes** (4/4), M4, M5 ×3, M6 etapa 2 y m1m2 PASS; M6
+etapas 1 (cámara 515, tres caídas, paleta 125) y 3 FAIL. La etapa 1 da lo mismo sin el cambio `NEO_KOBJ_NODE` del
+núcleo (probado: misma cámara 515 y mismas cuentas), y `neo_m5mech.c` solo corre en la M5.
 
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
+
+**Siguiente paso (alcantarilla)**: captura propia **`X`** hecha y **guardada** en `captures-m5/fam/X` (réplica de
+`run4` desde `sec08_274387`, raíces `95c98,95f8c,96140,8996a,89948,8995a,8a264`, traza 274388..276400, volcados cada
+30; hace falta para los descriptores de la exportación; se borra tras exportar). Fixtures ya extraídos (sin familia
+en el Makefile hasta que haya código): `data/m5sewer_fixture.json.gz` (`--range 89948-8a700`: los soldados 08996A /
+089948 / 08995A y su hijo 08A264, 9185 actualizaciones) y `data/m5pow_fixture.json.gz` (`--range 95c98-96200`: el
+prisionero 095C98 / 095F8C con el premio 08C374, 1056). 095C98 usa el sistema de huecos `0AA606` / `0AA83A` /
+`0AA7FC` / `0CA2CE` (en parte ya en `neo_vslot` / `neo_slug.c`) y `0C05EC` (sin portar). Desensamblado:
+`scratchpad/m5/d95c98.txt`. Análisis (sin código aún): 095C98 es un **mecanismo que el jugador agarra como un vehículo de clase 5**:
+`0AA606` = `0AA616` con la prueba `0C069E` (jugador en el suelo, `+15` bit 6, orientado hacia él según D1, vivo, sin
+forma 2/3; `0AA610` es la variante de `neo_vslot_select` con `0C0556`), luego `095B64` (`0AA760`, asiento `d2` = 0 ó 47
+por `+70`), `0AA83A` (clase 5), cada pulsación del jugador (bit 4 de la palabra del hueco, `0CA2CE`) sube `+88` de 9 en
+9 y los programas `095A94[+91]` giran (sonido 108B, `+96` al hijo); `0C05EC` lee del jugador `+84`, `+9A` bit 2;
+suelta con `0AA7FC` (clase 3 ó 5). El hijo 095F8C mueve su mapa dinámico (`0140C0`, tabla `095B54[+72]`) y los cuatro
+`08CD70` por `+8C` hacia `+78` (dirección `095B44[+6E]`) y avisa al padre (`+95`). Necesita en `neo_vslot` la entrada
+`0AA616` con la prueba `0C069E` y el enganche del mundo/jugador como en `neo_slug.c` (clase 5 nueva para el jugador).
+Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
+máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 1280).
 
 ## Pendiente (fase 2, por orden)
 

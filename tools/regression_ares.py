@@ -56,7 +56,7 @@ def run(name, script, extra, timeout, outflag, rom, out):
         text = (e.stdout or b'') + (e.stderr or b'')
         result = 'TIMEOUT'
     (out / f'{name}.txt').write_bytes(text)
-    logs = list(d.glob('*.log')) if d.exists() else []
+    logs = list(d.rglob('*.log')) if d.exists() else []
     blob = b''.join(l.read_bytes() for l in logs)
     counts = {k: len(r.findall(blob)) for k, r in COUNTS.items()}
     return {'result': result, 'seconds': round(time.time() - t0), **counts}

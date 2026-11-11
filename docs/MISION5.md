@@ -667,8 +667,12 @@ fusionar la compresión de C, `mslugx-m1end.z64` recién hecho; sin línea base 
 propio script: `test_logo_ares.py` da su veredicto en el JSON `"status": "PASS"`, no en `RESULT:`), pausa PASS, M4
 PASS, M5 ×3 PASS (0 dibujos perdidos, 0 rutinas sin portar), m1m2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (el
 fallo abierto que lleva C; la etapa 1 cuenta también 2CFD00 / 2D3A0E / 0DFF0A), M6 etapa 2 PASS con los mismos
-avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio: la elección del personaje no llega; sin
-mirar, no toca nada de este trabajo).
+avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio). **Causa**: no era el código: `ws-m5` no tenía
+`romfs/chars` (los paquetes de personaje, datos privados) y el juego decía `MSX SELECT place=1 not in this cartridge`.
+Arreglo: `romfs/chars` es un enlace al almacén `/home/user/ws-logo/romfs/chars` (idéntico al de `ws-chars`). Con
+él, matriz completa (61 505 536 bytes): logo, pausa, **personajes** (4/4), M4, M5 ×3, M6 etapa 2 y m1m2 PASS; M6
+etapas 1 (cámara 515, tres caídas, paleta 125) y 3 FAIL. La etapa 1 da lo mismo sin el cambio `NEO_KOBJ_NODE` del
+núcleo (probado: misma cámara 515 y mismas cuentas), y `neo_m5mech.c` solo corre en la M5.
 
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
 

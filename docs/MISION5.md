@@ -311,6 +311,52 @@ de escena: se deja la de la escena (solo los recursos de la M5 salen de sus capt
 Recorrido en ares (alcantarilla, disparando): la verja 0 cae, la cámara se suelta (grupo 7 = 0), los goteos
 caen y el guion llega a `2DEA8C` (`08996A`, el soldado de la alcantarilla), primera parada que queda.
 
+### Fase 2, segunda tanda (11-XI, agente B)
+
+Capturas de familia nuevas (réplica de `run4`, `MSX_FULL_FAMILY_ROOTS`, `MSX_FULL_VRAM_TRACE=1`, en
+`/home/user/captures-m5/fam/`; `S`, `G`, `D` y `E` siguen allí): **`T`** (calle, 247662..252800, raíces `09624E`,
+`050542`…, `08DCB2`, `08EB18`, `08FF7E`…, `0474B6`, `0479B8`, `047AFC`, `0AF1A8`, `047F7E`, `047A12`, `047B10`:
+sirve para todas las familias de la calle que faltan), **`M`** (metro entero, 252828..274330, raíces `0BC1E6`,
+`0BBF12`, `0BC192`, `0BC100`), **`W`** (alcantarilla hasta el jefe, 274388..277080, raíces `032B46/5A/6E`,
+`095C98`, `095F8C`, `0836E8`, `083820`, `08996A`, `089948`, `08995A`, `08A264`: sirve para los soldados de la
+alcantarilla y el aparato `095C98`, sin portar) y **`B8`** (inicio de la alcantarilla con BLOOD ON,
+`MSX_FULL_BLOOD=1`, nuevo en `capture_fullgame.lua` como `capture_blood.lua`: solo para la paleta `158`).
+Extracción: `extract_family_fixture.py … --attacks --ram 10000e-100010 --ram 10c72e-10d7b6 --ram 10c2f6-10c2f8
+--ram 10c6c0-10c702 --ram 1063d8-1063da` (y `--ram 1014d8-1014da --ram 101588-10158a` para los coches: los `+15`
+de los jugadores, por palabra).
+
+| Familia | Rutinas | Resultado contra MAME |
+| --- | --- | --- |
+| `m5ledge` | `09624E` (calle; repisas invisibles: mapa de celdas `095B54[+72]` por `0140C4`, fuera de `095948` se borra) | 4 nodos, 1072 actualizaciones iguales |
+| `m5car` | `050542` (coches destrozados, +6E 0..5: suspensión `050206` con los dos jugadores, mapas `050120/050138`, golpes, muerte `05065C`, salto, premios `05031E`/`050384`), ruedas `05090A/05092C`, explosión `05094E`, chapas `0509A8`, piezas `050B52` | 65 nodos, 2939 actualizaciones iguales (9 coches, 7 destruidos) |
+| `m5signal` | `0BC1E6` (metro; señal encendida mientras su grupo tiene a alguien, `019DCA`; sonido 107D de su programa) | 7 nodos, 21 435 actualizaciones iguales |
+| `m5door` | `0BBF12` (fin del metro: tres fases de daño, muros `0BBAF4/0BBBB0` por `0C88B0`, piezas `0BC100/0BC192`, manejadores de los jugadores `0BBF0E`, la salida `0B6ED2` como hija en (780, 28), destino 788) | 3 nodos, 221 actualizaciones iguales, 2 sellos |
+| `m5stain` | `032B46/032B5A/032B6E` (alcantarilla; paleta 158 con BLOOD, 17D sin él) | 3 nodos, 606 actualizaciones iguales |
+| `m5jet` | `0836E8` (chorros; **`0838DA` lee `move.w $70.w`: la palabra de ROM `000070`, no `+70`**, traducido tal cual) y sus bocanadas `083820` | 64 nodos, 2053 actualizaciones iguales |
+
+Motor y pruebas: `player_handlers` 4 = `0BBF0E` (`sub.w d7,d7`: sin entrada, como `054B18`); prueba de familia
+`--fresh-flip` (un creador que pone el bit de giro del hijo después de `01B220`: el nodo recién dado lo lleva a 0)
+y cuentas de ranura dinámica que se agotan cuando la familia no tuvo ningún nodo vivo durante más de 8
+fotogramas. `09624E` con el indicador de depuración `10F000` bit 7 (su dibujo `09635E`, con `009CCE`) es parada
+explícita.
+
+Guion tras esta tanda: la calle pasa de `2DCBBA` (`050542`) y se para en **`2DCF1A` (`08DCB2`)**; el metro pasa
+de `2DDB5E` y se para en **`2DDBBE` (`0474B6`, el helicóptero suelto)**; la alcantarilla se para en **`2DEA8C`
+(`08996A`)**.
+
+**Lo siguiente, por orden de guion** (desensamblado ya mirado; utilidades en el scratchpad: `m5/d474b6.txt`,
+`m5/d47f7e.txt`, `m5/dheli_srv.txt`, `ex5.sh FAMILIA CAPTURA RANGOS`, `famd.sh FAMILIA`):
+1. `08DCB2` + `08EB18` (calle, 1 creación, ~5,4 KB de código propio `08DCB2..08F1E0`).
+2. **El helicóptero suelto `0474B6` / `047F7E`** (calle y metro, 681 creaciones con sus lanzadores `0479B8/047A12` y
+   bombas `047AFC/047B10`): está en el módulo de `neo_heli.c` (comparte `0499A4`, `049A92`, `049E46/74`, `049EBE`,
+   la muerte `048B06..`, el rotor `047874`, el lanzador `047AAA..` y la bomba `047B34..`); faltan los servicios
+   `04900C`, `049324`, `04936C` (+ `049CB2`, `01B12E`), `049A1E`, `049B20`, `049E9E`, `049ECE`, `049F9E`, `01B04A`,
+   `01AF9A`, los estados `0474B6..047872` y `047F7E..04850E`, y las llamadas `04A1AE/04A208` (hoy parada
+   explícita en `heli_call`). Guarda en `+7C` el nodo del jugador objetivo.
+3. `0AF1A8` (del inventario de la M4), `051344` (trenes), `0D3B36`.
+4. Alcantarilla: soldados `08996A/089948/08995A` (código propio `089948..08A6xx`, hijo `08A264`), el aparato
+   montable `095C98/095F8C` (servicios de vehículo `0AA606/0AA83A/0AA7FC`), `08FF7E`, el jefe `0A0C00`.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: 103 constructores sin portar (102 propios), 2583
@@ -328,7 +374,9 @@ caen y el guion llega a `2DEA8C` (`08996A`, el soldado de la alcantarilla), prim
    ya son nativos; falta llegar a sus registros (el guion se para antes).
 5. Llamada `0BC550` de la cabeza de la lista de la alcantarilla (hoy evento
    sin consumidor) y las paletas que cambien durante el jefe.
-6. **Efectos**: las 17 palabras sin política y la voz `1135`.
+6. **Efectos**: las 17 palabras sin política y la voz `1135`. Sin hacer: `docs/AUDIO_JUEGO.md` §17 pide medir en
+   MAME los pares de cada palabra consigo misma, entre ellas y contra las etiquetas de la política (miles de
+   renders) y añadirlas de una en una; no cabía en el disco compartido de esta sesión (< 0,7 GB libres).
 7. La tabla de columnas `+3E` (pendiente 4 de la M4) no se usa en la M5
    (ninguna op 0x18 lleva tabla).
 

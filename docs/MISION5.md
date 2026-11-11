@@ -726,8 +726,12 @@ máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 128
 - Programas (22 raíces, grupo `m5`), tablas de ROM (`095938`, `095B44`, `0E525E..0E5392`, `2D2A1C..2D2C68`),
   descriptores de `X` (114 fotos, **162 164 px iguales, 0 distintos**). Paletas **sin captura** (pendiente): 878 (el
   soldado quemado) y 886..88C (la lista sin sangre); el resto de `X`.
-- El paquete de la M5 pasa a 1123 trozos (formato 4 de `make check`): `SCENE_MISSION_CHUNKS_MAX` 1088 → 1152. Caché de
-  escena en ares: **208 ranuras** (el suelo; `neo_m5sewer.o` 11 KB de código). ares alcantarilla (`--fire --jump 2.5`,
+- El paquete de la M5 pasa a 1123 trozos (`SCENE_MISSION_CHUNKS_MAX` de ccr: 1200, por la M6). **Memoria**: con
+  `neo_m5sewer.o` (11 KB de código) los flujos del logo, la pausa y los personajes se quedaban en 3326..3328 KB para un
+  mínimo de 3332 KB (`fit>=SCENE_EXPANDED_MIN_SLOTS`). Sin bajar mínimos, dos tablas de `scene_assets.c` a su tamaño
+  justo: `chunk_slot` como `int16_t` (índice de ranura o −1, a lo sumo 512 ranuras) y `requests` como `uint8_t` (las
+  prioridades son 1, 2, 3 y 255, con `assertf`): 11 KB de bss menos. Logo en ares: 208 ranuras, PASS. Caché de
+  escena en ares: **208 ranuras** (el suelo). ares alcantarilla (`--fire --jump 2.5`,
   300 s): **cámara 1568** (antes 673), 0 rutinas sin portar, la manivela no se agarra.
 
 - **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la

@@ -158,7 +158,7 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
 - La pausa y el menú de pruebas (L+R o Z+R con A/Start) funcionan igual con
   cualquier personaje; el menú usa el personaje del cursor.
 - ares solo registra con ROM ≤ 67 043 328 bytes: ver el aviso de tamaño de
-  PERSONAJES.md.
+  PERSONAJES.md y `docs/COMPRESION.md` §5 (cartucho actual: 61 407 232).
 
 ## Menú de pruebas (no arcade)
 

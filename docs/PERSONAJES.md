@@ -16,6 +16,9 @@ La pausa es la de la ROM: [PAUSA.md](PAUSA.md).
 > (misiones 4–6) hay que liberar espacio (p. ej. `howto.wav64`, 5,8 MB en
 > PCM). `select.wav64` (346 KB) ya no va al cartucho cuando está la música
 > de selección: `main.c` no lo leía.
+> **Hecho** ([COMPRESION.md](COMPRESION.md) §5): el PCM de las cinemáticas
+> va sin pérdida (MSXL) y las películas con el LZ4 óptimo; el cartucho con
+> las seis misiones mide 61 407 232 bytes (quedan 5 636 096).
 
 ## 1. Cómo lo decide la ROM
 

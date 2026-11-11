@@ -348,3 +348,126 @@ paquete: 208/209 antes y después.
 - Las pruebas de ares de esta rama usaron los Xvfb `:63` y `:64`; el agente
   de la M4 también arrancó en `:64` mientras tanto. Conviene repartir los
   números de pantalla.
+
+## 5. El cartucho bajo el límite del registro de ares (audio PCM y películas)
+
+### El problema, medido
+
+- `mslugx-explorer.z64` con los paquetes privados de las seis misiones:
+  **67.174.400 B**. ares 146 solo ofrece el IS-Viewer (el registro `MSX …`
+  del que dependen todas las pruebas) si el **fichero de la ROM** mide como
+  mucho `0x03FF0000` = 67.043.328 B: `ares/n64/cartridge/cartridge.cpp:50`
+  (`if(rom.size <= 0x03ff'0000) isviewer.ram.allocate(64_KiB)`). Con una ROM
+  mayor, `ares/n64/pi/bus.hpp:48` y `:99` dejan de desviar
+  `0x13FF0000–0x13FFFFFF` al IS-Viewer (lecturas: ROM; escrituras: «ROM is
+  too big so ISViewer is disabled») y la sonda de libdragon
+  (`src/debug.c`, `isviewer_init`, escribe y relee `0x13FF0000`) no lo
+  encuentra. **Es el tamaño del fichero, no la disposición**: dejar libre
+  ese rango dentro del DFS no cambia nada; no hay forma limpia de evitarlo
+  salvo medir menos. (En consola el tope es otro: 64 MiB = 67.108.864 B.)
+- `romfs/sprites.bin` (50.331.648 B, la C-ROM cruda) **no va en el cartucho
+  de lanzamiento**: solo en `mslugx-lab.z64` (`Makefile`, regla de
+  `mslugx-lab.dfs`). El juego lee `build/game-romfs`. Lo que hay ahí
+  (cartucho de 67.174.400 B = 64.812.384 B de ficheros + 394.400 B de DFS +
+  1.967.616 B de cabecera, ELF comprimido y símbolos):
+
+| Grupo | Ficheros | Bytes | Formato |
+| --- | ---: | ---: | --- |
+| `audio/music_*.wav64` | 24 | 27.752.856 | VADPCM estéreo 24 kHz |
+| paquetes (`scene` + misiones 2–6) | 6 | 12.145.024 | fragmentos LZ4 (§3) |
+| wav64 de cinemáticas y logo, PCM crudo 16 bit estéreo 32 kHz | 6 | 9.755.744 | `howto` 5.817.652, `title-motion` 1.429.560, `neogeo-jingle` 878.236, `entry` 798.056, `confirm` 454.188, `select-music-head` 378.052 |
+| películas `.msxc` (v2) | 8 | 5.958.238 | LZ4 por paquete, analizador voraz |
+| `audio/sfx_*.wav64` | 116 | 3.637.434 | 107 VADPCM, 6 PCM crudo mono (1.290.308 B) |
+| wav64 de cinemáticas en VADPCM (`select-music-loop`, `confirm-cN`) | 4 | 2.184.556 | |
+| columnas `.bgp` | 2 | 1.992.336 | |
+| `chars/`, `marco/` (745 partes), `vehicles/`, `fixed.bin`, resto | 787 | 1.386.196 | |
+
+### Opciones medidas
+
+| Opción | Ganancia medida | Coste en ejecución | Decisión |
+| --- | ---: | --- | --- |
+| **Películas con el analizador óptimo `tools/lz4opt.c`** (el de los fragmentos) en vez del voraz de `msxc_compress.py` | 5.958.238 → 4.384.712 B (**−1.573.526**) | ninguno: mismos bloques LZ4, mismo reproductor, menos bytes por DMA | **hecha** |
+| **PCM crudo de las cinemáticas sin pérdida (MSXL)**: predictores fijos + Rice, por bloques de 1024 muestras | 9.755.744 → 5.563.166 B (**−4.192.578**) | ≈2,0 ms de descodificación por bloque (32 ms de audio), en el tiempo libre de la cinemática; nada durante el juego | **hecha** |
+| MSXL con predictor lineal (LPC ≤ 8, 12 bits) además de los fijos | 5.413.048 B (147.358 B menos que con solo fijos) | 8 multiplicaciones por muestra: medido 2,0–4,1 ms por bloque en vez de 1,6–2,1 | no: poco por mucho |
+| FLAC `-compression_level 12` (referencia, ffmpeg) | `howto` 3.194.623 B (MSXL 3.351.290), `title-motion` 558.822 (619.238) | bloques de 4096 y LPC de orden 12 | referencia |
+| Los 6 efectos en PCM crudo (`sfx_1053/109d/109e/10a5/10d5/1169`) como MSXL | 1.290.308 → 852.192 B (−438.116) | 5 de los 6 se leen de la ROM **durante el juego** (`streamed` en `game_audio.c`): la descodificación caería dentro del fotograma; el sexto (66 KB) es residente | no (pendiente si hiciera falta: decodificar adelantado como aquí) |
+| Quitar la tabla de símbolos (`*.elf.sym`) del cartucho | 776.298 B | ninguno; se pierden los nombres en los volcados de pila de una excepción | no: depuración de los otros agentes |
+| Cabecera de fichero del DFS (256 B por fichero + relleno a 256) | 394.400 B en 954 ficheros (745 son `marco/pN.sprite`) | habría que empaquetar las partes de Marco en un fichero y cambiar su carga | no |
+| Partes de Marco comprimidas (`mkasset -c 1`, `asset_load` las abre igual) | 563.304 → ≈300.000 B (zlib −9) | el margen de la descompresión en sitio de libdragon (`(n>>8)+32` B por fichero) × 745 ≈ 30 KB de montón permanente = 2 ranuras de la caché | no |
+| Música VADPCM | xz −9: ≈ −8 % (2,2 MB) | es estéreo real (tramas L = R: 0–3 %, 27 % en una intro corta); haría falta un descodificador de entropía en cada lectura | no |
+| Tablas de los paquetes, columnas `.bgp` | ≈ 0,8 MB y 1,4 MB | ver §3.4 | no |
+| Deduplicar o comprimir `sprites.bin` | 0 | no está en el cartucho | — |
+
+### Resultado
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| wav64 PCM de las cinemáticas (6) | 9.755.744 B | **5.563.166 B** |
+| películas `.msxc` (8) | 5.958.238 B | **4.384.712 B** |
+| `mslugx-explorer.z64`, seis misiones | 67.174.400 B | **61.407.232 B (−5.767.168)** |
+| Margen bajo el límite de ares (67.043.328 B) | −131.072 B | **+5.636.096 B** |
+| Programa (`text` / `bss`) | 1.169.144 / 203.100 B | 1.175.288 / 203.228 B (+6,3 KB) |
+
+### MSXL: formato y lectura
+
+- `tools/msxl.c` (codificador, `tools/msxl_encode.h`) convierte un WAV64
+  crudo de 16 bits (1 o 2 canales, muestras desde el byte 24 hasta el final)
+  y **no escribe nada si al descodificarlo no salen los bytes del origen**;
+  cualquier otro fichero (VADPCM) se queda como está. Lo aplica la regla de
+  `build/game-romfs.stamp` a los `*.wav64` de la raíz del cartucho (las
+  cinemáticas y el logo; `audio/` no). El formato completo está en la
+  cabecera de `src/msx_pcm_codec.h`: bloques independientes de 1024
+  muestras; por bloque, 1 bit de modo estéreo (izquierda/derecha o
+  medio/lado) y, por canal, el predictor fijo de orden 0–4 que menos ocupa
+  (las diferencias de Shorten/FLAC, sin multiplicar) con sus residuos en
+  código de Rice (hasta 8 particiones con su parámetro), o las muestras
+  crudas si nada gana; índice de bloques al final para los saltos. De 2385
+  bloques del cartucho: 2273 en medio/lado; predictor de orden 1 en el 81 %
+  de los primeros canales, orden 2 en el 13 %.
+- `src/msx_pcm_codec.h` es el descodificador, el mismo fuente en la consola
+  y en las herramientas y pruebas, con lecturas y escrituras acotadas (un
+  bloque dañado se rechaza: silencio y `MSX ERROR pcm`).
+- `src/msx_pcm.c` es una forma de onda del mezclador (`waveform_t`) que
+  entrega **las mismas muestras en las mismas posiciones** que el WAV64
+  crudo; `src/msx_audio.c` la usa cuando el fichero empieza por `MSXL`
+  (si no, `wav64_open` como siempre: los cartuchos de prueba con WAV64
+  crudos siguen valiendo).
+- Coste y dónde cae: antes, cada bloque de 1024 muestras eran 4096 B leídos
+  por DMA dentro de la mezcla (≈1,5 ms en ares con los tiempos de PI del
+  cartucho); ahora son ≈2,3 KB leídos y ≈2,0 ms de descodificación. Para
+  que eso no entre en el fotograma, `msx_audio_prefetch` (primera llamada
+  del tiempo libre de cada fotograma de cinemática: `spare_time` y
+  `logo_idle` en `main.c`, `title_intro.c`) descodifica por adelantado
+  hasta dos bloques después del que suena, solo si quedan 4 ms antes del
+  siguiente blanco; la mezcla entonces solo copia. Medido: de 215 / 350 /
+  1421 bloques (logo / título / HOW TO PLAY), todos menos los 2–3 primeros
+  de cada pista van adelantados.
+- Memoria: 16,4 KB de montón (tres bloques descodificados + el leído)
+  mientras suena una pista MSXL; se sueltan en `msx_audio_stop` (antes de
+  que el juego mida el montón para la caché) y al cerrar. El lector (≈200 B)
+  vive en el montón mientras el fichero está abierto.
+
+### Pruebas
+
+- `make check` → `tools/test_msxl.c` (compila `src/msx_pcm.c`, el lector de
+  la consola, para el anfitrión con `tools/host_msxl/libdragon.h`):
+  1. 308 señales sintéticas (silencio, extremos ±32768 en cada muestra y
+     opuestos entre canales, ruido, tonos, longitudes 1…5121, mono y
+     estéreo): siempre.
+  2. Todos los WAV64 crudos privados (`filesystem/cinematics`, `logo`,
+     `audio`): empaquetados y comparados **enteros**.
+  3. Los ficheros MSXL que lleva `build/game-romfs` contra sus orígenes.
+  Cada fichero se descodifica dos veces: bloque a bloque por el índice y
+  con el lector de la consola haciendo las lecturas del mezclador (en
+  orden con longitudes 1…3000 y bloques adelantados, 300 saltos, tras
+  soltar los búferes). 6000 bloques dañados: rechazados o descodificados
+  sin escribir fuera de los búferes.
+  Resultado: `sources: 13 raw 16-bit WAV64 … 11392104 -> 6597604 bytes,
+  every sample back`, `cartridge: 6 MSXL files, 9755744 -> 5563166 bytes,
+  each one decodes to its source`, `PASS: MSXL`.
+- Películas: `msxc_compress.py` descodifica cada paquete antes de aceptarlo
+  (dos descodificadores: el suyo y el de `lz4_blocks.py`) y el reproductor
+  sigue comprobando el CRC de cada paquete en la consola. `lz4opt.c` acepta
+  ahora bloques de hasta 1 MiB y de longitudes distintas (los paquetes de
+  una película); para los fragmentos de 16 KiB produce los mismos bytes
+  (`scene.pack` reconstruido es idéntico al anterior, `cmp`).

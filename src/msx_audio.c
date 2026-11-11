@@ -17,11 +17,6 @@ static int start_tail(void *ctx) {
     return 0;
 }
 static msx_audio_stats_t stats;
-/* Pause (msx_pause.h): the mixer is not polled, so every voice, stream and
- * mixer event (the loop tails) stands where it was; silence goes out. */
-static bool paused;
-void msx_audio_pause(bool on) {paused=on;}
-bool msx_audio_paused(void) {return paused;}
 static bool submitted;   /* AI has received a buffer from msx_audio_service */
 void msx_audio_init(void) {
     assert(!initialized);
@@ -88,7 +83,6 @@ bool msx_audio_playing(unsigned voice) {
 void msx_audio_mix(int16_t *stereo,unsigned frames) {
     assert(initialized && stereo && frames && !(frames&1u));
     stats.buffers++;stats.frames+=frames;
-    if (paused) {memset(stereo,0,(size_t)frames*2*sizeof(*stereo));return;}
     while (frames) {
         unsigned count=frames>1024?1024:frames;
         mixer_poll(stereo,count);stereo+=count*2;frames-=count;

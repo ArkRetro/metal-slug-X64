@@ -229,6 +229,8 @@ enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL, MSX_DESCENT_WAIT };
  * +30/+34 after the player's first 0C162A update), with the canopy. */
 void msx_game_stage_descent_at(msx_game_t *game,int x,int y);
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
+/* The buttons that are no new press of the update after a pause (0156FA). */
+void msx_game_resume_inputs(msx_game_t *g,uint8_t held);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
 /* Reference build: the route planner of Mission 2 stage 3 (msx_autopilot.h)
  * replaces the pad's direction and jump while game->pilot.on; the release

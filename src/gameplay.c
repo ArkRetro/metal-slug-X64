@@ -973,14 +973,14 @@ static bool hgun_reserve(void *context) {
 }
 /* Mission end of the mission actor 101364 (0x018846..0x01893A), one step
  * per original update, from the update after 018F40 (step 2):
- *   018846  10E9E3 = FF (c8cd6), music 15418, +7C = 0x1E; 018870 waits
+ *   018846  10E9E3 = FF (c8cd6), 15418 (no pause: 10C2BD = FF), +7C = 0x1E; 018870 waits
  *           (subq/bne: 30 updates).
  *   018884  cae6c(mission): RAM 10EA1B keeps the highest mission reached
  *           (signed byte); +60 = 0 and the prisoner tally actor 0308C0
  *           (neo_tally.c, created after the mission actor: it runs in the
  *           same update); 0188B0 waits for its +60 (the tally's root sets
  *           it when it ends; it adds the rescue bonus to 10C46A).
- *   0188B8  music 15422; sounds 0x20 and 0x1137, +7C = 0xA0, +60 = 0, the
+ *   0188B8  15422 (pause allowed again); sounds 0x20 and 0x1137, +7C = 0xA0, +60 = 0, the
  *           MISSION COMPLETE letters actor 06090A (neo_end.c, created after
  *           the mission actor: it runs in the same update); 0188F4 waits
  *           (subq/bcc: 161 updates).
@@ -1107,11 +1107,13 @@ static void mission_end_step(msx_game_t *g) {
         /* 018F40 cleared 4303; the stage loop takes record +2 (018722,
          * 0182C8): type 4 with +4 = 0, the mission end 018846. */
         g->flow.end=0;neo_mission_stage_done(&g->flow);
+        g->flow.pause_off=0xff;                                        /* 018852: 15418 */
         g->mission_end=MSX_END_WAIT;g->end_timer=0x1e;
         __attribute__((fallthrough)); /* 018864 -> 018870 in the same update */
     case MSX_END_WAIT:
         if (--g->end_timer) return;
         if ((int8_t)0>(int8_t)g->best_mission) g->best_mission=0;   /* cae6c(42F4 = 0) */
+        g->flow.pause_off=0xff;                                        /* 01888E: 15418 */
         neo_end_reset(&g->end);end_ram_start(g);
         neo_end_start(&g->end,0x308c0);                                /* 01889A */
         g->mission_end=MSX_END_TALLY;
@@ -1124,6 +1126,7 @@ static void mission_end_step(msx_game_t *g) {
         /* 0188B8: 15422 (clears 10C2BD), then 0120F8 with 0x0020 (the
          * mission complete jingle, bank 00) and 0x1137 (the voice), in this
          * order and before the letters actor's own requests. */
+        g->flow.pause_off=0;
         end_sound(g,0x0020);end_sound(g,0x1137);
         g->end_timer=0xa0;g->end.mission60=0;
         neo_end_start(&g->end,0x6090a);                                /* 0188DE */
@@ -1165,6 +1168,14 @@ static void end_actors(msx_game_t *g,bool jump,bool fire) {
 }
 bool msx_game_victory(const msx_game_t *g) {
     return g->complete && g->mission_end!=MSX_END_NONE && ((g->world.ga_flags.end_kind>>2)&1u);
+}
+/* The update that follows a pause (neo_pause.c, 0156FA): held = the buttons
+ * (0CA1B8 bits: fire 0x10, jump 0x20, bomb 0x40, stick 1/2/4/8) that are no
+ * new press of that update. */
+void msx_game_resume_inputs(msx_game_t *g,uint8_t held) {
+    g->fire_was=(held&0x10u)!=0;g->jump_was_down=(held&0x20u)!=0;
+    if (g->complete) {g->end_fire_was=(held&0x10u)!=0;g->end_jump_was=(held&0x20u)!=0;}   /* the mission end's own history */
+    g->grenade_was_down=(held&0x40u)!=0;g->pad_held=held;
 }
 static void play_update(msx_game_t *g,int direction,bool jump,bool fire);
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {

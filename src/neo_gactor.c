@@ -471,7 +471,7 @@ bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
     else if (dx<0) {if ((int16_t)(uint16_t)(lo+hi+ga_w(a,0x3c))<(int16_t)e->view[0]) return true;}
     return false;
 }
-uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *t) {
+uint16_t ga_rank_word(const neo_gactor_t *a,neo_genv_t *e,const uint8_t *t) {
     /* 0260C8: [type][rank mask] then rows; rank RAM 10FD8B unless mode 2. */
     unsigned type=t[0],mask_bits=t[1];
     unsigned coop=e->players.active_mask==3u;
@@ -482,7 +482,14 @@ uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *t
     unsigned row=0;for (unsigned b=mask_bits&mask&0xffu;b;b&=b-1u) row++;
     if (!row) return 0;
     unsigned d0=(row-1u)*2u+coop,v=ga_b(a,0x68);
-    if (type==2) return t[2+d0*6u+v];
+    if (type==2) {
+        /* 02614A: the row's byte picks a group of 8 words after the byte
+         * rows (12 bytes per bit of the whole mask byte), one of them at
+         * random (0029C6 & E). Families m5tank and m5tread (2CED8E). */
+        unsigned bits=0;for (unsigned b=mask_bits;b;b&=b-1u) bits++;
+        const uint8_t *g=t+2u+((unsigned)t[2+d0*6u+v]<<4)+bits*12u+(ga_rand(e)&0xeu);
+        return (uint16_t)(g[0]<<8|g[1]);
+    }
     unsigned o=2+(d0*12u+v*2u);
     return (uint16_t)(t[o]<<8|t[o+1]);
 }

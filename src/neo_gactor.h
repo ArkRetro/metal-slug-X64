@@ -334,7 +334,7 @@ uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row);
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy); /* 004C24: carry */
 bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 01AFFC: carry when none */
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 0C8BEC */
-uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *table); /* 0260C8 */
+uint16_t ga_rank_word(const neo_gactor_t *a,neo_genv_t *e,const uint8_t *table); /* 0260C8 (a type-2 table takes a random number) */
 void ga_fail(neo_genv_t *e,uint32_t at);
 /* The kernel object of a parent tag (0xFF: an actor's block) and back, and
  * the self exclusion of the actor running a query (01424C). */

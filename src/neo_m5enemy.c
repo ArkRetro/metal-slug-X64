@@ -83,11 +83,7 @@ static uint32_t rl(neo_genv_t *e,uint32_t at) {return (uint32_t)rw(e,at)<<16|rw(
 static uint16_t rank(neo_gactor_t *a,neo_genv_t *e,uint32_t table) {   /* 0260C8 */
     const uint8_t *t=ga_rom(table);
     if (!t) {ga_fail(e,table);return 0;}
-    uint16_t v=ga_rank_word(a,e,t);
-    if (t[0]!=2u) return v;
-    /* 02614A: type 2: the byte picks a group of 8 words after the byte rows (12 per bit of the mask), one of them at random (0029C6). */
-    unsigned bits=0;for (unsigned b=t[1];b;b&=b-1u) bits++;
-    return rw(e,table+2u+((uint32_t)v<<4)+bits*12u+(ga_rand(e)&0xeu));
+    return ga_rank_word(a,e,t);
 }
 static void sound(neo_genv_t *e,uint16_t id) {if (e->sound) e->sound(e->ctx,id);}
 static neo_gactor_t *creator(neo_gactor_t *a,neo_genv_t *e) {return e->creator?e->creator(e->ctx,a):NULL;}

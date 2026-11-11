@@ -15,6 +15,7 @@ RING0,RING1=0x100016,0x100084
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('fixture',type=Path);p.add_argument('--output',type=Path,required=True);p.add_argument('--name',required=True)
+    p.add_argument('--tree-deletes',help='LO-HI (hex): a node deleted in an update of a routine in [LO, HI) leaves by 0041AC (the sewer soldiers 089948..08A264): its descendants die with it, so a later node at their address is not their child')
     p.add_argument('--tree',action='store_true',help='keep only the first node and its descendants')
     p.add_argument('--stop',help='FRAME,ROUTINE (hex routine): the update of that frame must stop explicitly at ROUTINE (an untranslated service); later updates are dropped')
     p.add_argument('--stamp',action='append',default=[],help='X,Y,TEMPLATE (hex): collision stamp (0C88B0) applied before the first update (an event of another family seen in the RAM dumps)')
@@ -59,6 +60,7 @@ def main():
     ext_states=[int(x,16) for x in a.external_state.split(',')] if a.external_state else []
     shared=[int(x,16) for x in a.shared.split(',')] if a.shared else []
     script=int(a.script_actor,16) if a.script_actor else None
+    tree_lo,tree_hi=(int(x,16) for x in a.tree_deletes.split('-')) if a.tree_deletes else (0,0)
     used=[]
     d=json.load(gzip.open(a.fixture,'rt'))
     # A node deleted while deeper nodes follow it stays as a placeholder
@@ -113,7 +115,14 @@ def main():
                 # Projected words after the move (y up); a constructor's
                 # update has no position yet: matched last.
                 dead.append((live[u['node']],u['frame'],(sx(0x3c)+sx(0x30))&0xffff,(sx(0x40)+sx(0x34))&0xffff) if sx(0x3c) else (live[u['node']],u['frame'],None,None))
-            if not u['post']:gone[u['node']]=(live[u['node']],u['frame']);del live[u['node']]
+            if not u['post']:
+                gone[u['node']]=(live[u['node']],u['frame']);k=live[u['node']];del live[u['node']]
+                if tree_lo<=u['routine']<tree_hi:
+                    # 0041AC: the deeper nodes after it go too (004192),
+                    # its descendants among them: no later node is theirs.
+                    dying={k}
+                    for nd,i in sorted(live.items(),key=lambda x:x[1]):
+                        if order[i][1] in dying:dying.add(i);del live[nd]
         return order,inst
     if a.soldier:
         sold=[int(x,16) for x in a.soldier.split(',')]

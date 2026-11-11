@@ -292,7 +292,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -433,6 +433,11 @@ ROOTS+=[0x2ab858,0x2ab888,0x2ab8b8,0x2ab8f2,0x2ab914,0x2aba16,0x2aba2e,0x2abb42,
         0x2abd50,0x2aba78,0x2abb8c,0x2abc7a,0x2abd7a,0x2abe32,0x2abb04,0x2abbfc,0x2abd06,0x2abd8c,0x2abe44,0x2abdd4,0x2ac67a,0x2ac68c,
         0x2ac72a,0x2ac7c8,0x23643a,0x2ac1c2,0x2ac312,0x2ac462,0x2ac0bc,0x236272,0x2abe96,0x2abf38,0x2abfb2,0x2abffa,0x2ac074,0x2ac8d0,
         0x2ac92e,0x263ad0,0x2361de]
+# Mission 5 sewer crank 095C98 (neo_m5sewer.c): idle 29C9D4; the sewer soldiers 089948 / 08995A / 08996A: walking 284C18 /
+# 284DF0 / 284C26, idle 284CB2 / 284E7C, waiting 284D36, turning 284DC0 / 284EC4, aiming 284CB2 / 284E7C, falling 284F08 / 284F68,
+# dropping 285088 / 285026, hit 285238 / 28538A / 285418, burnt 2854F2 / 285602 / 28563A / 285722, running off 2850DA / 285118.
+ROOTS+=[0x29c9d4,0x284c18,0x284cb2,0x284d36,0x284df0,0x284e7c,0x284c26,0x284f08,0x284f68,0x285088,0x285026,0x2854f2,0x285602,
+        0x28563a,0x285722,0x28538a,0x285238,0x285418,0x2850da,0x285118,0x284dc0,0x284ec4]
 # Mission 6 stage 1 rafts and decorations (neo_m6props.c; no mission group: /programs.bin): the float 2A953E, the raft's
 # picture 2A954E (0BDA4E), the decorations 2A946C / 2A947C / 2A948C / 2A949C / 2A94B4 and 0BDAB8's 2A95A4.
 ROOTS+=[0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4,0x2a95a4]

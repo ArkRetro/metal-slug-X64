@@ -694,6 +694,54 @@ suelta con `0AA7FC` (clase 3 ó 5). El hijo 095F8C mueve su mapa dinámico (`014
 Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
 máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 1280).
 
+### Fase 2, séptima tanda (11-XI, agente B): la alcantarilla
+
+**La manivela `095C98` y los soldados de la alcantarilla `089948` / `08995A` / `08996A`** (`src/neo_m5sewer.c`, nuevo).
+
+- Manivela: constructor (paleta 4F, `+8F`, capas 8810, `0146E8`, el hijo `095F8C` con `0040BC` D0 = 1C en (+74, +76) por
+  `01ACF2`, `+78 << 3`), reposo `095D2E` / `095D6E` (`004C24`, `01436A`, `01AD8C`, `00427A`, `0C8BEC` `095948`), `095C38`
+  (una vez: la explosión `01C706` y el sonido 106A) y la prueba de agarre `0AA606` = `0AA616` con `0C069E`, nueva en
+  `neo_vslot.c` (`neo_vslot_select_grab`: en el suelo, mirando según D1, vivo, sin forma 2/3, pulsación nueva = solo el
+  bit 4; sin la prueba de sistema `019424`). El hijo: mapa de celdas `095B54[+72]` por `0140C0`, los premios `08C374`
+  de `+7C..+82` por `08CD70` (vida FFFF, `+8B` = 1), `095FFC` (`00409A` → `0041AC`, `00408C` → `0960A6`, `+8C` hacia
+  `+8A` y el mapa desplazado por `095B44[+6E]`).
+- **El agarre** (`095DCE`: `095B64` / `0AA760`, `0AA83A` clase 5, `095E08..095F8A`, `095B98`, `095C76`, `0AA7FC`,
+  `0C05EC`, el jugador girando `096140` y la clase 5 del jugador) **es una parada explícita**: en la captura `X` nadie la
+  agarra (520 actualizaciones de `095D6E`, ninguna con acarreo). **Pendiente de captura** (un jugador que se agarre y
+  gire), sin traducir hasta tenerla.
+- Soldados: las tres entradas (suelo `0146E8`, pared `089D92`, techo `08A546` con `+15` bit 1; sin techo, `TRAP #F`:
+  parada explícita `089980`), `08A080` (uno o dos fusiles `08A264`, D0 = E), `08A0CE` (rangos `2D2A1C` / `2D2C06` /
+  `2D2A7E`, paleta C4, lista `E5372` por `08A618` / `009D1E`), las marchas `0899A6` / `089A8C` / `089B16`, espera
+  `089A38`, giro `089BB0`, apuntar `089DB4`, disparo por el aviso `+89` del fusil (`E5362`), caídas `089BFE` /
+  `089C12`, bajada `089C6E` / `089CDA`, subida `089D1E` / `089D2A`, golpe `089E34` (`01B2BE`: lista `E5382` sin sangre),
+  quemado `089ED6` (paleta 878), huida `08A00A` (`0049E8` `E52FA`), la cola `08A1BA` (`01945C` `E530A`, `10C700` por
+  `08A654`) y las llamadas de sus programas (`08A66C`, `08A674`, `08A6A0`, `08A6A8`, `08A6B0`, `08A6C6`, `08A6E8`).
+  El fusil `08A264`: sobre el creador (`01AD6E`), caja `E52A6[+76][+70 & 1]`, un golpe de un jugador de frente avisa
+  al creador (`+89` = 1 / 2).
+- Familias **`m5pow`** (`--range 95c98-96200 --range 8c374-8c700` con los huecos, entradas y nodos de jugador:
+  **12 nodos, 1576 actualizaciones iguales a MAME**, con los cuatro premios que crea el hijo y que `0041AC` borra con
+  él) y **`m5sewer`** (**98 nodos, 9185 actualizaciones iguales**). `compile_family_fixture.py --tree-deletes LO-HI`
+  (nuevo): un nodo borrado en una rutina de ese intervalo sale por `0041AC` y sus descendientes con él; sin eso el
+  compilador tomaba un fusil muerto en `101E64` por creador del soldado que el corredor `0838A6` puso luego en ese nodo.
+- Programas (22 raíces, grupo `m5`), tablas de ROM (`095938`, `095B44`, `0E525E..0E5392`, `2D2A1C..2D2C68`),
+  descriptores de `X` (114 fotos, **162 164 px iguales, 0 distintos**). Paletas **sin captura** (pendiente): 878 (el
+  soldado quemado) y 886..88C (la lista sin sangre); el resto de `X`.
+- El paquete de la M5 pasa a 1123 trozos (`SCENE_MISSION_CHUNKS_MAX` de ccr: 1200, por la M6). **Memoria**: con
+  `neo_m5sewer.o` (11 KB de código) los flujos del logo, la pausa y los personajes se quedaban en 3326..3328 KB para un
+  mínimo de 3332 KB (`fit>=SCENE_EXPANDED_MIN_SLOTS`). Sin bajar mínimos, dos tablas de `scene_assets.c` a su tamaño
+  justo: `chunk_slot` como `int16_t` (índice de ranura o −1, a lo sumo 512 ranuras) y `requests` como `uint8_t` (las
+  prioridades son 1, 2, 3 y 255, con `assertf`): 11 KB de bss menos. Logo en ares: 208 ranuras, PASS. Caché de
+  escena en ares: **208 ranuras** (el suelo). ares alcantarilla (`--fire --jump 2.5`,
+  300 s): **cámara 1568** (antes 673), 0 rutinas sin portar, la manivela no se agarra.
+
+- **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
+  marcha agachada, nativa en `neo_soldier_ai.c`) sino la muerte del soldado agachado (`0407CA`, tabla `0407F4`) por
+  un golpe de **tipo 5** (`detail` 305 = tipo 5, en el suelo, agachado): la entrada `040BE6`, sin traducir. Elige el
+  programa `2410E2` / `241056` por el bit 15 de `eor.w` entre D0 (`+5B`, que `0407DA` acaba de poner a 0) y D1.w, cuya
+  parte alta es la que deja `01495C` en `04097A`: con contacto, `swap` de (superficie − y) (el signo del dy del sondeo);
+  sin contacto, el resto de `013968`. Solo pasa cuando el mando automático mata a un soldado agachado con ese tipo de
+  golpe (de ahí ~1 de cada 4 pasadas). **Pendiente**: una captura de esa muerte para fijar D1 (sin ella, parada).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

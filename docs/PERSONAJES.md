@@ -5,6 +5,7 @@ normal: `tools/test_characters_ares.py`, PASS). Marco es el catálogo de
 siempre, sin cambios; los otros tres salen de la ROM por las mismas tablas,
 con sus programas, poses, paletas, película de elección y voz de muerte.
 Lo que la ROM hace por personaje y el port aún no hace está en «Pendiente».
+La pausa es la de la ROM: [PAUSA.md](PAUSA.md).
 
 > **Aviso de tamaño (para todos los agentes).** ares solo abre el canal de
 > registro (ISViewer) si la ROM mide como mucho `0x03FF0000` =
@@ -185,22 +186,29 @@ make check-characters && make
 - ares, cartucho normal (`tools/test_characters_ares.py`): por cada casilla,
   Derecha hasta ella (`MSX SELECT place=K character=N`), Start
   (`MSX CHARACTER N chosen`), película, descenso, unos segundos de juego
-  (andar, disparar, saltar, granada, agacharse, arriba), pausa y reanudar.
+  (andar, disparar, saltar, granada, agacharse, arriba), pausa y reanudar, y
+  seguir andando hasta la primera muerte (su voz).
   Ningún descriptor fuera del catálogo, ningún programa parado, ningún
   error de pack. **PASS los cuatro.**
 
 ## 6. Pendiente
 
-1. **Voces de muerte** 1087/1125/114E: el juego ya pide la palabra del personaje, pero
-   **no suenan** (`MSX AUDIO ... unmapped`: sin sonido, no el de Marco). Hecho:
-   render aislado de las tres (`render_sound_commands.py`: 0,486 s, 0,729 s
-   y 0,724 s, `OK`; los WAV en `filesystem/audio-src`) y 555 pares medidos
-   (`data/sound_pairs_characters.json`). Las tres salen como canal VOZ,
-   nivel 2, igual que `1123`. Falta: con esos pares
-   `derive_sound_policy.py` une canales de la política actual (14 → 9) y
-   cambia 34 sonidos ya asignados, así que no se han fusionado; hay que
-   revisar los puentes (`--bridge`) como en B30/B36 y luego
-   `compile_sound_policy.py` y `pack_game_audio.py` (≈30 KB de ROM).
+1. **Voz de muerte de Tarma (`1087`)**: el juego la pide, pero **no suena**
+   (`MSX AUDIO voice 1087: unmapped`: silencio, no la de Marco). Las de Eri
+   (`1125`) y Fio (`114E`) **ya suenan**: sus 368 pares están en
+   `data/sound_pairs.json`; `derive_sound_policy.py` las deja en el canal
+   VOZ, nivel 2, como la `1123` de Marco, sin cambiar ningún otro sonido
+   (14 canales, mismas asignaciones); WAV64 de 10 KB cada una, leídas de
+   `rom:/` (sin RAM); la prueba de ares mata al personaje y comprueba
+   `MSX AUDIO voice 1125/114E: started`. La `1087` está renderizada
+   (0,486 s, `filesystem/audio-src/sfx_1087.wav`) y medida (187 pares en
+   `data/sound_pairs_characters.json`), pero no se comporta como las otras
+   tres: 106 de sus 181 pares comunes con `1123` salen distintos, muchos
+   «descarte» en los dos órdenes (contra `1084`, `108C`, `108E`..`1092`,
+   `104F`, `1056`, `10F9`, `10FB`, `10FF`…). Con ellos la política une
+   canales (14 → 9) y cambia 34 sonidos ya asignados, así que no se ha
+   fusionado. Falta: leer en el controlador Z80 qué canal y prioridad usa
+   `1087` (o repetir la medida con otra separación) antes de darle canal.
 2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor de `253322` con su
    física (`0C4CBA`: +30 −= +30/16, +34 hacia |2·+30| − 6.0, suelo `0143E4`,
    15 fines de programa → parpadeo, 30 → fuera). Falta la captura de una
@@ -220,7 +228,7 @@ make check-characters && make
    descomprimir antes de repetir `export_character.py --verify` o los
    fixtures.
 
-**Siguiente paso:** las voces de muerte (punto 1) y, después, la
+**Siguiente paso:** la voz de Tarma (punto 1) y, después, la
 captura de una muerte de cada personaje (`capture_weapons.lua` con la
 elección por entradas de `capture_marco_catalog.lua`) para probar sus
 muertes pose a pose y traducir el actor de Fio.

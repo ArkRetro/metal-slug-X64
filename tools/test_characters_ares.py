@@ -5,7 +5,8 @@ SELECT (0 Marco, 1 Eri, 2 Tarma, 3 Fio): Start through the boot movies up to
 the wait of SOLDIER SELECT, Right once per place (log MSX SELECT place=K
 character=N), Start (MSX CHARACTER N chosen for the three packs), the choice
 movie and the descent, then a few seconds of play (walk, fire, jump,
-grenade, crouch) and a pause and resume (MSX PAUSE on/off). Checks from the
+grenade, crouch), a pause and resume (MSX PAUSE on/off) and a walk on to the
+first death (its voice 0C294E[+6E]: MSX AUDIO voice). Checks from the
 log: the chosen character, no descriptor outside its catalog, no stopped
 program, no part or pack error, no crash. Screenshots per place:
 select.png (the cursor), play.png, paused.png. Uses the X display in DISPLAY.
@@ -86,8 +87,15 @@ for place in [int(x) for x in a.places.split(',')]:
         time.sleep(.6);grab('paused.png')
         mark=len(log());tap('Return');wait(r'MSX PAUSE off',10,mark)
         key('keydown','Left');time.sleep(1.2);tap('x');key('keyup','Left');time.sleep(.5)
-        text=log()
         checks['pause and resume']=True
+        # The death voice 0C294E[+6E]: walk on without firing until the first death.
+        VOICE=('1123','1087','1125','114E')[who];mark=len(log());key('keydown','Right')
+        try:wait(r'MSX player death',150,mark)
+        finally:key('keyup','Right')
+        m=wait(r'MSX AUDIO voice %s: ([a-z ,0-9A-F]+)'%VOICE,10,mark)
+        if who==1:print('note Tarma: death voice 1087 '+m[1]+' (pending, docs/PERSONAJES.md)')
+        else:checks['death voice %s plays'%VOICE]=m[1].startswith('started')
+        text=log()
         checks['every pose in the catalog']='descriptor outside the catalog' not in text and 'MSX native draw missing descriptor' not in text
         checks['no stopped program']='MSX marco program stopped' not in text
         checks['no pack or part error']=not re.search(r'MSX character (part|\d+: (bad|.*missing))|MSX marco part \d',text)

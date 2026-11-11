@@ -205,10 +205,14 @@ make check-characters && make
    `data/sound_pairs_characters.json`), pero no se comporta como las otras
    tres: 106 de sus 181 pares comunes con `1123` salen distintos, muchos
    «descarte» en los dos órdenes (contra `1084`, `108C`, `108E`..`1092`,
-   `104F`, `1056`, `10F9`, `10FB`, `10FF`…). Con ellos la política une
+   `104F`, `1056`, `10F9`, `10FB`, `10FF`…), el par `1087>1123` sale
+   mudo y en `1123>1087` y `108E>1087` el residuo del ajuste supera la
+   mitad de la mezcla (medida poco fiable). Con ellos la política une
    canales (14 → 9) y cambia 34 sonidos ya asignados, así que no se ha
-   fusionado. Falta: leer en el controlador Z80 qué canal y prioridad usa
-   `1087` (o repetir la medida con otra separación) antes de darle canal.
+   fusionado. Falta: una captura de MAME de una muerte de Tarma con audio
+   (punto 5) para comparar lo que suena con el render aislado, y leer en
+   el controlador Z80 qué canal y prioridad usa `1087`, antes de darle
+   canal. La tabla `0C294E` de la ROM es `1123 1087 1125 114E` (comprobada).
 2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor de `253322` con su
    física (`0C4CBA`: +30 −= +30/16, +34 hacia |2·+30| − 6.0, suelo `0143E4`,
    15 fines de programa → parpadeo, 30 → fuera). Falta la captura de una

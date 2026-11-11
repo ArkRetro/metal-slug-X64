@@ -570,6 +570,17 @@ copiarla a `ws-logo/filesystem/mission4/` y rehacer los paquetes
 (`build_packs.py 4`)**. Sin validar contra VRAM (0 fotogramas) y con 64
 paletas sin captura (216, 367, 3D2… dibujos que faltan en el recorrido).
 
+### Puertas de la segunda sesión (11-XI, `work-m4` `54adba8` con `ccr` de la M5 y de los personajes fusionado)
+
+`make -j4` RC 0; `make check` RC 0 (**251 PASS**, con `m4pris`, `m4pris2`,
+`m4animal`, `m4label`); `tools/test_m1m2_ares.py` con `mslugx-m1end.z64` recién
+hecho: `RESULT: PASS` al segundo intento (en el primero una pulsación de START
+del propio guion de la prueba cayó ya en la partida y, con la pausa de la ROM
+recién fusionada, la dejó parada: **carrera de la prueba**, no del juego);
+`tools/test_mission4_ares.py mslugx-explorer.z64 --seconds 150 --jump 2.5
+--fire --lifebar`: `RESULT: PASS`, `unsupported=0`, caché de escena 201
+ranuras (suelo 200).
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

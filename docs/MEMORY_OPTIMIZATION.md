@@ -223,6 +223,10 @@ ranuras** (`MSX CACHE slots=202 (3232 KB, floor 200) free=489 KB`, M4 por el men
 (≈ 3000 líneas de 68K) no cabe sin recuperar memoria antes (`-Os` en los módulos de misión, tablas fuera del
 ELF o módulos por misión). El paquete de la M4 tiene ahora 976 trozos (límite 1024).
 
+**Tercera medida (11-XI, `54adba8`: con `ccr` de los personajes y la pausa fusionado)**: **201 ranuras**
+(`MSX CACHE slots=201 (3216 KB, floor 200) free=486 KB`, ELF 2 362 984 bytes; M4 por el menú, `heap_low` 287 KB).
+Queda **una** ranura (≈ 16 KB de programa) antes de que el arranque se pare por el suelo.
+
 `SCENE_MISSION_CHUNKS_MAX` pasó de 896 a 1024 (la M4 tiene 895 trozos y el
 paquete de formato 4 de la M5 que construye `make check` 935): son 128
 entradas más en las tablas por trozo de `scene_assets.c`; las ranuras medidas

@@ -18,7 +18,7 @@
 - Procesos: parar por PID; nunca `pgrep -f` ni `pkill -f`.
 - Datos de la ROM nunca en git. Sin nombres de modelo en los commits; todo
   commit (también las fusiones) termina con:
-  `Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>` y
+  `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>` y
   `Claude-Session: https://claude.ai/code/session_014oBkvYWFkZ4jtciR7AtEF3`.
 - No lanzar subagentes. Hacer commits a menudo. Antes de agotar el contexto,
   actualizar el documento de la tarea (hecho, falta, siguiente paso).

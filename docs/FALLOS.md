@@ -50,7 +50,7 @@ usuario una prueba concreta.
 
 | Fallo | Estado |
 | --- | --- |
-| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | en curso (bisección) |
-| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | en curso, mismo origen probable |
+| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | no era regresión (B67): 320 es el final de la arena en MAME y la prueba pedía 600; la paleta 125 ya faltaba en la ROM 47 (actores de la M6, fase 2) |
+| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | los de la ROM 47 (B67); FAIL conocido en la línea base |
 | Prueba de personajes que supera 600 s | tiempo de la prueba ampliado a 1800 s en la matriz |
 | Voz de muerte de Tarma `1087` | pendiente de captura con audio |

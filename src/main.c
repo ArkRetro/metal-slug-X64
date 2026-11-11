@@ -72,7 +72,15 @@ static bool game_preload_idle(void) {
     }
     return scene_early==2 && scene_assets_idle();
 }
+/* The logo's spare frame time: the jingle's next block (MSXL), then the
+ * title's movie. */
+static bool logo_prepares;
+__attribute__((section("keep.text.main_logo_idle"))) static bool logo_idle(void) {
+    msx_audio_prefetch(msx_cinematic_idle_deadline());
+    return logo_prepares && msx_cinematic_prepare_idle();
+}
 static void spare_time(void) {
+    msx_audio_prefetch(msx_cinematic_idle_deadline());   // the audio's next block first (MSXL)
     while (msx_cinematic_prepare_idle()) {}   // this movie's frames ahead, then the next one's
     {uint32_t deadline=msx_cinematic_idle_deadline();if (deadline) scene_assets_plan_step(deadline);}
     while (game_preload_idle()) {}
@@ -344,7 +352,11 @@ int main(void) {
          * warm-up come after the entry, sized from what is free then. */
         // The title's movie is read, validated and its heavy frames prepared
         // in the logo's spare frame time (before: ~2 s of black after it).
+#if MSX_BOOT_CINEMATICS
+        logo_prepares=msx_cinematic_prepare("rom:/title.msxc");msx_neogeo_logo_set_idle(logo_idle);
+#else
         if (msx_cinematic_prepare("rom:/title.msxc")) msx_neogeo_logo_set_idle(msx_cinematic_prepare_idle);
+#endif
         msx_frames_stage("logo");
         msx_neogeo_logo();
         msx_neogeo_logo_set_idle(NULL);

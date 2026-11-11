@@ -50,6 +50,21 @@ def compress(blocks):
     assert o==len(r)
     return out
 
+def compress_any(blocks):
+    """One LZ4 block per input block of any length up to 1 MiB (the movies'
+    packets, tools/msxc_compress.py), each checked."""
+    blocks=list(blocks)
+    if not blocks:return []
+    assert all(0<len(b)<=1<<20 for b in blocks)
+    r=subprocess.run([str(tool())],input=struct.pack('<I',0)+b''.join(struct.pack('<I',len(b))+b for b in blocks),stdout=subprocess.PIPE,check=True).stdout
+    out=[];o=0
+    for b in blocks:
+        n,=struct.unpack_from('<I',r,o);o+=4;z=r[o:o+n];o+=n
+        assert unblock(z,len(b))==b,'LZ4 block does not decode to its source'
+        out.append(z)
+    assert o==len(r)
+    return out
+
 if __name__=='__main__':
     data=Path(sys.argv[1]).read_bytes();size=int(sys.argv[2]) if len(sys.argv)>2 else 16384
     z=compress([data[i:i+size] for i in range(0,len(data)-len(data)%size,size)])

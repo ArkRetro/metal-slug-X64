@@ -661,18 +661,26 @@ const scene_stage_t *scene_stage(void) { return stage_on?&stage:NULL; }
  * rule 5): ROM blobs served to ga_rom and animation programs served to the
  * world (neo_world.c program) while a stage of the mission is loaded. */
 typedef struct { uint32_t tag; neo_anim_program_t program; } stage_program_t;
-static const uint8_t *mission_data;static unsigned mission_blobs;static stage_program_t *stage_programs;static unsigned stage_program_count;
+static const uint8_t *mission_data,*mission_records;static unsigned mission_blobs;static stage_program_t *stage_programs;static unsigned stage_program_count;
+/* Version 2 'MSXD' (docs/COMPRESION.md, Duplicados): the groups another
+ * mission's pack holds are read from that pack, right after this block. */
+static unsigned data_lender;static uint32_t data_lent_at,data_lent_bytes;
 static uint32_t rd32(const uint8_t *p) {return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];}
 static void load_mission_data(unsigned programs) {
     mission_data=NULL;mission_blobs=0;stage_programs=NULL;stage_program_count=0;
     if (mission_head.data_length<12u) return;
-    uint8_t *d=take(mission_head.data_length);rom_read(d,mission_head.data_offset,mission_head.data_length);
-    if (memcmp(d,"MSXD",4) || (d[4]<<8|d[5])!=1u) {debugf("MSX mission data block not read (explicit stop)\n");return;}
-    mission_data=d;mission_blobs=d[6]<<8|d[7];
+    uint8_t *d=take(mission_head.data_length+data_lent_bytes);rom_read(d,mission_head.data_offset,mission_head.data_length);
+    unsigned version=d[4]<<8|d[5];
+    if (memcmp(d,"MSXD",4) || (version!=1u && version!=2u) || (version==2u)!=(data_lent_bytes!=0u)) {debugf("MSX mission data block not read (explicit stop)\n");return;}
+    if (data_lent_bytes) {
+        uint8_t *lent=d+mission_head.data_length;
+        data_cache_hit_writeback_invalidate(lent,data_lent_bytes);dma_read(lent,other_rom[data_lender]+data_lent_at,data_lent_bytes);
+    }
+    mission_data=d;mission_records=d+(version==2u?20u:12u);mission_blobs=d[6]<<8|d[7];
     stage_programs=take(programs*sizeof(stage_program_t));
     _Static_assert(sizeof(neo_anim_command_t)==10,"MSXD command record");
     for (unsigned i=0;i<programs;i++) {
-        const uint8_t *r=d+12u+12u*mission_blobs+12u*i;
+        const uint8_t *r=mission_records+12u*mission_blobs+12u*i;
         uint32_t tag=rd32(r),at=rd32(r+4);unsigned n=r[8]<<8|r[9];
         neo_anim_command_t *c=(neo_anim_command_t*)(d+at);
         for (unsigned k=0;k<n;k++) {   /* in place: the record and the struct are 10 bytes */
@@ -696,7 +704,7 @@ const uint8_t *scene_stage_rom(uint32_t address) {
     for (unsigned i=0;i<stage.dynamic_map_count;i++)
         if (address>=stage.dynamic_map_rom[i] && address<stage.dynamic_map_rom[i]+stage.dynamic_map_length[i]) return stage.dynamic_map[i]+(address-stage.dynamic_map_rom[i]);
     for (unsigned i=0;i<mission_blobs;i++) {
-        const uint8_t *r=mission_data+12u+12u*i;uint32_t rom=rd32(r),len=rd32(r+8);
+        const uint8_t *r=mission_records+12u*i;uint32_t rom=rd32(r),len=rd32(r+8);
         if (address>=rom && address<rom+len) return mission_data+rd32(r+4)+(address-rom);
     }
     return NULL;
@@ -869,12 +877,17 @@ bool scene_stage_load(unsigned index) {
     NEED(8u*mission_head.actors);NEED(mission_head.actor_images*sizeof(scene_image_t));NEED(4u*mission_head.resources);
     /* 'MSXD': the mission's ROM blobs and programs (read whole, the
      * commands converted in place) and the program table. */
-    static uint8_t data_head[16] __attribute__((aligned(16)));
+    static uint8_t data_head[32] __attribute__((aligned(16)));
     unsigned data_programs=0;
     if (mission_head.data_length>=12u) {
-        rom_read(data_head,mission_head.data_offset,16);
-        data_programs=data_head[8]<<8|data_head[9];
-        NEED(mission_head.data_length);NEED(data_programs*sizeof(stage_program_t));
+        rom_read(data_head,mission_head.data_offset,mission_head.data_length<32u?16u:32u);
+        data_programs=data_head[8]<<8|data_head[9];data_lender=0;data_lent_at=data_lent_bytes=0;
+        if ((data_head[4]<<8|data_head[5])==2u && mission_head.data_length>=20u) {
+            unsigned holder=data_head[10]<<8|data_head[11];uint32_t at=rd32(data_head+12),bytes=rd32(data_head+16);
+            if (holder<PACK_MISSIONS && other_rom[holder] && bytes && (mission_head.data_length&1u)==0u && at<=other_bytes[holder] && bytes<=other_bytes[holder]-at) {data_lender=holder;data_lent_at=at;data_lent_bytes=bytes;}
+            else debugf("MSX mission data of mission %u: lender pack %u not on the cartridge (explicit stop)\n",mission_head.mission,holder);
+        }
+        NEED(mission_head.data_length+data_lent_bytes);NEED(data_programs*sizeof(stage_program_t));
     }
     /* Pre-rendered columns (scene_prerender.h): tables and rings
      * in the stage's slots, in place of its pinned static map chunks. */

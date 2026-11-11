@@ -109,34 +109,91 @@ KIND_NAMES={'WAIT':'NEO_ANIM_WAIT','POSE':'NEO_ANIM_POSE','JUMP':'NEO_ANIM_JUMP'
     'SPAWN_THROW':'NEO_ANIM_SPAWN_THROW','SELECT_POSE':'NEO_ANIM_SELECT_POSE','SET_BYTE':'NEO_ANIM_SET_BYTE','SET_WORD':'NEO_ANIM_SET_WORD',
     'SET_LONG':'NEO_ANIM_SET_LONG','DEC_BYTE':'NEO_ANIM_DEC_BYTE','COND_JUMP':'NEO_ANIM_COND_JUMP','SWITCH':'NEO_ANIM_SWITCH',
     'SOUND':'NEO_ANIM_SOUND','CALL':'NEO_ANIM_CALL','SELECT_FIELD_POSE':'NEO_ANIM_SELECT_FIELD_POSE'}
-def mission_data(mission):
+def lender_data(lenders,groups):
+    """The pack among `lenders` whose 'MSXD' holds only groups this mission
+    carries too (docs/COMPRESION.md, Duplicados: Missions 4 and 5 carry the
+    Mission 3 group): (pack, its groups, its blob records, its program
+    records, its header bytes), or None."""
+    for other in lenders:
+        g=GROUPS.get(other.mission,())
+        if not g or not set(g)<=set(groups) or not other.data_length:continue
+        d=other.raw[other.data_offset:other.data_offset+other.data_length]
+        assert d[:4]==b'MSXD'
+        version,nb,np_=struct.unpack_from('>HHH',d,4)
+        if version!=1:continue   # a lender that borrows itself: not taken
+        blobs=[struct.unpack_from('>III',d,12+12*i) for i in range(nb)]
+        progs=[struct.unpack_from('>IIHH',d,12+12*nb+12*i) for i in range(np_)]
+        return other,g,blobs,progs,12+12*nb+12*np_
+    return None
+def mission_data(mission,lenders=()):
     """'MSXD' u16 version=1 u16 blobs u16 programs u16 0, blob[] (u32 rom
     address, u32 offset, u32 length), program[] (u32 tag, u32 offset, u16
     commands, u16 0; tags ascending), then the data: blob bytes and
     10-byte commands (u8 kind, i24 asset, u16 target, u8 operand, u8 flags,
     i8 dx, i8 dy: neo_anim_command_t, as compile_soldier_ai_tables.py
-    writes them). Offsets from the block start, 2-byte aligned."""
+    writes them). Offsets from the block start, 2-byte aligned.
+
+    Version 2 (a lender in `lenders`, lender_data): the groups another
+    mission's pack holds are not stored again. 'MSXD' u16 2 u16 blobs u16
+    programs u16 lender mission, u32 offset in the lender's pack of its
+    data after its records, u32 length of that data; then the records as
+    in version 1. The loader reads the lender's data right after this
+    block: a record offset >= this block's length (even) points into it.
+    Returns (block, report, lender mission or 0)."""
     groups=GROUPS.get(mission,())
+    lend=lender_data(lenders,groups)
+    if lend:groups=tuple(g for g in groups if g not in lend[1])
     rom=json.loads((ROOT/'data/region_rom.json').read_text());progs=json.loads((ROOT/'data/soldier_programs.json').read_text())
     blobs=[b for b in rom['blobs'] if b.get('group') in groups]
     programs=sorted((p for p in progs['programs'] if p.get('group') in groups),key=lambda p:p['root'])
-    if not blobs and not programs:return b'',{}
+    if not blobs and not programs and not lend:return b'',{},0
     kinds=anim_kinds()
-    base=12+12*len(blobs)+12*len(programs);body=bytearray();recs=bytearray()
+    nb=len(blobs)+(len(lend[2]) if lend else 0);np_=len(programs)+(len(lend[3]) if lend else 0)
+    base=(20 if lend else 12)+12*nb+12*np_;body=bytearray();brecs=[];precs=[]
     for b in blobs:
-        data=bytes.fromhex(b['hex']);recs+=struct.pack('>III',int(b['rom'],16),base+len(body),len(data));body+=data
+        data=bytes.fromhex(b['hex']);brecs.append((int(b['rom'],16),base+len(body),len(data)));body+=data
         if len(body)&1:body.append(0)
-    seen=set()
+    seen=set();cmds=[]
     for p in programs:
         assert p['root'] not in seen;seen.add(p['root'])
-        recs+=struct.pack('>IIHH',p['root'],base+len(body),len(p['commands']),0)
+        precs.append((p['root'],base+len(body),len(p['commands']),0))
         for c in p['commands']:
             asset=0x1adaa if c['kind']=='FLIP_FACING' else c['asset']
             asset&=0xffffffff
             assert asset<0x800000 or asset>=0xff800000,('asset',hex(asset))
             body+=struct.pack('>B',kinds[KIND_NAMES[c['kind']]])+(asset&0xffffff).to_bytes(3,'big')+struct.pack('>HBBbb',c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
-    blob=b'MSXD'+struct.pack('>HHHH',1,len(blobs),len(programs),0)+bytes(recs)+bytes(body)
-    return blob,dict(blobs=len(blobs),blob_bytes=sum(len(b['hex'])//2 for b in blobs),programs=len(programs),commands=sum(len(p['commands']) for p in programs),bytes=len(blob))
+    report=dict(blobs=len(blobs),blob_bytes=sum(len(b['hex'])//2 for b in blobs),programs=len(programs),commands=sum(len(p['commands']) for p in programs))
+    if lend:
+        other,_,lblobs,lprogs,lhead=lend
+        own=base+len(body);assert own%2==0
+        shift=own-lhead   # the lender's data lands right after this block
+        brecs+=[(r,o+shift,n) for r,o,n in lblobs]
+        for t,o,n,z in lprogs:
+            assert t not in seen,('program in two groups',hex(t));seen.add(t);precs.append((t,o+shift,n,z))
+        precs.sort()
+        head=b'MSXD'+struct.pack('>HHHHII',2,nb,np_,other.mission,other.data_offset+lhead,other.data_length-lhead)
+        report.update(lender=other.mission,borrowed_blobs=len(lblobs),borrowed_programs=len(lprogs),borrowed_bytes=other.data_length-lhead)
+    else:
+        precs.sort();head=b'MSXD'+struct.pack('>HHHH',1,nb,np_,0)
+    # scene_stage_rom serves an address from the first record that holds it:
+    # records by descending end, so an address in two blobs is served from
+    # the one with more bytes after it (Mission 5's rank table 2D388E, 306 B,
+    # starts in the last 2 bytes of the Mission 3 blob 2D36A4: served from
+    # there, a read of the table ran past that blob). Overlapping blobs must
+    # hold the same bytes.
+    lent=lend[0].raw[lend[0].data_offset+lend[4]:lend[0].data_offset+lend[0].data_length] if lend else b''
+    def blob_bytes(o,n):
+        own=base+len(body)
+        return bytes(body[o-base:o-base+n]) if o<own else lent[o-own:o-own+n]
+    for i,(r,o,n) in enumerate(brecs):
+        for r2,o2,n2 in brecs[i+1:]:
+            lo,hi=max(r,r2),min(r+n,r2+n2)
+            if lo<hi:assert blob_bytes(o+lo-r,hi-lo)==blob_bytes(o2+lo-r2,hi-lo),('blobs differ where they overlap',hex(r),hex(r2))
+    brecs.sort(key=lambda x:(-(x[0]+x[2]),x[0]))
+    blob=head+b''.join(struct.pack('>III',*r) for r in brecs)+b''.join(struct.pack('>IIHH',*r) for r in precs)+bytes(body)
+    assert len(blob)==base+len(body)
+    report['bytes']=len(blob)
+    return blob,report,(lend[0].mission if lend else 0)
 def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
     MISSION[0]=mission;assert fmt in (4,5) and (fmt==5 or not shared)
     pages=[];page_ids={};palettes=[];pal_ids={}
@@ -314,7 +371,9 @@ def build(mission,stage_dirs,crom,rom=None,fmt=5,shared=()):
         body.extend(packed);body.extend(bytes((-len(body))%64))
     own_chunks=len(chunks);chunks+=[rec for _,rec in borrowed]
     pages+=[x for ps,_ in borrowed for x in ps]
-    data,data_report=mission_data(mission)
+    data,data_report,lender=mission_data(mission,shared if fmt>=5 else ())
+    if lender and all(m!=lender for m,_,_ in trailer):
+        other=next(o for o in shared if o.mission==lender);trailer.append((other.mission,len(other.raw),zlib.crc32(other.raw)))
     head=bytearray(b'MSXM')+struct.pack('>HHHHIIIIIIIII',fmt,mission,len(stages),len(palettes),len(images),len(chunks),len(cells),len(grids),len(actors),len(actor_images),len(res),0,len(data))
     stage_at=len(head);head+=bytes(STAGE_BYTES*len(stages))
     for layer,x,y,ph in cells:head+=struct.pack('>BBhh8H',layer,0,x,y,*ph)

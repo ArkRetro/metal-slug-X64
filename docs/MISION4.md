@@ -708,6 +708,13 @@ imagen de RAM. **Falta**: el resto del jefe (cuerpo `02267E`, `022CB6`, `023526`
 piezas tampoco están: no se dibujan hasta que exista el jefe), el mapa `02225E` / la capa `10D7B6`, la cámara
 automática y el fin de misión.
 
+Puertas tras fusionar los personajes (`fd40fb6` + jefe): `make check` RC 0 (**275 PASS**); `regression_ares.py` con
+el cartucho entero (61 554 688 bytes, con `romfs/chars` enlazado de `ws-logo`): logo, pausa, personajes, M4 (209
+ranuras), M5 ×3 y M1 → M2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (`missing descriptor … palette_id=125`, el
+fallo abierto que lleva el agente C); `missing_part=1` en cada prueba de misión = `/m4s1.bgp missing` (prerender
+privado que no está en este árbol). Corregido en el ejecutor: la prueba del logo informa con JSON (`"status":
+"PASS"`) y salida 0, no con `RESULT:`, y contaba como FAIL.
+
 **El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
 (derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
 los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. El log da ahí `MSX camera autoscroll=0 progress=4360` (una orden de cámara del guion)

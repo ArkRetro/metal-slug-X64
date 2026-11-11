@@ -51,7 +51,8 @@ def run(name, script, extra, timeout, outflag, rom, out):
     try:
         p = subprocess.run(cmd, cwd=ROOT, capture_output=True, timeout=timeout)
         text = p.stdout + p.stderr
-        result = 'PASS' if b'RESULT: PASS' in text else 'FAIL'
+        # The logo test reports in JSON ("status": "PASS") and by its exit code, not with a RESULT line.
+        result = 'PASS' if b'RESULT: PASS' in text or (p.returncode == 0 and b'"status": "PASS"' in text) else 'FAIL'
     except subprocess.TimeoutExpired as e:
         text = (e.stdout or b'') + (e.stderr or b'')
         result = 'TIMEOUT'

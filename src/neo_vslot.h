@@ -49,6 +49,11 @@ void neo_vslot_exit_place(neo_vslots_t *v,unsigned p,uint8_t *player,uint8_t *ki
  * `rect` (four words, ROM data at A0) around `vehicle`, whose slot is free.
  * `system` = RAM 10C300 (019424), `halted` = 018F24, `rng` = 0029C6 for a
  * tie. Returns the chosen player (carry) or -1. */
+/* 0AA606: 0AA616 with the test 0C069E (the crank 095C98): D1 (`d1`: the
+ * player must face left) and the players' new presses (0CA2CE +0). */
+typedef struct { bool d1; uint16_t fresh[2]; } neo_vslot_grab_t;
+int neo_vslot_select_grab(const neo_vslots_t *v,const uint8_t *vehicle,const neo_vslot_player_t players[2],
+    const int16_t rect[4],bool halted,const neo_vslot_grab_t *grab,uint16_t (*rng)(void *),void *ctx);
 int neo_vslot_select(const neo_vslots_t *v,const uint8_t *vehicle,const neo_vslot_player_t players[2],
     const int16_t rect[4],bool halted,bool system,uint16_t (*rng)(void *),void *ctx);
 /* 0AA760: vehicle node `node` binds player p's slot in this update (+1C =

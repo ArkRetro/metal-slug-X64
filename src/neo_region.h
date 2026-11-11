@@ -28,6 +28,8 @@ ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5train_routine(uint32_t routine);
 ga_result_t neo_m5train_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5mech_routine(uint32_t routine);
+bool neo_m5sewer_routine(uint32_t routine);
+ga_result_t neo_m5sewer_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_m5mech_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 040846 on a node (04097A, state 040C8E: the soldier death of neo_m3enemy.c). */
 void neo_m3enemy_death_40846(neo_gactor_t *a,neo_genv_t *e);

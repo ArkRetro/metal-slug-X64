@@ -54,8 +54,8 @@ enum {
 enum { CHUNKS_ALL=SCENE_CHUNK_COUNT+SCENE_MISSION_CHUNKS_MAX };
 typedef struct { int chunk; bool ready,reserved; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
-static int chunk_slot[CHUNKS_ALL];
-static unsigned requests[CHUNKS_ALL];
+static int16_t chunk_slot[CHUNKS_ALL];   // slot index or -1: the cache has at most 8 MB / 16 KB = 512 slots (4.4 KB less than int)
+static uint8_t requests[CHUNKS_ALL];   // request priority: the callers pass 1, 2, 3 and 255 (6.6 KB less than unsigned)
 static bool pinned[CHUNKS_ALL],map_chunk[CHUNKS_ALL];
 static uint8_t block_pins[CHUNKS_ALL];   // bit per recorded-block group
 static int recording=-1;
@@ -218,7 +218,8 @@ bool scene_assets_idle(void) {
 static void request(unsigned chunk,unsigned priority) {
     assertf(chunk<SCENE_CHUNK_COUNT+mission_chunk_count,"Scene chunk ID");
     if (chunk_slot[chunk]>=0) return;
-    if (requests[chunk]<priority) requests[chunk]=priority;
+    assertf(priority<=255u,"Scene request priority");
+    if (requests[chunk]<priority) requests[chunk]=(uint8_t)priority;
 }
 void scene_request_image(const scene_image_t *image,unsigned priority) { request(image->page/8,priority); }
 /* Every chunk decoded and resident: requests are no-ops (request() returns for

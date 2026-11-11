@@ -1,4 +1,5 @@
 #include "neo_vslot.h"
+#include <stddef.h>
 /* Manual translation of the vehicle-slot services ROM 0AA458..0AABF2
  * (docs/ARMAS_VEHICULOS.md §7); ROM labels are provenance. */
 static uint16_t rw(const uint8_t *m,unsigned o) {return (uint16_t)(m[o]<<8|m[o+1]);}
@@ -47,9 +48,23 @@ static bool may_mount(const neo_vslot_player_t *pl,bool system) {
     if (m[0x15]&0x40u) return false;
     return true;
 }
-/* 0AA6B6 (with 0C0556): carry when player p mounts. */
-static bool candidate(const neo_vslots_t *v,unsigned p,const uint8_t *veh,const neo_vslot_player_t *pl,const int16_t rect[4],bool system) {
-    if (!may_mount(pl,system)) return false;
+/* 0C069E: d0 = 0 when player p may grab the crank 095C98 (else FF): on the
+ * ground facing it (+15 bit 0 against D1), alive, not in the forms 2/3, and
+ * the new presses of 0CA2CE exactly bit 4. */
+static bool may_grab(const neo_vslot_player_t *pl,bool d1,uint16_t fresh) {
+    if (!pl->exists) return false;
+    const uint8_t *m=pl->m;
+    if (((m[0x15]&1u)!=0)!=d1) return false;                              /* sne, sne, eor.b; bmi */
+    if (m[0x5f]&0x80u) return false;
+    if (!(m[0x15]&0x40u)) return false;
+    if (m[0x93]==3 || m[0x93]==2) return false;
+    if (!fresh || (fresh&0xffefu)) return false;                          /* 0C0702..0C070C */
+    return true;
+}
+/* 0AA6B6 (with 0C0556, or 0C069E when `grab`): carry when player p mounts. */
+static bool candidate(const neo_vslots_t *v,unsigned p,const uint8_t *veh,const neo_vslot_player_t *pl,const int16_t rect[4],bool system,
+    const neo_vslot_grab_t *grab) {
+    if (grab?!may_grab(pl,grab->d1,grab->fresh[p]):!may_mount(pl,system)) return false;
     const uint8_t *b=v->slot[p].b;
     if (rw(b,0) || b[0x1c]) return false;
     const uint8_t *m=pl->m;
@@ -70,10 +85,10 @@ static bool candidate(const neo_vslots_t *v,unsigned p,const uint8_t *veh,const 
     }
     return true;
 }
-int neo_vslot_select(const neo_vslots_t *v,const uint8_t *veh,const neo_vslot_player_t players[2],
-    const int16_t rect[4],bool halted,bool system,uint16_t (*rng)(void *),void *ctx) {
+static int select_with(const neo_vslots_t *v,const uint8_t *veh,const neo_vslot_player_t players[2],
+    const int16_t rect[4],bool halted,bool system,const neo_vslot_grab_t *grab,uint16_t (*rng)(void *),void *ctx) {
     if (halted) return -1;                                               /* 018F24 */
-    bool c0=candidate(v,0,veh,&players[0],rect,system),c1=candidate(v,1,veh,&players[1],rect,system);
+    bool c0=candidate(v,0,veh,&players[0],rect,system,grab),c1=candidate(v,1,veh,&players[1],rect,system,grab);
     if (!c0 && !c1) return -1;
     if (!c0) return 1;
     if (!c1) return 0;
@@ -83,6 +98,14 @@ int neo_vslot_select(const neo_vslots_t *v,const uint8_t *veh,const neo_vslot_pl
     if (d1&0x8000u) d1=(uint16_t)-d1;
     if (d0==d1) return rng(ctx)&1;                                       /* 0029C6 */
     return d1<d0?1:0;
+}
+int neo_vslot_select(const neo_vslots_t *v,const uint8_t *veh,const neo_vslot_player_t players[2],
+    const int16_t rect[4],bool halted,bool system,uint16_t (*rng)(void *),void *ctx) {
+    return select_with(v,veh,players,rect,halted,system,NULL,rng,ctx);  /* 0AA610 */
+}
+int neo_vslot_select_grab(const neo_vslots_t *v,const uint8_t *veh,const neo_vslot_player_t players[2],
+    const int16_t rect[4],bool halted,const neo_vslot_grab_t *grab,uint16_t (*rng)(void *),void *ctx) {
+    return select_with(v,veh,players,rect,halted,false,grab,rng,ctx);   /* 0AA606 */
 }
 bool neo_vslot_bind(neo_vslots_t *v,unsigned p,uint8_t *veh,uint16_t node,const neo_vslot_player_t *pl,
     uint16_t video,int16_t d2,int16_t d3,uint16_t *player6e) {

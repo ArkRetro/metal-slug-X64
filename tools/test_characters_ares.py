@@ -10,7 +10,7 @@ log: the chosen character, no descriptor outside its catalog, no stopped
 program, no part or pack error, no crash. Screenshots per place:
 select.png (the cursor), play.png, paused.png. Uses the X display in DISPLAY.
 Last line: RESULT: PASS/FAIL."""
-import argparse,os,re,subprocess,time
+import argparse,os,re,subprocess,sys,time
 from pathlib import Path
 from PIL import ImageGrab
 p=argparse.ArgumentParser(description=__doc__)
@@ -75,7 +75,15 @@ for place in [int(x) for x in a.places.split(',')]:
         time.sleep(.3);tap('x');time.sleep(.5);key('keydown','Down');time.sleep(.6);tap('x');time.sleep(.6);key('keyup','Down')
         key('keydown','Up');time.sleep(.4);tap('x');time.sleep(.5);key('keyup','Up');time.sleep(.3)
         grab('play.png')
-        mark=len(log());tap('Return');wait(r'MSX PAUSE on',10,mark);time.sleep(.6);grab('paused.png')
+        # Start pauses only while player 1's panel runs its play routine (msx_pause.h):
+        # a press during a death or the new life is not a pause, so it is tried again.
+        mark=len(log())
+        for attempt in range(5):
+            tap('Return')
+            try:wait(r'MSX PAUSE on',4,mark);break
+            except AssertionError:
+                if attempt==4 or 'Timeout' not in str(sys.exc_info()[1]):raise
+        time.sleep(.6);grab('paused.png')
         mark=len(log());tap('Return');wait(r'MSX PAUSE off',10,mark)
         key('keydown','Left');time.sleep(1.2);tap('x');key('keyup','Left');time.sleep(.5)
         text=log()

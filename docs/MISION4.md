@@ -679,6 +679,15 @@ Tras fusionar `ccr` (tercer lote de la M5, `40bbf40`): la imagen sube a 2 197 66
 `romfs/mission6.pack` apartado (cartucho 65 994 752) y devuelto después: M4 `RESULT: PASS`, **211 ranuras**,
 `heap_low` 284 KB, 0 paradas del mundo; M1 → M2 `RESULT: PASS`, 212 ranuras; `make check` RC 0 en el árbol fusionado.
 
+Segunda fusión de `ccr` (cuarto lote de la M5: el tanque de orugas `08FF7E`, el helicóptero `047F7E`, `ga_rank_word`
+de tipo 2): `ga_attack` con varias parejas (`004B06`) estaba hecho en las dos ramas; queda la de la M5 (mismo
+recorrido; sin la parada tras ocho parejas) y un solo `attack_pair`. El paquete de la M5 pasa a **1037 trozos**
+(el grupo de la M3 dentro): `SCENE_MISSION_CHUNKS_MAX` 1024 → 1088 (si no, el cargador rechaza el paquete). Suelo
+de la caché: el de la M5, 197 (la necesidad). Puertas: `make check` RC 0 (**263 PASS**, `romfs/` rehecho con
+`build_packs.py`); con `mission6.pack` apartado (cartucho 66 371 584; con él 67 567 616): M4 `RESULT: PASS`,
+**210 ranuras**, `heap_low` 277 KB, una parada `routine=289a80` (los animales: la llamada sin traducir, ya en la
+lista de pendientes; **ares sí la alcanza**); M1 → M2 `RESULT: PASS`, 210 ranuras.
+
 **El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
 (derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
 los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. El log da ahí `MSX camera autoscroll=0 progress=4360` (una orden de cámara del guion)

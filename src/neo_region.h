@@ -109,6 +109,7 @@ uint32_t neo_slug_k143ee(neo_gactor_t *a,neo_genv_t *e);   /* 0143EE */
 /* neo_tread.c: the SV-001's tread body 014AE8..0153EE. */
 neo_gactor_t *neo_tread_spawn(neo_gactor_t *a,neo_genv_t *e);
 int32_t neo_tread_step(neo_gactor_t *a,neo_genv_t *e,unsigned entry);
+int32_t neo_tread_step_node(neo_gactor_t *a,neo_genv_t *e,unsigned entry,uint32_t node);
 void neo_tread_air_reset(neo_gactor_t *c,uint16_t d0);
 ga_result_t neo_tread_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);

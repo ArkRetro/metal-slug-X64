@@ -470,13 +470,108 @@ de las capturas `fam/*` del agente anterior (`layers.csv`, `actorstate.csv`, `pl
 sus trazas: siguen ahí. La captura propia `K` se borró tras hacer la familia y la exportación (se rehace con
 `b/capK.sh`: `MSX_FULL_NOFIRE=248100-249600`, raíces `8dcb2,8eb18`, desde `sec06_247661`).
 
+### Fase 2, cuarta tanda (11-XI, agente B)
+
+**El tanque de orugas `08FF7E` con su torreta `090A62`** (`src/neo_m5enemy.c`; calle: registros `2DCF7C..2DCFFE`, cámara
+600; alcantarilla: `2DF502..2DF5A2`, cámara 2064). Traducidos todos sus estados `08FF7E..09097E`, la torreta
+`090A62..09127A` con su tabla de órdenes `0924B0` (`jmp (a1)` en la misma actualización), el fogonazo `091290`, el
+proyectil `0912EE` y los servicios `0913DE..091CC6`. `0907FC` (y con él la orden 7 de la torreta, `0910A6`) no lo
+referencia nada en la ROM; `08FF8C` (la entrada sin `+96` bit 0) no está en ningún registro: los dos son parada
+explícita (`0910A6` está traducido, sin captura). `090986` es la comprobación del cartucho, como `08EF46`.
+
+- Va sobre el **nodo de orugas `014A4E`** del SV-001 (`014AE8`, `014C6A` en el suelo y `014C2E` en el aire): el
+  servicio recibe el nodo en A0 (el SV-001 lo guarda en `+8C`, este tanque en `+7A`): `neo_tread_step_node`. La
+  pendiente (`091A72`, de 0 a 0x10) elige la pose (`0919F4`: 0, 8 o 0x10; entre dos, el estado «inclinándose»
+  `090698` / `090772`) y con ella el programa, la caja de daño y el cuerpo sólido de cada estado.
+- `091638` lee la x del objetivo por A0 **después** de `002EB4`, que deja A0 en su tabla `002D7C` salvo cuando una
+  de las dos componentes partidas por dos tiene el byte bajo a cero: lo que lee casi siempre es la palabra de ROM
+  `002DB8`. Traducido tal cual (la familia sin fuego, con 18 disparos, lo comprueba).
+- Sus filas de ataque `091D08..` llevan **dos pares (clase, daño)** (el jugador y los cuerpos de clase 1): `ga_attack`
+  (motor compartido) recorre ahora todos los pares de la fila (`004B06`), una llamada al `attack` del mundo por par
+  (`attack_pair`); antes era parada explícita «no observado».
+- Capturas propias (réplica de `run4` desde `sec08_274387`, raíz `8ff7e`): **`N`** (276150..277080, los cuatro tanques
+  de la alcantarilla) y **`N2`** (la misma sin fuego en 276190..278600: recorren las pendientes, se inclinan, apuntan
+  y disparan 18 proyectiles). Borradas tras hacer las familias y la exportación; se rehacen con `b/capK.sh`
+  (`LOADN=sec08_274387 LOADF=274387 BLOCKED=20 ROOTS=8ff7e FROM=276150 LAST=277080 NOFIRE=1-2`, y
+  `LAST=278600 NOFIRE=276190-278600`).
+
+| Familia | Captura | Resultado contra MAME |
+| --- | --- | --- |
+| `m5tread` | `T` (calle) | 10 nodos, 1894 actualizaciones iguales |
+| `m5tread2` | `N` (alcantarilla) | 12 nodos, 1705 actualizaciones iguales |
+| `m5tread3` | `N2` (alcantarilla sin fuego) | 42 nodos, 7259 actualizaciones iguales (pendientes, 18 disparos, 621 contactos) |
+| `m5heli2` | `H` (metro) | 542 nodos, 27 649 actualizaciones iguales |
+| `m5heli3` | `L` (metro sin fuego, 274700..274900) | 20 nodos, 705 actualizaciones iguales: la marcha `04783A` / `047856` y su borrado |
+
+**El otro helicóptero suelto `047F7E`** (`neo_heli.c`, junto al `0474B6`): sus 22 estados `047F7E..04850E`, los
+servicios `04940C` (la x junto a los jugadores que tiene debajo, con la lógica de dos jugadores) y `049862` (el lado
+de la pantalla contrario), el lanzador `047A12` (programa `244E6E`), la bomba `047B10` (rango `2D1952`) y el callback
+`04A208`. Captura **`H`** (réplica de `run4` desde `sec07_252827`, raíces `474b6,47f7e,479b8,47a12,47afc,47b10`, traza
+263800..269500: los cuatro `047F7E` del metro y dos `0474B6` con todas sus bombas y muertes). **La marcha `04783A` /
+`047856`** (pendiente 5): el único registro con estancia finita es `2DE3DA` (`+72` = 30: 960 llamadas a `049ECE`);
+captura **`L`** (la misma réplica sin fuego en 267800..276500): el helicóptero `1018E4` se va en 274818 y sale por
+arriba en 274848. De `L` se guarda solo el tramo 274700..274900 (familia `m5heli3`, `--resume`), sin los descendientes de los dos
+helicópteros nacidos antes de la traza (`102AC4` y `104174`, nodos sin seguir: sus lanzadores no se pueden crear en
+nativo). `H` y `L` borradas (se rehacen con `b/capK.sh`: `LOADN=sec07_252827 LOADF=252827 BLOCKED=20
+ROOTS=474b6,47f7e,479b8,47a12,47afc,47b10 FROM=263800 LAST=269500 NOFIRE=1-2`; `L`: `FROM=267800 LAST=276500
+NOFIRE=267800-276500`).
+
+**Utilidades de las familias** (`tools/`): `extract_family_fixture.py --births` (un nodo creado dentro de una
+actualización de la familia y usado en esa misma actualización, el nodo de orugas, nace con los bytes que tenía al
+nacer —los que el resto de esa actualización leyó antes de escribir— y no con los de su primera actualización propia);
+`test_neo_family.c`: una dirección de nodo reutilizada se resuelve a la instancia viva más reciente (y, muerta, a una
+que ya haya vivido), y un campo de nodo (`--node-fields`) que la actualización no toca se compara con el campo nativo
+de antes (una dirección caducada, el rotor borrado antes que su helicóptero, puede ser ya de otro nodo).
+
+**`ga_rank_word` con tablas de tipo 2** (pendiente 5): hecho en el motor (`neo_gactor.c`): el byte de la fila elige un
+grupo de 8 palabras tras las filas (12 bytes por bit de la máscara) y `0029C6 & E` una de ellas (`02614A..026184`). Lo
+prueban `m5tank` y las tres `m5tread` (`2CED8E`), que ya no llevan el apaño local. Los otros módulos con su propia
+copia (`neo_m3enemy.c`, `neo_m3mid.c`, `neo_m3boss.c`, `neo_m2boss.c`, `m4h_rank` de `neo_heli.c`) siguen con ella:
+hacen lo mismo y son de otros agentes.
+
+**RAM: el suelo de la caché de escena.** Con el código del tanque (15 KB) la caché se queda en 199 ranuras (3184 KB)
+y `SCENE_EXPANDED_MIN_SLOTS` era 200: el cartucho paraba al arrancar (`RAM budget: 3155 KB left for the scene cache
+(minimum 3203 KB)`). Dos cambios: los programas del tanque van al paquete de la misión (grupo `m5`: 85 programas,
+5006 órdenes, 57 KB de datos de misión) y el suelo baja a **197**, que es lo que el propio comentario da como
+necesidad de los tres juegos fijados (49 + 65 + 83). **Ya no queda margen**: el siguiente módulo de la M5 (trenes,
+soldados de la alcantarilla, jefe: unos 40 KB de código) no cabe sin liberar RAM (código por misión, o tablas fuera de
+la imagen). Decisión del coordinador.
+
+**Datos de la M3 en el paquete de la M5.** El recorrido de la calle contaba `world unsupported routine=22c0a6`
+(×270: el programa del disparo `01B62C` de un arma que sueltan los coches), `2cfd00`, `2d3c16` y `e53ba`: programas
+y tablas del grupo `m3` (los soldados `05C53C` y sus armas, que la M5 también usa) que solo iban en los paquetes de
+la M3 y la M4. `pack_mission.py`: `GROUPS[5] = ('m3', 'm5')`, como la M4.
+
+**Prueba de ares** (`tools/test_mission5_ares.py`): `--lifebar` (la barra de vida opcional, Z en el menú de pruebas;
+en ares Z es `R-Trigger: 0x1/0/60`) y `--back T` (cada T segundos el mando mira 1,5 s a la izquierda: en una parada
+de cámara el tanque queda detrás del caminante y un mando que solo va a la derecha no lo toca nunca).
+
+**Recorrido en ares** (`mslugx-explorer.z64`, `--fire --jump 2.5 --lifebar`, calle y metro con `--back`): las tres
+etapas `RESULT: PASS`, caché de escena 199 ranuras (suelo 197), `heap_low` 281 KB en la calle. Calle: los dos tanques
+de orugas nacen nativos en la cámara 600 (`2DCFA4`, `2DCFFE`), el caminante los destruye y llega a la **cámara 880**
+(el helicóptero `0474B6` de `2DD29E` y los soldados `0AF1A8`, ya nativos por la fusión de la M4): el mando no dispara
+hacia arriba y no pasa de ahí; ninguna parada del guion en el log. Queda contada una parada nueva, **`world
+unsupported routine=800040` ×3** (la primera en la cámara 289, antes de los tanques: un actor del grupo `m3` que
+ahora sí tiene sus datos y llega más lejos; `800040` es la dirección que pidió, sin identificar: falta el nodo en el
+diagnóstico). Metro: el helicóptero de la cámara 80 retiene al caminante (0 paradas). Alcantarilla: parada en
+`2DEA8C` (`08996A`) y los dos registros `095C98` saltados, sin cambios.
+
+**El cartucho mide ya 67 043 328 bytes**, el límite a partir del cual ares no escribe log: con el próximo recurso
+habrá que probar con `romfs/mission6.pack` apartado. `mission5.pack`: 1001 trozos de 1024
+(`SCENE_MISSION_CHUNKS_MAX`), 186 KB de datos de misión (523 programas con el grupo `m3`).
+
+**Lo siguiente, por orden de guion**: metro `2DDF60` (`051344`, los trenes: 12 constructores, `050D70..0528xx`, con el
+mapa dinámico `0140C4` y los premios `08CDB2`) y `0D3B36`; alcantarilla `2DEA8C` (`08996A` / `089948` / `08995A`:
+`089948..08A6xx`, desensamblado mirado: tres entradas de un mismo soldado —suelo, `089D92` y techo con `+15` bit 1—,
+hijo `08A264`) y `095C98`; el jefe `0A0C00`. Antes hay que resolver la RAM (arriba). La calle no tiene más
+constructores sin portar hasta su fin `0BBE16`; falta verla entera en ares (un mando que dispare hacia arriba).
+
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: quedan **74 constructores sin portar (73 propios), 1317 creaciones** tras la tercera tanda (eran 79 y 1707 tras la segunda) (eran 103 y 2583 al
-   acabar la fase 1) ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
-   constructores del guion; 141 registros del guion que `run4` no ejecutó
-   necesitan captura propia. Primer paso: los registros donde se para el
-   guion (`2DCB42` → `0BBE5E`, `2DDB5E` → `0BC1E6`, `2DE9D0` → `08346E`).
+1. **Actores nuevos**: tras la cuarta tanda quedan **66 constructores sin portar** (los 74 de la tercera menos
+   `08FF7E`, `090A62`, `091290`, `0912EE`, `047F7E`, `047A12`, `047B10` y `0AF1A8`, este por la fusión de la M4);
+   el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con `tools/build_mission5_actors_doc.sh`.
+   Paradas del guion: metro `2DDF60` (`051344`), alcantarilla `2DEA8C` (`08996A`).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
    `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
 3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**

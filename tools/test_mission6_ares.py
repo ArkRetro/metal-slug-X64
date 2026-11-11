@@ -6,16 +6,23 @@ taps Start to SOLDIER SELECT, opens the test menu (L+R and A), chooses
 MISSION 6 STAGE n and holds right (with a jump every --jump seconds; no fire unless
 --fire). Grabs a screenshot every --period seconds with the camera x in its
 name. Checks from the log: the menu choice, the pack load with the flow's
-descriptor and camera list (016E5E / 0BCA00, 016E6E / 0BDCE2, 016E7E / 0BE99E), the camera reaching --progress,
+descriptor and camera list (016E5E / 0BCA00, 016E6E / 0BDCE2, 016E7E / 0BE99E), the camera reaching --progress
+(default 600, or the stage's last camera x in MAME when that is lower: the arena 016E7E stops at 320 in
+data/m6s3_camera_fixture.json.gz, so 600 can never be reached there; a --progress above that x is refused),
 no crash and no "not loaded" stop. Prints the counted stops of the log.
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
 import argparse,os,re,subprocess,time
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
-p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
+p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=None)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--continues',action='store_true');p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
+import gzip,json
+# The stage's camera limit in MAME (run4 replay, tools/test_m6_camera.c): the highest camera x of its fixture.
+limit=max(r['x'] for r in json.load(gzip.open(Path(__file__).resolve().parents[1]/f'data/m6s{a.stage}_camera_fixture.json.gz'))['records'])>>16
+if a.progress is None:a.progress=min(600,limit)
+assert a.progress<=limit,f'--progress {a.progress} is beyond the camera x {limit} that stage {a.stage} reaches in MAME'
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log'

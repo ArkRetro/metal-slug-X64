@@ -192,8 +192,18 @@ def main():
         L.append('#define FAMILY_STAMPS {%s}'%','.join('{0x%x,0x%x,0x%x}'%t for t in st))
     L+=[
        'static const family_node_t %s_nodes[]={'%n]
-    for u,cr in order:
-        pre=bytes.fromhex(u['pre'])
+    # Births (extract_family_fixture.py --births): the bytes a node made inside a family update held at its birth, where
+    # the rest of that update read them before writing (the tread node 014A4E, stepped by its tank in the update that
+    # creates it): the native spawn starts from them, not from the node's bytes at its own first update.
+    births={}
+    for k,u in enumerate(d['updates']):
+        for nd,b in u.get('births',{}).items():
+            k2=next((j for j in range(k+1,len(d['updates'])) if d['updates'][j]['node']==nd),None)
+            if k2 is not None and order[inst[k2]][0] is d['updates'][k2]:births[inst[k2]]=b
+    for i,(u,cr) in enumerate(order):
+        pre=bytearray(bytes.fromhex(u['pre']))
+        for o,v in births.get(i,[]):
+            if o>=0x10:pre[o]=v
         L.append('{%d,0x%x,%d,{%s}},'%(cr,u['routine'],u['frame'],','.join(str(x) for x in pre[:0xb0])))
     L.append('};')
     # RAM the update read (first read of each byte) and wrote, in the --ram

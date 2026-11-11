@@ -196,6 +196,9 @@ struct neo_genv {
      * 32..47). */
     bool want_targets;
     neo_ga_target_t target[2];
+    /* The (class, damage) pair of the row the attack callback is called for (0: the first; ga_attack calls it once
+     * per pair of a row with several, 004B06). */
+    uint8_t attack_pair;
     /* The node behind a target's tag or a player's node address (1014C4 /
      * 101574), as the fields the original reads of another node: +00 (0040AC:
      * 3F1E once deleted), +3C..+43, +5E, +5F. NULL: the tag is unknown. The

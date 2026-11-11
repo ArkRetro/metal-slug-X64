@@ -414,7 +414,17 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     int16_t w[7];for (unsigned i=0;i<7;i++) w[i]=(int16_t)(r[2*i]<<8|r[2*i+1]);
     if (w[5]<0) return 0;
     uint8_t best=e->attack(e->ctx,a,w);
-    if ((int16_t)(r[14]<<8|r[15])>=0) ga_fail(e,row); /* several (class,damage) pairs: not observed */
+    /* 004B06: every (class, damage) long up to a negative one visits the bodies of its class in the same rectangle
+     * (the Mission 5 tank 08FF7E: the player and the class-1 bodies); D0 is the highest type of them all. The bodies
+     * 0049E8 returns in A0 / A1 with several pairs are not modelled. */
+    for (unsigned i=1;i<8 && !(r[10+4*i]&0x80u);i++) {
+        if (e->want_targets) {ga_fail(e,row);break;}
+        w[5]=(int16_t)(r[10+4*i]<<8|r[11+4*i]);w[6]=(int16_t)(r[12+4*i]<<8|r[13+4*i]);
+        e->attack_pair=(uint8_t)i;
+        uint8_t t=e->attack(e->ctx,a,w);
+        e->attack_pair=0;
+        if (t>best) best=t;
+    }
     return best;
 }
 uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {

@@ -135,8 +135,11 @@ void neo_tread_air_reset(neo_gactor_t *c,uint16_t d0) {     /* 0153D2 */
 }
 /* entry: 0 014C0C, 1 014C2E, 2 014C48, 3 014C6A. Returns the angle word D0
  * (the callers' +84) or -1 on an explicit stop. */
-int32_t neo_tread_step(neo_gactor_t *a,neo_genv_t *e,unsigned entry) {
-    neo_gactor_t *c=e->actor?e->actor(e->ctx,L(0x8c)):NULL;
+int32_t neo_tread_step(neo_gactor_t *a,neo_genv_t *e,unsigned entry) {return neo_tread_step_node(a,e,entry,L(0x8c));}
+/* The same with the tread node the caller passes in A0 (the SV-001 keeps it in
+ * +8C, the Mission 5 tank 08FF7E in +7A). */
+int32_t neo_tread_step_node(neo_gactor_t *a,neo_genv_t *e,unsigned entry,uint32_t node) {
+    neo_gactor_t *c=e->actor?e->actor(e->ctx,node):NULL;
     if (!c) {ga_fail(e,0x14c0c);return -1;}
     modes_t m={0,0,0,0,0,0};
     bool ground=entry>=2;

@@ -190,8 +190,9 @@ static bool updated[NN],first_update[NN];
 #endif
 static neo_gactor_t actors[NN+1];
 static uint32_t native_tag(uint32_t recorded) {
-    /* A reused node address: the instance alive now first. */
-    for (unsigned i=0;i<NN;i++) if (node_address[i] && bound[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
+    /* A reused node address: the instance alive now first; the latest of them when an older one left the family's
+     * routines without a recorded deletion (the turret 090A62 turned into the blast 01C706) and still counts as alive. */
+    for (unsigned i=NN;i-->0;) if (node_address[i] && bound[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     /* A dead address: its latest instance (the gunship's exhaust 01D908 keeps
      * the block of its creator deleted in the same frame). */
     for (unsigned i=NN;i-->0;) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
@@ -390,6 +391,7 @@ static neo_genv_t *answer_env;
 static unsigned answer_first,answer_count,answer_used,answers;
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     (void)ctx;(void)a;(void)row;
+    if (answer_env && answer_env->attack_pair) return 0;   /* the recorded D0 is the one of the whole call (all its pairs) */
     if (answer_used>=answer_count) {answer_used++;return 0;}
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {

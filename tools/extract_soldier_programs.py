@@ -400,6 +400,12 @@ ROOTS+=[0x28b7bc,0x28b80e,0x28b860,0x28b8b2,0x28b904,0x28b956,0x28b9a8,0x28b9fa,
 # Mission 5 lone helicopter 0474B6 (neo_heli.c): arriving 244712, stopping 0E0C32[+96 & 3] (244792, 2447A0, 2447AE, 2447BC), flying
 # 24473E (the pose by the bank +96), its dropper 0479B8 (244DD6: sound 10FF, callback 04A1AE).
 ROOTS+=[0x244712,0x244792,0x2447a0,0x2447ae,0x2447bc,0x24473e,0x244dd6]
+# Mission 5 tank on treads 08FF7E (neo_m5enemy.c): by pose (slope 0 / level / slope 2): idle, driving both ways, stopping, starting,
+# firing, destroyed (and 28E270), tilting 28C442, the empty 28C440; its turret 090A62: pose, tilting 28E28A, firing 091EC0, thrown
+# off, hit; the shell 0912EE (2907FA; the flash 091290 uses 22D264).
+ROOTS+=[0x28ca64,0x28c9c8,0x28ca16,0x28c440,0x28c6e0,0x28c56c,0x28c626,0x28c90e,0x28c79a,0x28c854,0x28ccae,0x28cab2,0x28cbb0,0x28cfa8,0x28cdac,0x28ceaa,
+        0x28d2d2,0x28d0a6,0x28d1bc,0x28d614,0x28d3e8,0x28d4fe,0x28d7ca,0x28d72a,0x28d77a,0x28e146,0x28def2,0x28e01c,0x28e270,0x28c442,
+        0x28e4b8,0x28e3ac,0x28e432,0x28e28a,0x28efc6,0x28e53e,0x28ea82,0x2905dc,0x2901a0,0x2903be,0x28fd6e,0x28f50a,0x28f93c,0x2907fa]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

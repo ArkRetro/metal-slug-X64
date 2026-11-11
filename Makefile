@@ -480,7 +480,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -543,6 +543,15 @@ FAMILY_ARGS_m5tank := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --r
 # m5heli = the Mission 5 lone helicopter 0474B6 (neo_heli.c: its rotor 047874, droppers 0479B8, bombs 047AFC and its
 # death 048B06); captures-m5/fam/T (the first helicopter of the street and its descendants).
 FAMILY_ARGS_m5heli := --script-actor 101414 --script-routines 47de0 --late-creator --hit-to 47c48 --hit-moving --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m5tread = the Mission 5 tank on treads 08FF7E (street record 2DCFA4) with its tread node 014A4E, its turret 090A62, flashes
+# 091290 and shells 0912EE (neo_m5enemy.c); captures-m5/fam/T (run4 replay from sec06_247661): the two tanks of the street.
+FAMILY_ARGS_m5tread := --node-fields 7a --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --shared 14a4e
+# m5tread2 = the same tank in the sewer (records 2DF502..): captures-m5/fam/N (run4 replay from sec08_274387, roots 8ff7e,
+# 276150..277080: the four tanks before the boss, on the sewer's slopes).
+FAMILY_ARGS_m5tread2 := $(FAMILY_ARGS_m5tread)
+# m5tread3 = the same tanks left alive: captures-m5/fam/N2 (the same replay without fire in 276190..278600: they drive over
+# the sewer's slopes, tilt, aim and fire 18 shells).
+FAMILY_ARGS_m5tread3 := $(FAMILY_ARGS_m5tread)
 FAMILY_ARGS_m5ledge := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 FAMILY_ARGS_m5car := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --fresh-flip --split-children --script-actor 101414 --script-routines 8c374
 # m5deco = the Mission 5 sewer decorations 0BC4F4 (script records of the sewer's start,

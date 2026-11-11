@@ -69,6 +69,7 @@ typedef struct {
     struct { bool alive; uint8_t follow7a; bool vehicle; uint8_t follow7b; uint16_t x,y; } player_state[2];
     uint16_t point[2];                    /* RAM 69B8/69BA: script point (01903A) */
     const neo_marker_t *markers;unsigned marker_count; /* list queried this update */
+    uint16_t slot_word[2];                /* RAM 10C608 / 10C62C: the first word of each player's vehicle slot (0AAA88: nonzero while riding) */
 } neo_soldier_env_t;
 typedef enum { NEO_SOLDIER_MORE,NEO_SOLDIER_DELETED,NEO_SOLDIER_UNSUPPORTED } neo_soldier_result_t;
 /* Spawn record words copied to +6E..+78 (ROM 01A136) and creator data. */

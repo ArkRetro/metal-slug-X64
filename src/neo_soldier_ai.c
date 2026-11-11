@@ -906,6 +906,77 @@ static neo_soldier_result_t run(ctx_t *c) {
         if (a->flags15&64u) ground(c,NULL); else air_drop(c);
         if (anim_step(c)) s->routine=0xaf380;
         return tail(c,false);
+    /* Actions 5..7 (+81 bits 5..7; the entry 0AF1A8 has only these, +81 = E0):
+     * the leap. 0AF99A: with the chosen player (+80) riding a vehicle (0AAA88:
+     * its node alive and its slot word RAM 10C608 / 10C62C nonzero) the
+     * action 1 instead (0AF918); else it runs (23D510, +62 = +-4 0000 after
+     * turning to the player when +7C bit 0 is clear, program speed |+62| >>
+     * 10 + 80) until the nearest player (01AF9A) is within 0x40 (0AFA4C: the
+     * leap 23EE3C, +34 = 8 A000, +62 = +30 = +-(2 8000 + rand + rand)); while
+     * falling (0AFA9C) the row 0AE990 finds a player (type 5) -> 0AFADA
+     * (23EEB6) and the row 0AE9A0 hits it (0AFAF0 -> 0AFB44); on the ground
+     * 0AFB88 (23EEEA) and back to 0AF380. */
+    case 0xaf99a: {
+        unsigned p=B(0x80)?1u:0u;
+        if (c->e->player_state[p].alive && c->e->slot_word[p]) {s->routine=0xaf918;continue;}
+        START(0x23d510);
+        if (!(B(0x7c)&1u)) a->flags15^=1u;
+        a->scalar62=facing_value(s,0x40000);
+        uint32_t d0=(uint32_t)a->scalar62;
+        if (d0&0x80000000u) d0=0u-d0;
+        s->anim.speed=(uint16_t)((uint16_t)((d0<<6)>>16)+0x80u);
+        s->routine=0xaf9fa;
+    }
+        /* fall through */
+    case 0xaf9fa: {
+        if (!(a->flags15&64u)) {s->routine=0xafce2;continue;}
+        unsigned m=c->e->players.active_mask&0xffu;                       /* 01AF9A */
+        if (!m) {s->routine=0xaf890;continue;}
+        uint16_t x=HI(a->projected_x),px=c->e->players.p1x;
+        if (m==2u) px=c->e->players.p2x;
+        else if (m!=1u) {
+            int16_t d1=S16((uint16_t)(c->e->players.p1x-x)),d2=S16((uint16_t)(c->e->players.p2x-x));
+            if (d1<0) d1=(int16_t)-d1;
+            if (d2<0) d2=(int16_t)-d2;
+            if (d2<d1) px=c->e->players.p2x;
+        }
+        if ((uint16_t)(px-x+0x40u)<0x80u) s->routine=0xafa4c;
+        ground(c,NULL);anim_step(c);
+        if (a->flags5f&1u) s->routine=0xafbc0;
+        pred_object(c);                                                   /* 0AF108 */
+        return tail(c,false);
+    }
+    case 0xafa4c: {
+        START(0x23ee3c);
+        a->vx=a->scalar62;a->vy=0x8a000;
+        uint16_t d1=neo_rng_next(c->e->rng),d0=neo_rng_next(c->e->rng);
+        uint32_t v=(uint32_t)(int32_t)S16((uint16_t)(d0+d1))+0x28000u;
+        if (!(a->flags15&1u)) v=0u-v;
+        a->scalar62=S32(v);a->vx=S32(v);
+        s->routine=0xafa9c;
+    }
+        /* fall through */
+    case 0xafa9c:
+        gravity_blend(s);air(c,0);anim_step(c);                           /* 0AEDD6 */
+        if (S16(HI(a->vy))<0 && hit_player(c,soldier_attack_leap,false)==5u) s->routine=0xafada;
+        if (a->flags15&64u) s->routine=0xafb88;
+        return tail(c,false);
+    case 0xafada:START(0x23eeb6);s->routine=0xafaf0; /* fall through */
+    case 0xafaf0:
+        gravity_blend(s);air(c,0);anim_step(c);
+        if (hit_player(c,soldier_attack_leap_hit,true)) s->routine=0xafb44;
+        if (a->flags15&64u) s->routine=0xafb88;
+        return tail(c,false);
+    case 0xafb44:s->routine=0xafb4a; /* fall through */
+    case 0xafb4a:
+        gravity_blend(s);air(c,0);anim_step(c);
+        if (a->flags15&64u) s->routine=0xafb88;
+        return tail(c,false);
+    case 0xafb88:START(0x23eeea);a->scalar62=0;s->routine=0xafba6; /* fall through */
+    case 0xafba6:
+        ground(c,NULL);
+        if (anim_step(c)) s->routine=0xaf380;
+        return tail(c,false);
     case 0xb0336:
         START(0x23ef98);a->scalar62=0;s->routine=0xb0354; /* fall through */
     case 0xb0354:

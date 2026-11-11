@@ -44,6 +44,7 @@ def main():
     p.add_argument('--split-children',action='store_true',help='the children one update makes may split over two frames (the frame mark inside the list walk, as --m2boss): the first made is the last of them in the list')
     p.add_argument('--fresh-program',action='store_true',help='a constructor that steps the program (00427A) before starting one: the original steps the previous occupant\'s program (+20), the world\'s fresh node has none, so +24..+27 are not compared in a node\'s first update without a program')
     p.add_argument('--reserve',action='store_true',help='0040BC refuses a node unless more than its reserve are free: RAM 1063D8 as the update first read it (extract with --ram 1063d8-1063da); the world has no such limit')
+    p.add_argument('--soldier-nodes',action='store_true',help='the nodes of the soldier module (routines 0AE000..0B0FFF, 040500..040FFF) run through neo_soldier_tick / neo_soldier_construct (tools/test_neo_family.c soldier_tick_node): only the fields the module models are compared')
     p.add_argument('--soldier',help='ROUTINES (comma hex): an update of one of these routines ends with JMP 0B0626 / 0B0632 (the node becomes a soldier): the native code must keep the node (the world moves it), its bytes are not compared, and the node\'s later updates and the nodes it creates from then on (the soldier\'s own code) are dropped until the node is deleted')
     p.add_argument('--external-state',default='',help='ROUTINES (comma hex): states another node of the family sets on a node between its updates (the jeep gunner 0A39D6 sets its creator to 0A35A8): an update of such a routine goes on with the same node instance')
     p.add_argument('--ram-creators',action='store_true',help='a node whose creator (+0C) is a node outside the family (the player 1014C4, a gate) reads that creator from the RAM image (extract with --ram covering the node pool)')
@@ -165,6 +166,7 @@ def main():
     if a.resume:L.append('#define FAMILY_RESUME 1')
     if a.train:L.append('#define FAMILY_TRAIN 1')
     if a.ram_creators:L.append('#define FAMILY_RAM_CREATORS 1')
+    if a.soldier_nodes:L.append('#define FAMILY_SOLDIER_NODES 1')
     if a.group_map:L.append('#define FAMILY_GROUP_MAP 0x%xu'%int(a.group_map,16))
     if a.grid:
         g=json.load(open(a.grid));cells=bytes.fromhex(g['cells_hex']);assert len(cells)==g['columns']*g['rows']

@@ -14,10 +14,10 @@
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
 enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414, PLAYER1_TAG=0x1014c4 };
 /* The soldier entries 0AF17E.. (0AEF30 then +81): 0 for any other routine.
- * 0AF1A8 (+81 = E0: the actions 0AF99A, not ported) stays external. */
+ * 0AF1A8: +81 = E0, the leap 0AF99A (families m4sold / m4sold2). */
 static uint8_t soldier_entry_flags81(uint32_t r) {
     switch (r) {
-    case 0xaf17e:return 2;case 0xaf18c:return 0x10;case 0xaf19a:return 0x12;
+    case 0xaf17e:return 2;case 0xaf18c:return 0x10;case 0xaf19a:return 0x12;case 0xaf1a8:return 0xe0;
     case 0xaf1b6:return 4;case 0xaf1c4:return 8;case 0xaf1d2:return 0xc;case 0xaf1e0:return 0xe;
     default:return 0;
     }
@@ -1452,6 +1452,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->event=soldier_event;e->event_context=&t;e->blood=w->blood;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
     e->player_state[0].follow7b=pl?pl->follow_y:0xff;e->player_state[0].x=px;e->player_state[0].y=py;
+    e->slot_word[0]=(uint16_t)(w->vslots.slot[0].b[0]<<8|w->vslots.slot[0].b[1]);e->slot_word[1]=0;   /* RAM 10C608 (0AAA88) */
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;

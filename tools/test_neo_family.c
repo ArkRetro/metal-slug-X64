@@ -517,6 +517,87 @@ static void map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6
 }
 #endif
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
+#ifdef FAMILY_SOLDIER_NODES
+/* A node of the soldier module (0AE000..0B0FFF and its deaths 040500..040FFF,
+ * neo_soldier_ai.c) inside a family trace: the node's bytes become a
+ * neo_soldier_t (the named fields of tools/soldier_capture.py and the block
+ * +6E..+93), one neo_soldier_tick with the update's scene (kernel, RNG,
+ * players, grid, bounds), and back. The bytes the soldier module does not
+ * model (+12..+14, +16, +19..+1D, +60, +61, +6A, +94..) take the original's
+ * values: only the modelled fields are compared. No player hurtbox is offered
+ * (a recorded 0049E8 hit stops the test). */
+static bool soldier_node(uint32_t r) {return (r>=0xae000u && r<0xb1000u) || (r>=0x40500u && r<0x41000u);}
+static bool soldier_modelled(unsigned o) {
+    return o<4u || o==0x15 || o==0x17 || o==0x18 || o==0x1e || o==0x1f || (o>=0x24 && o<0x44) || (o>=0x4c && o<0x54) || (o>=0x5a && o<0x60) ||
+        (o>=0x62 && o<0x6a) || (o>=0x6c && o<0x94);
+}
+static ga_result_t soldier_tick_node(neo_gactor_t *a,neo_genv_t *e,const family_update_t *u) {
+    neo_soldier_t s;memset(&s,0,sizeof(s));s.active=true;s.routine=ga_l(a,0);
+    neo_contact_actor_t *b=&s.b;
+    b->x=(int32_t)ga_l(a,0x28);b->y=(int32_t)ga_l(a,0x2c);b->vx=(int32_t)ga_l(a,0x30);b->vy=(int32_t)ga_l(a,0x34);b->scalar62=(int32_t)ga_l(a,0x62);
+    b->projected_x=(int32_t)ga_l(a,0x3c);b->projected_y=(int32_t)ga_l(a,0x40);b->cached_x=(int32_t)ga_l(a,0x44);b->cached_y=(int32_t)ga_l(a,0x48);
+    b->parent_tag=ga_l(a,0x38);b->kind_angle=ga_w(a,0x6c);b->field66=ga_w(a,0x66);b->word1e=ga_w(a,0x1e);
+    b->flags15=ga_b(a,0x15);b->flags5f=ga_b(a,0x5f);b->timer5a=ga_b(a,0x5a);b->mark=ga_b(a,0x4c);b->correction=ga_b(a,0x4d);
+    s.anim.timer=ga_w(a,0x24);s.anim.speed=ga_w(a,0x26);s.anim.flash=ga_b(a,0x17);s.anim.field18=ga_b(a,0x18);s.anim.field50_tag=ga_l(a,0x50);
+    s.anim.program=a->program;s.anim.cursor=a->cursor;
+    s.render.attributes=(uint16_t)(0x7100u|b->flags15);
+    s.health=ga_w(a,0x4e);s.f5b=ga_b(a,0x5b);s.f5c=ga_b(a,0x5c);s.f5d=ga_b(a,0x5d);s.f5e=ga_b(a,0x5e);s.variant68=ga_b(a,0x68);s.group69=ga_b(a,0x69);
+    memcpy(s.locals,&a->m[0x6e],sizeof(s.locals));
+    neo_soldier_env_t env;memset(&env,0,sizeof(env));
+    env.kernel=e->kernel;
+    if (!ga_parent(e,0x10c72eu,&env.terrain)) memset(&env.terrain,0,sizeof(env.terrain));
+    if (!ga_parent(e,0x10e968u,&env.root)) memset(&env.root,0,sizeof(env.root));
+    env.terrain.tag=0x10c72eu;env.root.tag=0x10e968u;
+    static neo_contact_parent_t sdyn[NEO_KDYN_COUNT];
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) sdyn[i]=(neo_contact_parent_t){NEO_DYN_TAG(i),e->kernel->dyn[i].pos.x,e->kernel->dyn[i].pos.y,e->kernel->dyn[i].pos.prev_x,e->kernel->dyn[i].pos.prev_y,0};
+    env.dyn=sdyn;
+    env.epoch=e->epoch;env.players=e->players;env.grid=e->grid;env.rng=e->rng;env.bounds=e->bounds;
+    env.camera_word=(uint16_t)((uint32_t)e->scroll_x>>16);env.program=program;
+#ifdef FAMILY_RAM
+    env.slot_word[0]=w16(0x10c608);env.slot_word[1]=w16(0x10c62c);   /* --ram 10c608-10c62e */
+#endif
+    for (unsigned p=0;p<2;p++) {
+        env.player_state[p].alive=(e->players.active_mask>>p)&1u;env.player_state[p].follow7a=0xff;env.player_state[p].follow7b=0xff;
+        env.player_state[p].x=p?e->players.p2x:e->players.p1x;env.player_state[p].y=p?e->players.p2y:e->players.p1y;
+    }
+    /* 0049E8 by the soldier: its own narrow phase against player 1's hurtbox
+     * (0E...: soldier_player_hurtbox at the player's projected words), as
+     * tools/test_neo_soldier_ai.c; the recorded answers are not replayed. */
+    neo_hurtbox_t ph={e->players.p1x,e->players.p1y,e->player_flags15[0],soldier_player_hurtbox.type,0,
+        {soldier_player_hurtbox.rect[0],soldier_player_hurtbox.rect[1],soldier_player_hurtbox.rect[2],soldier_player_hurtbox.rect[3]},false};
+    if (e->players.active_mask&1u) {env.targets=&ph;env.target_count=1;}
+    neo_soldier_result_t r=NEO_SOLDIER_MORE;
+    uint8_t f81=0;
+    switch (ga_l(a,0)) {   /* the entries 0AF17E.. (0AEF30 then +81): the constructor, no update */
+    case 0xaf17e:f81=2;break;case 0xaf18c:f81=0x10;break;case 0xaf19a:f81=0x12;break;case 0xaf1a8:f81=0xe0;break;
+    case 0xaf1b6:f81=4;break;case 0xaf1c4:f81=8;break;case 0xaf1d2:f81=0xc;break;case 0xaf1e0:f81=0xe;break;
+    }
+    if (f81) {
+        neo_soldier_spawn_t sp;memset(&sp,0,sizeof(sp));
+        sp.x=(int32_t)ga_l(a,0x28);sp.y=(int32_t)ga_l(a,0x2c);sp.variant68=ga_b(a,0x68);sp.group69=ga_b(a,0x69);sp.flags81=f81;
+        for (unsigned i=0;i<6;i++) sp.words[i]=ga_w(a,0x6eu+2u*i);
+        uint16_t t24=ga_w(a,0x24),t26=ga_w(a,0x26);   /* the constructor starts no program: +24 / +26 stay the previous occupant's */
+        if (!neo_soldier_construct(&s,&sp,&env)) {fprintf(stderr,"soldier constructor %05x refused (line %u)\n",(unsigned)ga_l(a,0),neo_soldier_unsupported_line);ga_fail(e,ga_l(a,0));return GA_UNSUPPORTED;}
+        s.anim.timer=t24;s.anim.speed=t26;
+        s.f5b=ga_b(a,0x5b);s.f5c=ga_b(a,0x5c);s.f5d=ga_b(a,0x5d);s.f5e=ga_b(a,0x5e);   /* not cleared by 003F24 either */
+    } else r=neo_soldier_tick(&s,&env);
+    if (r==NEO_SOLDIER_UNSUPPORTED) {fprintf(stderr,"soldier unsupported: routine %05x line %u\n",(unsigned)s.routine,neo_soldier_unsupported_line);ga_fail(e,s.routine);return GA_UNSUPPORTED;}
+    ga_sl(a,0,s.routine);
+    ga_sl(a,0x28,(uint32_t)b->x);ga_sl(a,0x2c,(uint32_t)b->y);ga_sl(a,0x30,(uint32_t)b->vx);ga_sl(a,0x34,(uint32_t)b->vy);ga_sl(a,0x62,(uint32_t)b->scalar62);
+    ga_sl(a,0x3c,(uint32_t)b->projected_x);ga_sl(a,0x40,(uint32_t)b->projected_y);ga_sl(a,0x44,(uint32_t)b->cached_x);ga_sl(a,0x48,(uint32_t)b->cached_y);
+    ga_sl(a,0x38,b->parent_tag);ga_sw(a,0x6c,b->kind_angle);ga_sw(a,0x66,b->field66);ga_sw(a,0x1e,b->word1e);
+    ga_sb(a,0x15,b->flags15);ga_sb(a,0x5f,b->flags5f);ga_sb(a,0x5a,b->timer5a);ga_sb(a,0x4c,b->mark);ga_sb(a,0x4d,b->correction);
+    ga_sw(a,0x24,s.anim.timer);ga_sw(a,0x26,s.anim.speed);ga_sb(a,0x17,s.anim.flash);ga_sb(a,0x18,s.anim.field18);ga_sl(a,0x50,s.anim.field50_tag);
+    a->program=s.anim.program;a->cursor=s.anim.cursor;
+    ga_sw(a,0x4e,s.health);ga_sb(a,0x5b,s.f5b);ga_sb(a,0x5c,s.f5c);ga_sb(a,0x5d,s.f5d);ga_sb(a,0x5e,s.f5e);ga_sb(a,0x68,s.variant68);ga_sb(a,0x69,s.group69);
+    for (unsigned i=0;i<sizeof(s.locals);i++) ga_sb(a,0x6eu+i,s.locals[i]);
+    if (u->has_post) for (unsigned o=0x10;o<0xb0;o++) if (!soldier_modelled(o)) a->m[o]=u->post[o];
+#ifdef FAMILY_ATTACKS
+    answer_used=answer_count;
+#endif
+    return r==NEO_SOLDIER_DELETED?GA_DELETE:GA_MORE;
+}
+#endif
 static bool skip(unsigned o) {return o==0x14 || o==0x16 || o==0x58 || o==0x59 || (o>=0x19 && o<=0x1c) || (o>=0x20 && o<=0x23) || (o>=0x44 && o<=0x4b);}
 int main(void) {
     /* Node addresses are not in the fixture: a child's recorded +0C names
@@ -818,7 +899,11 @@ int main(void) {
 #ifdef FAMILY_PREVIOUS
         previous_node=PREVIOUS[k];
 #endif
+#ifdef FAMILY_SOLDIER_NODES
+        ga_result_t r=soldier_node(ga_l(a,0))?soldier_tick_node(a,&e,u):neo_region_tick(a,&e);
+#else
         ga_result_t r=neo_region_tick(a,&e);
+#endif
 #ifdef FAMILY_LEAVE
         {static const uint32_t lv[][2]=FAMILY_LEAVE;bool leave=false;
          for (unsigned i=0;i<sizeof(lv)/sizeof(lv[0]);i++) if (lv[i][0]==u->frame && (int)lv[i][1]==u->node) leave=true;

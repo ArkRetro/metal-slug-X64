@@ -32,8 +32,11 @@ Hechos después (11-XI, `docs/MISION4.md` «Fase 2c»): el soldado `0AF17E` del 
 (`neo_heli.c`, familia `m4heli`); el soldado que salta `0AF1A8` (`neo_soldier_ai.c`, familias `m4sold`/`m4sold2`), el
 destello `08CF6E` (`m4spark`) y el camión `02916E` de la cámara 4929 con sus piezas `02A448` (`m4truck`).
 
-Quedan (orden de guion): `0DE0FE`/`0DE24A` (disparos del prisionero que pelea, `0DDCDA`), los animales (tipos 40..42
-de `08C374`, con sus frutas 3D/3F), `08C954`, `0587C4` (+2), y el jefe `02267E` con `0259F2` y la orden
+Después (11-XI, segunda sesión): el prisionero que pelea `0DDCDA` con sus disparos `0DE0FE`/`0DE24A` (`neo_prisoner.c`,
+familias `m4pris`/`m4pris2`) y los animales (tipos 40..42 de `08C374`, `neo_item.c`, familia `m4animal`; sus frutas
+3D/3F traducidas sin captura).
+
+Quedan (orden de guion): `08C954` (rótulo de `08C752`), `0587C4` (+2), y el jefe `02267E` con `0259F2` y la orden
 `0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), G (camión `02916E` y sus piezas), **T (jefe y fin de
 misión, del TAS)**.
 

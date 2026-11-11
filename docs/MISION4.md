@@ -462,34 +462,76 @@ que ya existía; **pendiente** ver si es el arnés —época de los objetos
 dinámicos— o el módulo). Extracción: `--range af000-b0fff` con el juego de
 RAM de la M4 más `--ram 1067e6-1068e6`.
 
+**Prisionero que pelea `0DDCDA..0DE06E` con sus disparos `0DE0FE` / `0DE24A`
+(`src/neo_prisoner.c`; familias `m4pris`, 2211 actualizaciones, y `m4pris2`,
+1321, iguales a MAME).** `099E06` con `+74 = FFFE`: al acabar el saludo
+(`09A30E`) salta a `0DDCDA` con el nodo del jugador en `+76`. Lo sigue (a más
+de 0x28 anda a ±4 0000, `0DDD62`; a menos de 0x18 se para), busca enemigos con
+las filas `0DE494` (cualquiera en 1024 × 512: el **nodo** que `0049E8` devuelve
+en A0 va a `+6E` y el programa `2AFE14` dispara, llamada `0DE3DA`) y `0DE4A4`
+(tipo 5 a su lado: el puñetazo `2AFF14`, llamada `0DE3CE`, sonido `113B`),
+vuelve a la pantalla (`0DE33E` / `0DE35E` → `0DDDC2`), salta donde se acaba el
+suelo o el jugador está a otra altura (`0DE37E` → `0DDF5A`) y cae (`0DDF8C`).
+Si el jugador muere o no está (`0DE016`: `+87`) saluda y se va (`0DE064` →
+`09A318`). El disparo `0DE0FE` persigue al nodo `+6E` (`0040AC`, `002EB4`:
+8 unidades de ángulo por actualización, velocidad 0x1000 · coseno / seno,
+`0DE262`) 15 actualizaciones y estalla (`0DE24A` → `01C706`) con la fila
+`0DE474`; con un enemigo dentro de `0DE484` la llamada crea el estallido
+directamente.
+
+Motor compartido: `neo_ga_target_t.tag` (el nodo de A0 / A1: en el mundo la
+ranura del actor genérico, del soldado con su generación o del nodo de jefe;
+en la prueba, la dirección del nodo) y `e->node(tag)` (los campos que otro
+actor lee de ese nodo o del de un jugador `1014C4` / `101574`: `+00` = `3F1E`
+si ya no existe, `+3C..+43`, `+5E`, `+5F`). El mundo guarda soldados, nodos de
+jefe y actores genéricos en reservas separadas: una ranura reutilizada solo se
+lee como el ocupante nuevo entre actores genéricos (en el original, una sola
+reserva). Prueba: la reserva de nodos entra como RAM (`--ram 1010a4-105564
+--ram-creators`: solo lecturas). `m4pris` = captura E; `m4pris2` = captura J
+(`scratchpad/agA/capJ.sh`: `run4` con `MSX_FULL_IDLE=153720-155200`; el
+prisionero dispara parado, `0DE18E` × 168). **Sin captura** (traducido de la
+ROM, sin comprobar): el puñetazo `0DDF14` / `0DDF42` / `0DE3CE`, la despedida
+`0DE064` y el borrado de `+6E` de `0DE0FE` (el objetivo en x 0x20..0x100 del
+largo `+3C`).
+
+**Animales (objetos de tipo 40..42; `src/neo_item.c`; familia `m4animal`: 54
+nodos, 1554 actualizaciones iguales a MAME, 2 recogidas comprobadas con el
+bloque de armas `10C718` como RAM — contador de comida `10C728`).** Movimiento
+`08BAAA` = `08CCD4` (`01456A` en el suelo, `0143DC` en el aire) + `08B9D8`;
+llamadas de sus programas `289082` / `289CD6` / `28A12C`: `289528` (rebote en
+pared), `28953E`, `289552`, `289570` (`+62` = ∓1 4000), `2895A2` / `2895B2` /
+`2895C2` (azar a `+7D`) y las doce de soltar fruta `2895D8..28969E` →
+`2896B2` (`08CD58` tipo 3D o 3F a (±0x11, 7), `+30` = ±velocidad de la
+entrada, `+74` = 0 / 1 / 2). Frutas: movimientos `08BB3C` / `08BB44` (tabla
+`08BB24`: caída con rebote a la mitad, espera `+8D` = 15, programa `28992A` /
+`289B44`). Captura F2 (como F; la traza de F ya no existía). **Sin captura**:
+en `run4` y en tres réplicas con el mando parado (151250 / 151270 / 151290)
+ningún animal suelta fruta (lo decide el azar en cada ciclo de paseo), así que
+`2896B2`, `08BB3C` / `08BB44` y el tipo 42 están traducidos de la ROM sin
+comprobar; la llamada `289A80` del programa de la fruta 3F (crea `032FB4`) no
+está traducida: parada explícita. Prueba de familia: `--item-kinds` (solo los
+objetos de esos tipos), `--script-kinds` (qué objetos hechos tras el actor del
+guion son de la familia) y `--pickup-ram`.
+
 Lo que falta, con lo que se sabe de cada cosa (nada de esto está portado: son
 paradas explícitas contadas):
 
-- **Prisionero que pelea** (`099E06` con `+74 = FFFE` → `0DDCDA`): sigue al
-  nodo del jugador (`+76`), guarda en `+6E` el **nodo** que devuelve `0049E8`
-  en A0 (filas `0DE494`/`0DE4A4`), lo mira (`01B08A`), comprueba que vive
-  (`0040AC`) y le apunta el disparo `0DE0FE` (ángulo `002EB4`, 8 por
-  actualización, velocidad 0x1000 · seno/coseno). Hace falta que
-  `neo_ga_target_t` lleve la etiqueta del nodo (mundo: actor genérico,
-  soldado o nodo de jefe; prueba: `targets` del fixture) y leer `+3C/+40` de
-  ese nodo. Desensamblado y captura E listos.
-- **Animales** (objetos de tipo 40/41/42, movimiento `08BAAA` = `08CCD4`
-  (`01456A` en el suelo, `0143DC` en el aire) + `08B9D8`; sueltan frutas de
-  tipo 3D/3F con `2896B2` → `08CD58`, cuyos movimientos `08BB3C/08BB44`
-  tampoco están): 14 llamadas de programa sin traducir (`289528`, `28953E`,
-  `289552`, `289570`, `289588` = con `rand & 3 == 0` el destello `08CF6E` en
-  (8, 8), `2895A2`, `2895B2`, `2895C2`, `2895D8`, `2895E6`, `289626`…).
-  `08CF6E`: programa `289704`, paleta 124, `+34 −= 6AA` por actualización,
-  16 + 16 actualizaciones, fuera de `0E5624` (`0C8BEC`) se borra. Captura F.
-- **`08C954`** (rótulo de puntos de `08C752`, que sigue siendo externo),
-  `0587C4` (+ `0592C6`, `059B5C`; 1160 líneas): en la captura A, sin empezar.
-- **`02A448`**: 16 piezas (`02A71E`, reserva 0x2A: en `run4` solo caben 2)
-  que lanza una llamada del programa de muerte del camión `02916E` de la M4
-  (`236A46`: llamadas `02A6C8` y `02A71E`, que `truck_call` no tiene); cada
-  pieza: paletas `02A9BC[+83 & 3]` y 201, programa `02A878[rand & F]` y
-  `01D5AA` (`+62 = (rand & 700) + 200`, `+92/+93 = 3`, ángulo `(rand & 3E) +
-  20`, después `01D5EC` como `frag_launch`). Captura G (`run4`, raíces
-  `2916e,2a448`, intervalo `2916e-2aa00`, 156900..157600) hecha.
+- **`08C954`** (las cifras del rótulo de recogida `08C752`, que sigue siendo
+  externo en todas las misiones): `08C752` crea una cifra `08C954` por dígito
+  de `+6E` (o por byte de la lista `+72`, tabla `0E5782`), con la cuenta
+  `10C5B2[+86]`; cada cifra: paletas `0E559E[+86]`, programa `0E565A` /
+  `0E56EE` (`08CF2E`), sube con la tabla `0E55EC`, espera 0x96 y sale con
+  `0E55CA`. Desensamblado en `scratchpad/agA/8c752.asm` (217 líneas hasta
+  `08CAD0`), sin empezar.
+- **`0587C4`** (+ torreta `0592C6`, restos `059B5C`; 1160 líneas,
+  `scratchpad/agA/587c4.asm`): vehículo de tierra del registro de cámara 4713
+  (`+78` = 1; otras entradas `0587D8` = 3, `058806` = 2), cuerpo sólido
+  `004E76` (`0586A6`), vida de rango `2D105E`, velocidad tope `2D1122`,
+  estados por `+80` (`059C2C` elige programa). **La captura A no sirve**: en
+  `run4` muere 24 actualizaciones después de pararse (`058DD4`), antes de
+  disparar (`058E30` no sale). Hace falta una captura con el mando parado
+  desde 156874 (raíces `587c4,592c6,59b5c`, intervalo `587c4-59f76`) y
+  traducir lo que visite.
 - **Jefe `02267E`** (captura T): el constructor crea 3 `023526`, 4 `02391E`,
   `024226`, `0246D0`, `022CB6` y la música `059F76`; después `023EB4`,
   `023FDE`, `025DC2`, `024F0E` → 64 `02505C`, `025CDE`, `025B6E`, `02591C`,

@@ -216,6 +216,13 @@ de las misiones 2 a 6 fuera del programa residente se recuperan bastante más
 de 49 KB. El suelo debe revisarse cuando exista el jefe de la M4 (su
 `heap_low` con la música `0x2C`).
 
+**Segunda medida (11-XI, tras el prisionero que pelea y los animales, `2b9dca8`)**: la caché baja a **202
+ranuras** (`MSX CACHE slots=202 (3232 KB, floor 200) free=489 KB`, M4 por el menú de pruebas, `heap_low` mínimo
+285 KB en 300 s hasta la cámara 2160): el programa creció ≈ 45 KB con la fusión de la M5 y el código nuevo
+(ELF 2 344 936 bytes). Quedan **2 ranuras (≈ 33 KB de programa) hasta el suelo de 200**: el jefe de la M4
+(≈ 3000 líneas de 68K) no cabe sin recuperar memoria antes (`-Os` en los módulos de misión, tablas fuera del
+ELF o módulos por misión). El paquete de la M4 tiene ahora 976 trozos (límite 1024).
+
 `SCENE_MISSION_CHUNKS_MAX` pasó de 896 a 1024 (la M4 tiene 895 trozos y el
 paquete de formato 4 de la M5 que construye `make check` 935): son 128
 entradas más en las tablas por trozo de `scene_assets.c`; las ranuras medidas

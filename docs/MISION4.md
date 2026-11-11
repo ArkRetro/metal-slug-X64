@@ -708,7 +708,11 @@ imagen de RAM. **Falta**: el resto del jefe (cuerpo `02267E`, `022CB6`, `023526`
 piezas tampoco están: no se dibujan hasta que exista el jefe), el mapa `02225E` / la capa `10D7B6`, la cámara
 automática y el fin de misión.
 
-Tras fusionar además la máquina del metro de la M5 (`467e945`): `make check` RC 0 (**276 PASS**); la misma matriz da lo
+Tras la línea base de la matriz (`b111a4c`): `make check` RC 0 (275 PASS; un primer intento falló en la prueba de
+compresión porque la exportación compartida de la M6 estaba a medio escribir por otro agente: 1194 trozos en formato 4;
+al repetir, bien); matriz: todo PASS menos M6 etapa 1 (la de la línea base) y M5 etapa 1 con `unsupported` 0 → 1
+(`routine=aff5e`, el soldado `0AF1A8`: **intermitente**, 1 de 4 ejecuciones con el mismo cartucho; sale también
+antes de esta fusión). Tras fusionar además la máquina del metro de la M5 (`467e945`): `make check` RC 0 (**276 PASS**); la misma matriz da lo
 mismo (M6 etapas 1 y 3: solo la paleta 125) y la M4 queda en **208 ranuras = el suelo** (sin margen: el próximo
 módulo necesita liberar RAM). Antes, tras los personajes (`fd40fb6` + jefe): `make check` RC 0 (**275 PASS**); `regression_ares.py` con
 el cartucho entero (61 554 688 bytes, con `romfs/chars` enlazado de `ws-logo`): logo, pausa, personajes, M4 (209

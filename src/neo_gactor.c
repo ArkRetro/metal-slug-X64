@@ -414,7 +414,19 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     int16_t w[7];for (unsigned i=0;i<7;i++) w[i]=(int16_t)(r[2*i]<<8|r[2*i+1]);
     if (w[5]<0) return 0;
     uint8_t best=e->attack(e->ctx,a,w);
-    if ((int16_t)(r[14]<<8|r[15])>=0) ga_fail(e,row); /* several (class,damage) pairs: not observed */
+    /* 004B06: one (class, damage) long after another until a negative one,
+     * each against the bodies of its class; D0 is the highest type of all
+     * (the Mission 4 vehicle's ram row 05871A: classes 0 and 1). The A0 / A1
+     * of several pairs were not observed: explicit stop. */
+    for (unsigned k=1;k<8;k++) {
+        const uint8_t *q=r+10u+4u*k;
+        if ((int16_t)(q[0]<<8|q[1])<0) return best;
+        if (e->want_targets) {ga_fail(e,row);return best;}
+        w[5]=(int16_t)(q[0]<<8|q[1]);w[6]=(int16_t)(q[2]<<8|q[3]);
+        e->attack_pair=(uint8_t)k;uint8_t b=e->attack(e->ctx,a,w);e->attack_pair=0;
+        if (b>best) best=b;
+    }
+    ga_fail(e,row);
     return best;
 }
 uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {

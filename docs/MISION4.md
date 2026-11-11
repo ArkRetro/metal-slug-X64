@@ -595,6 +595,87 @@ recién fusionada, la dejó parada: **carrera de la prueba**, no del juego);
 --fire --lifebar`: `RESULT: PASS`, `unsupported=0`, caché de escena 201
 ranuras (suelo 200).
 
+## Fase 2d (11-XI, tercera sesión): memoria, vehículo `0587C4`
+
+**Memoria de programa** (lo primero: la caché estaba a una ranura del suelo): los 928 programas de animación sin
+grupo se leen bajo demanda de `/programs.bin` ([MEMORY_OPTIMIZATION.md](MEMORY_OPTIMIZATION.md) «Programas bajo
+demanda»): imagen −182 KB con el vehículo dentro, caché 212 ranuras, suelo otra vez 208.
+
+**Vehículo de tierra `0587C4` (`src/neo_m4veh.c`; familias `m4veh` 7192 actualizaciones, `m4veh2` 218, `m4veh3`
+568 y `m4veh4` 4487, todas iguales a MAME).** Registro de la cámara 4713 (`+78` = 1). Cuerpo: vida de rango
+`2D105E`, caja `05868E`, cuerpo sólido `0586A6`, paleta 1C (destello 30B), la torreta `0592C6` y la onda `03C532`;
+el estado `+80` elige el programa de la tabla `+7C` (`058752` cuerpo, `058776` torreta; `059C2C`): 0 avanza
+(`0589D2`: `+62` crece `+82` hasta rango `2D1122` << 8), 1 frena (`058C66`), 2 espera (`058CE4`), 3 saca el cañón
+(`058DD4`), 4 apunta (`058E48`), 5 fogonazo `059A3E` / `059A62`, 6 disparo `0594B0` / `0594CE` (cada rango `2D124C`
+actualizaciones, rango `2D11B8` disparos, luego rango `2D11EA` de espera), 7 destruido (`059048` / `0590B8`: pieza
+`059B5C`, `019DFC`, sonidos 1021 / 102F, `01DBAA`). Cada actualización `059214`: suelo o caída, borrado fuera de
+`0586C2`, embestida `05871A` si `+72`, caja, programa. Torreta: sigue al cuerpo (cara, estado, profundidad + 1,
+destello `0044F6`); cuando ella o el cuerpo mueren (`0593B6`) el cuerpo pasa a ser de tipo 2 (`+8F` = FF) y sale el
+estallido `01C6EE`. Disparo: la llamada `059770` de su programa lo lanza (rangos `2D1154` / `2D1186`), `0595B2`
+con la estela `05996A` (`0599F0`), el giro `0597DE` bajo `+7C` o sobre un jugador dentro de `0586DA`, las filas
+`0586E2` / `0586F2`; al acertar, tocar suelo o con `+8F` del cuerpo: sonido 1022 y el estallido `059852`.
+
+Capturas (`scratchpad/agA/`): **L** (mando parado, `capL.sh`), **A** (el piloto de `run4` lo destruye), **N**
+(`capN.sh`, `MSX_FULL_NOFIRE`: el piloto sigue andando, el cuerpo se borra fuera de pantalla y la torreta acaba por
+`0593B6`) y **N55** (`HOP=157200-158400:55 capL.sh`: opción nueva `MSX_FULL_HOP` de `capture_fullgame.lua`, el
+jugador parado salta sobre el sitio y los disparos le dan: 8 estallidos `059852`). L2 = L con volcados cada 30
+(`capL2.sh`) para los sprites. Las trazas de N y N55 se borraron tras hacer los fixtures; quedan A, T, L y L2.
+
+Motor compartido: `ga_attack` admite **varias parejas (clase, daño)** en una fila de `0049E8` (`004B06`: la
+embestida `05871A` lleva las clases 0 y 1; antes era una parada explícita); `neo_genv_t.attack_pair` marca las
+llamadas de las parejas siguientes (la prueba de familia cuenta una sola `0049E8`).
+
+Sprites: 136 descriptores nuevos y las paletas 1C, 1D, 1E, 30B y 37C en la exportación privada de la M4
+(`/home/user/ws-m4-private/filesystem/mission4/rest-native.json`, 10 857 descriptores). **Validados contra VRAM: 50
+fotogramas** (capturas L2 y A, rutinas `587c4-59f76`): 125 992 píxeles iguales, 403 distintos en 6 fotogramas de L2
+(157290, 157320, 157590, 157650, 157800, 157860: entre 2 y 97 píxeles cada uno, **sin revisar**), 7182 solapados.
+
+### Sin verificar, pendiente de captura (traducido de la ROM; ninguna captura lo ejecuta)
+
+Lista medida con `gcov` sobre las cuatro familias del vehículo y la que ya constaba de las sesiones anteriores:
+
+| Familia | Sin captura |
+| --- | --- |
+| Vehículo `0587C4` | las entradas `05879A` / `0587D8` / `058806` (tipos 0, 3 y 2) y lo que solo ellas alcanzan: `058AA8` / `058AEC`, `058B84` / `058BC2`, `058DF6` / `058E0A`, las pruebas de jugador `059EFC` de `058CE4` y `058E48`, la vuelta por `+7A`; el respingo `059C4C` (`24BA5E`) y su reanudación; las ramas mirando a la derecha (`+15` bit 0) de `0589D2` y `059770`; el mapa de celdas del resto (`058656` / `058672`, `+6E` = 1) |
+| Prisionero que pelea `0DDCDA` | el puñetazo `0DDF14` / `0DDF42` / `0DE3CE`, la despedida `0DE064`, el borrado de `+6E` de `0DE0FE` |
+| Animales (tipos 40..42) | soltar fruta `2896B2`, las frutas `08BB3C` / `08BB44` (3D / 3F), el tipo 42; la llamada `289A80` **no está traducida** (parada explícita) |
+| Rótulo `08C752` | el final de las letras (`FF` de `0E55CA`), el borrado `004188` y el del árbol `0041AC`; el sitio de la munición `08B6C8` |
+| Soldado `0AF1A8` | `0AFB44` / `0AFB4A` |
+| Soldado `07E554` | la caída `07E832` y la granada `07EB4E` **no están traducidas** (paradas explícitas; `07E832` salió 4 veces en el recorrido de ares) |
+
+Se intentó en esta sesión: el vehículo (hecho: N y N55 cubren el borrado, el fin de la torreta y el estallido).
+La fruta de los animales: otras seis réplicas con el mando parado desde 151310 / 151340 / 151370 / 151400 / 151440 /
+151480 (`scratchpad/agA/tryfruit.sh`: busca escrituras con PC en `2896B2..`): ninguna suelta fruta (nueve réplicas
+con las tres de antes); sigue pendiente.
+`MSX_FULL_HOP` + `MSX_FULL_IDLE` sirve para forzar más situaciones desde `sec05` (un jugador parado que salta).
+
+**No hecho**: el jefe `02267E` (captura T, 95 rutinas), el fin de misión, las celdas de las copias de `0E6DA8` del
+camino del jefe y la conexión del rótulo (`MSX_PICKUP_LABEL` sigue en 0): sus letras tienen que estar en la
+exportación **base** (`filesystem/rest-native.json`, de la que sale `scene.pack` y `scene_meta.h`), y esa exportación
+con la lista de raíces actual metería en la base los sprites de todas las misiones; hace falta su receta (o un
+filtro de raíces) y rehacer `scene.pack` y todos los paquetes, coordinado con el trabajo de compresión de
+`sprites.bin`. En el recorrido de ares salieron además dos paradas sin familia: `world unsupported
+routine=2058e` y `routine=1fece` (una vez cada una).
+
+### Puertas de la tercera sesión (11-XI)
+
+`make -j4` RC 0 (`mslugx-explorer.z64` 67 010 560 bytes: **quedan 32 KB hasta los 67 043 328** con los que ares deja
+de escribir el log; el cartucho de referencia mide justo 67 043 328 y aún funciona); `make check` RC 0 (**256 PASS**,
+con `m4veh`..`m4veh4` y la prueba de `programs.bin`); `tools/test_mission4_ares.py mslugx-explorer.z64 --seconds 150
+--jump 2.5 --fire --lifebar`: `RESULT: PASS`, `unsupported=0`, **212 ranuras** (suelo 208), 488 KB libres,
+`heap_low` 277 KB; `tools/test_m1m2_ares.py` con `mslugx-m1end.z64` recién hecho: `RESULT: PASS`, 213 ranuras,
+`heap_low` 308 KB (la prueba ya no pulsa START fuera de las cinemáticas: la pulsación caía en la partida y era la
+pausa de la ROM; `cinematic_running`). Misión 1 entera con `mslugx-reference.z64`: PASS.
+
+**El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
+(derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
+los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. No se ha investigado si es el mando
+(no dispara hacia arriba a los helicópteros `085522`) o una espera del guion mal resuelta; el mortal muere en 2160.
+Paradas nuevas vistas en ese recorrido largo: `routine=1fece` y `routine=2058e` (una vez cada una), `7e832` (4).
+
+**Siguiente paso**: (0) por qué la cámara se queda en 4360 en ares; (1) el jefe `02267E` con la captura T (`scratchpad/boss4.txt`): ya hay memoria (≈ 4 ranuras
+sobre el suelo de 208); (2) fin de misión; (3) rótulo en la base; (4) `2058E`, `07E832`, `289A80`.
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

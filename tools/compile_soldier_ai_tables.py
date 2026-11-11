@@ -100,6 +100,35 @@ for i in sorted(range(len(texts)),key=lambda k:(-len(texts[k]),k)):
     if t and (group[i],t) in tails: storage[i]=tails[(group[i],t)];continue
     storage[i]=(i,0)
     for k in range(len(t)): tails.setdefault((group[i],t[k:]),(i,k))
+# The programs of no group are not in the console image either
+# (docs/MEMORY_OPTIMIZATION.md "Programs on demand"): build/programs.bin, in
+# the cartridge's file system, holds their commands as the 10-byte records of
+# the mission packs ('MSXD', pack_mission.py) and the image keeps one
+# reference per program (tag, offset, count; tags ascending). neo_world.c
+# reads a program the first time it is asked for.
+import re,struct
+_enum=re.sub(r'/\*.*?\*/','',re.search(r'typedef enum \{(.*?)\} neo_anim_kind_t;',(ROOT/'src/neo_animation.h').read_text(),re.S).group(1),flags=re.S)
+KIND_NUMBER={n.strip():k for k,n in enumerate(x for x in _enum.split(',') if x.strip())}
+def command_record(c):
+    asset=(0x1adaa if c['kind']=='FLIP_FACING' else c['asset'])&0xffffffff
+    assert asset<0x800000 or asset>=0xff800000
+    return struct.pack('>B',KIND_NUMBER[kinds[c['kind']]])+(asset&0xffffff).to_bytes(3,'big')+struct.pack('>HBBbb',c['target'],c['operand'],c['flags'],c['dx'],c['dy'])
+file_at={};file_body=bytearray()
+for i,prog in enumerate(p['programs']):
+    if group[i] or storage[i][0]!=i: continue
+    file_at[i]=16+len(file_body)
+    for c in prog['commands']: file_body+=command_record(c)
+refs=sorted((prog['root'],file_at[storage[i][0]]+10*storage[i][1],len(prog['commands'])) for i,prog in enumerate(p['programs']) if not group[i])
+assert len({r[0] for r in refs})==len(refs),'two programs of the image share a tag'
+assert all(r[2] for r in refs)
+(ROOT/'build').mkdir(exist_ok=True)
+(ROOT/'build/programs.bin').write_bytes(b'MSXP'+struct.pack('>HHII',1,0,len(refs),16+len(file_body))+bytes(file_body))
+L.append('typedef struct { uint32_t tag,offset; uint16_t count; } soldier_program_ref_t;')
+L.append('#define SOLDIER_PROGRAM_FILE_BYTES %du'%(16+len(file_body)))
+L.append('static const soldier_program_ref_t soldier_program_refs[]={')
+for r in refs: L.append('{0x%x,%d,%d},'%r)
+L.append('};')
+L.append('#ifndef N64')
 for i,prog in enumerate(p['programs']):
     if group[i]: L.append('#if %s'%GUARD[group[i]])
     if storage[i][0]==i:
@@ -124,6 +153,7 @@ for i,prog in enumerate(p['programs']):
     L.append('{0x%x,{soldier_program_%d+%d,%d},SOLDIER_PROGRAM_ADDRESS(%d)},'%(prog['root'],storage[i][0],storage[i][1],len(prog['commands']),i))
     if group[i]: L.append('#endif')
 L.append('};')
+L.append('#endif')
 L.append('#endif')
 L.append('#endif')
 (ROOT/'build').mkdir(exist_ok=True);(ROOT/'build/soldier_ai_tables.h').write_text('\n'.join(L)+'\n')

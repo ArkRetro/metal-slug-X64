@@ -330,5 +330,8 @@ void neo_world_camera(neo_world_t *world,const neo_world_player_t *player);
 const neo_anim_program_t *neo_world_program(uint32_t tag);
 /* Programs looked up after the image's (the loaded mission's, actor.c:
  * scene_stage_program). */
+/* Console: forgets the programs read on demand (program_file.c). Only when
+ * nothing holds a program any more: msx_game_init, which clears the game. */
+void neo_world_programs_reset(void);
 void neo_world_set_program_extra(const neo_anim_program_t *(*lookup)(uint32_t tag));
 #endif

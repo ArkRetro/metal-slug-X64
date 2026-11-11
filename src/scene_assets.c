@@ -33,10 +33,11 @@ enum {
      * set (65) and three soldier programs (83) with some room; below it
      * something else took the RAM (the cache is sized last, from the free
      * heap left after the audio, so whatever loads before shrinks it).
-     * 200 since the Mission 4 props (neo_m4props.c: 13 KB of code and
-     * tables took the 208th slot, docs/MISION4.md); the three sets above
-     * need 197. */
-    SCENE_EXPANDED_MIN_SLOTS=200,
+     * 208 again since the animation programs are read on demand
+     * (program_file.c, docs/MEMORY_OPTIMIZATION.md "Programas bajo demanda":
+     * 212 slots measured with the Mission 4 vehicle in; it was 200 while the
+     * programs were in the image); the three sets above need 197. */
+    SCENE_EXPANDED_MIN_SLOTS=208,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank

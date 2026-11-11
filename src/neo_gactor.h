@@ -195,6 +195,9 @@ struct neo_genv {
      * tie, in the registry's slot order (004B06: 16..31, 0..15, 48..63,
      * 32..47). */
     bool want_targets;
+    /* Nonzero while ga_attack calls `attack` again for the second and later
+     * (class, damage) pairs of the same row (one 0049E8 of the original). */
+    uint8_t attack_pair;
     neo_ga_target_t target[2];
     /* The node behind a target's tag or a player's node address (1014C4 /
      * 101574), as the fields the original reads of another node: +00 (0040AC:

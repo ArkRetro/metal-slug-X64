@@ -390,6 +390,7 @@ static neo_genv_t *answer_env;
 static unsigned answer_first,answer_count,answer_used,answers;
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     (void)ctx;(void)a;(void)row;
+    if (answer_env->attack_pair) return 0;   /* the same 0049E8: its recorded result went with the first pair */
     if (answer_used>=answer_count) {answer_used++;return 0;}
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {

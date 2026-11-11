@@ -94,7 +94,7 @@ def actor_frames(mission):
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
 # Mission 4 shares enemies with Mission 3 (grenadiers, shield soldiers, the bomber's family...): its pack carries both groups.
-GROUPS={2:('m2',),3:('m3',),4:('m3','m4'),5:('m3','m5')}   # Mission 5 uses the Mission 3 soldiers 05C53C and their weapons too
+GROUPS={2:('m2',),3:('m3',),4:('m3','m4'),5:('m3','m5'),6:('m3','m4','m5')}   # Mission 5 uses the Mission 3 soldiers 05C53C and their weapons too
 def c_layer(patch):
     layers={c['layer'] for c in patch['cells']};assert len(layers)==1;return layers.pop()
 def anim_kinds():

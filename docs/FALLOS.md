@@ -50,11 +50,13 @@ Línea base (`data/regression_baseline.json`, 11-XI): cartucho de la ROM 50 (`ae
 un `m1end` recién hecho; todo PASS salvo `m6s1` (FAIL conocido: el agua; B68). Los recuentos de dibujos ausentes de la M6
 dependen del tiempo que la prueba pasa con esos actores en pantalla (90 s), no solo del cartucho.
 
+Línea base nueva (B70, `work-chars` sobre ccr `401875e`, cartucho de 62 111 744 B con los paquetes rehechos): todo PASS, también `m6s1` (balsas; corre con `--jump 1.0 --continues`) y `m6s2` (`--fire --jump 2.5 --continues`: sus soldados ya andan con los grupos m3/m4/m5 y matan a un jugador que ni dispara ni salta); 0 dibujos ausentes en las tres etapas de la M6.
+
 ## 5. Abierto ahora
 
 | Fallo | Estado |
 | --- | --- |
-| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | no era regresión (B68): 320 es el final de la arena en MAME y la prueba pedía 600; la paleta 125 ya faltaba en la ROM 47 (actores de la M6, fase 2) |
-| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | los de la ROM 47 (B68); FAIL conocido en la línea base |
+| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | no era regresión (B68): 320 es el final de la arena en MAME; la paleta 125, corregida (B70) |
+| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | corregido (B70): las balsas `0BD71E` portadas y la M6 con su `rest-native.json` y los grupos m3, m4, m5; queda el puente colgante `10D7B6` (MISION6.md «Fase 2») |
 | Prueba de personajes que supera 600 s | tiempo de la prueba ampliado a 1800 s en la matriz |
 | Voz de muerte de Tarma `1087` | pendiente de captura con audio |

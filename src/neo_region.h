@@ -55,6 +55,7 @@ bool neo_truck_routine(uint32_t routine);
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 01D51A / 01D54A / 01D578 entered by JMP with the program started (098C0C). */
 ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail);
+ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e);   /* JMP 01D5AA */
 bool neo_effects_routine(uint32_t routine);
 ga_result_t neo_flyer_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_flyer_routine(uint32_t routine);

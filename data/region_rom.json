@@ -1503,6 +1503,18 @@
    "reader": "085F84 Mission 4 helicopter: heading scores 085FB8 / 085FC1",
    "hex": "0000000000000000003c32280000000000000000000000283200",
    "group": "m4"
+  },
+  {
+   "rom": "0x02A878",
+   "reader": "02A448 Mission 4 truck pieces: programs 02A878[rand & F]",
+   "hex": "00236a8800236af200236af200236b4800236b4800236b4800236b9e00236bb800236aba00236b1a00236b1a00236b7000236b7000236b7000236ba800236bc2",
+   "group": "m4"
+  },
+  {
+   "rom": "0x02A9BC",
+   "reader": "02A448 Mission 4 truck pieces: palettes 02A9BC[+83 & 3]",
+   "hex": "023a032f0372023a",
+   "group": "m4"
   }
  ]
 }

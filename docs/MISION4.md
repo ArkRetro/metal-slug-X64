@@ -395,6 +395,40 @@ Capturas nuevas (privadas, `/home/user/captures-m4/fam/`):
 `capture_fullgame.lua` (`MSX_TAS_FAMILY_ROOTS/RANGE/NODES/VRAM`,
 `MSX_TAS_DUMP_PERIOD`), solo lectura.
 
+**Helicópteros `08514A..086062` (`src/neo_heli.c`, familia `m4heli`: 51
+nodos, 4774 actualizaciones iguales a MAME, 154171..157449; captura A,
+`--range 8514a-86070 --ram 101500-101508`).** Tres raíces del guion:
+
+- `08571C` (+ fogonazo `085952`): helicóptero de fondo a escala (`+12/+13`,
+  `AF` si el registro trae 0), sin caja; velocidad de rango `2D5320`, al pasar
+  su x objetivo espera rango `2D533A` actualizaciones (con fogonazo si `+70`)
+  y da la vuelta (`FF80`/`1C0`).
+- `085522` (+ fogonazo `0859E4` y bomba `085ACE`): el que ataca. Vida de rango
+  `2D5132`, bombas `2D51CE`, límites de velocidad `2D514C[rango 2D515C]`;
+  persigue al jugador (`085D2E`: rumbo entre 16 por las puntuaciones
+  `085FB8/085FC1`, velocidad por la distancia `002F1A`, 1/16 por
+  actualización, tope ±8 0000) y, tras la espera de rango `2D521C` y sin
+  jugador dentro de `0E4DB4`, se para y dispara (la llamada `085DEE` del
+  programa del fogonazo crea la bomba tras el actor del guion con el rumbo al
+  jugador / 16). Se va (`0856CA`, `03B332`) cuando la cámara pasa su `+80` o
+  se le acaban las bombas. Al morir (`085880`) suelta su objeto (`08604A` →
+  `08CDB2` con `+7A/+7C`).
+- `08514A` → `085294`: la escuadrilla. Un helicóptero cada 3000 / rango
+  `2D50A6` actualizaciones por el camino `0E4D04/0E4D10[+8A]` (`021288`); cada
+  rango `2D5024` actualizaciones uno de los vivos dispara (`+8D`); si caen
+  todos, los puntos `08D1D0` con `+84`.
+
+`2D521C` es una tabla de **tipo 2** de `0260C8` (fila de bytes, juegos de 16
+bytes, una palabra al azar de 8: `02617A`): `ga_rank_word` devuelve el byte
+de la fila, no la palabra (**pendiente**: corregirlo en `neo_gactor.c`; las
+familias con tablas de tipo 2 llevan su propio lector, como `neo_m3boss.c` y
+ahora `m4h_rank`). El entorno lleva la palabra baja de `+40` de los jugadores
+(`player_ylow`, RAM `101506`); **el mundo no rellena todavía ni `player_low`
+ni `player_ylow`** (valen 0: el jugador del port no tiene fracción de píxel
+que darles; pendiente). Exportación de sprites: 142 entradas con zoom
+saltadas (los de fondo) y 1360 píxeles distintos en 10 fotogramas de
+validación (156030..157410, helicópteros bajo fuego): **sin revisar**.
+
 Lo que falta, con lo que se sabe de cada cosa (nada de esto está portado: son
 paradas explícitas contadas):
 
@@ -418,15 +452,23 @@ paradas explícitas contadas):
   `neo_ga_target_t` lleve la etiqueta del nodo (mundo: actor genérico,
   soldado o nodo de jefe; prueba: `targets` del fixture) y leer `+3C/+40` de
   ese nodo. Desensamblado y captura E listos.
-- **Animales** (objetos de tipo 40/41/42, movimiento `08BAAA` = `08CCD4` +
-  `08B9D8`): 14 llamadas de programa sin traducir (`289528`, `28953E`,
+- **Animales** (objetos de tipo 40/41/42, movimiento `08BAAA` = `08CCD4`
+  (`01456A` en el suelo, `0143DC` en el aire) + `08B9D8`; sueltan frutas de
+  tipo 3D/3F con `2896B2` → `08CD58`, cuyos movimientos `08BB3C/08BB44`
+  tampoco están): 14 llamadas de programa sin traducir (`289528`, `28953E`,
   `289552`, `289570`, `289588` = con `rand & 3 == 0` el destello `08CF6E` en
   (8, 8), `2895A2`, `2895B2`, `2895C2`, `2895D8`, `2895E6`, `289626`…).
   `08CF6E`: programa `289704`, paleta 124, `+34 −= 6AA` por actualización,
   16 + 16 actualizaciones, fuera de `0E5624` (`0C8BEC`) se borra. Captura F.
-- **`08C954`** (rótulo de puntos de `08C752`, 5 creaciones), `08571C`/`085952`,
-  `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`, `0587C4` (+ `0592C6`,
-  `059B5C`; 1160 líneas), `02A448`: en la captura A, sin empezar.
+- **`08C954`** (rótulo de puntos de `08C752`, que sigue siendo externo),
+  `0587C4` (+ `0592C6`, `059B5C`; 1160 líneas): en la captura A, sin empezar.
+- **`02A448`**: 16 piezas (`02A71E`, reserva 0x2A: en `run4` solo caben 2)
+  que lanza una llamada del programa de muerte del camión `02916E` de la M4
+  (`236A46`: llamadas `02A6C8` y `02A71E`, que `truck_call` no tiene); cada
+  pieza: paletas `02A9BC[+83 & 3]` y 201, programa `02A878[rand & F]` y
+  `01D5AA` (`+62 = (rand & 700) + 200`, `+92/+93 = 3`, ángulo `(rand & 3E) +
+  20`, después `01D5EC` como `frag_launch`). Captura G (`run4`, raíces
+  `2916e,2a448`, intervalo `2916e-2aa00`, 156900..157600) hecha.
 - **Jefe `02267E`** (captura T): el constructor crea 3 `023526`, 4 `02391E`,
   `024226`, `0246D0`, `022CB6` y la música `059F76`; después `023EB4`,
   `023FDE`, `025DC2`, `024F0E` → 64 `02505C`, `025CDE`, `025B6E`, `02591C`,

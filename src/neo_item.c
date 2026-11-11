@@ -70,6 +70,12 @@ static bool item_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_
     if (kind!=NEO_ANIM_CALL) return false;
     switch (routine) {
     case 0x2881ca: if (BIT(0x15,6) && !L(0x30)) SB(0x7d,L(0x34)?0:0xff);return true;
+    case 0x289588:   /* the animals (kinds 40..42): one time in four the sparkle 08CF6E after the script actor at (8, 8) (08D08E: x by the facing) */
+        if (!(ga_rand(e)&3u)) {
+            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8cf6e,true):NULL;
+            if (c) ga_place_at(c,a,e,BIT(0x15,0)?-8:8,8);
+        }
+        return true;
     case 0x287d50: SB(0x7d,BIT(0x15,6)?0xff:0);return true;
     case 0x2881e6: k2881e6(a,e);return true;
     /* The foods (kinds 35.., motion 08BAB2): rolling speed and the
@@ -523,6 +529,24 @@ static bool label_routine(uint32_t r) {return r==0x8d330 || r==0x8d4de || r==0x8
 static ga_result_t item_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t rec;
     switch (L(0)) {
+    /* 08CF6E: the sparkle of the animals (kinds 40..42, call 289588): program
+     * 289704, palette 124, +34 -= 6AA each update (01AC38); after 0x10 updates
+     * +5F bit 3 and 0x10 more, or outside 0E5624 (0C8BEC): 004188. */
+    case 0x8cf6e:
+        START(0x289704);ga_palette(a,0x124);SL(0x30,0);SL(0x34,0);SW(0x6e,0);SW(0x70,0);SL(0,0x8cfa2);
+        /* fall through */
+    case 0x8cfa2: {
+        SL(0x34,L(0x34)+0xfffff956u);ga_move(a,e);
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        SW(0x6e,W(0x6e)+1u);
+        if (W(0x6e)>0xfu) {SW(0x6e,0xf);SET(0x5f,3);}
+        if (BIT(0x5f,3)) {
+            SW(0x70,W(0x70)+1u);
+            if (W(0x70)>0xfu) return GA_DELETE;
+        }
+        if (ga_outside_view(a,e,0xe5624)) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     case 0x8c68e:                                                    /* sparkle */
         START(0x28617e);ga_palette(a,0x380);SL(0,0x8c6b2);
         /* fall through */
@@ -617,7 +641,7 @@ view:
     if (B(0x8b) && ga_creator_alive(a,e)) return GA_MORE;
     return ga_outside_view(a,e,0xe5624)?GA_DELETE:GA_MORE;
 }
-bool neo_item_routine(uint32_t r) {return label_routine(r) || r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564 || r==0x8c66a || r==0x8c68e || r==0x8c6b2;}
+bool neo_item_routine(uint32_t r) {return label_routine(r) || r==0x8cf6e || r==0x8cfa2 || r==0x8c374 || r==0x8c37c || r==0x8c53c || r==0x8c564 || r==0x8c66a || r==0x8c68e || r==0x8c6b2;}
 /* The code a pickup stops at when it cannot be served (no pickup state,
  * untranslated routine or refusal): explicit stops of the native items. */
 bool neo_item_pickup(uint32_t routine) {

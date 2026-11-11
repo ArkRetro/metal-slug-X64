@@ -996,9 +996,9 @@ static ga_result_t m4h_tick(neo_gactor_t *a,neo_genv_t *e) {
         SW(0x74,m4h_rank(a,e,0x2d533a));
         if (e->unsupported) return GA_UNSUPPORTED;
         if (BIT(0x85,0)) {
-            if (!(c=m4h_kid(a,e,0x85952))) {ga_fail(e,0x85802);return GA_UNSUPPORTED;}
+            /* a failed 0040BC leaves the dummy node 101624 in A0: the write is lost */
             int16_t v=(int16_t)(uint16_t)(W(0x74)-8u);
-            ga_sb(c,0x86,(uint8_t)((uint16_t)(v<0?0:v)>>1));
+            if ((c=m4h_kid(a,e,0x85952))) ga_sb(c,0x86,(uint8_t)((uint16_t)(v<0?0:v)>>1));
         }
         SL(0,0x85820);
     }
@@ -1235,7 +1235,7 @@ static bool m4h_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t
     case 0x85d1e:SB(0x86,B(0x87)?1:0);return true;
     case 0x85dee: {                                                      /* the bomb after the script actor */
         neo_gactor_t *c=after_script(a,e,0x85ace,0,0);
-        if (!c) {ga_fail(e,0x85dfe);return true;}
+        if (!c) return true;                                           /* the dummy node 101624 */
         ga_sw(c,0x82,W(0x82));
         uint8_t d0=0x80;
         if (m4h_live(e,L(0x6e))) d0=m4h_aim(a,e,L(0x6e));

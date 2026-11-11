@@ -246,10 +246,20 @@ typedef struct {
     uint32_t map_patch[64][2];uint8_t map_patches;uint32_t map_patch_at[64];   /* SCENE_STAGE_PATCHES */
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
-     * nonzero). neo_world_init sets MSX_BLOOD (default 1: ON, the Japanese
-     * header default); the US/EU headers default it to OFF. */
+     * nonzero). neo_world_init copies neo_softdip[NEO_DIP_BLOOD]. */
     bool blood;
 } neo_world_t;
+/* RAM 10FD88..10FD8F: the soft-DIP bytes the MVS BIOS copies from the game's
+ * settings (header table of 250-p1.p1, EU at 0x316E; docs/OPCIONES.md). A
+ * list setting holds the index of its option, HERO the count. The readers
+ * read the byte, never a copy: 0C942C/0C9420 lives (0 counts as 1), 0186D4/
+ * 019008/0C9848 continue, 0260D8 rank, 003586 play time, 012160/0122AE
+ * attract sound (RAM 100088 = 1), 016BD4 HOW TO PLAY (after Start on the
+ * MVS path), 01B2BE/032B94 blood. The values below are those of every MAME
+ * capture (BLOOD: MSX_BLOOD); the N64 options screen (src/msx_options.c)
+ * writes them as the BIOS would. */
+enum { NEO_DIP_HERO=0, NEO_DIP_CONTINUE=2, NEO_DIP_DIFFICULTY=3, NEO_DIP_PLAY_TIME=4, NEO_DIP_DEMO_SOUND=5, NEO_DIP_PLAY_MANUAL=6, NEO_DIP_BLOOD=7, NEO_DIPS=8 };
+extern uint8_t neo_softdip[NEO_DIPS];
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */
 void neo_world_init(neo_world_t *world,int32_t scroll_x);

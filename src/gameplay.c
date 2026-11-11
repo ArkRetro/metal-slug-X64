@@ -96,11 +96,13 @@ void msx_game_init(msx_game_t *g) {
     /* Reference traversal build only: the original's debug flag 10F000 bit 7
      * (a destroyed vehicle keeps its rider), as the player ignores hits. */
     g->world.dip10f000=MSX_REFERENCE_INVULNERABLE?0x80u:0u;
-    /* Mission start: timer 003586 (DIP index 0 of 10FD8C: 60, as in the
-     * captures), lives 10FD88 = 3 (0C9406), one taken by the first spawn
-     * (0C95E6). */
-    neo_hud_init(&g->hud,(uint16_t)(neo_hud_timer_start(MSX_HUD_TIMER_DIP)<<8|0xff));
-    g->hud.panel[0].f84=3;neo_hud_life_lost(&g->hud,0);
+    /* Mission start: timer 003586 (DIP index of 10FD8C; 0, 60, in the
+     * captures), lives 0C942C from 10FD88 (1 when 0; 3 in the captures), one
+     * taken by the first spawn (0C95E6). */
+    neo_hud_init(&g->hud,(uint16_t)(neo_hud_timer_start(neo_softdip[NEO_DIP_PLAY_TIME])<<8|0xff));
+    g->hud.panel[0].f84=neo_softdip[NEO_DIP_HERO]?neo_softdip[NEO_DIP_HERO]:1;neo_hud_life_lost(&g->hud,0);
+    FALL_LOG("MSX GAME dips lives=%u continue=%u rank=%u timer=%u blood=%u\n",g->hud.panel[0].f84,neo_softdip[NEO_DIP_CONTINUE],
+        neo_softdip[NEO_DIP_DIFFICULTY],neo_hud_timer_start(neo_softdip[NEO_DIP_PLAY_TIME]),g->world.blood);
 }
 /* One update of the original HUD with the port's state (neo_hud.c): single
  * player game on the home cartridge path (docs/FIN_PARTIDA.md, "HUD sin
@@ -113,7 +115,7 @@ void msx_game_init(msx_game_t *g) {
  * gauge of player 1's slot 10C608 (0AAAE0), timer running while the mission
  * is in play. */
 static void hud_step(msx_game_t *g) {
-    if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);}
+    if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,neo_softdip[NEO_DIP_PLAY_TIME]);}
     neo_hud_input_t in={0};
     in.hud_on=true;in.join_mask=3;in.mvs=false;in.credits_available=true;in.credit_text=false;in.credits=0;
     /* 0C071C/0C0764 read player 1's vehicle slot 10C608 (ARMS infinite and
@@ -128,11 +130,11 @@ static void hud_step(msx_game_t *g) {
     memcpy(in.score,g->world.pickup.score[0],4);in.rescued=g->world.ga_flags.rescued[0];
     in.video=(uint16_t)(g->ticks>>1);
     in.timer_running=!g->complete && !g->mission_complete && !g->awaiting_continue;
-    /* Continue (docs/MISION1_COMPLETA.md, game over): DIP 10FD8A on, free play
+    /* Continue (docs/MISION1_COMPLETA.md, game over): DIP 10FD8A (on in the captures), free play
      * (the home cartridge's AES path of 0C987A: a continue is always offered,
      * Start takes it), lives DIP 3, B of the arcade (the port's jump) speeds
-     * the countdown (0187B0). */
-    in.continue_dip=true;in.can_continue=true;in.credit_count=0;in.lives_dip=3;
+     * the countdown (0187B0). DIP 10FD8A and 10FD88: neo_softdip. */
+    in.continue_dip=neo_softdip[NEO_DIP_CONTINUE]!=0;in.can_continue=true;in.credit_count=0;in.lives_dip=neo_softdip[NEO_DIP_HERO];
     in.start=g->start_edge;in.speedup=g->jump_edge;in.no_life=g->no_life;g->no_life=false;
     neo_hud_frame(&g->hud,&in);
     /* 01883C: the mission actor's 00427A while the countdown runs (012022:
@@ -233,7 +235,7 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
      * keep the index until their value is read in a capture. */
     g->world.pickup.mission=g->flow.mission==2u?4u:g->flow.mission==3u?5u:g->flow.mission;
     /* Each stage starts its timer again (DIP 60, the run4 capture). */
-    neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
+    neo_hud_timer_reset(&g->hud,neo_softdip[NEO_DIP_PLAY_TIME]);
     g->in_stage=true;g->stage_camera_max=camera_max;
     /* On the highest floor of the left edge (run4: y 64, 184 and 48 at the
      * three stage starts; the grid's top rows are empty), searched in the
@@ -454,7 +456,7 @@ static void new_life(msx_game_t *g) {
     /* No life left: the panel's game over 0C9848 (neo_hud.c) runs in the
      * next HUD update; the player stays gone until its continue. */
     if (!neo_hud_life_lost(&g->hud,0)) {g->hud_game_over++;g->no_life=true;g->awaiting_continue=true;return;}
-    neo_hud_timer_reset(&g->hud,MSX_HUD_TIMER_DIP);
+    neo_hud_timer_reset(&g->hud,neo_softdip[NEO_DIP_PLAY_TIME]);
     if (g->lifebar) g->life_hits=MSX_LIFEBAR_HITS;
     marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     memset(g->bullets,0,sizeof(g->bullets));

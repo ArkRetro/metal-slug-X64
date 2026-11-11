@@ -29,9 +29,6 @@ enum { MSX_BULLETS=16, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
 /* up: fired with up held (moves up, original pistol attack row 4). */
 /* kind: weapon id that fired it (RAM 10C71E); 0 = pistol. */
-#ifndef MSX_HUD_TIMER_DIP
-#define MSX_HUD_TIMER_DIP 0   /* RAM 10FD8C (003586 index): 60 */
-#endif
 typedef struct { int x,y,direction; bool active,up; uint8_t kind; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the

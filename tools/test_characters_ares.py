@@ -54,7 +54,7 @@ for place in [int(x) for x in a.places.split(',')]:
                 if found:subprocess.run([XD,'windowmove',found[-1],'0','0']);subprocess.run([XD,'windowfocus',found[-1]]);focused=True
             # Start only while the title or HOW TO PLAY runs: SOLDIER SELECT plays to its wait.
             t=log()
-            if focused and (('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t)):tap('Return')
+            if focused and (('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t)):tap('Return')
             time.sleep(1.0)
         window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]
         subprocess.run([XD,'windowmove',window,'0','0'],check=True);subprocess.run([XD,'windowfocus','--sync',window],check=True)

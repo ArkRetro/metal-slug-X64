@@ -4,16 +4,21 @@
 #include "msx_audio.h"
 #include "msx_perf.h"
 #include "title_motion_meta.h"
+#include "neo_world.h"
 bool msx_title_intro(const char *next) {
  if(!msx_cinematic_open("rom:/title.msxc")) return false;
  if(next) msx_cinematic_prepare(next);   // read and decoded ahead in the title's spare frame time
  unsigned count=msx_cinematic_stats().frames;
  uint32_t first_crc=msx_cinematic_pixels_crc();
  if(count!=MSX_ENTRY_FRAMES || first_crc!=msx_entry_crc[0]) {msx_cinematic_close();return false;}
- if(!msx_audio_open(MSX_AUDIO_MUSIC,"rom:/title-motion.wav64")) {msx_cinematic_close();return false;}
+ /* DEMO SOUND (RAM 10FD8D): the title is the attract (RAM 100088 = 1), whose
+  * sound commands 012160/0122AE drop when it is 0 (MAME 0.264, euro BIOS,
+  * 10FD8D = 0: no command from frame 335 to the coin; docs/OPCIONES.md). */
+ bool sound=neo_softdip[NEO_DIP_DEMO_SOUND]!=0;
+ if(sound && !msx_audio_open(MSX_AUDIO_MUSIC,"rom:/title-motion.wav64")) {msx_cinematic_close();return false;}
  // Prepare the initial RDP path before starting the synchronized timeline.
  msx_frames_stage("title");msx_cinematic_draw(display_get());msx_frames_present();
- if(!msx_audio_play(MSX_AUDIO_MUSIC,false,.8f)) {msx_cinematic_close();return false;}
+ if(sound && !msx_audio_play(MSX_AUDIO_MUSIC,false,.8f)) {msx_cinematic_close();return false;}
  bool previous=true,skipped=false;unsigned rendered=0,unique=0,dropped=0,last=~0u;
  debugf("MSX TITLE start crc=%08lx audio=%u\n",(unsigned long)first_crc,msx_audio_playing(MSX_AUDIO_MUSIC));
  uint32_t began=TICKS_READ(),audio_max=0,previous_draw=0;

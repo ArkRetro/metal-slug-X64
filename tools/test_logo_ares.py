@@ -104,6 +104,8 @@ try:
             cad=re.search(r'MSX TITLE cadence unique=(\d+) dropped=(\d+)',log());assert cad
             assert 'title' in skips or int(cad[2])==0,('dropped title frames',cad[0])
             stages['title']=dict(frames=int(t[1]),skipped='title' in skips,dropped=int(cad[2]))
+            # The options screen (docs/OPCIONES.md) when the cartridge has the table: Start leaves it.
+            if 'MSX OPTIONS start' in log():wait(r'MSX OPTIONS open',120);time.sleep(.5);press_start();wait(r'MSX OPTIONS close',30)
             # HOW TO PLAY / SOLDIER SELECT / the choice (optional files): the
             # selection waits on P1 at Marco for A or Start.
             done=[]

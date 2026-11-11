@@ -44,6 +44,7 @@ def wait(pattern,seconds=120):
 def cinematic_running(text):
     last=None
     for m in re.finditer(r'MSX (TITLE|CINE (?:howto|select|confirm|entry)) (start|complete)',text):last=m
+    if 'MSX OPTIONS open' in text and 'MSX OPTIONS close' not in text:return True   # the options screen: Start leaves it
     return last is not None and last.group(2)=='start' and 'entry' not in last.group(1)
 stop=threading.Event();grabs=[]
 def grabber():

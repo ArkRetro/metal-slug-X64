@@ -27,10 +27,13 @@ static uint8_t soldier_entry_flags81(uint32_t r) {
 #define SOLDIER_TAG(w,i) (0x70000000u|(uint32_t)(w)->soldier_gen[i]<<8|(uint32_t)(i))
 /* The pool index of the soldier view (tags a generic node keeps of a soldier it created). */
 enum { SOLDIER_VIEW_INDEX=0x4000 };
-/* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player.
- * RAM 10FD8F (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
+/* Observed settings of every capture: RAM 100088 = 2, one player. The rank
+ * 10FD8B (3 in every capture) is neo_softdip[NEO_DIP_DIFFICULTY]. RAM 10FD8F
+ * (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
  * (src/neo_blood.c: 037A ON, 03BA OFF). */
-enum { MODE88=2, RANK=3, SPLASH_PROGRAM=0x2402fa };
+enum { MODE88=2, SPLASH_PROGRAM=0x2402fa };
+uint8_t neo_softdip[NEO_DIPS]={3,0xff,1,3,0,1,1,MSX_BLOOD!=0};
+#define RANK neo_softdip[NEO_DIP_DIFFICULTY]
 static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
 /* The programs by tag. Console: the image holds the references in tag order
  * and the commands are read from /programs.bin the first time (program_file.c,
@@ -1494,7 +1497,7 @@ void neo_world_init(neo_world_t *w,int32_t scroll_x) {
     w->order[w->order_count++]=(neo_world_slot_t){NEO_WORLD_SCRIPT,0,0};
     /* RAM 10E9D2..10E9D8 as observed in the region (0C8BEC). */
     w->view[0]=0;w->view[1]=319;w->view[2]=256;w->view[3]=511;
-    w->blood=MSX_BLOOD!=0;  /* RAM 10FD8F */
+    w->blood=neo_softdip[NEO_DIP_BLOOD]!=0;  /* RAM 10FD8F */
 }
 unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t *pl) {
     tick_t t;memset(&t,0,sizeof(t));t.w=w;

@@ -12,6 +12,8 @@
 #include "neogeo_logo.h"
 #include "msx_ramfs.h"
 #include "marco_renderer.h"
+#include "msx_options.h"
+#include "neo_world.h"
 #if MSX_BOOT_CINEMATICS
 #include "title_intro.h"
 #include "cinematic.h"
@@ -277,14 +279,18 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
  * HOW TO PLAY 770..3459, SOLDIER SELECT 3460..3619 (P1 on Marco from 3600),
  * the choice 3620..3829, then the parachute entry from 3830. The first three
  * are optional private files; the entry is required for the handoff. */
+/* HOW TO PLAY only with the soft-DIP PLAY MANUAL on (016BD4: 10FD8E read
+ * after Start; MAME 0.264 with 10FD8E = 0: SOLDIER SELECT at once,
+ * docs/OPCIONES.md). */
+static bool play_manual(void) { return neo_softdip[NEO_DIP_PLAY_MANUAL] && rom_file("/howto.msxc"); }
 static const char *first_after_title(void) {
-    if (rom_file("/howto.msxc")) return "rom:/howto.msxc";
+    if (play_manual()) return "rom:/howto.msxc";
     if (rom_file("/select.msxc")) return "rom:/select.msxc";
     if (rom_file("/confirm.msxc")) return "rom:/confirm.msxc";
     return "rom:/entry.msxc";
 }
 static bool entry_cinematic(void) {
-    bool howto=rom_file("/howto.msxc"),select=rom_file("/select.msxc"),confirm=rom_file("/confirm.msxc");
+    bool howto=play_manual(),select=rom_file("/select.msxc"),confirm=rom_file("/confirm.msxc");
     const char *after_select=confirm?"rom:/confirm.msxc":"rom:/entry.msxc";
     if (howto) play_cinematic("howto","rom:/howto.msxc","rom:/howto.wav64",NULL,-1,false,select?"rom:/select.msxc":after_select);
     msx_ramfs_preload("fixed.bin");game_audio_preload();game_preloading=true;
@@ -343,6 +349,7 @@ int main(void) {
      * entry (docs/MISSION_ENTRY.md) when the cartridge carries them, then
      * Mission 1. Each private part is optional. */
     bool cinematics=false;
+    msx_options_init();   /* the soft-DIP bytes (title sound included) before the logo */
 #if MSX_BOOT_CINEMATICS
     cinematics=rom_file("/title.msxc") && rom_file("/title-motion.wav64") && rom_file("/entry.msxc") && rom_file("/entry.wav64");
 #endif
@@ -376,6 +383,11 @@ int main(void) {
     if (cinematics) {
         if (!msx_title_intro(first_after_title())) debugf("MSX TITLE could not play\n");
         scene_assets_mem("title done");
+        /* The options screen between the title and HOW TO PLAY / SOLDIER
+         * SELECT (docs/OPCIONES.md): PLAY MANUAL may change the next movie. */
+        msx_options_menu(spare_time);
+        if (!play_manual()) msx_cinematic_cancel("rom:/howto.msxc");
+        msx_cinematic_prepare(first_after_title());
         handoff=entry_cinematic();
         scene_assets_mem("entry done");
         scene_assets_game_preloaded(game_preloaded_bytes());

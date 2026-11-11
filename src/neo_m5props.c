@@ -230,5 +230,330 @@ static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u;}
-bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || deco_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
-ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {return drip_routine(L(0))?drip_tick(a,e):deco_routine(L(0))?deco_tick(a,e):gate_tick(a,e);}
+/* ---- the street's ledges 09624E and wrecked cars 050542 -----------------------------
+ * - 09624E (script, +6E = 0..3, never drawn): +72 = +6E, +7A = +70, program
+ *   0963B8, private palette 124, layers 0. 09628E: 01ABC8, the cell map
+ *   095B54[+72] at (096356[+72], -8) (0140C4); outside 095948 (0C8BEC):
+ *   004188. With the debug flag 10F000 bit 7 it draws itself (09635E: 009CCE
+ *   and 00427A in a row): an explicit stop here.
+ * - 050542 (script, +6E = 0..5; +70 items of kind +72 with the word +74):
+ *   palette 0500FC[+6E], program 04FD26[+6E], hurtbox 050150[+6E], 0146E8,
+ *   +4E = 64, +7C = 0, layers 8600 (0501D4[+6E] -> 0501F8). 0505AC: 050206
+ *   (+7D / +7E: where each player stands on it, 050296: 01AEB0, 01AF34, up
+ *   to 0501EC[+6E] above, the six bounds 0501A4[+6E][dy >= 2C] against the
+ *   long x difference; +7C follows their mean one step per update, 5 at
+ *   once from 0 when it is over 3; back at 0: program 04FD3E[+6E]); 01ABC8;
+ *   004C24: a hit of kind 5 kills, another one starts 04FD56[+6E] (+5B
+ *   negative) or 04FD6E[+6E]; 00427A, at its end 04FD26[+6E] again; outside
+ *   050108[+6E] (01945C): 004188; the cell map 050120[+6E] lowered by +7C
+ *   (050418, 0140C4).
+ *   Dead (+5F bit 7 or the kind 5), 05065C: 019DFC, four wheels 05090A /
+ *   05092C (the second pair mirrored), the blast 05094E, program
+ *   04FD86[+6E] (its calls: 050C32 the panels 0509A8; for +6E >= 4 also
+ *   013F1E, the debris list 0500AA by 01DA40 and 050384, the items 08CD58
+ *   thrown to both sides). 050806: 01ABC8, the map while +6E < 4, 00427A.
+ *   05082C (+6E < 4): +15 bit 5, program 04FD9E[+6E], layers 1002, +34 = F
+ *   px, y + 8; 050876: 0143E4, rising: the map 050138[+6E] and -1.25 px,
+ *   falling: 013F1E and -0.3125 px; landed: program 04FDB6[+6E] (calls
+ *   050D12: two pieces 050B52; 05031E: the items 08CDB2 at the angle (rand
+ *   & 1F) + 30 with the speed ((rand & FF) + 300) << 8), 0508DC: 01ABC8,
+ *   00427A; at the end (and at once for +6E >= 4) 0508EE: 013F1E, sound
+ *   1021, 009F88, jmp 01C71E.
+ * - 05090A / 05092C (palette 37C, programs 22E6AE / 247DA8) and 05094E
+ *   (palette 113, program 24855C, 8 px left when the car's +6E >= 3):
+ *   layers 1001; 050990: 01ABC8, 00427A, deleted at the end.
+ * - 0509A8 (+7F from the car): +15 bit 5, the car's +6E, palette
+ *   0500FC[+6E], layers 1002 with +7F, program 04FDCE[+6E] or 04FDE6[+6E],
+ *   +30 = +-C000 (twice with +7F), +34 = 5 px + (rand * C00 >> 16) << 4,
+ *   +7A = 3C. 050A66: deleted when +7A runs out; +76 = +34; the first four
+ *   updates 01AC38 with the gravity, then 0143DC; landed: +34 = |+76| * 3 /
+ *   4, +5F bit 3; 00427A.
+ * - 050B52: as 0509A8 with program 04FDFE[+6E], +30 = +-1 px, +34 = 2.25
+ *   px + the same random, +7A = 1E; 050BD0: 0143DC, landed also program
+ *   04FE16[+6E]. */
+static uint16_t rw(uint32_t at) {const uint8_t *p=ga_rom(at);return p?(uint16_t)(p[0]<<8|p[1]):0;}
+static uint32_t rl(uint32_t at) {return (uint32_t)rw(at)<<16|rw(at+2u);}
+static ga_result_t ledge_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x9624e: {
+        uint16_t d0=W(0x6e),d1=W(0x70);
+        SW(0x72,d0);SW(0x7a,d1);
+        if (!ga_anim_start(a,e,0x963b8,0x100)) return GA_UNSUPPORTED;
+        ga_palette(a,0x124);SW(0x66,0);SW(0x1e,0);SL(0,0x9628e);}
+        /* fall through */
+    case 0x9628e: {
+        ga_project(a,e);
+        unsigned n=W(0x72);
+        if (n>3u || !rom_ok(e,0x96356u+n) || !rom_ok(e,0x95b54u+4u*n)) return GA_UNSUPPORTED;
+        if (e->dyn_set) e->dyn_set(e->ctx,a,rl(0x95b54u+4u*n),(int8_t)ga_rom(0x96356u+n)[0],-8);   /* 0140C4 */
+        if (ga_outside_view(a,e,0x95948)) return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+        if (e->vehicle && (e->vehicle->dip10f000&0x80u)) {ga_fail(e,0x9635e);return GA_UNSUPPORTED;}   /* the debug flag, where the world gives it */
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;}
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool car_start(neo_gactor_t *a,neo_genv_t *e,uint32_t table) {
+    uint32_t at=table+4u*W(0x6e);
+    return rom_ok(e,at) && ga_anim_start(a,e,rl(at),0x100);
+}
+/* 050296 */
+static uint8_t car_weight(neo_gactor_t *a,neo_genv_t *e,unsigned p) {
+    unsigned n=W(0x6e);
+    if (!((e->players.active_mask>>p)&1u)) return 0;                     /* 01AEB0 */
+    if (!(e->player_flags15[p]&0x40u)) return 0;                         /* 01AF34 */
+    int16_t d1=(int16_t)((p?e->players.p2y:e->players.p1y)-W(0x40));
+    if (d1<0) return 0;
+    if ((uint16_t)d1>rw(0x501ecu+2u*n)) return 0;
+    uint32_t px=(uint32_t)(p?e->players.p2x:e->players.p1x)<<16|e->player_low[p];
+    int16_t d0=(int16_t)((px-L(0x3c))>>16);
+    uint32_t t=rl(0x501a4u+8u*n+(d1>=0x2c?4u:0u));
+    for (unsigned i=0;i<6;i++) if (d0<(int16_t)rw(t+2u*i)) return (uint8_t)i;
+    return 0;
+}
+/* 050418 */
+static void car_map(neo_gactor_t *a,neo_genv_t *e) {
+    unsigned n=W(0x6e);int16_t d1=0;uint8_t s=B(0x7c);
+    if (s==1u) d1=-2;
+    if (s==2u && n==5u) d1=-1;
+    if (s==3u) d1=-2;
+    if (s==5u) d1=-2;
+    if (e->dyn_set) e->dyn_set(e->ctx,a,rl(0x50120u+4u*n),0,d1);          /* 0140C4 */
+}
+static neo_gactor_t *car_child(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy) {   /* 0040BC (D0 = 1C), 01B220 */
+    neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,0x1c):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+    if (c) ga_place_from(c,a,e,dx,dy);
+    return c;
+}
+/* 08CDB2: the item 08C374 after the script actor (a kind from 5A on: none). */
+static neo_gactor_t *car_item(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint16_t kind,uint16_t word,uint8_t b8b) {
+    if (kind>=0x5au) return NULL;
+    neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x8c374,true):NULL;
+    if (c) {ga_sb(c,0x8b,b8b);ga_sw(c,0x70,word);ga_sw(c,0x6e,kind);ga_sw(c,0x72,0);ga_sb(c,0x7f,0);ga_place_at(c,a,e,dx,dy);}
+    return c;
+}
+static bool car_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
+    (void)parameter;
+    if (kind!=NEO_ANIM_CALL) return false;
+    unsigned n=W(0x6e);neo_gactor_t *c;
+    switch (routine) {
+    case 0x13f1e:
+        if (e->dyn_release) e->dyn_release(e->ctx,a);
+        return true;
+    case 0x50c32:
+        c=car_child(a,e,0x509a8,0x10,8);
+        if (c) ga_sb(c,0x7f,0);
+        if (n>=4u) return true;
+        c=car_child(a,e,0x509a8,-0x10,8);
+        if (c) {ga_sb(c,0x7f,0);ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|1u));}
+        if (n!=1u && n!=2u) return true;
+        c=car_child(a,e,0x509a8,0x10,8);
+        if (c) ga_sb(c,0x7f,1);
+        c=car_child(a,e,0x509a8,-0x10,8);
+        if (c) {ga_sb(c,0x7f,1);ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|1u));}
+        return true;
+    case 0x50d12:
+        car_child(a,e,0x50b52,0x10,0);
+        c=car_child(a,e,0x50b52,-0x10,0);
+        if (c) ga_sb(c,0x15,(uint8_t)(ga_b(c,0x15)|1u));
+        return true;
+    case 0x50d66:
+        debris(a,e,0x500aa);                                             /* 01DA40 */
+        return true;
+    case 0x5031e:
+        while (W(0x70)) {
+            int16_t dx=(int16_t)(ga_rand_range(e,0x31)-0x18u);
+            c=car_item(a,e,dx,8,W(0x72),W(0x74),0);
+            uint8_t angle=(uint8_t)((ga_rand(e)&0x1fu)+0x30u);
+            uint32_t speed=(uint32_t)(int32_t)(int16_t)((ga_rand(e)&0xffu)+0x300u)<<8,vx,vy;
+            ga_polar(speed,angle,&vx,&vy);                               /* 002E7C */
+            if (c) {ga_sl(c,0x30,vx);ga_sl(c,0x34,vy);}
+            SW(0x70,W(0x70)-1u);
+        }
+        return true;
+    case 0x50384:
+        for (uint16_t d7=W(0x70);d7;d7--) {
+            int16_t dx=(int16_t)(ga_rand_range(e,0x31)-0x18u);
+            uint16_t d5=(ga_rand(e)&0x8000u)?4u:8u;
+            c=car_item(a,e,dx,8,W(0x72),W(0x74),0);                      /* 08CD58 */
+            if (c) ga_sw(c,0x72,d5);
+            uint32_t vy=((uint32_t)(int32_t)(int16_t)ga_rand_range(e,0x400)<<8)+0x50000u;
+            if (c) ga_sl(c,0x34,vy);
+            uint32_t vx=(uint32_t)(int32_t)(int16_t)ga_rand_range(e,0x200)<<8;
+            if (d5==8u) vx=0u-vx;
+            if (c) ga_sl(c,0x30,vx);
+        }
+        return true;
+    }
+    return false;
+}
+static void car_bounce(neo_gactor_t *a) {
+    uint32_t v=L(0x76);
+    if (v&0x80000000u) v=0u-v;
+    SL(0x34,(uint32_t)((int32_t)(v*3u)>>2));SB(0x5f,B(0x5f)|8u);
+}
+static ga_result_t car_tick(neo_gactor_t *a,neo_genv_t *e) {
+    unsigned n=W(0x6e);int r;neo_gactor_t *c;
+    switch (L(0)) {
+    case 0x50542:
+        if (n>5u || !rom_ok(e,0x500fcu+2u*n) || !rom_ok(e,0x50150u+4u*n) || !rom_ok(e,0x501a4)) return GA_UNSUPPORTED;
+        ga_palette(a,rw(0x500fcu+2u*n));
+        if (!car_start(a,e,0x4fd26)) return GA_UNSUPPORTED;
+        SL(0x50,rl(0x50150u+4u*n));
+        ga_floor(a,e);
+        SW(0x4e,0x64);SB(0x7c,0);
+        SW(0x66,0x8600);SW(0x1e,0x8600);                                 /* 0501D4[+6E] -> 0501F8 */
+        SL(0,0x505ac);
+        goto body;
+    case 0x505ac: {
+        uint8_t w0=car_weight(a,e,0),w1;                                 /* 050206 */
+        SB(0x7d,w0);w1=car_weight(a,e,1);SB(0x7e,w1);
+        uint8_t d1=(uint8_t)(w0+w1);bool back=false;
+        if (w0 && w1) d1>>=1;
+        if (!B(0x7c) && d1>3u) SB(0x7c,5);
+        else if (B(0x7c) && !d1) {SB(0x7c,0);back=true;}
+        else if (d1!=B(0x7c)) {if (d1<=B(0x7c)) SB(0x7c,B(0x7c)-1u); else SB(0x7c,B(0x7c)+1u);}
+        if (back && !car_start(a,e,0x4fd3e)) return GA_UNSUPPORTED;
+    }
+    body:
+        ga_project(a,e);
+        if (!(B(0x5f)&0x80u)) {
+            bool dead=false;
+            if (ga_register(a,e,NULL,NULL)) {                            /* 004C24 */
+                uint8_t k=B(0x5a);
+                SB(0x5a,0);
+                if (k==5u) dead=true;
+                else if (!car_start(a,e,(B(0x5b)&0x80u)?0x4fd56u:0x4fd6eu)) return GA_UNSUPPORTED;
+            }
+            if (!dead) {
+                if ((r=ga_anim_step(a,e,car_call))<0) return GA_UNSUPPORTED;
+                if (r && !car_start(a,e,0x4fd26)) return GA_UNSUPPORTED;
+                if (ga_cull(a,e,rl(0x50108u+4u*n))) return e->unsupported?GA_UNSUPPORTED:GA_DELETE;   /* 050496 */
+                car_map(a,e);
+                return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+            }
+        }
+        SB(0x69,0xff);                                                   /* 05065C: 019DFC */
+        car_child(a,e,0x5090a,n<3u?-0x3c:-0x44,0);
+        car_child(a,e,0x5092c,n<3u?-0x1e:-0x26,-10);
+        SB(0x15,B(0x15)|1u);
+        car_child(a,e,0x5090a,n<3u?-0x3b:-0x33,0);
+        car_child(a,e,0x5092c,n<3u?-0x1d:-0x15,-10);
+        SB(0x15,B(0x15)&0xfeu);
+        car_child(a,e,0x5094e,0,0);
+        if (!car_start(a,e,0x4fd86)) return GA_UNSUPPORTED;
+        SL(0x30,0);SL(0x34,0);SB(0x7c,0);SL(0,0x50806);
+        /* fall through */
+    case 0x50806:
+        ga_project(a,e);
+        if (n<4u) car_map(a,e);
+        if ((r=ga_anim_step(a,e,car_call))<0 || e->unsupported) return GA_UNSUPPORTED;
+        if (r) SL(0,0x5082c);
+        return GA_MORE;
+    case 0x5082c:
+        if (n>=4u) goto blast;
+        SB(0x15,B(0x15)|0x20u);
+        if (!car_start(a,e,0x4fd9e)) return GA_UNSUPPORTED;
+        SW(0x66,0x1002);SW(0x1e,0x1002);SL(0x34,0xf0000);SW(0x2c,W(0x2c)+8u);SL(0,0x50876);
+        /* fall through */
+    case 0x50876:
+        ga_air(a,e);                                                     /* 0143E4 */
+        if (!(L(0x34)&0x80000000u)) {
+            if (e->dyn_set) e->dyn_set(e->ctx,a,rl(0x50138u+4u*n),0,0);   /* 050478 */
+            SL(0x34,L(0x34)+0xfffec000u);
+        } else {
+            if (e->dyn_release) e->dyn_release(e->ctx,a);                /* 013F1E */
+            SL(0x34,L(0x34)+0xffffb000u);
+        }
+        if ((L(0x34)&0x80000000u) && (B(0x15)&0x40u)) {
+            if (!car_start(a,e,0x4fdb6)) return GA_UNSUPPORTED;
+            SL(0x30,0);SL(0x34,0);SL(0,0x508dc);
+            ga_project(a,e);
+        }
+        goto last;
+    case 0x508dc:
+        ga_project(a,e);
+    last:
+        if ((r=ga_anim_step(a,e,car_call))<0 || e->unsupported) return GA_UNSUPPORTED;
+        if (!r) return GA_MORE;
+    blast:
+        if (e->dyn_release) e->dyn_release(e->ctx,a);                    /* 0508EE: 013F1E */
+        if (e->sound) e->sound(e->ctx,0x1021);
+        SB(0x1d,0);                                                      /* 009F88 */
+        SL(0,0x1c71e);
+        return neo_effects_tick(a,e);                                    /* jmp 01C71E */
+    case 0x5090a:
+        ga_palette(a,0x37c);
+        if (!ga_anim_start(a,e,0x22e6ae,0x100)) return GA_UNSUPPORTED;
+        goto part;
+    case 0x5092c:
+        ga_palette(a,0x37c);
+        if (!ga_anim_start(a,e,0x247da8,0x100)) return GA_UNSUPPORTED;
+        goto part;
+    case 0x5094e:
+        ga_palette(a,0x113);
+        if (!ga_anim_start(a,e,0x24855c,0x100)) return GA_UNSUPPORTED;
+        c=e->creator?e->creator(e->ctx,a):NULL;
+        if (!c) {ga_fail(e,0x5096c);return GA_UNSUPPORTED;}
+        if (ga_w(c,0x6e)>=3u) SW(0x28,W(0x28)-8u);
+    part:
+        SW(0x66,0x1001);SW(0x1e,0x1001);SL(0,0x50990);
+        /* fall through */
+    case 0x50990:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
+        return r?GA_DELETE:GA_MORE;
+    case 0x509a8:
+    case 0x50b52: {
+        bool panel=L(0)==0x509a8u;
+        SB(0x15,B(0x15)|0x20u);
+        c=e->creator?e->creator(e->ctx,a):NULL;
+        if (!c) {ga_fail(e,L(0)+6u);return GA_UNSUPPORTED;}
+        SW(0x6e,ga_w(c,0x6e));n=W(0x6e);
+        if (n>5u || !rom_ok(e,0x500fcu+2u*n)) return GA_UNSUPPORTED;
+        ga_palette(a,rw(0x500fcu+2u*n));
+        if (panel && B(0x7f)) {SW(0x66,0x1002);SW(0x1e,0x1002);}
+        if (!car_start(a,e,!panel?0x4fdfeu:B(0x7f)?0x4fde6u:0x4fdceu)) return GA_UNSUPPORTED;
+        uint32_t d0=panel?0xc000u:0x10000u;
+        if (panel && B(0x7f)) d0+=d0;
+        if (B(0x15)&1u) d0=0u-d0;
+        SL(0x30,d0);
+        SL(0x34,(panel?0x50000u:0x24000u)+((uint32_t)(int32_t)(int16_t)ga_rand_range(e,0xc00)<<4));
+        SW(0x7a,panel?0x3c:0x1e);SL(0,panel?0x50a66u:0x50bd0u);
+        if (!panel) goto piece;}
+        /* fall through */
+    case 0x50a66:
+        SW(0x7a,W(0x7a)-1u);
+        if ((int16_t)W(0x7a)<0) return GA_DELETE;
+        SL(0x76,L(0x34));
+        SL(0x34,L(0x34)+0xffffb000u);
+        if (W(0x7a)>=0x38u) ga_move(a,e); else ga_air(a,e);              /* 01AC38 : 0143DC */
+        if (B(0x15)&0x40u) car_bounce(a);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_MORE;
+    case 0x50bd0:
+    piece:
+        SW(0x7a,W(0x7a)-1u);
+        if ((int16_t)W(0x7a)<0) return GA_DELETE;
+        SL(0x76,L(0x34));
+        SL(0x34,L(0x34)+0xffffb000u);ga_air(a,e);                        /* 0143DC */
+        if (B(0x15)&0x40u) {
+            car_bounce(a);
+            if (!car_start(a,e,0x4fe16)) return GA_UNSUPPORTED;
+        }
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return GA_MORE;
+    default:
+        ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+}
+static bool car_routine(uint32_t r) {
+    return r==0x9624eu || r==0x9628eu || r==0x50542u || r==0x505acu || r==0x50806u || r==0x5082cu || r==0x50876u || r==0x508dcu || r==0x5090au ||
+           r==0x5092cu || r==0x5094eu || r==0x50990u || r==0x509a8u || r==0x50a66u || r==0x50b52u || r==0x50bd0u;
+}
+bool neo_m5props_routine(uint32_t r) {return drip_routine(r) || deco_routine(r) || car_routine(r) || r==0xbc296u || r==0xbc30au || r==0xbc3a6u || r==0xbc42cu;}
+ga_result_t neo_m5props_tick(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t r=L(0);
+    if (r==0x9624eu || r==0x9628eu) return ledge_tick(a,e);
+    return drip_routine(r)?drip_tick(a,e):deco_routine(r)?deco_tick(a,e):car_routine(r)?car_tick(a,e):gate_tick(a,e);
+}

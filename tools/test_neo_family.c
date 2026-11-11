@@ -306,6 +306,9 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     if (pick>=0) {
         unsigned i=(unsigned)pick;bound[i]=true;neo_gactor_t *a=&actors[i];memset(a,0,sizeof(*a));a->active=true;a->index=(int16_t)i;
         memcpy(a->m,NODES[i].pre,0xb0);
+#ifdef FAMILY_FRESH_FLIP
+        a->m[0x15]&=0xf8u;   /* the flip bits its creator sets after 01B220 (--fresh-flip) */
+#endif
         if (c>=0) ga_sl(a,0x0c,NEO_GA_TAG((unsigned)c));
         ga_sl(a,0x38,native_tag(ga_l(a,0x38)));
         return a;
@@ -619,6 +622,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         neo_gactor_t *a=&actors[u->node];current_frame=u->frame;current_update=k;
         {static uint32_t last_frame;
          if (k && u->frame!=last_frame) for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (dyn_countdown[i]) dyn_countdown[i]--;
+         /* No family update for more than 8 frames (the family had no node alive): the camera update
+          * 01406A ran at least twice meanwhile and the countdowns (2 at most) are over. */
+         if (k && u->frame>last_frame+8u) memset(dyn_countdown,0,sizeof(dyn_countdown));
          last_frame=u->frame;}
         /* A node created by an actor outside the family (another family's
          * test) starts from its recorded bytes at its first update. */

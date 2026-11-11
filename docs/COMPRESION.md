@@ -698,6 +698,25 @@ ares 146 (pantalla `:73`), «antes» = `2f64726` (ccr sin este trabajo) sin
 `test_characters_ares.py`: **PASS**. (Los peores fotogramas de M3/M4 caen
 en ventanas con cargas y varían de una pasada a otra, §5.)
 
+### Tras fusionar `ccr` `ea5bb75` (programas bajo demanda)
+
+Con el código de `ea5bb75` el dibujo del logo cuesta 9,0–9,2 ms de CPU por
+fotograma (7,5 antes; `ccr` solo: 9,04 ms, 0 tardíos). Con la sintonía del
+logo en MSXL, descodificar sus bloques en el tiempo libre dejaba 16
+fotogramas tardíos. La sintonía (`neogeo-jingle.wav64`, 878.236 B) vuelve a
+ir en WAV64 crudo (`MSXL_RAW` en el `Makefile`): logo 546 fotogramas, 0
+tardíos, CPU media 9,23 ms, máximo 17,96 ms. El resto de pistas siguen en
+MSXL, y desde `5982c0d` los dos primeros bloques de cada una se descodifican
+al empezar (`msx_pcm_prime`, fuera de los fotogramas): ninguna cinemática
+tiene fotogramas tardíos.
+
+| | `ccr` `ea5bb75` (sin `mission6.pack`) | Esta rama, seis misiones |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64` | 66.994.176 B | **61.472.768 B** (margen 5.570.560 B) |
+| Logo: tardíos / CPU media | 0 / 9,04 ms | 0 / 9,23 ms |
+| M5 etapa 3 / M4: carga de la etapa | — | 284.348 µs / 769.799 µs (PASS) |
+| `MSX CACHE slots=` (suelo 208) | — | 209–210 |
+
 ### Pendiente
 
 - **Partes de Marco repetidas** (8, 5,4 KB y 8 ficheros): el catálogo

@@ -223,6 +223,7 @@ $(MARCO_INPUTS_SUM): ;
 ifdef MSX_PCM_STATS
 $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_audio.o: N64_CFLAGS += -DMSX_PCM_STATS=$(MSX_PCM_STATS)
 endif
+MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
@@ -244,7 +245,10 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_ta
 	for f in $(BUILD_DIR)/game-romfs/*.msxc; do [ -f "$$f" ] || continue; python3 -I tools/msxc_compress.py $$f $$f.v2 >/dev/null && mv $$f.v2 $$f || exit 1; done
 	# Raw 16-bit WAV64s of the cinematics as MSXL (same samples; the packer
 	# decodes each file before writing it and leaves the others as they are).
-	for f in $(BUILD_DIR)/game-romfs/*.wav64; do [ -f "$$f" ] || continue; $(BUILD_DIR)/host/msxl pack $$f $$f.msxl >/dev/null || exit 1; if [ -f $$f.msxl ]; then mv $$f.msxl $$f; fi; done
+	# The NEOGEO logo's jingle stays raw (MSXL_RAW): the logo's frame takes
+	# 9-12 ms of CPU and decoding its blocks in the spare time made 16 of
+	# its frames late (docs/COMPRESION.md, Duplicados).
+	for f in $(BUILD_DIR)/game-romfs/*.wav64; do [ -f "$$f" ] || continue; case $$(basename $$f) in $(MSXL_RAW)) continue;; esac; $(BUILD_DIR)/host/msxl pack $$f $$f.msxl >/dev/null || exit 1; if [ -f $$f.msxl ]; then mv $$f.msxl $$f; fi; done
 	touch $@
 # Reference traversal cartridge (tools/test_mission_native_ares.py): the same
 # game with an invulnerable player (MSX_REFERENCE_INVULNERABLE); never the release.

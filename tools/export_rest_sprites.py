@@ -412,6 +412,11 @@ ROOTS=ROOTS+(0x281ee0,0x281f82)
 RESOURCES=RESOURCES+(0x851,)   # 869 is the +77 = 0 variant (0836DE), which Mission 5 never makes: no capture has it
 # Mission 5: the debris pieces 01CE50..01CE98 of the sewer gates' lists 0BBD78 / 0BBD8A (palettes 168 / 167, 01D1B0).
 RESOURCES=RESOURCES+(0x167,0x168)
+# Mission 5 street tank 08DCB2 / 08EB18 (22B / 347 by +89, flash 306), its flash 08EFFA (208) and shell 08F058 (373); the prizes
+# of class 0x55 the wrecked cars 050542 drop (892).
+ROOTS=ROOTS+(0x28aef0,0x28ad3a,0x28adf4,0x28b03c,0x28af3e,0x28b13a,0x28b250,0x28b366,0x28b5cc,0x28b6f6,0x28bcdc,0x28c10e,0x22d264,0x28c32c,
+    0x28b7bc,0x28b80e,0x28b860,0x28b8b2,0x28b904,0x28b956,0x28b9a8,0x28b9fa,0x28ba4c,0x28ba9e,0x28baf0,0x28bb42,0x28bb94,0x28bbe6,0x28bc38,0x28bc8a)
+RESOURCES=RESOURCES+(0x22b,0x892)   # 347 is the +89 = 1 variant, which no Mission 5 record makes: no capture has it
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
@@ -493,9 +498,17 @@ def validate(capture,nodes,descs,crom,stats,per):
     by=collections.defaultdict(list)
     for u in parse(capture/'boss-trace.txt'):
         if isinstance(nodes,tuple):
-            if not nodes[0]<=u['routine']<=nodes[1]:continue
+            if not nodes[0]<=u['routine']<=nodes[1]:
+                # A node of the family that left the routine range (a car turned into the blast 01C71E): its entries
+                # are not rasterized, but the update counts, so that "the previous update" of the second try is
+                # the same update for every node.
+                if u['node'] in by:by[u['node']].append((u['frame'],[]))
+                continue
         elif u['node'] not in nodes:continue
-        if u['post'] is None or u['post'][:4]==bytes.fromhex('00003f1e'):continue   # deleting update: nothing drawn after it
+        if u['post'] is None or u['post'][:4]==bytes.fromhex('00003f1e'):
+            # Deleting update: nothing drawn after it (it counts as an update with no entries, as above).
+            if u['node'] in by:by[u['node']].append((u['frame'],[]))
+            continue
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:
@@ -566,10 +579,15 @@ def validate(capture,nodes,descs,crom,stats,per):
                 for sy in range(max(top,0),min(top+g['height'],256)):
                     for sx in range(max(left,0),min(left+g['width'],320)):native[sy*320+sx]=-1
             same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
-            diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])
+            # A pixel where the dump shows a pen of another palette slot: a sprite outside the family (drawn with a
+            # slot some family entry also uses, e.g. the fire 01C9E6 and a shell's blast 01C706) lies on top of
+            # the family's; counted apart, not a difference of the descriptor.
+            covered=sum(1 for i in range(320*256) if native[i]>0 and mame[i] and (mame[i]>>4)!=(native[i]>>4))
+            diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])-covered
             overlap=sum(1 for i in range(320*256) if native[i]<0)
-            if best is None or diff<best[1]:best=(same,diff,rank,f,overlap)
+            if best is None or diff<best[1]:best=(same,diff,rank,f,overlap,covered)
         if best is None:continue
         stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['pixels_overlapping']+=best[4];stats['rank_%d'%best[2]]+=1
+        stats['pixels_covered']+=best[5]
         per.append(dict(capture=capture.name,frame=frame,update_frame=best[3],equal=best[0],different=best[1]))
 if __name__=='__main__':main()

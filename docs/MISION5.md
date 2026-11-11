@@ -451,6 +451,25 @@ tiene sus estados hasta `048254`; el bombardeo `04828E..048504` solo ocurre en e
 raíces: hay que repetirla con `474b6,47f7e,479b8,47a12,47afc,47b10`); después `0AF1A8`, trenes `051344`, `0D3B36`,
 los soldados de la alcantarilla `08996A/089948/08995A`, `095C98`, el jefe `0A0C00` y las palabras de sonido.
 
+**Puertas de la tercera tanda (11-XI, `work-m5` con `ccr` `0cc0d53` fusionado: personajes y pausa, fase 2 de la M4)**:
+`make -j4` RC 0; `make check` RC 0 (**253 PASS**, con `m5tank` y `m5heli`; lanzado con `HOST_CFLAGS=... -pipe` porque el
+disco compartido no daba para los temporales del compilador); `test_mission5_ares.py` sobre `mslugx-explorer.z64`,
+etapas 1, 2 y 3 (`--fire`): `RESULT: PASS`, 0 dibujos sin descriptor. Calle: el tanque nativo en la cámara 409; cuando
+el caminante lo destruye el guion sigue y se para en **`2DCFA4` (`08FF7E`)**. Metro: el guion pasa de `2DDBBE`, el
+helicóptero `0474B6` nace nativo en la cámara 80 y bombardea (el caminante muere 3 veces y no pasa de ahí en 80 s; la
+siguiente parada del guion del metro no se ha visto). Alcantarilla: parada en `2DEA8C` (sin cambios).
+`tools/test_m1m2_ares.py` no se ha repetido en esta tanda (no estaba en las puertas pedidas).
+
+Notas para el coordinador: (1) `romfs/scene.pack` depende ahora de `data/soldier_programs.json` (sus imágenes se
+empaquetan en el orden de los programas; sin esa dependencia `test_pack_compression` fallaba al añadir programas): el
+primer `make` de cada árbol lo rehace, y hay que rehacer los paquetes de misión (`python3 tools/build_packs.py`) en
+`ws-logo/romfs`. (2) Durante un minuto `ccr` tuvo la fusión `99c4476` hecha con el árbol de `work-m5` solo (sin los 19
+commits de la M4 que acababan de entrar); `8d75f1a` restauró el árbol de `0cc0d53` y la fusión buena va encima.
+(3) El disco compartido llegó al 100 % (1,4 MB libres) dos veces; el clasificador de permisos denegó borrar los CSV
+de las capturas `fam/*` del agente anterior (`layers.csv`, `actorstate.csv`, `platforms.csv`, unos 80 MB) y comprimir
+sus trazas: siguen ahí. La captura propia `K` se borró tras hacer la familia y la exportación (se rehace con
+`b/capK.sh`: `MSX_FULL_NOFIRE=248100-249600`, raíces `8dcb2,8eb18`, desde `sec06_247661`).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: quedan **74 constructores sin portar (73 propios), 1317 creaciones** tras la tercera tanda (eran 79 y 1707 tras la segunda) (eran 103 y 2583 al

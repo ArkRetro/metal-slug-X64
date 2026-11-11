@@ -785,8 +785,14 @@ static bool st_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t 
     }
     return false;
 }
+/* The program of the pose D0 with its hurtbox and body. */
+static bool st_prog(neo_gactor_t *a,neo_genv_t *e,const uint32_t *t,uint8_t d0) {
+    SB(0x92,d0);
+    if (!ga_anim_start(a,e,t[d0&3u],0x100)) return false;
+    st_body(a,e);return true;
+}
 #define ST_TILT() do { if (st_pose(a,&d0)) {SL(0,0x90698);goto again;} } while (0)
-#define ST_PROG(t) do { SB(0x92,d0);START((t)[d0&3u]);st_body(a,e); } while (0)
+#define ST_PROG(t) do { if (!st_prog(a,e,(t),d0)) return GA_UNSUPPORTED; } while (0)
 #define ST_STEP(keep) do { if (!st_step(a,e,(keep))) return GA_UNSUPPORTED; } while (0)
 #define ST_ANIM() do { if ((r=ga_anim_step(a,e,st_call))<0) return GA_UNSUPPORTED; } while (0)
 static ga_result_t st_tick(neo_gactor_t *a,neo_genv_t *e) {
@@ -1140,8 +1146,16 @@ static bool su_order(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *p,uint32_t *nex
     *next=rl(e,0x924b0u+4u*(d0&0xfu));
     return true;
 }
+/* The tank's slope and the program of its pose: 0, 1 while it tilts (090BBE), -1 on an explicit stop. */
+static int su_prog(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *p,const uint32_t *t) {
+    uint8_t d0;
+    SB(0x90,ga_b(p,0x90));
+    if (st_pose(a,&d0)) return 1;
+    SB(0x92,d0);
+    return ga_anim_start(a,e,t[d0&3u],0x100)?0:-1;
+}
 #define SU_ORDER() do { if (su_order(a,e,p,&next)) {SL(0,next);goto again;} if (e->unsupported) return GA_UNSUPPORTED; } while (0)
-#define SU_PROG(t) do { SB(0x90,ga_b(p,0x90));if (st_pose(a,&d0)) {SL(0,0x90bbe);goto again;} SB(0x92,d0);START((t)[d0&3u]); } while (0)
+#define SU_PROG(t) do { int q=su_prog(a,e,p,(t));if (q<0) return GA_UNSUPPORTED;if (q) {SL(0,0x90bbe);goto again;} } while (0)
 #define SU_ANIM() do { if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED; } while (0)
 static ga_result_t su_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;uint32_t next=0;uint8_t d0;

@@ -547,7 +547,7 @@ cualquier módulo nuevo que no se ejecute en el fotograma.
 - `make MSX_PCM_STATS=1` (tras `touch src/msx_pcm.h`) añade las líneas
   `MSX PCM` (bloques, adelantados, tiempos); cuesta 0,3 KB de programa.
 - El programa crece 6,1 KB de código y 128 B de bss. Con `7f2b743` la caché
-  de escena dejaba 6,9 KB sin usar antes de la ranura 204: sigue habiendo
+  de escena dejaba ≈7 KB sin usar antes de la ranura 204: sigue habiendo
   203 ranuras, pero ya sin holgura (libre tras la caché: 576 KB de 576). El
   siguiente crecimiento del programa costará una ranura.
 - Si una cinemática nueva trae su audio en PCM crudo, entra sola (la regla

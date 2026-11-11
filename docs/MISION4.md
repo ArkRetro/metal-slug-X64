@@ -570,6 +570,20 @@ copiarla a `ws-logo/filesystem/mission4/` y rehacer los paquetes
 (`build_packs.py 4`)**. Sin validar contra VRAM (0 fotogramas) y con 64
 paletas sin captura (216, 367, 3D2… dibujos que faltan en el recorrido).
 
+**Capturas tras la segunda sesión** (`/home/user/captures-m4/fam/`): quedan
+las trazas de **A** (todo el recorrido), **T** (jefe y fin de misión, del TAS)
+y **L** (vehículo `0587C4` con el mando parado); las de D, E, G, I, J, F2, K y
+M se borraron después de hacer sus fixtures (disco al 95 %); se rehacen con
+`scratchpad/capE.sh`, `capF.sh`, `capI.sh` y `scratchpad/agA/capJ.sh`,
+`capK.sh`, `capL.sh` (≈ 1–2 min cada una).
+
+**Siguiente paso**: (1) `0587C4` con las capturas L y A (≈ 1000 líneas de
+68K: `scratchpad/agA/587c4.asm`); (2) el jefe `02267E` (captura T, 95
+rutinas, `scratchpad/boss4.txt`) y el fin de misión — **antes hay que
+recuperar memoria de programa** (docs/MEMORY_OPTIMIZATION.md: queda una
+ranura de caché sobre el suelo de 200); (3) exportación base de las letras
+del rótulo y validación de sprites con capturas con volcados de VRAM.
+
 ### Puertas de la segunda sesión (11-XI, `work-m4` `54adba8` con `ccr` de la M5 y de los personajes fusionado)
 
 `make -j4` RC 0; `make check` RC 0 (**251 PASS**, con `m4pris`, `m4pris2`,

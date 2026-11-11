@@ -128,3 +128,4 @@ Abreviaturas:
 | Música | P | F al entrar desde la M1 (B06) |
 | Eventos y oleadas | P | F (B09) |
 | Reinicio tras morir / CONTINUE | P | ? |
+| B67 | ROM 49 (MiSTer): no arranca; `ASSERTION FAILED: error opening file rom:/audio/sfx_1029.wav64` en `game_audio_init` | encender la ROM 49 en MiSTer N64 | logo | aserción en el arranque, primer efecto leído de la ROM | cartucho de 67 928 064 bytes (0x40C8000): pasa de los 64 MiB que lee el núcleo N64 de MiSTer; la tabla de ficheros queda por encima (`sfx_1029.wav64` en 0x40C235C) | `Makefile` (`cart-size`) | U (fotos del usuario), A | P1 | corregido: la compresión de C deja el cartucho en 61,5 MB (ROM 50); `make` falla ahora si `mslugx-explorer.z64` pasa de 67 043 328 bytes (el menor de MiSTer y del log de ares), y `regression_ares.py` lo rechaza |

@@ -39,9 +39,10 @@ enum {
      * of code; 199 slots measured, docs/MISION5.md): the floor is the need
      * itself. The animation programs read on demand (program_file.c,
      * docs/MEMORY_OPTIMIZATION.md "Programas bajo demanda") gave back
-     * about 11 slots (212 measured with the Mission 4 vehicle in); the
-     * floor stays at the need. */
-    SCENE_EXPANDED_MIN_SLOTS=197,
+     * about 11 slots (212 measured with the Mission 4 vehicle in, 210 with
+     * the Mission 5 tread tank, helicopter 047F7E and metro train too): 208
+     * again, the floor of before the props. */
+    SCENE_EXPANDED_MIN_SLOTS=208,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank

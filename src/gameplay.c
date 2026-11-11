@@ -77,6 +77,9 @@ static void lifebar_food(msx_game_t *g) {
 void msx_game_init(msx_game_t *g) {
     neo_collision_reset();
     memset(g,0,sizeof(*g));
+    /* Every program pointer was in *g (world, continue sprites, landing,
+     * end): the programs read on demand can go (console; neo_world.h). */
+    neo_world_programs_reset();
     g->air_trace_left=12;   /* MSX_DIAG: B48 air-step trace */
     if (msx_lifebar_request) {g->lifebar=true;g->life_hits=MSX_LIFEBAR_HITS;}g->laser_step=8;   /* no beam program running */
     /* 01829E for Mission 1 (record 01714E): the port's entry runs the

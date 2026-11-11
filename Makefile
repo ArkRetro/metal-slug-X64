@@ -8,6 +8,8 @@ MSX_BLOOD ?= 1
 # depth25d extras for review builds: 1 perspective, 2 lights, 4 fog (0 = layered 2D + shadows).
 MSX_DEPTH_STYLE ?= 0
 export N64_INST
+# Arena of the animation programs read on demand (src/program_file.c; measured, docs/MEMORY_OPTIMIZATION.md).
+PROGRAM_ARENA_KB ?= 112
 BUILD_DIR := build
 N64_MKDFS_ROOT := romfs
 # Ported from PR #2: host checks and clean must not require an installed SDK.
@@ -19,16 +21,16 @@ NEED_SDK := 1
 endif
 ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
-N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
+N64_CFLAGS += -DPROGRAM_ARENA_KB=$(PROGRAM_ARENA_KB) -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
-WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m5props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
+WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m5props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # RAM budget (docs/RENDIMIENTO.md): actor/boss/cutscene modules are cold
 # code, compiled -Os (~78 KB less program image). The per-frame core (world,
 # soldier AI, kernel, animation, contact/collision, camera, gameplay, actor)
 # stays -O2. Integer code only; host checks keep -O0/-O2 (make check).
 HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animation.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_cull.c src/neo_hit.c src/neo_camera.c src/neo_soldier.c src/neo_soldier_action.c src/neo_script.c
-COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c)
+COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c)
 $(COLD_OBJS): CFLAGS += -Os
 # make does not see a flag change: the -Os split is recorded in a stamp the
 # kernel objects depend on, rewritten only when the cold list changes. Without
@@ -105,6 +107,10 @@ $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/ent
 	python3 tools/compile_entry_meta.py
 $(BUILD_DIR)/src/mission_main.o: $(BUILD_DIR)/entry_meta.h
 $(BUILD_DIR)/mission1-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
+$(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/programs.bin
+$(BUILD_DIR)/mission1-romfs/programs.bin: $(BUILD_DIR)/soldier_ai_tables.h
+	@mkdir -p $(dir $@)
+	cp $(BUILD_DIR)/programs.bin $@
 $(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
 mission1-internal.z64: N64_ROM_TITLE = "MSX M1 INTERNAL"
 mission1-internal.z64: $(BUILD_DIR)/mission1-internal.dfs
@@ -126,7 +132,7 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -220,7 +226,7 @@ endif
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -229,6 +235,7 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(CHARACTER_PACKS) tools/m
 	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
+	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
@@ -492,7 +499,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m5train
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -615,6 +622,19 @@ FAMILY_ARGS_m4heli := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --r
 # m4spark = the sparkle 08CF6E of the animals (item kinds 40..42, neo_item.c;
 # 48 of them in capture A, --range 8cf6e-8d08d; made by the items, outside the family).
 FAMILY_ARGS_m4spark := --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m4veh = the Mission 4 ground vehicle 0587C4 (neo_m4veh.c) with its turret
+# 0592C6, muzzle flashes, shots 0594B0 / 0594CE and their trails; capture L
+# (run4 with the pad idle from its creation: it lives and fires its bursts).
+# m4veh2 = the same in capture A (run4's pilot destroys it: 059048 / 0590B8,
+# the turret's end 0593B6, the piece 059B5C).
+# m4veh3 = capture N (run4's pad without fire, MSX_FULL_NOFIRE: the pilot walks
+# on, the body is deleted outside 0586C2 and the turret ends by 0593B6 with
+# its creator gone). m4veh4 = capture N55 (as L with MSX_FULL_HOP: the idle
+# player jumps into the shots; their end 0596DE and the blast 059852).
+FAMILY_ARGS_m4veh := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 59b5c,59852,1c6ee
+FAMILY_ARGS_m4veh2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 59b5c,59852,1c6ee
+FAMILY_ARGS_m4veh3 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 59b5c,59852,1c6ee
+FAMILY_ARGS_m4veh4 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 59b5c,59852,1c6ee
 # m4truck = the Mission 4 truck 02916E (neo_truck.c, record of camera 4929)
 # with its body 029802 and the pieces 02A448 (02A71E with the reserve 2A:
 # two of sixteen; 01D5AA); capture G (run4's pad from sec05, roots
@@ -1539,7 +1559,7 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/m3push
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m5props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m5props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
 	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DEND_HEADER='"end_letters_fixture.h"' -DEND_NAME=end_letters tools/test_neo_end.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_letters
 	$(BUILD_DIR)/host/end_letters
@@ -1547,6 +1567,8 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/start_letters
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_continue_sprites.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/continue_sprites
 	$(BUILD_DIR)/host/continue_sprites
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_program_file.c src/neo_progstore.c -o $(BUILD_DIR)/host/program_file
+	$(BUILD_DIR)/host/program_file $(BUILD_DIR)/programs.bin
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_landing.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/landing
 	$(BUILD_DIR)/host/landing
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_smoke.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/smoke

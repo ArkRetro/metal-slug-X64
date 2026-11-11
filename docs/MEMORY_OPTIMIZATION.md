@@ -228,6 +228,56 @@ ELF o módulos por misión). El paquete de la M4 tiene ahora 976 trozos (límite
 (`MSX CACHE slots=201 (3216 KB, floor 200) free=486 KB`, ELF 2 362 984 bytes; M4 por el menú, `heap_low` 287 KB).
 Queda **una** ranura (≈ 16 KB de programa) antes de que el arranque se pare por el suelo.
 
+## Programas bajo demanda (11-XI, `work-m4`): la caché vuelve a 208 con margen
+
+Medida de partida (`mslugx-explorer.elf` de `54adba8`, `mips64-elf-nm -S`): texto 1185 KB, datos de solo lectura
+881 KB, bss 204 KB. De los datos, **308 KB eran los 928 programas de animación sin grupo** (`soldier_program_N`, 32 460
+órdenes de 10 bytes) más 15 KB de su tabla; después `scene_images` 122 KB, los bloques de ROM sin grupo 99 KB (174;
+el mayor, las tablas de poses del SV-001 `291CEA`, 44 KB), `scene_map_images` 55 KB, `scene_native_descriptors` y
+`marco_poses` 49 KB cada uno.
+
+Cambio (sin tocar valores ni lógica): los programas sin grupo salen del ELF y van al sistema de ficheros del cartucho.
+
+- `tools/compile_soldier_ai_tables.py` escribe `build/programs.bin` (`MSXP`, versión 1; las órdenes en los registros
+  de 10 bytes de `MSXD`, las colas compartidas igual que antes) y, en la imagen, una referencia por programa
+  (`soldier_program_refs`: etiqueta, desplazamiento, número de órdenes; 12 bytes, en orden de etiqueta). El Makefile
+  copia el fichero a `build/game-romfs` (todos los cartuchos del juego).
+- `src/neo_progstore.c` (portable): lee un programa la primera vez que se pide, lo convierte en el sitio y lo guarda
+  en una arena fija; lo que no cabe toma un bloque del montón (contado en el log). `src/program_file.c` (consola):
+  `/programs.bin` por DMA (`dma_read`, que espera a la transferencia en curso) y la arena en bss
+  (`PROGRAM_ARENA_KB`, 112), así la caché de escena se dimensiona con ella ya descontada.
+- `neo_world.c` `program()`: en consola, búsqueda binaria en las referencias y lectura; en el anfitrión, las tablas
+  de siempre (las pruebas no cambian).
+- **Vida de los punteros**: todo puntero a un programa vive dentro de `msx_game_t` (mundo, sprites de CONTINUE,
+  aterrizaje, fin de misión); `msx_game_init` lo borra entero, así que ahí se olvidan los programas leídos
+  (`neo_world_programs_reset`): al cargar cada etapa y al volver a la Misión 1. Lo que se conserva entre etapas
+  (HUD, flujo, RNG, armas, premios, banderas, fundido) no lleva punteros a programas (revisado tipo a tipo).
+- Prueba (`make check`): `tools/test_program_file.c` lee los 928 programas por el almacén (arena de 64 KB: 675 en
+  bloques del montón; dos pasadas con borrado) y compara cada orden con la tabla: iguales.
+
+Medidas (ares 146, 8 MB):
+
+| | Antes (`54adba8`) | Después |
+| --- | ---: | ---: |
+| `mslugx-explorer.elf` texto + datos + bss | 2 362 984 B | **2 180 920 B** (con el vehículo `0587C4` dentro) |
+| Caché de escena (M4 por el menú) | 201 ranuras | **212 ranuras** (213 por el arranque normal; suelo otra vez 208) |
+| Libre tras cargar | 486 KB | 488 KB (`heap_low` 277 KB en 150 s de la M4, 308 KB en el fin de la M1 y la carga de la M2) |
+
+Uso de la arena: **Misión 1 entera** (`mslugx-reference.z64`, `test_mission_native_ares.py`, PASS: jefe, fin de
+misión y recuento) 237 programas, pico entre 96 y 104 KB, `heap_low` 273 KB, peor fotograma 42,3 ms; **Misión 4**
+hasta la cámara 2160: 120 programas, 42 560 bytes; al volver a la M1 tras el *game over* el log da `MSX PROGRAMS
+reset` y la M1 vuelve a leer los suyos. Tiempo de lectura: 13,9 ms en total para 120 programas (media 0,12 ms), la
+más larga 0,82 ms. La arena de 112 KB deja ≥ 8 KB sobre el pico medido de la M1; lo que no quepa cae al montón
+(línea `heap blocks` del log), nunca falla.
+
+**Lo que no se hizo** (medido, pendiente): los tres bloques de ROM grandes sin grupo (`291CEA` 44 KB y `2B0386`
+7,5 KB del SV-001, `02CAD6` 7,5 KB de nombres del recuento) con el mismo mecanismo darían 59 KB menos de imagen, pero
+en la M1 (donde se usan todos) habría que subir la arena casi lo mismo: ganancia neta ≈ 25 KB; los datos de escena
+propios de la M1 que siguen enlazados (`scene_map_images` 55 KB, `scene_map_cells_data` 36 KB, `neo_grid` 15 KB,
+`dynamic_grid_m1` 15 KB de bss: 121 KB = 7 ranuras en las misiones 2 a 6) pedirían cargar la M1 como las demás
+(tablas en ranuras reservadas). `PROGRAM_ARENA_KB` y el suelo se revisan cuando exista el jefe de la M4 (≈ 3 ranuras
+de código por las 3000 líneas de 68K, como `neo_m3boss.o`, 30 KB).
+
 `SCENE_MISSION_CHUNKS_MAX` pasó de 896 a 1024 (la M4 tiene 895 trozos y el
 paquete de formato 4 de la M5 que construye `make check` 935): son 128
 entradas más en las tablas por trozo de `scene_assets.c`; las ranuras medidas

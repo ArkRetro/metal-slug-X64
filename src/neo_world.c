@@ -32,11 +32,35 @@ enum { SOLDIER_VIEW_INDEX=0x4000 };
  * (src/neo_blood.c: 037A ON, 03BA OFF). */
 enum { MODE88=2, RANK=3, SPLASH_PROGRAM=0x2402fa };
 static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
-/* The programs by tag: a binary search over an index sorted once (the
- * first entry of a tag, as the linear scan it replaces). */
+/* The programs by tag. Console: the image holds the references in tag order
+ * and the commands are read from /programs.bin the first time (program_file.c,
+ * docs/MEMORY_OPTIMIZATION.md "Programs on demand"); they are forgotten by
+ * neo_world_programs_reset, when the game starts again from nothing
+ * (msx_game_init). Host: the tables, by a binary search over an index sorted
+ * once (the first entry of a tag, as the linear scan it replaces). */
+static const neo_anim_program_t *(*program_extra)(uint32_t tag);
+#ifdef N64
+#include "program_file.h"
+static neo_anim_program_t program_read[COUNT(soldier_program_refs)];
+static const neo_anim_program_t *program(uint32_t tag) {
+    enum {N=COUNT(soldier_program_refs)};
+    unsigned lo=0,hi=N;                                /* first tag >= tag */
+    while (lo<hi) {unsigned m=(lo+hi)/2;if (soldier_program_refs[m].tag<tag) lo=m+1; else hi=m;}
+    if (lo<N && soldier_program_refs[lo].tag==tag) {
+        neo_anim_program_t *p=&program_read[lo];
+        if (!p->commands) {
+            p->commands=program_file_load(soldier_program_refs[lo].offset,soldier_program_refs[lo].count);
+            if (!p->commands) return NULL;             /* explicit stop (logged) */
+            p->count=soldier_program_refs[lo].count;
+        }
+        return p;
+    }
+    return program_extra?program_extra(tag):NULL;
+}
+void neo_world_programs_reset(void) {memset(program_read,0,sizeof(program_read));program_file_reset();}
+#else
 static uint16_t program_order[COUNT(soldier_programs)];
 static bool programs_sorted;
-static const neo_anim_program_t *(*program_extra)(uint32_t tag);
 static const neo_anim_program_t *program(uint32_t tag) {
     enum {N=COUNT(soldier_programs)};
     if (!programs_sorted) {
@@ -54,6 +78,8 @@ static const neo_anim_program_t *program(uint32_t tag) {
     /* A mission's own programs (its pack, docs/MEMORY_OPTIMIZATION.md rule 5). */
     return program_extra?program_extra(tag):NULL;
 }
+void neo_world_programs_reset(void) {}
+#endif
 void neo_world_set_program_extra(const neo_anim_program_t *(*lookup)(uint32_t tag)) {program_extra=lookup;}
 static uint8_t kobj(uint32_t tag) {return tag==TERRAIN_TAG?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:NEO_KOBJ_NONE;}
 static uint32_t ktag(uint8_t obj) {return obj==NEO_KOBJ_TERRAIN?TERRAIN_TAG:obj==NEO_KOBJ_ROOT?ROOT_TAG:0;}

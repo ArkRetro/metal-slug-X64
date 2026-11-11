@@ -683,7 +683,15 @@ en el Makefile hasta que haya código): `data/m5sewer_fixture.json.gz` (`--range
 089948 / 08995A y su hijo 08A264, 9185 actualizaciones) y `data/m5pow_fixture.json.gz` (`--range 95c98-96200`: el
 prisionero 095C98 / 095F8C con el premio 08C374, 1056). 095C98 usa el sistema de huecos `0AA606` / `0AA83A` /
 `0AA7FC` / `0CA2CE` (en parte ya en `neo_vslot` / `neo_slug.c`) y `0C05EC` (sin portar). Desensamblado:
-`scratchpad/m5/d95c98.txt`. Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
+`scratchpad/m5/d95c98.txt`. Análisis (sin código aún): 095C98 es un **mecanismo que el jugador agarra como un vehículo de clase 5**:
+`0AA606` = `0AA616` con la prueba `0C069E` (jugador en el suelo, `+15` bit 6, orientado hacia él según D1, vivo, sin
+forma 2/3; `0AA610` es la variante de `neo_vslot_select` con `0C0556`), luego `095B64` (`0AA760`, asiento `d2` = 0 ó 47
+por `+70`), `0AA83A` (clase 5), cada pulsación del jugador (bit 4 de la palabra del hueco, `0CA2CE`) sube `+88` de 9 en
+9 y los programas `095A94[+91]` giran (sonido 108B, `+96` al hijo); `0C05EC` lee del jugador `+84`, `+9A` bit 2;
+suelta con `0AA7FC` (clase 3 ó 5). El hijo 095F8C mueve su mapa dinámico (`0140C0`, tabla `095B54[+72]`) y los cuatro
+`08CD70` por `+8C` hacia `+78` (dirección `095B44[+6E]`) y avisa al padre (`+95`). Necesita en `neo_vslot` la entrada
+`0AA616` con la prueba `0C069E` y el enganche del mundo/jugador como en `neo_slug.c` (clase 5 nueva para el jugador).
+Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
 máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 1280).
 
 ## Pendiente (fase 2, por orden)

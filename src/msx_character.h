@@ -32,6 +32,12 @@ typedef struct {
     neo_anim_command_t *death_commands;
     neo_anim_program_t death[MSX_CHARACTER_DEATHS];
 } msx_character_pack_t;
+/* The file rom:/chars/cN.bin holds the pack in LZ4 blocks ('MSXZ';
+ * tools/export_character.py, the block decoder of scene_codec.h).
+ * msx_character_file_size: the pack's size, 0 when the file is not one.
+ * msx_character_unpack: the pack into `out` (that many bytes). */
+uint32_t msx_character_file_size(const uint8_t *file,uint32_t file_size);
+bool msx_character_unpack(const uint8_t *file,uint32_t file_size,uint8_t *out,uint32_t out_size);
 /* Checks the header and the section bounds of a pack held in memory. */
 bool msx_character_layout(const uint8_t *blob,uint32_t size,msx_character_layout_t *out);
 /* Decodes the programs of a pack (the blob must outlive it only for the

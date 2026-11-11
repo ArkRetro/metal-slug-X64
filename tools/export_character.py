@@ -24,8 +24,9 @@ the ROM (docs/PERSONAJES.md): the same roles as the campaign Marco
             the signed-doubled index of a colour word in the table 224000.
             Numbers from the per-character tables 0BEDD0 (normal), 0BEDE8
             (burnt death) and 0BEE00 (mummy); the mummy's second palette
-            (slot 0x64, brightened by the game) comes from a capture
-            (--mummy2 W1,..,W15) or is left as the mummy's first.
+            (slot 0x64, no ROM palette) is the one an audited capture of the
+            character as a mummy shows in the same frames (--mummy-capture)
+            or is left as the mummy's first.
 
 With --character 0 the pack is Marco's own (tests only: tools/test_character.c
 compares it with the built-in catalog). Evidence: --verify CAPTURE (several)
@@ -39,6 +40,7 @@ sys.path.insert(0,str(ROOT/'tools'))
 from export_marco import palette_rgb
 from export_vehicle import program
 from mission_tiles import decode
+import lz4_blocks
 KINDS=['WAIT','POSE','JUMP','FIELD50','FINISH','FLIP_FACING','UNRECOVERED','REPLACE_PALETTE','SPAWN_THROW','SELECT_POSE',
        'WRITE_BYTE','WRITE_WORD','WRITE_LONG','DECREMENT_BYTE','BRANCH_FIELD','SELECT_FIELD_POSE','EVENT']
 DEATH_TABLES=(0xBF298,0xBF3D8,0xBF358,0xBF318,0xBF498)   # ground, kind 2 on the ground, kinds 7/0x10, in the air, entrance
@@ -161,7 +163,7 @@ def main():
     p.add_argument('--graph',type=Path,required=True,help="Marco's converted graph.json (its measured event sites)")
     p.add_argument('--campaign',type=Path,default=ROOT/'build/marco_campaign.h')
     p.add_argument('--meta',type=Path,default=ROOT/'build/marco_pose_meta.h')
-    p.add_argument('--mummy2',help='W1,..,W15 (hex): palette of slot 0x64 as the mummy, from a capture of this character')
+    p.add_argument('--mummy-capture',type=Path,help="audited --give-mummy capture of this character: its second mummy palette (slot 0x64, not a ROM palette)")
     p.add_argument('--verify',type=Path,action='append',default=[],help='audited capture of this character')
     p.add_argument('--output',type=Path);p.add_argument('--report',type=Path)
     a=p.parse_args();c=a.character
@@ -220,12 +222,19 @@ def main():
     normal=rgba(rom.palette(numbers['NORMAL']));palettes=[list(normal) for _ in marco_palettes]
     palettes[named['BURNT']]=rgba(rom.palette(numbers['BURNT']));palettes[named['MUMMY']]=rgba(rom.palette(numbers['MUMMY']))
     palettes[named['MUMMY2']]=list(palettes[named['MUMMY']]);mummy2='the first mummy palette (no capture)'
-    if a.mummy2:
-        words=[int(w,16) for w in a.mummy2.split(',')];assert len(words)==15
-        palettes[named['MUMMY2']]=rgba([0]+words);mummy2='capture'
+    if a.mummy_capture:
+        # The mummy draws with two palettes in every frame: the ROM's
+        # (0BEE00) and the one of slot 0x64, which no ROM palette equals.
+        audit=json.loads((a.mummy_capture/'audit.json').read_text());assert audit['status']=='PASS'
+        profiles=audit['palette_profiles'];first=[x for x in profiles if x['words'][1:]==rom.palette(numbers['MUMMY'])[1:]]
+        assert len(first)==1,'the ROM mummy palette is in the capture'
+        rom_words={tuple(rom.palette(n)[1:]) for n in range(0x1000)}
+        second=[x for x in profiles if x['frame_uses']==first[0]['frame_uses'] and tuple(x['words'][1:]) not in rom_words]
+        assert len(second)==1,second
+        palettes[named['MUMMY2']]=rgba(second[0]['words']);mummy2='capture %s: %s'%(a.mummy_capture.name,','.join('%04X'%w for w in second[0]['words'][1:]))
     if c==0:
-        for k in ('NORMAL','BURNT','MUMMY'):
-            i=0 if k=='NORMAL' else named[k];assert palettes[i]==marco_palettes[i],('ROM palette differs from the built-in catalog',k)
+        for k in ('NORMAL','BURNT','MUMMY')+(('MUMMY2',) if a.mummy_capture else ()):
+            i=0 if k=='NORMAL' else named[k];assert palettes[i]==marco_palettes[i],('palette differs from the built-in catalog',k)
     # Evidence from audited captures of this character.
     verified=[]
     for capture in a.verify:
@@ -264,10 +273,20 @@ def main():
         commands=len(commands),death_commands=[len(d) for d in death_programs],unrecovered=unrecovered,
         poses=len(poses),poses_shared_with_marco=shared,parts=len(parts),own_parts=sum(1 for x in parts if not x['data']&0x80000000),
         pixel_bytes=len(pixels),pack_bytes=len(blob),pack_sha256=hashlib.sha256(blob).hexdigest(),verified=verified)
-    if a.output:a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_bytes(blob)
+    # The file: the pack in LZ4 blocks of 64 KiB (tools/lz4_blocks.py, the
+    # decoder of src/scene_codec.h; msx_character_unpack), a block that
+    # does not shrink stored raw (bit 31 of its size).
+    BLOCK=65536;raw=[bytes(blob[i:i+BLOCK]) for i in range(0,len(blob),BLOCK)]
+    packed=lz4_blocks.compress([b+bytes(BLOCK-len(b)) for b in raw]);stored=[]   # the last block padded with zeros
+    for b,z in zip(raw,packed):
+        if len(z)<len(b):stored.append((len(z),z))
+        else:stored.append((0x80000000|len(b),b))   # a block that does not shrink
+    file=struct.pack('>4sHHIII',b'MSXZ',1,c,len(blob),BLOCK,len(stored))+b''.join(struct.pack('>I',n) for n,_ in stored)+b''.join(d for _,d in stored)
+    report['file_bytes']=len(file);report['file_sha256']=hashlib.sha256(file).hexdigest()
+    if a.output:a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_bytes(file)
     if a.report:a.report.parent.mkdir(parents=True,exist_ok=True);a.report.write_text(json.dumps(report,indent=1)+'\n')
-    print('%s: %d roles, %d commands, deaths %s, %d unrecovered; %d poses (%d shared with Marco), %d parts (%d own, %d pixel bytes); pack %d bytes'%(
-        report['name'],len(mapped),len(commands),report['death_commands'],len(unrecovered),len(poses),shared,len(parts),report['own_parts'],len(pixels),len(blob)))
+    print('%s: %d roles, %d commands, deaths %s, %d unrecovered; %d poses (%d shared with Marco), %d parts (%d own, %d pixel bytes); pack %d bytes, file %d'%(
+        report['name'],len(mapped),len(commands),report['death_commands'],len(unrecovered),len(poses),shared,len(parts),report['own_parts'],len(pixels),len(blob),report['file_bytes']))
     for v in verified:
         print('  %s: %d frames, %d pixels equal in MAME; descriptors %d/%d in the pack; palette profiles %d/%d from the ROM; programs chosen %d/%d in the pack'%(
             v['capture'],v['frames'],v['matched_pixels'],v['descriptors_in_pack'],v['descriptors'],v['palette_profiles_from_rom'],v['palette_profiles'],v['programs_in_pack'],v['programs_chosen']))

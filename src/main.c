@@ -134,17 +134,19 @@ static bool mission_select_menu(void) {
  * sample-exact, until the next movie opens its own audio. */
 /* SOLDIER SELECT's cursor (docs/PERSONAJES.md): the place 0..3 on the
  * screen is Marco, Eri, Tarma, Fio; Left and Right move it and wrap (MAME
- * 0.264: one Left from Marco is Fio). The movie shows the cursor on Marco;
- * the other places are their own captured pictures (select-pN.msxc: P1 on
- * that place) and each character has its captured choice (confirm-cN.msxc
- * with its voice, N = +6E) and its pack (chars/cN.bin). A cartridge without
- * all of a character's files cannot choose it: only Marco, as before. */
+ * 0.264: one Left from Marco is Fio). The select movie ends with P1 on
+ * Marco. Each character has its captured choice (confirm.msxc for Marco,
+ * confirm-cN.msxc with its voice for N = +6E), whose first frame is the
+ * select screen with P1 on that character at the moment of the press: the
+ * cursor on another place shows that frame, and the choice plays the movie
+ * from it. A character needs its movie, its sound and its pack
+ * (chars/cN.bin) in the cartridge; without them only Marco, as before. */
 static unsigned soldier_place;
+static bool soldier_moved;
 static char soldier_path[2][40];
 static bool soldier_available(unsigned place) {
     unsigned c=msx_character_of_place(place);char name[40];
-    snprintf(name,sizeof(name),"/select-p%u.msxc",place);if (!rom_file(name)) return false;
-    if (!c) return true;
+    if (!c) return rom_file("/confirm.msxc");
     snprintf(name,sizeof(name),"/confirm-c%u.msxc",c);if (!rom_file(name)) return false;
     snprintf(name,sizeof(name),"/confirm-c%u.wav64",c);if (!rom_file(name)) return false;
     snprintf(name,sizeof(name),"/chars/c%u.bin",c);return rom_file(name);
@@ -188,26 +190,30 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         bool move_left=buttons.d_left && !previous_left,move_right=buttons.d_right && !previous_right;
         previous_left=buttons.d_left;previous_right=buttons.d_right;
         if (held && choosing && !press && move_left!=move_right) {
-            /* The cursor moves: the captured picture of the new place. */
-            unsigned place=(soldier_place+(move_right?1u:3u))&3u;char still[40];snprintf(still,sizeof(still),"rom:/select-p%u.msxc",place);
+            /* The cursor moves: the first frame of that character's choice. */
+            unsigned place=(soldier_place+(move_right?1u:3u))&3u;
             if (soldier_available(place) && soldier_available(soldier_place)) {
                 rspq_wait();msx_cinematic_close();
-                if (next) msx_cinematic_cancel(next);
-                if (!msx_cinematic_open(still)) {debugf("MSX ERROR select picture %s\n",still);return false;}
-                while (msx_cinematic_next()) {}
-                soldier_place=place;next=soldier_confirm(false);
-                if (!msx_cinematic_prepare(next)) next=NULL;
-                hold=(int)msx_cinematic_stats().frames-1;last_presented=~0u;
+                if (next) {msx_cinematic_cancel(next);next=NULL;}
+                soldier_place=place;soldier_moved=true;
+                if (!msx_cinematic_open(soldier_confirm(false))) {debugf("MSX ERROR select picture %s\n",soldier_confirm(false));return false;}
+                hold=0;last_presented=~0u;
                 debugf("MSX SELECT place=%u character=%u\n",place,msx_character_of_place(place));
             } else debugf("MSX SELECT place=%u not in this cartridge\n",place);
         }
         if (held) {
             /* Waiting on the choice: the clock stands on the hold frame. */
             if (press && mselect_combo(buttons)) {
-                if (mission_select_menu()) {held=false;hold=-1;debugf("MSX CINE %s chosen (test menu)\n",label);}
+                if (mission_select_menu()) {
+                    held=false;hold=-1;debugf("MSX CINE %s chosen (test menu)\n",label);
+                    if (choosing && soldier_moved) break;   // as the plain choice below
+                }
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);previous=previous_a=true;continue;
             }
-            if (press) {held=false;hold=-1;debugf("MSX CINE %s chosen audio=%u\n",label,(unsigned)msx_audio_playing(MSX_AUDIO_INTRO));lifebar_choice(buttons.z);}
+            if (press) {
+                held=false;hold=-1;debugf("MSX CINE %s chosen audio=%u\n",label,(unsigned)msx_audio_playing(MSX_AUDIO_INTRO));lifebar_choice(buttons.z);
+                if (choosing && soldier_moved) break;   // the picture shown is the choice movie's first frame: it plays next
+            }
             else {surface_t *surface=display_get();msx_audio_service();msx_cinematic_draw(surface);msx_frames_present();rendered++;
                 spare_time();
                 started=TICKS_READ()-(uint32_t)((uint64_t)msx_cinematic_stats().index*TICKS_PER_SECOND*1000000u/59185606u);continue;}
@@ -280,7 +286,7 @@ static bool entry_cinematic(void) {
      * render of 0030 up to its loop splice, then the 50 s loop body) the
      * hold keeps the music; without it the movie's own audio, as before. */
     bool select_music=rom_file("/select-music-head.wav64") && rom_file("/select-music-loop.wav64");
-    soldier_place=0;   // the movie puts P1 on Marco
+    soldier_place=0;soldier_moved=false;   // the movie puts P1 on Marco
     if (select) play_cinematic("select","rom:/select.msxc",select_music?"rom:/select-music-head.wav64":"rom:/select.wav64",
         select_music?"rom:/select-music-loop.wav64":NULL,-2,false,after_select);
     scene_early=1;

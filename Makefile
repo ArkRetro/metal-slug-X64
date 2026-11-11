@@ -179,12 +179,16 @@ BOOT_LOGO := $(wildcard filesystem/logo/neogeo-logo.mesh filesystem/logo/neogeo-
 # (tools/pack_cinematic.py --name howto/select/confirm, docs/MISSION_ENTRY.md).
 # The select music's continuation (tools/pack_select_music.py, B44) rides along.
 BOOT_ATTRACT := $(wildcard $(foreach n,howto select confirm,filesystem/cinematics/$(n).msxc filesystem/cinematics/$(n).wav64) filesystem/cinematics/select-music-head.wav64 filesystem/cinematics/select-music-loop.wav64)
-# Tarma, Eri and Fio (docs/PERSONAJES.md; private, optional): SOLDIER
-# SELECT's picture of each cursor place, each character's choice movie with
-# its voice (tools/pack_cinematic.py --name select-pN / confirm-cN) and its
-# pack (tools/export_character.py). main.c offers a character only when the
-# cartridge has all of its files.
-BOOT_ATTRACT += $(wildcard $(foreach n,0 1 2 3,filesystem/cinematics/select-p$(n).msxc) $(foreach n,1 2 3,filesystem/cinematics/confirm-c$(n).msxc filesystem/cinematics/confirm-c$(n).wav64))
+# select.wav64 is played only without the select music (main.c): with the
+# music in the cartridge it would be 346 KB nobody reads.
+ifneq ($(and $(wildcard filesystem/cinematics/select-music-head.wav64),$(wildcard filesystem/cinematics/select-music-loop.wav64)),)
+BOOT_ATTRACT := $(filter-out filesystem/cinematics/select.wav64,$(BOOT_ATTRACT))
+endif
+# Tarma, Eri and Fio (docs/PERSONAJES.md; private, optional): each
+# character's choice movie with its voice (tools/pack_cinematic.py --name
+# confirm-cN --wav-compress 1) and its pack (tools/export_character.py).
+# main.c offers a character only when the cartridge has all of its files.
+BOOT_ATTRACT += $(wildcard $(foreach n,1 2 3,filesystem/cinematics/confirm-c$(n).msxc filesystem/cinematics/confirm-c$(n).wav64))
 CHARACTER_PACKS := $(wildcard $(foreach n,1 2 3,romfs/chars/c$(n).bin))
 # The fix-layer HUD (src/hud_renderer.c) draws the S-ROM tiles with the fix
 # palettes of tools/build_hud_assets.py (docs/ARMAS_VEHICULOS.md §11).

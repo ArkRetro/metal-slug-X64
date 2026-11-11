@@ -134,7 +134,11 @@ bool marco_renderer_preload(unsigned long deadline,int keep) {
     uint32_t spent=TICKS_READ()-t0;part_cost-=part_cost/16;if (spent>part_cost) part_cost=spent;
     return true;
 }
-unsigned marco_renderer_preloaded_bytes(void) {return part_bytes;}
+/* The pack of another character and its decoded programs are part of the
+ * same budget as Marco's parts (scene_assets.c, SCENE_RESERVE_GAME). */
+static unsigned pack_bytes;
+void marco_renderer_character_heap(unsigned bytes) {pack_bytes=bytes;}
+unsigned marco_renderer_preloaded_bytes(void) {return part_bytes+pack_bytes;}
 bool marco_renderer_load(void) {
     if (loaded) return true;
     if (part_failed) {marco_renderer_close();return false;}
@@ -196,13 +200,16 @@ bool marco_renderer_set_character(unsigned c) {
     if (c==character) return true;
     marco_renderer_close();
     if (pack) {free(pack_sprites);pack_sprites=NULL;free(pack);pack=NULL;}
-    character=0;
+    character=0;pack_bytes=0;
     if (!c) return true;
     char path[32];snprintf(path,sizeof(path),"rom:/chars/c%u.bin",c);
     FILE *f=fopen(path,"rb");if (!f) {debugf("MSX character %u: %s missing\n",c,path);return false;}
     fseek(f,0,SEEK_END);long size=ftell(f);fseek(f,0,SEEK_SET);
-    uint8_t *blob=size>0?memalign(16,((size_t)size+15u)&~(size_t)15u):NULL;
-    bool ok=blob && fread(blob,1,(size_t)size,f)==(size_t)size;fclose(f);
+    uint8_t *file=size>0?malloc((size_t)size):NULL;
+    bool ok=file && fread(file,1,(size_t)size,f)==(size_t)size;fclose(f);
+    uint32_t raw=ok?msx_character_file_size(file,(uint32_t)size):0;
+    uint8_t *blob=raw?memalign(16,((size_t)raw+15u)&~(size_t)15u):NULL;
+    ok=blob && msx_character_unpack(file,(uint32_t)size,blob,raw);free(file);size=(long)raw;
     msx_character_layout_t l;
     if (!ok || !msx_character_layout(blob,(uint32_t)size,&l) || l.character!=c || l.palettes!=MARCO_PALETTES || (l.off_pixels&7u)) {
         debugf("MSX character %u: bad pack\n",c);free(blob);return false;

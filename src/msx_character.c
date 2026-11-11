@@ -4,9 +4,35 @@
 #include <string.h>
 #include "marco_visual.h"
 #include "marco_death.h"
+#include "scene_codec.h"
 #define be16 msx_character_be16
 #define be32 msx_character_be32
 static unsigned current;
+uint32_t msx_character_file_size(const uint8_t *f,uint32_t n) {
+    if (!f || n<20 || memcmp(f,"MSXZ",4) || be16(f+4)!=1) return 0;
+    uint32_t raw=be32(f+8),block=be32(f+12),blocks=be32(f+16);
+    if (!raw || block!=65536u || blocks!=(raw+block-1)/block || (uint64_t)20+blocks*4u>n) return 0;
+    return raw;
+}
+bool msx_character_unpack(const uint8_t *f,uint32_t n,uint8_t *out,uint32_t out_size) {
+    uint32_t raw=msx_character_file_size(f,n);
+    if (!raw || raw!=out_size) return false;
+    uint32_t block=be32(f+12),blocks=be32(f+16);uint64_t at=20+(uint64_t)blocks*4u;
+    for (uint32_t i=0;i<blocks;i++) {
+        uint32_t stored=be32(f+20+i*4u),length=stored&0x7fffffffu,want=raw-i*block<block?raw-i*block:block;
+        if (at+length>n) return false;
+        if (stored&0x80000000u) {if (length!=want) return false;memcpy(out+i*block,f+at,length);}
+        else if (want==block) {if (!scene_decode_lz4(out+i*block,block,f+at,length)) return false;}
+        else {
+            /* The last block was packed padded with zeros to a whole one. */
+            uint8_t *whole=malloc(block);bool ok=whole && scene_decode_lz4(whole,block,f+at,length);
+            if (ok) memcpy(out+i*block,whole,want);
+            free(whole);if (!ok) return false;
+        }
+        at+=length;
+    }
+    return at==n;
+}
 bool msx_character_layout(const uint8_t *b,uint32_t size,msx_character_layout_t *o) {
     if (!b || size<64 || memcmp(b,"MSXP",4) || be16(b+4)!=1) return false;
     memset(o,0,sizeof *o);o->blob=b;o->size=size;

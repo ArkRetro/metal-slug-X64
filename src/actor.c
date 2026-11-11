@@ -400,6 +400,8 @@ static msx_character_pack_t character_pack;
 bool actor_select_character(unsigned character) {
     rspq_wait();
     msx_character_use(NULL);msx_character_close(&character_pack);
+    marco_renderer_set_character(0);marco_renderer_close();   // any earlier pack and the parts loaded so far go first
+    heap_stats_t h0;sys_get_heap_stats(&h0);
     bool ok=character<MSX_CHARACTERS && marco_renderer_set_character(character);
     if (ok && character) {
         uint32_t size=0;const uint8_t *blob=marco_renderer_character_pack(&size);
@@ -407,8 +409,10 @@ bool actor_select_character(unsigned character) {
         if (ok) msx_character_use(&character_pack);
     }
     if (!ok) {marco_renderer_set_character(0);character=0;}
+    heap_stats_t h1;sys_get_heap_stats(&h1);
+    marco_renderer_character_heap(character && h1.used>h0.used?(unsigned)(h1.used-h0.used):0);
     msx_character_request=(uint8_t)character;
-    debugf("MSX CHARACTER %u %s\n",character,ok?"chosen":"(no pack: Marco)");
+    debugf("MSX CHARACTER %u %s heap=%u\n",character,ok?"chosen":"(no pack: Marco)",(unsigned)(h1.used>h0.used?h1.used-h0.used:0));
     return ok;
 }
 static unsigned select_mission,select_stage;

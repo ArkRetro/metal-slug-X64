@@ -35,6 +35,9 @@ unsigned marco_renderer_character(void);
 /* The pack in memory (NULL for Marco): its programs are decoded from it
  * (msx_character_open). */
 const uint8_t *marco_renderer_character_pack(uint32_t *size);
+/* Heap bytes the chosen character took (its pack and decoded programs):
+ * counted with the parts in marco_renderer_preloaded_bytes. */
+void marco_renderer_character_heap(unsigned bytes);
 bool marco_renderer_draw(unsigned pose,int anchor_x,int anchor_y,bool mirror);
 bool marco_renderer_draw_palette(unsigned pose,int anchor_x,int anchor_y,bool mirror,unsigned palette);
 /* Draw a native helper emission in Neo Geo 9-bit coordinates. viewport_x/y

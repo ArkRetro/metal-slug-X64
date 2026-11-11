@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van'),
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals'),
     'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter')}
 def root_groups():
     import re
@@ -359,6 +359,20 @@ ROOTS+=[0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x248a42,
 ROOTS+=[0x23bdd2,0x23bddc,0x23be08,0x23bdf2,0x23bebe]
 # Mission 4 van 0A9F0C (neo_m4props.c): 2A7E1A and its stages 0E6836, the overlay 0AA37C (2A7E10 and 0E6862).
 ROOTS+=[0x2a7e1a,0x2a7e10,0x2a7f28,0x2a80d8,0x2a8192,0x2a82e4,0x2a83e4,0x2a8546,0x2a8646,0x2a8712,0x2a896c,0x2a8994,0x2a7e2c,0x2a80cc,0x2a8186,0x2a82d8,0x2a83d0,0x2a8532,0x2a8632,0x2a86fe,0x2a8880,0x2a8988]
+# Mission 4 hatches 01F828 / 01F866 (neo_m4props.c): halves 22FBEA / 22FBF6 and their states 0DFE1A / 0DFE2A, the rock 01FABA (22FB34), its shadow 01FF82 (22FBBC), the puff 020004 (22FCDA).
+ROOTS+=[0x22fbea,0x22fc02,0x22fc4a,0x22fc92,0x22fbf6,0x22fc26,0x22fc6e,0x22fcb6,0x22fb34,0x22fbbc,0x22fcda]
+# Mission 4 jumping soldier 07E554 (neo_m4props.c): 27F832, 27F884, the jump 27F8AE, the hit 27F932, the piece 07EC6A (27FA3A); the dust 07EDF0 is 22DF54.
+ROOTS+=[0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a]
+# Mission 4 helicopters 08514A / 085522 / 08571C (neo_heli.c): 2825CE, the death 282834, the flashes 28292C / 282998, the bomb 282A2C and its impact 282AEA.
+ROOTS+=[0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea]
+# Mission 4 truck pieces 02A448 (neo_truck.c): the sixteen programs of 02A878; the sparkle 08CF6E of the animals (neo_item.c): 289704.
+ROOTS+=[0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704]
+# Pickup label 08C752: the characters 08C954 (tables 0E565A / 0E56EE).
+ROOTS+=[0x285ef2,0x285efe,0x285f0a,0x285f16,0x285f22,0x285f2e,0x285f3a,0x285f46,0x285f52,0x285f5e,0x285f6a,0x285f74,0x285f7e,0x285f88,0x285f92,0x285f9c,0x285fa6,0x285fb0,0x285fba,0x285fc4,0x285fce,0x285fd8,0x285fe2,0x285fec,0x285ff6,0x286000,0x28600a,0x286014,0x28601e,0x286028,0x286032,0x28603c,0x286046,0x286050,0x28605a,0x286064,0x28606e,0x286078,0x286082,0x28608c,0x286096,0x2860a0,0x2860aa,0x2860b4,0x2860be,0x2860c8,0x2860d2,0x2860dc,0x2860e6,0x2860f0,0x2860fa,0x286104,0x28610e,0x286118,0x286122,0x28612c,0x286136,0x286140,0x28614a,0x286154,0x28615e,0x286168,0x286172,0x28617c]
+# Mission 4 fighting prisoner 0DDCDA (neo_prisoner.c): the wait 2AFDAA, the shooting 2AFE14 (callback 0DE3DA), the punch 2AFF14 (0DE3CE) and its shot 0DE0FE (2AFF94).
+ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
+# Mission 4 animals (item kinds 40..42, neo_item.c): 289082, 289CD6, 28A12C; their fruits 3F (289AA8) and the fruits' second programs 28992A / 289B44 (08BBC6 / 08BBEE).
+ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
 # Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
 ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 # Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).

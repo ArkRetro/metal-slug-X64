@@ -14,6 +14,7 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (L-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
@@ -47,7 +48,7 @@ try:
         assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
         if re.search(r'MSX CINE select (start|waiting)',log()):
             time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7)];tap('a');time.sleep(.5)
+            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
             continue
         # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
         # or the press lands on SOLDIER SELECT and chooses before the menu combo.
@@ -59,7 +60,7 @@ try:
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
-    t0=time.monotonic();nextgrab=0;k=0;held={}
+    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     while time.monotonic()-t0<a.seconds:
@@ -69,7 +70,11 @@ try:
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
         if cam>=a.until:break
-        hold('Right',True);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        # The camera waits for something behind Marco (the tank 027F54 at 1000): after 6 s without
+        # progress, turn back and fire for 5 s of every 8.
+        if cam!=lastcam:lastcam=cam;stuck=t
+        back=a.fire and t-stuck>6 and ((t-stuck-6)%8)<5
+        hold('Right',not back);hold('Left',back and ((t-stuck-6)%8)<0.4);hold('a',bool(a.jump) and not back and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)
@@ -80,6 +85,7 @@ try:
     for s in stops[:40]:print('  ',s)
     ok=cam>=a.progress and 'not loaded' not in text
 finally:
+    for n in ('Right','Left','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)   # a key left down would be read by the next run's menu
     proc.terminate()
     try:proc.wait(5)
     except Exception:proc.kill()

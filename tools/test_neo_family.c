@@ -242,6 +242,8 @@ static void ram_to_env(marco_weapons_t *weapons) {
     }
     memcpy(weapons->b,&wram[0xc718],MARCO_WEAPON_BLOCK);
 }
+/* e->node: another node as the RAM image has it (the bytes the update read). */
+static const uint8_t *ram_node(void *ctx,uint32_t tag) {(void)ctx;return tag>=0x100000u && tag<0x10ff40u?&wram[tag&0xffffu]:NULL;}
 static void env_to_ram(const marco_weapons_t *weapons) {
     memcpy(&wram[0xc608],vslots.slot[0].b,0x24);memcpy(&wram[0xc62c],vslots.slot[1].b,0x24);
     for (unsigned r=0;r<2;r++) for (unsigned i=0;i<4;i++) wram[0xc2e8+4*r+i]=(uint8_t)(vslots.record[r]>>(24-8*i));
@@ -392,7 +394,7 @@ static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {
         const int32_t *t=r+1+10*i;neo_ga_target_t *o=&answer_env->target[i];
-        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]},(uint16_t)t[8],(uint16_t)t[9]};
+        *o=(neo_ga_target_t){t[0]!=0,(uint16_t)t[1],(uint16_t)t[2],t[3]!=0,{(int16_t)t[4],(int16_t)t[5],(int16_t)t[6],(int16_t)t[7]},(uint16_t)t[8],(uint16_t)t[9],(uint32_t)r[21+i]};
     }
     if (r[0]) contacts++;
     return (uint8_t)r[0];
@@ -542,6 +544,87 @@ static void map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6
 }
 #endif
 static void emit(void *ctx,const neo_anim_draw_t *d) {(void)ctx;(void)d;draws++;}
+#ifdef FAMILY_SOLDIER_NODES
+/* A node of the soldier module (0AE000..0B0FFF and its deaths 040500..040FFF,
+ * neo_soldier_ai.c) inside a family trace: the node's bytes become a
+ * neo_soldier_t (the named fields of tools/soldier_capture.py and the block
+ * +6E..+93), one neo_soldier_tick with the update's scene (kernel, RNG,
+ * players, grid, bounds), and back. The bytes the soldier module does not
+ * model (+12..+14, +16, +19..+1D, +60, +61, +6A, +94..) take the original's
+ * values: only the modelled fields are compared. No player hurtbox is offered
+ * (a recorded 0049E8 hit stops the test). */
+static bool soldier_node(uint32_t r) {return (r>=0xae000u && r<0xb1000u) || (r>=0x40500u && r<0x41000u);}
+static bool soldier_modelled(unsigned o) {
+    return o<4u || o==0x15 || o==0x17 || o==0x18 || o==0x1e || o==0x1f || (o>=0x24 && o<0x44) || (o>=0x4c && o<0x54) || (o>=0x5a && o<0x60) ||
+        (o>=0x62 && o<0x6a) || (o>=0x6c && o<0x94);
+}
+static ga_result_t soldier_tick_node(neo_gactor_t *a,neo_genv_t *e,const family_update_t *u) {
+    neo_soldier_t s;memset(&s,0,sizeof(s));s.active=true;s.routine=ga_l(a,0);
+    neo_contact_actor_t *b=&s.b;
+    b->x=(int32_t)ga_l(a,0x28);b->y=(int32_t)ga_l(a,0x2c);b->vx=(int32_t)ga_l(a,0x30);b->vy=(int32_t)ga_l(a,0x34);b->scalar62=(int32_t)ga_l(a,0x62);
+    b->projected_x=(int32_t)ga_l(a,0x3c);b->projected_y=(int32_t)ga_l(a,0x40);b->cached_x=(int32_t)ga_l(a,0x44);b->cached_y=(int32_t)ga_l(a,0x48);
+    b->parent_tag=ga_l(a,0x38);b->kind_angle=ga_w(a,0x6c);b->field66=ga_w(a,0x66);b->word1e=ga_w(a,0x1e);
+    b->flags15=ga_b(a,0x15);b->flags5f=ga_b(a,0x5f);b->timer5a=ga_b(a,0x5a);b->mark=ga_b(a,0x4c);b->correction=ga_b(a,0x4d);
+    s.anim.timer=ga_w(a,0x24);s.anim.speed=ga_w(a,0x26);s.anim.flash=ga_b(a,0x17);s.anim.field18=ga_b(a,0x18);s.anim.field50_tag=ga_l(a,0x50);
+    s.anim.program=a->program;s.anim.cursor=a->cursor;
+    s.render.attributes=(uint16_t)(0x7100u|b->flags15);
+    s.health=ga_w(a,0x4e);s.f5b=ga_b(a,0x5b);s.f5c=ga_b(a,0x5c);s.f5d=ga_b(a,0x5d);s.f5e=ga_b(a,0x5e);s.variant68=ga_b(a,0x68);s.group69=ga_b(a,0x69);
+    memcpy(s.locals,&a->m[0x6e],sizeof(s.locals));
+    neo_soldier_env_t env;memset(&env,0,sizeof(env));
+    env.kernel=e->kernel;
+    if (!ga_parent(e,0x10c72eu,&env.terrain)) memset(&env.terrain,0,sizeof(env.terrain));
+    if (!ga_parent(e,0x10e968u,&env.root)) memset(&env.root,0,sizeof(env.root));
+    env.terrain.tag=0x10c72eu;env.root.tag=0x10e968u;
+    static neo_contact_parent_t sdyn[NEO_KDYN_COUNT];
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) sdyn[i]=(neo_contact_parent_t){NEO_DYN_TAG(i),e->kernel->dyn[i].pos.x,e->kernel->dyn[i].pos.y,e->kernel->dyn[i].pos.prev_x,e->kernel->dyn[i].pos.prev_y,0};
+    env.dyn=sdyn;
+    env.epoch=e->epoch;env.players=e->players;env.grid=e->grid;env.rng=e->rng;env.bounds=e->bounds;
+    env.camera_word=(uint16_t)((uint32_t)e->scroll_x>>16);env.program=program;
+#ifdef FAMILY_RAM
+    env.slot_word[0]=w16(0x10c608);env.slot_word[1]=w16(0x10c62c);   /* --ram 10c608-10c62e */
+#endif
+    for (unsigned p=0;p<2;p++) {
+        env.player_state[p].alive=(e->players.active_mask>>p)&1u;env.player_state[p].follow7a=0xff;env.player_state[p].follow7b=0xff;
+        env.player_state[p].x=p?e->players.p2x:e->players.p1x;env.player_state[p].y=p?e->players.p2y:e->players.p1y;
+    }
+    /* 0049E8 by the soldier: its own narrow phase against player 1's hurtbox
+     * (0E...: soldier_player_hurtbox at the player's projected words), as
+     * tools/test_neo_soldier_ai.c; the recorded answers are not replayed. */
+    neo_hurtbox_t ph={e->players.p1x,e->players.p1y,e->player_flags15[0],soldier_player_hurtbox.type,0,
+        {soldier_player_hurtbox.rect[0],soldier_player_hurtbox.rect[1],soldier_player_hurtbox.rect[2],soldier_player_hurtbox.rect[3]},false};
+    if (e->players.active_mask&1u) {env.targets=&ph;env.target_count=1;}
+    neo_soldier_result_t r=NEO_SOLDIER_MORE;
+    uint8_t f81=0;
+    switch (ga_l(a,0)) {   /* the entries 0AF17E.. (0AEF30 then +81): the constructor, no update */
+    case 0xaf17e:f81=2;break;case 0xaf18c:f81=0x10;break;case 0xaf19a:f81=0x12;break;case 0xaf1a8:f81=0xe0;break;
+    case 0xaf1b6:f81=4;break;case 0xaf1c4:f81=8;break;case 0xaf1d2:f81=0xc;break;case 0xaf1e0:f81=0xe;break;
+    }
+    if (f81) {
+        neo_soldier_spawn_t sp;memset(&sp,0,sizeof(sp));
+        sp.x=(int32_t)ga_l(a,0x28);sp.y=(int32_t)ga_l(a,0x2c);sp.variant68=ga_b(a,0x68);sp.group69=ga_b(a,0x69);sp.flags81=f81;
+        for (unsigned i=0;i<6;i++) sp.words[i]=ga_w(a,0x6eu+2u*i);
+        uint16_t t24=ga_w(a,0x24),t26=ga_w(a,0x26);   /* the constructor starts no program: +24 / +26 stay the previous occupant's */
+        if (!neo_soldier_construct(&s,&sp,&env)) {fprintf(stderr,"soldier constructor %05x refused (line %u)\n",(unsigned)ga_l(a,0),neo_soldier_unsupported_line);ga_fail(e,ga_l(a,0));return GA_UNSUPPORTED;}
+        s.anim.timer=t24;s.anim.speed=t26;
+        s.f5b=ga_b(a,0x5b);s.f5c=ga_b(a,0x5c);s.f5d=ga_b(a,0x5d);s.f5e=ga_b(a,0x5e);   /* not cleared by 003F24 either */
+    } else r=neo_soldier_tick(&s,&env);
+    if (r==NEO_SOLDIER_UNSUPPORTED) {fprintf(stderr,"soldier unsupported: routine %05x line %u\n",(unsigned)s.routine,neo_soldier_unsupported_line);ga_fail(e,s.routine);return GA_UNSUPPORTED;}
+    ga_sl(a,0,s.routine);
+    ga_sl(a,0x28,(uint32_t)b->x);ga_sl(a,0x2c,(uint32_t)b->y);ga_sl(a,0x30,(uint32_t)b->vx);ga_sl(a,0x34,(uint32_t)b->vy);ga_sl(a,0x62,(uint32_t)b->scalar62);
+    ga_sl(a,0x3c,(uint32_t)b->projected_x);ga_sl(a,0x40,(uint32_t)b->projected_y);ga_sl(a,0x44,(uint32_t)b->cached_x);ga_sl(a,0x48,(uint32_t)b->cached_y);
+    ga_sl(a,0x38,b->parent_tag);ga_sw(a,0x6c,b->kind_angle);ga_sw(a,0x66,b->field66);ga_sw(a,0x1e,b->word1e);
+    ga_sb(a,0x15,b->flags15);ga_sb(a,0x5f,b->flags5f);ga_sb(a,0x5a,b->timer5a);ga_sb(a,0x4c,b->mark);ga_sb(a,0x4d,b->correction);
+    ga_sw(a,0x24,s.anim.timer);ga_sw(a,0x26,s.anim.speed);ga_sb(a,0x17,s.anim.flash);ga_sb(a,0x18,s.anim.field18);ga_sl(a,0x50,s.anim.field50_tag);
+    a->program=s.anim.program;a->cursor=s.anim.cursor;
+    ga_sw(a,0x4e,s.health);ga_sb(a,0x5b,s.f5b);ga_sb(a,0x5c,s.f5c);ga_sb(a,0x5d,s.f5d);ga_sb(a,0x5e,s.f5e);ga_sb(a,0x68,s.variant68);ga_sb(a,0x69,s.group69);
+    for (unsigned i=0;i<sizeof(s.locals);i++) ga_sb(a,0x6eu+i,s.locals[i]);
+    if (u->has_post) for (unsigned o=0x10;o<0xb0;o++) if (!soldier_modelled(o)) a->m[o]=u->post[o];
+#ifdef FAMILY_ATTACKS
+    answer_used=answer_count;
+#endif
+    return r==NEO_SOLDIER_DELETED?GA_DELETE:GA_MORE;
+}
+#endif
 static bool skip(unsigned o) {return o==0x14 || o==0x16 || o==0x58 || o==0x59 || (o>=0x19 && o<=0x1c) || (o>=0x20 && o<=0x23) || (o>=0x44 && o<=0x4b);}
 int main(void) {
     /* Node addresses are not in the fixture: a child's recorded +0C names
@@ -616,6 +699,17 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
     unsigned compared=0,deleted=0,left=0;bool stopped=false;uint32_t kill_frame=0,kill_at=0;uint8_t epoch=1;int32_t p1x=0,p1y=0,p1xl=0;
     for (unsigned k=0;k<NU;k++) {
         const family_update_t *u=&UPDATES[k];
+#ifdef FAMILY_HITW
+        /* What 0049E8 (0047xx..0049E7) of an earlier update wrote into the
+         * other nodes of the family (+5A.., +17 flash): the attack answers
+         * are the original's, so are their side effects, at the moment of
+         * the call (compile_family_fixture.py, extract --hit-writes). */
+        {static unsigned hw;
+         for (;hw<sizeof(CAT(FAMILY_NAME,_hitw))/sizeof(CAT(FAMILY_NAME,_hitw)[0]) && CAT(FAMILY_NAME,_hitw)[hw][0]<(int32_t)k;hw++) {
+             const int32_t *h=CAT(FAMILY_NAME,_hitw)[hw];
+             if (h[1]>=0 && actors[h[1]].active) actors[h[1]].m[h[2]]=(uint8_t)h[3];
+         }}
+#endif
 #ifdef FAMILY_FRESH_PROGRAM
         first_update[u->node]=!updated[u->node];updated[u->node]=true;
 #endif
@@ -777,9 +871,10 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #endif
 #ifdef FAMILY_RAM
         for (int i=0;i<u->ram_in_count;i++) wram[RAMIN[u->ram_in_first+i][0]&0xffffu]=(uint8_t)RAMIN[u->ram_in_first+i][1];
+        e.player_ylow[0]=w16(0x101506);   /* RAM 101506 (--ram 101500-101508): player 1 +42 */
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
-        ram_to_env(&weapons);e.vehicle=&venv;e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
+        ram_to_env(&weapons);e.vehicle=&venv;e.node=ram_node;pickup.mission=w16(0x10c2f6);e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
         e.player_flags15[0]=wram[0x14d9];e.player_flags15[1]=wram[0x1589];   /* the players' +15 as read */
         /* RAM 10C33C (01AEB0: the players present) when the family watches it. */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c33cu && 0x10c33du<ram_ranges[g][1]) e.players.active_mask=wram[0xc33c]&3u;   /* btst.l d0 on the byte 10C33C */
@@ -838,7 +933,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #ifdef FAMILY_PREVIOUS
         previous_node=PREVIOUS[k];
 #endif
+#ifdef FAMILY_SOLDIER_NODES
+        ga_result_t r=soldier_node(ga_l(a,0))?soldier_tick_node(a,&e,u):neo_region_tick(a,&e);
+#else
         ga_result_t r=neo_region_tick(a,&e);
+#endif
 #ifdef FAMILY_LEAVE
         {static const uint32_t lv[][2]=FAMILY_LEAVE;bool leave=false;
          for (unsigned i=0;i<sizeof(lv)/sizeof(lv[0]);i++) if (lv[i][0]==u->frame && (int)lv[i][1]==u->node) leave=true;
@@ -904,7 +1003,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         memcpy(wram,wexpect,sizeof(wram));
 #endif
         if (pickup.taken!=taken) {
-#ifdef FAMILY_PICKUPS
+#ifdef FAMILY_PICKUPS_RAM
+            /* The weapon block 10C718 (food counters 10C728) is part of the
+             * RAM image compared above. */
+            pickups_checked++;
+#elif defined(FAMILY_PICKUPS)
             static const uint32_t pk[][3]=FAMILY_PICKUPS;bool ok=false;
             for (unsigned i=0;i<sizeof(pk)/sizeof(pk[0]);i++)
                 if (pk[i][0]==u->frame) ok=marco_weapons_id(&weapons,0)==pk[i][1] && marco_weapons_rounds(&weapons,0)==pk[i][2];
@@ -945,9 +1048,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         }
         if (!u->has_post) {
             if (r!=GA_DELETE && r!=GA_DELETE_TREE) {fprintf(stderr,"frame %u node %d %05x: original deletes, native result %d\n",u->frame,u->node,u->routine,r);return 1;}
-#ifdef FAMILY_M3MID
             if (r==GA_DELETE_TREE) kill_children(NULL,a);   /* 0041AC: 004192 first */
-#endif
             /* 004126 -> 0164D0: a deleted node releases its dynamic object. */
             if (ga_b(a,0x6a)!=0xffu) dyn_release(NULL,a);
             a->active=false;deleted++;continue;

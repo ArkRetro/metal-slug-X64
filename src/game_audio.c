@@ -85,11 +85,18 @@ static bool m3_word(uint16_t w) {
     for (unsigned k=0;k<sizeof(M3)/sizeof(M3[0]);k++) if (M3[k]==w) return true;
     return false;
 }
+/* The Mission 4 effects (docs/MISION4.md: 9 words with a policy entry) stream
+ * from rom:/ as well, for the same reason. */
+static bool m4_word(uint16_t w) {
+    static const uint16_t M4[]={0x102e,0x1030,0x1036,0x1053,0x1060,0x1066,0x10d1,0x1134,0x113b};
+    for (unsigned k=0;k<sizeof(M4)/sizeof(M4[0]);k++) if (M4[k]==w) return true;
+    return false;
+}
 static bool streamed(unsigned i) {
     uint16_t w=msx_sfx_defs[i].word;
     return w==0x10f8u || w==0x1032u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
         || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
-        || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u || m3_word(w)
+        || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u || m3_word(w) || m4_word(w)
         || w==0x1125u || w==0x114eu;   /* the death voices of Eri and Fio (docs/PERSONAJES.md): no RAM for them */
 }
 void game_audio_preload(void) {

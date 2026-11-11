@@ -26,11 +26,22 @@ el `switch` del módulo.
 
 `0A9F0C` con `0AA37C` y `0AA2C6` (familias `m4van`, `m4van2`).
 
-Quedan (orden de guion): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
-`01FF82`, `020004`), `07E554` (+2), `09A71E`, `0AF1A8`, `0DE0FE`/`0DE24A`,
-`08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`,
-`0587C4` (+2), `02A448`, `08CF6E`, `08C954`, y el jefe `02267E` (11) con
-`0259F2` y la orden `0BB028`. Todos menos el jefe están en la captura A.
+Hechos después (11-XI, `docs/MISION4.md` «Fase 2c»): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866`
+(+ `01F9B8`, `01FA08`, `01FABA`, `01FF82`, `020004`; familia `m4rock`), `07E554` (+ `07EC6A`, `07EDF0`; `m4jump`) y
+`09A71E` (`m4box`); los helicópteros `08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`) y `08514A`/`085294`
+(`neo_heli.c`, familia `m4heli`); el soldado que salta `0AF1A8` (`neo_soldier_ai.c`, familias `m4sold`/`m4sold2`), el
+destello `08CF6E` (`m4spark`) y el camión `02916E` de la cámara 4929 con sus piezas `02A448` (`m4truck`).
+
+Después (11-XI, segunda sesión): el prisionero que pelea `0DDCDA` con sus disparos `0DE0FE`/`0DE24A` (`neo_prisoner.c`,
+familias `m4pris`/`m4pris2`) y los animales (tipos 40..42 de `08C374`, `neo_item.c`, familia `m4animal`; sus frutas
+3D/3F traducidas sin captura).
+
+El rótulo de recogida `08C752` con sus letras `08C954` está traducido y probado (`m4label`) pero sin conectar
+(`MSX_PICKUP_LABEL` 0: faltan sus sprites en la exportación base).
+
+Quedan (orden de guion): `0587C4` (+2; captura L hecha), y el jefe `02267E` con `0259F2` y la orden
+`0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), G (camión `02916E` y sus piezas), **T (jefe y fin de
+misión, del TAS)**.
 
 ## Resumen
 

@@ -480,7 +480,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -489,8 +489,11 @@ FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab crea
 # docs/MISION4.md "Fase 2"). RAM 10C6C0..10C6FF through neo_ga_flags_t m4.
 FAMILY_ARGS_m4props := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines bb106
 # m4flyer / m4flyer2 = the Mission 4 flyers 083C8A and 08391C (neo_m3enemy.c,
-# the family of the Mission 3 bomber): m4flyer = capture B (run4's own pad
-# from sec05_149829: nine 083C8A and the 08391C shot down in flight),
+# the family of the Mission 3 bomber): m4flyer = capture D (run4's own pad
+# from sec05_149829, roots 83c8a,8391c,a9f0c,aa37c,aa2c6 up to 152400: nine
+# 083C8A and the 08391C shot down in flight, together with the van 0A9F0C:
+# the ninth flyer lands on the van's dynamic map 0E6704; extracted with
+# --range 8391c-84c98 --range a9f0c-aa458 --hit-writes),
 # m4flyer2 = capture C (MSX_FULL_NOFIRE=150090-153000: they land, drop the
 # rider 0842A8 and crash; the trail 083B92 of 08391C). The rider's soldier
 # 0AF17E is outside the family.
@@ -498,8 +501,10 @@ FAMILY_ARGS_m4flyer := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --
 FAMILY_ARGS_m4flyer2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374 --late-creator --split-children --node-fields 7a
 # m4bin = the Mission 4 bins 033526 (script records 2DB6A2 / 2DB86E; neo_m4props.c):
 # hits, the items and the prisoner 099DD6 thrown out by the program call
-# 239C80 (the prisoner's constructor update only: neo_prisoner.c), the puffs
-# 03378A, the pieces 033864; capture A.
+# 239C80 with its whole life (neo_prisoner.c; the other prisoners of capture
+# A come along), the puffs 03378A, the pieces 033864; capture A, --range
+# 33526-33920 --range 99dcc-9a71d --range 9a97c-9aa9e (the ripples 03C62A
+# stay outside: the soldiers' are in the same capture).
 FAMILY_ARGS_m4bin := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 3378a,33864,99dd6
 # m4urn = the Mission 4 object 036C34 (five script records; neo_m4props.c): two
 # stages with their flinches, the end 23BEBE and the blast 036EA8; capture A.
@@ -549,10 +554,66 @@ FAMILY_ARGS_m5deco := --terrain 10c72e --group-map 0 --root-words
 FAMILY_ARGS_m5street := --terrain 10c72e --group-map 0 --root-words
 # m4van2 = the whole life of the van without its overlay (routines 0A9F0C..
 # 0AA2DF only: the wreck 0AA176, the blast 0AA2C6, 0AA1FE / 0AA252). m4van
-# (van and overlay) stops at 152048: in 152049 the blast's 0049E8 flashes
-# the van (+17) between the van's update and the overlay's 0044F6, a write
-# the family test only replays at the van's next update.
+# (van and overlay, --range a9f0c-aa458 --hit-writes) runs to the end too: in
+# 152049 the blast's 0049E8 flashes the van (+17) between the van's update
+# and the overlay's 0044F6; extract_family_fixture.py --hit-writes records
+# what 0049E8 wrote into the other nodes of the family and the test applies
+# it before the next update (FAMILY_HITW).
 FAMILY_ARGS_m4van2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374
+# m4rock = the Mission 4 hatches 01F828 / 01F866 (four script records; neo_m4props.c):
+# the emitter, the two halves of the hatch 01F9B8 / 01FA08 with their states
+# by the distance to the last rock (emitter +82), the puffs 020004, fifteen
+# rocks 01FABA with their shadows 01FF82 down to y 0x200; capture A, --range
+# 1f828-2055f.
+FAMILY_ARGS_m4rock := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --node-fields 82
+# m4jump = the Mission 4 jumping soldier 07E554 (four script records, 01A422;
+# neo_m4props.c): it waits for the player within +72, jumps out, is shot in
+# the air (07EA6C: the piece 07EC6A, the blast 01C706 or the dust 07EDF0 on
+# water) and its dust 07EDF0; capture A, --range 7e554-7f000.
+FAMILY_ARGS_m4jump := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m4box = the Mission 4 hidden prisoner boxes 09A71E (three script records,
+# neo_secret.c: 09A688's hits with the prisoner 099E1C, +7E = 0); in run4 they
+# are not opened; capture A, --range 9a5ee-9a97b.
+FAMILY_ARGS_m4box := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m4heli = the Mission 4 helicopters (neo_heli.c): the background ones 08571C
+# with their flash 085952, the attackers 085522 with the flash 0859E4 and the
+# bomb 085ACE, the squadrons 08514A of 085294; capture A, --range
+# 8514a-86070 --ram 101500-101508 (the player's +3C / +40 longs).
+FAMILY_ARGS_m4heli := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 85ace,8c374,8d0d2
+# m4spark = the sparkle 08CF6E of the animals (item kinds 40..42, neo_item.c;
+# 48 of them in capture A, --range 8cf6e-8d08d; made by the items, outside the family).
+FAMILY_ARGS_m4spark := --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m4truck = the Mission 4 truck 02916E (neo_truck.c, record of camera 4929)
+# with its body 029802 and the pieces 02A448 (02A71E with the reserve 2A:
+# two of sixteen; 01D5AA); capture G (run4's pad from sec05, roots
+# 2916e,2a448, --range 2916e-2aa00, 156900..157600).
+FAMILY_ARGS_m4truck := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m4sold / m4sold2 = the leaping soldiers 0AF1A8 (+81 = E0: the actions
+# 0AF99A of neo_soldier_ai.c) as nodes of a family trace (--soldier-nodes:
+# neo_soldier_construct / neo_soldier_tick on the node's bytes, the fields
+# the soldier module models): m4sold = capture A (six of them, 153471..155461,
+# shot in the air), m4sold2 = capture I (run4's pad from sec05 with
+# MSX_FULL_IDLE=153480-154400, roots af1a8: the leap reaches the idle
+# player, 0AFADA / 0AFAF0); --range af000-b0fff --ram 1067e6-1068e6 (the
+# delay grid) besides the Mission 4 set.
+FAMILY_ARGS_m4sold := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --soldier-nodes
+# m4pris = the fighting prisoner 0DDCDA.. (099E06 with +74 = FFFE, neo_prisoner.c) with its shots 0DE0FE and
+# blasts 0DE24A; capture E (run4's pad from sec05, roots 99e06,de0fe,de24a, range ddcda-de4ff,
+# 152700..157600): --range 99e06-9a97b --range ddcda-de4d8 and the node pool as RAM (--ram 1010a4-105564:
+# the player's node +76 and the enemy's +6E are read there, e->node).
+FAMILY_ARGS_m4pris := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374 --ram-creators
+# m4pris2 = the same from capture J (the pad idle from 153720: the prisoner stands and shoots, its shots home
+# on live soldiers, 0DE18E 168 updates).
+FAMILY_ARGS_m4pris2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374 --ram-creators
+# m4animal = the animals of Mission 4 (item kinds 40..42, motion 08BAAA, neo_item.c) with the fruits they drop
+# (kinds 3D / 3F, motions 08BB3C / 08BB44, 2896B2) and their sparkles 08CF6E; capture F (run4's pad from
+# sec05, roots 8c374,8c37c,8cf6e, range 8c374-8d900, 151000..155900).
+FAMILY_ARGS_m4animal := --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374,8c37c,8cf6e --script-kinds 3d,3f --item-kinds 3d,3f,40,41,42 --pickup-ram
+# m4label = the pickup label 08C752 (08CD10) with its characters 08C954 (neo_item.c): five labels of capture M
+# (run4's pad from sec05, roots 8c752,8c954, range 8c752-8cf6d, 152900..153800); the items that make them are
+# outside the family (injected), RAM 10C5B2 / 10C2F6 as read.
+FAMILY_ARGS_m4label := --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --label-counts
+FAMILY_ARGS_m4sold2 := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --soldier-nodes
 # m3wagon = the Mission 3 wagon boxes 039382/03938A and wagons 038D1E/038D26
 # (doors 038B06, targets 038F38, pieces 0390A6) with their ledge stampers
 # 0B90BC..0B9140 -> 0B8FA8 (0C70FC into the ring of 10C72E), neo_m3props.c;

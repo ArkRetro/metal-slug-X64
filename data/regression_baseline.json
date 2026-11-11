@@ -1,0 +1,94 @@
+{
+ "_cart": "ccr aeef1df + ebc1003 (cart 61472768 B, same bytes as ROM 50), m1end built fresh",
+ "chars": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 503,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "logo": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 126,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m1m2": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 114,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m4": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 139,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s1": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 125,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s2": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 122,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s3": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 122,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m6s1": {
+  "known": "FAIL known (docs/MISION6.md, B67): Marco falls into the water from x 160 (rafts, bridge and second terrain 10D7B6 not ported); missing draws with palette_id=125 are the Mission 6 actors (phase 2), as at ROM 47",
+  "missing_draw": 2074,
+  "missing_part": 1,
+  "result": "FAIL",
+  "seconds": 121,
+  "stopped": 0,
+  "unsupported": 8
+ },
+ "m6s2": {
+  "known": "missing draws with palette_id=125 (1C3F06, 1875FA..1876D6): Mission 6 actors, phase 2, as at ROM 47",
+  "missing_draw": 2342,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 121,
+  "stopped": 0,
+  "unsupported": 13
+ },
+ "m6s3": {
+  "known": "missing draws with palette_id=125 (1C3F06, 1875FA..1876D6): Mission 6 actors, phase 2, as at ROM 47",
+  "missing_draw": 2560,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 119,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "pause": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 72,
+  "stopped": 0,
+  "unsupported": 0
+ }
+}

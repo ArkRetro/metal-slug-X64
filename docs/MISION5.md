@@ -620,9 +620,11 @@ se borra `Q`.
 
 1. **Actores nuevos**: tras la quinta tanda quedan **54 constructores sin portar** (los 66 de la cuarta menos los 12 del
    tren `051344`); el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con
-   `tools/build_mission5_actors_doc.sh` (no regenerado en esta tanda: con el `script-native` de este árbol el script
-   daba 208 constructores sin portar de 222, un fallo de la herramienta sin investigar; el inventario sigue siendo el
-   de la tercera tanda). Paradas del guion: metro tras el tren (`0D3B36`, cámara 992, 14 constructores),
+   `tools/build_mission5_actors_doc.sh` (regenerado en la sexta tanda: 155 nativos, 13 en otro módulo, **54 sin
+   portar**. Los «208 sin portar» salían al lanzar el script desde otro árbol o sin `build/host/script-native`:
+   `compare_m3_events.py` tomaba entonces todo por «missing» en silencio. Ahora el script entra en su propio árbol
+   (`cd "$(dirname "$0")/.."`, también el de la M6) y `compare_m3_events.py` se para si falta el ayudante o es más
+   viejo que algún `src/*.c`). Paradas del guion: metro tras el tren (`0D3B36`, cámara 992, 14 constructores),
    alcantarilla `2DEA8C` (`08996A`). El tren de la cámara 528 y los siguientes del metro no se han visto en ares (el
    mando automático muere ante el helicóptero de la cámara 80).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,

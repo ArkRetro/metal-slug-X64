@@ -175,6 +175,21 @@ def mission_data(mission,lenders=()):
         report.update(lender=other.mission,borrowed_blobs=len(lblobs),borrowed_programs=len(lprogs),borrowed_bytes=other.data_length-lhead)
     else:
         precs.sort();head=b'MSXD'+struct.pack('>HHHH',1,nb,np_,0)
+    # scene_stage_rom serves an address from the first record that holds it:
+    # records by descending end, so an address in two blobs is served from
+    # the one with more bytes after it (Mission 5's rank table 2D388E, 306 B,
+    # starts in the last 2 bytes of the Mission 3 blob 2D36A4: served from
+    # there, a read of the table ran past that blob). Overlapping blobs must
+    # hold the same bytes.
+    lent=lend[0].raw[lend[0].data_offset+lend[4]:lend[0].data_offset+lend[0].data_length] if lend else b''
+    def blob_bytes(o,n):
+        own=base+len(body)
+        return bytes(body[o-base:o-base+n]) if o<own else lent[o-own:o-own+n]
+    for i,(r,o,n) in enumerate(brecs):
+        for r2,o2,n2 in brecs[i+1:]:
+            lo,hi=max(r,r2),min(r+n,r2+n2)
+            if lo<hi:assert blob_bytes(o+lo-r,hi-lo)==blob_bytes(o2+lo-r2,hi-lo),('blobs differ where they overlap',hex(r),hex(r2))
+    brecs.sort(key=lambda x:(-(x[0]+x[2]),x[0]))
     blob=head+b''.join(struct.pack('>III',*r) for r in brecs)+b''.join(struct.pack('>IIHH',*r) for r in precs)+bytes(body)
     assert len(blob)==base+len(body)
     report['bytes']=len(blob)

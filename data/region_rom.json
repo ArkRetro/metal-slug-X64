@@ -1539,6 +1539,18 @@
    "reader": "032B46 Mission 5 sewer stains: cull rectangle (01945C)",
    "hex": "ffe8fff001400050",
    "group": "m5"
+  },
+  {
+   "rom": "0x0E4C50",
+   "reader": "0836E8 Mission 5 sewer jets: cull rectangle (01945C)",
+   "hex": "fff8fff800100010",
+   "group": "m5"
+  },
+  {
+   "rom": "0x000070",
+   "reader": "0836E8 Mission 5 sewer jets: the ROM word that 0838DA reads with `move.w $70.w,d1` (the pause of the jets)",
+   "hex": "00c0",
+   "group": "m5"
   }
  ]
 }

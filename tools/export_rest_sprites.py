@@ -407,6 +407,9 @@ RESOURCES=RESOURCES+(0x58e,0x58d,0x587)
 # Mission 5 sewer stains 032B46.. (17D, and 158 with BLOOD on: captures-m5/fam/B8 as a palette capture).
 ROOTS=ROOTS+(0x2393de,0x2393ea,0x2393f6)
 RESOURCES=RESOURCES+(0x17d,0x158)
+# Mission 5 sewer jets 0836E8: the puff 083820 (869 / 851).
+ROOTS=ROOTS+(0x281ee0,0x281f82)
+RESOURCES=RESOURCES+(0x869,0x851)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

@@ -95,6 +95,18 @@ static ga_result_t gate_tick(neo_gactor_t *a,neo_genv_t *e) {
  * the script actor (00411C, D0 = 2A) at its position (01ACF2) and the next
  * wait 083674: rand <= 2666: +70 * 3/2; <= 4CCC: +70 * 5/4; <= A665: +70;
  * <= CCCC: +70 / 2; else +70 / 8. Outside E4C48 (01945C): 004188.
+ * - 0836E8 (script; 0836DE: +77 = 0) the jets: +77 = 1; 0838DA: +76 = +6E & 7
+ *   (the direction, 32 angle units each), +74 = the ROM word 000070 (the
+ *   original reads `$70.w`, not +70; 3C when 0: the pause), +70 = +72 (1E
+ *   when 0: how long it blows); 01B1DC, +78 = 0. 0836FC: +72 = +70, +6E = 0;
+ *   08370E: 01ABC8, every second update a puff 083820 (0040BC, D0 = 2A,
+ *   01ACF2, +76, +77, +60 = +78); after +72 updates 083760: +6E = +74,
+ *   08376C: 01ABC8 until it runs out, then 0836FC. Outside E4C50 (01945C):
+ *   004188.
+ * - 083820: layers 0, palette 869 / program 281EE0 (+77 = 0) or 851 /
+ *   281F82; speed 8 px at the angle (+76 << 5) + (rand & 7) - 3 (002E7C).
+ *   0838A6: 01AC38, 00427A (deleted at the end), +30 eased to 0 and +34 to
+ *   A000 by an eighth.
  * - 0834F4: +28 += (rand & 7) - 3, 01ABC8, layers 1, palette AC8, program
  *   281E98, 01B1DC; 083540: 0143DC, 00427A; on a floor (+15 bit 6) ->
  *   083568; deleted when +40 < 100. 083568: program 281EA2, 01AD52 (to
@@ -141,6 +153,56 @@ static ga_result_t drip_tick(neo_gactor_t *a,neo_genv_t *e) {
         }
         if (e->unsupported) return GA_UNSUPPORTED;
         return ga_cull(a,e,0xe4c48)?GA_DELETE:GA_MORE;
+    case 0x836de:case 0x836e8: {
+        SB(0x77,L(0)==0x836e8u?1:0);
+        const uint8_t *v=ga_rom(0x70);                                   /* 0838DA: `move.w $70.w,d1` reads the ROM word 000070, not +70 */
+        if (!v) {ga_fail(e,0x70);return GA_UNSUPPORTED;}
+        uint16_t d0=W(0x6e),d1=(uint16_t)(v[0]<<8|v[1]),d2=W(0x72);
+        if (!d1) d1=0x3c;
+        if (!d2) d2=0x1e;
+        SW(0x6e,0);SW(0x70,0);SW(0x72,0);SB(0x76,d0&7u);SW(0x74,d1);SW(0x70,d2);
+        k1b1dc(a);SB(0x78,0);}
+        /* fall through */
+    case 0x836fc:
+        SW(0x72,W(0x70));SW(0x6e,0);SL(0,0x8370e);
+        /* fall through */
+    case 0x8370e:
+        ga_project(a,e);
+        SW(0x6e,W(0x6e)-1u);
+        if ((int16_t)W(0x6e)<=0) {
+            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x83820,0x2a):e->spawn?e->spawn(e->ctx,a,0x83820,false):NULL;
+            if (c) {ga_place_at(c,a,e,0,0);ga_sb(c,0x76,B(0x76));ga_sb(c,0x77,B(0x77));}
+            SW(0x6e,2);
+            if (c) ga_sb(c,0x60,B(0x78));
+        }
+        SW(0x72,W(0x72)-1u);
+        if ((int16_t)W(0x72)<=0) SL(0,0x83760);
+        goto jet_cull;
+    case 0x83760:
+        SW(0x6e,W(0x74));SL(0,0x8376c);
+        /* fall through */
+    case 0x8376c:
+        ga_project(a,e);
+        SW(0x6e,W(0x6e)-1u);
+        if ((int16_t)W(0x6e)<=0) SL(0,0x836fc);
+    jet_cull:
+        if (e->unsupported) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0xe4c50)?GA_DELETE:GA_MORE;
+    case 0x83820: {
+        SW(0x66,0);SW(0x1e,0);
+        ga_palette(a,B(0x77)?0x851:0x869);
+        if (!ga_anim_start(a,e,B(0x77)?0x281f82:0x281ee0,0x100)) return GA_UNSUPPORTED;
+        uint8_t d0=(uint8_t)((ga_rand(e)&7u)-3u),d1=(uint8_t)((uint8_t)(B(0x76)<<5)+d0);
+        uint32_t vx,vy;ga_polar(0x80000,d1,&vx,&vy);                     /* 002E7C */
+        SL(0x30,vx);SL(0x34,vy);SL(0,0x838a6);}
+        /* fall through */
+    case 0x838a6:
+        ga_move(a,e);                                                    /* 01AC38 */
+        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
+        if (r) return GA_DELETE;
+        SL(0x30,L(0x30)+(uint32_t)((int32_t)(0u-L(0x30))>>3));
+        SL(0x34,L(0x34)+(uint32_t)((int32_t)(0xa000u-L(0x34))>>3));
+        return GA_MORE;
     case 0x834f4:
         SW(0x28,W(0x28)+(uint16_t)((ga_rand(e)&7u)-3u));ga_project(a,e);
         SW(0x66,1);SW(0x1e,1);ga_palette(a,0xac8);
@@ -165,7 +227,7 @@ static ga_result_t drip_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x834f4u || r==0x83540u || r==0x83568u || r==0x8358au;}
+static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x834f4u || r==0x83540u || r==0x83568u || r==0x8358au || r==0x836deu || r==0x836e8u || r==0x836fcu || r==0x8370eu || r==0x83760u || r==0x8376cu || r==0x83820u || r==0x838a6u;}
 /* ---- decorations of the street and the sewer, and the street's end ----------------
  * - 0BBE5E (street, camera 0): palette 5BB, layers 0, program 2A8FB6 (+6E =
  *   0) or 2A8FC0, +78 = FFD0. 0BBEAA -> 0BBEB0: 01ABC8, 00427A; deleted

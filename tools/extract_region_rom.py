@@ -92,7 +92,7 @@ BLOBS=[
     (0x63680,0x30,'063A92 R explosion blast rows 063680 / 063690 / 0636A0 (0636B0 payloads, 0049E8 by 063740)'),
     (0x63804,0x8,'0638B4 R rocket cull rectangle 063804 (019504)'),
     (0xE4E2C,0x58,'08606A weapon 0D ball: cull rectangles E4E2C (ball) / E4E3C (blast) (019504), contact row E4E44 and blast rows E4E54 / E4E64 / E4E74 (0049E8)'),
-    (0x2D0AE4,0x20,'0C3744 knife reach query row 2D0AE4 and 0C419E cut row 2D0AF4 (0049E8)'),
+    (0x2D0AE4,0x30,'0C3744 knife reach query row 2D0AE4 and 0C419E cut rows 2D0AF4 (Marco, Tarma: kind 2) and 2D0B04 (Eri, Fio: kind 3) (0049E8)'),
     (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
     (0x3BB40,0x30,'soldier hurtboxes 03BB40 / 03BB58: R rocket targets (01B162 reads their first rectangle)'),
     (0x14522,0x48,'014C0C..014C6A SV-001 tread: mode table 014522 of the kernel sweep (10C004) by the probe 013C1A word'),

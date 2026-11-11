@@ -19,6 +19,7 @@
 #include "marco_renderer.h"
 #include "hud_renderer.h"
 #include "msx_pause.h"
+#include "msx_character.h"
 #include "neo_text.h"
 #include <stdio.h>
 
@@ -389,6 +390,26 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
+}
+/* The character chosen at SOLDIER SELECT (msx_character.h): its catalog
+ * replaces Marco's in the renderer (the parts preloaded so far are dropped)
+ * and its programs go to the visual and the death; the game reads +6E from
+ * msx_character_request. False: no pack for it in this cartridge, Marco
+ * stays. No RDP work may be pending on Marco's parts. */
+static msx_character_pack_t character_pack;
+bool actor_select_character(unsigned character) {
+    rspq_wait();
+    msx_character_use(NULL);msx_character_close(&character_pack);
+    bool ok=character<MSX_CHARACTERS && marco_renderer_set_character(character);
+    if (ok && character) {
+        uint32_t size=0;const uint8_t *blob=marco_renderer_character_pack(&size);
+        ok=msx_character_open(&character_pack,blob,size);
+        if (ok) msx_character_use(&character_pack);
+    }
+    if (!ok) {marco_renderer_set_character(0);character=0;}
+    msx_character_request=(uint8_t)character;
+    debugf("MSX CHARACTER %u %s\n",character,ok?"chosen":"(no pack: Marco)");
+    return ok;
 }
 static unsigned select_mission,select_stage;
 void actor_select_mission(unsigned mission,unsigned stage) {select_mission=mission;select_stage=stage;}

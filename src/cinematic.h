@@ -13,6 +13,8 @@ bool msx_cinematic_open(const char *path);
  * when the frame has no time left or nothing is left; msx_cinematic_open on
  * the same path finishes the rest. */
 bool msx_cinematic_prepare(const char *path);
+/* Drops a prepared movie that will not play after all. */
+void msx_cinematic_cancel(const char *path);
 bool msx_cinematic_prepare_idle(void);
 /* End of this frame's spare time (TICKS_READ value: the next vertical blank
  * minus the margin) for other background work, 0 when none is left. */

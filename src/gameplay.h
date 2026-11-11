@@ -264,6 +264,7 @@ void msx_game_hurt(msx_game_t *game,int from);
  * msx_game_init. LIFEBAR_HITS hits; food gives max(1, points/100). */
 enum { MSX_LIFEBAR_HITS=10 };
 extern bool msx_lifebar_request;
+extern uint8_t msx_character_request;   /* player 1's +6E (msx_character.h) */
 /* Hits a food worth `points` (BCD, the pickup's value) gives back. */
 unsigned msx_lifebar_food_hits(uint32_t points);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */

@@ -16,6 +16,7 @@
 #include "title_intro.h"
 #include "cinematic.h"
 #include "entry_meta.h"
+#include "msx_character.h"
 #endif
 
 /* The FIX/C tile lab is a diagnostic: it needs the raw 48 MiB C-ROM copy, so
@@ -131,6 +132,29 @@ static bool mission_select_menu(void) {
 }
 /* loop: an optional loop body played after `sound` (msx_audio_open_loop),
  * sample-exact, until the next movie opens its own audio. */
+/* SOLDIER SELECT's cursor (docs/PERSONAJES.md): the place 0..3 on the
+ * screen is Marco, Eri, Tarma, Fio; Left and Right move it and wrap (MAME
+ * 0.264: one Left from Marco is Fio). The movie shows the cursor on Marco;
+ * the other places are their own captured pictures (select-pN.msxc: P1 on
+ * that place) and each character has its captured choice (confirm-cN.msxc
+ * with its voice, N = +6E) and its pack (chars/cN.bin). A cartridge without
+ * all of a character's files cannot choose it: only Marco, as before. */
+static unsigned soldier_place;
+static char soldier_path[2][40];
+static bool soldier_available(unsigned place) {
+    unsigned c=msx_character_of_place(place);char name[40];
+    snprintf(name,sizeof(name),"/select-p%u.msxc",place);if (!rom_file(name)) return false;
+    if (!c) return true;
+    snprintf(name,sizeof(name),"/confirm-c%u.msxc",c);if (!rom_file(name)) return false;
+    snprintf(name,sizeof(name),"/confirm-c%u.wav64",c);if (!rom_file(name)) return false;
+    snprintf(name,sizeof(name),"/chars/c%u.bin",c);return rom_file(name);
+}
+/* The movie and the sound of the choice of the cursor's character. */
+static const char *soldier_confirm(bool sound) {
+    unsigned c=msx_character_of_place(soldier_place);
+    if (!c) return sound?"rom:/confirm.wav64":"rom:/confirm.msxc";
+    snprintf(soldier_path[sound],sizeof(soldier_path[sound]),"rom:/confirm-c%u.%s",c,sound?"wav64":"msxc");return soldier_path[sound];
+}
 static bool play_cinematic(const char *label,const char *movie,const char *sound,const char *loop,int hold,bool entry,const char *next) {
     uint32_t s0=TICKS_READ();
     if (!msx_cinematic_open(movie)) return false;
@@ -147,6 +171,7 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
     if (loop) debugf("MSX CINE %s audio loop %s\n",label,looped?"on":"missing");
     debugf("MSX CINE %s setup open_us=%lu prepare_us=%lu check_us=%lu audio_us=%lu\n",label,(unsigned long)TICKS_TO_US(s1-s0),(unsigned long)TICKS_TO_US(s2-s1),(unsigned long)TICKS_TO_US(s3-s2),(unsigned long)TICKS_TO_US(TICKS_READ()-s3));
     unsigned rendered=0,unique=0,skipped=0,last_presented=~0u;bool previous=true,previous_a=true,start_skip=false,held=false;uint32_t draw_ticks=0,idle_ticks=0;
+    bool choosing=!strcmp(label,"select"),previous_left=true,previous_right=true;
     uint32_t started=TICKS_READ();
     msx_frames_stage(label);
     debugf("MSX CINE %s start frames=%lu audio=%u hold=%d\n",label,(unsigned long)msx_cinematic_stats().frames,audio,hold);
@@ -160,6 +185,22 @@ static bool play_cinematic(const char *label,const char *movie,const char *sound
         joypad_buttons_t buttons=joypad_get_buttons(JOYPAD_PORT_1);
         bool start=buttons.start,press=(start && !previous) || (buttons.a && !previous_a);
         previous=start;previous_a=buttons.a;
+        bool move_left=buttons.d_left && !previous_left,move_right=buttons.d_right && !previous_right;
+        previous_left=buttons.d_left;previous_right=buttons.d_right;
+        if (held && choosing && !press && move_left!=move_right) {
+            /* The cursor moves: the captured picture of the new place. */
+            unsigned place=(soldier_place+(move_right?1u:3u))&3u;char still[40];snprintf(still,sizeof(still),"rom:/select-p%u.msxc",place);
+            if (soldier_available(place) && soldier_available(soldier_place)) {
+                rspq_wait();msx_cinematic_close();
+                if (next) msx_cinematic_cancel(next);
+                if (!msx_cinematic_open(still)) {debugf("MSX ERROR select picture %s\n",still);return false;}
+                while (msx_cinematic_next()) {}
+                soldier_place=place;next=soldier_confirm(false);
+                if (!msx_cinematic_prepare(next)) next=NULL;
+                hold=(int)msx_cinematic_stats().frames-1;last_presented=~0u;
+                debugf("MSX SELECT place=%u character=%u\n",place,msx_character_of_place(place));
+            } else debugf("MSX SELECT place=%u not in this cartridge\n",place);
+        }
         if (held) {
             /* Waiting on the choice: the clock stands on the hold frame. */
             if (press && mselect_combo(buttons)) {
@@ -239,10 +280,14 @@ static bool entry_cinematic(void) {
      * render of 0030 up to its loop splice, then the 50 s loop body) the
      * hold keeps the music; without it the movie's own audio, as before. */
     bool select_music=rom_file("/select-music-head.wav64") && rom_file("/select-music-loop.wav64");
+    soldier_place=0;   // the movie puts P1 on Marco
     if (select) play_cinematic("select","rom:/select.msxc",select_music?"rom:/select-music-head.wav64":"rom:/select.wav64",
         select_music?"rom:/select-music-loop.wav64":NULL,-2,false,after_select);
     scene_early=1;
-    if (confirm) play_cinematic("confirm","rom:/confirm.msxc","rom:/confirm.wav64",NULL,-1,false,"rom:/entry.msxc");
+    /* The choice: the character's pack replaces Marco's catalog before its
+     * movie (the parts preloaded so far are Marco's). */
+    if (msx_character_of_place(soldier_place)!=msx_character_request && !actor_select_character(msx_character_of_place(soldier_place))) soldier_place=0;
+    if (confirm) play_cinematic("confirm",soldier_confirm(false),soldier_confirm(true),NULL,-1,false,"rom:/entry.msxc");
     if (scene_early==2) scene_assets_grow_early(msx_cinematic_heap_reserve());   // the choice's movie is gone: more slots to warm
     return play_cinematic("entry","rom:/entry.msxc","rom:/entry.wav64",NULL,-1,true,NULL);
 }

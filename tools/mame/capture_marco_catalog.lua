@@ -184,8 +184,26 @@ if character>=0 then
  for k=0,place-1 do boot[1700+20*k]={'P1 Right',1};boot[1710+20*k]={'P1 Right',0} end
  boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
 end
+-- MSX_SELECT_INPUTS=<string of L/R>: instead of MSX_CHARACTER, one Left or
+-- Right press per letter from 1700 (every 20 frames) and A at 1800: how the
+-- cursor moves at the ends of the row (docs/PERSONAJES.md).
+local select_inputs=os.getenv('MSX_SELECT_INPUTS')
+if select_inputs then
+ boot[1550]=nil;boot[1701]=nil
+ for k=1,#select_inputs do
+  local b=select_inputs:sub(k,k)=='L' and 'P1 Left' or 'P1 Right'
+  boot[1700+20*(k-1)]={b,1};boot[1710+20*(k-1)]={b,0}
+ end
+ boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
+end
 emu.register_frame_done(function()
  frame=frame+1;dbg:command(string.format('temp9=%x',frame))
+ -- MSX_CHARACTER_WATCH=1: every access to player 1's character word +6E
+ -- (101532) from frame 1600 on (the choice), to find its readers
+ -- (docs/PERSONAJES.md).
+ if frame==1600 and os.getenv('MSX_CHARACTER_WATCH')=='1' then
+  for _,sym in ipairs({'curpc','ppc','genpc'}) do dbg:command('wpset 101532,2,rw,1,{printf "CHARACTER_ACCESS frame=%d '..sym..'=%08X a6=%08X data=%08X\\n",temp9,'..sym..',a6,wpdata;g}') end
+ end
  if boot[frame] then button(boot[frame][1],boot[frame][2]) end
  -- Capture only (MSX_GIVE_HGUN): the H as a pickup gives it (weapon id 0A at
  -- 10C71E, rounds 10C724, 10C71C = FF, +94 = 1; tools/capture_weapons.lua

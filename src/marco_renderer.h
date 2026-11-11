@@ -25,6 +25,16 @@ unsigned marco_renderer_burnt_palette(void);
 /* The mummy's palette profiles (build_marco_poses.py --name-palette MUMMY /
  * MUMMY2): slot 63, or slot 64 with `second`; 0 when not in the catalog. */
 unsigned marco_renderer_mummy_palette(bool second);
+/* The catalog of the chosen character (msx_character.h): 0 Marco, the
+ * built-in tables and romfs/marco; 1..3 the pack rom:/chars/cN.bin
+ * (tools/export_character.py), read whole. Parts already loaded are freed
+ * (no RDP work may be pending); preload/load then bring the new ones.
+ * False: no such pack or a bad one, Marco stays. */
+bool marco_renderer_set_character(unsigned character);
+unsigned marco_renderer_character(void);
+/* The pack in memory (NULL for Marco): its programs are decoded from it
+ * (msx_character_open). */
+const uint8_t *marco_renderer_character_pack(uint32_t *size);
 bool marco_renderer_draw(unsigned pose,int anchor_x,int anchor_y,bool mirror);
 bool marco_renderer_draw_palette(unsigned pose,int anchor_x,int anchor_y,bool mirror,unsigned palette);
 /* Draw a native helper emission in Neo Geo 9-bit coordinates. viewport_x/y

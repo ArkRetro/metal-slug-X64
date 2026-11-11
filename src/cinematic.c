@@ -409,6 +409,12 @@ static slot_t *spare(void) {
     return NULL;
 }
 void msx_cinematic_close(void) {if (playing) close_slot(playing);playing=NULL;}
+/* Drops a movie prepared beside the playing one (SOLDIER SELECT: the choice
+ * of another character changes the movie that follows). */
+void msx_cinematic_cancel(const char *path) {
+    slot_t *s=path?find(path):NULL;
+    if (s && s!=playing) close_slot(s);
+}
 bool msx_cinematic_prepare(const char *path) {
     if (!path) return false;
     slot_t *s=find(path);if (s) return !s->failed;

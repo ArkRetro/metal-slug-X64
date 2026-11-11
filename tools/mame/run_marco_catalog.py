@@ -67,9 +67,10 @@ def main():
  if a.give_weapon:env['MSX_GIVE_WEAPON']=a.give_weapon
  if a.keep_bombs:env['MSX_KEEP_BOMBS']='1'
  if a.character is not None:
-  assert a.first>=2350,'the choice at 1800 lands 250 frames later: --first 2350 or more'
+  assert a.first>=2032,'the choice at 1800 lands 202 frames later than the captures of Marco: --first 2032 (the descent) or more'
   env['MSX_CHARACTER']=str(a.character)
  if a.victory is not None:env['MSX_VICTORY']=str(a.victory)
+ if os.environ.get('MSX_CHARACTER_WATCH'):env['MSX_CHARACTER_WATCH']='1'
  if a.dump_routines:env['MSX_DUMP_ROUTINES']=a.dump_routines
  assert sum((a.body_trace,a.motion_trace,a.stance_trace,a.idle_trace))<=1,'Block tracers share a debugger latch'
  if a.idle_trace:env['MSX_IDLE_TRACE']='1'

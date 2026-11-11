@@ -10,6 +10,7 @@
 #include "marco_thinfire.h"
 #include "msx_diag.h"
 #include "msx_sfx.h"
+#include "msx_character.h"
 #if defined(__mips__)
 #include <debug.h>
 #define FALL_LOG(...) debugf(__VA_ARGS__)
@@ -50,6 +51,9 @@ int msx_game_animation(const msx_game_t *g) {
     return g->moving?MSX_RUN:MSX_IDLE;
 }
 bool msx_lifebar_request;
+/* Player 1's +6E, the character chosen at SOLDIER SELECT (msx_character.h;
+ * actor_select_character): 0 Marco, 1 Tarma, 2 Eri, 3 Fio. */
+uint8_t msx_character_request;
 unsigned msx_lifebar_food_hits(uint32_t points) {
     uint32_t d=0;for (int i=7;i>=0;i--) d=d*10u+((points>>(4*i))&15u);
     uint32_t h=d/100u;return h<1u?1u:h>MSX_LIFEBAR_HITS?MSX_LIFEBAR_HITS:(unsigned)h;
@@ -351,8 +355,9 @@ static void landing_step(msx_game_t *g) {
 static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     /* 0C2956 (hits, the vehicle's 0C3118, time over) and 0C2D6A (the fall)
      * first request the character's death voice, table 0C294E[+6E]: Marco
-     * (+6E = 0) 0x1123 (B30; MAME capboss: every death, return 0C2D96). */
-    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=0x1123;
+     * (+6E = 0) 0x1123 (B30; MAME capboss: every death, return 0C2D96),
+     * Tarma 0x1087, Eri 0x1125, Fio 0x114E. */
+    if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=msx_character_death_voice(msx_character_request);
     else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
     if (!marco_death_start(&g->life,kind,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
@@ -1633,7 +1638,10 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     if (g->knife_t) {
         g->knife_t--;
         if (g->knife_t==KNIFE_TICKS-2u && knife_ok) {
-            const uint8_t *q=ga_rom(0x2d0af4);
+            /* The row the character's cut program passes to 0C419E (tables
+             * 0BF958/0BF118 and their form-1 rows): Marco and Tarma 2D0AF4
+             * (kind 2), Eri and Fio 2D0B04 (kind 3; same box and damage). */
+            const uint8_t *q=ga_rom(msx_character_request>=MSX_CHARACTER_ERI?0x2d0b04:0x2d0af4);
             if (q) {
                 int16_t row[7];for (unsigned i=0;i<7;i++) row[i]=(int16_t)(q[2*i]<<8|q[2*i+1]);
                 uint8_t t=neo_world_player_attack(&g->world,g->x,56*MSX_UNIT-g->y,g->facing<0,row);

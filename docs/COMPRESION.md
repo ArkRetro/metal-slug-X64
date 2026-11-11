@@ -471,3 +471,93 @@ paquete: 208/209 antes y después.
   ahora bloques de hasta 1 MiB y de longitudes distintas (los paquetes de
   una película); para los fragmentos de 16 KiB produce los mismos bytes
   (`scene.pack` reconstruido es idéntico al anterior, `cmp`).
+
+### ares 146
+
+«Antes»: `7f2b743`. «Después»: esta rama. Pantalla Xvfb `:73`. Las pruebas
+de menú van por tiempo real (xdotool): dos pasadas del mismo cartucho no
+dan el mismo peor fotograma (M4, mismo cartucho: 35,3 / 48,1 / 53,6 ms), así
+que se dan los intervalos de varias pasadas.
+
+Descodificación (cartucho con `make MSX_PCM_STATS=1`, línea `MSX PCM`), por
+bloque de 1024 muestras estéreo: lectura + descodificación 1,9–2,7 ms de
+media (máximo 3,4 ms), de ellos 1,6–2,1 ms de descodificación; adelantados
+212 de 215 bloques en el logo, 348 de 350 en el título, 1419 de 1421 en
+HOW TO PLAY.
+
+Arranque completo sin saltar nada (`tools/test_logo_ares.py`, **PASS**
+antes y después):
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| Logo: fotogramas / tardíos / fotograma más largo | 546 / 0 / 18,97 ms | 546 / 0 / 17,26 ms |
+| Logo: CPU medio del dibujo por fotograma | 6,98 ms | 8,00 ms |
+| Título: únicos / perdidos / CRC primero y último | 601 / 0 / `8e705c2a` `c0a8e830` | 601 / 0 / `8e705c2a` `c0a8e830` |
+| Título: mezcla de audio más larga | 2,4 ms | 4,9 ms (la primera: los dos primeros bloques aún no están adelantados) |
+| HOW TO PLAY / SELECT / elección / entrada: únicos, saltados | 2690 / 160 / 210 / 30, 0 saltados | 2690 / 160 / 210 / 30, 0 saltados |
+| `MSX FRAMES` de cada cinemática: `late` / `long` | 0 / 0 | 0 / 0 |
+| Fin del título (`title done`) | 20.903 ms | 20.904 ms |
+| `MSX CACHE slots=` / libre con el juego cargado | 203 / 489 KB | 203 / 482 KB |
+
+El CPU del logo sube 1 ms por fotograma (de 16,7): el descodificador corre
+en su tiempo libre y le vacía las cachés; ningún fotograma llega tarde.
+Durante el juego no suena ninguna pista MSXL (la música y los efectos son
+los de antes).
+
+Juego, por el menú de pruebas (`--fire --jump 2.5`). Para comparar con los
+mismos paquetes, «antes» es `7f2b743` con los paquetes de ahora menos
+`mission6.pack` (65.961.984 B, bajo el límite); «después», el cartucho
+entero (61.407.232 B):
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| M4 (100 s): resultado / peor fotograma (3 y 2 pasadas) | PASS / 46,6–50,0 ms | PASS / 37,9–47,2 ms |
+| M4: carga de la etapa / fotogramas en negro | 757,7–758,7 ms / 18 | 758,4–759,6 ms / 18 |
+| M5 etapa 1 (3 y 2 pasadas): resultado / peor fotograma | PASS / 18,5–26,2 ms | PASS / 16,3–16,9 ms |
+| M5 etapa 1: construcción del dibujo, media de la 3.ª ventana de 300 fotogramas | 6,00–6,09 ms | 6,07–6,16 ms |
+| M5 etapa 1: carga de la etapa / fotogramas en negro | 239,6–239,7 ms / 5 | 239,8–240,2 ms / 5 |
+| M5 etapa 2: resultado / peor fotograma | FAIL (la cámara no pasa de 80) / 10,4 ms | FAIL (lo mismo) / 10,6 ms |
+| M5 etapa 3: resultado / peor fotograma | PASS / 18,7 ms | PASS / 15,0 ms |
+| `decode_max` (fragmento más lento) / fallos síncronos | 7,0–7,1 ms / 0 | 7,0–7,1 ms / 0 |
+| `MSX CACHE slots=` | 203 | 203 |
+
+`tools/test_m1m2_ares.py` (con `rm -rf build/m1end`), `tools/test_pause_ares.py`
+y `tools/test_characters_ares.py`: **PASS**.
+
+**El código nuevo va al final del programa.** Con el lector enlazado en su
+sitio natural (entre los objetos del juego), el código de libdragon quedaba
+6 KB desplazado respecto al del juego y la construcción del dibujo de la M5
+etapa 1 costaba 6,8–7,0 ms en vez de 6,0–6,1 (también con los datos de
+antes en el cartucho: era la alineación en la caché de instrucciones, no la
+descodificación). `src/msx_pcm.c` y las funciones nuevas de `msx_audio.c` y
+`main.c` van en secciones `keep.text.*`, que el guion de enlace de
+libdragon coloca detrás de todo: los tiempos son los de antes. Vale para
+cualquier módulo nuevo que no se ejecute en el fotograma.
+
+### Estado y avisos
+
+- **Qué reconstruir tras fusionar** (también en `ws-logo`): solo `make`.
+  La regla de `build/game-romfs.stamp` compila `build/host/msxl` y vuelve a
+  hacer el sistema de ficheros (películas con el analizador óptimo, WAV64
+  crudos de la raíz como MSXL). `romfs/scene.pack` se regenera porque
+  `tools/lz4opt.c` es dependencia suya: sale idéntico byte a byte. Los
+  `missionN.pack` **no** hay que reconstruirlos. El programa de antes no lee
+  MSXL (`wav64_open` se detiene con «invalid ID»): programa y sistema de
+  ficheros van juntos, como siempre que se hace `make`.
+- `make MSX_PCM_STATS=1` (tras `touch src/msx_pcm.h`) añade las líneas
+  `MSX PCM` (bloques, adelantados, tiempos); cuesta 0,3 KB de programa.
+- El programa crece 6,1 KB de código y 128 B de bss. Con `7f2b743` la caché
+  de escena dejaba 6,9 KB sin usar antes de la ranura 204: sigue habiendo
+  203 ranuras, pero ya sin holgura (libre tras la caché: 576 KB de 576). El
+  siguiente crecimiento del programa costará una ranura.
+- Si una cinemática nueva trae su audio en PCM crudo, entra sola (la regla
+  empaqueta todo WAV64 crudo de 16 bits de la raíz). Los efectos de
+  `audio/` no pasan por `msx_audio_open`: no se empaquetan.
+- `make check` entero pasó (salida 0) con la rama en `1357dcc`. Después
+  cambió `filesystem/mission5/rest-native.json` (exportación en curso de la
+  Misión 5, 06:04; `filesystem` es compartido) y
+  `tools/test_pack_compression.py` se detiene en «mission 5 pack refused»
+  al cargar el paquete de la M5 hecho con esas fuentes; pasa lo mismo con
+  las herramientas de `7f2b743`: no es de este trabajo, queda para la
+  fusión de la Misión 5. El resto de pasos de `make check` se ejecutó
+  aparte sobre el código final.

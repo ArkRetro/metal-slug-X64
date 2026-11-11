@@ -21,7 +21,7 @@ ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
 N64_CFLAGS += -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
-WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
+WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m5props.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # RAM budget (docs/RENDIMIENTO.md): actor/boss/cutscene modules are cold
 # code, compiled -Os (~78 KB less program image). The per-frame core (world,
@@ -461,7 +461,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -494,6 +494,38 @@ FAMILY_ARGS_m4urn := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --ro
 # damage stages, overlay 0AA37C, items, the blast 0AA2C6 and the wreck;
 # capture A.
 FAMILY_ARGS_m4van := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 8c374
+# m5gate = the Mission 5 sewer gates 0BC296 / 0BC3A6 (script records, neo_m5props.c):
+# hits, the wall stamps 0C88B0 / 0C8A3C into the ring of 10C72E, the debris
+# lists 0BBD78 / 0BBD8A (01DA40) and 10C700; captures-m5/fam/G (run4 replay
+# from sec08_274387, 274388..276000).
+FAMILY_ARGS_m5gate := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m5drip = the Mission 5 sewer drips 08346E (script and runner records) and their drops
+# 0834F4 made after the script actor (neo_m5props.c); captures-m5/fam/D (run4 replay
+# from sec08_274387, 274388..275600).
+FAMILY_ARGS_m5drip := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --script-actor 101414 --script-routines 834f4
+# m5ledge = the Mission 5 street ledges 09624E (script records; cell maps 095B54 by 0140C4, never drawn);
+# m5car = the wrecked cars 050542 with their wheels 05090A / 05092C, blast 05094E, panels 0509A8, pieces
+# 050B52 and the items 08C374 of their programs' calls (neo_m5props.c); captures-m5/fam/T (run4 replay
+# from sec06_247661, 247662..252800).
+# m5signal = the Mission 5 metro signals 0BC1E6 (script records; lit while their group has somebody, 019DCA);
+# captures-m5/fam/M (run4 replay from sec07_252827, 252828..274330).
+FAMILY_ARGS_m5signal := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m5door = the Mission 5 metro's end 0BBF12 (three stages, walls 0BBAF4 / 0BBBB0 by 0C88B0, the pieces 0BC100 /
+# 0BC192, the stage exit 0B6ED2 as its child); captures-m5/fam/M.
+FAMILY_ARGS_m5door := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m5stain = the Mission 5 sewer stains 032B46 / 032B5A / 032B6E; m5jet = the jets 0836E8 and their puffs 083820
+# (neo_m5props.c); captures-m5/fam/W (run4 replay from sec08_274387, 274388..277080).
+FAMILY_ARGS_m5stain := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+FAMILY_ARGS_m5jet := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+FAMILY_ARGS_m5ledge := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+FAMILY_ARGS_m5car := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --fresh-flip --split-children --script-actor 101414 --script-routines 8c374
+# m5deco = the Mission 5 sewer decorations 0BC4F4 (script records of the sewer's start,
+# neo_m5props.c); captures-m5/fam/E (run4 replay from sec08_274387, to 275100).
+FAMILY_ARGS_m5deco := --terrain 10c72e --group-map 0 --root-words
+# m5street = the Mission 5 street's decorations 0BBE5E / 0BBED0 and its end 0BBE16 (the
+# stage exit 0B6ED2 after 60 updates; neo_m5props.c, neo_goarrow.c); captures-m5/fam/S
+# (run4 replay from sec06_247661, to 252800).
+FAMILY_ARGS_m5street := --terrain 10c72e --group-map 0 --root-words
 # m4van2 = the whole life of the van without its overlay (routines 0A9F0C..
 # 0AA2DF only: the wreck 0AA176, the blast 0AA2C6, 0AA1FE / 0AA252). m4van
 # (van and overlay, --range a9f0c-aa458 --hit-writes) runs to the end too: in
@@ -1423,7 +1455,7 @@ check: check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(B
 	$(BUILD_DIR)/host/m3push
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m5props.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
 	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DEND_HEADER='"end_letters_fixture.h"' -DEND_NAME=end_letters tools/test_neo_end.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_letters
 	$(BUILD_DIR)/host/end_letters

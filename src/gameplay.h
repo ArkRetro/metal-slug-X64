@@ -242,6 +242,7 @@ void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int st
 /* Entry kind 2 of the stage record (0C15B4, Mission 3): the player at the
  * record's x on the floor, without the parachute (explicit stop). */
 void msx_game_stage_entry_at(msx_game_t *g,int x);
+bool msx_game_stage_entry_walk(msx_game_t *g,int y);   /* entry kind 3 (0C14E6) */
 /* 01860A of a packed mission's stage: MISSION n START (42FA = 0) and the GO arrow. */
 void msx_game_stage_actors(msx_game_t *g);
 /* The order of the frame's sprite windows and background layers, by SCB

@@ -32,6 +32,7 @@ void neo_collision_set_ring(uint8_t *buffer);
 void neo_collision_ring_copy(int d0,int d1,int d2,int d3,int d4,int d5);
 unsigned neo_collision_unknown_reads(void);
 unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *template_bytes); /* 0C88B0 */
+unsigned neo_collision_stamp_cells(int32_t x,int32_t y,const uint8_t *template_bytes); /* 0C8A3C */
 /* 0C70FC collision part over the whole stage grid: sub-map cells (pairs x
  * blocks) at cell column `column`, world row `top` for r = 0. */
 unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks,unsigned stride,int column,int top);

@@ -394,6 +394,36 @@ RESOURCES=RESOURCES+(0xd2,0x88f,0xd6,0xd4,0xfe,0x88e,0xd5)
 # Mission 4 truck pieces 02A448 (palettes 02A9BC: 23A, 32F, 372; 201) and the animals' sparkle 08CF6E (289704, 124).
 ROOTS=ROOTS+(0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704)
 RESOURCES=RESOURCES+(0x23a,0x32f,0x372,0x201,0x124)
+# Mission 5 sewer gates 0BC296 (59C, flash 59D) and 0BC3A6 (59F, flash 59E).
+ROOTS=ROOTS+(0x2a91d0,0x2a91ee)
+RESOURCES=RESOURCES+(0x59c,0x59d,0x59e,0x59f)
+# Mission 5 sewer drips 08346E: the drop 0834F4 (AC8, 281E98 and the splash 281EA2).
+ROOTS=ROOTS+(0x281e98,0x281ea2)
+RESOURCES=RESOURCES+(0xac8,)
+# Mission 5 decorations 0BBE5E (5BB), 0BBED0 (5DC), 0BC4F4 (596 / 592) and 0BC4BA (591).
+ROOTS=ROOTS+(0x2a8fb6,0x2a8fc0,0x2a918a,0x2a921e,0x2a921c)
+RESOURCES=RESOURCES+(0x5bb,0x5dc,0x596,0x592,0x591)
+# Mission 5 street: the wrecked cars 050542 (palettes 0500FC by +6E: 211, E1..E5; program tables 04FD26..04FE2D), their
+# wheels 05090A / 05092C (37C) and blast 05094E (113).
+ROOTS=ROOTS+(0x22e6ae,0x247da8,0x24855c,0x247e54,0x247e8a,0x247ec0,0x247ef6,0x247f2c,0x247f62,0x248448,0x248476,0x2484a4,0x2484d2,0x248500,0x24852e,
+             0x247f98,0x248054,0x248110,0x2481cc,0x248288,0x248368,0x248008,0x2480c4,0x248180,0x24823c,0x2482f8,0x2483d8,0x248566,0x2486a6,0x2487e6,
+             0x248926,0x248a66,0x248b9e,0x248596,0x2486d6,0x248816,0x248956,0x2485d8,0x248718,0x248858,0x248998,0x248636,0x248776,0x2488b6,0x2489f6,
+             0x248b5c,0x248c94,0x248794,0x2488d4,0x248a14,0x248682,0x2487c2,0x248902,0x248a42,0x248678,0x2487b8,0x2488f8,0x248a38)
+RESOURCES=RESOURCES+(0x211,0xe1,0xe2,0xe3,0xe4,0xe5,0x37c,0x113)
+# Mission 5 metro: the signal 0BC1E6 (58F).
+ROOTS=ROOTS+(0x2a91c6,0x2a9194)
+RESOURCES=RESOURCES+(0x58f,)
+# Mission 5 metro's end 0BBF12 (58E, flash 58D, open 587).
+ROOTS=ROOTS+(0x2a8fca,0x2a906a,0x2a9080,0x2a909c,0x2a910c,0x2a90a6)
+RESOURCES=RESOURCES+(0x58e,0x58d,0x587)
+# Mission 5 sewer stains 032B46.. (17D, and 158 with BLOOD on: captures-m5/fam/B8 as a palette capture).
+ROOTS=ROOTS+(0x2393de,0x2393ea,0x2393f6)
+RESOURCES=RESOURCES+(0x17d,0x158)
+# Mission 5 sewer jets 0836E8: the puff 083820 (869 / 851).
+ROOTS=ROOTS+(0x281ee0,0x281f82)
+RESOURCES=RESOURCES+(0x851,)   # 869 is the +77 = 0 variant (0836DE), which Mission 5 never makes: no capture has it
+# Mission 5: the debris pieces 01CE50..01CE98 of the sewer gates' lists 0BBD78 / 0BBD8A (palettes 168 / 167, 01D1B0).
+RESOURCES=RESOURCES+(0x167,0x168)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

@@ -291,7 +291,8 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces')}
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces'),
+    'm5':('# Mission 5 sewer gates',)}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -366,6 +367,25 @@ ROOTS+=[0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a]
 ROOTS+=[0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea]
 # Mission 4 truck pieces 02A448 (neo_truck.c): the sixteen programs of 02A878; the sparkle 08CF6E of the animals (neo_item.c): 289704.
 ROOTS+=[0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704]
+# Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
+ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
+# Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).
+ROOTS+=[0x2a8fb6,0x2a8fc0,0x2a918a,0x2a921e,0x2a921c]
+# Mission 5 street: the ledge 09624E (0963B8, never stepped) and the wrecked cars 050542 (neo_m5props.c): the program
+# tables 04FD26..04FE2D by +6E, the wheels 22E6AE / 247DA8 and the blast 24855C.
+ROOTS+=[0x963b8,0x22e6ae,0x247da8,0x24855c]
+# Mission 5 metro: the signal 0BC1E6 (2A91C6 idle, 2A9194 with the sound 107D).
+ROOTS+=[0x2a91c6,0x2a9194]
+# Mission 5 metro's end 0BBF12: its stages 0BBE06 (2A8FCA, 2A906A, 2A9080, 2A909C), the piece 0BC100 (2A910C) and 0BC192 (2A90A6).
+ROOTS+=[0x2a8fca,0x2a906a,0x2a9080,0x2a909c,0x2a910c,0x2a90a6]
+# Mission 5 sewer stains 032B46 / 032B5A / 032B6E.
+ROOTS+=[0x2393de,0x2393ea,0x2393f6]
+# Mission 5 sewer jets 0836E8: the puff 083820 (281EE0 / 281F82).
+ROOTS+=[0x281ee0,0x281f82]
+ROOTS+=[0x247e54,0x247e8a,0x247ec0,0x247ef6,0x247f2c,0x247f62,0x248448,0x248476,0x2484a4,0x2484d2,0x248500,0x24852e,0x247f98,0x248054,0x248110,0x2481cc,0x248288,0x248368,
+        0x248008,0x2480c4,0x248180,0x24823c,0x2482f8,0x2483d8,0x248566,0x2486a6,0x2487e6,0x248926,0x248a66,0x248b9e,0x248596,0x2486d6,0x248816,0x248956,
+        0x2485d8,0x248718,0x248858,0x248998,0x248636,0x248776,0x2488b6,0x2489f6,0x248b5c,0x248c94,0x248794,0x2488d4,0x248a14,0x248682,0x2487c2,0x248902,0x248a42,
+        0x248678,0x2487b8,0x2488f8,0x248a38]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

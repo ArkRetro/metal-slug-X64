@@ -365,6 +365,78 @@ Los nodos que crea el guion necesitan `--script-actor 101414
 --script-routines <los que crea la familia con 00411C>`. **No editar fuentes
 mientras corre `make check`.**
 
+## Fase 2c (11-XI): estado y cómo seguir
+
+Hecho y verificado desde la fase 2 (commits `9606f2c`, `c4dd267`, `bf7b7ad`,
+`make check` RC 0 en el árbol fusionado con la M6 fase 1):
+
+- **Soldado del jinete** (`084300`): un nodo genérico crea un soldado
+  (`g_spawn` de `neo_world.c`, vista del soldado para sus palabras `+6E..`).
+- **Familias completas**: `m4flyer` (captura D, con la furgoneta, hasta
+  152371), `m4van` (con su capa, hasta el final), `m4bin` (la vida entera del
+  prisionero).
+- **`m4rock`** (`01F828`/`01F866`, rocas `01FABA`, sombras, humos: 49 nodos,
+  3690 actualizaciones), **`m4jump`** (`07E554` + `07EC6A` + `07EDF0`: 18
+  nodos, 426; la caída `07E832` y la granada `07EB4E` no salen en la captura:
+  paradas explícitas), **`m4box`** (`09A71E`: 1990 actualizaciones).
+- **Política de canales** de 9 de las 10 palabras de la M4 (medida,
+  `data/sound_pairs.json` → `data/sound_policy.json`); `1071` es un bucle del
+  controlador sin paquete.
+
+Capturas nuevas (privadas, `/home/user/captures-m4/fam/`):
+
+| Captura | Origen | Contenido |
+| --- | --- | --- |
+| E | `run4` desde `sec05`, raíces `99e06,de0fe,de24a`, intervalo `ddcda-de4ff`, 152700..157600 (`scratchpad/capE.sh`) | el prisionero que pelea (`0DDCDA..0DE06E`) y sus disparos `0DE0FE`/`0DE24A` |
+| F | `run4`, raíces `8c374,8c37c,8cf6e`, intervalo `8c374-8d900`, 151000..155900 (`capF.sh`) | los objetos de los tipos 40/41 (animales, programas `289082`/`289CD6`) con su destello `08CF6E` |
+| **T** | **TAS** (`tas_updates.lua`, sin escribir en la memoria) desde `u12000` hasta `u12890`, raíz `2267e`, intervalo `22000-26400`, volcados cada 30 (`capT.sh`) | **el jefe entero y el fin de la misión** (fotogramas 26052..27911; 0 desincronizaciones con los grifos puestos) |
+
+`tools/tas_updates.lua` tiene ahora la traza de familia y los volcados de
+`capture_fullgame.lua` (`MSX_TAS_FAMILY_ROOTS/RANGE/NODES/VRAM`,
+`MSX_TAS_DUMP_PERIOD`), solo lectura.
+
+Lo que falta, con lo que se sabe de cada cosa (nada de esto está portado: son
+paradas explícitas contadas):
+
+- **`0AF1A8`** es la entrada de soldado con `+81 = E0` (acciones 5..7 de la
+  tabla `0AF494`, todas `0AF99A`): corre hacia el jugador (`23D510`, `+62` =
+  ±4 0000), a menos de 0x40 salta (`0AFA4C`: `23EE3C`, `+34` = 8A000, `+62` =
+  ±(2 8000 + rand + rand)), golpea al caer (`0AFA9C`: fila `0AE990`, tipo 5 →
+  `0AFADA` `23EEB6`; `0AFAF0`: fila `0AE9A0` → `0AFB44`), aterriza
+  (`0AFB88`: `23EEEA` → `0AF380`). En la captura A están sus 6 nodos con U/V
+  (`0AF99A`×3, `0AFA4C`×3, `0AFA9C`×24, `0AFB88`, `0AFBA6`×24; ningún golpe
+  acertado). **Falta la prueba**: los soldados se prueban con
+  `extract_soldier_ticks.py` (volcados de RAM por fotograma y registro del
+  RNG de `trace_soldier_campaign.lua`), que no existe para un estado de la
+  M4; hay que hacer ese extractor sobre las líneas U/V/R de la traza de
+  familia o lanzar `trace_soldier_campaign.lua` desde `sec05`.
+- **Prisionero que pelea** (`099E06` con `+74 = FFFE` → `0DDCDA`): sigue al
+  nodo del jugador (`+76`), guarda en `+6E` el **nodo** que devuelve `0049E8`
+  en A0 (filas `0DE494`/`0DE4A4`), lo mira (`01B08A`), comprueba que vive
+  (`0040AC`) y le apunta el disparo `0DE0FE` (ángulo `002EB4`, 8 por
+  actualización, velocidad 0x1000 · seno/coseno). Hace falta que
+  `neo_ga_target_t` lleve la etiqueta del nodo (mundo: actor genérico,
+  soldado o nodo de jefe; prueba: `targets` del fixture) y leer `+3C/+40` de
+  ese nodo. Desensamblado y captura E listos.
+- **Animales** (objetos de tipo 40/41/42, movimiento `08BAAA` = `08CCD4` +
+  `08B9D8`): 14 llamadas de programa sin traducir (`289528`, `28953E`,
+  `289552`, `289570`, `289588` = con `rand & 3 == 0` el destello `08CF6E` en
+  (8, 8), `2895A2`, `2895B2`, `2895C2`, `2895D8`, `2895E6`, `289626`…).
+  `08CF6E`: programa `289704`, paleta 124, `+34 −= 6AA` por actualización,
+  16 + 16 actualizaciones, fuera de `0E5624` (`0C8BEC`) se borra. Captura F.
+- **`08C954`** (rótulo de puntos de `08C752`, 5 creaciones), `08571C`/`085952`,
+  `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`, `0587C4` (+ `0592C6`,
+  `059B5C`; 1160 líneas), `02A448`: en la captura A, sin empezar.
+- **Jefe `02267E`** (captura T): el constructor crea 3 `023526`, 4 `02391E`,
+  `024226`, `0246D0`, `022CB6` y la música `059F76`; después `023EB4`,
+  `023FDE`, `025DC2`, `024F0E` → 64 `02505C`, `025CDE`, `025B6E`, `02591C`,
+  `02530E`, `025362` → `025512`, `0257DC`, los escombros `0259F2` /
+  `025A5E` de `01D764` y las explosiones `01C6EE/01C706/01C71E`,
+  `01CE08..01CE44`. 95 rutinas visitadas por el TAS entre `02267E` y
+  `025E18` (3063 líneas desensambladas, `scratchpad/boss4.txt`). El guion de
+  la sección se cierra en la actualización 12463 (fotograma 26982) y la
+  sección 6 (M5) empieza en 12887 (27901).
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

@@ -26,11 +26,14 @@ el `switch` del módulo.
 
 `0A9F0C` con `0AA37C` y `0AA2C6` (familias `m4van`, `m4van2`).
 
-Quedan (orden de guion): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866` (+ `01F9B8`, `01FA08`, `01FABA`,
-`01FF82`, `020004`), `07E554` (+2), `09A71E`, `0AF1A8`, `0DE0FE`/`0DE24A`,
-`08571C`/`085952`, `085522` (+ `0859E4`, `085ACE`), `08514A`/`085294`,
-`0587C4` (+2), `02A448`, `08CF6E`, `08C954`, y el jefe `02267E` (11) con
-`0259F2` y la orden `0BB028`. Todos menos el jefe están en la captura A.
+Hechos después (11-XI, `docs/MISION4.md` «Fase 2c»): el soldado `0AF17E` del jinete `0842A8`, `01F828`/`01F866`
+(+ `01F9B8`, `01FA08`, `01FABA`, `01FF82`, `020004`; familia `m4rock`), `07E554` (+ `07EC6A`, `07EDF0`; `m4jump`) y
+`09A71E` (`m4box`).
+
+Quedan (orden de guion): `0AF1A8` (soldado, `+81 = E0`), `0DE0FE`/`0DE24A` (disparos del prisionero que pelea,
+`0DDCDA`), `08CF6E` (destello de los animales, tipos 40..42 de `08C374`), `08C954`, `08571C`/`085952`, `085522`
+(+ `0859E4`, `085ACE`), `08514A`/`085294`, `0587C4` (+2), `02A448`, y el jefe `02267E` con `0259F2` y la orden
+`0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), **T (jefe y fin de misión, del TAS)**.
 
 ## Resumen
 

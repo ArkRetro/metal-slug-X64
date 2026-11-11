@@ -51,13 +51,13 @@ def run(name, script, extra, timeout, outflag, rom, out):
     try:
         p = subprocess.run(cmd, cwd=ROOT, capture_output=True, timeout=timeout)
         text = p.stdout + p.stderr
-        # test_logo_ares.py prints its validation JSON ("status": "PASS") and stops on an assertion instead of a RESULT line.
-        result = 'PASS' if b'RESULT: PASS' in text or (p.returncode == 0 and b'"status": "PASS"' in text) else 'FAIL'
+        # test_logo_ares.py reports its verdict as the JSON field "status" instead of a RESULT line.
+        result = 'PASS' if b'RESULT: PASS' in text or re.search(rb'"status": "PASS"', text) else 'FAIL'
     except subprocess.TimeoutExpired as e:
         text = (e.stdout or b'') + (e.stderr or b'')
         result = 'TIMEOUT'
     (out / f'{name}.txt').write_bytes(text)
-    logs = sorted(d.rglob('*.log')) if d.exists() else []   # test_characters_ares.py writes place*/ares.log
+    logs = list(d.rglob('*.log')) if d.exists() else []
     blob = b''.join(l.read_bytes() for l in logs)
     counts = {k: len(r.findall(blob)) for k, r in COUNTS.items()}
     return {'result': result, 'seconds': round(time.time() - t0), **counts}

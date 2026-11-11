@@ -47,14 +47,14 @@ Lo que no se pueda reproducir en ares se marca «solo hardware» y se pide al
 usuario una prueba concreta.
 
 Línea base (`data/regression_baseline.json`, 11-XI): cartucho de la ROM 50 (`aeef1df` + `ebc1003`, mismos bytes) y
-un `m1end` recién hecho; todo PASS salvo `m6s1` (FAIL conocido: el agua; B67). Los recuentos de dibujos ausentes de la M6
+un `m1end` recién hecho; todo PASS salvo `m6s1` (FAIL conocido: el agua; B68). Los recuentos de dibujos ausentes de la M6
 dependen del tiempo que la prueba pasa con esos actores en pantalla (90 s), no solo del cartucho.
 
 ## 5. Abierto ahora
 
 | Fallo | Estado |
 | --- | --- |
-| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | no era regresión (B67): 320 es el final de la arena en MAME y la prueba pedía 600; la paleta 125 ya faltaba en la ROM 47 (actores de la M6, fase 2) |
-| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | los de la ROM 47 (B67); FAIL conocido en la línea base |
+| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | no era regresión (B68): 320 es el final de la arena en MAME y la prueba pedía 600; la paleta 125 ya faltaba en la ROM 47 (actores de la M6, fase 2) |
+| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | los de la ROM 47 (B68); FAIL conocido en la línea base |
 | Prueba de personajes que supera 600 s | tiempo de la prueba ampliado a 1800 s en la matriz |
 | Voz de muerte de Tarma `1087` | pendiente de captura con audio |

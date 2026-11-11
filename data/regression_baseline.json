@@ -57,7 +57,7 @@
   "unsupported": 0
  },
  "m6s1": {
-  "known": "FAIL known (docs/MISION6.md, B67): Marco falls into the water from x 160 (rafts, bridge and second terrain 10D7B6 not ported); missing draws with palette_id=125 are the Mission 6 actors (phase 2), as at ROM 47",
+  "known": "FAIL known (docs/MISION6.md, B68): Marco falls into the water from x 160 (rafts, bridge and second terrain 10D7B6 not ported); missing draws with palette_id=125 are the Mission 6 actors (phase 2), as at ROM 47",
   "missing_draw": 2074,
   "missing_part": 1,
   "result": "FAIL",

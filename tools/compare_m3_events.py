@@ -27,7 +27,7 @@ status from the host helper build/host/script-native = neo_world_spawn_native).
 (ares log of the reference cartridge, lines `MSX script spawn record R
 constructor C native N camera P`) it also compares the records each side
 executed, per section, like tools/compare_m2_events.py."""
-import argparse,collections,json,re,subprocess
+import argparse,collections,json,re,subprocess,sys
 from pathlib import Path
 ROOT=Path(__file__).resolve().parent.parent
 # Sections of the camera list 0B8968 (docs/MISION3.md "Reconocimiento del
@@ -106,7 +106,12 @@ def family(ctor):
     return {c:(next(iter(r)) if len(r)==1 else 'common') for c in ctor for r in [roots(c,frozenset())]}
 def native_status(ctors):
     helper=ROOT/'build/host/script-native'
-    if not helper.exists() or not ctors:return {}
+    if not ctors:return {}
+    # Without the helper every constructor would read as "missing" (the wrong "208 unported" inventory of 11-XI):
+    # stop instead, and refuse a helper older than the world sources it was built from.
+    if not helper.exists():sys.exit('compare_m3_events: %s missing (make check builds it)'%helper)
+    newer=[s.name for s in (ROOT/'src').glob('*.c') if s.stat().st_mtime>helper.stat().st_mtime]
+    if newer:sys.exit('compare_m3_events: %s is older than %s (rebuild it: make check)'%(helper,', '.join(sorted(newer)[:5])))
     out=subprocess.run([str(helper)]+['%x'%c for c in sorted(ctors)],capture_output=True,text=True,check=True).stdout
     return {int(a,16):int(b) for a,b in (l.split() for l in out.splitlines())}
 def describe(st):

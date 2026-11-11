@@ -604,25 +604,105 @@ nodo (`soldier line=… (rutina)`) y la de su padre (`detail`): era el suelo de 
 cámara 289 de la calle. `08B52A` indexa `0E53E6` con el byte `(+7E del creador × 4) & FF`; `neo_m3enemy.c` lo volvía a
 multiplicar por 4 y con `+7E` = 1 tomaba la palabra `00800040` de la tabla como mapa. Calle en ares sin paradas.
 
-**Siguiente paso (metro, cámara 992): `0D3B36`** y sus 13 hijos (`0D4396`, `0D43C4`, `0D43F2`, `0D4420` / `0D444E`,
-`0D447C`, `0D4762` / `0D4776`, `0D498C`, `0D4A1E`, `0D4A82`, `0D4ABA`, `0D4C26`, `0D4F1C`, `0D5018`). Captura propia
-**`Q`** hecha y **guardada** en `captures-m5/fam/Q` (réplica de `run4` desde `sec07_252827`, raíces de los 14,
-traza 269300..271500, volcados cada 30): el aparato nace en 269327 (registro de cámara 992), dispara y lanza sus
-piezas, se destruye en 270999 (`0D40A6`) y acaba en 271119 (`0D4116`: tres `01C71E`, `0D5730`, `004188`).
-Desensamblado mirado (`0D3B36..0D5730`, unas 1250 instrucciones): tres entradas (`0D3B36` / `0D3B4C` / `0D3C5A` /
-`0D3C76`, paletas 3E5 / 25B / 25C, rangos `2C9D84` / `2C9E46`), los brazos `0D42A4` con su tabla de órdenes
-(`0D5530`, `jmp (a0)` sobre `0E8FBC` / `0E8FD8`), el núcleo `0D447C` (estados `0D44CA..0D470E`, conversión
-`0405EA` / `040846` al morir), los proyectiles `0D4762` / `0D4776` (`2CA75E` / `2CA7BE`, `01B0F6`) y los servicios
-`0D5060..0D5730`. Sin traducir. La familia se extrae con `extract_family_fixture.py … --range d3b36-d5800` y luego
-se borra `Q`.
+### Fase 2, sexta tanda (11-XI, agente B)
+
+**La máquina del metro `0D3B36`** (`src/neo_m5mech.c`, nuevo; registro de la cámara 992). Traducidas las dos entradas
+de la tabla `0197DC` (`0D3B36` y `0D3C5A`; `0D3B4C` / `0D3C76` son del actor de `0D39xx`, fuera de la misión: parada
+explícita) y sus 13 hijos: el cuerpo (marcha `0D3E48` sobre los mapas de celdas `0D559A` / `0D55FE`, giro `0D3F0A`,
+la IA `0D50EC` que manda órdenes a los hijos por `+7E..+82`: `0D512E`, `0D5298`, `0D5396`; muerte `0D40A6` /
+`0D4116`), los brazos `0D42A4` (órdenes `0E8FBC`, posición por el cuadro `+7D` del cuerpo, `0D5506`), el piloto
+`0D447C` (órdenes `0E8FD8`, puntería `0D545C`, impacto `0D45EE`, muerte `0D470E` = `0405EA` + la muerte de soldado
+`040846` de `neo_m3enemy.c`, exportada como `neo_m3enemy_death_40846`), los proyectiles `0D4762` / `0D4776`
+(`2CA75E` / `2CA7BE`, `01B0F6`, ángulo `002EB4`), el fogonazo `0D498C`, las piezas `0D4A1E` / `0D4A82` / `0D4ABA` /
+`0D4C26`, la granada `0D4D84`, el casco `0D4F1C`, las chispas `0D5018` y las llamadas de programa (`0D5662`,
+`0D56D2`, `0D5722`, `0D5740`, `0D57D0`, `0D585C`, `0D58D4`, `0D5908`, `0D593C`, `029034`). Código muerto sin
+referencias en la ROM: `0D3F00`, `0D4034`, `0D404C`, `0D4EF0`, `0D4FAA`.
+
+- Familia **`m5mech`** (`data/m5mech_fixture.json.gz`, de la captura `Q`, que se ha borrado): **51 nodos, 6314
+  actualizaciones iguales a MAME** (269327..271119). Dos detalles: las sumas del creador sobre un hijo recién creado
+  (`addi.w #1E, +72`, `addi.w #10, +98`) se escriben como el valor, porque `003F24` deja a 0 `+6E..+AF` de todo nodo
+  libre; y el piloto muere sobre el bloque de posición del cuerpo (`+38` = `10419C`): `01495C` hace el barrido con un
+  bloque de actor como padre.
+- **Motor compartido** (mínimo): `neo_kernel` acepta `NEO_KOBJ_NODE`, un bloque de posición de actor como padre de la
+  consulta (sus `+14/+18/+1C/+20` = `+3C/+40/+44/+48` del actor, rellenados por `neo_gactor.c` en cada consulta);
+  antes esos barridos paraban con `1495c`. Ninguna otra familia pasaba por ahí (todas siguen iguales en `make check`).
+- Programas (45 raíces, grupo `m5`), descriptores (`export_rest_sprites.py` con `Q@d3b36-d5970`) y tablas de ROM
+  (`region_rom.json`: `2C9D84` (rangos y filas de velocidad), `0E8CC6` (cajas, filas de ataque, rectángulos, órdenes,
+  programas), `0D559A` (mapas de celdas)). Validación de `Q`: 48 fotos, **208 px distintos en 2** (270150: 114,
+  270180: 94), sin cerrar: el cuerpo y los brazos con el atributo de paleta del destello `+17` (BA00 / 9900);
+  probable límite del validador con el destello compartido `0044F6`, sin comprobar.
+
+- **Paletas**: el tren (10F, 110, 111, 112, 115, 116) no tenía sus paletas en el paquete (la quinta tanda puso sus
+  raíces en `ROOTS` pero no sus recursos en `RESOURCES`: en ares 224 avisos `missing ... palette_id=110`). Como `R` y
+  `Q` ya no existen, las paletas salen de la RAM de paletas de `run4` en el metro (`--palette-capture` de sus fotos
+  262380..271500): tren y máquina completos salvo **239** (la granada `0D4D84`, sin foto de `run4` con ella viva:
+  pendiente de captura) y 25B / 25C / 25D (la variante `+7B` / `0D3C5A`, que la M5 no crea). En ares el tren se ve ya
+  con sus colores (cámara 528) y ningún aviso de paleta.
+- **ares, metro** (tarea 2): el mando pasa ahora el helicóptero de la cámara 80 con `--up 1.8` (arriba 1,5 s de cada
+  1,8: dispara hacia arriba casi siempre) y `--continue` (nuevo: Start en el panel CONTINUE? del juego, como un
+  jugador; no cambia nada del juego). `--fire --jump 2.5 --up 1.8 --continue`: cámara 688 en 420 s, el tren de la
+  cámara 528 visto destruido; en 900 s llega a la **cámara 809** y para con `world unsupported routine=23b636
+  (35bf8)`: los murciélagos `035B66` (registro `2DDF4C`) usan los programas `23B636..` del grupo `m2`, que no van en el
+  paquete de la M5 (`GROUPS[5] = ('m3', 'm5')`). Se resuelve con `/programs.bin` del agente A (todos los programas
+  fuera de los paquetes); hasta entonces la máquina de la cámara 992 no se ve en ares (solo la familia).
+- **Caché de escena** (tarea 5): con `neo_m5mech.o` (15 KB de código) la caché queda en **197 ranuras = el suelo**.
+  El suelo 197 es la suma de los tres juegos que se fijan (bancos y mapa 49 + jefe 65 + tres programas de soldado 83,
+  comentario de `SCENE_EXPANDED_MIN_SLOTS` en `scene_assets.c`); era 200 («con algo de margen») y se bajó a 197 en la
+  tercera tanda (tanque `08FF7E`). La caché se dimensiona tras cargar el audio con el montón libre que deja la imagen
+  de consola (código y datos: 1,26 MB de texto, 0,96 MB de datos): lo que la achica es el **código** de los módulos de
+  la M5 (tanque 15 KB, tren 9 KB, máquina 15 KB), no el paquete de la M5, cuyos trozos se leen bajo demanda en la
+  caché (1066 trozos, dentro de 1088). Las tablas nuevas (`region_rom.json`, 3,8 KB) no duplican nada (comprobado
+  contra los bloques existentes). Con el suelo a 208 de A hacen falta 11 ranuras (176 KB) que tiene que liberar
+  `/programs.bin`; si no basta, el siguiente paso es sacar código o tablas de la imagen, no bajar el suelo.
+
+**Puertas de la sexta tanda** (tras fusionar ccr con `/programs.bin` de A; cartucho sin `mission6.pack`): `make check`
+y `make -j4` bien; ares `--fire --jump 2.5`: calle cámara 600 PASS, metro (`--up 1.8 --continue`, 420 s) cámara 688
+PASS (única parada contada: los murciélagos `23b636`), alcantarilla cámara 673 PASS; `test_m1m2_ares.py` con
+`mslugx-m1end.z64` recién hecho PASS. Caché de escena: **208 ranuras** en la calle y el metro, 209 en la alcantarilla
+(suelo 208): `/programs.bin` devolvió las ranuras, pero el margen sigue siendo 0..1. `/programs.bin` lleva solo los
+programas sin grupo; los de la M5 van en su paquete (grupo `m5`) y los murciélagos (`m2`) siguen fuera de él.
+
+**Matriz de regresión** (`tools/regression_ares.py`, cartucho completo de 60,9 MB con los cinco paquetes rehechos tras
+fusionar la compresión de C, `mslugx-m1end.z64` recién hecho; sin línea base todavía): logo PASS (con el arreglo del
+propio script: `test_logo_ares.py` da su veredicto en el JSON `"status": "PASS"`, no en `RESULT:`), pausa PASS, M4
+PASS, M5 ×3 PASS (0 dibujos perdidos, 0 rutinas sin portar), m1m2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (el
+fallo abierto que lleva C; la etapa 1 cuenta también 2CFD00 / 2D3A0E / 0DFF0A), M6 etapa 2 PASS con los mismos
+avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio). **Causa**: no era el código: `ws-m5` no tenía
+`romfs/chars` (los paquetes de personaje, datos privados) y el juego decía `MSX SELECT place=1 not in this cartridge`.
+Arreglo: `romfs/chars` es un enlace al almacén `/home/user/ws-logo/romfs/chars` (idéntico al de `ws-chars`). Con
+él, matriz completa (61 505 536 bytes): logo, pausa, **personajes** (4/4), M4, M5 ×3, M6 etapa 2 y m1m2 PASS; M6
+etapas 1 (cámara 515, tres caídas, paleta 125) y 3 FAIL. La etapa 1 da lo mismo sin el cambio `NEO_KOBJ_NODE` del
+núcleo (probado: misma cámara 515 y mismas cuentas), y `neo_m5mech.c` solo corre en la M5.
+
+**Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
+
+**Siguiente paso (alcantarilla)**: captura propia **`X`** hecha y **guardada** en `captures-m5/fam/X` (réplica de
+`run4` desde `sec08_274387`, raíces `95c98,95f8c,96140,8996a,89948,8995a,8a264`, traza 274388..276400, volcados cada
+30; hace falta para los descriptores de la exportación; se borra tras exportar). Fixtures ya extraídos (sin familia
+en el Makefile hasta que haya código): `data/m5sewer_fixture.json.gz` (`--range 89948-8a700`: los soldados 08996A /
+089948 / 08995A y su hijo 08A264, 9185 actualizaciones) y `data/m5pow_fixture.json.gz` (`--range 95c98-96200`: el
+prisionero 095C98 / 095F8C con el premio 08C374, 1056). 095C98 usa el sistema de huecos `0AA606` / `0AA83A` /
+`0AA7FC` / `0CA2CE` (en parte ya en `neo_vslot` / `neo_slug.c`) y `0C05EC` (sin portar). Desensamblado:
+`scratchpad/m5/d95c98.txt`. Análisis (sin código aún): 095C98 es un **mecanismo que el jugador agarra como un vehículo de clase 5**:
+`0AA606` = `0AA616` con la prueba `0C069E` (jugador en el suelo, `+15` bit 6, orientado hacia él según D1, vivo, sin
+forma 2/3; `0AA610` es la variante de `neo_vslot_select` con `0C0556`), luego `095B64` (`0AA760`, asiento `d2` = 0 ó 47
+por `+70`), `0AA83A` (clase 5), cada pulsación del jugador (bit 4 de la palabra del hueco, `0CA2CE`) sube `+88` de 9 en
+9 y los programas `095A94[+91]` giran (sonido 108B, `+96` al hijo); `0C05EC` lee del jugador `+84`, `+9A` bit 2;
+suelta con `0AA7FC` (clase 3 ó 5). El hijo 095F8C mueve su mapa dinámico (`0140C0`, tabla `095B54[+72]`) y los cuatro
+`08CD70` por `+8C` hacia `+78` (dirección `095B44[+6E]`) y avisa al padre (`+95`). Necesita en `neo_vslot` la entrada
+`0AA616` con la prueba `0C069E` y el enganche del mundo/jugador como en `neo_slug.c` (clase 5 nueva para el jugador).
+Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
+máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 1280).
 
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: tras la quinta tanda quedan **54 constructores sin portar** (los 66 de la cuarta menos los 12 del
-   tren `051344`); el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con
-   `tools/build_mission5_actors_doc.sh` (no regenerado en esta tanda: con el `script-native` de este árbol el script
-   daba 208 constructores sin portar de 222, un fallo de la herramienta sin investigar; el inventario sigue siendo el
-   de la tercera tanda). Paradas del guion: metro tras el tren (`0D3B36`, cámara 992, 14 constructores),
+1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de
+   `0D3B36`); el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con
+   `tools/build_mission5_actors_doc.sh` (regenerado en la sexta tanda: 169 nativos, 13 en otro módulo, **40 sin
+   portar**. Los «208 sin portar» salían al lanzar el script desde otro árbol o sin `build/host/script-native`:
+   `compare_m3_events.py` tomaba entonces todo por «missing» en silencio. Ahora el script entra en su propio árbol
+   (`cd "$(dirname "$0")/.."`, también el de la M6) y `compare_m3_events.py` se para si falta el ayudante o es más
+   viejo que algún `src/*.c`). Paradas del guion:
    alcantarilla `2DEA8C` (`08996A`). El tren de la cámara 528 y los siguientes del metro no se han visto en ares (el
    mando automático muere ante el helicóptero de la cámara 80).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,

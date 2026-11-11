@@ -163,6 +163,8 @@ static bool k40c8e(neo_gactor_t *a,neo_genv_t *e) {
     if (!ga_anim_start(a,e,0x240dee,0x100)) return false;
     CLR(0x15,6);SL(0,0x40d06);return true;
 }
+/* 040846 from another module (neo_m5mech.c: the pilot 0D447C at 0D475A). */
+void neo_m3enemy_death_40846(neo_gactor_t *a,neo_genv_t *e) {k4097a(a,e);SL(0,0x40c8e);}
 static int start(neo_gactor_t *a,neo_genv_t *e,uint32_t program,uint32_t routine) {
     if (!ga_anim_start(a,e,program,0x100)) return D_STOP;
     SL(0,routine);return D_MORE;

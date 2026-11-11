@@ -4,6 +4,8 @@
 # the port column is the state of the tree it was built from.
 # Usage: tools/build_mission6_actors_doc.sh [CAPTURES=/home/user/captures-m6]
 set -eu
+# Always the tree this script belongs to (not the caller's directory): data/ and docs/ are written here.
+cd "$(dirname "$0")/.."
 C=${1:-/home/user/captures-m6};T=$(mktemp -d)
 cat $C/s9/debug.log $C/s10/debug.log $C/s11/debug.log | grep -v '^LATCH\|^STAMP2' > $T/debug.log
 python3 tools/compare_m3_events.py $T/debug.log --script data/mission6_script.json \

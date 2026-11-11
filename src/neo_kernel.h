@@ -12,6 +12,10 @@
 enum { NEO_KOBJ_NONE, NEO_KOBJ_TERRAIN, NEO_KOBJ_ROOT, NEO_KOBJ_DYN0, NEO_KDYN_COUNT=8 };
 /* Mission 3: the train layer 10D7B6 as the second terrain object of 01382A. */
 enum { NEO_KOBJ_TRAIN=NEO_KOBJ_DYN0+NEO_KDYN_COUNT };
+/* An actor's position block (actor +28) as the query's parent (Mission 5: the pilot 0D447C of the metro machine
+ * 0D3B36 dies on the machine's block, 04097A's 01495C): its +14/+18/+1C/+20 = the actor's +3C/+40/+44/+48, set per
+ * query by neo_gactor.c (neo_kscene_t node). */
+enum { NEO_KOBJ_NODE=NEO_KOBJ_TRAIN+1 };
 typedef struct {
     int32_t x,y,prev_x,prev_y; /* object +14/+18/+1C/+20, Q16.16 */
 } neo_kobj_t;
@@ -57,6 +61,7 @@ typedef struct {
     /* The train's RAM ring (10D7B6 +88) as the original read it (the
      * family tests); NULL: the ROM map through neo_kernel_train_ring. */
     const uint8_t *train_ring;
+    neo_kobj_t node;   /* NEO_KOBJ_NODE */
 } neo_kscene_t;
 /* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
  * row 0 at the bottom); 0 outside. */

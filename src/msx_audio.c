@@ -17,7 +17,9 @@ static unsigned tail_voice[MSX_AUDIO_VOICES];
  * stored without loss (src/msx_pcm.h, docs/COMPRESION.md). wave_pcm /
  * tail_pcm: its reader, in the heap while the file is open (else the WAV64). */
 static msx_pcm_t *wave_pcm[MSX_AUDIO_VOICES],*tail_pcm[MSX_AUDIO_VOICES];
-#define SMALL __attribute__((noinline))
+/* After the rest of the program's code, like src/msx_pcm.c (see there). */
+#define LAST __attribute__((section("keep.text.msx_audio")))
+#define SMALL LAST __attribute__((noinline))
 static waveform_t *wave_of(unsigned v) {return wave_pcm[v]?&wave_pcm[v]->wave:&waves[v].wave;}
 static waveform_t *tail_of(unsigned v) {return tail_pcm[v]?&tail_pcm[v]->wave:&tails[v].wave;}
 static SMALL void close_file(msx_pcm_t **pcm,wav64_t *w) {
@@ -140,7 +142,7 @@ unsigned msx_audio_service(void) {
     return count;
 }
 msx_audio_stats_t msx_audio_stats(void) {return stats;}
-void msx_audio_prefetch(uint32_t deadline) {
+LAST void msx_audio_prefetch(uint32_t deadline) {
     if (!initialized || !deadline) return;
     for (unsigned v=0;v<MSX_AUDIO_EFFECT_FIRST;v++) {   /* the stream voices */
         if (!mixer_ch_playing((int)v*2)) continue;

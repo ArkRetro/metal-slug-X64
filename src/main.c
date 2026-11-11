@@ -75,7 +75,7 @@ static bool game_preload_idle(void) {
 /* The logo's spare frame time: the jingle's next block (MSXL), then the
  * title's movie. */
 static bool logo_prepares;
-static bool logo_idle(void) {
+__attribute__((section("keep.text.main_logo_idle"))) static bool logo_idle(void) {
     msx_audio_prefetch(msx_cinematic_idle_deadline());
     return logo_prepares && msx_cinematic_prepare_idle();
 }

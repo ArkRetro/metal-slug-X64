@@ -9,8 +9,8 @@
 #ifndef MSX_PCM_STATS
 #define MSX_PCM_STATS 0
 #endif
-/* A block is decoded ahead only with this much spare time left: twice the
- * slowest block measured in ares (docs/COMPRESION.md). */
+/* A block is decoded ahead only with this much spare time left: more than
+ * the slowest block measured in ares, 3.4 ms (docs/COMPRESION.md). */
 enum { MSX_PCM_PREFETCH_US=4000 };
 /* A waveform of the mixer read from an MSXL file (lossless 16-bit PCM,
  * src/msx_pcm_codec.h): the samples the mixer receives are those of the raw

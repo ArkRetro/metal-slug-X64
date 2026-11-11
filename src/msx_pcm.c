@@ -1,9 +1,14 @@
+/* All of this module goes after the rest of the program's code (the linker
+ * script of libdragon places keep.text.* last): adding it does not move the
+ * code of the game or of libdragon, whose cache alignment the frame times
+ * depend on (docs/COMPRESION.md). */
+#define MSXL_CODE __attribute__((section("keep.text.msx_pcm")))
 #include "msx_pcm.h"
 #include <fcntl.h>
 #include <malloc.h>
 #include <string.h>
 #include <unistd.h>
-static bool buffers(msx_pcm_t *p) {
+MSXL_CODE static bool buffers(msx_pcm_t *p) {
     if (p->raw) return true;
     unsigned block=1u<<p->info.block_log2,bytes=block*p->info.channels*sizeof(int16_t);
     /* One allocation, 16-byte aligned: the cartridge read goes straight to raw (DFS). */
@@ -14,13 +19,13 @@ static bool buffers(msx_pcm_t *p) {
     return true;
 }
 /* The buffer holding `block`, or -1. */
-static int find(const msx_pcm_t *p,uint32_t block) {
+MSXL_CODE static int find(const msx_pcm_t *p,uint32_t block) {
     for (int i=0;i<MSX_PCM_SLOTS;i++) if (p->have[i]==(int32_t)block) return i;
     return -1;
 }
 /* Block `block` into a buffer that holds none of block-or-the-two-after
  * (silence if the file is damaged). Returns the buffer. */
-static unsigned load(msx_pcm_t *p,uint32_t block,uint32_t keep) {
+MSXL_CODE static unsigned load(msx_pcm_t *p,uint32_t block,uint32_t keep) {
     unsigned slot=0;
     while (slot<MSX_PCM_SLOTS-1 && p->have[slot]>=(int32_t)keep && p->have[slot]<=(int32_t)keep+2) slot++;
     const msxl_info_t *info=&p->info;
@@ -65,7 +70,7 @@ static unsigned load(msx_pcm_t *p,uint32_t block,uint32_t keep) {
 #endif
     return slot;
 }
-static void pcm_read(void *ctx,samplebuffer_t *sbuf,int wpos,int wlen,bool seeking) {
+MSXL_CODE static void pcm_read(void *ctx,samplebuffer_t *sbuf,int wpos,int wlen,bool seeking) {
     (void)seeking;
     msx_pcm_t *p=ctx;const msxl_info_t *info=&p->info;
     unsigned frame=info->channels*sizeof(int16_t);
@@ -90,7 +95,7 @@ static void pcm_read(void *ctx,samplebuffer_t *sbuf,int wpos,int wlen,bool seeki
      * read of a raw WAV64 does (see ram_read in msx_ramfs.c). */
     if (dst>start) data_cache_hit_writeback(start,(unsigned long)(dst-start));
 }
-bool msx_pcm_prefetch(msx_pcm_t *p,uint32_t deadline) {
+MSXL_CODE bool msx_pcm_prefetch(msx_pcm_t *p,uint32_t deadline) {
     if (!p->raw || p->have[p->current]<0) return false;   /* not playing yet */
     uint32_t playing=(uint32_t)p->have[p->current],want=playing+1u;
     if (want<p->info.blocks && find(p,want)>=0) want++;
@@ -102,7 +107,7 @@ bool msx_pcm_prefetch(msx_pcm_t *p,uint32_t deadline) {
 #endif
     return true;
 }
-bool msx_pcm_open(msx_pcm_t *pcm,const char *path) {
+MSXL_CODE bool msx_pcm_open(msx_pcm_t *pcm,const char *path) {
     memset(pcm,0,sizeof(*pcm));pcm->fd=-1;
     int fd=open(path,O_RDONLY);
     if (fd<0) return false;
@@ -115,7 +120,7 @@ bool msx_pcm_open(msx_pcm_t *pcm,const char *path) {
         .len=(int)pcm->info.len,.loop_len=(int)pcm->info.loop_len,.read=pcm_read,.ctx=pcm};
     return true;
 }
-void msx_pcm_release(msx_pcm_t *pcm) {
+MSXL_CODE void msx_pcm_release(msx_pcm_t *pcm) {
 #if MSX_PCM_STATS
     if (pcm->loads) {
         debugf("MSX PCM %s blocks=%lu ahead=%lu load avg=%lu max=%lu us (decode avg=%lu us) errors=%lu\n",pcm->name,(unsigned long)pcm->loads,(unsigned long)pcm->ahead,
@@ -127,7 +132,7 @@ void msx_pcm_release(msx_pcm_t *pcm) {
     free(pcm->raw);pcm->raw=NULL;pcm->next=UINT32_MAX;
     for (unsigned i=0;i<MSX_PCM_SLOTS;i++) {pcm->pcm[i]=NULL;pcm->have[i]=-1;}
 }
-void msx_pcm_close(msx_pcm_t *pcm) {
+MSXL_CODE void msx_pcm_close(msx_pcm_t *pcm) {
     msx_pcm_release(pcm);
     if (pcm->fd>=0) close(pcm->fd);
     pcm->fd=-1;

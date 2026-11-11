@@ -38,6 +38,10 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+/* Where the console puts this code (src/msx_pcm.c); nothing on the host. */
+#ifndef MSXL_CODE
+#define MSXL_CODE
+#endif
 enum { MSXL_VERSION=1,MSXL_HEADER=56,MSXL_WAV_HEADER=24,MSXL_BLOCK_LOG2_MAX=10,MSXL_BLOCK_MAX=1<<MSXL_BLOCK_LOG2_MAX,
     MSXL_K_MAX=24,MSXL_Q_MAX=1<<16,
     /* A block never takes more than its samples stored raw plus this. */
@@ -48,17 +52,17 @@ typedef struct {
     uint32_t frequency,len,loop_len;   /* from the WAV64 header */
     uint32_t blocks,index_offset,first_size,crc,source_size;
 } msxl_info_t;
-static inline uint32_t msxl_be32(const uint8_t *p) {return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];}
-static inline uint32_t msxl_be16(const uint8_t *p) {return (uint32_t)p[0]<<8|p[1];}
+MSXL_CODE static inline uint32_t msxl_be32(const uint8_t *p) {return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];}
+MSXL_CODE static inline uint32_t msxl_be16(const uint8_t *p) {return (uint32_t)p[0]<<8|p[1];}
 /* Largest stored size of a block of n samples. */
-static inline uint32_t msxl_block_bound(unsigned channels,unsigned n) {return n*channels*2u+MSXL_BLOCK_SLACK;}
+MSXL_CODE static inline uint32_t msxl_block_bound(unsigned channels,unsigned n) {return n*channels*2u+MSXL_BLOCK_SLACK;}
 /* Samples of block `block`. */
-static inline unsigned msxl_block_samples(const msxl_info_t *info,uint32_t block) {
+MSXL_CODE static inline unsigned msxl_block_samples(const msxl_info_t *info,uint32_t block) {
     uint32_t size=1u<<info->block_log2,start=block<<info->block_log2;
     return info->len-start<size?info->len-start:size;
 }
 /* The 56-byte header. False unless it is a well-formed MSXL header. */
-static inline bool msxl_parse(const uint8_t *h,msxl_info_t *info) {
+MSXL_CODE static inline bool msxl_parse(const uint8_t *h,msxl_info_t *info) {
     if (memcmp(h,"MSXL",4) || h[4]!=MSXL_VERSION || (h[5]!=1 && h[5]!=2) || h[6]<3 || h[6]>MSXL_BLOCK_LOG2_MAX || h[7]) return false;
     info->channels=h[5];info->block_log2=h[6];memcpy(info->wav,h+8,MSXL_WAV_HEADER);
     const uint8_t *w=info->wav;
@@ -78,7 +82,7 @@ typedef struct { const uint8_t *p,*end;uint64_t acc;int n;unsigned pad; } msxl_b
 /* 32 bits at any address (one unaligned load on the console; a memcpy
  * would be a call under -Os). */
 typedef struct __attribute__((packed)) { uint32_t v; } msxl_word_t;
-static inline uint32_t msxl_load32(const uint8_t *p) {
+MSXL_CODE static inline uint32_t msxl_load32(const uint8_t *p) {
     uint32_t v=((const msxl_word_t *)(const void *)p)->v;
 #if __BYTE_ORDER__==__ORDER_LITTLE_ENDIAN__
     v=__builtin_bswap32(v);
@@ -92,17 +96,17 @@ static inline uint32_t msxl_load32(const uint8_t *p) {
 } while (0)
 /* 1..32 bits. Not inlined: the headers of the streams and the rare long
  * codes; the Rice loop below keeps its own state. */
-static __attribute__((noinline)) uint32_t msxl_get(msxl_bits_t *b,unsigned bits) {
+MSXL_CODE static __attribute__((noinline)) uint32_t msxl_get(msxl_bits_t *b,unsigned bits) {
     if (b->n<=32) MSXL_REFILL(b->p,b->end,b->acc,b->n,b->pad);
     uint32_t v=(uint32_t)(b->acc>>(64-bits));b->acc<<=bits;b->n-=(int)bits;return v;
 }
-static inline int32_t msxl_signed(msxl_bits_t *b,unsigned bits) {
+MSXL_CODE static inline int32_t msxl_signed(msxl_bits_t *b,unsigned bits) {
     uint32_t v=msxl_get(b,bits),sign=1u<<(bits-1);
     return (int32_t)((v^sign)-sign);
 }
 /* `count` Rice codes of parameter k into v. False on a code longer than any
  * the packer writes. */
-static inline bool msxl_rice(msxl_bits_t *b,unsigned k,int32_t *v,int count) {
+MSXL_CODE static inline bool msxl_rice(msxl_bits_t *b,unsigned k,int32_t *v,int count) {
     const uint8_t *p=b->p,*end=b->end;uint64_t acc=b->acc;int n=b->n;unsigned pad=b->pad;
     const uint32_t one=1u<<k;
     while (count-->0) {
@@ -125,7 +129,7 @@ static inline bool msxl_rice(msxl_bits_t *b,unsigned k,int32_t *v,int count) {
     b->p=p;b->acc=acc;b->n=n;b->pad=pad;return true;
 }
 /* One stream of n values into v. */
-static inline bool msxl_stream(msxl_bits_t *b,int n,int32_t *v,bool raw_allowed) {
+MSXL_CODE static inline bool msxl_stream(msxl_bits_t *b,int n,int32_t *v,bool raw_allowed) {
     unsigned type=msxl_get(b,3);
     if (type==7) {
         if (!raw_allowed) return false;
@@ -157,7 +161,7 @@ static inline bool msxl_stream(msxl_bits_t *b,int n,int32_t *v,bool raw_allowed)
 /* Decode one block of n samples per channel into out (interleaved, native
  * int16). False when the block is malformed (out is then undefined but
  * nothing is read or written out of bounds). scratch: n int32. */
-static inline bool msxl_decode_block(const uint8_t *in,size_t in_size,unsigned channels,int n,int16_t *out,int32_t *scratch) {
+MSXL_CODE static inline bool msxl_decode_block(const uint8_t *in,size_t in_size,unsigned channels,int n,int16_t *out,int32_t *scratch) {
     if (n<=0 || n>MSXL_BLOCK_MAX || (channels!=1 && channels!=2)) return false;
     msxl_bits_t b={in,in+in_size,0,0,0};
     unsigned mode=msxl_get(&b,1);int32_t wrong=0;

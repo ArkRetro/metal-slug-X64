@@ -17,6 +17,7 @@ p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='
 p.add_argument('--back',type=float,default=0,help='every BACK seconds, hold left for 1.5 s (0: never)')
 p.add_argument('--up',type=float,default=0,help='every UP seconds, hold up for 1.5 s (the pad fires upward: the helicopters over a camera stop; 0: never)')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
+p.add_argument('--continue',dest='cont',action='store_true',help='tap Start at the CONTINUE? panel (the arcade continue, MSX panel continue): the pad keeps going after its lives')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
@@ -62,7 +63,7 @@ try:
     assert (m.group(2),m.group(3))==(('016E2E','0BB8E6'),('016E3E','0BB9BA'),('016E4E','0BBA24'))[a.stage-1],m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
-    t0=time.monotonic();nextgrab=0;k=0;held={}
+    t0=time.monotonic();nextgrab=0;k=0;held={};next_start=0
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     while time.monotonic()-t0<a.seconds:
@@ -77,6 +78,10 @@ try:
         back=bool(a.back) and (t%a.back)>a.back-1.5
         up=bool(a.up) and (t%a.up)>a.up-1.5
         hold('Right',not back and not up);hold('Left',back);hold('Up',up);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        # --continue: the panel's last state is "continue" (CONTINUE? 9..0): Start, as an arcade player would.
+        if a.cont:
+            pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
+            if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

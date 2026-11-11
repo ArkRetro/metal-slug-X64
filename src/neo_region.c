@@ -108,6 +108,7 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_m5props_routine(r)) return neo_m5props_tick(a,e);
     if (neo_m5enemy_routine(r)) return neo_m5enemy_tick(a,e);
     if (neo_m5train_routine(r)) return neo_m5train_tick(a,e);
+    if (neo_m5mech_routine(r)) return neo_m5mech_tick(a,e);
     if (neo_m3enemy_routine(r)) return neo_m3enemy_tick(a,e);
     if (neo_drone_routine(r)) return neo_drone_tick(a,e);
     if (neo_m2traps_routine(r)) return neo_m2traps_tick(a,e);

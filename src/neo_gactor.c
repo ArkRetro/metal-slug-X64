@@ -70,8 +70,16 @@ void ga_move(neo_gactor_t *a,neo_genv_t *e) {
 /* Mission 3 (docs/MISION3.md): with the train in the kernel's list
  * (neo_kscene_t.train_on) 10D7B6 is the train, not the terrain. */
 static bool k_train;
-static void kset(const neo_genv_t *e) {k_train=e->kernel && e->kernel->train_on;}
+static neo_genv_t *k_env;static uint32_t k_node_tag;
+static void kset(const neo_genv_t *e) {k_train=e->kernel && e->kernel->train_on;k_env=(neo_genv_t *)e;}
 static uint8_t kobj(uint32_t tag) {
+    /* An actor's position block as the parent (NEO_KOBJ_NODE): its coordinates from the world for this query. */
+    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && k_env && k_env->kernel && k_env->parent) {
+        neo_contact_parent_t p;
+        if (!k_env->parent(k_env->ctx,tag,&p)) return 0xff;
+        k_env->kernel->node=(neo_kobj_t){p.x,p.y,p.previous_x,p.previous_y};k_node_tag=tag;
+        return NEO_KOBJ_NODE;
+    }
     if (tag>=DYN_TAG(0) && tag<DYN_TAG(NEO_KDYN_COUNT) && !((tag-DYN_TAG(0))&63u)) return (uint8_t)(NEO_KOBJ_DYN0+(tag-DYN_TAG(0))/64u);
     if (tag==0x10d7b6u && k_train) return NEO_KOBJ_TRAIN;
     return tag==TERRAIN_TAG || tag==0x10d7b6u?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
@@ -80,6 +88,7 @@ static uint32_t terrain_tag=TERRAIN_TAG;
 static uint32_t ktag(uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return DYN_TAG(id-NEO_KOBJ_DYN0);
     if (id==NEO_KOBJ_TRAIN) return 0x10d7b6u;
+    if (id==NEO_KOBJ_NODE) return k_node_tag;
     return id==NEO_KOBJ_TERRAIN?terrain_tag:id==NEO_KOBJ_ROOT?ROOT_TAG:0;
 }
 static void self(neo_gactor_t *a,neo_genv_t *e) {

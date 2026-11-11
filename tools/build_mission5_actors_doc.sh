@@ -4,6 +4,8 @@
 # the port column is the state of the tree it was built from.
 # Usage: tools/build_mission5_actors_doc.sh [CAPTURES=/home/user/captures-m5]
 set -eu
+# Always the tree this script belongs to (not the caller's directory): data/ and docs/ are written here.
+cd "$(dirname "$0")/.."
 C=${1:-/home/user/captures-m5};T=$(mktemp -d)
 cat $C/s6/debug.log $C/s7/debug.log $C/s8/debug.log > $T/debug.log
 python3 tools/compare_m3_events.py $T/debug.log --script data/mission5_script.json \
@@ -39,8 +41,8 @@ cat <<'EOF'
   (compartido con la M1). Estado MAME: `captures-m5/states/mslugx/sec06_247661` (382 fotogramas antes).
 - **Slugnoid `09692C`** (alcantarilla): 3 creaciones del guion, la primera en 275061 (cámara 557); nativo (compartido
   con la M2). Es el desplazamiento `0x2FC` de la tabla `0197DC`, con el bit 31 (no cuenta en su grupo 6).
-- **Trenes del metro**: familia `051344` (12 constructores, 148 creaciones, primera en la cámara 528) y la familia
-  `0D3B36` (14 constructores); sin portar. Estados: `at_256000..272000`.
+- **Trenes del metro**: familia `051344` (12 constructores, 148 creaciones, primera en la cámara 528): nativa
+  (`neo_m5train.c`, familia `m5train`); la familia `0D3B36` (14 constructores, cámara 992). Estados: `at_256000..272000`.
 - **Jefe**: el registro del guion de la cámara 2560 crea `0A0C00` en 277086 (22 constructores, 434 creaciones) y este el
   `059F76` de la música (fundido `0A 80` en 277087, `00 2C` en 277279: el mismo actor que en la M2/M3/M4, ya nativo).
   Fin de misión `018870` en 292010; la cuenta `0308C0` (`neo_tally.c`) nace en 292068. Estados: `at_277000` (86

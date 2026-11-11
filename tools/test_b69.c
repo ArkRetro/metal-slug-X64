@@ -8,7 +8,7 @@
  * 0966BC (01); the Camel's 0A0B02 (02) is class 1 and must not be hit. */
 #include <stdio.h>
 #include <string.h>
-#include "neo_world.h"
+#include "../src/neo_world.h"
 static neo_world_t w;
 static int check(uint32_t box,bool expect,const char *name) {
     neo_world_init(&w,0);

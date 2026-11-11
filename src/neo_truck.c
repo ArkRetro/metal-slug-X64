@@ -87,8 +87,7 @@ static bool truck_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
     case 0x29ae4: k29ae4(a,e);return true;
     case 0x29a98: /* wreck: grid stamp, landing attack, solid body removed */
         SB(0x60,0xff);
-        if (BIT(0x84,5) || !BIT(0x84,0)) return true;                  /* 029A9E / 029AA8: nothing else (the Mission 4 truck, +6E = 0) */
-        if (e->stamp) e->stamp(e->ctx,a,BIT(0x84,1)?0x29c26:0x29bf4);
+        if (!BIT(0x84,5) && BIT(0x84,0) && e->stamp) e->stamp(e->ctx,a,BIT(0x84,1)?0x29c26:0x29bf4);
         ga_attack(a,e,0x29ba2);
         if (e->solid) e->solid(e->ctx,a,0);
         return true;
@@ -99,16 +98,6 @@ static bool truck_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
         return true;
     default:return false;
     }
-}
-/* 02A448: a piece: palettes 02A9BC[+83 & 3] and 201, program 02A878[rand & F], then 01D5AA. */
-static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
-    const uint8_t *t=ga_rom(0x2a9bcu+2u*(B(0x83)&3u));
-    if (!t) {ga_fail(e,0x2a9bc);return GA_UNSUPPORTED;}
-    ga_palette(a,(uint16_t)(t[0]<<8|t[1]));ga_palette(a,0x201);SB(0x14,B(0x19));
-    t=ga_rom(0x2a878u+4u*(ga_rand(e)&0xfu));
-    if (!t) {ga_fail(e,0x2a878);return GA_UNSUPPORTED;}
-    START((uint32_t)t[0]<<24|(uint32_t)t[1]<<16|(uint32_t)t[2]<<8|t[3]);
-    return neo_effects_frag_1d5aa(a,e);
 }
 /* 02951A: damage registration, death check and visibility. */
 static ga_result_t tail(neo_gactor_t *a,neo_genv_t *e) {
@@ -206,7 +195,7 @@ static ga_result_t truck_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (e->sound) e->sound(e->ctx,0x102f);
         spawn_child(a,e,0x1c71e,-32,0,0);spawn_child(a,e,0x1c71e,32,0,0);
         for (unsigned i=0;i<16;i++) { /* 02A71E */
-            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x2a448,0x2a):e->spawn?e->spawn(e->ctx,a,0x2a448,false):NULL;   /* 0040BC, D0 = 2A */
+            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x2a448,false):NULL;
             if (c) {ga_place_from(c,a,e,0,0);ga_sb(c,0x83,B(0x83));}
         }
         for (unsigned i=0;i<16;i++) spawn_child(a,e,0x1d31c,0,24,0); /* 01DBAA */
@@ -245,9 +234,8 @@ static ga_result_t body_tick(neo_gactor_t *a,neo_genv_t *e) {
     return GA_MORE;
 }
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e) {
-    if (L(0)==0x2a448) return piece_tick(a,e);
     uint32_t r=L(0);
     if (r==0x29802 || r==0x29852 || r==0x298f4) return body_tick(a,e);
     return truck_tick(a,e);
 }
-bool neo_truck_routine(uint32_t r) {return r==0x2916e || r==0x2a448 || (r>=0x29294 && r<=0x295bc) || r==0x29802 || r==0x29852 || r==0x298f4;}
+bool neo_truck_routine(uint32_t r) {return r==0x2916e || (r>=0x29294 && r<=0x295bc) || r==0x29802 || r==0x29852 || r==0x298f4;}

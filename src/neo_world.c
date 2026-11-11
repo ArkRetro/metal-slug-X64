@@ -14,19 +14,15 @@
 enum { TERRAIN_TAG=0x10c72e, ROOT_TAG=0x10e968, SCENE_Y=0x01000000 };
 enum { SOLDIER_CONSTRUCTOR=0xaf17e, SCRIPT_TAG=0x101414, PLAYER1_TAG=0x1014c4 };
 /* The soldier entries 0AF17E.. (0AEF30 then +81): 0 for any other routine.
- * 0AF1A8: +81 = E0, the leap 0AF99A (families m4sold / m4sold2). */
+ * 0AF1A8 (+81 = E0: the actions 0AF99A, not ported) stays external. */
 static uint8_t soldier_entry_flags81(uint32_t r) {
     switch (r) {
-    case 0xaf17e:return 2;case 0xaf18c:return 0x10;case 0xaf19a:return 0x12;case 0xaf1a8:return 0xe0;
+    case 0xaf17e:return 2;case 0xaf18c:return 0x10;case 0xaf19a:return 0x12;
     case 0xaf1b6:return 4;case 0xaf1c4:return 8;case 0xaf1d2:return 0xc;case 0xaf1e0:return 0xe;
     default:return 0;
     }
 }
 #define RUNNER_TAG(i) (0x50000000u|(uint32_t)(i))
-/* A soldier as the creator (+0C) of a generic node: slot and generation. */
-#define SOLDIER_TAG(w,i) (0x70000000u|(uint32_t)(w)->soldier_gen[i]<<8|(uint32_t)(i))
-/* The pool index of the soldier view (tags a generic node keeps of a soldier it created). */
-enum { SOLDIER_VIEW_INDEX=0x4000 };
 /* Observed settings of every capture: RAM 100088 = 2, 10FD8B = 3, one player.
  * RAM 10FD8F (BLOOD) is w->blood: 040F98 asks 01B2BE for the splash palette
  * (src/neo_blood.c: 037A ON, 03BA OFF). */
@@ -75,8 +71,6 @@ typedef struct {
     const neo_script_env_t *se;  /* the script environment of this tick */
     int sub_owner;               /* generic actor running a sub-script (-1) */
     uint32_t convert;            /* 0B05FE/0B0626/0B0632 asked by the running generic actor */
-    int event_soldier;           /* soldier slot being constructed or converted (-1) */
-    int view_write;              /* soldier slot + 1 whose view the running generic actor may have written */
 } tick_t;
 static void emit(void *context,const neo_anim_draw_t *d) {
     tick_t *t=context;neo_world_t *w=t->w;
@@ -192,7 +186,7 @@ static void script_spawn_one(void *context,const neo_script_spawn_t *sp) {
     for (unsigned k=0;k<6 && k<sp->word_count;k++) p->words[k]=sp->words[k];
     /* The node exists from now on; its constructor runs when the list
      * traversal reaches it (after the creator has finished its update). */
-    memset(&w->soldiers[i],0,sizeof(w->soldiers[i]));w->soldiers[i].active=true;w->constructed[i]=false;w->soldier_gen[i]++;
+    memset(&w->soldiers[i],0,sizeof(w->soldiers[i]));w->soldiers[i].active=true;w->constructed[i]=false;
     w->spawned++;
 }
 static void sound_request(neo_world_t *w,uint16_t word) {
@@ -245,15 +239,6 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         neo_contact_actor_t body;neo_throw_spawn(&body,&seed,&w->root,w->epoch);
         neo_anim_render_t graphics;memset(&graphics,0,sizeof(graphics));graphics.attributes=body.flags15;
         neo_throw_actor_start(&w->throws[i],&body,(uint16_t)(e->value&0xffu),0xff,&graphics);
-        break;
-    }
-    case NEO_SOLDIER_EVENT_RIPPLE: { /* 03C52C: 019240, then 0040BC of 03C62A after the soldier, +6E = 2 */
-        if (t->event_soldier<0 || t->current<0) break;
-        if (t->genv.pickup && t->genv.pickup->mission>8u) {w->unsupported++;w->unsupported_routine=0x19240;break;}   /* 01926E: 013D1A */
-        if (!neo_gate_ripple_palette(&t->genv)) break;
-        unsigned i=(unsigned)t->event_soldier;
-        neo_gactor_t *c=ga_insert(t,t->current,0x3c62a,SOLDIER_TAG(w,i),w->soldiers[i].variant68);
-        if (c) ga_sw(c,0x6e,e->value);
         break;
     }
     case NEO_SOLDIER_EVENT_ATTACK: /* 0049E8 of a soldier with a class-1 row (0AF2BA: 0AE9B0) */
@@ -381,22 +366,6 @@ static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bo
     /* Player 1's node (its ripple): after the script actor, as 1014C4. */
     if (creator==&w->player_view) return ga_insert(t,find(w,NEO_WORLD_SCRIPT,0),routine,PLAYER1_TAG,ga_b(creator,0x68));
     int at=after_script?find(w,NEO_WORLD_SCRIPT,0):(creator?order_of_gactor(w,creator):t->current);
-    if (soldier_entry_flags81(routine) && !after_script && creator) {
-        /* 0040BC of a soldier entry from a generic node (084300): the node
-         * exists from now on, its constructor runs when the traversal
-         * reaches it; the creator writes its words +6E.. meanwhile (the
-         * view; soldier_view_flush after the creator's update). */
-        unsigned i;for (i=0;i<NEO_WORLD_SOLDIERS && w->soldiers[i].active;i++) {}
-        if (i==NEO_WORLD_SOLDIERS) MSX_DIAG_POOL_FAIL(MSX_POOL_SOLDIER);
-        if (i==NEO_WORLD_SOLDIERS || at<0 || !insert(w,(unsigned)at+1,(neo_world_slot_t){NEO_WORLD_SOLDIER,(uint8_t)i,(uint8_t)(w->order[at].depth+1u)})) {w->overflow++;return NULL;}
-        neo_soldier_spawn_t *p=&w->pending[i];memset(p,0,sizeof(*p));
-        p->from_node=true;p->variant68=ga_b(creator,0x68);p->flags81=soldier_entry_flags81(routine);
-        memset(&w->soldiers[i],0,sizeof(w->soldiers[i]));w->soldiers[i].active=true;w->constructed[i]=false;w->soldier_gen[i]++;
-        w->spawned++;
-        neo_gactor_t *v=&w->soldier_view;memset(v,0,sizeof(*v));v->active=true;v->index=(int16_t)(SOLDIER_VIEW_INDEX+i);
-        t->view_write=(int)i+1;
-        return v;
-    }
     /* 0040BC copies +68 from its A6: the creator, or the script actor for
      * 00411C (+68 = 0). */
     return ga_insert(t,at,routine,after_script?SCRIPT_TAG:(creator?NEO_GA_TAG(creator->index):0),!after_script && creator?ga_b(creator,0x68):0);
@@ -484,10 +453,7 @@ static bool convert_soldier(tick_t *t,unsigned gi,unsigned *si) {
     s->variant68=ga_b(a,0x68);s->group69=ga_b(a,0x69);
     memcpy(s->locals,&a->m[0x6e],NEO_SOLDIER_LOCALS);
     t->env.event_context=t;
-    w->soldier_gen[i]++;t->event_soldier=(int)i;
-    bool became=neo_soldier_become(s,t->convert,&t->env);
-    t->event_soldier=-1;
-    if (!became) {s->active=false;return false;}
+    if (!neo_soldier_become(s,t->convert,&t->env)) {s->active=false;return false;}
     w->constructed[i]=true;a->active=false;*si=i;w->converted++;
     return true;
 }
@@ -495,7 +461,6 @@ static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->exte
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (!c) return true;
-    if ((c&0xff000000u)==0x70000000u) return (c&0xffu)<NEO_WORLD_SOLDIERS && t->w->soldiers[c&0xffu].active && c==SOLDIER_TAG(t->w,c&0xffu);
     if ((c&0xff000000u)==NEO_GA_TAG_BASE) return (c&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[c&0xffffu].active && !t->w->gactors[c&0xffffu].placeholder;
     return true;
 }
@@ -504,35 +469,8 @@ static neo_gactor_t *g_previous(void *ctx,neo_gactor_t *a) {
     if (at<=0 || w->order[at-1].kind!=NEO_WORLD_GACTOR) return NULL;
     return &w->gactors[w->order[at-1].index];
 }
-/* Soldier `i` as a generic node record (the fields ga_contact covers and
- * its routine; 003F1E once deleted, with the fields it left). */
-static neo_gactor_t *soldier_view(neo_world_t *w,unsigned i) {
-    neo_gactor_t *v=&w->soldier_view;const neo_soldier_t *s=&w->soldiers[i];
-    memset(v,0,sizeof(*v));v->active=true;v->index=(int16_t)(SOLDIER_VIEW_INDEX+i);
-    ga_set_contact(v,&s->b);ga_sl(v,0,s->active?s->routine:0x3f1eu);
-    ga_sb(v,0x68,s->variant68);ga_sb(v,0x69,s->group69);
-    return v;
-}
-/* After a generic actor's update: what it wrote into the soldier it holds
- * (084318: the words of a soldier not constructed yet; 084344: 01ACF2,
- * 01AC94, +30/+34 of a constructed one). */
-static void soldier_view_flush(tick_t *t) {
-    neo_world_t *w=t->w;
-    if (!t->view_write) return;
-    unsigned i=(unsigned)t->view_write-1u;t->view_write=0;
-    const neo_gactor_t *v=&w->soldier_view;
-    if (v->index!=(int16_t)(SOLDIER_VIEW_INDEX+i) || !w->soldiers[i].active) return;
-    if (!w->constructed[i]) {for (unsigned k=0;k<6;k++) w->pending[i].words[k]=ga_w(v,0x6eu+2u*k);return;}
-    w->soldiers[i].b=ga_contact(v);
-}
 static neo_gactor_t *g_actor(void *ctx,uint32_t tag) {
     tick_t *t=ctx;
-    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)>=SOLDIER_VIEW_INDEX && (tag&0xffffu)<SOLDIER_VIEW_INDEX+NEO_WORLD_SOLDIERS) {
-        unsigned i=(tag&0xffffu)-SOLDIER_VIEW_INDEX;
-        if (!t->w->soldiers[i].active || !t->w->constructed[i]) return NULL;
-        soldier_view_flush(t);t->view_write=(int)i+1;
-        return soldier_view(t->w,i);
-    }
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS && t->w->gactors[tag&0xffffu].active) return &t->w->gactors[tag&0xffffu];
     return NULL;
 }
@@ -549,44 +487,7 @@ static neo_gactor_t *player_view(neo_world_t *w) {
 static neo_gactor_t *g_creator(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (c==PLAYER1_TAG) return player_view(t->w);
-    if ((c&0xff000000u)==0x70000000u && (c&0xffu)<NEO_WORLD_SOLDIERS) {
-        /* A soldier (its ripple 03C62A): its record, or what the deleted
-         * node left while the slot has not been given out again. */
-        unsigned i=c&0xffu;neo_gactor_t *v=soldier_view(t->w,i);
-        if (c!=SOLDIER_TAG(t->w,i)) ga_sl(v,0,0x3f1eu);
-        return v;
-    }
     if ((c&0xff000000u)==NEO_GA_TAG_BASE && (c&0xffffu)<NEO_WORLD_GACTORS) return &t->w->gactors[c&0xffffu];
-    return NULL;
-}
-/* e->node: the node of a target's tag (attack_targets) or of a player's
- * address, as the fields another actor reads of it (+00: 3F1E once deleted,
- * +3C..+43; the players' +5E / +5F). The port keeps soldiers, boss nodes and
- * generic actors in pools of their own: a tag names the slot (the soldier's
- * with its generation), so a slot given out again reads as the new occupant
- * only among generic actors, as in the original's single pool. */
-static const uint8_t *g_node(void *ctx,uint32_t tag) {
-    tick_t *t=ctx;neo_world_t *w=t->w;static uint8_t gone[NEO_GA_BYTES];
-    gone[2]=0x3f;gone[3]=0x1e;
-    if (tag==PLAYER1_TAG) return w->player_node[0];
-    if (tag==0x101574u) return w->player_node[1];
-    if ((tag&0xff000000u)==0x70000000u && (tag&0xffu)<NEO_WORLD_SOLDIERS) {
-        unsigned i=tag&0xffu;
-        if (tag!=SOLDIER_TAG(w,i) || !w->soldiers[i].active) return gone;
-        soldier_view_flush(t);
-        return soldier_view(w,i)->m;
-    }
-    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS) {
-        const neo_gactor_t *g=&w->gactors[tag&0xffffu];
-        return g->active && !g->placeholder?g->m:gone;
-    }
-    if (NEO_BOSS_IS_TAG(tag) && NEO_BOSS_TAG_INDEX(tag)<NEO_BOSS_NODES) {
-        const neo_boss_node_t *n=&w->boss.nodes[NEO_BOSS_TAG_INDEX(tag)];static uint8_t b[NEO_GA_BYTES];
-        if (!w->boss_active || !n->routine) return gone;
-        memset(b,0,sizeof(b));memcpy(b,n->f,sizeof(n->f)<sizeof(b)?sizeof(n->f):sizeof(b));
-        b[0]=(uint8_t)(n->routine>>24);b[1]=(uint8_t)(n->routine>>16);b[2]=(uint8_t)(n->routine>>8);b[3]=(uint8_t)n->routine;
-        return b;
-    }
     return NULL;
 }
 /* ROM 01ABCC on a dynamic object's block. */
@@ -863,7 +764,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
         if (sl>=w->last_reg_count) continue;
         const uint16_t xb=w->last_regs[sl].xbins;const uint8_t yb=w->last_regs[sl].ybins;
         if (!(xb&qx) || !(yb&qy)) continue;
-        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0},0,0,0};
+        unsigned i=w->last_regs[sl].index;uint16_t h;neo_ga_target_t tg={true,0,0,true,{0,0,0,0},0,0};
         const uint8_t *d=NULL;
         switch (w->last_regs[sl].kind) {
         case NEO_WORLD_GACTOR: {
@@ -871,7 +772,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             if (g==a || !g->active || g->placeholder || !ga_l(g,0x50)) continue;
             d=ga_rom(ga_l(g,0x50));
             if (!candidate(d,ga_w(g,0x3c),ga_w(g,0x40),ga_b(g,0x15),ga_l(g,0x54)?ga_rom(ga_l(g,0x54)):NULL,ga_b(g,0x5f),&q,row)) continue;
-            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);tg.y_low=ga_w(g,0x42);tg.x_low=ga_w(g,0x3e);tg.tag=NEO_GA_TAG(i);
+            h=ga_w(g,0x4e);tg.x=ga_w(g,0x3c);tg.y=ga_w(g,0x40);tg.y_low=ga_w(g,0x42);tg.x_low=ga_w(g,0x3e);
             break;
         }
         case NEO_WORLD_SOLDIER: {
@@ -880,7 +781,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             uint8_t sd[12]={hb.type,(uint8_t)(1u<<hb.klass),(uint8_t)((uint16_t)hb.rect[0]>>8),(uint8_t)hb.rect[0],(uint8_t)((uint16_t)hb.rect[1]>>8),(uint8_t)hb.rect[1],
                 (uint8_t)((uint16_t)hb.rect[2]>>8),(uint8_t)hb.rect[2],(uint8_t)((uint16_t)hb.rect[3]>>8),(uint8_t)hb.rect[3],0x80,0};
             if (!candidate(sd,hb.x,hb.y,hb.flags15,NULL,hb.dead?0x80u:0,&q,row)) continue;
-            h=s->health;tg.x=hb.x;tg.y=hb.y;tg.y_low=(uint16_t)s->b.projected_y;tg.x_low=(uint16_t)s->b.projected_x;d=sd;tg.tag=SOLDIER_TAG(w,i);
+            h=s->health;tg.x=hb.x;tg.y=hb.y;tg.y_low=(uint16_t)s->b.projected_y;tg.x_low=(uint16_t)s->b.projected_x;d=sd;
             for (unsigned k=0;k<4;k++) tg.rect[k]=hb.rect[k];
             break;
         }
@@ -890,7 +791,7 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
             d=neo_boss_rom(neo_boss_l(n,0x50),12);
             const uint8_t *mul=neo_boss_l(n,0x54)?neo_boss_rom(neo_boss_l(n,0x54),40):NULL;
             if (!candidate(d,neo_boss_w(n,0x3c),neo_boss_w(n,0x40),n->f[0x15],mul,n->f[0x5f],&q,row)) continue;
-            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);tg.y_low=neo_boss_w(n,0x42);tg.x_low=neo_boss_w(n,0x3e);tg.tag=NEO_BOSS_TAG(i);
+            h=neo_boss_w(n,0x4e);tg.x=neo_boss_w(n,0x3c);tg.y=neo_boss_w(n,0x40);tg.y_low=neo_boss_w(n,0x42);tg.x_low=neo_boss_w(n,0x3e);
             break;
         }
         default: continue;
@@ -1295,10 +1196,7 @@ static bool run_soldier(tick_t *t,unsigned i) {
     neo_world_t *w=t->w;neo_soldier_t *s=&w->soldiers[i];
     t->env.event_context=t;
     if (!w->constructed[i]) {
-        t->event_soldier=(int)i;
-        bool made=neo_soldier_construct(s,&w->pending[i],&t->env);
-        t->event_soldier=-1;
-        if (!made) {w->unsupported++;w->unsupported_routine=SOLDIER_CONSTRUCTOR;w->unsupported_line=neo_soldier_unsupported_line;w->unsupported_detail=(uint32_t)w->pending[i].variant68<<8|(w->pending[i].from_node?1u:0u);s->active=false;return false;}
+        if (!neo_soldier_construct(s,&w->pending[i],&t->env)) {w->unsupported++;w->unsupported_routine=SOLDIER_CONSTRUCTOR;s->active=false;return false;}
         w->constructed[i]=true;return true;
     }
     uint8_t group=s->group69;
@@ -1487,7 +1385,6 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     e->event=soldier_event;e->event_context=&t;e->blood=w->blood;e->dyn=w->dyn_parent;
     e->player_state[0].alive=t.player_valid;e->player_state[0].follow7a=pl?pl->follow_x:0xff;
     e->player_state[0].follow7b=pl?pl->follow_y:0xff;e->player_state[0].x=px;e->player_state[0].y=py;
-    e->slot_word[0]=(uint16_t)(w->vslots.slot[0].b[0]<<8|w->vslots.slot[0].b[1]);e->slot_word[1]=0;   /* RAM 10C608 (0AAA88) */
     e->point[0]=w->script.w69b8;e->point[1]=w->script.w69ba;
     neo_genv_t *g=&t.genv;
     g->kernel=&w->kernel;g->epoch=w->epoch;g->rng=&w->rng;g->players=t.players;g->bounds=t.bounds;
@@ -1497,7 +1394,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
@@ -1611,7 +1508,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         {{t.player_valid,pl?pl->follow_x:0,pl?pl->follow_y:0,px,py,
           (uint8_t)(t.player_valid && neo_vslot_node(&w->vslots.slot[0]) && w->vslots.slot[0].b[0x21])},{false,0,0,0,0,0}},
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native,w->script_skip_unported};
-    t.se=&se;t.sub_owner=-1;t.event_soldier=-1;
+    t.se=&se;t.sub_owner=-1;
     if (w->player_ripple) {w->player_ripple=false;neo_gate_ripple(player_view(w),&t.genv,2);}   /* 0C124C: 03C52C */
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
@@ -1637,7 +1534,6 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         case NEO_WORLD_GACTOR: {
             t.convert=0;
             int r=run_gactor(&t,slot.index);keep=r==1;tree=r==2;
-            soldier_view_flush(&t);
             if (t.convert && keep) {
                 /* JMP 0B0626..: the node goes on as a soldier, in this update. */
                 unsigned si;int at0=find(w,NEO_WORLD_GACTOR,slot.index);

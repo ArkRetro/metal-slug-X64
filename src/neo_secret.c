@@ -89,9 +89,6 @@ static ga_result_t secret_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_project(a,e);ga_register(a,e,NULL,NULL);SB(0x5a,0);
         if (BIT(0x5f,7)) SL(0,0x9a7b2);
         return view(a,e);
-    case 0x9a71e:   /* the hidden prisoner box of Mission 4 (09A71E): +7E = 0, 09A688's hits */
-        SW(0x7e,0);setup(a,e);SW(0x4e,0);count(a,e);SL(0,0x9a76a);
-        /* fall through */
     case 0x9a76a:
     hits:
         ga_project(a,e);
@@ -122,6 +119,6 @@ static ga_result_t secret_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
 }
 bool neo_secret_routine(uint32_t r) {
-    return r==0x9a67e || r==0x9a688 || r==0x9a692 || r==0x9a71e || r==0x9a6e8 || r==0x9a76a || r==0x9a7b2 || r==0x9a7c2 || r==0x9a5ee;
+    return r==0x9a67e || r==0x9a688 || r==0x9a692 || r==0x9a6e8 || r==0x9a76a || r==0x9a7b2 || r==0x9a7c2 || r==0x9a5ee;
 }
 ga_result_t neo_secret_tick(neo_gactor_t *a,neo_genv_t *e) {return secret_tick(a,e);}

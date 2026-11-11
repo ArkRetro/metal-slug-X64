@@ -25,7 +25,6 @@ def main():
     p.add_argument('--range',action='append',required=True,help='lo-hi routine interval (hex)')
     p.add_argument('--attacks',action='store_true',help='record every 0049E8 call of an update (its D0 at 004B96 and A0/A1 at 004B9A/004B9E, 0 on the 004BA4 path) and what 01B162 read of a target (+3C/+40 words, +50): the C shell\'s homing')
     p.add_argument('--ram',action='append',default=[],help='lo-hi RAM interval (hex): every first read of a byte there (input) and every write (output), e.g. the vehicle slots, input words, weapon block and player nodes a vehicle reads')
-    p.add_argument('--hit-writes',action='store_true',help='record what 0049E8 (PC 0047xx..0049E7) of an update wrote into the other nodes of the family (the blast 0AA2C6 flashing the van 0A9F0C between the van and its overlay)')
     a=p.parse_args();ranges=[tuple(int(x,16) for x in r.split('-')) for r in a.range]
     rams=[tuple(int(x,16) for x in r.split('-')) for r in a.ram]
     inram=lambda ad:any(lo<=ad<hi for lo,hi in rams)
@@ -66,11 +65,6 @@ def main():
                     # the bins of the dynamic objects (10C26E/10C280) are read by bytes.
                     o=cur['reads'][hex(ad)];new=mask&~o[0];o[1]=(o[1]&o[0])|(data&new);o[0]|=new
             if t[0]=='W' and any(lo<=ad<hi for lo,hi in GLOBALS):cur['writes'].append([ad,mask,data,pc])
-            if a.hit_writes and t[0]=='W' and 0x4700<=pc<0x49e8 and 0x1010a4<=ad<0x1010a4+0xb0*100:
-                n=ad-(ad-0x1010a4)%0xb0
-                if n in famnodes and n!=int(cur['node'],16):
-                    for b,m in ((ad,0xff00),(ad+1,0xff)):
-                        if mask&m:cur.setdefault('hitw',[]).append(['%x'%n,b-n,(data>>8)&255 if m==0xff00 else data&255])
             if a.attacks and t[0]=='R':
                 if pc==0x49e8 and ad==0x10f000:cur['attacks'].append([0,0,0])
                 elif pc==0x4b96 and ad==0x106754:cur['attacks'][-1][0]=data

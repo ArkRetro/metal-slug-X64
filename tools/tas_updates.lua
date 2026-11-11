@@ -212,93 +212,9 @@ if os.getenv('MSX_TAS_CELLS')=='1' then
  end))
  tas_events_csv=events
 end
--- Family trace from the movie (docs/MISION4.md), read-only taps in the format of tools/capture_fullgame.lua's
--- MSX_FULL_FAMILY_ROOTS (boss-trace.txt: U/V/R/W/X/A/B/F lines, Z vram writes) so tools/extract_family_fixture.py
--- reads it:  MSX_TAS_FAMILY_ROOTS=<hex list> (routines), MSX_TAS_FAMILY_RANGE=<lo>-<hi> (hex: every node
--- dispatched with a routine in the interval), MSX_TAS_FAMILY_NODES=<hex list>, from the update
--- MSX_TAS_CAPTURE_FROM; MSX_TAS_FAMILY_VRAM=1 adds the Z lines. MSX_TAS_DUMP_PERIOD=<N>: vram<f>.bin,
--- ram<f>.bin, palette<f>.bin and game<f>.png every N frames from the same update (as capture_fullgame.lua's dump).
-local tas_in_lua=false
-local fam_frame_hook=nil
-if os.getenv('MSX_TAS_FAMILY_ROOTS') or os.getenv('MSX_TAS_FAMILY_RANGE') then
- local family_roots,family={},{}
- for h in string.gmatch(os.getenv('MSX_TAS_FAMILY_ROOTS') or '','(%x+)') do family_roots[tonumber(h,16)]=true end
- for h in string.gmatch(os.getenv('MSX_TAS_FAMILY_NODES') or '','(%x+)') do family[tonumber(h,16)]=true end
- local frange_lo,frange_hi=string.match(os.getenv('MSX_TAS_FAMILY_RANGE') or '','(%x+)-(%x+)')
- if frange_lo then frange_lo,frange_hi=tonumber(frange_lo,16),tonumber(frange_hi,16) end
- local fam_log=assert(io.open(out..'/boss-trace.txt','w'))
- local factive,attacker_dumped=nil,{}
- local POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
- local function on() return updates>=cap_from and not tas_in_lua and not loading end
- tas_taps[#tas_taps+1]=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',guarded(function(address,data,mask)
-  if not on() then return end
-  if address>=POOL0 and address<POOL1 then
-   local o=(address-POOL0)%0xb0
-   if o==0 and mstate['CURPC'].value==0x4246 then
-    local n=address;tas_in_lua=true
-    local r=cpu:read_u32(n)
-    if family_roots[r] or (frange_lo and r>=frange_lo and r<=frange_hi) then family[n]=true end
-    if family[n] then factive=n;fam_log:write(string.format('U %x %x %s\n',n,r,hex(n,0xb0))) else factive=nil end
-    attacker_dumped={};tas_in_lua=false;return
-   elseif o==8 and factive==address-8 and mstate['CURPC'].value==0x424a then
-    tas_in_lua=true;fam_log:write(string.format('V %x %s\n',factive,hex(factive,0xb0)));tas_in_lua=false
-    factive=nil;return
-   end
-  end
-  if factive then fam_log:write(string.format('R %x %x %x %x\n',address,mask,data,mstate['CURPC'].value)) end
- end))
- tas_taps[#tas_taps+1]=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',guarded(function(address,data,mask)
-  if not on() then return end
-  local pc=mstate['CURPC'].value
-  if pc==0x40ec and address>=POOL0 and address<POOL1 and (address-POOL0)%0xb0==0xc then
-   local n=address-0xc;local a6=mstate['A6'].value
-   if family[a6] then family[n]=true;fam_log:write(string.format('B %x %x\n',n,a6)) else family[n]=nil end
-  end
-  if factive then fam_log:write(string.format('W %x %x %x %x\n',address,mask,data,pc));return end
-  if address>=POOL0 and address<POOL1 then
-   local n=address-(address-POOL0)%0xb0
-   if family[n] then
-    local a6=mstate['A6'].value
-    fam_log:write(string.format('X %x %x %x %x %x %x %x\n',address,mask,data,pc,a6,mstate['A0'].value,mstate['D3'].value))
-    if not attacker_dumped[a6] and a6>=0x100000 and a6<0x110000 then
-     attacker_dumped[a6]=true;tas_in_lua=true;fam_log:write(string.format('A %x %s\n',a6,hex(a6,0xb0)));tas_in_lua=false
-    end
-   end
-  end
- end))
- if os.getenv('MSX_TAS_FAMILY_VRAM')=='1' then
-  local vaddr,vmod=0,1
-  tas_taps[#tas_taps+1]=cpu:install_write_tap(0x3c0000,0x3c0005,'fam_v',guarded(function(address,data,mask)
-   if tas_in_lua then return end
-   if address==0x3c0000 then vaddr=data&0xffff
-   elseif address==0x3c0004 then vmod=data&0xffff
-   elseif address==0x3c0002 then
-    if factive and on() then fam_log:write(string.format('Z %x %x\n',vaddr,data&0xffff)) end
-    vaddr=(vaddr&0x8000)|((vaddr+vmod)&0x7fff)
-   end
-  end))
- end
- fam_frame_hook=function(f) if updates>=cap_from then fam_log:write(string.format('F %d\n',f));if f%600==0 then fam_log:flush() end end end
- tas_fam_log=fam_log
-end
-local dump_period=tonumber(os.getenv('MSX_TAS_DUMP_PERIOD') or '0')
-local function tas_dump(f)
- local video_memory=emu.item(assert(machine.devices[':spritegen'].items['0/m_videoram']))
- local v=assert(io.open(out..'/vram'..f..'.bin','wb'))
- local parts={}
- for i=0,0x85ff do parts[#parts+1]=string.pack('>I2',video_memory:read(i)) end
- v:write(table.concat(parts));v:close()
- local ram=assert(io.open(out..'/ram'..f..'.bin','wb'));ram:write(cpu:read_range(0x100000,0x10ffff,8));ram:close()
- local p=assert(io.open(out..'/palette'..f..'.bin','wb'))
- parts={}
- for i=0,4095 do parts[#parts+1]=string.pack('>I2',cpu:read_u16(0x400000+i*2)) end
- p:write(table.concat(parts));p:close()
- screen:snapshot(out..'/game'..f..'.png')
-end
 local function capture_close()
  if tas_camera_csv then tas_camera_csv:close() end
  if tas_events_csv then tas_events_csv:close() end
- if tas_fam_log then tas_fam_log:close() end
  if cell_seen then
   local o=assert(io.open(out..'/cells.txt','w'))
   for _,k in ipairs(cell_order) do local e=cell_seen[k];o:write(string.format('C %s %d %d %d %d\n',k,e[1],e[2],e[3],e[4])) end
@@ -312,9 +228,6 @@ emu.register_frame_done(function()
  local k=math.floor((tm.seconds*1e18+tm.attoseconds)/screen.refresh_attoseconds+0.5)
  if k==frame or done then return end
  frame=k
- tas_in_lua=true
- if fam_frame_hook then fam_frame_hook(frame) end
- if dump_period>0 and updates>=cap_from and frame%dump_period==0 and not first then tas_dump(frame) end
  -- MSX_TAS_DEBUG=1 (tools/run_tas_play.sh: -debug -debugger none): the debugger commands MSX_TAS_DEBUG_CMDS ('|'
  -- separated; print only, read-only probes as in tools/tas_play.lua) are set at the first frame; temp9 = the frame.
  if first and os.getenv('MSX_TAS_DEBUG')=='1' then
@@ -334,5 +247,4 @@ emu.register_frame_done(function()
  if frame>=last or (last_upd>0 and updates>=last_upd) or (desync and stop_on_desync) then
   done=true;log:close();capture_close();event(string.format('END frame %d update %d first desync %s, %d updates differ',frame,updates,tostring(desync),differ));ev:close();machine:exit()
  end
- tas_in_lua=false
 end,'tas')

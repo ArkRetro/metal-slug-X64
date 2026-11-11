@@ -195,11 +195,6 @@ typedef struct {
      * player 1014C4 follows it); its creator +0C is 1014C4, read through
      * player_view (a copy of player_node[0], +6D the floor angle). */
     bool player_ripple;neo_gactor_t player_view;
-    /* A soldier's record as a generic node, for the actors that read or
-     * write one: the creator of its ripple 03C62A (03C52C) and the Mission 4
-     * rider 0842A8, which creates a soldier (0040BC) and places it one
-     * update later. soldier_gen: bumped each time the slot is given out. */
-    neo_gactor_t soldier_view;uint8_t soldier_gen[NEO_WORLD_SOLDIERS];
     uint16_t pad[2];
     neo_vehicle_env_t vehicle_env;
     /* RAM 10F000, the original's debug-flag word (cleared at 002488): bit 7

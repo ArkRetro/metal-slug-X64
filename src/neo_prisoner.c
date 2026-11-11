@@ -1,6 +1,5 @@
 #include <string.h>
 #include "neo_region.h"
-#include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 /* Prisoner of the rest of Mission 1 (spawn-table entry 099862, camera
  * 2336..), manual translation; ROM labels are provenance only.
  *
@@ -339,248 +338,6 @@ static void face_rescuer(neo_gactor_t *a,neo_genv_t *e) {
     int16_t px=(int16_t)(p?e->players.p2x:e->players.p1x);
     if (S16(W(0x3c))>px) CLR(0x15,0); else SET(0x15,0);
 }
-/* ---- The fighting prisoner 0DDCDA..0DE4D3 (099E06 with +74 = FFFE, JMP from
- * 09A30E with A0 = the rescuer's node, kept in +76) --------------------------
- * It follows the player (0DE2F2: more than 0x28 away -> walk 0DDD62 at
- * +-4 0000; 0DE318: within 0x18 -> stand), looks for enemies with the rows
- * 0DE494 (anybody in 1024 x 512: the node 0049E8 returns in A0 goes to +6E
- * and the program 2AFE14 shoots, callback 0DE3DA) and 0DE4A4 (type 5 next to
- * it: the punch 2AFF14, callback 0DE3CE, sound 113B), walks back into the
- * screen (0DE33E / 0DE35E -> 0DDDC2), jumps where the floor ends ahead or the
- * player stands at another height (0DE37E -> 0DDF5A) and falls (0DDF8C).
- * When the player dies or is not there (0DE016: +87) it salutes and leaves
- * (0DE064 -> 09A318). Its shot 0DE0FE homes on the node +6E (0040AC, 002EB4:
- * 8 units of angle per update, speed 0x1000 x cosine / sine, 0DE262) for 15
- * updates and explodes (0DE24A -> 01C706) on the row 0DE474. */
-static const uint8_t *pnode(neo_genv_t *e,uint32_t node) {
-    return e->node?e->node(e->ctx,node):NULL;
-}
-static uint16_t nw(const uint8_t *m,unsigned o) {return (uint16_t)(m[o]<<8|m[o+1]);}
-/* 01B08A: carry when the node at x is behind the actor's facing. */
-static bool k1b08a(neo_gactor_t *a,uint16_t x) {
-    int16_t d0=(int16_t)(W(0x3c)-x);
-    return BIT(0x15,0)?d0>0:d0<0;
-}
-/* 0DE3B0: 01B08A against the node +6E (no node: carry clear). */
-static bool kde3b0(neo_gactor_t *a,neo_genv_t *e) {
-    if (!L(0x6e)) return false;
-    const uint8_t *n=e->node?e->node(e->ctx,L(0x6e)):NULL;
-    if (!n) {ga_fail(e,0xde3b0);return false;}
-    return k1b08a(a,nw(n,0x3c));
-}
-/* 0DE2C0 (row 0DE494, any type) / 0DE28E (row 0DE4A4, type 5): the node in
- * A0 to +6E; carry when there is one. */
-static bool fight_seek(neo_gactor_t *a,neo_genv_t *e,uint32_t row,bool five) {
-    uint8_t d0=ga_attack_targets(a,e,row);
-    if (five?d0!=5u:d0==0u) return false;
-    uint32_t tag=e->target[0].valid?e->target[0].tag:0;
-    SL(0x6e,tag);
-    return tag!=0;
-}
-static bool kde33e(neo_gactor_t *a) {int16_t x=S16(W(0x3c));return x>0x120 || x<0x40;}
-static bool kde35e(neo_gactor_t *a) {int16_t x=S16(W(0x3c));return x>0x120 || x<0;}
-/* 0DE37E: carry when the floor ends ahead (014850 with +62's high word,
- * unless +5F bit 0) or the player stands at another height. */
-static bool kde37e(neo_gactor_t *a,neo_genv_t *e,const uint8_t *pl) {
-    if (!BIT(0x5f,0) && ga_probe_forward(a,e,S16(W(0x62)))) return false;
-    return nw(pl,0x40)!=W(0x40);
-}
-/* 0DE262: speed 0x1000 x cosine / sine of the angle +84. */
-static void kde262(neo_gactor_t *a) {
-    uint8_t g=(uint8_t)W(0x84);
-    SL(0x30,(uint32_t)((int32_t)ga_cosine(g)*0x1000));SL(0x34,(uint32_t)((int32_t)ga_sine(g)*0x1000));
-}
-/* 0DE3DA (callback of 2AFE14): an enemy inside the row 0DE484 gets the
- * blast 0DE24A at once; otherwise the shot 0DE0FE. A refused node (0040BC,
- * reserve 1C / 2A) is the dummy 101624: nothing made. */
-static void kde3da(neo_gactor_t *a,neo_genv_t *e) {
-    if (!ga_attack(a,e,0xde484)) {
-        neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0xde0fe,0x1c):e->spawn?e->spawn(e->ctx,a,0xde0fe,false):NULL;
-        if (!c) return;
-        ga_place_from(c,a,e,-0x38,0x14);                                /* 01B220 */
-        ga_sb(c,0x5e,B(0x5e));ga_sl(c,0x6e,L(0x6e));
-        ga_sb(c,0x86,BIT(0x15,0)?0:0x10);
-    } else {
-        neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0xde24a,0x2a):e->spawn?e->spawn(e->ctx,a,0xde24a,false):NULL;
-        if (c) ga_place_from(c,a,e,-0x38,0x14);
-    }
-}
-static bool fight_routine(uint32_t r) {
-    static const uint32_t list[]={0xddce6,0xddcf4,0xddd10,0xddd62,0xddd96,0xdddc2,0xdde0c,0xdde46,0xdde62,0xdde7c,0xdde9e,0xddf14,0xddf42,
-        0xddf5a,0xddf8c,0xddfb0,0xde064,0xde06e,0xde0fe,0xde18e,0xde210,0xde24a};
-    for (unsigned i=0;i<sizeof(list)/sizeof(list[0]);i++) if (list[i]==r) return true;
-    return false;
-}
-static ga_result_t fight_tick(neo_gactor_t *a,neo_genv_t *e) {
-    int r;
-    const uint8_t *pl=NULL;
-    enum { T_DE016, T_DDFF2, T_DE006, T_DDEE8 } tail=T_DE016;
-    if (L(0)<0xde0feu && L(0)!=0xde06eu) {
-        pl=pnode(e,L(0x76));
-        if (!pl) {ga_fail(e,0xddce6);return GA_UNSUPPORTED;}
-    }
-    switch (L(0)) {
-    case 0xddce6:
-        SB(0x5e,pl[0x5e]);SL(0x6e,0);
-        /* fall through */
-    case 0xddcf4:
-        k1b1dc(a);START(0x2afdaa);SL(0,0xddd10);
-        /* fall through */
-    case 0xddd10:
-        ga_air(a,e);if (step2(a,e)<0) return GA_UNSUPPORTED;
-        if (!(e->flags && e->flags->player_lock)) {                     /* 01B34E -> 0C8CFC: RAM 10E9E3 */
-            int16_t d0=(int16_t)(nw(pl,0x3c)-W(0x3c));if (d0<0) d0=(int16_t)-d0;
-            if (d0>0x28) SL(0,0xddd62);                                 /* 0DE2F2 */
-            if (fight_seek(a,e,0xde494,false)) SL(0,0xdde7c);
-            if (fight_seek(a,e,0xde4a4,true)) SL(0,0xddf14);
-            if (kde33e(a)) SL(0,0xdddc2);
-        }
-        tail=T_DE006;break;
-    case 0xddd62:
-        if (k1b08a(a,nw(pl,0x3c))) goto turn;                           /* 0DE3C2 */
-        SL(0x62,BIT(0x15,0)?0x40000u:0xfffc0000u);
-        START(0x29fe52);SL(0,0xddd96);
-        /* fall through */
-    case 0xddd96: {
-        uint32_t kind;ga_ground(a,e,&kind);if (step2(a,e)<0) return GA_UNSUPPORTED;
-        int16_t d0=(int16_t)(nw(pl,0x3c)-W(0x3c));if (d0<0) d0=(int16_t)-d0;
-        if (d0<0x18) SL(0,0xddcf4);                                     /* 0DE318 */
-        if (kde37e(a,e,pl)) SL(0,0xddf5a);
-        tail=T_DDFF2;break;
-    }
-    case 0xdddc2: {
-        uint32_t d0=0x40000u;
-        if (S16(W(0x3c))<0xa0) {if (!BIT(0x15,0)) goto turn;}
-        else {if (BIT(0x15,0)) goto turn;d0=0u-d0;}
-        SL(0x62,d0);SW(0x82,0x14);
-        START(0x29fe52);SL(0,0xdde0c);
-    }   /* fall through */
-    case 0xdde0c: {
-        uint32_t kind;ga_ground(a,e,&kind);if (step2(a,e)<0) return GA_UNSUPPORTED;
-        SW(0x82,W(0x82)-1u);
-        if (!kde33e(a) && S16(W(0x82))<=1) SL(0,0xddcf4);
-        if (kde37e(a,e,pl)) SL(0,0xddf5a);
-        tail=T_DDFF2;break;
-    }
-    turn:
-    case 0xdde46:
-        k1b1dc(a);START(0x29fed0);SL(0,0xdde62);
-        /* fall through */
-    case 0xdde62:
-        ga_air(a,e);if ((r=step2(a,e))<0) return GA_UNSUPPORTED;
-        if (r) SL(0,0xddcf4);
-        break;
-    case 0xdde7c:
-        k1b1dc(a);
-        if (kde3b0(a,e)) goto turn;
-        if (e->unsupported) return GA_UNSUPPORTED;
-        START(0x2afe14);SL(0,0xdde9e);
-        /* fall through */
-    case 0xdde9e:
-        ga_air(a,e);if ((r=step2(a,e))<0) return GA_UNSUPPORTED;
-        if (r) {
-            SL(0,0xddcf4);
-            if (!(e->flags && e->flags->player_lock)) {
-                if (fight_seek(a,e,0xde494,false)) SL(0,0xdde7c);
-                if (fight_seek(a,e,0xde4a4,true)) SL(0,0xddf14);
-                if (kde33e(a)) SL(0,0xdddc2);
-            }
-        }
-        tail=T_DDEE8;break;
-    case 0xddf14:
-        k1b1dc(a);
-        if (kde3b0(a,e)) goto turn;
-        if (e->unsupported) return GA_UNSUPPORTED;
-        if (e->sound) e->sound(e->ctx,0x113b);
-        START(0x2aff14);SL(0,0xddf42);
-        /* fall through */
-    case 0xddf42:
-        ga_air(a,e);if ((r=step2(a,e))<0) return GA_UNSUPPORTED;
-        if (r) SL(0,0xddcf4);
-        tail=T_DDEE8;break;
-    case 0xddf5a:
-        SL(0x34,0x100000u);SL(0x72,0xfffe6667u);
-        SL(0x30,BIT(0x15,0)?0x40000u:0xfffc0000u);
-        goto kddf94;
-    case 0xddf8c:
-        SL(0x72,0xffffb000u);
-    kddf94:
-        SL(0x7a,L(0x30));START(0x29fbec);SL(0,0xddfb0);
-        /* fall through */
-    case 0xddfb0:
-        SL(0x34,L(0x34)+L(0x72));SL(0x7e,L(0x34));
-        ga_air(a,e);
-        SL(0x30,L(0x7a));SL(0x34,L(0x7e));
-        if (S16(W(0x34))<0 && BIT(0x15,6)) SL(0,0xddcf4);
-        if (step2(a,e)<0) return GA_UNSUPPORTED;
-        break;
-    case 0xde064:                                    /* -> 09A318 -> 09A29E with the node +76 */
-        SW(0x74,0xffff);
-        if (S16(W(0x3c))>S16(nw(pl,0x3c))) CLR(0x15,0); else SET(0x15,0);
-        START(0x2a02b6);SL(0x62,0);SL(0x30,0);SL(0,0x9a2d8);
-        return neo_prisoner_tick(a,e);
-    case 0xde06e:
-        return GA_DELETE;                            /* the cartridge check falls to 004188 */
-    /* ---- the shot ---- */
-    case 0xde0fe: {
-        ga_project(a,e);
-        uint8_t d0=ga_attack_targets(a,e,0xde4b4);
-        if (d0 && e->target[0].valid && e->target[0].tag) {
-            int32_t x=(int32_t)((uint32_t)e->target[0].x<<16|e->target[0].x_low);   /* cmpi.l on +3C */
-            if (x>=0x20 && x<=0x100) SL(0x6e,0);
-        }
-        SW(0x84,(uint16_t)((B(0x86)&0x1fu)<<3));
-        kde262(a);
-        SW(0x82,0xf);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);CLR(0x15,0);SET(0x15,5);
-        ga_palette(a,0x3fa);START(0x2aff94);SL(0,0xde18e);
-    }   /* fall through */
-    case 0xde18e:
-        if (!L(0x6e)) SL(0,0xde210);
-        else {
-            const uint8_t *n=e->node?e->node(e->ctx,L(0x6e)):NULL;
-            if (!n) {ga_fail(e,0xde18e);return GA_UNSUPPORTED;}
-            if ((uint32_t)(n[0]<<24|n[1]<<16|n[2]<<8|n[3])==0x3f1eu) SL(0x6e,0);       /* 0040AC */
-            else {
-                int16_t dx=(int16_t)(nw(n,0x3c)-W(0x3c)),dy=(int16_t)(nw(n,0x40)+0x14u-W(0x40));
-                uint8_t g=neo_angle(dx,dy);
-                uint8_t d1=(uint8_t)((uint8_t)W(0x84)-g);
-                if (d1) {
-                    if (d1&0x80u) SW(0x84,W(0x84)+8u); else SW(0x84,W(0x84)-8u);
-                    SW(0x84,W(0x84)&0xffu);
-                    kde262(a);
-                    SB(0x86,(uint8_t)((uint8_t)W(0x84)>>3));
-                }
-            }
-        }
-        SW(0x82,W(0x82)-1u);
-        if (!W(0x82)) SL(0,0xde210);
-        /* fall through */
-    case 0xde210:
-        ga_move(a,e);if (step2(a,e)<0) return GA_UNSUPPORTED;
-        if (ga_attack(a,e,0xde474)) SL(0,0xde24a);
-        if (ga_cull_rect(a,e,0xde4cc)) SL(0,0xde06e);
-        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
-    case 0xde24a:
-        SW(0x66,0x1001);SW(0x1e,0x1001);SB(0x1d,0);                     /* 009F88 */
-        SL(0,0x1c706);
-        return neo_effects_tick(a,e);
-    default:
-        ga_fail(e,L(0));return GA_UNSUPPORTED;
-    }
-    if (e->unsupported) return GA_UNSUPPORTED;
-    if (tail==T_DDEE8) {                             /* 0DDEE8 */
-        if (kde35e(a)) {if (S16(W(0x3c))<0xa0) SET(0x15,0); else CLR(0x15,0);SL(0,0xdddc2);}
-        tail=T_DE006;
-    }
-    if (tail==T_DDFF2 && !BIT(0x15,6)) SL(0,0xddf5a);
-    if (tail==T_DE006 && !BIT(0x15,6)) SL(0,0xddf8c);
-    /* 0DE016 */
-    if (pl[0x5f]&0x80u) SB(0x87,0xff);
-    if (!(e->players.active_mask&(L(0x76)==0x101574u?2u:1u))) SB(0x87,0xff);   /* 01AEDA */
-    if (BIT(0x15,6) && B(0x87)) SL(0,0xde064);
-    if (ga_cull_rect(a,e,0xde4c4)) SL(0,0xde06e);
-    return GA_MORE;
-}
 static ga_result_t prisoner2_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;
     for (;;) switch (L(0)) {
@@ -759,11 +516,8 @@ static ga_result_t prisoner2_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r) {
             SL(0,0x9a322);
             /* +74 = FFFE: the prisoner hands its gift to the rescuer
-             * (0DDCDA: follows the player node). */
-            if (W(0x74)==0xfffeu && (e->players.active_mask&(1u<<(B(0x83)&1u)))) {
-                SW(0x74,0xffff);SL(0x76,(B(0x83)&1u)?0x101574u:0x1014c4u);SL(0,0xddce6);   /* JMP 0DDCDA */
-                return GA_MORE;
-            }
+             * (0DDCDA: follows the player node), not translated. */
+            if (W(0x74)==0xfffeu && (e->players.active_mask&(1u<<(B(0x83)&1u)))) {ga_fail(e,0xddcda);return GA_UNSUPPORTED;}
         }
         return k9a5d8(a,e);
     case 0x9a322:
@@ -873,14 +627,12 @@ static bool prisoner_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uin
     if (routine==0x99c26u) {k99c26(a);return true;}
     if (routine==0x99ccc) {k99ccc(a,e);return true;}
     if (routine==0x9acd6u) {k9acd6(a,e);return true;}
-    if (routine==0xde3ceu) {(void)ga_attack(a,e,0xde464);return true;}   /* 0DE3CE: the punch */
-    if (routine==0xde3dau) {kde3da(a,e);return true;}
     if (routine==0x9acbau) {SW(0x2c,W(0x2c)+0x24u);ga_project(a,e);return true;}   /* 09ACBA */
     if (routine==0x9acc8u) {SW(0x2c,W(0x2c)-0x24u);ga_project(a,e);return true;}   /* 09ACC8 */
     return false;
 }
 bool neo_prisoner_routine(uint32_t r) {
     return r==0x99862 || r==0x998e8 || r==0x99922 || r==0x99956 || r==0x999ac || r==0x999c2 || r==0x999dc ||
-        r==0x999f6 || r==0x99a0e || r==0x99a22 || r==0x99a70 || r==0x99a8a || r==0x99ac6 || r==0x99b22 || prisoner2_routine(r) || fight_routine(r);
+        r==0x999f6 || r==0x99a0e || r==0x99a22 || r==0x99a70 || r==0x99a8a || r==0x99ac6 || r==0x99b22 || prisoner2_routine(r);
 }
-ga_result_t neo_prisoner_tick(neo_gactor_t *a,neo_genv_t *e) {return fight_routine(L(0))?fight_tick(a,e):prisoner2_routine(L(0))?prisoner2_tick(a,e):prisoner_tick(a,e);}
+ga_result_t neo_prisoner_tick(neo_gactor_t *a,neo_genv_t *e) {return prisoner2_routine(L(0))?prisoner2_tick(a,e):prisoner_tick(a,e);}

@@ -54,7 +54,7 @@ enum {
 enum { CHUNKS_ALL=SCENE_CHUNK_COUNT+SCENE_MISSION_CHUNKS_MAX };
 typedef struct { int chunk; bool ready,reserved; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
-static int chunk_slot[CHUNKS_ALL];
+static int16_t chunk_slot[CHUNKS_ALL];   // slot index or -1: the cache has at most 8 MB / 16 KB = 512 slots (4.4 KB less than int)
 static unsigned requests[CHUNKS_ALL];
 static bool pinned[CHUNKS_ALL],map_chunk[CHUNKS_ALL];
 static uint8_t block_pins[CHUNKS_ALL];   // bit per recorded-block group

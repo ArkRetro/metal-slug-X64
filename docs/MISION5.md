@@ -662,6 +662,14 @@ PASS (única parada contada: los murciélagos `23b636`), alcantarilla cámara 67
 (suelo 208): `/programs.bin` devolvió las ranuras, pero el margen sigue siendo 0..1. `/programs.bin` lleva solo los
 programas sin grupo; los de la M5 van en su paquete (grupo `m5`) y los murciélagos (`m2`) siguen fuera de él.
 
+**Matriz de regresión** (`tools/regression_ares.py`, cartucho completo de 60,9 MB con los cinco paquetes rehechos tras
+fusionar la compresión de C, `mslugx-m1end.z64` recién hecho; sin línea base todavía): logo PASS (con el arreglo del
+propio script: `test_logo_ares.py` da su veredicto en el JSON `"status": "PASS"`, no en `RESULT:`), pausa PASS, M4
+PASS, M5 ×3 PASS (0 dibujos perdidos, 0 rutinas sin portar), m1m2 PASS; M6 etapas 1 y 3 FAIL por la paleta 125 (el
+fallo abierto que lleva C; la etapa 1 cuenta también 2CFD00 / 2D3A0E / 0DFF0A), M6 etapa 2 PASS con los mismos
+avisos; personajes FAIL (`Timeout: MSX SELECT place=` en Eri, Tarma y Fio: la elección del personaje no llega; sin
+mirar, no toca nada de este trabajo).
+
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
 
 ## Pendiente (fase 2, por orden)

@@ -8,7 +8,7 @@ enum { SCENE_STRIP_ITEMS=2048, SCENE_STRIP_GROUPS=512, SCENE_STRIP_ENTRY_BYTES=8
 /* Mission packs (romfs/missionN.pack, tools/pack_mission.py): at most this
  * many chunks; their pages follow scene.pack's (SCENE_MISSION_PAGE_BASE,
  * set from scene_meta.h in scene_assets.c). */
-enum { SCENE_MISSION_CHUNKS_MAX=896 };   /* Mission 4 with the props and flyers (834: its export carries the Mission 2 and 3 actors too); Mission 3 with the fat bomb, dust and molotov (800); Mission 3 with the final boss 04A2C2 (779); Mission 3 with the fat Marco's weapons (648); Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (544 after the rider car) */
+enum { SCENE_MISSION_CHUNKS_MAX=960 };   /* Mission 5 with the street's cars, the metro's end and the sewer's jets (935: 819 of them borrowed from the packs of Missions 2 to 4); Mission 4 with the props and flyers (834: its export carries the Mission 2 and 3 actors too); Mission 3 with the fat bomb, dust and molotov (800); Mission 3 with the final boss 04A2C2 (779); Mission 3 with the fat Marco's weapons (648); Mission 2 with its map patches, the boulder (B37, 03A2AA) and the Slugnoid (B38); Mission 3 with the mid-boss layer 10E8C6 (446) and the step-2 enemies (544 after the rider car) */
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;

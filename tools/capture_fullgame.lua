@@ -744,3 +744,16 @@ emu.register_frame_done(function()
   machine:exit()
  end
 end,'frame')
+-- MSX_FULL_BLOOD=1: soft-DIP "BLOOD" ON (RAM 10FD8F), as tools/capture_blood.lua does for
+-- Mission 1: a read tap returns 1 to the game's reads of the byte and it is written every
+-- frame. For the palettes of the blood variants only (export_rest_sprites.py
+-- --palette-capture); never the source of a behaviour fixture.
+if os.getenv('MSX_FULL_BLOOD')=='1' then
+ local bcpu=manager.machine.devices[':maincpu']
+ local bspace=bcpu.spaces['program']
+ msx_full_blood_tap=bspace:install_read_tap(0x10fd8e,0x10fd8f,'msx_full_blood',function(offset,data,mask)
+  local pc=bcpu.state['rPC'];if (mask&0x00ff)==0 or (pc and pc.value>=0x100000) then return data end
+  return (data&0xff00)|1
+ end)
+ emu.register_frame_done(function() bspace:write_u8(0x10fd8f,1) end,'frame')
+end

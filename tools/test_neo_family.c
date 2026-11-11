@@ -306,6 +306,9 @@ static neo_gactor_t *spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool
     if (pick>=0) {
         unsigned i=(unsigned)pick;bound[i]=true;neo_gactor_t *a=&actors[i];memset(a,0,sizeof(*a));a->active=true;a->index=(int16_t)i;
         memcpy(a->m,NODES[i].pre,0xb0);
+#ifdef FAMILY_FRESH_FLIP
+        a->m[0x15]&=0xf8u;   /* the flip bits its creator sets after 01B220 (--fresh-flip) */
+#endif
         if (c>=0) ga_sl(a,0x0c,NEO_GA_TAG((unsigned)c));
         ga_sl(a,0x38,native_tag(ga_l(a,0x38)));
         return a;
@@ -478,6 +481,28 @@ static void stamp_ring(neo_gactor_t *a,uint32_t t) {
         }
     }
 }
+/* 0C8A3C (A0 = 10C72E, 0BC38E): the template over the ring +88 at the cell
+ * (+28 word >> 3 + dx, +2C word >> 3 + dy), rows from the top, every cell
+ * replaced by shape | bit 4 by +4 | +5 << 5; no window, no mask. */
+static void stamp_cells(void *ctx,neo_gactor_t *a,uint32_t t) {
+    (void)ctx;stamps++;
+    const uint8_t *tp=ga_rom(t);assert(tp);
+    uint16_t d0=(uint16_t)((ga_w(a,0x28)>>3)+(int8_t)tp[0]),d1=(uint16_t)((ga_w(a,0x2c)>>3)+(int8_t)tp[1]);
+    unsigned d4=tp[2],d5=tp[3];
+    d1=(uint16_t)-(int16_t)(d1+d5);
+    uint8_t *ring=&wram[(0xc72eu+0x88u)&0xffffu];
+    const uint8_t *a1=tp+10;
+    for (;d4;d4--,a1++,d0++) {
+        const uint8_t *a2=a1;uint16_t r=d1;
+        for (unsigned k=d5;k;k--,a2+=tp[2],r++) {
+            uint8_t v=*a2;assert(v<0x10);
+            if (tp[4]) v|=0x10;
+            ring[((unsigned)(d0&0x3f)<<6)+(unsigned)(r&0x3f)]=(uint8_t)(v|(tp[5]<<5));
+        }
+    }
+}
+#endif
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
 /* 0C70FC (collision part, 0C72EC): the sub-map's cells into the ring +88
  * of the --ring layer, clipped to its 32x32-block window (+36/+38 as read). */
 static unsigned patches;
@@ -537,7 +562,11 @@ int main(void) {
 #ifdef FAMILY_PREVIOUS
     e.previous=previous;
 #endif
-    e.spawn=spawn;e.palette_slot=palette_slot;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
+    e.spawn=spawn;e.palette_slot=palette_slot;e.attack=attack;e.dyn_set=dyn_set;e.dyn_release=dyn_release;e.stamp=stamp;
+#if defined(FAMILY_RING) && defined(FAMILY_RAM)
+    e.stamp_cells=stamp_cells;
+#endif
+e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_alive;
     e.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};
     e.view[0]=0;e.view[1]=319;e.view[2]=256;e.view[3]=511;
     e.players.mode88=2;e.players.rank=3;e.players.active_mask=1;e.players.targets_valid=true;
@@ -593,6 +622,9 @@ int main(void) {
         neo_gactor_t *a=&actors[u->node];current_frame=u->frame;current_update=k;
         {static uint32_t last_frame;
          if (k && u->frame!=last_frame) for (unsigned i=0;i<NEO_KDYN_COUNT;i++) if (dyn_countdown[i]) dyn_countdown[i]--;
+         /* No family update for more than 8 frames (the family had no node alive): the camera update
+          * 01406A ran at least twice meanwhile and the countdowns (2 at most) are over. */
+         if (k && u->frame>last_frame+8u) memset(dyn_countdown,0,sizeof(dyn_countdown));
          last_frame=u->frame;}
         /* A node created by an actor outside the family (another family's
          * test) starts from its recorded bytes at its first update. */
@@ -895,7 +927,7 @@ int main(void) {
         /* Flags the family writes through neo_ga_flags_t. */
         if (flags.kill_request!=kill_before) {put(0x1067e3,flags.kill_request);if (!kill_frame) kill_frame=u->frame;}
         put(0x10e9e3,flags.player_lock);
-        for (unsigned h=0;h<2;h++) {static const uint32_t hv[4]={0,0x00054b18u,0x000c0538u,0x000ca3ecu};uint32_t v=hv[flags.player_handlers&3u];for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
+        for (unsigned h=0;h<2;h++) {static const uint32_t hv[5]={0,0x00054b18u,0x000c0538u,0x000ca3ecu,0x000bbf0eu};uint32_t v=hv[flags.player_handlers<5u?flags.player_handlers:0];for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
 #ifdef FAMILY_EXIT_GLOBALS
         if (flags.flash_request) put(0x1067e5,flags.flash_request);
         for (unsigned p=0;p<2;p++) {put(0x10ea00+2*p,(uint8_t)(flags.walk_to[p]>>8));put(0x10ea01+2*p,(uint8_t)flags.walk_to[p]);}

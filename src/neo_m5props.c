@@ -177,10 +177,19 @@ static bool drip_routine(uint32_t r) {return r==0x8346eu || r==0x834b0u || r==0x
  *   0BBF00: 01ABC8, 00427A.
  * - 0BBE16 (street, camera 1640): +7B = 3C; 0BBE22: 01ABC8 and, at the end
  *   of the count, the stage exit 0B6ED2 at (7A0, -28) of the root with the
- *   rectangle 0BBAEC and the walk target 7A8 (neo_goarrow.c). */
+ *   rectangle 0BBAEC and the walk target 7A8 (neo_goarrow.c).
+ * - 0BC1E6 (metro, +6E = a group, 8 from 9 on): 012022, palette 58F, layers
+ *   0, program 2A91C6. 0BC22C: while the group +6E has nobody (019DCA);
+ *   else program 2A9194 (its sound 107D) and 0BC252 until the group is
+ *   empty again (program 2A91C6); 01ABC8, 00427A, deleted once +3C < -30. */
 static void front(neo_gactor_t *a,neo_genv_t *e) {                       /* 012022 */
     if (!e->front_layer) return;
     if (e->front_layer(e->ctx)) SB(0x15,B(0x15)|4u); else SB(0x15,B(0x15)&0xfbu);
+}
+/* 019DCA: the live count of the group +6E (RAM 10C326..; 0 from 9 on). */
+static uint8_t lamp_group(neo_gactor_t *a,neo_genv_t *e) {
+    uint8_t d0=(uint8_t)W(0x6e);
+    return d0>=9u || !e->groups?0:e->groups[d0&0xfu];
 }
 static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
     switch (L(0)) {
@@ -216,6 +225,26 @@ static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_project(a,e);
         if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
         return GA_MORE;
+    case 0xbc1e6:
+        front(a,e);ga_palette(a,0x58f);SW(0x66,0);SW(0x1e,0);
+        if (!ga_anim_start(a,e,0x2a91c6,0x100)) return GA_UNSUPPORTED;
+        if (W(0x6e)>=9u) SW(0x6e,8);
+        SL(0,0xbc22c);
+        /* fall through */
+    case 0xbc22c:
+        if (!lamp_group(a,e)) goto lamp;
+        if (!ga_anim_start(a,e,0x2a9194,0x100)) return GA_UNSUPPORTED;
+        SL(0,0xbc252);
+        /* fall through */
+    case 0xbc252:
+        if (!lamp_group(a,e)) {
+            if (!ga_anim_start(a,e,0x2a91c6,0x100)) return GA_UNSUPPORTED;
+            SL(0,0xbc22c);
+        }
+    lamp:
+        ga_project(a,e);
+        if (ga_anim_step(a,e,NULL)<0 || e->unsupported) return GA_UNSUPPORTED;
+        return (int16_t)W(0x3c)<-0x30?GA_DELETE:GA_MORE;
     case 0xbbe16:
         SB(0x7b,0x3c);SL(0,0xbbe22);
         /* fall through */
@@ -229,7 +258,7 @@ static ga_result_t deco_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u;}
+static bool deco_routine(uint32_t r) {return r==0xbbe5eu || r==0xbc4f4u || r==0xbc4bau || r==0xbbeb0u || r==0xbbed0u || r==0xbbf00u || r==0xbbe16u || r==0xbbe22u || r==0xbc1e6u || r==0xbc22cu || r==0xbc252u;}
 /* ---- the street's ledges 09624E and wrecked cars 050542 -----------------------------
  * - 09624E (script, +6E = 0..3, never drawn): +72 = +6E, +7A = +70, program
  *   0963B8, private palette 124, layers 0. 09628E: 01ABC8, the cell map

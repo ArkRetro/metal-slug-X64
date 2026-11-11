@@ -30,6 +30,13 @@
   solo lee (sprites.bin, exports `rest-native.json`, `audio-src`) se enlazan
   (symlink) desde el almacén del árbol que los genera; no se copian a cada
   worktree. Lo que una herramienta reescribe se queda local.
+- **Nunca se escribe a través de un enlace.** `ws-logo` es el árbol de la ROM:
+  ningún agente enlaza su `filesystem/` entero a él. El `filesystem/` de cada
+  worktree es un directorio propio con enlaces por entrada, y lo que el agente
+  vaya a regenerar (p. ej. `missionN/rest-native.json`) es una copia propia
+  desde el primer momento. Motivo: el 11-XI las exportaciones de trabajo de la
+  M5 (1123 fragmentos) y de la M6 (1195) entraron en la ROM 50 por enlaces y
+  rompieron la carga de ambas misiones.
 - Capturas: los ficheros idénticos entre `captures-*` son enlaces duros (hecho
   el 11-XI: 867 ficheros, 949 MB). Las trazas en bruto se borran en cuanto su
   fixture está en `data/`.

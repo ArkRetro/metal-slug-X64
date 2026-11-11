@@ -579,7 +579,7 @@ descodificadas, registros de las tablas, paquetes de película y columnas.
 | --- | ---: | --- |
 | Columnas de los fondos prerrenderizados iguales byte a byte: `m3s1.bgp` 236 de 701 columnas guardadas otra vez, `m2s2.bgp` 11 de 234 | **480.864 B** | **hecho**: una sola copia, la tabla de columnas apunta a ella |
 | Paquetes de película iguales a uno anterior de la misma película: HOW TO PLAY 1854 de 2690 (los fotogramas que se repiten), título 284, SELECT 98, las cuatro elecciones 165–166 cada una, entrada 17 | **601.658 B** guardados (566 KB solo en HOW TO PLAY) | **hecho**: MSXC v3 |
-| Programas y bloques de ROM del grupo `m3` en `mission3.pack` y otra vez en `mission4.pack` (`GROUPS[4]=('m3','m4')`: 23.873 B de bloques + 98.660 B de órdenes) | ≈122.500 B | **pendiente** (abajo) |
+| Programas y bloques de ROM del grupo `m3` en `mission3.pack` y otra vez en `mission4.pack` y, desde `c00d128`, en `mission5.pack` (`GROUPS[4]=('m3','m4')`, `GROUPS[5]=('m3','m5')`: 63 bloques, 438 programas) | **2 × 122.534 B** | **hecho**: `MSXD` versión 2 |
 | Registros de actores y paletas comunes a las tablas de M3/M4/M5 | ≈60.000 B | no: tablas leídas por desplazamiento fijo (§3.4) |
 | Partes de Marco idénticas (`marco/`: p383=p391, p384=p390, p385=p389, p386=p388, p393=p401, p394=p400, p395=p399, p396=p398) | 5.432 B + 8 cabeceras del DFS | **pendiente** (abajo) |
 | Páginas propias de un paquete de misión que ya guarda uno de número menor | 4 páginas (M4, de la M2) | no: §3.2 ya toma los fragmentos con 5 páginas usadas de 8; 4 páginas sueltas no pagan un fragmento prestado |
@@ -639,6 +639,28 @@ cada paquete descodificado en sitio a trozos aleatorios, su CRC y cada
 fotograma aplicado, píxel a píxel con `msx_cine_*`. Antes esta prueba solo
 corría en `make check-cinematic` y solo para `entry.msxc` en v2.
 
+### `MSXD` versión 2 (grupos de otra misión)
+
+`pack_mission.py` (`lender_data`): si un paquete de número menor tiene un
+`MSXD` de versión 1 con solo grupos que esta misión también lleva (la M3 y
+su grupo `m3`), esos grupos no se guardan otra vez. Cabecera de 20 B:
+`'MSXD' u16 2 u16 bloques u16 programas u16 misión prestadora, u32 offset en
+su paquete de sus datos tras sus registros, u32 longitud`; los registros (los
+propios y los prestados, programas por etiqueta) apuntan a
+`[este bloque | los datos prestados]`. El paquete prestador va en la cola
+`MSXX` (tamaño y CRC: si no es el del cartucho, la misión se rechaza como
+con los fragmentos). `scene_assets.c` lee los datos prestados justo detrás
+del bloque (la misma RAM que antes: el bloque entero ocupaba eso) y convierte
+las órdenes en su sitio como siempre. M4: `mission4.pack` 1.466.112 →
+1.343.616 B; M5: −122.534 B sobre el paquete con el grupo copiado.
+
+Prueba: la de identidad de `make check` (`tools/test_pack_compression.py`):
+los paquetes de formato 4 llevan los grupos copiados, los nuevos prestados, y
+el volcado de cada bloque de ROM (servido por `scene_stage_rom` en su primera
+dirección) y de cada programa, orden por orden, es el mismo (los bloques se
+listan por dirección de ROM: la versión 2 pone los propios antes que los
+prestados). `PASS: … the same 21795966 bytes …`.
+
 ### Resultado
 
 | | Antes (`91cf7f6`) | Después |
@@ -664,12 +686,6 @@ en ventanas con cargas y varían de una pasada a otra, §5.)
 
 ### Pendiente
 
-- **`MSXD` del grupo `m3` en la M4** (≈122,5 KB): la M4 debería tomar los
-  bloques y programas del grupo `m3` de `mission3.pack` como ya toma sus
-  páginas (§3.2), en vez de copiarlos. Toca `pack_mission.py` y el cargador
-  de `MSXD` de la escena, que el agente de la M4 está cambiando ahora mismo
-  (`ws-m4`, programas sin grupo leídos de `/programs.bin`): se deja para
-  después de esa fusión, para no pisarla.
 - **Partes de Marco repetidas** (8, 5,4 KB y 8 ficheros): el catálogo
   (`marco_pose_meta.h`) podría apuntar las 8 copias a la primera y el
   cargador compartir el sprite (también ahorraría su RAM). Poco a cambio de
@@ -677,8 +693,10 @@ en ventanas con cargas y varían de una pasada a otra, §5.)
 
 ### Qué reconstruir tras fusionar
 
-Solo `make` (regla de `build/bgp.stamp` y de `build/game-romfs.stamp`: las
-columnas y las películas se rehacen solas). El programa de antes no lee MSXC
+`python3 tools/build_packs.py 4` (M4 y siguientes: `MSXD` versión 2) y
+`make` (regla de `build/bgp.stamp` y de `build/game-romfs.stamp`: las
+columnas y las películas se rehacen solas). Un programa anterior rechaza el
+`MSXD` versión 2 («mission data block not read»). El programa de antes no lee MSXC
 v3 (`bad header`/ «cannot open»): programa y sistema de ficheros van juntos.
 Si `romfs/sprites.bin`/`romfs/fixed.bin` son copias, `pack_scene.py` los
 cambia por enlaces la próxima vez que rehaga `scene.pack`; se pueden cambiar

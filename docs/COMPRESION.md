@@ -561,3 +561,128 @@ cualquier módulo nuevo que no se ejecute en el fotograma.
   las herramientas de `7f2b743`: no es de este trabajo, queda para la
   fusión de la Misión 5. El resto de pasos de `make check` se ejecutó
   aparte sobre el código final.
+
+## 6. Duplicados
+
+Búsqueda medida de datos guardados dos veces dentro del cartucho de
+lanzamiento (`build/game-romfs`, 954 ficheros, seis misiones) y en sus
+entradas privadas. `sprites.bin` no va en el cartucho (§5). Herramientas: SHA-1
+por fichero; troceado por contenido (hash de engranaje, trozos de 64 B o más,
+independiente de la alineación) de todos los ficheros del cartucho a la vez y,
+aparte, de todo el PCM de origen (`filesystem/audio-src/*.wav`,
+`cinematics/*.wav`, `logo/*.wav`); y, por formato, páginas de 2048 B
+descodificadas, registros de las tablas, paquetes de película y columnas.
+
+### Qué había (cartucho a `91cf7f6`, 61.702.144 B)
+
+| Qué | Repetido | Qué se hace |
+| --- | ---: | --- |
+| Columnas de los fondos prerrenderizados iguales byte a byte: `m3s1.bgp` 236 de 701 columnas guardadas otra vez, `m2s2.bgp` 11 de 234 | **480.864 B** | **hecho**: una sola copia, la tabla de columnas apunta a ella |
+| Paquetes de película iguales a uno anterior de la misma película: HOW TO PLAY 1854 de 2690 (los fotogramas que se repiten), título 284, SELECT 98, las cuatro elecciones 165–166 cada una, entrada 17 | **601.658 B** guardados (566 KB solo en HOW TO PLAY) | **hecho**: MSXC v3 |
+| Programas y bloques de ROM del grupo `m3` en `mission3.pack` y otra vez en `mission4.pack` (`GROUPS[4]=('m3','m4')`: 23.873 B de bloques + 98.660 B de órdenes) | ≈122.500 B | **pendiente** (abajo) |
+| Registros de actores y paletas comunes a las tablas de M3/M4/M5 | ≈60.000 B | no: tablas leídas por desplazamiento fijo (§3.4) |
+| Partes de Marco idénticas (`marco/`: p383=p391, p384=p390, p385=p389, p386=p388, p393=p401, p394=p400, p395=p399, p396=p398) | 5.432 B + 8 cabeceras del DFS | **pendiente** (abajo) |
+| Páginas propias de un paquete de misión que ya guarda uno de número menor | 4 páginas (M4, de la M2) | no: §3.2 ya toma los fragmentos con 5 páginas usadas de 8; 4 páginas sueltas no pagan un fragmento prestado |
+| Paquetes de película iguales entre películas distintas (elecciones, SELECT, entrada, título) | 21 paquetes, 12.684 B sin comprimir | no: necesitaría referencias entre ficheros |
+| Audio: muestras iguales entre ficheros (PCM de origen, a cualquier desfase) | solo `sfx_112d`/`sfx_1155`: 85.887 B de PCM (≈24 KB en VADPCM) | no: los dos efectos se cargan y suenan por separado; cada wav64 VADPCM tiene su libro de códigos |
+| Audio: la misma pista o voz en dos ficheros o a dos frecuencias | nada: las voces de `confirm-c1..c3` son PCM distintos (SHA-256 de `cinematics/*.json`), las músicas de las cinemáticas son capturas de MAME y las de `audio/` renders del controlador: no hay un tramo igual muestra a muestra | — |
+| Ficheros enteros iguales | solo las 8 partes de Marco | — |
+| Tablas compiladas en el programa que también estén en un paquete | ninguna: `scene_meta.h` son las tablas de la M1 (`scene.pack` solo lleva fragmentos); `region_rom.h` y `soldier_ai_tables.h` llevan los bloques y programas sin grupo y el `MSXD` de los paquetes solo los de grupo (conjuntos disjuntos por construcción, `compile_region_rom.py`, `pack_mission.py`) | — |
+| Entradas privadas del árbol iguales a `ws-logo/filesystem` | `romfs/sprites.bin` (50.331.648 B) y `romfs/fixed.bin` (131.072 B) eran copias que hacía `pack_scene.py` | **hecho**: enlaces simbólicos `romfs/X -> ../filesystem/X`; nadie escribe a través de ellos |
+
+### Columnas compartidas (`.bgp`)
+
+`tools/prerender_stage.py render` guarda cada columna distinta una vez; una
+columna igual byte a byte (sus tramos y sus texeles) lleva en la tabla el
+mismo `offset` que la primera. El formato no cambia: `src/scene_prerender.c`
+ya leía cada columna por su `offset` y `bytes`, sin suponer orden. `m3s1.bgp`
+1.479.392 → 1.018.560 B, `m2s2.bgp` 512.944 → 492.912 B. Con `share=False`
+el fichero es byte a byte el de antes (comprobado contra `build/bgp` previo).
+
+Prueba en `make check`: `tools/test_bgp_share.py` genera cada `.bgp` del
+cartucho de las dos maneras y lee cada columna como el lector de la consola
+(cabecera, registros de capa, tabla, `bytes` desde `offset`): misma cabecera,
+mismas capas, mismos tamaños, tramos y bytes de cada columna; y el fichero de
+`build/bgp` (el que va al cartucho) es el compartido. `PASS: bgp share: 2
+files, every column the same, 480864 bytes saved`.
+
+### MSXC v3 (paquetes repetidos)
+
+`tools/msxc_compress.py` escribe v3 cuando ocupa menos que v2: tras las dos
+tablas de v2 va una tercera de `count` u16 (rellena a palabra), el paquete
+cuyos bytes guardados lee cada uno (él mismo o el primero igual). Un paquete
+que lee otro no guarda nada: su palabra de la tabla guardada es el
+desplazamiento del siguiente paquete guardado, sin bit de relleno. El
+reproductor (`src/cinematic.c`) comprueba en `check_part` que la referencia
+apunta atrás a un paquete que se guarda a sí mismo, con la misma longitud
+cruda, y el orden de la tabla; en `L_ROOM` toma `at`/`have` del paquete
+referido. Lo demás (anillo, LZ4 en sitio, CRC de cada paquete, validación,
+aplicación) no cambia: el paquete se lee y descodifica igual, solo que de
+otro sitio de la ROM. Memoria: +2 B por paquete en las tablas (5,4 KB en HOW
+TO PLAY) mientras suena la película. El empaquetador descodifica el fichero
+escrito (su propio lector de v2/v3) y exige el v1 de origen byte a byte antes
+de escribirlo.
+
+| Película | v2 | v3 |
+| --- | ---: | ---: |
+| `howto.msxc` | 2.477.804 | **1.917.274** |
+| `title.msxc` | 980.114 | 977.368 |
+| `select.msxc` | 231.316 | 230.180 |
+| `confirm.msxc`, `confirm-c1..c3.msxc` | 541.644 | 504.474 |
+| `entry.msxc` | 153.834 | 153.758 |
+| total | 4.384.712 | **3.783.054** |
+
+Prueba en `make check`: `tools/test_cinematic_stream.c` (el descodificador en
+sitio de la consola, `src/cinematic_stream.h`) sobre **cada película del
+cartucho** contra su v1 de `filesystem/cinematics`: las reglas de la tabla v3,
+cada paquete descodificado en sitio a trozos aleatorios, su CRC y cada
+fotograma aplicado, píxel a píxel con `msx_cine_*`. Antes esta prueba solo
+corría en `make check-cinematic` y solo para `entry.msxc` en v2.
+
+### Resultado
+
+| | Antes (`91cf7f6`) | Después |
+| --- | ---: | ---: |
+| `mslugx-explorer.z64`, seis misiones | 61.702.144 B | **60.620.800 B (−1.081.344)** |
+| Margen bajo el límite de ares (67.043.328 B) | 5.341.184 B | **6.422.528 B** |
+| `ccr` sin MSXL (`2f64726`, sin `mission6.pack` para entrar en ares) | 66.256.896 B | — |
+
+ares 146 (pantalla `:73`), «antes» = `2f64726` (ccr sin este trabajo) sin
+`mission6.pack`, «después» = esta rama con las seis misiones:
+
+| | Antes | Después |
+| --- | ---: | ---: |
+| Arranque completo (`test_logo_ares.py`) | — | **PASS**, 546 fotogramas del logo, 0 tardíos; CRC finales de HOW TO PLAY / SELECT / elección / entrada `47fe0a98` `ad129003` `342b3c8e` `be25a626` (los de antes), `late=0 long=0` en todas |
+| M3 por el menú (`--fire --jump 2.5`): carga de la etapa / peor fotograma tras el primero | 398.854 µs / 33,5 ms | 399.211 µs / 30,0 ms (PASS los dos) |
+| M4 (`--fire --jump 2.5`): carga / peor fotograma tras el primero | 765.469 µs / 49,4 ms | 764.886 µs / 32,4 ms (PASS) |
+| M5 etapa 3 (`--fire --jump 2.5`): carga / peor fotograma de juego / construcción media | 233.035 µs / 13,9 ms / 2,11 ms | 232.481 µs / 13,9 ms / 1,96 ms (PASS) |
+| `decode_max` / `sync` / `MSX CACHE slots=` | 6,4–7,0 ms / 0 / 200 | 6,4–6,9 ms / 0 / 200 |
+
+`test_m1m2_ares.py` (con `rm -rf build/m1end`), `test_pause_ares.py`,
+`test_characters_ares.py`: **PASS**. (Los peores fotogramas de M3/M4 caen
+en ventanas con cargas y varían de una pasada a otra, §5.)
+
+### Pendiente
+
+- **`MSXD` del grupo `m3` en la M4** (≈122,5 KB): la M4 debería tomar los
+  bloques y programas del grupo `m3` de `mission3.pack` como ya toma sus
+  páginas (§3.2), en vez de copiarlos. Toca `pack_mission.py` y el cargador
+  de `MSXD` de la escena, que el agente de la M4 está cambiando ahora mismo
+  (`ws-m4`, programas sin grupo leídos de `/programs.bin`): se deja para
+  después de esa fusión, para no pisarla.
+- **Partes de Marco repetidas** (8, 5,4 KB y 8 ficheros): el catálogo
+  (`marco_pose_meta.h`) podría apuntar las 8 copias a la primera y el
+  cargador compartir el sprite (también ahorraría su RAM). Poco a cambio de
+  tocar el catálogo compartido con los paquetes de personajes.
+
+### Qué reconstruir tras fusionar
+
+Solo `make` (regla de `build/bgp.stamp` y de `build/game-romfs.stamp`: las
+columnas y las películas se rehacen solas). El programa de antes no lee MSXC
+v3 (`bad header`/ «cannot open»): programa y sistema de ficheros van juntos.
+Si `romfs/sprites.bin`/`romfs/fixed.bin` son copias, `pack_scene.py` los
+cambia por enlaces la próxima vez que rehaga `scene.pack`; se pueden cambiar
+a mano (`rm romfs/X && ln -s ../filesystem/X romfs/X`) si son iguales. **Un
+`pack_scene.py` anterior a este cambio se detiene** con `SameFileError` sobre
+esos enlaces (no escribe a través de ellos): quitar los enlaces antes de
+ejecutar uno viejo.

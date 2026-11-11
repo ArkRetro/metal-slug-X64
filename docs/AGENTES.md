@@ -40,3 +40,9 @@
 - Worktrees terminados y fusionados (`ws-bossp`, `ws-comp`, `ws-fullgame`,
   `ws-m3`, `ws-world`, `ws-m6`, `beta`): candidatos a retirar con
   `git worktree remove` (las ramas quedan); pendiente de permiso del usuario.
+
+## Matriz de regresión (obligatoria antes de subir a ccr)
+
+`python3 tools/regression_ares.py mslugx-explorer.z64 --m1end mslugx-m1end.z64 --out OUT`
+sobre el cartucho completo (todas las misiones), en verde. Plan completo en
+`docs/FALLOS.md`.

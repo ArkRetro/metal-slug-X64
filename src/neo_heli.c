@@ -1038,6 +1038,7 @@ static ga_result_t lone_tick(neo_gactor_t *a,neo_genv_t *e) {
 static bool lone(uint32_t r) {
     return r==0x474b6 || r==0x4755a || r==0x4756a || r==0x47598 || r==0x475ce || r==0x475ee || r==0x47608 || r==0x47630 || r==0x4768e || r==0x4769c ||
            r==0x4771a || r==0x47720 || r==0x4778e || r==0x477be || r==0x4783a || r==0x47856;
+}
 /* ---- Mission 4 helicopters 08514A..08604A (families m4heli / m4heli2 / m4heli3) ----
  * Manual translation of ROM 08514A..086062.
  * 08571C (script; +6E target x, +70 fires, +72 scale, AF when 0): a scaled

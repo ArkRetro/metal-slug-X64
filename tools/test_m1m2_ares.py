@@ -41,6 +41,10 @@ def wait(pattern,seconds=120):
         assert process.poll() is None,'ares exited'
         time.sleep(.03)
     raise AssertionError('Timeout: '+pattern+'\n'+log()[-2000:])
+def cinematic_running(text):
+    last=None
+    for m in re.finditer(r'MSX (TITLE|CINE (?:howto|select|confirm|entry)) (start|complete)',text):last=m
+    return last is not None and last.group(2)=='start' and 'entry' not in last.group(1)
 stop=threading.Event();grabs=[]
 def grabber():
     k=0
@@ -59,7 +63,12 @@ try:
             found=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True).stdout.split()
             if found:
                 subprocess.run([XD,'windowmove',found[-1],'0','0']);subprocess.run([XD,'windowfocus',found[-1]]);focused=True
-        if focused and re.search(r'MSX (TITLE start|CINE \w+ start)',log()):
+        # START only while the title, HOW TO PLAY, SOLDIER SELECT or the
+        # confirmation runs (its start logged and not its end), read just
+        # before the press; never in the entry film: it ends by itself and a
+        # press landing in the game is the ROM's pause (neo_pause.c), which
+        # stopped this test at the Mission 1 walk.
+        if focused and cinematic_running(log()):
             key('keydown','Return');time.sleep(.1);key('keyup','Return')
         time.sleep(1.5)
     window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]

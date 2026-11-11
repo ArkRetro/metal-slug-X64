@@ -36,9 +36,13 @@ enum {
      * 200 since the Mission 4 props (neo_m4props.c: 13 KB of code and
      * tables took the 208th slot, docs/MISION4.md); the three sets above
      * need 197. 197 since the Mission 5 tank 08FF7E (neo_m5enemy.c: 15 KB
-     * of code; 199 slots measured, docs/MISION5.md): the floor is now the
-     * need itself, the next module does not fit without freeing RAM. */
-    SCENE_EXPANDED_MIN_SLOTS=197,
+     * of code; 199 slots measured, docs/MISION5.md): the floor is the need
+     * itself. The animation programs read on demand (program_file.c,
+     * docs/MEMORY_OPTIMIZATION.md "Programas bajo demanda") gave back
+     * about 11 slots (212 measured with the Mission 4 vehicle in, 210 with
+     * the Mission 5 tread tank, helicopter 047F7E and metro train too): 208
+     * again, the floor of before the props. */
+    SCENE_EXPANDED_MIN_SLOTS=208,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank

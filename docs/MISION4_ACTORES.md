@@ -39,7 +39,11 @@ familias `m4pris`/`m4pris2`) y los animales (tipos 40..42 de `08C374`, `neo_item
 El rótulo de recogida `08C752` con sus letras `08C954` está traducido y probado (`m4label`) pero sin conectar
 (`MSX_PICKUP_LABEL` 0: faltan sus sprites en la exportación base).
 
-Quedan (orden de guion): `0587C4` (+2; captura L hecha), y el jefe `02267E` con `0259F2` y la orden
+Después (11-XI, tercera sesión): el vehículo `0587C4` con su torreta `0592C6`, fogonazos, disparos `0594B0` / `0594CE`,
+estelas, estallido `059852` y pieza `059B5C` (`neo_m4veh.c`, familias `m4veh`..`m4veh4`; lo no verificado, en
+`docs/MISION4.md` «Sin verificar, pendiente de captura»).
+
+Quedan (orden de guion): el jefe `02267E` con `0259F2` y la orden
 `0BB028`. Capturas: A (todo menos el jefe), E (prisionero), F (objetos), G (camión `02916E` y sus piezas), **T (jefe y fin de
 misión, del TAS)**.
 

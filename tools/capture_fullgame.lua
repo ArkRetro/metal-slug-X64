@@ -651,6 +651,11 @@ emu.register_frame_done(function()
   -- Mission 4 flyers 083C8A land, drop their rider and crash).
   local nl,nh=string.match(os.getenv('MSX_FULL_NOFIRE') or '','(%d+)-(%d+)')
   if nl and frame>=tonumber(nl) and frame<=tonumber(nh) then button('P1 A',0);button('P1 C',0) end
+  -- MSX_FULL_HOP="lo-hi:period": capture-only, with MSX_FULL_IDLE over the
+  -- same frames: B (jump) held 8 frames every `period` (the idle player
+  -- jumps in place into the shots of the Mission 4 vehicle 0587C4).
+  local hl,hh,hp=string.match(os.getenv('MSX_FULL_HOP') or '','(%d+)-(%d+):(%d+)')
+  if hl and frame>=tonumber(hl) and frame<=tonumber(hh) and (frame-tonumber(hl))%tonumber(hp)<8 then button('P1 B',1) end
   if still>=stall_limit then print('STALL '..frame);last_frame=frame end
  end
  if frame>=2100 then

@@ -291,7 +291,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
-    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals'),
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle'),
     'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine')}
 def root_groups():
     import re
@@ -373,6 +373,8 @@ ROOTS+=[0x285ef2,0x285efe,0x285f0a,0x285f16,0x285f22,0x285f2e,0x285f3a,0x285f46,
 ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
 # Mission 4 animals (item kinds 40..42, neo_item.c): 289082, 289CD6, 28A12C; their fruits 3F (289AA8) and the fruits' second programs 28992A / 289B44 (08BBC6 / 08BBEE).
 ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
+# Mission 4 vehicle 0587C4 (neo_m4veh.c): the body's states 058752 and its flinch 24BA5E, the turret's 058776, the shots 24BFBC / 24C0FC (callback 059770), the muzzle flashes 24BF42 / 24C082, the wreck's piece 24C3AA and the trail 24C53E.
+ROOTS+=[0x24ba74,0x24bb34,0x24bca0,0x24bcba,0x24bdc8,0x24bde2,0x24c1c2,0x24c2f6,0x24bd62,0x24ba5e,0x24bad4,0x24bbea,0x24bd48,0x24bedc,0x24be5c,0x24c25a,0x24be76,0x24bfbc,0x24c0fc,0x24bf42,0x24c082,0x24c3aa,0x24c53e]
 # Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
 ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
 # Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).

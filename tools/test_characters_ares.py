@@ -75,7 +75,7 @@ for place in [int(x) for x in a.places.split(',')]:
         time.sleep(.3);tap('x');time.sleep(.5);key('keydown','Down');time.sleep(.6);tap('x');time.sleep(.6);key('keyup','Down')
         key('keydown','Up');time.sleep(.4);tap('x');time.sleep(.5);key('keyup','Up');time.sleep(.3)
         grab('play.png')
-        # Start pauses only while player 1's panel runs its play routine (msx_pause.h):
+        # Start pauses only while player 1's panel runs its play routine (neo_pause.h: the SELECT of 015520):
         # a press during a death or the new life is not a pause, so it is tried again.
         mark=len(log())
         for attempt in range(5):

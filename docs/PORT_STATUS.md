@@ -134,40 +134,15 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   Prueba: `test_gameplay lifebar` (misma partida igual hasta el golpe con el
   modo apagado y encendido; reglas del modo).
 
-## Pausa (no arcade)
+## Pausa (la de la ROM, `015520`)
 
-- Start durante el juego pausa y otro Start reanuda (`src/msx_pause.c`,
-  `actor.c`). Solo con el panel del jugador 1 en su rutina de juego
-  (`0C9848`), donde el arcade no lee Start: en la continuación (`0C98CC`)
-  Start sigue siendo la del arcade. Las pulsaciones que pausan y reanudan
-  nunca llegan a la Start del arcade (la arista de Start es la pulsación
-  cruda de un fotograma que corre; una Start aún pulsada tras reanudar no
-  cuenta).
-- Congela la simulación (ningún paso en los fotogramas de la pausa, ni el de
-  la pulsación que pausa ni el de la que reanuda; el reloj se reinicia al
-  reanudar, así que el tiempo pausado no es deuda), la música y los efectos:
-  `msx_audio_pause` deja de sondear el mezclador y manda silencio, así que
-  cada voz, flujo y evento del mezclador (las colas de bucle) sigue
-  exactamente donde estaba. `game_audio_update` no corre en pausa.
-- Pantalla: el fotograma atenuado a la mitad y PAUSE con la fuente propia
-  del juego (fuente de dos filas 'a' de `03DD96`, paleta 4, como PRESS START
-  `0C90DA`) escrita con la impresora de cadenas original `03D25A` en una
-  copia del mapa fix, en el centro (columnas 17..21, filas 15..16).
-- R reinicia igual que antes (también en pausa: quita la pausa); el menú de
-  pruebas está en SOLDIER SELECT y no cambia. En la ROM de referencia,
-  donde Start ya activa el piloto o acaba la etapa, no hay pausa.
-- El historial de A/B/Start lo guarda el módulo y los fotogramas de pausa no
-  lo tocan: el primer fotograma tras la pausa toma sus aristas frente al
-  último anterior. Prueba (`make check`, `test_gameplay pause`): el mismo
-  flujo de entradas (0..2 pasos por fotograma, aristas pendientes, muertes y
-  continuaciones con Start) con y sin 24 bloques de pausa con entradas
-  basura (todos los botones, Start mantenida y suelta): el estado del juego
-  es idéntico byte a byte al final, igual tras cada fotograma que corre
-  (con sus aristas) y no cambia durante cada bloque.
-- ares (`tools/test_pause_ares.py`, cartucho normal): Start pausa, la imagen
-  queda quieta 3 s con Derecha/A/B pulsados y sin registro de simulación,
-  Start reanuda y el juego sigue; R reinicia desde la pausa. Una Start
-  pulsada justo tras el traspaso de la película ya es la pausa.
+- La ROM trae la pausa del sistema doméstico: SELECT pausa y reanuda. El port
+  la ejecuta traducida (`src/neo_pause.c`): la paleta baja 8 niveles en
+  cuatro vueltas, la auto-animación se apaga, PAUSE parpadea en la capa fix
+  (columna 18, fila 26) y la música sigue. Detalle, captura y pruebas en
+  [PAUSA.md](PAUSA.md).
+- Añadido de la N64: START hace de SELECT durante el juego (en la
+  continuación sigue siendo START); R reinicia también desde la pausa.
 
 ## Personajes: Marco, Tarma, Eri y Fio
 

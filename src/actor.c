@@ -550,6 +550,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (run && was_paused) {
             /* 0156FA: the buttons held and not newly pressed on this turn. */
             msx_game_resume_inputs(&game,(uint8_t)(pause_held&~pressed[0]));
+            /* The list head 003918 of the update that follows steps the fade
+             * (00698C): the palette of before the pause. gameplay.c steps a
+             * fade of its own flows only; none is in flight when 009BD4 left
+             * the count at 1 with the pause's offsets. */
+            if (game.fade.count==1 && neo_fade_offset(&game.fade,0)!=(int8_t)((uint16_t)game.fade.target[0]>>8)) neo_fade_step(&game.fade);
             pending_a=pending_b=false;a_new=b_new=false;
             scene_clock_reset(&simulation_clock);pause_vblanks=0;   // the paused time is no debt
         }

@@ -688,6 +688,10 @@ de la caché: el de la M5, 197 (la necesidad). Puertas: `make check` RC 0 (**263
 **210 ranuras**, `heap_low` 277 KB, una parada `routine=289a80` (los animales: la llamada sin traducir, ya en la
 lista de pendientes; **ares sí la alcanza**); M1 → M2 `RESULT: PASS`, 210 ranuras.
 
+Tercera fusión (quinto lote de la M5: el metro `051344`): `make check` RC 0 (**264 PASS**); suelo de la caché otra vez
+**208** (no se baja ningún suelo): con `mission6.pack` apartado (cartucho 66 387 968) M4 `RESULT: PASS` **209 ranuras**,
+`heap_low` 279 KB; M1 → M2 `RESULT: PASS`, 210 ranuras.
+
 **El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
 (derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
 los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. El log da ahí `MSX camera autoscroll=0 progress=4360` (una orden de cámara del guion)

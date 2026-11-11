@@ -198,8 +198,10 @@ int main(int argc,char **argv) {
         if (who[c].count) throw_fixture_run(who[c].cases,who[c].count,who[c].descriptors,&ok,&bad);
         printf("%s: %u cases, %u steps equal, %u different\n",who[c].name,who[c].count,ok,bad);
         if (bad || !who[c].count) {printf("FAIL: %s against its MAME captures\n",who[c].name);return 1;}
-        printf("PASS: %s (+6E = %u): %u commands, %u roles, %u poses; every role starts; fire, throws, cuts, descent, victory, fat and mummy pose by pose against its captures\n",
-            who[c].name,c,l->commands,l->roles,l->poses);
+        printf("PASS: %s (+6E = %u): %u commands, %u roles, %u poses, no program fails to start; %u cases pose by pose against its captures:",
+            who[c].name,c,l->commands,l->roles,l->poses,who[c].count);
+        for (unsigned i=0;i<who[c].count;i++) printf(" %s",who[c].cases[i].name);
+        printf("\n");
         msx_character_use(NULL);msx_character_close(&pack);free(blob);
     }
     return 0;

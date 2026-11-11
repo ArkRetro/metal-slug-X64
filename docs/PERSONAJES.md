@@ -9,8 +9,8 @@ Lo que la ROM hace por personaje y el port aún no hace está en «Pendiente».
 > **Aviso de tamaño (para todos los agentes).** ares solo abre el canal de
 > registro (ISViewer) si la ROM mide como mucho `0x03FF0000` =
 > 67 043 328 bytes (`ares/n64/cartridge/cartridge.cpp`). `ccr` medía
-> 65 650 688; con los personajes mide **TAMANO_ROM**: quedan
-> **MARGEN_ROM bytes**. Una ROM mayor arranca, pero sin registro, y todas
+> 65 650 688; con los personajes mide **66 846 720**: quedan
+> **196 608 bytes**. Una ROM mayor arranca, pero sin registro, y todas
 > las pruebas de ares fallan por tiempo de espera. Antes de añadir datos
 > (misiones 4–6) hay que liberar espacio (p. ej. `howto.wav64`, 5,8 MB en
 > PCM). `select.wav64` (346 KB) ya no va al cartucho cuando está la música
@@ -77,8 +77,8 @@ copia de referencia en `/home/user/ws-logo/romfs/chars`):
 | | Órdenes | Poses | Piezas (propias) | Pack en RAM | Fichero en ROM |
 | --- | --- | --- | --- | --- | --- |
 | Tarma | 2102 | 688 (28 de Marco) | 713 (685) | 457 987 | 193 803 |
-| Eri | 2121 | 706 | 737 | 470 721 | 200 410 |
-| Fio | 2252 | 750 | 775 | 475 308 | 204 926 |
+| Eri | 2121 | 706 | 737 | 470 721 | 200 435 |
+| Fio | 2252 | 750 | 775 | 475 308 | 204 952 |
 
 Las teselas apenas se repiten entre personajes (Eri y Fio comparten 100 de
 ~3900; Tarma y Eri, 2), así que un banco común no ahorra nada.
@@ -159,7 +159,26 @@ make check-characters && make
   entrada y la cadena de programas del personaje
   (`tools/extract_character_fixture.py` → `data/character_fixture_cN.json`).
 
-RESULTADOS_FIXTURE
+| | Capturas auditadas | Fotogramas / píxeles iguales en MAME | Casos | Pasos iguales | Distintos |
+| --- | --- | --- | --- | --- | --- |
+| Tarma | 16 | 19 938 / 14 363 638 | 42 | 852 | 0 |
+| Eri | 16 | 19 936 / 13 761 246 | 41 | 867 | 0 |
+| Fio | 16 | 19 932 / 13 105 036 | 41 | 867 | 0 |
+
+  Las 16 capturas son las de Marco: catálogo base, H (`h2`, `h3`), granadas
+  con la H (`g1`), C (`c1`), armas 02/04/06 (`w2`, `w4`, `w6`), cuchillo con
+  pistola y con H (`k1`, `k2`), descenso (`dsc0`, `dsc1`), victoria (`v0`,
+  `v1`), gordo (`f2`) y momia (`mz2`). Los casos cubren granadas (de pie, en
+  carrera, en el aire, agachado), disparo de la C y de las armas 02 y 04,
+  la H hacia abajo, cortes, descenso, victoria, gordo y momia. Un caso
+  falta en Eri y en Fio: `h_knife_crouch` (su programa de corte agachado
+  con la H, `258C16`/`258E84`, no se eligió en esa condición del plan: su
+  corte anterior dura más). En cada captura, los descriptores que el
+  original dibujó y no están en el pack son de programas que el port no
+  arranca; las cuentas coinciden con las de Marco (p. ej. `cat`: 142 de
+  174 Tarma, 142 de 172 Marco). En `c1` y `k2` se excluyen de la auditoría
+  entre 4 y 16 fotogramas con un destello sobre el jugador (`excluded.txt`
+  en cada captura, como los de `marco-c1`).
 
 - `tools/test_marco_visual.c` (Marco, `make check-marco-campaign`): 852
   pasos iguales, como antes del cambio.
@@ -172,7 +191,16 @@ RESULTADOS_FIXTURE
 
 ## 6. Pendiente
 
-1. **Voces de muerte** 1087/1125/114E: RESULTADO_VOCES
+1. **Voces de muerte** 1087/1125/114E: el juego ya pide la palabra del personaje, pero
+   **no suenan** (`MSX AUDIO ... unmapped`: sin sonido, no el de Marco). Hecho:
+   render aislado de las tres (`render_sound_commands.py`: 0,486 s, 0,729 s
+   y 0,724 s, `OK`; los WAV en `filesystem/audio-src`) y 555 pares medidos
+   (`data/sound_pairs_characters.json`). Las tres salen como canal VOZ,
+   nivel 2, igual que `1123`. Falta: con esos pares
+   `derive_sound_policy.py` une canales de la política actual (14 → 9) y
+   cambia 34 sonidos ya asignados, así que no se han fusionado; hay que
+   revisar los puentes (`--bridge`) como en B30/B36 y luego
+   `compile_sound_policy.py` y `pack_game_audio.py` (≈30 KB de ROM).
 2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor de `253322` con su
    física (`0C4CBA`: +30 −= +30/16, +34 hacia |2·+30| − 6.0, suelo `0143E4`,
    15 fines de programa → parpadeo, 30 → fuera). Falta la captura de una
@@ -188,6 +216,11 @@ RESULTADOS_FIXTURE
 7. Lo que ya faltaba a Marco falta igual: programas que el original elige y
    el port no arranca (los mismos papeles en los cuatro), el contador de
    SOLDIER SELECT y el parpadeo de P1.
-CAPTURAS_PENDIENTES
+8. Los registros `debug.log` de `captures-chars` están en gzip (disco):
+   descomprimir antes de repetir `export_character.py --verify` o los
+   fixtures.
 
-**Siguiente paso:** PASO_SIGUIENTE
+**Siguiente paso:** las voces de muerte (punto 1) y, después, la
+captura de una muerte de cada personaje (`capture_weapons.lua` con la
+elección por entradas de `capture_marco_catalog.lua`) para probar sus
+muertes pose a pose y traducir el actor de Fio.

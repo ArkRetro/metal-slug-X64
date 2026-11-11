@@ -10,6 +10,7 @@
 #include "../src/scene_cull.h"
 #include "../src/neo_soldier_ai.h"
 #include "../src/neo_region.h"
+#include "../src/neo_pause.h"
 #include "scene_meta.h"
 /* Every native draw must find its descriptor and logical palette in the
  * scene pack (src/actor.c and boss_renderer.c log "native draw missing"
@@ -657,6 +658,120 @@ static uint32_t observe(const msx_game_t *g) {
     #undef MIX
     return h;
 }
+/* The original's pause (src/neo_pause.c, docs/PAUSA.md).
+ * 1. data/pause_fixture.json (build/pause_fixture.h): the turns of the MAME
+ *    0.264 capture of 015520 (SELECT pauses, 150 paused turns, SELECT
+ *    resumes): owner 10C2BF, blink 10C2C2, results 10008D / 10008E, the
+ *    fade 10991A.. with its count and the five fix cells 725A.. after
+ *    every turn.
+ * 2. The game through a pause: the turn that pauses and the paused turns
+ *    run no update and leave the game untouched but for what the pause
+ *    itself owns (the fade, the LSPC switch, the fix cells of PAUSE and
+ *    the panels' +88); with the same buttons held at the resume as at the
+ *    pause the run goes on as the run without pauses (same hash after
+ *    every update), and a button first held during the pause is a new
+ *    press of the resuming update (0156FA). */
+#include "pause_fixture.h"
+static void pause_fixture_run(void) {
+    static neo_hud_t hud;neo_pause_t p;neo_fade_t fade;neo_lspc_t lspc;
+    memset(&hud,0,sizeof hud);memset(&p,0,sizeof p);memset(&fade,0,sizeof fade);memset(&lspc,0,sizeof lspc);
+    neo_pause_init(&p);
+    for (unsigned i=0;i<5;i++) hud.fix[0x25a+i*32]=pause_fixture_before[i];
+    for (unsigned i=0;i<3;i++) {fade.current[i]=(int16_t)pause_fixture_fade0[i];fade.target[i]=(int16_t)pause_fixture_fade0[3+i];fade.step[i]=(int16_t)pause_fixture_fade0[6+i];}
+    fade.count=0;lspc.speed=pause_fixture_lspc0[0];lspc.disabled=(pause_fixture_lspc0[1]&8u)!=0;
+    unsigned paused=0,shown=0;
+    for (unsigned t=0;t<PAUSE_FIXTURE_TURNS;t++) {
+        const pause_fixture_turn_t *f=&pause_fixture[t];
+        neo_pause_input_t in={f->select,0,{1,0},{0,0}};uint8_t pressed[2]={0,0};
+        bool run=neo_pause_turn(&p,&in,pressed,&hud,&fade,&lspc);
+        if (run) neo_fade_step(&fade);   /* the update of a turn that runs: its list head 003918 -> 00698C */
+        assert(run==(f->last!=0) && p.owner==f->owner && p.last==f->last && p.resumed==f->resumed);
+        if (p.owner || f->resumed) assert(p.blink==f->blink);
+        for (unsigned i=0;i<3;i++) assert((uint16_t)fade.current[i]==f->fade[i] && (uint16_t)fade.target[i]==f->fade[3+i]);
+        assert(fade.count==f->count);
+        for (unsigned i=0;i<5;i++) assert(hud.fix[0x25a+i*32]==f->cells[i]);
+        assert(lspc.speed==f->lspc[0] && lspc.disabled==((f->lspc[1]&8u)!=0));
+        paused+=!run;shown+=hud.fix[0x25a]==0x0350;
+    }
+    assert(paused>=100 && shown>=50);
+    printf("PASS: pause 015520 against MAME: %u turns (%u paused, PAUSE shown on %u), owner, blink, results, fade, LSPC and fix cells equal\n",(unsigned)PAUSE_FIXTURE_TURNS,paused,shown);
+}
+typedef struct {int dir;bool a,b,up,down,z,start;} pause_in_t;
+static uint8_t pause_bits(const pause_in_t *in) {
+    return (uint8_t)((in->up?1u:0u)|(in->down?2u:0u)|(in->dir<0?4u:0u)|(in->dir>0?8u:0u)|(in->b?0x10u:0u)|(in->a?0x20u:0u)|(in->z?0x40u:0u));
+}
+/* One original update (two steps) as actor.c runs it. */
+static void pause_update(msx_game_t *g,const pause_in_t *in) {
+    g->start_edge|=in->start;
+    for (unsigned s=0;s<2;s++) {g->aim_up=in->up;g->crouch=in->down;g->grenade=in->z;msx_game_update(g,in->dir,in->a,in->b);}
+}
+static unsigned pause_rand(unsigned *r) {*r=*r*1103515245u+12345u;return *r>>16;}
+static void pause_input(const msx_game_t *g,unsigned i,unsigned *r,pause_in_t *in) {
+    unsigned v=pause_rand(r);
+    in->dir=v%10<6?1:v%10<8?0:-1;in->a=(v>>4)%7==0;in->b=(v>>7)%3!=0;in->up=(v>>9)%5==0;in->down=(v>>11)%9==0;in->z=(v>>13)%61==0;
+    in->start=g->awaiting_continue && i%4==0;   /* the continue: the original's START */
+}
+static uint32_t pause_trace[6000];
+static void pause_run(void) {
+    pause_fixture_run();
+    static msx_game_t g,snap,before;neo_pause_t p;
+    enum { UPDATES=6000 };
+    unsigned r=7,deaths;pause_in_t in,last={0};
+    msx_game_init(&g);
+    for (unsigned i=0;i<UPDATES;i++) {pause_input(&g,i,&r,&in);pause_update(&g,&in);pause_trace[i]=observe(&g);}
+    memcpy(&snap,&g,sizeof g);deaths=g.deaths;unsigned continues=g.continues;
+    msx_game_init(&g);neo_pause_init(&p);r=7;
+    unsigned junk=99,blocks=0,turns=0,refused=0,presses=0;
+    for (unsigned i=0;i<UPDATES;i++) {
+        bool play=g.hud.panel[0].state==NEO_PANEL_PLAY && !g.awaiting_continue;
+        uint8_t pressed[2]={0,0};
+        if (i%259==3 && play) {
+            /* SELECT with the buttons of the last update still held. */
+            neo_pause_input_t pin={2,g.flow.pause_off,{g.hud.mode[0],g.hud.mode[1]},{pause_bits(&last),0}};
+            memcpy(&before,&g,sizeof g);
+            bool run=neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc);
+            if (g.flow.pause_off || g.hud.mode[0]==0 || g.hud.mode[0]==3) {assert(run && !memcmp(&before,&g,sizeof g));refused++;}
+            else {
+                assert(!run && p.owner==1);
+                unsigned n=1+pause_rand(&junk)%200;pin.select=0;
+                for (unsigned k=0;k<n;k++) {assert(!neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc));turns++;}
+                /* Nothing of the game moved: only the pause's own things. */
+                static msx_game_t now;memcpy(&now,&g,sizeof g);
+                now.hud=before.hud;now.fade=before.fade;now.lspc=before.lspc;
+                assert(!memcmp(&before,&now,sizeof g));
+                assert(neo_fade_offset(&g.fade,0)==(int8_t)(n>=3?-8:-2*(int)(n+1)) || before.fade.count);
+                assert(g.lspc.disabled);
+                pin.select=2;pressed[0]=pressed[1]=0;
+                assert(neo_pause_turn(&p,&pin,pressed,&g.hud,&g.fade,&g.lspc) && !p.owner && p.resumed==0xff && !pressed[0]);
+                assert(g.lspc.disabled==before.lspc.disabled && g.lspc.speed==(before.lspc.disabled?0:before.lspc.speed));
+                msx_game_resume_inputs(&g,pin.held[0]);
+                /* The palette is the one before the pause from the next fade step on (009BD4). */
+                assert(g.fade.count>=1);
+                if (!before.fade.count) {neo_fade_t f=g.fade;neo_fade_step(&f);assert(!memcmp(f.current,before.fade.current,sizeof f.current));g.fade=before.fade;}
+                g.hud=before.hud;   /* the cells of PAUSE and the panels' redraw (+88) are the pause's */
+                g.lspc=before.lspc; /* 002802 with the saved speed: equal but for the speed byte of a switched-off LSPC */
+                blocks++;
+            }
+        }
+        pause_input(&g,i,&r,&in);pause_update(&g,&in);last=in;
+        assert(observe(&g)==pause_trace[i]);
+    }
+    assert(!memcmp(&snap,&g,sizeof g));
+    assert(blocks>=8 && deaths>0 && continues>0 && turns>0);
+    /* 0156FA: a button first held during the pause is a new press at the resume. */
+    {neo_pause_t q;static neo_hud_t hud;neo_fade_t f;neo_lspc_t l;memset(&hud,0,sizeof hud);memset(&f,0,sizeof f);memset(&l,0,sizeof l);
+     neo_pause_init(&q);hud.mode[0]=1;
+     neo_pause_input_t pin={2,0,{1,0},{0x10,0}};uint8_t pr[2]={0,0};
+     assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && q.held[0]==0x10);
+     pin.select=0;pin.held[0]=0x30;pr[0]=0x20;assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l));
+     pin.select=2;pin.held[0]=0x70;pr[0]=0x40;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && pr[0]==0x60);presses++;
+     /* 10C2BD and the BIOS modes 0 and 3 refuse the pause; START (bit 0) is no SELECT. */
+     pin.off=0xff;pr[0]=0;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);pin.off=0;
+     pin.mode[0]=3;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);pin.mode[0]=0;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);
+     pin.mode[0]=1;pin.select=1;assert(neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && !q.owner);
+     pin.select=2;assert(!neo_pause_turn(&q,&pin,pr,&hud,&f,&l) && q.owner==1);}
+    printf("PASS: pause 015520 in the game: %u pauses (%u paused turns, %u refused by 10C2BD or the mode) in a %u-update run (camera %d, %u kills, %u deaths, %u continues by START): the game stands while paused and goes on as the run without pauses\n",blocks,turns,refused,UPDATES,g.camera,g.kills,deaths,continues);
+}
 static void lifebar_run(void) {
     static msx_game_t off,on;static uint32_t trace[1300];
     msx_lifebar_request=false;msx_game_init(&off);
@@ -706,6 +821,7 @@ int main(int argc,char **argv) {
     if (argc>1 && !strcmp(argv[1],"mummy")) {mummy_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"thin")) {thin_cadence_run();return 0;}
     if (argc>1 && !strcmp(argv[1],"lifebar")) {lifebar_run();return 0;}
+    if (argc>1 && !strcmp(argv[1],"pause")) {pause_run();return 0;}
     if (argc>2 && !strcmp(argv[1],"release")) {for (int i=2;i<argc;i++) release_run((unsigned)atoi(argv[i]));return 0;}
     {   /* The stick as an 8-way lever (msx_stick.h): 45-degree sectors. */
         int h,v;
@@ -976,5 +1092,6 @@ int main(int argc,char **argv) {
     for (unsigned i=0;i<1200 && !hit_at;i++) {msx_game_update(&g,i<170?1:0,false,false);if (g.world.player_hits) hit_at=i;}
     assert(hit_at && g.deaths==1 && g.life.phase==MARCO_DYING && g.world.player_hits==1);
     lifebar_run();
+    pause_run();
     puts("PASS: half-rate input, air landing, dune/village support, reference camera to 3520, whole Mission 1 with native camera, script, boss and mission end, extended terrain, knife hit and respawn");
 }

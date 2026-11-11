@@ -52,6 +52,11 @@ static int fat_role(int role) {
     for (unsigned i=0;i<sizeof map/sizeof map[0];i++) if (map[i][0]==role) return map[i][1];
     return -1;
 }
+/* The programs of the chosen character (marco_visual_use_programs); NULL:
+ * Marco's, the built-in catalog. */
+static const neo_anim_program_t *character_script;
+static const uint16_t (*character_roles)[2];
+static unsigned character_role_count;
 static void start(marco_visual_t *v,marco_part_t part,int role) {
     if (part==MARCO_BODY) {v->body_role=role;v->body_done=false;}
     else {v->weapon_role=role;v->weapon_done=false;}
@@ -66,8 +71,24 @@ static void start(marco_visual_t *v,marco_part_t part,int role) {
      * every run update of 24DD18 has 01C1), every other program at 0x100. */
     /* The mummy's walk 0C196A: +26 = 0x80 (marco-mz2, every update of 25F3CC). */
     uint16_t speed=part==MARCO_BODY && role==MARCO_CAMPAIGN_B_RUN?0x1c1:part==MARCO_BODY && role==MARCO_CAMPAIGN_B3_WALK?0x80:0x100;
-    if (!marco_animation_start(&v->anim,part,&marco_script,(uint16_t)program,speed)) v->failures++;
+    /* Another character (msx_character.h): the same role, the program of
+     * its column of the same table rows. A role without one is a stop. */
+    const neo_anim_program_t *script=&marco_script;
+    if (character_script) {
+        unsigned lo=0,hi=character_role_count;
+        while (lo<hi) {unsigned mid=lo+(hi-lo)/2;if (character_roles[mid][0]<(unsigned)program) lo=mid+1;else hi=mid;}
+        if (lo==character_role_count || character_roles[lo][0]!=(unsigned)program) {
+            v->stops++;
+            if (part==MARCO_BODY) v->body_done=true; else v->weapon_done=true;
+            return;
+        }
+        program=character_roles[lo][1];script=character_script;
+    }
+    if (!marco_animation_start(&v->anim,part,script,(uint16_t)program,speed)) v->failures++;
     v->starts++;
+}
+void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (*roles)[2],unsigned count) {
+    character_script=script;character_roles=script?roles:NULL;character_role_count=script?count:0;
 }
 void marco_visual_reset(marco_visual_t *v) {
     memset(v,0,sizeof(*v));marco_animation_reset(&v->anim);

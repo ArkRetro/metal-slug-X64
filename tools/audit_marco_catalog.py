@@ -4,7 +4,7 @@
 Writes numerical coverage to the requested report. Original image/tile data
 and full observations stay private. An input case is NOT an animation identity.
 """
-import argparse,collections,hashlib,json,re,struct
+import argparse,collections,gzip,hashlib,json,re,struct
 from functools import lru_cache
 from pathlib import Path
 import numpy as np
@@ -13,6 +13,9 @@ from export_marco import reconstruct,top_sprite_pixel,palette_rgb
 from export_vehicle import program
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
+def dump(path):
+ """A frame dump, or its gzip (dumps packed during a long capture: disk)."""
+ return path.read_bytes() if path.exists() else gzip.open(str(path)+'.gz').read()
 
 def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=()):
  plan=json.loads((capture/'plan.json').read_text());states={r['frame']:r for line in (capture/'states.jsonl').read_text().splitlines() if (r:=json.loads(line))}
@@ -70,9 +73,9 @@ def audit(capture,rom_path,output,queue_publication=False,sparse=False,exclude=(
    last=visible_batches.get(frame)
   elif frame-3 in updates:last=frame-3
   if last is None:continue
-  if sparse and not (capture/f'vram{frame}.bin').exists():continue
+  if sparse and not (capture/f'vram{frame}.bin').exists() and not (capture/f'vram{frame}.bin.gz').exists():continue
   if any(lo<=frame<=hi for lo,hi in exclude):excluded+=1;continue
-  v=struct.unpack('>34304H',(capture/f'vram{frame}.bin').read_bytes());pal=struct.unpack('>4096H',(capture/f'palette{frame}.bin').read_bytes())
+  v=struct.unpack('>34304H',dump(capture/f'vram{frame}.bin'));pal=struct.unpack('>4096H',dump(capture/f'palette{frame}.bin'))
   known_palettes.update(d['attr']>>8 for d in draws[last])
   if sparse:known_palettes.update(d['attr']>>8 for u in range(frame-6,frame) for d in draws.get(u,()))
   active_palettes=known_palettes

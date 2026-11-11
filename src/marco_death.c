@@ -59,6 +59,16 @@ static const neo_anim_command_t entrance_cmds[]={
 PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);
 static const neo_anim_program_t air_prog={air_cmds,sizeof air_cmds/sizeof air_cmds[0]};
 PROGRAM(entrance);
+/* The chosen character's five programs (marco_death_use_programs), in the
+ * order ground 0BF298, kind 2 on the ground 0BF3D8, kinds 7/0x10 0BF358, in
+ * the air 0BF318, entrance 0BF498; NULL: Marco's above. */
+static const neo_anim_program_t *character_programs;
+void marco_death_use_programs(const neo_anim_program_t *five) {character_programs=five;}
+#define ground_prog (*(character_programs?&character_programs[0]:&ground_prog))
+#define kind2_ground_prog (*(character_programs?&character_programs[1]:&kind2_ground_prog))
+#define kind7_prog (*(character_programs?&character_programs[2]:&kind7_prog))
+#define air_prog (*(character_programs?&character_programs[3]:&air_prog))
+#define entrance_prog (*(character_programs?&character_programs[4]:&entrance_prog))
 
 /* The pose relative to the actor's words, facing right (render x/y 0,
  * attributes 0x6340: palette 0x63 of the player, as marco_visual.c). */

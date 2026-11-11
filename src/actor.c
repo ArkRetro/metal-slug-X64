@@ -18,6 +18,9 @@
 #include "marco_visual.h"
 #include "marco_renderer.h"
 #include "hud_renderer.h"
+#include "neo_pause.h"
+#include "msx_character.h"
+#include "neo_text.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -33,7 +36,16 @@ static bool descent_fresh;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
-static bool previous_a,previous_b,pending_a,pending_b,previous_start;
+static bool pending_a,pending_b;
+/* The original's pause 015520 (neo_pause.h, docs/PAUSA.md). The N64 START
+ * is the Neo Geo SELECT while the game is played. pause_start/pause_a/
+ * pause_b: the button history of the presented frames (03CB3A);
+ * pause_select: a press waiting for its turn; pause_vblanks: the vblanks of
+ * the paused turns (two each, 003AE0); pause_prev: 10C35C of the last turn. */
+static neo_pause_t pause;
+static bool pause_start,pause_a,pause_b,pause_select;
+static unsigned pause_vblanks,pause_count,pause_turns;
+static uint8_t pause_prev;
 static int previous_animation=-1;
 static const color_t ink={8,16,32,255};
 static unsigned observed_projectiles;
@@ -149,6 +161,12 @@ static void leave_mission(void) {
 }
 static void reset_game(void) {
     msx_diag_event(MSX_EV_RESET,game.flow.mission+1u,game.deaths,(uint32_t)game.camera);
+    if (pause.owner) {   /* a reset (R) from the pause: the game starts again (0153F0), fade and animation as before it */
+        neo_pause_input_t in={2,0,{1,0},{0,0}};uint8_t pressed[2]={0,0};
+        neo_pause_turn(&pause,&in,pressed,&game.hud,&game.fade,&game.lspc);
+        debugf("MSX PAUSE off (reset)\n");
+    }
+    neo_pause_init(&pause);pause_select=false;pause_vblanks=0;
     marco_visual_reset(&marco);marco_shots=0;marco_grenades=marco_cfires=marco_knives=0;
     observed_wreck_contact=false;
     leave_mission();
@@ -278,7 +296,7 @@ void actor_init(void) {
 bool actor_begin_mission(int32_t world_x,int32_t world_y) {
     if (!msx_game_begin_at(&game,world_x,world_y)) return false;
     has_entry=true;entry_x=world_x;entry_y=world_y;
-    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    previous_animation=-1;pending_a=pending_b=pause_a=pause_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();
     game_audio_sync(&game);
     debugf("MSX mission handoff x=%ld y=%ld\n",(long)world_x,(long)world_y);
@@ -293,7 +311,7 @@ void actor_begin_descent(int32_t world_x,int32_t world_y,int32_t vx,int32_t vy) 
         msx_game_begin_descent(&game,world_x,world_y,vx,vy);
     descent_fresh=false;
     has_entry=true;entry_descent=true;entry_x=world_x;entry_y=world_y;entry_vx=vx;entry_vy=vy;
-    previous_animation=-1;pending_a=pending_b=previous_a=previous_b=false;
+    previous_animation=-1;pending_a=pending_b=pause_a=pause_b=false;
     scene_clock_reset(&simulation_clock);scene_render_forget_texture();
     game_audio_sync(&game);
     debugf("MSX mission handoff (descent) x=%ld y=%ld vx=%ld vy=%ld\n",(long)world_x,(long)world_y,(long)vx,(long)vy);
@@ -390,6 +408,30 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
 }
+/* The character chosen at SOLDIER SELECT (msx_character.h): its catalog
+ * replaces Marco's in the renderer (the parts preloaded so far are dropped)
+ * and its programs go to the visual and the death; the game reads +6E from
+ * msx_character_request. False: no pack for it in this cartridge, Marco
+ * stays. No RDP work may be pending on Marco's parts. */
+static msx_character_pack_t character_pack;
+bool actor_select_character(unsigned character) {
+    rspq_wait();
+    msx_character_use(NULL);msx_character_close(&character_pack);
+    marco_renderer_set_character(0);marco_renderer_close();   // any earlier pack and the parts loaded so far go first
+    heap_stats_t h0;sys_get_heap_stats(&h0);
+    bool ok=character<MSX_CHARACTERS && marco_renderer_set_character(character);
+    if (ok && character) {
+        uint32_t size=0;const uint8_t *blob=marco_renderer_character_pack(&size);
+        ok=msx_character_open(&character_pack,blob,size);
+        if (ok) msx_character_use(&character_pack);
+    }
+    if (!ok) {marco_renderer_set_character(0);character=0;}
+    heap_stats_t h1;sys_get_heap_stats(&h1);
+    marco_renderer_character_heap(character && h1.used>h0.used?(unsigned)(h1.used-h0.used):0);
+    msx_character_request=(uint8_t)character;
+    debugf("MSX CHARACTER %u %s heap=%u\n",character,ok?"chosen":"(no pack: Marco)",(unsigned)(h1.used>h0.used?h1.used-h0.used:0));
+    return ok;
+}
 static unsigned select_mission,select_stage;
 void actor_select_mission(unsigned mission,unsigned stage) {select_mission=mission;select_stage=stage;}
 /* The test menu's mission: 01891E's own start of that mission (42F4/42F8,
@@ -474,22 +516,68 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     int32_t old_lock=game.world.camera_lock;uint8_t old_auto=game.world.camera.auto_mode;
     bool was_complete=game.complete,was_grounded=game.grounded;
     unsigned vehicle_health=game.vehicle.health,wreckage=game.wreckage_cells,vehicle_state=game.vehicle.state;
-    pending_a|=input.btn.a && !previous_a;pending_b|=input.btn.b && !previous_b;
     /* Reference build: Start in Mission 2 stage 3 and in Mission 3 toggles
-     * the test's route
-     * planner (gameplay.h, msx_autopilot.h) instead of reaching the HUD. */
-    bool start_press=input.btn.start && !previous_start;
+     * the test's route planner (gameplay.h, msx_autopilot.h) and in Mission
+     * 2 stages 1 and 2 ends the stage: no pause there. */
+    bool reference_start=msx_reference_invulnerable && game.in_stage && (game.flow.mission==2u || (game.flow.mission==1u && (game.flow.stage==3u || (game.flow.stage<3u && !game.stage_step))));
+    /* The pause 015520 (neo_pause.h). The N64 START is the SELECT of the Neo
+     * Geo pad while player 1's panel runs its play routine 0C9650 (where the
+     * original does not read START) and while the game is paused; in the
+     * continue it stays the original's START. A press waits for the start
+     * of an original update (two steps, even ticks). */
+    bool can_select=!reference_start && game.hud.panel[0].state==NEO_PANEL_PLAY && !game.awaiting_continue;
+    bool start_new=input.btn.start && !pause_start,a_new=input.btn.a && !pause_a,b_new=input.btn.b && !pause_b;
+    pause_start=input.btn.start;pause_a=input.btn.a;pause_b=input.btn.b;
+    bool select_new=start_new && (pause.owner || can_select);
+    if (select_new) {pause_select=true;start_new=false;}
+    else if (!pause.owner && !can_select) pause_select=false;
+    uint8_t pause_held=(uint8_t)((input.btn.d_up || stick_v>0?1u:0u)|(input.btn.d_down || stick_v<0?2u:0u)|(direction<0?4u:0u)|(direction>0?8u:0u)|
+        (input.btn.b?0x10u:0u)|(input.btn.a?0x20u:0u)|(input.btn.z?0x40u:0u));
+    bool was_paused=pause.owner!=0,run=true,turn_now=!was_paused && !(game.ticks&1u);
+    unsigned pause_steps=0;
+    if (was_paused) {
+        /* A paused turn waits two vblanks (003AE0); the LSPC goes on counting. */
+        pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+        for (unsigned k=0;k<pause_steps;k++) neo_lspc_frame(&game.lspc);
+        pause_vblanks+=pause_steps;run=false;
+    }
+    while (turn_now || (!run && pause_vblanks>=2u)) {
+        neo_pause_input_t in={(uint8_t)(pause_select?2u:0u),game.flow.pause_off,{game.hud.mode[0],game.hud.mode[1]},{pause_held,0}};
+        uint8_t pressed[2]={(uint8_t)(pause_held&~pause_prev),0};
+        if (!turn_now) pause_vblanks-=2u;
+        turn_now=false;pause_select=false;pause_prev=pause_held;pause_turns++;
+        run=neo_pause_turn(&pause,&in,pressed,&game.hud,&game.fade,&game.lspc);
+        if (run && was_paused) {
+            /* 0156FA: the buttons held and not newly pressed on this turn. */
+            msx_game_resume_inputs(&game,(uint8_t)(pause_held&~pressed[0]));
+            /* The list head 003918 of the update that follows steps the fade
+             * (00698C): the palette of before the pause. gameplay.c steps a
+             * fade of its own flows only; none is in flight when 009BD4 left
+             * the count at 1 with the pause's offsets. */
+            if (game.fade.count==1 && neo_fade_offset(&game.fade,0)!=(int8_t)((uint16_t)game.fade.target[0]>>8)) neo_fade_step(&game.fade);
+            pending_a=pending_b=false;a_new=b_new=false;
+            scene_clock_reset(&simulation_clock);pause_vblanks=0;   // the paused time is no debt
+        }
+        if (!run && !was_paused) {pause_count++;pending_a=pending_b=false;pause_vblanks=0;scene_clock_reset(&simulation_clock);}
+        if (run!=!was_paused) debugf("MSX PAUSE %s (pauses=%u turns=%u fade=%d lspc=%u)\n",run?"off":"on",pause_count,pause_turns,(int)neo_fade_offset(&game.fade,0),(unsigned)game.lspc.disabled);
+        if (run) break;
+        was_paused=true;
+    }
+    struct {bool step,start_edge,a_edge,b_edge;} pf={run,start_new,a_new,b_new};
+    if (pf.step) {
+    pending_a|=pf.a_edge;pending_b|=pf.b_edge;
+    bool start_press=pf.start_edge;
     if (msx_reference_invulnerable && start_press && game.in_stage && ((game.flow.mission==1u && game.flow.stage==3u) || game.flow.mission==2u)) {
         game.pilot.on=!game.pilot.on;start_press=false;debugf("MSX autopilot %s\n",game.pilot.on?"on":"off");
     }
-    /* Reference build: Start in Mission 2 stages 1 and 2 ends the stage
-     * (018F40 as the stage's own exit), for targeted stage-3 checks. */
     if (msx_reference_invulnerable && start_press && game.in_stage && game.flow.mission==1u && game.flow.stage<3u && !game.stage_step) {
         msx_game_stage_end(&game);start_press=false;debugf("MSX reference: stage %u ended by Start\n",(unsigned)game.flow.stage);
     }
-    game.start_edge|=start_press;game.jump_edge|=input.btn.a && !previous_a;previous_start=input.btn.start;
-    previous_a=input.btn.a;previous_b=input.btn.b;
-    unsigned steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+    game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
+    }
+    unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND):0;
+    /* A SELECT press inside an original update: the update ends first. */
+    if (pause_select && steps>(game.ticks&1u)) steps=game.ticks&1u?1u:steps;
     /* At most two steps per frame: the world updates on every second step
      * (gameplay.c), so a frame never runs two world updates (10-13 ms each
      * around camera 2336). The rest of the catch-up stays as debt for the
@@ -546,7 +634,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_steps(steps);msx_perf_where((unsigned)game.camera,(unsigned)game.flow.stage);msx_perf_mark(MSX_PERF_SIM);
     /* MSX_DIAG: pools, stops and events of this frame's updates (read only). */
     msx_diag_game(&game,(uint16_t)(input.btn.c_left|input.btn.c_right<<1|input.btn.c_up<<2|input.btn.c_down<<3));
-    game_audio_update(&game);
+    if (pf.step) game_audio_update(&game);   // paused: no sound word is new; the music and the sounds go on, as the Z80 does
     /* A second AI service per frame, between the simulation and the draw:
      * a slow frame (two updates plus a full redraw) no longer drains both
      * buffers before the main loop's service. */
@@ -893,7 +981,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     /* The original fix layer above every layer, on the 304x224 window. */
     /* The fix layer's palettes are outside the fade (MAME runK: slots 0..9 keep their colours). */
     scene_render_set_fade(0,0,0);
-    rdpq_set_scissor(8,8,312,232);hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
+    rdpq_set_scissor(8,8,312,232);
+    hud_renderer_draw(&game.hud);rdpq_set_scissor(0,0,320,240);
     scene_render_forget_texture();
     if (diagnostics) {
         scene_render_box(28,20,264,40,ink);scene_render_box(28,202,264,24,ink);

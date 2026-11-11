@@ -48,6 +48,11 @@ typedef struct {
     unsigned failures,starts;
     bool victory_armed;            /* 0C2046 set the routine 0C1E84: its program starts in the next update */
 } marco_visual_t;
+/* The chosen character's programs (msx_character.h): script = its converted
+ * commands, roles = (Marco's entry, this character's entry) sorted by the
+ * first; every role keeps its MARCO_CAMPAIGN_* name and starts the program
+ * of the character's column of the same table rows. NULL: Marco. */
+void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (*roles)[2],unsigned count);
 void marco_visual_reset(marco_visual_t *v);
 /* One logic update. */
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in);

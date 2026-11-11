@@ -34,7 +34,7 @@ def schedule(cases=CASES,first=2100):
  return rows,events
 
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');p.add_argument('--give-cgun',action='store_true',help='capture only: at the first plan frame write the C (id 0C, 40 rounds kept, cap 3, +94 = 1) like a pickup, as tools/capture_weapons.lua plan air');p.add_argument('--give-rgun',action='store_true',help='capture only: at the first plan frame write the R (id 03, 30 rounds kept, cap 2, +94 = 1) like a pickup (marco_weapons_grant)');p.add_argument('--give-weapon',help='capture only: at the first plan frame write weapon HEXID like a pickup (0C0928 tables: cap, +94, rounds kept)');p.add_argument('--victory',type=int,help='capture only: N frames after the first plan frame write RAM 10C304 = 04 and 10C301 = FF, the mission end of 018F92/018846 (victory table 0BF658)');p.add_argument('--give-fat',action='store_true',help='capture only: at the first plan frame request form 2 (+94 = 2, the food 0C0BF4) with RAM 10C2F6 = 4 (Mission 3, 0C0BAE keeps the form)');p.add_argument('--give-mummy',action='store_true',help='capture only: at the first plan frame request form 3 (+94 = 3), as a hit of kind 0x10 (the mummy breath) does in 0C36C0');p.add_argument('--first',type=int,default=2100,help='first plan frame (default 2100, after the landing; 1830 covers the parachute descent, landing at 2039)');p.add_argument('--keep-bombs',action='store_true',help='capture only: bombs kept at 10 (several throws per plan)');a=p.parse_args()
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('--rom-dir',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--command-trace',action='store_true');p.add_argument('--paired-trace',action='store_true');p.add_argument('--end-frame',type=int);p.add_argument('--controller-trace',action='store_true');p.add_argument('--logic-only',action='store_true');p.add_argument('--queue-trace',action='store_true');p.add_argument('--upper-trace',action='store_true');p.add_argument('--body-trace',action='store_true');p.add_argument('--motion-trace',action='store_true');p.add_argument('--ammo-trace',action='store_true');p.add_argument('--stance-trace',action='store_true');p.add_argument('--idle-trace',action='store_true');p.add_argument('--plan',type=Path,help='JSON list of named duration/button experiments');p.add_argument('--dump-routines',help='capture only VRAM/palette/screen while the player routine is in these hex ranges (lo-hi,...), and 4 frames after');p.add_argument('--give-hgun',action='store_true',help='capture only: at the first plan frame write the H (id 0A, rounds kept at 200, +94 = 1) like a pickup, as tools/capture_weapons.lua plan hold');p.add_argument('--give-cgun',action='store_true',help='capture only: at the first plan frame write the C (id 0C, 40 rounds kept, cap 3, +94 = 1) like a pickup, as tools/capture_weapons.lua plan air');p.add_argument('--give-rgun',action='store_true',help='capture only: at the first plan frame write the R (id 03, 30 rounds kept, cap 2, +94 = 1) like a pickup (marco_weapons_grant)');p.add_argument('--give-weapon',help='capture only: at the first plan frame write weapon HEXID like a pickup (0C0928 tables: cap, +94, rounds kept)');p.add_argument('--victory',type=int,help='capture only: N frames after the first plan frame write RAM 10C304 = 04 and 10C301 = FF, the mission end of 018F92/018846 (victory table 0BF658)');p.add_argument('--give-fat',action='store_true',help='capture only: at the first plan frame request form 2 (+94 = 2, the food 0C0BF4) with RAM 10C2F6 = 4 (Mission 3, 0C0BAE keeps the form)');p.add_argument('--give-mummy',action='store_true',help='capture only: at the first plan frame request form 3 (+94 = 3), as a hit of kind 0x10 (the mummy breath) does in 0C36C0');p.add_argument('--first',type=int,default=2100,help='first plan frame (default 2100, after the landing; 1830 covers the parachute descent, landing at 2039)');p.add_argument('--keep-bombs',action='store_true',help='capture only: bombs kept at 10 (several throws per plan)');p.add_argument('--character',type=int,choices=(0,1,2,3),help='player +6E chosen at SOLDIER SELECT with the controller (0 Marco, 1 Tarma, 2 Eri, 3 Fio; confirm at 1800, so --first >= 2350)');a=p.parse_args()
  assert a.give_hgun+a.give_cgun+a.give_rgun+a.give_mummy+bool(a.give_weapon)<=1 and not (a.give_fat and a.give_mummy)   # --give-fat goes with one weapon (the fat form keeps it: rule FF of 0C32E4)
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
@@ -66,7 +66,11 @@ def main():
  if a.give_fat:env['MSX_GIVE_FAT']='1'
  if a.give_weapon:env['MSX_GIVE_WEAPON']=a.give_weapon
  if a.keep_bombs:env['MSX_KEEP_BOMBS']='1'
+ if a.character is not None:
+  assert a.first>=2032,'the choice at 1800 lands 202 frames later than the captures of Marco: --first 2032 (the descent) or more'
+  env['MSX_CHARACTER']=str(a.character)
  if a.victory is not None:env['MSX_VICTORY']=str(a.victory)
+ if os.environ.get('MSX_CHARACTER_WATCH'):env['MSX_CHARACTER_WATCH']='1'
  if a.dump_routines:env['MSX_DUMP_ROUTINES']=a.dump_routines
  assert sum((a.body_trace,a.motion_trace,a.stance_trace,a.idle_trace))<=1,'Block tracers share a debugger latch'
  if a.idle_trace:env['MSX_IDLE_TRACE']='1'
@@ -74,9 +78,12 @@ def main():
  if a.motion_trace:
   env['MSX_MOTION_TRACE']='1'
  with (out/'xvfb.log').open('w') as xlog:
-  server=subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
+  # MSX_DISPLAY=:N: an X server already running (one shared display per agent).
+  shared=os.environ.get('MSX_DISPLAY')
+  server=None if shared else subprocess.Popen([XVFB,'-displayfd','1','-screen','0','1024x768x24','-ac','-nolisten','tcp'],stdout=subprocess.PIPE,stderr=xlog,text=True,env=env)
   try:
-   number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
+   if shared:env['DISPLAY']=shared
+   else:number=server.stdout.readline().strip();assert number.isdigit();env['DISPLAY']=':'+number
    cmd=[MAME,'mslugx','-rompath',str(a.rom_dir.resolve()),'-bios','euro','-video','soft','-sound','none','-window','-skip_gameinfo','-nothrottle','-debug','-debugger','none','-debuglog','-debugscript',str(ROOT/'tools/mame/start.cmd'),'-autoboot_delay','0','-autoboot_script',str(script),'-cfg_directory',str(out/'cfg'),'-nvram_directory',str(out/'nvram')]
    (out/'run-command.json').write_text(json.dumps(cmd,indent=2)+'\n')
    with (out/'mame.log').open('w') as log:subprocess.run(cmd,cwd=out,env=env,stdout=log,stderr=subprocess.STDOUT,check=True,timeout=int(os.environ.get('MSX_CATALOG_TIMEOUT','480')))
@@ -85,5 +92,6 @@ def main():
    sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
    (out/'capture.json').write_text(json.dumps(dict(status='CAPTURED',frames=last-a.first+1,script_sha256=sha(script),plan_sha256=sha(out/'plan.json'),program_fixed_sha256=sha(out/'program-fixed.bin'),program_bank_sha256=sha(out/'program-bank.bin')),indent=2)+'\n')
    print('CAPTURED',last-a.first+1,'frames /',len(rows),'input conditions')
-  finally:server.terminate();server.wait(timeout=8)
+  finally:
+   if server:server.terminate();server.wait(timeout=8)
 if __name__=='__main__':main()

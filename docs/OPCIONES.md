@@ -79,7 +79,12 @@ quiere ese menú en lugar del de soft DIP (el pedido por el usuario).
 - EEPROM 4 Kbit (cabecera del cartucho, `N64_ROM_SAVETYPE = eeprom4k`):
   bloque 0 `MSXO`, versión 1, 8, suma; bloque 1 los ocho bytes. Solo se
   escribe si la elección cambió; un contenido inválido da los de la tabla.
-  Sin memoria persistente nueva (8 KB de fuente solo durante la pantalla).
+  Memoria: la tabla y la fuente (8 KB) solo mientras dura la pantalla; el
+  código (pantalla + EEPROM, ~7 KB) llevó la caché de escena por debajo de su
+  suelo (`RAM budget: 3326 KB left ... (minimum 3332 KB)`), y se recuperó
+  compilando `-Os` código de arranque y de contabilidad por fotograma
+  (`COLD_BOOT_SRCS` del Makefile): de nuevo «3331 KB foreseen» como antes
+  y 208 ranuras.
 - DEMO SOUND OFF: el título (la atracción del port) sin audio. PLAY MANUAL
   OFF: sin HOW TO PLAY. El logo NEOGEO (BIOS) no depende de `10FD8D`.
 - Prueba: `tools/test_options_ares.py` (en `tools/regression_ares.py`): HERO

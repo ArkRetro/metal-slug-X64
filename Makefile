@@ -30,7 +30,13 @@ WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # soldier AI, kernel, animation, contact/collision, camera, gameplay, actor)
 # stays -O2. Integer code only; host checks keep -O0/-O2 (make check).
 HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animation.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_cull.c src/neo_hit.c src/neo_camera.c src/neo_soldier.c src/neo_soldier_action.c src/neo_script.c
-COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c)
+# Boot-only code (the cinematics' loop, the options screen, the character
+# choice), the depth25d path (off in the classic mode) and small per-frame
+# bookkeeping (sound requests, frame counters, pause, fix-layer blit) are
+# cold too: the options screen's ~7 KB came back from them (docs/OPCIONES.md; the scene
+# cache stays at its floor of 208 slots).
+COLD_BOOT_SRCS := src/main.c src/msx_character.c src/retro25d.c src/retro_effects.c src/retro_events.c src/diorama_building.c src/game_audio.c src/msx_perf.c src/neo_pause.c src/hud_renderer.c
+COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c src/msx_options.c $(COLD_BOOT_SRCS))
 $(COLD_OBJS): CFLAGS += -Os
 # make does not see a flag change: the -Os split is recorded in a stamp the
 # kernel objects depend on, rewritten only when the cold list changes. Without
@@ -38,7 +44,7 @@ $(COLD_OBJS): CFLAGS += -Os
 # -O2 from before the split (+4.5 KB, slower logo: the title missed a frame).
 COLD_FLAGS := $(BUILD_DIR)/cold-objs.flags
 COLD_FLAGS_RUN := $(shell mkdir -p $(BUILD_DIR) && echo '-Os $(sort $(COLD_OBJS))' | cmp -s - $(COLD_FLAGS) || echo '-Os $(sort $(COLD_OBJS))' > $(COLD_FLAGS))
-$(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_ramfs.o: $(COLD_FLAGS)
+$(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/msx_options.o $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(COLD_BOOT_SRCS)): $(COLD_FLAGS)
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
 # libdragon normally propagates the toolchain from a .z64 goal. Direct object

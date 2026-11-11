@@ -16,85 +16,86 @@
 #include "msx_audio.h"
 #include "msx_perf.h"
 
-enum { NAME_CHARS=12, PAGE=0x300, MAX_ROWS=NEO_DIPS };
-static uint8_t table[0x400];
-static unsigned table_size;
-/* One row of the screen: its RAM byte, name, options (NULL for a count). */
-typedef struct { uint8_t dip,count; const uint8_t *name,*options; } row_t;
+enum { NAME_CHARS=12, PAGE=0x300, MAX_ROWS=NEO_DIPS, TABLE_MAX=0x400 };
+/* One row of the screen: its RAM byte, option count (0: a count setting),
+ * offsets of its name and first option in the table. The table and the
+ * font are read again for the screen and freed after it (the RAM budget of
+ * the scene cache, docs/MEMORY_OPTIMIZATION.md, has no room to keep them). */
+typedef struct { uint8_t dip,count;uint16_t name,options; } row_t;
 static row_t rows[MAX_ROWS];
-static unsigned row_count;
+static uint8_t row_count;
+static uint8_t *table;                  /* during the screen only */
+static uint8_t *font;                   /* page 3: 256 tiles; then palette 0 */
+static unsigned table_read(void) {
+    FILE *f=fopen("rom:/softdip.bin","rb");
+    if (!f) return 0;
+    unsigned n=(table=malloc(TABLE_MAX))?fread(table,1,TABLE_MAX,f):0;fclose(f);
+    return n;
+}
 
 /* EEPROM: block 0 "MSXO", version, byte count, sum of the bytes, 0; block 1
  * the bytes of 10FD88..10FD8F. */
-static const uint8_t magic[4]={'M','S','X','O'};
 static bool valid(const uint8_t *dip) {
     for (unsigned i=0;i<row_count;i++) {
         const row_t *r=&rows[i];uint8_t v=dip[r->dip];
-        if (r->options?v>=r->count:(v<1 || v>99)) return false;
+        if (r->count?v>=r->count:(v<1 || v>99)) return false;
     }
     return true;
 }
-static uint8_t sum(const uint8_t *dip) {uint8_t s=0;for (unsigned i=0;i<NEO_DIPS;i++) s=(uint8_t)(s+dip[i]);return s;}
-static void save(void) {
-    if (eeprom_present()==EEPROM_NONE) {debugf("MSX OPTIONS no EEPROM: not saved\n");return;}
-    uint8_t b[16]={0};memcpy(b,magic,4);b[4]=1;b[5]=NEO_DIPS;b[6]=sum(neo_softdip);memcpy(b+8,neo_softdip,NEO_DIPS);
-    eeprom_write_bytes(b,0,16);debugf("MSX OPTIONS saved\n");
-}
-static void load(void) {
-    if (eeprom_present()==EEPROM_NONE) {debugf("MSX OPTIONS no EEPROM: defaults of the table\n");return;}
-    uint8_t b[16];eeprom_read_bytes(b,0,16);
-    if (memcmp(b,magic,4) || b[4]!=1 || b[5]!=NEO_DIPS || b[6]!=sum(b+8) || !valid(b+8)) {debugf("MSX OPTIONS EEPROM empty: defaults of the table\n");return;}
-    for (unsigned i=0;i<row_count;i++) neo_softdip[rows[i].dip]=b[8+rows[i].dip];
-    debugf("MSX OPTIONS loaded from EEPROM\n");
+static void header(uint8_t *b,const uint8_t *dip) {
+    uint8_t s=0;for (unsigned i=0;i<NEO_DIPS;i++) s=(uint8_t)(s+dip[i]);
+    memcpy(b,"MSXO",4);b[4]=1;b[5]=NEO_DIPS;b[6]=s;b[7]=0;
 }
 static void log_dips(const char *what) {
     debugf("MSX OPTIONS %s 10FD88=%02X 10FD8A=%02X 10FD8B=%02X 10FD8C=%02X 10FD8D=%02X 10FD8E=%02X 10FD8F=%02X\n",what,
         neo_softdip[0],neo_softdip[2],neo_softdip[3],neo_softdip[4],neo_softdip[5],neo_softdip[6],neo_softdip[7]);
 }
 bool msx_options_init(void) {
-    FILE *f=fopen("rom:/softdip.bin","rb");
-    if (!f) {debugf("MSX OPTIONS rom:/softdip.bin missing: no options screen\n");return false;}
-    table_size=fread(table,1,sizeof(table),f);fclose(f);
-    if (table_size<32) {table_size=0;return false;}
+    unsigned size=table_read();
+    if (size<32) {free(table);table=NULL;debugf("MSX OPTIONS rom:/softdip.bin missing: no options screen\n");return false;}
     /* The strings in the BIOS order: time names, count names, then each list. */
-    const uint8_t *s=table+32,*end=table+table_size;
+    unsigned s=32;bool ok=true;
     for (unsigned t=0;t<2;t++) if (table[16+2*t]!=0xff || table[17+2*t]!=0xff) s+=NAME_CHARS;
-    row_count=0;
     for (unsigned c=0;c<2;c++) {
         if (table[20+c]==0xff) continue;
-        if (s+NAME_CHARS>end) return false;
-        rows[row_count++]=(row_t){(uint8_t)c,0,s,NULL};
+        if (s+NAME_CHARS>size) {ok=false;break;}
+        rows[row_count++]=(row_t){(uint8_t)c,0,(uint16_t)s,0};
         neo_softdip[c]=table[20+c];s+=NAME_CHARS;
     }
-    for (unsigned l=0;l<10 && table[22+l];l++) {
+    for (unsigned l=0;ok && l<10 && table[22+l];l++) {
         uint8_t b=table[22+l],n=b&15,def=b>>4;
-        if (s+NAME_CHARS*(1u+n)>end || !n) return false;
-        if (2+l<NEO_DIPS) {rows[row_count++]=(row_t){(uint8_t)(2+l),n,s,s+NAME_CHARS};neo_softdip[2+l]=def<n?def:0;}
+        if (!n || s+NAME_CHARS*(1u+n)>size) {ok=false;break;}
+        if (2+l<NEO_DIPS) {rows[row_count++]=(row_t){(uint8_t)(2+l),n,(uint16_t)s,(uint16_t)(s+NAME_CHARS)};neo_softdip[2+l]=def<n?def:0;}
         s+=NAME_CHARS*(1u+n);
     }
+    free(table);table=NULL;
+    if (!ok) {row_count=0;return false;}
     log_dips("defaults");
-    load();
+    if (eeprom_present()==EEPROM_NONE) debugf("MSX OPTIONS no EEPROM: defaults of the table\n");
+    else {
+        uint8_t b[8],dip[8],want[8];eeprom_read(0,b);eeprom_read(1,dip);header(want,dip);
+        if (memcmp(b,want,8) || !valid(dip)) debugf("MSX OPTIONS EEPROM empty: defaults of the table\n");
+        else {for (unsigned i=0;i<row_count;i++) neo_softdip[rows[i].dip]=dip[rows[i].dip];debugf("MSX OPTIONS loaded from EEPROM\n");}
+    }
     log_dips("start");
     return row_count>0;
 }
 
 /* The fix font: page 3 of the S-ROM, palette 0 of the fix palettes. */
-static uint8_t *font;
-static uint16_t palette[16];
+#define PALETTE ((const uint16_t *)(font+256*32))
 static bool font_load(void) {
     FILE *f=fopen("rom:/fixed.bin","rb"),*p=fopen("rom:/hud-palette.bin","rb");
-    bool ok=f && p && (font=malloc(256*32))!=NULL && fseek(f,PAGE*32,SEEK_SET)==0 && fread(font,32,256,f)==256 && fread(palette,2,16,p)==16;
+    bool ok=f && p && (font=malloc(256*32+32))!=NULL && fseek(f,PAGE*32,SEEK_SET)==0 && fread(font,32,256,f)==256 && fread(font+256*32,2,16,p)==16;
     if (f) fclose(f);
     if (p) fclose(p);
-    if (!ok) {free(font);font=NULL;return false;}
-    for (unsigned i=0;i<16;i++) palette[i]=(uint16_t)(((uint8_t *)&palette[i])[0]<<8|((uint8_t *)&palette[i])[1]);
-    return true;
+    return ok;
 }
-/* Fix cell (c, r) at screen (8c, 8r - 8), as the HUD (hud_renderer.c). */
+/* Fix cell (c, r) at screen (8c, 8r - 8), as the HUD (hud_renderer.c); the
+ * palette words are big-endian RGBA5551, as the framebuffer's. */
 static void glyph(surface_t *s,unsigned c,unsigned r,uint8_t ch) {
     for (unsigned y=0;y<8;y++) {
         uint16_t *line=(uint16_t *)((uint8_t *)s->buffer+(r*8-8+y)*s->stride)+c*8;
-        for (unsigned x=0;x<8;x++) {unsigned pen=fixed_pixel(font,ch,x,y);if (pen) line[x]=palette[pen];}
+        for (unsigned x=0;x<8;x++) {unsigned pen=fixed_pixel(font,ch,x,y);if (pen) line[x]=PALETTE[pen];}
     }
 }
 static void text(surface_t *s,unsigned c,unsigned r,const uint8_t *t,unsigned n) {
@@ -107,14 +108,15 @@ static void draw(surface_t *s,unsigned cursor) {
     for (unsigned i=0;i<row_count;i++) {
         const row_t *r=&rows[i];unsigned y=9+2*i;
         if (i==cursor) glyph(s,4,y,CURSOR);
-        text(s,6,y,r->name,NAME_CHARS);
+        text(s,6,y,table+r->name,NAME_CHARS);
         uint8_t v=neo_softdip[r->dip];
-        if (r->options) text(s,22,y,r->options+NAME_CHARS*v,NAME_CHARS);
+        if (r->count) text(s,22,y,table+r->options+NAME_CHARS*v,NAME_CHARS);
         else {uint8_t d[2]={(uint8_t)(v>=10?'0'+v/10:' '),(uint8_t)('0'+v%10)};text(s,22,y,d,2);}
     }
 }
 void msx_options_menu(void (*idle)(void)) {
-    if (!row_count || !font_load()) return;
+    if (!row_count) return;
+    if (table_read()<32 || !font_load()) {free(table);free(font);table=font=NULL;return;}
     unsigned cursor=0;bool first=true;joypad_buttons_t was={0};
     uint8_t opened[NEO_DIPS];memcpy(opened,neo_softdip,NEO_DIPS);
     debugf("MSX OPTIONS open\n");msx_frames_stage("options");
@@ -130,7 +132,7 @@ void msx_options_menu(void (*idle)(void)) {
         if (down && cursor+1<row_count) cursor++;
         if (plus || minus) {
             const row_t *r=&rows[cursor];uint8_t *v=&neo_softdip[r->dip];
-            if (r->options) *v=(uint8_t)(plus?(*v+1u<r->count?*v+1u:0u):(*v?*v-1u:r->count-1u));
+            if (r->count) *v=(uint8_t)(plus?(*v+1u<r->count?*v+1u:0u):(*v?*v-1u:r->count-1u));
             else do *v=(uint8_t)(*v+(plus?1:-1)); while (!*v || *v>=100);   /* C1A48A: 1..99 */
             debugf("MSX OPTIONS row=%u value=%02X\n",cursor,*v);
         }
@@ -140,7 +142,9 @@ void msx_options_menu(void (*idle)(void)) {
         display_show(surface);msx_frames_present();
         if (idle) idle();
     }
-    free(font);font=NULL;
+    free(font);free(table);font=table=NULL;
     log_dips("close");
-    if (memcmp(opened,neo_softdip,NEO_DIPS)) save();   /* written only when changed */
+    if (!memcmp(opened,neo_softdip,NEO_DIPS)) return;   /* written only when changed */
+    if (eeprom_present()==EEPROM_NONE) {debugf("MSX OPTIONS no EEPROM: not saved\n");return;}
+    uint8_t b[8];header(b,neo_softdip);eeprom_write(0,b);eeprom_write(1,neo_softdip);debugf("MSX OPTIONS saved\n");
 }

@@ -25,6 +25,7 @@ def main():
     p.add_argument('--range',action='append',required=True,help='lo-hi routine interval (hex)')
     p.add_argument('--attacks',action='store_true',help='record every 0049E8 call of an update (its D0 at 004B96 and A0/A1 at 004B9A/004B9E, 0 on the 004BA4 path) and what 01B162 read of a target (+3C/+40 words, +50): the C shell\'s homing')
     p.add_argument('--ram',action='append',default=[],help='lo-hi RAM interval (hex): every first read of a byte there (input) and every write (output), e.g. the vehicle slots, input words, weapon block and player nodes a vehicle reads')
+    p.add_argument('--births',action='store_true',help='for a node allocated inside a family update (0040BC at 00410E), record the bytes of the new node that the rest of that update read before writing them (the tread node 014A4E the tank 08FF7E steps in the update that creates it): what the pool node held at its birth, instead of its bytes at its own first update')
     p.add_argument('--hit-writes',action='store_true',help='record what 0049E8 (PC 0047xx..0049E7) of an update wrote into the other nodes of the family (the blast 0AA2C6 flashing the van 0A9F0C between the van and its overlay)')
     a=p.parse_args();ranges=[tuple(int(x,16) for x in r.split('-')) for r in a.range]
     rams=[tuple(int(x,16) for x in r.split('-')) for r in a.ram]
@@ -41,7 +42,7 @@ def main():
         if not t:continue
         if t[0]=='F':frame=int(t[1]);continue
         if t[0]=='U':
-            if cur is not None:cur['post']=None;updates.append(cur)
+            if cur is not None:cur.pop('born',None);cur['post']=None;updates.append(cur)
             if rnd_frame!=frame:rnd+=1;rnd_frame=frame
             last_round[int(t[1],16)]=rnd
             r=int(t[2],16)
@@ -56,7 +57,11 @@ def main():
             continue
         if t[0]=='B':famnodes.add(int(t[1],16));last_round[int(t[1],16)]=rnd+1
         if cur is None:continue
-        if t[0]=='V':cur['post']=t[2];updates.append(cur);cur=None;continue
+        if t[0]=='V':
+            if 'born' in cur:
+                cur['births']={'%x'%n:sorted([o,v] for o,v in b.items() if v is not None) for n,b in cur.pop('born').items()}
+                cur['births']={n:b for n,b in cur['births'].items() if b}
+            cur['post']=t[2];updates.append(cur);cur=None;continue
         if t[0] in 'RW':
             ad,mask,data,pc=int(t[1],16),int(t[2],16),int(t[3],16),int(t[4],16)
             if t[0]=='R' and ad in WATCH:
@@ -96,6 +101,13 @@ def main():
                     else:tg[2]=(tg[2]<<16|data)&0xffffffff
             # A node allocated in a family update (0040BC / 00411C write its
             # routine at +00) is a family node from then on.
+            if a.births and 0x1010a4<=ad<0x1010a4+0xb0*100:
+                n=ad-(ad-0x1010a4)%0xb0
+                if n in cur.get('born',{}):
+                    for b,m in ((ad,0xff00),(ad+1,0xff)):
+                        if not mask&m or b-n in cur['born'][n]:continue
+                        cur['born'][n][b-n]=((data>>8)&255 if m==0xff00 else data&255) if t[0]=='R' else None
+                if t[0]=='W' and ad==n and pc==0x410e:cur.setdefault('born',{})[n]={}
             if t[0]=='W' and 0x1010a4<=ad<0x1010a4+0xb0*100 and (ad-0x1010a4)%0xb0==0 and pc==0x410e:famnodes.add(ad);last_round[ad]=rnd+1
             # The allocator 0040BC / 00411C (0040D0..004126) taking a pool node
             # for a family child is not RAM traffic of a --ram range.

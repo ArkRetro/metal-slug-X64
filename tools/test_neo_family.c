@@ -41,6 +41,7 @@ typedef struct {
     int32_t view[4];   /* RAM 10E9D2..10E9D8 as read (0C8BEC), -1: not read */
     int32_t p1xl;      /* RAM 101502: player 1 +3E (low word of the X long), -1: not read */
     int32_t solid_busy; /* RAM 106756: used entries of the solid-body table as read (004E76), -1: not read */
+    int nfsame;        /* bit i: the i-th node field (--node-fields) was not changed by the update */
 } family_update_t;
 #include FAMILY_HEADER
 /* The Mission 3 mid-boss 0A4A94 (neo_m3mid.c): pieces of one long fight
@@ -190,10 +191,12 @@ static bool updated[NN],first_update[NN];
 #endif
 static neo_gactor_t actors[NN+1];
 static uint32_t native_tag(uint32_t recorded) {
-    /* A reused node address: the instance alive now first. */
-    for (unsigned i=0;i<NN;i++) if (node_address[i] && bound[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
+    /* A reused node address: the instance alive now first; the latest of them when an older one left the family's
+     * routines without a recorded deletion (the turret 090A62 turned into the blast 01C706) and still counts as alive. */
+    for (unsigned i=NN;i-->0;) if (node_address[i] && bound[i] && actors[i].active && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     /* A dead address: its latest instance (the gunship's exhaust 01D908 keeps
      * the block of its creator deleted in the same frame). */
+    for (unsigned i=NN;i-->0;) if (node_address[i] && bound[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);   /* one that has lived already (the address of a rotor 047874 deleted before its helicopter is reused later) */
     for (unsigned i=NN;i-->0;) if (node_address[i] && (node_address[i]==recorded || node_address[i]+0x28u==recorded)) return NEO_GA_TAG(i);
     for (unsigned i=0;i<NN;i++) if (node_address[i] && recorded>node_address[i] && recorded<node_address[i]+0xc0u) return NEO_GA_TAG(i)|((recorded-node_address[i])<<16);
     return recorded;
@@ -390,6 +393,7 @@ static neo_genv_t *answer_env;
 static unsigned answer_first,answer_count,answer_used,answers;
 static uint8_t attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     (void)ctx;(void)a;(void)row;
+    if (answer_env && answer_env->attack_pair) return 0;   /* the recorded D0 is the one of the whole call (all its pairs) */
     if (answer_used>=answer_count) {answer_used++;return 0;}
     const int32_t *r=ATTACKS[answer_first+answer_used++];answers++;
     for (unsigned i=0;i<2;i++) {
@@ -933,6 +937,10 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #ifdef FAMILY_PREVIOUS
         previous_node=PREVIOUS[k];
 #endif
+#ifdef FAMILY_NODE_FIELDS
+        uint32_t nf_before[8]={0};
+        {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]) && i<8;i++) nf_before[i]=ga_l(a,nf[i]);}
+#endif
 #ifdef FAMILY_SOLDIER_NODES
         ga_result_t r=soldier_node(ga_l(a,0))?soldier_tick_node(a,&e,u):neo_region_tick(a,&e);
 #else
@@ -1078,6 +1086,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
             {static const unsigned nf[]=FAMILY_NODE_FIELDS;
              for (unsigned k=0;k<sizeof(nf)/sizeof(nf[0]);k++) if (o>=nf[k] && o<nf[k]+4u) {
                  uint32_t v=native_tag((uint32_t)u->post[nf[k]]<<24|(uint32_t)u->post[nf[k]+1]<<16|(uint32_t)u->post[nf[k]+2]<<8|u->post[nf[k]+3]);
+                 if (k<8 && (u->nfsame&(1<<k))) v=nf_before[k];
                  want=(uint8_t)(v>>(24-8*(o-nf[k])));
              }}
 #endif

@@ -14,6 +14,8 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+p.add_argument('--back',type=float,default=0,help='every BACK seconds, hold left for 1.5 s (0: never)')
+p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
@@ -47,7 +49,7 @@ try:
         assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
         if re.search(r'MSX CINE select (start|waiting)',log()):
             time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7-a.stage)];tap('a');time.sleep(.5)
+            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7-a.stage)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
             continue
         # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
         # or the press lands on SOLDIER SELECT and chooses before the menu combo.
@@ -69,7 +71,10 @@ try:
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
         if cam>=a.until:break
-        hold('Right',True);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        # --back T: every T seconds the pad faces left for 1.5 s (an enemy behind the walker at a camera stop, the tank
+        # 08FF7E at the screen's edge, is never hit by a pad that only holds right).
+        back=bool(a.back) and (t%a.back)>a.back-1.5
+        hold('Right',not back);hold('Left',back);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

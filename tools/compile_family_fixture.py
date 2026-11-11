@@ -192,8 +192,18 @@ def main():
         L.append('#define FAMILY_STAMPS {%s}'%','.join('{0x%x,0x%x,0x%x}'%t for t in st))
     L+=[
        'static const family_node_t %s_nodes[]={'%n]
-    for u,cr in order:
-        pre=bytes.fromhex(u['pre'])
+    # Births (extract_family_fixture.py --births): the bytes a node made inside a family update held at its birth, where
+    # the rest of that update read them before writing (the tread node 014A4E, stepped by its tank in the update that
+    # creates it): the native spawn starts from them, not from the node's bytes at its own first update.
+    births={}
+    for k,u in enumerate(d['updates']):
+        for nd,b in u.get('births',{}).items():
+            k2=next((j for j in range(k+1,len(d['updates'])) if d['updates'][j]['node']==nd),None)
+            if k2 is not None and order[inst[k2]][0] is d['updates'][k2]:births[inst[k2]]=b
+    for i,(u,cr) in enumerate(order):
+        pre=bytearray(bytes.fromhex(u['pre']))
+        for o,v in births.get(i,[]):
+            if o>=0x10:pre[o]=v
         L.append('{%d,0x%x,%d,{%s}},'%(cr,u['routine'],u['frame'],','.join(str(x) for x in pre[:0xb0])))
     L.append('};')
     # RAM the update read (first read of each byte) and wrote, in the --ram
@@ -326,10 +336,14 @@ def main():
                 marks.append((s32(wv[0]<<16|wv[1]),s32(wv[2]<<16|wv[3]),wv[4]>>8,wv[4]&255))
             break
         nm=len(marks);marks+=[(0,0,0,0)]*(8-len(marks))
-        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},%d,%d,{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d},%d,%d},'%(
+        # Node fields (--node-fields) the update left as they were: compared with the native field before the update,
+        # not through the node correspondence (a stale address, the rotor 047874 deleted before its helicopter, may
+        # belong to another node by then).
+        nfsame=sum(1<<i for i,x in enumerate(a.node_fields.split(',')) if u['post'] and pre[int(x,16):int(x,16)+4]==post[int(x,16):int(x,16)+4]) if a.node_fields else 0
+        L.append('{%d,%d,0x%x,%d,{%s},%d,{%d,%d,%d,%d},%d,%d,{%d,%d,%d,%d},%d,%d,%d,%d,%d,%d,%d,%d,%d,{%s},{%s},{%s},%d,%d,{%s},{%s},%d,%d,%d,{%s},%d,%d,%d,%d,{%d,%d,%d,%d},%d,%d,%d},'%(
             u['frame'],inst[k],u['routine'],1 if u['post'] else 0,','.join(str(x) for x in post[:0xb0]),
             rmask,*rv,opt(corr),tmask,*tv,opt(tcorr),opt(rd(u,0x101500)),opt(rd(u,0x101504)),opt(rd(u,0x10c44e)),-1 if hex(0x10c44e) not in u['reads'] else u['reads'][hex(0x10c44e)][1]&255,front,opt(rd(u,0x10c33a)),
-            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),*wspans[k],','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)],opt(rd(u,0x101502)),solid_busy(u)))
+            -1 if cur is None else cur,progress,','.join(map(str,groups)),','.join('{%d,%d,%d}'%x for x in dyn),','.join('{%d,%d}'%r for r in ring),*wspans[k],','.join('{%d,%d}'%x for x in ext),','.join(map(str,boxes)),opt(kill),opt(rd(u,0x10c068)),nm,','.join('{%d,%d,%d,%d}'%m for m in marks),*spans[k],*[opt(rd(u,0x10e9d2+2*i)) for i in range(4)],opt(rd(u,0x101502)),solid_busy(u),nfsame))
     L.append('};')
     if a.attacks:
         rom={}

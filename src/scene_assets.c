@@ -35,8 +35,10 @@ enum {
      * heap left after the audio, so whatever loads before shrinks it).
      * 200 since the Mission 4 props (neo_m4props.c: 13 KB of code and
      * tables took the 208th slot, docs/MISION4.md); the three sets above
-     * need 197. */
-    SCENE_EXPANDED_MIN_SLOTS=200,
+     * need 197. 197 since the Mission 5 tank 08FF7E (neo_m5enemy.c: 15 KB
+     * of code; 199 slots measured, docs/MISION5.md): the floor is now the
+     * need itself, the next module does not fit without freeing RAM. */
+    SCENE_EXPANDED_MIN_SLOTS=197,
     /* Slots left for the streamed actors once the map is pinned. */
     SCENE_EXPANDED_STREAM_SLOTS=128,
     SCENE_IDLE_MARGIN_US=1200,     // idle decodes end this long before the next blank

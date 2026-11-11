@@ -661,6 +661,20 @@ dirección) y de cada programa, orden por orden, es el mismo (los bloques se
 listan por dirección de ROM: la versión 2 pone los propios antes que los
 prestados). `PASS: … the same 21795966 bytes …`.
 
+**Bloques que se solapan.** `scene_stage_rom` sirve una dirección desde el
+primer registro que la contiene. Con el grupo `m3` en la M5 (`ea69b0e`), la
+tabla de rangos `2D388E` (306 B, grupo `m5`, la lee `neo_m5train.c`) empieza
+en los 2 últimos bytes del bloque `2D36A4` (492 B, grupo `m3`): en el orden
+del JSON (formato 4 y el paquete de versión 1 de `ccr`) se servía desde
+`2D36A4` y una lectura de la tabla seguía más allá de ese bloque; la prueba
+de identidad lo vio como `blob 2d388e served=0` (formato 4) frente a
+`served=1` (versión 2, que ponía los propios primero). Ahora los registros
+van por final descendente en las dos versiones (una dirección se sirve del
+bloque con más bytes detrás) y el empaquetador exige que los bloques que se
+solapan tengan los mismos bytes (los tres solapes que hay: `2D36A4`/`2D388E`,
+`039516`/`039542`, `0BBAC8`/`0BBAEC`, iguales). La prueba pasa con los
+paquetes reconstruidos sobre `ccr` `59fee85`.
+
 ### Resultado
 
 | | Antes (`91cf7f6`) | Después |

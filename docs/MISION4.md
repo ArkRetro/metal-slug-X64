@@ -648,6 +648,13 @@ La fruta de los animales: otras seis réplicas con el mando parado desde 151310 
 151480 (`scratchpad/agA/tryfruit.sh`: busca escrituras con PC en `2896B2..`): ninguna suelta fruta (nueve réplicas
 con las tres de antes); sigue pendiente.
 `MSX_FULL_HOP` + `MSX_FULL_IDLE` sirve para forzar más situaciones desde `sec05` (un jugador parado que salta).
+Cuarta sesión, el prisionero que pelea (raíces `99e06,de0fe,de24a`, `scratchpad/agA/capP.sh` / `capQ.sh`): `run4` sin
+disparo desde 153720 (`MSX_FULL_NOFIRE`, hasta 157600), mando parado desde 156880 con saltos desde 157200 y mando
+parado desde 153720 con saltos desde 156880 (hasta 158400): en las tres el prisionero vive hasta el final disparando
+(`0DDE9E`, `0DE18E`) y **ni puñetazo ni despedida**. La despedida pide que el jugador muera, y las capturas lo hacen
+invulnerable (`101523` bit 6, `capture_fullgame.lua`): se probó a borrar el bit desde 153720 y no volver a ponerlo,
+pero el propio juego lo pone otra vez dos fotogramas después (escritor sin identificar; hace falta un punto de
+vigilancia del depurador de MAME en `101523`). Siguen pendientes.
 
 **No hecho**: el jefe `02267E` (captura T, 95 rutinas), el fin de misión, las celdas de las copias de `0E6DA8` del
 camino del jefe y la conexión del rótulo (`MSX_PICKUP_LABEL` sigue en 0): sus letras tienen que estar en la
@@ -667,10 +674,16 @@ con `m4veh`..`m4veh4` y la prueba de `programs.bin`); `tools/test_mission4_ares.
 `heap_low` 308 KB (la prueba ya no pulsa START fuera de las cinemáticas: la pulsación caía en la partida y era la
 pausa de la ROM; `cinematic_running`). Misión 1 entera con `mslugx-reference.z64`: PASS.
 
+Tras fusionar `ccr` (tercer lote de la M5, `40bbf40`): la imagen sube a 2 197 664 bytes y el cartucho a
+67 207 168 (**pasa de 67 043 328: ares no escribe log**), así que las dos pruebas de ares se repitieron con
+`romfs/mission6.pack` apartado (cartucho 65 994 752) y devuelto después: M4 `RESULT: PASS`, **211 ranuras**,
+`heap_low` 284 KB, 0 paradas del mundo; M1 → M2 `RESULT: PASS`, 212 ranuras; `make check` RC 0 en el árbol fusionado.
+
 **El vehículo no se ha visto en ares**: con el cartucho de referencia (jugador invulnerable) y el mando de la prueba
 (derecha + salto + disparo, 760 s) la cámara se queda en 4360 con el jugador contra el borde derecho (x 4622..4651;
-los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. No se ha investigado si es el mando
-(no dispara hacia arriba a los helicópteros `085522`) o una espera del guion mal resuelta; el mortal muere en 2160.
+los grupos del guion pasan por 1, 2, 0) y el registro de `0587C4` está en 4713. El log da ahí `MSX camera autoscroll=0 progress=4360` (una orden de cámara del guion)
+y los grupos siguen con enemigos vivos: lo probable es que el mando de la prueba no los mate (no dispara hacia
+arriba a los helicópteros `085522`), pero no se ha comprobado contra `run4`; el mortal muere en 2160.
 Paradas nuevas vistas en ese recorrido largo: `routine=1fece` y `routine=2058e` (una vez cada una), `7e832` (4).
 
 **Siguiente paso**: (0) por qué la cámara se queda en 4360 en ares; (1) el jefe `02267E` con la captura T (`scratchpad/boss4.txt`): ya hay memoria (≈ 4 ranuras

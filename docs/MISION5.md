@@ -388,9 +388,91 @@ disco lleno (`No space left on device`, árbol compartido al 100 %); se repitió
 así que hay que rehacerlo allí (`python3 tools/build_packs.py 5`, que rehace también el de la M6) cuando el agente
 de la M4 deje el suyo; `filesystem/mission5/rest-native.json` (compartido) ya lleva la exportación nueva.
 
+### Fase 2, tercera tanda (11-XI, agente B tras el reinicio del contenedor)
+
+**El tanque de la calle `08DCB2` y su torreta `08EB18`** (`src/neo_m5enemy.c`, nuevo; registro `2DCF1A`, cámara 408). En
+`run4` (captura `T`) el jugador lo destruye en 140 fotogramas y solo se ven 12 de sus estados, así que se hizo una
+captura propia: **`K`** (`fam/K`, réplica de `run4` desde `sec06_247661` con `MSX_FULL_NOFIRE=248100-249600`, raíces
+`8dcb2,8eb18`, 248100..249900; guion en el scratchpad, `b/capK.sh`): el tanque espera, arranca, avanza, gira en los
+bordes (30 / 110), apunta, dispara ocho proyectiles en ráfagas y muere en 249798. Familia **`m5tank`: 18 nodos, 1971
+actualizaciones iguales a MAME** (tanque, torreta, fogonazos `08EFFA`, proyectiles `08F058`; 274 820 bytes, 5 contactos
+con el jugador). Traducido: `08DCB2..08E19C` (todos los estados del registro, también `08DDA2` con `+95`), la torreta
+`08EB18..08EF3C` con sus tres tablas de órdenes `08FEF0/08FF14/08FF38` (`jmp (a1)` en la misma actualización), el
+proyectil `08F058/08F1A0`, y los servicios `08F1EE..08FBC6`. Las otras entradas del módulo (`08DCF4`, `08DD08`,
+`08DD16`, `08DD24`, `08DD2C` → `08E19E..08EB16`) no las crea ningún registro de la M5 y no están traducidas (parada
+explícita). `08EF46` es la comprobación del cartucho (`2FFFE0`): como en `neo_armored.c`, acaba en `004188`.
+
+- **`0260C8` de tipo 2** (`2CED8E`, las actualizaciones antes de disparar): el byte de la fila elige un grupo de 8
+  palabras y `0029C6` una de ellas. `ga_rank_word` (motor compartido) solo devuelve el byte; el tanque lo completa en
+  su propio `rank` (sin tocar el motor).
+- Datos: programas `28AEF0..28C32C` y `22D264` (`extract_soldier_programs.py`), `region_rom.json` (`2CECCA`, `2CED2C`,
+  `2CED8E`, `2CEE00`, `2CEE1A`, `2CEE34`, `08FC0A..08FF77`, `28B77C`); paletas `22B` (tanque), `306`, `208`, `373` y
+  **`892`** (los premios de clase 0x55 de los coches: sale de los volcados de `T`; los 7 dibujos sin paleta del
+  recorrido ya no faltan). La `347` (variante `+89 = 1`) no la crea la M5 y no se exporta.
+- En ares (calle, `--fire`): el tanque nace nativo en la cámara 409, con su dibujo y su paleta, es sólido (Marco se sube
+  encima, `004E76`) y dispara. El caminante de la prueba se queda encima disparando por encima de él, no lo destruye y
+  el guion espera en la cámara 600 (`2DCF6E`, condición): **la siguiente parada del guion de la calle es `2DCF7C`
+  (`08FF7E`)**, todavía sin ver en el recorrido.
+
+**Los 21 157 píxeles distintos de la validación de sprites: explicados, quedan 268 en 13 de 756 fotos.** No eran
+descriptores mal exportados sino tres defectos del validador (`export_rest_sprites.py`, `validate`):
+
+1. Un nodo borrado, o que sale del intervalo de rutinas (un coche que pasa a ser la explosión `01C71E`), dejaba de
+   contar actualizaciones: «la actualización anterior» del segundo intento era para él una más vieja que para los demás.
+   Ahora toda actualización de un nodo de la familia cuenta (sin entradas si borra o está fuera del intervalo).
+2. El juego va más lento que la pantalla (una actualización del juego dura 2 a 4 fotogramas) y el volcado puede caer
+   en medio del recorrido de la lista: unos nodos enseñan su última actualización y otros la anterior, y un nodo recién
+   creado o recién convertido no tiene entradas anteriores. Tercer intento: por nodo, la de las dos que está en
+   pantalla.
+3. Un sprite de fuera de la familia dibujado con un número de paleta que también usa la familia (el fuego `01C9E6` y la
+   explosión `01C706` de un proyectil comparten recurso) tapa el de la familia: se cuenta aparte (`pixels_covered`,
+   13 590), no como diferencia.
+
+Con las siete capturas (`K`, `T`, `M`, `W`, `G`): **1 215 989 píxeles iguales, 268 distintos** (antes 21 157), 30 966
+solapados entre sprites de la familia. Los 268 (calle 248070..248130, 249450..249570, 250770/250800; alcantarilla
+275220, 275670, 275700) son todos píxeles donde el volcado tiene **otro lápiz del mismo número de paleta** (ninguno
+vacío): otro sprite con la misma paleta encima (en 248070, dos ruedas `37C`); no se ha identificado cuál en cada foto.
+
+**El helicóptero suelto `0474B6`** (`neo_heli.c`, junto a la formación de la M1 con la que comparte rotor `047874`,
+bomba `047B34..`, muerte `048B06..` y los servicios `0499A4`, `049A92`, `049E46/74`). Traducidos sus 16 estados
+`0474B6..047872`, los servicios `049324`, `04936C` (con `049CB2` y `01B12E`: el ángulo de bombardeo `+80` de la tabla
+`0E0962[+70]` y el x que lo da), `049A1E`, `049B20` (la inclinación `+96` en nueve pasos, con el acarreo de la última
+comparación o suma del original), `049E9E`, `049ECE`, `049F9E`, `01B04A`, `04900C/049166`, el lanzador `0479B8`, la bomba
+`047AFC` (rango `2D18F0`) y el callback `04A1AE`. Familia **`m5heli`: 46 nodos, 2037 actualizaciones iguales a MAME**
+(captura `T` cortada en 250760, antes de que nazca el `047F7E`: los dos primeros helicópteros de la calle con sus
+rotores, 19 lanzadores, 19 bombas y sus dos muertes, 249523..250531). **Sin cubrir por la captura** (traducido, no
+probado): la marcha `04783A/047856` (`049ECE`, cuando se agota `+86`) y las ramas de `049CB2` con vecinos marcados.
+Datos: `2D146C`, `0E0C32` (16 bytes, separados del bloque `m3` que empezaba ahí), programas `244792..2447BC`.
+
+**Lo siguiente** (sin hacer en esta tanda): `08FF7E` (calle, cámara 600: `08FF7E..0913xx`, con `090A62`, `091290`,
+`0912EE`); el otro helicóptero suelto `047F7E` (calle 1208 y metro: estados `047F7E..0484FE`, servicios `04940C`
+(1 KB, lógica de dos jugadores) y `049862`, lanzador `047A12`, bomba `047B10`, callback `04A208`; la captura `T` solo
+tiene sus estados hasta `048254`; el bombardeo `04828E..048504` solo ocurre en el metro y la captura `M` no lleva esas
+raíces: hay que repetirla con `474b6,47f7e,479b8,47a12,47afc,47b10`); después `0AF1A8`, trenes `051344`, `0D3B36`,
+los soldados de la alcantarilla `08996A/089948/08995A`, `095C98`, el jefe `0A0C00` y las palabras de sonido.
+
+**Puertas de la tercera tanda (11-XI, `work-m5` con `ccr` `0cc0d53` fusionado: personajes y pausa, fase 2 de la M4)**:
+`make -j4` RC 0; `make check` RC 0 (**253 PASS**, con `m5tank` y `m5heli`; lanzado con `HOST_CFLAGS=... -pipe` porque el
+disco compartido no daba para los temporales del compilador); `test_mission5_ares.py` sobre `mslugx-explorer.z64`,
+etapas 1, 2 y 3 (`--fire`): `RESULT: PASS`, 0 dibujos sin descriptor. Calle: el tanque nativo en la cámara 409; cuando
+el caminante lo destruye el guion sigue y se para en **`2DCFA4` (`08FF7E`)**. Metro: el guion pasa de `2DDBBE`, el
+helicóptero `0474B6` nace nativo en la cámara 80 y bombardea (el caminante muere 3 veces y no pasa de ahí en 80 s; la
+siguiente parada del guion del metro no se ha visto). Alcantarilla: parada en `2DEA8C` (sin cambios).
+`tools/test_m1m2_ares.py` no se ha repetido en esta tanda (no estaba en las puertas pedidas).
+
+Notas para el coordinador: (1) `romfs/scene.pack` depende ahora de `data/soldier_programs.json` (sus imágenes se
+empaquetan en el orden de los programas; sin esa dependencia `test_pack_compression` fallaba al añadir programas): el
+primer `make` de cada árbol lo rehace, y hay que rehacer los paquetes de misión (`python3 tools/build_packs.py`) en
+`ws-logo/romfs`. (2) Durante un minuto `ccr` tuvo la fusión `99c4476` hecha con el árbol de `work-m5` solo (sin los 19
+commits de la M4 que acababan de entrar); `8d75f1a` restauró el árbol de `0cc0d53` y la fusión buena va encima.
+(3) El disco compartido llegó al 100 % (1,4 MB libres) dos veces; el clasificador de permisos denegó borrar los CSV
+de las capturas `fam/*` del agente anterior (`layers.csv`, `actorstate.csv`, `platforms.csv`, unos 80 MB) y comprimir
+sus trazas: siguen ahí. La captura propia `K` se borró tras hacer la familia y la exportación (se rehace con
+`b/capK.sh`: `MSX_FULL_NOFIRE=248100-249600`, raíces `8dcb2,8eb18`, desde `sec06_247661`).
+
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: quedan **79 constructores sin portar (78 propios), 1707 creaciones** (eran 103 y 2583 al
+1. **Actores nuevos**: quedan **74 constructores sin portar (73 propios), 1317 creaciones** tras la tercera tanda (eran 79 y 1707 tras la segunda) (eran 103 y 2583 al
    acabar la fase 1) ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
    constructores del guion; 141 registros del guion que `run4` no ejecutó
    necesitan captura propia. Primer paso: los registros donde se para el

@@ -30,10 +30,10 @@
  * The cartridge check (2FFFE0) before the deletions is not reproduced (it
  * falls through to 004188 on genuine hardware).
  *
- * Not in Mission 1 and not translated (explicit stops): the lone
- * helicopter 047F7E..048510 (states 047800/04783A/048002..0484FE with the
- * droppers 0479B8/047A12 and bombs 047AFC/047B10 of the callbacks
- * 04A1AE/04A208), the spawn word +6E > 0x13 (trap #15 "takasa err"), the
+ * The lone helicopter 0474B6 of Mission 5 (0474B6..047872, its dropper
+ * 0479B8 and bomb 047AFC) is further down. Not translated (explicit stops):
+ * the other lone helicopter 047F7E..0484FE (dropper 047A12, bomb 047B10,
+ * callback 04A208), the spawn word +6E > 0x13 (trap #15 "takasa err"), the
  * timed explosion 048CD2 (unreachable: 048C36 tests the high byte of the
  * word +8C). 048AB6 (the points) is translated but was not recorded. */
 #define B(o) ga_b(a,(o))
@@ -615,6 +615,17 @@ static ga_result_t dropper_tick(neo_gactor_t *a,neo_genv_t *e) {
         on_creator(a,e);SL(0,0x47ae0);
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     }
+    case 0x479b8: {                                                     /* the lone helicopter's dropper */
+        neo_gactor_t *p=creator(a,e);
+        if (!p) {ga_fail(e,0x479b8);return GA_UNSUPPORTED;}
+        if (ga_b(p,0x15)&1u) SET(0x15,0); else CLR(0x15,0);
+        SW(0x80,ga_w(p,0x80));SB(0x96,ga_b(p,0x96));
+        if (S8(B(0x96))>7) SB(0x96,(uint8_t)(0u-(uint8_t)(B(0x96)-0x0eu)));
+        START(0x244dd6);
+        SB(0x1d,0);ga_palette(a,0x22);SW(0x66,0x8600);SW(0x1e,0x8600);  /* 047AAA */
+        on_creator(a,e);SL(0,0x47ae0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
     case 0x47ae0: {
         ga_project(a,e);
         int r=ga_anim_step(a,e,heli_call);
@@ -631,10 +642,10 @@ static ga_result_t dropper_tick(neo_gactor_t *a,neo_genv_t *e) {
 static bool heli_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter) {
     (void)parameter;
     if (kind!=NEO_ANIM_CALL) return false;
-    if (routine==0x4a1aeu || routine==0x4a208u) {ga_fail(e,routine);return true;}
-    if (routine!=0x4a262u) return false;
+    if (routine==0x4a208u) {ga_fail(e,routine);return true;}             /* the bomb 047B10 of the helicopter 047F7E: not translated */
+    if (routine!=0x4a262u && routine!=0x4a1aeu) return false;
     if (B(0x60)) return true;
-    child_at(a,e,0x47b24,0,0);
+    child_at(a,e,routine==0x4a1aeu?0x47afcu:0x47b24u,0,0);
     neo_gactor_t *c=after_script(a,e,0x47de0,0,-8);
     if (c) {
         ga_sb(c,0x96,B(0x96));
@@ -646,8 +657,9 @@ static bool heli_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_
 static ga_result_t bomb_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t pc=L(0);
     for (unsigned guard=0;guard<4;guard++) switch (pc) {
+    case 0x47afc:
     case 0x47b24: {
-        SW(0x76,rank(a,e,0x2d19b4));
+        SW(0x76,rank(a,e,pc==0x47afcu?0x2d18f0u:0x2d19b4u));
         SB(0x1d,0);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);
         ga_palette(a,0x22);ga_palette(a,0x178);ga_palette(a,0x179);ga_palette(a,0x202);
         SB(0x14,B(0x19));
@@ -736,6 +748,296 @@ static ga_result_t shell_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+/* ---- the lone helicopter 0474B6 (Mission 5 street and metro; script records
+ * with +6E altitude index, +70 the angle set of 0E0962, +72 its stay) --------
+ * 0474B6: 01ABC8, +86 = (+72 << 5) & 7FFF (049EBE), hurtbox E0AB2, palette
+ * 20, flash 15C, +4E = rank 2D146C, +76 = rank 2D1A16 (top speed), facing left
+ * when born left of A0, the rotor 047874 (0040BC, +60 = 0), program 244712.
+ * 04755A: sound 10E8. 04756A: 049324 (+7A = 100 + 16 * +6E, +78 = the nearest
+ * player's x or A0, +7C = that player), 0499A4, 049A92, 0143E4, 00427A;
+ * within 16 px (049E46) -> 047598: stopped, program E0C32[+96 & 3]; 0475CE:
+ * the hover 049E9E (+82 -= 4, +34 = the y of 4000 along it), at the program's
+ * end 0475EE: +84 = rank 2D1592, +7C = a player (01B04A); 047608: program
+ * 24473E, +9B = +A8 = +90 = 0. 047630: 049E9E, 04936C (the target x: by the
+ * angle to the player 16 px higher (049CB2, 01B12E) the bombing angle +80 of
+ * the set 0E0962[+70] and the x that gives it; at the screen's sides 18 / 128
+ * the player's x, +80 = C0, +9B = FF), 049F9E (speed +90 up to +76 towards
+ * (+78, +7A), there at once inside +90 px), 0143E4, 049B20 (the bank +96 by
+ * +30, nine steps, held by the bank of +80 unless +9B; facing left from 5),
+ * 00427A; at the x (049E74, 2 px) or +84 run out -> 04768E; 049ECE (+86 run
+ * out) -> 04783A. 04769C: stopped; a player alive (01B04A): +9B -> 047608;
+ * +84 = 0 and +30 = 0 -> 04771A; else off the x by more than 14 px -> 047608.
+ * 047720: the bank +96 a step per update to the one of +80 (E09F4), then
+ * 04778E: +98 = rank 2D177C bombs, one every +97 = rank 2D18A2 updates
+ * (0477BE: the dropper 0479B8, 0040BC with D0 = 2A), then 0475EE again.
+ * 04783A: +7A = 2FF, program 24473E; 047856: 049A1E, 0143E4, 049B20: it leaves
+ * upwards. Every state ends in 04900C: 004C24, +5F bit 7 -> 048B06, outside
+ * E0AA2 (049166): +61 = FF, 004188.
+ * The dropper 0479B8 (facing, +80 and the bank of the helicopter; program
+ * 244DD6 with the sound 10FF and the callback 04A1AE: the bomb 047AFC, speed
+ * rank 2D18F0, and the shell 047DE0). */
+static neo_gactor_t *kid(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,uint16_t reserve) {   /* 0040BC, no placement */
+    return e->spawn_reserve?e->spawn_reserve(e->ctx,a,routine,reserve):e->spawn?e->spawn(e->ctx,a,routine,false):NULL;
+}
+static uint8_t rbx(neo_genv_t *e,uint32_t address) {const uint8_t *p=ga_rom(address);if (!p) {ga_fail(e,address);return 0;} return p[0];}
+static uint16_t rwx(neo_genv_t *e,uint32_t address) {const uint8_t *p=ga_rom(address);if (!p) {ga_fail(e,address);return 0;} return (uint16_t)(p[0]<<8|p[1]);}
+#define P1_NODE 0x1014c4u
+#define P2_NODE 0x101574u
+static uint16_t node_x(const neo_genv_t *e,uint32_t node) {return node==P2_NODE?e->players.p2x:e->players.p1x;}
+static uint16_t node_y(const neo_genv_t *e,uint32_t node) {return node==P2_NODE?e->players.p2y:e->players.p1y;}
+/* 01AF9A: the nearest live player's node; carry (true) when none (player 1). */
+static bool lone_nearest(neo_gactor_t *a,neo_genv_t *e,uint32_t *node) {
+    unsigned m=e->players.active_mask&0xffu;
+    *node=P1_NODE;
+    if (!m) return true;
+    if (m==1u) return false;
+    if (m==2u) {*node=P2_NODE;return false;}
+    uint16_t d1=(uint16_t)(e->players.p1x-W(0x3c)),d2=(uint16_t)(e->players.p2x-W(0x3c));
+    if (d1&0x8000u) d1=(uint16_t)(0u-d1);
+    if (d2&0x8000u) d2=(uint16_t)(0u-d2);
+    if (S16(d2)<S16(d1)) *node=P2_NODE;
+    return false;
+}
+/* 01B04A: player 1, 2 or (both live) one at random; carry when none. */
+static bool lone_any(neo_genv_t *e,uint32_t *node) {
+    unsigned d0=e->players.active_mask&0xffu;
+    if (d0>=3u) d0=(ga_rand(e)&1u)+1u;
+    *node=d0==2u?P2_NODE:P1_NODE;
+    return d0==0;
+}
+/* 049324 / 04936C head: the altitude +7A (trap #15 "takasa err" past 13). */
+static bool lone_altitude(neo_gactor_t *a,neo_genv_t *e) {
+    if (W(0x6e)>0x13u) {ga_fail(e,0x49330);return false;}
+    SW(0x7a,W(0x6e)*16u+0x100u);
+    return true;
+}
+/* 049CB2: the bombing angle +80 of the set 0E0962[+70] for the angle to the
+ * player +7C (16 px higher: 01B12E) and the x +78 that gives it; carry when
+ * both neighbours of the angle are marked (+80 = FFFF). */
+static bool lone_angle(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t node=L(0x7c);
+    int16_t d0=(int16_t)(neo_angle(S16((uint16_t)(node_x(e,node)-W(0x3c))),S16((uint16_t)(node_y(e,node)+0x10u-W(0x40))))&0xffu);
+    uint32_t t=(uint32_t)rwx(e,0xe0962u+4u*W(0x70))<<16|rwx(e,0xe0962u+4u*W(0x70)+2u);
+    if (e->unsupported) return false;
+    unsigned i=0;
+    for (;;) {
+        if (d0<S16(rwx(e,t+4u*i))) break;
+        i++;
+        if (rwx(e,t+4u*i)==0xffffu || e->unsupported) {ga_fail(e,0x49e42);return false;}   /* trap #15 */
+    }
+    if (!i) {ga_fail(e,0x49cfa);return false;}                           /* the entry before the first: outside the table */
+    unsigned d5=(rwx(e,t+4u*i+2u)?1u:0u)|(rwx(e,t+4u*i-2u)?2u:0u);
+    int16_t d7=S16(rwx(e,t+4u*i)),d6=S16(rwx(e,t+4u*i-4u)),d1;
+    if (d5==3u) {SW(0x80,0xffff);return true;}
+    if (d5) d1=(d5&2u)?d7:d6;
+    else {
+        int16_t n1=(int16_t)(d6-d0),n2=(int16_t)(d7-d0);
+        if (n1<0) n1=(int16_t)-n1;
+        if (n2<0) n2=(int16_t)-n2;
+        d1=n1>n2?d7:d6;
+    }
+    if (d1<0x80) {SW(0x80,(uint16_t)(0u-(uint16_t)d1)&0xffu);SW(0x78,W(0x3c)+(uint16_t)(d1-d0));}
+    else {SW(0x80,d1);SW(0x78,W(0x3c)-(uint16_t)(d1-d0));}
+    return false;
+}
+/* 04936C */
+static void lone_target(neo_gactor_t *a,neo_genv_t *e) {
+    if (!lone_altitude(a,e)) return;
+    if (B(0x9b)) return;
+    uint32_t node=L(0x7c);
+    bool live=(node==P1_NODE && (e->players.active_mask&1u)) || (node==P2_NODE && (e->players.active_mask&2u));   /* 01AEDA */
+    if (!live) {lone_nearest(a,e,&node);SL(0x7c,node);}
+    if (lone_angle(a,e)) SW(0x78,node_x(e,L(0x7c)));
+    if (S16(W(0x3c))<0x18) {SW(0x78,node_x(e,L(0x7c)));SW(0x80,0xc0);SB(0x9b,0xff);}
+    if (S16(W(0x3c))>0x128) {SW(0x78,node_x(e,L(0x7c)));SW(0x80,0xc0);SB(0x9b,0xff);}
+}
+/* 049E9E: the hover. */
+static void lone_hover(neo_gactor_t *a) {
+    SW(0x82,(W(0x82)-4u)&0xffu);
+    uint32_t vx,vy;ga_polar(0x4000,(uint8_t)W(0x82),&vx,&vy);SL(0x34,vy);
+}
+/* 049ECE: carry once the stay +86 has run out (it stays at 1). */
+static bool lone_leave(neo_gactor_t *a) {
+    if (!W(0x86)) return false;
+    SW(0x86,W(0x86)-1u);
+    if (W(0x86)) return false;
+    SW(0x86,1);return true;
+}
+/* 049F9E: the speed +90 (+ d0 per update, at most +76) towards (+78, +7A);
+ * inside +90 px it is put there (the projected longs; +30 cleared twice, +34
+ * kept, as the original). */
+static void lone_fly(neo_gactor_t *a,neo_genv_t *e,uint16_t accel) {
+    if (W(0x6e)>0x13u) {ga_fail(e,0x49fb0);return;}
+    int32_t d=(int32_t)((uint32_t)distance(W(0x78),W(0x6e)*16u+0x100u,W(0x3c),W(0x40))<<16);
+    if (!(d>(int32_t)((uint32_t)W(0x90)<<8))) {
+        SL(0x30,0);
+        SL(0x3c,(uint32_t)W(0x78)<<16);SL(0x40,(uint32_t)W(0x7a)<<16);
+        SW(0x90,0);
+        return;
+    }
+    SW(0x90,W(0x90)+accel);
+    if (S16(W(0x76))<S16(W(0x90))) SW(0x90,W(0x76));
+    uint8_t ang=neo_angle(S16((uint16_t)(W(0x78)-W(0x3c))),S16((uint16_t)(W(0x7a)-W(0x40))));
+    SB(0xaa,ang);
+    uint32_t vx,vy;ga_polar((uint32_t)W(0x90)<<8,ang,&vx,&vy);SL(0x30,vx);SL(0x34,vy);
+}
+/* 049A1E: as 0499A4 with the speed distance << 12. */
+static void lone_steer(neo_gactor_t *a) {
+    int16_t dx=(int16_t)(S16((uint16_t)(W(0x78)-W(0x3c)))>>1),dy=(int16_t)(S16((uint16_t)(W(0x7a)-W(0x40)))>>1);
+    uint16_t d0=neo_angle(dx,dy),d1=W(0x74)&0x1fu;
+    if (FACING) d1=(uint16_t)(0u-d1);
+    SW(0x82,(d0+d1)&0xffu);
+    uint32_t s=((uint32_t)distance(W(0x3c),W(0x40),W(0x78),W(0x7a))<<16)>>4;
+    uint32_t vx,vy;ga_polar(s,(uint8_t)W(0x82),&vx,&vy);
+    int32_t ex=(int32_t)(vx-L(0x30)),ey=(int32_t)(vy-L(0x34));
+    SL(0x34,L(0x34)+(uint32_t)(ey>>4));SL(0x30,L(0x30)+(uint32_t)(ex>>3));
+}
+/* 049B20: the bank +96 (less its offset 3; the caller adds it back) one step
+ * towards the one of the speed +30 (0..8), held by the bank of the bombing
+ * angle +80 (E09F4) unless +9B; the carry of the last compare or add decides
+ * the way down, as the original's flags; facing left from 5. */
+static void lone_bank(neo_gactor_t *a,neo_genv_t *e) {
+    SB(0x96,B(0x96)-3u);
+    int32_t v=(int32_t)L(0x30);
+    uint8_t d1=v<(int32_t)0xffff0000?0:v<(int32_t)0xffff4000?1:v<(int32_t)0xffff8000?2:v<(int32_t)0xffffc000?3:v<0x4000?4:v<0x8000?5:v<0xc000?6:v<0x10000?7:8;
+    uint8_t b=B(0x96);bool carry;
+    if (d1>b) {
+        bool up=true;carry=false;
+        if (!B(0x9b)) {
+            uint8_t d0=(uint8_t)(rbx(e,0xe09f4u+(W(0x80)>>4))-3u);
+            if (S8(d0)<4 && S8(d0)>=S8(b)) {up=false;carry=d0<b;}
+        }
+        if (up) {carry=b==0xffu;SB(0x96,b+1u);}
+    } else carry=d1<b;
+    if (carry) {
+        bool down=true;
+        if (!B(0x9b)) {
+            uint8_t d0=(uint8_t)(rbx(e,0xe09f4u+(W(0x80)>>4))-3u);
+            if (S8(d0)>4 && S8(d0)<=S8(B(0x96))) down=false;
+        }
+        if (down) SB(0x96,B(0x96)-1u);
+    }
+    if (S8(B(0x96))>=5) SET(0x15,0); else CLR(0x15,0);
+}
+/* 04900C: hurtbox, the death 048B06, the cull 049166 (the cartridge check
+ * before 004188 is not reproduced). */
+static ga_result_t lone_tail(neo_gactor_t *a,neo_genv_t *e) {
+    if (ga_register(a,e,NULL,NULL)) SB(0x5a,0);
+    if (BIT(0x5f,7)) SL(0,0x48b06);
+    if (ga_cull(a,e,0xe0aa2)) {SB(0x61,0xff);return e->unsupported?GA_UNSUPPORTED:GA_DELETE;}
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+static ga_result_t lone_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool done=false;neo_gactor_t *c;uint32_t node;
+    for (unsigned guard=0;guard<8;guard++) switch (L(0)) {
+    case 0x474b6:
+        ga_project(a,e);
+        SW(0x86,(W(0x72)<<5)&0x7fffu);                                  /* 049EBE */
+        SB(0x1d,0);                                                     /* 009F88 */
+        SW(0x66,0x8600);SW(0x1e,0x8600);SL(0x50,0xe0ab2);
+        ga_palette(a,0x20);ga_flash_palette(a,0x15c);
+        SW(0x4e,rank(a,e,0x2d146c));SW(0x76,rank(a,e,0x2d1a16));
+        SB(0x61,0);SB(0x60,0);SB(0x96,0);
+        if (S16(W(0x3c))<0xa0) SET(0x15,0);
+        c=kid(a,e,0x47874,0x1c);
+        if (c) ga_sb(c,0x60,0);
+        START(0x244712);SL(0,0x4755a);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x4755a:
+        sound(e,0x10e8);SL(0,0x4756a);
+        /* fall through */
+    case 0x4756a: {
+        if (!lone_altitude(a,e)) return GA_UNSUPPORTED;                 /* 049324 */
+        SW(0x78,0xa0);
+        if (!lone_nearest(a,e,&node)) SW(0x78,node_x(e,node));
+        SL(0x7c,node);
+        steer(a);bank_by_speed(a);ga_air(a,e);STEP(done);
+        if (near_target(a,true,0x10)) SL(0,0x47598);
+        return lone_tail(a,e);}
+    case 0x47598: {
+        uint32_t t=0xe0c32u+4u*(B(0x96)&3u);
+        SL(0x30,0);SL(0x34,0);SW(0x74,0);SW(0x82,0);
+        START((uint32_t)rwx(e,t)<<16|rwx(e,t+2u));SL(0,0x475ce);}
+        /* fall through */
+    case 0x475ce:
+        lone_hover(a);ga_air(a,e);STEP(done);
+        if (done) SL(0,0x475ee);
+        return lone_tail(a,e);
+    case 0x475ee:
+        SW(0x84,rank(a,e,0x2d1592));
+        lone_any(e,&node);SL(0x7c,node);
+        /* fall through */
+    case 0x47608:
+        CLR(0x15,0);SB(0x9b,0);SB(0xa8,0);SW(0x90,0);
+        START(0x24473e);SL(0,0x47630);
+        /* fall through */
+    case 0x47630:
+        lone_hover(a);lone_target(a,e);lone_fly(a,e,0x10);ga_air(a,e);lone_bank(a,e);STEP(done);
+        if (near_target(a,false,2)) SL(0,0x4768e);
+        if (!W(0x84)) SL(0,0x4768e); else SW(0x84,W(0x84)-1u);
+        if (lone_leave(a)) SL(0,0x4783a);
+        SB(0x96,B(0x96)+3u);
+        return lone_tail(a,e);
+    case 0x4768e:
+        SL(0x30,0);SL(0x34,0);SL(0,0x4769c);
+        /* fall through */
+    case 0x4769c:
+        lone_hover(a);lone_target(a,e);ga_air(a,e);lone_bank(a,e);STEP(done);
+        SB(0x96,B(0x96)+3u);
+        if (!lone_any(e,&node)) {
+            if (B(0x9b)) {SB(0x9b,0);SL(0,0x47608);}
+            else if (!W(0x84)) {if (!L(0x30)) SL(0,0x4771a);}
+            else {
+                if (!near_target(a,false,0xe)) SL(0,0x47608);
+                SW(0x84,W(0x84)-1u);
+            }
+        }
+        if (lone_leave(a)) SL(0,0x4783a);
+        return lone_tail(a,e);
+    case 0x4771a:
+        SL(0,0x47720);
+        /* fall through */
+    case 0x47720: {
+        lone_hover(a);
+        uint8_t d1=rbx(e,0xe09f4u+(W(0x80)>>4));
+        if (d1==B(0x96)) SL(0,0x4778e);
+        else if (S8(d1)<=S8(B(0x96))) SB(0x96,B(0x96)-1u);
+        else SB(0x96,B(0x96)+1u);
+        goto facing;}
+    case 0x4778e:
+        SB(0x98,rank(a,e,0x2d177c));SB(0x97,rank(a,e,0x2d18a2));SB(0x94,B(0x97));SB(0x60,0);
+        SL(0,0x477be);
+        /* fall through */
+    case 0x477be:
+        lone_hover(a);
+        if (B(0x94)) SB(0x94,B(0x94)-1u);
+        else if (B(0x98)) {
+            SB(0x98,B(0x98)-1u);SB(0x94,B(0x97));
+            c=kid(a,e,0x479b8,0x2a);
+            if (c) ga_sb(c,0x60,0);
+        } else SL(0,0x475ee);
+    facing:
+        if (S8(B(0x96))>7) SET(0x15,0); else CLR(0x15,0);
+        SB(0x96,B(0x96)-3u);
+        ga_air(a,e);STEP(done);
+        SB(0x96,B(0x96)+3u);
+        return lone_tail(a,e);
+    case 0x4783a:
+        SW(0x7a,0x2ff);
+        START(0x24473e);SL(0,0x47856);
+        /* fall through */
+    case 0x47856:
+        lone_steer(a);ga_air(a,e);lone_bank(a,e);STEP(done);
+        SB(0x96,B(0x96)+3u);
+        return lone_tail(a,e);
+    default: ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool lone(uint32_t r) {
+    return r==0x474b6 || r==0x4755a || r==0x4756a || r==0x47598 || r==0x475ce || r==0x475ee || r==0x47608 || r==0x47630 || r==0x4768e || r==0x4769c ||
+           r==0x4771a || r==0x47720 || r==0x4778e || r==0x477be || r==0x4783a || r==0x47856;
 }
 /* ---- Mission 4 helicopters 08514A..08604A (families m4heli / m4heli2 / m4heli3) ----
  * Manual translation of ROM 08514A..086062.
@@ -1265,9 +1567,9 @@ static bool body(uint32_t r) {
     return false;
 }
 static bool leader(uint32_t r) {return r==0x4870c || r==0x4871c || r==0x4876c || r==0x48780 || r==0x487d0 || r==0x48832;}
-static bool bomb(uint32_t r) {return r==0x47b24 || r==0x47bec || r==0x47c48 || r==0x47c90 || r==0x48510 || r==0x48560;}
+static bool bomb(uint32_t r) {return r==0x47afc || r==0x47b24 || r==0x47bec || r==0x47c48 || r==0x47c90 || r==0x48510 || r==0x48560;}
 bool neo_heli_routine(uint32_t r) {
-    return m4h_routine(r) || r==0x4857c || r==0x485ec || leader(r) || body(r) || r==0x47874 || r==0x478c4 || r==0x47a6c || r==0x47ae0 || bomb(r) || r==0x47de0 || r==0x47e92;
+    return m4h_routine(r) || r==0x4857c || r==0x485ec || leader(r) || body(r) || lone(r) || r==0x47874 || r==0x478c4 || r==0x479b8 || r==0x47a6c || r==0x47ae0 || bomb(r) || r==0x47de0 || r==0x47e92;
 }
 ga_result_t neo_heli_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
@@ -1275,8 +1577,9 @@ ga_result_t neo_heli_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (r==0x4857c || r==0x485ec) return controller_tick(a,e);
     if (leader(r)) return leader_tick(a,e);
     if (body(r)) return body_tick(a,e);
+    if (lone(r)) return lone_tick(a,e);
     if (r==0x47874 || r==0x478c4) return rotor_tick(a,e);
-    if (r==0x47a6c || r==0x47ae0) return dropper_tick(a,e);
+    if (r==0x479b8 || r==0x47a6c || r==0x47ae0) return dropper_tick(a,e);
     if (bomb(r)) return bomb_tick(a,e);
     return shell_tick(a,e);
 }

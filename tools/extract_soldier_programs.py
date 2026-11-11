@@ -292,7 +292,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle'),
-    'm5':('# Mission 5 sewer gates',)}
+    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -394,6 +394,14 @@ ROOTS+=[0x247e54,0x247e8a,0x247ec0,0x247ef6,0x247f2c,0x247f62,0x248448,0x248476,
         0x248008,0x2480c4,0x248180,0x24823c,0x2482f8,0x2483d8,0x248566,0x2486a6,0x2487e6,0x248926,0x248a66,0x248b9e,0x248596,0x2486d6,0x248816,0x248956,
         0x2485d8,0x248718,0x248858,0x248998,0x248636,0x248776,0x2488b6,0x2489f6,0x248b5c,0x248c94,0x248794,0x2488d4,0x248a14,0x248682,0x2487c2,0x248902,0x248a42,
         0x248678,0x2487b8,0x2488f8,0x248a38]
+# Mission 5 street tank 08DCB2 (neo_m5enemy.c): idle 28AEF0, driving 28AD3A / 28ADF4, turning 28B03C / 28AF3E, starting 28B13A / 28B250,
+# firing 28B366, destroyed 28B5CC; its turret 08EB18: 28B6F6 (the pose by +8A), firing 28B77C[+8A], hit 28BCDC, 28C10E; the flash
+# 08EFFA (22D264) and the shell 08F058 (28C32C).
+ROOTS+=[0x28aef0,0x28ad3a,0x28adf4,0x28b03c,0x28af3e,0x28b13a,0x28b250,0x28b366,0x28b5cc,0x28b6f6,0x28bcdc,0x28c10e,0x22d264,0x28c32c]
+ROOTS+=[0x28b7bc,0x28b80e,0x28b860,0x28b8b2,0x28b904,0x28b956,0x28b9a8,0x28b9fa,0x28ba4c,0x28ba9e,0x28baf0,0x28bb42,0x28bb94,0x28bbe6,0x28bc38,0x28bc8a]
+# Mission 5 lone helicopter 0474B6 (neo_heli.c): arriving 244712, stopping 0E0C32[+96 & 3] (244792, 2447A0, 2447AE, 2447BC), flying
+# 24473E (the pose by the bank +96), its dropper 0479B8 (244DD6: sound 10FF, callback 04A1AE).
+ROOTS+=[0x244712,0x244792,0x2447a0,0x2447ae,0x2447bc,0x24473e,0x244dd6]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

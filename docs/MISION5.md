@@ -340,6 +340,28 @@ y cuentas de ranura dinámica que se agotan cuando la familia no tuvo ningún no
 fotogramas. `09624E` con el indicador de depuración `10F000` bit 7 (su dibujo `09635E`, con `009CCE`) es parada
 explícita.
 
+**Paquete** (`export_rest_sprites.py` con `T@50542-50d70`, `M@bbf12-bc296`, `W@32b46-32c6c`, `W@836de-83916`,
+`G@1ce50-1ce98`, `M@1cdc0-1cf90` y `--palette-capture B8`; `build_packs.py 5`): 5106 descriptores de actores, 263
+paletas (nuevas: 211, E1..E5, 37C, 113, 58F, 58E, 58D, 587, 17D, 158, 851 y **167/168**, las de las piezas
+`01CE50..01CE98` de las verjas, que el recorrido de la alcantarilla dibujaba sin paleta: 85 dibujos ausentes antes,
+0 ahora), **935 trozos** (819 prestados de los paquetes de las misiones 2 a 4): `SCENE_MISSION_CHUNKS_MAX` 896 →
+960 (con 896 el paquete se rechazaba: `bad header`). La 869 (variante `0836DE`, que la M5 no crea) no está en
+ninguna captura y no se exporta.
+
+**Validación de píxeles sin cerrar**: 521 fotos, 1 108 784 píxeles iguales y **21 157 distintos en 28 fotos**
+(captura `T` 23 de 42, `M` 1 de 447, `W` 4 de 32; las familias de la primera tanda dieron 0). Los descriptores salen
+de la ROM por la misma vía que los demás; no se ha mirado todavía qué píxeles son (hipótesis sin comprobar: sprites
+de fuera de la familia con el mismo número de paleta encima, p. ej. los premios y las explosiones `01C71E` en que se
+convierten los coches). **Pendiente**: volcar la diferencia de una foto (`T` 247830) y explicarla.
+
+**Recorrido en ares** (`test_mission5_ares.py`, `mslugx-explorer.z64`, `--fire --jump 2.5`): las tres etapas
+`RESULT: PASS`. Calle (`--progress 100`): los coches se destrozan y sueltan sus premios; paradas contadas:
+`MSX script stopped at 2dcf1a`, `world unsupported routine=22c0a6` ×28, `2cfd00` ×5, `2d3c16` ×2, `e53ba` ×1
+(acciones de soldados ya nativos que la M5 usa y no están portadas) y **7 dibujos sin paleta `892`** (descriptores
+`1C6086..1C671C`: los premios de clase 0x55 de los coches, `08C374`; falta exportarlos: sus nodos no cuelgan de
+la familia en la captura `T`). Metro (`--progress 40`): parada en `2ddbbe`, 0 dibujos ausentes. Alcantarilla
+(`--progress 100`): parada en `2dea8c`, registros `095C98` saltados (2), 0 dibujos ausentes.
+
 Guion tras esta tanda: la calle pasa de `2DCBBA` (`050542`) y se para en **`2DCF1A` (`08DCB2`)**; el metro pasa
 de `2DDB5E` y se para en **`2DDBBE` (`0474B6`, el helicóptero suelto)**; la alcantarilla se para en **`2DEA8C`
 (`08996A`)**.
@@ -357,10 +379,19 @@ de `2DDB5E` y se para en **`2DDBBE` (`0474B6`, el helicóptero suelto)**; la alc
 4. Alcantarilla: soldados `08996A/089948/08995A` (código propio `089948..08A6xx`, hijo `08A264`), el aparato
    montable `095C98/095F8C` (servicios de vehículo `0AA606/0AA83A/0AA7FC`), `08FF7E`, el jefe `0A0C00`.
 
+**Puertas de la segunda tanda (11-XI, `work-m5`)**: `make -j4` RC 0; `make check` RC 0 (**236 PASS**: los 230 de
+la primera tanda de la fase 2 y `m5ledge`, `m5car`, `m5signal`, `m5door`, `m5stain`, `m5jet`);
+`tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf build/m1end`): `RESULT: PASS` (354
+fotos); `test_mission5_ares.py` etapas 1, 2 y 3: `RESULT: PASS` (arriba). Un primer `make check` se cortó por
+disco lleno (`No space left on device`, árbol compartido al 100 %); se repitió entero. Fusionado en `ccr`.
+`/home/user/ws-logo/romfs` **no** se ha tocado: `mission5.pack` toma trozos de los paquetes de las misiones 2 a 4,
+así que hay que rehacerlo allí (`python3 tools/build_packs.py 5`, que rehace también el de la M6) cuando el agente
+de la M4 deje el suyo; `filesystem/mission5/rest-native.json` (compartido) ya lleva la exportación nueva.
+
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: 103 constructores sin portar (102 propios), 2583
-   creaciones ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
+1. **Actores nuevos**: quedan **79 constructores sin portar (78 propios), 1707 creaciones** (eran 103 y 2583 al
+   acabar la fase 1) ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
    constructores del guion; 141 registros del guion que `run4` no ejecutó
    necesitan captura propia. Primer paso: los registros donde se para el
    guion (`2DCB42` → `0BBE5E`, `2DDB5E` → `0BC1E6`, `2DE9D0` → `08346E`).

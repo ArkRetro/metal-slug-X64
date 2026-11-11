@@ -676,6 +676,16 @@ núcleo (probado: misma cámara 515 y mismas cuentas), y `neo_m5mech.c` solo cor
 
 **Inventario**: arreglado (pendiente 1) y regenerado: **40 constructores sin portar** (54 antes de esta tanda, menos los 14 de `0D3B36`).
 
+**Siguiente paso (alcantarilla)**: captura propia **`X`** hecha y **guardada** en `captures-m5/fam/X` (réplica de
+`run4` desde `sec08_274387`, raíces `95c98,95f8c,96140,8996a,89948,8995a,8a264`, traza 274388..276400, volcados cada
+30; hace falta para los descriptores de la exportación; se borra tras exportar). Fixtures ya extraídos (sin familia
+en el Makefile hasta que haya código): `data/m5sewer_fixture.json.gz` (`--range 89948-8a700`: los soldados 08996A /
+089948 / 08995A y su hijo 08A264, 9185 actualizaciones) y `data/m5pow_fixture.json.gz` (`--range 95c98-96200`: el
+prisionero 095C98 / 095F8C con el premio 08C374, 1056). 095C98 usa el sistema de huecos `0AA606` / `0AA83A` /
+`0AA7FC` / `0CA2CE` (en parte ya en `neo_vslot` / `neo_slug.c`) y `0C05EC` (sin portar). Desensamblado:
+`scratchpad/m5/d95c98.txt`. Antes de ellos, por cámara: los escombros `01CDF0` (cámara 992, de la lista `E8F02` de la
+máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 1280).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

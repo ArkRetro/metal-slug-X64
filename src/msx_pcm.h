@@ -42,6 +42,10 @@ bool msx_pcm_open(msx_pcm_t *pcm,const char *path);
  * the first block after the one being played that is not ready, when the
  * time left is MSX_PCM_PREFETCH_US or more. true when it did. */
 bool msx_pcm_prefetch(msx_pcm_t *pcm,uint32_t deadline);
+/* The first two blocks decoded now, when a stream starts from its beginning
+ * (msx_audio_play, outside the frames it plays in): the mix then never
+ * decodes; the next blocks come from msx_pcm_prefetch. */
+void msx_pcm_prime(msx_pcm_t *pcm);
 /* Free the block buffers; the channel playing the waveform must be stopped. */
 void msx_pcm_release(msx_pcm_t *pcm);
 void msx_pcm_close(msx_pcm_t *pcm);

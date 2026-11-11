@@ -107,6 +107,10 @@ MSXL_CODE bool msx_pcm_prefetch(msx_pcm_t *p,uint32_t deadline) {
 #endif
     return true;
 }
+MSXL_CODE void msx_pcm_prime(msx_pcm_t *p) {
+    if (!buffers(p)) return;
+    for (uint32_t b=0;b<2u && b<p->info.blocks;b++) if (find(p,b)<0) load(p,b,0);
+}
 MSXL_CODE bool msx_pcm_open(msx_pcm_t *pcm,const char *path) {
     memset(pcm,0,sizeof(*pcm));pcm->fd=-1;
     int fd=open(path,O_RDONLY);

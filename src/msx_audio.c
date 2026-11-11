@@ -38,7 +38,12 @@ static SMALL bool open_file(const char *path,msx_pcm_t **pcm,wav64_t *wav) {
     if (*pcm && msx_pcm_open(*pcm,path)) return true;
     free(*pcm);*pcm=NULL;return false;
 }
-static SMALL void play_wave(waveform_t *w,int loop_len,int ch) {w->loop_len=loop_len;mixer_ch_play(ch,w);}
+static SMALL void play_wave(waveform_t *w,int loop_len,int ch) {
+    /* A stream started by msx_audio_play (not a loop body started by the
+     * mixer's event, start_tail): its first blocks before it plays. */
+    for (unsigned v=0;v<MSX_AUDIO_VOICES;v++) if (wave_pcm[v] && w==&wave_pcm[v]->wave) msx_pcm_prime(wave_pcm[v]);
+    w->loop_len=loop_len;mixer_ch_play(ch,w);
+}
 static int start_tail(void *ctx) {
     unsigned v=*(unsigned *)ctx;
     if (tail_pcm[v]) play_wave(&tail_pcm[v]->wave,tail_pcm[v]->wave.len,(int)v*2);

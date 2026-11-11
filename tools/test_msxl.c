@@ -43,6 +43,7 @@ static void stream(const char *name,const char *work,const uint8_t *msxl,size_t 
     int len=p.wave.len;
     if (len!=(int)msxl_be32(wav+12) || p.wave.loop_len!=(int)msxl_be32(wav+16) || p.wave.channels!=wav[6] || p.wave.bits!=16
         || p.wave.frequency!=(float)msxl_be32(wav+8)) fail(name,"the waveform is not the WAV64's");
+    if (rnd()&1u) msx_pcm_prime(&p);   /* msx_audio_play: the first blocks before the stream plays */
     for (int pos=0;pos<len;) {   /* in order, lengths 1..3000 */
         int n=1+(int)(rnd()%3000u);
         if (n>len-pos) n=len-pos;
@@ -56,7 +57,7 @@ static void stream(const char *name,const char *work,const uint8_t *msxl,size_t 
         expect(name,&p,&sb,wav,pos,n);
         if (k%50==49) msx_pcm_release(&p);
     }
-    msx_pcm_release(&p);expect(name,&p,&sb,wav,0,len<5000?len:5000);   /* a replay */
+    msx_pcm_release(&p);msx_pcm_prime(&p);expect(name,&p,&sb,wav,0,len<5000?len:5000);   /* a replay, primed */
     if (p.errors) fail(name,"the stream reader met a damaged block");
     msx_pcm_close(&p);free(sb.data);remove(work);
 }

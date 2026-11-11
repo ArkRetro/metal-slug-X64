@@ -152,10 +152,13 @@ static uint16_t exec(vm_t *v,uint16_t pc) {
         return next(v,pc);
     }
     case 0xa: { /* 01A272 */
-        uint16_t alt[16];unsigned n=0;
+        /* The original pushes every alternative on the stack (no limit);
+         * the scripts have at most 27 (Missions 5 and 6: the sewer drips'
+         * runner 2DE83A). */
+        uint16_t alt[32];unsigned n=0;
         pc=next(v,pc);
         while (ok(v) && op(v,pc)!=4u) {
-            if (!nonblocking(op(v,pc)) || n==16u) return halt(v,pc);
+            if (!nonblocking(op(v,pc)) || n==32u) return halt(v,pc);
             alt[n++]=pc;pc=skip(v,pc);
         }
         if (!ok(v)) return pc;

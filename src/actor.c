@@ -125,6 +125,11 @@ static bool load_stage(void) {
         msx_game_stage_descent_at(&game,ex,ey);
         debugf("MSX stage entry %06lX kind 2 (0C15B4): the parachute descent from (%d, %d) after the fade-in\n",(unsigned long)entry,ex,ey);
     }
+    if (er && er[8]==3u && !er[5]) {
+        bool on=msx_game_stage_entry_walk(&game,(int16_t)(er[2]<<8|er[3]));
+        debugf("MSX stage entry %06lX kind 3 (0C14E6): x 0, floor below y %d of the terrain: %s y=%d\n",(unsigned long)entry,(int16_t)(er[2]<<8|er[3]),
+            on?"found":"none (scan kept)",(int)((56*MSX_UNIT-game.y)/MSX_UNIT));
+    }
     /* 019604 +4: the stage's respawn entries (019658/0196E8, B33). */
     game.respawn_table=st->players;game.respawn_length=st->players_len;
     /* The exit kind (fade-in, wipe) and the stage loop run in the game's
@@ -744,7 +749,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.boss_unsupported!=old_boss_unsupported) debugf("MSX boss stopped node routine=%05lx label=%05lx\n",(unsigned long)game.world.boss_unsupported_routine,(unsigned long)game.world.boss_unsupported_label);
     if (game.mission_complete && !old_mission) debugf("MSX mission complete signal (018F92) camera=%d\n",game.camera);
     if (game.world.ga_flags.dome_signal && !old_flags.dome_signal) debugf("MSX domes signal 05486A group=%u camera=%d\n",game.world.ga_flags.dome_group,game.camera);
-    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
+    if (game.world.ga_flags.player_handlers!=old_flags.player_handlers) debugf("MSX player handlers=%s camera=%d\n",game.world.ga_flags.player_handlers==4u?"0BBF0E":game.world.ga_flags.player_handlers?"054B18":"restored",game.camera);
     if (game.world.ga_flags.barrel_patched && !old_flags.barrel_patched) debugf("MSX shop destroyed (0B6882 patch) camera=%d\n",game.camera);
     {   /* Armoured vehicle 087E36 of the 1304 stop: standing (+5F bit 7 clear) or not. */
         static bool armored_standing;bool standing=false;

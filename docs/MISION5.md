@@ -266,26 +266,137 @@ Peticiones `0120F8`: 27 palabras / 648 peticiones (calle), 46 / 1971
 `1097`×105, `1098`×4, `10D0`×17, `10D6`×8, `10F1`×13, `1144`×24. Sin
 renderizar (pendiente 6).
 
+## Fase 2 (11-XI, agente B, rama `work-m5`)
+
+Capturas de familia (MAME 0.264, réplica de `run4`, `MSX_FULL_FAMILY_ROOTS`, `MSX_FULL_VRAM_TRACE=1`;
+guiones `captures-m5/fam/runG.sh` y `runS.sh`, que no van a git): `fam/G` (verjas, 274388..276000), `fam/D`
+(goteos, ..275600), `fam/E` (decoración de la alcantarilla, ..275100), `fam/S` (calle, 247662..252800, volcados
+desde 247800, después del fundido).
+
+**Las verjas `1F` de la alcantarilla (pendiente 2).** Lo que retenía a Marco en MAME son las celdas: `1F` es
+grupo 0, forma F con el bit 4, y con 10C008 = FF (el barrido del jugador) la forma F es pared (`0129EC`/`012AD4`).
+El barrido nativo ya lo hacía; el fallo era otro: **Marco empezaba la alcantarilla en el techo**. La colocación
+de `msx_game_begin_stage` (el suelo más alto del borde izquierdo, una búsqueda del port) lo ponía sobre la celda
+`0D` del techo (y 216), por encima de las paredes. Traducido de la ROM, **entrada de clase 3** (`0C1260` →
+`0C14E6`, registros `2D6036` y `2D6040`): `0196E8` pone al jugador en (x, y) del registro respecto a la raíz,
+`0C14E6` en (0, +40) absoluto y `01473A` (`0128E8` + `0146EE`: 013DB2 hacia abajo 256 px, 10C008 = FF) lo baja
+al suelo; una forma 13 (techo) no para una búsqueda hacia abajo. MAME (sonda en `1014EC`, 274581): (0x68, 0x80)
+de la raíz, (0, 0x180) absoluto y (0, 0x30) de `10C72E`. Nativo: `msx_game_stage_entry_walk` (`gameplay.c`)
+con `neo_kernel_floor`: y 48, el mismo valor; ahora Marco se para en x 791 ante la primera verja.
+
+**Verjas `0BC296` / `0BC3A6`** (`src/neo_m5props.c`, familia **`m5gate`: 56 nodos, 2125 actualizaciones
+iguales a MAME**, 5 sellos en el anillo, 10C700 comparado): la verja 0 (x 120, 3 golpes, el muro `0BBB28` por
+`0C88B0` al nacer y `0BBBE4` al morir) y las tres de `0BC3A6` (x 320/520/720, 5 golpes, `0BBBE4` por
+`0BC38E` → **`0C8A3C`**, nuevo: `neo_collision_stamp_cells`, sin máscara ni ventana; callback `stamp_cells`),
+restos `0BBD78`/`0BBD8A` (`01DA40`), sonidos 1027/102D, **10C700 = +3C** en cada actualización (`0BC542`, el
+límite de los soldados `08A654`) y 0x200 al morir (`0BC550`; también la llamada de la cabeza de la lista
+`0BBA24`, ahora consumida en `neo_world.c`).
+
+**Goteos `08346E`** (familia **`m5drip`: 79 nodos, 3732 actualizaciones**): periodo por azar `083674`, gota
+`0834F4` tras el actor de guion (`00411C`, D0 = 2A), caída `0143DC`, salpicadura `281EA2` con `01AD52`.
+**Decoración** `0BC4F4`/`0BC4BA` (**`m5deco`, 415 actualizaciones**), `0BBE5E`/`0BBED0` y **el fin de la calle
+`0BBE16`** → `0B6ED2` (rectángulo `0BBAEC`, destino 7A8) (**`m5street`, 1439 actualizaciones**, con las
+escrituras de 10C300.. del fin de etapa).
+
+**Guion:** la op 0A (`01A272`) apila todas las alternativas; el port tenía 16 y el corredor de los goteos
+`2DE83A` tiene 27 (la M6 también): ahora 32, y si alguna lista pasa de ahí sigue siendo parada explícita.
+
+Datos: grupo **`m5`** en `region_rom.json` (tablas de rango `2D3F1E`, bloque `0BBAC8..0BBE00`, `0E4C48`,
+`0BBAEC`, `0BBE00`), programas (`extract_soldier_programs.py`, bloque «# Mission 5 sewer gates») y
+`pack_mission.py` `GROUPS[5]`. Sprites y paletas (`export_rest_sprites.py`, 59C..59F, AC8, 5BB, 5DC, 591, 592,
+596) en `filesystem/mission5/rest-native.json`: 200 fotos, **0 píxeles distintos**; el paquete lleva 4719
+descriptores de actores. La paleta 0x208 de la captura de la calle sale con otros colores que la del paquete
+de escena: se deja la de la escena (solo los recursos de la M5 salen de sus capturas).
+
+Recorrido en ares (alcantarilla, disparando): la verja 0 cae, la cámara se suelta (grupo 7 = 0), los goteos
+caen y el guion llega a `2DEA8C` (`08996A`, el soldado de la alcantarilla), primera parada que queda.
+
+### Fase 2, segunda tanda (11-XI, agente B)
+
+Capturas de familia nuevas (réplica de `run4`, `MSX_FULL_FAMILY_ROOTS`, `MSX_FULL_VRAM_TRACE=1`, en
+`/home/user/captures-m5/fam/`; `S`, `G`, `D` y `E` siguen allí): **`T`** (calle, 247662..252800, raíces `09624E`,
+`050542`…, `08DCB2`, `08EB18`, `08FF7E`…, `0474B6`, `0479B8`, `047AFC`, `0AF1A8`, `047F7E`, `047A12`, `047B10`:
+sirve para todas las familias de la calle que faltan), **`M`** (metro entero, 252828..274330, raíces `0BC1E6`,
+`0BBF12`, `0BC192`, `0BC100`), **`W`** (alcantarilla hasta el jefe, 274388..277080, raíces `032B46/5A/6E`,
+`095C98`, `095F8C`, `0836E8`, `083820`, `08996A`, `089948`, `08995A`, `08A264`: sirve para los soldados de la
+alcantarilla y el aparato `095C98`, sin portar) y **`B8`** (inicio de la alcantarilla con BLOOD ON,
+`MSX_FULL_BLOOD=1`, nuevo en `capture_fullgame.lua` como `capture_blood.lua`: solo para la paleta `158`).
+Extracción: `extract_family_fixture.py … --attacks --ram 10000e-100010 --ram 10c72e-10d7b6 --ram 10c2f6-10c2f8
+--ram 10c6c0-10c702 --ram 1063d8-1063da` (y `--ram 1014d8-1014da --ram 101588-10158a` para los coches: los `+15`
+de los jugadores, por palabra).
+
+| Familia | Rutinas | Resultado contra MAME |
+| --- | --- | --- |
+| `m5ledge` | `09624E` (calle; repisas invisibles: mapa de celdas `095B54[+72]` por `0140C4`, fuera de `095948` se borra) | 4 nodos, 1072 actualizaciones iguales |
+| `m5car` | `050542` (coches destrozados, +6E 0..5: suspensión `050206` con los dos jugadores, mapas `050120/050138`, golpes, muerte `05065C`, salto, premios `05031E`/`050384`), ruedas `05090A/05092C`, explosión `05094E`, chapas `0509A8`, piezas `050B52` | 65 nodos, 2939 actualizaciones iguales (9 coches, 7 destruidos) |
+| `m5signal` | `0BC1E6` (metro; señal encendida mientras su grupo tiene a alguien, `019DCA`; sonido 107D de su programa) | 7 nodos, 21 435 actualizaciones iguales |
+| `m5door` | `0BBF12` (fin del metro: tres fases de daño, muros `0BBAF4/0BBBB0` por `0C88B0`, piezas `0BC100/0BC192`, manejadores de los jugadores `0BBF0E`, la salida `0B6ED2` como hija en (780, 28), destino 788) | 3 nodos, 221 actualizaciones iguales, 2 sellos |
+| `m5stain` | `032B46/032B5A/032B6E` (alcantarilla; paleta 158 con BLOOD, 17D sin él) | 3 nodos, 606 actualizaciones iguales |
+| `m5jet` | `0836E8` (chorros; **`0838DA` lee `move.w $70.w`: la palabra de ROM `000070`, no `+70`**, traducido tal cual) y sus bocanadas `083820` | 64 nodos, 2053 actualizaciones iguales |
+
+Motor y pruebas: `player_handlers` 4 = `0BBF0E` (`sub.w d7,d7`: sin entrada, como `054B18`); prueba de familia
+`--fresh-flip` (un creador que pone el bit de giro del hijo después de `01B220`: el nodo recién dado lo lleva a 0)
+y cuentas de ranura dinámica que se agotan cuando la familia no tuvo ningún nodo vivo durante más de 8
+fotogramas. `09624E` con el indicador de depuración `10F000` bit 7 (su dibujo `09635E`, con `009CCE`) es parada
+explícita.
+
+**Paquete** (`export_rest_sprites.py` con `T@50542-50d70`, `M@bbf12-bc296`, `W@32b46-32c6c`, `W@836de-83916`,
+`G@1ce50-1ce98`, `M@1cdc0-1cf90` y `--palette-capture B8`; `build_packs.py 5`): 5106 descriptores de actores, 263
+paletas (nuevas: 211, E1..E5, 37C, 113, 58F, 58E, 58D, 587, 17D, 158, 851 y **167/168**, las de las piezas
+`01CE50..01CE98` de las verjas, que el recorrido de la alcantarilla dibujaba sin paleta: 85 dibujos ausentes antes,
+0 ahora), **935 trozos** (819 prestados de los paquetes de las misiones 2 a 4): `SCENE_MISSION_CHUNKS_MAX` 896 →
+960 (con 896 el paquete se rechazaba: `bad header`). La 869 (variante `0836DE`, que la M5 no crea) no está en
+ninguna captura y no se exporta.
+
+**Validación de píxeles sin cerrar**: 521 fotos, 1 108 784 píxeles iguales y **21 157 distintos en 28 fotos**
+(captura `T` 23 de 42, `M` 1 de 447, `W` 4 de 32; las familias de la primera tanda dieron 0). Los descriptores salen
+de la ROM por la misma vía que los demás; no se ha mirado todavía qué píxeles son (hipótesis sin comprobar: sprites
+de fuera de la familia con el mismo número de paleta encima, p. ej. los premios y las explosiones `01C71E` en que se
+convierten los coches). **Pendiente**: volcar la diferencia de una foto (`T` 247830) y explicarla.
+
+**Recorrido en ares** (`test_mission5_ares.py`, `mslugx-explorer.z64`, `--fire --jump 2.5`): las tres etapas
+`RESULT: PASS`. Calle (`--progress 100`): los coches se destrozan y sueltan sus premios; paradas contadas:
+`MSX script stopped at 2dcf1a`, `world unsupported routine=22c0a6` ×28, `2cfd00` ×5, `2d3c16` ×2, `e53ba` ×1
+(acciones de soldados ya nativos que la M5 usa y no están portadas) y **7 dibujos sin paleta `892`** (descriptores
+`1C6086..1C671C`: los premios de clase 0x55 de los coches, `08C374`; falta exportarlos: sus nodos no cuelgan de
+la familia en la captura `T`). Metro (`--progress 40`): parada en `2ddbbe`, 0 dibujos ausentes. Alcantarilla
+(`--progress 100`): parada en `2dea8c`, registros `095C98` saltados (2), 0 dibujos ausentes.
+
+Guion tras esta tanda: la calle pasa de `2DCBBA` (`050542`) y se para en **`2DCF1A` (`08DCB2`)**; el metro pasa
+de `2DDB5E` y se para en **`2DDBBE` (`0474B6`, el helicóptero suelto)**; la alcantarilla se para en **`2DEA8C`
+(`08996A`)**.
+
+**Lo siguiente, por orden de guion** (desensamblado ya mirado; utilidades en el scratchpad: `m5/d474b6.txt`,
+`m5/d47f7e.txt`, `m5/dheli_srv.txt`, `ex5.sh FAMILIA CAPTURA RANGOS`, `famd.sh FAMILIA`):
+1. `08DCB2` + `08EB18` (calle, 1 creación, ~5,4 KB de código propio `08DCB2..08F1E0`).
+2. **El helicóptero suelto `0474B6` / `047F7E`** (calle y metro, 681 creaciones con sus lanzadores `0479B8/047A12` y
+   bombas `047AFC/047B10`): está en el módulo de `neo_heli.c` (comparte `0499A4`, `049A92`, `049E46/74`, `049EBE`,
+   la muerte `048B06..`, el rotor `047874`, el lanzador `047AAA..` y la bomba `047B34..`); faltan los servicios
+   `04900C`, `049324`, `04936C` (+ `049CB2`, `01B12E`), `049A1E`, `049B20`, `049E9E`, `049ECE`, `049F9E`, `01B04A`,
+   `01AF9A`, los estados `0474B6..047872` y `047F7E..04850E`, y las llamadas `04A1AE/04A208` (hoy parada
+   explícita en `heli_call`). Guarda en `+7C` el nodo del jugador objetivo.
+3. `0AF1A8` (del inventario de la M4), `051344` (trenes), `0D3B36`.
+4. Alcantarilla: soldados `08996A/089948/08995A` (código propio `089948..08A6xx`, hijo `08A264`), el aparato
+   montable `095C98/095F8C` (servicios de vehículo `0AA606/0AA83A/0AA7FC`), `08FF7E`, el jefe `0A0C00`.
+
+**Puertas de la segunda tanda (11-XI, `work-m5`)**: `make -j4` RC 0; `make check` RC 0 (**236 PASS**: los 230 de
+la primera tanda de la fase 2 y `m5ledge`, `m5car`, `m5signal`, `m5door`, `m5stain`, `m5jet`);
+`tools/test_m1m2_ares.py` sobre un `mslugx-m1end.z64` recién hecho (`rm -rf build/m1end`): `RESULT: PASS` (354
+fotos); `test_mission5_ares.py` etapas 1, 2 y 3: `RESULT: PASS` (arriba). Un primer `make check` se cortó por
+disco lleno (`No space left on device`, árbol compartido al 100 %); se repitió entero. Fusionado en `ccr`.
+`/home/user/ws-logo/romfs` **no** se ha tocado: `mission5.pack` toma trozos de los paquetes de las misiones 2 a 4,
+así que hay que rehacerlo allí (`python3 tools/build_packs.py 5`, que rehace también el de la M6) cuando el agente
+de la M4 deje el suyo; `filesystem/mission5/rest-native.json` (compartido) ya lleva la exportación nueva.
+
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: 103 constructores sin portar (102 propios), 2583
-   creaciones ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
+1. **Actores nuevos**: quedan **79 constructores sin portar (78 propios), 1707 creaciones** (eran 103 y 2583 al
+   acabar la fase 1) ([MISION5_ACTORES.md](MISION5_ACTORES.md)); 27 de los 49
    constructores del guion; 141 registros del guion que `run4` no ejecutó
    necesitan captura propia. Primer paso: los registros donde se para el
    guion (`2DCB42` → `0BBE5E`, `2DDB5E` → `0BC1E6`, `2DE9D0` → `08346E`).
-2. **Estampadores**: `0C88B0` (2 sellos en el metro, 2 en la alcantarilla) y
-   `0C8A3C` (tres escrituras de 126 celdas sobre las paredes `1F`; su actor
-   no está capturado: la sonda estaba solo en `0C88B0`; hay que poner otra en
-   `0C8A3C`). **En ares Marco cruza hoy las paredes `1F`** y en MAME no:
-   el barrido del jugador lee esas celdas (39 lecturas con A6 = `1014C4` en
-   x 792..795 durante 274933..275046, `s8/cells.txt`) y el jugador no pasa
-   de ahí hasta la escritura de 275049. El barrido nativo
-   (`neo_kernel_player_sweep`) no se para en ellas: falta trazar en MAME si
-   lo retienen las celdas (tipo `F` con el bit 4) o el cuerpo sólido de la
-   verja, y traducir lo que falte; no se ha ajustado nada.
-   Trazado después (sesión de la M6, sonda en `0C8A3C`, `captures-m6/m5gate`): las tres escrituras son del actor
-   `0BC42C` (retorno `0BC496`), plantilla `0BBBE4`, D0 = 0x64 / 0xA4 / 0xE4, D1 = 6 ([MISION6.md](MISION6.md),
-   «Verjas de la alcantarilla»). Sigue sin portar.
+2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
+   `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
 3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**
    `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
    estados `at_277000` (antes) y `at_280000..291500`.
@@ -294,7 +405,9 @@ renderizar (pendiente 6).
    ya son nativos; falta llegar a sus registros (el guion se para antes).
 5. Llamada `0BC550` de la cabeza de la lista de la alcantarilla (hoy evento
    sin consumidor) y las paletas que cambien durante el jefe.
-6. **Efectos**: las 17 palabras sin política y la voz `1135`.
+6. **Efectos**: las 17 palabras sin política y la voz `1135`. Sin hacer: `docs/AUDIO_JUEGO.md` §17 pide medir en
+   MAME los pares de cada palabra consigo misma, entre ellas y contra las etiquetas de la política (miles de
+   renders) y añadirlas de una en una; no cabía en el disco compartido de esta sesión (< 0,7 GB libres).
 7. La tabla de columnas `+3E` (pendiente 4 de la M4) no se usa en la M5
    (ninguna op 0x18 lleva tabla).
 

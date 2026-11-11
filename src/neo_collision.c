@@ -153,6 +153,25 @@ unsigned neo_collision_stamp(int32_t x,int32_t y,const uint8_t *t) {
     }
     return changed;
 }
+unsigned neo_collision_stamp_cells(int32_t x,int32_t y,const uint8_t *t) {
+    /* ROM 0C8A3C: template dx,dy,w,h,flag +4,group +5, w*h shapes (rows
+     * from the top, +2 apart) at the cell (x word >> 3 + dx, y word >> 3 +
+     * dy); every cell is replaced by shape | flag (bit 4) | group << 5
+     * (the old cell is not read; a shape >= 0x10 traps). No window: the
+     * ring slot is written wherever the column is (the sewer gates are on
+     * screen). */
+    make_dynamic();
+    int dx=(int8_t)t[0],dy=(int8_t)t[1],w=t[2],h=t[3];
+    int base_x=(int)((uint32_t)x>>19)+dx,base_y=(int)((uint32_t)y>>19)+dy+h-1;unsigned changed=0;
+    for (int col=0;col<w;col++) for (int row=0;row<h;row++) {
+        int cx=base_x+col,cy=base_y-row;
+        if (cx<0 || cx>=(int)columns || cy<row0 || cy>=row0+(int)rows) continue;
+        uint8_t *cell=&dynamic_grid[cx*rows+(cy-row0)];
+        uint8_t value=(uint8_t)(t[10+row*w+col]|(t[4]?16:0)|(t[5]<<5));
+        if (value!=*cell) {*cell=value;changed++;ring_touch(cx,cy);}
+    }
+    return changed;
+}
 unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
     /* Vertical stages: every reader sees the kernel's ring (0C79FE), which

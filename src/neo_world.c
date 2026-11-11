@@ -568,6 +568,11 @@ static void g_stamp(void *ctx,neo_gactor_t *a,uint32_t templ) {
     if (!t) {ga_fail(&((tick_t *)ctx)->genv,templ);return;}
     neo_collision_stamp((int32_t)ga_l(a,0x28),(int32_t)ga_l(a,0x2c),t);
 }
+static void g_stamp_cells(void *ctx,neo_gactor_t *a,uint32_t templ) {
+    const uint8_t *t=ga_rom(templ);
+    if (!t) {ga_fail(&((tick_t *)ctx)->genv,templ);return;}
+    neo_collision_stamp_cells((int32_t)(uint32_t)ga_w(a,0x28)<<16,(int32_t)(uint32_t)ga_w(a,0x2c)<<16,t);
+}
 /* ROM 0C70FC, collision part (0C72EC): the sub-map's cells over the whole
  * stage grid of the terrain layer 10C72E (the ring window is not modelled;
  * the patch is made on screen: Mission 2 stage 1 gate, stage 2 gate
@@ -1389,7 +1394,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
-    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->map_patch=g_map_patch;
+    g->creator_alive=g_creator_alive;g->creator=g_creator;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
     g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
@@ -1815,6 +1820,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
+        if (at==0x0BC550u) w->ga_flags.limit700=0x200;                /* Mission 5 sewer list head (0BBA24): 10C700 = 200 */
         if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
         if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)) {

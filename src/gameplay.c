@@ -245,6 +245,26 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
 }
+/* Entry kind 3 (0C1260 -> 0C14E6, the walk-in of Mission 5 stages 7 and 8,
+ * records 2D6036 / 2D6040): 0196E8 places the player at the record's (x, y)
+ * of the root 10E968, 0C14E6 then at (0, +40) of nothing (01AB9C with A1 =
+ * 0: the absolute x 0 and the same absolute y) and 01473A (0128E8: 10C00A
+ * = 0, 10C00D = FF; 0146EE: 10C008 = FF with +15 bit 5 clear, 10C009 = 0,
+ * 013DB2 down to 256 px) drops it on the floor. The root and the terrain
+ * share their position at the stage start (MAME 274581: both at (0, 100);
+ * the player at (0, 180) absolute, then (0, 30) of 10C72E), so the search
+ * starts at the record's y of the terrain. A ceiling (shape 13, 0x0D: the
+ * sewer's top at y 216) does not stop a downward search (0129EC); the
+ * highest-floor scan of msx_game_begin_stage stood the player on it.
+ * false: no floor of the terrain (the scan's placement stays). */
+bool msx_game_stage_entry_walk(msx_game_t *g,int y) {
+    neo_kfloor_t fl;neo_collision_ring_bypass(true);
+    bool ok=neo_kernel_floor(&g->world.kernel,0,(int32_t)((uint32_t)y<<16),NEO_KOBJ_TERRAIN,(int32_t)0xff000000,0xff,0,0xff,&fl);
+    neo_collision_ring_bypass(false);
+    if (!ok || !fl.found || fl.parent!=NEO_KOBJ_TERRAIN) return false;
+    g->x=fl.x;g->y=56*MSX_UNIT-fl.y;g->grounded=true;
+    return true;
+}
 void msx_game_stage_entry_at(msx_game_t *g,int x) {
     /* Entry kind 2 (0C15B4: the parachute from the record's y, Mission 3,
      * run4 117972: x 0x48 -> 88, falling from y 256): the player starts at

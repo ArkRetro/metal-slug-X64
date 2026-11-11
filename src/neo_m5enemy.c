@@ -1,5 +1,4 @@
 #include "neo_region.h"
-#include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 /* Mission 5 enemies, manual translation (ROM labels as provenance).
  *
  * ---- the street's tank 08DCB2 (script record 2DCF1A) and its turret 08EB18 ----
@@ -59,10 +58,10 @@
  *   layers 1001); 08EEEA: 0143E4; landed or +5F bit 0 -> 08F1E0 (sound 1025,
  *   08EFDE: 009F88, layers E0ED, +50 = 0, jmp 01C706); +40 <= C0 -> 08EF46;
  *   08F432 -> 08EFD6 (0041AC).
- * - The flash 08EFFA (palette 208, program 22D264, at +8B / +8C - 8) and the
- *   shell 08F058 (speeds 08FD5C[+88][+8A], palette 373, layers E0EF, program
- *   28C32C; 08F114: 0143E4, +8A = its angle >> 3, the row 08FC46 -> 08EFDE,
- *   outside 08FC74 (019504) -> 08EFD6; landed -> 08F1E0).
+ * - The flash 08EFFA, the shell 08F058 and their ends 08EFD6 / 08EFDE / 08F1E0
+ *   are the ones of neo_effects.c (the Mission 1 boss's turret fires the same
+ *   ones); the family m5tank is their capture. The shell 08F1A0 of the +93
+ *   bit 5 tanks is an explicit stop.
  *
  * 08EF46 is the cartridge check (RAM 10F00C + 3EF, on a carry the test of
  * 2FFFE0, branch to 08DC92 when it fails): not reproduced, as in neo_armored.c;
@@ -475,21 +474,14 @@ static void turret_fire(neo_gactor_t *a,neo_genv_t *e) {
     int16_t d1=S16(rw(e,at)),d2=S16(rw(e,at+2u));
     if (B(0x15)&1u) d1=(int16_t)-d1;
     if (c) {ga_sb(c,0x8a,B(0x8a));ga_sb(c,0x8b,(uint8_t)d1);ga_sb(c,0x8c,(uint8_t)d2);}
-    c=child(a,e,(B(0x93)&0x20u)?0x8f1a0u:0x8f058u,0x1c);
+    if (B(0x93)&0x20u) {ga_fail(e,0x8f1a0);return;}                      /* the shell of the +93 bit 5 tanks: not a Mission 5 record */
+    c=child(a,e,0x8f058,0x1c);
     if (!c) return;
     ga_sb(c,0x8a,B(0x6e));
     ga_sw(c,0x28,(uint16_t)(ga_w(c,0x28)+(uint16_t)d1));ga_sw(c,0x2c,(uint16_t)(ga_w(c,0x2c)+(uint16_t)d2));
     ga_sb(c,0x93,0);ga_sb(c,0x94,0);
     if (B(0x94)&1u) ga_sb(c,0x94,(uint8_t)(ga_b(c,0x94)|1u));
     ga_sb(c,0x88,B(0x88));
-}
-/* 08F1E0 / 08EFDE */
-static ga_result_t burst(neo_gactor_t *a,neo_genv_t *e,bool loud) {
-    if (loud) sound(e,0x1025);
-    SB(0x1d,0);                                                          /* 009F88 */
-    SW(0x66,0xe0ed);SW(0x1e,0xe0ed);SL(0x50,0);
-    SL(0,0x1c706);
-    return neo_effects_tick(a,e);                                        /* jmp 01C706 */
 }
 static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;uint32_t next=0;
@@ -598,82 +590,19 @@ static ga_result_t turret_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-/* ---- the flash 08EFFA and the shells 08F058 / 08F1A0 ---------------------------------- */
-static ga_result_t shell_tick(neo_gactor_t *a,neo_genv_t *e) {
-    int r;
-    switch (L(0)) {
-    case 0x8effa:
-        SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
-        ga_palette(a,0x208);
-        SW(0x28,W(0x28)+(uint16_t)(int16_t)(int8_t)B(0x8b));
-        SW(0x2c,W(0x2c)+(uint16_t)((int16_t)(int8_t)B(0x8c)-8));
-        START(0x22d264);
-        SL(0,0x8f040);
-        /* fall through */
-    case 0x8f040:
-        ga_project(a,e);
-        if ((r=ga_anim_step(a,e,NULL))<0 || e->unsupported) return GA_UNSUPPORTED;
-        if (r) SL(0,0x8efd6);
-        return GA_MORE;
-    case 0x8efd6:
-        return GA_DELETE_TREE;                                           /* 0041AC */
-    case 0x8efde:
-        return burst(a,e,false);
-    case 0x8f1e0:
-        return burst(a,e,true);
-    case 0x8f058: {
-        uint32_t at=rl(e,0x8fd5cu+4u*(B(0x88)&7u))+6u*(B(0x8a)&0xfu);
-        int16_t d4=0x20,d0=S16(rw(e,at));
-        if (d0<0) d4=-0x20;
-        if (B(0x94)&1u) d0=(int16_t)(d0-d4);
-        SL(0x30,(uint32_t)(int32_t)d0<<8);
-        SL(0x76,(uint32_t)(int32_t)S16(rw(e,at+2u))<<8);
-        SL(0x34,(uint32_t)(int32_t)S16(rw(e,at+4u))<<8);
-        uint8_t n=B(0x8a)&0xfu;
-        if (!n || n>=8u) SB(0x15,B(0x15)|0x20u);
-        goto fly;}
-    case 0x8f1a0: {
-        uint8_t angle=(uint8_t)((B(0x8a)&0xfu)<<4);
-        int32_t d1=(int32_t)ga_cosine(angle)*0xc00,d2=(int32_t)ga_sine(angle)*0xc00;
-        SL(0x30,(uint32_t)d1);SL(0x34,(uint32_t)d2);
-        SL(0x76,(uint32_t)-(d2>>5));
-        SB(0x93,B(0x93)|0x20u);}
-    fly:
-        ga_palette(a,0x373);
-        SW(0x66,0xe0ef);SW(0x1e,0xe0ef);
-        SB(0x15,B(0x15)&0xfeu);
-        START(0x28c32c);
-        SL(0,0x8f114);
-        /* fall through */
-    case 0x8f114:
-        ga_air(a,e);                                                     /* 0143E4 */
-        if (B(0x15)&0x40u) SL(0,0x8f1e0);
-        if (B(0x5f)&1u) SL(0,0x8f1e0);
-        SB(0x8a,(uint16_t)neo_angle((int16_t)(S16(W(0x30))>>4),(int16_t)(S16(W(0x34))>>4))>>3);
-        SL(0x34,L(0x34)+L(0x76));
-        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
-        if (ga_attack(a,e,(B(0x93)&0x20u)?0x8fc56u:0x8fc46u)) SL(0,0x8efde);   /* 0049E8 */
-        if (ga_cull_rect(a,e,0x8fc74)) SL(0,0x8efd6);                    /* 019504 */
-        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
-    default:
-        ga_fail(e,L(0));return GA_UNSUPPORTED;
-    }
-}
 static bool tank_routine(uint32_t r) {
     return r==0x8dcb2u || r==0x8dd34u || r==0x8dda2u || r==0x8dd6eu || r==0x8ddd4u || r==0x8ddfau || r==0x8de46u || r==0x8de84u || r==0x8dec2u ||
            r==0x8dedeu || r==0x8df16u || r==0x8df42u || r==0x8df76u || r==0x8df92u || r==0x8dfa6u || r==0x8e000u || r==0x8e034u || r==0x8e06eu ||
            r==0x8e08au || r==0x8e0d4u || r==0x8e104u || r==0x8e128u || r==0x8e144u || r==0x8ef3eu;
 }
+/* 08EEBC is entered from the turret's own update (never a node's routine at its dispatch here); as a label it is also
+ * where the Mission 1 boss's turret jumps (neo_boss.c, convert), which the world keeps as it was. */
 static bool turret_routine(uint32_t r) {
     return r==0x8eb18u || r==0x8eb3cu || r==0x8eb58u || r==0x8eb8eu || r==0x8ebb6u || r==0x8ec3au || r==0x8ec54u || r==0x8eccau || r==0x8ecf4u ||
-           r==0x8ed22u || r==0x8ed3cu || r==0x8edacu || r==0x8edc6u || r==0x8edfcu || r==0x8ee2cu || r==0x8ee62u || r==0x8ee78u || r==0x8eebcu ||
+           r==0x8ed22u || r==0x8ed3cu || r==0x8edacu || r==0x8edc6u || r==0x8edfcu || r==0x8ee2cu || r==0x8ee62u || r==0x8ee78u ||
            r==0x8eeeau || r==0x8ef46u;
 }
-static bool shell_routine(uint32_t r) {return r==0x8effau || r==0x8f040u || r==0x8efd6u || r==0x8efdeu || r==0x8f1e0u || r==0x8f058u || r==0x8f1a0u || r==0x8f114u;}
-bool neo_m5enemy_routine(uint32_t r) {return tank_routine(r) || turret_routine(r) || shell_routine(r);}
+bool neo_m5enemy_routine(uint32_t r) {return tank_routine(r) || turret_routine(r);}
 ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
-    uint32_t r=L(0);
-    if (tank_routine(r)) return tank_tick(a,e);
-    if (turret_routine(r)) return turret_tick(a,e);
-    return shell_tick(a,e);
+    return tank_routine(L(0))?tank_tick(a,e):turret_tick(a,e);
 }

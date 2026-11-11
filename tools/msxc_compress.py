@@ -9,6 +9,13 @@ table (count+1 words) of file offsets of the stored packets (bit 0: one pad
 byte follows the packet); a packet that LZ4 does not shrink is stored raw. The device decompresses with
 libdragon's decompress_lz4_full_fast (docs/RENDIMIENTO.md, ROM budget).
 
+v3 (written when it is smaller): a packet equal byte for byte to an earlier
+one is stored once (docs/COMPRESION.md, Duplicados). After the two tables
+comes a third, count u16 (padded to a word): the packet whose stored bytes
+each packet reads, itself or the first equal one. A packet that reads another
+stores nothing: its stored word is the next stored packet's offset, with no
+pad bit.
+
 usage: msxc_compress.py [--greedy] in.msxc out.msxc
 """
 import struct,sys
@@ -67,6 +74,22 @@ def lz4_unblock(src,size):
     assert len(out)==size
     return bytes(out)
 
+def unpack(o):
+    """The v1 movie a v2/v3 file holds (the reader of the player's tables)."""
+    version,count=struct.unpack('>I',o[4:8])[0],struct.unpack('>I',o[16:20])[0]
+    assert o[:4]==b'MSXC' and version in (2,3)
+    raw=[struct.unpack('>I',o[32+4*i:36+4*i])[0] for i in range(count+1)]
+    st=[struct.unpack('>I',o[32+4*(count+1)+4*i:36+4*(count+1)+4*i])[0] for i in range(count+1)]
+    ref=list(struct.unpack('>%dH'%count,o[32+8*(count+1):32+8*(count+1)+2*count])) if version==3 else list(range(count))
+    out=bytearray(o[:4]+struct.pack('>I',1)+o[8:32+4*(count+1)])
+    for k in range(count):
+        j=ref[k];assert j<=k and ref[j]==j;at=st[j]&~1;have=(st[j+1]&~1)-at-(st[j]&1);n=raw[k+1]-raw[k]
+        assert n==raw[j+1]-raw[j]
+        if j!=k:assert st[k]&1==0 and st[k]&~1==st[k+1]&~1
+        c=o[at:at+have];out+=c if have==n else lz4_unblock(c,n)
+    assert st[count]==len(o) and len(out)==raw[count]
+    return bytes(out)
+
 def main(a,b,greedy=False):
     d=open(a,'rb').read()
     assert d[:4]==b'MSXC' and struct.unpack('>I',d[4:8])[0]==1,a
@@ -82,14 +105,26 @@ def main(a,b,greedy=False):
     for p,c in zip(packets,packed):
         assert lz4_unblock(c,len(p))==p
         blobs.append(c if len(c)<len(p) else p)
-    at=32+8*(count+1);stored=[]
-    # Packets start even (PI DMA); bit 0 marks a packet followed by one pad byte.
-    for c in blobs:stored.append(at|(len(c)&1));at+=(len(c)+1)&~1
-    stored.append(at)
-    o=bytearray(d[:4]+struct.pack('>I',2)+d[8:32+4*(count+1)])
-    o+=b''.join(struct.pack('>I',v) for v in stored)
-    for c in blobs:o+=c+(b'\0' if len(c)&1 else b'')
-    assert len(o)==stored[-1]
+    first={};ref=[first.setdefault(p,i) for i,p in enumerate(packets)]
+    def write(version):
+        r=ref if version==3 else list(range(count))
+        at=32+8*(count+1)+(4*((count+1)//2) if version==3 else 0);stored=[None]*(count+1);body=bytearray()
+        # Packets start even (PI DMA); bit 0 marks a packet followed by one pad byte.
+        for k,c in enumerate(blobs):
+            if r[k]!=k:continue
+            stored[k]=at|(len(c)&1);body+=c+(b'\0' if len(c)&1 else b'');at+=(len(c)+1)&~1
+        stored[count]=at
+        for k in range(count-1,-1,-1):
+            if stored[k] is None:stored[k]=stored[k+1]&~1
+        o=bytearray(d[:4]+struct.pack('>I',version)+d[8:32+4*(count+1)])
+        o+=b''.join(struct.pack('>I',v) for v in stored)
+        if version==3:
+            o+=struct.pack('>%dH'%count,*r)
+            while len(o)%4:o.append(0)
+        o+=body;assert len(o)==stored[-1]
+        return bytes(o)
+    o=min((write(v) for v in (2,3)),key=len)
+    assert unpack(o)==d,'the stored movie does not give the source back'
     open(b,'wb').write(o)
     print('%s: %d -> %d bytes (%d packets)'%(b,len(d),len(o),count))
 

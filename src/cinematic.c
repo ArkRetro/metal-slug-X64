@@ -8,7 +8,8 @@
  * movie slot runs two background stages in the spare time before each
  * vertical blank, every step bounded by the time left:
  *  - loader: packets read from the ROM by asynchronous PI DMA into a ring of
- *    v1 packets, LZ4-decompressed in place (MSXC v2, tools/msxc_compress.py),
+ *    v1 packets, LZ4-decompressed in place (MSXC v2, tools/msxc_compress.py;
+ *    v3: a packet equal to an earlier one reads that one's stored bytes),
  *    CRC-checked and validated, all in pieces;
  *  - producer: whole frames decoded ahead into a pool of canvases: the RDP
  *    copies the previous frame (or clears, for the first) into a free canvas
@@ -32,8 +33,9 @@ typedef struct {
     bool active,failed,opened;
     char path[64];
     uint32_t rom,file_size,raw_size,maximum,extra,ring_full;
-    unsigned count,w,h;bool v2;
+    unsigned count,w,h;bool v2,v3;
     uint32_t *tables,*off,*st;   // raw (v1) offsets, then stored offsets (v2): big-endian words, the CPU's order
+    uint16_t *ref;               // v3: the packet whose stored bytes each packet reads (itself, or an equal earlier one)
     uint8_t **pkt;               // ring address of each loaded packet still needed: [prod,load)
     uint8_t *ring,*ring_old;uint32_t ring_size,ring_old_size;unsigned old_until;   // packets < old_until are in ring_old
     // loader
@@ -112,6 +114,7 @@ static int dma_step(slot_t *s) {
     dma_read_async(s->dma_dst+s->dma_pos,s->rom+s->at+s->dma_pos,n);s->dma_pos+=n;
     return STEP_WORK;
 }
+static uint32_t table_words(const slot_t *s) {return (s->count+1)*(s->v2?2u:1u)+(s->v3?(s->count+1)/2:0u);}
 static bool begin(slot_t *s,const char *path) {
     if (!path || strncmp(path,"rom:/",5) || strlen(path)>=sizeof(s->path)) return false;
     uint32_t addr=dfs_rom_addr(path+4);if (!addr) return false;
@@ -120,15 +123,15 @@ static bool begin(slot_t *s,const char *path) {
     static uint8_t header[32] __attribute__((aligned(16)));
     data_cache_hit_invalidate(header,sizeof(header));dma_read(header,s->rom,sizeof(header));
     uint32_t version=msx_cine_be32(header+4);
-    if (s->file_size<32 || memcmp(header,"MSXC",4) || (version!=1 && version!=2)) goto error;
-    s->v2=version==2;
+    if (s->file_size<32 || memcmp(header,"MSXC",4) || version<1 || version>3) goto error;
+    s->v2=version>=2;s->v3=version==3;
     s->w=msx_cine_be32(header+8);s->h=msx_cine_be32(header+12);s->count=msx_cine_be32(header+16);s->maximum=msx_cine_be32(header+20);
     if (!s->w || !s->h || s->w>320 || s->h>240 || !s->count || s->count>6000 || s->maximum<8 || s->maximum>512*1024 ||
         msx_cine_be32(header+24)!=59185606u || msx_cine_be32(header+28)!=1000000u || s->file_size>64u*1024*1024) goto error;
-    uint32_t words=(s->count+1)*(s->v2?2u:1u);
+    uint32_t words=table_words(s);
     if (32+4*words>s->file_size) goto error;
     s->tables=memalign(16,a16(4*words));if (!s->tables) goto error;
-    s->off=s->tables;s->st=s->v2?s->tables+s->count+1:NULL;
+    s->off=s->tables;s->st=s->v2?s->tables+s->count+1:NULL;s->ref=s->v3?(uint16_t *)(s->tables+2*(s->count+1)):NULL;
     s->extra=s->v2?INPLACE_EXTRA(s->maximum):0;
     s->stats=(msx_cinematic_stats_t){.frames=s->count,.max_packet=s->maximum,.width=(uint16_t)s->w,.height=(uint16_t)s->h};
     dma_begin(s,(uint8_t *)s->tables,32,4*words);s->ls=L_TABLE;
@@ -154,9 +157,17 @@ static int check_part(slot_t *s,unsigned n) {
         if (i) {s->chk_full+=a16(o-s->off[i-1]);s->heavy+=o-s->off[i-1]>16384;}
         if (s->v2) {
             uint32_t value=s->st[i],at=value&~1u;
-            if (!i && at!=32+8*(count+1)) return -1;
+            if (!i && at!=4*table_words(s)+32) return -1;
             if (i==count && value!=s->file_size) return -1;
-            if (at>s->file_size || (i && (at<=s->chk_prev || at-s->chk_prev>o-s->off[i-1]+1))) return -1;
+            /* v3: a packet read from an earlier one stores nothing (its
+             * word is the next stored packet's offset, no pad bit); its
+             * source stores its own bytes and has the same raw length. */
+            bool shared=s->v3 && i<count && s->ref[i]!=i,after_shared=s->v3 && i && s->ref[i-1]!=i-1;
+            if (shared) {
+                unsigned r=s->ref[i];
+                if (r>i || s->ref[r]!=r || (value&1u) || s->off[i+1]-o!=s->off[r+1]-s->off[r]) return -1;
+            }
+            if (at>s->file_size || (i && (after_shared?at!=s->chk_prev:(at<=s->chk_prev || at-s->chk_prev>o-s->off[i-1]+1)))) return -1;
             s->chk_prev=at;
         }
     }
@@ -248,7 +259,8 @@ static int load_step(slot_t *s,uint32_t deadline) {
         unsigned k=s->load;
         s->len=s->off[k+1]-s->off[k];s->have=s->len;s->at=s->off[k];
         if (s->v2) {
-            uint32_t first=s->st[k],next=s->st[k+1];s->at=first&~1u;
+            unsigned j=s->v3?s->ref[k]:k;
+            uint32_t first=s->st[j],next=s->st[j+1];s->at=first&~1u;
             if ((next&~1u)<=s->at) return STEP_ERROR;
             s->have=(next&~1u)-s->at-(first&1u);
             if (s->have>s->len || s->at+s->have>s->file_size) return STEP_ERROR;
@@ -425,7 +437,7 @@ int msx_cinematic_heap_bytes(void) {
     int bytes=0;
     for (unsigned i=0;i<2;i++) {
         const slot_t *s=&slots[i];if (!s->active) continue;
-        bytes+=(int)(s->ring_size+(s->ring_old?s->ring_old_size:0)+s->nbuf*frame_bytes(s)+(s->count+1)*4u*(s->v2?2u:1u)+(s->pkt?s->count*4u:0u));
+        bytes+=(int)(s->ring_size+(s->ring_old?s->ring_old_size:0)+s->nbuf*frame_bytes(s)+table_words(s)*4u+(s->pkt?s->count*4u:0u));
     }
     return bytes;
 }

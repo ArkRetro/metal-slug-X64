@@ -2,7 +2,10 @@
  * packet of a v1 movie and its v2 (LZ4) form, decode in place in random
  * pieces, CRC four bytes at a time, validate and apply in random pieces; the
  * bytes, CRCs and every frame's pixels must match msx_cine_* exactly.
- * usage: test_cinematic_stream v1.msxc v2.msxc */
+ * A v3 file (packets equal to an earlier one stored once) is read the
+ * player's way: each packet's bytes from the one its u16 says, with the
+ * table rules src/cinematic.c checks.
+ * usage: test_cinematic_stream v1.msxc v2-or-v3.msxc */
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,18 +21,29 @@ static size_t rnd(size_t lo,size_t hi) {seed=seed*1103515245u+12345u;return lo+(
 int main(int argc,char **argv) {
     if (argc!=3) {fprintf(stderr,"usage: %s v1.msxc v2.msxc\n",argv[0]);return 2;}
     size_t n1,n2;uint8_t *v1=slurp(argv[1],&n1),*v2=slurp(argv[2],&n2);
-    if (memcmp(v1,"MSXC",4) || msx_cine_be32(v1+4)!=1 || memcmp(v2,"MSXC",4) || msx_cine_be32(v2+4)!=2) {fprintf(stderr,"versions\n");return 1;}
+    if (memcmp(v1,"MSXC",4) || msx_cine_be32(v1+4)!=1 || memcmp(v2,"MSXC",4) || (msx_cine_be32(v2+4)!=2 && msx_cine_be32(v2+4)!=3)) {fprintf(stderr,"versions\n");return 1;}
     unsigned w=msx_cine_be32(v1+8),h=msx_cine_be32(v1+12),count=msx_cine_be32(v1+16),maximum=msx_cine_be32(v1+20);
     size_t pixels=(size_t)w*h;
     static msx_cine_crc_tables_t tables;msx_cine_crc_tables_init(&tables);
     uint16_t *a=calloc(pixels,2),*b=calloc(pixels,2);
     uint8_t *room=malloc(maximum+(maximum>>8)+256);
-    size_t compressed=0;
+    size_t compressed=0,shared=0;bool v3=msx_cine_be32(v2+4)==3;
+    const uint8_t *st=v2+32+4*(count+1),*ref=v2+32+8*(count+1);
+    #define ST(i) msx_cine_be32(st+4*(i))
+    #define REF(i) (v3?(unsigned)(ref[2*(i)]<<8|ref[2*(i)+1]):(i))
+    if ((ST(0)&~1u)!=32+8*(count+1)+(v3?4*((count+1)/2):0) || ST(count)!=n2) {fprintf(stderr,"stored table ends\n");return 1;}
+    for (unsigned i=0;i<count;i++) {
+        unsigned r=REF(i);
+        if (r>i || REF(r)!=r) {fprintf(stderr,"packet %u: ref %u\n",i,r);return 1;}
+        if (r!=i && ((ST(i)&1u) || ST(i)!=(ST(i+1)&~1u) || msx_cine_be32(v1+32+4*(i+1))-msx_cine_be32(v1+32+4*i)!=msx_cine_be32(v1+32+4*(r+1))-msx_cine_be32(v1+32+4*r))) {fprintf(stderr,"packet %u: shared entry\n",i);return 1;}
+        if (r==i && (ST(i+1)&~1u)<=(ST(i)&~1u)) {fprintf(stderr,"packet %u: stored order\n",i);return 1;}
+        shared+=r!=i;
+    }
     for (unsigned i=0;i<count;i++) {
         uint32_t o=msx_cine_be32(v1+32+4*i),e=msx_cine_be32(v1+32+4*(i+1)),len=e-o;
         const uint8_t *raw=v1+o;
         // v2 stored packet, decoded in place in random pieces.
-        uint32_t first=msx_cine_be32(v2+32+4*(count+1)+4*i),next=msx_cine_be32(v2+32+4*(count+1)+4*(i+1));
+        unsigned j=REF(i);uint32_t first=ST(j),next=ST(j+1);
         uint32_t at=first&~1u,have=(next&~1u)-at-(first&1u);
         if (have>len) {fprintf(stderr,"packet %u: stored %u > raw %u\n",i,have,len);return 1;}
         memset(room,0xA5,maximum+(maximum>>8)+256);
@@ -56,6 +70,6 @@ int main(int argc,char **argv) {
         if (memcmp(a,b,pixels*2)) {fprintf(stderr,"frame %u: pixels differ\n",i);return 1;}
         if (hi>pixels || (hi && lo>hi)) {fprintf(stderr,"frame %u: span %zu..%zu\n",i,lo,hi);return 1;}
     }
-    printf("cinematic stream PASS %s: %u packets (%zu LZ4), %ux%u, canvas crc=%08x\n",argv[2],count,compressed,w,h,msx_cine_crc32((const uint8_t *)a,pixels*2));
+    printf("cinematic stream PASS %s: %u packets (%zu LZ4, %zu read from an equal one), %ux%u, canvas crc=%08x\n",argv[2],count,compressed,shared,w,h,msx_cine_crc32((const uint8_t *)a,pixels*2));
     free(v1);free(v2);free(a);free(b);free(room);return 0;
 }

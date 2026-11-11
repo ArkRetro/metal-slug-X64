@@ -480,8 +480,8 @@
   },
   {
    "rom": "0x2D0AE4",
-   "reader": "0C3744 knife reach query row 2D0AE4 and 0C419E cut row 2D0AF4 (0049E8)",
-   "hex": "fffc000000220024000000010000fffffffc00000024002400020001001effff"
+   "reader": "0C3744 knife reach query row 2D0AE4 and 0C419E cut rows 2D0AF4 (Marco, Tarma: kind 2) and 2D0B04 (Eri, Fio: kind 3) (0049E8)",
+   "hex": "fffc000000220024000000010000fffffffc00000024002400020001001efffffffc00000024002400030001001effff"
   },
   {
    "rom": "0x03BB70",

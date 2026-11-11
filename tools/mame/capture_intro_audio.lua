@@ -33,6 +33,15 @@ local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},
 if os.getenv('MSX_TITLE_ONLY')=='1' then actions={} end
 local confirm=tonumber(os.getenv('MSX_CONFIRM_FRAME') or '0')
 if confirm>0 then actions[confirm]={'P1 A',1};actions[confirm+10]={'P1 A',0} end
+-- MSX_SELECT_INPUTS=FRAME:L|R,...: SOLDIER SELECT's cursor moved with the
+-- controller before the confirmation (each press held 10 frames), to
+-- capture the choice of Eri, Tarma or Fio (docs/PERSONAJES.md).
+for at,dir in (os.getenv('MSX_SELECT_INPUTS') or ''):gmatch('(%d+):([LR])') do
+ local name=dir=='L' and 'P1 Left' or 'P1 Right'
+ actions[tonumber(at)]={name,1};actions[tonumber(at)+10]={name,0}
+end
+-- MSX_DUMP_FIRST=n: VRAM and palette dumps only from frame n (disk).
+local dump_first=tonumber(os.getenv('MSX_DUMP_FIRST') or '0')
 local function dump()
  local video=assert(io.open(output..'/vram'..frame..'.bin','wb'))
  for address=0,0x85ff do video:write(string.pack('>I2',video_memory:read(address))) end
@@ -61,7 +70,7 @@ emu.register_frame_done(function()
   for i=0,255 do node[#node+1]=string.format('%02x',cpu:read_u8(0x1014c4+i)) end
   players:write(string.format('{"frame":%d,"routine":%d,"x":%d,"y":%d,"vx":%d,"vy":%d,"flags15":%d,"node":"%s"}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x1014f4),cpu:read_u32(0x1014f8),cpu:read_u8(0x1014d9),table.concat(node)));players:flush()
  end
- if frame%video_step==0 then dump() end
+ if frame%video_step==0 and frame>=dump_first then dump() end
  if frame%60==0 or (frame>=shot_first and frame<=shot_last) then manager.machine.screens[':screen']:snapshot(output..'/game'..frame..'.png') end
  if frame==finish then inputs:close();timing:close();players:close();manager.machine:exit() end
 end,'frame')

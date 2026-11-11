@@ -134,6 +134,32 @@ Detalle de contenido: `ESTADO.md`. Memoria: `MEMORY_OPTIMIZATION.md`,
   Prueba: `test_gameplay lifebar` (misma partida igual hasta el golpe con el
   modo apagado y encendido; reglas del modo).
 
+## Pausa (la de la ROM, `015520`)
+
+- La ROM trae la pausa del sistema doméstico: SELECT pausa y reanuda. El port
+  la ejecuta traducida (`src/neo_pause.c`): la paleta baja 8 niveles en
+  cuatro vueltas, la auto-animación se apaga, PAUSE parpadea en la capa fix
+  (columna 18, fila 26) y la música sigue. Detalle, captura y pruebas en
+  [PAUSA.md](PAUSA.md).
+- Añadido de la N64: START hace de SELECT durante el juego (en la
+  continuación sigue siendo START); R reinicia también desde la pausa.
+
+## Personajes: Marco, Tarma, Eri y Fio
+
+- SOLDIER SELECT: Izquierda/Derecha mueven el cursor (da la vuelta, como en
+  MAME) y A/Start elige; cada personaje tiene su película de elección y su
+  pack de la ROM (`romfs/chars/cN.bin`: programas de las mismas tablas en su
+  columna +6E, poses, paletas). Marco no cambia. Detalle, pruebas y
+  pendientes en [PERSONAJES.md](PERSONAJES.md).
+- Por personaje según la ROM: sprites y paletas, película y voz de la
+  elección, voz de muerte (`0C294E`), fila del corte (`2D0AF4` Marco/Tarma,
+  `2D0B04` Eri/Fio). Pendiente: el actor que Fio suelta al morir, el reposo
+  largo y el arma que cae (los dos últimos tampoco los tiene Marco).
+- La pausa y el menú de pruebas (L+R o Z+R con A/Start) funcionan igual con
+  cualquier personaje; el menú usa el personaje del cursor.
+- ares solo registra con ROM ≤ 67 043 328 bytes: ver el aviso de tamaño de
+  PERSONAJES.md.
+
 ## Menú de pruebas (no arcade)
 
 - En SOLDIER SELECT, mantener L+R (o Z+R) y pulsar A/Start abre MISSION SELECT (`main.c`): MISSION 1, MISSION 2 STAGE 1/2/3, MISSION 3, MISSION 4 (fase 1: mapa, colisión, cámara y capas; `docs/MISION4.md`); cruceta mueve, A/Start empieza, B vuelve, Z alterna la barra de vida (combina con B42; sin menú sigue siendo Z al confirmar).

@@ -620,6 +620,33 @@
    "event": "Marco's death voice: 0C2956 (hit death) and 0C2D6A (fall death) request table 0C294E[+6E] (Marco 1123, Tarma 1087, Eri 1125, Fio 114E) before anything else (MAME capboss: 1123 at every death, return 0C2D96)"
   },
   {
+   "label": "sfx_1087",
+   "word": "1087",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Tarma's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
+   "label": "sfx_1125",
+   "word": "1125",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Eri's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
+   "label": "sfx_114e",
+   "word": "114E",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Fio's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
    "label": "sfx_1130",
    "word": "1130",
    "callers": [],

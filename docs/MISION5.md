@@ -566,15 +566,68 @@ mapa dinámico `0140C4` y los premios `08CDB2`) y `0D3B36`; alcantarilla `2DEA8C
 hijo `08A264`) y `095C98`; el jefe `0A0C00`. Antes hay que resolver la RAM (arriba). La calle no tiene más
 constructores sin portar hasta su fin `0BBE16`; falta verla entera en ares (un mando que dispare hacia arriba).
 
+### Fase 2, quinta tanda (11-XI, agente B tras el corte)
+
+**El tren del metro `051344`** (`src/neo_m5train.c`, nuevo; registro `2DDF60`, cámara 528). Traducidos el tren y todos
+sus hijos: las ruedas `0515CE` (programa `050EE8[etapa]`, paletas por el `+9F` del tren), los bogies `051688` /
+`051690`, los paneles `051772` (`24922C[+96]`), las chispas `051DF2` → `051D70` (lista `050F40`, el tren baja 8 px
+una actualización) y luego las explosiones `01C71E` de `050F48`, el humo `051C00` (lista `050F50`), las piezas
+`051FF4` / `051FFE` (`0525EE`: siete, programa `+82`) y `052128`, el vaivén `0527A2` (`052840`), y las llamadas de sus
+programas (`0517D0`, `0518C4`, `051A1E`, `051B20`, `0521B4`, `0521D0`, `0521F2`, `0522E4`, `0523D6`, `0524C8`,
+`0524E0`, `0525C6`, `052840`, `051032`, `051082`, `0510D4`, `013F1E`). Salud `+4E` = rango `2D388E`, cinco etapas de
+daño (`+8A` umbral, `+8C` = salud / 5, programas `050ECC`), empuje del impacto por el tipo de arma `+9C` (`051220`,
+rangos `2D390A..2D39A6`), mapa de celdas `050D82` en (−78, 0) por `0140C4` mientras la etapa es < 5, salto final
+(`0521D0`: etapa 6, `+30` = FFFEC000, `+34` = 6C000) y destrucción (`0514EA`: `009BB0`, sonido 1034, piezas,
+escombros `050F62`, premio `08CDB2` en (−20, 58)). Las comprobaciones de cartucho (`10F00C` + 3EF) acaban en
+`004188`, como en `neo_m5enemy.c`.
+
+- Captura propia **`R`** (réplica de `run4` desde `sec07_252827`, raíces `51344,515ce,51688,51690,51772,527a2,52128,
+  51d70,51df2,51c00,51ff4,51ffe`, traza 262380..263700, volcados cada 30): el primer tren, destruido en 263176. Familia
+  **`m5train`**: 37 nodos, 2261 actualizaciones iguales a MAME (`--script-actor 101414 --script-routines
+  1c706,1c6ee,8c374`). Se rehace con `b/capK.sh` (`NAME=R LOADN=sec07_252827 LOADF=252827 BLOCKED=20 ROOTS=… FROM=262380
+  DUMP0=262380 LAST=263700 NOFIRE=1-2`).
+- Programas (31 raíces, grupo `m5`), descriptores (`export_rest_sprites.py` con `R@51344-52856`: 163 nuevos, paletas
+  10F, 110, 111, 112, 115, 116 y 1D) y tablas de ROM (`region_rom.json`: `2D388E`, `050D76`, `051126`, `24922C`).
+  Validación de `R`: 156 567 píxeles iguales y **70 distintos en 2 de 27 fotos**, sin cerrar: 263040 (20 px del
+  descriptor `1D04C4` del tren, donde MAME tiene el pen 3 de su paleta: otro sprite de la misma paleta encima, sin
+  identificar) y 263190 (50 px de `1D23E8` en x = 0: pens desplazados, el borde izquierdo de la pantalla; probable
+  defecto del validador con columnas en x < 0, sin comprobar).
+- El paquete de la M5 tiene ahora **1037 trozos**: `SCENE_MISSION_CHUNKS_MAX` 1024 → 1088 (con 1024 el paquete se
+  rechaza). Caché de escena en ares: 198 ranuras (3168 KB, suelo 197); `neo_m5train.o` 9,3 KB.
+- ares: el cartucho mide 67 239 936 bytes (más que el límite de log): las pruebas se hicieron con
+  `mission6.pack` fuera de `build/game-romfs`. El mando automático no llega a la cámara 528: el helicóptero
+  `0474B6` de la cámara 80 lo mata (incluso con `--lifebar --up 4 --back 9`, opción `--up` nueva: arriba 1,5 s cada
+  T s); el tren queda probado solo por la familia.
+
+**G11 (`routine=800040`) corregido** (también en la M3): el diagnóstico de parada del mundo lleva ahora la rutina del
+nodo (`soldier line=… (rutina)`) y la de su padre (`detail`): era el suelo de la balsa `08B43E` (padre `08B090`) en la
+cámara 289 de la calle. `08B52A` indexa `0E53E6` con el byte `(+7E del creador × 4) & FF`; `neo_m3enemy.c` lo volvía a
+multiplicar por 4 y con `+7E` = 1 tomaba la palabra `00800040` de la tabla como mapa. Calle en ares sin paradas.
+
+**Siguiente paso (metro, cámara 992): `0D3B36`** y sus 13 hijos (`0D4396`, `0D43C4`, `0D43F2`, `0D4420` / `0D444E`,
+`0D447C`, `0D4762` / `0D4776`, `0D498C`, `0D4A1E`, `0D4A82`, `0D4ABA`, `0D4C26`, `0D4F1C`, `0D5018`). Captura propia
+**`Q`** hecha y **guardada** en `captures-m5/fam/Q` (réplica de `run4` desde `sec07_252827`, raíces de los 14,
+traza 269300..271500, volcados cada 30): el aparato nace en 269327 (registro de cámara 992), dispara y lanza sus
+piezas, se destruye en 270999 (`0D40A6`) y acaba en 271119 (`0D4116`: tres `01C71E`, `0D5730`, `004188`).
+Desensamblado mirado (`0D3B36..0D5730`, unas 1250 instrucciones): tres entradas (`0D3B36` / `0D3B4C` / `0D3C5A` /
+`0D3C76`, paletas 3E5 / 25B / 25C, rangos `2C9D84` / `2C9E46`), los brazos `0D42A4` con su tabla de órdenes
+(`0D5530`, `jmp (a0)` sobre `0E8FBC` / `0E8FD8`), el núcleo `0D447C` (estados `0D44CA..0D470E`, conversión
+`0405EA` / `040846` al morir), los proyectiles `0D4762` / `0D4776` (`2CA75E` / `2CA7BE`, `01B0F6`) y los servicios
+`0D5060..0D5730`. Sin traducir. La familia se extrae con `extract_family_fixture.py … --range d3b36-d5800` y luego
+se borra `Q`.
+
 ## Pendiente (fase 2, por orden)
 
-1. **Actores nuevos**: tras la cuarta tanda quedan **66 constructores sin portar** (los 74 de la tercera menos
-   `08FF7E`, `090A62`, `091290`, `0912EE`, `047F7E`, `047A12`, `047B10` y `0AF1A8`, este por la fusión de la M4);
-   el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con `tools/build_mission5_actors_doc.sh`.
-   Paradas del guion: metro `2DDF60` (`051344`), alcantarilla `2DEA8C` (`08996A`).
+1. **Actores nuevos**: tras la quinta tanda quedan **54 constructores sin portar** (los 66 de la cuarta menos los 12 del
+   tren `051344`); el inventario ([MISION5_ACTORES.md](MISION5_ACTORES.md)) se regenera con
+   `tools/build_mission5_actors_doc.sh` (no regenerado en esta tanda: con el `script-native` de este árbol el script
+   daba 208 constructores sin portar de 222, un fallo de la herramienta sin investigar; el inventario sigue siendo el
+   de la tercera tanda). Paradas del guion: metro tras el tren (`0D3B36`, cámara 992, 14 constructores),
+   alcantarilla `2DEA8C` (`08996A`). El tren de la cámara 528 y los siguientes del metro no se han visto en ares (el
+   mando automático muere ante el helicóptero de la cámara 80).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
    `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
-3. **Trenes del metro** (familia `051344`, 12 constructores) y **el jefe**
+3. ~~Trenes del metro~~ (hecho en la quinta tanda) y **el jefe**
    `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
    estados `at_277000` (antes) y `at_280000..291500`.
 4. **Vehículos**: SV-001 `092A32` en la calle (registro `2DCE10`, cámara 280)

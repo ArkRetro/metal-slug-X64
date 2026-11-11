@@ -1,0 +1,56 @@
+# Plan de búsqueda y resolución de fallos (11-XI)
+
+Motivo: la regresión de la M6 (paleta 125 sin dibujar, etapa 3 parada en la
+cámara 320) entró entre la ROM 47 y la 50 sin que nadie la viera, porque las
+ROM 48 y 49 pasaban del límite de log de ares y se probaron sin la M6, y cada
+agente solo corría las pruebas de su misión.
+
+## 1. Detectar: matriz de regresión en cada subida
+
+- `tools/regression_ares.py` corre en un solo cartucho normal todas las
+  pruebas de ares del cartucho de juego (logo, pausa, personajes, M4, M5 ×3,
+  M6 ×3) y M1→M2 sobre un `m1end`, y cuenta en cada log los dibujos ausentes,
+  rutinas sin portar, piezas que faltan y programas parados.
+- Compara con `data/regression_baseline.json`: una prueba que pasaba y ya no,
+  o un recuento que sube, es regresión. Las bajadas se aceptan y se fijan con
+  `--write-baseline` tras una pasada revisada.
+- **Regla**: nadie sube a `ccr` sin la matriz en verde sobre el cartucho
+  completo (todas las misiones dentro). El script rechaza un cartucho de más
+  de 67 043 328 bytes; si una misión lo hace crecer, primero se busca el
+  duplicado (`docs/COMPRESION.md`), nunca se prueba quitando misiones.
+- `make check` sigue siendo la puerta bit a bit; la matriz es la puerta de
+  conjunto.
+
+## 2. Aislar
+
+1. Reproducir con la prueba más corta que falle (`--only`).
+2. Bisecar `ccr` entre la última ROM verde y la roja (`git bisect run` con la
+   prueba concreta; reconstruir los paquetes en cada paso con `build_packs.py`).
+3. Leer la rutina 68K y el código nativo implicados; una hipótesis cada vez,
+   anotada en el documento de la misión antes de cambiar código.
+
+## 3. Resolver
+
+- Arreglo en la causa, nunca en el síntoma ni rebajando la prueba.
+- Cada fallo corregido deja una prueba que lo habría detectado: familia bit a
+  bit, prueba de host en `make check` (p. ej. integridad: todo programa,
+  paleta y bloque que una escena referencia existe en el paquete) o una
+  comprobación nueva en la matriz.
+- Registro en `docs/BUG_MATRIX.md` (fila B nn: síntoma, cómo se reproduce,
+  esperado, observado, causa, commit, prueba que lo cubre).
+
+## 4. Fallos que trae el usuario (MiSTer)
+
+Cada informe se pasa a fila de `BUG_MATRIX.md`, se reproduce en ares con el
+estado o la etapa del menú de pruebas más cercanos, y entra por los pasos 2–3.
+Lo que no se pueda reproducir en ares se marca «solo hardware» y se pide al
+usuario una prueba concreta.
+
+## 5. Abierto ahora
+
+| Fallo | Estado |
+| --- | --- |
+| M6 etapa 3: paleta 125 sin dibujar, cámara parada en 320 | en curso (bisección) |
+| M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | en curso, mismo origen probable |
+| Prueba de personajes que supera 600 s | tiempo de la prueba ampliado a 1800 s en la matriz |
+| Voz de muerte de Tarma `1087` | pendiente de captura con audio |

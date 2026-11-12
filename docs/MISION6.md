@@ -394,6 +394,40 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   Paquete de la M6: 1200 trozos, `MSXD` 86 blobs.
 - **Siguiente**: jefes de la M6 y final (abajo).
 
+## Jefe intermedio `05310E` (12-XI, agente C)
+
+- Captura **`captures-m6/fam/B`** (`runB.sh`: réplica de `run4` desde `sec09_292683`, raíz de familia `5310e` desde
+  296800, volcados desde 296850, hasta 303000). Nace en 296857 (guion, cámara 2352), muere en 301809 y se hunde en el agua
+  hasta 302369.
+- Traducción en `src/neo_m6props.c` (`mid_*`), rutina a rutina: `05310E` (vida rango `2CFF8A`, umbral `+76`/`+78` = vida/5,
+  `+54` = `2D01BA`, paleta 38E, las cuatro partes `0539E0` / `0539EE` / `0539C4` / `0539D2`, lado `+8A` por `+28` < 08C0),
+  la entrada `0531EC` / `053214` / `053254` / `053280`, el bucle de decisión `0532F6` (en su orden: sin blanco `0534A8`, de
+  espaldas `0533A2`, cuerpo a cuerpo `052C78` → `05345E`, agarre `052CDA` → `05344A`, patada `052E06` → `053698`, disparo
+  `052D82` → `0533EE` (voz `052B56`), borde `052D0A` → `0533E2`, saltos `052D36` → `0535AE` y `052E88` → `053658`, partes
+  `052ED4` → `0533E2`, en el aire → `053520`), los saltos (`053520` / `05358A` / `0535AE` / `053658`, `05362A`), la caída
+  `052B7A`, el blanco `052BDA` (`01AEDA`, `01AFFC` con `052B3E`, `01AF9A`), la cola común `052F04` (`004C24` o `+92`,
+  chispa `040ED0` y tinte `053DCC` al herir, muerte por `+5F` bit 7, recorte `019504` con `052B46` → `052F8A`), la muerte
+  `0536F4` (`040F04`, `05390C`, en el aire `0537AE` / `0537D0`), `053748`, el final `0537F4` / `05385C` / `0538AE` /
+  `0538C8` (`0C8CD6`, `10C00B` = 0, `10C00C` = FF, `0CA2E0` con `0537E4` ×2, cámara `10E95C` / `10E960`, `0C09DA` con F,
+  `+7E` = `10E992`) y `052F8A` (`019DFC`, `0CA2F2` ×2, `0C8CE6`, `0C7B48(0)`, `10C44C` = 0); las llamadas de programa
+  `05304A` / `05305C` (polvo `053A48` / `053A5C`), `05306E` / `0530AA` (cuchillo `053CB2`, sonido 10F4), `052E3E` (granada
+  `053B38`), `053DBC` (fila `052AE6`), `053E20` (objeto 49 de `08CDB2`); el hundimiento `05439E` (`053F0A` / `053E40`,
+  siete `0540EA`, `0542B0`, `0541F2` con `03C5C6`; `012040` es el inverso de `012022`) y la paleta de chapoteo de la etapa
+  9 en `019240` (`01932E`: 154 antes de la cámara 0700, 166 después).
+- **Familia `m6mid`** (`make check`; `--range 52a00-546ef --attacks` y la RAM de los jugadores `+2C`, el anillo del
+  terreno, `10C44C`, `10E992`, `10C2F6`): **56 nodos, 15 554 actualizaciones en lazo cerrado iguales a MAME** (296857..302369),
+  55 borrados, 4171 dibujos. Arnés: `camera_push` (`10E95C`), `camera_y` (`10E992`), `10C44C` y el manejador `0537E4`.
+- Sprites: `export_rest_sprites.py ... captures-m6/fam/B@52a00-546ef`: 11 975 descriptores (+115), 372 paletas; 849 971
+  píxeles iguales, 0 distintos. Programas en `extract_soldier_programs.py` (sin grupo). Paquete de la M6: 1224 trozos
+  (`SCENE_MISSION_CHUNKS_MAX` 1200 → 1224). Tablas `052A8E`, `053B30`, `053C9E`, `2CFF8A..2D01E1` en el grupo `m6`.
+- Memoria: el código del jefe (~13 KB) dejaba la caché en 3318 KB (suelo 3332). La copia mutable de la rejilla de la M1
+  (`dynamic_grid_m1`, 15 KB de bss) sale del montón en su primera escritura (`neo_collision.c`; las misiones de paquete
+  pasan la suya): de nuevo 208 ranuras (3328 KB) con la M6 entera.
+- **Pendiente**: `009CCE` (mezcla de paleta del tinte de daño y del fundido de la muerte) no se dibuja (se cuenta como
+  externa 0x9CCE); `0C09DA` se registra (`guard_min`) pero no se aplica a los jugadores (como `player_guard`); las balas
+  `053B38` / `053CB2` no entran en la familia de `B` (su creador es el actor de guion `101414`): traducidas, sin prueba
+  bit a bit todavía (captura con esas raíces); en ares el piloto de `test_mission6_ares.py` no llega a la cámara 2352.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

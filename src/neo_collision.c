@@ -2,13 +2,21 @@
 #include "mission_collision.h"
 #include <limits.h>
 #include <string.h>
+#include <stdlib.h>
+#ifdef N64
+#include <libdragon.h>
+#endif
 #include "vehicle_wreckage.h"
-static uint8_t dynamic_grid_m1[sizeof(neo_grid)];
+/* Mission 1's mutable copy of neo_grid (the wreckage and stamps write it):
+ * from the heap at its first write, not 15 KB of bss from the boot (the
+ * scene cache is sized from the heap left at the boot; docs/MISION6.md
+ * "Memoria"). The mission packs pass their own buffer. */
+static uint8_t *dynamic_grid_m1;
 static bool dynamic_active;
 /* Active grid (column major, `rows` cells per column, row 0 at the bottom):
  * Mission 1's compiled neo_grid, or a stage of a mission pack
  * (neo_collision_set_grid, docs/MISION2.md "Fase 2"). */
-static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid=dynamic_grid_m1;static const uint8_t *unknown;
+static const uint8_t *grid=neo_grid;static uint8_t *dynamic_grid;static const uint8_t *unknown;
 static unsigned columns=NEO_GRID_COLUMNS,rows=32,unknown_reads;
 /* Kernel row of the grid's row 0 (neo_collision_set_row_origin): 0, or the
  * negative row of a map that goes below the kernel's y 0 (Mission 4: the
@@ -74,7 +82,7 @@ void neo_collision_ring_copy(int d0,int d1,int d2,int d3,int d4,int d5) {
 }
 void neo_collision_reset(void) {dynamic_active=false;ring_on=false;}
 void neo_collision_set_grid(const uint8_t *cells,uint8_t *dynamic,const uint8_t *unknown_mask,unsigned column_count,unsigned row_count) {
-    if (!cells) {grid=neo_grid;dynamic_grid=dynamic_grid_m1;unknown=NULL;columns=NEO_GRID_COLUMNS;rows=32;}
+    if (!cells) {grid=neo_grid;dynamic_grid=NULL;unknown=NULL;columns=NEO_GRID_COLUMNS;rows=32;}
     else {grid=cells;dynamic_grid=dynamic;unknown=unknown_mask;columns=column_count;rows=row_count;}
     dynamic_active=false;unknown_reads=0;ring_on=false;ring=NULL;row0=0;
 }
@@ -85,6 +93,16 @@ void neo_collision_ring_bypass(bool on) {ring_bypass=on;}
 unsigned neo_collision_rows(void) {return rows;}
 unsigned neo_collision_unknown_reads(void) {return unknown_reads;}
 static void make_dynamic(void) {
+    if (!dynamic_grid) {   /* Mission 1 (grid = neo_grid) */
+        if (!dynamic_grid_m1 && grid==neo_grid) dynamic_grid_m1=malloc(sizeof(neo_grid));
+        if (!dynamic_grid_m1 || grid!=neo_grid) {
+#ifdef N64
+            assertf(0,"neo_collision: no dynamic grid (Mission 1 heap, %u bytes, or a stage without its buffer)",(unsigned)sizeof(neo_grid));
+#endif
+            abort();
+        }
+        dynamic_grid=dynamic_grid_m1;
+    }
     if (!dynamic_active) {memcpy(dynamic_grid,grid,columns*rows);dynamic_active=true;}
 }
 static int cell_floor(int32_t value) {

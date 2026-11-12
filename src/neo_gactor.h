@@ -62,7 +62,7 @@ typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
     uint8_t player_lock;             /* RAM 10E9E3 (0C8CD6 / 0C8CE6) */
-    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC (0CA2E0): 0 none, 1 = 054B18 (no-op), 2 = 0C0538 (018F92), 3 = 0CA3EC (walk to walk_to[], 0CA340), 4 = 0BBF0E (sub.w d7,d7: no input, as 054B18; the metro's end 0BBF12) */
+    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC (0CA2E0): 0 none, 1 = 054B18 (no-op), 2 = 0C0538 (018F92), 3 = 0CA3EC (walk to walk_to[], 0CA340), 5 = 0537E4 (sub.l d7,d7: no input; the Mission 6 mid-boss), 4 = 0BBF0E (sub.w d7,d7: no input, as 054B18; the metro's end 0BBF12) */
     uint16_t walk_to[2];             /* RAM 10EA00/10EA02: screen X the 0CA3EC handler walks each player to (0CA340) */
     uint8_t mission_end;             /* RAM 10C300 = FF (018F92: halt; the level script actor 101414 is deleted, 0041D0) */
     uint8_t end_kind;                /* RAM 10C304 (018F92: +5E of the caller) */
@@ -85,6 +85,8 @@ typedef struct neo_ga_flags {
     uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
     uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
+    uint8_t m6_signal;               /* RAM 10C44C (Mission 6 mid-boss 05310E: cleared by 052F8A, set by 0530F4) */
+    uint8_t guard_min;               /* 0C09DA's D0 last asked (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; not applied yet) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
@@ -183,6 +185,7 @@ struct neo_genv {
     uint16_t video;                  /* RAM 10000E */
     uint16_t ref69b8;                /* RAM 10E9B8: the script's player reference x (op 10, 01A30C; read by 098678) */
     uint16_t camera;                 /* RAM 10E99E */
+    uint16_t camera_y;               /* RAM 10E992 (read by the Mission 6 mid-boss 05310E at its end) */
     uint16_t camera_low;             /* RAM 10E9A0 (low word of the progress long, 0C7B26) */
     uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
     uint8_t *arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, 05287C) */
@@ -277,6 +280,7 @@ struct neo_genv {
     bool clear_shots;                /* RAM 1067E4 (copy of 1067E5 by 0046E0): 004C0E carry, enemy shots vanish */
     void (*camera_mode)(void *ctx,uint8_t mode);       /* 0C7B48: RAM 10E95A */
     void (*camera_rise)(void *ctx,int32_t vy);         /* RAM 10E960 (autoscroll vy) */
+    void (*camera_push)(void *ctx,int32_t vx);         /* RAM 10E95C (autoscroll vx) */
     void (*shake)(void *ctx);                          /* 0C801A */
     bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
     bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */

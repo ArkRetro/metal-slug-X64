@@ -244,6 +244,8 @@ static uint16_t splash_palette(const neo_genv_t *e) {   /* 019240 D1 */
     switch (e->pickup?e->pickup->mission:0u) {
     case 1: return 0x151;case 4: return 0x152;
     case 5: return 0x150;case 8: return 0x153;
+    case 9: return e->camera<0x700u?0x154:0x166;   /* 01932E: Mission 6 stage 1 */
+    case 12: case 13: return 0x20c;
     default: return 0;
     }
 }

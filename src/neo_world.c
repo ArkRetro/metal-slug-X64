@@ -446,6 +446,7 @@ static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bo
 static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id);}
 static void g_camera_mode(void *ctx,uint8_t mode) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_set_auto(&t->w->camera,mode);}
 static void g_camera_rise(void *ctx,int32_t vy) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vy=vy;}
+static void g_camera_push(void *ctx,int32_t vx) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vx=vx;}
 static void g_shake(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_start(&t->w->camera);}
 static void g_shake_pulse(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_pulse(&t->w->camera);}
 #ifdef MSX_HAS_M3MID
@@ -1578,7 +1579,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->player_flags15[0]=pl?pl->flags15:0;g->player_flags15[1]=0;
     /* RAM 10000E as the actors read it: the counter has already advanced for
      * this update (video_phase is the value before it). */
-    g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
+    g->video=(uint16_t)(w->video_phase+1u);g->ref69b8=w->script.w69b8;g->camera=camera;g->camera_y=(uint16_t)((uint32_t)w->camera.y>>16);g->scroll_x=w->terrain.x;g->scroll_y=w->terrain.y;g->grid=w->grid;g->ctx=&t;
     g->parent=g_parent;g->program=g_program;g->emit=emit;g->emit_ctx=&t;g->spawn=g_spawn;g->sound=g_sound;
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
@@ -1639,7 +1640,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * lands on it, kernel object TRAIN; docs/MISION3.md). */
     if (w->stage_camera_base==0x0B8968u) g->terrain_tag=0x10c72eu;
     g->flags=&w->ga_flags;w->ga_flags.camera_restart=w->camera.restart;   /* RAM 10E9D0 (0B9286) */
-    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
+    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->camera_push=g_camera_push;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];

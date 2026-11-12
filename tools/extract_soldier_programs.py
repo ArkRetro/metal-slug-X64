@@ -444,6 +444,13 @@ ROOTS+=[0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4,0x2a95a4]
 # Mission 6 stage 1 hanging bridge spans 0BCFA4 / 0BCFC4 / 0BCFE4 / 0BD004 (neo_m6props.c; no group): 2A923C / 2A92C8 /
 # 2A9354 / 2A93E0.
 ROOTS+=[0x2a923c,0x2a92c8,0x2a9354,0x2a93e0]
+# Mission 6 stage 1 mid-boss 05310E (neo_m6props.c; no group): walk 249D10 / 249D84, turn 249DD0, shout 249FB2, melee
+# 249A40 / 249B42, wait 24A014, land 249E80, jump 249E38, kick 24A0BE, deaths 249EC8 / 249F6A / 249F8A / 249F4C; dust
+# 249AF0 / 249C1A; grenade 24A260 (blast 22CB60); knife 244DBC (stuck 24A15C / 24A1AE); the fall 24A20A / 24A21E / 24A214,
+# splashes 22E1F0 / 22E064 / 24A306 / 269340.
+ROOTS+=[0x249d10,0x249d84,0x249dd0,0x249fb2,0x249a40,0x249b42,0x24a014,0x249e80,0x249e38,0x24a0be,0x249ec8,0x249f6a,0x249f8a,
+        0x249f4c,0x249af0,0x249c1a,0x24a260,0x22cb60,0x244dbc,0x24a15c,0x24a1ae,0x24a20a,0x24a21e,0x24a214,0x22e1f0,0x22e064,
+        0x24a306,0x269340]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

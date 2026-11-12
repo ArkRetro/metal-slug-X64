@@ -231,6 +231,18 @@ typedef struct {
     /* The layer's 19 x 10 blocks as 0C714E left them (tile << 16 |
      * attribute; column major), drawn by actor.c. */
     uint32_t m3grid[19*10];
+    /* Mission 4 boss 02267E (neo_m4boss.c): the layer object 10D7B6 (RAM
+     * 10D7B6..10D83D) from the boss's 024BDA on, stepped by 0C8240 with the
+     * flag byte 10E957 (camera layer_flags[1]) and the speeds 694E/6952
+     * (m4speed); what 0C714E wrote into its sprite columns: every write of
+     * this boss covers a whole map column (its 13 rows: 024BDA, 0C741A and
+     * the treads' 20 x 13 patches), so ring slot n < 20 (the map width)
+     * holds map column n of m4col_map[n] from tile slot m4col_top[n] down
+     * (0 = none); the map last drawn and the patches; 002802 requests of
+     * the treads (m4anim: D0 + 1, 0 = none) for the LSPC (gameplay.c). */
+    uint8_t m4layer[0x88];bool m4layer_used;
+    int32_t m4speed[2];uint32_t m4layer_map;unsigned m4patch_count;uint16_t m4anim;
+    uint32_t m4col_map[20];uint8_t m4col_top[20];
 #endif
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the

@@ -42,16 +42,16 @@ int main(int argc,char **argv) {
             const soldier_program_ref_t *r=&soldier_program_refs[i];
             if (i && r[-1].tag>=r->tag) {fprintf(stderr,"reference %u: tags not ascending\n",i);return 1;}
             const soldier_program_t *t=table(r->tag);
-            if (!t || t->program.count!=r->count) {fprintf(stderr,"program %06x: not in the table with %u commands\n",(unsigned)r->tag,r->count);return 1;}
-            const neo_anim_command_t *c=neo_progstore_load(r->offset,r->count);
+            if (!t || t->program.count!=SOLDIER_PROGRAM_REF_COUNT(r)) {fprintf(stderr,"program %06x: not in the table with %u commands\n",(unsigned)r->tag,(unsigned)SOLDIER_PROGRAM_REF_COUNT(r));return 1;}
+            const neo_anim_command_t *c=neo_progstore_load(r->offset,SOLDIER_PROGRAM_REF_COUNT(r));
             if (!c) {fprintf(stderr,"program %06x: not read\n",(unsigned)r->tag);return 1;}
-            for (unsigned k=0;k<r->count;k++) {
+            for (unsigned k=0;k<SOLDIER_PROGRAM_REF_COUNT(r);k++) {
                 const neo_anim_command_t *a=&c[k],*b=&t->program.commands[k];
                 if (a->kind!=b->kind || a->asset!=b->asset || a->target!=b->target || a->operand!=b->operand || a->flags!=b->flags || a->dx!=b->dx || a->dy!=b->dy) {
                     fprintf(stderr,"program %06x command %u differs\n",(unsigned)r->tag,k);return 1;
                 }
             }
-            commands+=r->count;
+            commands+=SOLDIER_PROGRAM_REF_COUNT(r);
         }
         neo_progstore_stats_t s=neo_progstore_stats();
         if (s.programs!=n || s.failed || !s.heap_blocks || s.bytes-s.heap_bytes+16u*s.heap_blocks>ARENA) {fprintf(stderr,"store counts: %u programs, %u failed, %u heap blocks\n",s.programs,s.failed,s.heap_blocks);return 1;}

@@ -118,10 +118,12 @@ void neo_layers_event(neo_layer_t l[NEO_LAYERS],const uint8_t *list,uint8_t kind
         l[i].ring=true;l[i].ring_base=(int32_t)(-(int32_t)neo_layer_word(l[i].x))&~511;
     }
 }
-void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4]) {
+void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4]) {neo_layers_step_own(l,root_vx,root_vy,flags,false,0);}
+void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4],bool own,int32_t own_vx) {
     for (unsigned i=0;i<NEO_LAYERS;i++) {
-        if (i<4 && flags[i]) continue;
-        l[i].x=(int32_t)((uint32_t)l[i].x+(uint32_t)neo_layer_step(root_vx,l[i].fx,&l[i].frac_x));
+        bool own_x=own && i<4 && flags[i]==1u;   /* 0C81C0: bit 0 of 10E956+i, x by 10E94E (0C8212 / 0C826C) */
+        if (i<4 && flags[i] && !own_x) continue;
+        l[i].x=(int32_t)((uint32_t)l[i].x+(uint32_t)neo_layer_step(own_x?own_vx:root_vx,l[i].fx,&l[i].frac_x));
         l[i].y=(int32_t)((uint32_t)l[i].y+(uint32_t)neo_layer_step(root_vy,l[i].fy,&l[i].frac_y));
     }
 }

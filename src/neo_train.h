@@ -72,6 +72,9 @@ void neo_layers_event(neo_layer_t l[NEO_LAYERS],const uint8_t *list,uint8_t kind
 /* 0C81C0 after the camera update: the root's velocity 6970/6974 through each
  * layer's factors; a layer whose flag byte is not 0 is left to its owner. */
 void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4]);
+/* The same with an owner's x step (RAM 10E94E) for the layers whose flag
+ * byte is exactly 1 (bit 0: x by 10E94E, y by the root) when own is set. */
+void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4],bool own,int32_t own_vx);
 /* +84 de una capa sin padre (0C75B2): palabra alta de +14. */
 static inline int16_t neo_layer_word(int32_t x) {return (int16_t)(uint16_t)((uint32_t)x>>16);}
 /* Cuadro del cielo 10E83E (0B8EDC): 0 = el mapa 0B857C de la etapa, 1..4 =

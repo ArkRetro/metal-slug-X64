@@ -10,6 +10,7 @@ enum { NEO_TOWER_PIECES=128 };
 #include "neo_gactor.h"
 #include "neo_camera.h"
 #include "neo_train.h"
+#include "neo_m6bridge.h"
 #include "neo_boss.h"
 #include "neo_blood.h"
 #include "neo_vslot.h"
@@ -147,6 +148,9 @@ typedef struct {
     neo_camera_t camera;bool camera_native;
     neo_train_t train;           /* Misión 3: capa del tren 10D7B6 (neo_train.c) */
     neo_layer_t layers[NEO_LAYERS];   /* layer objects moved by the camera list (neo_train.h, docs/MISION4.md) */
+    /* Mission 6 stage 1: the hanging bridge's driver (neo_m6bridge.h) and
+     * its step 10E94E, which 0C81C0 gives 10D7B6 while bit 0 of 10E957 is set. */
+    neo_m6bridge_t bridge;int32_t bridge_dx;
     bool script_skip_unported;   /* reference cartridge: neo_script_env_t.skip_unported */
     /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
      * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */

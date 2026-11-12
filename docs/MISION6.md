@@ -318,6 +318,24 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   `10D7B6`. Las lecturas no vacías de su anillo son de barridos que no aterrizan (y de los soldados). El puente no
   bloquea el camino de `run4`: es la colisión y los dibujos del puente para los demás actores (fase 2, actores).
 
+### Puente: el conductor nativo (12-XI)
+
+- `src/neo_m6bridge.c`: `0BCDC2` (cabeza de la lista: `10C70C` = 0, modo 0, `10C706` = 0; los actores `0BD2CE`,
+  `0BD2BA`, `0BD18E` que crea siguen sin portar), `0BCE18` / `0BCE22` (modo), `0BCF36` / `0BCF46` / `0BCF86` /
+  `0BCF8C` / `0BCF94` (entrada de `0BCE96`; `0BCF46` más allá del final es el `trap #F`), `0BCE2C` (modo 0 conserva
+  `10C706`; modo 1 −0x4000 hasta −2 px; modo 2 ¾ de la raíz y −0x2000 hasta −8 px) y `0BCEB0`.
+- Prueba bit a bit `tools/test_m6_bridge.c` (en `make check`) con `data/m6bridge_fixture.json.gz`
+  (`tools/extract_m6bridge_fixture.py` sobre `captures-m6/fam/R`): las 1650 actualizaciones de `0BCE2C` escriben lo
+  mismo que MAME (`10C706`, `10E94E`, `+32`/`+34`, `10C704`, `10C70C`; 12 saltos del origen).
+- Mundo: `neo_world_camera` pasa las llamadas al conductor y, tras el paso de cámara, calcula `10E94E` y el bucle
+  sobre `layers[NEO_LAYER_MID]` (`+32` = `column`, `+34` = `top`, `+36` de su x). `0C81C0` (`neo_layers_step_own`)
+  mueve la x de una capa con bandera exactamente 1 por `10E94E` y sus factores (`0C826C`); con otras banderas sigue
+  quieta como antes. m6s1 / m6s2 en ares: PASS, sin cambios en los recuentos.
+- **Siguiente**: `0BD18E` (balanceo `10C712..10C714`), los creadores `0BD2BA` / `0BD2CE` y los tramos `0BCFA4..0BD004`
+  (programas `2A923C..2A93E0`, paleta 4E1), familia sobre `R`; luego el objeto de núcleo `10D7B6` (mapa `0BC6E6`,
+  colisión `45FC2A`). El orden «cámara, luego `0BCE2C`» del mundo es el del tren de la M3; falta comprobar la x de
+  `10D7B6` con una captura que la lea (R solo trae las lecturas del conductor).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho para las balsas (arriba, «Fase 2»); falta el puente colgante `10D7B6` (`0BCE2C`, `0BD18E`,

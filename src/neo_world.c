@@ -1986,7 +1986,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_camera_commands(&w->camera,&w->script.w69b8,&w->script.w69ba);
         firsts=w->camera.event_count;memcpy(first,w->camera.events,sizeof(first));
         /* The head's layer ops (0x14, 0x18, 0x1C) before the first step. */
-        memset(w->layers,0,sizeof(w->layers));
+        memset(w->layers,0,sizeof(w->layers));memset(&w->bridge,0,sizeof(w->bridge));w->bridge_dx=0;
         for (unsigned i=0;i<firsts;i++) neo_layers_event(w->layers,w->camera.list,first[i].kind,first[i].address,first[i].at,neo_camera_root_x(&w->camera),neo_camera_root_y(&w->camera));
     }
     if (!w->camera_native) {
@@ -2004,7 +2004,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_camera_t *c=&w->camera;
         for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=p[i].alive;c->op4_players[i].px=p[i].px;c->op4_players[i].py=p[i].py;c->op4_players[i].rect_ok=p[i].rect_ok;}
         neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
-        neo_layers_step(w->layers,c->root_vx,c->root_vy,c->layer_flags);
+        neo_layers_step_own(w->layers,c->root_vx,c->root_vy,c->layer_flags,w->bridge.on,w->bridge_dx);
         neo_camera_finish(c,&w->script.w69b8,&w->script.w69ba);
         for (unsigned i=0;i<c->event_count;i++) {
             const neo_camera_event_t *e=&c->events[i];
@@ -2020,6 +2020,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     for (unsigned i=0;i<w->camera.event_count;i++) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
+        if (neo_m6bridge_call(&w->bridge,at)) {if (at==0x0BCDC2u) w->bridge_dx=0;continue;}   /* Mission 6 stage 1 bridge (0BCA00) */
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
         if (at==0x0BC550u) w->ga_flags.limit700=0x200;                /* Mission 5 sewer list head (0BBA24): 10C700 = 200 */
         if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */
@@ -2029,6 +2030,16 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
             if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
             else w->camera_events_unsupported++;
         }
+    }
+    if (w->bridge.on) {
+        /* 0BCE2C (an actor of priority 1C, after the camera actor): 10E94E
+         * from this update's root step 10E970, which the next 0C81C0 gives
+         * 10D7B6; then 0BCEB0 with +36 of its x (0C748E, refreshed by the
+         * camera commands before). */
+        neo_layer_t *l=&w->layers[NEO_LAYER_MID];
+        w->bridge_dx=neo_m6bridge_drive(&w->bridge,w->camera.root_vx);
+        int16_t o36=(int16_t)((int16_t)(uint16_t)((0xffc00000u-(uint32_t)l->x)>>16)>>4);
+        neo_m6bridge_loop(&w->bridge,&l->column,&l->top,o36);
     }
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}

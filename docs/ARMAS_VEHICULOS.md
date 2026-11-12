@@ -1781,7 +1781,9 @@ raíces `96a60,96c3a,3b57c,97886,3527e,3533a,96b32,96b62,96c22`, rango `966f0-97
 `03533A`/`03536C`, `09756A` en 39669). Extracción con el `A` de arriba más `--range
 3533a-3539f`. El piloto es el personaje 1 del TAS (programa `29E122`): los programas de
 las tablas `09649C[1..3]` entran en `soldier_programs.json` (posiciones de las de Marco;
-sus sprites siguen sin exportar). `slughit`: 6 nodos, 2988 actualizaciones 38008..39670
+grupo `m5`: fuera de la imagen de la consola por el presupuesto de RAM —con ellos la
+caché de escena quedaba en 3331 KB, suelo 3332—; sus sprites siguen sin exportar, así que
+montar el Slugnoid con Eri, Tarma o Fio en la M2 sigue en parada explícita). `slughit`: 6 nodos, 2988 actualizaciones 38008..39670
 iguales bit a bit (`make check`).
 
 **No capturado** (traducido de la ROM, sin prueba): la reacción en el aire

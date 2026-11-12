@@ -27,13 +27,13 @@ import argparse,os,re,subprocess,time
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--mission',default='m1',choices=('m1','m2s3','m5s3'))
-p.add_argument('--expect',default='',help='comma list of vehicle kinds that must pass (default: m1 -> 2,1; m2s3 -> 3)')
+p.add_argument('--expect',default='',help='comma list of vehicle kinds that must pass (default: m1 -> 2, the Camel; the blind pad walks past the SV-001; m2s3/m5s3 -> 3)')
 p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type=float,default=60,help='seconds the pad waits on a vehicle')
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
-expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
+expect=[int(k) for k in (a.expect or {'m1':'2','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
 MENU={'m1':0,'m2s3':3,'m5s3':8}[a.mission]          # main.c mselect_items: Down presses from MISSION 1
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
@@ -102,8 +102,10 @@ try:
             mm=re.findall(r'MSX (?:stage \d+ camera x=|camera progress=\d+ x=)(-?\d+)',text[-20000:])
             subprocess.run(['import','-display',env['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{mm[-1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         # a kind is done once its rides show everything (checked below on the whole log)
-        for kind in expect:
-            if kind not in done and re.search(r'MSX player left vehicle kind=%d '%kind,text):done.add(kind)
+        # (the `left` line prints the slot's +1D: the kind of the last mount is the one left)
+        if lefts and not riding:
+            km=re.findall(r'MSX player mounted vehicle kind=(\d+)',text)
+            if km:done.add(int(km[-1]))
         time.sleep(.03)
     for n in list(held):hold(n,False)
     text=log()

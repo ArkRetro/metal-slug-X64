@@ -90,9 +90,12 @@ try:
         waiting=riding and t-ride_since<a.wait
         prog=re.findall(r'MSX (?:stage \d+ camera x=|camera progress=)(-?\d+)',text[-20000:])
         if prog and prog[-1]!=last_prog:last_prog=prog[-1];prog_at=t
-        stuck=t-prog_at>12   # a camera stop (the Mission 1 towers, a helicopter): aim up half the time
-        up=not riding and ((stuck and (t%3.0)<1.5) or (bool(a.up) and (t%a.up)>a.up-1.2))   # on foot: aim up a while
-        hold('Up',up);hold('Right',not waiting and not up);hold('a',not waiting and bool(a.jump) and (t%a.jump)<0.2);hold('b',not waiting and int(t*10)%2==0)
+        # A camera stop (the Mission 1 towers, a tank, a helicopter): a 9 s cycle, 3 s left aiming up, 2 s
+        # aiming up, 4 s right firing ahead.
+        stuck=not riding and t-prog_at>12;c9=t%9.0
+        up=not riding and ((stuck and c9<5.0) or (not stuck and bool(a.up) and (t%a.up)>a.up-1.2))   # on foot: aim up a while
+        left=stuck and c9<3.0
+        hold('Up',up);hold('Left',left);hold('Right',not waiting and not left and (stuck or not up));hold('a',not waiting and bool(a.jump) and (t%a.jump)<0.2);hold('b',not waiting and int(t*10)%2==0)
         pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
         if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:

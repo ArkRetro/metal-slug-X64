@@ -314,6 +314,14 @@ emu.register_frame_done(function()
  frame=k
  tas_in_lua=true
  if fam_frame_hook then fam_frame_hook(frame) end
+ -- MSX_TAS_SLOT_TAP=1 (read only, B69): an event when the P1 vehicle slot 10C608 (+00 node, +18 health, +21 kind)
+ -- or the ridden vehicle's routine, +5A or +5F changes.
+ if os.getenv('MSX_TAS_SLOT_TAP')=='1' then
+  local nw=cpu:read_u16(0x10c608);local node=nw~=0 and (0x100000|nw) or 0
+  local k=string.format('node=%06x health=%04x kind=%02x routine=%06x 5a=%02x 5f=%02x',node,cpu:read_u16(0x10c620),cpu:read_u8(0x10c629),
+   node~=0 and cpu:read_u32(node) or 0,node~=0 and cpu:read_u8(node+0x5a) or 0,node~=0 and cpu:read_u8(node+0x5f) or 0)
+  if k~=slot_tap_key then event(string.format('SLOT update %d frame %d %s',updates,frame,k));slot_tap_key=k end
+ end
  if dump_period>0 and updates>=cap_from and frame%dump_period==0 and not first then tas_dump(frame) end
  -- MSX_TAS_DEBUG=1 (tools/run_tas_play.sh: -debug -debugger none): the debugger commands MSX_TAS_DEBUG_CMDS ('|'
  -- separated; print only, read-only probes as in tools/tas_play.lua) are set at the first frame; temp9 = the frame.

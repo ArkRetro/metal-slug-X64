@@ -783,6 +783,9 @@ los volcados de VRAM de T; los sprites de todas las piezas (no están en la expo
 recogida en la base. Sin captura: `024828` (escombro con `25EBC`), `0255F8..0256D2` (código muerto: `0255F4` salta
 a `0256D4`).
 
+**Sesión del 12-XI (agente A)**: dedicada a B69 (daño de los vehículos, `BUG_MATRIX.md`); el jefe en juego
+(capa `10D7B6`, mapa `02225E`, sprites, fin de misión) sigue exactamente en la lista «Falta» de arriba, sin cambios.
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

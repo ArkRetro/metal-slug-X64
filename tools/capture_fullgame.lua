@@ -472,6 +472,16 @@ local function ride_inputs()
   -- 0938DA); every 8 s a short drive right.
   if t>=60 and t<180 then b.R=1
   elseif t>=180 and (t%480)<40 then b.R=1 end
+ elseif ride_plan=='still' then
+  -- 'still' (the Slugnoid 09692C on its ledge, B69): no input at all once
+  -- mounted, so the enemies' shots reach the walker (the reaction
+  -- 097308/09737E, the turrets lost 0977DC, the death with a rider).
+ elseif ride_plan=='pace' then
+  -- 'pace' (the Slugnoid, B69): walk between x 400 and 440 on its ledge
+  -- (as 'tour') with a jump every 75 frames, never firing.
+  local n=slugnoid_node();local wx=n and cpu:read_i16(n+0x28) or 420
+  if wx>=440 then ride_dir=-1 elseif wx<=400 then ride_dir=1 end
+  if t>=60 then if ride_dir>0 then b.R=1 else b.L=1 end;if (t-60)%75<4 then b.B=1 end end
  elseif ride_plan=='boss' then
   -- 'boss' (the Mission 3 SV-001 093C9A into the final boss 04A2C2, G15):
   -- drive right until the camera progress 10E99E reaches the arena's 6494,
@@ -704,6 +714,16 @@ emu.register_frame_done(function()
   local key=string.format('%d %x %d %x',cpu:read_u16(0x10e99e),spc,sec,cpu:read_u32(0x10e964))
   if key==last_key then still=still+1 else still=0 end
   last_key=key
+  -- MSX_FULL_SLOT_TAP=1 (read only, B69): a SLOT line when the P1 vehicle
+  -- slot 10C608 changes (+00 the vehicle's node, +18 health, +21 kind) or
+  -- the ridden vehicle's routine, +5A, +5F or palette handle +14 changes.
+  if os.getenv('MSX_FULL_SLOT_TAP')=='1' then
+   local nw=cpu:read_u16(0x10c608);local node=nw~=0 and (0x100000|nw) or 0
+   local r=node~=0 and cpu:read_u32(node) or 0
+   local k=string.format('node=%06x health=%04x kind=%02x routine=%06x 5a=%02x 5f=%02x 14=%02x',node,cpu:read_u16(0x10c620),cpu:read_u8(0x10c629),r,
+    node~=0 and cpu:read_u8(node+0x5a) or 0,node~=0 and cpu:read_u8(node+0x5f) or 0,node~=0 and cpu:read_u8(node+0x14) or 0)
+   if k~=slot_tap_key then print('SLOT f='..frame..' '..k);slot_tap_key=k end
+  end
   if ride_plan and load_name and frame>tonumber(os.getenv('MSX_FULL_LOAD_FRAME')) then plan='ride';ride_inputs()
   elseif (crank_left>0 or crank_held) and crank_inputs() then plan='crank'
   else plan_inputs(cpu:read_u16(0x101500)&511) end

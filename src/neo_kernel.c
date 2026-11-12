@@ -1,5 +1,6 @@
 #include "neo_kernel.h"
 #include "neo_collision.h"
+#include "neo_m6bridge.h"
 #include <stddef.h>
 /* Manual C translation of the original collision kernel. Register names are
  * kept where the original routines communicate through registers; 68000
@@ -56,6 +57,7 @@ uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin) {
     return neo_kernel_train_cell(c,(q-24)&63);
 }
 static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    if (s->bridge_ring) return neo_m6ring_cell(s->bridge_ring,s->bridge_map,x,y);   /* Mission 6: the bridge 10D7B6 */
     if (s->train_ring) return s->train_ring[((x&0x1f8u)<<3)|(((uint16_t)~y&0x1f8u)>>3)];   /* 0C79FE */
     return neo_kernel_train_ring(x,y,s->train_origin);
 }
@@ -517,6 +519,7 @@ static void k1382a(kr_t *k) {
     if (k->iterator==0) {k->iterator=1;k->a1=NEO_KOBJ_TERRAIN;return;}
     if (k->iterator==1 && k->s->train_on) {
         k->iterator=2;
+        if (k->s->bridge_ring) {k->a1=NEO_KOBJ_TRAIN;return;}   /* 0BC6E6 +C = 0: 01384E returns it */
         /* 01384E..013896: (+34 - 0x11 + 1) * 16 + y; the rows 7*16 above */
         int d6=(int16_t)(uint16_t)((19-0x11+1)*16+(int16_t)(uint16_t)((uint32_t)k->s->train.y>>16));
         if (!(d6<k->qy0) && !((int16_t)(d6-7*16)>k->qy1)) {k->a1=NEO_KOBJ_TRAIN;return;}

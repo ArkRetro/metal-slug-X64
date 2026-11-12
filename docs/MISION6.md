@@ -366,16 +366,39 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   actor de misión `101364`, que corre antes) `0BD2CE`, `0BD2BA` y `0BD18E`: la lista queda `0BD18E`, `0BD2BA`,
   `0BD2CE` y el conductor nativo corre antes (con la cámara); ninguno lee lo que escribe el otro (comprobado con `O`).
   `neo_world_parent(10D7B6)` con el puente activo da la capa media (x/y y la posición previa al paso, `01ABC8`).
-- **Siguiente**: el objeto de núcleo `10D7B6` (mapa `0BC6E6`, colisión `45FC2A`, anillo con el origen de cada carga),
-  familia y prueba del núcleo con las lecturas de `cells.txt` de `s9`; luego jefes y final (abajo).
+### Puente: el objeto de núcleo `10D7B6` (12-XI)
+
+- **Lista estática `013810`** (`01382A`): `10C72E`, luego `10D7B6` si su `+2E` tiene mapa con `+4` ≠ 0; con `+C` = 0
+  (`0BC6E6`) `01384E` lo devuelve sin la prueba vertical (la del tren usa `+10`/`+14`). Solo en la etapa 1: `s10` / `s11`
+  no tienen ninguna lectura de `10D7B6`.
+- **Mapa `0BC6E6`**: `+0` = FFFFFFFF (sin teselas: `0C714E` va a `0C7272`), `+4` = `45FC2A` (P2 lineal, banco 3), 60 × 5
+  bloques, `+C` = 0; 56 celdas no vacías (formas 81..8A, grupo 4). Ambos en `region_rom.json` con grupo nuevo **`m6`**
+  (los sirve el `MSXD` del paquete de la M6, no la RDRAM; también `0BDA0C`, `2D3FEE`, `0BCF9C`, `0BD2A8`).
+- **Anillo** (`neo_m6ring_*` en `src/neo_m6bridge.c`): `0C7038` lo borra al empezar la etapa; `0C741A` (op 0x18) carga la
+  ventana; `0C74C4` (desde `0C748E`, en cada pasada de cámara) carga las columnas que entran (`+3A` − `+36`) y, con el bit
+  2 de `+82` (siempre: `0C6CD4` pone `+82` = 6), las filas que entran (`+3C` − `+38`), por `0C714E` (recorte al mapa) y
+  `0C72EC` (bloque → (2·s, q), (2·s+1, q), (2·s, q+1), (2·s+1, q+1), q = 2·(~d5 & 31) + 2k). **`0C6F82`** (el avance del
+  origen de `0BCEB0`) salta a `0C748E` en la misma actualización: `+3A`/`+3C` aún son los de la pasada anterior (`0C7480`
+  los copia en la siguiente), así que lo que entró se carga **otra vez con el origen nuevo** (los 7 fotogramas de avance
+  de 16 columnas lo muestran). Por ranura y fila de bloque del mapa: la columna del mapa escrita y su fila en el anillo.
+- Núcleo: `neo_kscene_t.bridge_ring` / `bridge_map`; `10D7B6` sigue siendo `NEO_KOBJ_TRAIN` (posición: `+14/+18` de la capa
+  media y la previa al paso). Mundo: borrado y carga en la cabeza, pasada tras los comandos de cámara, segunda pasada si
+  el bucle movió el origen, `0C7480` al final.
+- Captura **`captures-m6/fam/L`** (`runL.sh`: réplica de `run4` desde `sec09_292683` hasta 304270, `layers.csv` de cada
+  fotograma) con `captures-m6/s9` (escrituras del anillo y `cells.txt`): `tools/extract_m6ring_fixture.py` →
+  `data/m6ring_fixture.json.gz`. Etiquetas: `capture_fullgame.lua` cuenta el fotograma en `frame_done`, así que lo que
+  un tap ve en el fotograma N es el estado que la instantánea etiqueta N + 1. Prueba **`tools/test_m6_ring.c`** (en
+  `make check`): **671 de 671 fotogramas de carga, 14 240 escrituras del anillo iguales a MAME en orden, y 277 002 de
+  277 002 comprobaciones de lectura del núcleo (223 167 lecturas) iguales**.
+- Memoria: con los blobs en la RDRAM la caché quedaba en 3331 KB (suelo 3332); con el grupo `m6`, 208 ranuras (3328 KB).
+  Paquete de la M6: 1200 trozos, `MSXD` 86 blobs.
+- **Siguiente**: jefes de la M6 y final (abajo).
 
 ## Pendiente (fase 2, por orden)
 
-1. **Etapa 1**: hecho para las balsas y para el conductor y los actores del puente (arriba, «Puente»); falta el objeto
-   de núcleo `10D7B6` (su colisión).
-2. **Segundo objeto de terreno `10D7B6`**: rejilla en el paquete (hoy no cabe en el registro de etapa de 128 bytes:
-   quedan 2), objeto en la lista del núcleo `01382A` (como el tren de la M3) y captura de `+32/+34` para explicar las
-   3066 lecturas con el origen movido; su dueño y los sprites del puente.
+1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).
+2. ~~Segundo objeto de terreno `10D7B6`~~: hecho (anillo del ROM, no rejilla del paquete; las 3066 lecturas «con otro
+   origen» son celdas cargadas con el origen de su momento, que el modelo lleva por ranura, `test_m6_ring`). `test_m6_map` sigue contándolas como nota.
 3. **Capa `10E83E` movida por su dueño** en el progreso 1056 (los 300 bloques de `0BC728`) y las banderas de capa.
 4. **Parches y sellos de la etapa 2**: 4 parches `0C70FC` (submapa `0BDBB2`; 304505, 304596, 304973, 309159) sin
    `patches.json` todavía, y 4 sellos `0C88B0` (313437, 313441, 314099, 314129; plantillas `0A42C4`, `0E1A2C`,

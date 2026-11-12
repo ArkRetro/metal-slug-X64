@@ -1604,6 +1604,9 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/m6bridge
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_m6_order.c src/neo_train.c -o $(BUILD_DIR)/host/m6order
 	$(BUILD_DIR)/host/m6order
+	# The bridge 10D7B6 in the collision kernel: its ring (map 0BC6E6, collision 45FC2A) against MAME (captures-m6/fam/L + s9).
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_m6_ring.c src/neo_m6bridge.c -o $(BUILD_DIR)/host/m6ring
+	$(BUILD_DIR)/host/m6ring
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DMSX_BLOOD=$(MSX_BLOOD) tools/test_neo_blood.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/blood
 	$(BUILD_DIR)/host/blood
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_m3props.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/m3props

@@ -1510,6 +1510,13 @@ static void scene_at(neo_world_t *w,int32_t x,bool reset) {
         w->kernel.train=(neo_kobj_t){w->train.x,w->terrain.y,px,w->terrain.previous_y};
         w->kernel.train_origin=w->train.origin;
     }
+    /* Mission 6 stage 1: 10D7B6 is the bridge (its +14/+18 and the position before the layer step, 01ABC8). */
+    w->kernel.bridge_ring=NULL;w->kernel.bridge_map=NULL;
+    if (w->bridge_ring_on && !w->train.on) {
+        const neo_layer_t *l=&w->layers[NEO_LAYER_MID];
+        w->kernel.train_on=true;w->kernel.train=(neo_kobj_t){l->x,l->y,reset?l->x:w->bridge_prev_x,reset?l->y:w->bridge_prev_y};
+        w->kernel.bridge_ring=&w->bridge_ring;w->kernel.bridge_map=&w->bridge_map;
+    }
     /* RAM 10C00E (camera op 0x50): the cell group map of 012938. Mission 1
      * keeps its table; Mission 2's 0B7000 maps group 6 to 0x0A (ROM bytes
      * 00 01 02 03 04 05 0A 07). */
@@ -1999,6 +2006,18 @@ void neo_world_init_stage(neo_world_t *w,int32_t scroll_x,const neo_world_stage_
     w->stage_camera=st->camera;w->stage_camera_size=st->camera_size;w->stage_camera_base=st->camera_base;
     w->player_ripple=true;   /* 0C0CD6: the player's 0C10FE again */
 }
+/* Op 0x18 on 10D7B6 (0C8654 -> 0C741A): with the map 0BC6E6 its collision
+ * ring is loaded from the window (neo_m6bridge.h); another map leaves the
+ * kernel's static list at 10C72E (the train of Mission 3 is neo_train.c). */
+static void bridge_ring_event(neo_world_t *w,const neo_camera_event_t *e) {
+    if (e->kind!=0x18u || e->address!=0x10D7B6u) return;
+    const neo_layer_t *l=&w->layers[NEO_LAYER_MID];
+    const uint8_t *d=l->map==0x0BC6E6u?ga_rom(0x0BC6E6u):NULL,*c=d?ga_rom(0x45FC2Au):NULL;
+    w->bridge_ring_on=false;
+    if (!c || (uint16_t)(d[10]<<8|d[11])!=NEO_M6RING_ROWS) return;
+    w->bridge_map=(neo_m6map_t){c,(uint16_t)(d[8]<<8|d[9]),(uint16_t)(d[10]<<8|d[11])};
+    neo_m6ring_init(&w->bridge_ring,&w->bridge_map,l->x,l->y,l->column,l->top,NULL,NULL);w->bridge_ring_on=true;
+}
 void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     /* Events of the stage start's commands (0C8774): the update below
      * clears the list (neo_camera_finish), so they are kept and handed out
@@ -2013,7 +2032,11 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         firsts=w->camera.event_count;memcpy(first,w->camera.events,sizeof(first));
         /* The head's layer ops (0x14, 0x18, 0x1C) before the first step. */
         memset(w->layers,0,sizeof(w->layers));memset(&w->bridge,0,sizeof(w->bridge));w->bridge_dx=0;
-        for (unsigned i=0;i<firsts;i++) neo_layers_event(w->layers,w->camera.list,first[i].kind,first[i].address,first[i].at,neo_camera_root_x(&w->camera),neo_camera_root_y(&w->camera));
+        w->bridge_ring_on=false;neo_m6ring_clear(&w->bridge_ring);   /* 0C7038 */
+        for (unsigned i=0;i<firsts;i++) {
+            neo_layers_event(w->layers,w->camera.list,first[i].kind,first[i].address,first[i].at,neo_camera_root_x(&w->camera),neo_camera_root_y(&w->camera));
+            bridge_ring_event(w,&first[i]);
+        }
     }
     if (!w->camera_native) {
         const uint8_t *list=ga_rom(0x0B57BE);
@@ -2036,6 +2059,11 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         for (unsigned i=0;i<c->event_count;i++) {
             const neo_camera_event_t *e=&c->events[i];
             neo_layers_event(w->layers,c->list,e->kind,e->address,e->at,neo_camera_root_x(c),neo_camera_root_y(c));
+            bridge_ring_event(w,e);
+        }
+        if (w->bridge_ring_on) {   /* 0C83BC / 0C840C -> 0C748E: columns and rows that came in (+82 = 6 from 0C6CD4: bit 2 on) */
+            const neo_layer_t *l=&w->layers[NEO_LAYER_MID];
+            neo_m6ring_pass(&w->bridge_ring,&w->bridge_map,l->x,l->y,l->column,l->top,true,NULL,NULL);
         }
     }
     if (firsts) {
@@ -2073,8 +2101,12 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_layer_t *l=&w->layers[NEO_LAYER_MID];
         w->bridge_dx=neo_m6bridge_drive(&w->bridge,w->camera.root_vx);
         int16_t o36=(int16_t)((int16_t)(uint16_t)((0xffc00000u-(uint32_t)l->x)>>16)>>4);
-        neo_m6bridge_loop(&w->bridge,&l->column,&l->top,o36);
+        bool moved=neo_m6bridge_loop(&w->bridge,&l->column,&l->top,o36);
+        /* 0C6F82 -> 0C748E: +3A / +3C are still the previous pass's, so what
+         * came in is loaded again with the new origin. */
+        if (moved && w->bridge_ring_on) neo_m6ring_pass(&w->bridge_ring,&w->bridge_map,l->x,l->y,l->column,l->top,true,NULL,NULL);
     }
+    if (w->bridge_ring_on) neo_m6ring_mark(&w->bridge_ring,w->layers[NEO_LAYER_MID].x,w->layers[NEO_LAYER_MID].y,true);   /* 0C7480 at the next pass */
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}
 unsigned neo_world_alive(const neo_world_t *w) {

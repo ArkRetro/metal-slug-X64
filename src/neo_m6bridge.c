@@ -44,3 +44,59 @@ bool neo_m6bridge_loop(neo_m6bridge_t *b,int16_t *o32,int16_t *o34,int16_t o36) 
     b->lock&=tw(b->index+6);
     return true;
 }
+
+/* ---- The bridge's collision ring (neo_m6bridge.h) ---- */
+static int16_t s16w(uint32_t v) {return (int16_t)(uint16_t)v;}
+int16_t neo_m6ring_o36(int32_t x) {return (int16_t)(s16w((0xffc00000u-(uint32_t)x)>>16)>>4);}   /* 0C748E: +36 */
+int16_t neo_m6ring_o38(int32_t y) {return (int16_t)(s16w((0x00800000u-(uint32_t)y)>>16)>>4);}   /* +38 */
+void neo_m6ring_clear(neo_m6ring_t *r) {
+    for (unsigned s=0;s<32;s++) for (unsigned k=0;k<NEO_M6RING_ROWS;k++) {r->col[s][k]=-1;r->ring_row[s][k]=0;}
+}
+/* 0C714E with the collision copy 0C72EC: d0 map block column, d1 map block
+ * row, d2 columns, d3 rows, d4 local block column, d5 ring row (before ~). */
+static void copy(neo_m6ring_t *r,const neo_m6map_t *m,int d0,int d1,int d2,int d3,int d4,int d5,neo_m6ring_write_fn w,void *ctx) {
+    d0=s12(d0);d1=s12(d1);
+    if ((int16_t)(d0-m->columns)>=0 || (int16_t)(d1-m->rows)>=0) return;
+    if (d0<0) {d2+=d0;if (d2<=0) return;d4-=d0;d0=0;}
+    if (d1<0) {d3+=d1;if (d3<=0) return;d5+=d1;d1=0;}
+    if (d0+d2-m->columns>=0) {d2-=d0+d2-m->columns;if (d2<=0) return;}
+    if (d1+d3-m->rows>=0) {d3-=d1+d3-m->rows;if (d3<=0) return;}
+    d4&=31;d5=~d5&31;
+    for (int i=0;i<d2;i++) {
+        unsigned s=(unsigned)(d4+i)&31u;
+        for (int k=0;k<d3;k++) {
+            unsigned row=(unsigned)(d1+k),q=(unsigned)(2*d5+2*k)&0x3eu;
+            if (row>=NEO_M6RING_ROWS) continue;   /* the map has NEO_M6RING_ROWS block rows (checked by the caller) */
+            for (unsigned j=0;j<NEO_M6RING_ROWS;j++) if (j!=row && r->col[s][j]>=0 && r->ring_row[s][j]==q>>1) r->col[s][j]=-1;   /* the same bytes */
+            r->col[s][row]=(int8_t)(d0+i);r->ring_row[s][row]=(uint8_t)(q>>1);
+            if (w) {
+                const uint8_t *b=m->blocks+((unsigned)(d0+i)*m->rows+row)*4u;unsigned base=(s<<7)&0xf80u;
+                w(ctx,base+q,b[0]);w(ctx,base+q+0x40,b[1]);w(ctx,base+q+1,b[2]);w(ctx,base+q+0x41,b[3]);
+            }
+        }
+    }
+}
+void neo_m6ring_init(neo_m6ring_t *r,const neo_m6map_t *m,int32_t x,int32_t y,int16_t o32,int16_t o34,neo_m6ring_write_fn w,void *ctx) {
+    int d0=neo_m6ring_o36(x),d1=neo_m6ring_o38(y);
+    r->o3a=(int16_t)d0;r->o3c=(int16_t)d1;d1+=0x1f;
+    copy(r,m,d0-o32,-(d1-o34),0x20,0x20,d0,d1,w,ctx);
+}
+void neo_m6ring_pass(neo_m6ring_t *r,const neo_m6map_t *m,int32_t x,int32_t y,int16_t o32,int16_t o34,bool rows,neo_m6ring_write_fn w,void *ctx) {
+    int d0=neo_m6ring_o36(x),d7=s12(r->o3a-d0);
+    if (d7) {
+        if (d7<0) {d7=-d7;d0=d0-d7+0x20;}
+        int d1=neo_m6ring_o38(y)+0x1f;
+        copy(r,m,d0-o32,-(d1-o34),d7,0x20,d0,d1,w,ctx);
+    }
+    if (rows) {   /* 0C752E: bit 2 of +82 */
+        int d1=neo_m6ring_o38(y);d7=s12(r->o3c-d1);
+        if (d7) {
+            if (d7<0) {d7=-d7;d1+=0x1f;} else d1+=d7;
+            int d4=neo_m6ring_o36(x);
+            copy(r,m,d4-o32,-(d1-o34),0x20,d7,d4,d1,w,ctx);
+        }
+    }
+}
+void neo_m6ring_mark(neo_m6ring_t *r,int32_t x,int32_t y,bool rows) {
+    r->o3a=neo_m6ring_o36(x);if (rows) r->o3c=neo_m6ring_o38(y);
+}

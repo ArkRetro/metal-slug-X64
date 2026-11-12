@@ -770,9 +770,15 @@ gira hacia ella (`0C069E`), y pulsa solo A cada 6 fotogramas hasta que `095C76` 
   iguales**, entre ellas el quemado `089ED6`). El banco de pruebas (`test_neo_family.c`) escribe ahora de vuelta las
   palabras de entrada y lee / escribe los campos del jugador de las rutinas de armas (`+93`, `+94`, `+95`, `+9A` bit 4):
   sin eso el premio de arma 0B (`0C0928`: `+94`) no cuadraba.
-- Paletas de `C`: **878** (quemado), **886**, **887** y **204**; **888..88C siguen sin captura** (la lista sin sangre
-  `E5382` pasa por ellas en fotogramas que los volcados cada 5 no cogen: pendiente, volcado cada fotograma en esas
-  muertes). Descriptores de `C` (`C@959b0-96200`, `C@89948-8a700`): 848 fotos, 1 085 958 px iguales, **68 distintos en 6
+- Paletas de `C`: **878** (quemado), **886**, **887** y **204**. **888, 889 y 88A** de las capturas `P90`, `Q90_14` y
+  `R2` (réplicas de `run4` desde `sec08_274387` con volcados cada fotograma, `captures-m5/fam/runP.sh`; `MSX_FULL_FIRE_CYCLE`
+  nuevo, de solo entrada: A y C solo en los últimos fotogramas de cada periodo, 90:14, para que los soldados apunten
+  más; `R2` con la ametralladora, `MSX_FULL_GIVE_WEAPON=274700:1`). Solo guardan RAM y paletas. La lista sin sangre
+  `E5382[+8C]` empieza en el `+8C` del golpe y baja de 1 en 1 cada dos actualizaciones: `+8C` vale 1..5 al apuntar
+  (`089DE0`: n / 6 + 1) y 6 / 7 solo en la huida (`2850DA`), cuyo estado `08A040` no registra golpes (sin `004C24`).
+  Así **88B y 88C no los muestra ningún soldado de la alcantarilla** (en las rutinas traducidas de la ROM nada pone `+72` = `E5382` con
+  `+8C` ≥ 6); quedan sin paleta en el paquete, sin rellenar. El paquete de la M6 (que lleva los soldados del grupo `m5`)
+  pasa a 1213 trozos: `SCENE_MISSION_CHUNKS_MAX` 1200 → 1216. Descriptores de `C` (`C@959b0-96200`, `C@89948-8a700`): 848 fotos, 1 085 958 px iguales, **68 distintos en 6
   fotos** (soldados con la llama encima; sin cerrar, como los de las tandas anteriores). Paquete de la M5: 1144 trozos.
 - **Muerte agachada `040BE6`** (`neo_soldier_ai.c`, `neo_m3enemy.c`): traducida desde la ROM. `D0.w` = `+5B` (0, con el
   byte alto 0 de `tipo × 4`), `D1.b` = `seq` del `+15` bit 0, y el bit 15 de `D1.w` es el que deja `01495C`
@@ -787,6 +793,14 @@ gira hacia ella (`0C069E`), y pulsa solo A cada 6 fotogramas hasta que `095C76` 
 - **Orden del jugador** (sin cambiar): el port mueve al jugador antes que a los actores del mundo; en el original el
   jugador va después de la manivela, cuyo `andi.w #FFEF` le quita la pulsación de A del agarre. En el port esa
   pulsación ya ha disparado: un tiro de más en la actualización del agarre (pendiente, en el motor compartido).
+
+**Bloqueo de la subida (12-XI)**: tras fusionar ccr `6e0e2d9` (jefe de la M4 de A) la prueba del logo falla siempre
+igual en ares (`late=211`, `cpu_mean_us=11986` frente a 7310 en el cartucho de `ws-m4`; 335 fotogramas en 9,15 s):
+determinista, no es el disco ni los paquetes (con los paquetes de A falla igual), ni la caché de escena (con las
+matrices `bool` también), ni la alineación del montón (rellenado para igualar a A: igual). Antes de la fusión, mismo
+código de la M5: PASS. Con `neogeo_logo.o` enlazado al final baja a `late=89`: apunta a la disposición del código
+(libdragon se desplaza 0xD20 respecto a A y sus manejadores de interrupción y `fm_sincosf` caen en las mismas líneas de
+la caché de instrucciones que `msx_neogeo_logo`), sin confirmar. Pendiente de resolver antes de subir a ccr.
 
 ## Pendiente (fase 2, por orden)
 

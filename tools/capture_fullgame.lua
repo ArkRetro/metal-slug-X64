@@ -720,6 +720,10 @@ emu.register_frame_done(function()
   -- Mission 4 flyers 083C8A land, drop their rider and crash).
   local nl,nh=string.match(os.getenv('MSX_FULL_NOFIRE') or '','(%d+)-(%d+)')
   if nl and frame>=tonumber(nl) and frame<=tonumber(nh) then button('P1 A',0);button('P1 C',0) end
+  -- MSX_FULL_FIRE_CYCLE="period:frames": capture-only, A and C only in the last `frames` of every `period`
+  -- (the sewer soldiers 089948 aim longer before they die: the late entries of their palette lists, 089DE0).
+  local cp,cf=string.match(os.getenv('MSX_FULL_FIRE_CYCLE') or '','(%d+):(%d+)')
+  if cp and frame%tonumber(cp)<tonumber(cp)-tonumber(cf) then button('P1 A',0);button('P1 C',0) end
   -- MSX_FULL_HOP="lo-hi:period": capture-only, with MSX_FULL_IDLE over the
   -- same frames: B (jump) held 8 frames every `period` (the idle player
   -- jumps in place into the shots of the Mission 4 vehicle 0587C4).

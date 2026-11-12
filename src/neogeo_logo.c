@@ -20,6 +20,14 @@
  * constant stored per edge, so only visible geometry is projected and lit,
  * reading memory in order (the CPU cost is dominated by cache misses). */
 
+/* The whole module goes after the rest of the program's code, next to
+ * libm's floor/floorf (Makefile, LIBM_KEEP_OBJS), at a fixed distance from
+ * libdragon's rdpq_triangle_rsp: the per-vertex path (project, metal,
+ * gradient, rdpq_triangle_rsp, floor, floorf) no longer moves in the 16 KB
+ * direct-mapped instruction cache when the game code changes size.
+ * tools/check_icache.py (make, after the link) checks it has no shared line. */
+#define LOGO_CODE __attribute__((section("keep.text.neogeo_logo")))
+
 #define VI_HZ 59.826f
 #define T_SPIN_END 373.0f    /* fade to white starts (MK64: ~6.2 s after the logo appears) */
 #define T_WHITE 443.0f       /* fully white after 70 ticks */
@@ -43,7 +51,7 @@ static unsigned cap_count,edge_count,cap_tri_count;
 static float logo_w,logo_h,logo_d;
 static float (*cap_screen)[7];
 
-static float speed_at(float t) {
+LOGO_CODE static float speed_at(float t) {
     unsigned n=sizeof(speed_keys)/sizeof(speed_keys[0]);
     if (t<=speed_keys[0][0]) return speed_keys[0][1];
     for (unsigned i=1;i<n;i++) if (t<=speed_keys[i][0]) {
@@ -52,24 +60,24 @@ static float speed_at(float t) {
     }
     return speed_keys[n-1][1];
 }
-static float yaw_at(float t) {
+LOGO_CODE static float yaw_at(float t) {
     if (t<=0) return yaw_table[0];
     unsigned i=(unsigned)t;
     if (i+1>=YAW_STEPS) return yaw_table[YAW_STEPS-1];
     float u=t-(float)i;return yaw_table[i]+(yaw_table[i+1]-yaw_table[i])*u;
 }
-static float smooth(float a,float b,float t) {
+LOGO_CODE static float smooth(float a,float b,float t) {
     if (t<=a) return 0;
     if (t>=b) return 1;
     float u=(t-a)/(b-a);return u*u*(3-2*u);
 }
-static float clamp1(float v) { return v<0?0:(v>1?1:v); }
+LOGO_CODE static float clamp1(float v) { return v<0?0:(v>1?1:v); }
 
-static void free_mesh(void) {
+LOGO_CODE static void free_mesh(void) {
     free(cap_points);free(edges);free(cap_tris);free(cap_screen);
     cap_points=NULL;edges=NULL;cap_tris=NULL;cap_screen=NULL;
 }
-static bool load_mesh(void) {
+LOGO_CODE static bool load_mesh(void) {
     FILE *f=fopen("rom:/neogeo-logo.mesh","rb");if (!f) return false;
     struct { char magic[4];uint16_t version,caps,edges,tris;float w,h,d; } __attribute__((packed)) head;
     bool ok=fread(&head,sizeof(head),1,f)==1 && !memcmp(head.magic,"NGLM",4) && head.version==2 && head.caps && head.edges && head.tris;
@@ -95,7 +103,7 @@ static float HX,HY,HZ;
  * logo): ambient + diffuse from an upper-left key light, a sky/ground term
  * from the reflected view ray and a white Blinn highlight. Normal already
  * rotated. `grad` darkens toward the bottom of the letters. */
-static void metal(float nx,float ny,float nz,float grad,float *o) {
+LOGO_CODE static void metal(float nx,float ny,float nz,float grad,float *o) {
     float ndl=nx*LX+ny*LY+nz*LZ;if (ndl<0) ndl=0;
     /* ^16, cut below 0.25 so the powers never reach denormals (the VR4300 traps on them). */
     float ndh=nx*HX+ny*HY+nz*HZ,spec=0;
@@ -104,13 +112,13 @@ static void metal(float nx,float ny,float nz,float grad,float *o) {
     float k=(0.30f+0.62f*ndl+0.60f*env)*light*grad,w=spec*0.85f*light;
     o[3]=clamp1(k+w);o[4]=clamp1(0.82f*k+w);o[5]=clamp1(0.34f*k+0.9f*w);o[6]=1.0f;
 }
-static void project(float x,float y,float z,float *o) {
+LOGO_CODE static void project(float x,float y,float z,float *o) {
     float xr=x*rc+z*rs,zr=-x*rs+z*rc,depth=CAM_DIST-zr,k=focal/depth;
     o[0]=160.0f+xr*k;o[1]=120.0f-y*k;o[2]=clamp1((depth-(CAM_DIST-170.0f))/340.0f);
 }
-static float gradient(float y) { return 0.78f+0.44f*clamp1(y/logo_h+0.5f); }
+LOGO_CODE static float gradient(float y) { return 0.78f+0.44f*clamp1(y/logo_h+0.5f); }
 
-static unsigned draw_cap(float z,float side) {
+LOGO_CODE static unsigned draw_cap(const rdpq_trifmt_t *fmt,float z,float side) {
     /* Cap normal (0,0,side) rotated: (side*s, 0, side*c). */
     float base[7];metal(side*rs,0,side*rc,1.0f,base);
     for (unsigned i=0;i<cap_count;i++) {
@@ -120,11 +128,12 @@ static unsigned draw_cap(float z,float side) {
     }
     for (unsigned t=0;t<cap_tri_count;t++) {
         const uint16_t *i=&cap_tris[t*3];
-        rdpq_triangle(&TRIFMT_ZBUF_SHADE,cap_screen[i[0]],cap_screen[i[1]],cap_screen[i[2]]);
+        rdpq_triangle(fmt,cap_screen[i[0]],cap_screen[i[1]],cap_screen[i[2]]);
     }
     return cap_tri_count;
 }
-static unsigned draw_sides(void) {
+/* Not inlined, so that tools/check_icache.py sees its calls. */
+LOGO_CODE __attribute__((noinline)) static unsigned draw_sides(const rdpq_trifmt_t *fmt) {
     float zf=logo_d*0.5f,zb=-zf,limit=rs*CAM_DIST;unsigned n=0;
     float v[4][7];
     for (unsigned e=0;e<edge_count;e++) {
@@ -132,19 +141,22 @@ static unsigned draw_sides(void) {
         if (d->k-d->fnx*limit<=0) continue;   /* faces away: k - n.x*s*dist is the facing test */
         project(d->ax,d->ay,zf,v[0]);project(d->ax,d->ay,zb,v[1]);
         project(d->bx,d->by,zf,v[2]);project(d->bx,d->by,zb,v[3]);
-        metal(d->nax*rc,d->nay,-d->nax*rs,gradient(d->ay),v[0]);memcpy(&v[1][3],&v[0][3],16);
-        metal(d->nbx*rc,d->nby,-d->nbx*rs,gradient(d->by),v[2]);memcpy(&v[3][3],&v[2][3],16);
-        rdpq_triangle(&TRIFMT_ZBUF_SHADE,v[0],v[1],v[3]);
-        rdpq_triangle(&TRIFMT_ZBUF_SHADE,v[0],v[3],v[2]);
+        /* The colour copies inline: libc's memcpy sits at the start of the
+         * program, where the game code before libdragon moves it against
+         * rdpq_triangle_rsp. */
+        metal(d->nax*rc,d->nay,-d->nax*rs,gradient(d->ay),v[0]);v[1][3]=v[0][3];v[1][4]=v[0][4];v[1][5]=v[0][5];v[1][6]=v[0][6];
+        metal(d->nbx*rc,d->nby,-d->nbx*rs,gradient(d->by),v[2]);v[3][3]=v[2][3];v[3][4]=v[2][4];v[3][5]=v[2][5];v[3][6]=v[2][6];
+        rdpq_triangle(fmt,v[0],v[1],v[3]);
+        rdpq_triangle(fmt,v[0],v[3],v[2]);
         n+=2;
     }
     return n;
 }
 
 static bool (*idle_hook)(void);
-void msx_neogeo_logo_set_idle(bool (*idle)(void)) { idle_hook=idle; }
+LOGO_CODE void msx_neogeo_logo_set_idle(bool (*idle)(void)) { idle_hook=idle; }
 
-bool msx_neogeo_logo(void) {
+LOGO_CODE bool msx_neogeo_logo(void) {
     if (!load_mesh()) {debugf("MSX LOGO skipped: no rom:/neogeo-logo.mesh (tools/build_neogeo_logo.py)\n");return false;}
     float yaw=START_YAW;
     for (unsigned i=0;i<YAW_STEPS;i++) {yaw_table[i]=yaw;yaw+=speed_at((float)i+0.5f);}
@@ -161,6 +173,12 @@ bool msx_neogeo_logo(void) {
     unsigned frames=0,late=0,max_drawn=0;bool previous=true,skipped=false;
     uint32_t idle_sum=0;
     surface_t *prev=NULL;
+    /* The triangle format read by every rdpq_triangle call, copied next to
+     * this frame: in libdragon's .rodata it moves in the 8 KB direct-mapped
+     * data cache with the size of the program and could share a line with
+     * rdpq_triangle_rsp's own stack frame (ROM 2cb2aa0 + this module after
+     * the code: 0x801D5D48 against 0x807FFCD8..0x807FFDC0, 1.6 ms a frame). */
+    const rdpq_trifmt_t fmt=TRIFMT_ZBUF_SHADE;
     for (;;) {
         msx_audio_service();joypad_poll();
         bool start=joypad_get_buttons(JOYPAD_PORT_1).start;
@@ -195,9 +213,9 @@ bool msx_neogeo_logo(void) {
             light=0.12f+0.88f*smooth(0,60,t);
             focal=FOCAL*(0.92f+0.08f*clamp1(t/T_SPIN_END));
             float half=logo_d*0.5f;
-            if (rc*CAM_DIST>half) drawn+=draw_cap(half,1.0f);
-            if (-rc*CAM_DIST>half) drawn+=draw_cap(-half,-1.0f);
-            drawn+=draw_sides();
+            if (rc*CAM_DIST>half) drawn+=draw_cap(&fmt,half,1.0f);
+            if (-rc*CAM_DIST>half) drawn+=draw_cap(&fmt,-half,-1.0f);
+            drawn+=draw_sides(&fmt);
             if (drawn>max_drawn) max_drawn=drawn;
             if (white>0) {
                 rdpq_set_mode_standard();

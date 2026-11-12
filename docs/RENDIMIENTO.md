@@ -1263,3 +1263,50 @@ Medidas (ares 146, referencias con `MSX_DIAG`):
   `test_mission3_ares.py` PASS).
 - M2 e2: mapa fijado 25 → 5 fragmentos, 0 lecturas síncronas.
 - M3 e1: mapa fijado 44 → 31 fragmentos, a cambio de 6 ranuras de anillo.
+
+## Caché de instrucciones: el logo tras la fusión de ccr (12-XI, rama `work-m5`)
+
+**Síntoma.** Tras fusionar ccr `6e0e2d9` en `work-m5` (`2cb2aa0`), `tools/test_logo_ares.py` fallaba siempre igual:
+`late=211`, `cpu_mean_us=11986` (cartucho de `ws-m4`: 7310), 335 fotogramas en 9,15 s. Antes de la fusión, PASS.
+
+**Bisección (una hipótesis cada vez, mismo código, solo se mueve la imagen).**
+
+| Variante sobre `2cb2aa0` | qué se mueve | `cpu_mean_us` | `late` |
+| --- | --- | --- | --- |
+| tal cual | — | 11986 | 211 |
+| 0x32E0 bytes de `.text` entre el juego y libdragon (libdragon ≡ `ws-m4` módulo 16 KB) | código de libdragon y datos | 7148 | 0 |
+| 0x32E0 bytes en `keep.text` (tras todo el código) | solo datos | 11625 | 0 |
+| 0x400 bytes entre el juego y libdragon | código de libdragon y datos | 7215 | 0 |
+
+(Las variantes con relleno no caben en el presupuesto de RAM de la escena: solo valen para el logo.) Es la caché de
+instrucciones (16 KB, mapeo directo, líneas de 32 bytes). Por vértice el logo ejecuta `project`, `metal`, `gradient`,
+`draw_cap`/`draw_sides` y `rdpq_triangle_rsp` de libdragon, que llama a `floor` y `floorf` de libm. libm se compila sin
+`-ffunction-sections`: su `.text` simple va al principio del programa (0x80000800), mientras libdragon va detrás del
+código del juego. Con el tamaño del juego de `2cb2aa0`, `floorf` (0x80000BB0) y `rdpq_triangle_rsp` (0x801349C0)
+compartían 9 conjuntos de la caché y se expulsaban en cada vértice. 0x400 bytes bastan para separarlos.
+
+Quedaba un segundo efecto, en la caché de datos (8 KB, mapeo directo): con el arreglo de abajo `cpu_mean_us` era 8744,
+y 7103 con 0x400 bytes solo en los datos. `TRIFMT_ZBUF_SHADE` (`.rodata` de libdragon, 0x801D5D48) caía en las mismas
+líneas que el marco de pila de `rdpq_triangle_rsp` (0x807FFCD8..0x807FFDC0, fijo en lo alto de la RAM), y se lee en
+cada triángulo.
+
+**Corrección.**
+- `floor` y `floorf` se sacan de `libm.a` del propio toolchain y se enlazan con su sección renombrada a
+  `keep.text.libm_*` (`LIBM_KEEP_OBJS` en el Makefile; mismo código máquina, solo cambia la sección), primeros del
+  bloque `keep.text`, que el guion de enlace pone detrás de todo.
+- Todo `src/neogeo_logo.c` va a `keep.text.neogeo_logo`. Así el camino por vértice entero (logo, `floor`, `floorf`,
+  `rdpq_triangle_rsp`) queda a una distancia fija entre sí: ya no depende del tamaño del código del juego.
+- Las dos copias de color por arista son asignaciones (antes `memcpy`, que está al principio del programa).
+- El logo pasa a `rdpq_triangle` una copia de `TRIFMT_ZBUF_SHADE` en su propia pila, contigua al marco de
+  `rdpq_triangle_rsp`.
+
+Resultado en ares (`--skip title,entry`): 6911, 6996, 6958 y 6938 µs con el cartucho tal cual, con 0x400 bytes solo
+en los datos, y con 0x400 y 0xA60 bytes antes de libdragon. `late=0` en las cuatro. La prueba completa del logo da
+PASS con 6876 µs (`late=0`).
+
+**Lo que lo detecta.** `tools/check_icache.py` se ejecuta tras enlazar `mslugx-explorer` y `mslugx-m1end` (regla
+`$(BUILD_DIR)/%.icache`, de la que depende cada `.z64`). Falla si dos funciones del camino por vértice ocupan el mismo
+conjunto de la caché de instrucciones en líneas distintas, o si llaman a código de fuera del camino (permitidos:
+`rspq_next_buffer`, una vez por búfer, y el `memset` de entrada de `draw_sides`, una vez por fotograma, que pone
+`-ftrivial-auto-var-init=pattern`). Con el ELF de `2cb2aa0` informa de las 9 líneas compartidas entre
+`rdpq_triangle_rsp` y `floorf`.

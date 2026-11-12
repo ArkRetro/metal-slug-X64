@@ -140,7 +140,27 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+# libm's floor and floorf after the rest of the program's code (keep.text,
+# first of it): rdpq_triangle_rsp calls them for every vertex, and in their
+# own place (libm's plain .text, at the start of the program) they shared
+# instruction cache lines with it whenever the game code before libdragon
+# had a given size (the boot logo at 12 ms of CPU a frame instead of 7:
+# docs/RENDIMIENTO.md, "Caché de instrucciones"). Same machine code, taken
+# from the toolchain's libm.a; only its section changes.
+LIBM_KEEP_OBJS := $(BUILD_DIR)/libm-keep/s_floor.o $(BUILD_DIR)/libm-keep/sf_floor.o
+$(BUILD_DIR)/libm-keep/%.o: $(N64_LIBDIR)/libm.a
+	@mkdir -p $(dir $@)
+	cd $(dir $@) && $(N64_GCCPREFIX_TRIPLET)ar x $< libm_a-$*.o
+	$(N64_OBJCOPY) --rename-section .text=keep.text.libm_$* $(dir $@)libm_a-$*.o $@
+	rm -f $(dir $@)libm_a-$*.o
+# Each cartridge is checked after the link (tools/check_icache.py): the
+# logo's per-vertex path must not share an instruction cache line.
+ICACHE_CHECKED := mslugx-explorer mslugx-m1end
+$(foreach c,$(ICACHE_CHECKED),$(eval $(c).z64: $(BUILD_DIR)/$(c).icache))
+$(BUILD_DIR)/%.icache: $(BUILD_DIR)/%.elf tools/check_icache.py
+	python3 tools/check_icache.py $< $(BUILD_DIR)/$*.map > $@.txt || { cat $@.txt; exit 1; }
+	@tail -1 $@.txt; touch $@
+MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)

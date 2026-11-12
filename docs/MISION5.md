@@ -800,7 +800,12 @@ determinista, no es el disco ni los paquetes (con los paquetes de A falla igual)
 matrices `bool` también), ni la alineación del montón (rellenado para igualar a A: igual). Antes de la fusión, mismo
 código de la M5: PASS. Con `neogeo_logo.o` enlazado al final baja a `late=89`: apunta a la disposición del código
 (libdragon se desplaza 0xD20 respecto a A y sus manejadores de interrupción y `fm_sincosf` caen en las mismas líneas de
-la caché de instrucciones que `msx_neogeo_logo`), sin confirmar. Pendiente de resolver antes de subir a ccr.
+la caché de instrucciones que `msx_neogeo_logo`), sin confirmar. **Resuelto** (bisección, causa y corrección en
+[RENDIMIENTO.md](RENDIMIENTO.md), «Caché de instrucciones: el logo tras la fusión de ccr»): la causa era la caché de
+instrucciones. `floorf` de libm, al principio del programa, compartía 9 conjuntos con `rdpq_triangle_rsp` de
+libdragon, que va detrás del juego, y se expulsaban en cada vértice. Ahora el logo, `floor` y `floorf` van en
+`keep.text`, el formato del triángulo se copia a la pila y `tools/check_icache.py` comprueba cada cartucho tras el
+enlace. Logo: PASS, 6876 µs, `late=0`.
 
 ## Pendiente (fase 2, por orden)
 

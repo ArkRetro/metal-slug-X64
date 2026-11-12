@@ -1769,12 +1769,25 @@ repisa (x 392) como en `run4` 87600; `CACHE slots=209` (suelo 208),
 `mission2.pack` de 351 fragmentos cargado. No se montó en ares (el piloto
 automático no sube a esa repisa).
 
-**No capturado** (traducido de la ROM, sin prueba): la reacción al daño
-`097308/09737E` y `0977DC`, la caída por debajo de la pantalla en espera,
+**Daño montado (B69, familia `slughit`)**: el TAS no recibe ningún golpe en ningún
+vehículo (`tas_updates.lua` con `MSX_TAS_SLOT_TAP=1`: salud de la ranura siempre 0x30),
+y en la M2 el andador quieto en su repisa (`u5340`/`u5460`, planes `still`/`pace`/`dmg`)
+no recibe disparos (o cae por debajo de la pantalla). En la M5 sí: estado del TAS
+`u17460` (fotograma 38007), `capture_fullgame.lua` con `MSX_FULL_RIDE=still` (sin
+ninguna entrada una vez montado), `MSX_FULL_VEHICLE_CHEAT=0`, `MSX_FULL_SLOT_TAP=1`,
+raíces `96a60,96c3a,3b57c,97886,3527e,3533a,96b32,96b62,96c22`, rango `966f0-97e08`,
+`FROM=38008 LAST=39845`: montado en 38131, golpes en 39039 (0x30 → 0x20, `09737E` →
+`097396`) y 39331 (0x10), el tercero con salud 0 en 39503 (`0973E2` → `097414`, marca
+`03533A`/`03536C`, `09756A` en 39669). Extracción con el `A` de arriba más `--range
+3533a-3539f`. El piloto es el personaje 1 del TAS (programa `29E122`): los programas de
+las tablas `09649C[1..3]` entran en `soldier_programs.json` (posiciones de las de Marco;
+sus sprites siguen sin exportar). `slughit`: 6 nodos, 2988 actualizaciones 38008..39670
+iguales bit a bit (`make check`).
+
+**No capturado** (traducido de la ROM, sin prueba): la reacción en el aire
+`097308`, `0977DC` (torreta perdida), la caída por debajo de la pantalla en espera,
 la lista de muerte `097EDE`, el doble salto `096F7A`, `096EA6`, el empuje
-del tipo 1 (`+93` = 1, Misión 5). **Parada explícita**: `0973E2` (muerte
-con jinete en el suelo: el hijo `03533A` de `0353C2` no está traducido) y
-el TRAP #F de `097EDE`/`097F52`. Sonidos: `1092`, `1090`, `1084`, `1034`,
+del tipo 1 (`+93` = 1, Misión 5). `0973E2` ya traducido (B50, probado en `slughit`); el TRAP #F de `097EDE`/`097F52`. Sonidos: `1092`, `1090`, `1084`, `1034`,
 `10E9`, `10F2` ya están en la política; `116C` (bomba de tipo 3) y `1089`
 (torreta perdida) no están renderizados (se cuentan como `unmapped`).
 Memoria: con el código y los programas del Slugnoid la referencia de la M2

@@ -703,6 +703,23 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.vehicle_stops!=old_vehicle_stops) debugf("MSX vehicle stopped explicitly: script spawn %05lx not ported (not created)\n",(unsigned long)game.world.vehicle_stop_constructor);
     if (game.grenades!=old_grenades) debugf("MSX grenade thrown count=%u\n",game.grenades);
     {static unsigned old_class0;if (game.world.class0_hits!=old_class0) {old_class0=game.world.class0_hits;debugf("MSX vehicle hit (class-0 row, B69) count=%u mount=%d\n",old_class0,(int)game.mount);}}
+    /* B69: the P1 vehicle slot (10C608: word +00 the vehicle's node, +18
+     * its health, +21 the kind) and that node: a line when its routine, the
+     * health or the HUD gauge (+7C shown / +7E target, 0C9B94) changes, and
+     * the first changes of its palette handle +14 after a health drop (the
+     * flicker). */
+    {static uint32_t vr;static uint16_t vh=0xffffu,vgs,vgt;static uint8_t v14;static unsigned flicker;static bool armed;
+     const uint8_t *sb=game.world.vslots.slot[0].b;uint16_t nw=(uint16_t)(sb[0]<<8|sb[1]);
+     if ((nw&0x8000u) && (nw&0x7fffu)<NEO_WORLD_GACTORS) {
+        const neo_gactor_t *v=&game.world.gactors[nw&0x7fffu];
+        uint32_t r=ga_l(v,0);uint16_t h=(uint16_t)(sb[0x18]<<8|sb[0x19]);
+        uint16_t gs=game.hud.panel[0].f7c,gt=game.hud.panel[0].f7e;
+        if (vh!=0xffffu && h<vh) armed=true;
+        if (armed && ga_b(v,0x14)!=v14 && flicker<8u) {flicker++;debugf("MSX vehicle flicker palette=%u count=%u\n",ga_b(v,0x14),flicker);}
+        if (r!=vr || h!=vh || gs!=vgs || gt!=vgt)
+            debugf("MSX vehicle state routine=%06lx health=%u kind=%u gauge=%u/%u 5a=%02x 5f=%02x\n",(unsigned long)r,h,sb[0x21],gs,gt,ga_b(v,0x5a),ga_b(v,0x5f));
+        vr=r;vh=h;vgs=gs;vgt=gt;v14=ga_b(v,0x14);
+     } else {vr=0;vh=0xffffu;armed=false;flicker=0;}}
     if (game.mounts!=old_mounts) debugf("MSX player mounted vehicle kind=%u (0C3078) count=%u\n",game.world.vslots.slot[0].b[0x21],game.mounts);
     if (game.dismounts!=old_dismounts) debugf("MSX player left vehicle kind=%u (0C30F0) count=%u\n",game.world.vslots.slot[0].b[0x1d],game.dismounts);
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);

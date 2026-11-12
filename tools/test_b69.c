@@ -5,7 +5,9 @@
  * class-0 row with the player only, so no enemy ever damaged a vehicle on the
  * cartridge while the vehicles' family tests (recorded 0049E8 answers)
  * passed. Hurtboxes from the ROM: SV-001 092676 (class mask 01), Slugnoid
- * 0966BC (01); the Camel's 0A0B02 (02) is class 1 and must not be hit. */
+ * 0966BC (01), Camel Slug 0342CC..0342FC (01, the table 0342B8 by the
+ * crouch +86); the enemy camel rider's head 0A0B02 (02, neo_camel.c) is
+ * class 1 and must not be hit. */
 #include <stdio.h>
 #include <string.h>
 #include "../src/neo_world.h"
@@ -19,7 +21,7 @@ static int check(uint32_t box,bool expect,const char *name) {
     a.projected_x=a.cached_x=100<<16;a.projected_y=a.cached_y=0x180<<16;
     for (int16_t kind=0;kind<20;kind++) {
         ga_sw(g,0x4e,0x100);ga_sb(g,0x5a,0);ga_sb(g,0x5f,0);
-        const int16_t row[7]={-32,-32,64,64,kind,0,0x10};
+        const int16_t row[7]={-64,-64,128,128,kind,0,0x10};
         uint8_t t=neo_world_class0_attack(&w,&a,0,row);
         if (expect && t && ga_w(g,0x4e)!=0x100) {printf("PASS: B69 %s: class-0 row kind %d hits the vehicle (type %u, health %04x)\n",name,kind,t,ga_w(g,0x4e));return 0;}
         if (!expect && (t || ga_w(g,0x4e)!=0x100)) {printf("FAIL: B69 %s: a class-0 row hit a class-1 body\n",name);return 1;}
@@ -31,6 +33,7 @@ int main(void) {
     int r=0;
     r|=check(0x92676u,true,"SV-001 092676");
     r|=check(0x966bcu,true,"Slugnoid 0966BC");
-    r|=check(0xa0b02u,false,"Camel 0A0B02");
+    for (uint32_t b=0x342ccu;b<=0x342fcu;b+=0xcu) {char n[40];snprintf(n,sizeof(n),"Camel Slug %06X",(unsigned)b);r|=check(b,true,n);}
+    r|=check(0xa0b02u,false,"enemy camel head 0A0B02");
     return r;
 }

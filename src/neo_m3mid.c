@@ -121,7 +121,7 @@ static uint32_t ll(const uint8_t *l,unsigned o) {return (uint32_t)lw(l,o)<<16|lw
 static void lsw(uint8_t *l,unsigned o,uint16_t v) {l[o]=(uint8_t)(v>>8);l[o+1]=(uint8_t)v;}
 static void lsl(uint8_t *l,unsigned o,uint32_t v) {lsw(l,o,(uint16_t)(v>>16));lsw(l,o+2,(uint16_t)v);}
 /* 01AB9C on the layer with the scene root as parent, then 01ABCC. */
-static void layer_place(neo_genv_t *e,uint8_t *l,int16_t x,int16_t y) {
+void neo_layerobj_place(neo_genv_t *e,uint8_t *l,int16_t x,int16_t y) {
     lsl(l,0,(uint32_t)(int32_t)x<<16);lsl(l,4,(uint32_t)(int32_t)y<<16);lsl(l,0x10,ROOT);l[0x24]=0;l[0x25]=0;   /* +24 word */
     neo_contact_parent_t r;
     if (!ga_parent(e,ROOT,&r)) return;
@@ -136,7 +136,7 @@ static void layer_place(neo_genv_t *e,uint8_t *l,int16_t x,int16_t y) {
     else if (l[0x24]!=epoch) {l[0x24]=epoch;lsl(l,0x1c,d2);lsl(l,0x20,d3);}
 }
 /* 0C6F34: map descriptor `map`, block offsets (12-bit), column list. */
-static void k0c6f34(uint8_t *l,uint32_t map,uint16_t d0,uint16_t d1,uint32_t list) {
+void neo_layerobj_map(uint8_t *l,uint32_t map,uint16_t d0,uint16_t d1,uint32_t list) {
     lsl(l,0x2e,map);
     d0=(uint16_t)(S16((uint16_t)(d0<<4))>>4);d1=(uint16_t)(S16((uint16_t)(d1<<4))>>4);
     lsw(l,0x32,d0);lsw(l,0x34,d1);
@@ -146,7 +146,7 @@ static void k0c6f34(uint8_t *l,uint32_t map,uint16_t d0,uint16_t d1,uint32_t lis
 }
 /* 0C6BDE: the column table +42.. (byte 0: row offset * 8, byte 1: height)
  * from the list +3E for d2 columns from map column d0 / ring column d4. */
-static bool k0c6bde(neo_genv_t *e,uint8_t *l,uint16_t d0,uint16_t d2,uint16_t d4) {
+bool neo_layerobj_columns(neo_genv_t *e,uint8_t *l,uint16_t d0,uint16_t d2,uint16_t d4) {
     d0=(uint16_t)(S16((uint16_t)(d0<<4))>>4);
     uint32_t a2=ll(l,0x3e);
     if ((a2&0xffffu)==0xffffu && (a2>>16)==0xffffu) return true;
@@ -169,13 +169,12 @@ static bool k0c6bde(neo_genv_t *e,uint8_t *l,uint16_t d0,uint16_t d2,uint16_t d4
 }
 /* 0C73CE: draw d2 x d3 blocks of the map from (d0, d1) (0C6BDE + 0C714E),
  * then the window +36/+38 from the layer's position. */
-static void k0c73ce(neo_genv_t *e,neo_m3mid_env_t *m,uint16_t d0,uint16_t d1,uint16_t d2,uint16_t d3) {
-    uint8_t *l=m->layer;
+void neo_layerobj_blocks(neo_genv_t *e,uint8_t *l,void (*draw)(void *ctx,uint32_t map,const int16_t d[6]),uint16_t d0,uint16_t d1,uint16_t d2,uint16_t d3) {
     uint32_t map=ll(l,0x2e);
     if (!map) return;
     uint16_t d4=(uint16_t)(d0+lw(l,0x32)),d5=(uint16_t)(lw(l,0x34)-d1);
-    k0c6bde(e,l,d0,d2,d4);
-    if (m->draw) {int16_t d[6]={(int16_t)d0,(int16_t)d1,(int16_t)d2,(int16_t)d3,(int16_t)d4,(int16_t)d5};m->draw(e->ctx,map,d);}
+    neo_layerobj_columns(e,l,d0,d2,d4);
+    if (draw) {int16_t d[6]={(int16_t)d0,(int16_t)d1,(int16_t)d2,(int16_t)d3,(int16_t)d4,(int16_t)d5};draw(e->ctx,map,d);}
     lsw(l,0x36,(uint16_t)(S16((uint16_t)((0xffc00000u-ll(l,0x14))>>16))>>4));
     lsw(l,0x38,(uint16_t)(S16((uint16_t)((0x800000u-ll(l,0x18))>>16))>>4));
 }
@@ -190,10 +189,10 @@ static void layer_setup(neo_gactor_t *a,neo_genv_t *e) {
     l[0x82]&=0xfeu;                                                     /* 0C6D04 */
     if (m->clear) m->clear(e->ctx);                                     /* 0C702A ring, 0C703C/0C6D04 SCB */
     SW(0x92,W(0x28));SW(0x94,W(0x2c));
-    layer_place(e,l,S16(W(0x28)),(int16_t)(S16(W(0x2c))+0xc0));
+    neo_layerobj_place(e,l,S16(W(0x28)),(int16_t)(S16(W(0x2c))+0xc0));
     l[0x82]=(uint8_t)((l[0x82]&~6u)|8u);
-    k0c6f34(l,0x2a6142u,0,9,0x2a61b0u);
-    k0c73ce(e,m,0,0,0x13,0xa);
+    neo_layerobj_map(l,0x2a6142u,0,9,0x2a61b0u);
+    neo_layerobj_blocks(e,m->layer,m->draw,0,0,0x13,0xa);
     l[0x82]|=0x81u;                                                     /* 0C6CFC */
     ga_place(a,e,0x98,0,LAYER);                                         /* 01AB98 */
 }
@@ -201,8 +200,8 @@ static void layer_setup(neo_gactor_t *a,neo_genv_t *e) {
 static void wreck_map(neo_genv_t *e) {
     neo_m3mid_env_t *m=menv(e);
     if (!m) return;
-    k0c6f34(m->layer,0x2a619au,0,9,0x2a61dau);
-    k0c73ce(e,m,0,0,0x13,0xa);
+    neo_layerobj_map(m->layer,0x2a619au,0,9,0x2a61dau);
+    neo_layerobj_blocks(e,m->layer,m->draw,0,0,0x13,0xa);
 }
 /* 0A6D7C: patch `index` of the list 2A6210 (0C714E into the layer). */
 static void patch(neo_genv_t *e,uint16_t index) {
@@ -541,7 +540,7 @@ static ga_result_t body_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (!last) STOP(0xa5604);
         m->layer[0x82]|=6u;m->layer[0x82]&=0xfeu;
         if (m->clear) m->clear(e->ctx);
-        k0c6f34(m->layer,0,ga_w(last,0x3e),ga_w(last,0x42),0);
+        neo_layerobj_map(m->layer,0,ga_w(last,0x3e),ga_w(last,0x42),0);
         if (e->shake) e->shake(e->ctx);                                 /* 0C801A */
         for (unsigned i=0;i<0x1e;i++) item55(a,e);
         SW(0x9e,0x1e);SL(0,0xa4d3c);

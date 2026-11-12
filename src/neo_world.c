@@ -251,6 +251,7 @@ static void player_hit(tick_t *t,int32_t projected_x,int32_t cached_x,uint8_t ki
     t->hits++;w->hit_x=HI(projected_x);
 }
 static neo_gactor_t *g_spawn(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script);
+static uint8_t class0_bodies(neo_world_t *w,const neo_gactor_t *a,const neo_contact_actor_t *c,uint8_t a5e,const int16_t row[7]);
 static void soldier_event(void *context,const neo_soldier_event_t *e) {
     tick_t *t=context;neo_world_t *w=t->w;
     switch (e->kind) {
@@ -286,6 +287,11 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         break;
     }
     case NEO_SOLDIER_EVENT_ATTACK: /* 0049E8 of a soldier with a class-1 row (0AF2BA: 0AE9B0) */
+        if (e->row && e->row[5]==0) {   /* B69: a class-0 row (knife, leap) against the class-0 bodies */
+            uint8_t v=class0_bodies(w,NULL,&e->actor,(uint8_t)e->value,e->row);
+            if (e->answer) *e->answer=v;
+            break;
+        }
         neo_world_soldier_attack(w,t->current>=0 && w->order[t->current].kind==NEO_WORLD_SOLDIER?(int)w->order[t->current].index:-1,&e->actor,(uint8_t)e->value,e->row);
         break;
     case NEO_SOLDIER_EVENT_GRENADE: { /* 03C2DE: the grenade 03C306 after the script actor, at (0, 2C) of the soldier, its facing bits 0..1 */
@@ -929,13 +935,33 @@ static void attack_targets(tick_t *t,neo_gactor_t *a,const neo_contact_actor_t *
         if (h<=lo) {lo=h;out[1]=tg;}                                   /* 004946..004952 */
     }
 }
+/* B69: 0049E8's class-0 list holds the player nodes *and* every body
+ * registered (004C24) with class bit 0: the player's vehicles (SV-001
+ * hurtboxes 092676.., Slugnoid 0966BC, ...), whose rider is unregistered
+ * (0C308A: +50 = 0). Before, a class-0 row only looked at the player and no
+ * enemy ever hit a ridden vehicle. */
+static uint8_t class0_bodies(neo_world_t *w,const neo_gactor_t *a,const neo_contact_actor_t *c,uint8_t a5e,const int16_t row[7]) {
+    uint16_t qx;uint8_t qy;uint8_t best=0;
+    if (!attack_bins(c,row,&qx,&qy)) return 0;
+    for (unsigned b=0;b<w->last_box_count;b++) {
+        neo_gactor_t *g=&w->gactors[w->last_boxes[b].owner];
+        if (!(w->last_boxes[b].xbins&qx) || !(w->last_boxes[b].ybins&qy)) continue;
+        if (g==a || !g->active || g->placeholder || !ga_l(g,0x50) || !ga_class(g,0)) continue;
+        if (ga_receive(g,c,a5e,row,w->grid)) {uint8_t ty=ga_rom(ga_l(g,0x50))[0];if (ty>best) best=ty;w->class0_hits++;}
+    }
+    return best;
+}
+uint8_t neo_world_class0_attack(neo_world_t *w,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]) {return row[5]==0?class0_bodies(w,NULL,attacker,a5e,row):0;}
 static uint8_t g_attack(void *ctx,neo_gactor_t *a,const int16_t row[7]) {
     tick_t *t=ctx;neo_world_t *w=t->w;neo_contact_actor_t c=ga_contact(a);
     if (t->genv.want_targets && row[5]!=0) attack_targets(t,a,&c,row);
-    if (row[5]==0) { /* class 0: the player */
-        if (!t->player_hittable) return 0;
-        int first=-1;uint8_t type=neo_hit_query(&c,row,&t->player,1,(uint8_t)row[4],0,&first);
-        if (type && first>=0 && row[6]) player_hit(t,c.projected_x,c.cached_x,(uint8_t)row[4]);
+    if (row[5]==0) { /* class 0: the player and the class-0 bodies */
+        uint8_t type=0;
+        if (t->player_hittable) {
+            int first=-1;type=neo_hit_query(&c,row,&t->player,1,(uint8_t)row[4],0,&first);
+            if (type && first>=0 && row[6]) player_hit(t,c.projected_x,c.cached_x,(uint8_t)row[4]);
+        }
+        if (!t->genv.want_targets) {uint8_t v=class0_bodies(w,a,&c,ga_b(a,0x5e),row);if (v>type) type=v;}
         return type;
     }
     uint8_t best=0;
@@ -1183,6 +1209,13 @@ static bool b_attack(void *c,int16_t node,uint32_t rows,uint16_t *result) {
             a.cached_x=(int32_t)neo_boss_l(n,0x44);a.cached_y=(int32_t)neo_boss_l(n,0x48);a.flags15=n->f[0x15];
             int first=-1;uint8_t type=neo_hit_query(&a,row,&t->player,1,(uint8_t)row[4],0,&first);
             if (type && first>=0 && row[6]) player_hit(t,a.projected_x,a.cached_x,(uint8_t)row[4]);
+            if (type>*result) *result=type;
+        }
+        if (row[5]==0) {   /* B69: and the class-0 bodies (the ridden vehicles) */
+            neo_contact_actor_t a;memset(&a,0,sizeof(a));
+            a.projected_x=(int32_t)neo_boss_l(n,0x3c);a.projected_y=(int32_t)neo_boss_l(n,0x40);
+            a.cached_x=(int32_t)neo_boss_l(n,0x44);a.cached_y=(int32_t)neo_boss_l(n,0x48);a.flags15=n->f[0x15];
+            uint8_t type=class0_bodies(w,NULL,&a,n->f[0x5e],row);
             if (type>*result) *result=type;
         }
         if ((uint16_t)(r[14]<<8|r[15])==0xffffu) return true;

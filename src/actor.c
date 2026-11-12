@@ -702,6 +702,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.weapon_stops!=old_weapon_stops && !old_weapon_stops) debugf("MSX weapon shot stopped explicitly: constructor %05lx not ported (pistol bullet fired)\n",(unsigned long)game.weapon_stop_constructor);
     if (game.world.vehicle_stops!=old_vehicle_stops) debugf("MSX vehicle stopped explicitly: script spawn %05lx not ported (not created)\n",(unsigned long)game.world.vehicle_stop_constructor);
     if (game.grenades!=old_grenades) debugf("MSX grenade thrown count=%u\n",game.grenades);
+    {static unsigned old_class0;if (game.world.class0_hits!=old_class0) {old_class0=game.world.class0_hits;debugf("MSX vehicle hit (class-0 row, B69) count=%u mount=%d\n",old_class0,(int)game.mount);}}
     if (game.mounts!=old_mounts) debugf("MSX player mounted vehicle kind=%u (0C3078) count=%u\n",game.world.vslots.slot[0].b[0x21],game.mounts);
     if (game.dismounts!=old_dismounts) debugf("MSX player left vehicle kind=%u (0C30F0) count=%u\n",game.world.vslots.slot[0].b[0x1d],game.dismounts);
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);

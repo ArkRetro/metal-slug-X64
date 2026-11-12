@@ -154,6 +154,18 @@ typedef struct neo_m3mid_env {
     void (*patch)(void *ctx,uint32_t submap,const int16_t d[6]);
     void (*clear)(void *ctx);
 } neo_m3mid_env_t;
+/* The Mission 4 boss 02267E (neo_m4boss.c): its picture is the layer object
+ * 10D7B6 (RAM 10D7B6..10D83D: the map 02225E, its patches by 0C714E), moved
+ * by RAM 10E94E/10E952 while 10E957 (0C7BD0) is 3; RAM 10E9B8 (0xE0 at the
+ * end); `anim_speed` is 002802 (D0 frames per step, neo_lspc.h). NULL in
+ * neo_genv_t: the body stops explicitly. */
+typedef struct neo_m4boss_env {
+    uint8_t *layer;uint8_t owner;int32_t speed[2];uint16_t point69b8;
+    void (*draw)(void *ctx,uint32_t map,const int16_t d[6]);
+    void (*patch)(void *ctx,uint32_t submap,const int16_t d[6]);
+    void (*clear)(void *ctx);
+    void (*anim_speed)(void *ctx,uint16_t frames);
+} neo_m4boss_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -269,6 +281,7 @@ struct neo_genv {
     neo_vehicle_env_t *vehicle;
     neo_m2boss_env_t *m2boss;
     neo_m3mid_env_t *m3mid;
+    neo_m4boss_env_t *m4boss;
     void (*shake_pulse)(void *ctx);  /* 0C8022 (RAM 10E9C8/10E9CC) */
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
      * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;

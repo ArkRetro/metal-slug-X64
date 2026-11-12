@@ -89,6 +89,7 @@ typedef struct {
      * registered during this update / queried during this update. */
     struct { uint8_t owner; uint16_t xbins; uint8_t ybins; } boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];
     unsigned box_count,last_box_count;
+    unsigned class0_hits;              /* B69: class-0 rows that hit a class-0 body (a ridden vehicle), counted for the log */
     /* The same registry in its slot order (004C24 numbers the bodies as
      * they register, at most 0x40): soldiers, generic actors and boss
      * nodes, for the A0/A1 targets of 0049E8 (004B06 visits the slots
@@ -325,6 +326,11 @@ void neo_world_soldier_attack(neo_world_t *w,int self,const neo_contact_actor_t 
 /* Attack row (ROM 0049E8 format) of an outside attacker against generic
  * actor `index`, as registered during the previous update (ROM 004762). */
 bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
+/* B69: 0049E8 with a class-0 row against the bodies registered with class
+ * bit 0 in the previous update (the ridden vehicles): their 004762/004892
+ * damage; the highest type hit. The enemies' class-0 rows (g_attack, the
+ * soldiers' knife and leap, the boss's rows) go through it. */
+uint8_t neo_world_class0_attack(neo_world_t *world,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
 /* True once the script has passed the camera-1920 lock (2D6A1A): the end of
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);

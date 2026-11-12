@@ -53,7 +53,10 @@ typedef struct {
 #if defined(FAMILY_M3MID) && !defined(FAMILY_RESUME)
 #define FAMILY_RESUME 1
 #endif
-#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS)
+#if defined(FAMILY_M4BOSS) && !defined(FAMILY_RESERVE)
+#define FAMILY_RESERVE 1   /* the Mission 4 boss: 0040BC with its reserve */
+#endif
+#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS)
 static uint8_t wram[0x10000];   /* tentative: the RAM image below */
 #endif
 #define STR2(a) #a
@@ -124,7 +127,7 @@ static void shake(void *ctx) {(void)ctx;put(0x10e9c8,0);put(0x10e9c9,8);
     wram[0xe9c8]=0;wram[0xe9c9]=8;
 #endif
 }
-#if defined(FAMILY_M3MID)
+#if defined(FAMILY_M3MID) || defined(FAMILY_M4BOSS)
 /* 0C8022: RAM 10E9C8 as read; bits 0..1 set, or (negative) cleared and
  * 10E9CC = (10E9C8 long + 0x8000) & FFFF0000. */
 static void shake_pulse(void *ctx) {
@@ -150,6 +153,16 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
 #ifdef FAMILY_TRAIN
     /* Mission 3: the train 10D7B6 as read (+14..+20, +24 correction 0). */
     if (tag==0x10d7b6u) {*out=(neo_contact_parent_t){tag,train_now.x,train_now.y,train_now.prev_x,train_now.prev_y,0};return true;}
+#endif
+#if defined(FAMILY_M4BOSS) && defined(FAMILY_RAM)
+    /* Mission 4: the boss's layer object 10D7B6 (as the RAM image holds it). */
+    if (tag==0x10d7b6u) {
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        const uint8_t *b=&wram[0xd7b6];
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
 #endif
 #if defined(FAMILY_M3MID) && defined(FAMILY_RAM)
     /* Mission 3: the mid-boss moves the layer object 10E8C6 (as read). */
@@ -913,6 +926,14 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         static neo_m3mid_env_t m3;m3.layer=&wram[0xe8c6];m3.flags959=wram[0xe959];e.m3mid=&m3;
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);e.shake_pulse=shake_pulse;
 #endif
+#ifdef FAMILY_M4BOSS
+        /* The Mission 4 boss: its layer 10D7B6, speeds 10E94E/10E952, owner
+         * 10E957 and 10E9B8 from the RAM image; the writes are compared. */
+        static neo_m4boss_env_t m4;m4.layer=&wram[0xd7b6];m4.owner=wram[0xe957];
+        flags.mission_end=wram[0xc300];flags.end_kind=wram[0xc304];   /* RAM 10C300/10C304 as read (018F92) */
+        m4.speed[0]=(int32_t)w32(0x10e94e);m4.speed[1]=(int32_t)w32(0x10e952);m4.point69b8=w16(0x10e9b8);e.m4boss=&m4;
+        e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);e.shake_pulse=shake_pulse;
+#endif
 #ifdef FAMILY_RESERVE
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);
 #endif
@@ -983,6 +1004,12 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         if (watchm4) memcpy(&wram[0xc6c0],flags.m4,sizeof(flags.m4));
 #ifdef FAMILY_M3MID
         wram[0xe959]=m3.flags959;
+#endif
+#ifdef FAMILY_M4BOSS
+        wram[0xc300]=flags.mission_end;wram[0xc304]=flags.end_kind;
+        if (flags.stage_done) {wram[0xc303]=0;wram[0xc306]=wram[0xc307]=0;}   /* 018F40 (0AAA88: no vehicle) */
+        wram[0xe957]=m4.owner;wram[0xe9b8]=(uint8_t)(m4.point69b8>>8);wram[0xe9b9]=(uint8_t)m4.point69b8;
+        for (unsigned i=0;i<8;i++) wram[(0xe94e)+i]=(uint8_t)((uint32_t)m4.speed[i>>2]>>(24-8*(i&3)));
 #endif
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;

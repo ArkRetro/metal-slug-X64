@@ -87,5 +87,13 @@
   "seconds": 77,
   "stopped": 0,
   "unsupported": 0
+ },
+ "veh": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 452,
+  "stopped": 0,
+  "unsupported": 0
  }
 }

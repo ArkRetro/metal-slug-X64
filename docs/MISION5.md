@@ -781,6 +781,9 @@ gira hacia ella (`0C069E`), y pulsa solo A cada 6 fotogramas hasta que `095C76` 
   `040DF0`. Las sondas de `C` dan cuatro muertes por `04097A` (todas con superficie: `D1` = 00000000 tres veces y
   8000FFFF una), ninguna agachada de tipo 5 (`040BF2` sin disparar): falta una captura de esa muerte para
   contrastarla.
+- **Memoria**: con el agarre la imagen pasaba del mínimo (logo, personajes, M4: 3328 KB; M6 etapa 3: 3326 KB, para
+  3332). Sin bajar mínimos: `pinned`, `map_chunk` y `warm_queued` de `scene_assets.c` a un bit por trozo (5,8 KB de bss
+  menos). Logo y M6 etapa 3 en ares: PASS, caché de 3328 KB.
 - **Orden del jugador** (sin cambiar): el port mueve al jugador antes que a los actores del mundo; en el original el
   jugador va después de la manivela, cuyo `andi.w #FFEF` le quita la pulsación de A del agarre. En el port esa
   pulsación ya ha disparado: un tiro de más en la actualización del agarre (pendiente, en el motor compartido).

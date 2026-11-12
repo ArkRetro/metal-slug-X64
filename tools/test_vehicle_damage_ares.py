@@ -145,7 +145,7 @@ try:
                 res['steps']=all(x-y==0x10 or y==0 for x,y in drops) and bool(drops)
                 res['react']=kind not in REACT or any(s[0] in REACT[kind] for s in st)
                 res['flicker']=any('MSX vehicle flicker' in l for l in L)
-                res['gauge']=any(s[3]==s[1] for s in st if s[1]<0x30)
+                res['gauge']=any(s[3]==s[1]<<8 for s in st if s[1]<0x30)   # 0C9B94: the target +7E is the health << 8
                 res['destroyed']=bool(hs) and hs[-1]==0 and left and (kind not in DESTROY or any(s[0] in DESTROY[kind] for s in st))
                 res['ok']=hit and res['steps'] and res['react'] and res['flicker'] and res['gauge']
             if best is None or (res['ok'] and not best['ok']) or (res.get('destroyed') and not best.get('destroyed')):best=res

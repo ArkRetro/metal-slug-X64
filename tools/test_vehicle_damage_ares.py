@@ -96,9 +96,12 @@ try:
         up=not riding and ((stuck and c9<5.0) or (not stuck and bool(a.up) and (t%a.up)>a.up-1.2))   # on foot: aim up a while
         left=stuck and c9<3.0
         # A vehicle waiting for its rider (actor.c `MSX vehicle waiting`, twice a second): walk to it and hop on.
-        nw=text.count('MSX vehicle waiting');vw=re.findall(r'MSX vehicle waiting routine=\w+ dx=(-?\d+) dy=(-?\d+)',text[text.rfind('MSX vehicle waiting'):]) if nw else []
+        # (a kind already done or not expected is left alone: 0345E0 Camel 2, 092B0E/093D76 SV-001 1, 096BA6 Slugnoid 3)
+        nw=text.count('MSX vehicle waiting');vw=re.findall(r'MSX vehicle waiting routine=(\w+) dx=(-?\d+) dy=(-?\d+)',text[text.rfind('MSX vehicle waiting'):]) if nw else []
         if nw!=seen_wait[0]:seen_wait[:]=[nw,t]
-        seek=not riding and vw and t-seen_wait[1]<1.5
+        wkind={'0345e0':2,'092b0e':1,'093d76':1,'096ba6':3}.get(vw[-1][0]) if vw else None
+        seek=not riding and vw and t-seen_wait[1]<1.5 and wkind in expect and wkind not in done
+        if vw:vw=[(x,y) for _,x,y in vw]
         if seek:
             dx=int(vw[-1][0]);up=False;left=dx<-6
             hold('Up',False);hold('Left',left);hold('Right',dx>6);hold('a',abs(dx)<48 and (t%0.6)<0.15)

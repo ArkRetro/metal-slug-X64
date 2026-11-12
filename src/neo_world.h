@@ -151,6 +151,10 @@ typedef struct {
     /* Mission 6 stage 1: the hanging bridge's driver (neo_m6bridge.h) and
      * its step 10E94E, which 0C81C0 gives 10D7B6 while bit 0 of 10E957 is set. */
     neo_m6bridge_t bridge;int32_t bridge_dx;
+    /* Its actors (neo_m6props.c): RAM 10C70C..10C714 (10C70C/10C70D are the
+     * driver's lock word, bridge.lock), 10D7B6 as they read it and its
+     * position before this update's layer step (01ABC8's +1C/+20). */
+    uint8_t bridge_ram[9];int32_t bridge_prev_x,bridge_prev_y;neo_m6bridge_env_t bridge_env;
     bool script_skip_unported;   /* reference cartridge: neo_script_env_t.skip_unported */
     /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
      * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */

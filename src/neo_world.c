@@ -382,6 +382,13 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
     /* Mission 3: 10D7B6 is the train (neo_train.c), the kernel's second
      * terrain object. */
     if (tag==0x10d7b6u && w->kernel.train_on) {*out=(neo_contact_parent_t){tag,w->kernel.train.x,w->kernel.train.y,w->kernel.train.prev_x,w->kernel.train.prev_y,0};return true;}
+    /* Mission 6 stage 1: 10D7B6 is the hanging bridge, moved by its driver
+     * (neo_m6bridge.c): +14/+18 = its position (no parent), +1C/+20 the one
+     * before this update's step (01ABC8), +25 = 0. */
+    if (tag==0x10d7b6u && w->bridge.on) {
+        const neo_layer_t *l=&w->layers[NEO_LAYER_MID];
+        *out=(neo_contact_parent_t){tag,l->x,l->y,w->bridge_prev_x,w->bridge_prev_y,0};return true;
+    }
 #ifdef MSX_HAS_M3MID
     /* Mission 3: the mid-boss's layer object 10E8C6 (neo_m3mid.c). */
     if (tag==0x10e8c6u && w->m3layer_used) {
@@ -1592,6 +1599,13 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         g->vehicle=v;
     }
     g->laser=w->laser;
+    /* Mission 6 stage 1: the bridge's actors read 10D7B6 (+0, +32, +36 as
+     * the driver left them, 0C748E) and RAM 10C70C..10C714. */
+    if (w->bridge.on) {
+        const neo_layer_t *l=&w->layers[NEO_LAYER_MID];neo_m6bridge_env_t *m=&w->bridge_env;
+        m->x=l->x;m->origin=l->column;m->o36=(int16_t)((int16_t)(uint16_t)((0xffc00000u-(uint32_t)l->x)>>16)>>4);
+        w->bridge_ram[0]=(uint8_t)(w->bridge.lock>>8);w->bridge_ram[1]=(uint8_t)w->bridge.lock;m->ram=w->bridge_ram;g->m6bridge=m;
+    } else g->m6bridge=NULL;
     w->kernel.shake_y=w->camera_native?(uint32_t)w->camera.shake_applied:0;   /* RAM 10E9CC (0138A0) */
     /* RAM 10C5EC/10C5F4: item pickup boxes of the players (the original
      * player's code writes them). The port's player keeps the standing box
@@ -1683,6 +1697,17 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native,w->script_skip_unported};
     t.se=&se;t.sub_owner=-1;t.event_soldier=-1;
     if (w->player_ripple) {w->player_ripple=false;neo_gate_ripple(player_view(w),&t.genv,2);}   /* 0C124C: 03C52C */
+    /* 0BCDC2 (Mission 6 stage 1, list 0BCA00): 10C70C = 0, the span makers
+     * 0BD2CE and 0BD2BA, the driver 0BCE2C (native: neo_m6bridge.c) and the
+     * swing 0BD18E, each 0040BC (D0 = 1C) after the caller (the mission actor
+     * 101364, MAME captures-m6/fam/R): the list runs 0BD18E, 0BCE2C,
+     * 0BD2BA, 0BD2CE, in the update of the call. */
+    for (unsigned i=0;i<w->camera_call_count;i++) {
+        if (w->camera_calls[i]!=0x0BCDC2u) continue;
+        static const uint32_t made[]={0xbd2ceu,0xbd2bau,0xbd18eu};
+        int script=find(w,NEO_WORLD_SCRIPT,0);
+        for (unsigned k=0;k<COUNT(made);k++) if (!ga_insert(&t,script,made[k],SCRIPT_TAG,0)) w->camera_events_unsupported++;
+    }
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         MSX_DIAG_CHECK((slot.kind==NEO_WORLD_SOLDIER?slot.index<NEO_WORLD_SOLDIERS:slot.kind==NEO_WORLD_THROW?slot.index<NEO_WORLD_THROWS:
@@ -1739,6 +1764,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         if (!keep) {remove_at(w,(unsigned)now);at=(unsigned)now;}
         else at=(unsigned)now+1u;
     }
+    if (w->bridge.on) w->bridge.lock=(uint16_t)(w->bridge_ram[0]<<8|w->bridge_ram[1]);   /* the span makers' lock bytes */
     /* Player shots of this update (00411C after the list head). */
     for (unsigned i=0;i<w->shot_request_count;i++) {
         neo_gactor_t *a=ga_insert(&t,find(w,NEO_WORLD_SCRIPT,0),w->shot_requests[i].routine,SCRIPT_TAG,0);
@@ -2004,6 +2030,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_camera_t *c=&w->camera;
         for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=p[i].alive;c->op4_players[i].px=p[i].px;c->op4_players[i].py=p[i].py;c->op4_players[i].rect_ok=p[i].rect_ok;}
         neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
+        w->bridge_prev_x=w->layers[NEO_LAYER_MID].x;w->bridge_prev_y=w->layers[NEO_LAYER_MID].y;
         neo_layers_step_own(w->layers,c->root_vx,c->root_vy,c->layer_flags,w->bridge.on,w->bridge_dx);
         neo_camera_finish(c,&w->script.w69b8,&w->script.w69ba);
         for (unsigned i=0;i<c->event_count;i++) {
@@ -2020,7 +2047,14 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
     for (unsigned i=0;i<w->camera.event_count;i++) {
         uint32_t at=w->camera.events[i].address;
         if (w->camera.events[i].kind!=NEO_CAMERA_EV_CALL) continue;
-        if (neo_m6bridge_call(&w->bridge,at)) {if (at==0x0BCDC2u) w->bridge_dx=0;continue;}   /* Mission 6 stage 1 bridge (0BCA00) */
+        if (neo_m6bridge_call(&w->bridge,at)) {   /* Mission 6 stage 1 bridge (0BCA00) */
+            if (at==0x0BCDC2u) {
+                w->bridge_dx=0;
+                if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=0;w->camera_calls[w->camera_call_count++]=at;}
+                else w->camera_events_unsupported++;
+            }
+            continue;
+        }
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
         if (at==0x0BC550u) w->ga_flags.limit700=0x200;                /* Mission 5 sewer list head (0BBA24): 10C700 = 200 */
         if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */

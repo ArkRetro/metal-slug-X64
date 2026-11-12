@@ -331,15 +331,48 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   sobre `layers[NEO_LAYER_MID]` (`+32` = `column`, `+34` = `top`, `+36` de su x). `0C81C0` (`neo_layers_step_own`)
   mueve la x de una capa con bandera exactamente 1 por `10E94E` y sus factores (`0C826C`); con otras banderas sigue
   quieta como antes. m6s1 / m6s2 en ares: PASS, sin cambios en los recuentos.
-- **Siguiente**: `0BD18E` (balanceo `10C712..10C714`), los creadores `0BD2BA` / `0BD2CE` y los tramos `0BCFA4..0BD004`
-  (programas `2A923C..2A93E0`, paleta 4E1), familia sobre `R`; luego el objeto de núcleo `10D7B6` (mapa `0BC6E6`,
-  colisión `45FC2A`). El orden «cámara, luego `0BCE2C`» del mundo es el del tren de la M3; falta comprobar la x de
-  `10D7B6` con una captura que la lea (R solo trae las lecturas del conductor).
+- **Orden comprobado (captura `captures-m6/fam/O`, `runO.sh`)**: réplica de `run4` desde `sec09_292683` con
+  `MSX_FULL_ORDER_TAP` (nuevo en `capture_fullgame.lua`: cada lectura y escritura de `10D7B6` +0 / +14 / +32..+37,
+  `10E94E`, `10C712..10C714` y el último almacenamiento de la cámara `10E9D8`, por orden de CPU y con PC) y
+  `MSX_FULL_CAMERA`. En las 1650 actualizaciones de `0BCE2C` el orden es: cámara (`0C7EB6`) → `0C81C0` lee `10E94E`
+  (`0C826C`, el que escribió el conductor en la actualización anterior; 1231 veces, el resto con bandera 0 toma el
+  paso de la raíz) → `01AC38` escribe +0 (`01AC40`) → `01ABC8` copia +14 (`01AC08`) → `0C748E` rehace +36 (`0C74D8`)
+  → `0BD1B8` lee +0 → `0BCE2C` escribe `10E94E` → `0BCEB0` lee +36 → `0BD20E` lee +32/+36 → los tramos leen `10C714`.
+  Una actualización puede ocupar dos fotogramas de vídeo (292941/292942): el extractor agrupa desde cada
+  almacenamiento de la cámara. Prueba `tools/test_m6_order.c` (en `make check`, `data/m6order_fixture.json.gz` de
+  `tools/extract_m6order_fixture.py`): el orden, `neo_layers_step_own` con el `10E94E` anterior (`w->bridge_dx`) da el
+  +0 de MAME y la fórmula de +36 del mundo da el +36 que leyó el conductor: **1650 de 1650 iguales**.
+- **Actores del puente nativos** (`src/neo_m6props.c`): `0BD18E` / `0BD1B8` (balanceo `10C712..10C714`, x anterior
+  `10C70E`), `0BD2BA` / `0BD2CE` → `0BD202` / `0BD20E` (columna `0BD2A8[+6E]` = 6 / 14 más el origen +32; con
+  d3 = (+36 + 1F − d4) << 4 ≥ 0, el byte de bloqueo `10C70C` / `10C70D` a 0 y d3 ≠ +70 llama a `0BD09A` / `0BD114` y
+  pone el bloqueo a 1), los tramos `0BCFA4` / `0BCFC4` / `0BCFE4` / `0BD004` (+66 = +1E = FFF0 / 0, programas
+  `2A923C` / `2A92C8` / `2A9354` / `2A93E0`, paleta 4E1) y `0BD044` (byte +6E = `10C714`, `01ABC8`, `01945C` con
+  `0BCF9C`, `00427A`, borrado con `10E99E` ≥ 08B0 o +28 < 04F00000). Entorno `neo_m6bridge_env_t` (`10D7B6` +0/+32/+36
+  y RAM `10C70C..10C714`). Tablas `0BCF9C` y `0BD2A8..0BD2B9` en `region_rom.json`; programas en
+  `extract_soldier_programs.py` (sin grupo).
+- Familia **`m6span`** (`captures-m6/fam/R`, `--range bcfa4-bd2e1 --ram 10d7b6-10d7ee --ram 10c70c-10c715`, opción
+  nueva `--m6bridge` del compilador): **31 nodos, 12 784 actualizaciones en lazo cerrado iguales a MAME**, 28 borrados,
+  7806 dibujos.
+- Sprites: `export_rest_sprites.py mslugx.zip captures-m6/fam/R@bd416-bdaeb captures-m6/fam/R@bcfa4-bd2e1 --keep
+  filesystem/rest-native.json --keep <la exportación M6 anterior> --output filesystem/mission6/rest-native.json`: 146
+  volcados, 769 266 píxeles iguales, 0 distintos; 11 860 descriptores (los 12 de los tramos nuevos) y la paleta 4E1 de
+  los volcados. Paquete: 1200 trozos (el máximo). Con `--keep filesystem/mission5/rest-native.json` entraban además
+  107 descriptores de la alcantarilla de la M5 (1213 trozos, +2,4 KB de cabecera) y la caché de escena bajaba de su
+  suelo (`RAM budget: 3330 KB left ... (minimum 3332 KB)`, ares se para en `scene_assets.c:498`): no se conservan.
+- Memoria: aun así el código nuevo (actores, mundo) dejaba 3330 KB para la caché (suelo 3332 KB). `scene_assets.c`
+  guarda ahora fijado / mapa / en cola de precarga de cada trozo como bits de un byte (`chunk_bits`) en vez de tres
+  `bool[CHUNKS_ALL]`: 4,4 KB menos de bss, sin cambio de lógica.
+- Mundo: `0BCDC2` crea en la misma actualización (antes del bucle de actores, tras el actor de guion; en MAME tras el
+  actor de misión `101364`, que corre antes) `0BD2CE`, `0BD2BA` y `0BD18E`: la lista queda `0BD18E`, `0BD2BA`,
+  `0BD2CE` y el conductor nativo corre antes (con la cámara); ninguno lee lo que escribe el otro (comprobado con `O`).
+  `neo_world_parent(10D7B6)` con el puente activo da la capa media (x/y y la posición previa al paso, `01ABC8`).
+- **Siguiente**: el objeto de núcleo `10D7B6` (mapa `0BC6E6`, colisión `45FC2A`, anillo con el origen de cada carga),
+  familia y prueba del núcleo con las lecturas de `cells.txt` de `s9`; luego jefes y final (abajo).
 
 ## Pendiente (fase 2, por orden)
 
-1. **Etapa 1**: hecho para las balsas (arriba, «Fase 2»); falta el puente colgante `10D7B6` (`0BCE2C`, `0BD18E`,
-   `0BD2BA`, `0BD2CE`), siguiente paso descrito arriba.
+1. **Etapa 1**: hecho para las balsas y para el conductor y los actores del puente (arriba, «Puente»); falta el objeto
+   de núcleo `10D7B6` (su colisión).
 2. **Segundo objeto de terreno `10D7B6`**: rejilla en el paquete (hoy no cabe en el registro de etapa de 128 bytes:
    quedan 2), objeto en la lista del núcleo `01382A` (como el tren de la M3) y captura de `+32/+34` para explicar las
    3066 lecturas con el origen movido; su dueño y los sprites del puente.

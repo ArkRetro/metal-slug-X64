@@ -464,6 +464,10 @@ RESOURCES=RESOURCES+(0x4f,0xc4,0xc5,0xc6,0xc7,0xc8,0xc9,0xca,0xcb,0xcc,0x878,0x1
 # (2A946C 4D4, 2A947C 4D5, 2A948C 50B, 2A949C 4DF, 2A94B4 11D) and 0BDAB8 (2A95A4, no pose) (neo_m6props.c).
 ROOTS=ROOTS+(0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4)
 RESOURCES=RESOURCES+(0x4cb,0x4cc,0x4cd,0x509,0x4d4,0x4d5,0x50b,0x4df,0x11d)
+# Mission 6 stage 1 hanging bridge spans 0BCFA4 / 0BCFC4 / 0BCFE4 / 0BD004 (2A923C / 2A92C8 / 2A9354 / 2A93E0, palette 4E1;
+# neo_m6props.c).
+ROOTS=ROOTS+(0x2a923c,0x2a92c8,0x2a9354,0x2a93e0)
+RESOURCES=RESOURCES+(0x4e1,)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)

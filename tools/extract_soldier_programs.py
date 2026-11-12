@@ -441,6 +441,9 @@ ROOTS+=[0x29c9d4,0x284c18,0x284cb2,0x284d36,0x284df0,0x284e7c,0x284c26,0x284f08,
 # Mission 6 stage 1 rafts and decorations (neo_m6props.c; no mission group: /programs.bin): the float 2A953E, the raft's
 # picture 2A954E (0BDA4E), the decorations 2A946C / 2A947C / 2A948C / 2A949C / 2A94B4 and 0BDAB8's 2A95A4.
 ROOTS+=[0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4,0x2a95a4]
+# Mission 6 stage 1 hanging bridge spans 0BCFA4 / 0BCFC4 / 0BCFE4 / 0BD004 (neo_m6props.c; no group): 2A923C / 2A92C8 /
+# 2A9354 / 2A93E0.
+ROOTS+=[0x2a923c,0x2a92c8,0x2a9354,0x2a93e0]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

@@ -166,6 +166,15 @@ typedef struct neo_m4boss_env {
     void (*clear)(void *ctx);
     void (*anim_speed)(void *ctx,uint16_t frames);
 } neo_m4boss_env_t;
+/* The Mission 6 stage 1 hanging bridge's actors 0BD18E / 0BD2BA / 0BD2CE and
+ * its spans 0BCFA4..0BD004 (neo_m6props.c): the bridge layer 10D7B6 as the
+ * update reads it (+0 x, +32 column origin, +36 local column) and RAM
+ * 10C70C..10C714 (ram[0] = 10C70C: the creators' lock bytes 10C70C /
+ * 10C70D, the previous x 10C70E, the swing bytes 10C712..10C714). NULL in
+ * neo_genv_t: an explicit stop. */
+typedef struct neo_m6bridge_env {
+    int32_t x;int16_t origin,o36;uint8_t *ram;
+} neo_m6bridge_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
@@ -282,6 +291,7 @@ struct neo_genv {
     neo_m2boss_env_t *m2boss;
     neo_m3mid_env_t *m3mid;
     neo_m4boss_env_t *m4boss;
+    neo_m6bridge_env_t *m6bridge;
     void (*shake_pulse)(void *ctx);  /* 0C8022 (RAM 10E9C8/10E9CC) */
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
      * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;

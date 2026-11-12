@@ -595,6 +595,28 @@ local function floor_frame(f)
   if f>=tonumber(floor_hi) then floor_log:close();floor_log=nil;floor_tap:remove() end
  end
 end
+-- MSX_FULL_ORDER_TAP=<lo>-<hi>: order.txt, the accesses to the Mission 6
+-- bridge layer 10D7B6 (+0, +14, +32..+37), its driver's step 10E94E, the
+-- swing bytes 10C712..10C714 and the camera's last store 10E9D8 (C), in
+-- the order the CPU made them: `<frame> R|W|C <address> <data> <mask> <pc>`
+-- (docs/MISION6.md, "Puente").
+local order_lo,order_hi=string.match(os.getenv('MSX_FULL_ORDER_TAP') or '','(%d+)-(%d+)')
+if order_lo then
+ order_lo=tonumber(order_lo);order_hi=tonumber(order_hi)
+ local order_log=assert(io.open(output..'/order.txt','w'))
+ local function logger(kind)
+  return function(address,data,mask)
+   if in_lua or frame<order_lo or frame>order_hi then return end
+   order_log:write(string.format('%d %s %x %x %x %x\n',frame,kind,address,data,mask,mstate['CURPC'].value))
+  end
+ end
+ order_taps={}
+ for i,s in ipairs({{0x10d7b6,0x10d7b9},{0x10d7ca,0x10d7cd},{0x10d7e8,0x10d7ed},{0x10e94e,0x10e951},{0x10c712,0x10c715}}) do
+  order_taps[#order_taps+1]=cpu:install_read_tap(s[1],s[2],'order_r'..i,logger('R'))
+  order_taps[#order_taps+1]=cpu:install_write_tap(s[1],s[2],'order_w'..i,logger('W'))
+ end
+ order_taps[#order_taps+1]=cpu:install_write_tap(0x10e9d8,0x10e9d9,'order_cam',logger('C'))
+end
 emu.register_frame_done(function()
  in_lua=true
  frame=frame+1

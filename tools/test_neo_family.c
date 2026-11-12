@@ -56,7 +56,7 @@ typedef struct {
 #if defined(FAMILY_M4BOSS) && !defined(FAMILY_RESERVE)
 #define FAMILY_RESERVE 1   /* the Mission 4 boss: 0040BC with its reserve */
 #endif
-#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS)
+#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS) || defined(FAMILY_M6BRIDGE)
 static uint8_t wram[0x10000];   /* tentative: the RAM image below */
 #endif
 #define STR2(a) #a
@@ -156,6 +156,16 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
 #endif
 #if defined(FAMILY_M4BOSS) && defined(FAMILY_RAM)
     /* Mission 4: the boss's layer object 10D7B6 (as the RAM image holds it). */
+    if (tag==0x10d7b6u) {
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        const uint8_t *b=&wram[0xd7b6];
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
+#endif
+#if defined(FAMILY_M6BRIDGE) && defined(FAMILY_RAM)
+    /* Mission 6: the bridge layer 10D7B6 the spans hang on (as read). */
     if (tag==0x10d7b6u) {
         #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         const uint8_t *b=&wram[0xd7b6];
@@ -936,6 +946,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #endif
 #ifdef FAMILY_RESERVE
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);
+#endif
+#ifdef FAMILY_M6BRIDGE
+        /* The bridge actors: 10D7B6 +0/+32/+36 and RAM 10C70C..10C714 from
+         * the RAM image; the writes are compared. */
+        static neo_m6bridge_env_t m6;m6.x=(int32_t)w32(0x10d7b6);m6.origin=(int16_t)w16(0x10d7e8);m6.o36=(int16_t)w16(0x10d7ec);m6.ram=&wram[0xc70c];e.m6bridge=&m6;
 #endif
 #ifdef FAMILY_LEAVE
         e.become_soldier=leave_soldier;

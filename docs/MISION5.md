@@ -734,13 +734,56 @@ máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 128
   escena en ares: **208 ranuras** (el suelo). ares alcantarilla (`--fire --jump 2.5`,
   300 s): **cámara 1568** (antes 673), 0 rutinas sin portar, la manivela no se agarra.
 
-- **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
+- (Resuelto en la octava tanda: `040BE6` traducida.) **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
   marcha agachada, nativa en `neo_soldier_ai.c`) sino la muerte del soldado agachado (`0407CA`, tabla `0407F4`) por
   un golpe de **tipo 5** (`detail` 305 = tipo 5, en el suelo, agachado): la entrada `040BE6`, sin traducir. Elige el
   programa `2410E2` / `241056` por el bit 15 de `eor.w` entre D0 (`+5B`, que `0407DA` acaba de poner a 0) y D1.w, cuya
   parte alta es la que deja `01495C` en `04097A`: con contacto, `swap` de (superficie − y) (el signo del dy del sondeo);
   sin contacto, el resto de `013968`. Solo pasa cuando el mando automático mata a un soldado agachado con ese tipo de
   golpe (de ahí ~1 de cada 4 pasadas). **Pendiente**: una captura de esa muerte para fijar D1 (sin ella, parada).
+
+### Fase 2, octava tanda (12-XI, agente B): el agarre de la manivela, el soldado quemado y la muerte agachada
+
+**Captura `C`** (una sola sesión de MAME, réplica de `run4` desde `sec08_274387`, 274388..277000, volcados cada 5
+fotogramas; `captures-m5/fam/runC.sh`). Mando nuevo de solo entrada `MSX_FULL_CRANK=<n>` (`capture_fullgame.lua`): anda
+hasta que el +3C del jugador cae en el rectángulo de la manivela (`095938` / `095940`, espejado por su `+15` bit 0), se
+gira hacia ella (`0C069E`), y pulsa solo A cada 6 fotogramas hasta que `095C76` la suelta. Agarradas las dos variantes:
+`+70` = 0 (274634..274750) y `+70` = 1 (274923..275037), las dos hasta el final (`+95` del hijo). Después
+`MSX_FULL_CRANK_WEAPON=60:4` (el lanzallamas, como `MSX_FULL_GIVE_WEAPON`) para el soldado quemado. Raíces de familia
+`959b0,95c98,95f8c,96140,8996a,89948,8995a,8a264` y el nodo del jugador `1014c4`; sondas del depurador en `0409B4` /
+`0409BA` (entrada y salida de `01495C` en `04097A`) y `040BF2`.
+
+- **El agarre** (`src/neo_m5sewer.c`): `095DCE` (`+84`, `095B64` = `0AA760` con el asiento 0 / 47, `+86` = el `+6E` del
+  jugador, `0AA83A` clase 5, `andi.w #FFEF` en la palabra de `0CA2CE`), `095E08` (el hijo `096140`, programa `29CA7A`,
+  `+50` = `095950` / `09595C`), `095E58..095F8A` (soltar por `+95` o por otra tecla: `095C76`, clase 3 ó 5; con
+  `10F000` bit 7 apagado `0C05EC`: jugador invulnerable → `+5F` bit 7 y `+5A` a 0, si no `004C24` y un golpe suelta
+  con la clase 0; cada A suma 9 a `+88`, `+97` = F; `095B98`: la rueda por `095A94[+91]`, en el paso 4 hacia delante
+  `+96` y el sonido 108B, la cuenta siguiente de `095B14` / `095B24` / `095B34`), `096140` / `0961CE` (el jugador girando:
+  paleta `034330[+86]` dos veces, `+14` = `+1A` con `0C05EC` d1 && d2 && d3, programas `095AD4[+91]`; `009CCE` no se
+  reproduce, como en `neo_slug.c`) y la salpicadura `0959B0` / `0959D4` de la llamada `095A74` de los programas de la
+  rueda (`00411C` tras el actor del guion, paleta 204, programa `29C98C`). Jugador (`marco_mount.c`): la salida de clase
+  3 y 5 es `0C1F4A` (`+15` bit 0 con la 5; la forma gorda 2 con `+86` ≥ 20 → `0C1E94`, parada explícita): de pie,
+  `+00` = `0C1FA6`, y `gameplay.c` devuelve el jugador del port (`MARCO_MOUNT_STAND`).
+- Familias **`m5grab`** (`--range 959b0-96200 --range 8c374-8c700`, los RAM de `m5pow` y `--script-actor 101414
+  --script-routines 959b0`: **24 nodos, 1947 actualizaciones iguales a MAME**, con los dos premios recogidos) y
+  **`m5sewer2`** (los soldados de `C`, con el `+15` del jugador `--ram 1014d8-1014da`: **108 nodos, 9814 actualizaciones
+  iguales**, entre ellas el quemado `089ED6`). El banco de pruebas (`test_neo_family.c`) escribe ahora de vuelta las
+  palabras de entrada y lee / escribe los campos del jugador de las rutinas de armas (`+93`, `+94`, `+95`, `+9A` bit 4):
+  sin eso el premio de arma 0B (`0C0928`: `+94`) no cuadraba.
+- Paletas de `C`: **878** (quemado), **886**, **887** y **204**; **888..88C siguen sin captura** (la lista sin sangre
+  `E5382` pasa por ellas en fotogramas que los volcados cada 5 no cogen: pendiente, volcado cada fotograma en esas
+  muertes). Descriptores de `C` (`C@959b0-96200`, `C@89948-8a700`): 848 fotos, 1 085 958 px iguales, **68 distintos en 6
+  fotos** (soldados con la llama encima; sin cerrar, como los de las tandas anteriores). Paquete de la M5: 1144 trozos.
+- **Muerte agachada `040BE6`** (`neo_soldier_ai.c`, `neo_m3enemy.c`): traducida desde la ROM. `D0.w` = `+5B` (0, con el
+  byte alto 0 de `tipo × 4`), `D1.b` = `seq` del `+15` bit 0, y el bit 15 de `D1.w` es el que deja `01495C`
+  (`neo_kernel_1495c_d1`, nuevo): con superficie, el `swap` de (y del resultado + su `+18`) − (y + `+18` de la
+  petición); sin ella, el `D1` de `013968`. Programa `241056` si el `eor.w` es negativo, si no `2410E2`; `+00` =
+  `040DF0`. Las sondas de `C` dan cuatro muertes por `04097A` (todas con superficie: `D1` = 00000000 tres veces y
+  8000FFFF una), ninguna agachada de tipo 5 (`040BF2` sin disparar): falta una captura de esa muerte para
+  contrastarla.
+- **Orden del jugador** (sin cambiar): el port mueve al jugador antes que a los actores del mundo; en el original el
+  jugador va después de la manivela, cuyo `andi.w #FFEF` le quita la pulsación de A del agarre. En el port esa
+  pulsación ya ha disparado: un tiro de más en la actualización del agarre (pendiente, en el motor compartido).
 
 ## Pendiente (fase 2, por orden)
 

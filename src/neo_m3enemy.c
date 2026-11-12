@@ -116,17 +116,18 @@ static void k1b1dc(neo_gactor_t *a) {SL(0x30,0);SL(0x34,0);SL(0x62,0);}
 static void splash(neo_gactor_t *a,neo_genv_t *e,uint32_t routine) {
     SB(0x15,B(0x15)^1u);child(a,e,routine,0x2a,8,0);SB(0x15,B(0x15)^1u);
 }
-/* 04097A */
-static void k4097a(neo_gactor_t *a,neo_genv_t *e) {
+/* 04097A; returns the D1 its 01495C leaves (040BE6 reads it). */
+static uint32_t k4097a(neo_gactor_t *a,neo_genv_t *e) {
     if (!BIT(0x5f,6)) {SET(0x5f,6);SB(0x6e,0);}
     SL(0x50,0);CLR(0x5f,7);
     SB(0x1d,0);ga_palette(a,neo_blood_palette(NEO_BLOOD_SOLDIER_DEATH,e->blood));   /* 0405EA: 009F88, 01B2BE */
     SL(0x50,0);SB(0x69,0xff);                                                    /* 019DFC */
-    uint16_t d6=ga_probe_vertical_d6(a,e,-1);
+    uint32_t d1;uint16_t d6=ga_probe_vertical_d6_d1(a,e,-1,&d1);
     SB(0x72,(d6&8u)?0xff:0);
     if (d6&8u) {SW(0x66,0xfff2);SW(0x1e,0xfff2);}
     SB(0x70,BIT(0x15,6)?0xff:0);
     SL(0x76,0);SL(0x62,0);SB(0x71,0);SB(0x6f,0);SB(0x74,0);
+    return d1;
 }
 /* +5B against the facing (sne / eor.b / bmi). */
 static bool against(neo_gactor_t *a) {return (int8_t)(B(0x5b)^(BIT(0x15,0)?0xffu:0u))<0;}
@@ -172,7 +173,7 @@ static int start(neo_gactor_t *a,neo_genv_t *e,uint32_t program,uint32_t routine
 /* 0406B6 (crouch false) / 0407CA (crouch true). */
 static int dispatch(neo_gactor_t *a,neo_genv_t *e,bool crouch) {
     if (!B(0x5a)) return D_MORE;
-    k4097a(a,e);
+    uint32_t d1=k4097a(a,e);
     uint8_t kind=B(0x5a);SB(0x5a,0);
     if (crouch) SB(0x5b,0);
     if (kind>=0x14) kind=0x0e;
@@ -205,8 +206,12 @@ static int dispatch(neo_gactor_t *a,neo_genv_t *e,bool crouch) {
     case 0xd66:
         if (!B(0x6e)) splash(a,e,0x40f88);
         return start(a,e,against(a)?0x2406ec:0x240588,0x40db4);
+    case 0xbe6: {   /* 040BE6: D0.w = +5B (high byte 0 from kind * 4), D1.b = seq of +15 bit 0, eor.w; bmi */
+        uint16_t d0w=B(0x5b),d1w=(uint16_t)((d1&0xff00u)|(BIT(0x15,0)?0u:0xffu));
+        return start(a,e,((d0w^d1w)&0x8000u)?0x241056:0x2410e2,0x40df0);
     }
-    ga_fail(e,0x40be6);return D_STOP;   /* 040BE6: D1's upper byte */
+    }
+    ga_fail(e,(uint32_t)entry|0x40000u);return D_STOP;
 }
 /* 040852 */
 static bool motion(neo_gactor_t *a,neo_genv_t *e) {

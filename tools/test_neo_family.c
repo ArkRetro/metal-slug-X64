@@ -261,6 +261,10 @@ static const uint8_t *ram_node(void *ctx,uint32_t tag) {(void)ctx;return tag>=0x
 static void env_to_ram(const marco_weapons_t *weapons) {
     memcpy(&wram[0xc608],vslots.slot[0].b,0x24);memcpy(&wram[0xc62c],vslots.slot[1].b,0x24);
     for (unsigned r=0;r<2;r++) for (unsigned i=0;i<4;i++) wram[0xc2e8+4*r+i]=(uint8_t)(vslots.record[r]>>(24-8*i));
+    /* The input words (the sewer crank's andi.w #FFEF on 0CA2CE's word). */
+    for (unsigned p=0;p<2;p++) for (unsigned i=0;i<2;i++) {
+        uint16_t ad=(uint16_t)(0xe9ecu+6u*p+2u*i);wram[ad]=(uint8_t)(venv.input[p][i]>>8);wram[ad+1u]=(uint8_t)venv.input[p][i];
+    }
     memcpy(&wram[0xc718],weapons->b,MARCO_WEAPON_BLOCK);
 }
 #endif
@@ -889,7 +893,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         e.player_ylow[0]=w16(0x101506);   /* RAM 101506 (--ram 101500-101508): player 1 +42 */
         memcpy(wexpect,wram,sizeof(wram));
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
-        ram_to_env(&weapons);e.vehicle=&venv;e.node=ram_node;pickup.mission=w16(0x10c2f6);e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
+        ram_to_env(&weapons);
+        /* Player 1's fields of the weapon block's routines (marco_weapon_player_t) from its node as read. */
+        player1.exists=venv.exists[0];player1.dead=(wram[0x1523]&0x80u)!=0;player1.form93=wram[0x1557];player1.form94=wram[0x1558];
+        player1.combo95=wram[0x1559];player1.ate9a=(wram[0x155e]&0x10u)!=0;
+        e.vehicle=&venv;e.node=ram_node;pickup.mission=w16(0x10c2f6);e.video=w16(0x10000e);e.ref69b8=w16(0x10e9b8);
         e.player_flags15[0]=wram[0x14d9];e.player_flags15[1]=wram[0x1589];   /* the players' +15 as read */
         /* RAM 10C33C (01AEB0: the players present) when the family watches it. */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c33cu && 0x10c33du<ram_ranges[g][1]) e.players.active_mask=wram[0xc33c]&3u;   /* btst.l d0 on the byte 10C33C */
@@ -976,6 +984,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #endif
 #ifdef FAMILY_RAM
         env_to_ram(&weapons);
+        wram[0x1558]=player1.form94;wram[0x1559]=player1.combo95;wram[0x155e]=(uint8_t)((wram[0x155e]&~0x10u)|(player1.ate9a?0x10u:0u));
         if (watch358) wram[0xc358]=flags.signal358;
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
         if (watchgrid) for (unsigned q=0;q<128;q++) {wram[(0x67e6+2*q)&0xffff]=(uint8_t)(dgrid[q]>>8);wram[(0x67e7+2*q)&0xffff]=(uint8_t)dgrid[q];}

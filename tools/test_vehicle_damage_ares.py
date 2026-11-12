@@ -76,7 +76,7 @@ try:
         time.sleep(1.0)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0]
+    t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0];seek_dx=[None,0.0];seek_off=[0.0]
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     while time.monotonic()-t0<a.seconds and not set(expect)<=done:
@@ -102,6 +102,10 @@ try:
         wkind={'0345e0':2,'092b0e':1,'093d76':1,'096ba6':3}.get(vw[-1][0]) if vw else None
         seek=not riding and vw and t-seen_wait[1]<1.5 and wkind in expect and wkind not in done
         if vw:vw=[(x,y) for _,x,y in vw]
+        # A vehicle the pad cannot reach (dx unchanged 8 s: behind the camera's left edge) is left for 20 s.
+        if seek and vw[-1]!=seek_dx[0]:seek_dx[:]=[vw[-1],t]
+        if seek and t-seek_dx[1]>8:seek_off[0]=t+20;seek_dx[1]=t+20
+        if t<seek_off[0]:seek=False
         if seek:
             dx=int(vw[-1][0]);up=False;left=dx<-6
             hold('Up',False);hold('Left',left);hold('Right',dx>6);hold('a',abs(dx)<48 and (t%0.6)<0.15)

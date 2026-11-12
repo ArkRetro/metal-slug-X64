@@ -835,6 +835,11 @@ cada columna (`w->m4col_map/m4col_top`); hay que fijar antes la relación entre 
 paquete y la y de la captura (las fórmulas de `actor.c` dan 8 px de diferencia para la capa 2 en la M4 antes del
 jefe).
 
+**Puertas** (`work-m4` `d2d06db`): `make check` RC 0 (288 PASS, con `m4layer` y `program_file` de 8 bytes);
+`regression_ares.py` con el cartucho completo (62 324 736 B) y un `m1end` recién hecho: todo PASS (logo, pausa,
+personajes, M4, M5 ×3, M6 ×3, `veh`, M1 → M2), sin recuentos nuevos (M6 etapa 1: `unsupported` 3, la línea base 4);
+`MSX CACHE slots=208 (floor 208)` en la M4.
+
 **Falta (en este orden)**: (1) el dibujo de la capa (arriba); (2) los sprites de las piezas del jefe en la
 exportación de la M4 (107 programas del grupo `m4`; validación contra VRAM de `run4` 157590..); (3) prueba de ares
 que llegue al jefe y lo derrote (el mando de `test_mission4_ares.py` no pasa de la cámara 4360: «Siguiente paso

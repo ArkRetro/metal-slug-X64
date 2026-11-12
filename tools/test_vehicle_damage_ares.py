@@ -107,7 +107,7 @@ try:
             hold('Up',False);hold('Left',left);hold('Right',dx>6);hold('a',abs(dx)<48 and (t%0.6)<0.15)
         else:
             hold('Up',up);hold('Left',left);hold('Right',not waiting and not left and (stuck or not up));hold('a',not riding and bool(a.jump) and (t%a.jump)<0.2)
-        hold('b',not waiting and int(t*10)%2==0)
+        hold('b',not waiting and not seek and int(t*10)%2==0)   # no fire while hopping on: A+B is the exit (0AA7FC kind 1)
         pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
         if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:
@@ -115,9 +115,11 @@ try:
             subprocess.run(['import','-display',env['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{mm[-1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         # a kind is done once its rides show everything (checked below on the whole log)
         # (the `left` line prints the slot's +1D: the kind of the last mount is the one left)
+        # (done once a ride of that kind took a class-0 hit; a ride left without one is tried again)
         if lefts and not riding:
-            km=re.findall(r'MSX player mounted vehicle kind=(\d+)',text)
-            if km:done.add(int(km[-1]))
+            at=text.rfind('MSX player mounted vehicle kind=')
+            km=re.match(r'MSX player mounted vehicle kind=(\d+)',text[at:])
+            if km and 'MSX vehicle hit (class-0 row' in text[at:]:done.add(int(km.group(1)))
         time.sleep(.03)
     for n in list(held):hold(n,False)
     text=log()

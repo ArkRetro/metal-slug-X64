@@ -91,3 +91,13 @@ quiere ese menú en lugar del de soft DIP (el pedido por el usuario).
   5, LEVEL 8, PLAY MANUAL OFF, Start → bytes, guardado, SOLDIER SELECT sin
   HOW TO PLAY, juego con 4 vidas en pantalla y rango 7; segundo arranque con
   la EEPROM.
+
+## Pendiente (12-XI)
+
+- Matriz sobre ccr con la alcantarilla de la M5 (`neo_m5sewer.c`, agente B):
+  todo PASS salvo `m5s3` con BLOOD OFF (el valor EU por defecto):
+  `missing_draw` 0 → 6, paletas 888/889/88A (la lista sin sangre 886..88C,
+  «sin captura» en `docs/MISION5.md`). El mismo cartucho con la EEPROM en
+  BLOOD ON (la condición de la línea base): `m5s3` 0/0. Falta la captura de
+  esas paletas con `10FD8F = 0` (M5, agente B); hasta entonces la rama no
+  sube a ccr (regla de la matriz).

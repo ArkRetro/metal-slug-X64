@@ -257,6 +257,12 @@ static uint8_t hit_player(ctx_t *c,const int16_t *attack,bool damage) {
     int first=-1;
     uint8_t type=neo_hit_query(&c->s->b,attack,c->e->targets,c->e->target_count,(uint8_t)attack[4],0,&first);
     if (damage && first>=0 && attack[6]) event(c,NEO_SOLDIER_EVENT_KNIFE_HIT,(uint16_t)attack[4],NULL);  /* value: the row's kind */
+    /* B69: the same 0049E8 reaches the class-0 bodies (the ridden vehicles). */
+    if (damage && c->e->event) {
+        uint8_t v=0;neo_soldier_event_t ev={.kind=NEO_SOLDIER_EVENT_ATTACK,.value=c->s->f5e,.actor=c->s->b,.row=attack,.answer=&v};
+        c->e->event(c->e->event_context,&ev);
+        if (v>type) type=v;
+    }
     return type;
 }
 bool neo_soldier_hurtbox(const neo_soldier_t *s,neo_hurtbox_t *out) {

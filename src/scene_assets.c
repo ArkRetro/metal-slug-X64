@@ -942,7 +942,7 @@ bool scene_stage_load(unsigned index) {
     unsigned min_page=0xffff,max_page=0;
     for (unsigned i=0;i<images;i++) {
         const uint8_t *r=ri+8u*i;uint16_t page=(uint16_t)(r[0]<<8|r[1]),pal=(uint16_t)(r[2]<<8|r[3]),y=(uint16_t)(r[4]<<8|r[5]),h=(uint16_t)(r[6]<<8|r[7]);
-        stage_images[i]=(scene_image_t){(uint16_t)(SCENE_MISSION_PAGE_BASE+page),(uint16_t)(SCENE_PALETTE_COUNT+pal),0,(int16_t)y,16,h,2};
+        stage_images[i]=(scene_image_t){.page=(uint16_t)(SCENE_MISSION_PAGE_BASE+page),.palette=(uint16_t)(SCENE_PALETTE_COUNT+pal),.x=0,.y=(int16_t)y,.height=h,.width=16,.format=2};
         if (page<min_page) min_page=page;
         if (page>max_page) max_page=page;
     }
@@ -958,9 +958,11 @@ bool scene_stage_load(unsigned index) {
     uint8_t *ra=(uint8_t*)stage_actor_images+mission_head.actor_images*(sizeof(scene_image_t)-12u);
     rom_read(ra,mission_actors_at+8u*mission_head.actors,12u*mission_head.actor_images);
     for (unsigned i=0;i<mission_head.actor_images;i++) {
-        const uint8_t *r=ra+12u*i;
-        stage_actor_images[i]=(scene_image_t){(uint16_t)(SCENE_MISSION_PAGE_BASE+(r[0]<<8|r[1])),(uint16_t)(SCENE_PALETTE_COUNT+(r[2]<<8|r[3])),
-            (int16_t)(r[4]<<8|r[5]),(int16_t)(r[6]<<8|r[7]),(uint16_t)(r[8]<<8|r[9]),(uint16_t)(r[10]<<8|r[11]),0};
+        const uint8_t *r=ra+12u*i;   /* expanded in place (12-byte records): read the record first */
+        uint16_t pg=(uint16_t)(r[0]<<8|r[1]),pl=(uint16_t)(r[2]<<8|r[3]),w=(uint16_t)(r[8]<<8|r[9]),h=(uint16_t)(r[10]<<8|r[11]);
+        int16_t px=(int16_t)(r[4]<<8|r[5]),py=(int16_t)(r[6]<<8|r[7]);
+        assertf(w<=255u,"actor image width");
+        stage_actor_images[i]=(scene_image_t){.page=(uint16_t)(SCENE_MISSION_PAGE_BASE+pg),.palette=(uint16_t)(SCENE_PALETTE_COUNT+pl),.x=px,.y=py,.height=h,.width=(uint8_t)w,.format=0};
     }
     stage_resources=take(4u*mission_head.resources);
     rom_read(stage_resources,mission_actors_at+8u*mission_head.actors+12u*mission_head.actor_images,4u*mission_head.resources);

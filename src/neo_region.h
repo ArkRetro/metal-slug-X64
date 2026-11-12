@@ -49,6 +49,13 @@ ga_result_t neo_hostage_tick(neo_gactor_t *a,neo_genv_t *e);
 /* Mission 4 ground vehicle 0587C4 with its turret and shots (neo_m4veh.c). */
 bool neo_m4veh_routine(uint32_t routine);
 ga_result_t neo_m4veh_tick(neo_gactor_t *a,neo_genv_t *e);
+/* Layer objects owned by a boss (neo_m3mid.c: 10E8C6; neo_m4boss.c: 10D7B6):
+ * 01AB9C with the scene root as parent + 01ABCC, 0C6F34 (map, block offsets,
+ * column list), 0C6BDE (column table), 0C73CE (d2 x d3 blocks drawn). */
+void neo_layerobj_place(neo_genv_t *e,uint8_t *l,int16_t x,int16_t y);
+void neo_layerobj_map(uint8_t *l,uint32_t map,uint16_t d0,uint16_t d1,uint32_t list);
+bool neo_layerobj_columns(neo_genv_t *e,uint8_t *l,uint16_t d0,uint16_t d2,uint16_t d4);
+void neo_layerobj_blocks(neo_genv_t *e,uint8_t *l,void (*draw)(void *ctx,uint32_t map,const int16_t d[6]),uint16_t d0,uint16_t d1,uint16_t d2,uint16_t d3);
 /* Mission 4 boss 02267E: its parts translated so far (neo_m4boss.c). */
 bool neo_m4boss_routine(uint32_t routine);
 ga_result_t neo_m4boss_tick(neo_gactor_t *a,neo_genv_t *e);

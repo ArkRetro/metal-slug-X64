@@ -291,6 +291,15 @@ y su música (la de la misión 1, 2,36 MB, VADPCM 24 kHz): ≈4,3 MB × 4 mision
 `filesystem/cinematics` siguen en v1; se convierten al construir
 `build/game-romfs`.
 
+## Imagen de 12 bytes (11-XI, `work-m4`): sitio para el jefe de la M4
+
+`scene_image_t` pasa de 14 a 12 bytes (`{page, palette, x, y, height, width, format}`: ancho y formato en un byte;
+medido: ancho ≤ 64 y formato 0 / 2 en `scene_images` (8710), `scene_background` y `scene_map_images` (3946), las
+piezas de actor de los paquetes de misión ≤ 64 × 64 y las tiras de mapa 16 × 256; `pack_scene.py` lo comprueba y el
+cargador de paquetes se para si un ancho no cabe). Ahorro: 25,3 KB de imagen (las tablas base) y un 14 % de las
+tablas de imágenes de cada etapa en sus ranuras reservadas. Con el jefe de la M4 dentro (`neo_m4boss.o` 24,7 KB)
+la imagen queda en 2 243 496 bytes, 1808 menos que antes del jefe: la caché no pierde ninguna ranura.
+
 ## Para continuar (nueva sesión)
 
 Rama `work-ram`. Puertas: `make check`, `make check-core`, `make -j4`,

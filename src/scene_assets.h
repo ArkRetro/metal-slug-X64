@@ -12,7 +12,13 @@ enum { SCENE_MISSION_CHUNKS_MAX=1200 };   /* 1200 since the Mission 6 pack with 
 enum { SCENE_BASE, SCENE_ACTIONS, SCENE_SOLDIER, SCENE_MOTION, SCENE_PROJECTILES, SCENE_NATIVE, SCENE_BANK_COUNT };
 typedef struct { uint32_t offset,length,crc,codec; } scene_chunk_t;
 typedef struct { uint16_t start,first,second,interval,width,height; } scene_bank_t;
-typedef struct { uint16_t page,palette; int16_t x,y; uint16_t width,height,format; } scene_image_t;
+/* 12 bytes (was 14): width <= 64 and format 0 / 2 in every table
+ * (pack_scene.py asserts bytes; the mission packs' parts are <= 64 x 64, map
+ * strips 16 x 256). The 2 bytes per image of the base tables (12 656 images)
+ * are ~25 KB of the program image (docs/MEMORY_OPTIMIZATION.md, "Imagen de
+ * 12 bytes"). Initializers: page, palette, x, y, height, width, format. */
+typedef struct { uint16_t page,palette; int16_t x,y; uint16_t height; uint8_t width,format; } scene_image_t;
+_Static_assert(sizeof(scene_image_t)==12,"scene_image_t is 12 bytes");
 /* A map cell: layer, position and its image per video phase (& 7), as the
  * first phase's image plus, for an animated cell, a shared pattern of image
  * deltas (scene_cell_patterns; SCENE_CELL_STATIC: the same image in every

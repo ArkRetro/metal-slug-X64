@@ -30,7 +30,7 @@ def main():
         tag=int(f['descriptor'],16);first,count=descs[tag];w,h=f['width'],f['height']
         pens=bytes.fromhex(f['pens_hex']);got=bytearray(w*h)
         for i in range(count):
-            pg,pal,x,y,pw,ph,fmt=images[start+first+i];assert fmt==0
+            pg,pal,x,y,ph,pw,fmt=images[start+first+i];assert fmt==0   # scene_image_t order: page, palette, x, y, height, width, format
             data=page(pg)
             for yy in range(ph):
                 for xx in range(pw):

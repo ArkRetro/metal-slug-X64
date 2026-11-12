@@ -27,13 +27,13 @@ import argparse,os,re,subprocess,time
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--mission',default='m1',choices=('m1','m2s3','m5s3'))
-p.add_argument('--expect',default='',help='comma list of vehicle kinds that must pass (default: m1 -> 2, the Camel; the blind pad walks past the SV-001; m2s3/m5s3 -> 3)')
+p.add_argument('--expect',default='',help='comma list of vehicle kinds that must pass (default: m1 -> 2,1; m2s3/m5s3 -> 3)')
 p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type=float,default=60,help='seconds the pad waits on a vehicle')
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
-expect=[int(k) for k in (a.expect or {'m1':'2','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
+expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
 MENU={'m1':0,'m2s3':3,'m5s3':8}[a.mission]          # main.c mselect_items: Down presses from MISSION 1
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
@@ -76,7 +76,7 @@ try:
         time.sleep(1.0)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0
+    t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0]
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     while time.monotonic()-t0<a.seconds and not set(expect)<=done:
@@ -95,7 +95,16 @@ try:
         stuck=not riding and t-prog_at>12;c9=t%9.0
         up=not riding and ((stuck and c9<5.0) or (not stuck and bool(a.up) and (t%a.up)>a.up-1.2))   # on foot: aim up a while
         left=stuck and c9<3.0
-        hold('Up',up);hold('Left',left);hold('Right',not waiting and not left and (stuck or not up));hold('a',not waiting and bool(a.jump) and (t%a.jump)<0.2);hold('b',not waiting and int(t*10)%2==0)
+        # A vehicle waiting for its rider (actor.c `MSX vehicle waiting`, twice a second): walk to it and hop on.
+        nw=text.count('MSX vehicle waiting');vw=re.findall(r'MSX vehicle waiting routine=\w+ dx=(-?\d+) dy=(-?\d+)',text[text.rfind('MSX vehicle waiting'):]) if nw else []
+        if nw!=seen_wait[0]:seen_wait[:]=[nw,t]
+        seek=not riding and vw and t-seen_wait[1]<1.5
+        if seek:
+            dx=int(vw[-1][0]);up=False;left=dx<-6
+            hold('Up',False);hold('Left',left);hold('Right',dx>6);hold('a',abs(dx)<48 and (t%0.6)<0.15)
+        else:
+            hold('Up',up);hold('Left',left);hold('Right',not waiting and not left and (stuck or not up));hold('a',not riding and bool(a.jump) and (t%a.jump)<0.2)
+        hold('b',not waiting and int(t*10)%2==0)
         pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
         if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:

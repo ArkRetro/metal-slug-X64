@@ -719,7 +719,20 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (r!=vr || h!=vh || gs!=vgs || gt!=vgt)
             debugf("MSX vehicle state routine=%06lx health=%u kind=%u gauge=%u/%u 5a=%02x 5f=%02x\n",(unsigned long)r,h,sb[0x21],gs,gt,ga_b(v,0x5a),ga_b(v,0x5f));
         vr=r;vh=h;vgs=gs;vgt=gt;v14=ga_b(v,0x14);
-     } else {vr=0;vh=0xffffu;armed=false;flicker=0;}}
+     } else {
+        vr=0;vh=0xffffu;armed=false;flicker=0;
+        /* A rideable vehicle waiting for its rider (Camel 0345E0, SV-001
+         * 092B0E / 093D76, Slugnoid 096BA6): its projected +3C/+40 against
+         * the P1 node's, twice a second (tools/test_vehicle_damage_ares.py
+         * steers by it). */
+        if (!(game.ticks%30u)) for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *v=&game.world.gactors[i];uint32_t r=v->active?ga_l(v,0):0;
+            if (r!=0x345e0u && r!=0x92b0eu && r!=0x93d76u && r!=0x96ba6u) continue;
+            const uint8_t *pn=game.world.player_node[0];
+            debugf("MSX vehicle waiting routine=%06lx dx=%d dy=%d\n",(unsigned long)r,(int)(int16_t)(ga_w(v,0x3c)-(uint16_t)(pn[0x3c]<<8|pn[0x3d])),(int)(int16_t)(ga_w(v,0x40)-(uint16_t)(pn[0x40]<<8|pn[0x41])));
+            break;
+        }
+     }}
     if (game.mounts!=old_mounts) debugf("MSX player mounted vehicle kind=%u (0C3078) count=%u\n",game.world.vslots.slot[0].b[0x21],game.mounts);
     if (game.dismounts!=old_dismounts) debugf("MSX player left vehicle kind=%u (0C30F0) count=%u\n",game.world.vslots.slot[0].b[0x1d],game.dismounts);
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);

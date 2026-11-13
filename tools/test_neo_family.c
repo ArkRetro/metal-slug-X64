@@ -53,10 +53,10 @@ typedef struct {
 #if defined(FAMILY_M3MID) && !defined(FAMILY_RESUME)
 #define FAMILY_RESUME 1
 #endif
-#if defined(FAMILY_M4BOSS) && !defined(FAMILY_RESERVE)
-#define FAMILY_RESERVE 1   /* the Mission 4 boss: 0040BC with its reserve */
+#if (defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS)) && !defined(FAMILY_RESERVE)
+#define FAMILY_RESERVE 1   /* the Mission 4 and 5 bosses: 0040BC with its reserve */
 #endif
-#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS) || defined(FAMILY_M6BRIDGE)
+#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS) || defined(FAMILY_M6BRIDGE)
 static uint8_t wram[0x10000];   /* tentative: the RAM image below */
 #endif
 #define STR2(a) #a
@@ -128,7 +128,7 @@ static void shake(void *ctx) {(void)ctx;put(0x10e9c8,0);put(0x10e9c9,8);
     wram[0xe9c8]=0;wram[0xe9c9]=8;
 #endif
 }
-#if defined(FAMILY_M3MID) || defined(FAMILY_M4BOSS)
+#if defined(FAMILY_M3MID) || defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS)
 /* 0C8022: RAM 10E9C8 as read; bits 0..1 set, or (negative) cleared and
  * 10E9CC = (10E9C8 long + 0x8000) & FFFF0000. */
 static void shake_pulse(void *ctx) {
@@ -953,6 +953,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         m4.speed[0]=(int32_t)w32(0x10e94e);m4.speed[1]=(int32_t)w32(0x10e952);m4.point69b8=w16(0x10e9b8);e.m4boss=&m4;
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);e.shake_pulse=shake_pulse;
 #endif
+#ifdef FAMILY_M5BOSS
+        /* The Mission 5 boss 0A0C00 (neo_m5boss.c): RAM 10C300/10C304 as
+         * read (018F92, 019424) and the shake 0C8022 on 10E9C8. */
+        flags.mission_end=wram[0xc300];flags.end_kind=wram[0xc304];e.shake_pulse=shake_pulse;
+#endif
 #ifdef FAMILY_RESERVE
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);
 #endif
@@ -1040,6 +1045,10 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         if (flags.stage_done) {wram[0xc303]=0;wram[0xc306]=wram[0xc307]=0;}   /* 018F40 (0AAA88: no vehicle) */
         wram[0xe957]=m4.owner;wram[0xe9b8]=(uint8_t)(m4.point69b8>>8);wram[0xe9b9]=(uint8_t)m4.point69b8;
         for (unsigned i=0;i<8;i++) wram[(0xe94e)+i]=(uint8_t)((uint32_t)m4.speed[i>>2]>>(24-8*(i&3)));
+#endif
+#ifdef FAMILY_M5BOSS
+        wram[0xc300]=flags.mission_end;wram[0xc304]=flags.end_kind;
+        if (flags.stage_done) {wram[0xc303]=0;wram[0xc306]=wram[0xc307]=0;}   /* 018F40 (0AAA88: no vehicle) */
 #endif
 #ifdef FAMILY_M2BOSS
         wram[0xe9ba]=(uint8_t)(m2.point69ba>>8);wram[0xe9bb]=(uint8_t)m2.point69ba;wram[0xc354]=(uint8_t)((uint16_t)m2.tower_mode>>8);wram[0xc355]=(uint8_t)m2.tower_mode;

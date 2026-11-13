@@ -304,7 +304,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -469,6 +469,15 @@ ROOTS+=[0x249d10,0x249d84,0x249dd0,0x249fb2,0x249a40,0x249b42,0x24a014,0x249e80,
 # Mission 6 stage 1 runners 020166 / 02011C before the mid-boss (neo_m6props.c; no group): 22FE22 / 22FD1C, the rider
 # 020372's 22FEB0.
 ROOTS+=[0x22fe22,0x22fd1c,0x22feb0]
+# Mission 5 boss 0A0C00 (neo_m5boss.c): the controller's death 2A2768; the hurtboxes 0A2D56[+85] 2A2788 / 2A27BA / 2A27EC /
+# 2A281E / 2A2850; the body 2A2882 and its orders 0A2D6A 2A2A58 / 2A2AF0 / 2A38C2 / 2A2BEA / 2A28D8 / 2A2998 / 2A2B6A / 2A2BAA;
+# the falling piece 2A2C7E / 2A2C8A; the lights 2A38CE / 2A38FC; the shots 2A3816 / 2A386C; the beam 2A3172 / 2A3458 / 2A3572 /
+# 2A359A / 2A38C2; 2A2CD8 / 2A2C96; 2A35C8 / 2A3642; 2A36F8; the debris 23BFFC / 23BFBA; the fire 22E750; the burnt soldier
+# 099090: 0995D6 / 0995DE (29F2E6 / 29F36E / 29F320 / 29F3B2), 29F3DC, 29F2B6, 29F23E, 29F286.
+ROOTS+=[0x2a2768,0x2a2788,0x2a27ba,0x2a27ec,0x2a281e,0x2a2850,0x2a2882,0x2a2a58,0x2a2af0,0x2a38c2,0x2a2bea,0x2a28d8,0x2a2998,
+        0x2a2b6a,0x2a2baa,0x2a2c7e,0x2a2c8a,0x2a38ce,0x2a38fc,0x2a3816,0x2a386c,0x2a3172,0x2a3458,0x2a3572,0x2a359a,0x2a2cd8,
+        0x2a2c96,0x2a35c8,0x2a3642,0x2a36f8,0x23bffc,0x23bfba,0x22e750,0x29f2e6,0x29f36e,0x29f320,0x29f3b2,0x29f3dc,0x29f2b6,
+        0x29f23e,0x29f286]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

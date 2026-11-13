@@ -32,6 +32,14 @@
   "stopped": 0,
   "unsupported": 0
  },
+ "m5boss": {
+  "missing_draw": 8,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 1575,
+  "stopped": 0,
+  "unsupported": 0
+ },
  "m5s1": {
   "missing_draw": 0,
   "missing_part": 1,

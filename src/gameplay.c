@@ -2056,8 +2056,10 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (g->world.mission_step>=1) g->mission_complete=true;
         /* 018F92 of Mission 2's boss (026C30 of 026254, stage 3; the stage
          * gates 0B6ED2 of stages 1/2 run it too). Mission 3 is one stage (record 0173F6): its 018F92 ends it;
-         * Mission 4 too (record 017462, then 017488 type 4 -> 0): its boss 02267E's 022B34. */
-        if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u || g->flow.mission==3u) && g->world.ga_flags.mission_end) g->mission_complete=true;
+         * Mission 4 too (record 017462, then 017488 type 4 -> 0): its boss 02267E's 022B34. Mission 5: its last
+         * stage (8, record 017574, then the mission end 01759A), the boss 0A0C00's 0A12C0 (the stage 6 end 0BBE22
+         * runs 018F92 too, and stage 7 follows it). */
+        if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u || g->flow.mission==3u || (g->flow.mission==4u && g->flow.stage==8u)) && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
         if (g->lifebar) lifebar_food(g);
         hud_step(g);

@@ -52,7 +52,7 @@ try:
         assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
         if re.search(r'MSX CINE select (start|waiting)',log()):
             time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up'),time.sleep(.3)) for _ in range(7)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
+            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up',.2),time.sleep(.4)) for _ in range(7)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
             continue
         # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
         # or the press lands on SOLDIER SELECT and chooses before the menu combo.
@@ -82,12 +82,15 @@ try:
         # its roof if he keeps walking), the armoured vehicle 087E36 at 2160 (behind him), the helicopters 085522 over him
         # at 4360 (script 2DC67A waits for group 6 < 1; they leave only when out of bombs). After 6 s without progress the
         # pad stands and fights a 12 s cycle: 0.8 s back left and fire left (a grenade at 1.5 s), 0.15 s turn right and
-        # fire right (a grenade at 5.5 s), then 4 s walking on (after 40 s stuck: 4 s firing upwards, Up held).
+        # fire right (a grenade at 5.5 s), then 4 s walking on (with jumps); after 40 s stuck the cycle is 20 s, the last 8 s
+        # firing upwards (Up held) while walking 4 s left and 4 s right (a flyer hovers anywhere over the street).
         # Grenades need N64 Z on the key z (--lifebar's private ares data).
         if cam!=lastcam:lastcam=cam;stuck=t
         ph=-1;up=False
-        if a.fire and t-stuck>6:ph=(t-stuck-6)%12;up=ph>=8 and t-stuck>46
-        fight=0<=ph<8;left=0<=ph<0.8;right=(4<=ph<4.15) or not fight and not up
+        if a.fire and t-stuck>6:
+            if t-stuck<46:ph=(t-stuck-6)%12
+            else:ph=(t-stuck-46)%20;up=ph>=12
+        fight=0<=ph<8;left=0<=ph<0.8 or 12<=ph<16;right=(4<=ph<4.15) or (not fight and not up) or ph>=16
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
         hold('a',bool(a.jump) and not fight and not up and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
         hold('z',a.lifebar and (1.5<=ph<1.65 or 5.5<=ph<5.65))

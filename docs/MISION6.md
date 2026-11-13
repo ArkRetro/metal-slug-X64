@@ -458,14 +458,22 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   `fam/P`): **43 de 43 pasos en el suelo del puente iguales a MAME** (`+28/+2C`, `+38` raíz, bit de suelo), con la
   cabecera del puente del fotograma siguiente (etiquetas de `capture_fullgame.lua`). ares (`--stage 1 --jump 1.0
   --continues --fire --progress 2352`): PASS, cámara 3520, 4 caídas.
-- **Pendiente: el jefe intermedio no aparece en ares**: el guion se para en `2DFAD4` (`07 0C 05 80 01 90`: el
+- **Corredores `020166` (13-XI, hecho en anfitrión)**: el guion se paraba en `2DFAD4` (`07 0C 05 80 01 90`: el
   corredor `020166`, sin portar; también `01F836`/`01F844`, `0530F4` y `08571C` de la M4 en la etapa), así que la
-  sentencia de `05310E` no llega y la cámara pasa de 2352 sin retención. Siguiente: familia `020166` / `020372`
-  (plataforma dinámica `0140C0` con mapas `0DFF52..0DFFA0`, vida por `2D35AA`, muerte `0202B2` → `01C71E`).
-  Captura hecha: **`captures-m6/fam/C`** (`NAME=C ROOTS=20166 FROM=294400 DUMP0=294400 LAST=296200 sh runB2.sh`, 35 MB en
-  bruto, sin fixture todavía): cinco corredores (294459..294896; uno muere en 294592 por `0202B2`, los demás salen por
-  `01945C` → `02010E`) con sus hijos `020372`. Siguiente paso: `extract_family_fixture.py --range 2010e-2042b`,
-  traducción en `neo_m6props.c` y familia `m6run`; luego `01F836`/`01F844` y `0530F4` si el guion se para en ellos.
+  sentencia de `05310E` no llegaba y la cámara pasaba de 2352 sin retención. Traducción en `neo_m6props.c`
+  (`run_tick`): `02011C` / `020166` (programa `22FD1C` / `22FE22`, +28 ± 0080 / 0040, fila de ataque +82 = `0E003E` /
+  `0E001E`, +8C bit 0 en `020166`, vida por rango `2D3578` / `2D35AA`, `01B1DC`, +30 = +6E << 8, paleta 74, `004C1C`,
+  el jinete `020372`), `02020C` (`01AC38`, `00427A`, mapa de celdas `0DFF52` / `0DFF68` / `0DFF7E` / `0DFFA0` por +8C y
+  +15 con `0140C0`, `0049E8` → `0202B2`, `004C24` con +5F bit 7 → `0202B2`, `01945C` `0DFF12` → `02010E`), `02010E`
+  (`013F1E`, `0041AC`), la muerte `0202B2` (`013F1E`, +82 del creador a 0, +66 = +1E = 1001, `009F88`, `004192`, los
+  restos `01DA40` `0DFEA6`+`0DFE5E` / `0DFEB8`+`0DFE70`, la explosión `01C71E` con +28 ± 0038 / 0078, sonido 1021,
+  `01C706`) y el jinete `020372` / `0203B6` (paleta 75, programa `22FEB0`, `01AD6E`, +15 bit 0 del creador, `01ABC8`,
+  `01AD8C`, `00427A`). Familia **`m6run`** (`captures-m6/fam/C`, `NAME=C ROOTS=20166 FROM=294400 DUMP0=294400
+  LAST=296200 sh runB2.sh`; `extract_family_fixture.py --range 2010e-2042b --attacks` y la RAM de `m6mid`; traza en
+  bruto borrada): **10 nodos, 1338 actualizaciones en lazo cerrado iguales a MAME** (294458..295623), 3 borrados, 1335
+  dibujos, 4 hijos borrados por `004192`. Programas en `extract_soldier_programs.py` (sin grupo); sprites
+  (`export_rest_sprites.py ... captures-m6/fam/C@2010e-2042b`, raíces y paletas 74 / 75): 35 volcados, 45 156 píxeles
+  iguales, 0 distintos; 12 124 descriptores, 406 paletas. Paquete de la M6: 1245 trozos (límite 1256).
 - **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
 
 ## Pendiente (fase 2, por orden)

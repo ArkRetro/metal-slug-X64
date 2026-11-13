@@ -861,6 +861,13 @@ ROM: `0A1C8C`, `0A1DCE`.
   parada de cámara 2064 queda bajo la escalera, fuera de la línea de la pistola) y `--down` (abajo fuera de los giros:
   la pistola dispara hacia abajo en los saltos, el jefe está bajo la cornisa). En la matriz como `m5boss`.
 
+**Puertas de la novena tanda** (tras fusionar ccr `50b2a2f`): `make check` en verde (familias `m5boss`..`m5boss5`
+incluidas) y matriz (`regression_ares.py` con `--m1end` recién hecho, cartucho completo de 62,9 MB): logo, pausa,
+personajes, M4, M5 ×3, **`m5boss`** (nuevo: el mando llega a la cámara 2560, vence al jefe en ~1600 s, recuento y
+`01891E -> mission 6`; 8 dibujos sin las paletas 6 / A, ya pendientes), M6 ×3, `veh` y M1→M2 PASS; `m5s1` FAIL la
+primera vez (con `make check` a la vez el menú perdió una pulsación: entró en la etapa 2) y PASS al repetirla. Caché:
+209 ranuras (suelo 208). Línea base: `m5boss` añadida.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

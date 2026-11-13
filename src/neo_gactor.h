@@ -334,6 +334,7 @@ void ga_project(neo_gactor_t *a,neo_genv_t *e);                 /* 01ABC8 */
 void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t parent); /* 01AB98 */
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
+void ga_to_root(neo_gactor_t *a,neo_genv_t *e);                 /* 01AC4C to 10E968 (A0 = +38) */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
 uint16_t ga_air_400a(neo_gactor_t *a,neo_genv_t *e);            /* 0143CC (RAM 10C00A = FF) */
 uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */

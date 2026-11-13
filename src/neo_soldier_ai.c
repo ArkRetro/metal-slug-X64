@@ -647,10 +647,26 @@ static bool death_motion(ctx_t *c) { /* 040852 */
         s->b.vy=S32((uint32_t)s->b.vy+ASR(0xfff40000u-(uint32_t)s->b.vy,5));
         s->b.vx=S32((uint32_t)s->b.vx+ASR(L(0x76)-(uint32_t)s->b.vx,5));
         s->b.scalar62=s->b.vx;
-        /* +74 (a grounded death by a kind 7 or 9 row with +15 bit 5): 040920
-         * (the block to the scene root, 01AC4C, then 01AC38) has no MAME
-         * evidence yet: explicit stop. */
-        if (B(0x74)) {UNSUPPORTED_AT();return false;}
+        /* +74 (a body that left the ground on a slope 7 / 9 with +15 bit 5):
+         * 040920, the block re-expressed in the scene root (01AC4C, A0 =
+         * +38, A1 = 10E968) and moved by its speed (01AC38), no sweep. A
+         * parent other than the terrain, a cell map or the root: explicit
+         * stop (its frames are not in the soldier's environment). */
+        if (B(0x74)) {
+            neo_contact_actor_t *a=&s->b;
+            if (a->parent_tag!=ROOT_TAG) {
+                const neo_contact_parent_t *op=parent_of(c->e,a->parent_tag),*np=&c->e->root;
+                if (a->parent_tag && !op) {UNSUPPORTED_AT();return false;}
+                uint32_t d0=(uint32_t)a->x,d1=(uint32_t)a->y,d2=(uint32_t)a->vx+d0,d3=(uint32_t)a->vy+d1;
+                if (op) {d0+=(uint32_t)op->previous_x;d1+=(uint32_t)op->previous_y;d2+=(uint32_t)op->x;d3+=(uint32_t)op->y;}
+                d0-=(uint32_t)np->previous_x;d1-=(uint32_t)np->previous_y;d2-=(uint32_t)np->x;d3-=(uint32_t)np->y;
+                a->x=S32(d0);a->y=S32(d1);a->vx=S32(d2-d0);a->vy=S32(d3-d1);a->parent_tag=ROOT_TAG;
+            }
+            a->x=S32((uint32_t)a->x+(uint32_t)a->vx);a->y=S32((uint32_t)a->y+(uint32_t)a->vy);   /* 01AC38 */
+            project(c);
+            SB(0x70,(s->b.flags15&64u)?0xff:0);
+            return true;
+        }
         uint16_t f=(s->b.flags15&32u) && B(0x72)?air(c,0xff):air(c,0);
         if (f&0x200u) s->b.flags15|=32u;
         if (f&1u) SB(0x72,(f&8u)?0xff:0);

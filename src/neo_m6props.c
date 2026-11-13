@@ -905,9 +905,58 @@ static ga_result_t run_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- the large rock 01FBAC and the rock burst 01FECE (the hatch 01F836 of the record 2DF67E) ----
+ * The hatches 01F828..01F88E and the small rock 01FABA are Mission 4's (neo_m4props.c, family m4rock); Mission 6
+ * stage 1 also makes the large rock (+8C bit 0 clear), and its rocks are shot (family m6rock).
+ * 01FBAC: 009F88, +66 = +1E = 8801, palette 0074 (009EA8), +50 = 0DFFF6, program 22FA34 (004256), +2C -= 0080,
+ * +30 = 0, +34 = +6E << 8, +4E = rank (0260C8) of 2D34B0 (+8C bits 1 and 2 clear: also +15 bit 2), 2D3514 (bit 2),
+ * 2D35DC (bit 1: also +15 bit 2) or 2D3640 (both), +82 = the attack row 0E002E, 004C1C, the shadow 01FF82 (0040BC,
+ * D0 = 1C), +00 = 01FC9E (neo_m4props.c).
+ * 01FECE: 013F1E, the creator's +82 cleared when it is this node, +66 = +1E = 1001, 009F88, 004192, the debris
+ * 01DA40 0DFE82 + 0DFE3A (+8C bit 0) or 0DFE94 + 0DFE4C, the blast 01C71E (0040BC, D0 = 1C) with +2C moved up by
+ * 0038 / 0078 and put back, sound 1021, 01C706. */
+static bool rock_routine(uint32_t r) {return r==0x1fbacu || r==0x1feceu;}
+static ga_result_t rock_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x1fbac: {
+        SB(0x1d,0);                                                          /* 009F88 */
+        SW(0x66,0x8801);SW(0x1e,0x8801);ga_palette(a,0x74);
+        SL(0x50,0xdfff6);
+        if (!ga_anim_start(a,e,0x22fa34,0x100)) return GA_UNSUPPORTED;
+        SW(0x2c,W(0x2c)-0x80u);SL(0x30,0);SL(0x34,(uint32_t)W(0x6e)<<8);
+        uint32_t t=(B(0x8c)&2u)?((B(0x8c)&4u)?0x2d3640u:0x2d35dcu):((B(0x8c)&4u)?0x2d3514u:0x2d34b0u);
+        if (!rom_ok(e,t)) return GA_UNSUPPORTED;
+        SW(0x4e,ga_rank_word(a,e,ga_rom(t)));                                /* 0260C8 */
+        if (!(B(0x8c)&4u)) SB(0x15,B(0x15)|4u);
+        SL(0x82,0xe002e);SB(0x5e,B(0x5e)|0x80u);                             /* 004C1C */
+        run_kid(a,e,0x1ff82);
+        SL(0,0x1fc9e);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x1fece: {
+        if (e->dyn_release) e->dyn_release(e->ctx,a);                        /* 013F1E */
+        neo_gactor_t *p=e->creator?e->creator(e->ctx,a):NULL;
+        if (p && ga_l(p,0x82)==NEO_GA_TAG(a->index)) ga_sl(p,0x82,0);
+        SW(0x66,0x1001);SW(0x1e,0x1001);SB(0x1d,0);                          /* 009F88 */
+        if (!e->kill_children) {ga_fail(e,0x4192);return GA_UNSUPPORTED;}
+        e->kill_children(e->ctx,a);                                          /* 004192 */
+        bool b=(B(0x8c)&1u)!=0;
+        run_debris(a,e,b?0xdfe82:0xdfe94);run_debris(a,e,b?0xdfe3a:0xdfe4c);
+        uint32_t y=L(0x2c);
+        SW(0x2c,W(0x2c)-(b?0x38u:0x78u));
+        run_kid(a,e,0x1c71e);
+        SL(0x2c,y);
+        if (e->sound) e->sound(e->ctx,0x1021);                               /* 0120F8 */
+        SL(0,0x1c706);
+        return neo_effects_tick(a,e);                                        /* JMP 01C706 */
+    }
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static ga_result_t m6props_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (mid_routine(L(0))) return mid_tick(a,e);
     if (run_routine(L(0))) return run_tick(a,e);
+    if (rock_routine(L(0))) return rock_tick(a,e);
     switch (L(0)) {
     /* ---- 0530F4: the hold of the mid-boss (script 2DFB88, group 0) ----
      * 0530F4: st.b 10C44C (444C(A5)), +0 = 0530FE; 0530FE: 10C44C set → rts,
@@ -1067,6 +1116,6 @@ bool neo_m6props_routine(uint32_t r) {
     static const uint32_t k[]={0x530f4,0x530fe,0xbd822,0xbd836,0xbd84a,0xbd898,0xbd8f4,0xbd906,0xbd918,0xbd95e,0xbda4e,0xbd416,0xbd444,0xbd472,0xbd4a6,0xbd4d4,0xbd50e,
         0xbdab8,0xbdade,0xbd18e,0xbd1b8,0xbd2ba,0xbd2ce,0xbd20e,0xbcfa4,0xbcfc4,0xbcfe4,0xbd004,0xbd044};
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
-    return mid_routine(r) || run_routine(r);
+    return mid_routine(r) || run_routine(r) || rock_routine(r);
 }
 ga_result_t neo_m6props_tick(neo_gactor_t *a,neo_genv_t *e) {return m6props_tick(a,e);}

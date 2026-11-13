@@ -537,3 +537,29 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
 `sound_map.json`, `region_rom.json`. Privados:
 `filesystem/mission6/s{1,2,3}/{map.json,map_observed.json,collision.json,collision_observed.json,rom_report.json}`,
 `romfs/mission6.pack`, `filesystem/audio/music_mission6_boss*.wav64`.
+
+## Paradas de la etapa 1 (13-XI, agente C, WIP: parado por orden del usuario)
+
+- **Hecho, sin `make check` completo ni ares** (WIP): (1) `0B833A` (cartel, registro `2DF690`) se paraba porque la
+  tabla `0B8444` y los programas de los carteles (`2A8BAC..2A8E34`) eran del grupo `m2`: ahora sin grupo
+  (`region_rom.json`, `extract_soldier_programs.py`; `soldier_programs.json` regenerado: solo esos 22 programas
+  cambian de grupo); familia `signs` PASS. (2) `0203FC`/`01F934`/`01FECE`: la trampilla `01F836` (registro `2DF67E`)
+  hace la roca grande `01FBAC`, que no era nativa, y el estallido `01FECE`; traducidos en `neo_m6props.c`
+  (`rock_tick`), programa `22FA34` añadido. Captura `captures-m6/fam/K` (`runK.sh`, raíces `1f836,1f844`,
+  292684..294100); familia **`m6rock`** (`--range 1f828-2055f`, RAM de `m6mid`, `--node-fields 82`): **21 nodos, 2153
+  actualizaciones en lazo cerrado iguales a MAME** (292687..294067), 2 `01FBAC` y 2 `01FECE`. `compile_family_fixture.py`
+  / `test_neo_family.c`: hasta 64 lecturas de mapas de celdas por actualización (antes 48; `m6rock` lee 51).
+  Sprites: `export_rest_sprites.py` con raíz `22FA34`; la exportación M6 = la anterior + los 25 descriptores de
+  `22FA34` (filtrada: la salida completa traía 1347 descriptores de jefes M4/M5 que no son de la M6); 56 634 píxeles
+  iguales, 48 distintos, todos en las columnas x 318..319 (borde derecho, el volcado no los muestra). Paquetes
+  rehechos (`build_packs.py`): M6 1251 trozos (límite 1256). **El coordinador debe copiar
+  `filesystem/mission6/rest-native.json` de `ws-chars` a `ws-logo`** al fusionar.
+  (3) `040920`: traducido en `neo_m3enemy.c` (nodo genérico, `ga_to_root` nuevo en `neo_gactor.c` = `01AC4C` hacia
+  `10E968`, y `01AC38`) y en `neo_soldier_ai.c` (soldado; parada explícita si el padre no es terreno, mapa o raíz).
+  **Sin prueba bit a bit todavía**: captura `captures-m6/fam/Z` (`runZ.sh`, solo depurador, M6 entera): MAME pasa
+  por `040920` 128 veces, todas en la etapa 1, 294644..295808, nodos 102754/102804/104174/102494/102CD4 (rebeldes
+  `0AF1C4`/`0AF17E` muertos, `+00` = 040D06/040DF0). Siguiente: captura de familia con raíces `af1c4,af17e` de
+  294380 a 295900 (`--soldier-nodes`, `--range af000-b0fff` y `40500-40fff`) y fixture; después `make check`, ares
+  etapa 1 y matriz. `fam/Z` (193 MB, sin trazas de familia) se puede borrar cuando exista esa familia;
+  `fam/K/boss-trace.txt` (41 MB) ya tiene su fixture (`data/m6rock_fixture.json.gz`).
+- Falta además: `af964` (visto en ares en la cámara 1620), `04153E` (último enemigo) y los créditos (sin empezar).

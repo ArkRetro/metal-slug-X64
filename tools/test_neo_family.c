@@ -34,7 +34,7 @@ typedef struct {
     uint32_t frame; int node; uint32_t routine; int has_post; uint8_t post[0xb0];
     int root_mask; int32_t root[4]; int corr;
     int tmask; int32_t terrain[4]; int tcorr;
-    int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[48][3];
+    int32_t p1x,p1y,signal,group,front,epoch,cursor,progress; int16_t groups[9]; uint16_t dyn[64][3];
     uint16_t ring[64][2]; int wfirst,wcount; uint8_t ext[16][2]; int32_t boxes[8]; int32_t kill; int32_t w4068;
     int marker_count; int32_t markers[8][4];   /* object list read (040200/0402E6): x, y, height, id */
     int ram_in_first,ram_in_count,ram_out_first,ram_out_count;  /* FAMILY_RAM inputs/outputs */
@@ -79,7 +79,7 @@ static uint8_t ram[0x200];                   /* globals, see slot() */
  * actors outside the family, e.g. the wagon under its swordsmen). */
 static bool dyn_seen;
 static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
-    for (unsigned i=0;i<48 && u->dyn[i][0]!=0xffffu;i++) {
+    for (unsigned i=0;i<64 && u->dyn[i][0]!=0xffffu;i++) {
         unsigned o=u->dyn[i][0];uint16_t m=u->dyn[i][1],v=u->dyn[i][2];
         if (m&0xff00u) dynram[o]=(uint8_t)(v>>8);
         if (m&0x00ffu) dynram[o+1]=(uint8_t)v;

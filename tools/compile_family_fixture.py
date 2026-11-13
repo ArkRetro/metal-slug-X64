@@ -334,8 +334,8 @@ def main():
             v=rd(u,0x10c5ec+2*i);boxes.append(-1 if v is None else v)
         # Dynamic collision objects 10C06E..10C291 as read (offset, mask, word).
         dyn=[(int(k,16)-0x10c06e,v[0],v[1]) for k,v in u['reads'].items() if 0x10c06e<=int(k,16)<0x10c292]
-        assert len(dyn)<=48,(u['frame'],len(dyn))
-        dyn+=[(0xffff,0,0)]*(48-len(dyn))
+        assert len(dyn)<=64,(u["frame"],len(dyn))
+        dyn+=[(0xffff,0,0)]*(64-len(dyn))
         # RAM 1067E2 (kill-all, 004BAC) as read: set by another family.
         kill=rd(u,0x1067e2)
         # Object list (markers, 040200/0402E6) as read: list 10C3A2 (count

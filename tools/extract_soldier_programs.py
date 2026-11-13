@@ -205,7 +205,8 @@ ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,
 # The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
 # pieces 09A9C4 falling (neo_prisoner.c).
 ROOTS+=[0x29fb62,0x29fbe8,0x29fc42,0x29fc8a]
-# The stage-2/3 signs 0B829C (tables B84AC) and 0B833A (B84BC, wiggle B84E0) (neo_m2props.c).
+# The stage-2/3 signs 0B829C (tables B84AC) and 0B833A (B84BC, wiggle B84E0) (neo_m2props.c); 0B833A is also a script
+# record of Mission 6 stage 1 (2DF690), so these programs are in no mission group.
 ROOTS+=[0x2a8da4,0x2a8db0,0x2a8dbc,0x2a8dc8,0x2a8dd4,0x2a8de0,0x2a8dec,0x2a8df8,0x2a8e04,0x2a8e10,0x2a8e1c,0x2a8e28,0x2a8e34,0x2a8bac,0x2a8be4,0x2a8c1c,0x2a8c54,0x2a8c8c,0x2a8cc4,0x2a8cfc,0x2a8d34,0x2a8d6c]
 # Mission 2 stage-3 boss 026254 (neo_m2boss.c): body 23502C/234F10/234FCC/
 # 234F3C/23508C/235A8A, parts by 027D74 (+87), shots 235872/23581C.
@@ -293,13 +294,15 @@ ROOTS+=[0x2451dc,0x2451e8,0x245294,0x245340,0x24585a,0x24569c,0x2459d0,0x2458c8,
     0x246ad2,0x246b4c,0x247034,0x246eb2,0x2470f6,0x247598,0x24741e,
     0x245ba0,0x247656,0x24767a,0x24855c,0x245d92,0x245de6,0x245fec,0x2461a2,0x24683a,0x246694,0x2465da,0x2464ba,
     0x246794]
+# Mission 6 stage 1: the large rock 01FBAC of the hatch 01F836 (neo_m6props.c; the hatches are Mission 4's).
+ROOTS+=[0x22fa34]
 # Mission-only programs (docs/MEMORY_OPTIMIZATION.md, rule 5): the blocks of
 # ROOTS whose comment starts with one of these lines belong to one mission
 # ("m2", "m3"): they go into that mission's pack (pack_mission.py, 'MSXD'),
 # not into the console image (compile_soldier_ai_tables.py). A root also
 # listed in another block stays in the image.
 MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
-    '# Mission 2: the hostage','# The miners','# The bats','# The stage-2/3 signs','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
+    '# Mission 2: the hostage','# The miners','# The bats','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),

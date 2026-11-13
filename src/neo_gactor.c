@@ -63,6 +63,21 @@ void ga_place_from(neo_gactor_t *a,const neo_gactor_t *s,neo_genv_t *e,int16_t d
     ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d0-d2);ga_sl(a,0x34,d1-d3);ga_sl(a,0x38,ROOT_TAG);
     ga_project(a,e);
 }
+/* 01AC4C with A0 = +38 and A1 = the scene root 10E968 (040920: movem +28..+38, 01AC4C, movem back): +28/+2C the
+ * start (previous frame of A0) and +30/+34 the motion to the end (current frame of A0), both re-expressed in the
+ * root's frames; nothing changes when +38 already is the root. */
+void ga_to_root(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t tag=ga_l(a,0x38);
+    if (tag==ROOT_TAG) return;
+    neo_contact_parent_t root,op;
+    if (!ga_parent(e,ROOT_TAG,&root)) {ga_fail(e,0x1ac4c);return;}
+    bool has=false;
+    if (tag) {if (!ga_parent(e,tag,&op)) {ga_fail(e,0x1ac4c);return;}has=true;}
+    uint32_t d0=ga_l(a,0x28),d1=ga_l(a,0x2c),d2=ga_l(a,0x30)+d0,d3=ga_l(a,0x34)+d1;
+    if (has) {d0+=(uint32_t)op.previous_x;d1+=(uint32_t)op.previous_y;d2+=(uint32_t)op.x;d3+=(uint32_t)op.y;}
+    d0-=(uint32_t)root.previous_x;d1-=(uint32_t)root.previous_y;d2-=(uint32_t)root.x;d3-=(uint32_t)root.y;
+    ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d2-d0);ga_sl(a,0x34,d3-d1);ga_sl(a,0x38,ROOT_TAG);
+}
 void ga_move(neo_gactor_t *a,neo_genv_t *e) {
     ga_sl(a,0x28,ga_l(a,0x28)+ga_l(a,0x30));ga_sl(a,0x2c,ga_l(a,0x2c)+ga_l(a,0x34));
     ga_project(a,e);

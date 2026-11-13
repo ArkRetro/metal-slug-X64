@@ -1014,3 +1014,31 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   `regression_ares.py` con `m1end` recién hecho: todo PASS (la pausa falló una vez por «boot tap» con la máquina
   cargada y pasó al repetirla); `m4boss` PASS en 2260 s, entra en la línea base (sus 2061 dibujos ausentes son la
   `palette_id=000` de `169276..16929E`, pendiente (2)).
+
+## Jefe en juego, sexta sesión (13-XI, agente A): BLOOD OFF, la estela, el casco y el coche
+
+- **BLOOD OFF** (menú de opciones de `work-chars`, valor por defecto de la tabla EU): las capturas de la M4 ya son
+  sin sangre (`10FD8F` = 0 en la RAM de A, B, C, L2 y T; el TAS y `run4` usan el BIOS euro por defecto), así que no
+  faltaba ninguna paleta «sin sangre». Los ~4000 dibujos ausentes de `m4boss` con el menú eran todos
+  `palette_id=000` de los descriptores `169276..16929E` (programa `234BC8`): **la estela del proyectil** `02505C`.
+  Su `+14` es la ranura de paleta del proyectil `024F0E` (`02508C`, cada actualización; 357..359 que el proyectil
+  alterna) y no reserva ninguna; las ranuras nativas son por actor (`ga_palette`), así que ahora la estela resuelve el
+  `+14` con los recursos del proyectil. Su número dependía de cuántos proyectiles lanzaba el jefe (larga pelea con
+  BLOOD OFF), no de la sangre.
+- **El casco** (`10D7B6`) solo dibujaba las columnas de la derecha: el port no corría **`0C748E`** de esa capa (la
+  cámara, `0C840C`, tras las órdenes de la lista; `0C7480` copia antes `+36`/`+38` a `+3A`/`+3C`) ni **`0C75B2`**
+  (`003942` → `0C7AA8`: `+84`/`+86` = palabras altas de `+14`/`+18` menos los acarreos de `+25`). Sin `0C748E` solo
+  tenían altura en `+42` las columnas de la ventana de `0C741A` (desde la 14); sin `0C75B2`, `+84` = `+86` = 0 (el
+  casco a x 0 y la Y sin la del objeto). Ahora `neo_world.c` `m4_ring_pass` (`0C74C4`: `0C6BDE` para las columnas
+  que entran; `0C714E` con `+82` bit 1 y las filas con el bit 2, apagados en el jefe) y `neo_layerobj_scb`
+  (`neo_train.c`). En ares (`MSX m4col`, traza temporal): `+84` sigue al objeto (−288 → 66), `+86` = `01E8` (el de
+  T), las 20 columnas con su altura de `0223A8` (las de T: `C801`, `E809`…, `D006`) y **el casco entero dibujado**.
+- **El coche `027F54` de 1000**: muerto por un golpe de los tipos de `01B1F2` (9, A, C, D, E; `02858C` → `236170`)
+  suelta el motor `028A88` (paletas 216, 3D2, 367); `run4` y el TAS lo matan con la pistola (`02853E`) y ninguna
+  captura las tenía. Captura **W4** (`captures-m4/fam/runW.sh`, `WEAPON=4`: `MSX_FULL_GIVE_WEAPON=150700:4`, réplica de
+  `run4` desde `sec05_149829`, volcados cada 10 fotogramas 150990..153000): el motor en 151270..151370 con las tres
+  paletas. Añadidas a `mission4/rest-native.json` solo las paletas nuevas de la exportación con
+  `--keep-palettes` (216, 218, 35D, 364, 365, 367, 3D2; validación de W4@27f54-28d04: 76 fotos, 127 500 píxeles
+  iguales, 0 distintos); los descriptores, sin cambios (la exportación entera traía 1634 de otras misiones).
+- **B69 Slugnoid**: `test_vehicle_damage_ares.py --ride forward` (montado: ciclo de 5 s, 2 s a la derecha y fuego B
+  al final; nunca A) para llevarlo hasta los enemigos de `m5s3`.

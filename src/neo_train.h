@@ -83,6 +83,10 @@ void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_
  * parent +10 (the scene root at root_x/root_y with its +25, or none),
  * +1C/+20 the previous +14/+18 once per epoch (RAM 10C33A). */
 void neo_layerobj_step(uint8_t *l,uint8_t flags,const int32_t own[2],int32_t root_vx,int32_t root_vy,int32_t root_x,int32_t root_y,uint8_t root_correction,uint8_t epoch,int32_t shake);
+/* 0C75B2: +84 / +86 (the sprite position words 0C75EE writes to SCB4 /
+ * SCB3) = the high words of +14 / +18 less the carries +25 bits 0 / 1;
+ * a change sets +82 bit 7. */
+void neo_layerobj_scb(uint8_t *l);
 /* +84 de una capa sin padre (0C75B2): palabra alta de +14. */
 static inline int16_t neo_layer_word(int32_t x) {return (int16_t)(uint16_t)((uint32_t)x>>16);}
 /* Cuadro del cielo 10E83E (0B8EDC): 0 = el mapa 0B857C de la etapa, 1..4 =

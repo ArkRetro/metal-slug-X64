@@ -131,6 +131,12 @@ void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_
 /* Layer objects as bytes (RAM 10C72E.. / 10D7B6.. / 10E83E.. / 10E8C6..). */
 static uint32_t lo_l(const uint8_t *l,unsigned o) {return (uint32_t)l[o]<<24|(uint32_t)l[o+1]<<16|(uint32_t)l[o+2]<<8|l[o+3];}
 static void lo_s(uint8_t *l,unsigned o,uint32_t v) {l[o]=(uint8_t)(v>>24);l[o+1]=(uint8_t)(v>>16);l[o+2]=(uint8_t)(v>>8);l[o+3]=(uint8_t)v;}
+void neo_layerobj_scb(uint8_t *l) {
+    uint16_t d0=(uint16_t)(l[0x14]<<8|l[0x15]),d1=(uint16_t)(l[0x18]<<8|l[0x19]);
+    d0=(uint16_t)(d0-(l[0x25]&1u));d1=(uint16_t)(d1-((l[0x25]>>1)&1u));   /* lsr.b / subx.w */
+    if (d0!=(uint16_t)(l[0x84]<<8|l[0x85])) {l[0x84]=(uint8_t)(d0>>8);l[0x85]=(uint8_t)d0;l[0x82]|=0x80u;}
+    if (d1!=(uint16_t)(l[0x86]<<8|l[0x87])) {l[0x86]=(uint8_t)(d1>>8);l[0x87]=(uint8_t)d1;l[0x82]|=0x80u;}
+}
 void neo_layerobj_step(uint8_t *l,uint8_t flags,const int32_t own[2],int32_t root_vx,int32_t root_vy,int32_t root_x,int32_t root_y,uint8_t root_correction,uint8_t epoch,int32_t shake) {
     if (!(flags&0x80u)) {
         int32_t d0=(flags&1u)?own[0]:root_vx,d1=(flags&2u)?own[1]:root_vy;

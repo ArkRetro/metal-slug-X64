@@ -31,6 +31,7 @@ p.add_argument('--expect',default='',help='comma list of vehicle kinds that must
 p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type=float,default=60,help='seconds the pad waits on a vehicle')
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
+p.add_argument('--ride',choices=('wait','forward'),default='wait',help='while riding: wait (stand still, no fire) or forward (a 5 s cycle: 2 s right, 3 s still, the vehicle fire B in the last 0.6 s; never A: A+B is the exit) to take the vehicle to the enemies (the Slugnoid of m5s3, B69)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
@@ -109,12 +110,13 @@ try:
         if seek and vw[-1]!=seek_dx[0]:seek_dx[:]=[vw[-1],t]
         if seek and t-seek_dx[1]>8:seek_off[0]=t+20;seek_dx[1]=t+20
         if t<seek_off[0]:seek=False
+        fwd=waiting and a.ride=='forward';c5=(t-ride_since)%5.0 if fwd else 0.0
         if seek:
             dx=int(vw[-1][0]);up=False;left=dx<-6
             hold('Up',False);hold('Left',left);hold('Right',dx>6);hold('a',abs(dx)<48 and (t%0.6)<0.15)
         else:
-            hold('Up',up);hold('Left',left);hold('Right',not waiting and not left and (stuck or not up));hold('a',not riding and bool(a.jump) and (t%a.jump)<0.2)
-        hold('b',not waiting and not seek and int(t*10)%2==0)   # no fire while hopping on: A+B is the exit (0AA7FC kind 1)
+            hold('Up',up);hold('Left',left);hold('Right',(fwd and c5<2.0) or (not waiting and not left and (stuck or not up)));hold('a',not riding and bool(a.jump) and (t%a.jump)<0.2)
+        hold('b',(not waiting and not seek and int(t*10)%2==0) or (not seek and fwd and c5>=4.4 and int(t*10)%2==0))   # no fire while hopping on: A+B is the exit (0AA7FC kind 1)
         pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
         if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:

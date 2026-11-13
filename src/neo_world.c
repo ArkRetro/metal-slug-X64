@@ -511,6 +511,45 @@ static void m4_blocks(neo_world_t *w,uint32_t map,const int16_t din[6]) {
         w->m4col_top[slot]=(uint8_t)(((unsigned)((int8_t)w->m4layer[0x42+2*slot]>>3)+w->m4layer[0x83]+row)&31u);
     }
 }
+/* 0C748E for the boss's layer 10D7B6 (the camera's 0C840C, after the
+ * list's commands; +3A / +3C are this update's 0C7480 copies of +36 / +38):
+ * the window +36 / +38 from +14 / +18; with a map (0C74C4), the columns that
+ * came in get their +42 words from the column list (0C6BDE), and their
+ * blocks when +82 bit 1 is set (0C714E); with +82 bit 2 the rows that came
+ * in (0C7538). */
+static uint16_t m4w(const uint8_t *l,unsigned o) {return (uint16_t)(l[o]<<8|l[o+1]);}
+static void m4sw(uint8_t *l,unsigned o,uint16_t v) {l[o]=(uint8_t)(v>>8);l[o+1]=(uint8_t)v;}
+static uint32_t m4l(const uint8_t *l,unsigned o) {return (uint32_t)l[o]<<24|(uint32_t)l[o+1]<<16|(uint32_t)l[o+2]<<8|l[o+3];}
+static uint16_t m4col(const uint8_t *l) {return (uint16_t)((int16_t)(uint16_t)((0xffc00000u-m4l(l,0x14))>>16)>>4);}
+static uint16_t m4row(const uint8_t *l) {return (uint16_t)((int16_t)(uint16_t)((0x800000u-m4l(l,0x18))>>16)>>4);}
+static uint16_t m4s12(uint16_t v) {return (uint16_t)((int16_t)(uint16_t)(v<<4)>>4);}
+static void m4_blocks(neo_world_t *w,uint32_t map,const int16_t din[6]);
+static void m4_ring_pass(neo_world_t *w) {
+    uint8_t *l=w->m4layer;uint32_t map=m4l(l,0x2e);
+    if (!map) {m4sw(l,0x36,m4col(l));m4sw(l,0x38,m4row(l));return;}   /* 0C749A */
+    uint16_t d0=m4col(l),d7=m4w(l,0x3a);
+    m4sw(l,0x36,d0);d7=(uint16_t)(d7-d0);
+    if (d7) {
+        d7=m4s12(d7);
+        if ((int16_t)d7<0) {d7=(uint16_t)-d7;d0=(uint16_t)(d0-d7+0x20u);}
+        uint16_t d2=d7,d1=(uint16_t)(m4row(l)+0x1fu),d4=d0,d5=d1;
+        d0=(uint16_t)(d0-m4w(l,0x32));d1=(uint16_t)-(uint16_t)(d1-m4w(l,0x34));
+        neo_genv_t g;memset(&g,0,sizeof(g));
+        neo_layerobj_columns(&g,l,d0,d2,d4);                                          /* 0C6BDE */
+        if (g.unsupported) {w->unsupported++;w->unsupported_routine=g.unsupported_at;}
+        if (l[0x82]&2u) {int16_t d[6]={(int16_t)d0,(int16_t)d1,(int16_t)d2,0x20,(int16_t)d4,(int16_t)d5};m4_blocks(w,map,d);}   /* 0C714E */
+    }
+    if (l[0x82]&4u) {
+        uint16_t d1=m4row(l);d7=m4w(l,0x3c);
+        m4sw(l,0x38,d1);d7=(uint16_t)(d7-d1);
+        if (!d7) return;
+        d7=m4s12(d7);
+        if ((int16_t)d7<0) {d7=(uint16_t)-d7;d1=(uint16_t)(d1+0x1fu);} else d1=(uint16_t)(d1+d7);
+        uint16_t c0=m4col(l),d3=d7,d4=c0,d5=d1;
+        c0=(uint16_t)(c0-m4w(l,0x32));d1=(uint16_t)-(uint16_t)(d1-m4w(l,0x34));
+        int16_t d[6]={(int16_t)c0,(int16_t)d1,0x20,(int16_t)d3,(int16_t)d4,(int16_t)d5};m4_blocks(w,map,d);   /* 0C714E */
+    }
+}
 static void g_m4_draw(void *ctx,uint32_t map,const int16_t d[6]) {neo_world_t *w=((tick_t *)ctx)->w;w->m4layer_map=map;m4_blocks(w,map,d);}
 static void g_m4_patch(void *ctx,uint32_t submap,const int16_t d[6]) {neo_world_t *w=((tick_t *)ctx)->w;w->m4patch_count++;m4_blocks(w,submap,d);}
 static void g_m4_clear(void *ctx) {neo_world_t *w=((tick_t *)ctx)->w;w->m4layer_map=0;w->m4patch_count=0;memset(w->m4col_map,0,sizeof(w->m4col_map));}
@@ -2014,6 +2053,9 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             if (calls[k][5]!=0xffffffffu) ga_sw(a,0x74,(uint16_t)calls[k][5]);
         }
     }
+#ifdef MSX_HAS_M3MID
+    if (w->m4layer_used) neo_layerobj_scb(w->m4layer);   /* 003942 -> 0C7AA8: 0C75B2 of 10D7B6 */
+#endif
     w->camera_call_count=0;
     w->player_hits+=t.hits;
     return t.hits;
@@ -2178,6 +2220,9 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
          * camera update 0C7CA6 and the list's commands (docs/MISION4.md). */
         neo_camera_t *c=&w->camera;
         for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=p[i].alive;c->op4_players[i].px=p[i].px;c->op4_players[i].py=p[i].py;c->op4_players[i].rect_ok=p[i].rect_ok;}
+#ifdef MSX_HAS_M3MID
+        if (w->m4layer_used) {uint8_t *l=w->m4layer;l[0x3a]=l[0x36];l[0x3b]=l[0x37];l[0x3c]=l[0x38];l[0x3d]=l[0x39];}   /* 0C7480 (0C83C8) */
+#endif
         neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
         w->bridge_prev_x=w->layers[NEO_LAYER_MID].x;w->bridge_prev_y=w->layers[NEO_LAYER_MID].y;
         neo_layers_step_own(w->layers,c->root_vx,c->root_vy,c->layer_flags,w->bridge.on,w->bridge_dx);
@@ -2245,6 +2290,9 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         if (moved && w->bridge_ring_on) neo_m6ring_pass(&w->bridge_ring,&w->bridge_map,l->x,l->y,l->column,l->top,true,NULL,NULL);
     }
     if (w->bridge_ring_on) neo_m6ring_mark(&w->bridge_ring,w->layers[NEO_LAYER_MID].x,w->layers[NEO_LAYER_MID].y,true);   /* 0C7480 at the next pass */
+#ifdef MSX_HAS_M3MID
+    if (w->m4layer_used) m4_ring_pass(w);   /* 0C840C: 0C748E of 10D7B6 */
+#endif
 }
 bool neo_world_region_clear(const neo_world_t *w) {return neo_script_reached(&w->script,MISSION1_REGION_END);}
 unsigned neo_world_alive(const neo_world_t *w) {

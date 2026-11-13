@@ -1088,6 +1088,12 @@ static ga_result_t shot_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x25088: {
         neo_gactor_t *c=creator(a,e);
         if (!c) return GA_UNSUPPORTED;
+        /* 02508C: +14 is the shell's hardware slot (357..359, cycled by the
+         * shell); the trail allocates none. Native handles are per actor
+         * (ga_palette), so the trail resolves them through the shell's
+         * resources (without this: palette_id 000 on 234BC8's descriptors
+         * 169276..16929E). */
+        for (unsigned i=0;i<6u;i++) a->palette[i]=c->palette[i];
         SB(0x14,ga_b(c,0x14));
         ga_project(a,e);
         if ((st=step(a,e))<0) return GA_UNSUPPORTED;

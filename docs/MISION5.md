@@ -734,13 +734,85 @@ máquina) y `01CDxx` (1545..1602), `0DEA44` / `0DEC14` (del jugador, cámara 128
   escena en ares: **208 ranuras** (el suelo). ares alcantarilla (`--fire --jump 2.5`,
   300 s): **cámara 1568** (antes 673), 0 rutinas sin portar, la manivela no se agarra.
 
-- **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
+- (Resuelto en la octava tanda: `040BE6` traducida.) **`unsupported routine=aff5e` intermitente en m5s1** (matriz de A, `soldier line=614 detail=305`): no es `0AFF5E` (la
   marcha agachada, nativa en `neo_soldier_ai.c`) sino la muerte del soldado agachado (`0407CA`, tabla `0407F4`) por
   un golpe de **tipo 5** (`detail` 305 = tipo 5, en el suelo, agachado): la entrada `040BE6`, sin traducir. Elige el
   programa `2410E2` / `241056` por el bit 15 de `eor.w` entre D0 (`+5B`, que `0407DA` acaba de poner a 0) y D1.w, cuya
   parte alta es la que deja `01495C` en `04097A`: con contacto, `swap` de (superficie − y) (el signo del dy del sondeo);
   sin contacto, el resto de `013968`. Solo pasa cuando el mando automático mata a un soldado agachado con ese tipo de
   golpe (de ahí ~1 de cada 4 pasadas). **Pendiente**: una captura de esa muerte para fijar D1 (sin ella, parada).
+
+### Fase 2, octava tanda (12-XI, agente B): el agarre de la manivela, el soldado quemado y la muerte agachada
+
+**Captura `C`** (una sola sesión de MAME, réplica de `run4` desde `sec08_274387`, 274388..277000, volcados cada 5
+fotogramas; `captures-m5/fam/runC.sh`). Mando nuevo de solo entrada `MSX_FULL_CRANK=<n>` (`capture_fullgame.lua`): anda
+hasta que el +3C del jugador cae en el rectángulo de la manivela (`095938` / `095940`, espejado por su `+15` bit 0), se
+gira hacia ella (`0C069E`), y pulsa solo A cada 6 fotogramas hasta que `095C76` la suelta. Agarradas las dos variantes:
+`+70` = 0 (274634..274750) y `+70` = 1 (274923..275037), las dos hasta el final (`+95` del hijo). Después
+`MSX_FULL_CRANK_WEAPON=60:4` (el lanzallamas, como `MSX_FULL_GIVE_WEAPON`) para el soldado quemado. Raíces de familia
+`959b0,95c98,95f8c,96140,8996a,89948,8995a,8a264` y el nodo del jugador `1014c4`; sondas del depurador en `0409B4` /
+`0409BA` (entrada y salida de `01495C` en `04097A`) y `040BF2`.
+
+- **El agarre** (`src/neo_m5sewer.c`): `095DCE` (`+84`, `095B64` = `0AA760` con el asiento 0 / 47, `+86` = el `+6E` del
+  jugador, `0AA83A` clase 5, `andi.w #FFEF` en la palabra de `0CA2CE`), `095E08` (el hijo `096140`, programa `29CA7A`,
+  `+50` = `095950` / `09595C`), `095E58..095F8A` (soltar por `+95` o por otra tecla: `095C76`, clase 3 ó 5; con
+  `10F000` bit 7 apagado `0C05EC`: jugador invulnerable → `+5F` bit 7 y `+5A` a 0, si no `004C24` y un golpe suelta
+  con la clase 0; cada A suma 9 a `+88`, `+97` = F; `095B98`: la rueda por `095A94[+91]`, en el paso 4 hacia delante
+  `+96` y el sonido 108B, la cuenta siguiente de `095B14` / `095B24` / `095B34`), `096140` / `0961CE` (el jugador girando:
+  paleta `034330[+86]` dos veces, `+14` = `+1A` con `0C05EC` d1 && d2 && d3, programas `095AD4[+91]`; `009CCE` no se
+  reproduce, como en `neo_slug.c`) y la salpicadura `0959B0` / `0959D4` de la llamada `095A74` de los programas de la
+  rueda (`00411C` tras el actor del guion, paleta 204, programa `29C98C`). Jugador (`marco_mount.c`): la salida de clase
+  3 y 5 es `0C1F4A` (`+15` bit 0 con la 5; la forma gorda 2 con `+86` ≥ 20 → `0C1E94`, parada explícita): de pie,
+  `+00` = `0C1FA6`, y `gameplay.c` devuelve el jugador del port (`MARCO_MOUNT_STAND`).
+- Familias **`m5grab`** (`--range 959b0-96200 --range 8c374-8c700`, los RAM de `m5pow` y `--script-actor 101414
+  --script-routines 959b0`: **24 nodos, 1947 actualizaciones iguales a MAME**, con los dos premios recogidos) y
+  **`m5sewer2`** (los soldados de `C`, con el `+15` del jugador `--ram 1014d8-1014da`: **108 nodos, 9814 actualizaciones
+  iguales**, entre ellas el quemado `089ED6`). El banco de pruebas (`test_neo_family.c`) escribe ahora de vuelta las
+  palabras de entrada y lee / escribe los campos del jugador de las rutinas de armas (`+93`, `+94`, `+95`, `+9A` bit 4):
+  sin eso el premio de arma 0B (`0C0928`: `+94`) no cuadraba.
+- Paletas de `C`: **878** (quemado), **886**, **887** y **204**. **888, 889 y 88A** de las capturas `P90`, `Q90_14` y
+  `R2` (réplicas de `run4` desde `sec08_274387` con volcados cada fotograma, `captures-m5/fam/runP.sh`; `MSX_FULL_FIRE_CYCLE`
+  nuevo, de solo entrada: A y C solo en los últimos fotogramas de cada periodo, 90:14, para que los soldados apunten
+  más; `R2` con la ametralladora, `MSX_FULL_GIVE_WEAPON=274700:1`). Solo guardan RAM y paletas. La lista sin sangre
+  `E5382[+8C]` empieza en el `+8C` del golpe y baja de 1 en 1 cada dos actualizaciones: `+8C` vale 1..5 al apuntar
+  (`089DE0`: n / 6 + 1) y 6 / 7 solo en la huida (`2850DA`), cuyo estado `08A040` no registra golpes (sin `004C24`).
+  Así **88B y 88C no los muestra ningún soldado de la alcantarilla** (en las rutinas traducidas de la ROM nada pone `+72` = `E5382` con
+  `+8C` ≥ 6); quedan sin paleta en el paquete, sin rellenar. El paquete de la M6 (que lleva los soldados del grupo `m5`)
+  pasa a 1213 trozos: `SCENE_MISSION_CHUNKS_MAX` 1200 → 1216. Descriptores de `C` (`C@959b0-96200`, `C@89948-8a700`): 848 fotos, 1 085 958 px iguales, **68 distintos en 6
+  fotos** (soldados con la llama encima; sin cerrar, como los de las tandas anteriores). Paquete de la M5: 1144 trozos.
+- **Muerte agachada `040BE6`** (`neo_soldier_ai.c`, `neo_m3enemy.c`): traducida desde la ROM. `D0.w` = `+5B` (0, con el
+  byte alto 0 de `tipo × 4`), `D1.b` = `seq` del `+15` bit 0, y el bit 15 de `D1.w` es el que deja `01495C`
+  (`neo_kernel_1495c_d1`, nuevo): con superficie, el `swap` de (y del resultado + su `+18`) − (y + `+18` de la
+  petición); sin ella, el `D1` de `013968`. Programa `241056` si el `eor.w` es negativo, si no `2410E2`; `+00` =
+  `040DF0`. Las sondas de `C` dan cuatro muertes por `04097A` (todas con superficie: `D1` = 00000000 tres veces y
+  8000FFFF una), ninguna agachada de tipo 5 (`040BF2` sin disparar): falta una captura de esa muerte para
+  contrastarla.
+- **Memoria**: con el agarre la imagen pasaba del mínimo (logo, personajes, M4: 3328 KB; M6 etapa 3: 3326 KB, para
+  3332). Sin bajar mínimos: `pinned`, `map_chunk` y `warm_queued` de `scene_assets.c` a un bit por trozo (5,8 KB de bss
+  menos). Logo y M6 etapa 3 en ares: PASS, caché de 3328 KB.
+- **Orden del jugador** (sin cambiar): el port mueve al jugador antes que a los actores del mundo; en el original el
+  jugador va después de la manivela, cuyo `andi.w #FFEF` le quita la pulsación de A del agarre. En el port esa
+  pulsación ya ha disparado: un tiro de más en la actualización del agarre (pendiente, en el motor compartido).
+
+**Bloqueo de la subida (12-XI)**: tras fusionar ccr `6e0e2d9` (jefe de la M4 de A) la prueba del logo falla siempre
+igual en ares (`late=211`, `cpu_mean_us=11986` frente a 7310 en el cartucho de `ws-m4`; 335 fotogramas en 9,15 s):
+determinista, no es el disco ni los paquetes (con los paquetes de A falla igual), ni la caché de escena (con las
+matrices `bool` también), ni la alineación del montón (rellenado para igualar a A: igual). Antes de la fusión, mismo
+código de la M5: PASS. Con `neogeo_logo.o` enlazado al final baja a `late=89`: apunta a la disposición del código
+(libdragon se desplaza 0xD20 respecto a A y sus manejadores de interrupción y `fm_sincosf` caen en las mismas líneas de
+la caché de instrucciones que `msx_neogeo_logo`), sin confirmar. **Resuelto** (bisección, causa y corrección en
+[RENDIMIENTO.md](RENDIMIENTO.md), «Caché de instrucciones: el logo tras la fusión de ccr»): la causa era la caché de
+instrucciones. `floorf` de libm, al principio del programa, compartía 9 conjuntos con `rdpq_triangle_rsp` de
+libdragon, que va detrás del juego, y se expulsaban en cada vértice. Ahora el logo, `floor` y `floorf` van en
+`keep.text`, el formato del triángulo se copia a la pila y `tools/check_icache.py` comprueba cada cartucho tras el
+enlace. Logo: PASS, 6876 µs, `late=0`. Subida (13-XI, tras fusionar ccr `13d2da0`): `make check` en verde y matriz
+(`regression_ares.py` con `--m1end`) sin regresiones: logo, pausa, personajes, M4, M5 ×3, M6 ×3 y M1→M2 PASS; `veh`
+(B69) FAIL la primera vez (el mando ciego no pasa la parada de la cámara 1920 en 3000 s, 85 muertes) y PASS al
+repetirla con el mismo cartucho (1651 s): la prueba depende del reloj del anfitrión, no es determinista. Tras fusionar
+también `178d046` (jefe de la M4 en el mundo): el paquete de la M6 rehecho tiene 1224 trozos (grupo `m5` con los
+pilotos del Slugnoid `09649C[1..3]`; 1223 en la copia de formato 4 de `make check`, que fallaba con «mission 6 pack
+refused»): `SCENE_MISSION_CHUNKS_MAX` 1216 → 1224 y paquetes de `romfs/` rehechos. `make check` en verde y matriz
+completa PASS (`veh` incluido, 2520 s).
 
 ## Pendiente (fase 2, por orden)
 

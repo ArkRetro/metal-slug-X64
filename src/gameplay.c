@@ -650,6 +650,7 @@ static void mount_after_world(msx_game_t *g) {
             g->dismounts++;start_death(g,cause,false);neo_vslot_release(&w->vslots,0);
             return;
         }
+        if (r==MARCO_MOUNT_STAND) {g->dismounts++;g->mount=MSX_MOUNT_NONE;return;}   /* 0C1F4A: the port's standing player */
     }
     if (r==MARCO_MOUNT_EJECT) {
         g->dismounts++;g->mount=MSX_MOUNT_EJECT;g->grounded=false;

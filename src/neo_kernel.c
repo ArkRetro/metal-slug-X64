@@ -601,6 +601,14 @@ static bool k138a0(kr_t *k) {
     }
     return cut;
 }
+uint32_t neo_kernel_1495c_d1(const neo_kscene_t *scene,const neo_kreq_t *q,const neo_kres_t *r) {
+    if (!(r->flags&1u)) return (uint32_t)r->y;                          /* 0149A8 -> 0149C4 */
+    kr_t k={0};k.s=(neo_kscene_t *)scene;
+    const neo_kobj_t *a=obj(&k,q->parent),*b=obj(&k,r->parent);
+    uint32_t d7=(uint32_t)q->y+(a?(uint32_t)a->y:0u);                   /* 01498C..014996 */
+    uint32_t d1=(uint32_t)r->y+(b?(uint32_t)b->y:0u);                   /* 0149AC..0149B4 */
+    return SWAP(d1-d7);                                                  /* 0149B8, 0149BA */
+}
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
     kr_t k={0};k.s=scene;
     if (!known(q->parent)) return false;

@@ -501,18 +501,28 @@ static bool facing_away(const neo_soldier_t *s,uint16_t *distance) {
 }
 
 /* ---- death ---------------------------------------------------------------- */
-static void death_setup(ctx_t *c) { /* 04097A */
+/* 04097A; returns the D1 its 01495C leaves (040BE6 reads it). */
+static uint32_t death_setup(ctx_t *c) {
     neo_soldier_t *s=c->s;
     if (!(s->b.flags5f&64u)) {s->b.flags5f|=64u;SB(0x6e,0);}
     s->anim.field50_tag=0;s->b.flags5f&=127u;
     /* 0405EA: 01B2BE carry clear (BLOOD ON) 0x20E, carry set (OFF) 0x22F. */
     s->palette_resource=neo_blood_palette(NEO_BLOOD_SOLDIER_DEATH,c->e->blood);
     s->anim.field50_tag=0;s->group69=0xff;
-    uint16_t flags=0;probe_vertical(c,-1,&flags);
+    uint16_t flags=0;uint32_t d1=0;
+    {   /* 01495C with D0 = FFFF */
+        neo_contact_actor_t *b=&s->b;neo_kres_t k;
+        int32_t dy=(int32_t)(0xffffu<<16);
+        if (query(c,b->x,b->y,0,dy,0,&k)) {
+            neo_kreq_t q={b->x,b->y,0,dy,kobj(b->parent_tag),0,0,0,0,0,0};
+            flags=k.flags;d1=neo_kernel_1495c_d1(c->e->kernel,&q,&k);
+        }
+    }
     SB(0x72,(flags&8u)?0xff:0);
     if (flags&8u) {s->b.field66=0xfff2;s->b.word1e=0xfff2;}
     SB(0x70,(s->b.flags15&64u)?0xff:0);
     SL(0x76,0);s->b.scalar62=0;SB(0x71,0);SB(0x6f,0);SB(0x74,0);
+    return d1;
 }
 /* 040C8E (grounded and air tables, kind 1: the armoured vehicle's blast,
  * row 0E4EBE): thrown up and back, then 040D06. */
@@ -541,9 +551,14 @@ static void death_child_40f04(ctx_t *c) {
 static int death_dispatch(ctx_t *c,bool crouch) { /* 0406B6 / 0407CA */
     neo_soldier_t *s=c->s;uint8_t kind=s->b.timer5a;
     if (!kind) return 0;
-    death_setup(c);
+    uint32_t d1=death_setup(c);
     kind=s->b.timer5a;s->b.timer5a=0;
     if (crouch) s->f5b=0; /* 0407DA writes a word over +5A/+5B */
+    if (crouch && kind==5) { /* 040BE6: D0.w = +5B (high byte 0 from kind * 4), D1.b = seq of +15 bit 0, eor.w; bmi */
+        uint16_t d0w=s->f5b,d1w=(uint16_t)((d1&0xff00u)|((s->b.flags15&1u)?0u:0xffu));
+        if (!anim_start(c,((d0w^d1w)&0x8000u)?0x241056u:0x2410e2u)) return -1;
+        s->routine=0x40df0;return 0;
+    }
     bool grounded=(s->b.flags15&64u)!=0;
     /* Dispatch tables: 0406EA (grounded), 040750 (air), 0407F4 (crouch).
      * Entries: 040DC0/040DD8/040A28 start a program and continue in 040DF0;

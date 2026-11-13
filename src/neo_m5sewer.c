@@ -8,9 +8,13 @@
  *   004C24, 01436A, 01AD8C, 00427A, 0C8BEC (095948) -> 004188; +95 set (the
  *   child is done): 095C38 (once, +98: the explosion 01C706 (D0 = 2A) at
  *   (28, 8), sound 106A); else 0AA606 (0AA616 with 0C069E: the rectangle
- *   095938, or 095940 and D1 = FF with +70). A player who grabs it (the
- *   vehicle slot of class 5, 095B64 / 0AA83A, then 095E08..095F8A, 096140,
- *   0C05EC, 0AA7FC) is not in capture X: explicit stop at 095DCE (pending).
+ *   095938, or 095940 and D1 = FF with +70). The grab (capture C):
+ *   095DCE (+84, 095B64 = 0AA760 seat 0 / 47, +86, 0AA83A class 5, the
+ *   input word's bit 4 cleared), 095E08 (the turning player 096140,
+ *   program 29CA7A, +50 = 095950 / 09595C), 095E58..095F8A (A adds 9 to
+ *   +88, 095B98 turns the wheel 095A94[+91], 0C05EC / 004C24, let go by
+ *   095C76 (class 3 / 5) or a hit (class 0)); the wheel's call 095A74 makes
+ *   the splash 0959B0 (palette 204, program 29C98C) after the script actor.
  * - 095F8C (its child): 01ABC8 and the cell map 095B54[+72] by 0140C0;
  *   095FAE: the items 08C374 of the words +7C..+82 by 08CD70 at
  *   (C + 18 * i, 10), life FFFF, +8B = 1; 095FFC: 01ABC8; creator gone ->
@@ -82,6 +86,11 @@ static bool sewer_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
         SB(0x15,B(0x15)^2u);
         SW(0x76,W(0x76)==0u?2:0);
         return true;
+    case 0x95a74: {                                                      /* the wheel's program: the splash 0959B0 */
+        neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x959b0,true):NULL;   /* 00411C after the script actor, D0 = 2A */
+        if (c) ga_place_at(c,a,e,0,0);                                     /* 01ACF2 */
+        return true;
+    }
     case 0x8a6e8: {                                                      /* 08A5D4: A80000 */
         uint32_t d0=0xa80000u;
         if (BIT(0x15,1)) d0=0u-d0;
@@ -101,6 +110,53 @@ static bool crank_idle(neo_gactor_t *a,neo_genv_t *e) {
     if (!ga_anim_start(a,e,0x29c9d4,0x100)) return false;
     SL(0,0x95d6e);
     return true;
+}
+static uint16_t node_word(neo_genv_t *e,const neo_gactor_t *a) {return e->node_word?e->node_word(e->ctx,a):(uint16_t)(0x8000u|(uint16_t)a->index);}
+/* The bytes the slot services write into the node directly, written again through the actor (as neo_tank.c). */
+static void touched(neo_gactor_t *a) {static const uint8_t o[]={0x4e,0x4f,0x5e,0x5f};for (unsigned i=0;i<sizeof(o);i++) ga_sb(a,o[i],a->m[o[i]]);}
+static unsigned rider(neo_gactor_t *a) {return W(0x84)&1u;}
+/* 095B64: 0AA760 for the player +84 with the seat (0 or 47 by +70, 0); carry
+ * (true) when bound, *d0 = the player's +6E; else +94 = 0. +95 set: no carry. */
+static bool k95b64(neo_gactor_t *a,neo_genv_t *e,uint16_t *d0) {
+    if (B(0x95)) return false;
+    neo_vehicle_env_t *v=e->vehicle;unsigned p=rider(a);uint16_t p6e=0;
+    neo_vslot_player_t pl={v->exists[p],v->player[p]};
+    bool bound=neo_vslot_bind(v->slots,p,a->m,node_word(e,a),&pl,e->video,W(0x70)?0x47:0,0,&p6e);
+    touched(a);
+    if (bound) {if (d0) *d0=p6e;return true;}
+    SB(0x94,0);return false;
+}
+/* 095C76: 0AA7FC kind 3 (or 5 with +70), +00 = 095D2E. */
+static void k95c76(neo_gactor_t *a,neo_genv_t *e) {
+    neo_vslot_exit(e->vehicle->slots,rider(a),a->m,node_word(e,a),W(0x70)?5:3);touched(a);
+    SL(0,0x95d2e);
+}
+/* 0C05EC: player p's +84 nonzero (d1), +9A bit 2 (d2), +84 >= 10 and odd
+ * (d3); all clear for a player who does not exist (0040AC) or with +5F bit 7. */
+static void k0c05ec(neo_genv_t *e,unsigned p,bool *d1,bool *d2,bool *d3) {
+    const uint8_t *m=e->vehicle->exists[p&1u]?e->vehicle->player[p&1u]:NULL;
+    *d1=*d2=*d3=false;
+    if (!m || (m[0x5f]&0x80u)) return;
+    uint16_t w84=(uint16_t)(m[0x84]<<8|m[0x85]);
+    *d1=w84!=0;*d2=(m[0x9a]&4u)!=0;*d3=w84>=0x10u && (w84&1u);
+}
+/* 095B98: +92 counts down; at 0 the wheel steps by +93 (095A94[+91]), at
+ * step 4 turning forwards +96 (the child's +8A) and sound 108B; the next
+ * count from 095B14 / 095B24 / 095B34 (by +86 < 2 and +88 >= 28) while +97,
+ * else 2. */
+static void k95b98(neo_gactor_t *a,neo_genv_t *e) {
+    SB(0x92,B(0x92)-1u);
+    if (B(0x92)) return;
+    uint8_t d0=(uint8_t)((B(0x91)+B(0x93))&0xfu);SB(0x91,d0);
+    if (!ga_anim_start(a,e,rl(e,0x95a94u+4u*d0),0x100)) return;
+    if (B(0x91)==4u && !(B(0x93)&0x80u)) {SB(0x96,0xff);sound(e,0x108b);}
+    if (!B(0x97)) {SB(0x92,2);return;}
+    uint32_t t0,t1;
+    if (W(0x86)<2u) {t0=0x95b24;t1=0x95b14;} else {t0=0x95b34;t1=0x95b24;}
+    if (S16(W(0x88))>=0x28) t0=t1;
+    const uint8_t *t=ga_rom(t0+B(0x91));
+    if (!t) {ga_fail(e,t0);return;}
+    SB(0x92,t[0]>>1);
 }
 /* 095C38: once (+98), the explosion 01C706 (D0 = 2A) at (28, 8), sound 106A. */
 static void k95c38(neo_gactor_t *a,neo_genv_t *e) {
@@ -134,7 +190,7 @@ static ga_result_t crank_tick(neo_gactor_t *a,neo_genv_t *e) {
         SB(0x95,0);
         if (!crank_idle(a,e)) return GA_UNSUPPORTED;
     }   /* fall through */
-    case 0x95d6e: {
+    case 0x95d6e: wait: {
         ga_register(a,e,NULL,NULL);                                      /* 004C24 */
         SB(0x5a,0);SL(0x30,0);
         ga_stationary(a,e);depth(a);STEP();
@@ -147,7 +203,98 @@ static ga_result_t crank_tick(neo_gactor_t *a,neo_genv_t *e) {
         neo_vslot_player_t pl[2]={{v->exists[0],v->player[0]},{v->exists[1],v->player[1]}};
         neo_vslot_grab_t g={W(0x70)!=0,{v->input[0][0],v->input[1][0]}};
         int p=neo_vslot_select_grab(v->slots,a->m,pl,rect,v->halted!=0,&g,rng,e);
-        if (p>=0) {ga_fail(e,0x95dce);return GA_UNSUPPORTED;}            /* the grab: no capture (pending) */
+        if (p<0) return done(e,GA_MORE);
+        SW(0x84,(uint16_t)p);                                            /* 095DCE */
+        uint16_t d0;
+        if (!k95b64(a,e,&d0)) return done(e,GA_MORE);
+        SW(0x86,d0);
+        neo_vslot_mount(v->slots,rider(a),a->m,5,0,0,0);touched(a);      /* 0AA83A */
+        v->input[rider(a)][0]&=0xffefu;                                  /* 0CA2CE: andi.w #FFEF, (a0) */
+        SL(0,0x95e08);
+        return done(e,GA_MORE);
+    }
+    case 0x95e08: {
+        neo_gactor_t *c=spawn(a,e,0x96140,0x1c);
+        if (c) ga_sw(c,0x70,W(0x70));
+        SB(0x91,0);SB(0x92,0);SW(0x88,0);SB(0x94,0xff);
+        if (!ga_anim_start(a,e,0x29ca7a,0x100)) return GA_UNSUPPORTED;
+        SL(0x50,W(0x70)?0x9595cu:0x95950u);
+        SL(0,0x95e58);
+    }   /* fall through */
+    case 0x95e58: {
+        if (!e->vehicle || !e->vehicle->slots) {ga_fail(e,0x95e58);return GA_UNSUPPORTED;}
+        neo_vehicle_env_t *v=e->vehicle;
+        if (B(0x95)) {k95c76(a,e);if (!crank_idle(a,e)) return GA_UNSUPPORTED;goto wait;}
+        if (!(v->dip10f000&0x80u)) {
+            bool d1,d2,d3;k0c05ec(e,W(0x84),&d1,&d2,&d3);
+            if (d1) {SB(0x5f,B(0x5f)&0x7fu);SB(0x5a,0);}                  /* 095EA4 */
+            else if (ga_register(a,e,NULL,NULL)) {                        /* 004C24 */
+                neo_vslot_exit(v->slots,rider(a),a->m,node_word(e,a),0);touched(a);
+                if (!crank_idle(a,e)) return GA_UNSUPPORTED;
+                goto wait;
+            }
+        }
+        uint16_t pad=v->input[rider(a)][0];                              /* 0CA2CE */
+        if (pad&0x10u) {
+            SB(0x97,0xf);SB(0x93,1);
+            if (!B(0x92)) {SB(0x92,1);SW(0x88,0);}
+            SW(0x88,W(0x88)+9u);
+        }
+        if (W(0x88)) SW(0x88,W(0x88)-1u);
+        if (B(0x97)) {
+            SB(0x97,B(0x97)-1u);
+            if (!B(0x97)) {SW(0x88,0);if (B(0x91)<=7u) SB(0x93,0xff);}
+        }
+        if (B(0x92)) k95b98(a,e);
+        if (!W(0x88) && !B(0x91) && B(0x92)) {
+            if (!ga_anim_start(a,e,0x29ca7a,0x100)) return GA_UNSUPPORTED;
+            SB(0x92,0);
+        }
+        if (v->input[rider(a)][0]&0xffefu) k95c76(a,e);
+        SL(0x30,0);
+        ga_stationary(a,e);depth(a);STEP();
+        if (!k95b64(a,e,NULL)) SL(0,0x95d2e);
+        return done(e,GA_MORE);
+    }
+    case 0x95d2e:
+        if (!crank_idle(a,e)) return GA_UNSUPPORTED;
+        goto wait;
+    case 0x959b0:   /* the splash of the wheel (095A74): palette 204, program 29C98C */
+        ga_palette(a,0x204);
+        START(0x29c98c);
+        SL(0,0x959d4);
+        /* fall through */
+    case 0x959d4:
+        ga_project(a,e);STEP();
+        if (r) return done(e,GA_DELETE);                                 /* 00427A carry: 10F00C + 3EF, 004188 */
+        return done(e,GA_MORE);
+    case 0x96140: {   /* the turning player (its creator the crank) */
+        neo_gactor_t *c=creator(a,e);
+        int16_t d0=0;
+        if (W(0x70)) {SB(0x15,B(0x15)|1u);d0=0x47;}
+        ga_place(a,e,d0,0,c?NEO_GA_TAG(c->index):0);                     /* 01AD6E */
+        uint16_t w86=c?ga_w(c,0x86):0;SW(0x86,w86);SB(0x90,w86);
+        uint16_t pal=rw(e,0x34330u+2u*W(0x86));
+        ga_palette(a,pal);ga_palette(a,pal);                             /* 009EA8 D1 = 1, twice */
+        /* 009CCE (+1A, 0, 8): palette fade RAM 1068EA (no node byte), not reproduced (as neo_slug.c). */
+        SW(0x84,c?ga_w(c,0x84):0);SB(0x91,0x63);
+        SL(0,0x961ce);
+    }   /* fall through */
+    case 0x961ce: {
+        neo_gactor_t *c=creator(a,e);
+        if (!c || !ga_b(c,0x94)) return done(e,GA_DELETE);              /* 004188 */
+        SB(0x14,B(0x19));
+        bool d1,d2,d3;
+        if (!e->vehicle) {ga_fail(e,0xc05ec);return GA_UNSUPPORTED;}
+        k0c05ec(e,W(0x84),&d1,&d2,&d3);
+        if (d1 && d2 && d3) SB(0x14,B(0x1a));
+        uint8_t d0=ga_b(c,0x91);
+        if (d0!=B(0x91)) {
+            d0&=0xfu;SB(0x91,d0);
+            if (!ga_anim_start(a,e,rl(e,0x95ad4u+4u*d0),0x100)) return GA_UNSUPPORTED;
+        }
+        SW(0x1e,ga_w(c,0x1e));
+        ga_project(a,e);STEP();
         return done(e,GA_MORE);
     }
     case 0x95f8c:
@@ -570,7 +717,7 @@ static ga_result_t gun_tick(neo_gactor_t *a,neo_genv_t *e) {
         ga_fail(e,L(0));return GA_UNSUPPORTED;
     }
 }
-static const uint32_t crank_r[]={0x95c98,0x95d6e,0x95f8c,0x95fae,0x95ffc,0x960a6};
+static const uint32_t crank_r[]={0x959b0,0x959d4,0x95c98,0x95d2e,0x95d6e,0x95e08,0x95e58,0x95f8c,0x95fae,0x95ffc,0x960a6,0x96140,0x961ce};
 static const uint32_t soldier_r[]={0x89948,0x8995a,0x8996a,0x899a6,0x899c0,0x899f8,0x89a14,0x89a38,0x89a4e,0x89a8c,0x89aa6,0x89ada,
     0x89af6,0x89b16,0x89b30,0x89b6c,0x89b88,0x89bb0,0x89bd2,0x89bfe,0x89c12,0x89c36,0x89c6e,0x89cb6,0x89cda,0x89cfc,0x89d1e,0x89d2a,
     0x89d56,0x89db4,0x89de0,0x89e34,0x89ea6,0x89ed6,0x89f56,0x89fbe,0x89fdc,0x89ff2,0x8a00a,0x8a040};

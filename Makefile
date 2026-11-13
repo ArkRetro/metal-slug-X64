@@ -140,7 +140,27 @@ $(BUILD_DIR)/src/main.o $(BUILD_DIR)/diag/main.o: N64_CFLAGS += -DMSX_BOOT_CINEM
 else
 BOOT_CINE_OBJS :=
 endif
-MSLUGX_GAME_OBJS = $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+# libm's floor and floorf after the rest of the program's code (keep.text,
+# first of it): rdpq_triangle_rsp calls them for every vertex, and in their
+# own place (libm's plain .text, at the start of the program) they shared
+# instruction cache lines with it whenever the game code before libdragon
+# had a given size (the boot logo at 12 ms of CPU a frame instead of 7:
+# docs/RENDIMIENTO.md, "Caché de instrucciones"). Same machine code, taken
+# from the toolchain's libm.a; only its section changes.
+LIBM_KEEP_OBJS := $(BUILD_DIR)/libm-keep/s_floor.o $(BUILD_DIR)/libm-keep/sf_floor.o
+$(BUILD_DIR)/libm-keep/%.o: $(N64_LIBDIR)/libm.a
+	@mkdir -p $(dir $@)
+	cd $(dir $@) && $(N64_GCCPREFIX_TRIPLET)ar x $< libm_a-$*.o
+	$(N64_OBJCOPY) --rename-section .text=keep.text.libm_$* $(dir $@)libm_a-$*.o $@
+	rm -f $(dir $@)libm_a-$*.o
+# Each cartridge is checked after the link (tools/check_icache.py): the
+# logo's per-vertex path must not share an instruction cache line.
+ICACHE_CHECKED := mslugx-explorer mslugx-m1end
+$(foreach c,$(ICACHE_CHECKED),$(eval $(c).z64: $(BUILD_DIR)/$(c).icache))
+$(BUILD_DIR)/%.icache: $(BUILD_DIR)/%.elf tools/check_icache.py
+	python3 tools/check_icache.py $< $(BUILD_DIR)/$*.map > $@.txt || { cat $@.txt; exit 1; }
+	@tail -1 $@.txt; touch $@
+MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -511,7 +531,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m5pow m5sewer m4boss
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m5pow m5sewer m4boss m5grab m5sewer2
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -607,7 +627,12 @@ FAMILY_ARGS_m5mech := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --r
 # family); m5sewer = the sewer soldiers 089948 / 08995A / 08996A and their guns 08A264. captures-m5/fam/X (run4 replay from
 # sec08_274387, 274388..276400); m5pow with the vehicle slots, input words and player nodes (0AA606 / 0C069E).
 FAMILY_ARGS_m5pow := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --item-kinds 3,6,52,53 --pickup-ram
+# m5grab = the crank grabbed and turned (095DCE..095F8A, 095B64, 095B98, 095C76, the turning player 096140): captures-m5/fam/C
+# (run4 replay from sec08_274387 with MSX_FULL_CRANK=2: the cranks of +70 = 0 and 1, 274388..277000), the ranges and RAM of m5pow.
+FAMILY_ARGS_m5grab := $(FAMILY_ARGS_m5pow) --script-actor 101414 --script-routines 959b0
 FAMILY_ARGS_m5sewer := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --tree-deletes 89948-8a264
+# m5sewer2 = the same soldiers in capture C (the flame from 275097: the burnt 089ED6, palette 878).
+FAMILY_ARGS_m5sewer2 := $(FAMILY_ARGS_m5sewer)
 FAMILY_ARGS_m5ledge := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 FAMILY_ARGS_m5car := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --fresh-flip --split-children --script-actor 101414 --script-routines 8c374
 # m5deco = the Mission 5 sewer decorations 0BC4F4 (script records of the sewer's start,

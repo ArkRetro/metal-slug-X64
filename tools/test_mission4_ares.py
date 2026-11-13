@@ -14,6 +14,7 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+p.add_argument('--continues',action='store_true',help='Start at every CONTINUE? panel (a player\'s choice, as tools/test_mission6_ares.py)')
 p.add_argument('--boss',action='store_true',help='PASS only when the boss 02267E dies and Mission 5 starts (`MSX mission 5 stage N start`, 018F92 -> 01891E); the run stops there')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (L-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
@@ -61,7 +62,7 @@ try:
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
-    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0
+    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     while time.monotonic()-t0<a.seconds:
@@ -73,6 +74,9 @@ try:
         if cam>=a.until or (a.boss and re.search(r'MSX mission 5 stage \d+ start',text)):break
         # The camera waits for something behind Marco (the tank 027F54 at 1000): after 6 s without
         # progress, turn back and fire for 5 s of every 8.
+        if a.continues and text.count('MSX panel continue')>continued:
+            for n in list(held):hold(n,False)
+            time.sleep(1.0);tap('Return');time.sleep(.5);continued=text.count('MSX panel continue');continue
         # Some locks wait for enemies above or under Marco (the camera lock at 4360 of the script 2DC67A waits for
         # group 6 < 1: the helicopters 085522, which hover over the player and leave only when out of bombs): the
         # stuck cycle is 5 s back and fire of every 8 s (the tank behind Marco at 1000) and, after 40 s stuck, of every 16 s
@@ -91,7 +95,7 @@ try:
     for n in list(held):hold(n,False)
     text=log()
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
-    print('camera',cam,'screenshots',k);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
+    print('camera',cam,'screenshots',k,'continues',continued);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
     for s in stops[:40]:print('  ',s)
     ok=cam>=a.progress and 'not loaded' not in text
     if a.boss:

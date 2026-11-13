@@ -805,7 +805,10 @@ la caché de instrucciones que `msx_neogeo_logo`), sin confirmar. **Resuelto** (
 instrucciones. `floorf` de libm, al principio del programa, compartía 9 conjuntos con `rdpq_triangle_rsp` de
 libdragon, que va detrás del juego, y se expulsaban en cada vértice. Ahora el logo, `floor` y `floorf` van en
 `keep.text`, el formato del triángulo se copia a la pila y `tools/check_icache.py` comprueba cada cartucho tras el
-enlace. Logo: PASS, 6876 µs, `late=0`.
+enlace. Logo: PASS, 6876 µs, `late=0`. Subida (13-XI, tras fusionar ccr `13d2da0`): `make check` en verde y matriz
+(`regression_ares.py` con `--m1end`) sin regresiones: logo, pausa, personajes, M4, M5 ×3, M6 ×3 y M1→M2 PASS; `veh`
+(B69) FAIL la primera vez (el mando ciego no pasa la parada de la cámara 1920 en 3000 s, 85 muertes) y PASS al
+repetirla con el mismo cartucho (1651 s): la prueba depende del reloj del anfitrión, no es determinista.
 
 ## Pendiente (fase 2, por orden)
 

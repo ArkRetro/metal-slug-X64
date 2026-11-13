@@ -40,7 +40,7 @@ def wait(pat,secs=300):
         assert proc.poll() is None,'ares exited'
         time.sleep(.05)
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
-ok=False;cam=0
+ok=False;cam=0;maxcam=0
 try:
     win=None
     while not win:
@@ -75,6 +75,7 @@ try:
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
+        maxcam=max(maxcam,cam) if mm and re.search(r'MSX stage [678] camera',text[-20000:]) else maxcam
         if cam>=a.until:break
         # --back T: every T seconds the pad faces left for 1.5 s (an enemy behind the walker at a camera stop, the tank
         # 08FF7E at the screen's edge, is never hit by a pad that only holds right).
@@ -99,7 +100,7 @@ try:
     if a.boss:
         won='MSX mission complete signal (018F92)' in text;nxt=re.search(r'MSX mission end 018846 done[^\n]*',text)
         print('boss beaten (018F92):',won,'| next mission:',nxt.group(0) if nxt else None)
-        ok=ok and won and bool(nxt) and '-> mission 6' in nxt.group(0)
+        ok=maxcam>=a.progress and 'not loaded' not in text and won and bool(nxt) and '-> mission 6' in nxt.group(0)   # the camera of the next mission follows
 finally:
     proc.terminate()
     try:proc.wait(5)

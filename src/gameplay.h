@@ -118,6 +118,10 @@ typedef struct {
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
     unsigned wall_stops,pit_deaths;   /* side stops of the sweeps 0143EE/014594 (wall_stop) */
     unsigned kernel_landings;         /* air steps landed by the sweep 013968 where the plane test missed */
+    /* Mission 6 stage 1 (the hanging bridge 10D7B6): the player stands on a
+     * floor the kernel found (its +38 is the scene root, MAME fam/P), so its
+     * ground step is the original's 014594 sweep (kangle = +6C, D7 >> 8). */
+    bool kground;uint16_t kangle;unsigned kernel_ground_steps;
     /* Reference build only: the last grounded position, where a fall
      * below the screen puts the player back (pit_rescues) instead of the
      * fall death 0C3712 (the invulnerability also covers pits). */

@@ -18,7 +18,7 @@ static const uint8_t *fixed_rom;
 static uint16_t palette[256];
 static surface_t strip;                    /* 304 x 224 CI8 */
 static uint16_t shown[NEO_FIX_WORDS];
-static uint8_t opaque[NEO_FIX_WORDS];      /* cell has a non-zero pen */
+static uint8_t opaque[(NEO_FIX_WORDS+7)/8];   /* bit per cell: it has a non-zero pen (1.1 KB less than a byte each) */
 static bool ready,valid;
 static uint32_t shown_serial;
 
@@ -52,7 +52,7 @@ static void raster(unsigned column,unsigned row,uint16_t word) {
         for (unsigned x=0;x<8;x++) {unsigned pen=fixed_pixel(fixed_rom,tile,x,y);line[x]=(uint8_t)(bank|pen);any|=pen;}
         data_cache_hit_writeback(line,8);
     }
-    opaque[column*32+row]=any!=0;
+    {unsigned i=column*32+row;if (any) opaque[i>>3]|=(uint8_t)(1u<<(i&7u)); else opaque[i>>3]&=(uint8_t)~(1u<<(i&7u));}
 }
 void hud_renderer_draw(const neo_hud_t *hud) {
     if (!ready) return;
@@ -66,7 +66,7 @@ void hud_renderer_draw(const neo_hud_t *hud) {
     bool mode=false;
     for (unsigned r=FIRST_ROW;r<FIRST_ROW+ROWS;r++) {
         unsigned first=COLUMNS,last=0;
-        for (unsigned c=FIRST_COLUMN;c<FIRST_COLUMN+COLUMNS;c++) if (opaque[c*32+r]) {if (first==COLUMNS) first=c;last=c;}
+        for (unsigned c=FIRST_COLUMN;c<FIRST_COLUMN+COLUMNS;c++) if ((opaque[(c*32+r)>>3]>>((c*32+r)&7u))&1u) {if (first==COLUMNS) first=c;last=c;}
         if (first==COLUMNS) continue;
         if (!mode) {rdpq_mode_push();rdpq_set_mode_copy(true);rdpq_mode_tlut(TLUT_RGBA16);rdpq_tex_upload_tlut(palette,0,256);mode=true;}
         unsigned x0=(first-FIRST_COLUMN)*8,w=(last-first+1)*8,y0=(r-FIRST_ROW)*8;

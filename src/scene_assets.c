@@ -55,12 +55,17 @@ enum { CHUNKS_ALL=SCENE_CHUNK_COUNT+SCENE_MISSION_CHUNKS_MAX };
 typedef struct { int chunk; bool ready,reserved; unsigned used_epoch,lru; } cache_slot_t;
 static cache_slot_t *slots;
 static int16_t chunk_slot[CHUNKS_ALL];   // slot index or -1: the cache has at most 8 MB / 16 KB = 512 slots (4.4 KB less than int)
-static uint8_t requests[CHUNKS_ALL];   // request priority: the callers pass 1, 2, 3 and 255 (6.6 KB less than unsigned)
+/* Per chunk, one byte: bits 0..3 the recorded-block pin groups (scene_renderer.c
+ * uses four), bits 4..6 the request priority as a rank (the callers pass 1, 2,
+ * 3 and 255: ranks 1..4; 0 = none). One array instead of two (2.2 KB of bss). */
+static uint8_t chunk_state[CHUNKS_ALL];
+enum { CHUNK_PINS=0x0f,CHUNK_REQUEST=0x70 };
+static inline unsigned request_rank(unsigned c) {return (chunk_state[c]&CHUNK_REQUEST)>>4;}
+static inline void request_set(unsigned c,unsigned rank) {chunk_state[c]=(uint8_t)((chunk_state[c]&~CHUNK_REQUEST)|(rank<<4));}
 /* pinned / map_chunk / warm_queued: one bit per chunk (5.8 KB of bss less than bool arrays). */
 static uint8_t pinned_bits[(CHUNKS_ALL+7)/8],map_bits[(CHUNKS_ALL+7)/8],warm_bits[(CHUNKS_ALL+7)/8];
 static inline bool bit_get(const uint8_t *b,unsigned i) {return (b[i>>3]>>(i&7u))&1u;}
 static inline void bit_put(uint8_t *b,unsigned i,bool v) {if (v) b[i>>3]|=(uint8_t)(1u<<(i&7u)); else b[i>>3]&=(uint8_t)~(1u<<(i&7u));}
-static uint8_t block_pins[CHUNKS_ALL];   // bit per recorded-block group
 static int recording=-1;
 static uint8_t *cache,*staging[2];
 static uint8_t **slot_mem;   /* each slot's 16 KiB (the cache can span several heap blocks) */
@@ -139,7 +144,7 @@ static void start_next(void) {
     if (active_chunk>=0 || pi_busy()) return;
     int chosen=-1;bool warm=false;
     for (unsigned i=0;i<CHUNKS_ALL;i++)
-        if (requests[i] && (chosen<0 || requests[i]>requests[chosen])) chosen=(int)i;
+        if (request_rank(i) && (chosen<0 || request_rank(i)>request_rank((unsigned)chosen))) chosen=(int)i;
     if (chosen<0) { chosen=warm_candidate();warm=true; }
     if (chosen<0) return;
     int victim=-1;
@@ -147,13 +152,13 @@ static void start_next(void) {
         if (slots[i].reserved) continue;   // stage tables (scene_stage_load)
         if (slots[i].chunk<0) { victim=(int)i;break; }
         if (warm) continue;   // warming only fills free slots
-        if (!slots[i].ready || bit_get(pinned_bits,slots[i].chunk) || block_pins[slots[i].chunk] || slots[i].used_epoch>completed) continue;
+        if (!slots[i].ready || bit_get(pinned_bits,slots[i].chunk) || (chunk_state[slots[i].chunk]&CHUNK_PINS) || slots[i].used_epoch>completed) continue;
         if (victim<0 || slots[i].lru<slots[victim].lru) victim=(int)i;
     }
     if (victim<0) { if (warm && capacity>=capacity_final) warm_count=warm_next; return; }   // cache full: stop warming (not while begun early)
     if (warm) warm_next++;
     if (slots[victim].chunk>=0) { chunk_slot[slots[victim].chunk]=-1;stats.evictions++;resident--; }
-    slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;requests[chosen]=0;
+    slots[victim]=(cache_slot_t){.chunk=chosen};chunk_slot[chosen]=victim;request_set((unsigned)chosen,0);
     active_chunk=chosen;active_slot=victim;active_stage=last_stage^1;last_stage=active_stage;active_warm=warm;
     uint32_t base,size;const scene_chunk_t *c=chunk_info((unsigned)chosen,&base,&size);
     unsigned length=(c->length+63)&~63u;
@@ -196,7 +201,7 @@ void scene_service(void) {
      * synchronous wait or a pending request still takes it now. */
     if (active_warm && !timing_depth) {
         bool asked=false;
-        for (unsigned i=0;i<CHUNKS_ALL && !asked;i++) asked=requests[i]!=0;
+        for (unsigned i=0;i<CHUNKS_ALL && !asked;i++) asked=request_rank(i)!=0;
         if (!asked) return;
     }
     // Prefetch spends at most SCENE_SERVICE_DECODES decodes per frame; the
@@ -221,8 +226,9 @@ bool scene_assets_idle(void) {
 static void request(unsigned chunk,unsigned priority) {
     assertf(chunk<SCENE_CHUNK_COUNT+mission_chunk_count,"Scene chunk ID");
     if (chunk_slot[chunk]>=0) return;
-    assertf(priority<=255u,"Scene request priority");
-    if (requests[chunk]<priority) requests[chunk]=(uint8_t)priority;
+    assertf(priority==1u || priority==2u || priority==3u || priority==255u,"Scene request priority");
+    unsigned rank=priority==255u?4u:priority;
+    if (request_rank(chunk)<rank) request_set(chunk,rank);
 }
 void scene_request_image(const scene_image_t *image,unsigned priority) { request(image->page/8,priority); }
 /* Every chunk decoded and resident: requests are no-ops (request() returns for
@@ -256,7 +262,7 @@ static void require_chunk(unsigned chunk,bool deferrable) {
 static const void *page_of(const scene_image_t *image,bool deferrable) {
     assertf(image->page<SCENE_PAGE_COUNT || (image->page>=SCENE_MISSION_PAGE_BASE && image->page/8u<SCENE_CHUNK_COUNT+mission_chunk_count),"Scene page ID");
     unsigned chunk=image->page/8;require_chunk(chunk,deferrable);
-    if (recording>=0) block_pins[chunk]|=(uint8_t)(1u<<recording);
+    if (recording>=0) {assertf(recording<4,"Scene pin group");chunk_state[chunk]|=(uint8_t)(1u<<recording);}
     cache_slot_t *s=&slots[chunk_slot[chunk]];s->used_epoch=epoch;s->lru=++clock_lru;
     return slot_mem[chunk_slot[chunk]]+(image->page%8)*SCENE_PAGE_BYTES;
 }
@@ -758,14 +764,14 @@ static bool reserve_slots(unsigned need,unsigned largest) {
 }
 static void forget_mission_chunks(void) {
     for (unsigned c=SCENE_CHUNK_COUNT;c<CHUNKS_ALL;c++) {
-        bit_put(pinned_bits,c,false);bit_put(map_bits,c,false);requests[c]=0;
+        bit_put(pinned_bits,c,false);bit_put(map_bits,c,false);request_set(c,0);
         if (chunk_slot[c]>=0) {slots[chunk_slot[c]]=(cache_slot_t){.chunk=-1};chunk_slot[c]=-1;resident--;}
     }
 }
 /* Waits for the chunk in flight (its slot may be reserved next). */
 static void quiesce(void) {
     while (active_chunk>=0) { if (pi_busy()) dma_wait(); else decode_active(); }
-    for (unsigned c=0;c<CHUNKS_ALL;c++) requests[c]=0;
+    for (unsigned c=0;c<CHUNKS_ALL;c++) request_set(c,0);
 }
 bool scene_mission_load(unsigned mission) {
     char path[32];snprintf(path,sizeof(path),"/mission%u.pack",mission);
@@ -1075,7 +1081,7 @@ const uint16_t *scene_palette(unsigned id) {
     assert(id<SCENE_PALETTE_COUNT);return scene_palettes[id];
 }
 void scene_record_pins(int group) { recording=group; }
-void scene_unpin_group(int group) { for (unsigned i=0;i<CHUNKS_ALL;i++) block_pins[i]&=(uint8_t)~(1u<<group); }
+void scene_unpin_group(int group) { for (unsigned i=0;i<CHUNKS_ALL;i++) chunk_state[i]&=(uint8_t)~(1u<<group); }
 unsigned scene_completed_epoch(void) { return completed; }
 void scene_begin_epoch(unsigned next) { epoch=next;frame_service_decodes=frame_sync_decodes=0; }
 void scene_complete_epoch(unsigned done) { completed=done; }

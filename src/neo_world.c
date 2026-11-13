@@ -1609,7 +1609,12 @@ static void scene_at(neo_world_t *w,int32_t x,bool reset) {
      * keeps its table; Mission 2's 0B7000 maps group 6 to 0x0A (ROM bytes
      * 00 01 02 03 04 05 0A 07). */
     static const uint8_t mission2_group_map[8]={0,1,2,3,4,5,10,7};
-    w->kernel.group_map=w->camera.l400e==0x0B7000u?mission2_group_map:soldier_group_map;
+    /* Mission 6 stage 1 (list 0BCA00, op 0x50 -> 0BC67C: ROM bytes 00 01 02
+     * 03 09 05 06 07): group 4, the bridge's cables 81..8A of 0BC6E6, is 9,
+     * so a sweep that ends on 10D7B6 leaves the root in +38 (013BC0; MAME
+     * fam/P: the player on the bridge always has 10E968). */
+    static const uint8_t mission6_group_map[8]={0,1,2,3,9,5,6,7};
+    w->kernel.group_map=w->camera.l400e==0x0B7000u?mission2_group_map:w->camera.l400e==0x0BC67Cu?mission6_group_map:soldier_group_map;
     /* Mission 3 (camera list 0B8968, no op 0x50): RAM 10C00E = 0 in run4,
      * so 012970 keeps the cell's group (docs/MISION3.md). */
     if (w->stage_camera_base==0x0B8968u && !w->camera.l400e) w->kernel.group_map=NULL;

@@ -761,9 +761,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         static unsigned last;static int seen_camera=-1,seen_height=-99999;
         if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {
             last=game.ticks;seen_camera=game.camera;seen_height=game.camera_height;
-            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u\n",
+            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u ground=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u\n",
                 (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
-                game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues,game.wall_stops,game.solid_pushes,game.kernel_landings,
+                game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues,game.wall_stops,game.solid_pushes,game.kernel_landings,game.kernel_ground_steps,
                 game.world.train.on,game.world.train.mode,(long)(game.world.train.x>>16),game.world.camera.layer_flags[1]&1u,
                 game.world.script.groups[0],game.world.script.groups[1],game.world.script.groups[2],game.world.script.groups[3]);
 #if MSX_DIAG

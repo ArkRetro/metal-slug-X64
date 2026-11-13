@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "neo_motion.h"
 #include "neo_collision.h"
+#include "neo_contact.h"
 #include "mission_camera.h"
 #include "marco_mount.h"
 #include "marco_descent.h"
@@ -460,7 +461,7 @@ static void new_life(msx_game_t *g) {
     if (g->lifebar) g->life_hits=MSX_LIFEBAR_HITS;
     marco_weapons_death(&g->world.weapons,0);marco_weapons_life(&g->world.weapons,0,&g->world.weapon_player);
     memset(g->bullets,0,sizeof(g->bullets));
-    g->velocity_x=g->velocity_y=0;g->facing=1;g->ride=0;g->air_ticks=0;   /* 0C10FE: facing right */
+    g->velocity_x=g->velocity_y=0;g->facing=1;g->ride=0;g->kground=false;g->air_ticks=0;   /* 0C10FE: facing right */
     g->mount=MSX_MOUNT_NONE;
     int32_t rx,ry;root_xy(g,&rx,&ry);
     int32_t x,y;uint8_t type=0;
@@ -565,7 +566,7 @@ static void mount_place(msx_game_t *g) {
     g->x=(int32_t)((uint32_t)p.x+nrl(m,0x28)-(uint32_t)rx);
     g->y=56*MSX_UNIT-(int32_t)((uint32_t)p.y+nrl(m,0x2c)-(uint32_t)ry);
     g->grounded=(m[0x15]&0x40u)!=0;g->facing=(m[0x15]&1u)?-1:1;
-    g->velocity_x=g->velocity_y=0;g->ride=0;g->air_ticks=0;
+    g->velocity_x=g->velocity_y=0;g->ride=0;g->kground=false;g->air_ticks=0;
 }
 /* The screen edges (camera+28 .. right_limit) on the feet: a grounded
  * player stopped by an edge stands on the floor at the stopped x (MAME,
@@ -606,7 +607,7 @@ static void descent_step(msx_game_t *g) {
     if (g->descent==MSX_DESCENT_HANG) {
         if (marco_descent_hang_after(m)) {g->descent=MSX_DESCENT_NONE;neo_landing_marker(&g->landing);}   /* 0C16B0 */
     } else if (marco_descent_fall_after(m)) g->descent=MSX_DESCENT_NONE;                               /* 0C1EBE */
-    g->grounded=ground;g->air_ticks=0;g->ride=0;
+    g->grounded=ground;g->air_ticks=0;g->ride=0;g->kground=false;
     g->velocity_x=ground?0:(int32_t)nrl(m,0x30);g->velocity_y=ground?0:-(int32_t)nrl(m,0x34);
 }
 /* 0C3250 with the port's air step for its 0143EE (as the player's own). */
@@ -803,6 +804,9 @@ static bool platform_floor(msx_game_t *g,int32_t x,int32_t y,int32_t depth,uint8
     neo_kfloor_t f;
     if (!neo_kernel_floor(k,x,y,NEO_KOBJ_TERRAIN,depth,0xff,0,0,&f) || !f.found || f.parent<NEO_KOBJ_DYN0) return false;
     if (f.parent==NEO_KOBJ_TRAIN) {   /* Mission 3: the train's platform (no ride: see docs/MISION3.md) */
+        /* Mission 6: the bridge is landed on by the air sweep 0143EE itself
+         * (neo_kernel_air_landing), which leaves +38 = the root (fam/P). */
+        if (k->bridge_ring) return false;
         *object=f.parent;*top=(int32_t)((uint32_t)f.y+(uint32_t)k->train.y-(uint32_t)k->terrain.y);return true;
     }
     if (f.parent>=NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return false;
@@ -1398,6 +1402,36 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             uint8_t object;int32_t top;
             if (platform_floor(g,body.x,body.y+8*MSX_UNIT,-16*MSX_UNIT,&object,&top)) {body.y=top;ride_on(g,object,body.x,body.y);}
             else {g->ride=0;g->grounded=false;g->air_ticks=0;}
+        } else if (g->grounded && g->kground && g->world_enabled && g->world.kernel.bridge_ring) {
+            /* Mission 6, the hanging bridge 10D7B6: 0C2888 / 0C2144 call
+             * 014594 with +62 = 0x30000 (0x28000 fat, +93 = 2; the mummy's
+             * half), negated facing left, or 0 standing and dying (0C2EB8).
+             * 4ED2 sees +30 = +62; 013968 runs from +28/+2C along
+             * 002E98(+62, +6D) with 10C009 = FF (neo_contact_prepare_ground)
+             * and 014492 keeps where it ends: on the bridge +38 stays the
+             * root (MAME fam/P: every update at x 1916..2128 writes 10E968).
+             * D6 bit 0 is +15 bit 6 (on the floor); a sweep that ends on
+             * 10C72E gives the feet back to the terrain model. */
+            int32_t speed=!direction || dying?0:g->world.weapon_player.form93==2u?0x28000:0x30000;
+            speed>>=mummy;if (direction<0) speed=-speed;
+            solid_push_t s=solid_push(g,&body,speed,body.vy);
+            neo_contact_actor_t c={0};
+            c.x=body.x;c.y=body.y;c.vx=body.vx;c.vy=body.vy;c.scalar62=speed;c.kind_angle=g->kangle;
+            c.flags15=(uint8_t)(0x40u|(s.left?8u:0u)|(s.right?16u:0u));
+            c.flags5f=(uint8_t)((g->aim_up?32u:0u)|(g->crouch?16u:0u));   /* 0C0FEA: up -> bit 5, down -> bit 4 */
+            neo_contact_request_t r=neo_contact_prepare_ground(&c);
+            neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+            neo_kreq_t q={body.x,body.y,r.dx,r.dy,NEO_KOBJ_TERRAIN,r.mode,r.mode8,0xff,0,0,0xff};
+            neo_kres_t res;
+            if (neo_kernel_player_sweep(k,&q,&res) && (res.parent==NEO_KOBJ_ROOT || res.parent==NEO_KOBJ_TERRAIN || res.parent==NEO_KOBJ_TRAIN)) {
+                const neo_kobj_t *o=res.parent==NEO_KOBJ_ROOT?&k->root:res.parent==NEO_KOBJ_TRAIN?&k->train:&k->terrain;
+                body.x=(int32_t)((uint32_t)res.x+(uint32_t)o->x-(uint32_t)k->terrain.x);
+                body.y=(int32_t)((uint32_t)res.y+(uint32_t)o->y-(uint32_t)k->terrain.y);
+                body.vx=res.vx;body.vy=res.vy;g->kangle=(uint16_t)(res.kind>>8);
+                g->grounded=(res.flags&1u)!=0;g->kground=g->grounded && res.parent!=NEO_KOBJ_TERRAIN;
+                g->kernel_ground_steps++;
+            } else {g->grounded=false;g->kground=false;}
+            if (!g->grounded) g->air_ticks=0;
         } else if (g->grounded) {
             /* 014594: the push-out sees the ground speed (+62) as +30; the
              * sweep's velocity into the body is cancelled (014676..01469C). */
@@ -1459,6 +1493,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             body.x+=body.vx;body.y+=body.vy;
             g->air_ticks+=2;
             uint8_t object;int32_t top;
+            g->kground=false;
             if (body.y<previous && platform_floor(g,body.x,previous,body.y-previous,&object,&top) && top<=previous && top>=body.y) {
                 body.vy=top-previous;body.y=top;g->grounded=true;ride_on(g,object,body.x,body.y);
             } else {
@@ -1474,6 +1509,8 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 neo_kland_t land;
                 if (!g->grounded && g->world_enabled && neo_kernel_air_landing(&g->world.kernel,start.x,start.y,start.vx,start.vy,&land)) {
                     body.x=land.x;body.y=land.y;body.vx=land.vx;body.vy=land.vy;g->grounded=true;g->kernel_landings++;
+                    /* 014492 (+38 = the root, +6C = D7 >> 8): on the Mission 6 bridge the next ground steps are the sweep's. */
+                    g->kground=g->world.kernel.bridge_ring!=NULL;g->kangle=(uint16_t)(land.kind>>8);
                 }
             }
         }
@@ -1485,7 +1522,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         }
 #endif
         if (mummy && !was_grounded && g->grounded && !dying) g->mummy_landing=3;
-        clamp_feet(g,&body,g->grounded && !g->ride);
+        clamp_feet(g,&body,g->grounded && !g->ride && !g->kground);
         if (g->x!=body.x) {body.vx=0;if (g->ride) ride_on(g,(uint8_t)(NEO_KOBJ_DYN0+g->ride-1),g->x,body.y);}
         g->y=56*MSX_UNIT-body.y;g->velocity_x=body.vx;g->velocity_y=-body.vy;
         /* 0C1ED6 (the landing 0C1EBE with +93 = 2): the dust 0C4E86
@@ -1535,7 +1572,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
                 msx_diag_trail_dump("fall rescue");
                 fall_dyn_log(g);
-                g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->pit_rescues++;
+                g->x=g->safe_x;g->y=g->safe_y;g->velocity_x=g->velocity_y=0;g->ride=0;g->kground=false;g->pit_rescues++;
             } else if ((int16_t)p.py<0x100) {
                 FALL_LOG("MSX fall death stage %u: x=%ld y=%ld camera=%d,%d last ground x=%ld y=%ld\n",(unsigned)g->flow.stage,
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));

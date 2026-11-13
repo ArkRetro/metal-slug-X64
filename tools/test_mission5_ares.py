@@ -17,6 +17,7 @@ p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='
 p.add_argument('--back',type=float,default=0,help='every BACK seconds, hold left for 1.5 s (0: never)')
 p.add_argument('--up',type=float,default=0,help='every UP seconds, hold up for 1.5 s (the pad fires upward: the helicopters over a camera stop; 0: never)')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
+p.add_argument('--down',action='store_true',help='hold down outside the --back / --up turns: the pistol fires down in the jumps (the boss 0A0C00 below the ledge of the arena, camera 2560)')
 p.add_argument('--bomb',action='store_true',help='a bomb (N64 Z, key z) at the start of each --back turn: the tank on treads 08FF7E below the stairs of the sewer\'s camera 2064 is out of the pistol\'s line')
 p.add_argument('--boss',action='store_true',help='stage 3: PASS needs the boss 0A0C00 beaten (the log\'s mission complete signal 018F92) and the next mission chosen by 01891E (mission end done -> mission 6); stops there')
 p.add_argument('--continue',dest='cont',action='store_true',help='tap Start at the CONTINUE? panel (the arcade continue, MSX panel continue): the pad keeps going after its lives')
@@ -79,7 +80,7 @@ try:
         # 08FF7E at the screen's edge, is never hit by a pad that only holds right).
         back=bool(a.back) and (t%a.back)>a.back-1.5
         up=bool(a.up) and (t%a.up)>a.up-1.5
-        hold('Right',not back and not up);hold('Left',back);hold('Up',up);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        hold('Right',not back and not up);hold('Left',back);hold('Up',up);hold('Down',a.down and not back and not up);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
         hold('z',a.bomb and back and (t%a.back)<a.back-1.3)
         if a.boss and re.search(r'MSX mission end 018846 done[^\n]*-> mission 6',text):break
         # --continue: the panel's last state is "continue" (CONTINUE? 9..0): Start, as an arcade player would.

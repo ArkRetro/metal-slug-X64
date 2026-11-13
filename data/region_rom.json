@@ -1860,9 +1860,9 @@
    "group": "m5"
   },
   {
-   "rom": "0x09959E",
-   "reader": "099090 burnt soldier (0A2134): rectangle 09959E (01945C), throws 0995A6 (09954A), programs 0995D6 / 0995DE",
-   "hex": "ffe0fff8004000200007ae14ffff62b70001eb85000aaaaafffe93ea0002222200099999ffff0a3e00026666000aaaaafffe93ea000111110029f2e60029f36e0029f3200029f3b2",
+   "rom": "0x099586",
+   "reader": "099090 burnt soldier (0A2134): hurtboxes 099586 / 099592 (programs 29F23E..), rectangle 09959E (01945C), throws 0995A6 (09954A), programs 0995D6 / 0995DE",
+   "hex": "0102fff000100020000c80000102fff60004001400208000ffe0fff8004000200007ae14ffff62b70001eb85000aaaaafffe93ea0002222200099999ffff0a3e00026666000aaaaafffe93ea000111110029f2e60029f36e0029f3200029f3b2",
    "group": "m5"
   }
  ]

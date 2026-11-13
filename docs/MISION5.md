@@ -851,9 +851,15 @@ ROM: `0A1C8C`, `0A1DCE`.
   Imagen −50,6 KB: caché **209 ranuras** (suelo 208); `check_icache.py` sin líneas compartidas.
 - **Fin de la M5**: la señal de misión completa (`018F92`) cuenta en la etapa 8 (`gameplay.c`, como la M4); `018F40`
   del jefe lleva por `msx_game_stage_end` al fin de misión y `01891E` elige la M6.
+- Captura `B`: la traza en bruto se borró tras extraer los fixtures (quedan los volcados para la exportación); se rehace
+  con `captures-m5/fam/runB.sh`. La quemadura de `0A2134` registra la caja `099586` / `099592` (`region_rom.json`:
+  sin ella la consola paraba con `unsupported routine=99586`; el anfitrión lee la ROM entera y no lo veía).
+- `actor.c`: el descriptor vacío (`1C3F06`, sin partes) no pide paleta (el rayo `0A1D20` no pone ninguna: contaba
+  cientos de `native draw missing ... palette_id=000`).
 - **Prueba de ares**: `test_mission5_ares.py --boss` (PASS solo con `MSX mission complete signal (018F92)` y
   `01891E -> mission 6`) y `--bomb` (una bomba al empezar cada giro `--back`: el tanque de orugas `08FF7E` de la
-  parada de cámara 2064 queda bajo la escalera, fuera de la línea de la pistola).
+  parada de cámara 2064 queda bajo la escalera, fuera de la línea de la pistola) y `--down` (abajo fuera de los giros:
+  la pistola dispara hacia abajo en los saltos, el jefe está bajo la cornisa). En la matriz como `m5boss`.
 
 ## Pendiente (fase 2, por orden)
 

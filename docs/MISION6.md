@@ -445,11 +445,23 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   84 borrados, 2188 dibujos, 21 contactos con el jugador.
 - Memoria: el código nuevo dejaba 3331 KB (suelo 3332); `scene_prerender.c`, `vehicle_renderer.c` y `neo_vehicle.c`
   pasan a `-Os` (`COLD_BOOT_SRCS`, −1,1 KB de texto): ares de nuevo «MSX CACHE slots=208 (3328 KB, floor 208)».
-- **Pendiente: ares no llega a la cámara 2352** (13-XI, `test_mission6_ares.py --stage 1 --jump 1.0 --continues --fire
-  --progress 2352 --seconds 420`): la cámara se queda en **1888**; el jugador cae a través del puente colgante (x 2000..2100,
-  61 muertes por caída, 20 continuaciones). En MAME `run4` cruza ese tramo sobre `10C72E` (nunca sobre `10D7B6`, captura
-  `fam/P`): falta comparar el suelo del jugador nativo (rejilla del paquete / anillo de `10C72E`) con las lecturas de `P`
-  en x 1888..2352. Sin captura nueva no se toca.
+- **Puente colgante en ares (13-XI, hecho)**: el jugador caía a través del puente (x 2000..2100, 61 caídas). En
+  MAME (`fam/P`) cada `014492` del jugador en x 1916..2128 escribe `+38` = la raíz `10E968` y su estado alterna
+  `0C2692` / `0C1EBE` / `0C2888`: anda **sobre el puente** (las celdas `81..8A` de `0BC6E6`), no sobre `10C72E`.
+  Causas: (1) `10C00E` de la lista `0BCA00` es `0BC67C` (op 0x50; ROM `00 01 02 03 09 05 06 07`) y el mundo usaba
+  el mapa de la M1: el grupo 4 de los cables quedaba 4 en vez de 9, y `013BC0` (grupo 9 → raíz) no se cumplía;
+  (2) el modelo de suelo del jugador (`neo_walk_step`) no ve el puente: aterrizaba por `platform_floor` (013DB2) y
+  al paso siguiente caía. Ahora el aterrizaje es el barrido aéreo `0143EE` (`neo_kernel_air_landing`) y, mientras el
+  suelo es del núcleo (`kground`), el paso en el suelo es `014594` por el núcleo (`neo_contact_prepare_ground`:
+  `+62` = 0x30000, 0x28000 gordo, negado mirando a la izquierda, 0 parado o muriendo; `002E98` por `+6D`). Prueba
+  `tools/test_m6_walk.c` (en `make check`; `data/m6walk_fixture.json.gz` de `tools/extract_m6walk_fixture.py` sobre
+  `fam/P`): **43 de 43 pasos en el suelo del puente iguales a MAME** (`+28/+2C`, `+38` raíz, bit de suelo), con la
+  cabecera del puente del fotograma siguiente (etiquetas de `capture_fullgame.lua`). ares (`--stage 1 --jump 1.0
+  --continues --fire --progress 2352`): PASS, cámara 3520, 4 caídas.
+- **Pendiente: el jefe intermedio no aparece en ares**: el guion se para en `2DFAD4` (`07 0C 05 80 01 90`: el
+  corredor `020166`, sin portar; también `01F836`/`01F844`, `0530F4` y `08571C` de la M4 en la etapa), así que la
+  sentencia de `05310E` no llega y la cámara pasa de 2352 sin retención. Siguiente: familia `020166` / `020372`
+  (plataforma dinámica `0140C0` con mapas `0DFF52..0DFFA0`, vida por `2D35AA`, muerte `0202B2` → `01C71E`).
 - **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
 
 ## Pendiente (fase 2, por orden)

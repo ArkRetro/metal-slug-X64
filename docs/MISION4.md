@@ -1010,3 +1010,7 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   que comparar `m4col_map`/`+42` del port con la RAM de T (26070..26970) columna a columna. (2) `palette_id=000` de
   `169276..16929E` (también antes de esta sesión, 220 veces en el recorrido de la cuarta). (3) el 5A de 1F sin
   captura (arriba).
+- **Puertas** (`work-m4` sobre ccr `d8c4028`, cartucho 63 471 616 B, caché 208): `make check` RC 0 (288 PASS);
+  `regression_ares.py` con `m1end` recién hecho: todo PASS (la pausa falló una vez por «boot tap» con la máquina
+  cargada y pasó al repetirla); `m4boss` PASS en 2260 s, entra en la línea base (sus 2061 dibujos ausentes son la
+  `palette_id=000` de `169276..16929E`, pendiente (2)).

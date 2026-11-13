@@ -62,3 +62,4 @@ Pantalla de opciones (`work-chars`, 11-XI): prueba `options` añadida a la matri
 | M6 etapa 1: dibujos ausentes con la paleta 125 (además de la caída al agua, conocida) | corregido (B70): las balsas `0BD71E` portadas y la M6 con su `rest-native.json` y los grupos m3, m4, m5; queda el puente colgante `10D7B6` (MISION6.md «Fase 2») |
 | Prueba de personajes que supera 600 s | tiempo de la prueba ampliado a 1800 s en la matriz |
 | Voz de muerte de Tarma `1087` | pendiente de captura con audio |
+| `veh` (B69) tras fusionar ccr `91d8ef3` en `work-chars` (menú de opciones + M6) | abierto (13-XI): FAIL tres veces seguidas (3055..3069 s) con el cartucho de `c1dd3d2`; el mando ciego se queda en la parada de las cúpulas (cámara 1920) sin llegar al Camel Slug; el resto de la matriz PASS. Sin subir a ccr hasta aclararlo (¿no determinista, como en B69, o el menú/0C09DA cambia la partida de la M1?) |

@@ -19,6 +19,10 @@ void neo_progstore_setup(neo_progstore_read_t read,uint8_t *arena,uint32_t arena
 /* The commands of `count` records at `offset`; NULL when they cannot be
  * read (explicit stop: the caller has no program). */
 const neo_anim_command_t *neo_progstore_load(uint32_t offset,unsigned count);
+/* The same with the program (commands and count) in the 16 bytes before
+ * the commands, in the same store: the caller keeps one pointer a program
+ * instead of the 8-byte struct (docs/MEMORY_OPTIMIZATION.md). */
+const neo_anim_program_t *neo_progstore_load_program(uint32_t offset,unsigned count);
 /* Forgets every program read (the caller drops its pointers first). */
 void neo_progstore_reset(void);
 typedef struct { unsigned programs,bytes,peak_bytes,heap_blocks,heap_bytes,failed; } neo_progstore_stats_t;

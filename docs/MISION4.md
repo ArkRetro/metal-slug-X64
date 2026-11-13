@@ -999,3 +999,14 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   modelo de ROM (validado contra MAME); el 5A de 1F no tiene captura (1F no se destruye en run4): pendiente.
 - **Paleta 892** de los helicópteros 085522 (descriptores 1C603E..1C671C): `RESOURCES` de `export_rest_sprites.py`,
   de la captura A (155880..156180).
+- **ares** (`tools/test_mission4_ares.py --fire --jump 1.5 --lifebar --continues --boss --vehicle 1`, cartucho completo):
+  el mando llega al jefe en ~10 min montado en el SV-001 de 4288 (golpeado: `vehicle hit … mount=1`, B69), pelea
+  sobre el camino repetido (cámara 5552 → 9456, suelo y tejados dibujados por el anillo), **el jefe muere**
+  (`MSX mission complete signal (018F92) camera=9456`) y empieza la M5 (`MSX mission 5 stage 6 start`). Con el jefe el
+  mando hace un ciclo de 5 s (giro a la izquierda, 3,5 s de fuego con dos saltos y una granada, 1,35 s a la derecha).
+  En la matriz: `m4boss` (4800 s).
+- **Visto y pendiente**: (1) de la capa `10D7B6` del casco solo se ven las columnas de la derecha (la torre de la
+  portilla y la panza roja, en su sitio de MAME); las de la izquierda no se dibujan y los cañones quedan sueltos: hay
+  que comparar `m4col_map`/`+42` del port con la RAM de T (26070..26970) columna a columna. (2) `palette_id=000` de
+  `169276..16929E` (también antes de esta sesión, 220 veces en el recorrido de la cuarta). (3) el 5A de 1F sin
+  captura (arriba).

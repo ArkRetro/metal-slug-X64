@@ -808,7 +808,11 @@ libdragon, que va detrás del juego, y se expulsaban en cada vértice. Ahora el 
 enlace. Logo: PASS, 6876 µs, `late=0`. Subida (13-XI, tras fusionar ccr `13d2da0`): `make check` en verde y matriz
 (`regression_ares.py` con `--m1end`) sin regresiones: logo, pausa, personajes, M4, M5 ×3, M6 ×3 y M1→M2 PASS; `veh`
 (B69) FAIL la primera vez (el mando ciego no pasa la parada de la cámara 1920 en 3000 s, 85 muertes) y PASS al
-repetirla con el mismo cartucho (1651 s): la prueba depende del reloj del anfitrión, no es determinista.
+repetirla con el mismo cartucho (1651 s): la prueba depende del reloj del anfitrión, no es determinista. Tras fusionar
+también `178d046` (jefe de la M4 en el mundo): el paquete de la M6 rehecho tiene 1224 trozos (grupo `m5` con los
+pilotos del Slugnoid `09649C[1..3]`; 1223 en la copia de formato 4 de `make check`, que fallaba con «mission 6 pack
+refused»): `SCENE_MISSION_CHUNKS_MAX` 1216 → 1224 y paquetes de `romfs/` rehechos. `make check` en verde y matriz
+completa PASS (`veh` incluido, 2520 s).
 
 ## Pendiente (fase 2, por orden)
 

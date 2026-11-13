@@ -814,6 +814,60 @@ pilotos del Slugnoid `09649C[1..3]`; 1223 en la copia de formato 4 de `make chec
 refused»): `SCENE_MISSION_CHUNKS_MAX` 1216 → 1224 y paquetes de `romfs/` rehechos. `make check` en verde y matriz
 completa PASS (`veh` incluido, 2520 s).
 
+### Fase 2, novena tanda (13-XI, agente B): el jefe `0A0C00`
+
+**El jefe** (`src/neo_m5boss.c`, nuevo; registro `2DF66C`, cámara 2560). Traducidos rutina a rutina el controlador
+`0A0C00` (música `0x2C`, piezas de `0A26CE`, salud `2C2B08`, umbrales `2C2B6A` / `2C2BCC`, humo `01DD50` → `01D86C`,
+subida `0A0C9A..0A0D1C`, vuelo `0A0D54` / `0A0D80` con `0A2560` / `0A24C6`, los cuatro ataques `0A0DA6` / `0A0EC6` /
+`0A10BE` / `0A0FA4` por órdenes `+60` al cuerpo y su respuesta `+61`, cola común `0A11E2` / `0A11F0` / `0A11FA`,
+fases `+89` con `0A2926` en la segunda, mapa de celdas `0A2E40` por `0140C0`, muerte `0A12C0..0A1466` con `013F1E`,
+`018F92`, `009BB0`, `0C8022` y `018F40`) y sus piezas: las cajas de daño `0A14FE` ×5, el cuerpo `0A167C`, las luces
+`0A1830` / `0A18D8`, la pieza que cae `0A1756`, los disparos `0A192E` / `0A1958` (abanicos `0A2D1A` de la llamada
+`0A2856`, rebote con `+92` bit 7, patrones `2C3F1E`), el rayo `0A1D20` con `0A1B3A` / `0A1BEC` / `0A1C0C` / `0A1C4C`,
+`0A1DF2` / `0A1E7E`, `0A1E92` / `0A1EA6` / `0A1F0E` (recolgados del controlador), los escombros `0A1F98` / `0A203A`
+(de las listas `01D764`), los fuegos `0A21A8` / `0A21CE` / `0A21F0` y los soldados quemados `0A2134` → `099090`
+(su rama de impacto `0406B6` no se usa: `0A2134` pone `+5F` bit 6; parada explícita). Llamadas de programa:
+`0A264E` / `0A2656` / `0A265E`, `0A27E0`, `0A2856`, `0A28EA`, `0A28FC`, `0A290E`. Código muerto sin referencias en la
+ROM: `0A1C8C`, `0A1DCE`.
+
+- Captura propia **`B`** (`captures-m5/fam/runB.sh`: réplica de `run4` desde `sec08_274387`, raíces de los 22
+  constructores más `0A1F98` / `0A2134`, traza 277080..292100, volcados cada 30). Familias por ventanas (todo el
+  combate no cabe en un fixture): **`m5boss`** 277080..279600 (86 nodos, 17 392 actualizaciones), **`m5boss2`**
+  281400..282500 (ataque 3; 35 nodos, 5442), **`m5boss3`** 284500..284886 (segundo umbral, escombros; 27 nodos, 2576),
+  **`m5boss5`** 287250..287800 (ataque 0 con el rayo; 27 nodos, 2654) y **`m5boss4`** 291300..292100 (la muerte;
+  49 nodos, 7254): todas iguales a MAME (`--m5boss`: RAM 10C300/10C304 y el temblor 0C8022; `--split-children`).
+- **Pendiente** (motor compartido, sin cerrar): en 284887 el barrido de suelo `01456A` nativo del escombro `103E04`, que
+  se desliza sobre el objeto dinámico `10C22E` (el mapa de celdas del jefe), toma el terreno estático y el original sigue
+  en el objeto; por eso `m5boss3` acaba en 284886. El mapa `0A2E40` tenía que ir entero en `region_rom.json`
+  (cabecera + 34 × 5 celdas, hasta `0A2EF0`): con él cortado el fallo salía en 284817.
+- Exportación de la M5 (`export_rest_sprites.py` con `B@a0c00-a22fc` y `B@99090-99300`): 367 descriptores nuevos, 119
+  fotos, 1 434 016 px iguales y **796 distintos en 12 fotos** (sobre todo la muerte, 291540..291750, con explosiones
+  encima; sin cerrar). Paleta **20C** (la llama final `099268` del soldado quemado) sin captura: en `run4` ninguno llega
+  a ese estado (pendiente, sin rellenar). Paquete de la M5: **1250 trozos** → `SCENE_MISSION_CHUNKS_MAX` 1256.
+- **Memoria** (sin bajar mínimos): con el jefe (21 KB de código, -Os) la caché caía a 3314 KB (mínimo 3332). Las
+  tablas de poses del SV-001 `291CEA` (44 KB) y sus registros `2B0386` (7,5 KB), que solo lee `neo_tank.c` de 1 y 2
+  bytes en 2 bytes, se quedan en el cartucho en la consola: `/romblobs.bin` (`compile_region_rom.py`), y `ga_rom` las
+  sirve por DMA en ventanas de 32 bytes (`program_file_rom`, ocho ventanas); en el anfitrión siguen en la imagen.
+  Imagen −50,6 KB: caché **209 ranuras** (suelo 208); `check_icache.py` sin líneas compartidas.
+- **Fin de la M5**: la señal de misión completa (`018F92`) cuenta en la etapa 8 (`gameplay.c`, como la M4); `018F40`
+  del jefe lleva por `msx_game_stage_end` al fin de misión y `01891E` elige la M6.
+- Captura `B`: la traza en bruto se borró tras extraer los fixtures (quedan los volcados para la exportación); se rehace
+  con `captures-m5/fam/runB.sh`. La quemadura de `0A2134` registra la caja `099586` / `099592` (`region_rom.json`:
+  sin ella la consola paraba con `unsupported routine=99586`; el anfitrión lee la ROM entera y no lo veía).
+- `actor.c`: el descriptor vacío (`1C3F06`, sin partes) no pide paleta (el rayo `0A1D20` no pone ninguna: contaba
+  cientos de `native draw missing ... palette_id=000`).
+- **Prueba de ares**: `test_mission5_ares.py --boss` (PASS solo con `MSX mission complete signal (018F92)` y
+  `01891E -> mission 6`) y `--bomb` (una bomba al empezar cada giro `--back`: el tanque de orugas `08FF7E` de la
+  parada de cámara 2064 queda bajo la escalera, fuera de la línea de la pistola) y `--down` (abajo fuera de los giros:
+  la pistola dispara hacia abajo en los saltos, el jefe está bajo la cornisa). En la matriz como `m5boss`.
+
+**Puertas de la novena tanda** (tras fusionar ccr `50b2a2f`): `make check` en verde (familias `m5boss`..`m5boss5`
+incluidas) y matriz (`regression_ares.py` con `--m1end` recién hecho, cartucho completo de 62,9 MB): logo, pausa,
+personajes, M4, M5 ×3, **`m5boss`** (nuevo: el mando llega a la cámara 2560, vence al jefe en ~1600 s, recuento y
+`01891E -> mission 6`; 8 dibujos sin las paletas 6 / A, ya pendientes), M6 ×3, `veh` y M1→M2 PASS; `m5s1` FAIL la
+primera vez (con `make check` a la vez el menú perdió una pulsación: entró en la etapa 2) y PASS al repetirla. Caché:
+209 ranuras (suelo 208). Línea base: `m5boss` añadida.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de
@@ -827,9 +881,8 @@ completa PASS (`veh` incluido, 2520 s).
    mando automático muere ante el helicóptero de la cámara 80).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
    `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
-3. ~~Trenes del metro~~ (hecho en la quinta tanda) y **el jefe**
-   `0A0C00` (22 constructores, cámara 2560, música `0x2C` por `059F76`):
-   estados `at_277000` (antes) y `at_280000..291500`.
+3. ~~Trenes del metro~~ (hecho en la quinta tanda) y ~~el jefe `0A0C00`~~ (novena tanda). Queda el barrido de
+   suelo del escombro sobre el objeto dinámico del jefe (284887, arriba) y la paleta 20C.
 4. **Vehículos**: SV-001 `092A32` en la calle (registro `2DCE10`, cámara 280)
    y Slugnoid `09692C` ×3 en la alcantarilla (`2DECEA`…, cámara 557): los dos
    ya son nativos; falta llegar a sus registros (el guion se para antes).

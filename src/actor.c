@@ -228,6 +228,7 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     }
     const scene_native_descriptor_t *desc=scene_native_descriptor(d->descriptor);
     if (!desc) {native_missing_descriptor++;native_missing_tag=d->descriptor;return;}
+    if (!desc->count) return;   /* the empty descriptor (1C3F06): nothing drawn, no palette asked (the beam 0A1D20 sets none) */
     int palette=scene_native_palette(d->palette);
     if (palette<0) {native_missing_palette++;native_missing_palette_id=d->palette;native_missing_tag=d->descriptor;palette=scene_native_palette(0x20e);}
     /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'

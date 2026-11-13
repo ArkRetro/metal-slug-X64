@@ -24,6 +24,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #define MSX_SOLDIER_PROGRAMS 1
 #include "../src/neo_region.h"
 #include "../src/neo_collision.h"
@@ -93,7 +94,8 @@ static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
         #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
         uint32_t map=L32(b+0x26);
         neo_kdyn_t *d=&k->dyn[i];
-        d->map=map?ga_rom(map):NULL;
+        d->map=map?ga_rom_dyn_map(map):NULL;
+        if (map && !d->map) {fprintf(stderr,"dynamic object %u: the cell map %06x is not whole in the ROM data\n",i,(unsigned)map);exit(1);}
         d->pos=(neo_kobj_t){(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20)};
         for (unsigned j=0;j<4;j++) d->bbox[j]=(int32_t)L32(b+0x2c+4*j);
         d->countdown=(uint16_t)(b[0x2a]<<8|b[0x2b]);

@@ -670,7 +670,7 @@ static void dyn_project(neo_world_t *w,tick_t *t,unsigned i) {
 }
 static void g_dyn_set(void *ctx,neo_gactor_t *a,uint32_t map,int16_t dx,int16_t dy) {
     tick_t *t=ctx;neo_world_t *w=t->w;
-    const uint8_t *m=ga_rom(map);
+    const uint8_t *m=ga_rom_dyn_map(map);
     if (!m) {ga_fail(&t->genv,map);return;}
     unsigned i=ga_b(a,0x6a);
     if (i==0xffu) { /* 0140D2: first free slot from 7 down */
@@ -1200,7 +1200,7 @@ static bool b_floor(void *c,int32_t x,int32_t y,uint32_t parent_tag,neo_boss_swe
 static bool b_platform(void *c,int16_t node,uint8_t slot,uint32_t table,const int32_t pos[4],uint32_t parent,uint8_t *slot_out) {
     neo_world_t *w=c;tick_t *t=boss_tick_ctx;
     const uint8_t *m=neo_boss_rom(table,10);
-    if (!m) return false;
+    if (!m || !neo_boss_rom(table,10u+(unsigned)m[2]*m[3])) return false;   /* the whole map (ga_rom_dyn_map) */
     unsigned i=slot;
     if (i==0xffu) {
         int k;for (k=NEO_KDYN_COUNT-1;k>=0 && (w->kernel.dyn[k].map || w->kernel.dyn[k].countdown);k--) {}

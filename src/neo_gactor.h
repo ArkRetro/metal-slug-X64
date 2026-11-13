@@ -304,6 +304,7 @@ struct neo_genv {
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
 /* ROM rom data imported by tools/extract_region_rom.py. */
 const uint8_t *ga_rom(uint32_t address);
+const uint8_t *ga_rom_dyn_map(uint32_t address);   /* the whole cell map of 0140C0 or NULL (neo_region.c) */
 /* A lookup tried after the program's ROM blobs (the stage pack's ROM data). */
 void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address));
 /* Dispatch one update of a generic actor by its routine label. */

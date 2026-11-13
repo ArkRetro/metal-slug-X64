@@ -680,8 +680,8 @@
   },
   {
    "rom": "0x0E004E",
-   "reader": "021B46 hostage: cull E004E (01945C), players rectangle E0056 (01AFFC), hurtbox E005E",
-   "hex": "ffe0ffe000400040ffe0fff0004000300101fff80000001800288000fc0108010100000000000f0f"
+   "reader": "021B46 hostage: cull E004E (01945C), players rectangle E0056 (01AFFC), hurtbox E005E; the cell map E006A of the Mission 4 boss platform 0140C4 (header and 8 x 1 cells, to E007C)",
+   "hex": "ffe0ffe000400040ffe0fff0004000300101fff80000001800288000fc0108010100000000000f0f0f0f0f0f0f0f"
   },
   {
    "rom": "0x027BFC",

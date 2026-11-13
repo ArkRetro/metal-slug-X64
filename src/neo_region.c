@@ -79,9 +79,21 @@ void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address)) {rom_extra=loo
  * 0A2EF0: its last row read past the blob) gives NULL, an explicit stop, instead of the bytes after the blob. */
 const uint8_t *ga_rom_dyn_map(uint32_t address) {
     const uint8_t *m=ga_rom(address);
-    if (!m || ga_rom(address+9u)!=m+9) return NULL;
+    if (!m) return NULL;
     uint32_t n=10u+(uint32_t)m[2]*m[3];
-    return ga_rom(address+n-1u)==m+(n-1u)?m:NULL;
+    /* One blob holding all n bytes (blobs overlap: ga_rom's pick for the last byte may be another one). */
+    if (!blob_sorted) sort_blobs();
+    unsigned lo=0,hi=REGION_BLOBS;
+    while (lo<hi) {unsigned k=(lo+hi)/2;if (blob_start[k]<=address) lo=k+1; else hi=k;}
+    for (unsigned k=lo;k-- && blob_max_end[k]>address;) {
+        const region_blob_t *b=&region_blobs[blob_order[k]];
+        if (address>=b->address && address+n<=b->address+b->length) return b->data+(address-b->address);
+    }
+    /* The other sources (the boss's tables, the stage pack's blobs) are contiguous within one record. */
+    const uint8_t *boss=neo_boss_rom(address,n);
+    if (boss) return boss;
+    if (rom_extra) {const uint8_t *p=rom_extra(address);if (p && rom_extra(address+n-1u)==p+(n-1u)) return p;}
+    return NULL;
 }
 bool neo_region_routine(uint32_t r) {return neo_m4veh_routine(r) || neo_m4boss_routine(r) || neo_m4props_routine(r) || neo_m5props_routine(r) || neo_m6props_routine(r) || neo_m5enemy_routine(r) || neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r) || neo_dome_routine(r) || neo_barrel_routine(r) || neo_wagon_routine(r) || neo_arab_routine(r) || neo_prisoner_routine(r) || neo_item_routine(r) || neo_armored_routine(r) || neo_secret_routine(r) || neo_swords_routine(r) || neo_rocket_routine(r) || neo_heli_routine(r) || neo_camel_routine(r) || neo_porter_routine(r) || neo_civil_routine(r) || neo_slug_routine(r) || neo_tank_routine(r) || neo_slugnoid_routine(r) || neo_bullet_routine(r) || neo_chaser_routine(r) || neo_pweapon_routine(r) || neo_goarrow_routine(r) || neo_rebel2_routine(r) || neo_rebel3_routine(r) || neo_m2creature_routine(r) || neo_gate_routine(r) || neo_crate_routine(r) || neo_m2props_routine(r) || neo_m3props_routine(r) || neo_m3enemy_routine(r) || neo_drone_routine(r) || neo_m2traps_routine(r) || neo_hostage_routine(r) || neo_m2boss_routine(r) || neo_m3mid_routine(r) || (MSX_M3BOSS && neo_m3boss_routine(r)) || (MSX_M3VEH && neo_m3veh_routine(r)) || neo_m5train_routine(r) || neo_m5sewer_routine(r) || neo_m5boss_routine(r);}
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {

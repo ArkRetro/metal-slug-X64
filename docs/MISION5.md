@@ -904,14 +904,11 @@ primera vez (con `make check` a la vez el menú perdió una pulsación: entró e
   prueba de la sonda) y no pasa nunca por `040BE6` / `040BF2` (sondas del depurador; `04097A` sí, 5 veces en la
   sección 8). Con `run4` (octava tanda) tampoco: no hay estado de MAME de esta ROM donde aparezcan.
 
-**Estado de la décima tanda (pausa del coordinador, 13-XI)**: hecho y en `work-m5` (sin subir a ccr): la causa del
-escombro (B72) con `m5boss3` hasta 287250, la validación de la exportación en 0 píxeles distintos, el registro de 20C,
-88B / 88C y `040BE6` como no capturables, y `mission5.pack` / `mission6.pack` rehechos (blob `0A2B7E` más largo). El
-primer `make check` paró en la familia `figure` («cell map 030000 is not whole»: un objeto de fuera de la familia con
-un mapa sin datos de ROM; ahora sigue en NULL como antes y solo falla si la cabecera está y las celdas no). Falta:
-`make check` completo con ese cambio (se cortó por el reinicio y la pausa, 98 PASS hasta entonces sin fallos), `make -j4`,
-`check_icache.py` / caché ≥ 208, la matriz `regression_ares.py` con `--m1end` recién hecho, y la subida fast-forward a
-`ccr-09eb2f6b-8rwl8l`. La exportación de la M5 no cambia: nada que copiar a `ws-logo`.
+**Reanudación (13-XI)**: fusionado ccr `4de14ab`. `make check` encontró otro mapa cortado con la comprobación nueva:
+`E006A` (la plataforma del jefe de la M4, `0140C4`, 8 × 1 celdas) acababa en `E0076`, dentro del blob del rehén; sus
+celdas estaban en otro blob (`E0076..`, grupo m4). `ga_rom_dyn_map` busca ahora un blob que tenga los `10 + w × h`
+bytes enteros (los blobs se solapan) y el del rehén llega a `E007C` (de la ROM). `filesystem/mission4` enlaza (solo
+lectura) a los datos privados de `ws-m4` (el paquete de la M4 de A, con los parches nuevos, sale igual byte a byte).
 
 ## Pendiente (fase 2, por orden)
 

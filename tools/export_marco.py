@@ -36,6 +36,7 @@ def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
     image = Image.new('RGBA', (320, 256))
     indices = bytearray(320*256)
     palette_indices = array('H',[0])*(320*256)
+    owners = array('i',[-1])*(320*256)   # the record (16x16 tile) on top at each pixel
     selected_palettes = {selected_palette} if isinstance(selected_palette,int) else set(selected_palette)
     records = []
     x = y = rows = zx = zy = 0
@@ -72,6 +73,8 @@ def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
                         image.putpixel((dx, dy), palette_rgb(palette[(attr>>8)*16+pen])+(255,))
                         indices[dy*320+dx] = pen
                         palette_indices[dy*320+dx] = (attr>>8)*16+pen
+                        owners[dy*320+dx] = len(records)-1
+    image.info["neo_owners"] = owners
     image.info["neo_indices"] = bytes(indices)
     image.info["neo_palette_indices"] = palette_indices.tobytes()
     return image, records

@@ -721,9 +721,8 @@ FAMILY_ARGS_m4spark := --terrain 10c72e --ring 10c72e --group-map 0 --root-words
 # (run4 replay from sec08_274387, trace 277080..292100), window 277080..279600 (the rise, hovering, attacks 1 and 2).
 FAMILY_ARGS_m5boss := --root-words --attacks --m5boss --ram-creators --split-children --terrain 10c72e --ring 10c72e --group-map 0
 # m5boss2..4: windows of capture B from the nodes alive at their start (--resume): 281400..282500 (attack 3, 0A0FA4, with the
-# shot patterns 2C3F1E), 284500..284886 (the second threshold: 0A2926, the debris 0A203A / 0A1F98 on the boss's cell map;
-# at 284887 the native ground sweep 01456A of the debris 103E04 leaves the moving dynamic object 10C22E for the static terrain
-# and the original stays: pending, docs/MISION5.md), 291300..292100 (the death 0A12C0..0A1466: 0A1756, 0A18D8, the burnt
+# shot patterns 2C3F1E), 284500..287250 (the second threshold: 0A2926, the debris 0A203A / 0A1F98 on the boss's cell map
+# 0A2E40 to its end; capture B3, captures-m5/fam/runB3.sh: the trace of B written from 284499 only), 291300..292100 (the death 0A12C0..0A1466: 0A1756, 0A18D8, the burnt
 # soldiers 0A2134 / 099090, 018F92, 018F40), 287250..287800 (attack 0 with the beam 0A1B3A..0A1D20, 0A1DF2, 0A1E7E).
 FAMILY_ARGS_m5boss2 := $(FAMILY_ARGS_m5boss) --resume
 FAMILY_ARGS_m5boss3 := $(FAMILY_ARGS_m5boss) --resume

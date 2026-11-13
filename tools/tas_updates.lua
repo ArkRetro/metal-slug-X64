@@ -282,6 +282,11 @@ if os.getenv('MSX_TAS_FAMILY_ROOTS') or os.getenv('MSX_TAS_FAMILY_RANGE') then
  tas_fam_log=fam_log
 end
 local dump_period=tonumber(os.getenv('MSX_TAS_DUMP_PERIOD') or '0')
+local dump_res,dump_res_gap,dump_res_next=nil,30,0
+do
+ local list,gap=string.match(os.getenv('MSX_TAS_DUMP_RES') or '','^([%x,]+):?(%d*)$')
+ if list then dump_res={};for h in string.gmatch(list,'(%x+)') do dump_res[tonumber(h,16)]=true end;if gap~='' then dump_res_gap=tonumber(gap) end end
+end
 local function tas_dump(f)
  local video_memory=emu.item(assert(machine.devices[':spritegen'].items['0/m_videoram']))
  local v=assert(io.open(out..'/vram'..f..'.bin','wb'))
@@ -323,6 +328,17 @@ emu.register_frame_done(function()
   if k~=slot_tap_key then event(string.format('SLOT update %d frame %d %s',updates,frame,k));slot_tap_key=k end
  end
  if dump_period>0 and updates>=cap_from and frame%dump_period==0 and not first then tas_dump(frame) end
+ -- MSX_TAS_DUMP_RES=<hex list>[:<gap>] (read only): the dump of tas_dump the first frame a listed palette resource
+ -- (the logical palette ids of the slot table 1068EA, +10 of each 16-byte entry, as export_soldier_sprites.resources
+ -- reads them) is in a slot, and again every <gap> frames (default 30) while one is; an event line names them.
+ if dump_res and updates>=cap_from and not first and not loading then
+  local seen={}
+  for i=0,255 do local r=cpu:read_u16(0x1068ea+16*i+10);if dump_res[r] then seen[#seen+1]=string.format('%x@%d',r,i) end end
+  if #seen>0 and frame>=dump_res_next then
+   tas_dump(frame);dump_res_next=frame+dump_res_gap
+   event(string.format('RES update %d frame %d %s',updates,frame,table.concat(seen,' ')))
+  end
+ end
  -- MSX_TAS_DEBUG=1 (tools/run_tas_play.sh: -debug -debugger none): the debugger commands MSX_TAS_DEBUG_CMDS ('|'
  -- separated; print only, read-only probes as in tools/tas_play.lua) are set at the first frame; temp9 = the frame.
  if first and os.getenv('MSX_TAS_DEBUG')=='1' then

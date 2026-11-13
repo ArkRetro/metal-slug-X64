@@ -12,7 +12,7 @@ filesystem/boss-native.json) and docs/rest-sprites-validation.json."""
 import argparse,collections,hashlib,json,struct
 from pathlib import Path
 from export_marco import ROOT,reconstruct
-from export_soldier_sprites import program,descriptor,resources
+from export_soldier_sprites import program,descriptor,resources,decode
 from mission_tiles import rgba16
 from extract_boss_fight import parse
 ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
@@ -483,7 +483,7 @@ RESOURCES=RESOURCES+(0x4cb,0x4cc,0x4cd,0x509,0x4d4,0x4d5,0x50b,0x4df,0x11d)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
-    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
+    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi[,lo-hi...] (family trace; nodes, or routine ranges, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--keep-palettes',action='store_true',help='the --keep exports\' palettes win over the captures\' (a capture of one actor, e.g. the Mission 4 boss T, adds its palettes without changing the colours the scene pack already has)')
     p.add_argument('--mask-auto',action='store_true',help='compare the frames with auto-animated entries (LSPC attribute bits 2/3), leaving out their area')
@@ -506,15 +506,45 @@ def main():
             x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6+2*cols*rows
             out+=[x+16*c for c in range(cols)]
         return out
+    def tiles(address):
+        # Per sprite column of the descriptor (as columns()): its C-ROM tile numbers (low word | attribute bits 4..7).
+        at=address-0x100000;groups,attr=data[at:at+2];at+=2;out=[];high=(attr&0xf0)<<12
+        for g in range(groups):
+            x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6
+            for c in range(cols):
+                out.append({struct.unpack_from('>H',data,at+2*(c*rows+r))[0]|high for r in range(rows)})
+            at+=2*cols*rows
+        return out
+    def colmap(address,g):
+        # Per pixel of the descriptor's pens: the index (in columns() order) of the sprite column that drew it, the
+        # last one writing it as in export_soldier_sprites.descriptor.
+        if not g['width']:return b''
+        at=address-0x100000;groups,attr=data[at:at+2];at+=2;high=(attr&0xF0)<<12;out=bytearray(g['width']*g['height']);k=0
+        for group in range(groups):
+            x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6
+            for col in range(cols):
+                for row in range(rows):
+                    low=struct.unpack_from('>H',data,at)[0];at+=2
+                    pens=decode(crom,low|high,attr&3)
+                    for py in range(16):
+                        for px in range(16):
+                            if pens[py*16+px]:out[(-y+row*16+py-g['y'])*g['width']+x+col*16+px-g['x']]=k
+                k+=1
+        return bytes(out)
     descs={}
     for d in assets:
         try:descs[d]=descriptor(data,d,crom)
         except AssertionError:descs[d]=dict(descriptor=hex(d),x=0,y=0,width=0,height=0,pens=b'')
         descs[d]['columns']=columns(d)
+        descs[d]['tiles']=tiles(d)
+        descs[d]['colmap']=None   # colmap(), made when validate paints it
+        descs[d]['colmap_of']=lambda g,d=d:colmap(d,g)
     caps=[]
     for c in a.captures:
         if '@' in c:
-            path,_,r=c.partition('@');lo,hi=(int(x,16) for x in r.split('-'));caps.append((Path(path),(lo,hi)))
+            # directory@lo-hi[,lo-hi...]: several routine ranges validated as one family (the sprites of one range drawn
+            # on another's with the same palette slot, e.g. the Mission 5 boss's fires 0A21A8 on its burnt soldiers 099090).
+            path,_,r=c.partition('@');caps.append((Path(path),tuple(tuple(int(x,16) for x in q.split('-')) for q in r.split(','))))
         else:
             path,_,nodes=c.partition(':');caps.append((Path(path),[int(n,16) for n in nodes.split(',')] if nodes else [0x104644]))
     palettes={}
@@ -564,7 +594,7 @@ def validate(capture,nodes,descs,crom,stats,per):
     by=collections.defaultdict(list)
     for u in parse(capture/'boss-trace.txt'):
         if isinstance(nodes,tuple):
-            if not nodes[0]<=u['routine']<=nodes[1]:
+            if not any(lo<=u['routine']<=hi for lo,hi in nodes):
                 # A node of the family that left the routine range (a car turned into the blast 01C71E): its entries
                 # are not rasterized, but the update counts, so that "the previous update" of the second try is
                 # the same update for every node.
@@ -575,12 +605,14 @@ def validate(capture,nodes,descs,crom,stats,per):
             # Deleting update: nothing drawn after it (it counts as an update with no entries, as above).
             if u['node'] in by:by[u['node']].append((u['frame'],[]))
             continue
+        # The entry's x word is signed (the list walker culls each column by -8 <= x <= 311 on the 16-bit sum: an entry
+        # at FFFE draws its columns from x = -2, e.g. the Mission 5 boss's fires 0A21A8 at the left edge).
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:
                 if cur is None or len(cur['w'])>=6:cur=dict(w=[]);dl.append(cur)
                 cur['w'].append(d)
-        by[u['node']].append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0],y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
+        by[u['node']].append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0]-(c['w'][0]&0x8000)*2,y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
     for vf in sorted(capture.glob('vram*.bin'),key=lambda f:int(f.stem[4:])):
         frame=int(vf.stem[4:])
         if not (capture/f'palette{frame}.bin').exists():continue
@@ -603,16 +635,17 @@ def validate(capture,nodes,descs,crom,stats,per):
                 # (measured on capture d1: 71222 equal vs 48551 with 0).
                 mirror=d['attr']&1;flip=d['attr']&2;w,h=g['width'],g['height'];pens=g['pens']
                 left=d['x']+(-(g['x']+w)-1 if mirror else g['x']);top=((512-d['y'])&511)+(1-(g['y']+h) if flip else g['y'])
-                shown=set()
-                for cx in g['columns']:
-                    sx0=d['x']-cx-16-1 if mirror else d['x']+cx
-                    if -8<=sx0<=311:shown.update(range(sx0,sx0+16))
+                # Per sprite column (the list walker culls each by its own x): a pixel shows when the column that drew
+                # it does (two groups of a descriptor can share screen x: the Mission 5 boss's 0x11A5FC at x 323).
+                shown=[-8<=(d['x']-cx-16-1 if mirror else d['x']+cx)<=311 for cx in g['columns']]
+                if g['colmap'] is None:g['colmap']=g['colmap_of'](g)
+                cmap=g['colmap']
                 for yy in range(h):
                     sy=top+yy
                     if not 0<=sy<256:continue
                     for xx in range(w):
-                        pen=pens[(h-1-yy if flip else yy)*w+(w-1-xx if mirror else xx)];sx=left+xx
-                        if pen and 0<=sx<320 and sx in shown:
+                        at=(h-1-yy if flip else yy)*w+(w-1-xx if mirror else xx);pen=pens[at];sx=left+xx
+                        if pen and 0<=sx<320 and shown[cmap[at]]:
                             # Two sprites of the family on one pixel: the
                             # hardware order decides; not compared.
                             if native[sy*320+sx]:native[sy*320+sx]=-1
@@ -625,14 +658,21 @@ def validate(capture,nodes,descs,crom,stats,per):
                 for sy in range(max(top,0),min(top+g['height'],256)):
                     for sx in range(max(left,0),min(left+g['width'],320)):native[sy*320+sx]=-1
             return native
-        def score(native,mame):
+        def score(native,mame,own=None):
+            if own is not None:
+                # A pixel whose top VRAM sprite is not one of the family's (family_records): another routine's sprite
+                # with the same palette slot lies on top of the family's; counted with the covered pixels.
+                foreign=[i for i in range(320*256) if native[i]>0 and native[i]!=mame[i] and mame[i] and (mame[i]>>4)==(native[i]>>4) and owners[i]>=0 and owners[i] not in own]
+                native=list(native)
+                for i in foreign:native[i]=-2
+            else:foreign=[]
             same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
             # A pixel where the dump shows a pen of another palette slot: a sprite outside the family (drawn with a
             # slot some family entry also uses, e.g. the fire 01C9E6 and a shell's blast 01C706) lies on top of
             # the family's; counted apart, not a difference of the descriptor.
             covered=sum(1 for i in range(320*256) if native[i]>0 and mame[i] and (mame[i]>>4)!=(native[i]>>4))
             diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])-covered
-            return same,diff,sum(1 for i in range(320*256) if native[i]<0),covered
+            return same,diff,sum(1 for i in range(320*256) if native[i]==-1),covered+len(foreign)
         # Per node, the entries of its last update and of the one before (a node deleted since then draws nothing).
         cand={}
         for node,ups in by.items():
@@ -644,7 +684,7 @@ def validate(capture,nodes,descs,crom,stats,per):
         stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&12)
         if any(d['attr']&12 for d in every) and not MASK_AUTO:continue
         slots={d['attr']>>8 for d in entries(every)[0]}
-        try:im,_=reconstruct(v,pw,crom,slots)
+        try:im,_records=reconstruct(v,pw,crom,slots)
         except AssertionError as err:
             # Another sprite of the screen with one of these palette
             # numbers is auto-animated (Mission 3: the train's wheels):
@@ -652,20 +692,34 @@ def validate(capture,nodes,descs,crom,stats,per):
             if 'auto-animation' not in str(err):raise
             stats['dumps_skipped_auto_animation']+=1;continue
         mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
+        owners=im.info['neo_owners']
+        def family_records(dl):
+            # The VRAM sprites (16x16 tiles of reconstruct) that are the family's own entries: a tile of an entry's
+            # descriptor column at that column's screen x. Any other sprite with one of the family's palette slots
+            # (an effect of another routine sharing the palette) is not the family's.
+            want=set()
+            for d in dl:
+                g=descs.get(d['desc'])
+                if g is None or not g['width']:continue
+                for cx,ts in zip(g['columns'],g['tiles']):
+                    sx0=(d['x']-cx-16-1 if d['attr']&1 else d['x']+cx)&511
+                    for t in ts:want.add((t|((d['attr']<<12)&0xf0000),sx0))
+            return {k for k,r in enumerate(_records) if (r['tile'],r['x'])in want}
         # First and second try: every node's last update, or every node's previous one (the dump shows the last
         # sprite list the game finished). Third try: the walk of one game update split by the dump (the game
         # runs slower than the screen: an update takes several frames, and a node made or deleted in it has no
         # previous entries): per node, whichever of its two updates is the one on screen.
+        own=family_records(entries(every)[0])
         for rank in (1,2,3):
             if rank<3:picks={n:c[rank-1] for n,c in cand.items()}
             else:
                 if best is not None and not best[1]:break
                 picks={}
                 for n,c in cand.items():
-                    s=[score(paint(*entries(x[1])),mame)[1] for x in c]
+                    s=[score(paint(*entries(x[1])),mame,own)[1] for x in c]
                     picks[n]=c[1] if s[1]<s[0] else c[0]
             dl=[d for x in picks.values() for d in x[1]];f=max(x[0] for x in picks.values())
-            same,diff,overlap,covered=score(paint(*entries(dl)),mame)
+            same,diff,overlap,covered=score(paint(*entries(dl)),mame,own)
             if best is None or diff<best[1]:best=(same,diff,rank,f,overlap,covered)
         if best is None:continue
         stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['pixels_overlapping']+=best[4];stats['rank_%d'%best[2]]+=1

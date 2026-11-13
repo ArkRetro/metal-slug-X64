@@ -1542,6 +1542,9 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	python3 tools/compile_camera_fixture.py data/m4_camera_fixture.json.gz $(BUILD_DIR)/m4_camera_fixture.h
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m4_camera.c src/neo_camera.c src/neo_train.c -o $(BUILD_DIR)/host/m4camera
 	$(BUILD_DIR)/host/m4camera romfs/mission4.pack
+	python3 tools/compile_m4layer_fixture.py data/m4layer_fixture.json.gz $(BUILD_DIR)/m4layer_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m4layer.c src/neo_train.c -o $(BUILD_DIR)/host/m4layer
+	$(BUILD_DIR)/host/m4layer
 	python3 tools/compile_m5_map_fixture.py data/m5_map_fixture.json.gz $(BUILD_DIR)/m5_map_fixture.h
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_m5_map.c src/neo_collision.c -o $(BUILD_DIR)/host/m5map
 	$(BUILD_DIR)/host/m5map romfs/mission5.pack

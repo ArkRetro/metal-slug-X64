@@ -1977,6 +1977,11 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p))
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
         tower_step(g);
+#ifdef MSX_HAS_M3MID
+        /* 002802 of the Mission 4 boss's treads (0251D6, through the vertical
+         * interrupt's 0036A4): the LSPC auto-animation speed. */
+        if (g->world.m4anim) {neo_lspc_set(&g->lspc,(uint16_t)(g->world.m4anim-1u));g->world.m4anim=0;}
+#endif
         mount_after_world(g);
         /* Time over (0186FA -> 0C0A2C): +9E = FF, +5A = 6, a death however
          * invulnerable (not in the reference cartridge). */
@@ -1988,8 +1993,9 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;
         if (g->world.mission_step>=1) g->mission_complete=true;
         /* 018F92 of Mission 2's boss (026C30 of 026254, stage 3; the stage
-         * gates 0B6ED2 of stages 1/2 run it too). Mission 3 is one stage (record 0173F6): its 018F92 ends it. */
-        if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u) && g->world.ga_flags.mission_end) g->mission_complete=true;
+         * gates 0B6ED2 of stages 1/2 run it too). Mission 3 is one stage (record 0173F6): its 018F92 ends it;
+         * Mission 4 too (record 017462, then 017488 type 4 -> 0): its boss 02267E's 022B34. */
+        if (((g->flow.mission==1u && g->flow.stage==3u) || g->flow.mission==2u || g->flow.mission==3u) && g->world.ga_flags.mission_end) g->mission_complete=true;
         if (g->world.mission_step>=2) {g->complete=true;g->moving=false;g->shooting=false;memset(g->bullets,0,sizeof(g->bullets));}
         if (g->lifebar) lifebar_food(g);
         hud_step(g);

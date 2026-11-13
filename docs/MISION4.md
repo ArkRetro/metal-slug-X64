@@ -786,6 +786,66 @@ a `0256D4`).
 **Sesión del 12-XI (agente A)**: dedicada a B69 (daño de los vehículos, `BUG_MATRIX.md`); el jefe en juego
 (capa `10D7B6`, mapa `02225E`, sprites, fin de misión) sigue exactamente en la lista «Falta» de arriba, sin cambios.
 
+## Jefe en juego (12-XI, agente A, segunda sesión)
+
+**Hecho (lógica)**: el mundo entrega la capa al jefe y la mueve; el jefe ya no se para (`world unsupported
+routine=2267e` desaparece).
+
+- `neo_world.c`: la primera vez que corre una rutina de `neo_m4boss_routine` se crea el objeto de capa `10D7B6` en bytes
+  (`w->m4layer[0x88]`) con la posición +0/+4, factores +26/+28 y restos +2A/+2B del objeto de cámara (`neo_layers_*`),
+  primer sprite +2C = 0x20 y +82 = 0F (RAM de `run4` 157200/157500, antes del jefe); el entorno `neo_m4boss_env_t`
+  lleva la capa, el byte 10E957 (`camera.layer_flags[1]`), 694E/6952 (`w->m4speed`), 10E9B8 (`script.w69b8`) y los
+  dibujos `0C714E` (`g_m4_draw` / `g_m4_patch` / `g_m4_clear`) y `002802` (`g_m4_anim` → `neo_lspc_set` en
+  `gameplay.c`). El padre `10D7B6` de `neo_world_parent` es esa capa mientras exista.
+- Paso de cámara `0C8240` (`neo_layerobj_step`, `src/neo_train.c`): bit 7 del byte → `01AC3C` con su +8/+C; si no,
+  694E (bit 0) o 6970, 6952 (bit 1) o 6974, `0C6F9E`, `01AC3C`, `01ABCC` contra la raíz y +18 += 69CC. Corre en
+  `neo_world_camera` entre `neo_layers_step` y `neo_camera_finish` (antes del decaimiento `0C804A`), con la raíz de esa
+  actualización y la época que la cabeza de lista `003B3E` (`01AB50`) ya cambió. **Prueba** `tools/test_m4layer.c`
+  (`make check`, fixture `data/m4layer_fixture.json.gz` de la traza T por `tools/extract_m4layer_fixture.py`, una fila
+  por actualización del cuerpo `102EE4`): lazo cerrado de 832 actualizaciones, +14 igual en las 704 que leen capa y
+  raíz, +18 en 677; las 27 desde el `0C8022` de las orugas (`023432`, actualización 499) difieren en ±1..3 px = el
+  69CC, que la traza no tiene (no se comparan; la sacudida es de `test_m4_camera.c`).
+- `0BB028` (op 0x2C de la lista en 0x15B0): `019388` con D0 = 0x8000 → +72/+76 del actor de misión
+  (`camera.speed_x/y`), ya no se cuenta como no portada.
+- Terreno: en la M4 (lista `0E741A`) la etiqueta de terreno es `10C72E` (la regla `≥ 1023 → 10D7B6` es de la M1):
+  ningún nodo apunta a `10D7B6` antes del jefe (RAM de `run4` 157200, 157500) y durante él solo el cuerpo y su
+  pieza 3 (158400).
+- Fin de misión: la M4 es una etapa (registro `017462`, después `017488` tipo 4 → 0), así que su `018F92` (`022B34` del
+  cuerpo) acaba la misión como en la M3 (`gameplay.c`: `flow.mission == 3`); `01891E` pasa a la M5 por el camino de
+  siempre (`actor.c`, `enter_mission`).
+- Memoria: el módulo cuesta ≈ 2,4 KB; se liberan 3,7 KB dejando las referencias de los 936 programas bajo demanda en
+  8 bytes (`soldier_program_refs`: etiqueta y desplazamiento de 24 bits, número de órdenes de 16;
+  `compile_soldier_ai_tables.py` comprueba los rangos): `mslugx-explorer.elf` texto + datos + bss 2 250 472 B frente a
+  2 251 784 antes de esta sesión (−1,3 KB).
+
+**Medido para el dibujo (pendiente de implementar)**: en los volcados de `run4` del jefe (157620, 157800, 158400,
+160200, 161400) el sprite de la columna n de la capa es +2C + 1 + n; su SCB3 = (+86 << 7) + palabra n de la tabla
+de columnas +42 (byte alto = fila de inicio × 8, bajo = altura) y SCB4 = +84 << 7 + 0x800 n (`0C75EE`; altura 0 si
+X ∉ [−8, 312)); la fila de mapa sr de la columna está en la casilla t = ((byte alto >> 3) + +83 + sr − +34 − 1) & 31
+del SCB1 (`0C714E`: 260 de 260 bloques iguales en los cinco volcados, mapas `02225E` y `022274`); y en la captura
+de pantalla de MAME la casilla t se ve en y = (512 − Y − 16 + 16 t) mod 512, x = X (SCB3/SCB4): 4186 píxeles iguales y
+582 distintos (los tapados por sprites) en 158400, 4255/513 en 160200; con ±1 px, menos de la mitad. Las teselas de
+los 15 mapas `02225E..02239E` están en `332468..335D47` (banco P2: desplazamiento − 0x100000), paletas 0x70 y 0x71
+(iguales en los 148 volcados del jefe); 2240 de 2868 bloques tienen autoanimación de 8 imágenes, así que como
+fotogramas nativos (`export_m3_overlay.py`) serían 14 566 imágenes de 16 × 16: **no caben** en las tablas de la
+misión. Camino previsto: celdas del paquete de la M4 (atlas CI4 con `animation_mask`, como el mapa de la etapa) en
+una página x propia para la capa `10D7B6` (como `LOAD_PAGE` de la M6), una por mapa (todas las escrituras del jefe
+son mapas enteros de 20 × 13), y en `actor.c` el desplazamiento y la subida de esa capa desde +84/+86 y el mapa de
+cada columna (`w->m4col_map/m4col_top`); hay que fijar antes la relación entre «fila de pantalla» de las capas del
+paquete y la y de la captura (las fórmulas de `actor.c` dan 8 px de diferencia para la capa 2 en la M4 antes del
+jefe).
+
+**Puertas** (`work-m4` `d2d06db`): `make check` RC 0 (288 PASS, con `m4layer` y `program_file` de 8 bytes);
+`regression_ares.py` con el cartucho completo (62 324 736 B) y un `m1end` recién hecho: todo PASS (logo, pausa,
+personajes, M4, M5 ×3, M6 ×3, `veh`, M1 → M2), sin recuentos nuevos (M6 etapa 1: `unsupported` 3, la línea base 4);
+`MSX CACHE slots=208 (floor 208)` en la M4.
+
+**Falta (en este orden)**: (1) el dibujo de la capa (arriba); (2) los sprites de las piezas del jefe en la
+exportación de la M4 (107 programas del grupo `m4`; validación contra VRAM de `run4` 157590..); (3) prueba de ares
+que llegue al jefe y lo derrote (el mando de `test_mission4_ares.py` no pasa de la cámara 4360: «Siguiente paso
+(0)» de la fase 2d) y sumarla a `regression_ares.py`; (4) el rótulo de recogida en la base; (5) del B69: el SV-001 de
+forma fija en la prueba `veh` y el Slugnoid en ares (sin cambios en esta sesión).
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

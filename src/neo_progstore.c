@@ -11,8 +11,9 @@ void neo_progstore_reset(void) {
     while (heap_blocks) {heap_block_t *n=heap_blocks->next;free(heap_blocks);heap_blocks=n;}
     arena_used=0;unsigned peak=stats.peak_bytes;memset(&stats,0,sizeof(stats));stats.peak_bytes=peak;
 }
-const neo_anim_command_t *neo_progstore_load(uint32_t offset,unsigned count) {
-    uint32_t bytes=10u*count,room=(bytes+15u)&~15u;uint8_t *d;
+/* `head` bytes (a multiple of 16) before the commands, for the caller. */
+static uint8_t *load(uint32_t offset,unsigned count,uint32_t head) {
+    uint32_t bytes=10u*count,room=head+((bytes+15u)&~15u);uint8_t *d;
     if (!reader || !count) {stats.failed++;return NULL;}
     if (arena && arena_used+room<=arena_bytes) {d=arena+arena_used;arena_used+=room;}
     else {
@@ -21,6 +22,7 @@ const neo_anim_command_t *neo_progstore_load(uint32_t offset,unsigned count) {
         if (!b) {stats.failed++;return NULL;}
         b->next=heap_blocks;heap_blocks=b;d=(uint8_t*)b+16;stats.heap_blocks++;stats.heap_bytes+=16u+room;
     }
+    uint8_t *h=d;d+=head;
     if (!reader(d,offset,bytes)) {stats.failed++;return NULL;}
     neo_anim_command_t *c=(neo_anim_command_t*)d;
     for (unsigned k=0;k<count;k++) {   /* in place: the record and the struct are 10 bytes */
@@ -31,6 +33,16 @@ const neo_anim_command_t *neo_progstore_load(uint32_t offset,unsigned count) {
     }
     stats.programs++;stats.bytes+=room;
     if (stats.bytes>stats.peak_bytes) stats.peak_bytes=stats.bytes;
-    return c;
+    return h;
+}
+const neo_anim_command_t *neo_progstore_load(uint32_t offset,unsigned count) {
+    return (const neo_anim_command_t*)load(offset,count,0);
+}
+const neo_anim_program_t *neo_progstore_load_program(uint32_t offset,unsigned count) {
+    _Static_assert(sizeof(neo_anim_program_t)<=16,"program header");
+    uint8_t *h=load(offset,count,16);
+    if (!h) return NULL;
+    neo_anim_program_t *p=(neo_anim_program_t*)h;p->commands=(const neo_anim_command_t*)(h+16);p->count=(uint16_t)count;
+    return p;
 }
 neo_progstore_stats_t neo_progstore_stats(void) {return stats;}

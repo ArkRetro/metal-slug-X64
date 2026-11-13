@@ -45,19 +45,14 @@ static uint16_t HI(int32_t v) {return (uint16_t)((uint32_t)v>>16);}
 static const neo_anim_program_t *(*program_extra)(uint32_t tag);
 #ifdef N64
 #include "program_file.h"
-static neo_anim_program_t program_read[COUNT(soldier_program_refs)];
+static const neo_anim_program_t *program_read[COUNT(soldier_program_refs)];   /* the program in the store (4 bytes a program, not 8) */
 static const neo_anim_program_t *program(uint32_t tag) {
     enum {N=COUNT(soldier_program_refs)};
     unsigned lo=0,hi=N;                                /* first tag >= tag */
     while (lo<hi) {unsigned m=(lo+hi)/2;if (soldier_program_refs[m].tag<tag) lo=m+1; else hi=m;}
     if (lo<N && soldier_program_refs[lo].tag==tag) {
-        neo_anim_program_t *p=&program_read[lo];
-        if (!p->commands) {
-            p->commands=program_file_load(soldier_program_refs[lo].offset,SOLDIER_PROGRAM_REF_COUNT(&soldier_program_refs[lo]));
-            if (!p->commands) return NULL;             /* explicit stop (logged) */
-            p->count=SOLDIER_PROGRAM_REF_COUNT(&soldier_program_refs[lo]);
-        }
-        return p;
+        if (!program_read[lo]) program_read[lo]=program_file_load(soldier_program_refs[lo].offset,SOLDIER_PROGRAM_REF_COUNT(&soldier_program_refs[lo]));
+        return program_read[lo];                       /* NULL: explicit stop (logged) */
     }
     return program_extra?program_extra(tag):NULL;
 }

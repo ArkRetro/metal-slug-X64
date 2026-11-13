@@ -104,6 +104,8 @@ def main():
     ap.add_argument('--observed',type=Path);ap.add_argument('--model',type=Path);ap.add_argument('--report',type=Path);ap.add_argument('--keep-going',action='store_true')
     ap.add_argument('--palette-capture',type=Path,help='capture directory with palette<frame>.bin (8192 bytes: 256 palettes of 16 big-endian words): colours of the palette numbers no observed block used, from the snapshot --palette-frames MAP:FRAME,...; every observed palette number of the map must have the same colours there')
     ap.add_argument('--palette-frames',default='')
+    ap.add_argument('--actor-maps',default='',help='FIRST:COUNT:LAYER:XPAGE:FRAME,...: COUNT 22-byte map descriptors from FIRST that an actor (not the camera list) copies whole into a layer object (Mission 4: the boss 02267E, 02225E x 15 into 10D7B6, docs/MISION4.md); descriptor k goes to model LAYER at x XPAGE + 512 k, block (i, j) at (16 i, 16 j); the colours of their palette numbers from palette<FRAME>.bin of --palette-capture, which must be the same in every palette snapshot of --actor-map-frames')
+    ap.add_argument('--actor-map-frames',default='',help='A:B: the capture frames (inclusive) whose palette snapshots must agree on the colours of --actor-maps')
     ap.add_argument('--rom-model',type=Path,help='map.json for tools/pack_mission.py built from the ROM blocks');ap.add_argument('--camera-max',type=int);ap.add_argument('--outside-limit',type=int,default=1<<30,help='terrain blocks past the last map kept up to this x')
     a=ap.parse_args();rom=Rom(a.rom)
     loads=camera_maps(rom,a.descriptor);rep=dict(descriptor='%06X'%a.descriptor,camera_list='%06X'%rom.u32(a.descriptor),loads=[])
@@ -308,6 +310,33 @@ def main():
                               palette_numbers=len(votes),palette_numbers_from_palette_ram=sorted(ram_pal),palette_numbers_with_several_colour_sets=changes,blocks_without_observed_colours=dict(uncoloured)))
             print('ROM model: map %06X layer %d: %d ROM blocks, %d observed blocks outside the map kept, %d palette numbers (%d with more than one colour set), %d blocks without colours'%(
                 l['map'],layer,emitted,kept,len(votes),len(changes),sum(uncoloured.values())))
+        for spec in [x for x in a.actor_maps.split(',') if x]:
+            # Maps an actor copies into a layer object (docs/MISION4.md "Jefe en juego"): the runtime draws column n of the
+            # layer from the page of the map that 0C714E last wrote there (src/actor.c draw of 10D7B6), so every descriptor
+            # gets its own x page, the blocks as the ROM has them (tile, attribute; auto-animation bits as the stage map).
+            first,count,layer,xpage,frame=spec.split(':');first,count,layer,xpage,frame=int(first,16),int(count),int(layer),int(xpage,0),int(frame)
+            assert a.palette_capture,'--actor-maps needs --palette-capture'
+            def ram_colours(f,n):
+                raw=(a.palette_capture/('palette%d.bin'%f)).read_bytes();return [int.from_bytes(raw[32*n+2*k:32*n+2*k+2],'big') for k in range(16)]
+            lo,hi=(int(v) for v in a.actor_map_frames.split(':')) if a.actor_map_frames else (frame,frame)
+            snaps=[f for f in range(lo,hi+1) if (a.palette_capture/('palette%d.bin'%f)).exists()]
+            assert frame in snaps,('palette snapshot',frame)
+            pal_of={};emitted=0;nums=set()
+            for k in range(count):
+                desc=first+22*k;_,_,w,h,tiles,_=map_blocks(rom,desc)
+                for (i,j),(code,attr) in sorted(tiles.items()):
+                    if not code&0xffff and not attr:continue
+                    n=attr>>8;nums.add(n)
+                    if n not in pal_of:
+                        cols=ram_colours(frame,n);cols[0]=0
+                        for f in snaps:
+                            other=ram_colours(f,n);other[0]=0
+                            assert other==cols,('palette number changes in the frames',hex(desc),n,f)
+                        if cols not in palettes:palettes.append(cols)
+                        pal_of[n]=palettes.index(cols)
+                    cells.append(dict(layer=layer,x=xpage+512*k+16*i,y=16*j,code=code&~mask(attr),flip=attr&3,animation_mask=mask(attr),palette=pal_of[n],observations=0,share_pixels=True));emitted+=1
+            stats.append(dict(actor_maps='%06X'%first,count=count,model_layer=layer,x_page=xpage,rom_blocks=emitted,palette_numbers=sorted(nums),palette_frame=frame,palette_snapshots_equal=len(snaps)))
+            print('ROM model: %d actor maps from %06X into layer %d at x %#x: %d ROM blocks, palette numbers %s (same colours in %d snapshots)'%(count,first,layer,xpage,emitted,sorted(nums),len(snaps)))
         out=dict(m);out['source']='tools/export_stage_rom.py: ROM blocks of the maps of the camera list %06X; colours of the observed blocks (%s)'%(rom.u32(a.descriptor),m['source'])
         out['cells']=cells;out['swapped_cells']=[];out['conflicts']=[];out['palettes']=palettes;out['palette_numbers']=numbers
         out['width']=max(c['x'] for c in cells if c['layer']==3)+16;out['camera_max']=a.camera_max if a.camera_max is not None else m['camera_max']

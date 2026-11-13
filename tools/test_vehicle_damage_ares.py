@@ -33,6 +33,8 @@ p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
+if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
+    import sys;sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_private_data import private_data;a.data=private_data(a.data,out)
 expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
 MENU={'m1':0,'m2s3':3,'m5s3':8}[a.mission]          # main.c mselect_items: Down presses from MISSION 1
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
@@ -74,6 +76,7 @@ try:
         t=log()
         if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')   # the options screen (docs/OPCIONES.md): Start leaves it
         time.sleep(1.0)
+    if a.lifebar:wait(r'MSX LIFEBAR on',60)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0];seek_dx=[None,0.0];seek_off=[0.0]

@@ -91,9 +91,16 @@ try:
             if t-stuck<46:ph=(t-stuck-6)%12
             else:ph=(t-stuck-46)%20;up=ph>=12
         fight=0<=ph<8;left=0<=ph<0.8 or 12<=ph<16;right=(4<=ph<4.15) or (not fight and not up) or ph>=16
+        jump=bool(a.jump) and not fight and not up and (t%a.jump)<0.2;bomb=a.lifebar and (1.5<=ph<1.65 or 5.5<=ph<5.65)
+        # The boss 02267E (camera list 0x15B0) comes from the left while the camera follows the player at 0x8000 to the
+        # focus point 0x20 (MAME T): a 5 s cycle facing it, 0.15 s turning left, 3.5 s firing left (a jump at 1 s and
+        # 2.6 s, a grenade at 2 s), then 1.35 s walking right to keep up with the camera.
+        if a.boss and 'MSX boss layer 10D7B6' in text and 'MSX mission complete signal' not in text:
+            bp=t%5;left=bp<0.15;right=bp>=3.65;up=False
+            jump=1.0<=bp<1.2 or 2.6<=bp<2.8;bomb=a.lifebar and 2.0<=bp<2.15
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
-        hold('a',bool(a.jump) and not fight and not up and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
-        hold('z',a.lifebar and (1.5<=ph<1.65 or 5.5<=ph<5.65))
+        hold('a',jump);hold('b',a.fire and int(t*10)%2==0)
+        hold('z',bomb)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

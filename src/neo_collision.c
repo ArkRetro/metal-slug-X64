@@ -113,8 +113,21 @@ unsigned neo_collision_patch(const uint8_t *cells,unsigned pairs,unsigned blocks
     make_dynamic();unsigned changed=0;
     for (unsigned p=0;p<pairs;p++) for (unsigned b=0;b<blocks;b++) for (unsigned k=0;k<4;k++) {
         int cx=column+2*(int)p+(int)(k&1u),cy=top-2*(int)b-(int)(k>>1);
+        uint8_t v=cells[(p*stride+b)*4u+k];
+        /* Past the map's last column (Mission 4, the boss's road: the props
+         * 1C..1F copy 0E6DA8 again 0x20 columns further each lap) only the
+         * ring holds the cell: 0C72EC writes its slot (column & 63, row &
+         * 63) after 0C70FC's clip (neo_collision_window_clip), which only
+         * cuts what lies left of +36: a copy right of the window is written
+         * whole (MAME run4 157260..157290: 1C's copy to 344..350 with +36 =
+         * 316..318 rewrote the slots of all seven columns). */
+        if (cx>=(int)columns && ring_on) {
+            uint8_t *slot=&ring[((unsigned)(cx&63)<<6)|(63u-((unsigned)cy&63u))];
+            if (*slot!=v) {*slot=v;changed++;}
+            continue;
+        }
         if (cx<0 || cx>=(int)columns || cy<row0 || cy>=row0+(int)rows) continue;
-        uint8_t v=cells[(p*stride+b)*4u+k],*cell=&dynamic_grid[cx*rows+(cy-row0)];
+        uint8_t *cell=&dynamic_grid[cx*rows+(cy-row0)];
         if (*cell!=v) {*cell=v;changed++;ring_touch(cx,cy);}
     }
     return changed;
@@ -176,7 +189,10 @@ unsigned neo_collision_columns(void) {return columns;}
 uint8_t neo_collision_cell(int x,int y) {
     /* Vertical stages: every reader sees the kernel's ring (0C79FE), which
      * the tower writer 0B7C38 fills beyond the map's rows. */
-    if (x<0 || x>=(int)columns*8 || y<row0*8) return 0;
+    /* With the ring, a column past the map's end reads the slot it shares
+     * (0C714E loads nothing there: the slot keeps the column 64 cells
+     * before, or what a patch wrote; Mission 4's boss road). */
+    if (x<0 || (x>=(int)columns*8 && !(ring_on && !ring_bypass)) || y<row0*8) return 0;
     if (ring_on && !ring_bypass) return ring[((unsigned)(x>>3)&63u)<<6|(63u-((unsigned)(y>>3)&63u))];
     if (y>=(row0+(int)rows)*8) return 0;
     unsigned at=(unsigned)(x/8)*rows+(unsigned)((y>>3)-row0);
@@ -193,7 +209,7 @@ uint8_t neo_collision_cell(int x,int y) {
 static int row_lo(void) {return ring_on && !ring_bypass?ring_r0:row0;}
 static int row_hi(void) {return ring_on && !ring_bypass?ring_r0+64:row0+(int)rows;}
 static bool surface(int32_t x,int row,neo_surface_t *out) {
-    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
+    if (x<0 || (x>=(int32_t)columns*8*NEO_UNIT && !(ring_on && !ring_bypass))) return false;
     uint8_t code=neo_collision_cell(x/NEO_UNIT,row*8);
     unsigned shape=code&15;int32_t base=row*8*NEO_UNIT,u=(uint32_t)x&(8*NEO_UNIT-1),height;
     if (shape>=1 && shape<=4) height=base+(u/4)+(shape-1)*2*NEO_UNIT;
@@ -220,7 +236,7 @@ static bool surface(int32_t x,int row,neo_surface_t *out) {
  * y 192 and lands on the FB roof at y 144. Soldiers and other actors keep
  * them (neo_surface_unique). */
 static bool player_surface(int32_t x,int row,neo_surface_t *out) {
-    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
+    if (x<0 || (x>=(int32_t)columns*8*NEO_UNIT && !(ring_on && !ring_bypass))) return false;
     if ((neo_collision_cell(x/NEO_UNIT,row*8)>>5)==1u) return false;
     return surface(x,row,out);
 }
@@ -235,7 +251,7 @@ bool neo_surface_unique(int32_t x,neo_surface_t *out) {
     return found;
 }
 bool neo_surface_at(int32_t x,int32_t reference,int32_t rise,int32_t drop,neo_surface_t *out) {
-    if (x<0 || x>=(int32_t)columns*8*NEO_UNIT) return false;
+    if (x<0 || (x>=(int32_t)columns*8*NEO_UNIT && !(ring_on && !ring_bypass))) return false;
     bool found=false;int64_t closest=INT64_MAX;
     for (int row=row_lo(),end=row_hi();row<end;row++) {
         neo_surface_t s;if (!player_surface(x,row,&s)) continue;

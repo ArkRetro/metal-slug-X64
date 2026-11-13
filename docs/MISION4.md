@@ -972,3 +972,30 @@ Efectos: las 10 palabras están en `data/sound_map.json` y renderizadas
 `mission4_actors.json`, `m4_map_fixture.json.gz`, `m4_camera_fixture.json.gz`.
 Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,collision_observed.json,rom_report.json}`,
 `romfs/mission4.pack`.
+
+## Jefe en juego, quinta sesión (13-XI, agente A): el camino del jefe
+
+- **Causa de la cornisa de x 6127**: no faltaba suelo de MAME, era el tope del port `end_x` (`gameplay.c`):
+  `camera_max` del paquete (5808) + 320 = 6128. En MAME (captura T) la cámara sigue al jugador a 0x8000 por
+  actualización hasta el punto 0x20 (op 0x34 en 0x15B0; RAM 69B8 = 32 con el jefe vivo, 224 tras su muerte), sin
+  autoscroll (695A = 0) y sin otro límite: el camino se repite. Ahora la M4 no tiene fin de mundo cuando se conoce el
+  final del mapa del terreno (`neo_world_terrain_end`: columna + ancho del último op 0x18 de `10C72E`; 0E6DA8: 200 +
+  144 = bloque 344, x 5504).
+- **Anillo pasado el final del mapa** (0C714E no carga nada allí; cada ranura guarda la columna de 512 px antes):
+  la colisión lee el anillo también fuera de la rejilla (`neo_collision_cell`, `surface`) y `neo_collision_patch`
+  escribe la ranura de las celdas pasado el mapa. El recorte 0C70FC solo corta a la izquierda de +36 (y el ancho a
+  32 + (D4 − +36)): una copia a la derecha de la ventana se escribe entera (MAME run4 157260→157290: la copia de 1C a
+  344..350 con +36 = 316..318 cambió las ranuras 25..30, las 7 columnas iguales a 0E6DA8 70..76). En T (26970) las 32
+  columnas 356..387 del anillo son el mapa intacto repetido (142/144 celdas cada una; las 2 restantes, las 36 filas en
+  32 ranuras).
+- **Dibujo**: `scene_render_set_terrain_wrap` dibuja la capa 3 (10C72E) como anillo: el bloque b ≥ 344 muestra
+  b − 32 k (comprobado: las 600 celdas observadas de 5504..6144 del paquete = las de x − 512 salvo 52, todas en las
+  columnas de los accesorios 1C/1D/1E parcheados). Los registros de parches pasado el final se guardan en la
+  columna 32 bloques atrás, con la máscara de columnas que escribió la copia (`map_patch_cols`); el renderizador solo
+  dibuja y oculta esas columnas, y otra copia en el mismo destino quita sus columnas a las anteriores.
+- **Celdas de las copias de 0E6DA8** en el paquete (`extract_map_patches.py`, `MISSION4_ROAD`): 1C (70,1E,7,5), 1D
+  (78,1E,10,5) (la de 4 columnas, 0BA264, es el mismo registro con su máscara), 1E (88,1A,4,9), 1F (8C,1F,4,4) y el
+  parche propio de 1F 0BA7C2 (5A,1F,4,4), que tampoco estaba. Las cuatro restauraciones son iguales celda a celda al
+  modelo de ROM (validado contra MAME); el 5A de 1F no tiene captura (1F no se destruye en run4): pendiente.
+- **Paleta 892** de los helicópteros 085522 (descriptores 1C603E..1C671C): `RESOURCES` de `export_rest_sprites.py`,
+  de la captura A (155880..156180).

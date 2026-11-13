@@ -71,17 +71,28 @@ void scene_render_set_patch(bool done) {patched=done;}
  * cells (scene_stage_t patch_cells) are drawn instead of the stage's cells
  * of their layer inside each patch's rectangle (the original's SCB1 words
  * of those blocks are overwritten). */
-typedef struct { uint8_t layer;int16_t x0,y0,x1,y1;unsigned first,count; } map_patch_t;
-static map_patch_t map_patches[SCENE_STAGE_PATCHES];static unsigned map_patch_total;static uint64_t map_patch_mask;
+/* cols: the sub-map columns its record wrote (bit n = x0c + 16 n; 0xFFFF:
+ * all), x0c the target column's x (neo_world.h map_patch_cols). */
+typedef struct { uint8_t layer;int16_t x0,y0,x1,y1;unsigned first,count;int16_t x0c;uint16_t cols; } map_patch_t;
+static map_patch_t map_patches[SCENE_STAGE_PATCHES];static unsigned map_patch_total,map_patch_cols_gen;static uint64_t map_patch_mask;
 /* The pack's layer word against the game's (B63: target column D4 in bits
  * 21..31; a pack entry without it, Mission 2 before B63, takes any). */
 static bool patch_object_match(uint32_t pack,uint32_t game) {
     return !((pack^game)&0x1fffffu) && (!(pack>>21) || pack>>21==game>>21);
 }
-void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n) {
+static inline bool map_patch_col_on(const map_patch_t *m,int16_t x) {
+    if (m->cols==0xffffu) return true;
+    int n=(x-m->x0c)>>4;return n>=0 && n<16 && (m->cols>>n&1u);
+}
+void scene_render_set_map_patches(const uint32_t (*list)[2],const uint16_t *cols,unsigned n) {
     const scene_stage_t *st=scene_stage();uint64_t mask=0;
     if (st) for (unsigned k=0;k<n;k++) for (unsigned i=0;i<st->patch_count && i<map_patch_total;i++)
-        if (st->patch_submap[i]==list[k][0] && patch_object_match(st->patch_layer_object[i],list[k][1])) mask|=1ull<<i;
+        if (st->patch_submap[i]==list[k][0] && patch_object_match(st->patch_layer_object[i],list[k][1])) {
+            mask|=1ull<<i;
+            uint16_t c=cols && cols[k]?cols[k]:0xffffu;
+            if (map_patches[i].cols!=c) {map_patches[i].cols=c;map_patch_cols_gen++;}   /* a changed column set redraws (the cache key) */
+            map_patches[i].x0c=(int16_t)(st->patch_layer_object[i]>>21?16*(int)(st->patch_layer_object[i]>>21):map_patches[i].x0);
+        }
     static uint32_t seen_key;uint32_t key=n?list[n-1][0]^list[n-1][1]:0;
     if (mask!=map_patch_mask || key!=seen_key) debugf("MSX map patches drawn mask=%08lx%08lx (%u recorded, last %08lx %08lx)\n",(unsigned long)(mask>>32),(unsigned long)(mask&0xffffffffu),n,n?(unsigned long)list[n-1][0]:0ul,n?(unsigned long)list[n-1][1]:0ul);
     seen_key=key;
@@ -91,7 +102,7 @@ static void map_patch_index(const scene_stage_t *st) {
     map_patch_total=0;map_patch_mask=0;
     if (!st) return;
     for (unsigned i=0;i<st->patch_count && i<SCENE_STAGE_PATCHES;i++) {
-        map_patch_t *m=&map_patches[i];*m=(map_patch_t){0,32767,32767,-32768,-32768,0,0};
+        map_patch_t *m=&map_patches[i];*m=(map_patch_t){0,32767,32767,-32768,-32768,0,0,0,0xffffu};
         for (unsigned c=0;c<st->patch_cell_count;c++) {
             const scene_map_cell_t *cell=&st->patch_cells[c];
             if (scene_patch_cell_index(cell->layer)!=i) continue;
@@ -107,13 +118,13 @@ static void map_patch_index(const scene_stage_t *st) {
 }
 static inline bool map_patch_column(const scene_map_cell_t *cell) {
     for (unsigned i=0;i<map_patch_total;i++)
-        if ((map_patch_mask>>i)&1u && map_patches[i].layer==cell->layer && cell->x>=map_patches[i].x0 && cell->x<map_patches[i].x1) return true;
+        if ((map_patch_mask>>i)&1u && map_patches[i].layer==cell->layer && cell->x>=map_patches[i].x0 && cell->x<map_patches[i].x1 && map_patch_col_on(&map_patches[i],cell->x)) return true;
     return false;
 }
 static inline bool map_patch_hides(const scene_map_cell_t *cell) {
     for (unsigned i=0;i<map_patch_total;i++) {
         const map_patch_t *m=&map_patches[i];
-        if ((map_patch_mask>>i)&1u && m->layer==cell->layer && cell->x>=m->x0 && cell->x<m->x1 && cell->y>=m->y0 && cell->y<m->y1) return true;
+        if ((map_patch_mask>>i)&1u && m->layer==cell->layer && cell->x>=m->x0 && cell->x<m->x1 && cell->y>=m->y0 && cell->y<m->y1 && map_patch_col_on(m,cell->x)) return true;
     }
     return false;
 }
@@ -134,6 +145,24 @@ void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slo
     layer_ring_t *r=&layer_ring[layer];
     if (!on) {memset(r,0,sizeof(*r));return;}
     r->on=true;r->cols=false;r->first=(uint8_t)(first_slot&31u);r->x=(int16_t)x;memcpy(r->map_x,map_x,sizeof(r->map_x));
+}
+/* The terrain layer past its map's end (scene_render_set_terrain_wrap): a
+ * ring whose sprite column for block b shows block b - 32 k, the last one
+ * 0C714E loaded into that slot (the pack's cells and patches stay at the
+ * map's own columns; neo_world_terrain_end). */
+static int wrap_layer=-1,wrap_end;static bool wrap_ring;
+void scene_render_set_terrain_wrap(int layer,int end_x) {
+    if (wrap_ring && (layer!=wrap_layer || end_x<=0) && wrap_layer>=0 && wrap_layer<4) {memset(&layer_ring[wrap_layer],0,sizeof(layer_ring[0]));wrap_ring=false;}
+    wrap_layer=end_x>0?layer:-1;wrap_end=end_x;
+}
+static void terrain_wrap(unsigned i,int off) {
+    if (off+336<=wrap_end) {
+        if (wrap_ring) {memset(&layer_ring[i],0,sizeof(layer_ring[i]));wrap_ring=false;}
+        return;
+    }
+    int b0=(off>>4)-1,end=wrap_end>>4;int16_t map_x[32];
+    for (int k=0;k<32;k++) {int b=b0+k;if (b>=end) b-=32*((b-end)/32+1);map_x[k]=(int16_t)(16*b);}
+    scene_render_set_layer_ring(i,true,16*b0-off,(unsigned)b0&31u,map_x);wrap_ring=true;
 }
 /* A ring whose columns each have their own rise and screen rows [y0, y1)
  * (scene_render_set_layer_columns): the tile path only. */
@@ -462,6 +491,7 @@ static void map_patch_draw(unsigned layer,const retro_plane_view_t *view,const i
         if (!((map_patch_mask>>i)&1u) || m->layer!=layer) continue;
         for (unsigned c=0;c<m->count;c++) {
             scene_map_cell_t cell=st->patch_cells[m->first+c];cell.layer=(uint8_t)layer;
+            if (!map_patch_col_on(m,cell.x)) continue;
             if (view) depth_cell(&cell,view,offsets,video_tick,1);
             else if (cell.x-offsets[layer]>-16 && cell.x-offsets[layer]<320) classic_cell(&cell,offsets,rises,video_tick,1);
         }
@@ -540,7 +570,7 @@ static scene_strip_t *strip_rebuild(unsigned layer,int wx0,int wx1,int wy0,int w
     }
 }
 static const scene_strip_t *layer_strip(unsigned layer,int wx0,int wx1,int wy0,int wy1) {
-    uint32_t state=(collapsed?1u:0u)|(patched?2u:0u);static uint64_t strip_patches;
+    uint32_t state=(collapsed?1u:0u)|(patched?2u:0u)|map_patch_cols_gen<<2;static uint64_t strip_patches;
     if (state!=strip_state || map_patch_mask!=strip_patches) {strips_drop();strip_state=state;strip_patches=map_patch_mask;}
     scene_strip_t *s=&strips[layer];
     if (!scene_strip_covers(s,wx0,wx1,wy0,wy1)) return strip_rebuild(layer,wx0,wx1,wy0,wy1);
@@ -842,7 +872,7 @@ static void draw_layers(unsigned mask,const int *offsets,const int *rises,const 
  * pinned until the RDP has finished the last frame that ran it; then the
  * blocks are freed. Off while a fade or the white flash is on. */
 typedef struct {
-    bool valid;bool collapsed,patched;uint64_t map_patches;unsigned tower;int offsets[5],rises[5];bool visible[5];
+    bool valid;bool collapsed,patched;uint64_t map_patches;unsigned map_patch_cols,tower;int offsets[5],rises[5];bool visible[5];
     retro_plane_view_t views[5];
     layer_ring_t rings[4];
 } bg_key_t;
@@ -912,7 +942,7 @@ static void draw_layers_cached(unsigned mask,bool first,const int *offsets,const
     bg_collect();
     bool cacheable=!fade_on && !flash && !(MSX_DEPTH_STYLE&DEPTH_FOG) && !bg_retired[bg_group].pending;
     bg_key_t key;memset(&key,0,sizeof(key));
-    key.valid=true;key.collapsed=collapsed;key.patched=patched;key.map_patches=map_patch_mask;key.tower=tower_count;
+    key.valid=true;key.collapsed=collapsed;key.patched=patched;key.map_patches=map_patch_mask;key.map_patch_cols=map_patch_cols_gen;key.tower=tower_count;
     for (unsigned i=0;i<5;i++) {key.offsets[i]=offsets[i];key.rises[i]=rises[i];key.visible[i]=visible[i];}
     memcpy(key.rings,layer_ring,sizeof(key.rings));
     if (depth_mode) memcpy(key.views,depth_views,sizeof(key.views));
@@ -964,6 +994,7 @@ static void background(unsigned camera,int height,bool backdrop_after,unsigned v
             const scene_layer_rule_t *r=&st->rules[source];
             offsets[i]=((int)camera*r->x_num+r->x_den-1)/r->x_den;
             if (i<4 && layer_own[i]) offsets[i]=layer_own_offset[i];
+            if ((int)i==wrap_layer && i<4) terrain_wrap(i,offsets[i]);
             /* A ring layer: its columns carry their own offsets (draw_layers). */
             if (i<4 && layer_ring[i].on) offsets[i]=0;
             rises[i]=scene_layer_rise(r,source,height);

@@ -274,6 +274,8 @@ extern uint8_t msx_character_request;   /* player 1's +6E (msx_character.h) */
 unsigned msx_lifebar_food_hits(uint32_t points);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
+/* The diagnostics overlay's text (reference builds; nothing in the release). */
+void msx_debug_text(int x,int y,const char *text);
 /* Layout of msx_game_t as one object file sees it. gameplay.c exports its
  * own; actor.c compares it with the value it was compiled with, so a stale
  * object built against an older neo_world_t (the reference cartridge's

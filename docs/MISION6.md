@@ -474,6 +474,12 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   dibujos, 4 hijos borrados por `004192`. Programas en `extract_soldier_programs.py` (sin grupo); sprites
   (`export_rest_sprites.py ... captures-m6/fam/C@2010e-2042b`, raíces y paletas 74 / 75): 35 volcados, 45 156 píxeles
   iguales, 0 distintos; 12 124 descriptores, 406 paletas. Paquete de la M6: 1245 trozos (límite 1256).
+- **Memoria tras fusionar ccr `250afc9` (13-XI)**: el arranque completo (logo, título, opciones, películas) dejaba 3329 KB
+  para la caché (suelo 3332: «RAM budget» en `logo`; `pause`, que salta películas, sí llegaba a 208). La fuente de
+  depuración del panel de diagnóstico (`FONT_BUILTIN_DEBUG_MONO` y `rdpq_text`) solo se usa con
+  `msx_reference_invulnerable`: ahora la carga `msx_debug_text` de `gameplay.c` solo en los cartuchos de referencia
+  (`MSX_REFERENCE_INVULNERABLE`), y el de juego no la enlaza (texto −17 KB, datos −3,3 KB): ares «MSX CACHE slots=209
+  (3344 KB, floor 208)». Probado y descartado: las tablas CRC de las películas en el montón (ares: RSP CRASH en el logo).
 - **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
 
 ## Pendiente (fase 2, por orden)

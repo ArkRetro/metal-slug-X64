@@ -5,6 +5,7 @@
 #include "msx_perf.h"
 #include "scene_cull.h"
 #include "scene_strips.h"
+#include "gameplay.h"
 #include "scene_prerender.h"
 #include "visual_config.h"
 #include <stdlib.h>
@@ -305,7 +306,6 @@ surface_t *msx_display_get(void) {
 }
 static scene_cell_index_t mission1_index;
 void scene_renderer_init(void) {
-    rdpq_text_register_font(1,rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO));
     retro_effects_init();
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
     bool indexed=scene_cell_index_build(&cell_index,cells,count);
@@ -1096,7 +1096,9 @@ void scene_render_box(int x,int y,int width,int height,color_t color) {
     rdpq_mode_push();rdpq_set_mode_fill(color);rdpq_fill_rectangle(x,y,x+width,y+height);rdpq_mode_pop();
 }
 void scene_render_text(int x,int y,const char *text) {
-    rdpq_text_print(NULL,1,x,y+8,text);
+    /* The debug font of the diagnostics overlay: gameplay.c, reference
+     * builds only (loaded at its first use). */
+    msx_debug_text(x,y+8,text);
     // Fonts can overwrite TMEM; do not retain stale texture/palette residency.
     last_page=last_slot=last_format=-1;
     for (unsigned i=0;i<16;i++) pal_ids[i]=-1;

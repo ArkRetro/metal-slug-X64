@@ -344,6 +344,19 @@ void msx_game_vehicle_reference(msx_game_t *g) {
     neo_vehicle_init(&g->vehicle,937*MSX_UNIT+MSX_UNIT/2,64*MSX_UNIT,936*MSX_UNIT,0,1,300,9);
 }
 const bool msx_reference_invulnerable=MSX_REFERENCE_INVULNERABLE!=0;
+/* The diagnostics overlay's text (actor.c: only with msx_reference_invulnerable):
+ * the debug font is linked and loaded in the reference builds only, so the
+ * release image keeps neither the font nor its loader (docs/MISION6.md "Memoria"). */
+#if defined(N64) && MSX_REFERENCE_INVULNERABLE
+#include <libdragon.h>
+void msx_debug_text(int x,int y,const char *text) {
+    static bool font_ready;
+    if (!font_ready) {rdpq_text_register_font(1,rdpq_font_load_builtin(FONT_BUILTIN_DEBUG_MONO));font_ready=true;}
+    rdpq_text_print(NULL,1,x,y,text);
+}
+#else
+void msx_debug_text(int x,int y,const char *text) {(void)x;(void)y;(void)text;}
+#endif
 const uint32_t msx_game_layout=MSX_GAME_LAYOUT;
 /* Root of the projected words (the scene root 10E968 of player_frame). */
 static void root_xy(const msx_game_t *g,int32_t *rx,int32_t *ry) {

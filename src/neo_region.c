@@ -11,6 +11,9 @@
 #define MSX_M3VEH 1
 #endif
 #include "region_rom.h"
+#ifdef N64
+#include "program_file.h"
+#endif
 #include "neo_boss.h"
 /* Dispatch of the generic actors by routine label (see neo_region.h) and the
  * ROM data tables they read (data/region_rom.json). */
@@ -56,6 +59,12 @@ const uint8_t *ga_rom(uint32_t address) {
         }
     }
     if (best) return best;
+#ifdef N64
+    /* Blobs kept in the cartridge (/romblobs.bin, compile_region_rom.py). */
+    for (unsigned i=0;i<sizeof(region_cart)/sizeof(region_cart[0]);i++)
+        if (address>=region_cart[i].address && address<region_cart[i].address+region_cart[i].length)
+            return program_file_rom(region_cart[i].offset+(address-region_cart[i].address));
+#endif
     /* The boss's ROM regions (debris lists 0E932A.. read by the generic
      * actors it creates). */
     const uint8_t *boss=neo_boss_rom(address,1);

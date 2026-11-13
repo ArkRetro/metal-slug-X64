@@ -43,3 +43,23 @@ void program_file_reset(void) {
     if (s.programs) debugf("MSX PROGRAMS reset: %u read, %u bytes of %u KB, heap blocks %u (%u bytes), failed %u, read time %lu us in all, longest %lu us\n",s.programs,s.bytes,(unsigned)PROGRAM_ARENA_KB,s.heap_blocks,s.heap_bytes,s.failed,(unsigned long)read_us,(unsigned long)read_max_us);
     neo_progstore_reset();logged_kb=0;read_us=read_max_us=0;
 }
+const uint8_t *program_file_rom(uint32_t offset) {
+    static uint8_t window[8][48] __attribute__((aligned(16)));static unsigned next;
+    static uint32_t brom,bbytes;static bool bopened;
+    if (!bopened) {
+        static uint8_t head[16] __attribute__((aligned(16)));
+        bopened=true;
+        uint32_t at=(uint32_t)dfs_rom_addr("/romblobs.bin");
+        if (!at) {debugf("MSX ROMBLOBS /romblobs.bin missing (explicit stop: no ROM tables of the cartridge)\n");return NULL;}
+        brom=PhysicalAddr((void*)(uintptr_t)at);
+        data_cache_hit_writeback_invalidate(head,sizeof(head));dma_read(head,brom,sizeof(head));
+        if (memcmp(head,"MSXB",4) || (head[4]<<8|head[5])!=1u) {debugf("MSX ROMBLOBS /romblobs.bin not read (explicit stop)\n");brom=0;return NULL;}
+        bbytes=(uint32_t)head[8]<<24|(uint32_t)head[9]<<16|(uint32_t)head[10]<<8|head[11];brom+=16u;
+    }
+    if (!brom || offset>=bbytes) return NULL;
+    uint32_t start=offset&~1u,n=32u;
+    if (start+n>bbytes) n=(bbytes-start+1u)&~1u;
+    uint8_t *w=window[next++&7u];
+    data_cache_hit_writeback_invalidate(w,sizeof(window[0]));dma_read(w,brom+start,n);
+    return w+(offset-start);
+}

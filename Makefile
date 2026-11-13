@@ -107,10 +107,13 @@ $(BUILD_DIR)/entry_meta.h: tools/compile_entry_meta.py filesystem/cinematics/ent
 	python3 tools/compile_entry_meta.py
 $(BUILD_DIR)/src/mission_main.o: $(BUILD_DIR)/entry_meta.h
 $(BUILD_DIR)/mission1-internal.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/mission1-romfs
-$(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/programs.bin
+$(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/programs.bin $(BUILD_DIR)/mission1-romfs/romblobs.bin
 $(BUILD_DIR)/mission1-romfs/programs.bin: $(BUILD_DIR)/soldier_ai_tables.h
 	@mkdir -p $(dir $@)
 	cp $(BUILD_DIR)/programs.bin $@
+$(BUILD_DIR)/mission1-romfs/romblobs.bin: $(BUILD_DIR)/romblobs.bin
+	@mkdir -p $(dir $@)
+	cp $(BUILD_DIR)/romblobs.bin $@
 $(BUILD_DIR)/mission1-internal.dfs: $(BUILD_DIR)/mission1-romfs/title.msxc $(BUILD_DIR)/mission1-romfs/title-motion.wav64 $(BUILD_DIR)/mission1-romfs/scene.pack $(BUILD_DIR)/mission1-romfs/entry.msxc $(BUILD_DIR)/mission1-romfs/entry.wav64
 mission1-internal.z64: N64_ROM_TITLE = "MSX M1 INTERNAL"
 mission1-internal.z64: $(BUILD_DIR)/mission1-internal.dfs
@@ -255,7 +258,7 @@ MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -264,7 +267,7 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_ta
 	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
-	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/game-romfs/
+	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/romblobs.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
@@ -475,7 +478,7 @@ $(BUILD_DIR)/wipe_fixture.h: tools/extract_wipe_fixture.py data/wipe_fixture.jso
 	python3 tools/extract_wipe_fixture.py --from-json data/wipe_fixture.json.gz --output data/wipe_fixture.json.gz --header $@
 $(BUILD_DIR)/mission_flow_fixture.h: tools/compile_mission_flow_fixture.py data/mission_flow_fixture.json
 	python3 tools/compile_mission_flow_fixture.py
-$(BUILD_DIR)/region_rom.h: tools/compile_region_rom.py data/region_rom.json
+$(BUILD_DIR)/region_rom.h $(BUILD_DIR)/romblobs.bin &: tools/compile_region_rom.py data/region_rom.json
 	python3 tools/compile_region_rom.py
 # LSPC auto-animation (G25): REG_LSPCMODE writes and counter samples of run4/spr.
 $(BUILD_DIR)/lspc_fixture.h: data/lspc_fixture.json tools/compile_lspc_fixture.py

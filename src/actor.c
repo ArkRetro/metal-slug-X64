@@ -354,6 +354,50 @@ static void draw_m3_overlay(bool request_only) {
     }
 }
 #endif
+/* Mission 4 boss 02267E (docs/MISION4.md "Jefe en juego"): its layer object
+ * 10D7B6 (world m4layer) as the hardware shows it, measured on run4's VRAM
+ * dumps 157620..161400: the sprite of column n (n < 20, the boss maps' width)
+ * has SCB4 = +84 << 7 + 0x800 n (x = +84 + 16 n; 0C75EE gives it height 0
+ * when x is outside [-8, 312)) and SCB3 = (+86 << 7) + word n of the column
+ * table +42 (Y = its bits 15..7, height its bits 5..0); its tile slot t
+ * (0C714E: map row r of the map last written there at slot m4col_top + r)
+ * shows on the capture at y = (496 - Y + 16 t) mod 512 when t < height. The
+ * boss maps 02225E + 22 k are the pack's layer-2 cells at x 0x4000 + 512 k
+ * (tools/export_stage_rom.py --actor-maps): map column n, row r at
+ * (0x4000 + 512 k + 16 n, 16 r); port y = capture y + 8. A column whose
+ * visible rows are not one run is not drawn and counted (none seen). */
+#ifdef MSX_HAS_M3MID
+enum { M4_BOSS_MAPS=0x02225Eu,M4_BOSS_MAP_BYTES=22,M4_BOSS_MAP_COUNT=15,M4_BOSS_PAGE=0x4000,M4_BOSS_LAYER=2 };
+static unsigned m4_layer_unsupported;
+static void m4_boss_layer(void) {
+    const neo_world_t *w=&game.world;
+    int16_t map_x[32],rise[32],y0[32],y1[32];bool any=false;
+    for (unsigned n=0;n<32;n++) {map_x[n]=INT16_MIN;rise[n]=y0[n]=y1[n]=0;}
+    if (w->m4layer_used && w->m4layer_map) {
+        const uint8_t *b=w->m4layer;
+        uint16_t w84=(uint16_t)(b[0x84]<<8|b[0x85]),w86=(uint16_t)(b[0x86]<<8|b[0x86+1]);
+        for (unsigned n=0;n<20;n++) {
+            uint32_t m=w->m4col_map[n];
+            if (!m) continue;
+            if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
+            int16_t x=(int16_t)(w84+16u*n);
+            if (x<-8 || x>=312) continue;
+            uint16_t scb3=(uint16_t)((uint16_t)(w86<<7)+(uint16_t)(b[0x42+2*n]<<8|b[0x43+2*n]));
+            unsigned h=scb3&0x3fu,top=w->m4col_top[n];
+            if (h>32u) {m4_layer_unsupported++;continue;}
+            int yt=(496-(int)(scb3>>7))&511,r=(yt+16*(int)top)&511;if (r>=256) r-=512;
+            int first=-1,last=-1;bool split=false;
+            for (unsigned sr=0;sr<13;sr++) if (((top+sr)&31u)<h) {if (last>=0 && last!=(int)sr-1) split=true;if (first<0) first=(int)sr;last=(int)sr;}
+            if (split) {m4_layer_unsupported++;continue;}
+            if (first<0) continue;
+            map_x[n]=(int16_t)(M4_BOSS_PAGE+512*(int)((m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES)+16*(int)n);
+            rise[n]=(int16_t)r;y0[n]=(int16_t)(8+r+16*first);y1[n]=(int16_t)(8+r+16*(last+1));any=true;
+        }
+        /* The ring's x is the column 0 one (+84). */
+        scene_render_set_layer_columns(M4_BOSS_LAYER,any,(int16_t)w84,map_x,rise,y0,y1);
+    } else scene_render_set_layer_columns(M4_BOSS_LAYER,false,0,map_x,rise,y0,y1);
+}
+#endif
 static void draw_marco(unsigned bank_id,unsigned frame);
 static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) {
 #ifdef MSX_HAS_M3MID
@@ -743,6 +787,12 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         native_missing_descriptor=native_missing_palette=0;
     }
 #ifdef MSX_HAS_M3MID
+    if (m4_layer_unsupported) {debugf("MSX boss layer 10D7B6: %u columns not drawn (map outside 02225E..+15, height > 32 or split rows)\n",m4_layer_unsupported);m4_layer_unsupported=0;}
+    {static uint32_t m4_map;static unsigned m4_patches;
+     if (game.world.m4layer_map!=m4_map || game.world.m4patch_count!=m4_patches) {
+        m4_map=game.world.m4layer_map;m4_patches=game.world.m4patch_count;
+        debugf("MSX boss layer 10D7B6 map=%06lX patches=%u\n",(unsigned long)m4_map,m4_patches);
+     }}
     if (m3_overlay_missing) {debugf("MSX mid-boss layer 10E8C6: %u blocks without a frame or palette\n",m3_overlay_missing);m3_overlay_missing=0;}
     {static uint32_t m3_map;static unsigned m3_patches;
      if (game.world.m3layer_map!=m3_map || game.world.m3patch_count!=m3_patches) {
@@ -963,6 +1013,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             scene_render_set_layer_offset(p,on,on?-(int)neo_layer_word(mid->x):0);
             scene_render_set_layer_rise(p,on,256-(int)neo_layer_word(mid->y)+(p<2?8:0));
         }
+#ifdef MSX_HAS_M3MID
+        m4_boss_layer();
+#endif
     }
     /* B26: the frame's sprite windows and layers in their SCB slot order
      * (msx_draw_order, gameplay.c): window A holds the sprites in +1E

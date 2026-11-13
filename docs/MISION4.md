@@ -846,6 +846,72 @@ que llegue al jefe y lo derrote (el mando de `test_mission4_ares.py` no pasa de 
 (0)» de la fase 2d) y sumarla a `regression_ares.py`; (4) el rótulo de recogida en la base; (5) del B69: el SV-001 de
 forma fija en la prueba `veh` y el Slugnoid en ares (sin cambios en esta sesión).
 
+## Jefe en juego, tercera sesión (13-XI, agente A)
+
+- **Dibujo de la capa `10D7B6`** (celdas del paquete, no fotogramas nativos): `export_stage_rom.py --actor-maps
+  02225E:15:2:0x4000:158400 --actor-map-frames 157620:161970` (en `build_mission4.sh`) pone los 15 mapas de 20 × 13 del
+  jefe en la capa 2 del modelo, mapa k en x 0x4000 + 512 k, bloque (i, j) en (16 i, 16 j), tal como la ROM los tiene
+  (3900 bloques; paletas 0x70/0x71 de `palette158400.bin`, iguales en las 146 instantáneas del jefe). Las celdas llevan
+  `share_pixels`: `mission_tiles.pack_map` da a las fases de autoanimación con los mismos píxeles y paleta una sola
+  imagen (14 648 teselas → **1328 imágenes**; con una imagen por tesela el paquete pasaba a 20 480 imágenes y las tablas
+  no cabían). `actor.c` `m4_boss_layer`: columna n en x = +84 + 16 n (oculta fuera de [−8, 312)), SCB3 = (+86 << 7) +
+  palabra n de +42 (Y, altura), fila r del mapa en la casilla `m4col_top + r`, y = (496 − Y + 16 t) mod 512 si t < altura;
+  `scene_render_set_layer_columns` (anillo de columnas con subida y filas visibles propias; solo ruta de teselas).
+  Comprobado contra la VRAM de `run4` (157620, 157800, 158400, 160200, 161400; script de la sesión): las 736 casillas
+  visibles son la fila (t − top) de la columna n de uno de los 15 mapas; SCB4/SCB3 = la fórmula salvo el retraso de un
+  fotograma de la VRAM frente a la RAM (x ±1..2) y la altura de las columnas ocultas.
+- **Sprites de las piezas** en la exportación de la M4: `export_rest_sprites.py` con las 116 raíces del grupo `m4`
+  del jefe y sus paletas (`F0, 276, FB, FC, 147, F3, 146, 357..359, 378, 141, F4, 156, 113, F8`), validados con la
+  captura T (`captures-m4/fam/T@2267e-25ec0 --mask-auto`): 58 fotos, **18 685 píxeles iguales, 0 distintos**; opción
+  nueva `--keep-palettes` (las paletas de la exportación anterior ganan: T daba otros colores a 114, 124, 380, 3AC,
+  861, 863). Solo se añaden los 980 descriptores del jefe (no los de otras misiones). Paquete M4: 1145 trozos, 7160
+  imágenes; tablas de la etapa 941 KB en 59 ranuras (antes 846 KB / 53).
+- **Memoria**: `pinned`, `map_chunk` y `warm_queued` (tres `bool[CHUNKS_ALL]`) en un byte de banderas: −4,4 KB; la
+  imagen queda +56 B sobre `d2d06db` (el anillo de columnas y `m4_boss_layer` cuestan lo mismo). Caché 208.
+- **Cámara 4360**: no es un fallo del port. La orden `2DC67A` bloquea la cámara hasta que el grupo 6 (helicópteros
+  `085522`, `+80` = 0: solo se van al acabar las bombas, y no disparan con el jugador dentro de `0E4DB4`) quede vacío;
+  el mando de la prueba solo disparaba al frente. `test_mission4_ares.py`: tras 40 s parado, ciclo de 16 s con 6 s de
+  disparo hacia arriba; opción `--boss` (PASS solo con el mapa de la capa, `018F92` y `MSX mission 5 stage N start`).
+- **Sin cerrar**: (1) la prueba de ares hasta el jefe: con el cartucho normal, `--lifebar --continues` y el ciclo
+  nuevo, el mando muere una y otra vez en la cámara 2160 (el tanque `027F54` queda a su espalda; 14 continuaciones,
+  sin pasar de 2160); hace falta un mando que lo destruya (girarse y disparar mientras el tanque está detrás) o un punto
+  de partida más cercano en el menú de pruebas. Por eso **el dibujo de la capa y los sprites del jefe aún no se han
+  visto en ares** (sí la carga del paquete: 21 166 celdas, 7160 imágenes, 941 KB en 59 ranuras, caché 208). (2) B69:
+  `test_vehicle_damage_ares.py --mission m2s3` (Slugnoid) con este cartucho: el mando no llega a montarlo en 1500 s
+  (FAIL); el SV-001 fijo en `veh` sigue pendiente. (3) Las exportaciones `mission5/6/rest-native.json` de este árbol
+  enlazaban a `ws-m5`/`ws-chars` (trabajo en curso: la M6 salía con 1224 trozos > 1200); ahora enlazan a `ws-logo`.
+
+## Jefe en juego, cuarta sesión (13-XI, agente A)
+
+- **Fusión de `ccr` (`91d8ef3`)**: `scene_assets.c` toma los conjuntos de bits de `ccr` (las banderas en un byte de
+  esta rama sobran). El árbol fusionado se quedaba en **3331 KB para la caché (mínimo 3332)** y ares paraba en
+  `scene_assets_init`: los programas bajo demanda guardan ahora la cabecera (`neo_anim_program_t`) en el almacén,
+  delante de las órdenes (`neo_progstore_load_program`, 16 bytes más por programa leído), y la imagen solo un
+  puntero por programa: −3,7 KB de bss (`test_program_file`: la segunda pasada lee con cabecera).
+- **Prueba de ares**: la barra de vida no se encendía nunca (ni en esta prueba ni en `veh`): Z de la N64 es
+  `R-Trigger` y los ajustes compartidos lo tienen vacío. `tools/ares_private_data.py`: con `--lifebar` cada prueba
+  usa una copia propia de `data146` con `R-Trigger: 0x1/0/60` (tecla z; el fichero compartido no se toca), y espera
+  `MSX LIFEBAR on`. Mando de `test_mission4_ares.py` en las paradas de cámara (6 s sin avance): ciclo de 12 s
+  (atrás y disparo a la izquierda, granada; giro y disparo a la derecha, granada; 4 s de avance con saltos) y, tras
+  40 s, de 20 s con 8 s de disparo hacia arriba andando a izquierda y derecha. Así pasa el coche de 1000 (el mando se
+  subía a su techo), el blindado `087E36` de 2160 (destruido) y los voladores de 4360, monta el SV-001 `092A32`
+  de 4288 y llega al jefe (`02267E` en 5552, `MSX boss layer 10D7B6 map=02225E`, piezas destruidas) en ~45 min.
+- **Jefe**: el paso desplazado `023E3A` (pieza 3 y orugas sobre el fotograma `+9A` del cuerpo) es el mismo
+  `00427A` que los demás: sus CALL (`025D32..025DAA`, destellos `025DC2`) quedaban como `unsupported
+  routine=25d92` en ares; ahora corren (`m4boss` sigue igual a MAME).
+- **Sin cerrar: derrotar al jefe en ares.** La cámara del port llega a x 6084 y Marco queda en la cornisa de x 6127
+  sin suelo a la derecha (franja negra abajo); en el TAS la cámara avanza despacio con el jefe (progreso 5561 en
+  U 12060 → 5742 al cerrar la sección, `updates.txt`) y el jugador pelea sobre los tejados y el propio jefe
+  (`snap_u12000/12180/12300.png`). Falta lo ya listado: las celdas de las copias de `0E6DA8` de los accesorios
+  1C..1F (camino del jefe) y la cámara automática del jefe; hasta entonces `--boss` no puede pasar y la prueba no
+  entra en la matriz. Dibujos ausentes nuevos vistos en 4360: `palette_id=892` (programas `1C6086..1C671C`, los
+  voladores `085522`), pendiente de exportar con su captura.
+- **Puertas** (`work-m4` tras fusionar `ccr` `91d8ef3`): `make check` RC 0 (282 PASS; `m4boss` repetida con el
+  arreglo de `023E3A`: igual a MAME); cartucho 62 963 712 B; `regression_ares.py` con `m1end` recién hecho: logo,
+  personajes, M4, M5 ×3, M6 ×3 PASS sin recuentos nuevos (M6 E1 `unsupported` 3, línea base 4), pausa FAIL la primera
+  vez («paused by a boot tap», con tres emuladores y `make check` en la máquina) y PASS al repetirla, M1 → M2 PASS,
+  `veh` FAIL (torres de 1920, 3049 s) y PASS al repetirla (993 s).
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

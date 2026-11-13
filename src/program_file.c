@@ -25,10 +25,10 @@ static void open_file(void) {
     if (memcmp(head,"MSXP",4) || (head[4]<<8|head[5])!=1u) {debugf("MSX PROGRAMS /programs.bin not read (explicit stop)\n");rom=0;return;}
     rom_bytes=bytes;neo_progstore_setup(file_read,arena,ARENA_BYTES);
 }
-const neo_anim_command_t *program_file_load(uint32_t offset,unsigned count) {
+const neo_anim_program_t *program_file_load(uint32_t offset,unsigned count) {
     if (!opened) open_file();
     uint32_t t0=TICKS_READ();
-    const neo_anim_command_t *c=neo_progstore_load(offset,count);
+    const neo_anim_program_t *c=neo_progstore_load_program(offset,count);
     uint32_t us=TICKS_TO_US(TICKS_SINCE(t0));read_us+=us;if (us>read_max_us) read_max_us=us;
     neo_progstore_stats_t s=neo_progstore_stats();
     if (!c && !reported) {reported=true;debugf("MSX PROGRAMS program at %lu not read (explicit stop)\n",(unsigned long)offset);}

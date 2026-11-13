@@ -33,6 +33,9 @@ void scene_render_set_layer_rise(unsigned layer,bool on,int rise);
  * screen x + 16 k in ring slot (first_slot + k) & 31, showing the pack's
  * column at layer x map_x[k] (INT16_MIN: nothing). Overrides the offset. */
 void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]);
+/* Column k of the layer at screen x + 16 k shows the pack column at map_x[k]
+ * (INT16_MIN: none) with its own rise, clipped to screen rows [y0[k], y1[k]). */
+void scene_render_set_layer_columns(unsigned layer,bool on,int x,const int16_t map_x[32],const int16_t rise[32],const int16_t y0[32],const int16_t y1[32]);
 void scene_render_image_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flash);
 void scene_render_back(unsigned camera,int height,bool backdrop_after,unsigned video_tick);
 void scene_render_front(unsigned camera,int height,bool backdrop_after,unsigned video_tick);

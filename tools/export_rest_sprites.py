@@ -402,6 +402,10 @@ ROOTS=ROOTS+(0x2afdaa,0x2afe14,0x2aff14,0x2aff94,0x289082,0x289cd6,0x28a12c,0x28
 # Mission 4 vehicle 0587C4 and its turret 0592C6 (1C, flash 30B), the muzzle flashes and shots 0594B0 / 0594CE (1E), the trail 05996A (37C), the wreck's piece 059B5C (1D); the shot's blast 059852 is 22CE6C (204, above).
 ROOTS=ROOTS+(0x24ba74,0x24bb34,0x24bca0,0x24bcba,0x24bdc8,0x24bde2,0x24c1c2,0x24c2f6,0x24bd62,0x24ba5e,0x24bad4,0x24bbea,0x24bd48,0x24bedc,0x24be5c,0x24c25a,0x24be76,0x24bfbc,0x24c0fc,0x24bf42,0x24c082,0x24c3aa,0x24c53e)
 RESOURCES=RESOURCES+(0x1c,0x30b,0x1e,0x37c,0x1d)
+# Mission 4 boss 02267E (neo_m4boss.c): the programs of its parts, shells, trails, flashes, debris and reflection (the roots
+# of tools/extract_soldier_programs.py, group m4) and the palettes neo_m4boss.c gives them.
+ROOTS=ROOTS+(0x2348d4,0x246ad2,0x234d04,0x234c06,0x234bfc,0x234c62,0x232a9a,0x232b0a,0x232b7a,0x232bea,0x232c78,0x232d06,0x230b1e,0x230b6e,0x230bbe,0x230c0e,0x230ca0,0x230d32,0x230dc4,0x230e56,0x230ee8,0x230f7a,0x23100c,0x23109e,0x231130,0x2311b6,0x23123c,0x2312c2,0x231348,0x2313ce,0x231454,0x2314da,0x231560,0x2315e6,0x2315f2,0x2315fe,0x23160a,0x23165a,0x2316aa,0x2316fa,0x23174a,0x231838,0x231926,0x231a14,0x231b02,0x231bf0,0x231cde,0x231dcc,0x231eba,0x231fa8,0x232096,0x232184,0x232272,0x23231c,0x2323c6,0x232470,0x23251a,0x2325c4,0x23266e,0x232718,0x2327c2,0x23286c,0x232916,0x2329c0,0x232a6a,0x232a76,0x232a82,0x232a8e,0x232d94,0x232e36,0x232ed8,0x232f7a,0x23301c,0x2330be,0x233160,0x233202,0x2332a4,0x233346,0x2334ac,0x233612,0x2336b4,0x233756,0x2337f8,0x23389a,0x23393c,0x2339de,0x233a80,0x233b22,0x233bc4,0x233c66,0x233d08,0x233daa,0x233f10,0x234076,0x2341dc,0x2341e4,0x23423a,0x234554,0x2346aa,0x2347aa,0x2347b0,0x2347de,0x2347e4,0x234812,0x234840,0x234912,0x234924,0x234930,0x2349ec,0x2349ee,0x234a7a,0x234ad8,0x234b2c,0x234bb2,0x234bc8,0x234e0a)
+RESOURCES=RESOURCES+(0xf0,0x276,0xfb,0xfc,0x147,0xf3,0x146,0x357,0x358,0x359,0x378,0x141,0xf4,0x156,0x113,0xf8)
 # Mission 5 sewer gates 0BC296 (59C, flash 59D) and 0BC3A6 (59F, flash 59E).
 ROOTS=ROOTS+(0x2a91d0,0x2a91ee)
 RESOURCES=RESOURCES+(0x59c,0x59d,0x59e,0x59f)
@@ -481,6 +485,7 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
+    p.add_argument('--keep-palettes',action='store_true',help='the --keep exports\' palettes win over the captures\' (a capture of one actor, e.g. the Mission 4 boss T, adds its palettes without changing the colours the scene pack already has)')
     p.add_argument('--mask-auto',action='store_true',help='compare the frames with auto-animated entries (LSPC attribute bits 2/3), leaving out their area')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
@@ -524,7 +529,9 @@ def main():
     for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
         if not keep.exists():continue
         prev=json.loads(keep.read_text())
-        for k,v in prev.get('palettes',{}).items():pal_out.setdefault(k,v)
+        for k,v in prev.get('palettes',{}).items():
+            if a.keep_palettes:pal_out[k]=v
+            else:pal_out.setdefault(k,v)
         for f in prev.get('frames',[]):kept_frames.setdefault(f['descriptor'],f)
         pal_out=dict(sorted(pal_out.items(),key=lambda kv:int(kv[0],16)))
     stats=collections.Counter();per=[]

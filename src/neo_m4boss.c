@@ -367,17 +367,19 @@ static void part_tail(neo_gactor_t *a,neo_genv_t *e,bool bit1,bool phase) {
     k24c94(a,e,false);
     if (phase && k24a94(a,e)) {k23e96(a,e);lost(a,e);if (bit1) SET(0x8d,1);SL(0,0x240ee);}
 }
+static bool shell_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter);
 /* The program step of the parts that sit on the body's frame +9A (part 3
- * and the treads): +3C shifted by 4 * the frame (-2 or -1 at frame 9). */
+ * and the treads): +3C shifted by 4 * the frame (-2 or -1 at frame 9). The
+ * same step 00427A as the others (023E3A / 023E52), so its CALLs run too
+ * (part 3's programs call the flashes 025D32..025DAA; ares, 13-XI). */
 static int step_shifted(neo_gactor_t *a,neo_genv_t *e,uint16_t frame,unsigned nine) {
     uint16_t d0=(uint16_t)(frame*4u);
     if (frame==9u) d0=(uint16_t)(d0-nine);
     uint32_t x=L(0x3c);SW(0x3c,W(0x3c)+d0);
-    int st=ga_anim_step(a,e,NULL);
+    int st=ga_anim_step(a,e,shell_call);
     SL(0x3c,x);
     return st;
 }
-static bool shell_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter);
 static int step(neo_gactor_t *a,neo_genv_t *e) {return ga_anim_step(a,e,shell_call);}
 /* ---- the guns 023526 (parts 0..2) and 02391E (parts 3..6) ----------------------- */
 static ga_result_t gun_tick(neo_gactor_t *a,neo_genv_t *e) {

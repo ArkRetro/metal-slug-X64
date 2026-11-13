@@ -909,6 +909,16 @@ static ga_result_t m6props_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (mid_routine(L(0))) return mid_tick(a,e);
     if (run_routine(L(0))) return run_tick(a,e);
     switch (L(0)) {
+    /* ---- 0530F4: the hold of the mid-boss (script 2DFB88, group 0) ----
+     * 0530F4: st.b 10C44C (444C(A5)), +0 = 0530FE; 0530FE: 10C44C set → rts,
+     * clear (052F8A at the boss's end) → 004188. */
+    case 0x530f4:
+        if (!e->flags) {ga_fail(e,0x530f4);return GA_UNSUPPORTED;}
+        e->flags->m6_signal=0xff;SL(0,0x530fe);
+        /* fall through */
+    case 0x530fe:
+        if (!e->flags) {ga_fail(e,0x530fe);return GA_UNSUPPORTED;}
+        return e->flags->m6_signal?GA_MORE:GA_DELETE;
     /* ---- 0BD822 / 0BD836 / 0BD84A: the raft ---- */
     case 0xbd822: case 0xbd836: case 0xbd84a: {
         uint32_t f=L(0)==0xbd822u?0xbd8f4u:L(0)==0xbd836u?0xbd906u:0xbd918u;
@@ -1054,7 +1064,7 @@ static ga_result_t m6props_tick(neo_gactor_t *a,neo_genv_t *e) {
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
 bool neo_m6props_routine(uint32_t r) {
-    static const uint32_t k[]={0xbd822,0xbd836,0xbd84a,0xbd898,0xbd8f4,0xbd906,0xbd918,0xbd95e,0xbda4e,0xbd416,0xbd444,0xbd472,0xbd4a6,0xbd4d4,0xbd50e,
+    static const uint32_t k[]={0x530f4,0x530fe,0xbd822,0xbd836,0xbd84a,0xbd898,0xbd8f4,0xbd906,0xbd918,0xbd95e,0xbda4e,0xbd416,0xbd444,0xbd472,0xbd4a6,0xbd4d4,0xbd50e,
         0xbdab8,0xbdade,0xbd18e,0xbd1b8,0xbd2ba,0xbd2ce,0xbd20e,0xbcfa4,0xbcfc4,0xbcfe4,0xbd004,0xbd044};
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
     return mid_routine(r) || run_routine(r);

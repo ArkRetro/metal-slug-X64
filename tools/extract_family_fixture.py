@@ -42,7 +42,7 @@ def main():
         if not t:continue
         if t[0]=='F':frame=int(t[1]);continue
         if t[0]=='U':
-            if cur is not None:cur.pop('born',None);cur['post']=None;updates.append(cur)
+            if cur is not None:cur.pop('born',None);cur.pop('freed',None);cur['post']=None;updates.append(cur)
             if rnd_frame!=frame:rnd+=1;rnd_frame=frame
             last_round[int(t[1],16)]=rnd
             r=int(t[2],16)
@@ -61,9 +61,10 @@ def main():
             if 'born' in cur:
                 cur['births']={'%x'%n:sorted([o,v] for o,v in b.items() if v is not None) for n,b in cur.pop('born').items()}
                 cur['births']={n:b for n,b in cur['births'].items() if b}
-            cur['post']=t[2];updates.append(cur);cur=None;continue
+            cur.pop('freed',None);cur['post']=t[2];updates.append(cur);cur=None;continue
         if t[0] in 'RW':
             ad,mask,data,pc=int(t[1],16),int(t[2],16),int(t[3],16),int(t[4],16)
+            if t[0]=='W' and ad==int(cur['node'],16) and 0x4126<=pc<0x4188:cur['freed']=True
             if t[0]=='R' and ad in WATCH:
                 if hex(ad) not in cur['reads']:cur['reads'][hex(ad)]=[mask,data,pc]
                 elif (0x10c3a2<=ad<0x10c446 or 0x10c06e<=ad<0x10c292) and mask&~cur['reads'][hex(ad)][0]:
@@ -120,7 +121,11 @@ def main():
                         if '%x'%b not in cur['ram_in'] and not any(w[0]==b for w in cur['ram_out']):cur['ram_in']['%x'%b]=v
                     else:cur['ram_out'].append([b,v])
     # An update still open at the end of the trace was cut by the capture's
-    # last frame (not a deletion): dropped.
+    # last frame (not a deletion): dropped, unless the free 004126 cleared its
+    # node (+00 written at 004136): a deletion with no U after it (m6hold: the
+    # last family update of the trace; a frame line is no end, the vblank can
+    # fall inside an update).
+    if cur is not None and cur.get('freed'):cur.pop('born',None);cur.pop('freed');cur['post']=None;updates.append(cur)
     with gzip.open(a.output,'wt') as f:json.dump(dict(source=f'MAME 0.264 mslugx euro family trace {a.trace}',globals=2,ranges=a.range,ram=a.ram,updates=updates),f,separators=(',',':'))
     rs={}
     for u in updates:rs[u['routine']]=rs.get(u['routine'],0)+1

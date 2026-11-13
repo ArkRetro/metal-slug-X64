@@ -910,6 +910,14 @@ celdas estaban en otro blob (`E0076..`, grupo m4). `ga_rom_dyn_map` busca ahora 
 bytes enteros (los blobs se solapan) y el del rehén llega a `E007C` (de la ROM). `filesystem/mission4` enlaza (solo
 lectura) a los datos privados de `ws-m4` (el paquete de la M4 de A, con los parches nuevos, sale igual byte a byte).
 
+**Puertas tras fusionar ccr `4de14ab`**: `make check` en verde (`-j2`), `make` y `mslugx-m1end.z64` sin líneas
+compartidas en `check_icache.py`, caché 209 ranuras. Matriz (`regression_ares.py` con `--m1end`): logo, pausa,
+personajes, M4, M5 ×3, `m5boss` (963 s), M6 ×3 y M1→M2 PASS; `veh` FAIL la primera vez y PASS al repetirla (1709 s).
+**`m4boss` FAIL dos veces** por la comprobación B69: el mando lleva al jugador fuera del SV-001 (`0C30F0`, cámara 4360)
+y los golpes al vehículo llegan con `mount=0`; el jefe muere y empieza la M5 en las dos. Sin subir a ccr hasta aclararlo
+con el agente A (la plataforma del jefe de la M4 lee ahora sus celdas reales de `E006A`; la familia `m4boss` sigue igual
+a MAME).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de

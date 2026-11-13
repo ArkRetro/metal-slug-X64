@@ -1053,3 +1053,12 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
 - **Pendiente**: (1) en la pelea, la torre de andamios del terreno (`10C72E`) se dibuja delante del casco: falta
   comparar el orden de sprites de `10D7B6` y `10C72E` (`+2C`) con la VRAM de T; (2) el 5A de 1F sin captura;
   (3) el Slugnoid golpeado en ares (`--ride forward`, sin pasada aún).
+- **Estado al parar (13-XI, orden del usuario)**: `work-m4` = ccr `4de14ab` + `work-chars` `410edca` + `work-m5`
+  `e13b3d9` + lo de esta sesión; `make check` RC 0 (296 PASS) con los paquetes 4..6 rehechos. Matriz sobre ese cartucho:
+  logo, pausa, personajes, opciones, m4, M5 ×3, m6s2, m6s3 PASS; `m4boss` PASS con 0 dibujos ausentes (BLOOD OFF) pero
+  `unsupported` 6 → 7 (parada explícita `02058E` de la trampilla `01F866` en 1771: el `+82` del emisor apunta a una roca
+  ya borrada por otro camino; depende de la partida, no de este cambio); `m5boss` 8 dibujos ausentes y `m6s1` 1312
+  (sin mirar: probablemente la exportación de la M6 de `ws-logo` frente a la de `ws-chars`); `veh` y `m1m2` sin
+  correr. **No subido a ccr.** Falta: fusionar `origin/work-chars` `609f8dd`, mirar `m5boss`/`m6s1`, repetir la matriz
+  y subir M4 + M5 + menú juntos. Para la M4: copiar `filesystem/mission4/rest-native.json` (7 paletas nuevas) a
+  `ws-logo`; `ws-logo` no tiene `filesystem/softdip.bin` (`tools/extract_softdip.py`).

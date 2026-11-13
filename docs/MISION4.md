@@ -1042,3 +1042,14 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   iguales, 0 distintos); los descriptores, sin cambios (la exportación entera traía 1634 de otras misiones).
 - **B69 Slugnoid**: `test_vehicle_damage_ares.py --ride forward` (montado: ciclo de 5 s, 2 s a la derecha y fuego B
   al final; nunca A) para llevarlo hasta los enemigos de `m5s3`.
+- **Mando de `m4boss` (B69)**: con la rama de B (`542dff5`, el mapa `E006A` entero) la comprobación «golpeado
+  montado» falló dos veces porque el jugador salía del SV-001 en 4360: el mando saltaba (`a`) mientras disparaba (`b`)
+  y A+B a la vez es la salida del vehículo (`0AA7FC` tipo 1); `E006A` es el mapa de la plataforma del jefe y no toca
+  el recorrido de 4288..4360. Ahora, montado, el mando no salta.
+- **Puertas** (`work-m4` = ccr `4de14ab` + `work-chars` `410edca` + `work-m5` `e13b3d9`; `softdip.bin` de
+  `tools/extract_softdip.py` en el `filesystem` propio: sin él no hay pantalla de opciones y el cartucho usa
+  `MSX_BLOOD` = 1): `m4boss` con BLOOD OFF (`10FD8F` = 00 en el log) **PASS, 0 dibujos ausentes** (antes 2061 con
+  sangre y ~4000..6122 sin ella), 9 golpes de clase 0 montado, el jefe muerto y la M5 empezada (3138 s).
+- **Pendiente**: (1) en la pelea, la torre de andamios del terreno (`10C72E`) se dibuja delante del casco: falta
+  comparar el orden de sprites de `10D7B6` y `10C72E` (`+2C`) con la VRAM de T; (2) el 5A de 1F sin captura;
+  (3) el Slugnoid golpeado en ares (`--ride forward`, sin pasada aún).

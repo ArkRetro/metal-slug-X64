@@ -100,6 +100,9 @@ try:
         if a.boss and 'MSX boss layer 10D7B6' in text and 'MSX mission complete signal' not in text:
             bp=t%5;left=bp<0.15;right=bp>=3.65;up=False
             jump=1.0<=bp<1.2 or 2.6<=bp<2.8;bomb=a.lifebar and 2.0<=bp<2.15
+        # Riding (B69: the SV-001 of 4288), no jump: A+B together is the vehicle's exit (0AA7FC kind 1), and the
+        # pad's jumps over its fire left the SV-001 at 4360 before the helicopters' bombs hit it.
+        if text.count('MSX player mounted vehicle')>text.count('MSX player left vehicle'):jump=False
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
         hold('a',jump);hold('b',a.fire and int(t*10)%2==0)
         hold('z',bomb)

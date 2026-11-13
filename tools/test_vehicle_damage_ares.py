@@ -72,7 +72,7 @@ try:
                 time.sleep(.5);[(tap('Down'),time.sleep(.3)) for _ in range(MENU)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
             continue
         t=log()
-        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t):tap('Return')
+        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')   # the options screen (docs/OPCIONES.md): Start leaves it
         time.sleep(1.0)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)

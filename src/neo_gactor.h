@@ -86,7 +86,7 @@ typedef struct neo_ga_flags {
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
     uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
     uint8_t m6_signal;               /* RAM 10C44C (Mission 6 mid-boss 05310E: cleared by 052F8A, set by 0530F4) */
-    uint8_t guard_min;               /* 0C09DA's D0 last asked (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; not applied yet) */
+    uint8_t guard_min;               /* 0C09DA's D0 asked this update (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; gameplay.c applies and clears it) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
@@ -271,6 +271,9 @@ struct neo_genv {
     uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */
     /* An original actor this world does not create (counted, provenance). */
     void (*external)(void *ctx,uint32_t constructor);
+    /* 009CCE on the palette slot +14 of `owner`: +C = target, +E = weight
+     * (the slot's colours: tools/palette_mix.py, neo_palmix.h). */
+    void (*palette_mix)(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight);
     /* Mission flags outside the actor list (domed building 054904). */
     struct neo_ga_flags *flags;
     /* Layer object of the static collision terrain: 10C72E in the village,

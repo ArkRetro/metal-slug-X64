@@ -49,6 +49,7 @@ typedef struct {
      * 0C17A0..0C182A, the protection +84 after it, the takeoff wait of
      * 0C1A0C; breaths taken (kind 0x10) and cures (the medicine 08B750). */
     unsigned mummy_transform,mummy_guard,mummy_takeoff,mummy_breaths,mummy_cures;
+    unsigned guard_requests;   /* 0C09DA applied (neo_ga_flags_t guard_min) */
     unsigned fat_transform,fat_starts,fat_stops,fat_shots;   /* form 2: 0C1D70..0C1DA8 updates left; transformations; thin-back 0C1D82 (not captured) */
     /* Optional non-arcade "Barra de vida" (docs/PORT_STATUS.md, B42): chosen
      * at SOLDIER SELECT (msx_lifebar_request); off = the arcade (one hit

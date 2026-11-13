@@ -1,5 +1,6 @@
 #define MSX_SOLDIER_PROGRAMS 1
 #include "neo_world.h"
+#include "neo_palmix.h"
 #include <string.h>
 #include "neo_throw.h"
 #include "neo_hit.h"
@@ -535,6 +536,20 @@ static bool convert_soldier(tick_t *t,unsigned gi,unsigned *si) {
     return true;
 }
 static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
+/* 009CCE: slot +14 of the owner (no slot: nothing, 009CE2). */
+static void g_palette_mix(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight) {
+    tick_t *t=ctx;neo_world_t *w=t->w;
+    if (!owner) return;
+    uint8_t h=ga_b(owner,0x14);
+    if (!h || h>6u) return;
+    int free_k=-1;
+    for (unsigned k=0;k<4;k++) {
+        if (w->mixes[k].index1==owner->index+1 && w->mixes[k].handle==h) {w->mixes[k].target=target;w->mixes[k].weight=weight;return;}
+        if (!w->mixes[k].index1 && free_k<0) free_k=(int)k;
+    }
+    if (free_k<0) {w->mix_overflow++;return;}
+    w->mixes[free_k].index1=(uint8_t)(owner->index+1);w->mixes[free_k].handle=h;w->mixes[free_k].target=target;w->mixes[free_k].weight=weight;
+}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (!c) return true;
@@ -681,6 +696,7 @@ static void ga_kill(tick_t *t,neo_gactor_t *a) {
     if (ga_b(a,0x6a)!=0xffu) g_dyn_release(t,a);
     for (unsigned i=0;i<NEO_WORLD_SUBSCRIPTS;i++) if (t->w->subs[i].used && t->w->subs[i].owner==a->index) t->w->subs[i].used=false;
     ga_sb(a,0x6b,0xff);ga_sw(a,0x58,0xffff);ga_sb(a,0x68,0);ga_sb(a,0x69,0xff);
+    for (unsigned k=0;k<4;k++) if (t->w->mixes[k].index1==a->index+1) t->w->mixes[k].index1=0;   /* its slots go back (003F90) */
     a->active=false;
 }
 static void g_marker(void *ctx,int32_t x,int32_t y,uint8_t h,uint8_t id) {
@@ -1047,6 +1063,10 @@ static int run_gactor(tick_t *t,unsigned i) {
     for (unsigned k=before;k<w->draw_count;k++) {
         uint8_t h=(uint8_t)(w->draws[k].attributes>>8);
         w->draws[k].palette=h && h<=6u?a->palette[h-1u]:a->palette[0];
+        for (unsigned m=0;m<4;m++) if (w->mixes[m].index1==a->index+1 && w->mixes[m].handle==(h && h<=6u?h:1u)) {
+            int r=neo_palmix_resource(w->draws[k].palette,w->mixes[m].target,w->mixes[m].weight);
+            if (r<0) w->mix_missing++; else w->draws[k].palette=(uint16_t)r;
+        }
         w->draws[k].flash=(ga_b(a,0x17)&1u) && !(ga_b(a,0x17)&0x80u);
         w->draws[k].zoom_x=ga_b(a,0x12);w->draws[k].zoom_y=ga_b(a,0x13);
     }
@@ -1584,7 +1604,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
-    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->palette_mix=g_palette_mix;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
      * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
     g->arrow=&w->arrow;

@@ -35,7 +35,7 @@ HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animat
 # bookkeeping (sound requests, frame counters, pause, fix-layer blit) are
 # cold too: the options screen's ~7 KB came back from them (docs/OPCIONES.md; the scene
 # cache stays at its floor of 208 slots).
-COLD_BOOT_SRCS := src/main.c src/msx_character.c src/retro25d.c src/retro_effects.c src/retro_events.c src/diorama_building.c src/game_audio.c src/msx_perf.c src/neo_pause.c src/hud_renderer.c
+COLD_BOOT_SRCS := src/main.c src/msx_character.c src/retro25d.c src/retro_effects.c src/retro_events.c src/diorama_building.c src/game_audio.c src/msx_perf.c src/neo_pause.c src/hud_renderer.c src/scene_prerender.c src/vehicle_renderer.c src/neo_vehicle.c
 COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c src/msx_options.c $(COLD_BOOT_SRCS))
 $(COLD_OBJS): CFLAGS += -Os
 # make does not see a flag change: the -Os split is recorded in a stamp the
@@ -524,7 +524,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m5pow m5sewer m4boss
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m5pow m5sewer m4boss
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -626,6 +626,10 @@ FAMILY_ARGS_m6span := --terrain 10c72e --ring 10c72e --group-map 0 --root-words 
 # 52a00-546ef --attacks --ram 10c44c-10c44d --ram 10e992-10e994 --ram 1063d8-1063da --ram 10c33c-10c33e --ram 1014f0-1014f2
 # --ram 1015a0-1015a2 (the players' +2C) --ram 10c7b6-10d7b6 (the terrain ring) --ram 10c2f6-10c2f8 (the stage, 019240).
 FAMILY_ARGS_m6mid := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m6shot = the mid-boss's grenades 053B38 (053BBC, the blast 053C18 / 053C80) and knives 053CB2 (053D16, the stuck knife
+# 053DAE), made by the boss after the script actor 101414 (00411C; injected here: the boss is m6mid); captures-m6/fam/B2 (runB2.sh: runB with roots
+# 5310e,53b38,53cb2, to 301700), --range 53b38-53dcb and the RAM of m6mid.
+FAMILY_ARGS_m6shot := --script-actor 101414 --script-routines 1 --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 FAMILY_ARGS_m5mech := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 # m5pow = the Mission 5 sewer crank 095C98 and its child 095F8C (neo_m5sewer.c; the item 08C374 it makes is outside the
 # family); m5sewer = the sewer soldiers 089948 / 08995A / 08996A and their guns 08A264. captures-m5/fam/X (run4 replay from
@@ -1449,6 +1453,7 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_train.c src/neo_train.c -o $(BUILD_DIR)/host/train
 	$(BUILD_DIR)/host/train
 	python3 tools/test_train_grid.py $(or $(MSX_ROM_ZIP),mslugx.zip)
+	python3 tools/palette_mix.py $(or $(MSX_ROM_ZIP),mslugx.zip) --check data/palmix_fixture.json.gz
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_neo_lspc.c -o $(BUILD_DIR)/host/lspc
 	$(BUILD_DIR)/host/lspc
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_wipe.c src/neo_wipe.c $(filter-out src/neo_wipe.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/wipe

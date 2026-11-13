@@ -423,10 +423,34 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
 - Memoria: el código del jefe (~13 KB) dejaba la caché en 3318 KB (suelo 3332). La copia mutable de la rejilla de la M1
   (`dynamic_grid_m1`, 15 KB de bss) sale del montón en su primera escritura (`neo_collision.c`; las misiones de paquete
   pasan la suya): de nuevo 208 ranuras (3328 KB) con la M6 entera.
-- **Pendiente**: `009CCE` (mezcla de paleta del tinte de daño y del fundido de la muerte) no se dibuja (se cuenta como
-  externa 0x9CCE); `0C09DA` se registra (`guard_min`) pero no se aplica a los jugadores (como `player_guard`); las balas
-  `053B38` / `053CB2` no entran en la familia de `B` (su creador es el actor de guion `101414`): traducidas, sin prueba
-  bit a bit todavía (captura con esas raíces); en ares el piloto de `test_mission6_ares.py` no llega a la cámara 2352.
+- **`009CCE` (13-XI)**: la ranura de paleta (1068EA) guarda +A (su recurso), +C (destino) y +E (peso); el vblank `008402`
+  la rehace: +A = +C o peso 0 → +A (`005978`), peso ≥ 31 → +C, si no `005EA0` mezcla canal a canal (base +A, byte con
+  signo de `0051D8` + 64·peso + (C − A), en palabras de 16 bits del 68000; el canal alto lleva el bit 15) y convierte por
+  la tabla `224000`. El tinte de daño `053DCC` es peso 0x20 (la paleta 3BF / 3C0 / 3C1 / 3C2 entera, según `+86` = 7 / E /
+  15 / 1C; con otro `+86` D1 sería el del llamador `052F5E`, no visto en `B`: se cuenta como externa 0x9CCE) y el fundido
+  `05390C` mezcla 38E hacia 3C2 con `+7C` = 1F..0 en la ranura del jefe (`+C` → su `+14`; ranura privada, bit 0 de +F).
+  `tools/palette_mix.py` traduce `005EA0` / `005978`; `--verify` sobre `captures-m6/fam/B` y **`B3`** (`runB2.sh` con
+  `DUMP0=301760 LAST=301845 MSX_FULL_PERIOD=1`: el fundido fotograma a fotograma): **300 de 300 ranuras con destino iguales a
+  MAME** (170 emparejadas con la RAM de la actualización anterior: el volcado de paleta del fotograma f muestra lo que dejó
+  la de f − 1; 3 sin pareja no comparables). Prueba `palette_mix.py --check data/palmix_fixture.json.gz` en `make check`
+  (31 estados, sha256 de los colores). Exportación: `palette_mix.py mslugx.zip --into filesystem/mission6/rest-native.json
+  --plain 3bf,3c0,3c1,3c2 --mix 38e:3c2` (34 paletas: las cuatro y las 30 mezclas como recursos `4000 | par << 5 | peso`,
+  `src/neo_palmix.h`). Nativo: `e->palette_mix` → `neo_world_t.mixes` (dueño + asa `+14`; se libera con el nodo) y la
+  emisión de dibujos cambia el recurso (`mix_missing` cuenta un par sin exportar).
+- **`0C09DA`** (13-XI): `gameplay.c` lo aplica tras el mundo: con el jugador vivo y su +84 (aquí `mummy_guard`, o la cuenta
+  de entrada `invulnerable` / 2) no mayor que D0, +84 = D0 y sin parpadeo; `guard_min` se borra cada actualización.
+  `player_guard` (0C09D8, jefes de M2..M4) sigue sin aplicar (no es de esta tarea: +84 = FFFF duraría a la etapa siguiente).
+- **Balas** (13-XI): familia **`m6shot`** (`captures-m6/fam/B2`, `runB2.sh` con raíces `5310e,53b38,53cb2` hasta 301700;
+  inyectadas tras el actor de guion): **84 nodos, 2171 actualizaciones en lazo cerrado iguales a MAME** (297440..301601),
+  84 borrados, 2188 dibujos, 21 contactos con el jugador.
+- Memoria: el código nuevo dejaba 3331 KB (suelo 3332); `scene_prerender.c`, `vehicle_renderer.c` y `neo_vehicle.c`
+  pasan a `-Os` (`COLD_BOOT_SRCS`, −1,1 KB de texto): ares de nuevo «MSX CACHE slots=208 (3328 KB, floor 208)».
+- **Pendiente: ares no llega a la cámara 2352** (13-XI, `test_mission6_ares.py --stage 1 --jump 1.0 --continues --fire
+  --progress 2352 --seconds 420`): la cámara se queda en **1888**; el jugador cae a través del puente colgante (x 2000..2100,
+  61 muertes por caída, 20 continuaciones). En MAME `run4` cruza ese tramo sobre `10C72E` (nunca sobre `10D7B6`, captura
+  `fam/P`): falta comparar el suelo del jugador nativo (rejilla del paquete / anillo de `10C72E`) con las lecturas de `P`
+  en x 1888..2352. Sin captura nueva no se toca.
+- **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
 
 ## Pendiente (fase 2, por orden)
 

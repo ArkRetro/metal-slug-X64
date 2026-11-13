@@ -1979,6 +1979,16 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             msx_game_hurt(g,g->camera+(int)(int16_t)g->world.hit_x);
         tower_step(g);
         mount_after_world(g);
+        /* 0C09DA (D0 = the request): a player node in use (0040AC) whose
+         * +84 is not above D0 gets +84 = D0, +5F bit 6 (no contact while
+         * +84 counts, 0C363A) and +9A bit 2 clear (no blink). Here +84 is
+         * the guard count (mummy_guard) or the entrance count (invulnerable,
+         * video ticks: two per update); bit 2 clear ends the entrance blink. */
+        if (g->world.ga_flags.guard_min) {
+            unsigned d0=g->world.ga_flags.guard_min,cur=g->mummy_guard>(g->invulnerable+1u)/2u?g->mummy_guard:(g->invulnerable+1u)/2u;
+            if (g->life.phase==MARCO_ALIVE && d0>=cur) {g->mummy_guard=d0;g->invulnerable=0;g->guard_requests++;}
+            g->world.ga_flags.guard_min=0;
+        }
         /* Time over (0186FA -> 0C0A2C): +9E = FF, +5A = 6, a death however
          * invulnerable (not in the reference cartridge). */
         if (!g->hud.time_over) g->time_over_seen=false;

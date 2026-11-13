@@ -92,8 +92,8 @@ static bool start(neo_gactor_t *a,neo_genv_t *e,uint32_t program,uint16_t palett
  * +91 the hits of the four parts 0539C4..0539EE, +92 frames without 004C24.
  * The cartridge check (10F00A/10F00C, 2FFFE0) before the deletions is not
  * reproduced: on genuine hardware it ends in 004188.
- * 009CCE (the hit tint and the death fade of the palette slot +14: a mix of
- * the palette table 1068EA) is not drawn: counted in e->external as 0x9CCE.
+ * 009CCE (the hit tint 3BF..3C2 and the death fade toward 3C2 of the slot
+ * +14) goes to e->palette_mix (neo_palmix.h).
  * The thrown objects 053B38 / 053CB2 (00411C after the script actor) are
  * outside the family of the capture (their creator is 101414). */
 #define MID_P1 0x1014c4u
@@ -105,7 +105,8 @@ static neo_gactor_t *mid_kid(neo_gactor_t *a,neo_genv_t *e,uint32_t r,uint16_t r
 static neo_gactor_t *mid_after(neo_gactor_t *a,neo_genv_t *e,uint32_t r) {   /* 00411C (A1 = 101414) */
     return e->spawn?e->spawn(e->ctx,a,r,true):NULL;
 }
-static void mid_tint(neo_gactor_t *a,neo_genv_t *e) {(void)a;if (e->external) e->external(e->ctx,0x9cce);}   /* 009CCE */
+/* 009CCE on the slot +14 of `owner` (neo_world.c g_palette_mix). */
+static void mid_tint(neo_gactor_t *owner,neo_genv_t *e,uint16_t target,uint8_t weight) {if (e->palette_mix) e->palette_mix(e->ctx,owner,target,weight);}
 static bool mid_live(const neo_genv_t *e,uint32_t n) {   /* 01AEDA: carry (true) while the player node is in play */
     if (n!=MID_P1 && n!=MID_P2) return false;
     return (e->players.active_mask>>(n==MID_P2?1u:0u))&1u;
@@ -220,7 +221,10 @@ static void mid_speed(neo_gactor_t *a) {SL(0x62,B(0x8a)?0xfffa0000u:0x60000u);} 
 static bool mid_start(neo_gactor_t *a,neo_genv_t *e,uint32_t p) {return ga_anim_start(a,e,p,0x100);}
 static void mid_flash(neo_gactor_t *a,neo_genv_t *e) {   /* 053DCC */
     if (B(0x86)<0x20u) SB(0x86,B(0x86)+7u);
-    mid_tint(a,e);
+    uint16_t d1;
+    switch (B(0x86)) {case 7: d1=0x3bf;break; case 0xe: d1=0x3c0;break; case 0x15: d1=0x3c1;break; case 0x1c: d1=0x3c2;break;
+    default: if (e->external) e->external(e->ctx,0x9cce);return;}   /* D1 of the caller 052F5E (not reached in captures-m6/fam/B) */
+    mid_tint(a,e,d1,0x20);
 }
 static ga_result_t mid_end(neo_gactor_t *a,neo_genv_t *e) {   /* 052F8A */
     SB(0x69,0xff);                                                       /* 019DFC */
@@ -539,7 +543,9 @@ static ga_result_t mid_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x53918:
         SB(0x7c,B(0x7c)-1u);
         if (B(0x7c)&0x80u) return GA_DELETE;                             /* (cartridge check) 004188 */
-        mid_tint(a,e);return GA_MORE;                                    /* 009CCE (slot of the boss +14, 3C2, +7C) */
+        {neo_gactor_t *boss=e->actor?e->actor(e->ctx,L(0x0c)):NULL;   /* 0539AE: +C, its +14 */
+         if (boss) mid_tint(boss,e,0x3c2,B(0x7c));}
+        return GA_MORE;
     /* ---- the four parts 0539C4 / 0539D2 / 0539E0 / 0539EE ---- */
     case 0x539c4: case 0x539d2: case 0x539e0: case 0x539ee: {
         static const uint32_t box[]={0x52aa6,0x52ab2,0x52abe,0x52aca};static const uint8_t flag[]={0x90,0x91,0x8e,0x8f};

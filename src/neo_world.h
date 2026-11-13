@@ -127,6 +127,10 @@ typedef struct {
     uint16_t sounds[NEO_WORLD_SOUNDS];unsigned sound_count,sound_dropped;
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
+    /* 009CCE: palette slots of generic actors with a target / weight
+     * (index + 1, 0 = free; handle = the owner's +14). mix_missing: draws
+     * whose (resource, target) pair has no exported mix (neo_palmix.h). */
+    struct {uint8_t index1,handle,weight;uint16_t target;} mixes[4];unsigned mix_missing,mix_overflow;
     unsigned converted;          /* generic nodes turned soldiers (0B05FE/0B0626/0B0632) */
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */

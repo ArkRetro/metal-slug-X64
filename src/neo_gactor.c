@@ -271,6 +271,18 @@ uint16_t ga_probe_vertical_d6(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return 0;}
     return k.flags;
 }
+/* 01495C with D6 as the result and the D1 it leaves in *d1 (neo_kernel_1495c_d1). */
+uint16_t ga_probe_vertical_d6_d1(neo_gactor_t *a,neo_genv_t *e,int16_t distance,uint32_t *d1) {
+    neo_contact_actor_t c=ga_contact(a);*d1=0;
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return 0;}
+    *d1=neo_kernel_1495c_d1(e->kernel,&q,&k);
+    return k.flags;
+}
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
      * a downward one from its end by |distance| + 8 (carry on either hit). */

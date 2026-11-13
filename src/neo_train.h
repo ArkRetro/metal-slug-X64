@@ -75,6 +75,14 @@ void neo_layers_step(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,c
 /* The same with an owner's x step (RAM 10E94E) for the layers whose flag
  * byte is exactly 1 (bit 0: x by 10E94E, y by the root) when own is set. */
 void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_vy,const uint8_t flags[4],bool own,int32_t own_vx);
+/* 0C81C0 for one layer object as bytes (0C8240 for 10D7B6): flag byte bit
+ * 7 (RAM 10E956+i, 0C7BD0): 01AC3C by its own +8/+C; otherwise the speed
+ * is 694E (bit 0) or the root's 6970, 6952 (bit 1) or 6974 (own[] /
+ * root_v*), through 0C6F9E (+8/+C by the factors +26/+28 and remainders
+ * +2A/+2B, then 01AC3C), and 69CC (`shake`) is added to +18. 01ABCC: the
+ * parent +10 (the scene root at root_x/root_y with its +25, or none),
+ * +1C/+20 the previous +14/+18 once per epoch (RAM 10C33A). */
+void neo_layerobj_step(uint8_t *l,uint8_t flags,const int32_t own[2],int32_t root_vx,int32_t root_vy,int32_t root_x,int32_t root_y,uint8_t root_correction,uint8_t epoch,int32_t shake);
 /* +84 de una capa sin padre (0C75B2): palabra alta de +14. */
 static inline int16_t neo_layer_word(int32_t x) {return (int16_t)(uint16_t)((uint32_t)x>>16);}
 /* Cuadro del cielo 10E83E (0B8EDC): 0 = el mapa 0B857C de la etapa, 1..4 =

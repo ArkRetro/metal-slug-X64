@@ -127,3 +127,26 @@ void neo_layers_step_own(neo_layer_t l[NEO_LAYERS],int32_t root_vx,int32_t root_
         l[i].y=(int32_t)((uint32_t)l[i].y+(uint32_t)neo_layer_step(root_vy,l[i].fy,&l[i].frac_y));
     }
 }
+
+/* Layer objects as bytes (RAM 10C72E.. / 10D7B6.. / 10E83E.. / 10E8C6..). */
+static uint32_t lo_l(const uint8_t *l,unsigned o) {return (uint32_t)l[o]<<24|(uint32_t)l[o+1]<<16|(uint32_t)l[o+2]<<8|l[o+3];}
+static void lo_s(uint8_t *l,unsigned o,uint32_t v) {l[o]=(uint8_t)(v>>24);l[o+1]=(uint8_t)(v>>16);l[o+2]=(uint8_t)(v>>8);l[o+3]=(uint8_t)v;}
+void neo_layerobj_step(uint8_t *l,uint8_t flags,const int32_t own[2],int32_t root_vx,int32_t root_vy,int32_t root_x,int32_t root_y,uint8_t root_correction,uint8_t epoch,int32_t shake) {
+    if (!(flags&0x80u)) {
+        int32_t d0=(flags&1u)?own[0]:root_vx,d1=(flags&2u)?own[1]:root_vy;
+        lo_s(l,8,(uint32_t)neo_layer_step(d0,(int16_t)(uint16_t)(l[0x26]<<8|l[0x27]),&l[0x2a]));
+        lo_s(l,0xc,(uint32_t)neo_layer_step(d1,(int16_t)(uint16_t)(l[0x28]<<8|l[0x29]),&l[0x2b]));
+    }
+    lo_s(l,0,lo_l(l,0)+lo_l(l,8));lo_s(l,4,lo_l(l,4)+lo_l(l,0xc));          /* 01AC3C */
+    uint32_t d0=lo_l(l,0),d1=lo_l(l,4),d2=lo_l(l,0x14),d3=lo_l(l,0x18);      /* 01ABCC */
+    uint8_t d7=0;
+    if (lo_l(l,0x10)) {
+        d7=(uint8_t)(((uint32_t)(uint16_t)d1+(uint16_t)root_y>0xffffu)?1u:0u);
+        d7=(uint8_t)(d7<<1|(((uint32_t)(uint16_t)d0+(uint16_t)root_x>0xffffu)?1u:0u));
+        d0+=(uint32_t)root_x;d1+=(uint32_t)root_y;d7|=root_correction;
+    }
+    l[0x25]=d7;lo_s(l,0x14,d0);lo_s(l,0x18,d1);
+    if (!l[0x24]) {l[0x24]=epoch;lo_s(l,0x1c,d0);lo_s(l,0x20,d1);}
+    else if (l[0x24]!=epoch) {l[0x24]=epoch;lo_s(l,0x1c,d2);lo_s(l,0x20,d3);}
+    if (!(flags&0x80u)) lo_s(l,0x18,lo_l(l,0x18)+(uint32_t)shake);
+}

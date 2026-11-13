@@ -327,6 +327,71 @@ local function slugnoid_node()
  end
  return nil
 end
+-- MSX_FULL_CRANK=<n> (capture only, input only): the next n sewer cranks
+-- 095C98 (Mission 5 stage 3) that come on screen are grabbed and turned:
+-- walk until the player's projected x +3C lies in the crank's rectangle
+-- (095938 for +70 = 0: -4 + 20 px; 095940 for +70 = 1: 0x38 + 20 px;
+-- mirrored by the crank's +15 bit 0), face it (0C069E: +15 bit 0 against
+-- D1 of 095DB0), then A alone every 6 frames (0C069E takes exactly bit 4 of
+-- the new presses; each one is 095EBA's +9 of +88) until 095C76 lets go
+-- (routine 095D6E again).
+-- MSX_FULL_CRANK_WEAPON=<frames>:<hex id>: the weapon id 10C71E written that
+-- many frames after the last crank let go (as MSX_FULL_GIVE_WEAPON).
+local crank_left=tonumber(os.getenv('MSX_FULL_CRANK') or '0')
+local crank_done,crank_held,crank_end,crank_walk={},nil,nil,false
+local function crank_inputs()
+ if crank_held then
+  local r=cpu:read_u32(crank_held)
+  if r==0x95d6e or r<0x95c98 or r>=0x95f8c then
+   print(string.format('CRANK released frame=%d node=%x routine=%x',frame,crank_held,r))
+   crank_done[crank_held]=true;crank_held=nil;crank_left=crank_left-1
+   if crank_left<=0 then crank_end=frame end
+  else
+   for _,b in ipairs({'P1 Left','P1 Right','P1 Up','P1 Down','P1 B','P1 C'}) do button(b,0) end
+   button('P1 A',frame%6<3 and 1 or 0)
+   return true
+  end
+ end
+ if crank_left<=0 then return false end
+ local n=ROOT;local count=0;local best,bestd=nil,nil
+ local px=cpu:read_i16(0x101500)
+ while n~=0 and n>=0x100000 and n<0x110000 and count<400 do
+  count=count+1
+  local r=cpu:read_u32(n)
+  if r>=0x95c98 and r<0x95f8c and not crank_done[n] then
+   local cx=cpu:read_i16(n+0x3c)
+   if cx>-40 and cx<360 then
+    local flip=(cpu:read_u8(n+0x15)&1)==1
+    local var=cpu:read_u16(n+0x70)
+    local dx=px-cx;if flip then dx=-dx end
+    local d=dx-((var==0 and -4 or 0x38)+10)
+    if not best or math.abs(d)<math.abs(bestd) then best,bestd=n,d end
+    if r==0x95e08 or r==0x95e58 then crank_held=n;print(string.format('CRANK grabbed frame=%d node=%x var=%d',frame,n,var)) end
+   end
+  end
+  n=cpu:read_u32(n+8)
+ end
+ if crank_held then return crank_inputs() end
+ if not best then return false end
+ local flip=(cpu:read_u8(best+0x15)&1)==1
+ local var=cpu:read_u16(best+0x70)
+ for _,b in ipairs({'P1 Left','P1 Right','P1 Up','P1 Down','P1 A','P1 B','P1 C'}) do button(b,0) end
+ -- Walk to within 3 px of the rectangle's middle; once there, a turn (a
+ -- step of 3 px) does not start the walk again until 9 px off.
+ if math.abs(bestd)>8 or (crank_walk and math.abs(bestd)>3) then
+  crank_walk=true
+  if frame%30==0 then print(string.format('CRANK walk frame=%d node=%x d=%d',frame,best,bestd)) end
+  button(((bestd<0)~=flip) and 'P1 Right' or 'P1 Left',1)
+  return true
+ end
+ if frame%30==0 then print(string.format('CRANK near frame=%d node=%x var=%d flip=%s d=%d p15=%02x',frame,best,var,tostring(flip),bestd,cpu:read_u8(0x1014c4+0x15))) end
+ crank_walk=false
+ local want_left=(var~=0)~=flip
+ local left=(cpu:read_u8(0x1014c4+0x15)&1)==1
+ if left~=want_left then button(want_left and 'P1 Left' or 'P1 Right',frame%4<2 and 1 or 0) return true end
+ button('P1 A',frame%6<3 and 1 or 0)
+ return true
+end
 local function ride_inputs()
  local b={L=0,R=0,U=0,D=0,A=0,B=0,C=0}
  -- Until the vehicle exists the usual plan runs (a mount of another kind,
@@ -407,6 +472,16 @@ local function ride_inputs()
   -- 0938DA); every 8 s a short drive right.
   if t>=60 and t<180 then b.R=1
   elseif t>=180 and (t%480)<40 then b.R=1 end
+ elseif ride_plan=='still' then
+  -- 'still' (the Slugnoid 09692C on its ledge, B69): no input at all once
+  -- mounted, so the enemies' shots reach the walker (the reaction
+  -- 097308/09737E, the turrets lost 0977DC, the death with a rider).
+ elseif ride_plan=='pace' then
+  -- 'pace' (the Slugnoid, B69): walk between x 400 and 440 on its ledge
+  -- (as 'tour') with a jump every 75 frames, never firing.
+  local n=slugnoid_node();local wx=n and cpu:read_i16(n+0x28) or 420
+  if wx>=440 then ride_dir=-1 elseif wx<=400 then ride_dir=1 end
+  if t>=60 then if ride_dir>0 then b.R=1 else b.L=1 end;if (t-60)%75<4 then b.B=1 end end
  elseif ride_plan=='boss' then
   -- 'boss' (the Mission 3 SV-001 093C9A into the final boss 04A2C2, G15):
   -- drive right until the camera progress 10E99E reaches the arena's 6494,
@@ -661,7 +736,21 @@ emu.register_frame_done(function()
   local key=string.format('%d %x %d %x',cpu:read_u16(0x10e99e),spc,sec,cpu:read_u32(0x10e964))
   if key==last_key then still=still+1 else still=0 end
   last_key=key
-  if ride_plan and load_name and frame>tonumber(os.getenv('MSX_FULL_LOAD_FRAME')) then plan='ride';ride_inputs() else plan_inputs(cpu:read_u16(0x101500)&511) end
+  -- MSX_FULL_SLOT_TAP=1 (read only, B69): a SLOT line when the P1 vehicle
+  -- slot 10C608 changes (+00 the vehicle's node, +18 health, +21 kind) or
+  -- the ridden vehicle's routine, +5A, +5F or palette handle +14 changes.
+  if os.getenv('MSX_FULL_SLOT_TAP')=='1' then
+   local nw=cpu:read_u16(0x10c608);local node=nw~=0 and (0x100000|nw) or 0
+   local r=node~=0 and cpu:read_u32(node) or 0
+   local k=string.format('node=%06x health=%04x kind=%02x routine=%06x 5a=%02x 5f=%02x 14=%02x',node,cpu:read_u16(0x10c620),cpu:read_u8(0x10c629),r,
+    node~=0 and cpu:read_u8(node+0x5a) or 0,node~=0 and cpu:read_u8(node+0x5f) or 0,node~=0 and cpu:read_u8(node+0x14) or 0)
+   if k~=slot_tap_key then print('SLOT f='..frame..' '..k);slot_tap_key=k end
+  end
+  if ride_plan and load_name and frame>tonumber(os.getenv('MSX_FULL_LOAD_FRAME')) then plan='ride';ride_inputs()
+  elseif (crank_left>0 or crank_held) and crank_inputs() then plan='crank'
+  else plan_inputs(cpu:read_u16(0x101500)&511) end
+  local cwf,cwid=string.match(os.getenv('MSX_FULL_CRANK_WEAPON') or '','(%d+):(%x+)')
+  if cwf and crank_end and frame==crank_end+tonumber(cwf) then cpu:write_u8(0x10c71e,tonumber(cwid,16));print('CRANK weapon frame='..frame) end
   -- MSX_FULL_IDLE="lo-hi": capture-only, no input in those frames (an idle
   -- player for the GO arrow 05287C).
   local il,ih=string.match(os.getenv('MSX_FULL_IDLE') or '','(%d+)-(%d+)')
@@ -673,6 +762,10 @@ emu.register_frame_done(function()
   -- Mission 4 flyers 083C8A land, drop their rider and crash).
   local nl,nh=string.match(os.getenv('MSX_FULL_NOFIRE') or '','(%d+)-(%d+)')
   if nl and frame>=tonumber(nl) and frame<=tonumber(nh) then button('P1 A',0);button('P1 C',0) end
+  -- MSX_FULL_FIRE_CYCLE="period:frames": capture-only, A and C only in the last `frames` of every `period`
+  -- (the sewer soldiers 089948 aim longer before they die: the late entries of their palette lists, 089DE0).
+  local cp,cf=string.match(os.getenv('MSX_FULL_FIRE_CYCLE') or '','(%d+):(%d+)')
+  if cp and frame%tonumber(cp)<tonumber(cp)-tonumber(cf) then button('P1 A',0);button('P1 C',0) end
   -- MSX_FULL_HOP="lo-hi:period": capture-only, with MSX_FULL_IDLE over the
   -- same frames: B (jump) held 8 frames every `period` (the idle player
   -- jumps in place into the shots of the Mission 4 vehicle 0587C4).

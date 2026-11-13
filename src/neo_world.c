@@ -53,9 +53,9 @@ static const neo_anim_program_t *program(uint32_t tag) {
     if (lo<N && soldier_program_refs[lo].tag==tag) {
         neo_anim_program_t *p=&program_read[lo];
         if (!p->commands) {
-            p->commands=program_file_load(soldier_program_refs[lo].offset,soldier_program_refs[lo].count);
+            p->commands=program_file_load(soldier_program_refs[lo].offset,SOLDIER_PROGRAM_REF_COUNT(&soldier_program_refs[lo]));
             if (!p->commands) return NULL;             /* explicit stop (logged) */
-            p->count=soldier_program_refs[lo].count;
+            p->count=SOLDIER_PROGRAM_REF_COUNT(&soldier_program_refs[lo]);
         }
         return p;
     }
@@ -101,6 +101,7 @@ typedef struct {
     neo_m2boss_env_t m2boss;     /* the Mission 2 boss's RAM (neo_m2boss.c) */
 #ifdef MSX_HAS_M3MID
     neo_m3mid_env_t m3mid;       /* the Mission 3 mid-boss's layer 10E8C6 (neo_m3mid.c) */
+    neo_m4boss_env_t m4boss;     /* the Mission 4 boss's layer 10D7B6 (neo_m4boss.c) */
 #endif
     const neo_script_env_t *se;  /* the script environment of this tick */
     int sub_owner;               /* generic actor running a sub-script (-1) */
@@ -399,6 +400,14 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
         #undef L32
         return true;
     }
+    /* Mission 4: the boss's layer object 10D7B6 (neo_m4boss.c). */
+    if (tag==0x10d7b6u && w->m4layer_used) {
+        const uint8_t *b=w->m4layer;
+        #define L32(p) ((int32_t)((uint32_t)(p)[0]<<24|(uint32_t)(p)[1]<<16|(uint32_t)(p)[2]<<8|(p)[3]))
+        *out=(neo_contact_parent_t){tag,L32(b+0x14),L32(b+0x18),L32(b+0x1c),L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
 #endif
     /* Layer objects 10D7B6/10E8C6 scroll with the foreground once the middle
      * bank runs at full speed (camera >= 1023, docs/MISSION1_REST.md). */
@@ -476,6 +485,35 @@ static void g_m3_patch(void *ctx,uint32_t submap,const int16_t d[6]) {
     neo_world_t *w=((tick_t *)ctx)->w;w->m3patch_count++;m3_blocks(w,submap,d);
 }
 static void g_m3_clear(void *ctx) {neo_world_t *w=((tick_t *)ctx)->w;w->m3layer_map=0;w->m3patch_count=0;memset(w->m3grid,0,sizeof(w->m3grid));}
+/* The Mission 4 boss layer 10D7B6: 0C714E with the map (or sub-map) `map`
+ * and D0..D5: the clipped d2 x d3 blocks from (d0, d1) go to ring slot
+ * d4 & 31 on, tile slot ((+42 + 2 slot) >> 3) + +83 + (~d5 & 31) + row (& 31)
+ * of that column, as the original writes SCB1. Kept per slot as (map,
+ * first tile slot): a write that is not a whole column of map column ==
+ * slot (d1 = 0, d3 = height) is an explicit stop. */
+static void m4_blocks(neo_world_t *w,uint32_t map,const int16_t din[6]) {
+    const uint8_t *m=ga_rom(map);
+    if (!m) {w->unsupported++;w->unsupported_routine=map;return;}
+    int16_t d0=(int16_t)((int16_t)(din[0]<<4)>>4),d1=(int16_t)((int16_t)(din[1]<<4)>>4),d2=din[2],d3=din[3],d4=din[4],d5=din[5];
+    int16_t mw=(int16_t)(m[8]<<8|m[9]),mh=(int16_t)(m[10]<<8|m[11]);
+    if (d0>=mw || d1>=mh) return;
+    if (d0<0) {d2=(int16_t)(d2+d0);if (d2<=0) return;d4=(int16_t)(d4-d0);d0=0;}
+    if (d1<0) {d3=(int16_t)(d3+d1);if (d3<=0) return;d5=(int16_t)(d5+d1);d1=0;}
+    if (d0+d2-mw>=0) {d2=(int16_t)(mw-d0);if (d2<=0) return;}
+    if (d1+d3-mh>=0) {d3=(int16_t)(mh-d1);if (d3<=0) return;}
+    uint32_t t=(uint32_t)m[0]<<24|(uint32_t)m[1]<<16|(uint32_t)m[2]<<8|m[3];
+    if (!t || t==0xffffffffu || d1 || d3!=mh) {w->unsupported++;w->unsupported_routine=0x0C714Eu;return;}   /* empty / filled maps, part columns: not written by this boss */
+    unsigned slot=(unsigned)d4&31u,row=(unsigned)(~d5)&31u;
+    for (int c=0;c<d2;c++,slot=(slot+1u)&31u) {
+        if (slot>=20u || (int)slot!=d0+c) {w->unsupported++;w->unsupported_routine=0x0C714Eu;continue;}   /* the boss's maps: slot = column, 20 wide */
+        w->m4col_map[slot]=map;
+        w->m4col_top[slot]=(uint8_t)(((unsigned)((int8_t)w->m4layer[0x42+2*slot]>>3)+w->m4layer[0x83]+row)&31u);
+    }
+}
+static void g_m4_draw(void *ctx,uint32_t map,const int16_t d[6]) {neo_world_t *w=((tick_t *)ctx)->w;w->m4layer_map=map;m4_blocks(w,map,d);}
+static void g_m4_patch(void *ctx,uint32_t submap,const int16_t d[6]) {neo_world_t *w=((tick_t *)ctx)->w;w->m4patch_count++;m4_blocks(w,submap,d);}
+static void g_m4_clear(void *ctx) {neo_world_t *w=((tick_t *)ctx)->w;w->m4layer_map=0;w->m4patch_count=0;memset(w->m4col_map,0,sizeof(w->m4col_map));}
+static void g_m4_anim(void *ctx,uint16_t frames) {((tick_t *)ctx)->w->m4anim=(uint16_t)(frames+1u);}
 #endif
 static bool g_map_swap(void *ctx) {tick_t *t=ctx;if (t->w->swap_step) return false;t->w->swap_step=1;return true;}
 /* 012022: RAM 10B954 against 10B95C; the only call in Mission 1 is the
@@ -1043,6 +1081,30 @@ static int run_gactor(tick_t *t,unsigned i) {
         m->layer=w->m3layer;m->flags959=w->m3layer959;m->draw=g_m3_draw;m->patch=g_m3_patch;m->clear=g_m3_clear;
         t->genv.m3mid=m;w->m3layer_used=true;
     }
+    /* Mission 4 boss 02267E (neo_m4boss.c): the layer object 10D7B6 as its
+     * picture, RAM 10E957 (the camera's flag byte of 10D7B6), 694E/6952 and
+     * 10E9B8 (the script's point). The first time, the bytes 10D7B6 are
+     * those of the camera's object: position +0/+4 (no parent), factors
+     * +26/+28 and remainders +2A/+2B (neo_layers_*), first sprite +2C =
+     * 0x20 and +82 = 0F (run4 RAM 157200..157500, before the boss). */
+    bool m4=neo_m4boss_routine(ga_l(a,0));
+    if (m4) {
+        if (!w->m4layer_used) {
+            const neo_layer_t *l=&w->layers[NEO_LAYER_MID];uint8_t *b=w->m4layer;
+            memset(b,0,sizeof(w->m4layer));
+            #define P32(o,v) do {uint32_t v_=(uint32_t)(v);b[o]=(uint8_t)(v_>>24);b[(o)+1]=(uint8_t)(v_>>16);b[(o)+2]=(uint8_t)(v_>>8);b[(o)+3]=(uint8_t)v_;} while (0)
+            P32(0,l->x);P32(4,l->y);P32(0x14,l->x);P32(0x18,l->y);
+            #undef P32
+            b[0x26]=(uint8_t)((uint16_t)l->fx>>8);b[0x27]=(uint8_t)l->fx;b[0x28]=(uint8_t)((uint16_t)l->fy>>8);b[0x29]=(uint8_t)l->fy;
+            b[0x2a]=l->frac_x;b[0x2b]=l->frac_y;b[0x2d]=0x20;b[0x82]=0x0f;
+            w->m4speed[0]=w->m4speed[1]=0;memset(w->m4col_map,0,sizeof(w->m4col_map));w->m4layer_map=0;w->m4patch_count=0;
+            w->m4layer_used=true;
+        }
+        neo_m4boss_env_t *m=&t->m4boss;
+        m->layer=w->m4layer;m->owner=w->camera.layer_flags[1];m->speed[0]=w->m4speed[0];m->speed[1]=w->m4speed[1];m->point69b8=w->script.w69b8;
+        m->draw=g_m4_draw;m->patch=g_m4_patch;m->clear=g_m4_clear;m->anim_speed=g_m4_anim;
+        t->genv.m4boss=m;
+    }
 #endif
     bool m2=neo_m2boss_routine(ga_l(a,0));
     if (m2) {
@@ -1054,6 +1116,11 @@ static int run_gactor(tick_t *t,unsigned i) {
     ga_result_t r=neo_region_tick(a,&t->genv);
 #ifdef MSX_HAS_M3MID
     if (m3) {w->m3layer959=t->m3mid.flags959;t->genv.m3mid=NULL;}
+    if (m4) {
+        neo_m4boss_env_t *m=&t->m4boss;
+        w->camera.layer_flags[1]=m->owner;w->m4speed[0]=m->speed[0];w->m4speed[1]=m->speed[1];w->script.w69b8=m->point69b8;
+        t->genv.m4boss=NULL;
+    }
 #endif
     if (m2) {
         neo_m2boss_env_t *m=&t->m2boss;
@@ -1659,6 +1726,10 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     /* Mission 3: the terrain stays 10C72E; 10D7B6 is the train (+38 of what
      * lands on it, kernel object TRAIN; docs/MISION3.md). */
     if (w->stage_camera_base==0x0B8968u) g->terrain_tag=0x10c72eu;
+    /* Mission 4 (list 0E741A): no node points at 10D7B6 before the boss
+     * (run4 RAM 157200, 157500), whose picture it then is (158400: the body
+     * and its part 3). */
+    if (w->stage_camera_base==0x0E741Au) g->terrain_tag=0x10c72eu;
     g->flags=&w->ga_flags;w->ga_flags.camera_restart=w->camera.restart;   /* RAM 10E9D0 (0B9286) */
     g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->camera_push=g_camera_push;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
@@ -2076,6 +2147,18 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
         w->bridge_prev_x=w->layers[NEO_LAYER_MID].x;w->bridge_prev_y=w->layers[NEO_LAYER_MID].y;
         neo_layers_step_own(w->layers,c->root_vx,c->root_vy,c->layer_flags,w->bridge.on,w->bridge_dx);
+#ifdef MSX_HAS_M3MID
+        /* 0C8240: the Mission 4 boss's layer object 10D7B6 by its flag byte
+         * 10E957 (0C7BD0: 3 = the speeds 694E/6952 its treads write), against
+         * the root this update put (6968/696C) and the shake 69CC before
+         * 0C804A's decay (tools/test_m4layer.c). */
+        if (w->m4layer_used) {
+            /* RAM 10C33A is toggled by the list head 003B3E (01AB50) before the
+             * mission actor: the epoch neo_world_tick is about to set; the
+             * root's +25 is 0 (scene_at). */
+            neo_layerobj_step(w->m4layer,c->layer_flags[1],w->m4speed,c->root_vx,c->root_vy,neo_camera_root_x(c),neo_camera_root_y(c),0,(uint8_t)(w->epoch==1?2:1),c->shake_applied);
+        }
+#endif
         neo_camera_finish(c,&w->script.w69b8,&w->script.w69ba);
         for (unsigned i=0;i<c->event_count;i++) {
             const neo_camera_event_t *e=&c->events[i];
@@ -2106,7 +2189,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         }
         if (at==0x0BC548u) w->ga_flags.limit700=0x7fff;               /* 10C700 (08A654's limit) */
         if (at==0x0BC550u) w->ga_flags.limit700=0x200;                /* Mission 5 sewer list head (0BBA24): 10C700 = 200 */
-        if (at==0x0BB028u) w->camera_events_unsupported++;             /* Mission 4 boss: 019388 with 0x8000 (the automatic road), not ported */
+        if (at==0x0BB028u) w->camera.speed_x=w->camera.speed_y=0x8000; /* Mission 4 (progress 0x15B0): 019388 with D0 = 0x8000 -> the mission actor's +72/+76 (RAM 1013D6/1013DA) */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
         if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)
             || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u) {   /* Mission 6 stage 1 (neo_m6props.c) */

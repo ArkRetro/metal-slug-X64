@@ -87,6 +87,11 @@ typedef struct {
 } neo_kres_t;
 /* Returns false only for a context outside the recovered object list. */
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result);
+/* 01495C's D1 at its RTS for the 013968 request q and its result r: with a
+ * surface (D6 bit 0) the swapped difference (r->y + the result parent's
+ * +18) - (q->y + the request parent's +18) (0149AC..0149BA, no +18 for A0 =
+ * 0); without, 013968's own D1 (r->y). Read by the crouched death 040BE6. */
+uint32_t neo_kernel_1495c_d1(const neo_kscene_t *scene,const neo_kreq_t *q,const neo_kres_t *r);
 /* ROM 013DB2 floor search: d3 = negative search depth (Q16.16). */
 typedef struct { int32_t x,y; uint8_t parent; uint32_t kind; int32_t d6; bool found; } neo_kfloor_t;
 bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int32_t depth,

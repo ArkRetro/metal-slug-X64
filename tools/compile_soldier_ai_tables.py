@@ -123,10 +123,13 @@ assert len({r[0] for r in refs})==len(refs),'two programs of the image share a t
 assert all(r[2] for r in refs)
 (ROOT/'build').mkdir(exist_ok=True)
 (ROOT/'build/programs.bin').write_bytes(b'MSXP'+struct.pack('>HHII',1,0,len(refs),16+len(file_body))+bytes(file_body))
-L.append('typedef struct { uint32_t tag,offset; uint16_t count; } soldier_program_ref_t;')
+# 8 bytes a reference (12 before; docs/MEMORY_OPTIMIZATION.md): 24-bit tag and file offset, 16-bit count.
+assert all(r[0]<1<<24 and r[1]<1<<24 and r[2]<1<<16 for r in refs),'program reference out of its fields'
+L.append('typedef struct { uint32_t tag:24,count_lo:8; uint32_t offset:24,count_hi:8; } soldier_program_ref_t;')
+L.append('#define SOLDIER_PROGRAM_REF_COUNT(r) ((uint16_t)((r)->count_lo|(unsigned)(r)->count_hi<<8))')
 L.append('#define SOLDIER_PROGRAM_FILE_BYTES %du'%(16+len(file_body)))
 L.append('static const soldier_program_ref_t soldier_program_refs[]={')
-for r in refs: L.append('{0x%x,%d,%d},'%r)
+for r in refs: L.append('{0x%x,%d,%d,%d},'%(r[0],r[2]&255,r[1],r[2]>>8))
 L.append('};')
 L.append('#ifndef N64')
 for i,prog in enumerate(p['programs']):

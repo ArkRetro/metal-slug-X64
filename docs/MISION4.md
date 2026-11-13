@@ -906,6 +906,11 @@ forma fija en la prueba `veh` y el Slugnoid en ares (sin cambios en esta sesión
   1C..1F (camino del jefe) y la cámara automática del jefe; hasta entonces `--boss` no puede pasar y la prueba no
   entra en la matriz. Dibujos ausentes nuevos vistos en 4360: `palette_id=892` (programas `1C6086..1C671C`, los
   voladores `085522`), pendiente de exportar con su captura.
+- **Puertas** (`work-m4` tras fusionar `ccr` `91d8ef3`): `make check` RC 0 (282 PASS; `m4boss` repetida con el
+  arreglo de `023E3A`: igual a MAME); cartucho 62 963 712 B; `regression_ares.py` con `m1end` recién hecho: logo,
+  personajes, M4, M5 ×3, M6 ×3 PASS sin recuentos nuevos (M6 E1 `unsupported` 3, línea base 4), pausa FAIL la primera
+  vez («paused by a boot tap», con tres emuladores y `make check` en la máquina) y PASS al repetirla, M1 → M2 PASS,
+  `veh` FAIL (torres de 1920, 3049 s) y PASS al repetirla (993 s).
 
 ## Sonido y música
 

@@ -391,6 +391,8 @@ RESOURCES=RESOURCES+(0x379,0x150)
 # Mission 4 helicopters 08514A / 085522 / 08571C: body 2825CE (D2 or 88F scaled, D6, D4), death 282834, flashes 28292C (FE) / 282998 (88E), bomb 282A2C (88E), impact 282AEA (D5).
 ROOTS=ROOTS+(0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea)
 RESOURCES=RESOURCES+(0xd2,0x88f,0xd6,0xd4,0xfe,0x88e,0xd5)
+# Their palette 892 (the descriptors 1C603E..1C671C of 085522 in ares, camera 4360): allocated in capture A 155880..156180.
+RESOURCES=RESOURCES+(0x892,)
 # Mission 4 truck pieces 02A448 (palettes 02A9BC: 23A, 32F, 372; 201) and the animals' sparkle 08CF6E (289704, 124).
 ROOTS=ROOTS+(0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704)
 RESOURCES=RESOURCES+(0x23a,0x32f,0x372,0x201,0x124)

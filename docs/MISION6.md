@@ -462,6 +462,10 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   corredor `020166`, sin portar; también `01F836`/`01F844`, `0530F4` y `08571C` de la M4 en la etapa), así que la
   sentencia de `05310E` no llega y la cámara pasa de 2352 sin retención. Siguiente: familia `020166` / `020372`
   (plataforma dinámica `0140C0` con mapas `0DFF52..0DFFA0`, vida por `2D35AA`, muerte `0202B2` → `01C71E`).
+  Captura hecha: **`captures-m6/fam/C`** (`NAME=C ROOTS=20166 FROM=294400 DUMP0=294400 LAST=296200 sh runB2.sh`, 35 MB en
+  bruto, sin fixture todavía): cinco corredores (294459..294896; uno muere en 294592 por `0202B2`, los demás salen por
+  `01945C` → `02010E`) con sus hijos `020372`. Siguiente paso: `extract_family_fixture.py --range 2010e-2042b`,
+  traducción en `neo_m6props.c` y familia `m6run`; luego `01F836`/`01F844` y `0530F4` si el guion se para en ellos.
 - **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
 
 ## Pendiente (fase 2, por orden)

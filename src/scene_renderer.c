@@ -127,24 +127,35 @@ void scene_render_set_layer_offset(unsigned layer,bool on,int offset) {if (layer
 static bool layer_rise_own[4];static int layer_own_rise[4];
 void scene_render_set_layer_rise(unsigned layer,bool on,int rise) {if (layer<4) {layer_rise_own[layer]=on;layer_own_rise[layer]=rise;}}
 /* Layers drawn by their hardware column ring (scene_render_set_layer_ring). */
-typedef struct { bool on;uint8_t first;int16_t x;int16_t map_x[32]; } layer_ring_t;
+typedef struct { bool on,cols;uint8_t first;int16_t x;int16_t map_x[32];int16_t rise[32],y0[32],y1[32]; } layer_ring_t;
 static layer_ring_t layer_ring[4];
 void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]) {
     if (layer>=4) return;
     layer_ring_t *r=&layer_ring[layer];
     if (!on) {memset(r,0,sizeof(*r));return;}
-    r->on=true;r->first=(uint8_t)(first_slot&31u);r->x=(int16_t)x;memcpy(r->map_x,map_x,sizeof(r->map_x));
+    r->on=true;r->cols=false;r->first=(uint8_t)(first_slot&31u);r->x=(int16_t)x;memcpy(r->map_x,map_x,sizeof(r->map_x));
 }
-/* Runs of ring columns with one offset (map x - screen x): [x0, x1) on screen. */
-typedef struct { int x0,x1,offset; } ring_segment_t;
+/* A ring whose columns each have their own rise and screen rows [y0, y1)
+ * (scene_render_set_layer_columns): the tile path only. */
+void scene_render_set_layer_columns(unsigned layer,bool on,int x,const int16_t map_x[32],const int16_t rise[32],const int16_t y0[32],const int16_t y1[32]) {
+    if (layer>=4) return;
+    layer_ring_t *r=&layer_ring[layer];
+    if (!on) {memset(r,0,sizeof(*r));return;}
+    r->on=r->cols=true;r->first=0;r->x=(int16_t)x;memcpy(r->map_x,map_x,sizeof(r->map_x));
+    memcpy(r->rise,rise,sizeof(r->rise));memcpy(r->y0,y0,sizeof(r->y0));memcpy(r->y1,y1,sizeof(r->y1));
+}
+/* Runs of ring columns with one offset (map x - screen x): [x0, x1) on screen
+ * (with their rise and rows [y0, y1) for a column ring). */
+typedef struct { int x0,x1,offset,rise,y0,y1; } ring_segment_t;
 static unsigned ring_segments(const layer_ring_t *r,ring_segment_t *seg) {
     unsigned n=0;
     for (unsigned k=0;k<32;k++) {
         int sx=r->x+16*(int)k;
         if (r->map_x[k]==INT16_MIN || sx+16<=8 || sx>=312) continue;
-        int off=r->map_x[k]-sx;
-        if (n && seg[n-1].offset==off && seg[n-1].x1==sx) seg[n-1].x1=sx+16;
-        else seg[n++]=(ring_segment_t){sx,sx+16,off};
+        int off=r->map_x[k]-sx,rise=r->cols?r->rise[k]:0,y0=r->cols?r->y0[k]:8,y1=r->cols?r->y1[k]:232;
+        if (r->cols && (y0>=232 || y1<=8 || y1<=y0)) continue;
+        if (n && seg[n-1].offset==off && seg[n-1].x1==sx && seg[n-1].rise==rise && seg[n-1].y0==y0 && seg[n-1].y1==y1) seg[n-1].x1=sx+16;
+        else seg[n++]=(ring_segment_t){sx,sx+16,off,rise,y0,y1};
     }
     return n;
 }
@@ -722,7 +733,7 @@ static void draw_layer_ring(unsigned layer,const int *offsets,const int *rises,c
     int offs[5];memcpy(offs,offsets,sizeof(offs));
     uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
 #if MSX_BG_PRERENDER
-    if (prerender_on && (scene_prerender_layers()>>layer&1u)) {
+    if (prerender_on && (scene_prerender_layers()>>layer&1u) && !ring->cols) {
         int col[32];
         for (unsigned k=0;k<32;k++) {
             col[k]=ring->map_x[k]==INT16_MIN?-1:scene_prerender_column_of(layer,ring->map_x[k]);
@@ -755,21 +766,23 @@ static void draw_layer_ring(unsigned layer,const int *offsets,const int *rises,c
 #endif
     {
         ring_segment_t seg[32];unsigned segs=ring_segments(ring,seg);
+        int rs[5];memcpy(rs,rises,sizeof(rs));
         for (unsigned g=0;g<segs;g++) {
-            rdpq_set_scissor(seg[g].x0<8?8:seg[g].x0,8,seg[g].x1>312?312:seg[g].x1,232);
+            rdpq_set_scissor(seg[g].x0<8?8:seg[g].x0,seg[g].y0<8?8:seg[g].y0,seg[g].x1>312?312:seg[g].x1,seg[g].y1>232?232:seg[g].y1);
             offs[layer]=seg[g].offset;
+            if (ring->cols) rs[layer]=seg[g].rise;
             if (cell_index.layer_major) {
                 const scene_strip_t *st=NULL;
-                if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offs,rises,&wx0,&wx1,&wy0,&wy1);st=layer_strip(layer,wx0,wx1,wy0,wy1);}
-                if (st) draw_layer_strip(layer,st,offs,rises,video_tick); else draw_layer_direct(layer,offs,rises,video_tick);
+                if (strips_on && strip_items) {int wx0,wx1,wy0,wy1;layer_bounds(layer,offs,rs,&wx0,&wx1,&wy0,&wy1);st=layer_strip(layer,wx0,wx1,wy0,wy1);}
+                if (st) draw_layer_strip(layer,st,offs,rs,video_tick); else draw_layer_direct(layer,offs,rs,video_tick);
             } else {
                 unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);
-                for (unsigned i=0;i<count;i++) if (cells[i].layer==layer && !hidden(&cells[i])) classic_cell(&cells[i],offs,rises,video_tick,1);
+                for (unsigned i=0;i<count;i++) if (cells[i].layer==layer && !hidden(&cells[i])) classic_cell(&cells[i],offs,rs,video_tick,1);
             }
         }
         rdpq_set_scissor(8,8,312,232);
     }
-    if (map_patch_mask) {
+    if (map_patch_mask && !ring->cols) {
         ring_segment_t seg[32];unsigned segs=ring_segments(ring,seg);
         for (unsigned g=0;g<segs;g++) {
             rdpq_set_scissor(seg[g].x0<8?8:seg[g].x0,8,seg[g].x1>312?312:seg[g].x1,232);

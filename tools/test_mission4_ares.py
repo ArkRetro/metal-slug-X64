@@ -14,6 +14,7 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+p.add_argument('--boss',action='store_true',help='PASS only when the boss 02267E dies and Mission 5 starts (`MSX mission 5 stage N start`, 018F92 -> 01891E); the run stops there')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (L-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
@@ -69,12 +70,21 @@ try:
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
-        if cam>=a.until:break
+        if cam>=a.until or (a.boss and re.search(r'MSX mission 5 stage \d+ start',text)):break
         # The camera waits for something behind Marco (the tank 027F54 at 1000): after 6 s without
         # progress, turn back and fire for 5 s of every 8.
+        # Some locks wait for enemies above or under Marco (the camera lock at 4360 of the script 2DC67A waits for
+        # group 6 < 1: the helicopters 085522, which hover over the player and leave only when out of bombs): the
+        # stuck cycle is 5 s back and fire of every 8 s (the tank behind Marco at 1000) and, after 40 s stuck, of every 16 s
+        # 5 s back, 6 s fire upwards (Up held) and 5 s forward.
         if cam!=lastcam:lastcam=cam;stuck=t
-        back=a.fire and t-stuck>6 and ((t-stuck-6)%8)<5
-        hold('Right',not back);hold('Left',back and ((t-stuck-6)%8)<0.4);hold('a',bool(a.jump) and not back and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        ph=-1;up=down=False
+        if a.fire and t-stuck>6:
+            if t-stuck<46:ph=(t-stuck-6)%8
+            else:ph=(t-stuck-46)%16;up=5<=ph<11
+        back=0<=ph<5
+        hold('Right',not back and not up and not down);hold('Left',back and ph<0.4);hold('Up',up);hold('Down',down)
+        hold('a',bool(a.jump) and not back and not up and ((t%a.jump)<0.2 or (down and (t%1.0)<0.2)));hold('b',a.fire and int(t*10)%2==0)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)
@@ -84,8 +94,11 @@ try:
     print('camera',cam,'screenshots',k);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
     for s in stops[:40]:print('  ',s)
     ok=cam>=a.progress and 'not loaded' not in text
+    if a.boss:
+        for pat in (r'MSX boss layer 10D7B6 map=[0-9A-F]*[1-9A-F][0-9A-F]* ',r'MSX mission complete signal \(018F92\)',r'MSX mission 5 stage \d+ start'):
+            m=re.search(pat,text);print('boss:',pat,'->',m.group(0) if m else 'MISSING');ok=ok and m is not None
 finally:
-    for n in ('Right','Left','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)   # a key left down would be read by the next run's menu
+    for n in ('Right','Left','Up','Down','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)   # a key left down would be read by the next run's menu
     proc.terminate()
     try:proc.wait(5)
     except Exception:proc.kill()

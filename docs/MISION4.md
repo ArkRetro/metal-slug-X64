@@ -881,6 +881,32 @@ forma fija en la prueba `veh` y el Slugnoid en ares (sin cambios en esta sesión
   (FAIL); el SV-001 fijo en `veh` sigue pendiente. (3) Las exportaciones `mission5/6/rest-native.json` de este árbol
   enlazaban a `ws-m5`/`ws-chars` (trabajo en curso: la M6 salía con 1224 trozos > 1200); ahora enlazan a `ws-logo`.
 
+## Jefe en juego, cuarta sesión (13-XI, agente A)
+
+- **Fusión de `ccr` (`91d8ef3`)**: `scene_assets.c` toma los conjuntos de bits de `ccr` (las banderas en un byte de
+  esta rama sobran). El árbol fusionado se quedaba en **3331 KB para la caché (mínimo 3332)** y ares paraba en
+  `scene_assets_init`: los programas bajo demanda guardan ahora la cabecera (`neo_anim_program_t`) en el almacén,
+  delante de las órdenes (`neo_progstore_load_program`, 16 bytes más por programa leído), y la imagen solo un
+  puntero por programa: −3,7 KB de bss (`test_program_file`: la segunda pasada lee con cabecera).
+- **Prueba de ares**: la barra de vida no se encendía nunca (ni en esta prueba ni en `veh`): Z de la N64 es
+  `R-Trigger` y los ajustes compartidos lo tienen vacío. `tools/ares_private_data.py`: con `--lifebar` cada prueba
+  usa una copia propia de `data146` con `R-Trigger: 0x1/0/60` (tecla z; el fichero compartido no se toca), y espera
+  `MSX LIFEBAR on`. Mando de `test_mission4_ares.py` en las paradas de cámara (6 s sin avance): ciclo de 12 s
+  (atrás y disparo a la izquierda, granada; giro y disparo a la derecha, granada; 4 s de avance con saltos) y, tras
+  40 s, de 20 s con 8 s de disparo hacia arriba andando a izquierda y derecha. Así pasa el coche de 1000 (el mando se
+  subía a su techo), el blindado `087E36` de 2160 (destruido) y los voladores de 4360, monta el SV-001 `092A32`
+  de 4288 y llega al jefe (`02267E` en 5552, `MSX boss layer 10D7B6 map=02225E`, piezas destruidas) en ~45 min.
+- **Jefe**: el paso desplazado `023E3A` (pieza 3 y orugas sobre el fotograma `+9A` del cuerpo) es el mismo
+  `00427A` que los demás: sus CALL (`025D32..025DAA`, destellos `025DC2`) quedaban como `unsupported
+  routine=25d92` en ares; ahora corren (`m4boss` sigue igual a MAME).
+- **Sin cerrar: derrotar al jefe en ares.** La cámara del port llega a x 6084 y Marco queda en la cornisa de x 6127
+  sin suelo a la derecha (franja negra abajo); en el TAS la cámara avanza despacio con el jefe (progreso 5561 en
+  U 12060 → 5742 al cerrar la sección, `updates.txt`) y el jugador pelea sobre los tejados y el propio jefe
+  (`snap_u12000/12180/12300.png`). Falta lo ya listado: las celdas de las copias de `0E6DA8` de los accesorios
+  1C..1F (camino del jefe) y la cámara automática del jefe; hasta entonces `--boss` no puede pasar y la prueba no
+  entra en la matriz. Dibujos ausentes nuevos vistos en 4360: `palette_id=892` (programas `1C6086..1C671C`, los
+  voladores `085522`), pendiente de exportar con su captura.
+
 ## Sonido y música
 
 Latch (0120F8) en 149829..160500: 56 palabras, 1178 peticiones; 12 fuera de

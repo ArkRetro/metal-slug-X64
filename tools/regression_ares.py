@@ -33,7 +33,7 @@ TESTS = {
     'm6s1':  ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--continues'], 600, '--out'),   # the rafts need jumps (beach 0..176, raft 226..298)
     'm6s2':  ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--continues'], 600, '--out'),   # its soldiers run now (groups m3, m4, m5) and kill a player who neither fires nor jumps
     'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 600, '--out'),
-    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000'], 3300, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it)
+    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 3300, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
 }
 M1M2 = ('test_m1m2_ares.py', [], 1200, '--output')
 

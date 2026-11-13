@@ -531,7 +531,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m5pow m5sewer m4boss m5grab m5sewer2 m5boss
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -685,6 +685,15 @@ FAMILY_ARGS_m4spark := --terrain 10c72e --ring 10c72e --group-map 0 --root-words
 # m5boss = the Mission 5 boss 0A0C00 and its pieces (neo_m5boss.c), with the lists 01D764 it makes: captures-m5/fam/B
 # (run4 replay from sec08_274387, trace 277080..292100), window 277080..279600 (the rise, hovering, attacks 1 and 2).
 FAMILY_ARGS_m5boss := --root-words --attacks --m5boss --ram-creators --split-children --terrain 10c72e --ring 10c72e --group-map 0
+# m5boss2..4: windows of capture B from the nodes alive at their start (--resume): 281400..282500 (attack 3, 0A0FA4, with the
+# shot patterns 2C3F1E), 284500..284886 (the second threshold: 0A2926, the debris 0A203A / 0A1F98 on the boss's cell map;
+# at 284887 the native ground sweep 01456A of the debris 103E04 leaves the moving dynamic object 10C22E for the static terrain
+# and the original stays: pending, docs/MISION5.md), 291300..292100 (the death 0A12C0..0A1466: 0A1756, 0A18D8, the burnt
+# soldiers 0A2134 / 099090, 018F92, 018F40), 287250..287800 (attack 0 with the beam 0A1B3A..0A1D20, 0A1DF2, 0A1E7E).
+FAMILY_ARGS_m5boss2 := $(FAMILY_ARGS_m5boss) --resume
+FAMILY_ARGS_m5boss3 := $(FAMILY_ARGS_m5boss) --resume
+FAMILY_ARGS_m5boss4 := $(FAMILY_ARGS_m5boss) --resume
+FAMILY_ARGS_m5boss5 := $(FAMILY_ARGS_m5boss) --resume
 # m4boss = the whole Mission 4 boss 02267E (neo_m4boss.c: body, guns, cannon, treads, shells, balls, debris) in capture T.
 FAMILY_ARGS_m4boss := --root-words --attacks --m4boss --ram-creators --terrain 10c72e --ring 10c72e --group-map 0
 FAMILY_ARGS_m4veh := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --script-actor 101414 --script-routines 59b5c,59852,1c6ee

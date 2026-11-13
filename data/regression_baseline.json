@@ -32,6 +32,14 @@
   "stopped": 0,
   "unsupported": 0
  },
+ "m4boss": {
+  "missing_draw": 2061,
+  "missing_part": 2,
+  "result": "PASS",
+  "seconds": 2260,
+  "stopped": 0,
+  "unsupported": 6
+ },
  "m5boss": {
   "missing_draw": 8,
   "missing_part": 1,

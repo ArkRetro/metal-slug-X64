@@ -271,7 +271,12 @@ typedef struct {
      * object word carries the target column D4 in bits 21..31 and
      * map_patch_at the target (D4, D5): a later patch at the same target
      * replaces the record, as its words overwrite the SCB1 entries (B63). */
-    uint32_t map_patch[64][2];uint8_t map_patches;uint32_t map_patch_at[64];   /* SCENE_STAGE_PATCHES */
+    /* map_patch_cols: the columns of the sub-map the copy wrote (bit n =
+     * column D4 + n; 0 = all), after 0C70FC's clip to the ring window: a
+     * clipped copy leaves the other slots as they were. Past the terrain
+     * map's end (Mission 4's boss road) the target column is the one of the
+     * slot 32 blocks back that holds it (neo_world_terrain_end). */
+    uint32_t map_patch[64][2];uint8_t map_patches;uint32_t map_patch_at[64];uint16_t map_patch_cols[64];   /* SCENE_STAGE_PATCHES */
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
      * nonzero). neo_world_init copies neo_softdip[NEO_DIP_BLOOD]. */
@@ -291,6 +296,11 @@ extern uint8_t neo_softdip[NEO_DIPS];
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */
 void neo_world_init(neo_world_t *world,int32_t scroll_x);
+/* The block column past the last one of the map the camera list loaded into
+ * 10C72E (op 0x18: column + the map's width +8), or -1 without one: from
+ * there the 32 sprite columns of its tile layer, and the 64 cell columns of
+ * its collision ring, keep what they held 512 px before (0C714E). */
+int neo_world_terrain_end(const neo_world_t *world);
 /* Stage of a mission pack (docs/MISION2.md "Fase 2", 0183D0): the script
  * section of the descriptor's +8 entry and the camera command list +0 from
  * its first command; the RNG ring, weapons and score carry over from the

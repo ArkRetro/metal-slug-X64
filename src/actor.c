@@ -958,8 +958,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);
-    scene_render_set_map_patches((const uint32_t (*)[2])game.world.map_patch,game.world.map_patches);
+    scene_render_set_map_patches((const uint32_t (*)[2])game.world.map_patch,game.world.map_patch_cols,game.world.map_patches);
     scene_render_set_tower(game.world.tower.types,game.world.tower.drawn);
+    /* Mission 4 (pack layer 3 = 10C72E): the camera passes the end of 0E6DA8
+     * (block 344) on the boss's road, where the ring repeats. */
+    {int end=game.in_stage && game.flow.mission==3u?neo_world_terrain_end(&game.world):-1;scene_render_set_terrain_wrap(3,end>0?16*end:0);}
     {   /* Mission 3 train 10D7B6 (MISSION3_DEBUG.md G24): its 32 sprites
          * show the ring of neo_train.c, sprite k at +84 + 16 k (0C75EE; +84 =
          * the +14 word, 0C75B2): local column +36 + k at 16 (+36 + k) + +84,

@@ -28,6 +28,7 @@ TESTS = {
     'chars': ('test_characters_ares.py', [], 1800, '--output'),
     'options': ('test_options_ares.py', [], 900, '--output'),   # the options screen: HERO 5, LEVEL 8, no HOW TO PLAY, EEPROM (docs/OPCIONES.md)
     'm4':    ('test_mission4_ares.py', [], 600, '--out'),
+    'm4boss': ('test_mission4_ares.py', ['--fire', '--jump', '1.5', '--lifebar', '--continues', '--boss', '--vehicle', '1', '--seconds', '4500', '--progress', '5552', '--period', '10'], 4800, '--out'),   # the boss 02267E defeated and Mission 5 started; B69: the SV-001 of 4288 hit while mounted
     'm5s1':  ('test_mission5_ares.py', ['--stage', '1', '--progress', '100', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s2':  ('test_mission5_ares.py', ['--stage', '2', '--progress', '80', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s3':  ('test_mission5_ares.py', ['--stage', '3', '--progress', '100', '--fire', '--jump', '2.5'], 900, '--out'),

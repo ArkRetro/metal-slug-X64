@@ -796,6 +796,11 @@ static void camera_step(msx_game_t *g,const neo_world_player_t *p) {
  * maximum + 320 when wider (Mission 3: 6496 + 320; the M1 width capped the
  * player at x 3839, before the platform 0B9286). */
 static int end_x(const msx_game_t *g) {
+    /* Mission 4: past the end of its terrain map the ring repeats (the
+     * boss's road, drawn by scene_render_set_terrain_wrap): no world end,
+     * only the camera's right limit (MAME T: the camera follows the player
+     * at 0x8000 to the focus point 0x20 of the list's op 0x34 at 0x15B0). */
+    if (g->in_stage && g->flow.mission==3u && g->world_enabled && neo_world_terrain_end(&g->world)>0) return INT32_MAX;
     int64_t e=(int64_t)(g->stage_camera_max+320)*MSX_UNIT-1;
     return g->in_stage && e>MSX_END_X?(int)e:MSX_END_X;
 }

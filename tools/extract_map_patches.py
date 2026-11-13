@@ -59,7 +59,16 @@ PATCHES={
 # fronts 0..5 with both variants of each shared edge, one sub-map for the
 # props 6..1A, 1C and 1E at their record's column/row (+6/+8), two for 1B
 # and 1D (the second hit). The copies of the stage map 0E6DA8 (prop 1F and
-# the callbacks +1C, 0x20 columns further each time) belong to the boss.
+# the callbacks +1C, 0x20 columns further each time) at the props' own
+# columns: past the map's end (block 344) the runtime records each copy at
+# the column 32 blocks back whose ring slot it writes (neo_world.c
+# g_map_patch, neo_world_terrain_end), with the columns the window clip let
+# through: 1C 0BA240 (70, 1E, 7, 5), 1D 0BA264 (78, 1E, 4, 5) and 0BA218
+# (78, 1E, 10, 5) (one entry: same key and target, the record keeps the 4
+# columns of the first), 1E 0BA270 (88, 1A, 4, 9), 1F 0BA27C (8C, 1F, 4, 4)
+# and 1F's own patch 0BA7C2 (5A, 1F, 4, 4).
+MISSION4_ROAD=[(0xe6da8,(0x70,0x1e,7,5),0x1c),(0xe6da8,(0x78,0x1e,0x10,5),0x1d),(0xe6da8,(0x88,0x1a,4,9),0x1e),
+               (0xe6da8,(0x8c,0x1f,4,4),0x1f),(0xe6da8,(0x5a,0x1f,4,4),0x1f)]
 def mission4_patches(rom):
     T=0x10c72e
     out=[(T,0xe6e16,(0,0,3,8,0x2a,0xb)),(T,0xe6e42,(0,0,3,8,0x2a,0xb)),(T,0xe6e00,(0,0,6,8,0x24,0xb)),(T,0xe6e2c,(0,0,3,8,0x2a,0xb)),
@@ -76,6 +85,8 @@ def mission4_patches(rom):
         rec=0xe68d0+0x24*n;col,row=rom.u16(rec+6),s16(rom.u16(rec+8))
         for sub in (subs if isinstance(subs,tuple) else (subs,)):
             out.append((T,sub,(0,0,rom.u16(sub+8),rom.u16(sub+10),col,row)))
+    for sub,src,n in MISSION4_ROAD:
+        rec=0xe68d0+0x24*n;out.append((T,sub,src+(rom.u16(rec+6),s16(rom.u16(rec+8)))))
     return out
 def swap(d):
     b=bytearray(d);b[0::2],b[1::2]=d[1::2],d[0::2];return bytes(b)

@@ -362,6 +362,12 @@ static neo_gactor_t *ga_alloc(neo_world_t *w,uint32_t routine,uint32_t creator_t
     memset(a->written,0,sizeof(a->written));
     return a;
 }
+int neo_world_terrain_end(const neo_world_t *w) {
+    const neo_layer_t *l=&w->layers[NEO_LAYER_FORE];
+    if (!w->camera_native || !l->loads || !l->map) return -1;
+    const uint8_t *m=ga_rom(l->map);
+    return m?l->column+(int16_t)(m[8]<<8|m[9]):-1;
+}
 bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==TERRAIN_TAG) {*out=w->terrain;return true;}
     if (tag==ROOT_TAG) {*out=w->root;return true;}
@@ -801,12 +807,40 @@ static void g_map_patch(void *ctx,uint32_t layer,uint32_t submap,const int16_t d
      * 0B8FA8 copy the same frame of 0B85EA to several wagons) and one
      * record per target: each stamper copies 4-6 frames to one target and
      * only the last stays (they also overflowed the 16 records). */
-    uint32_t obj=layer|(uint32_t)(d[4]&0x7ff)<<21,at=(uint32_t)(uint16_t)d[4]<<16|(uint16_t)d[5];
-    if (s[0]|s[1]|s[2]|s[3]) {
-        unsigned i=0;
-        while (i<wd->map_patches && !((wd->map_patch[i][1]&0x1fffffu)==layer && wd->map_patch_at[i]==at)) i++;
+    /* The tile layer of 10C72E is a ring of 32 sprite columns: past the end
+     * of its map (0C714E loads nothing there) a slot keeps the column 32
+     * blocks before. A copy past the end is recorded at that column (the
+     * pack's cells are there and the renderer repeats it, scene_render_
+     * set_terrain_wrap), with the columns the window clip let through. */
+    int16_t t4=d[4];int end=layer==0x10c72eu?neo_world_terrain_end(wd):-1;
+    if (end>=32 && t4>=end) t4=(int16_t)(t4-32*((t4-end)/32+1));
+    uint16_t cols=0;bool record=true;
+    if (dw[4]!=d[4] || dw[2]!=d[2]) {
+        int lo=dw[4]-d[4],hi=lo+dw[2];
+        for (int k=lo;k<hi && k<16;k++) if (k>=0) cols|=(uint16_t)(1u<<k);
+        if (!cols) record=false;   /* only columns past 16 (no copy of the packs is that wide when clipped) */
+    }
+    uint32_t obj=layer|(uint32_t)(t4&0x7ff)<<21,at=(uint32_t)(uint16_t)t4<<16|(uint16_t)d[5];
+    if (record && (s[0]|s[1]|s[2]|s[3])) {
+        /* One record per (target, sub-map): the same copy again adds its
+         * columns; another sub-map at the target takes its columns from
+         * the older records (its words overwrite those SCB1 entries, B63). */
+        unsigned i=0;uint16_t all=cols?cols:0xffffu;
+        for (unsigned k=0;k<wd->map_patches;) {
+            if ((wd->map_patch[k][1]&0x1fffffu)==layer && wd->map_patch_at[k]==at && wd->map_patch[k][0]!=key) {
+                uint16_t old=wd->map_patch_cols[k]?wd->map_patch_cols[k]:0xffffu;old&=(uint16_t)~all;
+                if (!old) {   /* nothing left: drop it */
+                    for (unsigned j=k+1;j<wd->map_patches;j++) {memcpy(wd->map_patch[j-1],wd->map_patch[j],sizeof(wd->map_patch[0]));wd->map_patch_at[j-1]=wd->map_patch_at[j];wd->map_patch_cols[j-1]=wd->map_patch_cols[j];}
+                    wd->map_patches--;continue;
+                }
+                wd->map_patch_cols[k]=old;
+            }
+            k++;
+        }
+        while (i<wd->map_patches && !((wd->map_patch[i][1]&0x1fffffu)==layer && wd->map_patch_at[i]==at && wd->map_patch[i][0]==key)) i++;
         if (i<COUNT(wd->map_patch)) {
-            wd->map_patch[i][0]=key;wd->map_patch[i][1]=obj;wd->map_patch_at[i]=at;
+            uint16_t merged=i<wd->map_patches?(cols && wd->map_patch_cols[i]?(uint16_t)(wd->map_patch_cols[i]|cols):0):cols;
+            wd->map_patch[i][0]=key;wd->map_patch[i][1]=obj;wd->map_patch_at[i]=at;wd->map_patch_cols[i]=merged;
             if (i==wd->map_patches) wd->map_patches++;
         }
     }

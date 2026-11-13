@@ -15,7 +15,7 @@ void scene_render_set_collapse(bool collapsed,bool flash);
 void scene_render_set_patch(bool patched);
 /* Map patches 0C70FC applied in the loaded stage ((sub-map, layer object)
  * pairs, neo_world_t map_patch): drawn from the stage pack (B37). */
-void scene_render_set_map_patches(const uint32_t (*list)[2],unsigned n);
+void scene_render_set_map_patches(const uint32_t (*list)[2],const uint16_t *cols,unsigned n);
 /* Mission 2 stage 3 tower (docs/MISION2.md "Fase 2d"): pieces 0..count-1
  * of the writer 0B7C38, types[k] drawn from the stage's templates (layer-3
  * cells at x >= SCENE_TOWER_TEMPLATE_X, tools/pack_mission.py) at
@@ -32,6 +32,9 @@ void scene_render_set_layer_rise(unsigned layer,bool on,int rise);
  * Mission 3 train 10D7B6, neo_train.c ring): 32 columns of 16 px, column k at
  * screen x + 16 k in ring slot (first_slot + k) & 31, showing the pack's
  * column at layer x map_x[k] (INT16_MIN: nothing). Overrides the offset. */
+/* Layer `layer` repeats every 512 px from x `end_x` on (0: off): the tile
+ * ring of 10C72E past its map's end (Mission 4's boss road). */
+void scene_render_set_terrain_wrap(int layer,int end_x);
 void scene_render_set_layer_ring(unsigned layer,bool on,int x,unsigned first_slot,const int16_t map_x[32]);
 /* Column k of the layer at screen x + 16 k shows the pack column at map_x[k]
  * (INT16_MIN: none) with its own rise, clipped to screen rows [y0[k], y1[k]). */

@@ -16,6 +16,7 @@ p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
 p.add_argument('--continues',action='store_true',help='Start at every CONTINUE? panel (a player\'s choice, as tools/test_mission6_ares.py)')
 p.add_argument('--boss',action='store_true',help='PASS only when the boss 02267E dies and Mission 5 starts (`MSX mission 5 stage N start`, 018F92 -> 01891E); the run stops there')
+p.add_argument('--vehicle',type=int,default=0,help='B69: PASS only when the player mounts this vehicle kind (1 = the SV-001 092A32 at 4288) and a class-0 row hits it while mounted (`MSX vehicle hit (class-0 row, B69) ... mount=1` after `MSX player mounted vehicle kind=K`)')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
@@ -38,7 +39,7 @@ def wait(pat,secs=300):
         assert proc.poll() is None,'ares exited'
         time.sleep(.05)
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
-ok=False;cam=0
+ok=False;cam=0;maxcam=0
 try:
     win=None
     while not win:
@@ -74,6 +75,7 @@ try:
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
+        maxcam=max(maxcam,cam)
         if cam>=a.until or (a.boss and re.search(r'MSX mission 5 stage \d+ start',text)):break
         if a.continues and text.count('MSX panel continue')>continued:
             for n in list(held):hold(n,False)
@@ -91,9 +93,16 @@ try:
             if t-stuck<46:ph=(t-stuck-6)%12
             else:ph=(t-stuck-46)%20;up=ph>=12
         fight=0<=ph<8;left=0<=ph<0.8 or 12<=ph<16;right=(4<=ph<4.15) or (not fight and not up) or ph>=16
+        jump=bool(a.jump) and not fight and not up and (t%a.jump)<0.2;bomb=a.lifebar and (1.5<=ph<1.65 or 5.5<=ph<5.65)
+        # The boss 02267E (camera list 0x15B0) comes from the left while the camera follows the player at 0x8000 to the
+        # focus point 0x20 (MAME T): a 5 s cycle facing it, 0.15 s turning left, 3.5 s firing left (a jump at 1 s and
+        # 2.6 s, a grenade at 2 s), then 1.35 s walking right to keep up with the camera.
+        if a.boss and 'MSX boss layer 10D7B6' in text and 'MSX mission complete signal' not in text:
+            bp=t%5;left=bp<0.15;right=bp>=3.65;up=False
+            jump=1.0<=bp<1.2 or 2.6<=bp<2.8;bomb=a.lifebar and 2.0<=bp<2.15
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
-        hold('a',bool(a.jump) and not fight and not up and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
-        hold('z',a.lifebar and (1.5<=ph<1.65 or 5.5<=ph<5.65))
+        hold('a',jump);hold('b',a.fire and int(t*10)%2==0)
+        hold('z',bomb)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)
@@ -102,7 +111,11 @@ try:
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
     print('camera',cam,'screenshots',k,'continues',continued);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
     for s in stops[:40]:print('  ',s)
-    ok=cam>=a.progress and 'not loaded' not in text
+    ok=(maxcam if a.boss else cam)>=a.progress and 'not loaded' not in text   # with --boss the camera restarts at 0 in Mission 5
+    if a.vehicle:
+        at=text.find('MSX player mounted vehicle kind=%d '%a.vehicle)
+        hit=at>=0 and re.search(r'MSX vehicle hit \(class-0 row, B69\) count=\d+ mount=1',text[at:]) is not None
+        print('vehicle kind %d: mounted %s, hit while mounted %s'%(a.vehicle,at>=0,hit));ok=ok and hit
     if a.boss:
         for pat in (r'MSX boss layer 10D7B6 map=[0-9A-F]*[1-9A-F][0-9A-F]* ',r'MSX mission complete signal \(018F92\)',r'MSX mission 5 stage \d+ start'):
             m=re.search(pat,text);print('boss:',pat,'->',m.group(0) if m else 'MISSING');ok=ok and m is not None

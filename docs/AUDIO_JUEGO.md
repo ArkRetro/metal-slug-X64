@@ -529,6 +529,16 @@ renombrado `ch_109d`; `10FC` arma 0; `1133` `ch_1132` 0; `1153` `ch_1056`
 el suelo de la caché. `109D`, `109E`, `10D5` y `1169` quedan en PCM16 (su
 VADPCM no pasa la comprobación de B43).
 
+## 18. Golpes a los vehículos `1089`/`108A`/`108B` (B75, rama `work-audit`)
+
+`1089` y `108A` en `data/sound_map.json`; render aislado `1089` 1,537 s,
+`108A` 0,644 s; 438 pares nuevos (con ellas mismas, entre sí, con `108B` y
+con las 102 etiquetas de la política en los dos órdenes). Añadidas de una en
+una como en §17: `1089` impacto 2 sin mover nada (205 pares en
+`data/sound_pairs.json`; `rom:/`); `108A` y `108B` mueven `108E` y `116E` y
+quedan sin política (`data/sound_pairs_b75_unmapped.json`). Detalle en
+`ANIMACIONES_DANO.md` §6.
+
 ## Regenerar
 
 ```sh

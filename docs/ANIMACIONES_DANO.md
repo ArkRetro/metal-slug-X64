@@ -78,11 +78,11 @@ lo corrigió B69 (`test_b69` en `make check`).
 
 | Vehículo | Rutinas de golpe / destrucción | Port | Familias (MAME, `make check`) | Sprites / paletas | Sonido | Pendiente |
 | --- | --- | --- | --- | --- | --- | --- |
-| SV-001 (M1, M4; `092A32`) | golpe en tierra `09351A`/`093576`, en el aire `0935A8`/`0935EC`, parpadeo `+7E` (paleta `+19`), destrucción con piloto `0938DA`/`09391E` → `093AFA` (destello `0AE1DC`, piezas `0AD9B8`, ráfaga `093BC2`, torreta `03B936`), paletas `093882` | nativo (`neo_tank.c`; B52, B59) | `tankhit` (`09351A`, `093576`), `tankkill` (`09391E`, `093AFA`), `tankair` (`0935EC`, `093576`, `09391E`, `093AFA`): iguales; ares `m4boss` 7 golpes | `rest-sprites-validation.json` (lado vehículos; diferencias atribuidas a solapes y parpadeo `+7E`, no 0) | 1034, 10E9 suenan; **1089/108A (retroceso) sin renderizar** → silencio (B75) | paradas explícitas que no son de daño (salto, agachado, bombas, obús de tipo 5); validación de píxeles del parpadeo y la destrucción con 0 distintos |
+| SV-001 (M1, M4; `092A32`) | golpe en tierra `09351A`/`093576`, en el aire `0935A8`/`0935EC`, parpadeo `+7E` (paleta `+19`), destrucción con piloto `0938DA`/`09391E` → `093AFA` (destello `0AE1DC`, piezas `0AD9B8`, ráfaga `093BC2`, torreta `03B936`), paletas `093882` | nativo (`neo_tank.c`; B52, B59) | `tankhit` (`09351A`, `093576`), `tankkill` (`09391E`, `093AFA`), `tankair` (`0935EC`, `093576`, `09391E`, `093AFA`): iguales; ares `m4boss` 7 golpes | `rest-sprites-validation.json` (lado vehículos; diferencias atribuidas a solapes y parpadeo `+7E`, no 0) | 1034, 10E9 suenan; `1089` suena (B75, agente F); **`108A` sin política** (silencio) | paradas explícitas que no son de daño (salto, agachado, bombas, obús de tipo 5); validación de píxeles del parpadeo y la destrucción con 0 distintos |
 | SV-001 (M3, copia `093C9A`) | golpes en el aire `0946FA` → `094788` → `0947CC`, destrucción `094ABA` | nativo | `m3tankair` (137396..138628, `094756`, `0947CC`, `094AFE`, `094CDA`): igual | ídem | ídem (B75) | — |
-| Camel Slug (M1; `03458E`) | sube con salud 0: el primer golpe pone `+5F` bit 7 → `0351BC` (`0AA7FC(0)`: muere el jinete); el camello vuelve a esperar | nativo (`neo_slug.c`) | `slug` (camelfam 9400..10095, jinete muerto 10091): igual; ares `veh` (B69) | `slug-sprites-validation.json`: 24 volcados, 21 206 iguales, **695 distintos** (subida 9531: 299; muerte 10092: 324; balas) | voz del jinete (1123 etc.) | volcado de la muerte 10092 no a 0 (asincronía volcado/actualización, sin medir pose a pose); agua `034AC0` parada explícita |
-| Slugnoid (M2 E3, M5; `09692C`) | golpes en tierra `09737E`/`097396`, destrucción con jinete `0973E2` → `097414` (marcador `03533A`) → `09756A`; paleta de muerte `097EDE`/`097F52` | nativo (`neo_slugnoid.c`, B38) | `slughit` (39039/39331 golpes, 39503 destrucción): igual | `docs/ARMAS_VEHICULOS.md` paso 17: 4047 distintos en 7 volcados (saltos) | 1034, 10E9; **1089** (B75) | golpe en el aire `097308`, `0977DC` (torreta perdida), lista de muerte `097EDE` en espera: sin captura; pilotos de Eri, Tarma y Fio sin exportar (B69); no probado en ares bajo fuego |
-| Vehículo volador de la M3 (`0AC866`) | golpe (parpadeo `+8C`, retroceso `+8E`), destrucción con jinete (paleta de muerte `+86`, piezas `0AD9B8`, destello `0AE1DC`) | nativo (`neo_m3veh.c`) | `m3veh2` (vuela hasta destruirse con su jinete): igual | MISION3_ACTORES | 1034, 1090, 10E9; **108B sin política** | `0AE752` (índice de paleta 0xF2: trap) parada explícita |
+| Camel Slug (M1; `03458E`) | sube con salud 0: el primer golpe pone `+5F` bit 7 → `0351BC` (`0AA7FC(0)`: muere el jinete); el camello vuelve a esperar | nativo (`neo_slug.c`) | `slug` (camelfam 9400..10095, jinete muerto 10091): igual; ares `veh` (B69) | `slug-sprites-validation.json` (regenerado por el agente F): 38 volcados, 21 525 iguales, **0 distintos** (los 695 eran del validador antiguo, ver §6) | voz del jinete (1123 etc.) | agua `034AC0` parada explícita |
+| Slugnoid (M2 E3, M5; `09692C`) | golpes en tierra `09737E`/`097396`, destrucción con jinete `0973E2` → `097414` (marcador `03533A`) → `09756A`; paleta de muerte `097EDE`/`097F52` | nativo (`neo_slugnoid.c`, B38) | `slughit` (39039/39331 golpes, 39503 destrucción): igual | `docs/ARMAS_VEHICULOS.md` paso 17: 4047 distintos en 7 volcados (saltos) | 1034, 10E9, `1089` (B75) | golpe en el aire `097308`, `0977DC` (torreta perdida), lista de muerte `097EDE` en espera: sin captura; pilotos de Eri, Tarma y Fio sin exportar (B69); no probado en ares bajo fuego |
+| Vehículo volador de la M3 (`0AC866`) | golpe (parpadeo `+8C`, retroceso `+8E`), destrucción con jinete (paleta de muerte `+86`, piezas `0AD9B8`, destello `0AE1DC`) | nativo (`neo_m3veh.c`) | `m3veh2` (vuela hasta destruirse con su jinete): igual | MISION3_ACTORES | 1034, 1090, 10E9, `1089`; **108B sin política** | `0AE752` (índice de paleta 0xF2: trap) parada explícita |
 
 Otros vehículos del port (`neo_m4veh.c` `0587C4`, `neo_m5tank`, trenes…) son
 **enemigos**, no jugables: fuera de esta auditoría.
@@ -92,8 +92,9 @@ Otros vehículos del port (`neo_m4veh.c` `0587C4`, `neo_m5tank`, trenes…) son
 - **B73** muerte del gordo: corregida, `death` la prueba (`fatd1`).
 - **B74** muerte de la momia: ruta corregida y probada (`mzd1`); la paleta
   `0BEE08` sigue pendiente (catálogo con una paleta por pose).
-- **B75** sonidos de golpe de vehículo 1089/108A/108B sin renderizar ni
-  política: pendiente (medir pares como en AUDIO_JUEGO.md §17).
+- **B75** sonidos de golpe de vehículo: `1089` renderizado, medido y con
+  política (impacto, nivel 2; agente F, §6); `108A` y `108B` medidos pero sin
+  política (mueven `108E` y `116E`): pendiente del controlador Z80.
 - **B76** (agente E) muertes de tipo 8 y 0x12 y actor de Fio: corregidas
   para Marco (`386c5c0`) y Fio (`c79ea00`); quedan las de Tarma/Eri/Fio de
   tipos 8/0x12 y el agua.
@@ -127,3 +128,82 @@ jugador (`children.log`). Pendiente, por orden:
 4. Agua `0C2CCC`: captura (ver la tabla) y traducción.
 5. Camello (695 px), Slugnoid en el aire `097308`, pilotos de Tarma/Eri/Fio:
    sin empezar.
+
+## 6. Agente F (16-XI, rama `work-audit`)
+
+**Hecho.**
+
+- **`1089`** (B75): en `data/sound_map.json` con sus 8 llamadores (búsqueda
+  de `move.w #$1089,D0` + `jsr 0120F8` en la P-ROM: `09353A`, `0935B0`,
+  `0938DA`, `09471A`, `094790`, `094ABA`, `0977DC`, `0AD1F4`; `108A`: `08E186`,
+  `090A4A`, `09354E`, `0935C4`, `09472E`, `0947A4`; el código nativo ya los
+  pedía). Render aislado (`render_sound_commands.py --labels sfx_1089 sfx_108a
+  --output` a `/home/user/captures-audit/audio-src`): `1089` 1,537 s, `108A`
+  0,644 s, `OK`. 438 pares (`measure_sound_pairs.py --pairs`, tres procesos;
+  las dos con ellas mismas, entre sí, con `108B` y con las 102 etiquetas de la
+  política en los dos órdenes; los de `108B` que faltaban desde G8). Añadidas
+  de una en una (§17 de AUDIO_JUEGO): `1089` → impacto, nivel 2, **ningún otro
+  sonido cambia**: 205 pares en `data/sound_pairs.json`, política derivada de
+  nuevo. `108A` (voz 1) y `108B` (voz 1) suben `108E` (voz 1→2) y `116E`
+  (voz 0→1): `108A` se descarta bajo `108F`/`1090` (nivel 0) pero corta a
+  `108E` (nivel 1), sin orden total; quedan sin política, pares en
+  `data/sound_pairs_b75_unmapped.json`. `sfx_1089.wav64` (VADPCM, 20 978 B)
+  se lee de `rom:/` (`game_audio.c`). `filesystem/audio` de este árbol es ahora
+  un directorio propio (enlaces por fichero a `ws-logo` más `sfx_1089.wav64`
+  y su `manifest.json`).
+- **Camello (695 px)**: no era el port ni la exportación. Con el validador
+  actual (`export_rest_sprites.py`, cambios de `b6f34ac`/`e2953bf`: cada
+  actualización que borra el nodo o lo saca del rango cuenta, y cada nodo
+  elige su actualización) los mismos píxeles salen iguales: `camelfam`
+  (`@34300-35600 @3b4e0-3b900 @1be24-1be30 @59e30-59f00`) 38 volcados, 21 525
+  iguales, 0 distintos, 0 cubiertos (9531: 1648 = 1349 + 299 de antes).
+  `docs/slug-sprites-validation.json` regenerado.
+- **SV-001 (M1)** contra `tankfam` (`@92810-95800 @3b4e0-3bb00 @14ae8-153ee
+  @1b600-1bd00 @1be24-1be30`): 36 volcados, 63 503 iguales, **429 distintos**
+  en 7 volcados (10577, 10657, 10818, 10900, 11058: torreta `101784`;
+  10977, 11058: 8 px de balas). Causa medida en 10577: los sprites 371/372 de
+  la VRAM (tiles `8F99`/`8F9A`, paleta 0x6A, volteo H) caen sobre el destello
+  de la torreta; ningún nodo trazado los dibuja (la traza de `tankfam` solo
+  sigue `1014C4`, `1028B4`, `101784` y sus hijos por `00411C`/`0040BC`).
+  Los píxeles propios de la torreta coinciden donde no hay ese sprite. No es
+  una diferencia del port.
+
+**Prueba en ares** (`test_vehicle_damage_ares.py --mission m1`, Xvfb `:96`):
+`MSX AUDIO game sounds=98/98` (`sfx_1089` abre de `rom:/`), pero el mando
+ciego no llega a los vehículos: muere tres veces por vida (`MSX player death
+kind=9`) en la parada de las cúpulas (cámara 1920) hasta agotar el tiempo, y
+`RESULT: FAIL`. **El cartucho de esta rama sin el cambio falla igual** (mismas
+muertes de tipo 9, misma cámara): es previo a este cambio y queda abierto
+(¿desde `386c5c0`/`c79ea00`, las muertes por tipo?).
+
+**`make check`** (291 PASS, rc 0 con este cambio): no enlazaba desde `c79ea00` (`test_neo_rest` usa
+`neo_effects.c`, que llama a `marco_death_cap_*`): `src/marco_death.c`
+añadido a esa orden del `Makefile`.
+
+**Hallazgo sin tocar:** `src/msx_sfx_policy.h` no es la compilación de
+`data/sound_policy.json` de esta rama (la fusión `54adba8` derivó la política
+con los pares de la M4 sin recompilar la cabecera: faltan `102E`, `1030`,
+`1036`, `1053`, `1060`, `1066`, `10D1`, `1134`, `113B`, y `1132/1133/1137`
+tienen nivel 0 en vez de 1). `1089` se ha insertado a mano tal como lo emite
+`compile_sound_policy.py`, sin arrastrar esos cambios.
+
+**Falta / siguiente paso.**
+
+1. `108A`, `108B` y la voz de Tarma `1087`: el modelo de canales y niveles
+   medido no los admite (descartes en los dos órdenes). Siguiente paso: leer
+   en el controlador Z80 (`250-m1.m1`) cómo elige canal ADPCM-A y prioridad
+   por orden, y sustituir el modelo por esa regla; sin eso no se les da
+   política (no se rellena).
+2. SV-001 a 0 px: los tiles `28F99`/`28F9A` son de la pose `1B0FE6` del
+   programa `22C1B6` (vuelo de la bala `01B6DC`, la de la torreta); en
+   10577 ninguna bala trazada tiene una actualización en los 2 fotogramas
+   anteriores al volcado. Falta ver en `tankfam` (o una captura nueva) qué
+   nodo de bala dibuja esa entrada y por qué el validador no la empareja.
+3. Slugnoid: sus capturas se borraron tras extraer; la validación de
+   píxeles (4047 distintos en saltos) y el golpe en el aire `097308` necesitan
+   una captura nueva de la M5 (estado `u17460`, `capture_fullgame.lua`,
+   `MSX_FULL_RIDE=pace`, que salta cada 75 fotogramas sin disparar).
+4. Pilotos de Tarma/Eri/Fio: programas `09649C[1..3]` en
+   `soldier_programs.json` (grupo `m5`), sprites sin exportar: falta una
+   captura con cada personaje montado (`capture_fullgame.lua` no elige
+   personaje; la elección por entradas está en `capture_marco_catalog.lua`).

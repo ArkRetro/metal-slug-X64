@@ -1037,6 +1037,34 @@
     "004492"
    ],
    "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 153704): 004492 sprite program op (routine 0DDE9E) x33"
+  },
+  {
+   "label": "sfx_1089",
+   "word": "1089",
+   "callers": [
+    "09353A",
+    "0935B0",
+    "0938DA",
+    "09471A",
+    "094790",
+    "094ABA",
+    "0977DC",
+    "0AD1F4"
+   ],
+   "event": "Vehicle hit recoil (B75): SV-001 hit on the ground/in the air with +5B bit 7 (09353A, 0935B0), destroyed with its pilot (0938DA), Mission 3 copy (09471A, 094790, 094ABA), Slugnoid (0977DC), Mission 3 flyer (0AD1F4); each move.w #$1089,D0 then jsr 0120F8"
+  },
+  {
+   "label": "sfx_108a",
+   "word": "108A",
+   "callers": [
+    "08E186",
+    "090A4A",
+    "09354E",
+    "0935C4",
+    "09472E",
+    "0947A4"
+   ],
+   "event": "Vehicle hit recoil (B75): SV-001 hit with +5B bit 7 clear (09354E, 0935C4), Mission 3 copy (09472E, 0947A4), also 08E186 and 090A4A; each move.w #$108A,D0 then jsr 0120F8"
   }
  ]
 }

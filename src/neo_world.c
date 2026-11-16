@@ -2066,7 +2066,11 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             {0x0BDA8Eu,0xbdab8u,0x01b00000u,0x00600000u,0xffffffffu,0xffffffffu},
             {0x0BD2FAu,0xbd416u,0x05600000u,0x00800000u,0x580,0xffffffffu},{0x0BD2FAu,0xbd444u,0x05600000u,0x00800000u,0x580,0xffffffffu},
             {0x0BD2FAu,0xbd472u,0x06a00000u,0x00800000u,0x6b0,0xffffffffu},{0x0BD386u,0xbd4a6u,0x08800000u,0x00800000u,0x92f,0xffffffffu},
-            {0x0BD3B6u,0xbd4d4u,0x05600000u,0x00bc0000u,0x600,0xffffffffu},{0x0BD3E6u,0xbd4d4u,0x08a80000u,0x00e80000u,0x960,0xffffffffu}};
+            {0x0BD3B6u,0xbd4d4u,0x05600000u,0x00bc0000u,0x600,0xffffffffu},{0x0BD3E6u,0xbd4d4u,0x08a80000u,0x00e80000u,0x960,0xffffffffu},
+            /* 0BDF3A (list 0BDCE2, head): the machines of stage 2 (neo_m6enemy.c) */
+            {0x0BDF3Au,0xbe02cu,0x00e00000u,0x00600000u,0xffffffffu,0xffffffffu},{0x0BDF3Au,0xbe082u,0x01d00000u,0x00600000u,0xffffffffu,0xffffffffu},
+            {0x0BDF3Au,0xbe0d8u,0x00700000u,0x00c80000u,0xffffffffu,0xffffffffu},{0x0BDF3Au,0xbe180u,0x03b00000u,0x00800000u,0xffffffffu,0xffffffffu},
+            {0x0BDF3Au,0xbe1d6u,0x06000000u,0x00c80000u,0xffffffffu,0xffffffffu},{0x0BDF3Au,0xbe27eu,0x06e00000u,0x00c80000u,0xffffffffu,0xffffffffu}};
         int script=find(w,NEO_WORLD_SCRIPT,0);
         for (unsigned k=0;k<COUNT(calls);k++) {
             if (calls[k][0]!=w->camera_calls[i]) continue;
@@ -2313,7 +2317,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         if (at==0x0BB028u) w->camera.speed_x=w->camera.speed_y=0x8000; /* Mission 4 (progress 0x15B0): 019388 with D0 = 0x8000 -> the mission actor's +72/+76 (RAM 1013D6/1013DA) */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
         if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)
-            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u || at==0x0BD67Au || at==0x0BE888u) {   /* Mission 6 stages 1 and 2 (neo_m6props.c, neo_m6enemy.c) */
+            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u || at==0x0BD67Au || at==0x0BE888u || at==0x0BDF3Au) {   /* Mission 6 stages 1 and 2 (neo_m6props.c, neo_m6enemy.c) */
             if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
             else w->camera_events_unsupported++;
         }

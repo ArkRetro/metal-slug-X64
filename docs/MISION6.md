@@ -485,7 +485,31 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   `msx_reference_invulnerable`: ahora la carga `msx_debug_text` de `gameplay.c` solo en los cartuchos de referencia
   (`MSX_REFERENCE_INVULNERABLE`), y el de juego no la enlaza (texto −17 KB, datos −3,3 KB): ares «MSX CACHE slots=209
   (3344 KB, floor 208)». Probado y descartado: las tablas CRC de las películas en el montón (ares: RSP CRASH en el logo).
-- **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar en esta sesión.
+- **Orden `2DFB88` (13-XI, agente C)**: `07 0a 00 80 04 7c` es una creación de grupo 0 (contada) con la entrada `0x47C`
+  de la tabla `0197DC` = **`0530F4`**, que no era nativa (por eso el guion se paraba). `0530F4`: `st.b 444C(A5)` (10C44C =
+  FF), +0 = `0530FE`; `0530FE`: con 10C44C distinto de 0 `rts`, a 0 `jmp 004188`. Es la retención del jefe: su `052F8A` pone
+  10C44C a 0 al final del hundimiento y el nodo se libera (grupo 0 a 0). En `captures-m6/fam/B`: nodo 104594 con `0530FE`
+  y 10C44C = FF en todos los volcados de 296858 a 302340; en 302370 10C44C = 0 y el nodo libre (`003F1E`); el grupo 0 del
+  guion pasa de 1 a 0 en 302372. Traducción en `neo_m6props.c` (`m6props_tick`, `e->flags->m6_signal`). Tras ella el guion
+  sigue: `2DFB92` (región 4330), `2DFB9C` / `2DFBAA` (`05310E` por el lado del jugador), espera de 120, corredores
+  `0AF17E` y `2DFC60` (grupo 7 < 1) → `2DFC66` desbloqueo. Familia **`m6hold`** (`captures-m6/fam/H`, `runH.sh`: réplica
+  de `run4` desde `sec09_292683`, raíz `530f4` de 296800 a 302420; `extract_family_fixture.py --range 530f4-5310d --ram
+  10c44c-10c44d`; traza en bruto borrada): **1 nodo, 2716 actualizaciones en lazo cerrado iguales a MAME** (296857..302369),
+  1 borrado, 2716 bytes de 10C44C comparados. El extractor guarda ahora como borrado la última actualización de la traza
+  si el `004126` ya limpió su nodo (+00 escrito en 004136) aunque no venga otra `U` detrás (antes se descartaba como
+  cortada).
+- **ares (13-XI)**: `test_mission6_ares.py --stage 1 --jump 1.0 --turn 6 --continues --fire --progress 2600 --seconds 1500`
+  (`--turn P`, nuevo: izquierda y abajo 0,5 s cada P s; sin él el jugador deja atrás los morteros `08A732` de grupo 0 tras
+  los sacos y la retención `2DF9B8` de 1056 no se suelta; elección del jugador, nada del juego cambia): `2DFB88` → `0530F4`
+  nativo, `2DFBAA` → `05310E` en la cámara 2352, **el jefe derrotado** (`2DFC68`, `2DFC7C` en 2353) y la cámara sigue
+  hasta 3520: `RESULT: PASS` (2 continuaciones, 5 caídas). Sin `MSX script stopped` en la etapa 1. Paradas que siguen (anteriores, fuera de esta tarea): `040920` /
+  `040DB4` / `040DF0` (cámara 1376..1436), `01FECE` / `0203FC` / `01F934`, `0B833A`.
+- **Pendiente**: el último enemigo `04153E` (con `04445A`) y el final (créditos), sin empezar. Plan: `04153E` (`0C8CD6`,
+  +86..+88 y 10C448 a 0, `04157A` por `0040BC` con +72 = creador, `01ACF2`) es el árbol de 45 constructores de la etapa 3
+  (`04157A` → `042BDC`, `042E22`, `04307E`, `0431E0`, `0444E8`, `045428`; código `037404..038800`, `041500..046700`,
+  `08DD2C` / `08EB18` / `08F1A0`). Una captura de familia de toda la etapa (322339..347200, 2639 creaciones) no cabe en el
+  disco libre (1,6 GB): se hará por ventanas (`runB2.sh` con `FROM` / `LAST` y raíces por rama: `045428`/`045608` desde
+  322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4` desde 324938), una familia por ventana.
 
 ## Pendiente (fase 2, por orden)
 
@@ -513,3 +537,29 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
 `sound_map.json`, `region_rom.json`. Privados:
 `filesystem/mission6/s{1,2,3}/{map.json,map_observed.json,collision.json,collision_observed.json,rom_report.json}`,
 `romfs/mission6.pack`, `filesystem/audio/music_mission6_boss*.wav64`.
+
+## Paradas de la etapa 1 (13-XI, agente C, WIP: parado por orden del usuario)
+
+- **Hecho, sin `make check` completo ni ares** (WIP): (1) `0B833A` (cartel, registro `2DF690`) se paraba porque la
+  tabla `0B8444` y los programas de los carteles (`2A8BAC..2A8E34`) eran del grupo `m2`: ahora sin grupo
+  (`region_rom.json`, `extract_soldier_programs.py`; `soldier_programs.json` regenerado: solo esos 22 programas
+  cambian de grupo); familia `signs` PASS. (2) `0203FC`/`01F934`/`01FECE`: la trampilla `01F836` (registro `2DF67E`)
+  hace la roca grande `01FBAC`, que no era nativa, y el estallido `01FECE`; traducidos en `neo_m6props.c`
+  (`rock_tick`), programa `22FA34` añadido. Captura `captures-m6/fam/K` (`runK.sh`, raíces `1f836,1f844`,
+  292684..294100); familia **`m6rock`** (`--range 1f828-2055f`, RAM de `m6mid`, `--node-fields 82`): **21 nodos, 2153
+  actualizaciones en lazo cerrado iguales a MAME** (292687..294067), 2 `01FBAC` y 2 `01FECE`. `compile_family_fixture.py`
+  / `test_neo_family.c`: hasta 64 lecturas de mapas de celdas por actualización (antes 48; `m6rock` lee 51).
+  Sprites: `export_rest_sprites.py` con raíz `22FA34`; la exportación M6 = la anterior + los 25 descriptores de
+  `22FA34` (filtrada: la salida completa traía 1347 descriptores de jefes M4/M5 que no son de la M6); 56 634 píxeles
+  iguales, 48 distintos, todos en las columnas x 318..319 (borde derecho, el volcado no los muestra). Paquetes
+  rehechos (`build_packs.py`): M6 1251 trozos (límite 1256). **El coordinador debe copiar
+  `filesystem/mission6/rest-native.json` de `ws-chars` a `ws-logo`** al fusionar.
+  (3) `040920`: traducido en `neo_m3enemy.c` (nodo genérico, `ga_to_root` nuevo en `neo_gactor.c` = `01AC4C` hacia
+  `10E968`, y `01AC38`) y en `neo_soldier_ai.c` (soldado; parada explícita si el padre no es terreno, mapa o raíz).
+  **Sin prueba bit a bit todavía**: captura `captures-m6/fam/Z` (`runZ.sh`, solo depurador, M6 entera): MAME pasa
+  por `040920` 128 veces, todas en la etapa 1, 294644..295808, nodos 102754/102804/104174/102494/102CD4 (rebeldes
+  `0AF1C4`/`0AF17E` muertos, `+00` = 040D06/040DF0). Siguiente: captura de familia con raíces `af1c4,af17e` de
+  294380 a 295900 (`--soldier-nodes`, `--range af000-b0fff` y `40500-40fff`) y fixture; después `make check`, ares
+  etapa 1 y matriz. `fam/Z` (193 MB, sin trazas de familia) se puede borrar cuando exista esa familia;
+  `fam/K/boss-trace.txt` (41 MB) ya tiene su fixture (`data/m6rock_fixture.json.gz`).
+- Falta además: `af964` (visto en ares en la cámara 1620), `04153E` (último enemigo) y los créditos (sin empezar).

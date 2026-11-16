@@ -385,6 +385,8 @@ RESOURCES=RESOURCES+(0xb5,0x318)
 # Mission 4 hatches 01F828 / 01F866 (76), rocks 01FABA (74), shadows 01FF82 (75), puffs 020004 (77).
 ROOTS=ROOTS+(0x22fbea,0x22fc02,0x22fc4a,0x22fc92,0x22fbf6,0x22fc26,0x22fc6e,0x22fcb6,0x22fb34,0x22fbbc,0x22fcda)
 RESOURCES=RESOURCES+(0x74,0x75,0x76,0x77)
+# Mission 6 stage 1: the large rock 01FBAC (74) of the hatch 01F836.
+ROOTS=ROOTS+(0x22fa34,)
 # Mission 4 jumping soldier 07E554 and its piece 07EC6A (379), the dust 07EDF0 (22DF54, splash palette 150).
 ROOTS=ROOTS+(0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a,0x22df54)
 RESOURCES=RESOURCES+(0x379,0x150)

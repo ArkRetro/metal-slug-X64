@@ -33,8 +33,9 @@
  *   the creator's facing flipped): programs 2402FA / 24039C / 2403EE, 040F98
  *   (palette 37A / 3BA by 01B2BE, +66/+1E = E0ED), 040FD4: 01ABC8, 00427A.
  * The cartridge checks before 004188 are not reproduced (they fall through to
- * the deletion on genuine hardware). Explicit stops: 040920 (a grounded
- * death with +74 in the air: the block to the scene root), the crouch entry
+ * the deletion on genuine hardware). 040920 (+74: a body that left
+ * the ground on a slope 7 / 9) re-expresses its block in the scene root 10E968 (01AC4C) and moves (01AC38) without
+ * a sweep. Explicit stop: the crouch entry
  * 040BE6 (its sign test reads the upper byte of D1, not set by the routine).
  *
  * Grenadier 08A732 (script records of sections 2 and 4) and its pieces:
@@ -224,11 +225,12 @@ static bool motion(neo_gactor_t *a,neo_genv_t *e) {
         SL(0x34,L(0x34)+ASR(0xfff40000u-L(0x34),5));
         SL(0x30,L(0x30)+ASR(L(0x76)-L(0x30),5));
         SL(0x62,L(0x30));
-        if (B(0x74)) {ga_fail(e,0x40920);return false;}
+        if (B(0x74)) {ga_to_root(a,e);ga_move(a,e);goto out;}                  /* 040920: 01AC4C to 10E968, 01AC38 */
         uint16_t d6=BIT(0x15,5) && B(0x72)?ga_air_400a(a,e):ga_air(a,e);
         if (d6&0x200u) SET(0x15,5);
         if (d6&1u) SB(0x72,(d6&8u)?0xff:0);
     }
+out:
     SB(0x70,BIT(0x15,6)?0xff:0);
     return true;
 }

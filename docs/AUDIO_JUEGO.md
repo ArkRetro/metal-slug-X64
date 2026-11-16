@@ -593,10 +593,36 @@ desviación que ya tenía `116E`. `sfx_1087.wav64` (VADPCM, 6 794 B, desde el
 render aislado de `ws-logo`) y `sfx_108a.wav64` (8 918 B) se leen de `rom:/`
 (`game_audio.c`); `sfx_108b.wav64` ya estaba.
 
-**Pendiente**: sustituir el modelo medido entero por la regla del
-controlador (canal = grupo `D`, nivel = orden de la prioridad, listas de
-parada, y el reparto de canales del chip `4422` para los descartes FM);
-cambia muchos sonidos de todas las misiones y necesita su propia prueba.
+**Hecho (agente J): la política entera es la regla del controlador.**
+`tools/compile_sound_policy.py --rom ZIP --keep src/msx_sfx_policy.h` escribe
+para cada efecto (los 101 del cartucho: los 12 primeros y los 89 de la
+cabecera anterior) su grupo `D`, el byte de prioridad `E` de su primera pista
+y su lista de parada, leídos de su cabecera `506F` en `250-m1.m1`.
+`src/msx_sfx.c` aplica `5204` (al empezar, para los efectos de su lista,
+aunque luego se descarte) y `50CF` (mismo grupo `D ≠ 0`: corta si el que
+suena tiene byte `>=`, si no se descarta; la misma palabra vuelve a empezar);
+un canal por grupo (20 canales: 18 grupos y los dos efectos de grupo 0,
+`109B` y `10BA`). Ya no hay canales ni niveles medidos: los pares medidos
+son la prueba. `108A`/`108B`/`116E` (0x65) descartan a `108F..1092` (0x6E)
+como en el Z80 y estos los cortan; `108E` (0x64) descarta y corta a `108A`.
+
+**Prueba de pares** (`make check`, `tools/test_msx_sfx.c` con
+`build/sound_pairs_fixture.h` de `tools/compile_sound_pairs_fixture.py`):
+los 5 441 pares claros de `data/sound_policy.json`; de los 4 330 entre
+efectos del cartucho, **4 293 iguales** y 37 desviaciones listadas en la
+prueba (cualquier otra la hace fallar): 34 descartes de `109F`/`10A3`/`10A4`
+(FM/SSG) tras otros grupos (el reparto de canales del chip `4A2A/4422`, sin
+traducir), los cortes `1159>1032` y `115B>1033` entre los grupos 06/01 (sin
+lista de parada: sin explicar) y `109B>109B` (grupo 0: el driver toma otra
+ranura, el port un solo canal por efecto). Las listas de parada resuelven
+`1064>1022` y `10E9>1034`, que la regla sola no daba. `game_audio.c` calla
+los canales de `stop_mask`.
+
+**Pendiente**: el reparto de canales del chip (`4422`); `1159>1032`,
+`115B>1033`; los nueve efectos de `data/sound_policy.json` que la cabecera
+anterior no llevaba (`102E`, `1030`, `1036`, `1053`, `1060`, `1066`, `10D1`,
+`1134`, `113B`; sus `.wav64` existen) siguen fuera del cartucho: añadirlos
+cambia el presupuesto de RAM (`RAMFS_FILES`), no se ha probado en ares.
 
 ## Regenerar
 

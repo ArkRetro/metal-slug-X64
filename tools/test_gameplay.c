@@ -914,7 +914,7 @@ int main(int argc,char **argv) {
         // Sound requests of the native world: every one has a packed render.
         for (unsigned i=0;i<g.world.sound_count;i++) {
             int id=msx_sfx_lookup(g.world.sounds[i]);requests++;
-            if (id>=0) {mapped++;voices+=msx_sfx_defs[id].channel==MSX_SFX_CH_VOICE;}
+            if (id>=0) {mapped++;voices+=msx_sfx_defs[id].group==0x02;}   // the driver's voice group
             // Not rendered yet (docs/AUDIO_JUEGO.md): vehicle engine loop 10A5,
             // 10E8 of the generic actors and the boss's own requests.
             else pending++;

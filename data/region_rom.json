@@ -2011,6 +2011,21 @@
    "reader": "0BE43A Mission 6 stage 2 machine wreck programs 2A95BA / 2A95D8 (neo_m6enemy.c): the attack row 0BE360 (0049E8)",
    "hex": "ffb0ffb000a000c0000700010190ffff",
    "group": "m6"
+  },
+  {
+   "rom": "0x2B02FC",
+   "reader": "0DEA20 weapon F (B16): programs by variant, level 2B02FC and vertical 2B0304 (004256)",
+   "hex": "002b028a002b02be002b02a4002b02e2"
+  },
+  {
+   "rom": "0x0EB5CE",
+   "reader": "0DEB1A weapon F: cull rectangle EB5CE (019504)",
+   "hex": "ffd0ffd000480040"
+  },
+  {
+   "rom": "0x0EB616",
+   "reader": "0DEB1A weapon F: attack rows EB616/EB626 (level), EB636/EB646 (vertical), the burst 0DEC14 EB656 (0049E8)",
+   "hex": "fff4fffb0010000a000c00010064fffffff6fff800150010000c00010064fffffffbfffd000a0010000c00010064fffffff8fff600100015000c00010064ffffffe8000000300088000100010032ffff"
   }
  ]
 }

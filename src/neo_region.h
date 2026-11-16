@@ -138,6 +138,11 @@ int32_t neo_tread_step_node(neo_gactor_t *a,neo_genv_t *e,unsigned entry,uint32_
 void neo_tread_air_reset(neo_gactor_t *c,uint16_t d0);
 ga_result_t neo_tread_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e);
+/* B53 (MSX_DIAG only, read by actor.c): the pistol's 01B782 bullets aimed
+ * up (+6E = 40): built, deleted by 01B882's vertical screen cull (+40
+ * outside 0x100..0x1FF: out through the top) and other ends. */
+typedef struct { unsigned born,top,other; } neo_bullet_up_diag_t;
+extern neo_bullet_up_diag_t neo_bullet_up_diag;
 bool neo_bullet_routine(uint32_t routine);
 ga_result_t neo_armored_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_armored_routine(uint32_t routine);

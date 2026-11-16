@@ -1003,6 +1003,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         bool watch44c=false;   /* RAM 10C44C (the Mission 6 mid-boss) */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c44cu && 0x10c44cu<ram_ranges[g][1]) watch44c=true;
         if (watch44c) flags.m6_signal=wram[0xc44c];
+        bool watch716=false;   /* RAM 10C716 (the Mission 6 stage 2 end 0BE8A2 / 0BE8F6) */
+        for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c716u && 0x10c716u<ram_ranges[g][1]) watch716=true;
+        if (watch716) flags.m6_exit=wram[0xc716];
         e.camera_y=w16(0x10e992);
         /* RAM 10C700 (0BC542/0BC548, the Mission 3 wagon 038D26) and 10C6BD
          * (the platform 0B9286 / 0B9400) when the family watches them. */
@@ -1064,6 +1067,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         wram[0x1558]=player1.form94;wram[0x1559]=player1.combo95;wram[0x155e]=(uint8_t)((wram[0x155e]&~0x10u)|(player1.ate9a?0x10u:0u));
         if (watch358) wram[0xc358]=flags.signal358;
         if (watch44c) wram[0xc44c]=flags.m6_signal;
+        if (watch716) wram[0xc716]=flags.m6_exit;
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
         if (watchgrid) for (unsigned q=0;q<128;q++) {wram[(0x67e6+2*q)&0xffff]=(uint8_t)(dgrid[q]>>8);wram[(0x67e7+2*q)&0xffff]=(uint8_t)dgrid[q];}
         if (watch6bd) wram[0xc6bd]=flags.platform6bd;

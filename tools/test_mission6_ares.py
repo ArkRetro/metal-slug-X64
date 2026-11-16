@@ -15,7 +15,7 @@ import argparse,os,re,subprocess,time
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=None)
-p.add_argument('--jump',type=float,default=0.0);p.add_argument('--turn',type=float,default=0.0);p.add_argument('--continues',action='store_true');p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+p.add_argument('--jump',type=float,default=0.0);p.add_argument('--turn',type=float,default=0.0);p.add_argument('--up',type=float,default=0.0);p.add_argument('--sweep',type=float,default=0.0);p.add_argument('--continues',action='store_true');p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
 # --next: the stage played to its end: PASS needs the next stage's record to start (stage 1 -> 016E6E, 2 -> 016E7E).
 p.add_argument('--next',action='store_true')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
@@ -89,7 +89,13 @@ try:
         # --turn P: Left and Down for 0.5 s every P s (a player's choice: crouched shots at the enemies left behind, e.g.
         # the group-0 mortar soldiers 08A732 behind the sandbags that hold the camera lock 2DF9B8 at 1056).
         back=bool(a.turn) and (t%a.turn)<0.5
-        hold('Right',not back);hold('Left',back);hold('Down',back);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
+        # --up P: Up for 0.5 s every P s (a player's choice: shots up at the jumpers 086712 hanging over the factory floor at 1104).
+        up=bool(a.up) and not back and ((t+a.up/2)%a.up)<0.5
+        hold('Up',up)
+        # --sweep P: left for the first half of every P s, right for the second (a player's choice: under the camera hold
+        # of 1104 the jumpers stand on the platforms all over the screen).
+        left=back or (bool(a.sweep) and (t%a.sweep)<a.sweep/2)
+        hold('Right',not left and not up);hold('Left',left and not up);hold('Down',back);hold('a',bool(a.jump) and (t%a.jump)<0.2);hold('b',a.fire and int(t*10)%2==0)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

@@ -86,6 +86,7 @@ typedef struct neo_ga_flags {
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
     uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
     uint8_t m6_signal;               /* RAM 10C44C (Mission 6 mid-boss 05310E: cleared by 052F8A, set by 0530F4) */
+    uint8_t m6_exit;                 /* RAM 10C716 (Mission 6 stage 2: cleared by 0BE8A2, set by the script's 0BE8F6) */
     uint8_t guard_min;               /* 0C09DA's D0 asked this update (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; gameplay.c applies and clears it) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve

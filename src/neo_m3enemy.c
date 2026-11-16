@@ -4461,7 +4461,7 @@ static ga_result_t raft_end(neo_gactor_t *a,neo_genv_t *e) {
 static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;neo_gactor_t *p;
     switch (L(0)) {
-    case 0x8afb6:case 0x8afd0:case 0x8afde: {
+    case 0x8afa8:case 0x8afb6:case 0x8afd0:case 0x8afde: {   /* 08AFA8: the Mission 6 stage 2 entry (+6E = 0, +7F bits 2 / 3 clear) */
         uint32_t self=L(0);
         uint16_t d0=W(0x6e),d1=W(0x70),d2=W(0x72),d3=W(0x74),d4=W(0x76),d5=W(0x78);   /* 08B372 */
         for (unsigned o=0x6e;o<0x7a;o+=2) SW(o,0);
@@ -4470,8 +4470,8 @@ static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
         SW(0x70,0u-d1);SW(0x72,0u-d2);SB(0x80,d3);
         SW(0x74,d4?d4:0x400u);
         SW(0x7a,(uint16_t)((d5?d5:4u)<<8));
-        SW(0x6e,self==0x8afb6?0:1);
-        if (self!=0x8afd0) {SET(0x7f,2);SET(0x7f,3);}
+        SW(0x6e,self==0x8afb6 || self==0x8afa8?0:1);
+        if (self!=0x8afd0 && self!=0x8afa8) {SET(0x7f,2);SET(0x7f,3);}
         SB(0x7e,0);
         neo_gactor_t *c=child(a,e,0x8b3e6,0x0e,0,0);
         SB(0x81,c?0:0xff);
@@ -4490,7 +4490,7 @@ static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
                 if (dy>=S16(W(0x72))) SB(0x7e,1);
                 if (dy>=S16(W(0x70))) SL(0,0x8b138);
             }
-            if (BIT(0x15,6)) SL(0,0x8b18e);
+            if (BIT(0x15,6)) SL(0,0x8b18a);                              /* 08B18A: bra 08B18E */
         } else {
             /* 01AC4C to the scene root: the y long less the parents' previous y. */
             neo_contact_parent_t op,np;uint32_t y=L(0x2c),tag=L(0x38);
@@ -4507,7 +4507,7 @@ static ga_result_t raft_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x8b138:
         if (B(0x80)) {ga_fail(e,0x8b144);return GA_UNSUPPORTED;}
         /* fall through */
-    case 0x8b18e:
+    case 0x8b18a: case 0x8b18e:
         SET(0x7f,1);
         if (W(0x6e)==0) {START(0x285d3a);SW(0x7c,0x10);SL(0,0x8b1c4);goto c4;}
         to_root(a,e);START(0x285d68);SL(0x30,0);SL(0,0x8b214);
@@ -5136,7 +5136,7 @@ again:
  * the family m3jeep (capture A of captures-m3s2c: the idle jeep at 3296, its
  * bursts, shells, the gunner's death, the jeep's death and its rider); the
  * drive and the entries 0A2F48.. are literal. */
-static bool jp(uint32_t r) {return r>=0xa2f2e && r<0xa3db0;}
+static bool jp(uint32_t r) {return r>=0xa2efa && r<0xa3db0;}   /* 0A2EFA / 0A2F14: the Mission 6 stage 2 entries (bits 0 / 0 and 1) */
 static uint8_t rb(neo_genv_t *e,uint32_t at) {const uint8_t *t=ga_rom(at);if (!t) {ga_fail(e,at);return 0;}return t[0];}
 /* 0A3DB0 */
 static void jp_db0(neo_gactor_t *a) {
@@ -5276,6 +5276,8 @@ static ga_result_t jeep_tick(neo_gactor_t *a,neo_genv_t *e) {
     int r;neo_gactor_t *p,*c;
 again:
     switch (L(0)) {
+    case 0xa2efa:jp_db0(a);SET(0x96,0);CLR(0x96,1);CLR(0x96,2);goto f92;
+    case 0xa2f14:jp_db0(a);SET(0x96,0);SET(0x96,1);CLR(0x96,2);goto f92;
     case 0xa2f2e:jp_db0(a);CLR(0x96,0);CLR(0x96,1);CLR(0x96,2);goto f92;
     case 0xa2f48:jp_db0(a);SET(0x96,0);CLR(0x96,1);SET(0x96,2);goto f92;
     case 0xa2f62:jp_db0(a);SET(0x96,0);SET(0x96,1);SET(0x96,2);goto f92;
@@ -6087,7 +6089,7 @@ static bool gunship(uint32_t r) {return r>=0x97fcc && r<0x99070;}
 static bool thrower(uint32_t r) {return r>=0x55f26 && r<0x56eee;}
 static bool bomber(uint32_t r) {return r>=0x8391c && r<=0x84bd0;}   /* 08391C (Mission 4) .. 084BD0 inclusive */
 static bool box(uint32_t r) {return r==0x391ea || r==0x39232 || r==0x39260 || r==0x39276;}
-static const uint32_t rafts[]={0x8afb6,0x8afd0,0x8afde,0x8b090,0x8b138,0x8b18e,0x8b214,0x8b1c4,0x8b3e6,0x8b43e,0x8b4d6,0x8b502};
+static const uint32_t rafts[]={0x8afa8,0x8afb6,0x8afd0,0x8afde,0x8b090,0x8b18a,0x8b138,0x8b18e,0x8b214,0x8b1c4,0x8b3e6,0x8b43e,0x8b4d6,0x8b502};
 static const uint32_t trucks[]={0x2b202,0x2b2ea,0x2b316,0x2ae46,0x2ae72,0x2b138,0x2b1d4,0x2b1cc,0x2b61c,0x2b656,0x2b670,0x2b69e,0x2b6e4,0x2b700,0x2bbba,0x2bc36,0x2bc62,0x2bc84,0x2bcac,0x2bcca,0x2bd3c};
 bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r) || jp(r) || bd(r) || sk(r) || cp(r) || dg(r) || sbomb(r);}
 ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {

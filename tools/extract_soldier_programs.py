@@ -488,6 +488,8 @@ ROOTS+=[0x2a2768,0x2a2788,0x2a27ba,0x2a27ec,0x2a281e,0x2a2850,0x2a2882,0x2a2a58,
 # 2838F0 / 2839CA / 283B7A / 283BF8; the shots 283CCC / 283E30 / 283EBE, the muzzle 283674, the pieces 283F4C / 283FB6.
 ROOTS+=[0x28315a,0x28320a,0x2832b0,0x283356,0x2833fc,0x283458,0x2834e6,0x283534,0x283540,0x2835ce,0x2836b2,0x283740,0x2838f0,
         0x2839ca,0x283b7a,0x283bf8,0x283ccc,0x283e30,0x283ebe,0x283674,0x283f4c,0x283fb6]
+# Mission 6 stage 2 platform 0BE460 (neo_m6enemy.c; no group): 2A9626, at the bottom 2A9650.
+ROOTS+=[0x2a9626,0x2a9650]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

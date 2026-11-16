@@ -698,8 +698,56 @@ static bool jp_routine(uint32_t r) {
     for (unsigned i=0;i<sizeof k/sizeof k[0];i++) if (r==k[i]) return true;
     return false;
 }
-bool neo_m6enemy_routine(uint32_t r) {return jp_routine(r);}
+/* ---- 0BE460: the platform of the jumpers (script records at camera 1040) ----
+ * 0BE460: program 2A9626, palette 508, layers 0001, +72 = FF (riders' map), +73 = 0. 0BE498: 01AC38; with +72 set and +2C <=
+ * +6E, +72 = 0; with +73 clear and +70 >= +2C: +2C = +70, +34 = 0, +72 = FF, program 2A9650 (every update it stays there);
+ * the cell map 0BE338 (+72 set: group 3) or 0BE34C (0140C4 at (0, -1)), 00427A; outside 0BE526 (01945C) -> 004188. */
+static ga_result_t pf_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0xbe460:
+        if (!jp_start(a,e,0x2a9626)) return GA_UNSUPPORTED;
+        ga_palette(a,0x508);layers(a,1);SB(0x72,0xff);SB(0x73,0);SL(0,0xbe498);
+        /* fall through */
+    case 0xbe498:
+        ga_move(a,e);                                                    /* 01AC38 */
+        if (B(0x72) && S16(W(0x2c))<=S16(W(0x6e))) SB(0x72,0);
+        if (!B(0x73) && S16(W(0x70))>=S16(W(0x2c))) {
+            SW(0x2c,W(0x70));SL(0x34,0);SB(0x72,0xff);
+            if (!jp_start(a,e,0x2a9650)) return GA_UNSUPPORTED;
+        }
+        if (!e->dyn_set) {ga_fail(e,0x140c4);return GA_UNSUPPORTED;}
+        e->dyn_set(e->ctx,a,B(0x72)?0xbe338u:0xbe34cu,0,-1);             /* 0140C4 */
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if (ga_cull(a,e,0xbe526)) SL(0,0xbe520);                         /* 01945C */
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xbe520: return GA_DELETE;                                      /* 004188 */
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool pf_routine(uint32_t r) {return r==0xbe460u || r==0xbe498u || r==0xbe520u;}
+/* ---- the end of stage 2: 0BE8A2 (made by the list call 0BE888 at progress 3952) and 0BE8F6 (script, camera 4240) ----
+ * 0BE8A2: 10C716 = 0; 0BE8AE: with 10C716 set, the stage exit 0B6ED2 (0040BC, D0 = 1C) at (11E0, 0038) of the root
+ * 10E968, +6E = 0BE89A, +72 = 1220, then 004188. 0BE8F6: 10C716 = 1, 004188. */
+static ga_result_t ex_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (!e->flags) {ga_fail(e,L(0));return GA_UNSUPPORTED;}
+    switch (L(0)) {
+    case 0xbe8f6: e->flags->m6_exit=1;return GA_DELETE;
+    case 0xbe8a2: e->flags->m6_exit=0;SL(0,0xbe8ae);
+        /* fall through */
+    case 0xbe8ae: {
+        if (!e->flags->m6_exit) return GA_MORE;
+        neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0xb6ed2,0x1c):e->spawn?e->spawn(e->ctx,a,0xb6ed2,false):NULL;
+        if (c) {ga_sl(c,0x38,0x10e968u);ga_sl(c,0x28,0x11e00000u);ga_sl(c,0x2c,0x00380000u);ga_sl(c,0x6e,0x0be89au);ga_sw(c,0x72,0x1220);}
+        return GA_DELETE;
+    }
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
+static bool ex_routine(uint32_t r) {return r==0xbe8a2u || r==0xbe8aeu || r==0xbe8f6u;}
+bool neo_m6enemy_routine(uint32_t r) {return jp_routine(r) || pf_routine(r) || ex_routine(r);}
 ga_result_t neo_m6enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (jp_routine(L(0))) return jp_tick(a,e);
+    if (pf_routine(L(0))) return pf_tick(a,e);
+    if (ex_routine(L(0))) return ex_tick(a,e);
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }

@@ -1951,6 +1951,18 @@
    "reader": "Mission 6 stage 2 platforms (registered by 0BE460, 0140C0): the cell maps 0BE338 / 0BE34C (nine cells 0B), read by the jumpers 086712 standing on them (neo_m6enemy.c)",
    "hex": "fb0009010103000000000b0b0b0b0b0b0b0b0b00fb0009010100000000000b0b0b0b0b0b0b0b0b",
    "group": "m6"
+  },
+  {
+   "rom": "0x0BE526",
+   "reader": "0BE498 Mission 6 stage 2 platform (neo_m6enemy.c): its cull rectangle 0BE526 (01945C)",
+   "hex": "ffc0000000800040",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0BE89A",
+   "reader": "0BE8AE Mission 6 stage 2 end (neo_m6enemy.c): the stage exit 0B6ED2's rectangle 0BE89A (+6E)",
+   "hex": "fff4ffff00800080",
+   "group": "m6"
   }
  ]
 }

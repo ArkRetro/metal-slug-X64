@@ -576,14 +576,41 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   (`0872FA`, `087362`, `08739C`, paleta 852) y `0869AC` / `0869E4`.
 - Sprites: `export_rest_sprites.py ... G@86712-87c91 G2@86712-87c91`: 508 880 píxeles iguales, 0 distintos; 311 descriptores
   nuevos y 11 paletas (C0..C3, 188..18B, 868, 86B, 882). Sin ver: 852, 85F, 860, 86A.
-- **Parada: el paquete no cabe.** Con esos 311 descriptores `build_packs.py 6` da **1291 trozos** (límite
-  `SCENE_MISSION_CHUNKS_MAX` 1256, antes 1252). Por orden del coordinador no se ha subido el límite: en el árbol siguen el
-  paquete y la exportación M6 anteriores (sin el saltador; en ares sus tablas del grupo `m6` faltan y el actor se para
-  explícitamente). La exportación nueva (12 157 + 311 descriptores) queda fuera del árbol, en
-  `/home/user/captures-m6/fam/G/rest-native-m6jump.json` (privada). Para seguir: decidir el límite (memoria de la caché de escena: el suelo 3328 KB)
-  o aligerar la exportación M6 (lleva los actores de las misiones 2..5), rehacer el paquete y probar la etapa 2 en ares.
-- Falta en la etapa 2 (sin portar): `0BE460` (plataformas, 4), `032946` / `032AA4`, `0A2EFA`, `0676A8` / `0676B6` (sellos
-  `0C88B0`), `08AFA8`, `0BE8F6`, `0BE8A2` (llamada de la lista, la salida `0B6ED2`) y los actores de cabeza `0BE02C..0BE27E`.
+- Con esos 311 descriptores el paquete daba 1291 trozos (límite 1256): resuelto con el recorte de abajo. Copia de la
+  exportación M6 al día: `/home/user/captures-m6/fam/G/rest-native-m6jump.json` (privada).
+- **Plataforma `0BE460`** (`neo_m6enemy.c`, `pf_*`): programa 2A9626 / 2A9650 (la que baja), paleta 508, mapas de celdas
+  `0BE338` (grupo 3) / `0BE34C` por `0140C4` (0, −1). Familia **`m6plat`** (`captures-m6/fam/G3`, raíz `be460`, 305200..307500):
+  3 nodos, 1445 actualizaciones iguales a MAME.
+- **Jeep `0A2EFA` / `0A2F14`** (registro contado de la cámara 2672): entradas nuevas del jeep armado de la M3
+  (`neo_m3enemy.c`, +96 bits 0 / 0 y 1: el sello del desguace `0C88B0`). Familia **`m6jeep`** (`captures-m6/fam/G4`,
+  `LOAD=at_312000`, raíces `a2efa,a2f14,676a8,676b6`, 312000..314600; `--ram 10c72e-10d7b6` para la ventana de la capa que
+  lee el sello, `--soldier a3b50`): 5 nodos, 910 actualizaciones, 2 sellos iguales a MAME.
+- **Fin de la etapa 2**: la llamada `0BE888` de la lista `0BDCE2` (progreso 3952) crea `0BE8A2` (en `neo_world.c`, tras el
+  actor de guion como las demás llamadas: la inserción por prioridad 1C no se modela), que borra 10C716 y espera; el
+  registro contado `0BE8F6` (cámara 4240) pone 10C716 = 1 (`neo_ga_flags_t.m6_exit`); entonces `0BE8A2` crea la salida
+  `0B6ED2` en (11E0, 0038) de la raíz, +6E = `0BE89A`, +72 = 1220. La plataforma `08AFA8` (registro contado de 4101) es una
+  entrada nueva de la balsa `08AFB6` de la M3 (+6E = 0, +7F bits 2/3 sin poner); de paso, `08B090` guarda ahora `08B18A`
+  (el `bra 08B18E` del original) en +0 como MAME. Familia **`m6end2`** (`captures-m6/fam/G5`, `LOAD=at_321000`, raíces
+  `8afa8,be8a2,be8f6`, 321000..322330; el arnés lee y escribe 10C716): 5 nodos, 622 actualizaciones iguales a MAME,
+  incluida la salida.
+- Sin portar en la etapa 2 (registros no contados, el guion los salta contándolos): `032946` / `032AA4`, `0676A8` /
+  `0676B6` (los sellos `0C88B0` de 3600 / 3642, con `0C899E`; tablas `0E199E..0E1A5E`), y los actores de cabeza de la lista
+  `0BE02C..0BE27E` (con `0BE5E4`, `0BE592`, `0BE700`, `0BE7CC`).
+
+## Recorte del paquete de la M6 (16-XI, agente G; decisión del coordinador: no subir el límite)
+
+- Regla determinista (`tools/pack_mission.py`, `mission_descriptor_rule`, misiones en `TRIM` = {6}): un descriptor de la
+  exportación entra en el paquete salvo que **todos** los programas de animación que lo posan (`data/soldier_programs.json`,
+  órdenes POSE, también las de las tablas de poses) sean de un grupo que la misión no carga (`GROUPS[6]` = m3, m4, m5, m6;
+  un programa sin grupo está en `/programs.bin` y lo cargan todas). Los descriptores que ningún programa posa (dibujados por
+  código) se quedan. En la práctica salen los del grupo `m2`. La exportación `filesystem/mission6/rest-native.json` sigue
+  completa (copia propia); el recorte lo hace el empaquetador.
+- Prueba **`tools/check_mission_descriptors.py 6`** (en `make check`): todo descriptor que la M6 referencia (POSE de sus
+  programas cargables, más los exportados que ningún programa posa) y que está exportado está en las exportaciones de la
+  escena o en la tabla de actores de `romfs/mission6.pack`, y el paquete no lleva ninguno que la regla quite. Hoy: 11 911
+  referenciados y exportados, 0 fuera; 1505 referenciados que no se han exportado nunca (contados: en ejecución un dibujo
+  sin descriptor es una parada explícita).
+- Paquete con el saltador `086712` y la plataforma `0BE460`: **1090 trozos** (límite 1256; antes del recorte 1291).
 
 ## Pendiente (fase 2, por orden)
 

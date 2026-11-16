@@ -7,7 +7,8 @@
  * one update later, the respawn x (when the capture has the progress) and
  * the entrance length (0C229C). Shared by tools/test_marco_death.c (Marco)
  * and tools/test_character.c (Tarma, Eri, Fio). */
-typedef struct {unsigned bad,skipped,velocities,speeds,ends,respawns,entrances,poses,palettes,forms;} death_stats_t;
+static bool death_surface(void *ctx,int32_t *y) {*y=(int32_t)((const death_update_t *)ctx)->surface;return true;}
+typedef struct {unsigned bad,skipped,velocities,speeds,ends,respawns,entrances,poses,palettes,forms,water_velocities;} death_stats_t;
 static void death_case_run(const death_case_t *c,death_stats_t *st) {
 #define bad st->bad
 #define skipped st->skipped
@@ -25,7 +26,9 @@ static void death_case_run(const death_case_t *c,death_stats_t *st) {
         bool ground=(u[0].f15&0x40u)!=0;
         /* The deaths by form (data/form_death_fixture.json, MAME mzd1 / fatd1):
          * form 3 0C2C40 for a hit of kind 0, form 2 0C2A36; the other characters in tools/test_character.c. */
-        if (!marco_death_start_form(&d,(uint8_t)c->kind,(uint8_t)c->form,false,ground,(c->f5b&0x80u)!=0,&vx,&vy,&facing)) {fprintf(stderr,"death %u: form %u not translated\n",c->frame,c->form);bad++;}
+        /* The fall 0C2D6A (Mission 6 w6d2): into water 0C2CCC (its surface per update from MARCO_WATER), else by the form/kind. */
+        if (c->water) {if (!marco_death_start_water(&d,&vy)) {fprintf(stderr,"death %u: water not translated\n",c->frame);bad++;}}
+        else if (!marco_death_start_form(&d,(uint8_t)c->kind,(uint8_t)c->form,c->fall!=0,ground,(c->f5b&0x80u)!=0,&vx,&vy,&facing)) {fprintf(stderr,"death %u: form %u not translated\n",c->frame,c->form);bad++;}
         forms+=c->form!=0;
         /* 009EA8's palette of +19 (0BEDE8 burnt, 0BEE08 the mummy's, else kept). */
         if (c->palette_table!=0xffffffffu) {
@@ -36,7 +39,10 @@ static void death_case_run(const death_case_t *c,death_stats_t *st) {
         if (!d.keep_ground && !d.fat) ground=false;            /* 0C2E7E (not for kinds 2, 8, 0x12 on the ground) */
         unsigned k=1,end=0,gone=0;uint32_t got[256]={0};marco_life_phase_t phase[256]={0};
         for (;k<c->count && d.phase!=MARCO_GONE;k++) {
-            marco_death_velocity(&d,ground,&vx,&vy);
+            if (d.water) {
+                const death_update_t *q=&u[k];int32_t y40=(int32_t)u[k-1].y40;
+                marco_death_water_velocity(&d,&vx,&vy,y40,q->found?death_surface:0,(void *)q);
+            } else marco_death_velocity(&d,ground,&vx,&vy);
             bool now=(u[k].f15&0x40u)!=0;
             /* Updates whose motion the sweep changed (the position moved by
              * other than +34, another parent, or the ceiling bit +15 bit 7) and kind 7's first update
@@ -46,7 +52,7 @@ static void death_case_run(const death_case_t *c,death_stats_t *st) {
             if (!free) skipped++;
             else if (!now && d.phase==MARCO_DYING) {
                 if ((uint32_t)vx!=u[k].v30 || (uint32_t)vy!=u[k].v34) {if (bad<20) fprintf(stderr,"death %u update %u: +30/+34 %08X %08X, capture %08X %08X\n",c->frame,k,(unsigned)vx,(unsigned)vy,u[k].v30,u[k].v34);bad++;}
-                else velocities++;
+                else {velocities++;if (c->water) st->water_velocities++;}
             }
             vx=(int32_t)u[k].v30;vy=(int32_t)u[k].v34;        /* the motion (and landing) of the capture */
             marco_life_phase_t before=d.phase;

@@ -71,6 +71,8 @@ static const neo_anim_command_t kind12_cmds[]={
     P(0x18d3ca),W(1),P(0x18d3e2),W(1),P(0x18d3fa),W(1),P(0x18d412),W(2),
     P(0x18d42a),W(2),P(0x18d438),W(2),P(0x18d450),W(1),{NEO_ANIM_FINISH,0,0,0,0,0,0},
 };
+/* 0BF2D8 (the fall into water, 0C2CCC): 24ECCC, one pose and FINISH. */
+static const neo_anim_command_t water_cmds[]={P(0x18d7b0),{NEO_ANIM_FINISH,0,0,0,0,0,0}};
 /* 0BF498: 24F072 */
 static const neo_anim_command_t entrance_cmds[]={
     P(0x18aabc),W(1),P(0x18ab00),W(1),P(0x18ab40),W(1),P(0x18ab76),W(1),
@@ -81,7 +83,7 @@ static const neo_anim_command_t entrance_cmds[]={
 #undef PY
 #undef W
 #define PROGRAM(n) static const neo_anim_program_t n##_prog={n##_cmds,sizeof n##_cmds/sizeof n##_cmds[0]}
-PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);PROGRAM(kind8);PROGRAM(kind12);
+PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);PROGRAM(kind8);PROGRAM(kind12);PROGRAM(water);
 static const neo_anim_program_t air_prog={air_cmds,sizeof air_cmds/sizeof air_cmds[0]};
 PROGRAM(entrance);
 /* The chosen character's five programs (marco_death_use_programs), in the
@@ -172,6 +174,27 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
     return translated;
 }
+bool marco_death_water_stage(uint16_t stage) {return stage==9u || stage==0xbu || stage==0u;}   /* 0191FC: 2, 2, 3 */
+bool marco_death_start_water(marco_death_t *d,int32_t *vy) {
+    memset(d,0,sizeof *d);
+    d->f78=0xff;d->phase=MARCO_DYING;d->water=true;d->water80=0x1e;
+    d->palette_table=0xbedf0u;                          /* 0C2CD2..0C2CE4 */
+    neo_anim_start(&d->anim,&water_prog,0x100);         /* 0C0F32 (0C0F56: speed 0x100) */
+    *vy=0;                                              /* 0C2CF6 */
+    return !character_column;
+}
+void marco_death_water_velocity(marco_death_t *d,int32_t *vx,int32_t *vy,int32_t y40,marco_surface_fn surface,void *ctx) {
+    *vx-=*vx>>4;                                        /* 0C2D06..0C2D0C */
+    int32_t y;
+    if (d->water80) {
+        d->water80--;                                   /* 0C2D18 */
+        if (surface && surface(ctx,&y)) {               /* 0C2D1E: 03C55C */
+            *vy=(int32_t)((uint32_t)y-0x80000u-(uint32_t)y40)>>3;   /* 0C2D28..0C2D38 */
+            return;
+        }
+    }
+    *vy+=(int32_t)((uint32_t)0xfff00000u-(uint32_t)*vy)>>5;          /* 0C2D40..0C2D4C */
+}
 static const neo_anim_program_t *fat_script;static uint16_t fat_cursor;
 void marco_death_use_fat_program(const neo_anim_program_t *script,uint16_t entry) {fat_script=script;fat_cursor=entry;}
 bool marco_death_start_form(marco_death_t *d,uint8_t kind,uint8_t form93,bool fall,bool grounded,bool attacker_right,
@@ -256,6 +279,14 @@ marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,in
         if (done || offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;d->final_draw=done;}   /* fatd1: 128606 shows at the end update */
         return d->phase;
     }
+    if (d->phase==MARCO_DYING && d->water) {
+        /* 0C2D50: the program (its end ignored); 0C2D5C: on the ground
+         * (+15 bit 6) 0C2F90, the actor's end; else 0C2F4A..0C2F72: off the
+         * screen, the end too. No +26 ramp, no lying. */
+        step(d);(void)vx;
+        if (ground || offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;d->final_draw=d->shown;}   /* w6d2: its pose shows */
+        return d->phase;
+    }
     if (d->phase==MARCO_DYING && d->own) {
         /* 0C2BAA / 0C2AB8: the program (no +26 ramp), its end 0C2F06; kind 8:
          * +78 = 0 on the ground (0C2BBA); 0C2F72 off the screen. */
@@ -270,7 +301,8 @@ marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,in
         int16_t sp=(int16_t)d->anim.speed;sp=(int16_t)(sp+((int16_t)(d->speed_target-sp)>>4));d->anim.speed=(uint16_t)sp;
         bool done=step(d)!=NEO_ANIM_MORE;
         if (ground) {*vx=0;d->speed_target=0x100;d->f78=0;}   /* 0C2EE4..0C2EFC */
-        if (offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;return d->phase;}
+        /* 0C2F72 after the program: the pose of this update shows (w6d2 293315). */
+        if (offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;d->final_draw=d->shown;return d->phase;}
         if (done) {d->phase=MARCO_LYING;d->count80=0x1e;d->updates=0;}   /* 0C2EDE: 0C2F06 next update */
         return d->phase;
     }

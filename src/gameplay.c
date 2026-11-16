@@ -375,6 +375,31 @@ static void landing_step(msx_game_t *g) {
     g->landing_x=in.x;g->landing_y=in.y;g->landing_root_x=rx;g->landing_root_y=ry;
     if (!neo_landing_active(&g->landing)) {g->landing_on=false;g->landing.draw_count=0;}
 }
+/* 03C55C at the player's +3C/+40 (the projected words): water (class 5,
+ * 013CF8) at +40 - 1, + 7 or + 15 px; found, 8 px higher while there is
+ * water (relative to the cell's object), then (y & ~7FFFF) - 1; *surface:
+ * that + the object's +18 (0C2D28), the projected frame of +40. */
+static bool player_water(msx_game_t *g,int32_t *surface) {
+    if (!g->world_enabled) return false;
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+    const int32_t x=g->x+rx,y=56*MSX_UNIT-g->y+ry;
+    int32_t lx=0,ly=0;uint8_t o=0;bool found=false;
+    for (unsigned i=0;i<3 && !found;i++)
+        found=neo_kernel_point_class(k,x,(int32_t)((uint32_t)y-0x10000u+0x80000u*i),5,0,&lx,&ly,&o);
+    if (!found) return false;
+    for (;;) {
+        int32_t nx,ny;uint8_t no;
+        ly=(int32_t)((uint32_t)ly+0x80000u);
+        if (!neo_kernel_point_class_in(k,o,lx,ly,5,0,&nx,&ny,&no)) break;
+        lx=nx;ly=ny;o=no;
+    }
+    int32_t oy;
+    if (!neo_kernel_object_y(k,o,&oy)) return false;
+    *surface=(int32_t)((((uint32_t)ly&0xfff80000u)-1u)+(uint32_t)oy);
+    return true;
+}
+static bool player_water_fn(void *ctx,int32_t *surface) {return player_water(ctx,surface);}
 static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
     /* 0C2956 (hits, the vehicle's 0C3118, time over) and 0C2D6A (the fall)
      * first request the character's death voice, table 0C294E[+6E]: Marco
@@ -386,7 +411,13 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
     /* 0C2986/0C2990 (0C2DC6/0C2DD0 after a fall): form 2 0C2A36 (0C2A06),
      * form 3 0C2C40, the others by the kind. */
     const uint8_t form=g->world_enabled?g->world.weapon_player.form93:0u;
-    if (!marco_death_start_form(&g->life,kind,form,fall,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
+    /* 0C2DA6..0C2DC2: the fall over water with 0191FC 2 or 3 (stage 42F6
+     * 9, 0xB, 0) is 0C2CCC, before the forms (MAME w6d2). */
+    int32_t surface;
+    if (fall && marco_death_water_stage(g->flow.stage) && player_water(g,&surface)) {
+        FALL_LOG("MSX fall into water 0C2CCC stage %u: surface %08lx\n",(unsigned)g->flow.stage,(unsigned long)(uint32_t)surface);
+        if (!marco_death_start_water(&g->life,&vy)) g->death_stops++;
+    } else if (!marco_death_start_form(&g->life,kind,form,fall,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
     if (!g->life.keep_ground && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     /* 0C2A70: 040F38 for every kind 0x12 (Marco's own death on the ground,
      * else 0C2DDA): the splash 040F74 after the player, 01B220 (8, 0). */
@@ -1387,7 +1418,12 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
              * air step 0143EE (no gravity of its own) or the ground step.
              * Kind 8 (0C2B8A) always takes the air step 0143EE. */
-            marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
+            /* 0C2D06: the water death's own velocities (03C55C each update while +80 counts). */
+            if (g->life.phase==MARCO_DYING && g->life.water) {
+                int32_t rx,ry;root_xy(g,&rx,&ry);
+                marco_death_water_velocity(&g->life,&body.vx,&body.vy,56*MSX_UNIT-g->y+ry,player_water_fn,g);
+                g->grounded=false;g->ride=0;
+            } else marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
             if (g->life.phase==MARCO_DYING && g->life.own==8) {g->grounded=false;g->ride=0;}
             if (g->life.phase==MARCO_LYING && g->grounded) body.vy=0;
         }

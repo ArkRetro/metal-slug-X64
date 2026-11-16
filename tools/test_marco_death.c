@@ -65,8 +65,8 @@ int main(void) {
     unsigned bad=st.bad,skipped=st.skipped,velocities=st.velocities,speeds=st.speeds,ends=st.ends,respawns=st.respawns,entrances=st.entrances,poses=st.poses,palettes=st.palettes,forms=st.forms;
     unsigned queries=0,rbad=respawn_cases_test(&queries);bad+=rbad;
     printf("respawn (Mission 2 boss tower): %u respawns, %u floor searches of 014742 replayed; %u mismatches\n",RESPAWNS,queries,rbad);
-    printf("death: %u deaths (%u by form), %u airborne velocities, %u speeds, %u end/gone updates, %u respawn points, %u entrances, %u update poses equal, %u palettes (%u updates with swept motion not compared); %u mismatches\n",marco,forms,velocities,speeds,ends,respawns,entrances,poses,palettes,skipped,bad);
+    printf("death: %u deaths (%u by form), %u airborne velocities (%u of the water death 0C2D06), %u speeds, %u end/gone updates, %u respawn points, %u entrances, %u update poses equal, %u palettes (%u updates with swept motion not compared); %u mismatches\n",marco,forms,velocities,st.water_velocities,speeds,ends,respawns,entrances,poses,palettes,skipped,bad);
     if (bad) return 1;
-    printf("PASS: player death 0C2956..0C2F96 (forms 2/3: 0C2A36, 0C2C40) and respawn 019658/0196E8/014742/0C1438\n");
+    printf("PASS: player death 0C2956..0C2F96 (forms 2/3: 0C2A36, 0C2C40; the fall 0C2D6A, water 0C2CCC) and respawn 019658/0196E8/014742/0C1438\n");
     return 0;
 }

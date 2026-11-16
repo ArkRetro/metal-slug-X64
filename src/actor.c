@@ -812,6 +812,18 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
         debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
     if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+#if MSX_DIAG
+    {   /* B53: the pistol's up shots (gameplay.c up_shots) and their native
+         * bullets 01B782 (neo_bullet.c): built, out through the screen's
+         * vertical cull, other ends; with the camera's height. */
+        static unsigned seen;
+        if (game.up_shots!=seen && (game.up_shots<8u || !(game.up_shots%16u))) {
+            seen=game.up_shots;
+            debugf("MSX up shots=%u born=%u culled=%u other=%u stage=%u camera x=%d y=%d\n",game.up_shots,neo_bullet_up_diag.born,neo_bullet_up_diag.top,
+                neo_bullet_up_diag.other,(unsigned)game.flow.stage,game.camera,game.camera_height);
+        }
+    }
+#endif
     if (game.in_stage) {   /* mission pack stage: camera, player and coverage */
         static unsigned last;static int seen_camera=-1,seen_height=-99999;
         if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {

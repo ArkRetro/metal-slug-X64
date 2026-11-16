@@ -307,7 +307,7 @@ MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mis
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 weapon F','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -340,6 +340,8 @@ ROOTS+=[0x22cd04,0x22cc34,0x22cd5a,0x22cc8a,0x0c4e48,0x22f65e]
 ROOTS+=[0x22e064,0x22e0f2,0x22df54,0x22e1f0]
 # Mission 3 weapon E 0DE4DA (neo_pweapon.c): the ball's programs 2B0272/2B027A/2B0282 (two variants).
 ROOTS+=[0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244]
+# Mission 5 weapon F 0DEA20 / 0DEA44 (neo_pweapon.c, B16): level 2B02FC[+7D] = 2B028A / 2B02BE, vertical 2B0304[+7D] = 2B02A4 / 2B02E2, burst 0DEC14 2B030C.
+ROOTS+=[0x2b028a,0x2b02be,0x2b02a4,0x2b02e2,0x2b030c]
 # Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).
 ROOTS+=[0x281ffc,0x28207a,0x2824f4,0x282518,0x282362,0x28236e,0x282388]
 # Mission 3 oil drum 0391EA (neo_m3enemy.c).

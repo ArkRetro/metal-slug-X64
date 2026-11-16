@@ -1077,6 +1077,7 @@ static fire_kind_t fire_kind(uint8_t id) {
     case 0x0e: return (fire_kind_t){0xde4dau,MSX_FIRE_C,14,8,8,8};   /* weapon E (neo_pweapon.c) */
     case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,16,16,8,16};
     case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,16,16,8,16};
+    case 0x0f: return (fire_kind_t){0xdea20u,MSX_FIRE_S,16,16,8,16};   /* weapon F: the S programs (0C3C10/50/90[0F] = 0BFFD8/0C0018/0C0058, 0C24DE[0F] = 0C0098), neo_pweapon.c */
     case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,8,8,8,8};
     case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,8,8,8,8};
     case 6: case 0x0b: return (fire_kind_t){0x1e22cu,MSX_FIRE_L,18,16,16,16};
@@ -1882,7 +1883,8 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 if (left) angle=(uint8_t)(0x80-angle);
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
-                if (k.group==MSX_FIRE_C) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
+                /* The flash 0C58D2 of table 0C432A: ids 3, 8 and 0C..0F. */
+                if (id==3 || id==8 || id>=0x0c) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
                 /* 0C4434: 01AC94 copies the player's +15 & 3 (the facing
                  * bit 0) to the projectile, as 0C43E4 to the flash: the
                  * blast 0644C4/0646B0 draws and mirrors its row E1412 by
@@ -1915,7 +1917,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * 6/0B, 0C3E02): 8 updates of 0C46D6 (laser_call), +76 in the
          * ninth; a held press restarts it in the update that sees it
          * (0C3E66 jumps to 0C3CD0): 9 updates. Ids without a native fat
-         * projectile (0C5508, 0A7960, 0DEA44) are explicit stops. */
+         * projectile (0C5508, 0A7960) are explicit stops. */
         g->pistol_pending=0;
         if (g->pistol_wait) g->pistol_wait--;
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
@@ -1933,7 +1935,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->pistol_wait=10;
             uint32_t ctor=fat_table[id];
             bool native=ctor==0x1b62cu || ctor==0x63aeeu || ctor==0x63b22u || ctor==0x63f10u || ctor==0x646c8u || ctor==0x646e0u ||
-                ctor==0xa7226u || ctor==0xa719cu || ctor==0xde4feu;
+                ctor==0xa7226u || ctor==0xa719cu || ctor==0xde4feu || ctor==0xdea44u;
             if (allowed && !native) {g->weapon_stops++;g->weapon_stop_constructor=ctor;}
             else if (allowed) {
                 bool left=g->facing<0;

@@ -403,8 +403,13 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
      * form 3 0C2C40, the others by the kind. */
     const uint8_t form=g->world_enabled?g->world.weapon_player.form93:0u;
     if (!marco_death_start_form(&g->life,kind,form,fall,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
-    if (kind!=2 && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    if (!g->life.keep_ground && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    /* 0C2A70: 040F38 for every kind 0x12 (Marco's own death on the ground,
+     * else 0C2DDA): the splash 040F74 after the player, 01B220 (8, 0). */
+    if (kind==0x12 && g->world_enabled) neo_world_player_child(&g->world,0x40f74u,0);
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
+    /* 0C2E74: 0C4C28, Fio's actor 0C4C64 (+6E = 3) at the new facing. */
+    if (g->life.c4c28 && msx_character_request==MSX_CHARACTER_FIO && g->world_enabled) neo_world_player_child(&g->world,0xc4c64u,facing);
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
     g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;g->fat_transform=0;
     marco_hgun_reset(&g->hgun);
@@ -1399,8 +1404,10 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
 #endif
         if (dying) {
             /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
-             * air step 0143EE (no gravity of its own) or the ground step. */
+             * air step 0143EE (no gravity of its own) or the ground step.
+             * Kind 8 (0C2B8A) always takes the air step 0143EE. */
             marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
+            if (g->life.phase==MARCO_DYING && g->life.own==8) {g->grounded=false;g->ride=0;}
             if (g->life.phase==MARCO_LYING && g->grounded) body.vy=0;
         }
         if (g->ride) {
@@ -1561,9 +1568,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* 0C2EC6..0C2F8A: speed, program, landing, count-down, off-screen. */
             int32_t rx,ry;root_xy(g,&rx,&ry);
             int32_t vx=g->velocity_x;
+            const bool own8=g->life.phase==MARCO_DYING && g->life.own==8;
             marco_death_after(&g->life,g->grounded,&vx,(int16_t)((uint32_t)(g->x+rx)>>16),(int16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16));
             g->velocity_x=vx;
-            if (g->grounded) g->velocity_y=0;
+            if (g->grounded && !own8) g->velocity_y=0;
+            /* 2503B6: the program's callback 05A09E, the child 05A0B4 after
+             * the player (01AD6E on its +28 block, 01AC94 its facing). */
+            if (g->life.child_5a0b4) {g->life.child_5a0b4=false;if (g->world_enabled) neo_world_player_child(&g->world,0x5a0b4u,0);}
         } else if (g->life.phase==MARCO_ENTERING) marco_entrance_step(&g->life);
         else if (g->life.phase==MARCO_ALIVE && !g->complete && g->world_enabled) {
             /* 0C3712: the projected feet (+40) below RAM 10C72C (0x100 from

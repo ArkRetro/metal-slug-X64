@@ -28,6 +28,11 @@ typedef struct {
     uint32_t palette_table;     /* ROM table of the palette 009EA8 puts in +19 (0BEDE8 burnt,
                                  * 0BEE08 form 3); 0: the palettes stay */
     unsigned updates;           /* updates in the phase */
+    uint8_t own;                /* a death of its own: 8 (0C2ACC..0C2BCA), 0x12 (0C2A70..0C2AC8); 0: 0C2DDA's motion */
+    bool keep_ground;           /* the start leaves +15 bit 6 (kinds 2, 8, 0x12 on the ground: no 0C2E7E) */
+    bool child_5a0b4;           /* kind 8: the program's callback 05A09E ran (the caller makes 05A0B4; it clears this) */
+    bool c4c28;                 /* the start reached 0C2E44 (0C2E74: 0C4C28, Fio's actor 0C4C64 for +6E = 3) */
+    uint32_t palette_slot1a;    /* ROM table of the palette 009EA8 puts in +1A (kind 8: 0BEDE0); 0: none */
 } marco_death_t;
 
 /* The death and entrance programs of the chosen character (msx_character.h):
@@ -35,13 +40,18 @@ typedef struct {
  * kinds 7/0x10 0BF358, in the air 0BF318, entrance 0BF498, each the
  * character's column (+6E) of the same table row. NULL: Marco. */
 void marco_death_use_programs(const neo_anim_program_t *five);
+/* The chosen character's +6E (0 Marco): the deaths of kinds 8 / 0x12 of the
+ * others (programs 250DB6.. / 2509AA.., not in their packs) stop explicitly. */
+void marco_death_use_character(unsigned column);
 /* 0C2DDA: a hit of kind `kind` (+5A) on the player; attacker_right is +5B
  * bit 7 (the player's projected x left of the attacker's +44). Sets the
  * velocities (+30/+34, Q16 y up) and the facing (-1 left, 1 right): kind 2
- * 0C2BCE, kinds 7/0x10 0C2C7A/0C2C40, the others 0C2DDA. Kind 8 (0C2ACC)
- * and 0x12 (0C2A70) have their own deaths: not translated, they return
- * false (explicit stop) and take 0C2DDA. grounded: +15 bit 6; the caller
- * clears it unless kind 2 (0C2E7E). */
+ * 0C2BCE, kinds 7/0x10 0C2C7A/0C2C40, kind 8 0C2ACC (always the air step
+ * 0143EE), kind 0x12 on the ground 0C2A70 (its splash 040F74 is the
+ * caller's, for every kind 0x12: 040F38), the others 0C2DDA. Kinds 8 and
+ * 0x12 of Tarma, Eri and Fio (programs not in their packs) return false
+ * (explicit stop) and take 0C2DDA. grounded: +15 bit 6; the caller clears
+ * it unless keep_ground (0C2E7E). */
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing);
 /* 0C2956 by the form +93 (and 0C2D6A, the fall, when `fall`): form 3 (the
  * mummy) 0C2C40 for every kind (0BF358 with the palettes 0BEE08 / 0BEDE8,
@@ -66,6 +76,16 @@ void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy);
  * facing (-1 left): mirrored offsets and attribute bit 0. False before the
  * program's first pose. */
 bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,neo_anim_draw_t *out);
+/* Fio's actor 0C4C64 (0C4C28 from 0C2E74 when +6E = 3: the deaths that
+ * reach 0C2E44, marco_death_t.c4c28). Its constructor: +30 = the creator's
+ * +30 + 1 away from 0 (+1 for 0), +34 = the creator's. 0C4CBA..0C4D04
+ * before its 0143E4 step: +30 -= >>4, +34 += ((|2 +30| - 6) - +34) >> 4,
+ * on the ground (+15 bit 6) +34 = 0 and +26 eases (>>3) to 0x400, else to
+ * 0x80. 0C4D14..0C4D38 after 00427A: at its end (carry) +80 counts, from
+ * 0xF on +5F bit 3 (blink), at 0x1E the actor ends (true). */
+void marco_death_cap_start(int32_t creator_vx,int32_t creator_vy,int32_t *vx,int32_t *vy);
+void marco_death_cap_velocity(int32_t *vx,int32_t *vy,uint16_t *speed,bool ground);
+bool marco_death_cap_after(bool program_done,uint16_t *count80,uint8_t *f5f);
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y);
 /* The respawn record of 0196E8 for the camera progress (10E99E): world x/y
  * (Q16, y up) from the scene root (root_x/root_y, Q16) after the 0143E4 step

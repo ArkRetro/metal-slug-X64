@@ -33,7 +33,7 @@ static void death_case_run(const death_case_t *c,death_stats_t *st) {
             if (d.palette_table!=want) {fprintf(stderr,"death %u: palette table %06X, capture %06X\n",c->frame,(unsigned)d.palette_table,c->palette_table);bad++;}
             else palettes++;
         }
-        if (c->kind!=2 && !d.fat) ground=false;                /* 0C2E7E */
+        if (!d.keep_ground && !d.fat) ground=false;            /* 0C2E7E (not for kinds 2, 8, 0x12 on the ground) */
         unsigned k=1,end=0,gone=0;uint32_t got[256]={0};marco_life_phase_t phase[256]={0};
         for (;k<c->count && d.phase!=MARCO_GONE;k++) {
             marco_death_velocity(&d,ground,&vx,&vy);

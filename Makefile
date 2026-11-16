@@ -1366,6 +1366,9 @@ $(BUILD_DIR)/fatmuzzle_fixture.h: tools/extract_fat_muzzle_fixture.py data/fatmu
 # Player death/respawn (docs/JEFE_MISION1.md): tools/extract_death_fixture.py.
 $(BUILD_DIR)/death_fixture.h: tools/compile_death_fixture.py data/death_fixture.json data/form_death_fixture.json
 	python3 tools/compile_death_fixture.py
+# Fio's actor 0C4C64 of her deaths (docs/ANIMACIONES_DANO.md): tools/extract_fio_cap_fixture.py.
+$(BUILD_DIR)/fio_cap_fixture.h: tools/compile_fio_cap_fixture.py data/fio_cap_fixture.json
+	python3 tools/compile_fio_cap_fixture.py
 # Respawn at the Mission 2 boss (B33, docs/JEFE_MISION2.md): tools/extract_respawn_fixture.py.
 $(BUILD_DIR)/respawn_fixture.h: tools/compile_respawn_fixture.py data/respawn_fixture.json
 	python3 tools/compile_respawn_fixture.py
@@ -1397,7 +1400,7 @@ $(BUILD_DIR)/vulcan_fixture.h: tools/compile_vulcan_fixture.py data/vulcan_fixtu
 $(BUILD_DIR)/marco_idle_fixture.h: tools/compile_marco_idle.py data/marco_idle_fixture.json
 	python3 tools/compile_marco_idle.py
 
-check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/respawn_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h $(BUILD_DIR)/vslot_fixture.h $(BUILD_DIR)/vulcan_fixture.h $(BUILD_DIR)/mount_fixture.h
+check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/fio_cap_fixture.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/respawn_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h $(BUILD_DIR)/vslot_fixture.h $(BUILD_DIR)/vulcan_fixture.h $(BUILD_DIR)/mount_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -1470,6 +1473,8 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(BUILD_DIR)/host/hgun
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_death.c src/marco_death.c src/neo_animation.c -o $(BUILD_DIR)/host/death
 	$(BUILD_DIR)/host/death
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_fio_cap.c src/marco_death.c src/neo_animation.c -o $(BUILD_DIR)/host/fio_cap
+	$(BUILD_DIR)/host/fio_cap
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_legs.c src/marco_legs.c src/neo_animation.c -o $(BUILD_DIR)/host/legs
 	$(BUILD_DIR)/host/legs
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-stance
@@ -1698,7 +1703,7 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/m3push
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_camera.c src/neo_camera.c -o $(BUILD_DIR)/host/camera
 	$(BUILD_DIR)/host/camera
-	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m4boss.c src/neo_m5props.c src/neo_m6props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m5mech.c src/neo_m5sewer.c src/neo_m5boss.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_rest.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_vulcan.c src/neo_vslot.c src/neo_boss.c src/neo_gactor.c src/neo_region.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m4boss.c src/neo_m5props.c src/neo_m6props.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m5mech.c src/neo_m5sewer.c src/neo_m5boss.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c src/neo_truck.c src/neo_effects.c src/marco_death.c src/neo_flyer.c src/neo_props.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_cull.c src/neo_collision.c src/neo_soldier_ai.c src/neo_blood.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_target.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c -o $(BUILD_DIR)/host/rest
 	$(BUILD_DIR)/host/rest
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DEND_HEADER='"end_letters_fixture.h"' -DEND_NAME=end_letters tools/test_neo_end.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_letters
 	$(BUILD_DIR)/host/end_letters

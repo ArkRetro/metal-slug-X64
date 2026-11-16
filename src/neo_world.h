@@ -211,6 +211,11 @@ typedef struct {
      * player 1014C4 follows it); its creator +0C is 1014C4, read through
      * player_view (a copy of player_node[0], +6D the floor angle). */
     bool player_ripple;neo_gactor_t player_view;
+    /* Children 0040BC makes after player 1's node in its update (the
+     * deaths: the splash 040F74 of 040F38, kind 0x12; the smoke 05A0B4 of
+     * the callback 05A09E, kind 8): made at the start of the next tick, as
+     * the ripple, from the node record as it was at the request. */
+    struct {uint32_t routine;int8_t facing;uint8_t node[0xc0];} player_children[3];uint8_t player_child_count;
     /* A soldier's record as a generic node, for the actors that read or
      * write one: the creator of its ripple 03C62A (03C52C) and the Mission 4
      * rider 0842A8, which creates a soldier (0040BC) and places it one
@@ -332,6 +337,12 @@ bool neo_world_player_grenade(neo_world_t *world,uint32_t constructor,int32_t x,
  * flash 0C58D2 placed by 01ACF2, the shell 063F32 by 0C482E). A shell
  * 063F32 the world cannot insert gives its projectile back (0C4526). */
 bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player);
+/* 0040BC from player 1's update: `routine` after its node (player_children);
+ * 040F74 is then placed by 01B220 (8, 0), 0C4C64 by 01ACF2 (8 forward,
+ * 0x20) with `facing` (-1 left, 1 right: the player's +15 bit 0 as the
+ * death set it; 0 keep the record's), 05A0B4 and 0C4C64 get +15 & 3
+ * (01AC94). False when the request list is full. */
+bool neo_world_player_child(neo_world_t *world,uint32_t routine,int facing);
 /* 01E19E + 01E166 of the beam call 0C46D6 (weapons 06/0B, gameplay.c):
  * the player's block in `laser` gets the point (x, y: the fire program's
  * point plus +72/+74, facing forward, y up), the direction (+92: 0 level,

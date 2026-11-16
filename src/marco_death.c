@@ -46,6 +46,31 @@ static const neo_anim_command_t kind7_cmds[]={
     P(0x18cd68),W(2),P(0x18cd92),W(2),P(0x18cdbc),W(2),P(0x18cde6),W(2),
     {NEO_ANIM_FINISH,0,0,0,0,0,0},
 };
+/* 0BF398 (kind 8, 0C2ACC): 25032A. POSE flags 0x10 / 0x20: the palettes of
+ * +19 / +1A (render palettes[1] / [2]); 2503B6 the callback 05A09E (the
+ * child 05A0B4, an event here); 2503CE jumps to 25016A (air_cmds), copied. */
+#define P1(d) {NEO_ANIM_POSE,(d),0,0,16,0,0}
+#define P2(d) {NEO_ANIM_POSE,(d),0,0,32,0,0}
+static const neo_anim_command_t kind8_cmds[]={
+    P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),
+    P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),P1(0x18cf86),W(1),P1(0x18cfa4),W(1),
+    P1(0x18cf86),W(1),P2(0x18cfc2),W(1),P2(0x18cfe0),W(1),P2(0x18cfc2),W(1),
+    P1(0x18cf86),W(1),P1(0x18cfc2),W(1),{NEO_ANIM_EVENT,0x5a09e,0,0,0,0,0},P1(0x18cfc2),W(2),
+    {NEO_ANIM_BRANCH_FIELD,0x78,29,1,0,0,0},
+    {NEO_ANIM_WRITE_BYTE,0xff,0x78,0,0,0,0},P(0x18bd6a),W(1),P(0x18bd82),W(2),P(0x18bd9c),W(3),P(0x18bdb6),
+    W(3),P(0x18bdca),W(3),P(0x18bdf2),W(1),{NEO_ANIM_BRANCH_FIELD,0x78,43,1,0,0,0},P(0x18be06),W(2),
+    P(0x18be1a),W(2),P(0x18be30),W(2),P(0x18be1a),W(2),{NEO_ANIM_FINISH,0,0,0,0,0,0},
+};
+#undef P1
+#undef P2
+/* 0BF418 (kind 0x12 on the ground, 0C2A70): 24FF1E. */
+static const neo_anim_command_t kind12_cmds[]={
+    P(0x18d298),W(1),P(0x18d2b4),W(1),P(0x18d2d0),W(2),P(0x18d2ec),W(2),
+    P(0x18d308),W(2),P(0x18d326),W(2),P(0x18d342),W(2),P(0x18d35e),W(2),
+    P(0x18d372),W(3),P(0x18d386),W(3),P(0x18d39a),W(2),P(0x18d3b2),W(1),
+    P(0x18d3ca),W(1),P(0x18d3e2),W(1),P(0x18d3fa),W(1),P(0x18d412),W(2),
+    P(0x18d42a),W(2),P(0x18d438),W(2),P(0x18d450),W(1),{NEO_ANIM_FINISH,0,0,0,0,0,0},
+};
 /* 0BF498: 24F072 */
 static const neo_anim_command_t entrance_cmds[]={
     P(0x18aabc),W(1),P(0x18ab00),W(1),P(0x18ab40),W(1),P(0x18ab76),W(1),
@@ -56,7 +81,7 @@ static const neo_anim_command_t entrance_cmds[]={
 #undef PY
 #undef W
 #define PROGRAM(n) static const neo_anim_program_t n##_prog={n##_cmds,sizeof n##_cmds/sizeof n##_cmds[0]}
-PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);
+PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);PROGRAM(kind8);PROGRAM(kind12);
 static const neo_anim_program_t air_prog={air_cmds,sizeof air_cmds/sizeof air_cmds[0]};
 PROGRAM(entrance);
 /* The chosen character's five programs (marco_death_use_programs), in the
@@ -64,6 +89,10 @@ PROGRAM(entrance);
  * the air 0BF318, entrance 0BF498; NULL: Marco's above. */
 static const neo_anim_program_t *character_programs;
 void marco_death_use_programs(const neo_anim_program_t *five) {character_programs=five;}
+/* +6E of the chosen character: kinds 8 and 0x12 have Marco's programs only
+ * (25032A / 24FF1E, column 0 of 0BF398 / 0BF418). */
+static unsigned character_column;
+void marco_death_use_character(unsigned column) {character_column=column;}
 #define ground_prog (*(character_programs?&character_programs[0]:&ground_prog))
 #define kind2_ground_prog (*(character_programs?&character_programs[1]:&kind2_ground_prog))
 #define kind7_prog (*(character_programs?&character_programs[2]:&kind7_prog))
@@ -81,13 +110,22 @@ static bool field(void *context,unsigned f,unsigned bytes,bool write,uint32_t *v
     if (f==0x76) return write;   /* entrance: +76 (upper body may act), not used here */
     return false;
 }
+/* 2503B6: the callback 05A09E (0040BC: the child 05A0B4, made by the caller). */
+static bool event(void *context,neo_anim_kind_t kind,uint32_t asset,neo_anim_render_t *r) {
+    marco_death_t *d=context;(void)r;
+    if (kind!=NEO_ANIM_EVENT || asset!=0x5a09eu) return false;
+    d->child_5a0b4=true;return true;
+}
 static neo_anim_result_t step(marco_death_t *d) {
-    neo_anim_render_t r;memset(&r,0,sizeof r);r.attributes=0x6340;
-    return neo_anim_step_fields(&d->anim,&r,emit,d,256,NULL,NULL,field,d);
+    /* palettes[1..3]: the slots +19..+1B (0043D4: POSE flags >> 4), named
+     * by the player's attribute 0x63 and the two next ones. */
+    neo_anim_render_t r;memset(&r,0,sizeof r);r.attributes=0x6340;r.palettes[1]=0x63;r.palettes[2]=0x64;r.palettes[3]=0x65;
+    return neo_anim_step_fields(&d->anim,&r,emit,d,256,event,d,field,d);
 }
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing) {
     memset(d,0,sizeof *d);
     d->f78=0xff;d->phase=MARCO_DYING;
+    const int before=*facing;
     /* +5B bit 7: facing right (0C2E66/0C2C2A), else left. */
     *facing=attacker_right?1:-1;
     if (kind==2) {
@@ -98,6 +136,23 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
         d->speed_target=0x100;
         return true;
     }
+    if (kind==8 && !character_column) {
+        /* 0C2ACC: 009F88; +19 = 0BEDD0 (0BEDD8 with 10C30C), +1A = 0BEDE0,
+         * +1B = 0x51 (009EA8); 0BF398; +5B bit 7 clear: +15 bit 0 set (left),
+         * +30 = 2; set: 0C2B68 clears bit 1, not bit 0 (the facing stays),
+         * +30 = -2; +34 = 0xA9000, +78 = FF. +15 bit 6 and +80/+26 untouched. */
+        *facing=attacker_right?(before<0?-1:1):-1;
+        *vx=attacker_right?-0x20000:0x20000;*vy=0xa9000;
+        neo_anim_start(&d->anim,&kind8_prog,0x100);d->own=8;d->keep_ground=true;d->palette_slot1a=0xbede0u;
+        return true;
+    }
+    if (kind==0x12 && grounded && !character_column) {
+        /* 0C2A70: 040F38 (the splash 040F74, made by the caller), then on
+         * the ground (+15 bit 6) the facing by +5B, 0BF418, +62 = 0; no
+         * palette request and no velocity write. */
+        neo_anim_start(&d->anim,&kind12_prog,0x100);d->own=0x12;d->keep_ground=true;
+        return true;
+    }
     bool translated=true;
     if (kind==7 || kind==0x10) {
         /* 0C2C7A (+19/+1A = 0BEDE8, the burnt palette) / 0C2C40 (+19 =
@@ -105,12 +160,14 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
          * only reaches 0C2956 in form 3 (0C36CE), which takes 0C2C40. */
         neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;d->palette_table=kind==7?0xbede8u:0xbee08u;
     } else {
-        /* 0C2DDA (kinds 8 and 0x12 on the ground have their own deaths,
-         * 0C2ACC/0C2A70: not translated, explicit stop, this one instead):
+        /* 0C2DDA (kinds 8 and 0x12 on the ground of Tarma, Eri and Fio have
+         * their own deaths, 0C2ACC/0C2A70, programs not in their packs:
+         * explicit stop, this one instead):
          * 0BF298 on the ground, 0BF318 in the air; +80 = 0x20. */
-        translated=!(kind==8 || (kind==0x12 && grounded));
+        translated=!character_column || !(kind==8 || (kind==0x12 && grounded));
         neo_anim_start(&d->anim,grounded?&ground_prog:&air_prog,0x100);d->speed_target=0x20;
     }
+    d->c4c28=true;                                     /* 0C2E74 */
     /* 0C2E44..0C2E7E: +34 = 0xA9000, +30 = -2 facing right else +2, airborne. */
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
     return translated;
@@ -150,11 +207,35 @@ bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,ne
     if (facing<0) out->attributes^=1u;
     return true;
 }
+void marco_death_cap_start(int32_t creator_vx,int32_t creator_vy,int32_t *vx,int32_t *vy) {
+    *vx=(int32_t)((uint32_t)creator_vx+(creator_vx>=0?0x10000u:0xffff0000u));   /* 0C4C94..0C4CAA */
+    *vy=creator_vy;                                                             /* 0C4CAE */
+}
+void marco_death_cap_velocity(int32_t *vx,int32_t *vy,uint16_t *speed,bool ground) {
+    *vx-=*vx>>4;                                                                /* 0C4CBA */
+    int32_t d0=(int32_t)((uint32_t)*vx+(uint32_t)*vx);if (d0<0) d0=(int32_t)(0u-(uint32_t)d0);
+    d0=(int32_t)((uint32_t)d0-0x60000u-(uint32_t)*vy);*vy+=d0>>4;              /* 0C4CC4..0C4CDC */
+    uint16_t target=0x80;
+    if (ground) {*vy=0;target=0x400;}                                           /* 0C4CE0..0C4CFA */
+    *speed=(uint16_t)(*speed+(uint16_t)((int16_t)(target-*speed)>>3));         /* 0C4CFE..0C4D04 */
+}
+bool marco_death_cap_after(bool program_done,uint16_t *count80,uint8_t *f5f) {
+    if (!program_done) return false;                                            /* 0C4D14 */
+    ++*count80;
+    if (*count80>=0xf) *f5f|=8u;                                                /* 0C4D22: +5F bit 3 */
+    return *count80>=0x1e;                                                      /* 0C4D30: 004188 */
+}
 void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy) {
     if (d->phase==MARCO_DYING && d->fat) {
         *vx-=*vx>>5;*vy-=*vy>>5;                        /* 0C2A48..0C2A58, then 0143EE */
         return;
     }
+    if (d->phase==MARCO_DYING && d->own==8) {
+        *vy+=((int32_t)0xffea0000-*vy)>>6;              /* 0C2B8A..0C2BA0, then 0143EE */
+        *vx-=*vx>>6;(void)ground;
+        return;
+    }
+    if (d->phase==MARCO_DYING && d->own==0x12) return; /* 0C2AB2: 014594 with +62 = 0 */
     if (d->phase==MARCO_DYING) {
         if (ground) return;                            /* 0C2EB8: ground step, +62 = 0 */
         *vy+=((int32_t)0xffea0000-*vy)>>5;              /* 0C2E94 */
@@ -173,6 +254,15 @@ marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,in
          * actor's end (no lying count-down); 0C2F72 off the screen too. */
         bool done=step(d)!=NEO_ANIM_MORE;(void)ground;(void)vx;
         if (done || offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;d->final_draw=done;}   /* fatd1: 128606 shows at the end update */
+        return d->phase;
+    }
+    if (d->phase==MARCO_DYING && d->own) {
+        /* 0C2BAA / 0C2AB8: the program (no +26 ramp), its end 0C2F06; kind 8:
+         * +78 = 0 on the ground (0C2BBA); 0C2F72 off the screen. */
+        bool done=step(d)!=NEO_ANIM_MORE;(void)vx;
+        if (d->own==8 && ground) d->f78=0;
+        if (offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;return d->phase;}
+        if (done) {d->phase=MARCO_LYING;d->count80=0x1e;d->updates=0;}
         return d->phase;
     }
     if (d->phase==MARCO_DYING) {

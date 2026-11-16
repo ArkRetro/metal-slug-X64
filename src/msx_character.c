@@ -80,8 +80,8 @@ void msx_character_close(msx_character_pack_t *p) {
 void msx_character_use(const msx_character_pack_t *p) {
     if (p && p->commands) {
         current=p->layout.character;
-        marco_visual_use_programs(&p->script,(const uint16_t (*)[2])p->roles,p->layout.roles);marco_death_use_programs(p->death);
-    } else {current=MSX_CHARACTER_MARCO;marco_visual_use_programs(NULL,NULL,0);marco_death_use_programs(NULL);}
+        marco_visual_use_programs(&p->script,(const uint16_t (*)[2])p->roles,p->layout.roles);marco_death_use_programs(p->death);marco_death_use_character(current);
+    } else {current=MSX_CHARACTER_MARCO;marco_visual_use_programs(NULL,NULL,0);marco_death_use_programs(NULL);marco_death_use_character(0);}
 }
 unsigned msx_character_current(void) {return current;}
 unsigned msx_character_of_place(unsigned place) {

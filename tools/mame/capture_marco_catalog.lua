@@ -271,6 +271,25 @@ emu.register_frame_done(function()
   end
   dbg:command(string.format('printf "MARCO_VIDEO_STATE frame=%%d a5=%%08X flag=%%02X phase=%%02X head0=%%08X head1=%%08X\\n",%x,a5,b@(a5+1946),b@(10000f),d@(a5+1d48),d@(a5+2d4e)',frame))
  end
+ -- Capture only (MSX_CHILD_ROUTINES=hex,hex): every node of the work RAM
+ -- whose routine (+0) is one of these and whose creator (+0C) is the
+ -- player 1014C4, its 0xB0 bytes as hex, one line per node and frame.
+ local children=os.getenv('MSX_CHILD_ROUTINES')
+ if children and frame>=plan.first and frame<=plan.last then
+  if not child_log then child_log=assert(io.open(output..'/children.log','w')) end
+  local ram=cpu:read_range(0x100000,0x10ffff,8)
+  for r in children:gmatch('(%x+)') do
+   local pat=string.pack('>I4',tonumber(r,16));local at=1
+   while true do
+    local i=ram:find(pat,at,true);if not i then break end
+    if (i-1)%2==0 and ram:sub(i+12,i+15)==string.pack('>I4',0x1014c4) then
+     child_log:write(string.format('%d %06X %s\n',frame,0x100000+i-1,(ram:sub(i,i+0xaf):gsub('.',function(c) return string.format('%02x',c:byte()) end))))
+    end
+    at=i+2
+   end
+  end
+  child_log:flush()
+ end
  if frame>=plan.first and frame<=plan.last then
   local file=assert(io.open(output..'/actor'..frame..'.bin','wb'));file:write(cpu:read_range(0x1014c4,0x101573,8));file:close()
   states:write(string.format('{"frame":%d,"routine":%d,"cursor":%d,"x":%d,"y":%d,"projected_x":%d,"projected_y":%d,"flags":%d}\n',frame,cpu:read_u32(0x1014c4),cpu:read_u32(0x1014e4),cpu:read_u32(0x1014ec),cpu:read_u32(0x1014f0),cpu:read_u32(0x101500),cpu:read_u32(0x101504),cpu:read_u16(0x1014d8)));states:flush()

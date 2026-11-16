@@ -591,7 +591,14 @@ static int right_limit(const msx_game_t *g);
 static void clamp_feet(msx_game_t *g,neo_air_t *body,bool grounded) {
     /* 10C00B = FF (stage exit 0B6ED2): the sweeps 0143AC/014574 skip the
      * screen box, so the exit's walk 0CA3EC leaves the screen. */
-    if (g->world_enabled && g->world.ga_flags.scroll_lock) {g->x=body->x<end_x(g)?body->x:end_x(g);return;}
+    if (g->world_enabled && g->world.ga_flags.scroll_lock) {
+        /* No screen box: the walk goes on to the end of the stage's grid (the port has no cells past it), at least
+         * end_x. The exit of Mission 6 stage 2 (0BE8A2: 0B6ED2 at 11E0, rectangle 0BE89A) is past the camera's last
+         * view (MAME: the players walk out of the screen, 322152..322339). */
+        int64_t grid=(int64_t)neo_collision_columns()*8*MSX_UNIT-1;int lim=end_x(g);
+        if (grid>lim && grid<=INT32_MAX) lim=(int)grid;
+        g->x=body->x<lim?body->x:lim;return;
+    }
     g->x=clamp(body->x,(g->camera+28)*MSX_UNIT,right_limit(g));
     neo_surface_t s;
     if (g->x!=body->x && grounded && neo_surface_at(g->x,body->y,4*NEO_UNIT,4*NEO_UNIT,&s)) body->y=s.height;

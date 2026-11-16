@@ -592,7 +592,15 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   entrada nueva de la balsa `08AFB6` de la M3 (+6E = 0, +7F bits 2/3 sin poner); de paso, `08B090` guarda ahora `08B18A`
   (el `bra 08B18E` del original) en +0 como MAME. Familia **`m6end2`** (`captures-m6/fam/G5`, `LOAD=at_321000`, raíces
   `8afa8,be8a2,be8f6`, 321000..322330; el arnés lee y escribe 10C716): 5 nodos, 622 actualizaciones iguales a MAME,
-  incluida la salida.
+  incluida la salida. En ares la balsa de la etapa 2 toma además el camino `08B144` / `08B170` (+80 ≠ 0: la plataforma que
+  se hunde: programa `E539A[+6E]`, +34 = 100, `08B2DE` y `08B31A`), que `run4` no recorre: traducido sin prueba bit a bit
+  (antes era una parada explícita `8b144` que dejaba la etapa sin salida).
+- Pendientes vistos en ares (otras familias, sin tocar): paletas 21C (el jeep `0A2F2E` con +70 ≠ 0) y 214 (el soldado
+  `0413B0`, programa 24124C) sin exportar: dibujos contados como ausentes; paradas `413d4` / `40df0` del módulo de soldados.
+- Recorrido en ares (`test_mission6_ares.py --stage 2 --fire --jump 2.5 --up 1.5 --sweep 10 --continues --progress 4240
+  --next`; `--up` / `--sweep`, nuevos: disparos hacia arriba y paseo a izquierda y derecha, elección del jugador): con el
+  guion completo la cámara se retiene en 1104 (los saltadores sobre las plataformas), 2672 (el jeep) y 4240; el mando ciego
+  necesita ~60 min y muchas continuaciones.
 - Sin portar en la etapa 2 (registros no contados, el guion los salta contándolos): `032946` / `032AA4`, `0676A8` /
   `0676B6` (los sellos `0C88B0` de 3600 / 3642, con `0C899E`; tablas `0E199E..0E1A5E`), y los actores de cabeza de la lista
   `0BE02C..0BE27E` (con `0BE5E4`, `0BE592`, `0BE700`, `0BE7CC`).

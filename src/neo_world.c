@@ -2027,7 +2027,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
          * other calls of the list. */
         /* 0BE888 (list 0BDCE2, progress 3952): 0BE8A2 (0040BC, priority 1C; after the script actor here, as above), the
          * stage 2 end waiting for the script's 0BE8F6 (neo_m6enemy.c). */
-        if (w->camera_calls[i]==0x0BE888u) ga_insert(&t,script,0xbe8a2,SCRIPT_TAG,0);
+        if (w->camera_calls[i]==0x0BE888u && !ga_insert(&t,script,0xbe8a2,SCRIPT_TAG,0)) w->camera_events_unsupported++;
         if (w->camera_calls[i]==0x0BD67Au) {
             neo_gactor_t *a=ga_insert(&t,script,0xb6ed2,SCRIPT_TAG,0);
             if (a) {ga_sl(a,0x38,ROOT_TAG);ga_sl(a,0x28,0x0f000000u);ga_sl(a,0x2c,0x00a80000u);ga_sl(a,0x6e,0x0bd536u);ga_sw(a,0x72,0x0f20);}

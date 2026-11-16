@@ -298,3 +298,131 @@ B68); la línea nueva `MSX fall into water 0C2CCC` marca la rama del agua.
    planes son experimentos cortos al principio de la M1; `capture_fullgame.lua` y
    `capture_weapons.lua` (planes que llegan a los vehículos) no eligen
    personaje: siguiente paso, pasarles la elección de `capture_marco_catalog.lua`.
+
+## 8. Agente J (16-XI, rama `work-audit`)
+
+### 8.1 Catálogo de Marco (tipos 8, 0x12, agua y paletas de la muerte)
+
+**Catálogo nuevo, para copiar a `ws-logo`:**
+`/home/user/captures-audit/j/catalog/` (`build/marco_pose_meta.h`,
+`build/marco_pose_assets.json`, `build/marco-poses.stamp` y
+`romfs/marco/p0..p768.sprite`; los `.sprite` sustituyen a todos los de
+`ws-logo/romfs/marco`: la numeración de las piezas cambia). **Con él hay que
+copiar también los packs** `ws-audit/romfs/chars/c1..c3.bin` (versión 2, 11
+paletas: `msx_character_layout` exige `palettes == MARCO_PALETTES`) y el
+código de esta rama (`marco_death.c`, `marco_renderer.c`, `msx_character.*`).
+
+- **744 poses, 769 piezas CI4, 582 336 bytes, 11 perfiles** (antes 720 /
+  745 / 563 304 / 7). `build_marco_poses.py` con las 17 auditorías de
+  `captures-marco` de siempre más `j/k8d1`, `j/k12d1`, `j/mzd1`, `j/w6d2`
+  (`--out-dir`, nuevo: escribe `build/` y `romfs/marco` en otro árbol).
+  Nombres nuevos: `DEATH8` (7, `0BEDE0`: Marco 0x53), `DEATH8B` (8, 0x51),
+  `MUMMYDEATH` (9, `0BEE08`: 0x132), `WATER` (10, `0BEDF0`: 0x136); cada uno
+  es la paleta de la ROM de la columna de Marco, palabra a palabra.
+- **Las anteriores, idénticas**: el mismo comando sin las cuatro auditorías
+  nuevas (`j/cat-old`) da el catálogo de `ws-logo` (paletas, piezas, poses,
+  anclas y CRC iguales; los 745 `.sprite` iguales byte a byte), y
+  `tools/check_marco_catalog.py j/catalog --base j/cat-old`: 720 poses y 745
+  piezas idénticas, las 7 paletas en su índice.
+- **Las nuevas a 0 px**: 24 poses (`18CF86..18CFE0`, `18D298..18D450`,
+  `18D7B0`). `check_marco_catalog.py` (nuevo) comprueba que las piezas del
+  catálogo son la descodificación de la ROM de cada descriptor que las
+  auditorías verificaron (k8d1 216 fotogramas, 102 512 px; k12d1 132,
+  53 450; mzd1 202, 270 124; w6d2 167, 91 814; 0 distintos) y que cada
+  banco con que MAME lo dibuja es un perfil del catálogo: `18CF86/18CFA4`
+  `DEATH8`, `18CFC2` `DEATH8`+`DEATH8B`, `18CFE0` `DEATH8B`, la momia
+  `MUMMYDEATH` y `18CDE6` `BURNT`, el agua `WATER`: PASS.
+- **Capturas repetidas** (MAME 0.264, las órdenes del §2/§7, en
+  `/home/user/captures-audit/j/`): `mzd1`, `k8d1`, `k12d1` dan auditorías
+  iguales campo a campo a las de antes (el `debug.log` de k8d1/k12d1 solo
+  difiere en la ruta); `w6d2` (con `--command-trace --paired-trace`) se
+  audita por primera vez: `audit_marco_catalog.py --draw-palettes` (nuevo:
+  en la M6 el banco 0x63 es de otro actor) y la oclusión por un sprite con
+  autoanimación (el agua, atributo bit 3): `top_sprite_pixel(..., auto)` y
+  un solo contador LSPC por fotograma que explique todas sus oclusiones
+  (113 959 píxeles, 151 fotogramas); excluidos 293188.. (la reaparición:
+  un sprite encogido, `zx` 11, encima; sus poses ya estaban).
+- **Port**: la muerte usaba `palettes[1..3]` = 0x63..0x65 (desplazado: en
+  `0043EA` la ranura es `+19 + (flags >> 4)`; MAME k8d1: los `flags` 0x10/0x20
+  de `25032A` dibujan con los bancos de `+1A`/`+1B`); ahora `palettes[0..2]`.
+  `2501DC` dibuja `18CDE6` con `flags` 0x10 (`+1A`, quemado en mzd1): estaba
+  traducido con 0x40. `actor.c` elige el perfil de cada dibujo por su ranura y
+  la tabla que la muerte puso en ella (`palette_table`, `palette_slot1a`,
+  `palette_slot1b` nuevo; `marco_renderer_death_palette`): la momia muere con
+  0x132/quemado (**B74 corregido**), el tipo 8 con 0x53/0x51 y el agua con su
+  paleta (antes la normal).
+
+### 8.2 Tarma, Eri y Fio: tipos 8, 0x12 y agua (B76)
+
+- Pack versión 2 (`export_character.py`): ocho muertes (`DEATH_TABLES` +
+  `0BF398`, `0BF418`, `0BF2D8`, columna +6E); la llamada `05A09E` de `25032A`
+  (medida en k8d1) es un `EVENT` que conserva la rutina; un programa que salta
+  por debajo de su entrada (`25032A` → `25016A`) se ordena desde la entrada
+  (comprobado que nada cae por el corte); paletas `DEATH8`, `DEATH8B`,
+  `MUMMYDEATH`, `WATER` de la ROM por columna. `marco_death.c` toma los
+  programas 5..7 del pack: **sin paradas explícitas** (`death_stops`) en
+  esos tipos.
+- Capturas nuevas (MAME 0.264, `--character N --first 2350 --hit 400:8|12
+  --end-frame 3250 --dump-routines c2956-c2f96`): `j/c{1,2,3}k8`,
+  `j/c{1,2,3}k12`; auditoría de píxeles PASS (c1k8 216 fotogramas, 105 990
+  px; c1k12 132, 54 184; c2k8 240, 83 568; c2k12 144, 60 622; c3k8 240,
+  91 068; c3k12 144, 58 842). `export_character.py --verify`: todos los
+  descriptores de la muerte en el pack (falta solo el de antes del golpe,
+  `194B70`/`19DDA2`/`1A5982`, que ya faltaba en `cNd1`). Fixture:
+  `data/form_death_fixture.json` + 6 muertes (31 en `death_fixture.h`; las de
+  `mzd1`, `k8d1`, `k12d1`, `w6d2` re-extraídas de las capturas nuevas salen
+  iguales). `make check-characters`: Tarma, Eri y Fio, 3 muertes cada uno
+  contra MAME (d1, k8, k12), poses, velocidades y fin: **0 distintos**; el pack
+  de Marco (`c0`) igual al catálogo interno también en las muertes 8/0x12 y
+  el agua (casos nuevos en `test_character.c`).
+- **Pendiente**: agua de Tarma/Eri/Fio sin captura (el estado de la M6 es
+  de Marco; los programas `24F150/24F5D4/24FA58` vienen de la ROM y su forma,
+  una pose y fin, es la de Marco).
+
+### 8.3 Pilotos de Eri y Fio en el SV-001
+
+- **Cómo fija la ROM el personaje**: en SOLDIER SELECT el cursor de P1 (orden
+  en pantalla Marco, Eri, Tarma, Fio) se confirma con A y el panel `0C961C`
+  escribe `+6E` (`msx_character.h`). `capture_weapons.lua`
+  (`MSX_WEAPONS_CHARACTER`) y `capture_fullgame.lua` (`MSX_FULL_CHARACTER`)
+  eligen ahora igual que `capture_marco_catalog.lua`: Derecha una vez por
+  casilla desde 1700 y A en 1800, en vez de A mantenido 1550..1700 (solo
+  entradas de mando; ninguna escritura de RAM).
+- El hijo de subida `0954DC/095580` dibuja el programa `0954A4/B4/C4[+6E]`
+  (Eri `292732/292770/25E536`, Fio `2927AE/2927EC/25EECC`) con la paleta
+  `0954D4[+6E]` (Eri 0x4, Fio 0x5, las que faltaban en la exportación del
+  SV-001). Capturas MAME 0.264 (plan `vehicles`, `ASSIST_CAMERA=2000`,
+  familia `92a32`): Eri sube en 11450 (`+6E` = 2), Fio en 9781 (`+6E` = 3).
+  `export_rest_sprites.py "CAP@954dc-95640" --roots-from 292600-292800`:
+  **Fio 13 volcados (9775.., uno por fotograma), 11 120 píxeles iguales, 0
+  distintos** (`/home/user/captures-audit/j/fio-tank-pilot-sprites.json`);
+  **Eri 3 volcados (PERIOD 4), 2 345 iguales, 0 distintos** (una ejecución;
+  su informe se sobrescribió al repetirla, ver abajo).
+- **Hallazgo**: el plan `vehicles` con otro personaje no es reproducible: con
+  los mismos `MSX_WEAPONS_*` Eri sube en 11450 en dos ejecuciones y en otras
+  tres no llega al tanque antes de 11500 (cámara 3192: lo pasa de largo).
+  Sin explicar (¿carga de la máquina? `make check` corría a la vez); por eso la
+  captura de Eri a cada fotograma queda **pendiente**.
+- La familia entera del tanque con Eri (12 912 descriptores, 240 volcados):
+  1 302 350 iguales y 559 distintos en 26 volcados, sin atribuir (no son del
+  piloto: su nodo da 0); **pendiente**, como los 19 de Marco (§7).
+- **Pendiente**: los pilotos del Slugnoid de Eri y Fio (`09649C[2]/[3]`):
+  hace falta una partida hasta la M2/M5 con ellas
+  (`capture_fullgame.lua` con `MSX_FULL_CHARACTER`, ya posible, pero la
+  partida desde el arranque hasta el Slugnoid no se ha hecho aquí).
+
+### 8.4 Estado al terminar (agente J)
+
+- `make check` (292 PASS, rc 0) y `make -j2` con todo lo anterior; ares
+  (`:96`) `test_characters_ares.py mslugx-explorer.z64`: los cuatro personajes
+  con los packs v2 y el catálogo nuevo, voces de muerte 1123/1125/1087/114E,
+  **RESULT: PASS**.
+- Datos en `/home/user/captures-audit/j/`: `catalog/` (para `ws-logo`, §8.1),
+  las auditorías y `debug.log`/`palette*.bin` de `mzd1`, `k8d1`, `k12d1`,
+  `w6d2`, `c{1,2,3}k{8,12}` (volcados de VRAM, pantallas y nodos borrados;
+  `check_marco_catalog.py` necesita además `catalog/build/marco-png`, que se
+  rehace con la orden de §8.1), los informes de los pilotos.
+- Siguiente paso: copiar `catalog/` y `romfs/chars/c1..c3.bin` a `ws-logo`
+  junto con la fusión de esta rama; agua de Tarma/Eri/Fio; Eri a cada
+  fotograma en el SV-001 y la reproducibilidad del plan `vehicles`; pilotos
+  del Slugnoid de Eri/Fio; reparto de canales del chip `4422`.

@@ -13,8 +13,11 @@ the ROM (docs/PERSONAJES.md): the same roles as the campaign Marco
             the cut 0C419E of Eri and Fio (row 2D0B04) is Marco's with
             another attack row; anything else stays UNRECOVERED (the
             program stops there).
-  deaths    the five programs of src/marco_death.c from tables 0BF298,
-            0BF3D8, 0BF358, 0BF318 and 0BF498, same column.
+  deaths    the eight programs of src/marco_death.c from tables 0BF298,
+            0BF3D8, 0BF358, 0BF318, 0BF498, 0BF398 (kind 8), 0BF418
+            (kind 0x12 on the ground) and 0BF2D8 (water), same column. The
+            callback 05A09E of kind 8 (MAME k8d1: the smoke 05A0B4) is an
+            EVENT that keeps its routine (marco_death.c makes the child).
   poses     every descriptor those programs can draw, decoded from the
             program ROM and the C-ROM exactly as build_marco_poses.py
             (anchored CI4 parts of at most 64x64). A pose Marco's catalog
@@ -23,7 +26,9 @@ the ROM (docs/PERSONAJES.md): the same roles as the campaign Marco
   palettes  009B84/005978: palette n = 16 words at 200000 + n * 32, each
             the signed-doubled index of a colour word in the table 224000.
             Numbers from the per-character tables 0BEDD0 (normal), 0BEDE8
-            (burnt death) and 0BEE00 (mummy); the mummy's second palette
+            (burnt death), 0BEE00 (mummy), 0BEDE0 (kind 8's +1A), 0BEE08
+            (the mummy's death) and 0BEDF0 (water), and kind 8's +1B 0x51
+            (0C2B2E, the same for all); the mummy's second palette
             (slot 0x64, no ROM palette) is the one an audited capture of the
             character as a mummy shows in the same frames (--mummy-capture)
             or is left as the mummy's first.
@@ -43,8 +48,14 @@ from mission_tiles import decode
 import lz4_blocks
 KINDS=['WAIT','POSE','JUMP','FIELD50','FINISH','FLIP_FACING','UNRECOVERED','REPLACE_PALETTE','SPAWN_THROW','SELECT_POSE',
        'WRITE_BYTE','WRITE_WORD','WRITE_LONG','DECREMENT_BYTE','BRANCH_FIELD','SELECT_FIELD_POSE','EVENT']
-DEATH_TABLES=(0xBF298,0xBF3D8,0xBF358,0xBF318,0xBF498)   # ground, kind 2 on the ground, kinds 7/0x10, in the air, entrance
-PALETTE_TABLES=dict(NORMAL=0xBEDD0,BURNT=0xBEDE8,MUMMY=0xBEE00)
+# ground, kind 2 on the ground, kinds 7/0x10, in the air, entrance, kind 8,
+# kind 0x12 on the ground, water (marco_death.c's order)
+DEATH_TABLES=(0xBF298,0xBF3D8,0xBF358,0xBF318,0xBF498,0xBF398,0xBF418,0xBF2D8)
+# Callbacks of the death programs measured for Marco: 25032A's 2503B6 calls
+# 05A09E (no payload), which makes the smoke 05A0B4 (MAME k8d1, children.log).
+DEATH_EVENTS={(0x5A09E,'')}
+PALETTE_TABLES=dict(NORMAL=0xBEDD0,BURNT=0xBEDE8,MUMMY=0xBEE00,DEATH8=0xBEDE0,MUMMYDEATH=0xBEE08,WATER=0xBEDF0)
+PALETTE_NUMBERS=dict(DEATH8B=0x51)   # 0C2B2E: move.w #$51,d0 before 009EA8
 # Callback sites that are the same request as a site measured for Marco with
 # another ROM row as payload: 0C419E, the cut of the knife programs, with
 # the attack row 2D0B04 of Eri and Fio (kind 3) where Marco and Tarma pass
@@ -72,8 +83,12 @@ def table_rows(rom,address):
         if rom.l(a)==address:rows.append(a)
     return rows
 
-def walk(rom,roots,by_call,service_measured):
-    """convert_marco_programs.py's walk over bank 1, from static roots."""
+def walk(rom,roots,by_call,service_measured,entry=None,keep_calls=frozenset()):
+    """convert_marco_programs.py's walk over bank 1, from static roots.
+    entry: the commands from that address on come first (a program that
+    jumps back below its start, 25032A -> 25016A), in address order; every
+    fall-through must still reach the next command. keep_calls: measured
+    callbacks kept as an EVENT with their routine as asset."""
     nodes={};unrecovered=[];equivalent=0
     def go(pc):
         nonlocal equivalent
@@ -96,7 +111,8 @@ def walk(rom,roots,by_call,service_measured):
                 size=4+length
             elif op==0x14:
                 assert arg>=4;callback=rom.l(pc+2);payload=rom.bytes(pc+6,arg-4).hex()
-                if SAME_REQUEST.get((callback,payload),(callback,payload)) in by_call:c.update(kind='EVENT',asset=0);equivalent+=1
+                if (callback,payload) in keep_calls:c.update(kind='EVENT',asset=callback)
+                elif SAME_REQUEST.get((callback,payload),(callback,payload)) in by_call:c.update(kind='EVENT',asset=0);equivalent+=1
                 else:c.update(kind='UNRECOVERED',asset=callback);unrecovered.append(dict(command=pc,callback=callback,payload=payload))
                 size=2+arg
             elif op==0x18:c.update(kind='WRITE_BYTE',asset=arg,target=rom.w(pc+2));size=4
@@ -112,7 +128,12 @@ def walk(rom,roots,by_call,service_measured):
             else:raise AssertionError(('Unrecovered script command',hex(pc),hex(op)))
             pc+=size
     for r in roots:go(r)
-    ordered=sorted(nodes);index={pc:i for i,pc in enumerate(ordered)}
+    ordered=sorted(nodes,key=lambda pc:(entry is not None and pc<entry,pc));index={pc:i for i,pc in enumerate(ordered)}
+    if entry is not None:
+        # The block below the entry moves after the rest: the commands just
+        # before the entry and the last one must not fall through.
+        flat=sorted(nodes);k=flat.index(entry)
+        for pc in ([flat[k-1]] if k else [])+[flat[-1]]:assert nodes[pc]['kind'] in ('JUMP','FINISH'),('fall-through broken',hex(pc))
     for c in nodes.values():
         if 'target_address' in c:c['target']=index[c.pop('target_address')]
     return [nodes[pc] for pc in ordered],index,unrecovered
@@ -187,7 +208,7 @@ def main():
     assert len(commands)<65536
     death_programs=[]
     for d in deaths:
-        cmds,idx,unrec=walk(rom,[d],by_call,service_measured)
+        cmds,idx,unrec=walk(rom,[d],by_call,service_measured,entry=d,keep_calls=DEATH_EVENTS)
         assert idx[d]==0,'a death program starts at its first command';death_programs.append(cmds);unrecovered+=unrec
     for cmd in commands+[x for d in death_programs for x in d]:
         v=cmd['asset']&0xffffffff;assert v<0x800000 or v>=0xff800000,'asset %08x does not fit the 24-bit command field'%v
@@ -219,8 +240,10 @@ def main():
     # other profiles of that catalog (flashes seen in captures, not used by
     # the game) repeat the normal one here.
     numbers={k:rom.w(t+2*c) for k,t in PALETTE_TABLES.items()}
+    numbers.update(PALETTE_NUMBERS)
     normal=rgba(rom.palette(numbers['NORMAL']));palettes=[list(normal) for _ in marco_palettes]
-    palettes[named['BURNT']]=rgba(rom.palette(numbers['BURNT']));palettes[named['MUMMY']]=rgba(rom.palette(numbers['MUMMY']))
+    for k in numbers:
+        if k!='NORMAL':palettes[named[k]]=rgba(rom.palette(numbers[k]))
     palettes[named['MUMMY2']]=list(palettes[named['MUMMY']]);mummy2='the first mummy palette (no capture)'
     if a.mummy_capture:
         # The mummy draws with two palettes in every frame: the ROM's
@@ -233,14 +256,19 @@ def main():
         assert len(second)==1,second
         palettes[named['MUMMY2']]=rgba(second[0]['words']);mummy2='capture %s: %s'%(a.mummy_capture.name,','.join('%04X'%w for w in second[0]['words'][1:]))
     if c==0:
-        for k in ('NORMAL','BURNT','MUMMY')+(('MUMMY2',) if a.mummy_capture else ()):
+        for k in tuple(numbers)+(('MUMMY2',) if a.mummy_capture else ()):
             i=0 if k=='NORMAL' else named[k];assert palettes[i]==marco_palettes[i],('palette differs from the built-in catalog',k)
     # Evidence from audited captures of this character.
     verified=[]
     for capture in a.verify:
         audit=json.loads((capture/'audit.json').read_text());assert audit['status']=='PASS'
         text=(capture/'debug.log').read_text()
-        seen={int(v,16) for v in re.findall(r'character=([0-9A-F]{4})',text)};assert seen=={c},(capture,seen)
+        seen={int(v,16) for v in re.findall(r'character=([0-9A-F]{4})',text)}
+        if not seen:   # no controller trace: +6E of the player's node dumps (actor<frame>.bin, 1014C4..) in the plan
+            first=json.loads((capture/'plan.json').read_text())['first']
+            nodes=[f.read_bytes() for f in capture.glob('actor*.bin') if int(f.stem[5:])>=first]
+            seen={struct.unpack_from('>H',b,0x6e)[0] for b in nodes if 0xc0000<=struct.unpack_from('>I',b,0)[0]<0xd0000}   # the player's routines (not the node's reset 003F1E)
+        assert seen=={c},(capture,seen)
         have={x['tag'] for x in poses};drawn={int(t,16) for t in audit['descriptor_addresses']}
         known=[rgba(rom.palette(n)) for n in numbers.values()]
         profiles=[rgba(x['words']) in known+[palettes[named['MUMMY2']]] for x in audit.get('palette_profiles',[])]
@@ -267,7 +295,7 @@ def main():
     off_parts=section(b''.join(struct.pack('>hhHHII',x['x'],x['y'],x['width'],x['height'],x['fnv'],x['data']) for x in parts))
     off_palettes=section(b''.join(struct.pack('>16H',*q) for q in palettes))
     off_pixels=section(pixels)
-    struct.pack_into('>4sHHHHHHHHHH8I',blob,0,b'MSXP',1,c,len(commands),len(role_rows),len(poses),len(parts),len(palettes),len(death_dir),len(death_blob)//10,0,
+    struct.pack_into('>4sHHHHHHHHHH8I',blob,0,b'MSXP',2,c,len(commands),len(role_rows),len(poses),len(parts),len(palettes),len(death_dir),len(death_blob)//10,0,
         off_commands,off_roles,off_death,off_poses,off_parts,off_palettes,off_pixels,len(blob))
     report=dict(character=c,name=('Marco','Tarma','Eri','Fio')[c],palette_numbers=numbers,mummy2=mummy2,roles=report_roles,deaths=deaths,
         commands=len(commands),death_commands=[len(d) for d in death_programs],unrecovered=unrecovered,

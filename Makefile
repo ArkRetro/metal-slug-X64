@@ -1433,7 +1433,8 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_scene_codec.c -o $(BUILD_DIR)/host/codec
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_scene_clock.c -o $(BUILD_DIR)/host/clock
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_cinematic_codec.c -o $(BUILD_DIR)/host/cinematic-codec
-	$(HOST_CC) $(HOST_CFLAGS) tools/test_msx_sfx.c src/msx_sfx.c -o $(BUILD_DIR)/host/msx-sfx
+	python3 -I tools/compile_sound_pairs_fixture.py --output $(BUILD_DIR)/sound_pairs_fixture.h
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_msx_sfx.c src/msx_sfx.c -o $(BUILD_DIR)/host/msx-sfx
 	$(HOST_CC) $(HOST_CFLAGS) -DMSX_DIAG=1 tools/test_msx_diag.c src/msx_diag_core.c -o $(BUILD_DIR)/host/msx-diag
 	$(BUILD_DIR)/host/msx-diag 2>/dev/null
 	$(BUILD_DIR)/host/msx-sfx

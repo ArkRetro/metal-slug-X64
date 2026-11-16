@@ -103,13 +103,16 @@ static void death_run(death_frame_t *out) {
     static const uint8_t kinds[]={0,2,7,0x10,8,0x12,1,5};
     for (unsigned r=0;r<DEATH_RUNS;r++) {
         marco_death_t d;int32_t vx=0x12345,vy=-0x2345;int facing=1;death_frame_t *o=out+r*DEATH_STEPS;
-        bool entrance=(r&7)==7,grounded=(r>>3)&1;unsigned land=20+r;
+        /* Runs with r & 0x1f == 6: the fall into water (0C2CCC, 0BF2D8). */
+        bool entrance=(r&7)==7,water=(r&0x1f)==6,grounded=(r>>3)&1;unsigned land=20+r;
         bool translated=true;
         if (entrance) marco_entrance_start(&d);
+        else if (water) translated=marco_death_start_water(&d,&vy);
         else translated=marco_death_start(&d,kinds[r&7],grounded,(r>>4)&1,&vx,&vy,&facing);
         for (unsigned k=0;k<DEATH_STEPS;k++) {
             bool ground=k>=land;
             if (entrance) marco_entrance_step(&d);
+            else if (water) {marco_death_water_velocity(&d,&vx,&vy,0,NULL,NULL);marco_death_after(&d,ground,&vx,100,100);}
             else {marco_death_velocity(&d,ground,&vx,&vy);marco_death_after(&d,ground,&vx,100,100);}
             o[k]=(death_frame_t){d.phase,d.drawn,d.shown,d.burnt,d.draw,d.anim.speed,d.f78,d.count80,vx,vy,facing,translated};
         }

@@ -32,27 +32,28 @@ typedef struct {
     bool keep_ground;           /* the start leaves +15 bit 6 (kinds 2, 8, 0x12 on the ground: no 0C2E7E) */
     bool child_5a0b4;           /* kind 8: the program's callback 05A09E ran (the caller makes 05A0B4; it clears this) */
     bool c4c28;                 /* the start reached 0C2E44 (0C2E74: 0C4C28, Fio's actor 0C4C64 for +6E = 3) */
-    uint32_t palette_slot1a;    /* ROM table of the palette 009EA8 puts in +1A (kind 8: 0BEDE0); 0: none */
+    uint32_t palette_slot1a;    /* ROM table of the palette 009EA8 puts in +1A (kinds 7/0x10 and form 3:
+                                 * 0BEDE8, kind 8: 0BEDE0); 0: none */
+    uint32_t palette_slot1b;    /* the palette in +1B: kind 8's number 0x51 (0C2B2E, no table); 0: none */
     bool water;                 /* the fall into water 0C2CCC..0C2D66 */
     uint16_t water80;           /* its +80: the updates left that look for the surface (0x1E) */
 } marco_death_t;
 
 /* The death and entrance programs of the chosen character (msx_character.h):
- * five programs in the order ground 0BF298, kind 2 on the ground 0BF3D8,
- * kinds 7/0x10 0BF358, in the air 0BF318, entrance 0BF498, each the
- * character's column (+6E) of the same table row. NULL: Marco. */
-void marco_death_use_programs(const neo_anim_program_t *five);
-/* The chosen character's +6E (0 Marco): the deaths of kinds 8 / 0x12 of the
- * others (programs 250DB6.. / 2509AA.., not in their packs) stop explicitly. */
+ * eight programs in the order ground 0BF298, kind 2 on the ground 0BF3D8,
+ * kinds 7/0x10 0BF358, in the air 0BF318, entrance 0BF498, kind 8 0BF398,
+ * kind 0x12 on the ground 0BF418, water 0BF2D8, each the character's column
+ * (+6E) of the same table row. NULL: Marco. */
+void marco_death_use_programs(const neo_anim_program_t *eight);
+/* The chosen character's +6E (0 Marco). */
 void marco_death_use_character(unsigned column);
 /* 0C2DDA: a hit of kind `kind` (+5A) on the player; attacker_right is +5B
  * bit 7 (the player's projected x left of the attacker's +44). Sets the
  * velocities (+30/+34, Q16 y up) and the facing (-1 left, 1 right): kind 2
  * 0C2BCE, kinds 7/0x10 0C2C7A/0C2C40, kind 8 0C2ACC (always the air step
  * 0143EE), kind 0x12 on the ground 0C2A70 (its splash 040F74 is the
- * caller's, for every kind 0x12: 040F38), the others 0C2DDA. Kinds 8 and
- * 0x12 of Tarma, Eri and Fio (programs not in their packs) return false
- * (explicit stop) and take 0C2DDA. grounded: +15 bit 6; the caller clears
+ * caller's, for every kind 0x12: 040F38), the others 0C2DDA (always true).
+ * grounded: +15 bit 6; the caller clears
  * it unless keep_ground (0C2E7E). */
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing);
 /* 0C2956 by the form +93 (and 0C2D6A, the fall, when `fall`): form 3 (the
@@ -71,9 +72,8 @@ bool marco_death_water_stage(uint16_t stage);
 /* 0C2CCC: 009F88, +19 = 0BEDF0[+6E] (009EA8), the program 0BF2D8[+6E] by
  * 0C0F32 (no row of its own for the forms: +93's rows are 0, the fallback
  * row 0), 0C0F16, +34 = 0, +80 = 0x1E, then 0C2D06 in the same update
- * (marco_death_water_velocity, the step 0143E4, marco_death_after). The
- * other characters' programs (24F150, 24F5D4, 24FA58) are not in their
- * packs: explicit stop (false), with Marco's. */
+ * (marco_death_water_velocity, the step 0143E4, marco_death_after); the
+ * other characters' programs (24F150, 24F5D4, 24FA58) from their packs. */
 bool marco_death_start_water(marco_death_t *d,int32_t *vy);
 /* 0C2D06..0C2D4C, before 00427A and the air step 0143E4: +30 -= +30 >> 4;
  * while +80 counts down (from 0x1E) 03C55C looks for the surface: `surface`

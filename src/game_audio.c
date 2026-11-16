@@ -243,6 +243,8 @@ static void request(uint16_t word) {
     int before=-1,wanted=msx_sfx_lookup(word);
     if (wanted>=0) before=policy.current[msx_sfx_defs[wanted].channel];
     int channel=msx_sfx_request(&policy,word);
+    /* 5204: the effects of the request's stop list (also when it is dropped). */
+    for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.stop_mask&(1u<<c)) mixer_ch_stop(mixer_of(c));
     if (voice) {
         if (wanted<0) debugf("MSX AUDIO voice %04X: unmapped\n",(unsigned)word);
         else if (channel<0) debugf("MSX AUDIO voice %04X: dropped under %04X\n",(unsigned)word,(unsigned)msx_sfx_defs[before].word);

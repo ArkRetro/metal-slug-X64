@@ -34,7 +34,7 @@ bool msx_character_unpack(const uint8_t *f,uint32_t n,uint8_t *out,uint32_t out_
     return at==n;
 }
 bool msx_character_layout(const uint8_t *b,uint32_t size,msx_character_layout_t *o) {
-    if (!b || size<64 || memcmp(b,"MSXP",4) || be16(b+4)!=1) return false;
+    if (!b || size<64 || memcmp(b,"MSXP",4) || be16(b+4)!=MSX_CHARACTER_VERSION) return false;
     memset(o,0,sizeof *o);o->blob=b;o->size=size;
     o->character=be16(b+6);o->commands=be16(b+8);o->roles=be16(b+10);o->poses=be16(b+12);o->parts=be16(b+14);
     o->palettes=be16(b+16);unsigned deaths=be16(b+18);o->death_commands=be16(b+20);

@@ -270,7 +270,7 @@ MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py tools/check_sfx_assets.py src/msx_sfx_policy.h $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -282,6 +282,7 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_ta
 	$(if $(SOFTDIP),cp $(SOFTDIP) $(BUILD_DIR)/game-romfs/)
 	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/romblobs.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
+	$(if $(GAME_AUDIO),python3 -I tools/check_sfx_assets.py $(BUILD_DIR)/game-romfs/audio)
 	$(if $(BOOT_LOGO),cp $(BOOT_LOGO) $(BUILD_DIR)/game-romfs/)
 	$(if $(BOOT_CINE_OBJS),cp filesystem/cinematics/title-motion.msxc $(BUILD_DIR)/game-romfs/title.msxc && cp filesystem/cinematics/title-motion.wav64 filesystem/cinematics/entry.msxc filesystem/cinematics/entry.wav64 $(BUILD_DIR)/game-romfs/)
 	$(if $(and $(BOOT_CINE_OBJS),$(BOOT_ATTRACT)),cp $(BOOT_ATTRACT) $(BUILD_DIR)/game-romfs/)

@@ -1317,6 +1317,9 @@ $(BUILD_DIR)/fatmuzzle_fixture.h: tools/extract_fat_muzzle_fixture.py data/fatmu
 # Player death/respawn (docs/JEFE_MISION1.md): tools/extract_death_fixture.py.
 $(BUILD_DIR)/death_fixture.h: tools/compile_death_fixture.py data/death_fixture.json data/form_death_fixture.json
 	python3 tools/compile_death_fixture.py
+# Fio's actor 0C4C64 of her deaths (docs/ANIMACIONES_DANO.md): tools/extract_fio_cap_fixture.py.
+$(BUILD_DIR)/fio_cap_fixture.h: tools/compile_fio_cap_fixture.py data/fio_cap_fixture.json
+	python3 tools/compile_fio_cap_fixture.py
 # Respawn at the Mission 2 boss (B33, docs/JEFE_MISION2.md): tools/extract_respawn_fixture.py.
 $(BUILD_DIR)/respawn_fixture.h: tools/compile_respawn_fixture.py data/respawn_fixture.json
 	python3 tools/compile_respawn_fixture.py
@@ -1348,7 +1351,7 @@ $(BUILD_DIR)/vulcan_fixture.h: tools/compile_vulcan_fixture.py data/vulcan_fixtu
 $(BUILD_DIR)/marco_idle_fixture.h: tools/compile_marco_idle.py data/marco_idle_fixture.json
 	python3 tools/compile_marco_idle.py
 
-check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/respawn_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h $(BUILD_DIR)/vslot_fixture.h $(BUILD_DIR)/vulcan_fixture.h $(BUILD_DIR)/mount_fixture.h
+check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/fio_cap_fixture.h $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/respawn_fixture.h $(BUILD_DIR)/hgun_fixture.h $(BUILD_DIR)/hud_fixture.h $(BUILD_DIR)/marco_idle_fixture.h $(BUILD_DIR)/marco_stance_fixture.h $(BUILD_DIR)/marco_ammo_fixture.h $(BUILD_DIR)/weapon_block_fixture.h $(BUILD_DIR)/marco-motion/marco_motion_fixture.h $(BUILD_DIR)/marco_crouch_fixture.h $(BUILD_DIR)/marco-crouch-turn/marco_crouch_fixture.h $(BUILD_DIR)/marco_upper_fixture.h $(BUILD_DIR)/marco-upper-combat/marco_upper_fixture.h $(BUILD_DIR)/marco-advance/marco_controller_fixture.h $(BUILD_DIR)/marco_controller_fixture.h $(BUILD_DIR)/marco_fields.h $(BUILD_DIR)/marco_selectors.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/history_fixture.h $(BUILD_DIR)/vslot_fixture.h $(BUILD_DIR)/vulcan_fixture.h $(BUILD_DIR)/mount_fixture.h
 	mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_fixed.c -o $(BUILD_DIR)/host/fixed
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_sprites.c -o $(BUILD_DIR)/host/sprites
@@ -1421,6 +1424,8 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(BUILD_DIR)/host/hgun
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_death.c src/marco_death.c src/neo_animation.c -o $(BUILD_DIR)/host/death
 	$(BUILD_DIR)/host/death
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_fio_cap.c src/marco_death.c src/neo_animation.c -o $(BUILD_DIR)/host/fio_cap
+	$(BUILD_DIR)/host/fio_cap
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_legs.c src/marco_legs.c src/neo_animation.c -o $(BUILD_DIR)/host/legs
 	$(BUILD_DIR)/host/legs
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_stance.c src/marco_stance.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-stance

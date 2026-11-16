@@ -41,6 +41,8 @@ ROOTS+=[0x23c8b0,0x23c8f8,0x23c97c,0x23c782,0x23c790,0x23c79e,0x23c7ac,0x23c7ba,
 # The player's death of kind 8 (0C2ACC): the child 05A0B4 of its program's
 # callback 05A09E (docs/ANIMACIONES_DANO.md).
 ROOTS+=[0x25339c]
+# Fio's actor 0C4C64 of her deaths (0C4C28).
+ROOTS+=[0x253322]
 # Prisoner 099862: tied (wriggle table 099D86 by +80), salute, item gift
 # (callback 099CCC), release jump and run.
 ROOTS+=[0x29f6d0,0x29f9ac,0x29fa22,0x29fa40,0x29fa78,0x29f85e,0x29f874,0x29f88a,0x29f8a0,0x29f8b6,0x29f8cc,0x29f8e2,

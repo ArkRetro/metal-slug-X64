@@ -390,8 +390,10 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
     if (!g->life.keep_ground && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     /* 0C2A70: 040F38 for every kind 0x12 (Marco's own death on the ground,
      * else 0C2DDA): the splash 040F74 after the player, 01B220 (8, 0). */
-    if (kind==0x12 && g->world_enabled) neo_world_player_child(&g->world,0x40f74u);
+    if (kind==0x12 && g->world_enabled) neo_world_player_child(&g->world,0x40f74u,0);
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
+    /* 0C2E74: 0C4C28, Fio's actor 0C4C64 (+6E = 3) at the new facing. */
+    if (g->life.c4c28 && msx_character_request==MSX_CHARACTER_FIO && g->world_enabled) neo_world_player_child(&g->world,0xc4c64u,facing);
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
     g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;g->fat_transform=0;
     marco_hgun_reset(&g->hgun);
@@ -1520,7 +1522,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             if (g->grounded && !own8) g->velocity_y=0;
             /* 2503B6: the program's callback 05A09E, the child 05A0B4 after
              * the player (01AD6E on its +28 block, 01AC94 its facing). */
-            if (g->life.child_5a0b4) {g->life.child_5a0b4=false;if (g->world_enabled) neo_world_player_child(&g->world,0x5a0b4u);}
+            if (g->life.child_5a0b4) {g->life.child_5a0b4=false;if (g->world_enabled) neo_world_player_child(&g->world,0x5a0b4u,0);}
         } else if (g->life.phase==MARCO_ENTERING) marco_entrance_step(&g->life);
         else if (g->life.phase==MARCO_ALIVE && !g->complete && g->world_enabled) {
             /* 0C3712: the projected feet (+40) below RAM 10C72C (0x100 from

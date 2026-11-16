@@ -31,6 +31,7 @@ typedef struct {
     uint8_t own;                /* a death of its own: 8 (0C2ACC..0C2BCA), 0x12 (0C2A70..0C2AC8); 0: 0C2DDA's motion */
     bool keep_ground;           /* the start leaves +15 bit 6 (kinds 2, 8, 0x12 on the ground: no 0C2E7E) */
     bool child_5a0b4;           /* kind 8: the program's callback 05A09E ran (the caller makes 05A0B4; it clears this) */
+    bool c4c28;                 /* the start reached 0C2E44 (0C2E74: 0C4C28, Fio's actor 0C4C64 for +6E = 3) */
     uint32_t palette_slot1a;    /* ROM table of the palette 009EA8 puts in +1A (kind 8: 0BEDE0); 0: none */
 } marco_death_t;
 
@@ -75,6 +76,16 @@ void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy);
  * facing (-1 left): mirrored offsets and attribute bit 0. False before the
  * program's first pose. */
 bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,neo_anim_draw_t *out);
+/* Fio's actor 0C4C64 (0C4C28 from 0C2E74 when +6E = 3: the deaths that
+ * reach 0C2E44, marco_death_t.c4c28). Its constructor: +30 = the creator's
+ * +30 + 1 away from 0 (+1 for 0), +34 = the creator's. 0C4CBA..0C4D04
+ * before its 0143E4 step: +30 -= >>4, +34 += ((|2 +30| - 6) - +34) >> 4,
+ * on the ground (+15 bit 6) +34 = 0 and +26 eases (>>3) to 0x400, else to
+ * 0x80. 0C4D14..0C4D38 after 00427A: at its end (carry) +80 counts, from
+ * 0xF on +5F bit 3 (blink), at 0x1E the actor ends (true). */
+void marco_death_cap_start(int32_t creator_vx,int32_t creator_vy,int32_t *vx,int32_t *vy);
+void marco_death_cap_velocity(int32_t *vx,int32_t *vy,uint16_t *speed,bool ground);
+bool marco_death_cap_after(bool program_done,uint16_t *count80,uint8_t *f5f);
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y);
 /* The respawn record of 0196E8 for the camera progress (10E99E): world x/y
  * (Q16, y up) from the scene root (root_x/root_y, Q16) after the 0143E4 step

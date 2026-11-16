@@ -167,6 +167,7 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
         translated=!character_column || !(kind==8 || (kind==0x12 && grounded));
         neo_anim_start(&d->anim,grounded?&ground_prog:&air_prog,0x100);d->speed_target=0x20;
     }
+    d->c4c28=true;                                     /* 0C2E74 */
     /* 0C2E44..0C2E7E: +34 = 0xA9000, +30 = -2 facing right else +2, airborne. */
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
     return translated;
@@ -205,6 +206,24 @@ bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,ne
     out->y=(uint16_t)(y+d->draw.y);
     if (facing<0) out->attributes^=1u;
     return true;
+}
+void marco_death_cap_start(int32_t creator_vx,int32_t creator_vy,int32_t *vx,int32_t *vy) {
+    *vx=(int32_t)((uint32_t)creator_vx+(creator_vx>=0?0x10000u:0xffff0000u));   /* 0C4C94..0C4CAA */
+    *vy=creator_vy;                                                             /* 0C4CAE */
+}
+void marco_death_cap_velocity(int32_t *vx,int32_t *vy,uint16_t *speed,bool ground) {
+    *vx-=*vx>>4;                                                                /* 0C4CBA */
+    int32_t d0=(int32_t)((uint32_t)*vx+(uint32_t)*vx);if (d0<0) d0=(int32_t)(0u-(uint32_t)d0);
+    d0=(int32_t)((uint32_t)d0-0x60000u-(uint32_t)*vy);*vy+=d0>>4;              /* 0C4CC4..0C4CDC */
+    uint16_t target=0x80;
+    if (ground) {*vy=0;target=0x400;}                                           /* 0C4CE0..0C4CFA */
+    *speed=(uint16_t)(*speed+(uint16_t)((int16_t)(target-*speed)>>3));         /* 0C4CFE..0C4D04 */
+}
+bool marco_death_cap_after(bool program_done,uint16_t *count80,uint8_t *f5f) {
+    if (!program_done) return false;                                            /* 0C4D14 */
+    ++*count80;
+    if (*count80>=0xf) *f5f|=8u;                                                /* 0C4D22: +5F bit 3 */
+    return *count80>=0x1e;                                                      /* 0C4D30: 004188 */
 }
 void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy) {
     if (d->phase==MARCO_DYING && d->fat) {

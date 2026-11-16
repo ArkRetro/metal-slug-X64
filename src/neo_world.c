@@ -1789,10 +1789,12 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     if (w->player_ripple) {w->player_ripple=false;neo_gate_ripple(player_view(w),&t.genv,2);}   /* 0C124C: 03C52C */
     for (unsigned i=0;i<w->player_child_count;i++) {
         neo_gactor_t *v=player_view(w);memcpy(v->m,w->player_children[i].node,sizeof(w->player_children[i].node));
+        if (w->player_children[i].facing) v->m[0x15]=(uint8_t)((v->m[0x15]&~1u)|(w->player_children[i].facing<0?1u:0u));
         neo_gactor_t *c=g_spawn(&t,v,w->player_children[i].routine,true);
         if (!c) continue;
-        if (w->player_children[i].routine==0x40f74u) ga_place_from(c,v,&t.genv,8,0);    /* 040F38: 01B220 (8, 0) */
-        else ga_sb(c,0x15,(uint8_t)(ga_b(v,0x15)&3u));                                  /* 05A09E: 01AC94 */
+        if (w->player_children[i].routine==0x40f74u) {ga_place_from(c,v,&t.genv,8,0);continue;}   /* 040F38: 01B220 (8, 0) */
+        if (w->player_children[i].routine==0xc4c64u) ga_place_at(c,v,&t.genv,(int16_t)(ga_b(v,0x15)&1u?-8:8),0x20);   /* 0C4C42..0C4C56: 01ACF2 */
+        ga_sb(c,0x15,(uint8_t)(ga_b(v,0x15)&3u));                                       /* 01AC94 */
     }
     w->player_child_count=0;
     for (unsigned at=0;at<w->order_count;) {
@@ -1995,9 +1997,9 @@ bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int3
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0,false};
     return true;
 }
-bool neo_world_player_child(neo_world_t *w,uint32_t routine) {
+bool neo_world_player_child(neo_world_t *w,uint32_t routine,int facing) {
     if (w->player_child_count>=sizeof(w->player_children)/sizeof(w->player_children[0])) {w->overflow++;return false;}
-    w->player_children[w->player_child_count].routine=routine;
+    w->player_children[w->player_child_count].routine=routine;w->player_children[w->player_child_count].facing=(int8_t)facing;
     memcpy(w->player_children[w->player_child_count++].node,w->player_node[0],sizeof(w->player_children[0].node));
     return true;
 }

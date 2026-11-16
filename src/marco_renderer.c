@@ -55,6 +55,23 @@ unsigned marco_renderer_mummy_palette(bool second) {
     (void)second;return 0;
 #endif
 }
+/* The profile of a palette the death puts in +19..+1B (009EA8): its ROM
+ * table (or kind 8's number 0x51), named by build_marco_poses.py
+ * --name-palette from the audited captures k8d1, mzd1 and w6d2 (each the
+ * ROM palette of Marco's column, tools/check_marco_catalog.py). 0 and
+ * 0BEDD0 (the generic deaths): the player's own. */
+unsigned marco_renderer_death_palette(uint32_t source) {
+    switch (source) {
+#if defined(MARCO_PALETTE_DEATH8) && defined(MARCO_PALETTE_DEATH8B) && defined(MARCO_PALETTE_MUMMYDEATH) && defined(MARCO_PALETTE_WATER)
+    case 0xbede0u:return MARCO_PALETTE_DEATH8;
+    case 0x51u:return MARCO_PALETTE_DEATH8B;
+    case 0xbee08u:return MARCO_PALETTE_MUMMYDEATH;
+    case 0xbedf0u:return MARCO_PALETTE_WATER;
+#endif
+    case 0xbede8u:return marco_renderer_burnt_palette();
+    default:return 0;
+    }
+}
 unsigned marco_renderer_palette_count(void) {return MARCO_PALETTES;}
 unsigned marco_renderer_max_upload(void) {return max_upload;}
 uint32_t marco_renderer_source_tag(unsigned pose) {return pose<pose_count()?pose_tag(pose):0;}

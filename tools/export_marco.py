@@ -77,11 +77,14 @@ def reconstruct(vram, palette, crom, selected_palette=0x63, x_range=None):
     return image, records
 
 
-def top_sprite_pixel(vram, palette, crom, px, py):
+def top_sprite_pixel(vram, palette, crom, px, py, auto=None):
     """Resolve a reference mismatch only when a later non-actor sprite covers it.
 
     Projectiles can cover the muzzle. Retain the actor artwork, but verify the
     occluder's actual color against MAME instead of accepting an arbitrary mask.
+    auto: the LSPC auto-animation counter to apply to sprites with attribute
+    bit 3 (low 3 code bits) or bit 2 (low 2), as MAME's neogeo_spr.cpp; None:
+    such a sprite leaves the pixel unexplained (the dumps do not hold it).
     """
     result = None
     x = y = rows = zx = zy = 0
@@ -98,9 +101,11 @@ def top_sprite_pixel(vram, palette, crom, px, py):
         if zx != 15 or zy != 255:
             result = None; continue
         low, attr = vram[slot*64+(dy//16)*2:slot*64+(dy//16)*2+2]
-        if attr & 12:
+        if attr & 12 and auto is None:
             result = None; continue
         code = low | ((attr << 12) & 0xf0000)
+        if attr & 8: code = (code & ~7) | (auto & 7)
+        elif attr & 4: code = (code & ~3) | (auto & 3)
         sx, sy = (px-x)&511, dy%16
         if attr & 1: sx = 15-sx
         if attr & 2: sy = 15-sy

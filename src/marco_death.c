@@ -34,6 +34,8 @@ static const neo_anim_command_t kind2_ground_cmds[]={
     P(0x18bd5c),W(1),{NEO_ANIM_FINISH,0,0,0,0,0,0},
 };
 /* 0BF458 (kind 2 in the air) is 25016A too: air_cmds. */
+#define P1(d) {NEO_ANIM_POSE,(d),0,0,16,0,0}   /* POSE flags 0x10: the palette of +1A */
+#define P2(d) {NEO_ANIM_POSE,(d),0,0,32,0,0}   /* POSE flags 0x20: the palette of +1B */
 /* 0BF358: 2501DC */
 static const neo_anim_command_t kind7_cmds[]={
     {NEO_ANIM_WRITE_BYTE,0xff,0x78,0,0,0,0},P(0x18c9c4),W(1),P(0x18c9e8),W(1),P(0x18ca0c),W(1),P(0x18ca38),
@@ -43,14 +45,12 @@ static const neo_anim_command_t kind7_cmds[]={
     P(0x18cb4c),W(2),P(0x18cb7c),W(2),P(0x18cba8),W(2),P(0x18cbd4),W(2),
     P(0x18cc04),W(2),P(0x18cc34),W(2),P(0x18cc64),W(2),P(0x18cc90),W(2),
     P(0x18ccbc),W(2),P(0x18cce6),W(2),P(0x18cd10),W(2),P(0x18cd3c),W(2),
-    P(0x18cd68),W(2),P(0x18cd92),W(2),P(0x18cdbc),W(2),P(0x18cde6),W(2),
+    P(0x18cd68),W(2),P(0x18cd92),W(2),P(0x18cdbc),W(2),P1(0x18cde6),W(2),   /* flags 0x10: +1A */
     {NEO_ANIM_FINISH,0,0,0,0,0,0},
 };
 /* 0BF398 (kind 8, 0C2ACC): 25032A. POSE flags 0x10 / 0x20: the palettes of
- * +19 / +1A (render palettes[1] / [2]); 2503B6 the callback 05A09E (the
+ * +1A / +1B (render palettes[1] / [2]); 2503B6 the callback 05A09E (the
  * child 05A0B4, an event here); 2503CE jumps to 25016A (air_cmds), copied. */
-#define P1(d) {NEO_ANIM_POSE,(d),0,0,16,0,0}
-#define P2(d) {NEO_ANIM_POSE,(d),0,0,32,0,0}
 static const neo_anim_command_t kind8_cmds[]={
     P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),
     P1(0x18cfa4),W(1),P2(0x18cfe0),W(1),P1(0x18cf86),W(1),P1(0x18cfa4),W(1),
@@ -86,13 +86,14 @@ static const neo_anim_command_t entrance_cmds[]={
 PROGRAM(ground);PROGRAM(kind2_ground);PROGRAM(kind7);PROGRAM(kind8);PROGRAM(kind12);PROGRAM(water);
 static const neo_anim_program_t air_prog={air_cmds,sizeof air_cmds/sizeof air_cmds[0]};
 PROGRAM(entrance);
-/* The chosen character's five programs (marco_death_use_programs), in the
+/* The chosen character's eight programs (marco_death_use_programs), in the
  * order ground 0BF298, kind 2 on the ground 0BF3D8, kinds 7/0x10 0BF358, in
- * the air 0BF318, entrance 0BF498; NULL: Marco's above. */
+ * the air 0BF318, entrance 0BF498, kind 8 0BF398, kind 0x12 on the ground
+ * 0BF418, water 0BF2D8; NULL: Marco's above. */
 static const neo_anim_program_t *character_programs;
-void marco_death_use_programs(const neo_anim_program_t *five) {character_programs=five;}
-/* +6E of the chosen character: kinds 8 and 0x12 have Marco's programs only
- * (25032A / 24FF1E, column 0 of 0BF398 / 0BF418). */
+void marco_death_use_programs(const neo_anim_program_t *eight) {character_programs=eight;}
+/* +6E of the chosen character (the palettes are its column's: the renderer
+ * takes them from its pack by the ROM table). */
 static unsigned character_column;
 void marco_death_use_character(unsigned column) {character_column=column;}
 #define ground_prog (*(character_programs?&character_programs[0]:&ground_prog))
@@ -100,6 +101,9 @@ void marco_death_use_character(unsigned column) {character_column=column;}
 #define kind7_prog (*(character_programs?&character_programs[2]:&kind7_prog))
 #define air_prog (*(character_programs?&character_programs[3]:&air_prog))
 #define entrance_prog (*(character_programs?&character_programs[4]:&entrance_prog))
+#define kind8_prog (*(character_programs?&character_programs[5]:&kind8_prog))
+#define kind12_prog (*(character_programs?&character_programs[6]:&kind12_prog))
+#define water_prog (*(character_programs?&character_programs[7]:&water_prog))
 
 /* The pose relative to the actor's words, facing right (render x/y 0,
  * attributes 0x6340: palette 0x63 of the player, as marco_visual.c). */
@@ -119,9 +123,11 @@ static bool event(void *context,neo_anim_kind_t kind,uint32_t asset,neo_anim_ren
     d->child_5a0b4=true;return true;
 }
 static neo_anim_result_t step(marco_death_t *d) {
-    /* palettes[1..3]: the slots +19..+1B (0043D4: POSE flags >> 4), named
-     * by the player's attribute 0x63 and the two next ones. */
-    neo_anim_render_t r;memset(&r,0,sizeof r);r.attributes=0x6340;r.palettes[1]=0x63;r.palettes[2]=0x64;r.palettes[3]=0x65;
+    /* palettes[n]: the slot +19 + n (0043EA..0043F6: POSE flags >> 4 below
+     * 4), named by the player's attribute 0x63 and the two next ones, as
+     * marco_visual.c (MAME k8d1: 25032A's flags 0x10 / 0x20 draw with the
+     * banks of +1A / +1B; mzd1: 2501DC's 18CDE6, flags 0x10, with +1A). */
+    neo_anim_render_t r;memset(&r,0,sizeof r);r.attributes=0x6340;r.palettes[0]=0x63;r.palettes[1]=0x64;r.palettes[2]=0x65;
     return neo_anim_step_fields(&d->anim,&r,emit,d,256,event,d,field,d);
 }
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing) {
@@ -138,41 +144,36 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
         d->speed_target=0x100;
         return true;
     }
-    if (kind==8 && !character_column) {
+    if (kind==8) {
         /* 0C2ACC: 009F88; +19 = 0BEDD0 (0BEDD8 with 10C30C), +1A = 0BEDE0,
          * +1B = 0x51 (009EA8); 0BF398; +5B bit 7 clear: +15 bit 0 set (left),
          * +30 = 2; set: 0C2B68 clears bit 1, not bit 0 (the facing stays),
          * +30 = -2; +34 = 0xA9000, +78 = FF. +15 bit 6 and +80/+26 untouched. */
         *facing=attacker_right?(before<0?-1:1):-1;
         *vx=attacker_right?-0x20000:0x20000;*vy=0xa9000;
-        neo_anim_start(&d->anim,&kind8_prog,0x100);d->own=8;d->keep_ground=true;d->palette_slot1a=0xbede0u;
+        neo_anim_start(&d->anim,&kind8_prog,0x100);d->own=8;d->keep_ground=true;d->palette_slot1a=0xbede0u;d->palette_slot1b=0x51u;
         return true;
     }
-    if (kind==0x12 && grounded && !character_column) {
+    if (kind==0x12 && grounded) {
         /* 0C2A70: 040F38 (the splash 040F74, made by the caller), then on
          * the ground (+15 bit 6) the facing by +5B, 0BF418, +62 = 0; no
          * palette request and no velocity write. */
         neo_anim_start(&d->anim,&kind12_prog,0x100);d->own=0x12;d->keep_ground=true;
         return true;
     }
-    bool translated=true;
     if (kind==7 || kind==0x10) {
         /* 0C2C7A (+19/+1A = 0BEDE8, the burnt palette) / 0C2C40 (+19 =
          * 0BEE08, +1A = 0BEDE8) -> 0C2CB0: 0BF358, +80 = 0x80. Kind 0x10
          * only reaches 0C2956 in form 3 (0C36CE), which takes 0C2C40. */
-        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;d->palette_table=kind==7?0xbede8u:0xbee08u;
+        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;d->palette_table=kind==7?0xbede8u:0xbee08u;d->palette_slot1a=0xbede8u;
     } else {
-        /* 0C2DDA (kinds 8 and 0x12 on the ground of Tarma, Eri and Fio have
-         * their own deaths, 0C2ACC/0C2A70, programs not in their packs:
-         * explicit stop, this one instead):
-         * 0BF298 on the ground, 0BF318 in the air; +80 = 0x20. */
-        translated=!character_column || !(kind==8 || (kind==0x12 && grounded));
+        /* 0C2DDA: 0BF298 on the ground, 0BF318 in the air; +80 = 0x20. */
         neo_anim_start(&d->anim,grounded?&ground_prog:&air_prog,0x100);d->speed_target=0x20;
     }
     d->c4c28=true;                                     /* 0C2E74 */
     /* 0C2E44..0C2E7E: +34 = 0xA9000, +30 = -2 facing right else +2, airborne. */
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
-    return translated;
+    return true;
 }
 bool marco_death_water_stage(uint16_t stage) {return stage==9u || stage==0xbu || stage==0u;}   /* 0191FC: 2, 2, 3 */
 bool marco_death_start_water(marco_death_t *d,int32_t *vy) {
@@ -181,7 +182,7 @@ bool marco_death_start_water(marco_death_t *d,int32_t *vy) {
     d->palette_table=0xbedf0u;                          /* 0C2CD2..0C2CE4 */
     neo_anim_start(&d->anim,&water_prog,0x100);         /* 0C0F32 (0C0F56: speed 0x100) */
     *vy=0;                                              /* 0C2CF6 */
-    return !character_column;
+    return true;
 }
 void marco_death_water_velocity(marco_death_t *d,int32_t *vx,int32_t *vy,int32_t y40,marco_surface_fn surface,void *ctx) {
     *vx-=*vx>>4;                                        /* 0C2D06..0C2D0C */

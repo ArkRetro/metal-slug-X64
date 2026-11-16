@@ -440,19 +440,23 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
         n=shown;
         if (n) {
             /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
-            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2).
-             * Form 3's death (0C2C40) has 0BEE08 in +19 and 0BEDE8 in +1A
-             * (MAME mzd1: tiles of both slots in one descriptor); the catalog
-             * has one palette per pose and no 0BEE08 profile: drawn burnt
-             * (pending, B71, docs/ANIMACIONES_DANO.md). */
-            unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
+            /* Dying: each pose's palette slot (POSE flags >> 4: attribute
+             * 0x63/0x64/0x65 = +19/+1A/+1B, 0 = +14 = +19) holds what the
+             * death put there with 009EA8 (MAME k8d1: 0BEDE0 / 0x51 in
+             * banks 72/73; mzd1: 0BEE08 / 0BEDE8; marco-d2: 0BEDE8 twice;
+             * w6d2: 0BEDF0). */
+            const uint32_t slots[3]={game.life.palette_table,game.life.palette_slot1a,game.life.palette_slot1b};
             /* The mummy (form 3): slots 63/64 hold its two palettes
              * (marco-mz2 palette dumps). The transformation's body
              * (1887E0/1887CC) keeps the player's own palettes: marco-mz2's
              * audit uses them in its first 37 frames (2101..2137, the
              * transformation), the mummy's from the end of it on. */
             bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3 && !game.mummy_transform;
-            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
+            for (unsigned i=0;i<n;i++) {
+                unsigned bank=parts[i].attributes>>8,slot=bank==0x64u?1u:bank==0x65u?2u:0u;
+                unsigned palette=game.life.phase!=MARCO_ALIVE?marco_renderer_death_palette(slots[slot]):0;
+                marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette(bank==0x64u):palette);
+            }
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }

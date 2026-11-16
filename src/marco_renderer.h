@@ -22,6 +22,10 @@ unsigned marco_renderer_max_upload(void);
 uint32_t marco_renderer_source_tag(unsigned pose);
 bool marco_renderer_find(uint32_t source_tag,unsigned *pose);
 unsigned marco_renderer_burnt_palette(void);
+/* The catalog profile of a palette a death puts in +19..+1B: its ROM table
+ * (0BEDE8 burnt, 0BEE08 form 3, 0BEDE0 kind 8, 0BEDF0 water) or 0x51 (kind
+ * 8's +1B); anything else (0, 0BEDD0) the player's own, 0. */
+unsigned marco_renderer_death_palette(uint32_t source);
 /* The mummy's palette profiles (build_marco_poses.py --name-palette MUMMY /
  * MUMMY2): slot 63, or slot 64 with `second`; 0 when not in the catalog. */
 unsigned marco_renderer_mummy_palette(bool second);

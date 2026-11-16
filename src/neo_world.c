@@ -367,6 +367,13 @@ int neo_world_terrain_end(const neo_world_t *w) {
 bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *out) {
     if (tag==TERRAIN_TAG) {*out=w->terrain;return true;}
     if (tag==ROOT_TAG) {*out=w->root;return true;}
+    if (tag==PLAYER1_TAG+0x28u) {   /* player 1's +28 block (01AD6E of its children) */
+        const uint8_t *b=w->player_node[0];
+        #define L32(p) ((int32_t)((uint32_t)(p)[0]<<24|(uint32_t)(p)[1]<<16|(uint32_t)(p)[2]<<8|(p)[3]))
+        *out=(neo_contact_parent_t){tag,L32(b+0x3c),L32(b+0x40),L32(b+0x44),L32(b+0x48),b[0x4d]};
+        #undef L32
+        return true;
+    }
     if (tag>=NEO_DYN_TAG(0) && tag<NEO_DYN_TAG(NEO_KDYN_COUNT)) {*out=w->dyn_parent[(tag-NEO_DYN_TAG(0))/64u];return true;}
     if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_WORLD_GACTORS) {
         const neo_gactor_t *a=&w->gactors[tag&0xffffu];
@@ -1780,6 +1787,14 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
         script_rng,script_spawn,script_runner,script_camera_lock,script_camera_release,script_autoscroll,&t,neo_world_spawn_native,w->script_skip_unported};
     t.se=&se;t.sub_owner=-1;t.event_soldier=-1;
     if (w->player_ripple) {w->player_ripple=false;neo_gate_ripple(player_view(w),&t.genv,2);}   /* 0C124C: 03C52C */
+    for (unsigned i=0;i<w->player_child_count;i++) {
+        neo_gactor_t *v=player_view(w);memcpy(v->m,w->player_children[i].node,sizeof(w->player_children[i].node));
+        neo_gactor_t *c=g_spawn(&t,v,w->player_children[i].routine,true);
+        if (!c) continue;
+        if (w->player_children[i].routine==0x40f74u) ga_place_from(c,v,&t.genv,8,0);    /* 040F38: 01B220 (8, 0) */
+        else ga_sb(c,0x15,(uint8_t)(ga_b(v,0x15)&3u));                                  /* 05A09E: 01AC94 */
+    }
+    w->player_child_count=0;
     for (unsigned at=0;at<w->order_count;) {
         neo_world_slot_t slot=w->order[at];t.current=(int)at;bool keep=true,tree=false;
         MSX_DIAG_CHECK((slot.kind==NEO_WORLD_SOLDIER?slot.index<NEO_WORLD_SOLDIERS:slot.kind==NEO_WORLD_THROW?slot.index<NEO_WORLD_THROWS:
@@ -1978,6 +1993,12 @@ bool neo_world_player_shot(neo_world_t *w,uint32_t constructor,int32_t x,int32_t
 bool neo_world_player_grenade(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,bool left,uint8_t player) {
     if (w->shot_request_count>=sizeof(w->shot_requests)/sizeof(w->shot_requests[0])) {w->shot_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SHOT);return false;}
     w->shot_requests[w->shot_request_count++]=(neo_world_shot_request_t){constructor,x,y,vx,vy,0,player,(uint8_t)(left?1u:0u),true,false,0,false};
+    return true;
+}
+bool neo_world_player_child(neo_world_t *w,uint32_t routine) {
+    if (w->player_child_count>=sizeof(w->player_children)/sizeof(w->player_children[0])) {w->overflow++;return false;}
+    w->player_children[w->player_child_count].routine=routine;
+    memcpy(w->player_children[w->player_child_count++].node,w->player_node[0],sizeof(w->player_children[0].node));
     return true;
 }
 bool neo_world_player_actor(neo_world_t *w,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player) {

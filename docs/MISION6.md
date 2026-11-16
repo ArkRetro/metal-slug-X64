@@ -548,6 +548,14 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   (018722) mission 6: next stage 10» y la fábrica `016E6E` empieza (2 continuaciones, 0 caídas). Con el mando ciego una
   pasada de cada tres se queda sin vidas en las balsas (cámara 508): variación del mando, no del juego.
 
+- **Etapa 2 en ares (16-XI)**: `--stage 2 --fire --jump 2.5 --turn 6 --continues --progress 4240 --seconds 1500 --next`:
+  cámara 0 → 4272 sin caídas, pero el guion se para en `2E03DE` (`07`, grupo 5 contado, constructor
+  **`086712`**, sin portar, en (1304, 248)): el resto del guion (366 sentencias) no corre y la etapa no termina.
+  Siguiente para la etapa 2: captura de familia de `086712` (raíz en su creación) y su traducción; luego el fin de etapa.
+- **Siguiente (orden)**: (1) `086712` y el resto del guion de la etapa 2 hasta `016E7E`; (2) `04153E` por ventanas (plan de
+  arriba: `045428`/`045608` desde 322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4`
+  desde 324938), una familia por ventana; (3) la huida `017624` y los créditos.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

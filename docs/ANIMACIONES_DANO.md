@@ -102,3 +102,12 @@ Otros vehículos del port (`neo_m4veh.c` `0587C4`, `neo_m5tank`, trenes…) son
 3. Fio `0C4C64`: repetir `c3d1` guardando la VRAM del actor y traducirlo.
 4. Muertes de tipo 8, 0x12 y agua: capturas con `--hit 400:8` / `400:12`
    y el agua de la M6, y su traducción.
+
+## 6. Pruebas de esta rama
+
+`death` (Marco: 18 muertes, 447 poses), `check-characters` (Tarma, Eri, Fio:
+una muerte cada uno, 0 distintos), `gameplay` y `marco_visual` en el PC:
+PASS; objetos N64 de los ficheros tocados compilan sin avisos. **No** se ha
+corrido `make check` completo ni la matriz de ares: las cabeceras de familias
+de `build/` ocupan ~1,6 GB y el disco quedó a 0 (quedaban 1,8 GB); por eso la
+rama no se ha fusionado en `ccr`.

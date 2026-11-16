@@ -871,7 +871,8 @@ emu.register_frame_done(function()
   if frame%300==0 or frame==2100 then check_bank(frame) end
   -- While the progress key is unchanged for 20 s, snapshot only every
   -- 10 periods (the view repeats; keeps long stalls from filling the disk).
-  local sparse=still>=1200
+  -- MSX_FULL_DENSE=1: every period even then (a still player, e.g. the ride plan 'still' of B69).
+  local sparse=still>=1200 and os.getenv('MSX_FULL_DENSE')~='1'
   if frame>=first_dump and (frame==2100 or (frame%period==0 and (not sparse or frame%(period*10)==0))) then dump(frame) end
   if prev_dumps and frame>=first_dump and (frame+1)%period==0 and (still<1199 or (frame+1)%(period*10)==0) then dump_vram(output..'/prev/vram'..(frame+1)..'.bin') end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' section '..sec..' plan '..plan..' still '..still..string.format(' script %x',spc));trace:flush();actors:flush();scriptlog:flush();if events then events:flush() end end

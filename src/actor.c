@@ -422,7 +422,7 @@ static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) 
 }
 static void draw_marco(unsigned bank_id,unsigned frame) {
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
-    if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
+    if ((game.life.phase!=MARCO_GONE || game.life.final_draw) && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
         static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
         neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
@@ -440,7 +440,11 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
         n=shown;
         if (n) {
             /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
-            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
+            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2).
+             * Form 3's death (0C2C40) has 0BEE08 in +19 and 0BEDE8 in +1A
+             * (MAME mzd1: tiles of both slots in one descriptor); the catalog
+             * has one palette per pose and no 0BEE08 profile: drawn burnt
+             * (pending, B71, docs/ANIMACIONES_DANO.md). */
             unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
             /* The mummy (form 3): slots 63/64 hold its two palettes
              * (marco-mz2 palette dumps). The transformation's body

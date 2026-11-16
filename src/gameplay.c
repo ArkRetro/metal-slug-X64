@@ -391,7 +391,7 @@ static void landing_step(msx_game_t *g) {
     g->landing_x=in.x;g->landing_y=in.y;g->landing_root_x=rx;g->landing_root_y=ry;
     if (!neo_landing_active(&g->landing)) {g->landing_on=false;g->landing.draw_count=0;}
 }
-static void start_death(msx_game_t *g,uint8_t kind,bool right) {
+static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
     /* 0C2956 (hits, the vehicle's 0C3118, time over) and 0C2D6A (the fall)
      * first request the character's death voice, table 0C294E[+6E]: Marco
      * (+6E = 0) 0x1123 (B30; MAME capboss: every death, return 0C2D96),
@@ -399,8 +399,11 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=msx_character_death_voice(msx_character_request);
     else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
-    if (!marco_death_start(&g->life,kind,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
-    if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    /* 0C2986/0C2990 (0C2DC6/0C2DD0 after a fall): form 2 0C2A36 (0C2A06),
+     * form 3 0C2C40, the others by the kind. */
+    const uint8_t form=g->world_enabled?g->world.weapon_player.form93:0u;
+    if (!marco_death_start_form(&g->life,kind,form,fall,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
+    if (kind!=2 && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
     g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;g->fat_transform=0;
@@ -428,8 +431,8 @@ void msx_game_hurt(msx_game_t *g,int from) {
     }
     if (g->lifebar && lifebar_absorb(g,g->world_enabled?g->world.hit_kind:0)) return;
     /* 0C2956 with the update's +5A/+5B (neo_world.c player_hit). */
-    if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
-    else start_death(g,0,g->x/MSX_UNIT<from);
+    if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right,false);
+    else start_death(g,0,g->x/MSX_UNIT<from,false);
 }
 /* Floor 0146EE after 0C1438's 01473A: 0128E8 (10C00A = 0, 10C00D = FF:
  * cells of group 1 are no floor) and 013DB2 from the feet down 256 px,
@@ -663,7 +666,7 @@ static void mount_after_world(msx_game_t *g) {
         if (r!=MARCO_MOUNT_EJECT) {nwl(m,0x30,0);nwl(m,0x34,0);}   /* 0AA5F2 */
         mount_place(g);
         if (r==MARCO_MOUNT_DIE) {
-            g->dismounts++;start_death(g,cause,false);neo_vslot_release(&w->vslots,0);
+            g->dismounts++;start_death(g,cause,false,false);neo_vslot_release(&w->vslots,0);
             return;
         }
         if (r==MARCO_MOUNT_STAND) {g->dismounts++;g->mount=MSX_MOUNT_NONE;return;}   /* 0C1F4A: the port's standing player */
@@ -1596,7 +1599,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
                 msx_diag_trail_dump("fall death");
                 fall_dyn_log(g);
-                g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
+                g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0,true);}
             else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {
                 unsigned n=g->safe_old;
                 if (g->safe && (g->x-g->safe_x>=32*MSX_UNIT || g->safe_x-g->x>=32*MSX_UNIT) &&
@@ -2054,7 +2057,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * invulnerable (not in the reference cartridge). */
         if (!g->hud.time_over) g->time_over_seen=false;
         else if (!g->time_over_seen && g->life.phase==MARCO_ALIVE && !g->complete && !MSX_REFERENCE_INVULNERABLE) {
-            g->time_over_seen=true;g->time_overs++;start_death(g,6,g->world.hit_right);
+            g->time_over_seen=true;g->time_overs++;start_death(g,6,g->world.hit_right,false);
         }
         g->kills=g->world.kills;
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;

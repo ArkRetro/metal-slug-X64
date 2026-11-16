@@ -100,8 +100,10 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
     }
     bool translated=true;
     if (kind==7 || kind==0x10) {
-        /* 0C2C7A/0C2C40 (their sounds differ) -> 0C2CB0: 0BF358, +80 = 0x80. */
-        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;
+        /* 0C2C7A (+19/+1A = 0BEDE8, the burnt palette) / 0C2C40 (+19 =
+         * 0BEE08, +1A = 0BEDE8) -> 0C2CB0: 0BF358, +80 = 0x80. Kind 0x10
+         * only reaches 0C2956 in form 3 (0C36CE), which takes 0C2C40. */
+        neo_anim_start(&d->anim,&kind7_prog,0x100);d->speed_target=0x80;d->burnt=true;d->palette_table=kind==7?0xbede8u:0xbee08u;
     } else {
         /* 0C2DDA (kinds 8 and 0x12 on the ground have their own deaths,
          * 0C2ACC/0C2A70: not translated, explicit stop, this one instead):
@@ -113,9 +115,35 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
     *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;
     return translated;
 }
+static const neo_anim_program_t *fat_script;static uint16_t fat_cursor;
+void marco_death_use_fat_program(const neo_anim_program_t *script,uint16_t entry) {fat_script=script;fat_cursor=entry;}
+bool marco_death_start_form(marco_death_t *d,uint8_t kind,uint8_t form93,bool fall,bool grounded,bool attacker_right,
+    int32_t *vx,int32_t *vy,int *facing) {
+    if (form93==3) {
+        /* 0C2986/0C2DD0: 0C2C40 whatever the kind (MAME audit mzd1: a hit
+         * of kind 0 on the mummy runs 2501DC with +19 = 0x132, +1A = 0x56). */
+        marco_death_start(d,0x10,grounded,attacker_right,vx,vy,facing);
+        return true;
+    }
+    if (form93!=2) return marco_death_start(d,kind,grounded,attacker_right,vx,vy,facing);
+    memset(d,0,sizeof *d);
+    d->phase=MARCO_DYING;d->fat=true;d->f78=0xff;
+    if (fall) {
+        /* 0C2A06: +34 = 0xA9000; +5B bit 7 clear: facing right, +30 = 2. */
+        *vy=0xa9000;*vx=attacker_right?-0x20000:0x20000;*facing=attacker_right?-1:1;
+    }
+    /* 0C2A36: the body of 0C0518 (0C0FB6, +6E's column), 0C0F16; the
+     * velocities and the facing stay. */
+    if (!fat_script || fat_cursor>=fat_script->count) {
+        neo_anim_start(&d->anim,grounded?&ground_prog:&air_prog,0x100);d->fat=false;d->speed_target=0x20;
+        return false;
+    }
+    neo_anim_start(&d->anim,fat_script,0x100);d->anim.cursor=fat_cursor;
+    return true;
+}
 bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,neo_anim_draw_t *out) {
     /* Lying, the program steps (and draws) every other update: blinking. */
-    if (!d->drawn || (d->phase==MARCO_LYING && !d->shown)) return false;
+    if (!d->drawn || (d->phase==MARCO_LYING && !d->shown) || (d->phase==MARCO_GONE && !d->final_draw)) return false;
     *out=d->draw;
     out->x=(uint16_t)(x+(facing<0?-(int16_t)d->draw.x:(int16_t)d->draw.x));
     out->y=(uint16_t)(y+d->draw.y);
@@ -123,6 +151,10 @@ bool marco_death_draw(const marco_death_t *d,uint16_t x,uint16_t y,int facing,ne
     return true;
 }
 void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy) {
+    if (d->phase==MARCO_DYING && d->fat) {
+        *vx-=*vx>>5;*vy-=*vy>>5;                        /* 0C2A48..0C2A58, then 0143EE */
+        return;
+    }
     if (d->phase==MARCO_DYING) {
         if (ground) return;                            /* 0C2EB8: ground step, +62 = 0 */
         *vy+=((int32_t)0xffea0000-*vy)>>5;              /* 0C2E94 */
@@ -136,6 +168,13 @@ static bool offscreen(int16_t sx,int16_t py) {          /* 0C2F72..0C2F8A */
 }
 marco_life_phase_t marco_death_after(marco_death_t *d,bool ground,int32_t *vx,int16_t screen_x,int16_t projected_y) {
     d->updates++;d->shown=false;
+    if (d->phase==MARCO_DYING && d->fat) {
+        /* 0C2A62: the program at +26 (unchanged); at its end 0C2F90, the
+         * actor's end (no lying count-down); 0C2F72 off the screen too. */
+        bool done=step(d)!=NEO_ANIM_MORE;(void)ground;(void)vx;
+        if (done || offscreen(screen_x,projected_y)) {d->phase=MARCO_GONE;d->updates=0;d->final_draw=done;}   /* fatd1: 128606 shows at the end update */
+        return d->phase;
+    }
     if (d->phase==MARCO_DYING) {
         /* 0C2EC6: +26 moves 1/16 of the way to +80; 0C2ED4: the program. */
         int16_t sp=(int16_t)d->anim.speed;sp=(int16_t)(sp+((int16_t)(d->speed_target-sp)>>4));d->anim.speed=(uint16_t)sp;

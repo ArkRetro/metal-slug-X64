@@ -250,6 +250,16 @@ emu.register_frame_done(function()
  -- victory table 0BF658 (0C1E84).
  local victory=tonumber(os.getenv('MSX_VICTORY') or '-1')
  if victory>=0 and frame==plan.first+victory then cpu:write_u8(0x10c304,4);cpu:write_u8(0x10c301,0xff) end
+ -- Capture only (MSX_HIT=<frames after the first plan frame>:<hex kind>):
+ -- the player's hit as the contact 004C24 leaves it (+5A = kind, +5F bit 7);
+ -- the player's 0C3702 then runs the death 0C2956 (forms 2/3: 0C2A36/0C2C40).
+ local hit=os.getenv('MSX_HIT')
+ if hit then
+  local after,kind=hit:match('^(%d+):(%x+)$')
+  if frame==plan.first+tonumber(after) then
+   cpu:write_u8(0x1014c4+0x5a,tonumber(kind,16));cpu:write_u8(0x1014c4+0x5f,cpu:read_u8(0x1014c4+0x5f)|0x80)
+  end
+ end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end

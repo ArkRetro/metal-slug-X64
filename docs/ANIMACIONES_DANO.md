@@ -38,8 +38,11 @@ Las ramas `0C2E44`/`0C2DDA` llaman a `0C4C28` (solo Fio: el actor `0C4C64`).
 | Marco momia (forma 3) | transformación `0C17A0`/`0C182A` por el tipo 0x10 (`0C36C0`); muerte `0C2C40` para todo tipo | **ruta corregida (B74)**: antes un disparo a la momia hacía la muerte normal `0BF298` | `death`: captura `mzd1` (`--give-mummy --hit 400:0`): 68 poses, 15 dibujos tumbado, velocidades, fin; tabla de paleta de `+19` = `0BEE08` medida | auditoría `mzd1`: PASS 202 fotogramas, 31 descriptores, 270 124 píxeles, con los perfiles `0x132` y `0x56` | 1123 | **paleta** (B74): la muerte de la momia usa `0x132` (`0BEE08`) en `+19` y `0x56` en `+1A` en el mismo descriptor; el catálogo tiene una paleta por pose y no tiene `0x132`: se dibuja con la quemada |
 | Tarma | las mismas, columna 1 | nativo (pack `c1.bin`) | `check-characters`: captura `c1d1` (`--character 1 --hit`), 51 poses, fin, vida nueva, entrada: **0 distintos** | auditoría `c1d1`: PASS 168 fotogramas, 21 descriptores, 93 578 píxeles | **1087 sin mapear** (silencio; FALLOS §5, PERSONAJES §6.1) | voz 1087 (necesita captura con audio); tipos 2/7/aire sin captura |
 | Eri | columna 2 | nativo (`c2.bin`) | `c2d1`: 57 poses, 0 distintos | `c2d1`: PASS 180 fotogramas, 19 descriptores, 69 850 píxeles | 1125 suena | tipos 2/7/aire sin captura |
-| Fio | columna 3 | nativo (`c3.bin`) salvo `0C4C28` | `c3d1`: 57 poses, 0 distintos | `c3d1`: PASS 180 fotogramas, 19 descriptores, 73 232 píxeles | 114E suena | el actor `0C4C64` (programa `253322`) **sin portar** (no se dibuja); `c3d1` es su primera muerte capturada (VRAM y trazas borradas tras el fixture: repetir con `--dump-routines` ampliado para traducirlo) |
-| Todos | tipo 8 `0C2ACC`, tipo 0x12 `0C2A70`, agua `0C2CCC` | **parada explícita** (se cuenta en `death_stops` y se hace `0C2DDA`) | — | — | — | sin captura; no se ha localizado qué fila de ataque da 8 o 0x12 |
+| Fio | columna 3 | nativo (`c3.bin`); su actor `0C4C64` **nativo (agente E)**: `0C4C28` desde `0C2E74` (tipos que llegan a `0C2E44`), hijo tras el jugador por `01ACF2` (8 hacia delante, 0x20) y `01AC94`, programa `253322` a velocidad 0, paleta 5, `+30` = la del jugador ± 1, `0C4CBA` (`marco_death_cap_*`, `neo_effects.c`) | `c3d1`: 57 poses, 0 distintos; actor: captura `c3d2` (`--child-routines c4c64,c4cba`), `make check-core` `fio_cap`: 85 actualizaciones, 169 velocidades, 85 `+26`, cuenta final `+80`/`+5F`, desaparición: **0 distintos** | `c3d1`: PASS 180 fotogramas; sprites `1A5A6A..1A5AD8` del actor sin comprobar en los exports | 114E suena | colocación inicial (`01ACF2`) no comparada; sprites del actor |
+| Marco | tipo 8 `0C2ACC` → `0C2B8A` | **nativo (agente E)**: programa `0BF398` (`25032A`, poses con paleta `+19`/`+1A`), siempre el paso aéreo `0143EE`, `+34 += (−0x16 − +34) >> 6`, `+30 −= >> 6`, `+78 = 0` en el suelo, sin rampa de `+26`; con `+5B` bit 7 el giro se queda (`0C2B68` borra el bit 1, no el 0); la llamada `05A09E` del programa crea el humo `05A0B4` (programa `25339C`, paleta 0x204, sobre el bloque `+28` del jugador, `neo_effects.c`) | `death`: captura `k8d1` (`--hit 400:8`), 118 actualizaciones, 75 poses, 15 dibujos tumbado, fin y vida nueva: **0 distintos** | auditoría `k8d1`: PASS 216 fotogramas, 16 descriptores, 102 512 píxeles; **las poses `18CF86..18CFE0` no están en el catálogo** (se mantiene la anterior) | 1123 | catálogo y paletas `+1A` = `0BEDE0` (0x53) / `+1B` = 0x51; el deslizamiento por el suelo tras aterrizar es el `0143EE` compartido del port (no comparado: la prueba usa el movimiento de la captura); humo `05A0B4` sin prueba bit a bit ni sprites en los exports |
+| Marco | tipo 0x12 `0C2A70` | **nativo (agente E)**: `040F38` crea la salpicadura `040F74` para todo tipo 0x12 (`01B220` (8, 0), antes del giro); en el suelo `0BF418` (`24FF1E`), `014594` con `+62 = 0`, sin paleta ni velocidad; en el aire `0C2DDA` | `death`: captura `k12d1` (`--hit 400:12`), 76 actualizaciones, 33 poses: **0 distintos** | auditoría `k12d1`: PASS 132 fotogramas, 22 descriptores, 53 450 píxeles; **poses `18D298..18D450` fuera del catálogo** | 1123 | catálogo; 0x12 en el aire sin captura (es `0C2DDA`, ya probada) |
+| Tarma / Eri / Fio | tipos 8 y 0x12 | **parada explícita** (`death_stops`, hacen `0C2DDA`): sus programas (`250DB6`/`2509AA`, …) no están en los packs de personaje | — | — | — | ampliar el formato del pack (`export_character.py`) con las filas `0BF398`/`0BF418` |
+| Todos | caída al agua `0C2CCC` | **sin portar**: la caída `0C2D6A` hace `0C2DDA` | — | — | — | captura: caer por la parte de abajo con agua de clase 5 bajo los pies (`03C55C`) y `0191FC` = 2/3 (RAM `10C2F6` = 9, 0xB o 0); `0C2D06` desensamblada: `+30 −= >> 4`, 0x1E actualizaciones `+34 = (superficie − 8 − +40) >> 3`, luego `+34 += (−0x10 − +34) >> 5`, `0143E4`, fin al tocar suelo; programa `24ECCC` (una pose y FINISH), paleta `0BEDF0` |
 
 `marco_death_start_form` (nuevo) elige por la forma como `0C2986/0C2990`;
 `marco_death_use_fat_program` recibe de `marco_visual.c` el programa de la
@@ -91,23 +94,36 @@ Otros vehículos del port (`neo_m4veh.c` `0587C4`, `neo_m5tank`, trenes…) son
   `0BEE08` sigue pendiente (catálogo con una paleta por pose).
 - **B75** sonidos de golpe de vehículo 1089/108A/108B sin renderizar ni
   política: pendiente (medir pares como en AUDIO_JUEGO.md §17).
+- **B76** (agente E) muertes de tipo 8 y 0x12 y actor de Fio: corregidas
+  para Marco (`386c5c0`) y Fio (`c79ea00`); quedan las de Tarma/Eri/Fio de
+  tipos 8/0x12 y el agua.
 
-## 5. Siguiente paso
+## 5. Siguiente paso (agente E, 16-XI)
 
-1. Paleta de la muerte de la momia: piezas del catálogo por byte de paleta
-   (`build_marco_poses.py`) o un perfil compuesto; el perfil `0x132` de
-   `mzd1` (repetir la captura, ~26 MB).
-2. Voz 1087 y sonidos 1089/108A/108B: captura con audio
-   (`run_gameplay_audio.py`), render y pares.
-3. Fio `0C4C64`: repetir `c3d1` guardando la VRAM del actor y traducirlo.
-4. Muertes de tipo 8, 0x12 y agua: capturas con `--hit 400:8` / `400:12`
-   y el agua de la M6, y su traducción.
+Hecho: tipos 8 y 0x12 de Marco (`386c5c0`), actor `0C4C64` de Fio
+(`c79ea00`); capturas nuevas `k8d1`, `k12d1`, `c3d2` (brutos borrados,
+quedan `audit.json` y `children.log` en `/home/user/captures-audit/`).
+`run_marco_catalog.py --child-routines R,R` vuelca cada nodo hijo del
+jugador (`children.log`). Pendiente, por orden:
 
-## 6. Pruebas de esta rama
-
-`death` (Marco: 18 muertes, 447 poses), `check-characters` (Tarma, Eri, Fio:
-una muerte cada uno, 0 distintos), `gameplay` y `marco_visual` en el PC:
-PASS; objetos N64 de los ficheros tocados compilan sin avisos. **No** se ha
-corrido `make check` completo ni la matriz de ares: las cabeceras de familias
-de `build/` ocupan ~1,6 GB y el disco quedó a 0 (quedaban 1,8 GB); por eso la
-rama no se ha fusionado en `ccr`.
+1. **Catálogo de Marco** (bloquea ver bien los tipos 8/0x12 y la paleta
+   `0x132` de la momia): rehacer `build_marco_poses.py` con todas las
+   auditorías de `MARCO_CAMPAIGN.md` más `--extra-audit` `k8d1`, `k12d1`,
+   y un perfil por ranura de paleta (`+19`/`+1A`: las poses de flags 0x10 /
+   0x20 de `25032A`; `mzd1` usa `0x132` y `0x56` en el mismo descriptor).
+   No se ha hecho aquí: el catálogo actual es el de `ws-logo` (10-XI) y su
+   lista completa de capturas no está en este árbol. `marco_death.c` ya
+   da `palettes[1..3]` = 0x63..0x65 para elegir el perfil en `actor.c`.
+2. **Sonidos 1089/108A/108B y voz 1087** (B75): `1089`/`108A` no están en
+   `data/sound_map.json` (llamadores `09353A`, `0935B0`, `0938DA`,
+   `09471A`, `094790`, `094ABA`, `0977DC`, `0AD1F4` / `08E186`, `090A4A`,
+   `09354E`, `0935C4`, `09472E`, `0947A4`); `1087` y `108B` ya tienen WAV
+   en `audio-src` (sin política). Pasos: añadirlos al mapa,
+   `render_sound_commands.py --labels … --output` a un directorio propio
+   (`filesystem/audio-src` es un enlace a `ws-logo`: no escribir por él),
+   `measure_sound_pairs.py --pairs` contra las etiquetas de la política,
+   `derive_sound_policy.py` añadiendo de una en una (§17), `pack_game_audio.py`.
+3. Tipos 8/0x12 de Tarma, Eri y Fio: filas `0BF398`/`0BF418` en el pack.
+4. Agua `0C2CCC`: captura (ver la tabla) y traducción.
+5. Camello (695 px), Slugnoid en el aire `097308`, pilotos de Tarma/Eri/Fio:
+   sin empezar.

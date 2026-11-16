@@ -387,6 +387,8 @@ int16_t ga_cosine(uint8_t angle);                                 /* table ROM 0
 void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy); /* 002E7C */
 neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy); /* 0040BC + 01B220 */
 void ga_place_at(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01ACF2 */
+/* 01ACF2 from a source's +3C/+40 (projected) and +44/+48 (previous) words. */
+void ga_place_at_words(neo_gactor_t *child,neo_genv_t *e,uint32_t x3c,uint32_t y40,uint32_t x44,uint32_t y48,int16_t dx,int16_t dy);
 bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e);             /* 00409A carry */
 int ga_marker_cross(neo_gactor_t *a,neo_genv_t *e,uint8_t *flag);  /* 040200: marker id or -1 */
 int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id); /* 0402E6 */

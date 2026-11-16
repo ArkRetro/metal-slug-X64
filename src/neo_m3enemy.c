@@ -6045,6 +6045,42 @@ static ga_result_t grenade_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
+/* ---- the soldiers' bomb 03C16C ---------------------------------------------------- */
+/* 03C16C (03C13E from the soldier programs: 00411C after the script actor,
+ * 01ACF2 (0, 14), facing bits 0..1 and +68 of the soldier): palette 20E,
+ * +5F bit 4, +4E by 2D3D9A (0260C8), E0EF, 23F39A, +30 = +-20000 by the
+ * facing, +6E = 2 * +30, +34 = 20000. 03C1D6: +34 += (FFF00000 - +34) >> 6,
+ * +30 -= +30 >> 6; on the ground (+15 bit 6) +30 += (+6E - +30) >> 3 and
+ * +6E += (+30 - +6E) >> 6; 0143E4; +26 = |+6E| >> 8; 00427A; 03C296 when
+ * +30 runs against the facing, on +5F bit 0, a hit of the row 03C11E or
+ * +5F bit 7; 019504 03BC18 -> 004188. 03C296: 0049E8 row 03C12E, sound
+ * 1022, 009F88, 1001, JMP 01C706. */
+static bool sbomb(uint32_t r) {return r==0x3c16c || r==0x3c1d6 || r==0x3c296;}
+static ga_result_t bomb_tick(neo_gactor_t *a,neo_genv_t *e) {
+    switch (L(0)) {
+    case 0x3c16c:
+        ga_palette(a,0x20e);SET(0x5f,4);SW(0x4e,rank(a,e,0x2d3d9a));SW(0x66,0xe0ef);SW(0x1e,0xe0ef);START(0x23f39a);
+        {uint32_t d0=BIT(0x15,0)?0x20000u:0xfffe0000u;SL(0x30,d0);SL(0x6e,d0<<1);}
+        SL(0x34,0x20000);SL(0,0x3c1d6);
+        /* fall through */
+    case 0x3c1d6: {
+        SL(0x34,L(0x34)+ASR(0xfff00000u-L(0x34),6));
+        SL(0x30,L(0x30)-ASR(L(0x30),6));
+        if (BIT(0x15,6)) {SL(0x30,L(0x30)+ASR(L(0x6e)-L(0x30),3));SL(0x6e,L(0x6e)+ASR(L(0x30)-L(0x6e),6));}
+        ga_air(a,e);
+        {uint32_t d0=L(0x6e);if (S32(d0)<0) d0=0u-d0;SW(0x26,(uint16_t)ASR(d0,8));}
+        if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED;
+        if ((int8_t)(B(0x30)^(BIT(0x15,0)?0u:0xffu))<0) SL(0,0x3c296);
+        if (BIT(0x5f,0)) SL(0,0x3c296);
+        if (ga_attack(a,e,0x3c11e)) SL(0,0x3c296);
+        if (BIT(0x5f,7)) SL(0,0x3c296);
+        if (ga_cull_rect(a,e,0x3bc18)) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x3c296:ga_attack(a,e,0x3c12e);sound(e,0x1022);SB(0x1d,0);SW(0x66,0x1001);SW(0x1e,0x1001);SL(0,0x1c706);return neo_effects_tick(a,e);   /* 009F88, JMP 01C706 */
+    }
+    ga_fail(e,L(0));return GA_UNSUPPORTED;
+}
 static bool para(uint32_t r) {return r>=0x5c53c && r<0x5e0b8;}
 static bool pod(uint32_t r) {return r>=0x4e990 && r<0x4f7e8;}
 static bool gunship(uint32_t r) {return r>=0x97fcc && r<0x99070;}
@@ -6053,7 +6089,7 @@ static bool bomber(uint32_t r) {return r>=0x8391c && r<=0x84bd0;}   /* 08391C (M
 static bool box(uint32_t r) {return r==0x391ea || r==0x39232 || r==0x39260 || r==0x39276;}
 static const uint32_t rafts[]={0x8afb6,0x8afd0,0x8afde,0x8b090,0x8b138,0x8b18e,0x8b214,0x8b1c4,0x8b3e6,0x8b43e,0x8b4d6,0x8b502};
 static const uint32_t trucks[]={0x2b202,0x2b2ea,0x2b316,0x2ae46,0x2ae72,0x2b138,0x2b1d4,0x2b1cc,0x2b61c,0x2b656,0x2b670,0x2b69e,0x2b6e4,0x2b700,0x2bbba,0x2bc36,0x2bc62,0x2bc84,0x2bcac,0x2bcca,0x2bd3c};
-bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r) || jp(r) || bd(r) || sk(r) || cp(r) || dg(r);}
+bool neo_m3enemy_routine(uint32_t r) {return IN(deaths,r) || IN(splashes,r) || IN(grenadier,r) || shielded(r) || IN(windowed,r) || para(r) || pod(r) || gunship(r) || thrower(r) || bomber(r) || box(r) || IN(trucks,r) || IN(rafts,r) || cv(r) || jp(r) || bd(r) || sk(r) || cp(r) || dg(r) || sbomb(r);}
 ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
     if (IN(deaths,r)) return death_tick(a,e);
@@ -6075,5 +6111,6 @@ ga_result_t neo_m3enemy_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (sk(r)) return sack_tick(a,e);
     if (cp(r)) return camp_tick(a,e);
     if (dg(r)) return grenade_tick(a,e);
+    if (sbomb(r)) return bomb_tick(a,e);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

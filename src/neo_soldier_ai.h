@@ -40,6 +40,7 @@ typedef struct {
 } neo_hurtbox_t;
 typedef enum { NEO_SOLDIER_EVENT_SOUND,NEO_SOLDIER_EVENT_THROW,NEO_SOLDIER_EVENT_DEATH_CHILD,
     NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE,NEO_SOLDIER_EVENT_ATTACK,
+    NEO_SOLDIER_EVENT_BOMB /* 03C13E: the bomb 03C16C after the script actor at (0, 14) of `actor`, its facing bits 0..1, +68 = value */,
     NEO_SOLDIER_EVENT_RIPPLE /* 03C52C at the head of 0AEF30: the ripple 03C62A (+6E = value) after the soldier, when 019240 has a palette for the mission */ } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C);
     ATTACK: 0049E8 with `row` against the other actors' bodies (class row[5] != 0), `actor` the attacker, value its +5E */
 typedef struct {
@@ -64,6 +65,8 @@ typedef struct {
     neo_anim_emit_t emit;void *emit_context;
     void (*event)(void *context,const neo_soldier_event_t *event);void *event_context;
     bool blood;                           /* RAM 10FD8F nonzero: 01B2BE returns carry clear */
+    /* Out: RAM 10C00A as the last sweep left it (0128DA: 0; 0143CC: FF), set when one ran (the family tests). */
+    uint8_t ram400a; bool wrote400a;
     /* Player actors 1014C4/101574 as 0B03E0 reads them: routine alive (0040AC),
      * +7A (0 = scripted, the soldiers stay idle) and RAM 10E9F8/10E9FC
      * (nonzero: CA2F8 carry). */

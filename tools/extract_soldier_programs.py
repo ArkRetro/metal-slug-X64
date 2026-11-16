@@ -356,6 +356,8 @@ ROOTS+=[0x2a392a,0x2a39be,0x2a3aca,0x2a3b80,0x2a3cbc,0x2a3e92,0x2a40fa,0x2a426a,
 ROOTS+=[0x22d372]
 # The soldiers' grenade 03C306 (03C2DE of the actions 0AF92C / 0AF940: 23DA62 / 23D9EA) (neo_m3enemy.c).
 ROOTS+=[0x23f2a0,0x23da62,0x23d9ea]
+# The soldiers' bomb 03C16C (03C13E of the rebels' programs; Mission 6 stage 1) (neo_m3enemy.c).
+ROOTS+=[0x23f39a]
 # Item kind 28 (record 0E581A + 0x18 * 0x28): its program 2869D6 as a root (the walker 288396 falls into it by 2884C8; the Mission 3 hidden boxes 09A67E drop kind 28 directly, 08C374 starts 2869D6 itself).
 ROOTS+=[0x2869d6]
 # Mission 3 birds 03ED00.., sandbags 0214EA/0216BA with their pieces 0218C4, camp 01F1D4 (soldiers 01F2D6/01F386, stove 01F562, pot 01F4DA) (neo_m3enemy.c).

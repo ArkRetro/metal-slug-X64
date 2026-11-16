@@ -16,6 +16,8 @@ from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=None)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--turn',type=float,default=0.0);p.add_argument('--continues',action='store_true');p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
+# --next: the stage played to its end: PASS needs the next stage's record to start (stage 1 -> 016E6E, 2 -> 016E7E).
+p.add_argument('--next',action='store_true')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 import gzip,json
@@ -40,7 +42,7 @@ def wait(pat,secs=300):
         assert proc.poll() is None,'ares exited'
         time.sleep(.05)
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
-ok=False;cam=0
+ok=False;cam=0;maxcam=0
 try:
     win=None
     while not win:
@@ -75,7 +77,10 @@ try:
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
+        maxcam=max(maxcam,cam)
         if cam>=a.until:break
+        nxt=a.next and a.stage<3 and re.search(r'MSX mission 6 stage \d+ start: record \w+ descriptor %s'%('016E6E','016E7E')[a.stage-1],text)
+        if nxt:break
         # --continues: Start at every CONTINUE? panel (a player's choice, nothing of the game changes): the stage 016E5E
         # has water gaps the rafts 0BD71E bridge only with well-timed jumps, which the fixed --jump period misses at times.
         if a.continues and text.count('MSX panel continue')>continued:
@@ -93,7 +98,10 @@ try:
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
     print('camera',cam,'screenshots',k,'continues',continued,'fall deaths',(re.findall(r'pit deaths=(\d+)',text) or ['0'])[-1]);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
     for s in stops[:40]:print('  ',s)
-    ok=cam>=a.progress and 'not loaded' not in text
+    ok=(maxcam if a.next else cam)>=a.progress and 'not loaded' not in text
+    if a.next:
+        nxt=a.stage<3 and re.search(r'MSX mission 6 stage \d+ start: record \w+ descriptor %s'%('016E6E','016E7E')[a.stage-1],text)
+        print('next stage started' if nxt else 'next stage not started');ok=ok and bool(nxt)
 finally:
     proc.terminate()
     try:proc.wait(5)

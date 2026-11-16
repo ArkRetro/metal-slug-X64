@@ -511,6 +511,51 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   disco libre (1,6 GB): se hará por ventanas (`runB2.sh` con `FROM` / `LAST` y raíces por rama: `045428`/`045608` desde
   322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4` desde 324938), una familia por ventana.
 
+## `040920` con prueba bit a bit (16-XI, agente C)
+
+- Captura **`captures-m6/fam/S`** (`runS.sh`: réplica de `run4` desde `sec09_292683`, raíces
+  `af1c4,af17e,8a732,9ae1e,9ae2c,9ba2a,3c16c` de 294380 a 295900; traza en bruto borrada al tener fixture). `fam/Z`
+  borrada: las 128 pasadas de `040920` que contaba (nodos 102754, 102804, 104174, 102494, 102CD4) son de los rebeldes
+  `0AF1C4` / `0AF17E`, del granadero `08A732` y del soldado del escudo `09AE2C`.
+- Familia **`m6reb`** (`make check`): **61 nodos, 4668 actualizaciones en lazo cerrado iguales a MAME** (294407..295899),
+  59 borrados, 1006 dibujos; contiene las 128 pasadas de `040920`. Lo que hizo falta, todo traducido de la ROM:
+  - `019240` entero (`neo_gate.c`, tabla de 45 entradas `01924A`): D0 (onda) y D1 (chapoteo) con acarreo; la etapa 9
+    (`01932E`) da 14E / 154 antes de la cámara 0700 y 165 / 166 después. Antes se paraba la onda `03C62A` de la M6
+    (`mission > 8`); ahora solo se para fuera de la tabla.
+  - `004C24` con `+50` = 0 (`ga_register`): no registra pero responde por `+5A` (`004DA6`, D2/D3 = 0). Antes devolvía
+    «sin golpe» (el soldado del escudo roto `09B4F8` borra `+50` y luego mira `09CDB8`).
+  - Las llamadas de programa `04061C..0406A0` (`NEO_ANIM_REPLACE_PALETTE`) en nodos genéricos: `009F88` (`+1D` = 0)
+    y `009EA8` del recurso (antes solo cambiaban el recurso; `+1D` quedaba en 2).
+  - La bomba de los rebeldes **`03C16C`** (`03C13E` de sus programas; `neo_m3enemy.c` `bomb_tick`, evento
+    `NEO_SOLDIER_EVENT_BOMB` en `neo_world.c`): `03C16C` / `03C1D6` / `03C296`, tablas `2D3D9A` y `03C11E` /
+    `03C12E` en `region_rom.json`, programa `23F39A` (`extract_soldier_programs.py`). `ga_place_at_words` = `01ACF2`
+    desde las palabras de un soldado (con fracción y posición previa).
+  - El módulo de soldados deja `10C00A` como el último barrido (`0128DA` 0, `0143CC` FF), para la prueba.
+  - Arnés (`test_neo_family.c`, `compile_family_fixture.py`): `--m6ring` (el puente `10D7B6` y su anillo `10D83E`
+    como se leyeron; `neo_kscene_t.bridge_raw`), `--group-map bc67c` (mapa de grupos de la etapa, 8 bytes de la ROM
+    en `region_rom.json`), la corrección `+25` de los objetos dinámicos para los soldados (`01AC00`), la onda
+    `03C52C` y la bomba de los soldados por sus eventos, y la muerte `040500..040FFF` va al módulo de soldados solo
+    si el nodo nació soldado (el granadero y el del escudo mueren en su nodo genérico). Las manchas de sangre
+    `040F60` / `040F88` son registros de salpicadura del mundo: fuera del rango de la familia.
+
+- **Etapa 1 hasta su final en ares (16-XI)**: en MAME el fin de etapa `018F92` lo da la salida `0B6ED2` (304151) que crea
+  la llamada **`0BD67A`** de la lista `0BCA00` (la última; `10C70B` = 1, `0040BC` prioridad 1C, (0F00, 00A8) de la raíz,
+  `+6E` = `0BD536`, `+72` = 0F20). Nativa en `neo_world.c` (antes las llamadas no listadas se ignoraban; el rectángulo
+  `0BD536` en `region_rom.json`). Limitaciones anotadas: la inserción por prioridad 1C no se modela (va tras el actor de
+  guion, como las demás llamadas de la lista) y `10C70B` no tiene lector nativo. `test_mission6_ares.py --next` (PASS
+  solo si empieza la etapa siguiente) y prueba **`m6s1end`** en `regression_ares.py` (`--stage 1 --jump 1.0 --turn 6
+  --continues --fire --progress 3520 --seconds 1500 --next`): cámara 0 → 3520, jefe intermedio vencido, «stage end
+  (018722) mission 6: next stage 10» y la fábrica `016E6E` empieza (2 continuaciones, 0 caídas). Con el mando ciego una
+  pasada de cada tres se queda sin vidas en las balsas (cámara 508): variación del mando, no del juego.
+
+- **Etapa 2 en ares (16-XI)**: `--stage 2 --fire --jump 2.5 --turn 6 --continues --progress 4240 --seconds 1500 --next`:
+  cámara 0 → 4272 sin caídas, pero el guion se para en `2E03DE` (`07`, grupo 5 contado, constructor
+  **`086712`**, sin portar, en (1304, 248)): el resto del guion (366 sentencias) no corre y la etapa no termina.
+  Siguiente para la etapa 2: captura de familia de `086712` (raíz en su creación) y su traducción; luego el fin de etapa.
+- **Siguiente (orden)**: (1) `086712` y el resto del guion de la etapa 2 hasta `016E7E`; (2) `04153E` por ventanas (plan de
+  arriba: `045428`/`045608` desde 322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4`
+  desde 324938), una familia por ventana; (3) la huida `017624` y los créditos.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

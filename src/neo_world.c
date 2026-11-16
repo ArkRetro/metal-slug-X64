@@ -276,7 +276,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
     }
     case NEO_SOLDIER_EVENT_RIPPLE: { /* 03C52C: 019240, then 0040BC of 03C62A after the soldier, +6E = 2 */
         if (t->event_soldier<0 || t->current<0) break;
-        if (t->genv.pickup && t->genv.pickup->mission>8u) {w->unsupported++;w->unsupported_routine=0x19240;break;}   /* 01926E: 013D1A */
+        if (t->genv.pickup && t->genv.pickup->mission>44u) {w->unsupported++;w->unsupported_routine=0x19240;break;}   /* past the table 01924A */
         if (!neo_gate_ripple_palette(&t->genv)) break;
         unsigned i=(unsigned)t->event_soldier;
         neo_gactor_t *c=ga_insert(t,t->current,0x3c62a,SOLDIER_TAG(w,i),w->soldiers[i].variant68);
@@ -297,6 +297,13 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         int32_t rx=HI(w->root.x),ry=HI(w->root.y);
         ga_place(c,&t->genv,(int16_t)(HI(e->actor.projected_x)-rx),(int16_t)(HI(e->actor.projected_y)+0x2c-ry),0x10e968u);
         ga_sb(c,0x15,(uint8_t)(e->actor.flags15&3u));
+        break;
+    }
+    case NEO_SOLDIER_EVENT_BOMB: { /* 03C13E: the bomb 03C16C after the script actor, 01ACF2 (0, 14), 01AC94, +68 */
+        neo_gactor_t *c=g_spawn(t,NULL,0x3c16c,true);
+        if (!c) break;
+        ga_place_at_words(c,&t->genv,(uint32_t)e->actor.projected_x,(uint32_t)e->actor.projected_y,(uint32_t)e->actor.cached_x,(uint32_t)e->actor.cached_y,0,0x14);
+        ga_sb(c,0x15,(uint8_t)(e->actor.flags15&3u));ga_sb(c,0x68,(uint8_t)e->value);
         break;
     }
     case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0 / 040F04: immediate child 040F88 / 040F60 (value 1) */
@@ -2052,6 +2059,15 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             if (calls[k][4]!=0xffffffffu) ga_sw(a,0x6e,(uint16_t)calls[k][4]);
             if (calls[k][5]!=0xffffffffu) ga_sw(a,0x74,(uint16_t)calls[k][5]);
         }
+        /* 0BD67A (the list's last call, retention 3632): RAM 10C70B = 1 (no
+         * native reader), 0040BC (priority 1C) of the stage exit 0B6ED2 at
+         * (0F00, 00A8) of the root, +6E = 0BD536, +72 = 0F20. The priority
+         * insertion is not modelled: it goes after the script actor like the
+         * other calls of the list. */
+        if (w->camera_calls[i]==0x0BD67Au) {
+            neo_gactor_t *a=ga_insert(&t,script,0xb6ed2,SCRIPT_TAG,0);
+            if (a) {ga_sl(a,0x38,ROOT_TAG);ga_sl(a,0x28,0x0f000000u);ga_sl(a,0x2c,0x00a80000u);ga_sl(a,0x6e,0x0bd536u);ga_sw(a,0x72,0x0f20);}
+        }
     }
 #ifdef MSX_HAS_M3MID
     if (w->m4layer_used) neo_layerobj_scb(w->m4layer);   /* 003942 -> 0C7AA8: 0C75B2 of 10D7B6 */
@@ -2271,7 +2287,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         if (at==0x0BB028u) w->camera.speed_x=w->camera.speed_y=0x8000; /* Mission 4 (progress 0x15B0): 019388 with D0 = 0x8000 -> the mission actor's +72/+76 (RAM 1013D6/1013DA) */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
         if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)
-            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u) {   /* Mission 6 stage 1 (neo_m6props.c) */
+            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u || at==0x0BD67Au) {   /* Mission 6 stage 1 (neo_m6props.c) */
             if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
             else w->camera_events_unsupported++;
         }

@@ -12,12 +12,19 @@
 #include "death_fixture.h"
 #include "respawn_fixture.h"
 #include "death_fixture_driver.h"
-/* Form 2's death body (0C0518, role B2_HIT_C2A06) from the compiled catalog. */
+/* Form 2's death body (0C0518, role B2_HIT_C2A06) from the compiled catalog.
+ * The catalog is derived from the ROM (never in git): without it (CI) the
+ * form-2 deaths are not run and the count says so; every other case is. */
+#if __has_include("marco_campaign.h")
+#define HAVE_MARCO_CAMPAIGN 1
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Woverflow"
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #include "marco_campaign.h"
 #pragma GCC diagnostic pop
+#else
+#define HAVE_MARCO_CAMPAIGN 0
+#endif
 
 /* B33: the Mission 2 boss tower (data/respawn_fixture.json): 019658's entry
  * of the stage-3 table for the progress, 0196E8's record after its step,
@@ -59,9 +66,15 @@ static unsigned respawn_cases_test(unsigned *queries) {
 }
 
 int main(void) {
+#if HAVE_MARCO_CAMPAIGN
     marco_death_use_fat_program(&marco_script,MARCO_CAMPAIGN_B2_HIT_C2A06);
-    death_stats_t st={0};unsigned marco=0;
-    for (unsigned i=0;i<DEATHS;i++) if (!death_cases[i].character) {death_case_run(&death_cases[i],&st);marco++;}
+#endif
+    death_stats_t st={0};unsigned marco=0,no_catalog=0;
+    for (unsigned i=0;i<DEATHS;i++) if (!death_cases[i].character) {
+        if (!HAVE_MARCO_CAMPAIGN && death_cases[i].form==2) {no_catalog++;continue;}
+        death_case_run(&death_cases[i],&st);marco++;
+    }
+    if (no_catalog) printf("death: %u form-2 deaths not run (build/marco_campaign.h, derived from the ROM, absent)\n",no_catalog);
     unsigned bad=st.bad,skipped=st.skipped,velocities=st.velocities,speeds=st.speeds,ends=st.ends,respawns=st.respawns,entrances=st.entrances,poses=st.poses,palettes=st.palettes,forms=st.forms;
     unsigned queries=0,rbad=respawn_cases_test(&queries);bad+=rbad;
     printf("respawn (Mission 2 boss tower): %u respawns, %u floor searches of 014742 replayed; %u mismatches\n",RESPAWNS,queries,rbad);

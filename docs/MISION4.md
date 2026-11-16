@@ -1089,3 +1089,6 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   `mission5/rest-native.json` solo las paletas nuevas (6, A, B, C, 377); descriptores sin cambios.
 - **`m5boss`**: 43 dibujos ausentes antes de SH (8 de la muerte del Slugnoid y 35 de la paleta 20C, `099268`,
   registrada como no capturable en `MISION5.md`: su número sigue a cómo acaba la pelea); con SH, **0** (1539 s).
+- **Subido** a ccr `71d9449` (matriz de 17 pruebas en verde, línea base nueva). Después: `work-audit` `33e96a0` (muerte
+  de Fio, tipos 8 y 0x12, 1089) unido en `1b158ee`, con `soldier_programs.json` regenerado del extractor unido
+  (`captures-soldiers/walk3`) y `src/msx_sfx_policy.h` recompilado (`compile_sound_policy.py`: las palabras de la M4).

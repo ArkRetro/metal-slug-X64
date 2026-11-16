@@ -410,3 +410,19 @@ código de esta rama (`marco_death.c`, `marco_renderer.c`, `msx_character.*`).
   hace falta una partida hasta la M2/M5 con ellas
   (`capture_fullgame.lua` con `MSX_FULL_CHARACTER`, ya posible, pero la
   partida desde el arranque hasta el Slugnoid no se ha hecho aquí).
+
+### 8.4 Estado al terminar (agente J)
+
+- `make check` (292 PASS, rc 0) y `make -j2` con todo lo anterior; ares
+  (`:96`) `test_characters_ares.py mslugx-explorer.z64`: los cuatro personajes
+  con los packs v2 y el catálogo nuevo, voces de muerte 1123/1125/1087/114E,
+  **RESULT: PASS**.
+- Datos en `/home/user/captures-audit/j/`: `catalog/` (para `ws-logo`, §8.1),
+  las auditorías y `debug.log`/`palette*.bin` de `mzd1`, `k8d1`, `k12d1`,
+  `w6d2`, `c{1,2,3}k{8,12}` (volcados de VRAM, pantallas y nodos borrados;
+  `check_marco_catalog.py` necesita además `catalog/build/marco-png`, que se
+  rehace con la orden de §8.1), los informes de los pilotos.
+- Siguiente paso: copiar `catalog/` y `romfs/chars/c1..c3.bin` a `ws-logo`
+  junto con la fusión de esta rama; agua de Tarma/Eri/Fio; Eri a cada
+  fotograma en el SV-001 y la reproducibilidad del plan `vehicles`; pilotos
+  del Slugnoid de Eri/Fio; reparto de canales del chip `4422`.

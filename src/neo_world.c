@@ -2020,6 +2020,15 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
             if (calls[k][4]!=0xffffffffu) ga_sw(a,0x6e,(uint16_t)calls[k][4]);
             if (calls[k][5]!=0xffffffffu) ga_sw(a,0x74,(uint16_t)calls[k][5]);
         }
+        /* 0BD67A (the list's last call, retention 3632): RAM 10C70B = 1 (no
+         * native reader), 0040BC (priority 1C) of the stage exit 0B6ED2 at
+         * (0F00, 00A8) of the root, +6E = 0BD536, +72 = 0F20. The priority
+         * insertion is not modelled: it goes after the script actor like the
+         * other calls of the list. */
+        if (w->camera_calls[i]==0x0BD67Au) {
+            neo_gactor_t *a=ga_insert(&t,script,0xb6ed2,SCRIPT_TAG,0);
+            if (a) {ga_sl(a,0x38,ROOT_TAG);ga_sl(a,0x28,0x0f000000u);ga_sl(a,0x2c,0x00a80000u);ga_sl(a,0x6e,0x0bd536u);ga_sw(a,0x72,0x0f20);}
+        }
     }
     w->camera_call_count=0;
     w->player_hits+=t.hits;
@@ -2233,7 +2242,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         if (at==0x0BB028u) w->camera.speed_x=w->camera.speed_y=0x8000; /* Mission 4 (progress 0x15B0): 019388 with D0 = 0x8000 -> the mission actor's +72/+76 (RAM 1013D6/1013DA) */
         if (at==0x0BA942u) neo_m4props_reset(&w->ga_flags);            /* Mission 4 list head: RAM 10C6C0..10C6FF */
         if (at==0x0B918Cu || at==0x0B91AEu || at==0x0B9148u || at==0x0B916Au || at==0x0B925Cu || at==0x0B91D0u || (at>=0x0BA82Au && at<0x0BA942u) || (at>0x0BA942u && at<=0x0BAA1Eu)
-            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u) {   /* Mission 6 stage 1 (neo_m6props.c) */
+            || at==0x0BD71Eu || at==0x0BDA8Eu || at==0x0BD2FAu || at==0x0BD386u || at==0x0BD3B6u || at==0x0BD3E6u || at==0x0BD67Au) {   /* Mission 6 stage 1 (neo_m6props.c) */
             if (w->camera_call_count<COUNT(w->camera_calls)) {w->camera_call_args[w->camera_call_count]=w->camera.events[i].value;w->camera_calls[w->camera_call_count++]=at;}
             else w->camera_events_unsupported++;
         }

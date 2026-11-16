@@ -538,6 +538,16 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
     si el nodo nació soldado (el granadero y el del escudo mueren en su nodo genérico). Las manchas de sangre
     `040F60` / `040F88` son registros de salpicadura del mundo: fuera del rango de la familia.
 
+- **Etapa 1 hasta su final en ares (16-XI)**: en MAME el fin de etapa `018F92` lo da la salida `0B6ED2` (304151) que crea
+  la llamada **`0BD67A`** de la lista `0BCA00` (la última; `10C70B` = 1, `0040BC` prioridad 1C, (0F00, 00A8) de la raíz,
+  `+6E` = `0BD536`, `+72` = 0F20). Nativa en `neo_world.c` (antes las llamadas no listadas se ignoraban; el rectángulo
+  `0BD536` en `region_rom.json`). Limitaciones anotadas: la inserción por prioridad 1C no se modela (va tras el actor de
+  guion, como las demás llamadas de la lista) y `10C70B` no tiene lector nativo. `test_mission6_ares.py --next` (PASS
+  solo si empieza la etapa siguiente) y prueba **`m6s1end`** en `regression_ares.py` (`--stage 1 --jump 1.0 --turn 6
+  --continues --fire --progress 3520 --seconds 1500 --next`): cámara 0 → 3520, jefe intermedio vencido, «stage end
+  (018722) mission 6: next stage 10» y la fábrica `016E6E` empieza (2 continuaciones, 0 caídas). Con el mando ciego una
+  pasada de cada tres se queda sin vidas en las balsas (cámara 508): variación del mando, no del juego.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

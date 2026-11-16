@@ -1062,3 +1062,30 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   correr. **No subido a ccr.** Falta: fusionar `origin/work-chars` `609f8dd`, mirar `m5boss`/`m6s1`, repetir la matriz
   y subir M4 + M5 + menú juntos. Para la M4: copiar `filesystem/mission4/rest-native.json` (7 paletas nuevas) a
   `ws-logo`; `ws-logo` no tiene `filesystem/softdip.bin` (`tools/extract_softdip.py`).
+
+## Integración y jefe, séptima sesión (16-XI, agente I)
+
+- **Unión** (`work-m4` `f5d4f0a` + ccr `a41e23a` + `work-chars` `c952bea` + `work-audit` `1727400`): exportaciones de la
+  M5 y la M6 como copias propias en `ws-m4-private` (de `ws-m5` y `ws-chars`), `softdip.bin` de
+  `tools/extract_softdip.py` (igual byte a byte al anterior), paquetes 2..6 rehechos; `make check` RC 0 (298 PASS).
+- **`m6s1` 1312 dibujos ausentes**: era la exportación de la M6 de `ws-logo` (enlace) frente a la de `ws-chars`
+  (difieren desde el byte 40 049 917); con la copia de `ws-chars`, `m6s1` da 0 dibujos ausentes y 0 paradas (antes 4).
+- **`02058E` (trampilla `01F866`)**: el 68K (`020542`) lee `+2C` de lo que apunte el `+82` del emisor sin mirar si el
+  nodo sigue vivo; la roca solo lo borra ella misma (`01FDA4`/`01FECE`, si es la última). Con una traza temporal
+  (cada `rock_emit`, cada `ga_kill` de una roca con su llamador y la parada) el recorrido de `m4boss` emitió y borró 69
+  rocas, todas por `01FDA4`, sin ninguna parada `02058E`; y la matriz sobre el cartucho de esta unión tampoco la dio
+  (`m4boss` PASS, 6 paradas como la línea base: `7E832` ×4, `03C5E8` ×2). La parada explícita se queda (no se
+  rellena la lectura de un nodo borrado sin captura que la muestre); si vuelve, la traza dice qué camino borró la roca.
+- **La torre delante del casco no es un fallo**: en la VRAM de T (26700) la capa del terreno `10C72E` tiene `+2C` =
+  `00A0` (sprites 161..192) y la del casco `10D7B6` `+2C` = `0020` (sprites 33..52); en el Neo Geo el sprite de número
+  mayor tapa al menor, y las columnas 177..180 (x 193..256, filas 18..26: casillas `4A9EF..4AA42`) son la torre de
+  andamios, dibujada encima del casco en MAME (`game26700.png`), como en ares.
+- **B69 Slugnoid** en la matriz (`slugnoid`: `test_vehicle_damage_ares.py --mission m5s3 --ride forward`): montado en
+  la cámara 557, golpes de clase 0, 48 → 32 → 16 → 0, parpadeo, medidor y destrucción (PASS, 278 s). Faltaban las
+  paletas de la lista de muerte `097E88` (6, A, B, C: 32 dibujos ausentes del armazón `1C2178..`, también 8 de los
+  43 de `m5boss`): captura nueva **SH** (`captures-m5/fam/runSH.sh`: estado del TAS `u17460`, plan `still`, sin
+  trampa de vehículo, volcados cada fotograma 39500..39680 con `MSX_FULL_DENSE=1`, nuevo); `export_rest_sprites.py`
+  `SH@966f0-97e08 --keep mission5 --keep-palettes`: 174 fotos, 210 689 píxeles iguales, 0 distintos; añadidas a
+  `mission5/rest-native.json` solo las paletas nuevas (6, A, B, C, 377); descriptores sin cambios.
+- **`m5boss`**: 43 dibujos ausentes antes de SH (8 de la muerte del Slugnoid y 35 de la paleta 20C, `099268`,
+  registrada como no capturable en `MISION5.md`: su número sigue a cómo acaba la pelea); con SH, **0** (1539 s).

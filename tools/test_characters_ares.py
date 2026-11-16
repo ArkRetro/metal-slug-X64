@@ -93,8 +93,7 @@ for place in [int(x) for x in a.places.split(',')]:
         try:wait(r'MSX player death',150,mark)
         finally:key('keyup','Right')
         m=wait(r'MSX AUDIO voice %s: ([a-z ,0-9A-F]+)'%VOICE,10,mark)
-        if who==1:print('note Tarma: death voice 1087 '+m[1]+' (pending, docs/PERSONAJES.md)')
-        else:checks['death voice %s plays'%VOICE]=m[1].startswith('started')
+        checks['death voice %s plays'%VOICE]=m[1].startswith('started')   # Tarma's 1087: driver twin of 1123 (AUDIO_JUEGO.md 19)
         text=log()
         checks['every pose in the catalog']='descriptor outside the catalog' not in text and 'MSX native draw missing descriptor' not in text
         checks['no stopped program']='MSX marco program stopped' not in text

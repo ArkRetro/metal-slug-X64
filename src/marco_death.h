@@ -24,7 +24,7 @@ typedef struct {
     bool shown;                 /* the program drew in the last update (lying: every other one) */
     bool burnt;                 /* 0BF358 (kinds 7/0x10, form 3): drawn with its burnt palette */
     bool fat;                   /* form 2 (0C2A36..0C2A6C): no landing, no lying, gone at the program end */
-    bool final_draw;            /* form 2: the program ended in this update, its last pose still shows */
+    bool final_draw;            /* the update that ends the actor drew its pose (form 2 at its end, off the screen, water): it still shows */
     uint32_t palette_table;     /* ROM table of the palette 009EA8 puts in +19 (0BEDE8 burnt,
                                  * 0BEE08 form 3); 0: the palettes stay */
     unsigned updates;           /* updates in the phase */
@@ -33,6 +33,8 @@ typedef struct {
     bool child_5a0b4;           /* kind 8: the program's callback 05A09E ran (the caller makes 05A0B4; it clears this) */
     bool c4c28;                 /* the start reached 0C2E44 (0C2E74: 0C4C28, Fio's actor 0C4C64 for +6E = 3) */
     uint32_t palette_slot1a;    /* ROM table of the palette 009EA8 puts in +1A (kind 8: 0BEDE0); 0: none */
+    bool water;                 /* the fall into water 0C2CCC..0C2D66 */
+    uint16_t water80;           /* its +80: the updates left that look for the surface (0x1E) */
 } marco_death_t;
 
 /* The death and entrance programs of the chosen character (msx_character.h):
@@ -62,6 +64,24 @@ bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker
  * The caller clears the ground flag unless kind 2 or form 2 (0C2E7E). */
 bool marco_death_start_form(marco_death_t *d,uint8_t kind,uint8_t form93,bool fall,bool grounded,bool attacker_right,
     int32_t *vx,int32_t *vy,int *facing);
+/* 0C2D6A's water branch (0C2DA6..0C2DC2): with water (class 5) under the
+ * feet (03C55C, the caller's) the fall takes 0C2CCC when 0191FC gives 2 or
+ * 3: RAM 10C2F6 (the stage word 42F6) 9 or 0xB (2), 0 (3). */
+bool marco_death_water_stage(uint16_t stage);
+/* 0C2CCC: 009F88, +19 = 0BEDF0[+6E] (009EA8), the program 0BF2D8[+6E] by
+ * 0C0F32 (no row of its own for the forms: +93's rows are 0, the fallback
+ * row 0), 0C0F16, +34 = 0, +80 = 0x1E, then 0C2D06 in the same update
+ * (marco_death_water_velocity, the step 0143E4, marco_death_after). The
+ * other characters' programs (24F150, 24F5D4, 24FA58) are not in their
+ * packs: explicit stop (false), with Marco's. */
+bool marco_death_start_water(marco_death_t *d,int32_t *vy);
+/* 0C2D06..0C2D4C, before 00427A and the air step 0143E4: +30 -= +30 >> 4;
+ * while +80 counts down (from 0x1E) 03C55C looks for the surface: `surface`
+ * (may be NULL: none) gives D1 + the object's +18 (the surface - 1, the
+ * projected frame of +40); found, +34 = (that - 8 - +40) >> 3; else (or +80
+ * at 0) +34 += (-0x10 - +34) >> 5. */
+typedef bool (*marco_surface_fn)(void *ctx,int32_t *surface);
+void marco_death_water_velocity(marco_death_t *d,int32_t *vx,int32_t *vy,int32_t y40,marco_surface_fn surface,void *ctx);
 /* Form 2's death body: the program of table 0C0518 in the chosen
  * character's column (marco_visual.c, role B2_HIT_C2A06): the script and
  * its entry. NULL: none (explicit stop). */

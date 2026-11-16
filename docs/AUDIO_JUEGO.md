@@ -537,7 +537,66 @@ con las 102 etiquetas de la política en los dos órdenes). Añadidas de una en
 una como en §17: `1089` impacto 2 sin mover nada (205 pares en
 `data/sound_pairs.json`; `rom:/`); `108A` y `108B` mueven `108E` y `116E` y
 quedan sin política (`data/sound_pairs_b75_unmapped.json`). Detalle en
-`ANIMACIONES_DANO.md` §6.
+`ANIMACIONES_DANO.md` §6. **Decididos después por el controlador Z80 (§19).**
+
+## 19. El controlador Z80: grupos y prioridades (B75, agente H, rama `work-audit`)
+
+Leído del código del Z80 (`250-m1.m1`, desensamblado con `z80dis` en un
+directorio de trabajo; `tools/sound_driver_table.py` lo traduce y lee la
+ROM del zip, solo números):
+
+- `0066` (NMI) guarda cada byte del *latch* en el anillo `FFF0..FFFF`
+  (índice `FFEF`); el bucle `1E3F` llama a `2001`, que lee un byte por vuelta,
+  cuenta órdenes en `F816` y, con byte `< 0x20`, guarda el banco en `F819`;
+  con byte `>= 0x20`, `F818` y, para bancos `>= 0x10`, `20C6`: puntero de 3
+  bytes `0x0088 + (banco − 0x10)·4` (`57BE`: desplazamiento lineal en la m1,
+  ventanas `0B..08`), entrada `(orden − 0x20)·4` de esa tabla y `506F`.
+- **Cabecera del efecto** (`506F`): cuatro palabras de petición que el efecto
+  para al empezar (`5204`: las pistas con esa palabra `F818/F819` puestas por
+  otra orden; p. ej. `1022` para `109B`, `10A3` y `1064`, `1034` para `10E9`,
+  `108E` para `10AE`), el **grupo** `D` y entradas de 5 bytes (puntero de
+  pista, un byte, **prioridad** `E`) hasta un puntero 0.
+- **Ranura** (`50CF`, ocho de 0x23 bytes en `FDF6`): con `D ≠ 0`, una ranura
+  activa del mismo grupo puesta por otra orden se para y se reutiliza si su
+  prioridad es `>= E`; si es `< E` la pista nueva **se descarta** (byte menor
+  = más prioridad; iguales se cortan). Grupos distintos toman una ranura
+  libre (sin libres, la de byte mayor). El canal del chip lo reparte después
+  `4A2A`/`4422` (ADPCM-A: seis registros de `FAA9`, por ocupación, prioridad
+  y antigüedad).
+
+**Contraste con los pares medidos** (`--check data/sound_policy.json`): de
+los 5187 pares con resultado claro, la regla de grupo y prioridad acierta
+**5150**; los 37 restantes son descartes de `109F`/`10A4` (FM/SSG) tras
+otros grupos, `10E9>1034` y `1064>1022` (las listas de parada) y los dos
+puentes `1159>1032`, `115B>1033`. El modelo medido de §4/§8 une grupos
+distintos en el canal «voz» (`02`, `05`, `07`, `08`, `0F`, `10`) por esos
+descartes FM y ordena mal niveles dentro de un grupo (`116E` 0x65 y `108F`
+0x6E tienen el mismo nivel; `1048` y `104A`, ambos 0x1F, niveles 1 y 2).
+
+**Decisión de `108A`, `108B` y `1087`** sin mover ningún sonido medido: el
+controlador los trata exactamente como a otro sonido ya con política (mismo
+grupo, misma lista de parada vacía y la misma prioridad):
+
+| Palabra | Grupo / prioridad | Gemelo | Canal y nivel |
+| --- | --- | --- | --- |
+| `108A`, `108B` | `07` / `0x65` | `116E` (`07` / `0x65`) | voz 0 |
+| `1087` (voz de muerte de Tarma) | `02` / `0x01` | `1123` (Marco, `02` / `0x01`) | voz 2 |
+
+`derive_sound_policy.py --rom ZIP --twin sfx_108a=sfx_116e --twin
+sfx_108b=sfx_116e --twin sfx_1087=sfx_1123` comprueba la igualdad en la ROM y
+copia canal y nivel (los pares medidos de `108A`/`108B` quedan en su entrada,
+sin unir canales ni acotar niveles): `data/sound_policy.json` igual salvo
+las tres entradas nuevas. Con el gemelo, `108E` (0x64) descarta a `108A` y lo
+corta, como en los pares medidos; frente a `108F..1092` (0x6E) el port los
+corta en los dos órdenes (en el Z80 `108A` descarta a `108F`): la misma
+desviación que ya tenía `116E`. `sfx_1087.wav64` (VADPCM, 6 794 B, desde el
+render aislado de `ws-logo`) y `sfx_108a.wav64` (8 918 B) se leen de `rom:/`
+(`game_audio.c`); `sfx_108b.wav64` ya estaba.
+
+**Pendiente**: sustituir el modelo medido entero por la regla del
+controlador (canal = grupo `D`, nivel = orden de la prioridad, listas de
+parada, y el reparto de canales del chip `4422` para los descartes FM);
+cambia muchos sonidos de todas las misiones y necesita su propia prueba.
 
 ## Regenerar
 

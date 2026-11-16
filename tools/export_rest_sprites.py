@@ -501,16 +501,21 @@ RESOURCES=RESOURCES+(0x74,0x75)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
-    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi[,lo-hi...] (family trace; nodes, or routine ranges, validated)')
+    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi[,lo-hi...][@lo-hi...] (family trace; nodes, or routine ranges painted together, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--keep-palettes',action='store_true',help='the --keep exports\' palettes win over the captures\' (a capture of one actor, e.g. the Mission 4 boss T, adds its palettes without changing the colours the scene pack already has)')
     p.add_argument('--mask-auto',action='store_true',help='compare the frames with auto-animated entries (LSPC attribute bits 2/3), leaving out their area')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
+    # --roots-from LO-HI: also every program of data/soldier_programs.json whose root lies there (e.g.
+    # 29e100-29f000: Tarma's Slugnoid pilot, table 09649C[1], validated against the TAS capture slugair
+    # without entering the default export: docs/ANIMACIONES_DANO.md 7).
+    p.add_argument('--roots-from',action='append',default=[],metavar='LO-HI')
     a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
-    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
+    spans=[tuple(int(x,16) for x in r.split('-')) for r in a.roots_from]
+    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS or any(lo<=q['root']<hi for lo,hi in spans)]
     assets=[]
     for prog in progs:
         for c in prog['commands']:
@@ -560,9 +565,10 @@ def main():
     caps=[]
     for c in a.captures:
         if '@' in c:
-            # directory@lo-hi[,lo-hi...]: several routine ranges validated as one family (the sprites of one range drawn
-            # on another's with the same palette slot, e.g. the Mission 5 boss's fires 0A21A8 on its burnt soldiers 099090).
-            path,_,r=c.partition('@');caps.append((Path(path),tuple(tuple(int(x,16) for x in q.split('-')) for q in r.split(','))))
+            # directory@lo-hi[,lo-hi...][@lo-hi...]: several routine ranges validated as one family, painted together (a
+            # sprite of one range over another's with the same palette slot is an overlap, not a difference: the Mission 5
+            # boss's fires 0A21A8 on its burnt soldiers 099090, the SV-001 turret's bullets 01B882 over the turret 03B57C).
+            path,*rs=c.split('@');caps.append((Path(path),tuple(tuple(int(x,16) for x in q.split('-')) for r in rs for q in r.split(','))))
         else:
             path,_,nodes=c.partition(':');caps.append((Path(path),[int(n,16) for n in nodes.split(',')] if nodes else [0x104644]))
     palettes={}

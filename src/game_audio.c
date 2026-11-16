@@ -98,7 +98,9 @@ static bool streamed(unsigned i) {
         || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
         || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u || m3_word(w) || m4_word(w)
         || w==0x1125u || w==0x114eu    /* the death voices of Eri and Fio (docs/PERSONAJES.md): no RAM for them */
-        || w==0x1089u;                 /* B75: the vehicles' hit recoil (21 KB), no RAM either (ANIMACIONES_DANO.md) */
+        || w==0x1089u                  /* B75: the vehicles' hit recoil (21 KB), no RAM either (ANIMACIONES_DANO.md) */
+        || w==0x108au || w==0x108bu    /* B75: the vehicles' hit sounds 108A/108B (AUDIO_JUEGO.md 19) */
+        || w==0x1087u;                 /* Tarma's death voice (AUDIO_JUEGO.md 19) */
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;

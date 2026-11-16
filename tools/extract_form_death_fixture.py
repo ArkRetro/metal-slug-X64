@@ -17,11 +17,52 @@ is not compared. Capture RAM and the ROM's palettes only (no ROM bytes are
 written). Usage: extract_form_death_fixture.py --rom mslugx.zip CAPTURE... --output OUT.json"""
 import argparse,json,re,struct,zipfile
 from pathlib import Path
-DYING=('c2956','c2e8a','c2a48','c2b8a','c2ab2','c2d06')
+DYING=('c2956','c2d6a','c2e8a','c2a48','c2b8a','c2ab2','c2d06')
 LYING=('c2f06','c2f12')
 TABLES=(0xbedd0,0xbedd8,0xbede0,0xbede8,0xbedf0,0xbedf8,0xbee00,0xbee08,0xbee10)
 def swap(b):
     o=bytearray(len(b));o[0::2]=b[1::2];o[1::2]=b[0::2];return bytes(o)
+UPD=re.compile(r'MARCO_UPDATE frame=(\d+) r=(\w+) f15=(\w+) v30=(\w+) v34=(\w+) x3c=(\w+) y40=(\w+) x28=(\w+) y2c=(\w+) p38=(\w+) f26=(\w+) f5a=(\w+) f5b=(\w+) f93=(\w+) f6e=(\w+) f19=(\w+)')
+def from_updates(d,fixed,bank,w,rom_palette):
+    """A capture with --update-trace (MARCO_UPDATE at 00424A, once per game
+    update: Mission 6 runs an update in 1..5 frames, so the frame-end dumps
+    are not used): the records are the updates; an update's pose is the
+    first MARCO_DRAW of the next one (as drawn[g+1] of two-frame updates);
+    MARCO_WATER (0C2D28, the surface 03C55C found) gives the update's
+    surface D1 + the object's +18. Deaths from a record whose routine is
+    0C2956 or 0C2D6A (the fall: 'fall') to 0C229C."""
+    recs=[];draws={};surf={}
+    for line in (d/'debug.log').read_text(errors='replace').splitlines():
+        m=UPD.match(line)
+        if m:recs.append([int(m.group(1))]+[int(x,16) for x in m.groups()[1:]]);continue
+        m=re.match(r'MARCO_DRAW frame=\d+ descriptor=([0-9A-F]+)',line)
+        if m:draws.setdefault(len(recs),int(m.group(1),16));continue
+        m=re.match(r'MARCO_WATER frame=\d+ d1=(\w+) a0=\w+ y18=(\w+)',line)
+        if m:surf[len(recs)]=(int(m.group(1),16)+int(m.group(2),16))&0xffffffff
+    out=[]
+    for i,r in enumerate(recs):
+        if r[1] not in (0xc2956,0xc2d6a) or (i and recs[i-1][1]==r[1]):continue
+        cur=dict(capture=d.name,frame=r[0],progress=0,respawn=False,kind=r[11],f5b=r[12],form=r[13],character=r[14],fall=r[1]==0xc2d6a,updates=[])
+        j=i;prev=0
+        while j<len(recs):
+            q=recs[j];desc=draws.get(j+1,0)
+            # surface: -1 none (no MARCO_WATER in that update)
+            cur['updates'].append(['%x'%q[1],q[2],q[3],q[4],q[5],q[6],q[7],q[8],'%08x'%q[9],q[10],desc or prev,surf.get(j,-1)])
+            prev=desc or prev
+            if q[1]==0xc229c:break
+            j+=1
+        if cur['updates'][-1][0]!='c229c':continue
+        cur['water']=len(cur['updates'])>1 and cur['updates'][1][0]=='c2d06'
+        cur['dying_poses']=[draws[i+k+1] for k,u in enumerate(cur['updates']) if u[0] in DYING and (i+k+1) in draws]
+        cur['lying_draws']=sum(1 for k,u in enumerate(cur['updates']) if u[0] in LYING and (i+k+1) in draws)
+        # The palette in slot +19 one update after the hit (the dump after update 1's frame).
+        cur['palette_table']=0;pal=d/f'palette{recs[i+1][0]+2}.bin'
+        if pal.exists():
+            slot=recs[i+1][15];ram=pal.read_bytes();words=[w(ram,slot*32+2*k) for k in range(16)]
+            for t in TABLES:
+                if rom_palette(w(fixed,t+2*cur['character']))[1:]==words[1:]:cur['palette_table']=t;break
+        out.append(cur)
+    return out
 def main():
     p=argparse.ArgumentParser();p.add_argument('--rom',type=Path,required=True);p.add_argument('--output',type=Path,required=True)
     p.add_argument('captures',type=Path,nargs='+');a=p.parse_args()
@@ -31,6 +72,7 @@ def main():
         return [0]+[w(bank,0x24000+((2*w(bank,n*32+2*k)+0x8000)&0xffff)-0x8000) for k in range(1,16)]
     deaths=[]
     for d in a.captures:
+        if 'MARCO_UPDATE' in (d/'debug.log').read_text(errors='replace'):deaths+=from_updates(d,fixed,bank,w,rom_palette);continue
         drawn={}
         for f,desc in re.findall(r'MARCO_DRAW frame=(\d+) descriptor=([0-9A-F]+)',(d/'debug.log').read_text(errors='replace')):drawn.setdefault(int(f),int(desc,16))
         frames=sorted(int(m.group(1)) for m in (re.match(r'actor(\d+)\.bin$',x.name) for x in d.iterdir()) if m)
@@ -57,6 +99,6 @@ def main():
                 for t in TABLES:
                     if rom_palette(w(fixed,t+2*cur['character']))[1:]==words[1:]:cur['palette_table']=t;break
             deaths.append(cur)
-    json.dump(dict(source=' + '.join(c.name for c in a.captures)+' (run_marco_catalog.py --hit)',deaths=deaths),open(a.output,'w'),separators=(',',':'))
+    json.dump(dict(source=' + '.join(c.name for c in a.captures)+' (run_marco_catalog.py --hit / --load --update-trace)',deaths=deaths),open(a.output,'w'),separators=(',',':'))
     for x in deaths:print(x['capture'],x['frame'],'kind',hex(x['kind']),'form',x['form'],'character',x['character'],'updates',len(x['updates']),'poses',len(x['dying_poses']),'lying',x['lying_draws'],'palette',hex(x['palette_table']))
 if __name__=='__main__':main()

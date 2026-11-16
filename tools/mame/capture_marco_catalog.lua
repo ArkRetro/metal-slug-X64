@@ -168,6 +168,16 @@ end
 probe(0x4412,'MARCO_SELECT','cursor=%08X field=%02X value=%02X count=%04X state=%08X x=%04X y=%04X attributes=%04X z=%04X correction=%02X flash_palette=%02X palettes=%08X',
  'a1-1,b@(a1),b@(a6+b@(a1)),w@(a1+1)/8,a0,w@(a6+3c),w@(a6+40),w@(a6+14),w@(a6+1e),b@(a6+4d),b@(a6+16),d@(a6+19)')
 probe(0x4256,'MARCO_INIT','program=%08X speed=%04X','a1,d0&ffff')
+-- MSX_UPDATE_TRACE=1: the player's node words right after its routine returns to the node loop
+-- (004248 jsr (a0) -> 00424A), once per game update whatever the frame (Mission 6 runs an update in
+-- 1..5 frames: the frame-end actor dumps can catch an update half done).
+if os.getenv('MSX_UPDATE_TRACE')=='1' then
+ probe(0x424a,'MARCO_UPDATE','r=%08X f15=%02X v30=%08X v34=%08X x3c=%08X y40=%08X x28=%08X y2c=%08X p38=%08X f26=%04X f5a=%02X f5b=%02X f93=%02X f6e=%04X f19=%02X f80=%04X',
+  'd@a6,b@(a6+15),d@(a6+30),d@(a6+34),d@(a6+3c),d@(a6+40),d@(a6+28),d@(a6+2c),d@(a6+38),w@(a6+26),b@(a6+5a),b@(a6+5b),b@(a6+93),w@(a6+6e),b@(a6+19),w@(a6+80)')
+ -- The water death 0C2D06: 03C55C found the surface (carry) -> 0C2D28 with D1 the surface - 1 relative
+ -- to the object A0 (its +18 added next).
+ probe(0xc2d28,'MARCO_WATER','d1=%08X a0=%08X y18=%08X y40=%08X f80=%04X','d1,a0,d@(a0+18),d@(a6+40),w@(a6+80)')
+end
 probe(0x4406,'MARCO_DRAW','descriptor=%08X xy=%08X attr=%04X z=%04X','d7,d0,d1&ffff,d5&ffff')
 probe(0x44ec,'MARCO_CALLBACK','target=%08X','a1')
 dbg:command('wpset 1014e4,4,w,temp9>='..string.format('%x',plan.first)..',{printf "MARCO_CURSOR_WRITE frame=%d pc=%08X a6=%08X address=%08X data=%08X\\n",temp9,pc,a6,wpaddr,wpdata;g}')
@@ -196,8 +206,14 @@ if select_inputs then
  end
  boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
 end
+-- MSX_LOAD=<state> with MSX_LOAD_FRAME=<frame> (capture only, run_marco_catalog.py --load): a
+-- save state of the -state_directory loaded at frame 1, the count going on from its frame (the
+-- boot inputs are then never reached).
+local load_name=os.getenv('MSX_LOAD')
 emu.register_frame_done(function()
- frame=frame+1;dbg:command(string.format('temp9=%x',frame))
+ frame=frame+1
+ if load_name and frame==1 then manager.machine:load(load_name);frame=tonumber(os.getenv('MSX_LOAD_FRAME')) end
+ dbg:command(string.format('temp9=%x',frame))
  -- MSX_CHARACTER_WATCH=1: every access to player 1's character word +6E
  -- (101532) from frame 1600 on (the choice), to find its readers
  -- (docs/PERSONAJES.md).

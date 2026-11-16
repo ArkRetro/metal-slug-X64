@@ -620,6 +620,24 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   sin descriptor es una parada explícita).
 - Paquete con el saltador `086712` y la plataforma `0BE460`: **1090 trozos** (límite 1256; antes del recorte 1291).
 
+## Estado al cerrar la sesión del agente G (16-XI)
+
+- **Hecho**: etapa 2 con todos sus registros contados nativos (`086712`, `0A2EFA`, `08AFA8`, `0BE8F6`) y su fin (`0BE888` →
+  `0BE8A2` → `0B6ED2`), con pruebas bit a bit (`m6jump`, `m6jump2`, `m6plat`, `m6jeep`, `m6end2`); paquete M6 recortado por
+  regla (1090 trozos) con `check_mission_descriptors.py`. Commits `412191c`, `8560a6b`, `8a13e09` en `work-chars`.
+- **ares** (`m6s2end` en `regression_ares.py`, sin tocar la línea base): en una pasada de 75 min el mando ciego llegó a la
+  cámara 4240, `0BE8F6` puso 10C716 y la salida `0B6ED2` se creó (manos de los jugadores cambiadas), pero el jugador no podía
+  salir de la pantalla (recorte `end_x` con el máximo de cámara observado, 4240): corregido en `clamp_feet` (bajo 10C00B
+  hasta el final de la rejilla). En la pasada siguiente el mando perdió todas las vidas ante los tanques de 3872: **falta
+  ver la etapa 2 terminada en ares** (repetir `m6s2end`; es variación del mando, no del juego).
+- **Falta** (por orden): (1) `m6s2end` en verde; (2) la etapa 3: `04153E` y sus 45 constructores (plan de ventanas de arriba:
+  `045428`/`045608` desde 322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4` desde 324938);
+  (3) la huida `017624`, el final y los créditos; (4) los no contados de la etapa 2 (`032946`, `0676A8` / `0676B6`, cabeza
+  de lista `0BE02C..0BE27E`) y las paletas 214 / 21C / 852 / 85F / 860 / 86A.
+- La exportación M6 al día (privada) está en `filesystem/mission6/rest-native.json` de `ws-chars` y en
+  `/home/user/captures-m6/fam/G/rest-native-m6jump.json`: **el coordinador debe copiarla a `ws-logo`** al fusionar y rehacer
+  `build_packs.py 6`.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

@@ -1092,3 +1092,15 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
 - **Subido** a ccr `71d9449` (matriz de 17 pruebas en verde, línea base nueva). Después: `work-audit` `33e96a0` (muerte
   de Fio, tipos 8 y 0x12, 1089) unido en `1b158ee`, con `soldier_programs.json` regenerado del extractor unido
   (`captures-soldiers/walk3`) y `src/msx_sfx_policy.h` recompilado (`compile_sound_policy.py`: las palabras de la M4).
+- **Uniones siguientes (16-XI, noche)**: `work-audit` `f4a5571` (paquetes de personaje v2: `romfs/chars/c1..c3.bin` de
+  `ws-audit` y el catálogo de Marco de `captures-audit/j/catalog/` copiados al árbol, sin enlaces duros: los `c*.bin`
+  de este árbol eran enlaces duros a `ws-logo` y se borraron antes de copiar), `work-chars` `9013c98` (M6 etapa 2;
+  `mission6/rest-native.json` y `mission6/s2/patches.json` copiados; `s2` es un directorio propio con enlaces por
+  fichero) y `work-bugs` `ec724ca` (arma F; `mission5/rest-native.json` de `ws-m5`: la de esta rama más los 8
+  descriptores de la F). Cabecera de sonido con la regla del Z80 (`compile_sound_policy.py --rom … --keep`) y las
+  palabras de la M4. `filesystem/audio` propio: enlaces por fichero a `ws-logo` más `sfx_1087`, `sfx_1089`, `sfx_108a`
+  (de `ws-audit`) y su `manifest.json`; `tools/check_sfx_assets.py` en la regla del cartucho (sin un `.wav64` de la
+  política el juego se paraba al arrancar: toda la matriz falló así una vez).
+- Ojo con la matriz: una ares huérfana de una pasada parada (padre muerto) dejó su ventana en `:71` y la siguiente
+  pasada falló `chars` y `m4` (las teclas iban a la otra ventana); al repetirlas solas, PASS. Parar siempre también
+  el proceso `ares` hijo.

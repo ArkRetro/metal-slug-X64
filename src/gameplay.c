@@ -1302,7 +1302,16 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * no buttons. */
         int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
         direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers==6u) {
+        /* 0CA386 (the Mission 6 last enemy's opening, 0CA324): walk toward screen X walk_to[0]; on crossing it
+         * (the sign of the distance changes from the previous update's, +44 - 6984) the handler clears itself
+         * (0CA2F2) and the distance is negated for this update; no buttons. */
+        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
+        int d3=(g->handler_prev_ok?g->handler_prev_sx:g->x/MSX_UNIT-g->camera)-(int)g->world.ga_flags.walk_to[0];
+        if ((int16_t)((int16_t)d2^(int16_t)d3)<0) {g->world.ga_flags.player_handlers=0;d2=-d2;}
+        direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
     } else if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
+    g->handler_prev_sx=g->x/MSX_UNIT-g->camera;g->handler_prev_ok=true;
     /* Player 1's input words for the vehicles (0CA1B8), once per update. */
     if ((g->ticks&1) && g->world_enabled) mount_pad(g,direction,jump,fire);
     /* Mounted (0C309C) or ejected (0C3250): the vehicle and its turret take

@@ -207,6 +207,7 @@ typedef struct {
      * stage loop 01860A (4302 = FF); counts for the log. */
     unsigned entry_updates,entry_fade_updates;bool mission_start,entry_letters;
     bool entry_descent_pending;   /* entry kind 2 (0C15B4): the descent starts with the stage loop */
+    int handler_prev_sx;bool handler_prev_ok;   /* the player's screen x of the previous update (0CA386: +44 - 6984) */
     int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts,lock_kills;bool lock_killed;int32_t lock_value;
     /* Player 1's priority word +1E (the sprite list is sorted by it,
      * 0113EA): +66 = 8834 on foot (0C10DE/0C14D0/0C157A/0C1EBE/0C1F70),

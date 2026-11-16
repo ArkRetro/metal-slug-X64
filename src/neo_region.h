@@ -25,6 +25,9 @@ bool neo_m6props_routine(uint32_t routine);   /* Mission 6 stage 1 props (neo_m6
 ga_result_t neo_m6props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m6enemy_routine(uint32_t routine);   /* Mission 6 stage 2 enemies (neo_m6enemy.c) */
 ga_result_t neo_m6enemy_tick(neo_gactor_t *a,neo_genv_t *e);
+neo_gactor_t *neo_item_drop(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t d1,uint16_t kind,uint16_t d3,uint8_t d4,uint16_t d5);   /* 08CD58 (neo_item.c) */
+bool neo_m6boss_routine(uint32_t routine);   /* Mission 6 stage 3: the last enemy 04153E (neo_m6boss.c) */
+ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5enemy_routine(uint32_t routine);
 ga_result_t neo_m5enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m5train_routine(uint32_t routine);

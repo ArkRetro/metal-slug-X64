@@ -32,6 +32,11 @@ static const fx_t simple[]={
     {0x1c8d2,0x22e8ae,0x1def8,0x20d},
     /* 01C82A: palette 0x345, rectangle 01DEC0 (the trail 083B92 of the Mission 4 flyer 08391C). */
     {0x1c82a,0x22cdd4,0x1dec0,0x345},
+    /* 01C87E: palette 0x175, rectangle 01DEB8 (the shells 042F04 of the Mission 6 last enemy jump to it, neo_m6boss.c). */
+    {0x1c87e,0x22ce6c,0x1deb8,0x175},
+    /* 01C8FC: program 22D2A6, palette 0x36C, rectangle 01DEC0, no random flip (it enters 01C9D6; the bombs 0465FE of the
+     * Mission 6 last enemy's walkers jump to it, neo_m6boss.c). */
+    {0x1c8fc,0x22d2a6,0x1dec0,0x36c},
 };
 static const fx_t *simple_of(uint32_t r) {
     for (unsigned i=0;i<sizeof(simple)/sizeof(simple[0]);i++) if (simple[i].routine==r) return &simple[i];
@@ -50,7 +55,7 @@ static ga_result_t simple_tick(neo_gactor_t *a,neo_genv_t *e) {
     } else if (f) {
         if (!ga_anim_start(a,e,f->program,0x100)) return GA_UNSUPPORTED;
         SL(0x82,f->rect);ga_palette(a,f->palette);
-        if (!(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);   /* 01DEA2 */
+        if (f->routine!=0x1c8fcu && !(ga_rand(e)&2u)) SB(0x15,B(0x15)^1u);   /* 01DEA2 (01C8FC enters after it) */
         SB(0x15,B(0x15)&~2u);SL(0x50,0);SL(0,0x1c9e6);
     }
     /* 01C9E6 */
@@ -405,6 +410,15 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (r>0) SL(0,0x8efd6);
         return e->unsupported?GA_UNSUPPORTED:GA_MORE;
     case 0x8efd6: return GA_DELETE_TREE;
+    case 0x8f1a0: {   /* the shell of the +93 bit 5 tanks (the Mission 6 last enemy's 08DD2C): speed C00 along +8A, gravity -vy/32 */
+        uint8_t ang=(uint8_t)((B(0x8a)&15u)<<4);
+        int32_t d1=(int32_t)ga_cosine(ang)*0xc00,d2=(int32_t)ga_sine(ang)*0xc00;
+        SL(0x30,(uint32_t)d1);SL(0x34,(uint32_t)d2);SL(0x76,(uint32_t)-(d2>>5));SB(0x93,B(0x93)|0x20u);
+        ga_palette(a,0x373);SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SB(0x15,B(0x15)&~1u);   /* 08F0DE */
+        if (!ga_anim_start(a,e,0x28c32c,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x8f114);
+        goto k8f114;
+    }
     case 0x8f058: {
         uint32_t t=0;const uint8_t *p=ga_rom(0x8fd5cu+(B(0x88)&7u)*4u);
         if (p) t=(uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];
@@ -420,7 +434,7 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (!ga_anim_start(a,e,0x28c32c,0x100)) return GA_UNSUPPORTED;
         SL(0,0x8f114);
     }   /* fall through */
-    case 0x8f114: {
+    case 0x8f114: k8f114: {
         ga_air(a,e);
         if (e->unsupported) return GA_UNSUPPORTED;
         if ((B(0x15)&0x40u) || (B(0x5f)&1u)) SL(0,0x8f1e0);
@@ -441,7 +455,7 @@ static ga_result_t fire_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     ga_fail(e,L(0));return GA_UNSUPPORTED;
 }
-static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
+static bool fire_routine(uint32_t r) {return r==0x8effa || r==0x8f040 || r==0x8efd6 || r==0x8f058 || r==0x8f1a0 || r==0x8f114 || r==0x8f1e0 || r==0x8efde;}
 ga_result_t neo_effects_frag_launch(neo_gactor_t *a,neo_genv_t *e,uint8_t tail) {frag_launch(a,e,tail);return frag_tick(a,e);}
 /* 01D5AA (a piece with its creator's program and palettes: the Mission 4
  * truck's 02A448): +62 = (rand & 700) + 200, layers 1001, +92 / +93 = 3, the

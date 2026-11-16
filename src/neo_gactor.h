@@ -87,6 +87,10 @@ typedef struct neo_ga_flags {
     uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
     uint8_t m6_signal;               /* RAM 10C44C (Mission 6 mid-boss 05310E: cleared by 052F8A, set by 0530F4) */
     uint8_t m6_exit;                 /* RAM 10C716 (Mission 6 stage 2: cleared by 0BE8A2, set by the script's 0BE8F6) */
+    uint8_t m6_boss;                 /* RAM 10C448 (Mission 6 stage 3: the last enemy 04153E clears it, its second form's end sets it) */
+    /* Player 2's handler (RAM 10E9FC) when it differs from player 1's (split_handlers): the opening 045428 of the last
+     * enemy walks each player by 0CA386 (6), which clears its own player's handler on arrival, then holds it by 0455E6 (7). */
+    uint8_t handler_p2,split_handlers;
     uint8_t guard_min;               /* 0C09DA's D0 asked this update (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; gameplay.c applies and clears it) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
@@ -301,6 +305,10 @@ struct neo_genv {
     neo_m4boss_env_t *m4boss;
     neo_m6bridge_env_t *m6bridge;
     void (*shake_pulse)(void *ctx);  /* 0C8022 (RAM 10E9C8/10E9CC) */
+    /* RAM 698E / 6992: the camera position (as read) and its store by an actor (the glide 04445A, neo_camera_place_x/y). */
+    int32_t camera_xy[2];
+    void (*camera_place)(void *ctx,unsigned axis,int32_t v);
+    void (*mission_speed)(void *ctx,int32_t v);   /* 019388: the mission actor's +72 / +76 (RAM 1013D6 / 1013DA; -1: A0000) */
     /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
      * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;
      * 01E13A/01E166/01E19E, neo_pweapon.c); NULL: the beam stops explicitly. */

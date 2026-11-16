@@ -77,6 +77,10 @@ def main():
                 if n in famnodes and n!=int(cur['node'],16):
                     for b,m in ((ad,0xff00),(ad+1,0xff)):
                         if mask&m:cur.setdefault('hitw',[]).append(['%x'%n,b-n,(data>>8)&255 if m==0xff00 else data&255])
+            # A read of another family node's +5F with bit 7 (a node a player's shot killed before this update).
+            if t[0]=='R' and 0x1010a4<=ad<0x1010a4+0xb0*100:
+                n=ad-(ad-0x1010a4)%0xb0
+                if n in famnodes and n!=int(cur['node'],16) and ad-n in (0x5e,0x5f) and mask&0xff and data&0x80 and '%x'%n not in cur.get('kills',[]):cur.setdefault('kills',[]).append('%x'%n)
             if a.attacks and t[0]=='R':
                 if pc==0x49e8 and ad==0x10f000:cur['attacks'].append([0,0,0])
                 elif pc==0x4b96 and ad==0x106754:cur['attacks'][-1][0]=data

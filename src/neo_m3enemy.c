@@ -214,6 +214,8 @@ static int dispatch(neo_gactor_t *a,neo_genv_t *e,bool crouch) {
     }
     ga_fail(e,(uint32_t)entry|0x40000u);return D_STOP;
 }
+/* 0406B6 from another module (neo_m6enemy.c: the crew 0BE6A6 of the Mission 6 stage 2 machines): 1 delete, 0 more, -1 stop. */
+int neo_m3enemy_death_406b6(neo_gactor_t *a,neo_genv_t *e) {int r=dispatch(a,e,false);return r==D_STOP?-1:r==D_DELETE?1:0;}
 /* 040852 */
 static bool motion(neo_gactor_t *a,neo_genv_t *e) {
     if (BIT(0x15,6)) {

@@ -1963,6 +1963,54 @@
    "reader": "0BE8AE Mission 6 stage 2 end (neo_m6enemy.c): the stage exit 0B6ED2's rectangle 0BE89A (+6E)",
    "hex": "fff4ffff00800080",
    "group": "m6"
+  },
+  {
+   "rom": "0x2D4080",
+   "reader": "0BE02C..0BE27E Mission 6 stage 2 machines (neo_m6enemy.c): the hurtboxes 2D4080 / 2D408C / 2D4098 (+50) and the rank table 2D40A4 (6 rank bits: 12 rows of 6 words) (+4E, 0260C8)",
+   "hex": "0002ffe0ffe00030008080000002ffe0ffe00020008080000202ffd0fff0004000208000005f00f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f000f0",
+   "group": "m6"
+  },
+  {
+   "rom": "0x2D5C12",
+   "reader": "0BDE16 / 0BDE9A / 0BDEEA Mission 6 stage 2 machines (neo_m6enemy.c): the kinds of their items (08CD58)",
+   "hex": "00060006004f",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0BE328",
+   "reader": "0BE604 / 0BE684 Mission 6 stage 2 machine crew (neo_m6enemy.c): the four programs 0BE328 (0029C6 & C)",
+   "hex": "0023dbe20023dc260023dc6a0023dcfe",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0BE836",
+   "reader": "0BE3C0 Mission 6 stage 2 machines (neo_m6enemy.c): the debris list 0BE836 (01DA40)",
+   "hex": "00ff000affd80050ffd000600001000be8480001c6ee0001c7060001c71e0001c71e0001c6ee0001c7060001c71e0001c71e0001c6ee0001c7060001c71e0001c71e0001c6ee0001c7060001c71e0001c71e",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0BDBB2",
+   "reader": "0BDDAA..0BDEEA Mission 6 stage 2 machines (neo_m6enemy.c): the header of the sub-map 0BDBB2 (0C70FC; no collision cells)",
+   "hex": "00357c300000000000140013",
+   "group": "m6"
+  },
+  {
+   "rom": "0x03293E",
+   "reader": "0329FA / 032AEC Mission 6 stage 2 (neo_m6enemy.c): the cull rectangle 03293E (01945C)",
+   "hex": "ffe8fff000300040",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0E1926",
+   "reader": "0676A8 / 0676B6 Mission 6 stage 2 wrecks (neo_m6enemy.c): the program lists 0E1926..0E199D and 0E199E, palettes 0E19B6, view rectangles 0E19BC.. (0E1A04 / 0E1A18, 0C8BEC), the stamp templates 0E1A2C / 0E1A3A (0C899E, 0C88B0) and the offsets 0E1A4A / 0E1A54",
+   "hex": "00268afc00268b0600268b1000268b1a00268b2400268b2e00268b3800268b4200268b4c00268b4c00268b5600268b6000268b6a00268b7400268b7e00268b8800268b9200268b9c00268ba600268ba600268bb000268bba00268bc400268bce00268bd800268be200268bec00268bf600268c0000268c00000e1926000e193a000e194e000e1962000e1976000e198a04740ad905e2ffe8000000300029ffe8000000300049ffe8000000300069ffe8000000300089ffe80000003000a9ffe0000000400039ffe0000000400069ffe0000000400099ffe00000004000c9000e19bc000e19c4000e19cc000e19d4000e19dc000e19e4000e19ec000e19f4000e19fc000e19fcfe0004010100000000000b0b0b0bfd0006010100000000000b0b0b0b0b0b0018003800580078009800280058008800b800b8",
+   "group": "m6"
+  },
+  {
+   "rom": "0x0BE360",
+   "reader": "0BE43A Mission 6 stage 2 machine wreck programs 2A95BA / 2A95D8 (neo_m6enemy.c): the attack row 0BE360 (0049E8)",
+   "hex": "ffb0ffb000a000c0000700010190ffff",
+   "group": "m6"
   }
  ]
 }

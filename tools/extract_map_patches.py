@@ -53,6 +53,15 @@ PATCHES={
               (0x10c72e,0x0b85ea,(0x14,0,4,4,0x9e,8)),
               (0x10c72e,0x0b85ea,(8,0,4,4,0xa3,8)),
               (0x10c72e,0x0b85ea,(0x14,0,4,4,0xac,8))],
+    # Mission 6 stage 2 (neo_m6enemy.c): the wreck calls +78 of the machines of the list head 0BDF3A (0BDDAA, 0BDDE0,
+    # 0BDE16, 0BDE64, 0BDE9A, 0BDEEA) on the sub-map 0BDBB2 (no collision cells).
+    # Only the four run4 makes (0BDDAA 304509, 0BDDE0 304600, 0BDE64 304977, 0BDE9A 309163: captures-m6/fam/W1, each
+    # checked with --patch-frames on a dump after it, colours of its palette RAM with --ram-colours); 0BDE16 (5, D) and
+    # 0BDEEA (6C, D) are never made in run4: their colours are not observed (pending).
+    (6,'s2'):[(0x10c72e,0x0bdbb2,(0,0,0xa,0xd,8,0x10)),
+              (0x10c72e,0x0bdbb2,(0,0,0xa,0xd,0x17,0x10)),
+              (0x10c72e,0x0bdbb2,(0xc,4,8,6,0x36,0xb)),
+              (0x10c72e,0x0bdbb2,(0xd,0xc,3,3,0x5e,0xd))],
 }
 # Mission 4 (neo_m4props.c): every patch the props 0B9F4A can make before the
 # boss's road (callbacks 0BA288..0BA7AA, record +E of 0E68D0): the street's
@@ -121,6 +130,8 @@ def main():
         'checked by its columns in the SCB1 words (code and attribute, in order) and takes the colours of the palette RAM')
     p.add_argument('--palette-capture',type=Path,help='ROM model: capture directory with palette<frame>.bin, for the palette numbers no block of the map uses (as tools/export_stage_rom.py)')
     p.add_argument('--palette-frames',default='',help='MAP:FRAME,... (hex map)')
+    p.add_argument('--ram-colours',action='store_true',help='every block takes the colours of the palette RAM of its patch frame (a stage whose palette numbers change colours: Mission 6 stage 2, numbers 16 and 22)')
+    p.add_argument('--patch-frames',default='',help='I:VRAM,... the --capture-frame of patch I only (a dump right after it; Mission 6 stage 2)')
     a=p.parse_args()
     rom=Rom(a.rom)
     model=json.loads((a.stage/'map.json').read_text())
@@ -179,7 +190,14 @@ def main():
     for c in model['conflicts']:
         for ch in c.get('choices',()):seen.setdefault((c['layer'],c['x'],c['y'],ch['code'],ch['flip']),[]).append(ch['palette'])
     out=[];report=[]
-    for obj,submap,d in todo:
+    per={int(k):Path(v) for k,v in (x.split(':',1) for x in a.patch_frames.split(',') if x)}
+    vram0,pal0=vram,pal
+    for idx,(obj,submap,d) in enumerate(todo):
+        vram,pal=vram0,pal0
+        if idx in per:
+            import struct
+            vram=struct.unpack('>34304H',per[idx].read_bytes())
+            pal=struct.unpack('>4096H',per[idx].with_name(per[idx].name.replace('vram','palette')).read_bytes())
         layer=LAYERS[obj];cells=[];bypal={};missing=[]
         for col,row,code,attr in blocks(rom,submap,d):
             x=16*(d[4]+col);y=240-16*(d[5]+1)+16*row-voff[layer];flip=attr&3
@@ -190,6 +208,10 @@ def main():
                 cell['colors']=obs[-1];bypal.setdefault(attr>>8,set()).add(tuple(obs[-1]))
             else:missing.append(cell)
             cells.append(cell)
+        if a.ram_colours:
+            assert pal,'--ram-colours needs a patch frame'
+            for cell in cells:cell['colors']=list(pal[16*cell['palette_number']:16*cell['palette_number']+16])
+            bypal={n:{tuple(pal[16*n:16*n+16])} for n in bypal};missing=[]
         for n,cs in bypal.items():
             if pal:assert cs=={tuple(pal[16*n:16*n+16])},('palette RAM and observed colours differ',hex(submap),hex(n))
         seen_cols=0;columns=0
@@ -209,7 +231,7 @@ def main():
             assert len(got)==1,('block never observed and its palette ambiguous',hex(submap),cell['x'],cell['y'],len(got))
             cell['colors']=list(next(iter(got)))
         observed=sum(1 for c in cells if (layer,c['x'],c['y'],c['code'],c['flip']) in seen)
-        assert 2*observed>=len(cells) or (vram and 2*seen_cols>=columns),('patch not observed at its position',hex(submap))
+        assert 2*observed>=len(cells) or (vram and 2*seen_cols>=columns),('patch not observed at its position',hex(submap),idx,observed,len(cells),seen_cols,columns)
         for n,cs in bypal.items():assert len(cs)==1,('palette %X has several colour sets'%n,hex(submap))
         out.append(dict(layer_object='%06X'%obj,submap='%06X'%submap,d=list(d),layer=layer,cells=cells))
         report.append(dict(submap='%06X'%submap,d=list(d),layer=layer,blocks=len(cells),observed=observed,**({'vram_columns':[seen_cols,columns]} if vram else {}),palettes=sorted('%X'%n for n in {c['palette_number'] for c in cells})))

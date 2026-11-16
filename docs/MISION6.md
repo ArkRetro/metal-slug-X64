@@ -690,3 +690,52 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   etapa 1 y matriz. `fam/Z` (193 MB, sin trazas de familia) se puede borrar cuando exista esa familia;
   `fam/K/boss-trace.txt` (41 MB) ya tiene su fixture (`data/m6rock_fixture.json.gz`).
 - Falta además: `af964` (visto en ares en la cámara 1620), `04153E` (último enemigo) y los créditos (sin empezar).
+
+## Etapa 2: lo no contado y su final en ares (16-XI, agente K)
+
+- **`m6s2end` en verde** (ares, cartucho `078e123` con el tope de salida de `clamp_feet`): `test_mission6_ares.py --stage 2
+  --fire --jump 2.5 --up 1.5 --sweep 10 --continues --progress 4240 --seconds 5000 --period 30 --next`: cámara 0 → 4272,
+  `0BE8F6`, la salida `0B6ED2`, «stage end (018722) mission 6: next stage 11» y la arena `016E7E` empieza: `RESULT: PASS`
+  (19 continuaciones, 0 caídas, ~65 min). Las continuaciones son infinitas (ruta AES de `0C987A`): el mando ciego no se
+  queda sin ellas; solo tarda. No se ha hecho estado guardado: un estado de ares lleva el código del cartucho y no sirve
+  para la ROM siguiente.
+- **Máquinas de la cabeza de lista `0BDF3A`** (`neo_m6enemy.c`, `mc_*`; resumen en su comentario): las seis `0BE02C`,
+  `0BE082`, `0BE0D8`, `0BE180`, `0BE1D6`, `0BE27E` en sus puntos de la raíz (llamada de lista en `neo_world.c`, tras el
+  actor de guion como las demás: la prioridad 1C no se modela), su tripulación `0BE5E4` / `0BE700` / `0BE7CC` (la muerte
+  `0406B6` del módulo de soldados, `neo_m3enemy_death_406b6`, nuevo), el humo `0BE592`, los restos `01DA40 0BE836` y
+  `01DBAA`, los objetos `08CD58` de `2D5C12` y los parches `0C70FC` del submapa `0BDBB2` (sin celdas de colisión). Las
+  llamadas de programa `0BE43A` (`0049E8 0BE360`) y las del convoy (abajo) en `k2_call`.
+- **Convoy `032946` / `032AA4`** (registro `2E019C`, cámara 290): traducido con sus llamadas `23914C` (`00408C`), `23915C`
+  (el objeto 30 de `08CD70`), `23918A` y las de `032AA4` (`239346..2393D4`, con su compañero `+76`). En `run4` el `032AA4`
+  no llega a crearse (traducido sin prueba bit a bit).
+- **Restos `0676A8` / `0676B6`** (registros `2E1238` / `2E124A`): `0C899E` (la plantilla dentro de la ventana del anillo,
+  `k8c899e`) y el sello `0C88B0` con `+2C` desplazado por `+7A`; `0C8BEC` o la cámara `+70` para borrarse.
+- Capturas **`captures-m6/fam/W1`** (`NAME=W1 ROOTS=be02c,be082,be0d8,be180,be1d6,be27e,32946 FROM=304272 DUMP0=304300
+  LAST=312600 PERIOD=60 sh runG.sh`) y **`W2`** (`LOAD=at_312000 LOADF=312000 NAME=W2 ROOTS=676a8,676b6 FROM=313900
+  DUMP0=314100 LAST=321700 PERIOD=120`); trazas en bruto borradas. Familias (`make check`): **`m6mach`**: 13 nodos, **18 030
+  actualizaciones en lazo cerrado iguales a MAME** (304274..310146), 13 borrados, 6274 dibujos (las cuatro máquinas que
+  `run4` destruye: `0BDDAA` 304509, `0BDDE0` 304600, `0BDE64` 304977, `0BDE9A` 309163); **`m6wreck`**: 2 nodos, **4867**
+  (316707..321699), 2 sellos iguales.
+- Parches de mapa: `filesystem/mission6/s2` es ahora **copia propia** (antes enlace a `ws-logo`) con `patches.json`
+  (`extract_map_patches.py 6 filesystem/mission6/s2 --ram-colours --patch-frames 0:W1/vram304560.bin,1:W1/vram304620.bin,
+  2:W1/vram304980.bin,3:W1/vram309180.bin`; opciones nuevas: los colores de la RAM de paleta del volcado tras cada parche,
+  porque los números 16 y 22 cambian de colores en la etapa): los cuatro parches que hace `run4`, todas sus columnas vistas
+  en SCB1. `0BDE16` (5, D) y `0BDEEA` (6C, D) no salen en `run4`: sin colores observados, **pendientes** (sin parche de
+  dibujo; no tienen colisión).
+- Programas (`extract_soldier_programs.py`, sin grupo, 22 nuevos) y sprites (`export_rest_sprites.py ... W1@be02c-be887
+  W1@32946-32b3f`, luego `W2@676a8-67830`, raíces y paletas nuevas): 170 508 + 192 782 píxeles iguales, 0 distintos; la
+  salida se filtró como hizo el agente C (la exportación anterior más los descriptores que posan los programas nuevos: +72;
+  la salida completa trae 1347 de jefes M4/M5). Paletas nuevas: 4F2, 507, 50E, 50F, 5E2 y, vistas en `W2`, **21C, 85F, 86A**.
+  Siguen sin ver: **214, 852, 860** (ni `run4` ni sus réplicas los dibujan; pendientes de una captura que los muestre).
+- Paquete de la M6: 1099 trozos (límite 1256). ares (`--stage 2 --fire --jump 2.5 --continues`, 300 s): PASS, el guion
+  crea `032946` nativo, las máquinas se ven, los mismos recuentos que la línea base (`missing: tile path` de `m6s2.bgp`).
+- **Copiar a `ws-logo`** al fusionar: `filesystem/mission6/rest-native.json` y `filesystem/mission6/s2/patches.json`
+  (y rehacer `build_packs.py 6`).
+
+## Etapa 3: el último enemigo `04153E` (sin empezar; plan)
+
+- `04153E` (`0C8CD6`, +86..+88 y 10C448 a 0, `04157A` con +72 = creador) → `04157A` (`0418D2`, luego `045428`, la cola
+  `041F1C` y los estados `041B34`, `042284`, `044682`, `0422C8`, `0422A0`, `042308`, `044666`, `04240A`, `042AAC`,
+  `041BCE`, `03C0EA`...): unos 25 KB de código 68K (`037404..038800`, `041500..046700`, `08DD2C` / `08EB18` / `08F1A0`).
+  No cabe en una sesión: se hará por ramas, una captura y una familia por ventana (plan de la sección del agente C), y
+  después la huida `017624` y los créditos.

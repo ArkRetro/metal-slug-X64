@@ -37,6 +37,7 @@ ga_result_t neo_m5boss_tick(neo_gactor_t *a,neo_genv_t *e);
 ga_result_t neo_m5mech_tick(neo_gactor_t *a,neo_genv_t *e);
 /* 040846 on a node (04097A, state 040C8E: the soldier death of neo_m3enemy.c). */
 void neo_m3enemy_death_40846(neo_gactor_t *a,neo_genv_t *e);
+int neo_m3enemy_death_406b6(neo_gactor_t *a,neo_genv_t *e);   /* 0406B6: 1 delete, 0 more, -1 stop */
 void neo_m4props_reset(neo_ga_flags_t *flags);   /* 0BA942 */
 ga_result_t neo_m4props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m3enemy_routine(uint32_t routine);

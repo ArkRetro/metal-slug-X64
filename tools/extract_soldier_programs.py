@@ -490,6 +490,11 @@ ROOTS+=[0x28315a,0x28320a,0x2832b0,0x283356,0x2833fc,0x283458,0x2834e6,0x283534,
         0x2839ca,0x283b7a,0x283bf8,0x283ccc,0x283e30,0x283ebe,0x283674,0x283f4c,0x283fb6]
 # Mission 6 stage 2 platform 0BE460 (neo_m6enemy.c; no group): 2A9626, at the bottom 2A9650.
 ROOTS+=[0x2a9626,0x2a9650]
+# Mission 6 stage 2 machines of the list head 0BDF3A and their crew (neo_m6enemy.c; no group): 2A95AE / 2A95BA, 2A95EA /
+# 2A95A6, 2A95CC / 2A95D8, 2A9602, the first hit 2A95F6, the smoke 2A9698, the crew 2A96EA / 2A960E and 0BE328 (23DBE2,
+# 23DC26, 23DC6A, 23DCFE); 032946 / 032AA4: 238BAC, 2391A8; the wrecks 0676A8 / 0676B6: 0E1976 / 0E198A (268BB0..268C00).
+ROOTS+=[0x2a95ae,0x2a95ba,0x2a95ea,0x2a95a6,0x2a95cc,0x2a95d8,0x2a9602,0x2a95f6,0x2a9698,0x2a96ea,0x2a960e,0x23dbe2,0x23dc26,
+        0x23dc6a,0x23dcfe,0x238bac,0x2391a8,0x268bb0,0x268bba,0x268bc4,0x268bce,0x268bd8,0x268be2,0x268bec,0x268bf6,0x268c00]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

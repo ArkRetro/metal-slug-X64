@@ -22,7 +22,11 @@ typedef struct {
     neo_anim_draw_t draw;       /* that pose relative to the actor's words, facing right */
     bool drawn;                 /* a pose was emitted since the start */
     bool shown;                 /* the program drew in the last update (lying: every other one) */
-    bool burnt;                 /* 0BF358 (kinds 7/0x10): drawn with its burnt palette */
+    bool burnt;                 /* 0BF358 (kinds 7/0x10, form 3): drawn with its burnt palette */
+    bool fat;                   /* form 2 (0C2A36..0C2A6C): no landing, no lying, gone at the program end */
+    bool final_draw;            /* form 2: the program ended in this update, its last pose still shows */
+    uint32_t palette_table;     /* ROM table of the palette 009EA8 puts in +19 (0BEDE8 burnt,
+                                 * 0BEE08 form 3); 0: the palettes stay */
     unsigned updates;           /* updates in the phase */
 } marco_death_t;
 
@@ -39,6 +43,19 @@ void marco_death_use_programs(const neo_anim_program_t *five);
  * false (explicit stop) and take 0C2DDA. grounded: +15 bit 6; the caller
  * clears it unless kind 2 (0C2E7E). */
 bool marco_death_start(marco_death_t *d,uint8_t kind,bool grounded,bool attacker_right,int32_t *vx,int32_t *vy,int *facing);
+/* 0C2956 by the form +93 (and 0C2D6A, the fall, when `fall`): form 3 (the
+ * mummy) 0C2C40 for every kind (0BF358 with the palettes 0BEE08 / 0BEDE8,
+ * then 0C2E44 as kind 7); form 2 (fat) 0C2A36: the body program of the
+ * character's table 0C0518 (marco_death_use_fat_program; none: explicit
+ * stop, false) with the velocities kept (the fall 0C2A06 first sets +34 = 0xA9000
+ * and +30 = -/+2 by +5B, and the facing); the others marco_death_start.
+ * The caller clears the ground flag unless kind 2 or form 2 (0C2E7E). */
+bool marco_death_start_form(marco_death_t *d,uint8_t kind,uint8_t form93,bool fall,bool grounded,bool attacker_right,
+    int32_t *vx,int32_t *vy,int *facing);
+/* Form 2's death body: the program of table 0C0518 in the chosen
+ * character's column (marco_visual.c, role B2_HIT_C2A06): the script and
+ * its entry. NULL: none (explicit stop). */
+void marco_death_use_fat_program(const neo_anim_program_t *script,uint16_t entry);
 /* Before the motion of an update: the velocities of 0C2E94..0C2EAA (air)
  * or 0C2F20..0C2F28 (lying). ground: the body stands (+15 bit 6). */
 void marco_death_velocity(marco_death_t *d,bool ground,int32_t *vx,int32_t *vy);

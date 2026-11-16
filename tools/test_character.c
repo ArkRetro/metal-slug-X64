@@ -56,6 +56,8 @@ static unsigned same_program(const neo_anim_command_t *pc,unsigned pn,unsigned m
 #include "character_fixture_c1.h"
 #include "character_fixture_c2.h"
 #include "character_fixture_c3.h"
+#include "death_fixture.h"
+#include "death_fixture_driver.h"
 static uint8_t *read_file(const char *path,uint32_t *size) {
     FILE *f=fopen(path,"rb");if (!f) return NULL;
     fseek(f,0,SEEK_END);long n=ftell(f);fseek(f,0,SEEK_SET);
@@ -194,6 +196,15 @@ int main(int argc,char **argv) {
         unsigned differ=0;for (unsigned k=0;k<STEPS;k++) differ+=a[k].wn && m[k].wn && a[k].weapon[0].descriptor!=m[k].weapon[0].descriptor;
         assert(differ>STEPS/4);   /* its own upper body, not Marco's */
         free(a);free(m);
+        /* Its deaths (data/form_death_fixture.json: MAME cNd1, a hit of kind 0
+         * on the ground, run_marco_catalog.py --character N --hit) with its
+         * five death programs, pose by pose. */
+        {
+            death_stats_t st={0};unsigned n=0;
+            for (unsigned i=0;i<DEATHS;i++) if (death_cases[i].character==c) {death_case_run(&death_cases[i],&st);n++;}
+            printf("%s: %u deaths, %u poses while dying equal, %u end/gone updates, %u entrances, %u speeds, %u mismatches\n",who[c].name,n,st.poses,st.ends,st.entrances,st.speeds,st.bad);
+            if (st.bad || !n) {printf("FAIL: %s's deaths against its MAME captures\n",who[c].name);return 1;}
+        }
         unsigned ok=0,bad=0;
         if (who[c].count) throw_fixture_run(who[c].cases,who[c].count,who[c].descriptors,&ok,&bad);
         printf("%s: %u cases, %u steps equal, %u different\n",who[c].name,who[c].count,ok,bad);

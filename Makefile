@@ -1315,7 +1315,7 @@ $(BUILD_DIR)/hmuzzle_fixture.h: tools/compile_hmuzzle_fixture.py data/hmuzzle_fi
 $(BUILD_DIR)/fatmuzzle_fixture.h: tools/extract_fat_muzzle_fixture.py data/fatmuzzle_fixture.json
 	python3 tools/extract_fat_muzzle_fixture.py --header data/fatmuzzle_fixture.json $@
 # Player death/respawn (docs/JEFE_MISION1.md): tools/extract_death_fixture.py.
-$(BUILD_DIR)/death_fixture.h: tools/compile_death_fixture.py data/death_fixture.json
+$(BUILD_DIR)/death_fixture.h: tools/compile_death_fixture.py data/death_fixture.json data/form_death_fixture.json
 	python3 tools/compile_death_fixture.py
 # Respawn at the Mission 2 boss (B33, docs/JEFE_MISION2.md): tools/extract_respawn_fixture.py.
 $(BUILD_DIR)/respawn_fixture.h: tools/compile_respawn_fixture.py data/respawn_fixture.json
@@ -1813,7 +1813,7 @@ check-marco-campaign: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/marco_pose_meta
 $(BUILD_DIR)/character_fixture_c%.h: tools/extract_character_fixture.py data/character_fixture_c%.json
 	python3 tools/extract_character_fixture.py --from-json data/character_fixture_c$*.json --header $@
 .PHONY: check-characters check-pause
-check-characters: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/character_fixture_c1.h $(BUILD_DIR)/character_fixture_c2.h $(BUILD_DIR)/character_fixture_c3.h
+check-characters: $(BUILD_DIR)/marco_campaign.h $(BUILD_DIR)/death_fixture.h $(BUILD_DIR)/character_fixture_c1.h $(BUILD_DIR)/character_fixture_c2.h $(BUILD_DIR)/character_fixture_c3.h
 	@mkdir -p $(BUILD_DIR)/host $(BUILD_DIR)/chars
 	cp romfs/chars/c1.bin romfs/chars/c2.bin romfs/chars/c3.bin $(BUILD_DIR)/chars/
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc -Itools tools/test_character.c src/msx_character.c src/marco_visual.c src/marco_animation.c src/neo_animation.c src/marco_hgun.c src/marco_legs.c src/marco_death.c -o $(BUILD_DIR)/host/test_character

@@ -1,10 +1,10 @@
 {
- "_cart": "work-chars 0f35e18 (ccr 401875e + the Mission 6 rafts and actors, B70; cart 62111744 B, packs rebuilt), m1end built fresh; m6s1 runs with --jump 1.0 --continues, m6s2 with --fire --jump 2.5 --continues",
+ "_cart": "work-m4 9da158b (ccr a41e23a + work-m4 + work-m5 e13b3d9 + work-chars 786127a + work-audit 1727400; M5/M6 exports copied, M5 with the Slugnoid death palettes of capture SH; cart 63635456 B), m1end built fresh; new tests m6s1end, slugnoid",
  "chars": {
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 672,
+  "seconds": 419,
   "stopped": 0,
   "unsupported": 0
  },
@@ -12,7 +12,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 188,
+  "seconds": 147,
   "stopped": 0,
   "unsupported": 0
  },
@@ -20,7 +20,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 213,
+  "seconds": 141,
   "stopped": 0,
   "unsupported": 0
  },
@@ -28,23 +28,23 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 150,
+  "seconds": 124,
   "stopped": 0,
   "unsupported": 0
  },
  "m4boss": {
-  "missing_draw": 2061,
+  "missing_draw": 0,
   "missing_part": 2,
   "result": "PASS",
-  "seconds": 2260,
+  "seconds": 2990,
   "stopped": 0,
-  "unsupported": 6
+  "unsupported": 4
  },
  "m5boss": {
-  "missing_draw": 8,
+  "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 1575,
+  "seconds": 1384,
   "stopped": 0,
   "unsupported": 0
  },
@@ -52,7 +52,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 155,
+  "seconds": 137,
   "stopped": 0,
   "unsupported": 0
  },
@@ -60,7 +60,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 137,
+  "seconds": 134,
   "stopped": 0,
   "unsupported": 0
  },
@@ -68,7 +68,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 138,
+  "seconds": 137,
   "stopped": 0,
   "unsupported": 0
  },
@@ -76,15 +76,23 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 149,
+  "seconds": 133,
   "stopped": 0,
-  "unsupported": 4
+  "unsupported": 0
+ },
+ "m6s1end": {
+  "missing_draw": 0,
+  "missing_part": 2,
+  "result": "PASS",
+  "seconds": 1072,
+  "stopped": 0,
+  "unsupported": 0
  },
  "m6s2": {
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 142,
+  "seconds": 128,
   "stopped": 0,
   "unsupported": 0
  },
@@ -92,7 +100,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 151,
+  "seconds": 128,
   "stopped": 0,
   "unsupported": 0
  },
@@ -100,7 +108,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 66,
+  "seconds": 44,
   "stopped": 0,
   "unsupported": 0
  },
@@ -108,7 +116,15 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 77,
+  "seconds": 69,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "slugnoid": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 345,
   "stopped": 0,
   "unsupported": 0
  },
@@ -116,7 +132,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 452,
+  "seconds": 569,
   "stopped": 0,
   "unsupported": 0
  }

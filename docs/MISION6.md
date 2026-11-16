@@ -556,6 +556,88 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   arriba: `045428`/`045608` desde 322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4`
   desde 324938), una familia por ventana; (3) la huida `017624` y los créditos.
 
+## Etapa 2: el saltador `086712` (16-XI, agente G)
+
+- Guion `2E03DE` (`07 0c 05 00 00 c8`): constructor **`086712`** (también `08671A`, +8B bit 3, y `086728`, +8B bit 1: el que
+  anda hasta su +7E), 100 creaciones en la etapa (305250..320869). Código `086712..087C91` (sus hijos `087458` / `087460`
+  (disparos), `0876CC` (fogonazo) y `087716` (trozos) incluidos), traducido rutina a rutina en **`src/neo_m6enemy.c`**
+  (resumen en su cabecera): entrada `087838`, caída desde arriba `086868`, despertar `0867E8`, acostado `086938`, andar
+  `086A1C` / `086B52` / `086C5C`, giro `086B0E`, saltos `086CD8..086EB4` (cuatro tipos por +8B bits 6/7 y el azar), disparo
+  `086F4C..087008`, el andador `087066`, la cola común `08712E` / `08713E` / `087184`, las muertes `0871AA` / `0871D4` /
+  `087220` / `08728C` y la comprobación del cartucho `0873C0` (no se reproduce: en el original acaba en `004188`), las
+  llamadas de programa `087B84`, `087C0E`, `087C86`. Tablas en `region_rom.json` (grupo `m6`): `087C92..087E2F`,
+  `2D2C68..2D301F` y los mapas de celdas de las plataformas `0BE338` / `0BE34C` (las registra `0BE460`, sin portar; los
+  saltadores se suben a ellas). Programas en `extract_soldier_programs.py` (sin grupo; 20 nuevos).
+- Capturas **`captures-m6/fam/G`** (`runG.sh`: réplica de `run4` desde `sec10_304271`, raíces `86712,8671a,86728` de 305200 a
+  309000) y **`G2`** (`LOAD=at_312000 FROM=312000 LAST=316500 NAME=G2`); trazas en bruto borradas.
+- Familias (`make check`): **`m6jump`**: 131 nodos, **11 790 actualizaciones en lazo cerrado iguales a MAME** (305250..308998),
+  119 borrados, 11 671 dibujos; **`m6jump2`**: 58 nodos, **5099** (314429..316499). `--split-children` (los seis trozos de
+  `087C0E` caen en dos fotogramas). No vistos en las capturas (traducidos, sin prueba): la muerte por explosión `08728C`
+  (`0872FA`, `087362`, `08739C`, paleta 852) y `0869AC` / `0869E4`.
+- Sprites: `export_rest_sprites.py ... G@86712-87c91 G2@86712-87c91`: 508 880 píxeles iguales, 0 distintos; 311 descriptores
+  nuevos y 11 paletas (C0..C3, 188..18B, 868, 86B, 882). Sin ver: 852, 85F, 860, 86A.
+- Con esos 311 descriptores el paquete daba 1291 trozos (límite 1256): resuelto con el recorte de abajo. Copia de la
+  exportación M6 al día: `/home/user/captures-m6/fam/G/rest-native-m6jump.json` (privada).
+- **Plataforma `0BE460`** (`neo_m6enemy.c`, `pf_*`): programa 2A9626 / 2A9650 (la que baja), paleta 508, mapas de celdas
+  `0BE338` (grupo 3) / `0BE34C` por `0140C4` (0, −1). Familia **`m6plat`** (`captures-m6/fam/G3`, raíz `be460`, 305200..307500):
+  3 nodos, 1445 actualizaciones iguales a MAME.
+- **Jeep `0A2EFA` / `0A2F14`** (registro contado de la cámara 2672): entradas nuevas del jeep armado de la M3
+  (`neo_m3enemy.c`, +96 bits 0 / 0 y 1: el sello del desguace `0C88B0`). Familia **`m6jeep`** (`captures-m6/fam/G4`,
+  `LOAD=at_312000`, raíces `a2efa,a2f14,676a8,676b6`, 312000..314600; `--ram 10c72e-10d7b6` para la ventana de la capa que
+  lee el sello, `--soldier a3b50`): 5 nodos, 910 actualizaciones, 2 sellos iguales a MAME.
+- **Fin de la etapa 2**: la llamada `0BE888` de la lista `0BDCE2` (progreso 3952) crea `0BE8A2` (en `neo_world.c`, tras el
+  actor de guion como las demás llamadas: la inserción por prioridad 1C no se modela), que borra 10C716 y espera; el
+  registro contado `0BE8F6` (cámara 4240) pone 10C716 = 1 (`neo_ga_flags_t.m6_exit`); entonces `0BE8A2` crea la salida
+  `0B6ED2` en (11E0, 0038) de la raíz, +6E = `0BE89A`, +72 = 1220. La plataforma `08AFA8` (registro contado de 4101) es una
+  entrada nueva de la balsa `08AFB6` de la M3 (+6E = 0, +7F bits 2/3 sin poner); de paso, `08B090` guarda ahora `08B18A`
+  (el `bra 08B18E` del original) en +0 como MAME. Familia **`m6end2`** (`captures-m6/fam/G5`, `LOAD=at_321000`, raíces
+  `8afa8,be8a2,be8f6`, 321000..322330; el arnés lee y escribe 10C716): 5 nodos, 622 actualizaciones iguales a MAME,
+  incluida la salida. En ares la balsa de la etapa 2 toma además el camino `08B144` / `08B170` (+80 ≠ 0: la plataforma que
+  se hunde: programa `E539A[+6E]`, +34 = 100, `08B2DE` y `08B31A`), que `run4` no recorre: traducido sin prueba bit a bit
+  (antes era una parada explícita `8b144` que dejaba la etapa sin salida).
+- Pendientes vistos en ares (otras familias, sin tocar): paletas 21C (el jeep `0A2F2E` con +70 ≠ 0) y 214 (el soldado
+  `0413B0`, programa 24124C) sin exportar: dibujos contados como ausentes; paradas `413d4` / `40df0` del módulo de soldados.
+- Recorrido en ares (`test_mission6_ares.py --stage 2 --fire --jump 2.5 --up 1.5 --sweep 10 --continues --progress 4240
+  --next`; `--up` / `--sweep`, nuevos: disparos hacia arriba y paseo a izquierda y derecha, elección del jugador): con el
+  guion completo la cámara se retiene en 1104 (los saltadores sobre las plataformas), 2672 (el jeep) y 4240; el mando ciego
+  necesita ~60 min y muchas continuaciones.
+- Sin portar en la etapa 2 (registros no contados, el guion los salta contándolos): `032946` / `032AA4`, `0676A8` /
+  `0676B6` (los sellos `0C88B0` de 3600 / 3642, con `0C899E`; tablas `0E199E..0E1A5E`), y los actores de cabeza de la lista
+  `0BE02C..0BE27E` (con `0BE5E4`, `0BE592`, `0BE700`, `0BE7CC`).
+
+## Recorte del paquete de la M6 (16-XI, agente G; decisión del coordinador: no subir el límite)
+
+- Regla determinista (`tools/pack_mission.py`, `mission_descriptor_rule`, misiones en `TRIM` = {6}): un descriptor de la
+  exportación entra en el paquete salvo que **todos** los programas de animación que lo posan (`data/soldier_programs.json`,
+  órdenes POSE, también las de las tablas de poses) sean de un grupo que la misión no carga (`GROUPS[6]` = m3, m4, m5, m6;
+  un programa sin grupo está en `/programs.bin` y lo cargan todas). Los descriptores que ningún programa posa (dibujados por
+  código) se quedan. En la práctica salen los del grupo `m2`. La exportación `filesystem/mission6/rest-native.json` sigue
+  completa (copia propia); el recorte lo hace el empaquetador.
+- Prueba **`tools/check_mission_descriptors.py 6`** (en `make check`): todo descriptor que la M6 referencia (POSE de sus
+  programas cargables, más los exportados que ningún programa posa) y que está exportado está en las exportaciones de la
+  escena o en la tabla de actores de `romfs/mission6.pack`, y el paquete no lleva ninguno que la regla quite. Hoy: 11 911
+  referenciados y exportados, 0 fuera; 1505 referenciados que no se han exportado nunca (contados: en ejecución un dibujo
+  sin descriptor es una parada explícita).
+- Paquete con el saltador `086712` y la plataforma `0BE460`: **1090 trozos** (límite 1256; antes del recorte 1291).
+
+## Estado al cerrar la sesión del agente G (16-XI)
+
+- **Hecho**: etapa 2 con todos sus registros contados nativos (`086712`, `0A2EFA`, `08AFA8`, `0BE8F6`) y su fin (`0BE888` →
+  `0BE8A2` → `0B6ED2`), con pruebas bit a bit (`m6jump`, `m6jump2`, `m6plat`, `m6jeep`, `m6end2`); paquete M6 recortado por
+  regla (1090 trozos) con `check_mission_descriptors.py`. Commits `412191c`, `8560a6b`, `8a13e09` en `work-chars`.
+- **ares** (`m6s2end` en `regression_ares.py`, sin tocar la línea base): en una pasada de 75 min el mando ciego llegó a la
+  cámara 4240, `0BE8F6` puso 10C716 y la salida `0B6ED2` se creó (manos de los jugadores cambiadas), pero el jugador no podía
+  salir de la pantalla (recorte `end_x` con el máximo de cámara observado, 4240): corregido en `clamp_feet` (bajo 10C00B
+  hasta el final de la rejilla). En la pasada siguiente el mando perdió todas las vidas ante los tanques de 3872: **falta
+  ver la etapa 2 terminada en ares** (repetir `m6s2end`; es variación del mando, no del juego).
+- **Falta** (por orden): (1) `m6s2end` en verde; (2) la etapa 3: `04153E` y sus 45 constructores (plan de ventanas de arriba:
+  `045428`/`045608` desde 322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4` desde 324938);
+  (3) la huida `017624`, el final y los créditos; (4) los no contados de la etapa 2 (`032946`, `0676A8` / `0676B6`, cabeza
+  de lista `0BE02C..0BE27E`) y las paletas 214 / 21C / 852 / 85F / 860 / 86A.
+- La exportación M6 al día (privada) está en `filesystem/mission6/rest-native.json` de `ws-chars` y en
+  `/home/user/captures-m6/fam/G/rest-native-m6jump.json`: **el coordinador debe copiarla a `ws-logo`** al fusionar y rehacer
+  `build_packs.py 6`.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

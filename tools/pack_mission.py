@@ -90,11 +90,31 @@ def actor_frames(mission):
         assert f['descriptor'] not in known or known[f['descriptor']] is None or known[f['descriptor']]['pens_hex']==f['pens_hex'],('descriptor differs from the scene pack',f['descriptor'])
     for k,v in m['palettes'].items():assert have.get(k,v)==v,('palette differs from the scene pack',k)
     frames=[f for f in m['frames'] if f['descriptor'] not in known]
+    if mission in TRIM:   # only the descriptors this mission can draw (mission_descriptor_rule)
+        keep=mission_descriptor_rule(mission)
+        frames=[f for f in frames if keep(int(f['descriptor'],16))]
     empty=[e for e in m.get('empty',[]) if e not in known and e not in {f['descriptor'] for f in frames}]
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
 # Mission 4 shares enemies with Mission 3 (grenadiers, shield soldiers, the bomber's family...): its pack carries both groups.
 GROUPS={2:('m2',),3:('m3',),4:('m3','m4'),5:('m3','m5'),6:('m3','m4','m5','m6')}   # Mission 6 stage 1: the rafts, the bridge spans and the bridge's collision map ('m6'); Mission 5 uses the Mission 3 soldiers 05C53C and their weapons too
+# Missions whose pack carries only the descriptors the mission can draw (docs/MISION6.md "Recorte"): Mission 6's export
+# keeps the actors of Missions 2..5 (each export does) and its pack did not fit SCENE_MISSION_CHUNKS_MAX with them.
+TRIM={6}
+def mission_descriptor_rule(mission):
+    """The deterministic rule of a trimmed pack: a descriptor stays unless every animation program that poses it
+    (data/soldier_programs.json, POSE commands, also those of a pose table) belongs to a group the mission does not load
+    (GROUPS[mission]; a program without a group is in /programs.bin, loaded by every mission). Descriptors no program
+    poses (drawn by code) always stay."""
+    sp=json.loads((ROOT/'data/soldier_programs.json').read_text())
+    posed=set();usable=set()
+    for prog in sp['programs']:
+        ok=prog.get('group') is None or prog['group'] in GROUPS[mission]
+        for c in prog['commands']:
+            if c['kind']=='POSE':
+                posed.add(c['asset'])
+                if ok:usable.add(c['asset'])
+    return lambda d:d not in posed or d in usable
 def c_layer(patch):
     layers={c['layer'] for c in patch['cells']};assert len(layers)==1;return layers.pop()
 def anim_kinds():

@@ -56,7 +56,7 @@ typedef struct {
 #if (defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS)) && !defined(FAMILY_RESERVE)
 #define FAMILY_RESERVE 1   /* the Mission 4 and 5 bosses: 0040BC with its reserve */
 #endif
-#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS) || defined(FAMILY_M6BRIDGE)
+#if defined(FAMILY_M3MID) || defined(FAMILY_RAM_CREATORS) || defined(FAMILY_M4BOSS) || defined(FAMILY_M5BOSS) || defined(FAMILY_M6BRIDGE) || defined(FAMILY_M6RING)
 static uint8_t wram[0x10000];   /* tentative: the RAM image below */
 #endif
 #define STR2(a) #a
@@ -165,7 +165,7 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
         return true;
     }
 #endif
-#if defined(FAMILY_M6BRIDGE) && defined(FAMILY_RAM)
+#if (defined(FAMILY_M6BRIDGE) || defined(FAMILY_M6RING)) && defined(FAMILY_RAM)
     /* Mission 6: the bridge layer 10D7B6 the spans hang on (as read). */
     if (tag==0x10d7b6u) {
         #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
@@ -601,6 +601,20 @@ static bool soldier_modelled(unsigned o) {
     return o<4u || o==0x15 || o==0x17 || o==0x18 || o==0x1e || o==0x1f || (o>=0x24 && o<0x44) || (o>=0x4c && o<0x54) || (o>=0x5a && o<0x60) ||
         (o>=0x62 && o<0x6a) || (o>=0x6c && o<0x94);
 }
+/* The soldier's 03C52C (0AEF30): the ripple 03C62A after the soldier when 019240
+ * gives the stage a palette (neo_gate_ripple, as neo_world.c does). */
+static neo_gactor_t *soldier_event_actor;static neo_genv_t *soldier_event_env;
+static void soldier_event(void *context,const neo_soldier_event_t *ev) {
+    (void)context;
+    if (ev->kind==NEO_SOLDIER_EVENT_RIPPLE) neo_gate_ripple(soldier_event_actor,soldier_event_env,ev->value);
+    if (ev->kind==NEO_SOLDIER_EVENT_BOMB) {   /* 03C13E, as neo_world.c */
+        neo_genv_t *e=soldier_event_env;
+        neo_gactor_t *c=e->spawn?e->spawn(e->ctx,NULL,0x3c16c,true):NULL;
+        if (!c) return;
+        ga_place_at_words(c,e,(uint32_t)ev->actor.projected_x,(uint32_t)ev->actor.projected_y,(uint32_t)ev->actor.cached_x,(uint32_t)ev->actor.cached_y,0,0x14);
+        ga_sb(c,0x15,(uint8_t)(ev->actor.flags15&3u));ga_sb(c,0x68,(uint8_t)ev->value);
+    }
+}
 static ga_result_t soldier_tick_node(neo_gactor_t *a,neo_genv_t *e,const family_update_t *u) {
     neo_soldier_t s;memset(&s,0,sizeof(s));s.active=true;s.routine=ga_l(a,0);
     neo_contact_actor_t *b=&s.b;
@@ -619,10 +633,11 @@ static ga_result_t soldier_tick_node(neo_gactor_t *a,neo_genv_t *e,const family_
     if (!ga_parent(e,0x10e968u,&env.root)) memset(&env.root,0,sizeof(env.root));
     env.terrain.tag=0x10c72eu;env.root.tag=0x10e968u;
     static neo_contact_parent_t sdyn[NEO_KDYN_COUNT];
-    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) sdyn[i]=(neo_contact_parent_t){NEO_DYN_TAG(i),e->kernel->dyn[i].pos.x,e->kernel->dyn[i].pos.y,e->kernel->dyn[i].pos.prev_x,e->kernel->dyn[i].pos.prev_y,0};
+    for (unsigned i=0;i<NEO_KDYN_COUNT;i++) sdyn[i]=(neo_contact_parent_t){NEO_DYN_TAG(i),e->kernel->dyn[i].pos.x,e->kernel->dyn[i].pos.y,e->kernel->dyn[i].pos.prev_x,e->kernel->dyn[i].pos.prev_y,dynram[i*64u+0x25u]};   /* +25 as read (01AC00) */
     env.dyn=sdyn;
     env.epoch=e->epoch;env.players=e->players;env.grid=e->grid;env.rng=e->rng;env.bounds=e->bounds;
     env.camera_word=(uint16_t)((uint32_t)e->scroll_x>>16);env.program=program;
+    soldier_event_actor=a;soldier_event_env=e;env.event=soldier_event;
 #ifdef FAMILY_RAM
     env.slot_word[0]=w16(0x10c608);env.slot_word[1]=w16(0x10c62c);   /* --ram 10c608-10c62e */
 #endif
@@ -651,7 +666,8 @@ static ga_result_t soldier_tick_node(neo_gactor_t *a,neo_genv_t *e,const family_
         s.anim.timer=t24;s.anim.speed=t26;
         s.f5b=ga_b(a,0x5b);s.f5c=ga_b(a,0x5c);s.f5d=ga_b(a,0x5d);s.f5e=ga_b(a,0x5e);   /* not cleared by 003F24 either */
     } else r=neo_soldier_tick(&s,&env);
-    if (r==NEO_SOLDIER_UNSUPPORTED) {fprintf(stderr,"soldier unsupported: routine %05x line %u\n",(unsigned)s.routine,neo_soldier_unsupported_line);ga_fail(e,s.routine);return GA_UNSUPPORTED;}
+    if (env.wrote400a && e->flags) {e->flags->ram400a=env.ram400a;e->flags->wrote400a=1;}
+    if (r==NEO_SOLDIER_UNSUPPORTED) {fprintf(stderr,"soldier unsupported: routine %05x line %u detail %08x\n",(unsigned)s.routine,neo_soldier_unsupported_line,(unsigned)neo_soldier_unsupported_detail);ga_fail(e,s.routine);return GA_UNSUPPORTED;}
     ga_sl(a,0,s.routine);
     ga_sl(a,0x28,(uint32_t)b->x);ga_sl(a,0x2c,(uint32_t)b->y);ga_sl(a,0x30,(uint32_t)b->vx);ga_sl(a,0x34,(uint32_t)b->vy);ga_sl(a,0x62,(uint32_t)b->scalar62);
     ga_sl(a,0x3c,(uint32_t)b->projected_x);ga_sl(a,0x40,(uint32_t)b->projected_y);ga_sl(a,0x44,(uint32_t)b->cached_x);ga_sl(a,0x48,(uint32_t)b->cached_y);
@@ -916,6 +932,16 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         for (int i=0;i<u->ram_in_count;i++) wram[RAMIN[u->ram_in_first+i][0]&0xffffu]=(uint8_t)RAMIN[u->ram_in_first+i][1];
         e.player_ylow[0]=w16(0x101506);   /* RAM 101506 (--ram 101500-101508): player 1 +42 */
         memcpy(wexpect,wram,sizeof(wram));
+#endif
+#if defined(FAMILY_M6RING) && defined(FAMILY_RAM)
+        /* Mission 6 stage 1: the bridge 10D7B6 (+14..+20) and its ring 10D83E as read. */
+        {const uint8_t *b=&wram[0xd7b6];
+         #define L32(p) ((int32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+         kernel.train_on=true;kernel.bridge_raw=true;kernel.train=(neo_kobj_t){L32(b+0x14),L32(b+0x18),L32(b+0x1c),L32(b+0x20)};
+         #undef L32
+         kernel.train_ring=&wram[0xd83e];}
+#endif
+#ifdef FAMILY_RAM
         for (int i=0;i<u->ram_out_count;i++) wexpect[RAMOUT[u->ram_out_first+i][0]&0xffffu]=(uint8_t)RAMOUT[u->ram_out_first+i][1];
         ram_to_env(&weapons);
         /* Player 1's fields of the weapon block's routines (marco_weapon_player_t) from its node as read. */
@@ -1007,7 +1033,12 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]) && i<8;i++) nf_before[i]=ga_l(a,nf[i]);}
 #endif
 #ifdef FAMILY_SOLDIER_NODES
-        ga_result_t r=soldier_node(ga_l(a,0))?soldier_tick_node(a,&e,u):neo_region_tick(a,&e);
+        /* A death routine 040500..040FFF is the soldier module's only for a
+         * node that began as a soldier (0AE000..0B0FFF); the generic enemies
+         * (08A7AE, 09AE9A: neo_m3enemy.c) run the same deaths on their node. */
+        uint32_t first=NODES[u->node].routine;
+        bool as_soldier=soldier_node(ga_l(a,0)) && first>=0xae000u && first<0xb1000u;
+        ga_result_t r=as_soldier?soldier_tick_node(a,&e,u):neo_region_tick(a,&e);
 #else
         ga_result_t r=neo_region_tick(a,&e);
 #endif

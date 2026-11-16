@@ -519,7 +519,7 @@ static void k1382a(kr_t *k) {
     if (k->iterator==0) {k->iterator=1;k->a1=NEO_KOBJ_TERRAIN;return;}
     if (k->iterator==1 && k->s->train_on) {
         k->iterator=2;
-        if (k->s->bridge_ring) {k->a1=NEO_KOBJ_TRAIN;return;}   /* 0BC6E6 +C = 0: 01384E returns it */
+        if (k->s->bridge_ring || k->s->bridge_raw) {k->a1=NEO_KOBJ_TRAIN;return;}   /* 0BC6E6 +C = 0: 01384E returns it */
         /* 01384E..013896: (+34 - 0x11 + 1) * 16 + y; the rows 7*16 above */
         int d6=(int16_t)(uint16_t)((19-0x11+1)*16+(int16_t)(uint16_t)((uint32_t)k->s->train.y>>16));
         if (!(d6<k->qy0) && !((int16_t)(d6-7*16)>k->qy1)) {k->a1=NEO_KOBJ_TRAIN;return;}

@@ -511,6 +511,33 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
   disco libre (1,6 GB): se hará por ventanas (`runB2.sh` con `FROM` / `LAST` y raíces por rama: `045428`/`045608` desde
   322504, `0431E0`/`0436B6` desde 323520, `037404` desde 324636, `04307E`/`0438A4` desde 324938), una familia por ventana.
 
+## `040920` con prueba bit a bit (16-XI, agente C)
+
+- Captura **`captures-m6/fam/S`** (`runS.sh`: réplica de `run4` desde `sec09_292683`, raíces
+  `af1c4,af17e,8a732,9ae1e,9ae2c,9ba2a,3c16c` de 294380 a 295900; traza en bruto borrada al tener fixture). `fam/Z`
+  borrada: las 128 pasadas de `040920` que contaba (nodos 102754, 102804, 104174, 102494, 102CD4) son de los rebeldes
+  `0AF1C4` / `0AF17E`, del granadero `08A732` y del soldado del escudo `09AE2C`.
+- Familia **`m6reb`** (`make check`): **61 nodos, 4668 actualizaciones en lazo cerrado iguales a MAME** (294407..295899),
+  59 borrados, 1006 dibujos; contiene las 128 pasadas de `040920`. Lo que hizo falta, todo traducido de la ROM:
+  - `019240` entero (`neo_gate.c`, tabla de 45 entradas `01924A`): D0 (onda) y D1 (chapoteo) con acarreo; la etapa 9
+    (`01932E`) da 14E / 154 antes de la cámara 0700 y 165 / 166 después. Antes se paraba la onda `03C62A` de la M6
+    (`mission > 8`); ahora solo se para fuera de la tabla.
+  - `004C24` con `+50` = 0 (`ga_register`): no registra pero responde por `+5A` (`004DA6`, D2/D3 = 0). Antes devolvía
+    «sin golpe» (el soldado del escudo roto `09B4F8` borra `+50` y luego mira `09CDB8`).
+  - Las llamadas de programa `04061C..0406A0` (`NEO_ANIM_REPLACE_PALETTE`) en nodos genéricos: `009F88` (`+1D` = 0)
+    y `009EA8` del recurso (antes solo cambiaban el recurso; `+1D` quedaba en 2).
+  - La bomba de los rebeldes **`03C16C`** (`03C13E` de sus programas; `neo_m3enemy.c` `bomb_tick`, evento
+    `NEO_SOLDIER_EVENT_BOMB` en `neo_world.c`): `03C16C` / `03C1D6` / `03C296`, tablas `2D3D9A` y `03C11E` /
+    `03C12E` en `region_rom.json`, programa `23F39A` (`extract_soldier_programs.py`). `ga_place_at_words` = `01ACF2`
+    desde las palabras de un soldado (con fracción y posición previa).
+  - El módulo de soldados deja `10C00A` como el último barrido (`0128DA` 0, `0143CC` FF), para la prueba.
+  - Arnés (`test_neo_family.c`, `compile_family_fixture.py`): `--m6ring` (el puente `10D7B6` y su anillo `10D83E`
+    como se leyeron; `neo_kscene_t.bridge_raw`), `--group-map bc67c` (mapa de grupos de la etapa, 8 bytes de la ROM
+    en `region_rom.json`), la corrección `+25` de los objetos dinámicos para los soldados (`01AC00`), la onda
+    `03C52C` y la bomba de los soldados por sus eventos, y la muerte `040500..040FFF` va al módulo de soldados solo
+    si el nodo nació soldado (el granadero y el del escudo mueren en su nodo genérico). Las manchas de sangre
+    `040F60` / `040F88` son registros de salpicadura del mundo: fuera del rango de la familia.
+
 ## Pendiente (fase 2, por orden)
 
 1. **Etapa 1**: hecho (balsas, conductor, actores del puente y el objeto de núcleo `10D7B6` con su anillo; arriba).

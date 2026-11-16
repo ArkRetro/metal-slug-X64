@@ -387,6 +387,8 @@ ROOTS=ROOTS+(0x22fbea,0x22fc02,0x22fc4a,0x22fc92,0x22fbf6,0x22fc26,0x22fc6e,0x22
 RESOURCES=RESOURCES+(0x74,0x75,0x76,0x77)
 # Mission 6 stage 1: the large rock 01FBAC (74) of the hatch 01F836.
 ROOTS=ROOTS+(0x22fa34,)
+# The soldiers' bomb 03C16C (palette 20E) of the Mission 6 stage 1 rebels (03C13E).
+ROOTS=ROOTS+(0x23f39a,)
 # Mission 4 jumping soldier 07E554 and its piece 07EC6A (379), the dust 07EDF0 (22DF54, splash palette 150).
 ROOTS=ROOTS+(0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a,0x22df54)
 RESOURCES=RESOURCES+(0x379,0x150)

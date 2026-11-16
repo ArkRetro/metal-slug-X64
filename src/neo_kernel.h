@@ -66,6 +66,8 @@ typedef struct {
      * vertical test in 01384E) with its ring as the loaders left it
      * (neo_m6bridge.h); train_on with train = its position. NULL: the train. */
     const struct neo_m6ring *bridge_ring; const struct neo_m6map *bridge_map;
+    /* The family tests: the bridge with its RAM ring as the original read it (train_ring). */
+    bool bridge_raw;
 } neo_kscene_t;
 /* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
  * row 0 at the bottom); 0 outside. */

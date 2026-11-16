@@ -367,7 +367,9 @@ bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
 typedef struct {neo_gactor_t *a;neo_genv_t *e;ga_call_t call;bool fail;neo_anim_state_t *s;uint32_t missing;} anim_ctx_t;
 static bool ev(void *context,neo_anim_kind_t kind,uint32_t asset,neo_anim_render_t *render) {
     anim_ctx_t *c=context;(void)render;
-    if (kind==NEO_ANIM_REPLACE_PALETTE) {c->a->palette[0]=(uint16_t)asset;return true;}
+    /* 04061C..0406A0: 009F88 releases the node's palettes (+1D = 0), then
+     * 009EA8 takes the asset in slot 0 (+19, +14, +1D = 1). */
+    if (kind==NEO_ANIM_REPLACE_PALETTE) {ga_sb(c->a,0x1d,0);ga_palette(c->a,(uint16_t)asset);return true;}
     if (c->call && c->call(c->a,c->e,kind,asset,0)) return true;
     c->missing=asset;return false;
 }
@@ -469,7 +471,9 @@ uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     return r;
 }
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
-    if (!ga_l(a,0x50)) return false;
+    /* 004C2C: no hurtbox (+50 = 0) registers nothing but still answers
+     * from +5A (004DA6). */
+    if (!ga_l(a,0x50)) goto hit;
     /* 004BAC: while RAM 1067E2 is set every body whose descriptor class is
      * not 1 dies instead of registering. */
     if (e->kill_all) {
@@ -478,6 +482,8 @@ bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
     }
     if (e->register_box) e->register_box(e->ctx,a);
 hit:
+    if (dx) *dx=0;
+    if (dy) *dy=0;
     if (!ga_b(a,0x5a)) return false;
     if (dx) *dx=(int16_t)((int8_t)ga_b(a,0x5c)*2);
     if (dy) *dy=(int16_t)((int8_t)ga_b(a,0x5d)*2);
@@ -556,11 +562,14 @@ void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy) {
     *vx=(uint32_t)((int32_t)w*ga_cosine(angle));
 }
 void ga_place_at(neo_gactor_t *a,const neo_gactor_t *s,neo_genv_t *e,int16_t dx,int16_t dy) {
+    ga_place_at_words(a,e,ga_l(s,0x3c),ga_l(s,0x40),ga_l(s,0x44),ga_l(s,0x48),dx,dy);
+}
+void ga_place_at_words(neo_gactor_t *a,neo_genv_t *e,uint32_t x3c,uint32_t y40,uint32_t x44,uint32_t y48,int16_t dx,int16_t dy) {
     neo_contact_parent_t root;
     if (!ga_parent(e,ROOT_TAG,&root)) return;
     uint32_t ox=(uint32_t)(int32_t)dx<<16,oy=(uint32_t)(int32_t)dy<<16;
-    uint32_t d0=ox+ga_l(s,0x3c)-(uint32_t)root.x,d1=oy+ga_l(s,0x40)-(uint32_t)root.y;
-    uint32_t d2=ox+ga_l(s,0x44)-(uint32_t)root.previous_x,d3=oy+ga_l(s,0x48)-(uint32_t)root.previous_y;
+    uint32_t d0=ox+x3c-(uint32_t)root.x,d1=oy+y40-(uint32_t)root.y;
+    uint32_t d2=ox+x44-(uint32_t)root.previous_x,d3=oy+y48-(uint32_t)root.previous_y;
     ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d0-d2);ga_sl(a,0x34,d1-d3);ga_sl(a,0x38,ROOT_TAG);
     ga_project(a,e);
 }

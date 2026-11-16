@@ -276,7 +276,7 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
     }
     case NEO_SOLDIER_EVENT_RIPPLE: { /* 03C52C: 019240, then 0040BC of 03C62A after the soldier, +6E = 2 */
         if (t->event_soldier<0 || t->current<0) break;
-        if (t->genv.pickup && t->genv.pickup->mission>8u) {w->unsupported++;w->unsupported_routine=0x19240;break;}   /* 01926E: 013D1A */
+        if (t->genv.pickup && t->genv.pickup->mission>44u) {w->unsupported++;w->unsupported_routine=0x19240;break;}   /* past the table 01924A */
         if (!neo_gate_ripple_palette(&t->genv)) break;
         unsigned i=(unsigned)t->event_soldier;
         neo_gactor_t *c=ga_insert(t,t->current,0x3c62a,SOLDIER_TAG(w,i),w->soldiers[i].variant68);
@@ -297,6 +297,13 @@ static void soldier_event(void *context,const neo_soldier_event_t *e) {
         int32_t rx=HI(w->root.x),ry=HI(w->root.y);
         ga_place(c,&t->genv,(int16_t)(HI(e->actor.projected_x)-rx),(int16_t)(HI(e->actor.projected_y)+0x2c-ry),0x10e968u);
         ga_sb(c,0x15,(uint8_t)(e->actor.flags15&3u));
+        break;
+    }
+    case NEO_SOLDIER_EVENT_BOMB: { /* 03C13E: the bomb 03C16C after the script actor, 01ACF2 (0, 14), 01AC94, +68 */
+        neo_gactor_t *c=g_spawn(t,NULL,0x3c16c,true);
+        if (!c) break;
+        ga_place_at_words(c,&t->genv,(uint32_t)e->actor.projected_x,(uint32_t)e->actor.projected_y,(uint32_t)e->actor.cached_x,(uint32_t)e->actor.cached_y,0,0x14);
+        ga_sb(c,0x15,(uint8_t)(e->actor.flags15&3u));ga_sb(c,0x68,(uint8_t)e->value);
         break;
     }
     case NEO_SOLDIER_EVENT_DEATH_CHILD: { /* 040ED0 / 040F04: immediate child 040F88 / 040F60 (value 1) */

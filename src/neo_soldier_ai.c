@@ -64,6 +64,7 @@ static bool sweep(ctx_t *c,const neo_contact_request_t *r,uint32_t mode4004,uint
     uint8_t parent=kobj(r->parent_tag);
     if (parent==0xff) {UNSUPPORTED_AT();return false;}
     neo_kreq_t q={r->x,r->y,r->dx,r->dy,parent,mode4004,b4008,b4009,b400a,0,0};
+    c->e->ram400a=b400a;c->e->wrote400a=true;
     neo_kres_t k;
     if (!neo_kernel_sweep(c->e->kernel,&q,&k)) {UNSUPPORTED_AT();return false;}
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,ktag(k.parent),k.kind,k.flags};
@@ -102,6 +103,7 @@ static bool query(ctx_t *c,int32_t x,int32_t y,int32_t dx,int32_t dy,uint8_t b40
     neo_contact_actor_t *a=&c->s->b;uint8_t parent=kobj(a->parent_tag);
     if (parent==0xff) {UNSUPPORTED_AT();return false;}
     neo_kreq_t q={x,y,dx,dy,parent,0,(uint8_t)(a->flags15&32u?0:255),b4009,0,0,0};
+    c->e->ram400a=0;c->e->wrote400a=true;   /* 0128DA */
     if (!neo_kernel_sweep(c->e->kernel,&q,k)) {UNSUPPORTED_AT();return false;}
     return true;
 }
@@ -180,6 +182,10 @@ static bool call(void *context,uint32_t routine,uint16_t parameter,neo_anim_rend
     case 0x3c2de: { /* the grenade 03C306 (00411C after the script actor, 01ACF2 (0, 2C), 01AC94: facing bits 0..1) */
         neo_contact_actor_t seed=s->b;seed.flags15=(uint8_t)render->attributes;
         event(c,NEO_SOLDIER_EVENT_GRENADE,0,&seed);return true;
+    }
+    case 0x3c13e: { /* the bomb 03C16C (00411C after the script actor, 01ACF2 (0, 14), 01AC94: facing bits 0..1, +68 copied) */
+        neo_contact_actor_t seed=s->b;seed.flags15=(uint8_t)render->attributes;
+        event(c,NEO_SOLDIER_EVENT_BOMB,s->variant68,&seed);return true;
     }
     case 0xaef14: /* knife: 0049E8 with ROM 0AE980, sound 10FA on any hit. */
         if (hit_player(c,soldier_attack_knife,true)) event(c,NEO_SOLDIER_EVENT_SOUND,0x10fa,NULL);
@@ -1374,6 +1380,7 @@ static bool aef30(ctx_t *c) {
     } else {
         /* 0146E8 floor search, then projection. */
         neo_kfloor_t fl;
+        e->ram400a=0;e->wrote400a=true;   /* 0146E8: 0128DA */
         if (!neo_kernel_floor(e->kernel,s->b.x,s->b.y,kobj(s->b.parent_tag),(int32_t)0xff000000,
             (uint8_t)(s->b.flags15&32u?0:255),0,0,&fl)) return false;
         s->b.kind_angle=(uint16_t)(fl.kind>>8);s->b.x=fl.x;s->b.y=fl.y;s->b.vx=0;s->b.vy=0;s->b.parent_tag=ktag(fl.parent);
@@ -1429,6 +1436,7 @@ static void ctor_4115a(ctx_t *c) {
     if (!W(0x6e)) {s->routine=0x412e0;return;}
     if (W(0x76)) {
         neo_kfloor_t fl;
+        c->e->ram400a=0;c->e->wrote400a=true;   /* 0146E8: 0128DA */
         if (!neo_kernel_floor(c->e->kernel,s->b.x,s->b.y,kobj(s->b.parent_tag),(int32_t)0xff000000,
             (uint8_t)(s->b.flags15&32u?0:255),0,0,&fl)) {UNSUPPORTED_AT();return;}
         s->b.kind_angle=(uint16_t)(fl.kind>>8);s->b.x=fl.x;s->b.y=fl.y;s->b.vx=0;s->b.vy=0;s->b.parent_tag=ktag(fl.parent);

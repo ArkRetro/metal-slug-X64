@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 names=set()
 for f in ('src/msx_sfx.c','src/msx_sfx_policy.h'):
-    names|=set(re.findall(r'\{0x[0-9a-fA-F]+,MSX_SFX_CH_\w+,\d+,"([^"]+)"\}',(ROOT/f).read_text()))
+    names|=set(re.findall(r'\{0x[0-9a-fA-F]+,[^"\n]*"([^"]+)"\}',(ROOT/f).read_text()))
 d=Path(sys.argv[1])
 missing=sorted(n for n in names if not (d/(n+'.wav64')).exists())
 if missing:

@@ -481,6 +481,9 @@ RESOURCES=RESOURCES+(0x107,0x149,0x108,0x11e,0x11f,0x120,0x18c,0x18d,0x18e,0x135
 # Mission 6 stage 1 rafts 0BD822.. (floats 2A953E: 4CB / 4CC / 4CD; pictures 0BDA4E 2A954E: 509), decorations 0BD416..0BD4D4
 # (2A946C 4D4, 2A947C 4D5, 2A948C 50B, 2A949C 4DF, 2A94B4 11D) and 0BDAB8 (2A95A4, no pose) (neo_m6props.c).
 ROOTS=ROOTS+(0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4)
+# The smoke 05A0B4 of the player's death of kind 8 (program 25339C, palette 0x204; MAME k8s1:
+# docs/ANIMACIONES_DANO.md). In the scene export (filesystem/rest-native.json): every mission has it.
+ROOTS=ROOTS+(0x25339c,)
 RESOURCES=RESOURCES+(0x4cb,0x4cc,0x4cd,0x509,0x4d4,0x4d5,0x50b,0x4df,0x11d)
 DRAWN_7A=(0x29fb62,)
 def main():
@@ -496,10 +499,13 @@ def main():
     # 29e100-29f000: Tarma's Slugnoid pilot, table 09649C[1], validated against the TAS capture slugair
     # without entering the default export: docs/ANIMACIONES_DANO.md 7).
     p.add_argument('--roots-from',action='append',default=[],metavar='LO-HI')
+    # --only: just the programs of --roots-from (not ROOTS); with --keep, the kept export plus their
+    # descriptors (one actor added to an export without the roots other branches added since).
+    p.add_argument('--only',action='store_true')
     a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     spans=[tuple(int(x,16) for x in r.split('-')) for r in a.roots_from]
-    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS or any(lo<=q['root']<hi for lo,hi in spans)]
+    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if (q['root'] in ROOTS and not a.only) or any(lo<=q['root']<hi for lo,hi in spans)]
     assets=[]
     for prog in progs:
         for c in prog['commands']:
@@ -537,6 +543,7 @@ def main():
             if rid in RESOURCES:palettes.setdefault(rid,collections.Counter())[tuple(rgba16(pw[slot*16:slot*16+16]))]+=1
     pal_out={hex(k):list(c.most_common(1)[0][0]) for k,c in sorted(palettes.items())}
     kept_frames={}
+    kept_empty=[]
     for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
         if not keep.exists():continue
         prev=json.loads(keep.read_text())
@@ -544,14 +551,15 @@ def main():
             if a.keep_palettes:pal_out[k]=v
             else:pal_out.setdefault(k,v)
         for f in prev.get('frames',[]):kept_frames.setdefault(f['descriptor'],f)
+        kept_empty+=[e for e in prev.get('empty',[]) if e not in kept_empty]
         pal_out=dict(sorted(pal_out.items(),key=lambda kv:int(kv[0],16)))
     stats=collections.Counter();per=[]
     for capture,nodes in caps:validate(capture,nodes,descs,crom,stats,per)
     frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
     have={f['descriptor'] for f in frames}
-    frames+=[f for d,f in sorted(kept_frames.items(),key=lambda kv:int(kv[0],16)) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
+    frames+=[f for d,f in (kept_frames.items() if a.only else sorted(kept_frames.items(),key=lambda kv:int(kv[0],16))) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
-        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
+        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']]+[e for e in kept_empty if int(e,16) not in descs],
         missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(out,separators=(',',':'))+'\n')
     report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)

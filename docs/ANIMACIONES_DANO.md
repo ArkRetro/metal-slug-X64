@@ -39,7 +39,7 @@ Las ramas `0C2E44`/`0C2DDA` llaman a `0C4C28` (solo Fio: el actor `0C4C64`).
 | Tarma | las mismas, columna 1 | nativo (pack `c1.bin`) | `check-characters`: captura `c1d1` (`--character 1 --hit`), 51 poses, fin, vida nueva, entrada: **0 distintos** | auditoría `c1d1`: PASS 168 fotogramas, 21 descriptores, 93 578 píxeles | `1087`: gemelo de `1123` en el controlador Z80 (§7, AUDIO_JUEGO §19), voz 2 | tipos 2/7/aire sin captura |
 | Eri | columna 2 | nativo (`c2.bin`) | `c2d1`: 57 poses, 0 distintos | `c2d1`: PASS 180 fotogramas, 19 descriptores, 69 850 píxeles | 1125 suena | tipos 2/7/aire sin captura |
 | Fio | columna 3 | nativo (`c3.bin`); su actor `0C4C64` **nativo (agente E)**: `0C4C28` desde `0C2E74` (tipos que llegan a `0C2E44`), hijo tras el jugador por `01ACF2` (8 hacia delante, 0x20) y `01AC94`, programa `253322` a velocidad 0, paleta 5, `+30` = la del jugador ± 1, `0C4CBA` (`marco_death_cap_*`, `neo_effects.c`) | `c3d1`: 57 poses, 0 distintos; actor: captura `c3d2` (`--child-routines c4c64,c4cba`), `make check-core` `fio_cap`: 85 actualizaciones, 169 velocidades, 85 `+26`, cuenta final `+80`/`+5F`, desaparición: **0 distintos** | `c3d1`: PASS 180 fotogramas; sprites `1A5A6A..1A5AD8` del actor sin comprobar en los exports | 114E suena | colocación inicial (`01ACF2`) no comparada; sprites del actor |
-| Marco | tipo 8 `0C2ACC` → `0C2B8A` | **nativo (agente E)**: programa `0BF398` (`25032A`, poses con paleta `+19`/`+1A`), siempre el paso aéreo `0143EE`, `+34 += (−0x16 − +34) >> 6`, `+30 −= >> 6`, `+78 = 0` en el suelo, sin rampa de `+26`; con `+5B` bit 7 el giro se queda (`0C2B68` borra el bit 1, no el 0); la llamada `05A09E` del programa crea el humo `05A0B4` (programa `25339C`, paleta 0x204, sobre el bloque `+28` del jugador, `neo_effects.c`) | `death`: captura `k8d1` (`--hit 400:8`), 118 actualizaciones, 75 poses, 15 dibujos tumbado, fin y vida nueva: **0 distintos** | auditoría `k8d1`: PASS 216 fotogramas, 16 descriptores, 102 512 píxeles; **las poses `18CF86..18CFE0` no están en el catálogo** (se mantiene la anterior) | 1123 | catálogo y paletas `+1A` = `0BEDE0` (0x53) / `+1B` = 0x51; el deslizamiento por el suelo tras aterrizar es el `0143EE` compartido del port (no comparado: la prueba usa el movimiento de la captura); humo `05A0B4` sin prueba bit a bit ni sprites en los exports |
+| Marco | tipo 8 `0C2ACC` → `0C2B8A` | **nativo (agente E)**: programa `0BF398` (`25032A`, poses con paleta `+19`/`+1A`), siempre el paso aéreo `0143EE`, `+34 += (−0x16 − +34) >> 6`, `+30 −= >> 6`, `+78 = 0` en el suelo, sin rampa de `+26`; con `+5B` bit 7 el giro se queda (`0C2B68` borra el bit 1, no el 0); la llamada `05A09E` del programa crea el humo `05A0B4` (programa `25339C`, paleta 0x204, sobre el bloque `+28` del jugador, `neo_effects.c`) | `death`: captura `k8d1` (`--hit 400:8`), 118 actualizaciones, 75 poses, 15 dibujos tumbado, fin y vida nueva: **0 distintos** | auditoría `k8d1`: PASS 216 fotogramas, 16 descriptores, 102 512 píxeles; **las poses `18CF86..18CFE0` no están en el catálogo** (se mantiene la anterior) | 1123 | catálogo y paletas `+1A` = `0BEDE0` (0x53) / `+1B` = 0x51; el deslizamiento por el suelo tras aterrizar es el `0143EE` compartido del port (no comparado: la prueba usa el movimiento de la captura); humo `05A0B4`: sus 10 poses en los exports, validadas a 0 px (captura `k8s1`, §8.5) |
 | Marco | tipo 0x12 `0C2A70` | **nativo (agente E)**: `040F38` crea la salpicadura `040F74` para todo tipo 0x12 (`01B220` (8, 0), antes del giro); en el suelo `0BF418` (`24FF1E`), `014594` con `+62 = 0`, sin paleta ni velocidad; en el aire `0C2DDA` | `death`: captura `k12d1` (`--hit 400:12`), 76 actualizaciones, 33 poses: **0 distintos** | auditoría `k12d1`: PASS 132 fotogramas, 22 descriptores, 53 450 píxeles; **poses `18D298..18D450` fuera del catálogo** | 1123 | catálogo; 0x12 en el aire sin captura (es `0C2DDA`, ya probada) |
 | Tarma / Eri / Fio | tipos 8 y 0x12 | **parada explícita** (`death_stops`, hacen `0C2DDA`): sus programas (`250DB6`/`2509AA`, …) no están en los packs de personaje | — | — | — | ampliar el formato del pack (`export_character.py`) con las filas `0BF398`/`0BF418` |
 | Todos | caída al agua `0C2CCC` | **nativo para Marco (agente H, §7)**: `marco_death_start_water`/`_water_velocity`; Tarma/Eri/Fio parada explícita (programas `24F150..` fuera de los packs) | `death`: captura `w6d2` (M6 etapa 9, `--load --update-trace`): 52 velocidades, 53 poses, fin, vida nueva: 0 distintos | sin auditoría de píxeles | 1123 | paso `0143E4` no comparado; los otros tres personajes |
@@ -426,3 +426,36 @@ código de esta rama (`marco_death.c`, `marco_renderer.c`, `msx_character.*`).
   junto con la fusión de esta rama; agua de Tarma/Eri/Fio; Eri a cada
   fotograma en el SV-001 y la reproducibilidad del plan `vehicles`; pilotos
   del Slugnoid de Eri/Fio; reparto de canales del chip `4422`.
+
+### 8.5 Humo `05A0B4` de la muerte de tipo 8 (agente N)
+
+- La matriz de integración (m5boss) contaba 28 dibujos ausentes del humo:
+  el port lo crea (`neo_effects.c`, programa `25339C`, paleta 0x204) pero
+  sus descriptores `1B02D6..1B038E` (10 poses) no estaban en ningún export.
+- Captura nueva (MAME 0.264): `run_marco_catalog.py --rom-dir ROMS --output
+  k8s1 --hit 400:8 --end-frame 3000 --dump-routines c2956-c2f96
+  --family-routines 5a0b4-5a0ff --family-frames 2400-3000 --child-routines
+  5a0b4,5a0e2`. `--family-routines` (nuevo, `capture_marco_catalog.lua`):
+  `boss-trace.txt` con el formato de `capture_weapons.lua` (U/V alrededor de
+  `004246..00424A` de cada nodo cuya rutina está en el rango, sus W) para
+  `export_rest_sprites.py DIR@lo-hi`. El humo: nodo `101F14`, 14
+  actualizaciones (2532..2556), una pose por actualización.
+- `export_rest_sprites.py` raíz `0x25339C` en `ROOTS`; `--only` (nuevo): solo
+  los programas de `--roots-from`, sobre el export de `--keep` (que conserva
+  ahora también su `empty` y, con `--only`, su orden), sin las raíces que
+  otras ramas añadieron desde que se hizo. Orden por export (N = 2..6):
+  `export_rest_sprites.py ROMS/mslugx.zip k8s1@5a0b4-5a0ff --roots-from
+  25339c-25339d --only --keep-palettes --keep VIEJO --output NUEVO`.
+- Validación: 27 volcados, **9 962 píxeles iguales, 0 distintos**; las 10
+  poses vistas (de 503 a 78 px; `/home/user/captures-audit/j/k8s1-sprites.json`,
+  brutos borrados, quedan `boss-trace.txt` y `children.log`).
+- Dónde: el humo es del jugador y puede salir en cualquier misión, así que va
+  una vez en el export de escena `filesystem/rest-native.json` (residente en
+  todas: `scene_native_descriptor`), `scene.pack` 1036 → 1038 trozos (16
+  páginas). Los exports M2..M6 lo llevan también (regla de
+  `check_mission_sprites.py`), pero `pack_mission.py` no guarda lo que ya
+  está en la escena: los paquetes de misión no cambian (M2..M4 rehechos
+  idénticos byte a byte; M5 1250 y M6 1195 trozos, iguales; su bloque
+  `MSXD` rehecho crece 16 606 B por los programas de este árbol, sin
+  relación con el humo).
+

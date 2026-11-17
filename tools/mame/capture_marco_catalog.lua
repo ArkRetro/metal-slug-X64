@@ -209,9 +209,53 @@ end
 -- MSX_LOAD=<state> with MSX_LOAD_FRAME=<frame> (capture only, run_marco_catalog.py --load): a
 -- save state of the -state_directory loaded at frame 1, the count going on from its frame (the
 -- boot inputs are then never reached).
+-- MSX_FAMILY_ROUTINES=lo-hi,lo-hi (hex) with MSX_FAMILY_FROM/TO (frames;
+-- capture only, run_marco_catalog.py --family-routines): boss-trace.txt in
+-- the format of tools/capture_weapons.lua (U/V node dumps around every update
+-- 004246..00424A of a work-RAM node whose routine +0 lies in a range, W its
+-- writes, F frames) for tools/export_rest_sprites.py DIR@lo-hi.
+local fam_ranges={}
+for lo,hi in (os.getenv('MSX_FAMILY_ROUTINES') or ''):gmatch('(%x+)-(%x+)') do fam_ranges[#fam_ranges+1]={tonumber(lo,16),tonumber(hi,16)} end
+local fam_from=tonumber(os.getenv('MSX_FAMILY_FROM') or '0');local fam_to=tonumber(os.getenv('MSX_FAMILY_TO') or '0')
+local mstate=manager.machine.devices[':maincpu'].state
+local fam_log,fam_rtap,fam_wtap=nil,nil,nil;local fam_busy=true;local fam_active=nil
+local FPOOL0,FPOOL1=0x1010a4,0x1010a4+0xb0*100
+local function fam_hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+local function fam_read(address,data,mask)
+ if fam_busy then return end
+ if address>=FPOOL0 and address<FPOOL1 then
+  local o=(address-FPOOL0)%0xb0
+  if o==0 and mstate['CURPC'].value==0x4246 then
+   fam_busy=true
+   local r=cpu:read_u32(address);fam_active=nil
+   for _,q in ipairs(fam_ranges) do if r>=q[1] and r<=q[2] then fam_active=address end end
+   if fam_active then fam_log:write(string.format('U %x %x %s\n',address,r,fam_hex(address,0xb0))) end
+   fam_busy=false
+  elseif o==8 and fam_active==address-8 and mstate['CURPC'].value==0x424a then
+   fam_busy=true;fam_log:write(string.format('V %x %s\n',fam_active,fam_hex(fam_active,0xb0)));fam_busy=false;fam_active=nil
+  end
+ end
+end
+local function fam_write(address,data,mask)
+ if fam_busy or not fam_active then return end
+ fam_log:write(string.format('W %x %x %x %x\n',address,mask,data,mstate['CURPC'].value))
+end
+local function fam_frame(f)
+ if #fam_ranges==0 then return end
+ if f==fam_from then
+  fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
+  fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
+ end
+ if fam_log then
+  fam_log:write(string.format('F %d\n',f))
+  if f==fam_to then fam_rtap:remove();fam_wtap:remove();fam_log:close();fam_log=nil end
+ end
+end
 local load_name=os.getenv('MSX_LOAD')
 emu.register_frame_done(function()
  frame=frame+1
+ fam_busy=true
  if load_name and frame==1 then manager.machine:load(load_name);frame=tonumber(os.getenv('MSX_LOAD_FRAME')) end
  dbg:command(string.format('temp9=%x',frame))
  -- MSX_CHARACTER_WATCH=1: every access to player 1's character word +6E
@@ -333,5 +377,6 @@ emu.register_frame_done(function()
    local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
   end
  end
- if frame==plan.last then inputs:close();states:close();manager.machine:exit() end
+ fam_frame(frame);fam_busy=false
+ if frame==plan.last then if fam_log then fam_log:close() end;inputs:close();states:close();manager.machine:exit() end
 end,'frame')

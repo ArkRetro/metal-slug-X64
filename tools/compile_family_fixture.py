@@ -48,6 +48,7 @@ def main():
     p.add_argument('--m6bridge',action='store_true',help='the Mission 6 bridge actors 0BD18E / 0BD2BA / 0BD2CE and spans 0BCFA4..0BD004 (neo_m6props.c): 10D7B6 +0/+32/+36 and RAM 10C70C..10C714 through neo_m6bridge_env_t, the spans on 10D7B6 (+14..+25) from the RAM image (extract with --ram covering them)')
     p.add_argument('--m4boss',action='store_true',help='the Mission 4 boss 02267E (neo_m4boss.c): its layer object 10D7B6, RAM 10E94E..10E955 (speeds), 10E957 (owner), 10E9B8, 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them)')
     p.add_argument('--m5boss',action='store_true',help='the Mission 5 boss 0A0C00 (neo_m5boss.c): RAM 10C300/10C304 (018F92 / 019424), 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them)')
+    p.add_argument('--ext-kills',action='store_true',help='a node killed by a player\'s shot between its updates (+5F bit 7) is seen dead by the nodes running before it in the same logic update (the troopers of the Mission 6 last enemy read by their shots)')
     p.add_argument('--m3mid',action='store_true',help='the Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6, RAM 10E959, 1063D8 and the shake 10E9C8 from the RAM image (extract with --ram covering them); pieces resume like --m2boss')
     p.add_argument('--root-words',action='store_true',help='a single word read of the root\'s +14..+20 (01AD7C) updates it with the other word as last known')
     p.add_argument('--split-children',action='store_true',help='the children one update makes may split over two frames (the frame mark inside the list walk, as --m2boss): the first made is the last of them in the list')
@@ -190,6 +191,14 @@ def main():
     if a.fresh_flip:L.append('#define FAMILY_FRESH_FLIP 1')
     if a.reserve:L.append('#define FAMILY_RESERVE 1')
     if a.m3mid:L.append('#define FAMILY_M3MID 1')
+    if a.ext_kills:
+        L.append('#define FAMILY_EXT_KILLS 1')
+        kl=[]
+        for k,u in enumerate(d['updates']):
+            for nd in u.get('kills',[]):
+                j=next((j for j in range(k-1,-1,-1) if d['updates'][j]['node']==nd),None)
+                if j is not None:kl.append((k,inst[j]))
+        L.append('#define FAMILY_KILLS {%s}'%(','.join('{%d,%d}'%x for x in kl) or '{-1,-1}'))
     if a.m4boss:L.append('#define FAMILY_M4BOSS 1')
     if a.m6bridge:L.append('#define FAMILY_M6BRIDGE 1')
     if a.m6ring:L.append('#define FAMILY_M6RING 1')

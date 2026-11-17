@@ -473,8 +473,7 @@ static void turret_fire(neo_gactor_t *a,neo_genv_t *e) {
     int16_t d1=S16(rw(e,at)),d2=S16(rw(e,at+2u));
     if (B(0x15)&1u) d1=(int16_t)-d1;
     if (c) {ga_sb(c,0x8a,B(0x8a));ga_sb(c,0x8b,(uint8_t)d1);ga_sb(c,0x8c,(uint8_t)d2);}
-    if (B(0x93)&0x20u) {ga_fail(e,0x8f1a0);return;}                      /* the shell of the +93 bit 5 tanks: not a Mission 5 record */
-    c=child(a,e,0x8f058,0x1c);
+    c=child(a,e,(B(0x93)&0x20u)?0x8f1a0u:0x8f058u,0x1c);                 /* +93 bit 5 (the Mission 6 last enemy's tanks): 08F1A0 */
     if (!c) return;
     ga_sb(c,0x8a,B(0x6e));
     ga_sw(c,0x28,(uint16_t)(ga_w(c,0x28)+(uint16_t)d1));ga_sw(c,0x2c,(uint16_t)(ga_w(c,0x2c)+(uint16_t)d2));

@@ -472,6 +472,7 @@ static void g_sound(void *ctx,uint16_t id) {sound_request(((tick_t *)ctx)->w,id)
 static void g_camera_mode(void *ctx,uint8_t mode) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_set_auto(&t->w->camera,mode);}
 static void g_camera_rise(void *ctx,int32_t vy) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vy=vy;}
 static void g_camera_push(void *ctx,int32_t vx) {tick_t *t=ctx;if (t->w->camera_native) t->w->camera.auto_vx=vx;}
+static void g_camera_place(void *ctx,unsigned axis,int32_t v) {tick_t *t=ctx;if (!t->w->camera_native) return;t->genv.camera_xy[axis&1u]=v;if (axis) neo_camera_place_y(&t->w->camera,v); else neo_camera_place_x(&t->w->camera,v);}
 static void g_shake(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_start(&t->w->camera);}
 static void g_shake_pulse(void *ctx) {tick_t *t=ctx;if (t->w->camera_native) neo_camera_shake_pulse(&t->w->camera);}
 #ifdef MSX_HAS_M3MID
@@ -627,6 +628,8 @@ static bool convert_soldier(tick_t *t,unsigned gi,unsigned *si) {
     w->constructed[i]=true;a->active=false;*si=i;w->converted++;
     return true;
 }
+/* 019388: the mission actor's +72 / +76 (D0 < 0: A0000). */
+static void g_mission_speed(void *ctx,int32_t v) {tick_t *t=ctx;if (v<0) v=0xa0000;t->w->camera.speed_x=t->w->camera.speed_y=v;}
 static void g_external(void *ctx,uint32_t constructor) {tick_t *t=ctx;t->w->external_spawns++;t->w->external_constructor=constructor;}
 /* 009CCE: slot +14 of the owner (no slot: nothing, 009CE2). */
 static void g_palette_mix(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight) {
@@ -1169,7 +1172,8 @@ static int run_gactor(tick_t *t,unsigned i) {
      * those of the camera's object: position +0/+4 (no parent), factors
      * +26/+28 and remainders +2A/+2B (neo_layers_*), first sprite +2C =
      * 0x20 and +82 = 0F (run4 RAM 157200..157500, before the boss). */
-    bool m4=neo_m4boss_routine(ga_l(a,0));
+    /* The Mission 6 last enemy 04153E (neo_m6boss.c) takes the same layer 10D7B6 as its picture. */
+    bool m4=neo_m4boss_routine(ga_l(a,0)) || neo_m6boss_routine(ga_l(a,0));
     if (m4) {
         if (!w->m4layer_used) {
             const neo_layer_t *l=&w->layers[NEO_LAYER_MID];uint8_t *b=w->m4layer;
@@ -1758,7 +1762,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
-    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->palette_mix=g_palette_mix;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->mission_speed=g_mission_speed;g->palette_mix=g_palette_mix;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
      * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
     g->arrow=&w->arrow;
@@ -1818,7 +1822,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
      * and its part 3). */
     if (w->stage_camera_base==0x0E741Au) g->terrain_tag=0x10c72eu;
     g->flags=&w->ga_flags;w->ga_flags.camera_restart=w->camera.restart;   /* RAM 10E9D0 (0B9286) */
-    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->camera_push=g_camera_push;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
+    g->camera_mode=g_camera_mode;g->camera_rise=g_camera_rise;g->camera_push=g_camera_push;g->camera_place=g_camera_place;g->camera_xy[0]=w->camera.x;g->camera_xy[1]=w->camera.y;g->shake=g_shake;g->shake_pulse=g_shake_pulse;
     g->map_swap=g_map_swap;g->front_layer=g_front_layer;g->kill_children=g_kill_children;g->has_children=g_has_children;g->subscript=g_subscript;
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];

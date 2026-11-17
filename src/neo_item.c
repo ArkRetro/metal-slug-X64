@@ -57,6 +57,8 @@ static neo_gactor_t *k8cd58_at(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t 
     ga_place_at(c,a,e,d0,d1);ga_sw(c,0x72,d5);
     return c;
 }
+/* 08CD58 for another module (the Mission 6 last enemy's troopers 0440FE, neo_m6boss.c). */
+neo_gactor_t *neo_item_drop(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t d1,uint16_t kind,uint16_t d3,uint8_t d4,uint16_t d5) {return k8cd58_at(a,e,d0,d1,kind,d3,d4,d5);}
 /* 2896B2: the fruit an animal drops (kind 3D or 3F, 0x11 ahead and 7 up,
  * +30 = d7 by the facing, +74 = d6: the animal). */
 static void k2896b2(neo_gactor_t *a,neo_genv_t *e,uint16_t kind,uint16_t d6,uint32_t d7) {

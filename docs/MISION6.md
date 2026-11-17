@@ -732,10 +732,65 @@ actualizada (`m6s1` con `--jump 1.0 --continues`, `m6s2` con `--fire --jump 2.5 
 - **Copiar a `ws-logo`** al fusionar: `filesystem/mission6/rest-native.json` y `filesystem/mission6/s2/patches.json`
   (y rehacer `build_packs.py 6`).
 
-## Etapa 3: el último enemigo `04153E` (sin empezar; plan)
+## Etapa 3: el último enemigo `04153E` (16-XI, agente M; en curso)
 
-- `04153E` (`0C8CD6`, +86..+88 y 10C448 a 0, `04157A` con +72 = creador) → `04157A` (`0418D2`, luego `045428`, la cola
-  `041F1C` y los estados `041B34`, `042284`, `044682`, `0422C8`, `0422A0`, `042308`, `044666`, `04240A`, `042AAC`,
-  `041BCE`, `03C0EA`...): unos 25 KB de código 68K (`037404..038800`, `041500..046700`, `08DD2C` / `08EB18` / `08F1A0`).
-  No cabe en una sesión: se hará por ramas, una captura y una familia por ventana (plan de la sección del agente C), y
-  después la huida `017624` y los créditos.
+Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabecera), rutina a rutina, por ventanas de
+`run4` (`captures-m6/fam/runM.sh`: réplica desde `sec11_322339` o `at_323500`, raíz `4153e` o `RANGE=41500-46800`).
+
+- **El árbol**: el nodo de cabecera `04153E` (las órdenes en sus bytes `+6E..+72`, una por parte; `+74` / `+8A..+8D` la
+  sacudida; `+7E` la velocidad de programa; `+86` bits 0 (segunda forma) y 1 (fin)), el cuerpo `04157A` (su dibujo es la
+  capa `10D7B6`, como el jefe de la M4: `neo_m4boss_env_t`; velocidades `694E` / `6952` desde `+86` / `+8A` en la cola
+  `041F1C`), las cinco partes `042BDC` / `0431E0` / `042E22` / `04307E` / `0444E8` (tablas de rutinas `0453A6`, orden nueva
+  en `044860`, hecha en `04489E`), la apertura `045428` con sus ocho actores `045608` (línea de tiempo `045D84`, listas
+  `045E02..`), el fundido `0BEA82`, las llamas `0436B6` / `043860`, los proyectiles `042F04`, los soldados voladores
+  `0438A4` con `04416E` / `0441CA`, y los auxiliares `0443BE` (muertes `004BFE`), `04445A` (la cámara: `neo_camera_place_*`,
+  `genv.camera_place` / `camera_xy`), `044A08` (el suelo que se rompe: parche `0C714E` de `045244` sobre `10C72E`),
+  `044B32`, `0424F8` (subguion `019E72` con el registro `2C7920` a 3000 de vida), `042AEA`.
+- **Ataques del cuerpo**: `042308` elige `+80` por la posición del jugador (`044FCA`) y el rango (`04463E`); los pasos de
+  cada ataque son la lista `044ECC[+80]` (`04240A` / `042440` / `04246E`), traducidos en `step_run` (`042516..042A9A`);
+  `042AAC` (`044F9C`) dice cuándo acaba. La segunda forma (`041634..0417FE`: `041BCE`, `041C78` con el mapa `04522E` de la
+  capa, `041E38`, `04493E`, `044AE4`, `0420A8`, `0420FC`, `04215E`, `042178`, `041EC0`; después `04249E` / `0424AC`) está
+  traducida; el final (`04180A..`: `041D2E`, y en `041826` el manejador `0CA438`) **para explícitamente** en `041826`, y
+  la huida `04677A` en `041872`.
+- **Manejadores de los jugadores** (`neo_ga_flags_t.player_handlers`, ahora por jugador con `handler_p2` /
+  `split_handlers`): 6 = `0CA386` (andar hasta `10EA00`/`02` y borrarse al llegar, `0CA324`), 7 = `0455E6` y 8 = `041EBC`
+  (sin mando). **Pendiente en `gameplay.c`** (el juego nativo aún no los anda: el 6 se trata como sin mando).
+- Motor: `019388` como `genv.mission_speed` (`1013D6` / `1013DA`), `10C448` (`flags.m6_boss`), `01C87E` en la tabla de
+  efectos simples (paleta 175), `neo_item_drop` (`08CD58` desde otro módulo). `009CCE` sobre ranuras fijas (el brillo de
+  `042BDC`, la paleta 23 del fondo en `0BEA82`) se cuenta como externo: **pendiente** (no se dibuja).
+- Datos de la ROM (`region_rom.json`, grupo `m6`): `04496C`, `044DC4..045428`, `045D0E..045EF4`, `046740..046774`,
+  `2C4084..2C7A00`. Efectos simples nuevos `01C87E` y `01C8FC` (sin giro al azar). Sprites: `export_rest_sprites.py ... M1@41500-46800
+  M2@.. M3@..` (682 775 píxeles iguales, 0 distintos) y la mezcla de `merge_rest.py` en `filesystem/mission6/rest-native.json`
+  (+356 descriptores, 19 paletas; sin ver aún: D9, 169, 175, 184..186, 102, 35D, 364, 365, 36C); paquete M6 1192 trozos. Programas en
+  `extract_soldier_programs.py` (sin grupo).
+- **Familias** (`make check`; extracción común: `--range 41500-46800 --range bea82-beab1 --attacks --ram 1010a4-105564
+  --ram 1063d8-1063da --ram 10c72e-10d83e --ram 10e94e-10e9dc --ram 10e9f8-10ea04 --ram 10c300-10c308 --ram 10000e-100010
+  --ram 10c2f6-10c2f8 --ram 10c448-10c449 --ram 10c33c-10c33e --ram 10c00a-10c00d`; prueba `--m4boss --node-fields
+  6e,72,86 --ext-kills`, nueva: un nodo muerto por un disparo del jugador entre sus actualizaciones ya se ve muerto por los
+  que corren antes en la misma): **`m6boss1`** (`M1`, 322502..323598): 18 nodos, **8534** actualizaciones en lazo cerrado
+  iguales a MAME; **`m6boss2`** (`M2`, 323500..324698): 17 nodos, **8285**; **`m6boss3`** (`M3`, 324600..325798, con los
+  soldados): 29 nodos, **5176**; **`m6boss4`** (`M4`, `at_340000`, 346950..348398: el descenso de la segunda forma,
+  `04493E` con el suelo `044A08` / `044B32`, `04445A`): 11 nodos, **5882**; **`m6boss5`** (`M5`, 348300..350399: la
+  segunda forma `0417F0` / `0417FE`, los soldados del ataque 8 y el generador `045EF6` con los andadores `046112` /
+  `04611C` y sus bombas `046510` / `0465FE`): 94 nodos, **13 831**. `--ext-kills` (nuevo, `FAMILY_KILLS`): el extractor
+  anota las lecturas del `+5F` (bit 7) de otro nodo de la familia y la prueba se lo aplica antes de esa actualización (un
+  soldado muerto por un disparo del jugador visto por sus disparos). El arnés lee y escribe ahora `10E9F8..10EA03`, `10C448`, `10C00B` / `10C00C` y la cámara
+  `10E95A..` en la imagen de RAM cuando la familia las vigila.
+- **Consola (16-XI)**: con `neo_m6boss.c` (44 KB de texto a `-Os`; probado `-fno-inline*` y accesores fuera de línea: no
+  baja) el arranque en ares para en `scene_assets.c:506` («RAM budget: 3307 KB left for the scene cache (minimum 3332
+  KB)»). Hasta encontrar ~25 KB, el módulo queda **apagado en el cartucho** (`MSX_M6BOSS`, `neo_region.h`: 0 en N64, 1 en
+  el anfitrión; las pruebas lo tienen siempre): el guion sigue parándose en `2E19F8` → `04153E` como antes. ares
+  `--stage 3`: PASS (la línea base, cámara 0 → 320). Siguiente para la consola: memoria (p. ej. código por misión cargado
+  del paquete, o mover datos del montón) y entonces la prueba `m6boss` en `regression_ares.py`.
+- **Sin traducir todavía** (por orden): (1) el combate de fondo `037404` (`037404..038800`: los aviones `03762A` /
+  `03790C` sobre `10E83E`, sus disparos `037CEC` / `037E04`, humo `037B00`, `037FBC` con `038092` / `03848A` / `038604`,
+  explosiones `03825C`; ~1000 líneas, decorado sin efecto en el juego) — en `M3` existe ya la captura de su comienzo;
+  (2) el resto de la segunda forma: `08F1A0` (el proyectil de los tanques `08DD2C` con `+93` bit 5) está **traducido sin
+  prueba bit a bit** (`neo_effects.c`, y `neo_m5enemy.c` ya no para en él); la ventana `M6` (`LOAD=at_350000 FROM=352700
+  LAST=354000 ROOTS=8dd2c,8eb18,8f1a0`, traza en bruto guardada, 75 MB) aún no pasa: en 352726 el soldado `1023E4`
+  (primer nodo, `--resume`) lee su `+72` como dirección cruda `1018E4` en vez de la etiqueta de la cabecera (algo inyecta
+  los bytes grabados después de la traducción de `--node-fields`; por investigar en `test_neo_family.c`), y no se ha
+  visto ningún `08F1A0` en la traza y su muerte `04180A..` (`run4` no la alcanza: hace falta una captura de familia
+  del TAS, de `u26300` a `u26480`); (3) `041826` (`0CA438` / `0CA49C`) y
+  `04677A`; (4) los manejadores 6..10 en `gameplay.c`; (5) sprites (exportación con `M1..M3`) y paquete; (6) prueba
+  `m6boss` en ares; (7) la huida `017624` y los créditos.

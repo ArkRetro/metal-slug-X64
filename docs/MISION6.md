@@ -776,6 +776,12 @@ Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabece
   anota las lecturas del `+5F` (bit 7) de otro nodo de la familia y la prueba se lo aplica antes de esa actualización (un
   soldado muerto por un disparo del jugador visto por sus disparos). El arnés lee y escribe ahora `10E9F8..10EA03`, `10C448`, `10C00B` / `10C00C` y la cámara
   `10E95A..` en la imagen de RAM cuando la familia las vigila.
+- **Consola (16-XI)**: con `neo_m6boss.c` (44 KB de texto a `-Os`; probado `-fno-inline*` y accesores fuera de línea: no
+  baja) el arranque en ares para en `scene_assets.c:506` («RAM budget: 3307 KB left for the scene cache (minimum 3332
+  KB)»). Hasta encontrar ~25 KB, el módulo queda **apagado en el cartucho** (`MSX_M6BOSS`, `neo_region.h`: 0 en N64, 1 en
+  el anfitrión; las pruebas lo tienen siempre): el guion sigue parándose en `2E19F8` → `04153E` como antes. ares
+  `--stage 3`: PASS (la línea base, cámara 0 → 320). Siguiente para la consola: memoria (p. ej. código por misión cargado
+  del paquete, o mover datos del montón) y entonces la prueba `m6boss` en `regression_ares.py`.
 - **Sin traducir todavía** (por orden): (1) el combate de fondo `037404` (`037404..038800`: los aviones `03762A` /
   `03790C` sobre `10E83E`, sus disparos `037CEC` / `037E04`, humo `037B00`, `037FBC` con `038092` / `03848A` / `038604`,
   explosiones `03825C`; ~1000 líneas, decorado sin efecto en el juego) — en `M3` existe ya la captura de su comienzo;

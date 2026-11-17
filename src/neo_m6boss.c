@@ -1,4 +1,5 @@
 #include "neo_region.h"
+#if MSX_M6BOSS
 #include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
 /* Mission 6 stage 3: the last enemy 04153E (script record 2E19F8, camera 1),
  * manual translation routine by routine; ROM labels are provenance only.
@@ -1937,3 +1938,7 @@ ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (in(r,0x436b6,0x43712) || in(r,0x43860,0x43896)) return fl_tick(a,e);
     STOP(r);
 }
+#else
+bool neo_m6boss_routine(uint32_t r) {(void)r;return false;}
+ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e) {(void)a;ga_fail(e,0x4153e);return GA_UNSUPPORTED;}
+#endif

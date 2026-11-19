@@ -1091,7 +1091,7 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   registrada como no capturable en `MISION5.md`: su número sigue a cómo acaba la pelea); con SH, **0** (1539 s).
 - **Subido** a ccr `71d9449` (matriz de 17 pruebas en verde, línea base nueva). Después: `work-audit` `33e96a0` (muerte
   de Fio, tipos 8 y 0x12, 1089) unido en `1b158ee`, con `soldier_programs.json` regenerado del extractor unido
-  (`captures-soldiers/walk3`) y `src/msx_sfx_policy.h` recompilado (`compile_sound_policy.py`: las palabras de la M4).
+  (`captures-soldiers/walk3`; desde el 19-XI `captures-audit/j/k8d1`, mismo banco `7839d20a…`) y `src/msx_sfx_policy.h` recompilado (`compile_sound_policy.py`: las palabras de la M4).
 - **Uniones siguientes (16-XI, noche)**: `work-audit` `f4a5571` (paquetes de personaje v2: `romfs/chars/c1..c3.bin` de
   `ws-audit` y el catálogo de Marco de `captures-audit/j/catalog/` copiados al árbol, sin enlaces duros: los `c*.bin`
   de este árbol eran enlaces duros a `ws-logo` y se borraron antes de copiar), `work-chars` `9013c98` (M6 etapa 2;

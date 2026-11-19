@@ -548,7 +548,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit slugair m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit slugair m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6air m6air2
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -722,6 +722,21 @@ FAMILY_ARGS_m6boss4 := $(FAMILY_ARGS_m6boss1) --resume
 # m6boss5 = window 5 (captures-m6/fam/M5: LOAD=at_340000 FROM=348300 LAST=350400 RANGE=41500-46800): the second form
 # (0417F0, 04249E / 0424AC, the troopers of attack 8) and the spawner 045EF6 with its walkers 046112 / 04611C and bombs.
 FAMILY_ARGS_m6boss5 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss6 = window 6, from the TAS (captures-m6/fam/P1: runP1.sh, tas_updates.lua from u26340 to u26708, RANGE=41500-46800
+# ROOTS=bea82): the end of the second form, the death 04180A.. (041D2E, 041DD4 with 018F92, 041E9A: the walk 0CA438 / 0CA49C),
+# the escape 04677A with its timeline actors 046858 and the wait 0418B0.
+FAMILY_ARGS_m6boss6 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss7 = window 7, from the TAS (captures-m6/fam/P2: LOAD=u26400:26400 LASTU=28000 NAME=P2 sh runP1.sh, to frame 60000):
+# the escape 04677A to its end with all its actors (046A9A..047256) and the parts' last orders.
+FAMILY_ARGS_m6boss7 := $(FAMILY_ARGS_m6boss1) --resume
+# m6air = the Mission 6 stage 3 background fight 037404 (neo_m6boss.c: its planes 03762A / 03790C, shots, smoke and the
+# formations of 037FBC); captures-m6/fam/M3 (runM.sh LOAD=at_323500 FROM=324600 LAST=325800 ROOTS=37404), --range
+# 37404-38900 --attacks --ram 1010a4-105564 --ram 1063d8-1063da --ram 10c72e-10d83e --ram 10e94e-10e9dc --ram 10e83e-10e94e
+# --ram 10000e-100010 --ram 10c33c-10c33e.
+FAMILY_ARGS_m6air := --root-words --attacks --ram-creators --terrain 10c72e --ring 10c72e --group-map 0 --reserve --node-fields 72,76,7e
+# m6air2 = the same from the TAS (captures-m6/fam/P5: LOAD=u24600:24600 LASTU=26420 ROOTS=37404 NAME=P5 sh runP3.sh): all
+# three formations; the bomber 038702 never comes out.
+FAMILY_ARGS_m6air2 := $(FAMILY_ARGS_m6air)
 FAMILY_ARGS_m5mech := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 # m5pow = the Mission 5 sewer crank 095C98 and its child 095F8C (neo_m5sewer.c; the item 08C374 it makes is outside the
 # family); m5sewer = the sewer soldiers 089948 / 08995A / 08996A and their guns 08A264. captures-m5/fam/X (run4 replay from

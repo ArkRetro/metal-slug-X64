@@ -1,10 +1,10 @@
 {
- "_cart": "work-m4 c7ff44a (ccr e138371 + work-audit f4a5571 + work-chars 9013c98 + work-bugs ec724ca; exports copied; cart 63913984 B), m1end fresh; m5boss kept at its previous counts (B77: 28 draws of the kind-8 smoke 05A0B4 missing, known), m6s2end outside the baseline (agent C), m4boss 6 explicit stops (7E832 x4, 03C5E8 x2, as the first baseline)",
+ "_cart": "work-m4 c932e54 (ccr 20c330c + work-chars bcc3849 + work-audit c777140; scene export with the kind-8 smoke, M2/M3 exports with it, M6 export of ws-chars; cart 64307200 B), m1end fresh; m6s2end (agent C) outside the baseline",
  "chars": {
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 329,
+  "seconds": 378,
   "stopped": 0,
   "unsupported": 0
  },
@@ -12,7 +12,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 93,
+  "seconds": 118,
   "stopped": 0,
   "unsupported": 0
  },
@@ -20,7 +20,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 89,
+  "seconds": 150,
   "stopped": 0,
   "unsupported": 0
  },
@@ -28,7 +28,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 119,
+  "seconds": 123,
   "stopped": 0,
   "unsupported": 0
  },
@@ -36,7 +36,7 @@
   "missing_draw": 0,
   "missing_part": 2,
   "result": "PASS",
-  "seconds": 1426,
+  "seconds": 1690,
   "stopped": 0,
   "unsupported": 6
  },
@@ -44,7 +44,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 1384,
+  "seconds": 955,
   "stopped": 0,
   "unsupported": 0
  },
@@ -52,7 +52,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 118,
+  "seconds": 122,
   "stopped": 0,
   "unsupported": 0
  },
@@ -60,7 +60,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 117,
+  "seconds": 120,
   "stopped": 0,
   "unsupported": 0
  },
@@ -68,7 +68,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 115,
+  "seconds": 120,
   "stopped": 0,
   "unsupported": 0
  },
@@ -76,7 +76,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 115,
+  "seconds": 117,
   "stopped": 0,
   "unsupported": 0
  },
@@ -84,7 +84,7 @@
   "missing_draw": 0,
   "missing_part": 2,
   "result": "PASS",
-  "seconds": 116,
+  "seconds": 179,
   "stopped": 0,
   "unsupported": 0
  },
@@ -92,7 +92,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 119,
+  "seconds": 132,
   "stopped": 0,
   "unsupported": 0
  },
@@ -100,7 +100,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 120,
+  "seconds": 131,
   "stopped": 0,
   "unsupported": 0
  },
@@ -108,7 +108,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 38,
+  "seconds": 42,
   "stopped": 0,
   "unsupported": 0
  },
@@ -116,7 +116,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 56,
+  "seconds": 63,
   "stopped": 0,
   "unsupported": 0
  },
@@ -124,7 +124,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 669,
+  "seconds": 470,
   "stopped": 0,
   "unsupported": 0
  },
@@ -132,7 +132,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 1768,
+  "seconds": 1059,
   "stopped": 0,
   "unsupported": 0
  }

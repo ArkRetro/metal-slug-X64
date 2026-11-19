@@ -104,8 +104,8 @@ static void dyn_inputs(neo_kscene_t *k,const family_update_t *u) {
 }
 static uint8_t expect[0x200];
 /* RAM 10E9F8 / 10E9FC by neo_ga_flags_t.player_handlers (0CA2E0's A0). */
-static const uint32_t handler_words[9]={0,0x00054b18u,0x000c0538u,0x000ca3ecu,0x000bbf0eu,0x000537e4u,0x000ca386u,0x000455e6u,0x00041ebcu};
-static __attribute__((unused)) uint8_t handler_of(uint32_t v) {for (uint8_t k=0;k<9;k++) if (handler_words[k]==v) return k;return 0xff;}
+static const uint32_t handler_words[11]={0,0x00054b18u,0x000c0538u,0x000ca3ecu,0x000bbf0eu,0x000537e4u,0x000ca386u,0x000455e6u,0x00041ebcu,0x000ca438u,0x000ca49cu};
+static __attribute__((unused)) uint8_t handler_of(uint32_t v) {for (uint8_t k=0;k<11;k++) if (handler_words[k]==v) return k;return 0xff;}
 static int slot(uint32_t ad) {
     if (ad>=0x10e95a && ad<0x10e964) return (int)(ad-0x10e95a);
     if (ad>=0x10e9c8 && ad<0x10e9d0) return 0x10+(int)(ad-0x10e9c8);
@@ -738,7 +738,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #define FAMILY_TERRAIN 0x10d7b6u   /* the families past camera 1023 */
 #endif
     e.flags=&flags;e.terrain_tag=FAMILY_TERRAIN;e.node_word=node_word;kernel.b400c=0;   /* RAM 10C00C: 0 in the Mission 1 dumps */
-    unsigned ram_bytes=0;(void)ram_bytes;
+    unsigned ram_bytes=0,dead_bytes=0;(void)ram_bytes;(void)dead_bytes;
     e.kill_children=kill_children;e.has_children=has_children;e.camera_mode=camera_mode;e.camera_rise=camera_rise;e.camera_push=camera_push;e.shake=shake;e.map_swap=map_swap;e.front_layer=front_layer;
 #if defined(FAMILY_RING) && defined(FAMILY_RAM)
     e.map_patch=map_patch;
@@ -1035,10 +1035,11 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         bool watch716=false;   /* RAM 10C716 (the Mission 6 stage 2 end 0BE8A2 / 0BE8F6) */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) if (ram_ranges[g][0]<=0x10c716u && 0x10c716u<ram_ranges[g][1]) watch716=true;
         if (watch716) flags.m6_exit=wram[0xc716];
-        bool watch448=false,watch9f8=false;   /* RAM 10C448 (the Mission 6 last enemy), 10E9F8..10EA03 (the players' handlers and walk points) */
+        bool watch448=false,watch9f8=false,watchface=false;   /* RAM 10C448 (the Mission 6 last enemy), 10E9F8..10EA03 (the players' handlers and walk points) */
         for (unsigned g=0;g<sizeof(ram_ranges)/sizeof(ram_ranges[0]);g++) {
             if (ram_ranges[g][0]<=0x10c448u && 0x10c448u<ram_ranges[g][1]) watch448=true;
             if (ram_ranges[g][0]<=0x10e9f8u && 0x10ea04u<=ram_ranges[g][1]) watch9f8=true;
+            if (ram_ranges[g][0]<=0x10ea04u && 0x10ea06u<=ram_ranges[g][1]) watchface=true;
         }
         if (watch448) flags.m6_boss=wram[0xc448];
         bool watch00b=false;   /* RAM 10C00B / 10C00C (the scroll lock, the kernel's 400C) */
@@ -1049,6 +1050,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
             if (h1==0xffu || h2==0xffu) {fprintf(stderr,"frame %u: unknown player handler %08x / %08x\n",u->frame,(unsigned)w32(0x10e9f8),(unsigned)w32(0x10e9fc));return 1;}
             flags.player_handlers=h1;flags.handler_p2=h2;flags.split_handlers=h1!=h2;
             flags.walk_to[0]=w16(0x10ea00);flags.walk_to[1]=w16(0x10ea02);
+            if (watchface) {flags.walk_face[0]=wram[0xea04];flags.walk_face[1]=wram[0xea05];}
         }
         e.camera_y=w16(0x10e992);
         e.camera_xy[0]=(int32_t)w32(0x10e98e);e.camera_xy[1]=(int32_t)w32(0x10e992);e.camera_place=camera_place;place_env=&e;
@@ -1116,8 +1118,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         if (watch448) wram[0xc448]=flags.m6_boss;
         if (watch00b) {wram[0xc00b]=flags.scroll_lock;wram[0xc00c]=kernel.b400c;}
         if (watch9f8) {
-            for (unsigned h=0;h<2;h++) {uint8_t k=h && flags.split_handlers?flags.handler_p2:flags.player_handlers;uint32_t v=handler_words[k<9u?k:0];for (unsigned i=0;i<4;i++) wram[(0xe9f8+4*h+i)&0xffff]=(uint8_t)(v>>(24-8*i));}
+            for (unsigned h=0;h<2;h++) {uint8_t k=h && flags.split_handlers?flags.handler_p2:flags.player_handlers;uint32_t v=handler_words[k<11u?k:0];for (unsigned i=0;i<4;i++) wram[(0xe9f8+4*h+i)&0xffff]=(uint8_t)(v>>(24-8*i));}
             for (unsigned p=0;p<2;p++) {wram[0xea00+2*p]=(uint8_t)(flags.walk_to[p]>>8);wram[0xea01+2*p]=(uint8_t)flags.walk_to[p];}
+            if (watchface) {wram[0xea04]=flags.walk_face[0];wram[0xea05]=flags.walk_face[1];}
         }
         if (watch700) {wram[0xc700]=(uint8_t)(flags.limit700>>8);wram[0xc701]=(uint8_t)flags.limit700;}
         if (watchgrid) for (unsigned q=0;q<128;q++) {wram[(0x67e6+2*q)&0xffff]=(uint8_t)(dgrid[q]>>8);wram[(0x67e7+2*q)&0xffff]=(uint8_t)dgrid[q];}
@@ -1167,6 +1170,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
             /* A recorded RAM range over a node the family holds now (a
              * solid body's node reused by a family node): the node test
              * compares it. */
+            /* Dead registers: 046CD4 (the Mission 6 last enemy's escape) calls 0C6F34 with D0 / D1 as the routine
+             * dispatched before it left them; the layer's +32 / +34 take them (neo_m6boss.c leaves them). */
+            if (u->routine==0x46cc8u && ad>=0x10d7e8u && ad<0x10d7ecu) {wram[ad&0xffffu]=wexpect[ad&0xffffu];dead_bytes++;continue;}
             {bool own=false;for (unsigned k=0;k<NN && !own;k++) own=actors[k].active && node_address[k] && ad>=node_address[k] && ad<node_address[k]+0xc0u;if (own) continue;}
             if (wram[ad&0xffffu]!=wexpect[ad&0xffffu]) {fprintf(stderr,"frame %u node %d %05x: RAM %06x = %02x, original %02x (stop %05x)\n",u->frame,u->node,u->routine,(unsigned)ad,wram[ad&0xffffu],wexpect[ad&0xffffu],(unsigned)e.unsupported_at);return 1;}
             ram_bytes++;
@@ -1201,7 +1207,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
         /* Flags the family writes through neo_ga_flags_t. */
         if (flags.kill_request!=kill_before) {put(0x1067e3,flags.kill_request);if (!kill_frame) kill_frame=u->frame;}
         put(0x10e9e3,flags.player_lock);
-        for (unsigned h=0;h<2;h++) {uint8_t k=h && flags.split_handlers?flags.handler_p2:flags.player_handlers;uint32_t v=handler_words[k<9u?k:0];for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
+        for (unsigned h=0;h<2;h++) {uint8_t k=h && flags.split_handlers?flags.handler_p2:flags.player_handlers;uint32_t v=handler_words[k<11u?k:0];for (unsigned i=0;i<4;i++) put(0x10e9f8+4*h+i,(uint8_t)(v>>(24-8*i)));}
 #ifdef FAMILY_EXIT_GLOBALS
         if (flags.flash_request) put(0x1067e5,flags.flash_request);
         for (unsigned p=0;p<2;p++) {put(0x10ea00+2*p,(uint8_t)(flags.walk_to[p]>>8));put(0x10ea01+2*p,(uint8_t)flags.walk_to[p]);}
@@ -1293,6 +1299,7 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
 #endif
 #ifdef FAMILY_RAM
     printf("RAM outside the nodes (slots, input words, weapon block, player nodes): %u bytes compared\n",ram_bytes);
+    if (dead_bytes) printf("dead-register bytes taken from the record (046CD4): %u\n",dead_bytes);
 #endif
     if (sgun_born) {
         printf("blasts 0644C4/0646B0: %u born, %u facing left (+15 bit 0)\n",sgun_born,sgun_left);

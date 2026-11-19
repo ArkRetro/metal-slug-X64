@@ -214,7 +214,7 @@ static void path_move(neo_gactor_t *a,uint16_t d0,uint8_t d1) {
 }
 /* 021288: path interpreter (program +A0, heading +AA, speed +A8, segment
  * progress +A4). Returns carry (path finished). */
-static bool path(neo_gactor_t *a,neo_genv_t *e) {
+bool neo_path(neo_gactor_t *a,neo_genv_t *e,bool (*call)(neo_gactor_t *a,neo_genv_t *e,uint32_t routine)) {
     ga_project(a,e);
     uint16_t d5=W(0xa8);
     for (unsigned guard=0;guard<256;guard++) {
@@ -253,13 +253,17 @@ static bool path(neo_gactor_t *a,neo_genv_t *e) {
         case 5: {uint16_t o=rw(at+2);if (o>=0xb0) {ga_fail(e,0x21396);return false;}SL(o,rl(at+4));SL(0xa0,at+8);break;}
         case 6: {uint16_t o=rw(at+4);if (o>=0xb0) {ga_fail(e,0x21376);return false;}SW(o,rw(at+2));SL(0xa0,at+6);break;}
         case 7: {uint16_t o=rw(at+2);if (o>=0xb0) {ga_fail(e,0x21356);return false;}SB(o,rb(at+1));SL(0xa0,at+4);break;}
-        case 8:ga_fail(e,rl(at+2));return false;
+        case 8:   /* 021312: the routine, then +A0 past the op */
+            if (!call) {ga_fail(e,rl(at+2));return false;}
+            if (!call(a,e,rl(at+2))) return false;
+            SL(0xa0,at+6);break;
         case 9:sound(e,rw(at+2));SL(0xa0,at+4);break;
         case 10:path_move(a,d5,B(0xaa));return true;
         }
     }
     ga_fail(e,0x21296);return false;
 }
+static bool path(neo_gactor_t *a,neo_genv_t *e) {return neo_path(a,e,NULL);}
 /* 04982A: the target altitude +7A from the controller's +6E, +78 = 0xA0. */
 static ga_result_t altitude(neo_gactor_t *a,neo_genv_t *e) {
     neo_gactor_t *r=creator(a,e);

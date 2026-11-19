@@ -91,6 +91,10 @@ typedef struct neo_ga_flags {
     /* Player 2's handler (RAM 10E9FC) when it differs from player 1's (split_handlers): the opening 045428 of the last
      * enemy walks each player by 0CA386 (6), which clears its own player's handler on arrival, then holds it by 0455E6 (7). */
     uint8_t handler_p2,split_handlers;
+    /* Handlers 9 = 0CA438 (walk to walk_to[], then 10 = 0CA49C: face walk_face) and 10 (0CA35C; the last enemy's end
+     * 041E9A); RAM 10EA04/10EA05 = FF when the player is to face left at the end (0CA35C's D2 != 0; 0CA49C against +15 bit 0). */
+    uint8_t walk_face[2];
+    uint8_t join_off;                /* RAM 10F003 = 0 (041DD4: no player may join any more) */
     uint8_t guard_min;               /* 0C09DA's D0 asked this update (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; gameplay.c applies and clears it) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
@@ -340,6 +344,9 @@ neo_contact_actor_t ga_contact(const neo_gactor_t *a);
 void ga_set_contact(neo_gactor_t *a,const neo_contact_actor_t *c);
 bool ga_parent(neo_genv_t *e,uint32_t tag,neo_contact_parent_t *out);
 void ga_project(neo_gactor_t *a,neo_genv_t *e);                 /* 01ABC8 */
+/* 021288 (neo_heli.c): the path program +A0 (heading +AA, speed +A8, segment progress +A4); op 8 runs `call` (false:
+ * stop, as unsupported; NULL: op 8 is an explicit stop). True (carry): the path ended. */
+bool neo_path(neo_gactor_t *a,neo_genv_t *e,bool (*call)(neo_gactor_t *a,neo_genv_t *e,uint32_t routine));
 void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t parent); /* 01AB98 */
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */

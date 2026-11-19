@@ -794,3 +794,39 @@ Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabece
   del TAS, de `u26300` a `u26480`); (3) `041826` (`0CA438` / `0CA49C`) y
   `04677A`; (4) los manejadores 6..10 en `gameplay.c`; (5) sprites (exportación con `M1..M3`) y paquete; (6) prueba
   `m6boss` en ares; (7) la huida `017624` y los créditos.
+
+### La muerte y la huida del último enemigo (17-XI, agente P)
+
+- **Captura del TAS** (`captures-m6/fam/runP1.sh`: `tas_updates.lua` sin escrituras desde `u26340` hasta `u26708`, el
+  final del registro de 0.251; `RANGE=41500-47400 ROOTS=bea82`, sin volcados; 0 desincronizaciones; 14 MB): el fin de la
+  segunda forma, la muerte `04180A..` y el comienzo de la huida `04677A`.
+- **`04180A..` traducido entero**: `041826` = `041DD4` (RAM `10F003` = 0: `neo_ga_flags_t.join_off`, el HUD ya no deja
+  entrar al jugador 2; `0446D4` a (E0, 118); `018F92`), `041E38` y `041E9A` (`0CA35C`: los jugadores andan con `0CA438`
+  a x 170 / 1D8 y miran a `10EA04` / `10EA05` = 0 / FF: manejadores 9 y 10, `walk_face`); `041872` crea la huida
+  `04677A` (01ACF2 (0, 0)), espera su `+60` (`0418B0`) y en `0418C2` corre `018F40` (fin de etapa).
+- **La huida `04677A`** (`es_tick`): 01ABC8, los nueve actores `046858` de la lista `0473B0` (cada uno con su línea de
+  tiempo `0473FC..`: pares (señal, rutina)), su propia línea de tiempo `047394` ((señal, duración) en `+8A` / `+8C`;
+  duración 0 = esperar a que un actor ponga `+8F`); al acabar, el `+60` del cuerpo. Los actores (`ea_tick`, todos
+  traducidos, `046858..047256`): `04685C` (la señal), `04687A` la nave (programa `243AD6`, paleta 248, el camino
+  `0472C4` con `021288`, ahora `neo_path` compartido desde `neo_heli.c` con las llamadas de la orden 8: `0469C0` /
+  `0469D6`) y su pieza `0469E8`; `046964` el estallido (1035, `01DA40` `046912`, `0C8022`, `004192`); las órdenes al
+  nodo de cabecera `046A48` / `046A78` / `046A8C` / `046C4C` / `046CC8` / `046D6E` (con `0446D6` sobre el cuerpo y el
+  programa del cuerpo apagado por `004260`); las cinco explosiones `046A9A` → `046DCE` (`046EF2`, `1C706`); `046B40`
+  (`047342`, el contador `046B90` con el sonido 1026); `046EFC` (cae por `01495C`, programas `244054[0..3]`, `2440EA`);
+  los soldados que huyen `04702C..0470E0` (`0472B8`, `2442E8` / `24449E`, `244366` / `24451C`, `047238`, `244572`,
+  las llamadas `047274` / `047296` / `0472A8`) y `047240` (`244630`).
+- **Fuera de la traducción, a la vista**: (1) `046BAA` / `046E64` (y `037512` del combate de fondo): la sonda de la
+  protección de mslugx (`10F00C` += 3EF; con acarreo, lecturas de `2FFFE0` y `10F00A`; si falla, `046774`). No se
+  modela: la placa original va siempre a `004188` (borrar el nodo), que es lo traducido; `10F00A` / `10F00C` quedan
+  fuera de la comparación (zona `10F000..` de `docs/TAS.md`). (2) `046CD4` llama a `0C6F34` sin mapa con D0 / D1 tal
+  como los dejó la rutina anterior de la lista (registros muertos): el `+32` / `+34` de la capa `10D7B6` no se
+  reproduce; el arnés toma esos 4 bytes del registro (los cuenta aparte). (3) En `046F38` un fallo de `01495C` para
+  explícitamente (su D0 no está trazado).
+- **Familias**: **`m6boss6`** (P1, 56794..57613): 24 nodos, **5701** actualizaciones iguales a MAME; **`m6boss7`**
+  (`captures-m6/fam/P2`: `LOAD=u26400:26400 LASTU=28000 NAME=P2 sh runP1.sh`, hasta el fotograma 60000, donde para
+  `tas_updates.lua`): 30 nodos, **25 017**. El arnés conoce los manejadores 9 / 10 y `10EA04` / `10EA05` (`--ram
+  10ea04-10ea06`, `--range 46800-47400` además de la extracción común). En 60000 el cuerpo sigue en `0418B0` (esperando
+  el `+60` de la huida); `0418C2` (`018F40`) no está en ninguna ventana todavía. Trazas crudas P1 / P2 borradas.
+- `gameplay.c`: manejadores 9 (`0CA438`) y 10 (`0CA49C`) para el jugador 1; 7 (`0455E6`) y 8 (`041EBC`) son «sin mando»
+  (`moveq #0,d7`), como ya estaba. **Pendiente**: cuándo vuelve `10F003` a no ser 0 (no trazado; el nativo lo borra con la
+  etapa).

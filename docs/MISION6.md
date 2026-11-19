@@ -779,7 +779,7 @@ Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabece
 - **Consola (16-XI)**: con `neo_m6boss.c` (44 KB de texto a `-Os`; probado `-fno-inline*` y accesores fuera de línea: no
   baja) el arranque en ares para en `scene_assets.c:506` («RAM budget: 3307 KB left for the scene cache (minimum 3332
   KB)»). Hasta encontrar ~25 KB, el módulo queda **apagado en el cartucho** (`MSX_M6BOSS`, `neo_region.h`: 0 en N64, 1 en
-  el anfitrión; las pruebas lo tienen siempre): el guion sigue parándose en `2E19F8` → `04153E` como antes. ares
+  el anfitrión; las pruebas lo tienen siempre): el guion sigue parándose en `2E19F8` → `04153E` como antes. **19-XI (`work-mem`)**: encendido en la consola: los cuatro jefes de misión son superposiciones de código que comparten una región (`src/msx_overlay.c`, `docs/RENDIMIENTO.md` «Superposiciones de código»); caché de escena 3360 KB (210 ranuras). ares
   `--stage 3`: PASS (la línea base, cámara 0 → 320). Siguiente para la consola: memoria (p. ej. código por misión cargado
   del paquete, o mover datos del montón) y entonces la prueba `m6boss` en `regression_ares.py`.
 - **Sin traducir todavía** (por orden): (1) el combate de fondo `037404` (`037404..038800`: los aviones `03762A` /

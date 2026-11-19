@@ -201,7 +201,13 @@ Peticiones `0120F8`: 38 palabras / 922 peticiones (etapa 1), 37 / 1109 (etapa 2)
 | 73037..73677 | la pantalla siguiente | `0A7FFE` (de `01674A`) → `0A81A4`×10, `0A83D6`×216, `0A8602` |
 | 73677.. | sección 20: la demostración | (fuera de la misión) |
 
-Ninguna de estas rutinas está portada salvo la cuenta y las letras de MISSION COMPLETE. El registro de etapa
+Portado (19-XI): la cuenta, las letras de MISSION COMPLETE, la muerte `04180A..` y la huida `04677A` con todos sus
+actores (familias `m6boss6` / `m6boss7`, hasta el fotograma 60000). **Siguiente** (por orden): una ventana desde
+`60000` (estado **`end27900`**, actualización 27900, fotograma 59999, en `captures-m6/states/mslugx/`, guardado con
+`captures-m6/fam/runP6.sh`; para cargarlo, `MSX_TAS_STATES=/home/user/captures-m6/states MSX_TAS_UPD_LOAD=end27900:27900`) para el cierre del
+cuerpo `0418C2` (`018F40`) y el paso a `018870`; el registro `017624` (lista `0BEC28`) en `mission_flow`; la escena
+final `0570A0`; los créditos (`0646FE..0648B6`, `064AC0`, el desfile `0A4478` / `0A454C`); el logotipo `057E00` y
+`0A7FFE`; la vuelta a la sección 20. El registro de etapa
 `017624` (descriptor `01708E`, lista `0BEC28`) de la huida no se ha decodificado todavía.
 
 ## Verjas de la alcantarilla de la M5 (pendiente 2 de [MISION5.md](MISION5.md)): lo trazado
@@ -830,3 +836,27 @@ Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabece
 - `gameplay.c`: manejadores 9 (`0CA438`) y 10 (`0CA49C`) para el jugador 1; 7 (`0455E6`) y 8 (`041EBC`) son «sin mando»
   (`moveq #0,d7`), como ya estaba. **Pendiente**: cuándo vuelve `10F003` a no ser 0 (no trazado; el nativo lo borra con la
   etapa).
+
+### El combate de fondo `037404` (19-XI, agente P)
+
+- Traducido entero en `neo_m6boss.c` (`bf_tick`, `037404..038812`): el controlador (`+76` / `+7E`: una ranura por bando,
+  etiquetas de nodo), los aviones `03762A` (persigue puntos al azar, dispara `037CEC`) y `03790C` (cruza, apunta por
+  `+98` al avión enemigo y dispara `037E04`), humo `037B00`, muerte `037A86` / `037A8A`, el generador `037FBC` de las
+  formaciones `038092` / `03848A` / `038604` (con sus compañeros `0381D2` / `03858A` / `038680`, los disparos `03825C`
+  entre ellos y el bombardero `038702`), todo sobre la capa del cielo `10E83E` (`01AB98`, `012040`). La sonda de la
+  protección (`037512` y los finales de los disparos) no se modela: la placa original borra el nodo igual.
+- Un blanco se lee como el original lo lee por dirección (`bf_view`): el nodo nativo vivo o, si murió, los bytes de su
+  ranura del montón (`e->node`), que pueden ser ya de otro nodo (en `M3`, 324876: el líder dispara a la ranura de su
+  compañero muerto, ocupada por otro actor).
+- Familia **`m6air`** (`M3`, 324636..325798): 72 nodos, **4703** actualizaciones iguales a MAME. El arnés da la capa
+  `10E83E` como padre (`FAMILY_RAM`). **`m6air2`** (TAS, `captures-m6/fam/runP3.sh` con `LOAD=u24600:24600 LASTU=26420
+  ROOTS=37404 NAME=P5`, sin escrituras, 53438..57029): 146 nodos, **12 152** actualizaciones, con las tres formaciones.
+  El bombardero `038702..038812` no sale en ninguna captura (traducido sin prueba). Arnés: un hijo nacido en la última
+  actualización de su creador guarda la dirección grabada en `+0C`; `creator_of` la resuelve a la última instancia
+  de ese nodo de la familia (el humo `037B00` de un avión que sale de la pantalla).
+
+### El proyectil `08F1A0` de los tanques (19-XI, agente P): sin captura posible
+
+Ninguna captura lo contiene: `run4` (`M6`, 352700..354000) no lo despacha, y el TAS tampoco (`runP3.sh`, raíz `8f1a0`
+sola, sin escrituras: `sec06_u12887..u23570`, `sec11_u23570..u24620` y `u24600..u26420`: 0 nodos). Queda traducido
+sin prueba bit a bit (pendiente: una partida grabada que haga disparar ese proyectil al tanque `08DD2C`).

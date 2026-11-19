@@ -2212,6 +2212,439 @@ static ga_result_t ea_tick(neo_gactor_t *a,neo_genv_t *e) {
     }
     STOP(L(0));
 }
+/* ---- the background fight 037404 ------------------------------------------------------- */
+/* 037404 (the last enemy's stage, decor): a controller with one slot per side (+76: the plane 03762A, +7E: the plane
+ * 03790C; node tags) and the spawner 037FBC of the formations 038092 / 03848A / 038604; their shots 037CEC / 037E04 /
+ * 03825C, smoke 037B00, the bomber 038702. All on the sky layer 10E83E. Coordinates are the +28 / +2C words. */
+#define SKY 0x10e83eu
+#define X(n) S16(ga_w((n),0x28))
+#define Y(n) S16(ga_w((n),0x2c))
+static neo_gactor_t *bf_node(neo_genv_t *e,uint32_t tag) {return e->actor?e->actor(e->ctx,tag):NULL;}
+static uint16_t bf_abs(int16_t v) {return (uint16_t)(v<0?-v:v);}
+/* A node by its tag as the original reads it by address: the live native node, or else the bytes the pool slot holds
+ * (e->node: a target's slot reused by another node after its death, 0040AC then sees that node). */
+typedef struct {neo_gactor_t *n;const uint8_t *p;} bf_view_t;
+static bool bf_view(neo_genv_t *e,uint32_t tag,bf_view_t *v) {
+    v->n=bf_node(e,tag);v->p=NULL;
+    if (v->n && ga_l(v->n,0)!=0x3f1eu) return true;
+    v->n=NULL;v->p=e->node?e->node(e->ctx,tag):NULL;
+    if (!v->p) {ga_fail(e,tag);return false;}
+    return true;
+}
+static uint8_t vb(const bf_view_t *v,unsigned o) {return v->n?ga_b(v->n,o):v->p[o];}
+static int16_t vw(const bf_view_t *v,unsigned o) {return (int16_t)(v->n?ga_w(v->n,o):(uint16_t)(v->p[o]<<8|v->p[o+1u]));}
+static uint32_t vl(const bf_view_t *v,unsigned o) {return (uint32_t)(uint16_t)vw(v,o)<<16|(uint16_t)vw(v,o+2u);}
+static bool vkill(neo_genv_t *e,bf_view_t *v) {   /* +5F bit 7 of the node */
+    if (!v->n) {ga_fail(e,0x5f);return false;}
+    ga_sb(v->n,0x5f,ga_b(v->n,0x5f)|0x80u);return true;
+}
+static void k374c6(neo_gactor_t *a,neo_genv_t *e) {   /* +66 / +1E = 0, 012040 */
+    SW(0x66,0);SW(0x1e,0);
+    if (!e->front_layer) {ga_fail(e,0x12040);return;}
+    if (e->front_layer(e->ctx)) CLR(0x15,2);else SET(0x15,2);
+}
+static void k374ba(neo_gactor_t *a,neo_genv_t *e,int16_t x,int16_t y) {ga_place(a,e,x,y,SKY);k374c6(a,e);}   /* 01AB98 */
+/* 037512: out of the box 60..1F0 x 20..110, +5F bit 7 and 004188 (true). The protection probe of 2FFFE0 on the way
+ * (10F00C += 3EF, 10F00A) is not modelled: the genuine board deletes the node either way. */
+static bool k374d8(neo_gactor_t *a) {
+    if ((uint16_t)W(0x28)>0x60u && (uint16_t)W(0x28)<0x1f0u && (uint16_t)W(0x2c)>0x20u && (uint16_t)W(0x2c)<0x110u) return false;
+    SET(0x5f,7);return true;
+}
+static void k375a8(neo_genv_t *e,int16_t *x,int16_t *y) {*y=(int16_t)(ga_rand_range(e,0x50)+0x80u);*x=(int16_t)(ga_rand_range(e,0x130)+0x90u);}
+static void k377da(neo_gactor_t *a) {if (B(0x98)&0x80u) SB(0x98,0);if (B(0x98)>0xcu) SB(0x98,0xc);}
+static void k37854(neo_gactor_t *a,neo_genv_t *e) {SB(0x99,(uint8_t)(B(0x98)*2u+(e->video&1u)));}
+static void k3786c(neo_gactor_t *a,neo_genv_t *e) {
+    k37854(a,e);SL(0x34,0);
+    if (B(0x98)<6u) SL(0x34,0x8000);else if (B(0x98)>6u) SL(0x34,0xffff8000u);
+}
+static void bf_spawn_at(neo_gactor_t *a,neo_genv_t *e,uint32_t r) {neo_gactor_t *c=child(a,e,r,0x1c);if (c) ga_place_from(c,a,e,0,0);}   /* 0040BC, 01B220 */
+static void k378d2(neo_gactor_t *a,neo_genv_t *e) {if (B(0x5a) && !(e->video&0xfu)) bf_spawn_at(a,e,0x37b00);}
+/* 037ACC: dead, and off its controller's slot. */
+static void k37acc(neo_gactor_t *a,neo_genv_t *e) {
+    SET(0x5f,7);
+    neo_gactor_t *c=creator(a,e);
+    if (!c) return;
+    unsigned o=B(0x97)?0x7eu+4u*(B(0x95)&0xfu):0x76u+4u*(B(0x94)&0xfu);
+    ga_sl(c,o,0);
+}
+/* 037C0A / 037C78: the nearest live node of the list +76 / +7E (of the creator, or of its creator for a shot, +97 = 2)
+ * by |dx| + |dy|; NULL (carry) when none. */
+static neo_gactor_t *k37c0a(neo_gactor_t *a,neo_genv_t *e,unsigned list) {
+    neo_gactor_t *c=creator(a,e);
+    if (c && B(0x97)==2u) c=creator(c,e);
+    if (!c) return NULL;
+    uint32_t t=ga_l(c,list);
+    if (!t) return NULL;
+    neo_gactor_t *n=bf_node(e,t);
+    if (!n) {ga_fail(e,t);return NULL;}
+    if (ga_b(n,0x5f)&0x80u) return NULL;
+    uint16_t d=(uint16_t)(bf_abs((int16_t)(X(n)-X(a)))+bf_abs((int16_t)(Y(n)-Y(a))));
+    return d<0x8000u?n:NULL;   /* add.w d6,d6: carry */
+}
+static void k37c94(neo_gactor_t *a,neo_genv_t *e,int16_t nx,int16_t ny) {   /* aim at (nx, ny) */
+    int16_t dx=(int16_t)(nx-X(a)),dy=(int16_t)(ny-Y(a));
+    uint8_t d1;
+    if (dy>0) d1=(uint8_t)((ga_rand(e)&0x70u)+0x80u);
+    else d1=(uint8_t)((neo_angle(dx,dy)+8u)&0xf0u);
+    SB(0x96,d1>>4);
+    uint32_t vx,vy;ga_polar(0x90000,d1,&vx,&vy);SL(0x30,vx);SL(0x34,vy);
+}
+static void k384e0(neo_gactor_t *a,neo_gactor_t *n) {   /* the collision of two planes */
+    if (ga_b(n,0x5f)&0x80u) return;
+    if (bf_abs((int16_t)(X(n)-X(a)))>8u || bf_abs((int16_t)(Y(n)-Y(a)))>5u) return;
+    if (ga_b(n,0x9a)!=3u) ga_sb(n,0x5f,ga_b(n,0x5f)|0x80u);
+    if (B(0x9a)!=3u) SET(0x5f,7);
+}
+static void k380fc(neo_gactor_t *a,neo_genv_t *e,bool *ok) {
+    if (!B(0x97)) {ga_palette(a,0xfd);*ok=ga_anim_start(a,e,0x23c0de,0x100);}
+    else {ga_palette(a,0xff);*ok=ga_anim_start(a,e,0x23c212,0x100);}
+}
+static void k38148(neo_gactor_t *a,neo_genv_t *e,bool first) {   /* 038148 / 03814E */
+    if (first) SB(0x9c,1);
+    SB(0x9c,B(0x9c)-1u);
+    if (B(0x9c)) {SW(0x8a,3);return;}
+    SW(0x8a,(uint16_t)(ga_rand_range(e,0x14)+0x14u));SB(0x9c,(uint8_t)(ga_rand_range(e,3)+1u));
+}
+static void k38228(neo_gactor_t *a,neo_genv_t *e,uint8_t d0,uint32_t tag) {   /* a shot 03825C at the node */
+    bf_view_t v;
+    if (!bf_view(e,tag,&v) || vl(&v,0)==0x3f1eu || (vb(&v,0x5f)&0x80u)) return;
+    neo_gactor_t *c=child(a,e,0x3825c,0x2a);
+    if (c) {ga_sl(c,0x72,tag);ga_sb(c,0x9b,d0);}
+}
+static void k38184(neo_gactor_t *a,neo_genv_t *e,bool *ok) {   /* a follower at its leader */
+    neo_gactor_t *p=creator(a,e);
+    if (!p) {*ok=false;return;}
+    k374ba(a,e,X(p),Y(p));
+    SB(0x97,ga_b(p,0x97)?0:1);
+    k380fc(a,e,ok);
+    if (ga_b(p,0x15)&1u) {SET(0x15,0);SL(0x30,(uint32_t)-S32(L(0x30)));}
+    SB(0x96,6);
+}
+static void k3853a(neo_gactor_t *a,neo_genv_t *e) {   /* the formation's dip by the distance to x 128 */
+    uint32_t d0=bf_abs((int16_t)(X(a)-0x128));
+    d0=(d0*0x32u)/0x128u;
+    SW(0x2c,(uint16_t)(W(0x90)+(uint16_t)d0));
+    int16_t d=(int16_t)(X(a)-0x128);
+    if (!(W(0x30)&0x8000u)) d=(int16_t)-d;
+    SB(0x98,(uint8_t)(B(0x98)+(d<0?0xffu:1u)));
+    k377da(a);k37854(a,e);ga_move(a,e);
+}
+static bool k38016(neo_gactor_t *a,neo_genv_t *e,uint32_t r,bool *ok) {   /* the leader's follower and its entry */
+    neo_gactor_t *c=child(a,e,r,0x2a);
+    if (!c) return false;
+    SL(0x72,self(c));
+    SB(0x97,(ga_rand(e)&0x80u)?0:1);
+    k380fc(a,e,ok);
+    int16_t x=0x1ef;
+    if (!(ga_rand(e)&0x80u)) {x=0x61;SL(0x30,(uint32_t)-S32(L(0x30)));SET(0x15,0);}
+    SW(0x28,(uint16_t)x);
+    int16_t y=(int16_t)((ga_rand(e)&0x3fu)-0x20+0xa8);
+    k374ba(a,e,X(a),y);
+    SB(0x96,6);
+    return true;
+}
+static ga_result_t bf_die(neo_gactor_t *a,neo_genv_t *e) {   /* 037A8A */
+    SB(0x1d,0);ga_palette(a,0x100);START(0x23c340);SL(0,0x37ab4);   /* 009F88 */
+    ga_project(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;return r?GA_DELETE:GA_MORE;   /* 037AB4 */
+}
+static ga_result_t bf_tail(neo_gactor_t *a,neo_genv_t *e) {   /* 037512, 00427A */
+    if (k374d8(a)) return GA_DELETE;
+    if (STEP()<0) return GA_UNSUPPORTED;
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+static ga_result_t bf_tick(neo_gactor_t *a,neo_genv_t *e) {
+    bool ok=true;
+    switch (L(0)) {
+    case 0x37404: SL(0x76,0);SL(0x7e,0);child(a,e,0x37fbc,0x1c);SL(0,0x3743e);
+        /* fall through */
+    case 0x3743e:
+        if (!L(0x7e)) {SB(0x95,0);neo_gactor_t *c=child(a,e,0x3790c,0x2a);if (c) {ga_sb(c,0x95,0);SL(0x7e,self(c));}}
+        if (!L(0x76)) {SB(0x94,0);neo_gactor_t *c=child(a,e,0x3762a,0x2a);if (c) {ga_sb(c,0x94,0);SL(0x76,self(c));}}
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x3762a: {
+        int16_t x,y;SB(0x97,0);k375a8(e,&x,&y);k374ba(a,e,x,0x10f);
+        k375a8(e,&x,&y);SW(0x8c,(uint16_t)x);SW(0x8e,(uint16_t)y);
+        ga_palette(a,0xfd);
+        SL(0x6e,(ga_rand_range(e,0x31)+0x280u)<<8);
+        SW(0x8a,(uint16_t)(ga_rand_range(e,0x1e)+0x3cu));                         /* 037602 */
+        START(0x23c0de);SW(0x88,0);SB(0x9a,0);SL(0,0x3768e);
+    }   /* fall through */
+    case 0x3768e:
+        if (BIT(0x5f,7)) {k37acc(a,e);return bf_die(a,e);}
+        k378d2(a,e);
+        if (W(0x88)) {SL(0x30,0);SL(0x34,0);}
+        else {uint32_t vx,vy;ga_polar(L(0x6e),neo_angle((int16_t)(S16(W(0x8c))-X(a)),(int16_t)(S16(W(0x8e))-Y(a))),&vx,&vy);SL(0x30,vx);SL(0x34,vy);}
+        ga_move(a,e);
+        if (STEP()<0) return GA_UNSUPPORTED;
+        if (!W(0x88)) {
+            if (bf_abs((int16_t)(X(a)-S16(W(0x8c))))<=4u && bf_abs((int16_t)(Y(a)-S16(W(0x8e))))<=4u) {   /* 0375CA */
+                int16_t x,y;SW(0x88,(uint16_t)(ga_rand_range(e,0x3c)+0x14u));k375a8(e,&x,&y);SW(0x8c,(uint16_t)x);SW(0x8e,(uint16_t)y);
+            }
+        } else SW(0x88,W(0x88)-1u);
+        SW(0x8a,W(0x8a)-1u);
+        if (S16(W(0x8a))<0) {bf_spawn_at(a,e,0x37cec);SW(0x8a,(uint16_t)(ga_rand_range(e,0x1e)+0x3cu));}
+        if (k374d8(a)) {k37acc(a,e);return GA_DELETE;}
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0x3790c: {
+        int16_t x,y;SB(0x97,1);k375a8(e,&x,&y);k374ba(a,e,x,y);
+        ga_palette(a,0xff);
+        if (ga_rand(e)&0x8000u) SET(0x15,0);
+        int32_t v=(int32_t)((ga_rand_range(e,0x19)+0x300u)<<8);int16_t px=0x61;
+        if (!BIT(0x15,0)) {v=-v;px=0x1ef;}
+        SL(0x30,(uint32_t)v);SW(0x28,(uint16_t)px);
+        START(0x23c212);
+        SW(0x8a,(uint16_t)(ga_rand_range(e,0x1e)+0x14u));                         /* 037616 */
+        SL(0x72,0xffffffffu);SB(0x98,6);SB(0x9a,0);SL(0,0x37996);
+    }   /* fall through */
+    case 0x37996: {
+        if (BIT(0x5f,7)) {k37acc(a,e);return bf_die(a,e);}
+        /* 03775E: the target, the nearest plane of +76 in front */
+        if (!(L(0x72)&0x80000000u)) {neo_gactor_t *n=bf_node(e,L(0x72));if (!n || ga_l(n,0)==0x3f1eu || (ga_b(n,0x5f)&0x80u)) SL(0x72,0xffffffffu);}
+        else SL(0x72,0xffffffffu);
+        if (L(0x72)==0xffffffffu) {
+            neo_gactor_t *c=creator(a,e);
+            if (!c) return GA_UNSUPPORTED;
+            uint32_t t=ga_l(c,0x76);
+            if (t) {
+                neo_gactor_t *n=bf_node(e,t);
+                if (!n) STOP(t);
+                int16_t d0=(int16_t)(X(n)-X(a));
+                if (BIT(0x15,0)) d0=(int16_t)-d0;
+                if (d0<0) SL(0x72,t);
+            }
+        }
+        /* 0377F8: steer +98 toward the target's height */
+        neo_gactor_t *t=(L(0x72)&0x80000000u)?NULL:bf_node(e,L(0x72));
+        int16_t dy=t?(int16_t)(Y(t)-Y(a)):0;
+        if (t && bf_abs(dy)>(B(0x98)==6u?0x10u:8u)) {SB(0x98,(uint8_t)(B(0x98)+(dy<0?1u:0xffu)));k377da(a);}
+        else if (B(0x98)<6u) SB(0x98,B(0x98)+1u);
+        else if (B(0x98)>6u) SB(0x98,B(0x98)-1u);
+        SW(0x8a,W(0x8a)-1u);
+        if (S16(W(0x8a))<0) {
+            SW(0x8a,(uint16_t)(ga_rand_range(e,0x1e)+0x14u));
+            if (t && bf_abs((int16_t)(Y(t)-Y(a)))<=8u) bf_spawn_at(a,e,0x37e04);   /* 03788E */
+        }
+        k378d2(a,e);k3786c(a,e);ga_move(a,e);
+        if (STEP()<0) return GA_UNSUPPORTED;
+        neo_gactor_t *n=k37c0a(a,e,0x76);
+        if (n) {k384e0(a,n);if (BIT(0x5f,7)) SL(0,0x37a86);}
+        if (k374d8(a)) {k37acc(a,e);return GA_DELETE;}
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x37a86: k37acc(a,e);return bf_die(a,e);
+    case 0x37a8a: return bf_die(a,e);
+    case 0x37ab4: {ga_project(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;return r?GA_DELETE:GA_MORE;}
+    case 0x37b00: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        int16_t x=X(p),y=Y(p);
+        if (ga_b(p,0x97)==1u) x=(int16_t)(x+((ga_b(p,0x15)&1u)?-4:4));else y=(int16_t)(y-3);
+        ga_place(a,e,x,y,SKY);ga_palette(a,0x100);START(0x23c446);SL(0x30,0);SL(0x34,0x2000);SL(0,0x37b6a);
+    }   /* fall through */
+    case 0x37b6a: {ga_move(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;return r?GA_DELETE:GA_MORE;}
+    case 0x37cec: {
+        SB(0x97,2);
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        SW(0x28,ga_w(p,0x28));SW(0x2c,ga_w(p,0x2c));
+        neo_gactor_t *n=k37c0a(a,e,0x7e);
+        if (!n) return e->unsupported?GA_UNSUPPORTED:GA_DELETE;
+        k37c94(a,e,X(n),Y(n));on_creator(a,e,0,-8);ga_palette(a,0xfe);START(0x23c184);SL(0,0x37d3e);
+    }   /* fall through */
+    case 0x37d3e: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (ga_b(p,0x5f)&0x80u) return GA_DELETE;
+        ga_project(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x37d64);
+        return GA_MORE;
+    }
+    case 0x37d64: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        ga_place(a,e,X(p),(int16_t)(Y(p)-8),SKY);SB(0x1d,0);ga_palette(a,0xfe);START(0x23c4ca);SL(0,0x37daa);
+    }   /* fall through */
+    case 0x37daa: case 0x37eda: {   /* the shots: a hit on the nearest plane of the other side */
+        bool up=L(0)==0x37daa;
+        neo_gactor_t *n=k37c0a(a,e,up?0x7eu:0x76u);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (n && bf_abs((int16_t)(X(n)-X(a)))<=(up?0x10u:8u) && bf_abs((int16_t)(Y(n)-Y(a)))<=(up?0xau:7u)) {
+            if (!ga_b(n,0x5a)) ga_sb(n,0x5a,0xff);else ga_sb(n,0x5f,ga_b(n,0x5f)|0x80u);
+            return GA_DELETE;
+        }
+        ga_move(a,e);
+        if (STEP()<0) return GA_UNSUPPORTED;
+        if (k374d8(a)) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x37e04: {
+        SB(0x97,2);
+        SL(0x30,BIT(0x15,0)?0xa0000u:(uint32_t)-0xa0000);SL(0x34,0);
+        on_creator(a,e,BIT(0x15,0)?0x10:-0x10,0);ga_palette(a,0xfe);START(0x23c2ee);SL(0,0x37e60);
+    }   /* fall through */
+    case 0x37e60: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (ga_b(p,0x5f)&0x80u) return GA_DELETE;
+        ga_project(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x37e86);
+        return GA_MORE;
+    }
+    case 0x37e86: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        ga_place(a,e,(int16_t)(X(p)+((ga_b(p,0x15)&1u)?0x10:-0x10)),Y(p),SKY);SB(0x1d,0);ga_palette(a,0xfe);START(0x23c550);SL(0,0x37eda);
+        return bf_tick(a,e);
+    }
+    case 0x37fbc: {   /* the spawner: one formation at a time */
+        if (!e->has_children) STOP(0x408c);
+        if (e->has_children(e->ctx,a)) return GA_MORE;
+        static const uint32_t r[3]={0x38092,0x3848a,0x38604};
+        child(a,e,r[ga_rand_range(e,3)],0x2a);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x38092: SL(0x30,0xfffd0000u);if (!k38016(a,e,0x381d2,&ok)) return GA_DELETE;if (!ok) return GA_UNSUPPORTED;SB(0x9a,0);SL(0,0x380ae);
+        /* fall through */
+    case 0x380ae: lead: {
+        if (BIT(0x5f,7)) return bf_die(a,e);
+        SB(0x96,B(0x96)+2u);
+        uint32_t vx,vy;ga_polar(0x10000,B(0x96),&vx,&vy);SL(0x34,vy);
+        SB(0x98,(uint8_t)(B(0x98)+((B(0x96)&0x80u)?1u:0xffu)));
+        k377da(a);k37854(a,e);ga_move(a,e);
+        return bf_tail(a,e);
+    }
+    case 0x381d2: SL(0x30,0xfffd0000u);k38184(a,e,&ok);if (!ok) return GA_UNSUPPORTED;SL(0,0x381e2);
+        /* fall through */
+    case 0x381e2: {
+        ga_project(a,e);
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (bf_abs((int16_t)(X(p)-X(a)))<0x60u) return GA_MORE;
+        k38148(a,e,true);SL(0,0x3820e);
+    }   /* fall through */
+    case 0x3820e:
+        SW(0x8a,W(0x8a)-1u);
+        if (S16(W(0x8a))<0) {neo_gactor_t *p=creator(a,e);if (!p) return GA_UNSUPPORTED;k38228(a,e,0,self(p));k38148(a,e,false);}
+        goto lead;
+    case 0x3825c: {
+        k374c6(a,e);
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        SB(0x97,ga_b(p,0x97));SB(0x96,8);
+        int32_t v=-0xf0000;
+        if (ga_b(p,0x15)&1u) {SB(0x96,0);SET(0x15,0);v=-v;}
+        SL(0x30,(uint32_t)v);SL(0x34,0);ga_palette(a,0xfe);
+        if (!B(0x97)) {CLR(0x15,0);START(0x23c184);on_creator(a,e,0,-8);}
+        else {START(0x23c2ee);on_creator(a,e,BIT(0x15,0)?0x10:-0x10,0);}
+        SL(0,0x38300);
+    }   /* fall through */
+    case 0x38300: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (ga_b(p,0x5f)&0x80u) return GA_DELETE;
+        ga_project(a,e);int r=STEP();if (r<0) return GA_UNSUPPORTED;
+        if (r) SL(0,0x383b4);
+        return GA_MORE;
+    }
+    case 0x383b4: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        k374ba(a,e,X(p),Y(p));
+        if (!B(0x97)) {START(0x23c4ca);SW(0x2c,W(0x2c)-8u);}
+        else {START(0x23c550);SW(0x28,(uint16_t)(W(0x28)+(BIT(0x15,0)?0x10u:0xfff0u)));}
+        if (B(0x9b)) {bf_view_t v;if (!bf_view(e,L(0x72),&v)) return GA_UNSUPPORTED;k37c94(a,e,vw(&v,0x28),vw(&v,0x2c));}
+        SL(0,0x38422);
+    }   /* fall through */
+    case 0x38422: {
+        ga_move(a,e);
+        bf_view_t v;
+        if (!bf_view(e,L(0x72),&v)) return GA_UNSUPPORTED;
+        if (!vb(&v,0x9a) && bf_abs((int16_t)(vw(&v,0x28)-X(a)))<=8u && bf_abs((int16_t)(vw(&v,0x2c)-Y(a)))<=5u) return vkill(e,&v)?GA_DELETE:GA_UNSUPPORTED;
+        return bf_tail(a,e);
+    }
+    case 0x3848a:
+        SL(0x30,0xfffd0000u);if (!k38016(a,e,0x3858a,&ok)) return GA_DELETE;if (!ok) return GA_UNSUPPORTED;
+        SW(0x90,W(0x2c));SL(0x34,0);k38148(a,e,true);SB(0x9a,(uint8_t)ga_rand_range(e,4));SL(0,0x384b0);
+        /* fall through */
+    case 0x384b0:
+        if (BIT(0x5f,7)) return bf_die(a,e);
+        SW(0x8a,W(0x8a)-1u);
+        if (S16(W(0x8a))<0) {k38228(a,e,0,L(0x72));k38148(a,e,false);}
+        k3853a(a,e);return bf_tail(a,e);
+    case 0x3858a: {
+        SL(0x30,0xfffd0000u);k38184(a,e,&ok);if (!ok) return GA_UNSUPPORTED;
+        SB(0x15,B(0x15)^1u);
+        SL(0x30,(uint32_t)-S32(L(0x30)));
+        SW(0x28,(L(0x30)&0x80000000u)?0x1efu:0x61u);
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        SW(0x90,ga_w(p,0x90));SL(0x34,0);k38148(a,e,true);SB(0x9a,(uint8_t)ga_rand_range(e,4));SL(0,0x385cc);
+    }   /* fall through */
+    case 0x385cc: case 0x386d2: {
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (L(0)==0x385ccu) k384e0(a,p);
+        if (BIT(0x5f,7)) return bf_die(a,e);
+        SW(0x8a,W(0x8a)-1u);
+        if (S16(W(0x8a))<0) {k38228(a,e,0,self(p));k38148(a,e,false);}
+        k3853a(a,e);return bf_tail(a,e);
+    }
+    case 0x38604:
+        SL(0x30,0xfffd0000u);if (!k38016(a,e,0x38680,&ok)) return GA_DELETE;if (!ok) return GA_UNSUPPORTED;
+        SW(0x2c,W(0x2c)-0x20u);SW(0x90,W(0x2c));SL(0x34,0);SW(0x92,(uint16_t)(ga_rand_range(e,0x1e)+0x23u));SB(0x9a,0);SL(0,0x38642);
+        /* fall through */
+    case 0x38642:
+        if (BIT(0x5f,7)) return bf_die(a,e);
+        SW(0x92,W(0x92)-1u);
+        if (!W(0x92) && (ga_rand(e)&0x80u)) child(a,e,0x38702,0x2a);
+        k3853a(a,e);return bf_tail(a,e);
+    case 0x38680: {
+        SL(0x30,0xfffd0000u);k38184(a,e,&ok);if (!ok) return GA_UNSUPPORTED;
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        SW(0x90,ga_w(p,0x90));SL(0x34,0);k38148(a,e,true);SB(0x9a,0);SL(0,0x386aa);
+    }   /* fall through */
+    case 0x386aa: {
+        ga_project(a,e);
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        if (bf_abs((int16_t)(X(p)-X(a)))<0x50u) return GA_MORE;
+        SL(0,0x386d2);
+        return bf_tick(a,e);
+    }
+    case 0x38702: {   /* the bomber of the formation 038604 */
+        neo_gactor_t *p=creator(a,e);
+        if (!p) return GA_UNSUPPORTED;
+        SB(0x15,ga_b(p,0x15)&3u);                                               /* 01ACA2 */
+        SL(0x72,ga_l(p,0x72));SB(0x97,ga_b(p,0x97));
+        k374ba(a,e,BIT(0x15,0)?0x61:0x1ef,0x10f);
+        k380fc(a,e,&ok);if (!ok) return GA_UNSUPPORTED;
+        SB(0x98,0xc);k377da(a);k37854(a,e);SL(0,0x3874a);
+    }   /* fall through */
+    case 0x3874a: {
+        neo_gactor_t *t=bf_node(e,L(0x72));
+        if (!t) STOP(L(0x72));
+        if (!B(0x97) && S16((uint16_t)(W(0x2c)-ga_w(t,0x2c)))<=0x28) {
+            k38228(a,e,1,L(0x72));SW(0x86,0x1e);SL(0,0x387ea);
+            return bf_tick(a,e);
+        }
+        k384e0(a,t);
+        if (BIT(0x5f,7)) {ga_sb(t,0x5f,ga_b(t,0x5f)|0x80u);return bf_die(a,e);}
+        if (!(ga_b(t,0x5f)&0x80u)) {uint32_t vx,vy;ga_polar(0x50000,neo_angle((int16_t)(X(t)-X(a)),(int16_t)(Y(t)-Y(a))),&vx,&vy);SL(0x30,vx);SL(0x34,vy);}
+        ga_move(a,e);
+        return bf_tail(a,e);
+    }
+    case 0x387ea:
+        SW(0x86,W(0x86)-1u);
+        if (!(W(0x86)&0x8000u)) {ga_project(a,e);if (STEP()<0) return GA_UNSUPPORTED;return GA_MORE;}
+        SL(0x30,0);SL(0x34,0x50000);SL(0,0x38812);
+        /* fall through */
+    case 0x38812: ga_move(a,e);return bf_tail(a,e);
+    }
+    STOP(L(0));
+}
+#undef X
+#undef Y
 /* ---- dispatch ------------------------------------------------------------------------- */
 static bool in(uint32_t r,uint32_t lo,uint32_t hi) {return r>=lo && r<=hi;}
 static bool tr_routine(uint32_t r) {return in(r,0x438a4,0x438c8) || in(r,0x43ae4,0x43b1c) || in(r,0x43e36,0x43f64) || r==0x440d6u || in(r,0x4416e,0x441a8) || in(r,0x441ca,0x4439e);}
@@ -2220,7 +2653,7 @@ static bool aux_routine(uint32_t r) {return r==0x443beu || r==0x4445au || r==0x4
 bool neo_m6boss_routine(uint32_t r) {
     return r==0x4153eu || r==0x41578u || in(r,0x4157a,0x418ce) || aux_routine(r) || tr_routine(r) || wk_routine(r) || in(r,0x42bdc,0x42d4e) || in(r,0x42e22,0x42f5c) || r==0x43054u
         || in(r,0x4307e,0x430ae) || in(r,0x431e0,0x4357e) || in(r,0x4359e,0x435ce) || in(r,0x444e8,0x445f6)
-        || in(r,0x45428,0x45518) || in(r,0x45608,0x45cf6) || in(r,0x4677a,0x4681c) || in(r,0x46858,0x47256) || r==0xbea82u || in(r,0x436b6,0x43712) || in(r,0x43860,0x43896);
+        || in(r,0x45428,0x45518) || in(r,0x45608,0x45cf6) || in(r,0x4677a,0x4681c) || in(r,0x46858,0x47256) || in(r,0x37404,0x38812) || r==0xbea82u || in(r,0x436b6,0x43712) || in(r,0x43860,0x43896);
 }
 ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
@@ -2239,6 +2672,7 @@ ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (r==0xbea82u) return fade_tick(a,e);
     if (in(r,0x4677a,0x4681c)) return es_tick(a,e);
     if (in(r,0x46858,0x47256)) return ea_tick(a,e);
+    if (in(r,0x37404,0x38812)) return bf_tick(a,e);
     if (in(r,0x436b6,0x43712) || in(r,0x43860,0x43896)) return fl_tick(a,e);
     STOP(r);
 }

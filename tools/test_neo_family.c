@@ -171,6 +171,16 @@ static bool parent(void *ctx,uint32_t tag,neo_contact_parent_t *out) {
     /* Mission 3: the train 10D7B6 as read (+14..+20, +24 correction 0). */
     if (tag==0x10d7b6u) {*out=(neo_contact_parent_t){tag,train_now.x,train_now.y,train_now.prev_x,train_now.prev_y,0};return true;}
 #endif
+#ifdef FAMILY_RAM
+    /* The sky layer object 10E83E (the Mission 6 background fight 037404 flies on it), as the RAM image holds it. */
+    if (tag==0x10e83eu) {
+        #define L32(p) ((uint32_t)((uint32_t)(p)[0]<<24|(p)[1]<<16|(p)[2]<<8|(p)[3]))
+        const uint8_t *b=&wram[0xe83e];
+        *out=(neo_contact_parent_t){tag,(int32_t)L32(b+0x14),(int32_t)L32(b+0x18),(int32_t)L32(b+0x1c),(int32_t)L32(b+0x20),b[0x25]};
+        #undef L32
+        return true;
+    }
+#endif
 #if defined(FAMILY_M4BOSS) && defined(FAMILY_RAM)
     /* Mission 4: the boss's layer object 10D7B6 (as the RAM image holds it). */
     if (tag==0x10d7b6u) {
@@ -406,6 +416,9 @@ static neo_gactor_t *actor_of(void *ctx,uint32_t t) {
 static neo_gactor_t *creator_of(void *ctx,neo_gactor_t *a) {
     (void)ctx;uint32_t t=ga_l(a,0x0c);
     if ((t&0xff000000u)==NEO_GA_TAG_BASE && (t&0xffffu)<NN) return &actors[t&0xffffu];
+    /* A child born in its creator's last update keeps the recorded address: the family node of that address (its
+     * bytes as it left them; the background fight's smoke 037B00 of a plane that left the screen). */
+    for (unsigned k=NN;k-->0;) if (node_address[k]==t && t && bound[k]) return &actors[k];
 #ifdef FAMILY_RAM_CREATORS
     /* A creator outside the family (the player 1014C4, the gate 03889C):
      * its node from the RAM image, as the update read it. */

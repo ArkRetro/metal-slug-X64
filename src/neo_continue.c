@@ -20,7 +20,7 @@ static void emit(void *context,const neo_anim_draw_t *d) {
     if (slot==0x04) resource=0x63; else if (slot==0xfe) resource=0x25f;
     else {if (!c->unsupported++) c->unsupported_at=0x18120;return;}
     const neo_gactor_t *a=&c->node;
-    c->draws[c->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13)};
+    c->draws[c->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13),0,0};
 }
 static bool front(void *context) {return ((ctx_t *)context)->front;}
 /* 0180F6: +12 = sine(2 * low byte of +7E, the doubling saturated at 0x80) - 1, at least 0. */

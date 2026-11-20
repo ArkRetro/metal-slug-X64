@@ -254,8 +254,8 @@ static bool count_one(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m,neo_gactor_
 /* +6E: the holder node (native tag NEO_GA_TAG(pool index)). */
 static neo_gactor_t *holder_of(neo_end_t *s,neo_gactor_t *a) {
     uint32_t tag=L(0x6e);
-    if ((tag&0xff000000u)!=NEO_GA_TAG_BASE || (tag&0xffffu)>=NEO_END_NODES) return NULL;
-    return &s->nodes[tag&0xffffu];
+    if ((tag&0xff000000u)!=NEO_GA_TAG_BASE || (tag&0xffffu)>=neo_end_capacity(s)) return NULL;
+    return &neo_end_nodes(s)[tag&0xffffu];
 }
 /* 030FA2: the root's +60 plus 1 and 00427A. */
 static ga_result_t tail(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *p) {

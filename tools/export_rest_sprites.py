@@ -517,6 +517,25 @@ ROOTS=ROOTS+(0x2415f8,0x241ba6,0x241ab0,0x241b3a,0x241b4e,0x241bc8,0x241be2,0x24
 ROOTS=ROOTS+(0x243662,0x243728,0x243744,0x243764,0x24378e,0x2438a4,0x24396a,0x2436e0,0x2438c4,0x243a30,0x22d2a6)
 RESOURCES=RESOURCES+(0x102,0x35d,0x364,0x365,0x36c,0xd7,0xd8,0xd9,0x10b,0xdb,0xe7,0x109,0xda,0x176,0x169,0xea,0xeb,0xec,0xed,0xee,0x10a,0xef,0x506,0x113,0xe8,0xe9,0x10c,0x184,0x185,0x186,0x175)
 DRAWN_7A=(0x29fb62,)
+# The game's ending (--ending: the private export of the credits' pack, filesystem/mission13/rest-native.json;
+# docs/MISION6.md "Los créditos"): the small pictures 0A454C (program 2A4B16, palette 845, 125 from picture 0x3E), the
+# title 0A7FFE (2A7368 palette DE; the pieces 2A702C / 2A7082 with 134 / 145 towards 159; the sparks 2A7182 / 2A7224 /
+# 2A72C6 with 134; the picture 1D5B22 with 840), the results 0570A0 (the dial 24BA2A / 24BA34 and its piece 24BA46 /
+# 24BA52, the frames 1D9154 / 1D932C, palette 35F) and the 48 pages of the table 0E1446 (26 bytes: the first palette and
+# six descriptors, drawn by 064AE0 through 011FF6 with consecutive palettes). The palettes come from the ROM (palette n:
+# the 16 words at 200000 + 32 n of bank 1 through the table 224000, tools/palette_mix.py) and each one 009CCE blends at
+# run time (the pages' and the pictures' towards 1, the pieces' 145 towards 159) also as its ROM words, resource 8000 | n
+# (src/neo_palmix.h neo_palmix_mix).
+ENDING_ROOTS=(0x2a4b16,0x2a7368,0x2a702c,0x2a7082,0x2a7182,0x2a7224,0x2a72c6,0x24ba2a,0x24ba34,0x24ba46,0x24ba52)
+ENDING_DESCRIPTORS=(0x1d9154,0x1d932c,0x1d5b22)
+ENDING_PLAIN=(0x845,0x125,0x35f,0xde,0x134,0x145,0x159,0x840,1)
+ENDING_RAW=(0x845,0x125,0x145,0x159,1)
+def ending_pages(zip_path):
+    """(palette, descriptor) of the six lines of each page of ROM 0E1446."""
+    import zipfile
+    with zipfile.ZipFile(zip_path) as z:raw=z.read('250-p1.p1')
+    p1=bytearray(raw);p1[::2]=raw[1::2];p1[1::2]=raw[::2]
+    return [(struct.unpack_from('>H',p1,0xe1446+26*k)[0]+i,struct.unpack_from('>I',p1,0xe1446+26*k+2+4*i)[0]) for k in range(48) for i in range(6)]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
     p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
@@ -526,10 +545,12 @@ def main():
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
+    p.add_argument('--ending',action='store_true',help='the game\'s ending only (ENDING_ROOTS, the pages of ROM 0E1446; palettes from the ROM)')
     a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
-    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
-    assets=[]
+    roots=ENDING_ROOTS if a.ending else ROOTS;pages=ending_pages(a.zip) if a.ending else []
+    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in roots]
+    assets=[d for _,d in pages]+list(ENDING_DESCRIPTORS) if a.ending else []
     for prog in progs:
         for c in prog['commands']:
             if c['kind']=='POSE' and c['asset'] not in assets:assets.append(c['asset'])
@@ -561,6 +582,12 @@ def main():
         for slot,rid in resources(ram).items():
             if rid in RESOURCES:palettes.setdefault(rid,collections.Counter())[tuple(rgba16(pw[slot*16:slot*16+16]))]+=1
     pal_out={hex(k):list(c.most_common(1)[0][0]) for k,c in sorted(palettes.items())}
+    if a.ending:
+        from palette_mix import Mixer
+        mixer=Mixer(a.zip);plain=sorted(set(ENDING_PLAIN)|{n for n,_ in pages});raw=sorted(set(ENDING_RAW)|{n for n,_ in pages})
+        pal_out={hex(n):rgba16(mixer.plain(n)) for n in plain}
+        pal_out.update({hex(0x8000|n):[0]+[mixer.word(n,k) for k in range(1,16)] for n in raw})
+        a.keep=[]
     kept_frames={}
     for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
         if not keep.exists():continue
@@ -577,7 +604,7 @@ def main():
     frames+=[f for d,f in sorted(kept_frames.items(),key=lambda kv:int(kv[0],16)) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
         p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
-        missing_palettes=[hex(r) for r in RESOURCES if hex(r) not in pal_out])
+        missing_palettes=[] if a.ending else [hex(r) for r in RESOURCES if hex(r) not in pal_out])
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(out,separators=(',',':'))+'\n')
     report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)
     a.report.write_text(json.dumps(report,indent=1)+'\n')

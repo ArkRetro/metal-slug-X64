@@ -1,5 +1,6 @@
 #include "scene_renderer.h"
 #include "neo_fade.h"
+#include "neo_palmix_run.h"
 #include "retro_effects.h"
 #include "mission_camera.h"
 #include "msx_perf.h"
@@ -48,6 +49,21 @@ const uint16_t *scene_render_fade_palette(const uint16_t *source) {
     }
     data_cache_hit_writeback(d,sizeof(fade_copies[0][0]));
     return d;
+}
+/* 009CCE at run time (src/neo_palmix_run.h): the mixed TLUTs of this frame, each a palette id of its own
+ * (SCENE_MIX_BASE + n) that palette_slot uploads like a pack palette (the fade applies to it as to the others). */
+enum { MIX_COPIES=24 };
+static uint16_t mix_tluts[4][MIX_COPIES][16] __attribute__((aligned(16)));
+static struct {uint16_t a,c;uint8_t weight;} mix_keys[MIX_COPIES];
+static unsigned mix_used,mix_overflow;
+int scene_render_mixed_palette(unsigned raw_a,unsigned raw_c,unsigned weight,const uint8_t *table) {
+    for (unsigned i=0;i<mix_used;i++) if (mix_keys[i].a==raw_a && mix_keys[i].c==raw_c && mix_keys[i].weight==weight) return (int)(SCENE_MIX_BASE+i);
+    if (mix_used==MIX_COPIES || !table) {mix_overflow++;return -1;}
+    uint16_t *d=mix_tluts[fade_ring][mix_used];
+    neo_palmix_mix(scene_palette(raw_a),scene_palette(raw_c),weight,table,d);
+    data_cache_hit_writeback(d,sizeof(mix_tluts[0][0]));
+    mix_keys[mix_used].a=(uint16_t)raw_a;mix_keys[mix_used].c=(uint16_t)raw_c;mix_keys[mix_used].weight=(uint8_t)weight;
+    return (int)(SCENE_MIX_BASE+mix_used++);
 }
 static unsigned pal_lru[16];
 // Render-mode values this renderer last set and still knows to be current
@@ -350,7 +366,7 @@ static void finished(void *arg) {
 void scene_render_begin(surface_t *surface) {
     current=&completions[++frame%4];*current=(completion_t){surface,frame,TICKS_READ()};
     scene_begin_epoch(frame);scene_service();
-    fade_ring=frame%4;fade_used=0;
+    fade_ring=frame%4;fade_used=0;mix_used=0;
     for (unsigned i=0;i<16;i++) { pal_ids[i]=-1;pal_lru[i]=0; }
     last_page=last_slot=last_format=last_width=last_height=-1;draws=uploads=palette_uploads=tmem_bytes=0;
     rdpq_attach_clear(surface,NULL);rdpq_set_mode_standard();
@@ -368,7 +384,7 @@ static unsigned palette_slot(unsigned id) {
         if (pal_ids[i]<0) {slot=i;break;}
         if (pal_lru[i]<pal_lru[slot]) slot=i;
     }
-    rdpq_tex_upload_tlut((uint16_t*)scene_render_fade_palette(scene_palette(id)),slot*16,16);
+    rdpq_tex_upload_tlut((uint16_t*)scene_render_fade_palette(id>=SCENE_MIX_BASE?mix_tluts[fade_ring][id-SCENE_MIX_BASE]:scene_palette(id)),slot*16,16);
     pal_ids[slot]=(int)id;pal_lru[slot]=++clock_pal;palette_uploads++;
     return slot;
 }

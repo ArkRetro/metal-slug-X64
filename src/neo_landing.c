@@ -48,7 +48,7 @@ static void g_emit(void *c,const neo_anim_draw_t *d) {
     if ((ga_b(a,0x5f)&8u) && t->in->odd_phase) return;                     /* 00436E */
     uint8_t h=(uint8_t)(d->attributes>>8);
     uint16_t resource=h>=1 && h<=4?a->palette[h-1]:0;
-    s->draws[s->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13)};
+    s->draws[s->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13),0,0};
 }
 static void env(neo_genv_t *e,neo_ga_flags_t *flags,ctx_t *t,const neo_anim_program_t *(*program)(uint32_t)) {
     memset(e,0,sizeof(*e));memset(flags,0,sizeof(*flags));

@@ -302,6 +302,9 @@ struct neo_genv {
      * for actor `a` (the interpreter of the world, freed with the actor);
      * true once op 3 ran. */
     bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
+    /* The ending's actors (src/neo_ending.c): the end list they run in (NULL in the world: the credits' pages and
+     * pictures) and the RAM of the original they read and write (NULL: explicit stop). */
+    struct neo_end *end_list;struct neo_end_ram *end_ram;
     neo_pickup_env_t *pickup;
     neo_vehicle_env_t *vehicle;
     neo_m2boss_env_t *m2boss;

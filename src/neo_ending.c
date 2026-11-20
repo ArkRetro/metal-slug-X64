@@ -95,17 +95,12 @@
 #define START(t) do { if (!ga_anim_start(a,e,(t),0x100)) return GA_UNSUPPORTED; } while (0)
 #define STEP() do { if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED; } while (0)
 #define DEC72() (SW(0x72,W(0x72)-1u),W(0x72)!=0)   /* subq.w #1,+72; beq */
-/* The credits and the title are off on the console until it runs them (docs/MISION6.md "Los créditos": their stage,
- * sprites and node pool are pending): MSX_CREDITS turns them on there; the host builds always have them. */
-#if !defined(N64) || defined(MSX_CREDITS)
 #define NEO_ENDING_CREDITS 1
-#endif
 bool neo_ending_routine(uint32_t r) {
-#ifdef NEO_ENDING_CREDITS
-    if ((r>=0x646fe && r<=0x64ae0) || (r>=0xa4408 && r<=0xa4724) || (r>=0xa7ffe && r<=0xa8622)) return true;
-#endif
-    return r>=0x56fcc && r<=0x585fa;
+    return (r>=0x56fcc && r<=0x585fa) || neo_ending_world_routine(r) || (r>=0xa7ffe && r<=0xa8622) || (r>=0x1959c && r<=0x195d0);
 }
+/* The credits' nodes, created by the sub-scripts of the stage 0x2C in the world's list. */
+bool neo_ending_world_routine(uint32_t r) {return (r>=0x646fe && r<=0x64ae0) || (r>=0xa4408 && r<=0xa4724);}
 static uint16_t rw(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint16_t)(p[0]<<8|p[1]):0;}
 static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(address+2);}
 static uint8_t rb(uint32_t address) {const uint8_t *p=ga_rom(address);return p?p[0]:0;}
@@ -339,7 +334,7 @@ static uint32_t step_of(neo_end_ram_t *m) {return mb(m,0x10c604)?0x40000u:0x1000
  * colours; the credits: target 1, level 0x20 = black). */
 static void slot_blend(neo_end_ram_t *m,neo_gactor_t *a,uint8_t handle,uint16_t target,uint16_t level) {
     m->slot_levels++;
-    if (m->slot_level) m->slot_level(m->ram_ctx,a,handle,target,(uint8_t)level);
+    if (m->slot_level) m->slot_level(m->slot_ctx,a,handle,target,(uint8_t)level);
 }
 static void slot_level(neo_end_ram_t *m,neo_gactor_t *a,uint8_t handle,uint16_t level) {slot_blend(m,a,handle,1,level);}
 /* asr.l by a register count (modulo 64). */
@@ -399,13 +394,40 @@ static void parade_speed(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m,bool wav
 }
 #endif
 /* ---- the update ---------------------------------------------------------- */
-ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
+static ga_result_t ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
     (void)s;
     if (!m) STOP(L(0));
 #ifdef NEO_ENDING_CREDITS
     if (L(0)>=0x646feu && L(0)<=0x648d4u && (L(0)-0x646feu)%10u==0) return page(a,e,m);
 #endif
     switch (L(0)) {
+    /* ---- 01959C: the line the mission actor leaves on the last screen (018B9E, stage 0x2C) ----
+     * 16 updates, then the string 019582 typed a glyph an update (03D292 / 03D2B0 with the state block in the node,
+     * +6E..+85: +0 d0, +2 d3, +4 d1, +6 a0, +A a1, +E a2, +16 count); deleted at its end. D0 / D1 at 03D292 are the
+     * dispatcher's dead registers: the string's own escapes set the place and the colour before the first glyph. */
+    case 0x1959c:
+        SW(0x26,0x0f);SL(0,0x195a8);
+        /* fall through */
+    case 0x195a8: {
+        uint16_t v=W(0x26);SW(0x26,v-1u);
+        if (v) return GA_MORE;                                               /* subq.w #1; bcs */
+        SL(0x74,0x19582);SL(0x78,0x3dd96);SL(0x7c,0);SW(0x84,0);
+        SL(0,0x195d0);
+    }   /* fall through */
+    case 0x195d0: {
+        neo_text_t t=text_of(m);
+        uint32_t a0=L(0x74);uint16_t d0=W(0x6e),d1=W(0x72),d3=W(0x70);
+        const uint8_t *base=ga_rom(a0),*p=base;
+        if (!base) STOP(0x19582);
+        uint8_t d2=neo_text_next(&t,&p,&d0,&d1,&d3);
+        if (!d2) return GA_DELETE;                                           /* 0195DE: 004188 */
+        SW(0x70,d3);SW(0x72,d1);SW(0x6e,d0);
+        if (d2=='%') STOP(0x3d2b0);
+        d0=neo_text_glyph(&t,W(0x6e),d1,d2,&p);
+        SW(0x6e,d0);SL(0x74,a0+(uint32_t)(p-base));
+        if (!text_done(e,m,&t,0x195d0)) return GA_UNSUPPORTED;
+        return GA_MORE;
+    }
     /* ---- root 0570A0 ---- */
     case 0x570a0: {
         if (m->setup) m->setup(m->ram_ctx);                                  /* 056FCC */
@@ -564,7 +586,7 @@ ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_
     case 0x57416:
         if (DEC72()) return GA_MORE;
         SW(0x72,0x1e);SL(0,0x5742c);
-        return neo_ending_tick(s,a,e,m);   /* 057426 -> 05742C in the same update */
+        return ending_tick(s,a,e,m);   /* 057426 -> 05742C in the same update */
     case 0x57490:
         SW(0x72,0xf);SL(0,0x5749c);
         /* fall through */
@@ -896,8 +918,8 @@ ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_
         SL(0,0xa8096);
         return GA_MORE;
     case 0xa8096: {
-        for (unsigned i=0;i<NEO_END_NODES;i++) {                             /* 004192: every other node */
-            neo_gactor_t *o=&s->nodes[i];
+        for (unsigned i=0;i<neo_end_capacity(s);i++) {                        /* 004192: every other node */
+            neo_gactor_t *o=&neo_end_nodes(s)[i];
             if (o!=a && o->active && !o->placeholder) {ga_sl(o,0,0x3f1e);o->placeholder=true;}
         }
         if (m->setup) m->setup(m->ram_ctx);                                  /* 0A863C: 01AA28(0A7D52), 03E2A8, 0C81A6, 03CF60 */
@@ -1029,3 +1051,4 @@ ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_
     }
     STOP(L(0));
 }
+ga_result_t neo_ending_tick(neo_gactor_t *a,neo_genv_t *e) {return ending_tick(e->end_list,a,e,e->end_ram);}

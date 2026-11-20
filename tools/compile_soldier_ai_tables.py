@@ -47,7 +47,9 @@ def spawn_records(statements):
             if isinstance(v,dict):v=[v]
             if isinstance(v,list):yield from spawn_records(v)
 # Mission 3 too (docs/MISION3.md: 8 bytes per offset, ~1 KB of .rodata).
-for sec in [sec for n in (2,3,4,5,6) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]:
+# The credits (data/ending_script.json: section 22 and the sub-script records of tools/decode_ending_subscripts.py).
+ENDING=json.loads((ROOT/'data/ending_script.json').read_text())
+for sec in [sec for n in (2,3,4,5,6) for sec in json.loads((ROOT/f'data/mission{n}_script.json').read_text())['sections']]+ENDING['sections']+ENDING.get('sub_scripts',[]):
     for st in spawn_records(sec['statements']):
         off=hex(int(st['table_offset'],16));ctor=int(st['constructor'],16)
         bit=(0 if st['group_counted'] else 1<<31) if st['group']<9 else None

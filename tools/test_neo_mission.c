@@ -50,6 +50,23 @@ int main(void) {
                   "frame %u: mission %u/%u stage %u/%u index %u/%u record %u/%u %X/%X end %u/%u",e->frame,m.mission,e->mission,m.stage,e->stage,m.index,e->index,m.record_index,e->record_index,m.record,e->record,m.end,e->end);
         }
     }
+    /* The game's end (the TAS capture captures-m6/fam/T1, the mission actor's updates 441, 1067 and 1068 and the RAM
+     * dump of update 28967: 42F4 = 6, 42F6 = 0x2C, 42F8 = 0xC, 42FA = 0): after Mission 6 01891E goes to 01893E;
+     * 0189FA starts mission 0xC, whose first record is the credits' stage 017C54 (descriptor 01709E, list 025F3E,
+     * script 0x858, stage 0x2C, no music, no players), and the stage loop is 018AC6. */
+    {
+        neo_mission_t e;memset(&e,0,sizeof(e));e.mission=5;e.pause_off=0xff;
+        neo_mission_next(&e);
+        CHECK(e.state==NEO_MISSION_GAME_END && e.routine==0x1893e && e.mission==6 && !e.stops,"game end: state %u routine %X mission %u",e.state,e.routine,e.mission);
+        neo_mission_start(&e,0xc);
+        CHECK(e.mission==6 && e.index==0xc && e.record_index==0 && e.record==0x17c54 && e.descriptor==0x1709e && e.stage==0x2c && e.load && e.routine==0x184b4 && e.fade_black,
+            "credits: mission %u index %u record %X descriptor %X stage %X routine %X",e.mission,e.index,e.record,e.descriptor,e.stage,e.routine);
+        CHECK(neo_mission_map_list(&e)==0x25f3e && neo_mission_script_entry(&e)==0x858 && neo_mission_music(&e)==0 && neo_mission_players(&e)==0,
+            "credits descriptor: list %X script %X music %X players %X",neo_mission_map_list(&e),neo_mission_script_entry(&e),neo_mission_music(&e),neo_mission_players(&e));
+        neo_mission_update(&e);
+        CHECK(e.state==NEO_MISSION_PLAYING && e.routine==0x18ac6 && !e.letters && e.fade_in && e.fade_steps==1 && e.pause_off==0xff && !e.stops,
+            "credits stage loop: state %u routine %X letters %d fade %d/%u pause_off %X",e.state,e.routine,e.letters,e.fade_in,e.fade_steps,e.pause_off);
+    }
     CHECK(m.stops==0 && wipes==12,"stops %u, wipes %u",m.stops,wipes);
     printf("%s: mission flow %u routine changes, %u RAM samples, %u stage ends (%u mission ends predicted), %u mission starts, %u transition waits of 35 updates, %u explicit stops\n",fails?"FAIL":"PASS",checked,rams,stages,mission_ends,missions,wipes,m.stops);
     return fails!=0;

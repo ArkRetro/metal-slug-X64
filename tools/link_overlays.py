@@ -29,7 +29,8 @@ from pathlib import Path
 B = Path(os.environ.get('N64_INST', '/home/user/toolchains/package/opt/libdragon')) / 'bin' / 'mips64-elf-'
 # id order = enum msx_overlay_id_t (src/msx_overlay.h).
 OVERLAYS = [('neo_m3boss', 'neo_m3boss_tick'), ('neo_m4boss', 'neo_m4boss_tick'),
-            ('neo_m5boss', 'neo_m5boss_tick'), ('neo_m6boss', 'neo_m6boss_tick')]
+            ('neo_m5boss', 'neo_m5boss_tick'), ('neo_m6boss', 'neo_m6boss_tick'),
+            ('neo_ending', 'neo_ending_tick')]   # the ending: results, credits, ranking, title (src/neo_ending.c)
 REGION = 'msx_overlay_region'
 SCRIPT = """ENTRY({tick})
 SECTIONS {{

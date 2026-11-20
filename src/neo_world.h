@@ -26,6 +26,7 @@ enum { NEO_TOWER_PIECES=128 };
  *
  * Positions are scene-local Q16.16 with Y up (the native collision grid);
  * the scene object sits at (-camera, 256) as RAM 10C742/10C746 do. */
+enum { NEO_WORLD_MIXES=24 };   /* 009CCE slots: 4 in the missions; the credits' page lines (6 a page) and pictures (2 each) */
 enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_GACTORS=96,
     NEO_WORLD_ORDER=160, NEO_WORLD_DRAWS=160, NEO_WORLD_BOXES=48, NEO_WORLD_SOUNDS=16 };
 typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_THROW,
@@ -58,6 +59,9 @@ typedef struct {
     uint8_t kind;              /* neo_world_kind_t of the owner */
     uint8_t zoom_x,zoom_y;     /* generic actors: +12/+13 (0xFF = full size) */
     uint16_t z;                /* +1E: the sprite list is sorted by it (0113EA) */
+    /* 009CCE on the draw's palette slot with no exported mix (the credits: neo_palmix_step at run time): the weight
+     * 1..30 (0: none; `palette` is then the slot's own resource) towards the palette mix_targets[mix_target]. */
+    uint8_t mix_weight,mix_target;
 } neo_world_draw_t;
 typedef struct {
     uint16_t px,py;            /* projected words (+3C/+40) left by the player's
@@ -130,7 +134,10 @@ typedef struct {
     /* 009CCE: palette slots of generic actors with a target / weight
      * (index + 1, 0 = free; handle = the owner's +14). mix_missing: draws
      * whose (resource, target) pair has no exported mix (neo_palmix.h). */
-    struct {uint8_t index1,handle,weight;uint16_t target;} mixes[4];unsigned mix_missing,mix_overflow;
+    struct {uint8_t index1,handle,weight;uint16_t target;} mixes[NEO_WORLD_MIXES];unsigned mix_missing,mix_overflow;
+    uint16_t mix_targets[4];     /* the targets of the draws' run-time mixes (neo_world_draw_t.mix_target) */
+    /* The ending's RAM for the credits' nodes (neo_ending.c, e->end_ram); NULL: they stop explicitly. */
+    struct neo_end_ram *end_ram;
     unsigned converted;          /* generic nodes turned soldiers (0B05FE/0B0626/0B0632) */
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */

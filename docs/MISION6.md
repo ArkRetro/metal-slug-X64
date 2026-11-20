@@ -1169,7 +1169,13 @@ fotograma (`game<n>.png`, líneas de raster 16..239).
   sprites sin zoom 345..348 (y 358 / 359), paleta 16, tamaño 5, sin autoanimación, en las líneas 36..64. Su posición es
   la correcta (desplazarla ±16 líneas / ±4 px solo empeora), y en el ~40 % de sus píxeles opacos la captura muestra otro
   pen de la misma fila de paleta (4 / 5 en vez de 1). Los datos de C-ROM de esas teselas (0x3055B..) son los del zip
-  (`250-c3/c4`). **Pendiente**: la causa no está encontrada. No es el encogido: esos sprites no tienen zoom, y los
+  (`250-c3/c4`). Descartado también (20-XI, con TF): **el límite de 96 sprites por línea** (en las líneas 36 / 50 / 64
+  hay 15 / 17 / 26 sprites cuya altura las cubre, y 345..348 son del 2.º al 8.º); **el orden de pintado** (en esos
+  píxeles solo hay un sprite opaco en la VRAM, el de la cadena; ninguna otra tesela de la cadena, de −40 a +40, da
+  los colores de la captura); **el otro banco de paleta** (`MSX_TAS_DUMP_PALRAM=1` vuelca los dos bancos de
+  `m_paletteram`: el banco 0 es el volcado y da los mismos 1448 distintos; el banco 1 no da casi ninguno igual). El
+  port no modela el límite de 96 sprites por línea: su renderizador dibuja todas las partes. **Pendiente**: la causa
+  no está encontrada. No es el encogido: esos sprites no tienen zoom, y los
   únicos 7 px con zoom (73350) caen en la misma zona y fotogramas.
 - Se excluyen las teselas fijas distintas de 0x0FF: la 0 no es transparente, porque las columnas 0 y 39, todas de
   tesela 0, salen negras sobre los sprites. También se excluyen los sprites autoanimados. Informe:

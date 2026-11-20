@@ -297,6 +297,16 @@ local function tas_dump(f)
  for i=0,4095 do parts[#parts+1]=string.pack('>I2',cpu:read_u16(0x400000+i*2)) end
  p:write(table.concat(parts));p:close()
  screen:snapshot(out..'/game'..f..'.png')
+ -- MSX_TAS_DUMP_PALRAM=1: both palette banks (the driver's m_paletteram, 2 x 4096 words; 0x400000 shows only the
+ -- bank REG_PALBANK0/1 selects) and the bank in use, read only.
+ if os.getenv('MSX_TAS_DUMP_PALRAM')=='1' then
+  local items=machine.devices[':'].items;local name;for k,_ in pairs(items) do if string.find(k,'paletteram') then name=k end end
+  local o=assert(io.open(out..'/palram'..f..'.txt','w'))
+  for k,_ in pairs(items) do if string.find(k,'palette') then o:write('item '..k..'\n') end end
+  if name then local it=emu.item(items[name]);local q={};for i=0,it.count-1 do q[#q+1]=string.pack('>I2',it:read(i)) end
+   local b=assert(io.open(out..'/palram'..f..'.bin','wb'));b:write(table.concat(q));b:close() end
+  o:close()
+ end
 end
 local function capture_close()
  if tas_camera_csv then tas_camera_csv:close() end

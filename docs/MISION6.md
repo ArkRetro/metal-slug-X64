@@ -1174,8 +1174,15 @@ fotograma (`game<n>.png`, líneas de raster 16..239).
   píxeles solo hay un sprite opaco en la VRAM, el de la cadena; ninguna otra tesela de la cadena, de −40 a +40, da
   los colores de la captura); **el otro banco de paleta** (`MSX_TAS_DUMP_PALRAM=1` vuelca los dos bancos de
   `m_paletteram`: el banco 0 es el volcado y da los mismos 1448 distintos; el banco 1 no da casi ninguno igual). El
-  port no modela el límite de 96 sprites por línea: su renderizador dibuja todas las partes. **Pendiente**: la causa
-  no está encontrada. No es el encogido: esos sprites no tienen zoom, y los
+  port no modela el límite de 96 sprites por línea: su renderizador dibuja todas las partes. Y **los bits altos de la
+  tesela** (las teselas de 345..348 con ±0x10000, ±0x20000, ±0x40000, con los bits 4..7 del atributo y sin ellos:
+  ninguna da 0 distintos; la mejor es la decodificación actual, p. ej. 348: 728 iguales / 355 distintos frente a 119 /
+  1161 la mejor otra). **Pendiente, cerrado por ahora** (1448 px de un fotograma del fundido): la causa no está
+  encontrada. TF está borrada; para rehacerla: `MSX_TAS_SCRIPT=tas_updates.lua
+  MSX_TAS_UPD_PLAY=/home/user/captures-tas/updates251.txt MSX_TAS_STATES=/home/user/captures-m6/states
+  MSX_TAS_UPD_LOAD=end27900:27900 MSX_TAS_CAPTURE_FROM=27900 MSX_TAS_UPD_LAST=35100 MSX_TAS_LAST=73410
+  MSX_TAS_DUMP_PERIOD=1 MSX_TAS_DUMP_FRAMES=73050-73400 [MSX_TAS_DUMP_PALRAM=1] sh tools/run_tas_play.sh OUT` (unos 4
+  minutos, 67 MB). No es el encogido: esos sprites no tienen zoom, y los
   únicos 7 px con zoom (73350) caen en la misma zona y fotogramas.
 - Se excluyen las teselas fijas distintas de 0x0FF: la 0 no es transparente, porque las columnas 0 y 39, todas de
   tesela 0, salen negras sobre los sprites. También se excluyen los sprites autoanimados. Informe:

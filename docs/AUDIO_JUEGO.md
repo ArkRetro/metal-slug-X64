@@ -506,7 +506,7 @@ música. `src/msx_fade.h` traduce `4FAF` (`F806 = 16·[0x0700 + xx − 0x20]`, `
 `data/music_fade.json`, `tools/extract_music_fade.py`) y el tick `4D67..4D97` (salida: resta con tope 0; entrada: suma
 con tope FFFF, y FFFF mientras h < FF, como en la ROM); `4FFF..5003` (byte de banco 00 de una música) pone `F805` y
 `F808` a 0. `game_audio.c`: cada actualización suma 135 168 ciclos de 8 MHz (un fotograma de la Neo Geo) y da un tick
-por cada 47 952 (el temporizador A); el volumen de la voz de música es `F805 / 255` del 80 %. La música ya no se para
+por cada 47 952 (el temporizador A); el volumen de la voz de música es `F805 / 255` del 80 %. **Origen del 80 %** (auditoría): es `VOLUME_PERCENT=80` de `src/game_audio.c`, el volumen de mezcla que el port aplica a todas sus voces (música y efectos) desde 87d603d; **no tiene fuente** en la ROM ni en una captura de MAME: es un nivel de mezcla del port sin documentar (**pendiente**: medirlo contra la salida de audio de MAME o retirarlo). La música ya no se para
 con `0A xx`. **Familia** (`tools/check_music_fade.py` y `tools/test_music_fade.c`, en `make check`): captura **ZF**
 (`tas_updates.lua` con `MSX_TAS_Z80_TAP=1`, desde `end27900` hasta 73410: cada escritura en `F804..F808` con el tiempo
 de la máquina; `build/captures/ZF/z80tap.txt`): **37 685 ticks, 0 distintos**, 3 escrituras directas de `F805`

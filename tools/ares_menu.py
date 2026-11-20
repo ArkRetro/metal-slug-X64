@@ -11,7 +11,9 @@ the cursor is read back from the log, so a lost or doubled press only costs anot
 """
 import re, time
 
-ITEMS = [(1, 1), (2, 1), (2, 2), (2, 3), (3, 1), (4, 1), (5, 1), (5, 2), (5, 3), (6, 1), (6, 2), (6, 3)]   # src/main.c mselect_items
+# src/main.c mselect_items, read from the source so the list cannot drift from the cartridge's (13, 1 is ENDING).
+from pathlib import Path as _P
+ITEMS = [(int(a), int(b)) for a, b in re.findall(r'\{(\d+),(\d+)\}', re.search(r'mselect_items\[\]=\{(.*?)\};', (_P(__file__).resolve().parents[1] / 'src/main.c').read_text()).group(1))]
 BOOT = (('MSX TITLE start', 'MSX TITLE complete'), ('MSX CINE howto start', 'MSX CINE howto complete'), ('MSX OPTIONS open', 'MSX OPTIONS close'))
 
 

@@ -95,7 +95,7 @@ try:
         if nxt:break
         if a.boss and 'MSX mission complete signal' in text:
             if not dead:dead=time.monotonic()
-            if time.monotonic()-dead>60:break   # host time: the stage line (the game clock) stops with the mission's end
+            if time.monotonic()-dead>60 or 'MSX mission end 018846 done' in text:break   # host time: the stage line (the game clock) stops with the mission's end
         # --continues: Start at every CONTINUE? panel (a player's choice, nothing of the game changes): the stage 016E5E
         # has water gaps the rafts 0BD71E bridge only with well-timed jumps, which the fixed --jump period misses at times.
         if a.continues and text.count('MSX panel continue')>continued:
@@ -126,7 +126,12 @@ try:
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
     print('camera',cam,'screenshots',k,'continues',continued,'fall deaths',(re.findall(r'pit deaths=(\d+)',text) or ['0'])[-1]);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
     for s in stops[:40]:print('  ',s)
-    ok=(maxcam if a.next or a.boss else cam)>=a.progress and 'not loaded' not in text   # --boss: the camera glides back (04445A) and the mission ends
+    # --boss: the camera glides back (04445A) and the mission ends. What the port does after Mission 6 (01891E: the ending
+    # 0570A0 and the credits are not wired into the game yet: `MSX mission 7 not loaded (explicit stop)`) is outside this
+    # test: printed, not judged.
+    after=re.findall(r'MSX mission 7 not loaded[^\n]*',text) if a.boss else []
+    if after:print('after the mission end (not judged):',after[0])
+    ok=(maxcam if a.next or a.boss else cam)>=a.progress and 'not loaded' not in (text.replace(after[0],'') if after else text)
     if a.next:
         nxt=a.stage<3 and re.search(r'MSX mission 6 stage \d+ start: record \w+ descriptor %s'%('016E6E','016E7E')[a.stage-1],text)
         print('next stage started' if nxt else 'next stage not started');ok=ok and bool(nxt)

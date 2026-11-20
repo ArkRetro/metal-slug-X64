@@ -94,3 +94,12 @@ CONTINUE? duraba 0,1 s del anfitrión, menos que una lectura del mando del juego
 la cuenta llegó a 0 y el juego volvió a la Misión 1 (`MSX game over: mission restart`), con la prueba esperando en
 vano. Ahora `test_mission4/6_ares.py` repiten Start (0,4 s) hasta ver `MSX panel play`, y `test_mission5_ares.py`
 pulsa 0,4 s.
+
+## `m5boss`: los 34 dibujos ausentes de más son la paleta 20C (20-XI, agente S)
+
+Comprobado en los registros de la matriz del agente O: las 34 líneas de más son todas `descriptor=0 palette=4
+palette_id=20C` con los descriptores `131FAE` / `1320AE` (que sí están en `filesystem/mission5/rest-native.json`; lo
+que falta es la paleta: `0x20c` está en su `missing_palettes`), y el código que la pide es `ga_palette(a,0x20c)` de
+`neo_m5boss.c` (`099268`, la llama final del soldado quemado), idéntico en el anfitrión y en la superposición. En el
+cartucho de control ningún soldado quemado llegó a esa llama. No es un efecto de la superposición; sigue pendiente
+la captura de la paleta 20C (`docs/MISION5.md`).

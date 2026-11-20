@@ -944,3 +944,12 @@ nativo, `MSX mission complete signal (018F92)` (la muerte `041DD4`) y ninguna pa
   el mismo patrón que `043054` → `01C87E` de `m6boss9`). **Sin prueba bit a bit del relevo**: ni run4 (346400..358800)
   ni el TAS (`u24600..u26420`) lo hacen (`RANGE=9ae1e-9d630`, 0 nodos en `09B500`); pendiente de una partida grabada
   que rompa el escudo de un soldado en la segunda forma.
+- **Resultado en ares** (cartucho completo, mando ciego `--fire --jump 4 --aimup --sweep 8 --lifebar --continues --bomb 3`):
+  la apertura acaba, la primera forma cae (~500 s de juego), la segunda forma baja con su capa, el suelo roto y sus
+  soldados, a 3000 de vida llegan el SV-001, el prisionero y el camión, **el jefe muere** (`MSX mission complete signal
+  (018F92) camera=256`, ~770..790 s de juego) y corren la muerte, la huida y las letras de MISSION COMPLETE; **0 paradas
+  de rutina, 0 dibujos ausentes** (pasadas `b6`, `mx1`, `mx4` del 20-XI); `regression_ares.py --only m6boss`: **PASS** en 2122 s (`missing_draw=0 unsupported=0 stopped=0`; sin línea base escrita). Después, `01891E` → «mission 7 not loaded
+  (explicit stop)»: el final `0570A0` y los créditos (`neo_ending.c`) aún no están unidos al juego (agente de
+  `work-chars`); la prueba lo imprime y no lo juzga.
+- **Pendiente**: el brillo de la paleta 56 de la capa (`009CCE`); la paleta D9; la prueba bit a bit de `09B532`; el
+  margen de memoria (una ranura de caché); `08F1A0` sigue sin captura.

@@ -50,3 +50,11 @@ class EmuClock:
         t = self.base + min((w - self.wall) * self.rate, STEP / HZ)
         self.out = max(self.out, t)         # never backwards
         return self.out
+
+
+def game_sleep(clock, log, seconds, poll=.03):
+    """Sleep `seconds` of game time on `clock` (`log()` returns the ares log): the same number of game updates at any
+    machine load. Before the cartridge's first tick line the clock is the host's."""
+    end = clock.now(log()[-4000:]) + seconds
+    while clock.now(log()[-4000:]) < end:
+        time.sleep(poll)

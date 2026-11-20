@@ -12,7 +12,7 @@ EEPROM, HOW TO PLAY is skipped (016BD4 with 10FD8E = 0: SOLDIER SELECT at
 once), and the game starts with 5 lives (the first spawn takes one: 4) and
 rank 7. Boot 2: the EEPROM gives the same bytes back before the title.
 Uses the X display in DISPLAY. Last line: RESULT: PASS/FAIL."""
-import argparse,os,re,subprocess,time
+import argparse,os,re,subprocess,sys,time
 from pathlib import Path
 from PIL import ImageGrab
 p=argparse.ArgumentParser(description=__doc__)
@@ -30,7 +30,23 @@ for f in out.iterdir():
     if f.name.startswith('options.'):f.unlink()   # a new EEPROM each run
 os.link(a.rom.resolve(),rom)
 def key(action,name):subprocess.run([XD,action,name],check=True)
-def tap(name):key('keydown',name);time.sleep(.15);key('keyup',name);time.sleep(.35)
+def tap(name):key('keydown',name);time.sleep(.3);key('keyup',name);time.sleep(.35)
+# The options screen is driven by what the cartridge logs (`MSX OPTIONS cursor=N`, `row=R value=VV`; tools/ares_menu.py holds
+# each press until its line): the row and the value are read back, never counted, so a press lost or doubled on a loaded
+# machine only costs another one.
+sys.path.insert(0,str(Path(__file__).resolve().parent));import ares_menu
+def row_to(log,row):
+    while True:
+        m=re.findall(r'MSX OPTIONS cursor=(\d+)',log());cur=int(m[-1]) if m else 0
+        if cur==row:return
+        ares_menu.held(key,'Down' if cur<row else 'Up',log,r'MSX OPTIONS cursor=\d+')
+def value_to(log,row,value,button):
+    row_to(log,row)
+    for _ in range(120):
+        m=re.findall(r'MSX OPTIONS row=%d value=([0-9A-F]{2})'%row,log())
+        if m and int(m[-1],16)==value:return
+        ares_menu.held(key,button,log,r'MSX OPTIONS row=%d value='%row)
+    raise AssertionError('options row %d never reached %02X'%(row,value))
 DEFAULTS='10FD88=03 10FD8A=01 10FD8B=03 10FD8C=00 10FD8D=01 10FD8E=01 10FD8F=00'
 CHOSEN='10FD88=05 10FD8A=01 10FD8B=07 10FD8C=00 10FD8D=01 10FD8E=00 10FD8F=00'
 checks={}
@@ -40,7 +56,7 @@ def boot(n):
         '--system','Nintendo 64','--no-file-prompt',str(rom)],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
     def log():return logp.read_text(errors='replace')
     def wait(pattern,seconds=120,start=0):
-        deadline=time.monotonic()+seconds
+        deadline=time.monotonic()+4*seconds   # host time: four times the game's, for a loaded machine
         while time.monotonic()<deadline:
             text=log()
             assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text and 'MSX ERROR' not in text,text[-3000:]
@@ -64,17 +80,17 @@ try:
         if 'MSX TITLE start' in log():tap('Return')
         time.sleep(1)
     time.sleep(.5);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'options.png')
-    tap('b');tap('b')                              # HERO 3 -> 5 (N64 B: the Neo Geo A adds one)
-    tap('Down');tap('Down');[tap('b') for _ in range(4)]   # DIFFICULTY LEVEL 4 -> 8
-    tap('Down');tap('Down');tap('Down');tap('a')   # PLAY MANUAL ON -> OFF (N64 A: the Neo Geo B takes one)
+    value_to(log,0,5,'b')   # HERO 3 -> 5 (N64 B: the Neo Geo A adds one)
+    value_to(log,2,7,'b')   # DIFFICULTY LEVEL 4 -> 8 (10FD8B = 7)
+    value_to(log,5,0,'a')   # PLAY MANUAL ON -> OFF (N64 A: the Neo Geo B takes one)
     time.sleep(.3);ImageGrab.grab(xdisplay=env['DISPLAY']).save(out/'options-chosen.png')
-    mark=len(log());tap('Return')
+    mark=len(log());ares_menu.held(key,'Return',log,r'MSX OPTIONS close',20)
     m=wait(r'MSX OPTIONS close (.*)',10,mark)
     checks['bytes written as the BIOS would']=m[1].strip()==CHOSEN
     wait(r'MSX OPTIONS saved',10,mark)
     s=wait(r'MSX CINE (\w+) start',120,mark)
     checks['PLAY MANUAL off: SOLDIER SELECT without HOW TO PLAY']=s[1]=='select'
-    wait(r'MSX CINE select waiting',120,mark);time.sleep(.5);tap('Return')   # Marco
+    wait(r'MSX CINE select waiting',120,mark);time.sleep(.5);ares_menu.held(key,'Return',log,r'MSX CINE select chosen',30)   # Marco
     g=wait(r'MSX GAME dips lives=(\d+) continue=(\d+) rank=(\d+) timer=(\d+) blood=(\d+)',180,mark)
     checks['game: 5 lives, one taken by the first spawn']=g[1]=='4'
     checks['game: rank 10FD8B = 7']=g[3]=='7'

@@ -66,17 +66,9 @@ try:
         if r:win=r[-1]
         time.sleep(.5)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    end=time.monotonic()+400
-    while 'MSX MSELECT mission=' not in log():
-        assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
-        if re.search(r'MSX CINE select (start|waiting)',log()):
-            time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():
-                time.sleep(.5);[(tap('Down'),time.sleep(.3)) for _ in range(MENU)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
-            continue
-        t=log()
-        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')   # the options screen (docs/OPCIONES.md): Start leaves it
-        time.sleep(1.0)
+    # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
+    # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
+    import ares_menu;ares_menu.choose(key,log,proc,*{'m1':(1,1),'m2s3':(2,3),'m5s3':(5,3)}[a.mission],lifebar=a.lifebar)
     if a.lifebar:wait(r'MSX LIFEBAR on',60)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)

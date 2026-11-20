@@ -9,14 +9,19 @@ Every sprite of a VRAM dump (SCB1 tiles, SCB2 shrink, SCB3 y / size / chain, SCB
   (tile >= rows) is not drawn;
 - horizontal: the 16 columns of a tile drawn for a shrink nibble zx are the ones of row zx of COLUMNS (zx = 15: all
   16; zx = 0: one); a chained sprite stands at the previous one's x + its zx + 1.
-COLUMNS is checked here, not assumed: each row is the only one of the candidate rows that gives the pixels of the
-screenshot (--derive prints, per nibble value seen, which column subsets match).
+COLUMNS is not in any ROM (it is the chip's logic). It comes from the captures: --derive takes, for every nibble
+0..14 and every output column i, the source columns of the tile that no screenshot pixel refutes (a pixel refutes a
+column when the column's pen there is opaque and its colour is not the screenshot's; only pixels whose top box,
+x .. x + zx with the lines of the L0 ROM, is this sprite's, and not under a fix tile, are used: no column table is
+assumed). With the results' dumps of T1 (60000..62580) each (nibble, i) has exactly one column left, and the rows are
+COLUMNS 0..14; 15 is the full sprite (every unshrunk sprite of the comparison). --derive fails when a nibble is not
+uniquely determined or differs from COLUMNS.
 
 The screenshot (game<frame>.png, 320 x 224) is the raster lines 16..239. Pixels the fix layer covers and pixels of
 auto-animated sprites (attribute bits 2 / 3: the tile depends on the LSPC counter, not in the dump) are not compared.
 
   check_lspc_shrink.py --capture captures-m6/fam/T1 --zip ROMS/neogeo.zip [--frames 61500,...] [--report OUT.json]"""
-import argparse,json,struct,zipfile
+import argparse,collections,json,struct,zipfile
 from pathlib import Path
 from PIL import Image
 from export_marco import ROOT,palette_rgb
@@ -49,6 +54,43 @@ def line_tile(zoomy,zy,rows,line):
     if inv:tile^=0x1f;yy^=0xf
     if rows<=0x20 and tile>=rows:return None
     return tile,yy
+def derive(capture,frames,crom,zoomy):
+    """Per nibble 0..14: the tuple of source columns left by the screenshots, or None when not determined."""
+    bad=collections.defaultdict(collections.Counter);seen=collections.Counter()
+    for fr in frames:
+        if not (capture/f'game{fr}.png').exists() or not (capture/f'vram{fr}.bin').exists():continue
+        v=struct.unpack('>34304H',(capture/f'vram{fr}.bin').read_bytes());pw=struct.unpack('>4096H',(capture/f'palette{fr}.bin').read_bytes())
+        px=Image.open(capture/f'game{fr}.png').convert('RGB').load();fm=fix_mask(v);sp=sprites(v)
+        cover=[[0]*320 for _ in range(224)]
+        for slot,x,y,rows,zx,zy in sp:
+            if not rows:continue
+            for r in range(224):
+                if line_tile(zoomy,zy,rows,(r+16-y)&511) is None:continue
+                for i in range(zx+1):
+                    if (x+i)&511<320:cover[r][(x+i)&511]=slot
+        for slot,x,y,rows,zx,zy in sp:
+            if not rows or zx==15:continue
+            for i in range(zx+1):
+                sx=(x+i)&511
+                if sx>=320:continue
+                for r in range(224):
+                    if fm[r][sx] or cover[r][sx]!=slot:continue
+                    t=line_tile(zoomy,zy,rows,(r+16-y)&511)
+                    if t is None:continue
+                    low,attr=v[slot*64+t[0]*2],v[slot*64+t[0]*2+1]
+                    if attr&12:continue
+                    tile=low|((attr<<12)&0xf0000);seen[(zx,i)]+=1
+                    for c in range(16):
+                        pen=pen_of(crom,tile,15-c if attr&1 else c,15-t[1] if attr&2 else t[1])
+                        if pen and palette_rgb(pw[(attr>>8)*16+pen])!=px[sx,r]:bad[(zx,i)][c]+=1
+    out={}
+    for zx in range(15):
+        cols=[]
+        for i in range(zx+1):
+            left=[c for c in range(16) if bad[(zx,i)][c]==0]
+            cols.append(left[0] if seen[(zx,i)] and len(left)==1 else None)
+        out[zx]=None if None in cols else tuple(cols)
+    return out
 def render(v,crom,zoomy,columns=COLUMNS):
     """Raster lines 16..239: per pixel (slot, palette index), or (slot, -1) for an auto-animated tile."""
     top=[[None]*320 for _ in range(224)]
@@ -84,8 +126,16 @@ def main():
     p=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument('--capture',type=Path,required=True);p.add_argument('--zip',type=Path,required=True)
     p.add_argument('--frames');p.add_argument('--report',type=Path)
+    p.add_argument('--derive',help='frames (comma-separated) to derive the column table from; it must equal COLUMNS')
+    p.add_argument('--quick',action='store_true',help='make check: skip without the BIOS or the capture; PASS needs 0 different')
     a=p.parse_args()
+    if a.quick and not (a.zip.exists() and a.capture.exists()):print('SKIP: LSPC shrink (no BIOS zip or capture)');return
     zoomy=zipfile.ZipFile(a.zip).read('000-lo.lo');crom=(ROOT/'filesystem/sprites.bin').read_bytes()
+    if a.derive:
+        got=derive(a.capture,[int(f) for f in a.derive.split(',')],crom,zoomy)
+        for zx in range(15):print('nibble',zx,got[zx] if got[zx] else 'not determined')
+        assert all(got[zx]==COLUMNS[zx] for zx in range(15)),'the captures do not give COLUMNS'
+        print('PASS: LSPC shrink columns 0..14 derived from the screenshots = COLUMNS')
     frames=[int(f) for f in a.frames.split(',')] if a.frames else sorted(int(f.stem[4:]) for f in a.capture.glob('vram*.bin'))
     nibbles={};total=dict(zoomed_y_equal=0,zoomed_y_different=0,frames=0,zoomed_equal=0,zoomed_different=0,full_equal=0,full_different=0,skipped_fix=0,skipped_auto=0);per=[]
     for fr in frames:
@@ -112,5 +162,8 @@ def main():
         total['frames']+=1;per.append(st)
     total['by_shrink_nibble']={'%d'%k:dict(equal=e,different=d) for k,(e,d) in sorted(nibbles.items())}
     print(json.dumps(total))
+    if a.quick:
+        assert total['zoomed_different']==0 and total['zoomed_equal']>0,total
+        print('PASS: LSPC shrink: %d shrunk-sprite pixels equal to MAME, 0 different'%total['zoomed_equal'])
     if a.report:a.report.write_text(json.dumps(dict(total=total,frames=per),indent=1)+'\n')
 if __name__=='__main__':main()

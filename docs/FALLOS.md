@@ -103,3 +103,6 @@ que falta es la paleta: `0x20c` está en su `missing_palettes`), y el código qu
 `neo_m5boss.c` (`099268`, la llama final del soldado quemado), idéntico en el anfitrión y en la superposición. En el
 cartucho de control ningún soldado quemado llegó a esa llama. No es un efecto de la superposición; sigue pendiente
 la captura de la paleta 20C (`docs/MISION5.md`).
+Pasada repetida el 20-XI sobre el cartucho con las superposiciones (`regression_ares.py --only m5boss`, `f4e1492`):
+**PASS en 1930 s, `missing_draw=8`** (la línea base: paletas 006 ×3 y 00A ×5), una sola copia de la superposición, ninguna
+línea de la paleta 20C: en esta pasada ningún soldado quemado llegó a la llama `099268`.

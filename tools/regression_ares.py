@@ -43,6 +43,7 @@ TESTS = {
     'm6boss': ('test_mission6_ares.py', ['--stage', '3', '--fire', '--jump', '4', '--aimup', '--sweep', '8', '--lifebar', '--continues', '--bomb', '3', '--boss', '--seconds', '2400', '--period', '10'], 7800, '--out'),   # the last enemy 04153E (neo_m6boss overlay) from its opening 045428 to its death 04180A (018F92 by 041DD4): both forms, no routine stop; --seconds counts game time (tools/ares_clock.py)
     'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 9900, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
     'slugnoid': ('test_vehicle_damage_ares.py', ['--mission', 'm5s3', '--ride', 'forward'], 5400, '--out'),   # B69: the Slugnoid 09692C of Mission 5 stage 3 ridden forward to the enemies: class-0 hit, 48 -> 32 -> 16 -> 0, flicker, gauge, destroyed
+    'ending': ('test_ending_ares.py', ['--seconds', '3600'], 4200, '--out'),   # the test menu's ENDING: results 0570A0, credits (stage 0x2C), last screen, ranking 057E00 and title 0A7FFE with the TAS's update counts
 }
 M1M2 = ('test_m1m2_ares.py', [], 1200, '--output')
 

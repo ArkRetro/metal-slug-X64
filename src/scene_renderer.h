@@ -55,6 +55,11 @@ void scene_render_set_deferrable(bool on);
  * from now on; scene_render_fade_palette returns the converted copy. */
 void scene_render_set_fade(int8_t red,int8_t green,int8_t blue);
 const uint16_t *scene_render_fade_palette(const uint16_t *source);
+/* 009CCE at run time (src/neo_palmix_run.h): the palette id, for this frame, of the palette whose ROM words are
+ * scene_palette(raw_a) blended towards scene_palette(raw_c) by `weight` (1..30) with the ROM table 0051D8 (`table`);
+ * -1 when the frame has no room left (counted) or without the table. An id is SCENE_MIX_BASE or more. */
+enum { SCENE_MIX_BASE=0xf000 };
+int scene_render_mixed_palette(unsigned raw_a,unsigned raw_c,unsigned weight,const uint8_t *table);
 void scene_render_box(int x,int y,int width,int height,color_t color);
 void scene_render_text(int x,int y,const char *text);
 void scene_render_end(void);

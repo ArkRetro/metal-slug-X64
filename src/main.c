@@ -100,7 +100,8 @@ static void lifebar_choice(bool z) {
  * own path; the remaining Mission 1 movies are skipped then. */
 static bool mselect_skip;
 static bool mselect_combo(joypad_buttons_t b) { return b.r && (b.l || b.z); }
-static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{2,1},{2,2},{2,3},{3,1},{4,1},{5,1},{5,2},{5,3},{6,1},{6,2},{6,3}};
+/* {13, 1}: ENDING, the game's end from 01893E (second in the list: the tests reach the missions with Up from the first). */
+static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{13,1},{2,1},{2,2},{2,3},{3,1},{4,1},{5,1},{5,2},{5,3},{6,1},{6,2},{6,3}};
 #define MSELECT_ITEMS (sizeof(mselect_items)/sizeof(mselect_items[0]))
 static bool mission_select_menu(void) {
     static unsigned cursor;bool lifebar=false,first=true;joypad_buttons_t was={0};
@@ -130,7 +131,8 @@ static bool mission_select_menu(void) {
         for (unsigned i=0;i<MSELECT_ITEMS;i++) {
             char line[32];unsigned m=mselect_items[i].mission;
             bool stages=m==2 || m>=5;   /* the missions with more than one stage record ported */
-            snprintf(line,sizeof(line),"%c MISSION %u%s",i==cursor?'>':' ',m,stages?(mselect_items[i].stage==1?" STAGE 1":mselect_items[i].stage==2?" STAGE 2":" STAGE 3"):"");
+            if (m==13) snprintf(line,sizeof(line),"%c ENDING",i==cursor?'>':' ');
+            else snprintf(line,sizeof(line),"%c MISSION %u%s",i==cursor?'>':' ',m,stages?(mselect_items[i].stage==1?" STAGE 1":mselect_items[i].stage==2?" STAGE 2":" STAGE 3"):"");
             graphics_set_color(i==cursor?yellow:white,black);graphics_draw_text(surface,88,44+(int)i*11,line);
         }
         graphics_set_color(white,black);

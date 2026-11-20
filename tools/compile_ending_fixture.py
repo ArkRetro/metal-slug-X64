@@ -13,6 +13,7 @@ def main():
     o.append(f'static const int {n}_births[]={{{",".join(str(b["node"]) for b in d["births"]) or "-1"}}};')
     o.append(f'static const int {n}_creators[]={{{",".join(str(b["creator"]) for b in d["births"]) or "-1"}}};')
     o.append(f'#define ENDING_NBIRTHS {len(d["births"])}')
+    o.append(f'#define ENDING_NLIVES {max([u["node"] for u in ups]+[b["node"] for b in d["births"]])+1}')
     sk=[tuple(int(x,16) for x in r.split('-')) for r in d.get('skip',[])]
     o.append('#define ENDING_SKIP {%s}'%','.join('{0x%x,0x%x}'%t for t in sk+[(0x10f200,0x10f400),(0x100016,0x100088)]))
     o.append(f'#define ENDING_ROOT 0x{int(d["roots"][0],16):x}u')
@@ -26,6 +27,6 @@ def main():
     o.append(f'static const uint32_t {n}_reads[][2]={{{",".join("{0x%x,0x%x}"%tuple(w) for w in reads) or "{0,0}"}}};')
     o.append(f'static const uint32_t {n}_writes[][2]={{{",".join("{0x%x,0x%x}"%tuple(w) for w in writes) or "{0,0}"}}};')
     o.append(f'static const uint16_t {n}_vram[][2]={{{",".join("{0x%x,0x%x}"%tuple(w) for w in vram) or "{0,0}"}}};')
-    o.append(f'static const uint16_t {n}_rng[]={{{",".join(str(x) for x in rng) or "0"}}};')
+    o.append(f'static const uint32_t {n}_rng[]={{{",".join(str(x) for x in rng) or "0"}}};')
     a.output.write_text('\n'.join(o)+'\n')
 if __name__=='__main__':main()

@@ -189,6 +189,8 @@ static void stage_descent_start(msx_game_t *g) {   /* 0C15C6 */
     g->velocity_x=0;g->velocity_y=-vy;g->descent=MSX_DESCENT_HANG;g->entry_descent_pending=false;
     neo_landing_descent(&g->landing);g->landing_on=true;
 }
+static void ending_ram_bind(msx_game_t *g);
+static void msx_game_credits_first_pass(msx_game_t *g);
 void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
     neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
@@ -198,8 +200,15 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
      * it back in (0184F6, stage_entry_step). */
     neo_fade_t fade=g->fade;
     bool lifebar=g->lifebar;uint8_t life_hits=g->life_hits;unsigned food_seen=g->food_seen,absorbed=g->lifebar_absorbed,refills=g->lifebar_refills;
+    /* The ending's RAM and screen outlive the load of the credits' stage (mission 0xC, stage 0x2C). */
+    uint8_t end_mem[MSX_END_MEM];memcpy(end_mem,g->end_mem,sizeof(end_mem));
+    unsigned end_stops=g->end_stops;
     msx_game_init(g);
     g->hud=hud;g->flow=flow;g->continues=continues;g->best_mission=best;g->fade=fade;
+    if (g->flow.stage==0x2cu) {
+        g->credits=true;g->credits_phase=0;g->ending_scene=MSX_ENDING_SCENE_CREDITS;g->end_stops=end_stops;
+        ending_ram_bind(g);memcpy(g->end_mem,end_mem,sizeof(end_mem));
+    }
     g->lifebar=lifebar;g->life_hits=life_hits;g->food_seen=food_seen;g->lifebar_absorbed=absorbed;g->lifebar_refills=refills;   /* B42 */
     /* Only the rescue counts outlive the stage: the exit's handlers, walk
      * target, screen box (10C00B) and end requests belong to the old one. */
@@ -218,6 +227,10 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
         memset(kept.rescued,0,sizeof(kept.rescued));memset(kept.gifts,0,sizeof(kept.gifts));memset(kept.special,0,sizeof(kept.special));
     }
     g->world.rng=rng;g->world.weapons=weapons;g->world.pickup=pickup;g->world.ga_flags=kept;
+    /* 0180AA -> 08BF5C at every stage start (018080): the pickup block 10C590.. cleared and RAM 10C5EA = a random word
+     * & 7 (08BFC6). The word is drawn here for the credits' stage only (the script's two random choices follow it, T1
+     * update 28966: 100060, then 100062 / 100064); the other stages do not draw it yet (pending, docs/MISION6.md). */
+    if (g->credits) neo_rng_next(&g->world.rng);
     /* The player actor 1014C4 outlives the stage: its form +93, request +94
      * and combo +95 too (MAME run4, stage 2 -> 3 at 26140: weapon 9, +93 = 1,
      * +95 = 47 in 26130 and 26160). msx_game_init cleared them to the
@@ -251,6 +264,9 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->y=neo_surface_at(0,(int32_t)neo_collision_rows()*8*MSX_UNIT,0,(int32_t)neo_collision_rows()*8*MSX_UNIT,&top)?56*MSX_UNIT-top.height:msx_ground_offset(0);
     neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
+    /* The credits' stage: 0183D0 runs in the mission actor's update, and the script actor it creates (019E04) has its
+     * first update in that same list pass (T1: the two figures 0A8C62 are created in the pass of 0189FA). */
+    if (g->credits) msx_game_credits_first_pass(g);
 }
 /* Entry kind 3 (0C1260 -> 0C14E6, the walk-in of Mission 5 stages 7 and 8,
  * records 2D6036 / 2D6040): 0196E8 places the player at the record's (x, y)
@@ -1076,7 +1092,12 @@ static bool hgun_reserve(void *context) {
  *           stage and restarts Mission 1 (docs/MISION2.md).
  * MAME runJ: 018870 at 13710, 0188B0 13770, 0188F4 <=14040, 018916 14370,
  * Mission 2 at 14460 (dumps every 30 frames). */
-static uint16_t end_rand(void *ctx) {return neo_rng_next(&((msx_game_t *)ctx)->world.rng);}
+static void game_end_start(msx_game_t *g);
+static uint16_t end_rand(void *ctx) {
+    msx_game_t *g=ctx;neo_rng_result_t r=neo_rng_next_result(&g->world.rng);
+    g->end_rand_negative=(r.mixed_word&0x8000u)!=0;   /* 0029EE: the N flag 0029C6 returns with */
+    return r.value;
+}
 /* The RAM of the tally from the world (once, as 0308C0 starts). The
  * port's single player: 10C33C = 1 (none while awaiting the continue),
  * the euro region of every capture (RAM 100000 = 1), medals 10C306/7 = 0
@@ -1185,6 +1206,214 @@ static void laser_call(msx_game_t *g) {
 static void end_sound(msx_game_t *g,uint16_t word) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=word;else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
 }
+/* ---- The game's ending (docs/MISION6.md "El final") --------------------------
+ * The mission actor after Mission 6 (01893E..018A06) and in the credits' stage 0x2C (018AC0..018C58), and the core
+ * actor 101154 after it (016D18..016D7A, 0166AA..01677A), from the listing and the update numbers of the TAS capture
+ * captures-m6/fam/T1 (the mission actor's updates 441 / 1067 / 1068 / 6248 / 6278 / 6378 and the core's 6379 / 6486 /
+ * 6488: the same waits).
+ *
+ * RAM of the original for the ending's actors (neo_end_ram_t rd / wr): only the bytes they use. */
+static const struct {uint32_t lo,hi;} end_mem_range[]={
+    {0x10c340,0x10c480},   /* inputs 10C35A.., the text states 10C380 / 10C384 / 10C450, 10C468 / 10C469, the scores and names 10C46A..10C479 */
+    {0x10f000,0x10f060},   /* the record table 10F010 (ten rows of score, name and a byte) and 10F008 (057CDA's mirror write) */
+    {0x10fdb0,0x10fdc0},   /* the players in play 10FDB6 / 10FDB7.. */
+    {0x10e9e0,0x10e9f0},   /* the continues 10E9E4 and the prisoners 10E9E8 of each player */
+    {0x100000,0x100001},{0x100002,0x100003},{0x10c2e6,0x10c2e7},{0x10c604,0x10c605}};
+static int end_mem_at(uint32_t ad) {
+    unsigned at=0;ad=0x100000u|(ad&0xffffu);   /* the work RAM's mirrors (057D18 writes 14F008) */
+    for (unsigned i=0;i<sizeof(end_mem_range)/sizeof(end_mem_range[0]);i++) {
+        if (ad>=end_mem_range[i].lo && ad<end_mem_range[i].hi) return (int)(at+(ad-end_mem_range[i].lo));
+        at+=end_mem_range[i].hi-end_mem_range[i].lo;
+    }
+    return -1;
+}
+static uint8_t end_mem_rd(void *ctx,uint32_t ad) {
+    msx_game_t *g=ctx;int at=end_mem_at(ad);
+    if (at<0) {if (!g->end_mem_stray++) g->end_mem_stray_at=ad;return 0;}
+    return g->end_mem[at];
+}
+static void end_mem_wr(void *ctx,uint32_t ad,uint8_t v) {
+    msx_game_t *g=ctx;int at=end_mem_at(ad);
+    if (at<0) {if (!g->end_mem_stray++) g->end_mem_stray_at=ad;return;}
+    g->end_mem[at]=v;
+}
+/* 03CF12: d2 columns of d3 rows of the fix map filled with d1 from the VRAM address d0. */
+static void fix_fill(msx_game_t *g,uint16_t d0,uint16_t d1,uint16_t d2,uint16_t d3) {
+    for (;d2;d2--,d0=(uint16_t)(d0+0x20u)) for (uint16_t r=0;r<d3;r++) {
+        uint16_t ad=(uint16_t)(d0+r);
+        if (ad>=0x7000u && ad<0x7000u+NEO_FIX_WORDS) g->hud.fix[ad-0x7000u]=d1;
+    }
+    g->hud.serial++;   /* a map write (hud_renderer.c redraws) */
+}
+/* 016502: the fix map cleared (the frame of 0xFF tiles and the blank borders). Its tail 016572 (RAM 10C2E6 set: the
+ * coin line when RAM 10FD91 bit 0) is not reproduced: the port has no coin line. */
+static void fix_clear(msx_game_t *g) {
+    fix_fill(g,0x7021,0xff,0x26,0x1e);fix_fill(g,0x701f,0,0x28,1);fix_fill(g,0x7000,0,0x28,1);
+    fix_fill(g,0x7000,0,1,0x20);fix_fill(g,0x74e0,0,1,0x20);
+}
+/* The environment resets of the ending's roots (056FCC of 0570A0, 057F34 of 057E00, 002976 / 01AA28(0A7D4A) of 0A7FFE
+ * and 0A863C of 0A8096): their palette slots and layers are the renderer's (ending_scene, actor.c). */
+static void ending_setup(void *ctx) {
+    msx_game_t *g=ctx;
+    switch (g->ending_scene) {
+    case MSX_ENDING_SCENE_PEACE: g->ending_scene=MSX_ENDING_SCENE_RANKING;break;
+    case MSX_ENDING_SCENE_RANKING: g->ending_scene=MSX_ENDING_SCENE_TITLE;break;
+    case MSX_ENDING_SCENE_TITLE: g->ending_scene=MSX_ENDING_SCENE_TITLE_LOGO;break;
+    default: g->ending_scene=MSX_ENDING_SCENE_RESULTS;break;
+    }
+    fix_clear(g);
+}
+static bool ending_rand_negative(void *ctx) {return ((msx_game_t *)ctx)->end_rand_negative;}
+/* The ending's RAM as the game has it when its first root starts (01893E). */
+static void ending_ram_bind(msx_game_t *g) {
+    end_ram_start(g);
+    neo_end_ram_t *m=&g->end_ram;
+    m->rd=end_mem_rd;m->wr=end_mem_wr;m->ram_ctx=g;m->setup=ending_setup;m->rand_negative=ending_rand_negative;
+}
+static void ending_ram_start(msx_game_t *g) {
+    ending_ram_bind(g);
+    neo_end_ram_t *m=&g->end_ram;
+    memset(g->end_mem,0,sizeof(g->end_mem));g->end_mem_stray=0;
+    end_mem_wr(g,0x100000,m->region);                                   /* the euro region of every capture */
+    end_mem_wr(g,0x10c2e6,0xff);                                        /* 018666 */
+    /* The players in play (01897C / 01898A: 0027C4 with D0 = 3 keeps a player that plays at 3 and an absent one
+     * at 0, table 0027B4), the score and the name fields, the continues and the prisoners of the whole game. */
+    end_mem_wr(g,0x10fdb6,3);
+    for (unsigned i=0;i<4;i++) end_mem_wr(g,0x10c46au+i,g->world.pickup.score[0][i]);
+    end_mem_wr(g,0x10e9e4,(uint8_t)(g->continues>>8));end_mem_wr(g,0x10e9e5,(uint8_t)g->continues);
+    end_mem_wr(g,0x10e9e8,(uint8_t)(g->world.ga_flags.tally[0]>>8));end_mem_wr(g,0x10e9e9,(uint8_t)g->world.ga_flags.tally[0]);   /* 0C8CC2 */
+    /* The record table 10F010 (backup RAM): its factory content, ROM 0579D6 (0x50 bytes), as the TAS reads it. */
+    for (unsigned i=0;i<0x50;i++) {const uint8_t *p=ga_rom(0x579d6u+i);end_mem_wr(g,0x10f010u+i,p?*p:0);}
+}
+/* 01893E..0189E8, in the update the mission end's fade ends: RAM 10EA1B (0CAE6C with the mission 6), 430E = FF,
+ * 7003 = 0, the players' bytes 10FDB6 / 10FDB7, 019632, 01805C, every node deleted (004192, the script actor too),
+ * 0C0CD6, 0C8EAA, the fix map (016502), no pause (015418), the layers off (01AA28 with 0) and the results 0570A0
+ * after the mission actor (it runs in this update). */
+static void game_end_start(msx_game_t *g) {
+    if ((int8_t)6>(int8_t)g->best_mission) g->best_mission=6;
+    g->flow.pause_off=0xff;
+    g->world.draw_count=0;g->world_enabled=false;
+    fix_clear(g);
+    neo_end_reset(&g->end);ending_ram_start(g);
+    g->ending_scene=MSX_ENDING_SCENE_NONE;g->ending_done=false;
+    neo_end_start(&g->end,0x570a0);g->end.mission60=0;
+    g->mission_end=MSX_END_RESULTS;
+}
+/* Test entry (the test menu's ENDING, not arcade): the mission end's last wait 018916 of Mission 6 ends in the next
+ * update, so 01891E goes to 01893E as after the last enemy; the score, the prisoners and the continues are the
+ * game's as it stands. */
+void msx_game_test_ending(msx_game_t *g) {
+    g->flow.mission=5;g->complete=true;g->end_started=true;g->mission_complete=true;
+    g->mission_end=MSX_END_FADE;g->end_timer=0;g->world_enabled=false;
+    if (g->ticks&1u) g->ticks++;
+}
+bool msx_game_ending(const msx_game_t *g) {return g->credits || (g->complete && g->mission_end>=MSX_END_RESULTS && g->ending_scene);}
+/* One update of the ending's list after the mission (or core) actor, as end_actors. */
+static void ending_actors(msx_game_t *g,uint8_t held,uint8_t pressed) {
+    neo_end_ram_t *m=&g->end_ram;
+    /* The inputs 0190BC / 057xxx read: held 10C35C, new presses 10C35D of player 1 (0CA1B8 bits). */
+    end_mem_wr(g,0x10c35c,held);end_mem_wr(g,0x10c35d,pressed);
+    m->pressed[0]=pressed;m->video=(uint16_t)(g->ticks>>1);
+    neo_end_inputs_t in={g->world.root,{false,0,0,0,0,0,256,320,512},g->world.epoch,g->world.front_window,g->flow.mission,neo_world_program,m};
+    neo_end_update(&g->end,&in);
+    for (unsigned i=0;i<m->sound_count;i++) end_sound(g,m->sounds[i]);
+    m->sound_count=0;
+}
+/* One pass of the credits' list in the world: the script actor 101414 and its nodes. No player actor: a zero block,
+ * absent. */
+static void credits_world(msx_game_t *g,uint8_t held,uint8_t pressed) {
+    neo_end_ram_t *m=&g->end_ram;
+    neo_world_player_t p;memset(&p,0,sizeof(p));p.inactive=true;p.unregistered=true;
+    end_mem_wr(g,0x10c35c,held);end_mem_wr(g,0x10c35d,pressed);
+    neo_world_camera(&g->world,&p);
+    g->world.video_phase=(uint16_t)(g->ticks>>1);
+    g->world.scroll_y=neo_camera_root_y(&g->world.camera);
+    g->world.end_ram=m;
+    neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p);
+    g->world.end_ram=NULL;m->slot_level=NULL;m->slot_ctx=NULL;   /* the world's 009CCE slots end with its tick */
+    for (unsigned i=0;i<m->sound_count;i++) end_sound(g,m->sounds[i]);
+    m->sound_count=0;
+    if (m->audio_commands) {g->ending_audio_command=m->audio_command;m->audio_commands=0;}
+}
+/* The credits' stage 0x2C (mission 0xC, record 017C54): one update of the list. No player (the record's entry +0E
+ * is negative: 01862E skips the letters, the arrow and 015422), no HUD.
+ *  phase 0  018AC6: waits for the script actor's +5F bit 7 (its op 3); then 018B18 in the same update: 0C8EAA, the
+ *           fade to black in 0x1E steps, +7C = 0x1E.
+ *  phase 1  018B38 (subq / bcc: 31 updates), then 018B40: every node deleted (004192, the script actor), 0C0CD6,
+ *           002852, 016502, 03D4EE, the layers 017EB0 and the list 017EE6 (the last screen: ending_scene PEACE), the
+ *           fade back in 0x1E steps, the line 01959C after the mission actor (stage 0x2C), +7C = 0x64.
+ *  phase 2  018BBA (101 updates), then 018BC2: 0C8EAA and the mission actor deletes itself (004188; the protection
+ *           probe of 018BD0, RAM 10F00C += 3EF, is not modelled: the original board always goes to 018C58).
+ *  phase 3  the core actor 016D18 in the next update (0040AC: the mission actor is gone): 016D80 (004192), the
+ *           memory card call 0CAC24 (BIOS C00468: +60 = FF at once in the capture, no card screen; not ported),
+ *           016502, 012244 and the ranking 057E00 after it; 016D72 waits for its +60.
+ *  phase 4  016D72; its +60 leads to C00444 (the BIOS), which comes back at 0166AA.
+ *  phase 5  0166AA: one update (0166C8: 009BAA still busy with the palettes of 009B84, T1 update 6487).
+ *  phase 6  0166C8..01674A: 03D4AC, 002976(0), 017FD0, 016502, 016D80 and the title 0A7FFE (0040BC with the
+ *           reserve 0x2A); 01677A waits for its +60.
+ *  phase 7  01677A; then 0167A0, the attract demo (not ported): ending_done. */
+static void msx_game_credits_first_pass(msx_game_t *g) {credits_world(g,0,0);}
+static void credits_update(msx_game_t *g,bool jump,bool fire) {
+    g->ticks++;
+    if (g->ticks&1) return;
+    const uint8_t held=(uint8_t)((fire?0x10u:0u)|(jump?0x20u:0u)|(g->grenade?0x40u:0u));
+    const uint8_t pressed=(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u));
+    g->end_fire_was=fire;g->end_jump_was=jump;g->grenade=false;
+    neo_fade_step(&g->fade);                                            /* 003918 -> 00698C, list head */
+    if (g->flow.state==NEO_MISSION_STAGE_ENTRY || g->flow.state==NEO_MISSION_STAGE_EXIT) {
+        neo_mission_update(&g->flow);
+        /* 0184D8 (exit kind 0): the fix map cleared (016502, a job of the vertical blank, 0036A4) and the fade off. */
+        if (g->flow.fade_in) {fix_clear(g);neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);}
+        if (g->flow.state!=NEO_MISSION_PLAYING) goto world;
+        g->credits_phase=0;g->credits_mark=g->ticks>>1;                 /* 018690: stage 0x2C, 018AC0 */
+    }
+    const uint8_t phase_was=g->credits_phase;
+    switch (g->credits_phase) {
+    case 0:
+        if (!g->world.script.finished) break;
+        neo_fade_start(&g->fade,(int16_t)-0x1f,(int16_t)-0x1f,(int16_t)-0x1f,0x1e);
+        g->credits_timer=0x1e;g->credits_phase=1;
+        /* fall through */
+    case 1:
+        if (g->credits_timer--) break;
+        g->world.draw_count=0;g->world_enabled=false;
+        fix_clear(g);g->ending_scene=MSX_ENDING_SCENE_PEACE;
+        neo_fade_start(&g->fade,0,0,0,0x1e);
+        neo_end_reset(&g->end);neo_end_start(&g->end,0x1959c);
+        g->credits_timer=0x64;g->credits_phase=2;
+        /* fall through */
+    case 2:
+        if (g->credits_timer--) break;
+        g->credits_phase=3;
+        break;
+    case 3:
+        neo_end_reset(&g->end);g->end.mission60=0;fix_clear(g);
+        neo_end_start(&g->end,0x57e00);
+        g->credits_phase=4;
+        break;
+    case 4:
+        if (!g->end.mission60 && !g->end.unsupported) break;
+        g->end_stops+=g->end.unsupported;g->credits_phase=5;
+        break;
+    case 5: g->credits_phase=6;break;
+    case 6:
+        fix_clear(g);
+        /* The title has up to 47 nodes at once: it runs on the world's generic actors, idle since 018B40. */
+        neo_end_lend(&g->end,g->world.gactors,NEO_WORLD_GACTORS);g->end.mission60=0;
+        neo_end_start(&g->end,0xa7ffe);
+        g->credits_phase=7;
+        break;
+    case 7:
+        if (!g->end.mission60 && !g->end.unsupported) break;
+        g->end_stops+=g->end.unsupported;g->credits_phase=8;g->ending_done=true;g->credits_mark=g->ticks>>1;
+        return;
+    default: return;
+    }
+    if (g->credits_phase!=phase_was) g->credits_mark=g->ticks>>1;   /* the update of the step (the ares test's counts) */
+world:
+    if (g->world_enabled) credits_world(g,held,pressed);
+    else if (g->end.count) ending_actors(g,held,pressed);
+}
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {
     case MSX_END_NONE:
@@ -1224,6 +1453,15 @@ static void mission_end_step(msx_game_t *g) {
     case MSX_END_FADE:
         if (g->end_timer--) return;
         neo_mission_next(&g->flow);                                     /* 01891E */
+        if (g->flow.state==NEO_MISSION_GAME_END) {game_end_start(g);return;}   /* 01893E */
+        g->mission_end=MSX_END_DONE;
+        return;
+    case MSX_END_RESULTS:
+        /* 0189F2: the results' +60, then 0189FA: mission 0xC, record 0 (42F8 / 42FA; 0182A4, without the music
+         * word +80 of 01829E): the credits' stage, loaded as any mission's first (actor.c, MSX_END_DONE). */
+        if (!g->end.mission60 && !g->end.unsupported) return;
+        g->end_stops+=g->end.unsupported;
+        neo_mission_start(&g->flow,0xc);
         g->mission_end=MSX_END_DONE;
         return;
     default: return;
@@ -1264,12 +1502,15 @@ void msx_game_resume_inputs(msx_game_t *g,uint8_t held) {
 static void play_update(msx_game_t *g,int direction,bool jump,bool fire);
 void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
     neo_lspc_frame(&g->lspc);   /* one call per video frame (G25) */
+    if (g->credits) {credits_update(g,jump,fire);return;}
     if (g->complete) {
         if (!((g->ticks+1u)&1u) && g->end_started) {
             neo_fade_step(&g->fade);                /* 003918 -> 00698C, list head */
             mission_end_step(g);
             /* The end actors after the mission actor in the list. */
-            if (g->end.count) end_actors(g,jump,fire);
+            if (g->mission_end==MSX_END_RESULTS)
+                ending_actors(g,(uint8_t)((fire?0x10u:0u)|(jump?0x20u:0u)),(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u)));
+            else if (g->end.count) end_actors(g,jump,fire);
             g->end_fire_was=fire;g->end_jump_was=jump;
         }
         g->end_started=true;
@@ -1277,7 +1518,7 @@ void msx_game_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * (0D5EBC/0D5EDA), the effects, the surrendering figure 0A9010 and
          * the players, whose input handlers are 0C0538 (no input) since
          * 018F92 (MAME runK 13632..14456). */
-        if (g->world_enabled && g->mission_end!=MSX_END_DONE) {g->grenade=false;play_update(g,0,false,false);}
+        if (g->world_enabled && g->mission_end<MSX_END_RESULTS) {g->grenade=false;play_update(g,0,false,false);}
         else g->ticks++;
         return;
     }

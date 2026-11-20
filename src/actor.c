@@ -214,6 +214,7 @@ static int native_screen_y(uint16_t projected_y) {
     return MSX_SCREEN_BASE_Y-((int)(int16_t)projected_y-MSX_PROJECTED_BASE_Y);
 }
 static void draw_native_parts(const neo_world_draw_t *d,bool request_only);
+static uint16_t end_mix_target;   /* the 009CCE target of an end-list draw (draw_end); 0: the world's table */
 /* Actor sprite parts may be deferred a frame when their chunk is not
  * resident and the frame's synchronous decode budget is spent. */
 static void draw_native(const neo_world_draw_t *d,bool request_only) {
@@ -233,6 +234,19 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
     if (!desc->count) return;   /* the empty descriptor (1C3F06): nothing drawn, no palette asked (the beam 0A1D20 sets none) */
     int palette=scene_native_palette(d->palette);
     if (palette<0) {native_missing_palette++;native_missing_palette_id=d->palette;native_missing_tag=d->descriptor;palette=scene_native_palette(0x20e);}
+    if (d->mix_weight) {
+        /* 009CCE with no exported mix (the credits): weight 31 or more shows the target; else the two palettes'
+         * ROM words (resource 8000 | n of the pack) are mixed for this frame (005EA0, neo_palmix_run.h). */
+        const uint16_t target=end_mix_target?end_mix_target:game.world.mix_targets[d->mix_target&3u];
+        int mixed=-1;
+        if (d->mix_weight>=0x1fu) mixed=scene_native_palette(target);
+        else {
+            int ra=scene_native_palette(0x8000u|d->palette),rc=scene_native_palette(0x8000u|target);
+            if (ra>=0 && rc>=0) mixed=scene_render_mixed_palette((unsigned)ra,(unsigned)rc,d->mix_weight,ga_rom(0x51d8));
+        }
+        if (mixed<0) {native_missing_palette++;native_missing_palette_id=0x8000u|d->palette;native_missing_tag=d->descriptor;}
+        else palette=mixed;
+    }
     /* Attribute bit 0 mirrors, bit 1 flips vertically (the H bullets'
      * 32 directions 22C3BE are 9 shapes with both flips; ignoring bit 1
      * drew the bullets going up-right as "\", MiSTer report). Parts are
@@ -260,9 +274,11 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         scene_render_sprite(&part,x,y,mirror,flip_y,d->flash && (game.ticks&1));
     }
 }
+static bool ending_pack_wait;   /* the results began in this frame's update: the ending's pack is loaded at the next frame's top */
 static void draw_end(const neo_end_draw_t *e,bool request_only) {
-    neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y};
-    draw_native(&d,request_only);
+    if (ending_pack_wait) return;
+    neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y,0,e->mix_target?e->mix_weight:0,0};
+    end_mix_target=e->mix_target;draw_native(&d,request_only);end_mix_target=0;
 }
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
@@ -429,6 +445,7 @@ static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) 
     }
 }
 static void draw_marco(unsigned bank_id,unsigned frame) {
+    if (msx_game_ending(&game)) return;   /* the results, the credits and the title have no player */
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
     if ((game.life.phase!=MARCO_GONE || game.life.final_draw) && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
@@ -501,6 +518,12 @@ void actor_select_mission(unsigned mission,unsigned stage) {select_mission=missi
  * parachute), each earlier stage of it ended by 018F40/018722 first. */
 static void selected_mission(void) {
     unsigned m=select_mission,st=select_stage?select_stage:1u;select_mission=0;
+    if (m==13u) {
+        /* ENDING: the game's end from 01893E (the results 0570A0, the credits, the ranking and the title). */
+        debugf("MSX MSELECT enter the ending (01893E)\n");
+        msx_game_test_ending(&game);restart_was_down=true;previous_animation=-1;scene_clock_reset(&simulation_clock);
+        return;
+    }
     game.flow.mission=(uint16_t)(m-1u);neo_mission_start(&game.flow,(uint16_t)(m-1u));
     for (unsigned s=1;s<st;s++) {
         for (unsigned k=0;k<40 && !game.flow.load && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
@@ -552,6 +575,38 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             reset_game();
         }
         previous_animation=-1;scene_clock_reset(&simulation_clock);
+    }
+    {
+        /* The game's ending (gameplay.c): a line at each step, and its end. 0167A0 (the attract demo after the
+         * title 0A7FFE) is not ported: the game starts again as after a game over. */
+        static uint8_t seen_scene,seen_phase=0xff;static bool seen_results;static unsigned seen_mark;
+        const bool results=game.complete && game.mission_end==MSX_END_RESULTS;
+        if (results && !seen_results) debugf("MSX ENDING results 0570A0 start (01893E) score=%02x%02x%02x%02x prisoners=%u continues=%u\n",
+            game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3],(unsigned)game.world.ga_flags.tally[0],game.continues);
+        ending_pack_wait=false;
+        if (results && !seen_results) {
+            /* The ending's sprites (the results' dial and frames, the credits, the title) are the pack of mission 0xC
+             * (romfs/mission13.pack; its only stage is the credits' 0x2C): loaded here, behind the black screen 018954
+             * left, with its stage tables (0189FA loads the stage itself later, enter_mission). */
+            leave_mission();
+            bool ok=scene_mission_load(13u);
+            if (ok) {scene_assets_set_load_idle(load_idle);load_shown_at=TICKS_READ();load_presents=load_gap=0;ok=scene_stage_load(0);load_idle_end();}
+            if (ok) {ga_rom_set_extra(scene_stage_rom);neo_world_set_program_extra(scene_stage_program);scene_renderer_stage_changed();}
+            else debugf("MSX ENDING pack 13 not loaded: the ending's sprites are not drawn\n");
+            previous_animation=-1;scene_clock_reset(&simulation_clock);
+        }
+        seen_results=results;
+        if (game.ending_scene!=seen_scene) {seen_scene=game.ending_scene;debugf("MSX ENDING scene %u ticks=%lu\n",seen_scene,(unsigned long)game.ticks);}
+        if (game.credits && (game.credits_phase!=seen_phase || game.credits_mark!=seen_mark)) {
+            seen_phase=game.credits_phase;seen_mark=game.credits_mark;
+            debugf("MSX ENDING credits phase %u update=%u nodes=%u end nodes=%u stops=%u world stops=%u stray=%u\n",seen_phase,game.credits_mark,neo_world_alive(&game.world),game.end.count,game.end_stops,game.world.unsupported,game.end_mem_stray);
+        }
+        if (!game.credits) seen_phase=0xff;
+        if (game.ending_done) {
+            debugf("MSX ENDING credits phase 8 update=%u\n",game.credits_mark);
+            debugf("MSX ENDING done: the title 0A7FFE ended (0167A0, the attract demo, is not ported): the game starts again (stops=%u stray=%u at %06lX)\n",game.end_stops,game.end_mem_stray,(unsigned long)game.end_mem_stray_at);
+            reset_game();previous_animation=-1;scene_clock_reset(&simulation_clock);
+        }
     }
     if (game.stage_load) {
         debugf("MSX stage end (018722) mission %u: next stage %u (exit hooks=%u, script lock releases=%u)\n",(unsigned)game.flow.mission+1u,(unsigned)game.flow.stage,game.stage_exit_hooks,game.stage_lock_releases);
@@ -659,6 +714,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
          }}
 #endif
         msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
+        if (game.complete && game.mission_end==MSX_END_RESULTS && game.ending_scene==MSX_ENDING_SCENE_RESULTS && !scene_native_descriptor(0x1d9154u)) ending_pack_wait=true;
         /* Dying, lying and the entrance (marco_death.c): the death and
          * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
          * the body/weapon programs restart with the new life. */
@@ -935,7 +991,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     {   /* MISSION COMPLETE letters: all arrived (root +61 = 0x11, 060974). */
         static bool logged;
         if (game.mission_end!=MSX_END_LETTERS) logged=false;
-        else if (!logged && game.end.count && ga_l(&game.end.nodes[game.end.order[0]],0)==0x609a4) {
+        else if (!logged && game.end.count && ga_l(&neo_end_nodes(&game.end)[game.end.order[0]],0)==0x609a4) {
             logged=true;debugf("MSX mission end letters arrived (06090A nodes=%u draws=%u stops=%u)\n",game.end.spawned,game.end.draw_count,game.end.unsupported);
         }
     }

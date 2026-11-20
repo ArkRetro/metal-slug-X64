@@ -11,7 +11,9 @@ stack 10F200..10F3FF and the --skip intervals (the original's engine state
 the port keeps its own way: free node count, palette slots, sprite lists),
 the random words of 0029C6 (reads at 0029D2; the ring 100016..100087 is
 skipped), the last value written to every such byte, and every VRAM word
-written (Z: address, data) in order. Updates are grouped by list pass."""
+written (Z: address, data) in order. Updates are grouped by list pass (a node
+seen again: a fixture needs a node that lives through it). With several --root (the credits: nodes the
+level script creates), every life that is not in `births` is a root."""
 import argparse,gzip,json
 from pathlib import Path
 POOL0,POOL1=0x1010a4,0x1010a4+0xb0*100
@@ -30,7 +32,7 @@ def main():
     def keep_ad(ad):
         if POOL0<=ad<POOL1 or STACK0<=ad<STACK1 or RNG0<=ad<RNG1:return False
         return not any(lo<=ad<hi for lo,hi in skips)
-    life={};nlives=0;births=[];updates=[];frame=0;cur=None;npass=0;seen=set()
+    life={};nlives=0;births=[];updates=[];frame=0;cur=None;npass=0;seen=set();pframe=-9;irq=0
     # A node freed by 004126 (its +00 written at 004136, by itself or by the delete-all 004192: an X line) is no
     # creator any more: a later node in its slot is not its descendant.
     dead=set()
@@ -41,7 +43,7 @@ def main():
             cur['writes']=sorted([int(k,16),v] for k,v in cur['writes'].items())
             updates.append(cur)
         cur=None
-    for line in open(a.trace):
+    for line in (gzip.open(a.trace,'rt') if a.trace.suffix=='.gz' else open(a.trace)):
         t=line[0];p_=line.split()
         if t=='F':frame=int(p_[1]);continue
         if t=='U':
@@ -51,6 +53,7 @@ def main():
             if r in roots and n not in life and a.from_frame<=frame+1<=a.to_frame:life[n]=nlives;nlives+=1
             keep=n in life and r!=0x3f1e and keep_r(r) and a.from_frame<=frame+1<=a.to_frame
             if keep:
+                # (Not by frames: a pass crosses frame lines, and a loaded one takes three frames.)
                 if n in seen:npass+=1;seen=set()
                 seen.add(n)
             cur=dict(frame=frame+1,pass_=npass,node=life.get(n,-1),routine=r,pre=p_[3],keep=keep,ram={},rng=[],writes={},vram=[],n=n)
@@ -65,10 +68,20 @@ def main():
             if t=='W' and cur is not None and cur['keep']:pass
             else:continue
         if t in 'FUVB':continue
+        # The vertical blank interrupt 0022AC..002320 (it calls 002850, 0036CC and the BIOS) inside a node's update:
+        # its reads, writes and VRAM words are not the node's.
+        if t in 'RW':
+            pc_=int(p_[4],16)
+            if 0x22ac<=pc_<0x2300:irq=1
+            elif irq and 0x2300<=pc_<0x2322:irq=2
+            elif irq==2:irq=0
+        if irq:continue
         if cur is None or not cur['keep']:continue
         if t in 'RW':
             ad,m,d,pc=(int(x,16) for x in p_[1:5])
             if t=='R' and pc==0x29d2:cur['rng'].append(d);continue
+            # 0029EE: the ring word 0029C6 changes; its sign is the N flag the routine returns with (bit 16).
+            if t=='W' and pc==0x29ee and cur['rng']:cur['rng'][-1]|=(d>>15&1)<<16;continue
             for b,bm,sh in ((0,0xff00,8),(1,0xff,0)):
                 if not m&bm or not keep_ad(ad+b):continue
                 k='%x'%(ad+b);v=(d>>sh)&0xff

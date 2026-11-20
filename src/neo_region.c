@@ -22,6 +22,7 @@
 #include "program_file.h"
 #endif
 #include "neo_boss.h"
+#include "neo_end.h"
 /* Dispatch of the generic actors by routine label (see neo_region.h) and the
  * ROM data tables they read (data/region_rom.json). */
 /* The blobs sorted by address, with the running maximum of their ends: a
@@ -102,7 +103,7 @@ const uint8_t *ga_rom_dyn_map(uint32_t address) {
     if (rom_extra) {const uint8_t *p=rom_extra(address);if (p && rom_extra(address+n-1u)==p+(n-1u)) return p;}
     return NULL;
 }
-bool neo_region_routine(uint32_t r) {return neo_m4veh_routine(r) || neo_m4boss_routine(r) || neo_m4props_routine(r) || neo_m5props_routine(r) || neo_m6props_routine(r) || neo_m6enemy_routine(r) || neo_m6boss_routine(r) || neo_m5enemy_routine(r) || neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r) || neo_dome_routine(r) || neo_barrel_routine(r) || neo_wagon_routine(r) || neo_arab_routine(r) || neo_prisoner_routine(r) || neo_item_routine(r) || neo_armored_routine(r) || neo_secret_routine(r) || neo_swords_routine(r) || neo_rocket_routine(r) || neo_heli_routine(r) || neo_camel_routine(r) || neo_porter_routine(r) || neo_civil_routine(r) || neo_slug_routine(r) || neo_tank_routine(r) || neo_slugnoid_routine(r) || neo_bullet_routine(r) || neo_chaser_routine(r) || neo_pweapon_routine(r) || neo_goarrow_routine(r) || neo_rebel2_routine(r) || neo_rebel3_routine(r) || neo_m2creature_routine(r) || neo_gate_routine(r) || neo_crate_routine(r) || neo_m2props_routine(r) || neo_m3props_routine(r) || neo_m3enemy_routine(r) || neo_drone_routine(r) || neo_m2traps_routine(r) || neo_hostage_routine(r) || neo_m2boss_routine(r) || neo_m3mid_routine(r) || (MSX_M3BOSS && neo_m3boss_routine(r)) || (MSX_M3VEH && neo_m3veh_routine(r)) || neo_m5train_routine(r) || neo_m5sewer_routine(r) || neo_m5boss_routine(r);}
+bool neo_region_routine(uint32_t r) {return neo_m4veh_routine(r) || neo_m4boss_routine(r) || neo_m4props_routine(r) || neo_m5props_routine(r) || neo_m6props_routine(r) || neo_m6enemy_routine(r) || neo_m6boss_routine(r) || neo_m5enemy_routine(r) || neo_truck_routine(r) || neo_effects_routine(r) || neo_flyer_routine(r) || neo_props_routine(r) || neo_rest_routine(r) || neo_dome_routine(r) || neo_barrel_routine(r) || neo_wagon_routine(r) || neo_arab_routine(r) || neo_prisoner_routine(r) || neo_item_routine(r) || neo_armored_routine(r) || neo_secret_routine(r) || neo_swords_routine(r) || neo_rocket_routine(r) || neo_heli_routine(r) || neo_camel_routine(r) || neo_porter_routine(r) || neo_civil_routine(r) || neo_slug_routine(r) || neo_tank_routine(r) || neo_slugnoid_routine(r) || neo_bullet_routine(r) || neo_chaser_routine(r) || neo_pweapon_routine(r) || neo_goarrow_routine(r) || neo_rebel2_routine(r) || neo_rebel3_routine(r) || neo_m2creature_routine(r) || neo_gate_routine(r) || neo_crate_routine(r) || neo_m2props_routine(r) || neo_m3props_routine(r) || neo_m3enemy_routine(r) || neo_drone_routine(r) || neo_m2traps_routine(r) || neo_hostage_routine(r) || neo_m2boss_routine(r) || neo_m3mid_routine(r) || (MSX_M3BOSS && neo_m3boss_routine(r)) || (MSX_M3VEH && neo_m3veh_routine(r)) || neo_m5train_routine(r) || neo_m5sewer_routine(r) || neo_m5boss_routine(r) || neo_ending_world_routine(r);}
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (neo_truck_routine(r)) return neo_truck_tick(a,e);
@@ -158,5 +159,8 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_m2boss_routine(r)) return neo_m2boss_tick(a,e);
     if (neo_m3mid_routine(r)) return neo_m3mid_tick(a,e);
     if (MSX_M3BOSS && neo_m3boss_routine(r)) return BOSS_TICK(MSX_OVL_M3BOSS,neo_m3boss_tick);
+    /* The credits' pages, timers and pictures (neo_ending.c) in the world's list; without the ending's RAM
+     * (e->end_ram) they stop explicitly. */
+    if (neo_ending_world_routine(r) && e->end_ram) return BOSS_TICK(MSX_OVL_ENDING,neo_ending_tick);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

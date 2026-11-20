@@ -18,7 +18,7 @@ enum {
     NEO_MISSION_STAGE_EXIT,     /* 0184B4.. exit kind (+6) running */
     NEO_MISSION_PLAYING,        /* 0186A0 stage loop */
     NEO_MISSION_END,            /* 018846 mission end (gameplay.c) */
-    NEO_MISSION_GAME_END,       /* 01893E: after mission 6 (not ported) */
+    NEO_MISSION_GAME_END,       /* 01893E: after mission 6 (the results 0570A0, then mission 0xC: gameplay.c) */
 };
 typedef struct {
     uint16_t mission,stage,index,record_index;   /* 42F4 42F6 42F8 42FA */

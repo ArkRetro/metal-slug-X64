@@ -70,7 +70,8 @@ from pack_scene import PAGE
 import pack_store
 from export_marco import palette_rgb
 ROOT=Path(__file__).resolve().parents[1]
-DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,),4:(0x016E1E,),5:(0x016E2E,0x016E3E,0x016E4E),6:(0x016E5E,0x016E6E,0x016E7E)}
+# 13: mission 0xC of the table 017D44, the credits (record 017C54, stage 0x2C; docs/MISION6.md "Los créditos").
+DESCRIPTORS={2:(0x016DDE,0x016DEE,0x016DFE),3:(0x016E0E,),4:(0x016E1E,),5:(0x016E2E,0x016E3E,0x016E4E),6:(0x016E5E,0x016E6E,0x016E7E),13:(0x01709E,)}
 
 def actor_frames(mission):
     """Native actor descriptors of the mission (filesystem/missionN/rest-native.json,
@@ -97,7 +98,7 @@ def actor_frames(mission):
     return frames,{k:v for k,v in m['palettes'].items() if k not in have},empty
 
 # Mission 4 shares enemies with Mission 3 (grenadiers, shield soldiers, the bomber's family...): its pack carries both groups.
-GROUPS={2:('m2',),3:('m3',),4:('m3','m4'),5:('m3','m5'),6:('m3','m4','m5','m6')}   # Mission 6 stage 1: the rafts, the bridge spans and the bridge's collision map ('m6'); Mission 5 uses the Mission 3 soldiers 05C53C and their weapons too
+GROUPS={2:('m2',),3:('m3',),4:('m3','m4'),5:('m3','m5'),6:('m3','m4','m5','m6'),13:('end',)}   # Mission 6 stage 1: the rafts, the bridge spans and the bridge's collision map ('m6'); Mission 5 uses the Mission 3 soldiers 05C53C and their weapons too
 # Missions whose pack carries only the descriptors the mission can draw (docs/MISION6.md "Recorte"): Mission 6's export
 # keeps the actors of Missions 2..5 (each export does) and its pack did not fit SCENE_MISSION_CHUNKS_MAX with them.
 TRIM={6}
@@ -704,10 +705,12 @@ def stage_blobs(rom,descriptor):
         assert n and n<0x40,('camera list',hex(a),op,n);a+=n
     out=[(cam,rom.read(cam,a-cam))]
     entry=rom.u32(descriptor+8);script=rom.u32(entry)
-    sec=json.loads((ROOT/f'data/mission{MISSION[0]}_script.json').read_text())['sections']
+    # (The credits' stage, pack 13: the section 22 of data/ending_script.json; its sub-script records are ROM blobs of the group 'end'.)
+    sec=json.loads((ROOT/('data/ending_script.json' if MISSION[0]==13 else f'data/mission{MISSION[0]}_script.json')).read_text())['sections']
     end=next(int(s['end'],16) for s in sec if int(s['base'],16)==script)
     out.append((script,rom.read(script,end+2-script)))
     players=rom.u32(descriptor+4);a=players
+    if not players:return out+[(0,b'')]   # the credits' record has no players (descriptor +4 = 0): an empty third blob
     while rom.u16(a+12)!=0xffff:a+=12
     out.append((players,rom.read(players,a+14-players)))
     return out

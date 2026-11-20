@@ -339,7 +339,8 @@ def main():
             print('ROM model: %d actor maps from %06X into layer %d at x %#x: %d ROM blocks, palette numbers %s (same colours in %d snapshots)'%(count,first,layer,xpage,emitted,sorted(nums),len(snaps)))
         out=dict(m);out['source']='tools/export_stage_rom.py: ROM blocks of the maps of the camera list %06X; colours of the observed blocks (%s)'%(rom.u32(a.descriptor),m['source'])
         out['cells']=cells;out['swapped_cells']=[];out['conflicts']=[];out['palettes']=palettes;out['palette_numbers']=numbers
-        out['width']=max(c['x'] for c in cells if c['layer']==3)+16;out['camera_max']=a.camera_max if a.camera_max is not None else m['camera_max']
+        # (A stage whose maps have no tile on 10C72E, the credits' 01709E: the screen's width.)
+        out['width']=max([c['x'] for c in cells if c['layer']==3]+[304])+16;out['camera_max']=a.camera_max if a.camera_max is not None else m['camera_max']
         out['selection']='ROM maps (pre-patch state); observed blocks only outside the maps'
         a.rom_model.write_text(json.dumps(out)+'\n');rep['rom_model']=stats
     a.output.write_text(json.dumps(doc)+'\n')

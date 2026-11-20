@@ -1,6 +1,12 @@
 #include "neo_end.h"
 #include <string.h>
 #include "neo_soldier_ai.h"   /* neo_angle (ROM 002EB4) */
+#include "msx_overlay.h"
+#if MSX_OVERLAY
+#define ENDING_TICK(a,e) msx_overlay_tick(MSX_OVL_ENDING,(a),(e))
+#else
+#define ENDING_TICK(a,e) neo_ending_tick((a),(e))
+#endif
 /* MISSION COMPLETE letters 06090A and MISSION n START 0607DE, manual
  * translation of ROM 0607DE..060F42
  * (ROM labels are provenance only). Called by the mission actor at 0188DE
@@ -41,15 +47,15 @@
 typedef struct {neo_end_t *s;const neo_end_inputs_t *in;int current;} ctx_t;
 static uint16_t rw(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint16_t)(p[0]<<8|p[1]):0;}
 static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(address+2);}
-static int index_of(const neo_end_t *s,const neo_gactor_t *a) {return (int)(a-s->nodes);}
+static int index_of(const neo_end_t *s,const neo_gactor_t *a) {return (int)(a-neo_end_nodes(s));}
 static int order_of(const neo_end_t *s,int index) {
     for (unsigned i=0;i<s->count;i++) if (s->order[i]==index) return (int)i;
     return -1;
 }
 static neo_gactor_t *alloc(neo_end_t *s,int creator,uint32_t routine) {
-    unsigned i;for (i=0;i<NEO_END_NODES && s->nodes[i].active;i++) {}
-    if (i==NEO_END_NODES || s->count==NEO_END_NODES) {s->unsupported++;if (!s->unsupported_at) s->unsupported_at=0x40bc;return NULL;}
-    neo_gactor_t *a=&s->nodes[i];memset(a,0,sizeof(*a));a->index=(int16_t)i;a->active=true;
+    unsigned i;for (i=0;i<neo_end_capacity(s) && neo_end_nodes(s)[i].active;i++) {}
+    if (i==neo_end_capacity(s) || s->count==NEO_END_NODES) {s->unsupported++;if (!s->unsupported_at) s->unsupported_at=0x40bc;return NULL;}
+    neo_gactor_t *a=&neo_end_nodes(s)[i];memset(a,0,sizeof(*a));a->index=(int16_t)i;a->active=true;
     SL(0,routine);SL(0x0c,creator<0?0x101364u:NEO_GA_TAG((unsigned)creator));
     SB(0x12,0xff);SB(0x13,0xff);SW(0x1e,0xffff);SB(0x17,0xff);SW(0x58,0xffff);SB(0x69,0xff);SB(0x6a,0xff);SB(0x6b,0xff);
     memset(a->written,0,sizeof(a->written));
@@ -64,13 +70,19 @@ static neo_gactor_t *alloc(neo_end_t *s,int creator,uint32_t routine) {
 }
 void neo_end_reset(neo_end_t *s) {memset(s,0,sizeof(*s));}
 neo_gactor_t *neo_end_start(neo_end_t *s,uint32_t routine) {return alloc(s,-1,routine);}
+void neo_end_lend(neo_end_t *s,neo_gactor_t *nodes,unsigned count) {
+    neo_end_reset(s);
+    if (count>NEO_END_NODES) count=NEO_END_NODES;
+    for (unsigned i=0;i<count;i++) nodes[i].active=false;
+    s->lent=nodes;s->lent_count=(uint8_t)count;
+}
 bool neo_end_routine(uint32_t r) {return r>=0x607de && r<=0x60c8c;}
 /* ---- environment ----------------------------------------------------------- */
 static bool g_parent(void *c,uint32_t tag,neo_contact_parent_t *out) {
     ctx_t *t=c;
     if (tag==ROOT_TAG) {*out=t->in->root;return true;}
-    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<NEO_END_NODES) {
-        const neo_gactor_t *a=&t->s->nodes[tag&0xffffu];
+    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && (tag&0xffffu)<neo_end_capacity(t->s)) {
+        const neo_gactor_t *a=&neo_end_nodes(t->s)[tag&0xffffu];
         *out=(neo_contact_parent_t){tag,(int32_t)ga_l(a,0x3c),(int32_t)ga_l(a,0x40),(int32_t)ga_l(a,0x44),(int32_t)ga_l(a,0x48),ga_b(a,0x4d)};
         return true;
     }
@@ -82,18 +94,30 @@ static neo_gactor_t *g_spawn(void *c,neo_gactor_t *creator,uint32_t routine,bool
 }
 static neo_gactor_t *g_creator(void *c,neo_gactor_t *a) {
     ctx_t *t=c;int k=t->s->creator[index_of(t->s,a)];
-    return k<0?NULL:&t->s->nodes[k];
+    return k<0?NULL:&neo_end_nodes(t->s)[k];
 }
 static bool g_front(void *c) {return ((ctx_t *)c)->in->front_layer;}
 static void g_emit(void *c,const neo_anim_draw_t *d) {
     ctx_t *t=c;neo_end_t *s=t->s;
     if (s->draw_count==NEO_END_DRAWS || t->current<0) return;
-    const neo_gactor_t *a=&s->nodes[t->current];
+    const neo_gactor_t *a=&neo_end_nodes(s)[t->current];
     /* 0043D4: palette nibble >= 4 draws with +14, else +19..+1C; native
      * handles are slot+1 (ga_palette). */
     uint8_t h=(uint8_t)(d->attributes>>8);
     uint16_t resource=h>=1 && h<=4?a->palette[h-1]:0;
-    s->draws[s->draw_count++]=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13)};
+    neo_end_draw_t *o=&s->draws[s->draw_count++];
+    *o=(neo_end_draw_t){d->descriptor,d->x,d->y,d->attributes,resource,ga_b(a,0x12),ga_b(a,0x13),0,0};
+    for (unsigned k=0;k<NEO_END_MIXES;k++) if (s->mixes[k].node==t->current+1 && s->mixes[k].handle==h) {o->mix_weight=s->mixes[k].weight;o->mix_target=s->mixes[k].target;}
+}
+void neo_end_slot_level(void *ctx,neo_gactor_t *a,uint8_t handle,uint16_t target,uint8_t level) {
+    neo_end_t *s=ctx;int free_k=-1;
+    if (!a || !handle || handle>4u) return;   /* no slot: nothing (009CE2) */
+    for (unsigned k=0;k<NEO_END_MIXES;k++) {
+        if (s->mixes[k].node==a->index+1 && s->mixes[k].handle==handle) {s->mixes[k].target=target;s->mixes[k].weight=level;return;}
+        if (!s->mixes[k].node && free_k<0) free_k=(int)k;
+    }
+    if (free_k<0) {s->mix_overflow++;return;}
+    s->mixes[free_k].node=(uint8_t)(a->index+1);s->mixes[free_k].handle=handle;s->mixes[free_k].target=target;s->mixes[free_k].weight=level;
 }
 /* ---- letters 06090A --------------------------------------------------------- */
 #define START(t) do { if (!ga_anim_start(a,e,(t),0x100)) return GA_UNSUPPORTED; } while (0)
@@ -250,28 +274,46 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
     neo_ga_flags_t flags;memset(&flags,0,sizeof(flags));
     neo_genv_t e;memset(&e,0,sizeof(e));
     e.epoch=in->epoch;e.bounds=in->bounds;e.ctx=&t;e.parent=g_parent;e.program=in->program;e.emit=g_emit;e.emit_ctx=&t;
-    e.spawn=g_spawn;e.creator=g_creator;e.front_layer=g_front;e.flags=&flags;
+    e.spawn=g_spawn;e.creator=g_creator;e.front_layer=g_front;e.flags=&flags;e.end_list=s;e.end_ram=in->ram;
     s->draw_count=0;
+    const bool own_slots=in->ram && !in->ram->slot_level;
+    if (own_slots) {in->ram->slot_level=neo_end_slot_level;in->ram->slot_ctx=s;}
     for (unsigned i=0;i<s->count;i++) {
-        int n=s->order[i];neo_gactor_t *a=&s->nodes[n];
+        int n=s->order[i];neo_gactor_t *a=&neo_end_nodes(s)[n];
         if (!a->active || a->placeholder) continue;
         t.current=n;e.unsupported=0;
+        if (s->on_update) {s->on_update(s->on_alloc_ctx,a);e.epoch=in->epoch;}
         ga_result_t r=neo_end_routine(ga_l(a,0))?tick(a,&e,in):
             neo_tally_routine(ga_l(a,0))?neo_tally_tick(s,a,&e,in->ram):
-            neo_ending_routine(ga_l(a,0))?neo_ending_tick(s,a,&e,in->ram):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
+            neo_ending_routine(ga_l(a,0))?ENDING_TICK(a,&e):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
         if (r==GA_UNSUPPORTED) {
             /* Explicit stop: the node stays frozen, counted once. */
             if (!s->unsupported) s->unsupported_at=e.unsupported_at;
             s->unsupported++;a->placeholder=true;continue;
         }
+        if (r==GA_DELETE_TREE) {
+            /* 0041AC: the node and every descendant (the nodes after it created by it or by one of them). */
+            bool gone[NEO_END_NODES];memset(gone,0,sizeof(gone));gone[n]=true;
+            for (unsigned j=i+1;j<s->count;j++) {
+                int k=s->order[j];
+                if (s->creator[k]>=0 && gone[(int)s->creator[k]]) {gone[k]=true;ga_sl(&neo_end_nodes(s)[k],0,0x3f1e);neo_end_nodes(s)[k].placeholder=true;}
+            }
+            r=GA_DELETE;
+        }
         if (r==GA_DELETE) {
             /* 004188: routine 003F1E; the bytes stay (read by its children). */
             if (ga_l(a,0)==0x609ba) {
-                if (s->creator[n]<0) s->mission60=1; else ga_sb(&s->nodes[s->creator[n]],0x60,1);
+                if (s->creator[n]<0) s->mission60=1; else ga_sb(&neo_end_nodes(s)[s->creator[n]],0x60,1);
             }
             ga_sl(a,0,0x3f1e);a->placeholder=true;
         }
         if (s->on_updated) s->on_updated(s->on_alloc_ctx,a);
+    }
+    if (own_slots) {in->ram->slot_level=NULL;in->ram->slot_ctx=NULL;}
+    /* A deleted node's palette slots go back (003F90). */
+    for (unsigned k=0;k<NEO_END_MIXES;k++) if (s->mixes[k].node) {
+        const neo_gactor_t *o=&neo_end_nodes(s)[s->mixes[k].node-1];
+        if (!o->active || o->placeholder) s->mixes[k].node=0;
     }
     /* The tally root's last update set the mission actor's +60 (030A6E). */
     if (in->ram && in->ram->mission60) {s->mission60=1;in->ram->mission60=0;}
@@ -279,9 +321,9 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
     for (unsigned i=s->count;i-->0;) {
         int n=s->order[i];
         bool referenced=false;
-        for (unsigned j=0;j<s->count;j++) {int m=s->order[j];if (s->creator[m]==n && !s->nodes[m].placeholder) referenced=true;}
-        if (s->nodes[n].placeholder && ga_l(&s->nodes[n],0)==0x3f1e && !referenced) {
-            s->nodes[n].active=false;
+        for (unsigned j=0;j<s->count;j++) {int m=s->order[j];if (s->creator[m]==n && !neo_end_nodes(s)[m].placeholder) referenced=true;}
+        if (neo_end_nodes(s)[n].placeholder && ga_l(&neo_end_nodes(s)[n],0)==0x3f1e && !referenced) {
+            neo_end_nodes(s)[n].active=false;
             memmove(&s->order[i],&s->order[i+1],(s->count-i-1)*sizeof(s->order[0]));s->count--;
         }
     }

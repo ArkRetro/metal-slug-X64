@@ -24,6 +24,7 @@
  * own for them (0C0D64: 10C71C = FF for id 0, table 0C08A8): only its object
  * pool. One press per 4 ticks and 6 px per tick leave up to 10 on screen
  * (~200 px to the edge + 32), so 8 refused shots the original fires. */
+enum { MSX_END_MEM=0x1c4 };   /* the ending's RAM (gameplay.c end_mem_range) */
 enum { MSX_BULLETS=16, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
@@ -93,6 +94,18 @@ typedef struct {
     bool start_letters;unsigned start_stops;   /* MISSION n START 0607DE in end (descent, 01860A) */
     unsigned start_voices;                     /* its voice 607D2[mission] requested without a render (msx_sfx_lookup) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
+    /* The game's ending after Mission 6 (gameplay.c "The game's ending"): the results 0570A0 (mission_end
+     * MSX_END_RESULTS), the credits' stage 0x2C of mission 0xC (credits: the mission actor's 018AC0.. in
+     * credits_phase / credits_timer), the last screen's line 01959C, the ranking 057E00 and the title 0A7FFE of the
+     * core actor (016D18.., 0166AA..). ending_scene: the screen the ending's environment resets asked for (the
+     * renderer's background, MSX_ENDING_SCENE_*); ending_done: the title ended (0167A0: the attract demo, not ported:
+     * actor.c goes back to the port's title). end_mem: the RAM of the original the ending's actors read and write
+     * (end_ram.rd / wr: the ranges of end_mem_range), end_mem_stray: accesses outside them (read as 0, counted). */
+    bool credits;uint8_t credits_phase,ending_scene;bool ending_done;uint16_t credits_timer;
+    unsigned credits_mark;           /* the update (ticks >> 1) of the last credits_phase change */
+    uint8_t end_mem[MSX_END_MEM];unsigned end_mem_stray;uint32_t end_mem_stray_at;
+    uint16_t ending_audio_command;   /* 0A453A's 01228C word (0: none), taken by the audio layer */
+    bool end_rand_negative;          /* the N flag of the ending's last 0029C6 (the ring word of 0029EE) */
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
     neo_continue_t continue_sprites;
@@ -283,7 +296,12 @@ void msx_debug_text(int x,int y,const char *text);
  * gameplay.o once missed the item fields: its ga_flags.player_handlers read
  * the low byte of item_pickups and the first item taken froze the player's
  * input) stops at start instead of corrupting the game. */
-enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_TALLY,MSX_END_LETTERS,MSX_END_FADE,MSX_END_DONE };
+enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_TALLY,MSX_END_LETTERS,MSX_END_FADE,MSX_END_RESULTS,MSX_END_DONE };
+/* The ending's screens, in order (msx_game_t.ending_scene). */
+enum { MSX_ENDING_SCENE_NONE,MSX_ENDING_SCENE_RESULTS,MSX_ENDING_SCENE_CREDITS,MSX_ENDING_SCENE_PEACE,MSX_ENDING_SCENE_RANKING,MSX_ENDING_SCENE_TITLE,MSX_ENDING_SCENE_TITLE_LOGO };
+/* True from the results scene to the title's end: no player, no HUD. */
+bool msx_game_ending(const msx_game_t *g);
+void msx_game_test_ending(msx_game_t *g);   /* the test menu's ENDING */
 /* Updates of the GAME OVER panel before the original game ends (MAME go1). */
 #define MSX_GAME_OVER_UPDATES 190u
 #define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \

@@ -72,9 +72,12 @@ static void exit_kind(neo_mission_t *m) {
  * mode 100088 = 2 of the port), 5287C, 10C2E6 = FF, c8e50, c8ce6, 15422,
  * the continue program 018120, then the stage loop 0186A0. */
 static void stage_loop(neo_mission_t *m) {
-    m->letters=m->record_index==0;
-    m->pause_off=0;                                          /* 01867A: 15422 */
-    m->state=NEO_MISSION_PLAYING;m->routine=0x186a0;
+    /* 01862A: a record whose entry +0E is negative (the credits' 017C54: no players) skips the letters, the arrow
+     * 05287C, 0C8E50, 0C8CE6 and 015422 (018680). */
+    const bool players=!(rw(m->record+0xe)&0x8000u);
+    m->letters=players && m->record_index==0;
+    if (players) m->pause_off=0;                             /* 01867A: 15422 */
+    m->state=NEO_MISSION_PLAYING;m->routine=m->stage==0x2cu?0x18ac6u:0x186a0u;   /* 018690: the credits' stage 0x2C waits in 018AC6 (gameplay.c) */
 }
 /* The transition actor's update after the mission actor's (its node follows
  * it in the list); the fix-map writes stay in m->wipe.fix. */
@@ -115,7 +118,7 @@ void neo_mission_stage_done(neo_mission_t *m) {
 }
 void neo_mission_next(neo_mission_t *m) {
     m->mission++;                                           /* 01891E */
-    if ((uint8_t)m->mission>=6) {m->state=NEO_MISSION_GAME_END;m->routine=0x1893e;stop(m,0x1893e);return;}
+    if ((uint8_t)m->mission>=6) {m->state=NEO_MISSION_GAME_END;m->routine=0x1893e;return;}   /* gameplay.c game_end_start */
     neo_mission_start(m,m->mission);
 }
 bool neo_mission_ends_after_stage(const neo_mission_t *m) {

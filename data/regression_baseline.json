@@ -1,10 +1,10 @@
 {
- "_cart": "work-m4 c932e54 (ccr 20c330c + work-chars bcc3849 + work-audit c777140; scene export with the kind-8 smoke, M2/M3 exports with it, M6 export of ws-chars; cart 64307200 B), m1end fresh; m6s2end (agent C) outside the baseline",
+ "_cart": "work-m4 f7a660e (ccr bf4b040 + work-chars 0171ec9; cart built 20-XI), m1end fresh; m4boss kept at its previous counts (B78: the blind pad does not beat the boss since the container restart of 20-XI, also on the control cartridge of ccr bf4b040); m6s2end outside the baseline",
  "chars": {
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 378,
+  "seconds": 371,
   "stopped": 0,
   "unsupported": 0
  },
@@ -12,7 +12,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 118,
+  "seconds": 123,
   "stopped": 0,
   "unsupported": 0
  },
@@ -20,7 +20,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 150,
+  "seconds": 144,
   "stopped": 0,
   "unsupported": 0
  },
@@ -28,7 +28,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 123,
+  "seconds": 153,
   "stopped": 0,
   "unsupported": 0
  },
@@ -44,7 +44,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 955,
+  "seconds": 1278,
   "stopped": 0,
   "unsupported": 0
  },
@@ -52,7 +52,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 122,
+  "seconds": 117,
   "stopped": 0,
   "unsupported": 0
  },
@@ -60,7 +60,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 120,
+  "seconds": 124,
   "stopped": 0,
   "unsupported": 0
  },
@@ -68,7 +68,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 120,
+  "seconds": 125,
   "stopped": 0,
   "unsupported": 0
  },
@@ -76,7 +76,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 117,
+  "seconds": 133,
   "stopped": 0,
   "unsupported": 0
  },
@@ -84,7 +84,7 @@
   "missing_draw": 0,
   "missing_part": 2,
   "result": "PASS",
-  "seconds": 179,
+  "seconds": 905,
   "stopped": 0,
   "unsupported": 0
  },
@@ -100,7 +100,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 131,
+  "seconds": 129,
   "stopped": 0,
   "unsupported": 0
  },
@@ -108,7 +108,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 42,
+  "seconds": 65,
   "stopped": 0,
   "unsupported": 0
  },
@@ -116,7 +116,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 63,
+  "seconds": 62,
   "stopped": 0,
   "unsupported": 0
  },
@@ -124,7 +124,7 @@
   "missing_draw": 0,
   "missing_part": 1,
   "result": "PASS",
-  "seconds": 470,
+  "seconds": 321,
   "stopped": 0,
   "unsupported": 0
  },
@@ -132,7 +132,7 @@
   "missing_draw": 0,
   "missing_part": 0,
   "result": "PASS",
-  "seconds": 1059,
+  "seconds": 390,
   "stopped": 0,
   "unsupported": 0
  }

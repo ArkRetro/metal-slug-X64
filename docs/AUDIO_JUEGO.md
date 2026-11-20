@@ -501,6 +501,18 @@ como su render aislado. El port sigue parando la música en el `0A..`
 chip, no solo el maestro (medida contra el render sin fundido: −7 dB a los
 100 fotogramas, −25 dB a los 180, más rápido que `F805/255`). **Pendiente.**
 
+**Fundido `0A xx` en el port (20-XI).** Decisión del coordinador: el nivel maestro exacto como volumen del canal de
+música. `src/msx_fade.h` traduce `4FAF` (`F806 = 16·[0x0700 + xx − 0x20]`, `FFFF` con xx = 0x20; tabla de la M1 en
+`data/music_fade.json`, `tools/extract_music_fade.py`) y el tick `4D67..4D97` (salida: resta con tope 0; entrada: suma
+con tope FFFF, y FFFF mientras h < FF, como en la ROM); `4FFF..5003` (byte de banco 00 de una música) pone `F805` y
+`F808` a 0. `game_audio.c`: cada actualización suma 135 168 ciclos de 8 MHz (un fotograma de la Neo Geo) y da un tick
+por cada 47 952 (el temporizador A); el volumen de la voz de música es `F805 / 255` del 80 %. La música ya no se para
+con `0A xx`. **Familia** (`tools/check_music_fade.py` y `tools/test_music_fade.c`, en `make check`): captura **ZF**
+(`tas_updates.lua` con `MSX_TAS_Z80_TAP=1`, desde `end27900` hasta 73410: cada escritura en `F804..F808` con el tiempo
+de la máquina; `build/captures/ZF/z80tap.txt`): **37 685 ticks, 0 distintos**, 3 escrituras directas de `F805`
+(`4FFF`). Fundidos de la captura: fotograma 60098 (`F806` 0070, 586 ticks hasta 0), 62134 y 72303 (00F0, 274 ticks).
+**Pendiente** (`APROXIMACIONES.md` A20): la atenuación por canal y por chip y la fase del temporizador.
+
 **Efectos (G8).** Las 30 palabras sin política de la captura (más `1026`,
 §13) en `data/sound_map.json` con sus llamadas y fotogramas. Render
 aislado: 22 terminan en 5 s; `109D`, `109E` (`0284B0`, `0A366C`), `10EB`,

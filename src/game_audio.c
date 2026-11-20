@@ -20,6 +20,11 @@
  *  - region end: the music stops (the arcade has no region end; its driver
  *    is reset with command 03 between scenes, which silences the music). */
 enum { VOLUME_PERCENT=80 };
+#include "msx_fade.h"
+#include "music_fade.h"
+/* The driver's master level F804, step F806, direction F808 and the timer A phase (8 MHz cycles). */
+static uint16_t fade_level=0xffffu,fade_step=0xffffu;static bool fade_out;static uint32_t fade_cycles;
+static uint16_t fade_applied=0xffffu;
 static wav64_t sounds[MSX_SFX_COUNT];
 static bool loaded[MSX_SFX_COUNT],ready,music_ready,music_on,warned,active;
 static msx_sfx_state_t policy;
@@ -211,7 +216,7 @@ void game_audio_mission_start(void) {
 }
 void game_audio_music(bool play) {
     if (!active || !music_ready) return;
-    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,!music_once,VOLUME_PERCENT/100.0f);
+    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,!music_once,VOLUME_PERCENT/100.0f*(float)(fade_level>>8)/255.0f);
     else {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;}
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
@@ -230,12 +235,18 @@ static void request(uint16_t word) {
     }
     /* Bank 00 music words from actors (the boss's 059F76: 0x27 in Mission
      * 2, 0x28 in Mission 3) replace the music; 0x0Axx is its fade command
-     * (01228C): the music stops. The driver's fade is not reproduced
-     * (pending, docs/AUDIO_JUEGO.md 17): it lowers the master level F804 by
-     * 0x0700[xx-0x20]*16 per timer A tick and the chips' level tables shape the
-     * output; the next music's bank byte 00 restores the level. */
-    if (word>=0x0021 && word<0x0100 && music_name(word)) {music_word=0;game_audio_stage_music(word);return;}
-    if ((word&0xff00u)==0x0a00u) {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;debugf("MSX AUDIO music fade %04X\n",(unsigned)word);return;}
+     * (01228C): the driver's master level F804 (msx_fade.h, translated) is the
+     * music voice's volume, ticked at the timer A cadence in game_audio_update.
+     * The chips' per-channel level tables are not reproduced (pending,
+     * docs/AUDIO_JUEGO.md). */
+    if (word>=0x0021 && word<0x0100 && music_name(word)) {
+        /* 4FFF..5003: the music's bank byte 00 clears F805 and F808; the next ticks bring the level back. */
+        fade_level&=0xffu;fade_out=false;music_word=0;game_audio_stage_music(word);return;
+    }
+    if ((word&0xff00u)==0x0a00u) {
+        fade_step=msx_fade_step(music_fade_table,(uint8_t)word);fade_out=true;
+        debugf("MSX AUDIO music fade %04X step %04X\n",(unsigned)word,(unsigned)fade_step);return;
+    }
     if (word==0x0020) {
         msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
         bool ok=msx_audio_open(MSX_AUDIO_INTRO,"rom:/audio/music_mission_complete.wav64") &&
@@ -292,6 +303,14 @@ void game_audio_update(msx_game_t *g) {
     }
     if (v->state>=NEO_VEHICLE_DYING && v->frame==1 && (vehicle_frame!=1 || vehicle_state<NEO_VEHICLE_DYING)) request(0x1033);
     shots=port_shots(g);vehicle_health=v->health;vehicle_frame=v->frame;vehicle_state=v->state;
+    /* One Neo Geo frame of timer A ticks (msx_fade.h); the master level's high byte F805, the byte the driver
+     * multiplies every channel by, is the music voice's volume. */
+    for (fade_cycles+=MSX_FADE_FRAME_CYCLES;fade_cycles>=MSX_FADE_TICK_CYCLES;fade_cycles-=MSX_FADE_TICK_CYCLES)
+        fade_level=msx_fade_tick(fade_level,fade_step,fade_out);
+    if (music_on && (fade_level>>8)!=(fade_applied>>8)) {
+        float volume=VOLUME_PERCENT/100.0f*(float)(fade_level>>8)/255.0f;mixer_ch_set_vol(MSX_AUDIO_MUSIC*2,volume,volume);
+    }
+    fade_applied=fade_level;
     if (g->complete && !complete) game_audio_music(false);
     complete=g->complete;
     msx_perf_add(MSX_PERF_AUDIO,TICKS_READ()-started);

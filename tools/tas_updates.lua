@@ -312,11 +312,23 @@ local function capture_close()
  if tas_camera_csv then tas_camera_csv:close() end
  if tas_events_csv then tas_events_csv:close() end
  if tas_fam_log then tas_fam_log:close() end
+ if z80_tap_log then z80_tap_log:close() end
  if cell_seen then
   local o=assert(io.open(out..'/cells.txt','w'))
   for _,k in ipairs(cell_order) do local e=cell_seen[k];o:write(string.format('C %s %d %d %d %d\n',k,e[1],e[2],e[3],e[4])) end
   o:close()
  end
+end
+-- MSX_TAS_Z80_TAP=1 (read only): every write of the sound driver to F804..F808 (master level, fade step, direction)
+-- with the machine time, to z80tap.txt ('W time_attoseconds_total addr value frame').
+if os.getenv('MSX_TAS_Z80_TAP')=='1' then
+ local zs=machine.devices[':audiocpu'].spaces['program']
+ local zlog=assert(io.open(out..'/z80tap.txt','w'))
+ z80_tap=zs:install_write_tap(0xf804,0xf808,'msx_z80_tap',function(offset,data,mask)
+  local tm=machine.time
+  zlog:write(string.format('W %d.%018d %04X %02X %d\n',tm.seconds,tm.attoseconds,offset,data&0xff,frame or 0))
+  return data end)
+ z80_tap_log=zlog
 end
 apply(masks[1])
 local first=true

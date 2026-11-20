@@ -166,6 +166,7 @@ static uint8_t next_glyph(neo_text_t *t,const uint8_t **a0,uint16_t *d0,uint16_t
         } else return e;   /* 03D1E6: an unknown escape returns its letter */
     }
 }
+uint8_t neo_text_next(neo_text_t *t,const uint8_t **a0,uint16_t *d0,uint16_t *d1,uint16_t *d3) {return next_glyph(t,a0,d0,d1,d3);}
 uint16_t neo_text_string(neo_text_t *t,uint16_t d0,uint16_t *d1,const uint8_t *a0) {
     uint16_t d3=d0;
     if (!a0) {stop(t,"string",0);return d0;}

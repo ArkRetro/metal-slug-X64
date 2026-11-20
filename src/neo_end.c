@@ -257,7 +257,8 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
         if (!a->active || a->placeholder) continue;
         t.current=n;e.unsupported=0;
         ga_result_t r=neo_end_routine(ga_l(a,0))?tick(a,&e,in):
-            neo_tally_routine(ga_l(a,0))?neo_tally_tick(s,a,&e,in->ram):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
+            neo_tally_routine(ga_l(a,0))?neo_tally_tick(s,a,&e,in->ram):
+            neo_ending_routine(ga_l(a,0))?neo_ending_tick(s,a,&e,in->ram):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
         if (r==GA_UNSUPPORTED) {
             /* Explicit stop: the node stays frozen, counted once. */
             if (!s->unsupported) s->unsupported_at=e.unsupported_at;

@@ -860,3 +860,28 @@ Traducción en `src/neo_m6boss.c` (resumen del árbol en su comentario de cabece
 Ninguna captura lo contiene: `run4` (`M6`, 352700..354000) no lo despacha, y el TAS tampoco (`runP3.sh`, raíz `8f1a0`
 sola, sin escrituras: `sec06_u12887..u23570`, `sec11_u23570..u24620` y `u24600..u26420`: 0 nodos). Queda traducido
 sin prueba bit a bit (pendiente: una partida grabada que haga disparar ese proyectil al tanque `08DD2C`).
+
+### El final tras el último enemigo (19-XI, agente Q)
+
+- **Captura** `captures-m6/fam/Q1` (`runQ1.sh`: TAS desde `end27900`, sin escrituras, hasta el fotograma 74 400; raíces
+  `570a0,a8c62,57e00,a7ffe,1959c` y `RANGE=41500-47400`, VRAM; 254 MB, borrar cuando estén todos los fixtures). Sección 22
+  en U 28967 (f 62176), −1 en U 34179 (f 72602), **sección 20 (demostración tras el título) en U 34681, f 73687**.
+- **Registro `017624`: inalcanzable.** Solo se llega a él con 4303 = 3 (`018730`), y en toda la ROM 4303 solo se escribe
+  con FF (`01809A`) y 0 (`018F42`); el TAS nunca carga `0BEC28`. Tras la M6, `01893E..0189FA` crea `0570A0` y va a la misión
+  0xC, registro 0 = **`017C54`** (descriptor `01709E`: lista `025F3E`, guion 0x858 = sección 22, etapa 0x2C, sin música):
+  los créditos. Con 42F6 = 0x2C el bucle va a `018AC0` (espera el bit 7 de `101414 +5F`), `018B18`..`018BBA` (fundidos,
+  `01959C`) y el núcleo `101154` crea `057E00` (`016D3C`) y `0A7FFE` (`01674A`).
+- **`m6boss8`** (Q1, 60000..60917): el cierre del cuerpo `0418C2` (`018F40`) hasta el borrado general; 7024 actualizaciones
+  iguales. Arnés: con `--m4boss` los globales vigilados 10C300/10C304 empiezan como se leen (como `--m2boss`).
+- **`src/neo_ending.c`** (lista de `neo_end.c`): la escena de resultados y clasificación `0570A0` entera (`0577E2` el
+  dial, `0576B6`, `05764A`, `05731C`, `05752E`, la entrada de nombre `05812A`, la tabla `057C82` en 10F010, con el bucle
+  de 65 536 vueltas de `057CDA` y su escritura en el espejo 14F008 = 10F008) y la tabla de récords `057E00`/`0580A2`.
+  RAM del original por `neo_end_ram_t rd/wr`; el reinicio de entorno `056FCC`/`057F34` es `ram->setup`.
+- **Prueba** `tools/test_neo_ending.c` (`extract_ending_fixture.py`, `compile_ending_fixture.py`; `ENDINGS` en
+  `make check`): nodo, RAM escrita (exacta, sin escrituras de más), VRAM en orden y azar. `scene`: 5010 actualizaciones,
+  9882 palabras de VRAM, 490 bytes de RAM iguales; `ranking`: 214 y 2058. Sin comparar (contados): VRAM/RAM del reinicio y
+  el A2 muerto que `03D292` guarda en +E.
+- **Siguiente**: los créditos (`credits.c` del agente Q en el scratchpad tiene traducidos `0646FE..064ABA`, `064AC0`,
+  `0A4408`, `0A4478`, `0A453A`; falta el arnés con raíces creadas fuera — los subguiones `019E72` — y `0A454C..0A4744`), el
+  título `0A7FFE..0A8700`, la integración en `gameplay.c` (tras `neo_mission_next` con misión ≥ 6) y la prueba ares.
+  Sprites: programas `24BA2A/24BA34/24BA46/24BA52` (descriptores `1D9154`, `1D932C`, paleta 0x35F) sin exportar.

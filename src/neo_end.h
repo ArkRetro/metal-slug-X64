@@ -31,6 +31,11 @@ typedef struct {
     uint16_t sounds[NEO_END_SOUNDS];unsigned sound_count,sounds_dropped;
     unsigned audio_commands,unsupported_text;
     uint8_t mission60;
+    /* The ending 0570A0 (src/neo_ending.c): the RAM bytes of the original it
+     * reads and writes (scores 10C46A.., the table 10F010.., the text states
+     * 10C384/10C450, inputs 10C35A..), the environment reset 056FCC. */
+    uint8_t (*rd)(void *ctx,uint32_t address);void (*wr)(void *ctx,uint32_t address,uint8_t value);void *ram_ctx;
+    void (*setup)(void *ctx);unsigned setups;
 } neo_end_ram_t;
 typedef struct {
     uint32_t descriptor;
@@ -72,4 +77,7 @@ bool neo_end_routine(uint32_t routine);
 /* Prisoner tally 0308C0 (src/neo_tally.c). */
 bool neo_tally_routine(uint32_t routine);
 ga_result_t neo_tally_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m);
+/* The ending's results and ranking 0570A0 (src/neo_ending.c). */
+bool neo_ending_routine(uint32_t routine);
+ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m);
 #endif

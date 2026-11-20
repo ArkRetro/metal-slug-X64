@@ -1311,7 +1311,7 @@ conjunto de la caché de instrucciones en líneas distintas, o si llaman a códi
 `-ftrivial-auto-var-init=pattern`). Con el ELF de `2cb2aa0` informa de las 9 líneas compartidas entre
 `rdpq_triangle_rsp` y `floorf`.
 
-## Superposiciones de código: los cuatro jefes de misión comparten una región (17-XI, rama `work-mem`)
+## Superposiciones de código: los cuatro jefes de misión comparten una región (19-XI, rama `work-mem`)
 
 **Problema.** Con `neo_m6boss.c` (44 KB de código a `-Os`) residente, ares arrancaba con 3307 KB para la caché de
 escena y el suelo es 3332 KB (208 ranuras): el módulo estaba apagado en el cartucho (`MSX_M6BOSS`=0, `docs/MISION6.md`).
@@ -1357,3 +1357,19 @@ Imágenes (release y diag iguales): `neo_m3boss` 30.160 B, `neo_m4boss` 24.704 B
 `cpu_mean_us=7014`; `MSX MEM scene cache ... cache=3360 KB` (**210 ranuras**, suelo 3332 KB / 208; antes 3307 KB
 con el jefe residente). `tools/check_icache.py`: sin líneas compartidas en `mslugx-explorer` ni `mslugx-m1end`.
 `make check`: verde (311 PASS, 0 FAIL; el anfitrión no cambia).
+
+**Matriz completa** (`tools/regression_ares.py`, 19/20-XI, `mslugx-explorer.z64` + `mslugx-m1end.z64` de `42d49b7`,
+contra `data/regression_baseline.json`): `logo`, `pause`, `chars`, `options`, `m4`, `m5s1`, `m5s2`, `m5s3`, `m5boss`,
+`m6s1`, `m6s1end`, `m6s2`, `m6s2end`, `m6s3`, `veh` y `m1m2` PASS; ninguna aserción. Cada jefe se copia una vez
+(`MSX OVL 1`: 24 704 B en 4,8 ms; `MSX OVL 2`: 20 912 B en 4,1 ms; `MSX OVL 3`: 43 824 B en 8,5 ms, en los fotogramas
+negros de la carga); en `m4boss` la M4 y luego la M5 (2 copias en todo el recorrido, sin vaivén). `m6s3`: el
+constructor `04153E` ya es nativo en la consola (`native 1`), caché 3376 KB. Dos diferencias con la base, **comprobadas
+con el cartucho de control `bcc3849`** (sin superposiciones, mismos paquetes, misma pantalla):
+- `m4boss` FAIL en ambos (rama: `missing_draw` 3818; control: 4897; base 2061): el jefe cae y la M5 empieza, pero el
+  mando ciego baja del SV-001 antes de recibir un golpe (`hit while mounted False`), y los dibujos sin descriptor tras
+  `16929E` son el fallo abierto de `docs/FALLOS.md` (M4 con BLOOD OFF). No es de esta rama.
+- `m5boss` PASS con `missing_draw` 42 (control: 8): los 34 de más son la paleta `20C` (la llama final `099268` del
+  soldado quemado, sin captura: pendiente de `docs/MISION5.md`), que solo aparece si un soldado quemado llega a ella
+  en esa pasada; no hay código de la superposición en ese camino (`neo_m5boss` no la dibuja en el control porque
+  ningún soldado llegó).
+La línea base no se reescribe (`m4boss` sigue abierto).

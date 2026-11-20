@@ -274,7 +274,9 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         scene_render_sprite(&part,x,y,mirror,flip_y,d->flash && (game.ticks&1));
     }
 }
+static bool ending_pack_wait;   /* the results began in this frame's update: the ending's pack is loaded at the next frame's top */
 static void draw_end(const neo_end_draw_t *e,bool request_only) {
+    if (ending_pack_wait) return;
     neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y,0,e->mix_target?e->mix_weight:0,0};
     end_mix_target=e->mix_target;draw_native(&d,request_only);end_mix_target=0;
 }
@@ -563,10 +565,11 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     {
         /* The game's ending (gameplay.c): a line at each step, and its end. 0167A0 (the attract demo after the
          * title 0A7FFE) is not ported: the game starts again as after a game over. */
-        static uint8_t seen_scene,seen_phase=0xff;static bool seen_results;
+        static uint8_t seen_scene,seen_phase=0xff;static bool seen_results;static unsigned seen_mark;
         const bool results=game.complete && game.mission_end==MSX_END_RESULTS;
         if (results && !seen_results) debugf("MSX ENDING results 0570A0 start (01893E) score=%02x%02x%02x%02x prisoners=%u continues=%u\n",
             game.world.pickup.score[0][0],game.world.pickup.score[0][1],game.world.pickup.score[0][2],game.world.pickup.score[0][3],(unsigned)game.world.ga_flags.tally[0],game.continues);
+        ending_pack_wait=false;
         if (results && !seen_results) {
             /* The ending's sprites (the results' dial and frames, the credits, the title) are the pack of mission 0xC
              * (romfs/mission13.pack; its only stage is the credits' 0x2C): loaded here, behind the black screen 018954
@@ -580,8 +583,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         }
         seen_results=results;
         if (game.ending_scene!=seen_scene) {seen_scene=game.ending_scene;debugf("MSX ENDING scene %u ticks=%lu\n",seen_scene,(unsigned long)game.ticks);}
-        if (game.credits && game.credits_phase!=seen_phase) {
-            seen_phase=game.credits_phase;
+        if (game.credits && (game.credits_phase!=seen_phase || game.credits_mark!=seen_mark)) {
+            seen_phase=game.credits_phase;seen_mark=game.credits_mark;
             debugf("MSX ENDING credits phase %u update=%u nodes=%u end nodes=%u stops=%u world stops=%u stray=%u\n",seen_phase,game.credits_mark,neo_world_alive(&game.world),game.end.count,game.end_stops,game.world.unsupported,game.end_mem_stray);
         }
         if (!game.credits) seen_phase=0xff;
@@ -697,6 +700,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
          }}
 #endif
         msx_game_update(&game,pilot_direction,pilot_jump,input.btn.b || pending_b);
+        if (game.complete && game.mission_end==MSX_END_RESULTS && game.ending_scene==MSX_ENDING_SCENE_RESULTS && !scene_native_descriptor(0x1d9154u)) ending_pack_wait=true;
         /* Dying, lying and the entrance (marco_death.c): the death and
          * entrance programs (0BF298/0BF318/0BF358/0BF3D8, 0BF498) draw;
          * the body/weapon programs restart with the new life. */

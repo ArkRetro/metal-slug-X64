@@ -38,6 +38,7 @@ TESTS = {
     'm6s2end': ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--up', '1.5', '--sweep', '10', '--continues', '--progress', '4240', '--seconds', '5000', '--period', '10', '--next'], 5400, '--out'),   # stage 2 to its end: the jumpers 086712 at 1104, the jeep 0A2EFA at 2672, the tanks at 3872, 0BE8F6 at 4240 and the exit 0B6ED2 of 0BE8A2 (list call 0BE888), then stage 3 (016E7E) starts
     'm6s2':  ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--continues'], 600, '--out'),   # its soldiers run now (groups m3, m4, m5) and kill a player who neither fires nor jumps
     'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 600, '--out'),
+    'ending': ('test_ending_ares.py', ['--seconds', '3600'], 4200, '--out'),   # the test menu's ENDING: results 0570A0, credits (stage 0x2C), last screen, ranking 057E00 and title 0A7FFE with the TAS's update counts
     'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 3300, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
 }
 M1M2 = ('test_m1m2_ares.py', [], 1200, '--output')

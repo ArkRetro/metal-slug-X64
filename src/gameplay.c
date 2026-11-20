@@ -190,6 +190,7 @@ static void stage_descent_start(msx_game_t *g) {   /* 0C15C6 */
     neo_landing_descent(&g->landing);g->landing_on=true;
 }
 static void ending_ram_bind(msx_game_t *g);
+static void msx_game_credits_first_pass(msx_game_t *g);
 void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,int camera_max) {
     neo_hud_t hud=g->hud;neo_mission_t flow=g->flow;unsigned continues=g->continues;uint8_t best=g->best_mission;
     neo_rng_t rng=g->world.rng;marco_weapons_t weapons=g->world.weapons;neo_pickup_env_t pickup=g->world.pickup;neo_ga_flags_t flags=g->world.ga_flags;
@@ -263,6 +264,9 @@ void msx_game_begin_stage(msx_game_t *g,const neo_world_stage_t *st,int start_x,
     g->y=neo_surface_at(0,(int32_t)neo_collision_rows()*8*MSX_UNIT,0,(int32_t)neo_collision_rows()*8*MSX_UNIT,&top)?56*MSX_UNIT-top.height:msx_ground_offset(0);
     neo_collision_ring_bypass(false);
     g->walk_in_x=start_x*MSX_UNIT;
+    /* The credits' stage: 0183D0 runs in the mission actor's update, and the script actor it creates (019E04) has its
+     * first update in that same list pass (T1: the two figures 0A8C62 are created in the pass of 0189FA). */
+    if (g->credits) msx_game_credits_first_pass(g);
 }
 /* Entry kind 3 (0C1260 -> 0C14E6, the walk-in of Mission 5 stages 7 and 8,
  * records 2D6036 / 2D6040): 0196E8 places the player at the record's (x, y)
@@ -1191,6 +1195,7 @@ static void fix_fill(msx_game_t *g,uint16_t d0,uint16_t d1,uint16_t d2,uint16_t 
         uint16_t ad=(uint16_t)(d0+r);
         if (ad>=0x7000u && ad<0x7000u+NEO_FIX_WORDS) g->hud.fix[ad-0x7000u]=d1;
     }
+    g->hud.serial++;   /* a map write (hud_renderer.c redraws) */
 }
 /* 016502: the fix map cleared (the frame of 0xFF tiles and the blank borders). Its tail 016572 (RAM 10C2E6 set: the
  * coin line when RAM 10FD91 bit 0) is not reproduced: the port has no coin line. */
@@ -1266,6 +1271,22 @@ static void ending_actors(msx_game_t *g,uint8_t held,uint8_t pressed) {
     for (unsigned i=0;i<m->sound_count;i++) end_sound(g,m->sounds[i]);
     m->sound_count=0;
 }
+/* One pass of the credits' list in the world: the script actor 101414 and its nodes. No player actor: a zero block,
+ * absent. */
+static void credits_world(msx_game_t *g,uint8_t held,uint8_t pressed) {
+    neo_end_ram_t *m=&g->end_ram;
+    neo_world_player_t p;memset(&p,0,sizeof(p));p.inactive=true;p.unregistered=true;
+    end_mem_wr(g,0x10c35c,held);end_mem_wr(g,0x10c35d,pressed);
+    neo_world_camera(&g->world,&p);
+    g->world.video_phase=(uint16_t)(g->ticks>>1);
+    g->world.scroll_y=neo_camera_root_y(&g->world.camera);
+    g->world.end_ram=m;
+    neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p);
+    g->world.end_ram=NULL;m->slot_level=NULL;m->slot_ctx=NULL;   /* the world's 009CCE slots end with its tick */
+    for (unsigned i=0;i<m->sound_count;i++) end_sound(g,m->sounds[i]);
+    m->sound_count=0;
+    if (m->audio_commands) {g->ending_audio_command=m->audio_command;m->audio_commands=0;}
+}
 /* The credits' stage 0x2C (mission 0xC, record 017C54): one update of the list. No player (the record's entry +0E
  * is negative: 01862E skips the letters, the arrow and 015422), no HUD.
  *  phase 0  018AC6: waits for the script actor's +5F bit 7 (its op 3); then 018B18 in the same update: 0C8EAA, the
@@ -1283,6 +1304,7 @@ static void ending_actors(msx_game_t *g,uint8_t held,uint8_t pressed) {
  *  phase 6  0166C8..01674A: 03D4AC, 002976(0), 017FD0, 016502, 016D80 and the title 0A7FFE (0040BC with the
  *           reserve 0x2A); 01677A waits for its +60.
  *  phase 7  01677A; then 0167A0, the attract demo (not ported): ending_done. */
+static void msx_game_credits_first_pass(msx_game_t *g) {credits_world(g,0,0);}
 static void credits_update(msx_game_t *g,bool jump,bool fire) {
     g->ticks++;
     if (g->ticks&1) return;
@@ -1290,10 +1312,10 @@ static void credits_update(msx_game_t *g,bool jump,bool fire) {
     const uint8_t pressed=(uint8_t)((fire && !g->end_fire_was?0x10u:0u)|(jump && !g->end_jump_was?0x20u:0u));
     g->end_fire_was=fire;g->end_jump_was=jump;g->grenade=false;
     neo_fade_step(&g->fade);                                            /* 003918 -> 00698C, list head */
-    neo_end_ram_t *m=&g->end_ram;
     if (g->flow.state==NEO_MISSION_STAGE_ENTRY || g->flow.state==NEO_MISSION_STAGE_EXIT) {
         neo_mission_update(&g->flow);
-        if (g->flow.fade_in) neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);
+        /* 0184D8 (exit kind 0): the fix map cleared (016502, a job of the vertical blank, 0036A4) and the fade off. */
+        if (g->flow.fade_in) {fix_clear(g);neo_fade_start(&g->fade,0,0,0,g->flow.fade_steps);}
         if (g->flow.state!=NEO_MISSION_PLAYING) goto world;
         g->credits_phase=0;g->credits_mark=g->ticks>>1;                 /* 018690: stage 0x2C, 018AC0 */
     }
@@ -1341,20 +1363,8 @@ static void credits_update(msx_game_t *g,bool jump,bool fire) {
     }
     if (g->credits_phase!=phase_was) g->credits_mark=g->ticks>>1;   /* the update of the step (the ares test's counts) */
 world:
-    if (g->world_enabled) {
-        /* The list: the script actor 101414 and its nodes. No player actor: a zero block, absent. */
-        neo_world_player_t p;memset(&p,0,sizeof(p));p.inactive=true;p.unregistered=true;
-        end_mem_wr(g,0x10c35c,held);end_mem_wr(g,0x10c35d,pressed);
-        neo_world_camera(&g->world,&p);
-        g->world.video_phase=(uint16_t)(g->ticks>>1);
-        g->world.scroll_y=neo_camera_root_y(&g->world.camera);
-        g->world.end_ram=m;
-        neo_world_tick(&g->world,neo_camera_root_x(&g->world.camera),&p);
-        g->world.end_ram=NULL;m->slot_level=NULL;m->slot_ctx=NULL;   /* the world's 009CCE slots end with its tick */
-        for (unsigned i=0;i<m->sound_count;i++) end_sound(g,m->sounds[i]);
-        m->sound_count=0;
-        if (m->audio_commands) {g->ending_audio_command=m->audio_command;m->audio_commands=0;}
-    } else if (g->end.count) ending_actors(g,held,pressed);
+    if (g->world_enabled) credits_world(g,held,pressed);
+    else if (g->end.count) ending_actors(g,held,pressed);
 }
 static void mission_end_step(msx_game_t *g) {
     switch (g->mission_end) {

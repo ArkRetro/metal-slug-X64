@@ -9,7 +9,7 @@ No button is pressed after the menu (a button held makes the credits run four ti
 PASS needs every step in the cartridge's log, with the numbers of game updates between them that the TAS has (the
 mission actor's and the core actor's updates of the capture captures-m6/fam/T1; the cartridge logs the update of each
 step, so the check does not depend on the emulator's speed):
-  018AC6 (the stage loop, phase 0) -> 018B18 (the script's end)      5180 updates
+  018AC6 (the stage loop, phase 0) -> 018B18 (the script's end)      5181 updates
   018B18 -> 018B40 (the fade to black; the last screen)                30
   018B40 -> 018BC2 (the mission actor deletes itself)                 100
   -> 016D18 (the core actor: the ranking 057E00)                        1
@@ -34,7 +34,7 @@ proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
 def log():return logp.read_text(errors='replace')
 # The TAS's updates between the steps (phases 0..8 of gameplay.c credits_update).
-WANT=(5180,30,100,1,107,1,1,287)
+WANT=(5181,30,100,1,107,1,1,287)
 ok=False
 try:
     win=None
@@ -68,12 +68,12 @@ try:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f"g{k:03d}_s{sc[-1] if sc else 0}_p{ph[-1] if ph else 'x'}.png")]);k+=1;nextgrab=t+a.period
         time.sleep(.2)
     text=log()
-    steps={int(m.group(1)):int(m.group(2)) for m in re.finditer(r'MSX ENDING credits phase (\d+) update=(\d+)',text)}
+    steps={int(m.group(1)):int(m.group(2)) for m in re.finditer(r'MSX ENDING credits phase (\d+) update=(\d+)',text)}   # the last line of a phase: its update
     scenes=[int(x) for x in re.findall(r'MSX ENDING scene (\d+)',text)]
     got=tuple(steps[i+1]-steps[i] for i in range(8)) if all(i in steps for i in range(9)) else None
     done=re.search(r'MSX ENDING done[^\n]*stops=(\d+) stray=(\d+)',text)
     missing=re.findall(r'MSX native draw missing[^\n]*',text[text.find('MSX ENDING results'):]) if 'MSX ENDING results' in text else []
-    stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|pack 13 not)[^\n]{0,100}',text[text.find('MSX MSELECT enter the ending'):])))
+    stops=sorted(set(re.findall(r'(?:unsupported routine|script stopped|not loaded|pack 13 not)[^\n]{0,100}',text[text.find('MSX MSELECT enter the ending'):])))
     ovl=re.findall(r'MSX OVL (\d+) loaded',text)
     print('results started:','MSX ENDING results' in text,'| scenes',scenes,'| steps',steps)
     print('updates between the steps:',got,'TAS',WANT)

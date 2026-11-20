@@ -933,20 +933,120 @@ sin prueba bit a bit (pendiente: una partida grabada que haga disparar ese proye
   para: fixture de familia de los espadachines `0A8C62` y su subguion `019E82` en los créditos (no hecho). **No tiene
   volcados de VRAM** (`PERIOD=0`): la validación de sprites a 0 px necesita repetir `runQ1.sh` con
   `MSX_TAS_DUMP_PERIOD`.
-- **Pendiente, por orden**:
-  1. **Sprites** (nada exportado aún): la esfera `24BA2A/24BA34` y la pieza `24BA46/24BA52` (descriptores `1D9154`,
-     `1D932C`, paleta 0x35F) al paquete de la M6 (escena `0570A0`, misma etapa; ≤ 1256 trozos, va en 1195); los de los
-     créditos (63 láminas de `2A4B16` con 0x845 / 0x125, los 6×48 descriptores de `0E1446` con paletas consecutivas) y
-     los del título (`2A7368`, `2A702C`, `2A7082`, chispas, `1D5B22`; paletas 0xDE, 0x134, 0x145, 0x159, 0x840) necesitan
-     **paquete propio** (la etapa 0x2C cambia de escena: punto natural de carga) y el fondo de teselas `0A7D4A` / `0A7D52`.
-  2. **`009CCE` en el dibujo**: desensamblar el lector de `1068EA +0A/+0C/+0E` (mezcla hacia la paleta D1 por nivel) y
-     llevar `slot_level` al renderizador; sin eso las páginas y láminas no se funden.
-  3. **Etapa de créditos en el juego**: misión 0xC, registro `017C54` (descriptor `01709E`, lista de cámara `025F3E`,
-     guion 0x858 = sección 22, etapa 0x2C, sin música). Camino: paquete de etapa con `export_stage_rom.py 1709e` (los
-     espadachines llaman a `0146E8`: necesitan su mapa de colisión), `data/ending_script.json` en el paquete, y que el
-     mundo despache a `neo_ending_tick` las rutinas `0646FE..064AE0` / `0A4408..0A4724` que crea el subguion (hoy viven
-     en la lista de `neo_end.c`; hace falta un `neo_end_ram_t` desde `neo_world`, y `GA_DELETE_TREE`). Bucle de misión con
-     42F6 = 0x2C: `018AC0` (espera el bit 7 de `101414 +5F`), `018B18..018BBA` (fundidos, `01959C`), y el núcleo crea
-     `057E00` y `0A7FFE` (ambos traducidos). El título del arcade solo en host hasta resolver nodos y capas: mientras,
-     tras `057E00` se puede volver al título del port (decisión del coordinador).
-  4. Prueba en ares créditos → título por un punto de entrada de prueba (el jefe sigue apagado en N64).
+- (La lista de pendientes del agente R queda sustituida por la sección siguiente.)
+
+### El final en el juego y en la consola (20-XI, agente T)
+
+Rama `work-chars` con `origin/work-mem` fusionada (superposiciones de código; el último enemigo vuelve a estar encendido
+en la consola).
+
+**Captura `captures-m6/fam/T1`** (`runT1.sh`: como Q1, del estado `end27900` al fotograma 74 400, sin escrituras, 0
+desincronizaciones; además el actor de misión `101364`, el de núcleo `101154` y el de guion `101414` en la familia,
+volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de las actualizaciones 28966..28968 en
+`T1/upd/`). La traza va comprimida (`boss-trace.txt.gz`, 74 MB; `extract_boss_fight.parse` la lee así). `Q1` (su
+`.gz`) borrada: todo lo que daba sale de T1.
+
+**Cronología de los dos actores** (actualizaciones del actor de misión desde `end27900`; del listado y de T1):
+
+| Act. | Rutina | Qué hace |
+| --- | --- | --- |
+| 441 | `018916` → `01893E..0189E8` | fin del fundido del fin de misión: 42F4 = 6 ≥ 6; `0CAE6C`, 430E = FF, 7003 = 0, `0027C4` sobre 10FDB6/7, `004192` (todo borrado), `016502`, `015418`, `01AA28(0)` y `0570A0`; espera su `+60` en `0189F2` |
+| 1067 | `0189FA` → `0182A4` | misión 0xC, registro 0 = `017C54` (tipo 0, entrada y salida de clase 0, descriptor `01709E`, entrada `+0E` negativa: sin jugadores); `0183D0` carga la etapa 0x2C. **`0180AA` → `08BF5C` saca una palabra de azar** (10C5EA = r & 7) antes de que el guion haga sus dos elecciones (RAM 100060, luego 100062 / 100064) |
+| 1068..6248 | `018AC6` | espera el bit 7 de `+5F` del guion (su op 3); 5180 actualizaciones |
+| 6248 | `018B18` | `0C8EAA`, fundido a negro en 0x1E pasos, `+7C` = 0x1E |
+| 6278 | `018B40` | `004192`, guion borrado, `016502`, `03D4EE`, capas `017EB0`, lista `017EE6`, fundido de vuelta en 0x1E, **`01959C`** (etapa 0x2C: escribe «PEACE FOREVER!», cadena `019582`, un glifo por actualización tras 16), `+7C` = 0x64 |
+| 6378 | `018BC2` | `0C8EAA`; la sonda de protección (10F00C += 3EF) y `004188`: el actor de misión se borra |
+| 6379 (núcleo) | `016D18` | `0040AC`: el de misión ya no está → `016D80`, `0CAC24` (la tarjeta de memoria por la BIOS `C00468`: `+60` = FF al instante en la captura), `016502`, `012244`, **`057E00`**; espera en `016D72` |
+| 6486 | `016D72` | `+60` → `C00444` (la BIOS), que vuelve por `0166AA` |
+| 6487 / 6488 | `0166AA` / `0166C8` | una actualización de espera (`009BAA`), luego `03D4AC`, `002976(0)`, `017FD0`, `016502`, `016D80` y **`0A7FFE`**; espera en `01677A` |
+| 6775 | `01677A` → `0167A0` | la demostración (sección 20) |
+
+**Hecho y probado en el anfitrión** (`make check`):
+- `neo_mission.c`: `01891E` con 42F4 ≥ 6 deja `NEO_MISSION_GAME_END` (ya no es una parada); `neo_mission_start(0xC)`
+  da el registro `017C54` (blobs `017D74`, `017C54`); un registro con `+0E` negativo no crea letras ni flecha ni
+  llama a `015422` (`01862E`); con la etapa 0x2C el bucle es `018AC6`. `test_neo_mission` lo comprueba con los valores
+  de T1 (42F4 = 6, 42F6 = 0x2C, 42F8 = 0xC, 42FA = 0; `0184B4` y a la siguiente `018AC6`).
+- `gameplay.c` («The game's ending»): `game_end_start` (`01893E`), `MSX_END_RESULTS` (espera de `0189F2` y `0189FA`),
+  `credits_update` (las fases 0..8 de la tabla; el `016502` de la salida de clase 0, `0184D8`), `ending_actors`. La RAM
+  del original para los actores del final son 452 bytes (`end_mem`: 10C340..10C47F, 10F000..10F05F, 10FDB0..10FDBF,
+  10E9E0..10E9EF, 100000, 100002, 10C2E6, 10C604); un acceso fuera se cuenta (`end_mem_stray`). La tabla de récords
+  10F010 arranca con su contenido de fábrica, **ROM `0579D6`** (0x50 bytes, lo que lee el TAS); prisioneros 10E9E8 =
+  `ga_flags.tally` (`0C8CC2`), continuaciones 10E9E4 = las del port.
+- **Los créditos corren en el mundo nativo**: `neo_region_tick` despacha `0646FE..064AE0` y `0A4408..0A4724`
+  (`neo_ending_world_routine`) con la RAM del final en `e->end_ram`; el guion de la sección 22 crea las dos figuras
+  `0A8C62`, cada una su subguion `019E72` (registros 4..12 de la tabla `00087A`: decodificados en
+  `data/ending_script.json` con `decode_ending_subscripts.py`, de ahí salen las entradas de la tabla de creación
+  `0197DC`; el intérprete ya no corta un subguion a 0x80 bytes). **`tools/test_neo_credits.c`** (familia de las `0A8C62`
+  con sus subguiones y toda su descendencia; `extract_credits_world.py` sobre T1, `data/credits_world_fixture.json.gz`):
+  el mundo arranca la etapa como el juego, con el anillo de azar de la actualización 28966, y **las 5183 pasadas de la
+  etapa dan lo mismo que MAME: 65 060 actualizaciones con los bytes +10..+AF iguales antes y después, 187 nacimientos
+  atados a las vidas de MAME (4290 bytes escritos al nacer iguales), 48 243 dibujos, y el guion acaba (op 3) en la
+  pasada en que el actor de misión sale de `018AC6`**. No se comparan los bytes de los nodos `019E72` / `019E82` (su
+  estado vive en el intérprete nativo): sí su sitio en la lista y sus nacimientos.
+- `neo_ending.c`: `01959C` traducida (fixture `peace`: 30 actualizaciones, 56 palabras de VRAM iguales). Su `tick`
+  recibe la lista y la RAM por el entorno (`e->end_list`, `e->end_ram`).
+- **`009CCE` en el dibujo**: no hacía falta desensamblar un lector nuevo: es la mezcla `005EA0` del vblank, que ya
+  estaba en `tools/palette_mix.py`. Como los créditos mezclan 288 paletas de página y las de las láminas hacia la
+  paleta 1 con 31 pesos, la consola la calcula (`src/neo_palmix_run.h`, `neo_palmix_mix`) con las palabras de ROM de
+  las dos paletas (recurso `8000 | n` del paquete) y la tabla `0051D8`. `tools/test_palmix_run.py` (con la ROM): la
+  tabla de conversión `224000` es la identidad de los tres canales para las 32 768 palabras (rojo 10..14, verde 5..9,
+  azul 0..4; nunca el bit oscuro), `neo_palmix_dac` es la escalera de resistencias de las exportaciones, y **8730
+  casos (291 pares × 30 pesos) iguales a `Mixer.mix`**. `palette_mix.py --verify T1`: **3384 ranuras con destino
+  iguales a la RAM de paleta de MAME durante el final, 0 distintas** (695 sin pareja, no comparables). Los dibujos del
+  mundo llevan peso y destino (`neo_world_draw_t.mix_weight / mix_target`, 24 ranuras `mixes`), los de la lista del
+  final también (`neo_end_slot_level`, las piezas del título hacia 0x159).
+
+**Consola**:
+- **Superposición**: `neo_ending` es la imagen 4 (20 528 B); el programa principal solo guarda sus pruebas de rutina.
+  `neo_m6boss` con la muerte, la huida y el combate de fondo son **62 240 B** (era 43 824): `MSX_OVERLAY_BYTES` =
+  62 240. Imagen del programa 2 232 224 B (`text` 1 315 176, `bss` 350 124); **ares: caché de escena 3344 KB, 209
+  ranuras (suelo 3332 KB / 208)**: queda una ranura de margen.
+- **Los 96 nodos del título**: la lista del final tiene 32 nodos propios (letras, cuenta, resultados, ranking) y puede
+  correr sobre nodos prestados (`neo_end_lend`): el título `0A7FFE` usa los 96 actores genéricos del mundo, parados
+  desde `018B40`. Sin memoria nueva.
+- **Paquete propio `romfs/mission13.pack`** (misión 0xC; privado, no va en git): etapa `01709E` exportada de la ROM
+  (`export_stage_rom.py 1709e`: rejilla 344 × 102, 645 celdas, **1280 celdas observadas iguales, 0 distintas**; el mapa
+  `025F22` no tiene ninguna tesela: fondo negro), guion y datos del grupo `end` (8 blobs, 7 programas) y los sprites de
+  `export_rest_sprites.py --ending`: 433 descriptores (las 288 capas de las 48 páginas de `0E1446`, 63 láminas de
+  `2A4B16`, título, resultados) y 590 paletas (295 de la ROM y sus 295 en palabras de ROM). **1 849 536 B, 420 trozos**
+  (límite 1256). Cartucho: **66 158 592 B** (tope 67 043 328: quedan 884 736). Receta: `tools/build_packs.py 13`.
+  Las cuatro variantes de página (0/4/8.., 1/5/9.., 2/6.., 3/7..: los subguiones 7..10) van todas.
+- **Validación de sprites contra T1** (`T1@646fe-a4744`, 374 volcados): **10 768 156 píxeles iguales; distintos solo
+  en 4 volcados (63630, 65820, 68010, 70200), el fotograma en que nace una página: su primera lista de sprites aún no
+  está en la VRAM de ese volcado**. Las láminas y páginas ampliadas no existen; título y resultados usan zoom y el
+  rasterizador de la herramienta no lo pinta: **sin validar a píxel** (pendiente).
+- `actor.c`: el paquete 13 se carga al empezar los resultados (pantalla en negro de `018954`), sin jugador ni HUD
+  mientras dura el final (`msx_game_ending`), mezclas por fotograma (`scene_render_mixed_palette`, 24 por fotograma),
+  y al acabar el título vuelve a empezar la partida (`0167A0`, la demostración, no está portada).
+- **Menú de pruebas: `ENDING`** (segundo elemento; los demás no se mueven): arranca en `01893E`.
+  **`tools/test_ending_ares.py`**: recorre resultados → créditos → última pantalla → ranking → título sin tocar el
+  mando y exige las cuentas de actualizaciones del TAS entre pasos (5181, 30, 100, 1, 107, 1, 1, 287), que el
+  cartucho escribe en su registro (no depende de la velocidad del emulador), sin paradas ni dibujos sin descriptor.
+  Está en `tools/regression_ares.py` como `ending` (unos 25 minutos de reloj aquí). **Resultado (20-XI, cartucho de
+  66 158 592 B): PASS** — pasos (5181, 30, 100, 1, 107, 1, 1, 287) = TAS, pantallas 1..6 en orden, 0 paradas, 0 accesos
+  fuera de la RAM del final, 0 dibujos sin descriptor ni paleta, la superposición 4 cargada una vez (20 528 B en
+  4,0 ms), el título sobre los nodos prestados, sin aserciones. (La primera pasada daba 5183: el guion hacía su
+  primera pasada de lista una actualización tarde; ahora la hace en la carga de la etapa, como `0183D0` en la pasada de
+  `0189FA`.)
+
+**Pendiente (por orden)**:
+1. **Fondos de teselas** de los resultados (`056EF4`), la última pantalla (`017EB0` / `017EE6`), el ranking y el
+   título (`0A7D4A`, `0A7D52`): son tablas `01AA28` / listas `0C81A6` con mapas propios; hoy esas pantallas salen con
+   sus sprites y su texto sobre negro. Camino: etapas adicionales del paquete 13 con `export_stage_rom.py` (hay que
+   darle la lista directamente; hoy parte de un descriptor) y que `ending_setup` pida la etapa a `actor.c`.
+   Con ellos van los textos que escriben esos reinicios de entorno y no las rutinas traducidas: en el título,
+   `0A863C` (`03E2A8`, `0C81A6`, `03CF60`: el © y «INSERT COIN») y `017FD0`. Referencia: `T1/game72690.png` (la arena
+   con «GAME OVER» y «PEACE FOREVER!»), `game72900.png` (ranking sobre el plano), `game73110.png` / `game73380.png`.
+2. **Paletas de la capa fija** en el final: el final pone las suyas (`03D4AC`: lista `03D3C4`; ranura 15 = 62 → 1
+   con peso 0xC). El HUD del port usa `hud-palette.bin`; sin comparar con los volcados de T1.
+3. **Sprites de resultados y título a 0 px** (zoom) y **la lámina oscilante `0A4698`**: la variante de láminas la
+   elige `0029C6` al empezar la etapa (alternativas 7..10 del segundo `random_choice`); el TAS da una sin láminas
+   oscilantes y, sin escrituras en memoria, cambiarla exige otra partida que llegue a los créditos con otro número de
+   llamadas al azar. No capturada.
+4. **La palabra de azar de `08BF5C`** en todas las etapas (hoy solo en la 0x2C): cambia el azar de las misiones en la
+   consola respecto a hoy (habría que rehacer la línea base de `regression_ares.py`); 10C5EA no está modelada.
+5. **Música**: 0x2E (resultados) y 0x31 (créditos) se piden por `0120F8` como las demás; la orden `0A453A` (`01228C`)
+   queda en `ending_audio_command` sin consumidor. Sin comprobar que el paquete de audio las tenga.
+6. **Cadena desde el jefe en ares**: `ENDING` empieza en `01893E`. Jefe → huida → cuenta están en las familias
+   `m6boss6..8` y el último enemigo corre ya en la consola, pero no hay prueba de ares que lo venza (mando ciego).
+7. `0CAC24` (tarjeta de memoria) y `016572` (línea de créditos con 10FD91 bit 0) no se reproducen.

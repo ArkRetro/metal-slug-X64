@@ -1088,7 +1088,11 @@ static ga_result_t shot_tick(neo_gactor_t *a,neo_genv_t *e) {
     case 0x25088: {
         neo_gactor_t *c=creator(a,e);
         if (!c) return GA_UNSUPPORTED;
+        /* 025088: move.b $14(A0),$14(A6) with A0 = +0C: the hardware palette slot of the shell (357..359, cycled
+         * by 025192). Native handles index the actor's own a->palette[], so the trail takes the shell's
+         * resources with the handle (without them it drew palette 000: the descriptor-0 lines of B78). */
         SB(0x14,ga_b(c,0x14));
+        for (unsigned i=0;i<6u;i++) a->palette[i]=c->palette[i];
         ga_project(a,e);
         if ((st=step(a,e))<0) return GA_UNSUPPORTED;
         if (st) return GA_DELETE;

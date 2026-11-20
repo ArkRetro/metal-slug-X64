@@ -24,6 +24,7 @@ while riding, and
     kind 0: `left vehicle`).
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
 import argparse,os,re,subprocess,time
+import sys as _sys;from pathlib import Path as _Path;_sys.path.insert(0,str(_Path(__file__).resolve().parent));from ares_clock import EmuClock
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--mission',default='m1',choices=('m1','m2s3','m5s3'))
@@ -83,9 +84,12 @@ try:
     t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0];seek_dx=[None,0.0];seek_off=[0.0]
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
-    while time.monotonic()-t0<a.seconds and not set(expect)<=done:
+    # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
+    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    while time.monotonic()<wall_end and not set(expect)<=done:
         assert proc.poll() is None,'ares exited'
-        t=time.monotonic()-t0;text=log()
+        text=log();t=clock.now(text[-4000:])
+        if t>=a.seconds:break
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mounts=len(re.findall(r'MSX player mounted vehicle',text));lefts=len(re.findall(r'MSX player left vehicle',text))
         riding=mounts>lefts

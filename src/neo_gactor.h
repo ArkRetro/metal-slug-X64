@@ -274,7 +274,7 @@ struct neo_genv {
     /* Object list read this update (RAM 10C3A2/10C3F4 by 10000F bit 0:
      * the one written during the previous update), for 040200/0402E6. */
     const neo_marker_t *markers;unsigned marker_count;
-    uint8_t flag448;                 /* RAM 10E448 */
+    uint8_t flag448;                 /* RAM 10C448 (a5 + 4448) as the truck reads it */
     bool blood;                      /* RAM 10FD8F nonzero (soft-DIP BLOOD ON): 01B2BE clears the carry */
     const uint8_t *groups;           /* RAM 10C326..10C32E live counts (019DCA) */
     uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */

@@ -73,3 +73,45 @@ Pasada del 17-XI (agente I, `work-m4` `c7ff44a` = ccr `e138371` + `work-audit` `
 Pasada del 19-XI (agente I, `work-m4` `c932e54` = ccr `20c330c` + `work-chars` `bcc3849` + `work-audit` `c777140`, cartucho de 64 307 200 B; exportación de escena de `ws-audit` y las de la M2/M3 con los 10 descriptores del humo, como copias propias): las 18 pruebas PASS, **0 dibujos ausentes en todas** (B77 corregido: `m5boss` 0). `m6s2end` (agente C) PASS con 1813 dibujos ausentes y 12 paradas, fuera de la línea base.
 
 Pasada del 20-XI (agente I, `work-m4` `f7a660e` = ccr `bf4b040` + `work-chars` `0171ec9`; el contenedor se reinició a mitad y se repitieron las pruebas sin terminar): todo PASS con 0 dibujos ausentes salvo **`m4boss` FAIL (B78)**, que falla igual sobre el cartucho de control de ccr `bf4b040` reconstruido: no es de esta unión; subido con ese fallo abierto y su línea base sin tocar. `m6s2end` PASS (788 dibujos ausentes, 16 paradas), fuera de la línea base.
+
+## `m4boss`: no era el juego, era el mando (20-XI, agente S)
+
+En las pasadas que fallaban (`agentO/matrix`, `agentO/ctl`, la del agente I con otra ares a la vez) el registro tiene
+`MSX player left vehicle kind=1 (0C30F0)` uno o dos segundos después de montar en el SV-001 de 4288, y a partir de ahí
+`MSX vehicle hit ... mount=0` y los dibujos sin descriptor tras `169276..16929E` (el SV-001 abandonado embistiendo:
+3818 / 4897 frente a 2061). Causa: montado, **A + B a la vez es la salida `093A08`** (`0CA1B0`: bit 7 de la palabra del
+mando; regla de la ROM, bien traducida), y el mando ciego pulsaba el fuego a 5 Hz y el salto 0,2 s cada 1,5 s sin
+relación entre ambos: que coincidieran en una actualización dependía del reloj del anfitrión. No es una regresión.
+
+Arreglo en la prueba (`tools/test_mission4_ares.py`): montado (`MSX player mounted vehicle` posterior al último `left
+vehicle` / muerte / reaparición), un salto es una secuencia: fuego suelto, 0,3 s, A 0,2 s, 0,3 s, fuego otra vez.
+Además las pruebas de las misiones 4, 5 y 6 cuentan ahora en **tiempo de juego** (`tools/ares_clock.py`: el cartucho
+escribe `ticks=N` en la línea periódica de etapa; 60 por segundo): el programa del mando y `--seconds` ya no cambian
+con la carga de la máquina (con otra ares y `make check` a la vez la emulación iba al 40 %). Los límites de
+`regression_ares.py` de esas pruebas son tiempo del anfitrión (tres veces el de juego más el arranque). Lo que sigue
+dependiendo del anfitrión: el fotograma exacto en que llega cada tecla de `xdotool` (ares no tiene entrada grabada).
+
+Pasada del 20-XI sobre este cartucho (`--only m4boss`, con `make check` y la ares de otro agente a la vez: emulación al
+~30 %): monta en el SV-001 de 4288, 12 golpes montado (`mount=1`), **ninguna salida por A + B**; el SV-001 muere por
+daño (`09391E`, vida 0) antes del jefe y a pie el mando pelea sin derrotarlo (cámara 14 188 a los 1330 s de juego; en
+las pasadas buenas moría entre 9456 y 13 717). La corté ahí para correr `m6boss`: **`m4boss` sigue sin veredicto verde**.
+Lo que queda no es azar del reloj sino del mando: las pasadas que pasaban llegaban al jefe montadas. Siguiente paso
+(sin tocar el juego): escribir en el registro la x de la capa `10D7B6` y que el mando se encare al jefe (B78).
+
+Otra dependencia del reloj hallada el 20-XI (pasada `m6boss` con la emulación al 30 %): la pulsación de Start en
+CONTINUE? duraba 0,1 s del anfitrión, menos que una lectura del mando del juego a esa velocidad; la tercera no entró,
+la cuenta llegó a 0 y el juego volvió a la Misión 1 (`MSX game over: mission restart`), con la prueba esperando en
+vano. Ahora `test_mission4/6_ares.py` repiten Start (0,4 s) hasta ver `MSX panel play`, y `test_mission5_ares.py`
+pulsa 0,4 s.
+
+## `m5boss`: los 34 dibujos ausentes de más son la paleta 20C (20-XI, agente S)
+
+Comprobado en los registros de la matriz del agente O: las 34 líneas de más son todas `descriptor=0 palette=4
+palette_id=20C` con los descriptores `131FAE` / `1320AE` (que sí están en `filesystem/mission5/rest-native.json`; lo
+que falta es la paleta: `0x20c` está en su `missing_palettes`), y el código que la pide es `ga_palette(a,0x20c)` de
+`neo_m5boss.c` (`099268`, la llama final del soldado quemado), idéntico en el anfitrión y en la superposición. En el
+cartucho de control ningún soldado quemado llegó a esa llama. No es un efecto de la superposición; sigue pendiente
+la captura de la paleta 20C (`docs/MISION5.md`).
+Pasada repetida el 20-XI sobre el cartucho con las superposiciones (`regression_ares.py --only m5boss`, `f4e1492`):
+**PASS en 1930 s, `missing_draw=8`** (la línea base: paletas 006 ×3 y 00A ×5), una sola copia de la superposición, ninguna
+línea de la paleta 20C: en esta pasada ningún soldado quemado llegó a la llama `099268`.

@@ -1373,3 +1373,11 @@ con el cartucho de control `bcc3849`** (sin superposiciones, mismos paquetes, mi
   en esa pasada (en el control ninguno llegó). El soldado quemado es código de `neo_m5boss` (`burnt_tick`), el mismo
   objeto en la superposición y en el anfitrión (`make check`, familias `m5boss*`); la paleta falta en el paquete, no en el código.
 La línea base no se reescribe (`m4boss` sigue abierto).
+
+**20-XI (agente S): `work-chars` unido.** `neo_m6boss` crece a **62 240 B** (la muerte `04180A..`, la huida `04677A` y
+el combate de fondo `037404`): `MSX_OVERLAY_BYTES` = 62240; las otras tres imágenes no cambian (30 160 / 24 704 /
+20 912). Programa `mslugx-explorer.elf`: texto 1 323 240, datos 566 244, bss 348 204 (con la región de 62 240). Arranque
+en ares: `MSX CACHE slots=208..209 (3328..3344 KB, floor 208)`: **queda una ranura de margen como mucho** (antes 210).
+El siguiente módulo que crezca necesita memoria: candidatos medidos (`mips64-elf-size`, sin datos escribibles, una sola
+misión): `neo_m3mid` 23 KB (M3), `neo_m6enemy` 22 KB y `neo_m6props` 23 KB (M6; cabrían junto al jefe solo con una
+segunda región), `neo_ending` 12 KB (tras la M6). No hecho en esta sesión.

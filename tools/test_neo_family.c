@@ -786,7 +786,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
     ga_sl(&actors[0],0x38,native_tag(ga_l(&actors[0],0x38)));
 #if defined(FAMILY_M2BOSS) || defined(FAMILY_RESUME)
     ga_sl(&actors[0],0x0c,native_tag(ga_l(&actors[0],0x0c)));resume_program(&actors[0]);
-#if defined(FAMILY_M3MID) && defined(FAMILY_NODE_FIELDS)
+    /* Its node fields as the later nodes' (FAMILY_RESUME: the first node of m6boss9 is a trooper 0438A4 alive at the
+     * start, with the body and the hub in +6E / +72; a field that is no node address stays as it is). */
+#if (defined(FAMILY_M3MID) || defined(FAMILY_RESUME)) && defined(FAMILY_NODE_FIELDS)
     {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) ga_sl(&actors[0],nf[i],native_tag(ga_l(&actors[0],nf[i])));}
 #endif
 #endif
@@ -855,7 +857,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
              )) {
             neo_gactor_t *p=&actors[c];bound[c]=true;memset(p,0,sizeof(*p));p->active=true;p->index=(int16_t)c;
             memcpy(p->m,NODES[c].pre,0xb0);ga_sl(p,0x38,native_tag(ga_l(p,0x38)));ga_sl(p,0x0c,native_tag(ga_l(p,0x0c)));resume_program(p);injected++;
-#if defined(FAMILY_M3MID) && defined(FAMILY_NODE_FIELDS)
+            /* Its node fields too (FAMILY_RESUME: a trooper 0438A4 alive at the start of m6boss9 runs before its creator
+             * and reads the hub through the creator's +72, which held the recorded address). */
+#if (defined(FAMILY_M3MID) || defined(FAMILY_RESUME)) && defined(FAMILY_NODE_FIELDS)
             {static const unsigned nf[]=FAMILY_NODE_FIELDS;for (unsigned i=0;i<sizeof(nf)/sizeof(nf[0]);i++) ga_sl(p,nf[i],native_tag(ga_l(p,nf[i])));}
 #endif
          }}
@@ -1021,6 +1025,9 @@ e.solid=solid;e.creator=creator_of;e.actor=actor_of;e.creator_alive=creator_aliv
          * 10E957 and 10E9B8 from the RAM image; the writes are compared. */
         static neo_m4boss_env_t m4;m4.layer=&wram[0xd7b6];m4.owner=wram[0xe957];
         flags.mission_end=wram[0xc300];flags.end_kind=wram[0xc304];   /* RAM 10C300/10C304 as read (018F92) */
+        {int s0=slot(0x10c300),s4=slot(0x10c304);   /* 018F40 reads 10C300 (0418C2): the watched globals start as read */
+         if (s0>=0) ram[s0]=expect[s0]=flags.mission_end;
+         if (s4>=0) ram[s4]=expect[s4]=flags.end_kind;}
         m4.speed[0]=(int32_t)w32(0x10e94e);m4.speed[1]=(int32_t)w32(0x10e952);m4.point69b8=w16(0x10e9b8);e.m4boss=&m4;
         e.mission_speed=mission_speed;
         e.spawn_reserve=spawn_reserve;free_nodes=w16(0x1063d8);e.shake_pulse=shake_pulse;

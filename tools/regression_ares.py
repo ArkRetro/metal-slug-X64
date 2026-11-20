@@ -21,25 +21,28 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 LIMIT = 67_043_328
 BASELINE = ROOT / 'data' / 'regression_baseline.json'
 
-# name: (script, extra args, timeout in s, output flag)
+# name: (script, extra args, timeout in s, output flag). The Mission 4, 5 and 6 tests and `veh` count --seconds in game time
+# (tools/ares_clock.py: the pad's schedule does not change with the machine's load); their timeouts here are host
+# time, three times that and the boot.
 TESTS = {
     'logo':  ('test_logo_ares.py', [], 600, '--output'),
     'pause': ('test_pause_ares.py', [], 600, '--output'),
     'chars': ('test_characters_ares.py', [], 1800, '--output'),
     'options': ('test_options_ares.py', [], 900, '--output'),   # the options screen: HERO 5, LEVEL 8, no HOW TO PLAY, EEPROM (docs/OPCIONES.md)
     'm4':    ('test_mission4_ares.py', [], 600, '--out'),
-    'm4boss': ('test_mission4_ares.py', ['--fire', '--jump', '1.5', '--lifebar', '--continues', '--boss', '--vehicle', '1', '--seconds', '4500', '--progress', '5552', '--period', '10'], 4800, '--out'),   # the boss 02267E defeated and Mission 5 started; B69: the SV-001 of 4288 hit while mounted
+    'm4boss': ('test_mission4_ares.py', ['--fire', '--jump', '1.5', '--lifebar', '--continues', '--boss', '--vehicle', '1', '--seconds', '4500', '--progress', '5552', '--period', '10'], 14400, '--out'),   # the boss 02267E defeated and Mission 5 started; B69: the SV-001 of 4288 hit while mounted
     'm5s1':  ('test_mission5_ares.py', ['--stage', '1', '--progress', '100', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s2':  ('test_mission5_ares.py', ['--stage', '2', '--progress', '80', '--fire', '--jump', '2.5'], 600, '--out'),
     'm5s3':  ('test_mission5_ares.py', ['--stage', '3', '--progress', '100', '--fire', '--jump', '2.5'], 900, '--out'),
-    'm5boss': ('test_mission5_ares.py', ['--stage', '3', '--seconds', '3300', '--progress', '2560', '--fire', '--jump', '1.5', '--lifebar', '--continue', '--up', '6', '--back', '7', '--bomb', '--down', '--boss'], 3600, '--out'),   # the sewer to the boss 0A0C00, beaten, and 01891E -> Mission 6 (life bar and continues: a blind pad)
+    'm5boss': ('test_mission5_ares.py', ['--stage', '3', '--seconds', '3300', '--progress', '2560', '--fire', '--jump', '1.5', '--lifebar', '--continue', '--up', '6', '--back', '7', '--bomb', '--down', '--boss'], 10800, '--out'),   # the sewer to the boss 0A0C00, beaten, and 01891E -> Mission 6 (life bar and continues: a blind pad)
     'm6s1':  ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--continues'], 600, '--out'),   # the rafts need jumps (beach 0..176, raft 226..298)
-    'm6s1end': ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--turn', '6', '--continues', '--fire', '--progress', '3520', '--seconds', '1500', '--next'], 1800, '--out'),   # stage 1 to its end: the mid-boss 05310E, the retention 3632 and the stage exit 0B6ED2 of the list call 0BD67A, then stage 2 (016E6E) starts
-    'm6s2end': ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--up', '1.5', '--sweep', '10', '--continues', '--progress', '4240', '--seconds', '5000', '--period', '10', '--next'], 5400, '--out'),   # stage 2 to its end: the jumpers 086712 at 1104, the jeep 0A2EFA at 2672, the tanks at 3872, 0BE8F6 at 4240 and the exit 0B6ED2 of 0BE8A2 (list call 0BE888), then stage 3 (016E7E) starts
+    'm6s1end': ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--turn', '6', '--continues', '--fire', '--progress', '3520', '--seconds', '1500', '--next'], 5400, '--out'),   # stage 1 to its end: the mid-boss 05310E, the retention 3632 and the stage exit 0B6ED2 of the list call 0BD67A, then stage 2 (016E6E) starts
+    'm6s2end': ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--up', '1.5', '--sweep', '10', '--continues', '--progress', '4240', '--seconds', '5000', '--period', '10', '--next'], 16200, '--out'),   # stage 2 to its end: the jumpers 086712 at 1104, the jeep 0A2EFA at 2672, the tanks at 3872, 0BE8F6 at 4240 and the exit 0B6ED2 of 0BE8A2 (list call 0BE888), then stage 3 (016E7E) starts
     'm6s2':  ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--continues'], 600, '--out'),   # its soldiers run now (groups m3, m4, m5) and kill a player who neither fires nor jumps
     'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 600, '--out'),
-    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 3300, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
-    'slugnoid': ('test_vehicle_damage_ares.py', ['--mission', 'm5s3', '--ride', 'forward'], 1800, '--out'),   # B69: the Slugnoid 09692C of Mission 5 stage 3 ridden forward to the enemies: class-0 hit, 48 -> 32 -> 16 -> 0, flicker, gauge, destroyed
+    'm6boss': ('test_mission6_ares.py', ['--stage', '3', '--fire', '--jump', '4', '--aimup', '--sweep', '8', '--lifebar', '--continues', '--bomb', '3', '--boss', '--seconds', '2400', '--period', '10'], 7800, '--out'),   # the last enemy 04153E (neo_m6boss overlay) from its opening 045428 to its death 04180A (018F92 by 041DD4): both forms, no routine stop; --seconds counts game time (tools/ares_clock.py)
+    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 9900, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
+    'slugnoid': ('test_vehicle_damage_ares.py', ['--mission', 'm5s3', '--ride', 'forward'], 5400, '--out'),   # B69: the Slugnoid 09692C of Mission 5 stage 3 ridden forward to the enemies: class-0 hit, 48 -> 32 -> 16 -> 0, flicker, gauge, destroyed
 }
 M1M2 = ('test_m1m2_ares.py', [], 1200, '--output')
 

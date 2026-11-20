@@ -9,8 +9,9 @@ name. Checks from the log: the menu choice, the pack load with the flow's
 descriptor 016E1E and camera list 0E741A, the camera reaching --progress,
 no crash and no "not loaded" stop. Prints the counted stops of the log.
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
-import argparse,os,re,subprocess,time
+import argparse,os,re,subprocess,sys,time
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_clock import EmuClock
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
@@ -66,12 +67,15 @@ try:
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
-    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0
+    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0;seq=None
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
-    while time.monotonic()-t0<a.seconds:
+    # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
+    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
-        t=time.monotonic()-t0;text=log()
+        text=log();t=clock.now(text[-4000:])
+        if t>=a.seconds:break
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
@@ -79,7 +83,14 @@ try:
         if cam>=a.until or (a.boss and re.search(r'MSX mission 5 stage \d+ start',text)):break
         if a.continues and text.count('MSX panel continue')>continued:
             for n in list(held):hold(n,False)
-            time.sleep(1.0);tap('Return');time.sleep(.5);continued=text.count('MSX panel continue');continue
+            # Start until the panel takes it (`MSX panel play` again): one 0.1 s tap was less than one pad read with the
+            # emulator at a third of its speed (a loaded machine), the countdown ran out and the game restarted in Mission 1.
+            plays=text.count('MSX panel play');time.sleep(1.0)
+            for _ in range(30):
+                tap('Return',.4);time.sleep(.6);tx=log()
+                if tx.count('MSX panel play')>plays or tx.count('MSX panel game over')>text.count('MSX panel game over'):break
+            continued=text.count('MSX panel continue')
+            continue
         # A camera lock waits for an enemy group to be emptied: the car 027F54 at 1000 (ahead of Marco, who jumps on
         # its roof if he keeps walking), the armoured vehicle 087E36 at 2160 (behind him), the helicopters 085522 over him
         # at 4360 (script 2DC67A waits for group 6 < 1; they leave only when out of bombs). After 6 s without progress the
@@ -104,7 +115,19 @@ try:
         # pad's jumps over its fire left the SV-001 at 4360 before the helicopters' bombs hit it.
         if text.count('MSX player mounted vehicle')>text.count('MSX player left vehicle'):jump=False
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
-        hold('a',jump);hold('b',a.fire and int(t*10)%2==0)
+        # Riding a vehicle, A and B together are the exit 093A08 (0CA1B0: pad bit 7; the vehicle is thrown away). The pad
+        # used to press them together by chance (the 5 Hz fire against the jump), and then nothing could hit it mounted.
+        # While it rides, a jump is a sequence on the host's clock (well over one update at any load): fire released,
+        # 0.3 s, A for 0.2 s, 0.3 s, fire again.
+        fire=a.fire and int(t*10)%2==0
+        if text.rfind('MSX player mounted vehicle')>max(text.rfind('MSX player left vehicle'),text.rfind('MSX player death'),text.rfind('MSX respawn ')):
+            w=time.monotonic()
+            if jump and seq is None:seq=w
+            if seq is not None:
+                fire=False;jump=0.3<=w-seq<0.5
+                if w-seq>=0.8:seq=None
+        elif seq is not None:seq=None;jump=False
+        hold('b',fire);hold('a',jump)
         hold('z',bomb)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period

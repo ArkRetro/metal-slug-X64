@@ -158,7 +158,9 @@ typedef struct {
     /* Its actors (neo_m6props.c): RAM 10C70C..10C714 (10C70C/10C70D are the
      * driver's lock word, bridge.lock), 10D7B6 as they read it and its
      * position before this update's layer step (01ABC8's +1C/+20). */
-    uint8_t bridge_ram[9];int32_t bridge_prev_x,bridge_prev_y;neo_m6bridge_env_t bridge_env;
+    uint8_t bridge_ram[9];int32_t bridge_prev_x,bridge_prev_y;
+    int32_t sky_prev_x,sky_prev_y;   /* the sky layer object 10E83E's +1C/+20: its position before this update's step */
+    neo_m6bridge_env_t bridge_env;
     /* The bridge 10D7B6 in the collision kernel (map 0BC6E6 loaded by op 0x18):
      * its ring (neo_m6bridge.h; 0C7038 clears it at each stage start). */
     bool bridge_ring_on;neo_m6ring_t bridge_ring;neo_m6map_t bridge_map;
@@ -262,7 +264,7 @@ typedef struct {
      * the treads (m4anim: D0 + 1, 0 = none) for the LSPC (gameplay.c). */
     uint8_t m4layer[0x88];bool m4layer_used;
     int32_t m4speed[2];uint32_t m4layer_map;unsigned m4patch_count;uint16_t m4anim;
-    uint32_t m4col_map[20];uint8_t m4col_top[20];
+    uint32_t m4col_map[32];uint8_t m4col_top[32];   /* 32 ring slots: the Mission 4 boss's maps use 20, the Mission 6 last enemy's 04522E 26 */
 #endif
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the

@@ -10,6 +10,7 @@ descriptor and camera list (016E2E / 0BB8E6, 016E3E / 0BB9BA, 016E4E / 0BBA24), 
 no crash and no "not loaded" stop. Prints the counted stops of the log.
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
 import argparse,os,re,subprocess,time
+import sys as _sys;from pathlib import Path as _Path;_sys.path.insert(0,str(_Path(__file__).resolve().parent));from ares_clock import EmuClock
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--stage',type=int,default=1,choices=(1,2,3));p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
@@ -71,9 +72,12 @@ try:
     t0=time.monotonic();nextgrab=0;k=0;held={};next_start=0
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
-    while time.monotonic()-t0<a.seconds:
+    # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
+    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
-        t=time.monotonic()-t0;text=log()
+        text=log();t=clock.now(text[-4000:])
+        if t>=a.seconds:break
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
@@ -89,7 +93,7 @@ try:
         # --continue: the panel's last state is "continue" (CONTINUE? 9..0): Start, as an arcade player would.
         if a.cont:
             pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
-            if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
+            if pm and pm[-1]=='continue' and t>=next_start:tap('Return',.4);next_start=t+1.0   # 0.4 s: longer than one pad read with the emulator at a third of its speed
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

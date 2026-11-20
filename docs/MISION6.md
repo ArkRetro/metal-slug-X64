@@ -1066,3 +1066,96 @@ se ha pasado en esta sesión.
 8. **Entrada de nombre `05812A`** (cuando la puntuación entra en la tabla): el final recibe A, B y C (10C35C / 10C35D)
    pero no la palanca (bits 2 / 3 de arriba / abajo: `msx_game_update` no los pasa): la letra no se puede cambiar en
    la consola; acaba con A o por tiempo, como en el original. `ENDING` (puntuación 0) no pasa por ella.
+
+### Fondos, textos y entradas del final (20-XI, agente U)
+
+**Qué pantallas tienen mapa** (del listado; `tools/export_ending_layers.py` lo lee de la ROM):
+
+| Pantalla | Reinicio | Tabla `01AA28` | Lista `0C81A6` | Capas |
+| --- | --- | --- | --- | --- |
+| Resultados `0570A0` | `056FCC` | `056EF4`: ninguna capa | no hay | el plano es el dial `0577E2` (sprites con zoom) |
+| Última pantalla | `018B40` | `017EB0`: `10C72E` (sprites 1..32) | `017EE6`: paletas `017ED8` (ranuras 10/11 ← 126/127), mapa `017EC2` (20 × 16 bloques, P2 `300000`) | 1 |
+| Ranking `057E00` | `057F34` | `0579AA`: ninguna capa | `0579BA` (solo `01AA28`, `0x14`, `002802`) | el plano es su sprite (paleta E1) |
+| Título, piezas `0A7FFE` | `002976`, `01AA28(0A7D4A)` | ninguna capa | no hay | negro |
+| Título, logotipo `0A8096` | `0A863C` | `0A7D52`: ventana de 40 sprites (1..40), `10E83E` (41..), `10D7B6` (73..), `10C72E` (105..) | `0A7F02` con RAM 100001 ≠ 0 (`0A7E5E` si es 0): paletas `0A7D7E`, mapas `0A7E24` / `0A7DF8` / `0A7E0E` | 3 |
+
+- RAM 100001 es el país de la BIOS (`00240E`: `10FD83`; 2 en todas las capturas). Con 0 la lista `0A7E5E` muestra las
+  filas 13 y 14 del mapa de `10E83E` (60 bloques más) y no escribe el texto; con ≠ 0 la lista `0A7F02` copia solo 20 × 13
+  bloques (`0C73CE`) y `0A863C` escribe la línea `0A7E3A` (`03E2A8`) y el bloque de 6 × 3 teselas `6E5A` en `709A`
+  (`03CF60`). El port es la placa europea de las capturas: `0A7F02`.
+- **Exportación**: las celdas van en la etapa de los créditos del paquete 13 (su mapa propio `025F22` no tiene
+  teselas) como **páginas de x**: última pantalla en `0x2000`, logotipo en `0x4000`; las cuatro reglas de capa del
+  paquete 13 son «nunca» y `actor.c` enseña la página con el desplazamiento propio de la capa (las capas no se mueven:
+  op `0x14` con 0,0 y factores 0). 675 celdas, 572 imágenes, 7 paletas (de la ROM, `palette_mix.Mixer.plain`).
+  Paquete 13: **1 902 912 B, 425 trozos** (era 1 849 536 / 420).
+- **Validación contra T1** (`build/ending_layers_report.json`): última pantalla, 6 volcados (72630..72780): **1920
+  palabras de bloque y 430 080 píxeles iguales, 0 distintos**; colores de ROM iguales a la RAM de paleta en 5 (72630 está
+  en el fundido). Logotipo, 10 volcados (73380..73650): **9000 palabras y 569 050 píxeles iguales, 0 distintos**; colores
+  iguales en 9 (73380 en el fundido desde blanco), también los de las ranuras fijas 6 / 7 (paletas 174 / 890).
+- **Orden de dibujo del logotipo**: la tabla `0A7D52` reserva primero la ventana de las entradas con `+15` bit 2 (RAM
+  10B95C = 0), luego las capas y encima la otra ventana (10B954 = 0x88). `actor.c`: fondo, entradas con bit 2 (la
+  lámina `0A8602`), las tres capas, el resto (el programa `2A7368`).
+- **Textos del título**: escritos por el nodo `0A8096` (`neo_ending.c`), no por el entorno. El fixture `title` compara
+  ahora las palabras de la capa fija de un reinicio: **43 palabras iguales en orden** (25 de la línea, 18 del bloque).
+  Las ranuras fijas 6 y 7 siguen el fundido (T1 73380: blanqueadas con las de las capas; las 0..4 no):
+  `hud_renderer_slot`. «INSERT COIN» y «CREDIT 0» son la línea de monedas de la MVS (`016572` / `016648`): el port
+  no tiene línea de monedas; no se escriben.
+- **En ares** (`test_ending_ares.py`, capturas cada 3 s tras los créditos): última pantalla con la arena y el casco,
+  logotipo con sus tres capas sobre la lámina y los textos.
+
+**Entrada de nombre `05812A`**: en la ROM la letra se cambia con **derecha / izquierda** (bits 3 / 2 del byte de
+repetición 10C35E, `058554`), no con arriba / abajo. El bloque de puerto del jugador 1 (`03CC10..03CC54`, una vez por
+actualización en el bucle principal `003A5E`: anterior, mantenido, nuevas pulsaciones, repetición con la cuenta de
+10C380 / 10C381 = 0x20 / 4 que pone `03CAB4`) está en `neo_end_port_block` y el final lo recibe entero (palanca
+incluida) en cada actualización (`gameplay.c end_inputs`). **Captura `captures-m6/fam/NE1`** (`runNE1.sh`: desde
+`end27900` con entradas en las actualizaciones 28600..28835, `updates_ne1.txt`; nombre «DAB»): familia `name` (4560
+actualizaciones, 8604 palabras de VRAM, 506 bytes de RAM iguales) y `end_ports` (**249 actualizaciones de la entrada de
+nombre: nuevas pulsaciones, byte de repetición y cuenta iguales a MAME**, 16 pulsaciones, 8 repeticiones).
+
+**Audio**: `01228C` (fundido `0A xx` del controlador) de `0571BA` y `0A453A` sale ya como palabra `0Axx` (para la música,
+como los jefes). **Las músicas 0x2E (resultados) y 0x31 (créditos) no están en el paquete de audio.** Renderizadas
+por el procedimiento de `AUDIO_JUEGO.md` (`data/sound_map.json`: `music_results`, `music_credits`) y empaquetadas en
+un directorio aparte: 0x2E bucle de 48,10 s (similitud 0,927) = 1 299 088 B + introducción 162 100 B; 0x31 de una
+vez, 163,31 s = 4 409 812 B. **Total 5 871 000 B; al cartucho le quedan 786 432 B: no caben.** Sin empaquetar
+(decisión del coordinador: subir el tope o quitar otra cosa).
+
+**Los cuatro volcados (63630, 65820, 68010, 70200)**: demostrado con la captura sola
+(`tools/check_credits_birth_dumps.py`, `build/credits_birth_dumps_report.json`). En cada uno hay **6 nodos `064AC0` (las
+seis líneas de una página) cuya primera entrada de lista de sprites se escribe en la pasada en curso**, y **ninguna
+palabra de tesela de los sprites encendidos de ese volcado lleva sus ranuras de paleta** (0 de 0; en el volcado
+siguiente, 541, 586, 790 y 676): la lista que construye una pasada llega a la VRAM en el vblank siguiente. De los 12
+volcados de control, 11 no tienen nacimientos; el otro (70170) tiene una lámina `0A454C` recién nacida fuera de la
+pantalla (primera entrada en y = 260 → fila 252), tampoco en VRAM y sin píxeles que comparar. No hay nada que corregir
+en el port: es el fotograma de retraso del volcado.
+
+**Tras el título** (del listado, `0166F8..0169A0`): el actor de núcleo, con `10FDAE` = 2, hace título `0A7FFE` →
+`0167A0` (demostración: `10F003` = 3, `017F2C` con el registro `01678C + 10·(10F00E & 1)`, jugadores `0C10D8`,
+reproducción de entradas grabadas `03CAD2` / tabla `03CF06`, 900 actualizaciones como mucho) → ranking `057E00` →
+`C00444` (la BIOS, que vuelve a `0166AA`). En cada espera `0168DA` llama a `016648` (la línea de monedas) y, con
+RAM 100088 = 2 (inicio pulsado), va a `016B9A` en MVS o, en casa (`10FD82` = 0), a `01691E`: el menú casero `066A1C`.
+**Pendiente**: el port no tiene ni la demostración (hace falta el reproductor de entradas `03CCB2..03CE8E` y sus dos
+grabaciones) ni el menú `066A1C`, y sus películas de arranque (título, instrucciones, selección) solo se reproducen
+antes de reservar la memoria del juego; por eso al acabar el título sigue empezando la partida (`reset_game`), igual
+que tras un GAME OVER.
+
+**Ranking**: su plano (nodo `0580A2`, descriptor `1D932C`) se lista en y = `FF80`; la LSPC toma la palabra módulo 512
+líneas (como `0x180`; T1, VRAM 72900: sprites en las líneas 8 / 48). `draw_end` tomaba la palabra con signo y lo
+dibujaba 512 líneas fuera: corregido (`actor.c`), el plano sale tras los nombres.
+
+**Sprites con zoom a 0 px: pendiente, con lo que falta.** El dial de resultados encoge solo en x (`+12`; en VRAM cada
+sprite de 16 px lleva su nibble de SCB2, alternando p. ej. A / B en 61500) y las piezas del título en x e y. El port
+escala cada parte con un rectángulo del RDP (posición y tamaño en coma flotante): no es la tabla de columnas de la LSPC
+(qué columnas de cada sprite de 16 px se quedan con cada nibble: lógica del chip, no está en la ROM del juego) ni la
+ROM L0 del encogido vertical (`000-lo.lo`, de la BIOS). Para validarlo a píxel hay que dibujar por sprites de 16 px
+con esas dos tablas (la de x habría que sacarla de volcados de VRAM + PNG de MAME, nibble a nibble: T1 tiene los 16
+valores en el dial) y comparar en el anfitrión; no hecho en esta sesión.
+
+**Otros**: `romfs/scene.pack` de este árbol estaba atrasado respecto a sus fuentes (8285 páginas; las fuentes dan
+8301, como ws-logo y ws-m4) y `make check` fallaba en la prueba de compresión; rehecho con `tools/pack_scene.py` y
+`build_packs.py`.
+
+**Números (20-XI, agente U)**: cartucho **66 256 896 B** (tope 67 043 328: quedan 786 432); programa `text`
+1 319 592, `bss` 354 196; superposición `neo_ending` 20 752 B (región 62 240); caché de escena en ares 3344 KB, 209
+ranuras (sin cambio). Receta del paquete 13: `export_stage_rom.py 1709e …` (como antes), `export_rest_sprites.py
+--ending`, **`export_ending_layers.py --map filesystem/mission13/s1/map.json --capture captures-m6/fam/T1 --rest
+filesystem/mission13/rest-native.json`**, `build_packs.py 13`.

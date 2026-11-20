@@ -90,6 +90,11 @@ typedef struct neo_end {
 } neo_end_t;
 static inline neo_gactor_t *neo_end_nodes(const neo_end_t *s) {return s->lent?s->lent:(neo_gactor_t *)s->own;}
 static inline unsigned neo_end_capacity(const neo_end_t *s) {return s->lent?s->lent_count:(unsigned)NEO_END_OWN;}
+/* 03CC10..03CC54 (03CD20.. for player 2's block 10C360), a player's port block of the main loop's port read 03CB3A:
+ * +1 the held byte before, +2 `held` (the port inverted: up 1, down 2, left 4, right 8, A 0x10, B 0x20, C 0x40,
+ * D 0x80), +3 the new presses, +4 the repeat byte (the new presses; else, when the count +5 runs out, the held byte,
+ * and the count is RAM 10C381 again; else 0), +5 the count (RAM 10C380 at a new press). */
+void neo_end_port_block(neo_end_ram_t *m,uint32_t block,uint8_t held);
 void neo_end_reset(neo_end_t *s);
 /* An empty list on `count` nodes of the caller (at most NEO_END_NODES), until the next neo_end_reset. */
 void neo_end_lend(neo_end_t *s,neo_gactor_t *nodes,unsigned count);

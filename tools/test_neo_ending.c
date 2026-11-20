@@ -81,7 +81,7 @@ static bool dead_register(uint32_t ad) {return (ad>=0x10c392 && ad<0x10c396) || 
 static uint32_t be32(const uint8_t *p) {return (uint32_t)p[0]<<24|p[1]<<16|p[2]<<8|p[3];}
 static neo_end_ram_t ram;static neo_hud_t hud;static neo_fade_t fade;
 static uint8_t img[0x10000];
-static unsigned edge_updates,cur_lo,cur_hi,updates,bytes,deletes,failures,vram_words,rng_used,rng_at,rng_end,ram_bytes,dead_bytes,setup_words,skipped_writes,setup_rng;
+static unsigned edge_updates,cur_lo,cur_hi,updates,bytes,deletes,failures,vram_words,rng_used,rng_at,rng_end,ram_bytes,dead_bytes,setup_words,skipped_writes,setup_rng,setup_fix;
 static uint16_t written[8192][2];static unsigned nwritten;
 static uint32_t wlog[4096];static unsigned nwlog;
 static void on_write(void *ctx,uint16_t address,uint16_t word) {
@@ -152,8 +152,21 @@ static void on_updated(void *ctx,neo_gactor_t *a) {
     if (!u) {fprintf(stderr,"frame %u: node %d (%06x) updated natively, not in MAME\n",(unsigned)UPDATES[cur_lo].frame,id,(unsigned)ga_l(a,0));failures++;return;}
     uint32_t f=u->frame,routine=ga_l(a,0);unsigned bad=0;
     bool setup=is_setup(u->routine) && !born[id];
-    if (setup) {setup_words+=u->vram_count;nw=0;}
-    else {
+    if (setup) {
+        /* An environment reset: its sprite and layer words are the environment's; its fix-map words (7000..74FF: the
+         * title's texts of 0A863C) are the node's, compared in order. */
+        unsigned k=0;
+        for (unsigned i=0;i<u->vram_count;i++) {
+            const uint16_t *w=VRAM[u->vram_first+i];
+            if (w[0]<0x7000u || w[0]>=0x7500u) {setup_words++;continue;}
+            if (k>=nw || k>=8192 || written[k][0]!=w[0] || written[k][1]!=w[1]) {
+                if (bad<8) fprintf(stderr,"frame %u node %d routine %06x: fix word %u of the reset: MAME %04x=%04x, native %04x=%04x\n",(unsigned)f,id,(unsigned)u->routine,k,w[0],w[1],k<nw?written[k][0]:0,k<nw?written[k][1]:0);
+                bad++;
+            } else {vram_words++;setup_fix++;}
+            k++;
+        }
+        if (k!=nw) {fprintf(stderr,"frame %u node %d routine %06x: %u fix words in the reset, MAME %u\n",(unsigned)f,id,(unsigned)u->routine,nw,k);bad++;}
+    } else {
         if (nw!=u->vram_count) {fprintf(stderr,"frame %u node %d routine %06x: %u VRAM words, MAME %u\n",(unsigned)f,id,(unsigned)u->routine,nw,u->vram_count);bad++;}
         for (unsigned i=0;i<nw && i<u->vram_count && i<8192;i++) {
             const uint16_t *w=VRAM[u->vram_first+i];
@@ -244,7 +257,7 @@ int main(void) {
         if (rng_at!=rng_end) {fprintf(stderr,"frame %u: %u random words used, MAME %u\n",(unsigned)f,rng_at-UPDATES[i].rng_first,rng_end-UPDATES[i].rng_first);return 1;}
         i=j;
     }
-    printf("PASS: ending %s (root %06x): %u passes, %u updates, %u node bytes, %u VRAM words, %u RAM bytes equal, %u RAM bytes read, %u random words, %u deletes, %u draws, %u sounds, %u audio commands, %u slot levels; not compared: %u VRAM words and %u random words of the reset (056FCC / 057F34), %u dead A2 bytes, %u writes in the skipped RAM, %u updates past the window's end; creator +60 %s\n",
-        ENDING_HEADER,(unsigned)ENDING_ROOT,frames,updates,bytes,vram_words,ram_bytes,reads,rng_used,deletes,draws,ram.sound_count+ram.sounds_dropped,ram.audio_commands,ram.slot_levels,setup_words,setup_rng,dead_bytes,skipped_writes,edge_updates,s.mission60?"set":"clear");
+    printf("PASS: ending %s (root %06x): %u passes, %u updates, %u node bytes, %u VRAM words (%u of them fix words of a reset), %u RAM bytes equal, %u RAM bytes read, %u random words, %u deletes, %u draws, %u sounds, %u audio commands, %u slot levels; not compared: %u VRAM words and %u random words of the reset (056FCC / 057F34), %u dead A2 bytes, %u writes in the skipped RAM, %u updates past the window's end; creator +60 %s\n",
+        ENDING_HEADER,(unsigned)ENDING_ROOT,frames,updates,bytes,vram_words,setup_fix,ram_bytes,reads,rng_used,deletes,draws,ram.sound_count+ram.sounds_dropped,ram.audio_commands,ram.slot_levels,setup_words,setup_rng,dead_bytes,skipped_writes,edge_updates,s.mission60?"set":"clear");
     return 0;
 }

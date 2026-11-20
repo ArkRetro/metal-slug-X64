@@ -22,6 +22,26 @@ static uint8_t opaque[(NEO_FIX_WORDS+7)/8];   /* bit per cell: it has a non-zero
 static bool ready,valid;
 static uint32_t shown_serial;
 
+/* A fix palette slot replaced by 16 RGBA5551 colours (the title's list 0A7F02 loads the slots 6 and 7, 009D8C), or
+ * given back (NULL): the two slots' own colours are kept here. */
+static uint16_t kept[2][16];static uint8_t kept_slot[2];static bool kept_on[2];
+void hud_renderer_slot(unsigned slot,const uint16_t *colours) {
+    if (slot>15u) return;
+    unsigned k=0;
+    while (k<2 && !(kept_on[k] && kept_slot[k]==slot)) k++;
+    if (!colours) {
+        if (k==2) return;
+        memcpy(&palette[16*slot],kept[k],32);kept_on[k]=false;
+    } else {
+        if (k==2) {
+            for (k=0;k<2 && kept_on[k];k++) {}
+            if (k==2) return;
+            kept_on[k]=true;kept_slot[k]=(uint8_t)slot;memcpy(kept[k],&palette[16*slot],32);
+        }
+        memcpy(&palette[16*slot],colours,32);palette[16*slot]=0;
+    }
+    data_cache_hit_writeback(palette,sizeof(palette));
+}
 bool hud_renderer_init(void) {
     /* Read in the boot cinematics' spare time when they ran (main.c,
      * msx_ramfs_preload): the resident copy is used as is. */

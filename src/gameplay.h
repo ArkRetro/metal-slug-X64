@@ -24,7 +24,7 @@
  * own for them (0C0D64: 10C71C = FF for id 0, table 0C08A8): only its object
  * pool. One press per 4 ticks and 6 px per tick leave up to 10 on screen
  * (~200 px to the edge + 32), so 8 refused shots the original fires. */
-enum { MSX_END_MEM=0x1c4 };   /* the ending's RAM (gameplay.c end_mem_range) */
+enum { MSX_END_MEM=0x1c5 };   /* the ending's RAM (gameplay.c end_mem_range) */
 enum { MSX_BULLETS=16, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };

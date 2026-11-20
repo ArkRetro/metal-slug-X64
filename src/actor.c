@@ -274,6 +274,7 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         scene_render_sprite(&part,x,y,mirror,flip_y,d->flash && (game.ticks&1));
     }
 }
+static bool ending_layers;      /* this frame shows one of the ending's screens with maps (the last screen, the title's logo) */
 static bool ending_pack_wait;   /* the results began in this frame's update: the ending's pack is loaded at the next frame's top */
 static void draw_end(const neo_end_draw_t *e,bool request_only) {
     if (ending_pack_wait) return;
@@ -1078,6 +1079,31 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
 #ifdef MSX_HAS_M3MID
         m4_boss_layer();
 #endif
+        /* The ending's screens with maps (docs/MISION6.md "Fondos del final"): the last screen (list 017EE6: 10C72E)
+         * and the title's logo (list 0A7F02: 10E83E, 10D7B6, 10C72E) are x pages of the credits' stage in the pack of
+         * mission 0xC (tools/export_ending_layers.py); their layer objects stay at the root (op 0x14, factors 0), so
+         * a layer shows its page as it is. No other screen of the ending has a map. */
+        int page=-1;
+        if (st && st->mission==13u && msx_game_ending(&game))
+            page=game.ending_scene==MSX_ENDING_SCENE_PEACE?0x2000:game.ending_scene==MSX_ENDING_SCENE_TITLE_LOGO?0x4000:-1;
+        if (page>=0) for (unsigned p=0;p<4;p++) {scene_render_set_layer_offset(p,true,page);scene_render_set_layer_rise(p,true,p<2?8:0);}
+        else {scene_render_set_layer_offset(3,false,0);scene_render_set_layer_rise(3,false,0);}
+        ending_layers=page>=0;
+        /* The title's list loads the fix slots 6 and 7 with the palettes 0x174 and 0x890 (op 0x0C, 0A7D7E): the
+         * colours of its texts (0A863C). */
+        static bool title_fix;
+        const bool logo=page==0x4000;
+        if (logo || title_fix) {
+            /* These two slots are inside the fade (T1, palette RAM 73380: both whitened with the layers' slots, while
+             * the slots 0..4 keep their colours), so they follow it frame by frame. */
+            static const uint16_t slot_palette[2][2]={{6,0x174},{7,0x890}};
+            for (unsigned k=0;k<2;k++) {
+                int id=logo?scene_native_palette(slot_palette[k][1]):-1;
+                hud_renderer_slot(slot_palette[k][0],id>=0?scene_render_fade_palette(scene_palette((unsigned)id)):NULL);
+                if (logo && !title_fix && id<0) debugf("MSX ENDING fix palette %03X not in the pack\n",slot_palette[k][1]);
+            }
+            title_fix=logo;
+        }
     }
     /* B26: the frame's sprite windows and layers in their SCB slot order
      * (msx_draw_order, gameplay.c): window A holds the sprites in +1E
@@ -1085,7 +1111,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
      * the +15 bit 2 ones (e.g. Mission 2's exit marker 0B6F6A, +1E FFF1,
      * and the gate's frame 03A82E: over Marco when he walks through). */
     msx_draw_order_t layout=game.in_stage?msx_draw_order(game.flow.mission,game.flow.stage):msx_draw_order(0,0);
+    /* The ending's screens with maps: the table of 01AA28 allots the sprite window of the +15 bit 2 entries first (the
+     * title's 0A7D52: sprites 1..40, RAM 10B95C = 0), the layers above it (41..136) and the other window above them
+     * (RAM 10B954 = 0x88; MAME capture T1, VRAM 73650: the picture 0A8602 in 21..40, the root's program in 380). */
+    if (ending_layers) {layout.back=0;layout.front=0x1f;layout.normal_mid=false;}
     scene_render_layers(game.camera,game.camera_height,game.backdrop_after,neo_lspc_phase(&game.lspc),layout.back,true);
+    if (ending_layers) {
+        rdpq_set_scissor(8,8,312,232);
+        for (unsigned i=0;i<game.end.draw_count;i++) if (game.end.draws[i].attributes&4u) draw_end(&game.end.draws[i],false);
+    }
     /* Sprites with attribute bit 2 (+15 bit 2) lie in window B. Every
      * sprite is clipped to the arcade's 304x224 window, like the layers. */
     rdpq_set_scissor(8,8,312,232);
@@ -1120,7 +1154,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     scene_render_foreground_fog();
     /* Mission-end actors (MISSION COMPLETE letters 06090A), created after
      * the mission actor: above the world's sprites, below the fix layer. */
-    for (unsigned i=0;i<game.end.draw_count;i++) draw_end(&game.end.draws[i],false);
+    for (unsigned i=0;i<game.end.draw_count;i++) if (!ending_layers || !(game.end.draws[i].attributes&4u)) draw_end(&game.end.draws[i],false);
     /* The mission actor's CONTINUE? and digit (program 018120). */
     for (unsigned i=0;i<game.continue_sprites.draw_count;i++) draw_end(&game.continue_sprites.draws[i],false);
     rdpq_set_scissor(0,0,320,240);

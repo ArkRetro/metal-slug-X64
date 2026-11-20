@@ -22,7 +22,7 @@ and no explicit stop, no access outside the ending's RAM, no missing descriptor 
 import argparse,os,re,subprocess,sys,time
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__,formatter_class=argparse.RawDescriptionHelpFormatter)
-p.add_argument('rom');p.add_argument('--out',required=True);p.add_argument('--seconds',type=float,default=2400);p.add_argument('--period',type=float,default=20.0)
+p.add_argument('rom');p.add_argument('--out',required=True);p.add_argument('--seconds',type=float,default=2400);p.add_argument('--period',type=float,default=20.0);p.add_argument('--period-late',type=float,default=3.0)
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
@@ -65,7 +65,9 @@ try:
         if t>=nextgrab:
             if k==1:subprocess.run([XD,'windowmove',win,'0','0'],env=env)
             ph=re.findall(r'MSX ENDING credits phase (\d+)',text);sc=re.findall(r'MSX ENDING scene (\d+)',text)
-            subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f"g{k:03d}_s{sc[-1] if sc else 0}_p{ph[-1] if ph else 'x'}.png")]);k+=1;nextgrab=t+a.period
+            subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f"g{k:03d}_s{sc[-1] if sc else 0}_p{ph[-1] if ph else 'x'}.png")]);k+=1
+            # After the credits (the last screen, the ranking, the title: 496 updates in all) a picture every --period-late seconds.
+            nextgrab=t+(a.period_late if ph and int(ph[-1])>=1 else a.period)
         time.sleep(.2)
     text=log()
     steps={int(m.group(1)):int(m.group(2)) for m in re.finditer(r'MSX ENDING credits phase (\d+) update=(\d+)',text)}   # the last line of a phase: its update

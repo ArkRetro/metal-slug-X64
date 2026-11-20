@@ -1037,6 +1037,26 @@
     "004492"
    ],
    "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 153704): 004492 sprite program op (routine 0DDE9E) x33"
+  },
+  {
+   "label": "music_results",
+   "word": "002E",
+   "callers": [
+    "0570AE"
+   ],
+   "event": "the results' music: the root 0570A0 of the game's ending asks for 0x2E (0120F8, return 0570AE) in its first update; it is faded by 01228C(0x80) (0571BA: 0A, A0) when both results are done",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_credits",
+   "word": "0031",
+   "callers": [
+    "0A445C"
+   ],
+   "event": "the credits' music: the node 0A4408 of the stage 0x2C (created by the sub-script of the figures 0A8C62) asks for 0x31 (0120F8) once, after its +6E updates; faded by the node 0A453A (01228C with its +6E) at the end of the credits",
+   "music": true,
+   "frames": 24000
   }
  ]
 }

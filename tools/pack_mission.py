@@ -599,6 +599,10 @@ def rom_native_rules(rom,descriptor,model):
     slots={0x10E83E:0,0x10D7B6:1 if 0x10E8C6 in mapped else 2,0x10E8C6:2,0x10C72E:3}
     for o in mapped:
         if factors.get(o)=={(0x100,0x100)} and o not in rebased:rules[slots[o]]=(1,1,1,1,-32768,32767)
+    # Mission 0xC (the ending, docs/MISION6.md "Fondos del final"): the credits' own map has no tile; the cells are the
+    # x pages of the last screen and of the title (tools/export_ending_layers.py), whose layers never follow the camera:
+    # the runtime shows a page with the layer's own offset (src/actor.c).
+    if descriptor==0x01709E:return [never]*4
     assert rules[3]!=never,'the terrain layer does not follow the camera'
     return rules
 def layer_rules(model):

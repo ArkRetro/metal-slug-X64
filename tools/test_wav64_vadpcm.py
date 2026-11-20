@@ -33,6 +33,19 @@ for f in sorted(audio.glob('*.wav64')) if audio.exists() else []:
     if head[5]!=1 or not s.exists():continue
     with wave.open(str(s)) as w:x=np.frombuffer(w.readframes(w.getnframes()),dtype='<i2')
     pcm,rate=W.decode(f);r=W.check(pcm[:,0],x,rate);assert r['ok'],(f.name,r);checked+=1
+# Music (lossy audio compression approved by the user on 20-XI, docs/APROXIMACIONES.md): no bit-exact comparison;
+# every music pack carries its SNR, measured by pack_game_audio.py on its decoded PCM against the 20 kHz staging PCM
+# (the codec) and against the 48 kHz render (codec + band limit); the file must be the one measured (sha256).
+music=0
+man=audio/'manifest.json'
+if man.exists():
+    import hashlib
+    for label,e in json.loads(man.read_text())['sounds'].items():
+        if not label.startswith('music') or not (audio/(label+'.wav64')).exists():continue
+        assert 'snr_codec_db' in e and 'snr_render_db' in e,(label,'pack without its SNR')
+        assert hashlib.sha256((audio/(label+'.wav64')).read_bytes()).hexdigest()==e['sha256'],(label,'not the measured pack')
+        music+=1
+print('music packs with their measured SNR',music)
 sel=ROOT/'filesystem/cinematics/select-music.json'
 if sel.exists():assert json.loads(sel.read_text())['vadpcm_check']['ok']
 print('effects checked',checked,'select music',sel.exists())

@@ -26,6 +26,7 @@ static msx_sfx_state_t policy;
 static uint16_t music_word;
 static bool open_music(uint16_t word);
 static const char *music_name(uint16_t word);
+static bool music_once;   /* the music playing is a one-shot (open_music) */
 static unsigned port_shots(const msx_game_t *g) {return g->shots-g->h_shots-g->c_shots-g->down_shots;}
 static unsigned shots,vehicle_health,vehicle_frame,vehicle_state;
 static bool complete;
@@ -165,6 +166,11 @@ static const char *music_name(uint16_t word) {
      * ask for 0x2C (0A 60 at 324391, 00 2C at 324635) and 0x29 (0A 40 at
      * 347135, 00 29 at 348850). */
     case 0x0029: return "music_mission6_boss";
+    /* The game's ending (data/sound_map.json): the results' root 0570A0
+     * asks for 0x2E in its first update (0570AE), the credits' node 0A4408
+     * for 0x31 once (0A445C); 01228C fades both. */
+    case 0x002e: return "music_results";
+    case 0x0031: return "music_credits";
     default: return NULL;
     }
 }
@@ -178,6 +184,9 @@ static bool open_music(uint16_t word) {
     bool ok=msx_audio_open(MSX_AUDIO_MUSIC,intro) && msx_audio_open_loop(MSX_AUDIO_MUSIC,body);
     if (!ok) ok=msx_audio_open(MSX_AUDIO_MUSIC,body);
     if (ok) music_word=word;
+    /* 0x31 ends by itself (its isolated render: status OK at 163.3 s, packed
+     * as a one-shot, no intro): played once, not looped. */
+    music_once=ok && word==0x0031;
     return ok;
 }
 /* 018434 requests the word (0120F8) and the driver plays it: whatever
@@ -202,7 +211,7 @@ void game_audio_mission_start(void) {
 }
 void game_audio_music(bool play) {
     if (!active || !music_ready) return;
-    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,true,VOLUME_PERCENT/100.0f);
+    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,!music_once,VOLUME_PERCENT/100.0f);
     else {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;}
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }

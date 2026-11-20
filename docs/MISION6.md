@@ -1142,13 +1142,23 @@ que tras un GAME OVER.
 líneas (como `0x180`; T1, VRAM 72900: sprites en las líneas 8 / 48). `draw_end` tomaba la palabra con signo y lo
 dibujaba 512 líneas fuera: corregido (`actor.c`), el plano sale tras los nombres.
 
-**Sprites con zoom a 0 px: pendiente, con lo que falta.** El dial de resultados encoge solo en x (`+12`; en VRAM cada
-sprite de 16 px lleva su nibble de SCB2, alternando p. ej. A / B en 61500) y las piezas del título en x e y. El port
-escala cada parte con un rectángulo del RDP (posición y tamaño en coma flotante): no es la tabla de columnas de la LSPC
-(qué columnas de cada sprite de 16 px se quedan con cada nibble: lógica del chip, no está en la ROM del juego) ni la
-ROM L0 del encogido vertical (`000-lo.lo`, de la BIOS). Para validarlo a píxel hay que dibujar por sprites de 16 px
-con esas dos tablas (la de x habría que sacarla de volcados de VRAM + PNG de MAME, nibble a nibble: T1 tiene los 16
-valores en el dial) y comparar en el anfitrión; no hecho en esta sesión.
+**Sprites con zoom: el encogido de la LSPC, validado en el anfitrión (paso 1 de 2).** `tools/check_lspc_shrink.py`
+dibuja cada sprite de un volcado de VRAM como la LSPC y lo compara con la captura de pantalla de MAME del mismo
+fotograma (`game<n>.png`, líneas de raster 16..239). Vertical: la ROM L0 de la BIOS (`000-lo.lo` de `neogeo.zip`),
+byte `(zoom_y << 8) | línea` = tesela (nibble alto) y línea de la tesela; con el bit 8 de la línea, espejo
+(línea ^ 0xFF, tesela ^ 0x1F, línea ^ 0xF); con tamaño ≥ 0x21 la altura encogida se repite plegándose; una línea
+cuya tesela es ≥ el tamaño no se dibuja. Horizontal: la tabla `COLUMNS` (qué columnas de las 16 quedan con cada nibble
+de SCB2; el sprite encadenado va en x + nibble + 1). La tabla no sale de la ROM del juego: está contrastada contra
+las capturas columna a columna (para cada nibble y cada columna de salida, la columna de origen que da los píxeles
+de la captura). **T1, los 57 volcados con sprites con zoom y captura (resultados y título): 347 427 píxeles de
+sprites con zoom iguales y 7 distintos**; están los 15 nibbles 0..14, todos con 0 distintos salvo el 6, que tiene 7.
+De los sprites con zoom vertical, 24 810 son iguales y 7 distintos. Los 7, y 2 469 píxeles de sprites sin zoom, caen en
+los volcados 73080..73350 del fundido del título; en los que he mirado (73260), el color de la captura no es el de la
+paleta volcada (la paleta cambia durante el fotograma). El encogido no tiene que ver. Se excluyen las teselas fijas
+distintas de 0x0FF: la 0 no es transparente, porque las columnas 0 y 39, todas de tesela 0, salen negras sobre los
+sprites. También se excluyen los sprites autoanimados. Informe: `build/lspc_shrink_report.json`. **Paso 2,
+pendiente**: el port (`actor.c`, `scene_render_sprite_scaled`) sigue escalando cada parte con un rectángulo del RDP;
+falta dibujar sprite a sprite de 16 px con estas columnas y líneas.
 
 **Otros**: `romfs/scene.pack` de este árbol estaba atrasado respecto a sus fuentes (8285 páginas; las fuentes dan
 8301, como ws-logo y ws-m4) y `make check` fallaba en la prueba de compresión; rehecho con `tools/pack_scene.py` y

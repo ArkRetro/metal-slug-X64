@@ -1658,6 +1658,11 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	# captures-m6/fam/T1 (each nibble 0..14 from one dump) and the shrunk sprites of two dumps (one with vertical shrink) against MAME's
 	# screenshots; skipped without the BIOS (000-lo.lo) or the capture.
 	python3 tools/check_lspc_shrink.py --quick --capture $(or $(MSX_T1),../captures-m6/fam/T1) --zip $(or $(MSX_BIOS_ZIP),$(dir $(or $(MSX_ROM_ZIP),mslugx.zip))neogeo.zip) --derive 60930,60960,61620,61260,61290,61020 --frames 61500,73200
+	# The sprite-list column writers 11D04 / 11E60 (a106..fffe, zoom +12 / +13 included: SCB2 nibble per column, SCB3
+	# zoomed y / size, SCB4 accumulated x), docs/MISION6.md: against MAME dumps of every frame of the results (ZC,
+	# 61490..61530) and the title (ZT, 73150..73410); skipped without them (build/captures, recipe in the doc).
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZC),build/captures/ZC) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZT),build/captures/ZT) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_wipe.c src/neo_wipe.c $(filter-out src/neo_wipe.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/wipe
 	$(BUILD_DIR)/host/wipe
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_muzzle.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/muzzle

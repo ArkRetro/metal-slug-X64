@@ -1190,6 +1190,29 @@ fotograma (`game<n>.png`, líneas de raster 16..239).
 - **`make check`** (versión rápida, unos 15 s): la tabla derivada de nuevo de los seis volcados de arriba, y 61500 y
   73200 (con zoom vertical) comparados con 0 distintos. Se salta sin `neogeo.zip` (`MSX_BIOS_ZIP`) o sin la captura.
 
+**Escritura de la lista de sprites en la VRAM (zoom incluido), traducida y comprobada palabra a palabra (parte A).**
+La lista que llena `00A03E` (entrada: +0 x, +2 y, +4 zoom x / zoom y = +12 / +13 del actor, +6 paleta << 8 |
+atributo & 7, +8 descriptor de P2, banco = bits 20..23 − 1) la ordena `0113EA` (radix estable por la palabra +2 del
+índice) y la escriben dos pasadas: **`011D04`** al final de la pasada del juego (SCB1/2/4 de los sprites que la pantalla
+no enseña: hacia delante desde el principio de la ventana `3954` / `395C` hasta su +6, o hacia atrás desde el final
+hasta su +4; luego invierte 1946) y **`011E60`** en el vblank (SCB3 de cada columna y SCB1/2/4 de los solapados;
+después `0103A6` / `010BC8` esconden el resto de la ventana con SCB3 = 8000). Cada entrada va a uno de 32 escritores
+de columnas (`00A086` + 4·((zoom ≠ FFFF) << 2 | atributo & 3), +0x20 en el vblank, +0x40 hacia atrás). Con zoom
+(`00AB7A` / `00C3EE` / …): por columna, acumulador `d4 = (d4 & FF) + 16·(zx+1) − 256` (inicio: byte bajo de
+x_desc·(zx+1)); negativo = columna sin anchura (no se escribe); si no, **SCB2 = (d4 & FF00) | zoom y** (nibble = anchura
+− 1), **SCB4 = x << 7** con x = x_entrada + ⌊x_desc·(zx+1)/256⌋ más las anchuras anteriores (con espejo: x_desc = ~x_desc
+y la anchura se resta antes), **SCB3 = (y_entrada + ⌊y_desc·(zy+1)/256⌋) << 7 | ⌈filas·(zy+1)/256⌉**, y SCB1 con las
+filas del descriptor y ceros en el resto de las 32. Columnas con x fuera de −8..311 no se escriben.
+`tools/check_zoom_scb.py` es la traducción (las 32 variantes como una función con sus parámetros) y la familia: de
+cada volcado justo tras `011D04` al siguiente de la otra lista, VRAM(f) + `011E60`(lista de f) + `011D04`(lista de g)
+= VRAM(g) en SCB1..SCB4 de los sprites de las ventanas, y las +4 / +6 de la RAM. **Capturas ZC** (resultados,
+fotogramas 61490..61530) y **ZT** (título, 73150..73410), volcados de cada fotograma: receta de TF de arriba con
+`MSX_TAS_DUMP_FRAMES=61490-61530` (`MSX_TAS_LAST=73410`) y `73150-73410` (`MSX_TAS_LAST=73420`); guardadas (RAM y VRAM)
+en `build/captures/ZC` y `ZT` de este árbol. **Resultado: 121 pares, 2 958 452 palabras iguales, 0 distintas**; 239
+entradas con zoom (80 sin espejo y 40 con espejo horizontal en el dial; 159 sin espejo en el título) y 14 957 sin zoom
+de las cuatro variantes. **Pendiente**: las variantes con zoom y espejo vertical (6 / 7) no salen en las capturas
+(traducidas igual que las demás, sin comprobar). En `make check` (se salta sin las capturas o la ROM).
+
 **Paso 2, pendiente**: el port (`actor.c`, `scene_render_sprite_scaled`) sigue escalando cada parte con un
 rectángulo del RDP; falta dibujar sprite a sprite de 16 px con estas columnas y líneas.
 

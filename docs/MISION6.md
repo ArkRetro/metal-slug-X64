@@ -1034,6 +1034,12 @@ volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de 
   primera pasada de lista una actualización tarde; ahora la hace en la carga de la etapa, como `0183D0` en la pasada de
   `0189FA`.)
 
+**Estado de las puertas (20-XI, `ab79392`)**: `make check` verde (328 PASS, 0 FAIL; las dos pruebas de mezcla de
+paleta se saltan sin `MSX_ROM_ZIP` y pasan a mano con la ROM), `make -j2` verde, `test_ending_ares.py` PASS dos veces
+con los mismos números de actualización (1, 5182, 5212, 5312, 5313, 5420, 5421, 5422, 5709) y `test_mission6_ares.py
+--stage 3` PASS (caché 3344 KB; superposición 3 de 62 240 B en 12 ms). La matriz completa de `regression_ares.py` no
+se ha pasado en esta sesión.
+
 **Pendiente (por orden)**:
 1. **Fondos de teselas** de los resultados (`056EF4`), la última pantalla (`017EB0` / `017EE6`), el ranking y el
    título (`0A7D4A`, `0A7D52`): son tablas `01AA28` / listas `0C81A6` con mapas propios; hoy esas pantallas salen con

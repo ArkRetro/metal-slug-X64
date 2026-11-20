@@ -1013,8 +1013,9 @@ volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de 
   Las cuatro variantes de página (0/4/8.., 1/5/9.., 2/6.., 3/7..: los subguiones 7..10) van todas.
 - **Validación de sprites contra T1** (`T1@646fe-a4744`, 374 volcados): **10 768 156 píxeles iguales; distintos solo
   en 4 volcados (63630, 65820, 68010, 70200), el fotograma en que nace una página: su primera lista de sprites aún no
-  está en la VRAM de ese volcado**. Las láminas y páginas ampliadas no existen; título y resultados usan zoom y el
-  rasterizador de la herramienta no lo pinta: **sin validar a píxel** (pendiente).
+  está en la VRAM de ese volcado**. Resultados, ranking y título (`T1@56fcc-585fa`, `T1@a7ffe-a8622`, 467 volcados):
+  **212 918 píxeles iguales, 0 distintos**; sus 190 entradas con zoom (el dial `0577E2`, las piezas `0A81A4` en vuelo) y
+  20 autoanimadas no las pinta el rasterizador de la herramienta: **sin validar a píxel** (pendiente).
 - `actor.c`: el paquete 13 se carga al empezar los resultados (pantalla en negro de `018954`), sin jugador ni HUD
   mientras dura el final (`msx_game_ending`), mezclas por fotograma (`scene_render_mixed_palette`, 24 por fotograma),
   y al acabar el título vuelve a empezar la partida (`0167A0`, la demostración, no está portada).
@@ -1037,9 +1038,11 @@ volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de 
    Con ellos van los textos que escriben esos reinicios de entorno y no las rutinas traducidas: en el título,
    `0A863C` (`03E2A8`, `0C81A6`, `03CF60`: el © y «INSERT COIN») y `017FD0`. Referencia: `T1/game72690.png` (la arena
    con «GAME OVER» y «PEACE FOREVER!»), `game72900.png` (ranking sobre el plano), `game73110.png` / `game73380.png`.
-2. **Paletas de la capa fija** en el final: el final pone las suyas (`03D4AC`: lista `03D3C4`; ranura 15 = 62 → 1
-   con peso 0xC). El HUD del port usa `hud-palette.bin`; sin comparar con los volcados de T1.
-3. **Sprites de resultados y título a 0 px** (zoom) y **la lámina oscilante `0A4698`**: la variante de láminas la
+2. **Paletas de la capa fija**: comprobadas con los volcados de T1. Los textos de resultados, última pantalla y
+   ranking usan las ranuras 0 y 4, **iguales a `hud-palette.bin`** (en los créditos, la última pantalla y el ranking
+   las 16 ranuras lo son; en los resultados cambia la 10, sin uso en el texto). Los del título usan la 6 y la 7, que
+   allí son otras (cambian las 5..10): van con sus textos, pendiente 1.
+3. **Sprites con zoom de resultados y título a 0 px** (el encogido del port es una aproximación del de la LSPC, como en el resto del juego) y **la lámina oscilante `0A4698`**: la variante de láminas la
    elige `0029C6` al empezar la etapa (alternativas 7..10 del segundo `random_choice`); el TAS da una sin láminas
    oscilantes y, sin escrituras en memoria, cambiarla exige otra partida que llegue a los créditos con otro número de
    llamadas al azar. No capturada.
@@ -1050,3 +1053,6 @@ volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de 
 6. **Cadena desde el jefe en ares**: `ENDING` empieza en `01893E`. Jefe → huida → cuenta están en las familias
    `m6boss6..8` y el último enemigo corre ya en la consola, pero no hay prueba de ares que lo venza (mando ciego).
 7. `0CAC24` (tarjeta de memoria) y `016572` (línea de créditos con 10FD91 bit 0) no se reproducen.
+8. **Entrada de nombre `05812A`** (cuando la puntuación entra en la tabla): el final recibe A, B y C (10C35C / 10C35D)
+   pero no la palanca (bits 2 / 3 de arriba / abajo: `msx_game_update` no los pasa): la letra no se puede cambiar en
+   la consola; acaba con A o por tiempo, como en el original. `ENDING` (puntuación 0) no pasa por ella.

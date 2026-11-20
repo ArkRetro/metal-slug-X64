@@ -15,6 +15,11 @@ GUARD['end']='!defined(N64)'
 # cartridge on the console: build/romblobs.bin ('MSXB', version 1, count, data bytes; then the bytes), each read by DMA
 # into a small window (program_file_rom, docs/RENDIMIENTO.md "Bloques de ROM en el cartucho"). Host: in the image.
 CART=(0x291cea,0x2b0386)
+# A blob with "pack_only" goes only into its group's mission pack (tools/pack_mission.py), in no program image, host
+# tests included: the palette mix table 0051D8 of the credits' pack. On the host nothing mixes palettes, and an
+# address inside it that a node holds as a stale +50 (0053C2, the Mission 3 jeep 0A2F2E's family m3jeep) must go on
+# reading as "no descriptor" there.
+d['blobs']=[b for b in d['blobs'] if not b.get('pack_only')]
 for b in d['blobs']:
     if int(b['rom'],16) in CART:b['group']='cart'
 GUARD['cart']='!defined(N64)'

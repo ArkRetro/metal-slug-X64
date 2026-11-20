@@ -86,4 +86,4 @@ finally:
     proc.terminate()
     try:proc.wait(10)
     except subprocess.TimeoutExpired:proc.kill()
-print('RESULT','PASS' if ok else 'FAIL');sys.exit(0 if ok else 1)
+print('RESULT:','PASS' if ok else 'FAIL');sys.exit(0 if ok else 1)

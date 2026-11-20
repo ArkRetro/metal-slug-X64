@@ -1016,6 +1016,10 @@ volcados `vram/ram/palette/png` cada 30 fotogramas (482) y la RAM de trabajo de 
   está en la VRAM de ese volcado**. Resultados, ranking y título (`T1@56fcc-585fa`, `T1@a7ffe-a8622`, 467 volcados):
   **212 918 píxeles iguales, 0 distintos**; sus 190 entradas con zoom (el dial `0577E2`, las piezas `0A81A4` en vuelo) y
   20 autoanimadas no las pinta el rasterizador de la herramienta: **sin validar a píxel** (pendiente).
+- La tabla `0051D8` va **solo en el paquete** (`"pack_only"` en `region_rom.json`: `compile_region_rom.py` no la pone
+  en ninguna imagen de programa). Con ella en las imágenes del anfitrión la familia `m3jeep` dejaba de pasar: un nodo
+  del jeep `0A2F2E` guarda en `+50` el valor `0053C2`, que cae dentro de esa tabla, y el arnés lo tomaba por un
+  descriptor de golpe (sin el blob se lee «sin descriptor», que es lo que da MAME).
 - `actor.c`: el paquete 13 se carga al empezar los resultados (pantalla en negro de `018954`), sin jugador ni HUD
   mientras dura el final (`msx_game_ending`), mezclas por fotograma (`scene_render_mixed_palette`, 24 por fotograma),
   y al acabar el título vuelve a empezar la partida (`0167A0`, la demostración, no está portada).

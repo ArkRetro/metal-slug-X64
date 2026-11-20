@@ -399,6 +399,13 @@ bool neo_world_parent(const neo_world_t *w,uint32_t tag,neo_contact_parent_t *ou
         const neo_layer_t *l=&w->layers[NEO_LAYER_MID];
         *out=(neo_contact_parent_t){tag,l->x,l->y,w->bridge_prev_x,w->bridge_prev_y,0};return true;
     }
+    /* The sky layer object 10E83E as a parent (the Mission 6 background fight 037404 flies on it): the camera
+     * list's layer (0C81C0), +14/+18 = its position (no parent), +1C/+20 the one before this update's step, +25 = 0
+     * (MAME fam M3 / TAS: data/m6air*_fixture). Mission 3's sky is the train's (neo_train.c): not this one. */
+    if (tag==0x10e83eu && w->camera_native && !w->kernel.train_on) {
+        const neo_layer_t *l=&w->layers[NEO_LAYER_SKY];
+        *out=(neo_contact_parent_t){tag,l->x,l->y,w->sky_prev_x,w->sky_prev_y,0};return true;
+    }
 #ifdef MSX_HAS_M3MID
     /* Mission 3: the mid-boss's layer object 10E8C6 (neo_m3mid.c). */
     if (tag==0x10e8c6u && w->m3layer_used) {
@@ -514,7 +521,7 @@ static void m4_blocks(neo_world_t *w,uint32_t map,const int16_t din[6]) {
     if (!t || t==0xffffffffu || d1 || d3!=mh) {w->unsupported++;w->unsupported_routine=0x0C714Eu;return;}   /* empty / filled maps, part columns: not written by this boss */
     unsigned slot=(unsigned)d4&31u,row=(unsigned)(~d5)&31u;
     for (int c=0;c<d2;c++,slot=(slot+1u)&31u) {
-        if (slot>=20u || (int)slot!=d0+c) {w->unsupported++;w->unsupported_routine=0x0C714Eu;continue;}   /* the boss's maps: slot = column, 20 wide */
+        if ((int)slot!=d0+c) {w->unsupported++;w->unsupported_routine=0x0C714Eu;continue;}   /* the bosses' maps: slot = column (20 wide in Mission 4, 26 the Mission 6 last enemy's 04522E) */
         w->m4col_map[slot]=map;
         w->m4col_top[slot]=(uint8_t)(((unsigned)((int8_t)w->m4layer[0x42+2*slot]>>3)+w->m4layer[0x83]+row)&31u);
     }
@@ -1781,7 +1788,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     w->marker_count[g->video&1u]=0;                          /* 0401E8 */
     e->markers=w->markers[(g->video&1u)^1u];e->marker_count=w->marker_count[(g->video&1u)^1u];
     g->markers=e->markers;g->marker_count=e->marker_count;
-    memcpy(g->view,w->view,sizeof(g->view));g->flag448=0;g->blood=w->blood;
+    memcpy(g->view,w->view,sizeof(g->view));g->flag448=w->ga_flags.m6_boss;   /* RAM 10C448 (the Mission 6 last enemy sets it at its end: the truck 029184 leaves) */g->blood=w->blood;
     /* Hurtboxes registered during the previous update are the ones queried
      * now (ROM 004C24 double buffer). */
     memcpy(w->last_boxes,w->boxes,sizeof(w->boxes));w->last_box_count=w->box_count;w->box_count=0;
@@ -2207,6 +2214,7 @@ void neo_world_camera(neo_world_t *w,const neo_world_player_t *pl) {
         for (unsigned i=0;i<2;i++) {c->op4_players[i].alive=p[i].alive;c->op4_players[i].px=p[i].px;c->op4_players[i].py=p[i].py;c->op4_players[i].rect_ok=p[i].rect_ok;}
         neo_camera_track(c,p,true,w->script.w69b8,w->script.w69ba);
         w->bridge_prev_x=w->layers[NEO_LAYER_MID].x;w->bridge_prev_y=w->layers[NEO_LAYER_MID].y;
+        w->sky_prev_x=w->layers[NEO_LAYER_SKY].x;w->sky_prev_y=w->layers[NEO_LAYER_SKY].y;
         neo_layers_step_own(w->layers,c->root_vx,c->root_vy,c->layer_flags,w->bridge.on,w->bridge_dx);
 #ifdef MSX_HAS_M3MID
         /* 0C8240: the Mission 4 boss's layer object 10D7B6 by its flag byte

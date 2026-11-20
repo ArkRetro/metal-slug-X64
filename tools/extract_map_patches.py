@@ -62,6 +62,15 @@ PATCHES={
               (0x10c72e,0x0bdbb2,(0,0,0xa,0xd,0x17,0x10)),
               (0x10c72e,0x0bdbb2,(0xc,4,8,6,0x36,0xb)),
               (0x10c72e,0x0bdbb2,(0xd,0xc,3,3,0x5e,0xd))],
+    # Mission 6 stage 3 (neo_m6boss.c k4493e, ROM 044978): the floor the last enemy's second form breaks as it comes
+    # down: the sub-map 045244 from the source offsets 045278[4 i] (i = 0..4) to (0x14, 9), 0xB x 7 blocks, the five
+    # of run4 at 346741, 346779, 346821, 346871 and 346916 (captures-m6/fam/SJ, a dump 10 frames or less after each:
+    # --patch-frames, --ram-colours).
+    (6,'s3'):[(0x10c72e,0x045244,(4,8,0xb,7,0x14,9)),
+              (0x10c72e,0x045244,(0x10,0,0xb,7,0x14,9)),
+              (0x10c72e,0x045244,(0x10,8,0xb,7,0x14,9)),
+              (0x10c72e,0x045244,(0x1c,0,0xb,7,0x14,9)),
+              (0x10c72e,0x045244,(0x1c,8,0xb,7,0x14,9))],
 }
 # Mission 4 (neo_m4props.c): every patch the props 0B9F4A can make before the
 # boss's road (callbacks 0BA288..0BA7AA, record +E of 0E68D0): the street's

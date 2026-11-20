@@ -16,7 +16,7 @@ typedef enum { MSX_OVL_M3BOSS, MSX_OVL_M4BOSS, MSX_OVL_M5BOSS, MSX_OVL_M6BOSS, M
 /* The region: exactly the largest image, neo_m6boss's (43 824 bytes, -Os, release and diag alike, 17-XI).
  * tools/link_overlays.py fails the build when an image does not fit and prints each image's size: a boss
  * that grows raises this to its new size. */
-#define MSX_OVERLAY_BYTES 43824u
+#define MSX_OVERLAY_BYTES 62240u
 #if MSX_OVERLAY
 /* The overlay's tick, the overlay copied first if another one (or none) is in
  * the region. A copy while overlay code is running (a boss's tick reaching

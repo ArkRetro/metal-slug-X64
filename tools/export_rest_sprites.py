@@ -516,6 +516,13 @@ RESOURCES=RESOURCES+(0x508,)
 ROOTS=ROOTS+(0x2415f8,0x241ba6,0x241ab0,0x241b3a,0x241b4e,0x241bc8,0x241be2,0x241c8a,0x241c76,0x241d32,0x24136e,0x2413b4,0x241430,0x2414be,0x2414c0,0x24153e,0x24235c,0x242386,0x242270,0x241e1e,0x241ef2,0x241fc6,0x24209a,0x24216e,0x242242,0x242c58,0x242c86,0x242d54,0x242d90,0x242dbe,0x242e10,0x242e1c,0x242e4a,0x2432a6,0x2432e8,0x2433ca,0x24348e,0x242e56,0x242efc,0x243004,0x24306e,0x243100,0x24315a,0x243200,0x243656,0x243556,0x243604,0x24855c,0x242404,0x242642,0x242908,0x242a00,0x242a94,0x242b52,0x241a4e,0x241a5a,0x241362,0x22d372)
 ROOTS=ROOTS+(0x243662,0x243728,0x243744,0x243764,0x24378e,0x2438a4,0x24396a,0x2436e0,0x2438c4,0x243a30,0x22d2a6)
 RESOURCES=RESOURCES+(0x102,0x35d,0x364,0x365,0x36c,0xd7,0xd8,0xd9,0x10b,0xdb,0xe7,0x109,0xda,0x176,0x169,0xea,0xeb,0xec,0xed,0xee,0x10a,0xef,0x506,0x113,0xe8,0xe9,0x10c,0x184,0x185,0x186,0x175)
+# The background fight 037404 (planes 23C0DE / 23C212, death 23C340, smoke 23C446, shots 23C184 / 23C4CA / 23C2EE /
+# 23C550: palettes FD / FF, 100, FE) and the last enemy's escape 04677A (the craft 243AD6.. with palette 248, its
+# actors 2440D0.., the troopers 2442E8..; captures-m6/fam SA, SB, SD).
+ROOTS=ROOTS+(0x23c0de,0x23c212,0x23c340,0x23c446,0x23c184,0x23c4ca,0x23c2ee,0x23c550,
+    0x243ad6,0x243b00,0x243b2a,0x243c36,0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,0x24451c,0x2443fe,0x244458,0x244572,0x244630)
+# 144: the debris pieces 01D00C..01D078 of the first form's wreck (neo_effects.c debris_entry), seen in SB and SJ.
+RESOURCES=RESOURCES+(0xfd,0xfe,0xff,0x100,0x101,0x248,0x144)
 DRAWN_7A=(0x29fb62,)
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
@@ -526,7 +533,9 @@ def main():
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
+    p.add_argument('--bit2-plain',action='store_true',help='entries with attribute bit 2 are rasterized as plain sprites (the sky-layer actors of the Mission 6 background fight 037404 set it on every entry and their VRAM tiles carry no auto-animation bits: reconstruct() refuses a slot that has them)')
     a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
+    if a.bit2_plain:globals()["AUTO_BITS"]=8
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
     progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in ROOTS]
     assets=[]
@@ -594,6 +603,7 @@ def zoomed_slots(vram):
         for row in range(rows):out.add(vram[slot*64+row*2+1]>>8)
     return out
 MASK_AUTO=False
+AUTO_BITS=12
 def validate(capture,nodes,descs,crom,stats,per):
     # Sprite-list entries written during each update of the nodes; at a dump
     # every node contributes its last (or, second try, its previous) update.
@@ -627,7 +637,7 @@ def validate(capture,nodes,descs,crom,stats,per):
             # Zoomed sprites are not rasterized; auto-animated entries (attr bits 2/3: the LSPC counter picks the
             # tile, e.g. the GO arrow 05287C) neither.
             dl=[d for d in dl if d['attr']>>8 not in zoomed]
-            return [d for d in dl if not d['attr']&12],[d for d in dl if d['attr']&12]
+            return [d for d in dl if not d['attr']&AUTO_BITS],[d for d in dl if d['attr']&AUTO_BITS]
         def paint(dl,auto):
             native=[0]*(320*256)
             for d in dl:
@@ -677,8 +687,8 @@ def validate(capture,nodes,descs,crom,stats,per):
         if not cand:continue
         every=[d for c in cand.values() for x in c for d in x[1]]
         stats['zoomed_entries_skipped']+=sum(1 for d in every if d['attr']>>8 in zoomed)
-        stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&12)
-        if any(d['attr']&12 for d in every) and not MASK_AUTO:continue
+        stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&AUTO_BITS)
+        if any(d['attr']&AUTO_BITS for d in every) and not MASK_AUTO:continue
         slots={d['attr']>>8 for d in entries(every)[0]}
         try:im,_=reconstruct(v,pw,crom,slots)
         except AssertionError as err:

@@ -509,6 +509,18 @@ ROOTS+=[0x2415f8,0x241ba6,0x241ab0,0x241b3a,0x241b4e,0x241bc8,0x241be2,0x241c8a,
 ROOTS+=[0x242404,0x242642,0x242908,0x242a00,0x242a94,0x242b52,0x241a4e,0x241a5a,0x241362,0x22d372]
 # The second form's walkers 046112 / 04611C, their bombs 046510 / 0465FE.
 ROOTS+=[0x243662,0x243728,0x243744,0x243764,0x24378e,0x2438a4,0x24396a,0x2436e0,0x2438c4,0x243a30]
+# The escape 04677A's craft 04687A: 243AD6, its path calls 0469C0 / 0469D6 243B00 / 243B2A, its part 0469E8 243C36.
+ROOTS+=[0x243ad6,0x243b00,0x243b2a,0x243c36]
+# Its other actors: 046EFC 2440D0 / 2440B6 / 24409C / 244082 (table 244054) and 2440EA; the troopers 04702C.. 2442E8 /
+# 24449E, 244366 / 24451C, 2443FE / 244458 (047238), 244572; 047240 244630.
+# The background fight 037404: the planes 23C0DE / 23C212, their death 23C340, smoke 23C446, shots 23C184 / 23C4CA and
+# 23C2EE / 23C550.
+ROOTS+=[0x23c0de,0x23c212,0x23c340,0x23c446,0x23c184,0x23c4ca,0x23c2ee,0x23c550]
+ROOTS+=[0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,0x24451c,0x2443fe,0x244458,0x244572,0x244630]
+# The ending 0570A0 (neo_ending.c): the dial's pieces 05785A / 057862 (table 056FC4).
+ROOTS+=[0x24ba2a,0x24ba34]
+# The ranking 057E00's piece 0580A2 (table 24BA3E).
+ROOTS+=[0x24ba46,0x24ba52]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

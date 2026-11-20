@@ -714,8 +714,9 @@ static bool k9d470(neo_gactor_t *a,neo_genv_t *e) {
     if (x<-0x40 || x>0x1c0) return true;
     return ga_cull(a,e,0x9d7c8);
 }
-/* 09D496: +90 bit 4 asks 044930 (not ported: explicit stop). */
-static bool k9d496(neo_gactor_t *a,neo_genv_t *e) {if (BIT(0x90,4)) ga_fail(e,0x44930);return false;}
+/* 09D496: with +90 bit 4, the carry of 044930 (tst.b $4448(a5): RAM 10C448, set to FF at the end of the Mission 6
+ * last enemy's second form, neo_m6boss.c); clear without it. */
+static bool k9d496(neo_gactor_t *a,neo_genv_t *e) {return BIT(0x90,4) && e->flags && e->flags->m6_boss;}
 /* 09D5BA / 09D5EE: the item +80/+82 once (08CDB2 at (0, 4) / (0, 10)). */
 static void k9d5ba(neo_gactor_t *a,neo_genv_t *e,int16_t dy,bool rise) {
     if (!BIT(0x90,6) || BIT(0x90,7)) return;
@@ -897,7 +898,10 @@ static ga_result_t shield_tick(neo_gactor_t *a,neo_genv_t *e) {
         /* fall through */
     case 0x9b4e4:k9cd02(a,e);ANIM();if (r) SL(0,0x9b500);SL(0x50,0);return t47a(a,e);
     case 0x9b500:
-        if (BIT(0x90,4)) {ga_fail(e,0x4611c);return GA_UNSUPPORTED;}   /* jmp 04611C */
+        /* 09B532: jmp 04611C: the node goes on as the Mission 6 last enemy's walker (neo_m6boss.c, its constructor
+         * entry: family m6boss5 for the nodes born there). No recorded play makes this jump (run4 and the TAS searched,
+         * captures-m6/fam/SM): translated without a bit-exact window of the hand-off itself. */
+        if (BIT(0x90,4)) {SL(0,0x4611c);return neo_region_tick(a,e);}
         CLR(0x5f,7);SB(0x5a,0);SB(0x17,0xff);SL(0x50,0x9d62a);solid(a,e,0);
         /* jmp 0B0626: the node becomes a soldier (the world moves it). */
         if (!e->become_soldier || !e->become_soldier(e->ctx,a,0xb0626)) {ga_fail(e,0xb0626);return GA_UNSUPPORTED;}
@@ -1170,8 +1174,9 @@ static ga_result_t shield_tick(neo_gactor_t *a,neo_genv_t *e) {
         SL(0x30,(uint32_t)((int32_t)d0*d1));SL(0x34,(uint32_t)((int32_t)d0*d2));
         SW(0x66,0xe0ef);SW(0x1e,0xe0ef);SET(0x15,5);ga_palette(a,0x22);
         SSTART(0x2a0f26);SL(0,0x9c80c);
-        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
-    }
+        if (e->unsupported) return GA_UNSUPPORTED;
+    }   /* 09C806 stores 09C80C and runs on into it (no rts; family m6flee) */
+        /* fall through */
     case 0x9c80c: {
         ga_air(a,e);
         uint32_t program;

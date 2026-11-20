@@ -64,3 +64,33 @@ Pantalla de opciones (`work-chars`, 11-XI): prueba `options` añadida a la matri
 | Voz de muerte de Tarma `1087` | pendiente de captura con audio |
 | `veh` (B69) tras fusionar ccr `91d8ef3` en `work-chars` (menú de opciones + M6) | no era de la rama (13-XI): con la misma prueba fallaron igual (cúpulas, cámara 1920, ~90 muertes en 3049 s) `work-m4` y `work-m5`, sin el menú; el cartucho de ccr `91d8ef3` compilado aparte pasó una vez (1598 s, 43 muertes en las cúpulas). Causa hallada en `work-m4` (`326c1e1`/`6173047`): con la Z del N64 asignada, la prueba activaba la barra de vida y el mando ciego se queda en las torres de 1920; la matriz corre ahora `veh` con `--no-lifebar` (como la base). Diferencia real del menú anotada: BLOOD sale OFF (valor por defecto de la tabla EU de la ROM) donde el cartucho sin menú usaba `MSX_BLOOD` = 1 |
 | `m4boss` en `work-chars` (menú de opciones, BLOOD OFF por defecto) | abierto (13-XI): con ccr `4de14ab` fusionado, `make check` y el resto de la matriz PASS, pero `m4boss` da missing_draw 3976 y 4043 (base 2061; mismo origen: descriptor 0 tras `16929E`, paletas 10/20/30/40); con la EEPROM puesta a BLOOD ON (`10FD8F` = 1, el valor de las capturas y de `MSX_BLOOD`) baja a 1694. Causa: la M4 con BLOOD OFF dibuja muertes sin exportar (las exportaciones y capturas de la M4 son con sangre). Pendiente de decidir: exportar la M4 con una captura BLOOD OFF (agente A) o correr la matriz con la EEPROM de las capturas. Sin subir a ccr hasta entonces |
+
+## `m4boss`: no era el juego, era el mando (20-XI, agente S)
+
+En las pasadas que fallaban (`agentO/matrix`, `agentO/ctl`, la del agente I con otra ares a la vez) el registro tiene
+`MSX player left vehicle kind=1 (0C30F0)` uno o dos segundos después de montar en el SV-001 de 4288, y a partir de ahí
+`MSX vehicle hit ... mount=0` y los dibujos sin descriptor tras `169276..16929E` (el SV-001 abandonado embistiendo:
+3818 / 4897 frente a 2061). Causa: montado, **A + B a la vez es la salida `093A08`** (`0CA1B0`: bit 7 de la palabra del
+mando; regla de la ROM, bien traducida), y el mando ciego pulsaba el fuego a 5 Hz y el salto 0,2 s cada 1,5 s sin
+relación entre ambos: que coincidieran en una actualización dependía del reloj del anfitrión. No es una regresión.
+
+Arreglo en la prueba (`tools/test_mission4_ares.py`): montado (`MSX player mounted vehicle` posterior al último `left
+vehicle` / muerte / reaparición), un salto es una secuencia: fuego suelto, 0,3 s, A 0,2 s, 0,3 s, fuego otra vez.
+Además las pruebas de las misiones 4, 5 y 6 cuentan ahora en **tiempo de juego** (`tools/ares_clock.py`: el cartucho
+escribe `ticks=N` en la línea periódica de etapa; 60 por segundo): el programa del mando y `--seconds` ya no cambian
+con la carga de la máquina (con otra ares y `make check` a la vez la emulación iba al 40 %). Los límites de
+`regression_ares.py` de esas pruebas son tiempo del anfitrión (tres veces el de juego más el arranque). Lo que sigue
+dependiendo del anfitrión: el fotograma exacto en que llega cada tecla de `xdotool` (ares no tiene entrada grabada).
+
+Pasada del 20-XI sobre este cartucho (`--only m4boss`, con `make check` y la ares de otro agente a la vez: emulación al
+~30 %): monta en el SV-001 de 4288, 12 golpes montado (`mount=1`), **ninguna salida por A + B**; el SV-001 muere por
+daño (`09391E`, vida 0) antes del jefe y a pie el mando pelea sin derrotarlo (cámara 14 188 a los 1330 s de juego; en
+las pasadas buenas moría entre 9456 y 13 717). La corté ahí para correr `m6boss`: **`m4boss` sigue sin veredicto verde**.
+Lo que queda no es azar del reloj sino del mando: las pasadas que pasaban llegaban al jefe montadas. Siguiente paso
+(sin tocar el juego): escribir en el registro la x de la capa `10D7B6` y que el mando se encare al jefe (B78).
+
+Otra dependencia del reloj hallada el 20-XI (pasada `m6boss` con la emulación al 30 %): la pulsación de Start en
+CONTINUE? duraba 0,1 s del anfitrión, menos que una lectura del mando del juego a esa velocidad; la tercera no entró,
+la cuenta llegó a 0 y el juego volvió a la Misión 1 (`MSX game over: mission restart`), con la prueba esperando en
+vano. Ahora `test_mission4/6_ares.py` repiten Start (0,4 s) hasta ver `MSX panel play`, y `test_mission5_ares.py`
+pulsa 0,4 s.

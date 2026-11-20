@@ -23,7 +23,7 @@ ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
 N64_CFLAGS += -DPROGRAM_ARENA_KB=$(PROGRAM_ARENA_KB) -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
-WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_m6bridge.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m4boss.c src/neo_m5props.c src/neo_m6props.c src/neo_m6enemy.c src/neo_m6boss.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m5mech.c src/neo_m5sewer.c src/neo_m5boss.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
+WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_m6bridge.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_ending.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m4boss.c src/neo_m5props.c src/neo_m6props.c src/neo_m6enemy.c src/neo_m6boss.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m5mech.c src/neo_m5sewer.c src/neo_m5boss.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
 # RAM budget (docs/RENDIMIENTO.md): actor/boss/cutscene modules are cold
 # code, compiled -Os (~78 KB less program image). The per-frame core (world,
@@ -580,6 +580,14 @@ $(BUILD_DIR)/descent_fixture.h: tools/extract_descent_fixture.py data/descent_fi
 $(BUILD_DIR)/continue_sprites_fixture.h: tools/compile_continue_sprites.py data/continue_sprites_fixture.json.gz
 	@mkdir -p $(BUILD_DIR)
 	python3 tools/compile_continue_sprites.py data/continue_sprites_fixture.json.gz --output $@
+# The game's ending (src/neo_ending.c) against the TAS family trace of captures-m6/fam/Q1 (runQ1.sh: from end27900 to
+# the title, no memory writes; tools/extract_ending_fixture.py, docs/MISION6.md "El final"): scene = the results and
+# ranking 0570A0 (--range 56ef0-57dff --range 58112-58640 --root 570a0 and the --skip list of the fixture).
+ENDINGS := scene ranking
+ENDING_HEADERS := $(patsubst %,$(BUILD_DIR)/ending_%_fixture.h,$(ENDINGS))
+$(BUILD_DIR)/ending_%_fixture.h: tools/compile_ending_fixture.py data/ending_%_fixture.json.gz
+	@mkdir -p $(BUILD_DIR)
+	python3 tools/compile_ending_fixture.py data/ending_$*_fixture.json.gz --output $@ --name ending_$*
 TALLY_HEADERS := $(patsubst %,$(BUILD_DIR)/tally_%_fixture.h,$(TALLIES))
 $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixture.json.gz
 	@mkdir -p $(BUILD_DIR)
@@ -588,7 +596,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6boss8 m6boss9 m6flee m6truck m6air m6air2 m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -762,6 +770,41 @@ FAMILY_ARGS_m6boss4 := $(FAMILY_ARGS_m6boss1) --resume
 # m6boss5 = window 5 (captures-m6/fam/M5: LOAD=at_340000 FROM=348300 LAST=350400 RANGE=41500-46800): the second form
 # (0417F0, 04249E / 0424AC, the troopers of attack 8) and the spawner 045EF6 with its walkers 046112 / 04611C and bombs.
 FAMILY_ARGS_m6boss5 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss6 = window 6, from the TAS (captures-m6/fam/P1: runP1.sh, tas_updates.lua from u26340 to u26708, RANGE=41500-46800
+# ROOTS=bea82): the end of the second form, the death 04180A.. (041D2E, 041DD4 with 018F92, 041E9A: the walk 0CA438 / 0CA49C),
+# the escape 04677A with its timeline actors 046858 and the wait 0418B0.
+FAMILY_ARGS_m6boss6 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss7 = window 7, from the TAS (captures-m6/fam/P2: LOAD=u26400:26400 LASTU=28000 NAME=P2 sh runP1.sh, to frame 60000):
+# the escape 04677A to its end with all its actors (046A9A..047256) and the parts' last orders.
+FAMILY_ARGS_m6boss7 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss8 = window 8, from the TAS (captures-m6/fam/Q1: runQ1.sh, tas_updates.lua from end27900 = frame 59999 with no memory
+# writes, RANGE=41500-47400): the body's wait 0418B0, its stage end 0418C2 (018F40: 10C303 = 0, 10C300 = FF so no 0AAA88)
+# and its tail 0418CE to the delete-all 004192 of 018976 (frame 60917); the extraction of m6boss7.
+FAMILY_ARGS_m6boss8 := $(FAMILY_ARGS_m6boss1) --resume
+# m6boss9 = window 9 (captures-m6/fam/SH: LOAD=at_340000 LOADF=340000 FROM=341100 DUMP0=341120 LAST=341400 PERIOD=2
+# RANGE=41500-46800 sh runS1.sh): the part 042E22's attack (042E5E..042EA2) with its shells 042F04 / 042F5C and their
+# end 043054 -> 01C87E, which no earlier window holds (run4 fires them at 335381, 337945 and 341121 only); the extraction
+# of m6boss1.
+FAMILY_ARGS_m6boss9 := $(FAMILY_ARGS_m6boss1) --resume
+# m6flee = the shield soldier 09BA2A alive when the Mission 6 last enemy dies (TAS, captures-m6/fam/SK: LOAD=u26340:26340
+# LASTU=26708 PERIOD=0 RANGE=9a700-9d600 ROOTS=bea82 NAME=SK sh runS2.sh): 09D496 with +90 bit 4 reads RAM 10C448
+# through 044930 (FF from 041D2E on) and the soldier leaves by 09C292 / 09C2AC; --range 9ae1e-9d630 --attacks --ram
+# 1063d8-1063da --ram 10c72e-10d83e --ram 10e94e-10e9dc --ram 10000e-100010 --ram 10c448-10c449 --ram 10c33c-10c33e; its
+# shots 09C76C run on into 09C80C in their first update (the first capture that holds them).
+FAMILY_ARGS_m6flee := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve --node-fields 72 --resume
+# m6truck = the "background" truck 029184 (spawn-table offset 0x348) of the Mission 6 last enemy's sub-script 2C7920 at
+# 3000 of health, with its body 029802 and smoke 01D86C, to its exit when RAM 10C448 is set (0293DC) and its deletion;
+# TAS, captures-m6/fam/SL (LOAD=u24600:24600 LASTU=26708 PERIOD=0 RANGE=29160-29d94 ROOTS=29184 NAME=SL sh runS2.sh; run4
+# never makes it), --range 29160-29d94 --range 1d86c-1d8ff --attacks and the RAM of m6flee.
+FAMILY_ARGS_m6truck := --tree --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
+# m6air = the Mission 6 stage 3 background fight 037404 (neo_m6boss.c: its planes 03762A / 03790C, shots, smoke and the
+# formations of 037FBC); captures-m6/fam/M3 (runM.sh LOAD=at_323500 FROM=324600 LAST=325800 ROOTS=37404), --range
+# 37404-38900 --attacks --ram 1010a4-105564 --ram 1063d8-1063da --ram 10c72e-10d83e --ram 10e94e-10e9dc --ram 10e83e-10e94e
+# --ram 10000e-100010 --ram 10c33c-10c33e.
+FAMILY_ARGS_m6air := --root-words --attacks --ram-creators --terrain 10c72e --ring 10c72e --group-map 0 --reserve --node-fields 72,76,7e
+# m6air2 = the same from the TAS (captures-m6/fam/P5: LOAD=u24600:24600 LASTU=26420 ROOTS=37404 NAME=P5 sh runP3.sh): all
+# three formations; the bomber 038702 never comes out.
+FAMILY_ARGS_m6air2 := $(FAMILY_ARGS_m6air)
 FAMILY_ARGS_m5mech := --attacks --terrain 10c72e --ring 10c72e --group-map 0 --root-words --reserve
 # m5pow = the Mission 5 sewer crank 095C98 and its child 095F8C (neo_m5sewer.c; the item 08C374 it makes is outside the
 # family); m5sewer = the sewer soldiers 089948 / 08995A / 08996A and their guns 08A264. captures-m5/fam/X (run4 replay from
@@ -1591,7 +1634,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
@@ -1804,6 +1847,7 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_descent.c src/marco_controller.c src/marco_animation.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/descent
 	$(BUILD_DIR)/host/descent
 	for t in $(TALLIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DTALLY_HEADER="\"tally_$${t}_fixture.h\"" -DTALLY_NAME=tally_$$t tools/test_neo_tally.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/tally_$$t && $(BUILD_DIR)/host/tally_$$t || exit 1; done
+	for t in $(ENDINGS); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DENDING_HEADER="\"ending_$${t}_fixture.h\"" -DENDING_NAME=ending_$$t tools/test_neo_ending.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/ending_$$t && $(BUILD_DIR)/host/ending_$$t || exit 1; done
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_fuel.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/fuel
 	$(BUILD_DIR)/host/fuel
 	for f in $(FAMILIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DFAMILY_HEADER="\"$${f}_fixture.h\"" -DFAMILY_NAME=$$f tools/test_neo_family.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/family_$$f && $(BUILD_DIR)/host/family_$$f && rm -f $(BUILD_DIR)/host/family_$$f || exit 1; done

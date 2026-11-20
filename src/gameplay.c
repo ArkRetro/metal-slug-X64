@@ -118,7 +118,8 @@ void msx_game_init(msx_game_t *g) {
 static void hud_step(msx_game_t *g) {
     if (g->world.timer_resets!=g->timer_resets_seen) {g->timer_resets_seen=g->world.timer_resets;neo_hud_timer_reset(&g->hud,neo_softdip[NEO_DIP_PLAY_TIME]);}
     neo_hud_input_t in={0};
-    in.hud_on=true;in.join_mask=3;in.mvs=false;in.credits_available=true;in.credit_text=false;in.credits=0;
+    in.hud_on=true;in.join_mask=g->world.ga_flags.join_off?0:3;   /* 10F003 (041DD4: 0) */
+    in.mvs=false;in.credits_available=true;in.credit_text=false;in.credits=0;
     /* 0C071C/0C0764 read player 1's vehicle slot 10C608 (ARMS infinite and
      * the vehicle's shells while riding). */
     in.arms=neo_hud_arms(g->world.weapons.b,g->world.vslots.slot[0].b,0,false,0);
@@ -514,6 +515,14 @@ static void new_life(msx_game_t *g) {
     FALL_LOG("MSX respawn %u stage %u: entry %u type %u x=%ld y=%ld screen %d,%d grounded=%d\n",g->respawns,(unsigned)g->flow.stage,g->respawn_entry,
         (unsigned)type,(long)(x>>16),(long)(y>>16),(int)((uint32_t)(x+rx)>>16),(int)(int16_t)((uint32_t)(y+ry)>>16),(int)g->grounded);
     marco_entrance_start(&g->life);g->invulnerable=2*0x78;
+}
+/* The walk handlers' position (0CA386, 0CA3EC, 0CA438: move.w $3c(a0),d2; sub.w $697c(a5),d2): the player's
+ * projected word less the scene root's word (RAM 10E97C: the negated camera), i.e. the x in the root's space that
+ * 10EA00 / 10EA02 are compared with (MAME fam/M1: the opening 045428's 0x180 leaves player 1 at +28 = 384 while the
+ * camera goes on from 170 to 320). */
+static int handler_x(const msx_game_t *g) {
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    return (int16_t)((uint16_t)((uint32_t)(g->x+rx)>>16)-(uint16_t)((uint32_t)rx>>16));
 }
 /* Projected words of the player as the original registers them (+3C/+40):
  * world position plus the scene root (RAM 10E97C/10E980) of the native
@@ -1298,20 +1307,37 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers==3u) {
-        /* 0CA3EC: on the ground, walk towards screen X walk_to (10EA00);
+        /* 0CA3EC: on the ground, walk towards the root-space X walk_to (10EA00, handler_x);
          * no buttons. */
-        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
         direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
     } else if (g->world_enabled && g->world.ga_flags.player_handlers==6u) {
-        /* 0CA386 (the Mission 6 last enemy's opening, 0CA324): walk toward screen X walk_to[0]; on crossing it
+        /* 0CA386 (the Mission 6 last enemy's opening, 0CA324): walk toward the X walk_to[0] (handler_x); on crossing it
          * (the sign of the distance changes from the previous update's, +44 - 6984) the handler clears itself
          * (0CA2F2) and the distance is negated for this update; no buttons. */
-        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
-        int d3=(g->handler_prev_ok?g->handler_prev_sx:g->x/MSX_UNIT-g->camera)-(int)g->world.ga_flags.walk_to[0];
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
+        int d3=(int16_t)((g->handler_prev_ok?g->handler_prev_sx:handler_x(g))-(int)g->world.ga_flags.walk_to[0]);
         if ((int16_t)((int16_t)d2^(int16_t)d3)<0) {g->world.ga_flags.player_handlers=0;d2=-d2;}
         direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
-    } else if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
-    g->handler_prev_sx=g->x/MSX_UNIT-g->camera;g->handler_prev_ok=true;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers==9u) {
+        /* 0CA438 (the Mission 6 last enemy's end, 041E9A / 0CA35C): walk toward the X walk_to[0] (handler_x); at it, or on
+         * crossing it (the sign against the previous update's, +44 - 6984), on the ground the handler becomes 0CA49C
+         * with no input this update; no buttons. */
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
+        int d3=(int16_t)((g->handler_prev_ok?g->handler_prev_sx:handler_x(g))-(int)g->world.ga_flags.walk_to[0]);
+        if ((!d2 || (int16_t)((int16_t)d2^(int16_t)d3)<0) && g->grounded) {g->world.ga_flags.player_handlers=10;d2=0;}
+        direction=!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers==10u) {
+        /* 0CA49C: turn to walk_face[0] (FF: left) when +15 bit 0 differs; no buttons. */
+        bool left=g->facing<0,want=g->world.ga_flags.walk_face[0]!=0;
+        direction=left==want?0:want?-1:1;jump=false;fire=false;g->grenade=false;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers) {
+        direction=0;jump=false;fire=false;
+        /* 054B18 (sub.l d7,d7), 0537E4, 0455E6 and 041EBC (moveq #0,d7): the whole input word is 0, the bomb button too. */
+        uint8_t h=g->world.ga_flags.player_handlers;
+        if (h==1u || h==5u || h==7u || h==8u) g->grenade=false;
+    }
+    g->handler_prev_sx=handler_x(g);g->handler_prev_ok=true;
     /* Player 1's input words for the vehicles (0CA1B8), once per update. */
     if ((g->ticks&1) && g->world_enabled) mount_pad(g,direction,jump,fire);
     /* Mounted (0C309C) or ejected (0C3250): the vehicle and its turret take

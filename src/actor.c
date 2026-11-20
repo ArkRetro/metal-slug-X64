@@ -370,6 +370,9 @@ static void draw_m3_overlay(bool request_only) {
  * visible rows are not one run is not drawn and counted (none seen). */
 #ifdef MSX_HAS_M3MID
 enum { M4_BOSS_MAPS=0x02225Eu,M4_BOSS_MAP_BYTES=22,M4_BOSS_MAP_COUNT=15,M4_BOSS_PAGE=0x4000,M4_BOSS_LAYER=2 };
+/* The Mission 6 last enemy's second form (neo_m6boss.c k41e02): the map 04522E (0x1A x 8 blocks) on the same layer object,
+ * the pack's layer-2 cells at x 0x4000 of stage 3 (tools/build_mission6.sh --actor-maps 04522E:1:2:0x4000). */
+enum { M6_BOSS_MAP=0x04522Eu };
 static unsigned m4_layer_unsupported;
 static void m4_boss_layer(void) {
     const neo_world_t *w=&game.world;
@@ -378,10 +381,13 @@ static void m4_boss_layer(void) {
     if (w->m4layer_used && w->m4layer_map) {
         const uint8_t *b=w->m4layer;
         uint16_t w84=(uint16_t)(b[0x84]<<8|b[0x85]),w86=(uint16_t)(b[0x86]<<8|b[0x86+1]);
-        for (unsigned n=0;n<20;n++) {
+        for (unsigned n=0;n<32;n++) {
             uint32_t m=w->m4col_map[n];
             if (!m) continue;
-            if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
+            unsigned page;
+            if (m==M6_BOSS_MAP) page=0;
+            else if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
+            else page=(m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES;
             int16_t x=(int16_t)(w84+16u*n);
             if (x<-8 || x>=312) continue;
             uint16_t scb3=(uint16_t)((uint16_t)(w86<<7)+(uint16_t)(b[0x42+2*n]<<8|b[0x43+2*n]));
@@ -392,7 +398,7 @@ static void m4_boss_layer(void) {
             for (unsigned sr=0;sr<13;sr++) if (((top+sr)&31u)<h) {if (last>=0 && last!=(int)sr-1) split=true;if (first<0) first=(int)sr;last=(int)sr;}
             if (split) {m4_layer_unsupported++;continue;}
             if (first<0) continue;
-            map_x[n]=(int16_t)(M4_BOSS_PAGE+512*(int)((m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES)+16*(int)n);
+            map_x[n]=(int16_t)(M4_BOSS_PAGE+512*(int)page+16*(int)n);
             rise[n]=(int16_t)r;y0[n]=(int16_t)(8+r+16*first);y1[n]=(int16_t)(8+r+16*(last+1));any=true;
         }
         /* The ring's x is the column 0 one (+84). */
@@ -810,15 +816,19 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
         debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
     if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+    if (!game.in_stage) {   /* Mission 1 (no stage line): the update count, the clock of the ares tests' pads (tools/ares_clock.py) */
+        static unsigned last_clock;
+        if (game.ticks-last_clock>=120) {last_clock=game.ticks;debugf("MSX clock ticks=%u\n",(unsigned)game.ticks);}
+    }
     if (game.in_stage) {   /* mission pack stage: camera, player and coverage */
         static unsigned last;static int seen_camera=-1,seen_height=-99999;
         if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {
             last=game.ticks;seen_camera=game.camera;seen_height=game.camera_height;
-            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u ground=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u\n",
+            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u ground=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u ticks=%u\n",
                 (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
                 game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues,game.wall_stops,game.solid_pushes,game.kernel_landings,game.kernel_ground_steps,
                 game.world.train.on,game.world.train.mode,(long)(game.world.train.x>>16),game.world.camera.layer_flags[1]&1u,
-                game.world.script.groups[0],game.world.script.groups[1],game.world.script.groups[2],game.world.script.groups[3]);
+                game.world.script.groups[0],game.world.script.groups[1],game.world.script.groups[2],game.world.script.groups[3],(unsigned)game.ticks);
 #if MSX_DIAG
             /* B48: what holds the player up (ride object, air ticks, vy) and
              * the dynamic collision objects (slot: owner, position, map). */

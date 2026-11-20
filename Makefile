@@ -210,7 +210,7 @@ $(BUILD_DIR)/mslugx-reference.elf $(BUILD_DIR)/mslugx-m2-reference.elf $(BUILD_D
 	if [ ! -z "$(strip $(N64_ED64ROMCONFIGFLAGS))" ]; then \
 		$(N64_ED64ROMCONFIG) $(N64_ED64ROMCONFIGFLAGS) $@; \
 	fi
-MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BUILD_DIR)/src/msx_options.o $(BUILD_DIR)/src/msx_overlay.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/end_zoom.o $(BUILD_DIR)/src/end_zoom_core.o $(BUILD_DIR)/src/neo_scb.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BUILD_DIR)/src/msx_options.o $(BUILD_DIR)/src/msx_overlay.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)
@@ -311,7 +311,7 @@ MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP) $(wildcard romfs/endzoom.bin)
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -320,6 +320,7 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_ta
 	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
+	$(if $(wildcard romfs/endzoom.bin),cp romfs/endzoom.bin $(BUILD_DIR)/game-romfs/)
 	$(if $(SOFTDIP),cp $(SOFTDIP) $(BUILD_DIR)/game-romfs/)
 	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/romblobs.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)
@@ -1676,6 +1677,11 @@ check: $(MISSION_BGP) $(BUILD_DIR)/music_fade.h $(BUILD_DIR)/pause_fixture.h $(i
 	mkdir -p $(BUILD_DIR)/host && $(HOST_CC) $(HOST_CFLAGS) -O2 -shared -fPIC src/neo_scb.c -o $(BUILD_DIR)/host/neo_scb.so
 	python3 tools/check_zoom_scb.py $(or $(MSX_ZC),build/captures/ZC) --rom $(or $(MSX_ROM_ZIP),mslugx.zip) --c $(BUILD_DIR)/host/neo_scb.so
 	python3 tools/check_zoom_scb.py $(or $(MSX_ZT),build/captures/ZT) --rom $(or $(MSX_ROM_ZIP),mslugx.zip) --c $(BUILD_DIR)/host/neo_scb.so
+	# The console's shrunk sprites of the ending (src/end_zoom_core.c: list entry -> column writers -> L0 / COLUMNS strips,
+	# romfs/endzoom.bin from tools/export_ending_zoom.py) against the LSPC drawing of the MAME dumps of ZC and ZT, 0 px;
+	# skipped without the file, the BIOS or the captures.
+	$(HOST_CC) $(HOST_CFLAGS) -O2 -shared -fPIC -Isrc src/end_zoom_core.c src/neo_scb.c -o $(BUILD_DIR)/host/end_zoom.so
+	python3 tools/check_end_zoom.py --quick --lib $(BUILD_DIR)/host/end_zoom.so --file romfs/endzoom.bin --zip $(or $(MSX_BIOS_ZIP),$(dir $(or $(MSX_ROM_ZIP),mslugx.zip))neogeo.zip) $(or $(MSX_ZC),build/captures/ZC) $(or $(MSX_ZT),build/captures/ZT)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_wipe.c src/neo_wipe.c $(filter-out src/neo_wipe.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/wipe
 	$(BUILD_DIR)/host/wipe
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_muzzle.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/muzzle

@@ -578,7 +578,7 @@ fotogramas): antes el final no tenía música (`stage music 002E missing`); ahor
 `music start`, `music fade 0AA0`, `stage music 0031`, `music start`, `music fade 0AA0`. `audio` (todo
 `msx_audio_service`) medio por ventana 468 → 701 µs, máximo 3651 → 3533 µs; peor ventana fuera de las cargas del
 paquete `cpu` máx. 28 531 → 29 075 µs (las dos mayores, 197 / 863-871 ms, son las cargas del paquete 13 en ambos);
-*underruns* 4 → 4. Memoria: el VADPCM de libdragon no reserva nada nuevo (la música se lee de `rom:/`);
+*underruns* 4 → 4. **Por qué sube la media con menos muestras**: antes no había ninguna música sonando en el final (los dos `stage music` fallaban), así que el mezclador solo mezclaba silencio. Ventana a ventana: las ventanas con música van a 686–822 µs (antes 463–486 en esas mismas ventanas, en silencio) y las que no tienen música siguen igual (464–483 en las dos pasadas). El aumento es lo que cuesta descodificar y mezclar un canal estéreo VADPCM de 20 kHz, unos 0,27 ms por servicio; no es una pérdida respecto a las misiones, donde la música ya sonaba a 24 kHz. Memoria: el VADPCM de libdragon no reserva nada nuevo (la música se lee de `rom:/`);
 caché de escena 3344 KB, **209 ranuras** (sin cambio), efectos residentes 956 122 B como antes. `make check` EXIT 0
 (331 PASS), `make -j2`, `test_ending_ares.py` PASS.
 

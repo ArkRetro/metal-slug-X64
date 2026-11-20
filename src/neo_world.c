@@ -606,6 +606,10 @@ static void g_palette_mix(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t 
     if (free_k<0) {w->mix_overflow++;return;}
     w->mixes[free_k].index1=(uint8_t)(owner->index+1);w->mixes[free_k].handle=h;w->mixes[free_k].target=target;w->mixes[free_k].weight=weight;
 }
+static void g_slot_mix(void *ctx,uint8_t slot,uint16_t target,uint8_t weight) {
+    tick_t *t=ctx;
+    if (slot==0x38u) {t->w->slot38_target=target;t->w->slot38_weight=weight;}
+}
 static bool g_creator_alive(void *ctx,neo_gactor_t *a) {
     tick_t *t=ctx;uint32_t c=ga_l(a,0x0c);
     if (!c) return true;
@@ -1723,7 +1727,7 @@ unsigned neo_world_tick(neo_world_t *w,int32_t scroll_x,const neo_world_player_t
     g->attack=g_attack;g->register_box=g_register;g->dyn_set=g_dyn_set;g->dyn_release=g_dyn_release;g->solid=g_solid;
     g->creator_alive=g_creator_alive;g->creator=g_creator;g->node=g_node;g->actor=g_actor;g->previous=g_previous;g->stamp=g_stamp;g->stamp_cells=g_stamp_cells;g->map_patch=g_map_patch;
     g->marker=g_marker;g->marker_seq=&w->marker_seq;
-    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->mission_speed=g_mission_speed;g->palette_mix=g_palette_mix;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
+    g->groups=w->script.groups;g->flag606=&w->flag606;g->external=g_external;g->mission_speed=g_mission_speed;g->palette_mix=g_palette_mix;g->slot_mix=g_slot_mix;g->become_soldier=g_become_soldier;g->spawn_throw=g_spawn_throw;
     /* The GO arrow 05287C: RAM 10C44A, the low word of the progress long
      * (10E9A0) and the camera stop 10E9BC (0C7B26; 0 keeps it idle). */
     g->arrow=&w->arrow;

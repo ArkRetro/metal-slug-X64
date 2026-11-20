@@ -374,9 +374,32 @@ enum { M4_BOSS_MAPS=0x02225Eu,M4_BOSS_MAP_BYTES=22,M4_BOSS_MAP_COUNT=15,M4_BOSS_
  * the pack's layer-2 cells at x 0x4000 of stage 3 (tools/build_mission6.sh --actor-maps 04522E:1:2:0x4000). */
 enum { M6_BOSS_MAP=0x04522Eu };
 static unsigned m4_layer_unsupported;
+/* The second form's layer: its palette number 56 is the hardware slot 0x38, whose colours 0421E4 (neo_m6boss.c) sets with
+ * 009CCE every 12 frames, 10C / 10D / 10E in turn (DA while the body flashes), always with the weight 0x20: the slot shows
+ * the target itself (005978; tools/palette_mix.py). run4's 42 palette snapshots 346200..358500 hold in slot 56 exactly the
+ * ROM palettes 10C, 10D, 10E or DA, nothing else. The pack's cells of 04522E carry the colours of 348300 (10C); the ring
+ * draws them with the palette of the slot's target. A weight 1..30 (a mix: 0421E4 never asks it) or a target the pack
+ * does not carry is not drawn: counted (`m6_slot38_missing`). */
+static unsigned m6_slot38_missing;static int m6_cell_pal=-2;
+static void m6_layer_palette(bool on) {
+    const neo_world_t *w=&game.world;int from=-1,to=-1;
+    if (on && m6_cell_pal==-2) {
+        unsigned n;const scene_map_cell_t *c=scene_map_cells(&n);m6_cell_pal=-1;
+        for (unsigned i=0;i<n;i++) if (c[i].layer==M4_BOSS_LAYER && c[i].x>=M4_BOSS_PAGE) {m6_cell_pal=scene_map_image(scene_cell_phase(&c[i],0))->palette;break;}
+        int p=scene_native_palette(0x10c);
+        debugf("MSX M6 layer palette: cells %d, 10C %d, colours equal %d\n",m6_cell_pal,p,
+            m6_cell_pal>=0 && p>=0 && !memcmp(scene_palette((unsigned)m6_cell_pal)+1,scene_palette((unsigned)p)+1,30));
+    }
+    if (!on) m6_cell_pal=-2;
+    else if (w->slot38_target) {
+        if (w->slot38_weight>=0x1fu) to=scene_native_palette(w->slot38_target);
+        if (to>=0 && m6_cell_pal>=0) from=m6_cell_pal; else m6_slot38_missing++;
+    }
+    scene_render_set_ring_palette(M4_BOSS_LAYER,from,to);
+}
 static void m4_boss_layer(void) {
     const neo_world_t *w=&game.world;
-    int16_t map_x[32],rise[32],y0[32],y1[32];bool any=false;
+    int16_t map_x[32],rise[32],y0[32],y1[32];bool any=false,m6=false;
     for (unsigned n=0;n<32;n++) {map_x[n]=INT16_MIN;rise[n]=y0[n]=y1[n]=0;}
     if (w->m4layer_used && w->m4layer_map) {
         const uint8_t *b=w->m4layer;
@@ -385,7 +408,7 @@ static void m4_boss_layer(void) {
             uint32_t m=w->m4col_map[n];
             if (!m) continue;
             unsigned page;
-            if (m==M6_BOSS_MAP) page=0;
+            if (m==M6_BOSS_MAP) {page=0;m6=true;}
             else if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
             else page=(m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES;
             int16_t x=(int16_t)(w84+16u*n);
@@ -404,6 +427,7 @@ static void m4_boss_layer(void) {
         /* The ring's x is the column 0 one (+84). */
         scene_render_set_layer_columns(M4_BOSS_LAYER,any,(int16_t)w84,map_x,rise,y0,y1);
     } else scene_render_set_layer_columns(M4_BOSS_LAYER,false,0,map_x,rise,y0,y1);
+    m6_layer_palette(m6);
 }
 #endif
 static void draw_marco(unsigned bank_id,unsigned frame);
@@ -801,7 +825,23 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         m4_map=game.world.m4layer_map;m4_patches=game.world.m4patch_count;
         debugf("MSX boss layer 10D7B6 map=%06lX patches=%u\n",(unsigned long)m4_map,m4_patches);
      }}
+    /* The boss body 02267E for the test pad (tools/test_mission4_ares.py faces it): its projected x / y (+3C / +40), health
+     * +4E, lost parts +8F and phase +8A, with the player's screen x; every 30 updates while it lives. */
+    {static unsigned m4_body_at;
+     if (game.world.m4layer_used && game.ticks-m4_body_at>=30u) {
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *g=&game.world.gactors[i];uint32_t r=g->active?ga_l(g,0):0;
+            if (r<0x22872u || r>=0x22cb6u) continue;
+            m4_body_at=game.ticks;
+            debugf("MSX boss body %06lX x=%d y=%d health=%u lost=%02X phase=%u player=%d,%d\n",(unsigned long)r,(int16_t)ga_w(g,0x3c),(int16_t)ga_w(g,0x40),
+                ga_w(g,0x4e),ga_b(g,0x8f),ga_b(g,0x8a),game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT);
+            break;
+        }
+     }}
     if (m3_overlay_missing) {debugf("MSX mid-boss layer 10E8C6: %u blocks without a frame or palette\n",m3_overlay_missing);m3_overlay_missing=0;}
+    {static uint16_t m6_pal_was;uint16_t now=game.world.slot38_target;
+     if (now!=m6_pal_was) {debugf("MSX M6 layer slot 38 target=%X weight=%u\n",now,game.world.slot38_weight);m6_pal_was=now;}
+     if (m6_slot38_missing) {debugf("MSX M6 layer slot 38: native draw missing (%u frames without the palette of the target)\n",m6_slot38_missing);m6_slot38_missing=0;}}
     {static uint32_t m3_map;static unsigned m3_patches;
      if (game.world.m3layer_map!=m3_map || game.world.m3patch_count!=m3_patches) {
         m3_map=game.world.m3layer_map;m3_patches=game.world.m3patch_count;

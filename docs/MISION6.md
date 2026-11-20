@@ -953,3 +953,25 @@ nativo, `MSX mission complete signal (018F92)` (la muerte `041DD4`) y ninguna pa
   `work-chars`); la prueba lo imprime y no lo juzga.
 - **Pendiente**: el brillo de la paleta 56 de la capa (`009CCE`); la paleta D9; la prueba bit a bit de `09B532`; el
   margen de memoria (una ranura de caché); `08F1A0` sigue sin captura.
+
+### La paleta 56 de la capa de la segunda forma (20-XI, agente del carril de memoria, rama `work-mem`)
+
+- **Qué hace la ROM**: `0421E4` (`neo_m6boss.c`, con `+86` bit 0 del eje) llama a `009CCE` sobre la ranura de hardware
+  0x38 (número de paleta 56 del mapa `04522E`) cada 12 fotogramas con el siguiente de 10C / 10D / 10E (DA mientras el
+  cuerpo parpadea), siempre con peso 0x20: la ranura muestra el destino tal cual (`005978`, `tools/palette_mix.py`); no
+  hay mezcla. El índice `+A2` y el parpadeo `+17` son RAM de nodo que las familias ya comparan bit a bit.
+- **Comprobado contra MAME** (run4, las 42 instantáneas de paleta 346200..358500): la ranura 56 tiene exactamente los
+  colores de la ROM de 10C (16), 10E (14), 10D (11) o DA (1), nada más. Las celdas del paquete (208, todas en la capa 2 a
+  x ≥ 0x4000, paleta 7 de `s3/map.json`) llevan los de 348300 = 10C.
+- **En la consola**: `k9cce` pasa la ranura 0x38 al mundo (`slot_mix` → `slot38_target/weight`; sigue contándose como
+  externa para las familias); `actor.c m6_layer_palette` pide al dibujo del anillo de columnas
+  (`scene_render_set_ring_palette`) que la paleta de esas celdas se vea como la paleta nativa del destino. Las paletas
+  10D y 10E se añadieron a la exportación desde la ROM (`palette_mix.py /home/user/roms/mslugx.zip --into
+  filesystem/mission6/rest-native.json --plain 10c,10d,10e,da`: 2 añadidas; 10C y DA ya estaban y coinciden). M6:
+  1230 trozos. Registro: `MSX M6 layer palette: cells P, 10C Q, colours equal 1` al empezar la capa, `MSX M6 layer slot 38
+  target=…` en cada cambio; un peso 1..30 o un destino sin paleta en el paquete no se dibuja y se cuenta como
+  `native draw missing` (la matriz lo vigila).
+- **Sigue pendiente**: la paleta D9 (`042DC0`: `009CCE` sobre la ranura `+1A` de la parte con peso 0..0x20, una mezcla
+  real): ninguna captura la muestra (run4 ni el TAS ponen `+87` del eje), no se sabe de la ranura su `+A` y no se dibuja;
+  el relevo `09B532 jmp 04611C` sigue sin partida grabada que rompa el escudo de un soldado en la segunda forma (hace falta
+  jugarla en MAME 0.264 con volcados; no hay mando grabado que lo haga).

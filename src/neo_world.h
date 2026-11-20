@@ -131,6 +131,9 @@ typedef struct {
      * (index + 1, 0 = free; handle = the owner's +14). mix_missing: draws
      * whose (resource, target) pair has no exported mix (neo_palmix.h). */
     struct {uint8_t index1,handle,weight;uint16_t target;} mixes[4];unsigned mix_missing,mix_overflow;
+    /* 009CCE on the hardware slot 0x38 (the Mission 6 last enemy's layer 10D7B6, palette number 56: neo_m6boss.c
+     * 0421E4): target and weight; target 0 = never set. The renderer swaps the layer's palette (actor.c). */
+    uint16_t slot38_target;uint8_t slot38_weight;
     unsigned converted;          /* generic nodes turned soldiers (0B05FE/0B0626/0B0632) */
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */

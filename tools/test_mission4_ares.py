@@ -26,6 +26,7 @@ if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/a
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log'
+BOSS_NEAR=(-80,-20)   # player x - body x (px) where the boss cycle runs
 def key(action,name):subprocess.run([XD,action,name],check=True,env=env)
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
@@ -48,19 +49,9 @@ try:
         if r:win=r[-1]
         time.sleep(.5)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Up seven times (MISSION 4 is the seventh item from the end: the three stages of Mission 5 and of Mission 6 follow it), A.
-    end=time.monotonic()+400
-    while 'MSX MSELECT mission=' not in log():
-        assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
-        if re.search(r'MSX CINE select (start|waiting)',log()):
-            time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up',.2),time.sleep(.4)) for _ in range(7)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
-            continue
-        # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
-        # or the press lands on SOLDIER SELECT and chooses before the menu combo.
-        t=log()
-        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')
-        time.sleep(1.0)
+    # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
+    # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
+    import ares_menu;ares_menu.choose(key,log,proc,4,1,lifebar=a.lifebar)
     wait(r'MSX MSELECT mission=4',20)
     if a.lifebar:wait(r'MSX LIFEBAR on',5)
     m=wait(r'MSX mission 4 stage \d+ start: record (\w+) descriptor (\w+) camera list (\w+)',120)
@@ -111,6 +102,16 @@ try:
         if a.boss and 'MSX boss layer 10D7B6' in text and 'MSX mission complete signal' not in text:
             bp=t%5;left=bp<0.15;right=bp>=3.65;up=False
             jump=1.0<=bp<1.2 or 2.6<=bp<2.8;bomb=a.lifebar and 2.0<=bp<2.15
+            # The pad faces the boss (B78): the body keeps itself between the screen x 0x90 and 0xE0 (022872) while the
+            # camera brings the player to the left edge, under the hull's tail, where the blind cycle fired at nothing.
+            # The cartridge logs the body's screen x and the player's (`MSX boss body ... x=X ... player=PX,PY`, every 30
+            # updates): the cycle above only runs with the player BOSS_NEAR[0]..BOSS_NEAR[1] px from the body (where the
+            # blind pad's hits landed, measured on its logs); farther left the pad walks right, farther right it walks left.
+            bm=re.findall(r'MSX boss body \w+ x=(-?\d+) y=-?\d+ health=\d+ lost=\w+ phase=\d+ player=(-?\d+),',text[-6000:])
+            if bm:
+                dx=int(bm[-1][1])-int(bm[-1][0])
+                if dx<BOSS_NEAR[0]:left=False;right=True
+                elif dx>BOSS_NEAR[1]:left=True;right=False
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
         # Riding a vehicle, A and B together are the exit 093A08 (0CA1B0: pad bit 7; the vehicle is thrown away). The pad
         # used to press them together by chance (the 5 Hz fire against the jump), and then nothing could hit it mounted.

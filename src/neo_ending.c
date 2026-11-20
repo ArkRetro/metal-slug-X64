@@ -37,7 +37,49 @@
  * "SNK" and the nine names of 0585FC become "SNK", 7F become blanks, 60
  * updates of the name blinking, the creator's +60 and 10C468/9 = 0.
  *
- * Not reproduced: the cartridge checks 0571FC/0575BC/0576EE (they only act
+ * The credits (section 22 of the script, stage 0x2C; the nodes below are
+ * created by the sub-scripts 019E72 of the two actors 0A8C62):
+ * - Page 0646FE + 0x0A k (k = 0..47, +84): times +74 (the script's +6E in
+ *   updates, 60 by default, FFFF none), +78 and +7C (+70 / +72, 30 by
+ *   default) through 0A4996 (50 Hz: times 0.D600); +8C = 20.0000; six lines
+ *   064AC0 at its place with the descriptors and consecutive palettes of the
+ *   record 0E1446 + 26 k. 0649E8: +8C falls to 0 in +78 updates (04E962 /
+ *   04E5D0 with the step 0A49B0: 1, or 4 while RAM 10C604), waits +74, rises
+ *   to 20.0000 in +7C and deletes itself with its lines (0041AC). A line
+ *   sets its palette slot's level to the page's +8C word (009CCE) and draws
+ *   its descriptor (011FF6).
+ * - 0A4408: RAM 10C604 = FF while a player in play holds A, B or C (0190BC
+ *   & 70); after +6E updates the music 0x31, once. 0A4478: deleted after +6E
+ *   updates (a script's wait). 0A453A: the audio command +6E (01228C).
+ * - Picture 0A454C (0A4744): program 2A4B16 with the picture +A8 = +7A - 1
+ *   (two slots of palette 0x845, 0x125 from picture 0x3E), speed +76 << 8
+ *   (50 Hz: plus 0.2A00 of it) along the angle +78 (002E7C; +6E = 2: down,
+ *   until +2C reaches +78), kept in +94 / +98. +6E != 1 (0A45EC): after +84
+ *   (the script's +70) updates the slots' level falls from 20 by +8C (+74 <<
+ *   8) to 0, then after +88 (+72) rises again and the picture is deleted
+ *   (0041AC; also outside the rectangle 0E61B4). +6E = 1 (0A4698): a
+ *   swaying picture (x by sine(+A4) * +72, the size +12 by sine(+9C)): in no
+ *   capture (the TAS's credits have none), translated from the listing.
+ *
+ * The title 0A7FFE (after the ranking 057E00): 002976 (the random ring) and
+ * the layers 0A7D4A (01AA28: the environment's, ram->setup); every +6E
+ * updates (table 0A7FD6) a piece 0A81A4 with +70 = 0..9 and its flight time
+ * +72; the last piece sets +60: fade to white (1F,1F,1F at once), then
+ * 0A8096 deletes every other node (004192), 0A863C (layers 0A7D52, texts
+ * 03E2A8 / 0C81A6 / 03CF60: ram->setup), the picture 0A8602 (descriptor
+ * 1D5B22, palette 0x840), its own program 2A7368 (palette 0xDE) at (120,130),
+ * fade in 16, 0x96 updates and its creator's +60.
+ * Piece 0A81A4: two palette slots (0x134, 0x145), the second blended towards
+ * 0x159 from 1F down by its progress (009CCE); it starts at its place of
+ * 0A7FAE mirrored around (80,170) and spirals in (0A8278), drawn through the
+ * zoom +12 / +13 and the scale D7 of 0A824E around (A0,110), depth +1E by
+ * its place. Arrived (+74 = +72): sound 0x10E1 and 24 sparks 0A83D6 (the
+ * last piece: 0x10E5 and the root's +60), program 2A7082 at its place.
+ * Spark 0A83D6: one of three programs (0A83CA), speed +26, flips by 0029C6
+ * (bit 0 by the N flag it returns with: ram->rand_negative), two trails
+ * around its creator's place; it is deleted when its program ends.
+ *
+ * Not reproduced: the cartridge checks 0571FC/0575BC/0576EE/0A4496/0A8116 (they only act
  * on a failed check). Explicit stops: 057B44 with a player byte +7 above 3
  * (TRAP #F), the formats '%' of 03D2B0. */
 #include "neo_end.h"
@@ -53,7 +95,17 @@
 #define START(t) do { if (!ga_anim_start(a,e,(t),0x100)) return GA_UNSUPPORTED; } while (0)
 #define STEP() do { if (ga_anim_step(a,e,NULL)<0) return GA_UNSUPPORTED; } while (0)
 #define DEC72() (SW(0x72,W(0x72)-1u),W(0x72)!=0)   /* subq.w #1,+72; beq */
-bool neo_ending_routine(uint32_t r) {return r>=0x56fcc && r<=0x585fa;}
+/* The credits and the title are off on the console until it runs them (docs/MISION6.md "Los créditos": their stage,
+ * sprites and node pool are pending): MSX_CREDITS turns them on there; the host builds always have them. */
+#if !defined(N64) || defined(MSX_CREDITS)
+#define NEO_ENDING_CREDITS 1
+#endif
+bool neo_ending_routine(uint32_t r) {
+#ifdef NEO_ENDING_CREDITS
+    if ((r>=0x646fe && r<=0x64ae0) || (r>=0xa4408 && r<=0xa4724) || (r>=0xa7ffe && r<=0xa8622)) return true;
+#endif
+    return r>=0x56fcc && r<=0x585fa;
+}
 static uint16_t rw(uint32_t address) {const uint8_t *p=ga_rom(address);return p?(uint16_t)(p[0]<<8|p[1]):0;}
 static uint32_t rl(uint32_t address) {return (uint32_t)rw(address)<<16|rw(address+2);}
 static uint8_t rb(uint32_t address) {const uint8_t *p=ga_rom(address);return p?p[0]:0;}
@@ -255,10 +307,104 @@ static bool show(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
     }
     return text_done(e,m,&t,0x5821a);
 }
+#ifdef NEO_ENDING_CREDITS
+/* ---- the credits (docs/MISION6.md "Los créditos") ---------------------------
+ * 04E5D0: the signed 16.16 product (both below 1.0: the product of the low
+ * words; else the 64-bit product 04E57A, a TRAP #F when it passes 2^63). */
+static uint32_t fmul(neo_genv_t *e,uint32_t d0,uint32_t d1) {
+    bool neg=false;
+    if (d0&0x80000000u) {d0=0u-d0;neg=!neg;}
+    if (d1&0x80000000u) {d1=0u-d1;neg=!neg;}
+    if (d0<0x10000u && d1<0x10000u) {uint32_t r=(d0*d1)>>16;return neg?0u-r:r;}
+    uint64_t p=(uint64_t)d0*d1;
+    if (p>>63) {ga_fail(e,0x4e578);return 0;}
+    if (neg) p=0u-p;
+    return (uint32_t)(p>>16);
+}
+/* 04E962: the signed 16.16 quotient (04E648: 48 steps of long division; 0 / x = 0, x / 0 is a TRAP #F). */
+static uint32_t fdiv(neo_genv_t *e,uint32_t d0,uint32_t d1) {
+    bool neg=false;
+    if (d0&0x80000000u) {d0=0u-d0;neg=!neg;}
+    if (d1&0x80000000u) {d1=0u-d1;neg=!neg;}
+    if (!d0) return 0;
+    if (!d1 || (d1&0x80000000u)) {ga_fail(e,0x4e578);return 0;}   /* a divisor of 2^31: the 32-bit remainder would overflow (not followed) */
+    uint32_t r=(uint32_t)(((uint64_t)d0<<16)/d1);
+    return neg?0u-r:r;
+}
+/* 0A4996: a time or speed for the 50 Hz machine (RAM 100002 = FF: times 0.D600). */
+static uint32_t pal(neo_genv_t *e,neo_end_ram_t *m,uint32_t d0) {return mb(m,0x100002)==0xffu?fmul(e,d0,0xd600u):d0;}
+/* 0A49B0: the step of an update (RAM 10C604: a button held, four times faster). */
+static uint32_t step_of(neo_end_ram_t *m) {return mb(m,0x10c604)?0x40000u:0x10000u;}
+/* 009CCE(slot, target, level): a palette slot of the node blended towards the palette `target` (level 0: its own
+ * colours; the credits: target 1, level 0x20 = black). */
+static void slot_blend(neo_end_ram_t *m,neo_gactor_t *a,uint8_t handle,uint16_t target,uint16_t level) {
+    m->slot_levels++;
+    if (m->slot_level) m->slot_level(m->ram_ctx,a,handle,target,(uint8_t)level);
+}
+static void slot_level(neo_end_ram_t *m,neo_gactor_t *a,uint8_t handle,uint16_t level) {slot_blend(m,a,handle,1,level);}
+/* asr.l by a register count (modulo 64). */
+static int32_t asr(int32_t v,uint16_t count) {count&=63u;return count>=32u?(v<0?-1:0):v>>count;}
+/* 0029C6 and the N flag it returns with (the ring word it changed). */
+static uint16_t rnd(neo_end_ram_t *m) {return m->rand?m->rand(m->rand_ctx):0u;}
+static bool rnd_negative(neo_end_ram_t *m) {return m->rand_negative?m->rand_negative(m->rand_ctx):false;}
+/* 0A489A: (sine(d0) * d1) >> 8. */
+static uint32_t sine_times(uint16_t d0,uint16_t d1) {return (uint32_t)(((int32_t)ga_sine((uint8_t)d0)*S16(d1))>>8);}
+/* 0646FE + 0x0A k: the page k of the table 0E1446 (26 bytes: the first palette and six descriptors). */
+static ga_result_t page(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
+    SW(0x84,(L(0)-0x646feu)/10u);
+    SL(0x74,!W(0x6e)?pal(e,m,0x3c0000u):W(0x6e)==0xffffu?0u:pal(e,m,(uint32_t)W(0x6e)<<16));
+    SL(0x78,pal(e,m,W(0x70)?(uint32_t)W(0x70)<<16:0x1e0000u));
+    SL(0x7c,pal(e,m,W(0x72)?(uint32_t)W(0x72)<<16:0x1e0000u));
+    SL(0x8c,0x200000u);
+    uint32_t a1=0xe1446u+0x1au*W(0x84);
+    SW(0x94,rw(a1));a1+=2;SW(0x86,0);
+    for (;W(0x86)<6;SW(0x86,W(0x86)+1u)) {
+        neo_gactor_t *c=spawn(a,e,0x64ac0);
+        if (!c) STOP(0x649b8);
+        ga_sl(c,0x3c,L(0x3c));ga_sl(c,0x40,L(0x40));
+        ga_sl(c,0x80,rl(a1));a1+=4;
+        ga_sw(c,0x94,W(0x94));SW(0x94,W(0x94)+1u);
+    }
+    SL(0,0x649e8);
+    return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0A4744: the parade picture's start. */
+static bool parade_start(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
+    SW(0x66,0xfff1);SW(0x1e,0xfff1);
+    if (!ga_anim_start(a,e,0x2a4b16,0x100)) return false;
+    uint8_t d0=(uint8_t)(W(0x7a)-1u);SB(0xa8,d0);
+    uint16_t res=(int8_t)d0<0x3d?0x845:0x125;
+    ga_palette(a,res);ga_palette(a,res);                                    /* 009EA8 with D1 = 1: slots of its own */
+    uint32_t v=(uint32_t)(int32_t)S16(W(0x76))<<8;
+    if (mb(m,0x100002)==0xffu) v=fmul(e,v,0x10000u-0xd600u)+v;
+    if (W(0x6e)==2) {SL(0x34,v);SL(0x30,0);}
+    else {uint32_t vx,vy;ga_polar(v,(uint8_t)W(0x78),&vx,&vy);SL(0x30,vx);SL(0x34,vy);}   /* 002E7C */
+    if (W(0x6e)==1) {
+        SL(0x84,pal(e,m,(uint32_t)(int32_t)S16(W(0x70))<<8));
+        SL(0x8c,pal(e,m,(uint32_t)(int32_t)S16(W(0x74))<<8));
+    } else {
+        SL(0x84,pal(e,m,(uint32_t)W(0x70)<<16));
+        SL(0x88,pal(e,m,(uint32_t)W(0x72)<<16));
+        SL(0x8c,pal(e,m,(uint32_t)(int32_t)S16(W(0x74))<<8));
+    }
+    SL(0x94,L(0x30));SL(0x98,L(0x34));
+    return !e->unsupported;
+}
+/* 0A49CC / 0A4A1C: the speeds of this update (four times with RAM 10C604). */
+static void parade_speed(neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m,bool wave) {
+    bool fast=mb(m,0x10c604)!=0;
+    if (wave) SL(0x84,pal(e,m,(uint32_t)(int32_t)S16(fast?(uint16_t)(W(0x70)<<2):W(0x70))<<8));
+    SL(0x8c,pal(e,m,(uint32_t)(int32_t)S16(fast?(uint16_t)(W(0x74)<<2):W(0x74))<<8));
+    SL(0x30,fast?L(0x94)<<2:L(0x94));SL(0x34,fast?L(0x98)<<2:L(0x98));
+}
+#endif
 /* ---- the update ---------------------------------------------------------- */
 ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_end_ram_t *m) {
     (void)s;
     if (!m) STOP(L(0));
+#ifdef NEO_ENDING_CREDITS
+    if (L(0)>=0x646feu && L(0)<=0x648d4u && (L(0)-0x646feu)%10u==0) return page(a,e,m);
+#endif
     switch (L(0)) {
     /* ---- root 0570A0 ---- */
     case 0x570a0: {
@@ -596,6 +742,290 @@ ga_result_t neo_ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,neo_
     case 0x5810a:
         STEP();
         return GA_MORE;
+#ifdef NEO_ENDING_CREDITS
+    /* ---- credits: a page 0646FE + 0x0A k (page(): +84 = k) ---- */
+    case 0x649e8: {
+        uint32_t d1=L(0x78);if (!d1) d1=0x10000u;
+        SL(0x90,fdiv(e,0xffe00000u,d1));SL(0,0x64a0c);
+    }   /* fall through */
+    case 0x64a0c: {
+        uint32_t d2=L(0x8c)+fmul(e,step_of(m),L(0x90));
+        if ((int32_t)d2<=0) {d2=0;SL(0,0x64a3a);}
+        SL(0x8c,d2);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x64a3a:
+        SL(0x88,L(0x74));SL(0,0x64a46);
+        /* fall through */
+    case 0x64a46:
+        if (L(0x88)) {
+            uint32_t v=L(0x88)-step_of(m);SL(0x88,v);
+            if ((int32_t)v<=0) SL(0,0x64a64);
+        }
+        return GA_MORE;
+    case 0x64a64: {
+        uint32_t d1=L(0x7c);if (!d1) d1=0x10000u;
+        SL(0x90,fdiv(e,0x200000u,d1));SL(0,0x64a88);
+    }   /* fall through */
+    case 0x64a88: {
+        uint32_t d2=L(0x8c)+fmul(e,step_of(m),L(0x90));
+        if (d2>=0x200000u) {d2=0x200000u;SL(0,0x64aba);}
+        SL(0x8c,d2);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0x64aba:
+        return GA_DELETE_TREE;                                               /* 0041AC */
+    case 0x64ac0:
+        ga_palette(a,W(0x94));SW(0x66,0);SW(0x1e,0);SL(0,0x64ae0);
+        /* fall through */
+    case 0x64ae0: {
+        neo_gactor_t *c=e->creator(e->ctx,a);
+        slot_level(m,a,B(0x14),c?ga_w(c,0x8c):0u);                           /* 009CCE(+14, 1, creator +8C) */
+        ga_draw(a,e,L(0x80));                                                /* 011FF6 */
+        return GA_MORE;
+    }
+    /* ---- the music 0A4408, the timers 0A4478, the audio command 0A453A ---- */
+    case 0xa4408:
+        sbm(m,0x10c604,0);SB(0x61,0);
+        SL(0x80,pal(e,m,(uint32_t)W(0x6e)<<16));
+        if (e->unsupported) return GA_UNSUPPORTED;
+        SL(0,0xa4426);
+        /* fall through */
+    case 0xa4426: {
+        uint8_t d0=0;                                                        /* 0190BC: D0 only */
+        if (mb(m,0x10fdb6)) d0|=mb(m,0x10c35c);
+        if (mb(m,0x10fdb7)) d0|=mb(m,0x10c362);
+        sbm(m,0x10c604,(d0&0x70u)?0xffu:0u);                                 /* andi.w #$7070 */
+        if (B(0x61)) return GA_MORE;
+        if (!L(0x80)) {sound(m,0x31);SB(0x61,0xff);return GA_MORE;}
+        uint32_t v=L(0x80)-step_of(m);SL(0x80,(int32_t)v<0?0u:v);
+        return GA_MORE;
+    }
+    case 0xa4478:
+        SL(0x80,pal(e,m,(uint32_t)W(0x6e)<<16));
+        if (e->unsupported) return GA_UNSUPPORTED;
+        SL(0,0xa448e);
+        /* fall through */
+    case 0xa448e: {
+        if (!L(0x80)) return GA_DELETE;                                      /* 0A4496: the cartridge check, then 004188 */
+        uint32_t v=L(0x80)-step_of(m);SL(0x80,(int32_t)v<0?0u:v);
+        return GA_MORE;
+    }
+    case 0xa453a:
+        m->audio_commands++;m->audio_command=W(0x6e);                        /* 01228C(+6E) */
+        return GA_DELETE;
+    /* ---- the parade's pictures 0A454C ---- */
+    case 0xa454c:
+        ga_project(a,e);
+        if (!parade_start(a,e,m)) return GA_UNSUPPORTED;
+        if (W(0x6e)==1) {
+            uint32_t d0=0x1780000u-L(0x40);
+            if ((int32_t)L(0x34)<0) d0=0u-d0;
+            uint32_t t=fdiv(e,d0,L(0x34));
+            uint32_t p=fmul(e,t,L(0x8c))+0x400000u;
+            if (fdiv(e,p,0x800000u)&0x10000u) SB(0x15,B(0x15)|1u);
+            SL(0x9c,0x800000u-(p&0x7fffffu));
+            SL(0xa4,0u-fmul(e,t,L(0x84)));
+            SL(0,0xa4698);
+        } else {SL(0xa0,0x200000u);SL(0,0xa45ec);}
+        SB(0x60,0);
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    case 0xa45ec:
+        parade_speed(a,e,m,false);
+        ga_move(a,e);
+        if (!(B(0x60)&1u)) {
+            if (!L(0x84)) {
+                STEP();
+                if ((int32_t)L(0xa0)>0) {                                    /* 0A48C2 */
+                    uint32_t v=L(0xa0)-L(0x8c);SL(0xa0,(int32_t)v<0?0u:v);
+                    slot_level(m,a,B(0x19),W(0xa0));slot_level(m,a,B(0x1a),W(0xa0));
+                } else {SB(0x60,B(0x60)|1u);slot_level(m,a,B(0x19),0);slot_level(m,a,B(0x1a),0);}
+            } else {uint32_t v=L(0x84)-step_of(m);SL(0x84,(int32_t)v<0?0u:v);}
+        } else {
+            STEP();
+            if (B(0x60)&2u) SL(0,0xa4724);
+            else if (!L(0x88)) {                                             /* 0A492E */
+                if ((int32_t)L(0xa0)<=0x200000) {
+                    SL(0xa0,L(0xa0)+L(0x8c));
+                    slot_level(m,a,B(0x19),W(0xa0));slot_level(m,a,B(0x1a),W(0xa0));
+                } else {SB(0x60,B(0x60)|2u);slot_level(m,a,B(0x19),0x20);slot_level(m,a,B(0x1a),0x20);}
+            } else {uint32_t v=L(0x88)-step_of(m);SL(0x88,(int32_t)v<0?0u:v);}
+        }
+        if (W(0x6e)==2 && S16(W(0x78))<=S16(W(0x2c))) {SL(0x30,0);SL(0x34,0);SL(0x94,0);SL(0x98,0);SW(0x6e,0);}
+        if (e->unsupported) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0xe61b4)?GA_DELETE_TREE:GA_MORE;                  /* 0A472C: 01945C, 0041AC */
+    case 0xa4698: {   /* +6E = 1: the swaying picture (no capture: the TAS's credits have none) */
+        parade_speed(a,e,m,true);
+        ga_move(a,e);
+        uint32_t keep=L(0x3c);
+        SW(0x3c,W(0x3c)+(uint16_t)(S16((uint16_t)sine_times(W(0xa4),W(0x72)))>>8));
+        STEP();
+        SL(0x3c,keep);
+        SL(0xa4,L(0xa4)+L(0x84));
+        uint16_t d0=(uint16_t)sine_times(W(0x9c),0xff);
+        if (d0&0x8000u) d0=(uint16_t)(0u-d0);
+        SB(0x12,d0);
+        SL(0x9c,L(0x9c)+L(0x8c));
+        if (L(0x9c)>=0x800000u) {SL(0x9c,L(0x9c)&0x7fffffu);SB(0x15,B(0x15)^1u);}
+        SB(0x14,(B(0x15)&1u)?B(0x1a):B(0x19));
+        if (e->unsupported) return GA_UNSUPPORTED;
+        return ga_cull(a,e,0xe61b4)?GA_DELETE_TREE:GA_MORE;
+    }
+    case 0xa4724:
+        return GA_DELETE_TREE;                                               /* 0041AC */
+    /* ---- the title 0A7FFE (kernel 101154, 01674A) ---- */
+    case 0xa7ffe:
+        if (m->setup) m->setup(m->ram_ctx);                                  /* 002976(FFFF): the random ring; 01AA28(0A7D4A) */
+        m->setups++;
+        SB(0x60,0);SB(0x70,0);SW(0x6e,0);SL(0,0xa802a);
+        /* fall through */
+    case 0xa802a: {
+        uint16_t v=W(0x6e);SW(0x6e,v-1u);
+        if (!v) {
+            neo_gactor_t *c=spawn(a,e,0xa81a4);
+            if (!c) STOP(0xa803c);
+            ga_sb(c,0x70,B(0x70));
+            ga_sw(c,0x72,rw(0xa7fd6u+4u*B(0x70)));SW(0x6e,rw(0xa7fd8u+4u*B(0x70)));
+            SB(0x70,B(0x70)+1u);
+            if (B(0x70)>=0xau) SL(0,0xa8076);
+        }
+    }   /* fall through */
+    case 0xa8076:
+        if (!B(0x60)) return GA_MORE;
+        if (m->fade) neo_fade_start(m->fade,0x1f,0x1f,0x1f,0);
+        SL(0,0xa8096);
+        return GA_MORE;
+    case 0xa8096: {
+        for (unsigned i=0;i<NEO_END_NODES;i++) {                             /* 004192: every other node */
+            neo_gactor_t *o=&s->nodes[i];
+            if (o!=a && o->active && !o->placeholder) {ga_sl(o,0,0x3f1e);o->placeholder=true;}
+        }
+        if (m->setup) m->setup(m->ram_ctx);                                  /* 0A863C: 01AA28(0A7D52), 03E2A8, 0C81A6, 03CF60 */
+        m->setups++;
+        if (!spawn(a,e,0xa8602)) STOP(0xa80aa);
+        SL(0,0xa80b8);
+        return GA_MORE;
+    }
+    case 0xa80b8:
+        START(0x2a7368);
+        ga_palette(a,0xde);
+        SW(0x3c,0x120);SW(0x40,0x130);
+        if (m->fade) neo_fade_start(m->fade,0,0,0,0x10);
+        SW(0x6e,0x96);SL(0,0xa80fc);
+        /* fall through */
+    case 0xa80fc: {
+        STEP();
+        uint16_t v=W(0x6e);SW(0x6e,v-1u);
+        if (v) return GA_MORE;
+        creator60(a,e,m,false);                                              /* then the cartridge check 0A8116 */
+        return GA_DELETE;
+    }
+    /* A piece of the title (+70 = 0..9: its place in the table 0A7FAE, +72 the updates of its flight). */
+    case 0xa81a4: {
+        ga_palette(a,0x134);ga_palette(a,0x145);                             /* slots of its own */
+        slot_blend(m,a,B(0x14),0x159,0x1f);
+        START(0x2a702c);
+        uint32_t tab=0xa7faeu+4u*B(0x70);
+        SW(0x28,0x100u-rw(tab));SW(0x2c,0x2e0u-rw(tab+2));
+        SL(0,0xa821a);
+        return GA_MORE;
+    }
+    case 0xa821a: {
+        uint32_t tab=0xa7faeu+4u*B(0x70);
+        SW(0x74,W(0x74)+1u);
+        if (!W(0x72)) STOP(0xa8226);
+        slot_blend(m,a,B(0x14),0x159,(uint16_t)(0x1fu-(uint32_t)W(0x74)*0x1fu/W(0x72)));
+        uint16_t d0=W(0x72),d1=W(0x74),d7=0x300;
+        bool arrived=d1>=d0;
+        if (!arrived) {
+            d1=(uint16_t)(d1*2u+d0-3u);
+            if (S16(d1)>0) {
+                uint32_t n=(uint32_t)(uint16_t)(d0-1u)<<8,q=n/d1,q7=3u*n/d1;
+                if (q>0xffffu || q7>0xffffu) STOP(0xa8266);                  /* divu overflow: not followed */
+                if (!q) arrived=true;
+                else {SB(0x12,q-1u);SB(0x13,q-1u);d7=(uint16_t)q7;}
+            }
+        }
+        if (arrived) {                                                       /* 0A8340 */
+            if (B(0x70)==9) {sound(m,0x10e5);creator60(a,e,m,false);}
+            else {
+                sound(m,0x10e1);
+                for (unsigned i=0;i<0x18;i++) if (!spawn(a,e,0xa83d6)) STOP(0xa837a);
+            }
+            START(0x2a7082);
+            SW(0x3c,rw(tab));SW(0x40,rw(tab+2));SB(0x12,0xff);SB(0x13,0xff);SL(0,0xa83c2);
+            STEP();
+            return GA_MORE;
+        }
+        int32_t dx=(int32_t)(((uint32_t)rw(tab)<<16)-L(0x28)),dy=(int32_t)(((uint32_t)rw(tab+2)<<16)-L(0x2c));
+        uint16_t d4=(uint16_t)((uint16_t)(W(0x72)-W(0x74))>>1),d5=(uint16_t)(W(0x74)>>1);
+        if (d4>=4) d4=4;
+        if (d5<3) d5=3;
+        SL(0x28,L(0x28)+(uint32_t)(asr(dx,d4)-asr(dy,d5)));
+        SL(0x2c,L(0x2c)+(uint32_t)(asr(dy,d4)+asr(dx,d5)));
+        SW(0x3c,(uint16_t)(((int32_t)S16(W(0x28)-0xa0u)*S16(d7))>>8)+0xa0u);
+        SW(0x40,(uint16_t)(((int32_t)S16(W(0x2c)-0x110u)*S16(d7))>>8)+0x110u);
+        uint16_t d=(uint16_t)(W(0x3c)-0xa0u);
+        if (!(d&0x8000u)) d=(uint16_t)(0u-d);
+        d=(uint16_t)((d>>2)+0x8000u-W(0x40));
+        uint16_t r=(uint16_t)(W(0x72)-W(0x74));
+        if (r) r=(uint16_t)(r+0x10u);
+        SW(0x1e,d+(uint16_t)(r<<8));
+        if (W(0x40)<0x280u) STEP();
+        return GA_MORE;
+    }
+    case 0xa83c2:
+        STEP();
+        return GA_MORE;
+    /* A spark of an arrived piece: two trails (+6E.., 16 bytes each: x, y and their speeds) drawn with one program. */
+    case 0xa83d6: {
+        uint32_t d0=(uint32_t)rnd(m)*3u;d0=d0<<16|d0>>16;                     /* 0029F2(3): the high word stays in D0 */
+        START(rl(0xa83cau+4u*(uint16_t)d0));
+        ga_palette(a,0x134);
+        SW(0x26,(rnd(m)&0xffu)+0x80u);
+        uint16_t f=rnd(m);
+        if (rnd_negative(m)) SB(0x15,B(0x15)|1u);
+        if (f&0x80u) SB(0x15,B(0x15)|2u);
+        neo_gactor_t *c=e->creator(e->ctx,a);
+        /* The high words of D1, D2 and D3 as this routine is entered: FFFF, 0 and 0 in every one of the capture's
+         * 216 sparks (what the node before it in the list left; not derived). */
+        uint32_t d1=0xffff0000u,d2=0,d3=0;
+        for (unsigned i=0;i<2;i++) {
+            d1=(d1&0xffff0000u)|rnd(m);
+            d0=(d0&0xffff0000u)|(uint16_t)((rnd(m)&0x1fu)-0xfu);
+            d1=(d1&0xffff0000u)|(uint16_t)(((uint16_t)d1&0x3fu)-0x1fu);
+            d2=(d2&0xffff0000u)|(uint16_t)((c?ga_w(c,0x3c):0u)+(uint16_t)d0);
+            d3=(d3&0xffff0000u)|(uint16_t)((c?ga_w(c,0x40):0u)+(uint16_t)d1);
+            d2=d2<<16|d2>>16;d3=d3<<16|d3>>16;
+            SL(0x6eu+16u*i,d2);SL(0x72+16*i,d3);
+            d0=d0<<16|d0>>16;d1=d1<<16|d1>>16;
+            d0=(uint32_t)((int32_t)d0>>2);d1=(uint32_t)((int32_t)d1>>2);
+            SL(0x76+16*i,d0);SL(0x7a+16*i,d1);
+        }
+        SW(0x1e,(rnd(m)&0xffu)+1u);SL(0,0xa8498);
+    }   /* fall through */
+    case 0xa8498: {
+        uint16_t keep=W(0x26);
+        for (unsigned i=0;i<2;i++) {
+            SL(0x28,L(0x6eu+16u*i));SL(0x2c,L(0x72+16*i));SL(0x30,L(0x76+16*i));SL(0x34,L(0x7a+16*i));
+            ga_move(a,e);
+            int r=ga_anim_step(a,e,NULL);
+            if (r<0) return GA_UNSUPPORTED;
+            if (r>0) SB(0x5f,B(0x5f)|0x80u);
+            SW(0x26,0);
+            SL(0x6eu+16u*i,L(0x28));SL(0x72+16*i,L(0x2c));
+        }
+        SW(0x26,keep);
+        return (B(0x5f)&0x80u)?GA_DELETE:GA_MORE;
+    }
+    case 0xa8602:
+        ga_palette(a,0x840);SW(0x1e,0);SB(0x15,B(0x15)|4u);SL(0,0xa8622);
+        /* fall through */
+    case 0xa8622:
+        SW(0x3c,0xa0);SW(0x40,0x160);
+        ga_draw(a,e,0x1d5b22);                                               /* 011FF6 */
+        return GA_MORE;
+#endif
     }
     STOP(L(0));
 }

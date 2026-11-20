@@ -542,7 +542,11 @@ $(BUILD_DIR)/continue_sprites_fixture.h: tools/compile_continue_sprites.py data/
 # The game's ending (src/neo_ending.c) against the TAS family trace of captures-m6/fam/Q1 (runQ1.sh: from end27900 to
 # the title, no memory writes; tools/extract_ending_fixture.py, docs/MISION6.md "El final"): scene = the results and
 # ranking 0570A0 (--range 56ef0-57dff --range 58112-58640 --root 570a0 and the --skip list of the fixture).
-ENDINGS := scene ranking
+# credits (frames 62170..64500: the first three pages 0646FE.. with their lines 064AC0, the music 0A4408, the timers
+# 0A4478), parade (62170..65500: thirteen pictures 0A454C), creditsend (71690..72700: the last picture, +6E = 2, and the
+# audio command 0A453A), title (73038..73677: the title 0A7FFE whole, 10 pieces and 216 sparks). Several roots: the nodes
+# the level script creates. The trace is kept compressed (Q1/boss-trace.txt.gz).
+ENDINGS := scene ranking credits parade creditsend title
 ENDING_HEADERS := $(patsubst %,$(BUILD_DIR)/ending_%_fixture.h,$(ENDINGS))
 $(BUILD_DIR)/ending_%_fixture.h: tools/compile_ending_fixture.py data/ending_%_fixture.json.gz
 	@mkdir -p $(BUILD_DIR)

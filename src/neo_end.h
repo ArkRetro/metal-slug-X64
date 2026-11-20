@@ -10,7 +10,13 @@
  * 101364 (0040BC: after it, so at the head of this list) or by each other,
  * and a deleted node keeps its bytes (the letters read their root's +60/+72
  * after the root deleted itself, as in the original RAM). */
+/* The title 0A7FFE has up to 47 nodes at once (its sparks): only the host builds take it (the console keeps 32 nodes
+ * until it runs the title, docs/MISION6.md). */
+#ifdef N64
 enum { NEO_END_NODES=32, NEO_END_DRAWS=64, NEO_END_SOUNDS=8 };
+#else
+enum { NEO_END_NODES=96, NEO_END_DRAWS=128, NEO_END_SOUNDS=8 };
+#endif
 /* RAM the prisoner tally 0308C0 (src/neo_tally.c) reads and writes, and its
  * services. NULL in neo_end_inputs_t: a tally node is an explicit stop. */
 typedef struct {
@@ -36,6 +42,11 @@ typedef struct {
      * 10C384/10C450, inputs 10C35A..), the environment reset 056FCC. */
     uint8_t (*rd)(void *ctx,uint32_t address);void (*wr)(void *ctx,uint32_t address,uint8_t value);void *ram_ctx;
     void (*setup)(void *ctx);unsigned setups;
+    /* The credits (0646FE.., 0A4408..): 009CCE(slot, target palette, level) of a node's palette slot (handle: the node's +14 / +19..)
+     * and the audio command of 0A453A (01228C). */
+    void (*slot_level)(void *ctx,neo_gactor_t *a,uint8_t handle,uint16_t target,uint8_t level);unsigned slot_levels;
+    bool (*rand_negative)(void *ctx);   /* the N flag 0029C6 returned with (0A83D6) */
+    uint16_t audio_command;
 } neo_end_ram_t;
 typedef struct {
     uint32_t descriptor;
@@ -64,6 +75,8 @@ typedef struct neo_end {
     unsigned unsupported;uint32_t unsupported_at;
     /* Test hook: called when a node is taken (before its creator's writes). */
     void (*on_alloc)(void *ctx,neo_gactor_t *a,unsigned spawn);void *on_alloc_ctx;
+    /* Test hook: called before each node's update (it may change the inputs' epoch and scene root). */
+    void (*on_update)(void *ctx,neo_gactor_t *a);
     /* Test hook: called after each node's update (deleted: routine 003F1E). */
     void (*on_updated)(void *ctx,neo_gactor_t *a);
 } neo_end_t;

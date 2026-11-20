@@ -881,7 +881,72 @@ sin prueba bit a bit (pendiente: una partida grabada que haga disparar ese proye
   `make check`): nodo, RAM escrita (exacta, sin escrituras de más), VRAM en orden y azar. `scene`: 5010 actualizaciones,
   9882 palabras de VRAM, 490 bytes de RAM iguales; `ranking`: 214 y 2058. Sin comparar (contados): VRAM/RAM del reinicio y
   el A2 muerto que `03D292` guarda en +E.
-- **Siguiente**: los créditos (`credits.c` del agente Q en el scratchpad tiene traducidos `0646FE..064ABA`, `064AC0`,
-  `0A4408`, `0A4478`, `0A453A`; falta el arnés con raíces creadas fuera — los subguiones `019E72` — y `0A454C..0A4744`), el
-  título `0A7FFE..0A8700`, la integración en `gameplay.c` (tras `neo_mission_next` con misión ≥ 6) y la prueba ares.
-  Sprites: programas `24BA2A/24BA34/24BA46/24BA52` (descriptores `1D9154`, `1D932C`, paleta 0x35F) sin exportar.
+- (Hecho por el agente R, abajo: páginas, temporizadores y desfile.)
+
+### Los créditos (20-XI, agente R)
+
+- **Quién los crea**: la sección 22 del guion crea dos espadachines `0A8C62` (los de `neo_rest.c`, fuera de la pantalla, en
+  `(360,-32)` y `(360,-24)`; `random_choice` de 0029C6 entre variantes con +74 = 4..8). Cada uno, al conmutar (`0A8F1E`),
+  crea el subguion `019E72` con el registro `rl(0x87A + 4·(+74))`, y **ese subguion** crea las páginas, los temporizadores,
+  la música, las láminas y la orden de audio. En el mundo ya existen las dos piezas (`neo_rest.c`, `e->subscript`).
+- **`src/neo_ending.c`** (traducidas y probadas): página `0646FE + 0x0A·k` (k = 0..47; tabla `0E1446`, 26 bytes: primera
+  paleta y seis descriptores) con sus seis líneas `064AC0`; música `0A4408` (0x31 tras +6E actualizaciones; **RAM 10C604 =
+  FF mientras un jugador en juego mantiene A, B o C: todo va 4 veces más deprisa**, `0A49B0`); temporizador `0A4478`; orden
+  de audio `0A453A` (`01228C`); lámina `0A454C` (programa `2A4B16`, 63 láminas por +A8, paletas 0x845 / 0x125 desde la
+  0x3E). Aritmética `04E5D0` / `04E962` (16.16 con signo) y la escala de 50 Hz `0A4996` (RAM 100002 = FF: ×0.D600).
+  `009CCE(ranura, D1, nivel)` (mezcla de la ranura de paleta hacia la paleta D1 = 1 con nivel 0..0x20) sale por
+  `neo_end_ram_t.slot_level` (nivel de la página en su +8C, de la lámina en su +A0): **el dibujo con ese nivel está
+  pendiente** (hay que desensamblar el lector de `1068EA +C/+E` para el color exacto).
+- **`neo_end.c`**: `GA_DELETE_TREE` (`0041AC`: el nodo y sus descendientes).
+- **Título `0A7FFE`** (traducido entero, `neo_ending.c`): raíz (`002976` y capas `0A7D4A`: `ram->setup`), diez piezas
+  `0A81A4` (tabla `0A7FD6`: vuelo 0x10, cada 0x0C; lugares `0A7FAE`; espiral `0A8278`, zoom +12/+13, escala D7, fondo +1E;
+  `009CCE` de su segunda ranura hacia la paleta 0x159), sonido 0x10E1 y 24 chispas `0A83D6` por pieza (programas `0A83CA`,
+  dos estelas con una sola animación; la última pieza: 0x10E5 y el +60 de la raíz), fundido a blanco, `0A8096` (`004192`
+  borra los demás nodos; `0A863C` = capas `0A7D52` y textos, `ram->setup`), imagen `0A8602` (`1D5B22`, paleta 0x840),
+  programa `2A7368`, 0x96 actualizaciones y el +60 de su creador. Dos datos de la captura, no deducidos: **el bit 0 de +15
+  de la chispa es el indicador N con que vuelve `0029C6`** (el signo de la palabra del anillo que cambia en `0029EE`:
+  `ram->rand_negative`; el fixture lo lleva en el bit 16 de cada palabra de azar) y **las mitades altas de D1/D2/D3 al
+  entrar en `0A83D6` (FFFF, 0, 0 en las 216 chispas)**, que pasan a las fracciones de las estelas: lo que deja el nodo
+  anterior de la lista, sin desensamblar. No reproducido: la entrada `0A8502` (título desde la demostración, con `0A8552`
+  y `0A85C4`: en ninguna captura), `0CA624` / `0A872E`.
+- **Pruebas** (`ENDINGS` en `make check`; `test_neo_ending.c` admite ahora **varias raíces**: toda vida que no nace de
+  otra es una raíz que arranca con sus bytes grabados; los nacimientos se atan por creador; las lecturas grabadas se
+  ponen antes de cada nodo, `neo_end_t.on_update`): `credits` (f 62170..64500: tres páginas, 18 líneas, música, 11
+  temporizadores; 7558 actualizaciones), `parade` (f 62170..65500: 13 láminas, 3858), `creditsend` (f 71690..72700: la
+  última lámina, +6E = 2, y `0A453A`; 709), `title` (f 73038..73677: entero, 5926 actualizaciones, 1728 palabras de azar,
+  194 borrados). Todo igual byte a byte (nodos +10..+AF, RAM 10C604, azar). Sin comparar: los dibujos (contados), la
+  RAM/VRAM de entorno de `0A7FFE` / `0A8096` (13 487 palabras). Extractor (`extract_ending_fixture.py`): lee `.gz`,
+  **descarta lo que hace la interrupción de vertical `0022AC..002320` dentro de la actualización de un nodo** y agrupa las
+  pasadas solo por nodo repetido (una pasada cruza líneas de fotograma y, cargada, dura tres). Órdenes:
+  `--range 646fe-64b02 --range a4408-a454a --root 646fe .. --root a453a` (credits),
+  `--range a454c-a4744 --root a454c` (parade), `--range a7d44-a8730 --root a7ffe` (title), con `--skip 106300-106400
+  --skip 106800-107900 --skip 109900-10c000 --skip 10f000-10f010` y la ventana `--from-frame/--to-frame`.
+- **Nodos**: `NEO_END_NODES` 96 en host (el título tiene 47 a la vez y crea 24 de golpe), **32 en N64** (no cabe el
+  título: decidir memoria antes de engancharlo).
+- **Sin captura**: la lámina oscilante `0A4698` (+6E = 1): ninguna de las 43 del TAS lo es; está traducida del listado
+  y **pendiente de captura** (haría falta otra semilla de `random_choice`). Las comprobaciones de cartucho `0A4496` /
+  `0A8116` no se reproducen (solo actúan si fallan).
+- **Datos de ROM**: `region_rom.json` grupo nuevo **`end`** (solo host, como los `mN`; `pack_mission.py` no lo empaqueta):
+  `0E1446` (0x4E0), `0E61B4`, `0A7FAE` (0x50), `0A83CA`. Programas grupo `end` en `extract_soldier_programs.py`: `2A4B16`,
+  `2A7368`, `2A702C`, `2A7082`, `2A7182`, `2A7224`, `2A72C6`. En N64 el código de créditos y título no se compila (`MSX_CREDITS` lo enciende); ni datos ni código nuevos en la imagen.
+- **Traza Q1**: comprimida en `captures-m6/fam/Q1/boss-trace.txt.gz` (29 MB; la cruda de 254 MB, borrada). Aún sirve
+  para: fixture de familia de los espadachines `0A8C62` y su subguion `019E82` en los créditos (no hecho). **No tiene
+  volcados de VRAM** (`PERIOD=0`): la validación de sprites a 0 px necesita repetir `runQ1.sh` con
+  `MSX_TAS_DUMP_PERIOD`.
+- **Pendiente, por orden**:
+  1. **Sprites** (nada exportado aún): la esfera `24BA2A/24BA34` y la pieza `24BA46/24BA52` (descriptores `1D9154`,
+     `1D932C`, paleta 0x35F) al paquete de la M6 (escena `0570A0`, misma etapa; ≤ 1256 trozos, va en 1195); los de los
+     créditos (63 láminas de `2A4B16` con 0x845 / 0x125, los 6×48 descriptores de `0E1446` con paletas consecutivas) y
+     los del título (`2A7368`, `2A702C`, `2A7082`, chispas, `1D5B22`; paletas 0xDE, 0x134, 0x145, 0x159, 0x840) necesitan
+     **paquete propio** (la etapa 0x2C cambia de escena: punto natural de carga) y el fondo de teselas `0A7D4A` / `0A7D52`.
+  2. **`009CCE` en el dibujo**: desensamblar el lector de `1068EA +0A/+0C/+0E` (mezcla hacia la paleta D1 por nivel) y
+     llevar `slot_level` al renderizador; sin eso las páginas y láminas no se funden.
+  3. **Etapa de créditos en el juego**: misión 0xC, registro `017C54` (descriptor `01709E`, lista de cámara `025F3E`,
+     guion 0x858 = sección 22, etapa 0x2C, sin música). Camino: paquete de etapa con `export_stage_rom.py 1709e` (los
+     espadachines llaman a `0146E8`: necesitan su mapa de colisión), `data/ending_script.json` en el paquete, y que el
+     mundo despache a `neo_ending_tick` las rutinas `0646FE..064AE0` / `0A4408..0A4724` que crea el subguion (hoy viven
+     en la lista de `neo_end.c`; hace falta un `neo_end_ram_t` desde `neo_world`, y `GA_DELETE_TREE`). Bucle de misión con
+     42F6 = 0x2C: `018AC0` (espera el bit 7 de `101414 +5F`), `018B18..018BBA` (fundidos, `01959C`), y el núcleo crea
+     `057E00` y `0A7FFE` (ambos traducidos). El título del arcade solo en host hasta resolver nodos y capas: mientras,
+     tras `057E00` se puede volver al título del port (decisión del coordinador).
+  4. Prueba en ares créditos → título por un punto de entrada de prueba (el jefe sigue apagado en N64).

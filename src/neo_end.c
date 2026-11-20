@@ -256,6 +256,7 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
         int n=s->order[i];neo_gactor_t *a=&s->nodes[n];
         if (!a->active || a->placeholder) continue;
         t.current=n;e.unsupported=0;
+        if (s->on_update) {s->on_update(s->on_alloc_ctx,a);e.epoch=in->epoch;}
         ga_result_t r=neo_end_routine(ga_l(a,0))?tick(a,&e,in):
             neo_tally_routine(ga_l(a,0))?neo_tally_tick(s,a,&e,in->ram):
             neo_ending_routine(ga_l(a,0))?neo_ending_tick(s,a,&e,in->ram):(ga_fail(&e,ga_l(a,0)),GA_UNSUPPORTED);
@@ -263,6 +264,15 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
             /* Explicit stop: the node stays frozen, counted once. */
             if (!s->unsupported) s->unsupported_at=e.unsupported_at;
             s->unsupported++;a->placeholder=true;continue;
+        }
+        if (r==GA_DELETE_TREE) {
+            /* 0041AC: the node and every descendant (the nodes after it created by it or by one of them). */
+            bool gone[NEO_END_NODES];memset(gone,0,sizeof(gone));gone[n]=true;
+            for (unsigned j=i+1;j<s->count;j++) {
+                int k=s->order[j];
+                if (s->creator[k]>=0 && gone[(int)s->creator[k]]) {gone[k]=true;ga_sl(&s->nodes[k],0,0x3f1e);s->nodes[k].placeholder=true;}
+            }
+            r=GA_DELETE;
         }
         if (r==GA_DELETE) {
             /* 004188: routine 003F1E; the bytes stay (read by its children). */

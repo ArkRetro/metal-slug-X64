@@ -301,7 +301,7 @@ ROOTS+=[0x22fa34]
 # ("m2", "m3"): they go into that mission's pack (pack_mission.py, 'MSXD'),
 # not into the console image (compile_soldier_ai_tables.py). A root also
 # listed in another block stays in the image.
-MISSION_BLOCKS={'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
+MISSION_BLOCKS={'end':('# The credits and the title after them',),'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
     '# Mission 2: the hostage','# The miners','# The bats','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
@@ -521,6 +521,10 @@ ROOTS+=[0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,
 ROOTS+=[0x24ba2a,0x24ba34]
 # The ranking 057E00's piece 0580A2 (table 24BA3E).
 ROOTS+=[0x24ba46,0x24ba52]
+# The credits and the title after them (neo_ending.c; group "end": host only until the console runs them): the pictures
+# 0A454C (0A4744) 2A4B16, one program with the picture by +A8; the title 0A7FFE: its root 2A7368, the pieces 2A702C
+# (flying) / 2A7082 (arrived), the sparks 2A7182 / 2A7224 / 2A72C6.
+ROOTS+=[0x2a4b16,0x2a7368,0x2a702c,0x2a7082,0x2a7182,0x2a7224,0x2a72c6]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):

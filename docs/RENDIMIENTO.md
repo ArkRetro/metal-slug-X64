@@ -1370,6 +1370,6 @@ con el cartucho de control `bcc3849`** (sin superposiciones, mismos paquetes, mi
   `16929E` son el fallo abierto de `docs/FALLOS.md` (M4 con BLOOD OFF). No es de esta rama.
 - `m5boss` PASS con `missing_draw` 42 (control: 8): los 34 de más son la paleta `20C` (la llama final `099268` del
   soldado quemado, sin captura: pendiente de `docs/MISION5.md`), que solo aparece si un soldado quemado llega a ella
-  en esa pasada; no hay código de la superposición en ese camino (`neo_m5boss` no la dibuja en el control porque
-  ningún soldado llegó).
+  en esa pasada (en el control ninguno llegó). El soldado quemado es código de `neo_m5boss` (`burnt_tick`), el mismo
+  objeto en la superposición y en el anfitrión (`make check`, familias `m5boss*`); la paleta falta en el paquete, no en el código.
 La línea base no se reescribe (`m4boss` sigue abierto).

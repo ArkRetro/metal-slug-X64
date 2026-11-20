@@ -975,3 +975,8 @@ nativo, `MSX mission complete signal (018F92)` (la muerte `041DD4`) y ninguna pa
   real): ninguna captura la muestra (run4 ni el TAS ponen `+87` del eje), no se sabe de la ranura su `+A` y no se dibuja;
   el relevo `09B532 jmp 04611C` sigue sin partida grabada que rompa el escudo de un soldado en la segunda forma (hace falta
   jugarla en MAME 0.264 con volcados; no hay mando grabado que lo haga).
+- **ares** (cartucho de `8acec10`, `regression_ares.py --only m6boss`): **PASS** en 2428 s, `missing_draw=0 unsupported=0
+  stopped=0`; `MSX M6 layer palette: cells 320, 10C 320, colours equal 1` (la paleta de las celdas es la nativa de 10C);
+  la ranura 0x38 pasa por 10C, 10D, 10E y DA (cambios registrados 464 / 456 / 430 / 1150), ningún fotograma sin paleta.
+  Arranque: `MSX CACHE slots=208..209 (floor 208)` con la región de superposición en 62 432 B; cartucho 64 765 952 B; M6
+  1230 trozos.

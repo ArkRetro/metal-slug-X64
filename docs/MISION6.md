@@ -1210,8 +1210,8 @@ fotogramas 61490..61530) y **ZT** (título, 73150..73410), volcados de cada foto
 `MSX_TAS_DUMP_FRAMES=61490-61530` (`MSX_TAS_LAST=73410`) y `73150-73410` (`MSX_TAS_LAST=73420`); guardadas (RAM y VRAM)
 en `build/captures/ZC` y `ZT` de este árbol. **Resultado: 121 pares, 2 958 452 palabras iguales, 0 distintas**; 239
 entradas con zoom (80 sin espejo y 40 con espejo horizontal en el dial; 159 sin espejo en el título) y 14 957 sin zoom
-de las cuatro variantes. **Pendiente**: las variantes con zoom y espejo vertical (6 / 7) no salen en las capturas
-(traducidas igual que las demás, sin comprobar). En `make check` (se salta sin las capturas o la ROM).
+de las cuatro variantes. Variantes con zoom y espejo vertical (6 / 7): **sin captura** (no salen en ZC ni ZT;
+traducidas igual que las demás, sin comprobar). En `make check` (se salta sin las capturas o la ROM).
 
 **Paso 2, pendiente**: el port (`actor.c`, `scene_render_sprite_scaled`) sigue escalando cada parte con un
 rectángulo del RDP; falta dibujar sprite a sprite de 16 px con estas columnas y líneas.

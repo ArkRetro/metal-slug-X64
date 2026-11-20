@@ -107,6 +107,23 @@ def pending(r):
 
 def windows(r):return [[ram_w(r,A5+b+2*i) for i in range(4)] for b in (0x3954,0x395c)]
 
+class CWriter:
+    """The same entries through src/neo_scb.c (--c build/host/neo_scb.so)."""
+    def __init__(self,lib,vram,p2):
+        import ctypes as C
+        self.C=C;self.v=vram;self.p2=p2;self.writes=0;self.lib=C.CDLL(str(lib))
+        RD=C.CFUNCTYPE(C.c_uint16,C.c_void_p,C.c_uint32,C.c_uint32);WR=C.CFUNCTYPE(None,C.c_void_p,C.c_uint16,C.c_uint16)
+        def rd(_,ptr,i):
+            a=(((ptr>>20)&0xf)-1)*0x100000+(ptr&0xfffff)+2*i;return (p2[a]<<8)|p2[a+1]
+        def wr(_,a,d):self.v[a]=d;self.writes+=1
+        self.rd=RD(rd);self.wr=WR(wr)
+        class E(C.Structure):_fields_=[('x',C.c_uint16),('y',C.c_uint16),('zoom',C.c_uint16),('attr',C.c_uint16),('descriptor',C.c_uint32)]
+        self.E=E
+    def entry(self,pas,fwd,e,win):
+        C=self.C;w=(C.c_uint16*4)(*win)
+        self.lib.neo_scb_entry(C.c_bool(pas=='E'),C.c_bool(fwd),C.byref(self.E(*e)),w,self.rd,self.wr,None)
+        win[:]=list(w)
+    def w(self,a,d):self.v[a&0xffff]=d&0xffff;self.writes+=1
 def run_pass(wr,pas,fwd,ents,wins):
     for w in wins:
         if fwd:w[2]=w[0]
@@ -125,6 +142,7 @@ def run_pass(wr,pas,fwd,ents,wins):
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('capture',type=Path);ap.add_argument('--frames')
+    ap.add_argument('--c',type=Path,help='src/neo_scb.c built as a shared library: the C translation instead')
     ap.add_argument('--rom',type=Path,default=Path('/home/user/roms/mslugx.zip'))
     a=ap.parse_args()
     if not a.capture.is_dir() or not a.rom.is_file():print('check_zoom_scb: skipped (no capture or ROM)');return 0
@@ -147,7 +165,7 @@ def main():
         v0=list(struct.unpack('>34304H',(a.capture/f'vram{f}.bin').read_bytes()))
         v1=struct.unpack('>34304H',(a.capture/f'vram{g}.bin').read_bytes())
         fwd0,e0,p0=pending(r0);fwd1,e1,p1=pending(r1)
-        wins=windows(r0);wr=Writer(v0,p2)
+        wins=windows(r0);wr=CWriter(a.c,v0,p2) if a.c else Writer(v0,p2)
         run_pass(wr,'E',fwd0,e0,wins);run_pass(wr,'D',fwd1,e1,wins)
         if [w[:2] for w in windows(r0)]!=[w[:2] for w in windows(r1)]:continue   # a002 set other windows (another screen)
         # the windows' sprites (index i: sprite i + 1): SCB1 and SCB2..4; sprites outside them are other writers'

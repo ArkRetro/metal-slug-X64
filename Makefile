@@ -1612,6 +1612,10 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(HOST_CC) $(HOST_CFLAGS) tools/test_marco_common.c src/marco_common.c src/marco_upper.c src/marco_controller.c src/marco_animation.c src/neo_animation.c -o $(BUILD_DIR)/host/marco-common
 	$(BUILD_DIR)/host/marco-common
 # Mission 1 boss (docs/JEFE_MISION1.md): ROM-derived tables and fight fixtures.
+$(BUILD_DIR)/music_fade.h: tools/extract_music_fade.py data/music_fade.json
+	python3 tools/extract_music_fade.py --header
+$(BUILD_DIR)/src/game_audio.o: $(BUILD_DIR)/music_fade.h src/msx_fade.h
+
 $(BUILD_DIR)/boss_tables.h: tools/compile_boss_tables.py data/boss_tables.json data/boss_programs.json
 	python3 tools/compile_boss_tables.py
 $(BUILD_DIR)/boss_fixture.h: tools/compile_boss_fixture.py $(wildcard data/boss_fight_*.json.gz)
@@ -1634,7 +1638,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/end_ports_fixture.h $(BUILD_DIR)/credits_world_fixture.h $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: $(MISSION_BGP) $(BUILD_DIR)/music_fade.h $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/end_ports_fixture.h $(BUILD_DIR)/credits_world_fixture.h $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
@@ -1661,8 +1665,17 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	# The sprite-list column writers 11D04 / 11E60 (a106..fffe, zoom +12 / +13 included: SCB2 nibble per column, SCB3
 	# zoomed y / size, SCB4 accumulated x), docs/MISION6.md: against MAME dumps of every frame of the results (ZC,
 	# 61490..61530) and the title (ZT, 73150..73410); skipped without them (build/captures, recipe in the doc).
+	# The sound driver's master level (fade 0A xx, timer A ticks): tools/check_music_fade.py and src/msx_fade.h against
+	# the capture ZF (every write to F804..F808 from end27900, docs/AUDIO_JUEGO.md); skipped without it.
+	python3 tools/check_music_fade.py $(or $(MSX_ZF),build/captures/ZF/z80tap.txt)
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_music_fade.c -o $(BUILD_DIR)/host/music_fade
+	$(BUILD_DIR)/host/music_fade $(or $(MSX_ZF),build/captures/ZF/z80tap.txt)
 	python3 tools/check_zoom_scb.py $(or $(MSX_ZC),build/captures/ZC) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
 	python3 tools/check_zoom_scb.py $(or $(MSX_ZT),build/captures/ZT) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
+	# The same family through the C translation (src/neo_scb.c).
+	mkdir -p $(BUILD_DIR)/host && $(HOST_CC) $(HOST_CFLAGS) -O2 -shared -fPIC src/neo_scb.c -o $(BUILD_DIR)/host/neo_scb.so
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZC),build/captures/ZC) --rom $(or $(MSX_ROM_ZIP),mslugx.zip) --c $(BUILD_DIR)/host/neo_scb.so
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZT),build/captures/ZT) --rom $(or $(MSX_ROM_ZIP),mslugx.zip) --c $(BUILD_DIR)/host/neo_scb.so
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_wipe.c src/neo_wipe.c $(filter-out src/neo_wipe.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/wipe
 	$(BUILD_DIR)/host/wipe
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_muzzle.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/muzzle

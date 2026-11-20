@@ -29,6 +29,7 @@ Sesión `work-aprox` (9-XI). Siguiente paso al final.
 | A15 | `src/neo_m3enemy.c:1329` | `08DBC4`: D0 tras un fin de programa se supone no nulo | `004352`, `08D91E` | **pendiente** |
 | A16 | `src/mission_camera.h:19` | Altura de cámara de la M1 por fórmula medida `ceil((cámara−944)/4)` | `0C8764` y la lista de cámara | sin uso (`msx_camera_height` no se llama: código muerto) |
 | A17 | `src/neogeo_logo.c`, `src/cinematic.c`, `src/scene_assets.c` | Logo de arranque (animación medida en ares), estimaciones de coste de decodificación y presupuestos de RAM | — | fuera de alcance (no son del juego) |
+| A18 | `tools/pack_game_audio.py`, `filesystem/audio` | **Compresión de audio con pérdida: aprobada por el usuario el 20-XI.** VADPCM en todo el audio; las músicas a 20 kHz (antes 24), los efectos a 24 kHz | PCM de referencia: el render aislado de la ROM en MAME 0.264; lo que suena (pista, momento, bucle, canal, prioridad) sigue siendo exacto | **aprobado**: tolerancia propia del códec, SNR por pista en `manifest.json` y en `AUDIO_JUEGO.md` §18 (códec 21–35 dB; contra el render 12,6–30,6 dB); `test_wav64_vadpcm.py` comprueba que cada música lleva su SNR medida |
 
 ## Siguiente paso (uno solo)
 

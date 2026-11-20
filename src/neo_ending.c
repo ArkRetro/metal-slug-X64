@@ -471,7 +471,7 @@ static ga_result_t ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,n
     case 0x571ba:
         if (B(0x60)!=2) return GA_MORE;
         if (m->fade) neo_fade_start(m->fade,-31,-31,-31,0x10);
-        m->audio_commands++;                                                /* 01228C(0x80) */
+        m->audio_commands++;m->audio_command=0x80;                           /* 01228C(0x80) */
         SW(0x72,0x14);SL(0,0x571ea);
         /* fall through */
     case 0x571ea:
@@ -922,8 +922,25 @@ static ga_result_t ending_tick(struct neo_end *s,neo_gactor_t *a,neo_genv_t *e,n
             neo_gactor_t *o=&neo_end_nodes(s)[i];
             if (o!=a && o->active && !o->placeholder) {ga_sl(o,0,0x3f1e);o->placeholder=true;}
         }
-        if (m->setup) m->setup(m->ram_ctx);                                  /* 0A863C: 01AA28(0A7D52), 03E2A8, 0C81A6, 03CF60 */
+        /* 0A863C: the layers 0A7D52 (01AA28) and their maps and palettes (0C81A6: the list 0A7F02, or 0A7E5E when RAM
+         * 100001 = 0) are the environment's (ram->setup); its fix texts are written here: the line 0A7E3A (03E2A8 =
+         * 03D25A with 03DD96; the string sets its own place, palette and page) unless RAM 100001 = 0, and the 6 x 3
+         * block of tiles from 0x6E5A at 709A (03CF60). */
+        if (m->setup) m->setup(m->ram_ctx);
         m->setups++;
+        {
+            neo_text_t t=text_of(m);
+            if (mb(m,0x100001)) {uint16_t d1=0;neo_text_string(&t,0,&d1,ga_rom(0xa7e3a));}
+            uint16_t d0=0x709a,d1=0x6e5a;
+            for (unsigned d2=6;d2;d2--) {                                    /* 03CF60 */
+                uint16_t ad=d0,w=d1;
+                for (unsigned d6=3;d6;d6--) {
+                    neo_text_word(&t,ad,w);ad=(uint16_t)(ad+1u);w=(uint16_t)((w&0xff00u)|(uint8_t)(w+0x10u));
+                }
+                d1=(uint16_t)((d1&0xff00u)|(uint8_t)(d1+1u));d0=(uint16_t)(d0+0x20u);
+            }
+            if (!text_done(e,m,&t,0xa863c)) return GA_UNSUPPORTED;
+        }
         if (!spawn(a,e,0xa8602)) STOP(0xa80aa);
         SL(0,0xa80b8);
         return GA_MORE;

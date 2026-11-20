@@ -328,3 +328,15 @@ void neo_end_update(neo_end_t *s,const neo_end_inputs_t *in) {
         }
     }
 }
+void neo_end_port_block(neo_end_ram_t *m,uint32_t block,uint8_t held) {
+    if (!m->rd || !m->wr) return;
+    uint8_t d1=m->rd(m->ram_ctx,block+2u);
+    m->wr(m->ram_ctx,block+1u,d1);m->wr(m->ram_ctx,block+2u,held);
+    d1=(uint8_t)((d1^held)&held);m->wr(m->ram_ctx,block+3u,d1);
+    if (d1) {m->wr(m->ram_ctx,block+4u,d1);m->wr(m->ram_ctx,block+5u,m->rd(m->ram_ctx,0x10c380));}
+    else {
+        uint8_t n=(uint8_t)(m->rd(m->ram_ctx,block+5u)-1u);m->wr(m->ram_ctx,block+5u,n);
+        if (!n) {m->wr(m->ram_ctx,block+4u,held);m->wr(m->ram_ctx,block+5u,m->rd(m->ram_ctx,0x10c381));}
+        else m->wr(m->ram_ctx,block+4u,0);
+    }
+}

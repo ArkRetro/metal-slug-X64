@@ -287,6 +287,9 @@ do
  local list,gap=string.match(os.getenv('MSX_TAS_DUMP_RES') or '','^([%x,]+):?(%d*)$')
  if list then dump_res={};for h in string.gmatch(list,'(%x+)') do dump_res[tonumber(h,16)]=true end;if gap~='' then dump_res_gap=tonumber(gap) end end
 end
+-- MSX_TAS_DUMP_FRAMES=LO-HI: the dumps only in those frames (a window every frame: PERIOD=1).
+local dump_lo,dump_hi=string.match(os.getenv('MSX_TAS_DUMP_FRAMES') or '','(%d+)-(%d+)')
+dump_lo,dump_hi=tonumber(dump_lo or '0'),tonumber(dump_hi or '1e18')
 local function tas_dump(f)
  local video_memory=emu.item(assert(machine.devices[':spritegen'].items['0/m_videoram']))
  local v=assert(io.open(out..'/vram'..f..'.bin','wb'))
@@ -299,6 +302,16 @@ local function tas_dump(f)
  for i=0,4095 do parts[#parts+1]=string.pack('>I2',cpu:read_u16(0x400000+i*2)) end
  p:write(table.concat(parts));p:close()
  screen:snapshot(out..'/game'..f..'.png')
+ -- MSX_TAS_DUMP_PALRAM=1: both palette banks (the driver's m_paletteram, 2 x 4096 words; 0x400000 shows only the
+ -- bank REG_PALBANK0/1 selects) and the bank in use, read only.
+ if os.getenv('MSX_TAS_DUMP_PALRAM')=='1' then
+  local items=machine.devices[':'].items;local name;for k,_ in pairs(items) do if string.find(k,'paletteram') then name=k end end
+  local o=assert(io.open(out..'/palram'..f..'.txt','w'))
+  for k,_ in pairs(items) do if string.find(k,'palette') then o:write('item '..k..'\n') end end
+  if name then local it=emu.item(items[name]);local q={};for i=0,it.count-1 do q[#q+1]=string.pack('>I2',it:read(i)) end
+   local b=assert(io.open(out..'/palram'..f..'.bin','wb'));b:write(table.concat(q));b:close() end
+  o:close()
+ end
 end
 local function capture_close()
  if tas_camera_csv then tas_camera_csv:close() end
@@ -327,7 +340,7 @@ emu.register_frame_done(function()
    node~=0 and cpu:read_u32(node) or 0,node~=0 and cpu:read_u8(node+0x5a) or 0,node~=0 and cpu:read_u8(node+0x5f) or 0)
   if k~=slot_tap_key then event(string.format('SLOT update %d frame %d %s',updates,frame,k));slot_tap_key=k end
  end
- if dump_period>0 and updates>=cap_from and frame%dump_period==0 and not first then tas_dump(frame) end
+ if dump_period>0 and updates>=cap_from and frame%dump_period==0 and frame>=dump_lo and frame<=dump_hi and not first then tas_dump(frame) end
  -- MSX_TAS_DUMP_RES=<hex list>[:<gap>] (read only): the dump of tas_dump the first frame a listed palette resource
  -- (the logical palette ids of the slot table 1068EA, +10 of each 16-byte entry, as export_soldier_sprites.resources
  -- reads them) is in a slot, and again every <gap> frames (default 30) while one is; an event line names them.

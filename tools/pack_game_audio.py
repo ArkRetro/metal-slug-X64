@@ -16,8 +16,15 @@ Output: filesystem/audio/<label>.wav64 and filesystem/audio/manifest.json.
   stays high). The driver output is not sample-identical between passes
   (FM phase, tick jitter), so the splice is placed where the waveform at t0
   and t0+period+d correlates best (d within +-25 ms); the WAV64 holds
-  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 24 kHz
-  (loop start/length rounded to 16 samples for VADPCM).
+  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 20 kHz
+  (loop start/length rounded to 16 samples for VADPCM). Lossy audio
+  compression approved by the user on 20-XI (docs/APROXIMACIONES.md): the
+  music was 24 kHz, and the ending's 0x2E / 0x31 did not fit in the cart;
+  at 20 kHz all of it fits. Every music pack is decoded here (the C
+  reference decoder, tools/wav64_vadpcm.py) and its SNR against the render
+  is written to the manifest: 'snr_render_db' (decoded, band-limited back to
+  48 kHz, against the 48 kHz render: band limit + codec) and 'snr_codec_db'
+  (against the 20 kHz staging PCM: the codec alone).
 Resampling is an FFT band limit (numpy only)."""
 import argparse,hashlib,json,subprocess,wave
 from pathlib import Path
@@ -75,6 +82,16 @@ def find_loop(pcm,min_period=30.0,measured=None):
         assert min(windows)>level-0.05,('the measured period does not hold in the whole render',windows)
     return dict(period_s=fine*hop/SRC,start_s=start*hop/SRC,similarity=round(level,3),
                 candidates=[dict(lag_s=l/10,similarity=round(c,3)) for c,l in coarse[:6]])
+def snr(decoded,rate,staging,render):
+    """Music: SNR (dB) of the decoded pack against its 20 kHz staging PCM
+    and, stretched back to the render's length (the inverse of `resample`), against
+    the render."""
+    d=decoded.astype(np.float64);n=min(len(d),len(staging));e=d[:n]-np.round(staging[:n])
+    codec=10*np.log10((staging[:n]**2).sum()/max((e**2).sum(),1e-9))
+    m=len(render);X=np.fft.rfft(d,axis=0);Y=np.zeros((m//2+1,)+d.shape[1:],dtype=complex);k=min(len(X),m//2+1);Y[:k]=X[:k]
+    up=np.fft.irfft(Y,m,axis=0)*m/len(d);e=up-render;n=m
+    full=10*np.log10((render[:n]**2).sum()/max((e**2).sum(),1e-9))
+    return round(float(full),2),round(float(codec),2)
 def splice(pcm,start,period,good=0.9):
     """Splice candidates every 0.25 s of the repeated part; take the earliest
     whose seam correlation reaches `good` (or the best one): a shorter file."""
@@ -95,7 +112,7 @@ def main():
     p.add_argument('--source',type=Path,default=ROOT/'filesystem/audio-src')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/audio')
     p.add_argument('--audioconv',default=None);p.add_argument('--sfx-rate',type=int,default=24000)
-    p.add_argument('--music-rate',type=int,default=24000)
+    p.add_argument('--music-rate',type=int,default=20000)
     p.add_argument('--period',action='append',default=[],metavar='LABEL=SECONDS',help='loop period measured over the whole render')
     a=p.parse_args();measured={k:float(v) for k,v in (x.split('=') for x in a.period)}
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
@@ -156,6 +173,9 @@ def main():
             if sustained:entry.update(status='SUSTAINED: render window, stopped by its actor',window_s=info['seconds'])
         subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
         wav64=a.output/(label+'.wav64')
+        if label.startswith('music'):
+            parts=([W.decode(a.output/(label+'_intro.wav64'))[0]] if entry.get('intro_samples') else [])+[W.decode(wav64)[0]]
+            entry['snr_render_db'],entry['snr_codec_db']=snr(np.concatenate(parts),entry['rate'],out,pcm[:(end if entry.get('intro_samples') else len(pcm))])
         if not label.startswith('music'):
             # B43: audioconv64's VADPCM encoder can fail on a signal (the
             # truck engine 10A5 decoded with bursts over a quarter of its
@@ -177,6 +197,6 @@ def main():
         if label not in manifest and (a.output/(label+'.wav64')).exists():manifest[label]=entry
     total=sum(e.get('bytes',0)+e.get('intro_bytes',0) for e in manifest.values())
     (a.output/'manifest.json').write_text(json.dumps(dict(source='tools/pack_game_audio.py from tools/render_sound_commands.py renders',total_bytes=total,sounds=manifest),indent=1)+'\n')
-    for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})
+    for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('snr_render_db','snr_codec_db','status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})
     print('total',total)
 if __name__=='__main__':main()

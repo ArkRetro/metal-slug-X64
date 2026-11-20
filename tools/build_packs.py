@@ -17,7 +17,8 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 # Stage directories under filesystem/missionN and extra arguments (docs/MISION2.md, docs/MISION3.md, docs/MISION4.md, docs/MISION5.md).
 RECIPES={2:(('s1','s2','s3'),()),3:(('s1',),('--loose-layers',)),4:(('s1',),('--rom-layers',)),5:(('s1','s2','s3'),('--rom-layers',)),6:(('s1','s2','s3'),('--rom-layers',)),
-    13:(('s1',),('--rom-layers',))}   # 13: mission 0xC, the credits (tools/build_ending.sh)
+    13:(('s1',),('--rom-layers',))}   # 13: mission 0xC, the ending (docs/MISION6.md: export_stage_rom.py 1709e, export_rest_sprites.py
+    # --ending and export_ending_layers.py, the map pages of the last screen and of the title, fill filesystem/mission13)
 
 def build(output=None,fmt=5,first=2,quiet=False):
     """Packs of the missions >= first that have their extracted stages; returns their numbers."""

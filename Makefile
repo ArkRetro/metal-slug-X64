@@ -596,8 +596,14 @@ $(BUILD_DIR)/continue_sprites_fixture.h: tools/compile_continue_sprites.py data/
 # 0A4478), parade (62170..65500: thirteen pictures 0A454C), creditsend (71690..72700: the last picture, +6E = 2, and the
 # audio command 0A453A), title (73038..73677: the title 0A7FFE whole, 10 pieces and 216 sparks). Several roots: the nodes
 # the level script creates. The trace is kept compressed (Q1/boss-trace.txt.gz).
-ENDINGS := scene ranking credits parade creditsend title peace
+# name (captures-m6/fam/NE1, runNE1.sh: the results again from end27900 with the stick and the buttons during the name
+# entry 05812A, updates 28600..28835 of captures-m6/fam/updates_ne1.txt; the same ranges and skips as scene).
+ENDINGS := scene ranking credits parade creditsend title peace name
 ENDING_HEADERS := $(patsubst %,$(BUILD_DIR)/ending_%_fixture.h,$(ENDINGS))
+# Player 1's port block 10C35A (neo_end_port_block, ROM 03CC10) against the same capture (tools/extract_end_ports_fixture.py).
+$(BUILD_DIR)/end_ports_fixture.h: tools/compile_end_ports_fixture.py data/end_ports_fixture.json.gz
+	@mkdir -p $(BUILD_DIR)
+	python3 tools/compile_end_ports_fixture.py data/end_ports_fixture.json.gz --output $@
 $(BUILD_DIR)/ending_%_fixture.h: tools/compile_ending_fixture.py data/ending_%_fixture.json.gz
 	@mkdir -p $(BUILD_DIR)
 	python3 tools/compile_ending_fixture.py data/ending_$*_fixture.json.gz --output $@ --name ending_$*
@@ -1667,7 +1673,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_boss.c $(BOSS_SRCS) -o $(BUILD_DIR)/host/boss
 	$(BUILD_DIR)/host/boss
 	python3 tools/check_boss_budget.py
-check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/credits_world_fixture.h $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
+check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/end_ports_fixture.h $(BUILD_DIR)/credits_world_fixture.h $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
@@ -1687,6 +1693,15 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	python3 tools/test_palmix_run.py $(or $(MSX_ROM_ZIP),mslugx.zip)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -Isrc tools/test_neo_lspc.c -o $(BUILD_DIR)/host/lspc
 	$(BUILD_DIR)/host/lspc
+	# The LSPC's sprite shrink (tools/check_lspc_shrink.py): the column table derived again from six results dumps of
+	# captures-m6/fam/T1 (each nibble 0..14 from one dump) and the shrunk sprites of two dumps (one with vertical shrink) against MAME's
+	# screenshots; skipped without the BIOS (000-lo.lo) or the capture.
+	python3 tools/check_lspc_shrink.py --quick --capture $(or $(MSX_T1),../captures-m6/fam/T1) --zip $(or $(MSX_BIOS_ZIP),$(dir $(or $(MSX_ROM_ZIP),mslugx.zip))neogeo.zip) --derive 60930,60960,61620,61260,61290,61020 --frames 61500,73200
+	# The sprite-list column writers 11D04 / 11E60 (a106..fffe, zoom +12 / +13 included: SCB2 nibble per column, SCB3
+	# zoomed y / size, SCB4 accumulated x), docs/MISION6.md: against MAME dumps of every frame of the results (ZC,
+	# 61490..61530) and the title (ZT, 73150..73410); skipped without them (build/captures, recipe in the doc).
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZC),build/captures/ZC) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
+	python3 tools/check_zoom_scb.py $(or $(MSX_ZT),build/captures/ZT) --rom $(or $(MSX_ROM_ZIP),mslugx.zip)
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_wipe.c src/neo_wipe.c $(filter-out src/neo_wipe.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/wipe
 	$(BUILD_DIR)/host/wipe
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_muzzle.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/muzzle
@@ -1882,6 +1897,7 @@ check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS)
 	$(BUILD_DIR)/host/descent
 	for t in $(TALLIES); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DTALLY_HEADER="\"tally_$${t}_fixture.h\"" -DTALLY_NAME=tally_$$t tools/test_neo_tally.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/tally_$$t && $(BUILD_DIR)/host/tally_$$t || exit 1; done
 	for t in $(ENDINGS); do $(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) -DENDING_HEADER="\"ending_$${t}_fixture.h\"" -DENDING_NAME=ending_$$t tools/test_neo_ending.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/ending_$$t && $(BUILD_DIR)/host/ending_$$t || exit 1; done
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_end_ports.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/end_ports && $(BUILD_DIR)/host/end_ports
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_credits.c $(WORLD_SRCS) src/neo_collision.c -o $(BUILD_DIR)/host/credits_world
 	$(BUILD_DIR)/host/credits_world
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_neo_fuel.c $(filter-out src/neo_world.c src/neo_script.c src/neo_camera.c,$(WORLD_SRCS)) src/neo_collision.c -o $(BUILD_DIR)/host/fuel

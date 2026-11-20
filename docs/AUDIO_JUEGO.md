@@ -623,6 +623,58 @@ los canales de `stop_mask`.
 anterior no llevaba (`102E`, `1030`, `1036`, `1053`, `1060`, `1066`, `10D1`,
 `1134`, `113B`; sus `.wav64` existen) siguen fuera del cartucho: añadirlos
 cambia el presupuesto de RAM (`RAMFS_FILES`), no se ha probado en ares.
+## 20. Compresión de audio con pérdida (aprobada por el usuario el 20-XI) y las músicas del final
+
+**Excepción aprobada por el usuario el 20-XI: compresión de audio con pérdida.** Solo afecta a la codificación:
+qué suena, cuándo, bucles, canales y prioridades siguen saliendo de la ROM, y el PCM de referencia es el render
+aislado de MAME 0.264 (`render_sound_commands.py`). Todo el audio ya era VADPCM (`--wav-compress 1`); a 24 kHz
+las músicas 0x2E (resultados, `0570AE`) y 0x31 (créditos, `0A445C`) no cabían (5 871 000 B, quedaban 786 432).
+Ahora **las músicas van a 20 kHz** (VADPCM estéreo, `pack_game_audio.py --music-rate 20000`, el valor por
+defecto) y **los efectos siguen a 24 kHz**. Las 15 músicas se han vuelto a renderizar de la ROM (24 000
+fotogramas cada una; `--period music_mission4=86.67 --period music_mission4_boss=46.96` como en MISION4.md):
+los bucles salen iguales a los del paquete anterior (periodos y arranques a 0,01 s). Opus (`--wav-compress 3`)
+no hace falta.
+
+`game_audio.c`: `music_name` 0x2E → `music_results` (intro + bucle) y 0x31 → `music_credits` (su render acaba
+a los 163,3 s, estado `OK`: una vez, sin bucle; `music_once`).
+
+**Tolerancia del códec** (`manifest.json`, medida por `pack_game_audio.py` al descodificar cada paquete con el
+descodificador de referencia `wav64_vadpcm.py`): `snr_codec_db` = PCM descodificado contra el PCM de 20 kHz que
+recibe `audioconv64` (el códec solo); `snr_render_db` = el descodificado, llevado de vuelta a 48 kHz por FFT,
+contra el render (códec + recorte de banda a 10 kHz). `test_wav64_vadpcm.py` exige que cada música tenga sus
+dos SNR y que el archivo sea el medido (sha256); ya no hay comparación bit a bit de la música.
+
+| Pista | Palabra | s | Bytes (intro + bucle) | SNR códec (dB) | SNR contra el render (dB) |
+| --- | --- | --- | --- | --- | --- |
+| `music_credits` | 0031 | 163,313 | 3674908 | 24,85 | 18,98 |
+| `music_mission1` | 0021 | 78,793 | 1963928 | 22,48 | 16,04 |
+| `music_mission2` | 0022 | 79,330 | 1825040 | 25,26 | 18,85 |
+| `music_mission2_boss` | 0027 | 72,262 | 1681508 | 24,70 | 18,04 |
+| `music_mission2_stage3` | 0023 | 90,450 | 2262188 | 23,82 | 16,26 |
+| `music_mission3` | 0024 | 98,764 | 2299196 | 24,64 | 18,51 |
+| `music_mission3_boss` | 0028 | 119,190 | 2728388 | 25,24 | 20,18 |
+| `music_mission4` | 0025 | 86,679 | 2119520 | 23,13 | 16,61 |
+| `music_mission4_boss` | 002C | 46,957 | 1439732 | 22,51 | 15,91 |
+| `music_mission5` | 0026 | 47,576 | 1180280 | 23,36 | 17,60 |
+| `music_mission5_stage2` | 002A | 59,520 | 1392104 | 22,45 | 16,67 |
+| `music_mission5_stage3` | 002B | 85,931 | 1960724 | 35,03 | 30,58 |
+| `music_mission6_boss` | 0029 | 87,842 | 2134424 | 23,90 | 19,72 |
+| `music_mission_complete` | 0020 | 6,770 | 152704 | 22,70 | 16,78 |
+| `music_results` | 002E | 48,102 | 1217792 | 21,10 | 12,61 |
+
+A 24 kHz la SNR contra el render era unos 3 dB mejor (medida en `music_mission2_stage3`, 60 s: 19,5 dB a 24 kHz,
+16,3 a 20 kHz, códec solo 24,1 / 23,8). `music_results` es la de más energía alta (6,8 % por encima de 8 kHz).
+Tamaños: `filesystem/audio` 31 426 980 → 31 534 114 B con las dos músicas dentro; cartucho 66 256 896 →
+**66 535 424 B** (tope 67 043 328; quedan 507 904).
+
+**Medido en ares** (`test_ending_ares.py`, mismo recorrido antes y después, 40 ventanas `MSX PERF` de 300
+fotogramas): antes el final no tenía música (`stage music 002E missing`); ahora `MSX AUDIO stage music 002E`,
+`music start`, `music fade 0AA0`, `stage music 0031`, `music start`, `music fade 0AA0`. `audio` (todo
+`msx_audio_service`) medio por ventana 468 → 701 µs, máximo 3651 → 3533 µs; peor ventana fuera de las cargas del
+paquete `cpu` máx. 28 531 → 29 075 µs (las dos mayores, 197 / 863-871 ms, son las cargas del paquete 13 en ambos);
+*underruns* 4 → 4. **Por qué sube la media con menos muestras**: antes no había ninguna música sonando en el final (los dos `stage music` fallaban), así que el mezclador solo mezclaba silencio. Ventana a ventana: las ventanas con música van a 686–822 µs (antes 463–486 en esas mismas ventanas, en silencio) y las que no tienen música siguen igual (464–483 en las dos pasadas). El aumento es lo que cuesta descodificar y mezclar un canal estéreo VADPCM de 20 kHz, unos 0,27 ms por servicio; no es una pérdida respecto a las misiones, donde la música ya sonaba a 24 kHz. Memoria: el VADPCM de libdragon no reserva nada nuevo (la música se lee de `rom:/`); Comprobado: en la pasada de antes el registro tiene `music start` / `music stop` solo en el menú de pruebas, antes de la primera ventana `MSX PERF`, y ningún `stage music` en el final (`0x2E` / `0x31` no tenían `music_name`: `request` ignoraba la palabra), así que durante el final no sonaba nada. **El remuestreo no es la causa**: el mezclador sale a 32 kHz (`msx_audio_init`: `audio_init(MSX_AUDIO_RATE = 32000)`) y en `libdragon/src/audio/mixer.c` (`mixer_exec`, `rsp_wv[ch].step`) todo canal activo se mezcla en el RSP con su paso `frequency / sample_rate`, sin ruta aparte para un canal a la frecuencia de salida; las músicas de las misiones (24 kHz antes, 20 ahora) ya pasaban por ahí. El cartucho de medida con las dos músicas a 32 kHz no se pudo probar: se pasa del tope (`cart-size`, por encima de 67 043 328 B, donde ares ya no escribe registro). Peor ventana fuera de las cargas: 29,1 ms (< 33,3). **Renders**: borrados de `audio-src`, después de comprobar que `pack_game_audio.py` sin ellos deja `filesystem/audio` idéntico (`diff -r`), con el sha256 de cada música en el manifiesto.
+caché de escena 3344 KB, **209 ranuras** (sin cambio), efectos residentes 956 122 B como antes. `make check` EXIT 0
+(331 PASS), `make -j2`, `test_ending_ares.py` PASS.
 
 ## Regenerar
 

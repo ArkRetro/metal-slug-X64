@@ -278,7 +278,13 @@ static bool ending_layers;      /* this frame shows one of the ending's screens 
 static bool ending_pack_wait;   /* the results began in this frame's update: the ending's pack is loaded at the next frame's top */
 static void draw_end(const neo_end_draw_t *e,bool request_only) {
     if (ending_pack_wait) return;
-    neo_world_draw_t d={e->descriptor,e->x,e->y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y,0,e->mix_target?e->mix_weight:0,0};
+    /* The sprite list's y word reaches the LSPC modulo 512 lines (SCB3 has 9 bits): the ranking's picture 0580A2 is
+     * listed at y = FF80 (01ACF2 with -0x80) and stands where 0x180 does (MAME capture T1, VRAM 72900: its sprites at
+     * the raster lines 8 / 48, as the results' dial at 0x180). The word's line, or the one 512 above when that is
+     * below the screen. */
+    uint16_t y=(uint16_t)(e->y&0x1ffu);
+    if (MSX_SCREEN_BASE_Y-((int)y-MSX_PROJECTED_BASE_Y)>=240) y=(uint16_t)(y+0x200u);
+    neo_world_draw_t d={e->descriptor,e->x,y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y,0,e->mix_target?e->mix_weight:0,0};
     end_mix_target=e->mix_target;draw_native(&d,request_only);end_mix_target=0;
 }
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {

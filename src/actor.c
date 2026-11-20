@@ -21,6 +21,7 @@
 #include "neo_pause.h"
 #include "msx_character.h"
 #include "neo_text.h"
+#include "msx_overlay.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -153,6 +154,7 @@ static bool load_stage(void) {
 static bool enter_mission(void) {
     for (unsigned k=0;k<40 && !game.flow.load && game.flow.state!=NEO_MISSION_PLAYING;k++) neo_mission_update(&game.flow);
     if (!scene_mission_load(game.flow.index+1u)) return false;
+    msx_overlay_mission(game.flow.index+1u);   /* the mission's boss code (src/msx_overlay.h) */
     return load_stage();
 }
 static void leave_mission(void) {

@@ -38,12 +38,26 @@ HOT_SRCS := src/neo_world.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_animat
 COLD_BOOT_SRCS := src/main.c src/msx_character.c src/retro25d.c src/retro_effects.c src/retro_events.c src/diorama_building.c src/game_audio.c src/msx_perf.c src/neo_pause.c src/hud_renderer.c src/scene_prerender.c src/vehicle_renderer.c src/neo_vehicle.c
 COLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(filter-out $(HOT_SRCS),$(WORLD_SRCS)) src/cinematic.c src/title_intro.c src/neogeo_logo.c src/msx_pcm.c src/msx_ramfs.c src/neo_progstore.c src/program_file.c src/msx_options.c $(COLD_BOOT_SRCS))
 $(COLD_OBJS): CFLAGS += -Os
+# Code overlays (src/msx_overlay.h, tools/link_overlays.py, docs/RENDIMIENTO.md
+# "Superposiciones de código"): the four mission bosses' tick code shares one
+# region on the console. Their objects are compiled -G0 (no gp-relative data:
+# the overlay is linked away from the main program's small-data area); the
+# main link keeps what they call (the .externs list) and each cartridge gets
+# its overlays as the rompak file <elf>.ovl (the .z64 rule below).
+OVL_MODULES := neo_m3boss neo_m4boss neo_m5boss neo_m6boss
+OVL_OBJS_src := $(patsubst %,$(BUILD_DIR)/src/%.o,$(OVL_MODULES))
+OVL_OBJS_diag := $(patsubst %,$(BUILD_DIR)/diag/%.o,$(OVL_MODULES))
+$(OVL_OBJS_src) $(OVL_OBJS_diag): N64_CFLAGS += -G0
+$(BUILD_DIR)/ovl-src.externs: tools/link_overlays.py $(OVL_OBJS_src)
+	python3 -I tools/link_overlays.py --externs $@ $(filter %.o,$^)
+$(BUILD_DIR)/ovl-diag.externs: tools/link_overlays.py $(OVL_OBJS_diag)
+	python3 -I tools/link_overlays.py --externs $@ $(filter %.o,$^)
 # make does not see a flag change: the -Os split is recorded in a stamp the
 # kernel objects depend on, rewritten only when the cold list changes. Without
 # it test ROM 21 (/home/user/ws-logo) linked ten cold objects still compiled
 # -O2 from before the split (+4.5 KB, slower logo: the title missed a frame).
 COLD_FLAGS := $(BUILD_DIR)/cold-objs.flags
-COLD_FLAGS_RUN := $(shell mkdir -p $(BUILD_DIR) && echo '-Os $(sort $(COLD_OBJS))' | cmp -s - $(COLD_FLAGS) || echo '-Os $(sort $(COLD_OBJS))' > $(COLD_FLAGS))
+COLD_FLAGS_RUN := $(shell mkdir -p $(BUILD_DIR) && echo '-Os $(sort $(COLD_OBJS)) -G0 $(OVL_MODULES)' | cmp -s - $(COLD_FLAGS) || echo '-Os $(sort $(COLD_OBJS)) -G0 $(OVL_MODULES)' > $(COLD_FLAGS))
 $(WORLD_OBJS) $(BUILD_DIR)/src/cinematic.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/msx_options.o $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(COLD_BOOT_SRCS)): $(COLD_FLAGS)
 HOST_CC ?= cc
 HOST_CFLAGS ?= -std=c11 -Wall -Wextra -Werror
@@ -169,7 +183,34 @@ $(foreach c,$(ICACHE_CHECKED),$(eval $(c).z64: $(BUILD_DIR)/$(c).icache))
 $(BUILD_DIR)/%.icache: $(BUILD_DIR)/%.elf tools/check_icache.py
 	python3 tools/check_icache.py $< $(BUILD_DIR)/$*.map > $@.txt || { cat $@.txt; exit 1; }
 	@tail -1 $@.txt; touch $@
-MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BUILD_DIR)/src/msx_options.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
+# The cartridges with the bosses' dispatch (neo_region.o) and the objects
+# their overlays are linked from (src/msx_overlay.h).
+OVL_SRC_ELFS := mslugx-explorer mission1-internal mslugx-camel-shot mslugx-m1end mslugx-m3-release mslugx-lab intro-preview
+$(patsubst %,$(BUILD_DIR)/%.elf,$(OVL_SRC_ELFS)): $(BUILD_DIR)/ovl-src.externs
+$(BUILD_DIR)/mslugx-diag.elf: $(BUILD_DIR)/ovl-diag.externs
+$(BUILD_DIR)/mslugx-reference.elf $(BUILD_DIR)/mslugx-m2-reference.elf $(BUILD_DIR)/mslugx-m3-reference.elf: $(BUILD_DIR)/ovl-$(REF_DIR).externs
+# libdragon's .z64 rule (n64.mk) with one step more: the code overlays are
+# linked against the program just linked (tools/link_overlays.py) and, when
+# the program has the overlay region, go into the rompak as <elf>.ovl after
+# the DFS (src/msx_overlay.c finds them with rompak_search_ext).
+%.z64: $(BUILD_DIR)/%.elf
+	@echo "    [Z64] $@"
+	$(N64_SYM) $< $<.sym
+	python3 -I tools/link_overlays.py $< $(BUILD_DIR)/$*.map $<.ovl
+	cp $< $<.stripped
+	$(N64_STRIP) -s $<.stripped
+	$(N64_ELFCOMPRESS) -o $(dir $<) -c $(N64_ROM_ELFCOMPRESS) $<.stripped
+	@rm -f $@
+	DFS_FILE="$(filter %.dfs, $^)"; OVL_FILE=""; if [ -f "$<.ovl" ]; then OVL_FILE="--align 16 $<.ovl"; fi; \
+	if [ -z "$$DFS_FILE" ]; then \
+		$(N64_TOOL) $(N64_TOOLFLAGS) --toc --output $@ --align 256 $<.stripped --align 8 $<.sym $$OVL_FILE --align 8; \
+	else \
+		$(N64_TOOL) $(N64_TOOLFLAGS) --toc --output $@ --align 256 $<.stripped --align 8 $<.sym --align 16 "$$DFS_FILE" $$OVL_FILE; \
+	fi
+	if [ ! -z "$(strip $(N64_ED64ROMCONFIGFLAGS))" ]; then \
+		$(N64_ED64ROMCONFIG) $(N64_ED64ROMCONFIGFLAGS) $@; \
+	fi
+MSLUGX_GAME_OBJS = $(LIBM_KEEP_OBJS) $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/neogeo_logo.o $(BUILD_DIR)/src/marco_visual.o $(BUILD_DIR)/src/marco_animation.o $(BUILD_DIR)/src/marco_renderer.o $(BUILD_DIR)/src/actor.o $(BUILD_DIR)/src/gameplay.o $(BUILD_DIR)/src/neo_collision.o $(BUILD_DIR)/src/scene_assets.o $(BUILD_DIR)/src/msx_perf.o $(BUILD_DIR)/src/msx_diag.o $(BUILD_DIR)/src/msx_diag_core.o $(BUILD_DIR)/src/scene_cull.o $(BUILD_DIR)/src/scene_strips.o $(BUILD_DIR)/src/scene_prerender.o $(BUILD_DIR)/src/scene_renderer.o $(BUILD_DIR)/src/diorama_building.o $(BUILD_DIR)/src/retro25d.o $(BUILD_DIR)/src/retro_effects.o $(BUILD_DIR)/src/retro_events.o $(BUILD_DIR)/src/neo_vehicle.o $(BUILD_DIR)/src/vehicle_renderer.o $(BUILD_DIR)/src/boss_renderer.o $(BUILD_DIR)/src/hud_renderer.o $(BUILD_DIR)/src/neo_pause.o $(BUILD_DIR)/src/msx_character.o $(BUILD_DIR)/src/msx_audio.o $(BUILD_DIR)/src/msx_pcm.o $(BUILD_DIR)/src/msx_sfx.o $(BUILD_DIR)/src/game_audio.o $(BUILD_DIR)/src/msx_ramfs.o $(BUILD_DIR)/src/neo_progstore.o $(BUILD_DIR)/src/program_file.o $(BUILD_DIR)/src/msx_options.o $(BUILD_DIR)/src/msx_overlay.o $(BOOT_CINE_OBJS) $(WORLD_OBJS)
 # The game objects (Marco, world, renderers) with mission_main.c in place of main.c.
 $(BUILD_DIR)/mission1-internal.elf: $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/mission_main.o $(BUILD_DIR)/src/cinematic.o $(filter-out $(BUILD_DIR)/src/main.o $(BUILD_DIR)/src/title_intro.o $(BUILD_DIR)/src/cinematic.o,$(MSLUGX_GAME_OBJS))
 $(BUILD_DIR)/mslugx-explorer.elf: $(MSLUGX_GAME_OBJS)

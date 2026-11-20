@@ -283,6 +283,8 @@ struct neo_genv {
     /* 009CCE on the palette slot +14 of `owner`: +C = target, +E = weight
      * (the slot's colours: tools/palette_mix.py, neo_palmix.h). */
     void (*palette_mix)(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight);
+    /* 009CCE on a fixed hardware palette slot (no owner): +C = target, +E = weight. */
+    void (*slot_mix)(void *ctx,uint8_t slot,uint16_t target,uint8_t weight);
     /* Mission flags outside the actor list (domed building 054904). */
     struct neo_ga_flags *flags;
     /* Layer object of the static collision terrain: 10C72E in the village,

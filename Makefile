@@ -247,6 +247,14 @@ mslugx-diag.z64: N64_ROM_TITLE = "MSX DIAG"
 mslugx-diag.z64: $(BUILD_DIR)/mslugx-diag.dfs
 $(BUILD_DIR)/mslugx-diag.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-diag.dfs: $(BUILD_DIR)/game-romfs.stamp
+# Test cartridge with the scripted pad (B78, src/msx_testpad.c, tools/padscript.py): the release game objects with
+# joypad_poll / joypad_get_buttons / joypad_get_inputs wrapped; the user cartridge never links msx_testpad.o.
+$(BUILD_DIR)/mslugx-testpad.elf: $(MSLUGX_GAME_OBJS) $(BUILD_DIR)/src/msx_testpad.o $(BUILD_DIR)/ovl-src.externs
+$(BUILD_DIR)/mslugx-testpad.elf: LDFLAGS += --wrap=joypad_poll --wrap=joypad_get_buttons --wrap=joypad_get_inputs
+mslugx-testpad.z64: N64_ROM_TITLE = "MSX TESTPAD"
+mslugx-testpad.z64: $(BUILD_DIR)/mslugx-testpad.dfs
+$(BUILD_DIR)/mslugx-testpad.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
+$(BUILD_DIR)/mslugx-testpad.dfs: $(BUILD_DIR)/game-romfs.stamp
 mslugx-explorer.z64: N64_ROM_TITLE = "MSX COLLISION v10"
 mslugx-explorer.z64: $(BUILD_DIR)/mslugx-explorer.dfs
 # The game cartridge carries only what the game reads; the raw FIX/C-ROM copies

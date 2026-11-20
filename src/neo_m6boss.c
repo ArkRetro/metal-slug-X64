@@ -108,9 +108,11 @@ static bool share_flash(neo_gactor_t *a,neo_genv_t *e) {
     return !(d0&1u);
 }
 /* 009CCE on a hardware palette slot: the fade of the slot's colours is the
- * renderer's (RAM 1068EA); counted as external until it is modelled. */
-static void k9cce(neo_genv_t *e,uint8_t slot,uint16_t target,uint8_t weight) {
-    (void)slot;(void)target;(void)weight;
+ * renderer's (RAM 1068EA). The slot 0x38 of the layer 10D7B6 goes to the world
+ * (e->slot_mix: the layer's palette number 56, drawn by actor.c); the others
+ * stay counted as external until they are modelled. */
+static __attribute__((noinline)) void k9cce(neo_genv_t *e,uint8_t slot,uint16_t target,uint8_t weight) {
+    if (slot==0x38u && e->slot_mix) e->slot_mix(e->ctx,slot,target,weight);
     if (e->external) e->external(e->ctx,0x9cce);
 }
 static neo_m4boss_env_t *lenv(neo_genv_t *e) {if (!e->m4boss || !e->m4boss->layer) {ga_fail(e,LAYER);return NULL;}return e->m4boss;}

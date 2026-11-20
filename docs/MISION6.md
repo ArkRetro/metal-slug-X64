@@ -1160,11 +1160,17 @@ fotograma (`game<n>.png`, líneas de raster 16..239).
 - **Comparación**: T1, los 57 volcados con sprites con zoom y captura (resultados y título): **347 427 píxeles de
   sprites con zoom iguales y 7 distintos**; están los 15 nibbles, todos con 0 distintos salvo el 6, que tiene 7. De los
   sprites con zoom vertical, 24 810 son iguales y 7 distintos. Los 7, y 2 469 píxeles de sprites sin zoom, caen en los
-  volcados 73080..73350 del fundido del título. **Pendiente, con el motivo**: en 73260 los colores de la captura en
-  las filas de paleta 16 y 18 no están en la RAM de paleta de ese volcado, ni en la de ningún otro volcado de T1, ni
-  como fila de 16 palabras en la RAM de trabajo (`ram73260.bin`). Así que no se puede rasterizar con la paleta que
-  usó la captura. Hace falta una captura del fundido (73080..73380) con la RAM de paleta y la imagen del mismo
-  fotograma, en cada fotograma. El encogido no interviene en esos píxeles: los de 73260 son de sprites sin zoom.
+  volcados 73080..73350 del fundido del título. **Captura TF** (`tools/tas_updates.lua` con
+  `MSX_TAS_DUMP_PERIOD=1 MSX_TAS_DUMP_FRAMES=73050-73400`, desde `end27900` como `runT1.sh`, sin familia: VRAM, RAM,
+  paleta e imagen en cada fotograma; en los fotogramas comunes, VRAM y paleta iguales byte a byte a T1; guardada en
+  `scratchpad/agV/TF`, 351 fotogramas). Con ella **quedan descartadas** la paleta de otro fotograma (paleta f−1 y f−2
+  contra la imagen f: 73080, 73260 y 73350 igual o peor) y la VRAM de otro fotograma (f−1 y f+1: peor; de los 1448 píxeles
+  distintos de 73260, ninguno coincide con la VRAM f−1). Lo que sí se ve: en 73260 los distintos son de la cadena de
+  sprites sin zoom 345..348 (y 358 / 359), paleta 16, tamaño 5, sin autoanimación, en las líneas 36..64. Su posición es
+  la correcta (desplazarla ±16 líneas / ±4 px solo empeora), y en el ~40 % de sus píxeles opacos la captura muestra otro
+  pen de la misma fila de paleta (4 / 5 en vez de 1). Los datos de C-ROM de esas teselas (0x3055B..) son los del zip
+  (`250-c3/c4`). **Pendiente**: la causa no está encontrada. No es el encogido: esos sprites no tienen zoom, y los
+  únicos 7 px con zoom (73350) caen en la misma zona y fotogramas.
 - Se excluyen las teselas fijas distintas de 0x0FF: la 0 no es transparente, porque las columnas 0 y 39, todas de
   tesela 0, salen negras sobre los sprites. También se excluyen los sprites autoanimados. Informe:
   `build/lspc_shrink_report.json`.

@@ -1310,3 +1310,66 @@ conjunto de la caché de instrucciones en líneas distintas, o si llaman a códi
 `rspq_next_buffer`, una vez por búfer, y el `memset` de entrada de `draw_sides`, una vez por fotograma, que pone
 `-ftrivial-auto-var-init=pattern`). Con el ELF de `2cb2aa0` informa de las 9 líneas compartidas entre
 `rdpq_triangle_rsp` y `floorf`.
+
+## Superposiciones de código: los cuatro jefes de misión comparten una región (19-XI, rama `work-mem`)
+
+**Problema.** Con `neo_m6boss.c` (44 KB de código a `-Os`) residente, ares arrancaba con 3307 KB para la caché de
+escena y el suelo es 3332 KB (208 ranuras): el módulo estaba apagado en el cartucho (`MSX_M6BOSS`=0, `docs/MISION6.md`).
+
+**Medida** (`mips64-elf-size` por objeto, `-Os`; texto+`.rodata`, sin datos escribibles salvo la tabla constante
+`d[4]` de `neo_m6boss` en `.sdata`): `neo_m3enemy` 136 KB, `neo_m6boss` 44 KB, `neo_m3boss` 30 KB, `neo_m4boss` 25 KB,
+`neo_m5boss` 21 KB, `neo_m6enemy` 22 KB, `neo_m6props` 23 KB. `neo_m3enemy` no sirve: `neo_m5mech.c` llama a su
+`neo_m3enemy_death_40846` y `neo_m6boss.c` a `neo_m3enemy_death_406b6` (código compartido entre misiones). Los cuatro
+jefes exportan solo dos funciones (`neo_mXboss_routine`, `neo_mXboss_tick`), no tienen `.data`/`.bss`, no guardan
+punteros a su propio código o datos fuera de la llamada (las retrollamadas a `ga_anim_step` son síncronas; ninguna
+reubicación `R_MIPS_32` fuera de la depuración), y solo los llama `neo_region_tick`. Es el mínimo que basta: una
+región del tamaño del mayor (`neo_m6boss`) y los otros tres gratis.
+
+**Mecanismo** (solo en la consola; el anfitrión enlaza todo como antes, `make check` no cambia):
+- `src/msx_overlay.c`: `msx_overlay_region[43824]` en `.bss` (alineada a 32). `neo_region_tick` llama a los jefes por
+  `msx_overlay_tick(id)`, que copia la imagen del jefe a la región si no está (DMA desde la ROM, `inst_cache_hit_invalidate`)
+  y llama a su `tick`. El programa principal ya no referencia los `_tick`: `--gc-sections` los quita y deja las
+  `_routine` (que todo despacho consulta). `actor.c` (`enter_mission`) precarga el jefe de la misión 3..6 tras el
+  paquete, en los fotogramas negros de la carga. Una copia pedida mientras corre código de la superposición
+  (reentrada por `neo_region_tick` hacia otro jefe) es una aserción; nunca se sobrescribe código en uso.
+- `tools/link_overlays.py`, en la regla `.z64` (la de libdragon con un paso más): enlaza cada jefe en la dirección de
+  la región contra los símbolos del ELF recién enlazado (`--just-symbols`), a partir del mismo `.o` que usó el
+  enlace principal (lo lee del mapa: `build/src` o `build/diag`); solo `_tick` queda global (lo demás se enlaza local).
+  Las imágenes van al rompak como `<elf>.ovl` tras el DFS (`rompak_search_ext`); el cargador comprueba firma,
+  dirección y tamaño de la región. Los ELF de cada imagen se guardan (`build/<cart>.elf.neo_mXboss.elf`) para `addr2line`.
+- Los cuatro objetos se compilan `-G0` (sin datos relativos a `$gp`; la herramienta falla si queda alguna reubicación
+  `GPREL`). Lo que llaman en el programa principal se conserva con la lista `EXTERN` (`build/ovl-src.externs`,
+  `build/ovl-diag.externs`: los símbolos que dejan sin definir); si faltase uno, el enlace de la superposición falla.
+- Tamaño de la región exacto (`MSX_OVERLAY_BYTES`, `src/msx_overlay.h`): si un jefe crece, el enlace falla con el
+  tamaño de cada imagen y hay que subir la constante.
+
+| Imagen del programa (`mslugx-explorer.elf`) | Antes (`bcc3849`, sin `neo_m6boss`) | Después (con `neo_m6boss`) |
+| --- | ---: | ---: |
+| texto (+`.rodata`) | 1.383.272 B | 1.310.248 B |
+| datos | 564.772 B | 565.340 B |
+| bss | 285.692 B | 329.628 B (región 43.824 B) |
+| **total** | **2.233.736 B** | **2.205.216 B (−28,5 KB)** |
+
+Imágenes (release y diag iguales): `neo_m3boss` 30.160 B, `neo_m4boss` 24.704 B, `neo_m5boss` 20.912 B,
+`neo_m6boss` 43.824 B. Frente a tener `neo_m6boss` residente (+44 KB sobre «antes») son ~72 KB menos.
+
+**Arranque en ares** (`tools/test_logo_ares.py`, `mslugx-explorer.z64` con `neo_m6boss`): PASS, `late=0`,
+`cpu_mean_us=7014`; `MSX MEM scene cache ... cache=3360 KB` (**210 ranuras**, suelo 3332 KB / 208; antes 3307 KB
+con el jefe residente). `tools/check_icache.py`: sin líneas compartidas en `mslugx-explorer` ni `mslugx-m1end`.
+`make check`: verde (311 PASS, 0 FAIL; el anfitrión no cambia).
+
+**Matriz completa** (`tools/regression_ares.py`, 19/20-XI, `mslugx-explorer.z64` + `mslugx-m1end.z64` de `42d49b7`,
+contra `data/regression_baseline.json`): `logo`, `pause`, `chars`, `options`, `m4`, `m5s1`, `m5s2`, `m5s3`, `m5boss`,
+`m6s1`, `m6s1end`, `m6s2`, `m6s2end`, `m6s3`, `veh` y `m1m2` PASS; ninguna aserción. Cada jefe se copia una vez
+(`MSX OVL 1`: 24 704 B en 4,8 ms; `MSX OVL 2`: 20 912 B en 4,1 ms; `MSX OVL 3`: 43 824 B en 8,5 ms, en los fotogramas
+negros de la carga); en `m4boss` la M4 y luego la M5 (2 copias en todo el recorrido, sin vaivén). `m6s3`: el
+constructor `04153E` ya es nativo en la consola (`native 1`), caché 3376 KB. Dos diferencias con la base, **comprobadas
+con el cartucho de control `bcc3849`** (sin superposiciones, mismos paquetes, misma pantalla):
+- `m4boss` FAIL en ambos (rama: `missing_draw` 3818; control: 4897; base 2061): el jefe cae y la M5 empieza, pero el
+  mando ciego baja del SV-001 antes de recibir un golpe (`hit while mounted False`), y los dibujos sin descriptor tras
+  `16929E` son el fallo abierto de `docs/FALLOS.md` (M4 con BLOOD OFF). No es de esta rama.
+- `m5boss` PASS con `missing_draw` 42 (control: 8): los 34 de más son la paleta `20C` (la llama final `099268` del
+  soldado quemado, sin captura: pendiente de `docs/MISION5.md`), que solo aparece si un soldado quemado llega a ella
+  en esa pasada (en el control ninguno llegó). El soldado quemado es código de `neo_m5boss` (`burnt_tick`), el mismo
+  objeto en la superposición y en el anfitrión (`make check`, familias `m5boss*`); la paleta falta en el paquete, no en el código.
+La línea base no se reescribe (`m4boss` sigue abierto).

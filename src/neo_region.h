@@ -26,15 +26,11 @@ ga_result_t neo_m6props_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_m6enemy_routine(uint32_t routine);   /* Mission 6 stage 2 enemies (neo_m6enemy.c) */
 ga_result_t neo_m6enemy_tick(neo_gactor_t *a,neo_genv_t *e);
 neo_gactor_t *neo_item_drop(neo_gactor_t *a,neo_genv_t *e,int16_t d0,int16_t d1,uint16_t kind,uint16_t d3,uint8_t d4,uint16_t d5);   /* 08CD58 (neo_item.c) */
-/* The Mission 6 last enemy (neo_m6boss.c, ~44 KB of code): on the console the program image with it leaves 3307 KB for
- * the scene cache (floor 3332, ares 16-XI): off there until that memory is found (docs/MISION6.md); the host tests
- * always have it. MSX_M6BOSS=1 turns it on. */
+/* The Mission 6 last enemy (neo_m6boss.c, ~44 KB of code). On the console its tick code, like the other three
+ * mission bosses', is an overlay (src/msx_overlay.h): with it resident the program image left 3307 KB for the scene
+ * cache (floor 3332, ares 16-XI). MSX_M6BOSS=0 leaves it out (the script then stops at 04153E). */
 #ifndef MSX_M6BOSS
-#if defined(N64)
-#define MSX_M6BOSS 0
-#else
 #define MSX_M6BOSS 1
-#endif
 #endif
 bool neo_m6boss_routine(uint32_t routine);   /* Mission 6 stage 3: the last enemy 04153E (neo_m6boss.c) */
 ga_result_t neo_m6boss_tick(neo_gactor_t *a,neo_genv_t *e);

@@ -1,4 +1,11 @@
 #include "neo_region.h"
+#include "msx_overlay.h"
+/* The bosses' ticks: on the console through their overlay (src/msx_overlay.h). */
+#if MSX_OVERLAY
+#define BOSS_TICK(id,fn) msx_overlay_tick(id,a,e)
+#else
+#define BOSS_TICK(id,fn) fn(a,e)
+#endif
 /* 0AC866 (neo_m3veh.c, family m3veh); MSX_M3VEH=0 turns it back into an
  * explicit stop. */
 /* 04A2C2 (neo_m3boss.c, families m3boss<n>): MSX_M3BOSS=0 turns it back
@@ -100,7 +107,7 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (neo_truck_routine(r)) return neo_truck_tick(a,e);
     if (neo_m4veh_routine(r)) return neo_m4veh_tick(a,e);
-    if (neo_m4boss_routine(r)) return neo_m4boss_tick(a,e);
+    if (neo_m4boss_routine(r)) return BOSS_TICK(MSX_OVL_M4BOSS,neo_m4boss_tick);
     if (neo_effects_routine(r)) return neo_effects_tick(a,e);
     if (neo_flyer_routine(r)) return neo_flyer_tick(a,e);
     if (neo_props_routine(r)) return neo_props_tick(a,e);
@@ -138,18 +145,18 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_m5props_routine(r)) return neo_m5props_tick(a,e);
     if (neo_m6props_routine(r)) return neo_m6props_tick(a,e);
     if (neo_m6enemy_routine(r)) return neo_m6enemy_tick(a,e);
-    if (neo_m6boss_routine(r)) return neo_m6boss_tick(a,e);
+    if (neo_m6boss_routine(r)) return BOSS_TICK(MSX_OVL_M6BOSS,neo_m6boss_tick);
     if (neo_m5enemy_routine(r)) return neo_m5enemy_tick(a,e);
     if (neo_m5train_routine(r)) return neo_m5train_tick(a,e);
     if (neo_m5mech_routine(r)) return neo_m5mech_tick(a,e);
     if (neo_m5sewer_routine(r)) return neo_m5sewer_tick(a,e);
-    if (neo_m5boss_routine(r)) return neo_m5boss_tick(a,e);
+    if (neo_m5boss_routine(r)) return BOSS_TICK(MSX_OVL_M5BOSS,neo_m5boss_tick);
     if (neo_m3enemy_routine(r)) return neo_m3enemy_tick(a,e);
     if (neo_drone_routine(r)) return neo_drone_tick(a,e);
     if (neo_m2traps_routine(r)) return neo_m2traps_tick(a,e);
     if (neo_hostage_routine(r)) return neo_hostage_tick(a,e);
     if (neo_m2boss_routine(r)) return neo_m2boss_tick(a,e);
     if (neo_m3mid_routine(r)) return neo_m3mid_tick(a,e);
-    if (MSX_M3BOSS && neo_m3boss_routine(r)) return neo_m3boss_tick(a,e);
+    if (MSX_M3BOSS && neo_m3boss_routine(r)) return BOSS_TICK(MSX_OVL_M3BOSS,neo_m3boss_tick);
     ga_fail(e,r);return GA_UNSUPPORTED;
 }

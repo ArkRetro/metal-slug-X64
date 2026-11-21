@@ -1381,3 +1381,24 @@ en ares: `MSX CACHE slots=208..209 (3328..3344 KB, floor 208)`: **queda una ranu
 El siguiente módulo que crezca necesita memoria: candidatos medidos (`mips64-elf-size`, sin datos escribibles, una sola
 misión): `neo_m3mid` 23 KB (M3), `neo_m6enemy` 22 KB y `neo_m6props` 23 KB (M6; cabrían junto al jefe solo con una
 segunda región), `neo_ending` 12 KB (tras la M6). No hecho en esta sesión.
+
+## Caché de escena intermitente: la precarga de `fixed.bin` cortada (B79, 21-XI, `work-mem`)
+
+Síntoma (otro agente): un arranque paró en `scene_assets.c:506` («RAM budget: 3224 KB left for the scene cache
+(minimum 3332 KB)») y el mismo cartucho, repetido, arrancó con 209 ranuras. Registros comparados (`ezo_fail1` frente a
+`ezo`/`ezoff`): en el fallo Start cortó las películas de arranque (HOW TO PLAY con 39 fotogramas dibujados), la caché no
+empezó antes («begun early» ausente) y la reserva salió en 1216 KB frente a 962 KB.
+
+Causa (código): `msx_ramfs_preload("fixed.bin")` es lo primero de la cola de precarga (`main.c`), y `fixed.bin` nunca
+pasa por `msx_ramfs_load` (el HUD usa `msx_ramfs_data` o lee la ROM). Si la lectura en segundo plano había empezado y no
+acabado cuando `game_audio_init` llama a `msx_ramfs_preload_end`, la cola se liberaba con el búfer de 128 KB ya
+reservado y sin nadie que lo apuntara: 128 KB perdidos para siempre, y el HUD reservaba otra copia; además
+`scene_assets_game_preloaded` no lo contaba, así que la reserva del juego seguía incluyéndolo. Depende del fotograma en
+que llega Start respecto a la lectura: intermitente.
+
+Arreglo: `msx_ramfs_preload_end` termina (lectura síncrona del resto) y publica toda precarga empezada; `main.c` cuenta
+lo precargado **después** de `game_audio_init`. Sin pérdida: los mismos bytes, una sola copia.
+Cuenta del peor arranque registrado con el arreglo: 3224 + 128 (sin la fuga) + 128 (ya no reservado) = 3480 KB → 216
+ranuras de 16 KB más registros (≥ 8 sobre el suelo de 208). **Pendiente de medir en ares** (la máquina está cargada;
+orden del coordinador): arranque con Start inmediato y arranque normal, líneas `MSX CACHE slots=` y `MSX MEM audio`.
+La región de superposición (62 432 B) es el tamaño de `neo_m6boss` (la mayor); no se ha reducido.

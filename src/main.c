@@ -391,8 +391,9 @@ int main(void) {
         msx_cinematic_prepare(first_after_title());
         handoff=entry_cinematic();
         scene_assets_mem("entry done");
-        scene_assets_game_preloaded(game_preloaded_bytes());
         if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+        /* After game_audio_init: its msx_ramfs_preload_end completes a preload cut short (fixed.bin, B79), counted here. */
+        scene_assets_game_preloaded(game_preloaded_bytes());
         scene_assets_mem("audio");
     }
 #endif

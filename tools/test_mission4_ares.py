@@ -51,7 +51,7 @@ def cut_log():
 BOSS_NEAR=(-80,-20)   # player x - body x (px) where the boss cycle runs
 live=[not a.pad_script]   # --pad-script with --record: the keys go live at `MSX PAD script end` (a continued recording)
 def key(action,name):
-    if live[0]:subprocess.run([XD,action,name],check=True,env=env)   # a replay presses nothing: the ROM's script is the pad
+    if live[0]:subprocess.run([XD,action,name],check=action!='keyup',env=env)   # a replay presses nothing: the ROM's script is the pad
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)

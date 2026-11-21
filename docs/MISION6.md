@@ -1388,6 +1388,11 @@ traducidas igual que las demás, sin comprobar). En `make check` (se salta sin l
   por rectángulo) y 7,44 M (223)**, 0 px. Lo que queda: unas 100 instrucciones por fila de tesela y unas 25 000 por entrada de los escritores de
   `neo_scb.c` con sus llamadas por palabra; el objetivo de ≤ 2 µs por rectángulo (unas 150 instrucciones) pide no
   pasar por fila de tesela (columnas enteras precalculadas por zoom) o la RSP. Sin medir en ares (máquina cargada).
+- **Medida tras unir ccr 4c0a51b (21-XI)**: con `MSX_END_ZOOM=1` el cartucho (66 945 024 B) para al arrancar en
+  `scene_assets.c:506` en las dos pasadas: 3322 KB para la caché de escena, mínimo 3332 (el código del zoom, unos 14 KB
+  de `.text`, no cabe ya con lo de la integración). Sin zoom (66 551 808 B): 208 ranuras, `test_ending_ares` PASS en las
+  dos pasadas. Sin medida de vblanks con zoom: queda apagado; para medir hace falta liberar ≥ 10 KB o llevar
+  `end_zoom*` y la ruta de columnas de `neo_scb` a la superposición `neo_ending` (región de 62 432 B, el final usa 20 752).
 - **Pendiente**: bajar el coste de CPU por rectángulo del título (unos 20 µs: recorrido de filas, búsqueda de tesela y
   reajustes; en el anfitrión 10 µs por entrada) o llevar el corte a la RSP; después, encenderlo por defecto.
 

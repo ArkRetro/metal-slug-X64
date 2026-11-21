@@ -106,3 +106,26 @@ la captura de la paleta 20C (`docs/MISION5.md`).
 Pasada repetida el 20-XI sobre el cartucho con las superposiciones (`regression_ares.py --only m5boss`, `f4e1492`):
 **PASS en 1930 s, `missing_draw=8`** (la línea base: paletas 006 ×3 y 00A ×5), una sola copia de la superposición, ninguna
 línea de la paleta 20C: en esta pasada ningún soldado quemado llegó a la llama `099268`.
+
+## `m4boss`: los dibujos `descriptor=0` eran la estela del proyectil del jefe (20-XI, `work-mem`)
+
+Las 2061 (línea base), 3805 y 6670 líneas `native draw missing descriptor=0 palette=N ... palette_id=000` de `m4boss` son
+**todas** de los descriptores `169276..16929E`: el programa `234BC8`, la estela `02505C/025088` del proyectil `024F0E`
+del jefe (cuenta `palette=N` = estelas en pantalla en ese fotograma; crece con la duración de la pelea). La ROM
+(`025088`: `movea.l $0C(A6),A0; move.b $14(A0),$14(A6)`) copia el número de ranura de paleta del proyectil (357..359,
+`025192`); en el port el manejador `+14` indexa `a->palette[]` del propio actor, y la estela no tenía ninguno: paleta 000.
+Arreglo (`neo_m4boss.c`): la estela toma con el manejador los recursos del proyectil. Las paletas 357..359 ya estaban en
+`mission4/rest-native.json`. Familia `m4boss` igual bit a bit (`make check` RC 0). Pasada de grabación `--record` sobre
+`mslugx-testpad.z64`: 0 dibujos ausentes durante toda la pelea.
+
+## Mando por guion (B78)
+
+`mslugx-testpad.z64` (`make mslugx-testpad.z64`) es el juego de la ROM de usuario con `joypad_poll`,
+`joypad_get_buttons` y `joypad_get_inputs` envueltos en el enlazado (`src/msx_testpad.c`); el cartucho de usuario no
+enlaza ese objeto. Cada lectura del mando se numera desde el encendido; cada cambio se escribe `MSX PAD n=N btn=XXXX`.
+Sin guion (`--record`) el mando es el real (xdotool) y el registro **es** el guion
+(`tools/padscript.py from-log ares.log guion.txt`); con guion (`--pad-script guion.txt`) `padscript.py apply` lo añade
+al final de la ROM en un límite de 1 MiB (`MSXPAD01`) y la prueba no pulsa nada. Ambas copian la ROM a `--out` (EEPROM
+nueva) y cortan el registro en la condición de fin (`MSX mission 5 stage N start` con `--boss`, o `ticks` ≥ `--seconds`),
+para que los recuentos no dependan de cuándo se cierra ares. Si un cambio del juego altera la partida, el guion
+deja de servir y se vuelve a grabar.

@@ -15,7 +15,7 @@ current counts as the new baseline (only after a reviewed green run).
 Before running: the cartridge must be at most 67,043,328 bytes (above that
 ares writes no log and every test hangs) — the script refuses a larger one.
 """
-import argparse, json, pathlib, re, subprocess, sys, time
+import argparse, json, pathlib, re, subprocess, sys, time, os, signal
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LIMIT = 67_043_328
@@ -61,13 +61,21 @@ def run(name, script, extra, timeout, outflag, rom, out):
     d = out / name
     cmd = [sys.executable, str(ROOT / 'tools' / script), str(rom), outflag, str(d)] + extra
     t0 = time.time()
+    # The test runs in its own process group: on a timeout the whole group (the test and its ares) is stopped. Killing
+    # only the test left its ares running on the display, where it took the keyboard focus from the next tests.
+    p = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     try:
-        p = subprocess.run(cmd, cwd=ROOT, capture_output=True, timeout=timeout)
-        text = p.stdout + p.stderr
+        so, se = p.communicate(timeout=timeout)
+        text = so + se
         # test_logo_ares.py reports its verdict as the JSON field "status" instead of a RESULT line.
         result = 'PASS' if b'RESULT: PASS' in text or re.search(rb'"status": "PASS"', text) else 'FAIL'
-    except subprocess.TimeoutExpired as e:
-        text = (e.stdout or b'') + (e.stderr or b'')
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        so, se = p.communicate()
+        text = so + se
         result = 'TIMEOUT'
     (out / f'{name}.txt').write_bytes(text)
     logs = list(d.rglob('*.log')) if d.exists() else []

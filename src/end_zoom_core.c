@@ -15,7 +15,7 @@ uint32_t end_zoom_rest_size(const uint8_t *h) {
     return 20*be32(h+4)+((2*be32(h+12)+3)&~3u)+4*be32(h+8);
 }
 bool end_zoom_parse(end_zoom_file_t *f,const uint8_t *h,const uint8_t *rest,uint32_t size) {
-    if (memcmp(h,"EZM2",4)) return false;
+    if (memcmp(h,"EZM3",4) && memcmp(h,"EZM2",4)) return false;   /* EZM3: EZM2 + the RDP tables after the L0 */
     f->descriptors=be32(h+4);f->tiles=be32(h+8);f->table=rest;
     uint32_t at=20*f->descriptors;f->words=rest+at;at+=(2*be32(h+12)+3)&~3u;   /* the words, padded to 4 bytes */
     f->tile_keys=rest+at;at+=4*f->tiles;

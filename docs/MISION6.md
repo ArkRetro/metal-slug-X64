@@ -1250,8 +1250,33 @@ traducidas igual que las demás, sin comprobar). En `make check` (se salta sin l
   más una carga de TMEM por tesela (unas 460 en los resultados). Con lo medido (el camino actual dibuja unas 40 partes
   en 1,4 ms; las columnas de arriba, 9694 subidas y rectángulos en 0,6 s, unos 62 µs cada una) no cabe en +1 ms
   sin agrupar teselas en páginas: **pendiente de decisión**.
-- **Pendiente**: un camino que componga en la RSP o que reutilice columnas enteras entre fotogramas; la prueba de ares
-  entera con `MSX_END_ZOOM=1` (las ejecuciones se pararon tras los resultados para medir).
+- **Ruta exacta del RDP (hecha, apagada)**: `src/end_zoom_rdp.c` corta cada columna en los tramos exactos de
+  `export_ending_zoom.rdp_tables` (`endzoom.bin` EZM3: tras la L0, 1048 secuencias de líneas distintas y 2573 tramos;
+  tabla horizontal por nibble y espejo; por zoom y y fila de tesela su primera línea y sus 4 secuencias: tal cual,
+  invertida por la L0, con giro vertical de la tesela, las dos), cada tramo un TEXTURE_RECTANGLE en punto fijo
+  (`__rdpq_texture_rectangle_raw_fx`) sobre la tesela tal cual, en páginas CI4 de 16 × 256 (16 teselas) por descriptor
+  cargadas una vez por tramo de rectángulos (los de una entrada van ordenados por página; las columnas y filas de una
+  entrada no se solapan). Lo que el recorte por arriba / izquierda / la vuelta de 512 líneas deja fuera de la rejilla
+  de 1/32 se vuelve a ajustar (búsqueda exhaustiva). Dos rectángulos seguidos con la misma aritmética (filas de
+  teselas consecutivas de la página) se unen en uno: el ajuste prefiere el paso medio (1:1 → ds = 1024). Sin caché de
+  tiras ni composición. **Familia** (`check_end_zoom.py --rdp`, en `make check`): los rectángulos dibujados con la
+  aritmética del RDP (texel = ⌊(32 s0 + dsdx·i) / 1024⌋, ⌊(32 t0 + dtdy·j) / 1024⌋ en la página): **ZC + ZT, 358 010 px
+  iguales, 0 distintos**, ningún texel fuera de su tesela, ningún tramo sin ajuste; 16 002 rectángulos (máximo 1006 en
+  un fotograma del título).
+- **Medido en ares** (`MSX_END_ZOOM=1`, `tools/test_ending_ares.py` **PASS** con y sin; cartucho con zoom 66 928 640 B;
+  memoria 252 KB pedida al llegar al final; caché de escena 208 ranuras):
+  - Resultados: hasta 295 rectángulos y 27 cargas de página por fotograma; CPU del zoom 5,3 ms de media y 6,5 ms el
+    peor fotograma una vez cargado (14,4 ms el primero, con las lecturas); de ello el rdpq 0,6 ms. `actors` 5,6 / 6,7 ms
+    frente a 1,15 / 1,3 ms sin zoom; `multi` (fotogramas de más de un vblank) 3 + 0 frente a 1 + 0, `game-first2s`
+    late 3 / long 1 frente a 2 / 1.
+  - Título (piezas 0A81A4 con zoom vertical): hasta **1006 rectángulos**, CPU del zoom **21,9 ms** en el peor fotograma;
+    ventana del título `multi` **93** frente a 19, CPU máxima 48,1 ms frente a 26,3.
+  - Entre medias (créditos, sin zoom) los `multi` cambian entre dos ejecuciones iguales (271 frente a 521 en total), así
+    que solo cuentan las ventanas con zoom. **No cumple** el criterio (ningún vblank perdido de más): queda apagado.
+  - Arranque: una de las ejecuciones sin zoom paró en `scene_assets.c:506` (3224 KB para la caché) y la siguiente, igual,
+    arrancó con 209 ranuras: fallo intermitente de arranque ajeno a este cambio (el código del zoom no está enlazado).
+- **Pendiente**: bajar el coste de CPU por rectángulo del título (unos 20 µs: recorrido de filas, búsqueda de tesela y
+  reajustes; en el anfitrión 10 µs por entrada) o llevar el corte a la RSP; después, encenderlo por defecto.
 
 **Otros**: `romfs/scene.pack` de este árbol estaba atrasado respecto a sus fuentes (8285 páginas; las fuentes dan
 8301, como ws-logo y ws-m4) y `make check` fallaba en la prueba de compresión; rehecho con `tools/pack_scene.py` y

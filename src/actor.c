@@ -1029,8 +1029,10 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         static unsigned zoom_frames,zoom_entries;end_zoom_frame();const end_zoom_stats_t *z=end_zoom_stats();
         if (++zoom_frames%300==0 && z->entries!=zoom_entries) {
             zoom_entries=z->entries;
-            debugf("MSX ENDZOOM entries=%u columns=%u ring_peak=%lu strips=%u hits=%u misses=%u no_slot=%u reads=%u missing_desc=%u missing_tiles=%u overflow=%u auto=%u no_block=%u cache=%u KB worst=%lu us total=%lu compose=%lu draw=%lu ms\n",
-                z->entries,z->columns,(unsigned long)z->ring_peak,z->strips,z->hits,z->misses,z->no_slot,z->file_reads,z->missing_descriptors,z->missing_tiles,z->overflow,z->auto_animated,z->no_block,z->cache_bytes/1024,(unsigned long)TICKS_TO_US(z->worst_frame_ticks),(unsigned long)(TICKS_TO_US(z->total_ticks)/1000),(unsigned long)(TICKS_TO_US(z->compose_ticks)/1000),(unsigned long)(TICKS_TO_US(z->draw_ticks)/1000));
+            debugf("MSX ENDZOOM entries=%u rects=%u loads=%u refits=%u unfit=%u reads=%u missing_desc=%u missing_tiles=%u overflow=%u auto=%u no_block=%u cache=%u KB total=%lu ms (rdpq %lu ms) worst=%lu us; 300 frames: most rects=%lu loads=%lu cpu=%lu us\n",
+                z->entries,z->rects,z->loads,z->refits,z->unfit,z->file_reads,z->missing_descriptors,z->missing_tiles,z->overflow,z->auto_animated,z->no_block,z->cache_bytes/1024,
+                (unsigned long)(TICKS_TO_US(z->total_ticks)/1000),(unsigned long)(TICKS_TO_US(z->emit_ticks)/1000),(unsigned long)TICKS_TO_US(z->worst_frame_ticks),(unsigned long)z->window_rects,(unsigned long)z->window_loads,(unsigned long)TICKS_TO_US(z->window_ticks));
+            end_zoom_window_reset();
         }
     }
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));

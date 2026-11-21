@@ -451,18 +451,19 @@ void scene_render_sprite_scaled(const scene_image_t *image,float x,float y,float
     set_point_filter();
     blit_scaled(image,x,y,0,0,image->width,image->height,width,height,mirror,flip_y,flash);
 }
-void scene_render_ci4_strip(const void *texels,unsigned width,unsigned height,unsigned palette,int x,int y) {
-    if (x>=320 || y>=240 || x+(int)width<=0 || y+(int)height<=0) return;
+/* end_zoom.c: one 16 x 256 CI4 page (16 tiles, 2048 B) into TMEM with pack palette `palette`, then exact texture
+ * rectangles from it (raw fixed point: s0 / t0 10.5, ds/dx / dt/dy 5.10; x1 / y1 exclusive). */
+void scene_render_zoom_page(const void *page,unsigned palette) {
     set_point_filter();set_tlut(TLUT_RGBA16);
     unsigned slot=palette_slot(palette);
-    surface_t texture=surface_make((void*)texels,FMT_CI4,16,height,8);
+    surface_t texture=surface_make((void*)page,FMT_CI4,16,256,8);
     uint32_t u0=TICKS_READ();
-    int bytes=rdpq_tex_upload_sub(TILE0,&texture,&(rdpq_texparms_t){.palette=(int)slot},0,0,16,(int)height);
-    upload_ticks+=TICKS_READ()-u0;
-    /* the tile descriptors are not the pages' any more */
-    last_page=last_slot=last_format=last_width=last_height=-1;uploads++;tmem_bytes+=(unsigned)bytes;
+    tmem_bytes+=(unsigned)page_upload(&texture,2,slot);upload_ticks+=TICKS_READ()-u0;uploads++;
+    last_page=-1;last_format=2;last_slot=(int)slot;last_width=16;last_height=256;
+}
+void scene_render_zoom_rect(int x0,int y0,int x1,int y1,uint16_t s0,uint16_t t0,int16_t dsdx,int16_t dtdy) {
     uint32_t r0=TICKS_READ();
-    rdpq_texture_rectangle(TILE0,x,y,x+(int)width,y+(int)height,0,0);
+    __rdpq_texture_rectangle_raw_fx(TILE0,(uint16_t)(x0*4),(uint16_t)(y0*4),(uint16_t)(x1*4),(uint16_t)(y1*4),s0,t0,dsdx,dtdy);
     rect_ticks+=TICKS_READ()-r0;draws++;
 }
 void scene_render_sprite(const scene_image_t *image,int x,int y,bool mirror,bool flip_y,bool flash) {

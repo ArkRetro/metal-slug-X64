@@ -49,9 +49,9 @@ void scene_render_image(const scene_image_t *image,int x,int y,bool mirror,bool 
  * flip_y = bit 1 (V); the caller places the part (flipped offsets). */
 void scene_render_sprite(const scene_image_t *image,int x,int y,bool mirror,bool flip_y,bool flash);
 void scene_render_sprite_scaled(const scene_image_t *image,float x,float y,float width,float height,bool mirror,bool flip_y,bool flash);
-/* A CI4 strip of RAM texels (16 pixels, 8 bytes, per line; end_zoom.c), width x height drawn 1:1 at x, y with pack
- * palette `palette` (fades applied as to every palette). */
-void scene_render_ci4_strip(const void *texels,unsigned width,unsigned height,unsigned palette,int x,int y);
+/* end_zoom.c: a 16 x 256 CI4 page into TMEM, and exact texture rectangles from it (raw fixed point, see .c). */
+void scene_render_zoom_page(const void *page,unsigned palette);
+void scene_render_zoom_rect(int x0,int y0,int x1,int y1,uint16_t s0,uint16_t t0,int16_t dsdx,int16_t dtdy);
 /* Sprite parts drawn while on use scene_page_try (per-frame decode budget). */
 void scene_render_set_deferrable(bool on);
 /* Palette fade offsets (-31..31 per channel, 0 = off) for the TLUTs uploaded

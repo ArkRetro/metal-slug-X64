@@ -11,7 +11,11 @@ a difference; pixels under an unzoomed sprite or a fix tile are not compared. Th
 itself equal to MAME's screenshot of that frame (check_lspc_shrink.py: T1); captures with a screenshot of g also
 compare the strip's colour (the entry's palette) with it.
 
-  check_end_zoom.py --lib build/host/end_zoom.so --file romfs/endzoom.bin --zip neogeo.zip CAPTURE.. [--quick]"""
+With --rdp, the console's path instead (src/end_zoom_rdp.c): the entry's exact texture rectangles, drawn here with the
+RDP's fixed-point arithmetic (texel = floor((32 s0 + dsdx i) / 1024), floor((32 t0 + dtdy j) / 1024) from the 16 x 256
+CI4 page), in the order the console emits them; a texel outside its tile is a failure.
+
+  check_end_zoom.py [--rdp] --lib build/host/end_zoom.so --file romfs/endzoom.bin --zip neogeo.zip CAPTURE.. [--quick]"""
 import argparse,ctypes as C,struct,sys
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).resolve().parent))
@@ -26,6 +30,11 @@ ST=C.CFUNCTYPE(None,C.c_void_p,C.POINTER(Strip),C.c_int,C.c_int)
 class IO(C.Structure):_fields_=[('l0_row',L0),('strip',ST),('column_end',C.c_void_p),('ctx',C.c_void_p),('auto_animated',C.c_uint),('work',C.c_void_p)]
 class File(C.Structure):_fields_=[('descriptors',C.c_uint),('tiles',C.c_uint),('table',C.c_void_p),('words',C.c_void_p),('tile_keys',C.c_void_p),('tiles_offset',C.c_uint32),('l0_offset',C.c_uint32)]
 
+class Rect(C.Structure):_fields_=[('x0',C.c_int16),('y0',C.c_int16),('x1',C.c_int16),('y1',C.c_int16),('s0',C.c_uint16),('t0',C.c_uint16),('dsdx',C.c_int16),('dtdy',C.c_int16),('page',C.c_uint16)]
+RC=C.CFUNCTYPE(None,C.c_void_p,C.POINTER(Rect))
+class RIO(C.Structure):_fields_=[('rect',RC),('ctx',C.c_void_p),('work',C.c_void_p),('sorted',C.c_void_p),('sorted_max',C.c_uint),('rects',C.c_uint),('refits',C.c_uint),('auto_animated',C.c_uint),('missing_tiles',C.c_uint),('unfit',C.c_uint)]
+class RDP(C.Structure):_fields_=[('horizontal',C.c_void_p),('runs',C.c_void_p),('seqs',C.c_void_p),('pieces',C.c_void_p),('nseq',C.c_uint),('npieces',C.c_uint)]
+
 def listed(r):
     """The list 11D04 has written at this dump (check_zoom_scb.pending): the screen of the next frame shows it."""
     fwd=bool(r[0x9946]&0x80)
@@ -39,6 +48,7 @@ def listed(r):
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('captures',nargs='+',type=Path)
     ap.add_argument('--lib',type=Path,required=True);ap.add_argument('--file',type=Path,required=True);ap.add_argument('--zip',type=Path,required=True)
+    ap.add_argument('--rdp',action='store_true',help='the RDP path (end_zoom_rdp.c): rectangles drawn with the RDP fixed-point arithmetic')
     ap.add_argument('--quick',action='store_true',help='make check: skip without the file or captures; PASS needs 0 different')
     a=ap.parse_args()
     if not a.file.is_file() or not a.zip.is_file() or not any(c.is_dir() for c in a.captures):
@@ -67,6 +77,24 @@ def main():
                 b=out[8*i+j//2];pen=(b&15) if j&1 else b>>4
                 if pen:state['buf'][r][sx]=(state['pal']*16+pen)
     l0c=L0(l0);stc=ST(strip);work=(C.c_uint16*(96*67))()
+    rdp=RDP()
+    if a.rdp:
+        tb=f.l0_offset+65536;assert lib.end_zoom_rdp_parse(C.byref(rdp),C.cast(C.addressof(buf)+tb,C.c_void_p),C.c_uint32(len(data)-tb)),'no RDP tables'
+        tfirst=C.c_uint32();tcount=C.c_uint32()
+    def rect(_,rp):
+        r=rp.contents;state['rects']+=1
+        k=state['k'];lib.end_zoom_descriptor_tiles(C.byref(f),k,C.byref(tfirst),C.byref(tcount))
+        for yy in range(max(r.y0,0),min(r.y1,240)):
+            row=yy-8   # console line y is raster y + 8; the screenshot row is raster - 16
+            if not 0<=row<224:continue
+            tt=r.t0*32+r.dtdy*(yy-r.y0)
+            for xx in range(max(r.x0,0),min(r.x1,320)):
+                ss=r.s0*32+r.dsdx*(xx-r.x0);tx,ty=ss>>10,tt>>10
+                tile=r.page*16+(ty>>4)
+                if not (0<=tx<16 and 0<=ty<256 and tile<tcount.value):state['outside']+=1;continue
+                b=data[f.tiles_offset+128*(tfirst.value+tile)+8*(ty&15)+tx//2];pen=(b&15) if tx&1 else b>>4
+                if pen:state['buf'][row][xx]=state['pal']*16+pen
+    rcc=RC(rect);sorted_buf=(Rect*4096)()
     tot=dict(frames=0,entries=0,missing_descriptors=0,strips=0,missing_tiles=0,auto_animated=0,equal=0,different=0,colour_equal=0,colour_different=0,overflow=0)
     for cap in a.captures:
         dumps=sorted(int(p.stem[3:]) for p in cap.glob('ram*.bin'));have=set(dumps)
@@ -82,14 +110,19 @@ def main():
             ents=[e for e in listed((cap/f'ram{f0}.bin').read_bytes()) if e[2]!=0xffff]
             if not ents:continue
             v=struct.unpack('>34304H',vf.read_bytes())
-            state.update(buf=[[None]*320 for _ in range(224)],strips=0,missing_tiles=0)
+            state.update(buf=[[None]*320 for _ in range(224)],strips=0,missing_tiles=0,rects=0,outside=0)
             io=IO(l0c,stc,None,None,0,C.cast(work,C.c_void_p))
             for x,y,zoom,attr,d in ents:
                 k=lib.end_zoom_find_descriptor(C.byref(f),C.c_uint32(d))
                 tot['entries']+=1
                 if k<0:tot['missing_descriptors']+=1;continue
                 state['pal']=attr>>8;state['k']=k
-                if not lib.end_zoom_entry(C.byref(f),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),16,239,C.byref(io)):tot['overflow']+=1
+                if a.rdp:
+                    rio=RIO(rcc,None,C.cast(work,C.c_void_p),C.cast(sorted_buf,C.c_void_p),2048,0,0,0,0,0)
+                    lib.end_zoom_rdp_entry(C.byref(f),C.byref(rdp),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),C.byref(rio))
+                    for n in ('refits','unfit','missing_tiles','auto_animated'):tot[n]=tot.get(n,0)+getattr(rio,n)
+                elif not lib.end_zoom_entry(C.byref(f),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),16,239,C.byref(io)):tot['overflow']+=1
+            tot['rects']=tot.get('rects',0)+state['rects'];tot['rects_max']=max(tot.get('rects_max',0),state['rects']);tot['outside']=tot.get('outside',0)+state['outside']
             tot['strips']+=state['strips'];tot['missing_tiles']+=state['missing_tiles'];tot['auto_animated']+=io.auto_animated
             info={s:(zx,zy) for s,x,y,rw,zx,zy in sprites(v) if rw};zoomed={s for s,(zx,zy) in info.items() if zx!=15 or zy!=255}
             top=render(v,crom,zoomy);fm=fix_mask(v)
@@ -111,7 +144,7 @@ def main():
             tot['frames']+=1
             if tot['different']>d0:print(cap.name,fr,'different',tot['different']-d0)
     print(tot)
-    ok=tot['frames']>0 and tot['different']==0 and tot['missing_descriptors']==0 and tot['missing_tiles']==0 and tot['overflow']==0
+    ok=tot.get('outside',0)==0 and tot.get('unfit',0)==0 and tot['frames']>0 and tot['different']==0 and tot['missing_descriptors']==0 and tot['missing_tiles']==0 and tot['overflow']==0
     print(('PASS' if ok else 'FAIL')+': end_zoom strips: %d pixels equal to the LSPC drawing of the VRAM, %d different; %d equal to the screenshots, %d different'%(tot['equal'],tot['different'],tot['colour_equal'],tot['colour_different']))
     return 0 if ok else 1
 if __name__=='__main__':sys.exit(main())

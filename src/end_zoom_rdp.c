@@ -37,25 +37,6 @@ static uint16_t rd(void *ctx,uint32_t descriptor,uint32_t i) {
     scb_ctx_t *s=ctx;(void)descriptor;s->last=i;
     return i<s->nw?be16(s->w+2*i):0;
 }
-static void wr(void *ctx,uint16_t a,uint16_t d) {
-    scb_ctx_t *s=ctx;unsigned idx;
-    if (a<0x8000u) {
-        /* SCB1: with a local map, the tile word's local index from the descriptor word just read (rd) */
-        /* the zoomed writers' zero fill of the unused tile rows (no word read before it): those rows are beyond the
-         * column's size (SCB3) and never drawn, so they are not kept */
-        if (!(a&1u) && s->last==0xffffffffu) return;
-        idx=(a>>6)-1u;
-        if (idx>=END_ZOOM_COLUMNS) return;
-        s->c[idx].scb1[a&63u]=d;
-        if (!(a&1u)) {if (s->map) s->loc[idx][(a&63u)>>1]=s->last<s->nw?s->map[s->last]:0xffffu;s->last=0xffffffffu;}
-        return;
-    }
-    if (a>=0x8401u) {idx=a-0x8401u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb4=d;}
-    else if (a>=0x8201u) {idx=a-0x8201u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb3=d;}
-    else if (a>=0x8001u) {idx=a-0x8001u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb2=d;}
-    else {idx=(a>>6)-1u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb1[a&63u]=d; else return;}
-    if (idx<END_ZOOM_COLUMNS && idx+1>s->count) s->count=idx+1;
-}
 /* (S, d) with floor((32 S + d i) / 1024) = v[i] for every i (export_ending_zoom.fit, exhaustive over d). */
 static bool fit(const int *v,int n,int *S,int *D) {
     if (n==1) {*S=v[0]*32;*D=0;return true;}
@@ -106,54 +87,69 @@ void end_zoom_rdp_local_map(const end_zoom_file_t *f,int index,uint16_t *map) {
         }
     }
 }
+typedef struct { int16_t lstart,len,T,d; } vpiece_t;
 bool end_zoom_rdp_entry(const end_zoom_file_t *f,const end_zoom_rdp_t *t,int index,uint16_t x,uint16_t y,uint16_t zoom,uint16_t attr,end_zoom_rdp_io_t *io) {
-    column_t *cols=io->work;
     const uint8_t *te=f->table+20*index;
-    scb_ctx_t sc={f,index,cols,0,f->words+2*be32(te+4),be32(te+8),0xffffffffu,io->local_map,io->local_work};
-    neo_scb_entry_t e={x,y,zoom,(uint16_t)(attr&3u),be32(f->table+20*index)};
+    scb_ctx_t sc={f,index,NULL,0,f->words+2*be32(te+4),be32(te+8),0xffffffffu,NULL,NULL};
+    neo_scb_entry_t e={x,y,zoom,(uint16_t)(attr&3u),be32(te)};
     uint16_t win[4]={0,END_ZOOM_COLUMNS,0,0};
-    neo_scb_entry(true,true,&e,win,rd,wr,&sc);
+    neo_scb_columns_t cl={io->work,0,END_ZOOM_COLUMNS,0};
+    neo_scb_entry_columns(&e,win,rd,&sc,&cl);
     uint32_t first,count;end_zoom_descriptor_tiles(f,index,&first,&count);
     unsigned n_out=0,hint=0;
-    for (unsigned c=0;c<sc.count;c++) {
-        const column_t *k=&cols[c];
-        unsigned rows=k->scb3&63u,zx=(k->scb2>>8)&15u,zy=k->scb2&0xffu;
+    if (!cl.count) return true;
+    /* once per entry (every column has the entry's zoom y and attribute): per tile row, its pieces in sprite lines */
+    const unsigned zy=zoom&0xffu,at=cl.c[0].attr;
+    if (at&12u) {io->auto_animated++;return true;}
+    const bool vf=(at&2u)!=0;const unsigned hf=at&1u;
+    vpiece_t vp[32][4];uint8_t nvp[32];
+    for (unsigned tr=0;tr<32;tr++) {
+        unsigned half=tr>>4,tr0=half?tr^0x1fu:tr;
+        const uint8_t *run=t->runs+10*(zy*16+tr0);
+        unsigned len=run[1];nvp[tr]=0;
+        if (!len) continue;
+        unsigned variant=half?(vf?1u:3u):(vf?2u:0u);
+        int lstart=half?256+(255-(int)(run[0]+len-1)):run[0];
+        const uint8_t *sq=t->seqs+4*be16(run+2+2*variant);
+        for (unsigned p=0;p<sq[2] && p<4;p++) {
+            const uint8_t *pc=t->pieces+6*(be16(sq)+p);
+            vp[tr][nvp[tr]++]=(vpiece_t){(int16_t)(lstart+pc[0]),pc[1],bes16(pc+2),bes16(pc+4)};
+        }
+    }
+    for (unsigned c=0;c<cl.count;c++) {
+        const neo_scb_column_t *k=&cl.c[c];
+        unsigned rows=k->scb3&63u,zx=(k->scb2>>8)&15u;
         if (!rows) continue;
         int sx=(k->scb4>>7)&511,sy=(512-(k->scb3>>7))&511;
         if (sx>=320) sx-=512;
         if (sx+(int)zx<0 || sx>=320) continue;
         /* the column's vertical segments (tile row pieces on screen), merged where the texels continue */
         seg_t sg[64];unsigned ns=0;
-        for (unsigned half=0;half<2;half++) for (unsigned tr0=half?(rows>16?32-rows:16):0;tr0<(half?16u:(rows<16?rows:16u));tr0++) {
-            const uint8_t *run=t->runs+10*(zy*16+tr0);
-            unsigned len=run[1],tr=half?tr0^0x1fu:tr0;
-            if (!len) continue;
-            uint16_t lo=k->scb1[2*tr],at=k->scb1[2*tr+1];
-            if (at&12u) {io->auto_animated++;continue;}
-            int ti=io->local_map?(int)io->local_work[k-cols][tr]:-1;
-            if (ti<0 || ti==0xffff) ti=find_tile(f,first,count,lo|(((uint32_t)at<<12)&0xf0000u),&hint);
+        for (unsigned tr=0;tr<32;tr++) {
+            if (tr>=rows) break;
+            if (!nvp[tr]) continue;
+            unsigned row=k->vflip?k->rows-1u-tr:tr;
+            if (row>=k->rows) continue;
+            uint32_t wi=k->first_word+row;
+            int ti=io->local_map && wi<sc.nw?(int)io->local_map[wi]:-1;
+            if (ti<0 || ti==0xffff) ti=find_tile(f,first,count,(wi<sc.nw?be16(sc.w+2*wi):0)|(((uint32_t)at<<12)&0xf0000u),&hint);
             if (ti<0) {io->missing_tiles++;continue;}
             unsigned local=(unsigned)ti;
-            bool vf=(at&2u)!=0;
-            unsigned variant=half?(vf?1u:3u):(vf?2u:0u);
-            int lstart=half?256+(255-(int)(run[0]+len-1)):run[0];
-            const uint8_t *sq=t->seqs+4*be16(run+2+2*variant);
-            for (unsigned p=0;p<sq[2];p++) {
-                const uint8_t *pc=t->pieces+6*(be16(sq)+p);
-                int voff=pc[0],vlen=pc[1];
-                /* the piece's lines may wrap at 512 (the LSPC's line counter): two parts */
-                int r0=(sy+lstart+voff)&511;
+            for (unsigned p=0;p<nvp[tr];p++) {
+                const vpiece_t *pc=&vp[tr][p];
+                int vlen=pc->len;
+                int r0=(sy+pc->lstart)&511;
                 for (int part=0,k0=0;part<2 && k0<vlen;part++) {
                     int m=r0+vlen-k0>512?512-r0:vlen-k0,ry=part?0:r0;
-                    int Ty=bes16(pc+2),Dy=bes16(pc+4),yy=ry-8,kk=k0,mm=m;
+                    int Ty=pc->T,Dy=pc->d,yy=ry-8,kk=k0,mm=m;
                     k0+=m;r0=0;
                     if (yy>=240 || yy+mm<=0) continue;
                     if (yy<0) {kk+=-yy;mm-=-yy;yy=0;}
                     if (kk && !skip(&Ty,&Dy,kk,mm,io)) continue;
                     int y1=yy+mm>240?240:yy+mm,t0=Ty+512*(int)(local&15u);
                     seg_t *q=ns?&sg[ns-1]:NULL;
-                    if (q && q->page==(local>>4) && q->hf==(at&1u) && q->d==Dy && q->y1==yy && q->t0*32+Dy*(q->y1-q->y0)==t0*32) {q->y1=(int16_t)y1;continue;}
-                    if (ns<64) sg[ns++]=(seg_t){(int16_t)yy,(int16_t)y1,(int16_t)t0,(int16_t)Dy,(uint16_t)(local>>4),(uint8_t)(at&1u)};
+                    if (q && q->page==(local>>4) && q->d==Dy && q->y1==yy && q->t0*32+Dy*(q->y1-q->y0)==t0*32) {q->y1=(int16_t)y1;continue;}
+                    if (ns<64) sg[ns++]=(seg_t){(int16_t)yy,(int16_t)y1,(int16_t)t0,(int16_t)Dy,(uint16_t)(local>>4),(uint8_t)hf};
                     else io->unfit++;
                 }
             }

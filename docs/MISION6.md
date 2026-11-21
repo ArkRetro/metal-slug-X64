@@ -1282,7 +1282,11 @@ traducidas igual que las demás, sin comprobar). En `make check` (se salta sin l
   búsqueda por fila de tesela), sin guardar el relleno de ceros de las filas no usadas, solo las filas de tesela por
   debajo del tamaño, y los tramos verticales de una columna unidos una vez y luego multiplicados por los tramos
   horizontales (sin comparación por rectángulo): **5,84 M (765 por rectángulo) y 11,85 M (355)**. Sigue 0 px (`make
-  check`). Lo que queda: unas 100 instrucciones por fila de tesela y unas 25 000 por entrada de los escritores de
+  check`). Después: los tramos verticales de cada fila de tesela resueltos una vez por entrada (todas las columnas comparten
+  zoom y y atributo) y `neo_scb_entry_columns` (los mismos escritores de 011E60 con todas las columnas visibles,
+  devolviendo por columna SCB2 / SCB3 / SCB4, el atributo y la primera palabra de sus teselas en un arreglo, sin una
+  llamada por palabra; `check_zoom_scb.py --c` sigue a 0 palabras distintas con la ruta de escrituras): **3,35 M (438
+  por rectángulo) y 7,44 M (223)**, 0 px. Lo que queda: unas 100 instrucciones por fila de tesela y unas 25 000 por entrada de los escritores de
   `neo_scb.c` con sus llamadas por palabra; el objetivo de ≤ 2 µs por rectángulo (unas 150 instrucciones) pide no
   pasar por fila de tesela (columnas enteras precalculadas por zoom) o la RSP. Sin medir en ares (máquina cargada).
 - **Pendiente**: bajar el coste de CPU por rectángulo del título (unos 20 µs: recorrido de filas, búsqueda de tesela y

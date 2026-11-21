@@ -1,8 +1,9 @@
 /* The 68K's sprite-list column writers (neo_scb.h), translated from 00AB7A / 00C3EE / 00C782 / 00CB18 / 00F536 and
  * the unshrunk 00A106 / 00B8F6 / 00BBAC / 00BE64 / 00EA4E (the 32 writers differ only in the parameters below). */
+#include <stddef.h>
 #include "neo_scb.h"
 static int16_t s16(uint32_t v) {return (int16_t)(uint16_t)v;}
-void neo_scb_entry(bool vblank,bool forward,const neo_scb_entry_t *e,uint16_t win[4],neo_scb_read_t rd,neo_scb_write_t wr,void *ctx) {
+static inline void entry(bool vblank,bool forward,const neo_scb_entry_t *e,uint16_t win[4],neo_scb_read_t rd,neo_scb_write_t wr,void *ctx,neo_scb_columns_t *out) {
     const unsigned zx=e->zoom>>8,zy=e->zoom&0xffu;
     const bool zoomed=e->zoom!=0xffffu,hflip=(e->attr&1u)!=0,vflip=(e->attr&2u)!=0;
     uint32_t a3=0;
@@ -38,6 +39,17 @@ void neo_scb_entry(bool vblank,bool forward,const neo_scb_entry_t *e,uint16_t wi
             if ((uint16_t)((d5>>1)+0x200)>=0x5000u) {a3+=n+1;continue;}   /* x outside -8..311 */
             if (!forward) idx--;
             bool show=true;
+            if (out) {
+                /* the same words as the writes below (vblank, every column shown), into the entry's array */
+                if (out->count<out->max) {
+                    neo_scb_column_t *o=&out->c[out->count++];
+                    o->scb2=zoomed?(uint16_t)((d4&0xff00)|zy):0xffffu;o->scb3=scb3;o->scb4=(uint16_t)d5;o->attr=d1;
+                    o->first_word=a3;o->rows=(uint8_t)(n+1);o->vflip=vflip;
+                } else out->overflow++;
+                a3+=n+1;
+                if (forward) idx++;
+                continue;
+            }
             if (vblank) {
                 wr(ctx,(uint16_t)(0x8201u+idx),scb3);
                 show=forward?s16(idx-win[3])>=0:s16(idx-win[2])<0;
@@ -56,6 +68,12 @@ void neo_scb_entry(bool vblank,bool forward,const neo_scb_entry_t *e,uint16_t wi
         }
     }
     if (forward) win[2]=idx; else win[3]=idx;
+}
+void neo_scb_entry(bool vblank,bool forward,const neo_scb_entry_t *e,uint16_t win[4],neo_scb_read_t rd,neo_scb_write_t wr,void *ctx) {
+    entry(vblank,forward,e,win,rd,wr,ctx,NULL);
+}
+void neo_scb_entry_columns(const neo_scb_entry_t *e,uint16_t win[4],neo_scb_read_t rd,void *ctx,neo_scb_columns_t *out) {
+    entry(true,true,e,win,rd,NULL,ctx,out);
 }
 void neo_scb_hide_rest(bool forward,const uint16_t win[4],neo_scb_write_t wr,void *ctx) {
     if (forward) {

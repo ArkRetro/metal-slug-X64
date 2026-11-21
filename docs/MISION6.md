@@ -1242,6 +1242,14 @@ traducidas igual que las demás, sin comprobar). En `make check` (se salta sin l
   **1,4 / 1,5 ms** con el rectángulo escalado: no cabe en el tope de +1 ms. Con la caché de 512 ranuras protegidas dos
   fotogramas y las teselas leídas una a una, 100 ms. **Por eso queda apagado** (`MSX_END_ZOOM ?= 0`: el cartucho por
   defecto no lleva `endzoom.bin`, sigue en 66 535 424 B y dibuja como antes); con él, 66 863 104 B.
+- **Zoom con el RDP** (`tools/check_rdp_shrink.py neogeo.zip`, búsqueda exhaustiva en punto fijo: s/t 10.5, ds/dt 5.10,
+  muestreo puntual): **horizontal**, un solo rectángulo exacto para los nibbles 0, 1, 2, 6, 7, 13, 14, 15; el 3, 5, 8, 11
+  y 12 piden 2 tramos y el 4, 9 y 10, 3 (igual con espejo). **Vertical**, por fila de tesela de cada zoom y de la L0:
+  1 tramo en 16 zooms, 2 en 112, 3 en 112 y 4 en 16 (el peor, zoom y 0x9E); zoom y FF, 1. Exacto partiendo en tramos,
+  pero en el peor fotograma de las capturas hacen falta **1023 rectángulos** (ZC 61495, T1 61500; ZT 1006 en 73363),
+  más una carga de TMEM por tesela (unas 460 en los resultados). Con lo medido (el camino actual dibuja unas 40 partes
+  en 1,4 ms; las columnas de arriba, 9694 subidas y rectángulos en 0,6 s, unos 62 µs cada una) no cabe en +1 ms
+  sin agrupar teselas en páginas: **pendiente de decisión**.
 - **Pendiente**: un camino que componga en la RSP o que reutilice columnas enteras entre fotogramas; la prueba de ares
   entera con `MSX_END_ZOOM=1` (las ejecuciones se pararon tras los resultados para medir).
 

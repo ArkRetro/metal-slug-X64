@@ -30,12 +30,13 @@ if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/a
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log'
+import ares_padtest as pt;pt_ticks=pt.ticks
 if a.pad_script or a.record:
     import shutil;rom=out/'testpad.z64'
     for f in (out/'testpad.eeprom',out/'testpad.pak'):
         if f.exists():f.unlink()
     if a.pad_script:
-        from padscript import apply,read_script;apply(a.rom,read_script(a.pad_script),rom)
+        from padscript import apply,read_script;apply(a.rom,read_script(a.pad_script),rom,then_record=a.record)
     else:shutil.copyfile(a.rom,rom)
     a.rom=str(rom)
 def cut_log():
@@ -48,8 +49,9 @@ def cut_log():
         if int(m.group(1))>=a.seconds*60:ends.append(m.end());break
     if ends:logp.write_text(t[:min(ends)])
 BOSS_NEAR=(-80,-20)   # player x - body x (px) where the boss cycle runs
+live=[not a.pad_script]   # --pad-script with --record: the keys go live at `MSX PAD script end` (a continued recording)
 def key(action,name):
-    if not a.pad_script:subprocess.run([XD,action,name],check=True,env=env)   # a replay presses nothing: the ROM's script is the pad
+    if live[0]:subprocess.run([XD,action,name],check=action!='keyup',env=env)   # a replay presses nothing: the ROM's script is the pad
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
@@ -65,12 +67,12 @@ def wait(pat,secs=300):
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
 ok=False;cam=0;maxcam=0
 try:
-    win=None if not a.pad_script else 'none'
+    win=None if (not a.pad_script or a.record) else 'none'
     while not win:
         r=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
         if r:win=r[-1]
         time.sleep(.5)
-    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
+    if not a.pad_script or a.record:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
     # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
     import ares_menu;ares_menu.choose(key,log,proc,4,1,lifebar=a.lifebar)
@@ -79,16 +81,20 @@ try:
     m=wait(r'MSX mission 4 stage \d+ start: record (\w+) descriptor (\w+) camera list (\w+)',120)
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
-    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
+    if not a.pad_script or a.record:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
     t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0;seq=None
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
-    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    clock=EmuClock();wall_end=time.monotonic()+(3*a.seconds+600 if not (a.pad_script or a.record) else 10**9)   # B78: a recording / replay ends on the game's count only (the caller's timeout bounds it)
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if not live[0] and a.record and 'MSX PAD script end' in text[-200000:]:
+            live[0]=True;held.clear()   # every key is up: press again what the pad holds
+            w2=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
+            if w2:subprocess.run([XD,'windowfocus',w2[-1]],env=env)   # the newest ares window (other runs may have opened theirs meanwhile; run alone when going live)
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
@@ -100,7 +106,7 @@ try:
             # emulator at a third of its speed (a loaded machine), the countdown ran out and the game restarted in Mission 1.
             plays=text.count('MSX panel play');time.sleep(1.0)
             for _ in range(30):
-                tap('Return',.4);time.sleep(.6);tx=log()
+                tap('Return',2.0 if a.record else .4);time.sleep(.6);tx=log()   # a recording runs at ~10 % on a loaded host: 0.4 s missed every read (game over, B78)
                 if tx.count('MSX panel play')>plays or tx.count('MSX panel game over')>text.count('MSX panel game over'):break
             continued=text.count('MSX panel continue')
             continue

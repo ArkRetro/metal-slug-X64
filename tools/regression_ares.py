@@ -90,6 +90,8 @@ def main():
     ap.add_argument('--m1end')
     ap.add_argument('--out', required=True)
     ap.add_argument('--only')
+    ap.add_argument('--testpad', help='B78: the scripted-pad test cartridge (mslugx-testpad.z64); a test with a recorded '
+                    'script data/<name>_pad.txt replays it on this ROM (tools/padscript.py): the same numbers every run')
     ap.add_argument('--write-baseline', action='store_true')
     a = ap.parse_args()
     rom = pathlib.Path(a.rom).resolve()
@@ -105,7 +107,11 @@ def main():
                 sys.exit('m1m2 needs --m1end')
             r = run(n, *M1M2, pathlib.Path(a.m1end).resolve(), out)
         else:
-            r = run(n, *TESTS[n], rom, out)
+            script, extra, timeout, outflag = TESTS[n]; pad = ROOT / 'data' / f'{n}_pad.txt'
+            if a.testpad and pad.exists():
+                r = run(n, script, extra + ['--pad-script', str(pad)], timeout, outflag, pathlib.Path(a.testpad).resolve(), out)
+            else:
+                r = run(n, script, extra, timeout, outflag, rom, out)
         now[n] = r
         b = base.get(n)
         why = []

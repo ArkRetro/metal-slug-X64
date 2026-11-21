@@ -36,6 +36,9 @@ static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
 static bool descent_fresh;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
+#ifdef MSX_TESTPAD
+unsigned msx_testpad_steps(unsigned steps,unsigned kind);
+#endif
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
 static bool pending_a,pending_b;
 /* The original's pause 015520 (neo_pause.h, docs/PAUSA.md). The N64 START
@@ -689,6 +692,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (was_paused) {
         /* A paused turn waits two vblanks (003AE0); the LSPC goes on counting. */
         pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+#ifdef MSX_TESTPAD
+        pause_steps=msx_testpad_steps(pause_steps,2);   /* B78: recorded / replayed (src/msx_testpad.c) */
+#endif
         for (unsigned k=0;k<pause_steps;k++) neo_lspc_frame(&game.lspc);
         pause_vblanks+=pause_steps;run=false;
     }
@@ -727,6 +733,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
     }
     unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND):0;
+#ifdef MSX_TESTPAD
+    if (pf.step) steps=msx_testpad_steps(steps,1);   /* B78: the host-paced step count, recorded / replayed (src/msx_testpad.c) */
+#endif
     /* A SELECT press inside an original update: the update ends first. */
     if (pause_select && steps>(game.ticks&1u)) steps=game.ticks&1u?1u:steps;
     /* At most two steps per frame: the world updates on every second step

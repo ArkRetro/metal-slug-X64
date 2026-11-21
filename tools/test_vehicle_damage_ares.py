@@ -33,6 +33,7 @@ p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
 p.add_argument('--ride',choices=('wait','forward'),default='wait',help='while riding: wait (stand still, no fire) or forward (a 5 s cycle: 2 s right, 3 s still, the vehicle fire B in the last 0.6 s; never A: A+B is the exit) to take the vehicle to the enemies (the Slugnoid of m5s3, B69)')
+import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
@@ -41,8 +42,9 @@ expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m5s3':'3'}[a.missio
 MENU={'m1':0,'m2s3':3,'m5s3':8}[a.mission]          # main.c mselect_items: Down presses from MISSION 1
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
-XD='/usr/bin/xdotool';logp=out/'ares.log'
-def key(action,name):subprocess.run([XD,action,name],check=True,env=env)
+XD='/usr/bin/xdotool';logp=out/'ares.log';pt.prepare(a,out)
+def key(action,name):
+    if not a.pad_script:subprocess.run([XD,action,name],check=True,env=env)   # a replay presses nothing (tools/ares_padtest.py)
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
@@ -61,27 +63,27 @@ REACT={3:(0x97308,0x9731a,0x9737e,0x97396),1:(0x9351a,0x93576,0x935a8,0x935ec,0x
 DESTROY={3:(0x973e2,0x97414,0x9756a),1:(0x938da,0x9391e,0x93afa,0x938da+0x11e0,0x9391e+0x11e0,0x93afa+0x11e0)}
 done=set();ok=False
 try:
-    win=None
+    win=None if not a.pad_script else 'none'
     while not win:
         r=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
         if r:win=r[-1]
         time.sleep(.5)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
+    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
     # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
     import ares_menu;ares_menu.choose(key,log,proc,*{'m1':(1,1),'m2s3':(2,3),'m5s3':(5,3)}[a.mission],lifebar=a.lifebar)
     if a.lifebar:wait(r'MSX LIFEBAR on',60)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
+    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     t0=time.monotonic();nextgrab=0;k=0;held={};ride_since=None;next_start=0;last_prog=None;prog_at=0;seen_wait=[0,-9.0];seek_dx=[None,0.0];seek_off=[0.0]
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
-    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    clock=EmuClock();wall_end=time.monotonic()+(3*a.seconds+600 if not (a.pad_script or a.record) else 10**9)   # B78: a recording / replay ends on the game's count only (the caller's timeout bounds it)
     while time.monotonic()<wall_end and not set(expect)<=done:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mounts=len(re.findall(r'MSX player mounted vehicle',text));lefts=len(re.findall(r'MSX player left vehicle',text))
         riding=mounts>lefts
@@ -127,6 +129,7 @@ try:
             if km and 'MSX vehicle hit (class-0 row' in text[at:]:done.add(int(km.group(1)))
         time.sleep(.03)
     for n in list(held):hold(n,False)
+    pt.finish(a,proc,logp,[])
     text=log()
     # Split the log into rides: from each `mounted kind=K` to the next `left vehicle`.
     lines=text.splitlines();rides=[];cur=None

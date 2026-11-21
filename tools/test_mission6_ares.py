@@ -25,6 +25,7 @@ p.add_argument('--boss',action='store_true')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade); needs N64 Z on the key z (tools/ares_private_data.py)')
 p.add_argument('--aimup',action='store_true',help='Up held all the time while walking (a player\'s choice: the last enemy 04153E hangs over the arena)')
 p.add_argument('--bomb',type=float,default=0.0,help='a grenade (Z) every this many seconds (needs --lifebar: the key z)')
+import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:
@@ -36,8 +37,9 @@ if a.progress is None:a.progress=min(600,limit)
 assert a.progress<=limit,f'--progress {a.progress} is beyond the camera x {limit} that stage {a.stage} reaches in MAME'
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
-XD='/usr/bin/xdotool';logp=out/'ares.log'
-def key(action,name):subprocess.run([XD,action,name],check=True,env=env)
+XD='/usr/bin/xdotool';logp=out/'ares.log';pt.prepare(a,out)
+def key(action,name):
+    if not a.pad_script:subprocess.run([XD,action,name],check=True,env=env)   # a replay presses nothing (tools/ares_padtest.py)
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
@@ -53,12 +55,12 @@ def wait(pat,secs=300):
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
 ok=False;cam=0;maxcam=0
 try:
-    win=None
+    win=None if not a.pad_script else 'none'
     while not win:
         r=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
         if r:win=r[-1]
         time.sleep(.5)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
+    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
     # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
     import ares_menu;ares_menu.choose(key,log,proc,6,a.stage,lifebar=a.lifebar)
@@ -66,16 +68,16 @@ try:
     m=wait(r'MSX mission 6 stage \d+ start: record (\w+) descriptor (\w+) camera list (\w+)',120)
     assert (m.group(2),m.group(3))==(('016E5E','0BCA00'),('016E6E','0BDCE2'),('016E7E','0BE99E'))[a.stage-1],m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
+    if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
     t0=time.monotonic();nextgrab=0;k=0;held={};continued=0;dead=0
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
     # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
-    clock=EmuClock();wall_end=time.monotonic()+3*a.seconds+600
+    clock=EmuClock();wall_end=time.monotonic()+(3*a.seconds+600 if not (a.pad_script or a.record) else 10**9)   # B78: a recording / replay ends on the game's count only (the caller's timeout bounds it)
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
@@ -94,7 +96,7 @@ try:
             # emulator at a third of its speed (a loaded machine), the countdown ran out and the game restarted in Mission 1.
             plays=text.count('MSX panel play');time.sleep(1.0)
             for _ in range(30):
-                tap('Return',.4);time.sleep(.6);tx=log()
+                tap('Return',2.0 if a.record else .4);time.sleep(.6);tx=log()   # a recording runs at ~10 % on a loaded host: 0.4 s missed every read (game over, B78)
                 if tx.count('MSX panel play')>plays or tx.count('MSX panel game over')>text.count('MSX panel game over'):break
             continued=text.count('MSX panel continue')
         # --turn P: Left and Down for 0.5 s every P s (a player's choice: crouched shots at the enemies left behind, e.g.
@@ -112,6 +114,7 @@ try:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)
     for n in list(held):hold(n,False)
+    pt.finish(a,proc,logp,([r'MSX mission end 018846 done'] if a.boss else [])+([r'MSX mission 6 stage \d+ start: record \w+ descriptor %s'%('016E6E','016E7E')[a.stage-1]] if a.next and a.stage<3 else []))
     text=log()
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
     print('camera',cam,'screenshots',k,'continues',continued,'fall deaths',(re.findall(r'pit deaths=(\d+)',text) or ['0'])[-1]);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
@@ -130,7 +133,7 @@ try:
             m=re.search(pat,text);print('boss:',pat,'->',m.group(0) if m else 'MISSING');ok=ok and m is not None
         bad=re.findall(r'MSX world unsupported routine[^\n]*',text);print('boss: routine stops',len(bad),bad[:5]);ok=ok and not bad
 finally:
-    for n in ('Right','Left','Up','Down','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)
+    for n in ('Right','Left','Up','Down','a','b','d','e','z'):key('keyup',n)
     proc.terminate()
     try:proc.wait(5)
     except Exception:proc.kill()

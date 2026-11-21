@@ -249,7 +249,11 @@ $(BUILD_DIR)/mslugx-diag.dfs: N64_MKDFS_ROOT = $(BUILD_DIR)/game-romfs
 $(BUILD_DIR)/mslugx-diag.dfs: $(BUILD_DIR)/game-romfs.stamp
 # Test cartridge with the scripted pad (B78, src/msx_testpad.c, tools/padscript.py): the release game objects with
 # joypad_poll / joypad_get_buttons / joypad_get_inputs wrapped; the user cartridge never links msx_testpad.o.
-$(BUILD_DIR)/mslugx-testpad.elf: $(MSLUGX_GAME_OBJS) $(BUILD_DIR)/src/msx_testpad.o $(BUILD_DIR)/ovl-src.externs
+# actor.c again with -DMSX_TESTPAD: the frame's simulation steps go through the script too (msx_testpad_steps).
+$(BUILD_DIR)/testpad/actor.o: src/actor.c $(BUILD_DIR)/src/actor.o
+	@mkdir -p $(dir $@)
+	$(N64_CC) -c $(N64_CFLAGS) -MMD -DMSX_TESTPAD=1 -o $@ $<
+$(BUILD_DIR)/mslugx-testpad.elf: $(filter-out $(BUILD_DIR)/src/actor.o,$(MSLUGX_GAME_OBJS)) $(BUILD_DIR)/testpad/actor.o $(BUILD_DIR)/src/msx_testpad.o $(BUILD_DIR)/ovl-src.externs
 $(BUILD_DIR)/mslugx-testpad.elf: LDFLAGS += --wrap=joypad_poll --wrap=joypad_get_buttons --wrap=joypad_get_inputs
 mslugx-testpad.z64: N64_ROM_TITLE = "MSX TESTPAD"
 mslugx-testpad.z64: $(BUILD_DIR)/mslugx-testpad.dfs

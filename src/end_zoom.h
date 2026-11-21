@@ -4,7 +4,8 @@
 #include <stdint.h>
 /* The ending's shrunk sprites drawn as the LSPC draws them (end_zoom_core.h), from romfs/endzoom.bin. */
 typedef struct {
-    unsigned entries,strips,hits,misses,no_slot,file_reads,missing_descriptors,missing_tiles,overflow,auto_animated;
+    unsigned entries,strips,hits,misses,no_slot,file_reads,missing_descriptors,missing_tiles,overflow,auto_animated,no_block,columns;
+    uint32_t ring_peak,compose_ticks,draw_ticks,total_ticks;
     unsigned cache_bytes;
     uint32_t last_frame_ticks,worst_frame_ticks;
 } end_zoom_stats_t;

@@ -1213,8 +1213,37 @@ entradas con zoom (80 sin espejo y 40 con espejo horizontal en el dial; 159 sin 
 de las cuatro variantes. Variantes con zoom y espejo vertical (6 / 7): **sin captura** (no salen en ZC ni ZT;
 traducidas igual que las demás, sin comprobar). En `make check` (se salta sin las capturas o la ROM).
 
-**Paso 2, pendiente**: el port (`actor.c`, `scene_render_sprite_scaled`) sigue escalando cada parte con un
-rectángulo del RDP; falta dibujar sprite a sprite de 16 px con estas columnas y líneas.
+**Sprites con zoom en N64 (parte B): hecho y comprobado a 0 px en el anfitrión; en la consola, apagado por tiempo.**
+- **Datos** (`tools/export_ending_zoom.py` → `romfs/endzoom.bin`, 315 900 B, derivado de la ROM, fuera de git): los 25
+  descriptores de P2 que la lista de sprites lleva con zoom ≠ FFFF en los 783 volcados de RAM de T1, ZC y ZT (el dial
+  `0577E2` de los resultados: `1D9154` / `1D932C`, solo zoom x; las piezas `0A81A4` del título: `1D5F16..1D6B44`,
+  `1D9504..1D962C`), sus palabras tal cual las lee `neo_scb_entry`; sus teselas de la C-ROM (1859 por descriptor,
+  1785 distintas; decodificadas de los planos de bits a CI4 16 × 16) y las 256 filas de la L0 de la BIOS (los primeros
+  64 KB de `000-lo.lo`: el zoom y de las piezas en vuelo toma valores que las capturas no enseñan todos).
+- **Núcleo** (`src/end_zoom_core.c`, común a consola y anfitrión): una entrada de la lista pasa por los escritores de
+  columnas de `neo_scb.c` (ventana de 96 sprites) a SCB1..SCB4; cada columna se recorre línea a línea con la L0 y
+  `COLUMNS` (las mismas reglas que `check_lspc_shrink.line_tile`) y se corta en **tiras**: las líneas seguidas de una
+  columna con la misma fila de tesela (clave: tesela, giros, nibble, líneas de la tesela). La tira se compone en CI4.
+- **Familia** (`tools/check_end_zoom.py`, en `make check`): para cada par f, g de `check_zoom_scb` (f justo tras un
+  `11D04`), la lista de f dibujada solo con tiras, contra el dibujo LSPC de VRAM(g): **ZC + ZT, 94 pares, 358 010 px
+  iguales, 0 distintos**, ningún descriptor ni tesela ausente, ninguna tesela autoanimada. El dibujo LSPC de un volcado
+  es igual a la captura de pantalla de MAME del mismo fotograma (`check_lspc_shrink.py`, T1, salvo los 7 px pendientes
+  del fundido del título); T1 no tiene pares (un volcado cada 30 fotogramas), así que contra T1 la comprobación es esa
+  cadena, no directa.
+- **Consola** (`src/end_zoom.c`, solo en `draw_end`, con `MSX_END_ZOOM=1`): memoria pedida en el primer dibujo con zoom,
+  después de dimensionar la caché de escena (ares: **208 ranuras, 3328 KB**, igual que sin ella); tiras compuestas al
+  primer uso en una caché propia de 384 ranuras CI4 16 × 16 (48 KB, reloj), teselas leídas por descriptor (hasta 88 KB),
+  y cada columna copiada a una textura CI4 de 16 px de ancho (anillo de 2 × 56 KB: el RDP lee el fotograma anterior;
+  52 608 B es lo más que pide un fotograma de las capturas) dibujada 1:1 con un rectángulo. Total **292 KB**.
+- **Medido en ares** (`tools/test_ending_ares.py`, 300 primeros fotogramas de los resultados): 569 entradas, 8765
+  columnas, 112 787 tiras, **55 % de fallos** (62 375; el zoom x del dial cambia cada dos fotogramas y cada columna
+  cambia de nibble), 44 columnas sin sitio en el anillo; tiempo **9,7 s** (composición 3,4 s, dibujo 0,6 s, el resto
+  recorrido de líneas y búsqueda), peor fotograma 46,8 ms; `actors` 32,7 / 47,0 ms (media / máximo) frente a
+  **1,4 / 1,5 ms** con el rectángulo escalado: no cabe en el tope de +1 ms. Con la caché de 512 ranuras protegidas dos
+  fotogramas y las teselas leídas una a una, 100 ms. **Por eso queda apagado** (`MSX_END_ZOOM ?= 0`: el cartucho por
+  defecto no lleva `endzoom.bin`, sigue en 66 535 424 B y dibuja como antes); con él, 66 863 104 B.
+- **Pendiente**: un camino que componga en la RSP o que reutilice columnas enteras entre fotogramas; la prueba de ares
+  entera con `MSX_END_ZOOM=1` (las ejecuciones se pararon tras los resultados para medir).
 
 **Otros**: `romfs/scene.pack` de este árbol estaba atrasado respecto a sus fuentes (8285 páginas; las fuentes dan
 8301, como ws-logo y ws-m4) y `make check` fallaba en la prueba de compresión; rehecho con `tools/pack_scene.py` y

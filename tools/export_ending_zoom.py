@@ -5,13 +5,14 @@ Exports into one romfs file, from the user's ROM and BIOS only:
 - the P2 descriptors the sprite list carries with a zoom word != FFFF (the results' dial 0577E2 and the title's pieces
   0A81A4): every entry of the two lists (A5 + 1948 / 294E, check_zoom_scb.pending) of every RAM dump of the captures
   given (MAME 0.264: captures-m6/fam/T1, build/captures/ZC, ZT); their words exactly as neo_scb_entry reads them;
-- the C-ROM tiles those descriptors name (tile = SCB1 word | (descriptor word 0 bits 4..7) << 12), 128 bytes each in
-  the layout of filesystem/sprites.bin (check_lspc_shrink.pen_of);
+- the C-ROM tiles those descriptors name (tile = SCB1 word | (descriptor word 0 bits 4..7) << 12), decoded from the bitplanes of
+  filesystem/sprites.bin (check_lspc_shrink.pen_of) into 16 x 16 CI4, 128 bytes each;
 - the L0 ROM of the BIOS (000-lo.lo), all 256 rows of 256 bytes: the zoom y byte of a flying piece takes values the
   captures do not all show, and a row missing on the console would have to be invented.
 
-File (big-endian): 'EZM1', ndesc, ntiles, nwords, then ndesc x (P2 address, first word, word count), the words (u16, padded to 4 bytes), the
-sorted tile numbers (u32), the tiles (128 B each), the L0 (65 536 B).
+File (big-endian): 'EZM2', ndesc, ntiles, nwords, then ndesc x (P2 address, first word, word count, first tile, tile
+count), the words (u16, padded to 4 bytes), the tile numbers (u32; per descriptor its own, sorted: the console reads one
+descriptor's tiles in one go), the tiles (in the same order, 128 B each: 16 x 16 CI4 row by row, decoded from the C-ROM's bitplanes), the L0 (65 536 B).
 
   export_ending_zoom.py --rom mslugx.zip --bios neogeo.zip --crom filesystem/sprites.bin --out romfs/endzoom.bin CAPTURE..."""
 import argparse,struct,sys,zipfile
@@ -29,6 +30,16 @@ def descriptor_words(p2,ptr):
         for _c in range(cr>>8):
             tiles+=[w(i+k)|((w0&0xf0)<<12) for k in range(n+1)];i+=n+1
     return [w(k) for k in range(i)],tiles
+
+def linear(c):
+    """A C-ROM tile (check_lspc_shrink.pen_of's layout) as 16 x 16 CI4, row by row, the left pixel in the high nibble."""
+    out=bytearray(128)
+    for yy in range(16):
+        for xx in range(16):
+            off=(64 if xx<8 else 0)+yy*4
+            pen=sum(((c[off+b]>>(xx%8))&1)<<bit for bit,b in enumerate((0,2,1,3)))
+            out[yy*8+xx//2]|=pen<<4 if xx%2==0 else pen
+    return bytes(out)
 
 def main():
     ap=argparse.ArgumentParser();ap.add_argument('captures',nargs='+',type=Path)
@@ -48,17 +59,17 @@ def main():
                 for p in range(base,end,4):
                     e=base+ram_w(r,p)
                     if ram_w(r,e+4)!=0xffff:descs.add(ram_l(r,e+8))
-    table=[];words=[];tiles=set()
+    table=[];words=[];keys=[]
     for d in sorted(descs):
-        w,t=descriptor_words(p2,d);table.append((d,len(words),len(w)));words+=w;tiles|=set(t)
-    tiles=sorted(tiles)
-    out=bytearray(b'EZM1'+struct.pack('>III',len(table),len(tiles),len(words)))
-    for d,o,n in table:out+=struct.pack('>III',d,o,n)
+        w,t=descriptor_words(p2,d);t=sorted(set(t))
+        table.append((d,len(words),len(w),len(keys),len(t)));words+=w;keys+=t
+    out=bytearray(b'EZM2'+struct.pack('>III',len(table),len(keys),len(words)))
+    for e in table:out+=struct.pack('>5I',*e)
     out+=struct.pack('>%dH'%len(words),*words)
     if len(words)&1:out+=b'\0\0'   # the words padded to 4 bytes
-    out+=struct.pack('>%dI'%len(tiles),*tiles)
-    for t in tiles:out+=crom[t*128:t*128+128]
+    out+=struct.pack('>%dI'%len(keys),*keys)
+    for t in keys:out+=linear(crom[t*128:t*128+128])
     out+=l0
     a.out.write_bytes(out)
-    print('export_ending_zoom: %d dumps, %d descriptors, %d words, %d tiles, %d bytes -> %s'%(dumps,len(table),len(words),len(tiles),len(out),a.out))
+    print('export_ending_zoom: %d dumps, %d descriptors, %d words, %d tiles (%d different), %d bytes -> %s'%(dumps,len(table),len(words),len(keys),len(set(keys)),len(out),a.out))
 if __name__=='__main__':main()

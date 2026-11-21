@@ -23,7 +23,7 @@ from PIL import Image
 class Strip(C.Structure):_fields_=[('tile',C.c_uint32),('flips',C.c_uint8),('zx',C.c_uint8),('n',C.c_uint8),('line',C.c_uint8*16)]
 L0=C.CFUNCTYPE(C.c_void_p,C.c_void_p,C.c_uint)
 ST=C.CFUNCTYPE(None,C.c_void_p,C.POINTER(Strip),C.c_int,C.c_int)
-class IO(C.Structure):_fields_=[('l0_row',L0),('strip',ST),('ctx',C.c_void_p),('auto_animated',C.c_uint)]
+class IO(C.Structure):_fields_=[('l0_row',L0),('strip',ST),('column_end',C.c_void_p),('ctx',C.c_void_p),('auto_animated',C.c_uint),('work',C.c_void_p)]
 class File(C.Structure):_fields_=[('descriptors',C.c_uint),('tiles',C.c_uint),('table',C.c_void_p),('words',C.c_void_p),('tile_keys',C.c_void_p),('tiles_offset',C.c_uint32),('l0_offset',C.c_uint32)]
 
 def listed(r):
@@ -54,7 +54,7 @@ def main():
     def l0(_,z):return rows[z]
     def strip(_,sp,x,line):
         s=sp.contents;state['strips']+=1
-        t=lib.end_zoom_find_tile(C.byref(f),s.tile)
+        t=lib.end_zoom_find_tile(C.byref(f),state['k'],s.tile)
         if t<0:state['missing_tiles']+=1;return
         out=(C.c_uint8*128)()
         lib.end_zoom_compose(sp,C.cast(C.addressof(buf)+f.tiles_offset+128*t,C.c_void_p),out)
@@ -66,7 +66,7 @@ def main():
                 if not 0<=sx<320:continue
                 b=out[8*i+j//2];pen=(b&15) if j&1 else b>>4
                 if pen:state['buf'][r][sx]=(state['pal']*16+pen)
-    l0c=L0(l0);stc=ST(strip)
+    l0c=L0(l0);stc=ST(strip);work=(C.c_uint16*(96*67))()
     tot=dict(frames=0,entries=0,missing_descriptors=0,strips=0,missing_tiles=0,auto_animated=0,equal=0,different=0,colour_equal=0,colour_different=0,overflow=0)
     for cap in a.captures:
         dumps=sorted(int(p.stem[3:]) for p in cap.glob('ram*.bin'));have=set(dumps)
@@ -83,12 +83,12 @@ def main():
             if not ents:continue
             v=struct.unpack('>34304H',vf.read_bytes())
             state.update(buf=[[None]*320 for _ in range(224)],strips=0,missing_tiles=0)
-            io=IO(l0c,stc,None,0)
+            io=IO(l0c,stc,None,None,0,C.cast(work,C.c_void_p))
             for x,y,zoom,attr,d in ents:
                 k=lib.end_zoom_find_descriptor(C.byref(f),C.c_uint32(d))
                 tot['entries']+=1
                 if k<0:tot['missing_descriptors']+=1;continue
-                state['pal']=attr>>8
+                state['pal']=attr>>8;state['k']=k
                 if not lib.end_zoom_entry(C.byref(f),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),16,239,C.byref(io)):tot['overflow']+=1
             tot['strips']+=state['strips'];tot['missing_tiles']+=state['missing_tiles'];tot['auto_animated']+=io.auto_animated
             info={s:(zx,zy) for s,x,y,rw,zx,zy in sprites(v) if rw};zoomed={s for s,(zx,zy) in info.items() if zx!=15 or zy!=255}

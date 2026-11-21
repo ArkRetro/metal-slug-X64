@@ -21,7 +21,11 @@ NEED_SDK := 1
 endif
 ifdef NEED_SDK
 include $(N64_INST)/include/n64.mk
-N64_CFLAGS += -DPROGRAM_ARENA_KB=$(PROGRAM_ARENA_KB) -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
+# The ending's shrunk sprites through the LSPC strips (src/end_zoom.c, docs/MISION6.md "Sprites con zoom en N64"):
+# off by default (measured too slow on the results' dial: 33 ms a frame against 1.4 ms scaled); MSX_END_ZOOM=1 turns
+# it on and puts romfs/endzoom.bin into the cartridge (rebuild actor.o when changing it).
+MSX_END_ZOOM ?= 0
+N64_CFLAGS += -DPROGRAM_ARENA_KB=$(PROGRAM_ARENA_KB) -DMSX_END_ZOOM=$(MSX_END_ZOOM) -I$(BUILD_DIR) -I$(BUILD_DIR)/retro25d -DMSX_BLOOD=$(MSX_BLOOD) $(MSX_EXTRA_CFLAGS)
 endif
 WORLD_SRCS := src/neo_camera.c src/neo_train.c src/neo_m6bridge.c src/neo_boss.c src/neo_world.c src/neo_gactor.c src/neo_region.c src/neo_truck.c src/neo_effects.c src/neo_flyer.c src/neo_props.c src/neo_rest.c src/neo_dome.c src/neo_barrel.c src/neo_wagon.c src/neo_arab.c src/neo_prisoner.c src/neo_item.c src/neo_armored.c src/neo_secret.c src/neo_script.c src/neo_soldier_ai.c src/neo_kernel.c src/neo_contact.c src/neo_control.c src/neo_rng.c src/neo_animation.c src/neo_soldier.c src/neo_soldier_action.c src/neo_hit.c src/neo_cull.c src/neo_throw_actor.c src/neo_throw.c src/neo_target.c src/neo_blood.c src/marco_ammo.c src/neo_bullet.c src/neo_chaser.c src/neo_pweapon.c src/neo_hud.c src/marco_hgun.c src/marco_thinfire.c src/marco_death.c src/neo_swords.c src/neo_rocket.c src/neo_heli.c src/marco_legs.c src/neo_camel.c src/neo_porter.c src/neo_civil.c src/neo_vslot.c src/neo_vulcan.c src/neo_slug.c src/neo_tank.c src/neo_m3veh.c src/neo_slugnoid.c src/neo_tread.c src/neo_end.c src/neo_ending.c src/neo_fade.c src/marco_mount.c src/marco_descent.c src/neo_tally.c src/neo_text.c src/neo_continue.c src/neo_landing.c src/neo_mission.c src/neo_wipe.c src/neo_goarrow.c src/neo_rebel2.c src/neo_rebel3.c src/neo_m2creature.c src/neo_gate.c src/neo_crate.c src/neo_m2props.c src/neo_m3props.c src/neo_m4props.c src/neo_m4veh.c src/neo_m4boss.c src/neo_m5props.c src/neo_m6props.c src/neo_m6enemy.c src/neo_m6boss.c src/neo_m5enemy.c src/neo_m5train.c src/neo_m5mech.c src/neo_m5sewer.c src/neo_m5boss.c src/neo_m3enemy.c src/neo_drone.c src/neo_m2traps.c src/neo_hostage.c src/neo_m2boss.c src/neo_m3mid.c src/neo_m3boss.c
 WORLD_OBJS := $(patsubst src/%.c,$(BUILD_DIR)/src/%.o,$(WORLD_SRCS))
@@ -311,7 +315,7 @@ MSXL_RAW := neogeo-jingle.wav64
 $(BUILD_DIR)/host/msxl: tools/msxl.c tools/msxl_encode.h src/msx_pcm_codec.h
 	@mkdir -p $(BUILD_DIR)/host
 	$(HOST_CC) $(HOST_CFLAGS) -O2 tools/msxl.c -lm -o $@
-$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP) $(wildcard romfs/endzoom.bin)
+$(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/romblobs.bin $(CHARACTER_PACKS) tools/msxc_compress.py romfs/scene.pack $(BUILD_DIR)/vehicle-sprites.stamp $(BUILD_DIR)/marco-poses.stamp $(MARCO_INPUTS_SUM) tools/check_marco_romfs.py $(GAME_AUDIO) $(BOOT_LOGO) $(BOOT_CINEMATICS) $(BOOT_ATTRACT) filesystem/fixed.bin filesystem/hud-palette.bin $(SOFTDIP) $(MISSION_PACKS) $(MISSION_BGP) $(if $(filter 1,$(MSX_END_ZOOM)),$(wildcard romfs/endzoom.bin))
 	# The sprites must be the compiled catalog's (else the console falls back to six states).
 	python3 -I tools/check_marco_romfs.py $(BUILD_DIR)/marco_pose_meta.h romfs/marco
 	rm -rf $(BUILD_DIR)/game-romfs && mkdir -p $(BUILD_DIR)/game-romfs
@@ -320,7 +324,7 @@ $(BUILD_DIR)/game-romfs.stamp: $(BUILD_DIR)/host/msxl $(BUILD_DIR)/soldier_ai_ta
 	$(if $(CHARACTER_PACKS),mkdir -p $(BUILD_DIR)/game-romfs/chars && cp $(CHARACTER_PACKS) $(BUILD_DIR)/game-romfs/chars/)
 	$(if $(MISSION_BGP),for f in $(BUILD_DIR)/bgp/m*s*.bgp; do [ -f "$$f" ] && cp "$$f" $(BUILD_DIR)/game-romfs/; done; true)
 	cp filesystem/fixed.bin filesystem/hud-palette.bin $(BUILD_DIR)/game-romfs/
-	$(if $(wildcard romfs/endzoom.bin),cp romfs/endzoom.bin $(BUILD_DIR)/game-romfs/)
+	$(if $(filter 1,$(MSX_END_ZOOM)),$(if $(wildcard romfs/endzoom.bin),cp romfs/endzoom.bin $(BUILD_DIR)/game-romfs/))
 	$(if $(SOFTDIP),cp $(SOFTDIP) $(BUILD_DIR)/game-romfs/)
 	cp $(BUILD_DIR)/programs.bin $(BUILD_DIR)/romblobs.bin $(BUILD_DIR)/game-romfs/
 	$(if $(GAME_AUDIO),mkdir -p $(BUILD_DIR)/game-romfs/audio && cp $(GAME_AUDIO) $(BUILD_DIR)/game-romfs/audio/)

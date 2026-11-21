@@ -205,7 +205,9 @@ ROOTS+=[0x230984,0x230654,0x23066a]
 # item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
 # 02206E (the dust 021F96 is the bullets' impact 22E504).
 ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
-# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl.
+# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl. No mission group (/programs.bin):
+# Mission 2 and Mission 5 stage 3 (record 2DDF4C at camera 528, 2DE65C at 1280) both create them; in the m2 group the
+# Mission 5 pack had no wing program and the swarm stopped at 23B636/23B654 (matrix slugnoid, m5s3).
 ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,0x23b7aa,0x23b6de,0x23b7ec,0x23b720]
 # The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
 # pieces 09A9C4 falling (neo_prisoner.c).
@@ -307,7 +309,7 @@ ROOTS+=[0x22fa34]
 # not into the console image (compile_soldier_ai_tables.py). A root also
 # listed in another block stays in the image.
 MISSION_BLOCKS={'end':('# The credits and the title after them',),'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
-    '# Mission 2: the hostage','# The miners','# The bats','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
+    '# Mission 2: the hostage','# The miners','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),

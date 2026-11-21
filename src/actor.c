@@ -450,7 +450,11 @@ static void m4_boss_layer(void) {
         /* The ring's x is the column 0 one (+84). */
         scene_render_set_layer_columns(M4_BOSS_LAYER,any,(int16_t)w84,map_x,rise,y0,y1);
     } else scene_render_set_layer_columns(M4_BOSS_LAYER,false,0,map_x,rise,y0,y1);
-    m6_layer_palette(m6);
+    /* After the last enemy the world keeps its layer state into the ending (01893E) while the Mission 6 pack is
+     * replaced by the credits' (pack 13): the slot 0x38 targets 10C..10E are the Mission 6 pack's, so the swap (and
+     * its missing count) only applies with that pack loaded. */
+    const scene_stage_t *st=scene_stage();
+    m6_layer_palette(m6 && st && st->mission==6u);
 }
 #endif
 static void draw_marco(unsigned bank_id,unsigned frame);

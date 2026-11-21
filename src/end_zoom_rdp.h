@@ -20,11 +20,16 @@ typedef struct {
     void (*rect)(void *ctx,const end_zoom_rect_t *r);
     void *ctx;
     void *work;        /* END_ZOOM_WORK_BYTES */
-    end_zoom_rect_t *sorted;unsigned sorted_max;   /* 2 x END_ZOOM_RECTS: the entry's rectangles, then sorted by page (stable) */
+    end_zoom_rect_t *sorted;unsigned sorted_max;
+    const uint16_t *local_map;      /* end_zoom_rdp_local_map of the descriptor, or NULL (binary search) */
+    uint16_t (*local_work)[32];     /* END_ZOOM_COLUMNS x 32, with local_map */   /* 2 x END_ZOOM_RECTS: the entry's rectangles, then sorted by page (stable) */
     unsigned rects,refits,auto_animated,missing_tiles,unfit;
 } end_zoom_rdp_io_t;
 /* One list entry of descriptor `index` (tile pages: the descriptor's tiles in its order, 16 a page). Its rectangles
  * are emitted grouped by page (stable): an entry's columns and tile rows do not overlap (check_end_zoom.py --rdp draws
  * them in this order). */
+/* map: one u16 per descriptor word (end_zoom_descriptor_words). */
+uint32_t end_zoom_descriptor_words(const end_zoom_file_t *f,int index);
+void end_zoom_rdp_local_map(const end_zoom_file_t *f,int index,uint16_t *map);
 bool end_zoom_rdp_entry(const end_zoom_file_t *f,const end_zoom_rdp_t *t,int index,uint16_t x,uint16_t y,uint16_t zoom,uint16_t attr,end_zoom_rdp_io_t *io);
 #endif

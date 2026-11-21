@@ -17,7 +17,7 @@ static FILE *file;
 static end_zoom_file_t ez;
 static end_zoom_rdp_t rt;
 static uint8_t *meta,*tables;
-static void *work;static end_zoom_rect_t *sorted;
+static void *work;static end_zoom_rect_t *sorted;static uint16_t (*local_work)[32];static uint16_t *local_map[DESCRIPTORS_MAX];
 static uint8_t *block[DESCRIPTORS_MAX];static uint32_t block_frame[DESCRIPTORS_MAX],block_used[DESCRIPTORS_MAX],block_bytes;
 static uint32_t clock_lru,frame_no;
 static end_zoom_stats_t st;
@@ -31,15 +31,15 @@ static bool open_file(void) {
     uint8_t h[16];
     if (fread(h,1,16,file)!=16) return false;
     uint32_t n=end_zoom_rest_size(h);
-    meta=malloc(n);work=malloc(END_ZOOM_WORK_BYTES);sorted=malloc(2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS);
-    if (!meta || !work || !sorted || fread(meta,1,n,file)!=n || !end_zoom_parse(&ez,h,meta,n)) {debugf("MSX ENDZOOM bad file or no memory\n");return false;}
+    meta=malloc(n);work=malloc(END_ZOOM_WORK_BYTES);sorted=malloc(2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS);local_work=malloc(sizeof(uint16_t)*32*END_ZOOM_COLUMNS);
+    if (!meta || !work || !sorted || !local_work || fread(meta,1,n,file)!=n || !end_zoom_parse(&ez,h,meta,n)) {debugf("MSX ENDZOOM bad file or no memory\n");return false;}
     if (ez.descriptors>DESCRIPTORS_MAX) {debugf("MSX ENDZOOM %u descriptors: more than %u\n",ez.descriptors,DESCRIPTORS_MAX);return false;}
     fseek(file,0,SEEK_END);long size=ftell(file);uint32_t at=ez.l0_offset+65536,tn=(uint32_t)size-at;
     tables=malloc(tn);
     if (!tables) return false;
     fseek(file,(long)at,SEEK_SET);
     if (fread(tables,1,tn,file)!=tn || !end_zoom_rdp_parse(&rt,tables,tn)) {debugf("MSX ENDZOOM no RDP tables\n");return false;}
-    st.cache_bytes=n+tn+END_ZOOM_WORK_BYTES+2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS+BLOCK_BUDGET;
+    st.cache_bytes=n+tn+END_ZOOM_WORK_BYTES+2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS+sizeof(uint16_t)*32*END_ZOOM_COLUMNS+BLOCK_BUDGET;
     debugf("MSX ENDZOOM loaded: %u descriptors, %u tiles, %u sequences, %u KB (tiles up to %u KB)\n",ez.descriptors,ez.tiles,rt.nseq,(unsigned)(st.cache_bytes/1024),BLOCK_BUDGET/1024);
     return true;
 }
@@ -54,12 +54,15 @@ static bool load_block(int k) {
         for (int i=0;i<(int)ez.descriptors;i++)
             if (block[i] && block_frame[i]+2<=frame_no && (v<0 || block_used[i]<block_used[v])) v=i;
         if (v<0) break;
-        free(block[v]);block[v]=NULL;block_bytes-=pages_bytes(v);
+        free(block[v]);block[v]=NULL;block_bytes-=pages_bytes(v);free(local_map[v]);local_map[v]=NULL;
     }
     if (block_bytes+need>BLOCK_BUDGET || !(block[k]=memalign(16,need))) return false;
     memset(block[k]+128*count,0,need-128*count);
     fseek(file,(long)(ez.tiles_offset+128*first),SEEK_SET);fread(block[k],1,128*count,file);st.file_reads++;
     data_cache_hit_writeback_invalidate(block[k],need);
+    /* the descriptor's words -> local tile index (end_zoom_rdp_local_map), read with the block */
+    uint32_t nw=end_zoom_descriptor_words(&ez,k);
+    if ((local_map[k]=malloc(2*(nw?nw:1)))) end_zoom_rdp_local_map(&ez,k,local_map[k]);
     block_bytes+=need;block_used[k]=++clock_lru;block_frame[k]=frame_no;
     return true;
 }
@@ -85,7 +88,7 @@ bool end_zoom_draw(uint32_t descriptor,uint16_t x,uint16_t y,uint8_t zoom_x,uint
     uint32_t t0=TICKS_READ();
     if (!load_block(k)) {st.no_block++;frame_ticks+=TICKS_READ()-t0;return false;}
     cur_palette=palette;cur_desc=k;cur_page=-1;
-    end_zoom_rdp_io_t io={rect,NULL,work,sorted,END_ZOOM_RECTS,0,0,0,0,0};
+    end_zoom_rdp_io_t io={rect,NULL,work,sorted,END_ZOOM_RECTS,local_map[k],local_work,0,0,0,0,0};
     if (!end_zoom_rdp_entry(&ez,&rt,k,x,y,(uint16_t)(zoom_x<<8|zoom_y),attributes,&io)) st.overflow++;
     st.rects+=io.rects;st.refits+=io.refits;st.unfit+=io.unfit;st.auto_animated+=io.auto_animated;st.missing_tiles+=io.missing_tiles;st.entries++;
     uint32_t dt=TICKS_READ()-t0;frame_ticks+=dt;st.total_ticks+=dt;

@@ -32,7 +32,7 @@ class File(C.Structure):_fields_=[('descriptors',C.c_uint),('tiles',C.c_uint),('
 
 class Rect(C.Structure):_fields_=[('x0',C.c_int16),('y0',C.c_int16),('x1',C.c_int16),('y1',C.c_int16),('s0',C.c_uint16),('t0',C.c_uint16),('dsdx',C.c_int16),('dtdy',C.c_int16),('page',C.c_uint16)]
 RC=C.CFUNCTYPE(None,C.c_void_p,C.POINTER(Rect))
-class RIO(C.Structure):_fields_=[('rect',RC),('ctx',C.c_void_p),('work',C.c_void_p),('sorted',C.c_void_p),('sorted_max',C.c_uint),('rects',C.c_uint),('refits',C.c_uint),('auto_animated',C.c_uint),('missing_tiles',C.c_uint),('unfit',C.c_uint)]
+class RIO(C.Structure):_fields_=[('rect',RC),('ctx',C.c_void_p),('work',C.c_void_p),('sorted',C.c_void_p),('sorted_max',C.c_uint),('local_map',C.c_void_p),('local_work',C.c_void_p),('rects',C.c_uint),('refits',C.c_uint),('auto_animated',C.c_uint),('missing_tiles',C.c_uint),('unfit',C.c_uint)]
 class RDP(C.Structure):_fields_=[('horizontal',C.c_void_p),('runs',C.c_void_p),('seqs',C.c_void_p),('pieces',C.c_void_p),('nseq',C.c_uint),('npieces',C.c_uint)]
 
 def listed(r):
@@ -94,7 +94,7 @@ def main():
                 if not (0<=tx<16 and 0<=ty<256 and tile<tcount.value):state['outside']+=1;continue
                 b=data[f.tiles_offset+128*(tfirst.value+tile)+8*(ty&15)+tx//2];pen=(b&15) if tx&1 else b>>4
                 if pen:state['buf'][row][xx]=state['pal']*16+pen
-    rcc=RC(rect);sorted_buf=(Rect*4096)()
+    rcc=RC(rect);sorted_buf=(Rect*4096)();maps={};lwork=(C.c_uint16*(96*32))()
     tot=dict(frames=0,entries=0,missing_descriptors=0,strips=0,missing_tiles=0,auto_animated=0,equal=0,different=0,colour_equal=0,colour_different=0,overflow=0)
     for cap in a.captures:
         dumps=sorted(int(p.stem[3:]) for p in cap.glob('ram*.bin'));have=set(dumps)
@@ -118,7 +118,8 @@ def main():
                 if k<0:tot['missing_descriptors']+=1;continue
                 state['pal']=attr>>8;state['k']=k
                 if a.rdp:
-                    rio=RIO(rcc,None,C.cast(work,C.c_void_p),C.cast(sorted_buf,C.c_void_p),2048,0,0,0,0,0)
+                    if k not in maps:maps[k]=(C.c_uint16*4096)();lib.end_zoom_rdp_local_map(C.byref(f),k,maps[k])
+                    rio=RIO(rcc,None,C.cast(work,C.c_void_p),C.cast(sorted_buf,C.c_void_p),2048,C.cast(maps[k],C.c_void_p),C.cast(lwork,C.c_void_p),0,0,0,0,0)
                     lib.end_zoom_rdp_entry(C.byref(f),C.byref(rdp),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),C.byref(rio))
                     for n in ('refits','unfit','missing_tiles','auto_animated'):tot[n]=tot.get(n,0)+getattr(rio,n)
                 elif not lib.end_zoom_entry(C.byref(f),k,C.c_uint16(x),C.c_uint16(y),C.c_uint16(zoom),C.c_uint16(attr),16,239,C.byref(io)):tot['overflow']+=1

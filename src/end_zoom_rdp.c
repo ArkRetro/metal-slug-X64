@@ -23,12 +23,6 @@ static int find_tile(const end_zoom_file_t *f,uint32_t first,uint32_t count,uint
     while (lo<=hi) {int m=(lo+hi)/2;uint32_t k=be32(f->tile_keys+4*m);if (k==tile) {*hint=(unsigned)m-first;return (int)*hint;}if (k<tile) lo=m+1; else hi=m-1;}
     return -1;
 }
-/* A rectangle continuing `a` below it with the same texels' arithmetic: one rectangle (the same pixels). */
-static bool merge(end_zoom_rect_t *a,const end_zoom_rect_t *b) {
-    if (a->page!=b->page || a->x0!=b->x0 || a->x1!=b->x1 || a->s0!=b->s0 || a->dsdx!=b->dsdx || a->dtdy!=b->dtdy || a->y1!=b->y0) return false;
-    if ((int32_t)a->t0*32+(int32_t)a->dtdy*(a->y1-a->y0)!=(int32_t)b->t0*32) return false;
-    a->y1=b->y1;return true;
-}
 static int16_t bes16(const uint8_t *p) {return (int16_t)be16(p);}
 bool end_zoom_rdp_parse(end_zoom_rdp_t *t,const uint8_t *p,uint32_t size) {
     if (size<8) return false;
@@ -37,14 +31,25 @@ bool end_zoom_rdp_parse(end_zoom_rdp_t *t,const uint8_t *p,uint32_t size) {
     return (uint32_t)(t->pieces+6*t->npieces-p)<=size;
 }
 typedef struct { uint16_t scb2,scb3,scb4,scb1[64]; } column_t;
-typedef struct { const end_zoom_file_t *f;int index;column_t *c;unsigned count; } scb_ctx_t;
+typedef struct { int16_t y0,y1,t0,d;uint16_t page;uint8_t hf; } seg_t;
+typedef struct { const end_zoom_file_t *f;int index;column_t *c;unsigned count;const uint8_t *w;uint32_t nw;uint32_t last;const uint16_t *map;uint16_t (*loc)[32]; } scb_ctx_t;
 static uint16_t rd(void *ctx,uint32_t descriptor,uint32_t i) {
-    scb_ctx_t *s=ctx;(void)descriptor;
-    const uint8_t *e=s->f->table+20*s->index;
-    return i<be32(e+8)?be16(s->f->words+2*(be32(e+4)+i)):0;
+    scb_ctx_t *s=ctx;(void)descriptor;s->last=i;
+    return i<s->nw?be16(s->w+2*i):0;
 }
 static void wr(void *ctx,uint16_t a,uint16_t d) {
     scb_ctx_t *s=ctx;unsigned idx;
+    if (a<0x8000u) {
+        /* SCB1: with a local map, the tile word's local index from the descriptor word just read (rd) */
+        /* the zoomed writers' zero fill of the unused tile rows (no word read before it): those rows are beyond the
+         * column's size (SCB3) and never drawn, so they are not kept */
+        if (!(a&1u) && s->last==0xffffffffu) return;
+        idx=(a>>6)-1u;
+        if (idx>=END_ZOOM_COLUMNS) return;
+        s->c[idx].scb1[a&63u]=d;
+        if (!(a&1u)) {if (s->map) s->loc[idx][(a&63u)>>1]=s->last<s->nw?s->map[s->last]:0xffffu;s->last=0xffffffffu;}
+        return;
+    }
     if (a>=0x8401u) {idx=a-0x8401u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb4=d;}
     else if (a>=0x8201u) {idx=a-0x8201u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb3=d;}
     else if (a>=0x8001u) {idx=a-0x8001u;if (idx<END_ZOOM_COLUMNS) s->c[idx].scb2=d;}
@@ -85,8 +90,26 @@ static bool skip(int *S,int *D,int k,int n,end_zoom_rdp_io_t *io) {
     if (fit(v,n,S,D)) return true;
     io->unfit++;return false;
 }
+uint32_t end_zoom_descriptor_words(const end_zoom_file_t *f,int index) {return be32(f->table+20*index+8);}
+/* Per word of descriptor `index`: the local index of its tile (descriptor words that are tiles), else 0xFFFF. */
+void end_zoom_rdp_local_map(const end_zoom_file_t *f,int index,uint16_t *map) {
+    const uint8_t *te=f->table+20*index;const uint8_t *w=f->words+2*be32(te+4);uint32_t nw=be32(te+8),first,count;
+    end_zoom_descriptor_tiles(f,index,&first,&count);
+    for (uint32_t i=0;i<nw;i++) map[i]=0xffffu;
+    if (!nw) return;
+    unsigned w0=be16(w),i=1,hint=0;
+    for (unsigned g=0;g<(w0>>8) && i+3<=nw;g++) {
+        unsigned cr=be16(w+2*(i+2)),n=(((cr&0xffu)-1u)&0x1fu)+1u;i+=3;
+        for (unsigned c=0;c<(cr>>8);c++) for (unsigned k=0;k<n && i<nw;k++,i++) {
+            int ti=find_tile(f,first,count,be16(w+2*i)|((uint32_t)(w0&0xf0u)<<12),&hint);
+            map[i]=ti<0?0xffffu:(uint16_t)ti;
+        }
+    }
+}
 bool end_zoom_rdp_entry(const end_zoom_file_t *f,const end_zoom_rdp_t *t,int index,uint16_t x,uint16_t y,uint16_t zoom,uint16_t attr,end_zoom_rdp_io_t *io) {
-    column_t *cols=io->work;scb_ctx_t sc={f,index,cols,0};
+    column_t *cols=io->work;
+    const uint8_t *te=f->table+20*index;
+    scb_ctx_t sc={f,index,cols,0,f->words+2*be32(te+4),be32(te+8),0xffffffffu,io->local_map,io->local_work};
     neo_scb_entry_t e={x,y,zoom,(uint16_t)(attr&3u),be32(f->table+20*index)};
     uint16_t win[4]={0,END_ZOOM_COLUMNS,0,0};
     neo_scb_entry(true,true,&e,win,rd,wr,&sc);
@@ -99,21 +122,22 @@ bool end_zoom_rdp_entry(const end_zoom_file_t *f,const end_zoom_rdp_t *t,int ind
         int sx=(k->scb4>>7)&511,sy=(512-(k->scb3>>7))&511;
         if (sx>=320) sx-=512;
         if (sx+(int)zx<0 || sx>=320) continue;
-        end_zoom_rect_t open_r[3];unsigned open_n[3]={0,0,0};
-        for (unsigned half=0;half<2;half++) for (unsigned tr0=0;tr0<16;tr0++) {
+        /* the column's vertical segments (tile row pieces on screen), merged where the texels continue */
+        seg_t sg[64];unsigned ns=0;
+        for (unsigned half=0;half<2;half++) for (unsigned tr0=half?(rows>16?32-rows:16):0;tr0<(half?16u:(rows<16?rows:16u));tr0++) {
             const uint8_t *run=t->runs+10*(zy*16+tr0);
             unsigned len=run[1],tr=half?tr0^0x1fu:tr0;
-            if (!len || tr>=rows) continue;
+            if (!len) continue;
             uint16_t lo=k->scb1[2*tr],at=k->scb1[2*tr+1];
             if (at&12u) {io->auto_animated++;continue;}
-            int ti=find_tile(f,first,count,lo|(((uint32_t)at<<12)&0xf0000u),&hint);
+            int ti=io->local_map?(int)io->local_work[k-cols][tr]:-1;
+            if (ti<0 || ti==0xffff) ti=find_tile(f,first,count,lo|(((uint32_t)at<<12)&0xf0000u),&hint);
             if (ti<0) {io->missing_tiles++;continue;}
             unsigned local=(unsigned)ti;
-            bool hf=(at&1u)!=0,vf=(at&2u)!=0;
+            bool vf=(at&2u)!=0;
             unsigned variant=half?(vf?1u:3u):(vf?2u:0u);
             int lstart=half?256+(255-(int)(run[0]+len-1)):run[0];
             const uint8_t *sq=t->seqs+4*be16(run+2+2*variant);
-            const uint8_t *hp=t->horizontal+20*(zx*2+(hf?1u:0u));
             for (unsigned p=0;p<sq[2];p++) {
                 const uint8_t *pc=t->pieces+6*(be16(sq)+p);
                 int voff=pc[0],vlen=pc[1];
@@ -126,22 +150,26 @@ bool end_zoom_rdp_entry(const end_zoom_file_t *f,const end_zoom_rdp_t *t,int ind
                     if (yy>=240 || yy+mm<=0) continue;
                     if (yy<0) {kk+=-yy;mm-=-yy;yy=0;}
                     if (kk && !skip(&Ty,&Dy,kk,mm,io)) continue;
-                    int y1=yy+mm>240?240:yy+mm;
-                    for (unsigned h=0;h<hp[0];h++) {
-                        const uint8_t *hc=hp+1+6*h;
-                        int Sx=bes16(hc+2),Dx=bes16(hc+4),xx=sx+hc[0],w=hc[1],hk=0;
-                        if (xx>=320 || xx+w<=0) continue;
-                        if (xx<0) {hk=-xx;w-=hk;xx=0;if (!skip(&Sx,&Dx,hk,w,io)) continue;}
-                        end_zoom_rect_t r={(int16_t)xx,(int16_t)yy,(int16_t)(xx+w>320?320:xx+w),(int16_t)y1,
-                            (uint16_t)Sx,(uint16_t)(Ty+512*(int)(local&15u)),(int16_t)Dx,(int16_t)Dy,(uint16_t)(local>>4)};
-                        if (open_n[h] && merge(&open_r[h],&r)) continue;
-                        if (open_n[h]) {if (n_out<END_ZOOM_RECTS) io->sorted[n_out++]=open_r[h]; else io->unfit++;}
-                        open_r[h]=r;open_n[h]=1;
-                    }
+                    int y1=yy+mm>240?240:yy+mm,t0=Ty+512*(int)(local&15u);
+                    seg_t *q=ns?&sg[ns-1]:NULL;
+                    if (q && q->page==(local>>4) && q->hf==(at&1u) && q->d==Dy && q->y1==yy && q->t0*32+Dy*(q->y1-q->y0)==t0*32) {q->y1=(int16_t)y1;continue;}
+                    if (ns<64) sg[ns++]=(seg_t){(int16_t)yy,(int16_t)y1,(int16_t)t0,(int16_t)Dy,(uint16_t)(local>>4),(uint8_t)(at&1u)};
+                    else io->unfit++;
                 }
             }
         }
-        for (unsigned h=0;h<3;h++) if (open_n[h]) {if (n_out<END_ZOOM_RECTS) io->sorted[n_out++]=open_r[h]; else io->unfit++;}
+        for (unsigned g=0;g<ns;g++) {
+            const uint8_t *hp=t->horizontal+20*(zx*2+sg[g].hf);
+            for (unsigned h=0;h<hp[0];h++) {
+                const uint8_t *hc=hp+1+6*h;
+                int Sx=bes16(hc+2),Dx=bes16(hc+4),xx=sx+hc[0],w=hc[1];
+                if (xx>=320 || xx+w<=0) continue;
+                if (xx<0) {int hk=-xx;w-=hk;xx=0;if (!skip(&Sx,&Dx,hk,w,io)) continue;}
+                if (n_out<END_ZOOM_RECTS) io->sorted[n_out++]=(end_zoom_rect_t){(int16_t)xx,sg[g].y0,(int16_t)(xx+w>320?320:xx+w),sg[g].y1,
+                    (uint16_t)Sx,(uint16_t)sg[g].t0,(int16_t)Dx,sg[g].d,sg[g].page};
+                else io->unfit++;
+            }
+        }
     }
     /* page by page, in order within a page */
     uint16_t start[129];unsigned pages=(count+15)/16;

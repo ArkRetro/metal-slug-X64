@@ -1275,6 +1275,16 @@ traducidas igual que las demás, sin comprobar). En `make check` (se salta sin l
     que solo cuentan las ventanas con zoom. **No cumple** el criterio (ningún vblank perdido de más): queda apagado.
   - Arranque: una de las ejecuciones sin zoom paró en `scene_assets.c:506` (3224 KB para la caché) y la siguiente, igual,
     arrancó con 209 ranuras: fallo intermitente de arranque ajeno a este cambio (el código del zoom no está enlazado).
+- **Coste en el anfitrión** (`tools/bench_end_zoom.c` bajo callgrind; instrucciones x86 por pasada de las entradas
+  con zoom de ZC, 82 entradas y 7637 rectángulos, y de ZT, 213 y 33 377): antes 8,88 M (1163 por rectángulo) y 15,2 M
+  (451); el núcleo medido en ares (unos 2,3 ms por entrada del dial) cuadra con unas 108 000 instrucciones por entrada.
+  Hecho: índice local de cada palabra de tesela del descriptor calculado al cargarlo (`end_zoom_rdp_local_map`: sin
+  búsqueda por fila de tesela), sin guardar el relleno de ceros de las filas no usadas, solo las filas de tesela por
+  debajo del tamaño, y los tramos verticales de una columna unidos una vez y luego multiplicados por los tramos
+  horizontales (sin comparación por rectángulo): **5,84 M (765 por rectángulo) y 11,85 M (355)**. Sigue 0 px (`make
+  check`). Lo que queda: unas 100 instrucciones por fila de tesela y unas 25 000 por entrada de los escritores de
+  `neo_scb.c` con sus llamadas por palabra; el objetivo de ≤ 2 µs por rectángulo (unas 150 instrucciones) pide no
+  pasar por fila de tesela (columnas enteras precalculadas por zoom) o la RSP. Sin medir en ares (máquina cargada).
 - **Pendiente**: bajar el coste de CPU por rectángulo del título (unos 20 µs: recorrido de filas, búsqueda de tesela y
   reajustes; en el anfitrión 10 µs por entrada) o llevar el corte a la RSP; después, encenderlo por defecto.
 

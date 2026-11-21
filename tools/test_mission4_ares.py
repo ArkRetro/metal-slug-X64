@@ -90,7 +90,10 @@ try:
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if not live[0] and a.record and 'MSX PAD script end' in text[-200000:]:live[0]=True;held.clear()   # every key is up: press again what the pad holds
+        if not live[0] and a.record and 'MSX PAD script end' in text[-200000:]:
+            live[0]=True;held.clear()   # every key is up: press again what the pad holds
+            w2=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
+            if w2:subprocess.run([XD,'windowfocus',w2[-1]],env=env)   # the newest ares window (other runs may have opened theirs meanwhile; run alone when going live)
         if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])

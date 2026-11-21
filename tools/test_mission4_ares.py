@@ -9,8 +9,9 @@ name. Checks from the log: the menu choice, the pack load with the flow's
 descriptor 016E1E and camera list 0E741A, the camera reaching --progress,
 no crash and no "not loaded" stop. Prints the counted stops of the log.
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
-import argparse,os,re,subprocess,time
+import argparse,os,re,subprocess,sys,time
 from pathlib import Path
+sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_clock import EmuClock
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--seconds',type=float,default=90);p.add_argument('--period',type=float,default=3.0);p.add_argument('--progress',type=int,default=600)
 p.add_argument('--jump',type=float,default=0.0);p.add_argument('--fire',action='store_true');p.add_argument('--until',type=int,default=99999)
@@ -18,6 +19,10 @@ p.add_argument('--continues',action='store_true',help='Start at every CONTINUE? 
 p.add_argument('--boss',action='store_true',help='PASS only when the boss 02267E dies and Mission 5 starts (`MSX mission 5 stage N start`, 018F92 -> 01891E); the run stops there')
 p.add_argument('--vehicle',type=int,default=0,help='B69: PASS only when the player mounts this vehicle kind (1 = the SV-001 092A32 at 4288) and a class-0 row hits it while mounted (`MSX vehicle hit (class-0 row, B69) ... mount=1` after `MSX player mounted vehicle kind=K`)')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade), to walk past the sections the mortal pad dies in; needs N64 Z on the key z (R-Trigger: 0x1/0/60 in the ares settings)')
+p.add_argument('--pad-script',help='B78: replay this pad script (tools/padscript.py) on the test cartridge ROM (mslugx-testpad.z64): no xdotool; '
+    'the ROM is copied with the script into --out (a fresh EEPROM) and the log is cut at the end condition, so two replays give the same numbers')
+p.add_argument('--record',action='store_true',help='B78: the test cartridge without a script (keys from xdotool), copied into --out (a fresh EEPROM); '
+    'its log is the script (tools/padscript.py from-log) and is cut at the end condition like a replay')
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
@@ -25,7 +30,28 @@ if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/a
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log'
-def key(action,name):subprocess.run([XD,action,name],check=True,env=env)
+import ares_padtest as pt;pt_ticks=pt.ticks
+if a.pad_script or a.record:
+    import shutil;rom=out/'testpad.z64'
+    for f in (out/'testpad.eeprom',out/'testpad.pak'):
+        if f.exists():f.unlink()
+    if a.pad_script:
+        from padscript import apply,read_script;apply(a.rom,read_script(a.pad_script),rom,then_record=a.record)
+    else:shutil.copyfile(a.rom,rom)
+    a.rom=str(rom)
+def cut_log():
+    # The log up to the end condition's line (a replay's numbers do not depend on when the host stopped ares).
+    t=logp.read_text(errors='replace');ends=[]
+    if a.boss:
+        m=re.search(r'MSX mission 5 stage \d+ start[^\n]*\n',t)
+        if m:ends.append(m.end())
+    for m in re.finditer(r' ticks=(\d+)\n',t):
+        if int(m.group(1))>=a.seconds*60:ends.append(m.end());break
+    if ends:logp.write_text(t[:min(ends)])
+BOSS_NEAR=(-80,-20)   # player x - body x (px) where the boss cycle runs
+live=[not a.pad_script]   # --pad-script with --record: the keys go live at `MSX PAD script end` (a continued recording)
+def key(action,name):
+    if live[0]:subprocess.run([XD,action,name],check=action!='keyup',env=env)   # a replay presses nothing: the ROM's script is the pad
 def tap(name,t=.1):key('keydown',name);time.sleep(t);key('keyup',name)
 proc=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(Path(a.rom).resolve())],stdout=open(logp,'w'),stderr=subprocess.STDOUT,env=env)
@@ -41,37 +67,34 @@ def wait(pat,secs=300):
     raise AssertionError('timeout '+pat+'\n'+log()[-2000:])
 ok=False;cam=0;maxcam=0
 try:
-    win=None
+    win=None if (not a.pad_script or a.record) else 'none'
     while not win:
         r=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
         if r:win=r[-1]
         time.sleep(.5)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Up seven times (MISSION 4 is the seventh item from the end: the three stages of Mission 5 and of Mission 6 follow it), A.
-    end=time.monotonic()+400
-    while 'MSX MSELECT mission=' not in log():
-        assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
-        if re.search(r'MSX CINE select (start|waiting)',log()):
-            time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);[(tap('Up',.2),time.sleep(.4)) for _ in range(7)];(a.lifebar and (tap('z'),time.sleep(.3)));tap('a');time.sleep(.5)
-            continue
-        # One Start for the title and one for HOW TO PLAY (the cinematic before SOLDIER SELECT); none after it,
-        # or the press lands on SOLDIER SELECT and chooses before the menu combo.
-        t=log()
-        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')
-        time.sleep(1.0)
+    if not a.pad_script or a.record:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
+    # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
+    # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
+    import ares_menu;ares_menu.choose(key,log,proc,4,1,lifebar=a.lifebar)
     wait(r'MSX MSELECT mission=4',20)
     if a.lifebar:wait(r'MSX LIFEBAR on',5)
     m=wait(r'MSX mission 4 stage \d+ start: record (\w+) descriptor (\w+) camera list (\w+)',120)
     assert m.group(2)=='016E1E' and m.group(3)=='0E741A',m.group(0)
     wait(r'MSX stage \d+ camera x=',300)
-    subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
-    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0
+    if not a.pad_script or a.record:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)   # the window grows when the game starts
+    t0=time.monotonic();nextgrab=0;k=0;held={};lastcam=-1;stuck=0;continued=0;seq=None
     def hold(n,on):
         if held.get(n)!=on:key('keydown' if on else 'keyup',n);held[n]=on
-    while time.monotonic()-t0<a.seconds:
+    # The schedule and --seconds run on the game's clock (tools/ares_clock.py), not the host's: the same pad under any machine load.
+    clock=EmuClock();wall_end=time.monotonic()+(3*a.seconds+600 if not (a.pad_script or a.record) else 10**9)   # B78: a recording / replay ends on the game's count only (the caller's timeout bounds it)
+    while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
-        t=time.monotonic()-t0;text=log()
+        text=log();t=clock.now(text[-4000:])
+        if not live[0] and a.record and 'MSX PAD script end' in text[-200000:]:
+            live[0]=True;held.clear()   # every key is up: press again what the pad holds
+            w2=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True,env=env).stdout.split()
+            if w2:subprocess.run([XD,'windowfocus',w2[-1]],env=env)   # the newest ares window (other runs may have opened theirs meanwhile; run alone when going live)
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0
@@ -79,7 +102,14 @@ try:
         if cam>=a.until or (a.boss and re.search(r'MSX mission 5 stage \d+ start',text)):break
         if a.continues and text.count('MSX panel continue')>continued:
             for n in list(held):hold(n,False)
-            time.sleep(1.0);tap('Return');time.sleep(.5);continued=text.count('MSX panel continue');continue
+            # Start until the panel takes it (`MSX panel play` again): one 0.1 s tap was less than one pad read with the
+            # emulator at a third of its speed (a loaded machine), the countdown ran out and the game restarted in Mission 1.
+            plays=text.count('MSX panel play');time.sleep(1.0)
+            for _ in range(30):
+                tap('Return',2.0 if a.record else .4);time.sleep(.6);tx=log()   # a recording runs at ~10 % on a loaded host: 0.4 s missed every read (game over, B78)
+                if tx.count('MSX panel play')>plays or tx.count('MSX panel game over')>text.count('MSX panel game over'):break
+            continued=text.count('MSX panel continue')
+            continue
         # A camera lock waits for an enemy group to be emptied: the car 027F54 at 1000 (ahead of Marco, who jumps on
         # its roof if he keeps walking), the armoured vehicle 087E36 at 2160 (behind him), the helicopters 085522 over him
         # at 4360 (script 2DC67A waits for group 6 < 1; they leave only when out of bombs). After 6 s without progress the
@@ -100,13 +130,40 @@ try:
         if a.boss and 'MSX boss layer 10D7B6' in text and 'MSX mission complete signal' not in text:
             bp=t%5;left=bp<0.15;right=bp>=3.65;up=False
             jump=1.0<=bp<1.2 or 2.6<=bp<2.8;bomb=a.lifebar and 2.0<=bp<2.15
+            # The pad faces the boss (B78): the body keeps itself between the screen x 0x90 and 0xE0 (022872) while the
+            # camera brings the player to the left edge, under the hull's tail, where the blind cycle fired at nothing.
+            # The cartridge logs the body's screen x and the player's (`MSX boss body ... x=X ... player=PX,PY`, every 30
+            # updates): the cycle above only runs with the player BOSS_NEAR[0]..BOSS_NEAR[1] px from the body (where the
+            # blind pad's hits landed, measured on its logs); farther left the pad walks right, farther right it walks left.
+            bm=re.findall(r'MSX boss body \w+ x=(-?\d+) y=-?\d+ health=\d+ lost=\w+ phase=\d+ player=(-?\d+),',text[-6000:])
+            if bm:
+                dx=int(bm[-1][1])-int(bm[-1][0])
+                if dx<BOSS_NEAR[0]:left=False;right=True
+                elif dx>BOSS_NEAR[1]:left=True;right=False
         hold('Right',right);hold('Left',left);hold('Up',up);hold('Down',False)
-        hold('a',jump);hold('b',a.fire and int(t*10)%2==0)
+        # Riding a vehicle, A and B together are the exit 093A08 (0CA1B0: pad bit 7; the vehicle is thrown away). The pad
+        # used to press them together by chance (the 5 Hz fire against the jump), and then nothing could hit it mounted.
+        # While it rides, a jump is a sequence on the host's clock (well over one update at any load): fire released,
+        # 0.3 s, A for 0.2 s, 0.3 s, fire again.
+        fire=a.fire and int(t*10)%2==0
+        if text.rfind('MSX player mounted vehicle')>max(text.rfind('MSX player left vehicle'),text.rfind('MSX player death'),text.rfind('MSX respawn ')):
+            w=time.monotonic()
+            if jump and seq is None:seq=w
+            if seq is not None:
+                fire=False;jump=0.3<=w-seq<0.5
+                if w-seq>=0.8:seq=None
+        elif seq is not None:seq=None;jump=False
+        hold('b',fire);hold('a',jump)
         hold('z',bomb)
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)
     for n in list(held):hold(n,False)
+    if a.pad_script or a.record:
+        time.sleep(1.0);proc.terminate()
+        try:proc.wait(10)
+        except Exception:proc.kill();proc.wait()
+        cut_log()
     text=log()
     stops=sorted(set(re.findall(r'(?:unsupported|explicit stop|not loaded|missing)[^\n]{0,100}',text)))
     print('camera',cam,'screenshots',k,'continues',continued);print('counted stops and missing draws in the log (%d kinds):'%len(stops))
@@ -120,7 +177,7 @@ try:
         for pat in (r'MSX boss layer 10D7B6 map=[0-9A-F]*[1-9A-F][0-9A-F]* ',r'MSX mission complete signal \(018F92\)',r'MSX mission 5 stage \d+ start'):
             m=re.search(pat,text);print('boss:',pat,'->',m.group(0) if m else 'MISSING');ok=ok and m is not None
 finally:
-    for n in ('Right','Left','Up','Down','a','b','d','e','z'):subprocess.run([XD,'keyup',n],env=env)   # a key left down would be read by the next run's menu
+    for n in ('Right','Left','Up','Down','a','b','d','e','z'):key('keyup',n)   # a key left down would be read by the next run's menu
     proc.terminate()
     try:proc.wait(5)
     except Exception:proc.kill()

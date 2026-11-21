@@ -12,7 +12,7 @@ descriptor's music (0022) playing, the mission start of 1805C (weapon back
 to the pistol, ten bombs, rescue counts cleared), the 16-step fade-in, the
 MISSION 2 START letters and the walk-in; no crash, no missing descriptor.
 Last line: RESULT: PASS/FAIL."""
-import argparse,json,os,re,subprocess,threading,time
+import argparse,json,os,re,subprocess,sys,threading,time
 from pathlib import Path
 from PIL import ImageGrab
 p=argparse.ArgumentParser(description=__doc__)
@@ -32,7 +32,7 @@ def key(action,name):subprocess.run([XD,action,name],check=True)
 process=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(a.rom.resolve())],stdout=open(log_path,'w'),stderr=subprocess.STDOUT,env=env)
 def wait(pattern,seconds=120):
-    deadline=time.monotonic()+seconds
+    deadline=time.monotonic()+4*seconds   # host time: four times the game's, for a loaded machine
     while time.monotonic()<deadline:
         text=log()
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text and 'MSX ERROR' not in text,text[-3000:]
@@ -70,7 +70,7 @@ try:
         # press landing in the game is the ROM's pause (neo_pause.c), which
         # stopped this test at the Mission 1 walk.
         if focused and cinematic_running(log()):
-            key('keydown','Return');time.sleep(.1);key('keyup','Return')
+            key('keydown','Return');time.sleep(.3);key('keyup','Return')   # longer than one pad read with the emulator at a third of its speed
         time.sleep(1.5)
     window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]
     subprocess.run([XD,'windowmove',window,'0','0'],check=True);subprocess.run([XD,'windowfocus','--sync',window],check=True)
@@ -80,9 +80,11 @@ try:
     wait(r'MSX mission end letters arrived',seconds=120)
     wait(r'MSX mission end 018846 done',seconds=120)
     wait(r'MSX mission 2 stage 1 start',seconds=120)
-    time.sleep(a.after)
+    # Game time (tools/ares_clock.py: the stage line's ticks=), not the host's: the same number of updates at any load.
+    sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_clock import EmuClock,game_sleep
+    clock=EmuClock();game_sleep(clock,log,a.after)
     if a.walk:
-        key('keydown','Right');time.sleep(a.walk);key('keyup','Right')
+        key('keydown','Right');game_sleep(clock,log,a.walk);key('keyup','Right')
     text=log();tail=text[text.find('MSX mission end 018846 done'):]
     checks={
         'music 0022 requested at the stage load':re.search(r'MSX AUDIO stage music 0022',tail) is not None,

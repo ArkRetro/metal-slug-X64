@@ -10,7 +10,7 @@ Start resumes (MSX PAUSE off), the picture is as bright as before and the
 game goes on; then a second pause ended by R (MSX reset, MSX PAUSE off
 (reset)). Uses the X display in DISPLAY (one shared display per agent).
 Last line: RESULT: PASS/FAIL."""
-import argparse,os,re,subprocess,time
+import argparse,os,re,subprocess,sys,time
 from pathlib import Path
 from PIL import ImageGrab,ImageChops,ImageStat
 p=argparse.ArgumentParser(description=__doc__)
@@ -26,14 +26,21 @@ assert env.get('DISPLAY'),'DISPLAY'
 XD='/usr/bin/xdotool';log_path=out/'ares.log'
 def log():return log_path.read_text(errors='replace')
 def key(action,name):subprocess.run([XD,action,name],check=True)
-def tap(name):key('keydown',name);time.sleep(.15);key('keyup',name)
+def tap(name):key('keydown',name);time.sleep(.3);key('keyup',name)
+# The play counts game time (tools/ares_clock.py: the cartridge's update count) and every press that the cartridge logs is
+# held until its line (tools/ares_menu.py): the same test at any machine load. While paused the game's clock stands
+# still: those waits are host time over the emulator's last measured speed.
+sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_clock import EmuClock,game_sleep;import ares_menu
+clock=EmuClock()
+def gs(seconds):game_sleep(clock,log,seconds)
+def paused_sleep(seconds):time.sleep(seconds/max(clock.rate,.1))
 def grab(name):
     im=ImageGrab.grab(xdisplay=env['DISPLAY']);im.save(out/name)
     return im.crop((0,24,im.width,im.height-70))   # the picture, not ares' status bar (its VPS counter)
 process=subprocess.Popen([a.ares,'--setting','Video/Driver=OpenGL 3.2','--setting','Audio/Driver=None','--setting','General/HomebrewMode=true',
     '--system','Nintendo 64','--no-file-prompt',str(a.rom.resolve())],stdout=open(log_path,'w'),stderr=subprocess.STDOUT,env=env)
 def wait(pattern,seconds=120,start=0):
-    deadline=time.monotonic()+seconds
+    deadline=time.monotonic()+4*seconds   # host time: four times the game's, for a loaded machine
     while time.monotonic()<deadline:
         text=log()
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text and 'MSX ERROR' not in text,text[-3000:]
@@ -51,20 +58,20 @@ try:
             found=subprocess.run([XD,'search','--onlyvisible','--class','ares'],text=True,capture_output=True).stdout.split()
             if found:subprocess.run([XD,'windowmove',found[-1],'0','0']);subprocess.run([XD,'windowfocus',found[-1]]);focused=True
         # Start only while a movie runs: after the handoff Start is the pause.
-        if focused and 'MSX mission handoff' not in log() and re.search(r'MSX (TITLE start|CINE \w+ start)',log()):tap('Return')
+        if focused and 'MSX mission handoff' not in log() and ares_menu.cinematic_running(log()):tap('Return')   # read just before the press; never in the entry film
         time.sleep(1.5)
     window=subprocess.check_output([XD,'search','--onlyvisible','--class','ares'],text=True).split()[-1]
     subprocess.run([XD,'windowmove',window,'0','0'],check=True);subprocess.run([XD,'windowfocus','--sync',window],check=True)
-    time.sleep(12)   # the descent and the landing
+    gs(12)   # the descent and the landing
     assert 'MSX PAUSE' not in log(),'paused by a boot tap'
-    key('keydown','Right');time.sleep(2);key('keyup','Right');time.sleep(.5)
+    key('keydown','Right');gs(2);key('keyup','Right');gs(.5)
     def bright(im):return sum(ImageStat.Stat(im.convert('RGB')).mean)
     play=grab('play.png')
-    mark=len(log());tap('Return');wait(r'MSX PAUSE on',10,mark)
-    time.sleep(1.5)   # the four turns of the fade
+    mark=len(log());ares_menu.held(key,'Return',log,r'MSX PAUSE on',20);wait(r'MSX PAUSE on',10,mark)
+    paused_sleep(1.5)   # the four turns of the fade
     key('keydown','Right');key('keydown','x');key('keydown','z')   # held while paused: no effect
     mark=len(log());shots=[]
-    for k in range(int(a.hold/.25)):shots.append(grab('paused-%02d.png'%k));time.sleep(.25)
+    for k in range(int(a.hold/.25)):shots.append(grab('paused-%02d.png'%k));paused_sleep(.25)
     key('keyup','Right');key('keyup','x');key('keyup','z')
     during=log()[mark:]
     w,h=shots[0].size;boxes=[ImageChops.difference(shots[0].convert('RGB'),x.convert('RGB')).getbbox() for x in shots[1:]]
@@ -74,13 +81,13 @@ try:
     checks['paused picture darker (fade to -8)']=bright(shots[-1])<bright(play)*.9
     checks['no simulation log while paused']=not re.search(r'MSX (rebel spawned|enemy hit|defeated|player death|script spawn)',during)
     second=shots[-1]
-    mark=len(log());tap('Return');wait(r'MSX PAUSE off',10,mark)
-    key('keydown','Right');time.sleep(2);key('keyup','Right')
+    mark=len(log());ares_menu.held(key,'Return',log,r'MSX PAUSE off',20);wait(r'MSX PAUSE off',10,mark)
+    key('keydown','Right');gs(2);key('keyup','Right')
     moved=grab('resumed.png')
     checks['picture moves after resume']=ImageChops.difference(second.convert('RGB'),moved.convert('RGB')).getbbox() is not None
     checks['bright again after resume']=bright(moved)>bright(second)*1.05
-    mark=len(log());tap('Return');wait(r'MSX PAUSE on',10,mark)
-    mark=len(log());tap('e');wait(r'MSX PAUSE off \(reset\)',10,mark);wait(r'MSX reset',10,mark)
+    mark=len(log());ares_menu.held(key,'Return',log,r'MSX PAUSE on',20);wait(r'MSX PAUSE on',10,mark)
+    mark=len(log());ares_menu.held(key,'e',log,r'MSX PAUSE off \(reset\)',20);wait(r'MSX PAUSE off \(reset\)',10,mark);wait(r'MSX reset',10,mark)
     checks['R resets from the pause']=True
     time.sleep(2)
     text=log()

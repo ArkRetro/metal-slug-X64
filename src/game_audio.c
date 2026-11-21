@@ -103,7 +103,10 @@ static bool streamed(unsigned i) {
     return w==0x10f8u || w==0x1032u || w==0x1137u || w==0x115au || w==0x1132u || w==0x10a5u
         || w==0x115bu || w==0x1159u || w==0x1130u || w==0x1156u || w==0x10e9u || w==0x10a7u
         || w==0x1073u || w==0x10c6u || w==0x10a3u || w==0x1034u || m3_word(w) || m4_word(w)
-        || w==0x1125u || w==0x114eu;   /* the death voices of Eri and Fio (docs/PERSONAJES.md): no RAM for them */
+        || w==0x1125u || w==0x114eu    /* the death voices of Eri and Fio (docs/PERSONAJES.md): no RAM for them */
+        || w==0x1089u                  /* B75: the vehicles' hit recoil (21 KB), no RAM either (ANIMACIONES_DANO.md) */
+        || w==0x108au || w==0x108bu    /* B75: the vehicles' hit sounds 108A/108B (AUDIO_JUEGO.md 19) */
+        || w==0x1087u;                 /* Tarma's death voice (AUDIO_JUEGO.md 19) */
 }
 void game_audio_preload(void) {
     if (!msx_ramfs_init()) return;
@@ -260,6 +263,8 @@ static void request(uint16_t word) {
     int before=-1,wanted=msx_sfx_lookup(word);
     if (wanted>=0) before=policy.current[msx_sfx_defs[wanted].channel];
     int channel=msx_sfx_request(&policy,word);
+    /* 5204: the effects of the request's stop list (also when it is dropped). */
+    for (unsigned c=0;c<MSX_SFX_CHANNELS;c++) if (policy.stop_mask&(1u<<c)) mixer_ch_stop(mixer_of(c));
     if (voice) {
         if (wanted<0) debugf("MSX AUDIO voice %04X: unmapped\n",(unsigned)word);
         else if (channel<0) debugf("MSX AUDIO voice %04X: dropped under %04X\n",(unsigned)word,(unsigned)msx_sfx_defs[before].word);

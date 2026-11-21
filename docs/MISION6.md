@@ -1067,6 +1067,105 @@ se ha pasado en esta sesión.
    pero no la palanca (bits 2 / 3 de arriba / abajo: `msx_game_update` no los pasa): la letra no se puede cambiar en
    la consola; acaba con A o por tiempo, como en el original. `ENDING` (puntuación 0) no pasa por ella.
 
+- **Siguiente**: los créditos (`credits.c` del agente Q en el scratchpad tiene traducidos `0646FE..064ABA`, `064AC0`,
+  `0A4408`, `0A4478`, `0A453A`; falta el arnés con raíces creadas fuera — los subguiones `019E72` — y `0A454C..0A4744`), el
+  título `0A7FFE..0A8700`, la integración en `gameplay.c` (tras `neo_mission_next` con misión ≥ 6) y la prueba ares.
+  Sprites: programas `24BA2A/24BA34/24BA46/24BA52` (descriptores `1D9154`, `1D932C`, paleta 0x35F) sin exportar.
+
+### El último enemigo en ares con el jefe encendido (20-XI, agente S, rama `work-mem`)
+
+`work-chars` (`7726b05`: la muerte `04180A..`, la huida `04677A`, el combate de fondo `037404`, `neo_ending.c`) unido a
+`work-mem`. `neo_m6boss` pasa de 43 824 a **62 240 B**: `MSX_OVERLAY_BYTES` = 62240 (`docs/RENDIMIENTO.md`).
+
+Prueba `m6boss` (`tools/regression_ares.py`; `test_mission6_ares.py --stage 3 --boss`): PASS = constructor `04153E`
+nativo, `MSX mission complete signal (018F92)` (la muerte `041DD4`) y ninguna parada de rutina. Lo que impedía llegar:
+
+- **Los manejadores de andar `0CA386` / `0CA3EC` / `0CA438`** (`gameplay.c`, `handler_x`): la ROM compara
+  `+3C − 697C` (la palabra proyectada menos la de la raíz `10E97C`, que es la cámara negada), es decir la x en el
+  espacio de la raíz, con `10EA00`; el port restaba la cámara otra vez. En la apertura `045428` el jugador iba hacia
+  la x de pantalla 0x180 y se quedaba contra el borde derecho: la apertura no acababa nunca. MAME (`fam/M1`,
+  `actorstate.csv`): el jugador se para en +28 = 384 mientras la cámara sigue de 170 a 320.
+- Los manejadores sin entrada (`054B18`, `0537E4`, `0455E6`, `041EBC`: `d7` = 0) tampoco dejan lanzar granadas.
+- **La capa del cielo `10E83E` como padre** en el mundo de la consola (`neo_world_parent`: la capa `NEO_LAYER_SKY`
+  de la lista de cámara, `+1C/+20` = la posición antes del paso): los nodos del combate de fondo paraban en `01ABCC`.
+- **Sprites y paletas** (exportación propia, `filesystem/mission6/rest-native.json`): capturas nuevas
+  `captures-m6/fam/SA` (run4 `at_323500`, raíz `37404`, 324600..325800), `SB` (TAS `u24600..u26420`, raíz `37404`,
+  volcados cada 30), `SD` (TAS `u26340..u28000`, `RANGE=41500-47400`, volcados cada 30: la muerte y la huida) y `SH`
+  (run4 `at_340000`, 341100..341400, volcados cada 2: los proyectiles `042F04`). `export_rest_sprites.py ...
+  SA@37404-38820 SB@37404-38820 SD@41500-47400 SH@41500-46800 --bit2-plain`: **976 968 píxeles iguales, 0 distintos**
+  (284 volcados). `--bit2-plain` (nuevo): las entradas del combate de fondo llevan el bit 2 del atributo y sus
+  teselas en VRAM no tienen autoanimación (`reconstruct` la rechazaría); se rasterizan como sprites normales.
+  `tools/merge_rest.py` (nuevo, en el repositorio): la exportación anterior más los descriptores que posan los
+  programas nuevos (+232) y las paletas FD, FF, 100, 101, 169, 175 y 248. Quedan sin ver: D9.
+- **`m6boss9`** (familia nueva, `SH`): el ataque de la parte `042E22` con sus proyectiles `042F04` / `042F5C` y su fin
+  `043054` → `01C87E`, que ninguna ventana anterior tenía (run4 solo los dispara en 335381, 337945 y 341121): 22
+  nodos, **1549** actualizaciones iguales a MAME. Arnés: con `--resume`, el primer nodo y los creadores inyectados
+  traducen también sus campos de nodo (`--node-fields`); era el fallo anotado en la ventana `M6` (el soldado leía su
+  `+72` como dirección cruda).
+- **La segunda forma**: (1) las celdas de colisión del submapa `045244` (`46441A`, 0x27 × 0xF bloques) faltaban en
+  `region_rom.json`: `0C72EC` paraba en la primera rotura del suelo y el cuerpo moría; (2) el mapa `04522E` (0x1A × 8)
+  de la capa `10D7B6`: `m4col_map` / `m4col_top` a 32 ranuras (el jefe de la M4 usa 20) y sus celdas en el paquete
+  (`export_stage_rom.py --actor-maps 04522E:1:2:0x4000:348300 --actor-map-frames 348300:348600`, capa 2, página
+  0x4000; `actor.c` `M6_BOSS_MAP`). El número de paleta 56 de ese mapa alterna tres juegos de colores (el brillo por
+  `009CCE` sobre una ranura fija, ya anotado como pendiente): el paquete lleva el de 348300 y el brillo **no se dibuja**
+  (pendiente, no se aproxima); (3) los cinco parches del suelo (`extract_map_patches.py 6 .../s3 --ram-colours
+  --patch-frames 0:SJ/vram346750.bin,1:..346790,2:..346830,3:..346880,4:..346920`; captura `SJ`: run4 `at_340000`,
+  346700..346960, volcados cada 10): `PATCHES[(6,'s3')]`, comprobados contra SCB1.
+  `filesystem/mission6/s3` es ahora un directorio propio de este árbol (no un enlace a `ws-logo`).
+- **`09D496` / `044930`** (`neo_m3enemy.c`): era una parada explícita; `044930` es `tst.b $4448(a5)` (RAM `10C448`, FF
+  desde el fin de la segunda forma): el soldado de escudo `09BA2A` con `+90` bit 4 se va por `09C292`. Familia nueva
+  **`m6flee`** (TAS, `fam/SK`): 11 nodos, **521** actualizaciones iguales. Al tenerla salió otro fallo de traducción sin
+  prueba: los disparos `09C744` / `09C76C` / `09C780` siguen dentro de `09C80C` en su primera actualización (`09C806`
+  no tiene `rts`); corregido (ninguna captura anterior los tenía).
+- **El camión `029184`** (entrada 0x348 de la tabla `0197DC`): el subguion `2C7920` de los 3000 de vida crea el SV-001
+  (0x2EC), el prisionero `099DCC` (0x2C8) y este camión «de fondo»; el intérprete paraba en `2C7942` (entrada fuera de la
+  tabla, que solo llevaba las de los guiones de misión). Traducido el constructor (`02996E`, `+84` bit 5; el resto del
+  camión ya llevaba las ramas del bit 5) y `10C448` leído del mundo (`f448`; antes siempre 0 en la consola). Familia
+  nueva **`m6truck`** (TAS, `fam/SL`; run4 nunca lo crea): 3 nodos, **1341** actualizaciones iguales, hasta su salida
+  por `0293DC` al morir el jefe.
+- La paleta 144 (los restos `01D00C..01D078` de la primera forma) añadida a la exportación (vista en `SB` y `SJ`):
+  exportación final **1 267 232 píxeles iguales, 0 distintos** (310 volcados, con `SJ@41500-46800`).
+- **`09B500` con `+90` bit 4** (`09B532: jmp 04611C`): el soldado de escudo sigue como el andador `04611C` de la segunda
+  forma; era una parada explícita y salió en ares. Traducido como el salto que es (`SL(0, 04611C)` y `neo_region_tick`,
+  el mismo patrón que `043054` → `01C87E` de `m6boss9`). **Sin prueba bit a bit del relevo**: ni run4 (346400..358800)
+  ni el TAS (`u24600..u26420`) lo hacen (`RANGE=9ae1e-9d630`, 0 nodos en `09B500`); pendiente de una partida grabada
+  que rompa el escudo de un soldado en la segunda forma.
+- **Resultado en ares** (cartucho completo, mando ciego `--fire --jump 4 --aimup --sweep 8 --lifebar --continues --bomb 3`):
+  la apertura acaba, la primera forma cae (~500 s de juego), la segunda forma baja con su capa, el suelo roto y sus
+  soldados, a 3000 de vida llegan el SV-001, el prisionero y el camión, **el jefe muere** (`MSX mission complete signal
+  (018F92) camera=256`, ~770..790 s de juego) y corren la muerte, la huida y las letras de MISSION COMPLETE; **0 paradas
+  de rutina, 0 dibujos ausentes** (pasadas `b6`, `mx1`, `mx4` del 20-XI); `regression_ares.py --only m6boss`: **PASS** en 2122 s (`missing_draw=0 unsupported=0 stopped=0`; sin línea base escrita). Después, `01891E` → «mission 7 not loaded
+  (explicit stop)»: el final `0570A0` y los créditos (`neo_ending.c`) aún no están unidos al juego (agente de
+  `work-chars`); la prueba lo imprime y no lo juzga.
+- **Pendiente**: el brillo de la paleta 56 de la capa (`009CCE`); la paleta D9; la prueba bit a bit de `09B532`; el
+  margen de memoria (una ranura de caché); `08F1A0` sigue sin captura.
+
+### La paleta 56 de la capa de la segunda forma (20-XI, agente del carril de memoria, rama `work-mem`)
+
+- **Qué hace la ROM**: `0421E4` (`neo_m6boss.c`, con `+86` bit 0 del eje) llama a `009CCE` sobre la ranura de hardware
+  0x38 (número de paleta 56 del mapa `04522E`) cada 12 fotogramas con el siguiente de 10C / 10D / 10E (DA mientras el
+  cuerpo parpadea), siempre con peso 0x20: la ranura muestra el destino tal cual (`005978`, `tools/palette_mix.py`); no
+  hay mezcla. El índice `+A2` y el parpadeo `+17` son RAM de nodo que las familias ya comparan bit a bit.
+- **Comprobado contra MAME** (run4, las 42 instantáneas de paleta 346200..358500): la ranura 56 tiene exactamente los
+  colores de la ROM de 10C (16), 10E (14), 10D (11) o DA (1), nada más. Las celdas del paquete (208, todas en la capa 2 a
+  x ≥ 0x4000, paleta 7 de `s3/map.json`) llevan los de 348300 = 10C.
+- **En la consola**: `k9cce` pasa la ranura 0x38 al mundo (`slot_mix` → `slot38_target/weight`; sigue contándose como
+  externa para las familias); `actor.c m6_layer_palette` pide al dibujo del anillo de columnas
+  (`scene_render_set_ring_palette`) que la paleta de esas celdas se vea como la paleta nativa del destino. Las paletas
+  10D y 10E se añadieron a la exportación desde la ROM (`palette_mix.py /home/user/roms/mslugx.zip --into
+  filesystem/mission6/rest-native.json --plain 10c,10d,10e,da`: 2 añadidas; 10C y DA ya estaban y coinciden). M6:
+  1230 trozos. Registro: `MSX M6 layer palette: cells P, 10C Q, colours equal 1` al empezar la capa, `MSX M6 layer slot 38
+  target=…` en cada cambio; un peso 1..30 o un destino sin paleta en el paquete no se dibuja y se cuenta como
+  `native draw missing` (la matriz lo vigila).
+- **Sigue pendiente**: la paleta D9 (`042DC0`: `009CCE` sobre la ranura `+1A` de la parte con peso 0..0x20, una mezcla
+  real): ninguna captura la muestra (run4 ni el TAS ponen `+87` del eje), no se sabe de la ranura su `+A` y no se dibuja;
+  el relevo `09B532 jmp 04611C` sigue sin partida grabada que rompa el escudo de un soldado en la segunda forma (hace falta
+  jugarla en MAME 0.264 con volcados; no hay mando grabado que lo haga).
+- **ares** (cartucho de `8acec10`, `regression_ares.py --only m6boss`): **PASS** en 2428 s, `missing_draw=0 unsupported=0
+  stopped=0`; `MSX M6 layer palette: cells 320, 10C 320, colours equal 1` (la paleta de las celdas es la nativa de 10C);
+  la ranura 0x38 pasa por 10C, 10D, 10E y DA (cambios registrados 464 / 456 / 430 / 1150), ningún fotograma sin paleta.
+  Arranque: `MSX CACHE slots=208..209 (floor 208)` con la región de superposición en 62 432 B; cartucho 64 765 952 B; M6
+  1230 trozos.
 ### Fondos, textos y entradas del final (20-XI, agente U)
 
 **Qué pantallas tienen mapa** (del listado; `tools/export_ending_layers.py` lo lee de la ROM):

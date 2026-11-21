@@ -294,6 +294,18 @@ for _,port in pairs(manager.machine.ioport.ports) do
  for name,field in pairs(port.fields) do fields[name]=field end
 end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0}}
+-- MSX_WEAPONS_CHARACTER=n (player +6E: 0 Marco, 1 Tarma, 2 Eri, 3 Fio): chosen at SOLDIER
+-- SELECT with the controller as tools/mame/capture_marco_catalog.lua does
+-- (the ROM fixes +6E from the cursor when A confirms; screen order Marco,
+-- Eri, Tarma, Fio): Right once per place from 1700, A at 1800 instead of the
+-- A held 1550..1700 (the landing comes about 250 frames later).
+local character=tonumber(os.getenv('MSX_WEAPONS_CHARACTER') or '-1')
+local choice={}
+if character>=0 then
+ local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_WEAPONS_CHARACTER 0..3')
+ for k=0,place-1 do choice[1700+20*k]={'P1 Right',1};choice[1710+20*k]={'P1 Right',0} end
+ choice[1800]={'P1 A',1};choice[1810]={'P1 A',0}
+end
 local pressed={}
 local function button(name,value)
  pressed[name]=value
@@ -335,8 +347,12 @@ emu.register_frame_done(function()
  dbg:command(string.format('temp9=%x',frame))
  if frame==2000 then probes() end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
- if frame>=1550 and frame<=1700 then button('P1 A',1) end
- if frame==1710 then button('P1 A',0) end
+ if character>=0 then
+  if choice[frame] then button(choice[frame][1],choice[frame][2]) end
+ else
+  if frame>=1550 and frame<=1700 then button('P1 A',1) end
+  if frame==1710 then button('P1 A',0) end
+ end
  if frame>=2000 then
   if not keep_timer then cpu:write_u8(0x1013de,0x5a) end
   if mortal_camera>0 and not mortal and cpu:read_u16(0x102036)>=mortal_camera then

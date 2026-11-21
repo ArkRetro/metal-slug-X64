@@ -797,6 +797,12 @@ bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int3
     }
     return false;
 }
+bool neo_kernel_object_y(const neo_kscene_t *scene,uint8_t object,int32_t *y) {
+    kr_t k={0};k.s=(neo_kscene_t *)scene;
+    const neo_kobj_t *a=obj(&k,object);
+    if (!a) return false;
+    *y=a->y;return true;
+}
 bool neo_kernel_point_solid(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint8_t b4008) {
     kr_t k={0};k.s=scene;k.b4008=b4008;
     k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;

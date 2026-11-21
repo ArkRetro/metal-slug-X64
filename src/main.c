@@ -105,16 +105,17 @@ static const struct {uint8_t mission,stage;} mselect_items[]={{1,1},{13,1},{2,1}
 #define MSELECT_ITEMS (sizeof(mselect_items)/sizeof(mselect_items[0]))
 static bool mission_select_menu(void) {
     static unsigned cursor;bool lifebar=false,first=true;joypad_buttons_t was={0};
-    debugf("MSX MSELECT menu open\n");
+    debugf("MSX MSELECT menu open cursor=%u\n",cursor);   /* the cursor and the life bar are logged for the tests (tools/ares_menu.py): they move by what the menu read, not by counted presses */
     for (;;) {
         joypad_poll();
         joypad_buttons_t b=joypad_get_buttons(JOYPAD_PORT_1);
         if (first) {was=b;first=false;}   // the opening press is not a choice
         bool up=b.d_up && !was.d_up,down=b.d_down && !was.d_down,ok=(b.a && !was.a) || (b.start && !was.start),back=b.b && !was.b;
-        if (b.z && !was.z) lifebar=!lifebar;
+        if (b.z && !was.z) {lifebar=!lifebar;debugf("MSX MSELECT lifebar=%u\n",lifebar);}
         was=b;
         if (up) cursor=(cursor+MSELECT_ITEMS-1)%MSELECT_ITEMS;
         if (down) cursor=(cursor+1)%MSELECT_ITEMS;
+        if (up || down) debugf("MSX MSELECT cursor=%u\n",cursor);
         if (back) {debugf("MSX MSELECT back\n");return false;}
         if (ok) {
             unsigned m=mselect_items[cursor].mission,st=mselect_items[cursor].stage;
@@ -392,8 +393,9 @@ int main(void) {
         msx_cinematic_prepare(first_after_title());
         handoff=entry_cinematic();
         scene_assets_mem("entry done");
-        scene_assets_game_preloaded(game_preloaded_bytes());
         if (!game_audio_init()) debugf("MSX AUDIO incomplete: run tools/render_sound_commands.py and tools/pack_game_audio.py\n");
+        /* After game_audio_init: its msx_ramfs_preload_end completes a preload cut short (fixed.bin, B81), counted here. */
+        scene_assets_game_preloaded(game_preloaded_bytes());
         scene_assets_mem("audio");
     }
 #endif

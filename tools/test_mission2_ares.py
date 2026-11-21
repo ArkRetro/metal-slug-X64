@@ -22,6 +22,12 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--log',type=Path,required=True)
 parser.add_argument('--output',type=Path,required=True)
 parser.add_argument('--stage-seconds',type=float,default=150)
+# B53: from stage 2 on, fire aimed up (Up held with the fire presses, 1.5 s
+# of every 3 s) and check the native 01B782 bullets leave the screen
+# through the cull of 01B882 with the camera raised (MSX up shots lines);
+# the run ends after --up-seconds of stage 3's tower.
+parser.add_argument('--up-fire',action='store_true')
+parser.add_argument('--up-seconds',type=float,default=90)
 args=parser.parse_args();args.output.mkdir(parents=True,exist_ok=True)
 XD='/usr/bin/xdotool'
 def key(action,name):subprocess.run([XD,action,name],check=True)
@@ -56,6 +62,8 @@ def pad():
         if state.get(name)!=on:key('keydown' if on else 'keyup',name);state[name]=on
     while not stop.is_set():
         now=time.monotonic();t=now-t0
+        upnow=upfire.is_set() and (t%3.0)<1.5
+        hold('Up',upnow)
         if pilot.is_set():
             hold('Right',False);hold('Left',False);hold('Down',False);hold('a',False);hold('b',int(t*20)%2==0)
             time.sleep(.03);continue
@@ -69,6 +77,7 @@ def pad():
             elif phase==1:right=False;down=True;jump=(u%1.0)<0.2
             elif phase==2:jump=(u%1.0)<0.2;left=u>3.2;right=not left
             else:left=True;right=False;jump=(u%1.0)<0.2
+        if upnow:down=False
         hold('b',fire);hold('Right',right);hold('Left',left);hold('Down',down);hold('a',jump)
         time.sleep(.03)
     for name in list(state):hold(name,False)
@@ -87,7 +96,8 @@ def stage_report(stage):
     return 'stage %d: camera x max=%d y range=%d..%d progress max=%d modes=%s player x max=%d unknown cells read=%d'%(
         stage,max(r[0] for r in rows),min(r[1] for r in rows),max(r[1] for r in rows),max(r[2] for r in rows),sorted({r[3] for r in rows}),max(r[4] for r in rows),max(r[7] for r in rows))
 walked=[]
-pilot=threading.Event()
+pilot=threading.Event();upfire=threading.Event()
+class UpDone(Exception):pass
 worker=threading.Thread(target=pad,daemon=True);tapper=threading.Thread(target=boot_taps,daemon=True)
 try:
     tapper.start()
@@ -113,6 +123,7 @@ try:
     wait_for(r'MSX stage end \(018722\) mission 2: next stage 2',timeout=240)
     m=wait_for(r'MSX stage load mission 2 stage 2: .*',timeout=60);print(m.group(0))
     wait_for(r'MSX mission 2 stage 2 start',timeout=30);time.sleep(1.5);snap('stage2-start');walked.append(2)
+    if args.up_fire:upfire.set()
     end=time.monotonic()+args.stage_seconds;shots=0
     while time.monotonic()<end:
         time.sleep(2);
@@ -132,6 +143,9 @@ try:
         try:wait_for(r'MSX autopilot on',timeout=5);break
         except AssertionError:time.sleep(1)
     walked.append('autopilot')
+    if args.up_fire:
+        time.sleep(args.up_seconds);snap('stage3-up');walked.append('up %d s'%args.up_seconds)
+        raise UpDone
     # The tower climb (writer 0B7C38) up to the boss arena, the boss 026254
     # (native, script record 2D9CA2) and the mission end.
     end=time.monotonic()+3*args.stage_seconds;shots=0;done=None
@@ -153,6 +167,7 @@ try:
     wait_for(r'MSX mission end letters arrived',timeout=60);snap('mission-complete-letters')
     wait_for(r'MSX mission end 018846 done',timeout=60)
     wait_for(r'MSX mission 3 stage \d+ start',timeout=60);time.sleep(2);snap('mission3-start');walked.append('mission 3')
+except UpDone:pass
 finally:
     stop.set()
     for name in ('Right','Left','Up','a','b','Return'):
@@ -160,6 +175,17 @@ finally:
         except Exception:pass
 text=log()
 for s in (1,2,3):print(stage_report(s))
+if args.up_fire:
+    ups=[tuple(map(int,m)) for m in re.findall(r'MSX up shots=(\d+) born=(\d+) culled=(\d+) other=(\d+) stage=(\d+) camera x=(-?\d+) y=(-?\d+)',text)]
+    for st in (2,3):
+        rows=[u for u in ups if u[4]==st]
+        if rows:print('B53 stage %d: up shots %d..%d, bullets born %d, out through the cull %d, other ends %d, camera y %d..%d'%(st,rows[0][0],rows[-1][0],rows[-1][1],rows[-1][2],rows[-1][3],min(u[6] for u in rows),max(u[6] for u in rows)))
+    # Each later line's culled count grew while the camera was raised.
+    raised=[(a,b) for a,b in zip(ups,ups[1:]) if b[2]>a[2] and b[6]!=0 and a[6]!=0]
+    ok=bool(ups) and ups[-1][1]>0 and bool(raised) and any(u[4]==3 for u in ups)
+    print('B53: %d windows with the camera raised where up bullets left through the cull'%len(raised))
+    print('RESULT: %s B53 pistol up shots in Mission 2, stages: %s'%('PASS' if ok else 'FAIL',', '.join(map(str,walked))))
+    raise SystemExit(0)
 print('camera list events unsupported (max):',max([int(n) for n in re.findall(r'camera events unsupported=(\d+)',text)] or [0]))
 pieces=re.findall(r'MSX tower piece (\d+) type (\d+)',text)
 print('stage 3 tower: %d pieces (types %s); drawing and collision use the same types (scene_render_set_tower)'%(len(pieces),''.join('%x'%int(t) for _,t in pieces)))

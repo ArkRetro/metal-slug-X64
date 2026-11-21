@@ -17,7 +17,9 @@
 #include <stdint.h>
 #include "neo_animation.h"
 enum { MSX_CHARACTER_MARCO,MSX_CHARACTER_TARMA,MSX_CHARACTER_ERI,MSX_CHARACTER_FIO,MSX_CHARACTERS };
-enum { MSX_CHARACTER_DEATHS=5 };
+/* Version 2: eight death programs (marco_death_use_programs), the palettes
+ * of the deaths of kinds 8, the mummy and the water. */
+enum { MSX_CHARACTER_DEATHS=8,MSX_CHARACTER_VERSION=2 };
 /* Big-endian sections of the pack, as the file has them. */
 typedef struct {
     const uint8_t *blob;uint32_t size;
@@ -41,7 +43,7 @@ bool msx_character_unpack(const uint8_t *file,uint32_t file_size,uint8_t *out,ui
 /* Checks the header and the section bounds of a pack held in memory. */
 bool msx_character_layout(const uint8_t *blob,uint32_t size,msx_character_layout_t *out);
 /* Decodes the programs of a pack (the blob must outlive it only for the
- * renderer's sections). False: not a pack of version 1 or out of memory. */
+ * renderer's sections). False: not a pack of MSX_CHARACTER_VERSION or out of memory. */
 bool msx_character_open(msx_character_pack_t *p,const uint8_t *blob,uint32_t size);
 void msx_character_close(msx_character_pack_t *p);
 /* The character of the next game: its programs go to marco_visual.c and

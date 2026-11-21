@@ -1,5 +1,6 @@
 #include "neo_region.h"
 #include "neo_blood.h"
+#include "marco_death.h"
 /* Visual effects of the region (ROM 01C6E8..01DF20), manual translation:
  * one-shot effects (01C6EE.. constructors, routine 01C9E6), smoke emitters
  * (01DA40 -> 01D764/01D7B8 with the emission lists) and the vehicle exhaust
@@ -467,11 +468,59 @@ ga_result_t neo_effects_frag_1d5aa(neo_gactor_t *a,neo_genv_t *e) {
     frag_1d5ec(a,e);
     return frag_tick(a,e);
 }
+/* 05A0B4: the child of the callback 05A09E (the player's death of kind 8,
+ * program 25032A): 01AD6E (0, 0) on the creator's +28 block (player 1:
+ * 1014EC), palette 0x204 (009EA8), program 25339C, then 05A0E2: 01ABC8,
+ * 00427A; at the end the cartridge check (10F00A/10F00C, 2FFFE0) ends in
+ * 004188 on genuine hardware: delete. */
+static ga_result_t death_smoke_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x5a0b4) {
+        uint32_t c=L(0x0c);
+        ga_place(a,e,0,0,c==0x1014c4u?0x1014ecu:c==0x101574u?0x10159cu:0);
+        ga_palette(a,0x204);
+        if (!ga_anim_start(a,e,0x25339c,0x100)) return GA_UNSUPPORTED;
+        SL(0,0x5a0e2);
+    }
+    ga_project(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    return r?GA_DELETE:e->unsupported?GA_UNSUPPORTED:GA_MORE;
+}
+/* 0C4C64: Fio's actor of her deaths (0C4C28: after the player, 01ACF2
+ * (8 forward, 0x20), 01AC94): +15 bit 5, layers E0ED, program 253322 at
+ * speed 0, palette 5, the velocities from the creator (marco_death_cap_*);
+ * 0C4CBA each update: the velocities and +26, 0143E4, 00427A and its end
+ * count; with the projected y word below 0x100 (off the bottom) the
+ * cartridge check, 004188 on genuine hardware: delete. */
+static ga_result_t fio_cap_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0xc4c64) {
+        SB(0x15,B(0x15)|0x20u);SW(0x66,0xe0ed);SW(0x1e,0xe0ed);
+        if (!ga_anim_start(a,e,0x253322,0)) return GA_UNSUPPORTED;
+        ga_palette(a,5);
+        neo_gactor_t *p=e->creator?e->creator(e->ctx,a):NULL;
+        if (!p) {ga_fail(e,0xc4c94);return GA_UNSUPPORTED;}
+        int32_t vx,vy;marco_death_cap_start((int32_t)ga_l(p,0x30),(int32_t)ga_l(p,0x34),&vx,&vy);
+        SL(0x30,vx);SL(0x34,vy);SL(0,0xc4cba);
+    }
+    int32_t vx=(int32_t)L(0x30),vy=(int32_t)L(0x34);uint16_t speed=W(0x26);
+    marco_death_cap_velocity(&vx,&vy,&speed,(B(0x15)&0x40u)!=0);
+    SL(0x30,vx);SL(0x34,vy);SW(0x26,speed);
+    ga_air(a,e);
+    int r=ga_anim_step(a,e,NULL);
+    if (r<0) return GA_UNSUPPORTED;
+    uint16_t count=W(0x80);uint8_t f5f=B(0x5f);
+    if (marco_death_cap_after(r!=0,&count,&f5f)) return GA_DELETE;
+    SW(0x80,count);SB(0x5f,f5f);
+    if ((int16_t)(W(0x40)-0x100u)>=0) return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    return GA_DELETE;                                                   /* cartridge check, 004188 */
+}
 bool neo_effects_routine(uint32_t r) {
-    return fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
+    return r==0xc4c64 || r==0xc4cba || r==0x5a0b4 || r==0x5a0e2 || fire_routine(r) || simple_of(r) || r==0x1c9e6 || r==0x1c97a || r==0x1d764 || r==0x1d7b8 || (r>=0x1d86c && r<=0x1d93c) || r==0x1d944 || r==0x1d958 || r==0x1d9c6 || frag_routine(r) || debris_routine(r) || r==0x1e058 || r==0x1e07c;
 }
 ga_result_t neo_effects_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=L(0);
+    if (r==0x5a0b4 || r==0x5a0e2) return death_smoke_tick(a,e);
+    if (r==0xc4c64 || r==0xc4cba) return fio_cap_tick(a,e);
     if (fire_routine(r)) return fire_tick(a,e);
     if (simple_of(r) || r==0x1c9e6 || r==0x1c97a) return simple_tick(a,e);
     if (r==0x1d764 || r==0x1d7b8) return smoke_tick(a,e);

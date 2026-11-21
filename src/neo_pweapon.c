@@ -565,6 +565,82 @@ burst:
     if (!release(a,e,0xe)) return GA_UNSUPPORTED;
     return GA_DELETE;
 }
+/* Weapon F 0DEA20 (table 0C42AA id 0F, the S group's fire programs 0BFFD8 /
+ * 0C0018 / 0C0058 / crouched 0C0098 with the flash 0C58D2 of 0C432A; item
+ * 4C, Mission 5): a shot that eases to its speed. 0DEA20: palette 37C,
+ * layer E000, +7D = 0 (0DEA44, +93 = 2, table 0C42EA: palette 86F, layer
+ * 1110, +7D = 1); 0DEA68: sound 1084, +15 bit 5; level (+6E & 7F = 0):
+ * program 2B02FC[+7D], target (0xC0000, 0); else program 2B0304[+7D],
+ * target (0, 0xC0000), +6E negative sets +15 bit 1; the target's x negated
+ * by +15 bit 0, its y by bit 1, into +72/+76 (the start speed +30/+34 is
+ * the player's, from 0C4372). 0DEB1A each update: +30 += (+72 - +30) >> 1,
+ * +34 likewise with +76; 0143E4, 00427A; the row EB616 (+7D = 1) / EB626
+ * level, EB636 / EB646 otherwise (0049E8): a hit -> 0DEBCE; once 03C5CC
+ * (the splash, +7E = its carry); +15 bit 7 (a wall) -> 0DEBCE for the next
+ * update; out of EB5CE (019504): 0DEC00; 00505A. 0DEBCE: sound 10F2, the
+ * burst 0DEC14 after the script (0040BC, 01B220 at 0,0) with +5E;
+ * 0DEC00: 0C0DFC id 0F and delete. Burst 0DEC14: the row EB656 once,
+ * palette 378, layer 1001, program 2B030C, +15 bit 1 cleared; 0DEC56:
+ * 01ABC8, 00427A; at its end delete (the cartridge check 2FFFE0 on that
+ * path ends in 004188 on genuine hardware, as in 0DE96A: not reproduced). */
+static ga_result_t weapon_f_tick(neo_gactor_t *a,neo_genv_t *e) {
+    int r;
+    switch (L(0)) {
+    case 0xdea20: case 0xdea44: {
+        bool fat=L(0)==0xdea44u;
+        ga_palette(a,fat?0x86f:0x37c);SW(0x66,fat?0x1110:0xe000);SW(0x1e,fat?0x1110:0xe000);SB(0x7d,fat?1u:0u);
+        sound(e,0x1084);SB(0x15,B(0x15)|0x20u);                        /* 0DEA68 */
+        uint32_t d0=0,d1=0;
+        if (!(B(0x6e)&0x7fu)) {
+            if (!ga_anim_start(a,e,e_rl(0x2b02fcu+4u*B(0x7d)),0x100)) return GA_UNSUPPORTED;
+            d0=0xc0000;
+        } else {
+            if (!ga_anim_start(a,e,e_rl(0x2b0304u+4u*B(0x7d)),0x100)) return GA_UNSUPPORTED;
+            d1=0xc0000;
+            if (B(0x6e)&0x80u) SB(0x15,B(0x15)|2u);
+        }
+        if (B(0x15)&1u) d0=0u-d0;
+        if (B(0x15)&2u) d1=0u-d1;
+        SL(0x72,d0);SL(0x76,d1);SL(0,0xdeb1a);
+        return GA_MORE;
+    }
+    case 0xdeb1a: {
+        SL(0x30,L(0x30)+(uint32_t)((int32_t)(L(0x72)-L(0x30))>>1));
+        SL(0x34,L(0x34)+(uint32_t)((int32_t)(L(0x76)-L(0x34))>>1));
+        ga_air(a,e);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        uint32_t row=!(B(0x6e)&0x7fu)?(B(0x7d)==1u?0xeb616u:0xeb626u):(B(0x7d)==1u?0xeb636u:0xeb646u);
+        if (ga_attack(a,e,row)) goto hit;
+        if (e->unsupported) return GA_UNSUPPORTED;
+        if (!B(0x7e)) {SB(0x7e,water(a,e)?0xffu:0u);if (e->unsupported) return GA_UNSUPPORTED;}
+        if (B(0x15)&0x80u) SL(0,0xdebce);
+        if (ga_cull_rect(a,e,0xeb5ce)) {if (!release(a,e,0xf)) return GA_UNSUPPORTED;return GA_DELETE;}
+        if (e->grid) neo_grid_splat(e->grid,W(0x3c),W(0x40));          /* 00505A */
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    }
+    case 0xdebce: goto hit;
+    case 0xdec14: {
+        ga_attack(a,e,0xeb656);
+        if (e->unsupported) return GA_UNSUPPORTED;
+        ga_palette(a,0x378);SW(0x66,0x1001);SW(0x1e,0x1001);
+        if (!ga_anim_start(a,e,0x2b030c,0x100)) return GA_UNSUPPORTED;
+        SB(0x15,B(0x15)&0xfdu);SL(0,0xdec56);
+    }   /* fall through */
+    case 0xdec56:
+        ga_project(a,e);
+        if ((r=ga_anim_step(a,e,NULL))<0) return GA_UNSUPPORTED;
+        if (r) return GA_DELETE;
+        return e->unsupported?GA_UNSUPPORTED:GA_MORE;
+    default: ga_fail(e,L(0));return GA_UNSUPPORTED;
+    }
+hit:
+    sound(e,0x10f2);
+    {neo_gactor_t *c=ga_spawn_from(a,e,0xdec14,0,0);if (c) ga_sb(c,0x5e,B(0x5e));}
+    if (e->unsupported) return GA_UNSUPPORTED;
+    if (!release(a,e,0xf)) return GA_UNSUPPORTED;
+    return GA_DELETE;
+}
 static ga_result_t pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
     if ((L(0)>=0x1e22cu && L(0)<=0x1e604u)) return beam_tick(a,e);
     for (int guard=0;guard<4;guard++) switch (L(0)) {
@@ -854,15 +930,17 @@ bool neo_pweapon_routine(uint32_t r) {
         r==0xa71f8 || r==0xa716e || r==0xa7226 || r==0xa719c || r==0xa72ce || r==0xa73b4 || r==0xa73da || r==0xa74e4 || r==0xa751c || r==0xa7654 ||
         r==0x1e22c || r==0x1e274 || r==0x1e28e || r==0x1e2fc || r==0x1e398 || r==0x1e3b2 || r==0x1e41c || r==0x1e4d4 || r==0x1e4f2 ||
         r==0x1e582 || r==0x1e58a || r==0x1e596 || r==0x1e604 ||
-        r==0xde4da || r==0xde4fe || r==0xde5b4 || r==0xde5ba || r==0xde6a6 || r==0xde702 || r==0xde7f2 || r==0xde8ee || r==0xde92e || r==0xde96a;
+        r==0xde4da || r==0xde4fe || r==0xde5b4 || r==0xde5ba || r==0xde6a6 || r==0xde702 || r==0xde7f2 || r==0xde8ee || r==0xde92e || r==0xde96a ||
+        r==0xdea20 || r==0xdea44 || r==0xdeb1a || r==0xdebce || r==0xdec14 || r==0xdec56;
 }
 /* Attackers of the player's side (their rows may hit the boss). */
 bool neo_pweapon_attacker(uint32_t r) {
     return r==0x8613a || r==0x8619e || r==0x861e2 || r==0x86260 || r==0x86450 || r==0x64556 || r==0xa72ce || r==0xa7654 ||
-        r==0x1e28e || r==0x1e2fc || r==0x1e3b2 || r==0x1e41c;
+        r==0x1e28e || r==0x1e2fc || r==0x1e3b2 || r==0x1e41c || r==0xdeb1a || r==0xdec14;
 }
 ga_result_t neo_pweapon_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (r>=0xde4dau && r<=0xde96au) return weapon_e_tick(a,e);
+    if (r>=0xdea20u && r<=0xdec56u) return weapon_f_tick(a,e);
     return pweapon_tick(a,e);
 }

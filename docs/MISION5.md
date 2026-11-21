@@ -836,7 +836,7 @@ ROM: `0A1C8C`, `0A1DCE`.
   281400..282500 (ataque 3; 35 nodos, 5442), **`m5boss3`** 284500..284886 (segundo umbral, escombros; 27 nodos, 2576),
   **`m5boss5`** 287250..287800 (ataque 0 con el rayo; 27 nodos, 2654) y **`m5boss4`** 291300..292100 (la muerte;
   49 nodos, 7254): todas iguales a MAME (`--m5boss`: RAM 10C300/10C304 y el temblor 0C8022; `--split-children`).
-- **Pendiente** (motor compartido, sin cerrar): en 284887 el barrido de suelo `01456A` nativo del escombro `103E04`, que
+- **Pendiente** (motor compartido; cerrado en la décima tanda, B72): en 284887 el barrido de suelo `01456A` nativo del escombro `103E04`, que
   se desliza sobre el objeto dinámico `10C22E` (el mapa de celdas del jefe), toma el terreno estático y el original sigue
   en el objeto; por eso `m5boss3` acaba en 284886. El mapa `0A2E40` tenía que ir entero en `region_rom.json`
   (cabecera + 34 × 5 celdas, hasta `0A2EF0`): con él cortado el fallo salía en 284817.
@@ -868,6 +868,56 @@ personajes, M4, M5 ×3, **`m5boss`** (nuevo: el mando llega a la cámara 2560, v
 primera vez (con `make check` a la vez el menú perdió una pulsación: entró en la etapa 2) y PASS al repetirla. Caché:
 209 ranuras (suelo 208). Línea base: `m5boss` añadida.
 
+### Fase 2, décima tanda (13-XI, agente B): cierre de la M5
+
+- **Escombro del jefe en 284887 (B72, motor compartido)**: el mapa de celdas `0A2E40` tiene cabecera de 10 bytes y
+  34 × 5 celdas (`012938` / `01431A` indexan `+2` × `+3`): acaba en `0A2EF4`, no en `0A2EF0`. Con el blob cortado, la
+  sonda de suelo del escombro `103E04` leía la celda (fila 4, columna 33 = `0A`) fuera del blob, no hallaba suelo en el
+  objeto `10C22E` y se quedaba con el terreno. Causa corregida: `region_rom.json` hasta `0A2EF4` (de la ROM) y
+  `ga_rom_dyn_map` (`neo_region.c`): el mapa de un objeto dinámico (`0140C0`) se toma solo si cabecera y celdas salen
+  enteras de una misma fuente, si no parada explícita (`neo_world.c`; las plataformas del jefe de la M1 piden también
+  el mapa entero a `neo_boss_rom`; el banco de familias falla si un mapa de la RAM no está entero). **`m5boss3`**
+  ampliada a 284500..287250 (hasta el principio de `m5boss5`): **115 nodos, 17 302 actualizaciones iguales a MAME**.
+  Captura **`B3`** (`captures-m5/fam/runB3.sh`): la réplica de `B` con la familia seguida desde 277080 y la traza
+  escrita solo desde 284499 (`MSX_FULL_FAMILY_LOG_FROM`, nuevo, de solo lectura); sus primeras 2576 actualizaciones son
+  byte a byte las del fixture anterior. Traza en bruto borrada.
+- **Exportación de la M5: 796 px → 0**. No era ningún descriptor ni paleta: eran tres defectos del validador
+  (`export_rest_sprites.py`, `validate`) y un caso que contaba como diferencia. (1) Validar `B@a0c00-a22fc` y
+  `B@99090-99300` por separado dejaba los fuegos `0A21A8` (paleta en el mismo hueco `0x77`) encima de los soldados
+  quemados como píxeles «distintos»: ahora `dir@lo-hi,lo-hi` valida varios rangos como una familia. (2) La `x` de la
+  entrada es con signo (el recorrido de la lista recorta cada columna con −8 ≤ x ≤ 311 sobre la suma de 16 bits): el
+  fuego en `FFFE` se dibuja desde x = −2. (3) El recorte es por columna de sprite, no por x de pantalla: dos grupos del
+  descriptor `0x11A5FC` (x 323) comparten x. (4) Un píxel cuyo sprite de VRAM más alto no es de la familia (tile y x de
+  columna de ninguna entrada; `reconstruct` de `export_marco.py` da ahora el dueño de cada píxel) cuenta como tapado
+  (10 px en 291990). Resultado con `B@a0c00-a22fc,99090-99300`: **104 fotos, 1 426 494 px iguales, 0 distintos**
+  (25 tapados). La exportación no cambia (mismos descriptores y paletas): **no hay que copiarla a `ws-logo`**. Para
+  repetirlo hace falta la traza entera de `B` sin las líneas R (`captures-m5/fam/runB4.sh`, `MSX_FULL_FAMILY_LOG_PIPE`,
+  300 MB, a `B/boss-trace.txt`); se borró tras validar.
+- **Paleta 20C: no capturable** (registrado, sin rellenar). `099268` solo llega tras un golpe registrado en `099218`
+  (el soldado andando, desde ~291590 en `B`), y desde 291534 el jugador está bloqueado por la muerte del jefe: con
+  `MSX_FULL_PAD` (nuevo, solo entrada) el jugador anda a la izquierda desde 291487 y se para en 291534 (x 2653) sin
+  disparar más; nada más golpea a esos soldados. `0A2134` es la única referencia a `099090` en la ROM. En el TAS
+  (`tas_updates.lua` `MSX_TAS_DUMP_RES`, nuevo: volcado cuando una paleta pedida está en la tabla de huecos `1068EA`)
+  la 20C no aparece en las secciones 6..8 ni hasta la actualización 18680 (la 87C de los quemados sí, 39489..).
+- **88B / 88C y la muerte agachada `040BE6`: no capturables** (registrado). El TAS de las secciones 6..8 (desde
+  `sec06_u12887` hasta U 18160, `captures-m5/tas68b.sh`) no pone nunca 88B ni 88C en un hueco (la 886 y la 878 sí, como
+  prueba de la sonda) y no pasa nunca por `040BE6` / `040BF2` (sondas del depurador; `04097A` sí, 5 veces en la
+  sección 8). Con `run4` (octava tanda) tampoco: no hay estado de MAME de esta ROM donde aparezcan.
+
+**Reanudación (13-XI)**: fusionado ccr `4de14ab`. `make check` encontró otro mapa cortado con la comprobación nueva:
+`E006A` (la plataforma del jefe de la M4, `0140C4`, 8 × 1 celdas) acababa en `E0076`, dentro del blob del rehén; sus
+celdas estaban en otro blob (`E0076..`, grupo m4). `ga_rom_dyn_map` busca ahora un blob que tenga los `10 + w × h`
+bytes enteros (los blobs se solapan) y el del rehén llega a `E007C` (de la ROM). `filesystem/mission4` enlaza (solo
+lectura) a los datos privados de `ws-m4` (el paquete de la M4 de A, con los parches nuevos, sale igual byte a byte).
+
+**Puertas tras fusionar ccr `4de14ab`**: `make check` en verde (`-j2`), `make` y `mslugx-m1end.z64` sin líneas
+compartidas en `check_icache.py`, caché 209 ranuras. Matriz (`regression_ares.py` con `--m1end`): logo, pausa,
+personajes, M4, M5 ×3, `m5boss` (963 s), M6 ×3 y M1→M2 PASS; `veh` FAIL la primera vez y PASS al repetirla (1709 s).
+**`m4boss` FAIL dos veces** por la comprobación B69: el mando lleva al jugador fuera del SV-001 (`0C30F0`, cámara 4360)
+y los golpes al vehículo llegan con `mount=0`; el jefe muere y empieza la M5 en las dos. Sin subir a ccr hasta aclararlo
+con el agente A (la plataforma del jefe de la M4 lee ahora sus celdas reales de `E006A`; la familia `m4boss` sigue igual
+a MAME).
+
 ## Pendiente (fase 2, por orden)
 
 1. **Actores nuevos**: tras la sexta tanda quedan **40 constructores sin portar** (los 54 de la quinta menos los 14 de
@@ -881,8 +931,8 @@ primera vez (con `make check` a la vez el menú perdió una pulsación: entró e
    mando automático muere ante el helicóptero de la cámara 80).
 2. ~~**Estampadores** y verjas `1F`~~: hechos en la fase 2 (arriba): entrada de clase 3, `0BC296`/`0BC3A6`,
    `0C8A3C` nativo. Quedan los dos sellos `0C88B0` del metro (sus actores).
-3. ~~Trenes del metro~~ (hecho en la quinta tanda) y ~~el jefe `0A0C00`~~ (novena tanda). Queda el barrido de
-   suelo del escombro sobre el objeto dinámico del jefe (284887, arriba) y la paleta 20C.
+3. ~~Trenes del metro~~ (hecho en la quinta tanda) y ~~el jefe `0A0C00`~~ (novena tanda); el escombro en 284887
+   (B72) cerrado en la décima. La paleta 20C, 88B / 88C y `040BE6` quedan registradas como no capturables.
 4. **Vehículos**: SV-001 `092A32` en la calle (registro `2DCE10`, cámara 280)
    y Slugnoid `09692C` ×3 en la alcantarilla (`2DECEA`…, cámara 557): los dos
    ya son nativos; falta llegar a sus registros (el guion se para antes).

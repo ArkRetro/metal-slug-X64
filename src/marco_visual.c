@@ -1,4 +1,5 @@
 #include "marco_visual.h"
+#include "marco_death.h"
 #include <string.h>
 /* Catalogs generated before the 24-bit command asset (src/neo_animation.h)
  * write SET/WRITE_LONG constants as 0xFFFExxxx: the field keeps the same
@@ -87,10 +88,20 @@ static void start(marco_visual_t *v,marco_part_t part,int role) {
     if (!marco_animation_start(&v->anim,part,script,(uint16_t)program,speed)) v->failures++;
     v->starts++;
 }
+/* Form 2's death (0C2A36): the body of table 0C0518, role B2_HIT_C2A06
+ * (marco-f2: 25CF70 at 4423), in the chosen character's column. */
+static void publish_fat_death(void) {
+    unsigned program=MARCO_CAMPAIGN_B2_HIT_C2A06;
+    if (!character_script) {marco_death_use_fat_program(&marco_script,(uint16_t)program);return;}
+    for (unsigned i=0;i<character_role_count;i++) if (character_roles[i][0]==program) {marco_death_use_fat_program(character_script,character_roles[i][1]);return;}
+    marco_death_use_fat_program(NULL,0);
+}
 void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (*roles)[2],unsigned count) {
     character_script=script;character_roles=script?roles:NULL;character_role_count=script?count:0;
+    publish_fat_death();
 }
 void marco_visual_reset(marco_visual_t *v) {
+    publish_fat_death();
     memset(v,0,sizeof(*v));marco_animation_reset(&v->anim);
     v->body_role=v->weapon_role=-1;v->grounded=true;
 }

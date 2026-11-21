@@ -1,5 +1,6 @@
 #include "neo_region.h"
 #include "neo_soldier_ai.h"
+#include "msx_diag.h"
 /* The player's straight bullets (ROM 01B6DC..01BD00) and grenades
  * (01BF10..01C306), manual translation;
  * ROM labels are provenance only. Constructors: 01B6DC / 01B716 (H, ids 5
@@ -535,4 +536,21 @@ static bool molotov_routine(uint32_t r) {
 bool neo_bullet_routine(uint32_t r) {
     return r==0x1b6a0 || r==0x1be24 || r==0x1bdd2 || r==0x1b62c || r==0x1b668 || r==0x1b6dc || r==0x1b716 || r==0x1b750 || r==0x1b782 || r==0x1b882 || r==0x1bbe2 || r==0x1bc2e || r==0x1bc82 || grenade_routine(r) || molotov_routine(r) || bomb_routine(r) || dust_routine(r);
 }
-ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {return molotov_routine(ga_l(a,0))?molotov_tick(a,e):bomb_routine(ga_l(a,0))?bomb_tick(a,e):dust_routine(ga_l(a,0))?dust_tick(a,e):grenade_routine(ga_l(a,0))?grenade_tick(a,e):bullet_tick(a,e);}
+neo_bullet_up_diag_t neo_bullet_up_diag;
+ga_result_t neo_bullet_tick(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t r=ga_l(a,0);
+    if (molotov_routine(r)) return molotov_tick(a,e);
+    if (bomb_routine(r)) return bomb_tick(a,e);
+    if (dust_routine(r)) return dust_tick(a,e);
+    if (grenade_routine(r)) return grenade_tick(a,e);
+#if MSX_DIAG
+    /* Read only (the hooks never feed the simulation). */
+    const bool up=(r==0x1b782u || r==0x1b882u) && ga_b(a,0x6e)==0x40u;
+    ga_result_t res=bullet_tick(a,e);
+    if (up && r==0x1b782u) neo_bullet_up_diag.born++;
+    if (up && res==GA_DELETE) {if ((uint16_t)(ga_w(a,0x40)-0x100u)>=0x100u) neo_bullet_up_diag.top++; else neo_bullet_up_diag.other++;}
+    return res;
+#else
+    return bullet_tick(a,e);
+#endif
+}

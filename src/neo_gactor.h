@@ -274,7 +274,7 @@ struct neo_genv {
     /* Object list read this update (RAM 10C3A2/10C3F4 by 10000F bit 0:
      * the one written during the previous update), for 040200/0402E6. */
     const neo_marker_t *markers;unsigned marker_count;
-    uint8_t flag448;                 /* RAM 10E448 */
+    uint8_t flag448;                 /* RAM 10C448 (a5 + 4448) as the truck reads it */
     bool blood;                      /* RAM 10FD8F nonzero (soft-DIP BLOOD ON): 01B2BE clears the carry */
     const uint8_t *groups;           /* RAM 10C326..10C32E live counts (019DCA) */
     uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */
@@ -283,6 +283,8 @@ struct neo_genv {
     /* 009CCE on the palette slot +14 of `owner`: +C = target, +E = weight
      * (the slot's colours: tools/palette_mix.py, neo_palmix.h). */
     void (*palette_mix)(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight);
+    /* 009CCE on a fixed hardware palette slot (no owner): +C = target, +E = weight. */
+    void (*slot_mix)(void *ctx,uint8_t slot,uint16_t target,uint8_t weight);
     /* Mission flags outside the actor list (domed building 054904). */
     struct neo_ga_flags *flags;
     /* Layer object of the static collision terrain: 10C72E in the village,
@@ -337,6 +339,7 @@ struct neo_genv {
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
 /* ROM rom data imported by tools/extract_region_rom.py. */
 const uint8_t *ga_rom(uint32_t address);
+const uint8_t *ga_rom_dyn_map(uint32_t address);   /* the whole cell map of 0140C0 or NULL (neo_region.c) */
 /* A lookup tried after the program's ROM blobs (the stage pack's ROM data). */
 void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address));
 /* Dispatch one update of a generic actor by its routine label. */

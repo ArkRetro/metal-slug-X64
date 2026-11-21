@@ -37,6 +37,9 @@ static int32_t entry_x,entry_y,entry_vx,entry_vy;static bool entry_descent;
 static bool descent_fresh;
 static unsigned animation_started;
 static scene_clock_t simulation_clock;
+#ifdef MSX_TESTPAD
+unsigned msx_testpad_steps(unsigned steps,unsigned kind);
+#endif
 enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
 static bool pending_a,pending_b;
 /* The original's pause 015520 (neo_pause.h, docs/PAUSA.md). The N64 START
@@ -397,18 +400,47 @@ static void draw_m3_overlay(bool request_only) {
  * visible rows are not one run is not drawn and counted (none seen). */
 #ifdef MSX_HAS_M3MID
 enum { M4_BOSS_MAPS=0x02225Eu,M4_BOSS_MAP_BYTES=22,M4_BOSS_MAP_COUNT=15,M4_BOSS_PAGE=0x4000,M4_BOSS_LAYER=2 };
+/* The Mission 6 last enemy's second form (neo_m6boss.c k41e02): the map 04522E (0x1A x 8 blocks) on the same layer object,
+ * the pack's layer-2 cells at x 0x4000 of stage 3 (tools/build_mission6.sh --actor-maps 04522E:1:2:0x4000). */
+enum { M6_BOSS_MAP=0x04522Eu };
 static unsigned m4_layer_unsupported;
+/* The second form's layer: its palette number 56 is the hardware slot 0x38, whose colours 0421E4 (neo_m6boss.c) sets with
+ * 009CCE every 12 frames, 10C / 10D / 10E in turn (DA while the body flashes), always with the weight 0x20: the slot shows
+ * the target itself (005978; tools/palette_mix.py). run4's 42 palette snapshots 346200..358500 hold in slot 56 exactly the
+ * ROM palettes 10C, 10D, 10E or DA, nothing else. The pack's cells of 04522E carry the colours of 348300 (10C); the ring
+ * draws them with the palette of the slot's target. A weight 1..30 (a mix: 0421E4 never asks it) or a target the pack
+ * does not carry is not drawn: counted (`m6_slot38_missing`). */
+static unsigned m6_slot38_missing;static int m6_cell_pal=-2;
+static void m6_layer_palette(bool on) {
+    const neo_world_t *w=&game.world;int from=-1,to=-1;
+    if (on && m6_cell_pal==-2) {
+        unsigned n;const scene_map_cell_t *c=scene_map_cells(&n);m6_cell_pal=-1;
+        for (unsigned i=0;i<n;i++) if (c[i].layer==M4_BOSS_LAYER && c[i].x>=M4_BOSS_PAGE) {m6_cell_pal=scene_map_image(scene_cell_phase(&c[i],0))->palette;break;}
+        int p=scene_native_palette(0x10c);
+        debugf("MSX M6 layer palette: cells %d, 10C %d, colours equal %d\n",m6_cell_pal,p,
+            m6_cell_pal>=0 && p>=0 && !memcmp(scene_palette((unsigned)m6_cell_pal)+1,scene_palette((unsigned)p)+1,30));
+    }
+    if (!on) m6_cell_pal=-2;
+    else if (w->slot38_target) {
+        if (w->slot38_weight>=0x1fu) to=scene_native_palette(w->slot38_target);
+        if (to>=0 && m6_cell_pal>=0) from=m6_cell_pal; else m6_slot38_missing++;
+    }
+    scene_render_set_ring_palette(M4_BOSS_LAYER,from,to);
+}
 static void m4_boss_layer(void) {
     const neo_world_t *w=&game.world;
-    int16_t map_x[32],rise[32],y0[32],y1[32];bool any=false;
+    int16_t map_x[32],rise[32],y0[32],y1[32];bool any=false,m6=false;
     for (unsigned n=0;n<32;n++) {map_x[n]=INT16_MIN;rise[n]=y0[n]=y1[n]=0;}
     if (w->m4layer_used && w->m4layer_map) {
         const uint8_t *b=w->m4layer;
         uint16_t w84=(uint16_t)(b[0x84]<<8|b[0x85]),w86=(uint16_t)(b[0x86]<<8|b[0x86+1]);
-        for (unsigned n=0;n<20;n++) {
+        for (unsigned n=0;n<32;n++) {
             uint32_t m=w->m4col_map[n];
             if (!m) continue;
-            if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
+            unsigned page;
+            if (m==M6_BOSS_MAP) {page=0;m6=true;}
+            else if (m<M4_BOSS_MAPS || (m-M4_BOSS_MAPS)%M4_BOSS_MAP_BYTES || (m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES>=M4_BOSS_MAP_COUNT) {m4_layer_unsupported++;continue;}
+            else page=(m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES;
             int16_t x=(int16_t)(w84+16u*n);
             if (x<-8 || x>=312) continue;
             uint16_t scb3=(uint16_t)((uint16_t)(w86<<7)+(uint16_t)(b[0x42+2*n]<<8|b[0x43+2*n]));
@@ -419,12 +451,17 @@ static void m4_boss_layer(void) {
             for (unsigned sr=0;sr<13;sr++) if (((top+sr)&31u)<h) {if (last>=0 && last!=(int)sr-1) split=true;if (first<0) first=(int)sr;last=(int)sr;}
             if (split) {m4_layer_unsupported++;continue;}
             if (first<0) continue;
-            map_x[n]=(int16_t)(M4_BOSS_PAGE+512*(int)((m-M4_BOSS_MAPS)/M4_BOSS_MAP_BYTES)+16*(int)n);
+            map_x[n]=(int16_t)(M4_BOSS_PAGE+512*(int)page+16*(int)n);
             rise[n]=(int16_t)r;y0[n]=(int16_t)(8+r+16*first);y1[n]=(int16_t)(8+r+16*(last+1));any=true;
         }
         /* The ring's x is the column 0 one (+84). */
         scene_render_set_layer_columns(M4_BOSS_LAYER,any,(int16_t)w84,map_x,rise,y0,y1);
     } else scene_render_set_layer_columns(M4_BOSS_LAYER,false,0,map_x,rise,y0,y1);
+    /* After the last enemy the world keeps its layer state into the ending (01893E) while the Mission 6 pack is
+     * replaced by the credits' (pack 13): the slot 0x38 targets 10C..10E are the Mission 6 pack's, so the swap (and
+     * its missing count) only applies with that pack loaded. */
+    const scene_stage_t *st=scene_stage();
+    m6_layer_palette(m6 && st && st->mission==6u);
 }
 #endif
 static void draw_marco(unsigned bank_id,unsigned frame);
@@ -452,7 +489,7 @@ static void draw_window_a(const uint8_t *order,unsigned bank_id,unsigned frame) 
 static void draw_marco(unsigned bank_id,unsigned frame) {
     if (msx_game_ending(&game)) return;   /* the results, the credits and the title have no player */
     /* Riding (0C309C): the vehicle's rider graphic (034F1A) draws the player. */
-    if (game.life.phase!=MARCO_GONE && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
+    if ((game.life.phase!=MARCO_GONE || game.life.final_draw) && game.mount!=MSX_MOUNT_RIDE && !(game.invulnerable && game.life.phase==MARCO_ALIVE && ((game.ticks/3)&1)))
     {
         static neo_anim_draw_t parts[2*MARCO_VISUAL_DRAWS];static unsigned shown,missing;
         neo_anim_draw_t next[2*MARCO_VISUAL_DRAWS];unsigned n=marco_native?marco_visual_draws(&marco,next,2*MARCO_VISUAL_DRAWS):0;
@@ -470,15 +507,23 @@ static void draw_marco(unsigned bank_id,unsigned frame) {
         n=shown;
         if (n) {
             /* Neo Geo raster rows 16..239 are the screen rows 8..231. */
-            /* Dying in a kind 7/0x10 death: the burnt colours (marco-d2). */
-            unsigned palette=game.life.phase!=MARCO_ALIVE && game.life.burnt?marco_renderer_burnt_palette():0;
+            /* Dying: each pose's palette slot (POSE flags >> 4: attribute
+             * 0x63/0x64/0x65 = +19/+1A/+1B, 0 = +14 = +19) holds what the
+             * death put there with 009EA8 (MAME k8d1: 0BEDE0 / 0x51 in
+             * banks 72/73; mzd1: 0BEE08 / 0BEDE8; marco-d2: 0BEDE8 twice;
+             * w6d2: 0BEDF0). */
+            const uint32_t slots[3]={game.life.palette_table,game.life.palette_slot1a,game.life.palette_slot1b};
             /* The mummy (form 3): slots 63/64 hold its two palettes
              * (marco-mz2 palette dumps). The transformation's body
              * (1887E0/1887CC) keeps the player's own palettes: marco-mz2's
              * audit uses them in its first 37 frames (2101..2137, the
              * transformation), the mummy's from the end of it on. */
             bool mummy=game.life.phase==MARCO_ALIVE && game.world.weapon_player.form93==3 && !game.mummy_transform;
-            for (unsigned i=0;i<n;i++) marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette((parts[i].attributes>>8)==0x64):palette);
+            for (unsigned i=0;i<n;i++) {
+                unsigned bank=parts[i].attributes>>8,slot=bank==0x64u?1u:bank==0x65u?2u:0u;
+                unsigned palette=game.life.phase!=MARCO_ALIVE?marco_renderer_death_palette(slots[slot]):0;
+                marco_renderer_draw_native(&parts[i],0,-8,mummy?marco_renderer_mummy_palette(bank==0x64u):palette);
+            }
             scene_render_forget_texture();
         } else draw_frame(bank_id,frame,game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT,game.facing<0,false);
     }
@@ -651,6 +696,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (was_paused) {
         /* A paused turn waits two vblanks (003AE0); the LSPC goes on counting. */
         pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+#ifdef MSX_TESTPAD
+        pause_steps=msx_testpad_steps(pause_steps,2);   /* B78: recorded / replayed (src/msx_testpad.c) */
+#endif
         for (unsigned k=0;k<pause_steps;k++) neo_lspc_frame(&game.lspc);
         pause_vblanks+=pause_steps;run=false;
     }
@@ -689,6 +737,9 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
     }
     unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND):0;
+#ifdef MSX_TESTPAD
+    if (pf.step) steps=msx_testpad_steps(steps,1);   /* B78: the host-paced step count, recorded / replayed (src/msx_testpad.c) */
+#endif
     /* A SELECT press inside an original update: the update ends first. */
     if (pause_select && steps>(game.ticks&1u)) steps=game.ticks&1u?1u:steps;
     /* At most two steps per frame: the world updates on every second step
@@ -862,7 +913,23 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         m4_map=game.world.m4layer_map;m4_patches=game.world.m4patch_count;
         debugf("MSX boss layer 10D7B6 map=%06lX patches=%u\n",(unsigned long)m4_map,m4_patches);
      }}
+    /* The boss body 02267E for the test pad (tools/test_mission4_ares.py faces it): its projected x / y (+3C / +40), health
+     * +4E, lost parts +8F and phase +8A, with the player's screen x; every 30 updates while it lives. */
+    {static unsigned m4_body_at;
+     if (game.world.m4layer_used && game.ticks-m4_body_at>=30u) {
+        for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+            const neo_gactor_t *g=&game.world.gactors[i];uint32_t r=g->active?ga_l(g,0):0;
+            if (r<0x22872u || r>=0x22cb6u) continue;
+            m4_body_at=game.ticks;
+            debugf("MSX boss body %06lX x=%d y=%d health=%u lost=%02X phase=%u player=%d,%d\n",(unsigned long)r,(int16_t)ga_w(g,0x3c),(int16_t)ga_w(g,0x40),
+                ga_w(g,0x4e),ga_b(g,0x8f),ga_b(g,0x8a),game.x/MSX_UNIT-game.camera,game.y/MSX_UNIT);
+            break;
+        }
+     }}
     if (m3_overlay_missing) {debugf("MSX mid-boss layer 10E8C6: %u blocks without a frame or palette\n",m3_overlay_missing);m3_overlay_missing=0;}
+    {static uint16_t m6_pal_was;uint16_t now=game.world.slot38_target;
+     if (now!=m6_pal_was) {debugf("MSX M6 layer slot 38 target=%X weight=%u\n",now,game.world.slot38_weight);m6_pal_was=now;}
+     if (m6_slot38_missing) {debugf("MSX M6 layer slot 38: native draw missing (%u frames without the palette of the target)\n",m6_slot38_missing);m6_slot38_missing=0;}}
     {static uint32_t m3_map;static unsigned m3_patches;
      if (game.world.m3layer_map!=m3_map || game.world.m3patch_count!=m3_patches) {
         m3_map=game.world.m3layer_map;m3_patches=game.world.m3patch_count;
@@ -877,15 +944,31 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     if (game.world.camera_native && neo_camera_progress(&game.world.camera)!=old_progress && !(neo_camera_progress(&game.world.camera)%64))
         debugf("MSX camera progress=%u x=%d height=%d\n",neo_camera_progress(&game.world.camera),game.camera,game.camera_height);
     if (game.region_end && !old_region_end) debugf("MSX region end passed camera=%d\n",game.camera);
+#if MSX_DIAG
+    {   /* B53: the pistol's up shots (gameplay.c up_shots) and their native
+         * bullets 01B782 (neo_bullet.c): built, out through the screen's
+         * vertical cull, other ends; with the camera's height. */
+        static unsigned seen;
+        if (game.up_shots!=seen && (game.up_shots<8u || !(game.up_shots%16u))) {
+            seen=game.up_shots;
+            debugf("MSX up shots=%u born=%u culled=%u other=%u stage=%u camera x=%d y=%d\n",game.up_shots,neo_bullet_up_diag.born,neo_bullet_up_diag.top,
+                neo_bullet_up_diag.other,(unsigned)game.flow.stage,game.camera,game.camera_height);
+        }
+    }
+#endif
+    if (!game.in_stage) {   /* Mission 1 (no stage line): the update count, the clock of the ares tests' pads (tools/ares_clock.py) */
+        static unsigned last_clock;
+        if (game.ticks-last_clock>=120) {last_clock=game.ticks;debugf("MSX clock ticks=%u\n",(unsigned)game.ticks);}
+    }
     if (game.in_stage) {   /* mission pack stage: camera, player and coverage */
         static unsigned last;static int seen_camera=-1,seen_height=-99999;
         if (game.ticks-last>=120 || (game.camera/64!=seen_camera/64) || (game.camera_height/32!=seen_height/32)) {
             last=game.ticks;seen_camera=game.camera;seen_height=game.camera_height;
-            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u ground=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u\n",
+            debugf("MSX stage %u camera x=%d y=%d progress=%u mode=%u player x=%d y=%d grounded=%u unknown cells read=%u camera events unsupported=%u pit deaths=%u rescues=%u walls=%u pushes=%u kernel landings=%u ground=%u train on=%u mode=%u x=%ld own=%u groups=%u,%u,%u,%u ticks=%u\n",
                 (unsigned)game.flow.stage,game.camera,game.camera_height,neo_camera_progress(&game.world.camera),game.world.camera.mode,
                 game.x/MSX_UNIT,game.y/MSX_UNIT,game.grounded,neo_collision_unknown_reads(),game.world.camera.unsupported,game.pit_deaths,game.pit_rescues,game.wall_stops,game.solid_pushes,game.kernel_landings,game.kernel_ground_steps,
                 game.world.train.on,game.world.train.mode,(long)(game.world.train.x>>16),game.world.camera.layer_flags[1]&1u,
-                game.world.script.groups[0],game.world.script.groups[1],game.world.script.groups[2],game.world.script.groups[3]);
+                game.world.script.groups[0],game.world.script.groups[1],game.world.script.groups[2],game.world.script.groups[3],(unsigned)game.ticks);
 #if MSX_DIAG
             /* B48: what holds the player up (ride object, air ticks, vy) and
              * the dynamic collision objects (slot: owner, position, map). */

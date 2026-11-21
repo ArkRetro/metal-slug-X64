@@ -346,7 +346,7 @@ MSX_REST_FAMILY_ROOTS=a8c46 MSX_REST_BOSS_FROM=10550 MSX_REST_LAST=11200 MSX_RES
   tools/run_capture_rest.sh /ruta/robe1
 python3 tools/extract_rest_family.py /ruta/robe1/boss-trace.txt --root a8c46 --output data/robe_fixture.json.gz
 python3 tools/extract_soldier_ai_tables.py /ruta/captures-soldiers/entry-walk3 --output data/soldier_ai_tables.json
-python3 tools/extract_soldier_programs.py /ruta/captures-soldiers/walk3 --output data/soldier_programs.json
+python3 tools/extract_soldier_programs.py /home/user/captures-audit/j/k8d1 --output data/soldier_programs.json   # banco P2 sha256 7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc (walk3, borrada el 19-XI, tenía el mismo)
 python3 tools/extract_region_rom.py /ruta/captures-soldiers/walk3 --output data/region_rom.json
 cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..   # solo el espadachín; la exportación completa, abajo
 make check-core && make check && make -j4 && make mslugx-reference.z64

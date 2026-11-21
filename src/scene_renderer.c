@@ -377,7 +377,12 @@ void scene_render_begin(surface_t *surface) {
     rdpq_mode_filter(FILTER_POINT);rdpq_mode_alphacompare(1);
     mode_tlut=-1;mode_filter=FILTER_POINT;
 }
+/* A column ring's palette swap (scene_render_set_ring_palette): while that
+ * ring is drawn, palette `from` shows palette `to`. */
+static int ring_pal_layer=-1,ring_pal_from=-1,ring_pal_to;static bool ring_pal_now;
+void scene_render_set_ring_palette(int layer,int from,int to) {ring_pal_layer=layer;ring_pal_from=from;ring_pal_to=to;}
 static unsigned palette_slot(unsigned id) {
+    if (ring_pal_now && (int)id==ring_pal_from) id=(unsigned)ring_pal_to;
     for (unsigned i=0;i<16;i++) if (pal_ids[i]==(int)id) {pal_lru[i]=++clock_pal;return i;}
     unsigned slot=0;
     for (unsigned i=0;i<16;i++) {
@@ -792,6 +797,7 @@ static void prerender_attach(const scene_stage_t *st) {(void)st;}
 static void draw_layer_ring(unsigned layer,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     const layer_ring_t *ring=&layer_ring[layer];
     int offs[5];memcpy(offs,offsets,sizeof(offs));
+    ring_pal_now=ring->cols && (int)layer==ring_pal_layer && ring_pal_from>=0;
     uint32_t t0=TICKS_READ();unsigned d0=draws,u0=uploads;uint32_t b0=upload_ticks+rect_ticks;unsigned c0=run_touch;
 #if MSX_BG_PRERENDER
     if (prerender_on && (scene_prerender_layers()>>layer&1u) && !ring->cols) {
@@ -854,6 +860,7 @@ static void draw_layer_ring(unsigned layer,const int *offsets,const int *rises,c
     (void)visible;
     layer_blit[layer]+=upload_ticks+rect_ticks-b0;layer_touch[layer]+=run_touch-c0;
     layer_ticks[layer]+=TICKS_READ()-t0;layer_draws[layer]+=draws-d0;layer_uploads[layer]+=uploads-u0;
+    ring_pal_now=false;
 }
 static void draw_layers(unsigned mask,const int *offsets,const int *rises,const bool *visible,unsigned video_tick) {
     unsigned count;const scene_map_cell_t *cells=scene_map_cells(&count);

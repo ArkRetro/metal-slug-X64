@@ -12,7 +12,7 @@ filesystem/boss-native.json) and docs/rest-sprites-validation.json."""
 import argparse,collections,hashlib,json,struct
 from pathlib import Path
 from export_marco import ROOT,reconstruct
-from export_soldier_sprites import program,descriptor,resources
+from export_soldier_sprites import program,descriptor,resources,decode
 from mission_tiles import rgba16
 from extract_boss_fight import parse
 ROOTS=(0x2a7372,0x2a73b4,0x2a7434,0x2a74e0,0x2a759c,
@@ -229,6 +229,8 @@ ROOTS+=(0x2a6b8a,0x2a6c08,0x2a6c86,0x2a6d04)
 ROOTS+=(0x22e064,0x22e0f2,0x22df54,0x22e1f0)
 # The Mission 3 weapon E 0DE4DA (neo_pweapon.c).
 ROOTS+=(0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244)
+# The Mission 5 weapon F 0DEA20 / 0DEA44 and its burst 0DEC14 (neo_pweapon.c, B16).
+ROOTS+=(0x2b028a,0x2b02be,0x2b02a4,0x2b02e2,0x2b030c)
 # The Mission 3 vehicle 0AC866 (neo_m3veh.c) and the SV-001 093C9A's jump 299228.
 ROOTS+=(0x0ab09e,0x0ab1aa,0x0ab29e,0x0ab0ac,0x0ab250,0x0aafa2,0x0aafb2,0x0ab028,0x0ab202,0x0ab458,0x0ab48c,0x0ab654,0x0ab576,0x0ab528,0x0ab44c,0x0ab4c0,0x0ab7d6,0x0ab80a,0x0ab9d2,0x0ab8f4,0x0ab8a6,0x0ab7ca,0x0ab83e,0x0abb54,0x0abb88,0x0abd50,0x0abc72,0x0abc24,0x0abb48,0x0abbbc,0x0abed2,0x0abf06,0x0ac0ce,0x0abff0,0x0abfa2,0x0abec6,0x0abf3a,0x0ac214,0x0ac5ca,0x0ad53a,0x0ac61c,0x0ac66e,0x0ad738,0x0ac398,0x0adc8a,0x0ac23e,0x0ac288,0x0ac2d2,0x23ae0a,0x23b0e8,0x022d372,0x022cf2c,0x022ce6c,0x0299228)
 # Burning figures 08732C of the destroyed shop 0B6566 (B51): flight and landing.
@@ -485,6 +487,9 @@ RESOURCES=RESOURCES+(0x107,0x149,0x108,0x11e,0x11f,0x120,0x18c,0x18d,0x18e,0x135
 # Mission 6 stage 1 rafts 0BD822.. (floats 2A953E: 4CB / 4CC / 4CD; pictures 0BDA4E 2A954E: 509), decorations 0BD416..0BD4D4
 # (2A946C 4D4, 2A947C 4D5, 2A948C 50B, 2A949C 4DF, 2A94B4 11D) and 0BDAB8 (2A95A4, no pose) (neo_m6props.c).
 ROOTS=ROOTS+(0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4)
+# The smoke 05A0B4 of the player's death of kind 8 (program 25339C, palette 0x204; MAME k8s1:
+# docs/ANIMACIONES_DANO.md). In the scene export (filesystem/rest-native.json): every mission has it.
+ROOTS=ROOTS+(0x25339c,)
 RESOURCES=RESOURCES+(0x4cb,0x4cc,0x4cd,0x509,0x4d4,0x4d5,0x50b,0x4df,0x11d)
 # Mission 6 stage 1 hanging bridge spans 0BCFA4 / 0BCFC4 / 0BCFE4 / 0BD004 (2A923C / 2A92C8 / 2A9354 / 2A93E0, palette 4E1;
 # neo_m6props.c).
@@ -516,6 +521,13 @@ RESOURCES=RESOURCES+(0x508,)
 ROOTS=ROOTS+(0x2415f8,0x241ba6,0x241ab0,0x241b3a,0x241b4e,0x241bc8,0x241be2,0x241c8a,0x241c76,0x241d32,0x24136e,0x2413b4,0x241430,0x2414be,0x2414c0,0x24153e,0x24235c,0x242386,0x242270,0x241e1e,0x241ef2,0x241fc6,0x24209a,0x24216e,0x242242,0x242c58,0x242c86,0x242d54,0x242d90,0x242dbe,0x242e10,0x242e1c,0x242e4a,0x2432a6,0x2432e8,0x2433ca,0x24348e,0x242e56,0x242efc,0x243004,0x24306e,0x243100,0x24315a,0x243200,0x243656,0x243556,0x243604,0x24855c,0x242404,0x242642,0x242908,0x242a00,0x242a94,0x242b52,0x241a4e,0x241a5a,0x241362,0x22d372)
 ROOTS=ROOTS+(0x243662,0x243728,0x243744,0x243764,0x24378e,0x2438a4,0x24396a,0x2436e0,0x2438c4,0x243a30,0x22d2a6)
 RESOURCES=RESOURCES+(0x102,0x35d,0x364,0x365,0x36c,0xd7,0xd8,0xd9,0x10b,0xdb,0xe7,0x109,0xda,0x176,0x169,0xea,0xeb,0xec,0xed,0xee,0x10a,0xef,0x506,0x113,0xe8,0xe9,0x10c,0x184,0x185,0x186,0x175)
+# The background fight 037404 (planes 23C0DE / 23C212, death 23C340, smoke 23C446, shots 23C184 / 23C4CA / 23C2EE /
+# 23C550: palettes FD / FF, 100, FE) and the last enemy's escape 04677A (the craft 243AD6.. with palette 248, its
+# actors 2440D0.., the troopers 2442E8..; captures-m6/fam SA, SB, SD).
+ROOTS=ROOTS+(0x23c0de,0x23c212,0x23c340,0x23c446,0x23c184,0x23c4ca,0x23c2ee,0x23c550,
+    0x243ad6,0x243b00,0x243b2a,0x243c36,0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,0x24451c,0x2443fe,0x244458,0x244572,0x244630)
+# 144: the debris pieces 01D00C..01D078 of the first form's wreck (neo_effects.c debris_entry), seen in SB and SJ.
+RESOURCES=RESOURCES+(0xfd,0xfe,0xff,0x100,0x101,0x248,0x144)
 DRAWN_7A=(0x29fb62,)
 # The game's ending (--ending: the private export of the credits' pack, filesystem/mission13/rest-native.json;
 # docs/MISION6.md "Los créditos"): the small pictures 0A454C (program 2A4B16, palette 845, 125 from picture 0x3E), the
@@ -538,18 +550,28 @@ def ending_pages(zip_path):
     return [(struct.unpack_from('>H',p1,0xe1446+26*k)[0]+i,struct.unpack_from('>I',p1,0xe1446+26*k+2+4*i)[0]) for k in range(48) for i in range(6)]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('zip',type=Path)
-    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi (family trace; nodes, or routine range, validated)')
+    p.add_argument('captures',nargs='+',help='capture directory[:node,...] or directory@lo-hi[,lo-hi...][@lo-hi...] (family trace; nodes, or routine ranges painted together, validated)')
     p.add_argument('--palette-capture',action='append',type=Path,default=[],help='capture directory read for palettes only (e.g. the BLOOD ON capture of tools/capture_blood.lua)')
     p.add_argument('--keep-palettes',action='store_true',help='the --keep exports\' palettes win over the captures\' (a capture of one actor, e.g. the Mission 4 boss T, adds its palettes without changing the colours the scene pack already has)')
     p.add_argument('--mask-auto',action='store_true',help='compare the frames with auto-animated entries (LSPC attribute bits 2/3), leaving out their area')
     p.add_argument('--report',type=Path,default=ROOT/'docs/rest-sprites-validation.json')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/rest-native.json',help='export (e.g. filesystem/mission2/rest-native.json, the Mission 2 private export)')
     p.add_argument('--keep',type=Path,action='append',default=None,help='previous export (repeatable; default filesystem/rest-native.json): its palettes stay when no given capture has them, and its descriptors when no program root of this tree has them (captures or roots of another branch)')
+    # --roots-from LO-HI: also every program of data/soldier_programs.json whose root lies there (e.g.
+    # 29e100-29f000: Tarma's Slugnoid pilot, table 09649C[1], validated against the TAS capture slugair
+    # without entering the default export: docs/ANIMACIONES_DANO.md 7).
+    p.add_argument('--roots-from',action='append',default=[],metavar='LO-HI')
+    # --only: just the programs of --roots-from (not ROOTS); with --keep, the kept export plus their
+    # descriptors (one actor added to an export without the roots other branches added since).
+    p.add_argument('--only',action='store_true')
+    p.add_argument('--bit2-plain',action='store_true',help='entries with attribute bit 2 are rasterized as plain sprites (the sky-layer actors of the Mission 6 background fight 037404 set it on every entry and their VRAM tiles carry no auto-animation bits: reconstruct() refuses a slot that has them)')
     p.add_argument('--ending',action='store_true',help='the game\'s ending only (ENDING_ROOTS, the pages of ROM 0E1446; palettes from the ROM)')
     a=p.parse_args();globals()["MASK_AUTO"]=a.mask_auto
+    if a.bit2_plain:globals()["AUTO_BITS"]=8
     data=program(a.zip);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
+    spans=[tuple(int(x,16) for x in r.split('-')) for r in a.roots_from]
     roots=ENDING_ROOTS if a.ending else ROOTS;pages=ending_pages(a.zip) if a.ending else []
-    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if q['root'] in roots]
+    progs=[q for q in json.loads((ROOT/'data/soldier_programs.json').read_text())['programs'] if (q['root'] in roots and not a.only) or any(lo<=q['root']<hi for lo,hi in spans)]
     assets=[d for _,d in pages]+list(ENDING_DESCRIPTORS) if a.ending else []
     for prog in progs:
         for c in prog['commands']:
@@ -563,15 +585,46 @@ def main():
             x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6+2*cols*rows
             out+=[x+16*c for c in range(cols)]
         return out
+    def tiles(address):
+        # Per sprite column of the descriptor (as columns()): its C-ROM tile numbers (low word | attribute bits 4..7).
+        at=address-0x100000;groups,attr=data[at:at+2];at+=2;out=[];high=(attr&0xf0)<<12
+        for g in range(groups):
+            x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6
+            for c in range(cols):
+                out.append({struct.unpack_from('>H',data,at+2*(c*rows+r))[0]|high for r in range(rows)})
+            at+=2*cols*rows
+        return out
+    def colmap(address,g):
+        # Per pixel of the descriptor's pens: the index (in columns() order) of the sprite column that drew it, the
+        # last one writing it as in export_soldier_sprites.descriptor.
+        if not g['width']:return b''
+        at=address-0x100000;groups,attr=data[at:at+2];at+=2;high=(attr&0xF0)<<12;out=bytearray(g['width']*g['height']);k=0
+        for group in range(groups):
+            x,y,cols,rows=struct.unpack_from('>hhBB',data,at);at+=6
+            for col in range(cols):
+                for row in range(rows):
+                    low=struct.unpack_from('>H',data,at)[0];at+=2
+                    pens=decode(crom,low|high,attr&3)
+                    for py in range(16):
+                        for px in range(16):
+                            if pens[py*16+px]:out[(-y+row*16+py-g['y'])*g['width']+x+col*16+px-g['x']]=k
+                k+=1
+        return bytes(out)
     descs={}
     for d in assets:
         try:descs[d]=descriptor(data,d,crom)
         except AssertionError:descs[d]=dict(descriptor=hex(d),x=0,y=0,width=0,height=0,pens=b'')
         descs[d]['columns']=columns(d)
+        descs[d]['tiles']=tiles(d)
+        descs[d]['colmap']=None   # colmap(), made when validate paints it
+        descs[d]['colmap_of']=lambda g,d=d:colmap(d,g)
     caps=[]
     for c in a.captures:
         if '@' in c:
-            path,_,r=c.partition('@');lo,hi=(int(x,16) for x in r.split('-'));caps.append((Path(path),(lo,hi)))
+            # directory@lo-hi[,lo-hi...][@lo-hi...]: several routine ranges validated as one family, painted together (a
+            # sprite of one range over another's with the same palette slot is an overlap, not a difference: the Mission 5
+            # boss's fires 0A21A8 on its burnt soldiers 099090, the SV-001 turret's bullets 01B882 over the turret 03B57C).
+            path,*rs=c.split('@');caps.append((Path(path),tuple(tuple(int(x,16) for x in q.split('-')) for r in rs for q in r.split(','))))
         else:
             path,_,nodes=c.partition(':');caps.append((Path(path),[int(n,16) for n in nodes.split(',')] if nodes else [0x104644]))
     palettes={}
@@ -589,6 +642,7 @@ def main():
         pal_out.update({hex(0x8000|n):[0]+[mixer.word(n,k) for k in range(1,16)] for n in raw})
         a.keep=[]
     kept_frames={}
+    kept_empty=[]
     for keep in a.keep if a.keep is not None else [ROOT/'filesystem/rest-native.json']:
         if not keep.exists():continue
         prev=json.loads(keep.read_text())
@@ -596,14 +650,15 @@ def main():
             if a.keep_palettes:pal_out[k]=v
             else:pal_out.setdefault(k,v)
         for f in prev.get('frames',[]):kept_frames.setdefault(f['descriptor'],f)
+        kept_empty+=[e for e in prev.get('empty',[]) if e not in kept_empty]
         pal_out=dict(sorted(pal_out.items(),key=lambda kv:int(kv[0],16)))
     stats=collections.Counter();per=[]
     for capture,nodes in caps:validate(capture,nodes,descs,crom,stats,per)
     frames=[dict(descriptor=d['descriptor'],x=d['x'],y=d['y'],width=d['width'],height=d['height'],columns=d['columns'],pens_hex=d['pens'].hex()) for d in descs.values() if d['width']]
     have={f['descriptor'] for f in frames}
-    frames+=[f for d,f in sorted(kept_frames.items(),key=lambda kv:int(kv[0],16)) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
+    frames+=[f for d,f in (kept_frames.items() if a.only else sorted(kept_frames.items(),key=lambda kv:int(kv[0],16))) if d not in have and d not in {hex(e) for e,g in descs.items() if not g['width']}]
     out=dict(source='Original P-ROM descriptors and C-ROM tiles of the rest-of-mission programs; palettes from MAME 0.264 mslugx euro dumps',
-        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']],
+        p2_sha256=hashlib.sha256(data).hexdigest(),frames=frames,palettes=pal_out,empty=[hex(d) for d,g in descs.items() if not g['width']]+[e for e in kept_empty if int(e,16) not in descs],
         missing_palettes=[] if a.ending else [hex(r) for r in RESOURCES if hex(r) not in pal_out])
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text(json.dumps(out,separators=(',',':'))+'\n')
     report=dict(descriptors=len(frames),palettes=sorted(pal_out),missing_palettes=out['missing_palettes'],stats=stats,frames=per)
@@ -621,13 +676,14 @@ def zoomed_slots(vram):
         for row in range(rows):out.add(vram[slot*64+row*2+1]>>8)
     return out
 MASK_AUTO=False
+AUTO_BITS=12
 def validate(capture,nodes,descs,crom,stats,per):
     # Sprite-list entries written during each update of the nodes; at a dump
     # every node contributes its last (or, second try, its previous) update.
     by=collections.defaultdict(list)
     for u in parse(capture/'boss-trace.txt'):
         if isinstance(nodes,tuple):
-            if not nodes[0]<=u['routine']<=nodes[1]:
+            if not any(lo<=u['routine']<=hi for lo,hi in nodes):
                 # A node of the family that left the routine range (a car turned into the blast 01C71E): its entries
                 # are not rasterized, but the update counts, so that "the previous update" of the second try is
                 # the same update for every node.
@@ -638,12 +694,14 @@ def validate(capture,nodes,descs,crom,stats,per):
             # Deleting update: nothing drawn after it (it counts as an update with no entries, as above).
             if u['node'] in by:by[u['node']].append((u['frame'],[]))
             continue
+        # The entry's x word is signed (the list walker culls each column by -8 <= x <= 311 on the 16-bit sum: an entry
+        # at FFFE draws its columns from x = -2, e.g. the Mission 5 boss's fires 0A21A8 at the left edge).
         dl=[];cur=None
         for k,ad,m,d,pc in u['recs']:
             if k=='W' and pc==0xa078 and ad<0x10f000:
                 if cur is None or len(cur['w'])>=6:cur=dict(w=[]);dl.append(cur)
                 cur['w'].append(d)
-        by[u['node']].append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0],y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
+        by[u['node']].append((u['frame'],[dict(desc=c['w'][4]<<16|c['w'][5],x=c['w'][0]-(c['w'][0]&0x8000)*2,y=c['w'][1],attr=c['w'][3]) for c in dl if len(c['w'])==6]))
     for vf in sorted(capture.glob('vram*.bin'),key=lambda f:int(f.stem[4:])):
         frame=int(vf.stem[4:])
         if not (capture/f'palette{frame}.bin').exists():continue
@@ -654,7 +712,7 @@ def validate(capture,nodes,descs,crom,stats,per):
             # Zoomed sprites are not rasterized; auto-animated entries (attr bits 2/3: the LSPC counter picks the
             # tile, e.g. the GO arrow 05287C) neither.
             dl=[d for d in dl if d['attr']>>8 not in zoomed]
-            return [d for d in dl if not d['attr']&12],[d for d in dl if d['attr']&12]
+            return [d for d in dl if not d['attr']&AUTO_BITS],[d for d in dl if d['attr']&AUTO_BITS]
         def paint(dl,auto):
             native=[0]*(320*256)
             for d in dl:
@@ -666,16 +724,17 @@ def validate(capture,nodes,descs,crom,stats,per):
                 # (measured on capture d1: 71222 equal vs 48551 with 0).
                 mirror=d['attr']&1;flip=d['attr']&2;w,h=g['width'],g['height'];pens=g['pens']
                 left=d['x']+(-(g['x']+w)-1 if mirror else g['x']);top=((512-d['y'])&511)+(1-(g['y']+h) if flip else g['y'])
-                shown=set()
-                for cx in g['columns']:
-                    sx0=d['x']-cx-16-1 if mirror else d['x']+cx
-                    if -8<=sx0<=311:shown.update(range(sx0,sx0+16))
+                # Per sprite column (the list walker culls each by its own x): a pixel shows when the column that drew
+                # it does (two groups of a descriptor can share screen x: the Mission 5 boss's 0x11A5FC at x 323).
+                shown=[-8<=(d['x']-cx-16-1 if mirror else d['x']+cx)<=311 for cx in g['columns']]
+                if g['colmap'] is None:g['colmap']=g['colmap_of'](g)
+                cmap=g['colmap']
                 for yy in range(h):
                     sy=top+yy
                     if not 0<=sy<256:continue
                     for xx in range(w):
-                        pen=pens[(h-1-yy if flip else yy)*w+(w-1-xx if mirror else xx)];sx=left+xx
-                        if pen and 0<=sx<320 and sx in shown:
+                        at=(h-1-yy if flip else yy)*w+(w-1-xx if mirror else xx);pen=pens[at];sx=left+xx
+                        if pen and 0<=sx<320 and shown[cmap[at]]:
                             # Two sprites of the family on one pixel: the
                             # hardware order decides; not compared.
                             if native[sy*320+sx]:native[sy*320+sx]=-1
@@ -688,14 +747,21 @@ def validate(capture,nodes,descs,crom,stats,per):
                 for sy in range(max(top,0),min(top+g['height'],256)):
                     for sx in range(max(left,0),min(left+g['width'],320)):native[sy*320+sx]=-1
             return native
-        def score(native,mame):
+        def score(native,mame,own=None):
+            if own is not None:
+                # A pixel whose top VRAM sprite is not one of the family's (family_records): another routine's sprite
+                # with the same palette slot lies on top of the family's; counted with the covered pixels.
+                foreign=[i for i in range(320*256) if native[i]>0 and native[i]!=mame[i] and mame[i] and (mame[i]>>4)==(native[i]>>4) and owners[i]>=0 and owners[i] not in own]
+                native=list(native)
+                for i in foreign:native[i]=-2
+            else:foreign=[]
             same=sum(1 for i in range(320*256) if native[i]>0 and native[i]==mame[i])
             # A pixel where the dump shows a pen of another palette slot: a sprite outside the family (drawn with a
             # slot some family entry also uses, e.g. the fire 01C9E6 and a shell's blast 01C706) lies on top of
             # the family's; counted apart, not a difference of the descriptor.
             covered=sum(1 for i in range(320*256) if native[i]>0 and mame[i] and (mame[i]>>4)!=(native[i]>>4))
             diff=sum(1 for i in range(320*256) if native[i]>0 and native[i]!=mame[i])-covered
-            return same,diff,sum(1 for i in range(320*256) if native[i]<0),covered
+            return same,diff,sum(1 for i in range(320*256) if native[i]==-1),covered+len(foreign)
         # Per node, the entries of its last update and of the one before (a node deleted since then draws nothing).
         cand={}
         for node,ups in by.items():
@@ -704,10 +770,10 @@ def validate(capture,nodes,descs,crom,stats,per):
         if not cand:continue
         every=[d for c in cand.values() for x in c for d in x[1]]
         stats['zoomed_entries_skipped']+=sum(1 for d in every if d['attr']>>8 in zoomed)
-        stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&12)
-        if any(d['attr']&12 for d in every) and not MASK_AUTO:continue
+        stats['auto_animation_entries_skipped']+=sum(1 for d in every if d['attr']&AUTO_BITS)
+        if any(d['attr']&AUTO_BITS for d in every) and not MASK_AUTO:continue
         slots={d['attr']>>8 for d in entries(every)[0]}
-        try:im,_=reconstruct(v,pw,crom,slots)
+        try:im,_records=reconstruct(v,pw,crom,slots)
         except AssertionError as err:
             # Another sprite of the screen with one of these palette
             # numbers is auto-animated (Mission 3: the train's wheels):
@@ -715,20 +781,34 @@ def validate(capture,nodes,descs,crom,stats,per):
             if 'auto-animation' not in str(err):raise
             stats['dumps_skipped_auto_animation']+=1;continue
         mame=struct.unpack(f'<{320*256}H',im.info['neo_palette_indices'])
+        owners=im.info['neo_owners']
+        def family_records(dl):
+            # The VRAM sprites (16x16 tiles of reconstruct) that are the family's own entries: a tile of an entry's
+            # descriptor column at that column's screen x. Any other sprite with one of the family's palette slots
+            # (an effect of another routine sharing the palette) is not the family's.
+            want=set()
+            for d in dl:
+                g=descs.get(d['desc'])
+                if g is None or not g['width']:continue
+                for cx,ts in zip(g['columns'],g['tiles']):
+                    sx0=(d['x']-cx-16-1 if d['attr']&1 else d['x']+cx)&511
+                    for t in ts:want.add((t|((d['attr']<<12)&0xf0000),sx0))
+            return {k for k,r in enumerate(_records) if (r['tile'],r['x'])in want}
         # First and second try: every node's last update, or every node's previous one (the dump shows the last
         # sprite list the game finished). Third try: the walk of one game update split by the dump (the game
         # runs slower than the screen: an update takes several frames, and a node made or deleted in it has no
         # previous entries): per node, whichever of its two updates is the one on screen.
+        own=family_records(entries(every)[0])
         for rank in (1,2,3):
             if rank<3:picks={n:c[rank-1] for n,c in cand.items()}
             else:
                 if best is not None and not best[1]:break
                 picks={}
                 for n,c in cand.items():
-                    s=[score(paint(*entries(x[1])),mame)[1] for x in c]
+                    s=[score(paint(*entries(x[1])),mame,own)[1] for x in c]
                     picks[n]=c[1] if s[1]<s[0] else c[0]
             dl=[d for x in picks.values() for d in x[1]];f=max(x[0] for x in picks.values())
-            same,diff,overlap,covered=score(paint(*entries(dl)),mame)
+            same,diff,overlap,covered=score(paint(*entries(dl)),mame,own)
             if best is None or diff<best[1]:best=(same,diff,rank,f,overlap,covered)
         if best is None:continue
         stats['frames']+=1;stats['pixels_equal']+=best[0];stats['pixels_different']+=best[1];stats['pixels_overlapping']+=best[4];stats['rank_%d'%best[2]]+=1

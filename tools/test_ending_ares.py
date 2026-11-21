@@ -43,17 +43,10 @@ try:
         if r:win=r[-1]
         time.sleep(.5)
     subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
-    # Start through the cinematics; at SOLDIER SELECT hold L+R (keys d, e) and press A (the test menu), Down once (ENDING is the second item), A.
-    end=time.monotonic()+400
-    while 'MSX MSELECT mission=' not in log():
-        assert proc.poll() is None and time.monotonic()<end,'no test menu\n'+log()[-1500:]
-        if re.search(r'MSX CINE select (start|waiting)',log()):
-            time.sleep(1.5);key('keydown','d');key('keydown','e');time.sleep(.2);tap('a');time.sleep(.2);key('keyup','e');key('keyup','d')
-            if 'MSX MSELECT menu open' in log():time.sleep(.5);tap('Down');time.sleep(.3);tap('a');time.sleep(.5)
-            continue
-        t=log()
-        if ('MSX TITLE start' in t and 'MSX TITLE complete' not in t) or ('MSX CINE howto start' in t and 'MSX CINE howto complete' not in t) or ('MSX OPTIONS open' in t and 'MSX OPTIONS close' not in t):tap('Return')
-        time.sleep(1.0)
+    # Start through the cinematics and the test menu's ENDING item, every press checked on the cartridge's log
+    # (tools/ares_menu.py: a press counted on the host's clock is lost at a loaded machine's speed).
+    sys.path.insert(0,str(Path(__file__).resolve().parent))
+    import ares_menu;ares_menu.choose(key,log,proc,13,1)
     assert 'MSX MSELECT mission=13' in log(),'the menu chose another item\n'+log()[-800:]
     t0=time.monotonic();nextgrab=0;k=0
     while time.monotonic()-t0<a.seconds:

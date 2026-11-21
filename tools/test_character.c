@@ -56,6 +56,8 @@ static unsigned same_program(const neo_anim_command_t *pc,unsigned pn,unsigned m
 #include "character_fixture_c1.h"
 #include "character_fixture_c2.h"
 #include "character_fixture_c3.h"
+#include "death_fixture.h"
+#include "death_fixture_driver.h"
 static uint8_t *read_file(const char *path,uint32_t *size) {
     FILE *f=fopen(path,"rb");if (!f) return NULL;
     fseek(f,0,SEEK_END);long n=ftell(f);fseek(f,0,SEEK_SET);
@@ -101,13 +103,16 @@ static void death_run(death_frame_t *out) {
     static const uint8_t kinds[]={0,2,7,0x10,8,0x12,1,5};
     for (unsigned r=0;r<DEATH_RUNS;r++) {
         marco_death_t d;int32_t vx=0x12345,vy=-0x2345;int facing=1;death_frame_t *o=out+r*DEATH_STEPS;
-        bool entrance=(r&7)==7,grounded=(r>>3)&1;unsigned land=20+r;
+        /* Runs with r & 0x1f == 6: the fall into water (0C2CCC, 0BF2D8). */
+        bool entrance=(r&7)==7,water=(r&0x1f)==6,grounded=(r>>3)&1;unsigned land=20+r;
         bool translated=true;
         if (entrance) marco_entrance_start(&d);
+        else if (water) translated=marco_death_start_water(&d,&vy);
         else translated=marco_death_start(&d,kinds[r&7],grounded,(r>>4)&1,&vx,&vy,&facing);
         for (unsigned k=0;k<DEATH_STEPS;k++) {
             bool ground=k>=land;
             if (entrance) marco_entrance_step(&d);
+            else if (water) {marco_death_water_velocity(&d,&vx,&vy,0,NULL,NULL);marco_death_after(&d,ground,&vx,100,100);}
             else {marco_death_velocity(&d,ground,&vx,&vy);marco_death_after(&d,ground,&vx,100,100);}
             o[k]=(death_frame_t){d.phase,d.drawn,d.shown,d.burnt,d.draw,d.anim.speed,d.f78,d.count80,vx,vy,facing,translated};
         }
@@ -194,6 +199,15 @@ int main(int argc,char **argv) {
         unsigned differ=0;for (unsigned k=0;k<STEPS;k++) differ+=a[k].wn && m[k].wn && a[k].weapon[0].descriptor!=m[k].weapon[0].descriptor;
         assert(differ>STEPS/4);   /* its own upper body, not Marco's */
         free(a);free(m);
+        /* Its deaths (data/form_death_fixture.json: MAME cNd1, a hit of kind 0
+         * on the ground, run_marco_catalog.py --character N --hit) with its
+         * five death programs, pose by pose. */
+        {
+            death_stats_t st={0};unsigned n=0;
+            for (unsigned i=0;i<DEATHS;i++) if (death_cases[i].character==c) {death_case_run(&death_cases[i],&st);n++;}
+            printf("%s: %u deaths, %u poses while dying equal, %u end/gone updates, %u entrances, %u speeds, %u mismatches\n",who[c].name,n,st.poses,st.ends,st.entrances,st.speeds,st.bad);
+            if (st.bad || !n) {printf("FAIL: %s's deaths against its MAME captures\n",who[c].name);return 1;}
+        }
         unsigned ok=0,bad=0;
         if (who[c].count) throw_fixture_run(who[c].cases,who[c].count,who[c].descriptors,&ok,&bad);
         printf("%s: %u cases, %u steps equal, %u different\n",who[c].name,who[c].count,ok,bad);

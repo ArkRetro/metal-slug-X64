@@ -128,8 +128,10 @@ void msx_options_menu(void (*idle)(void)) {
         bool up=b.d_up && !was.d_up,down=b.d_down && !was.d_down,plus=b.b && !was.b,minus=b.a && !was.a,start=b.start && !was.start;
         was=b;
         if (start) break;
-        if (up && cursor>0) cursor--;
-        if (down && cursor+1<row_count) cursor++;
+        {unsigned old=cursor;
+         if (up && cursor>0) cursor--;
+         if (down && cursor+1<row_count) cursor++;
+         if (cursor!=old) debugf("MSX OPTIONS cursor=%u\n",cursor);}   /* for tools/test_options_ares.py: the row is read back, not counted */
         if (plus || minus) {
             const row_t *r=&rows[cursor];uint8_t *v=&neo_softdip[r->dip];
             if (r->count) *v=(uint8_t)(plus?(*v+1u<r->count?*v+1u:0u):(*v?*v-1u:r->count-1u));

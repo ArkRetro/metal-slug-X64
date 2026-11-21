@@ -541,7 +541,101 @@ renombrado `ch_109d`; `10FC` arma 0; `1133` `ch_1132` 0; `1153` `ch_1056`
 el suelo de la caché. `109D`, `109E`, `10D5` y `1169` quedan en PCM16 (su
 VADPCM no pasa la comprobación de B43).
 
-## 18. Compresión de audio con pérdida (aprobada por el usuario el 20-XI) y las músicas del final
+## 18. Golpes a los vehículos `1089`/`108A`/`108B` (B75, rama `work-audit`)
+
+`1089` y `108A` en `data/sound_map.json`; render aislado `1089` 1,537 s,
+`108A` 0,644 s; 438 pares nuevos (con ellas mismas, entre sí, con `108B` y
+con las 102 etiquetas de la política en los dos órdenes). Añadidas de una en
+una como en §17: `1089` impacto 2 sin mover nada (205 pares en
+`data/sound_pairs.json`; `rom:/`); `108A` y `108B` mueven `108E` y `116E` y
+quedan sin política (`data/sound_pairs_b75_unmapped.json`). Detalle en
+`ANIMACIONES_DANO.md` §6. **Decididos después por el controlador Z80 (§19).**
+
+## 19. El controlador Z80: grupos y prioridades (B75, agente H, rama `work-audit`)
+
+Leído del código del Z80 (`250-m1.m1`, desensamblado con `z80dis` en un
+directorio de trabajo; `tools/sound_driver_table.py` lo traduce y lee la
+ROM del zip, solo números):
+
+- `0066` (NMI) guarda cada byte del *latch* en el anillo `FFF0..FFFF`
+  (índice `FFEF`); el bucle `1E3F` llama a `2001`, que lee un byte por vuelta,
+  cuenta órdenes en `F816` y, con byte `< 0x20`, guarda el banco en `F819`;
+  con byte `>= 0x20`, `F818` y, para bancos `>= 0x10`, `20C6`: puntero de 3
+  bytes `0x0088 + (banco − 0x10)·4` (`57BE`: desplazamiento lineal en la m1,
+  ventanas `0B..08`), entrada `(orden − 0x20)·4` de esa tabla y `506F`.
+- **Cabecera del efecto** (`506F`): cuatro palabras de petición que el efecto
+  para al empezar (`5204`: las pistas con esa palabra `F818/F819` puestas por
+  otra orden; p. ej. `1022` para `109B`, `10A3` y `1064`, `1034` para `10E9`,
+  `108E` para `10AE`), el **grupo** `D` y entradas de 5 bytes (puntero de
+  pista, un byte, **prioridad** `E`) hasta un puntero 0.
+- **Ranura** (`50CF`, ocho de 0x23 bytes en `FDF6`): con `D ≠ 0`, una ranura
+  activa del mismo grupo puesta por otra orden se para y se reutiliza si su
+  prioridad es `>= E`; si es `< E` la pista nueva **se descarta** (byte menor
+  = más prioridad; iguales se cortan). Grupos distintos toman una ranura
+  libre (sin libres, la de byte mayor). El canal del chip lo reparte después
+  `4A2A`/`4422` (ADPCM-A: seis registros de `FAA9`, por ocupación, prioridad
+  y antigüedad).
+
+**Contraste con los pares medidos** (`--check data/sound_policy.json`): de
+los 5187 pares con resultado claro, la regla de grupo y prioridad acierta
+**5150**; los 37 restantes son descartes de `109F`/`10A4` (FM/SSG) tras
+otros grupos, `10E9>1034` y `1064>1022` (las listas de parada) y los dos
+puentes `1159>1032`, `115B>1033`. El modelo medido de §4/§8 une grupos
+distintos en el canal «voz» (`02`, `05`, `07`, `08`, `0F`, `10`) por esos
+descartes FM y ordena mal niveles dentro de un grupo (`116E` 0x65 y `108F`
+0x6E tienen el mismo nivel; `1048` y `104A`, ambos 0x1F, niveles 1 y 2).
+
+**Decisión de `108A`, `108B` y `1087`** sin mover ningún sonido medido: el
+controlador los trata exactamente como a otro sonido ya con política (mismo
+grupo, misma lista de parada vacía y la misma prioridad):
+
+| Palabra | Grupo / prioridad | Gemelo | Canal y nivel |
+| --- | --- | --- | --- |
+| `108A`, `108B` | `07` / `0x65` | `116E` (`07` / `0x65`) | voz 0 |
+| `1087` (voz de muerte de Tarma) | `02` / `0x01` | `1123` (Marco, `02` / `0x01`) | voz 2 |
+
+`derive_sound_policy.py --rom ZIP --twin sfx_108a=sfx_116e --twin
+sfx_108b=sfx_116e --twin sfx_1087=sfx_1123` comprueba la igualdad en la ROM y
+copia canal y nivel (los pares medidos de `108A`/`108B` quedan en su entrada,
+sin unir canales ni acotar niveles): `data/sound_policy.json` igual salvo
+las tres entradas nuevas. Con el gemelo, `108E` (0x64) descarta a `108A` y lo
+corta, como en los pares medidos; frente a `108F..1092` (0x6E) el port los
+corta en los dos órdenes (en el Z80 `108A` descarta a `108F`): la misma
+desviación que ya tenía `116E`. `sfx_1087.wav64` (VADPCM, 6 794 B, desde el
+render aislado de `ws-logo`) y `sfx_108a.wav64` (8 918 B) se leen de `rom:/`
+(`game_audio.c`); `sfx_108b.wav64` ya estaba.
+
+**Hecho (agente J): la política entera es la regla del controlador.**
+`tools/compile_sound_policy.py --rom ZIP --keep src/msx_sfx_policy.h` escribe
+para cada efecto (los 101 del cartucho: los 12 primeros y los 89 de la
+cabecera anterior) su grupo `D`, el byte de prioridad `E` de su primera pista
+y su lista de parada, leídos de su cabecera `506F` en `250-m1.m1`.
+`src/msx_sfx.c` aplica `5204` (al empezar, para los efectos de su lista,
+aunque luego se descarte) y `50CF` (mismo grupo `D ≠ 0`: corta si el que
+suena tiene byte `>=`, si no se descarta; la misma palabra vuelve a empezar);
+un canal por grupo (20 canales: 18 grupos y los dos efectos de grupo 0,
+`109B` y `10BA`). Ya no hay canales ni niveles medidos: los pares medidos
+son la prueba. `108A`/`108B`/`116E` (0x65) descartan a `108F..1092` (0x6E)
+como en el Z80 y estos los cortan; `108E` (0x64) descarta y corta a `108A`.
+
+**Prueba de pares** (`make check`, `tools/test_msx_sfx.c` con
+`build/sound_pairs_fixture.h` de `tools/compile_sound_pairs_fixture.py`):
+los 5 441 pares claros de `data/sound_policy.json`; de los 4 330 entre
+efectos del cartucho, **4 293 iguales** y 37 desviaciones listadas en la
+prueba (cualquier otra la hace fallar): 34 descartes de `109F`/`10A3`/`10A4`
+(FM/SSG) tras otros grupos (el reparto de canales del chip `4A2A/4422`, sin
+traducir), los cortes `1159>1032` y `115B>1033` entre los grupos 06/01 (sin
+lista de parada: sin explicar) y `109B>109B` (grupo 0: el driver toma otra
+ranura, el port un solo canal por efecto). Las listas de parada resuelven
+`1064>1022` y `10E9>1034`, que la regla sola no daba. `game_audio.c` calla
+los canales de `stop_mask`.
+
+**Pendiente**: el reparto de canales del chip (`4422`); `1159>1032`,
+`115B>1033`; los nueve efectos de `data/sound_policy.json` que la cabecera
+anterior no llevaba (`102E`, `1030`, `1036`, `1053`, `1060`, `1066`, `10D1`,
+`1134`, `113B`; sus `.wav64` existen) siguen fuera del cartucho: añadirlos
+cambia el presupuesto de RAM (`RAMFS_FILES`), no se ha probado en ares.
+## 20. Compresión de audio con pérdida (aprobada por el usuario el 20-XI) y las músicas del final
 
 **Excepción aprobada por el usuario el 20-XI: compresión de audio con pérdida.** Solo afecta a la codificación:
 qué suena, cuándo, bucles, canales y prioridades siguen saliendo de la ROM, y el PCM de referencia es el render

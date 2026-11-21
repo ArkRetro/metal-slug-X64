@@ -408,7 +408,32 @@ static void landing_step(msx_game_t *g) {
     g->landing_x=in.x;g->landing_y=in.y;g->landing_root_x=rx;g->landing_root_y=ry;
     if (!neo_landing_active(&g->landing)) {g->landing_on=false;g->landing.draw_count=0;}
 }
-static void start_death(msx_game_t *g,uint8_t kind,bool right) {
+/* 03C55C at the player's +3C/+40 (the projected words): water (class 5,
+ * 013CF8) at +40 - 1, + 7 or + 15 px; found, 8 px higher while there is
+ * water (relative to the cell's object), then (y & ~7FFFF) - 1; *surface:
+ * that + the object's +18 (0C2D28), the projected frame of +40. */
+static bool player_water(msx_game_t *g,int32_t *surface) {
+    if (!g->world_enabled) return false;
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    neo_kscene_t *k=&g->world.kernel;k->self_dyn=0;k->self_block=0;
+    const int32_t x=g->x+rx,y=56*MSX_UNIT-g->y+ry;
+    int32_t lx=0,ly=0;uint8_t o=0;bool found=false;
+    for (unsigned i=0;i<3 && !found;i++)
+        found=neo_kernel_point_class(k,x,(int32_t)((uint32_t)y-0x10000u+0x80000u*i),5,0,&lx,&ly,&o);
+    if (!found) return false;
+    for (;;) {
+        int32_t nx,ny;uint8_t no;
+        ly=(int32_t)((uint32_t)ly+0x80000u);
+        if (!neo_kernel_point_class_in(k,o,lx,ly,5,0,&nx,&ny,&no)) break;
+        lx=nx;ly=ny;o=no;
+    }
+    int32_t oy;
+    if (!neo_kernel_object_y(k,o,&oy)) return false;
+    *surface=(int32_t)((((uint32_t)ly&0xfff80000u)-1u)+(uint32_t)oy);
+    return true;
+}
+static bool player_water_fn(void *ctx,int32_t *surface) {return player_water(ctx,surface);}
+static void start_death(msx_game_t *g,uint8_t kind,bool right,bool fall) {
     /* 0C2956 (hits, the vehicle's 0C3118, time over) and 0C2D6A (the fall)
      * first request the character's death voice, table 0C294E[+6E]: Marco
      * (+6E = 0) 0x1123 (B30; MAME capboss: every death, return 0C2D96),
@@ -416,9 +441,23 @@ static void start_death(msx_game_t *g,uint8_t kind,bool right) {
     if (g->world.sound_count<NEO_WORLD_SOUNDS) g->world.sounds[g->world.sound_count++]=msx_character_death_voice(msx_character_request);
     else {g->world.sound_dropped++;MSX_DIAG_POOL_FAIL(MSX_POOL_SOUND);}
     int32_t vx=g->velocity_x,vy=-g->velocity_y;int facing=g->facing;
-    if (!marco_death_start(&g->life,kind,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
-    if (kind!=2) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    /* 0C2986/0C2990 (0C2DC6/0C2DD0 after a fall): form 2 0C2A36 (0C2A06),
+     * form 3 0C2C40, the others by the kind. */
+    const uint8_t form=g->world_enabled?g->world.weapon_player.form93:0u;
+    /* 0C2DA6..0C2DC2: the fall over water with 0191FC 2 or 3 (stage 42F6
+     * 9, 0xB, 0) is 0C2CCC, before the forms (MAME w6d2). */
+    int32_t surface;
+    if (fall && marco_death_water_stage(g->flow.stage) && player_water(g,&surface)) {
+        FALL_LOG("MSX fall into water 0C2CCC stage %u: surface %08lx\n",(unsigned)g->flow.stage,(unsigned long)(uint32_t)surface);
+        if (!marco_death_start_water(&g->life,&vy)) g->death_stops++;
+    } else if (!marco_death_start_form(&g->life,kind,form,fall,g->grounded,right,&vx,&vy,&facing)) g->death_stops++;
+    if (!g->life.keep_ground && !g->life.fat) {g->grounded=false;g->ride=0;g->air_ticks=0;}      /* 0C2E7E */
+    /* 0C2A70: 040F38 for every kind 0x12 (Marco's own death on the ground,
+     * else 0C2DDA): the splash 040F74 after the player, 01B220 (8, 0). */
+    if (kind==0x12 && g->world_enabled) neo_world_player_child(&g->world,0x40f74u,0);
     g->velocity_x=vx;g->velocity_y=-vy;g->facing=facing;
+    /* 0C2E74: 0C4C28, Fio's actor 0C4C64 (+6E = 3) at the new facing. */
+    if (g->life.c4c28 && msx_character_request==MSX_CHARACTER_FIO && g->world_enabled) neo_world_player_child(&g->world,0xc4c64u,facing);
     g->deaths++;g->moving=g->shooting=false;g->jump_pending=false;
     g->mummy_transform=g->mummy_guard=g->mummy_takeoff=g->mummy_landing=0;g->fat_transform=0;
     marco_hgun_reset(&g->hgun);
@@ -445,8 +484,8 @@ void msx_game_hurt(msx_game_t *g,int from) {
     }
     if (g->lifebar && lifebar_absorb(g,g->world_enabled?g->world.hit_kind:0)) return;
     /* 0C2956 with the update's +5A/+5B (neo_world.c player_hit). */
-    if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right);
-    else start_death(g,0,g->x/MSX_UNIT<from);
+    if (g->world_enabled) start_death(g,g->world.hit_kind,g->world.hit_right,false);
+    else start_death(g,0,g->x/MSX_UNIT<from,false);
 }
 /* Floor 0146EE after 0C1438's 01473A: 0128E8 (10C00A = 0, 10C00D = FF:
  * cells of group 1 are no floor) and 013DB2 from the feet down 256 px,
@@ -531,6 +570,14 @@ static void new_life(msx_game_t *g) {
     FALL_LOG("MSX respawn %u stage %u: entry %u type %u x=%ld y=%ld screen %d,%d grounded=%d\n",g->respawns,(unsigned)g->flow.stage,g->respawn_entry,
         (unsigned)type,(long)(x>>16),(long)(y>>16),(int)((uint32_t)(x+rx)>>16),(int)(int16_t)((uint32_t)(y+ry)>>16),(int)g->grounded);
     marco_entrance_start(&g->life);g->invulnerable=2*0x78;
+}
+/* The walk handlers' position (0CA386, 0CA3EC, 0CA438: move.w $3c(a0),d2; sub.w $697c(a5),d2): the player's
+ * projected word less the scene root's word (RAM 10E97C: the negated camera), i.e. the x in the root's space that
+ * 10EA00 / 10EA02 are compared with (MAME fam/M1: the opening 045428's 0x180 leaves player 1 at +28 = 384 while the
+ * camera goes on from 170 to 320). */
+static int handler_x(const msx_game_t *g) {
+    int32_t rx,ry;root_xy(g,&rx,&ry);
+    return (int16_t)((uint16_t)((uint32_t)(g->x+rx)>>16)-(uint16_t)((uint32_t)rx>>16));
 }
 /* Projected words of the player as the original registers them (+3C/+40):
  * world position plus the scene root (RAM 10E97C/10E980) of the native
@@ -687,7 +734,7 @@ static void mount_after_world(msx_game_t *g) {
         if (r!=MARCO_MOUNT_EJECT) {nwl(m,0x30,0);nwl(m,0x34,0);}   /* 0AA5F2 */
         mount_place(g);
         if (r==MARCO_MOUNT_DIE) {
-            g->dismounts++;start_death(g,cause,false);neo_vslot_release(&w->vslots,0);
+            g->dismounts++;start_death(g,cause,false,false);neo_vslot_release(&w->vslots,0);
             return;
         }
         if (r==MARCO_MOUNT_STAND) {g->dismounts++;g->mount=MSX_MOUNT_NONE;return;}   /* 0C1F4A: the port's standing player */
@@ -1103,6 +1150,7 @@ static fire_kind_t fire_kind(uint8_t id) {
     case 0x0e: return (fire_kind_t){0xde4dau,MSX_FIRE_C,14,8,8,8};   /* weapon E (neo_pweapon.c) */
     case 2: return (fire_kind_t){0x644c4u,MSX_FIRE_S,16,16,8,16};
     case 7: return (fire_kind_t){0x646b0u,MSX_FIRE_S,16,16,8,16};
+    case 0x0f: return (fire_kind_t){0xdea20u,MSX_FIRE_S,16,16,8,16};   /* weapon F: the S programs (0C3C10/50/90[0F] = 0BFFD8/0C0018/0C0058, 0C24DE[0F] = 0C0098), neo_pweapon.c */
     case 4: return (fire_kind_t){0xa71f8u,MSX_FIRE_F,8,8,8,8};
     case 9: return (fire_kind_t){0xa716eu,MSX_FIRE_F,8,8,8,8};
     case 6: case 0x0b: return (fire_kind_t){0x1e22cu,MSX_FIRE_L,18,16,16,16};
@@ -1563,32 +1611,37 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
     /* Collapse of the domed building: the players' input handlers are the
      * no-op 054B18 (0CA2E0) until 0CA2F2 restores them. */
     if (g->world_enabled && g->world.ga_flags.player_handlers==3u) {
-        /* 0CA3EC: on the ground, walk towards screen X walk_to (10EA00);
+        /* 0CA3EC: on the ground, walk towards the root-space X walk_to (10EA00, handler_x);
          * no buttons. */
-        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
         direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
     } else if (g->world_enabled && g->world.ga_flags.player_handlers==6u) {
-        /* 0CA386 (the Mission 6 last enemy's opening, 0CA324): walk toward screen X walk_to[0]; on crossing it
+        /* 0CA386 (the Mission 6 last enemy's opening, 0CA324): walk toward the X walk_to[0] (handler_x); on crossing it
          * (the sign of the distance changes from the previous update's, +44 - 6984) the handler clears itself
          * (0CA2F2) and the distance is negated for this update; no buttons. */
-        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
-        int d3=(g->handler_prev_ok?g->handler_prev_sx:g->x/MSX_UNIT-g->camera)-(int)g->world.ga_flags.walk_to[0];
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
+        int d3=(int16_t)((g->handler_prev_ok?g->handler_prev_sx:handler_x(g))-(int)g->world.ga_flags.walk_to[0]);
         if ((int16_t)((int16_t)d2^(int16_t)d3)<0) {g->world.ga_flags.player_handlers=0;d2=-d2;}
         direction=!g->grounded||!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
     } else if (g->world_enabled && g->world.ga_flags.player_handlers==9u) {
-        /* 0CA438 (the Mission 6 last enemy's end, 041E9A / 0CA35C): walk toward screen X walk_to[0]; at it, or on
+        /* 0CA438 (the Mission 6 last enemy's end, 041E9A / 0CA35C): walk toward the X walk_to[0] (handler_x); at it, or on
          * crossing it (the sign against the previous update's, +44 - 6984), on the ground the handler becomes 0CA49C
          * with no input this update; no buttons. */
-        int d2=g->x/MSX_UNIT-g->camera-(int)g->world.ga_flags.walk_to[0];
-        int d3=(g->handler_prev_ok?g->handler_prev_sx:g->x/MSX_UNIT-g->camera)-(int)g->world.ga_flags.walk_to[0];
+        int d2=(int16_t)(handler_x(g)-(int)g->world.ga_flags.walk_to[0]);
+        int d3=(int16_t)((g->handler_prev_ok?g->handler_prev_sx:handler_x(g))-(int)g->world.ga_flags.walk_to[0]);
         if ((!d2 || (int16_t)((int16_t)d2^(int16_t)d3)<0) && g->grounded) {g->world.ga_flags.player_handlers=10;d2=0;}
         direction=!d2?0:d2<0?1:-1;jump=false;fire=false;g->grenade=false;
     } else if (g->world_enabled && g->world.ga_flags.player_handlers==10u) {
         /* 0CA49C: turn to walk_face[0] (FF: left) when +15 bit 0 differs; no buttons. */
         bool left=g->facing<0,want=g->world.ga_flags.walk_face[0]!=0;
         direction=left==want?0:want?-1:1;jump=false;fire=false;g->grenade=false;
-    } else if (g->world_enabled && g->world.ga_flags.player_handlers) {direction=0;jump=false;fire=false;}
-    g->handler_prev_sx=g->x/MSX_UNIT-g->camera;g->handler_prev_ok=true;
+    } else if (g->world_enabled && g->world.ga_flags.player_handlers) {
+        direction=0;jump=false;fire=false;
+        /* 054B18 (sub.l d7,d7), 0537E4, 0455E6 and 041EBC (moveq #0,d7): the whole input word is 0, the bomb button too. */
+        uint8_t h=g->world.ga_flags.player_handlers;
+        if (h==1u || h==5u || h==7u || h==8u) g->grenade=false;
+    }
+    g->handler_prev_sx=handler_x(g);g->handler_prev_ok=true;
     /* Player 1's input words for the vehicles (0CA1B8), once per update. */
     if ((g->ticks&1) && g->world_enabled) mount_pad(g,direction,jump,fire);
     /* Mounted (0C309C) or ejected (0C3250): the vehicle and its turret take
@@ -1689,8 +1742,15 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
 #endif
         if (dying) {
             /* 0C2E94..0C2EAA / 0C2F20: the death's own velocities, then the
-             * air step 0143EE (no gravity of its own) or the ground step. */
-            marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
+             * air step 0143EE (no gravity of its own) or the ground step.
+             * Kind 8 (0C2B8A) always takes the air step 0143EE. */
+            /* 0C2D06: the water death's own velocities (03C55C each update while +80 counts). */
+            if (g->life.phase==MARCO_DYING && g->life.water) {
+                int32_t rx,ry;root_xy(g,&rx,&ry);
+                marco_death_water_velocity(&g->life,&body.vx,&body.vy,56*MSX_UNIT-g->y+ry,player_water_fn,g);
+                g->grounded=false;g->ride=0;
+            } else marco_death_velocity(&g->life,g->grounded,&body.vx,&body.vy);
+            if (g->life.phase==MARCO_DYING && g->life.own==8) {g->grounded=false;g->ride=0;}
             if (g->life.phase==MARCO_LYING && g->grounded) body.vy=0;
         }
         if (g->ride) {
@@ -1851,9 +1911,13 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             /* 0C2EC6..0C2F8A: speed, program, landing, count-down, off-screen. */
             int32_t rx,ry;root_xy(g,&rx,&ry);
             int32_t vx=g->velocity_x;
+            const bool own8=g->life.phase==MARCO_DYING && g->life.own==8;
             marco_death_after(&g->life,g->grounded,&vx,(int16_t)((uint32_t)(g->x+rx)>>16),(int16_t)((uint32_t)(56*MSX_UNIT-g->y+ry)>>16));
             g->velocity_x=vx;
-            if (g->grounded) g->velocity_y=0;
+            if (g->grounded && !own8) g->velocity_y=0;
+            /* 2503B6: the program's callback 05A09E, the child 05A0B4 after
+             * the player (01AD6E on its +28 block, 01AC94 its facing). */
+            if (g->life.child_5a0b4) {g->life.child_5a0b4=false;if (g->world_enabled) neo_world_player_child(&g->world,0x5a0b4u,0);}
         } else if (g->life.phase==MARCO_ENTERING) marco_entrance_step(&g->life);
         else if (g->life.phase==MARCO_ALIVE && !g->complete && g->world_enabled) {
             /* 0C3712: the projected feet (+40) below RAM 10C72C (0x100 from
@@ -1889,7 +1953,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                     (long)(g->x/MSX_UNIT),(long)(g->y/MSX_UNIT),g->camera,g->camera_height,(long)(g->safe_x/MSX_UNIT),(long)(g->safe_y/MSX_UNIT));
                 msx_diag_trail_dump("fall death");
                 fall_dyn_log(g);
-                g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0);}
+                g->pit_deaths++;g->rescue_streak=0;start_death(g,0,(int16_t)p.px>=0xa0,true);}
             else if (MSX_REFERENCE_INVULNERABLE && g->grounded && !g->ride && (int16_t)p.py>=0x120) {
                 unsigned n=g->safe_old;
                 if (g->safe && (g->x-g->safe_x>=32*MSX_UNIT || g->safe_x-g->x>=32*MSX_UNIT) &&
@@ -2172,7 +2236,8 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
                 if (left) angle=(uint8_t)(0x80-angle);
                 int fx=m.x-g->legs.x72,fy=m.y-g->legs.y74;
                 int32_t vx=g->velocity_x,vy=g->grounded?0:-g->velocity_y;
-                if (k.group==MSX_FIRE_C) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
+                /* The flash 0C58D2 of table 0C432A: ids 3, 8 and 0C..0F. */
+                if (id==3 || id==8 || id>=0x0c) neo_world_player_actor(&g->world,0xc58d2u,g->x+fx*MSX_UNIT,(56+fy)*MSX_UNIT-g->y,vx,vy,angle,left?1u:0u,0,0);
                 /* 0C4434: 01AC94 copies the player's +15 & 3 (the facing
                  * bit 0) to the projectile, as 0C43E4 to the flash: the
                  * blast 0644C4/0646B0 draws and mirrors its row E1412 by
@@ -2205,7 +2270,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * 6/0B, 0C3E02): 8 updates of 0C46D6 (laser_call), +76 in the
          * ninth; a held press restarts it in the update that sees it
          * (0C3E66 jumps to 0C3CD0): 9 updates. Ids without a native fat
-         * projectile (0C5508, 0A7960, 0DEA44) are explicit stops. */
+         * projectile (0C5508, 0A7960) are explicit stops. */
         g->pistol_pending=0;
         if (g->pistol_wait) g->pistol_wait--;
         if (g->fire_request && !g->pistol_wait && !g->complete && !(g->ticks&1)) {
@@ -2223,7 +2288,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
             g->pistol_wait=10;
             uint32_t ctor=fat_table[id];
             bool native=ctor==0x1b62cu || ctor==0x63aeeu || ctor==0x63b22u || ctor==0x63f10u || ctor==0x646c8u || ctor==0x646e0u ||
-                ctor==0xa7226u || ctor==0xa719cu || ctor==0xde4feu;
+                ctor==0xa7226u || ctor==0xa719cu || ctor==0xde4feu || ctor==0xdea44u;
             if (allowed && !native) {g->weapon_stops++;g->weapon_stop_constructor=ctor;}
             else if (allowed) {
                 bool left=g->facing<0;
@@ -2347,7 +2412,7 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
          * invulnerable (not in the reference cartridge). */
         if (!g->hud.time_over) g->time_over_seen=false;
         else if (!g->time_over_seen && g->life.phase==MARCO_ALIVE && !g->complete && !MSX_REFERENCE_INVULNERABLE) {
-            g->time_over_seen=true;g->time_overs++;start_death(g,6,g->world.hit_right);
+            g->time_over_seen=true;g->time_overs++;start_death(g,6,g->world.hit_right,false);
         }
         g->kills=g->world.kills;
         if (!g->region_end && neo_world_region_clear(&g->world)) g->region_end=true;

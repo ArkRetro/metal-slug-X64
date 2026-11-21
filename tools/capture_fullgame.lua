@@ -95,6 +95,18 @@ lspc_tap=cpu:install_write_tap(0x3c0006,0x3c0007,'full_lspc',function(address,da
 end)
 local fields={}
 for _,port in pairs(machine.ioport.ports) do for name,field in pairs(port.fields) do fields[name]=field end end
+-- MSX_FULL_CHARACTER=n (player +6E: 0 Marco, 1 Tarma, 2 Eri, 3 Fio): chosen at SOLDIER
+-- SELECT with the controller as tools/mame/capture_marco_catalog.lua does
+-- (the ROM fixes +6E from the cursor when A confirms; screen order Marco,
+-- Eri, Tarma, Fio): Right once per place from 1700, A at 1800 instead of the
+-- A held 1550..1700 (the landing comes about 250 frames later).
+local character=tonumber(os.getenv('MSX_FULL_CHARACTER') or '-1')
+local choice={}
+if character>=0 then
+ local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_FULL_CHARACTER 0..3')
+ for k=0,place-1 do choice[1700+20*k]={'P1 Right',1};choice[1710+20*k]={'P1 Right',0} end
+ choice[1800]={'P1 A',1};choice[1810]={'P1 A',0}
+end
 local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},[770]={'1 Player Start',0},[1450]={'P1 A',1},[1460]={'P1 A',0}}
 local pressed={}
 local function button(name,value)
@@ -548,6 +560,7 @@ local load_name=os.getenv('MSX_FULL_LOAD')
 -- MSX_REST_FAMILY_ROOTS: U/V/R/W/X/A/B/F lines; Z vram writes with
 -- MSX_FULL_VRAM_TRACE=1). Read-only taps; usually with MSX_FULL_LOAD.
 local fam_from=tonumber(os.getenv('MSX_FULL_FAMILY_FROM') or '0')
+local fam_log_from=tonumber(os.getenv('MSX_FULL_FAMILY_LOG_FROM') or '0')
 local family_roots={}
 for h in string.gmatch(os.getenv('MSX_FULL_FAMILY_ROOTS') or '','(%x+)') do family_roots[tonumber(h,16)]=true end
 -- MSX_FULL_FAMILY_NODES=<hex list>: nodes in the family from the start (the player's node 1014C0 for a vehicle's rider).
@@ -597,10 +610,20 @@ local function fam_write(address,data,mask)
   end
  end
 end
+-- MSX_FULL_FAMILY_LOG_PIPE=<shell filter>: the trace goes through that command into boss-trace.txt (e.g. "grep -v '^R '":
+-- no read lines, for the sprite validation of tools/export_rest_sprites.py, which uses U/V and the W lines only).
+local function fam_open()
+ local pipe=os.getenv('MSX_FULL_FAMILY_LOG_PIPE')
+ if pipe and pipe~='' then return assert(io.popen(pipe..' > '..output..'/boss-trace.txt','w')) end
+ return assert(io.open(output..'/boss-trace.txt','w'))
+end
 local function fam_frame(f)
  if fam_from<=0 then return end
  if f==fam_from then
-  fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  -- MSX_FULL_FAMILY_LOG_FROM=<frame>: track the family from MSX_FULL_FAMILY_FROM but write the trace only from this
+  -- frame on (a late window of a long fight without the earlier lines on disk).
+  if fam_log_from>f then fam_log={write=function() end,flush=function() end,close=function() end}
+  else fam_log=fam_open() end
   for n,_ in pairs(family_nodes) do family[n]=true end
   fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
   fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
@@ -617,6 +640,7 @@ local function fam_frame(f)
    end)
   end
  end
+ if fam_log_from>fam_from and f==fam_log_from then fam_log=fam_open() end
  if fam_log then fam_log:write(string.format('F %d\n',f));if f%600==0 then fam_log:flush() end end
 end
 -- MSX_FULL_CELL_TAP=<lo>-<hi>: every collision cell the kernel reads with
@@ -706,8 +730,12 @@ emu.register_frame_done(function()
  end
  if dbg then dbg:command(string.format('temp9=%x',frame)) if frame==2000 or (load_name and frame==tonumber(os.getenv('MSX_FULL_LOAD_FRAME'))+1) then probes() end end
  if actions[frame] then local a=actions[frame]; if fields[a[1]] then fields[a[1]]:set_value(a[2]) end end
- if frame>=1550 and frame<=1700 then button('P1 A',1) end
- if frame==1710 then button('P1 A',0) end
+ if character>=0 then
+  if choice[frame] then button(choice[frame][1],choice[frame][2]) end
+ else
+  if frame>=1550 and frame<=1700 then button('P1 A',1) end
+  if frame==1710 then button('P1 A',0) end
+ end
  -- Reference-only overrides (capture_advance.lua addresses and values).
  if frame>=2000 then
   cpu:write_u8(0x1013de,0x5a)
@@ -771,6 +799,17 @@ emu.register_frame_done(function()
   -- jumps in place into the shots of the Mission 4 vehicle 0587C4).
   local hl,hh,hp=string.match(os.getenv('MSX_FULL_HOP') or '','(%d+)-(%d+):(%d+)')
   if hl and frame>=tonumber(hl) and frame<=tonumber(hh) and (frame-tonumber(hl))%tonumber(hp)<8 then button('P1 B',1) end
+  -- MSX_FULL_PAD="lo-hi:KEYS[,lo-hi:KEYS...]": capture-only, in those frames the pad is KEYS alone: L R U D held, A
+  -- pressed on the frames frame%4<2, B for the first 4 frames of every 32 (a jump), C for the first 2 of every 64 (the
+  -- player of run4 walks left on the Mission 5 boss's ledge and shoots down at the burnt soldiers 099090: palette 20C).
+  for pl,ph,pk in string.gmatch(os.getenv('MSX_FULL_PAD') or '','(%d+)-(%d+):(%a*)') do
+   if frame>=tonumber(pl) and frame<=tonumber(ph) then
+    local has=function(c) return string.find(pk,c,1,true)~=nil end
+    for k,name in pairs({L='P1 Left',R='P1 Right',U='P1 Up',D='P1 Down'}) do button(name,has(k) and 1 or 0) end
+    button('P1 A',(has('A') and frame%4<2) and 1 or 0);button('P1 B',(has('B') and frame%32<4) and 1 or 0)
+    button('P1 C',(has('C') and frame%64<2) and 1 or 0)
+   end
+  end
   if still>=stall_limit then print('STALL '..frame);last_frame=frame end
  end
  if frame>=2100 then
@@ -848,7 +887,8 @@ emu.register_frame_done(function()
   if frame%300==0 or frame==2100 then check_bank(frame) end
   -- While the progress key is unchanged for 20 s, snapshot only every
   -- 10 periods (the view repeats; keeps long stalls from filling the disk).
-  local sparse=still>=1200
+  -- MSX_FULL_DENSE=1: every period even then (a still player, e.g. the ride plan 'still' of B69).
+  local sparse=still>=1200 and os.getenv('MSX_FULL_DENSE')~='1'
   if frame>=first_dump and (frame==2100 or (frame%period==0 and (not sparse or frame%(period*10)==0))) then dump(frame) end
   if prev_dumps and frame>=first_dump and (frame+1)%period==0 and (still<1199 or (frame+1)%(period*10)==0) then dump_vram(output..'/prev/vram'..(frame+1)..'.bin') end
   if frame%600==0 then print('FRAME '..frame..' camera '..camera..' section '..sec..' plan '..plan..' still '..still..string.format(' script %x',spc));trace:flush();actors:flush();scriptlog:flush();if events then events:flush() end end

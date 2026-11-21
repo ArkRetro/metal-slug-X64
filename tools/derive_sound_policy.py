@@ -19,7 +19,13 @@ constraint, never leaving the interval its pairs with the known sounds
 give (the outcomes between new sounds are not always a total order: the
 violated constraints are reported).
 A sound with an unclear pair against every member of its channel keeps the
-channel of its clear pairs. Output: data/sound_policy.json (numbers)."""
+channel of its clear pairs. Output: data/sound_policy.json (numbers).
+
+--twin NEW=OLD (with --rom): NEW takes OLD's channel and level when the Z80
+driver's header gives both the same group, stop list and track priorities
+(tools/sound_driver_table.py: the slot allocator 50CF then treats them
+alike); NEW's measured pairs are listed but join no channel and bound no
+level (docs/AUDIO_JUEGO.md 19)."""
 import argparse,json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
@@ -43,12 +49,16 @@ def main():
     # cross pair of the two groups overlaps (none cuts or drops; dozens are
     # clear overlaps in both orders). B36: 1159/115B; docs/AUDIO_JUEGO.md 14.
     p.add_argument('--bridge',nargs='*',default=['sfx_1159>sfx_1032','sfx_115b>vehicle_burst'])
+    p.add_argument('--twin',action='append',default=[],metavar='NEW=OLD')
+    p.add_argument('--rom',type=Path,help='mslugx.zip (checks each --twin against the driver header)')
     a=p.parse_args()
+    twins=dict(t.split('=') for t in a.twin)
     pairs={}
     for f in a.pairs:
         d=json.loads(f.read_text());pairs.update(d.get('pairs',d))
-    res={k:outcome(v) for k,v in pairs.items()}
-    labels=sorted({l for k in pairs for l in k.split('>')})
+    res_all={k:outcome(v) for k,v in pairs.items()}
+    res={k:v for k,v in res_all.items() if not set(k.split('>'))&set(twins)}
+    labels=sorted({l for k in res for l in k.split('>')})
     parent={l:l for l in labels}
     def find(x):
         while parent[x]!=x:parent[x]=parent[parent[x]];x=parent[x]
@@ -102,12 +112,24 @@ def main():
     for hi,lo,d in cons:
         if level[hi]<level[lo]+d:contradictions.append('%s >= %s + %d'%(hi,lo,d))
     words={s['label']:s['word'] for s in json.loads(a.map.read_text())['sounds']}
+    if twins:
+        import sound_driver_table as drv
+        assert a.rom,'--twin needs --rom'
+        m=drv.load(a.rom)
+        for new,old in twins.items():
+            assert old in labels and new not in labels,(new,old)
+            hn,ho=drv.effect(m,int(words[new],16)),drv.effect(m,int(words[old],16))
+            assert drv.same_rule(hn,ho),('driver headers differ',hn,ho)
     out=dict(source='tools/derive_sound_policy.py from MAME 0.264 isolated pair renders (tools/measure_sound_pairs.py)',
         rule='same channel: a cut or drop in either order; level: cut >=, drop <',
         sounds={l:dict(word=words.get(l),channel=channels[l],level=level[l],
             pairs={k:res[k][0] for k in res if l in k.split('>')}) for l in labels},
         channels=sorted(set(channels.values())),contradictions=contradictions,bridges=bridges,
         unclear=sorted(k for k,v in res.items() if v[0]=='unclear'))
+    for new,old in sorted(twins.items()):
+        out['sounds'][new]=dict(word=words[new],channel=channels[old],level=level[old],driver_twin=old,
+            pairs={k:res_all[k][0] for k in res_all if new in k.split('>')})
+    out['sounds']=dict(sorted(out['sounds'].items()))
     a.output.write_text(json.dumps(out,indent=1)+'\n')
     for c in out['channels']:print(c,sorted((level[l],l) for l in labels if channels[l]==c))
     print('contradictions',contradictions);print('bridges',bridges);print('unclear pairs',len(out['unclear']))

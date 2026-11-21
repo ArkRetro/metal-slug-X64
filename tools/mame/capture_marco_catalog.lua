@@ -168,6 +168,16 @@ end
 probe(0x4412,'MARCO_SELECT','cursor=%08X field=%02X value=%02X count=%04X state=%08X x=%04X y=%04X attributes=%04X z=%04X correction=%02X flash_palette=%02X palettes=%08X',
  'a1-1,b@(a1),b@(a6+b@(a1)),w@(a1+1)/8,a0,w@(a6+3c),w@(a6+40),w@(a6+14),w@(a6+1e),b@(a6+4d),b@(a6+16),d@(a6+19)')
 probe(0x4256,'MARCO_INIT','program=%08X speed=%04X','a1,d0&ffff')
+-- MSX_UPDATE_TRACE=1: the player's node words right after its routine returns to the node loop
+-- (004248 jsr (a0) -> 00424A), once per game update whatever the frame (Mission 6 runs an update in
+-- 1..5 frames: the frame-end actor dumps can catch an update half done).
+if os.getenv('MSX_UPDATE_TRACE')=='1' then
+ probe(0x424a,'MARCO_UPDATE','r=%08X f15=%02X v30=%08X v34=%08X x3c=%08X y40=%08X x28=%08X y2c=%08X p38=%08X f26=%04X f5a=%02X f5b=%02X f93=%02X f6e=%04X f19=%02X f80=%04X',
+  'd@a6,b@(a6+15),d@(a6+30),d@(a6+34),d@(a6+3c),d@(a6+40),d@(a6+28),d@(a6+2c),d@(a6+38),w@(a6+26),b@(a6+5a),b@(a6+5b),b@(a6+93),w@(a6+6e),b@(a6+19),w@(a6+80)')
+ -- The water death 0C2D06: 03C55C found the surface (carry) -> 0C2D28 with D1 the surface - 1 relative
+ -- to the object A0 (its +18 added next).
+ probe(0xc2d28,'MARCO_WATER','d1=%08X a0=%08X y18=%08X y40=%08X f80=%04X','d1,a0,d@(a0+18),d@(a6+40),w@(a6+80)')
+end
 probe(0x4406,'MARCO_DRAW','descriptor=%08X xy=%08X attr=%04X z=%04X','d7,d0,d1&ffff,d5&ffff')
 probe(0x44ec,'MARCO_CALLBACK','target=%08X','a1')
 dbg:command('wpset 1014e4,4,w,temp9>='..string.format('%x',plan.first)..',{printf "MARCO_CURSOR_WRITE frame=%d pc=%08X a6=%08X address=%08X data=%08X\\n",temp9,pc,a6,wpaddr,wpdata;g}')
@@ -196,8 +206,58 @@ if select_inputs then
  end
  boot[1800]={'P1 A',1};boot[1810]={'P1 A',0}
 end
+-- MSX_LOAD=<state> with MSX_LOAD_FRAME=<frame> (capture only, run_marco_catalog.py --load): a
+-- save state of the -state_directory loaded at frame 1, the count going on from its frame (the
+-- boot inputs are then never reached).
+-- MSX_FAMILY_ROUTINES=lo-hi,lo-hi (hex) with MSX_FAMILY_FROM/TO (frames;
+-- capture only, run_marco_catalog.py --family-routines): boss-trace.txt in
+-- the format of tools/capture_weapons.lua (U/V node dumps around every update
+-- 004246..00424A of a work-RAM node whose routine +0 lies in a range, W its
+-- writes, F frames) for tools/export_rest_sprites.py DIR@lo-hi.
+local fam_ranges={}
+for lo,hi in (os.getenv('MSX_FAMILY_ROUTINES') or ''):gmatch('(%x+)-(%x+)') do fam_ranges[#fam_ranges+1]={tonumber(lo,16),tonumber(hi,16)} end
+local fam_from=tonumber(os.getenv('MSX_FAMILY_FROM') or '0');local fam_to=tonumber(os.getenv('MSX_FAMILY_TO') or '0')
+local mstate=manager.machine.devices[':maincpu'].state
+local fam_log,fam_rtap,fam_wtap=nil,nil,nil;local fam_busy=true;local fam_active=nil
+local FPOOL0,FPOOL1=0x1010a4,0x1010a4+0xb0*100
+local function fam_hex(a,n) return (cpu:read_range(a,a+n-1,8):gsub('.',function(c) return string.format('%02x',string.byte(c)) end)) end
+local function fam_read(address,data,mask)
+ if fam_busy then return end
+ if address>=FPOOL0 and address<FPOOL1 then
+  local o=(address-FPOOL0)%0xb0
+  if o==0 and mstate['CURPC'].value==0x4246 then
+   fam_busy=true
+   local r=cpu:read_u32(address);fam_active=nil
+   for _,q in ipairs(fam_ranges) do if r>=q[1] and r<=q[2] then fam_active=address end end
+   if fam_active then fam_log:write(string.format('U %x %x %s\n',address,r,fam_hex(address,0xb0))) end
+   fam_busy=false
+  elseif o==8 and fam_active==address-8 and mstate['CURPC'].value==0x424a then
+   fam_busy=true;fam_log:write(string.format('V %x %s\n',fam_active,fam_hex(fam_active,0xb0)));fam_busy=false;fam_active=nil
+  end
+ end
+end
+local function fam_write(address,data,mask)
+ if fam_busy or not fam_active then return end
+ fam_log:write(string.format('W %x %x %x %x\n',address,mask,data,mstate['CURPC'].value))
+end
+local function fam_frame(f)
+ if #fam_ranges==0 then return end
+ if f==fam_from then
+  fam_log=assert(io.open(output..'/boss-trace.txt','w'))
+  fam_rtap=cpu:install_read_tap(0x100000,0x10ffff,'fam_r',fam_read)
+  fam_wtap=cpu:install_write_tap(0x100000,0x10ffff,'fam_w',fam_write)
+ end
+ if fam_log then
+  fam_log:write(string.format('F %d\n',f))
+  if f==fam_to then fam_rtap:remove();fam_wtap:remove();fam_log:close();fam_log=nil end
+ end
+end
+local load_name=os.getenv('MSX_LOAD')
 emu.register_frame_done(function()
- frame=frame+1;dbg:command(string.format('temp9=%x',frame))
+ frame=frame+1
+ fam_busy=true
+ if load_name and frame==1 then manager.machine:load(load_name);frame=tonumber(os.getenv('MSX_LOAD_FRAME')) end
+ dbg:command(string.format('temp9=%x',frame))
  -- MSX_CHARACTER_WATCH=1: every access to player 1's character word +6E
  -- (101532) from frame 1600 on (the choice), to find its readers
  -- (docs/PERSONAJES.md).
@@ -250,6 +310,16 @@ emu.register_frame_done(function()
  -- victory table 0BF658 (0C1E84).
  local victory=tonumber(os.getenv('MSX_VICTORY') or '-1')
  if victory>=0 and frame==plan.first+victory then cpu:write_u8(0x10c304,4);cpu:write_u8(0x10c301,0xff) end
+ -- Capture only (MSX_HIT=<frames after the first plan frame>:<hex kind>):
+ -- the player's hit as the contact 004C24 leaves it (+5A = kind, +5F bit 7);
+ -- the player's 0C3702 then runs the death 0C2956 (forms 2/3: 0C2A36/0C2C40).
+ local hit=os.getenv('MSX_HIT')
+ if hit then
+  local after,kind=hit:match('^(%d+):(%x+)$')
+  if frame==plan.first+tonumber(after) then
+   cpu:write_u8(0x1014c4+0x5a,tonumber(kind,16));cpu:write_u8(0x1014c4+0x5f,cpu:read_u8(0x1014c4+0x5f)|0x80)
+  end
+ end
  -- Capture only (MSX_KEEP_BOMBS): bombs 10C720 kept at 10 so a plan of
  -- several throws never runs out (the assist of capture_weapons.lua).
  if os.getenv('MSX_KEEP_BOMBS')=='1' and frame>=plan.first then cpu:write_u8(0x10c720,10) end
@@ -260,6 +330,25 @@ emu.register_frame_done(function()
    dbg:command('wpset 10000f,1,w,1,{printf "MARCO_PHASE_WRITE frame=%d pc=%08X data=%08X\\n",temp9,pc,wpdata;g}')
   end
   dbg:command(string.format('printf "MARCO_VIDEO_STATE frame=%%d a5=%%08X flag=%%02X phase=%%02X head0=%%08X head1=%%08X\\n",%x,a5,b@(a5+1946),b@(10000f),d@(a5+1d48),d@(a5+2d4e)',frame))
+ end
+ -- Capture only (MSX_CHILD_ROUTINES=hex,hex): every node of the work RAM
+ -- whose routine (+0) is one of these and whose creator (+0C) is the
+ -- player 1014C4, its 0xB0 bytes as hex, one line per node and frame.
+ local children=os.getenv('MSX_CHILD_ROUTINES')
+ if children and frame>=plan.first and frame<=plan.last then
+  if not child_log then child_log=assert(io.open(output..'/children.log','w')) end
+  local ram=cpu:read_range(0x100000,0x10ffff,8)
+  for r in children:gmatch('(%x+)') do
+   local pat=string.pack('>I4',tonumber(r,16));local at=1
+   while true do
+    local i=ram:find(pat,at,true);if not i then break end
+    if (i-1)%2==0 and ram:sub(i+12,i+15)==string.pack('>I4',0x1014c4) then
+     child_log:write(string.format('%d %06X %s\n',frame,0x100000+i-1,(ram:sub(i,i+0xaf):gsub('.',function(c) return string.format('%02x',c:byte()) end))))
+    end
+    at=i+2
+   end
+  end
+  child_log:flush()
  end
  if frame>=plan.first and frame<=plan.last then
   local file=assert(io.open(output..'/actor'..frame..'.bin','wb'));file:write(cpu:read_range(0x1014c4,0x101573,8));file:close()
@@ -288,5 +377,6 @@ emu.register_frame_done(function()
    local file=assert(io.open(output..'/'..r[1],'wb'));file:write(cpu:read_range(r[2],r[3],8));file:close()
   end
  end
- if frame==plan.last then inputs:close();states:close();manager.machine:exit() end
+ fam_frame(frame);fam_busy=false
+ if frame==plan.last then if fam_log then fam_log:close() end;inputs:close();states:close();manager.machine:exit() end
 end,'frame')

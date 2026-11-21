@@ -109,8 +109,22 @@ bool msx_ramfs_preload_idle(unsigned long deadline,int keep) {
     return true;
 }
 void msx_ramfs_preload_end(void) {
-    /* A file still in the queue stays as it was left (msx_ramfs_load has
-     * finished the ones the game uses). */
+    /* A file the background started and did not finish is completed here:
+     * with the queue gone nothing could find its buffer, which stayed
+     * allocated for good while the game read the file again into another.
+     * fixed.bin (128 KB, queued first and never msx_ramfs_load-ed: the HUD
+     * takes msx_ramfs_data or reads the ROM) was that file when Start cut the
+     * boot movies during its read: "RAM budget: 3224 KB left" on a boot
+     * whose twin had 209 slots (docs/RENDIMIENTO.md, B81). Finishing it
+     * keeps the bytes the read already cost and the HUD uses them. */
+    for (unsigned i=0;i<queued;i++) {
+        preload_t *p=&queue[i];
+        if (p->done || !p->data) continue;
+        dma_wait();
+        if (p->pos<p->size) dma_read(p->data+p->pos,p->rom+p->pos,p->size-p->pos);
+        p->pos=p->size;
+        if (file_count<RAMFS_FILES) publish(p); else {free(p->data);p->data=NULL;p->done=true;}
+    }
     free(queue);queue=NULL;queued=queue_next=0;
 }
 size_t msx_ramfs_load(const char *path) {

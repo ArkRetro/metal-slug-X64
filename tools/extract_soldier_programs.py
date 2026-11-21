@@ -38,6 +38,11 @@ ROOTS+=[0x23c8b0,0x23c8f8,0x23c97c,0x23c782,0x23c790,0x23c79e,0x23c7ac,0x23c7ba,
     0x23c7f8,0x23c806,0x23c814,0x23c822,0x23c836,0x23c9ba,0x23ca32,0x2a769c,0x269340,0x2a765a,0x2a78f0,0x2a796e,
     0x2a77f4,0x2a7872,0x2a79ec,0x2a7a6a,0x2a7ae8,0x2a7b2a,0x2a76f8,0x2a7776,
     0x23b3c6,0x23b5b8,0x23b4e4,0x23b41c]   # creature 035668
+# The player's death of kind 8 (0C2ACC): the child 05A0B4 of its program's
+# callback 05A09E (docs/ANIMACIONES_DANO.md).
+ROOTS+=[0x25339c]
+# Fio's actor 0C4C64 of her deaths (0C4C28).
+ROOTS+=[0x253322]
 # Prisoner 099862: tied (wriggle table 099D86 by +80), salute, item gift
 # (callback 099CCC), release jump and run.
 ROOTS+=[0x29f6d0,0x29f9ac,0x29fa22,0x29fa40,0x29fa78,0x29f85e,0x29f874,0x29f88a,0x29f8a0,0x29f8b6,0x29f8cc,0x29f8e2,
@@ -200,7 +205,9 @@ ROOTS+=[0x230984,0x230654,0x23066a]
 # item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
 # 02206E (the dust 021F96 is the bullets' impact 22E504).
 ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
-# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl.
+# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl. No mission group (/programs.bin):
+# Mission 2 and Mission 5 stage 3 (record 2DDF4C at camera 528, 2DE65C at 1280) both create them; in the m2 group the
+# Mission 5 pack had no wing program and the swarm stopped at 23B636/23B654 (matrix slugnoid, m5s3).
 ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,0x23b7aa,0x23b6de,0x23b7ec,0x23b720]
 # The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
 # pieces 09A9C4 falling (neo_prisoner.c).
@@ -302,12 +309,12 @@ ROOTS+=[0x22fa34]
 # not into the console image (compile_soldier_ai_tables.py). A root also
 # listed in another block stays in the image.
 MISSION_BLOCKS={'end':('# The credits and the title after them',),'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
-    '# Mission 2: the hostage','# The miners','# The bats','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
+    '# Mission 2: the hostage','# The miners','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
     '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 weapon F','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()
@@ -340,6 +347,8 @@ ROOTS+=[0x22cd04,0x22cc34,0x22cd5a,0x22cc8a,0x0c4e48,0x22f65e]
 ROOTS+=[0x22e064,0x22e0f2,0x22df54,0x22e1f0]
 # Mission 3 weapon E 0DE4DA (neo_pweapon.c): the ball's programs 2B0272/2B027A/2B0282 (two variants).
 ROOTS+=[0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244]
+# Mission 5 weapon F 0DEA20 / 0DEA44 (neo_pweapon.c, B16): level 2B02FC[+7D] = 2B028A / 2B02BE, vertical 2B0304[+7D] = 2B02A4 / 2B02E2, burst 0DEC14 2B030C.
+ROOTS+=[0x2b028a,0x2b02be,0x2b02a4,0x2b02e2,0x2b030c]
 # Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).
 ROOTS+=[0x281ffc,0x28207a,0x2824f4,0x282518,0x282362,0x28236e,0x282388]
 # Mission 3 oil drum 0391EA (neo_m3enemy.c).

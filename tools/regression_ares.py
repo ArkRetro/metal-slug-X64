@@ -15,31 +15,37 @@ current counts as the new baseline (only after a reviewed green run).
 Before running: the cartridge must be at most 67,043,328 bytes (above that
 ares writes no log and every test hangs) — the script refuses a larger one.
 """
-import argparse, json, pathlib, re, subprocess, sys, time
+import argparse, json, pathlib, re, subprocess, sys, time, os, signal
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 LIMIT = 67_043_328
 BASELINE = ROOT / 'data' / 'regression_baseline.json'
 
-# name: (script, extra args, timeout in s, output flag)
+# name: (script, extra args, timeout in s, output flag). The Mission 4, 5 and 6 tests and `veh` count --seconds in game time
+# (tools/ares_clock.py: the pad's schedule does not change with the machine's load); their timeouts here are host
+# time, three times that and the boot.
 TESTS = {
     'logo':  ('test_logo_ares.py', [], 600, '--output'),
     'pause': ('test_pause_ares.py', [], 600, '--output'),
     'chars': ('test_characters_ares.py', [], 1800, '--output'),
     'options': ('test_options_ares.py', [], 900, '--output'),   # the options screen: HERO 5, LEVEL 8, no HOW TO PLAY, EEPROM (docs/OPCIONES.md)
     'm4':    ('test_mission4_ares.py', [], 600, '--out'),
-    'm4boss': ('test_mission4_ares.py', ['--fire', '--jump', '1.5', '--lifebar', '--continues', '--boss', '--vehicle', '1', '--seconds', '4500', '--progress', '5552', '--period', '10'], 4800, '--out'),   # the boss 02267E defeated and Mission 5 started; B69: the SV-001 of 4288 hit while mounted
-    'm5s1':  ('test_mission5_ares.py', ['--stage', '1', '--progress', '100', '--fire', '--jump', '2.5'], 600, '--out'),
-    'm5s2':  ('test_mission5_ares.py', ['--stage', '2', '--progress', '80', '--fire', '--jump', '2.5'], 600, '--out'),
-    'm5s3':  ('test_mission5_ares.py', ['--stage', '3', '--progress', '100', '--fire', '--jump', '2.5'], 900, '--out'),
-    'm5boss': ('test_mission5_ares.py', ['--stage', '3', '--seconds', '3300', '--progress', '2560', '--fire', '--jump', '1.5', '--lifebar', '--continue', '--up', '6', '--back', '7', '--bomb', '--down', '--boss'], 3600, '--out'),   # the sewer to the boss 0A0C00, beaten, and 01891E -> Mission 6 (life bar and continues: a blind pad)
-    'm6s1':  ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--continues'], 600, '--out'),   # the rafts need jumps (beach 0..176, raft 226..298)
-    'm6s1end': ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--turn', '6', '--continues', '--fire', '--progress', '3520', '--seconds', '1500', '--next'], 1800, '--out'),   # stage 1 to its end: the mid-boss 05310E, the retention 3632 and the stage exit 0B6ED2 of the list call 0BD67A, then stage 2 (016E6E) starts
-    'm6s2end': ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--up', '1.5', '--sweep', '10', '--continues', '--progress', '4240', '--seconds', '5000', '--period', '10', '--next'], 5400, '--out'),   # stage 2 to its end: the jumpers 086712 at 1104, the jeep 0A2EFA at 2672, the tanks at 3872, 0BE8F6 at 4240 and the exit 0B6ED2 of 0BE8A2 (list call 0BE888), then stage 3 (016E7E) starts
-    'm6s2':  ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--continues'], 600, '--out'),   # its soldiers run now (groups m3, m4, m5) and kill a player who neither fires nor jumps
-    'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 600, '--out'),
+    'm4boss': ('test_mission4_ares.py', ['--fire', '--jump', '1.5', '--lifebar', '--continues', '--boss', '--vehicle', '1', '--seconds', '4500', '--progress', '5552', '--period', '10'], 14400, '--out'),   # the boss 02267E defeated and Mission 5 started; B69: the SV-001 of 4288 hit while mounted
+    # m5s1..m6s3: the tests stop by game updates (--seconds 90 on tools/ares_clock.py) or their own host cap
+    # 3 x 90 + 600 s after the boot; the matrix's limit (1500 s) is above both, so the game's clock decides.
+    'm5s1':  ('test_mission5_ares.py', ['--stage', '1', '--progress', '100', '--fire', '--jump', '2.5'], 1500, '--out'),
+    'm5s2':  ('test_mission5_ares.py', ['--stage', '2', '--progress', '80', '--fire', '--jump', '2.5'], 1500, '--out'),
+    'm5s3':  ('test_mission5_ares.py', ['--stage', '3', '--progress', '100', '--fire', '--jump', '2.5'], 1500, '--out'),
+    'm5boss': ('test_mission5_ares.py', ['--stage', '3', '--seconds', '3300', '--progress', '2560', '--fire', '--jump', '1.5', '--lifebar', '--continue', '--up', '6', '--back', '7', '--bomb', '--down', '--boss'], 10800, '--out'),   # the sewer to the boss 0A0C00, beaten, and 01891E -> Mission 6 (life bar and continues: a blind pad)
+    'm6s1':  ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--continues'], 1500, '--out'),   # the rafts need jumps (beach 0..176, raft 226..298)
+    'm6s1end': ('test_mission6_ares.py', ['--stage', '1', '--jump', '1.0', '--turn', '6', '--continues', '--fire', '--progress', '3520', '--seconds', '1500', '--next'], 5400, '--out'),   # stage 1 to its end: the mid-boss 05310E, the retention 3632 and the stage exit 0B6ED2 of the list call 0BD67A, then stage 2 (016E6E) starts
+    'm6s2end': ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--up', '1.5', '--sweep', '10', '--continues', '--progress', '4240', '--seconds', '5000', '--period', '10', '--next'], 16200, '--out'),   # stage 2 to its end: the jumpers 086712 at 1104, the jeep 0A2EFA at 2672, the tanks at 3872, 0BE8F6 at 4240 and the exit 0B6ED2 of 0BE8A2 (list call 0BE888), then stage 3 (016E7E) starts
+    'm6s2':  ('test_mission6_ares.py', ['--stage', '2', '--fire', '--jump', '2.5', '--continues'], 1500, '--out'),   # its soldiers run now (groups m3, m4, m5) and kill a player who neither fires nor jumps
+    'm6s3':  ('test_mission6_ares.py', ['--stage', '3'], 1500, '--out'),
+    'm6boss': ('test_mission6_ares.py', ['--stage', '3', '--fire', '--jump', '4', '--aimup', '--sweep', '8', '--lifebar', '--continues', '--bomb', '3', '--boss', '--seconds', '2400', '--period', '10'], 7800, '--out'),   # the last enemy 04153E (neo_m6boss overlay) from its opening 045428 to its death 04180A (018F92 by 041DD4): both forms, no routine stop; --seconds counts game time (tools/ares_clock.py)
+    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 9900, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
+    'slugnoid': ('test_vehicle_damage_ares.py', ['--mission', 'm5s3', '--ride', 'forward'], 5400, '--out'),   # B69: the Slugnoid 09692C of Mission 5 stage 3 ridden forward to the enemies: class-0 hit, 48 -> 32 -> 16 -> 0, flicker, gauge, destroyed
     'ending': ('test_ending_ares.py', ['--seconds', '3600'], 4200, '--out'),   # the test menu's ENDING: results 0570A0, credits (stage 0x2C), last screen, ranking 057E00 and title 0A7FFE with the TAS's update counts
-    'veh':   ('test_vehicle_damage_ares.py', ['--mission', 'm1', '--expect', '2', '--seconds', '3000', '--no-lifebar'], 3300, '--out'),   # B69: the Camel Slug ridden under fire (Mission 1, pad with continues; the SV-001 is reported, the blind pad does not always reach it). No life bar: the baseline ran without it (Z was unmapped), and with it the pad stays at the towers of 1920
 }
 M1M2 = ('test_m1m2_ares.py', [], 1200, '--output')
 
@@ -55,13 +61,21 @@ def run(name, script, extra, timeout, outflag, rom, out):
     d = out / name
     cmd = [sys.executable, str(ROOT / 'tools' / script), str(rom), outflag, str(d)] + extra
     t0 = time.time()
+    # The test runs in its own process group: on a timeout the whole group (the test and its ares) is stopped. Killing
+    # only the test left its ares running on the display, where it took the keyboard focus from the next tests.
+    p = subprocess.Popen(cmd, cwd=ROOT, stdout=subprocess.PIPE, stderr=subprocess.PIPE, start_new_session=True)
     try:
-        p = subprocess.run(cmd, cwd=ROOT, capture_output=True, timeout=timeout)
-        text = p.stdout + p.stderr
+        so, se = p.communicate(timeout=timeout)
+        text = so + se
         # test_logo_ares.py reports its verdict as the JSON field "status" instead of a RESULT line.
         result = 'PASS' if b'RESULT: PASS' in text or re.search(rb'"status": "PASS"', text) else 'FAIL'
-    except subprocess.TimeoutExpired as e:
-        text = (e.stdout or b'') + (e.stderr or b'')
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        so, se = p.communicate()
+        text = so + se
         result = 'TIMEOUT'
     (out / f'{name}.txt').write_bytes(text)
     logs = list(d.rglob('*.log')) if d.exists() else []
@@ -76,6 +90,8 @@ def main():
     ap.add_argument('--m1end')
     ap.add_argument('--out', required=True)
     ap.add_argument('--only')
+    ap.add_argument('--testpad', help='B78: the scripted-pad test cartridge (mslugx-testpad.z64); a test with a recorded '
+                    'script data/<name>_pad.txt replays it on this ROM (tools/padscript.py): the same numbers every run')
     ap.add_argument('--write-baseline', action='store_true')
     a = ap.parse_args()
     rom = pathlib.Path(a.rom).resolve()
@@ -91,7 +107,11 @@ def main():
                 sys.exit('m1m2 needs --m1end')
             r = run(n, *M1M2, pathlib.Path(a.m1end).resolve(), out)
         else:
-            r = run(n, *TESTS[n], rom, out)
+            script, extra, timeout, outflag = TESTS[n]; pad = ROOT / 'data' / f'{n}_pad.txt'
+            if a.testpad and pad.exists():
+                r = run(n, script, extra + ['--pad-script', str(pad)], timeout, outflag, pathlib.Path(a.testpad).resolve(), out)
+            else:
+                r = run(n, script, extra, timeout, outflag, rom, out)
         now[n] = r
         b = base.get(n)
         why = []

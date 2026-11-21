@@ -1014,3 +1014,93 @@ Privados: `filesystem/mission4/s1/{map.json,map_observed.json,collision.json,col
   `regression_ares.py` con `m1end` recién hecho: todo PASS (la pausa falló una vez por «boot tap» con la máquina
   cargada y pasó al repetirla); `m4boss` PASS en 2260 s, entra en la línea base (sus 2061 dibujos ausentes son la
   `palette_id=000` de `169276..16929E`, pendiente (2)).
+
+## Jefe en juego, sexta sesión (13-XI, agente A): BLOOD OFF, la estela, el casco y el coche
+
+- **BLOOD OFF** (menú de opciones de `work-chars`, valor por defecto de la tabla EU): las capturas de la M4 ya son
+  sin sangre (`10FD8F` = 0 en la RAM de A, B, C, L2 y T; el TAS y `run4` usan el BIOS euro por defecto), así que no
+  faltaba ninguna paleta «sin sangre». Los ~4000 dibujos ausentes de `m4boss` con el menú eran todos
+  `palette_id=000` de los descriptores `169276..16929E` (programa `234BC8`): **la estela del proyectil** `02505C`.
+  Su `+14` es la ranura de paleta del proyectil `024F0E` (`02508C`, cada actualización; 357..359 que el proyectil
+  alterna) y no reserva ninguna; las ranuras nativas son por actor (`ga_palette`), así que ahora la estela resuelve el
+  `+14` con los recursos del proyectil. Su número dependía de cuántos proyectiles lanzaba el jefe (larga pelea con
+  BLOOD OFF), no de la sangre.
+- **El casco** (`10D7B6`) solo dibujaba las columnas de la derecha: el port no corría **`0C748E`** de esa capa (la
+  cámara, `0C840C`, tras las órdenes de la lista; `0C7480` copia antes `+36`/`+38` a `+3A`/`+3C`) ni **`0C75B2`**
+  (`003942` → `0C7AA8`: `+84`/`+86` = palabras altas de `+14`/`+18` menos los acarreos de `+25`). Sin `0C748E` solo
+  tenían altura en `+42` las columnas de la ventana de `0C741A` (desde la 14); sin `0C75B2`, `+84` = `+86` = 0 (el
+  casco a x 0 y la Y sin la del objeto). Ahora `neo_world.c` `m4_ring_pass` (`0C74C4`: `0C6BDE` para las columnas
+  que entran; `0C714E` con `+82` bit 1 y las filas con el bit 2, apagados en el jefe) y `neo_layerobj_scb`
+  (`neo_train.c`). En ares (`MSX m4col`, traza temporal): `+84` sigue al objeto (−288 → 66), `+86` = `01E8` (el de
+  T), las 20 columnas con su altura de `0223A8` (las de T: `C801`, `E809`…, `D006`) y **el casco entero dibujado**.
+- **El coche `027F54` de 1000**: muerto por un golpe de los tipos de `01B1F2` (9, A, C, D, E; `02858C` → `236170`)
+  suelta el motor `028A88` (paletas 216, 3D2, 367); `run4` y el TAS lo matan con la pistola (`02853E`) y ninguna
+  captura las tenía. Captura **W4** (`captures-m4/fam/runW.sh`, `WEAPON=4`: `MSX_FULL_GIVE_WEAPON=150700:4`, réplica de
+  `run4` desde `sec05_149829`, volcados cada 10 fotogramas 150990..153000): el motor en 151270..151370 con las tres
+  paletas. Añadidas a `mission4/rest-native.json` solo las paletas nuevas de la exportación con
+  `--keep-palettes` (216, 218, 35D, 364, 365, 367, 3D2; validación de W4@27f54-28d04: 76 fotos, 127 500 píxeles
+  iguales, 0 distintos); los descriptores, sin cambios (la exportación entera traía 1634 de otras misiones).
+- **B69 Slugnoid**: `test_vehicle_damage_ares.py --ride forward` (montado: ciclo de 5 s, 2 s a la derecha y fuego B
+  al final; nunca A) para llevarlo hasta los enemigos de `m5s3`.
+- **Mando de `m4boss` (B69)**: con la rama de B (`542dff5`, el mapa `E006A` entero) la comprobación «golpeado
+  montado» falló dos veces porque el jugador salía del SV-001 en 4360: el mando saltaba (`a`) mientras disparaba (`b`)
+  y A+B a la vez es la salida del vehículo (`0AA7FC` tipo 1); `E006A` es el mapa de la plataforma del jefe y no toca
+  el recorrido de 4288..4360. Ahora, montado, el mando no salta.
+- **Puertas** (`work-m4` = ccr `4de14ab` + `work-chars` `410edca` + `work-m5` `e13b3d9`; `softdip.bin` de
+  `tools/extract_softdip.py` en el `filesystem` propio: sin él no hay pantalla de opciones y el cartucho usa
+  `MSX_BLOOD` = 1): `m4boss` con BLOOD OFF (`10FD8F` = 00 en el log) **PASS, 0 dibujos ausentes** (antes 2061 con
+  sangre y ~4000..6122 sin ella), 9 golpes de clase 0 montado, el jefe muerto y la M5 empezada (3138 s).
+- **Pendiente**: (1) en la pelea, la torre de andamios del terreno (`10C72E`) se dibuja delante del casco: falta
+  comparar el orden de sprites de `10D7B6` y `10C72E` (`+2C`) con la VRAM de T; (2) el 5A de 1F sin captura;
+  (3) el Slugnoid golpeado en ares (`--ride forward`, sin pasada aún).
+- **Estado al parar (13-XI, orden del usuario)**: `work-m4` = ccr `4de14ab` + `work-chars` `410edca` + `work-m5`
+  `e13b3d9` + lo de esta sesión; `make check` RC 0 (296 PASS) con los paquetes 4..6 rehechos. Matriz sobre ese cartucho:
+  logo, pausa, personajes, opciones, m4, M5 ×3, m6s2, m6s3 PASS; `m4boss` PASS con 0 dibujos ausentes (BLOOD OFF) pero
+  `unsupported` 6 → 7 (parada explícita `02058E` de la trampilla `01F866` en 1771: el `+82` del emisor apunta a una roca
+  ya borrada por otro camino; depende de la partida, no de este cambio); `m5boss` 8 dibujos ausentes y `m6s1` 1312
+  (sin mirar: probablemente la exportación de la M6 de `ws-logo` frente a la de `ws-chars`); `veh` y `m1m2` sin
+  correr. **No subido a ccr.** Falta: fusionar `origin/work-chars` `609f8dd`, mirar `m5boss`/`m6s1`, repetir la matriz
+  y subir M4 + M5 + menú juntos. Para la M4: copiar `filesystem/mission4/rest-native.json` (7 paletas nuevas) a
+  `ws-logo`; `ws-logo` no tiene `filesystem/softdip.bin` (`tools/extract_softdip.py`).
+
+## Integración y jefe, séptima sesión (16-XI, agente I)
+
+- **Unión** (`work-m4` `f5d4f0a` + ccr `a41e23a` + `work-chars` `c952bea` + `work-audit` `1727400`): exportaciones de la
+  M5 y la M6 como copias propias en `ws-m4-private` (de `ws-m5` y `ws-chars`), `softdip.bin` de
+  `tools/extract_softdip.py` (igual byte a byte al anterior), paquetes 2..6 rehechos; `make check` RC 0 (298 PASS).
+- **`m6s1` 1312 dibujos ausentes**: era la exportación de la M6 de `ws-logo` (enlace) frente a la de `ws-chars`
+  (difieren desde el byte 40 049 917); con la copia de `ws-chars`, `m6s1` da 0 dibujos ausentes y 0 paradas (antes 4).
+- **`02058E` (trampilla `01F866`)**: el 68K (`020542`) lee `+2C` de lo que apunte el `+82` del emisor sin mirar si el
+  nodo sigue vivo; la roca solo lo borra ella misma (`01FDA4`/`01FECE`, si es la última). Con una traza temporal
+  (cada `rock_emit`, cada `ga_kill` de una roca con su llamador y la parada) el recorrido de `m4boss` emitió y borró 69
+  rocas, todas por `01FDA4`, sin ninguna parada `02058E`; y la matriz sobre el cartucho de esta unión tampoco la dio
+  (`m4boss` PASS, 6 paradas como la línea base: `7E832` ×4, `03C5E8` ×2). La parada explícita se queda (no se
+  rellena la lectura de un nodo borrado sin captura que la muestre); si vuelve, la traza dice qué camino borró la roca.
+- **La torre delante del casco no es un fallo**: en la VRAM de T (26700) la capa del terreno `10C72E` tiene `+2C` =
+  `00A0` (sprites 161..192) y la del casco `10D7B6` `+2C` = `0020` (sprites 33..52); en el Neo Geo el sprite de número
+  mayor tapa al menor, y las columnas 177..180 (x 193..256, filas 18..26: casillas `4A9EF..4AA42`) son la torre de
+  andamios, dibujada encima del casco en MAME (`game26700.png`), como en ares.
+- **B69 Slugnoid** en la matriz (`slugnoid`: `test_vehicle_damage_ares.py --mission m5s3 --ride forward`): montado en
+  la cámara 557, golpes de clase 0, 48 → 32 → 16 → 0, parpadeo, medidor y destrucción (PASS, 278 s). Faltaban las
+  paletas de la lista de muerte `097E88` (6, A, B, C: 32 dibujos ausentes del armazón `1C2178..`, también 8 de los
+  43 de `m5boss`): captura nueva **SH** (`captures-m5/fam/runSH.sh`: estado del TAS `u17460`, plan `still`, sin
+  trampa de vehículo, volcados cada fotograma 39500..39680 con `MSX_FULL_DENSE=1`, nuevo); `export_rest_sprites.py`
+  `SH@966f0-97e08 --keep mission5 --keep-palettes`: 174 fotos, 210 689 píxeles iguales, 0 distintos; añadidas a
+  `mission5/rest-native.json` solo las paletas nuevas (6, A, B, C, 377); descriptores sin cambios.
+- **`m5boss`**: 43 dibujos ausentes antes de SH (8 de la muerte del Slugnoid y 35 de la paleta 20C, `099268`,
+  registrada como no capturable en `MISION5.md`: su número sigue a cómo acaba la pelea); con SH, **0** (1539 s).
+- **Subido** a ccr `71d9449` (matriz de 17 pruebas en verde, línea base nueva). Después: `work-audit` `33e96a0` (muerte
+  de Fio, tipos 8 y 0x12, 1089) unido en `1b158ee`, con `soldier_programs.json` regenerado del extractor unido
+  (`captures-soldiers/walk3`; desde el 19-XI `captures-audit/j/k8d1`, mismo banco `7839d20a…`) y `src/msx_sfx_policy.h` recompilado (`compile_sound_policy.py`: las palabras de la M4).
+- **Uniones siguientes (16-XI, noche)**: `work-audit` `f4a5571` (paquetes de personaje v2: `romfs/chars/c1..c3.bin` de
+  `ws-audit` y el catálogo de Marco de `captures-audit/j/catalog/` copiados al árbol, sin enlaces duros: los `c*.bin`
+  de este árbol eran enlaces duros a `ws-logo` y se borraron antes de copiar), `work-chars` `9013c98` (M6 etapa 2;
+  `mission6/rest-native.json` y `mission6/s2/patches.json` copiados; `s2` es un directorio propio con enlaces por
+  fichero) y `work-bugs` `ec724ca` (arma F; `mission5/rest-native.json` de `ws-m5`: la de esta rama más los 8
+  descriptores de la F). Cabecera de sonido con la regla del Z80 (`compile_sound_policy.py --rom … --keep`) y las
+  palabras de la M4. `filesystem/audio` propio: enlaces por fichero a `ws-logo` más `sfx_1087`, `sfx_1089`, `sfx_108a`
+  (de `ws-audit`) y su `manifest.json`; `tools/check_sfx_assets.py` en la regla del cartucho (sin un `.wav64` de la
+  política el juego se paraba al arrancar: toda la matriz falló así una vez).
+- Ojo con la matriz: una ares huérfana de una pasada parada (padre muerto) dejó su ventana en `:71` y la siguiente
+  pasada falló `chars` y `m4` (las teclas iban a la otra ventana); al repetirlas solas, PASS. Parar siempre también
+  el proceso `ares` hijo.

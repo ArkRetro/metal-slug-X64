@@ -85,7 +85,7 @@ try:
         # --continue: the panel's last state is "continue" (CONTINUE? 9..0): Start, as an arcade player would.
         if a.cont:
             pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
-            if pm and pm[-1]=='continue' and t>=next_start:tap('Return',.4);next_start=t+1.0   # 0.4 s: longer than one pad read with the emulator at a third of its speed
+            if pm and pm[-1]=='continue' and t>=next_start:tap('Return',2.0 if a.record else .4);next_start=t+1.0   # 0.4 s: longer than one pad read with the emulator at a third of its speed
         if t>=nextgrab:
             subprocess.run(['import','-display',os.environ['DISPLAY'],'-window','root',str(out/f'g{k:03d}_{cam}_{mm[-1][1] if mm else 0}.png')]);k+=1;nextgrab=t+a.period
         time.sleep(.03)

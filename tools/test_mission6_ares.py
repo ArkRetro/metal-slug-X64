@@ -96,7 +96,7 @@ try:
             # emulator at a third of its speed (a loaded machine), the countdown ran out and the game restarted in Mission 1.
             plays=text.count('MSX panel play');time.sleep(1.0)
             for _ in range(30):
-                tap('Return',.4);time.sleep(.6);tx=log()
+                tap('Return',2.0 if a.record else .4);time.sleep(.6);tx=log()   # a recording runs at ~10 % on a loaded host: 0.4 s missed every read (game over, B78)
                 if tx.count('MSX panel play')>plays or tx.count('MSX panel game over')>text.count('MSX panel game over'):break
             continued=text.count('MSX panel continue')
         # --turn P: Left and Down for 0.5 s every P s (a player's choice: crouched shots at the enemies left behind, e.g.

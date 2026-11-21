@@ -22,6 +22,7 @@
 #include "msx_character.h"
 #include "neo_text.h"
 #include "msx_overlay.h"
+#include "end_zoom.h"
 #include <stdio.h>
 
 static msx_game_t game;
@@ -215,6 +216,7 @@ static int native_screen_y(uint16_t projected_y) {
 }
 static void draw_native_parts(const neo_world_draw_t *d,bool request_only);
 static uint16_t end_mix_target;   /* the 009CCE target of an end-list draw (draw_end); 0: the world's table */
+static bool end_zoom_on;static uint16_t end_list_y;   /* a draw_end entry: its sprite-list y word as listed */
 /* Actor sprite parts may be deferred a frame when their chunk is not
  * resident and the frame's synchronous decode budget is spent. */
 static void draw_native(const neo_world_draw_t *d,bool request_only) {
@@ -258,6 +260,8 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         if (request_only) {scene_request_image(im,2);continue;}
         scene_image_t part=*im;part.palette=(uint16_t)palette;
         if (d->zoom_x!=0xff || d->zoom_y!=0xff) {
+            /* draw_end: the LSPC's shrink (end_zoom.c) when the descriptor is exported; else the scaled part below. */
+            if (end_zoom_on && end_zoom_draw(d->descriptor,d->x,end_list_y,d->zoom_x,d->zoom_y,d->attributes&3u,(unsigned)palette)) return;
             /* Shrunk sprite (+12/+13): offsets and size scaled about the
              * actor's point (render approximation of the hardware shrink). */
             float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
@@ -285,7 +289,7 @@ static void draw_end(const neo_end_draw_t *e,bool request_only) {
     uint16_t y=(uint16_t)(e->y&0x1ffu);
     if (MSX_SCREEN_BASE_Y-((int)y-MSX_PROJECTED_BASE_Y)>=240) y=(uint16_t)(y+0x200u);
     neo_world_draw_t d={e->descriptor,e->x,y,e->attributes,e->palette,false,NEO_WORLD_GACTOR,e->zoom_x,e->zoom_y,0,e->mix_target?e->mix_weight:0,0};
-    end_mix_target=e->mix_target;draw_native(&d,request_only);end_mix_target=0;
+    end_mix_target=e->mix_target;end_zoom_on=!request_only;end_list_y=e->y;draw_native(&d,request_only);end_mix_target=0;end_zoom_on=false;
 }
 static void draw_projectile(const msx_bullet_t *bullet,unsigned owner) {
     const scene_bank_t *bank=scene_bank(SCENE_PROJECTILES);
@@ -1021,6 +1025,14 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     msx_perf_mark(MSX_PERF_PREP);
     load_target=NULL;
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
+    {   /* end_zoom.c: the previous frame's time into the worst; a line every 300 frames while it draws */
+        static unsigned zoom_frames,zoom_entries;end_zoom_frame();const end_zoom_stats_t *z=end_zoom_stats();
+        if (++zoom_frames%300==0 && z->entries!=zoom_entries) {
+            zoom_entries=z->entries;
+            debugf("MSX ENDZOOM entries=%u strips=%u hits=%u misses=%u no_slot=%u reads=%u missing_desc=%u missing_tiles=%u overflow=%u auto=%u cache=%u KB worst=%lu us\n",
+                z->entries,z->strips,z->hits,z->misses,z->no_slot,z->file_reads,z->missing_descriptors,z->missing_tiles,z->overflow,z->auto_animated,z->cache_bytes/1024,(unsigned long)TICKS_TO_US(z->worst_frame_ticks));
+        }
+    }
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));
     scene_render_set_collapse(game.world.ga_flags.collapsed!=0,game.world.ga_flags.flash!=0);
     scene_render_set_patch(game.world.ga_flags.barrel_patched!=0);

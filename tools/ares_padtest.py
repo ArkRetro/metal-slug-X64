@@ -30,7 +30,7 @@ def prepare(a, out):
             f.unlink()
     if a.pad_script:
         from padscript import apply, read_script
-        apply(a.rom, read_script(a.pad_script), rom)
+        apply(a.rom, read_script(a.pad_script), rom, then_record=a.record)
     else:
         shutil.copyfile(a.rom, rom)
     a.rom = str(rom)

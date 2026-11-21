@@ -7,7 +7,8 @@ log; a replay cartridge carries that script and gives the game the same buttons 
 ares are the same run.
 
   padscript.py from-log ares.log script.txt     # the `MSX PAD n= btn=` lines of a recording -> script (text)
-  padscript.py apply ROM.z64 script.txt OUT.z64  # ROM + the script at the next 1 MiB boundary (magic MSXPAD01)
+  padscript.py apply ROM.z64 script.txt OUT.z64 [--then-record]  # ROM + the script at the next 1 MiB boundary
+      (magic MSXPAD01; --then-record: past the script's last entry the cartridge records again, a continued recording)
 
 Script text: one `N K XXXX` per line: from pad read N, stream K (0 the buttons, 1 a frame's simulation steps, 2 a paused
 frame's steps) has the hexadecimal value XXXX; N not decreasing.
@@ -39,11 +40,11 @@ def read_script(path):
     return rows
 
 
-def apply(rom, rows, out):
+def apply(rom, rows, out, then_record=False):
     data = bytearray(Path(rom).read_bytes())
     at = (len(data) + 0xFFFFF) & ~0xFFFFF
     data += bytes(at - len(data))
-    data += MAGIC + struct.pack('>II', len(rows), 0)
+    data += MAGIC + struct.pack('>II', len(rows), 1 if then_record else 0)   # flag 1: past the script the cartridge records
     for n, k, v in rows:
         data += struct.pack('>IHH', n, v, k)
     Path(out).write_bytes(bytes(data))
@@ -55,9 +56,9 @@ def main():
         rows = from_log(Path(sys.argv[2]).read_text(errors='replace'))
         Path(sys.argv[3]).write_text(''.join(f'{n} {k} {v:04X}\n' for n, k, v in rows))
         print(f'{len(rows)} changes, last read {rows[-1][0] if rows else 0}')
-    elif len(sys.argv) == 5 and sys.argv[1] == 'apply':
+    elif len(sys.argv) in (5, 6) and sys.argv[1] == 'apply':
         rows = read_script(sys.argv[3])
-        at = apply(sys.argv[2], rows, sys.argv[4])
+        at = apply(sys.argv[2], rows, sys.argv[4], then_record=sys.argv[5:] == ['--then-record'])
         print(f'{len(rows)} changes at 0x{at:07X}')
     else:
         raise SystemExit(__doc__)

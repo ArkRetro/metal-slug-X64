@@ -21,7 +21,7 @@ void __real_joypad_poll(void);
 #define PAD_MAGIC "MSXPAD01"
 #define PAD_CHUNK 64u
 #define PAD_KINDS 3u
-static bool pad_init,pad_script;static uint32_t pad_base,pad_count,pad_next;
+static bool pad_init,pad_script,pad_then_record;static uint32_t pad_last;static uint32_t pad_base,pad_count,pad_next;
 static uint32_t pad_reads;static uint16_t pad_val[PAD_KINDS],pad_logged[PAD_KINDS]={0xffffu,0xffffu,0xffffu};
 static uint8_t pad_buf[PAD_CHUNK*8u] __attribute__((aligned(16)));static uint32_t pad_buf_first=0xffffffffu;
 
@@ -42,7 +42,7 @@ static void pad_find(void) {
     for (uint32_t at=0x100000u;at<0x8000000u;at+=0x100000u) {
         data_cache_hit_writeback_invalidate(head,sizeof head);
         dma_read(head,0x10000000u+at,sizeof head);
-        if (!memcmp(head,PAD_MAGIC,8)) {pad_script=true;pad_base=at;pad_count=be32(head+8);break;}
+        if (!memcmp(head,PAD_MAGIC,8)) {pad_script=true;pad_base=at;pad_count=be32(head+8);pad_then_record=(head[15]&1u)!=0;break;}
     }
     debugf("MSX PAD %s count=%lu at=%07lX\n",pad_script?"script":"record",(unsigned long)pad_count,(unsigned long)pad_base);
 }
@@ -56,12 +56,17 @@ void __wrap_joypad_poll(void) {
     if (!pad_init) pad_find();
     __real_joypad_poll();
     pad_reads++;
+    if (pad_script && pad_then_record && pad_next>=pad_count && pad_reads>pad_last) {
+        /* A continued recording (tools/padscript.py apply --then-record): past the script's last read the pad and the
+         * clock are the real ones again, and the log goes on being the script. */
+        pad_script=false;debugf("MSX PAD script end n=%lu: recording\n",(unsigned long)pad_reads);
+    }
     if (pad_script) {
         while (pad_next<pad_count) {
             const uint8_t *e=pad_entry(pad_next);
             if (be32(e)>pad_reads) break;
             unsigned kind=e[7];if (kind<PAD_KINDS) pad_val[kind]=(uint16_t)(e[4]<<8|e[5]);
-            pad_next++;
+            pad_last=be32(e);pad_next++;
         }
     } else pad_val[0]=__real_joypad_get_buttons(JOYPAD_PORT_1).raw;
     pad_log(0);

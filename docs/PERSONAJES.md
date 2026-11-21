@@ -106,6 +106,8 @@ cd tools; python3 extract_character_fixture.py --character 1 --report ../build/c
 make check-characters && make
 ```
 
+**Pendiente (21-XI)**: la receta de `c0` de arriba falla hoy con `KeyError: 'DEATH8'` (`export_character.py`, paleta de las muertes del pack v2); sin `build/chars/c0.bin`, `check-characters` se salta.
+
 ## 3. Código
 
 - `src/msx_character.c/.h` (también en host): lee el pack, descodifica los

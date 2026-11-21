@@ -25,7 +25,7 @@ int main(void) {
         for (unsigned i=0;i<run->count;i++) {
             const weapon_step_t *s=&run->steps[i];
             if (memcmp(w.b,s->before,MARCO_WEAPON_BLOCK)) {printf("FAIL %s frame %u: block before\n",run->name,s->frame);dump("native",w.b);dump("orig  ",s->before);return 1;}
-            marco_weapon_player_t m={true,(s->f5f&0x80u)!=0,s->f93,0xff,0};
+            marco_weapon_player_t m={true,(s->f5f&0x80u)!=0,s->f93,0xff,0,false};
             uint8_t slot[0x24];memcpy(slot,s->slot,sizeof(slot));
             for (unsigned k=0;k<s->count;k++) {
                 const weapon_event_t *e=&s->events[k];uint16_t sound;marco_ammo_t a;bool ok=true;
@@ -51,7 +51,7 @@ int main(void) {
         }
     }
     /* Table edges the captures do not reach. */
-    marco_weapons_t w;marco_weapons_new_game(&w);marco_weapon_player_t m={true,false,0,0xff,5};
+    marco_weapons_t w;marco_weapons_new_game(&w);marco_weapon_player_t m={true,false,0,0xff,5,false};
     marco_weapons_life(&w,1,&m);
     assert(marco_weapons_id(&w,1)==0 && marco_weapons_bomb_count(&w,1)==10 && marco_weapons_rounds(&w,1)==0xffff && w.b[11]==1 && w.b[5]==0xff);
     uint16_t sound;

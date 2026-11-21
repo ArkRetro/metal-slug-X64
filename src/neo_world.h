@@ -1,5 +1,7 @@
 #ifndef MSX_NEO_WORLD_H
 #define MSX_NEO_WORLD_H
+/* Stage 3 tower pieces remembered for the renderer (81 in run4, up to the boss). */
+enum { NEO_TOWER_PIECES=128 };
 #include <stdbool.h>
 #include <stdint.h>
 #include "neo_script.h"
@@ -7,6 +9,8 @@
 #include "neo_throw_actor.h"
 #include "neo_gactor.h"
 #include "neo_camera.h"
+#include "neo_train.h"
+#include "neo_m6bridge.h"
 #include "neo_boss.h"
 #include "neo_blood.h"
 #include "neo_vslot.h"
@@ -22,6 +26,7 @@
  *
  * Positions are scene-local Q16.16 with Y up (the native collision grid);
  * the scene object sits at (-camera, 256) as RAM 10C742/10C746 do. */
+enum { NEO_WORLD_MIXES=24 };   /* 009CCE slots: 4 in the missions; the credits' page lines (6 a page) and pictures (2 each) */
 enum { NEO_WORLD_SOLDIERS=12, NEO_WORLD_THROWS=8, NEO_WORLD_SPLASHES=8, NEO_WORLD_GACTORS=96,
     NEO_WORLD_ORDER=160, NEO_WORLD_DRAWS=160, NEO_WORLD_BOXES=48, NEO_WORLD_SOUNDS=16 };
 typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_THROW,
@@ -29,7 +34,7 @@ typedef enum { NEO_WORLD_SCRIPT, NEO_WORLD_RUNNER, NEO_WORLD_SOLDIER, NEO_WORLD_
 /* depth: original +10 (creation depth; ROM 004192 deletes following deeper
  * nodes with their parent). */
 /* A player shot waiting for its list insertion (neo_world_player_shot). */
-typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; bool actor;uint8_t f5e; } neo_world_shot_request_t;
+typedef struct { uint32_t routine;int32_t x,y,vx,vy;uint8_t angle,player,flags15;bool grenade; bool actor;uint8_t f5e; bool laser; } neo_world_shot_request_t;
 typedef struct { uint8_t kind,index,depth; } neo_world_slot_t;
 /* Dynamic collision object owned by a generic actor (RAM 10C06E + 64*i):
  * local position block relative to its parent (+00..+25). */
@@ -42,6 +47,7 @@ typedef struct {
     neo_anim_state_t anim;
     neo_anim_render_t render;
     bool active,started;
+    uint32_t program;   /* 2402FA (040F88, kind 6) or 24039C (040F60, kinds 0A/0B) */
 } neo_world_splash_t;
 /* One emitted animation draw (ROM 004364), with the logical palette resource
  * the renderer must use (requested through 009EA8 by the original). */
@@ -53,6 +59,9 @@ typedef struct {
     uint8_t kind;              /* neo_world_kind_t of the owner */
     uint8_t zoom_x,zoom_y;     /* generic actors: +12/+13 (0xFF = full size) */
     uint16_t z;                /* +1E: the sprite list is sorted by it (0113EA) */
+    /* 009CCE on the draw's palette slot with no exported mix (the credits: neo_palmix_step at run time): the weight
+     * 1..30 (0: none; `palette` is then the slot's own resource) towards the palette mix_targets[mix_target]. */
+    uint8_t mix_weight,mix_target;
 } neo_world_draw_t;
 typedef struct {
     uint16_t px,py;            /* projected words (+3C/+40) left by the player's
@@ -85,6 +94,7 @@ typedef struct {
      * registered during this update / queried during this update. */
     struct { uint8_t owner; uint16_t xbins; uint8_t ybins; } boxes[NEO_WORLD_BOXES],last_boxes[NEO_WORLD_BOXES];
     unsigned box_count,last_box_count;
+    unsigned class0_hits;              /* B69: class-0 rows that hit a class-0 body (a ridden vehicle), counted for the log */
     /* The same registry in its slot order (004C24 numbers the bodies as
      * they register, at most 0x40): soldiers, generic actors and boss
      * nodes, for the A0/A1 targets of 0049E8 (004B06 visits the slots
@@ -121,8 +131,24 @@ typedef struct {
     uint16_t sounds[NEO_WORLD_SOUNDS];unsigned sound_count,sound_dropped;
     /* Counters for the caller and the documentation of the gaps. */
     unsigned ticks,spawned,kills,player_hits,external_spawns,unsupported,overflow;
+    /* 009CCE: palette slots of generic actors with a target / weight
+     * (index + 1, 0 = free; handle = the owner's +14). mix_missing: draws
+     * whose (resource, target) pair has no exported mix (neo_palmix.h). */
+    struct {uint8_t index1,handle,weight;uint16_t target;} mixes[NEO_WORLD_MIXES];unsigned mix_missing,mix_overflow;
+    uint16_t mix_targets[4];     /* the targets of the draws' run-time mixes (neo_world_draw_t.mix_target) */
+    /* The ending's RAM for the credits' nodes (neo_ending.c, e->end_ram); NULL: they stop explicitly. */
+    struct neo_end_ram *end_ram;
+    /* 009CCE on the hardware slot 0x38 (the Mission 6 last enemy's layer 10D7B6, palette number 56: neo_m6boss.c
+     * 0421E4): target and weight; target 0 = never set. The renderer swaps the layer's palette (actor.c). */
+    uint16_t slot38_target;uint8_t slot38_weight;
+    unsigned converted;          /* generic nodes turned soldiers (0B05FE/0B0626/0B0632) */
     uint32_t external_constructor;  /* last skipped spawn-table entry */
     unsigned timer_resets;          /* spawn-table entries 01913C (mission timer reset) */
+    uint8_t arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, read by 05287C) */
+    /* Level-script records executed (op 7, script_spawn), in order, for the
+     * reference log (actor.c drains them): created = the world made the
+     * actor (or applied its effect), 0 = dropped. */
+    struct {uint32_t record,constructor;uint8_t created;} spawn_log[16];unsigned spawn_log_count,spawn_log_dropped;
     /* Spawn-table vehicles stopped explicitly (none left: the Camel Slug
      * 03458E and the SV-001 092A32 are native, neo_slug.c / neo_tank.c). */
     unsigned vehicle_stops;uint32_t vehicle_stop_constructor;
@@ -134,6 +160,30 @@ typedef struct {
      * script's stop/release/autoscroll go to it. Off in the closed-loop
      * world tests, which take the scroll from the captures. */
     neo_camera_t camera;bool camera_native;
+    neo_train_t train;           /* Misión 3: capa del tren 10D7B6 (neo_train.c) */
+    neo_layer_t layers[NEO_LAYERS];   /* layer objects moved by the camera list (neo_train.h, docs/MISION4.md) */
+    /* Mission 6 stage 1: the hanging bridge's driver (neo_m6bridge.h) and
+     * its step 10E94E, which 0C81C0 gives 10D7B6 while bit 0 of 10E957 is set. */
+    neo_m6bridge_t bridge;int32_t bridge_dx;
+    /* Its actors (neo_m6props.c): RAM 10C70C..10C714 (10C70C/10C70D are the
+     * driver's lock word, bridge.lock), 10D7B6 as they read it and its
+     * position before this update's layer step (01ABC8's +1C/+20). */
+    uint8_t bridge_ram[9];int32_t bridge_prev_x,bridge_prev_y;
+    int32_t sky_prev_x,sky_prev_y;   /* the sky layer object 10E83E's +1C/+20: its position before this update's step */
+    neo_m6bridge_env_t bridge_env;
+    /* The bridge 10D7B6 in the collision kernel (map 0BC6E6 loaded by op 0x18):
+     * its ring (neo_m6bridge.h; 0C7038 clears it at each stage start). */
+    bool bridge_ring_on;neo_m6ring_t bridge_ring;neo_m6map_t bridge_map;
+    bool script_skip_unported;   /* reference cartridge: neo_script_env_t.skip_unported */
+    /* Stage 3 tower writer 0B7C38 (created by 0B7C20; 10C6B2 counter
+     * cleared by 0B7B00, 10C350 sequence, 10C354 mode): gameplay.c. */
+    /* types[k]: piece type of the k-th piece (10C6B2 = 3k), drawn by the
+     * renderer from the templates of map 0B740A (scene_render_set_tower);
+     * drawn: pieces 0..drawn-1 placed. */
+    struct { bool on; uint16_t counter; uint8_t table,at; int16_t mode; unsigned pieces,drawn; uint8_t types[NEO_TOWER_PIECES]; } tower;
+    /* Stage of a mission pack (neo_world_init_stage); NULL camera = Mission 1's
+     * list 0B57BE. */
+    const uint8_t *stage_camera;uint16_t stage_camera_size;uint32_t stage_camera_base;unsigned camera_events_unsupported;
     /* Optional extra target of the player's shots (the boss, neo_boss). */
     bool (*shot_hook)(void *context,const neo_contact_actor_t *bullet,const int16_t row[7]);void *shot_context;
     /* Mission 1 boss (neo_boss, script record 2D70FC): its nodes run as one
@@ -145,10 +195,12 @@ typedef struct {
     uint16_t boss_palette[32];uint8_t boss_palette_refs[32];
     int16_t boss_boxes[NEO_BOSS_NODES],last_boss_boxes[NEO_BOSS_NODES];unsigned boss_box_count,last_boss_box_count;
     uint8_t mission_step;           /* 018F92 (1) / 018F40 (2) requested by the boss */
+    bool front_window;              /* 012022: RAM 10B954 < 10B95C (signed), the stage's sprite windows (gameplay.c msx_draw_order) */
     uint8_t flag606;                /* RAM 10C606 */
     unsigned boss_unsupported,boss_external_effects;uint32_t boss_unsupported_label,boss_unsupported_routine;
     unsigned boss_hits;
     uint32_t unsupported_routine;   /* last soldier routine that stopped */
+    uint32_t unsupported_line,unsupported_detail;   /* neo_soldier_ai.c's line and detail of that stop (0: not a soldier's) */
     unsigned item_pickups;uint32_t item_pickup_routine; /* items whose pickup stopped explicitly (neo_item.c) */
     /* The players' weapon block (RAM 10C718), player 1's weapon fields and
      * the score/pickup state the items serve (neo_item.c); the caller (the
@@ -165,6 +217,22 @@ typedef struct {
      * world no longer runs player 1's 0AA458: the port's player does, after
      * the actors (the original player 1014C4 runs after the Camel). */
     uint8_t player_node[2][0xc0];
+    /* Player 1's water ripple 03C62A (0C124C -> 03C52C, +6E = 2: made by
+     * the player's constructor 0C10FE at each stage start, 0C0CD6): made at
+     * the start of the stage's first tick, after the script actor (the
+     * player 1014C4 follows it); its creator +0C is 1014C4, read through
+     * player_view (a copy of player_node[0], +6D the floor angle). */
+    bool player_ripple;neo_gactor_t player_view;
+    /* Children 0040BC makes after player 1's node in its update (the
+     * deaths: the splash 040F74 of 040F38, kind 0x12; the smoke 05A0B4 of
+     * the callback 05A09E, kind 8): made at the start of the next tick, as
+     * the ripple, from the node record as it was at the request. */
+    struct {uint32_t routine;int8_t facing;uint8_t node[0xc0];} player_children[3];uint8_t player_child_count;
+    /* A soldier's record as a generic node, for the actors that read or
+     * write one: the creator of its ripple 03C62A (03C52C) and the Mission 4
+     * rider 0842A8, which creates a soldier (0040BC) and places it one
+     * update later. soldier_gen: bumped each time the slot is given out. */
+    neo_gactor_t soldier_view;uint8_t soldier_gen[NEO_WORLD_SOLDIERS];
     uint16_t pad[2];
     neo_vehicle_env_t vehicle_env;
     /* RAM 10F000, the original's debug-flag word (cleared at 002488): bit 7
@@ -176,7 +244,38 @@ typedef struct {
      * next tick, so their constructor runs on the update after, as in the
      * original. */
     neo_world_shot_request_t shot_requests[8];unsigned shot_request_count,shot_dropped;
+    /* Camera-list calls that create an actor after the mission actor (0040BC
+     * from the camera step; Mission 3 wagon boxes 0B918C/0B91AE): made at
+     * the end of the next tick, like the shots. */
+    uint32_t camera_calls[8];uint16_t camera_call_args[8];unsigned camera_call_count;   /* camera-list calls (op 2C) and their word argument (command + 8) */
     unsigned player_shots;
+    /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B
+     * (neo_world_laser, neo_pweapon.c); beams made (01E19E). */
+    uint8_t laser[16];unsigned lasers;
+#ifdef MSX_HAS_M3MID
+    /* Mission 3 mid-boss 0A4A94 (neo_m3mid.c): the layer object 10E8C6
+     * (RAM 10E8C6..10E94D) it sets up and moves, RAM 10E959 (bit 7: the
+     * camera moves the layer by its own +8/+C, 0C82F4), and what the
+     * renderer draws of it: the map 0C73CE drew (+2E then) and the patches
+     * 0A6D7C applied since (0C714E: sub-map, d0..d5). */
+    uint8_t m3layer[0x88];uint8_t m3layer959;bool m3layer_used;
+    uint32_t m3layer_map;unsigned m3patch_count;
+    /* The layer's 19 x 10 blocks as 0C714E left them (tile << 16 |
+     * attribute; column major), drawn by actor.c. */
+    uint32_t m3grid[19*10];
+    /* Mission 4 boss 02267E (neo_m4boss.c): the layer object 10D7B6 (RAM
+     * 10D7B6..10D83D) from the boss's 024BDA on, stepped by 0C8240 with the
+     * flag byte 10E957 (camera layer_flags[1]) and the speeds 694E/6952
+     * (m4speed); what 0C714E wrote into its sprite columns: every write of
+     * this boss covers a whole map column (its 13 rows: 024BDA, 0C741A and
+     * the treads' 20 x 13 patches), so ring slot n < 20 (the map width)
+     * holds map column n of m4col_map[n] from tile slot m4col_top[n] down
+     * (0 = none); the map last drawn and the patches; 002802 requests of
+     * the treads (m4anim: D0 + 1, 0 = none) for the LSPC (gameplay.c). */
+    uint8_t m4layer[0x88];bool m4layer_used;
+    int32_t m4speed[2];uint32_t m4layer_map;unsigned m4patch_count;uint16_t m4anim;
+    uint32_t m4col_map[32];uint8_t m4col_top[32];   /* 32 ring slots: the Mission 4 boss's maps use 20, the Mission 6 last enemy's 04522E 26 */
+#endif
     /* Domed building (054904) and its collapse: script flags, player lock,
      * kill-all, white flash and the map swap of 0B595A (0B5972 turns the
      * flash on, 0B5982 runs 0B58CC on the next update and turns it off). */
@@ -184,15 +283,50 @@ typedef struct {
     bool kill_active;               /* RAM 1067E2 */
     bool shots_clear;               /* RAM 1067E4 (0046E0: copy of the 004C06 request 1067E5) */
     uint8_t swap_step;
+    /* Map patches 0C70FC applied this stage (sub-map, layer object), for the
+     * renderer: their tile part replaces the drawn blocks (B37). The layer
+     * object word carries the target column D4 in bits 21..31 and
+     * map_patch_at the target (D4, D5): a later patch at the same target
+     * replaces the record, as its words overwrite the SCB1 entries (B63). */
+    /* map_patch_cols: the columns of the sub-map the copy wrote (bit n =
+     * column D4 + n; 0 = all), after 0C70FC's clip to the ring window: a
+     * clipped copy leaves the other slots as they were. Past the terrain
+     * map's end (Mission 4's boss road) the target column is the one of the
+     * slot 32 blocks back that holds it (neo_world_terrain_end). */
+    uint32_t map_patch[64][2];uint8_t map_patches;uint32_t map_patch_at[64];uint16_t map_patch_cols[64];   /* SCENE_STAGE_PATCHES */
     unsigned killed_all;            /* soldiers killed by 004BAC */
     /* RAM 10FD8F, arcade soft-DIP option 6 "BLOOD" (01B2BE: carry clear when
-     * nonzero). neo_world_init sets MSX_BLOOD (default 1: ON, the Japanese
-     * header default); the US/EU headers default it to OFF. */
+     * nonzero). neo_world_init copies neo_softdip[NEO_DIP_BLOOD]. */
     bool blood;
 } neo_world_t;
+/* RAM 10FD88..10FD8F: the soft-DIP bytes the MVS BIOS copies from the game's
+ * settings (header table of 250-p1.p1, EU at 0x316E; docs/OPCIONES.md). A
+ * list setting holds the index of its option, HERO the count. The readers
+ * read the byte, never a copy: 0C942C/0C9420 lives (0 counts as 1), 0186D4/
+ * 019008/0C9848 continue, 0260D8 rank, 003586 play time, 012160/0122AE
+ * attract sound (RAM 100088 = 1), 016BD4 HOW TO PLAY (after Start on the
+ * MVS path), 01B2BE/032B94 blood. The values below are those of every MAME
+ * capture (BLOOD: MSX_BLOOD); the N64 options screen (src/msx_options.c)
+ * writes them as the BIOS would. */
+enum { NEO_DIP_HERO=0, NEO_DIP_CONTINUE=2, NEO_DIP_DIFFICULTY=3, NEO_DIP_PLAY_TIME=4, NEO_DIP_DEMO_SOUND=5, NEO_DIP_PLAY_MANUAL=6, NEO_DIP_BLOOD=7, NEO_DIPS=8 };
+extern uint8_t neo_softdip[NEO_DIPS];
 /* Starts the region script at its first record with the RNG ring dumped at
  * the mission handoff (data/soldier_ai_tables.json). */
 void neo_world_init(neo_world_t *world,int32_t scroll_x);
+/* The block column past the last one of the map the camera list loaded into
+ * 10C72E (op 0x18: column + the map's width +8), or -1 without one: from
+ * there the 32 sprite columns of its tile layer, and the 64 cell columns of
+ * its collision ring, keep what they held 512 px before (0C714E). */
+int neo_world_terrain_end(const neo_world_t *world);
+/* Stage of a mission pack (docs/MISION2.md "Fase 2", 0183D0): the script
+ * section of the descriptor's +8 entry and the camera command list +0 from
+ * its first command; the RNG ring, weapons and score carry over from the
+ * previous stage (the original never resets them between stages). */
+typedef struct {
+    const uint8_t *script;uint16_t script_size;uint32_t script_base;
+    const uint8_t *camera;uint16_t camera_size;uint32_t camera_base;
+} neo_world_stage_t;
+void neo_world_init_stage(neo_world_t *world,int32_t scroll_x,const neo_world_stage_t *stage);
 /* One original logic update. Returns the number of hits on the player
  * (knife 0AEF14 and thrown-object flight attack ROM 0E0894). */
 unsigned neo_world_tick(neo_world_t *world,int32_t scroll_x,const neo_world_player_t *player);
@@ -215,6 +349,20 @@ bool neo_world_player_grenade(neo_world_t *world,uint32_t constructor,int32_t x,
  * flash 0C58D2 placed by 01ACF2, the shell 063F32 by 0C482E). A shell
  * 063F32 the world cannot insert gives its projectile back (0C4526). */
 bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,int32_t y,int32_t vx,int32_t vy,uint8_t angle,uint8_t flags15,uint8_t f5e,uint8_t player);
+/* 0040BC from player 1's update: `routine` after its node (player_children);
+ * 040F74 is then placed by 01B220 (8, 0), 0C4C64 by 01ACF2 (8 forward,
+ * 0x20) with `facing` (-1 left, 1 right: the player's +15 bit 0 as the
+ * death set it; 0 keep the record's), 05A0B4 and 0C4C64 get +15 & 3
+ * (01AC94). False when the request list is full. */
+bool neo_world_player_child(neo_world_t *world,uint32_t routine,int facing);
+/* 01E19E + 01E166 of the beam call 0C46D6 (weapons 06/0B, gameplay.c):
+ * the player's block in `laser` gets the point (x, y: the fire program's
+ * point plus +72/+74, facing forward, y up), the direction (+92: 0 level,
+ * 1 up, FF down) and the life 4; with no beam alive (+6) the sound 10F8
+ * (unless the other player's +7) and the beam 01E22C after the player
+ * (0040BC reserve 0xE; inserted here after the list head with the next
+ * shots, placed by 01B220 (0, 0) on the player's node record). */
+void neo_world_laser(neo_world_t *world,uint8_t player,int16_t x,int16_t y,uint8_t direction);
 /* Player pistol shot segment against the registered soldiers (ROM 0049E8 with
  * attack row ROM 01B4C2: kind 6, class 1, damage 10). Coordinates are
  * scene-local Q16.16 of the bullet before and after its move. Returns true
@@ -222,6 +370,8 @@ bool neo_world_player_actor(neo_world_t *world,uint32_t constructor,int32_t x,in
 bool neo_world_shot(neo_world_t *world,int32_t previous_x,int32_t x,int32_t y,bool left);
 /* Same with pistol attack row `row` (0..15, ROM 01B4C2 + 16*row: the
  * bullet's direction) and a segment (previous_x,previous_y)->(x,y). */
+/* An actor of the mission actor (map command routine): list head, +28/+2C. */
+bool neo_world_mission_actor(neo_world_t *world,uint32_t routine,int32_t x,int32_t y);
 bool neo_world_shot_row(neo_world_t *world,int32_t previous_x,int32_t previous_y,int32_t x,int32_t y,unsigned row,bool left);
 /* 0049E8 for the player (A6 = 1014C4) with the attack row `row` at its
  * origin (x, y) (+15 bit 0 = left): the soldiers and the class-matching
@@ -229,9 +379,18 @@ bool neo_world_shot_row(neo_world_t *world,int32_t previous_x,int32_t previous_y
  * highest hurtbox type hit (D0), 0 for none. The knife: 0C3744 (query
  * 2D0AE4) and 0C419E (cut 2D0AF4). */
 uint8_t neo_world_player_attack(neo_world_t *w,int32_t x,int32_t y,bool left,const int16_t row[7]);
+/* 0049E8 of soldier `self` (world soldier index, -1: none) with a row of
+ * class row[5] != 0 (0AF2BA: 0AE9B0, the push of the wagon door 0391EA): the
+ * other soldiers and the generic actors registered in the previous update. */
+void neo_world_soldier_attack(neo_world_t *w,int self,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
 /* Attack row (ROM 0049E8 format) of an outside attacker against generic
  * actor `index`, as registered during the previous update (ROM 004762). */
 bool neo_world_hit_actor(neo_world_t *world,unsigned index,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
+/* B69: 0049E8 with a class-0 row against the bodies registered with class
+ * bit 0 in the previous update (the ridden vehicles): their 004762/004892
+ * damage; the highest type hit. The enemies' class-0 rows (g_attack, the
+ * soldiers' knife and leap, the boss's rows) go through it. */
+uint8_t neo_world_class0_attack(neo_world_t *world,const neo_contact_actor_t *attacker,uint8_t a5e,const int16_t row[7]);
 /* True once the script has passed the camera-1920 lock (2D6A1A): the end of
  * the imported records. */
 bool neo_world_region_clear(const neo_world_t *world);
@@ -245,4 +404,10 @@ unsigned neo_world_alive(const neo_world_t *world);
 void neo_world_camera(neo_world_t *world,const neo_world_player_t *player);
 /* Native animation program of a ROM program tag (tools/extract_soldier_programs.py). */
 const neo_anim_program_t *neo_world_program(uint32_t tag);
+/* Programs looked up after the image's (the loaded mission's, actor.c:
+ * scene_stage_program). */
+/* Console: forgets the programs read on demand (program_file.c). Only when
+ * nothing holds a program any more: msx_game_init, which clears the game. */
+void neo_world_programs_reset(void);
+void neo_world_set_program_extra(const neo_anim_program_t *(*lookup)(uint32_t tag));
 #endif

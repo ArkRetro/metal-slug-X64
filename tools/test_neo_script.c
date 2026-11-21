@@ -61,7 +61,7 @@ static const char *construct(const neo_script_spawn_t *sp,const script_construct
     env.root=env.terrain;env.root.tag=0x10e968u;env.epoch=k->epoch;env.camera_word=k->camera;
     env.players=(neo_control_frame_t){0,0,0,0,k->p1x,k->p1y,k->p2x,k->p2y,k->mask,k->mode88,k->rank,k->mask!=0,NULL};
     env.grid=grid;env.rng=&rng;env.program=program;
-    neo_soldier_spawn_t in={sp->x,sp->y,{0},sp->variant68,sp->group69,0};
+    neo_soldier_spawn_t in={sp->x,sp->y,{0},sp->variant68,sp->group69,0,0,false};
     for (unsigned i=0;i<6 && i<sp->word_count;i++) in.words[i]=sp->words[i];
     neo_soldier_t s;memset(&s,0,sizeof(s));
     if (!neo_soldier_construct(&s,&in,&env)) return "unsupported constructor";
@@ -90,7 +90,7 @@ int main(void) {
         s.w4330=cap->w4330;s.w4332=cap->w4332;s.w69b8=cap->w69b8;s.w69ba=cap->w69ba;
         ctx_t c;memset(&c,0,sizeof(c));c.s=&s;c.lock=cap->lock;
         for (unsigned i=0;i<cap->runner_count;i++) {
-            s.runners[i]=(neo_script_runner_t){true,(uint16_t)(cap->runners[i].record-MISSION1_SCRIPT_BASE),cap->runners[i].timer72,cap->runners[i].count76,false};
+            s.runners[i]=(neo_script_runner_t){true,(uint16_t)(cap->runners[i].record-MISSION1_SCRIPT_BASE),cap->runners[i].timer72,cap->runners[i].count76,false,0xff};
             c.order[c.order_count++]=(int)i;
         }
         for (unsigned ti=0;ti<cap->tick_count;ti++) {
@@ -98,9 +98,9 @@ int main(void) {
             c.t=t;c.rng_used=0;c.spawn_count=0;
             memcpy(s.groups,t->groups,sizeof(s.groups));
             neo_script_env_t e={t->camera,t->scroll_x,t->scroll_y,
-                {{t->players[0].alive,t->players[0].fx,t->players[0].fy,t->players[0].px,t->players[0].py},
-                 {t->players[1].alive,t->players[1].fx,t->players[1].fy,t->players[1].px,t->players[1].py}},
-                rng,spawn,runner,lock,release,NULL,&c};
+                {{t->players[0].alive,t->players[0].fx,t->players[0].fy,t->players[0].px,t->players[0].py,0},
+                 {t->players[1].alive,t->players[1].fx,t->players[1].fy,t->players[1].px,t->players[1].py,0}},
+                rng,spawn,runner,lock,release,NULL,&c,NULL,false};
             neo_script_tick(&s,&e);
             for (unsigned i=0;i<c.order_count;) {
                 int r=c.order[i];

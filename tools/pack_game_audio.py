@@ -16,13 +16,22 @@ Output: filesystem/audio/<label>.wav64 and filesystem/audio/manifest.json.
   stays high). The driver output is not sample-identical between passes
   (FM phase, tick jitter), so the splice is placed where the waveform at t0
   and t0+period+d correlates best (d within +-25 ms); the WAV64 holds
-  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 24 kHz
-  (loop start/length rounded to 16 samples for VADPCM).
+  [0, t0+period+d) and loops back to t0. Stored as stereo VADPCM, 20 kHz
+  (loop start/length rounded to 16 samples for VADPCM). Lossy audio
+  compression approved by the user on 20-XI (docs/APROXIMACIONES.md): the
+  music was 24 kHz, and the ending's 0x2E / 0x31 did not fit in the cart;
+  at 20 kHz all of it fits. Every music pack is decoded here (the C
+  reference decoder, tools/wav64_vadpcm.py) and its SNR against the render
+  is written to the manifest: 'snr_render_db' (decoded, band-limited back to
+  48 kHz, against the 48 kHz render: band limit + codec) and 'snr_codec_db'
+  (against the 20 kHz staging PCM: the codec alone).
 Resampling is an FFT band limit (numpy only)."""
 import argparse,hashlib,json,subprocess,wave
 from pathlib import Path
 import numpy as np
 ROOT=Path(__file__).resolve().parents[1]
+import sys;sys.path.insert(0,str(ROOT/'tools'))
+import wav64_vadpcm as W
 SRC=48000
 def read(path):
     with wave.open(str(path)) as w:
@@ -46,19 +55,43 @@ def spectral_frames(mono,hop=480,size=4096,bands=64):
     return F/(np.linalg.norm(F,axis=1,keepdims=True)+1e-9)
 def lag_score(F,lag,lo=None,hi=None):
     s=(F[:len(F)-lag]*F[lag:]).sum(axis=1);return float(np.median(s[lo:hi])),s
-def find_loop(pcm,min_period=30.0):
-    """Coarse search at 100 ms, refinement at 10 ms around the best lags."""
+def find_loop(pcm,min_period=30.0,measured=None):
+    """Coarse search at 100 ms, refinement at 10 ms around the best lags.
+    `measured` (--period label=seconds): a period measured over the whole
+    render when the best coarse lag is not a multiple of the period (a tune
+    with a phrase repeated inside its loop: Mission 4, 86.67 s with its best
+    lag at 370.5 s); it is refined the same way and must hold in every 20 s
+    window after the start."""
     mono=pcm.mean(axis=1);hop=480;F=spectral_frames(mono,hop);C=F[::10];n=len(C)
     coarse=sorted(((lag_score(C,lag,-min(300,n-lag))[0],lag) for lag in range(int(min_period*10),n-50)),reverse=True)
     best=coarse[0]
     # Multiples of the period score alike: take the shortest lag that divides
     # the best one and scores within 0.15 of it.
-    period=min(l for c,l in coarse[:40] if c>=best[0]-0.15 and any(abs(l*k-best[1])<=1 for k in range(1,6)))
+    period=int(round(measured*10)) if measured else min(l for c,l in coarse[:40] if c>=best[0]-0.15 and any(abs(l*k-best[1])<=1 for k in range(1,6)))
     fine=max(range(period*10-15,period*10+16),key=lambda l:lag_score(F,l,1000,5000)[0])
     level,s=lag_score(F,fine,1000,5000);smooth=np.convolve(s,np.ones(50)/50,'same')
     start=next(t for t in range(len(smooth)) if all(smooth[t:t+300]>level-0.15))
+    if measured:
+        # The repeated part starts where the one-second medians stay at the
+        # level for the rest of the render (the boss tune's intro scores 0.8
+        # to 0.94 for 15 s: above the 0.15 margin of the search above).
+        sec=[float(np.median(s[i:i+100])) for i in range(0,len(s)-100,100)]
+        low=[i for i,v in enumerate(sec) if v<level-0.1]
+        start=max(start,(low[-1]+1)*100 if low else 0)
+        windows=[float(np.median(s[i:i+2000])) for i in range(start,len(s)-1000,2000)]
+        assert min(windows)>level-0.05,('the measured period does not hold in the whole render',windows)
     return dict(period_s=fine*hop/SRC,start_s=start*hop/SRC,similarity=round(level,3),
                 candidates=[dict(lag_s=l/10,similarity=round(c,3)) for c,l in coarse[:6]])
+def snr(decoded,rate,staging,render):
+    """Music: SNR (dB) of the decoded pack against its 20 kHz staging PCM
+    and, stretched back to the render's length (the inverse of `resample`), against
+    the render."""
+    d=decoded.astype(np.float64);n=min(len(d),len(staging));e=d[:n]-np.round(staging[:n])
+    codec=10*np.log10((staging[:n]**2).sum()/max((e**2).sum(),1e-9))
+    m=len(render);X=np.fft.rfft(d,axis=0);Y=np.zeros((m//2+1,)+d.shape[1:],dtype=complex);k=min(len(X),m//2+1);Y[:k]=X[:k]
+    up=np.fft.irfft(Y,m,axis=0)*m/len(d);e=up-render;n=m
+    full=10*np.log10((render[:n]**2).sum()/max((e**2).sum(),1e-9))
+    return round(float(full),2),round(float(codec),2)
 def splice(pcm,start,period,good=0.9):
     """Splice candidates every 0.25 s of the repeated part; take the earliest
     whose seam correlation reaches `good` (or the best one): a shorter file."""
@@ -79,9 +112,12 @@ def main():
     p.add_argument('--source',type=Path,default=ROOT/'filesystem/audio-src')
     p.add_argument('--output',type=Path,default=ROOT/'filesystem/audio')
     p.add_argument('--audioconv',default=None);p.add_argument('--sfx-rate',type=int,default=24000)
-    p.add_argument('--music-rate',type=int,default=24000);a=p.parse_args()
+    p.add_argument('--music-rate',type=int,default=20000)
+    p.add_argument('--period',action='append',default=[],metavar='LABEL=SECONDS',help='loop period measured over the whole render')
+    a=p.parse_args();measured={k:float(v) for k,v in (x.split('=') for x in a.period)}
     import os;conv=a.audioconv or os.path.join(os.environ.get('N64_INST','/workspace/toolchains/package/opt/libdragon'),'bin/audioconv64')
     render=json.loads((a.source/'render.json').read_text())['sounds']
+    smap={x['label']:x for x in json.loads((ROOT/'data/sound_map.json').read_text())['sounds']}
     staging=a.output/'wav';staging.mkdir(parents=True,exist_ok=True);manifest={}
     old=json.loads((a.output/'manifest.json').read_text())['sounds'] if (a.output/'manifest.json').exists() else {}
     for label,info in render.items():
@@ -89,11 +125,22 @@ def main():
         # The music render (77 MB) need not stay on disk: keep its pack.
         if label.startswith('music') and not (a.source/(label+'.wav')).exists() and label in old:manifest[label]=old[label];continue
         # A sound still playing at the end of its render window is a loop
-        # (engine 10A5, 1026), not a one-shot effect: not packed.
-        if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END':manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
+        # (engine 10A5, 1026), not a one-shot effect: not packed. A
+        # sustained sound that its actor stops (data/sound_map.json "stop":
+        # the beam's 10F8, stopped by 012192 at the beam's end) is packed as
+        # its render window: exact while it lasts less than the window.
+        sustained=bool(smap.get(label,{}).get('stop'))
+        if not label.startswith('music') and info['status']=='ACTIVE_AT_WINDOW_END' and not sustained:manifest[label]=dict(word=info['word'],status='LOOP: not packed');continue
         pcm=read(a.source/(label+'.wav'))
-        if label.startswith('music'):
-            loop=find_loop(pcm);period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
+        if label.startswith('music') and info['status']=='OK':
+            # A music command that ends inside its render window (the
+            # mission complete jingle 0020) is a one-shot: stereo, no loop.
+            out=resample(pcm,a.music_rate)
+            write(staging/(label+'.wav'),out,a.music_rate)
+            cmd=[conv,'--wav-resample',str(a.music_rate),'--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'.wav'))]
+            entry=dict(samples=len(out),rate=a.music_rate,channels=2,compression='vadpcm',one_shot=True)
+        elif label.startswith('music'):
+            loop=find_loop(pcm,measured=measured.get(label));period=int(round(loop['period_s']*SRC));start=int(round(loop['start_s']*SRC))
             t0,end,seam=splice(pcm,start,period)
             # VADPCM loops need a loop start and loop length multiple of 16
             # samples (libdragon wav64_vadpcm.c): round both down.
@@ -115,17 +162,41 @@ def main():
                        intro_sha256=hashlib.sha256(intro.read_bytes()).hexdigest(),rate=a.music_rate,channels=2,compression='vadpcm')
         else:
             assert not info['stereo'],label
-            out=resample(pcm[:,0],a.sfx_rate)
-            write(staging/(label+'.wav'),out,a.sfx_rate)
+            # A render with energy above 11 kHz (the beam's 10F8: 30 %; the
+            # ADPCM-A effects stay below 4 % above 8 kHz) keeps 32 kHz, the
+            # mixer's rate.
+            rate=a.sfx_rate if info.get('energy_above_11khz',0)<0.05 else 32000
+            out=resample(pcm[:,0],rate)
+            write(staging/(label+'.wav'),out,rate)
             cmd=[conv,'--wav-mono','--wav-compress','1','--wav-loop','false','-o',str(a.output),str(staging/(label+'.wav'))]
-            entry=dict(samples=len(out),rate=a.sfx_rate,channels=1,compression='vadpcm')
+            entry=dict(samples=len(out),rate=rate,channels=1,compression='vadpcm')
+            if sustained:entry.update(status='SUSTAINED: render window, stopped by its actor',window_s=info['seconds'])
         subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
         wav64=a.output/(label+'.wav64')
+        if label.startswith('music'):
+            parts=([W.decode(a.output/(label+'_intro.wav64'))[0]] if entry.get('intro_samples') else [])+[W.decode(wav64)[0]]
+            entry['snr_render_db'],entry['snr_codec_db']=snr(np.concatenate(parts),entry['rate'],out,pcm[:(end if entry.get('intro_samples') else len(pcm))])
+        if not label.startswith('music'):
+            # B43: audioconv64's VADPCM encoder can fail on a signal (the
+            # truck engine 10A5 decoded with bursts over a quarter of its
+            # 10 ms windows): decode every effect pack (tools/wav64_vadpcm.py,
+            # the C reference decoder) and keep it as PCM16 when it fails.
+            pcm16=np.clip(np.round(out),-32768,32767)
+            check=W.check(W.decode(wav64)[0][:,0],pcm16,entry['rate'])
+            entry['vadpcm_check']=check
+            if not check['ok']:
+                cmd=[c if c!='1' or cmd[i-1]!='--wav-compress' else '0' for i,c in enumerate(cmd)]
+                subprocess.run(cmd,check=True,stdout=subprocess.DEVNULL)
+                entry['compression']='pcm16 (VADPCM failed its decode check)'
         entry.update(word=info['word'],seconds=round(entry['samples']/entry['rate'],3),bytes=wav64.stat().st_size,
                      sha256=hashlib.sha256(wav64.read_bytes()).hexdigest(),conversion=cmd[:-3]+[cmd[-1].rsplit('/',1)[-1]])
         manifest[label]=entry
+    # A render of a subset (render_sound_commands.py --labels) keeps the
+    # packs of the other sounds.
+    for label,entry in old.items():
+        if label not in manifest and (a.output/(label+'.wav64')).exists():manifest[label]=entry
     total=sum(e.get('bytes',0)+e.get('intro_bytes',0) for e in manifest.values())
     (a.output/'manifest.json').write_text(json.dumps(dict(source='tools/pack_game_audio.py from tools/render_sound_commands.py renders',total_bytes=total,sounds=manifest),indent=1)+'\n')
-    for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})
+    for k,v in manifest.items():print(k,{x:v[x] for x in v if x in ('snr_render_db','snr_codec_db','status','seconds','bytes','period_s','start_s','seam_correlation','similarity','loop_offset')})
     print('total',total)
 if __name__=='__main__':main()

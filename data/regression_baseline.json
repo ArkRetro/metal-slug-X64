@@ -1,0 +1,139 @@
+{
+ "_cart": "work-m4 f7a660e (ccr bf4b040 + work-chars 0171ec9; cart built 20-XI), m1end fresh; m4boss kept at its previous counts (B78: the blind pad does not beat the boss since the container restart of 20-XI, also on the control cartridge of ccr bf4b040); m6s2end outside the baseline",
+ "chars": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 371,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "logo": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 123,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m1m2": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 144,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m4": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 153,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m4boss": {
+  "missing_draw": 0,
+  "missing_part": 2,
+  "result": "PASS",
+  "seconds": 1690,
+  "stopped": 0,
+  "unsupported": 6
+ },
+ "m5boss": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 1278,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s1": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 117,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s2": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 124,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m5s3": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 125,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m6s1": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 133,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m6s1end": {
+  "missing_draw": 0,
+  "missing_part": 2,
+  "result": "PASS",
+  "seconds": 905,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m6s2": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 132,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "m6s3": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 129,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "options": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 65,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "pause": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 62,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "slugnoid": {
+  "missing_draw": 0,
+  "missing_part": 1,
+  "result": "PASS",
+  "seconds": 321,
+  "stopped": 0,
+  "unsupported": 0
+ },
+ "veh": {
+  "missing_draw": 0,
+  "missing_part": 0,
+  "result": "PASS",
+  "seconds": 390,
+  "stopped": 0,
+  "unsupported": 0
+ }
+}

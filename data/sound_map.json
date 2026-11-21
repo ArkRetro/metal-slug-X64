@@ -95,7 +95,7 @@
    "callers": [
     "0294AC"
    ],
-   "event": "vehicle destroyed, health 0 (ROM 0294A2 via 012192: 0x0C then 0x10A5). Rendered silent: 0x10A5 alone is a continuous (looping) sound started when the vehicle appears (ROM 029220) and 0x0C+0x10A5 stops it. Not packed: the native vehicle has no appearance event and the engine loop point was not measured."
+   "event": "vehicle destroyed, health 0 (ROM 0294A2 via 012192: 0x0C then 0x10A5). Rendered silent: 0x0C+0x10A5 stops the engine 0x10A5 (sfx_10a5, an 11.58 s one-shot started by the truck 029220); the port sends it as the stop request 0x10A5|0x8000 (neo_truck.c)"
   },
   {
    "label": "vehicle_burst",
@@ -247,7 +247,8 @@
    "label": "sfx_10a5",
    "word": "10A5",
    "callers": [],
-   "event": "requested by the native world actors at ROM 02916E (port host traversal of tools/test_gameplay.c)"
+   "event": "the truck 02916E's engine (0120F8 at 029220/029428, also 0296C0; 012192 stops it at 02935C/0294A2). A one-shot of 11.58 s, not a loop: the 300-frame window ended inside it (B20, render with 1500 frames: OK, silent after)",
+   "frames": 1500
   },
   {
    "label": "sfx_1072",
@@ -259,7 +260,8 @@
    "label": "sfx_1026",
    "word": "1026",
    "callers": [],
-   "event": "requested by the native world actors at ROM 054A2E (port host traversal of tools/test_gameplay.c)"
+   "event": "the dome building's collapse 054A2E (0120F8 at 054A60; also 022B56, 046C40, 04A9D4, 0A13DA; never stopped by 012192). A one-shot of 6.16 s, not a loop: the 300-frame window ended inside it (B20, render with 1500 frames: OK, silent after)",
+   "frames": 1500
   },
   {
    "label": "sfx_1142",
@@ -428,12 +430,659 @@
    "event": "knife cut hitting a type-4 hurtbox (ROM 0C41F6)"
   },
   {
+   "label": "music_mission_complete",
+   "word": "0020",
+   "callers": [
+    "0188C2"
+   ],
+   "event": "mission complete jingle (ROM 0188B8: 0x20 then 0x1137, same update as the MISSION COMPLETE letters actor 06090A); bank 00, replaces the mission music in the driver",
+   "music": true,
+   "frames": 900
+  },
+  {
+   "label": "sfx_1137",
+   "word": "1137",
+   "callers": [
+    "0188CC"
+   ],
+   "event": "mission complete voice (ROM 0188B8, right after 0x20)"
+  },
+  {
    "label": "music_mission1",
    "word": "0021",
    "callers": [
     "018434"
    ],
    "event": "Mission 1 music, after the driver reset 03 and 06 at the mission start",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission2",
+   "word": "0022",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 2 music, stages 1 and 2 (descriptors 016DDE/016DEE +C = 0x22; stage 2 does not request it again: 018422 compares with +80)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission2_stage3",
+   "word": "0023",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 2 stage 3 music (descriptor 016DFE +C = 0x23)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission2_boss",
+   "word": "0027",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 2 boss music: 059F76 (created by the boss 026254) sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests +72 = 0x27 (MAME mus1: frame 93274)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission3",
+   "word": "0024",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 3 music (descriptor 016E0E +C = 0x24, requested by 018412..01842E)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission3_boss",
+   "word": "0028",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 3 boss music: the boss 04A2C2 creates 059F76 (+72 = 0x28), which sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests 0x28",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission5",
+   "word": "0026",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 1 music (descriptor 016E2E +C = 0x26, requested by 018412..01842E; MAME run4 latch 06, 00 26 in 247662..247664)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission5_stage2",
+   "word": "002A",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 2 music (descriptor 016E3E +C = 0x2A; MAME run4 latch 00 2A in 252828..252829, no 03 between stages)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission5_stage3",
+   "word": "002B",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 5 stage 3 music (descriptor 016E4E +C = 0x2B; MAME run4 latch 00 2B in 274388..274389; the boss 0A0C00 creates 059F76: fade 0A 80 at 277087, 00 2C at 277279)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission6_boss",
+   "word": "0029",
+   "callers": [
+    "042100"
+   ],
+   "event": "Mission 6 stage 3, the last enemy's second music (0120F8 from the actor 0417B8, return 042106; MAME run4 latch: fade 0A 40 at 347135, 00 29 at 348850). The stages' own words are other missions' (016E5E +C = 0x28, 016E6E 0x27, 016E7E 0x2B) and the first music of the last stage is 0x2C (0415CC, return 041B3E: 0A 60 at 324391, 00 2C at 324635)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "sfx_10f5",
+   "word": "10F5",
+   "callers": [],
+   "event": "requested by the C shell 063F32 / R rocket 06381C (neo_chaser.c)"
+  },
+  {
+   "label": "sfx_10f6",
+   "word": "10F6",
+   "callers": [],
+   "event": "requested by the weapon 02/07 blast 0644C4 (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_10f3",
+   "word": "10F3",
+   "callers": [],
+   "event": "requested by the weapon 04/09 flame 0A727E (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_116a",
+   "word": "116A",
+   "callers": [],
+   "event": "requested by the weapon 0D ball 08606A (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_1168",
+   "word": "1168",
+   "callers": [],
+   "event": "requested by the weapon 0D burst 086216 (neo_pweapon.c)"
+  },
+  {
+   "label": "sfx_112f",
+   "word": "112F",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 02/07 (table 0C08F8)"
+  },
+  {
+   "label": "sfx_112c",
+   "word": "112C",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 04/09 (table 0C08F8)"
+  },
+  {
+   "label": "sfx_115a",
+   "word": "115A",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0D (table 0C08F8)"
+  },
+  {
+   "label": "sfx_10f8",
+   "word": "10F8",
+   "callers": [],
+   "event": "requested by the beam call 01E19E of weapons 06/0B (0120F8, unless the other player's beam sounds); stopped by 01E4D4 (012192) at the beam's end (neo_pweapon.c)",
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_1085",
+   "word": "1085",
+   "callers": [
+    "0C4E0C"
+   ],
+   "event": "the mummy transformation's smoke 0C4DD8 (0120F8 in its constructor; neo_landing.c)"
+  },
+  {
+   "label": "sfx_1123",
+   "word": "1123",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Marco's death voice: 0C2956 (hit death) and 0C2D6A (fall death) request table 0C294E[+6E] (Marco 1123, Tarma 1087, Eri 1125, Fio 114E) before anything else (MAME capboss: 1123 at every death, return 0C2D96)"
+  },
+  {
+   "label": "sfx_1087",
+   "word": "1087",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Tarma's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
+   "label": "sfx_1125",
+   "word": "1125",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Eri's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
+   "label": "sfx_114e",
+   "word": "114E",
+   "callers": [
+    "0C2972",
+    "0C2D96"
+   ],
+   "event": "Fio's death voice (+6E: table 0C294E), requested as Marco's 1123 by 0C2956 and 0C2D6A (docs/PERSONAJES.md)"
+  },
+  {
+   "label": "sfx_1130",
+   "word": "1130",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of ids 06/0B (table 0C08F8)"
+  },
+  {
+   "label": "sfx_115b",
+   "word": "115B",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0E (table 0C08F8)"
+  },
+  {
+   "label": "sfx_1159",
+   "word": "1159",
+   "callers": [],
+   "event": "requested by weapon grant 0C0928 of id 0F (table 0C08F8)"
+  },
+  {
+   "label": "sfx_1132",
+   "word": "1132",
+   "callers": [
+    "060888"
+   ],
+   "event": "MISSION 2 START voice: the letters 0607DE request 607D2[mission] at 060878 (0120F8; 607D2 = 1131..1136 for Missions 1..6; Mission 1's 1131 is in the entry audio). MAME sec01_19391: 1132 at 19428, return 060888"
+  },
+  {
+   "label": "sfx_1156",
+   "word": "1156",
+   "callers": [],
+   "event": "requested by the bomb-type pickup 0C0A7C of type 2 (molotov, item 08B5FA; table 0C0A66)"
+  },
+  {
+   "label": "sfx_1020",
+   "word": "1020",
+   "callers": [
+    "0A51D2"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 134598): 0A51D2 (routine 0A51CE) x13"
+  },
+  {
+   "label": "sfx_1029",
+   "word": "1029",
+   "callers": [
+    "038BB4"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 121732): 038BB4 (routine 038BB0) x4"
+  },
+  {
+   "label": "sfx_102d",
+   "word": "102D",
+   "callers": [
+    "0A39CC"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124618): 0A39CC (routine 0A3932) x1"
+  },
+  {
+   "label": "sfx_105e",
+   "word": "105E",
+   "callers": [
+    "04EA7A"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 122232): 04EA7A (routine 04E990) x3"
+  },
+  {
+   "label": "sfx_1062",
+   "word": "1062",
+   "callers": [
+    "04E196"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146695): 04E196 (routine 04C0EE) x9"
+  },
+  {
+   "label": "sfx_1065",
+   "word": "1065",
+   "callers": [
+    "04CEC6"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144919): 04CEC6 (routine 04B6C8) x11"
+  },
+  {
+   "label": "sfx_1078",
+   "word": "1078",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144855): 004492 sprite program op (routine 04B352) x9. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_1079",
+   "word": "1079",
+   "callers": [
+    "0B8D14"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 118732): 0B8D14 (routine 0186A0) x1. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_107a",
+   "word": "107A",
+   "callers": [
+    "0B8D20"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 121005): 0B8D20 (routine 0186A0) x1. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_107b",
+   "word": "107B",
+   "callers": [
+    "0A4D56",
+    "0B8D2C"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 126224): 0A4D56 (routine 0A4D52) x1; 0B8D2C (routine 0186A0) x2. A driver loop: still sounding after a 1500-frame render, never stopped by 012192 in the capture (not packed: no loop support for effects)",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_108b",
+   "word": "108B",
+   "callers": [
+    "0ACB8A"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 142268): 0ACB8A (routine 0ACB3A) x1"
+  },
+  {
+   "label": "sfx_109a",
+   "word": "109A",
+   "callers": [
+    "04D276"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 145163): 04D276 (routine 04D1DA) x7"
+  },
+  {
+   "label": "sfx_109d",
+   "word": "109D",
+   "callers": [
+    "0284AA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 119719): 0284AA (routine 02849A) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_109e",
+   "word": "109E",
+   "callers": [
+    "0A3666"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124620): 0A3666 (routine 0A35A8) x1; 0A3666 (routine 0A3624) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_109f",
+   "word": "109F",
+   "callers": [
+    "04C2C8"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146787): 04C2C8 (routine 01C6EE) x3"
+  },
+  {
+   "label": "sfx_10a1",
+   "word": "10A1",
+   "callers": [
+    "04BF30"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146683): 04BF30 (routine 04BF14) x1"
+  },
+  {
+   "label": "sfx_10ba",
+   "word": "10BA",
+   "callers": [
+    "097FD0"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 122133): 097FD0 (routine 097FCC) x5"
+  },
+  {
+   "label": "sfx_10d5",
+   "word": "10D5",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144151): 004492 sprite program op (routine 0528DE) x1"
+  },
+  {
+   "label": "sfx_10eb",
+   "word": "10EB",
+   "callers": [
+    "0A58B6",
+    "0A5932",
+    "0A6BD0"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132678): 0A58B6 (routine 0A4BCE) x16; 0A5932 (routine 0A4BCE) x16; 0A6BD0 (routine 0A4BDA) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_10ec",
+   "word": "10EC",
+   "callers": [
+    "0A593C",
+    "0A59C2",
+    "0A6BDA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132832): 0A593C (routine 0A4BCE) x16; 0A59C2 (routine 0A4BCE) x15; 0A6BDA (routine 0A4BDA) x1",
+   "frames": 1500,
+   "stop": "012192"
+  },
+  {
+   "label": "sfx_10ed",
+   "word": "10ED",
+   "callers": [
+    "0A4AB8"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 132378): 0A4AB8 (routine 0A4A94) x1",
+   "frames": 1500
+  },
+  {
+   "label": "sfx_10ee",
+   "word": "10EE",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 144789): 004492 sprite program op (routine 04E376) x9"
+  },
+  {
+   "label": "sfx_10ef",
+   "word": "10EF",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146269): 004492 sprite program op (routine 04C566) x2; 004492 sprite program op (routine 04C5E6) x2"
+  },
+  {
+   "label": "sfx_10fc",
+   "word": "10FC",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 148682): 004492 sprite program op (routine 0C1FA6) x1"
+  },
+  {
+   "label": "sfx_1133",
+   "word": "1133",
+   "callers": [
+    "060882"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 118022): 060882 (routine 0607DE) x1"
+  },
+  {
+   "label": "sfx_1139",
+   "word": "1139",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 146707): 004492 sprite program op (routine 099A70) x1"
+  },
+  {
+   "label": "sfx_1153",
+   "word": "1153",
+   "callers": [
+    "0C1D74"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 119151): 0C1D74 (routine 0C1D70) x1"
+  },
+  {
+   "label": "sfx_1155",
+   "word": "1155",
+   "callers": [
+    "0C0AD4"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124085): 0C0AD4 (routine 08C53C) x1"
+  },
+  {
+   "label": "sfx_1169",
+   "word": "1169",
+   "callers": [
+    "0DE6AA"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 141346): 0DE6AA (routine 0DE6A6) x40"
+  },
+  {
+   "label": "sfx_116d",
+   "word": "116D",
+   "callers": [
+    "01C47C"
+   ],
+   "event": "Mission 3 (MAME run4 replay from sec03_26140, 0120F8 tap, first in frame 124148): 01C47C (routine 01C448) x3"
+  },
+  {
+   "label": "music_mission4",
+   "word": "0025",
+   "callers": [
+    "018434"
+   ],
+   "event": "Mission 4 music (descriptor 016E1E +C = 0x25, requested by 018412..01842E; MAME run4 latch 03, 06, 00 25 in 149828..149831)",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_mission4_boss",
+   "word": "002C",
+   "callers": [
+    "059FBA"
+   ],
+   "event": "Mission 4 boss music: 059F76 (routine 059FA8 in MAME run4 frame 157772, created in the boss start 157582) sends 0x0A (fade, 01228C) and after the delay of table 0E11AA requests +72 = 0x2C",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "sfx_102e",
+   "word": "102E",
+   "callers": [
+    "0B9E98"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 152341): 0B9E98 (routine 0B9DE4) x17"
+  },
+  {
+   "label": "sfx_1030",
+   "word": "1030",
+   "callers": [
+    "0BA026"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 150481): 0BA026 (routine 0B9FD8) x33"
+  },
+  {
+   "label": "sfx_1036",
+   "word": "1036",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 150433): 004492 sprite program op (routine 036E3A) x2"
+  },
+  {
+   "label": "sfx_1053",
+   "word": "1053",
+   "callers": [
+    "01FCCE"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 152272): 01FCCE (routine 01FC9E) x10"
+  },
+  {
+   "label": "sfx_1060",
+   "word": "1060",
+   "callers": [
+    "058C5A"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 156878): 058C5A (routine 058C2E) x1"
+  },
+  {
+   "label": "sfx_1066",
+   "word": "1066",
+   "callers": [
+    "024DC2",
+    "024E2A",
+    "024E9E"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 157888): 024DC2 (routine 0238D4) x15; 024E2A (routine 023DFE) x14; 024E9E (routine 023DFE) x14"
+  },
+  {
+   "label": "sfx_1071",
+   "word": "1071",
+   "callers": [
+    "022E3C"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 157586): 022E3C (routine 022E38) x5"
+  },
+  {
+   "label": "sfx_10d1",
+   "word": "10D1",
+   "callers": [
+    "085A10"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 154535): 085A10 (routine 0859E4) x7"
+  },
+  {
+   "label": "sfx_1134",
+   "word": "1134",
+   "callers": [
+    "060882"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 149884): 060882 (routine 0607DE) x1"
+  },
+  {
+   "label": "sfx_113b",
+   "word": "113B",
+   "callers": [
+    "004492"
+   ],
+   "event": "Mission 4 (MAME run4 replay from sec05_149829, 0120F8 tap, first in frame 153704): 004492 sprite program op (routine 0DDE9E) x33"
+  },
+  {
+   "label": "sfx_1089",
+   "word": "1089",
+   "callers": [
+    "09353A",
+    "0935B0",
+    "0938DA",
+    "09471A",
+    "094790",
+    "094ABA",
+    "0977DC",
+    "0AD1F4"
+   ],
+   "event": "Vehicle hit recoil (B75): SV-001 hit on the ground/in the air with +5B bit 7 (09353A, 0935B0), destroyed with its pilot (0938DA), Mission 3 copy (09471A, 094790, 094ABA), Slugnoid (0977DC), Mission 3 flyer (0AD1F4); each move.w #$1089,D0 then jsr 0120F8"
+  },
+  {
+   "label": "sfx_108a",
+   "word": "108A",
+   "callers": [
+    "08E186",
+    "090A4A",
+    "09354E",
+    "0935C4",
+    "09472E",
+    "0947A4"
+   ],
+   "event": "Vehicle hit recoil (B75): SV-001 hit with +5B bit 7 clear (09354E, 0935C4), Mission 3 copy (09472E, 0947A4), also 08E186 and 090A4A; each move.w #$108A,D0 then jsr 0120F8"
+  },
+  {
+   "label": "music_results",
+   "word": "002E",
+   "callers": [
+    "0570AE"
+   ],
+   "event": "the results' music: the root 0570A0 of the game's ending asks for 0x2E (0120F8, return 0570AE) in its first update; it is faded by 01228C(0x80) (0571BA: 0A, A0) when both results are done",
+   "music": true,
+   "frames": 24000
+  },
+  {
+   "label": "music_credits",
+   "word": "0031",
+   "callers": [
+    "0A445C"
+   ],
+   "event": "the credits' music: the node 0A4408 of the stage 0x2C (created by the sub-script of the figures 0A8C62) asks for 0x31 (0120F8) once, after its +6E updates; faded by the node 0A453A (01228C with its +6E) at the end of the credits",
    "music": true,
    "frames": 24000
   }

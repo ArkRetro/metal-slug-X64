@@ -47,7 +47,9 @@ def lanes(a,m,d):
     return out
 def parse(path):
     frame=0;cur=None;pending=[];attack=None
-    for line in open(path):
+    # (A trace kept compressed, boss-trace.txt.gz, is read as it is.)
+    import gzip,os
+    for line in (open(path) if os.path.exists(path) else gzip.open(str(path)+'.gz','rt')):
         t=line[0]
         if t=='F':frame=int(line[2:]);continue
         p=line.split()
@@ -63,7 +65,8 @@ def parse(path):
             # interrupted instruction, which would fake a service result)
             if STACK0<=a<STACK1:continue
             cur['recs'].append((t,a,int(p[2],16),int(p[3],16),int(p[4],16)))
-        elif t=='B':cur['recs'].append(('B',int(p[1],16),int(p[2],16),0,0x40ec))
+        elif t=='B':
+            if cur is not None:cur['recs'].append(('B',int(p[1],16),int(p[2],16),0,0x40ec))   # (a birth outside an update: the core actor's)
         elif t=='X':
             a,m,d,pc,a6=(int(x,16) for x in p[1:6]);a0,d3=(int(x,16) for x in p[6:8]) if len(p)>=8 else (0,0)
             if pc in (0x4106,0x4166,0x416a):continue    # list links

@@ -23,10 +23,16 @@ def pack_map(model,crom,make_image):
     # Atlases per palette and map segment (0 = the region map, 1 = cells only
     # in the rest of the mission): the region keeps its original pages, so
     # its per-frame page/TLUT uploads do not change with the longer map.
+    # Cells marked share_pixels (the Mission 4 boss maps of tools/export_stage_rom.py --actor-maps: 14 648 tiles of
+    # their auto-animation phases, 1328 different pictures) take the image of the first tile, in key order, with the
+    # same palette and the same pixels: the same picture, one image.
+    alias={};first={}
+    for k in sorted({(c['palette'],c['code']|phase,c['flip']) for c in model['cells'] if c.get('share_pixels') for phase in range(c['animation_mask']+1)}):
+        alias[k]=first.setdefault((k[0],bytes(decode(crom,k[1],k[2]))),k)
     segment={}
     for c in model['cells']:
         for phase in range(c['animation_mask']+1):
-            k=(c['palette'],c['code']|phase,c['flip'])
+            k=(c['palette'],c['code']|phase,c['flip']);k=alias.get(k,k)
             segment[k]=min(segment.get(k,1),c.get('segment',0))
     groups=defaultdict(set)
     for (pal,code,flip),seg in segment.items():groups[(seg,pal)].add((code,flip))
@@ -52,7 +58,7 @@ def pack_map(model,crom,make_image):
                 images.append((packed[0],packed[1],0,slot*16,16,256,2))
     cells=[]
     for c in model['cells']:
-        phases=[lookup[(c['palette'],c['code']|(phase&c['animation_mask']),c['flip'])] for phase in range(8)]
+        phases=[lookup[alias.get(k,k)] for k in [(c['palette'],c['code']|(phase&c['animation_mask']),c['flip']) for phase in range(8)]]
         cells.append((c['layer'],c['x'],c['y'],phases))
     # Background cells do not overlap. Props (virtual layer 4) MUST retain SCB
     # order: canopy/cart tiles overlap, so texture sorting would change pixels.

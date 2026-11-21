@@ -38,6 +38,11 @@ ROOTS+=[0x23c8b0,0x23c8f8,0x23c97c,0x23c782,0x23c790,0x23c79e,0x23c7ac,0x23c7ba,
     0x23c7f8,0x23c806,0x23c814,0x23c822,0x23c836,0x23c9ba,0x23ca32,0x2a769c,0x269340,0x2a765a,0x2a78f0,0x2a796e,
     0x2a77f4,0x2a7872,0x2a79ec,0x2a7a6a,0x2a7ae8,0x2a7b2a,0x2a76f8,0x2a7776,
     0x23b3c6,0x23b5b8,0x23b4e4,0x23b41c]   # creature 035668
+# The player's death of kind 8 (0C2ACC): the child 05A0B4 of its program's
+# callback 05A09E (docs/ANIMACIONES_DANO.md).
+ROOTS+=[0x25339c]
+# Fio's actor 0C4C64 of her deaths (0C4C28).
+ROOTS+=[0x253322]
 # Prisoner 099862: tied (wriggle table 099D86 by +80), salute, item gift
 # (callback 099CCC), release jump and run.
 ROOTS+=[0x29f6d0,0x29f9ac,0x29fa22,0x29fa40,0x29fa78,0x29f85e,0x29f874,0x29f88a,0x29f8a0,0x29f8b6,0x29f8cc,0x29f8e2,
@@ -128,6 +133,8 @@ ROOTS+=[0x18120,0x181e4]
 ROOTS+=[0xc49d4,0xc519e,0xc5212]
 # Parachute descent: the canopy 0C4A58 (0C4904 descending, 0C498C cut away).
 ROOTS+=[0xc4904,0xc498c]
+# The mummy transformation's smoke 0C4DD8 (2A97A0, palette 0xB0).
+ROOTS+=[0x2a97a0]
 # Callbacks with a native meaning (ROM routine -> native kind, asset).
 PALETTE={0x4061c:0x385,0x40632:0x214,0x40648:0x35c,0x4065e:0x20e,0x40674:0x221,0x4068a:0x21a,0x406a0:0x20e}
 GENERIC={0x40948,0x40956,0x4095e,0x23e418,0x23e420,0x23e42e,0xaef14}
@@ -151,6 +158,19 @@ ROOTS+=[0x267f92,0x268622,0x26863a,0x0c586c,0x0c5806]
 # The R weapon (neo_chaser.c): rocket 06381C (level 2683F2, vertical 2683B6)
 # and its explosion 063A92 (26858A / 2685CA).
 ROOTS+=[0x2683f2,0x2683b6,0x26858a,0x2685ca]
+# Weapon 8 (neo_chaser.c): its rocket 0641EC (level 2684D2, vertical
+# 2684AA); the explosion is the R's.
+ROOTS+=[0x2684d2,0x2684aa]
+# Weapon 0D (neo_pweapon.c): ball 08606A (282C18, 282BF0, 282C22, 282C2C,
+# burst 282DCC), glow 08651C (282EE6), explosions 2830DA / 28311A (CALL
+# 0866A6; the blasts use 22CDD4 / 22CE6C / 22CF2C, above).
+ROOTS+=[0x282c18,0x282bf0,0x282c22,0x282c2c,0x282dcc,0x282ee6,0x2830da,0x28311a]
+# Weapons 02/07 (neo_pweapon.c): the blast 0644C4/0646B0, programs E13F2/E1402 by +72.
+ROOTS+=[0x2686dc,0x2687e4,0x2688ec,0x2689f4,0x268760,0x268868,0x268970,0x268a78]
+# Weapons 04/09 (neo_pweapon.c): the flame 0A71F8/0A716E and its puffs 0A74E4/0A751C.
+ROOTS+=[0x2a655a,0x2a696e,0x2a6574,0x2a676c,0x2a6666,0x2a6988,0x2a6868,0x2a6a8e]
+# The flames with +93 = 2 (fat Marco) 0A7226 / 0A719C (level, vertical; G21).
+ROOTS+=[0x2a6b8a,0x2a6c08,0x2a6c86,0x2a6d04]
 # The SV-001 092A32 (neo_tank.c): its state programs, the shell 094EAA
 # (290FC0, burst 2919FE), the muzzle flash 0952F8 (29090E / 290C9E), the dust
 # 0956CE (291AF0) and the rider's entry 0954DC (tables 0954A4 / 0954B4 /
@@ -164,6 +184,356 @@ TANK_ROOTS=[0x291ce4,0x291dc2,0x2942d4,0x294c6c,0x29667e,0x2952ec,0x296cfe,0x295
     # 093AFA: the pieces 0AD9B8 (fixed block 0AD8CE); the burst uses 22CF2C (above).
     0x0ad8ce]
 ROOTS+=TANK_ROOTS
+# Mission 2: the GO arrow 05287C (idle 24953C, arrows of table 05285C by
+# RAM 10C44A) and the stage-1 exit marker 0B6F6A (2A8B70).
+ROOTS+=[0x24953c,0x249546,0x2495fc,0x2496b2,0x249768,0x24981e,0x2498d4,0x24998a,0x2a8b70]
+# Mission 2: the rebels 0613CA/0613D8/0613E6 (neo_rebel2.c) and their flash 0620AA.
+ROOTS+=[0x265c8a,0x265f36,0x265fe2,0x266666,0x26608e,0x2660c8,0x26611e,0x266190,0x265e62,0x266162,0x266302,0x2663f8,0x26684a,0x2668c8,0x266572,0x2665ec,0x266686,0x266780,0x266a38]
+# Mission 2: the 0678B6 / 0692B2 families (neo_rebel3.c), their children 067FC0 / 021CB6 and 0695DC.
+ROOTS+=[0x268c0a,0x268ca8,0x268cc4,0x268d0c,0x268fee,0x269024,0x268dcc,0x268f24,0x2309d2,0x269530,0x2696a6,0x269702,0x26975e,0x269130,0x26985a]
+# Mission 2: the gate 03882A and the water ripple 03C62A (neo_gate.c).
+ROOTS+=[0x23c55a,0x23f868,0x23f8d0,0x23f960,0x23fa2c,0x23f746,0x23f774,0x23f7a2,0x23f7d0,0x23f7fe,0x23f892,0x23f90e,0x23f9b2]
+# Mission 2: the supply crate 08C154.. (neo_crate.c).
+ROOTS+=[0x286896,0x286904,0x2868a2,0x286910]
+# Mission 2: the stage-2 prop 06851A and its overlay 0685FE (neo_m2props.c).
+ROOTS+=[0x26939a,0x2693a6,0x2693b2,0x269382,0x26938e]
+# Mission 2: the drone 03670E and its bomb 0369AC (neo_drone.c).
+ROOTS+=[0x23ba74,0x23bb52,0x23bbd0,0x23bc72,0x23bcf2]
+# Mission 2: the hostage 021B46.. of 06835C (neo_hostage.c).
+ROOTS+=[0x230984,0x230654,0x23066a]
+# The miners 021A1C/021A26 (neo_hostage.c): digs, pause, startled, the
+# item gift (callbacks 022162/022196/0221C2), flight, and the sparkle
+# 02206E (the dust 021F96 is the bullets' impact 22E504).
+ROOTS+=[0x23058a,0x2305cc,0x230608,0x2308ce,0x2306ee,0x23072c,0x2306ac,0x22df54]
+# The bats 035B66/035C68 (neo_drone.c): wings, perch, stretches, death, fall, crawl. No mission group (/programs.bin):
+# Mission 2 and Mission 5 stage 3 (record 2DDF4C at camera 528, 2DE65C at 1280) both create them; in the m2 group the
+# Mission 5 pack had no wing program and the swarm stopped at 23B636/23B654 (matrix slugnoid, m5s3).
+ROOTS+=[0x23b636,0x23b654,0x23b672,0x23b838,0x23b88e,0x23b912,0x23b76c,0x23b68c,0x23b7aa,0x23b6de,0x23b7ec,0x23b720]
+# The prisoners hung from a rope 099DF0 (hanging, falling) and the rope
+# pieces 09A9C4 falling (neo_prisoner.c).
+ROOTS+=[0x29fb62,0x29fbe8,0x29fc42,0x29fc8a]
+# The stage-2/3 signs 0B829C (tables B84AC) and 0B833A (B84BC, wiggle B84E0) (neo_m2props.c); 0B833A is also a script
+# record of Mission 6 stage 1 (2DF690), so these programs are in no mission group.
+ROOTS+=[0x2a8da4,0x2a8db0,0x2a8dbc,0x2a8dc8,0x2a8dd4,0x2a8de0,0x2a8dec,0x2a8df8,0x2a8e04,0x2a8e10,0x2a8e1c,0x2a8e28,0x2a8e34,0x2a8bac,0x2a8be4,0x2a8c1c,0x2a8c54,0x2a8c8c,0x2a8cc4,0x2a8cfc,0x2a8d34,0x2a8d6c]
+# Mission 2 stage-3 boss 026254 (neo_m2boss.c): body 23502C/234F10/234FCC/
+# 234F3C/23508C/235A8A, parts by 027D74 (+87), shots 235872/23581C.
+ROOTS+=[0x23502c,0x234f10,0x234fcc,0x234f3c,0x23508c,0x235a8a,0x235872,0x23581c,
+    0x2350e6,0x2350fa,0x23510e,0x23518c,0x23520a,0x235288,0x235306,0x235384,0x23543c,0x235454,0x235478,0x2353fe,
+    0x235448,0x235466,0x235484,0x235490,0x2354d8,0x23558a,0x2356ba,0x2356b0,0x23574c,0x235742,0x235762]
+# Mission 2: the stage-2 gate 03A6EA (23CDD0), its overlay 03A82E (23CDDC)
+# and the dust 03A464 (22D372) of 03A776 (neo_m2gate.c).
+ROOTS+=[0x23cdd0,0x23cddc,0x22d372]
+# Weapons 06 / 0B (neo_pweapon.c): the beam 01E22C (muzzle, segments and
+# end cap of the firing phase 22EBB6/22EC92/22ED6E and 22F016/22F0F2/22F1CE,
+# of the fading phase 22EE6A/22EF3A/22F00A and 22F2CA/22F39A/22F46A) and its
+# sparks 01E582.. (22F476).
+ROOTS+=[0x22ebb6,0x22ec92,0x22ed6e,0x22f016,0x22f0f2,0x22f1ce,0x22ee6a,0x22ef3a,0x22f00a,0x22f2ca,0x22f39a,0x22f46a,0x22f476]
+# Mission 2 stage 3 (neo_m2traps.c): the hidden treasure 0995EC (idle, hit,
+# open, taken) and the soldier wrapped as a mummy 032DE2.
+ROOTS+=[0x29f57a,0x29f586,0x29f5d8,0x29f602,0x239492]
+# The gas vent 03A05A: its puffs 03A1AE (23CABA[+72]).
+ROOTS+=[0x23cac2,0x23cb9e]
+# The rope soldier 082BCE (descent, hanging, turn, knife, death, fall, body,
+# rope end 083212); the hit splash 0682F0 (22DB44) is already a root.
+ROOTS+=[0x2818e4,0x281a08,0x281a5c,0x281ac6,0x281c20,0x281d66,0x281e1e,0x281dea]
+# The molotov 01E648 (22F5B8) and its flames 01E9B6 (242B52), neo_bullet.c.
+ROOTS+=[0x22f5b8,0x242b52]
+# The Slugnoid 09692C (neo_slugnoid.c): program tables 096418 (and its
+# crouch sub-tables), the pilot's table 09649C[0] (Marco: the port's only
+# character; the others stop explicitly in ga_anim_start), the dust,
+# legs' flames and muzzle flash, and the type-3 flame 01EA7A (22F704).
+ROOTS+=[
+    0x29d00e,0x29d022,0x29d104,0x29d94a,0x29d2d8,0x29d35a,0x29d4f8,0x29d522,0x29d540,0x29d55e,0x29d57c,0x29d59a,
+    0x29d5b8,0x29d3ac,0x29d3b0,0x29d3ce,0x29d3ec,0x29d40a,0x29d428,0x29d6aa,0x29d8aa,0x29d710,0x29d15e,0x29d1c8,
+    0x29d1b0,0x29dd22,0x29deaa,0x29df14,0x29e10a,0x29df3e,0x29dd24,0x29de94,0x29ddc6,0x29ddd0,0x29ddda,0x29dde4,
+    0x29ddee,0x29ddf8,0x29dd42,0x29dd4c,0x29dd56,0x29dd60,0x29dd6a,0x29dfce,0x29e076,0x29dff8,0x29df94,0x29dfc2,
+    0x29dcde,0x29daea,0x29dc30,0x29d978,0x29dbd4,0x29dbde,0x22f704,]
+# Mission 5 Slugnoid pilots of the other characters (B69): tables 09649C[1..3]
+# (096530, 0965B4, 096638), the entries at the positions of Marco's above
+# (MAME: the Mission 5 ride of the TAS, character 1, program 29E122).
+# Group m5: out of the console image (RAM budget; their sprites are not
+# exported yet), in the host family test slughit.
+ROOTS+=[
+    0x29e120,0x29e122,0x29e140,0x29e14a,0x29e154,0x29e15e,0x29e168,0x29e1c4,0x29e1ce,0x29e1d8,0x29e1e2,0x29e1ec,
+    0x29e1f6,0x29e292,0x29e2a8,0x29e312,0x29e33c,0x29e392,0x29e3c0,0x29e3cc,0x29e3f6,0x29e474,0x29e508,0x29e51e,
+    0x29e520,0x29e53e,0x29e548,0x29e552,0x29e55c,0x29e566,0x29e5c2,0x29e5cc,0x29e5d6,0x29e5e0,0x29e5ea,0x29e5f4,
+    0x29e690,0x29e6a6,0x29e710,0x29e73a,0x29e790,0x29e7be,0x29e7ca,0x29e7f4,0x29e872,0x29e906,0x29e91c,0x29e91e,
+    0x29e93c,0x29e946,0x29e950,0x29e95a,0x29e964,0x29e9c0,0x29e9ca,0x29e9d4,0x29e9de,0x29e9e8,0x29e9f2,0x29ea8e,
+    0x29eaa4,0x29eb0e,0x29eb38,0x29eb8e,0x29ebbc,0x29ebc8,0x29ebf2,0x29ec70,0x29ed04,]
+# The stage-3 boulder 03A2AA (neo_m2props.c): boulder and stones 03A5E6
+# (23CC7E), their fall 23CD24 and the slab 03A528 (23CDE8).
+ROOTS+=[0x23cc7e,0x23cd24,0x23cde8]
+# Mission 3: the wagon box 039382/03938A (neo_m3props.c).
+ROOTS+=[0x23c762]
+# Mission 3 wagons 038D1E/038D26 (23C624/23C62C), doors 038B06 (23C574[+70],
+# broken 23C5D8), targets 038F38 (23C638[rand]), pieces 0390A6 (03957A[rand])
+# and the platform 0B9286/0B93B4 (2A8E50/2A8EA6), neo_m3props.c.
+ROOTS+=[0x23c624,0x23c62c,0x23c57c,0x23c5aa,0x23c5d8,0x23c640,0x23c64c,0x22d4e8,0x22d552,0x22d5bc,0x22d626,0x2a8e50,0x2a8ea6]
+# Mission 3 decoration 0B91FA (camera-list call 0B91D0, MISSION3_DEBUG.md G9).
+ROOTS+=[0x2a8e40]
+# Mission 3 grenadier 08A732 (285864/2858A6/2858FE), helmet 08AA6E (285A0C),
+# flash 08AB70 (2859BA), shell 08AC54 (285AB2) and smoke 08AE70 (285BBE), neo_m3enemy.c.
+ROOTS+=[0x285864,0x2858a6,0x2858fe,0x285a0c,0x2859ba,0x285ab2,0x285bbe]
+# Mission 3 shield soldiers 09AE1E/09AE2C/09BA2A, their shield 09C46C (poses
+# 09D804), raised-shield overlay 09C6B0, shots 09C744.. and flashes 09CAE8.. (neo_m3enemy.c).
+ROOTS+=[0x2a037a,0x2a03c6,0x2a044e,0x2a048c,0x2a04e2,0x2a0562,0x2a05c8,0x2a0654,0x2a069e,0x2a0714,0x2a076c,0x2a07c4,0x2a0852,0x2a08e0,0x2a0938,0x2a0990,0x2a09c4,0x2a09f8,0x2a0a46,0x2a0a94,0x2a0ac8,0x2a0afc,0x2a0b64,0x2a0cc8,0x2a0d20,0x2a0d80,0x2a0dc2,0x2a0e04,0x2a0e24,0x2a0e4e,0x2a0e78,0x2a0ffa,0x2a1000,0x2a0eda,0x2a0ee2,0x2a061e,0x2a06e4,0x2a0b34,0x2a0c24,0x2a0cfa,0x2a0746,0x2a079e,0x2a0eea,0x2a0ef2,0x2a0912,0x2a096a,0x2a0efa,0x2a0810,0x2a089e,0x2a0f26,0x2a109a,0x2a1034,0x2a0f40,0x2a0f7e,0x2a0fbc]
+# Mission 3 window soldiers 08DA12/08DA34 (neo_m3enemy.c).
+ROOTS+=[0x23d62a,0x23d976,0x28ab8c,0x28abd4,0x28ac56,0x28acce,0x28ad18]
+# Mission 3 soldiers 05C53C/05D226/05D916, canopy 05DDA4, helmet 05DD2A, flash 05DF3E,
+# bullets 05DF9A/05DFC2 and the program tables 05E9B8/05E9F8/05EA38/05EA5C (neo_m3enemy.c).
+ROOTS+=[0x2639a4,0x262ad8,0x262b1a,0x262bcc,0x262c18,0x262ec8,0x262f26,0x262b98,0x262fc4,0x262f06,0x263062,0x263082,0x2630e2,0x263170,0x2630a2,0x2630c2,0x262dcc,0x262e32,0x262e58,0x262c64,0x262cac,0x262d2c,0x262d86,0x262da8,0x262cee,0x262e26,0x26328e,0x26333e,0x263498,0x263ad0,0x2634e0,0x2638b0,0x26395c,0x263a2e,0x263a00,0x2631de,0x2631f4,0x26320a,0x263220,0x263236,0x26324c,0x263262,0x263278,0x2632a4,0x2632ba,0x2632d0,0x2632e6,0x2632fc,0x263312,0x263328,0x2633d2,0x2633e8,0x2633fe,0x263414,0x26342a,0x263440,0x263456,0x26346c,0x263482,0x263574,0x2635d0,0x26362c,0x263688,0x2636e4,0x263740,0x26379c,0x2637f8,0x263854]
+# Mission 3 flying machine 04E990 and its pieces, missiles 04F44E/04F464, bomb 04F358 (neo_m3enemy.c).
+ROOTS+=[0x247730,0x2477c2,0x247854,0x2478b0,0x24790c,0x247986,0x2479c4,0x247a76,0x247afe,0x247b18,0x247baa,0x247c50,0x247c6a,0x247cd4,0x247d16]
+# Mission 3 mid-boss 0A4A94 (neo_m3mid.c): side pieces 0A606E/0A6078
+# (tables E61BC/E61C8), guns 0A61E8/0A61F2 (2A60D2/2A60DA/2A60E2), parts
+# 0A64E2 (2A601A), debris 0A6598 (2A653C), burning engine 0A5D6A, hatch
+# 0A5E88, bay soldiers 0A4F3A/0A4F52 (and their table 2A63DC), bomb 0A5398
+# and the spark 0A68A0.
+M3MID_ROOTS=[0x2a4d16,0x2a4dc4,0x2a4d2e,0x2a4d22,0x2a4e66,0x2a4dd0,0x2a4eee,0x2a4f26,0x2a4f5e,0x2a4f8e,0x2a4fbe,0x2a50f6,
+    0x2a550e,0x2a4e72,0x2a522e,0x2a52e2,0x2a544e,0x2a4ea6,0x2a529a,0x2a539a,0x2a55c2,0x2a566e,0x2a571c,0x2a57ca,
+    0x22da42,0x22da98,0x22daee,0x22dc2c,0x22dc82,0x2a5626,0x2a5950,0x2a5a62,0x2a5a90,0x2a5b14,0x2a5b66,0x2a5be8,
+    0x2a5c4e,0x2a5c8c,0x2a5d3e,0x2a5df0,0x2a5ea2,0x2a5f54,0x2a595c]
+ROOTS+=M3MID_ROOTS
+# Mission 3 boss 04A2C2 (neo_m3boss.c): body, legs, torso, arm, missile pod,
+# hatch, hatch floor and the dust and step pieces (docs/JEFE_MISION3.md).
+ROOTS+=[0x2451dc,0x2451e8,0x245294,0x245340,0x24585a,0x24569c,0x2459d0,0x2458c8,0x24571e,0x2459dc,0x245936,0x2457a0,
+    0x2459f4,0x2459e8,0x245a48,0x245d86,0x2460d8,0x245efc,0x245df2,0x246262,0x2463ea,0x2463ee,0x246480,0x246484,0x246326,
+    0x246ad2,0x246b4c,0x247034,0x246eb2,0x2470f6,0x247598,0x24741e,
+    0x245ba0,0x247656,0x24767a,0x24855c,0x245d92,0x245de6,0x245fec,0x2461a2,0x24683a,0x246694,0x2465da,0x2464ba,
+    0x246794]
+# Mission 6 stage 1: the large rock 01FBAC of the hatch 01F836 (neo_m6props.c; the hatches are Mission 4's).
+ROOTS+=[0x22fa34]
+# Mission-only programs (docs/MEMORY_OPTIMIZATION.md, rule 5): the blocks of
+# ROOTS whose comment starts with one of these lines belong to one mission
+# ("m2", "m3"): they go into that mission's pack (pack_mission.py, 'MSXD'),
+# not into the console image (compile_soldier_ai_tables.py). A root also
+# listed in another block stays in the image.
+MISSION_BLOCKS={'end':('# The credits and the title after them',),'m2':('# Mission 2: the rebels','# Mission 2: the 0678B6','# Mission 2: the stage-2 prop','# Mission 2: the drone',
+    '# Mission 2: the hostage','# The miners','# Mission 2 stage-3 boss','# Mission 2: the stage-2 gate',
+    '# Mission 2 stage 3 (neo_m2traps.c)','# The gas vent','# The rope soldier','# The stage-3 boulder','# Mission 2 stage 3: the creature'),
+    'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
+    '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
+    'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
+    'm5':('# Mission 5 sewer gates','# Mission 5 weapon F','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
+def root_groups():
+    import re
+    text=Path(__file__).read_text();seen={};other=set()
+    for com,body in re.findall(r'((?:^#[^\n]*\n)+)((?:^(?!#)[^\n]*\n)+)',text,re.M):
+        if 'ROOTS' not in body:continue
+        first=com.split('\n')[0]
+        g=next((k for k,v in MISSION_BLOCKS.items() if first.startswith(v)),None)
+        roots=[int(x,16) for x in re.findall(r'0x[0-9a-f]+',body)]
+        if g:
+            for r in roots:seen.setdefault(r,g)
+        else:other.update(roots)
+    return {r:g for r,g in seen.items() if r not in other}
+# Mission 3 gunship 097FCC, its rotor 098886, bomb 09879C, missile 098974, pieces 098C0C.. and smoke 098EA2 (neo_m3enemy.c).
+ROOTS+=[0x29ed1a,0x29ee20,0x29ef26,0x29ef7c,0x29f032,0x29f06c,0x29f090,0x29f0e6,0x29f13c,0x29f192]
+# Mission 3 molotov throwers 0569B4/0569D0/0569E6, their shield 056D76, molotov 056B00, flash 056C94 and helmet 056A6A (neo_m3enemy.c).
+ROOTS+=[0x24ac4c,0x24ac56,0x24ad2a,0x24ad9a,0x24adf2,0x24aed2,0x24b106,0x24b1f6,0x24b426,0x24b50a,0x24b548,0x24b58a,0x24b5cc,0x24b616,0x24b680,0x24b730,0x24b7ae,0x24b810,0x24b8b6,0x24b966,0x24b9b8,0x24ba1a]
+# Mission 3 SV-001 093C9A (neo_tank.c v3, docs/PLAN_MISION3.md step 5): its jump program 299228 (09452C; the original's 299180 is shared).
+ROOTS+=[0x299228]
+# Mission 3 vehicle 0AC866 (neo_m3veh.c): its program table 0AAF72, the pilot tables 0AB40C (by character), the pieces and the marker 03533A.
+ROOTS+=[0x0ab09e,0x0ab1aa,0x0ab29e,0x0ab0ac,0x0ab250,0x0aafa2,0x0aafb2,0x0ab028,0x0ab202,0x0ab458,
+    0x0ab48c,0x0ab654,0x0ab576,0x0ab528,0x0ab44c,0x0ab4c0,0x0ab7d6,0x0ab80a,0x0ab9d2,0x0ab8f4,
+    0x0ab8a6,0x0ab7ca,0x0ab83e,0x0abb54,0x0abb88,0x0abd50,0x0abc72,0x0abc24,0x0abb48,0x0abbbc,
+    0x0abed2,0x0abf06,0x0ac0ce,0x0abff0,0x0abfa2,0x0abec6,0x0abf3a,0x0ac214,0x0ac5ca,0x0ad53a,
+    0x0ac61c,0x0ac66e,0x0ad738,0x0ac398,0x0adc8a,0x0ac23e,0x0ac288,0x0ac2d2,0x23ae0a,0x23b0e8]
+# Mission 3 fat weapons (+93 = 2, table 0C42EA / 0C476E): the R's rockets 063AEE 267C74 / 063B22 267E86 and their explosion 26860A, the C 063F10 2681A4, the bullets 01B62C 22C0A6 / 01B668 22C000, the grenade 01BEDA 22CA58.
+ROOTS+=[0x267c74,0x267e86,0x26860a,0x2681a4,0x22c0a6,0x22c000,0x22ca58]
+# Mission 3 fat bomb type 3 01C362 / 01C334 22CD04 (thin 01C3BE / 01C390 22CC34) and its piece 01C654 (22CD5A / 22CC8A), the fat landing dust 0C4E86 0C4E48, the fat molotov 01E680 / 01E69C 22F65E (neo_bullet.c).
+ROOTS+=[0x22cd04,0x22cc34,0x22cd5a,0x22cc8a,0x0c4e48,0x22f65e]
+# The splash 03C962 (programs 03C952: 22E064 / 22E0F2 / 22DF54 / 22E1F0; neo_gate.c).
+ROOTS+=[0x22e064,0x22e0f2,0x22df54,0x22e1f0]
+# Mission 3 weapon E 0DE4DA (neo_pweapon.c): the ball's programs 2B0272/2B027A/2B0282 (two variants).
+ROOTS+=[0x2b01a6,0x2b020c,0x2b01b0,0x2b0216,0x2b01de,0x2b0244]
+# Mission 5 weapon F 0DEA20 / 0DEA44 (neo_pweapon.c, B16): level 2B02FC[+7D] = 2B028A / 2B02BE, vertical 2B0304[+7D] = 2B02A4 / 2B02E2, burst 0DEC14 2B030C.
+ROOTS+=[0x2b028a,0x2b02be,0x2b02a4,0x2b02e2,0x2b030c]
+# Mission 3 flying bomber 084588, rotor 083B30, bomb 08471A, trail 0848EE, helmet 084948, debris 08497E (neo_m3enemy.c).
+ROOTS+=[0x281ffc,0x28207a,0x2824f4,0x282518,0x282362,0x28236e,0x282388]
+# Mission 3 oil drum 0391EA (neo_m3enemy.c).
+ROOTS+=[0x23c658,0x23c6b4]
+# Mission 3 armed truck 02B202, gunner 02B61C, rider 02B670, tyres 02BBBA (neo_m3enemy.c).
+ROOTS+=[0x236d00,0x236d88,0x23739e,0x2373cc,0x2373e6,0x23787c,0x2378aa]
+# Mission 3 floating platform 08AFB6 and its floor 08B3E6 (neo_m3enemy.c).
+ROOTS+=[0x285c6a,0x285c84,0x285cb2,0x285cbc,0x285d3a,0x285d68,0x285d96,0x285da8,0x285dba,0x285dcc,0x285eaa,0x285ebe]
+# Mission 3 rider car 027F54, its rider 0287FA, bomb 0286F8, shell 0287AC and pieces 028A88.. (neo_m3enemy.c; 236272 and 22D372 above).
+ROOTS+=[0x235baa,0x235a96,0x235ad8,0x235b1a,0x235c78,0x235d58,0x235be8,0x235c30,0x235e38,0x235f3e,0x235eaa,0x235fb6,0x235fe0,0x23606e,0x23611c,0x236170,0x236244,0x23638a,0x2363d8,0x236356,0x236314,0x23643a,0x2364d4,0x236758,0x23660c,0x2366b2,0x23657a,0x2361de]
+# Mission 3 armed jeep 0A2F2E, gunner 0A38F4 (table 0A4396), turret 0A3A0A (table 0A436A), rider, pieces 0A3BC2/0A3BD6, shell 0A3C24 (neo_m3enemy.c; 2404FE above).
+ROOTS+=[0x2a392a,0x2a39be,0x2a3aca,0x2a3b80,0x2a3cbc,0x2a3e92,0x2a40fa,0x2a426a,0x2a4056,0x2a440a,0x2a4350,0x2a4578,0x2a45fe,0x2a3958,0x2a3a14,0x2a3b20,0x2a3be6,0x2a3d88,0x2a3eda,0x2a3f42,0x2a409e,0x2a4170,0x2a42e0,0x2a438e,0x2a4484,0x2a4592,0x2a46c0,0x2a3990,0x2a3a74,0x2a3c56,0x2a3e5e,0x2a3f58,0x2a3fb4,0x2a41e6,0x2a43cc,0x2a44fe,0x2a45ac,0x2a473a,0x2a478e,0x2a47c4,0x2a4866,0x2a48fe]
+# Shared by Missions 2 and 3: the dust 22D372 (03A464 of Mission 2 above; the piece 028CA4 of the Mission 3 rider car): no mission group.
+ROOTS+=[0x22d372]
+# The soldiers' grenade 03C306 (03C2DE of the actions 0AF92C / 0AF940: 23DA62 / 23D9EA) (neo_m3enemy.c).
+ROOTS+=[0x23f2a0,0x23da62,0x23d9ea]
+# The soldiers' bomb 03C16C (03C13E of the rebels' programs; Mission 6 stage 1) (neo_m3enemy.c).
+ROOTS+=[0x23f39a]
+# Item kind 28 (record 0E581A + 0x18 * 0x28): its program 2869D6 as a root (the walker 288396 falls into it by 2884C8; the Mission 3 hidden boxes 09A67E drop kind 28 directly, 08C374 starts 2869D6 itself).
+ROOTS+=[0x2869d6]
+# Mission 3 birds 03ED00.., sandbags 0214EA/0216BA with their pieces 0218C4, camp 01F1D4 (soldiers 01F2D6/01F386, stove 01F562, pot 01F4DA) (neo_m3enemy.c).
+ROOTS+=[0x23fe3e,0x23fecc,0x23fefa,0x23fea0,0x23feac,0x23fe6c,0x23ff04,0x230238,0x23035e,0x2303e4,0x2303ca,0x2303f0,0x230438,0x23052c,0x230512,0x230538,0x22f81a,0x22f868,0x22f89c,0x22f9d8,0x22f8c2,0x22f98a,0x22f8f6]
+# Burning pieces 08732C of the destroyed shop 0B6566 (0B68B4, Mission 1; neo_barrel.c, B51): flight and landing.
+ROOTS+=[0x283b7a,0x283bf8]
+# Mission 2 stage 3: the creature 080170 thrown by the soldiers 0678B6 of +9C = 8 (06899A -> 0689D2), its pieces and its egg 0808AA (neo_m2creature.c, B54).
+ROOTS+=[0x280142,0x280198,0x2801cc,0x2802c2,0x2803bc,0x2804a0,0x280436,0x28050a,0x280342,0x28034c]
+# Mission 4 props (neo_m4props.c): the decorations 0B99EE (2A8EFC), 0B9AD6 (2A8F3E) and 0B9B24 (2A8F4A), the collapse pieces 0B9D88 (tables 2A8F56 / 2A8F62) and the debris 0BB106 (table 0BB0B6).
+ROOTS+=[0x2a8efc,0x2a8f3e,0x2a8f4a,0x2a8f6e,0x2a8f7a,0x2a8f86,0x2a8f92,0x2a8f9e,0x2a8faa,0x22d414,0x22d47e,0x22d4e8,0x22d552,0x22d5bc,0x22d626]
+# Mission 4 flyers 083C8A / 08391C (neo_m3enemy.c, the family of the Mission 3 bomber 084588): body 2820F8 / 282154 / 2821AC, rotors 282126 / 282182, rider 2823B2 / 2823E0, explosion 28240A (281FFC, 28207A, 282362 above).
+ROOTS+=[0x2820f8,0x282126,0x282154,0x282182,0x2821ac,0x2823b2,0x2823e0,0x28240a]
+# Mission 4 bins 033526 (neo_m4props.c): 2397D8 / 239928 / 239A7A, the puff 03378A (239BCA) and the pieces 033864 (04FDFE / 04FE16).
+ROOTS+=[0x2397d8,0x239928,0x239a7a,0x239bca,0x248682,0x2487c2,0x248902,0x248a42,0x248678,0x2487b8,0x2488f8,0x248a38]
+# Mission 4 object 036C34 (neo_m4props.c): 23BDD2, its flinches 23BDDC / 23BDF2, the broken stage 23BE08 and the end 23BEBE (the blast 036EA8: 22CF2C above).
+ROOTS+=[0x23bdd2,0x23bddc,0x23be08,0x23bdf2,0x23bebe]
+# Mission 4 van 0A9F0C (neo_m4props.c): 2A7E1A and its stages 0E6836, the overlay 0AA37C (2A7E10 and 0E6862).
+ROOTS+=[0x2a7e1a,0x2a7e10,0x2a7f28,0x2a80d8,0x2a8192,0x2a82e4,0x2a83e4,0x2a8546,0x2a8646,0x2a8712,0x2a896c,0x2a8994,0x2a7e2c,0x2a80cc,0x2a8186,0x2a82d8,0x2a83d0,0x2a8532,0x2a8632,0x2a86fe,0x2a8880,0x2a8988]
+# Mission 4 hatches 01F828 / 01F866 (neo_m4props.c): halves 22FBEA / 22FBF6 and their states 0DFE1A / 0DFE2A, the rock 01FABA (22FB34), its shadow 01FF82 (22FBBC), the puff 020004 (22FCDA).
+ROOTS+=[0x22fbea,0x22fc02,0x22fc4a,0x22fc92,0x22fbf6,0x22fc26,0x22fc6e,0x22fcb6,0x22fb34,0x22fbbc,0x22fcda]
+# Mission 4 jumping soldier 07E554 (neo_m4props.c): 27F832, 27F884, the jump 27F8AE, the hit 27F932, the piece 07EC6A (27FA3A); the dust 07EDF0 is 22DF54.
+ROOTS+=[0x27f832,0x27f884,0x27f8ae,0x27f932,0x27fa3a]
+# Mission 4 helicopters 08514A / 085522 / 08571C (neo_heli.c): 2825CE, the death 282834, the flashes 28292C / 282998, the bomb 282A2C and its impact 282AEA.
+ROOTS+=[0x2825ce,0x282834,0x28292c,0x282998,0x282a2c,0x282aea]
+# Mission 4 truck pieces 02A448 (neo_truck.c): the sixteen programs of 02A878; the sparkle 08CF6E of the animals (neo_item.c): 289704.
+ROOTS+=[0x236a88,0x236af2,0x236b48,0x236b9e,0x236bb8,0x236aba,0x236b1a,0x236b70,0x236ba8,0x236bc2,0x289704]
+# Pickup label 08C752: the characters 08C954 (tables 0E565A / 0E56EE).
+ROOTS+=[0x285ef2,0x285efe,0x285f0a,0x285f16,0x285f22,0x285f2e,0x285f3a,0x285f46,0x285f52,0x285f5e,0x285f6a,0x285f74,0x285f7e,0x285f88,0x285f92,0x285f9c,0x285fa6,0x285fb0,0x285fba,0x285fc4,0x285fce,0x285fd8,0x285fe2,0x285fec,0x285ff6,0x286000,0x28600a,0x286014,0x28601e,0x286028,0x286032,0x28603c,0x286046,0x286050,0x28605a,0x286064,0x28606e,0x286078,0x286082,0x28608c,0x286096,0x2860a0,0x2860aa,0x2860b4,0x2860be,0x2860c8,0x2860d2,0x2860dc,0x2860e6,0x2860f0,0x2860fa,0x286104,0x28610e,0x286118,0x286122,0x28612c,0x286136,0x286140,0x28614a,0x286154,0x28615e,0x286168,0x286172,0x28617c]
+# Mission 4 fighting prisoner 0DDCDA (neo_prisoner.c): the wait 2AFDAA, the shooting 2AFE14 (callback 0DE3DA), the punch 2AFF14 (0DE3CE) and its shot 0DE0FE (2AFF94).
+ROOTS+=[0x2afdaa,0x2afe14,0x2aff14,0x2aff94]
+# Mission 4 animals (item kinds 40..42, neo_item.c): 289082, 289CD6, 28A12C; their fruits 3F (289AA8) and the fruits' second programs 28992A / 289B44 (08BBC6 / 08BBEE).
+ROOTS+=[0x289082,0x289cd6,0x28a12c,0x289aa8,0x28992a,0x289b44]
+# Mission 4 vehicle 0587C4 (neo_m4veh.c): the body's states 058752 and its flinch 24BA5E, the turret's 058776, the shots 24BFBC / 24C0FC (callback 059770), the muzzle flashes 24BF42 / 24C082, the wreck's piece 24C3AA and the trail 24C53E.
+ROOTS+=[0x24ba74,0x24bb34,0x24bca0,0x24bcba,0x24bdc8,0x24bde2,0x24c1c2,0x24c2f6,0x24bd62,0x24ba5e,0x24bad4,0x24bbea,0x24bd48,0x24bedc,0x24be5c,0x24c25a,0x24be76,0x24bfbc,0x24c0fc,0x24bf42,0x24c082,0x24c3aa,0x24c53e]
+# Mission 4 boss debris 0259F2 / 025A5E (neo_m4boss.c): 246AD2 and 234D04; the flashes 025B6E / 025BE2 / 025CDE (234C06, 234BFC, 234C62) 025DC2 (table E06DA) and 02591C (2348D4).
+ROOTS+=[0x2348d4,0x246ad2,0x234d04,0x234c06,0x234bfc,0x234c62,0x232a9a,0x232b0a,0x232b7a,0x232bea,0x232c78,0x232d06]
+# Mission 4 boss 02267E (neo_m4boss.c): the parts' programs E0596 / E05CA / E069A / E06B6 / E0752 and the tables E05BE /
+# E05E6 / E06F2 by +9C, the treads' 2349EE / 234A7A / 234AD8 / 234B2C, the cannon's 2341E4 / 23423A / 234554 / 2346AA /
+# 234912, part 8's 234930, the shell 234BB2 and its trail 234BC8, the ball's trail 234E0A and the casing 234840.
+ROOTS+=[0x230b1e,0x230b6e,0x230bbe,0x230c0e,0x230ca0,0x230d32,0x230dc4,0x230e56,0x230ee8,0x230f7a,0x23100c,0x23109e,0x231130,0x2311b6,
+        0x23123c,0x2312c2,0x231348,0x2313ce,0x231454,0x2314da,0x231560,0x2315e6,0x2315f2,0x2315fe,0x23160a,0x23165a,0x2316aa,0x2316fa,
+        0x23174a,0x231838,0x231926,0x231a14,0x231b02,0x231bf0,0x231cde,0x231dcc,0x231eba,0x231fa8,0x232096,0x232184,0x232272,0x23231c,
+        0x2323c6,0x232470,0x23251a,0x2325c4,0x23266e,0x232718,0x2327c2,0x23286c,0x232916,0x2329c0,0x232a6a,0x232a76,0x232a82,0x232a8e,
+        0x232d94,0x232e36,0x232ed8,0x232f7a,0x23301c,0x2330be,0x233160,0x233202,0x2332a4,0x233346,0x2334ac,0x233612,0x2336b4,0x233756,
+        0x2337f8,0x23389a,0x23393c,0x2339de,0x233a80,0x233b22,0x233bc4,0x233c66,0x233d08,0x233daa,0x233f10,0x234076,0x2341dc,0x2341e4,
+        0x23423a,0x234554,0x2346aa,0x2347aa,0x2347b0,0x2347de,0x2347e4,0x234812,0x234840,0x234912,0x234924,0x234930,0x2349ec,0x2349ee,
+        0x234a7a,0x234ad8,0x234b2c,0x234bb2,0x234bc8,0x234e0a]
+# Mission 5 sewer gates 0BC296 / 0BC3A6 (neo_m5props.c): 2A91D0 and 2A91EE; the drips 08346E (drop 281E98, splash 281EA2).
+ROOTS+=[0x2a91d0,0x2a91ee,0x281e98,0x281ea2]
+# Mission 5 sewer gates: the decorations 0BBE5E (2A8FB6 / 2A8FC0), 0BBED0 (2A918A), 0BC4F4 (2A921E) and 0BC4BA (2A921C).
+ROOTS+=[0x2a8fb6,0x2a8fc0,0x2a918a,0x2a921e,0x2a921c]
+# Mission 5 street: the ledge 09624E (0963B8, never stepped) and the wrecked cars 050542 (neo_m5props.c): the program
+# tables 04FD26..04FE2D by +6E, the wheels 22E6AE / 247DA8 and the blast 24855C.
+ROOTS+=[0x963b8,0x22e6ae,0x247da8,0x24855c]
+# Mission 5 metro: the signal 0BC1E6 (2A91C6 idle, 2A9194 with the sound 107D).
+ROOTS+=[0x2a91c6,0x2a9194]
+# Mission 5 metro's end 0BBF12: its stages 0BBE06 (2A8FCA, 2A906A, 2A9080, 2A909C), the piece 0BC100 (2A910C) and 0BC192 (2A90A6).
+ROOTS+=[0x2a8fca,0x2a906a,0x2a9080,0x2a909c,0x2a910c,0x2a90a6]
+# Mission 5 sewer stains 032B46 / 032B5A / 032B6E.
+ROOTS+=[0x2393de,0x2393ea,0x2393f6]
+# Mission 5 sewer jets 0836E8: the puff 083820 (281EE0 / 281F82).
+ROOTS+=[0x281ee0,0x281f82]
+ROOTS+=[0x247e54,0x247e8a,0x247ec0,0x247ef6,0x247f2c,0x247f62,0x248448,0x248476,0x2484a4,0x2484d2,0x248500,0x24852e,0x247f98,0x248054,0x248110,0x2481cc,0x248288,0x248368,
+        0x248008,0x2480c4,0x248180,0x24823c,0x2482f8,0x2483d8,0x248566,0x2486a6,0x2487e6,0x248926,0x248a66,0x248b9e,0x248596,0x2486d6,0x248816,0x248956,
+        0x2485d8,0x248718,0x248858,0x248998,0x248636,0x248776,0x2488b6,0x2489f6,0x248b5c,0x248c94,0x248794,0x2488d4,0x248a14,0x248682,0x2487c2,0x248902,0x248a42,
+        0x248678,0x2487b8,0x2488f8,0x248a38]
+# Mission 5 street tank 08DCB2 (neo_m5enemy.c): idle 28AEF0, driving 28AD3A / 28ADF4, turning 28B03C / 28AF3E, starting 28B13A / 28B250,
+# firing 28B366, destroyed 28B5CC; its turret 08EB18: 28B6F6 (the pose by +8A), firing 28B77C[+8A], hit 28BCDC, 28C10E; the flash
+# 08EFFA (22D264) and the shell 08F058 (28C32C).
+ROOTS+=[0x28aef0,0x28ad3a,0x28adf4,0x28b03c,0x28af3e,0x28b13a,0x28b250,0x28b366,0x28b5cc,0x28b6f6,0x28bcdc,0x28c10e,0x22d264,0x28c32c]
+ROOTS+=[0x28b7bc,0x28b80e,0x28b860,0x28b8b2,0x28b904,0x28b956,0x28b9a8,0x28b9fa,0x28ba4c,0x28ba9e,0x28baf0,0x28bb42,0x28bb94,0x28bbe6,0x28bc38,0x28bc8a]
+# Mission 5 lone helicopter 0474B6 (neo_heli.c): arriving 244712, stopping 0E0C32[+96 & 3] (244792, 2447A0, 2447AE, 2447BC), flying
+# 24473E (the pose by the bank +96), its dropper 0479B8 (244DD6: sound 10FF, callback 04A1AE).
+ROOTS+=[0x244712,0x244792,0x2447a0,0x2447ae,0x2447bc,0x24473e,0x244dd6]
+# Mission 5 tank on treads 08FF7E (neo_m5enemy.c): by pose (slope 0 / level / slope 2): idle, driving both ways, stopping, starting,
+# firing, destroyed (and 28E270), tilting 28C442, the empty 28C440; its turret 090A62: pose, tilting 28E28A, firing 091EC0, thrown
+# off, hit; the shell 0912EE (2907FA; the flash 091290 uses 22D264).
+ROOTS+=[0x28ca64,0x28c9c8,0x28ca16,0x28c440,0x28c6e0,0x28c56c,0x28c626,0x28c90e,0x28c79a,0x28c854,0x28ccae,0x28cab2,0x28cbb0,0x28cfa8,0x28cdac,0x28ceaa,
+        0x28d2d2,0x28d0a6,0x28d1bc,0x28d614,0x28d3e8,0x28d4fe,0x28d7ca,0x28d72a,0x28d77a,0x28e146,0x28def2,0x28e01c,0x28e270,0x28c442,
+        0x28e4b8,0x28e3ac,0x28e432,0x28e28a,0x28efc6,0x28e53e,0x28ea82,0x2905dc,0x2901a0,0x2903be,0x28fd6e,0x28f50a,0x28f93c,0x2907fa]
+# Mission 5 metro train 051344 (neo_m5train.c): its first program 248CD6 and the damage stages 050ECC; the wheels 0515CE
+# (050EE8 by stage), the bogies 248F0A, the panels 051772 (24922C[+96]), the spark 24C3AA, the pieces 24924C and 0525EE's.
+ROOTS+=[0x248cd6,0x248cf0,0x248d16,0x248d3c,0x248d68,0x248d8e,0x248dd0,0x248e40,0x248e5a,0x248e74,0x248e8e,0x248ea8,0x248ec2,0x248edc,
+        0x248f0a,0x248f60,0x248fbc,0x249018,0x24907e,0x2490d0,0x249118,0x24917e,0x2491da,0x24c3aa,0x24924c,0x2492f2,0x249398,0x249420,
+        0x2494b2,0x2494f4,0x249518]
+# Mission 5 metro machine 0D3B36 (neo_m5mech.c): the body 2AB858 / 2AB888 / 2AB8B8 / 2AB8F2 / 2AB914 / 2ABA16, the arms'
+# rows E8FF0 / E9004 / E9018 / E902C / E9040, the pilot 2AC67A / 2AC68C / 2AC72A / 2AC7C8 / 23643A, the shells, muzzles, pieces,
+# grenade, helmet and sparks.
+ROOTS+=[0x2ab858,0x2ab888,0x2ab8b8,0x2ab8f2,0x2ab914,0x2aba16,0x2aba2e,0x2abb42,0x2abc3a,0x2abd44,0x2abe26,0x2aba3a,0x2abb4e,0x2abc46,
+        0x2abd50,0x2aba78,0x2abb8c,0x2abc7a,0x2abd7a,0x2abe32,0x2abb04,0x2abbfc,0x2abd06,0x2abd8c,0x2abe44,0x2abdd4,0x2ac67a,0x2ac68c,
+        0x2ac72a,0x2ac7c8,0x23643a,0x2ac1c2,0x2ac312,0x2ac462,0x2ac0bc,0x236272,0x2abe96,0x2abf38,0x2abfb2,0x2abffa,0x2ac074,0x2ac8d0,
+        0x2ac92e,0x263ad0,0x2361de]
+# Mission 5 sewer crank 095C98 (neo_m5sewer.c): idle 29C9D4; the sewer soldiers 089948 / 08995A / 08996A: walking 284C18 /
+# 284DF0 / 284C26, idle 284CB2 / 284E7C, waiting 284D36, turning 284DC0 / 284EC4, aiming 284CB2 / 284E7C, falling 284F08 / 284F68,
+# dropping 285088 / 285026, hit 285238 / 28538A / 285418, burnt 2854F2 / 285602 / 28563A / 285722, running off 2850DA / 285118.
+ROOTS+=[0x29c9d4,0x284c18,0x284cb2,0x284d36,0x284df0,0x284e7c,0x284c26,0x284f08,0x284f68,0x285088,0x285026,0x2854f2,0x285602,
+        0x28563a,0x285722,0x28538a,0x285238,0x285418,0x2850da,0x285118,0x284dc0,0x284ec4]
+# Mission 5 sewer crank grabbed (capture C): 29CA7A, the wheel 095A94[+91], the turning player 095AD4[+91] (096140), the splash 29C98C (0959B0).
+ROOTS+=[0x29ca7a,0x29cc3c,0x29cc82,0x29ccc8,0x29cd0e,0x29cd54,0x29cd9a,0x29cde0,0x29ce2c,0x29ce72,
+        0x29ceb8,0x29cede,0x29cf04,0x29cf2a,0x29cf50,0x29cf76,0x29cf9c,0x29cfc2,0x29cfe8,0x29c98c]
+# Mission 6 stage 1 rafts and decorations (neo_m6props.c; no mission group: /programs.bin): the float 2A953E, the raft's
+# picture 2A954E (0BDA4E), the decorations 2A946C / 2A947C / 2A948C / 2A949C / 2A94B4 and 0BDAB8's 2A95A4.
+ROOTS+=[0x2a953e,0x2a954e,0x2a946c,0x2a947c,0x2a948c,0x2a949c,0x2a94b4,0x2a95a4]
+# Mission 6 stage 1 hanging bridge spans 0BCFA4 / 0BCFC4 / 0BCFE4 / 0BD004 (neo_m6props.c; no group): 2A923C / 2A92C8 /
+# 2A9354 / 2A93E0.
+ROOTS+=[0x2a923c,0x2a92c8,0x2a9354,0x2a93e0]
+# Mission 6 stage 1 mid-boss 05310E (neo_m6props.c; no group): walk 249D10 / 249D84, turn 249DD0, shout 249FB2, melee
+# 249A40 / 249B42, wait 24A014, land 249E80, jump 249E38, kick 24A0BE, deaths 249EC8 / 249F6A / 249F8A / 249F4C; dust
+# 249AF0 / 249C1A; grenade 24A260 (blast 22CB60); knife 244DBC (stuck 24A15C / 24A1AE); the fall 24A20A / 24A21E / 24A214,
+# splashes 22E1F0 / 22E064 / 24A306 / 269340.
+ROOTS+=[0x249d10,0x249d84,0x249dd0,0x249fb2,0x249a40,0x249b42,0x24a014,0x249e80,0x249e38,0x24a0be,0x249ec8,0x249f6a,0x249f8a,
+        0x249f4c,0x249af0,0x249c1a,0x24a260,0x22cb60,0x244dbc,0x24a15c,0x24a1ae,0x24a20a,0x24a21e,0x24a214,0x22e1f0,0x22e064,
+        0x24a306,0x269340]
+# Mission 6 stage 1 runners 020166 / 02011C before the mid-boss (neo_m6props.c; no group): 22FE22 / 22FD1C, the rider
+# 020372's 22FEB0.
+ROOTS+=[0x22fe22,0x22fd1c,0x22feb0]
+# Mission 5 boss 0A0C00 (neo_m5boss.c): the controller's death 2A2768; the hurtboxes 0A2D56[+85] 2A2788 / 2A27BA / 2A27EC /
+# 2A281E / 2A2850; the body 2A2882 and its orders 0A2D6A 2A2A58 / 2A2AF0 / 2A38C2 / 2A2BEA / 2A28D8 / 2A2998 / 2A2B6A / 2A2BAA;
+# the falling piece 2A2C7E / 2A2C8A; the lights 2A38CE / 2A38FC; the shots 2A3816 / 2A386C; the beam 2A3172 / 2A3458 / 2A3572 /
+# 2A359A / 2A38C2; 2A2CD8 / 2A2C96; 2A35C8 / 2A3642; 2A36F8; the debris 23BFFC / 23BFBA; the fire 22E750; the burnt soldier
+# 099090: 0995D6 / 0995DE (29F2E6 / 29F36E / 29F320 / 29F3B2), 29F3DC, 29F2B6, 29F23E, 29F286.
+ROOTS+=[0x2a2768,0x2a2788,0x2a27ba,0x2a27ec,0x2a281e,0x2a2850,0x2a2882,0x2a2a58,0x2a2af0,0x2a38c2,0x2a2bea,0x2a28d8,0x2a2998,
+        0x2a2b6a,0x2a2baa,0x2a2c7e,0x2a2c8a,0x2a38ce,0x2a38fc,0x2a3816,0x2a386c,0x2a3172,0x2a3458,0x2a3572,0x2a359a,0x2a2cd8,
+        0x2a2c96,0x2a35c8,0x2a3642,0x2a36f8,0x23bffc,0x23bfba,0x22e750,0x29f2e6,0x29f36e,0x29f320,0x29f3b2,0x29f3dc,0x29f2b6,
+        0x29f23e,0x29f286]
+# Mission 6 stage 2 jumper 086712 / 08671A / 086728 (neo_m6enemy.c; no group): wake 28315A, stand 28320A, walk 2832B0 /
+# 283356, turn 2833FC, aim 283458, shoot 2834E6, rise 283534, crouch 283540, jump 2835CE, land 2836B2, deaths 283740 /
+# 2838F0 / 2839CA / 283B7A / 283BF8; the shots 283CCC / 283E30 / 283EBE, the muzzle 283674, the pieces 283F4C / 283FB6.
+ROOTS+=[0x28315a,0x28320a,0x2832b0,0x283356,0x2833fc,0x283458,0x2834e6,0x283534,0x283540,0x2835ce,0x2836b2,0x283740,0x2838f0,
+        0x2839ca,0x283b7a,0x283bf8,0x283ccc,0x283e30,0x283ebe,0x283674,0x283f4c,0x283fb6]
+# Mission 6 stage 2 platform 0BE460 (neo_m6enemy.c; no group): 2A9626, at the bottom 2A9650.
+ROOTS+=[0x2a9626,0x2a9650]
+# Mission 6 stage 2 machines of the list head 0BDF3A and their crew (neo_m6enemy.c; no group): 2A95AE / 2A95BA, 2A95EA /
+# 2A95A6, 2A95CC / 2A95D8, 2A9602, the first hit 2A95F6, the smoke 2A9698, the crew 2A96EA / 2A960E and 0BE328 (23DBE2,
+# 23DC26, 23DC6A, 23DCFE); 032946 / 032AA4: 238BAC, 2391A8; the wrecks 0676A8 / 0676B6: 0E1976 / 0E198A (268BB0..268C00).
+ROOTS+=[0x2a95ae,0x2a95ba,0x2a95ea,0x2a95a6,0x2a95cc,0x2a95d8,0x2a9602,0x2a95f6,0x2a9698,0x2a96ea,0x2a960e,0x23dbe2,0x23dc26,
+        0x23dc6a,0x23dcfe,0x238bac,0x2391a8,0x268bb0,0x268bba,0x268bc4,0x268bce,0x268bd8,0x268be2,0x268bec,0x268bf6,0x268c00]
+# Mission 6 stage 3 last enemy 04153E (neo_m6boss.c; no group): the body 2415F8, the glow 241BA6 / 241AB0 / 241B3A /
+# 241B4E / 241BC8, the arm 241BE2 / 241C8A / 241C76 / 241D32 / 24136E / 2413B4 / 241430 and its piece 2414BE / 2414C0 /
+# 24153E, the gun 24235C and its shell 242386, the flames 0436B6 242270 / 241E1E / 241EF2 / 241FC6 / 24209A / 24216E and
+# 043860 242242; the opening's actors 045608: 242C58, 242C86, 242D54, 242D90, 242DBE, 242E10, 242E1C, 242E4A, 2432A6,
+# 2432E8, 2433CA, 24348E, 242E56, 242EFC, 243004, 24306E, 243100, 24315A, 243200, 243656, 243556, 243604, 24855C.
+ROOTS+=[0x2415f8,0x241ba6,0x241ab0,0x241b3a,0x241b4e,0x241bc8,0x241be2,0x241c8a,0x241c76,0x241d32,0x24136e,0x2413b4,0x241430,
+        0x2414be,0x2414c0,0x24153e,0x24235c,0x242386,0x242270,0x241e1e,0x241ef2,0x241fc6,0x24209a,0x24216e,0x242242,
+        0x242c58,0x242c86,0x242d54,0x242d90,0x242dbe,0x242e10,0x242e1c,0x242e4a,0x2432a6,0x2432e8,0x2433ca,0x24348e,0x242e56,
+        0x242efc,0x243004,0x24306e,0x243100,0x24315a,0x243200,0x243656,0x243556,0x243604,0x24855c]
+# The troopers 0438A4 (by the hatch 04307E): 242404, 242642, the death 242908; their shot makers 04416E 242A00 and shots
+# 0441CA 242A94 / 242B52; the body's 241A4E / 241A5A, the piece 042AEA 241362, the floor 044B32 22D372.
+ROOTS+=[0x242404,0x242642,0x242908,0x242a00,0x242a94,0x242b52,0x241a4e,0x241a5a,0x241362,0x22d372]
+# The second form's walkers 046112 / 04611C, their bombs 046510 / 0465FE.
+ROOTS+=[0x243662,0x243728,0x243744,0x243764,0x24378e,0x2438a4,0x24396a,0x2436e0,0x2438c4,0x243a30]
+# The escape 04677A's craft 04687A: 243AD6, its path calls 0469C0 / 0469D6 243B00 / 243B2A, its part 0469E8 243C36.
+ROOTS+=[0x243ad6,0x243b00,0x243b2a,0x243c36]
+# Its other actors: 046EFC 2440D0 / 2440B6 / 24409C / 244082 (table 244054) and 2440EA; the troopers 04702C.. 2442E8 /
+# 24449E, 244366 / 24451C, 2443FE / 244458 (047238), 244572; 047240 244630.
+# The background fight 037404: the planes 23C0DE / 23C212, their death 23C340, smoke 23C446, shots 23C184 / 23C4CA and
+# 23C2EE / 23C550.
+ROOTS+=[0x23c0de,0x23c212,0x23c340,0x23c446,0x23c184,0x23c4ca,0x23c2ee,0x23c550]
+ROOTS+=[0x2440d0,0x2440b6,0x24409c,0x244082,0x2440ea,0x2442e8,0x24449e,0x244366,0x24451c,0x2443fe,0x244458,0x244572,0x244630]
+# The ending 0570A0 (neo_ending.c): the dial's pieces 05785A / 057862 (table 056FC4).
+ROOTS+=[0x24ba2a,0x24ba34]
+# The ranking 057E00's piece 0580A2 (table 24BA3E).
+ROOTS+=[0x24ba46,0x24ba52]
+# The credits and the title after them (neo_ending.c; group "end": host only until the console runs them): the pictures
+# 0A454C (0A4744) 2A4B16, one program with the picture by +A8; the title 0A7FFE: its root 2A7368, the pieces 2A702C
+# (flying) / 2A7082 (arrived), the sparks 2A7182 / 2A7224 / 2A72C6.
+ROOTS+=[0x2a4b16,0x2a7368,0x2a702c,0x2a7082,0x2a7182,0x2a7224,0x2a72c6]
 def convert(bank,root,fixed=None):
     commands=[];where={}
     def rd(pc,n):
@@ -235,7 +605,10 @@ def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path)
     p.add_argument('--output',type=Path,required=True);a=p.parse_args()
     bank=(a.capture/'program-bank.bin').read_bytes();fixed=(a.capture/'program-fixed.bin').read_bytes()
-    programs=[dict(root=r,commands=convert(bank,r,fixed)) for r in ROOTS]
+    # Programs of a group (m3mid: the Mission 3 mid-boss) are left out of
+    # the console image unless the build enables it (compile_soldier_ai_tables.py).
+    group=root_groups()
+    programs=[dict(root=r,commands=convert(bank,r,fixed),**({"group":group[r]} if r in group else {})) for r in dict.fromkeys(ROOTS)]
     kinds={}
     for prog in programs:
         for c in prog['commands']:kinds[c['kind']]=kinds.get(c['kind'],0)+1

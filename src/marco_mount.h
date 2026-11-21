@@ -18,7 +18,9 @@
  *           kind 4 -> 0C315A, in the air -> 0C3232, else +9A bit 7)
  *   0C30F0  0AA5AC (its 0143EE is the caller's), kind 0 -> death (+5A =
  *           cause, +5F bit 7, 0C2956) unless RAM 10C300 (then 0C3232);
- *           1 and the unknown kinds -> 0C3232; 2, 3, 4, 5 untranslated
+ *           1 and the unknown kinds -> 0C3232; 3 and 5 (+15 bit 0 set)
+ *           -> 0C1F4A (stand; the fat form 2 with +86 >= 20 -> 0C1E94
+ *           untranslated); 2 and 4 untranslated
  *   0C3232  program 0BF618 (0C0F32), 0C0F16, +30 = 0, +34 = 0xB7000,
  *           +00 = 0C3250 and on:
  *   0C3250  0AA4C8, +84 |= 0x1E, 0C0FEA, +34 += (-0x160000 - +34) >> 5,
@@ -36,6 +38,7 @@ typedef enum {
     MARCO_MOUNT_EXIT,       /* 0C30F0 now: call marco_mount_exit */
     MARCO_MOUNT_DIE,        /* 0C2956 with +5A (kind 0) */
     MARCO_MOUNT_EJECT,      /* 0C3232: the eject jump (marco_mount_eject each update) */
+    MARCO_MOUNT_STAND,      /* 0C1F4A (kinds 3 and 5, the sewer crank): standing, +00 = 0C1FA6 (its program 0BF6D8 by 0C0F32 is the caller's) */
     MARCO_MOUNT_STOP        /* untranslated path (`stop` = its ROM label) */
 } marco_mount_result_t;
 typedef struct {

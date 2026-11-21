@@ -1,5 +1,6 @@
 #include "neo_kernel.h"
 #include "neo_collision.h"
+#include "neo_m6bridge.h"
 #include <stddef.h>
 /* Manual C translation of the original collision kernel. Register names are
  * kept where the original routines communicate through registers; 68000
@@ -16,6 +17,7 @@ typedef struct {
     bool v4050; uint8_t o4050; uint32_t l4054,l4058,l405c,l4064; uint8_t o4060;
     uint16_t w4068; unsigned iterator;
     uint8_t mask42a2; uint16_t idx42a4; int32_t qbox[4]; /* RAM 10C2A2/10C2A4/10C292 */
+    int16_t qy0,qy1;  /* 01382A: D4/D5 words (query rows with A0's +20/+18) */
     bool unsupported;
 } kr_t;
 
@@ -30,9 +32,35 @@ static uint32_t SETW(uint32_t reg,uint32_t word) {return (reg&0xffff0000u)|(word
 static uint32_t ASR(uint32_t v,unsigned n) {return (uint32_t)(S(v)>=0?(int32_t)(v>>n):~(int32_t)(~v>>n));}
 static const neo_kobj_t *obj(const kr_t *k,uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return &k->s->dyn[id-NEO_KOBJ_DYN0].pos;
+    if (id==NEO_KOBJ_TRAIN) return k->s->train_on?&k->s->train:NULL;
+    if (id==NEO_KOBJ_NODE) return &k->s->node;
     return id==NEO_KOBJ_TERRAIN?&k->s->terrain:id==NEO_KOBJ_ROOT?&k->s->root:NULL;
 }
-static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT;}
+static bool known(uint8_t id) {return id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT || id==NEO_KOBJ_TRAIN || id==NEO_KOBJ_NODE;}
+/* ROM 0B8566 collision (+4 = 4340BA): a one-cell platform 0x2B on row 36
+ * of every column but 384..447, which hold 0xA0 on rows 46 and 47
+ * (tools/test_train_grid.py checks this against the ROM). */
+uint8_t neo_kernel_train_cell(int column,int row) {
+    if (column<0 || column>=784 || row<0 || row>=48) return 0;
+    if (column>=384 && column<448) return row>=46?0xa0:0;
+    return row==36?0x2b:0;
+}
+/* 0C79FE on the train's ring: slot row q = ((~y)&0x1F8)>>3 holds map row
+ * (q - 24) & 63 (layer +34 = 19 all mission: the platform row 36 is in
+ * slot 60 and the 0xA0 rows 46/47 in slots 6/7; MAME, every read of the
+ * mission and run4 RAM 10D83E, docs/MISION3.md "Reconocimiento del mapa");
+ * the column is the map column under the local x (+32 origin, neo_train.c). */
+uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin) {
+    int q=(int)(((uint16_t)~y&0x1f8u)>>3);
+    int c=((int)(int16_t)x-16*(int)origin)>>3;
+    c%=784;if (c<0) c+=784;
+    return neo_kernel_train_cell(c,(q-24)&63);
+}
+static uint8_t train_cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    if (s->bridge_ring) return neo_m6ring_cell(s->bridge_ring,s->bridge_map,x,y);   /* Mission 6: the bridge 10D7B6 */
+    if (s->train_ring) return s->train_ring[((x&0x1f8u)<<3)|(((uint16_t)~y&0x1f8u)>>3)];   /* 0C79FE */
+    return neo_kernel_train_ring(x,y,s->train_origin);
+}
 static uint16_t w4024(const kr_t *k) {return (uint16_t)((k->b4024[0]<<8)|k->b4024[1]);}
 static uint16_t w4026(const kr_t *k) {return (uint16_t)((k->b4024[2]<<8)|k->b4024[3]);}
 static void or4024(kr_t *k,uint16_t v) {k->b4024[0]|=(uint8_t)(v>>8);k->b4024[1]|=(uint8_t)v;}
@@ -45,6 +73,11 @@ static void or4026(kr_t *k,uint16_t v) {k->b4024[2]|=(uint8_t)(v>>8);k->b4024[3]
  * outside it reads the loaded column sharing its ring slot, as the original
  * does for actors far behind or ahead of the camera. */
 static uint8_t cell(const neo_kscene_t *s,uint16_t x,uint16_t y) {
+    if (s->ring) return s->ring[((x&0x1f8u)<<3)|(((uint16_t)~y&0x1f8u)>>3)];   /* 0C79FE */
+    /* Vertical stages of the mission packs (rows > 32): the ring's window is
+     * not modelled; the cell is read at the terrain-local pixel itself
+     * (docs/MISION2.md "Fase 2"). */
+    if (neo_collision_rows()>32u) return neo_collision_cell((int16_t)x,(int16_t)y);
     unsigned row=(unsigned)((~y)&0x1f8u)>>3; /* (~y)/8 modulo 64 */
     unsigned world_row=63u-row; if (world_row>=32u) return 0;
     int first=((int16_t)(uint16_t)(-64-(int16_t)(uint16_t)((uint32_t)s->terrain.x>>16))>>3)-1;
@@ -75,7 +108,7 @@ static void k12938(kr_t *k) {
             if (d5<h) {k->d6=m[4];hi=m[5];lo=m[10+(unsigned)d5*w+d4];}
         }
     } else {
-    uint32_t c=cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
+    uint32_t c=k->a0==NEO_KOBJ_TRAIN?train_cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1):cell(k->s,(uint16_t)k->d0,(uint16_t)k->d1);
     k->d6=c;
     uint32_t g=(c&0xe0u)>>5;
     if (k->s->group_map) g=k->s->group_map[g];
@@ -447,6 +480,13 @@ static void k1ac4c(kr_t *k) {
  * coordinates: called with A0 = 0 by 013968/013DB2). */
 static void k14160(kr_t *k,uint32_t d0,uint32_t d1,uint32_t d2,uint32_t d3) {
     k->idx42a4=7;k->mask42a2=0;
+    {   /* 01382A's D4/D5 (D1, D3 at the list start, relative to A0) */
+        const neo_kobj_t *p=obj(k,k->a0);uint32_t y0=d1,y1=d1+d3;
+        if (p) {y0+=(uint32_t)p->prev_y;y1+=(uint32_t)p->y;}
+        int16_t a=(int16_t)(uint16_t)(y0>>16),b=(int16_t)(uint16_t)(y1>>16);
+        if (a>b) {int16_t t=a;a=b;b=t;}
+        k->qy0=a;k->qy1=b;
+    }
     if (!k->b4008 && !k->s->solid) return;
     d2+=d0;d3+=d1;
     if (S(d0)>S(d2)) {uint32_t t=d0;d0=d2;d2=t;}
@@ -477,6 +517,13 @@ static void k14160(kr_t *k,uint32_t d0,uint32_t d1,uint32_t d2,uint32_t d3) {
  * dynamic objects 01424C, highest index first. */
 static void k1382a(kr_t *k) {
     if (k->iterator==0) {k->iterator=1;k->a1=NEO_KOBJ_TERRAIN;return;}
+    if (k->iterator==1 && k->s->train_on) {
+        k->iterator=2;
+        if (k->s->bridge_ring || k->s->bridge_raw) {k->a1=NEO_KOBJ_TRAIN;return;}   /* 0BC6E6 +C = 0: 01384E returns it */
+        /* 01384E..013896: (+34 - 0x11 + 1) * 16 + y; the rows 7*16 above */
+        int d6=(int16_t)(uint16_t)((19-0x11+1)*16+(int16_t)(uint16_t)((uint32_t)k->s->train.y>>16));
+        if (!(d6<k->qy0) && !((int16_t)(d6-7*16)>k->qy1)) {k->a1=NEO_KOBJ_TRAIN;return;}
+    }
     k->iterator=2;
     uint8_t d6=k->mask42a2;int d7=k->idx42a4;
     while (d6) {
@@ -556,6 +603,14 @@ static bool k138a0(kr_t *k) {
         }
     }
     return cut;
+}
+uint32_t neo_kernel_1495c_d1(const neo_kscene_t *scene,const neo_kreq_t *q,const neo_kres_t *r) {
+    if (!(r->flags&1u)) return (uint32_t)r->y;                          /* 0149A8 -> 0149C4 */
+    kr_t k={0};k.s=(neo_kscene_t *)scene;
+    const neo_kobj_t *a=obj(&k,q->parent),*b=obj(&k,r->parent);
+    uint32_t d7=(uint32_t)q->y+(a?(uint32_t)a->y:0u);                   /* 01498C..014996 */
+    uint32_t d1=(uint32_t)r->y+(b?(uint32_t)b->y:0u);                   /* 0149AC..0149B4 */
+    return SWAP(d1-d7);                                                  /* 0149B8, 0149BA */
 }
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *q,neo_kres_t *out) {
     kr_t k={0};k.s=scene;
@@ -722,8 +777,13 @@ bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int
  * passes it. */
 bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
     int32_t *ox,int32_t *oy,uint8_t *object) {
+    return neo_kernel_point_class_in(scene,NEO_KOBJ_NONE,x,y,cls,b4008,ox,oy,object);
+}
+/* 013CF8 with A0 = `parent` (the point relative to that object). */
+bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
+    int32_t *ox,int32_t *oy,uint8_t *object) {
     kr_t k={0};k.s=scene;k.b4008=b4008;
-    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=NEO_KOBJ_NONE;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
     k.iterator=0;k14160(&k,k.d0,k.d1,0,0);k1382a(&k);
     while (k.a1!=NEO_KOBJ_NONE) {
         const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);
@@ -733,6 +793,28 @@ bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls
         k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d1=SWAP(k.d1);k.d0=SWAP(k.d0);
         if (k.unsupported) return false;
         if ((uint16_t)(k.d7>>16)==cls) {if (ox) *ox=S(k.d0);if (oy) *oy=S(k.d1);if (object) *object=k.a0;return true;}
+        k1382a(&k);
+    }
+    return false;
+}
+bool neo_kernel_object_y(const neo_kscene_t *scene,uint8_t object,int32_t *y) {
+    kr_t k={0};k.s=(neo_kscene_t *)scene;
+    const neo_kobj_t *a=obj(&k,object);
+    if (!a) return false;
+    *y=a->y;return true;
+}
+bool neo_kernel_point_solid(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint8_t b4008) {
+    kr_t k={0};k.s=scene;k.b4008=b4008;
+    k.d0=(uint32_t)x;k.d1=(uint32_t)y;k.a0=parent;
+    k.iterator=0;k14160(&k,k.d0,k.d1,0,0);k1382a(&k);
+    while (k.a1!=NEO_KOBJ_NONE) {
+        const neo_kobj_t *a=obj(&k,k.a0),*b=obj(&k,k.a1);
+        if (!b) return false;
+        if (a) {k.d0+=(uint32_t)a->x;k.d1+=(uint32_t)a->y;}
+        k.d0-=(uint32_t)b->x;k.d1-=(uint32_t)b->y;k.a0=k.a1;
+        k.d0=SWAP(k.d0);k.d1=SWAP(k.d1);k12938(&k);k.d1=SWAP(k.d1);k.d0=SWAP(k.d0);
+        if (k.unsupported) return false;
+        if (k.d7&0xffffu) return true;
         k1382a(&k);
     }
     return false;
@@ -776,4 +858,45 @@ bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uin
     if (k.unsupported) return false;
     *d5=(uint16_t)k.d5;*d6=k.d6;*d7=k.d7;*object=o4060;
     return true;
+}
+/* 0128E8 for player 1 (A6 = 1014C4), before each of its sweeps 0143EE
+ * (air) and 014594 (ground): 10C00A = 0, 10C00D = FF and the screen box
+ * RAM 10C01C..10C023 copied from the record at RAM 10C2E8, ROM 016DBE =
+ * 001C 0000 0108 01E0 (MAME: the same words at every call of player 1 in
+ * Mission 2, stages 1 to 3). Without it 0138A0 clips every move to the
+ * right (and up) to nothing at the box of another object, or at 0 x 0, and
+ * the sweep never meets a wall there. The box is the call's own: the
+ * world's (neo_slug.c, neo_tread.c) is put back. */
+bool neo_kernel_player_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result) {
+    static const uint16_t box[4]={0x001c,0x0000,0x0108,0x01e0};   /* ROM 016DBE */
+    uint16_t config[4];
+    for (unsigned i=0;i<4u;i++) {config[i]=scene->config[i];scene->config[i]=box[i];}
+    bool ok=neo_kernel_sweep(scene,request,result);
+    for (unsigned i=0;i<4u;i++) scene->config[i]=config[i];
+    return ok;
+}
+/* Player 1's air sweep 0143EE: 013968 from +28..+34 with 10C004 = 0,
+ * 10C008 = FF (+15 bit 5 clear) and 10C009 = 0. On a floor (D6 bit 0,
+ * 0144B8: +15 bit 6) of the terrain or the root, *out gets the swept
+ * position and +30/+34 (014492) relative to the terrain and true is
+ * returned; otherwise the persistent words 10C018/10C068 are put back, so
+ * the caller's own sweeps see them unchanged. */
+bool neo_kernel_air_landing(neo_kscene_t *scene,int32_t x,int32_t y,int32_t vx,int32_t vy,neo_kland_t *out) {
+    uint16_t w4018=scene->w4018,w4068=scene->w4068;
+    uint8_t self_dyn=scene->self_dyn;uint32_t self_block=scene->self_block;
+    scene->self_dyn=0;scene->self_block=0;
+    neo_kreq_t q={x,y,vx,vy,NEO_KOBJ_TERRAIN,0,0xff,0,0,0,0xff};
+    neo_kres_t r;
+    bool ok=neo_kernel_player_sweep(scene,&q,&r);
+    scene->self_dyn=self_dyn;scene->self_block=self_block;
+    if (ok && (r.flags&1u) && (r.parent==NEO_KOBJ_TERRAIN || r.parent==NEO_KOBJ_ROOT)) {
+        if (r.parent==NEO_KOBJ_ROOT) {   /* 01AC4C: back to the terrain */
+            r.x=(int32_t)((uint32_t)r.x+(uint32_t)scene->root.x-(uint32_t)scene->terrain.x);
+            r.y=(int32_t)((uint32_t)r.y+(uint32_t)scene->root.y-(uint32_t)scene->terrain.y);
+        }
+        *out=(neo_kland_t){r.x,r.y,r.vx,r.vy,r.flags,r.kind};
+        return true;
+    }
+    scene->w4018=w4018;scene->w4068=w4068;
+    return false;
 }

@@ -28,6 +28,19 @@ static void k29904(neo_gactor_t *a) {
     SW(0x6e,0);SW(0x70,0);SW(0x72,0);SW(0x74,0);SW(0x78,0);
     if (!W(0x76)) SW(0x76,0xc0);
 }
+/* RAM 10C448 (tst.b $4448(a5)): the world's flag as it is now (the Mission 6 last enemy's body sets it in this same
+ * pass, before the truck's update), or the environment's copy. */
+static bool f448(const neo_genv_t *e) {return e->flag448 || (e->flags && e->flags->m6_boss);}
+/* 02996E: +84 = 0, +82 = +6E, and 029904 from 029926 on (the facing by +74, +84 bit 3 by +72, the target +70, the
+ * words cleared, the default speed C0). */
+static void k2996e(neo_gactor_t *a) {
+    SB(0x84,0);SW(0x82,W(0x6e));
+    if (!W(0x74)) SB(0x15,B(0x15)|1u);
+    if (W(0x72)) SET(0x84,3);
+    SW(0x7a,W(0x70));
+    SW(0x6e,0);SW(0x70,0);SW(0x72,0);SW(0x74,0);SW(0x78,0);
+    if (!W(0x76)) SW(0x76,0xc0);
+}
 /* 029A3A: target X (relative to the scene root when +84 bit 3) minus +3C. */
 static int16_t k29a3a(neo_gactor_t *a,neo_genv_t *e) {
     uint16_t d0=W(0x7a);
@@ -87,7 +100,8 @@ static bool truck_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
     case 0x29ae4: k29ae4(a,e);return true;
     case 0x29a98: /* wreck: grid stamp, landing attack, solid body removed */
         SB(0x60,0xff);
-        if (!BIT(0x84,5) && BIT(0x84,0) && e->stamp) e->stamp(e->ctx,a,BIT(0x84,1)?0x29c26:0x29bf4);
+        if (BIT(0x84,5) || !BIT(0x84,0)) return true;                  /* 029A9E / 029AA8: nothing else (the Mission 4 truck, +6E = 0) */
+        if (e->stamp) e->stamp(e->ctx,a,BIT(0x84,1)?0x29c26:0x29bf4);
         ga_attack(a,e,0x29ba2);
         if (e->solid) e->solid(e->ctx,a,0);
         return true;
@@ -98,6 +112,16 @@ static bool truck_call(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32
         return true;
     default:return false;
     }
+}
+/* 02A448: a piece: palettes 02A9BC[+83 & 3] and 201, program 02A878[rand & F], then 01D5AA. */
+static ga_result_t piece_tick(neo_gactor_t *a,neo_genv_t *e) {
+    const uint8_t *t=ga_rom(0x2a9bcu+2u*(B(0x83)&3u));
+    if (!t) {ga_fail(e,0x2a9bc);return GA_UNSUPPORTED;}
+    ga_palette(a,(uint16_t)(t[0]<<8|t[1]));ga_palette(a,0x201);SB(0x14,B(0x19));
+    t=ga_rom(0x2a878u+4u*(ga_rand(e)&0xfu));
+    if (!t) {ga_fail(e,0x2a878);return GA_UNSUPPORTED;}
+    START((uint32_t)t[0]<<24|(uint32_t)t[1]<<16|(uint32_t)t[2]<<8|t[3]);
+    return neo_effects_frag_1d5aa(a,e);
 }
 /* 02951A: damage registration, death check and visibility. */
 static ga_result_t tail(neo_gactor_t *a,neo_genv_t *e) {
@@ -115,8 +139,11 @@ static void damaged(neo_gactor_t *a,neo_genv_t *e,uint32_t program) {
 }
 static ga_result_t truck_tick(neo_gactor_t *a,neo_genv_t *e) {
     for (unsigned guard=0;guard<8;guard++) switch (L(0)) {
+    case 0x29184: /* the constructor of the "background" truck (spawn-table offset 0x348: the Mission 6 last enemy's
+                   * sub-script 2C7920): 02996E (+84 = 0, +82 = the word +6E, then 029926 on), +84 bit 5, and 02918E */
     case 0x2916e: /* constructor */
-        k29904(a);SET(0x84,2);
+        if (L(0)==0x29184u) {k2996e(a);SET(0x84,5);}
+        else {k29904(a);SET(0x84,2);}
         ga_floor(a,e);
         SW(0x66,0x8820);SW(0x1e,0x8820);
         SL(0x30,0);SL(0x34,0);SL(0x62,0);  /* 01B1DC */
@@ -145,7 +172,7 @@ static ga_result_t truck_tick(neo_gactor_t *a,neo_genv_t *e) {
         damaged(a,e,0x236846);
         if (!ga_players_in(a,e,0x29bda)) CLR(0x84,2); /* 029A82: a player inside the rectangle */
         if (k29a56(a,e)) SL(0,0x29326);
-        if (BIT(0x84,5) && e->flag448) SL(0,0x293dc);
+        if (BIT(0x84,5) && f448(e)) SL(0,0x293dc);
         return tail(a,e);
     case 0x29326: /* stop */
         CLR(0x84,2);SL(0x30,0);SL(0x34,0);SL(0x62,0);
@@ -156,7 +183,7 @@ static ga_result_t truck_tick(neo_gactor_t *a,neo_genv_t *e) {
         k299a8(a,e);SW(0x1e,W(0x1e)-1u);STEP();
         damaged(a,e,0x2367fe);
         if (BIT(0x84,5)) {
-            if (e->flag448) SL(0,0x293dc);
+            if (f448(e)) SL(0,0x293dc);
             SW(0x82,W(0x82)-1u);
             if (S16(W(0x82))<=0) SL(0,0x293dc);
         }
@@ -195,7 +222,7 @@ static ga_result_t truck_tick(neo_gactor_t *a,neo_genv_t *e) {
         if (e->sound) e->sound(e->ctx,0x102f);
         spawn_child(a,e,0x1c71e,-32,0,0);spawn_child(a,e,0x1c71e,32,0,0);
         for (unsigned i=0;i<16;i++) { /* 02A71E */
-            neo_gactor_t *c=e->spawn?e->spawn(e->ctx,a,0x2a448,false):NULL;
+            neo_gactor_t *c=e->spawn_reserve?e->spawn_reserve(e->ctx,a,0x2a448,0x2a):e->spawn?e->spawn(e->ctx,a,0x2a448,false):NULL;   /* 0040BC, D0 = 2A */
             if (c) {ga_place_from(c,a,e,0,0);ga_sb(c,0x83,B(0x83));}
         }
         for (unsigned i=0;i<16;i++) spawn_child(a,e,0x1d31c,0,24,0); /* 01DBAA */
@@ -221,7 +248,7 @@ static ga_result_t body_tick(neo_gactor_t *a,neo_genv_t *e) {
     ga_project(a,e);
     neo_gactor_t *p=e->creator(e->ctx,a);
     SB(0x84,ga_b(p,0x84));
-    if (BIT(0x84,5) && e->flag448) {if (e->dyn_release) e->dyn_release(e->ctx,a);}
+    if (BIT(0x84,5) && f448(e)) {if (e->dyn_release) e->dyn_release(e->ctx,a);}
     else k299e6(a,e);
     if (L(0x50)) {
         if (ga_register(a,e,NULL,NULL)) {
@@ -234,8 +261,9 @@ static ga_result_t body_tick(neo_gactor_t *a,neo_genv_t *e) {
     return GA_MORE;
 }
 ga_result_t neo_truck_tick(neo_gactor_t *a,neo_genv_t *e) {
+    if (L(0)==0x2a448) return piece_tick(a,e);
     uint32_t r=L(0);
     if (r==0x29802 || r==0x29852 || r==0x298f4) return body_tick(a,e);
     return truck_tick(a,e);
 }
-bool neo_truck_routine(uint32_t r) {return r==0x2916e || (r>=0x29294 && r<=0x295bc) || r==0x29802 || r==0x29852 || r==0x298f4;}
+bool neo_truck_routine(uint32_t r) {return r==0x2916e || r==0x29184 || r==0x2a448 || (r>=0x29294 && r<=0x295bc) || r==0x29802 || r==0x29852 || r==0x298f4;}

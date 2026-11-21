@@ -63,17 +63,47 @@ void ga_place_from(neo_gactor_t *a,const neo_gactor_t *s,neo_genv_t *e,int16_t d
     ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d0-d2);ga_sl(a,0x34,d1-d3);ga_sl(a,0x38,ROOT_TAG);
     ga_project(a,e);
 }
+/* 01AC4C with A0 = +38 and A1 = the scene root 10E968 (040920: movem +28..+38, 01AC4C, movem back): +28/+2C the
+ * start (previous frame of A0) and +30/+34 the motion to the end (current frame of A0), both re-expressed in the
+ * root's frames; nothing changes when +38 already is the root. */
+void ga_to_root(neo_gactor_t *a,neo_genv_t *e) {
+    uint32_t tag=ga_l(a,0x38);
+    if (tag==ROOT_TAG) return;
+    neo_contact_parent_t root,op;
+    if (!ga_parent(e,ROOT_TAG,&root)) {ga_fail(e,0x1ac4c);return;}
+    bool has=false;
+    if (tag) {if (!ga_parent(e,tag,&op)) {ga_fail(e,0x1ac4c);return;}has=true;}
+    uint32_t d0=ga_l(a,0x28),d1=ga_l(a,0x2c),d2=ga_l(a,0x30)+d0,d3=ga_l(a,0x34)+d1;
+    if (has) {d0+=(uint32_t)op.previous_x;d1+=(uint32_t)op.previous_y;d2+=(uint32_t)op.x;d3+=(uint32_t)op.y;}
+    d0-=(uint32_t)root.previous_x;d1-=(uint32_t)root.previous_y;d2-=(uint32_t)root.x;d3-=(uint32_t)root.y;
+    ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d2-d0);ga_sl(a,0x34,d3-d1);ga_sl(a,0x38,ROOT_TAG);
+}
 void ga_move(neo_gactor_t *a,neo_genv_t *e) {
     ga_sl(a,0x28,ga_l(a,0x28)+ga_l(a,0x30));ga_sl(a,0x2c,ga_l(a,0x2c)+ga_l(a,0x34));
     ga_project(a,e);
 }
+/* Mission 3 (docs/MISION3.md): with the train in the kernel's list
+ * (neo_kscene_t.train_on) 10D7B6 is the train, not the terrain. */
+static bool k_train;
+static neo_genv_t *k_env;static uint32_t k_node_tag;
+static void kset(const neo_genv_t *e) {k_train=e->kernel && e->kernel->train_on;k_env=(neo_genv_t *)e;}
 static uint8_t kobj(uint32_t tag) {
+    /* An actor's position block as the parent (NEO_KOBJ_NODE): its coordinates from the world for this query. */
+    if ((tag&0xff000000u)==NEO_GA_TAG_BASE && k_env && k_env->kernel && k_env->parent) {
+        neo_contact_parent_t p;
+        if (!k_env->parent(k_env->ctx,tag,&p)) return 0xff;
+        k_env->kernel->node=(neo_kobj_t){p.x,p.y,p.previous_x,p.previous_y};k_node_tag=tag;
+        return NEO_KOBJ_NODE;
+    }
     if (tag>=DYN_TAG(0) && tag<DYN_TAG(NEO_KDYN_COUNT) && !((tag-DYN_TAG(0))&63u)) return (uint8_t)(NEO_KOBJ_DYN0+(tag-DYN_TAG(0))/64u);
+    if (tag==0x10d7b6u && k_train) return NEO_KOBJ_TRAIN;
     return tag==TERRAIN_TAG || tag==0x10d7b6u?NEO_KOBJ_TERRAIN:tag==ROOT_TAG?NEO_KOBJ_ROOT:tag?0xff:NEO_KOBJ_NONE;
 }
 static uint32_t terrain_tag=TERRAIN_TAG;
 static uint32_t ktag(uint8_t id) {
     if (id>=NEO_KOBJ_DYN0 && id<NEO_KOBJ_DYN0+NEO_KDYN_COUNT) return DYN_TAG(id-NEO_KOBJ_DYN0);
+    if (id==NEO_KOBJ_TRAIN) return 0x10d7b6u;
+    if (id==NEO_KOBJ_NODE) return k_node_tag;
     return id==NEO_KOBJ_TERRAIN?terrain_tag:id==NEO_KOBJ_ROOT?ROOT_TAG:0;
 }
 static void self(neo_gactor_t *a,neo_genv_t *e) {
@@ -146,11 +176,12 @@ bool ga_push_solids(neo_gactor_t *a,neo_genv_t *e,uint8_t b4009,bool *top) {
     }
     return !e->unsupported;
 }
-static uint8_t sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
+static uint8_t sweep_400a,sweep_400b,sweep_400d;   /* RAM 10C00B/10C00D for the next sweep (ga_*_flags) */
 static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo_contact_request_t *r,
     uint32_t mode,uint8_t b4008,uint8_t b4009,neo_kres_t *out) {
-    uint8_t b400b=sweep_400b,b400d=sweep_400d;sweep_400b=sweep_400d=0;
-    uint8_t parent=kobj(r->parent_tag);
+    uint8_t b400a=sweep_400a,b400b=sweep_400b,b400d=sweep_400d;sweep_400a=sweep_400b=sweep_400d=0;
+    if (e->flags) {e->flags->ram400a=b400a;e->flags->wrote400a=1;}   /* 0128DA / 0143CC */
+    kset(e);uint8_t parent=kobj(r->parent_tag);
     int32_t x=r->x,y=r->y,dx=r->dx,dy=r->dy;
     if (parent==0xff) {
         /* An actor's position block as A0 (the camel rider 09FEAA dying on
@@ -164,7 +195,7 @@ static bool sweep(neo_gactor_t *a,neo_genv_t *e,neo_contact_actor_t *c,const neo
         parent=NEO_KOBJ_NONE;
     }
     self(a,e);
-    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,0,b400b,b400d};
+    neo_kreq_t q={x,y,dx,dy,parent,mode,b4008,b4009,b400a,b400b,b400d};
     neo_kres_t k;
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x13968);return false;}
     neo_contact_result_t res={k.x,k.y,k.vx,k.vy,kobj(r->parent_tag)==k.parent?r->parent_tag:ktag(k.parent),k.kind,k.flags};
@@ -185,6 +216,7 @@ uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind) {
     ga_set_contact(a,&c);if (kind) *kind=k.kind;return k.flags;
 }
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e) {return ga_air_kind(a,e,NULL);}
+uint16_t ga_air_400a(neo_gactor_t *a,neo_genv_t *e) {sweep_400a=0xff;uint16_t f=ga_air_kind(a,e,NULL);sweep_400a=0;return f;}
 uint16_t ga_air_flags(neo_gactor_t *a,neo_genv_t *e,uint8_t b400b,uint8_t b400d,uint32_t *kind) {
     sweep_400b=b400b;sweep_400d=b400d;uint16_t f=ga_air_kind(a,e,kind);sweep_400b=sweep_400d=0;return f;
 }
@@ -213,7 +245,7 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e) {
 }
 void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {
         /* A0 = another actor's position block (the civilians 031F52 placed
          * on their leader by 01AD6E): 013DB2 reads its +14/+18 (actor
@@ -235,7 +267,7 @@ void ga_floor(neo_gactor_t *a,neo_genv_t *e) {
  * carry when the sweep meets a surface. */
 bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x1495c);return false;}
     self(a,e);
     neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
@@ -243,11 +275,34 @@ bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
     return (k.flags&1u)!=0;
 }
+/* 01495C with D6 (013968's flags) as the result. */
+uint16_t ga_probe_vertical_d6(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return 0;}
+    return k.flags;
+}
+/* 01495C with D6 as the result and the D1 it leaves in *d1 (neo_kernel_1495c_d1). */
+uint16_t ga_probe_vertical_d6_d1(neo_gactor_t *a,neo_genv_t *e,int16_t distance,uint32_t *d1) {
+    neo_contact_actor_t c=ga_contact(a);*d1=0;
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return 0;}
+    *d1=neo_kernel_1495c_d1(e->kernel,&q,&k);
+    return k.flags;
+}
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     /* 014850: forward probe (4009 = FF) by `distance` pixels; without a hit,
      * a downward one from its end by |distance| + 8 (carry on either hit). */
     neo_contact_actor_t c=ga_contact(a);
-    uint8_t parent=kobj(c.parent_tag);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
     if (parent==0xff) {ga_fail(e,0x14850);return false;}
     self(a,e);
     uint8_t b4008=(uint8_t)(c.flags15&32u?0:255);
@@ -263,6 +318,43 @@ bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance) {
     if (!neo_kernel_sweep(e->kernel,&q2,&k2)) {ga_fail(e,0x14850);return false;}
     return (k2.flags&1u)!=0;
 }
+uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x14906);return 0;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,(int32_t)((uint32_t)(int32_t)dx<<16),(int32_t)((uint32_t)(int32_t)dy<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x14906);return 0;}
+    return k.flags;
+}
+bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy) {
+    uint32_t kind;return ga_probe_vertical_kind(a,e,distance,dy,&kind);
+}
+bool ga_probe_vertical_kind(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy,uint32_t *kind) {
+    neo_contact_actor_t c=ga_contact(a);*kind=0;
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x1495c);return false;}
+    self(a,e);
+    neo_kreq_t q={c.x,c.y,0,(int32_t)((uint32_t)(int32_t)distance<<16),parent,0,(uint8_t)(c.flags15&32u?0:255),0,0,0,0};
+    neo_kres_t k;
+    if (!neo_kernel_sweep(e->kernel,&q,&k)) {ga_fail(e,0x1495c);return false;}
+    *kind=k.kind;
+    if (!(k.flags&1u)) return false;
+    neo_contact_parent_t p;uint32_t oy=(uint32_t)c.y,ny=(uint32_t)k.y;
+    if (c.parent_tag && ga_parent(e,c.parent_tag,&p)) oy+=(uint32_t)p.y;
+    uint32_t nt=kobj(c.parent_tag)==k.parent?c.parent_tag:ktag(k.parent);
+    if (nt && ga_parent(e,nt,&p)) ny+=(uint32_t)p.y;
+    *dy=(int16_t)((ny-oy)>>16);
+    return true;
+}
+bool ga_probe_point(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy) {
+    neo_contact_actor_t c=ga_contact(a);
+    kset(e);uint8_t parent=kobj(c.parent_tag);
+    if (parent==0xff) {ga_fail(e,0x149ca);return false;}
+    self(a,e);
+    return neo_kernel_point_solid(e->kernel,parent,(int32_t)((uint32_t)c.x+((uint32_t)(int32_t)dx<<16)),(int32_t)((uint32_t)c.y+((uint32_t)(int32_t)dy<<16)),(uint8_t)(c.flags15&32u?0:255));
+}
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
     const neo_anim_program_t *p=e->program?e->program(tag):NULL;
     if (!p) {ga_fail(e,tag);return false;}
@@ -275,7 +367,9 @@ bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed) {
 typedef struct {neo_gactor_t *a;neo_genv_t *e;ga_call_t call;bool fail;neo_anim_state_t *s;uint32_t missing;} anim_ctx_t;
 static bool ev(void *context,neo_anim_kind_t kind,uint32_t asset,neo_anim_render_t *render) {
     anim_ctx_t *c=context;(void)render;
-    if (kind==NEO_ANIM_REPLACE_PALETTE) {c->a->palette[0]=(uint16_t)asset;return true;}
+    /* 04061C..0406A0: 009F88 releases the node's palettes (+1D = 0), then
+     * 009EA8 takes the asset in slot 0 (+19, +14, +1D = 1). */
+    if (kind==NEO_ANIM_REPLACE_PALETTE) {ga_sb(c->a,0x1d,0);ga_palette(c->a,(uint16_t)asset);return true;}
     if (c->call && c->call(c->a,c->e,kind,asset,0)) return true;
     c->missing=asset;return false;
 }
@@ -287,18 +381,24 @@ static bool wr(void *context,uint16_t field,unsigned size,uint32_t value) {
     if (field+size>NEO_GA_BYTES) return false;
     if (size==1) ga_sb(c->a,field,(uint8_t)value); else if (size==2) ga_sw(c->a,field,(uint16_t)value); else ga_sl(c->a,field,value);
     if (c->s && field<=0x18 && field+size>0x18) c->s->field18=c->a->m[0x18];
+    /* 004464 on +24..+27 (the boss legs 04AF02 set their speed +26 in
+     * the program): the running timer and speed are the node's words. */
+    if (c->s && field<0x28 && field+size>0x24) {c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);}
+    if (c->s && field<=0x17 && field+size>0x17) c->s->flash=c->a->m[0x17];
     return true;
 }
 static void snd(void *context,uint16_t id) {anim_ctx_t *c=context;if (c->e->sound) c->e->sound(c->e->ctx,id);}
 /* A callback reads and writes the node: the program's timer +24, speed +26,
- * flash +17 and counter +18 are in the node while it runs. */
+ * flash +17, counter +18 and hurtbox +50 are in the node while it runs. */
 static void state_out(anim_ctx_t *c) {
     if (!c->s) return;
     ga_sw(c->a,0x24,c->s->timer);ga_sw(c->a,0x26,c->s->speed);ga_sb(c->a,0x17,c->s->flash);ga_sb(c->a,0x18,c->s->field18);
+    ga_sl(c->a,0x50,c->s->field50_tag);
 }
 static void state_in(anim_ctx_t *c) {
     if (!c->s) return;
     c->s->timer=ga_w(c->a,0x24);c->s->speed=ga_w(c->a,0x26);c->s->flash=ga_b(c->a,0x17);c->s->field18=ga_b(c->a,0x18);
+    c->s->field50_tag=ga_l(c->a,0x50);   /* a callback may set the hurtbox (09D310..) */
 }
 static bool cl(void *context,uint32_t routine,uint16_t parameter,neo_anim_render_t *render) {
     anim_ctx_t *c=context;
@@ -328,6 +428,13 @@ int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call) {
     if (res!=NEO_ANIM_MORE && res!=NEO_ANIM_COMPLETE) {ga_fail(e,c.missing?c.missing:0x427a);return -1;}
     return res==NEO_ANIM_COMPLETE;
 }
+void ga_draw(neo_gactor_t *a,neo_genv_t *e,uint32_t descriptor) {
+    if (!descriptor || !e->emit) return;                               /* 00A044: D7 = 0 draws nothing */
+    uint8_t c=ga_b(a,0x4d);
+    neo_anim_draw_t d={descriptor,(uint16_t)(ga_w(a,0x3c)-(c&1u)),(uint16_t)(ga_w(a,0x40)-((c>>1)&1u)),
+        (uint16_t)(ga_b(a,0x14)<<8|ga_b(a,0x15)),ga_w(a,0x1e)};
+    e->emit(e->emit_ctx,&d);
+}
 void ga_palette(neo_gactor_t *a,uint16_t resource) {
     uint8_t slot=ga_b(a,0x1d);
     if (slot>=4u) return; /* original traps */
@@ -345,7 +452,17 @@ uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     int16_t w[7];for (unsigned i=0;i<7;i++) w[i]=(int16_t)(r[2*i]<<8|r[2*i+1]);
     if (w[5]<0) return 0;
     uint8_t best=e->attack(e->ctx,a,w);
-    if ((int16_t)(r[14]<<8|r[15])>=0) ga_fail(e,row); /* several (class,damage) pairs: not observed */
+    /* 004B06: every (class, damage) long up to a negative one visits the bodies of its class in the same rectangle
+     * (the Mission 5 tank 08FF7E: the player and the class-1 bodies); D0 is the highest type of them all. The bodies
+     * 0049E8 returns in A0 / A1 with several pairs are not modelled. */
+    for (unsigned i=1;i<8 && !(r[10+4*i]&0x80u);i++) {
+        if (e->want_targets) {ga_fail(e,row);break;}
+        w[5]=(int16_t)(r[10+4*i]<<8|r[11+4*i]);w[6]=(int16_t)(r[12+4*i]<<8|r[13+4*i]);
+        e->attack_pair=(uint8_t)i;
+        uint8_t t=e->attack(e->ctx,a,w);
+        e->attack_pair=0;
+        if (t>best) best=t;
+    }
     return best;
 }
 uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
@@ -354,7 +471,9 @@ uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row) {
     return r;
 }
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
-    if (!ga_l(a,0x50)) return false;
+    /* 004C2C: no hurtbox (+50 = 0) registers nothing but still answers
+     * from +5A (004DA6). */
+    if (!ga_l(a,0x50)) goto hit;
     /* 004BAC: while RAM 1067E2 is set every body whose descriptor class is
      * not 1 dies instead of registering. */
     if (e->kill_all) {
@@ -363,6 +482,8 @@ bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy) {
     }
     if (e->register_box) e->register_box(e->ctx,a);
 hit:
+    if (dx) *dx=0;
+    if (dy) *dy=0;
     if (!ga_b(a,0x5a)) return false;
     if (dx) *dx=(int16_t)((int8_t)ga_b(a,0x5c)*2);
     if (dy) *dy=(int16_t)((int8_t)ga_b(a,0x5d)*2);
@@ -392,7 +513,7 @@ bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect) {
     else if (dx<0) {if ((int16_t)(uint16_t)(lo+hi+ga_w(a,0x3c))<(int16_t)e->view[0]) return true;}
     return false;
 }
-uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *t) {
+uint16_t ga_rank_word(const neo_gactor_t *a,neo_genv_t *e,const uint8_t *t) {
     /* 0260C8: [type][rank mask] then rows; rank RAM 10FD8B unless mode 2. */
     unsigned type=t[0],mask_bits=t[1];
     unsigned coop=e->players.active_mask==3u;
@@ -403,7 +524,14 @@ uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *t
     unsigned row=0;for (unsigned b=mask_bits&mask&0xffu;b;b&=b-1u) row++;
     if (!row) return 0;
     unsigned d0=(row-1u)*2u+coop,v=ga_b(a,0x68);
-    if (type==2) return t[2+d0*6u+v];
+    if (type==2) {
+        /* 02614A: the row's byte picks a group of 8 words after the byte
+         * rows (12 bytes per bit of the whole mask byte), one of them at
+         * random (0029C6 & E). Families m5tank and m5tread (2CED8E). */
+        unsigned bits=0;for (unsigned b=mask_bits;b;b&=b-1u) bits++;
+        const uint8_t *g=t+2u+((unsigned)t[2+d0*6u+v]<<4)+bits*12u+(ga_rand(e)&0xeu);
+        return (uint16_t)(g[0]<<8|g[1]);
+    }
     unsigned o=2+(d0*12u+v*2u);
     return (uint16_t)(t[o]<<8|t[o+1]);
 }
@@ -434,11 +562,14 @@ void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy) {
     *vx=(uint32_t)((int32_t)w*ga_cosine(angle));
 }
 void ga_place_at(neo_gactor_t *a,const neo_gactor_t *s,neo_genv_t *e,int16_t dx,int16_t dy) {
+    ga_place_at_words(a,e,ga_l(s,0x3c),ga_l(s,0x40),ga_l(s,0x44),ga_l(s,0x48),dx,dy);
+}
+void ga_place_at_words(neo_gactor_t *a,neo_genv_t *e,uint32_t x3c,uint32_t y40,uint32_t x44,uint32_t y48,int16_t dx,int16_t dy) {
     neo_contact_parent_t root;
     if (!ga_parent(e,ROOT_TAG,&root)) return;
     uint32_t ox=(uint32_t)(int32_t)dx<<16,oy=(uint32_t)(int32_t)dy<<16;
-    uint32_t d0=ox+ga_l(s,0x3c)-(uint32_t)root.x,d1=oy+ga_l(s,0x40)-(uint32_t)root.y;
-    uint32_t d2=ox+ga_l(s,0x44)-(uint32_t)root.previous_x,d3=oy+ga_l(s,0x48)-(uint32_t)root.previous_y;
+    uint32_t d0=ox+x3c-(uint32_t)root.x,d1=oy+y40-(uint32_t)root.y;
+    uint32_t d2=ox+x44-(uint32_t)root.previous_x,d3=oy+y48-(uint32_t)root.previous_y;
     ga_sl(a,0x28,d0);ga_sl(a,0x2c,d1);ga_sl(a,0x30,d0-d2);ga_sl(a,0x34,d1-d3);ga_sl(a,0x38,ROOT_TAG);
     ga_project(a,e);
 }
@@ -514,7 +645,7 @@ void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx
     (void)ga_sweep_place_d0(a,e,child,dx,dy,0);
 }
 uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0) {
-    uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
+    kset(e);uint32_t tag=ga_l(a,0x38);uint8_t parent=kobj(tag);
     int32_t x=(int32_t)ga_l(a,0x28),y=(int32_t)ga_l(a,0x2c),ddx=(int32_t)((uint32_t)(int32_t)dx<<16),ddy=(int32_t)((uint32_t)(int32_t)dy<<16);
     if (parent==0xff) {
         /* An actor's position block (the turret on its vehicle): 01AC4C

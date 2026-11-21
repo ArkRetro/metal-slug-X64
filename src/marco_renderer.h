@@ -7,6 +7,14 @@
  * player action or claim that the observed descriptor catalog is complete.
  * Drawing changes TMEM/TLUT: invalidate any caller texture-residency cache. */
 bool marco_renderer_load(void);
+/* Background load of the parts (the boot cinematics' spare time, ~0.3 s of
+ * ROM reads at the mission handoff before): loads parts while each fits
+ * before `deadline` (TICKS_READ); false when all are in, one failed or the
+ * heap would keep less than `keep` bytes. marco_renderer_load finishes. */
+bool marco_renderer_preload(unsigned long deadline,int keep);
+/* Heap bytes the parts loaded so far take (the scene cache's game reserve
+ * counts them as already spent). */
+unsigned marco_renderer_preloaded_bytes(void);
 void marco_renderer_close(void); /* Caller must first wait for pending RDP work. */
 unsigned marco_renderer_count(void);
 unsigned marco_renderer_palette_count(void);
@@ -14,6 +22,26 @@ unsigned marco_renderer_max_upload(void);
 uint32_t marco_renderer_source_tag(unsigned pose);
 bool marco_renderer_find(uint32_t source_tag,unsigned *pose);
 unsigned marco_renderer_burnt_palette(void);
+/* The catalog profile of a palette a death puts in +19..+1B: its ROM table
+ * (0BEDE8 burnt, 0BEE08 form 3, 0BEDE0 kind 8, 0BEDF0 water) or 0x51 (kind
+ * 8's +1B); anything else (0, 0BEDD0) the player's own, 0. */
+unsigned marco_renderer_death_palette(uint32_t source);
+/* The mummy's palette profiles (build_marco_poses.py --name-palette MUMMY /
+ * MUMMY2): slot 63, or slot 64 with `second`; 0 when not in the catalog. */
+unsigned marco_renderer_mummy_palette(bool second);
+/* The catalog of the chosen character (msx_character.h): 0 Marco, the
+ * built-in tables and romfs/marco; 1..3 the pack rom:/chars/cN.bin
+ * (tools/export_character.py), read whole. Parts already loaded are freed
+ * (no RDP work may be pending); preload/load then bring the new ones.
+ * False: no such pack or a bad one, Marco stays. */
+bool marco_renderer_set_character(unsigned character);
+unsigned marco_renderer_character(void);
+/* The pack in memory (NULL for Marco): its programs are decoded from it
+ * (msx_character_open). */
+const uint8_t *marco_renderer_character_pack(uint32_t *size);
+/* Heap bytes the chosen character took (its pack and decoded programs):
+ * counted with the parts in marco_renderer_preloaded_bytes. */
+void marco_renderer_character_heap(unsigned bytes);
 bool marco_renderer_draw(unsigned pose,int anchor_x,int anchor_y,bool mirror);
 bool marco_renderer_draw_palette(unsigned pose,int anchor_x,int anchor_y,bool mirror,unsigned palette);
 /* Draw a native helper emission in Neo Geo 9-bit coordinates. viewport_x/y

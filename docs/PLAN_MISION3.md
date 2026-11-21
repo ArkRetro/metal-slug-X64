@@ -1,0 +1,146 @@
+# Plan de programación de la Misión 3
+
+Fuentes: `MISION3.md` («Reconocimiento del mapa»), `MISION3_ACTORES.md`,
+`JEFE_MISION3.md`, `data/mission3_actors.json`. Cada paso termina con una ROM
+de prueba (prueba corta de la parte tocada, sin pruebas de la Misión 1).
+
+| Paso | Contenido | Resultado esperado |
+| --- | --- | --- |
+| 1 | Suelos puestos por actores: fusionar `work-m3c` (cajas y salientes, quitando su desfase de filas), los cuatro estampadores de `038D1E/038D26`, la plataforma `0B9286` con su mapa dinámico `0E6896`; carga de la M3 tras la M2 con la rejilla nueva, el tren y la cámara | Marco recorre la M3 entera de principio a fin (sin enemigos) |
+| 2 | Enemigos del camino más frecuentes: `09BA2A`, `08A732`, `08DA12`, `05D916`, `04E990`, `097FCC`, `0569xx` | La misión se juega con sus oleadas principales |
+| 3 | Avión del jefe intermedio `0A4A94` (cuerpo, cañones, bodega, final con 30 premios) | Jefe intermedio completo |
+| 4 | Jefe final `04A2C2` en las 7 piezas de `JEFE_MISION3.md` (familias m3boss1..5) y fin de misión `018F92`/`018F40` | La M3 termina y pasa a la M4 |
+| 5 | Vehículos `093C9A` y `0AC866`; armas en la forma `+93 = 2`; arma E | Vehículos y armas de la M3 |
+| 6 | Resto de actores, premios, prisioneros y ramas al azar | Inventario completo |
+
+## Estado
+
+- **Paso 1: hecho** (rama `work-m3step1`, [MISION3.md](MISION3.md) «Paso 1»).
+  `work-m3c` fusionada sin desfase de filas; vagones `038D1E/038D26` (puertas,
+  blancos, piezas, 4 estampadores), plataforma `0B9286` (mapa `0E6896`),
+  `0B93B4` y `0B9400` nativos; familias `m3wagon` (3515 actualizaciones) y
+  `m3platform` (14 506) iguales a MAME en `make check`. La M3 carga tras la M2
+  con la rejilla nueva, el tren y el bloque `MSXR` (mapas dinámicos). En ares
+  (`mslugx-m3-reference.z64`, `test_mission3_ares.py --hop --pilot`) Marco
+  cruza las 5 secciones hasta la arena del jefe con 0 rescates y 0 caídas
+  (con el mando ciego `--hop`, 0 o 1 rescate según la pasada). Paradas
+  explícitas: la entrada en paracaídas (tipo 2), `0B9748` (puntos), los
+  enemigos (registros saltados), el guion en `2DB148`.
+- **Paso 2: en curso** (rama `work-m3step2`, [MISION3.md](MISION3.md) «Paso
+  2»). Nativos en `neo_m3enemy.c`: la muerte de soldado `0406B6` sobre un
+  nodo genérico (compartida), el granadero `08A732` (casco, obús, destello,
+  humo) y los soldados del escudo `09AE2C/09AE1E/09BA2A` (escudo `09C46C`,
+  capa, disparos); familias `m3grenade`, `m3grenade4`, `m3shield`,
+  `m3shield4`, `m3window` iguales a MAME (4417 actualizaciones); el soldado
+  de ventana `08DA12` y la conversión de un nodo genérico en el soldado
+  nativo (`0B05FE/0B0626/0B0632`); los soldados `05D916/05D226/05C53C`
+  (paracaidista con su vela, soldado de a pie, casco, balas; `m3para`) y la
+  máquina voladora `04E990` (piloto, suelo dinámico `0E112E`, misiles,
+  bombas, piezas; `m3pod`), 12 437 actualizaciones más iguales a MAME. En
+  ares PASS con 208 ranuras, pero el piloto ciego ya no llega a la arena del
+  jefe en 300 s. El helicóptero `097FCC` (`m3gun`, `m3gun4`), los lanzadores
+  de molotov `0569B4/0569D0/0569E6` (`m3thrower`) y el bombardero `084588`
+  (`m3bomber`), los bidones `0391EA` (`m3drum`), el camión armado `02B202`
+  (`m3truck`), la plataforma flotante `08AFB6` (`m3raft`) y el coche con
+  pasajero `027F54` (`m3car`, el pasajero pasa a soldado), el jeep armado
+  `0A2F2E` (`m3jeep`), los pájaros `03EE8A` (`m3bird`), los sacos `0214EA`
+  (`m3sack`) y el campamento `01F1D4` (`m3camp`): 16 823 actualizaciones
+  más iguales a MAME. El bloqueo de la cámara en 4380 está resuelto (la ROM
+  de referencia pide la muerte general antes de soltar un bloqueo). Paradas
+  del mundo resueltas (regalos 28/39, soldados con `+76` = 5/6/7, `08DBC8`,
+  granadas de los soldados de ventana, el pasajero convertido): la
+  granada `03C306` de los soldados va traducida sin traza. `0B9748`
+  (`m3bonus`), las entradas de soldado `0AF17E..0AF1E0` y las acciones
+  `0AF92C/0AF940` también. La entrada en paracaídas (`0C15B4`) arranca
+  como en la recreativa; las paletas de las familias nuevas están
+  exportadas. Faltan `03C306` con traza, `348/3CC/3CF` y `05D234`
+  (MISION3.md «Paso 2»).
+- **Paso 3: lógica hecha** (rama `work-m3step3`, [JEFE_MISION3.md](JEFE_MISION3.md)
+  «Jefe intermedio: estado del port»): `neo_m3mid.c`, familias `m3mid1..4`
+  (60 191 actualizaciones) iguales a MAME en `make check`; la aeronave se
+  crea desde el guion (`2DAE20`) y la capa `10E8C6` se dibuja; los
+  programas y datos de la M2 y la M3 van en sus paquetes (`MSXD`): 210
+  ranuras con el jefe intermedio dentro.
+- **Paso 5 (a) hecho: el vehículo `093C9A`** (rama `work-m3step3`). Es una
+  copia aparte del código del SV-001: los estados `092BCA..093AFE` a
+  `+0x11E0` (`093DAA..094CDE`, con sus tablas `094A62`/`094B9A..`), el
+  constructor y la espera `092A32/092AD8/092B0E` a `+0x1268`
+  (`093C9A/093D40/093D76`), la explosión `093BC2` en `094E2A`; cambia las
+  paletas (`0x87D/0x39D/0x87A`), la torreta `03B4E0` con `+72 = 4`, la
+  velocidad (`0x40000`), la dirección en el aire (`±0x40000 >> 2`), la
+  gravedad (`0xFFA3D740`) y el programa del salto (`299228`); obuses,
+  destellos, entradas, polvo, oruga y explosión son los compartidos. Diff
+  de código normalizado (`tankcopy-diff`, 1080/1045 instrucciones):
+  ninguna otra diferencia fuera de las paradas explícitas (`0938DA`,
+  `09351A` y la cola `094CE4..094DFE` con `1ACF2` y la tabla de bits
+  `0DEDD2`). `neo_tank.c` trabaja sobre las etiquetas originales (`orig()`
+  al despachar, `lab()` al guardar `+0` y leer tablas; `v3` para las
+  constantes). Captura: `tools/capture_fullgame.lua` con `MSX_FULL_RIDE=tank`
+  (`MSX_FULL_RIDE_RANGE=93afa-94e2a`, `MSX_FULL_FAMILY_NODES=1014c4`,
+  `MSX_FULL_VEHICLE_CHEAT=0`: sin ese cheat la ranura `10C627` no vuelve a
+  99 obuses cada fotograma) desde `at_132300` (la pelea del jefe intermedio
+  con un Lua nuevo acaba antes y el tanque nace en 137396, no en 142068):
+  familia `m3tank` (`data/m3tank_fixture.json.gz`, 21 nodos, 2206
+  actualizaciones 137396..138548: nacer, montar 137578, conducir en ambos
+  sentidos con vulcan, apuntar arriba, saltos, cañón, agacharse, A+B 138479 y
+  la explosión) igual a MAME en `make check`. Sprites: `export_rest_sprites.py`
+  con `tankd@93c9a-94e2a` (volcados 137380..138700: 2090 píxeles iguales, 0
+  distintos) y paletas `0x87D/0x87A`; programa `299228` en el grupo `m3`.
+  Sin evidencia (paradas explícitas, como en la M1): daño `09351A` y
+  destrucción `0938DA`.
+- **Paso 5 (b) hecho: el vehículo `0AC866`** (`neo_m3veh.c`, `0AC6D4..0AE96A`):
+  un asiento volador propio (no es copia del Slugnoid): el mando mueve
+  `+30/+34` (`0AE2D2`), B impulsa (`0ACB96`), C suelta bombas en el aire
+  (`0ADA16`, con su guiado `+9C` hacia la caja del blanco de `0049E8`) o
+  lanza las granadas del jugador en el suelo (`0C0808`), abajo aterriza
+  (`0ACD76`), abajo+B sale (`0ACE44`), D lo despide (`0AD01A`), sin vida
+  expulsa y se destroza (`0ACEB0` → `0ACFB2` → `0041AC`). Hijos: piloto
+  `0AD2AC` (tabla `0AB40C` por personaje), alas `0ADEDA` (estado por el
+  `+7C` del vehículo, `0ADE66`), llamas `0AD3E2/0AD6E4`, destello `0AD452`,
+  polvo `0AD776`, humo `0AD856`, estela `0ADD2C`, lanzamiento del piloto
+  `0AE03A`, pieza `0AD5D4`/chispa `0AD58C`; marcador `03533A` en
+  `neo_slug.c`. Subida: `0AA610` → `0C0556` (jugador cayendo, vivo, forma
+  ≠ 3) y el cruce del rectángulo `0AACB8` con `+3C/+40` y `+44/+48`; el
+  `+3C` del vehículo está 40 px a la derecha de su `+28` y su cuerpo
+  sólido para la marcha al lado: la captura sube con
+  `MSX_FULL_RIDE_SCREEN=8` (saltar desde 48 px y guiar en el aire).
+  Familias `m3veh` (2146 actualizaciones: subir, volar, bombas guiadas,
+  destrozo con piloto) y `m3veh2` (3366: además aterrizar, abajo+B, volver
+  a subir, el empuje del cuerpo sólido de otro actor con
+  `--ram 106756-1067d6` y los campos del cuerpo) iguales a MAME en `make
+  check`. `extract_family_fixture.py`: un nodo de la familia (o creado en
+  una actualización de la familia) deja de ser RAM de `--ram`. Sin captura
+  (traducido del código): `0AD01A/0AD08E` (D, caída y choque), `0ACCBE..`
+  (el suelo con la palanca) y las granadas en el suelo.
+- **Paso 5 (c), arma E hecha:** `0DE4DA` (tabla `0C42AA` id `0E`, los
+  programas de disparo del grupo C como `0D`; `neo_pweapon.c`): la pelota
+  que rebota (gravedad `-0x20000`, después `-0x15000`; primer bote
+  `0xD0000` hacia arriba, luego 7/8 de la caída; en pendiente `+30` por
+  cosenos `0DED6A/0DEDA6`; al cuarto bote o al tocar, el estallido
+  `0DE8EE` y `0C0DFC` id `0E`). Familia `m3wepe` (1506 actualizaciones,
+  136577..137398, desde `at_132300` con el plan normal) igual a MAME;
+  sprites y paleta `0x81E` del export privado (17 253 píxeles iguales,
+  113 distintos).
+- **Paso 5 (c), forma `+93 = 2` (Marco gordo), parte 1:** comprobado en la
+  ROM: la comida `0C0BF4` (misiones con valor 4-7, 9, 10; Misión 3 = 4)
+  suma 0x100 al contador `10C718+0x10`; a 0x780 pide `+94 = 2`; `0C33AE`
+  lo descuenta en la forma 2. Captura del catálogo `marco-f2`
+  (`--give-fat`), roles `ROLES_FAT`/`ROLES_FAT_BODY`, 720 poses; el visual
+  de la forma 2 (filas +0x20, `fat_role`), la transformación `0C1D70` y el
+  contador en `gameplay.c`, la comida en `neo_item.c`
+  (docs/MARCO_CAMPAIGN.md).
+- **Paso 5 (c), forma 2, parte 2 (armas):** todo arma gorda dispara con los
+  programas gordos (`25A8F4/25A83C/25A898`, agachado `25D10E`; `marco-f3`
+  con la R): CALL `0C436A` al empezar, `+76` a los 12 ticks; tabla
+  `0C42EA`. Nativos: el cohete R `063AEE`/`063B22` (`063BC0`, explosión
+  `063D60` con `26860A` y su `0636B0` `22CF2C`), la C `063F10`, las balas
+  `01B62C`/`01B668`/`01BDD2`, la granada `01BEDA`/`01BEA4` (tabla
+  `0C476E`). Familias `m3fat` (119212..120399, 618 nodos) y `m3fat2`
+  (122564..123299, 328 nodos) iguales a MAME desde `sec04_117966`; la estela
+  `063D9E` respeta la reserva 0x2A de `0040BC` (también en `063FDC` y
+  `0638B4`). Sprites del export privado (176 marcos, paleta `0x86E`; el
+  paquete pasa a 648 trozos, límite 672). Siguen como paradas explícitas:
+  la bomba `01C362/01C334` y su hijo `01C654`, el molotov gordo
+  `01E680/01E69C`, `0C4E86` (aterrizaje gordo, `0C1ED6`), `0C5064`
+  (`0C359A`, al dejar la forma 1), las balas `01B62C/01B668/01BDD2` sin
+  captura (sin sprites) y las armas gordas sin proyectil nativo.

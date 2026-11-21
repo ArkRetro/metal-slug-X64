@@ -7,7 +7,7 @@
 #include <string.h>
 
 /* 03D056: digit glyphs, index 16 = blank. */
-static const char hex_glyph[17] = "0123456789ABCDEF ";
+static const char hex_glyph[] = "0123456789ABCDEF ";
 /* 03D0C4: divisors of 03D068/03D0D0 by digits left. */
 static const uint16_t divisor[6] = {0,1,10,100,1000,10000};
 /* 0C8EB8: timer digit blocks (attribute word of the top-left tile). */

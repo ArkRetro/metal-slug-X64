@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
@@ -8,6 +9,8 @@
 #include "marco_death.h"
 #include "legs_fixture.h"
 #include "marco_throw_fixture.h"
+#include "marco_mummy_fixture.h"
+#include "throw_fixture_driver.h"
 static bool reserve(void *c){(void)c;return true;}
 #include "marco_pose_meta.h"
 static int find(uint32_t t){for(unsigned i=0;i<MARCO_POSES;i++)if(marco_poses[i].source_tag==t)return 1;return 0;}
@@ -99,31 +102,33 @@ int main(void){
   /* Grenade throws, the C's fire and the H's down programs
    * (data/marco_throw_fixture.json, marco-cat1/marco-g1/marco-c1): from the update
    * the original chose the program, the pose its part drew in every step. */
-  unsigned tok=0,tbad=0;
-  for(unsigned i=0;i<THROW_CASES;i++){
-    const throw_case_t*c=&throw_cases[i];
-    bool grenade=strstr(c->name,"grenade")!=NULL,cgun=c->name[0]=='c',down=strstr(c->name,"down")!=NULL,knife=strstr(c->name,"knife")!=NULL,hang=!strncmp(c->name,"d_hang",6),cut=!strncmp(c->name,"d_cut",5);
-    marco_visual_reset(&v);
-    marco_visual_input_t in={.grounded=true,.facing=1,.x=120,.y=350,.form=(uint8_t)c->form,.hgun_program=-1,.cgun=cgun};
-    if(c->situation==3)in.moving=1;
-    if(cut){in.grounded=false;in.hanging=true;}   /* the descent: hanging before the cut */
-    for(unsigned k=0;k<6;k++){if(c->situation==2&&k==4&&!hang)in.grounded=false;if(c->situation==1&&!grenade)in.crouch=1;marco_visual_step(&v,&in);}
-    if(c->situation==1)in.crouch=1;
-    in.aim_up=strstr(c->name,"_up")!=NULL;in.aim_down=down;
-    unsigned bad=0;
-    for(unsigned k=0;k<c->count;k++){
-      if(k==0&&hang){in.grounded=false;in.hanging=true;}if(k==0&&cut)in.hanging=false;
-      in.thrown=grenade&&k==0;in.cgun_fire=cgun&&!grenade&&k==0;in.knife=knife&&k==0;
-      if(c->name[0]=='h'&&down){in.hgun_program=strstr(c->name,"sweep")?4:2;in.hgun_start=k==0;}
+  unsigned tok=0,tbad=0;throw_fixture_run(throw_cases,THROW_CASES,throw_descriptors,&tok,&tbad);
+  /* The mummy update by update (data/marco_mummy_fixture.json, marco-mz2:
+   * 1475 updates from the transformation through 29 input cases): the
+   * situation derived from the original controller, the body and weapon
+   * descriptors the original drew. */
+  {
+    marco_visual_reset(&v);unsigned bok=0,bbad=0,wok=0,wbad=0,shown=0;
+    for(unsigned k=0;k<MUMMY_STEPS;k++){
+      const mummy_step_t*m=&mummy_steps[k];
+      marco_visual_input_t in={.grounded=m->grounded,.moving=m->moving,.crouch=m->crouch,.aim_up=m->aim_up,.aim_down=m->aim_down,.fired=m->fired,
+        .facing=m->facing,.x=120,.y=350,.form=(uint8_t)(k?3:0),.hgun_program=-1,.thrown=m->thrown,.transforming=m->transforming,.takeoff=m->takeoff};
       marco_visual_step(&v,&in);
-      unsigned n=c->part?(v.weapon_role>=0?v.weapon_count:0):v.body_count;
-      uint32_t got=n?(c->part?v.weapon_draws[0].descriptor:v.body_draws[0].descriptor):0;
-      if(got==throw_descriptors[c->first+k])tok++;
-      else{tbad++;if(bad++<3)printf("%s step %u: %06x, capture %06x\n",c->name,k,(unsigned)got,throw_descriptors[c->first+k]);}
+      uint32_t b=v.body_count?v.body_draws[0].descriptor:0,w=v.weapon_role>=0&&v.weapon_count?v.weapon_draws[0].descriptor:0;
+      if(!k)continue;   /* form 0, mid-program in the capture */
+      if(b==m->body)bok++;else{bbad++;if(shown++<40||getenv("MUMMY_ALL"))printf("mummy step %u: body %06x, capture %06x\n",k,(unsigned)b,(unsigned)m->body);}
+      if(w==m->weapon)wok++;else{wbad++;if(shown++<40||getenv("MUMMY_ALL"))printf("mummy step %u: weapon %06x, capture %06x\n",k,(unsigned)w,(unsigned)m->weapon);}
     }
-    assert(!v.failures);
+    printf("mummy: body %u equal %u different, weapon %u equal %u different, %u stops\n",bok,bbad,wok,wbad,v.stops);
+    /* Known weapon differences (12): the landing update's shot aims down in
+     * the original (its fire state runs in the air routine; the port's
+     * player has landed: 4 steps from 3903) and the gun raised/lowered in
+     * the air 25F7A0/25F794 at the takeoff (0C3A5E not translated: 2 steps,
+     * then the idle program 6 steps out of phase). */
+    assert(!bbad && wbad<=12 && !v.failures);
+    puts("PASS: the mummy (form 3) against marco-mz2 update by update: transformation, idle, walk, turn, jumps, landings, crouch, crouched fire, stand-up (body exact)");
   }
-  printf("throws/C/H down/knife/descent: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
-  assert(tok>=400&&!tbad);
-  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched) and the parachute descent (hanging, cut) pose by pose against the captures");
+  printf("throws/C/S/F/H down/knife/descent/mummy/fat: %u steps equal, %u different (%u cases)\n",tok,tbad,THROW_CASES);
+  assert(tok>=780&&!tbad);
+  puts("PASS: grenade throws (pistol, H, C: standing, running, in the air, crouched), C fire, H down, knife cuts (pistol, H: standing, crouched), the parachute descent (hanging, cut), the mission end's victory (pistol, H), the fire of weapons 02 and 04 and the mummy's and fat Marco's fire and throw pose by pose against the captures");
 }

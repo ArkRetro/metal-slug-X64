@@ -39,11 +39,16 @@ typedef struct {
     bool dead;             /* +5F bit 7 or 6 */
 } neo_hurtbox_t;
 typedef enum { NEO_SOLDIER_EVENT_SOUND,NEO_SOLDIER_EVENT_THROW,NEO_SOLDIER_EVENT_DEATH_CHILD,
-    NEO_SOLDIER_EVENT_KNIFE_HIT } neo_soldier_event_kind_t;
+    NEO_SOLDIER_EVENT_KNIFE_HIT,NEO_SOLDIER_EVENT_GRENADE,NEO_SOLDIER_EVENT_ATTACK,
+    NEO_SOLDIER_EVENT_BOMB /* 03C13E: the bomb 03C16C after the script actor at (0, 14) of `actor`, its facing bits 0..1, +68 = value */,
+    NEO_SOLDIER_EVENT_RIPPLE /* 03C52C at the head of 0AEF30: the ripple 03C62A (+6E = value) after the soldier, when 019240 has a palette for the mission */ } neo_soldier_event_kind_t;   /* GRENADE: 03C2DE, the grenade 03C306 after the script actor at (0, 2C);
+    ATTACK: 0049E8 with `row` against the other actors' bodies (class row[5] != 0), `actor` the attacker, value its +5E */
 typedef struct {
     neo_soldier_event_kind_t kind;
     uint16_t value;
-    neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD */
+    neo_contact_actor_t actor; /* spawn seed for THROW / DEATH_CHILD, the attacker for ATTACK */
+    const int16_t *row;        /* ATTACK: x,y,w,h,kind,class,damage */
+    uint8_t *answer;           /* ATTACK with a class-0 row (B69): the highest type of the class-0 bodies hit, written by the handler */
 } neo_soldier_event_t;
 typedef struct {
     neo_kscene_t *kernel;
@@ -60,12 +65,15 @@ typedef struct {
     neo_anim_emit_t emit;void *emit_context;
     void (*event)(void *context,const neo_soldier_event_t *event);void *event_context;
     bool blood;                           /* RAM 10FD8F nonzero: 01B2BE returns carry clear */
+    /* Out: RAM 10C00A as the last sweep left it (0128DA: 0; 0143CC: FF), set when one ran (the family tests). */
+    uint8_t ram400a; bool wrote400a;
     /* Player actors 1014C4/101574 as 0B03E0 reads them: routine alive (0040AC),
      * +7A (0 = scripted, the soldiers stay idle) and RAM 10E9F8/10E9FC
      * (nonzero: CA2F8 carry). */
     struct { bool alive; uint8_t follow7a; bool vehicle; uint8_t follow7b; uint16_t x,y; } player_state[2];
     uint16_t point[2];                    /* RAM 69B8/69BA: script point (01903A) */
     const neo_marker_t *markers;unsigned marker_count; /* list queried this update */
+    uint16_t slot_word[2];                /* RAM 10C608 / 10C62C: the first word of each player's vehicle slot (0AAA88: nonzero while riding) */
 } neo_soldier_env_t;
 typedef enum { NEO_SOLDIER_MORE,NEO_SOLDIER_DELETED,NEO_SOLDIER_UNSUPPORTED } neo_soldier_result_t;
 /* Spawn record words copied to +6E..+78 (ROM 01A136) and creator data. */
@@ -73,7 +81,12 @@ typedef struct {
     int32_t x,y;            /* local to the scene root, Q16.16 */
     uint16_t words[6];      /* +6E,+70,+72,+74,+76,+78 */
     uint8_t variant68,group69;
-    uint32_t constructor;   /* spawn-table entry: 0 = 0AF17E, or 04115A */
+    uint32_t constructor;   /* spawn-table entry: 0 = 0AF17E.., or 04115A */
+    uint8_t flags81;        /* +81 of the entry (0AF17E 2, 0AF18C 10, 0AF19A 12, 0AF1A8 E0, 0AF1B6 4, 0AF1C4 8, 0AF1D2 C, 0AF1E0 E; 0: 2) */
+    /* Created by another actor with 0040BC (the Mission 4 flyer's rider
+     * 084300) instead of the script's 01A10A: no 01ABB6 placement (position
+     * block zero, no parent), +68 = the creator's (variant68), +69 = FF. */
+    bool from_node;
 } neo_soldier_spawn_t;
 /* ROM 01ABB6 placement + 0AF17E/0AEF30 constructor, including its control
  * target/prefix/probes. Returns false (state untouched) for an unrecovered
@@ -82,8 +95,13 @@ bool neo_soldier_construct(neo_soldier_t *s,const neo_soldier_spawn_t *spawn,neo
 /* Source line of the last NEO_SOLDIER_UNSUPPORTED cause (diagnostics). */
 extern unsigned neo_soldier_unsupported_line;
 extern uint32_t neo_soldier_unsupported_detail; /* animation result<<28 | command asset */
+/* Deaths by a hit kind whose entry of the tables 0406EA/040750/0407F4 is not
+ * translated (explicit stops): count and kinds (bit per kind). */
+extern unsigned neo_soldier_death_stops;extern uint32_t neo_soldier_death_stop_kinds;
 /* One original actor update (every second video tick). */
 neo_soldier_result_t neo_soldier_tick(neo_soldier_t *s,neo_soldier_env_t *env);
+/* ROM 0B05FE / 0B0626 / 0B0632 on a converted generic node (see the .c). */
+bool neo_soldier_become(neo_soldier_t *s,uint32_t entry,neo_soldier_env_t *env);
 /* Big-endian accessors of the routine-private block. */
 uint8_t neo_soldier_b(const neo_soldier_t *s,unsigned offset);
 uint16_t neo_soldier_w(const neo_soldier_t *s,unsigned offset);

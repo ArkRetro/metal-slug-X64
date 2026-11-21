@@ -10,6 +10,12 @@
  * in the playable Mission 1 region (one cell-map terrain object, the scene
  * root and no dynamic platform). Unsupported contexts fail explicitly. */
 enum { NEO_KOBJ_NONE, NEO_KOBJ_TERRAIN, NEO_KOBJ_ROOT, NEO_KOBJ_DYN0, NEO_KDYN_COUNT=8 };
+/* Mission 3: the train layer 10D7B6 as the second terrain object of 01382A. */
+enum { NEO_KOBJ_TRAIN=NEO_KOBJ_DYN0+NEO_KDYN_COUNT };
+/* An actor's position block (actor +28) as the query's parent (Mission 5: the pilot 0D447C of the metro machine
+ * 0D3B36 dies on the machine's block, 04097A's 01495C): its +14/+18/+1C/+20 = the actor's +3C/+40/+44/+48, set per
+ * query by neo_gactor.c (neo_kscene_t node). */
+enum { NEO_KOBJ_NODE=NEO_KOBJ_TRAIN+1 };
 typedef struct {
     int32_t x,y,prev_x,prev_y; /* object +14/+18/+1C/+20, Q16.16 */
 } neo_kobj_t;
@@ -25,6 +31,10 @@ typedef struct {
 typedef struct {
     neo_kobj_t terrain,root;
     const uint8_t *group_map; /* 8-byte table referenced by RAM 10C00E */
+    /* The terrain layer's 64x64 cell ring (layer object +88, read by
+     * 0C79FE) when known (the family tests of the vertical stages feed the
+     * bytes the original read); NULL: the recovered grid. */
+    const uint8_t *ring;
     /* RAM 10C018 is global scratch written by 013C1A/013DB2 and read by later
      * sweeps; it is kept here instead of being reset per call. */
     uint16_t w4018;
@@ -43,7 +53,27 @@ typedef struct {
      * as index+1, 0 = none) and the tag of its position block (actor +28)
      * are excluded by 01424C. */
     uint8_t self_dyn; uint32_t self_block;
+    /* Mission 3 (docs/MISION3.md): 10D7B6 in the static list 013810 with
+     * its map 0B8566 (+2E: +C nonzero, +10 = 0x11, +14 = 7; layer +34 = 19)
+     * and its column origin +32 (neo_train.c). Off: the list stops at the
+     * terrain as in Missions 1 and 2. */
+    bool train_on; neo_kobj_t train; int16_t train_origin;
+    /* The train's RAM ring (10D7B6 +88) as the original read it (the
+     * family tests); NULL: the ROM map through neo_kernel_train_ring. */
+    const uint8_t *train_ring;
+    neo_kobj_t node;   /* NEO_KOBJ_NODE */
+    /* Mission 6 stage 1: 10D7B6 is the bridge (map 0BC6E6, +C = 0: no
+     * vertical test in 01384E) with its ring as the loaders left it
+     * (neo_m6bridge.h); train_on with train = its position. NULL: the train. */
+    const struct neo_m6ring *bridge_ring; const struct neo_m6map *bridge_map;
+    /* The family tests: the bridge with its RAM ring as the original read it (train_ring). */
+    bool bridge_raw;
 } neo_kscene_t;
+/* Cell of the train map 0B8566 (ROM 0C72EC layout: 784 columns, 48 rows,
+ * row 0 at the bottom); 0 outside. */
+uint8_t neo_kernel_train_cell(int column,int row);
+/* 0C79FE on the train layer's ring: local pixel (x, y), column origin +32. */
+uint8_t neo_kernel_train_ring(uint16_t x,uint16_t y,int16_t origin);
 typedef struct {
     int32_t x,y,dx,dy;          /* d0..d3 at entry, relative to `parent` */
     uint8_t parent;             /* NEO_KOBJ_* (A0) */
@@ -59,10 +89,23 @@ typedef struct {
 } neo_kres_t;
 /* Returns false only for a context outside the recovered object list. */
 bool neo_kernel_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result);
+/* 01495C's D1 at its RTS for the 013968 request q and its result r: with a
+ * surface (D6 bit 0) the swapped difference (r->y + the result parent's
+ * +18) - (q->y + the request parent's +18) (0149AC..0149BA, no +18 for A0 =
+ * 0); without, 013968's own D1 (r->y). Read by the crouched death 040BE6. */
+uint32_t neo_kernel_1495c_d1(const neo_kscene_t *scene,const neo_kreq_t *q,const neo_kres_t *r);
 /* ROM 013DB2 floor search: d3 = negative search depth (Q16.16). */
 typedef struct { int32_t x,y; uint8_t parent; uint32_t kind; int32_t d6; bool found; } neo_kfloor_t;
 bool neo_kernel_floor(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,int32_t depth,
     uint8_t b4008,uint8_t b400a,uint8_t b400d,neo_kfloor_t *result);
+/* 013968 with player 1's screen box of 0128E8 (ROM 016DBE), for its
+ * sweeps 0143EE/014594 (neo_kernel.c). */
+bool neo_kernel_player_sweep(neo_kscene_t *scene,const neo_kreq_t *request,neo_kres_t *result);
+/* Player 1's air sweep 0143EE/0128E8/013968 from (x,y) with (vx,vy), all
+ * relative to the terrain: true on a floor of the terrain (D6 bit 0), with
+ * the swept position and velocity (neo_kernel.c). */
+typedef struct { int32_t x,y,vx,vy; uint16_t flags; uint32_t kind; } neo_kland_t;
+bool neo_kernel_air_landing(neo_kscene_t *scene,int32_t x,int32_t y,int32_t vx,int32_t vy,neo_kland_t *out);
 /* ROM 01406A start: clear the dynamic-object bins (before the per-object
  * updates of the same tick). */
 void neo_kernel_dyn_begin(neo_kscene_t *scene);
@@ -81,6 +124,13 @@ uint32_t neo_kernel_cell_class(const neo_kscene_t *scene,uint8_t parent,uint16_t
  * absolute point; the point relative to it. */
 bool neo_kernel_point_class(neo_kscene_t *scene,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
     int32_t *ox,int32_t *oy,uint8_t *object);
+bool neo_kernel_point_class_in(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint16_t cls,uint8_t b4008,
+    int32_t *ox,int32_t *oy,uint8_t *object);
+/* A collision object's +18 (its y, Q16); false for an unknown object. */
+bool neo_kernel_object_y(const neo_kscene_t *scene,uint8_t object,int32_t *y);
+/* ROM 013D5E: true when a collision object has a solid cell (012938's D7
+ * word nonzero) under the point (x,y) of `parent`. */
+bool neo_kernel_point_solid(neo_kscene_t *scene,uint8_t parent,int32_t x,int32_t y,uint8_t b4008);
 /* ROM 013C1A: surface probe under (x,y) of `parent`; D5 (the surface word
  * before 012E64), D6 (height), D7 and the object (10C060). */
 bool neo_kernel_probe(neo_kscene_t *scene,int32_t x,int32_t y,uint8_t parent,uint8_t b4008,uint8_t b400a,uint8_t b400d,

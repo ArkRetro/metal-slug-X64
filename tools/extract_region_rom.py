@@ -32,6 +32,7 @@ BLOBS=[
     (0x2D2244,0x31C,'09D846 swordsmen rank tables 2D2244..2D24B0 and knife 09ECCC tables 2D2512/2D252C/2D253C (0260C8)'),
     (0x2D2FC0,0x80,'0A8CA0 robed swordsman rank tables 2D2FC0/2D2FDA/2D2FF4 (0260C8)'),
     (0x0E64D8,0x08,'0A9A56 robed swordsman cull rectangle (01945C)'),
+    (0x0E64EC,0x0C,'0A908E robed swordsman surrendering (white flag 0A9010, +80 = 1): hurtbox (+50, 004C24)'),
     (0x00087A,0x10,'0A8F38 sub-script records of the robed swordsman (+74 index)'),
     (0x2D7214,0x02,'019F1A sub-script record 2D7214 (op 3)'),
     (0x33924,0x374,'033C98 covered wagon: body/roof/wreck cell maps (0140C0), hurtbox, cull rectangle, debris list'),
@@ -60,6 +61,7 @@ BLOBS=[
     (0x9ADA0,0x78,'09A67E hidden item box: hurtboxes 09ADA0.., view rectangle 09ADD8 (0C8BEC), hurtbox table 09ADF8 and scatter ranges 09AE08 by +6E'),
     (0x1B4C2,0x14C,'01B882 player bullet attack rows 01B4C2..01B5B2 (by direction) and 01B5C2 (01BBE2); grenade 01B5D2 (01BFD0), its explosion rows 01B5E2/01B5F2 and their list 01B602 (01C19A); 0049E8'),
     (0x1B842,0x40,'01B882 player bullet attack row table (direction +6F)'),
+    (0xE541E,0x108,'08C02C/08D268 player item pickup boxes: pointers E541E (0x18) and rectangles E547E..E5525 (riding: index by vehicle kind, 08D234)'),
     (0xE5526,0x78,'08B896 item points: special values E5526 (+7B), combo values E5556, repeated value E559A'),
     (0x2D719A,0x80,'0A8F38 sub-script record 2D719A of the swordsman 0A8C62 (+74 = 1; 019F1A interpreter)'),
     (0x8FC46,0x36,'08F058 generic projectile attack rows 08FC46/08FC56 and cull rectangle 08FC74 (019504)'),
@@ -89,7 +91,8 @@ BLOBS=[
     (0x63620,0x60,'0638B4 R rocket: contact rows 063620 (level) / 063630 (vertical) and search rows 063660 / 063670 (0049E8)'),
     (0x63680,0x30,'063A92 R explosion blast rows 063680 / 063690 / 0636A0 (0636B0 payloads, 0049E8 by 063740)'),
     (0x63804,0x8,'0638B4 R rocket cull rectangle 063804 (019504)'),
-    (0x2D0AE4,0x20,'0C3744 knife reach query row 2D0AE4 and 0C419E cut row 2D0AF4 (0049E8)'),
+    (0xE4E2C,0x58,'08606A weapon 0D ball: cull rectangles E4E2C (ball) / E4E3C (blast) (019504), contact row E4E44 and blast rows E4E54 / E4E64 / E4E74 (0049E8)'),
+    (0x2D0AE4,0x30,'0C3744 knife reach query row 2D0AE4 and 0C419E cut rows 2D0AF4 (Marco, Tarma: kind 2) and 2D0B04 (Eri, Fio: kind 3) (0049E8)'),
     (0x3BB70,0xC,'soldier hurtbox 03BB70: a C shell target (01B162 reads its first rectangle)'),
     (0x3BB40,0x30,'soldier hurtboxes 03BB40 / 03BB58: R rocket targets (01B162 reads their first rectangle)'),
     (0x14522,0x48,'014C0C..014C6A SV-001 tread: mode table 014522 of the kernel sweep (10C004) by the probe 013C1A word'),
@@ -108,10 +111,27 @@ BLOBS=[
     (0x2CAD6,0x1D96,'0306D0 English prisoner names 02CAD6 (count word 989, zero-terminated strings; 030152)'),
     (0x3D512,0x884,'03DD96 font tables: page X two-byte codes 03D512, pages H 03D596, K 03D796, k 03D996 and h 03DB96'),
     (0x3E194,0x114,'03E0A8 accent pairs of the font page 0x32 (03E194..03E2A7)'),
+    (0x16DCE,0x8AE,'01824A/0182B6 mission stage records (table 017D44, missions 1..6) and their stage descriptors 016DCE.. (+A)'),
+    (0x17D44,0x18,'01824A mission record table (six long pointers)'),
+    (0x2D4A60,0x2F0,'0613CA Mission 2 rebels: rank tables 2D4A60..2D4CB2 (0260C8), jump table 2D4CCC (06243E), offsets 2D4D2C and delays 2D4D3C'),
+    (0xB7000,0x08,'Mission 2 cell group map (RAM 10C00E = 0B7000, 01296C)'),(0xE1B6A,0x90,'Mission 2 stage 2 dynamic collision map E1B6A (0140C0, the platform under the rebels)'),
+    (0xE121E,0x60,'0613CA Mission 2 rebels: cull rectangles E121E/E1226 (01945C/019504), hurtbox E1246 (+50), attack row E1252 (0049E8), solid box E1262 (004E76)'),
+    (0x2D26BC,0x35A,'0678B6 / 0692B2 Mission 2 soldiers: rank tables 2D26BC..2D29B4 (0260C8)'),
+    (0xE1A5E,0x10C,'0678B6 / 0692B2 Mission 2 soldiers: cull rectangles E1A5E/E1A66 (01945C), knife rows E1A76.. (0049E8), hurtboxes E1A96/E1AA2 (+50), solid boxes E1B4E/E1B5C (004E76)'),
+    (0xB6ECA,0x08,'0B6ED2 stage-1 exit rectangle (+6E, 01AF3C)'),
+    (0xE0818,0x7C,'03AF08 stage transition fix-map columns: entry 3AED8 (E0818) and exit 3AEF0 (E0856)'),
+    (0x963D8,0x318,'09692C Slugnoid: attack rows 0963D8 (shell) / 0963E8 (flight) / 0963F8 (blown up) / 096408 (killed) (0049E8), program table 096418 (+72, sub-tables 09645C/096474), pilot tables 09649C by character (097830), hurtbox 0966BC (+50), cull 0966C8 (0C8BEC/01945C), shell rectangle 0966D0 (019504), mount rectangle 0966D8 (0AA610)'),
+    (0x97E88,0x56,'097EDE / 097F52 Slugnoid palette list (009EA8)'),
 ]
 def main():
     p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
-    a=p.parse_args();fixed=(a.capture/'program-fixed.bin').read_bytes();bank=(a.capture/'program-bank.bin').read_bytes()
+    a=p.parse_args()
+    if a.capture.suffix=='.zip':
+        # The MAME ROM set itself: fixed P1 and P2 bank 1, the window of every
+        # capture (tools/decode_level_script.Program).
+        from decode_level_script import Program
+        prog=Program(a.capture);fixed=prog.fixed[:0x100000];bank=prog.p2[0x100000:0x200000]
+    else:fixed=(a.capture/'program-fixed.bin').read_bytes();bank=(a.capture/'program-bank.bin').read_bytes()
     out=dict(source='MAME 0.264 mslugx euro capture; fixed CPU block and P2 bank 1 window',
         program_fixed_sha256=hashlib.sha256(fixed).hexdigest(),program_bank_sha256=hashlib.sha256(bank).hexdigest(),blobs=[])
     for addr,n,why in BLOBS:

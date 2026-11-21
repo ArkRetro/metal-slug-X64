@@ -1,0 +1,780 @@
+{
+"source": "run4 actors.csv/ram*.bin (tools/capture_fullgame.lua)",
+"events": [
+{
+"frame": 18647,
+"routine": 100464,
+"previous": 100000,
+"ram": {
+"frame": 18660,
+"mission": 0,
+"stage": 0,
+"index": 0,
+"record_index": 1,
+"end": 0,
+"record": 94570,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 18705,
+"routine": 100528,
+"previous": 100464,
+"ram": {
+"frame": 18720,
+"mission": 0,
+"stage": 0,
+"index": 0,
+"record_index": 1,
+"end": 0,
+"record": 94570,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 18975,
+"routine": 100596,
+"previous": 100528,
+"ram": {
+"frame": 18990,
+"mission": 0,
+"stage": 0,
+"index": 0,
+"record_index": 1,
+"end": 0,
+"record": 94570,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 19295,
+"routine": 100630,
+"previous": 100596,
+"ram": {
+"frame": 19320,
+"mission": 0,
+"stage": 0,
+"index": 0,
+"record_index": 1,
+"end": 0,
+"record": 94570,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 19395,
+"routine": 99508,
+"previous": 100630
+},
+{
+"frame": 19397,
+"routine": 99610,
+"previous": 99508,
+"ram": {
+"frame": 19410,
+"mission": 1,
+"stage": 1,
+"index": 1,
+"record_index": 0,
+"end": 255,
+"record": 94738,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 19429,
+"routine": 100000,
+"previous": 99610,
+"ram": {
+"frame": 19440,
+"mission": 1,
+"stage": 1,
+"index": 1,
+"record_index": 0,
+"end": 255,
+"record": 94738,
+"cleared": "010000000000"
+}
+},
+{
+"frame": 19862,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 19890,
+"mission": 1,
+"stage": 1,
+"index": 1,
+"record_index": 1,
+"end": 0,
+"record": 94772,
+"cleared": "030000000000"
+}
+},
+{
+"frame": 19936,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 19939,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 19950,
+"mission": 1,
+"stage": 2,
+"index": 1,
+"record_index": 1,
+"end": 255,
+"record": 94772,
+"cleared": "030000000000"
+}
+},
+{
+"frame": 20009,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 20010,
+"mission": 1,
+"stage": 2,
+"index": 1,
+"record_index": 1,
+"end": 255,
+"record": 94772,
+"cleared": "030000000000"
+}
+},
+{
+"frame": 26070,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 26100,
+"mission": 1,
+"stage": 2,
+"index": 1,
+"record_index": 2,
+"end": 0,
+"record": 94806,
+"cleared": "070000000000"
+}
+},
+{
+"frame": 26144,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 26146,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 26160,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 2,
+"end": 255,
+"record": 94806,
+"cleared": "070000000000"
+}
+},
+{
+"frame": 26216,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 26220,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 2,
+"end": 255,
+"record": 94806,
+"cleared": "070000000000"
+}
+},
+{
+"frame": 117325,
+"routine": 100464,
+"previous": 100000,
+"ram": {
+"frame": 117330,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 3,
+"end": 0,
+"record": 94836,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 117383,
+"routine": 100528,
+"previous": 100464,
+"ram": {
+"frame": 117390,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 3,
+"end": 0,
+"record": 94836,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 117581,
+"routine": 100596,
+"previous": 100528,
+"ram": {
+"frame": 117600,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 3,
+"end": 0,
+"record": 94836,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 117901,
+"routine": 100630,
+"previous": 100596,
+"ram": {
+"frame": 117930,
+"mission": 1,
+"stage": 3,
+"index": 1,
+"record_index": 3,
+"end": 0,
+"record": 94836,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 117970,
+"routine": 99508,
+"previous": 100630
+},
+{
+"frame": 117975,
+"routine": 99610,
+"previous": 99508,
+"ram": {
+"frame": 117990,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 0,
+"end": 255,
+"record": 95222,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 118023,
+"routine": 100000,
+"previous": 99610,
+"ram": {
+"frame": 118050,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 0,
+"end": 255,
+"record": 95222,
+"cleared": "0f0000000000"
+}
+},
+{
+"frame": 149172,
+"routine": 100464,
+"previous": 100000,
+"ram": {
+"frame": 149190,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 1,
+"end": 0,
+"record": 95250,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 149230,
+"routine": 100528,
+"previous": 100464,
+"ram": {
+"frame": 149250,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 1,
+"end": 0,
+"record": 95250,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 149429,
+"routine": 100596,
+"previous": 100528,
+"ram": {
+"frame": 149430,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 1,
+"end": 0,
+"record": 95250,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 149749,
+"routine": 100630,
+"previous": 100596,
+"ram": {
+"frame": 149760,
+"mission": 2,
+"stage": 4,
+"index": 2,
+"record_index": 1,
+"end": 0,
+"record": 95250,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 149834,
+"routine": 99508,
+"previous": 100630
+},
+{
+"frame": 149837,
+"routine": 99610,
+"previous": 99508,
+"ram": {
+"frame": 149850,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 0,
+"end": 255,
+"record": 95330,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 149885,
+"routine": 100000,
+"previous": 99610,
+"ram": {
+"frame": 149910,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 0,
+"end": 255,
+"record": 95330,
+"cleared": "1f0000000000"
+}
+},
+{
+"frame": 246905,
+"routine": 100464,
+"previous": 100000,
+"ram": {
+"frame": 246930,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 1,
+"end": 0,
+"record": 95368,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 246963,
+"routine": 100528,
+"previous": 100464,
+"ram": {
+"frame": 246990,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 1,
+"end": 0,
+"record": 95368,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 247214,
+"routine": 100596,
+"previous": 100528,
+"ram": {
+"frame": 247230,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 1,
+"end": 0,
+"record": 95368,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 247534,
+"routine": 100630,
+"previous": 100596,
+"ram": {
+"frame": 247560,
+"mission": 3,
+"stage": 5,
+"index": 3,
+"record_index": 1,
+"end": 0,
+"record": 95368,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 247665,
+"routine": 99508,
+"previous": 100630
+},
+{
+"frame": 247668,
+"routine": 99610,
+"previous": 99508,
+"ram": {
+"frame": 247680,
+"mission": 4,
+"stage": 6,
+"index": 4,
+"record_index": 0,
+"end": 255,
+"record": 95532,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 247716,
+"routine": 100000,
+"previous": 99610,
+"ram": {
+"frame": 247740,
+"mission": 4,
+"stage": 6,
+"index": 4,
+"record_index": 0,
+"end": 255,
+"record": 95532,
+"cleared": "3f0000000000"
+}
+},
+{
+"frame": 252757,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 252780,
+"mission": 4,
+"stage": 6,
+"index": 4,
+"record_index": 1,
+"end": 0,
+"record": 95568,
+"cleared": "7f0000000000"
+}
+},
+{
+"frame": 252830,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 252833,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 252840,
+"mission": 4,
+"stage": 7,
+"index": 4,
+"record_index": 1,
+"end": 255,
+"record": 95568,
+"cleared": "7f0000000000"
+}
+},
+{
+"frame": 252903,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 252930,
+"mission": 4,
+"stage": 7,
+"index": 4,
+"record_index": 1,
+"end": 255,
+"record": 95568,
+"cleared": "7f0000000000"
+}
+},
+{
+"frame": 274317,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 274320,
+"mission": 4,
+"stage": 7,
+"index": 4,
+"record_index": 2,
+"end": 0,
+"record": 95604,
+"cleared": "ff0000000000"
+}
+},
+{
+"frame": 274389,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 274392,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 274410,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 2,
+"end": 255,
+"record": 95604,
+"cleared": "ff0000000000"
+}
+},
+{
+"frame": 274462,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 274470,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 2,
+"end": 255,
+"record": 95604,
+"cleared": "ff0000000000"
+}
+},
+{
+"frame": 292011,
+"routine": 100464,
+"previous": 100000,
+"ram": {
+"frame": 292020,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 3,
+"end": 0,
+"record": 95642,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 292069,
+"routine": 100528,
+"previous": 100464,
+"ram": {
+"frame": 292080,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 3,
+"end": 0,
+"record": 95642,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 292298,
+"routine": 100596,
+"previous": 100528,
+"ram": {
+"frame": 292320,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 3,
+"end": 0,
+"record": 95642,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 292618,
+"routine": 100630,
+"previous": 100596,
+"ram": {
+"frame": 292620,
+"mission": 4,
+"stage": 8,
+"index": 4,
+"record_index": 3,
+"end": 0,
+"record": 95642,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 292687,
+"routine": 99508,
+"previous": 100630
+},
+{
+"frame": 292690,
+"routine": 99610,
+"previous": 99508,
+"ram": {
+"frame": 292710,
+"mission": 5,
+"stage": 9,
+"index": 5,
+"record_index": 0,
+"end": 255,
+"record": 95686,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 292737,
+"routine": 100000,
+"previous": 99610,
+"ram": {
+"frame": 292740,
+"mission": 5,
+"stage": 9,
+"index": 5,
+"record_index": 0,
+"end": 255,
+"record": 95686,
+"cleared": "ff0100000000"
+}
+},
+{
+"frame": 304201,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 304230,
+"mission": 5,
+"stage": 9,
+"index": 5,
+"record_index": 1,
+"end": 0,
+"record": 95718,
+"cleared": "ff0300000000"
+}
+},
+{
+"frame": 304275,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 304278,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 304290,
+"mission": 5,
+"stage": 10,
+"index": 5,
+"record_index": 1,
+"end": 255,
+"record": 95718,
+"cleared": "ff0300000000"
+}
+},
+{
+"frame": 304348,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 304350,
+"mission": 5,
+"stage": 10,
+"index": 5,
+"record_index": 1,
+"end": 255,
+"record": 95718,
+"cleared": "ff0300000000"
+}
+},
+{
+"frame": 322269,
+"routine": 99172,
+"previous": 100000,
+"ram": {
+"frame": 322290,
+"mission": 5,
+"stage": 10,
+"index": 5,
+"record_index": 2,
+"end": 0,
+"record": 95748,
+"cleared": "ff0700000000"
+}
+},
+{
+"frame": 322343,
+"routine": 99508,
+"previous": 99172
+},
+{
+"frame": 322345,
+"routine": 99668,
+"previous": 99508,
+"ram": {
+"frame": 322350,
+"mission": 5,
+"stage": 11,
+"index": 5,
+"record_index": 2,
+"end": 255,
+"record": 95748,
+"cleared": "ff0700000000"
+}
+},
+{
+"frame": 322415,
+"routine": 100000,
+"previous": 99668,
+"ram": {
+"frame": 322440,
+"mission": 5,
+"stage": 11,
+"index": 5,
+"record_index": 2,
+"end": 255,
+"record": 95748,
+"cleared": "ff0700000000"
+}
+}
+]
+}

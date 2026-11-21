@@ -88,6 +88,11 @@ int main(void) {
     for (unsigned i=0;i<=NB;i++) native_of[i]=-1;
     neo_end_inputs_t in;memset(&in,0,sizeof(in));
     in.bounds=(neo_cull_bounds_t){false,0,0,0,0,0,256,320,512};in.program=program;
+    /* MISSION n START: 060878 requests the voice 607D2[mission] (0120F8)
+     * in the letters' first update, once (1131 + RAM 10C2F4; MAME
+     * sec01_19391: 1132 at 19428, return 060888). */
+    static neo_end_ram_t ram;unsigned voices=0;uint16_t voice=0;
+    if (UPDATES[0].routine==0x607de) in.ram=&ram;
     unsigned draws=0,frames=0;bool started=false;
     for (unsigned i=0;i<NU;) {
         uint32_t f=UPDATES[i].frame;unsigned j=i;
@@ -107,6 +112,10 @@ int main(void) {
         cur_lo=i;cur_hi=j;
         unsigned before=updates;
         neo_end_update(&s,&in);frames++;
+        if (in.ram) {
+            if (ram.sound_count) {assert(frames==1 && ram.sound_count==1);voice=ram.sounds[0];voices++;assert(voice==0x1131u+in.mission);}
+            ram.sound_count=0;
+        }
         draws+=s.draw_count;
         if (s.unsupported) {fprintf(stderr,"frame %u: explicit stop at %06x\n",(unsigned)f,(unsigned)s.unsupported_at);return 1;}
         if (failures) return 1;
@@ -114,6 +123,7 @@ int main(void) {
         i=j;
     }
     assert(s.mission60==1);
+    if (in.ram) {assert(voices==1);printf("MISSION START voice %04X requested once, in the first update\n",voice);}
     printf("%s letters (root %06x): %u frames, %u updates, %u bytes equal, %u deletes, %u draws; mission actor +60 set\n",UPDATES[0].routine==0x607de?"MISSION START":"MISSION COMPLETE",(unsigned)UPDATES[0].routine,frames,updates,bytes,deletes,draws);
     return 0;
 }

@@ -123,7 +123,7 @@ Los tipos de la Misión 1 (registro `0x0E581A`; puntos en BCD):
 | `18`, `1C`, `29`, `2A`, `2B`, `2F` | `0x08B7FC` | puntos 100 / 1000 / 100 / 100 / 100 / 1000 | `2A` y `2B` tomados en `pickups2`/`vehicles2` (`score_popup value=100`); el resto solo estático |
 | `4B` | `0x08B58C` | arma `0x0C` (C, Enemy Chaser: icono "C" en `pickups/game8340.png`) | `pickups` 8370 y `pickups2` 5875 |
 | `4F` | `0x08B59E` | arma `0x0A` (H) | `pickups2` 11199, `vehicles2` 10926 |
-| `51` | `0x08B5B0` | arma `0x08` | no tomado en estas capturas |
+| `51` | `0x08B5B0` | arma `0x08` (lanzacohetes, Paso 15) | prisionero `2D70C4` (cámara 3224, antes del jefe) |
 
 También se tomaron tipos de puntos/comida `1A, 24, 30, 35, 36, 58` (comida
 sin efecto en Misión 1: `food_item ... food=0`, `10C728` sigue a 0).
@@ -147,7 +147,7 @@ tope 999. Sonido `0x0C08F8[id]`.
 | 5 | 200 | 150 | FF | 112D | especial `0x01B6DC` | H (tipo `00`, no en M1) |
 | 6 | 200 | 150 | FF | 1130 | rayo `0x0C46D6` | desconocido (rayo `0x01E19E`) |
 | 7 | 15 | 10 | 1 | 112F | `0x0646B0` | variante de 2 (no observada) |
-| 8 | 30 | 20 | 2 | 112E | `0x0641EC` + `0x0C58D2` | variante de 3 (tipo `51`, no tomada) |
+| 8 | 30 | 20 | 2 | 112E | `0x0641EC` + `0x0C58D2` | lanzacohetes (tipo `51`: el prisionero `2D70C4` antes del jefe; Paso 15) |
 | 9 | 30 | 15 | 1 | 112C | `0x0A716E` | variante de 4 (no observada) |
 | A | 200 | 150 | FF | 112D | especial `0x01B716` | H (tipo `4F`, observada) |
 | B | 200 | 150 | FF | 1130 | rayo | variante de 6 (no observada) |
@@ -478,11 +478,75 @@ valor `10C5A0`, el sello `10C594`, el contador `10C590`, el combo
   combo `0xE5556`/`0xE559A` (registro byte 0 y ≤ 15 fotogramas). El rótulo de
   puntuación `0x08D330` es un actor externo contado (`popups`); un valor
   `> 0x50000` es el `TRAP #F` del original (parada explícita).
+- Bidón de gasolina (objeto `07`, registro `0x0E58C2`, programa `0x28657C`,
+  paletas `0x380`/`0x3A9`) `0x08B710`: `d1 = 0x10` y `0x0C0BA8` → `0x0AAAE0`
+  (`neo_vslot_gauge`). Montado en un vehículo con indicador (tipos 1, 3, 4,
+  8–B: SV-001, Slugnoid) por debajo de su máximo `+14`, suma `0x10` al cambio
+  pendiente `+16` del hueco (el vehículo lo pasa a `+18`/`+4E` en
+  `0x0AA9E4`): sin valor (`0x08B87A`), rótulo `0x08C752` con `d1 = 0`
+  (externo, contado en `labels` y `refuels`) y **sin sonido propio**. A pie,
+  en la Camel (tipo 2, máximo 0) o con el indicador lleno: los 1000 puntos del
+  registro, `0x08B850` y sonido `0x1121`. Un golpe (`0x0AAA32`) quita `0x10`:
+  el SV-001 y el Slugnoid (`+14 = 0x30`) aguantan 3 y un bidón devuelve uno.
+  **Fuentes en las misiones 1 y 2: ninguna.** El único creador con el tipo 7
+  es la lista 0 de `0x2D0BEC` (ocho `07`) del prisionero `0x099D12`, y solo la
+  usan las llamadas `0x099C9C`/`0x099CEE`/`0x099CCC` del prisionero atado
+  `0x099862` (programa `0x29F9AC`), cuyo `+70` es 6 en la M1 y 3 en la M2;
+  ninguna palabra de aparición de los guiones de la M1 y la M2
+  (`data/mission{1,2}_script.json`) da un 7 a un objeto, ni hay un objeto `07`
+  en `actors.csv` de ninguna captura de MAME. El código queda listo para las
+  misiones siguientes; el destello de la recogida usa la paleta `0x3A9`, que
+  ninguna captura tiene (no se exporta).
+- Caja de recogida del jugador montado (`0x08C02C` → `0x08D268`): con un
+  vehículo de tipo k = 1..12 la caja `0x10C5EC` es `0xE541E[t[k]]` (tabla
+  `0x08D234`: 8, A, C, D, E, F, 11, 13, 14, 15, 16, 17); en el SV-001
+  `FFE8,0000,0030,0038`, igual que la RAM de `hudv2` (fotograma 10500).
+  `neo_world.c` la pone cada actualización (blob `0xE541E` de
+  `data/region_rom.json`); a pie sigue la caja de pie.
+- Comida (B42, modo opcional «Barra de vida»): los objetos de `0x08B7FC`
+  con el byte 3 del registro (`0x0E581A + 0x18·tipo`) puesto; el valor real
+  es el de `0x08B896` (registro `+0C` en BCD, la tabla `0xE5526` con `+7B` o
+  el combo `0xE5556`/`0xE559A` si el byte 0 está puesto), y la barra suma
+  max(1, puntos/100) golpes hasta 10 (`msx_lifebar_food_hits`). Registro:
+
+| Objeto | Programa | Puntos (`+0C`) | Golpes (barra de vida) |
+| --- | --- | --- | --- |
+| `13` | `0x2871C2` | 1000 | 10 |
+| `15` | `0x28741A` | 500 | 5 |
+| `1E` | `0x286C6C` | 1000 | 10 |
+| `1F` | `0x286B54` | 1000 | 10 |
+| `20` | `0x287144` | 1000 | 10 |
+| `24` | `0x2876E6` | 300 | 3 |
+| `25` | `0x28741A` | 50000 | 10 |
+| `28` | `0x2869D6` | 1000 | 10 |
+| `34` | `0x287C7E` | 300 | 3 |
+| `35` | `0x287D64` | 100 | 1 |
+| `36` | `0x28829A` | 10 | 1 |
+| `37` | `0x288396` | 1000 | 10 |
+| `38` | `0x28851A` | 100 | 1 |
+| `39` | `0x2887D2` | 300 | 3 |
+| `3A` | `0x288AF2` | 100 | 1 |
+| `3B` | `0x288C1E` | 300 | 3 |
+| `3C` | `0x288E1C` | 300 | 3 |
+| `3D` | `0x28988E` | 10 | 1 |
+| `3E` | `0x28988E` | 10 | 1 |
+| `3F` | `0x289AA8` | 0 | 1 |
+| `40` | `0x289082` | 500 | 5 |
+| `41` | `0x289CD6` | 500 | 5 |
+| `42` | `0x28A12C` | 500 | 5 |
+| `43` | `0x28A94C` | 100 | 1 |
+| `44` | `0x28A720` | 300 | 3 |
+| `45` | `0x28A582` | 100 | 1 |
+| `46` | `0x288D18` | 300 | 3 |
+| `47` | `0x28A672` | 300 | 3 |
+| `57` | `0x288340` | 10 | 1 |
+| `58` | `0x28AA8C` | 100 | 1 |
+
 - Después `0x08C628`: chispa `0x08C68E/0x08C6B2` (programa `0x28617E` hasta su
   fin; la comprobación de cartucho `2FFFE0` acaba en `0x004188` en hardware
   genuino, como la otra rama) y dos actualizaciones de `0x08C66A`.
 - Paradas explícitas que quedan: tipos de bomba `0x08B5F4..0x08B60C`
-  (`0x0C0A7C`), `0x08B650`, `0x08B710`, `0x08B750`, `0x08B78E`, `0x08B7CC`,
+  (`0x0C0A7C`), `0x08B650`, `0x08B750`, `0x08B78E`, `0x08B7CC`,
   vehículo de tipo 4 (`0x0C0764`), recogida del jugador 2.
 
 Pruebas (`make check`): familia `hitem` (H tomada en 8081, ya sin `--stop`:
@@ -587,6 +651,38 @@ En el juego, Z lanza `0x01BF46` (o `0x01BF10` si `+90 = FF`: quieto) con la
 posición de `0x0C4806` aproximada (`+72/+74` del jugador = −1/0x15, el valor
 de pie de `cfam`; el port no tiene esos campos) y la velocidad del jugador
 (`0x0C4834`). Otros tipos de bomba: parada explícita (`grenade_stops`).
+
+### Molotov: bomba de tipo 2 (`src/neo_bullet.c`, B35)
+
+Recogida `08B5FA` (objeto 09) → `0C0A7C` con D1 = 2
+(`marco_weapons_bomb_type`): `0C0B32` +10 bombas (`1124`), mismo tipo →
+rechazado (puntos, `1121`), si no tipo = 2, voz `0C0A66[2]` = `1156` y
+etiqueta `08CD10` (externa). Con B, `0C4756` tipo 2: `01E648` (en marcha) /
+`01E664` (quieto). Vuelo `01E738` (fila `01F126`; con resultado 2/3
+`01E7B0`: sonido `1027`, explosión `01C7EA` en `neo_effects.c`, fila
+`01F136`), al tocar suelo `01E80E` (sonido `10F3`), `01E894` crea las
+llamas `01E9B6` de dos en dos (±0x100000, 4 veces); cada llama avanza
+`+86` pasos de `01456A`, golpea con `01F146` (tipo 7) y anima hasta su fin.
+El tipo 3 (`+88` = 1: `01E680/01E69C`, llamas `01EA7A`) es una parada.
+Programas `22F5B8`/`242B52` en `data/soldier_programs.json`; sprites en
+`filesystem/mission2/rest-native.json` (paletas 0x203, 0xD5, 0x363).
+
+Captura (MAME 0.264, privada, borrada tras extraer; ~2 min):
+
+```sh
+export MSX_FULL_STATES=/home/user/captures-fullgame/states4 MSX_FULL_VRAM_TRACE=1 MSX_FULL_FIRST_DUMP=23700 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec02_19932 MSX_FULL_LOAD_FRAME=19932 MSX_FULL_FAMILY_ROOTS=1e648,1e664 MSX_FULL_FAMILY_FROM=23700 \
+  MSX_FULL_LAST=26139 sh tools/run_capture_fullgame.sh OUT
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/molotov_fixture.json.gz --range 1e4f0-1ea80 \
+  --range 1c7ea-1c7f0 --range 1c9d2-1ca96 --attacks --ram 10c718-10c730 --ram 10000e-100010 --ram 10c7b6-10d7b6
+python3 tools/export_rest_sprites.py ZIP OUT@1e4f0-1ea80 OUT@1c7ea-1ca96 --mask-auto \
+  --output filesystem/mission2/rest-native.json --keep <export anterior>
+```
+
+Familia `molotov` (`make check`): 228 nodos, 8393 actualizaciones en bucle
+cerrado (23943..26109), 28 lanzamientos, 2 impactos en vuelo, 34 contactos,
+igual a MAME. Sprites: 124 volcados, 213924 píxeles iguales, 756 distintos
+(687 en un volcado de 25290).
 
 ### `tools/test_gameplay.c`
 
@@ -711,7 +807,7 @@ N-1. Las apariciones `01913C` corren después del actor de misión (la
 actualización del reinicio muestra `xxFF`, no `xxFD`).
 
 **Prueba** (`tools/test_neo_hud.c`, `make check-core`): `data/hud_fixture.json.gz`
-(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`
+(`tools/extract_hud_fixture.py` sobre las capturas `hudc`, `hudp2`, `hudv2`, `hudg`
 de `tools/capture_weapons.lua`; solo RAM/VRAM de las capturas) tiene 993
 intervalos de 30 fotogramas entre volcados. Cada intervalo parte del mapa,
 los campos de los paneles, los contadores de parpadeo y el tiempo del
@@ -722,6 +818,20 @@ excluyen porque un indicador de RAM de la cuenta atrás, conocido solo en f0 y
 f1, cambia dentro del intervalo). Además, la primera actualización con el HUD
 encendido redibuja el marco completo del primer volcado (178 palabras; se
 excluye la fase de parpadeo de INSERT COIN). Resultado: 0 diferencias.
+
+**Indicador del vehículo (B41).** `0C9B94` pide `0AAAE0` con `d1 = 0`
+(`neo_vslot_gauge`): hueco `10C608` ocupado y tipo 1, 3, 4, 8–B → vida `+18`
+y máximo `+14`. `gameplay.c` (`hud_step`) lo conecta con el hueco del jugador
+1: SV-001 y Slugnoid (`+14 = 0x30`) lo muestran; la Camel (tipo 2, máximo 0)
+no tiene indicador en el arcade (en `hudv2` y `vehicles2` su hueco tiene
+`+14 = +18 = 0` y el HUD no lo dibuja; muere de un golpe, fotograma 10091).
+Captura `hudg` (`PLAN=vehicles ASSIST_CAMERA=2000 LAST=10900 FIRST_DUMP=10380
+PERIOD=6`, más `MSX_WEAPONS_GAUGE=10450:28,10530:18,10610:8,10700:30,10790:20`:
+escritura solo de referencia de `+18` del hueco montado en el SV-001, que el
+vehículo copia a `+4E`): 106 intervalos con bajadas (paso rápido, `+89` bit
+3), el parpadeo por debajo de `0x1800` (atributo `7B00`) y la subida de 8 a
+48 (pasos de `0x200`); el modelo reproduce las filas del HUD palabra a
+palabra (1099 intervalos, 0 diferencias).
 
 **Dibujo** (`hud_renderer.c`): tiles de `rom:/fixed.bin` (S-ROM,
 `tools/import_rom.py`) con las paletas fijas `rom:/hud-palette.bin`
@@ -999,9 +1109,12 @@ la exportación anterior, la de más volcados). Faltan `0x4/0x5` (entrada de
 los personajes 2/3, `0954D4`). Validación contra VRAM: 49 volcados, 198118
 píxeles iguales, 7803 distintos (solapes y parpadeo `+7E`).
 
-**Paradas explícitas** (sin captura): reacción al daño `09351A` (y su
-caída `0935A8..093684`), destrucción con jinete `0938DA` (hijo `03533A` de
-`0353C2`, no traducido), obús de tipo 5 `0950DC`, `0933D6` sin nodo de
+**Paradas explícitas** (sin captura): la reacción en tierra `09351A`/`093576`
+y la destrucción con jinete `0938DA`/`09391E` son nativas desde B52 (familias
+`tankhit` y `tankkill`, BUG_MATRIX) y la reacción en el aire `0935A8`/`0935EC`
+(programa por el signo de `+5B`: `29B690`/`29B6F2`, `+34 += 0x3A550`, en la
+M3 `0x7C32F`; al tocar suelo `29B734`/`29BCD6` y `093576`) desde B59 (familias
+`tankair` de la M1 y `m3tankair` de la copia `093C9A`); obús de tipo 5 `0950DC`, `0933D6` sin nodo de
 orugas. No se reproducen las comprobaciones de cartucho antes de
 `004188`.
 
@@ -1179,6 +1292,33 @@ no crea el hijo, y un nodo registrado más tarde es de otra actualización.
 `tools/test_gameplay.c`: carrera R hasta la cámara 3520 (564 ondas, 56
 muertes, sin paradas ni dibujos ausentes).
 
+### La R «sigue sin verse» (informe de MiSTer, ROM 13)
+
+Qué parte faltaba, por pruebas:
+
+- **Objeto R.** Es el tipo `02` (registro `0E584A`, programa `28632A`,
+  recogida `08B57A` → id 3), y su programa está en las raíces exportadas.
+  La Misión 1 no lo suelta: en las semillas 1 y 2 de `release_run`
+  aparecen los tipos `00` (id 5), `4B` (C), `4F` (H) y `51` (id 8),
+  y nunca el `02`. Por eso hace falta un gancho para darla.
+- **Cohetes.** Con el cartucho de captura (`MSX_DEBUG_GIVE_R=1` en
+  `gameplay.c`, solo para capturas y nunca en un *release*: da la R como
+  un objeto tras el aterrizaje), ares dibuja el cohete `06381C`, su estela,
+  el destello y la explosión de pie, apuntando arriba y corriendo. Lo mismo
+  se ve en MAME (`run_marco_catalog.py --give-rgun`, nuevo, como
+  `--give-cgun`: id 03, 30 balas, tope 2).
+- **Marco disparando la R.** Este era el fallo. En MAME, con `kind=03`, cada
+  disparo entra en el estado de fuego de la C `0C3D9A` y en el programa de
+  arma `253A56` (cursores `253A70..253ABA`, `--upper-trace`). Las tablas
+  `0C3C10/0C3C50/0C3C90` dan `0C02D8/0C0318/0C0358` a los ids 3 y 0C. El
+  port solo pasaba `cgun` a `marco_visual` con el id 0C. Con la R, el cuerpo
+  forma 1 no arrancaba ningún programa de disparo: Marco quedaba en reposo
+  mientras salían los cohetes.
+
+Corrección: `msx_game_c_programs()` (ids 0C y 3) decide `cgun` en
+`actor.c`, y la R usa los programas de disparo de la C
+(`MARCO_CAMPAIGN_W1C_FIRE*`, `B1C_CROUCH_FIRE`). `chaser_run` lo comprueba.
+
 ### Camel Slug: «deja de disparar» (informe de MiSTer, ROM 10)
 
 Reproducción en el anfitrión (paseos largos en la Camel con el disparo
@@ -1221,3 +1361,438 @@ los primeros rebeldes): 10 cortes, todos de la tabla `0x0BF958` en reposo
 `tools/test_gameplay.c` (`knife_run`): cortes que golpean, sin paradas.
 Sonidos `10FB`, `10F9`, `1069` renderizados y medidos contra todos
 (`data/sound_pairs.json`, 2000 pares). Poses del corte: MARCO_CAMPAIGN.md, «Cuchillo».
+
+### Paso 14: armas 0D, 02/07 y 04/09 (`src/neo_pweapon.c`, rama `work-m2mummy`)
+
+La Misión 2 da las armas `06` (tipo `04`, sección 1), `07` (`50`), `09`
+(`52`), `0D` (`4A`), `02` (`01`), `04` (`03`) y las conocidas H y R
+(guion `data/mission2_script.json`: objetos `08C37C/08C168` y prisioneros
+`099DF0/099E06`). Todas pasan por `0C4372` → tabla `0C42AA` como la C; las
+tablas de programas de disparo `0C3C10/0C3C50/0C3C90` (+0x10, forma 1) y la
+agachada `0C246A` (`C0098..`) dan tres grupos: `C02D8..` (ids 3, 8, C, D,
+E: la C), `0BFFD8..` (02, 07, 0F) y `0C00D8..` (04, 09); `0C01D8..` es el
+rayo (06, 0B).
+
+Capturas MAME 0.264 (`/home/user/captures-weap2`, privadas):
+`capture_weapons.lua` con la nueva `MSX_WEAPONS_ASSIST_ID=<id>` (la ayuda
+escribe ese id; con ella, en el primer fotograma también el tope `0C08A8` y
+`+94` de `0C0918`, como `0C0928`), plan `air`, `ASSIST_CAMERA=9999`,
+`FAMILY 2150..3140`: `d1` (0D), `s2`/`s7` (02/07), `f4`/`f9` (04/09).
+
+| Arma | Proyectil | Familia (`make check`) |
+| --- | --- | --- |
+| 0D | bola `08606A` (nivel/arriba/abajo, rueda `0861C6` con la pose de pendiente `08661C`, estalla `086216`), resplandor `08651C`, explosiones `086304` con las tres llamadas `0866A6` (filas `E4E54/64/74`) | `dball`: 222 nodos, 3952 actualizaciones, 522900 bytes |
+| 02 / 07 | estallido `0644C4`/`0646B0` (fila `E1412..` una vez, pantalla blanca `009BB0` una actualización, devuelve el id de `E1442`) | `sgun2`/`sgun7`: 23 nodos, 437 actualizaciones cada una |
+| 04 / 09 | llama `0A71F8`/`0A716E` (suelo y aire, 12 actualizaciones), primera llama `0A74E4` y bocanadas `0A751C` atraídas por el nodo anterior (`+04`), velocidad de programa `0A7756`; espera a sus hijos (`00408C`) | `flame4`/`flame9`: 258 nodos, 3711/3459 actualizaciones |
+
+En el juego (`gameplay.c`, `fire_kind`): constructor, destello `0C58D2`
+solo en el grupo de la C, y la espera hasta `+76` de cada programa (02/07:
+7 actualizaciones de pie, arriba y agachado, 3 abajo; 04/09: 3).
+`0C4526` (sin nodo) devuelve el proyectil del arma actual.
+`tools/test_gameplay.c` (`chaser`, `pweapon`): 0D, 02, 07, 04 y 09
+concedidas y disparadas hasta la cámara 3520 (0D: 1920), matan, sin dibujos
+ausentes. Gráficos: `export_rest_sprites.py` (raíces y paletas `822`,
+`828`, `204`, `39B`, `384`, `876`; valida ahora el giro vertical, bit 1
+del atributo): `d1` 71222 píxeles iguales / 1044 distintos, `s2+s7` 86231 /
+0, `f4+f9` 63967 / 6237 (sin explicar uno por uno). Al `filesystem/rest-native.json`
+de la Misión 1 solo se añaden los descriptores de esas raíces.
+Sonidos: `10F5`, `10F6`, `10F3`, `116A`, `1168`, `112F`, `112C`, `115A` en
+`data/sound_map.json` (render aislado `OK`).
+
+**Paradas explícitas que quedan** (las muertes de soldado por filas de tipo
+7, `0A` y `0B` y el rayo `06/0B` son nativos desde el Paso 16): el agua bajo la bola
+0D (`03C5CC` → salpicadura `03C962`); la misión 9 de `0644EE` (`012022`);
+las variantes `+93 = 2` (tabla `0C42EA`: `0646C8/0646E0`, `0A7226/0A719C`,
+`063F10`, `0C44C2/0C44E0`); las armas `01` (`0C5508`),
+`0E` (`0DE4DA`) y `0F` (`0DEA20`) (la `08` es nativa desde el Paso 15): siguen disparando la
+bala de pistola del port (`weapon_stops`).
+
+**Rayo 06/0B: análisis (rama `work-m2gate`; traducido en el Paso 16).** Captura MAME 0.264 (privada,
+`/home/user/captures-m2gate/w6`, borrada al acabar; repetible):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=6 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=1e22c,c58d2 MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=999999 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT
+```
+
+En 2150..3140: 9 rayos `01E22C` (el primero en 2193), 445 actualizaciones
+en `01E28E/01E2FC/01E398/01E41C`, 58 chispas `01E582/01E58A/01E596`
+(1075 actualizaciones en `01E604`). Estructura leída de la ROM:
+`0C46D6` (con el arma 06/0B: +95 + 1 impar, o acarreo de `0C0D64`)
+llama a `01E19E` (D0 = jugador, D1 = 0, D2 = 4: bloque RAM 10C340/10C348
+del jugador, +6 vivo, +7 sonido 10F8 si el otro jugador no suena, +5 vida
+D2 & 7F, +4 dirección; crea `01E22C` con `0040BC` reserva 0xE, `01B220`,
++5E del jugador, +6E jugador, +70 dirección) y a `01E166` (D0/D1 = el
+punto del arma de la tabla que deja `0C46D6` en A0, más +72/+74 si +90 ≠
+FF; +4 = D3, +92 si +90 ≠ FF, y si cambia con +5 ≤ 0, +6 = 0). `01E22C`: capas E000, paletas 0x98/0x99/0x9A (`009F88` y
+de nuevo según +88, `01F002`: arma 0B → bit 0, `0C05B8` = 2 → bit 1),
+onda `03C526`; por actualización `01F002`, `01EC1E` (una vez por
+fotograma de vídeo 10000E: lee el bloque, copia el giro del jugador, mide
+con `014A02` desde el jugador con +2C/+40 + 1, `01AD6E`/`01AD52`/
+`01ABC8`), `01ED32` (fin si +6 = 0 → `01E4D4`: sonido 10F8 parado por
+`012192` si el otro jugador no lo usa, `004188`); horizontal
+`01ED60`/vertical `01EDF6`: recorre el rayo en pasos de 16 px
+(`014906`, `01AC38`, un `00427A` por paso, filas `1F096..1F116` de
+`0049E8` según +7A y +88, hasta la pared o el borde 0x10..0x130 /
+0x100..0x200), con programas `22EBB6/22EC92/22ED6E` (+70 = 0),
+`22F016/22F0F2/22F1CE` (+70 ≠ 0) y los de la fase `01E398`
+(`22EE6A/22EF3A/22F00A`, `22F2CA/22F39A/22F46A`), chispas `01EF68` cada 4
+fotogramas de vídeo. Falta: traducirlo con la familia de `w6` (dibujos
+múltiples por actualización, `014A02` sobre el nodo del jugador), los papeles
+de las poses `marco-w6` en `compile_marco_campaign.py`, el sonido 10F8 en
+`data/sound_map.json` y la llamada de `fire_kind`.
+
+**Muertes de soldado por fila de tipo 7, 0A y 0B (análisis; traducidas en
+el Paso 16).** Tablas de `0406B6`/`0407CA` (destino de cada
+tipo 0..13; ≥ 14 va a `040DC0`/`040A28`): suelo `0406EA` = 40DC0 40C8E
+40DC0 40B46 40B46 40BA8 40D66 **40A40** 40DC0 40C8E **40AF6 40A7C** 40DD8
+40DD8 40DC0×6; aire `040750` = 40DC0 40C8E 40DC0 40B46 40B46 40DC0 40A10
+**40A40** 40DC0 40DC0 **40AF6 40A7C** 40DC0×8; agachado `0407F4` = 40A28×3
+40B46 40B46 40BE6 40A28 **40A40** 40A28 40A28 **40AF6 40A7C** 40A28×8.
+`040A40` (tipo 7): +76 = (`0029C6` & FFFF) << 2, negado si +5B < 0; +34 =
+0; programa `240E8E`; → `040DF0`. `040AF6` (0A): `040F04` (hijo `040F60`
+a (8, 0) con +15 bit 0 invertido: programa `24039C`, paleta 0x37A/0x3BA
+por `01B2BE`), programa `240D2E` o `240C6E` según +5B ^ giro, +34 = 2,0,
++15 bit 6 a 0, → `040DF0`. `040A7C` (0B): `040F04`, programa `240DC0` o
+`240AE6` según el signo de `0029C6`, +30 = ±(`0029C6` & FFFF) << 2 por
++5B, +34 = 16,0, +15 bit 6 a 0; `040AE0`: +34 −= +34 >> 4 mientras sea ≥ 0
+y `040DF0`. Falta la evidencia de MAME (un soldado muerto por la llama o el
+estallido con volcados por fotograma, `extract_soldier_ticks.py`) y la
+variante de `NEO_SOLDIER_EVENT_DEATH_CHILD` con el programa `24039C`.
+
+**Escopeta hacia la izquierda (B25, rama `work-m2fix1`).** Informe de la
+ROM 22: la S dispara bien a la derecha, arriba y abajo, pero no a la
+izquierda. `0C4434` llama a `01AC94` tras crear el proyectil de la tabla
+`0C42AA`: copia `+15 & 3` del jugador (el giro, bit 0) al proyectil, como
+`0C43E4` al destello. `gameplay.c` creaba todos los proyectiles con `+15`
+= 0: el estallido `0644C4/0646B0` mirando a la izquierda se dibujaba
+hacia la derecha y su fila `E1412` (que `0049E8` refleja por `+15` bit 0)
+golpeaba a la derecha; arriba y abajo se ven casi simétricos. Las capturas
+`s2`/`s7` (`MSX_WEAPONS_ASSIST_ID=2/7`, plan `air`, mitad de cada postura
+mirando a la izquierda) ya tenían esos disparos: 11 de los 23 estallidos
+nacen con `+15` = 01 (`+6E` = 80 de frente, 40 arriba, C0 abajo) y la
+familia (con los bytes y las filas de ataque grabados) pasaba; el fallo
+estaba solo en la creación del juego. Las familias `flame4/9`, `dball`,
+`chaser` y `rlaunch8` muestran lo mismo (`+15` = 01 a la izquierda), así
+que el arreglo (`left?1:0` como el destello) vale para todas las armas de
+`0C42AA`. Pruebas: `test_neo_family` cuenta los estallidos de `sgun2/sgun7`
+a la izquierda (11 de 23) y exige los dos sentidos; `test_gameplay`
+(`sgun_left_run`, en `pweapon`) dispara 02 y 07 a ambos lados, arriba,
+agachado y abajo en el aire: 131 estallidos a la izquierda con `+15` bit 0
+y el ángulo de MAME, 0 erróneos (131 erróneos con el código anterior).
+
+### Paso 16: el rayo 06/0B y las muertes por llama y estallido (rama `work-laser`, B11 y B12)
+
+**Rayo (`neo_pweapon.c`, `beam_tick`).** Traducción de `01E22C..01F094`
+con el análisis de arriba: constructor `01E22C`, fase de disparo
+`01E28E`/`01E2FC` (horizontal/vertical), fase de apagado `01E398`
+(`01E3B2`/`01E41C`), fin `01E4D4` y chispas `01E582/01E58A/01E596` +
+`01E604`. Cada actualización vuelve a arrancar sus programas (`004256`) y
+dibuja varias veces (`00427A`): la boca, un segmento por cada paso de 16 px
+del recorrido `01ED60`/`01EDF6` y el extremo cuando acaba en una pared
+(`014906`, D6 bit 1) o en un blanco (`0049E8` ≠ 0). `01EC1E` lee el bloque
+RAM `10C340`/`10C348` (`neo_genv_t.laser`, una vez por valor de `10000E`),
+copia el giro del jugador y coloca el rayo con `014A02` desde el nodo del
+jugador (`+2C`/`+40` + 1, solo para `+84`), `01AD6E` sobre su bloque `+28`,
+`01AD52` a la raíz y `01ABC8` dos veces. Ayudas nuevas: `ga_sweep_probe`
+(`014906`). Filas `1F096..1F156`, rectángulo `1F166` y tabla de chispas
+`1F16E` en `data/region_rom.json`. El cambio de forma (`+88` bit 1:
+`009F88` y paleta `875`) está traducido pero no aparece en las capturas.
+
+**El jugador (`gameplay.c`).** `fire_kind` da a `06`/`0B` el grupo
+`MSX_FIRE_L`: la pulsación arranca el programa del rayo (`laser_step`,
+`laser_aim`) y cada una de las 8 actualizaciones siguientes hace la llamada
+`0C46D6` (`laser_call`) con el punto de la tabla del programa (`253594`
+nivel, `2536FC` arriba, `256132` abajo en el aire, `256DE8` agachado: los
+`dx, dy` de cada `CALL`) más `+72/+74`; `+95` impar no gasta munición, par
+`0C0D64`; `neo_world_laser` hace `01E19E` (sonido `10F8`, el rayo después
+de la cabeza de la lista, `01B220` (0, 0) desde el registro del jugador) y
+`01E166`. La espera de `+76`: 18 tics de nivel, 16 arriba, abajo y
+agachado (`SET_BYTE +76` tras 8 / 7 esperas). El registro del jugador
+tiene ahora `+6A` = FF (volcados de MAME). Visual: papeles `W1L_FIRE`
+`253594`, `W1L_FIRE_UP` `2536FC`, `W1L_FIRE_DOWN` `256132` y
+`B1L_CROUCH_FIRE` `256DE8` de `marco-w6` en `compile_marco_campaign.py`
+(`--w6-capture`), `cgroup` 4 en `marco_visual.c`.
+
+**Evidencia del rayo.** Capturas MAME 0.264 `w6` y `wb` (privadas,
+`/home/user/cap-laser`, borradas tras extraer; repetibles):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=6 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=1e22c,c58d2 MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=2160 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT   # y ASSIST_ID=B
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/laser6_fixture.json.gz --range 1e100-1f100 \
+  --ram 10c340-10c350 --ram 1014c4-101574 --ram 10000e-100010 --ram 10c718-10c730 --attacks
+python3 tools/export_rest_sprites.py ZIP OUT6@1e100-1f100 OUTB@1e100-1f100 --output SCRATCH/rest.json   # solo los descriptores del rayo
+```
+
+- Familias `laser6` y `laserb` (`make check`, terreno `10C72E`): **74
+  nodos, 1669 actualizaciones en bucle cerrado (2193..3139), 223860 bytes
+  iguales, 3488 dibujos**, 9 rayos, 65 chispas; las escrituras al bloque
+  `10C340` y al nodo del jugador (350490 bytes de RAM) iguales a las del
+  original. Sin cubrir en las capturas: `01E3B2` (apagado horizontal),
+  `01E58A` y `+88` bit 1.
+- Gráficos: 224 descriptores de los programas `22EBB6..22F476` y las
+  paletas `98/99/9A` añadidos a `filesystem/rest-native.json`
+  (`export_rest_sprites.py`, raíces y paletas nuevas). Validación contra la
+  VRAM de `w6`/`wb`: **45230 píxeles iguales y 1996 distintos en 62
+  volcados (50 volcados exactos)**; la paleta `875` (forma 2) no se capturó.
+- Sonido `10F8`: render aislado `ACTIVE_AT_WINDOW_END` (sonido sostenido:
+  ventana de 5,015 s, sin bucle exacto medible); `data/sound_map.json`
+  `"stop": "012192"` y `pack_game_audio.py` lo empaqueta como su ventana
+  (32 kHz: 30 % de la energía por encima de 11 kHz; no residente, desde
+  `rom:/`); `game_audio.c` atiende
+  la petición de parada `palabra | 0x8000` (`012192`). Pares contra las
+  referencias y los primeros de cada canal nuevo: todos `unclear` u
+  `overlap`: canal propio `ch_10f8` (`data/sound_policy.json`).
+- `tools/test_gameplay.c pweapon`: `06` 4052 llamadas `0C46D6`, 8 rayos,
+  8773 actualizaciones de rayo, 47 muertes; `0B` 3966, 9 rayos, 47 muertes;
+  sin paradas ni dibujos ausentes (antes: `weapon_stops`).
+- **B29 (MiSTer, ROM 22: al coger la L no se ve el arma).** Esos
+  descriptores y paletas solo entraron en la exportación de la Misión 1. En
+  la Misión 2 los actores dibujan con `romfs/mission2.pack`, hecho de
+  `filesystem/mission2/rest-native.json`, y la copia de la ROM 22
+  (`/home/user/ws-logo`) era anterior a `work-laser`: le faltaban **235
+  descriptores** (los del rayo `22EBB6..22F476` y el cohete del arma 8
+  `2684D2/2684AA`) y **7 paletas** (`98 99 9A` del rayo, `384 39B 822 828`
+  de las demás armas). `actor.c` cuenta el dibujo que no encuentra y no
+  pinta nada: en la Misión 2 el rayo de la L no se veía (la pistola del
+  jugador y sus poses `W1L_*` sí, vienen del catálogo de Marco). `test_gameplay`
+  prueba el láser contra la escena de la Misión 1 (`scene_meta.h`), así que no
+  lo veía. Arreglo (`work-m2fix2`): `filesystem/mission2/rest-native.json`
+  regenerado con todas las raíces y `--keep filesystem/rest-native.json`
+  (las paletas de la Misión 1), `romfs/mission2.pack` reempaquetado y la
+  comprobación `tools/check_mission_sprites.py` en `make check`: la
+  exportación de la Misión 2 debe llevar todos los descriptores y paletas de
+  la de la Misión 1 (con la de la ROM 22 falla con esos 235 + 7).
+
+**Muertes de soldado por filas de tipo 7, 0A y 0B (`neo_soldier_ai.c`).**
+`death_dispatch` traduce las entradas `040A40` (7: `+76` =
+(`0029C6` & FFFF) << 2 con el signo de `+5B`, `+34` = 0, programa
+`240E8E`), `040AF6` (`0A`: hijo `040F04`, programa `240C6E`/`240D2E` por
+`+5B` ^ giro, `+34` = 0x20000, `+15` bit 6 a 0) y `040A7C` (`0B`: hijo,
+programa `240AE6`/`240DC0` por el signo de `0029C6`, `+30`, `+34` =
+0x100000, `+15` bit 6 a 0, y **en la misma actualización** `040AE0` y el
+cuerpo `040DF0`; la rutina queda en `040AE0`: `+34` −= `+34` >> 4 y
+`040DF0`). Las tres tablas (suelo, aire, agachado) usan las mismas
+entradas. El hijo `040F60` (programa `24039C`, paleta `37A/3BA` por
+`01B2BE`) es la salpicadura del mundo con su programa
+(`NEO_SOLDIER_EVENT_DEATH_CHILD` con valor 1). `death_dispatch` devuelve
+ahora borrado cuando ese cuerpo llega a `004188`.
+
+Evidencia (MAME 0.264, `tools/mame/trace_soldier_campaign.lua` con las
+opciones nuevas `MSX_ASSIST_WEAPON` (la ayuda de `capture_weapons.lua`),
+`MSX_SOLDIER_ENTRY=1` (los 0xB0 bytes de cada soldado al empezar su
+actualización: el golpe de la llama o del estallido, que corren antes en la
+lista, ya está en ellos) y `MSX_FORCE_DEATH` (escritura de referencia: cada
+37 fotogramas el primer soldado en pantalla recibe `+5A` = tipo y `+5F` bit
+7, como lo dejaría `0049E8`; el estallido hacia arriba no alcanza a ningún
+soldado con las entradas porque de cerca el jugador acuchilla)):
+
+```sh
+D=OUT; MSX_CAPTURE_DIR=$D MSX_RAM_FIRST=2100 MSX_CAPTURE_END_FRAME=3400 MSX_FIRE_FRAME=2190 MSX_RIGHT_FRAME=2280 \
+  MSX_UP_FRAME=2400 MSX_ASSIST_WEAPON=4 MSX_SOLDIER_ENTRY=1 mame mslugx -rompath ROMS -bios euro -video none -sound none \
+  -skip_gameinfo -nothrottle -autoboot_delay 0 -autoboot_script tools/mame/trace_soldier_campaign.lua \
+  -cfg_directory $D/cfg -nvram_directory $D/nvram -debug -debugger none -debuglog -debugscript tools/mame/start.cmd
+# b12w4 (ASSIST_WEAPON=4), b12w2 (=2), b12f (=2, END 3250, MSX_FORCE_DEATH=b MSX_FORCE_PERIOD=37)
+python3 tools/extract_soldier_ticks.py b12w4:3270 b12w2:3270 b12f:3250 --entry --only-deaths \
+  --output data/soldier_death_tick_fixture.json.gz
+```
+
+`extract_soldier_ticks.py --entry` parte de los bytes de entrada y deja
+fuera las actualizaciones con el jugador 1 muriendo (`10C33C` = 0: el
+arnés no modela sus entradas); el corte en 3270 deja fuera la capa
+`10D7B6` (más allá de la cámara 1023, tampoco modelada por el arnés).
+`make check` (`soldier_death`): **1468 actualizaciones de soldados
+moribundos iguales (estado, cursor de animación y RNG)**: tipo 7 en el
+suelo 5 y en el aire 1, `0A` en el suelo 5, `0B` en el suelo 7 y en el
+aire 1 (forzadas) con 813 actualizaciones de `040AE0`, y 628 de `040DF0`.
+`tools/test_gameplay.c pweapon`: 02, 07, 04 y 09 con **0 paradas de
+muerte** (antes 13/40/68/91) y sin dibujos ausentes.
+
+Paradas que quedan: el cuerpo en llamas `040920` (`+74`: un soldado
+muerto en el suelo con `+15` bit 5 y una fila de tipo 7 o 9 en `+6C`; la
+raíz `01AC4C` y `01AC38`) no aparece en ninguna captura: sigue como parada
+explícita (`UNSUPPORTED_AT`). El hijo `040F60` no se compara con MAME
+(solo sus descriptores, sin dibujos ausentes). Las entradas `040B46`,
+`040BA8` y `040BE6` (tipos 3, 4, 5) siguen sin traducir.
+
+### Paso 15: arma 08, el lanzacohetes del final de la Misión 1 (`0x0641EC`, rama `work-m1m2flow`)
+
+Informe del usuario (hardware real, ROM 20): al llegar al jefe final no hay
+lanzacohetes. El guion de la Misión 1 (`data/mission1_script.json`) crea en
+la cámara 3224, justo antes del jefe `0D5976` (cámara 3308), un prisionero
+`099DCC` (registro `2D70C4`, palabras `0 0 0 81 180`): `+74` = `0x51`. Su
+saludo (`09ACD6`) suelta el objeto de tipo `51`, cuya recogida `08B5B0` da
+el arma `0x08` (`0C0928`: 30 cohetes, tope 2, voz `112E` «Rocket
+launcher»). La R del port era la `3` (`06381C`); la `8` caía en la parada
+explícita `weapon_stops` y disparaba la bala de pistola: en la recreativa
+hay lanzacohetes, en el port no.
+
+`0641EC..0644C2` es `06381C..063AEC` con cuatro cambios (desensamblado
+comparado instrucción a instrucción): programas `2684D2` (horizontal) /
+`2684AA` (vertical) con cohetes más grandes (descriptores `142910..14299E`,
+`145066`), filas de contacto `063640/063650` (`0x30×0x10` en vez de
+`0x18×0x08`), rectángulo de recorte `06380C` (sus ocho primeros bytes son
+los de `063804`) y el id `8` devuelto a `0C0DFC`; la búsqueda (`063660/
+063670`), el vuelo, la estela `063D9E` y la explosión (`26858A/2685CA`) son
+los de la R, y la comprobación de cartucho tras `0C0DFC` desaparece
+(`004188` directo). Las tablas `0C3C10/0C3C50/0C3C90` dan a la `8` los
+programas de disparo de la `3` (`0C02D8/0C0318/0C0358`) y `0C432A` el mismo
+destello `0C58D2`.
+
+- `neo_chaser.c`: `06381C`/`0641EC`, `0638B4`/`064284`, `063A92`/`0643DA`,
+  `063AD6`/`06441E` con esos parámetros; `gameplay.c` (`fire_kind`): id 8
+  por el grupo de la C.
+- Programas `2684D2/2684AA` en `extract_soldier_programs.py` y
+  `export_rest_sprites.py`; `data/region_rom.json`: `063804` ampliado a 16
+  bytes (`06380C`). `extract_family_fixture.py` registra también las
+  lecturas del objetivo en `0642AE/0642EC` (como `0638DE/06391C`).
+- Captura MAME 0.264 `r8` (privada, `/home/user/cap-m1m2/r8`, repetible):
+
+```sh
+MSX_WEAPONS_PLAN=air MSX_WEAPONS_ASSIST_ID=8 MSX_WEAPONS_ASSIST_CAMERA=9999 MSX_WEAPONS_FAMILY_FROM=2150 \
+  MSX_WEAPONS_FAMILY_TO=3140 MSX_WEAPONS_FAMILY_ROOTS=641ec,c58d2,63d9e MSX_WEAPONS_LAST=3150 \
+  MSX_WEAPONS_FIRST_DUMP=2160 MSX_WEAPONS_STATE_FROM=999999 sh tools/run_capture_weapons.sh OUT
+python3 tools/extract_family_fixture.py OUT/boss-trace.txt --output data/rlaunch8_fixture.json.gz \
+  --range 63600-64700 --range c5800-c5a00 --ram 10c718-10c72c --attacks
+```
+
+  Familia `rlaunch8` (`make check`, terreno `10C72E`: la captura está en el
+  pueblo): **505 nodos, 8747 actualizaciones en bucle cerrado (2195..3139),
+  1156120 bytes iguales**, 42 cohetes, 489 borrados.
+- Gráficos: los 11 descriptores nuevos se añaden a la exportación privada
+  `filesystem/rest-native.json` (`export_rest_sprites.py ZIP OUT@641ec-6441e
+  --keep <anterior>`, de la salida solo los descriptores de `2684D2/
+  2684AA`; paleta `0x37C` ya presente). Validación contra la VRAM de `r8`:
+  9655 píxeles iguales y 2742 distintos en 31 volcados; la misma medida con
+  la R ya validada (`r3`, misma captura con `ASSIST_ID=3`) da 5466/1518: la
+  diferencia es el desfase de una actualización de los cohetes rápidos en
+  el validador, no los descriptores.
+- `tools/test_gameplay.c` (`chaser`): carrera con la `8` hasta la cámara
+  3520: 1134 cohetes, 711 explosiones, 58 muertes, sin paradas ni dibujos
+  ausentes.
+
+### Paso 17: Slugnoid `0x09692C` (`src/neo_slugnoid.c`, B38, rama `work-slugnoid`)
+
+Traducción manual de `0966F0..097E06` y `097EDE..097FC4` (andador, piloto,
+destello y obús del cañón, polvo, llamas de las patas, estallido `0AD8A2`).
+Las dos torretas vulcan son las de la Camel (`03B4E0`, `+72` = 3 y 2, ráfaga
+cada 4, anclas `+78`/`+7C` del andador); los pasos de suelo y aire
+`014594`/`0143EE` son los de la Camel, ahora exportados
+(`neo_slug_k14594`/`neo_slug_k143ee`). El guion de la etapa 3 lo crea
+siempre al llegar el progreso de cámara a 3391 (`2D9BEA`/`2D9BF6`, x 392 o
+568, y 1624); el mundo ya lo crea nativo (`neo_region_routine`).
+
+**Estados.** Constructor (capa `8810`, caja `0966BC`, suelo `0146E8`, salud
+`0x30`, dos torretas, 10 obuses `+8B`, piloto `097830`), espera `096A10/
+096A60` (paletas `0x88D`/`0x2`, marcador «IN» `0353A4(0, 0x28)` si se ve;
+cae con `01AC38` bajo el borde inferior (`+40` < RAM `10C72C` = 0x100);
+`0C8BEC 0966C8` → `0041AC`; `0AA610` con el rectángulo `0966D8`, `0AA760
+(0, 0)`, `0AA83A` tipo 3), subida `096B32` (sonido `1092`, programa `0x18`),
+parado `096C22/096C3A`, marcha `096CCC/096CEA` (`+62` = ±0x20000),
+agachado `096DC4/096E02` (al final, abajo+B: `0AA7FC` tipo 1) y vuelta
+`096EAA/096EEA`, caída `096F6A`, salto `096F86` (`+34` = 0xE4000, polvo
+`097DD0`, llamas `097C46`/`097D22`, sonido `1090`) y aire `097028` (palanca
+±0xAAAA hasta ±0x38000, pose `+86` por `096794`, empuje `0968C0` solo con
+`+93` = 1), aterrizaje `0970FC/097136` (`014850` frena en las paredes),
+A+B `0971F8/0972A6` (el jinete sale con `0AA7FC` tipo 1 y el andador sube
+con `+34` = 0x1A4000 hasta tocar, la fila `0963E8` o `+40` ≤ 0x120;
+lista de paletas `097E88` desde `+8C` = 3), voladura `09749A/0974C0`
+(destello `0AE220(1,0)`, `004192`, fuego `01DBAA`, cuatro piezas `0AD9E6`,
+estallido `0AD8A2`, fila `0963F8`, sonido `1034`, programa `0x40`),
+destrucción con jinete `09756A` (`0AA7FC` tipo 0, fila `096408`, explosión
+`01C71E`), hundido bajo la pantalla `0975C6/0975EA/09760E` y la cola común
+`0976C8` (parpadeo `+8E`, `0AA760`: sin jinete → `096BA6`; `0AAA88` tipo 3
+copia los obuses; `0AA9E4`: con causa, `0977DC` quita una torreta (sonido
+`1089`) y reacción `09737E`/`097308`; salud 0 en el suelo → `0973E2`).
+Cañón `096728` (C): sin obús en vuelo (`+8A`) y `0AA956`, destello `097972`
+en `(0, +82)` y obús `097A36` (0x100000 en el ángulo 0xC0, fila `0963D8`;
+contra algo → el estallido del obús del SV-001 `094FF8`; en el suelo →
+`01EC0E`, la bomba de tipo 3: `01E80E` con `+88` = 1 (sonido `116C`,
+`+7C` = 4/3, `+87` = 0x18) y sus llamas `01EA7A..01EBE0` (paleta `0x873`,
+programa `22F704`, fila `01F156`, zoom `+12/+13` hasta 0xFF), traducidas en
+`neo_bullet.c`; al final `097B24` devuelve el obús al andador).
+
+**Capturas** (MAME 0.264, `tools/capture_fullgame.lua` con `MSX_FULL_RIDE`,
+privadas, borradas tras extraer): estado `at_87300` de `sec03_26140` (la
+misma partida que `run4`) y `at_91340` de él con el plan `fall` (el piloto
+automático sube la torre y cae sobre el andador en 91347).
+
+```sh
+export MSX_FULL_STATES=CAP/states MSX_FULL_FAMILY_ROOTS=96a60,96c3a,3b57c,97886,3527e MSX_FULL_FAMILY_RANGE=966f0-97e08 \
+  MSX_FULL_VRAM_TRACE=1 MSX_FULL_PERIOD=15 MSX_FULL_GRID_TAP=0
+MSX_FULL_LOAD=sec03_26140 MSX_FULL_LOAD_FRAME=26140 MSX_FULL_SAVE_AT=87300 MSX_FULL_FAMILY_FROM=0 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_LAST=87310 ... st
+MSX_FULL_LOAD=at_87300 MSX_FULL_LOAD_FRAME=87300 MSX_FULL_RIDE=fall MSX_FULL_SAVE_AT=91340 MSX_FULL_FAMILY_FROM=0 MSX_FULL_FIRST_DUMP=9999999 MSX_FULL_LAST=91345 ... t1
+MSX_FULL_LOAD=at_87300 MSX_FULL_LOAD_FRAME=87300 MSX_FULL_RIDE=tour MSX_FULL_FAMILY_FROM=87301 MSX_FULL_FIRST_DUMP=87330 MSX_FULL_LAST=87700 ... idle
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=fall MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=91800 ... fall
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=tour MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=93500 ... tour
+MSX_FULL_LOAD=at_91340 MSX_FULL_LOAD_FRAME=91340 MSX_FULL_RIDE=launch MSX_FULL_FAMILY_FROM=91341 MSX_FULL_FIRST_DUMP=91345 MSX_FULL_LAST=92000 ... launch
+A="--range 966f0-97e08 --range 3b4e0-3bb00 --range 3523c-352ff --range 1b6a0-1b6a0 --range ae1dc-ae220 --range ad884-ad9e6 --range 94ff8-9503c \
+  --range 1e4f0-1ec20 --range 1d31c-1d6e4 --range 1c6ee-1ca9a --attacks --ram 10c608-10c650 --ram 10c2e8-10c2f0 --ram 10e9ec-10e9f8 \
+  --ram 10f084-10f086 --ram 10c300-10c302 --ram 10f000-10f002 --ram 10c718-10c72e --ram 1014c4-101634 --ram 10000e-100010 --ram 10c7b6-10d7b6"
+python3 tools/extract_family_fixture.py CAP/<captura>/boss-trace.txt --output data/slug<captura>_fixture.json.gz $A
+```
+
+**Pruebas de familia** (`make check`; `SLUGNOID_ARGS`, y `--resume` en las
+que empiezan en un estado: los nodos vivos antes de la traza parten de sus
+bytes, su creador, su programa y sus punteros de nodo, como `--m2boss`):
+
+| Familia | Nodos | Actualizaciones (fotogramas) | Contenido |
+| --- | ---: | ---: | --- |
+| `slugidle` | 5 | 929 (87328..87699) | constructor, torretas, piloto, marcador «IN», espera |
+| `slugfall` | 7 | 705 (91342..91686) | subida, marcha, caída de la repisa, aterrizajes con polvo, hundido, destrucción con jinete (`09756A`) |
+| `slugtour` | 48 | 5020 (91342..93498) | marcha con ráfagas y la palanca arriba, 4 saltos con llamas, 7 cañonazos, agachado y salida abajo+B, espera sin jinete, segunda subida y saltos |
+| `sluglaunch` | 30 | 1278 (91342..91815) | agachado con cañón, vuelta, A+B, vuelo y voladura, obús en el suelo → bomba de tipo 3 y sus llamas |
+
+Todas iguales bit a bit.
+
+**Sprites.** `export_rest_sprites.py` con las raíces nuevas (tablas
+`096418`/`09649C`, polvo, llamas, destello, `22F704`) y paletas `0x88D`,
+`0x2`, `0x2D`, `0x3`, `0xD1`, `0x891`, `0x8`, `0x9` (`filesystem/mission2/
+rest-native.json`, 6780 descriptores, 177 nuevos; del piloto solo la tabla
+de Marco `09649C[0]`, el único personaje del port: los otros paran
+explícitamente en `ga_anim_start`). El paquete de la Misión 2 pasa a 351
+fragmentos (`SCENE_MISSION_CHUNKS_MAX` = 368): 239 volcados, 323663
+píxeles iguales, **4047 distintos en 7 volcados**, todos en saltos (91815..
+92655; sin explicar: en esos volcados se ven balas vulcan `01B6A0`, que no
+son de la familia, delante del andador). Faltan las paletas `0x873`
+(llamas de tipo 3: ningún volcado las tiene asignadas), `0x6`, `0x7`,
+`0xA..0xC` (lista `097E88` de la muerte en espera, sin captura), `0x377`
+y `0x4`/`0x5` (pilotos 2..4).
+
+**Ares** (`mslugx-m2-reference.z64`, `test_mission2_ares.py --stage-seconds
+800`, Xvfb `:88`): PASS hasta la Misión 3, crash=0; `MSX script spawn record
+2d9bea constructor 09692c native 1 camera 3395` y el andador dibujado en su
+repisa (x 392) como en `run4` 87600; `CACHE slots=209` (suelo 208),
+`mission2.pack` de 351 fragmentos cargado. No se montó en ares (el piloto
+automático no sube a esa repisa).
+
+**Daño montado (B69, familia `slughit`)**: el TAS no recibe ningún golpe en ningún
+vehículo (`tas_updates.lua` con `MSX_TAS_SLOT_TAP=1`: salud de la ranura siempre 0x30),
+y en la M2 el andador quieto en su repisa (`u5340`/`u5460`, planes `still`/`pace`/`dmg`)
+no recibe disparos (o cae por debajo de la pantalla). En la M5 sí: estado del TAS
+`u17460` (fotograma 38007), `capture_fullgame.lua` con `MSX_FULL_RIDE=still` (sin
+ninguna entrada una vez montado), `MSX_FULL_VEHICLE_CHEAT=0`, `MSX_FULL_SLOT_TAP=1`,
+raíces `96a60,96c3a,3b57c,97886,3527e,3533a,96b32,96b62,96c22`, rango `966f0-97e08`,
+`FROM=38008 LAST=39845`: montado en 38131, golpes en 39039 (0x30 → 0x20, `09737E` →
+`097396`) y 39331 (0x10), el tercero con salud 0 en 39503 (`0973E2` → `097414`, marca
+`03533A`/`03536C`, `09756A` en 39669). Extracción con el `A` de arriba más `--range
+3533a-3539f`. El piloto es el personaje 1 del TAS (programa `29E122`): los programas de
+las tablas `09649C[1..3]` entran en `soldier_programs.json` (posiciones de las de Marco;
+grupo `m5`: fuera de la imagen de la consola por el presupuesto de RAM —con ellos la
+caché de escena quedaba en 3331 KB, suelo 3332—; sus sprites siguen sin exportar, así que
+montar el Slugnoid con Eri, Tarma o Fio en la M2 sigue en parada explícita). `slughit`: 6 nodos, 2988 actualizaciones 38008..39670
+iguales bit a bit (`make check`).
+
+**No capturado** (traducido de la ROM, sin prueba): la reacción en el aire
+`097308`, `0977DC` (torreta perdida), la caída por debajo de la pantalla en espera,
+la lista de muerte `097EDE`, el doble salto `096F7A`, `096EA6`, el empuje
+del tipo 1 (`+93` = 1, Misión 5). `0973E2` ya traducido (B50, probado en `slughit`); el TRAP #F de `097EDE`/`097F52`. Sonidos: `1092`, `1090`, `1084`, `1034`,
+`10E9`, `10F2` ya están en la política; `116C` (bomba de tipo 3) y `1089`
+(torreta perdida) no están renderizados (se cuentan como `unmapped`).
+Memoria: con el código y los programas del Slugnoid la referencia de la M2
+quedaba 26 KB por debajo del suelo de la caché (3306 de 3332 KB); sin las
+tablas de los otros pilotos, 14 KB; `10E9` (37 KB, salida A+B del SV-001 y
+muerte con jinete) se lee ahora de `rom:/`: 209 ranuras (suelo 208).

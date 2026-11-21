@@ -26,8 +26,9 @@ enum { MARCO_WEAPON_BLOCK=0x14, MARCO_WEAPON_IDS=16 };
 typedef struct { uint8_t b[MARCO_WEAPON_BLOCK]; } marco_weapons_t;
 /* The player actor fields the block's routines read or write: exists
  * (0040AC carry), +93 current form, +94 requested form (FF none), +95 shot
- * counter, +5F bit 7 dead. */
-typedef struct { bool exists,dead; uint8_t form93,form94,combo95; } marco_weapon_player_t;
+ * counter, +5F bit 7 dead, +9A bit 4 food eaten (0C0BF4 sets it; in form 2
+ * 0C3A30 clears it and plays the weapon table C0528). */
+typedef struct { bool exists,dead; uint8_t form93,form94,combo95; bool ate9a; } marco_weapon_player_t;
 typedef enum { MW_REFUSED, MW_ACCEPTED, MW_STOP } marco_weapon_result_t;
 extern const uint8_t marco_weapon_cap[MARCO_WEAPON_IDS],marco_weapon_form[MARCO_WEAPON_IDS];
 extern const uint16_t marco_weapon_rounds[MARCO_WEAPON_IDS],marco_weapon_refill[MARCO_WEAPON_IDS],marco_weapon_sound[MARCO_WEAPON_IDS];
@@ -46,6 +47,13 @@ bool marco_weapons_grant(marco_weapons_t*,unsigned p,uint8_t id,marco_weapon_pla
  * routine 0C0764 (not translated): MW_STOP. *sound gets 1124. */
 marco_weapon_result_t marco_weapons_bombs(marco_weapons_t*,unsigned p,uint8_t count,const marco_weapon_player_t*,
     uint8_t *slot,uint16_t *sound);
+/* 0C0A7C: bomb type `type` (08B5FA: 2, the molotov) with 10 bombs. Types
+ * >= 4 are refused; 0C0B32 gives the bombs (*sound 1124); the same type
+ * again is refused (the item then gives points), otherwise the type is set
+ * and *voice gets 0C0A66[type] (1156 for 2). Types 1/2 never go to a
+ * vehicle (0AA898 with D2 = 1/2); a kind-4 vehicle reads 0C0764: MW_STOP. */
+marco_weapon_result_t marco_weapons_bomb_type(marco_weapons_t*,unsigned p,uint8_t type,const marco_weapon_player_t*,
+    uint8_t *slot,uint16_t *sound,uint16_t *voice);
 /* 0C2FA4..0C2FC6: the dead player gone (after 019028): no grenade in flight,
  * id 0, no bombs, ammunition 0 (0C337A then gives the pistol). */
 void marco_weapons_death(marco_weapons_t*,unsigned p);

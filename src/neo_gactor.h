@@ -57,25 +57,50 @@ typedef struct neo_genv neo_genv_t;
  * the +54 multiplier, +5F bits 7 and 6 clear), as 01B162 reads it: +3C/+40
  * words and the first rectangle of its +50 descriptor (`box` false: +50 is
  * 0). */
-typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y_low,x_low; } neo_ga_target_t;   /* +42 / +3E: the low words the rocket 06381C reads */
+typedef struct { bool valid; uint16_t x,y; bool box; int16_t rect[4]; uint16_t y_low,x_low; uint32_t tag; } neo_ga_target_t;   /* +42 / +3E: the low words the rocket 06381C reads; tag: the node itself (A0 / A1), for e->node */
 /* RAM bytes shared by the Mission 1 building actors and the mission. */
 typedef struct neo_ga_flags {
     uint8_t dome_signal,dome_group;  /* RAM 10C44E/10C44F (spawn-table entry 05486A) */
     uint8_t player_lock;             /* RAM 10E9E3 (0C8CD6 / 0C8CE6) */
-    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC set to 054B18 (0CA2E0) */
+    uint8_t player_handlers;         /* RAM 10E9F8/10E9FC (0CA2E0): 0 none, 1 = 054B18 (no-op), 2 = 0C0538 (018F92), 3 = 0CA3EC (walk to walk_to[], 0CA340), 5 = 0537E4 (sub.l d7,d7: no input; the Mission 6 mid-boss), 4 = 0BBF0E (sub.w d7,d7: no input, as 054B18; the metro's end 0BBF12) */
+    uint16_t walk_to[2];             /* RAM 10EA00/10EA02: screen X the 0CA3EC handler walks each player to (0CA340) */
+    uint8_t mission_end;             /* RAM 10C300 = FF (018F92: halt; the level script actor 101414 is deleted, 0041D0) */
+    uint8_t end_kind;                /* RAM 10C304 (018F92: +5E of the caller) */
+    uint8_t scroll_lock;             /* RAM 10C00B = FF (0B6EF4) */
+    uint8_t ram400a,wrote400a;       /* RAM 10C00A as the last sweep left it (0128DA: 0; 0143CC: FF), and whether one ran */
+    uint8_t stage_done;              /* 018F40 ran (RAM 10C303 = 0: the flow's 018722 ends the stage) */
+    uint8_t player_guard;            /* 0C09D8 ran: each player's +84 = FFFF, +5F bit 6 set, +9A bit 2 clear */
     uint8_t flash_request;           /* RAM 1067E5 (004C06) */
     uint8_t kill_request;            /* RAM 1067E3 (004BFE), copied to 1067E2 by 00469C */
     uint8_t flash;                   /* RAM 109944 (009BB0: white screen) */
     uint8_t collapsed;               /* 0B58CC ran: the building's map is swapped */
     uint8_t barrel_patched;          /* 0B6882 ran: the destroyed shop's map patch */
+    uint8_t gate_patched;            /* 0B6E06 ran (Mission 2 stage 1): map patches 0B6E4A/0B6E74 (0C70FC) */
+    uint8_t signal358;               /* RAM 10C358 = 1 (03A892; read by 03A75A) */
+    uint16_t limit700;               /* RAM 10C700: x limit of 08A732 (08A654), written by 0BC542/0BC548 (Mission 3 wagon 038D26) */
+    uint8_t platform6bd;             /* RAM 10C6BD: Mission 3 platform 0B9286 locked (read by 0B9400) */
+    uint16_t camera_restart;         /* RAM 10E9D0 (camera 69D0, read by 0B9286) */
+    uint8_t m4[0x40];                /* RAM 10C6C0..10C6FF: the Mission 4 props (neo_m4props.c; 0BA942 resets them) */
     uint16_t rescued[2];             /* RAM 10C5FC/10C600: prisoners rescued per player (09AB38) */
     uint16_t tally[2];               /* RAM 10E9E8/10E9EA: rescues per player (0C8CC2, 099DCC family) */
     uint8_t gifts[2];                /* RAM 10C5FF/10C603: rescues of a +74 = FFFE prisoner (09AAD6) */
     uint8_t special[2];              /* RAM 10C5FE/10C602: rescues of the tied prisoner 099862 (09AB38) */
+    uint8_t m6_signal;               /* RAM 10C44C (Mission 6 mid-boss 05310E: cleared by 052F8A, set by 0530F4) */
+    uint8_t m6_exit;                 /* RAM 10C716 (Mission 6 stage 2: cleared by 0BE8A2, set by the script's 0BE8F6) */
+    uint8_t m6_boss;                 /* RAM 10C448 (Mission 6 stage 3: the last enemy 04153E clears it, its second form's end sets it) */
+    /* Player 2's handler (RAM 10E9FC) when it differs from player 1's (split_handlers): the opening 045428 of the last
+     * enemy walks each player by 0CA386 (6), which clears its own player's handler on arrival, then holds it by 0455E6 (7). */
+    uint8_t handler_p2,split_handlers;
+    /* Handlers 9 = 0CA438 (walk to walk_to[], then 10 = 0CA49C: face walk_face) and 10 (0CA35C; the last enemy's end
+     * 041E9A); RAM 10EA04/10EA05 = FF when the player is to face left at the end (0CA35C's D2 != 0; 0CA49C against +15 bit 0). */
+    uint8_t walk_face[2];
+    uint8_t join_off;                /* RAM 10F003 = 0 (041DD4: no player may join any more) */
+    uint8_t guard_min;               /* 0C09DA's D0 asked this update (each player's +84 raised to it, +5F bit 6 set, +9A bit 2 clear; gameplay.c applies and clears it) */
 } neo_ga_flags_t;
 /* The players' weapon, bomb and score state the item pickups serve
  * (neo_item.c, ROM 08B568..08B9B0); NULL in neo_genv_t: a pickup is an
  * explicit stop. RAM provenance per field. */
+enum { NEO_ITEM_KINDS=0x5a };
 typedef struct neo_pickup_env {
     marco_weapons_t *weapons;            /* RAM 10C718 */
     marco_weapon_player_t *player[2];    /* player actor fields (+93/+94/+95, 0040AC) */
@@ -90,8 +115,14 @@ typedef struct neo_pickup_env {
     uint16_t shot_sound;                 /* RAM 10C33E: frame of the last H sound (01B60E) */
     unsigned bullet_hits,blast_hits;     /* player bullets that hit; grenade explosion rows that hit (0049E8) */
     uint16_t label_count[2];             /* RAM 10C5B2+2p: score labels 08D330 made (08D33C) */
-    unsigned taken,popups,labels;        /* pickups served; score labels 08D330 and
+    unsigned foods[2];uint32_t food_points[2];  /* food pickups (record byte 3) and the last one's value (B42 life bar) */
+    unsigned taken,popups,labels,cures,refuels;        /* pickups served; score labels 08D330 and
                                           * pickup labels 08C752 (both external) */
+    /* Per item kind (+6E < 0x5A, records 0E581A): items constructed with a
+     * native motion, items handed back as external (motion not translated:
+     * not created) and pickups served. Provenance counters (the original
+     * keeps none). */
+    uint16_t item_created[NEO_ITEM_KINDS],item_external[NEO_ITEM_KINDS],item_taken[NEO_ITEM_KINDS];
 } neo_pickup_env_t;
 /* What the player's vehicles (Camel Slug 03458E, SV-001 092A32, their
  * turret 03B4E0) read and write outside their nodes; NULL in neo_genv_t: a
@@ -111,12 +142,64 @@ typedef struct neo_vehicle_env {
     unsigned grenades;               /* grenades 0C0808 made for a rider (counted; the player's code) */
     uint32_t grenade_last;           /* routine of the last one */
 } neo_vehicle_env_t;
+/* RAM the Mission 2 stage-3 boss 026254 reads and writes outside its nodes
+ * (neo_m2boss.c); NULL in neo_genv_t: its tail and 059FA8 stop explicitly. */
+typedef struct neo_m2boss_env {
+    int32_t camera_dy;               /* RAM 10E99A (camera 699A, read) */
+    uint16_t point69ba;              /* RAM 10E9BA (written: 0x1A0, 0x110 while +8F bit 4) */
+    int32_t speed[2];                /* RAM 1013D6/1013DA: mission actor +72/+76 (019388) */
+    int16_t tower_mode;              /* RAM 10C354 (02624C/026230/026244) */
+    uint8_t frame_step;              /* 003B4C: RAM 10008A + 10F009 (byte sum) */
+} neo_m2boss_env_t;
+/* The Mission 3 mid-boss 0A4A94 (neo_m3mid.c): its layer object 10E8C6
+ * (RAM 10E8C6..10E94D: block +0..+25, map +2E, offsets +32/+34, window
+ * +36/+38, column list +3E, column table +42..+81, flags +82/+83) and RAM
+ * 10E959 (0C7BD0); the drawing is the renderer's: `draw` (0C73CE: d0..d5
+ * of 0C714E, the layer's map +2E), `patch` (0A6D7C: 0C714E with the
+ * sub-map) and `clear` (0C702A/0C703C/0C6D04). NULL in neo_genv_t: the
+ * body stops explicitly. */
+#define MSX_HAS_M3MID 1   /* the mid-boss's layer code in the world and the renderer */
+typedef struct neo_m3mid_env {
+    uint8_t *layer;uint8_t flags959;
+    void (*draw)(void *ctx,uint32_t map,const int16_t d[6]);
+    void (*patch)(void *ctx,uint32_t submap,const int16_t d[6]);
+    void (*clear)(void *ctx);
+} neo_m3mid_env_t;
+/* The Mission 4 boss 02267E (neo_m4boss.c): its picture is the layer object
+ * 10D7B6 (RAM 10D7B6..10D83D: the map 02225E, its patches by 0C714E), moved
+ * by RAM 10E94E/10E952 while 10E957 (0C7BD0) is 3; RAM 10E9B8 (0xE0 at the
+ * end); `anim_speed` is 002802 (D0 frames per step, neo_lspc.h). NULL in
+ * neo_genv_t: the body stops explicitly. */
+typedef struct neo_m4boss_env {
+    uint8_t *layer;uint8_t owner;int32_t speed[2];uint16_t point69b8;
+    void (*draw)(void *ctx,uint32_t map,const int16_t d[6]);
+    void (*patch)(void *ctx,uint32_t submap,const int16_t d[6]);
+    void (*clear)(void *ctx);
+    void (*anim_speed)(void *ctx,uint16_t frames);
+} neo_m4boss_env_t;
+/* The Mission 6 stage 1 hanging bridge's actors 0BD18E / 0BD2BA / 0BD2CE and
+ * its spans 0BCFA4..0BD004 (neo_m6props.c): the bridge layer 10D7B6 as the
+ * update reads it (+0 x, +32 column origin, +36 local column) and RAM
+ * 10C70C..10C714 (ram[0] = 10C70C: the creators' lock bytes 10C70C /
+ * 10C70D, the previous x 10C70E, the swing bytes 10C712..10C714). NULL in
+ * neo_genv_t: an explicit stop. */
+typedef struct neo_m6bridge_env {
+    int32_t x;int16_t origin,o36;uint8_t *ram;
+} neo_m6bridge_env_t;
 struct neo_genv {
     neo_kscene_t *kernel;uint8_t epoch;neo_rng_t *rng;
     neo_control_frame_t players;     /* P1/P2 projected words, mask, mode, rank */
+    uint8_t player_flags15[2];       /* the players' +15 (RAM 1014D9 / 101589): bit 6 on the ground (01AF1A) */
     neo_cull_bounds_t bounds;        /* RAM 10C2F0 scene descriptor */
     uint16_t video;                  /* RAM 10000E */
+    uint16_t ref69b8;                /* RAM 10E9B8: the script's player reference x (op 10, 01A30C; read by 098678) */
     uint16_t camera;                 /* RAM 10E99E */
+    uint16_t camera_y;               /* RAM 10E992 (read by the Mission 6 mid-boss 05310E at its end) */
+    uint16_t camera_low;             /* RAM 10E9A0 (low word of the progress long, 0C7B26) */
+    uint32_t camera_stop;            /* RAM 10E9BC (0C7B26; FFFFFFFF: no stop. The world must fill it: 0 keeps the GO arrow idle) */
+    uint8_t *arrow;                  /* RAM 10C44A: GO arrow direction (0529C0, 05287C) */
+    uint16_t player_low[2];          /* RAM 101502/1015B2: the players' +3E (low word of the X long; 0613CA's long compares) */
+    uint16_t player_ylow[2];         /* RAM 101506/1015B6: the players' +42 (low word of the Y long; 085FE4) */
     int32_t scroll_x,scroll_y;       /* RAM 10E97C/10E980 */
     uint16_t *grid;                  /* delay grid RAM 1067E6 */
     void *ctx;
@@ -127,6 +210,13 @@ struct neo_genv {
     /* ROM 0040BC (after the creator) or 00411C with the script actor as
      * creator (`after_script`). Returns NULL when the pool is exhausted. */
     neo_gactor_t *(*spawn)(void *ctx,neo_gactor_t *creator,uint32_t routine,bool after_script);
+    /* ROM 0040BC with its reserve D0: no node unless more than `reserve`
+     * nodes are free (RAM 1063D8). NULL: `spawn` (the reserve is ignored). */
+    neo_gactor_t *(*spawn_reserve)(void *ctx,neo_gactor_t *creator,uint32_t routine,uint16_t reserve);
+    /* ROM 009EA8 leaves in D0.w the hardware palette slot it gave (the
+     * byte it stores at +19+n); the bomb 01C362 adds D0/D1 to its speed
+     * after the call. The allocator is not modelled: NULL reads 0. */
+    uint8_t (*palette_slot)(void *ctx,neo_gactor_t *a,unsigned n);
     /* Soldier spawned by an actor (spawn-table entry 0AF17E style). */
     void (*sound)(void *ctx,uint16_t id);
     /* ROM 0049E8: attack row against the registered hurtboxes of the given
@@ -139,6 +229,15 @@ struct neo_genv {
      * 32..47). */
     bool want_targets;
     neo_ga_target_t target[2];
+    /* The (class, damage) pair of the row the attack callback is called for (0: the first; ga_attack calls it once
+     * per pair of a row with several, 004B06). */
+    uint8_t attack_pair;
+    /* The node behind a target's tag or a player's node address (1014C4 /
+     * 101574), as the fields the original reads of another node: +00 (0040AC:
+     * 3F1E once deleted), +3C..+43, +5E, +5F. NULL: the tag is unknown. The
+     * fighting prisoner 0DDCDA keeps the node 0049E8 gave it in +6E and its
+     * shot 0DE0FE homes on it. */
+    const uint8_t *(*node)(void *ctx,uint32_t tag);
     /* ROM 004C24: register this actor's hurtbox descriptor (+50). */
     void (*register_box)(void *ctx,neo_gactor_t *a);
     /* ROM 0140C0 / 013F1E: attach or release the actor's dynamic collision
@@ -159,6 +258,14 @@ struct neo_genv {
     neo_gactor_t *(*previous)(void *ctx,neo_gactor_t *a);
     /* ROM 0C88B0: wreck template stamped into the static collision grid. */
     void (*stamp)(void *ctx,neo_gactor_t *a,uint32_t template_address);
+    /* ROM 0C8A3C (A0 = 10C72E): the template's cells written over the
+     * ring at the cell (+28 word >> 3, +2C word >> 3), no mask and no
+     * window (0BC38E, the Mission 5 sewer gates 0BC3A6). */
+    void (*stamp_cells)(void *ctx,neo_gactor_t *a,uint32_t template_address);
+    /* ROM 0C70FC: copy the sub-map at ROM `submap` (+0 tiles, +4 collision,
+     * +8 column pairs, +A blocks) into layer `layer` at block column d4,
+     * block row d5 (d0/d1 source offsets, d2/d3 counts). */
+    void (*map_patch)(void *ctx,uint32_t layer,uint32_t submap,const int16_t d[6]);
     uint16_t view[4];                /* RAM 10E9D2..10E9D8 (visible rectangle) */
     uint16_t pickup_box[8];          /* RAM 10C5EC/10C5F4: item pickup boxes (x,y,w,h) of players 1/2 */
     /* ROM 040110: object-list entry (scene-root-relative position). */
@@ -167,12 +274,17 @@ struct neo_genv {
     /* Object list read this update (RAM 10C3A2/10C3F4 by 10000F bit 0:
      * the one written during the previous update), for 040200/0402E6. */
     const neo_marker_t *markers;unsigned marker_count;
-    uint8_t flag448;                 /* RAM 10E448 */
+    uint8_t flag448;                 /* RAM 10C448 (a5 + 4448) as the truck reads it */
     bool blood;                      /* RAM 10FD8F nonzero (soft-DIP BLOOD ON): 01B2BE clears the carry */
     const uint8_t *groups;           /* RAM 10C326..10C32E live counts (019DCA) */
     uint8_t *flag606;                /* RAM 10C606 (toggled by 0A8C46, read by the boss) */
     /* An original actor this world does not create (counted, provenance). */
     void (*external)(void *ctx,uint32_t constructor);
+    /* 009CCE on the palette slot +14 of `owner`: +C = target, +E = weight
+     * (the slot's colours: tools/palette_mix.py, neo_palmix.h). */
+    void (*palette_mix)(void *ctx,neo_gactor_t *owner,uint16_t target,uint8_t weight);
+    /* 009CCE on a fixed hardware palette slot (no owner): +C = target, +E = weight. */
+    void (*slot_mix)(void *ctx,uint8_t slot,uint16_t target,uint8_t weight);
     /* Mission flags outside the actor list (domed building 054904). */
     struct neo_ga_flags *flags;
     /* Layer object of the static collision terrain: 10C72E in the village,
@@ -182,6 +294,7 @@ struct neo_genv {
     bool clear_shots;                /* RAM 1067E4 (copy of 1067E5 by 0046E0): 004C0E carry, enemy shots vanish */
     void (*camera_mode)(void *ctx,uint8_t mode);       /* 0C7B48: RAM 10E95A */
     void (*camera_rise)(void *ctx,int32_t vy);         /* RAM 10E960 (autoscroll vy) */
+    void (*camera_push)(void *ctx,int32_t vx);         /* RAM 10E95C (autoscroll vx) */
     void (*shake)(void *ctx);                          /* 0C801A */
     bool (*map_swap)(void *ctx);                       /* 0B595A: carry when inserted */
     bool (*front_layer)(void *ctx);                    /* 012022: RAM 10B954 < 10B95C */
@@ -191,16 +304,44 @@ struct neo_genv {
      * for actor `a` (the interpreter of the world, freed with the actor);
      * true once op 3 ran. */
     bool (*subscript)(void *ctx,neo_gactor_t *a,uint32_t record);
+    /* The ending's actors (src/neo_ending.c): the end list they run in (NULL in the world: the credits' pages and
+     * pictures) and the RAM of the original they read and write (NULL: explicit stop). */
+    struct neo_end *end_list;struct neo_end_ram *end_ram;
     neo_pickup_env_t *pickup;
     neo_vehicle_env_t *vehicle;
+    neo_m2boss_env_t *m2boss;
+    neo_m3mid_env_t *m3mid;
+    neo_m4boss_env_t *m4boss;
+    neo_m6bridge_env_t *m6bridge;
+    void (*shake_pulse)(void *ctx);  /* 0C8022 (RAM 10E9C8/10E9CC) */
+    /* RAM 698E / 6992: the camera position (as read) and its store by an actor (the glide 04445A, neo_camera_place_x/y). */
+    int32_t camera_xy[2];
+    void (*camera_place)(void *ctx,unsigned axis,int32_t v);
+    void (*mission_speed)(void *ctx,int32_t v);   /* 019388: the mission actor's +72 / +76 (RAM 1013D6 / 1013DA; -1: A0000) */
+    /* RAM 10C340..10C34F: the players' beam blocks of weapons 06/0B (P1 at
+     * +0, P2 at +8: point +0/+2, direction +4, life +5, alive +6, sound +7;
+     * 01E13A/01E166/01E19E, neo_pweapon.c); NULL: the beam stops explicitly. */
+    uint8_t *laser;
     /* Low word of the node's address as the slot services keep it (slot
      * +00, 0AA760; a turret's +0E): a nonzero id per node (NULL: 8000|index). */
     uint16_t (*node_word)(void *ctx,const neo_gactor_t *a);
+    /* JMP 0B05FE / 0B0626 / 0B0632 from a generic node: the node becomes a
+     * native soldier after this update (the world moves the record); false
+     * when the world has no soldier slot (NULL: explicit stop). */
+    bool (*become_soldier)(void *ctx,neo_gactor_t *a,uint32_t entry);
+    /* A program's SPAWN_THROW (03BB8E / 03BBBC / 03BBEA) on a generic node:
+     * the thrown object (neo_throw) after the script actor, as the soldiers'
+     * NEO_SOLDIER_EVENT_THROW; false when the world has no slot (NULL:
+     * explicit stop). */
+    bool (*spawn_throw)(void *ctx,neo_gactor_t *a,uint32_t routine);
     unsigned unsupported;uint32_t unsupported_at;
 };
 typedef enum { GA_MORE, GA_DELETE, GA_DELETE_TREE, GA_UNSUPPORTED } ga_result_t;
 /* ROM rom data imported by tools/extract_region_rom.py. */
 const uint8_t *ga_rom(uint32_t address);
+const uint8_t *ga_rom_dyn_map(uint32_t address);   /* the whole cell map of 0140C0 or NULL (neo_region.c) */
+/* A lookup tried after the program's ROM blobs (the stage pack's ROM data). */
+void ga_rom_set_extra(const uint8_t *(*lookup)(uint32_t address));
 /* Dispatch one update of a generic actor by its routine label. */
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e);
 bool neo_region_routine(uint32_t routine);
@@ -209,10 +350,15 @@ neo_contact_actor_t ga_contact(const neo_gactor_t *a);
 void ga_set_contact(neo_gactor_t *a,const neo_contact_actor_t *c);
 bool ga_parent(neo_genv_t *e,uint32_t tag,neo_contact_parent_t *out);
 void ga_project(neo_gactor_t *a,neo_genv_t *e);                 /* 01ABC8 */
+/* 021288 (neo_heli.c): the path program +A0 (heading +AA, speed +A8, segment progress +A4); op 8 runs `call` (false:
+ * stop, as unsupported; NULL: op 8 is an explicit stop). True (carry): the path ended. */
+bool neo_path(neo_gactor_t *a,neo_genv_t *e,bool (*call)(neo_gactor_t *a,neo_genv_t *e,uint32_t routine));
 void ga_place(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy,uint32_t parent); /* 01AB98 */
 void ga_place_from(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01B220 */
 void ga_move(neo_gactor_t *a,neo_genv_t *e);                    /* 01AC38 */
+void ga_to_root(neo_gactor_t *a,neo_genv_t *e);                 /* 01AC4C to 10E968 (A0 = +38) */
 uint16_t ga_air(neo_gactor_t *a,neo_genv_t *e);                 /* 0143E4 */
+uint16_t ga_air_400a(neo_gactor_t *a,neo_genv_t *e);            /* 0143CC (RAM 10C00A = FF) */
 uint16_t ga_air_kind(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 0143E4, D7 out */
 uint16_t ga_air_d4(neo_gactor_t *a,neo_genv_t *e,uint16_t *d4); /* 0143E4, and D4.w at its return (the sweep's 13968) */
 uint16_t ga_ground(neo_gactor_t *a,neo_genv_t *e,uint32_t *kind); /* 01456A */
@@ -224,12 +370,17 @@ void ga_stationary(neo_gactor_t *a,neo_genv_t *e);              /* 01436A */
 void ga_floor(neo_gactor_t *a,neo_genv_t *e);                   /* 0146E8 */
 bool ga_probe_forward(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 014850: carry */
 bool ga_probe_vertical(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 01495C: carry */
+uint16_t ga_probe_vertical_d6(neo_gactor_t *a,neo_genv_t *e,int16_t distance); /* 01495C: D6 */
+uint16_t ga_probe_vertical_d6_d1(neo_gactor_t *a,neo_genv_t *e,int16_t distance,uint32_t *d1); /* 01495C: D6, and D1 */
 bool ga_anim_start(neo_gactor_t *a,neo_genv_t *e,uint32_t tag,uint16_t speed); /* 004256 */
 /* 00427A. `call` handles family callbacks (NEO_ANIM_CALL / events); returns
  * 1 complete, 0 more, -1 unsupported. */
 typedef bool (*ga_call_t)(neo_gactor_t *a,neo_genv_t *e,neo_anim_kind_t kind,uint32_t routine,uint16_t parameter);
 int ga_anim_step(neo_gactor_t *a,neo_genv_t *e,ga_call_t call);
 void ga_palette(neo_gactor_t *a,uint16_t resource);           /* 009EA8 (slot = +1D++) */
+/* 011FF6 with D0 = 0: the descriptor drawn at the actor's projected words
+ * (+3C/+40 less the +4D correction bits), attribute +14/+15, depth +1E. */
+void ga_draw(neo_gactor_t *a,neo_genv_t *e,uint32_t descriptor);
 void ga_flash_palette(neo_gactor_t *a,uint16_t resource);     /* 004520 */
 uint8_t ga_attack(neo_gactor_t *a,neo_genv_t *e,uint32_t row); /* 0049E8 */
 /* 0049E8 with its A0/A1 results in e->target[0]/[1] (cleared first). */
@@ -237,7 +388,7 @@ uint8_t ga_attack_targets(neo_gactor_t *a,neo_genv_t *e,uint32_t row);
 bool ga_register(neo_gactor_t *a,neo_genv_t *e,int16_t *dx,int16_t *dy); /* 004C24: carry */
 bool ga_players_in(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 01AFFC: carry when none */
 bool ga_outside_view(neo_gactor_t *a,neo_genv_t *e,uint32_t rect); /* 0C8BEC */
-uint16_t ga_rank_word(const neo_gactor_t *a,const neo_genv_t *e,const uint8_t *table); /* 0260C8 */
+uint16_t ga_rank_word(const neo_gactor_t *a,neo_genv_t *e,const uint8_t *table); /* 0260C8 (a type-2 table takes a random number) */
 void ga_fail(neo_genv_t *e,uint32_t at);
 /* The kernel object of a parent tag (0xFF: an actor's block) and back, and
  * the self exclusion of the actor running a query (01424C). */
@@ -257,10 +408,24 @@ int16_t ga_cosine(uint8_t angle);                                 /* table ROM 0
 void ga_polar(uint32_t speed,uint8_t angle,uint32_t *vx,uint32_t *vy); /* 002E7C */
 neo_gactor_t *ga_spawn_from(neo_gactor_t *a,neo_genv_t *e,uint32_t routine,int16_t dx,int16_t dy); /* 0040BC + 01B220 */
 void ga_place_at(neo_gactor_t *child,const neo_gactor_t *source,neo_genv_t *e,int16_t dx,int16_t dy); /* 01ACF2 */
+/* 01ACF2 from a source's +3C/+40 (projected) and +44/+48 (previous) words. */
+void ga_place_at_words(neo_gactor_t *child,neo_genv_t *e,uint32_t x3c,uint32_t y40,uint32_t x44,uint32_t y48,int16_t dx,int16_t dy);
 bool ga_creator_alive(neo_gactor_t *a,neo_genv_t *e);             /* 00409A carry */
 int ga_marker_cross(neo_gactor_t *a,neo_genv_t *e,uint8_t *flag);  /* 040200: marker id or -1 */
 int16_t ga_marker_follow(neo_gactor_t *a,neo_genv_t *e,uint8_t id); /* 0402E6 */
 void ga_sweep_place(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy); /* 014A02 */
 /* 014A02 with its D0 (0: 10C008 = FF) and the result D6 & 15. */
 uint16_t ga_sweep_place_d0(neo_gactor_t *a,neo_genv_t *e,neo_gactor_t *child,int16_t dx,int16_t dy,uint8_t d0);
+/* 014906: the sweep from the actor's block by (dx,dy) pixels (10C004 = 0,
+ * 10C008 = FF unless +15 bit 5, 10C009 = 0), nothing written back; the D6
+ * of 013968 (bit 1: the carry). */
+uint16_t ga_sweep_probe(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
+/* 0149CA: carry when a solid cell lies under the block + (dx,dy) (013D5E,
+ * 10C008 = FF unless +15 bit 5). */
+bool ga_probe_point(neo_gactor_t *a,neo_genv_t *e,int16_t dx,int16_t dy);
+/* 01495C with its D0: carry (true) with the vertical distance in pixels to the
+ * surface met (the absolute y after the sweep less the one before). */
+bool ga_probe_vertical_dy(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy);
+/* The same with 013968's D7 (group << 16 | angle word) in *kind. */
+bool ga_probe_vertical_kind(neo_gactor_t *a,neo_genv_t *e,int16_t distance,int16_t *dy,uint32_t *kind);
 #endif

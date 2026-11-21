@@ -137,7 +137,9 @@ llamada `0x0A9EDA` pone `+60` bit 0; con `+93 = 1`, `0x0A8F12` invierte
 actualización (`0x01A02C`) pone `+60` bit 7 del espadachín. Traducido como
 actor genérico en `src/neo_rest.c` (constructor, entrada, espera, giro hacia
 el jugador más cercano `0x01AF9A`, gesto, bucle, retirada `0x0A9A56`) con el
-subguion; la salida `0x0A8FE0` (cuando el grupo 6 llega a 0) y la rama `+93 =
+subguion; la salida `0x0A8FE0` (cuando el grupo 6 llega a 0) con `+72 ≠ 0`
+es la rendición con bandera blanca `0x0A9010`, nativa desde B46
+(JEFE_MISION1.md, «Fin del combate»); su muerte `0x0A93DC` y la rama `+93 =
 0` (espadachines del mercado `0x0A8C62/84`) se detienen explícitamente.
 `10C606` vale `0xFF` al aparecer el jefe en los dos combates grabados.
 
@@ -344,7 +346,7 @@ MSX_REST_FAMILY_ROOTS=a8c46 MSX_REST_BOSS_FROM=10550 MSX_REST_LAST=11200 MSX_RES
   tools/run_capture_rest.sh /ruta/robe1
 python3 tools/extract_rest_family.py /ruta/robe1/boss-trace.txt --root a8c46 --output data/robe_fixture.json.gz
 python3 tools/extract_soldier_ai_tables.py /ruta/captures-soldiers/entry-walk3 --output data/soldier_ai_tables.json
-python3 tools/extract_soldier_programs.py /ruta/captures-soldiers/walk3 --output data/soldier_programs.json
+python3 tools/extract_soldier_programs.py /home/user/captures-audit/j/k8d1 --output data/soldier_programs.json   # banco P2 sha256 7839d20a565bba2108a64e3840df08dc13c672cf9ebf5144429035fb92caa2bc (walk3, borrada el 19-XI, tenía el mismo)
 python3 tools/extract_region_rom.py /ruta/captures-soldiers/walk3 --output data/region_rom.json
 cd tools && python3 export_rest_sprites.py /ruta/mslugx.zip /ruta/robe1 && cd ..   # solo el espadachín; la exportación completa, abajo
 make check-core && make check && make -j4 && make mslugx-reference.z64
@@ -565,7 +567,7 @@ exacta.
   traducido sin captura (falta una captura en la que dispare para
   verificarlo); `0x08F1A0` sigue como parada explícita.
 - Bytes heredados de nodos reutilizados del jefe (se usa 0), orden de lista
-  del jefe como bloque, salida del espadachín (`0x0A8FE0`).
+  del jefe como bloque, muerte del espadachín rendido (`0x0A93DC`).
 - Presupuesto de 4 MiB en la arena del jefe (37–38 chunks de 32).
 - El jugador no usa plataformas dinámicas ni se sube al jefe.
 - Rendimiento del combate con el jefe (ver RENDIMIENTO.md, «Picos del combate con el jefe»).

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
+#include "neo_lspc.h"
 #include "neo_vehicle.h"
 #include "neo_world.h"
 #include "neo_hud.h"
@@ -10,21 +11,25 @@
 #include "neo_continue.h"
 #include "neo_landing.h"
 #include "neo_fade.h"
+#include "neo_mission.h"
 #include "marco_hgun.h"
+#include "marco_thinfire.h"
 #include "marco_legs.h"
 #include "marco_death.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
 // 2212 for 1920); MSX_REGION_END_X is the end of the village region.
-enum { MSX_BULLETS=8, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 };
+/* MSX_BULLETS: the pistol's bullets (01B782). The arcade has no cap of its
+ * own for them (0C0D64: 10C71C = FF for id 0, table 0C08A8): only its object
+ * pool. One press per 4 ticks and 6 px per tick leave up to 10 on screen
+ * (~200 px to the edge + 32), so 8 refused shots the original fires. */
+enum { MSX_END_MEM=0x1c5 };   /* the ending's RAM (gameplay.c end_mem_range) */
+enum { MSX_BULLETS=16, MSX_ENEMY_BULLETS=4, MSX_UNIT=65536, MSX_WORLD_WIDTH=3840 };
 // Historical observed prototype start; cinematic handoff supplies its own measured position.
 enum { MSX_START_X=0x78bad9, MSX_REGION_END_X=2212*MSX_UNIT-1, MSX_END_X=MSX_WORLD_WIDTH*MSX_UNIT-1 };
 /* up: fired with up held (moves up, original pistol attack row 4). */
 /* kind: weapon id that fired it (RAM 10C71E); 0 = pistol. */
-#ifndef MSX_HUD_TIMER_DIP
-#define MSX_HUD_TIMER_DIP 0   /* RAM 10FD8C (003586 index): 60 */
-#endif
 typedef struct { int x,y,direction; bool active,up; uint8_t kind; } msx_bullet_t;
 /* Screen/world mapping of the native region world: the original scene is
  * at (-camera, 256); its projected y word is 256 + original y (y up), and the
@@ -41,6 +46,19 @@ typedef struct {
      * 2, results); `complete` follows step 2 and stops the simulation. */
     bool mission_complete;
     unsigned ticks,air_ticks,shot_age,cooldown,hits,health,invulnerable,kills,deaths;
+    /* Form 3, the mummy (+93 = 3): updates left in the transformation
+     * 0C17A0..0C182A, the protection +84 after it, the takeoff wait of
+     * 0C1A0C; breaths taken (kind 0x10) and cures (the medicine 08B750). */
+    unsigned mummy_transform,mummy_guard,mummy_takeoff,mummy_breaths,mummy_cures;
+    unsigned guard_requests;   /* 0C09DA applied (neo_ga_flags_t guard_min) */
+    unsigned fat_transform,fat_starts,fat_stops,fat_shots;   /* form 2: 0C1D70..0C1DA8 updates left; transformations; thin-back 0C1D82 (not captured) */
+    /* Optional non-arcade "Barra de vida" (docs/PORT_STATUS.md, B42): chosen
+     * at SOLDIER SELECT (msx_lifebar_request); off = the arcade (one hit
+     * kills) with every lifebar path skipped. life_hits 0..10 (10 per new
+     * life), food_seen = world.pickup.foods already turned into hits. */
+    bool lifebar;uint8_t life_hits;unsigned food_seen,lifebar_absorbed,lifebar_refills;
+    bool mummy_smoke;   /* the transformation's smoke C4DD8 started */
+    unsigned mummy_landing;   /* updates left in the landing 0C1AC8 (no walking) */
     bool grounded,jump_was_down,jump_pending,moving,shooting,complete;
     bool aim_up;   /* input: up held (set by the caller before msx_game_update) */
     bool crouch;   /* input: down held; grounded = crouched in place (the original
@@ -70,8 +88,24 @@ typedef struct {
      * from and back to the world); end_fire_was/end_jump_was: A and B held
      * at the previous update (new presses 10C35D). */
     neo_end_t end;uint8_t best_mission;
-    bool start_letters;unsigned start_stops;   /* MISSION 1 START 0607DE in end (descent) */
+    /* Stage flow of the mission actor (neo_mission.c): Mission 1 stage
+     * 016DCE until 01891E selects the next mission. */
+    neo_mission_t flow;
+    bool start_letters;unsigned start_stops;   /* MISSION n START 0607DE in end (descent, 01860A) */
+    unsigned start_voices;                     /* its voice 607D2[mission] requested without a render (msx_sfx_lookup) */
     neo_end_ram_t end_ram;bool end_fire_was,end_jump_was;
+    /* The game's ending after Mission 6 (gameplay.c "The game's ending"): the results 0570A0 (mission_end
+     * MSX_END_RESULTS), the credits' stage 0x2C of mission 0xC (credits: the mission actor's 018AC0.. in
+     * credits_phase / credits_timer), the last screen's line 01959C, the ranking 057E00 and the title 0A7FFE of the
+     * core actor (016D18.., 0166AA..). ending_scene: the screen the ending's environment resets asked for (the
+     * renderer's background, MSX_ENDING_SCENE_*); ending_done: the title ended (0167A0: the attract demo, not ported:
+     * actor.c goes back to the port's title). end_mem: the RAM of the original the ending's actors read and write
+     * (end_ram.rd / wr: the ranges of end_mem_range), end_mem_stray: accesses outside them (read as 0, counted). */
+    bool credits;uint8_t credits_phase,ending_scene;bool ending_done;uint16_t credits_timer;
+    unsigned credits_mark;           /* the update (ticks >> 1) of the last credits_phase change */
+    uint8_t end_mem[MSX_END_MEM];unsigned end_mem_stray;uint32_t end_mem_stray_at;
+    uint16_t ending_audio_command;   /* 0A453A's 01228C word (0: none), taken by the audio layer */
+    bool end_rand_negative;          /* the N flag of the ending's last 0029C6 (the ring word of 0029EE) */
     /* The big CONTINUE? and digit: the mission actor's program 018120
      * (neo_continue.c), started at the mission start (01868A). */
     neo_continue_t continue_sprites;
@@ -84,7 +118,9 @@ typedef struct {
      * start: hanging (0C162A) or falling after the cut (0C170C); fire
      * latched for its update; the scene root of the previous update (01AD52). */
     uint8_t descent;bool descent_fire;int32_t landing_root_x,landing_root_y;unsigned descent_cuts;
+    unsigned entry_drops;   /* stage entries of kind 2 placed without the parachute (explicit stop) */
     neo_fade_t fade;   /* RAM 10991A..10992C (9C0A/698C) */
+    neo_lspc_t lspc;   /* LSPC auto-animation (RAM 100012, 3C0006; G25) */
     neo_vehicle_t vehicle;
     unsigned vehicle_events,wreckage_cells,vehicle_flash;
     unsigned shots;   /* pistol bullets created (sound request 0x10F7 each) */
@@ -93,6 +129,18 @@ typedef struct {
      * body's +28/+2C are relative to its parent object (+38), so it moves
      * with the platform (wagon 033C98, boss). */
     uint8_t ride;int32_t ride_x,ride_y;unsigned rides;
+    unsigned wall_stops,pit_deaths;   /* side stops of the sweeps 0143EE/014594 (wall_stop) */
+    unsigned kernel_landings;         /* air steps landed by the sweep 013968 where the plane test missed */
+    /* Mission 6 stage 1 (the hanging bridge 10D7B6): the player stands on a
+     * floor the kernel found (its +38 is the scene root, MAME fam/P), so its
+     * ground step is the original's 014594 sweep (kangle = +6C, D7 >> 8). */
+    bool kground;uint16_t kangle;unsigned kernel_ground_steps;
+    /* Reference build only: the last grounded position, where a fall
+     * below the screen puts the player back (pit_rescues) instead of the
+     * fall death 0C3712 (the invulnerability also covers pits). */
+    int32_t safe_x,safe_y;bool safe;unsigned pit_rescues;
+    unsigned rescue_streak;   /* rescues without landing in between (reference) */
+    int32_t safe_old_x[4],safe_old_y[4];unsigned safe_old;   /* earlier safe points (reference) */
     unsigned solid_pushes;   /* updates the push-out 004ED2 met a solid body */
     /* Weapons (world.weapons, RAM 10C718; docs/ARMAS_VEHICULOS.md). A shot
      * reserves through 0C0D64 for the current weapon; only the pistol's
@@ -119,6 +167,11 @@ typedef struct {
      * a press fires on the tick it arrives, as the original's state does in
      * the update of the press (hold2: press 2190, callback 2191). */
     bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
+    /* The thin fire states of C/R/0D/E, S and F (marco_thinfire.h): the
+     * presses since the last player update, the ground of the last two
+     * updates (the landing 0C1EBE runs in the update after the one that
+     * finds the ground) and the facing of the last update (the turn). */
+    marco_thin_t thin;bool thin_on,thin_fresh,thin_g1,thin_g2;int thin_facing;
     /* The knife 0C3B46: reach of 0C3744 (+9A bit 0), ticks left of the cut
      * program, cuts, cuts that hit. */
     bool knife_reach;unsigned knife_t,knife_cuts,knife_hits;
@@ -126,11 +179,24 @@ typedef struct {
      * kills (0C2956); dying/lying/gone/entering phases; death_stops counts
      * the deaths of kinds 8 / 0x12 (own routines, not translated). */
     marco_death_t life;unsigned death_stops,time_overs;bool time_over_seen;
+    /* The stage's respawn table (019604 +4: 12-byte ROM entries from the
+     * mission pack; NULL: Mission 1's, marco_death.c), 019658's entry
+     * (10C31E, it only moves on), the respawns, the type-4 searches 014742
+     * that found a floor / did not (type 5), and explicit stops: a record
+     * type other than 0/4/5 (0C1260's 1..3, 6..8 are not translated: type 0
+     * taken) or a floor search the kernel refused. */
+    const uint8_t *respawn_table;uint16_t respawn_length;unsigned respawn_entry;
+    unsigned respawns,respawn_found,respawn_type5,respawn_stops;
     unsigned weapon_shots,weapon_stops,grenades,grenade_stops,expiries;uint32_t weapon_stop_constructor;
     unsigned h_shots;   /* native H bullets fired (01B6DC/01B716) */
     unsigned c_shots;   /* native C shells fired (063F32 with the flash 0C58D2) */
     unsigned c_fires;   /* C fire states entered (0C3CD0: its program starts even when 0C0D64 refuses) */
+    /* Weapons 06/0B: the step of the beam's fire program (0..7 CALL 0C46D6,
+     * 8 done) and its table (0 level 253594, 1 up 2536FC, 2 down 256132,
+     * 3 crouched 256DE8); laser_calls counts the 0C46D6 calls. */
+    uint8_t laser_step,laser_aim;unsigned laser_calls;
     unsigned down_shots; /* pistol shots aimed down in the air: native 01B782 at angle C0 */
+    unsigned up_shots;   /* pistol shots aimed up: native 01B782 at angle 40 (B53) */
     bool aim_down;      /* 0C0FEA bit 1 in the air (down held, not grounded): +92 = FF */
     /* The mounted player (marco_mount.c, ROM 0C3078..0C3260) on player 1's
      * node record world.player_node[0]: mount = none, riding (0C3078/
@@ -140,28 +206,102 @@ typedef struct {
      * last untranslated path met (explicit stop, logged). */
     uint8_t mount;uint8_t pad_held;unsigned mounts,dismounts,mount_stops;uint32_t mount_stop;
     bool debug_dropped;   /* screenshot cartridge only (MSX_DEBUG_CAMEL_DROP) */
+    /* Stages of a mission pack (docs/MISION2.md "Fase 2"): walk-in to
+     * walk_in_x (Q16) at the stage start; stage_step: the stage end
+     * (018722, exit kind +6) until the flow's 0183D0 asks for the next
+     * stage (stage_load: actor.c loads it and calls msx_game_begin_stage);
+     * stage_camera_max: the list's hold; stage_exit_hooks: stage ends set by
+     * the reference-build hook (MSX_REFERENCE_STAGE_EXIT), not by 0B6F24
+     * (stage 1 of Mission 2 has none: the gate 03889C makes 0B6ED2). */
+    int walk_in_x;uint8_t stage_step;uint16_t stage_timer;bool stage_load,in_stage;
+    unsigned air_trace_left;   /* MSX_DIAG: air steps left to log (B48) */
+    /* After a stage load, the mission actor's exit kind (0184B4..01851A:
+     * fade-in, wipe) runs once per update with the players held until its
+     * stage loop 01860A (4302 = FF); counts for the log. */
+    unsigned entry_updates,entry_fade_updates;bool mission_start,entry_letters;
+    bool entry_descent_pending;   /* entry kind 2 (0C15B4): the descent starts with the stage loop */
+    int handler_prev_sx;bool handler_prev_ok;   /* handler_x of the previous update (0CA386: +44 - 6984) */
+    int stage_camera_max;unsigned stage_exit_hooks,stage_lock_releases,lock_held,lock_timeouts,lock_kills;bool lock_killed;int32_t lock_value;
+    /* Player 1's priority word +1E (the sprite list is sorted by it,
+     * 0113EA): +66 = 8834 on foot (0C10DE/0C14D0/0C157A/0C1EBE/0C1F70),
+     * 0143EE's ground sweep ends with 01AD8C (+1E = +66 - +40) while +15
+     * bit 6 (ground) is set, and the air keeps it; E0EC dying (0C2980,
+     * 0C2D6A) and in the descent (0C15C6). */
+    uint16_t depth1e;
+    /* Reference build only (msx_autopilot.h): the test's stage-3 pilot. */
+    struct {bool on;int8_t air_dir,pre_dir,kind,jdir,jpre;int16_t air_y,goal_x,goal_y,take_x,jair_y;uint16_t still,last_x,plans,jumps,plan_tick;
+        uint8_t why;int16_t from_x,from_y,to_x,to_y;} pilot;   /* why/from/to: the last jump (B14 fall log) */
 } msx_game_t;
 enum { MSX_MOUNT_NONE, MSX_MOUNT_RIDE, MSX_MOUNT_EJECT };
 void msx_game_init(msx_game_t *game);
+/* The mission end's victory of player 1 (0C2016): RAM 10C301 set by 018846
+ * (the mission end has started) and 10C304 >> 2 & +5E (018FFE; player 1's
+ * +5E is 1). */
+bool msx_game_victory(const msx_game_t *game);
 /* Accept a measured grounded world position only when native support agrees. */
 bool msx_game_begin_at(msx_game_t *game,int32_t world_x,int32_t world_y);
-enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL };
+enum { MSX_DESCENT_NONE, MSX_DESCENT_HANG, MSX_DESCENT_FALL, MSX_DESCENT_WAIT };   /* WAIT: 0C15BA until the stage loop 01860A (10C302) */
 /* The handoff at the start of the parachute descent (MAME 3860: +28/+2C,
  * +30/+34 after the player's first 0C162A update), with the canopy. */
+void msx_game_stage_descent_at(msx_game_t *game,int x,int y);
 void msx_game_begin_descent(msx_game_t *game,int32_t world_x,int32_t world_y,int32_t vx,int32_t vy);
+/* The buttons that are no new press of the update after a pause (0156FA). */
+void msx_game_resume_inputs(msx_game_t *g,uint8_t held);
 void msx_game_update(msx_game_t *game,int direction,bool jump,bool fire);
+/* Reference build: the route planner of Mission 2 stage 3 (msx_autopilot.h)
+ * replaces the pad's direction and jump while game->pilot.on; the release
+ * build leaves them as they are. */
+void msx_game_autopilot(msx_game_t *game,int *direction,bool *jump);
+/* A stage of a mission pack (the collision grid already set): the world's
+ * script and camera list, the HUD, flow, weapons and score kept; the player
+ * enters walking from the left edge to start_x (pixels), as in the run4
+ * capture of Mission 2 (19440..19530). */
+void msx_game_begin_stage(msx_game_t *game,const neo_world_stage_t *stage,int start_x,int camera_max);
+/* Entry kind 2 of the stage record (0C15B4, Mission 3): the player at the
+ * record's x on the floor, without the parachute (explicit stop). */
+void msx_game_stage_entry_at(msx_game_t *g,int x);
+bool msx_game_stage_entry_walk(msx_game_t *g,int y);   /* entry kind 3 (0C14E6) */
+/* 01860A of a packed mission's stage: MISSION n START (42FA = 0) and the GO arrow. */
+void msx_game_stage_actors(msx_game_t *g);
+/* The order of the frame's sprite windows and background layers, by SCB
+ * slot (the hardware draws a higher slot over a lower one). Window A (RAM
+ * 10B954, the sprites in +1E order) and window B (10B95C, the sprites with
+ * +15 bit 2: 012022 sets it when A starts below B) and the layer objects'
+ * first slots (+2C: 10E83E layer 0, 10D7B6 layer 1/2, 10E8C6 layer 2 in
+ * Mission 3, 10C72E layers 3/4). Two layer passes: `back` (first, with
+ * the backdrop), the window `mid`, `front`, the other window. */
+typedef struct {uint8_t back,front;bool normal_mid;bool known;bool front_window;} msx_draw_order_t;   /* front_window: 012022 sets +15 bit 2 (A < B, signed words) */
+msx_draw_order_t msx_draw_order(unsigned mission,unsigned stage);
+/* Player 1's +1E for the sprite order (depth1e). */
+uint16_t msx_game_depth(const msx_game_t *game);
+/* Stage end (018F40 + 018722 for a stage whose next record is a stage). */
+void msx_game_stage_end(msx_game_t *game);
 /* A hit on the player (from: world x of the attacker, used without the
  * native world): the death 0C2956 unless invulnerable or already dying. */
 void msx_game_hurt(msx_game_t *game,int from);
+/* Life-bar mode request (SOLDIER SELECT with Z held, main.c): read by
+ * msx_game_init. LIFEBAR_HITS hits; food gives max(1, points/100). */
+enum { MSX_LIFEBAR_HITS=10 };
+extern bool msx_lifebar_request;
+extern uint8_t msx_character_request;   /* player 1's +6E (msx_character.h) */
+/* Hits a food worth `points` (BCD, the pickup's value) gives back. */
+unsigned msx_lifebar_food_hits(uint32_t points);
 /* True only in the reference traversal build (MSX_REFERENCE_INVULNERABLE). */
 extern const bool msx_reference_invulnerable;
+/* The diagnostics overlay's text (reference builds; nothing in the release). */
+void msx_debug_text(int x,int y,const char *text);
 /* Layout of msx_game_t as one object file sees it. gameplay.c exports its
  * own; actor.c compares it with the value it was compiled with, so a stale
  * object built against an older neo_world_t (the reference cartridge's
  * gameplay.o once missed the item fields: its ga_flags.player_handlers read
  * the low byte of item_pickups and the first item taken froze the player's
  * input) stops at start instead of corrupting the game. */
-enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_TALLY,MSX_END_LETTERS,MSX_END_FADE,MSX_END_DONE };
+enum { MSX_END_NONE,MSX_END_WAIT,MSX_END_TALLY,MSX_END_LETTERS,MSX_END_FADE,MSX_END_RESULTS,MSX_END_DONE };
+/* The ending's screens, in order (msx_game_t.ending_scene). */
+enum { MSX_ENDING_SCENE_NONE,MSX_ENDING_SCENE_RESULTS,MSX_ENDING_SCENE_CREDITS,MSX_ENDING_SCENE_PEACE,MSX_ENDING_SCENE_RANKING,MSX_ENDING_SCENE_TITLE,MSX_ENDING_SCENE_TITLE_LOGO };
+/* True from the results scene to the title's end: no player, no HUD. */
+bool msx_game_ending(const msx_game_t *g);
+void msx_game_test_ending(msx_game_t *g);   /* the test menu's ENDING */
 /* Updates of the GAME OVER panel before the original game ends (MAME go1). */
 #define MSX_GAME_OVER_UPDATES 190u
 #define MSX_GAME_LAYOUT ((uint32_t)sizeof(msx_game_t)^(uint32_t)sizeof(neo_world_t)<<16^ \
@@ -170,6 +310,15 @@ extern const uint32_t msx_game_layout;
 int msx_game_animation(const msx_game_t *game);
 /* Projected words of the player (+3C/+40) as the native world receives them. */
 void msx_game_projected(const msx_game_t *game,uint16_t *x,uint16_t *y);
+/* The weapon fires through the C's fire state 0C3CD0 and its upper-body
+ * programs (tables 0C3C10/0C3C50/0C3C90 give 0C02D8/0C0318/0C0358): the C
+ * (id 0C) and the R (id 3). */
+bool msx_game_c_programs(const msx_game_t *game);
+/* Fire-program group of the current weapon (gameplay.c fire_kind):
+ * MSX_FIRE_C (ids 3, 0C, 0D), MSX_FIRE_S (02, 07), MSX_FIRE_F (04, 09),
+ * MSX_FIRE_L (06, 0B: the beam). */
+enum { MSX_FIRE_NONE, MSX_FIRE_C, MSX_FIRE_S, MSX_FIRE_F, MSX_FIRE_L };
+uint8_t msx_game_fire_group(const msx_game_t *game);
 int msx_ground_offset(int x16);
 /* Internal reference encounter; campaign spawn/wave logic is not recovered yet. */
 void msx_game_vehicle_reference(msx_game_t *game);

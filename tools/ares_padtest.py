@@ -60,3 +60,9 @@ def finish(a, proc, logp, ends=()):
                 cuts.append(m.end()); break
     if cuts:
         Path(logp).write_text(t[:min(cuts)])
+
+
+def ticks(text):
+    """The last update count the cartridge logged (` ticks=N`), 0 before the first."""
+    m = re.findall(r' ticks=(\d+)\n', text[-8000:])
+    return int(m[-1]) if m else 0

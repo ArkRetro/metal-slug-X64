@@ -25,7 +25,7 @@ p.add_argument('--boss',action='store_true')
 p.add_argument('--lifebar',action='store_true',help='Z in the test menu: the optional life bar (not arcade); needs N64 Z on the key z (tools/ares_private_data.py)')
 p.add_argument('--aimup',action='store_true',help='Up held all the time while walking (a player\'s choice: the last enemy 04153E hangs over the arena)')
 p.add_argument('--bomb',type=float,default=0.0,help='a grenade (Z) every this many seconds (needs --lifebar: the key z)')
-import ares_padtest as pt;pt.add_args(p)
+import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:
@@ -77,7 +77,7 @@ try:
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0

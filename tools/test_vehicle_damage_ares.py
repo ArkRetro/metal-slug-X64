@@ -32,7 +32,7 @@ p.add_argument('--expect',default='',help='comma list of vehicle kinds that must
 p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type=float,default=60,help='seconds the pad waits on a vehicle')
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
-import ares_padtest as pt;pt.add_args(p)
+import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
@@ -82,7 +82,7 @@ try:
     while time.monotonic()<wall_end and not set(expect)<=done:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mounts=len(re.findall(r'MSX player mounted vehicle',text));lefts=len(re.findall(r'MSX player left vehicle',text))
         riding=mounts>lefts

@@ -22,7 +22,7 @@ p.add_argument('--down',action='store_true',help='hold down outside the --back /
 p.add_argument('--bomb',action='store_true',help='a bomb (N64 Z, key z) at the start of each --back turn: the tank on treads 08FF7E below the stairs of the sewer\'s camera 2064 is out of the pistol\'s line')
 p.add_argument('--boss',action='store_true',help='stage 3: PASS needs the boss 0A0C00 beaten (the log\'s mission complete signal 018F92) and the next mission chosen by 01891E (mission end done -> mission 6); stops there')
 p.add_argument('--continue',dest='cont',action='store_true',help='tap Start at the CONTINUE? panel (the arcade continue, MSX panel continue): the pad keeps going after its lives')
-import ares_padtest as pt;pt.add_args(p)
+import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar or a.bomb:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
@@ -69,7 +69,7 @@ try:
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0

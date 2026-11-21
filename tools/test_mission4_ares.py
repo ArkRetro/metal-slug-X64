@@ -30,6 +30,7 @@ if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/a
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log'
+import ares_padtest as pt;pt_ticks=pt.ticks
 if a.pad_script or a.record:
     import shutil;rom=out/'testpad.z64'
     for f in (out/'testpad.eeprom',out/'testpad.pak'):
@@ -88,7 +89,7 @@ try:
     while time.monotonic()<wall_end:
         assert proc.poll() is None,'ares exited'
         text=log();t=clock.now(text[-4000:])
-        if t>=a.seconds:break
+        if (pt_ticks(text)>=a.seconds*60 if (a.pad_script or a.record) else t>=a.seconds):break   # B78: a recording / replay ends on the logged update count
         assert 'ASSERTION FAILED' not in text and 'RSP CRASH' not in text,text[-3000:]
         mm=re.findall(r'MSX stage \d+ camera x=(-?\d+) y=(-?\d+)',text[-20000:])
         cam=int(mm[-1][0]) if mm else 0

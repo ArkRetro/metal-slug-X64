@@ -44,7 +44,9 @@ $(COLD_OBJS): CFLAGS += -Os
 # the overlay is linked away from the main program's small-data area); the
 # main link keeps what they call (the .externs list) and each cartridge gets
 # its overlays as the rompak file <elf>.ovl (the .z64 rule below).
-OVL_MODULES := neo_m3boss neo_m4boss neo_m5boss neo_m6boss neo_ending
+OVL_MODULES := neo_m3boss neo_m4boss neo_m5boss neo_m6boss neo_ending \
+	neo_m2boss neo_m2props neo_m2traps neo_m2creature neo_m3mid neo_m3veh neo_m3props neo_m4props neo_m4veh \
+	neo_m5enemy neo_m5mech neo_m5props neo_m5sewer neo_m5train neo_m6enemy neo_m6props
 OVL_OBJS_src := $(patsubst %,$(BUILD_DIR)/src/%.o,$(OVL_MODULES))
 OVL_OBJS_diag := $(patsubst %,$(BUILD_DIR)/diag/%.o,$(OVL_MODULES))
 $(OVL_OBJS_src) $(OVL_OBJS_diag): N64_CFLAGS += -G0
@@ -1679,6 +1681,7 @@ check-boss: $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/boss_tables.h $(BUILD_DIR)/bo
 	python3 tools/check_boss_budget.py
 check: $(MISSION_BGP) $(BUILD_DIR)/pause_fixture.h $(if $(and $(CHARACTER_PACKS),$(wildcard $(BUILD_DIR)/chars/c0.bin)),check-characters) check-boss $(BUILD_DIR)/lspc_fixture.h $(BUILD_DIR)/m3ledge_fixture.h $(BUILD_DIR)/train_fixture.h $(BUILD_DIR)/mission_flow_fixture.h $(BUILD_DIR)/wipe_fixture.h $(BUILD_DIR)/end_letters_fixture.h $(BUILD_DIR)/start_letters_fixture.h $(TALLY_HEADERS) $(ENDING_HEADERS) $(BUILD_DIR)/end_ports_fixture.h $(BUILD_DIR)/credits_world_fixture.h $(BUILD_DIR)/continue_sprites_fixture.h $(BUILD_DIR)/landing_fixture.h $(BUILD_DIR)/smoke_fixture.h $(BUILD_DIR)/descent_fixture.h $(BUILD_DIR)/hmuzzle_fixture.h $(BUILD_DIR)/fatmuzzle_fixture.h $(BUILD_DIR)/blood_fixture.h $(BUILD_DIR)/camera_fixture.h $(BUILD_DIR)/robe_fixture.h $(FAMILY_HEADERS) $(BUILD_DIR)/soldier_ai_tables.h $(BUILD_DIR)/region_rom.h $(BUILD_DIR)/throw_tables.h $(BUILD_DIR)/retro25d/retro_assets.h $(BUILD_DIR)/scene_meta.h $(BUILD_DIR)/soldier_tick_fixture.h $(BUILD_DIR)/soldier_death_tick_fixture.h $(BUILD_DIR)/soldier_script_fixture.h $(BUILD_DIR)/soldier_world_fixture.h $(BUILD_DIR)/kernel_fixture.h $(BUILD_DIR)/m2_stairs_fixture.h $(BUILD_DIR)/m3_map_fixture.h $(BUILD_DIR)/attack_state_fixture.h $(BUILD_DIR)/locomotion_fixture.h $(BUILD_DIR)/object_fixture.h $(BUILD_DIR)/throw_fixture.h $(BUILD_DIR)/attack_fixture.h $(BUILD_DIR)/cull_fixture.h $(BUILD_DIR)/action_fixture.h $(BUILD_DIR)/state_fixture.h $(BUILD_DIR)/mission_collision.h $(BUILD_DIR)/vehicle_anim.h $(BUILD_DIR)/vehicle_wreckage.h $(BUILD_DIR)/soldier_fixture.h $(BUILD_DIR)/rng_fixture.h $(BUILD_DIR)/animation_fixture.h $(BUILD_DIR)/contact_fixture.h $(BUILD_DIR)/contact_tables.h $(BUILD_DIR)/control_fixture.h $(BUILD_DIR)/control_tables.h
 	sh tools/test_marco_inputs_sum.sh
+	python3 tools/padscript.py check data/m4boss_pad.txt
 	# B43: every VADPCM pack decodes to its source (synthetic always; private packs when present).
 	python3 tools/test_wav64_vadpcm.py
 	# The Mission 2 export (private) carries the Mission 1 sprites: the

@@ -772,3 +772,17 @@ PCM16 32 kHz, 2,95 s) y `select-music-loop.wav64` (VADPCM 32 kHz, 49,995 s,
 empalme 0,959, comprobado). `main.c` los reproduce en la espera de SOLDIER
 SELECT (`msx_audio_open_loop`); la elección abre el audio de `confirm` como
 antes. ares: `MSX CINE select chosen audio=1` tras 25 s de espera.
+
+## 21. Volumen de juego: sin atenuación (21-XI, `work-mem`)
+
+`game_audio.c` tenía `VOLUME_PERCENT=80` (músicas, voz de la intro y canales de efectos al 0,8) sin fuente.
+Todos los paquetes salen de `tools/render_sound_commands.py`: la salida `-wavwrite` de MAME 0.264 (48 kHz) cortada
+por tiempos, **sin escalar** (ni normalización ni ganancia en `render_sound_commands.py` ni en
+`pack_game_audio.py`); es el mismo camino de salida que las capturas de partida (`-wavwrite`, apartado 2). Medida:
+ajuste por mínimos cuadrados del render del efecto dentro de `captures-audio/knife1/reference.wav` (partida real
+de MAME 0.264, canal izquierdo, posición por correlación cruzada): `pistol` ganancia **0,9955** (a 18,361 s;
+residuo 0,61 de la señal: la música sigue debajo), `knife_hit` 0,969 (a 72,838 s; residuo 0,91). El render ya trae
+el nivel de la recreativa: el 0,8 se retira (`GAME_VOLUME` 1,0). La música de la misión 1 no se pudo ajustar en
+`knife1`/`vehicle1` (residuo 0,94..0,98: otra fase del bucle); su render sale por el mismo camino sin escala.
+Pendiente: escucha en ares/MiSTer de saturación con varios canales a la vez (el mezclador suma canales que en la
+recreativa mezcla el propio YM2610).

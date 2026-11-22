@@ -19,7 +19,11 @@
  *    voice (its own measured channel, msx_sfx_policy.h)
  *  - region end: the music stops (the arcade has no region end; its driver
  *    is reset with command 03 between scenes, which silences the music). */
-enum { VOLUME_PERCENT=80 };
+/* Every pack is MAME 0.264's own -wavwrite output, cut and unscaled (tools/render_sound_commands.py), the
+ * same path as the gameplay captures: the render already has the arcade's level, so the mixer plays it at 1.0
+ * (the 80 % of before had no source; measured fit of the pistol render inside captures-audio/knife1: gain
+ * 0.9955, docs/AUDIO_JUEGO.md 21). */
+#define GAME_VOLUME 1.0f
 static wav64_t sounds[MSX_SFX_COUNT];
 static bool loaded[MSX_SFX_COUNT],ready,music_ready,music_on,warned,active;
 static msx_sfx_state_t policy;
@@ -214,7 +218,7 @@ void game_audio_mission_start(void) {
 }
 void game_audio_music(bool play) {
     if (!active || !music_ready) return;
-    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,!music_once,VOLUME_PERCENT/100.0f);
+    if (play) music_on=msx_audio_play(MSX_AUDIO_MUSIC,!music_once,GAME_VOLUME);
     else {msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;}
     debugf("MSX AUDIO music %s\n",music_on?"start":"stop");
 }
@@ -242,7 +246,7 @@ static void request(uint16_t word) {
     if (word==0x0020) {
         msx_audio_stop(MSX_AUDIO_MUSIC);music_on=false;
         bool ok=msx_audio_open(MSX_AUDIO_INTRO,"rom:/audio/music_mission_complete.wav64") &&
-            msx_audio_play(MSX_AUDIO_INTRO,false,VOLUME_PERCENT/100.0f);
+            msx_audio_play(MSX_AUDIO_INTRO,false,GAME_VOLUME);
         debugf("MSX AUDIO mission complete jingle %s\n",ok?"start":"missing");
         return;
     }
@@ -270,7 +274,7 @@ static void request(uint16_t word) {
     }
     unsigned mixer=mixer_of((unsigned)channel);
     mixer_ch_stop(mixer);wav64_play(&sounds[id],mixer);
-    float volume=VOLUME_PERCENT/100.0f;mixer_ch_set_vol(mixer,volume,volume);
+    float volume=GAME_VOLUME;mixer_ch_set_vol(mixer,volume,volume);
 }
 void game_audio_sync(msx_game_t *g) {
     if (!active) return;

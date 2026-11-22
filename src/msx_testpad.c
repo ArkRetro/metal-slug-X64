@@ -9,8 +9,8 @@
  *
  * Without a script (a recording run: keys from xdotool, the real clock) every change is logged, `MSX PAD n=N btn=XXXX`
  * and `MSX PAD n=N sK=V`, and the log is the script (tools/padscript.py from-log). With a script (tools/padscript.py
- * apply: magic "MSXPAD01" at a 1 MiB boundary past the cartridge, a count, then {u32 n, u16 value, u16 kind} entries,
- * big-endian, n not decreasing) the game gets the script's values and the same lines are logged at the same reads, so
+ * apply: magic "MSXPAD02" at a 64 KiB boundary past the cartridge, a count, then 4-byte big-endian entries
+ * {u16 kind << 14 | reads since the previous entry, u16 value}, kind 3 a gap only) the game gets the script's values and the same lines are logged at the same reads, so
  * with the same ROM, script and EEPROM two replays in ares are the same run, update for update. */
 #include <libdragon.h>
 #include <string.h>
@@ -18,12 +18,12 @@
 joypad_buttons_t __real_joypad_get_buttons(joypad_port_t port);
 void __real_joypad_poll(void);
 
-#define PAD_MAGIC "MSXPAD01"
+#define PAD_MAGIC "MSXPAD02"
 #define PAD_CHUNK 64u
 #define PAD_KINDS 3u
 static bool pad_init,pad_script,pad_then_record;static uint32_t pad_last;static uint32_t pad_base,pad_count,pad_next;
 static uint32_t pad_reads;static uint16_t pad_val[PAD_KINDS],pad_logged[PAD_KINDS]={0xffffu,0xffffu,0xffffu};
-static uint8_t pad_buf[PAD_CHUNK*8u] __attribute__((aligned(16)));static uint32_t pad_buf_first=0xffffffffu;
+static uint8_t pad_buf[PAD_CHUNK*4u] __attribute__((aligned(16)));static uint32_t pad_buf_first=0xffffffffu;
 
 static uint32_t be32(const uint8_t *p) {return (uint32_t)p[0]<<24|(uint32_t)p[1]<<16|(uint32_t)p[2]<<8|p[3];}
 static const uint8_t *pad_entry(uint32_t i) {
@@ -31,15 +31,15 @@ static const uint8_t *pad_entry(uint32_t i) {
     if (first!=pad_buf_first) {
         uint32_t n=pad_count-first<PAD_CHUNK?pad_count-first:PAD_CHUNK;
         data_cache_hit_writeback_invalidate(pad_buf,sizeof pad_buf);
-        dma_read(pad_buf,0x10000000u+pad_base+16u+first*8u,n*8u);
+        dma_read(pad_buf,0x10000000u+pad_base+16u+first*4u,(n*4u+7u)&~7u);
         pad_buf_first=first;
     }
-    return pad_buf+(i-first)*8u;
+    return pad_buf+(i-first)*4u;
 }
 static void pad_find(void) {
     pad_init=true;
     static uint8_t head[16] __attribute__((aligned(16)));
-    for (uint32_t at=0x100000u;at<0x8000000u;at+=0x100000u) {
+    for (uint32_t at=0x10000u;at<0x8000000u;at+=0x10000u) {
         data_cache_hit_writeback_invalidate(head,sizeof head);
         dma_read(head,0x10000000u+at,sizeof head);
         if (!memcmp(head,PAD_MAGIC,8)) {pad_script=true;pad_base=at;pad_count=be32(head+8);pad_then_record=(head[15]&1u)!=0;break;}
@@ -64,9 +64,10 @@ void __wrap_joypad_poll(void) {
     if (pad_script) {
         while (pad_next<pad_count) {
             const uint8_t *e=pad_entry(pad_next);
-            if (be32(e)>pad_reads) break;
-            unsigned kind=e[7];if (kind<PAD_KINDS) pad_val[kind]=(uint16_t)(e[4]<<8|e[5]);
-            pad_last=be32(e);pad_next++;
+            uint32_t n=pad_last+((uint32_t)(e[0]&0x3fu)<<8|e[1]);
+            if (n>pad_reads) break;
+            unsigned kind=e[0]>>6;if (kind<PAD_KINDS) pad_val[kind]=(uint16_t)(e[2]<<8|e[3]);
+            pad_last=n;pad_next++;
         }
     } else pad_val[0]=__real_joypad_get_buttons(JOYPAD_PORT_1).raw;
     pad_log(0);

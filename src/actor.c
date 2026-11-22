@@ -264,7 +264,11 @@ static void draw_native_parts(const neo_world_draw_t *d,bool request_only) {
         scene_image_t part=*im;part.palette=(uint16_t)palette;
         if (d->zoom_x!=0xff || d->zoom_y!=0xff) {
             /* draw_end: the LSPC's shrink (end_zoom.c) when the descriptor is exported; else the scaled part below. */
-            if (MSX_END_ZOOM && end_zoom_on && end_zoom_draw(d->descriptor,d->x,end_list_y,d->zoom_x,d->zoom_y,d->attributes&3u,(unsigned)palette)) return;
+            if (MSX_END_ZOOM && end_zoom_on) {
+                /* end_zoom.c is in the ending's overlay image: called only when that image is resident */
+                const msx_overlay_ops_t *z=msx_overlay_ops(MSX_OVL_ENDING);
+                if (z && z->draw(d->descriptor,d->x,end_list_y,d->zoom_x,d->zoom_y,d->attributes&3u,(unsigned)palette)) return;
+            }
             /* Shrunk sprite (+12/+13): offsets and size scaled about the
              * actor's point (render approximation of the hardware shrink). */
             float sx=(d->zoom_x+1)/256.0f,sy=(d->zoom_y+1)/256.0f;
@@ -1109,13 +1113,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     load_target=NULL;
     scene_render_begin(surface);msx_perf_mark(MSX_PERF_BEGIN);
     {   /* end_zoom.c: the previous frame's time into the worst; a line every 300 frames while it draws */
-        static unsigned zoom_frames,zoom_entries;end_zoom_frame();const end_zoom_stats_t *z=end_zoom_stats();
-        if (++zoom_frames%300==0 && z->entries!=zoom_entries) {
+        static unsigned zoom_frames,zoom_entries;const msx_overlay_ops_t *zo=MSX_END_ZOOM?msx_overlay_ops(MSX_OVL_ENDING):NULL;
+        if (zo) zo->frame();
+        const end_zoom_stats_t *z=zo?zo->stats():NULL;
+        if (z && ++zoom_frames%300==0 && z->entries!=zoom_entries) {
             zoom_entries=z->entries;
             debugf("MSX ENDZOOM entries=%u rects=%u loads=%u refits=%u unfit=%u reads=%u missing_desc=%u missing_tiles=%u overflow=%u auto=%u no_block=%u cache=%u KB total=%lu ms (rdpq %lu ms) worst=%lu us; 300 frames: most rects=%lu loads=%lu cpu=%lu us\n",
                 z->entries,z->rects,z->loads,z->refits,z->unfit,z->file_reads,z->missing_descriptors,z->missing_tiles,z->overflow,z->auto_animated,z->no_block,z->cache_bytes/1024,
                 (unsigned long)(TICKS_TO_US(z->total_ticks)/1000),(unsigned long)(TICKS_TO_US(z->emit_ticks)/1000),(unsigned long)TICKS_TO_US(z->worst_frame_ticks),(unsigned long)z->window_rects,(unsigned long)z->window_loads,(unsigned long)TICKS_TO_US(z->window_ticks));
-            end_zoom_window_reset();
+            zo->window_reset();
         }
     }
     scene_render_set_fade(neo_fade_offset(&game.fade,0),neo_fade_offset(&game.fade,1),neo_fade_offset(&game.fade,2));

@@ -22,7 +22,7 @@ needs a symbol the main program lacks fails here (ld: undefined reference).
 
 File layout (big endian): 'MSXO', count, region address, region bytes, then
 per overlay (offset, bytes); each image is 16-byte aligned and begins with its
-own header: 'MSXo', id, address of its tick function, image bytes."""
+own header: 'MSXo', id, address of its tick function, image bytes, address of its ops table (0: none; EXTRA)."""
 import os, re, struct, subprocess, sys, tempfile
 from pathlib import Path
 
@@ -31,13 +31,17 @@ B = Path(os.environ.get('N64_INST', '/home/user/toolchains/package/opt/libdragon
 OVERLAYS = [('neo_m3boss', 'neo_m3boss_tick'), ('neo_m4boss', 'neo_m4boss_tick'),
             ('neo_m5boss', 'neo_m5boss_tick'), ('neo_m6boss', 'neo_m6boss_tick'),
             ('neo_ending', 'neo_ending_tick')]   # the ending: results, credits, ranking, title (src/neo_ending.c)
+# Draw code an image carries besides its module (main program code reaches it only through the ops table at the
+# header's fifth word, and only while that image is loaded: msx_overlay_ops): the ending's shrunk sprites.
+EXTRA = {'neo_ending': (['end_zoom', 'end_zoom_rdp', 'end_zoom_core', 'neo_scb'], 'end_zoom_ops')}
 REGION = 'msx_overlay_region'
 SCRIPT = """ENTRY({tick})
+EXTERN({ops_sym})
 SECTIONS {{
   . = 0xffffffff{addr:08x};
   .ovl : {{
     __ovl_start = .;
-    LONG(0x4d53586f) LONG({id}) LONG({tick}) LONG(__ovl_end - __ovl_start)
+    LONG(0x4d53586f) LONG({id}) LONG({tick}) LONG(__ovl_end - __ovl_start) LONG({ops})
     *(.text .text.*)
     *(.rodata .rodata.* .data .data.* .lit4 .lit8)
     *(.bss .bss.* COMMON)
@@ -54,12 +58,18 @@ def tool(name, *args):
 
 
 def externs(out, objs):
-    syms = set()
+    syms = set();own = set()
+    extra = {x for xs, _ in EXTRA.values() for x in xs}
+    for o in objs:
+        if Path(o).stem in extra:
+            for l in tool('nm', '--defined-only', o).splitlines():
+                p = l.split()
+                if len(p) == 3: own.add(p[2])
     for o in objs:
         for l in tool('nm', '-u', o).splitlines():
             p = l.split()
             if len(p) == 2 and p[0] == 'U': syms.add(p[1])
-    Path(out).write_text('EXTERN(%s)\n' % ' '.join(sorted(syms)))
+    Path(out).write_text('EXTERN(%s)\n' % ' '.join(sorted(syms - own)))   # the extras' own symbols stay out
 
 
 def link(elf, mapf, out):
@@ -85,16 +95,33 @@ def link(elf, mapf, out):
             # Only the tick stays global: the routine test and any other global
             # of the module are also in the main program, here they bind locally.
             subprocess.check_call([str(B) + 'objcopy', f'--keep-global-symbol={tick}', obj, lo])
-            ld = tmp / f'{mod}.ld'; ld.write_text(SCRIPT.format(tick=tick, addr=addr, id=i))
+            extra, ops = EXTRA.get(mod, ([], None))
+            los = [lo]
+            if extra:
+                # the extra objects: their globals stay global among themselves (the main program does not keep
+                # them: nothing there calls them but through the ops table)
+                for x in extra:
+                    xo = loaded.get(x)
+                    if not xo: sys.exit(f'{elf}: {x}.o not in the link map')
+                    if 'GPREL' in tool('readelf', '-r', '-W', xo): sys.exit(f'{xo}: gp-relative relocations (compile it with -G0)')
+                    los.append(xo)
+                kept = {l.split()[-1] for l in tool('nm', '--defined-only', elf).splitlines()}
+                for x in extra:
+                    for l in tool('nm', '--defined-only', loaded[x]).splitlines():
+                        q = l.split()
+                        if len(q) == 3 and q[1].isupper() and q[2] in kept and q[2] != ops:
+                            sys.exit(f'{x}.o: {q[2]} is also in the main program (the image must be its only copy)')
+            ld = tmp / f'{mod}.ld'; ld.write_text(SCRIPT.format(tick=tick, addr=addr, id=i, ops=ops or 0, ops_sym=ops or tick))
             oe = Path(out).with_suffix(f'.{mod}.elf')   # kept: addr2line of a crash in the overlay
             subprocess.check_call([str(B) + 'ld', '-T', ld, f'--just-symbols={elf}', '--gc-sections', '-nostdlib',
-                                   '-Map', Path(out).with_suffix(f'.{mod}.map'), '-o', oe, lo])
+                                   '-Map', Path(out).with_suffix(f'.{mod}.map'), '-o', oe, *los])
             ob = tmp / f'{mod}.bin'
             subprocess.check_call([str(B) + 'objcopy', '-O', 'binary', '-j', '.ovl', oe, ob])
             data = ob.read_bytes()
-            magic, oid, entry, n = struct.unpack('>4I', data[:16])
+            magic, oid, entry, n, opsa = struct.unpack('>5I', data[:20])
             if magic != 0x4d53586f or oid != i or n != len(data) or not addr <= entry < addr + n:
                 sys.exit(f'{mod}: bad overlay image')
+            if ops and not addr <= opsa < addr + n: sys.exit(f'{mod}: ops table {ops} outside the image')
             if n > size: sys.exit(f'{mod}: {n} bytes, over the region ({size} bytes, MSX_OVERLAY_BYTES in src/msx_overlay.h)')
             images.append((mod, data))
     head = struct.pack('>4I', 0x4d53584f, len(images), addr, size)

@@ -1,6 +1,11 @@
 /* The ending's shrunk sprites on the console (end_zoom.h): exact RDP texture rectangles (end_zoom_rdp.c) from the
  * descriptor's tiles as they are, in 16 x 256 CI4 pages (16 tiles), each page loaded once per run of rectangles.
  * Memory is taken at the first shrunk draw, after the scene cache has been sized (the scene cache keeps its slots). */
+/* An overlay image cannot use the main program's gp: newlib's _impure_ptr (malloc / free reach it) is declared
+ * small-data; here it is addressed absolutely (tools/link_overlays.py refuses gp-relative relocations). */
+#include <sys/config.h>
+#undef __ATTRIBUTE_IMPURE_PTR__
+#define __ATTRIBUTE_IMPURE_PTR__
 #include <libdragon.h>
 #include <string.h>
 #include <malloc.h>
@@ -8,12 +13,14 @@
 #include "end_zoom_core.h"
 #include "end_zoom_rdp.h"
 #include "scene_renderer.h"
+#include "msx_overlay.h"
 enum {
     BLOCK_BUDGET=96*1024,   /* descriptors' tiles in pages (the dial's plane 1D6B44: 488 tiles, 31 pages, 62 KB) */
     DESCRIPTORS_MAX=64,
 };
 static bool tried,ready;
-static FILE *file;
+static int file=-1;   /* dfs handle (no stdio: the overlay image links without newlib's gp-relative _impure_ptr) */
+static bool rd_at(uint32_t at,void *buf,uint32_t n) {return dfs_seek(file,(int)at,SEEK_SET)==DFS_ESUCCESS && dfs_read(buf,1,(int)n,file)==(int)n;}
 static end_zoom_file_t ez;
 static end_zoom_rdp_t rt;
 static uint8_t *meta,*tables;
@@ -26,19 +33,18 @@ static unsigned cur_palette;static int cur_desc,cur_page;
 static uint32_t pages_bytes(int k) {uint32_t f,c;end_zoom_descriptor_tiles(&ez,k,&f,&c);return 2048u*((c+15)/16);}
 static bool open_file(void) {
     tried=true;
-    file=fopen("rom:/endzoom.bin","rb");
-    if (!file) {debugf("MSX ENDZOOM no rom:/endzoom.bin: shrunk sprites scaled\n");return false;}
+    file=dfs_open("endzoom.bin");
+    if (file<0) {debugf("MSX ENDZOOM no rom:/endzoom.bin: shrunk sprites scaled\n");return false;}
     uint8_t h[16];
-    if (fread(h,1,16,file)!=16) return false;
+    if (!rd_at(0,h,16)) return false;
     uint32_t n=end_zoom_rest_size(h);
     meta=malloc(n);work=malloc(END_ZOOM_WORK_BYTES);sorted=malloc(2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS);local_work=malloc(sizeof(uint16_t)*32*END_ZOOM_COLUMNS);
-    if (!meta || !work || !sorted || !local_work || fread(meta,1,n,file)!=n || !end_zoom_parse(&ez,h,meta,n)) {debugf("MSX ENDZOOM bad file or no memory\n");return false;}
+    if (!meta || !work || !sorted || !local_work || !rd_at(16,meta,n) || !end_zoom_parse(&ez,h,meta,n)) {debugf("MSX ENDZOOM bad file or no memory\n");return false;}
     if (ez.descriptors>DESCRIPTORS_MAX) {debugf("MSX ENDZOOM %u descriptors: more than %u\n",ez.descriptors,DESCRIPTORS_MAX);return false;}
-    fseek(file,0,SEEK_END);long size=ftell(file);uint32_t at=ez.l0_offset+65536,tn=(uint32_t)size-at;
+    long size=dfs_size(file);uint32_t at=ez.l0_offset+65536,tn=(uint32_t)size-at;
     tables=malloc(tn);
     if (!tables) return false;
-    fseek(file,(long)at,SEEK_SET);
-    if (fread(tables,1,tn,file)!=tn || !end_zoom_rdp_parse(&rt,tables,tn)) {debugf("MSX ENDZOOM no RDP tables\n");return false;}
+    if (!rd_at(at,tables,tn) || !end_zoom_rdp_parse(&rt,tables,tn)) {debugf("MSX ENDZOOM no RDP tables\n");return false;}
     st.cache_bytes=n+tn+END_ZOOM_WORK_BYTES+2*sizeof(end_zoom_rect_t)*END_ZOOM_RECTS+sizeof(uint16_t)*32*END_ZOOM_COLUMNS+BLOCK_BUDGET;
     debugf("MSX ENDZOOM loaded: %u descriptors, %u tiles, %u sequences, %u KB (tiles up to %u KB)\n",ez.descriptors,ez.tiles,rt.nseq,(unsigned)(st.cache_bytes/1024),BLOCK_BUDGET/1024);
     return true;
@@ -58,7 +64,7 @@ static bool load_block(int k) {
     }
     if (block_bytes+need>BLOCK_BUDGET || !(block[k]=memalign(16,need))) return false;
     memset(block[k]+128*count,0,need-128*count);
-    fseek(file,(long)(ez.tiles_offset+128*first),SEEK_SET);fread(block[k],1,128*count,file);st.file_reads++;
+    rd_at(ez.tiles_offset+128*first,block[k],128*count);st.file_reads++;
     data_cache_hit_writeback_invalidate(block[k],need);
     /* the descriptor's words -> local tile index (end_zoom_rdp_local_map), read with the block */
     uint32_t nw=end_zoom_descriptor_words(&ez,k);
@@ -72,19 +78,24 @@ static void rect(void *ctx,const end_zoom_rect_t *r) {
     scene_render_zoom_rect(r->x0,r->y0,r->x1,r->y1,r->s0,r->t0,r->dsdx,r->dtdy);
     frame_rects++;st.emit_ticks+=TICKS_READ()-e0;
 }
-void end_zoom_frame(void) {
+static void end_zoom_release(void);
+static unsigned idle_frames;
+static void end_zoom_frame(void) {
+    /* nothing shrunk for 60 frames (the credits between the results and the title): the memory goes back */
+    if (ready && ++idle_frames>=60) {end_zoom_release();st.releases++;}
     if (frame_ticks>st.worst_frame_ticks) st.worst_frame_ticks=frame_ticks;
     if (frame_ticks>st.window_ticks) st.window_ticks=frame_ticks;
     if (frame_rects>st.window_rects) st.window_rects=frame_rects;
     if (frame_loads>st.window_loads) st.window_loads=frame_loads;
     st.last_frame_ticks=frame_ticks;frame_ticks=frame_rects=frame_loads=0;frame_no++;
 }
-void end_zoom_window_reset(void) {st.window_ticks=st.window_rects=st.window_loads=0;}
-bool end_zoom_draw(uint32_t descriptor,uint16_t x,uint16_t y,uint8_t zoom_x,uint8_t zoom_y,uint16_t attributes,unsigned palette) {
+static void end_zoom_window_reset(void) {st.window_ticks=st.window_rects=st.window_loads=0;}
+static bool end_zoom_draw(uint32_t descriptor,uint16_t x,uint16_t y,uint8_t zoom_x,uint8_t zoom_y,uint16_t attributes,unsigned palette) {
     if (!tried) ready=open_file();
     if (!ready) return false;
     int k=end_zoom_find_descriptor(&ez,descriptor);
     if (k<0) {st.missing_descriptors++;return false;}
+    idle_frames=0;
     uint32_t t0=TICKS_READ();
     if (!load_block(k)) {st.no_block++;frame_ticks+=TICKS_READ()-t0;return false;}
     cur_palette=palette;cur_desc=k;cur_page=-1;
@@ -94,4 +105,13 @@ bool end_zoom_draw(uint32_t descriptor,uint16_t x,uint16_t y,uint8_t zoom_x,uint
     uint32_t dt=TICKS_READ()-t0;frame_ticks+=dt;st.total_ticks+=dt;
     return true;
 }
-const end_zoom_stats_t *end_zoom_stats(void) {return &st;}
+static const end_zoom_stats_t *end_zoom_stats(void) {return &st;}
+/* Everything this file holds, given back before another overlay image replaces the ending's (msx_overlay.c). */
+static void end_zoom_release(void) {
+    for (unsigned k=0;k<DESCRIPTORS_MAX;k++) {free(block[k]);block[k]=NULL;free(local_map[k]);local_map[k]=NULL;}
+    free(meta);free(tables);free(work);free(sorted);free(local_work);meta=tables=NULL;work=NULL;sorted=NULL;local_work=NULL;
+    if (file>=0) dfs_close(file);
+    file=-1;tried=ready=false;block_bytes=0;idle_frames=0;
+}
+/* The ending image's draw entries (tools/link_overlays.py EXTRA): actor.c calls them through msx_overlay_ops. */
+const msx_overlay_ops_t end_zoom_ops={end_zoom_draw,end_zoom_frame,end_zoom_window_reset,end_zoom_stats,end_zoom_release};

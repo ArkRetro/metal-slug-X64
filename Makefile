@@ -50,7 +50,7 @@ $(COLD_OBJS): CFLAGS += -Os
 # the overlay is linked away from the main program's small-data area); the
 # main link keeps what they call (the .externs list) and each cartridge gets
 # its overlays as the rompak file <elf>.ovl (the .z64 rule below).
-OVL_MODULES := neo_m3boss neo_m4boss neo_m5boss neo_m6boss neo_ending
+OVL_MODULES := neo_m3boss neo_m4boss neo_m5boss neo_m6boss neo_ending end_zoom end_zoom_rdp end_zoom_core neo_scb
 OVL_OBJS_src := $(patsubst %,$(BUILD_DIR)/src/%.o,$(OVL_MODULES))
 OVL_OBJS_diag := $(patsubst %,$(BUILD_DIR)/diag/%.o,$(OVL_MODULES))
 $(OVL_OBJS_src) $(OVL_OBJS_diag): N64_CFLAGS += -G0

@@ -17,7 +17,17 @@ typedef enum { MSX_OVL_M3BOSS, MSX_OVL_M4BOSS, MSX_OVL_M5BOSS, MSX_OVL_M6BOSS, M
  * tools/link_overlays.py fails the build when an image does not fit and prints each image's size: a boss
  * that grows raises this to its new size. */
 #define MSX_OVERLAY_BYTES 62432u   /* 62432 since the slot 0x38 of 0421E4 reaches the world (its targets 10C..10E are no longer dead code, 20-XI) */
+/* The draw entries an image carries (tools/link_overlays.py EXTRA): the ending's shrunk sprites (src/end_zoom.c).
+ * Valid only while that image is in the region: msx_overlay_ops returns NULL otherwise. */
+typedef struct {
+    bool (*draw)(uint32_t descriptor,uint16_t x,uint16_t y,uint8_t zoom_x,uint8_t zoom_y,uint16_t attributes,unsigned palette);
+    void (*frame)(void);
+    void (*window_reset)(void);
+    const struct end_zoom_stats *(*stats)(void);
+    void (*release)(void);   /* before another image replaces this one */
+} msx_overlay_ops_t;
 #if MSX_OVERLAY
+const msx_overlay_ops_t *msx_overlay_ops(msx_overlay_id_t id);
 /* The overlay's tick, the overlay copied first if another one (or none) is in
  * the region. A copy while overlay code is running (a boss's tick reaching
  * another overlay through neo_region_tick) is an assertion. */

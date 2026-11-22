@@ -5,7 +5,7 @@
 uint32_t rompak_search_ext(const char *ext);   /* libdragon rompak.c (rompak_internal.h) */
 /* The images are linked at this address: global, tools/link_overlays.py reads it from the ELF. */
 uint8_t msx_overlay_region[MSX_OVERLAY_BYTES] __attribute__((aligned(32)));
-typedef struct { uint32_t magic,id; ga_result_t (*tick)(neo_gactor_t *a,neo_genv_t *e); uint32_t bytes; } image_head_t;
+typedef struct { uint32_t magic,id; ga_result_t (*tick)(neo_gactor_t *a,neo_genv_t *e); uint32_t bytes; const msx_overlay_ops_t *ops; } image_head_t;
 static uint32_t rom;   /* the `.ovl` file */
 static struct { uint32_t offset,bytes; } table[MSX_OVL_COUNT];
 static int loaded=-1;
@@ -28,6 +28,8 @@ static void load(msx_overlay_id_t id) {
     assertf(depth==0,"MSX overlays: overlay %u needed while overlay %d runs",(unsigned)id,loaded);
     if (!rom) open_file();
     uint32_t t0=TICKS_READ(),n=(table[id].bytes+7u)&~7u;
+    /* the image leaving the region gives back what its draw code holds (end_zoom.c's memory) */
+    if (loaded>=0) {const image_head_t *o=(const image_head_t *)msx_overlay_region;if (o->ops && o->ops->release) o->ops->release();}
     loaded=-1;
     data_cache_hit_writeback_invalidate(msx_overlay_region,n);
     dma_read(msx_overlay_region,rom+table[id].offset,n);
@@ -46,4 +48,8 @@ ga_result_t msx_overlay_tick(msx_overlay_id_t id,neo_gactor_t *a,neo_genv_t *e) 
 }
 void msx_overlay_mission(unsigned mission) {
     if (mission>=3 && mission<=6 && loaded!=(int)(MSX_OVL_M3BOSS+mission-3u)) load((msx_overlay_id_t)(MSX_OVL_M3BOSS+mission-3u));
+}
+const msx_overlay_ops_t *msx_overlay_ops(msx_overlay_id_t id) {
+    /* only the image in the region: its code is resident */
+    return loaded==(int)id?((const image_head_t *)msx_overlay_region)->ops:NULL;
 }

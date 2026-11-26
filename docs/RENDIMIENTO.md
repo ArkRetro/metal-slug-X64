@@ -1402,3 +1402,61 @@ Cuenta del peor arranque registrado con el arreglo: 3224 + 128 (sin la fuga) + 1
 ranuras de 16 KB más registros (≥ 8 sobre el suelo de 208). **Pendiente de medir en ares** (la máquina está cargada;
 orden del coordinador): arranque con Start inmediato y arranque normal, líneas `MSX CACHE slots=` y `MSX MEM audio`.
 La región de superposición (62 432 B) es el tamaño de `neo_m6boss` (la mayor); no se ha reducido.
+
+## Carril de optimización: inventario y segunda región de superposición (26-XI, rama `work-opt`)
+
+**Inventario medido** (`build/mslugx-explorer.map` tras `--gc-sections`, base ccr `da031c2`, mismos datos privados que
+el cartucho de `ws-m4`, 66 682 880 B). Programa: texto 1 329 952 B, `.rodata` 513 358 B, datos 16 197 B, bss
+355 721 B. Los mayores:
+
+| Módulo | texto | `.rodata` | bss | Nota |
+| --- | ---: | ---: | ---: | --- |
+| `neo_m3enemy` | 135 876 | 712 | 0 | compartido M3/M5/M6 (`neo_m5mech`, `neo_m6boss` llaman a sus muertes): residente |
+| `neo_world` | 61 120 | 14 022 | 4 964 | bucle del mundo (caliente) |
+| `gameplay` | 43 200 | 866 | 2 | |
+| `neo_boss` | 36 240 | 31 080 | 716 | |
+| `neo_heli` | 35 452 | 256 | 0 | |
+| `neo_soldier_ai` | 32 800 | 1 574 | 16 | |
+| `scene_renderer` | 32 704 | 132 | 32 592 | |
+| `actor` | 25 312 | 38 | 85 309 | `game` 83 680 B |
+| `scene_assets` | 23 648 | **267 639** | 14 681 | tablas generadas: `scene_images` 104 640, `scene_native_descriptors` 49 104, `scene_map_images` 47 352, `scene_map_cells_data` 35 832, `scene_chunks` 16 608 |
+| `main` | 6 644 | 50 348 | 96 | `marco_commands` 25 910, `marco_parts` 9 228, `marco_poses` 8 928 |
+| `neo_region` | 4 164 | 50 430 | 1 905 | |
+| `program_file` | 1 144 | 0 | 115 139 | `arena` 114 688 B |
+| libc `_vfprintf_r`+`_svfprintf_r` | 20 836 | | | los registros `debugf` de los que vive la matriz: no se quitan |
+
+Código de una sola misión que seguía residente (texto+`.rodata` de cada `.o` a `-Os`, sin `.data`/`.bss` y sin
+punteros a sí mismos guardados fuera de la llamada): M2 `neo_m2boss`, `neo_m2props`, `neo_m2traps`, `neo_m2creature`;
+M3 `neo_m3mid`, `neo_m3veh`, `neo_m3props`; M4 `neo_m4props`, `neo_m4veh`; M5 `neo_m5enemy`, `neo_m5mech`,
+`neo_m5props`, `neo_m5sewer`, `neo_m5train`; M6 `neo_m6enemy`, `neo_m6props`. Solo `neo_region_tick` llama a sus
+`_tick`; en el programa quedan las `_routine` (y `neo_m4props_reset`, `neo_m2gate_routine`, `neo_layerobj_*`, que no
+tienen estado).
+
+Montón al arrancar (arranque normal, `MSX MEM`): pantalla 459 KB, logo +175, título/entrada (liberados al acabar),
+efectos residentes 956 KB (110 ficheros), caché de escena el resto menos la reserva de juego (576 KB = reserva 320 +
+margen 256).
+
+**Cambio.** Segunda región (`msx_overlay_code_region`, 76 016 B = la imagen de la M5) con una imagen por misión
+(`m2code`..`m6code`, varias `_tick` por imagen: cabecera de 36 B con hasta 5 entradas, ranura fija por módulo en
+`neo_region.c`); `msx_overlay_mission` copia el jefe (región 0) y el código de la misión (región 1) en los fotogramas
+negros de la carga. La región 0 sube 16 B (cabecera). Mecanismo igual que el de los jefes (`-G0`, `--just-symbols`,
+`EXTERN`); el anfitrión no cambia.
+
+| | Antes (`da031c2`) | Después |
+| --- | ---: | ---: |
+| texto (+`.rodata`) | 1 845 892 B | 1 616 020 B |
+| datos | 16 424 B | 16 360 B |
+| bss | 356 036 B | 432 180 B (regiones 62 448 + 76 016) |
+| **programa** | **2 218 352 B** | **2 064 560 B (−150 KB)** |
+| montón (`MSX MEM display`) | 5961 KB | 6111 KB |
+| caché, Start desde el primer fotograma | 208 ranuras (3328 KB) | **218** (3488 KB) |
+| caché, arranque normal | 208 ranuras | **218** |
+| cartucho | 66 682 880 B | 66 535 424 B |
+
+Imágenes: `m2code` 35 296, `m3code` 46 448, `m4code` 34 896, `m5code` 76 016, `m6code` 44 416; jefes 30 192 /
+24 736 / 20 928 / 62 448, final 20 768. El zoom del final (~14 KB) cabe en la imagen `neo_ending` (región 0: 20 768 +
+14 KB < 62 448) sin tocar el programa principal.
+
+Pendientes medidos, no hechos: las tablas de `scene_assets` (≈270 KB de `.rodata` en RAM) podrían leerse del
+cartucho por trozos (≈16 ranuras), pero se consultan en el dibujo: hace falta medir el coste por fotograma antes;
+`neo_m3enemy` (136 KB) solo se puede partir separando las dos muertes compartidas.

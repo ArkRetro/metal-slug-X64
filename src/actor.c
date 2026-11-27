@@ -787,8 +787,8 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.victory=msx_game_victory(&game);
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
-#if MSX_DIAG
-            /* B83 (read only): an update whose parts draw with two facings
+#if MSX_DIAG || defined(MSX_TESTPAD)
+            /* B83 (read only; test cartridges): an update whose parts draw with two facings
              * (004364 mirrors every pose by the player's +15; the run and
              * fire poses carry no mirror flag of their own). */
             {neo_anim_draw_t d[2*MARCO_VISUAL_DRAWS];unsigned n=marco_visual_draws(&marco,d,2*MARCO_VISUAL_DRAWS),mixed=0;

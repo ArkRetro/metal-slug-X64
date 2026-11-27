@@ -18,7 +18,7 @@ p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares')
 p.add_argument('--places',default='0,1,2,3')
-p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-diag.z64 (MSX_DIAG=1): after the landing, run and fire, '
+p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-testpad.z64 (no script: the keys of xdotool) or mslugx-diag.z64: after the landing, run and fire, '
     'keep running with the fire over, turn, crouch and fire, with the pistol; no update may draw the parts with two facings '
     '(MSX DIAG marco facing mixed)')
 a=p.parse_args()

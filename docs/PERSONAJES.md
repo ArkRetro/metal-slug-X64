@@ -371,6 +371,15 @@ tools/pack_add_actors.py ROM52/romfs OUT --scene ROM52/romfs/scene.pack ROM52/bu
   `mission2.pack` y `mission5.pack` (versión 6), y `mission3/4/6.pack` solo
   en los desplazamientos de lo que toman de la M2 (mismo tamaño);
   `mission13.pack` igual.
+- ares (`test_vehicle_damage_ares.py --mission m1 --character N --rider
+  --expect 2`): Tarma `0343a8/377`, Eri `0343c8/004`, Fio `0343e8/005` en la
+  Camel, **PASS**, 0 dibujos ausentes montado; Fio muere 10 veces (tipos 9,
+  7, 0x10) y ningún dibujo ausente es de `1A5A..` (los que quedan, paletas
+  `0F7`/`3A9` de soldados, faltan ya en el `scene_meta.h` de la ROM 52).
+- `make check` orden a orden: todo pasa salvo `check_mission_descriptors 6`
+  (falta `soldier-native.json`) y `test_bgp_share.py` (el `m3s1.bgp` de la
+  ROM 52, con el cielo, no es el que `prerender_stage.py` rehace sin
+  `layers_rom.json`).
 - Caché de escena: **216 ranuras** en los dos arranques (las tablas
   compiladas crecen: 84 imágenes, 4 paletas, 10 fragmentos). Cartucho
   66 650 112 B.

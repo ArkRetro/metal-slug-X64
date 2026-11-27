@@ -11,6 +11,7 @@
 #include "marco_throw_fixture.h"
 #include "marco_mummy_fixture.h"
 #include "run_weapon_fixture.h"
+#include "run_turn_fixture.h"
 #include "throw_fixture_driver.h"
 static bool reserve(void *c){(void)c;return true;}
 #include "marco_pose_meta.h"
@@ -44,6 +45,34 @@ int main(void){
    }
    printf("B83 turn after the run weapon: %u draws with the other facing\n",mixed);assert(!mixed);
    puts("PASS: B83 the run's weapon is chosen again every update (MAME marco-run-fire-turn, 0 differences)");}
+  /* B84 (docs/BUG_MATRIX.md): the run's turn 0C2746 (0BEE58, +92 > 0
+   * 0BEE98, form 1 +0x10) with no weapon (0C0F16: a press in its two
+   * updates is no shot), the run's start against the facing from the idle
+   * and the stop (+80 = 0 0C1EFA: 0BEE18; a press or up there, the idle
+   * 0C1F4A). MAME 0.264 marco-run-turn, pistol, H and C: every draw of
+   * every update, and every press: the turn gate (gameplay.c) blocks it
+   * exactly when the original took no shot. */
+  {unsigned k=0,diff=0,gate_diff=0,presses=0,lost=0;
+   for(unsigned s=0;s<sizeof run_turn_segments/sizeof run_turn_segments[0];s++){
+    const run_turn_segment_t*g=&run_turn_segments[s];
+    marco_visual_t rv;marco_visual_reset(&rv);
+    for(unsigned t=0;t<g->rows;t++,k++){
+     const run_turn_row_t*r=&run_turn_rows[k];
+     marco_visual_input_t in={.grounded=true,.moving=r->moving,.facing=r->facing,.aim_up=r->aim_up,.form=g->form,.hgun_program=-1};
+     if(g->cgun){in.cgun=true;in.cgroup=1;in.cgun_fire=r->fired;in.fired=r->fired;}
+     else if(g->form==1){in.hgun_program=r->hgun;in.hgun_start=r->hgun>=0;}
+     else in.fired=r->fired;
+     marco_turn_gate_t gate=marco_visual_turn_gate(&rv);
+     if(r->pressed){presses++;lost+=r->lost;bool b=marco_turn_gate_blocks(&gate,true,false,r->moving,r->facing);
+      if(b!=(bool)r->lost && gate_diff++<4)printf("B84 %s frame %u: press blocked %d, MAME lost %d\n",g->capture,r->frame,b,r->lost);}
+     marco_visual_step(&rv,&in);neo_anim_draw_t d[16];unsigned n=marco_visual_draws(&rv,d,16);bool same=n==r->count;
+     for(unsigned i=0;i<n && same;i++)same=d[i].descriptor==r->draw[i] && (d[i].attributes&1u)==r->flip[i];
+     if(!same && diff++<12)printf("B84 %s frame %u: port %u %06x/%u %06x/%u, MAME %u %06x/%u %06x/%u\n",g->capture,r->frame,n,n?d[0].descriptor:0,n?d[0].attributes&1u:0,
+       n>1?d[1].descriptor:0,n>1?d[1].attributes&1u:0,r->count,r->draw[0],r->flip[0],r->draw[1],r->flip[1]);
+    }}
+   printf("B84 run turn and stop: %u updates, %u differences; %u presses (%u lost in the original), %u gate differences\n",k,diff,presses,lost,gate_diff);
+   assert(!diff && !gate_diff);
+   puts("PASS: B84 the run's turn (pistol, H, C; level and up), its lost shot and the stop (MAME marco-run-turn, 0 differences)");}
   marco_visual_t v;marco_visual_reset(&v);unsigned missing=0,total=0,empty=0;
   const char*names[]={"idle","run","fire","aimup","fireup","crouch","crouchfire","jump","runjump","jumpfire","jumpupfire","land-run-left"};
   for(unsigned s=0;s<12;s++)for(unsigned t=0;t<120;t++){

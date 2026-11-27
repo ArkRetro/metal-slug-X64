@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include "marco_animation.h"
+#include "marco_turn.h"
 /* Campaign Marco animation (docs/MARCO_CAMPAIGN.md): the original body and
  * weapon programs (converted graph of an audited catalog capture) stepped
  * by the native animation engine once per logic update, as the original
@@ -46,7 +47,9 @@ typedef struct {
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */
     unsigned failures,starts;
-    uint8_t m98;                   /* form 0: +98, 2 from a pistol shot (0C3CE2) until 0C3D9A sees +76 (the ground turn 0C28C8) */
+    uint8_t m98;                   /* forms 0/1: +98, 2 from a shot or a throw (0C3CE2, 0C3EB2, 0C3BD2) until 0C3D9A sees +76 or the weapon is chosen again (the ground turn 0C28C8) */
+    int8_t m92;                    /* forms 0/1: +92 as the weapon programs leave it (1 up: 0C4100, 0C3D38, 0C3EC4..; the turn reads +92 > 0) */
+    uint16_t m80;                  /* forms 0/1: +80 of the run, 0x3F at its start (0C287C) halved every run update (0C28A2): 0 lets the stop 0C1EFA */
     bool victory_armed;            /* 0C2046 set the routine 0C1E84: its program starts in the next update */
 } marco_visual_t;
 /* The chosen character's programs (msx_character.h): script = its converted
@@ -55,6 +58,8 @@ typedef struct {
  * of the character's column of the same table rows. NULL: Marco. */
 void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (*roles)[2],unsigned count);
 void marco_visual_reset(marco_visual_t *v);
+/* B84 (marco_turn.h): the gate of the update after this one. */
+marco_turn_gate_t marco_visual_turn_gate(const marco_visual_t *v);
 /* One logic update. */
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in);
 /* Draws of the current update in emission order (body, then weapon). */

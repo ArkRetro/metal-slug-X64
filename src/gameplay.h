@@ -16,6 +16,7 @@
 #include "marco_thinfire.h"
 #include "marco_legs.h"
 #include "marco_death.h"
+#include "marco_turn.h"
 // Whole Mission 1: map/collision 3840 px (camera progress 0..3520, the
 // original command list holds at 3520). The player's right limit keeps the
 // arcade fraction camera+292-1/65536 (measured at 1164 for camera 872 and
@@ -167,6 +168,8 @@ typedef struct {
      * a press fires on the tick it arrives, as the original's state does in
      * the update of the press (hold2: press 2190, callback 2191). */
     bool fire_request;unsigned pistol_pending,pistol_wait;msx_bullet_t pistol_next;
+    marco_turn_gate_t turn_gate;   /* B84: the run's turn of the visual layer (actor.c after each player update): no press is taken in its updates */
+    unsigned turn_blocked;         /* presses dropped by it */
     /* The thin fire states of C/R/0D/E, S and F (marco_thinfire.h): the
      * presses since the last player update, the ground of the last two
      * updates (the landing 0C1EBE runs in the update after the one that

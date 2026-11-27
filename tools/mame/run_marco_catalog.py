@@ -4,7 +4,7 @@ import argparse,json,os,subprocess,hashlib,shutil
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[2]
 # MAME 0.264+ and Xvfb: the emulator tree when present, else the system ones.
-MAME=next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')
+MAME=os.environ.get('MSX_MAME') or next((m for m in ('/workspace/emulator/root/usr/games/mame','/usr/games/mame') if os.path.exists(m)),'mame')
 XVFB=next((m for m in ('/workspace/emulator/root/usr/bin/Xvfb','/usr/bin/Xvfb') if os.path.exists(m)),'Xvfb')
 # Names describe input conditions only. Classify animation from actual evidence.
 CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',96,('Down','fire')),
@@ -21,16 +21,20 @@ CASES=[('idle_right',512,()),('crouch_right',64,('Down',)),('crouch_fire_right',
 def schedule(cases=CASES,first=2100):
  events={};rows=[];at=first
  def event(f,button,value):events.setdefault(f,[]).append(('P1 '+button,value))
- for name,length,buttons in cases:
-  assert isinstance(name,str) and name and 16<=length<=1200 and set(buttons)<={'Up','Down','Left','Right','fire','jump','grenade'}
+ for case in cases:
+  name,length,buttons=case[:3];fire_at=case[3] if len(case)>3 else None
+  assert isinstance(name,str) and name and 2<=length<=1200 and set(buttons)<={'Up','Down','Left','Right','fire','jump','grenade'}
   for b in ('Up','Down','Left','Right','A','B','C'):event(at,b,0)
   for b in buttons:
    if b not in ('fire','jump','grenade'):event(at,b,1)
   if 'fire' in buttons:
-   for f in range(at,at+length-1,8):event(f,'A',1);event(f+2,'A',0)
+   # fire_at (plan key "fire_at"): the frames of the case, from its first,
+   # on which A is pressed (released 2 frames later); default every 8.
+   for f in (range(at,at+length-1,8) if fire_at is None else [at+int(o) for o in fire_at]):
+    assert at<=f<at+length;event(f,'A',1);event(f+2,'A',0)
   if 'jump' in buttons:event(at,'B',1);event(at+2,'B',0)
   if 'grenade' in buttons:event(at+(8 if 'jump' in buttons else 0),'C',1);event(at+12,'C',0)
-  rows.append(dict(name=name,first=at,last=at+length-1,inputs=buttons));at+=length
+  rows.append(dict(name=name,first=at,last=at+length-1,inputs=buttons,**({} if fire_at is None else dict(fire_at=list(fire_at)))));at+=length
  return rows,events
 
 def main():
@@ -39,7 +43,7 @@ def main():
  out=a.output.resolve();out.mkdir(parents=True,exist_ok=False);(out/'cfg').mkdir();(out/'nvram').mkdir()
  cases=CASES
  if a.plan:
-  cases=[(c['name'],c['length'],tuple(c['inputs'])) for c in json.loads(a.plan.read_text())]
+  cases=[(c['name'],c['length'],tuple(c['inputs']))+((tuple(c['fire_at']),) if 'fire_at' in c else ()) for c in json.loads(a.plan.read_text())]
   assert cases
  rows,events=schedule(cases,a.first);last=rows[-1]['last'];assert last-a.first<=12000 and (a.load or last<=12000)
  if a.end_frame is not None:

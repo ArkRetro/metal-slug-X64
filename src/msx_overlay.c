@@ -45,7 +45,7 @@ static void load(msx_overlay_id_t id) {
     debugf("MSX OVL %u loaded: %lu bytes, %lu us (load %u)\n",(unsigned)id,(unsigned long)h->bytes,(unsigned long)TICKS_TO_US(TICKS_SINCE(t0)),loads);
 }
 /* Each module's own mission's image. */
-static const uint8_t home[MSX_MOD_COUNT]={MSX_OVL_M2CODE,MSX_OVL_M2CODE,MSX_OVL_M2CODE,MSX_OVL_M2CODE,MSX_OVL_M3CODE,MSX_OVL_M3CODE,
+static const uint8_t home[MSX_MOD_COUNT]={MSX_OVL_M2CODE,MSX_OVL_M2CODE,MSX_OVL_M2CODE,MSX_OVL_M3CODE,MSX_OVL_M3CODE,
     MSX_OVL_M3CODE,MSX_OVL_M4CODE,MSX_OVL_M4CODE,MSX_OVL_M5CODE,MSX_OVL_M5CODE,MSX_OVL_M5CODE,MSX_OVL_M5CODE,MSX_OVL_M5CODE,
     MSX_OVL_M6CODE,MSX_OVL_M6CODE};
 static ga_result_t run(unsigned r,unsigned slot,neo_gactor_t *a,neo_genv_t *e) {

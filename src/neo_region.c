@@ -159,7 +159,7 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_drone_routine(r)) return neo_drone_tick(a,e);
     if (neo_m2traps_routine(r)) return CODE_TICK(MSX_MOD_M2TRAPS,neo_m2traps_tick);
     if (neo_hostage_routine(r)) return neo_hostage_tick(a,e);
-    if (neo_m2boss_routine(r)) return CODE_TICK(MSX_MOD_M2BOSS,neo_m2boss_tick);
+    if (neo_m2boss_routine(r)) return neo_m2boss_tick(a,e);
     if (neo_m3mid_routine(r)) return CODE_TICK(MSX_MOD_M3MID,neo_m3mid_tick);
     if (MSX_M3BOSS && neo_m3boss_routine(r)) return BOSS_TICK(MSX_OVL_M3BOSS,neo_m3boss_tick);
     /* The credits' pages, timers and pictures (neo_ending.c) in the world's list; without the ending's RAM

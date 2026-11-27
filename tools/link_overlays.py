@@ -32,9 +32,10 @@ import os, re, struct, subprocess, sys, tempfile
 from pathlib import Path
 
 B = Path(os.environ.get('N64_INST', '/home/user/toolchains/package/opt/libdragon')) / 'bin' / 'mips64-elf-'
+# neo_m2boss stays in the main program: its delayed music 059F76/059FA8 runs in Missions 2, 4 and 5.
 # Region 2's modules, in the order of msx_overlay_module_t (src/msx_overlay.h): a region-2 image's tick table is
 # indexed by them (0: not in the image).
-MODULES = ['neo_m2boss', 'neo_m2props', 'neo_m2traps', 'neo_m2creature', 'neo_m3mid', 'neo_m3veh', 'neo_m3props',
+MODULES = ['neo_m2props', 'neo_m2traps', 'neo_m2creature', 'neo_m3mid', 'neo_m3veh', 'neo_m3props',
            'neo_m4props', 'neo_m4veh', 'neo_m5enemy', 'neo_m5mech', 'neo_m5props', 'neo_m5sewer', 'neo_m5train',
            'neo_m6enemy', 'neo_m6props']
 # id order = enum msx_overlay_id_t (src/msx_overlay.h): (image, region, modules); a region-0 image has one module,
@@ -44,9 +45,9 @@ OVERLAYS = [('neo_m3boss', 0, ['neo_m3boss']), ('neo_m4boss', 0, ['neo_m4boss'])
             ('neo_ending', 0, ['neo_ending']),   # the ending: results, credits, ranking, title (src/neo_ending.c)
             # Each mission's own code but its boss (region 1), plus the other missions' modules its lists make
             # (measured in ares: `MSX OVL n for module m` lines).
-            ('m2code', 1, ['neo_m2boss', 'neo_m2props', 'neo_m2traps', 'neo_m2creature']),
+            ('m2code', 1, ['neo_m2props', 'neo_m2traps', 'neo_m2creature']),
             ('m3code', 1, ['neo_m3mid', 'neo_m3veh', 'neo_m3props']),
-            ('m4code', 1, ['neo_m4props', 'neo_m4veh', 'neo_m2boss', 'neo_m6props']),   # M4 makes 059F76/059FA8 (neo_m2boss) and 01FECE (neo_m6props)
+            ('m4code', 1, ['neo_m4props', 'neo_m4veh', 'neo_m6props']),   # M4 makes 01FECE (neo_m6props)
             ('m5code', 1, ['neo_m5enemy', 'neo_m5mech', 'neo_m5props', 'neo_m5sewer', 'neo_m5train']),
             ('m6code', 1, ['neo_m6enemy', 'neo_m6props'])]
 TICKS_MAX = len(MODULES)   # image head: 'MSXo', id, bytes, TICKS_MAX, TICKS_MAX tick addresses (src/msx_overlay.c)

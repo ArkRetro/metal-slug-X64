@@ -72,4 +72,13 @@ bool marco_mount_eject_end(uint8_t *m,uint32_t saved34);
  * is clear and 10C71C+p <= 10C71A+p; +5F bits 5/4 from up/down, +9A bit 3
  * for a stick against the facing, +9B |= d0 & +9C. */
 uint16_t marco_mount_input(uint8_t *m,const marco_mount_in_t *in);
+/* B82: the character fields of the player's node record the vehicles read
+ * (0AA760 returns +6E, the Camel's / Slugnoid's / M3 vehicle's +70 and the
+ * SV-001's +82): +6E the character chosen at SOLDIER SELECT (0C961C: 0
+ * Marco, 1 Tarma, 2 Eri, 3 Fio), +70 the player (0 for player 1). MAME
+ * 0.264 RAM 1014C4+6E..+71: 0000 0000, 0001 0000, 0002 0000, 0003 0000
+ * (data/player_ids_fixture.txt, tools/test_player_ids.c). */
+static inline void marco_mount_record_ids(uint8_t *m,unsigned character) {
+    m[0x6e]=0;m[0x6f]=(uint8_t)character;m[0x70]=m[0x71]=0;
+}
 #endif

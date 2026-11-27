@@ -300,6 +300,8 @@ local actions={[700]={'Coin 1',1},[710]={'Coin 1',0},[760]={'1 Player Start',1},
 -- Eri, Tarma, Fio): Right once per place from 1700, A at 1800 instead of the
 -- A held 1550..1700 (the landing comes about 250 frames later).
 local character=tonumber(os.getenv('MSX_WEAPONS_CHARACTER') or '-1')
+local seek_routines=nil
+for h in string.gmatch(os.getenv('MSX_WEAPONS_SEEK') or '','(%x+)') do seek_routines=seek_routines or {};seek_routines[tonumber(h,16)]=true end
 local choice={}
 if character>=0 then
  local place=({[0]=0,[1]=2,[2]=1,[3]=3})[character];assert(place,'MSX_WEAPONS_CHARACTER 0..3')
@@ -434,6 +436,19 @@ emu.register_frame_done(function()
   local a=frame%12<6 and 1 or 0
   local b=(frame>3000 and frame%120>=6 and frame%120<12) and 1 or 0
   local c=(frame>2900 and frame%60<8) and 1 or 0
+  -- MSX_WEAPONS_SEEK=r1,r2..: on foot, a vehicle waiting in one of these
+  -- routines (hex, e.g. 345e0 the Camel) is walked to and jumped on (B every
+  -- 30 frames within 40 px, no fire): pad inputs only, no RAM write.
+  if seek_routines and not riding then
+   for n=ROOT,0x108000-0xb0,0xb0 do
+    if seek_routines[cpu:read_u32(n)] then
+     local dx=((cpu:read_u16(n+0x3c)-cpu:read_u16(P1+0x3c)+0x8000)&0xffff)-0x8000
+     right=dx>6 and 1 or 0;left=dx<-6 and 1 or 0;up=0;a=0;c=0
+     b=(dx>-40 and dx<40 and frame%30<4) and 1 or 0
+     break
+    end
+   end
+  end
   if riding then
    local t=frame-mounted_at
    b=0

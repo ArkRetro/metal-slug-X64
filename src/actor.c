@@ -894,6 +894,23 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             break;
         }
      }}
+    /* B82: the riders the vehicles draw (Camel 034F96 table +72, Slugnoid
+     * pilot 097886 +72, Mission 3 vehicle pilot 0AD2FC +78, the SV-001's
+     * climb 095580) with the character they took from
+     * the player's +6E (0AA760) and their palette: a line when one appears
+     * or changes (tools/test_vehicle_rider_ares.py). */
+    {static uint32_t last_rider[3];
+     for (unsigned i=0;i<NEO_WORLD_GACTORS;i++) {
+        const neo_gactor_t *v=&game.world.gactors[i];uint32_t r=v->active?ga_l(v,0):0;uint32_t t;uint16_t c;
+        if (r==0x34f96u || r==0x97886u) {t=ga_l(v,0x72);c=ga_w(v,0x70);}
+        else if (r==0xad2fcu) {t=ga_l(v,0x78);c=ga_w(v,0x70);}
+        else if (r==0x95580u) {t=0;c=0xffffu;}
+        else continue;
+        uint32_t key[3]={r,t,(uint32_t)c<<16|v->palette[0]};
+        if (memcmp(key,last_rider,sizeof(key))) {memcpy(last_rider,key,sizeof(key));
+            debugf("MSX vehicle rider routine=%06lx table=%06lx character=%d palette=%03X player6e=%u\n",(unsigned long)r,(unsigned long)t,c==0xffffu?-1:(int)c,v->palette[0],game.world.player_node[0][0x6f]);}
+        break;
+     }}
     if (game.mounts!=old_mounts) debugf("MSX player mounted vehicle kind=%u (0C3078) count=%u\n",game.world.vslots.slot[0].b[0x21],game.mounts);
     if (game.dismounts!=old_dismounts) debugf("MSX player left vehicle kind=%u (0C30F0) count=%u\n",game.world.vslots.slot[0].b[0x1d],game.dismounts);
     if (game.mount_stops!=old_mount_stops) debugf("MSX mounted player stopped explicitly at %06lx (untranslated)\n",(unsigned long)game.mount_stop);

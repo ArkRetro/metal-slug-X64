@@ -625,7 +625,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugidle slugfall slugtour sluglaunch slughit slugair m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6air m6air2 m6boss8 m6boss9 m6flee m6truck
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugc1 slugc2 slugc3 slugidle slugfall slugtour sluglaunch slughit slugair m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6air m6air2 m6boss8 m6boss9 m6flee m6truck
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -1157,6 +1157,15 @@ FAMILY_ARGS_awning := --terrain 10c72e
 # the slots, input words, weapon block and player nodes it reads and writes
 # (--ram of the extraction) are compared byte for byte.
 FAMILY_ARGS_slug := --script-actor 101414 --script-routines 1be24,59e30 --node-fields 6e
+# slugc1 / slugc2 / slugc3 (B82): the same family ridden by Tarma, Eri and Fio
+# (tools/capture_weapons.lua MSX_WEAPONS_CHARACTER=1/2/3, MSX_WEAPONS_SEEK=345e0,
+# plan vehicles, ASSIST_CAMERA=2000, FAMILY 9000..10350 ROOTS=3458e): the
+# rider graphic 034F1A with +70 = the character and its tables 0343A8 / 0343C8
+# / 0343E8; ranges and RAM of slug without the bullets 1be24 (one hits a target
+# outside the family in 9783).
+FAMILY_ARGS_slugc1 := $(FAMILY_ARGS_slug)
+FAMILY_ARGS_slugc2 := $(FAMILY_ARGS_slug)
+FAMILY_ARGS_slugc3 := $(FAMILY_ARGS_slug)
 FAMILY_ARGS_tank := --script-actor 101414 --script-routines 1b6a0 --node-fields 6e,8c --shared 14a4e --attacks --stamp a480000,400000,b69f8 --stamp a480000,400000,b6a2c --stamp a480000,400000,b6a12 --stamp a480000,400000,b6a42
 # tankhit / tankkill = the SV-001 hit on the ground (09351A -> 093576) and destroyed
 # with its rider (0938DA -> 09391E -> 093AFA), B52: MAME at_9000 (b51b states),
@@ -1637,6 +1646,9 @@ check-core: $(BUILD_DIR)/continue_fixture.h $(BUILD_DIR)/legs_fixture.h $(BUILD_
 	$(BUILD_DIR)/host/vulcan
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_mount.c src/marco_mount.c src/neo_vslot.c -o $(BUILD_DIR)/host/mount
 	$(BUILD_DIR)/host/mount
+	# B82: player 1's record +6E..+71 per character and the Camel's +70 / rider table, against MAME.
+	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_player_ids.c src/neo_vslot.c -o $(BUILD_DIR)/host/player_ids
+	$(BUILD_DIR)/host/player_ids
 	$(BUILD_DIR)/host/hud
 	$(HOST_CC) $(HOST_CFLAGS) -I$(BUILD_DIR) tools/test_marco_hgun.c src/marco_hgun.c -o $(BUILD_DIR)/host/hgun
 	$(BUILD_DIR)/host/hgun

@@ -604,8 +604,9 @@ static void nwl(uint8_t *m,unsigned o,uint32_t v) {m[o]=(uint8_t)(v>>24);m[o+1]=
  * selection, 0AA760 binding, 0C0808 bombs), from the port's player, once
  * per update before the world: +3C/+40 projected (+44/+48 the previous
  * ones), +15 (facing, ground), +28/+2C/+30/+34 at the scene root (+38 =
- * 10E968, as in the traces), +5E = 1 and +6E/+70 = 0 (player 1 in the
- * traces), +5F bit 7 dying, +93 form, +9C = FF. While mounted the record
+ * 10E968, as in the traces), +5E = 1, +6E the character chosen at SOLDIER
+ * SELECT (0C961C; B82: the vehicles read it through 0AA760 for their
+ * rider's programs and palette) and +70 = 0 (player 1), +5F bit 7 dying, +93 form, +9C = FF. While mounted the record
  * is the original's (marco_mount.c) and only the projection is refreshed. */
 static void mount_record(msx_game_t *g,const neo_world_player_t *p) {
     uint8_t *m=g->world.player_node[0];
@@ -616,7 +617,7 @@ static void mount_record(msx_game_t *g,const neo_world_player_t *p) {
     nwl(m,0x28,(uint32_t)g->x);nwl(m,0x2c,(uint32_t)(56*MSX_UNIT-g->y));
     nwl(m,0x30,(uint32_t)g->velocity_x);nwl(m,0x34,(uint32_t)(g->grounded?0:-g->velocity_y));nwl(m,0x38,0x10e968u);
     m[0x5e]=1;m[0x5f]=(uint8_t)((m[0x5f]&0x7fu)|(p->dead?0x80u:0u));
-    m[0x6e]=m[0x6f]=m[0x70]=m[0x71]=0;m[0x93]=g->world.weapon_player.form93;m[0x9c]=0xff;
+    marco_mount_record_ids(m,msx_character_request);m[0x93]=g->world.weapon_player.form93;m[0x9c]=0xff;
     m[0x6a]=0xff;   /* no dynamic collision object (RAM dumps: FF) */
     nwl(m,0,0);
 }

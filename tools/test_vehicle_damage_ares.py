@@ -22,12 +22,20 @@ while riding, and
     the rider leaves;
   - the Camel (health 0, gauge max 0): the hit kills the rider (0AA7FC
     kind 0: `left vehicle`).
+--character N (B82: 0 Marco, 1 Tarma, 2 Eri, 3 Fio; SOLDIER SELECT's cursor moved
+before the menu) with --rider: a kind passes once it is ridden and every `MSX
+vehicle rider` line of the ride (actor.c) names that character with the ROM's
+tables for it (Camel 23A58E[N], Slugnoid 09649C[N], Mission 3 vehicle 0AB40C[N],
+palette 034330[N] / SV-001 climb 0954D4[N]) and no draw misses a descriptor or a
+palette (`MSX native draw missing`) while riding; no hit is needed.
 Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
 import argparse,os,re,subprocess,time
 import sys as _sys;from pathlib import Path as _Path;_sys.path.insert(0,str(_Path(__file__).resolve().parent));from ares_clock import EmuClock
 from pathlib import Path
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
-p.add_argument('--mission',default='m1',choices=('m1','m2s3','m5s3'))
+p.add_argument('--mission',default='m1',choices=('m1','m2s3','m3','m4','m5s3'))
+p.add_argument('--rom-zip',default=os.environ.get('MSX_ROM_ZIP','mslugx.zip'))
+p.add_argument('--character',type=int,default=0,choices=(0,1,2,3));p.add_argument('--rider',action='store_true',help='B82: check the rider of each ride instead of the damage')
 p.add_argument('--expect',default='',help='comma list of vehicle kinds that must pass (default: m1 -> 2,1; m2s3/m5s3 -> 3)')
 p.add_argument('--seconds',type=float,default=1500);p.add_argument('--wait',type=float,default=60,help='seconds the pad waits on a vehicle')
 p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float,default=5.0);p.add_argument('--period',type=float,default=4.0)
@@ -38,8 +46,7 @@ p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.a
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
     import sys;sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_private_data import private_data;a.data=private_data(a.data,out)
-expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m5s3':'3'}[a.mission]).split(',')]
-MENU={'m1':0,'m2s3':3,'m5s3':8}[a.mission]          # main.c mselect_items: Down presses from MISSION 1
+expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m3':'4','m4':'1','m5s3':'3'}[a.mission]).split(',')]
 env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
     LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log';pt.prepare(a,out)
@@ -71,7 +78,8 @@ try:
     if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
     # Start through the boot movies, the test menu of SOLDIER SELECT (L+R and A) and its item, each press held until the
     # cartridge logs its effect (tools/ares_menu.py): no counted presses on the host's clock.
-    import ares_menu;ares_menu.choose(key,log,proc,*{'m1':(1,1),'m2s3':(2,3),'m5s3':(5,3)}[a.mission],lifebar=a.lifebar)
+    import ares_menu;ares_menu.choose(key,log,proc,*{'m1':(1,1),'m2s3':(2,3),'m3':(3,1),'m4':(4,1),'m5s3':(5,3)}[a.mission],lifebar=a.lifebar,place={0:0,1:2,2:1,3:3}[a.character])
+    if a.character:wait(r'MSX CHARACTER %d chosen'%a.character,120)
     if a.lifebar:wait(r'MSX LIFEBAR on',60)
     wait(r'MSX first frame ready' if a.mission=='m1' else r'MSX stage \d+ camera x=',300)
     if not a.pad_script:subprocess.run([XD,'windowmove',win,'0','0'],env=env);subprocess.run([XD,'windowfocus',win],env=env)
@@ -115,6 +123,9 @@ try:
         else:
             hold('Up',up);hold('Left',left);hold('Right',(fwd and c5<2.0) or (not waiting and not left and (stuck or not up)));hold('a',not riding and bool(a.jump) and (t%a.jump)<0.2)
         hold('b',(not waiting and not seek and int(t*10)%2==0) or (not seek and fwd and c5>=4.4 and int(t*10)%2==0))   # no fire while hopping on: A+B is the exit (0AA7FC kind 1)
+        if a.rider and riding:   # B82: a kind already checked is left (A+B, 0AA7FC kind 1) to reach the next vehicle
+            km=re.findall(r'MSX player mounted vehicle kind=(\d+)',text)
+            if km and int(km[-1]) in done:hold('a',int(t*4)%2==0);hold('b',int(t*4)%2==0)
         pm=re.findall(r'MSX panel (play|continue|game over)',text[-20000:])
         if pm and pm[-1]=='continue' and t>=next_start:tap('Return');next_start=t+1.0
         if t>=nextgrab:
@@ -123,6 +134,10 @@ try:
         # a kind is done once its rides show everything (checked below on the whole log)
         # (the `left` line prints the slot's +1D: the kind of the last mount is the one left)
         # (done once a ride of that kind took a class-0 hit; a ride left without one is tried again)
+        if a.rider and riding:   # B82: done once the ride shows its rider for 3 s
+            at=text.rfind('MSX player mounted vehicle kind=')
+            km=re.match(r'MSX player mounted vehicle kind=(\d+)',text[at:])
+            if km and ride_since is not None and t-ride_since>3 and re.search(r'MSX vehicle rider routine=',text[text.rfind('MSX player left vehicle',0,at)+1:]):done.add(int(km.group(1)))
         if lefts and not riding:
             at=text.rfind('MSX player mounted vehicle kind=')
             km=re.match(r'MSX player mounted vehicle kind=(\d+)',text[at:])
@@ -140,7 +155,37 @@ try:
             cur['lines'].append(ln)
             if 'MSX player left vehicle' in ln:cur=None
     verdict={}
-    for kind in expect:
+    if a.rider:
+        # B82: the riders' tables and palettes of the ROM for the character (P1 + P2 bank 1, as the port reads them).
+        import zipfile
+        z=zipfile.ZipFile(a.rom_zip);sw=lambda b:bytes(b[i^1] for i in range(len(b)))
+        mem=sw(z.read('250-p1.p1'))+bytes(0x100000)+sw(z.read('250-p2.ep1'))[0x100000:0x200000]   # 000000 P1, 200000 the bank
+        rl=lambda x:int.from_bytes(mem[x:x+4],'big');rw=lambda x:int.from_bytes(mem[x:x+2],'big');N=a.character
+        want={0x34f96:(rl(0x23a58e+4*N),rw(0x34330+2*N)),0x97886:(rl(0x9649c+4*N),rw(0x34330+2*N)),0xad2fc:(rl(0xab40c+4*N),rw(0x34330+2*N)),0x95580:(0,rw(0x954d4+2*N))}
+        kind_riders={2:(0x34f96,),1:(0x95580,),3:(0x97886,),4:(0xad2fc,)}
+        # Each ride with the lines since the previous ride ended (the SV-001's climb 095580 comes before its mount line).
+        segs=[];start=0;cur=None
+        for i,ln in enumerate(lines):
+            m=re.search(r'MSX player mounted vehicle kind=(\d+)',ln)
+            if m:cur={'kind':int(m.group(1)),'lines':lines[start:i+1]};segs.append(cur);continue
+            if cur is not None:
+                cur['lines'].append(ln)
+                if 'MSX player left vehicle' in ln:cur=None;start=i+1
+        for kind in expect:
+            best=None
+            for r in (r for r in segs if r['kind']==kind):
+                rid=[(int(m.group(1),16),int(m.group(2),16),int(m.group(3)),int(m.group(4),16),int(m.group(5))) for m in
+                    (re.search(r'MSX vehicle rider routine=(\w+) table=(\w+) character=(-?\d+) palette=(\w+) player6e=(\d+)',l) for l in r['lines']) if m]
+                rid=[x for x in rid if x[0] in kind_riders[kind]]
+                # (while riding: the lines after the rider's death are the death's, not the vehicle's)
+                L=r['lines'];dead=next((i for i,l in enumerate(L) if 'MSX player death' in l),len(L))
+                miss=[l for l in L[:dead] if 'MSX native draw missing' in l]
+                good=[x for x in rid if x[4]==N and x[3]==want[x[0]][1] and (x[0]==0x95580 or (x[2]==N and x[1]==want[x[0]][0]))]
+                res={'riders':sorted(set('%06x/%06x/%d/%03X'%x[:4] for x in rid)),'want':'%06x/%03X'%want[kind_riders[kind][0]],'missing_draws':len(miss),'ok':bool(rid) and len(good)==len(rid) and not miss}
+                if miss:res['missing']=miss[:3]
+                if best is None or (res['ok'] and not best['ok']):best=res
+            verdict[kind]=best;print('kind',kind,'character',N,best)
+    for kind in ([] if a.rider else expect):
         best=None
         for r in (r for r in rides if r['kind']==kind):
             L=r['lines'];st=[(int(m.group(1),16),int(m.group(2)),int(m.group(3)),int(m.group(4))) for m in

@@ -168,7 +168,7 @@ try:
         segs=[];start=0;cur=None
         for i,ln in enumerate(lines):
             m=re.search(r'MSX player mounted vehicle kind=(\d+)',ln)
-            if m:cur={'kind':int(m.group(1)),'lines':lines[start:i+1]};segs.append(cur);continue
+            if m:cur={'kind':int(m.group(1)),'lines':lines[start:i+1],'mount':i-start};segs.append(cur);continue
             if cur is not None:
                 cur['lines'].append(ln)
                 if 'MSX player left vehicle' in ln:cur=None;start=i+1
@@ -176,7 +176,8 @@ try:
             best=None
             for r in (r for r in segs if r['kind']==kind):
                 rid=[(int(m.group(1),16),int(m.group(2),16),int(m.group(3)),int(m.group(4),16),int(m.group(5))) for m in
-                    (re.search(r'MSX vehicle rider routine=(\w+) table=(\w+) character=(-?\d+) palette=(\w+) player6e=(\d+)',l) for l in r['lines']) if m]
+                    (re.search(r'MSX vehicle rider routine=(\w+) table=(\w+) character=(-?\d+) palette=(\w+) player6e=(\d+)',l) for l in r['lines'][r['mount']:]) if m]
+                # (from the mount on: the Slugnoid's pilot 097830 is made with the walker, +70 = 0 until 0AA760 copies the rider's +6E)
                 rid=[x for x in rid if x[0] in kind_riders[kind]]
                 # (while riding: the lines after the rider's death are the death's, not the vehicle's)
                 L=r['lines'];dead=next((i for i,l in enumerate(L) if 'MSX player death' in l),len(L))

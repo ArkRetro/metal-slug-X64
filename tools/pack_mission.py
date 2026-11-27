@@ -62,7 +62,12 @@ and a 64-byte trailer naming those packs; --format 4 writes version 4:
   Version 5, the file's last 64 bytes: 'MSXX' u16 packs u16 0, then per pack
   whose chunks are used (at most 5): u16 mission u16 0 u32 its size in bytes
   u32 the CRC-32 of the whole pack (the runtime refuses the mission when the
-  pack on the cartridge has another size; pack_store.py checks the CRC)."""
+  pack on the cartridge has another size; pack_store.py checks the CRC).
+  Version 6 (B82) is version 5 with the Slugnoid pilots of characters 1..3
+  (rider_descriptors) as the last actor images, one block per character,
+  and after resource[] the record 'MSXC' u32 rider_first u32 count[3]: the
+  stage loader keeps the images before rider_first and the chosen
+  character's block only (src/scene_assets.c scene_assets_set_rider)."""
 import argparse,hashlib,json,struct,zlib
 from pathlib import Path
 from mission_tiles import pack_map

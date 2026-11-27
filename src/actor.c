@@ -787,6 +787,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.victory=msx_game_victory(&game);
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
+#if MSX_DIAG
+            /* B83 (read only): an update whose parts draw with two facings
+             * (004364 mirrors every pose by the player's +15; the run and
+             * fire poses carry no mirror flag of their own). */
+            {neo_anim_draw_t d[2*MARCO_VISUAL_DRAWS];unsigned n=marco_visual_draws(&marco,d,2*MARCO_VISUAL_DRAWS),mixed=0;
+             for (unsigned i=1;i<n;i++) mixed+=(d[i].attributes&1u)!=(d[0].attributes&1u);
+             if (mixed) debugf("MSX DIAG marco facing mixed body=%d weapon=%d facing=%d %06lx/%u %06lx/%u\n",marco.body_role,marco.weapon_role,(int)mi.facing,
+                 (unsigned long)d[0].descriptor,(unsigned)(d[0].attributes&1u),(unsigned long)d[n-1].descriptor,(unsigned)(d[n-1].attributes&1u));}
+#endif
             if (marco.failures!=marco_failures) {debugf("MSX marco program stopped (unrecovered) count=%u\n",marco.failures);marco_failures=marco.failures;msx_diag_stop(MSX_STOP_MARCO,marco.failures,0);}
         }
         pending_a=pending_b=false;

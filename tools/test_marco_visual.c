@@ -10,11 +10,40 @@
 #include "legs_fixture.h"
 #include "marco_throw_fixture.h"
 #include "marco_mummy_fixture.h"
+#include "run_weapon_fixture.h"
 #include "throw_fixture_driver.h"
 static bool reserve(void *c){(void)c;return true;}
 #include "marco_pose_meta.h"
 static int find(uint32_t t){for(unsigned i=0;i<MARCO_POSES;i++)if(marco_poses[i].source_tag==t)return 1;return 0;}
 int main(void){
+  /* B83 (docs/BUG_MATRIX.md): running, the weapon program 24E2C8 picks its
+   * pose by +77 and finishes; 0C3B34/0C37CE choose it again every update.
+   * B84: the run's turn 0C2746 (body 24EF0E, no weapon), or with +98 = 2
+   * only the facing (0C28C8). MAME 0.264 marco-run-fire-turn: every draw
+   * (descriptor and facing bit) of 226 updates of running, firing and
+   * turning both ways. */
+  {unsigned k=0,diff=0;
+   for(unsigned s=0;s<sizeof run_weapon_segments/sizeof run_weapon_segments[0];s++){
+    marco_visual_t rv;marco_visual_reset(&rv);
+    for(unsigned t=0;t<run_weapon_segments[s];t++,k++){
+     const run_weapon_row_t*r=&run_weapon_rows[k];
+     marco_visual_input_t in={.grounded=true,.moving=r->moving,.facing=r->facing,.fired=r->fired,.hgun_program=-1};
+     marco_visual_step(&rv,&in);neo_anim_draw_t d[16];unsigned n=marco_visual_draws(&rv,d,16);bool same=n==r->count;
+     for(unsigned i=0;i<n && same;i++)same=d[i].descriptor==r->draw[i] && (d[i].attributes&1u)==r->flip[i];
+     if(!same && diff++<4)printf("B83 frame %u: port %06x/%u %06x/%u, MAME %06x/%u %06x/%u\n",r->frame,n?d[0].descriptor:0,n?d[0].attributes&1u:0,
+       n>1?d[1].descriptor:0,n>1?d[1].attributes&1u:0,r->draw[0],r->flip[0],r->draw[1],r->flip[1]);
+    }}
+   printf("B83 run weapon: %u updates, %u differences\n",k,diff);assert(!diff);
+   /* A turn after a finished run weapon: both parts take the new facing
+    * (004364 reads +15 at every pose; none of these poses has a mirror flag). */
+   marco_visual_t rv;marco_visual_reset(&rv);unsigned mixed=0;
+   for(unsigned t=0;t<80;t++){
+    marco_visual_input_t in={.grounded=true,.moving=1,.facing=t<50?1:-1,.fired=t==4,.hgun_program=-1};
+    marco_visual_step(&rv,&in);neo_anim_draw_t d[16];unsigned n=marco_visual_draws(&rv,d,16);
+    for(unsigned i=1;i<n;i++)mixed+=(d[i].attributes&1u)!=(d[0].attributes&1u);
+   }
+   printf("B83 turn after the run weapon: %u draws with the other facing\n",mixed);assert(!mixed);
+   puts("PASS: B83 the run's weapon is chosen again every update (MAME marco-run-fire-turn, 0 differences)");}
   marco_visual_t v;marco_visual_reset(&v);unsigned missing=0,total=0,empty=0;
   const char*names[]={"idle","run","fire","aimup","fireup","crouch","crouchfire","jump","runjump","jumpfire","jumpupfire","land-run-left"};
   for(unsigned s=0;s<12;s++)for(unsigned t=0;t<120;t++){

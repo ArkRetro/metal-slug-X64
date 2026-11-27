@@ -46,6 +46,7 @@ typedef struct {
     neo_anim_draw_t body_draws[MARCO_VISUAL_DRAWS],weapon_draws[MARCO_VISUAL_DRAWS];
     unsigned body_count,weapon_count,collect;   /* collect: 0 body, 1 weapon */
     unsigned failures,starts;
+    uint8_t m98;                   /* form 0: +98, 2 from a pistol shot (0C3CE2) until 0C3D9A sees +76 (the ground turn 0C28C8) */
     bool victory_armed;            /* 0C2046 set the routine 0C1E84: its program starts in the next update */
 } marco_visual_t;
 /* The chosen character's programs (msx_character.h): script = its converted

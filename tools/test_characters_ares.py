@@ -18,6 +18,9 @@ p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
 p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares')
 p.add_argument('--places',default='0,1,2,3')
+p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-diag.z64 (MSX_DIAG=1): after the landing, run and fire, '
+    'keep running with the fire over, turn, crouch and fire, with the pistol; no update may draw the parts with two facings '
+    '(MSX DIAG marco facing mixed)')
 a=p.parse_args()
 out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME='/workspace/emulator/data146',XDG_CONFIG_HOME='/workspace/emulator/config146',
@@ -78,6 +81,15 @@ for place in [int(x) for x in a.places.split(',')]:
         def gtap(name,hold=.15):key('keydown',name);gs(hold);key('keyup',name)
         gs(11)   # the descent and the landing
         assert 'MSX PAUSE' not in log(),'paused before the play'
+        if a.run_fire_turn:
+            mark=len(log())
+            for side,other in (('Right','Left'),('Left','Right'),('Right','Left')):
+                key('keydown',side);gs(.4)
+                for _ in range(3):gtap('x');gs(.25)
+                gs(1.2);key('keyup',side);key('keydown',other);gs(.8)       # the fire over, running: the turn
+                gtap('x');gs(.15);key('keyup',other);key('keydown',side);gs(.6);key('keyup',side)   # the turn with the shot on
+            key('keydown','Down');gs(.3);gtap('x');gs(.2);key('keydown','Left');gs(.3);key('keyup','Left');gtap('x');gs(.3);key('keyup','Down')
+            checks['parts with one facing (run, fire, turn)']='MSX DIAG marco facing mixed' not in log()[mark:]
         key('keydown','Right');gs(1.5);gtap('x');gs(.3);gtap('x');gs(.5);gtap('z');gs(.8);key('keyup','Right')
         gs(.3);gtap('x');gs(.5);key('keydown','Down');gs(.6);gtap('x');gs(.6);key('keyup','Down')
         key('keydown','Up');gs(.4);gtap('x');gs(.5);key('keyup','Up');gs(.3)

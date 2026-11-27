@@ -179,6 +179,10 @@ try:
                     (re.search(r'MSX vehicle rider routine=(\w+) table=(\w+) character=(-?\d+) palette=(\w+) player6e=(\d+)',l) for l in r['lines'][r['mount']:]) if m]
                 # (from the mount on: the Slugnoid's pilot 097830 is made with the walker, +70 = 0 until 0AA760 copies the rider's +6E)
                 rid=[x for x in rid if x[0] in kind_riders[kind]]
+                if not rid:   # the line is written when the rider changes: none after the mount = the last one before it
+                    pre=[(int(m.group(1),16),int(m.group(2),16),int(m.group(3)),int(m.group(4),16),int(m.group(5))) for m in
+                        (re.search(r'MSX vehicle rider routine=(\w+) table=(\w+) character=(-?\d+) palette=(\w+) player6e=(\d+)',l) for l in r['lines'][:r['mount']]) if m]
+                    rid=[x for x in pre if x[0] in kind_riders[kind]][-1:]
                 # (while riding: the lines after the rider's death are the death's, not the vehicle's)
                 L=r['lines'];dead=next((i for i,l in enumerate(L) if 'MSX player death' in l),len(L))
                 miss=[l for l in L[:dead] if 'MSX native draw missing' in l]

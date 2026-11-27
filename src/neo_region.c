@@ -3,9 +3,12 @@
 /* The bosses' ticks: on the console through their overlay (src/msx_overlay.h). */
 #if MSX_OVERLAY
 #define BOSS_TICK(id,fn) msx_overlay_tick(id,a,e)
+#define CODE_TICK(mod,fn) msx_overlay_code_tick(mod,a,e)
 #else
 #define BOSS_TICK(id,fn) fn(a,e)
+#define CODE_TICK(mod,fn) fn(a,e)
 #endif
+/* Each mission's own code (region 2, src/msx_overlay.h). */
 /* 0AC866 (neo_m3veh.c, family m3veh); MSX_M3VEH=0 turns it back into an
  * explicit stop. */
 /* 04A2C2 (neo_m3boss.c, families m3boss<n>): MSX_M3BOSS=0 turns it back
@@ -107,7 +110,7 @@ bool neo_region_routine(uint32_t r) {return neo_m4veh_routine(r) || neo_m4boss_r
 ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     uint32_t r=ga_l(a,0);
     if (neo_truck_routine(r)) return neo_truck_tick(a,e);
-    if (neo_m4veh_routine(r)) return neo_m4veh_tick(a,e);
+    if (neo_m4veh_routine(r)) return CODE_TICK(MSX_MOD_M4VEH,neo_m4veh_tick);
     if (neo_m4boss_routine(r)) return BOSS_TICK(MSX_OVL_M4BOSS,neo_m4boss_tick);
     if (neo_effects_routine(r)) return neo_effects_tick(a,e);
     if (neo_flyer_routine(r)) return neo_flyer_tick(a,e);
@@ -129,7 +132,7 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_civil_routine(r)) return neo_civil_tick(a,e);
     if (neo_slug_routine(r)) return neo_slug_tick(a,e);
     if (neo_tank_routine(r)) return neo_tank_tick(a,e);
-    if (MSX_M3VEH && neo_m3veh_routine(r)) return neo_m3veh_tick(a,e);
+    if (MSX_M3VEH && neo_m3veh_routine(r)) return CODE_TICK(MSX_MOD_M3VEH,neo_m3veh_tick);
     if (neo_slugnoid_routine(r)) return neo_slugnoid_tick(a,e);
     if (neo_bullet_routine(r)) return neo_bullet_tick(a,e);
     if (neo_chaser_routine(r)) return neo_chaser_tick(a,e);
@@ -137,27 +140,27 @@ ga_result_t neo_region_tick(neo_gactor_t *a,neo_genv_t *e) {
     if (neo_goarrow_routine(r)) return neo_goarrow_tick(a,e);
     if (neo_rebel2_routine(r)) return neo_rebel2_tick(a,e);
     if (neo_rebel3_routine(r)) return neo_rebel3_tick(a,e);
-    if (neo_m2creature_routine(r)) return neo_m2creature_tick(a,e);
+    if (neo_m2creature_routine(r)) return CODE_TICK(MSX_MOD_M2CREATURE,neo_m2creature_tick);
     if (neo_gate_routine(r)) return neo_gate_tick(a,e);
     if (neo_crate_routine(r)) return neo_crate_tick(a,e);
-    if (neo_m2props_routine(r)) return neo_m2props_tick(a,e);
-    if (neo_m3props_routine(r)) return neo_m3props_tick(a,e);
-    if (neo_m4props_routine(r)) return neo_m4props_tick(a,e);
-    if (neo_m5props_routine(r)) return neo_m5props_tick(a,e);
-    if (neo_m6props_routine(r)) return neo_m6props_tick(a,e);
-    if (neo_m6enemy_routine(r)) return neo_m6enemy_tick(a,e);
+    if (neo_m2props_routine(r)) return CODE_TICK(MSX_MOD_M2PROPS,neo_m2props_tick);
+    if (neo_m3props_routine(r)) return CODE_TICK(MSX_MOD_M3PROPS,neo_m3props_tick);
+    if (neo_m4props_routine(r)) return CODE_TICK(MSX_MOD_M4PROPS,neo_m4props_tick);
+    if (neo_m5props_routine(r)) return CODE_TICK(MSX_MOD_M5PROPS,neo_m5props_tick);
+    if (neo_m6props_routine(r)) return CODE_TICK(MSX_MOD_M6PROPS,neo_m6props_tick);
+    if (neo_m6enemy_routine(r)) return CODE_TICK(MSX_MOD_M6ENEMY,neo_m6enemy_tick);
     if (neo_m6boss_routine(r)) return BOSS_TICK(MSX_OVL_M6BOSS,neo_m6boss_tick);
-    if (neo_m5enemy_routine(r)) return neo_m5enemy_tick(a,e);
-    if (neo_m5train_routine(r)) return neo_m5train_tick(a,e);
-    if (neo_m5mech_routine(r)) return neo_m5mech_tick(a,e);
-    if (neo_m5sewer_routine(r)) return neo_m5sewer_tick(a,e);
+    if (neo_m5enemy_routine(r)) return CODE_TICK(MSX_MOD_M5ENEMY,neo_m5enemy_tick);
+    if (neo_m5train_routine(r)) return CODE_TICK(MSX_MOD_M5TRAIN,neo_m5train_tick);
+    if (neo_m5mech_routine(r)) return CODE_TICK(MSX_MOD_M5MECH,neo_m5mech_tick);
+    if (neo_m5sewer_routine(r)) return CODE_TICK(MSX_MOD_M5SEWER,neo_m5sewer_tick);
     if (neo_m5boss_routine(r)) return BOSS_TICK(MSX_OVL_M5BOSS,neo_m5boss_tick);
     if (neo_m3enemy_routine(r)) return neo_m3enemy_tick(a,e);
     if (neo_drone_routine(r)) return neo_drone_tick(a,e);
-    if (neo_m2traps_routine(r)) return neo_m2traps_tick(a,e);
+    if (neo_m2traps_routine(r)) return CODE_TICK(MSX_MOD_M2TRAPS,neo_m2traps_tick);
     if (neo_hostage_routine(r)) return neo_hostage_tick(a,e);
     if (neo_m2boss_routine(r)) return neo_m2boss_tick(a,e);
-    if (neo_m3mid_routine(r)) return neo_m3mid_tick(a,e);
+    if (neo_m3mid_routine(r)) return CODE_TICK(MSX_MOD_M3MID,neo_m3mid_tick);
     if (MSX_M3BOSS && neo_m3boss_routine(r)) return BOSS_TICK(MSX_OVL_M3BOSS,neo_m3boss_tick);
     /* The credits' pages, timers and pictures (neo_ending.c) in the world's list; without the ending's RAM
      * (e->end_ram) they stop explicitly. */

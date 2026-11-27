@@ -1,0 +1,3 @@
+# Encrypted payload: holds ROM-derived data, never in git.
+payload.bin
+*.exe

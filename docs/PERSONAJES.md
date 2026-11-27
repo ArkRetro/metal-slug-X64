@@ -216,14 +216,8 @@ make check-characters && make
    (punto 5) para comparar lo que suena con el render aislado, y leer en
    el controlador Z80 qué canal y prioridad usa `1087`, antes de darle
    canal. La tabla `0C294E` de la ROM es `1123 1087 1125 114E` (comprobada).
-2. **Fio al morir** (`0C4C28` → `0C4C64`): el actor ya es nativo
-   (`neo_effects.c`, familia `fio_cap`). Sus 12 descriptores
-   `1A5A6A..1A5AD8` (programa `253322`, paleta 5) están validados contra
-   MAME (captura `c3d3`, §7) y su raíz está en `export_rest_sprites.py`
-   (exportación de la M1, `scene.pack`), pero **siguen sin entrar en el
-   cartucho**: el export de la M1 (`filesystem/rest-native.json`) se perdió
-   con el reinicio del contenedor (27-XI) y `scene.pack`/`scene_meta.h`
-   salen hoy de la ROM 52. Al rehacer el export de la M1: la orden de §7.
+2. **Fio al morir** (`0C4C28` → `0C4C64`): **en el cartucho** (§8): sus 12
+   descriptores `1A5A6A..1A5AD8` van al banco nativo de `scene.pack`.
 3. **Reposo largo** (`0C39C8`, tabla `0C38FC`, programas `0BFCD8`): no está
    para ninguno; al portarlo, el umbral es por personaje.
 4. **Arma que cae al dejar la forma 1** (`0C5064`): no está para ninguno.
@@ -334,6 +328,61 @@ tools/pack_add_actors.py ROM52/romfs OUT --resources 377,4,5 --add 2:slug1.json,
 `export_rest_sprites.py ZIP c3d3@c4c64-c4dd6 --roots-from 253322-253323
 --only`: 12 descriptores, 171 volcados, 11 562 píxeles iguales, **0
 distintos**. Falta meterlos en el cartucho (punto 2 de §6).
+
+## 8. `scene.pack` sin fuentes: jinetes de la Camel, muerte de Fio, paletas (27-XI)
+
+`scene.pack` y sus tablas compiladas (`build/scene_meta.h`) son los de la
+ROM 52 (recuperados por integración); les faltaban los 72 descriptores de
+los jinetes de Eri y Fio en la Camel (tablas `0343C8`/`0343E8`, B82), los 12
+de la muerte de Fio y las paletas `4`, `5`, `377` y `892` (torreta del
+SV-001). `tools/pack_add_actors.py --scene romfs/scene.pack
+build/scene_meta.h --add 1:…` los añade sin las fuentes: piezas al final del
+banco nativo (el último de `scene_images`), páginas en fragmentos nuevos
+tras los de `scene.pack`, descriptores ordenados, recursos en
+`scene_palettes`/`scene_native_palettes` y
+`SCENE_NATIVE_PROGRAM_CHUNKS_MAX3` recalculado como `pack_scene.py`. Las
+paletas de `scene.pack` sirven en todas las misiones (`scene_native_palette`
+mira ahí primero), así que la `892` cubre también la M3 y los packs de
+misión ya no reciben `377`/`4`/`5`. Las páginas y paletas de los packs de
+misión siguen a las de `scene.pack` en tiempo de ejecución
+(`SCENE_MISSION_PAGE_BASE`, `SCENE_PALETTE_COUNT`): no cambian.
+
+```sh
+# Capturas de la Camel (receta de slugc1..3 del Makefile, volcados cada 6 fotogramas)
+MSX_MAME=… MSX_WEAPONS_CHARACTER=N MSX_WEAPONS_SEEK=345e0 MSX_WEAPONS_PLAN=vehicles MSX_WEAPONS_ASSIST_CAMERA=2000 \
+  MSX_WEAPONS_FAMILY_FROM=9000 MSX_WEAPONS_FAMILY_TO=10350 MSX_WEAPONS_FAMILY_ROOTS=3458e \
+  MSX_WEAPONS_FIRST_DUMP=9000 MSX_WEAPONS_PERIOD=6 MSX_WEAPONS_LAST=10400 tools/run_capture_weapons.sh camelN
+tools/export_rest_sprites.py ZIP camelN@34f1a-34fd1 --roots-from 23a000-23b200 --only --keep NADA --output camelN.json
+tools/pack_add_actors.py ROM52/romfs OUT --scene ROM52/romfs/scene.pack ROM52/build/scene_meta.h \
+  --add 1:camel1.json,camel2.json,camel3.json,c3d3.json --add 2:slug1.json,slug2.json,slug3.json \
+  --add 5:slug1.json,slug2.json,slug3.json --resources 377,4,5,892
+```
+
+- Jinete de la Camel contra la VRAM (MAME 0.264, `camel1..3`): Tarma 89
+  volcados / 44 446 píxeles, Eri 139 / 59 737, Fio 138 / 55 588, **0
+  distintos**; las paletas `377`/`4`/`5` de estas capturas son las de las
+  del Slugnoid (`slug1..3`); la `892`, igual en `camel2` y `camel3`.
+- Cargador del anfitrión, packs de la ROM 52 frente a los nuevos (sin contar
+  los números de página, que se desplazan con `SCENE_CHUNK_COUNT`, ni la
+  marca `own` de los descriptores que ahora sirve `scene.pack`): solo
+  añadidos (84 piezas nativas, 4 paletas, los 900 pilotos del Slugnoid).
+  `test_scene_pack`: 1048 fragmentos, CRC iguales.
+- Packs que cambian frente a la ROM 52: `scene.pack` (+ `scene_meta.h`),
+  `mission2.pack` y `mission5.pack` (versión 6), y `mission3/4/6.pack` solo
+  en los desplazamientos de lo que toman de la M2 (mismo tamaño);
+  `mission13.pack` igual.
+- ares (`test_vehicle_damage_ares.py --mission m1 --character N --rider
+  --expect 2`): Tarma `0343a8/377`, Eri `0343c8/004`, Fio `0343e8/005` en la
+  Camel, **PASS**, 0 dibujos ausentes montado; Fio muere 10 veces (tipos 9,
+  7, 0x10) y ningún dibujo ausente es de `1A5A..` (los que quedan, paletas
+  `0F7`/`3A9` de soldados, faltan ya en el `scene_meta.h` de la ROM 52).
+- `make check` orden a orden: todo pasa salvo `check_mission_descriptors 6`
+  (falta `soldier-native.json`) y `test_bgp_share.py` (el `m3s1.bgp` de la
+  ROM 52, con el cielo, no es el que `prerender_stage.py` rehace sin
+  `layers_rom.json`).
+- Caché de escena: **216 ranuras** en los dos arranques (las tablas
+  compiladas crecen: 84 imágenes, 4 paletas, 10 fragmentos). Cartucho
+  66 650 112 B.
 
 **Siguiente paso:** la voz de Tarma (punto 1) y, después, la
 captura de una muerte de cada personaje (`capture_weapons.lua` con la

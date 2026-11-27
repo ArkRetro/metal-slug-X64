@@ -18,10 +18,11 @@ import argparse,json,os,re,subprocess,threading,time
 from pathlib import Path
 from PIL import ImageGrab
 ROOT=Path(__file__).resolve().parents[1]
+EMU=os.environ.get('MSX_EMULATOR','/workspace/emulator')   # the ares tree (build/rundir/bin/ares, data146, config146, runtime, root)
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
 p.add_argument('--skip',nargs='?',const='logo',default='',help='Stages to skip with Start: comma list of logo,title,entry (alone: logo)')
-p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares')
+p.add_argument('--ares',default=EMU+'/build/rundir/bin/ares')
 p.add_argument('--record',type=Path,help='Write a review MP4 here')
 p.add_argument('--record-after',type=float,default=6.0,help='Seconds recorded after the logo ends')
 p.add_argument('--scale',type=int,default=2,help='Video scale of the 320x240 picture')
@@ -29,9 +30,9 @@ a=p.parse_args()
 skips=set(filter(None,a.skip.split(',')));assert skips<={'logo','title','entry'},skips
 out=a.output.resolve();assert not out.exists() or not any(out.iterdir()),'Use a new output directory'
 out.mkdir(parents=True,exist_ok=True)
-env=dict(os.environ,XDG_DATA_HOME='/workspace/emulator/data146',XDG_CONFIG_HOME='/workspace/emulator/config146',
-         XDG_RUNTIME_DIR='/workspace/emulator/runtime',LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',
-         VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
+env=dict(os.environ,XDG_DATA_HOME=EMU+'/data146',XDG_CONFIG_HOME=EMU+'/config146',
+         XDG_RUNTIME_DIR=EMU+'/runtime',LD_LIBRARY_PATH=EMU+'/root/usr/lib/x86_64-linux-gnu',
+         VK_DRIVER_FILES=EMU+'/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 pcm=out/'ares-audio.raw'
 if a.record:
     (out/'asound.conf').write_text('pcm.!default {\n type file\n slave { pcm { type null } }\n file "%s"\n format "raw"\n}\n'%pcm)

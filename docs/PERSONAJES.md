@@ -307,9 +307,24 @@ tools/pack_add_actors.py ROM52/romfs OUT --resources 377,4,5 --add 2:slug1.json,
   programas están compiladas, así que estas familias ya habrían pasado antes
   del arreglo; lo que falla antes y pasa después es el cargador (packs sin
   los bloques: el piloto no tiene descriptores) y la prueba de ares.
-- ares (cartucho normal, `test_vehicle_damage_ares.py --mission m5s3
-  --character N --rider --ride forward`): resultados en `BUG_MATRIX.md` B82.
-- Caché de escena: 218 ranuras (suelo 208) en el arranque.
+- ares 146 (cartucho normal, `test_vehicle_damage_ares.py --mission m5s3
+  --character N --rider --ride forward`): **PASS los cuatro**, piloto
+  `097886` con `0964ac/376` (Marco), `096530/377` (Tarma), `0965b4/004`
+  (Eri), `096638/005` (Fio); 0 dibujos ausentes montado; línea `MSX stage 3
+  riders: character N, 10586 of 10686 actor images kept`. La prueba lee las
+  líneas del piloto desde la monta (el piloto existe antes, con `+70` = 0)
+  y, si no hay ninguna después, la última de antes (Marco: no cambia).
+- Caché de escena: 217 ranuras (suelo 208) en los dos arranques
+  (`test_logo_ares.py` normal y `--skip logo,title,entry`), 217–218 en las
+  pruebas del Slugnoid. Cartucho 66 142 208 B (límite 67 043 328).
+  `check_icache.py`: sin líneas compartidas en `mslugx-explorer` ni
+  `mslugx-m1end`.
+- Vehículo de la M3 (`--mission m3 --character 2 --rider`): el mando ciego se
+  queda en la cámara 1520 de la M3 (12 muertes en 45 min) sin llegar al
+  vehículo `0AC866`: **sin probar**; tampoco el SV-001 de la M4. Las paletas
+  `377`/`4`/`5` del piloto ya están en los packs de la M3 y la M4
+  (`pack_add_actors.py`), pero la torreta del SV-001 (`892`) sigue faltando
+  en la M3 con los packs de la ROM 52.
 
 **Actor de muerte de Fio.** Captura `c3d3` (`run_marco_catalog.py
 --character 3 --first 2352 --hit 400:0 --child-routines c4c64,c4cba

@@ -22,7 +22,7 @@ Se elimina por completo compilando con `MSX_EXTRA_CFLAGS=-DMSX_PROFILE=0`.
 
 | Campo | Contenido |
 | --- | --- |
-| `steps=N/M multi=K` | pasos de simulación en la ventana / máximo por fotograma / fotogramas con más de un paso (recuperación de `scene_clock`) |
+| `steps=N/M multi=K` | pasos de simulación en la ventana / máximo por fotograma (2: una actualización del original) / fotogramas con dos pasos (el fotograma anterior duró más de un vblank de la Neo Geo; sin deuda desde B88) |
 | `cpu` | todo `actor_draw`: simulación + preparación + construcción del render |
 | `build` | `begin`+`bgreq`+`bg`+`mesh`+`actors`+`hud`+`end` (lo que medía `CPU=`) |
 | `sim` | todos los `msx_game_update` del fotograma (mundo, soldados, jugador) |
@@ -1460,3 +1460,75 @@ Imágenes: `m2code` 35 296, `m3code` 46 448, `m4code` 34 896, `m5code` 76 016, `
 Pendientes medidos, no hechos: las tablas de `scene_assets` (≈270 KB de `.rodata` en RAM) podrían leerse del
 cartucho por trozos (≈16 ranuras), pero se consultan en el dibujo: hace falta medir el coste por fotograma antes;
 `neo_m3enemy` (136 KB) solo se puede partir separando las dos muertes compartidas.
+
+## Reloj de la simulación: el original ralentiza, no recupera (B88, B90, B92)
+
+### El bucle del 68K (P-ROM de `mslugx`, desensamblado de MAME 0.264)
+
+    0036EE  IRQ de vblank: move.b 10F009,d0; addq.b #1,d0; bcs 003702; move.b d0,10F009
+    003A42  move.b 10F009,10008A     ; vblanks que duró la vuelta anterior
+    003A48  move.b #0,10F009         ; el contador se borra al empezar la vuelta
+    003A58  jsr 0026FA / jsr 03CB3A  ; mandos (una lectura por vuelta) ... actualización
+    003AE0  cmpi.b #2,10F009 / bcs 003AE0   ; espera a que pasen 2 vblanks
+    003AE8  bra 003A42
+    (en pausa, 003A80: tst.b 10F009 / beq: espera 1 vblank por turno)
+
+- Una actualización dura **al menos 2 vblanks**; si su trabajo dura más, la
+  siguiente empieza en cuanto acaba y `003A48` borra los vblanks de más. No
+  hay deuda: el juego **se ralentiza** y no acelera después.
+- El único lector de `10008A` es `003B4C` (llamado desde `059FA8`, una
+  espera de esa tarea): ninguna lógica escala por los vblanks perdidos.
+  Búsqueda de `0010008A`, `(808A,A5)`, `7009` y `00003B4C` en P1 y P2
+  (P2 con los bytes de cada palabra intercambiados, como lo carga MAME).
+- En MAME 0.264 (`docs/TAS.md`): en todo el TAS hay 23159 vueltas de 2
+  vblanks, 3300 de 3 y 288 de 4 o más; el TAS solo sincroniza por
+  actualización, no por fotograma, justamente porque las vueltas largas no
+  se compensan.
+
+### El port
+
+`src/scene_clock.h` conservaba la deuda (hasta 8 pasos por llamada y
+`scene_clock_defer` para los que pasaban de 2): tras cada fotograma lento
+los siguientes corrían dos pasos por fotograma hasta pagarla. Esa era la
+aceleración (B88). Ahora `scene_clock_steps(..., limit)` da como mucho
+`MSX_FRAME_STEPS` = 2 pasos (una actualización del original, `003AE0`) y
+**descarta los vblanks enteros de más**, como `003A48`; solo queda la
+fracción del vblank siguiente (el vblank llega a su hora). Sin constantes
+nuevas: 2 es el `cmpi.b #2` de `003AE0`. Prueba: `tools/test_scene_clock.c`
+(en `make check-core`), que compara con un modelo del bucle del original
+(fotogramas de 3 vblanks: una actualización cada 3 vblanks; fotograma de 1 s:
+un solo paso doble y ninguna recuperación después).
+
+### Picos de `sim` (m5s2)
+
+Medido con sondas temporales (no integradas) en ares:
+
+- El `sim` de 1 077 440 µs es el primer fotograma de la prueba: el salto de
+  `MSX_REFERENCE_START_MISSION` (carga del paquete de la M5, `enter_mission`)
+  que cae en la fase `sim` de `MSX PERF` (todo `actor_draw` hasta el último
+  paso). El de 297 046 µs es el reinicio tras GAME OVER. Son cargas, no
+  juego; el reloj ya se reiniciaba después (`scene_clock_reset`).
+- En juego (cámara 80, saltando y disparando, B90): la actualización del
+  mundo (`neo_world_tick`) llega a 8,6–9,6 ms en un paso par, casi todo en el
+  bucle de actores (`run_gactor`, 8–9 ms con unos 20 actores genéricos:
+  0,2–0,9 ms cada uno; ninguno domina). `neo_kernel_sweep` ≈ 70 µs por
+  llamada (15–23 por paso), `ga_air_kind` ≈ 120 µs, `ga_anim_step` ≈ 50 µs.
+  Compilar `neo_gactor.c` y `neo_region.c` con `-O2` en vez de `-Os` no
+  cambió la cifra (8,0–8,7 ms): no se integró. Con el fondo (5–10 ms) el
+  fotograma pasa de 16,9 ms y sale `multi`.
+
+### 59,19 Hz frente al VI de la N64 (medido, sin decidir)
+
+Ventanas estables de la matriz `gates4` (124 con `multi=0`): 84 con 297
+pasos y 37 con 296 por 300 fotogramas → 0,98897 pasos por fotograma, es
+decir un VI de 59,846 Hz en ares frente a 59,185606 Hz de la Neo Geo
+(6 MHz / 384 / 264). Un fotograma sin paso cada ≈ 91 fotogramas (≈ 1,5 s).
+Opciones:
+
+1. Dejarlo así: velocidad exacta del original; una imagen repetida cada
+   ≈ 1,5 s (tirón periódico).
+2. Un paso por VI: imagen fluida, juego un 1,1 % más rápido que el
+   original (la música, que va por su cuenta, se desfasa de los eventos).
+3. Programar el VI a la frecuencia de la Neo Geo (registros de sincronismo
+   del VI): fluido y exacto, pero fuera de norma NTSC; habría que probar
+   televisores, MiSTer y emuladores.

@@ -39,7 +39,7 @@ static scene_clock_t simulation_clock;
 #ifdef MSX_TESTPAD
 unsigned msx_testpad_steps(unsigned steps,unsigned kind);
 #endif
-enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run (the rest is deferred) */
+enum { MSX_FRAME_STEPS=2 };   /* simulation steps a frame may run: one original update (003AE0 awaits two vblanks) */
 static bool pending_a,pending_b;
 /* The original's pause 015520 (neo_pause.h, docs/PAUSA.md). The N64 START
  * is the Neo Geo SELECT while the game is played. pause_start/pause_a/
@@ -691,7 +691,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     unsigned pause_steps=0;
     if (was_paused) {
         /* A paused turn waits two vblanks (003AE0); the LSPC goes on counting. */
-        pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND);
+        pause_steps=scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND,MSX_FRAME_STEPS);
 #ifdef MSX_TESTPAD
         pause_steps=msx_testpad_steps(pause_steps,2);   /* B78: recorded / replayed (src/msx_testpad.c) */
 #endif
@@ -732,17 +732,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
     }
     game.start_edge|=start_press;game.jump_edge|=pf.a_edge;
     }
-    unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND):0;
+    unsigned steps=pf.step?scene_clock_steps(&simulation_clock,TICKS_READ(),TICKS_PER_SECOND,MSX_FRAME_STEPS):0;
 #ifdef MSX_TESTPAD
     if (pf.step) steps=msx_testpad_steps(steps,1);   /* B78: the host-paced step count, recorded / replayed (src/msx_testpad.c) */
 #endif
     /* A SELECT press inside an original update: the update ends first. */
     if (pause_select && steps>(game.ticks&1u)) steps=game.ticks&1u?1u:steps;
-    /* At most two steps per frame: the world updates on every second step
-     * (gameplay.c), so a frame never runs two world updates (10-13 ms each
-     * around camera 2336). The rest of the catch-up stays as debt for the
-     * next frames (scene_clock_defer): no simulation step is lost. */
-    if (steps>MSX_FRAME_STEPS) {scene_clock_defer(&simulation_clock,steps-MSX_FRAME_STEPS,TICKS_PER_SECOND);steps=MSX_FRAME_STEPS;}
+    /* At most two steps (one original update) per frame; the vblanks past
+     * them are dropped as the original's 003A48 clears 10F009: a slow frame
+     * slows the game down and the next frames do not catch up
+     * (src/scene_clock.h). */
     for (unsigned step=0;step<steps;step++) {
         uint32_t step_start=TICKS_READ();
         game.aim_up=input.btn.d_up || stick_v>0;

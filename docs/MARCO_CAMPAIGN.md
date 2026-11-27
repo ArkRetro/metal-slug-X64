@@ -579,3 +579,42 @@ selecciones): con la R gorda el disparo usa los mismos programas que la
 pistola gorda (`0C02D8/0C0318/0C0358 + 0x20` = `25A8F4/25A83C/25A898`,
 agachado `0C0398 + 0x20` = `25D10E`), cuyo primer mando es el CALL
 `0C436A`; no hace falta ningún rol nuevo.
+
+## B84: giro corriendo y parada (rama `work-anim-2`)
+
+Capturas MAME 0.264 de `tools/mame/plans/marco-run-turn.json` (nuevo: la
+clave `fire_at` de un caso da los fotogramas de sus pulsaciones de A, y el
+caso puede durar desde 2 fotogramas): `marco-rt0` (pistola), `marco-rt1`
+(`--give-hgun`) y `marco-rtc` (`--give-cgun`), 674 fotogramas cada una
+(auditorías 63/63/67 descriptores, 458962/550712/521876 píxeles). Papeles
+nuevos (`ROLES_TURN`, `--turn-capture`/`--turn-h-capture`):
+`B_TURN_RUN_UP` `24EF24`, `B1_TURN_RUN` `256FF2`, `B1_TURN_RUN_UP`
+`257008`, `B1_TURN` `257034`, `W_AIM_HOLD` `24C65C` y `W_AIM_DOWN`
+`24C6C0`. Catálogo 744 → 746 poses (`18A612`, `18A626`).
+
+Base reconstruida tras perder las capturas: todas las de arriba se repiten
+con las mismas órdenes y dan las mismas auditorías; el grafo y
+`compile_marco_campaign.py` sin las tres nuevas reproducen el
+`marco_campaign.h` de la ROM 52 (2591 órdenes, 107 papeles), y con ellas
+solo se insertan 10 órdenes (los demás iguales tras reindexar). CAP2 y D2
+(plan y lua no conservados) no se repiten: `build_marco_poses.py
+--base-meta` toma los descriptores y las paletas de un catálogo anterior y
+convierte de nuevo todas las poses desde la ROM (con la base sola sale el
+mismo catálogo y el mismo `romfs/marco`, byte a byte).
+
+```sh
+for o in rt0: rt1:--give-hgun rtc:--give-cgun; do python3 tools/mame/run_marco_catalog.py --rom-dir ROMS --output ${o%%:*} --command-trace --paired-trace --controller-trace --plan tools/mame/plans/marco-run-turn.json ${o#*:}; done
+# auditoría (rt1/rtc con --sparse), extract_marco_steps.py y extract_marco_controller.py de cada una
+python3 tools/convert_marco_programs.py CAP1 --event-evidence CAP1/diary/effects.json --extra-capture H2 --extra-capture H3 --extra-capture G1 --extra-capture C1 --extra-capture K1 --extra-capture K2 --extra-capture DSC0 --extra-capture DSC1 --extra-capture W2 --extra-capture W4 --extra-capture W6 --extra-capture MZ2 --extra-capture V0 --extra-capture V1 --extra-capture F2 --extra-capture RT0 --extra-capture RT1 --extra-capture RTC --equivalent-calls --output GRAFO
+python3 tools/compile_marco_campaign.py CAP1 --graph GRAFO --hgun-capture H2 --grenade-capture G1 --cgun-capture C1 --knife-capture K1 --knife-h-capture K2 --descent-capture DSC0 --w2-capture W2 --w4-capture W4 --w6-capture W6 --mummy-capture MZ2 --fat-capture F2 --victory-capture V0 --victory-h-capture V1 --turn-capture RT0 --turn-h-capture RT1 --output build/marco_campaign.h
+cd tools; python3 build_marco_poses.py CAP1 --base-meta BASE/marco_pose_meta.h --extra-audit RT0/audit.json --extra-audit RT1/audit.json --extra-audit RTC/audit.json --extra-profile-min-uses 40 --rom mslugx.zip --mksprite $N64_INST/bin/mksprite; cd ..
+python3 tools/extract_run_turn_fixture.py RT0 RT1 RTC   # data/run_turn_fixture.json
+```
+
+**Prueba** (`make check-marco-campaign`): `data/run_turn_fixture.json`,
+970 actualizaciones (la H y la C desde la carrera que reinicia tras recibir
+el arma), cada dibujo con su bit de espejo y cada pulsación: la compuerta
+del giro (`marco_turn.h`) la bloquea exactamente cuando el original no
+disparó. **0 diferencias** (antes del arreglo, 589 dibujos y 9 pulsaciones).
+`tools/test_run_turn.c` (`make check`) repite en el juego (`gameplay.c` con
+la compuerta de la capa visual, como `actor.c`) las entradas de `marco-rt0`.

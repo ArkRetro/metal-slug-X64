@@ -2065,6 +2065,16 @@ static void play_update(msx_game_t *g,int direction,bool jump,bool fire) {
      * fire there draw the down fire 25F932). */
     g->aim_down=g->crouch && (!g->grounded || g->mummy_takeoff) && !g->aim_up && g->mount==MSX_MOUNT_NONE && !g->ride;
     bool fire_edge=fire && !g->fire_was;g->fire_was=fire;
+    /* B84. The run's turn 0C2746 sets the weapon state 0C381C (0C0F16),
+     * which reads no input in its two updates (0C27A8): a press then is
+     * no shot, and its +9B latch is cleared by the next shot (0C3CD0), so
+     * it is dropped (MAME marco-rt0/rt1/rtc: 2141 and 2183). The gate is
+     * the visual layer's (marco_turn.h), set by actor.c after each update;
+     * a press on the tick before the update is read in it. */
+    if (g->world_enabled && g->mount==MSX_MOUNT_NONE && marco_turn_gate_blocks(&g->turn_gate,g->grounded,g->crouching,g->moving,g->facing)) {
+        if (fire_edge) g->turn_blocked++;
+        fire_edge=false;g->fire_request=false;g->hgun.request=false;g->thin_fresh=false;
+    }
     /* The knife. 0C3744 (each player update): the query row 2D0AE4 (kind
      * 0, no damage) at the player; a hurtbox of type 4 or 5 in reach sets
      * +9A bit 0. 0C3CD0 (any weapon but +93 = 3): a fire press with it

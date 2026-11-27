@@ -193,6 +193,22 @@ ROLES_VICTORY=[
  ('B_VICTORY',0,0x24FEDC,'victory',0,('victory',)),
  ('B1_VICTORY',0,0x257F86,'victory_h',1,('victory',)),
 ]
+# B84: the run's turn 0C2746 (table 0BEE58, with +92 > 0 0BEE98) and the
+# stop 0C1EFA (0BEE18) of forms 0 and 1 (+0x10). tools/mame/plans/
+# marco-run-turn.json (run_marco_catalog.py --plan): marco-rt0 pistol,
+# marco-rt1 --give-hgun (marco-rtc --give-cgun chooses the same rows).
+# Each role: (capture option, form, conditions).
+ROLES_TURN=[
+ ('B_TURN_RUN_UP',0,0x24EF24,'turn',0,('up_turn_right','up_turn_left_fire')),
+ ('B1_TURN_RUN',0,0x256FF2,'turn_h',1,('turn_fire_u1','turn_u2_lead','turn_u3_lead','short_run_left')),
+ ('B1_TURN_RUN_UP',0,0x257008,'turn_h',1,('up_turn_right','up_turn_left_fire','run_right')),
+ ('B1_TURN',0,0x257034,'turn_h',1,('stop','stop_fire_u2')),
+ # The pistol's raised gun held (0BFA18, the run's 0BFA58, after the raise
+ # 0BF9D8 or a turn with +92 > 0) and lowered (0BFA98), as W1_AIM_HOLD /
+ # W1_AIM_DOWN of the H.
+ ('W_AIM_HOLD',1,0x24C65C,'turn',0,('up_left','up_turn_right','up_stop')),
+ ('W_AIM_DOWN',1,0x24C6C0,'turn',0,('run_right',)),
+]
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('capture',type=Path);p.add_argument('--output',type=Path,required=True)
@@ -210,6 +226,8 @@ def main():
     p.add_argument('--descent-capture',type=Path,help='parachute descent capture (ROLES_DESCENT)')
     p.add_argument('--victory-capture',type=Path,help='mission-end victory capture, pistol (ROLES_VICTORY)')
     p.add_argument('--victory-h-capture',type=Path,help='mission-end victory capture with the H (ROLES_VICTORY)')
+    p.add_argument('--turn-capture',type=Path,help='run turn and stop capture, pistol (ROLES_TURN)')
+    p.add_argument('--turn-h-capture',type=Path,help='run turn and stop capture with the H (ROLES_TURN)')
     a=p.parse_args();c=a.capture
     plan=json.loads((c/'plan.json').read_text())['cases']
     choices=json.loads((c/'controller.json').read_text())['choices']
@@ -347,6 +365,19 @@ def main():
             assert addr in index,(role,hex(addr))
             lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}, {key}: {", ".join(conds)} */')
     else:assert not any(vcap.values()),'--victory-capture and --victory-h-capture go together'
+    tcap={'turn':a.turn_capture,'turn_h':a.turn_h_capture}
+    if all(tcap.values()):
+        for role,part,addr,key,form,conds in ROLES_TURN:
+            t=tcap[key];tplan={x['name']:x for x in json.loads((t/'plan.json').read_text())['cases']}
+            tchoices=json.loads((t/'controller.json').read_text())['choices']
+            for cond in conds:
+                case=tplan[cond]
+                seen=[x for x in tchoices if case['first']<=x['choice']['frame']<=case['last']
+                      and x['choice']['part']==part and x['choice']['program']==addr and x['before']['form']==form]
+                assert seen,(role,hex(addr),key,cond)
+            assert addr in index,(role,hex(addr))
+            lines.append(f'    MARCO_CAMPAIGN_{role}={index[addr]}, /* ROM {addr:06X}, {"weapon" if part else "body"}, form {form}, {key}: {", ".join(conds)} */')
+    else:assert not any(tcap.values()),'--turn-capture and --turn-h-capture go together'
     lines+=['};','#endif','']
     a.output.parent.mkdir(parents=True,exist_ok=True);a.output.write_text('\n'.join(lines))
     print('Marco campaign roles:',len(ROLES),'commands from',c)

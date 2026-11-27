@@ -58,9 +58,17 @@ static int fat_role(int role) {
 static const neo_anim_program_t *character_script;
 static const uint16_t (*character_roles)[2];
 static unsigned character_role_count;
+/* B84: the weapon programs chosen with +92 = 1 (0C4100 raise, 0BFA18 /
+ * 0BFA58 hold, 0C3D38 / 0C3EC4.. the fire up); the others leave +92 <= 0
+ * for the turn's choice (0C2768). */
+static bool up_role(int r) {
+    return r>=0 && (r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W_AIM_HOLD || r==MARCO_CAMPAIGN_W_FIRE_UP ||
+        r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD || r==MARCO_CAMPAIGN_W1_BURST_UP || r==MARCO_CAMPAIGN_W1_SWEEP_FWD_UP ||
+        r==MARCO_CAMPAIGN_W1C_FIRE_UP || r==MARCO_CAMPAIGN_W1S_FIRE_UP || r==MARCO_CAMPAIGN_W1F_FIRE_UP || r==MARCO_CAMPAIGN_W1L_FIRE_UP);
+}
 static void start(marco_visual_t *v,marco_part_t part,int role) {
     if (part==MARCO_BODY) {v->body_role=role;v->body_done=false;}
-    else {v->weapon_role=role;v->weapon_done=false;}
+    else {v->weapon_role=role;v->weapon_done=false;v->m92=up_role(role)?1:0;}
     if (role<0) return;
     int program=role;
     if (v->form==2 && (program=fat_role(role))<0) {
@@ -115,7 +123,7 @@ static bool crouch_role(int r) {
 }
 static bool weapon_default(int r) {
     return r==MARCO_CAMPAIGN_W_IDLE || r==MARCO_CAMPAIGN_W_RUN || r==MARCO_CAMPAIGN_W_JUMP ||
-        r==MARCO_CAMPAIGN_W_RUN_JUMP || r==MARCO_CAMPAIGN_W_AIM_UP ||
+        r==MARCO_CAMPAIGN_W_RUN_JUMP || r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W_AIM_HOLD ||
         r==MARCO_CAMPAIGN_W1_IDLE || r==MARCO_CAMPAIGN_W1_RUN || r==MARCO_CAMPAIGN_W1_JUMP ||
         r==MARCO_CAMPAIGN_W1_RUN_JUMP || r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD ||
         r==MARCO_CAMPAIGN_W1_AIM_DOWN || r==MARCO_CAMPAIGN_W2_AIM_HOLD || r==MARCO_CAMPAIGN_W2_AIM_DOWN;
@@ -173,7 +181,18 @@ static int weapon_rest(const marco_visual_t *v,const marco_visual_input_t *in,bo
     }
     if (in->form!=1) {
         if (!in->grounded) return running_jump?MARCO_CAMPAIGN_W_RUN_JUMP:MARCO_CAMPAIGN_W_JUMP;
-        if (in->aim_up) return MARCO_CAMPAIGN_W_AIM_UP;
+        /* B84 (MAME marco-rt0): the raise 0BF9D8 ends (0C4194) in the hold
+         * 0BFA18 24C65C (0C397E with +92 > 0), which the run's choice
+         * 0C387E keeps (0BFA58, the same program) after a turn; released,
+         * 0C4112 lowers the gun (0BFA98 24C6C0) before the rest. */
+        int r=v->weapon_role;bool done=v->weapon_done,up=r<0 && v->m92>0;
+        if (in->aim_up) {
+            if (r==MARCO_CAMPAIGN_W_AIM_UP && !done) return r;
+            if (r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W_AIM_HOLD || r==MARCO_CAMPAIGN_W_FIRE_UP || up) return MARCO_CAMPAIGN_W_AIM_HOLD;
+            return MARCO_CAMPAIGN_W_AIM_UP;
+        }
+        if ((r==MARCO_CAMPAIGN_W_AIM_DOWN && !done) || r==MARCO_CAMPAIGN_W_AIM_UP || r==MARCO_CAMPAIGN_W_AIM_HOLD || up)
+            return MARCO_CAMPAIGN_W_AIM_DOWN;
         return in->moving?MARCO_CAMPAIGN_W_RUN:MARCO_CAMPAIGN_W_IDLE;
     }
     int r=v->weapon_role;bool done=v->weapon_done;
@@ -183,13 +202,15 @@ static int weapon_rest(const marco_visual_t *v,const marco_visual_input_t *in,bo
      * jump's weapon program stays. A down program keeps its last pose. */
     if (!in->grounded && in->aim_down && !in->cgun && hgun_down(r)) return r;
     if (!in->grounded) return running_jump?MARCO_CAMPAIGN_W1_RUN_JUMP:MARCO_CAMPAIGN_W1_JUMP;
+    const bool up=r<0 && v->m92>0;   /* after a turn with +92 > 0 (marco-rt1: 0BFA58 253450) */
     if (in->aim_up) {
         if (r==MARCO_CAMPAIGN_W1_AIM_UP && !done) return r;
-        if (r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD || r==MARCO_CAMPAIGN_W1_SWEEP_FWD_UP ||
-            r==MARCO_CAMPAIGN_W1_BURST_UP) return MARCO_CAMPAIGN_W1_AIM_HOLD;
+        /* A fire up's end (0C38B2 with +92 > 0: 0BFA18; MAME marco-rtc
+         * 2435, the C's 253AC6 then 253450). */
+        if (up_role(r) || up) return MARCO_CAMPAIGN_W1_AIM_HOLD;
         return MARCO_CAMPAIGN_W1_AIM_UP;
     }
-    if ((r==MARCO_CAMPAIGN_W1_AIM_DOWN && !done) || r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD)
+    if ((r==MARCO_CAMPAIGN_W1_AIM_DOWN && !done) || r==MARCO_CAMPAIGN_W1_AIM_UP || r==MARCO_CAMPAIGN_W1_AIM_HOLD || up)
         return MARCO_CAMPAIGN_W1_AIM_DOWN;
     return in->moving?MARCO_CAMPAIGN_W1_RUN:MARCO_CAMPAIGN_W1_IDLE;
 }
@@ -320,6 +341,28 @@ static void mummy_step(marco_visual_t *v,const marco_visual_input_t *in) {
     if (weapon) step_part(v,MARCO_WEAPON);
     v->grounded=in->grounded && !in->takeoff;v->crouch=in->crouch;v->moving=in->moving;v->facing=in->facing;
 }
+/* B84: the run's turn 0C2746 (tables 0BEE58, +92 > 0 0BEE98) and the
+ * stop 0C1EFA (0BEE18), rows of forms 0 and 1. */
+static int turn_role(const marco_visual_t *v,const marco_visual_input_t *in) {
+    if (in->form==1) return v->m92>0?MARCO_CAMPAIGN_B1_TURN_RUN_UP:MARCO_CAMPAIGN_B1_TURN_RUN;
+    return v->m92>0?MARCO_CAMPAIGN_B_TURN_RUN_UP:MARCO_CAMPAIGN_B_TURN_RUN;
+}
+static bool turn_role_of(int r) {
+    return r>=0 && (r==MARCO_CAMPAIGN_B_TURN_RUN || r==MARCO_CAMPAIGN_B_TURN_RUN_UP || r==MARCO_CAMPAIGN_B1_TURN_RUN || r==MARCO_CAMPAIGN_B1_TURN_RUN_UP);
+}
+static bool stop_role_of(int r) {return r>=0 && (r==MARCO_CAMPAIGN_B_TURN || r==MARCO_CAMPAIGN_B1_TURN);}
+int marco_visual_turn_kind(const marco_visual_t *v) {return turn_role_of(v->body_role)?1:stop_role_of(v->body_role)?2:0;}
+marco_turn_gate_t marco_visual_turn_gate(const marco_visual_t *v) {
+    marco_turn_gate_t t={false,false,v->facing};
+    if (v->form>1) return t;
+    /* The run 0C2888, and the idle and the stop 0C1FA6, whose stick starts
+     * the run 0C285C, which goes on to 0C28BE in the same update (MAME
+     * marco-rt0 2541: 0BF718 then 0BEE58). */
+    const int b=v->body_role;
+    t.ready=v->grounded && !v->crouch && (b==MARCO_CAMPAIGN_B_RUN || b==MARCO_CAMPAIGN_B_IDLE || stop_role_of(b)) && v->m98!=2 && v->facing!=0;
+    t.hold=turn_role_of(v->body_role) && !v->body_done;
+    return t;
+}
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
     v->base_x=in->x;v->base_y=in->y;
     v->view.render.x=in->x;v->view.render.y=in->y;
@@ -370,6 +413,11 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
         } else v->victory_armed=false;
     }
     bool hgun_start=in->form==1 && in->hgun_start && in->hgun_program>=0 && in->hgun_program<7;
+    /* The turn as the fire saw it (gameplay.c reads the same gate). */
+    const marco_turn_gate_t gate=marco_visual_turn_gate(v);
+    if (v->body_role==MARCO_CAMPAIGN_B_RUN) v->m80>>=1;   /* 0C28A2 */
+    /* 0C2006: a fire or bomb press (the shot or throw of this update). */
+    const bool pressed=in->fired || in->thrown || in->knife || hgun_start || (in->cgun && in->cgun_fire);
     /* Body. */
     if (!in->grounded && in->hanging) {
         /* Hanging from the canopy (0C15C6: body 0BF818 24E5AA, weapon the
@@ -407,38 +455,57 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
             else if (v->body_done) start(v,MARCO_BODY,v->body_role==MARCO_CAMPAIGN_B_CROUCH_GRENADE?MARCO_CAMPAIGN_B_CROUCH_AFTER_GRENADE:MARCO_CAMPAIGN_B_CROUCH);
         }
         v->weapon_role=-1;v->weapon_count=0;v->m98=0;   /* 0C0F16 */
-    } else if (in->form==0 && v->grounded && v->body_role==MARCO_CAMPAIGN_B_RUN && in->moving && v->facing && in->facing!=v->facing && v->m98!=2) {
+    } else if (marco_turn_gate_blocks(&gate,in->grounded,crouch,in->moving,in->facing) && !gate.hold) {
         /* The run's turn (0C28BE: +9A bit 3; 0C28C8: with +98 = 2 only the
          * facing flips, 0C28D2). 0C2746: the facing flips, body 0BEE58
-         * (24EF0E, its first pose mirrored back: MAME marco-run-fire-turn
-         * 188958 /0 then /1), 0C0F16 (+98 = 0, +90 = +91 = FF: no weapon,
-         * the shot not taken), state 0C27A8 until the program's end, then
-         * 0C285C restarts the run (+77 = 0, 0BF718) and its weapon. The
-         * turn while aiming up (0BEE98, +92 > 0) was not captured. */
-        start(v,MARCO_BODY,MARCO_CAMPAIGN_B_TURN_RUN);v->m98=0;
-    } else if (in->form==0 && v->body_role==MARCO_CAMPAIGN_B_TURN_RUN && !v->body_done) {
+         * (+92 > 0: 0BEE98), rows by +93 (form 1 +0x10: 256FF2 / 257008),
+         * its first pose mirrored back (MAME marco-run-fire-turn 188958 /0
+         * then /1), 0C0F16 (+98 = 0, +90 = +91 = FF: no weapon, the shot
+         * not taken), state 0C27A8 until the program's end, then 0C285C
+         * restarts the run (+77 = 0, +80 = 0x3F, 0BF718) and its weapon.
+         * (+98 = 1, the gun raised or lowered (0C4168), takes 0C27E8 and
+         * 0BF7D8: not captured, docs/BUG_MATRIX.md B84.) */
+        start(v,MARCO_BODY,turn_role(v,in));v->m98=0;
+    } else if (turn_role_of(v->body_role) && !v->body_done) {
         /* 0C27A8 steps the turn (00427A); 0C285C from the next update. */
+    } else if (stop_role_of(v->body_role) && !v->body_done && !in->moving && !pressed && !in->aim_up) {
+        /* 0C1FA6 with +9A bit 5 clear: up, fire or bomb (0x51) take the
+         * idle 0C1F4A, the stick the run 0C285C; else 0C2144 steps the
+         * stop and its end takes the idle (next update). */
+    } else if (in->form<=1 && v->grounded && v->body_role==MARCO_CAMPAIGN_B_RUN && !in->moving && !v->m80 && v->m92<=0 && !v->m98 && !pressed && !in->aim_up) {
+        /* 0C28E2: the stick released after the run's +80 is 0 (six run
+         * updates): 0C1EFA with +92 <= 0 and +98 = 0 starts the stop
+         * 0BEE18 (24EF50, form 1 257034) with no weapon (0C0F16), then
+         * 0C1FA6 in the same update: a fire or bomb press or up held there
+         * (0x51) goes on to the idle 0C1F4A at once (and its weapon fires
+         * in this update), so those keep the idle. */
+        start(v,MARCO_BODY,in->form==1?MARCO_CAMPAIGN_B1_TURN:MARCO_CAMPAIGN_B_TURN);v->m98=0;
     } else {
         int body=in->moving?MARCO_CAMPAIGN_B_RUN:MARCO_CAMPAIGN_B_IDLE;
         if (!v->grounded || v->body_role!=body || v->body_done) {
-            if (body==MARCO_CAMPAIGN_B_RUN) v->anim.fields.frame77=0;   /* 0C2864 */
+            if (body==MARCO_CAMPAIGN_B_RUN) {v->anim.fields.frame77=0;v->m80=0x3f>>1;}   /* 0C2864, 0C287C, 0C28A2 */
             start(v,MARCO_BODY,body);
         }
     }
-    const bool turning=in->form==0 && v->body_role==MARCO_CAMPAIGN_B_TURN_RUN;
+    const bool turning=turn_role_of(v->body_role) || stop_role_of(v->body_role);   /* 0C0F16: no weapon thread */
     /* Weapon. With the H the fire states of marco_hgun.c choose the
      * program (0C3E9C/0C3F1A/0C3FA6..: its start or restart this update). */
     /* 0C3D9A: +76 written by the fire program ends +98 = 2 (0C3DA6). */
-    if (v->m98==2 && v->anim.fields.field76) v->m98=0;
+    /* (The H's states 0C3F1A.. keep +98 = 2 until the weapon is chosen
+     * again, 0C38B2: MAME marco-rt1 2149..2263.) */
+    if (v->m98==2 && v->anim.fields.field76 && !hgun_role(v->weapon_role)) v->m98=0;
     if (turning) {v->weapon_role=-1;v->weapon_count=0;v->weapon_done=false;}
     else if (!crouch) {
         int rest=weapon_rest(v,in,v->running_jump);
         /* 0C3A5E tests the bomb (bit 6) before the fire (bit 4): a throw
          * this update starts 0BF998 (pistol 24C862, form 1 253B3A). */
-        if (in->thrown) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_GRENADE:MARCO_CAMPAIGN_W_GRENADE);
+        if (in->thrown) {
+            start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_GRENADE:MARCO_CAMPAIGN_W_GRENADE);
+            v->anim.fields.field76=0;v->m98=2;   /* 0C3BD2, 0C3BFE..0C3D74 */
+        }
         /* The knife standing: weapon table 0BF958 (form 1: +0x10). */
         else if (in->knife) start(v,MARCO_WEAPON,in->form==1?MARCO_CAMPAIGN_W1_KNIFE:MARCO_CAMPAIGN_W_KNIFE);
-        else if (hgun_start && hgun_roles[in->hgun_program]>=0) start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);
+        else if (hgun_start && hgun_roles[in->hgun_program]>=0) {start(v,MARCO_WEAPON,hgun_roles[in->hgun_program]);v->m98=2;}   /* 0C3EB2 */
         else if (in->form==1 && in->cgun && in->cgun_fire)
         {
             /* The weapon's tables 0C3C10/0C3C50/0C3C90 (+0x10): the C's
@@ -452,6 +519,7 @@ void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in) {
                 {MARCO_CAMPAIGN_W1L_FIRE,MARCO_CAMPAIGN_W1L_FIRE_UP,MARCO_CAMPAIGN_W1L_FIRE_DOWN}};
             const int *f=fire[in->cgroup<5u?in->cgroup:0u];
             start(v,MARCO_WEAPON,in->aim_up?f[1]:in->aim_down && !in->grounded?f[2]:f[0]);
+            v->anim.fields.field76=0;v->m98=2;   /* 0C3CE2, 0C3D8C (the beam 0C3E18, +76 at its end) */
         }
         else if (in->form!=1 && in->fired) {
             start(v,MARCO_WEAPON,in->aim_up?MARCO_CAMPAIGN_W_FIRE_UP:in->aim_down && !in->grounded?MARCO_CAMPAIGN_W_FIRE_DOWN:MARCO_CAMPAIGN_W_FIRE);

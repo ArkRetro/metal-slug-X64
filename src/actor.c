@@ -767,6 +767,7 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
         if (game.life.phase!=MARCO_ALIVE) {marco_visual_reset(&marco);marco_shots=game.shots;marco_grenades=game.grenades;marco_cfires=game.c_fires;marco_knives=game.knife_cuts;}
         /* The players run on through the mission end with no input (their
          * handlers 0C0538 since 018F92): their idle takes the victory. */
+        if (!(game.ticks&1)) game.turn_gate=(marco_turn_gate_t){false,false,0};   /* no visual update: no turn */
         if (!(game.ticks&1) && (!game.complete || game.mission_end!=MSX_END_DONE) && game.life.phase==MARCO_ALIVE && game.mount!=MSX_MOUNT_RIDE) {
             /* One original player update: step the body/weapon programs. */
             marco_visual_input_t mi={game.grounded,game.moving,game.crouching,game.aim_up,game.shots!=marco_shots,game.aim_down,
@@ -787,6 +788,16 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             mi.victory=msx_game_victory(&game);
             msx_game_projected(&game,&mi.x,&mi.y);marco_shots=game.shots;
             marco_visual_step(&marco,&mi);
+            game.turn_gate=marco_visual_turn_gate(&marco);   /* B84: read by the next update's fire (gameplay.c) */
+#if MSX_DIAG || defined(MSX_TESTPAD)
+            /* B84 (read only; test cartridges): the run's turns and stops,
+             * and the presses the turn dropped (tools/test_characters_ares.py
+             * --run-fire-turn). */
+            {static int kind;static unsigned dropped;int k=marco_visual_turn_kind(&marco);
+             if (k!=kind && k) debugf("MSX DIAG marco %s facing=%d\n",k==1?"turn":"stop",(int)mi.facing);
+             kind=k;
+             if (game.turn_blocked!=dropped) {debugf("MSX DIAG turn press dropped count=%u\n",game.turn_blocked);dropped=game.turn_blocked;}}
+#endif
 #if MSX_DIAG || defined(MSX_TESTPAD)
             /* B83 (read only; test cartridges): an update whose parts draw with two facings
              * (004364 mirrors every pose by the player's +15; the run and

@@ -21,7 +21,7 @@ p.add_argument('--ares',default=EMU+'/build/rundir/bin/ares')
 p.add_argument('--places',default='0,1,2,3')
 p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-testpad.z64 (no script: the keys of xdotool) or mslugx-diag.z64: after the landing, run and fire, '
     'keep running with the fire over, turn, crouch and fire, with the pistol; no update may draw the parts with two facings '
-    '(MSX DIAG marco facing mixed)')
+    '(MSX DIAG marco facing mixed); B84: a run turn, a press dropped in it and a stop (MSX DIAG marco turn / turn press dropped / marco stop)')
 a=p.parse_args()
 out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
 env=dict(os.environ,XDG_DATA_HOME=EMU+'/data146',XDG_CONFIG_HOME=EMU+'/config146',
@@ -91,6 +91,16 @@ for place in [int(x) for x in a.places.split(',')]:
                 gtap('x');gs(.15);key('keyup',other);key('keydown',side);gs(.6);key('keyup',side)   # the turn with the shot on
             key('keydown','Down');gs(.3);gtap('x');gs(.2);key('keydown','Left');gs(.3);key('keyup','Left');gtap('x');gs(.3);key('keyup','Down')
             checks['parts with one facing (run, fire, turn)']='MSX DIAG marco facing mixed' not in log()[mark:]
+            # B84: the turn with the press on the stick's change (0C2746: no
+            # shot in its two updates), a run long enough to stop (0C1EFA)
+            # and its release.
+            mark=len(log())
+            for side,other in (('Right','Left'),('Left','Right')):
+                key('keydown',side);gs(1.2);key('keyup',side);key('keydown',other);key('keydown','x');gs(.05);key('keyup','x');gs(1.2)
+                key('keyup',other);gs(1.2)
+            checks['run turns (0C2746)']='MSX DIAG marco turn' in log()[mark:]
+            checks['press in the turn dropped (0C381C)']='MSX DIAG turn press dropped' in log()[mark:]
+            checks['run stops (0C1EFA)']='MSX DIAG marco stop' in log()[mark:]
         key('keydown','Right');gs(1.5);gtap('x');gs(.3);gtap('x');gs(.5);gtap('z');gs(.8);key('keyup','Right')
         gs(.3);gtap('x');gs(.5);key('keydown','Down');gs(.6);gtap('x');gs(.6);key('keyup','Down')
         key('keydown','Up');gs(.4);gtap('x');gs(.5);key('keyup','Up');gs(.3)

@@ -12,7 +12,7 @@ from export_marco import palette_rgb
 from mission_tiles import decode
 ROOT=Path(__file__).resolve().parents[1]
 def main():
- p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--extra-audit',type=Path,action='append',default=[]);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);p.add_argument('--extra-profile-min-uses',type=int,default=0,help='palette profiles of the extra audits seen in fewer frames (fades, flashes) are left out');p.add_argument('--name-palette',action='append',default=[],help='NAME=W1,W2,..: #define MARCO_PALETTE_NAME for the profile whose colours 1.. start with these words');p.add_argument('--out-dir',type=Path,default=ROOT,help='where build/ and romfs/marco are written (default: this tree)');a=p.parse_args();OUT=a.out_dir
+ p=argparse.ArgumentParser(description=__doc__);p.add_argument('capture',type=Path);p.add_argument('--audit',type=Path);p.add_argument('--extra-audit',type=Path,action='append',default=[]);p.add_argument('--rom',type=Path,required=True);p.add_argument('--mksprite',type=Path,required=True);p.add_argument('--extra-profile-min-uses',type=int,default=0,help='palette profiles of the extra audits seen in fewer frames (fades, flashes) are left out');p.add_argument('--name-palette',action='append',default=[],help='NAME=W1,W2,..: #define MARCO_PALETTE_NAME for the profile whose colours 1.. start with these words');p.add_argument('--out-dir',type=Path,default=ROOT,help='where build/ and romfs/marco are written (default: this tree)');p.add_argument('--base-meta',type=Path,help='an earlier marco_pose_meta.h whose captures are not all on disk: its descriptors join the audits\', its palettes (and their names) are kept as they are; the poses are converted again from the ROM');a=p.parse_args();OUT=a.out_dir
  audit_path=a.audit or a.capture/'audit.json';audit=json.loads(audit_path.read_text());assert audit['status']=='PASS'
  sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
  assert all(sha(a.capture/n)==h for n,h in audit['provenance'].items()),'Preserve audited source capture'
@@ -27,6 +27,14 @@ def main():
   extra_audits.append(dict(path=str(path),sha256=sha(path)))
   audit['descriptor_addresses']=sorted(set(audit['descriptor_addresses'])|set(extra['descriptor_addresses']))
   audit.setdefault('palette_profiles',[]).extend(x for x in extra.get('palette_profiles',[]) if x['frame_uses']>=a.extra_profile_min_uses and any(x['words'][1:]))
+ base=None
+ if a.base_meta:
+  import re
+  text=a.base_meta.read_text();i=text.index('marco_poses[')
+  base=dict(tags=[int(t) for t in re.findall(r'\{(\d+)u,',text[i:])],
+            palettes=[[int(v) for v in g.split(',')] for g in re.findall(r'\{([0-9,]+)\}',text[text.index('marco_palettes['):text.index('};',text.index('marco_palettes['))])],
+            names=re.findall(r'#define MARCO_PALETTE_(\w+) (\d+)u',text))
+  audit['descriptor_addresses']=sorted(set(audit['descriptor_addresses'])|{f'0x{t:06X}' for t in base['tags']})
  data=program(a.rom);crom=(ROOT/'filesystem/sprites.bin').read_bytes()
  pal=struct.unpack('>4096H',(a.capture/'palette2104.bin').read_bytes())[0x630:0x640]
  def convert_palette(words):return [0]+[((r>>3)<<11)|((g>>3)<<6)|((b>>3)<<1)|1 for r,g,b in (palette_rgb(v) for v in words[1:])]
@@ -34,6 +42,10 @@ def main():
  for profile in audit.get('palette_profiles',[]):
   converted=convert_palette(profile['words'])
   if converted not in palettes:palettes.append(converted)
+ if base:
+  assert base['palettes'][0]==rgba16,'the base catalog has the same player palette'
+  assert all(x in base['palettes'] for x in palettes),'a palette profile not in the base catalog'
+  palettes=base['palettes']
  colors=[((v>>11&31)*255//31,(v>>6&31)*255//31,(v>>1&31)*255//31,255 if v&1 else 0) for v in rgba16]
  # Pens with the same colour (3 and 6 of the player's palette): mksprite
  # maps a pixel to a palette index by colour, so a later duplicate is moved
@@ -101,6 +113,7 @@ def main():
  lines += ['#ifdef MARCO_POSE_CRC','static const uint32_t marco_pose_crc[MARCO_POSES][MARCO_PALETTES][2]={']
  for pose in poses:lines.append('{'+','.join('{'+','.join(str(v)+'u' for v in pair)+'}' for pair in pose['crc'])+'},')
  lines += ['};','#endif']
+ if base:lines+=[f'#define MARCO_PALETTE_{n} {v}u' for n,v in base['names']]
  for spec in a.name_palette:
   name,_,words=spec.partition('=');prefix=[int(w,16) for w in words.split(',')]
   found=[i for i,pal in enumerate(palettes) if convert_palette([0]+prefix+[0]*(15-len(prefix)))[1:1+len(prefix)]==pal[1:1+len(prefix)]]

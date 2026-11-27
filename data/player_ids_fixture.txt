@@ -1,0 +1,10 @@
+# B82: MAME 0.264 mslugx euro, RAM 1014C4+6E..+71 (player 1's node) and the
+# Camel rider graphic 034F96's +70 / +72 (table 23A58E[+70]) after the
+# character chosen at SOLDIER SELECT (tools/capture_weapons.lua
+# MSX_WEAPONS_CHARACTER, plan vehicles): Marco vehicles2 ram9600 (rider 103674), Tarma
+# c1-camelB ram9600, Eri c2-camelB ram9100 / rider 9300, Fio c3-camelB.
+# character record6e..71 rider70 rider72
+0 00000000 0000 00034388
+1 00010000 0001 000343a8
+2 00020000 0002 000343c8
+3 00030000 0003 000343e8

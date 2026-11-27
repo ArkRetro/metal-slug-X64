@@ -54,7 +54,9 @@ def cinematic_running(text):
     return last is not None and last.group(2) == 'start' and 'entry' not in last.group(1)
 
 
-def choose(key, log, proc, mission, stage, lifebar=False, seconds=900):
+def choose(key, log, proc, mission, stage, lifebar=False, seconds=900, place=0):
+    """place: SOLDIER SELECT's cursor moved right that many places (logged `MSX SELECT place=K character=N`) before
+    the menu combo: the menu's mission is played with that soldier (src/main.c, B82)."""
     target = ITEMS.index((mission, stage)); end = time.monotonic() + seconds
     def alive():
         assert proc.poll() is None and time.monotonic() < end, 'no test menu\n' + log()[-1500:]
@@ -63,7 +65,11 @@ def choose(key, log, proc, mission, stage, lifebar=False, seconds=900):
         alive()
         assert 'MSX CINE select chosen' not in log(), 'SOLDIER SELECT chose a soldier before the menu combo'
         if re.search(r'MSX CINE select (start|waiting)', log()):
-            time.sleep(1.5); key('keydown', 'd'); key('keydown', 'e'); time.sleep(.6)
+            time.sleep(1.5)
+            for k in range(1, place + 1):
+                while not re.search(r'MSX SELECT place=%d character=\d+' % k, log()):
+                    alive(); held(key, 'Right', log, r'MSX SELECT place=\d+ character=\d+', 15)
+            key('keydown', 'd'); key('keydown', 'e'); time.sleep(.6)
             held(key, 'a', log, r'MSX MSELECT menu open', 4.0)
             key('keyup', 'e'); key('keyup', 'd')
             continue

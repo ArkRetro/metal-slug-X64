@@ -632,6 +632,13 @@ static uint32_t mission_cells_at,mission_images_at,mission_palettes_at,mission_c
  * the bank's own) and the palette resources the scene pack lacks. */
 typedef struct { uint16_t resource,palette; } mission_resource_t;
 static scene_native_descriptor_t *stage_actors;static scene_image_t *stage_actor_images;static mission_resource_t *stage_resources;
+/* Pack version 6 (pack_mission.py RIDERS): the actor images of the
+ * Slugnoid's pilots of characters 1..3 (tables 09649C[1..3]) are the last
+ * ones, one block per character after rider_first; a stage keeps the common
+ * images and the block of the chosen character only (scene_assets_set_rider),
+ * and the descriptors of the other blocks are left out. */
+static unsigned stage_actor_count,stage_actor_image_count,rider_character;
+void scene_assets_set_rider(unsigned character) {rider_character=character;}
 static scene_stage_t stage;static bool stage_on;
 static unsigned stage_images_count(void);
 /* The stage tables' slots: one run of contiguous slots (one heap block), or
@@ -646,7 +653,7 @@ static unsigned stage_images_count(void) {return stage_image_total;}
 const scene_image_t *scene_frame(unsigned id,unsigned frame) {
     const scene_bank_t *b=scene_bank(id);
     if (id==SCENE_NATIVE && frame>=b->first+b->second) {
-        assert(stage_on && frame-(b->first+b->second)<mission_head.actor_images);
+        assert(stage_on && frame-(b->first+b->second)<stage_actor_image_count);
         return &stage_actor_images[frame-(b->first+b->second)];
     }
     assert(frame<b->first+b->second);return &scene_images[b->start+frame];
@@ -782,7 +789,7 @@ bool scene_mission_load(unsigned mission) {
     static pack_header_t head __attribute__((aligned(16)));
     data_cache_hit_writeback_invalidate(&head,sizeof(head));dma_read(&head,mission_rom,sizeof(head));
     pack_native(&head,PACK_HEADER_LAYOUT,1);
-    if (memcmp(head.magic,"MSXM",4) || head.version<3 || head.version>5 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
+    if (memcmp(head.magic,"MSXM",4) || head.version<3 || head.version>6 || head.mission!=mission || head.chunks>SCENE_MISSION_CHUNKS_MAX) {
         debugf("MSX mission pack %s: bad header (version %u, %lu chunks)\n",path,head.version,(unsigned long)head.chunks);mission_bytes=0;return false;
     }
     /* Version 5: the packs that hold chunks of this one (its last 64 bytes,
@@ -883,7 +890,20 @@ bool scene_stage_load(unsigned index) {
             for (unsigned i=0;i<dmaps;i++) NEED(recon_dyn[i].length);
         }
     }
-    NEED(8u*mission_head.actors);NEED(mission_head.actor_images*sizeof(scene_image_t));NEED(4u*mission_head.resources);
+    /* Version 6: the riders' record after the resources ('MSXC' u32
+     * rider_first u32 count[3]); without it every image is kept. */
+    uint32_t rider_first=mission_head.actor_images,rider_start=0,rider_count=0;
+    if (mission_head.version>=6u) {
+        static uint8_t rid[32] __attribute__((aligned(16)));
+        rom_read(rid,mission_actors_at+8u*mission_head.actors+12u*mission_head.actor_images+4u*mission_head.resources,20u);
+        uint32_t f=rd32(rid+4),n1=rd32(rid+8),n2=rd32(rid+12),n3=rd32(rid+16);
+        assertf(!memcmp(rid,"MSXC",4) && f+n1+n2+n3==mission_head.actor_images,"Mission pack riders record");
+        const uint32_t counts[3]={n1,n2,n3};
+        rider_first=f;rider_start=f;
+        for (unsigned c=1;c<=3u;c++) {if (c==rider_character) {rider_count=counts[c-1];break;}rider_start+=counts[c-1];}
+    }
+    stage_actor_image_count=rider_first+rider_count;
+    NEED(8u*mission_head.actors);NEED(stage_actor_image_count*sizeof(scene_image_t));NEED(4u*mission_head.resources);
     /* 'MSXD': the mission's ROM blobs and programs (read whole, the
      * commands converted in place) and the program table. */
     static uint8_t data_head[32] __attribute__((aligned(16)));
@@ -959,11 +979,25 @@ bool scene_stage_load(unsigned index) {
     _Static_assert(sizeof(scene_native_descriptor_t)==8,"pack actor record size");
     stage_actors=take(8u*mission_head.actors);rom_read(stage_actors,mission_actors_at,8u*mission_head.actors);
     pack_native(stage_actors,"422",mission_head.actors);
-    for (unsigned i=0;i<mission_head.actors;i++) stage_actors[i].first=(uint16_t)(stage_actors[i].first+scene_bank(SCENE_NATIVE)->first+scene_bank(SCENE_NATIVE)->second);
-    stage_actor_images=take(mission_head.actor_images*sizeof(scene_image_t));
-    uint8_t *ra=(uint8_t*)stage_actor_images+mission_head.actor_images*(sizeof(scene_image_t)-12u);
-    rom_read(ra,mission_actors_at+8u*mission_head.actors,12u*mission_head.actor_images);
-    for (unsigned i=0;i<mission_head.actor_images;i++) {
+    /* The descriptors of the riders' blocks not kept are left out (the
+     * table stays sorted); the kept block's follow the common images. */
+    stage_actor_count=0;
+    for (unsigned i=0;i<mission_head.actors;i++) {
+        scene_native_descriptor_t d=stage_actors[i];
+        if (d.count && d.first>=rider_first) {
+            if (d.first<rider_start || d.first>=rider_start+rider_count) continue;
+            d.first=(uint16_t)(rider_first+(d.first-rider_start));
+        }
+        d.first=(uint16_t)(d.first+scene_bank(SCENE_NATIVE)->first+scene_bank(SCENE_NATIVE)->second);
+        stage_actors[stage_actor_count++]=d;
+    }
+    _Static_assert(sizeof(scene_image_t)==12u,"actor images read in place");
+    stage_actor_images=take(stage_actor_image_count*sizeof(scene_image_t));
+    uint8_t *ra=(uint8_t*)stage_actor_images;
+    rom_read(ra,mission_actors_at+8u*mission_head.actors,12u*rider_first);
+    rom_read(ra+12u*rider_first,mission_actors_at+8u*mission_head.actors+12u*rider_start,12u*rider_count);
+    if (mission_head.version>=6u) debugf("MSX stage %u riders: character %u, %lu of %lu actor images kept (%lu common)\n",index+1,rider_character,(unsigned long)stage_actor_image_count,(unsigned long)mission_head.actor_images,(unsigned long)rider_first);
+    for (unsigned i=0;i<stage_actor_image_count;i++) {
         const uint8_t *r=ra+12u*i;   /* expanded in place (12-byte records): read the record first */
         uint16_t pg=(uint16_t)(r[0]<<8|r[1]),pl=(uint16_t)(r[2]<<8|r[3]),w=(uint16_t)(r[8]<<8|r[9]),h=(uint16_t)(r[10]<<8|r[11]);
         int16_t px=(int16_t)(r[4]<<8|r[5]),py=(int16_t)(r[6]<<8|r[7]);
@@ -1061,7 +1095,7 @@ const scene_native_descriptor_t *scene_native_descriptor(uint32_t tag) {
         if (scene_native_descriptors[mid].tag<tag) lo=mid+1; else hi=mid;
     }
     if (stage_on) {
-        lo=0;hi=mission_head.actors;
+        lo=0;hi=stage_actor_count;
         while (lo<hi) {
             unsigned mid=(lo+hi)/2;
             if (stage_actors[mid].tag==tag) return &stage_actors[mid];

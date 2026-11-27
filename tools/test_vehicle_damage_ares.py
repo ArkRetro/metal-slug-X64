@@ -32,6 +32,7 @@ Last line: RESULT: PASS/FAIL. Needs DISPLAY (an Xvfb of its own)."""
 import argparse,os,re,subprocess,time
 import sys as _sys;from pathlib import Path as _Path;_sys.path.insert(0,str(_Path(__file__).resolve().parent));from ares_clock import EmuClock
 from pathlib import Path
+EMU=os.environ.get('MSX_EMULATOR','/workspace/emulator')   # the ares tree (build/rundir/bin/ares, data146, config146, runtime, root)
 p=argparse.ArgumentParser(description=__doc__);p.add_argument('rom');p.add_argument('--out',required=True)
 p.add_argument('--mission',default='m1',choices=('m1','m2s3','m3','m4','m5s3'))
 p.add_argument('--rom-zip',default=os.environ.get('MSX_ROM_ZIP','mslugx.zip'))
@@ -42,13 +43,13 @@ p.add_argument('--jump',type=float,default=2.5);p.add_argument('--up',type=float
 p.add_argument('--no-lifebar',dest='lifebar',action='store_false')
 p.add_argument('--ride',choices=('wait','forward'),default='wait',help='while riding: wait (stand still, no fire) or forward (a 5 s cycle: 2 s right, 3 s still, the vehicle fire B in the last 0.6 s; never A: A+B is the exit) to take the vehicle to the enemies (the Slugnoid of m5s3, B69)')
 import ares_padtest as pt;pt.add_args(p);pt_ticks=pt.ticks
-p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares');p.add_argument('--data',default='/workspace/emulator/data146')
+p.add_argument('--ares',default=EMU+'/build/rundir/bin/ares');p.add_argument('--data',default=EMU+'/data146')
 a=p.parse_args();out=Path(a.out);out.mkdir(parents=True,exist_ok=True)
 if a.lifebar:   # N64 Z on the key z in a private copy of the ares data (tools/ares_private_data.py)
     import sys;sys.path.insert(0,str(Path(__file__).resolve().parent));from ares_private_data import private_data;a.data=private_data(a.data,out)
 expect=[int(k) for k in (a.expect or {'m1':'2,1','m2s3':'3','m3':'4','m4':'1','m5s3':'3'}[a.mission]).split(',')]
-env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME='/workspace/emulator/config146',XDG_RUNTIME_DIR='/workspace/emulator/runtime',
-    LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
+env=dict(os.environ,XDG_DATA_HOME=a.data,XDG_CONFIG_HOME=EMU+'/config146',XDG_RUNTIME_DIR=EMU+'/runtime',
+    LD_LIBRARY_PATH=EMU+'/root/usr/lib/x86_64-linux-gnu',VK_DRIVER_FILES=EMU+'/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 XD='/usr/bin/xdotool';logp=out/'ares.log';pt.prepare(a,out)
 def key(action,name):
     if not a.pad_script:subprocess.run([XD,action,name],check=True,env=env)   # a replay presses nothing (tools/ares_padtest.py)

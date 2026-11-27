@@ -14,18 +14,19 @@ Last line: RESULT: PASS/FAIL."""
 import argparse,os,re,subprocess,sys,time
 from pathlib import Path
 from PIL import ImageGrab
+EMU=os.environ.get('MSX_EMULATOR','/workspace/emulator')   # the ares tree (build/rundir/bin/ares, data146, config146, runtime, root)
 p=argparse.ArgumentParser(description=__doc__)
 p.add_argument('rom',type=Path);p.add_argument('--output',type=Path,required=True)
-p.add_argument('--ares',default='/workspace/emulator/build/rundir/bin/ares')
+p.add_argument('--ares',default=EMU+'/build/rundir/bin/ares')
 p.add_argument('--places',default='0,1,2,3')
 p.add_argument('--run-fire-turn',action='store_true',help='B83, with mslugx-testpad.z64 (no script: the keys of xdotool) or mslugx-diag.z64: after the landing, run and fire, '
     'keep running with the fire over, turn, crouch and fire, with the pistol; no update may draw the parts with two facings '
     '(MSX DIAG marco facing mixed)')
 a=p.parse_args()
 out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
-env=dict(os.environ,XDG_DATA_HOME='/workspace/emulator/data146',XDG_CONFIG_HOME='/workspace/emulator/config146',
-         XDG_RUNTIME_DIR='/workspace/emulator/runtime',LD_LIBRARY_PATH='/workspace/emulator/root/usr/lib/x86_64-linux-gnu',
-         VK_DRIVER_FILES='/workspace/emulator/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
+env=dict(os.environ,XDG_DATA_HOME=EMU+'/data146',XDG_CONFIG_HOME=EMU+'/config146',
+         XDG_RUNTIME_DIR=EMU+'/runtime',LD_LIBRARY_PATH=EMU+'/root/usr/lib/x86_64-linux-gnu',
+         VK_DRIVER_FILES=EMU+'/root/usr/share/vulkan/icd.d/lvp_icd.json',LIBGL_ALWAYS_SOFTWARE='1')
 assert env.get('DISPLAY'),'DISPLAY'
 XD='/usr/bin/xdotool';CHARACTER=(0,2,1,3);NAME=('Marco','Tarma','Eri','Fio')
 def key(action,name):subprocess.run([XD,action,name],check=True)

@@ -21,6 +21,7 @@
 #endif
 #include LOADER
 #include <inttypes.h>
+static void dump_actors(unsigned character);
 void msx_perf_add(unsigned bucket,uint32_t ticks) {(void)bucket;(void)ticks;}
 unsigned scene_prerender_probe(unsigned mission,unsigned index) {(void)mission;(void)index;return 0;}
 bool scene_prerender_open(uint8_t *mem,unsigned palette_base) {(void)mem;(void)palette_base;return false;}
@@ -57,6 +58,32 @@ static void cells(const char *name,const scene_map_cell_t *c,unsigned n) {
         fprintf(out,"%s %u layer=%u at=%d,%d images=",name,i,c[i].layer,c[i].x,c[i].y);
         for (unsigned k=0;k<8;k++) fprintf(out,"%u%c",scene_cell_phase(&c[i],k),k<7?',':'\n');
     }
+}
+/* The Slugnoid pilots of characters 1..3 (pack_mission.py rider_descriptors,
+ * written by test_pack_compression.py to the file named by MSX_RIDERS: one
+ * "character descriptor" line each). A version 6 pack's stage keeps only the
+ * chosen character's (scene_assets_set_rider); the old packs keep them all.
+ * For each character, the actors are written leaving out the other
+ * characters' pilots, so the old and new packs give the same text, and a
+ * version 6 pack must not serve them at all. */
+static struct {uint32_t tag;unsigned character;} riders[512];static unsigned rider_total;
+static unsigned rider_of(uint32_t tag) {for (unsigned i=0;i<rider_total;i++) if (riders[i].tag==tag) return riders[i].character;return 0;}
+static void dump_actors(unsigned character) {
+    /* Actors: each descriptor's parts in order, by content. */
+    unsigned parts=0;
+    fprintf(out,"rider %u\n",character);
+    for (unsigned i=0;i<stage_actor_count;i++) {
+        unsigned c=rider_of(stage_actors[i].tag);
+        if (c && c!=character) {assertf(mission_head.version<6u,"pilot %06" PRIx32 " of character %u kept for character %u",stage_actors[i].tag,c,character);continue;}
+        const scene_native_descriptor_t *d=scene_native_descriptor(stage_actors[i].tag);
+        bool own=d==&stage_actors[i];
+        fprintf(out,"actor %06" PRIx32 " parts=%u own=%u\n",stage_actors[i].tag,stage_actors[i].count,own);
+        for (unsigned k=0;k<stage_actors[i].count;k++) {
+            image(" part",k,scene_frame(SCENE_NATIVE,stage_actors[i].first+k),false);
+        }
+        parts+=stage_actors[i].count;
+    }
+    fprintf(out,"actor_images %u\n",parts);
 }
 static void dump_scene(void) {
     fprintf(out,"scene.pack pages=%u palettes=%u\n",SCENE_PAGE_COUNT,SCENE_PALETTE_COUNT);
@@ -106,16 +133,7 @@ static void dump_stage(unsigned mission,unsigned index) {
         for (unsigned k=0;k<16;k++) fprintf(out," %04x",scene_palette(SCENE_PALETTE_COUNT+i)[k]);
         fputc('\n',out);
     }
-    /* Actors: each descriptor's parts in order, by content. */
-    for (unsigned i=0;i<mission_head.actors;i++) {
-        const scene_native_descriptor_t *d=scene_native_descriptor(stage_actors[i].tag);
-        bool own=d==&stage_actors[i];
-        fprintf(out,"actor %06" PRIx32 " parts=%u own=%u\n",stage_actors[i].tag,stage_actors[i].count,own);
-        for (unsigned k=0;k<stage_actors[i].count;k++) {
-            image(" part",k,scene_frame(SCENE_NATIVE,stage_actors[i].first+k),false);
-        }
-    }
-    fprintf(out,"actor_images %" PRIu32 "\n",mission_head.actor_images);
+    dump_actors(0);
     for (unsigned i=0;i<mission_head.resources;i++) {
         int pal=scene_native_palette(stage_resources[i].resource);
         fprintf(out,"resource %04x",stage_resources[i].resource);
@@ -156,6 +174,13 @@ int main(int argc,char **argv) {
         char path[32];snprintf(path,sizeof(path),"/mission%u.pack",m);snprintf(file,sizeof(file),"%s%s",argv[1],path);
         have[m]=host_rom_add(path,file);
     }
+    const char *rf=getenv("MSX_RIDERS");
+    if (rf) {
+        FILE *f=fopen(rf,"r");if (!f) {fprintf(stderr,"%s missing\n",rf);return 2;}
+        unsigned c;unsigned long tag;
+        while (rider_total<512u && fscanf(f,"%u %lx",&c,&tag)==2) {riders[rider_total].tag=(uint32_t)tag;riders[rider_total++].character=c;}
+        fclose(f);
+    }
     out=fopen(argv[2],"w");
     if (!out) return 2;
     scene_assets_init();
@@ -166,8 +191,15 @@ int main(int argc,char **argv) {
         fprintf(out,"mission %u stages=%u palettes=%u actors=%" PRIu32 " resources=%" PRIu32 "\n",m,mission_head.stages,mission_head.palettes,mission_head.actors,mission_head.resources);
         unsigned n=mission_head.stages;
         for (unsigned k=0;k<n;k++) {
+            scene_assets_set_rider(0);
             assertf(scene_stage_load(k),"mission %u stage %u not loaded",m,k+1);
             dump_stage(m,k);stages++;
+            /* The missions with the Slugnoid: each other character's pilot. */
+            if (rider_total && (m==2u || m==5u)) for (unsigned c=1;c<=3u;c++) {
+                scene_assets_set_rider(c);
+                assertf(scene_stage_load(k),"mission %u stage %u not loaded (rider %u)",m,k+1,c);
+                dump_actors(c);
+            }
         }
         scene_mission_unload();
     }

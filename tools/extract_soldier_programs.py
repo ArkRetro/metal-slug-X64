@@ -242,8 +242,8 @@ ROOTS+=[0x2818e4,0x281a08,0x281a5c,0x281ac6,0x281c20,0x281d66,0x281e1e,0x281dea]
 # The molotov 01E648 (22F5B8) and its flames 01E9B6 (242B52), neo_bullet.c.
 ROOTS+=[0x22f5b8,0x242b52]
 # The Slugnoid 09692C (neo_slugnoid.c): program tables 096418 (and its
-# crouch sub-tables), the pilot's table 09649C[0] (Marco: the port's only
-# character; the others stop explicitly in ga_anim_start), the dust,
+# crouch sub-tables), the pilot's table 09649C[0] (Marco; the other
+# characters' tables below), the dust,
 # legs' flames and muzzle flash, and the type-3 flame 01EA7A (22F704).
 ROOTS+=[
     0x29d00e,0x29d022,0x29d104,0x29d94a,0x29d2d8,0x29d35a,0x29d4f8,0x29d522,0x29d540,0x29d55e,0x29d57c,0x29d59a,
@@ -251,11 +251,14 @@ ROOTS+=[
     0x29d1b0,0x29dd22,0x29deaa,0x29df14,0x29e10a,0x29df3e,0x29dd24,0x29de94,0x29ddc6,0x29ddd0,0x29ddda,0x29dde4,
     0x29ddee,0x29ddf8,0x29dd42,0x29dd4c,0x29dd56,0x29dd60,0x29dd6a,0x29dfce,0x29e076,0x29dff8,0x29df94,0x29dfc2,
     0x29dcde,0x29daea,0x29dc30,0x29d978,0x29dbd4,0x29dbde,0x22f704,]
-# Mission 5 Slugnoid pilots of the other characters (B69): tables 09649C[1..3]
+# Slugnoid pilots of the other characters (B69, B82): tables 09649C[1..3]
 # (096530, 0965B4, 096638), the entries at the positions of Marco's above
 # (MAME: the Mission 5 ride of the TAS, character 1, program 29E122).
-# Group m5: out of the console image (RAM budget; their sprites are not
-# exported yet), in the host family test slughit.
+# No mission group (/programs.bin, read on demand: only the chosen
+# character's are ever read): Mission 2 stage 3 and Mission 5 stage 3 both
+# make the Slugnoid; their sprites are in the packs of Missions 2 and 5 in
+# one block per character, and the stage loader keeps only the chosen
+# character's (pack_mission.py RIDERS, scene_assets.c).
 ROOTS+=[
     0x29e120,0x29e122,0x29e140,0x29e14a,0x29e154,0x29e15e,0x29e168,0x29e1c4,0x29e1ce,0x29e1d8,0x29e1e2,0x29e1ec,
     0x29e1f6,0x29e292,0x29e2a8,0x29e312,0x29e33c,0x29e392,0x29e3c0,0x29e3cc,0x29e3f6,0x29e474,0x29e508,0x29e51e,
@@ -317,7 +320,7 @@ MISSION_BLOCKS={'end':('# The credits and the title after them',),'m2':('# Missi
     'm3':('# Mission 3: the wagon box','# Mission 3 wagons','# Mission 3 grenadier','# Mission 3 shield soldiers','# Mission 3 window soldiers',
     '# Mission 3 mid-boss','# Mission 3 boss 04A2C2','# Mission 3 SV-001 093C9A','# Mission 3 vehicle 0AC866','# Mission 3 weapon E 0DE4DA','# Mission 3 fat weapons','# Mission 3 soldiers 05C53C','# Mission 3 flying machine','# Mission 3 gunship','# Mission 3 molotov throwers','# Mission 3 flying bomber','# Mission 3 oil drum','# Mission 3 armed truck','# Mission 3 floating platform','# Mission 3 rider car','# Mission 3 armed jeep','# Mission 3 birds, sandbags and camp'),
     'm4':('# Mission 4 props','# Mission 4 flyers','# Mission 4 bins','# Mission 4 object 036C34','# Mission 4 van','# Mission 4 hatches','# Mission 4 jumping soldier','# Mission 4 helicopters','# Mission 4 truck pieces','# Mission 4 fighting prisoner','# Mission 4 animals','# Mission 4 vehicle','# Mission 4 boss'),
-    'm5':('# Mission 5 sewer gates','# Mission 5 weapon F','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 Slugnoid pilots','# Mission 5 boss')}
+    'm5':('# Mission 5 sewer gates','# Mission 5 weapon F','# Mission 5 street tank','# Mission 5 lone helicopter','# Mission 5 tank on treads','# Mission 5 metro train','# Mission 5 metro machine','# Mission 5 sewer crank','# Mission 5 boss')}
 def root_groups():
     import re
     text=Path(__file__).read_text();seen={};other=set()

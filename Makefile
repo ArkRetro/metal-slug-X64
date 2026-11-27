@@ -627,7 +627,7 @@ $(BUILD_DIR)/tally_%_fixture.h: tools/compile_tally_fixture.py data/tally_%_fixt
 # (tools/extract_family_fixture.py -> data/<family>_fixture.json.gz).
 # FAMILY_ARGS_<family>: extra options of the compiler (--tree: the first
 # node and its descendants only).
-FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugc1 slugc2 slugc3 slugidle slugfall slugtour sluglaunch slughit slugair m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6air m6air2 m6boss8 m6boss9 m6flee m6truck
+FAMILIES := dome barrel figure tankhit tankkill tankair truck swordgen arab creature prisoner hitem citem hbullet pbullet grenade chaser armored secret swords prisoner2 bossprisoner bossprisonerb food rocket heli camel decor awning porter slug civil blast debris flash label tank tankjump tankcrouch tankpush rlaunch dball sgun2 sgun7 flame4 flame9 goarrow exitmark rebel2 rebel3 stageexit gate secret2 crate bags m2gate stage3 drone hostage miner minerrun signs prisoner3 prisoner4 bats rlaunch8 laser6 laserb coin treasure vent ventwait wrapped rope ropedeath molotov boulder robeflag slugc1 slugc2 slugc3 slugidle slugfall slugtour sluglaunch slughit slugair slugp0 slugp1 slugp2 slugp3 m2boss1 m2boss8 m3wagon m3platform m3grenade m3grenade4 m3shield m3shield4 m3window m3mid1 m3mid2 m3mid3 m3mid4 m3para m3pod m3gun m3gun4 m3thrower m3bomber m3drum m3truck m3raft m3car m3jeep m3bird m3sack m3camp m3bonus m3tank m3tankair m3veh m3veh2 m3wepe m3fat m3fat2 m3bomb m3molotov m3splash m3boss0 m3boss1 m3boss3 m3boss2 m3boss4 m3boss5 m3boss6 m2creature m2ripple m4props m4flyer m4flyer2 m4bin m4urn m4van m4van2 m4rock m4jump m4box m4heli m4spark m4truck m4sold m4sold2 m4pris m4pris2 m4animal m4label m5gate m5drip m5deco m5street m5ledge m5car m5signal m5door m5stain m5jet m5tank m5heli m5tread m5tread2 m5tread3 m5heli2 m5heli3 m4veh m4veh2 m4veh3 m4veh4 m5train m5mech m6raft m6span m6mid m6shot m6run m6hold m6rock m6reb m5pow m5sewer m4boss m5grab m5sewer2 m5boss m5boss2 m5boss3 m5boss4 m5boss5 m6jump m6jump2 m6plat m6jeep m6end2 m6mach m6wreck m5wepf m6boss1 m6boss2 m6boss3 m6boss4 m6boss5 m6boss6 m6boss7 m6air m6air2 m6boss8 m6boss9 m6flee m6truck
 # m4props = the Mission 4 props of the camera list 0E741A (neo_m4props.c):
 # the destructible fronts 0B9F4A (32 records 0E68D0, map patches 0C70FC into
 # the ring of 10C72E), their debris 0BB106, the lamp 0B9B24, the decorations
@@ -1403,6 +1403,15 @@ FAMILY_ARGS_slughit := $(SLUGNOID_ARGS) --resume
 # FROM=38008, trace cut at 39840): the hit in the air 097308 -> 09731A at 39174,
 # on the ground 09737E at 39294, the death with the rider 0973E2 at 39666, 09756A.
 FAMILY_ARGS_slugair := $(SLUGNOID_ARGS) --resume
+# slugp0..slugp3 = B82: the Mission 5 Slugnoid ridden by each character, its pilot
+# 097830/097886 drawing the table 09649C[+70] (MAME: TAS state u17460,
+# capture_fullgame.lua MSX_FULL_SET_CHARACTER=N (+6E written after the load),
+# MSX_FULL_RIDE=tour, VEHICLE_CHEAT=0, FROM=38008, LAST=41000; docs/PERSONAJES.md):
+# two rides (38131..39133, 39241..40309), the walker destroyed with the rider.
+FAMILY_ARGS_slugp0 := $(SLUGNOID_ARGS) --resume
+FAMILY_ARGS_slugp1 := $(SLUGNOID_ARGS) --resume
+FAMILY_ARGS_slugp2 := $(SLUGNOID_ARGS) --resume
+FAMILY_ARGS_slugp3 := $(SLUGNOID_ARGS) --resume
 # The 10 grenades 01BF46 of cfam (bounces, three explosions 01C152/01C19A);
 # the one that explodes on 0049E8 before its flight is the contact.
 FAMILY_ARGS_grenade := --hit-to 1c152

@@ -30,6 +30,10 @@ def main():
     run(sys.executable,ROOT/'tools/pack_scene.py','--legacy',old)
     shutil.copyfile(ROOT/'romfs/scene.pack',new/'scene.pack')
     missions=build_packs.build(old,4,quiet=True);assert build_packs.build(new,5,quiet=True)==missions
+    # The Slugnoid pilots of characters 1..3 (pack_mission.py): both loaders write each character's actors.
+    import pack_mission;from decode_level_script import Program
+    riders=host/'riders.txt';riders.write_text(''.join(f'{c} {d:06x}\n' for d,c in sorted(pack_mission.rider_descriptors(Program('/home/user/roms/mslugx.zip')).items())))
+    os.environ['MSX_RIDERS']=str(riders)
     cc=os.environ.get('HOST_CC','cc').split()+'-std=gnu11 -Wall -Wextra -Werror -Wno-unused-function -O1'.split()
     cc+=[f'-I{ROOT}/tools/host_n64',f'-I{ROOT}/src',str(ROOT/'tools/test_pack_loader.c')]
     # The old scene.pack has its own chunk table (scene_meta.h); the rest of the header is the same file.
@@ -50,5 +54,5 @@ def main():
     if stale:print('WARNING: '+', '.join(stale)+' in romfs/ are not what the sources give now: python3 tools/build_packs.py')
     else:print('PASS: romfs/ mission packs are the ones the sources give')
     for d in (old,new,cart):shutil.rmtree(d,ignore_errors=True)
-    for f in ('pack-old.txt','pack-new.txt','pack-cart.txt'):(host/f).unlink()
+    for f in ('pack-old.txt','pack-new.txt','pack-cart.txt','riders.txt'):(host/f).unlink()
 if __name__=='__main__':main()

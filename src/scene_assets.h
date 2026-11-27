@@ -62,6 +62,9 @@ void scene_assets_grow_early(int keep);
  * parts preloaded during the boot cinematics): taken off its reserve. */
 void scene_assets_game_preloaded(unsigned bytes);
 void scene_assets_init(void);
+/* The chosen character (+6E, 0..3): a version 6 mission pack's stage keeps
+ * only that character's block of the Slugnoid pilot's images (09649C[+70]). */
+void scene_assets_set_rider(unsigned character);
 /* One step of idle-time work while the CPU waits for a framebuffer: start the
  * next DMA or decode a staged chunk if it ends before the next vertical blank.
  * Returns false when there is nothing to do or no time left in this frame. */

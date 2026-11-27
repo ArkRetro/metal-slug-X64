@@ -26,27 +26,30 @@ that only that mission's lists make; one image per mission, several ticks).
 
 File layout (big endian): 'MSXO', count, then per region (address, bytes),
 then per overlay (offset, bytes); each image is 16-byte aligned and begins with
-its own header: 'MSXo', id, image bytes, tick count, TICKS_MAX tick addresses."""
+its own header: 'MSXo', id, image bytes, TICKS_MAX, then TICKS_MAX tick addresses (region 0: the tick in slot 0;
+region 1: indexed by MODULES, 0 when the image lacks the module)."""
 import os, re, struct, subprocess, sys, tempfile
 from pathlib import Path
 
 B = Path(os.environ.get('N64_INST', '/home/user/toolchains/package/opt/libdragon')) / 'bin' / 'mips64-elf-'
-# id order = enum msx_overlay_id_t (src/msx_overlay.h): (image, region, [(module, tick), ...]);
-# the ticks' order is the slot order of msx_overlay_code_tick (src/neo_region.c).
-OVERLAYS = [('neo_m3boss', 0, [('neo_m3boss', 'neo_m3boss_tick')]),
-            ('neo_m4boss', 0, [('neo_m4boss', 'neo_m4boss_tick')]),
-            ('neo_m5boss', 0, [('neo_m5boss', 'neo_m5boss_tick')]),
-            ('neo_m6boss', 0, [('neo_m6boss', 'neo_m6boss_tick')]),
-            ('neo_ending', 0, [('neo_ending', 'neo_ending_tick')]),   # the ending: results, credits, ranking, title (src/neo_ending.c)
-            # Each mission's own code but its boss (region 1, msx_overlay_code_region): one image per mission.
-            ('m2code', 1, [('neo_m2boss', 'neo_m2boss_tick'), ('neo_m2props', 'neo_m2props_tick'),
-                           ('neo_m2traps', 'neo_m2traps_tick'), ('neo_m2creature', 'neo_m2creature_tick')]),
-            ('m3code', 1, [('neo_m3mid', 'neo_m3mid_tick'), ('neo_m3veh', 'neo_m3veh_tick'), ('neo_m3props', 'neo_m3props_tick')]),
-            ('m4code', 1, [('neo_m4props', 'neo_m4props_tick'), ('neo_m4veh', 'neo_m4veh_tick')]),
-            ('m5code', 1, [('neo_m5enemy', 'neo_m5enemy_tick'), ('neo_m5mech', 'neo_m5mech_tick'), ('neo_m5props', 'neo_m5props_tick'),
-                           ('neo_m5sewer', 'neo_m5sewer_tick'), ('neo_m5train', 'neo_m5train_tick')]),
-            ('m6code', 1, [('neo_m6enemy', 'neo_m6enemy_tick'), ('neo_m6props', 'neo_m6props_tick')])]
-TICKS_MAX = 5   # image head: 'MSXo', id, bytes, tick count, TICKS_MAX tick addresses (src/msx_overlay.c)
+# Region 2's modules, in the order of msx_overlay_module_t (src/msx_overlay.h): a region-2 image's tick table is
+# indexed by them (0: not in the image).
+MODULES = ['neo_m2boss', 'neo_m2props', 'neo_m2traps', 'neo_m2creature', 'neo_m3mid', 'neo_m3veh', 'neo_m3props',
+           'neo_m4props', 'neo_m4veh', 'neo_m5enemy', 'neo_m5mech', 'neo_m5props', 'neo_m5sewer', 'neo_m5train',
+           'neo_m6enemy', 'neo_m6props']
+# id order = enum msx_overlay_id_t (src/msx_overlay.h): (image, region, modules); a region-0 image has one module,
+# its tick in slot 0.
+OVERLAYS = [('neo_m3boss', 0, ['neo_m3boss']), ('neo_m4boss', 0, ['neo_m4boss']),
+            ('neo_m5boss', 0, ['neo_m5boss']), ('neo_m6boss', 0, ['neo_m6boss']),
+            ('neo_ending', 0, ['neo_ending']),   # the ending: results, credits, ranking, title (src/neo_ending.c)
+            # Each mission's own code but its boss (region 1), plus the other missions' modules its lists make
+            # (measured in ares: `MSX OVL n for module m` lines).
+            ('m2code', 1, ['neo_m2boss', 'neo_m2props', 'neo_m2traps', 'neo_m2creature']),
+            ('m3code', 1, ['neo_m3mid', 'neo_m3veh', 'neo_m3props']),
+            ('m4code', 1, ['neo_m4props', 'neo_m4veh', 'neo_m2boss', 'neo_m6props']),   # M4 makes 059F76/059FA8 (neo_m2boss) and 01FECE (neo_m6props)
+            ('m5code', 1, ['neo_m5enemy', 'neo_m5mech', 'neo_m5props', 'neo_m5sewer', 'neo_m5train']),
+            ('m6code', 1, ['neo_m6enemy', 'neo_m6props'])]
+TICKS_MAX = len(MODULES)   # image head: 'MSXo', id, bytes, TICKS_MAX, TICKS_MAX tick addresses (src/msx_overlay.c)
 REGIONS = ['msx_overlay_region', 'msx_overlay_code_region']
 SCRIPT = """ENTRY({entry})
 SECTIONS {{
@@ -96,20 +99,22 @@ def link(elf, mapf, out):
         for i, (name, reg, mods) in enumerate(OVERLAYS):
             addr, size = regions[reg]
             los = []
-            for mod, tick in mods:
+            for mod in mods:
                 obj = loaded.get(mod)
                 if not obj: sys.exit(f'{elf}: {mod}.o not in the link map')
                 if 'GPREL' in tool('readelf', '-r', '-W', obj): sys.exit(f'{obj}: gp-relative relocations (compile it with -G0)')
                 lo = tmp / f'{mod}.o'
                 # Only the tick stays global: the routine test and any other global
                 # of the module are also in the main program, here they bind locally.
-                subprocess.check_call([str(B) + 'objcopy', f'--keep-global-symbol={tick}', obj, lo])
+                subprocess.check_call([str(B) + 'objcopy', f'--keep-global-symbol={mod}_tick', obj, lo])
                 los.append(lo)
-            ticks = [t for _, t in mods]
-            if len(ticks) > TICKS_MAX: sys.exit(f'{name}: more than {TICKS_MAX} ticks')
+            ticks = [m + '_tick' for m in mods]
+            slots = ticks + ['0'] * (TICKS_MAX - 1) if reg == 0 else \
+                [m + '_tick' if m in mods else '0' for m in MODULES]
+            if reg == 1 and not set(mods) <= set(MODULES): sys.exit(f'{name}: a module outside MODULES')
             ld = tmp / f'{name}.ld'
-            ld.write_text(SCRIPT.format(entry=ticks[0], addr=addr, id=i, count=len(ticks),
-                                        ticks=' '.join(f'LONG({t})' for t in ticks + ['0'] * (TICKS_MAX - len(ticks)))))
+            ld.write_text(SCRIPT.format(entry=ticks[0], addr=addr, id=i, count=TICKS_MAX,
+                                        ticks=' '.join(f'LONG({t})' for t in slots)))
             oe = Path(out).with_suffix(f'.{name}.elf')   # kept: addr2line of a crash in the overlay
             subprocess.check_call([str(B) + 'ld', '-T', ld, f'--just-symbols={elf}', '--gc-sections', '-nostdlib',
                                    *[f'--require-defined={t}' for t in ticks],
@@ -119,8 +124,8 @@ def link(elf, mapf, out):
             data = ob.read_bytes()
             magic, oid, n, count = struct.unpack('>4I', data[:16])
             entries = struct.unpack(f'>{TICKS_MAX}I', data[16:16 + 4 * TICKS_MAX])
-            if magic != 0x4d53586f or oid != i or n != len(data) or count != len(ticks) \
-                    or not all(addr <= t < addr + n for t in entries[:count]):
+            if magic != 0x4d53586f or oid != i or n != len(data) or count != TICKS_MAX \
+                    or not all(addr <= t < addr + n for t, s_ in zip(entries, slots) if s_ != '0'):
                 sys.exit(f'{name}: bad overlay image')
             if n > size: sys.exit(f'{name}: {n} bytes, over the region {REGIONS[reg]} ({size} bytes, src/msx_overlay.h)')
             images.append((name, data))

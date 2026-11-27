@@ -790,6 +790,15 @@ void actor_draw(surface_t *surface,joypad_inputs_t input) {
             marco_visual_step(&marco,&mi);
             game.turn_gate=marco_visual_turn_gate(&marco);   /* B84: read by the next update's fire (gameplay.c) */
 #if MSX_DIAG || defined(MSX_TESTPAD)
+            /* B84 (read only; test cartridges): the run's turns and stops,
+             * and the presses the turn dropped (tools/test_characters_ares.py
+             * --run-fire-turn). */
+            {static int kind;static unsigned dropped;int k=marco_visual_turn_kind(&marco);
+             if (k!=kind && k) debugf("MSX DIAG marco %s facing=%d\n",k==1?"turn":"stop",(int)mi.facing);
+             kind=k;
+             if (game.turn_blocked!=dropped) {debugf("MSX DIAG turn press dropped count=%u\n",game.turn_blocked);dropped=game.turn_blocked;}}
+#endif
+#if MSX_DIAG || defined(MSX_TESTPAD)
             /* B83 (read only; test cartridges): an update whose parts draw with two facings
              * (004364 mirrors every pose by the player's +15; the run and
              * fire poses carry no mirror flag of their own). */

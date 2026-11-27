@@ -351,6 +351,7 @@ static bool turn_role_of(int r) {
     return r>=0 && (r==MARCO_CAMPAIGN_B_TURN_RUN || r==MARCO_CAMPAIGN_B_TURN_RUN_UP || r==MARCO_CAMPAIGN_B1_TURN_RUN || r==MARCO_CAMPAIGN_B1_TURN_RUN_UP);
 }
 static bool stop_role_of(int r) {return r>=0 && (r==MARCO_CAMPAIGN_B_TURN || r==MARCO_CAMPAIGN_B1_TURN);}
+int marco_visual_turn_kind(const marco_visual_t *v) {return turn_role_of(v->body_role)?1:stop_role_of(v->body_role)?2:0;}
 marco_turn_gate_t marco_visual_turn_gate(const marco_visual_t *v) {
     marco_turn_gate_t t={false,false,v->facing};
     if (v->form>1) return t;

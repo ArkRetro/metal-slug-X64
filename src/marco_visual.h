@@ -60,6 +60,8 @@ void marco_visual_use_programs(const neo_anim_program_t *script,const uint16_t (
 void marco_visual_reset(marco_visual_t *v);
 /* B84 (marco_turn.h): the gate of the update after this one. */
 marco_turn_gate_t marco_visual_turn_gate(const marco_visual_t *v);
+/* The body's program: 1 the run's turn (0BEE58/0BEE98), 2 the stop (0BEE18), 0 another. */
+int marco_visual_turn_kind(const marco_visual_t *v);
 /* One logic update. */
 void marco_visual_step(marco_visual_t *v,const marco_visual_input_t *in);
 /* Draws of the current update in emission order (body, then weapon). */
